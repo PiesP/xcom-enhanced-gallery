@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import type { ToolbarHandlers } from '@shared/components/ui/Toolbar/handler-types.types';
+import type { DownloadStatus } from '@shared/state/signals/gallery-download-signals';
 import type { ImageFitMode } from '@shared/types/settings.types';
 import type { Accessor } from 'solid-js';
 
@@ -12,6 +13,7 @@ export interface ToolbarProps {
   readonly handlers: ToolbarHandlers;
   readonly currentFitMode?: Accessor<ImageFitMode | undefined>;
   readonly isDownloading?: Accessor<boolean>;
+  readonly downloadStatus?: Accessor<DownloadStatus>;
   readonly disabled?: Accessor<boolean>;
   readonly className?: string | undefined;
   readonly tweetText?: Accessor<string | null>;

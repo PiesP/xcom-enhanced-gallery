@@ -48,6 +48,7 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
     'totalCount',
     'focusedIndex',
     'isDownloading',
+    'downloadStatus',
     'disabled',
     'className',
     'currentFitMode',
@@ -140,8 +141,7 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
   const isFitDisabled = (mode: ImageFitMode): boolean => {
     if (isToolbarDisabled()) return true;
     const handler = fitModeHandlers()[mode];
-    if (!handler) return true;
-    return activeFitMode() === mode;
+    return !handler;
   };
 
   const handleFitModeClick = (mode: ImageFitMode) => (event: MouseEvent) => {
@@ -187,6 +187,7 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
       totalCount={local.totalCount() ?? 0}
       disabled={local.disabled?.() ?? false}
       currentFitMode={activeFitMode()}
+      downloadStatus={local.downloadStatus?.() ?? 'idle'}
       tweetText={local.tweetText?.() ?? null}
       tweetTextContent={local.tweetTextContent?.() ?? null}
       tweetUrl={local.tweetUrl?.() ?? null}

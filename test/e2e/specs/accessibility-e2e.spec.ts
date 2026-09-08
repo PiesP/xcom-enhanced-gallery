@@ -281,6 +281,10 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     const toolbar = page.locator('[data-gallery-element="toolbar"]');
     await expect(toolbar).toBeVisible();
     await expect(toolbar).toHaveJSProperty('tagName', 'FIELDSET');
+    await expect(toolbar.getByRole('group', { name: 'Navigation and position' })).toBeVisible();
+    await expect(toolbar.getByRole('group', { name: 'View fit' })).toBeVisible();
+    await expect(toolbar.getByRole('group', { name: 'Downloads' })).toBeVisible();
+    await expect(toolbar.getByRole('group', { name: 'More actions' })).toBeVisible();
 
     await closeGallery(page);
   });

@@ -22,6 +22,10 @@ export const ar: LanguageStrings = {
     fitH: 'ملاءمة الارتفاع',
     fitC: 'ملاءمة النافذة',
     galleryToolbar: 'شريط أدوات المعرض',
+    navigationGroup: 'التنقل والموضع الحالي',
+    fitGroup: 'ملاءمة العرض',
+    downloadGroup: 'التنزيلات',
+    auxGroup: 'إجراءات إضافية',
     progress: 'التقدم',
     settingsPanel: 'لوحة الإعدادات',
   },
@@ -65,6 +69,11 @@ export const ar: LanguageStrings = {
       toggle: '؟: عرض هذه المساعدة',
     },
     dl: {
+      status: {
+        working: 'جارٍ تجهيز التنزيل…',
+        handedOff: 'تم تسليم طلب التنزيل إلى المتصفح',
+        error: 'فشل التنزيل',
+      },
       one: {
         err: {
           t: 'فشل التنزيل',

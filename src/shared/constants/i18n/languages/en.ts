@@ -22,6 +22,10 @@ export const en: LanguageStrings = {
     fitH: 'Fit Height',
     fitC: 'Fit Window',
     galleryToolbar: 'Gallery Toolbar',
+    navigationGroup: 'Navigation and position',
+    fitGroup: 'View fit',
+    downloadGroup: 'Downloads',
+    auxGroup: 'More actions',
     progress: 'Progress',
     settingsPanel: 'Settings Panel',
   },
@@ -65,6 +69,11 @@ export const en: LanguageStrings = {
       toggle: '?: Show this help',
     },
     dl: {
+      status: {
+        working: 'Preparing download…',
+        handedOff: 'Handed off to browser',
+        error: 'Download failed',
+      },
       one: {
         err: {
           t: 'Download Failed',

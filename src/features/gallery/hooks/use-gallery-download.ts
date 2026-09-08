@@ -13,7 +13,7 @@ import { getDownloadOrchestrator } from '@shared/services/download/download-orch
 import { getLanguageService } from '@shared/services/language-service';
 import { getMediaService } from '@shared/services/media-service';
 import { gallerySignals, setError } from '@shared/state/signals/gallery.signals';
-import { setDownloading } from '@shared/state/signals/gallery-download-signals';
+import { setDownloadStatus } from '@shared/state/signals/gallery-download-signals';
 
 /**
  * Hook providing gallery download functionality.
@@ -25,6 +25,7 @@ import { setDownloading } from '@shared/state/signals/gallery-download-signals';
 export function createDownloadHandler() {
   const notify = getNotificationAdapter();
   let abortController = new AbortController();
+  let operationGeneration = 0;
 
   const resetAbortController = (): void => {
     abortController = new AbortController();
@@ -54,15 +55,21 @@ export function createDownloadHandler() {
     // the new session's non-aborted signal.
     const controller = abortController;
     const signal = controller.signal;
+    const operationId = ++operationGeneration;
+    const isCurrentOperation = (): boolean =>
+      operationId === operationGeneration && !signal.aborted;
+    const publishStatus = (status: Parameters<typeof setDownloadStatus>[0]): void => {
+      if (!isCurrentOperation()) return;
+      setDownloadStatus(status);
+    };
 
     if (signal.aborted) {
-      setDownloading(false);
       return;
     }
 
     // A7: Clear stale error from a previous download before starting a new one.
     setError(null);
-    setDownloading(true);
+    setDownloadStatus('working');
 
     const notifyError = (title: string, body: string): void => {
       notifySafely(notify, title, body);
@@ -80,7 +87,13 @@ export function createDownloadHandler() {
           // Single downloads are already demand-driven through the platform
           // adapter. Avoid a duplicate Blob fetch that would delay GM_download.
           const result = await downloadService.downloadSingle(currentMedia, { signal });
-          if (!result.success && result.error !== USER_CANCELLED_MESSAGE) {
+          if (!isCurrentOperation()) return;
+          if (result.success) {
+            publishStatus('handedOff');
+          } else if (result.error === USER_CANCELLED_MESSAGE) {
+            publishStatus('idle');
+          } else {
+            publishStatus('error');
             const error = result.error || 'Unknown error';
             const title = languageService.translate('msg.dl.one.err.t');
             const body = languageService.translate('msg.dl.one.err.b', { error });
@@ -88,6 +101,7 @@ export function createDownloadHandler() {
             notifyError(title, body);
           }
         } else {
+          publishStatus('error');
           notifyError(
             languageService.translate('msg.dl.one.err.t'),
             languageService.translate('msg.dl.noMedia')
@@ -99,9 +113,14 @@ export function createDownloadHandler() {
             mediaService.getDownloadMedia(item, requestSignal, maxResponseBytes),
           signal,
         });
+        if (!isCurrentOperation()) return;
 
-        if (result.code === 'CANCELLED') return;
+        if (result.code === 'CANCELLED') {
+          publishStatus('idle');
+          return;
+        }
         if (result.code === 'RESOURCE_LIMIT' && result.success && result.status === 'partial') {
+          publishStatus('handedOff');
           const failures = Math.max(0, result.filesProcessed - result.filesSuccessful);
           const title = languageService.translate('msg.dl.part.t');
           const body = languageService.translate('msg.dl.part.resourceLimit', {
@@ -113,6 +132,7 @@ export function createDownloadHandler() {
           return;
         }
         if (result.code === 'RESOURCE_LIMIT') {
+          publishStatus('error');
           const title = languageService.translate('msg.dl.one.err.t');
           const body = languageService.translate('msg.dl.zipTooLarge');
           setError(body);
@@ -121,6 +141,7 @@ export function createDownloadHandler() {
         }
 
         if (!result.success) {
+          publishStatus('error');
           if (result.filesSuccessful === 0) {
             const title = languageService.translate('msg.dl.allFail.t');
             const body = languageService.translate('msg.dl.allFail.b');
@@ -145,20 +166,23 @@ export function createDownloadHandler() {
             notifyError(title, body);
           }
         }
+        publishStatus('handedOff');
       }
     } catch (error) {
+      if (!isCurrentOperation()) return;
+      publishStatus('error');
       logger.error('Download failed', error);
       const { title, body } = getDownloadErrorNotification(error);
       setError(body);
       notifyError(title, body);
-    } finally {
-      setDownloading(false);
     }
   };
 
   const cancelDownloads = (): void => {
+    operationGeneration += 1;
     abortController.abort();
     resetAbortController();
+    setDownloadStatus('idle');
   };
 
   return { handleDownload, cancelDownloads };

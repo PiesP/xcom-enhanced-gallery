@@ -9,6 +9,7 @@ import { SettingsControls } from '@shared/components/ui/Settings/SettingsControl
 import type { ToolbarSettingsControllerResult } from '@shared/hooks/toolbar/use-toolbar-settings-controller.types';
 import { useTranslation } from '@shared/hooks/use-translation';
 import { getEventManager } from '@shared/services/event-manager';
+import type { DownloadStatus } from '@shared/state/signals/gallery-download-signals';
 import type { ImageFitMode } from '@shared/types/settings.types';
 import { shouldAllowWheelDefault as shouldAllowWheelDefaultBase } from '@shared/utils/events/wheel-scroll-guard';
 import { cx } from '@shared/utils/text/formatting';
@@ -39,6 +40,8 @@ interface ToolbarViewProps {
   readonly disabled: boolean;
   /** Current fit mode */
   readonly currentFitMode: ImageFitMode;
+  /** Download lifecycle visible at the gallery boundary */
+  readonly downloadStatus: DownloadStatus;
   /** Tweet text content */
   readonly tweetText: string | null;
   /** Tweet text content */
@@ -111,6 +114,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
     'currentIndex',
     'disabled',
     'currentFitMode',
+    'downloadStatus',
     'tweetText',
     'tweetTextContent',
     'tweetUrl',
@@ -143,6 +147,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
   const currentIndex = createMemo(() => local.currentIndex);
   const isToolbarDisabled = createMemo(() => local.disabled);
   const activeFitMode = createMemo(() => local.currentFitMode);
+  const downloadStatus = createMemo(() => local.downloadStatus);
   const tweetText = createMemo(() => local.tweetText);
   const tweetTextContent = createMemo(() => local.tweetTextContent);
   const tweetUrl = createMemo(() => local.tweetUrl);
@@ -186,6 +191,18 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
     }
   });
   const hasTweetContent = () => !!(tweetTextContent() ?? tweetText() ?? tweetUrl());
+  const downloadStatusLabel = (): string => {
+    switch (downloadStatus()) {
+      case 'working':
+        return translate('msg.dl.status.working');
+      case 'handedOff':
+        return translate('msg.dl.status.handedOff');
+      case 'error':
+        return translate('msg.dl.status.error');
+      default:
+        return '';
+    }
+  };
 
   const toolbarButtonClass = (...extra: (string | undefined)[]) =>
     cx(styles.toolbarButton, 'xeg-inline-center', ...extra);
@@ -293,141 +310,167 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
       <legend class="xeg-sr-only">{local['aria-label'] ?? translate('tb.galleryToolbar')}</legend>
       <div class={cx(styles.toolbarContent, 'xeg-row-center')}>
         <div class={styles.toolbarControls}>
-          <IconButton
-            class={toolbarButtonClass()}
-            size="toolbar"
-            aria-label={translate('tb.prev')}
-            tooltip={translate('tb.prev')}
-            disabled={nav().prevDisabled}
-            onClick={local.onPreviousClick}
-          >
-            <LucideIcon name="chevron-left" size={TOOLBAR_ICON_SIZE_VAR} />
-          </IconButton>
+          <fieldset class={styles.toolbarGroup}>
+            <legend class="xeg-sr-only">{translate('tb.navigationGroup')}</legend>
+            <IconButton
+              class={toolbarButtonClass()}
+              size="toolbar"
+              aria-label={translate('tb.prev')}
+              tooltip={translate('tb.prev')}
+              disabled={nav().prevDisabled}
+              onClick={local.onPreviousClick}
+            >
+              <LucideIcon name="chevron-left" size={TOOLBAR_ICON_SIZE_VAR} />
+            </IconButton>
 
-          <IconButton
-            class={toolbarButtonClass()}
-            size="toolbar"
-            aria-label={translate('tb.next')}
-            tooltip={translate('tb.next')}
-            disabled={nav().nextDisabled}
-            onClick={local.onNextClick}
-          >
-            <LucideIcon name="chevron-right" size={TOOLBAR_ICON_SIZE_VAR} />
-          </IconButton>
-
-          <div class={styles.counterBlock}>
-            <div class={cx(styles.mediaCounterWrapper, 'xeg-inline-center')}>
-              <span
-                ref={(element) => {
-                  setCounterElement(element);
-                }}
-                id="xeg-toolbar-counter"
-                class={cx(styles.mediaCounter, 'xeg-inline-center')}
-                aria-live="polite"
-              >
-                <span class={styles.currentIndex}>{local.displayedIndex() + 1}</span>
-                <span class={styles.separator}>/</span>
-                <span class={styles.totalCount}>{totalCount()}</span>
-              </span>
-              <div
-                class={styles.progressBar}
-                role="progressbar"
-                aria-label={translate('tb.progress')}
-                aria-valuenow={local.displayedIndex() + 1}
-                aria-valuemin={1}
-                aria-valuemax={totalCount()}
-                aria-labelledby="xeg-toolbar-counter"
-              >
-                <div class={styles.progressFill} style={{ width: local.progressWidth() }} />
+            <div class={styles.counterBlock}>
+              <div class={cx(styles.mediaCounterWrapper, 'xeg-inline-center')}>
+                <span
+                  ref={(element) => {
+                    setCounterElement(element);
+                  }}
+                  id="xeg-toolbar-counter"
+                  class={cx(styles.mediaCounter, 'xeg-inline-center')}
+                  aria-live="polite"
+                >
+                  <span class={styles.currentIndex}>{local.displayedIndex() + 1}</span>
+                  <span class={styles.separator}>/</span>
+                  <span class={styles.totalCount}>{totalCount()}</span>
+                </span>
+                <div
+                  class={styles.progressBar}
+                  role="progressbar"
+                  aria-label={translate('tb.progress')}
+                  aria-valuenow={local.displayedIndex() + 1}
+                  aria-valuemin={1}
+                  aria-valuemax={totalCount()}
+                  aria-labelledby="xeg-toolbar-counter"
+                >
+                  <div class={styles.progressFill} style={{ width: local.progressWidth() }} />
+                </div>
               </div>
             </div>
-          </div>
 
-          {local.fitModeOrder.map(({ mode, iconName }) => {
-            const label = fitModeLabels()[mode];
-            return (
-              <IconButton
-                class={toolbarButtonClass(styles.fitButton)}
-                size="toolbar"
-                onClick={local.handleFitModeClick(mode)}
-                disabled={local.isFitDisabled(mode)}
-                aria-label={label.label}
-                tooltip={label.title}
-                aria-pressed={activeFitMode() === mode}
-              >
-                <LucideIcon name={iconName} size={TOOLBAR_ICON_SIZE_VAR} />
-              </IconButton>
-            );
-          })}
-
-          <IconButton
-            class={toolbarButtonClass(styles.downloadButton, styles.downloadCurrent)}
-            size="toolbar"
-            onClick={local.onDownloadCurrent}
-            disabled={nav().downloadDisabled}
-            aria-label={translate('tb.dl')}
-            tooltip={translate('tb.dl')}
-          >
-            <LucideIcon name="download" size={TOOLBAR_ICON_SIZE_VAR} />
-          </IconButton>
-
-          {nav().canDownloadAll && (
             <IconButton
-              class={toolbarButtonClass(styles.downloadButton, styles.downloadAll)}
+              class={toolbarButtonClass()}
               size="toolbar"
-              onClick={local.onDownloadAll}
+              aria-label={translate('tb.next')}
+              tooltip={translate('tb.next')}
+              disabled={nav().nextDisabled}
+              onClick={local.onNextClick}
+            >
+              <LucideIcon name="chevron-right" size={TOOLBAR_ICON_SIZE_VAR} />
+            </IconButton>
+          </fieldset>
+
+          <fieldset class={styles.toolbarGroup}>
+            <legend class="xeg-sr-only">{translate('tb.fitGroup')}</legend>
+            {local.fitModeOrder.map(({ mode, iconName }) => {
+              const label = fitModeLabels()[mode];
+              return (
+                <IconButton
+                  class={toolbarButtonClass(styles.fitButton)}
+                  size="toolbar"
+                  onClick={local.handleFitModeClick(mode)}
+                  disabled={local.isFitDisabled(mode)}
+                  aria-label={label.label}
+                  tooltip={label.title}
+                  aria-pressed={activeFitMode() === mode}
+                >
+                  <LucideIcon name={iconName} size={TOOLBAR_ICON_SIZE_VAR} />
+                </IconButton>
+              );
+            })}
+          </fieldset>
+
+          <fieldset class={styles.toolbarGroup}>
+            <legend class="xeg-sr-only">{translate('tb.downloadGroup')}</legend>
+            <IconButton
+              class={toolbarButtonClass(styles.downloadButton, styles.downloadCurrent)}
+              size="toolbar"
+              onClick={local.onDownloadCurrent}
               disabled={nav().downloadDisabled}
-              aria-label={translate('tb.dlAllCt', { count: totalCount() })}
-              tooltip={translate('tb.dlAllCt', { count: totalCount() })}
+              aria-busy={downloadStatus() === 'working'}
+              aria-label={translate('tb.dl')}
+              tooltip={translate('tb.dl')}
             >
-              <LucideIcon name="folder-down" size={TOOLBAR_ICON_SIZE_VAR} />
+              <LucideIcon name="download" size={TOOLBAR_ICON_SIZE_VAR} />
             </IconButton>
-          )}
 
-          {local.showSettingsButton && (
+            {nav().canDownloadAll && (
+              <IconButton
+                class={toolbarButtonClass(styles.downloadButton, styles.downloadAll)}
+                size="toolbar"
+                onClick={local.onDownloadAll}
+                disabled={nav().downloadDisabled}
+                aria-busy={downloadStatus() === 'working'}
+                aria-label={translate('tb.dlAllCt', { count: totalCount() })}
+                tooltip={translate('tb.dlAllCt', { count: totalCount() })}
+              >
+                <LucideIcon name="folder-down" size={TOOLBAR_ICON_SIZE_VAR} />
+              </IconButton>
+            )}
+          </fieldset>
+
+          <fieldset class={styles.toolbarGroup}>
+            <legend class="xeg-sr-only">{translate('tb.auxGroup')}</legend>
+            {local.showSettingsButton && (
+              <IconButton
+                ref={local.settingsController.assignSettingsButtonRef}
+                id="settings-button"
+                class={toolbarButtonClass()}
+                size="toolbar"
+                aria-label={translate('tb.setOpen')}
+                aria-expanded={local.settingsController.isSettingsExpanded() ? 'true' : 'false'}
+                aria-controls="toolbar-settings-panel"
+                tooltip={translate('tb.setOpen')}
+                disabled={isToolbarDisabled()}
+                onMouseDown={local.settingsController.handleSettingsMouseDown}
+                onClick={local.settingsController.handleSettingsClick}
+              >
+                <LucideIcon name="settings-2" size={TOOLBAR_ICON_SIZE_VAR} />
+              </IconButton>
+            )}
+
+            {hasTweetContent() && (
+              <IconButton
+                id="tweet-text-button"
+                class={toolbarButtonClass()}
+                size="toolbar"
+                aria-label={translate('tb.twTxt')}
+                aria-expanded={local.isTweetPanelExpanded() ? 'true' : 'false'}
+                aria-controls="toolbar-tweet-panel"
+                tooltip={translate('tb.twTxt')}
+                disabled={isToolbarDisabled()}
+                onClick={local.toggleTweetPanelExpanded}
+              >
+                <LucideIcon name="messages-square" size={TOOLBAR_ICON_SIZE_VAR} />
+              </IconButton>
+            )}
+
             <IconButton
-              ref={local.settingsController.assignSettingsButtonRef}
-              id="settings-button"
-              class={toolbarButtonClass()}
+              class={toolbarButtonClass(styles.closeButton)}
               size="toolbar"
-              aria-label={translate('tb.setOpen')}
-              aria-expanded={local.settingsController.isSettingsExpanded() ? 'true' : 'false'}
-              aria-controls="toolbar-settings-panel"
-              tooltip={translate('tb.setOpen')}
+              aria-label={translate('tb.cls')}
+              tooltip={translate('tb.cls')}
               disabled={isToolbarDisabled()}
-              onMouseDown={local.settingsController.handleSettingsMouseDown}
-              onClick={local.settingsController.handleSettingsClick}
+              onClick={local.onCloseClick}
             >
-              <LucideIcon name="settings-2" size={TOOLBAR_ICON_SIZE_VAR} />
+              <LucideIcon name="x" size={TOOLBAR_ICON_SIZE_VAR} />
             </IconButton>
-          )}
+          </fieldset>
 
-          {hasTweetContent() && (
-            <IconButton
-              id="tweet-text-button"
-              class={toolbarButtonClass()}
-              size="toolbar"
-              aria-label={translate('tb.twTxt')}
-              aria-expanded={local.isTweetPanelExpanded() ? 'true' : 'false'}
-              aria-controls="toolbar-tweet-panel"
-              tooltip={translate('tb.twTxt')}
-              disabled={isToolbarDisabled()}
-              onClick={local.toggleTweetPanelExpanded}
+          <Show when={downloadStatus() !== 'idle'}>
+            <span
+              class={styles.downloadStatus}
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+              data-download-status={downloadStatus()}
             >
-              <LucideIcon name="messages-square" size={TOOLBAR_ICON_SIZE_VAR} />
-            </IconButton>
-          )}
-
-          <IconButton
-            class={toolbarButtonClass(styles.closeButton)}
-            size="toolbar"
-            aria-label={translate('tb.cls')}
-            tooltip={translate('tb.cls')}
-            disabled={isToolbarDisabled()}
-            onClick={local.onCloseClick}
-          >
-            <LucideIcon name="x" size={TOOLBAR_ICON_SIZE_VAR} />
-          </IconButton>
+              {downloadStatusLabel()}
+            </span>
+          </Show>
         </div>
       </div>
 

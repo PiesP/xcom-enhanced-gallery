@@ -22,6 +22,10 @@ export const es: LanguageStrings = {
     fitH: 'Ajustar alto',
     fitC: 'Ajustar ventana',
     galleryToolbar: 'Barra de herramientas de la galería',
+    navigationGroup: 'Navegación y posición',
+    fitGroup: 'Ajuste de vista',
+    downloadGroup: 'Descargas',
+    auxGroup: 'Más acciones',
     progress: 'Progreso',
     settingsPanel: 'Panel de configuración',
   },
@@ -65,6 +69,11 @@ export const es: LanguageStrings = {
       toggle: '?: Mostrar esta ayuda',
     },
     dl: {
+      status: {
+        working: 'Preparando la descarga…',
+        handedOff: 'Solicitud entregada al navegador',
+        error: 'Error de descarga',
+      },
       one: {
         err: {
           t: 'Descarga fallida',
