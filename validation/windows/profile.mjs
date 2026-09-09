@@ -280,7 +280,8 @@ export async function run({ browser, root, output }) {
     );
     await page.waitForFunction(() => {
       const toolbar = document.querySelector('[data-gallery-element="toolbar"]');
-      return toolbar && getComputedStyle(toolbar.parentElement).visibility === 'hidden';
+      return toolbar && getComputedStyle(toolbar.parentElement).visibility === 'hidden'
+        && getComputedStyle(toolbar.parentElement).opacity === '0';
     }, undefined, { timeout: 6000 });
     await page.screenshot({ path: path.join(output, 'gallery-content-uncovered.png') });
 
@@ -299,6 +300,10 @@ export async function run({ browser, root, output }) {
     await page.emulateMedia({ colorScheme: 'dark' });
     await page.mouse.move(200, 4);
     await toolbar.waitFor({ state: 'visible' });
+    await page.waitForFunction(() => {
+      const toolbar = document.querySelector('[data-gallery-element="toolbar"]');
+      return toolbar && getComputedStyle(toolbar.parentElement).opacity === '1';
+    });
     await page.screenshot({ path: path.join(output, 'gallery-narrow-dark.png') });
     const narrowGeometry = await toolbar.evaluate((element) => {
       const rect = element.getBoundingClientRect();
