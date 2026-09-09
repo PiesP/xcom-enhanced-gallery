@@ -24,6 +24,7 @@ interface UseGalleryItemScrollOptions {
 interface UseGalleryItemScrollReturn {
   readonly scrollToItem: (index: number) => void;
   readonly scrollToCurrentItem: () => void;
+  readonly realignToItem: (index: number) => void;
 }
 
 /**
@@ -83,9 +84,9 @@ export function useGalleryItemScroll(
     return element ?? null;
   };
 
-  const scrollToItem = (index: number) => {
+  const alignItem = (index: number): void => {
     const container = containerAccessor();
-    if (!enabled() || !container || index < 0 || index >= totalItemsAccessor()) return;
+    if (!container || index < 0 || index >= totalItemsAccessor()) return;
 
     const itemsRoot = container.querySelector('[data-gallery-element="items"]');
     if (!itemsRoot) return;
@@ -118,6 +119,18 @@ export function useGalleryItemScroll(
     }
   };
 
+  const scrollToItem = (index: number): void => {
+    if (!enabled()) return;
+    alignItem(index);
+  };
+
+  // Layout changes need to preserve the viewed item even when the last
+  // navigation source was scroll. Active user scrolling still owns position.
+  const realignToItem = (index: number): void => {
+    if (isScrolling()) return;
+    alignItem(index);
+  };
+
   // Auto-scroll when index changes
   createEffect(() => {
     const index = currentIndexAccessor();
@@ -136,5 +149,6 @@ export function useGalleryItemScroll(
   return {
     scrollToItem,
     scrollToCurrentItem: () => scrollToItem(currentIndexAccessor()),
+    realignToItem,
   };
 }

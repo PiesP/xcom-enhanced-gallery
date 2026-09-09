@@ -61,11 +61,13 @@ function applyViewportCssVars(el: HTMLElement, v: ViewportConstraints): void {
  * Uses ResizeObserver and window resize events, RAF-throttled.
  * @param el - Target HTML element to observe and apply CSS vars to
  * @param getChrome - Function returning current chrome offsets
+ * @param onApplied - Optional callback after new constraints are applied
  * @returns Cleanup function to disconnect observers and remove listeners
  */
 export function observeViewportCssVars(
   el: HTMLElement,
-  getChrome: () => ChromeOffsets
+  getChrome: () => ChromeOffsets,
+  onApplied?: () => void
 ): () => void {
   let disposed = false;
 
@@ -74,6 +76,7 @@ export function observeViewportCssVars(
     const rect = el.getBoundingClientRect();
     const v = computeViewportConstraints({ width: rect.width, height: rect.height }, getChrome());
     applyViewportCssVars(el, v);
+    onApplied?.();
   };
 
   // RAF-throttle update scheduling

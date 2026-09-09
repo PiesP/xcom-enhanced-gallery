@@ -300,6 +300,33 @@ export async function run({ browser, root, output }) {
     assert.equal(next, '2', 'ArrowRight must select the second image');
     await page.screenshot({ path: path.join(output, 'gallery-panorama.png') });
     await page.setViewportSize({ width: 401, height: 592 });
+    await page.waitForFunction(() => {
+      const items = document.querySelector('[data-gallery-element="items"]');
+      const selected = items?.querySelector('[data-gallery-element="item"][data-index="1"]');
+      const gallery = items?.parentElement;
+      if (!(items instanceof HTMLElement) || !(selected instanceof HTMLElement) || !gallery) {
+        return false;
+      }
+      const selectedTop = selected.getBoundingClientRect().top;
+      const itemsTop = items.getBoundingClientRect().top;
+      return gallery.style.getPropertyValue('--xeg-viewport-w') === '401px'
+        && Math.abs(selectedTop - itemsTop) <= 1;
+    });
+    assert.equal(
+      await progress.getAttribute('aria-valuenow'),
+      '2',
+      'Viewport resize must preserve the selected second image'
+    );
+    assert.equal(
+      await toolbar.getAttribute('data-current-index'),
+      '1',
+      'Viewport resize must not change the selected download item'
+    );
+    assert.equal(
+      await toolbar.getAttribute('data-focused-index'),
+      '1',
+      'Viewport resize must keep the visible item synchronized with the toolbar'
+    );
     await page.emulateMedia({ colorScheme: 'dark' });
     await page.mouse.move(200, 4);
     await toolbar.waitFor({ state: 'visible' });
@@ -348,6 +375,7 @@ export async function run({ browser, root, output }) {
         'keyboard-next',
         'focused-toolbar-survives-scroll',
         'keyboard-content-auto-hide',
+        'narrow-selected-content',
         'narrow-dark-toolbar',
         'mock-GM-browser-download',
         'escape-close',

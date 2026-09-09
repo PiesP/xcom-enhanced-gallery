@@ -32,10 +32,11 @@ interface UseGalleryLifecycleOptions {
   readonly containerEl: () => HTMLDivElement | null;
   readonly toolbarWrapperEl: () => HTMLDivElement | null;
   readonly isVisible: () => boolean;
+  readonly onViewportApplied?: () => void;
 }
 
 export function useGalleryLifecycle(options: UseGalleryLifecycleOptions): void {
-  const { containerEl, toolbarWrapperEl, isVisible } = options;
+  const { containerEl, toolbarWrapperEl, isVisible, onViewportApplied } = options;
 
   // Effect 1: Scroll setup on container mount
   createEffect(
@@ -90,10 +91,14 @@ export function useGalleryLifecycle(options: UseGalleryLifecycleOptions): void {
     const wrapper = toolbarWrapperEl();
     if (!container || !wrapper) return;
 
-    const cleanup = observeViewportCssVars(container, () => {
-      const toolbarHeight = wrapper ? Math.floor(wrapper.getBoundingClientRect().height) : 0;
-      return { toolbarHeight, paddingTop: 0, paddingBottom: 0 } as const;
-    });
+    const cleanup = observeViewportCssVars(
+      container,
+      () => {
+        const toolbarHeight = wrapper ? Math.floor(wrapper.getBoundingClientRect().height) : 0;
+        return { toolbarHeight, paddingTop: 0, paddingBottom: 0 } as const;
+      },
+      onViewportApplied
+    );
 
     onCleanup(() => cleanup?.());
   });

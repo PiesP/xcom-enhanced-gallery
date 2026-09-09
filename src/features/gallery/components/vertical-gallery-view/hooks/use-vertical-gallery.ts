@@ -156,7 +156,7 @@ export function useVerticalGallery(options: UseVerticalGalleryOptions): UseVerti
   });
 
   // 4. Item scroll handling - Provides scroll-to-item functionality
-  const { scrollToItem, scrollToCurrentItem } = useGalleryItemScroll(
+  const { scrollToItem, scrollToCurrentItem, realignToItem } = useGalleryItemScroll(
     containerEl,
     currentIndex,
     mediaItemsCount,
@@ -192,6 +192,9 @@ export function useVerticalGallery(options: UseVerticalGalleryOptions): UseVerti
     containerEl,
     toolbarWrapperEl,
     isVisible,
+    onViewportApplied: (): void => {
+      realignToItem(focusedIndex() ?? currentIndex());
+    },
   });
 
   // 7. Hide toolbar when user scrolls
