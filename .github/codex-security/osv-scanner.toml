@@ -7,3 +7,9 @@
 id = "GHSA-jmr9-qjv8-65gv"
 ignoreUntil = 2026-09-13
 reason = "Codex Security rejects all symlink ZIP entries before extraction; no patched extract-zip release exists."
+
+# The same pre-extraction guard also rejects duplicate-name symlink writes.
+[[IgnoredVulns]]
+id = "GHSA-7pqw-9j4j-h8q3"
+ignoreUntil = 2026-09-13
+reason = "Codex Security rejects symlink and duplicate ZIP entries before extraction; no patched extract-zip release exists."
