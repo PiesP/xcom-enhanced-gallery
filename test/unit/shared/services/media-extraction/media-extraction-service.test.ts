@@ -74,6 +74,57 @@ describe('MediaExtractionService quoted media selection', () => {
     expect(variables.tweetId).toBe('222');
   });
 
+  it('falls back to media in a public plain article and keeps the clicked overlay index', async () => {
+    httpGet.mockResolvedValue({ ok: false, status: 403, data: {} });
+    document.body.innerHTML = `
+      <article>
+        <img
+          src="https://pbs.twimg.com/profile_images/123/avatar.jpg"
+          alt="Account avatar"
+        >
+        <div class="media-cell">
+          <img
+            src="https://pbs.twimg.com/media/first?format=jpg&amp;name=large"
+            alt="First photo"
+          >
+          <a
+            aria-label="View media"
+            href="/public_author/status/333/photo/1"
+          ></a>
+        </div>
+        <div class="media-cell">
+          <img
+            src="https://pbs.twimg.com/media/second?format=jpg&amp;name=large"
+            alt="Second photo"
+          >
+          <a
+            aria-label="View media"
+            href="/public_author/status/333/photo/2"
+          ></a>
+        </div>
+      </article>
+    `;
+
+    const clickedOverlay = document.querySelector<HTMLAnchorElement>(
+      'a[href$="/photo/2"]'
+    );
+    expect(clickedOverlay).toBeInstanceOf(HTMLAnchorElement);
+
+    const service = new MediaExtractionService();
+    const result = await service.extractFromClickedElement(clickedOverlay as HTMLAnchorElement);
+
+    expect(httpGet).toHaveBeenCalledTimes(1);
+    expect(result.success).toBe(true);
+    expect(result.metadata?.sourceType).toBe('dom-fallback');
+    expect(result.tweetInfo?.tweetId).toBe('333');
+    expect(result.mediaItems.map((media) => media.url)).toEqual([
+      'https://pbs.twimg.com/media/first?format=jpg&name=large',
+      'https://pbs.twimg.com/media/second?format=jpg&name=large',
+    ]);
+    expect(result.mediaItems.every((media) => !media.url.includes('/profile_images/'))).toBe(true);
+    expect(result.clickedIndex).toBe(1);
+  });
+
   it('does not let an aborted API response mutate or return success after a newer click', async () => {
     let resolveResponse!: (value: {
       ok: boolean;
