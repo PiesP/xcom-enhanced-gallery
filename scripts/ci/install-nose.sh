@@ -5,8 +5,8 @@ set -euo pipefail
 
 : "${GITHUB_PATH:?GITHUB_PATH is required}"
 
-nose_version="0.20.0"
-nose_installer_sha256="1b8c99b810ffc946e861bee0dad3ccb8140751e0f03ed4531da819043d64f3ee"
+nose_version="0.21.0"
+nose_installer_sha256="0203a9c1204ca4ce4b233253a595375c0747c8f48ac8c88beeead64b4be71f55"
 installer="${RUNNER_TEMP:-${TMPDIR:-/tmp}}/nose-cli-installer.sh"
 
 curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
