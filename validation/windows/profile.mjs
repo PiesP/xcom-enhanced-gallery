@@ -253,11 +253,14 @@ export async function run({ browser, root, output }) {
     // A focused toolbar must survive gallery scrolling. After keyboard focus
     // returns to the image, auto-hide must expose the content beneath it.
     await selectedFit.focus();
-    await page.mouse.move(900, 500);
+    await page.mouse.move(600, 500);
     const items = gallery.locator('[data-gallery-element="items"]');
-    await items.evaluate((element) => {
-      element.dispatchEvent(new WheelEvent('wheel', { bubbles: true, deltaY: 40 }));
-    });
+    const scrollBeforeWheel = await items.evaluate((element) => element.scrollTop);
+    await page.mouse.wheel(0, 40);
+    await page.waitForFunction((previous) => {
+      const items = document.querySelector('[data-gallery-element="items"]');
+      return items && items.scrollTop > previous;
+    }, scrollBeforeWheel);
     const focusedToolbar = await selectedFit.evaluate((element) => {
       const wrapper = element.closest('[data-gallery-element="toolbar"]').parentElement;
       return {
