@@ -94,9 +94,19 @@ async function openGallery(
   itemCount = 3,
   dimensions: GalleryDimensions = { width: 800, height: 600 }
 ): Promise<void> {
-  await page.evaluate(({ itemCount, dimensions }) => {
+  await openGalleryWithDimensions(
+    page,
+    Array.from({ length: itemCount }, () => dimensions)
+  );
+}
+
+async function openGalleryWithDimensions(
+  page: Page,
+  dimensionsByItem: readonly GalleryDimensions[]
+): Promise<void> {
+  await page.evaluate((dimensionsByItem) => {
     const g = globalThis as any;
-    const items = Array.from({ length: itemCount }, (_, index) => {
+    const items = dimensionsByItem.map((dimensions, index) => {
       const number = index + 1;
       const url = `https://pbs.twimg.com/media/E${number}.jpg?format=jpg&name=large`;
       return {
@@ -116,7 +126,7 @@ async function openGallery(
       };
     });
     g.__XEG__.main.galleryApp.openGallery(items, 0);
-  }, { itemCount, dimensions });
+  }, dimensionsByItem);
   await page.waitForSelector('[data-xeg-gallery-container]', { timeout: 10_000 });
 }
 
@@ -287,6 +297,57 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
         expect(splitGroups).toEqual([]);
       });
     }
+  });
+
+  test('viewport resize preserves the selected mixed-aspect item in view', async ({ page }) => {
+    const dimensions = [
+      { width: 480, height: 720 },
+      { width: 1200, height: 360 },
+      { width: 640, height: 480 },
+    ] as const;
+    await page.route('https://pbs.twimg.com/**', async (route) => {
+      const match = /\/E(\d+)\.jpg/.exec(route.request().url());
+      const index = Number(match?.[1] ?? 1) - 1;
+      const size = dimensions[index] ?? dimensions[0];
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/svg+xml',
+        body: `<svg xmlns="http://www.w3.org/2000/svg" width="${size.width}" height="${size.height}" />`,
+      });
+    });
+    await setupGalleryPage(page);
+    await openGalleryWithDimensions(page, dimensions);
+
+    await page.keyboard.press('ArrowRight');
+    await expect.poll(() => getIndex(page)).toBe(1);
+
+    const toolbar = page.locator('[data-gallery-element="toolbar"]');
+    const selectedItem = page.locator('[data-gallery-element="item"][data-index="1"]');
+    const selectedTopOffset = () =>
+      selectedItem.evaluate((item) => {
+        const items = item.closest('[data-gallery-element="items"]');
+        if (!items) throw new Error('Missing gallery items container');
+        return Math.abs(
+          Math.round(item.getBoundingClientRect().top - items.getBoundingClientRect().top)
+        );
+      });
+    await expect.poll(selectedTopOffset).toBe(0);
+
+    await page.setViewportSize({ width: 401, height: 592 });
+    await page.waitForFunction(() => {
+      const gallery = document.querySelector<HTMLElement>('[data-gallery-element="items"]')
+        ?.parentElement;
+      return gallery?.style.getPropertyValue('--xeg-viewport-w') === '401px';
+    });
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    );
+
+    await expect(page.locator('[role="progressbar"]')).toHaveAttribute('aria-valuenow', '2');
+    await expect(toolbar).toHaveAttribute('data-current-index', '1');
+    await expect(toolbar).toHaveAttribute('data-focused-index', '1');
+    await expect.poll(selectedTopOffset).toBe(0);
   });
 
   test('selected fit state survives hover, focus, disabled, and forced colors', async ({ page }) => {

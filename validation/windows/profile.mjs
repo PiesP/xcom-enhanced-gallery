@@ -250,6 +250,44 @@ export async function run({ browser, root, output }) {
     );
     await toolbar.evaluate((element) => element.removeAttribute('disabled'));
 
+    // A focused toolbar must survive gallery scrolling. After keyboard focus
+    // returns to the image, auto-hide must expose the content beneath it.
+    await selectedFit.focus();
+    await page.mouse.move(600, 500);
+    const items = gallery.locator('[data-gallery-element="items"]');
+    const scrollBeforeWheel = await items.evaluate((element) => element.scrollTop);
+    await page.mouse.wheel(0, 40);
+    await page.waitForFunction((previous) => {
+      const items = document.querySelector('[data-gallery-element="items"]');
+      return items && items.scrollTop > previous;
+    }, scrollBeforeWheel);
+    const focusedToolbar = await selectedFit.evaluate((element) => {
+      const wrapper = element.closest('[data-gallery-element="toolbar"]').parentElement;
+      return {
+        focused: document.activeElement === element,
+        visibility: getComputedStyle(wrapper).visibility,
+        opacity: getComputedStyle(wrapper).opacity,
+      };
+    });
+    assert.equal(focusedToolbar.focused, true);
+    assert.equal(focusedToolbar.visibility, 'visible', 'Scrolling must preserve focused toolbar');
+    assert.equal(focusedToolbar.opacity, '1');
+    for (let step = 0; step < 30; step += 1) {
+      await page.keyboard.press('Tab');
+      if (await page.evaluate(() => Boolean(document.activeElement?.closest('[data-gallery-element="item"]')))) break;
+    }
+    assert.equal(
+      await page.evaluate(() => Boolean(document.activeElement?.closest('[data-gallery-element="item"]'))),
+      true,
+      'Keyboard users must be able to return focus to gallery content'
+    );
+    await page.waitForFunction(() => {
+      const toolbar = document.querySelector('[data-gallery-element="toolbar"]');
+      return toolbar && getComputedStyle(toolbar.parentElement).visibility === 'hidden'
+        && getComputedStyle(toolbar.parentElement).opacity === '0';
+    }, undefined, { timeout: 6000 });
+    await page.screenshot({ path: path.join(output, 'gallery-content-uncovered.png') });
+
     await page.keyboard.press('ArrowRight');
     await page.waitForFunction(
       (previous) =>
@@ -261,6 +299,66 @@ export async function run({ browser, root, output }) {
     const next = await progress.getAttribute('aria-valuenow');
     assert.equal(next, '2', 'ArrowRight must select the second image');
     await page.screenshot({ path: path.join(output, 'gallery-panorama.png') });
+    await page.setViewportSize({ width: 401, height: 592 });
+    await page.waitForFunction(() => {
+      const items = document.querySelector('[data-gallery-element="items"]');
+      const selected = items?.querySelector('[data-gallery-element="item"][data-index="1"]');
+      const gallery = items?.parentElement;
+      if (!(items instanceof HTMLElement) || !(selected instanceof HTMLElement) || !gallery) {
+        return false;
+      }
+      const selectedTop = selected.getBoundingClientRect().top;
+      const itemsTop = items.getBoundingClientRect().top;
+      return gallery.style.getPropertyValue('--xeg-viewport-w') === '401px'
+        && Math.abs(selectedTop - itemsTop) <= 1;
+    });
+    assert.equal(
+      await progress.getAttribute('aria-valuenow'),
+      '2',
+      'Viewport resize must preserve the selected second image'
+    );
+    assert.equal(
+      await toolbar.getAttribute('data-current-index'),
+      '1',
+      'Viewport resize must not change the selected download item'
+    );
+    assert.equal(
+      await toolbar.getAttribute('data-focused-index'),
+      '1',
+      'Viewport resize must keep the visible item synchronized with the toolbar'
+    );
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.mouse.move(200, 4);
+    await toolbar.waitFor({ state: 'visible' });
+    await page.waitForFunction(() => {
+      const toolbar = document.querySelector('[data-gallery-element="toolbar"]');
+      return toolbar && getComputedStyle(toolbar.parentElement).opacity === '1';
+    });
+    await page.screenshot({ path: path.join(output, 'gallery-narrow-dark.png') });
+    const narrowGeometry = await toolbar.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return { left: rect.left, right: rect.right, viewport: innerWidth };
+    });
+    assert(narrowGeometry.left >= 0 && narrowGeometry.right <= narrowGeometry.viewport,
+      'Toolbar must fit the narrow viewport');
+    await page.mouse.move(200, 500);
+    await page.waitForFunction(() => {
+      const toolbar = document.querySelector('[data-gallery-element="toolbar"]');
+      return toolbar && getComputedStyle(toolbar.parentElement).visibility === 'hidden'
+        && getComputedStyle(toolbar.parentElement).opacity === '0';
+    }, undefined, { timeout: 6000 });
+    const narrowContent = await gallery.locator('[data-gallery-element="item"][data-index="1"] img').evaluate((image) => {
+      const rect = image.getBoundingClientRect();
+      return { top: rect.top, bottom: rect.bottom, naturalWidth: image.naturalWidth };
+    });
+    assert(narrowContent.top >= -1 && narrowContent.bottom <= 592,
+      'The selected panorama must be visible after the narrow toolbar hides');
+    assert.equal(narrowContent.naturalWidth, 1200);
+    await page.screenshot({ path: path.join(output, 'gallery-narrow-content-uncovered.png') });
+
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.mouse.move(600, 4);
     const [download] = await Promise.all([
       page.waitForEvent('download', { timeout: 15_000 }),
       (async () => {
@@ -290,6 +388,10 @@ export async function run({ browser, root, output }) {
         'toolbar-selected-focus',
         'toolbar-forced-colors',
         'keyboard-next',
+        'focused-toolbar-survives-scroll',
+        'keyboard-content-auto-hide',
+        'narrow-selected-content',
+        'narrow-dark-toolbar',
         'mock-GM-browser-download',
         'escape-close',
       ],
