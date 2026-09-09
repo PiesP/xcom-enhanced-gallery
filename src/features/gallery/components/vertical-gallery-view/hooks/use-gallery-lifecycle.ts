@@ -86,20 +86,22 @@ export function useGalleryLifecycle(options: UseGalleryLifecycleOptions): void {
   );
 
   // Effect 3: Viewport CSS var sync via ResizeObserver
-  createEffect(() => {
-    const container = containerEl();
-    const wrapper = toolbarWrapperEl();
-    if (!container || !wrapper) return;
+  createEffect(
+    on([containerEl, toolbarWrapperEl], ([container, wrapper]) => {
+      if (!container || !wrapper) return;
 
-    const cleanup = observeViewportCssVars(
-      container,
-      () => {
-        const toolbarHeight = wrapper ? Math.floor(wrapper.getBoundingClientRect().height) : 0;
-        return { toolbarHeight, paddingTop: 0, paddingBottom: 0 } as const;
-      },
-      onViewportApplied
-    );
+      // Initial alignment reads scroll/focus state. Those reads must not
+      // recreate this observer when a user scrolls or changes the focused item.
+      const cleanup = observeViewportCssVars(
+        container,
+        () => {
+          const toolbarHeight = Math.floor(wrapper.getBoundingClientRect().height);
+          return { toolbarHeight, paddingTop: 0, paddingBottom: 0 } as const;
+        },
+        onViewportApplied
+      );
 
-    onCleanup(() => cleanup?.());
-  });
+      onCleanup(cleanup);
+    })
+  );
 }
