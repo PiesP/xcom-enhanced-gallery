@@ -341,6 +341,21 @@ export async function run({ browser, root, output }) {
     });
     assert(narrowGeometry.left >= 0 && narrowGeometry.right <= narrowGeometry.viewport,
       'Toolbar must fit the narrow viewport');
+    await page.mouse.move(200, 500);
+    await page.waitForFunction(() => {
+      const toolbar = document.querySelector('[data-gallery-element="toolbar"]');
+      return toolbar && getComputedStyle(toolbar.parentElement).visibility === 'hidden'
+        && getComputedStyle(toolbar.parentElement).opacity === '0';
+    }, undefined, { timeout: 6000 });
+    const narrowContent = await gallery.locator('[data-gallery-element="item"][data-index="1"] img').evaluate((image) => {
+      const rect = image.getBoundingClientRect();
+      return { top: rect.top, bottom: rect.bottom, naturalWidth: image.naturalWidth };
+    });
+    assert(narrowContent.top >= -1 && narrowContent.bottom <= 592,
+      'The selected panorama must be visible after the narrow toolbar hides');
+    assert.equal(narrowContent.naturalWidth, 1200);
+    await page.screenshot({ path: path.join(output, 'gallery-narrow-content-uncovered.png') });
+
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.emulateMedia({ colorScheme: 'light' });
     await page.mouse.move(600, 4);
