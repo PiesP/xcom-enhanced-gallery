@@ -1,6 +1,6 @@
-# Keep transitive qs users on patched releases for CVE-2026-8723.
+# Upgrade only affected qs requirements within the patched 6.x line.
 overrides:
-  qs@>=6.11.1: ">=6.15.2"
+  qs@>=6.11.1 <6.15.2: "^6.16.0"
 
 allowBuilds:
   esbuild: true
