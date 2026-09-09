@@ -71,12 +71,12 @@
   "license": "MIT",
   "engines": {
     "node": "^22.22.2 || ^24.15.0 || >=26.0.0",
-    "pnpm": ">=11.17.0"
+    "pnpm": ">=11.26.0"
   },
-  "packageManager": "pnpm@11.17.0",
+  "packageManager": "pnpm@11.26.0",
   "volta": {
     "node": "26.8.1",
-    "pnpm": "11.17.0"
+    "pnpm": "11.26.0"
   },
   "repository": {
     "type": "git",
@@ -96,7 +96,7 @@
     "@playwright/test": "^1.63.0",
     "@stryker-mutator/core": "^10.0.0",
     "@stryker-mutator/vitest-runner": "^10.0.0",
-    "@types/node": "^26.4.1",
+    "@types/node": "^26.5.0",
     "@types/selenium-webdriver": "4.35.6",
     "@vitest/coverage-v8": "^4.1.11",
     "dpdm": "4.3.0",
