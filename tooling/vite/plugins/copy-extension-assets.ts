@@ -1,6 +1,7 @@
-import { copyFileSync, cpSync, existsSync, mkdirSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { copyFileSync, existsSync, mkdirSync, rmSync, statSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import type { Plugin } from 'vite';
+import { readExtensionIconDeclarations } from '../utils/extension-icons.ts';
 
 export function copyExtensionAssetsPlugin(options: {
   root: string;
@@ -12,12 +13,34 @@ export function copyExtensionAssetsPlugin(options: {
   return {
     name: 'copy-extension-assets',
     writeBundle() {
-      mkdirSync(outDir, { recursive: true });
-      copyFileSync(resolve(root, 'extension', manifestFile), resolve(outDir, 'manifest.json'));
+      const manifestSource = resolve(root, 'extension', manifestFile);
+      const icons = readExtensionIconDeclarations(manifestSource);
+      const copies = [...new Set(icons.map((icon) => icon.path))].map((path) => ({
+        destination: resolve(outDir, path),
+        path,
+        source: resolve(root, 'assets', path),
+      }));
 
-      const iconsSource = resolve(root, 'assets/icons');
-      if (existsSync(iconsSource)) {
-        cpSync(iconsSource, resolve(outDir, 'icons'), { recursive: true });
+      for (const icon of copies) {
+        if (!existsSync(icon.source)) {
+          throw new Error(
+            `Extension manifest ${manifestFile} requires ${icon.path}, but the source asset does not exist.`
+          );
+        }
+        if (!statSync(icon.source).isFile()) {
+          throw new Error(
+            `Extension manifest ${manifestFile} requires ${icon.path}, but the source asset is not a file.`
+          );
+        }
+      }
+
+      mkdirSync(outDir, { recursive: true });
+      copyFileSync(manifestSource, resolve(outDir, 'manifest.json'));
+
+      rmSync(resolve(outDir, 'icons'), { force: true, recursive: true });
+      for (const icon of copies) {
+        mkdirSync(dirname(icon.destination), { recursive: true });
+        copyFileSync(icon.source, icon.destination);
       }
     },
   };

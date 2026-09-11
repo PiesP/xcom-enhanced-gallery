@@ -3,12 +3,18 @@
 // Copyright (c) 2024-2026 PiesP
 
 /** Verify that an extension build contains classic IIFE content code and required assets. */
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
+import {
+  type ExtensionIconDeclaration,
+  readExtensionIconDeclarations,
+} from '../../tooling/vite/utils/extension-icons.ts';
 
 const root = resolve(import.meta.dirname, '..', '..');
 const distDir = process.argv[2] ?? 'dist-extension';
 const contentJs = resolve(root, distDir, 'content.js');
+const manifestJson = resolve(root, distDir, 'manifest.json');
+const notificationFallbackIcon = 'icons/icon-128x128.png';
 let failed = false;
 
 function fail(message: string): void {
@@ -52,6 +58,33 @@ for (const file of ['background.js', 'manifest.json']) {
   } else {
     pass(`${file} produced`);
   }
+}
+
+let icons: readonly ExtensionIconDeclaration[] = [];
+if (existsSync(manifestJson)) {
+  try {
+    icons = readExtensionIconDeclarations(manifestJson);
+  } catch (error: unknown) {
+    fail(error instanceof Error ? error.message : String(error));
+  }
+}
+
+for (const icon of icons) {
+  const outputIcon = resolve(root, distDir, icon.path);
+  if (!existsSync(outputIcon)) {
+    fail(`${distDir}/${icon.path} declared by manifest.json was not produced`);
+  } else if (!statSync(outputIcon).isFile()) {
+    fail(`${distDir}/${icon.path} declared by manifest.json is not a file`);
+  } else {
+    pass(`${icon.path} produced`);
+  }
+}
+
+const manifestFallback = icons.find((icon) => icon.size === '128')?.path;
+if (icons.length > 0 && manifestFallback !== notificationFallbackIcon) {
+  fail(
+    `manifest.json icon 128 must be ${notificationFallbackIcon} for the background notification fallback`
+  );
 }
 
 if (failed) {
