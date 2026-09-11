@@ -12,6 +12,12 @@ import {
   MOCK_IMAGE,
 } from '../fixtures/artifacts';
 
+const INSTALLED_GALLERY_HTML = readFileSync(
+  resolve(import.meta.dirname, '../fixtures/installed-gallery-page.html'),
+  'utf8'
+);
+const PUBLIC_FIXTURE_URL = 'https://x.com/public_user/status/9876543210987654321';
+
 // Test observers use additional installed-browser APIs beyond the app's subset.
 declare module '../../../src/platform/chrome' {
   interface ChromeRuntimeCore {
@@ -53,7 +59,22 @@ test('loads the Chrome extension, completes a privileged download, and restores 
 
   try {
     await context.route('https://x.com/**', async (route) => {
-      await route.fulfill({ status: 200, contentType: 'text/html', body: MOCK_GALLERY_HTML });
+      const url = new URL(route.request().url());
+      if (url.pathname.endsWith('/TweetResultByRestId')) {
+        await route.fulfill({ status: 403, contentType: 'application/json', body: '{}' });
+        return;
+      }
+      const publicRoute = url.pathname === new URL(PUBLIC_FIXTURE_URL).pathname;
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/html',
+        body: publicRoute
+          ? INSTALLED_GALLERY_HTML.replace(
+              'data-fixture-route="classic"',
+              'data-fixture-route="public"'
+            )
+          : MOCK_GALLERY_HTML,
+      });
     });
     await context.route('https://pbs.twimg.com/**', async (route) => {
       await route.fulfill({ status: 200, contentType: 'image/png', body: MOCK_IMAGE });
@@ -82,8 +103,14 @@ test('loads the Chrome extension, completes a privileged download, and restores 
     await extensionPage.close();
 
     const pageErrors: string[] = [];
+    const apiResponses: Array<{ status: number; url: string }> = [];
     const page = await context.newPage();
     page.on('pageerror', (error) => pageErrors.push(error.message));
+    page.on('response', (response) => {
+      if (new URL(response.url()).pathname.endsWith('/TweetResultByRestId')) {
+        apiResponses.push({ status: response.status(), url: response.url() });
+      }
+    });
     await page.goto('https://x.com/testuser/status/1234567890123456789');
 
     await page.evaluate(() => {
@@ -168,6 +195,66 @@ test('loads the Chrome extension, completes a privileged download, and restores 
     await expect
       .poll(() => firstPhoto.evaluate((element) => document.activeElement === element))
       .toBe(true);
+
+    await page.goto(PUBLIC_FIXTURE_URL);
+    await expect(page.locator('html')).toHaveAttribute('data-xeg-gallery-ready', 'true');
+    const publicTrigger = page.locator(
+      'article:not([data-testid]) .public-media a[aria-label="View media"]'
+    ).nth(1);
+    await publicTrigger.scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollBy(0, -120));
+    await publicTrigger.focus();
+    await expect(publicTrigger).toBeFocused();
+    const publicBefore = await page.evaluate(() => ({
+      bodyStyle: document.body.getAttribute('style'),
+      scrollRestoration: history.scrollRestoration,
+      scrollY: window.scrollY,
+    }));
+    expect(publicBefore.scrollY).toBeGreaterThan(0);
+
+    const publicApiResponsesBefore = apiResponses.length;
+    await publicTrigger.click();
+    const publicGallery = page.locator('[data-xeg-gallery-container]');
+    await expect(publicGallery).toBeVisible();
+    await expect(publicGallery).toHaveAttribute('role', 'dialog');
+    await expect(publicGallery.locator('[role="progressbar"]')).toHaveAttribute(
+      'aria-valuenow',
+      '2'
+    );
+    await expect(publicGallery.locator('[data-gallery-element="item"] img')).toHaveCount(2);
+    await expect
+      .poll(() =>
+        publicGallery.locator('[data-gallery-element="item"] img').evaluateAll((images) =>
+          images.some(
+            (image) =>
+              image instanceof HTMLImageElement &&
+              image.src.includes('GkE5678') &&
+              image.complete &&
+              image.naturalWidth > 1
+          )
+        )
+      )
+      .toBe(true);
+    await expect
+      .poll(() => apiResponses.length)
+      .toBeGreaterThan(publicApiResponsesBefore);
+    expect(apiResponses.slice(publicApiResponsesBefore)).toEqual([
+      expect.objectContaining({ status: 403 }),
+    ]);
+
+    await page.keyboard.press('Escape');
+    await expect(publicGallery).toHaveCount(0);
+    await expect(publicTrigger).toBeFocused();
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(publicBefore.scrollY);
+    expect(
+      await page.evaluate(() => ({
+        bodyStyle: document.body.getAttribute('style'),
+        scrollRestoration: history.scrollRestoration,
+      }))
+    ).toEqual({
+      bodyStyle: publicBefore.bodyStyle,
+      scrollRestoration: publicBefore.scrollRestoration,
+    });
     expect(pageErrors).toEqual([]);
   } finally {
     await context.close();
