@@ -2,6 +2,8 @@
 // Copyright (c) 2024-2026 PiesP
 
 import type { Page } from '@playwright/test';
+import type { CookieAPI } from '../../../src/shared/types/core/cookie.types';
+import type { GMNotificationDetails } from '../../../src/shared/types/core/userscript';
 
 interface GMMockOptions {
   readonly persistentStorage?: boolean;
@@ -70,28 +72,39 @@ export async function installGMMock(
       document.body.append(marker);
       queueMicrotask(() => details.onload?.());
     };
-    window.GM_notification = (details: { title?: string; text?: string }): void => {
+    window.GM_notification = (
+      details: GMNotificationDetails | string,
+      titleOrDone?: string | (() => void)
+    ): void => {
+      const notification = typeof details === 'string'
+        ? { text: details, title: typeof titleOrDone === 'string' ? titleOrDone : undefined }
+        : details;
       const marker = document.createElement('div');
       marker.dataset.gmNotification = 'true';
-      marker.textContent = `${details.title ?? ''}: ${details.text ?? ''}`;
+      marker.textContent = `${notification.title ?? ''}: ${notification.text ?? ''}`;
       document.body.append(marker);
     };
     host.GM_xmlhttpRequest = () => ({ abort: () => undefined });
-    window.GM_cookie = {
-      list: () =>
-        document.cookie
+    host.GM_cookie = {
+      list: (_details, callback) => {
+        const cookies = document.cookie
           .split(';')
           .filter(Boolean)
           .map((cookie) => {
             const [name, ...rest] = cookie.trim().split('=');
             return { name: name?.trim() ?? '', value: rest.join('=').trim() };
-          }),
-      set: (cookie: { name: string; value: string }) => {
-        document.cookie = `${cookie.name}=${cookie.value}`;
+          });
+        callback?.(cookies, null);
+        return cookies;
       },
-      delete: (name: string) => {
+      set: (cookie, callback) => {
+        document.cookie = `${cookie.name ?? ''}=${cookie.value}`;
+        callback?.();
+      },
+      delete: ({ name }, callback) => {
         document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+        callback?.();
       },
-    };
+    } satisfies CookieAPI;
   }, options);
 }

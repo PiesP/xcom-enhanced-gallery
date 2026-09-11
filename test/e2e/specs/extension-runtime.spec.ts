@@ -12,6 +12,20 @@ import {
   MOCK_IMAGE,
 } from '../fixtures/artifacts';
 
+// Test observers use additional installed-browser APIs beyond the app's subset.
+declare module '../../../src/platform/chrome' {
+  interface ChromeRuntimeCore {
+    getManifest(): { name: string };
+  }
+  interface ChromeDownloadQuery {
+    readonly orderBy?: string[];
+    readonly limit?: number;
+  }
+  interface ChromeDownloadItem {
+    readonly filename: string;
+  }
+}
+
 test.beforeAll(() => {
   for (const directory of [CHROME_EXTENSION_DIR, FIREFOX_EXTENSION_DIR]) {
     if (!existsSync(resolve(directory, 'manifest.json'))) {

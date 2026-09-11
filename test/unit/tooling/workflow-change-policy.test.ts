@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { globSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -103,6 +103,30 @@ describe('workflow change policy', () => {
     const core = classify(['packages/core']);
     expectAll(core, ciOutputs);
     expectAll(core, ['osv', 'semgrep', 'codeql_javascript']);
+  });
+
+  it('type-checks every test source and selects quality for test-only changes', () => {
+    const checkedFiles = new Set<string>();
+    for (const project of ['tsconfig.test.json', 'tsconfig.e2e.json']) {
+      const config = JSON.parse(execFileSync(process.execPath, [
+        resolve(root, 'node_modules/typescript/bin/tsc'),
+        '--project', project, '--showConfig',
+      ], { cwd: root, encoding: 'utf8' })) as {
+        files: string[];
+        compilerOptions: { noUnusedLocals?: boolean; noUnusedParameters?: boolean };
+      };
+      expect(config.compilerOptions.noUnusedLocals, project).toBe(true);
+      expect(config.compilerOptions.noUnusedParameters, project).toBe(true);
+      for (const file of config.files) checkedFiles.add(resolve(root, file));
+    }
+    const testFiles = globSync('test/**/*.{ts,tsx}', {
+      cwd: root, exclude: ['test/node_modules/**'],
+    });
+    expect(testFiles.length).toBeGreaterThan(0);
+    for (const file of testFiles) {
+      expect(checkedFiles.has(resolve(root, file)), file).toBe(true);
+      expect(classify([file.replaceAll('\\', '/')]).quality, file).toBe('true');
+    }
   });
 
   it('scopes binary icons without weakening build and browser coverage', () => {
