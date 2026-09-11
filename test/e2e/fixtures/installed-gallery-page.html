@@ -9,14 +9,24 @@
     #host-layout-spacer { height: 1200px; }
     .tweet-container { max-width: 500px; margin: 0 auto; }
     .tweet-photo { margin: 4px 0; }
+    [data-fixture-route="public"] [data-route="classic"],
+    [data-fixture-route="classic"] [data-route="public"] { display: none; }
+    .public-avatar { width: 48px; height: 48px; border-radius: 50%; }
+    .public-media { position: relative; margin: 4px 0; }
+    .public-media > a { display: block; }
+    .public-media > a[aria-label="View media"] {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
     img { display: block; max-width: 100%; height: auto; }
   </style>
 </head>
-<body>
+<body data-fixture-route="classic">
   <div id="host-layout-spacer" aria-hidden="true"></div>
   <main>
     <div class="tweet-container">
-      <article data-testid="tweet">
+      <article data-route="classic" data-testid="tweet">
         <span>Test User</span>
         <span>@testuser</span>
         <a href="/testuser/status/1234567890123456789">
@@ -31,6 +41,27 @@
         </div>
         <div data-testid="tweetPhoto" class="tweet-photo">
           <img src="https://pbs.twimg.com/media/GkE9012MNOPQR.jpg?format=jpg&amp;name=large" alt="Forest path" width="320" height="180" tabindex="0">
+        </div>
+      </article>
+      <article data-route="public">
+        <img class="public-avatar" src="https://pbs.twimg.com/profile_images/123456789/public-avatar.jpg" alt="Public User">
+        <span>Public User</span>
+        <span>@public_user</span>
+        <a href="/public_user/status/9876543210987654321">
+          <time datetime="2026-09-12T10:00:00.000Z">10:00 AM · Sep 12, 2026</time>
+        </a>
+        <p>Two public-DOM installed-extension fixtures.</p>
+        <div class="public-media">
+          <a href="/public_user/status/9876543210987654321/photo/1">
+            <img src="https://pbs.twimg.com/media/GkE1234ABCDEF.jpg?format=jpg&amp;name=large" alt="Public mountain landscape" width="320" height="180">
+          </a>
+          <a href="/public_user/status/9876543210987654321/photo/1" aria-label="View media" tabindex="0"></a>
+        </div>
+        <div class="public-media">
+          <a href="/public_user/status/9876543210987654321/photo/2">
+            <img src="https://pbs.twimg.com/media/GkE5678GHIJKL.jpg?format=jpg&amp;name=large" alt="Public ocean sunset" width="320" height="180">
+          </a>
+          <a href="/public_user/status/9876543210987654321/photo/2" aria-label="View media" tabindex="0"></a>
         </div>
       </article>
     </div>
