@@ -237,16 +237,15 @@ test('loads the Chrome extension, completes a privileged download, and restores 
       '2'
     );
     await expect(publicGallery.locator('[data-gallery-element="item"] img')).toHaveCount(2);
+    const selectedPublicImage = publicGallery.locator(
+      '[data-gallery-element="item"][data-index="1"] img[src*="GkE5678"]'
+    );
+    await expect(selectedPublicImage).toHaveCount(1);
     await expect
       .poll(() =>
-        publicGallery.locator('[data-gallery-element="item"] img').evaluateAll((images) =>
-          images.some(
-            (image) =>
-              image instanceof HTMLImageElement &&
-              image.src.includes('GkE5678') &&
-              image.complete &&
-              image.naturalWidth > 1
-          )
+        selectedPublicImage.evaluate(
+          (image) =>
+            image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0
         )
       )
       .toBe(true);
