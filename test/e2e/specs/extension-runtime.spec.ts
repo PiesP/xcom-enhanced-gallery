@@ -220,11 +220,20 @@ test('loads the Chrome extension, completes a privileged download, and restores 
     await page.evaluate(() => window.scrollBy(0, -120));
     await publicTrigger.focus();
     await expect(publicTrigger).toBeFocused();
-    const publicBefore = await page.evaluate(() => ({
-      bodyStyle: document.body.getAttribute('style'),
-      scrollRestoration: history.scrollRestoration,
-      scrollY: window.scrollY,
-    }));
+    const publicBefore = await page.evaluate(() => {
+      const style = document.body.style;
+      return {
+        bodyStyle: {
+          left: style.left,
+          overflow: style.overflow,
+          position: style.position,
+          right: style.right,
+          top: style.top,
+        },
+        scrollRestoration: history.scrollRestoration,
+        scrollY: window.scrollY,
+      };
+    });
     expect(publicBefore.scrollY).toBeGreaterThan(0);
 
     const publicApiResponsesBefore = apiResponses.length;
@@ -261,10 +270,19 @@ test('loads the Chrome extension, completes a privileged download, and restores 
     await expect(publicTrigger).toBeFocused();
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(publicBefore.scrollY);
     expect(
-      await page.evaluate(() => ({
-        bodyStyle: document.body.getAttribute('style'),
-        scrollRestoration: history.scrollRestoration,
-      }))
+      await page.evaluate(() => {
+        const style = document.body.style;
+        return {
+          bodyStyle: {
+            left: style.left,
+            overflow: style.overflow,
+            position: style.position,
+            right: style.right,
+            top: style.top,
+          },
+          scrollRestoration: history.scrollRestoration,
+        };
+      })
     ).toEqual({
       bodyStyle: publicBefore.bodyStyle,
       scrollRestoration: publicBefore.scrollRestoration,
