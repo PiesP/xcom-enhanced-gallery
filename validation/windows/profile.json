@@ -4,5 +4,16 @@
     "dist/xcom-enhanced-gallery.user.js",
     "test/e2e/fixtures/mock-gallery-page.html",
     "test/e2e/fixtures/gm-mock.ts"
-  ]
+  ],
+  "installation": {
+    "entry": "validation/windows/install-profile.mjs",
+    "assets": [
+      "dist-extension",
+      "test/e2e/fixtures/installed-gallery-page.html"
+    ],
+    "build_commands": [
+      ["pnpm", "build:ci"],
+      ["pnpm", "build:extension:ci"]
+    ]
+  }
 }

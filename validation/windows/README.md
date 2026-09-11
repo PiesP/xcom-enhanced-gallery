@@ -27,3 +27,42 @@ Explorer, OS compositor, actual DPI changes, or physical GPU performance. A head
 run is functional diagnostics only, not desktop visual acceptance.
 
 Run `node --check validation/windows/profile.mjs` for the profile syntax check.
+
+## Installed Chrome/Edge extension flow
+
+The opt-in installed flow uses a fresh task-owned browser profile, enables
+extension developer mode, and loads the production unpacked MV3 distribution
+through CDP `Extensions.loadUnpacked`. It serves the existing deterministic X
+fixture and three distinct image payloads; no application script, download
+mock, GM bridge, or live-site response is injected.
+
+The flow repeats open, keyboard navigation, privileged `chrome.downloads`
+completion, and close three times. It proves the selected item's exact filename
+and bytes, checks both Escape and the close button, and verifies focus, scroll,
+body styles, late-added background isolation, and gallery teardown. The first
+cycle deliberately moves the focused trigger while the gallery is open. This
+keeps the scroll-versus-focus restoration order observable instead of hiding a
+host layout-shift regression. Page screenshots, per-cycle timings, file hashes,
+and cleanup metadata are retained as evidence; the timings are observations,
+not a performance claim.
+
+Only installed Chrome or Edge with `--installation extension` and no live URLs
+is supported. Userscript managers, Firefox installation, authenticated/live
+X.com, native Save As, Explorer, OS theme/DPI matrices, and physical GPU behavior
+remain outside this profile.
+
+After committing a clean named checkout and running the repository gates, run:
+
+```bash
+source /home/piesp/.config/shell/env.sh
+python3 /home/piesp/projects/windows-acceptance/vmctl.py run \
+  --repo "$PWD" --browser chrome --installation extension \
+  --output /tmp/xeg-chrome-installed
+```
+
+The entry uninstalls the extension and removes its profile after the owned
+browser closes. If browser cleanup fails, it preserves that profile for bounded
+diagnosis rather than terminating unrelated processes.
+
+Run `node --check validation/windows/install-profile.mjs` for the installed
+profile syntax check.

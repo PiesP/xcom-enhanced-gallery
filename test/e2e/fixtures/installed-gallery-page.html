@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Installed X.com Enhanced Gallery fixture</title>
+  <style>
+    body { margin: 0; padding: 20px; background: #000; color: #e7e9ea; font-family: "Segoe UI", sans-serif; }
+    #host-layout-spacer { height: 1200px; }
+    .tweet-container { max-width: 500px; margin: 0 auto; }
+    .tweet-photo { margin: 4px 0; }
+    img { display: block; max-width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+  <div id="host-layout-spacer" aria-hidden="true"></div>
+  <main>
+    <div class="tweet-container">
+      <article data-testid="tweet">
+        <span>Test User</span>
+        <span>@testuser</span>
+        <a href="/testuser/status/1234567890123456789">
+          <time datetime="2026-06-25T10:00:00.000Z">10:00 AM · Jun 25, 2026</time>
+        </a>
+        <div data-testid="tweetText"><p>Three installed-extension fixtures.</p></div>
+        <div data-testid="tweetPhoto" class="tweet-photo">
+          <img src="https://pbs.twimg.com/media/GkE1234ABCDEF.jpg?format=jpg&amp;name=large" alt="Mountain landscape" width="320" height="180" tabindex="0">
+        </div>
+        <div data-testid="tweetPhoto" class="tweet-photo">
+          <img src="https://pbs.twimg.com/media/GkE5678GHIJKL.jpg?format=jpg&amp;name=large" alt="Ocean sunset" width="320" height="180" tabindex="0">
+        </div>
+        <div data-testid="tweetPhoto" class="tweet-photo">
+          <img src="https://pbs.twimg.com/media/GkE9012MNOPQR.jpg?format=jpg&amp;name=large" alt="Forest path" width="320" height="180" tabindex="0">
+        </div>
+      </article>
+    </div>
+  </main>
+</body>
+</html>

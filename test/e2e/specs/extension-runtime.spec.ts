@@ -34,7 +34,7 @@ test.beforeAll(() => {
   }
 });
 
-test('loads the Chrome extension, opens the gallery, and completes a privileged download', async ({
+test('loads the Chrome extension, completes a privileged download, and restores host state', async ({
   browserName,
 }) => {
   test.skip(browserName !== 'chromium', 'Chrome extension loading requires Chromium');
@@ -86,12 +86,47 @@ test('loads the Chrome extension, opens the gallery, and completes a privileged 
     page.on('pageerror', (error) => pageErrors.push(error.message));
     await page.goto('https://x.com/testuser/status/1234567890123456789');
 
+    await page.evaluate(() => {
+      const spacer = document.createElement('div');
+      spacer.id = 'host-layout-spacer';
+      spacer.style.height = '1200px';
+      document.body.prepend(spacer);
+
+      const trigger = document.querySelector<HTMLElement>('[data-testid="tweetPhoto"] img');
+      if (!trigger) throw new Error('Gallery trigger missing');
+      trigger.tabIndex = 0;
+      trigger.addEventListener(
+        'click',
+        () => {
+          Object.assign(globalThis, {
+            __xegOpeningBoundary: {
+              scrollY: window.scrollY,
+              triggerFocused: document.activeElement === trigger,
+            },
+          });
+        },
+        { once: true }
+      );
+    });
+
     const firstPhoto = page.locator('[data-testid="tweetPhoto"] img').first();
     await expect(firstPhoto).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('data-xeg-gallery-ready', 'true');
     await firstPhoto.click();
     await expect(page.locator('[data-xeg-gallery-container]')).toBeVisible();
     await expect(page.locator('[data-xeg-gallery-container] img').first()).toBeVisible();
+
+    const openingBoundary = await page.evaluate(() => {
+      const boundary = (
+        globalThis as typeof globalThis & {
+          __xegOpeningBoundary?: { scrollY: number; triggerFocused: boolean };
+        }
+      ).__xegOpeningBoundary;
+      if (!boundary) throw new Error('Gallery opening boundary was not observed');
+      return boundary;
+    });
+    expect(openingBoundary).toMatchObject({ triggerFocused: true });
+    expect(openingBoundary.scrollY).toBeGreaterThan(0);
 
     const downloadButton = page.locator(
       '[data-gallery-element="toolbar"] button[aria-label="Download"]'
@@ -117,6 +152,20 @@ test('loads the Chrome extension, opens the gallery, and completes a privileged 
     );
     expect(completedDownload?.filename.startsWith(downloadDirectory)).toBe(true);
     expect(readFileSync(completedDownload?.filename ?? '')).toEqual(MOCK_IMAGE);
+
+    await page.evaluate(() => {
+      const spacer = document.querySelector<HTMLElement>('#host-layout-spacer');
+      if (!spacer) throw new Error('Host layout spacer missing');
+      spacer.style.height = '3200px';
+    });
+    await page.keyboard.press('Escape');
+    await expect(page.locator('[data-xeg-gallery-container]')).toHaveCount(0);
+    await expect
+      .poll(() => page.evaluate(() => window.scrollY))
+      .toBe(openingBoundary.scrollY);
+    await expect
+      .poll(() => firstPhoto.evaluate((element) => document.activeElement === element))
+      .toBe(true);
     expect(pageErrors).toEqual([]);
   } finally {
     await context.close();
