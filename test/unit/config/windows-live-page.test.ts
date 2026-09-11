@@ -11,6 +11,15 @@ type LivePageModule = {
     handle: string;
     statusId: string;
   }): false | { state: string; reason?: string; target?: { imageSource: { path: string } } };
+  inspectSelectedGalleryDocument(expected: {
+    expectedIndex: number;
+    expectedPath: string;
+  }): false | {
+    imageSource: { host: string; path: string };
+    itemIndex: number;
+    itemVisible: boolean;
+    progressValue: number;
+  };
   observeLiveUrls(options: {
     context: unknown;
     extensionId: string;
@@ -135,6 +144,61 @@ describe('Windows X live page validation', () => {
     expect(livePage.inspectLiveTargetDocument(identity)).toEqual({
       state: 'terminal',
       reason: 'host-challenge-or-unavailable',
+    });
+  });
+
+  it('rejects a matching image outside the selected gallery index', () => {
+    document.body.innerHTML = `
+      <div data-xeg-gallery-container>
+        <div role="progressbar" aria-valuenow="2"></div>
+        <ol>
+          <li data-gallery-element="item" data-index="0" data-media-loaded="true">
+            <img src="https://pbs.twimg.com/media/target.jpg" alt="Target in wrong item">
+          </li>
+          <li data-gallery-element="item" data-index="1" data-media-loaded="true">
+            <img src="https://pbs.twimg.com/media/wrong.jpg" alt="Wrong selected image">
+          </li>
+        </ol>
+      </div>
+    `;
+    const elements = document.querySelectorAll<HTMLElement>(
+      '[data-gallery-element="item"], [data-gallery-element="item"] img'
+    );
+    for (const element of elements) {
+      element.style.display = 'block';
+      element.style.opacity = '1';
+      element.style.visibility = 'visible';
+      element.getBoundingClientRect = () => ({
+        bottom: 180,
+        height: 180,
+        left: 0,
+        right: 320,
+        toJSON: () => ({}),
+        top: 0,
+        width: 320,
+        x: 0,
+        y: 0,
+      });
+      if (element instanceof HTMLImageElement) {
+        Object.defineProperties(element, {
+          complete: { configurable: true, value: true },
+          naturalWidth: { configurable: true, value: 320 },
+        });
+      }
+    }
+    const expected = { expectedIndex: 2, expectedPath: '/media/target.jpg' };
+
+    expect(livePage.inspectSelectedGalleryDocument(expected)).toBe(false);
+    const selectedImage = document.querySelector<HTMLImageElement>(
+      '[data-gallery-element="item"][data-index="1"] img'
+    );
+    if (!selectedImage) throw new Error('Selected gallery image fixture missing');
+    selectedImage.src = 'https://pbs.twimg.com/media/target.jpg?name=orig';
+    expect(livePage.inspectSelectedGalleryDocument(expected)).toEqual({
+      imageSource: { host: 'pbs.twimg.com', path: '/media/target.jpg' },
+      itemIndex: 1,
+      itemVisible: true,
+      progressValue: 2,
     });
   });
 });

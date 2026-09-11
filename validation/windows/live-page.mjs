@@ -295,6 +295,51 @@ async function inspectHitTestedAction(image, identity) {
   }, identity);
 }
 
+export function inspectSelectedGalleryDocument({ expectedIndex, expectedPath }) {
+  const gallery = document.querySelector('[data-xeg-gallery-container]');
+  const progress = gallery?.querySelector('[role="progressbar"]');
+  const item = gallery?.querySelector(
+    `[data-gallery-element="item"][data-index="${expectedIndex - 1}"]`
+  );
+  if (!(gallery instanceof HTMLElement) || !(item instanceof HTMLElement)) return false;
+
+  const isVisible = (element) => {
+    const style = getComputedStyle(element);
+    const rectangle = element.getBoundingClientRect();
+    return style.display !== 'none' && style.visibility !== 'hidden' &&
+      Number(style.opacity) !== 0 && rectangle.bottom > 0 && rectangle.top < innerHeight &&
+      rectangle.right > 0 && rectangle.left < innerWidth;
+  };
+  const selectedImage = [...item.querySelectorAll('img')].find((candidate) => {
+    if (!(candidate instanceof HTMLImageElement) || !candidate.complete ||
+        candidate.naturalWidth <= 0 || !isVisible(candidate)) return false;
+    try {
+      const url = new URL(candidate.currentSrc || candidate.src);
+      return url.hostname === 'pbs.twimg.com' && url.pathname === expectedPath;
+    } catch {
+      return false;
+    }
+  });
+  if (progress?.getAttribute('aria-valuenow') !== String(expectedIndex) ||
+      item.getAttribute('data-media-loaded') !== 'true' || !isVisible(item) || !selectedImage) {
+    return false;
+  }
+  const source = new URL(selectedImage.currentSrc || selectedImage.src);
+  return {
+    imageSource: { host: source.hostname, path: source.pathname },
+    itemIndex: Number(item.getAttribute('data-index')),
+    itemVisible: true,
+    progressValue: Number(progress.getAttribute('aria-valuenow')),
+  };
+}
+
+function photoIndexFromActionPath(path) {
+  const match = path.match(/\/photo\/([1-9]\d*)$/u);
+  const value = Number(match?.[1]);
+  if (!Number.isSafeInteger(value)) throw new Error('Selected media action has no safe photo index');
+  return value;
+}
+
 async function observeOne(context, extensionId, targetUrl, output, index) {
   const identity = targetIdentity(targetUrl);
   const page = await context.newPage();
@@ -357,7 +402,8 @@ async function observeOne(context, extensionId, targetUrl, output, index) {
     await image.scrollIntoViewIfNeeded({ timeout: ACTION_TIMEOUT_MS });
     const actionIdentity = await inspectHitTestedAction(image, identity);
     if (!actionIdentity) throw new Error('No owned top media action was found by hit test');
-    observation.target = { ...observation.target, ...actionIdentity };
+    const selectedPhotoIndex = photoIndexFromActionPath(actionIdentity.actionPath);
+    observation.target = { ...observation.target, ...actionIdentity, selectedPhotoIndex };
     const action = article.locator('a[href]').nth(actionIdentity.actionIndex);
     actionHandle = await action.elementHandle();
     if (!actionHandle) throw new Error('Selected target action detached before interaction');
@@ -390,26 +436,20 @@ async function observeOne(context, extensionId, targetUrl, output, index) {
     await actionHandle.click({ timeout: ACTION_TIMEOUT_MS });
     const gallery = page.locator('[data-xeg-gallery-container]');
     await gallery.waitFor({ state: 'visible', timeout: ACTION_TIMEOUT_MS });
-    const imageReady = await page.waitForFunction((expectedPath) =>
-      [...document.querySelectorAll('[data-xeg-gallery-container] [data-gallery-element="item"] img')]
-        .some((candidate) => {
-          if (!(candidate instanceof HTMLImageElement) || !candidate.complete ||
-              candidate.naturalWidth <= 0) return false;
-          try {
-            const url = new URL(candidate.currentSrc || candidate.src);
-            return url.hostname === 'pbs.twimg.com' && url.pathname === expectedPath;
-          } catch {
-            return false;
-          }
-        }),
-    observation.target.imageSource.path, {
+    const selectedGalleryHandle = await page.waitForFunction(inspectSelectedGalleryDocument, {
+      expectedIndex: selectedPhotoIndex,
+      expectedPath: observation.target.imageSource.path,
+    }, {
       timeout: ACTION_TIMEOUT_MS,
       polling: 100,
-    }).then(() => true, () => false);
+    }).catch(() => null);
+    const selectedGallery = selectedGalleryHandle
+      ? await selectedGalleryHandle.jsonValue()
+      : null;
+    await selectedGalleryHandle?.dispose();
     observation.gallery.opened = {
       ariaModal: await gallery.getAttribute('aria-modal'),
-      imageReady,
-      imageSource: observation.target.imageSource,
+      selectedGallery,
       role: await gallery.getAttribute('role'),
     };
     observation.screenshots.open = await captureScreenshot(
@@ -452,7 +492,7 @@ async function observeOne(context, extensionId, targetUrl, output, index) {
       topActionIdentity: identityBeforeClick,
       galleryDialog: observation.gallery.opened.role === 'dialog' &&
         observation.gallery.opened.ariaModal === 'true',
-      galleryHostImage: observation.gallery.opened.imageReady,
+      galleryHostImage: observation.gallery.opened.selectedGallery !== null,
       escapeClosed: detached,
       exactFocusRestored: focusRestored,
       nonzeroScrollPrepared: before.scrollY > 0,
