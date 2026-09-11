@@ -3,7 +3,7 @@
 
 import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import {
   copyFile,
   mkdir,
@@ -16,6 +16,7 @@ import {
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 
 const PROFILE_PREFIX = 'xeg-chrome-install-';
+const DEFAULT_NOTIFICATION_ICON = 'icons/icon-128x128.png';
 const TWEET_ID = '1234567890123456789';
 const FIXTURE_URL = `https://x.com/testuser/status/${TWEET_ID}`;
 const IMAGE_URL_MARKERS = ['GkE1234', 'GkE5678', 'GkE9012'];
@@ -165,6 +166,142 @@ async function installFixtureRoutes(context, root, images) {
 
 async function queryDownloads(extensionPage) {
   return extensionPage.evaluate(() => chrome.downloads.search({ orderBy: ['-startTime'] }));
+}
+
+async function verifyPackagedIcons(extensionPage) {
+  const icons = await extensionPage.evaluate(async () => {
+    const declarations = Object.entries(chrome.runtime.getManifest().icons ?? {});
+    if (!declarations.length) throw new Error('Installed extension manifest has no icons');
+
+    return Promise.all(
+      declarations.map(async ([size, path]) => {
+        const declaredSize = Number(size);
+        const dimensions = await new Promise((resolveImage, rejectImage) => {
+          const image = new Image();
+          image.addEventListener(
+            'load',
+            () => {
+              resolveImage({ height: image.naturalHeight, width: image.naturalWidth });
+            },
+            { once: true }
+          );
+          image.addEventListener(
+            'error',
+            () => {
+              rejectImage(new Error(`Failed to decode manifest icon ${size}: ${path}`));
+            },
+            { once: true }
+          );
+          image.src = chrome.runtime.getURL(path);
+        });
+        return { declaredSize, height: dimensions.height, path, width: dimensions.width };
+      })
+    );
+  });
+
+  for (const icon of icons) {
+    assert(
+      Number.isSafeInteger(icon.declaredSize) && icon.declaredSize > 0,
+      `Manifest icon size must be a positive integer: ${icon.declaredSize}`
+    );
+    assert.equal(
+      icon.width,
+      icon.declaredSize,
+      `Manifest icon ${icon.path} intrinsic width must match ${icon.declaredSize}`
+    );
+    assert.equal(
+      icon.height,
+      icon.declaredSize,
+      `Manifest icon ${icon.path} intrinsic height must match ${icon.declaredSize}`
+    );
+  }
+
+  const defaultNotificationIcon = icons.find((icon) => icon.declaredSize === 128);
+  assert.equal(
+    defaultNotificationIcon?.path,
+    DEFAULT_NOTIFICATION_ICON,
+    'Installed manifest icon 128 must match the production notification fallback'
+  );
+
+  return { count: icons.length, defaultNotificationIcon: DEFAULT_NOTIFICATION_ICON, icons };
+}
+
+async function verifyDefaultNotification(extensionPage) {
+  const id = `xeg-installed-validation-${randomUUID()}`;
+  const payload = {
+    id,
+    title: `XEG installed validation ${id}`,
+    message: `Default notification icon validation ${id}`,
+  };
+  let validation;
+  let validationError;
+  let validationErrorSeen = false;
+  let cleanup;
+  let cleanupError;
+  let cleanupErrorSeen = false;
+
+  try {
+    validation = await extensionPage.evaluate(async (notification) => {
+      const response = await chrome.runtime.sendMessage({
+        type: 'SHOW_NOTIFICATION',
+        payload: notification,
+      });
+      const active = await chrome.notifications.getAll();
+      return { active: Object.hasOwn(active, notification.id), response };
+    }, payload);
+    assert.deepEqual(
+      validation.response,
+      { success: true },
+      'Default notification request must succeed'
+    );
+    assert.equal(
+      validation.active,
+      true,
+      'Created default notification must be returned by chrome.notifications.getAll'
+    );
+  } catch (error) {
+    validationErrorSeen = true;
+    validationError = error;
+  } finally {
+    try {
+      cleanup = await extensionPage.evaluate(async (notificationId) => {
+        const cleared = await chrome.notifications.clear(notificationId);
+        const active = await chrome.notifications.getAll();
+        return { active: Object.hasOwn(active, notificationId), cleared };
+      }, id);
+      if (!validationErrorSeen) {
+        assert.equal(
+          cleanup.cleared,
+          true,
+          'Validation notification must be cleared by its exact ID'
+        );
+      }
+      assert.equal(
+        cleanup.active,
+        false,
+        'Validation notification must be absent after exact-ID cleanup'
+      );
+    } catch (error) {
+      cleanupErrorSeen = true;
+      cleanupError = error;
+    }
+  }
+
+  if (validationErrorSeen && cleanupErrorSeen) {
+    throw new AggregateError(
+      [validationError, cleanupError],
+      `Default notification validation and cleanup failed: ${safeError(validationError)}; ${safeError(cleanupError)}`
+    );
+  }
+  if (validationErrorSeen) throw validationError;
+  if (cleanupErrorSeen) throw cleanupError;
+  return {
+    cleared: cleanup.cleared,
+    defaultIcon: DEFAULT_NOTIFICATION_ICON,
+    id,
+    imageUrlOmitted: true,
+    observed: validation.active,
+  };
 }
 
 async function waitForDownload(extensionPage, knownIds, filename) {
@@ -351,6 +488,8 @@ async function exerciseInstalledExtension(context, extensionId, root, output, do
   const consoleErrors = [];
   const failedRequests = [];
   const cycles = [];
+  let packagingAssets;
+  let notification;
   let flowResult;
   let primaryError;
   let primarySeen = false;
@@ -370,6 +509,8 @@ async function exerciseInstalledExtension(context, extensionId, root, output, do
       await extensionPage.evaluate(() => chrome.runtime.getManifest().name),
       'X.com Enhanced Gallery'
     );
+    packagingAssets = await verifyPackagedIcons(extensionPage);
+    notification = await verifyDefaultNotification(extensionPage);
     await page.goto(FIXTURE_URL);
     await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached', timeout: 15_000 });
     for (const cycle of CYCLES) {
@@ -378,15 +519,21 @@ async function exerciseInstalledExtension(context, extensionId, root, output, do
     assert.deepEqual(pageErrors, [], 'Installed content script must not raise page errors');
     assert.deepEqual(consoleErrors, [], 'Installed content script must not log console errors');
     assert(cycles.every(({ scroll }) => scroll.restored), 'Every close must restore the saved scroll position');
-    flowResult = { cycles, pageErrors, consoleErrors };
+    flowResult = { cycles, pageErrors, consoleErrors, notification, packagingAssets };
   } catch (error) {
     primarySeen = true;
     primaryError = error;
     await page.screenshot({ path: join(output, 'installed-flow-error.png') }).catch(() => {});
   } finally {
     try {
-      await writeFile(join(output, 'installed-flow-observations.json'),
-        JSON.stringify({ cycles, pageErrors, consoleErrors, failedRequests }, null, 2));
+      await writeFile(
+        join(output, 'installed-flow-observations.json'),
+        JSON.stringify(
+          { cycles, pageErrors, consoleErrors, failedRequests, notification, packagingAssets },
+          null,
+          2
+        )
+      );
     } catch (error) {
       observationErrorSeen = true;
       observationError = error;
