@@ -64,7 +64,22 @@ async function enableDeveloperMode(context) {
   }
 }
 
-async function createPngFixtures(context) {
+async function verifyDownloadDirectory(context, downloads) {
+  const page = await context.newPage();
+  try {
+    await page.goto('chrome://settings/downloads');
+    const directory = await page.evaluate(() => new Promise((resolveDirectory) => {
+      chrome.settingsPrivate.getPref('download.default_directory', (preference) => {
+        resolveDirectory(preference.value);
+      });
+    }));
+    assert.equal(resolve(directory), resolve(downloads), 'Chrome must use the task-owned download directory');
+  } finally {
+    await page.close();
+  }
+}
+
+async function createImageFixtures(context) {
   const page = await context.newPage();
   try {
     await page.goto('about:blank');
@@ -83,7 +98,7 @@ async function createPngFixtures(context) {
         drawing.fillStyle = '#ffffff';
         drawing.font = 'bold 36px Segoe UI';
         drawing.fillText(label, 36, 72);
-        return canvas.toDataURL('image/png').split(',')[1];
+        return canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
       })
     );
     return encoded.map((value) => Buffer.from(value, 'base64'));
@@ -97,7 +112,7 @@ function imageIndex(url) {
   return index < 0 ? 0 : index;
 }
 
-async function installFixtureRoutes(context, root, pngs) {
+async function installFixtureRoutes(context, root, images) {
   const html = await readFile(join(root, 'test/e2e/fixtures/installed-gallery-page.html'), 'utf8');
   await context.route('**/*', async (route) => {
     const url = new URL(route.request().url());
@@ -109,14 +124,18 @@ async function installFixtureRoutes(context, root, pngs) {
       await route.fulfill({ status: 204, body: '' });
       return;
     }
+    if (url.hostname === 'x.com' && url.pathname.endsWith('/TweetResultByRestId')) {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ data: { tweetResult: { result: null } } }) });
+      return;
+    }
     if (url.hostname === 'x.com' && route.request().isNavigationRequest()) {
       await route.fulfill({ contentType: 'text/html', body: html });
       return;
     }
     if (url.hostname === 'pbs.twimg.com') {
       await route.fulfill({
-        contentType: 'image/png',
-        body: pngs[imageIndex(url.href)],
+        contentType: 'image/jpeg',
+        body: images[imageIndex(url.href)],
         headers: {
           'Access-Control-Allow-Origin': 'https://x.com',
           'Access-Control-Allow-Credentials': 'true',
@@ -180,7 +199,7 @@ async function hostSnapshot(page, triggerIndex) {
   }, triggerIndex);
 }
 
-async function runCycle({ cycle, downloads, extensionPage, output, page, pngs }) {
+async function runCycle({ cycle, downloads, extensionPage, output, page, images }) {
   const number = cycle.expectedIndex + 1;
   const trigger = page.locator('[data-testid="tweetPhoto"] img').nth(cycle.triggerIndex);
   await trigger.scrollIntoViewIfNeeded();
@@ -253,7 +272,7 @@ async function runCycle({ cycle, downloads, extensionPage, output, page, pngs })
     'Privileged download must remain inside the task-owned directory'
   );
   const bytes = await readFile(download.filename);
-  assert(pngs[cycle.expectedIndex].equals(bytes), 'Downloaded bytes must match the selected fixture');
+  assert(images[cycle.expectedIndex].equals(bytes), 'Downloaded bytes must match the selected fixture');
   const copiedName = `cycle-${number}-download.jpg`;
   await copyFile(download.filename, join(output, copiedName));
 
@@ -308,8 +327,8 @@ async function runCycle({ cycle, downloads, extensionPage, output, page, pngs })
   };
 }
 
-async function exerciseInstalledExtension(context, extensionId, root, output, downloads, pngs) {
-  await installFixtureRoutes(context, root, pngs);
+async function exerciseInstalledExtension(context, extensionId, root, output, downloads, images) {
+  await installFixtureRoutes(context, root, images);
   const extensionPage = await context.newPage();
   const page = await context.newPage();
   const pageErrors = [];
@@ -333,7 +352,7 @@ async function exerciseInstalledExtension(context, extensionId, root, output, do
     await page.goto(FIXTURE_URL);
     await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached', timeout: 15_000 });
     for (const cycle of CYCLES) {
-      cycles.push(await runCycle({ cycle, downloads, extensionPage, output, page, pngs }));
+      cycles.push(await runCycle({ cycle, downloads, extensionPage, output, page, images }));
     }
     assert.deepEqual(pageErrors, [], 'Installed content script must not raise page errors');
     assert.deepEqual(consoleErrors, [], 'Installed content script must not log console errors');
@@ -361,6 +380,10 @@ export async function run({ chromium, root, output, browserName, headless, insta
   const downloads = join(profile, 'downloads');
   await mkdir(downloads);
   assertOwnedProfile(root, profile);
+  await mkdir(join(profile, 'Default'));
+  await writeFile(join(profile, 'Default', 'Preferences'), JSON.stringify({
+    download: { default_directory: downloads, prompt_for_download: false, directory_upgrade: true },
+  }));
 
   let context;
   let cdp;
@@ -389,24 +412,25 @@ export async function run({ chromium, root, output, browserName, headless, insta
     });
     result.browserVersion = context.browser().version();
     await enableDeveloperMode(context);
+    await verifyDownloadDirectory(context, downloads);
     cdp = await context.browser().newBrowserCDPSession();
-    // Preserve ordinary browser filenames; Playwright otherwise stores downloads
-    // under GUIDs, which are not the user-visible filename contract checked here.
+    // Use Chrome's download manager and this fresh profile's directory preference
+    // so the extension's filename selection reaches the normal browser delegate.
     await cdp.send('Browser.setDownloadBehavior', {
-      behavior: 'allow', downloadPath: downloads, eventsEnabled: true,
+      behavior: 'default', eventsEnabled: true,
     });
     ({ id: extensionId } = await cdp.send('Extensions.loadUnpacked', {
       path: join(root, 'dist-extension'),
     }));
     assert.equal(typeof extensionId, 'string');
-    const pngs = await createPngFixtures(context);
+    const images = await createImageFixtures(context);
     result.fixture = await exerciseInstalledExtension(
       context,
       extensionId,
       root,
       output,
       downloads,
-      pngs
+      images
     );
     result.status = 'passed';
   } catch (error) {
