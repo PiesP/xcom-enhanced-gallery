@@ -25,27 +25,22 @@ globalThis.GM_getValue = (key: string, defaultValue?: unknown): unknown => {
   return defaultValue;
 };
 
-// @ts-expect-error
 globalThis.GM_setValue = (key: string, value: unknown): void => {
   gmStorage.set(key, value);
 };
 
-// @ts-expect-error
 globalThis.GM_deleteValue = (key: string): void => {
   gmStorage.delete(key);
 };
 
-// @ts-expect-error
 globalThis.GM_listValues = (): string[] => {
   return Array.from(gmStorage.keys());
 };
 
-// @ts-expect-error
 globalThis.GM_xmlhttpRequest = (_details: unknown): { abort: () => void } => {
   return { abort: () => {} };
 };
 
-// @ts-expect-error
 globalThis.GM_download = (
   _urlOrDetails: unknown,
   _name?: string,
@@ -76,14 +71,12 @@ globalThis.GM_info = {
 // jsdom may not provide these; fall back to setTimeout(..., 16ms)
 
 if (typeof globalThis.requestAnimationFrame === "undefined") {
-  // @ts-expect-error
   globalThis.requestAnimationFrame = (cb: FrameRequestCallback): number => {
     return setTimeout(cb, 16) as unknown as number;
   };
 }
 
 if (typeof globalThis.cancelAnimationFrame === "undefined") {
-  // @ts-expect-error
   globalThis.cancelAnimationFrame = (id: number): void => {
     clearTimeout(id);
   };
@@ -97,7 +90,6 @@ if (typeof globalThis.ResizeObserver === "undefined") {
     unobserve(): void {}
     disconnect(): void {}
   }
-  // @ts-expect-error
   globalThis.ResizeObserver = MockResizeObserver;
 }
 
@@ -119,7 +111,6 @@ if (typeof globalThis.IntersectionObserver === "undefined") {
 // matchMedia (not fully implemented in jsdom)
 
 if (typeof globalThis.matchMedia === "undefined") {
-  // @ts-expect-error
   globalThis.matchMedia = (): MediaQueryList => {
     return {
       matches: false,

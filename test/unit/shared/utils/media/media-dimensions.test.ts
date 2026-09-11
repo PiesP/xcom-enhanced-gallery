@@ -221,9 +221,9 @@ describe('media-dimensions (pure functions)', () => {
         { expanded_url: 'https://x.com/user/status/123/photo/2' },
       ] as any[];
       const result = sortMediaByVisualOrder(items);
-      expect(result[0].expanded_url).toContain('/photo/1');
-      expect(result[1].expanded_url).toContain('/photo/2');
-      expect(result[2].expanded_url).toContain('/photo/3');
+      expect(result[0]?.expanded_url).toContain('/photo/1');
+      expect(result[1]?.expanded_url).toContain('/photo/2');
+      expect(result[2]?.expanded_url).toContain('/photo/3');
     });
 
     it('should handle single item', () => {
@@ -243,8 +243,8 @@ describe('media-dimensions (pure functions)', () => {
         { expanded_url: 'https://x.com/user/status/123/photo/1', index: 3 },
       ] as any[];
       const result = sortMediaByVisualOrder(items);
-      expect(result[0].index).toBe(0);
-      expect(result[1].index).toBe(1);
+      expect(result[0]?.index).toBe(0);
+      expect(result[1]?.index).toBe(1);
     });
 
     it('should default to index 0 for URLs without visual index', () => {
@@ -254,7 +254,7 @@ describe('media-dimensions (pure functions)', () => {
       ] as any[];
       const result = sortMediaByVisualOrder(items);
       // URL without visual index gets 0, so it comes first
-      expect(result[0].expanded_url).toBe('https://x.com/user/status/123');
+      expect(result[0]?.expanded_url).toBe('https://x.com/user/status/123');
     });
   });
 

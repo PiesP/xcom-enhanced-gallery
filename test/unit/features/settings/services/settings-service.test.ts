@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { Mocked } from 'vitest';
 import { SettingsService } from '@features/settings/services/settings-service';
 import type { SettingsRepository } from '@features/settings/services/settings-repository';
 import type { AppSettings, SettingChangeEvent } from '@shared/types/settings.types';
@@ -9,7 +10,7 @@ import { createDefaultSettings } from '@constants/settings';
 
 // ── Helpers ─────────────────────────────────────────────────────────────
 
-function createMockRepository(): SettingsRepository {
+function createMockRepository(): Mocked<SettingsRepository> {
   let savedSettings: AppSettings | null = null;
   return {
     load: vi.fn(async () => {
@@ -220,7 +221,9 @@ describe('SettingsService', () => {
     it('should persist to repository after setting', async () => {
       await service.set('gallery.theme', 'dark');
       expect(mockRepo.save).toHaveBeenCalledTimes(1);
-      const saved = (mockRepo.save as ReturnType<typeof vi.fn>).mock.calls[0][0] as AppSettings;
+      const saved = mockRepo.save.mock.calls[0]?.[0];
+      expect(saved).toBeDefined();
+      if (!saved) return;
       expect(saved.gallery.theme).toBe('dark');
     });
 
@@ -268,7 +271,7 @@ describe('SettingsService', () => {
       };
       service = new SettingsService(repository);
       await service.initialize();
-      const listener = vi.fn();
+      const listener = vi.fn<(event: SettingChangeEvent) => void>();
       service.subscribe(listener);
 
       const pendingSet = service.set('gallery.theme', 'dark');
@@ -329,7 +332,9 @@ describe('SettingsService', () => {
       await service.set('gallery.theme', 'dark');
 
       expect(listener).toHaveBeenCalledTimes(1);
-      const event = listener.mock.calls[0][0] as SettingChangeEvent;
+      const event = listener.mock.calls[0]?.[0];
+      expect(event).toBeDefined();
+      if (!event) return;
       expect(event.key).toBe('gallery.theme');
       expect(event.oldValue).toBe('auto');
       expect(event.newValue).toBe('dark');
@@ -338,7 +343,7 @@ describe('SettingsService', () => {
     });
 
     it('should return an unsubscribe function', async () => {
-      const listener = vi.fn();
+      const listener = vi.fn<(event: SettingChangeEvent) => void>();
       const unsubscribe = service.subscribe(listener);
       unsubscribe();
       await service.set('gallery.theme', 'dark');
@@ -346,8 +351,8 @@ describe('SettingsService', () => {
     });
 
     it('should support multiple subscribers', async () => {
-      const listener1 = vi.fn();
-      const listener2 = vi.fn();
+      const listener1 = vi.fn<(event: SettingChangeEvent) => void>();
+      const listener2 = vi.fn<(event: SettingChangeEvent) => void>();
       service.subscribe(listener1);
       service.subscribe(listener2);
       await service.set('gallery.theme', 'dark');
@@ -356,11 +361,13 @@ describe('SettingsService', () => {
     });
 
     it('should notify with correct old and new values', async () => {
-      const listener = vi.fn();
+      const listener = vi.fn<(event: SettingChangeEvent) => void>();
       service.subscribe(listener);
       await service.set('gallery.videoVolume', 0.5);
 
-      const event = listener.mock.calls[0][0] as SettingChangeEvent;
+      const event = listener.mock.calls[0]?.[0];
+      expect(event).toBeDefined();
+      if (!event) return;
       expect(event.oldValue).toBe(1.0);
       expect(event.newValue).toBe(0.5);
     });

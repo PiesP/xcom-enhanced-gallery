@@ -24,8 +24,6 @@ import { LanguageService } from '@shared/services/language-service';
 
 // ── Helpers ─────────────────────────────────────────────────────────────
 
-let originalNavigatorLanguage: PropertyDescriptor | undefined;
-
 function setNavigatorLanguage(lang: string): void {
   // Stub both navigator.language AND navigator.languages
   // detectLanguage() checks navigator.languages[] first;

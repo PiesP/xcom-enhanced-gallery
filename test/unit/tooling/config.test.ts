@@ -1,4 +1,4 @@
-import { existsSync, globSync, readFileSync } from 'node:fs';
+import { globSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -70,16 +70,7 @@ describe('tooling configuration', () => {
 
   it('fails quality checks for unused dependencies, files, and exports across source and tests', () => {
     expect(packageJson.scripts.knip).toBe(
-      'pnpm -s knip:dependencies && pnpm -s knip:files && pnpm -s knip:exports'
-    );
-    expect(packageJson.scripts['knip:dependencies']).toBe(
-      'knip --dependencies --treat-config-hints-as-errors'
-    );
-    expect(packageJson.scripts['knip:files']).toBe(
-      'knip --files --treat-config-hints-as-errors'
-    );
-    expect(packageJson.scripts['knip:exports']).toBe(
-      'knip --exports --treat-config-hints-as-errors'
+      'knip --files --exports --dependencies --treat-config-hints-as-errors'
     );
     expect(knipConfig.project).toEqual(
       expect.arrayContaining(['test/**/*.ts', 'test/**/*.tsx'])

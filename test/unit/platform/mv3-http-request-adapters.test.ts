@@ -195,7 +195,7 @@ describe('MV3HttpRequestAdapter', () => {
   });
 
   it('returns a stream without buffering it as text', async () => {
-    const stream = new ReadableStream<Uint8Array>();
+    const stream = new ReadableStream<Uint8Array<ArrayBuffer>>();
     const text = vi.fn();
     vi.stubGlobal(
       'fetch',

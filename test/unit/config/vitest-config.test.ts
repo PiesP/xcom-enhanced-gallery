@@ -32,19 +32,28 @@ const criticalRuntimeSources = [
   'src/shared/services/media-extraction/media-extraction-service.ts',
   'src/features/gallery/gallery-app.ts',
 ];
+const coverageMetrics = ['statements', 'branches', 'functions', 'lines'] as const;
 
 function measuredSourceFiles(policy: CoveragePolicy): string[] {
-  return globSync(policy.include ?? [], {
-    cwd: root,
-    exclude: policy.exclude ?? [],
-  }).sort();
+  return [
+    ...new Set(
+      globSync(policy.include ?? [], {
+        cwd: root,
+        exclude: policy.exclude ?? [],
+      }).map((file) => file.replaceAll('\\', '/'))
+    ),
+  ].sort();
 }
 
 function coversCompleteRuntimeSet(policy: CoveragePolicy): boolean {
-  const expected = globSync(['src/**/*.{ts,tsx}'], {
-    cwd: root,
-    exclude: unitCoverageExemptions,
-  }).sort();
+  const expected = [
+    ...new Set(
+      globSync(['src/**/*.{ts,tsx}'], {
+        cwd: root,
+        exclude: unitCoverageExemptions,
+      }).map((file) => file.replaceAll('\\', '/'))
+    ),
+  ].sort();
   return measuredSourceFiles(policy).join('\n') === expected.join('\n');
 }
 
@@ -73,6 +82,15 @@ describe('Vitest coverage gate', () => {
     ).toBe(false);
   });
 
+  it('rejects excluding every critical runtime source', () => {
+    expect(
+      coversCompleteRuntimeSet({
+        ...coverage,
+        exclude: [...(coverage?.exclude ?? []), ...criticalRuntimeSources],
+      })
+    ).toBe(false);
+  });
+
   it('rejects broad source exclusions', () => {
     expect(coversCompleteRuntimeSet({ ...coverage, exclude: ['src/**'] })).toBe(false);
   });
@@ -86,7 +104,7 @@ describe('Vitest coverage gate', () => {
     ).toBe(true);
   });
 
-  it.each(['statements', 'branches', 'functions', 'lines'])(
+  it.each(coverageMetrics)(
     'enforces a meaningful %s threshold against the complete source set',
     (metric) => {
       expect(coverage?.thresholds?.[metric]).toBeGreaterThanOrEqual(30);

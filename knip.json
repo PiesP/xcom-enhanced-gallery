@@ -5,6 +5,7 @@
     "src/extension/background.ts",
     "src/extension/content.ts",
     "scripts/**/*.ts",
+    "test/e2e/specs/*.spec.ts",
     "vite.*.config.ts"
   ],
   "project": [
@@ -25,6 +26,8 @@
     "@platform/*": ["src/platform/*"],
     "@main": ["src/main.ts"]
   },
+  "node": false,
+  "playwright": false,
   "ignoreBinaries": ["openssl"],
   "ignoreExportsUsedInFile": true
 }

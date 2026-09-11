@@ -6,15 +6,16 @@ import {
   DEFAULT_REQUEST_TIMEOUT_MS,
   SINGLE_DOWNLOAD_MAX_RESPONSE_BYTES,
 } from '@constants/performance';
+import type { DownloadAdapter } from '@platform/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { adapter, getDownloadAdapter } = vi.hoisted(() => {
-  const download = vi.fn(async () => undefined);
+  const download = vi.fn<DownloadAdapter['download']>(async () => undefined);
   return {
     adapter: {
       download,
-      downloadBlob: vi.fn(async () => undefined),
-      needsBlobFallback: vi.fn(() => true),
+      downloadBlob: vi.fn<DownloadAdapter['downloadBlob']>(async () => undefined),
+      needsBlobFallback: vi.fn<DownloadAdapter['needsBlobFallback']>(() => true),
     },
     getDownloadAdapter: vi.fn(),
   };
