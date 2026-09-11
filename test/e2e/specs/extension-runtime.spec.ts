@@ -96,7 +96,7 @@ test('loads the Chrome extension, completes a privileged download, and restores 
       if (!trigger) throw new Error('Gallery trigger missing');
       trigger.tabIndex = 0;
       trigger.addEventListener(
-        'click',
+        'pointerdown',
         () => {
           Object.assign(globalThis, {
             __xegOpeningBoundary: {
@@ -105,13 +105,15 @@ test('loads the Chrome extension, completes a privileged download, and restores 
             },
           });
         },
-        { once: true }
+        { once: true, capture: true }
       );
     });
 
     const firstPhoto = page.locator('[data-testid="tweetPhoto"] img').first();
     await expect(firstPhoto).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('data-xeg-gallery-ready', 'true');
+    await firstPhoto.focus();
+    await expect(firstPhoto).toBeFocused();
     await firstPhoto.click();
     await expect(page.locator('[data-xeg-gallery-container]')).toBeVisible();
     await expect(page.locator('[data-xeg-gallery-container] img').first()).toBeVisible();
