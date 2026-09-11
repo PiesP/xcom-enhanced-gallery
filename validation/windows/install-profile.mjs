@@ -180,8 +180,18 @@ async function runCycle({ cycle, downloads, extensionPage, output, page, pngs })
   assert.equal(before.activeElementAlt, before.triggerAlt, 'Fixture trigger must hold focus before open');
   await page.screenshot({ path: join(output, `cycle-${number}-before.png`) });
 
+  await trigger.evaluate((element) => {
+    element.addEventListener('pointerdown', () => {
+      // Playwright may scroll the trigger into view before dispatching input.
+      // Observe the host state at the actual opening interaction boundary.
+      element.dataset.openingScrollY = String(window.scrollY);
+    }, { once: true, capture: true });
+  });
+
   const openStarted = performance.now();
   await trigger.click();
+  before.scrollY = Number(await trigger.getAttribute('data-opening-scroll-y'));
+  assert(Number.isFinite(before.scrollY) && before.scrollY > 0, 'Opening scroll must be observed');
   const gallery = page.locator('[data-xeg-gallery-container]');
   await gallery.waitFor({ state: 'visible', timeout: 15_000 });
   const openMs = performance.now() - openStarted;
@@ -293,6 +303,7 @@ async function exerciseInstalledExtension(context, extensionId, root, output, do
   const page = await context.newPage();
   const pageErrors = [];
   const consoleErrors = [];
+  const cycles = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
   page.on('console', (message) => {
     if (message.type() === 'error') consoleErrors.push(message.text());
@@ -305,7 +316,6 @@ async function exerciseInstalledExtension(context, extensionId, root, output, do
     );
     await page.goto(FIXTURE_URL);
     await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached', timeout: 15_000 });
-    const cycles = [];
     for (const cycle of CYCLES) {
       cycles.push(await runCycle({ cycle, downloads, extensionPage, output, page, pngs }));
     }
@@ -317,7 +327,12 @@ async function exerciseInstalledExtension(context, extensionId, root, output, do
     await page.screenshot({ path: join(output, 'installed-flow-error.png') }).catch(() => {});
     throw error;
   } finally {
-    await Promise.allSettled([page.close(), extensionPage.close()]);
+    try {
+      await writeFile(join(output, 'installed-flow-observations.json'),
+        JSON.stringify({ cycles, pageErrors, consoleErrors }, null, 2));
+    } finally {
+      await Promise.allSettled([page.close(), extensionPage.close()]);
+    }
   }
 }
 
