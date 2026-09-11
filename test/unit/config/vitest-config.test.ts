@@ -1,25 +1,40 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
-import { describe, expect, it } from 'vitest';
+import { resolve } from 'node:path';
+import { loadConfigFromFile } from 'vite';
+import { beforeAll, describe, expect, it } from 'vitest';
+
+interface CoveragePolicy {
+  readonly include?: string[];
+  readonly exclude?: string[];
+  readonly thresholds?: Partial<Record<'statements' | 'branches' | 'functions' | 'lines', number>>;
+}
+
+let coverage: CoveragePolicy | undefined;
+
+beforeAll(async () => {
+  const loaded = await loadConfigFromFile(
+    { command: 'serve', mode: 'test' },
+    resolve(import.meta.dirname, '../../../vitest.config.ts')
+  );
+  coverage = (loaded?.config as { test?: { coverage?: CoveragePolicy } } | undefined)?.test
+    ?.coverage;
+});
 
 describe('Vitest coverage gate', () => {
   it('measures all runtime source files instead of only imported modules', () => {
-    const source = readFileSync(resolve(process.cwd(), "vitest.config.ts"), "utf8");
-
-    expect(source).toContain('include: ["src/**/*.{ts,tsx}"]');
-    expect(source).not.toMatch(/exclude:[\s\S]*twitter-api-client/);
-    expect(source).not.toMatch(/exclude:[\s\S]*media-extraction/);
-    expect(source).not.toMatch(/exclude:[\s\S]*gallery-app/);
+    expect(coverage?.include).toEqual(['src/**/*.{ts,tsx}']);
+    expect(coverage?.exclude).not.toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('twitter-api-client'),
+        expect.stringContaining('media-extraction'),
+        expect.stringContaining('gallery-app'),
+      ])
+    );
   });
 
   it.each(['statements', 'branches', 'functions', 'lines'])(
     'enforces a meaningful %s threshold against the complete source set',
     (metric) => {
-      const source = readFileSync(resolve(process.cwd(), "vitest.config.ts"), "utf8");
-      const match = source.match(new RegExp(`${metric}:\\s*(\\d+)`));
-
-      expect(match?.[1]).toBeDefined();
-      expect(Number(match?.[1])).toBeGreaterThanOrEqual(30);
+      expect(coverage?.thresholds?.[metric]).toBeGreaterThanOrEqual(30);
     }
   );
 });

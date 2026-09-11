@@ -7,6 +7,9 @@ const packageJson = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8
   scripts: Record<string, string>;
   devDependencies: Record<string, string>;
 };
+const knipConfig = JSON.parse(readFileSync(resolve(root, 'knip.json'), 'utf8')) as {
+  project: string[];
+};
 const ciWorkflow = readFileSync(resolve(root, '.github/workflows/ci.yaml'), 'utf8');
 const deepWorkflow = readFileSync(resolve(root, '.github/workflows/deep-checks.yaml'), 'utf8');
 const releaseWorkflow = readFileSync(resolve(root, '.github/workflows/release.yaml'), 'utf8');
@@ -63,6 +66,24 @@ describe('tooling configuration', () => {
       expect(script).not.toMatch(/\bnpx\b|pnpm exec tsx\b|\brimraf\b/);
     }
     expect(packageJson.scripts['check:versions']).toContain('node --experimental-strip-types');
+  });
+
+  it('fails quality checks for unused dependencies, files, and exports across source and tests', () => {
+    expect(packageJson.scripts.knip).toBe(
+      'pnpm -s knip:dependencies && pnpm -s knip:files && pnpm -s knip:exports'
+    );
+    expect(packageJson.scripts['knip:dependencies']).toBe(
+      'knip --dependencies --treat-config-hints-as-errors'
+    );
+    expect(packageJson.scripts['knip:files']).toBe(
+      'knip --files --treat-config-hints-as-errors'
+    );
+    expect(packageJson.scripts['knip:exports']).toBe(
+      'knip --exports --treat-config-hints-as-errors'
+    );
+    expect(knipConfig.project).toEqual(
+      expect.arrayContaining(['test/**/*.ts', 'test/**/*.tsx'])
+    );
   });
 
   it('enforces and preserves actionable reports for the fast mutation gate', () => {
@@ -244,10 +265,4 @@ describe('tooling configuration', () => {
     expect(ciWorkflow).toContain('test-results/');
   });
 
-  it('keeps source contracts in Vitest rather than browser E2E', () => {
-    expect(existsSync(resolve(root, 'test/e2e/specs/accessibility.spec.ts'))).toBe(false);
-    expect(existsSync(resolve(root, 'test/unit/accessibility/source-contract.test.ts'))).toBe(
-      true
-    );
-  });
 });

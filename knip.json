@@ -7,7 +7,15 @@
     "scripts/**/*.ts",
     "vite.*.config.ts"
   ],
-  "project": ["src/**/*.ts", "src/**/*.tsx", "scripts/**/*.ts", "tooling/**/*.ts", "vite*.ts"],
+  "project": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "scripts/**/*.ts",
+    "tooling/**/*.ts",
+    "test/**/*.ts",
+    "test/**/*.tsx",
+    "vite*.ts"
+  ],
   "paths": {
     "@bootstrap/*": ["src/bootstrap/*"],
     "@constants/*": ["src/constants/*"],
@@ -17,7 +25,6 @@
     "@platform/*": ["src/platform/*"],
     "@main": ["src/main.ts"]
   },
-  "ignore": ["src/platform/types.ts"],
   "ignoreBinaries": ["openssl"],
   "ignoreExportsUsedInFile": true
 }
