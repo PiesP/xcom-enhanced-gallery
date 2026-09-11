@@ -341,7 +341,7 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
     });
     await page.evaluate(
       () =>
-        new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+        new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
     );
 
     await expect(page.locator('[role="progressbar"]')).toHaveAttribute('aria-valuenow', '2');

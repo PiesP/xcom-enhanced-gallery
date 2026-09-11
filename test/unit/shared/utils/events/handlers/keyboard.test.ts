@@ -36,8 +36,14 @@ describe('handleKeyboardEvent', () => {
 
     handleKeyboardEvent(
       event,
-      { onGalleryClose: vi.fn() },
-      { enableKeyboard: true }
+      { onGalleryClose: vi.fn(), onMediaClick: vi.fn(async () => undefined) },
+      {
+        enableKeyboard: true,
+        enableMediaDetection: true,
+        debugMode: false,
+        preventBubbling: true,
+        context: 'keyboard-test',
+      }
     );
 
     expect(executeVideoControl).toHaveBeenCalledWith('togglePlayPause');

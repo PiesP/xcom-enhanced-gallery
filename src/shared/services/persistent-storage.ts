@@ -204,7 +204,7 @@ export function getPersistentStorage(): PersistentStorage {
   return storageInstance;
 }
 
-/** Reset singleton instance (for testing only) */
+/** @testOnly Reset singleton instance for isolated tests. */
 export function resetPersistentStorageForTests(): void {
   storageInstance = null;
 }

@@ -53,6 +53,11 @@ classify_path() {
     *) select_output semgrep ;;
   esac
 
+  # TypeScript and Knip cover both unit and browser tests, including fixtures.
+  case "$path" in
+    test/*.ts | test/*.tsx | tsconfig.test.json) select_output quality ;;
+  esac
+
   case "$path" in
     packages/core | .gitmodules | package.json | pnpm-lock.yaml | pnpm-workspace.yaml)
       known=true
@@ -79,13 +84,7 @@ classify_path() {
       select_output unit
       select_output codeql_javascript
       ;;
-    test/e2e/firefox-extension-runtime.test.ts | test/e2e/fixtures/artifacts.ts)
-      known=true
-      select_output quality
-      select_output e2e
-      select_output codeql_javascript
-      ;;
-    test/e2e/playwright*.config.ts | test/e2e/specs/accessibility.spec.ts)
+    test/e2e/playwright*.config.ts)
       known=true
       select_output unit
       select_output e2e

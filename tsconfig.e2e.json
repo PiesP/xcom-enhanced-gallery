@@ -4,7 +4,7 @@
     "types": ["node"]
   },
   "include": [
-    "test/e2e/firefox-extension-runtime.test.ts",
-    "test/e2e/fixtures/artifacts.ts"
+    "test/e2e/**/*.ts",
+    "src/**/*.d.ts"
   ]
 }

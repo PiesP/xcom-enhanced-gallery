@@ -22,8 +22,9 @@ describe('filename-utils', () => {
   describe('generateMediaFilename', () => {
     it('generates a filename for video media', () => {
       const filename = generateMediaFilename({
+        id: 'video',
         url: 'https://x.com/video.mp4',
-        mediaType: 'video',
+        type: 'video',
       });
       expect(filename).toBeTruthy();
       expect(filename.endsWith('.mp4')).toBe(true);
@@ -31,8 +32,9 @@ describe('filename-utils', () => {
 
     it('generates a filename for image media', () => {
       const filename = generateMediaFilename({
+        id: 'image',
         url: 'https://x.com/photo.jpg',
-        mediaType: 'photo',
+        type: 'image',
       });
       expect(filename).toBeTruthy();
       expect(filename.endsWith('.jpg')).toBe(true);

@@ -96,7 +96,7 @@ describe('Codex Security CLI supply-chain controls', () => {
     expect(cliLock.packages['node_modules/fflate']?.version).toBe('0.8.3');
     expect(fastUriVersion).toMatch(/^\d+\.\d+\.\d+$/);
 
-    const [major, minor, patch] = fastUriVersion?.split('.').map(Number) ?? [];
+    const [major = 0, minor = 0, patch = 0] = fastUriVersion?.split('.').map(Number) ?? [];
     expect(
       major > 3 || (major === 3 && (minor > 1 || (minor === 1 && patch >= 6)))
     ).toBe(true);

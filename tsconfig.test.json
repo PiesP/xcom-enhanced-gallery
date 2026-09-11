@@ -4,11 +4,13 @@
     "types": [
       "vitest/globals"
     ],
-    "noUnusedLocals": false,
-    "noUnusedParameters": false
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
   },
   "include": [
-    "test"
+    "test",
+    "src/types/env.d.ts",
+    "src/shared/types/core/userscript.d.ts"
   ],
   "exclude": [
     "test/e2e",

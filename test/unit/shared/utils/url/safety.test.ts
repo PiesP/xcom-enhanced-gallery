@@ -77,7 +77,8 @@ describe('url/safety', () => {
     });
 
     it('should reject data URLs when MIME prefixes are absent or empty', () => {
-      const missingPrefixes = { ...MEDIA_URL_POLICY, allowedDataMimePrefixes: undefined };
+      const { allowedDataMimePrefixes, ...missingPrefixes } = MEDIA_URL_POLICY;
+      void allowedDataMimePrefixes;
       const emptyPrefixes = { ...MEDIA_URL_POLICY, allowedDataMimePrefixes: [] };
 
       expect(isUrlAllowed('data:image/png;base64,abc', missingPrefixes)).toBe(false);

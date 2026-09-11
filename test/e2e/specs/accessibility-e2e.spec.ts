@@ -133,6 +133,7 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await expect(container).toBeVisible();
     await expect(container).toHaveAttribute('role', 'dialog');
     await expect(container).toHaveAttribute('aria-modal', 'true');
+    await expect(page.getByRole('dialog', { name: 'Image gallery' })).toBeVisible();
 
     await closeGallery(page);
   });
@@ -218,6 +219,12 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await expect(imageAction).toHaveAttribute('type', 'button');
     await expect(imageAction).toHaveAttribute('aria-label', /Image \d+ of/);
 
+    const mediaActions = items.locator(':scope > *').locator('button, video');
+    await expect(mediaActions.nth(0)).toHaveAttribute('tabindex', '0');
+    for (let i = 1; i < (await mediaActions.count()); i++) {
+      await expect(mediaActions.nth(i)).toHaveAttribute('tabindex', '-1');
+    }
+
     await closeGallery(page);
   });
 
@@ -285,22 +292,11 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await expect(toolbar.getByRole('group', { name: 'View fit' })).toBeVisible();
     await expect(toolbar.getByRole('group', { name: 'Downloads' })).toBeVisible();
     await expect(toolbar.getByRole('group', { name: 'More actions' })).toBeVisible();
-
-    await closeGallery(page);
-  });
-
-  test('Focus: gallery container is focusable', async ({ page }) => {
-    await setupGalleryPage(page);
-    await openGallery(page);
-
-    const container = page.locator('[data-xeg-gallery-container]');
-    await expect(container).toBeVisible();
-
-    // Verify the gallery container is in the DOM and visible
-    // The GalleryContainer component uses role=dialog, aria-modal=true, lang attribute
-    // Focus management is handled by the lifecycle (openerElement restoration on close)
-    await expect(container).toHaveAttribute('role', 'dialog');
-    await expect(container).toHaveAttribute('aria-modal', 'true');
+    await expect(toolbar.locator('#xeg-toolbar-counter')).toHaveAttribute('aria-live', 'polite');
+    await expect(toolbar.locator('[role="progressbar"]')).toHaveAttribute(
+      'aria-label',
+      'Progress'
+    );
 
     await closeGallery(page);
   });
@@ -426,5 +422,6 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
       return !document.querySelector('[data-xeg-gallery-container]');
     });
     expect(galleryGone).toBe(true);
+    await expect(page.locator('#outside-button')).toBeFocused();
   });
 });

@@ -46,18 +46,6 @@ export interface HttpRequestAdapter {
 
 export type PlatformType = 'userscript' | 'mv3-extension';
 
-/**
- * Platform capability descriptor.
- * Exposed as public API for platform detection consumers.
- */
-export interface PlatformCapabilities {
-  type: PlatformType;
-  storage: StorageAdapter;
-  download: DownloadAdapter;
-  notification: NotificationAdapter;
-  httpRequest: HttpRequestAdapter;
-}
-
 // ── HTTP Request shared types ────────────────────────────────────────────────
 
 export interface HttpRequestDetails {
