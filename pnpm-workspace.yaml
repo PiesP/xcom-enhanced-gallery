@@ -12,6 +12,9 @@ blockExoticSubdeps: true
 # Fail if the current Node.js / pnpm version doesn't match engines field.
 engineStrict: true
 
+# Keep paired tooling and plugin peer requirements compatible during installs.
+strictPeerDependencies: true
+
 # Prefer current releases while retaining a short supply-chain observation window.
 minimumReleaseAge: 1440
 # Reject registry metadata that cannot prove a package has cleared the window.

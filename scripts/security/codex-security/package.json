@@ -2,11 +2,14 @@
   "name": "xcom-enhanced-gallery-codex-security",
   "private": true,
   "dependencies": {
-    "@openai/codex-security": "0.1.25"
+    "@openai/codex-security": "0.1.26"
   },
   "overrides": {
     "fast-uri": "3.1.6",
-    "fflate": "0.8.3"
+    "fflate": "0.8.3",
+    "@openai/codex-security@0.1.26": {
+      "smol-toml": "1.7.1"
+    }
   },
   "engines": {
     "node": "^22.13.0 || ^24.0.0 || ^26.0.0"
