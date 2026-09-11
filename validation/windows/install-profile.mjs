@@ -720,7 +720,7 @@ export async function run({
   headless,
   installation,
   liveUrls,
-  liveObservation,
+  liveObservation = null,
 }) {
   assert(['chrome', 'msedge'].includes(browserName), 'Installed XCOM profile supports Chrome and Edge only');
   assert.equal(installation, 'extension', 'Installed XCOM profile supports extension installation only');

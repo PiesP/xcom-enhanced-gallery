@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 PiesP
 
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
@@ -30,9 +31,24 @@ type LivePageModule = {
   validateLiveUrls(values: unknown): string[];
 };
 
+type InstallProfileModule = {
+  run(options: {
+    browserName: string;
+    chromium: { launchPersistentContext(): Promise<never> };
+    headless: boolean;
+    installation: string;
+    liveUrls: string[];
+    output: string;
+    root: string;
+  }): Promise<unknown>;
+};
+
 const livePage = (await import(
   pathToFileURL(resolve(import.meta.dirname, '../../../validation/windows/live-page.mjs')).href
 )) as LivePageModule;
+const installProfile = (await import(
+  pathToFileURL(resolve(import.meta.dirname, '../../../validation/windows/install-profile.mjs')).href
+)) as InstallProfileModule;
 
 describe('Windows X live page validation', () => {
   it('accepts only exact public X and Twitter status URLs', () => {
@@ -79,6 +95,31 @@ describe('Windows X live page validation', () => {
     expect(() =>
       livePage.validateLiveObservation({ mode: 'duration', durationSeconds: 1200 })
     ).toThrow('does not support duration');
+  });
+
+  it('defaults an omitted live observation to the fixture-compatible null mode', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'xeg-live-observation-default-'));
+    const output = join(root, 'output');
+    const chromium = {
+      launchPersistentContext: async (): Promise<never> => {
+        throw new Error('browser launch reached');
+      },
+    };
+    try {
+      await expect(
+        installProfile.run({
+          browserName: 'chrome',
+          chromium,
+          headless: true,
+          installation: 'extension',
+          liveUrls: [],
+          output,
+          root,
+        })
+      ).rejects.toThrow('browser launch reached');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 
   it('keeps live observation opt-in and bundles its imported module', async () => {
