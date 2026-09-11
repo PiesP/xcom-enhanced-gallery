@@ -19,6 +19,9 @@ const PROFILE_PREFIX = 'xeg-chrome-install-';
 const TWEET_ID = '1234567890123456789';
 const FIXTURE_URL = `https://x.com/testuser/status/${TWEET_ID}`;
 const IMAGE_URL_MARKERS = ['GkE1234', 'GkE5678', 'GkE9012'];
+const MAX_AGGREGATE_DEPTH = 2;
+const MAX_AGGREGATE_ERRORS = 4;
+const MAX_ERROR_SUMMARY_LENGTH = 2000;
 const CYCLES = [
   { close: 'escape', direction: 'ArrowLeft', expectedIndex: 0, triggerIndex: 1 },
   { close: 'button', direction: 'ArrowRight', expectedIndex: 1, triggerIndex: 0 },
@@ -29,8 +32,21 @@ function delay(ms) {
   return new Promise((resolveDelay) => setTimeout(resolveDelay, ms));
 }
 
-function safeError(error) {
-  return error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+function safeError(error, depth = 0) {
+  const rawSummary = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+  const summary = rawSummary.length > MAX_ERROR_SUMMARY_LENGTH
+    ? `${rawSummary.slice(0, MAX_ERROR_SUMMARY_LENGTH)}...`
+    : rawSummary;
+  if (!(error instanceof AggregateError) || depth >= MAX_AGGREGATE_DEPTH) return summary;
+
+  const nestedErrors = Array.from(error.errors);
+  const details = nestedErrors
+    .slice(0, MAX_AGGREGATE_ERRORS)
+    .map((nestedError) => safeError(nestedError, depth + 1));
+  if (nestedErrors.length > MAX_AGGREGATE_ERRORS) {
+    details.push(`${nestedErrors.length - MAX_AGGREGATE_ERRORS} more errors`);
+  }
+  return details.length ? `${summary} [${details.join('; ')}]` : summary;
 }
 
 function expectedFilename(index) {
@@ -335,6 +351,11 @@ async function exerciseInstalledExtension(context, extensionId, root, output, do
   const consoleErrors = [];
   const failedRequests = [];
   const cycles = [];
+  let flowResult;
+  let primaryError;
+  let primarySeen = false;
+  let observationError;
+  let observationErrorSeen = false;
   page.on('pageerror', (error) => pageErrors.push(error.message));
   page.on('console', (message) => {
     if (message.type() === 'error') consoleErrors.push(message.text());
@@ -357,18 +378,31 @@ async function exerciseInstalledExtension(context, extensionId, root, output, do
     assert.deepEqual(pageErrors, [], 'Installed content script must not raise page errors');
     assert.deepEqual(consoleErrors, [], 'Installed content script must not log console errors');
     assert(cycles.every(({ scroll }) => scroll.restored), 'Every close must restore the saved scroll position');
-    return { cycles, pageErrors, consoleErrors };
+    flowResult = { cycles, pageErrors, consoleErrors };
   } catch (error) {
+    primarySeen = true;
+    primaryError = error;
     await page.screenshot({ path: join(output, 'installed-flow-error.png') }).catch(() => {});
-    throw error;
   } finally {
     try {
       await writeFile(join(output, 'installed-flow-observations.json'),
         JSON.stringify({ cycles, pageErrors, consoleErrors, failedRequests }, null, 2));
+    } catch (error) {
+      observationErrorSeen = true;
+      observationError = error;
     } finally {
       await Promise.allSettled([page.close(), extensionPage.close()]);
     }
   }
+  if (primarySeen && observationErrorSeen) {
+    throw new AggregateError(
+      [primaryError, observationError],
+      `Installed flow and observation evidence write failed: ${safeError(primaryError)}; ${safeError(observationError)}`
+    );
+  }
+  if (primarySeen) throw primaryError;
+  if (observationErrorSeen) throw observationError;
+  return flowResult;
 }
 
 export async function run({ chromium, root, output, browserName, headless, installation, liveUrls }) {
@@ -389,6 +423,9 @@ export async function run({ chromium, root, output, browserName, headless, insta
   let cdp;
   let extensionId;
   let primaryError;
+  let primarySeen = false;
+  let installationResultError;
+  let installationResultErrorSeen = false;
   const cleanupErrors = [];
   const result = {
     browserName,
@@ -434,6 +471,7 @@ export async function run({ chromium, root, output, browserName, headless, insta
     );
     result.status = 'passed';
   } catch (error) {
+    primarySeen = true;
     primaryError = error;
     result.error = safeError(error);
   } finally {
@@ -468,12 +506,36 @@ export async function run({ chromium, root, output, browserName, headless, insta
       result.status = 'failed';
       result.cleanup.errors = cleanupErrors.map(safeError);
     }
-    await writeFile(join(output, 'installation-result.json'), JSON.stringify(result, null, 2));
+    try {
+      await writeFile(join(output, 'installation-result.json'), JSON.stringify(result, null, 2));
+    } catch (error) {
+      installationResultErrorSeen = true;
+      installationResultError = error;
+    }
   }
-  if (primaryError && cleanupErrors.length) {
-    throw new AggregateError([primaryError, ...cleanupErrors], 'Installed flow and cleanup failed');
+  const combinedErrors = [
+    ...(primarySeen ? [primaryError] : []),
+    ...cleanupErrors,
+    ...(installationResultErrorSeen ? [installationResultError] : []),
+  ];
+  if (combinedErrors.length > 1) {
+    const failedStages = [
+      ...(primarySeen ? ['installed flow'] : []),
+      ...(cleanupErrors.length ? ['cleanup'] : []),
+      ...(installationResultErrorSeen ? ['installation result write'] : []),
+    ];
+    throw new AggregateError(
+      combinedErrors,
+      `${failedStages.join(', ')} failed: ${combinedErrors.map((error) => safeError(error)).join('; ')}`
+    );
   }
-  if (primaryError) throw primaryError;
-  if (cleanupErrors.length) throw new AggregateError(cleanupErrors, 'Installed flow cleanup failed');
+  if (primarySeen) throw primaryError;
+  if (cleanupErrors.length) {
+    throw new AggregateError(
+      cleanupErrors,
+      `Installed flow cleanup failed: ${cleanupErrors.map((error) => safeError(error)).join('; ')}`
+    );
+  }
+  if (installationResultErrorSeen) throw installationResultError;
   return result;
 }
