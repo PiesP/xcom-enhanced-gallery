@@ -105,6 +105,10 @@ async function installFixtureRoutes(context, root, pngs) {
       await route.continue();
       return;
     }
+    if (url.hostname === 'x.com' && url.pathname === '/favicon.ico') {
+      await route.fulfill({ status: 204, body: '' });
+      return;
+    }
     if (url.hostname === 'x.com' && route.request().isNavigationRequest()) {
       await route.fulfill({ contentType: 'text/html', body: html });
       return;
@@ -113,7 +117,10 @@ async function installFixtureRoutes(context, root, pngs) {
       await route.fulfill({
         contentType: 'image/png',
         body: pngs[imageIndex(url.href)],
-        headers: { 'Access-Control-Allow-Origin': '*' },
+        headers: {
+          'Access-Control-Allow-Origin': 'https://x.com',
+          'Access-Control-Allow-Credentials': 'true',
+        },
       });
       return;
     }
