@@ -134,8 +134,10 @@ async function queryDownloads(extensionPage) {
 
 async function waitForDownload(extensionPage, knownIds, filename) {
   const deadline = Date.now() + 20_000;
+  let observed = [];
   while (Date.now() < deadline) {
-    const item = (await queryDownloads(extensionPage)).find(
+    observed = (await queryDownloads(extensionPage)).filter((download) => !knownIds.has(download.id));
+    const item = observed.find(
       (download) => !knownIds.has(download.id) && basename(download.filename) === filename
     );
     if (item?.state === 'complete') return item;
@@ -144,7 +146,9 @@ async function waitForDownload(extensionPage, knownIds, filename) {
     }
     await delay(100);
   }
-  throw new Error(`Timed out waiting for privileged download ${filename}`);
+  throw new Error(`Timed out waiting for privileged download ${filename}: ${JSON.stringify(
+    observed.map(({ filename: name, state, error }) => ({ filename: basename(name), state, error }))
+  )}`);
 }
 
 async function hostSnapshot(page, triggerIndex) {
@@ -310,10 +314,15 @@ async function exerciseInstalledExtension(context, extensionId, root, output, do
   const page = await context.newPage();
   const pageErrors = [];
   const consoleErrors = [];
+  const failedRequests = [];
   const cycles = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
   page.on('console', (message) => {
     if (message.type() === 'error') consoleErrors.push(message.text());
+  });
+  page.on('requestfailed', (request) => {
+    const url = new URL(request.url());
+    failedRequests.push({ host: url.hostname, path: url.pathname, error: request.failure()?.errorText });
   });
   try {
     await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
@@ -336,7 +345,7 @@ async function exerciseInstalledExtension(context, extensionId, root, output, do
   } finally {
     try {
       await writeFile(join(output, 'installed-flow-observations.json'),
-        JSON.stringify({ cycles, pageErrors, consoleErrors }, null, 2));
+        JSON.stringify({ cycles, pageErrors, consoleErrors, failedRequests }, null, 2));
     } finally {
       await Promise.allSettled([page.close(), extensionPage.close()]);
     }
@@ -381,6 +390,11 @@ export async function run({ chromium, root, output, browserName, headless, insta
     result.browserVersion = context.browser().version();
     await enableDeveloperMode(context);
     cdp = await context.browser().newBrowserCDPSession();
+    // Preserve ordinary browser filenames; Playwright otherwise stores downloads
+    // under GUIDs, which are not the user-visible filename contract checked here.
+    await cdp.send('Browser.setDownloadBehavior', {
+      behavior: 'allow', downloadPath: downloads, eventsEnabled: true,
+    });
     ({ id: extensionId } = await cdp.send('Extensions.loadUnpacked', {
       path: join(root, 'dist-extension'),
     }));
