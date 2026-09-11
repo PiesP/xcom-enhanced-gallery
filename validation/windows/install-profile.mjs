@@ -14,11 +14,18 @@ import {
   writeFile,
 } from 'node:fs/promises';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import {
+  observeLiveUrls,
+  validateLiveObservation,
+  validateLiveUrls,
+} from './live-page.mjs';
 
 const PROFILE_PREFIX = 'xeg-chrome-install-';
 const DEFAULT_NOTIFICATION_ICON = 'icons/icon-128x128.png';
 const TWEET_ID = '1234567890123456789';
 const FIXTURE_URL = `https://x.com/testuser/status/${TWEET_ID}`;
+const PUBLIC_TWEET_ID = '9876543210987654321';
+const PUBLIC_FIXTURE_URL = `https://x.com/public_user/status/${PUBLIC_TWEET_ID}`;
 const IMAGE_URL_MARKERS = ['GkE1234', 'GkE5678', 'GkE9012'];
 const MAX_AGGREGATE_DEPTH = 2;
 const MAX_AGGREGATE_ERRORS = 4;
@@ -131,6 +138,7 @@ function imageIndex(url) {
 
 async function installFixtureRoutes(context, root, images) {
   const html = await readFile(join(root, 'test/e2e/fixtures/installed-gallery-page.html'), 'utf8');
+  const apiResponses = [];
   await context.route('**/*', async (route) => {
     const url = new URL(route.request().url());
     if (url.protocol === 'chrome-extension:') {
@@ -142,11 +150,20 @@ async function installFixtureRoutes(context, root, images) {
       return;
     }
     if (url.hostname === 'x.com' && url.pathname.endsWith('/TweetResultByRestId')) {
-      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ data: { tweetResult: { result: null } } }) });
+      apiResponses.push({ method: route.request().method(), status: 403, url: url.pathname });
+      await route.fulfill({ status: 403, contentType: 'application/json', body: '{}' });
       return;
     }
     if (url.hostname === 'x.com' && route.request().isNavigationRequest()) {
-      await route.fulfill({ contentType: 'text/html', body: html });
+      await route.fulfill({
+        contentType: 'text/html',
+        body: url.pathname === new URL(PUBLIC_FIXTURE_URL).pathname
+          ? html.replace(
+              '<body data-fixture-route="classic">',
+              '<body data-fixture-route="public">'
+            )
+          : html,
+      });
       return;
     }
     if (url.hostname === 'pbs.twimg.com') {
@@ -162,6 +179,7 @@ async function installFixtureRoutes(context, root, images) {
     }
     await route.abort('blockedbyclient');
   });
+  return { apiResponses };
 }
 
 async function queryDownloads(extensionPage) {
@@ -352,6 +370,116 @@ async function hostSnapshot(page, triggerIndex) {
   }, triggerIndex);
 }
 
+function isExpectedFixtureApiConsoleError(record) {
+  try {
+    return new URL(record.location).pathname.endsWith('/TweetResultByRestId') &&
+      /\b403\b/u.test(record.text);
+  } catch {
+    return false;
+  }
+}
+
+async function runPublicFixtureCycle({ apiResponses, output, page }) {
+  await page.goto(PUBLIC_FIXTURE_URL);
+  await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({
+    state: 'attached',
+    timeout: 15_000,
+  });
+  const trigger = page.locator(
+    'article:not([data-testid]) .public-media a[aria-label="View media"]'
+  ).nth(1);
+  await trigger.scrollIntoViewIfNeeded();
+  await page.evaluate(() => window.scrollBy(0, -120));
+  await trigger.focus();
+  const before = await trigger.evaluate((element) => {
+    const image = element.parentElement?.querySelector('img');
+    if (!(image instanceof HTMLImageElement)) throw new Error('Public fixture image missing');
+    const rectangle = image.getBoundingClientRect();
+    const x = rectangle.left + rectangle.width / 2;
+    const y = rectangle.top + rectangle.height / 2;
+    const topAction = document.elementsFromPoint(x, y)
+      .map((candidate) => candidate.closest('a[href]')).find(Boolean);
+    const matchingActions = [...(element.closest('article')?.querySelectorAll('a[href]') ?? [])]
+      .filter((anchor) => anchor.getAttribute('href') === element.getAttribute('href'));
+    const style = document.body.style;
+    return {
+      active: document.activeElement === element,
+      bodyStyle: {
+        left: style.left,
+        overflow: style.overflow,
+        position: style.position,
+        right: style.right,
+        top: style.top,
+      },
+      duplicateActionCount: matchingActions.length,
+      scrollRestoration: history.scrollRestoration,
+      scrollY: window.scrollY,
+      topAction: topAction === element,
+    };
+  });
+  assert.equal(before.active, true, 'Public fixture trigger must hold focus before open');
+  assert.equal(before.duplicateActionCount, 2, 'Public fixture must retain both same-href actions');
+  assert.equal(before.topAction, true, 'View media overlay must be the hit-tested top action');
+  assert(before.scrollY > 0, 'Public fixture must begin from a nonzero scroll position');
+  await page.screenshot({ path: join(output, 'public-dom-before.png') });
+
+  const apiCountBefore = apiResponses.length;
+  await trigger.click();
+  const gallery = page.locator('[data-xeg-gallery-container]');
+  await gallery.waitFor({ state: 'visible', timeout: 15_000 });
+  assert.equal(await gallery.getAttribute('role'), 'dialog');
+  assert.equal(await gallery.getAttribute('aria-modal'), 'true');
+  assert.equal(
+    await gallery.locator('[role="progressbar"]').getAttribute('aria-valuenow'),
+    '2',
+    'Public View media overlay must select the second image'
+  );
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll('[data-xeg-gallery-container] [data-gallery-element="item"] img')]
+      .some((image) => image instanceof HTMLImageElement && image.src.includes('GkE5678') &&
+        image.complete && image.naturalWidth > 1),
+  undefined, { timeout: 15_000 });
+  const galleryImageCount = await gallery.locator('[data-gallery-element="item"] img').count();
+  assert.equal(galleryImageCount, 2, 'Public fixture gallery must exclude the account avatar');
+  assert.equal(apiResponses.length, apiCountBefore + 1, 'Public fixture must request TweetResultByRestId once');
+  assert.equal(apiResponses.at(-1)?.status, 403, 'Public fixture API route must return 403');
+  await page.screenshot({ path: join(output, 'public-dom-gallery.png') });
+
+  await page.keyboard.press('Escape');
+  await gallery.waitFor({ state: 'detached', timeout: 15_000 });
+  const after = await trigger.evaluate((element) => {
+    const style = document.body.style;
+    return {
+      active: document.activeElement === element,
+      bodyStyle: {
+        left: style.left,
+        overflow: style.overflow,
+        position: style.position,
+        right: style.right,
+        top: style.top,
+      },
+      scrollRestoration: history.scrollRestoration,
+      scrollY: window.scrollY,
+    };
+  });
+  assert.equal(after.active, true, 'Public fixture close must restore exact trigger focus');
+  assert.equal(after.scrollY, before.scrollY, 'Public fixture close must restore scroll');
+  assert.equal(after.scrollRestoration, before.scrollRestoration);
+  assert.deepEqual(after.bodyStyle, before.bodyStyle, 'Public fixture close must restore body styles');
+  await page.screenshot({ path: join(output, 'public-dom-after.png') });
+
+  return {
+    api: apiResponses.slice(apiCountBefore),
+    clickedIndex: 1,
+    duplicateActionCount: before.duplicateActionCount,
+    focusRestored: after.active,
+    galleryImageCount,
+    loadedSelectedImage: true,
+    scroll: { before: before.scrollY, after: after.scrollY, restored: after.scrollY === before.scrollY },
+    topActionHitTested: before.topAction,
+  };
+}
+
 async function runCycle({ cycle, downloads, extensionPage, output, page, images }) {
   const number = cycle.expectedIndex + 1;
   const trigger = page.locator('[data-testid="tweetPhoto"] img').nth(cycle.triggerIndex);
@@ -481,7 +609,7 @@ async function runCycle({ cycle, downloads, extensionPage, output, page, images 
 }
 
 async function exerciseInstalledExtension(context, extensionId, root, output, downloads, images) {
-  await installFixtureRoutes(context, root, images);
+  const fixtureRoutes = await installFixtureRoutes(context, root, images);
   const extensionPage = await context.newPage();
   const page = await context.newPage();
   const pageErrors = [];
@@ -490,6 +618,7 @@ async function exerciseInstalledExtension(context, extensionId, root, output, do
   const cycles = [];
   let packagingAssets;
   let notification;
+  let publicDom;
   let flowResult;
   let primaryError;
   let primarySeen = false;
@@ -497,7 +626,9 @@ async function exerciseInstalledExtension(context, extensionId, root, output, do
   let observationErrorSeen = false;
   page.on('pageerror', (error) => pageErrors.push(error.message));
   page.on('console', (message) => {
-    if (message.type() === 'error') consoleErrors.push(message.text());
+    if (message.type() === 'error') {
+      consoleErrors.push({ location: message.location().url, text: message.text() });
+    }
   });
   page.on('requestfailed', (request) => {
     const url = new URL(request.url());
@@ -516,10 +647,30 @@ async function exerciseInstalledExtension(context, extensionId, root, output, do
     for (const cycle of CYCLES) {
       cycles.push(await runCycle({ cycle, downloads, extensionPage, output, page, images }));
     }
+    publicDom = await runPublicFixtureCycle({
+      apiResponses: fixtureRoutes.apiResponses,
+      output,
+      page,
+    });
+    const unexpectedConsoleErrors = consoleErrors.filter(
+      (record) => !isExpectedFixtureApiConsoleError(record)
+    );
     assert.deepEqual(pageErrors, [], 'Installed content script must not raise page errors');
-    assert.deepEqual(consoleErrors, [], 'Installed content script must not log console errors');
+    assert.deepEqual(
+      unexpectedConsoleErrors,
+      [],
+      'Installed fixture must not log errors beyond its exact mocked API 403'
+    );
     assert(cycles.every(({ scroll }) => scroll.restored), 'Every close must restore the saved scroll position');
-    flowResult = { cycles, pageErrors, consoleErrors, notification, packagingAssets };
+    flowResult = {
+      cycles,
+      pageErrors,
+      consoleErrors,
+      fixtureApiResponses: fixtureRoutes.apiResponses,
+      notification,
+      packagingAssets,
+      publicDom,
+    };
   } catch (error) {
     primarySeen = true;
     primaryError = error;
@@ -529,7 +680,16 @@ async function exerciseInstalledExtension(context, extensionId, root, output, do
       await writeFile(
         join(output, 'installed-flow-observations.json'),
         JSON.stringify(
-          { cycles, pageErrors, consoleErrors, failedRequests, notification, packagingAssets },
+          {
+            cycles,
+            pageErrors,
+            consoleErrors,
+            failedRequests,
+            fixtureApiResponses: fixtureRoutes.apiResponses,
+            notification,
+            packagingAssets,
+            publicDom,
+          },
           null,
           2
         )
@@ -552,10 +712,20 @@ async function exerciseInstalledExtension(context, extensionId, root, output, do
   return flowResult;
 }
 
-export async function run({ chromium, root, output, browserName, headless, installation, liveUrls }) {
+export async function run({
+  chromium,
+  root,
+  output,
+  browserName,
+  headless,
+  installation,
+  liveUrls,
+  liveObservation,
+}) {
   assert(['chrome', 'msedge'].includes(browserName), 'Installed XCOM profile supports Chrome and Edge only');
   assert.equal(installation, 'extension', 'Installed XCOM profile supports extension installation only');
-  assert.deepEqual(liveUrls, [], 'Installed XCOM fixture does not accept live URLs');
+  const validatedLiveUrls = validateLiveUrls(liveUrls);
+  validateLiveObservation(liveObservation);
   await mkdir(output, { recursive: true });
   const profile = await mkdtemp(join(root, PROFILE_PREFIX));
   const downloads = join(profile, 'downloads');
@@ -579,8 +749,11 @@ export async function run({ chromium, root, output, browserName, headless, insta
     cleanup: {},
     installation,
     installationMethod: 'cdp-unpacked-extension',
-    liveUrls: [],
-    scope: 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
+    liveUrls: validatedLiveUrls,
+    liveObservation,
+    scope: validatedLiveUrls.length
+      ? 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
+      : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
     status: 'failed',
   };
   try {
@@ -616,11 +789,22 @@ export async function run({ chromium, root, output, browserName, headless, insta
       downloads,
       images
     );
+    await context.unrouteAll({ behavior: 'wait' });
+    result.live = await observeLiveUrls({
+      context,
+      extensionId,
+      liveUrls: validatedLiveUrls,
+      output,
+    });
+    result.evidenceStatus = validatedLiveUrls.length
+      ? result.live.evidenceStatus
+      : 'fixture-observed';
     result.status = 'passed';
   } catch (error) {
     primarySeen = true;
     primaryError = error;
     result.error = safeError(error);
+    if (error && typeof error === 'object' && 'summary' in error) result.live = error.summary;
   } finally {
     if (cdp && extensionId) {
       try {

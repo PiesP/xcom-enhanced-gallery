@@ -18,6 +18,15 @@ const INSTALLED_GALLERY_HTML = readFileSync(
 );
 const PUBLIC_FIXTURE_URL = 'https://x.com/public_user/status/9876543210987654321';
 
+function isExpectedFixtureApiConsoleError(record: { location: string; text: string }): boolean {
+  try {
+    return new URL(record.location).pathname.endsWith('/TweetResultByRestId') &&
+      /\b403\b/u.test(record.text);
+  } catch {
+    return false;
+  }
+}
+
 // Test observers use additional installed-browser APIs beyond the app's subset.
 declare module '../../../src/platform/chrome' {
   interface ChromeRuntimeCore {
@@ -70,8 +79,8 @@ test('loads the Chrome extension, completes a privileged download, and restores 
         contentType: 'text/html',
         body: publicRoute
           ? INSTALLED_GALLERY_HTML.replace(
-              'data-fixture-route="classic"',
-              'data-fixture-route="public"'
+              '<body data-fixture-route="classic">',
+              '<body data-fixture-route="public">'
             )
           : MOCK_GALLERY_HTML,
       });
@@ -103,9 +112,15 @@ test('loads the Chrome extension, completes a privileged download, and restores 
     await extensionPage.close();
 
     const pageErrors: string[] = [];
+    const consoleErrors: Array<{ location: string; text: string }> = [];
     const apiResponses: Array<{ status: number; url: string }> = [];
     const page = await context.newPage();
     page.on('pageerror', (error) => pageErrors.push(error.message));
+    page.on('console', (message) => {
+      if (message.type() === 'error') {
+        consoleErrors.push({ location: message.location().url, text: message.text() });
+      }
+    });
     page.on('response', (response) => {
       if (new URL(response.url()).pathname.endsWith('/TweetResultByRestId')) {
         apiResponses.push({ status: response.status(), url: response.url() });
@@ -256,6 +271,7 @@ test('loads the Chrome extension, completes a privileged download, and restores 
       scrollRestoration: publicBefore.scrollRestoration,
     });
     expect(pageErrors).toEqual([]);
+    expect(consoleErrors.filter((record) => !isExpectedFixtureApiConsoleError(record))).toEqual([]);
   } finally {
     await context.close();
     rmSync(userDataDir, { recursive: true, force: true });

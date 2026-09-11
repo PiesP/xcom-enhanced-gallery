@@ -105,6 +105,12 @@ classify_path() {
       known=true
       select_output codeql_javascript
       ;;
+    validation/windows/*)
+      known=true
+      select_output unit
+      select_output e2e
+      select_output codeql_javascript
+      ;;
     extension/*)
       known=true
       select_output unit

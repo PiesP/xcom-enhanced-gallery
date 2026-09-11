@@ -46,10 +46,10 @@ host layout-shift regression. Page screenshots, per-cycle timings, file hashes,
 and cleanup metadata are retained as evidence; the timings are observations,
 not a performance claim.
 
-Only installed Chrome or Edge with `--installation extension` and no live URLs
-is supported. Userscript managers, Firefox installation, authenticated/live
-X.com, native Save As, Explorer, OS theme/DPI matrices, and physical GPU behavior
-remain outside this profile.
+Only installed Chrome or Edge with `--installation extension` is supported.
+Userscript managers, Firefox installation, authenticated X.com, native Save As,
+Explorer, OS theme/DPI matrices, and physical GPU behavior remain outside this
+profile.
 
 After committing a clean named checkout and running the repository gates, run:
 
@@ -63,6 +63,31 @@ python3 /home/piesp/projects/windows-acceptance/vmctl.py run \
 The entry uninstalls the extension and removes its profile after the owned
 browser closes. If browser cleanup fails, it preserves that profile for bounded
 diagnosis rather than terminating unrelated processes.
+
+### Optional public status observation
+
+Up to three exact public status URLs may be supplied with repeatable
+`--live-url` arguments. Accepted URLs are
+`https://x.com/<handle>/status/<digits>` and the equivalent `twitter.com` form;
+credentials, ports, query strings, fragments, whitespace, backslashes, trailing
+paths, and handles outside X's 1–15 character public format are rejected. XCOM
+does not support the controller's duration observation mode.
+
+The deterministic installed fixture always runs first with strict console and
+page-error checks. The profile then removes every fixture route before opening
+the caller's unchanged URL. It does not intercept traffic, add authentication,
+accept consent or CAPTCHA prompts, start downloads, force clicks, or edit the
+host DOM. It finds the exact status-owned media action through an element hit
+test, performs an ordinary click, and checks the loaded host image, gallery
+dialog, Escape close, exact focus, scroll, and body-style restoration.
+
+Each page writes a partial JSON record and screenshots even when a required
+assertion is missing; the profile then fails rather than treating an unavailable
+guest page as success. Host console, HTTP, and request diagnostics are retained
+separately from extension-origin errors with URL queries and credentials
+removed. A `TweetResultByRestId` 403 can coexist with an observed gallery flow,
+but leaves the overall live evidence `unverified` instead of classifying the
+response as a product defect.
 
 Run `node --check validation/windows/install-profile.mjs` for the installed
 profile syntax check.

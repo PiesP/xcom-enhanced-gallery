@@ -9,7 +9,8 @@
     "entry": "validation/windows/install-profile.mjs",
     "assets": [
       "dist-extension",
-      "test/e2e/fixtures/installed-gallery-page.html"
+      "test/e2e/fixtures/installed-gallery-page.html",
+      "validation/windows/live-page.mjs"
     ],
     "build_commands": [
       ["pnpm", "build:ci"],
