@@ -8,6 +8,7 @@ const packageJson = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8
   devDependencies: Record<string, string>;
 };
 const knipConfig = JSON.parse(readFileSync(resolve(root, 'knip.json'), 'utf8')) as {
+  entry: string[];
   project: string[];
 };
 const ciWorkflow = readFileSync(resolve(root, '.github/workflows/ci.yaml'), 'utf8');
@@ -70,10 +71,23 @@ describe('tooling configuration', () => {
 
   it('fails quality checks for unused dependencies, files, and exports across source and tests', () => {
     expect(packageJson.scripts.knip).toBe(
+      'pnpm -s knip:full && pnpm -s knip:production'
+    );
+    expect(packageJson.scripts['knip:full']).toBe(
       'knip --files --exports --dependencies --treat-config-hints-as-errors'
     );
+    expect(packageJson.scripts['knip:production']).toBe(
+      'knip --production --files --exports --dependencies --tags=-testOnly --treat-config-hints-as-errors'
+    );
+    expect(knipConfig.entry).toEqual(
+      expect.arrayContaining([
+        'src/main.ts!',
+        'src/extension/background.ts!',
+        'src/extension/content.ts!',
+      ])
+    );
     expect(knipConfig.project).toEqual(
-      expect.arrayContaining(['test/**/*.ts', 'test/**/*.tsx'])
+      expect.arrayContaining(['src/**/*.ts!', 'src/**/*.tsx!', 'test/**/*.ts', 'test/**/*.tsx'])
     );
   });
 

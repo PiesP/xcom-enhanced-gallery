@@ -1,16 +1,16 @@
 {
   "$schema": "./node_modules/knip/schema.json",
   "entry": [
-    "src/main.ts",
-    "src/extension/background.ts",
-    "src/extension/content.ts",
+    "src/main.ts!",
+    "src/extension/background.ts!",
+    "src/extension/content.ts!",
     "scripts/**/*.ts",
     "test/e2e/specs/*.spec.ts",
     "vite.*.config.ts"
   ],
   "project": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
+    "src/**/*.ts!",
+    "src/**/*.tsx!",
     "scripts/**/*.ts",
     "tooling/**/*.ts",
     "test/**/*.ts",
