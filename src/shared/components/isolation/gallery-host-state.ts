@@ -60,7 +60,7 @@ class GalleryHostState implements GalleryHostStateHandle {
 
     if (this.previousFocus && typeof this.previousFocus.focus === 'function') {
       try {
-        this.previousFocus.focus();
+        this.previousFocus.focus({ preventScroll: true });
       } catch {
         // The host element may have been removed during SPA navigation.
       }
