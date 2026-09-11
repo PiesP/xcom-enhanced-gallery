@@ -7,6 +7,10 @@ import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 type LivePageModule = {
+  inspectLiveTargetDocument(identity: {
+    handle: string;
+    statusId: string;
+  }): false | { state: string; reason?: string; target?: { imageSource: { path: string } } };
   observeLiveUrls(options: {
     context: unknown;
     extensionId: string;
@@ -86,5 +90,51 @@ describe('Windows X live page validation', () => {
       readFileSync(resolve(import.meta.dirname, '../../../validation/windows/profile.json'), 'utf8')
     ) as { installation?: { assets?: string[] } };
     expect(profile.installation?.assets).toContain('validation/windows/live-page.mjs');
+  });
+
+  it('waits when the exact article precedes its image and terminates on a challenge', () => {
+    document.body.innerHTML = `
+      <article>
+        <a href="https://x.com/public_user/status/9876543210987654321">Status</a>
+        <img src="https://pbs.twimg.com/media/delayed.jpg" alt="Delayed media">
+      </article>
+    `;
+    const image = document.querySelector('img');
+    if (!(image instanceof HTMLImageElement)) throw new Error('Delayed media fixture missing');
+    image.style.display = 'block';
+    image.style.opacity = '1';
+    image.style.visibility = 'visible';
+    Object.defineProperties(image, {
+      complete: { configurable: true, value: false },
+      naturalWidth: { configurable: true, value: 0 },
+    });
+    image.getBoundingClientRect = () => ({
+      bottom: 180,
+      height: 180,
+      left: 0,
+      right: 320,
+      toJSON: () => ({}),
+      top: 0,
+      width: 320,
+      x: 0,
+      y: 0,
+    });
+    const identity = { handle: 'public_user', statusId: '9876543210987654321' };
+
+    expect(livePage.inspectLiveTargetDocument(identity)).toBe(false);
+    Object.defineProperties(image, {
+      complete: { configurable: true, value: true },
+      naturalWidth: { configurable: true, value: 320 },
+    });
+    expect(livePage.inspectLiveTargetDocument(identity)).toMatchObject({
+      state: 'ready',
+      target: { imageSource: { path: '/media/delayed.jpg' } },
+    });
+
+    document.body.innerHTML = '<main>Verify you are human</main>';
+    expect(livePage.inspectLiveTargetDocument(identity)).toEqual({
+      state: 'terminal',
+      reason: 'host-challenge-or-unavailable',
+    });
   });
 });

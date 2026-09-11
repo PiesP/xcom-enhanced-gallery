@@ -177,101 +177,82 @@ async function captureScreenshot(page, output, filename) {
   return filename;
 }
 
-async function waitForReadiness(page, identity) {
-  return page.waitForFunction(
-    ({ handle, statusId }) => {
-      const exactPath = `/${handle}/status/${statusId}`.toLowerCase();
-      const targetArticle = [...document.querySelectorAll('article')].some((article) =>
-        [...article.querySelectorAll('a[href]')].some((anchor) => {
-          try {
-            const url = new URL(anchor.href, location.href);
-            return anchor.closest('article') === article &&
-              ['x.com', 'twitter.com'].includes(url.hostname.toLowerCase()) &&
-              url.pathname.toLowerCase() === exactPath;
-          } catch {
-            return false;
-          }
-        })
-      );
-      const text = document.body?.innerText ?? '';
-      return targetArticle || /verify you are human|unusual activity|captcha|this post is unavailable|page doesn.?t exist/iu.test(text);
-    },
-    identity,
-    { timeout: READINESS_TIMEOUT_MS, polling: 200 }
-  );
-}
-
-async function inspectTarget(page, identity) {
-  return page.evaluate(({ handle, statusId }) => {
-    const statusPath = `/${handle}/status/${statusId}`.toLowerCase();
-    const isVisible = (element) => {
-      const style = getComputedStyle(element);
-      const rectangle = element.getBoundingClientRect();
-      return style.display !== 'none' && style.visibility !== 'hidden' &&
-        Number(style.opacity) !== 0 && rectangle.width > 0 && rectangle.height > 0;
-    };
-    const parseLink = (anchor) => {
-      try {
-        const url = new URL(anchor.href, location.href);
-        if (!['x.com', 'twitter.com'].includes(url.hostname.toLowerCase())) return null;
-        return { host: url.hostname.toLowerCase(), path: url.pathname };
-      } catch {
-        return null;
-      }
-    };
-    const parseMedia = (image) => {
-      for (const value of [image.currentSrc, image.src, image.getAttribute('src')]) {
-        try {
-          const url = new URL(value, location.href);
-          if (url.protocol === 'https:' && url.hostname.toLowerCase() === 'pbs.twimg.com' &&
-              url.pathname.startsWith('/media/')) {
-            return { host: url.hostname.toLowerCase(), path: url.pathname };
-          }
-        } catch {
-          // Try the next image source candidate.
-        }
-      }
+export function inspectLiveTargetDocument({ handle, statusId }) {
+  const statusPath = `/${handle}/status/${statusId}`.toLowerCase();
+  const isVisible = (element) => {
+    const style = getComputedStyle(element);
+    const rectangle = element.getBoundingClientRect();
+    return style.display !== 'none' && style.visibility !== 'hidden' &&
+      Number(style.opacity) !== 0 && rectangle.width > 0 && rectangle.height > 0;
+  };
+  const parseLink = (anchor) => {
+    try {
+      const url = new URL(anchor.href, location.href);
+      if (!['x.com', 'twitter.com'].includes(url.hostname.toLowerCase())) return null;
+      return { host: url.hostname.toLowerCase(), path: url.pathname };
+    } catch {
       return null;
-    };
+    }
+  };
+  const parseMedia = (image) => {
+    for (const value of [image.currentSrc, image.src, image.getAttribute('src')]) {
+      try {
+        const url = new URL(value, location.href);
+        if (url.protocol === 'https:' && url.hostname.toLowerCase() === 'pbs.twimg.com' &&
+            url.pathname.startsWith('/media/')) {
+          return { host: url.hostname.toLowerCase(), path: url.pathname };
+        }
+      } catch {
+        // Try the next image source candidate.
+      }
+    }
+    return null;
+  };
 
-    const articles = [...document.querySelectorAll('article')];
-    for (let articleIndex = 0; articleIndex < articles.length; articleIndex += 1) {
-      const article = articles[articleIndex];
-      const anchors = [...article.querySelectorAll('a[href]')];
-      const ownsStatus = anchors.some((anchor) => {
-        const link = parseLink(anchor);
-        return anchor.closest('article') === article && link?.path.toLowerCase() === statusPath;
-      });
-      if (!ownsStatus) continue;
+  const articles = [...document.querySelectorAll('article')];
+  for (let articleIndex = 0; articleIndex < articles.length; articleIndex += 1) {
+    const article = articles[articleIndex];
+    const ownsStatus = [...article.querySelectorAll('a[href]')].some((anchor) => {
+      const link = parseLink(anchor);
+      return anchor.closest('article') === article && link?.path.toLowerCase() === statusPath;
+    });
+    if (!ownsStatus) continue;
 
-      const images = [...article.querySelectorAll('img')];
-      for (let imageIndex = 0; imageIndex < images.length; imageIndex += 1) {
-        const image = images[imageIndex];
-        const source = parseMedia(image);
-        if (image.closest('article') !== article || !source || !isVisible(image) ||
-            !image.complete || image.naturalWidth <= 0) continue;
-        return {
+    const images = [...article.querySelectorAll('img')];
+    for (let imageIndex = 0; imageIndex < images.length; imageIndex += 1) {
+      const image = images[imageIndex];
+      const source = parseMedia(image);
+      if (image.closest('article') !== article || !source || !isVisible(image) ||
+          !image.complete || image.naturalWidth <= 0) continue;
+      return {
+        state: 'ready',
+        target: {
           articleIndex,
           imageIndex,
           imageLoaded: true,
           imageSource: source,
           imageVisible: true,
-        };
-      }
+        },
+      };
     }
-    return null;
-  }, identity);
+  }
+  const text = document.body?.innerText ?? document.body?.textContent ?? '';
+  if (/verify you are human|unusual activity|captcha|this post is unavailable|page doesn.?t exist/iu.test(text)) {
+    return { state: 'terminal', reason: 'host-challenge-or-unavailable' };
+  }
+  return false;
 }
 
 async function waitForTarget(page, identity) {
-  const deadline = Date.now() + READINESS_TIMEOUT_MS;
-  let target;
-  do {
-    target = await inspectTarget(page, identity);
-    if (target) return target;
-    await page.waitForTimeout(200);
-  } while (Date.now() < deadline);
-  return null;
+  const handle = await page.waitForFunction(inspectLiveTargetDocument, identity, {
+    timeout: READINESS_TIMEOUT_MS,
+    polling: 100,
+  });
+  try {
+    return await handle.jsonValue();
+  } finally {
+    await handle.dispose();
+  }
 }
 
 async function inspectHitTestedAction(image, identity) {
@@ -347,12 +328,18 @@ async function observeOne(context, extensionId, targetUrl, output, index) {
     });
     observation.responseStatus = response?.status() ?? null;
     observation.finalUrl = sanitizedUrl(page.url());
-    await waitForReadiness(page, identity);
-    observation.target = await waitForTarget(page, identity);
-    if (!observation.target) {
+    let readiness;
+    try {
+      readiness = await waitForTarget(page, identity);
+    } catch (error) {
       observation.missingAssertions.push('loadedTargetImage');
-      throw new Error('Exact target article with a loaded host media action was not found');
+      throw error;
     }
+    if (readiness.state !== 'ready') {
+      observation.missingAssertions.push('loadedTargetImage');
+      throw new Error(`Live target stopped before media readiness: ${readiness.reason}`);
+    }
+    observation.target = readiness.target;
     await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({
       state: 'attached',
       timeout: ACTION_TIMEOUT_MS,
