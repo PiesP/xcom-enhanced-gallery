@@ -22,3 +22,11 @@ minimumReleaseAgeIgnoreMissingTime: false
 trustPolicy: no-downgrade
 # Old transitive releases predate widespread provenance; scrutinize recent ones.
 trustPolicyIgnoreAfter: 525600
+
+# Stryker 10 cannot select Vitest 5 test names (upstream stryker-js#6214).
+# Revisit after a published runner fix and a real mutation run; keep majors
+# visible in Dependabot for review.
+update:
+  ignoreDeps:
+    - vitest
+    - "@vitest/coverage-v8"
