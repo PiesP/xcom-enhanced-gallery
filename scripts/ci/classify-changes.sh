@@ -168,7 +168,7 @@ classify_path() {
       known=true
       select_output unit
       ;;
-    .github/codex-security/*)
+    .github/codex-security/* | scripts/security/scope-osv-exceptions.py)
       known=true
       select_output unit
       select_output osv
