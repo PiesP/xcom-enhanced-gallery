@@ -132,8 +132,10 @@ jobs:
 
       - name: 🛡️ Scan dependencies before the PR
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
-        continue-on-error: true
         run: |
+          set -euo pipefail
+          results_dir="$RUNNER_TEMP/osv-results"
+          rm -f "$results_dir/old-results.raw.json" "$results_dir/old-results.json"
           scan_status=0
           docker run --rm \
             --env GOTOOLCHAIN=auto \
@@ -164,8 +166,10 @@ jobs:
 
       - name: 🛡️ Scan dependencies after the PR
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
-        continue-on-error: true
         run: |
+          set -euo pipefail
+          results_dir="$RUNNER_TEMP/osv-results"
+          rm -f "$results_dir/new-results.raw.json" "$results_dir/new-results.json"
           scan_status=0
           docker run --rm \
             --env GOTOOLCHAIN=auto \
@@ -188,8 +192,28 @@ jobs:
             --output "$RUNNER_TEMP/osv-results/new-results.json"
 
       - name: 📋 Report newly introduced vulnerabilities
+        id: osv-report
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
         run: |
+          set -euo pipefail
+          results_dir="$RUNNER_TEMP/osv-results"
+          reporter_log="$results_dir/osv-reporter.log"
+          rm -f "$results_dir/osv-results.sarif" "$reporter_log"
+          python3 -I - "$results_dir" old-results.json new-results.json <<'PY'
+          from pathlib import Path
+          import runpy
+          import sys
+
+          results_dir = Path(sys.argv[1])
+          validator = runpy.run_path(
+              str(results_dir / "scope-osv-exceptions.py"),
+              run_name="scope_osv_validator",
+          )
+          for name in sys.argv[2:]:
+              report = validator["load_report"](results_dir / name)
+              validator["validate_and_filter_report"](report, frozenset())
+          PY
+          set +e
           docker run --rm \
             --entrypoint /root/osv-reporter \
             --volume "$RUNNER_TEMP/osv-results:/results" \
@@ -199,10 +223,60 @@ jobs:
             --new=new-results.json \
             --output-files=sarif:osv-results.sarif \
             '--output-files=gh-annotations:#stderr' \
-            --fail-on-vuln=true
+            --fail-on-vuln=true 2>&1 | tee "$reporter_log"
+          pipeline_status=("${PIPESTATUS[@]}")
+          set -e
+          report_status="${pipeline_status[0]}"
+          if ((pipeline_status[1] != 0)); then
+            exit "${pipeline_status[1]}"
+          fi
+          if grep -Eq '^failed to open (old|new) results at ' "$reporter_log"; then
+            echo "OSV reporter rejected an input document." >&2
+            exit 2
+          fi
+          if ((report_status > 1)); then
+            exit "$report_status"
+          fi
+          SARIF_PATH="$results_dir/osv-results.sarif" REPORT_STATUS="$report_status" python3 -I - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          def reject_duplicate_keys(pairs):
+              document = {}
+              for key, value in pairs:
+                  if key in document:
+                      raise ValueError(f"SARIF contains duplicate key: {key}")
+                  document[key] = value
+              return document
+
+          sarif_path = Path(os.environ["SARIF_PATH"])
+          with sarif_path.open("r", encoding="utf-8") as sarif_file:
+              sarif = json.load(sarif_file, object_pairs_hook=reject_duplicate_keys)
+          if not isinstance(sarif, dict) or sarif.get("version") != "2.1.0":
+              raise ValueError("reporter output is not SARIF 2.1.0")
+          runs = sarif.get("runs")
+          if not isinstance(runs, list) or len(runs) != 1:
+              raise ValueError("reporter SARIF must contain exactly one run")
+          run = runs[0]
+          if not isinstance(run, dict):
+              raise ValueError("reporter SARIF run must be an object")
+          tool = run.get("tool")
+          driver = tool.get("driver") if isinstance(tool, dict) else None
+          if not isinstance(driver, dict) or driver.get("name") != "osv-scanner":
+              raise ValueError("reporter SARIF tool identity is invalid")
+          results = run.get("results")
+          if not isinstance(results, list) or not all(isinstance(item, dict) for item in results):
+              raise ValueError("reporter SARIF results must be an array of objects")
+          report_status = int(os.environ["REPORT_STATUS"])
+          if report_status == 1 and not results:
+              raise ValueError("reporter failed for vulnerabilities but emitted no SARIF results")
+          PY
+          echo "sarif-upload=true" >> "$GITHUB_OUTPUT"
+          exit "$report_status"
 
       - name: 📊 Upload OSV SARIF to GitHub Security
-        if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.osv != 'false') }}
+        if: ${{ !cancelled() && steps.osv-report.outputs.sarif-upload == 'true' && (needs.changes.result != 'success' || needs.changes.outputs.osv != 'false') }}
         uses: github/codeql-action/upload-sarif@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
         with:
           sarif_file: ${{ runner.temp }}/osv-results/osv-results.sarif
@@ -254,9 +328,10 @@ jobs:
 
       - name: 🛡️ Run OSV scan
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
-        continue-on-error: true
         run: |
           set -euo pipefail
+          results_dir="$RUNNER_TEMP/osv-results"
+          rm -f "$results_dir/osv-results.raw.json" "$results_dir/osv-results.json"
           scan_status=0
           docker run --rm \
             --env GOTOOLCHAIN=auto \
@@ -279,8 +354,28 @@ jobs:
             --output "$RUNNER_TEMP/osv-results/osv-results.json"
 
       - name: 📋 Convert OSV results to SARIF and enforce the vulnerability gate
+        id: osv-report
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
         run: |
+          set -euo pipefail
+          results_dir="$RUNNER_TEMP/osv-results"
+          reporter_log="$results_dir/osv-reporter.log"
+          rm -f "$results_dir/osv-results.sarif" "$reporter_log"
+          python3 -I - "$results_dir" osv-results.json <<'PY'
+          from pathlib import Path
+          import runpy
+          import sys
+
+          results_dir = Path(sys.argv[1])
+          validator = runpy.run_path(
+              str(results_dir / "scope-osv-exceptions.py"),
+              run_name="scope_osv_validator",
+          )
+          for name in sys.argv[2:]:
+              report = validator["load_report"](results_dir / name)
+              validator["validate_and_filter_report"](report, frozenset())
+          PY
+          set +e
           docker run --rm \
             --entrypoint /root/osv-reporter \
             --volume "$RUNNER_TEMP/osv-results:/results" \
@@ -288,10 +383,60 @@ jobs:
             "$OSV_SCANNER_IMAGE" \
             --output-files=sarif:osv-results.sarif \
             --new=osv-results.json \
-            --fail-on-vuln=true
+            --fail-on-vuln=true 2>&1 | tee "$reporter_log"
+          pipeline_status=("${PIPESTATUS[@]}")
+          set -e
+          report_status="${pipeline_status[0]}"
+          if ((pipeline_status[1] != 0)); then
+            exit "${pipeline_status[1]}"
+          fi
+          if grep -Eq '^failed to open (old|new) results at ' "$reporter_log"; then
+            echo "OSV reporter rejected an input document." >&2
+            exit 2
+          fi
+          if ((report_status > 1)); then
+            exit "$report_status"
+          fi
+          SARIF_PATH="$results_dir/osv-results.sarif" REPORT_STATUS="$report_status" python3 -I - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          def reject_duplicate_keys(pairs):
+              document = {}
+              for key, value in pairs:
+                  if key in document:
+                      raise ValueError(f"SARIF contains duplicate key: {key}")
+                  document[key] = value
+              return document
+
+          sarif_path = Path(os.environ["SARIF_PATH"])
+          with sarif_path.open("r", encoding="utf-8") as sarif_file:
+              sarif = json.load(sarif_file, object_pairs_hook=reject_duplicate_keys)
+          if not isinstance(sarif, dict) or sarif.get("version") != "2.1.0":
+              raise ValueError("reporter output is not SARIF 2.1.0")
+          runs = sarif.get("runs")
+          if not isinstance(runs, list) or len(runs) != 1:
+              raise ValueError("reporter SARIF must contain exactly one run")
+          run = runs[0]
+          if not isinstance(run, dict):
+              raise ValueError("reporter SARIF run must be an object")
+          tool = run.get("tool")
+          driver = tool.get("driver") if isinstance(tool, dict) else None
+          if not isinstance(driver, dict) or driver.get("name") != "osv-scanner":
+              raise ValueError("reporter SARIF tool identity is invalid")
+          results = run.get("results")
+          if not isinstance(results, list) or not all(isinstance(item, dict) for item in results):
+              raise ValueError("reporter SARIF results must be an array of objects")
+          report_status = int(os.environ["REPORT_STATUS"])
+          if report_status == 1 and not results:
+              raise ValueError("reporter failed for vulnerabilities but emitted no SARIF results")
+          PY
+          echo "sarif-upload=true" >> "$GITHUB_OUTPUT"
+          exit "$report_status"
 
       - name: 📊 Upload OSV SARIF to GitHub Security
-        if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.osv != 'false') }}
+        if: ${{ !cancelled() && steps.osv-report.outputs.sarif-upload == 'true' && (needs.changes.result != 'success' || needs.changes.outputs.osv != 'false') }}
         uses: github/codeql-action/upload-sarif@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
         with:
           sarif_file: ${{ runner.temp }}/osv-results/osv-results.sarif
