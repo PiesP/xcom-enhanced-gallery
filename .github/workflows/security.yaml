@@ -365,7 +365,7 @@ jobs:
     # semgrep/semgrep:1.177.0 (linux/amd64) — last checked: 2026-09-14
     # Check for updates: https://github.com/semgrep/semgrep/releases
     container:
-      image: semgrep/semgrep:1.177.0@sha256:d39aa8d8cdb7fd9e5ec14f0825e2356f902129778c9617217856295e553254d5
+      image: semgrep/semgrep:1.177.0@sha256:d1825c2c72110b5bfbf0602ff68f7f117322597a7c33037a79dba9f897f5f1f0
     steps:
       - name: ⏭️ No Semgrep-relevant changes
         if: ${{ needs.changes.result == 'success' && needs.changes.outputs.semgrep == 'false' }}
