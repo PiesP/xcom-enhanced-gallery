@@ -168,6 +168,7 @@ describe('workflow change policy', () => {
     for (const cliClosurePath of [
       'scripts/security/codex-security/package.json',
       'scripts/security/codex-security/package-lock.json',
+      'scripts/security/scope-osv-exceptions.py',
     ]) {
       const codexSecurityClosure = classify([cliClosurePath]);
       expect(codexSecurityClosure.unit).toBe('true');
