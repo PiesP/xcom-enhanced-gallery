@@ -135,7 +135,8 @@ jobs:
         run: |
           set -euo pipefail
           results_dir="$RUNNER_TEMP/osv-results"
-          rm -f "$results_dir/old-results.raw.json" "$results_dir/old-results.json"
+          raw_reporter_log="$results_dir/old-results.raw.reporter.log"
+          rm -f "$results_dir/old-results.raw.json" "$results_dir/old-results.json" "$raw_reporter_log"
           scan_status=0
           docker run --rm \
             --env GOTOOLCHAIN=auto \
@@ -151,6 +152,28 @@ jobs:
             . || scan_status=$?
           if ((scan_status > 1)); then
             exit "$scan_status"
+          fi
+          set +e
+          docker run --rm \
+            --entrypoint /root/osv-reporter \
+            --volume "$RUNNER_TEMP/osv-results:/results" \
+            --workdir /results \
+            "$OSV_SCANNER_IMAGE" \
+            --new=old-results.raw.json \
+            --output-files=json:/dev/null \
+            --fail-on-vuln=false 2>&1 | tee "$raw_reporter_log"
+          raw_pipeline_status=("${PIPESTATUS[@]}")
+          set -e
+          raw_report_status="${raw_pipeline_status[0]}"
+          if ((raw_pipeline_status[1] != 0)); then
+            exit "${raw_pipeline_status[1]}"
+          fi
+          if grep -Eq '^failed to open (old|new) results at ' "$raw_reporter_log"; then
+            echo "OSV reporter rejected the raw scanner output." >&2
+            exit 2
+          fi
+          if ((raw_report_status != 0)); then
+            exit "$raw_report_status"
           fi
           python3 "$RUNNER_TEMP/osv-results/scope-osv-exceptions.py" \
             --policy "$RUNNER_TEMP/osv-results/osv-scanner.toml" \
@@ -169,7 +192,8 @@ jobs:
         run: |
           set -euo pipefail
           results_dir="$RUNNER_TEMP/osv-results"
-          rm -f "$results_dir/new-results.raw.json" "$results_dir/new-results.json"
+          raw_reporter_log="$results_dir/new-results.raw.reporter.log"
+          rm -f "$results_dir/new-results.raw.json" "$results_dir/new-results.json" "$raw_reporter_log"
           scan_status=0
           docker run --rm \
             --env GOTOOLCHAIN=auto \
@@ -185,6 +209,28 @@ jobs:
             . || scan_status=$?
           if ((scan_status > 1)); then
             exit "$scan_status"
+          fi
+          set +e
+          docker run --rm \
+            --entrypoint /root/osv-reporter \
+            --volume "$RUNNER_TEMP/osv-results:/results" \
+            --workdir /results \
+            "$OSV_SCANNER_IMAGE" \
+            --new=new-results.raw.json \
+            --output-files=json:/dev/null \
+            --fail-on-vuln=false 2>&1 | tee "$raw_reporter_log"
+          raw_pipeline_status=("${PIPESTATUS[@]}")
+          set -e
+          raw_report_status="${raw_pipeline_status[0]}"
+          if ((raw_pipeline_status[1] != 0)); then
+            exit "${raw_pipeline_status[1]}"
+          fi
+          if grep -Eq '^failed to open (old|new) results at ' "$raw_reporter_log"; then
+            echo "OSV reporter rejected the raw scanner output." >&2
+            exit 2
+          fi
+          if ((raw_report_status != 0)); then
+            exit "$raw_report_status"
           fi
           python3 "$RUNNER_TEMP/osv-results/scope-osv-exceptions.py" \
             --policy "$RUNNER_TEMP/osv-results/osv-scanner.toml" \
@@ -331,7 +377,8 @@ jobs:
         run: |
           set -euo pipefail
           results_dir="$RUNNER_TEMP/osv-results"
-          rm -f "$results_dir/osv-results.raw.json" "$results_dir/osv-results.json"
+          raw_reporter_log="$results_dir/osv-results.raw.reporter.log"
+          rm -f "$results_dir/osv-results.raw.json" "$results_dir/osv-results.json" "$raw_reporter_log"
           scan_status=0
           docker run --rm \
             --env GOTOOLCHAIN=auto \
@@ -347,6 +394,28 @@ jobs:
             . || scan_status=$?
           if ((scan_status > 1)); then
             exit "$scan_status"
+          fi
+          set +e
+          docker run --rm \
+            --entrypoint /root/osv-reporter \
+            --volume "$RUNNER_TEMP/osv-results:/results" \
+            --workdir /results \
+            "$OSV_SCANNER_IMAGE" \
+            --new=osv-results.raw.json \
+            --output-files=json:/dev/null \
+            --fail-on-vuln=false 2>&1 | tee "$raw_reporter_log"
+          raw_pipeline_status=("${PIPESTATUS[@]}")
+          set -e
+          raw_report_status="${raw_pipeline_status[0]}"
+          if ((raw_pipeline_status[1] != 0)); then
+            exit "${raw_pipeline_status[1]}"
+          fi
+          if grep -Eq '^failed to open (old|new) results at ' "$raw_reporter_log"; then
+            echo "OSV reporter rejected the raw scanner output." >&2
+            exit 2
+          fi
+          if ((raw_report_status != 0)); then
+            exit "$raw_report_status"
           fi
           python3 "$RUNNER_TEMP/osv-results/scope-osv-exceptions.py" \
             --policy "$RUNNER_TEMP/osv-results/osv-scanner.toml" \

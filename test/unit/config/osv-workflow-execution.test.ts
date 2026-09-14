@@ -158,6 +158,17 @@ function installFakeDocker(bin: string): void {
     `#!/usr/bin/env bash
 set -euo pipefail
 if [[ " $* " == *" --entrypoint /root/osv-reporter "* ]]; then
+  if [[ " $* " == *" --output-files=json:/dev/null "* ]]; then
+    case "\${FAKE_RAW_REPORTER_MODE:-valid}" in
+      valid) exit 0 ;;
+      diagnostic)
+        printf '%s\n' 'failed to open new results at injected.json: failed to parse'
+        exit 0
+        ;;
+      error) exit 2 ;;
+      *) exit 99 ;;
+    esac
+  fi
   output_name=''
   for argument in "$@"; do
     case "$argument" in
@@ -196,6 +207,30 @@ exit "\${FAKE_SCANNER_STATUS:-0}"
 function installRuntimeDocker(bin: string, runtime: string): void {
   const path = join(bin, 'docker');
   writeFileSync(path, `#!/usr/bin/env bash\nexec ${JSON.stringify(runtime)} "$@"\n`);
+  chmodSync(path, 0o755);
+}
+
+function installScannerStubRuntimeReporter(bin: string, runtime: string): void {
+  const path = join(bin, 'docker');
+  writeFileSync(
+    path,
+    `#!/usr/bin/env bash
+set -euo pipefail
+if [[ " $* " == *" --entrypoint /root/osv-reporter "* ]]; then
+  exec ${JSON.stringify(runtime)} "$@"
+fi
+output_name=''
+for argument in "$@"; do
+  case "$argument" in
+    --output-file=/results/*) output_name="\${argument#--output-file=/results/}" ;;
+  esac
+done
+if [[ -n "\${FAKE_SCANNER_RAW:-}" && -n "$output_name" ]]; then
+  cp "$FAKE_SCANNER_RAW" "$RUNNER_TEMP/osv-results/$output_name"
+fi
+exit "\${FAKE_SCANNER_STATUS:-0}"
+`
+  );
   chmodSync(path, 0o755);
 }
 
@@ -517,6 +552,7 @@ for instant in ("2026-09-27", "2026-09-28"):
 });
 
 describe.runIf(Boolean(actualContainerRuntime))('pinned reporter integration through workflow body', () => {
+  const dispatchScan = extractStep('🛡️ Run OSV scan');
   const prReport = extractStep('📋 Report newly introduced vulnerabilities');
   const dispatchReport = extractStep(
     '📋 Convert OSV results to SARIF and enforce the vulnerability gate'
@@ -527,6 +563,32 @@ describe.runIf(Boolean(actualContainerRuntime))('pinned reporter integration thr
     installRuntimeDocker(sandbox.bin, actualContainerRuntime ?? 'podman');
     return sandbox;
   }
+
+  it.each([
+    ['valid approved report', {}, 0, true],
+    ['approved report with invalid published metadata', { published: 42 }, 2, false],
+  ])(
+    'validates raw scanner JSON before filtering: %s',
+    (_label, vulnerabilityMetadata, expectedStatus, expectedFiltered) => {
+      const sandbox = createSandbox();
+      installScannerStubRuntimeReporter(sandbox.bin, actualContainerRuntime ?? 'podman');
+      const raw = join(sandbox.runnerTemp, 'approved-raw.json');
+      writeJson(
+        raw,
+        reportWith(['GHSA-jmr9-qjv8-65gv'], true, vulnerabilityMetadata)
+      );
+
+      const execution = runStep(dispatchScan, sandbox, {
+        FAKE_SCANNER_RAW: raw,
+        FAKE_SCANNER_STATUS: '1',
+      });
+
+      expect(execution.status, `${execution.stdout}\n${execution.stderr}`).toBe(expectedStatus);
+      expect(existsSync(join(sandbox.results, 'osv-results.json'))).toBe(expectedFiltered);
+      expect(existsSync(join(sandbox.results, 'osv-results.raw.reporter.log'))).toBe(true);
+    },
+    30_000
+  );
 
   it.each([
     ['normal empty result', emptyReport(), 0, 0],
