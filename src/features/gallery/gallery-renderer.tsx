@@ -43,11 +43,15 @@ function GalleryRoot(props: GalleryRootProps): JSX.Element {
   const languageService = getLanguageService();
 
   const [currentTheme, setCurrentTheme] = createSignal(themeService.getCurrentTheme());
+  const [effectiveTheme, setEffectiveTheme] = createSignal(themeService.getEffectiveTheme());
   const [currentLanguage, setCurrentLanguage] = createSignal<SupportedLanguage>(
     languageService.getCurrentLanguage()
   );
 
-  const unbindTheme = themeService.onThemeChange((_, setting) => setCurrentTheme(setting));
+  const unbindTheme = themeService.onThemeChange((theme, setting) => {
+    setCurrentTheme(setting);
+    setEffectiveTheme(theme);
+  });
   const unbindLanguage = languageService.onLanguageChange((lang) => setCurrentLanguage(lang));
 
   onCleanup(() => {
@@ -68,7 +72,14 @@ function GalleryRoot(props: GalleryRootProps): JSX.Element {
   const dir = (): 'ltr' | 'rtl' => (resolvedLanguage() === 'ar' ? 'rtl' : 'ltr');
 
   return (
-    <ErrorBoundary onError={restoreActiveGalleryHostState}>
+    <ErrorBoundary
+      dir={dir()}
+      lang={resolvedLanguage()}
+      onClose={local.onClose}
+      onError={restoreActiveGalleryHostState}
+      theme={effectiveTheme()}
+      themeSetting={currentTheme()}
+    >
       <GalleryContainer
         className={`${CSS.CLASSES.RENDERER} ${CSS.CLASSES.ROOT} xeg-theme-scope`}
         theme={currentTheme()}

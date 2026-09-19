@@ -7,20 +7,66 @@ import { mkdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+function parseComputedRgb(value) {
+  const match = /^rgba?\((.*)\)$/i.exec(value.trim());
+  assert(match, `Expected computed rgb color, received ${value}`);
+  const parts = match[1].replace('/', ' ').split(/[,\s]+/).filter(Boolean);
+  assert(parts.length >= 3, `Expected three RGB channels, received ${value}`);
+  const channels = parts.slice(0, 3).map((part) =>
+    part.endsWith('%') ? (Number.parseFloat(part) / 100) * 255 : Number.parseFloat(part)
+  );
+  assert(channels.every((channel) => Number.isFinite(channel) && channel >= 0 && channel <= 255));
+  if (parts[3] !== undefined) {
+    const alpha = parts[3].endsWith('%')
+      ? Number.parseFloat(parts[3]) / 100
+      : Number.parseFloat(parts[3]);
+    assert.equal(alpha, 1, `Contrast check requires an opaque computed color: ${value}`);
+  }
+  return channels;
+}
+
+function relativeLuminance(value) {
+  const [red, green, blue] = parseComputedRgb(value).map((channel) => {
+    const normalized = channel / 255;
+    return normalized <= 0.04045
+      ? normalized / 12.92
+      : ((normalized + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+}
+
+function assertTextContrast(label, foreground, background) {
+  const foregroundLuminance = relativeLuminance(foreground);
+  const backgroundLuminance = relativeLuminance(background);
+  const ratio =
+    (Math.max(foregroundLuminance, backgroundLuminance) + 0.05) /
+    (Math.min(foregroundLuminance, backgroundLuminance) + 0.05);
+  assert(ratio >= 4.5, `${label} contrast ${ratio.toFixed(3)} must be at least 4.5:1`);
+  return ratio;
+}
+
 /** Artifact injection validates rendering, not userscript-manager installation. */
 export async function run({ browser, root, output }) {
+  const faultMessages = [
+    `XEG_WINDOWS_ACCEPTANCE_RENDER_FAULT_RETRY: ${'bounded-long-recovery-message-'.repeat(18)}`,
+    'XEG_WINDOWS_ACCEPTANCE_RENDER_FAULT_CLOSE',
+  ];
   const context = await browser.newContext({
     viewport: { width: 1280, height: 800 },
     locale: 'en-US',
     acceptDownloads: true,
   });
-  const errors = [];
+  const runtimeErrors = [];
   try {
     await mkdir(output, { recursive: true });
     const page = await context.newPage();
-    page.on('pageerror', (error) => errors.push(error.message));
+    page.on('pageerror', (error) =>
+      runtimeErrors.push({ source: 'pageerror', message: error.message })
+    );
     page.on('console', (message) => {
-      if (message.type() === 'error') errors.push(message.text());
+      if (message.type() === 'error') {
+        runtimeErrors.push({ source: 'console', message: message.text() });
+      }
     });
     const html = await readFile(
       path.join(root, 'test/e2e/fixtures/mock-gallery-page.html'),
@@ -111,8 +157,326 @@ export async function run({ browser, root, output }) {
       undefined,
       { timeout: 15_000 }
     );
-    await page.locator('[data-testid="tweetPhoto"] img').first().click();
+
+    const installGalleryRenderFault = async (message) => {
+      await page.evaluate((faultMessage) => {
+        const prototype = CSSStyleDeclaration.prototype;
+        const descriptor = Object.getOwnPropertyDescriptor(prototype, 'setProperty');
+        if (!descriptor || typeof descriptor.value !== 'function') {
+          throw new Error('CSSStyleDeclaration.setProperty descriptor unavailable');
+        }
+        const original = descriptor.value;
+        const evidence = {
+          message: faultMessage,
+          property: '--xeg-viewport-w',
+          restoredBeforeThrow: false,
+          throwCount: 0,
+        };
+        const records = (window.__xegAcceptanceRenderFaults ??= []);
+        records.push(evidence);
+        Object.defineProperty(prototype, 'setProperty', {
+          ...descriptor,
+          value(property, value, priority) {
+            if (property === evidence.property && evidence.throwCount === 0) {
+              evidence.throwCount += 1;
+              Object.defineProperty(prototype, 'setProperty', descriptor);
+              evidence.restoredBeforeThrow = prototype.setProperty === original;
+              throw new Error(faultMessage);
+            }
+            return Reflect.apply(original, this, [property, value, priority]);
+          },
+        });
+      }, message);
+    };
+
+    const captureHostState = () =>
+      page.evaluate(() => {
+        const outside = document.querySelector('#outside-button');
+        if (!(outside instanceof HTMLElement)) throw new Error('Missing outside host button');
+        outside.focus();
+        const main = document.querySelector('main');
+        return {
+          activeId: document.activeElement?.id ?? null,
+          bodyStyle: {
+            left: document.body.style.left,
+            overflow: document.body.style.overflow,
+            position: document.body.style.position,
+            right: document.body.style.right,
+            top: document.body.style.top,
+          },
+          mainAriaHidden: main?.getAttribute('aria-hidden') ?? null,
+          mainInert: main?.hasAttribute('inert') ?? false,
+          scrollY,
+        };
+      });
+
+    const assertHostRestored = async (expected) => {
+      const actual = await page.evaluate(() => {
+        const main = document.querySelector('main');
+        return {
+          activeId: document.activeElement?.id ?? null,
+          bodyStyle: {
+            left: document.body.style.left,
+            overflow: document.body.style.overflow,
+            position: document.body.style.position,
+            right: document.body.style.right,
+            top: document.body.style.top,
+          },
+          mainAriaHidden: main?.getAttribute('aria-hidden') ?? null,
+          mainInert: main?.hasAttribute('inert') ?? false,
+          scrollY,
+        };
+      });
+      assert.deepEqual(actual, expected, 'Recovery must restore the exact host state and focus');
+    };
+
+    const openFaultedGallery = async (faultMessage) => {
+      const expectedHost = await captureHostState();
+      await installGalleryRenderFault(faultMessage);
+      await page.locator('[data-testid="tweetPhoto"] img').first().click();
+      const recovery = page.locator('[data-xeg-error-boundary]');
+      await recovery.waitFor({ state: 'visible', timeout: 15_000 });
+      await assertHostRestored(expectedHost);
+      return recovery;
+    };
+
+    const inspectRecoveryAppearance = (recovery) =>
+      recovery.evaluate((element) => {
+        const panel = element.firstElementChild;
+        const title = element.querySelector('h2');
+        const body = element.querySelector('[role="alert"] p');
+        const retry = element.querySelector('[data-xeg-error-action="retry"]');
+        const close = element.querySelector('[data-xeg-error-action="close"]');
+        if (
+          !(panel instanceof HTMLElement) ||
+          !(title instanceof HTMLElement) ||
+          !(body instanceof HTMLElement) ||
+          !(retry instanceof HTMLElement) ||
+          !(close instanceof HTMLElement)
+        ) {
+          throw new Error('Missing recovery appearance target');
+        }
+        const rootStyle = getComputedStyle(element);
+        const panelStyle = getComputedStyle(panel);
+        const retryStyle = getComputedStyle(retry);
+        const closeStyle = getComputedStyle(close);
+        return {
+          ariaModal: element.getAttribute('aria-modal'),
+          bodyColor: getComputedStyle(body).color,
+          bodyText: body.textContent ?? '',
+          closeBackground: closeStyle.backgroundColor,
+          closeColor: closeStyle.color,
+          colorScheme: rootStyle.colorScheme,
+          dataTheme: element.getAttribute('data-theme'),
+          panelBackground: panelStyle.backgroundColor,
+          panelPointerEvents: panelStyle.pointerEvents,
+          position: rootStyle.position,
+          retryBackground: retryStyle.backgroundColor,
+          retryColor: retryStyle.color,
+          rootPointerEvents: rootStyle.pointerEvents,
+          semanticSection: element.matches('section[aria-labelledby][aria-describedby]'),
+          titleColor: getComputedStyle(title).color,
+        };
+      });
+
+    await page.emulateMedia({ colorScheme: 'dark' });
+    const retryRecovery = await openFaultedGallery(faultMessages[0]);
+    const darkRecovery = await inspectRecoveryAppearance(retryRecovery);
+    assert.equal(darkRecovery.semanticSection, true);
+    assert.equal(darkRecovery.ariaModal, null, 'Recovery surface must remain modeless');
+    assert.equal(darkRecovery.dataTheme, 'dark');
+    assert.equal(darkRecovery.colorScheme, 'dark');
+    assert.equal(darkRecovery.position, 'fixed');
+    assert.equal(darkRecovery.rootPointerEvents, 'none');
+    assert.equal(darkRecovery.panelPointerEvents, 'auto');
+    assert(
+      darkRecovery.bodyText.includes(faultMessages[0]),
+      'Normalized recovery body must include the complete injected fault message'
+    );
+    const darkContrast = {
+      body: assertTextContrast(
+        'Dark recovery body',
+        darkRecovery.bodyColor,
+        darkRecovery.panelBackground
+      ),
+      close: assertTextContrast(
+        'Dark recovery close button',
+        darkRecovery.closeColor,
+        darkRecovery.closeBackground
+      ),
+      retry: assertTextContrast(
+        'Dark recovery retry button',
+        darkRecovery.retryColor,
+        darkRecovery.retryBackground
+      ),
+      title: assertTextContrast(
+        'Dark recovery title',
+        darkRecovery.titleColor,
+        darkRecovery.panelBackground
+      ),
+    };
+    await page.screenshot({ path: path.join(output, 'gallery-recovery-dark.png') });
+
+    await page.setViewportSize({ width: 320, height: 640 });
+    const narrowRecovery = await retryRecovery.evaluate((element) => {
+      const panel = element.firstElementChild;
+      const body = element.querySelector('[role="alert"] p');
+      if (!(panel instanceof HTMLElement) || !(body instanceof HTMLElement)) {
+        throw new Error('Missing narrow recovery content');
+      }
+      const panelRect = panel.getBoundingClientRect();
+      const bodyRect = body.getBoundingClientRect();
+      return {
+        bodyRight: bodyRect.right,
+        bodyScrollWidth: body.scrollWidth,
+        bodyWidth: body.clientWidth,
+        panelLeft: panelRect.left,
+        panelRight: panelRect.right,
+        viewportWidth: innerWidth,
+      };
+    });
+    assert(narrowRecovery.panelLeft >= 0 && narrowRecovery.panelRight <= narrowRecovery.viewportWidth,
+      'Recovery panel must fit a 320px viewport');
+    assert(narrowRecovery.bodyRight <= narrowRecovery.viewportWidth,
+      'Long recovery text must remain inside the viewport');
+    assert(narrowRecovery.bodyScrollWidth <= narrowRecovery.bodyWidth,
+      'Long recovery text must wrap without horizontal overflow');
+    await page.screenshot({ path: path.join(output, 'gallery-recovery-narrow-dark.png') });
+
+    const localizedExpansionLabel = '더 이상 재시도할 수 없음';
+    const largeTextRecovery = await retryRecovery.evaluate((element, label) => {
+      const retry = element.querySelector('[data-xeg-error-action="retry"]');
+      if (!(retry instanceof HTMLButtonElement)) throw new Error('Missing recovery retry action');
+      const originalLabel = retry.textContent ?? '';
+      element.style.setProperty('--xeg-font-size-base', '2rem');
+      retry.textContent = label;
+      const buttonStyle = getComputedStyle(retry);
+      const rect = retry.getBoundingClientRect();
+      return {
+        blockSize: rect.height,
+        clientHeight: retry.clientHeight,
+        clientWidth: retry.clientWidth,
+        fontSize: buttonStyle.fontSize,
+        label: retry.textContent,
+        originalLabel,
+        overflowWrap: buttonStyle.overflowWrap,
+        right: rect.right,
+        scrollHeight: retry.scrollHeight,
+        scrollWidth: retry.scrollWidth,
+        viewportWidth: innerWidth,
+        whiteSpace: buttonStyle.whiteSpace,
+      };
+    }, localizedExpansionLabel);
+    assert.equal(largeTextRecovery.label, localizedExpansionLabel);
+    assert.equal(largeTextRecovery.whiteSpace, 'normal');
+    assert.equal(largeTextRecovery.overflowWrap, 'anywhere');
+    assert(Number.parseFloat(largeTextRecovery.fontSize) >= 30, 'Recovery must honor 200% text');
+    assert(largeTextRecovery.right <= largeTextRecovery.viewportWidth,
+      'Large localized recovery action must remain inside the viewport');
+    assert(largeTextRecovery.scrollWidth <= largeTextRecovery.clientWidth,
+      'Large localized recovery action must not overflow horizontally');
+    assert(largeTextRecovery.scrollHeight <= largeTextRecovery.clientHeight,
+      'Large localized recovery action must grow to contain wrapped text');
+    assert(largeTextRecovery.blockSize >= 44, 'Wrapped recovery action must retain its target size');
+    await page.screenshot({
+      path: path.join(output, 'gallery-recovery-narrow-large-text-dark.png'),
+    });
+    await retryRecovery.evaluate((element, originalLabel) => {
+      const retry = element.querySelector('[data-xeg-error-action="retry"]');
+      if (!(retry instanceof HTMLButtonElement)) throw new Error('Missing recovery retry action');
+      element.style.removeProperty('--xeg-font-size-base');
+      retry.textContent = originalLabel;
+    }, largeTextRecovery.originalLabel);
+
+    const outside = page.locator('#outside-button');
+    await outside.click();
+    assert.equal(await outside.isEnabled(), true, 'Host must remain interactive during recovery');
+    await outside.focus();
+    await page.keyboard.press('Tab');
+    assert.equal(
+      await page.evaluate(() => document.activeElement?.getAttribute('data-xeg-error-action')),
+      'retry',
+      'Tab from the restored host must reach Retry'
+    );
+    await page.keyboard.press('Enter');
     const gallery = page.locator('[data-xeg-gallery-container]');
+    await gallery.waitFor({ state: 'visible', timeout: 15_000 });
+    assert.equal(await gallery.getAttribute('data-theme'), 'dark');
+    assert.equal(
+      await page.evaluate(() => document.body.style.position),
+      'fixed',
+      'Retry must remount the normal gallery and restore its host lock'
+    );
+    await page.keyboard.press('Escape');
+    await gallery.waitFor({ state: 'detached' });
+
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    const closeRecovery = await openFaultedGallery(faultMessages[1]);
+    const lightRecovery = await inspectRecoveryAppearance(closeRecovery);
+    assert.equal(lightRecovery.dataTheme, 'light');
+    assert.equal(lightRecovery.colorScheme, 'light');
+    assert(
+      lightRecovery.bodyText.includes(faultMessages[1]),
+      'Light recovery body must include the injected fault message'
+    );
+    const lightContrast = {
+      body: assertTextContrast(
+        'Light recovery body',
+        lightRecovery.bodyColor,
+        lightRecovery.panelBackground
+      ),
+      close: assertTextContrast(
+        'Light recovery close button',
+        lightRecovery.closeColor,
+        lightRecovery.closeBackground
+      ),
+      retry: assertTextContrast(
+        'Light recovery retry button',
+        lightRecovery.retryColor,
+        lightRecovery.retryBackground
+      ),
+      title: assertTextContrast(
+        'Light recovery title',
+        lightRecovery.titleColor,
+        lightRecovery.panelBackground
+      ),
+    };
+    await page.screenshot({ path: path.join(output, 'gallery-recovery-light.png') });
+    await outside.focus();
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
+    assert.equal(
+      await page.evaluate(() => document.activeElement?.getAttribute('data-xeg-error-action')),
+      'close',
+      'Keyboard navigation must reach Close'
+    );
+    await page.keyboard.press('Enter');
+    await closeRecovery.waitFor({ state: 'detached' });
+    assert.equal(await page.locator('[data-renderer="gallery"]').count(), 0);
+    assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0);
+    assert.equal(await page.evaluate(() => document.activeElement?.id), 'outside-button');
+    await page.keyboard.press('Enter');
+    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => resolve())));
+    assert.equal(
+      await page.locator('[data-renderer="gallery"]').count(),
+      0,
+      'Closed recovery controls must not retain keyboard listeners'
+    );
+
+    const faultEvidence = await page.evaluate(() => window.__xegAcceptanceRenderFaults ?? []);
+    assert.deepEqual(
+      faultEvidence,
+      faultMessages.map((message) => ({
+        message,
+        property: '--xeg-viewport-w',
+        restoredBeforeThrow: true,
+        throwCount: 1,
+      })),
+      'Each bounded fault must fire once and restore the original DOM API before throwing'
+    );
+
+    await page.locator('[data-testid="tweetPhoto"] img').first().click();
     await gallery.waitFor({ state: 'visible', timeout: 15000 });
     await page.waitForFunction(() =>
       [...document.querySelectorAll('[data-xeg-gallery-container] img')].some(
@@ -379,10 +743,22 @@ export async function run({ browser, root, output }) {
     assert(pngs[1].equals(bytes), 'Downloaded bytes must match the selected second fixture');
     await page.keyboard.press('Escape');
     await gallery.waitFor({ state: 'detached' });
-    assert.deepEqual(errors, []);
+    const expectedRuntimeErrors = runtimeErrors.filter(({ message }) =>
+      faultMessages.some((fault) => message === fault || message === `Error: ${fault}`)
+    );
+    const unexpectedRuntimeErrors = runtimeErrors.filter(
+      ({ message }) => !faultMessages.some((fault) => message === fault || message === `Error: ${fault}`)
+    );
+    assert.deepEqual(unexpectedRuntimeErrors, []);
     return {
       checks: [
         'production-userscript-injection',
+        'bounded-reactive-render-fault',
+        'modeless-host-restoration',
+        'recovery-dark-light-theme',
+        'recovery-320px-long-message',
+        'keyboard-retry-close',
+        'recovery-listener-cleanup',
         'gallery-open',
         'toolbar-selected-state',
         'toolbar-selected-focus',
@@ -401,6 +777,12 @@ export async function run({ browser, root, output }) {
         suggestedFilename: download.suggestedFilename(),
         bytes: bytes.length,
         sha256: createHash('sha256').update(bytes).digest('hex'),
+      },
+      recovery: {
+        contrast: { dark: darkContrast, light: lightContrast },
+        expectedRuntimeErrors,
+        faultEvidence,
+        rawRuntimeErrors: runtimeErrors,
       },
       scope:
         'fixture userscript rendering and mocked-GM browser download; no extension installation or live X.com',

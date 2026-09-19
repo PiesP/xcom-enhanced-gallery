@@ -1,48 +1,154 @@
 /* SPDX-License-Identifier: MIT */
 /* Copyright (c) 2024-2026 PiesP */
 
-/**
- * ErrorBoundary Component Styles (CSS Modules)
- *
- * Fallback UI shown when a render error is caught by SolidJS `<ErrorBoundary>`.
- * Uses --xeg-* design tokens for consistency with the gallery design system.
- *
- * Class Structure:
- * - .xeg-error-boundary__title: Error title heading
- * - .xeg-error-boundary__body: Error description body
- * - .xeg-error-boundary__action: Primary retry action button
- * - .xeg-error-boundary__reset: Reset button (shown after retries exhausted)
- */
+/** Modeless recovery surface rendered outside the failed gallery container. */
 
-.xeg-error-boundary__title {
-  font-weight: 600;
-  font-size: 1rem;
-  margin-bottom: 0.5rem;
+.recoveryRoot {
+  all: initial;
+  box-sizing: border-box;
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--xeg-z-tooltip, 10005) + 1);
+  display: grid;
+  align-items: end;
+  justify-items: stretch;
+  padding-block: max(var(--xeg-spacing-xl, 1rem), env(safe-area-inset-top))
+    max(var(--xeg-spacing-xl, 1rem), env(safe-area-inset-bottom));
+  padding-inline: max(var(--xeg-spacing-xl, 1rem), env(safe-area-inset-left))
+    max(var(--xeg-spacing-xl, 1rem), env(safe-area-inset-right));
+  color: var(--xeg-color-text-primary, CanvasText);
+  font-family: var(--xeg-font-family-ui, system-ui, sans-serif);
+  font-size: var(--xeg-font-size-base, 0.9375rem);
+  line-height: var(--xeg-line-height-normal, 1.5);
+  pointer-events: none;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
-.xeg-error-boundary__body {
-  color: var(--xeg-color-text-secondary);
-  margin-bottom: 1rem;
-  max-width: 32ch;
+.recoveryRoot,
+.recoveryRoot * {
+  box-sizing: border-box;
 }
 
-.xeg-error-boundary__action,
-.xeg-error-boundary__reset {
+.recoveryRoot[data-theme="light"] {
+  color-scheme: light;
+}
+
+.recoveryRoot[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+.recoveryPanel {
+  inline-size: min(32rem, 100%);
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  max-block-size: min(32rem, calc(100dvh - 2rem));
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: var(--xeg-spacing-xl, 1rem);
+  color: var(--xeg-color-text-primary, CanvasText);
+  background: var(--xeg-color-bg-surface, Canvas);
+  border: 1px solid var(--xeg-color-border-emphasis, CanvasText);
+  border-radius: var(--xeg-radius-lg, 0.75rem);
+  box-shadow: var(--xeg-shadow-tooltip, 0 2px 8px rgba(0, 0, 0, 0.15));
+  pointer-events: auto;
+}
+
+.recoveryMessage {
+  min-inline-size: 0;
+}
+
+.recoveryTitle {
+  margin: 0;
+  color: var(--xeg-color-text-primary, CanvasText);
+  font-size: var(--xeg-font-size-lg, 1.125rem);
+  font-weight: var(--xeg-font-weight-semibold, 600);
+  line-height: var(--xeg-line-height-tight, 1.25);
+  overflow-wrap: anywhere;
+}
+
+.recoveryBody {
+  margin-block: 0.5rem 1rem;
+  margin-inline: 0;
+  max-inline-size: 100%;
+  color: var(--xeg-color-text-secondary, CanvasText);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.recoveryActions {
+  display: flex;
+  align-items: stretch;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.recoveryAction {
+  min-block-size: var(--xeg-target-minimum, 2.75rem);
+  inline-size: 100%;
+  max-inline-size: 100%;
+  padding-block: 0.5rem;
+  padding-inline: 1rem;
+  color: var(--xeg-color-text-primary, ButtonText);
+  font: inherit;
+  font-weight: var(--xeg-font-weight-medium, 500);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  background: var(--xeg-color-bg-surface, ButtonFace);
+  border: 1px solid var(--xeg-color-border-default, ButtonBorder);
+  border-radius: var(--xeg-radius-md, 0.5rem);
   cursor: pointer;
-  background: var(--xeg-color-bg-surface);
-  border: 1px solid var(--xeg-color-border-default);
-  border-radius: var(--xeg-radius-md);
-  padding: 0.5rem 1rem;
 }
 
-.xeg-error-boundary__action:focus-visible,
-.xeg-error-boundary__reset:focus-visible {
-  outline: 2px solid var(--xeg-color-primary);
-  outline-offset: 2px;
+.recoveryAction:focus-visible {
+  outline: var(--xeg-focus-ring-width, 2px) solid var(--xeg-focus-indicator-color, Highlight);
+  outline-offset: var(--xeg-focus-ring-offset, 2px);
 }
 
-.xeg-error-boundary__reset {
-  /* Slightly muted treatment for the reset button */
-  color: var(--xeg-color-text-secondary);
-  border-color: var(--xeg-color-border-emphasis);
+.recoveryAction:active:not(:disabled) {
+  background: var(--xeg-color-bg-secondary, ButtonFace);
+  transform: translateY(1px);
+}
+
+.recoveryAction:disabled {
+  cursor: not-allowed;
+  opacity: var(--xeg-opacity-disabled, 0.5);
+}
+
+.recoveryReset,
+.recoveryClose {
+  color: var(--xeg-color-text-secondary, ButtonText);
+  border-color: var(--xeg-color-border-emphasis, ButtonBorder);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .recoveryAction:hover:not(:disabled) {
+    background: var(--xeg-color-bg-secondary, ButtonFace);
+    border-color: var(--xeg-color-border-hover, ButtonBorder);
+  }
+}
+
+@media (forced-colors: active) {
+  .recoveryPanel,
+  .recoveryAction {
+    border-color: CanvasText;
+    forced-color-adjust: auto;
+  }
+}
+
+@media (min-width: 24rem) {
+  .recoveryRoot {
+    justify-items: end;
+  }
+
+  .recoveryActions {
+    align-items: center;
+    flex-flow: row wrap;
+    justify-content: end;
+  }
+
+  .recoveryAction {
+    inline-size: auto;
+  }
 }
