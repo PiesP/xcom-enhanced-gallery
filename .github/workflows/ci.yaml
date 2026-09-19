@@ -89,7 +89,7 @@ jobs:
 
       - name: 📦 Setup project
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.quality != 'false' }}
-        uses: PiesP/browser-core/automation/actions/setup-project@f630a8f0119dd6b4f1aa011f8510489936c7a7b9
+        uses: PiesP/browser-core/automation/actions/setup-project@adb7b05ff3781268c3625341951219da778bb40a
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -116,7 +116,7 @@ jobs:
 
       - name: 📦 Setup project
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.unit != 'false' }}
-        uses: PiesP/browser-core/automation/actions/setup-project@f630a8f0119dd6b4f1aa011f8510489936c7a7b9
+        uses: PiesP/browser-core/automation/actions/setup-project@adb7b05ff3781268c3625341951219da778bb40a
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -161,7 +161,7 @@ jobs:
 
       - name: 📦 Setup project
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.e2e != 'false' }}
-        uses: PiesP/browser-core/automation/actions/setup-project@f630a8f0119dd6b4f1aa011f8510489936c7a7b9
+        uses: PiesP/browser-core/automation/actions/setup-project@adb7b05ff3781268c3625341951219da778bb40a
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -209,7 +209,7 @@ jobs:
 
       - name: 📦 Setup project
         if: ${{ (needs.changes.result != 'success' || needs.changes.outputs.build != 'false') && needs.quality.result == 'success' }}
-        uses: PiesP/browser-core/automation/actions/setup-project@f630a8f0119dd6b4f1aa011f8510489936c7a7b9
+        uses: PiesP/browser-core/automation/actions/setup-project@adb7b05ff3781268c3625341951219da778bb40a
         with:
           node-version: ${{ env.NODE_VERSION }}
 
