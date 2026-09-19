@@ -7,6 +7,7 @@
  */
 
 import { getNotificationAdapter, notifySafely } from '@platform/index';
+import { isGalleryRecoveryActive } from '@shared/dom/utils';
 import { logger } from '@shared/logging/logger';
 import type { EventHandlers, GalleryEventOptions } from '@shared/services/event-manager';
 import { getLanguageService } from '@shared/services/language-service';
@@ -116,6 +117,9 @@ export function handleKeyboardEvent(
   if (!options.enableKeyboard) return;
 
   try {
+    // Recovery is modeless: leave every key available to the host and recovery controls.
+    if (isGalleryRecoveryActive()) return;
+
     const key = event.key;
     const isGalleryOpen = gallerySignals.isOpen;
 

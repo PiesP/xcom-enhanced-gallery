@@ -8,7 +8,11 @@
  */
 
 import { getTypedSettingOr, tryGetSettings } from '@shared/container/settings-registry';
-import { isGalleryInternalElement, isVideoClickAllowed } from '@shared/dom/utils';
+import {
+  isGalleryInternalElement,
+  isGalleryRecoveryActive,
+  isVideoClickAllowed,
+} from '@shared/dom/utils';
 import { logger } from '@shared/logging/logger';
 import type { EventHandlers, GalleryEventOptions } from '@shared/services/event-manager';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
@@ -32,6 +36,9 @@ export async function handleMediaClick(
 
   const target = event.target;
   if (!(target instanceof Element)) return;
+
+  // Recovery is modeless: host and recovery controls retain their native click routing.
+  if (isGalleryRecoveryActive()) return;
 
   // Gallery is open — close on outside click (defensive: the fixed overlay covers
   // the viewport, so this fires only if an element behind the overlay receives a
