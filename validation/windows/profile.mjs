@@ -189,13 +189,16 @@ export async function run({ browser, root, output }) {
       }, message);
     };
 
-    const captureHostState = () =>
+    const prepareHostSnapshot = () =>
       page.evaluate(() => {
-        const outside = document.querySelector('#outside-button');
-        if (!(outside instanceof HTMLElement)) throw new Error('Missing outside host button');
-        outside.focus();
+        const trigger = document.querySelector('[data-testid="tweetPhoto"] img');
+        if (!(trigger instanceof HTMLElement)) throw new Error('Missing gallery trigger');
+        trigger.id = 'recovery-trigger';
+        trigger.tabIndex = 0;
+        trigger.scrollIntoView({ block: 'center' });
+        trigger.focus({ preventScroll: true });
         const main = document.querySelector('main');
-        return {
+        const snapshot = () => ({
           activeId: document.activeElement?.id ?? null,
           bodyStyle: {
             left: document.body.style.left,
@@ -207,7 +210,13 @@ export async function run({ browser, root, output }) {
           mainAriaHidden: main?.getAttribute('aria-hidden') ?? null,
           mainInert: main?.hasAttribute('inert') ?? false,
           scrollY,
-        };
+        });
+        // Pointer input can scroll the fixture before the app handles its click.
+        // Bind the expectation to the actual interaction, not test setup time.
+        window.__xegAcceptanceOpeningHostState = null;
+        trigger.addEventListener('pointerdown', () => {
+          window.__xegAcceptanceOpeningHostState = snapshot();
+        }, { once: true });
       });
 
     const assertHostRestored = async (expected) => {
@@ -231,9 +240,11 @@ export async function run({ browser, root, output }) {
     };
 
     const openFaultedGallery = async (faultMessage) => {
-      const expectedHost = await captureHostState();
+      await prepareHostSnapshot();
       await installGalleryRenderFault(faultMessage);
       await page.locator('[data-testid="tweetPhoto"] img').first().click();
+      const expectedHost = await page.evaluate(() => window.__xegAcceptanceOpeningHostState);
+      assert(expectedHost, 'Opening interaction must capture the host snapshot');
       const recovery = page.locator('[data-xeg-error-boundary]');
       await recovery.waitFor({ state: 'visible', timeout: 15_000 });
       await assertHostRestored(expectedHost);
@@ -455,7 +466,7 @@ export async function run({ browser, root, output }) {
     await closeRecovery.waitFor({ state: 'detached' });
     assert.equal(await page.locator('[data-renderer="gallery"]').count(), 0);
     assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0);
-    assert.equal(await page.evaluate(() => document.activeElement?.id), 'outside-button');
+    assert.equal(await page.evaluate(() => document.activeElement?.id), 'recovery-trigger');
     await page.keyboard.press('Enter');
     await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => resolve())));
     assert.equal(
