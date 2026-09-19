@@ -302,7 +302,18 @@ export async function run({ browser, root, output }) {
         visited.push(focused);
         if (focused.action === action) return visited;
       }
-      assert.fail(`Keyboard cannot reach recovery ${action}: ${JSON.stringify(visited)}`);
+      const targets = await page.evaluate(() =>
+        [...document.querySelectorAll('[data-xeg-error-action]')].map((element) => ({
+          action: element.getAttribute('data-xeg-error-action'),
+          disabled: element.disabled,
+          tabIndex: element.tabIndex,
+          display: getComputedStyle(element).display,
+          visibility: getComputedStyle(element).visibility,
+          inertAncestor: element.closest('[inert]')?.outerHTML.slice(0, 300),
+          rect: element.getBoundingClientRect().toJSON(),
+        }))
+      );
+      assert.fail(`Keyboard cannot reach recovery ${action}: ${JSON.stringify({ visited, targets })}`);
     };
 
     await page.emulateMedia({ colorScheme: 'dark' });
@@ -418,6 +429,7 @@ export async function run({ browser, root, output }) {
     const outside = page.locator('#outside-button');
     await outside.click();
     assert.equal(await outside.isEnabled(), true, 'Host must remain interactive during recovery');
+    assert.equal(await retryRecovery.count(), 1, 'Host interaction must retain modeless recovery');
     await outside.focus();
     const retryKeyboardPath = await keyboardReachRecoveryAction('retry');
     await page.keyboard.press('Enter');
