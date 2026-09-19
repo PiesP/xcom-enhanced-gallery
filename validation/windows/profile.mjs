@@ -391,6 +391,7 @@ export async function run({ browser, root, output }) {
       const rect = retry.getBoundingClientRect();
       return {
         blockSize: rect.height,
+        bottom: rect.bottom,
         clientHeight: retry.clientHeight,
         clientWidth: retry.clientWidth,
         fontSize: buttonStyle.fontSize,
@@ -401,6 +402,7 @@ export async function run({ browser, root, output }) {
         scrollHeight: retry.scrollHeight,
         scrollWidth: retry.scrollWidth,
         viewportWidth: innerWidth,
+        viewportHeight: innerHeight,
         whiteSpace: buttonStyle.whiteSpace,
       };
     }, localizedExpansionLabel);
@@ -415,6 +417,8 @@ export async function run({ browser, root, output }) {
     assert(largeTextRecovery.scrollHeight <= largeTextRecovery.clientHeight,
       'Large localized recovery action must grow to contain wrapped text');
     assert(largeTextRecovery.blockSize >= 44, 'Wrapped recovery action must retain its target size');
+    assert(largeTextRecovery.bottom <= largeTextRecovery.viewportHeight,
+      'Long error details must not push the recovery action below the viewport');
     await retryRecovery.locator('[data-xeg-error-action="retry"]').scrollIntoViewIfNeeded();
     await page.screenshot({
       path: path.join(output, 'gallery-recovery-narrow-large-text-dark.png'),
@@ -427,10 +431,31 @@ export async function run({ browser, root, output }) {
     }, largeTextRecovery.originalLabel);
 
     const outside = page.locator('#outside-button');
+    await outside.evaluate((element) => {
+      window.__xegAcceptanceHostInput = { clicks: 0, keys: [] };
+      element.addEventListener('click', () => window.__xegAcceptanceHostInput.clicks++);
+      element.addEventListener('keydown', (event) => {
+        window.__xegAcceptanceHostInput.keys.push({
+          key: event.key,
+          prevented: event.defaultPrevented,
+        });
+      });
+    });
     await outside.click();
     assert.equal(await outside.isEnabled(), true, 'Host must remain interactive during recovery');
     assert.equal(await retryRecovery.count(), 1, 'Host interaction must retain modeless recovery');
     await outside.focus();
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('Escape');
+    const hostInput = await page.evaluate(() => window.__xegAcceptanceHostInput);
+    assert.deepEqual(hostInput, {
+      clicks: 1,
+      keys: [
+        { key: 'ArrowRight', prevented: false },
+        { key: 'Escape', prevented: false },
+      ],
+    }, 'Recovery must not swallow host clicks or keyboard navigation');
+    assert.equal(await retryRecovery.count(), 1, 'Host Escape must not close modeless recovery');
     const retryKeyboardPath = await keyboardReachRecoveryAction('retry');
     await page.keyboard.press('Enter');
     const gallery = page.locator('[data-xeg-gallery-container]');
@@ -807,6 +832,7 @@ export async function run({ browser, root, output }) {
         sha256: createHash('sha256').update(bytes).digest('hex'),
       },
       recovery: {
+        hostInput,
         keyboardPaths: { retry: retryKeyboardPath, close: closeKeyboardPath },
         contrast: { dark: darkContrast, light: lightContrast },
         expectedRuntimeErrors,

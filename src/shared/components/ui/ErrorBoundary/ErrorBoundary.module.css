@@ -39,6 +39,8 @@
 }
 
 .recoveryPanel {
+  display: flex;
+  flex-direction: column;
   inline-size: min(32rem, 100%);
   min-inline-size: 0;
   max-inline-size: 100%;
@@ -56,6 +58,9 @@
 
 .recoveryMessage {
   min-inline-size: 0;
+  min-block-size: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
 }
 
 .recoveryTitle {
@@ -68,7 +73,7 @@
 }
 
 .recoveryBody {
-  margin-block: 0.5rem 1rem;
+  margin-block: 0.5rem 0;
   margin-inline: 0;
   max-inline-size: 100%;
   color: var(--xeg-color-text-secondary, CanvasText);
@@ -78,6 +83,8 @@
 
 .recoveryActions {
   display: flex;
+  flex-shrink: 0;
+  margin-block-start: 1rem;
   align-items: stretch;
   flex-direction: column;
   gap: 0.5rem;
