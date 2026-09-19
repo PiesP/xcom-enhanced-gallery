@@ -1,5 +1,5 @@
 # Temporary exception for the integrity-locked security tooling only.
-# Revalidated against @openai/codex-security 0.1.27 on 2026-09-14.
+# Revalidated against @openai/codex-security 0.1.28 on 2026-09-19.
 # scope-osv-exceptions.py applies this policy only to npm extract-zip 2.0.1
 # in /src/scripts/security/codex-security/package-lock.json; OSV scans all inputs.
 # The CLI rejects all symlink ZIP entries before extraction, preventing both
