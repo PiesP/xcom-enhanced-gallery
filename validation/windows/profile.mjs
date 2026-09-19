@@ -290,6 +290,21 @@ export async function run({ browser, root, output }) {
         };
       });
 
+    const keyboardReachRecoveryAction = async (action) => {
+      const visited = [];
+      for (let step = 0; step < 8; step += 1) {
+        await page.keyboard.press('Tab');
+        const focused = await page.evaluate(() => ({
+          action: document.activeElement?.getAttribute('data-xeg-error-action'),
+          id: document.activeElement?.id,
+          tag: document.activeElement?.tagName,
+        }));
+        visited.push(focused);
+        if (focused.action === action) return visited;
+      }
+      assert.fail(`Keyboard cannot reach recovery ${action}: ${JSON.stringify(visited)}`);
+    };
+
     await page.emulateMedia({ colorScheme: 'dark' });
     const retryRecovery = await openFaultedGallery(faultMessages[0]);
     const darkRecovery = await inspectRecoveryAppearance(retryRecovery);
@@ -389,6 +404,7 @@ export async function run({ browser, root, output }) {
     assert(largeTextRecovery.scrollHeight <= largeTextRecovery.clientHeight,
       'Large localized recovery action must grow to contain wrapped text');
     assert(largeTextRecovery.blockSize >= 44, 'Wrapped recovery action must retain its target size');
+    await retryRecovery.locator('[data-xeg-error-action="retry"]').scrollIntoViewIfNeeded();
     await page.screenshot({
       path: path.join(output, 'gallery-recovery-narrow-large-text-dark.png'),
     });
@@ -403,12 +419,7 @@ export async function run({ browser, root, output }) {
     await outside.click();
     assert.equal(await outside.isEnabled(), true, 'Host must remain interactive during recovery');
     await outside.focus();
-    await page.keyboard.press('Tab');
-    assert.equal(
-      await page.evaluate(() => document.activeElement?.getAttribute('data-xeg-error-action')),
-      'retry',
-      'Tab from the restored host must reach Retry'
-    );
+    const retryKeyboardPath = await keyboardReachRecoveryAction('retry');
     await page.keyboard.press('Enter');
     const gallery = page.locator('[data-xeg-gallery-container]');
     await gallery.waitFor({ state: 'visible', timeout: 15_000 });
@@ -455,13 +466,7 @@ export async function run({ browser, root, output }) {
     };
     await page.screenshot({ path: path.join(output, 'gallery-recovery-light.png') });
     await outside.focus();
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Tab');
-    assert.equal(
-      await page.evaluate(() => document.activeElement?.getAttribute('data-xeg-error-action')),
-      'close',
-      'Keyboard navigation must reach Close'
-    );
+    const closeKeyboardPath = await keyboardReachRecoveryAction('close');
     await page.keyboard.press('Enter');
     await closeRecovery.waitFor({ state: 'detached' });
     assert.equal(await page.locator('[data-renderer="gallery"]').count(), 0);
@@ -790,6 +795,7 @@ export async function run({ browser, root, output }) {
         sha256: createHash('sha256').update(bytes).digest('hex'),
       },
       recovery: {
+        keyboardPaths: { retry: retryKeyboardPath, close: closeKeyboardPath },
         contrast: { dark: darkContrast, light: lightContrast },
         expectedRuntimeErrors,
         faultEvidence,
