@@ -45,6 +45,7 @@ const VIDEO_CONTROL_ARIA_TOKENS = [
 ] as const;
 
 const GALLERY_SELECTORS = CSS_CONST.INTERNAL_SELECTORS;
+const GALLERY_RECOVERY_SELECTOR = '[data-xeg-error-boundary]';
 const VIDEO_CONTROL_SELECTORS = ['.video-controls', '.video-progress button'] as const;
 
 /** Characters treated as word boundaries for token matching */
@@ -127,6 +128,13 @@ function matchesVideoControlSelectors(element: HTMLElement): boolean {
 // ============================================================================
 // Public API
 // ============================================================================
+
+/** Check whether the renderer-owned modeless recovery surface is mounted. */
+export function isGalleryRecoveryActive(): boolean {
+  return (
+    typeof document !== 'undefined' && document.querySelector(GALLERY_RECOVERY_SELECTOR) !== null
+  );
+}
 
 /**
  * Determine if element is a video control UI element.
