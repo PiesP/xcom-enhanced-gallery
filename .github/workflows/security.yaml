@@ -180,6 +180,8 @@ jobs:
           fi
           python3 "$RUNNER_TEMP/osv-results/scope-osv-exceptions.py" \
             --policy "$RUNNER_TEMP/osv-results/osv-scanner.toml" \
+            --cli-package "$GITHUB_WORKSPACE/scripts/security/codex-security/package.json" \
+            --cli-lock "$GITHUB_WORKSPACE/scripts/security/codex-security/package-lock.json" \
             --input "$RUNNER_TEMP/osv-results/old-results.raw.json" \
             --output "$RUNNER_TEMP/osv-results/old-results.json"
 
@@ -237,6 +239,8 @@ jobs:
           fi
           python3 "$RUNNER_TEMP/osv-results/scope-osv-exceptions.py" \
             --policy "$RUNNER_TEMP/osv-results/osv-scanner.toml" \
+            --cli-package "$GITHUB_WORKSPACE/scripts/security/codex-security/package.json" \
+            --cli-lock "$GITHUB_WORKSPACE/scripts/security/codex-security/package-lock.json" \
             --input "$RUNNER_TEMP/osv-results/new-results.raw.json" \
             --output "$RUNNER_TEMP/osv-results/new-results.json"
 
@@ -422,6 +426,8 @@ jobs:
           fi
           python3 "$RUNNER_TEMP/osv-results/scope-osv-exceptions.py" \
             --policy "$RUNNER_TEMP/osv-results/osv-scanner.toml" \
+            --cli-package "$GITHUB_WORKSPACE/scripts/security/codex-security/package.json" \
+            --cli-lock "$GITHUB_WORKSPACE/scripts/security/codex-security/package-lock.json" \
             --input "$RUNNER_TEMP/osv-results/osv-results.raw.json" \
             --output "$RUNNER_TEMP/osv-results/osv-results.json"
 

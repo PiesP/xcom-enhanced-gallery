@@ -1,5 +1,5 @@
 # Temporary exception for the integrity-locked security tooling only.
-# Revalidated against @openai/codex-security 0.1.28 on 2026-09-19.
+# Revalidated against @openai/codex-security 0.1.29 and its locked dependency closure on 2026-09-22.
 # scope-osv-exceptions.py applies this policy only to npm extract-zip 2.0.1
 # in /src/scripts/security/codex-security/package-lock.json; OSV scans all inputs.
 # The CLI rejects all symlink ZIP entries before extraction, preventing both
@@ -16,3 +16,10 @@ reason = "Tooling only: Codex Security rejects all symlink ZIP entries before ex
 id = "GHSA-7pqw-9j4j-h8q3"
 ignoreUntil = 2026-09-28
 reason = "Tooling only: rejecting the initial symlink before creation prevents same-name regular-file writes through it; no patched extract-zip release exists."
+
+[CodexSecurityReview]
+package = "@openai/codex-security"
+version = "0.1.29"
+integrity = "sha512-88bgIUd3v1wWUMexJNSYK1hRUJe3qwqhU+4dAw6V4O6A1Q9HzgB0xcIaMZSMiqOArH9l/i6QlKafaYTpYsV3Lg=="
+lockfileSha256 = "ce05664b8f59c58a13763cdab1724435084e73a202764baf6bf6bfdf14209b74"
+reviewedOn = 2026-09-22

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -6,9 +7,23 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 const root = resolve(import.meta.dirname, '../../..');
 const helper = resolve(root, 'scripts/security/scope-osv-exceptions.py');
+const cliPackagePath = resolve(root, 'scripts/security/codex-security/package.json');
+const cliLockPath = resolve(root, 'scripts/security/codex-security/package-lock.json');
 const targetLock = '/src/scripts/security/codex-security/package-lock.json';
 const ignoredIds = ['GHSA-jmr9-qjv8-65gv', 'GHSA-7pqw-9j4j-h8q3'] as const;
 const temporaryDirectories: string[] = [];
+const cliManifest = JSON.parse(readFileSync(cliPackagePath, 'utf8')) as {
+  dependencies?: Record<string, string>;
+};
+const cliLock = JSON.parse(readFileSync(cliLockPath, 'utf8')) as {
+  packages?: Record<string, { integrity?: string }>;
+};
+const cliVersion = cliManifest.dependencies?.['@openai/codex-security'];
+const cliIntegrity = cliLock.packages?.['node_modules/@openai/codex-security']?.integrity;
+if (!cliVersion || !cliIntegrity) throw new Error('Codex Security lock metadata is incomplete');
+const cliLockfileSha256 = createHash('sha256')
+  .update(readFileSync(cliLockPath))
+  .digest('hex');
 
 type RunResult = {
   output: unknown;
@@ -18,6 +33,7 @@ type RunResult = {
 };
 
 type RunOptions = {
+  cliLockContent?: string;
   inputIsOutput?: boolean;
   staleOutput?: boolean;
 };
@@ -28,8 +44,23 @@ function utcDateWithOffset(days: number): string {
   return value.toISOString().slice(0, 10);
 }
 
-function policyWithDates(firstDate: string, secondDate = firstDate): string {
+function reviewPolicy(version = cliVersion, lockfileSha256 = cliLockfileSha256): string {
   return `
+[CodexSecurityReview]
+package = "@openai/codex-security"
+version = "${version}"
+integrity = "${cliIntegrity}"
+lockfileSha256 = "${lockfileSha256}"
+reviewedOn = ${new Date().toISOString().slice(0, 10)}
+`;
+}
+
+function appendReview(policyBody: string, review = reviewPolicy()): string {
+  return `${policyBody.trim()}\n\n${review}`;
+}
+
+function policyWithDates(firstDate: string, secondDate = firstDate): string {
+  return appendReview(`
 [[IgnoredVulns]]
 id = "${ignoredIds[0]}"
 ignoreUntil = ${firstDate}
@@ -39,7 +70,7 @@ reason = "Scoped test exception"
 id = "${ignoredIds[1]}"
 ignoreUntil = ${secondDate}
 reason = "Scoped test exception"
-`;
+`);
 }
 
 function vulnerability(id: string): Record<string, unknown> {
@@ -84,10 +115,12 @@ function runHelper(input: unknown, policy: string, options: RunOptions = {}): Ru
   const directory = mkdtempSync(join(tmpdir(), 'xeg-osv-scope-'));
   temporaryDirectories.push(directory);
   const policyPath = join(directory, 'policy.toml');
+  const cliLockPathForRun = join(directory, 'cli-package-lock.json');
   const inputPath = join(directory, 'input.json');
   const outputPath = options.inputIsOutput ? inputPath : join(directory, 'output.json');
 
   writeFileSync(policyPath, policy);
+  writeFileSync(cliLockPathForRun, options.cliLockContent ?? readFileSync(cliLockPath, 'utf8'));
   writeFileSync(inputPath, typeof input === 'string' ? input : JSON.stringify(input));
   if (options.staleOutput) {
     writeFileSync(outputPath, JSON.stringify({ results: [], stale: true }));
@@ -95,7 +128,19 @@ function runHelper(input: unknown, policy: string, options: RunOptions = {}): Ru
 
   const process = spawnSync(
     'python3',
-    [helper, '--policy', policyPath, '--input', inputPath, '--output', outputPath],
+    [
+      helper,
+      '--policy',
+      policyPath,
+      '--cli-package',
+      cliPackagePath,
+      '--cli-lock',
+      cliLockPathForRun,
+      '--input',
+      inputPath,
+      '--output',
+      outputPath,
+    ],
     { encoding: 'utf8' }
   );
   const outputExists = existsSync(outputPath);
@@ -274,6 +319,44 @@ describe('scoped OSV exceptions', () => {
     );
   });
 
+  it('accepts zero or one supported exception without broadening the scope', () => {
+    const noExceptions = runHelper(report([]), appendReview('IgnoredVulns = []'));
+    expect(noExceptions.status, noExceptions.stderr).toBe(0);
+    expect(noExceptions.output).toEqual(report([]));
+
+    const oneException = runHelper(
+      report([]),
+      appendReview(`
+[[IgnoredVulns]]
+id = "${ignoredIds[0]}"
+ignoreUntil = ${utcDateWithOffset(30)}
+reason = "Scoped test exception"
+`)
+    );
+    expect(oneException.status, oneException.stderr).toBe(0);
+    expect(oneException.output).toEqual(report([]));
+  });
+
+  it('requires a reviewed CLI version and exact lockfile bytes before filtering', () => {
+    const alternateVersion = cliVersion === '0.1.29' ? '0.1.28' : '0.1.29';
+    const versionMismatch = runHelper(
+      report([]),
+      appendReview('IgnoredVulns = []', reviewPolicy(alternateVersion))
+    );
+    expect(versionMismatch.status).not.toBe(0);
+    expect(versionMismatch.stderr).toContain('SECURITY_REVIEW_REQUIRED');
+
+    const changedLock = readFileSync(cliLockPath, 'utf8').replace(
+      '"lockfileVersion": 3',
+      '"lockfileVersion": 3 '
+    );
+    const lockMismatch = runHelper(report([]), appendReview('IgnoredVulns = []'), {
+      cliLockContent: changedLock,
+    });
+    expect(lockMismatch.status).not.toBe(0);
+    expect(lockMismatch.stderr).toContain('SECURITY_REVIEW_REQUIRED');
+  });
+
   it.each([
     ['malformed JSON', '{'],
     ['invalid OSV result schema', { results: {} }],
@@ -303,7 +386,7 @@ describe('scoped OSV exceptions', () => {
     ['empty policy', ''],
     [
       'missing expiry',
-      `
+      appendReview(`
 [[IgnoredVulns]]
 id = "${ignoredIds[0]}"
 reason = "No expiry"
@@ -311,19 +394,19 @@ reason = "No expiry"
 [[IgnoredVulns]]
 id = "${ignoredIds[1]}"
 ignoreUntil = ${utcDateWithOffset(30)}
-`,
+      `),
     ],
     [
       'unsupported wildcard',
-      `
+      appendReview(`
 [[IgnoredVulns]]
 id = "*"
 ignoreUntil = ${utcDateWithOffset(30)}
-`,
+      `),
     ],
     [
       'unsupported permanent exception',
-      `
+      appendReview(`
 [[IgnoredVulns]]
 id = "${ignoredIds[0]}"
 ignoreUntil = ${utcDateWithOffset(30)}
@@ -332,7 +415,7 @@ ignore = true
 [[IgnoredVulns]]
 id = "${ignoredIds[1]}"
 ignoreUntil = ${utcDateWithOffset(30)}
-`,
+      `),
     ],
   ])('fails closed for %s', (_label, invalidPolicy) => {
     const execution = runHelper(report([]), invalidPolicy);
