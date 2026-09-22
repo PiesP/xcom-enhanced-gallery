@@ -227,39 +227,28 @@ async function createServiceWorkerObserver(browserCdp, pageCdp) {
             runningStatus === 'stopped'
         );
         const observedCreatedTargetIds = createdTargetIds(extensionId);
-        assert.deepEqual(
-          observedCreatedTargetIds,
-          stopCreatedTargetIds,
-          'Extension service worker target was created while stopping the old worker'
-        );
-        if (targets.length !== 0 || oldTargetPresent || !stoppedEvent) {
-          return undefined;
-        }
+        if (!stoppedEvent) return undefined;
         return {
           createdEventCount: stopCreatedTargetIds.length,
           createdTargetIds: stopCreatedTargetIds,
+          currentTargets: structuredClone(targets),
           extensionTargetCount: targets.length,
           lifecycle: structuredClone(stoppedEvent),
           oldTargetPresent,
+          observedCreatedTargetIds,
           runningStatus: stoppedEvent.runningStatus,
           status: stoppedEvent.status,
+          targetAbsentAtConfirmation: targets.length === 0,
           targetEventOffset: targetEvents.length,
           targetEventOffsetBeforeStop,
-          targetDisappeared: true,
           versionEventOffset: versionEvents.length,
           versionEventOffsetBeforeStop,
         };
-      }, 'old extension service worker to stop and disappear');
+      }, 'old extension service worker to report stopped');
     },
-    async assertNoTargets(extensionId, stop) {
+    async capturePreCancelBoundary(extensionId, stop) {
       const targets = await currentTargets(extensionId);
-      assert.deepEqual(targets, [], 'Extension service worker restarted before cancellation');
       const observedCreatedTargetIds = createdTargetIds(extensionId);
-      assert.deepEqual(
-        observedCreatedTargetIds,
-        stop.createdTargetIds,
-        'Extension service worker target was created before cancellation'
-      );
       const prematureLifecycleEvents = matchingVersionEvents(extensionId).filter(
         ({ runningStatus, sequence }) =>
           sequence > stop.lifecycle.sequence &&
@@ -273,6 +262,7 @@ async function createServiceWorkerObserver(browserCdp, pageCdp) {
       return {
         createdEventCount: observedCreatedTargetIds.length,
         createdTargetIds: observedCreatedTargetIds,
+        currentTargets: structuredClone(targets),
         extensionTargetCount: targets.length,
         lifecycleBoundarySequence: versionEvents.length,
         lifecycleEventsAfterStop: structuredClone(
@@ -692,7 +682,7 @@ async function verifyMv3RestartCancellation({
       downloadState: afterStop.download.state,
       storageRecord: afterStop.record,
     };
-    evidence.preCancel = await workerObserver.assertNoTargets(
+    evidence.preCancel = await workerObserver.capturePreCancelBoundary(
       extensionId,
       evidence.stop
     );
