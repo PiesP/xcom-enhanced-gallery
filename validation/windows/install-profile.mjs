@@ -94,28 +94,37 @@ async function createServiceWorkerObserver(browserCdp, pageCdp) {
   // ServiceWorker domain through a render-frame agent host.
   const serviceWorkerTargetIds = new Set();
   const targetEvents = [];
+  const versionEvents = [];
   const versions = new Map();
   const onTargetCreated = ({ targetInfo }) => {
     if (targetInfo.type === 'service_worker') {
       serviceWorkerTargetIds.add(targetInfo.targetId);
-      targetEvents.push({ event: 'created', targetId: targetInfo.targetId, url: targetInfo.url });
+      targetEvents.push({
+        event: 'created',
+        sequence: targetEvents.length + 1,
+        targetId: targetInfo.targetId,
+        targetInfo: structuredClone(targetInfo),
+        url: targetInfo.url,
+      });
     }
   };
   const onTargetDestroyed = ({ targetId }) => {
     if (serviceWorkerTargetIds.has(targetId)) {
-      targetEvents.push({ event: 'destroyed', targetId });
+      targetEvents.push({
+        event: 'destroyed',
+        sequence: targetEvents.length + 1,
+        targetId,
+      });
     }
   };
   const onWorkerVersionUpdated = ({ versions: updatedVersions }) => {
     for (const version of updatedVersions) {
-      versions.set(version.versionId, {
-        registrationId: version.registrationId,
-        runningStatus: version.runningStatus,
-        scriptURL: version.scriptURL,
-        status: version.status,
-        targetId: version.targetId,
-        versionId: version.versionId,
-      });
+      const snapshot = {
+        ...structuredClone(version),
+        sequence: versionEvents.length + 1,
+      };
+      versionEvents.push(snapshot);
+      versions.set(version.versionId, snapshot);
     }
   };
   const removeListeners = () => {
@@ -161,80 +170,154 @@ async function createServiceWorkerObserver(browserCdp, pageCdp) {
         ({ event, url }) => event === 'created' && url === workerScriptUrl(extensionId)
       )
       .map(({ targetId }) => targetId);
+  const matchingTargetEvents = (extensionId) => {
+    const matchingTargetIds = new Set(
+      targetEvents
+        .filter(({ url }) => url === workerScriptUrl(extensionId))
+        .map(({ targetId }) => targetId)
+    );
+    return targetEvents.filter(({ targetId }) => matchingTargetIds.has(targetId));
+  };
+  const matchingVersionEvents = (extensionId) =>
+    versionEvents.filter(({ scriptURL }) => scriptURL === workerScriptUrl(extensionId));
+  const snapshot = async (extensionId) => ({
+    currentTargets: structuredClone(await currentTargets(extensionId)),
+    targetEvents: structuredClone(matchingTargetEvents(extensionId)),
+    versionEvents: structuredClone(matchingVersionEvents(extensionId)),
+    versionStates: structuredClone(
+      [...versions.values()].filter(
+        ({ scriptURL }) => scriptURL === workerScriptUrl(extensionId)
+      )
+    ),
+  });
 
   return {
     targetEvents,
-    async waitForRunning(extensionId, excludedTargetId) {
+    async waitForRunning(extensionId) {
       return waitForValue(async () => {
         const targets = await currentTargets(extensionId);
-        const target = targets.find(({ targetId }) => targetId !== excludedTargetId);
-        if (!target) return undefined;
-        const version = [...versions.values()].find(
+        const version = matchingVersionEvents(extensionId).findLast(
           (candidate) =>
-            candidate.scriptURL === workerScriptUrl(extensionId) &&
-            candidate.targetId === target.targetId &&
             candidate.runningStatus === 'running'
         );
+        const target = targets.find(({ targetId }) => targetId === version?.targetId);
         if (!version) return undefined;
-        return { targetId: target.targetId, versionId: version.versionId };
+        if (versions.get(version.versionId)?.sequence !== version.sequence) return undefined;
+        if (!target) return undefined;
+        return {
+          lifecycle: structuredClone(version),
+          target: structuredClone(target),
+          targetId: target.targetId,
+          versionId: version.versionId,
+        };
       }, 'running extension service worker');
     },
     async stopAndWait(extensionId, worker) {
       const stopCreatedTargetIds = createdTargetIds(extensionId);
       const targetEventOffsetBeforeStop = targetEvents.length;
+      const versionEventOffsetBeforeStop = versionEvents.length;
       await pageCdp.send('ServiceWorker.stopWorker', { versionId: worker.versionId });
       return waitForValue(async () => {
         const targets = await currentTargets(extensionId);
         const oldTargetPresent = targets.some(({ targetId }) => targetId === worker.targetId);
-        const version = versions.get(worker.versionId);
+        const stoppedEvent = versionEvents.find(
+          ({ runningStatus, sequence, versionId }) =>
+            versionId === worker.versionId &&
+            sequence > versionEventOffsetBeforeStop &&
+            runningStatus === 'stopped'
+        );
         const observedCreatedTargetIds = createdTargetIds(extensionId);
         assert.deepEqual(
           observedCreatedTargetIds,
           stopCreatedTargetIds,
           'Extension service worker target was created while stopping the old worker'
         );
-        if (targets.length !== 0 || oldTargetPresent || version?.runningStatus !== 'stopped') {
+        if (targets.length !== 0 || oldTargetPresent || !stoppedEvent) {
           return undefined;
         }
         return {
           createdEventCount: stopCreatedTargetIds.length,
           createdTargetIds: stopCreatedTargetIds,
           extensionTargetCount: targets.length,
+          lifecycle: structuredClone(stoppedEvent),
           oldTargetPresent,
-          runningStatus: version.runningStatus,
-          status: version.status,
+          runningStatus: stoppedEvent.runningStatus,
+          status: stoppedEvent.status,
           targetEventOffset: targetEvents.length,
           targetEventOffsetBeforeStop,
           targetDisappeared: true,
+          versionEventOffset: versionEvents.length,
+          versionEventOffsetBeforeStop,
         };
       }, 'old extension service worker to stop and disappear');
     },
-    async assertNoTargets(extensionId, expectedCreatedTargetIds) {
+    async assertNoTargets(extensionId, stop) {
       const targets = await currentTargets(extensionId);
       assert.deepEqual(targets, [], 'Extension service worker restarted before cancellation');
       const observedCreatedTargetIds = createdTargetIds(extensionId);
       assert.deepEqual(
         observedCreatedTargetIds,
-        expectedCreatedTargetIds,
+        stop.createdTargetIds,
         'Extension service worker target was created before cancellation'
+      );
+      const prematureLifecycleEvents = matchingVersionEvents(extensionId).filter(
+        ({ runningStatus, sequence }) =>
+          sequence > stop.lifecycle.sequence &&
+          (runningStatus === 'starting' || runningStatus === 'running')
+      );
+      assert.deepEqual(
+        prematureLifecycleEvents,
+        [],
+        'Extension service worker lifecycle restarted before cancellation'
       );
       return {
         createdEventCount: observedCreatedTargetIds.length,
         createdTargetIds: observedCreatedTargetIds,
         extensionTargetCount: targets.length,
+        lifecycleBoundarySequence: versionEvents.length,
+        lifecycleEventsAfterStop: structuredClone(
+          matchingVersionEvents(extensionId).filter(
+            ({ sequence }) => sequence > stop.lifecycle.sequence
+          )
+        ),
         targetEventOffset: targetEvents.length,
       };
     },
-    snapshotEvents(extensionId) {
-      const matchingTargetIds = new Set(
-        targetEvents
-          .filter(({ url }) => url === workerScriptUrl(extensionId))
-          .map(({ targetId }) => targetId)
-      );
-      return targetEvents
-        .filter(({ targetId }) => matchingTargetIds.has(targetId))
-        .map((event) => ({ ...event }));
+    async waitForRunningAfter(extensionId, worker, lifecycleBoundarySequence) {
+      return waitForValue(async () => {
+        const targets = await currentTargets(extensionId);
+        const runningEvent = matchingVersionEvents(extensionId).findLast(
+          ({ runningStatus, sequence, versionId }) =>
+            versionId === worker.versionId &&
+            sequence > lifecycleBoundarySequence &&
+            runningStatus === 'running'
+        );
+        const target = targets.find(({ targetId }) => targetId === runningEvent?.targetId);
+        if (!runningEvent || !target) return undefined;
+        if (versions.get(runningEvent.versionId)?.sequence !== runningEvent.sequence) {
+          return undefined;
+        }
+        const lifecycleEvents = matchingVersionEvents(extensionId).filter(
+          ({ sequence, versionId }) =>
+            versionId === worker.versionId && sequence > lifecycleBoundarySequence
+        );
+        return {
+          lifecycle: structuredClone(runningEvent),
+          lifecycleEvents: structuredClone(lifecycleEvents),
+          startingObserved: lifecycleEvents.some(
+            ({ runningStatus }) => runningStatus === 'starting'
+          ),
+          target: structuredClone(target),
+          targetId: target.targetId,
+          targetIdReused: target.targetId === worker.targetId,
+          versionId: runningEvent.versionId,
+        };
+      }, 'post-cancellation running extension service worker');
     },
+    snapshotEvents(extensionId) {
+      return structuredClone(matchingTargetEvents(extensionId));
+    },
+    snapshot,
     async dispose() {
       removeListeners();
       const cleanup = await Promise.allSettled([
@@ -451,6 +534,7 @@ async function verifyMv3RestartCancellation({
   let downloadId;
   let objectUrl;
   let pauseListenerInstalled = false;
+  let cancellationObservation = { status: 'not-sent' };
   let primaryError;
   let primarySeen = false;
   const cleanupErrors = [];
@@ -578,6 +662,7 @@ async function verifyMv3RestartCancellation({
     assert.equal(beforeStop.download.totalBytes, MV3_RESTART_BLOB_BYTES);
     assert.equal(basename(beforeStop.download.filename), filename);
     const oldWorker = await workerObserver.waitForRunning(extensionId);
+    const initialWorkerObservation = await workerObserver.snapshot(extensionId);
     evidence.beforeStop = {
       download: {
         bytesReceived: beforeStop.download.bytesReceived,
@@ -590,6 +675,7 @@ async function verifyMv3RestartCancellation({
       pauseControl,
       storageRecord: beforeStop.record,
       worker: oldWorker,
+      workerObservation: initialWorkerObservation,
     };
 
     evidence.stop = await workerObserver.stopAndWait(extensionId, oldWorker);
@@ -608,7 +694,7 @@ async function verifyMv3RestartCancellation({
     };
     evidence.preCancel = await workerObserver.assertNoTargets(
       extensionId,
-      evidence.stop.createdTargetIds
+      evidence.stop
     );
 
     const cancellationResponsePromise = extensionPage.evaluate((message) =>
@@ -616,14 +702,39 @@ async function verifyMv3RestartCancellation({
       type: 'DOWNLOAD_CANCEL_REQUEST',
       payload: { requestId },
     });
-    const newWorkerPromise = workerObserver.waitForRunning(extensionId, oldWorker.targetId);
-    const [cancellationResponse, newWorker] = await Promise.all([
+    const newWorkerPromise = workerObserver.waitForRunningAfter(
+      extensionId,
+      oldWorker,
+      evidence.preCancel.lifecycleBoundarySequence
+    );
+    const [cancellationResult, workerResult] = await Promise.allSettled([
       cancellationResponsePromise,
       newWorkerPromise,
     ]);
+    cancellationObservation = cancellationResult.status === 'fulfilled'
+      ? { response: cancellationResult.value, status: 'fulfilled' }
+      : { error: safeError(cancellationResult.reason), status: 'rejected' };
+    evidence.cancellation = {
+      response: cancellationObservation,
+      workerRestart: workerResult.status === 'fulfilled'
+        ? { status: 'fulfilled', worker: workerResult.value }
+        : { error: safeError(workerResult.reason), status: 'rejected' },
+    };
+    const cancellationFailures = [cancellationResult, workerResult]
+      .filter((result) => result.status === 'rejected')
+      .map((result) => result.reason);
+    if (cancellationFailures.length > 1) {
+      throw new AggregateError(
+        cancellationFailures,
+        'Cancellation response and service worker restart observation failed'
+      );
+    }
+    if (cancellationFailures.length === 1) throw cancellationFailures[0];
+    const cancellationResponse = cancellationResult.value;
+    const newWorker = workerResult.value;
     assert.deepEqual(cancellationResponse, { success: true });
-    assert.notEqual(newWorker.targetId, oldWorker.targetId);
-    assert.equal(evidence.stop.createdTargetIds.includes(newWorker.targetId), false);
+    assert.equal(newWorker.versionId, oldWorker.versionId);
+    assert(newWorker.lifecycle.sequence > evidence.preCancel.lifecycleBoundarySequence);
 
     const afterCancel = await waitForValue(async () => {
       const state = await readMv3LifecycleState(extensionPage, requestId, downloadId);
@@ -666,6 +777,7 @@ async function verifyMv3RestartCancellation({
       worker: newWorker,
     };
     evidence.workerTargetEvents = workerObserver.snapshotEvents(extensionId);
+    evidence.workerObservation = await workerObserver.snapshot(extensionId);
     evidence.status = 'passed';
   } catch (error) {
     primarySeen = true;
@@ -687,10 +799,12 @@ async function verifyMv3RestartCancellation({
       readMv3LifecycleState(extensionPage, requestId, downloadId),
       readdir(downloads),
       readPauseControlState(extensionPage),
+      workerObserver.snapshot(extensionId),
     ]);
     const lifecycleState = failureReads[0];
     const files = failureReads[1];
     const pauseControl = failureReads[2];
+    const workerObservation = failureReads[3];
     evidence.failureSnapshot = {
       ...(lifecycleState.status === 'fulfilled'
         ? {
@@ -720,6 +834,10 @@ async function verifyMv3RestartCancellation({
       ...(pauseControl.status === 'fulfilled'
         ? { pauseControl: pauseControl.value }
         : { pauseControlReadError: safeError(pauseControl.reason) }),
+      cancellation: cancellationObservation,
+      ...(workerObservation.status === 'fulfilled'
+        ? { workerObservation: workerObservation.value }
+        : { workerObservationReadError: safeError(workerObservation.reason) }),
       workerTargetEvents: workerObserver.snapshotEvents(extensionId),
     };
     evidence.status = 'failed';

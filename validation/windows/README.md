@@ -59,12 +59,17 @@ Browser-level CDP tracks targets, while an extension utility-page CDP session
 owns the ServiceWorker domain. The profile's protocol code does not explicitly
 attach to or evaluate the Worker target and does not substitute
 `Target.closeTarget`; Playwright can still maintain its standard automation
-sessions. The old Worker target must stop and disappear while the real download
-remains paused. A production `DOWNLOAD_CANCEL_REQUEST` must then create a
-different Worker target, restore the request-to-download relationship, leave the
-browser download `interrupted` with `USER_CANCELED`, and remove the tracking
-record. The task download directory must contain neither a completed payload nor
-a `.crdownload` residue.
+sessions. The old Worker must report `stopped` and disappear from
+`Target.getTargets` while the real download remains paused. The profile retains
+the ordered, complete ServiceWorker version updates and rejects any newer
+`starting` or `running` update before cancellation. A production
+`DOWNLOAD_CANCEL_REQUEST` must then produce a strictly later `running` update
+for the same script and version that matches the current Worker target, restore
+the request-to-download relationship, leave the browser download `interrupted`
+with `USER_CANCELED`, and remove the tracking record. Chromium keeps the
+ServiceWorker DevTools agent host across Worker stop/start, so reuse of the
+target ID is recorded evidence rather than a failure. The task download
+directory must contain neither a completed payload nor a `.crdownload` residue.
 
 The profile identifies the browser item independently by its unique Blob URL and
 later requires the exact filename before requiring the matching storage binding,
