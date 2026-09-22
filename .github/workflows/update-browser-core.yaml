@@ -9,7 +9,7 @@ on:
   repository_dispatch:
     types: [browser-core-updated]
   schedule:
-    - cron: "17 2 * * *"
+    - cron: "17 2 * * 0" # Weekly reconciliation; repository_dispatch remains immediate.
   workflow_dispatch:
     inputs:
       core_sha:
@@ -44,10 +44,9 @@ jobs:
           # be able to repair the consumer repository.
           submodules: false
 
-      - name: Update submodule, create PR, and queue auto-merge
+      - name: Update submodule and create PR
         env:
           GH_TOKEN: ${{ github.token }}
-          AUTO_MERGE_TOKEN: ${{ secrets.AUTO_MERGE_TOKEN }}
           EVENT_CORE_REPOSITORY: ${{ github.event.client_payload.core_repository }}
           EVENT_CORE_SHA: ${{ github.event.client_payload.core_sha }}
           INPUT_CORE_SHA: ${{ inputs.core_sha }}
@@ -131,11 +130,6 @@ jobs:
             exit 0
           fi
 
-          if [[ -z "${AUTO_MERGE_TOKEN:-}" ]]; then
-            echo "::error::AUTO_MERGE_TOKEN is required to approve automated PRs."
-            exit 1
-          fi
-
           git add packages/core
           git commit -m "chore(deps): update browser-core to $SHORT_SHA"
           EXPECTED_HEAD_SHA="$(git rev-parse HEAD)"
@@ -183,19 +177,12 @@ jobs:
             echo "Created browser-core update PR #$PR_NUMBER."
           fi
 
-          # Bind approval and auto-merge to the exact commit generated above.
-          # A later branch write must fail closed and wait for reconciliation.
+          # Bind the open PR to the exact commit generated above. A later
+          # branch write must fail closed and wait for reconciliation; review
+          # and merge remain governed by repository policy and humans.
           PR_HEAD_SHA="$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json headRefOid --jq .headRefOid)"
           if [[ "$PR_HEAD_SHA" != "$EXPECTED_HEAD_SHA" ]]; then
-            echo "::error::PR head changed before approval: expected $EXPECTED_HEAD_SHA, found $PR_HEAD_SHA"
+            echo "::error::PR head changed before handoff: expected $EXPECTED_HEAD_SHA, found $PR_HEAD_SHA"
             exit 1
           fi
-          GH_TOKEN="$AUTO_MERGE_TOKEN" gh api --method POST \
-            "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/reviews" \
-            -f event=APPROVE \
-            -f commit_id="$EXPECTED_HEAD_SHA" >/dev/null
-          echo "✅ PR #$PR_NUMBER approved."
-
-          GH_TOKEN="$AUTO_MERGE_TOKEN" gh pr merge --auto --squash \
-            --match-head-commit "$EXPECTED_HEAD_SHA" "$PR_NUMBER"
-          echo "✅ Auto-merge queued for PR #$PR_NUMBER."
+          echo "✅ PR #$PR_NUMBER is ready for required checks and manual review at $EXPECTED_HEAD_SHA."

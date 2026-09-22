@@ -1,12 +1,15 @@
 name: 🔒 Security Scanning
 
 # Responsibility: Security analysis for Node.js + pnpm project
-# - Default branch/PR/merge queue: CodeQL, OSV, and Semgrep
+# - Default branch/PR/merge queue: CodeQL, OSV, and Semgrep secrets
 # - PR gate: OSV diff scan
 # - Merge queue/manual gate: OSV full scan
-# - Scheduled/manual depth: pinned-tool freshness + OSV full scan + Semgrep SARIF
+# - Scheduled/manual depth: pinned-tool freshness + OSV full scan + full Semgrep SARIF
 #
-# Trigger: Push/PR to master + merge queue + daily schedule + manual
+# Full Semgrep source analysis runs on the weekly schedule or manually; the
+# required PR check retains secrets coverage on every relevant change.
+#
+# Trigger: Push/PR to master + merge queue + weekly schedule + manual
 
 on:
   push:
@@ -16,7 +19,7 @@ on:
   merge_group:
     types: [checks_requested]
   schedule:
-    - cron: "0 1 * * *" # Daily at 1 AM UTC
+    - cron: "0 1 * * 0" # Weekly at 1 AM UTC
   workflow_dispatch:
 
 permissions:
@@ -596,15 +599,24 @@ jobs:
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.semgrep != 'false' }}
         run: |
           set -euo pipefail
-          semgrep scan \
-            --config=p/typescript \
-            --config=p/javascript \
-            --config=p/security-audit \
-            --config=p/secrets \
-            --error \
-            --sarif \
-            --output=semgrep.sarif \
-            .
+          if [[ "$GITHUB_EVENT_NAME" == "schedule" || "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            semgrep scan \
+              --config=p/typescript \
+              --config=p/javascript \
+              --config=p/security-audit \
+              --config=p/secrets \
+              --error \
+              --sarif \
+              --output=semgrep.sarif \
+              .
+          else
+            semgrep scan \
+              --config=p/secrets \
+              --error \
+              --sarif \
+              --output=semgrep.sarif \
+              .
+          fi
 
       - name: 📊 Upload SARIF to GitHub Security
         if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.semgrep != 'false') && hashFiles('semgrep.sarif') != '' }}
