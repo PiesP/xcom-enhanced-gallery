@@ -20,6 +20,7 @@ const state = vi.hoisted(() => ({
   downloadChangedListener: null as DownloadChangedListener | null,
   listener: null as MessageListener | null,
   messages: [] as unknown[],
+  storageValues: {} as Record<string, unknown>,
 }));
 
 vi.mock('@platform/chrome-runtime', () => ({
@@ -43,6 +44,26 @@ vi.mock('@platform/chrome-runtime', () => ({
       onStartup: { addListener: vi.fn(), removeListener: vi.fn() },
       onSuspend: { addListener: vi.fn(), removeListener: vi.fn() },
     },
+    storage: {
+      local: {
+        get: vi.fn(async (keys: string | string[] | null) => {
+          if (keys === null) return { ...state.storageValues };
+          const requested = Array.isArray(keys) ? keys : [keys];
+          return Object.fromEntries(
+            requested
+              .filter((key) => Object.hasOwn(state.storageValues, key))
+              .map((key) => [key, state.storageValues[key]])
+          );
+        }),
+        set: vi.fn(async (items: Record<string, unknown>) => {
+          Object.assign(state.storageValues, items);
+        }),
+        remove: vi.fn(async (keys: string | string[]) => {
+          for (const key of Array.isArray(keys) ? keys : [keys]) delete state.storageValues[key];
+        }),
+        getKeys: vi.fn(async () => Object.keys(state.storageValues)),
+      },
+    },
     downloads: {
       download: state.download,
       cancel: state.cancelDownload,
@@ -61,7 +82,7 @@ vi.mock('@platform/chrome-runtime', () => ({
 import '@extension/background';
 
 async function flushPromises(): Promise<void> {
-  for (let index = 0; index < 6; index += 1) await Promise.resolve();
+  for (let index = 0; index < 20; index += 1) await Promise.resolve();
 }
 
 describe('MV3 download lifecycle integration', () => {

@@ -6,6 +6,8 @@ type MessageListener = (
   sendResponse: (response?: unknown) => void
 ) => boolean | undefined;
 
+type StartupListener = () => void | Promise<void>;
+
 type DownloadChangedListener = (delta: {
   id: number;
   state?: string | { current: string };
@@ -19,6 +21,8 @@ const state = vi.hoisted(() => ({
   searchDownload: vi.fn(),
   waitForDownloadComplete: vi.fn(),
   downloadChangedListener: null as DownloadChangedListener | null,
+  startupListener: null as StartupListener | null,
+  storageValues: {} as Record<string, unknown>,
 }));
 
 vi.mock('@platform/chrome-runtime', () => ({
@@ -32,8 +36,33 @@ vi.mock('@platform/chrome-runtime', () => ({
         removeListener: vi.fn(),
       },
       onInstalled: { addListener: vi.fn(), removeListener: vi.fn() },
-      onStartup: { addListener: vi.fn(), removeListener: vi.fn() },
+      onStartup: {
+        addListener: vi.fn((listener: StartupListener) => {
+          state.startupListener = listener;
+        }),
+        removeListener: vi.fn(),
+      },
       onSuspend: { addListener: vi.fn(), removeListener: vi.fn() },
+    },
+    storage: {
+      local: {
+        get: vi.fn(async (keys: string | string[] | null) => {
+          if (keys === null) return { ...state.storageValues };
+          const requested = Array.isArray(keys) ? keys : [keys];
+          return Object.fromEntries(
+            requested
+              .filter((key) => Object.hasOwn(state.storageValues, key))
+              .map((key) => [key, state.storageValues[key]])
+          );
+        }),
+        set: vi.fn(async (items: Record<string, unknown>) => {
+          Object.assign(state.storageValues, items);
+        }),
+        remove: vi.fn(async (keys: string | string[]) => {
+          for (const key of Array.isArray(keys) ? keys : [keys]) delete state.storageValues[key];
+        }),
+        getKeys: vi.fn(async () => Object.keys(state.storageValues)),
+      },
     },
     downloads: {
       download: state.download,
@@ -225,7 +254,8 @@ describe.each([
     state.cancelDownload.mockRejectedValueOnce(new Error('download is still active'));
     state.searchDownload
       .mockResolvedValueOnce([{ id: 212, state: 'in_progress' }])
-      .mockResolvedValueOnce([{ id: 212, state: 'in_progress' }]);
+      .mockResolvedValueOnce([{ id: 212, state: 'in_progress' }])
+      .mockResolvedValueOnce([{ id: 212, state: 'interrupted' }]);
 
     await expect(
       sendMessage({
@@ -244,6 +274,11 @@ describe.each([
 
     expect(state.cancelDownload).toHaveBeenCalledTimes(2);
     expect(state.searchDownload).toHaveBeenCalledTimes(2);
+
+    await expect(
+      sendMessage({ type: 'DOWNLOAD_CANCEL_REQUEST', payload: { requestId } })
+    ).resolves.toEqual({ success: true });
+    expect(state.cancelDownload).toHaveBeenCalledTimes(3);
   });
 
   it('keeps an unconfirmed timeout addressable for a later cancellation retry', async () => {
@@ -312,5 +347,34 @@ describe.each([
       sendMessage({ type: 'DOWNLOAD_CANCEL_REQUEST', payload: { requestId } })
     ).resolves.toEqual({ success: true });
     expect(state.cancelDownload).toHaveBeenCalledTimes(2);
+  });
+
+  it('restores a persisted download relationship before handling a late cancellation', async () => {
+    const requestId = `cancel-after-restart-${crypto.randomUUID()}`;
+    state.download.mockResolvedValueOnce(505);
+    state.waitForDownloadComplete.mockRejectedValueOnce(
+      Object.assign(new Error('Download timed out after 5 minutes (id: 505)'), {
+        name: 'DownloadTimeoutError',
+      })
+    );
+    state.searchDownload
+      .mockResolvedValueOnce([{ id: 505, state: 'in_progress' }])
+      .mockResolvedValueOnce([{ id: 505, state: 'in_progress' }])
+      .mockResolvedValueOnce([{ id: 505, state: 'in_progress' }])
+      .mockResolvedValueOnce([{ id: 505, state: 'interrupted' }]);
+
+    await expect(sendMessage(request(requestId))).resolves.toEqual({
+      success: false,
+      error: 'Download timed out after 5 minutes (id: 505)',
+      data: { requestId, terminal: false },
+    });
+
+    await state.startupListener?.();
+    await expect(
+      sendMessage({ type: 'DOWNLOAD_CANCEL_REQUEST', payload: { requestId } })
+    ).resolves.toEqual({ success: true });
+
+    expect(state.cancelDownload).toHaveBeenCalledTimes(3);
+    expect(state.cancelDownload).toHaveBeenLastCalledWith(505);
   });
 });
