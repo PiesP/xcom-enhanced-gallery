@@ -216,6 +216,36 @@ describe.each([
     expect(state.searchDownload).toHaveBeenCalledWith({ id: 202 });
   });
 
+  it('cancels and retains ownership when completion inspection fails after receiving an ID', async () => {
+    const requestId = `cancel-on-inspection-failure-${crypto.randomUUID()}`;
+    state.download.mockResolvedValueOnce(212);
+    state.waitForDownloadComplete.mockRejectedValueOnce(
+      new Error('Failed to inspect download 212: downloads unavailable')
+    );
+    state.cancelDownload.mockRejectedValueOnce(new Error('download is still active'));
+    state.searchDownload
+      .mockResolvedValueOnce([{ id: 212, state: 'in_progress' }])
+      .mockResolvedValueOnce([{ id: 212, state: 'in_progress' }]);
+
+    await expect(
+      sendMessage({
+        type: 'DOWNLOAD_REQUEST',
+        payload: {
+          url: 'https://pbs.twimg.com/media/test.jpg',
+          filename: 'test.jpg',
+          requestId,
+        },
+      })
+    ).resolves.toEqual({
+      success: false,
+      error: 'Failed to inspect download 212: downloads unavailable',
+      data: { requestId, terminal: false },
+    });
+
+    expect(state.cancelDownload).toHaveBeenCalledTimes(2);
+    expect(state.searchDownload).toHaveBeenCalledTimes(2);
+  });
+
   it('keeps an unconfirmed timeout addressable for a later cancellation retry', async () => {
     const requestId = `cancel-retry-${crypto.randomUUID()}`;
     state.download.mockResolvedValueOnce(303);
@@ -225,21 +255,62 @@ describe.each([
       })
     );
     state.cancelDownload.mockRejectedValueOnce(new Error('download is still active'));
-    state.searchDownload.mockResolvedValueOnce([{ id: 303, state: 'in_progress' }]);
+    state.searchDownload
+      .mockResolvedValueOnce([{ id: 303, state: 'in_progress' }])
+      .mockResolvedValueOnce([{ id: 303, state: 'in_progress' }])
+      .mockResolvedValueOnce([{ id: 303, state: 'interrupted' }]);
 
     await expect(sendMessage(request(requestId))).resolves.toEqual({
       success: false,
       error: 'Download timed out after 5 minutes (id: 303)',
+      data: { requestId, terminal: false },
     });
 
-    state.searchDownload.mockResolvedValueOnce([{ id: 303, state: 'interrupted' }]);
     await expect(
       sendMessage({ type: 'DOWNLOAD_CANCEL_REQUEST', payload: { requestId } })
     ).resolves.toEqual({ success: true });
 
-    expect(state.cancelDownload).toHaveBeenCalledTimes(2);
+    expect(state.cancelDownload).toHaveBeenCalledTimes(3);
     expect(state.cancelDownload).toHaveBeenNthCalledWith(1, 303);
     expect(state.cancelDownload).toHaveBeenNthCalledWith(2, 303);
-    expect(state.searchDownload).toHaveBeenCalledTimes(2);
+    expect(state.cancelDownload).toHaveBeenNthCalledWith(3, 303);
+    expect(state.searchDownload).toHaveBeenCalledTimes(3);
+  });
+
+  it('removes a retained download when its terminal event precedes owner settlement', async () => {
+    const requestId = `terminal-before-owner-${crypto.randomUUID()}`;
+    state.download.mockResolvedValueOnce(404);
+    state.waitForDownloadComplete.mockRejectedValueOnce(
+      Object.assign(new Error('Download timed out after 5 minutes (id: 404)'), {
+        name: 'DownloadTimeoutError',
+      })
+    );
+    state.cancelDownload.mockImplementationOnce(() => {
+      state.downloadChangedListener?.({ id: 404, state: 'interrupted' });
+      return Promise.resolve();
+    });
+    state.searchDownload
+      .mockRejectedValueOnce(new Error('download lookup unavailable'))
+      .mockRejectedValueOnce(new Error('download lookup still unavailable'));
+
+    await expect(
+      sendMessage({
+        type: 'DOWNLOAD_REQUEST',
+        payload: {
+          url: 'https://pbs.twimg.com/media/test.jpg',
+          filename: 'test.jpg',
+          requestId,
+        },
+      })
+    ).resolves.toEqual({
+      success: false,
+      error: 'Download timed out after 5 minutes (id: 404)',
+      data: { requestId, terminal: false },
+    });
+
+    await expect(
+      sendMessage({ type: 'DOWNLOAD_CANCEL_REQUEST', payload: { requestId } })
+    ).resolves.toEqual({ success: true });
+    expect(state.cancelDownload).toHaveBeenCalledTimes(2);
   });
 });

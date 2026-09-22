@@ -9,6 +9,12 @@
 /** Download timeout in milliseconds — aligned with the background SW 5-minute timeout */
 export const DOWNLOAD_TIMEOUT_MS = 300_000;
 
+/** Delay between bounded background download-cancellation retries. */
+export const DOWNLOAD_CANCEL_RETRY_DELAY_MS = 100;
+
+/** Maximum number of cancel-and-inspect attempts for one failure boundary. */
+export const DOWNLOAD_CANCEL_MAX_ATTEMPTS = 2;
+
 /** Default request timeout for fetch-based downloads */
 export const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
 

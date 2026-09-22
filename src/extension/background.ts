@@ -20,6 +20,10 @@
  * Content scripts send messages here and receive progress/completion updates.
  */
 
+import {
+  DOWNLOAD_CANCEL_MAX_ATTEMPTS,
+  DOWNLOAD_CANCEL_RETRY_DELAY_MS,
+} from '@constants/performance';
 import type {
   ChromeDownloadDelta,
   ChromeDownloadOptions,
@@ -32,6 +36,7 @@ import { waitForDownloadComplete } from './download-completion';
 import type {
   DownloadBlobUrlRequestMessage,
   DownloadCancelRequestMessage,
+  DownloadLifecycleResponse,
   DownloadRequestMessage,
   ExtensionMessageResponse,
   IncomingMessage,
@@ -44,9 +49,22 @@ type TrackedDownload = {
   downloadId: number;
   retainUntilTerminal: boolean;
   ownerSettled: boolean;
+  terminalObserved: boolean;
 };
 
 type DownloadCancellationStatus = 'terminal' | 'pending' | 'unknown';
+
+class DownloadOperationError extends Error {
+  readonly lifecycle: DownloadLifecycleResponse;
+
+  constructor(cause: unknown, requestId: string | undefined, terminal: boolean) {
+    super(cause instanceof Error ? cause.message : String(cause), {
+      cause,
+    });
+    this.name = cause instanceof Error ? cause.name : 'DownloadError';
+    this.lifecycle = { ...(requestId ? { requestId } : {}), terminal };
+  }
+}
 
 const activeDownloadIds = new Map<string, TrackedDownload>();
 const cancelledRequestIds = new Set<string>();
@@ -68,7 +86,9 @@ function handleTrackedDownloadChange(delta: ChromeDownloadDelta): void {
   if (!isTerminalDownloadState(readDownloadState(delta.state))) return;
 
   for (const [requestId, tracked] of activeDownloadIds) {
-    if (tracked.retainUntilTerminal && tracked.ownerSettled && tracked.downloadId === delta.id) {
+    if (tracked.downloadId !== delta.id) continue;
+    tracked.terminalObserved = true;
+    if (tracked.retainUntilTerminal && tracked.ownerSettled) {
       activeDownloadIds.delete(requestId);
     }
   }
@@ -108,6 +128,13 @@ function respondAsync(
  * preserving the error message regardless of the error's type.
  */
 function toErrorResponse(error: unknown): ExtensionMessageResponse {
+  if (error instanceof DownloadOperationError) {
+    return {
+      success: false,
+      error: error.message,
+      ...(error.lifecycle.requestId && !error.lifecycle.terminal ? { data: error.lifecycle } : {}),
+    };
+  }
   return {
     success: false,
     error: error instanceof Error ? error.message : String(error),
@@ -225,26 +252,27 @@ async function runTrackedDownload(
         downloadId,
         retainUntilTerminal: false,
         ownerSettled: false,
+        terminalObserved: false,
       };
       activeDownloadIds.set(requestId, tracked);
       if (cancelledRequestIds.delete(requestId)) {
-        tracked.retainUntilTerminal = true;
-        await cancelAndInspectDownload(downloadId, 'request');
+        const cancellationStatus = await cancelDownloadWithRetry(downloadId, 'request');
+        tracked.retainUntilTerminal = cancellationStatus !== 'terminal';
       }
     }
     await waitForDownloadComplete(browserApi.downloads, downloadId);
   } catch (error: unknown) {
-    if (
-      downloadId !== undefined &&
-      error instanceof Error &&
-      error.name === 'DownloadTimeoutError'
-    ) {
+    let terminal = true;
+    if (downloadId !== undefined) {
       const tracked = requestId ? activeDownloadIds.get(requestId) : undefined;
       if (tracked?.downloadId === downloadId) tracked.retainUntilTerminal = true;
-      const cancellationStatus = await cancelTimedOutDownload(downloadId);
-      retainTrackingAfterFailure = cancellationStatus !== 'terminal';
+      const reason =
+        error instanceof Error && error.name === 'DownloadTimeoutError' ? 'timeout' : 'failure';
+      const cancellationStatus = await cancelDownloadWithRetry(downloadId, reason);
+      terminal = cancellationStatus === 'terminal';
+      retainTrackingAfterFailure = !terminal;
     }
-    throw error;
+    throw new DownloadOperationError(error, requestId, terminal);
   } finally {
     if (requestId) {
       // A cancellation may arrive before downloads.download() resolves. Clear
@@ -255,7 +283,9 @@ async function runTrackedDownload(
         const tracked = activeDownloadIds.get(requestId);
         if (tracked?.downloadId === downloadId) {
           tracked.ownerSettled = true;
-          if (!retainTrackingAfterFailure) activeDownloadIds.delete(requestId);
+          if (!retainTrackingAfterFailure || tracked.terminalObserved) {
+            activeDownloadIds.delete(requestId);
+          }
         }
       }
     }
@@ -264,7 +294,7 @@ async function runTrackedDownload(
 
 async function cancelAndInspectDownload(
   downloadId: number,
-  reason: 'request' | 'timeout'
+  reason: 'failure' | 'request' | 'timeout'
 ): Promise<DownloadCancellationStatus> {
   let cancelError: unknown;
   try {
@@ -298,8 +328,21 @@ async function cancelAndInspectDownload(
   }
 }
 
-async function cancelTimedOutDownload(downloadId: number): Promise<DownloadCancellationStatus> {
-  return cancelAndInspectDownload(downloadId, 'timeout');
+async function cancelDownloadWithRetry(
+  downloadId: number,
+  reason: 'failure' | 'request' | 'timeout'
+): Promise<DownloadCancellationStatus> {
+  let status: DownloadCancellationStatus = 'unknown';
+  for (let attempt = 0; attempt < DOWNLOAD_CANCEL_MAX_ATTEMPTS; attempt += 1) {
+    if (attempt > 0) {
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, DOWNLOAD_CANCEL_RETRY_DELAY_MS);
+      });
+    }
+    status = await cancelAndInspectDownload(downloadId, reason);
+    if (status === 'terminal') return status;
+  }
+  return status;
 }
 
 async function handleDownloadCancelRequest(message: DownloadCancelRequestMessage): Promise<void> {
@@ -313,8 +356,8 @@ async function handleDownloadCancelRequest(message: DownloadCancelRequestMessage
   }
 
   tracked.retainUntilTerminal = true;
-  const cancellationStatus = await cancelAndInspectDownload(tracked.downloadId, 'request');
-  if (cancellationStatus === 'terminal' && tracked.ownerSettled) {
+  const cancellationStatus = await cancelDownloadWithRetry(tracked.downloadId, 'request');
+  if ((cancellationStatus === 'terminal' || tracked.terminalObserved) && tracked.ownerSettled) {
     if (activeDownloadIds.get(requestId) === tracked) activeDownloadIds.delete(requestId);
   }
 }

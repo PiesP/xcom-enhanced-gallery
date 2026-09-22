@@ -27,9 +27,10 @@
  *   is the single point of timeout responsibility.
  */
 
-import { BLOB_URL_REVOKE_DELAY_MS } from '@constants/performance';
+import { BLOB_URL_REVOKE_DELAY_MS, DOWNLOAD_TIMEOUT_MS } from '@constants/performance';
 import type {
   DownloadBlobUrlRequestMessage,
+  DownloadLifecycleResponse,
   DownloadRequestMessage,
   ExtensionMessageResponse,
 } from '@extension/extension-message-types';
@@ -50,6 +51,15 @@ function unwrapResponse(response: unknown): string | undefined {
   // Always return a string error, never undefined/null — the caller can
   // provide a fallback message.
   return typeof r.error === 'string' && r.error.length > 0 ? r.error : 'Download failed';
+}
+
+function isNonTerminalDownloadResponse(
+  response: ExtensionMessageResponse,
+  requestId: string
+): boolean {
+  if (!response.data || typeof response.data !== 'object') return false;
+  const data = response.data as Partial<DownloadLifecycleResponse>;
+  return data.requestId === requestId && data.terminal === false;
 }
 
 type DownloadMessage = DownloadRequestMessage | DownloadBlobUrlRequestMessage;
@@ -120,6 +130,15 @@ export class MV3DownloadAdapter implements DownloadAdapter {
     } as DownloadMessage;
 
     let rejectAbort: ((reason: unknown) => void) | null = null;
+    let retainAbortListener = false;
+    let handoffTimer: ReturnType<typeof setTimeout> | null = null;
+    const cleanupAbortListener = (): void => {
+      signal?.removeEventListener('abort', onAbort);
+      if (handoffTimer !== null) {
+        clearTimeout(handoffTimer);
+        handoffTimer = null;
+      }
+    };
     const abortPromise = signal
       ? new Promise<never>((_, reject) => {
           rejectAbort = reject;
@@ -127,6 +146,7 @@ export class MV3DownloadAdapter implements DownloadAdapter {
       : null;
     const onAbort = (): void => {
       sendCancelRequest(requestId);
+      cleanupAbortListener();
       rejectAbort?.(getUserCancelledAbortErrorFromSignal(signal));
     };
 
@@ -139,9 +159,19 @@ export class MV3DownloadAdapter implements DownloadAdapter {
         ? Promise.race([responsePromise, abortPromise])
         : responsePromise);
       const error = unwrapResponse(response);
-      if (error) throw new Error(error);
+      if (error) {
+        // A background failure can mean that Chrome still has an active
+        // download after the response promise settles. Keep the caller's
+        // cancellation signal connected for a bounded handoff window so a
+        // later user cancellation can still address the original request ID.
+        if (!signal?.aborted && isNonTerminalDownloadResponse(response, requestId)) {
+          retainAbortListener = true;
+          handoffTimer = setTimeout(cleanupAbortListener, DOWNLOAD_TIMEOUT_MS);
+        }
+        throw new Error(error);
+      }
     } finally {
-      signal?.removeEventListener('abort', onAbort);
+      if (!retainAbortListener) cleanupAbortListener();
     }
   }
 }
