@@ -82,7 +82,9 @@ export function waitForDownloadComplete(
       if (settled) return;
       settled = true;
       cleanup();
-      reject(new Error(`Download timed out after 5 minutes (id: ${downloadId})`));
+      const timeoutError = new Error(`Download timed out after 5 minutes (id: ${downloadId})`);
+      timeoutError.name = 'DownloadTimeoutError';
+      reject(timeoutError);
     }, DOWNLOAD_TIMEOUT_MS);
   });
 }

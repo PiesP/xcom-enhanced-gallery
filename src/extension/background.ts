@@ -189,6 +189,15 @@ async function runTrackedDownload(
       }
     }
     await waitForDownloadComplete(browserApi.downloads, downloadId);
+  } catch (error: unknown) {
+    if (
+      downloadId !== undefined &&
+      error instanceof Error &&
+      error.name === 'DownloadTimeoutError'
+    ) {
+      await cancelTimedOutDownload(downloadId);
+    }
+    throw error;
   } finally {
     if (requestId) {
       // A cancellation may arrive before downloads.download() resolves. Clear
@@ -199,6 +208,34 @@ async function runTrackedDownload(
         activeDownloadIds.delete(requestId);
       }
     }
+  }
+}
+
+async function cancelTimedOutDownload(downloadId: number): Promise<void> {
+  let cancelError: unknown;
+  try {
+    await browserApi.downloads.cancel(downloadId);
+  } catch (error: unknown) {
+    cancelError = error;
+  }
+
+  try {
+    const [item] = await browserApi.downloads.search({ id: downloadId });
+    if (item?.state === 'in_progress') {
+      log.warn('download.timeout-cancellation-unconfirmed', { downloadId });
+    }
+  } catch (error: unknown) {
+    log.warn('download.timeout-cancellation-state-check-failed', {
+      downloadId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+
+  if (cancelError !== undefined) {
+    log.warn('download.timeout-cancellation-failed', {
+      downloadId,
+      error: cancelError instanceof Error ? cancelError.message : String(cancelError),
+    });
   }
 }
 

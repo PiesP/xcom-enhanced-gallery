@@ -11,6 +11,7 @@ const state = vi.hoisted(() => ({
   listener: null as MessageListener | null,
   createNotification: vi.fn(),
   download: vi.fn(),
+  searchDownload: vi.fn(),
   waitForDownloadComplete: vi.fn(),
 }));
 
@@ -31,7 +32,7 @@ vi.mock('@platform/chrome-runtime', () => ({
     downloads: {
       download: state.download,
       cancel: state.cancelDownload,
-      search: vi.fn(),
+      search: state.searchDownload,
       onChanged: { addListener: vi.fn(), removeListener: vi.fn() },
     },
     notifications: { create: state.createNotification },
@@ -69,6 +70,7 @@ beforeEach(() => {
   state.cancelDownload.mockReset().mockResolvedValue(undefined);
   state.createNotification.mockReset();
   state.download.mockReset();
+  state.searchDownload.mockReset().mockResolvedValue([{ id: 101, state: 'interrupted' }]);
   state.waitForDownloadComplete.mockReset().mockResolvedValue(undefined);
 });
 
@@ -185,5 +187,21 @@ describe.each([
     await expect(sendMessage(request(requestId))).resolves.toEqual({ success: true });
 
     expect(state.cancelDownload).not.toHaveBeenCalled();
+  });
+
+  it('cancels and checks a download that times out after receiving an ID', async () => {
+    const requestId = `cancel-on-timeout-${crypto.randomUUID()}`;
+    state.download.mockResolvedValueOnce(202);
+    const timeoutError = new Error('Download timed out after 5 minutes (id: 202)');
+    timeoutError.name = 'DownloadTimeoutError';
+    state.waitForDownloadComplete.mockRejectedValueOnce(timeoutError);
+
+    await expect(sendMessage(request(requestId))).resolves.toEqual({
+      success: false,
+      error: 'Download timed out after 5 minutes (id: 202)',
+    });
+
+    expect(state.cancelDownload).toHaveBeenCalledWith(202);
+    expect(state.searchDownload).toHaveBeenCalledWith({ id: 202 });
   });
 });
