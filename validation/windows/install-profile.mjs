@@ -190,6 +190,34 @@ async function createServiceWorkerObserver(browserCdp, pageCdp) {
       )
     ),
   });
+  const runningWorkerAfter = (extensionId, worker, lifecycleSequence, targets) => {
+    const runningEvent = matchingVersionEvents(extensionId).findLast(
+      ({ runningStatus, sequence, versionId }) =>
+        versionId === worker.versionId &&
+        sequence > lifecycleSequence &&
+        runningStatus === 'running'
+    );
+    const target = targets.find(({ targetId }) => targetId === runningEvent?.targetId);
+    if (!runningEvent || !target) return undefined;
+    if (versions.get(runningEvent.versionId)?.sequence !== runningEvent.sequence) {
+      return undefined;
+    }
+    const lifecycleEvents = matchingVersionEvents(extensionId).filter(
+      ({ sequence, versionId }) =>
+        versionId === worker.versionId && sequence > lifecycleSequence
+    );
+    return {
+      lifecycle: structuredClone(runningEvent),
+      lifecycleEvents: structuredClone(lifecycleEvents),
+      startingObserved: lifecycleEvents.some(
+        ({ runningStatus }) => runningStatus === 'starting'
+      ),
+      target: structuredClone(target),
+      targetId: target.targetId,
+      targetIdReused: target.targetId === worker.targetId,
+      versionId: runningEvent.versionId,
+    };
+  };
 
   return {
     targetEvents,
@@ -246,18 +274,14 @@ async function createServiceWorkerObserver(browserCdp, pageCdp) {
         };
       }, 'old extension service worker to report stopped');
     },
-    async capturePreCancelBoundary(extensionId, stop) {
+    async capturePreCancelObservation(extensionId, worker, stop) {
       const targets = await currentTargets(extensionId);
       const observedCreatedTargetIds = createdTargetIds(extensionId);
-      const prematureLifecycleEvents = matchingVersionEvents(extensionId).filter(
-        ({ runningStatus, sequence }) =>
-          sequence > stop.lifecycle.sequence &&
-          (runningStatus === 'starting' || runningStatus === 'running')
-      );
-      assert.deepEqual(
-        prematureLifecycleEvents,
-        [],
-        'Extension service worker lifecycle restarted before cancellation'
+      const replacementWorker = runningWorkerAfter(
+        extensionId,
+        worker,
+        stop.lifecycle.sequence,
+        targets
       );
       return {
         createdEventCount: observedCreatedTargetIds.length,
@@ -270,39 +294,23 @@ async function createServiceWorkerObserver(browserCdp, pageCdp) {
             ({ sequence }) => sequence > stop.lifecycle.sequence
           )
         ),
+        replacementWorker: replacementWorker ?? null,
         targetEventOffset: targetEvents.length,
       };
     },
     async waitForRunningAfter(extensionId, worker, lifecycleBoundarySequence) {
       return waitForValue(async () => {
         const targets = await currentTargets(extensionId);
-        const runningEvent = matchingVersionEvents(extensionId).findLast(
-          ({ runningStatus, sequence, versionId }) =>
-            versionId === worker.versionId &&
-            sequence > lifecycleBoundarySequence &&
-            runningStatus === 'running'
+        return runningWorkerAfter(
+          extensionId,
+          worker,
+          lifecycleBoundarySequence,
+          targets
         );
-        const target = targets.find(({ targetId }) => targetId === runningEvent?.targetId);
-        if (!runningEvent || !target) return undefined;
-        if (versions.get(runningEvent.versionId)?.sequence !== runningEvent.sequence) {
-          return undefined;
-        }
-        const lifecycleEvents = matchingVersionEvents(extensionId).filter(
-          ({ sequence, versionId }) =>
-            versionId === worker.versionId && sequence > lifecycleBoundarySequence
-        );
-        return {
-          lifecycle: structuredClone(runningEvent),
-          lifecycleEvents: structuredClone(lifecycleEvents),
-          startingObserved: lifecycleEvents.some(
-            ({ runningStatus }) => runningStatus === 'starting'
-          ),
-          target: structuredClone(target),
-          targetId: target.targetId,
-          targetIdReused: target.targetId === worker.targetId,
-          versionId: runningEvent.versionId,
-        };
-      }, 'post-cancellation running extension service worker');
+      }, 'post-stop running extension service worker');
+    },
+    captureLifecycleBoundary() {
+      return versionEvents.length;
     },
     snapshotEvents(extensionId) {
       return structuredClone(matchingTargetEvents(extensionId));
@@ -682,21 +690,56 @@ async function verifyMv3RestartCancellation({
       downloadState: afterStop.download.state,
       storageRecord: afterStop.record,
     };
-    evidence.preCancel = await workerObserver.capturePreCancelBoundary(
+    evidence.preCancel = await workerObserver.capturePreCancelObservation(
       extensionId,
+      oldWorker,
       evidence.stop
     );
+    const preCancellationState = await readMv3LifecycleState(
+      extensionPage,
+      requestId,
+      downloadId
+    );
+    assert.equal(preCancellationState.download?.state, 'in_progress');
+    assert.equal(preCancellationState.download.paused, true);
+    assert.equal(preCancellationState.download.id, downloadId);
+    assert.equal(preCancellationState.download.url, objectUrl);
+    assert.equal(basename(preCancellationState.download.filename), filename);
+    assert.equal(preCancellationState.download.totalBytes, MV3_RESTART_BLOB_BYTES);
+    assert.deepEqual(preCancellationState.record, beforeStop.record);
+    assert.deepEqual(preCancellationState.trackingKeys, [requestId]);
+    const newDownloadsBeforeCancellation = (await queryDownloads(extensionPage))
+      .filter(({ id }) => !initialDownloadIds.has(id));
+    assert.deepEqual(
+      newDownloadsBeforeCancellation.map(({ id }) => id),
+      [downloadId],
+      'Worker restart must not allocate another Chrome download'
+    );
+    evidence.preCancel.download = {
+      bytesReceived: preCancellationState.download.bytesReceived,
+      filename: basename(preCancellationState.download.filename),
+      id: preCancellationState.download.id,
+      paused: preCancellationState.download.paused,
+      state: preCancellationState.download.state,
+      totalBytes: preCancellationState.download.totalBytes,
+    };
+    evidence.preCancel.newDownloadIds = newDownloadsBeforeCancellation.map(({ id }) => id);
+    evidence.preCancel.storageRecord = preCancellationState.record;
+    evidence.preCancel.trackingKeys = preCancellationState.trackingKeys;
 
+    const cancellationDispatchLifecycleSequence = workerObserver.captureLifecycleBoundary();
     const cancellationResponsePromise = extensionPage.evaluate((message) =>
       chrome.runtime.sendMessage(message), {
       type: 'DOWNLOAD_CANCEL_REQUEST',
       payload: { requestId },
     });
-    const newWorkerPromise = workerObserver.waitForRunningAfter(
-      extensionId,
-      oldWorker,
-      evidence.preCancel.lifecycleBoundarySequence
-    );
+    const newWorkerPromise = evidence.preCancel.replacementWorker === null
+      ? workerObserver.waitForRunningAfter(
+          extensionId,
+          oldWorker,
+          evidence.stop.lifecycle.sequence
+        )
+      : Promise.resolve(evidence.preCancel.replacementWorker);
     const [cancellationResult, workerResult] = await Promise.allSettled([
       cancellationResponsePromise,
       newWorkerPromise,
@@ -704,8 +747,17 @@ async function verifyMv3RestartCancellation({
     cancellationObservation = cancellationResult.status === 'fulfilled'
       ? { response: cancellationResult.value, status: 'fulfilled' }
       : { error: safeError(cancellationResult.reason), status: 'rejected' };
+    let replacementObservationTiming = 'not-observed';
+    if (workerResult.status === 'fulfilled') {
+      replacementObservationTiming =
+        workerResult.value.lifecycle.sequence <= cancellationDispatchLifecycleSequence
+          ? 'before-cancellation-dispatch'
+          : 'after-cancellation-dispatch';
+    }
     evidence.cancellation = {
+      dispatchLifecycleSequence: cancellationDispatchLifecycleSequence,
       response: cancellationObservation,
+      replacementObservationTiming,
       workerRestart: workerResult.status === 'fulfilled'
         ? { status: 'fulfilled', worker: workerResult.value }
         : { error: safeError(workerResult.reason), status: 'rejected' },
@@ -724,7 +776,7 @@ async function verifyMv3RestartCancellation({
     const newWorker = workerResult.value;
     assert.deepEqual(cancellationResponse, { success: true });
     assert.equal(newWorker.versionId, oldWorker.versionId);
-    assert(newWorker.lifecycle.sequence > evidence.preCancel.lifecycleBoundarySequence);
+    assert(newWorker.lifecycle.sequence > evidence.stop.lifecycle.sequence);
 
     const afterCancel = await waitForValue(async () => {
       const state = await readMv3LifecycleState(extensionPage, requestId, downloadId);

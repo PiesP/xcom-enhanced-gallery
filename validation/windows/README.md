@@ -63,15 +63,17 @@ sessions. The old Worker must report `stopped` while the real download remains
 paused. Target enumeration and creation events are retained as diagnostics, but
 the ordered, complete ServiceWorker version updates establish the lifecycle
 boundary because Chromium can retain the DevTools target across Worker
-stop/start. The profile rejects any newer `starting` or `running` update before
-cancellation. A production
-`DOWNLOAD_CANCEL_REQUEST` must then produce a strictly later `running` update
-for the same script and version that matches the current Worker target, restore
-the request-to-download relationship, leave the browser download `interrupted`
-with `USER_CANCELED`, and remove the tracking record. Chromium keeps the
-ServiceWorker DevTools agent host across Worker stop/start, so reuse of the
-target ID is recorded evidence rather than a failure. The task download
-directory must contain neither a completed payload nor a `.crdownload` residue.
+stop/start. The profile must observe a strictly later `running` update for the
+same script and version that matches the current Worker target. That replacement
+may be observed before or after the cancellation dispatch; the evidence records
+the ordering without attributing the wake-up to cancellation. Immediately before
+sending the production `DOWNLOAD_CANCEL_REQUEST`, the profile rechecks the one
+owned download ID, its `in_progress` and `paused` state, and the exact persisted
+request-to-download relationship. The request must leave the browser download
+`interrupted` with `USER_CANCELED` and remove the tracking record. Chromium keeps
+the ServiceWorker DevTools agent host across Worker stop/start, so reuse of the
+target ID is recorded evidence rather than a failure. The task download directory
+must contain neither a completed payload nor a `.crdownload` residue.
 
 The profile identifies the browser item independently by its unique Blob URL and
 later requires the exact filename before requiring the matching storage binding,
