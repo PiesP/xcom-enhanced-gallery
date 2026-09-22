@@ -347,6 +347,7 @@ test('executes the Firefox background module and registers its runtime listeners
       removeListener: () => undefined,
     };
     const downloads: Array<{ filename?: string; saveAs?: boolean; url: string }> = [];
+    const storage = new Map<string, unknown>();
 
     Object.assign(globalThis, {
       __xegFirefoxRegistrations: registrations,
@@ -373,6 +374,25 @@ test('executes the Firefox background module and registers its runtime listeners
           cancel: async () => undefined,
           search: async () => [{ id: 41, state: 'complete' }],
           onChanged: downloadChanged,
+        },
+        storage: {
+          local: {
+            get: async (keys: string | string[] | null) => {
+              if (keys === null) return Object.fromEntries(storage.entries());
+              const requested = Array.isArray(keys) ? keys : [keys];
+              return Object.fromEntries(
+                requested
+                  .filter((key) => storage.has(key))
+                  .map((key) => [key, storage.get(key)])
+              );
+            },
+            set: async (items: Record<string, unknown>) => {
+              for (const [key, value] of Object.entries(items)) storage.set(key, value);
+            },
+            remove: async (keys: string | string[]) => {
+              for (const key of Array.isArray(keys) ? keys : [keys]) storage.delete(key);
+            },
+          },
         },
         notifications: {
           create: async () => 'notification-id',

@@ -23,6 +23,7 @@ const state = vi.hoisted(() => ({
   downloadChangedListener: null as DownloadChangedListener | null,
   startupListener: null as StartupListener | null,
   storageValues: {} as Record<string, unknown>,
+  storageSetError: null as unknown,
 }));
 
 vi.mock('@platform/chrome-runtime', () => ({
@@ -56,6 +57,11 @@ vi.mock('@platform/chrome-runtime', () => ({
           );
         }),
         set: vi.fn(async (items: Record<string, unknown>) => {
+          if (state.storageSetError !== null) {
+            const error = state.storageSetError;
+            state.storageSetError = null;
+            throw error;
+          }
           Object.assign(state.storageValues, items);
         }),
         remove: vi.fn(async (keys: string | string[]) => {
@@ -112,6 +118,7 @@ beforeEach(() => {
   state.download.mockReset();
   state.searchDownload.mockReset().mockResolvedValue([{ id: 101, state: 'interrupted' }]);
   state.waitForDownloadComplete.mockReset().mockResolvedValue(undefined);
+  state.storageSetError = null;
 });
 
 describe.each([
@@ -349,7 +356,7 @@ describe.each([
     expect(state.cancelDownload).toHaveBeenCalledTimes(2);
   });
 
-  it('restores a persisted download relationship before handling a late cancellation', async () => {
+  it('does not repeat a successful restore before handling a late cancellation', async () => {
     const requestId = `cancel-after-restart-${crypto.randomUUID()}`;
     state.download.mockResolvedValueOnce(505);
     state.waitForDownloadComplete.mockRejectedValueOnce(
@@ -369,12 +376,46 @@ describe.each([
       data: { requestId, terminal: false },
     });
 
+    state.searchDownload.mockClear();
     await state.startupListener?.();
+    expect(state.searchDownload).not.toHaveBeenCalled();
     await expect(
       sendMessage({ type: 'DOWNLOAD_CANCEL_REQUEST', payload: { requestId } })
     ).resolves.toEqual({ success: true });
 
-    expect(state.cancelDownload).toHaveBeenCalledTimes(3);
+    expect(state.cancelDownload).toHaveBeenCalledTimes(4);
     expect(state.cancelDownload).toHaveBeenLastCalledWith(505);
+  });
+
+  it('does not report cancellation success when its persistence fails', async () => {
+    const requestId = `cancel-persistence-failure-${crypto.randomUUID()}`;
+    state.download.mockResolvedValueOnce(606);
+    state.waitForDownloadComplete.mockRejectedValueOnce(
+      Object.assign(new Error('Download timed out after 5 minutes (id: 606)'), {
+        name: 'DownloadTimeoutError',
+      })
+    );
+    state.cancelDownload.mockRejectedValueOnce(new Error('download is still active'));
+    state.searchDownload
+      .mockResolvedValueOnce([{ id: 606, state: 'in_progress' }])
+      .mockResolvedValueOnce([{ id: 606, state: 'in_progress' }])
+      .mockResolvedValueOnce([{ id: 606, state: 'interrupted' }]);
+
+    await expect(sendMessage(request(requestId))).resolves.toEqual({
+      success: false,
+      error: 'Download timed out after 5 minutes (id: 606)',
+      data: { requestId, terminal: false },
+    });
+
+    state.storageSetError = new Error('storage quota exceeded');
+    await expect(
+      sendMessage({ type: 'DOWNLOAD_CANCEL_REQUEST', payload: { requestId } })
+    ).resolves.toEqual({
+      success: false,
+      error: 'Download tracking storage write failed: storage quota exceeded',
+    });
+
+    expect(state.cancelDownload).toHaveBeenCalledTimes(3);
+    expect(state.cancelDownload).toHaveBeenLastCalledWith(606);
   });
 });

@@ -97,14 +97,19 @@ function handleTrackedDownloadChange(delta: ChromeDownloadDelta): void {
     tracked.terminalObserved = true;
     if (tracked.retainUntilTerminal && tracked.ownerSettled) {
       activeDownloadIds.delete(requestId);
-      void downloadTracking.remove(requestId);
+      void downloadTracking.remove(requestId).catch((error: unknown) => {
+        log.warn('download-tracking-terminal-cleanup-failed', {
+          requestId,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      });
     }
   }
 }
 
 browserApi.downloads.onChanged.addListener(handleTrackedDownloadChange);
 
-async function restoreTrackedDownloads(): Promise<void> {
+async function restoreTrackedDownloadsFromStorage(): Promise<void> {
   const records = await downloadTracking.reload();
   const restored = new Map<string, TrackedDownload>();
 
@@ -155,7 +160,38 @@ async function restoreTrackedDownloads(): Promise<void> {
   }
 }
 
-const downloadStateReady = restoreTrackedDownloads();
+let downloadStateRestored = false;
+let downloadStateRestorePromise: Promise<void> | undefined;
+
+/**
+ * Restore once per worker instance. If storage is temporarily unavailable,
+ * leave the state unready so the next operation can retry without replacing a
+ * known snapshot with an assumed-empty one.
+ */
+function restoreTrackedDownloads(): Promise<void> {
+  if (downloadStateRestored) return Promise.resolve();
+  if (downloadStateRestorePromise !== undefined) return downloadStateRestorePromise;
+
+  const restorePromise = restoreTrackedDownloadsFromStorage().then(() => {
+    downloadStateRestored = true;
+  });
+  downloadStateRestorePromise = restorePromise;
+  void restorePromise.then(
+    () => {
+      if (downloadStateRestorePromise === restorePromise) downloadStateRestorePromise = undefined;
+    },
+    () => {
+      if (downloadStateRestorePromise === restorePromise) downloadStateRestorePromise = undefined;
+    }
+  );
+  return restorePromise;
+}
+
+void restoreTrackedDownloads().catch((error: unknown) => {
+  log.warn('download-tracking-initial-restore-failed', {
+    error: error instanceof Error ? error.message : String(error),
+  });
+});
 
 // ── Message handler ──────────────────────────────────────────────────────────
 
@@ -304,11 +340,15 @@ async function runTrackedDownload(
   downloadOptions: ChromeDownloadOptions,
   requestId?: string
 ): Promise<void> {
-  await downloadStateReady;
-  if (requestId) await downloadTracking.registerRequest(requestId);
+  if (requestId) {
+    await restoreTrackedDownloads();
+    await downloadTracking.registerRequest(requestId);
+  }
 
   let downloadId: number | undefined;
   let retainTrackingAfterFailure = false;
+  let operationFailure: DownloadOperationError | undefined;
+  let cleanupFailure: unknown;
   try {
     downloadId = await browserApi.downloads.download(downloadOptions);
     if (requestId) {
@@ -336,7 +376,8 @@ async function runTrackedDownload(
       terminal = cancellationStatus === 'terminal';
       retainTrackingAfterFailure = !terminal;
     }
-    throw new DownloadOperationError(error, requestId, terminal);
+    operationFailure = new DownloadOperationError(error, requestId, terminal);
+    throw operationFailure;
   } finally {
     if (requestId) {
       if (downloadId !== undefined) {
@@ -345,17 +386,34 @@ async function runTrackedDownload(
           tracked.ownerSettled = true;
           if (!retainTrackingAfterFailure || tracked.terminalObserved) {
             activeDownloadIds.delete(requestId);
-            await downloadTracking.remove(requestId);
+            try {
+              await downloadTracking.remove(requestId);
+            } catch (cleanupError: unknown) {
+              cleanupFailure = cleanupError;
+              log.warn('download-tracking-cleanup-failed', {
+                requestId,
+                error: cleanupError instanceof Error ? cleanupError.message : String(cleanupError),
+              });
+            }
           }
         }
       } else {
         // A request that never received a Chrome download ID cannot be
         // recovered after this operation ends. Do not retain its cancellation
         // marker for a later request that happens to reuse the ID.
-        await downloadTracking.remove(requestId);
+        try {
+          await downloadTracking.remove(requestId);
+        } catch (cleanupError: unknown) {
+          cleanupFailure = cleanupError;
+          log.warn('download-tracking-cleanup-failed', {
+            requestId,
+            error: cleanupError instanceof Error ? cleanupError.message : String(cleanupError),
+          });
+        }
       }
     }
   }
+  if (cleanupFailure !== undefined && operationFailure === undefined) throw cleanupFailure;
 }
 
 async function cancelAndInspectDownload(
@@ -413,10 +471,10 @@ async function cancelDownloadWithRetry(
 
 async function handleDownloadCancelRequest(message: DownloadCancelRequestMessage): Promise<void> {
   const { requestId } = message.payload;
-  await downloadStateReady;
 
   let tracked = activeDownloadIds.get(requestId);
   if (tracked === undefined) {
+    await restoreTrackedDownloads();
     const persisted = downloadTracking.get(requestId);
     if (persisted?.downloadId === undefined) {
       // The cancel message can arrive before downloads.download() resolves.
@@ -437,13 +495,29 @@ async function handleDownloadCancelRequest(message: DownloadCancelRequestMessage
   }
 
   tracked.retainUntilTerminal = true;
-  await downloadTracking.requestCancellation(requestId);
+  let trackingError: unknown;
+  try {
+    await downloadTracking.requestCancellation(requestId);
+  } catch (error: unknown) {
+    trackingError = error;
+    log.warn('download-tracking-cancellation-persist-failed', {
+      requestId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
   const cancellationStatus = await cancelDownloadWithRetry(tracked.downloadId, 'request');
   if ((cancellationStatus === 'terminal' || tracked.terminalObserved) && tracked.ownerSettled) {
     if (activeDownloadIds.get(requestId) === tracked) {
       activeDownloadIds.delete(requestId);
       await downloadTracking.remove(requestId);
     }
+  }
+  if (trackingError !== undefined) {
+    throw new DownloadOperationError(
+      trackingError,
+      requestId,
+      cancellationStatus === 'terminal' || tracked.terminalObserved
+    );
   }
 }
 
