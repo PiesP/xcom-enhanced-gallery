@@ -74,6 +74,10 @@ request-to-download relationship. The request must leave the browser download
 the ServiceWorker DevTools agent host across Worker stop/start, so reuse of the
 target ID is recorded evidence rather than a failure. The task download directory
 must contain neither a completed payload nor a `.crdownload` residue.
+The exact task-owned file path and directory are checked on the filesystem before
+manual cleanup. Chrome's [`DownloadItem.exists`](https://developer.chrome.com/docs/extensions/reference/api/downloads#property-DownloadItem-exists)
+is retained as diagnostic metadata because `search` can return before its cached
+file-existence value is refreshed.
 
 The profile identifies the browser item independently by its unique Blob URL and
 later requires the exact filename before requiring the matching storage binding,

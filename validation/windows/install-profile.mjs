@@ -785,13 +785,20 @@ async function verifyMv3RestartCancellation({
         : undefined;
     }, 'interrupted download and removed tracking record');
     assert.equal(afterCancel.download.error, 'USER_CANCELED');
-    assert.equal(afterCancel.download.exists, false);
+    assert.equal(
+      resolve(afterCancel.download.filename),
+      resolve(join(downloads, filename)),
+      'Cancelled download must use the task-owned file path'
+    );
     assert.deepEqual(afterCancel.trackingKeys, []);
     const remainingFiles = await waitForValue(async () => {
       const entries = await readdir(downloads);
       const additions = entries.filter((entry) => !initialFiles.has(entry));
       return additions.length === 0 ? entries : undefined;
     }, 'cancelled download files to be removed');
+    // DownloadItem.exists is cached; search does not await its filesystem check.
+    const fileSystemFileExists = await pathExists(join(downloads, filename));
+    assert.equal(fileSystemFileExists, false);
     const originalRequestOutcome = await extensionPage.evaluate(async (timeoutMs) => {
       const outcome = globalThis.__xegMv3RestartStart;
       if (!outcome) return { status: 'missing' };
@@ -813,6 +820,7 @@ async function verifyMv3RestartCancellation({
         state: afterCancel.download.state,
       },
       filesAdded: remainingFiles.filter((entry) => !initialFiles.has(entry)),
+      fileSystemFileExists,
       originalRequestOutcome,
       storageRecord: afterCancel.record,
       trackingKeys: afterCancel.trackingKeys,
@@ -855,6 +863,7 @@ async function verifyMv3RestartCancellation({
               : {
                   bytesReceived: lifecycleState.value.download.bytesReceived,
                   error: lifecycleState.value.download.error,
+                  exists: lifecycleState.value.download.exists,
                   filename: typeof lifecycleState.value.download.filename === 'string'
                     ? basename(lifecycleState.value.download.filename)
                     : null,
