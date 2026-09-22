@@ -47,34 +47,40 @@ and cleanup metadata are retained as evidence; the timings are observations,
 not a performance claim.
 
 The deterministic fixture also exercises the MV3 download restart boundary. A
-production `DOWNLOAD_REQUEST` is redirected from its allowed media URL to a
-task-owned loopback response that sends headers and initial bytes, then remains
-open. The profile requires a real Chrome download ID and persisted tracking
-record before invoking CDP `ServiceWorker.stopWorker`. Browser-level CDP tracks
-targets, while an extension utility-page CDP session owns the ServiceWorker
-domain. The profile's protocol code does not explicitly attach to or evaluate
-the Worker target and does not substitute `Target.closeTarget`; Playwright can
-still maintain its standard automation sessions. The old Worker target must stop
-and disappear. A production `DOWNLOAD_CANCEL_REQUEST` must then create a
+bounded 32 MiB Blob belongs to the routed `https://x.com` fixture and enters the
+existing `DOWNLOAD_BLOB_URL_REQUEST` path. An extension utility page listens for
+the exact Blob URL through `chrome.downloads.onCreated` and immediately invokes
+the real `chrome.downloads.pause`. The check fails if pause loses the race. It
+then requires a new Chrome download ID, exact filename, `in_progress` and
+`paused` browser state, and the matching persisted tracking record before
+invoking CDP `ServiceWorker.stopWorker`.
+
+Browser-level CDP tracks targets, while an extension utility-page CDP session
+owns the ServiceWorker domain. The profile's protocol code does not explicitly
+attach to or evaluate the Worker target and does not substitute
+`Target.closeTarget`; Playwright can still maintain its standard automation
+sessions. The old Worker target must stop and disappear while the real download
+remains paused. A production `DOWNLOAD_CANCEL_REQUEST` must then create a
 different Worker target, restore the request-to-download relationship, leave the
 browser download `interrupted` with `USER_CANCELED`, and remove the tracking
-record. The result also requires one observed 307 fixture redirect, the held
-response to close, and the task download directory to contain neither a completed
-payload nor a `.crdownload` residue.
-The profile identifies the new browser download independently by its unique
-filename before requiring the matching storage binding, so an early persistence
-failure still retains an owned item for diagnosis and cleanup. The original
-request channel outcome is a bounded diagnostic and may be recorded as pending.
-The loopback listener, exact download history item, tracking record, route,
-pages, and any task-created partial file are cleaned in `finally`, including
-failed runs.
+record. The task download directory must contain neither a completed payload nor
+a `.crdownload` residue.
+
+The profile identifies the browser item independently by its unique Blob URL and
+later requires the exact filename before requiring the matching storage binding,
+so an early persistence failure still retains an owned item for diagnosis and
+cleanup. The original request channel outcome is a bounded diagnostic and may be
+recorded as pending. The on-created listener, page Blob URL, exact download
+history item, tracking record, route, pages, and any task-created partial file
+are cleaned in `finally`, including failed runs.
 
 Only installed Chrome or Edge with `--installation extension` is supported.
 Userscript managers, Firefox installation, authenticated X.com, native Save As,
 Explorer, OS theme/DPI matrices, and physical GPU behavior remain outside this
 profile. This restart check covers an explicit forced stop in the generated
 Chromium MV3 extension; it does not exercise natural idle termination, browser
-shutdown, or OS crash recovery.
+shutdown, OS crash recovery, or an actively streaming network transfer during
+the stop boundary.
 
 After committing a clean named checkout and running the repository gates, run:
 

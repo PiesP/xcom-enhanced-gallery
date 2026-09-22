@@ -14,7 +14,6 @@ import {
   stat,
   writeFile,
 } from 'node:fs/promises';
-import { createServer } from 'node:http';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import {
   observeLiveUrls,
@@ -29,8 +28,7 @@ const FIXTURE_URL = `https://x.com/testuser/status/${TWEET_ID}`;
 const PUBLIC_TWEET_ID = '9876543210987654321';
 const PUBLIC_FIXTURE_URL = `https://x.com/public_user/status/${PUBLIC_TWEET_ID}`;
 const DOWNLOAD_TRACKING_STORAGE_KEY = 'xeg.download-tracking.v1';
-const MV3_RESTART_DOWNLOAD_PATH = '/media/xeg-mv3-restart-boundary.bin';
-const MV3_RESTART_DOWNLOAD_URL = `https://pbs.twimg.com${MV3_RESTART_DOWNLOAD_PATH}`;
+const MV3_RESTART_BLOB_BYTES = 32 * 1024 * 1024;
 const IMAGE_URL_MARKERS = ['GkE1234', 'GkE5678', 'GkE9012'];
 const MAX_AGGREGATE_DEPTH = 2;
 const MAX_AGGREGATE_ERRORS = 4;
@@ -89,67 +87,6 @@ async function pathExists(path) {
     if (error.code === 'ENOENT') return false;
     throw error;
   });
-}
-
-async function createHeldDownloadServer() {
-  const sockets = new Set();
-  const responses = new Set();
-  const requests = [];
-  let closed = false;
-  const server = createServer((request, response) => {
-    if (request.url !== MV3_RESTART_DOWNLOAD_PATH) {
-      response.writeHead(404, { 'Content-Type': 'text/plain' });
-      response.end('Not found');
-      return;
-    }
-
-    const record = {
-      connectionClosed: false,
-      expectedBytes: 16 * 1024 * 1024,
-      initialBytes: 4096,
-      method: request.method,
-      path: request.url,
-    };
-    requests.push(record);
-    responses.add(response);
-    response.once('close', () => {
-      record.connectionClosed = true;
-      responses.delete(response);
-    });
-    response.writeHead(200, {
-      'Cache-Control': 'no-store',
-      'Content-Disposition': 'attachment',
-      'Content-Length': String(record.expectedBytes),
-      'Content-Type': 'application/octet-stream',
-    });
-    response.write(Buffer.alloc(record.initialBytes, 0x58));
-    // Keep the response open until Chrome cancels it or bounded cleanup runs.
-  });
-  server.on('connection', (socket) => {
-    sockets.add(socket);
-    socket.once('close', () => sockets.delete(socket));
-  });
-  await new Promise((resolveListen, rejectListen) => {
-    server.once('error', rejectListen);
-    server.listen(0, '127.0.0.1', () => {
-      server.off('error', rejectListen);
-      resolveListen();
-    });
-  });
-  const address = server.address();
-  assert(address && typeof address === 'object', 'Loopback download server did not expose a port');
-
-  return {
-    localUrl: `http://127.0.0.1:${address.port}${MV3_RESTART_DOWNLOAD_PATH}`,
-    requests,
-    async close() {
-      if (closed) return;
-      closed = true;
-      for (const response of responses) response.destroy();
-      for (const socket of sockets) socket.destroy();
-      await new Promise((resolveClose) => server.close(resolveClose));
-    },
-  };
 }
 
 async function createServiceWorkerObserver(browserCdp, pageCdp) {
@@ -218,6 +155,12 @@ async function createServiceWorkerObserver(browserCdp, pageCdp) {
       ({ type, url }) => type === 'service_worker' && url === workerScriptUrl(extensionId)
     );
   };
+  const createdTargetIds = (extensionId) =>
+    targetEvents
+      .filter(
+        ({ event, url }) => event === 'created' && url === workerScriptUrl(extensionId)
+      )
+      .map(({ targetId }) => targetId);
 
   return {
     targetEvents,
@@ -237,26 +180,50 @@ async function createServiceWorkerObserver(browserCdp, pageCdp) {
       }, 'running extension service worker');
     },
     async stopAndWait(extensionId, worker) {
+      const stopCreatedTargetIds = createdTargetIds(extensionId);
+      const targetEventOffsetBeforeStop = targetEvents.length;
       await pageCdp.send('ServiceWorker.stopWorker', { versionId: worker.versionId });
       return waitForValue(async () => {
         const targets = await currentTargets(extensionId);
         const oldTargetPresent = targets.some(({ targetId }) => targetId === worker.targetId);
         const version = versions.get(worker.versionId);
+        const observedCreatedTargetIds = createdTargetIds(extensionId);
+        assert.deepEqual(
+          observedCreatedTargetIds,
+          stopCreatedTargetIds,
+          'Extension service worker target was created while stopping the old worker'
+        );
         if (targets.length !== 0 || oldTargetPresent || version?.runningStatus !== 'stopped') {
           return undefined;
         }
         return {
+          createdEventCount: stopCreatedTargetIds.length,
+          createdTargetIds: stopCreatedTargetIds,
           extensionTargetCount: targets.length,
           oldTargetPresent,
           runningStatus: version.runningStatus,
           status: version.status,
+          targetEventOffset: targetEvents.length,
+          targetEventOffsetBeforeStop,
           targetDisappeared: true,
         };
       }, 'old extension service worker to stop and disappear');
     },
-    async assertNoTargets(extensionId) {
+    async assertNoTargets(extensionId, expectedCreatedTargetIds) {
       const targets = await currentTargets(extensionId);
       assert.deepEqual(targets, [], 'Extension service worker restarted before cancellation');
+      const observedCreatedTargetIds = createdTargetIds(extensionId);
+      assert.deepEqual(
+        observedCreatedTargetIds,
+        expectedCreatedTargetIds,
+        'Extension service worker target was created before cancellation'
+      );
+      return {
+        createdEventCount: observedCreatedTargetIds.length,
+        createdTargetIds: observedCreatedTargetIds,
+        extensionTargetCount: targets.length,
+        targetEventOffset: targetEvents.length,
+      };
     },
     snapshotEvents(extensionId) {
       const matchingTargetIds = new Set(
@@ -346,10 +313,9 @@ function imageIndex(url) {
   return index < 0 ? 0 : index;
 }
 
-async function installFixtureRoutes(context, root, images, heldDownloadServer) {
+async function installFixtureRoutes(context, root, images) {
   const html = await readFile(join(root, 'test/e2e/fixtures/installed-gallery-page.html'), 'utf8');
   const apiResponses = [];
-  const mv3Redirects = [];
   const routeHandler = async (route) => {
     const url = new URL(route.request().url());
     if (url.protocol === 'chrome-extension:') {
@@ -377,29 +343,6 @@ async function installFixtureRoutes(context, root, images, heldDownloadServer) {
       });
       return;
     }
-    if (url.hostname === 'pbs.twimg.com' && url.pathname === MV3_RESTART_DOWNLOAD_PATH) {
-      mv3Redirects.push({
-        method: route.request().method(),
-        path: url.pathname,
-        status: 307,
-      });
-      await route.fulfill({
-        status: 307,
-        headers: {
-          'Cache-Control': 'no-store',
-          Location: heldDownloadServer.localUrl,
-        },
-        body: '',
-      });
-      return;
-    }
-    if (
-      url.hostname === '127.0.0.1' &&
-      url.href === heldDownloadServer.localUrl
-    ) {
-      await route.continue();
-      return;
-    }
     if (url.hostname === 'pbs.twimg.com') {
       await route.fulfill({
         contentType: 'image/jpeg',
@@ -416,7 +359,6 @@ async function installFixtureRoutes(context, root, images, heldDownloadServer) {
   await context.route('**/*', routeHandler);
   return {
     apiResponses,
-    mv3Redirects,
     async remove() {
       await context.unroute('**/*', routeHandler);
     },
@@ -427,10 +369,11 @@ async function queryDownloads(extensionPage) {
   return extensionPage.evaluate(() => chrome.downloads.search({ orderBy: ['-startTime'] }));
 }
 
-async function findOwnedDownload(extensionPage, initialDownloadIds, filename) {
+async function findOwnedDownload(extensionPage, initialDownloadIds, objectUrl) {
   const matches = (await queryDownloads(extensionPage)).filter(
     (download) =>
-      !initialDownloadIds.has(download.id) && basename(download.filename) === filename
+      !initialDownloadIds.has(download.id) &&
+      download.url === objectUrl
   );
   assert(matches.length <= 1, `Expected at most one owned download, found ${matches.length}`);
   return matches[0];
@@ -458,8 +401,7 @@ async function verifyMv3RestartCancellation({
   extensionId,
   extensionPage,
   evidence,
-  heldDownloadServer,
-  redirectHits,
+  page,
   workerObserver,
 }) {
   const filename = `xeg-mv3-restart-${randomUUID()}.bin`;
@@ -472,54 +414,115 @@ async function verifyMv3RestartCancellation({
     cleanup: {},
     filename,
     requestId,
-    route: {
-      configuredPath: MV3_RESTART_DOWNLOAD_PATH,
-      expectedStatus: 307,
-      hits: [],
-    },
     source: {
-      loopbackRedirectConfigured: true,
-      productionMessageType: 'DOWNLOAD_REQUEST',
-      url: MV3_RESTART_DOWNLOAD_URL,
+      bytes: MV3_RESTART_BLOB_BYTES,
+      mimeType: 'application/octet-stream',
+      productionMessageType: 'DOWNLOAD_BLOB_URL_REQUEST',
     },
   });
   let downloadId;
+  let objectUrl;
+  let pauseListenerInstalled = false;
   let primaryError;
   let primarySeen = false;
   const cleanupErrors = [];
 
   try {
+    const blobFixture = await page.evaluate((bytes) => {
+      const chunk = new Uint8Array(1024 * 1024);
+      chunk.fill(0x58);
+      const parts = Array.from({ length: bytes / chunk.byteLength }, () => chunk);
+      const blob = new Blob(parts, { type: 'application/octet-stream' });
+      if (blob.size !== bytes) throw new Error(`Unexpected fixture Blob size: ${blob.size}`);
+      const url = URL.createObjectURL(blob);
+      globalThis.__xegMv3RestartBlobUrl = url;
+      return { size: blob.size, url };
+    }, MV3_RESTART_BLOB_BYTES);
+    assert.equal(blobFixture.size, MV3_RESTART_BLOB_BYTES);
+    assert(blobFixture.url.startsWith('blob:https://x.com/'));
+    objectUrl = blobFixture.url;
+    evidence.source.url = objectUrl;
+
+    await extensionPage.evaluate((ownedUrl) => {
+      const state = {
+        downloadId: null,
+        duplicateEvents: 0,
+        events: [],
+        pause: { status: 'waiting' },
+      };
+      const listener = (download) => {
+        if (download.url !== ownedUrl) return;
+        state.events.push({
+          bytesReceived: download.bytesReceived,
+          filename: typeof download.filename === 'string'
+            ? (download.filename.split(/[\\/]/).at(-1) ?? '')
+            : null,
+          id: download.id,
+          paused: download.paused,
+          state: download.state,
+          totalBytes: download.totalBytes,
+          url: download.url,
+        });
+        if (state.downloadId !== null) {
+          state.duplicateEvents += 1;
+          return;
+        }
+        state.downloadId = download.id;
+        try {
+          Promise.resolve(chrome.downloads.pause(download.id)).then(
+            () => {
+              state.pause = { status: 'fulfilled' };
+            },
+            (error) => {
+              state.pause = { error: String(error), status: 'rejected' };
+            }
+          );
+        } catch (error) {
+          state.pause = { error: String(error), status: 'rejected' };
+        }
+      };
+      globalThis.__xegMv3PauseControl = { listener, state };
+      chrome.downloads.onCreated.addListener(listener);
+    }, objectUrl);
+    pauseListenerInstalled = true;
+
     await extensionPage.evaluate((message) => {
       globalThis.__xegMv3RestartStart = chrome.runtime.sendMessage(message).then(
         (response) => ({ response, status: 'fulfilled' }),
         (error) => ({ error: String(error), status: 'rejected' })
       );
     }, {
-      type: 'DOWNLOAD_REQUEST',
+      type: 'DOWNLOAD_BLOB_URL_REQUEST',
       payload: {
         filename,
+        mimeType: 'application/octet-stream',
+        objectUrl,
         requestId,
-        url: MV3_RESTART_DOWNLOAD_URL,
       },
     });
 
-    const serverRequest = await waitForValue(
-      () => heldDownloadServer.requests[0],
-      'owned loopback download stream request'
-    );
-    assert.equal(serverRequest.method, 'GET');
-    assert.deepEqual(redirectHits, [{
-      method: 'GET',
-      path: MV3_RESTART_DOWNLOAD_PATH,
-      status: 307,
-    }]);
-    evidence.route.hits = redirectHits.map((hit) => ({ ...hit }));
+    const pauseControl = await waitForValue(async () => {
+      const control = await extensionPage.evaluate(() => {
+        const value = globalThis.__xegMv3PauseControl?.state;
+        return value ? structuredClone(value) : null;
+      });
+      if (control?.pause.status === 'rejected') {
+        throw new Error(`Failed to pause owned download: ${control.pause.error}`);
+      }
+      return Number.isInteger(control?.downloadId) && control.pause.status === 'fulfilled'
+        ? control
+        : undefined;
+    }, 'owned Chrome download to be created and paused');
+    downloadId = pauseControl.downloadId;
+    assert.equal(pauseControl.duplicateEvents, 0);
+    assert.equal(pauseControl.events.length, 1);
+    assert.equal(pauseControl.events[0].id, downloadId);
+    assert.equal(pauseControl.events[0].url, objectUrl);
     const ownedDownload = await waitForValue(
-      () => findOwnedDownload(extensionPage, initialDownloadIds, filename),
+      () => findOwnedDownload(extensionPage, initialDownloadIds, objectUrl),
       'owned Chrome download item'
     );
-    downloadId = ownedDownload.id;
-    assert.equal(ownedDownload.url, MV3_RESTART_DOWNLOAD_URL);
+    assert.equal(ownedDownload.id, downloadId);
     const bound = await waitForValue(async () => {
       const stored = await extensionPage.evaluate(async ({ trackingKey, trackedRequestId }) => {
         const values = await chrome.storage.local.get(trackingKey);
@@ -534,17 +537,20 @@ async function verifyMv3RestartCancellation({
 
     const beforeStop = await waitForValue(async () => {
       const state = await readMv3LifecycleState(extensionPage, requestId, downloadId);
-      return state.download?.state === 'in_progress' && state.download.bytesReceived > 0
-        ? state
-        : undefined;
-    }, 'in-progress Chrome download with received bytes before worker stop');
+      return (
+        state.download?.state === 'in_progress' &&
+        state.download.paused === true &&
+        state.download.totalBytes === MV3_RESTART_BLOB_BYTES &&
+        typeof state.download.filename === 'string' &&
+        basename(state.download.filename) === filename
+      ) ? state : undefined;
+    }, 'paused in-progress Chrome download before worker stop');
     assert.deepEqual(beforeStop.record, {
       cancellationRequested: false,
       downloadId,
     });
-    assert.equal(heldDownloadServer.requests.length, 1);
-    assert(beforeStop.download.bytesReceived > 0);
-    assert.equal(beforeStop.download.paused, false);
+    assert.equal(beforeStop.download.paused, true);
+    assert.equal(beforeStop.download.totalBytes, MV3_RESTART_BLOB_BYTES);
     assert.equal(basename(beforeStop.download.filename), filename);
     const oldWorker = await workerObserver.waitForRunning(extensionId);
     evidence.beforeStop = {
@@ -554,7 +560,9 @@ async function verifyMv3RestartCancellation({
         id: downloadId,
         paused: beforeStop.download.paused,
         state: beforeStop.download.state,
+        totalBytes: beforeStop.download.totalBytes,
       },
+      pauseControl,
       storageRecord: beforeStop.record,
       worker: oldWorker,
     };
@@ -562,16 +570,21 @@ async function verifyMv3RestartCancellation({
     evidence.stop = await workerObserver.stopAndWait(extensionId, oldWorker);
     const afterStop = await readMv3LifecycleState(extensionPage, requestId, downloadId);
     assert.equal(afterStop.download?.state, 'in_progress');
+    assert.equal(afterStop.download?.paused, true);
     assert.deepEqual(
       afterStop.record,
       beforeStop.record,
       'Persisted tracking must survive the old worker stopping'
     );
     evidence.afterStop = {
+      downloadPaused: afterStop.download.paused,
       downloadState: afterStop.download.state,
       storageRecord: afterStop.record,
     };
-    await workerObserver.assertNoTargets(extensionId);
+    evidence.preCancel = await workerObserver.assertNoTargets(
+      extensionId,
+      evidence.stop.createdTargetIds
+    );
 
     const cancellationResponsePromise = extensionPage.evaluate((message) =>
       chrome.runtime.sendMessage(message), {
@@ -585,6 +598,7 @@ async function verifyMv3RestartCancellation({
     ]);
     assert.deepEqual(cancellationResponse, { success: true });
     assert.notEqual(newWorker.targetId, oldWorker.targetId);
+    assert.equal(evidence.stop.createdTargetIds.includes(newWorker.targetId), false);
 
     const afterCancel = await waitForValue(async () => {
       const state = await readMv3LifecycleState(extensionPage, requestId, downloadId);
@@ -595,10 +609,6 @@ async function verifyMv3RestartCancellation({
     assert.equal(afterCancel.download.error, 'USER_CANCELED');
     assert.equal(afterCancel.download.exists, false);
     assert.deepEqual(afterCancel.trackingKeys, []);
-    await waitForValue(
-      () => serverRequest.connectionClosed ? true : undefined,
-      'cancelled loopback response connection to close'
-    );
     const remainingFiles = await waitForValue(async () => {
       const entries = await readdir(downloads);
       const additions = entries.filter((entry) => !initialFiles.has(entry));
@@ -630,26 +640,19 @@ async function verifyMv3RestartCancellation({
       trackingKeys: afterCancel.trackingKeys,
       worker: newWorker,
     };
-    evidence.server = {
-      connectionClosedAfterCancellation: serverRequest.connectionClosed,
-      expectedBytes: serverRequest.expectedBytes,
-      initialBytes: serverRequest.initialBytes,
-      requestCount: heldDownloadServer.requests.length,
-    };
     evidence.workerTargetEvents = workerObserver.snapshotEvents(extensionId);
     evidence.status = 'passed';
   } catch (error) {
     primarySeen = true;
     primaryError = error;
     evidence.error = safeError(error);
-    evidence.route.hits = redirectHits.map((hit) => ({ ...hit }));
     let ownershipRecoveryError;
-    if (downloadId === undefined) {
+    if (downloadId === undefined && objectUrl !== undefined) {
       try {
         downloadId = (await findOwnedDownload(
           extensionPage,
           initialDownloadIds,
-          filename
+          objectUrl
         ))?.id;
       } catch (recoveryError) {
         ownershipRecoveryError = recoveryError;
@@ -658,19 +661,29 @@ async function verifyMv3RestartCancellation({
     const failureReads = await Promise.allSettled([
       readMv3LifecycleState(extensionPage, requestId, downloadId),
       readdir(downloads),
+      extensionPage.evaluate(() => {
+        const value = globalThis.__xegMv3PauseControl?.state;
+        return value ? structuredClone(value) : null;
+      }),
     ]);
     const lifecycleState = failureReads[0];
     const files = failureReads[1];
+    const pauseControl = failureReads[2];
     evidence.failureSnapshot = {
       ...(lifecycleState.status === 'fulfilled'
         ? {
             download: lifecycleState.value.download === null
               ? null
               : {
+                  bytesReceived: lifecycleState.value.download.bytesReceived,
                   error: lifecycleState.value.download.error,
-                  filename: basename(lifecycleState.value.download.filename),
+                  filename: typeof lifecycleState.value.download.filename === 'string'
+                    ? basename(lifecycleState.value.download.filename)
+                    : null,
                   id: lifecycleState.value.download.id,
+                  paused: lifecycleState.value.download.paused,
                   state: lifecycleState.value.download.state,
+                  totalBytes: lifecycleState.value.download.totalBytes,
                 },
             storageRecord: lifecycleState.value.record,
             trackingKeys: lifecycleState.value.trackingKeys,
@@ -682,24 +695,22 @@ async function verifyMv3RestartCancellation({
       ...(ownershipRecoveryError === undefined
         ? { recoveredDownloadId: downloadId ?? null }
         : { ownershipRecoveryError: safeError(ownershipRecoveryError) }),
-      serverRequests: heldDownloadServer.requests.map((request) => ({ ...request })),
-      routeHits: redirectHits.map((hit) => ({ ...hit })),
+      ...(pauseControl.status === 'fulfilled'
+        ? { pauseControl: pauseControl.value }
+        : { pauseControlReadError: safeError(pauseControl.reason) }),
       workerTargetEvents: workerObserver.snapshotEvents(extensionId),
     };
     evidence.status = 'failed';
   } finally {
-    if (downloadId === undefined) {
+    if (downloadId === undefined && objectUrl !== undefined) {
       try {
-        const recoverOwnedDownload = () =>
-          findOwnedDownload(extensionPage, initialDownloadIds, filename);
-        const ownedDownload = heldDownloadServer.requests.length > 0
-          ? await waitForValue(
-              recoverOwnedDownload,
-              'owned Chrome download item during cleanup',
-              2_000
-            )
-          : await recoverOwnedDownload();
+        const ownedDownload = await findOwnedDownload(
+          extensionPage,
+          initialDownloadIds,
+          objectUrl
+        );
         downloadId = ownedDownload?.id;
+        evidence.cleanup.downloadRecovery = { found: ownedDownload !== undefined };
       } catch (error) {
         cleanupErrors.push(error);
       }
@@ -749,10 +760,43 @@ async function verifyMv3RestartCancellation({
       cleanupErrors.push(error);
     }
     try {
-      await heldDownloadServer.close();
-      evidence.cleanup.serverClosed = true;
+      evidence.cleanup.pauseListener = await extensionPage.evaluate(() => {
+        const control = globalThis.__xegMv3PauseControl;
+        const state = control ? structuredClone(control.state) : null;
+        if (control) chrome.downloads.onCreated.removeListener(control.listener);
+        delete globalThis.__xegMv3PauseControl;
+        delete globalThis.__xegMv3RestartStart;
+        return {
+          controlCleared: !Object.hasOwn(globalThis, '__xegMv3PauseControl'),
+          removed: control !== undefined,
+          requestOutcomeCleared: !Object.hasOwn(globalThis, '__xegMv3RestartStart'),
+          state,
+        };
+      });
+      assert.equal(evidence.cleanup.pauseListener.controlCleared, true);
+      assert.equal(evidence.cleanup.pauseListener.requestOutcomeCleared, true);
+      if (pauseListenerInstalled) {
+        assert.equal(evidence.cleanup.pauseListener.removed, true);
+      }
     } catch (error) {
       cleanupErrors.push(error);
+    }
+    if (objectUrl !== undefined) {
+      try {
+        evidence.cleanup.blob = await page.evaluate((ownedUrl) => {
+          URL.revokeObjectURL(ownedUrl);
+          if (globalThis.__xegMv3RestartBlobUrl === ownedUrl) {
+            delete globalThis.__xegMv3RestartBlobUrl;
+          }
+          return {
+            globalCleared: !Object.hasOwn(globalThis, '__xegMv3RestartBlobUrl'),
+            revoked: true,
+          };
+        }, objectUrl);
+        assert.deepEqual(evidence.cleanup.blob, { globalCleared: true, revoked: true });
+      } catch (error) {
+        cleanupErrors.push(error);
+      }
     }
     try {
       const currentFiles = await readdir(downloads);
@@ -1220,7 +1264,6 @@ async function exerciseInstalledExtension(
   const mv3RestartCancellation = {};
   const flowCleanup = {};
   const cleanupErrors = [];
-  let heldDownloadServer;
   let fixtureRoutes;
   let extensionPage;
   let page;
@@ -1234,8 +1277,7 @@ async function exerciseInstalledExtension(
   let observationError;
   let observationErrorSeen = false;
   try {
-    heldDownloadServer = await createHeldDownloadServer();
-    fixtureRoutes = await installFixtureRoutes(context, root, images, heldDownloadServer);
+    fixtureRoutes = await installFixtureRoutes(context, root, images);
     extensionPage = await context.newPage();
     page = await context.newPage();
     page.on('pageerror', (error) => pageErrors.push(error.message));
@@ -1260,18 +1302,20 @@ async function exerciseInstalledExtension(
       'X.com Enhanced Gallery'
     );
     packagingAssets = await verifyPackagedIcons(extensionPage);
+    await page.goto(FIXTURE_URL);
+    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({
+      state: 'attached',
+      timeout: 15_000,
+    });
     await verifyMv3RestartCancellation({
       downloads,
       evidence: mv3RestartCancellation,
       extensionId,
       extensionPage,
-      heldDownloadServer,
-      redirectHits: fixtureRoutes.mv3Redirects,
+      page,
       workerObserver,
     });
     notification = await verifyDefaultNotification(extensionPage);
-    await page.goto(FIXTURE_URL);
-    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached', timeout: 15_000 });
     for (const cycle of CYCLES) {
       cycles.push(await runCycle({ cycle, downloads, extensionPage, output, page, images }));
     }
@@ -1296,7 +1340,6 @@ async function exerciseInstalledExtension(
       pageErrors,
       consoleErrors,
       fixtureApiResponses: fixtureRoutes.apiResponses,
-      fixtureMv3Redirects: fixtureRoutes.mv3Redirects,
       mv3RestartCancellation,
       notification,
       packagingAssets,
@@ -1309,14 +1352,6 @@ async function exerciseInstalledExtension(
       await page.screenshot({ path: join(output, 'installed-flow-error.png') }).catch(() => {});
     }
   } finally {
-    if (heldDownloadServer) {
-      try {
-        await heldDownloadServer.close();
-        flowCleanup.heldDownloadServerClosed = true;
-      } catch (error) {
-        cleanupErrors.push(error);
-      }
-    }
     if (workerObserver) {
       try {
         await workerObserver.dispose();
@@ -1357,7 +1392,6 @@ async function exerciseInstalledExtension(
             consoleErrors,
             failedRequests,
             fixtureApiResponses: fixtureRoutes?.apiResponses ?? [],
-            fixtureMv3Redirects: fixtureRoutes?.mv3Redirects ?? [],
             flowCleanup,
             mv3RestartCancellation,
             notification,
