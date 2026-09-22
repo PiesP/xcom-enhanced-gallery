@@ -165,6 +165,37 @@ describe.each([
   });
 });
 
+it('restores ownership before cancellation so a terminal event prevents a retry', async () => {
+  const requestId = `restore-terminal-during-cancel-${crypto.randomUUID()}`;
+  const storageKey = 'xeg.download-tracking.v1';
+  const existingRecords = state.storageValues[storageKey];
+  state.storageValues[storageKey] = {
+    ...(typeof existingRecords === 'object' && existingRecords !== null ? existingRecords : {}),
+    [requestId]: {
+      downloadId: 707,
+      cancellationRequested: true,
+      cancellationRequestedAt: Date.now(),
+    },
+  };
+  state.searchDownload
+    .mockResolvedValueOnce([{ id: 707, state: 'in_progress' }])
+    .mockRejectedValue(new Error('download lookup unavailable'));
+  state.cancelDownload.mockImplementation(async (downloadId: number) => {
+    state.downloadChangedListener?.({ id: downloadId, state: 'interrupted' });
+  });
+
+  vi.resetModules();
+  await import('@extension/background');
+
+  await vi.waitFor(() => {
+    const records = state.storageValues[storageKey] as Record<string, unknown>;
+    expect(records).not.toHaveProperty(requestId);
+  });
+  expect(state.cancelDownload).toHaveBeenCalledTimes(1);
+  expect(state.cancelDownload).toHaveBeenCalledWith(707);
+  expect(state.searchDownload).toHaveBeenCalledTimes(2);
+});
+
 describe('background notification messages', () => {
   it('returns an error response when notifications.create rejects', async () => {
     const rejection = Promise.reject(new Error('notifications unavailable'));
@@ -234,6 +265,29 @@ describe.each([
     await expect(sendMessage(request(requestId))).resolves.toEqual({ success: true });
 
     expect(state.cancelDownload).not.toHaveBeenCalled();
+  });
+
+  it('does not cancel again after a pre-ID cancellation reaches a terminal state', async () => {
+    const requestId = `cancel-before-id-terminal-${crypto.randomUUID()}`;
+    const allocation = deferred<number>();
+    state.download.mockReturnValueOnce(allocation.promise);
+    state.waitForDownloadComplete.mockRejectedValueOnce(
+      new Error('Download interrupted: USER_CANCELED')
+    );
+
+    const downloadResponse = sendMessage(request(requestId));
+    await expect(
+      sendMessage({ type: 'DOWNLOAD_CANCEL_REQUEST', payload: { requestId } })
+    ).resolves.toEqual({ success: true });
+    allocation.resolve(151);
+
+    await expect(downloadResponse).resolves.toEqual({
+      success: false,
+      error: 'Download interrupted: USER_CANCELED',
+    });
+    expect(state.cancelDownload).toHaveBeenCalledTimes(1);
+    expect(state.cancelDownload).toHaveBeenCalledWith(151);
+    expect(state.storageValues['xeg.download-tracking.v1']).not.toHaveProperty(requestId);
   });
 
   it('cancels and checks a download that times out after receiving an ID', async () => {
@@ -319,7 +373,7 @@ describe.each([
     expect(state.searchDownload).toHaveBeenCalledTimes(3);
   });
 
-  it('removes a retained download when its terminal event precedes owner settlement', async () => {
+  it('does not retry cancellation after a terminal event precedes owner settlement', async () => {
     const requestId = `terminal-before-owner-${crypto.randomUUID()}`;
     state.download.mockResolvedValueOnce(404);
     state.waitForDownloadComplete.mockRejectedValueOnce(
@@ -347,13 +401,12 @@ describe.each([
     ).resolves.toEqual({
       success: false,
       error: 'Download timed out after 5 minutes (id: 404)',
-      data: { requestId, terminal: false },
     });
 
     await expect(
       sendMessage({ type: 'DOWNLOAD_CANCEL_REQUEST', payload: { requestId } })
     ).resolves.toEqual({ success: true });
-    expect(state.cancelDownload).toHaveBeenCalledTimes(2);
+    expect(state.cancelDownload).toHaveBeenCalledTimes(1);
   });
 
   it('does not repeat a successful restore before handling a late cancellation', async () => {
