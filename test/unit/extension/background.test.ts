@@ -236,6 +236,29 @@ describe.each([
     expect(state.cancelDownload).not.toHaveBeenCalled();
   });
 
+  it('does not cancel again after a pre-ID cancellation reaches a terminal state', async () => {
+    const requestId = `cancel-before-id-terminal-${crypto.randomUUID()}`;
+    const allocation = deferred<number>();
+    state.download.mockReturnValueOnce(allocation.promise);
+    state.waitForDownloadComplete.mockRejectedValueOnce(
+      new Error('Download interrupted: USER_CANCELED')
+    );
+
+    const downloadResponse = sendMessage(request(requestId));
+    await expect(
+      sendMessage({ type: 'DOWNLOAD_CANCEL_REQUEST', payload: { requestId } })
+    ).resolves.toEqual({ success: true });
+    allocation.resolve(151);
+
+    await expect(downloadResponse).resolves.toEqual({
+      success: false,
+      error: 'Download interrupted: USER_CANCELED',
+    });
+    expect(state.cancelDownload).toHaveBeenCalledTimes(1);
+    expect(state.cancelDownload).toHaveBeenCalledWith(151);
+    expect(state.storageValues['xeg.download-tracking.v1']).not.toHaveProperty(requestId);
+  });
+
   it('cancels and checks a download that times out after receiving an ID', async () => {
     const requestId = `cancel-on-timeout-${crypto.randomUUID()}`;
     state.download.mockResolvedValueOnce(202);
@@ -319,7 +342,7 @@ describe.each([
     expect(state.searchDownload).toHaveBeenCalledTimes(3);
   });
 
-  it('removes a retained download when its terminal event precedes owner settlement', async () => {
+  it('does not retry cancellation after a terminal event precedes owner settlement', async () => {
     const requestId = `terminal-before-owner-${crypto.randomUUID()}`;
     state.download.mockResolvedValueOnce(404);
     state.waitForDownloadComplete.mockRejectedValueOnce(
@@ -347,13 +370,12 @@ describe.each([
     ).resolves.toEqual({
       success: false,
       error: 'Download timed out after 5 minutes (id: 404)',
-      data: { requestId, terminal: false },
     });
 
     await expect(
       sendMessage({ type: 'DOWNLOAD_CANCEL_REQUEST', payload: { requestId } })
     ).resolves.toEqual({ success: true });
-    expect(state.cancelDownload).toHaveBeenCalledTimes(2);
+    expect(state.cancelDownload).toHaveBeenCalledTimes(1);
   });
 
   it('does not repeat a successful restore before handling a late cancellation', async () => {

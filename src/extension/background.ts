@@ -346,6 +346,7 @@ async function runTrackedDownload(
   }
 
   let downloadId: number | undefined;
+  let cancellationAlreadyTerminal = false;
   let retainTrackingAfterFailure = false;
   let operationFailure: DownloadOperationError | undefined;
   let cleanupFailure: unknown;
@@ -360,8 +361,13 @@ async function runTrackedDownload(
       };
       activeDownloadIds.set(requestId, tracked);
       if (await downloadTracking.bindDownload(requestId, downloadId)) {
-        const cancellationStatus = await cancelDownloadWithRetry(downloadId, 'request');
-        tracked.retainUntilTerminal = cancellationStatus !== 'terminal';
+        const cancellationStatus = await cancelDownloadWithRetry(
+          downloadId,
+          'request',
+          () => tracked.terminalObserved
+        );
+        cancellationAlreadyTerminal = cancellationStatus === 'terminal' || tracked.terminalObserved;
+        tracked.retainUntilTerminal = !cancellationAlreadyTerminal;
       }
     }
     await waitForDownloadComplete(browserApi.downloads, downloadId);
@@ -369,12 +375,23 @@ async function runTrackedDownload(
     let terminal = true;
     if (downloadId !== undefined) {
       const tracked = requestId ? activeDownloadIds.get(requestId) : undefined;
-      if (tracked?.downloadId === downloadId) tracked.retainUntilTerminal = true;
-      const reason =
-        error instanceof Error && error.name === 'DownloadTimeoutError' ? 'timeout' : 'failure';
-      const cancellationStatus = await cancelDownloadWithRetry(downloadId, reason);
-      terminal = cancellationStatus === 'terminal';
-      retainTrackingAfterFailure = !terminal;
+      const terminalObserved =
+        cancellationAlreadyTerminal ||
+        (tracked?.downloadId === downloadId && tracked.terminalObserved);
+      if (terminalObserved) {
+        terminal = true;
+      } else {
+        if (tracked?.downloadId === downloadId) tracked.retainUntilTerminal = true;
+        const reason =
+          error instanceof Error && error.name === 'DownloadTimeoutError' ? 'timeout' : 'failure';
+        const cancellationStatus = await cancelDownloadWithRetry(
+          downloadId,
+          reason,
+          () => tracked?.downloadId === downloadId && tracked?.terminalObserved === true
+        );
+        terminal = cancellationStatus === 'terminal';
+        retainTrackingAfterFailure = !terminal;
+      }
     }
     operationFailure = new DownloadOperationError(error, requestId, terminal);
     throw operationFailure;
@@ -454,17 +471,21 @@ async function cancelAndInspectDownload(
 
 async function cancelDownloadWithRetry(
   downloadId: number,
-  reason: 'failure' | 'request' | 'timeout'
+  reason: 'failure' | 'request' | 'timeout',
+  terminalObserved: () => boolean = () => false
 ): Promise<DownloadCancellationStatus> {
+  if (terminalObserved()) return 'terminal';
+
   let status: DownloadCancellationStatus = 'unknown';
   for (let attempt = 0; attempt < DOWNLOAD_CANCEL_MAX_ATTEMPTS; attempt += 1) {
     if (attempt > 0) {
       await new Promise<void>((resolve) => {
         setTimeout(resolve, DOWNLOAD_CANCEL_RETRY_DELAY_MS);
       });
+      if (terminalObserved()) return 'terminal';
     }
     status = await cancelAndInspectDownload(downloadId, reason);
-    if (status === 'terminal') return status;
+    if (status === 'terminal' || terminalObserved()) return 'terminal';
   }
   return status;
 }
@@ -505,7 +526,11 @@ async function handleDownloadCancelRequest(message: DownloadCancelRequestMessage
       error: error instanceof Error ? error.message : String(error),
     });
   }
-  const cancellationStatus = await cancelDownloadWithRetry(tracked.downloadId, 'request');
+  const cancellationStatus = await cancelDownloadWithRetry(
+    tracked.downloadId,
+    'request',
+    () => tracked.terminalObserved
+  );
   if ((cancellationStatus === 'terminal' || tracked.terminalObserved) && tracked.ownerSettled) {
     if (activeDownloadIds.get(requestId) === tracked) {
       activeDownloadIds.delete(requestId);
