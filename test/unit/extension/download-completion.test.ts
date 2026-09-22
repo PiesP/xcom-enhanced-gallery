@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
+import { DOWNLOAD_TIMEOUT_MS } from '@constants/performance';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { waitForDownloadComplete } from '@extension/download-completion';
 
 function createDownloads() {
@@ -20,6 +21,10 @@ function createDownloads() {
 }
 
 describe('waitForDownloadComplete', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('resolves from the current state when the completion event was missed', async () => {
     const downloads = createDownloads();
     downloads.search.mockResolvedValueOnce([{ id: 7, state: 'complete' }]);
@@ -63,6 +68,21 @@ describe('waitForDownloadComplete', () => {
         new Promise<string>((resolve) => setTimeout(() => resolve('still-pending'), 0)),
       ])
     ).resolves.toBe('Failed to inspect download 7: search unavailable');
+    expect(downloads.onChanged.removeListener).toHaveBeenCalledOnce();
+  });
+
+  it('marks timeout failures for the owning layer to cancel', async () => {
+    vi.useFakeTimers();
+    const downloads = createDownloads();
+    const pending = waitForDownloadComplete(downloads, 7);
+    const rejection = expect(pending).rejects.toMatchObject({
+      name: 'DownloadTimeoutError',
+      message: 'Download timed out after 5 minutes (id: 7)',
+    });
+
+    await vi.advanceTimersByTimeAsync(DOWNLOAD_TIMEOUT_MS);
+
+    await rejection;
     expect(downloads.onChanged.removeListener).toHaveBeenCalledOnce();
   });
 });
