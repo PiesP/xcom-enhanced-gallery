@@ -379,6 +379,34 @@ async function findOwnedDownload(extensionPage, initialDownloadIds, objectUrl) {
   return matches[0];
 }
 
+async function readPauseControlState(extensionPage) {
+  return extensionPage.evaluate(() => {
+    const value = globalThis.__xegMv3PauseControl?.state;
+    return value ? structuredClone(value) : null;
+  });
+}
+
+async function recoverOwnedDownload(extensionPage, initialDownloadIds, objectUrl) {
+  const pauseControl = await readPauseControlState(extensionPage);
+  if (Number.isInteger(pauseControl?.downloadId)) {
+    assert.equal(
+      initialDownloadIds.has(pauseControl.downloadId),
+      false,
+      'Pause listener matched a pre-existing download ID'
+    );
+    const [download] = await extensionPage.evaluate(
+      (id) => chrome.downloads.search({ id }),
+      pauseControl.downloadId
+    );
+    if (download !== undefined) {
+      assert.equal(download.url, objectUrl, 'Pause listener matched a different download URL');
+      return download;
+    }
+    return undefined;
+  }
+  return findOwnedDownload(extensionPage, initialDownloadIds, objectUrl);
+}
+
 async function readMv3LifecycleState(extensionPage, requestId, downloadId) {
   return extensionPage.evaluate(async ({ id, trackingKey, trackedRequestId }) => {
     const stored = await chrome.storage.local.get(trackingKey);
@@ -502,10 +530,7 @@ async function verifyMv3RestartCancellation({
     });
 
     const pauseControl = await waitForValue(async () => {
-      const control = await extensionPage.evaluate(() => {
-        const value = globalThis.__xegMv3PauseControl?.state;
-        return value ? structuredClone(value) : null;
-      });
+      const control = await readPauseControlState(extensionPage);
       if (control?.pause.status === 'rejected') {
         throw new Error(`Failed to pause owned download: ${control.pause.error}`);
       }
@@ -649,7 +674,7 @@ async function verifyMv3RestartCancellation({
     let ownershipRecoveryError;
     if (downloadId === undefined && objectUrl !== undefined) {
       try {
-        downloadId = (await findOwnedDownload(
+        downloadId = (await recoverOwnedDownload(
           extensionPage,
           initialDownloadIds,
           objectUrl
@@ -661,10 +686,7 @@ async function verifyMv3RestartCancellation({
     const failureReads = await Promise.allSettled([
       readMv3LifecycleState(extensionPage, requestId, downloadId),
       readdir(downloads),
-      extensionPage.evaluate(() => {
-        const value = globalThis.__xegMv3PauseControl?.state;
-        return value ? structuredClone(value) : null;
-      }),
+      readPauseControlState(extensionPage),
     ]);
     const lifecycleState = failureReads[0];
     const files = failureReads[1];
@@ -704,11 +726,16 @@ async function verifyMv3RestartCancellation({
   } finally {
     if (downloadId === undefined && objectUrl !== undefined) {
       try {
-        const ownedDownload = await findOwnedDownload(
-          extensionPage,
-          initialDownloadIds,
-          objectUrl
-        );
+        const pauseControl = await readPauseControlState(extensionPage);
+        const recoverDownload = () =>
+          recoverOwnedDownload(extensionPage, initialDownloadIds, objectUrl);
+        const ownedDownload = Number.isInteger(pauseControl?.downloadId)
+          ? await waitForValue(
+              recoverDownload,
+              'listener-owned Chrome download item during cleanup',
+              2_000
+            )
+          : await recoverDownload();
         downloadId = ownedDownload?.id;
         evidence.cleanup.downloadRecovery = { found: ownedDownload !== undefined };
       } catch (error) {
