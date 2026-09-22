@@ -15,6 +15,9 @@ export const DOWNLOAD_CANCEL_RETRY_DELAY_MS = 100;
 /** Maximum number of cancel-and-inspect attempts for one failure boundary. */
 export const DOWNLOAD_CANCEL_MAX_ATTEMPTS = 2;
 
+/** Maximum time a cancellation intent may wait for a download ID allocation. */
+export const DOWNLOAD_PRE_ID_CANCELLATION_TTL_MS = 30_000;
+
 /** Default request timeout for fetch-based downloads */
 export const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
 

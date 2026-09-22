@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
+import { DOWNLOAD_PRE_ID_CANCELLATION_TTL_MS } from '@constants/performance';
 import type { StorageAdapter } from '@platform/types';
 
 const DOWNLOAD_TRACKING_STORAGE_KEY = 'xeg.download-tracking.v1';
@@ -8,6 +9,7 @@ const DOWNLOAD_TRACKING_STORAGE_KEY = 'xeg.download-tracking.v1';
 export interface PersistedDownloadRecord {
   readonly downloadId?: number;
   readonly cancellationRequested: boolean;
+  readonly cancellationRequestedAt?: number;
 }
 
 type StorageErrorHandler = (operation: 'read' | 'write', error: unknown) => void;
@@ -27,9 +29,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function parseStoredRecords(value: unknown): Map<string, PersistedDownloadRecord> {
+function parseStoredRecords(
+  value: unknown,
+  nowMs: number
+): { records: Map<string, PersistedDownloadRecord>; needsPersistence: boolean } {
   const records = new Map<string, PersistedDownloadRecord>();
-  if (!isRecord(value)) return records;
+  let needsPersistence = false;
+  if (!isRecord(value)) return { records, needsPersistence };
 
   for (const [requestId, rawRecord] of Object.entries(value)) {
     if (!requestId || !isRecord(rawRecord)) continue;
@@ -43,13 +49,52 @@ function parseStoredRecords(value: unknown): Map<string, PersistedDownloadRecord
       continue;
     }
 
+    const rawCancellationRequestedAt = rawRecord.cancellationRequestedAt;
+    const hasValidCancellationRequestedAt =
+      rawCancellationRequestedAt === undefined ||
+      (typeof rawCancellationRequestedAt === 'number' &&
+        Number.isInteger(rawCancellationRequestedAt) &&
+        rawCancellationRequestedAt >= 0);
+    if (!hasValidCancellationRequestedAt) {
+      needsPersistence = true;
+      if (downloadId === undefined && rawRecord.cancellationRequested) continue;
+    }
+
+    let cancellationRequestedAt = hasValidCancellationRequestedAt
+      ? rawCancellationRequestedAt
+      : undefined;
+    if (rawRecord.cancellationRequested && downloadId === undefined) {
+      if (cancellationRequestedAt === undefined) {
+        // Records written before the timestamp field existed get one bounded
+        // grace period, then are normalized on the next successful write.
+        cancellationRequestedAt = nowMs;
+        needsPersistence = true;
+      } else if (nowMs - cancellationRequestedAt >= DOWNLOAD_PRE_ID_CANCELLATION_TTL_MS) {
+        needsPersistence = true;
+        continue;
+      }
+    } else if (!rawRecord.cancellationRequested && rawCancellationRequestedAt !== undefined) {
+      needsPersistence = true;
+      cancellationRequestedAt = undefined;
+    }
+
     records.set(requestId, {
       ...(typeof downloadId === 'number' ? { downloadId } : {}),
       cancellationRequested: rawRecord.cancellationRequested,
+      ...(cancellationRequestedAt === undefined ? {} : { cancellationRequestedAt }),
     });
   }
 
-  return records;
+  return { records, needsPersistence };
+}
+
+function isExpiredPreIdCancellation(record: PersistedDownloadRecord, nowMs: number): boolean {
+  return (
+    record.downloadId === undefined &&
+    record.cancellationRequested &&
+    record.cancellationRequestedAt !== undefined &&
+    nowMs - record.cancellationRequestedAt >= DOWNLOAD_PRE_ID_CANCELLATION_TTL_MS
+  );
 }
 
 /**
@@ -65,7 +110,8 @@ export class DownloadTrackingStore {
 
   constructor(
     private readonly storage: StorageAdapter,
-    private readonly onStorageError: StorageErrorHandler = () => undefined
+    private readonly onStorageError: StorageErrorHandler = () => undefined,
+    private readonly now: () => number = () => Date.now()
   ) {}
 
   async ready(): Promise<void> {
@@ -79,11 +125,12 @@ export class DownloadTrackingStore {
       // A failed write leaves the in-memory snapshot newer than storage. Do
       // not replace it with an older read while the state is still dirty.
       if (this.dirty) {
-        await this.ensureLoaded();
+        await this.persist();
         return this.entries();
       }
 
       await this.loadFromStorage();
+      if (this.dirty) await this.persist();
       return this.entries();
     });
   }
@@ -109,8 +156,16 @@ export class DownloadTrackingStore {
   async bindDownload(requestId: string, downloadId: number): Promise<boolean> {
     return this.enqueue(async () => {
       await this.ensureLoaded();
-      const cancellationRequested = this.records.get(requestId)?.cancellationRequested ?? false;
-      this.records.set(requestId, { downloadId, cancellationRequested });
+      const current = this.records.get(requestId);
+      const cancellationRequested =
+        current?.cancellationRequested === true && !isExpiredPreIdCancellation(current, this.now());
+      this.records.set(requestId, {
+        downloadId,
+        cancellationRequested,
+        ...(cancellationRequested && current?.cancellationRequestedAt !== undefined
+          ? { cancellationRequestedAt: current.cancellationRequestedAt }
+          : {}),
+      });
       await this.persist();
       return cancellationRequested;
     });
@@ -120,9 +175,16 @@ export class DownloadTrackingStore {
     await this.enqueue(async () => {
       await this.ensureLoaded();
       const current = this.records.get(requestId);
+      const cancellationRequestedAt =
+        current?.cancellationRequested === true &&
+        current.cancellationRequestedAt !== undefined &&
+        !isExpiredPreIdCancellation(current, this.now())
+          ? current.cancellationRequestedAt
+          : this.now();
       this.records.set(requestId, {
         ...(current?.downloadId === undefined ? {} : { downloadId: current.downloadId }),
         cancellationRequested: true,
+        cancellationRequestedAt,
       });
       await this.persist();
     });
@@ -137,19 +199,20 @@ export class DownloadTrackingStore {
   }
 
   private async ensureLoaded(): Promise<void> {
-    if (this.loaded) return;
-    await this.loadFromStorage();
+    if (!this.loaded) await this.loadFromStorage();
+    if (this.dirty) await this.persist();
   }
 
   private async loadFromStorage(): Promise<void> {
     try {
       const stored = await this.storage.get<unknown>(DOWNLOAD_TRACKING_STORAGE_KEY);
+      const parsed = parseStoredRecords(stored, this.now());
       this.records.clear();
-      for (const [requestId, record] of parseStoredRecords(stored)) {
+      for (const [requestId, record] of parsed.records) {
         this.records.set(requestId, record);
       }
       this.loaded = true;
-      this.dirty = false;
+      this.dirty = parsed.needsPersistence;
     } catch (error: unknown) {
       this.reportStorageError('read', error);
       throw new DownloadTrackingStorageError('read', error);
