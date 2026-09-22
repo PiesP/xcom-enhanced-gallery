@@ -46,10 +46,26 @@ host layout-shift regression. Page screenshots, per-cycle timings, file hashes,
 and cleanup metadata are retained as evidence; the timings are observations,
 not a performance claim.
 
+The deterministic fixture also exercises the MV3 download restart boundary. A
+production `DOWNLOAD_REQUEST` is redirected from its allowed media URL to a
+task-owned loopback response that sends headers and initial bytes, then remains
+open. The profile requires a real Chrome download ID and persisted tracking
+record before invoking CDP `ServiceWorker.stopWorker`; it does not attach a
+debugger to the Worker or substitute target closure. The old Worker target must
+stop and disappear. A production `DOWNLOAD_CANCEL_REQUEST` must then create a
+different Worker target, restore the request-to-download relationship, leave the
+browser download `interrupted` with `USER_CANCELED`, and remove the tracking
+record. The result also requires the held response to close and the task download
+directory to contain neither a completed payload nor a `.crdownload` residue.
+The loopback listener, exact download history item, tracking record, and any
+task-created partial file are cleaned in `finally`, including failed runs.
+
 Only installed Chrome or Edge with `--installation extension` is supported.
 Userscript managers, Firefox installation, authenticated X.com, native Save As,
 Explorer, OS theme/DPI matrices, and physical GPU behavior remain outside this
-profile.
+profile. This restart check covers an explicit forced stop in the generated
+Chromium MV3 extension; it does not claim that Chrome's idle scheduler chose the
+same instant or cover browser shutdown and OS crash recovery.
 
 After committing a clean named checkout and running the repository gates, run:
 
