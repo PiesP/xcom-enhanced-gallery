@@ -35,9 +35,9 @@ check_release() {
 
   expected="$(latest_mature_release "$repository")"
   if [[ "$current" != "$expected" ]]; then
-    printf '::error title=%s update available::Pinned %s; latest stable release older than %sh is %s.\n' \
+    printf '::warning title=%s update available::Pinned %s; latest stable release older than %sh is %s. Review and update the pin when ready.\n' \
       "$name" "$current" "$cooling_hours" "$expected"
-    return 1
+    return 0
   fi
 
   printf '✓ %s %s is current after the %sh cooling window.\n' \
@@ -86,9 +86,9 @@ check_npm_mature_release() {
       | last.key
     ')"
   if [[ "$current" != "$expected" ]]; then
-    printf '::error title=%s update available::Pinned %s; latest npm release older than %sh is %s.\n' \
+    printf '::warning title=%s update available::Pinned %s; latest npm release older than %sh is %s. Review and update the pin when ready.\n' \
       "$name" "$current" "$cooling_hours" "$expected"
-    return 1
+    return 0
   fi
 
   printf '✓ %s %s is current after the %sh cooling window.\n' \

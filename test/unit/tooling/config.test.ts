@@ -240,10 +240,11 @@ describe('tooling configuration', () => {
     expect(releaseWorkflow).not.toContain('path: ~/.cache/selenium');
   });
 
-  it('does not duplicate the default-branch duplication scan in Deep Verification', () => {
+  it('keeps the strict duplication scan in the weekly or manual Deep Verification gate', () => {
     const duplicationJob = deepWorkflow.match(/\n  duplication:[\s\S]*?\n  mutation:/)?.[0] ?? '';
 
-    expect(duplicationJob).toContain("github.event_name != 'push'");
+    expect(deepWorkflow).not.toContain('\n  push:\n');
+    expect(duplicationJob).toContain('run: nose query src --baseline .nose-baseline.json --fail-on new');
     expect(ciWorkflow).toContain('name: pr-gate/duplication');
   });
 

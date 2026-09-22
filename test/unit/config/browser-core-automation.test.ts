@@ -23,17 +23,18 @@ describe('browser-core update automation', () => {
     expect(workflow).toContain('CHANGED_FILES[0]}" != "packages/core"');
   });
 
-  it('binds approval and auto-merge to the generated head commit', () => {
+  it('hands the exact generated head to manual review without auto-merge', () => {
     const expectedHead = workflow.indexOf('EXPECTED_HEAD_SHA="$(git rev-parse HEAD)"');
     const liveHead = workflow.indexOf('--json headRefOid');
-    const approval = workflow.indexOf('-f commit_id="$EXPECTED_HEAD_SHA"');
-    const merge = workflow.indexOf('--match-head-commit "$EXPECTED_HEAD_SHA"');
+    const handoff = workflow.indexOf('PR head changed before handoff');
 
     expect(expectedHead).toBeGreaterThan(-1);
     expect(liveHead).toBeGreaterThan(expectedHead);
-    expect(approval).toBeGreaterThan(liveHead);
-    expect(merge).toBeGreaterThan(approval);
-    expect(workflow).toContain('GH_TOKEN="$AUTO_MERGE_TOKEN" gh pr merge');
+    expect(handoff).toBeGreaterThan(liveHead);
+    expect(workflow).toContain('manual review');
+    expect(workflow).not.toContain('AUTO_MERGE_TOKEN');
+    expect(workflow).not.toContain('gh pr merge');
+    expect(workflow).not.toContain('event=APPROVE');
   });
 
   it('avoids redundant core-only and no-open-PR push work', () => {

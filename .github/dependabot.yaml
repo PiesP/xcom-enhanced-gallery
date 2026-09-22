@@ -7,10 +7,11 @@ updates:
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
       time: "09:00"
       timezone: "Asia/Seoul"
-    # Keep only a short supply-chain cooling window for this fast-moving project.
+    # Batch routine dependency review once per week; security alerts remain
+    # visible through the normal advisory and scanner paths.
     cooldown:
       default-days: 1
     open-pull-requests-limit: 5
@@ -104,10 +105,11 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
       time: "09:00"
       timezone: "Asia/Seoul"
-    # Keep only a short supply-chain cooling window for this fast-moving project.
+    # Batch routine Actions review once per week; urgent fixes can still be
+    # requested manually or through security advisories.
     cooldown:
       default-days: 1
     open-pull-requests-limit: 3  # Limit concurrent PRs
