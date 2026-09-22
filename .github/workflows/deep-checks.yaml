@@ -2,7 +2,7 @@ name: 🔬 Deep Verification
 
 # Responsibility: expensive checks that should not block quick PR feedback
 # - Mutation testing
-# - Duplication checking on integrated master, scheduled, or on demand
+# - Duplication checking on the weekly schedule or on demand
 #
 # Manual runs can select one check to conserve Actions minutes and runner
 # concurrency when investigating a single gate.
@@ -10,23 +10,6 @@ name: 🔬 Deep Verification
 # Security: All third-party actions pinned to full commit SHAs.
 
 on:
-  push:
-    branches: [master]
-    paths:
-      - ".github/workflows/deep-checks.yaml"
-      - "package.json"
-      - "packages/core"
-      - "pnpm-lock.yaml"
-      - "pnpm-workspace.yaml"
-      - "src/**"
-      - "stryker.conf.json"
-      - "stryker.conf.fast.json"
-      - "test/setup.ts"
-      - "test/unit/**"
-      - "tooling/**"
-      - "tsconfig.json"
-      - "tsconfig.test.json"
-      - "vitest.config.ts"
   schedule:
     - cron: "17 2 * * 0"
   workflow_dispatch:
@@ -54,7 +37,7 @@ concurrency:
 jobs:
   duplication:
     name: 🔍 Duplication
-    if: ${{ github.event_name != 'push' && (github.event_name != 'workflow_dispatch' || inputs.scope == 'all' || inputs.scope == 'duplication') }}
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.scope == 'all' || inputs.scope == 'duplication' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -81,7 +64,7 @@ jobs:
           submodules: true
 
       - name: 📦 Setup project
-        uses: PiesP/browser-core/automation/actions/setup-project@adb7b05ff3781268c3625341951219da778bb40a
+        uses: PiesP/browser-core/automation/actions/setup-project@5fd4c8e8d0d84d8d46dd7b71b996d1664365f6d6
         with:
           node-version: ${{ env.NODE_VERSION }}
 

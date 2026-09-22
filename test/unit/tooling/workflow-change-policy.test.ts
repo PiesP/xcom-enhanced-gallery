@@ -200,18 +200,19 @@ describe('workflow change policy', () => {
     expect(ciWorkflow).toContain('No unit-relevant changes');
     expect(ciWorkflow).toContain('No browser-relevant changes');
     expect(ciWorkflow).toContain('No build-relevant changes');
-    expect(ciWorkflow).toContain('No duplication-relevant changes');
+    expect(ciWorkflow).toContain('Duplication is informational for PR CI');
     expect(securityWorkflow).toContain('No dependency-relevant changes');
     expect(securityWorkflow).toContain('No Semgrep-relevant changes');
   });
 
   it('fails open to heavy checks when routing fails or returns no explicit decision', () => {
-    for (const output of ciOutputs) {
+    for (const output of ['quality', 'unit', 'e2e', 'build'] as const) {
       expect(ciWorkflow).toContain(
         `needs.changes.result != 'success' || needs.changes.outputs.${output} != 'false'`
       );
       expect(ciWorkflow).toContain(`needs.changes.outputs.${output} == 'false'`);
     }
+    expect(jobBlock(ciWorkflow, 'duplication')).toContain('Duplication is informational for PR CI');
     for (const output of ['osv', 'semgrep'] as const) {
       expect(securityWorkflow).toContain(
         `needs.changes.result != 'success' || needs.changes.outputs.${output} != 'false'`
@@ -255,7 +256,8 @@ describe('workflow change policy', () => {
       expect(trigger).not.toContain('paths-ignore:');
     }
 
-    expect(deepWorkflow.slice(0, deepWorkflow.indexOf('\nenv:'))).toContain('paths:');
+    expect(deepWorkflow.slice(0, deepWorkflow.indexOf('\nenv:'))).toContain('schedule:');
+    expect(deepWorkflow.slice(0, deepWorkflow.indexOf('\nenv:'))).not.toContain('paths:');
     expect(codexWorkflow.slice(0, codexWorkflow.indexOf('\npermissions:'))).toContain('paths:');
     expect(dependabotWorkflow.slice(0, dependabotWorkflow.indexOf('\npermissions:'))).toContain(
       'paths:'

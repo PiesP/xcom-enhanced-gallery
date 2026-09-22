@@ -5,7 +5,7 @@ name: 🏗️ CI
 # - Run unit tests with coverage thresholds
 # - Run browser E2E tests
 # - Build all distribution targets
-# - Check source duplication
+# - Report the required duplication status; strict duplication runs in Deep Verification
 #
 # Expensive mutation testing lives in deep-checks.yaml so PR feedback is not
 # blocked by a long-running, resource-heavy analysis.
@@ -89,7 +89,7 @@ jobs:
 
       - name: 📦 Setup project
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.quality != 'false' }}
-        uses: PiesP/browser-core/automation/actions/setup-project@adb7b05ff3781268c3625341951219da778bb40a
+        uses: PiesP/browser-core/automation/actions/setup-project@5fd4c8e8d0d84d8d46dd7b71b996d1664365f6d6
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -116,7 +116,7 @@ jobs:
 
       - name: 📦 Setup project
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.unit != 'false' }}
-        uses: PiesP/browser-core/automation/actions/setup-project@adb7b05ff3781268c3625341951219da778bb40a
+        uses: PiesP/browser-core/automation/actions/setup-project@5fd4c8e8d0d84d8d46dd7b71b996d1664365f6d6
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -161,7 +161,7 @@ jobs:
 
       - name: 📦 Setup project
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.e2e != 'false' }}
-        uses: PiesP/browser-core/automation/actions/setup-project@adb7b05ff3781268c3625341951219da778bb40a
+        uses: PiesP/browser-core/automation/actions/setup-project@5fd4c8e8d0d84d8d46dd7b71b996d1664365f6d6
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -209,7 +209,7 @@ jobs:
 
       - name: 📦 Setup project
         if: ${{ (needs.changes.result != 'success' || needs.changes.outputs.build != 'false') && needs.quality.result == 'success' }}
-        uses: PiesP/browser-core/automation/actions/setup-project@adb7b05ff3781268c3625341951219da778bb40a
+        uses: PiesP/browser-core/automation/actions/setup-project@5fd4c8e8d0d84d8d46dd7b71b996d1664365f6d6
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -254,23 +254,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: ⏭️ No duplication-relevant changes
-        if: ${{ needs.changes.result == 'success' && needs.changes.outputs.duplication == 'false' }}
-        run: echo "No duplication-relevant changes; required check satisfied."
-
-      - name: 📥 Checkout code
-        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.duplication != 'false' }}
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          submodules: true
-
-      - name: 🔧 Install nose
-        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.duplication != 'false' }}
-        run: bash scripts/ci/install-nose.sh
-
-      - name: 🔎 Check for new duplication
-        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.duplication != 'false' }}
-        run: nose query src --baseline .nose-baseline.json --fail-on new
+      - name: ℹ️ Duplication is checked by Deep Verification
+        run: echo "Duplication is informational for PR CI; the weekly or manual Deep Verification gate owns this check."
 
   report-pr-gate-statuses:
     name: Report PR gate statuses

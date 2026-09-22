@@ -39,6 +39,12 @@ describe('Nose installer supply-chain controls', () => {
     expect(pinnedToolsCheck).toContain('nose-cli-installer.sh "$nose_installer_sha256"');
   });
 
+  it('reports mature-version drift without turning it into an integrity failure', () => {
+    expect(pinnedToolsCheck).toContain('::warning title=%s update available::');
+    expect(pinnedToolsCheck).not.toContain('::error title=%s update available::');
+    expect(pinnedToolsCheck).toContain('Review and update the pin when ready.');
+  });
+
   it('does not expose the job token to the installer step', () => {
     expect(workflows).not.toMatch(
       /env:\n\s+GH_TOKEN: \$\{\{ github\.token \}\}\n\s+run: bash scripts\/ci\/install-nose\.sh/

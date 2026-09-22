@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 const root = resolve(import.meta.dirname, '../../..');
 const centralSetupAction =
-  'PiesP/browser-core/automation/actions/setup-project@adb7b05ff3781268c3625341951219da778bb40a';
+  'PiesP/browser-core/automation/actions/setup-project@5fd4c8e8d0d84d8d46dd7b71b996d1664365f6d6';
 const releaseSetupAction = './.github/actions/setup-release';
 const centralWorkflowJobs = {
   'ci.yaml': ['quality', 'unit', 'e2e', 'build'],
