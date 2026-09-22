@@ -5,9 +5,11 @@ from __future__ import annotations
 
 import argparse
 from datetime import date, datetime, timezone
+from hashlib import sha256
 import json
 import os
 from pathlib import Path
+import re
 import sys
 import tempfile
 import tomllib
@@ -21,17 +23,25 @@ TARGET_PACKAGE = {
     "name": "extract-zip",
     "version": "2.0.1",
 }
+CLI_PACKAGE_NAME = "@openai/codex-security"
 ALLOWED_IDS = frozenset(
     {
         "GHSA-jmr9-qjv8-65gv",
         "GHSA-7pqw-9j4j-h8q3",
     }
 )
+REVIEW_POLICY_KEYS = frozenset(
+    {"package", "version", "integrity", "lockfileSha256", "reviewedOn"}
+)
 POLICY_ENTRY_KEYS = frozenset({"id", "ignoreUntil", "reason"})
 
 
 class ValidationError(ValueError):
     """Raised when input cannot be handled without broadening the exception."""
+
+
+class SecurityReviewRequired(ValidationError):
+    """Raised when a reviewed security-tool artifact no longer matches."""
 
 
 def require_mapping(value: Any, location: str) -> dict[str, Any]:
@@ -74,16 +84,63 @@ def reject_duplicate_json_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     return result
 
 
-def load_policy(path: Path, today: date) -> frozenset[str]:
+def load_policy_document(path: Path) -> dict[str, Any]:
     with path.open("rb") as policy_file:
         policy = require_mapping(tomllib.load(policy_file), "policy")
+    return policy
 
-    if set(policy) != {"IgnoredVulns"}:
-        raise ValidationError("policy must contain only IgnoredVulns")
+
+def validate_review_metadata(policy: dict[str, Any], today: date) -> dict[str, Any]:
+    if set(policy) != {"IgnoredVulns", "CodexSecurityReview"}:
+        raise ValidationError(
+            "policy must contain only IgnoredVulns and CodexSecurityReview"
+        )
+
+    review = require_mapping(
+        policy.get("CodexSecurityReview"), "policy.CodexSecurityReview"
+    )
+    if set(review) != REVIEW_POLICY_KEYS:
+        raise ValidationError(
+            "policy.CodexSecurityReview must contain exactly package, version, "
+            "integrity, lockfileSha256, and reviewedOn"
+        )
+    require_string(review.get("package"), "policy.CodexSecurityReview.package")
+    require_string(review.get("version"), "policy.CodexSecurityReview.version")
+    integrity = require_string(
+        review.get("integrity"), "policy.CodexSecurityReview.integrity"
+    )
+    if not integrity.startswith("sha512-"):
+        raise ValidationError(
+            "policy.CodexSecurityReview.integrity must be a sha512 integrity value"
+        )
+    lockfile_sha256 = require_string(
+        review.get("lockfileSha256"), "policy.CodexSecurityReview.lockfileSha256"
+    )
+    if re.fullmatch(r"[0-9a-f]{64}", lockfile_sha256) is None:
+        raise ValidationError(
+            "policy.CodexSecurityReview.lockfileSha256 must be 64 lowercase hex characters"
+        )
+    reviewed_on = review.get("reviewedOn")
+    if type(reviewed_on) is not date:
+        raise ValidationError(
+            "policy.CodexSecurityReview.reviewedOn must be a TOML local date"
+        )
+    if reviewed_on > today:
+        raise ValidationError(
+            "policy.CodexSecurityReview.reviewedOn cannot be in the future"
+        )
+    return review
+
+
+def load_policy(path: Path, today: date) -> frozenset[str]:
+    policy = load_policy_document(path)
+    validate_review_metadata(policy, today)
 
     entries = require_list(policy["IgnoredVulns"], "policy.IgnoredVulns")
-    if len(entries) != len(ALLOWED_IDS):
-        raise ValidationError("policy must define exactly the two supported exceptions")
+    if len(entries) > len(ALLOWED_IDS):
+        raise ValidationError(
+            f"policy must define at most {len(ALLOWED_IDS)} supported exceptions"
+        )
 
     expiries: dict[str, date] = {}
     for index, raw_entry in enumerate(entries):
@@ -106,14 +163,90 @@ def load_policy(path: Path, today: date) -> frozenset[str]:
             require_string(reason, f"{location}.reason")
         expiries[vulnerability_id] = ignore_until
 
-    if set(expiries) != ALLOWED_IDS:
-        raise ValidationError("policy must define each supported exception exactly once")
-
     return frozenset(
         vulnerability_id
         for vulnerability_id, ignore_until in expiries.items()
         if ignore_until > today
     )
+
+
+def load_json_document(path: Path, location: str) -> dict[str, Any]:
+    with path.open("r", encoding="utf-8") as input_file:
+        document = json.load(input_file, object_pairs_hook=reject_duplicate_json_keys)
+    return require_mapping(document, location)
+
+
+def validate_cli_review(
+    policy_path: Path, cli_package_path: Path, cli_lock_path: Path
+) -> None:
+    policy = load_policy_document(policy_path)
+    review = validate_review_metadata(policy, datetime.now(timezone.utc).date())
+    reviewed_package = require_string(
+        review.get("package"), "policy.CodexSecurityReview.package"
+    )
+    reviewed_version = require_string(
+        review.get("version"), "policy.CodexSecurityReview.version"
+    )
+    reviewed_integrity = require_string(
+        review.get("integrity"), "policy.CodexSecurityReview.integrity"
+    )
+    reviewed_lockfile_sha256 = require_string(
+        review.get("lockfileSha256"), "policy.CodexSecurityReview.lockfileSha256"
+    )
+    if reviewed_package != CLI_PACKAGE_NAME:
+        raise ValidationError(
+            f"policy.CodexSecurityReview.package must be {CLI_PACKAGE_NAME}"
+        )
+
+    manifest = load_json_document(cli_package_path, "CLI package manifest")
+    dependencies = require_mapping(manifest.get("dependencies"), "CLI package dependencies")
+    declared_version = require_string(
+        dependencies.get(CLI_PACKAGE_NAME), f"CLI package dependencies.{CLI_PACKAGE_NAME}"
+    )
+
+    lock = load_json_document(cli_lock_path, "CLI package lockfile")
+    packages = require_mapping(lock.get("packages"), "CLI package lockfile.packages")
+    root_package = require_mapping(packages.get(""), "CLI package lockfile.packages['']")
+    root_dependencies = require_mapping(
+        root_package.get("dependencies"), "CLI package lockfile root dependencies"
+    )
+    locked_package = require_mapping(
+        packages.get(f"node_modules/{CLI_PACKAGE_NAME}"),
+        f"CLI package lockfile.packages.node_modules/{CLI_PACKAGE_NAME}",
+    )
+    root_version = require_string(
+        root_dependencies.get(CLI_PACKAGE_NAME),
+        f"CLI package lockfile root dependencies.{CLI_PACKAGE_NAME}",
+    )
+    locked_version = require_string(
+        locked_package.get("version"),
+        f"CLI package lockfile node_modules/{CLI_PACKAGE_NAME}.version",
+    )
+    locked_integrity = require_string(
+        locked_package.get("integrity"),
+        f"CLI package lockfile node_modules/{CLI_PACKAGE_NAME}.integrity",
+    )
+
+    if not (declared_version == root_version == locked_version):
+        raise ValidationError(
+            "CLI package and lock versions must be one matching exact version"
+        )
+    if declared_version != reviewed_version:
+        raise SecurityReviewRequired(
+            "SECURITY_REVIEW_REQUIRED: candidate CLI "
+            f"{declared_version} differs from reviewed CLI {reviewed_version}"
+        )
+    if locked_integrity != reviewed_integrity:
+        raise SecurityReviewRequired(
+            "SECURITY_REVIEW_REQUIRED: candidate CLI integrity differs from the "
+            "reviewed npm artifact"
+        )
+    actual_lockfile_sha256 = sha256(cli_lock_path.read_bytes()).hexdigest()
+    if actual_lockfile_sha256 != reviewed_lockfile_sha256:
+        raise SecurityReviewRequired(
+            "SECURITY_REVIEW_REQUIRED: candidate CLI lockfile differs from the "
+            "reviewed dependency configuration"
+        )
 
 
 def validate_and_filter_report(report: Any, active_ids: frozenset[str]) -> dict[str, Any]:
@@ -211,9 +344,7 @@ def validate_and_filter_report(report: Any, active_ids: frozenset[str]) -> dict[
 
 
 def load_report(path: Path) -> dict[str, Any]:
-    with path.open("r", encoding="utf-8") as input_file:
-        report = json.load(input_file, object_pairs_hook=reject_duplicate_json_keys)
-    return require_mapping(report, "OSV document")
+    return load_json_document(path, "OSV document")
 
 
 def write_report(path: Path, report: dict[str, Any]) -> None:
@@ -244,13 +375,15 @@ def paths_refer_to_same_file(first: Path, second: Path) -> bool:
 
 def prepare_output(output: Path, protected_paths: tuple[Path, ...]) -> None:
     if any(paths_refer_to_same_file(output, protected) for protected in protected_paths):
-        raise ValidationError("output must differ from policy and input")
+        raise ValidationError("output must differ from policy, CLI review inputs, and input")
     output.unlink(missing_ok=True)
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--policy", required=True, type=Path)
+    parser.add_argument("--cli-package", required=True, type=Path)
+    parser.add_argument("--cli-lock", required=True, type=Path)
     parser.add_argument("--input", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
     return parser.parse_args()
@@ -259,8 +392,12 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     try:
-        prepare_output(args.output, (args.policy, args.input))
+        prepare_output(
+            args.output,
+            (args.policy, args.cli_package, args.cli_lock, args.input),
+        )
         active_ids = load_policy(args.policy, datetime.now(timezone.utc).date())
+        validate_cli_review(args.policy, args.cli_package, args.cli_lock)
         report = validate_and_filter_report(load_report(args.input), active_ids)
         write_report(args.output, report)
     except (OSError, ValueError) as error:

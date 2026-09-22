@@ -167,6 +167,21 @@
   cursor: none;
 }
 
+/* Hide the toolbar chrome while the gallery is in immersive mode */
+.container.uiHidden .toolbarWrapper {
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--xeg-duration-fast) var(--xeg-ease-standard);
+}
+
+/* Keep the toolbar visible during its initial visibility window */
+.container.initialToolbarVisible .toolbarWrapper {
+  --toolbar-opacity: 1;
+  --toolbar-visibility: visible;
+  --toolbar-pointer-events: auto;
+  --toolbar-transform-y: 0;
+}
+
 /* Scrolling state: hide toolbar while scrolling manually */
 /* High specificity to override hover states without forced overrides */
 .container.isScrolling[data-xeg-gallery="true"] .toolbarWrapper {
@@ -229,13 +244,6 @@
 
 .itemsContainer::-webkit-scrollbar-thumb:hover {
   background: var(--xeg-scrollbar-thumb-hover-color, var(--xeg-color-neutral-400));
-}
-
-.container.uiHidden .toolbarWrapper {
-  /* Hide non-content UI surfaces while the gallery is in immersive mode */
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity var(--xeg-duration-fast) var(--xeg-ease-standard);
 }
 
 .container.uiHidden .itemsContainer {
@@ -304,8 +312,7 @@
   pointer-events: none;
 }
 
-/* Keep toolbar visible when hover strips or layout toggles are engaged */
-.container.initialToolbarVisible .toolbarWrapper,
+/* Keep the toolbar visible when the hover strip is engaged */
 .container:has(.toolbarHoverZone:hover) .toolbarWrapper {
   --toolbar-opacity: 1;
   --toolbar-visibility: visible;

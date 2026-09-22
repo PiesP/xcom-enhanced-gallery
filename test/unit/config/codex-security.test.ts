@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -12,6 +13,7 @@ const dependabot = readFileSync(resolve(root, '.github/dependabot.yaml'), 'utf8'
 const workflow = readFileSync(resolve(root, '.github/workflows/codex-security.yaml'), 'utf8');
 const securityWorkflow = readFileSync(resolve(root, '.github/workflows/security.yaml'), 'utf8');
 const helper = readFileSync(resolve(root, 'scripts/security/codex-security.sh'), 'utf8');
+const zipGuardPath = resolve(root, 'scripts/security/verify-codex-security-zip-guard.mjs');
 const patcherPath = resolve(root, 'scripts/security/patch-codex-security.mjs');
 const osvConfig = readFileSync(resolve(root, '.github/codex-security/osv-scanner.toml'), 'utf8');
 const pinnedToolsCheck = readFileSync(resolve(root, 'scripts/ci/check-pinned-tools.sh'), 'utf8');
@@ -101,10 +103,21 @@ describe('Codex Security CLI supply-chain controls', () => {
     ).toBe(true);
   });
 
-  it('scopes the unpatched extract-zip advisory exception to the CLI lock', () => {
-    // A CLI upgrade requires revalidating the extraction guard before this exception.
+  it('binds the extract-zip advisory exception to the reviewed CLI lock', () => {
     const cliPackage = JSON.parse(readFileSync(cliPackagePath, 'utf8')) as CliPackage;
-    expect(cliPackage.dependencies['@openai/codex-security']).toBe('0.1.28');
+    const cliLock = JSON.parse(readFileSync(cliLockPath, 'utf8')) as CliLock;
+    const declaredVersion = cliPackage.dependencies['@openai/codex-security'];
+    const reviewedIntegrity = cliLock.packages['node_modules/@openai/codex-security']?.integrity;
+    if (!reviewedIntegrity) throw new Error('Codex Security integrity is missing');
+    const lockfileSha256 = createHash('sha256')
+      .update(readFileSync(cliLockPath))
+      .digest('hex');
+    expect(osvConfig).toContain('[CodexSecurityReview]');
+    expect(osvConfig).toContain('package = "@openai/codex-security"');
+    expect(osvConfig).toContain(`version = "${declaredVersion}"`);
+    expect(osvConfig).toContain(`integrity = "${reviewedIntegrity}"`);
+    expect(osvConfig).toContain(`lockfileSha256 = "${lockfileSha256}"`);
+    expect(osvConfig).toMatch(/reviewedOn = \d{4}-\d{2}-\d{2}/);
     expect(osvConfig).toContain('id = "GHSA-jmr9-qjv8-65gv"');
     expect(osvConfig).toContain('id = "GHSA-7pqw-9j4j-h8q3"');
     expect(osvConfig.match(/ignoreUntil = 2026-09-28/g)).toHaveLength(2);
@@ -125,6 +138,16 @@ describe('Codex Security CLI supply-chain controls', () => {
     expect(securityWorkflow.match(/python3 "\$RUNNER_TEMP\/osv-results\/scope-osv-exceptions\.py"/g)).toHaveLength(
       recursiveScanCount
     );
+    expect(
+      securityWorkflow.match(
+        /--cli-package "\$GITHUB_WORKSPACE\/scripts\/security\/codex-security\/package\.json"/g
+      )
+    ).toHaveLength(recursiveScanCount);
+    expect(
+      securityWorkflow.match(
+        /--cli-lock "\$GITHUB_WORKSPACE\/scripts\/security\/codex-security\/package-lock\.json"/g
+      )
+    ).toHaveLength(recursiveScanCount);
     expect(securityWorkflow).not.toContain(
       '--config=/src/.github/codex-security/osv-scanner.toml'
     );
@@ -217,6 +240,16 @@ describe('Codex Security CLI supply-chain controls', () => {
     expect(workflow).toContain('scripts/security/codex-security/package-lock.json');
     expect(workflow).not.toContain('.github/codex-security/package-lock.json');
     expect(workflow).not.toMatch(/\bnpm install\b/);
+    expect(existsSync(zipGuardPath)).toBe(true);
+    const guardInstall = workflow.indexOf(
+      'install -m 0700 scripts/security/verify-codex-security-zip-guard.mjs'
+    );
+    const guardRun = workflow.indexOf(
+      'node "$RUNNER_TEMP/codex-security/verify-codex-security-zip-guard.mjs"'
+    );
+    expect(guardInstall).toBeGreaterThan(lockedInstall);
+    expect(guardRun).toBeGreaterThan(guardInstall);
+    expect(sourceCheckout).toBeGreaterThan(guardRun);
   });
 
   it('triggers for both CLI closure and repository security policy changes', () => {
