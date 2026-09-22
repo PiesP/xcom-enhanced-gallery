@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import {
   chmodSync,
@@ -17,6 +18,18 @@ const root = resolve(import.meta.dirname, '../../..');
 const workflow = readFileSync(resolve(root, '.github/workflows/security.yaml'), 'utf8');
 const helper = resolve(root, 'scripts/security/scope-osv-exceptions.py');
 const policy = resolve(root, '.github/codex-security/osv-scanner.toml');
+const cliPackage = JSON.parse(
+  readFileSync(resolve(root, 'scripts/security/codex-security/package.json'), 'utf8')
+) as { dependencies: Record<string, string> };
+const cliLock = JSON.parse(
+  readFileSync(resolve(root, 'scripts/security/codex-security/package-lock.json'), 'utf8')
+) as { packages: Record<string, { integrity?: string }> };
+const cliVersion = cliPackage.dependencies['@openai/codex-security'];
+const cliIntegrity = cliLock.packages['node_modules/@openai/codex-security']?.integrity;
+if (!cliVersion || !cliIntegrity) throw new Error('Codex Security lock metadata is incomplete');
+const cliLockfileSha256 = createHash('sha256')
+  .update(readFileSync(resolve(root, 'scripts/security/codex-security/package-lock.json')))
+  .digest('hex');
 const image = workflow.match(/OSV_SCANNER_IMAGE: "([^"]+)"/)?.[1];
 const actualContainerRuntime = process.env.OSV_TEST_CONTAINER_RUNTIME;
 const temporaryDirectories: string[] = [];
@@ -133,6 +146,13 @@ reason = "Workflow test"
 id = "GHSA-7pqw-9j4j-h8q3"
 ignoreUntil = 2099-01-01
 reason = "Workflow test"
+
+[CodexSecurityReview]
+package = "@openai/codex-security"
+version = "${cliVersion}"
+integrity = "${cliIntegrity}"
+lockfileSha256 = "${cliLockfileSha256}"
+reviewedOn = ${new Date().toISOString().slice(0, 10)}
 `;
 }
 
