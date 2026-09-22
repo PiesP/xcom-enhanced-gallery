@@ -10,8 +10,9 @@
  * sides of the message boundary.
  *
  * Architecture notes:
- * - The background SW is intentionally STATELESS and features-limited.
- *   It handles only: downloads (URL + blob URL) and notifications.
+ * - The background SW is intentionally features-limited and keeps only the
+ *   recoverable download relationship needed across worker restarts.
+ *   It handles downloads (URL + blob URL), notifications, and that state.
  *   All gallery state, media extraction, settings, theme, language/i18n,
  *   and DOM access live in the content script. If a new feature needs SW
  *   privileges (clipboard, printing, native messaging, cross-origin fetch

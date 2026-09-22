@@ -10,8 +10,9 @@
  * - chrome.notifications.create() for desktop notifications
  *
  * Architecture notes — FEATURE AWARENESS:
- * The background SW is intentionally STATELESS and features-limited.
- * It knows only about downloads and notifications.
+ * The background SW is intentionally features-limited and keeps only the
+ * recoverable download relationship needed across worker restarts.
+ * It knows only about downloads, notifications, and that small persisted state.
  * All gallery state, media extraction, settings, theme, language/i18n,
  * and DOM access live exclusively in the content script. If a new feature
  * needs SW privileges (clipboard, printing, native messaging), extend the
@@ -30,9 +31,11 @@ import type {
   ChromeInstalledDetails,
 } from '@platform/chrome.d.ts';
 import { browserApi } from '@platform/chrome-runtime';
+import { MV3StorageAdapter } from '@platform/mv3-storage-adapters';
 import { createLogger } from '@shared/logging/logger';
 import { isAllowedUrl } from '@shared/utils/url/url-safety';
 import { waitForDownloadComplete } from './download-completion';
+import { DownloadTrackingStore } from './download-tracking';
 import type {
   DownloadBlobUrlRequestMessage,
   DownloadCancelRequestMessage,
@@ -67,7 +70,11 @@ class DownloadOperationError extends Error {
 }
 
 const activeDownloadIds = new Map<string, TrackedDownload>();
-const cancelledRequestIds = new Set<string>();
+const downloadTracking = new DownloadTrackingStore(new MV3StorageAdapter(), (operation, error) => {
+  log.warn(`download-tracking-${operation}-failed`, {
+    error: error instanceof Error ? error.message : String(error),
+  });
+});
 
 function readDownloadState(value: ChromeDownloadDelta['state']): string | undefined {
   return typeof value === 'string' ? value : value?.current;
@@ -90,11 +97,65 @@ function handleTrackedDownloadChange(delta: ChromeDownloadDelta): void {
     tracked.terminalObserved = true;
     if (tracked.retainUntilTerminal && tracked.ownerSettled) {
       activeDownloadIds.delete(requestId);
+      void downloadTracking.remove(requestId);
     }
   }
 }
 
 browserApi.downloads.onChanged.addListener(handleTrackedDownloadChange);
+
+async function restoreTrackedDownloads(): Promise<void> {
+  const records = await downloadTracking.reload();
+  const restored = new Map<string, TrackedDownload>();
+
+  for (const [requestId, record] of records) {
+    if (record.downloadId === undefined) continue;
+
+    try {
+      const [download] = await browserApi.downloads.search({ id: record.downloadId });
+      if (download === undefined) {
+        log.warn('download-tracking-missing-download', {
+          requestId,
+          downloadId: record.downloadId,
+        });
+        await downloadTracking.remove(requestId);
+        continue;
+      }
+      if (isTerminalDownloadState(download.state)) {
+        await downloadTracking.remove(requestId);
+        continue;
+      }
+    } catch (error: unknown) {
+      log.warn('download-tracking-restore-check-failed', {
+        requestId,
+        downloadId: record.downloadId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+
+    if (record.cancellationRequested) {
+      const cancellationStatus = await cancelDownloadWithRetry(record.downloadId, 'request');
+      if (cancellationStatus === 'terminal') {
+        await downloadTracking.remove(requestId);
+        continue;
+      }
+    }
+
+    restored.set(requestId, {
+      downloadId: record.downloadId,
+      retainUntilTerminal: true,
+      ownerSettled: true,
+      terminalObserved: false,
+    });
+  }
+
+  activeDownloadIds.clear();
+  for (const [requestId, tracked] of restored) {
+    activeDownloadIds.set(requestId, tracked);
+  }
+}
+
+const downloadStateReady = restoreTrackedDownloads();
 
 // ── Message handler ──────────────────────────────────────────────────────────
 
@@ -243,6 +304,9 @@ async function runTrackedDownload(
   downloadOptions: ChromeDownloadOptions,
   requestId?: string
 ): Promise<void> {
+  await downloadStateReady;
+  if (requestId) await downloadTracking.registerRequest(requestId);
+
   let downloadId: number | undefined;
   let retainTrackingAfterFailure = false;
   try {
@@ -255,7 +319,7 @@ async function runTrackedDownload(
         terminalObserved: false,
       };
       activeDownloadIds.set(requestId, tracked);
-      if (cancelledRequestIds.delete(requestId)) {
+      if (await downloadTracking.bindDownload(requestId, downloadId)) {
         const cancellationStatus = await cancelDownloadWithRetry(downloadId, 'request');
         tracked.retainUntilTerminal = cancellationStatus !== 'terminal';
       }
@@ -275,18 +339,20 @@ async function runTrackedDownload(
     throw new DownloadOperationError(error, requestId, terminal);
   } finally {
     if (requestId) {
-      // A cancellation may arrive before downloads.download() resolves. Clear
-      // that pending marker even when ID allocation rejects so a later request
-      // cannot inherit stale cancellation state.
-      cancelledRequestIds.delete(requestId);
       if (downloadId !== undefined) {
         const tracked = activeDownloadIds.get(requestId);
         if (tracked?.downloadId === downloadId) {
           tracked.ownerSettled = true;
           if (!retainTrackingAfterFailure || tracked.terminalObserved) {
             activeDownloadIds.delete(requestId);
+            await downloadTracking.remove(requestId);
           }
         }
+      } else {
+        // A request that never received a Chrome download ID cannot be
+        // recovered after this operation ends. Do not retain its cancellation
+        // marker for a later request that happens to reuse the ID.
+        await downloadTracking.remove(requestId);
       }
     }
   }
@@ -347,18 +413,37 @@ async function cancelDownloadWithRetry(
 
 async function handleDownloadCancelRequest(message: DownloadCancelRequestMessage): Promise<void> {
   const { requestId } = message.payload;
-  const tracked = activeDownloadIds.get(requestId);
+  await downloadStateReady;
+
+  let tracked = activeDownloadIds.get(requestId);
   if (tracked === undefined) {
-    // The cancel message can arrive before downloads.download() resolves.
-    // Remember it so the request is cancelled as soon as an ID is available.
-    cancelledRequestIds.add(requestId);
-    return;
+    const persisted = downloadTracking.get(requestId);
+    if (persisted?.downloadId === undefined) {
+      // The cancel message can arrive before downloads.download() resolves.
+      // Persist the intent so the current owner can bind it when an ID arrives.
+      await downloadTracking.requestCancellation(requestId);
+      return;
+    }
+
+    // A previous worker owned this download. Rebuild the local owner from the
+    // persisted relationship before attempting the user-requested cancellation.
+    tracked = {
+      downloadId: persisted.downloadId,
+      retainUntilTerminal: true,
+      ownerSettled: true,
+      terminalObserved: false,
+    };
+    activeDownloadIds.set(requestId, tracked);
   }
 
   tracked.retainUntilTerminal = true;
+  await downloadTracking.requestCancellation(requestId);
   const cancellationStatus = await cancelDownloadWithRetry(tracked.downloadId, 'request');
   if ((cancellationStatus === 'terminal' || tracked.terminalObserved) && tracked.ownerSettled) {
-    if (activeDownloadIds.get(requestId) === tracked) activeDownloadIds.delete(requestId);
+    if (activeDownloadIds.get(requestId) === tracked) {
+      activeDownloadIds.delete(requestId);
+      await downloadTracking.remove(requestId);
+    }
   }
 }
 
@@ -369,9 +454,8 @@ async function handleDownloadCancelRequest(message: DownloadCancelRequestMessage
  * Always logs in production (warn level) so operational issues are visible;
  * dev mode uses finer detail via console.log.
  *
- * This is intentionally minimal — the SW is stateless, so no migration or
- * state recovery is needed on update. If stateful features are added later,
- * migrations belong here.
+ * The download tracking record is versioned and storage-backed, so no
+ * migration is needed for the current shape. Future shape changes belong here.
  */
 browserApi.runtime.onInstalled.addListener((details: ChromeInstalledDetails) => {
   if (__DEV__) {
@@ -389,25 +473,19 @@ browserApi.runtime.onInstalled.addListener((details: ChromeInstalledDetails) => 
 
 /**
  * Service worker startup handler.
- * Logs SW wake-up for debugging extension lifecycle issues.
- * MV3 service workers can be terminated after ~30s of inactivity,
- * and this gives visibility into restart patterns.
- *
- * Currently a no-op in terms of state — the SW is stateless.
- * If state persistence is added later (e.g., download queue recovery),
- * the initialization logic belongs here.
+ * Logs the wake-up and refreshes recoverable download ownership from storage.
  */
 browserApi.runtime.onStartup?.addListener(() => {
   log.warn('sw.started');
+  return restoreTrackedDownloads();
 });
 
 /**
  * Service worker suspend handler.
  * Logs SW shutdown for debugging extension lifecycle issues.
  *
- * Currently a no-op — the SW is stateless so there's nothing to persist.
- * If stateful features are added, this is where in-flight state should
- * be snapshot before termination.
+ * Download tracking is persisted at each relationship/intent transition, so
+ * shutdown does not need to perform an asynchronous snapshot here.
  */
 browserApi.runtime.onSuspend?.addListener(() => {
   log.warn('sw.suspending');
