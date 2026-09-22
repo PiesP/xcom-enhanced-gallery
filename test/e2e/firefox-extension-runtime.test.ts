@@ -468,19 +468,44 @@ test('generated Firefox background restores cancellation ownership and ignores l
   assert.equal(persistedCancellation?.cancellationRequested, true);
   assert.equal(typeof persistedCancellation?.cancellationRequestedAt, 'number');
 
-  let restoredDownloadState: DownloadState = 'in_progress';
+  const siblingRequestId = 'generated-restart-sibling-terminal';
+  const persistedRecords = storage.get(DOWNLOAD_TRACKING_STORAGE_KEY) as Record<
+    string,
+    StoredDownloadRecord
+  >;
+  storage.set(DOWNLOAD_TRACKING_STORAGE_KEY, {
+    ...persistedRecords,
+    [siblingRequestId]: {
+      downloadId: 89,
+      cancellationRequested: true,
+      cancellationRequestedAt: Date.now(),
+    },
+  });
+
+  let emitRestoredTerminal: GeneratedBackgroundHarness['emitDownloadChanged'] | undefined;
+  let firstRestoredSearch = true;
   const restartedWorker = createGeneratedBackgroundHarness({
     storage,
     download: async () => {
       throw new Error('restart must not allocate another download');
     },
-    cancel: async () => {
-      restoredDownloadState = 'interrupted';
+    cancel: async (downloadId) => {
+      emitRestoredTerminal?.({ id: downloadId, state: 'interrupted' });
     },
-    search: async ({ id }) => [{ id, state: restoredDownloadState }],
+    search: async ({ id }) => {
+      if (firstRestoredSearch) {
+        firstRestoredSearch = false;
+        emitRestoredTerminal?.({ id: 89, state: 'interrupted' });
+        return [{ id, state: 'in_progress' }];
+      }
+      throw new Error('restored download lookup unavailable');
+    },
   });
+  emitRestoredTerminal = restartedWorker.emitDownloadChanged;
   await waitForCondition(
-    () => readStoredDownload(storage, requestId) === undefined,
+    () =>
+      readStoredDownload(storage, requestId) === undefined &&
+      readStoredDownload(storage, siblingRequestId) === undefined,
     'Restarted generated background did not clean terminal cancellation state'
   );
 
@@ -489,6 +514,7 @@ test('generated Firefox background restores cancellation ownership and ignores l
   await new Promise<void>((resolve) => setImmediate(resolve));
   assert.deepEqual(restartedWorker.cancelCalls, [88]);
   assert.equal(readStoredDownload(storage, requestId), undefined);
+  assert.equal(readStoredDownload(storage, siblingRequestId), undefined);
 
   assert.deepEqual(
     await restartedWorker.sendMessage({

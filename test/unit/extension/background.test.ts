@@ -165,6 +165,37 @@ describe.each([
   });
 });
 
+it('restores ownership before cancellation so a terminal event prevents a retry', async () => {
+  const requestId = `restore-terminal-during-cancel-${crypto.randomUUID()}`;
+  const storageKey = 'xeg.download-tracking.v1';
+  const existingRecords = state.storageValues[storageKey];
+  state.storageValues[storageKey] = {
+    ...(typeof existingRecords === 'object' && existingRecords !== null ? existingRecords : {}),
+    [requestId]: {
+      downloadId: 707,
+      cancellationRequested: true,
+      cancellationRequestedAt: Date.now(),
+    },
+  };
+  state.searchDownload
+    .mockResolvedValueOnce([{ id: 707, state: 'in_progress' }])
+    .mockRejectedValue(new Error('download lookup unavailable'));
+  state.cancelDownload.mockImplementation(async (downloadId: number) => {
+    state.downloadChangedListener?.({ id: downloadId, state: 'interrupted' });
+  });
+
+  vi.resetModules();
+  await import('@extension/background');
+
+  await vi.waitFor(() => {
+    const records = state.storageValues[storageKey] as Record<string, unknown>;
+    expect(records).not.toHaveProperty(requestId);
+  });
+  expect(state.cancelDownload).toHaveBeenCalledTimes(1);
+  expect(state.cancelDownload).toHaveBeenCalledWith(707);
+  expect(state.searchDownload).toHaveBeenCalledTimes(2);
+});
+
 describe('background notification messages', () => {
   it('returns an error response when notifications.create rejects', async () => {
     const rejection = Promise.reject(new Error('notifications unavailable'));

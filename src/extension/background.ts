@@ -112,9 +112,30 @@ browserApi.downloads.onChanged.addListener(handleTrackedDownloadChange);
 async function restoreTrackedDownloadsFromStorage(): Promise<void> {
   const records = await downloadTracking.reload();
   const restored = new Map<string, TrackedDownload>();
+  activeDownloadIds.clear();
 
   for (const [requestId, record] of records) {
     if (record.downloadId === undefined) continue;
+
+    const tracked: TrackedDownload = {
+      downloadId: record.downloadId,
+      retainUntilTerminal: true,
+      ownerSettled: true,
+      terminalObserved: false,
+    };
+    restored.set(requestId, tracked);
+    activeDownloadIds.set(requestId, tracked);
+  }
+
+  for (const [requestId, record] of records) {
+    if (record.downloadId === undefined) continue;
+    const tracked = restored.get(requestId);
+    if (tracked === undefined) continue;
+
+    if (tracked.terminalObserved) {
+      await downloadTracking.remove(requestId);
+      continue;
+    }
 
     try {
       const [download] = await browserApi.downloads.search({ id: record.downloadId });
@@ -123,10 +144,12 @@ async function restoreTrackedDownloadsFromStorage(): Promise<void> {
           requestId,
           downloadId: record.downloadId,
         });
+        activeDownloadIds.delete(requestId);
         await downloadTracking.remove(requestId);
         continue;
       }
       if (isTerminalDownloadState(download.state)) {
+        activeDownloadIds.delete(requestId);
         await downloadTracking.remove(requestId);
         continue;
       }
@@ -139,24 +162,26 @@ async function restoreTrackedDownloadsFromStorage(): Promise<void> {
     }
 
     if (record.cancellationRequested) {
-      const cancellationStatus = await cancelDownloadWithRetry(record.downloadId, 'request');
-      if (cancellationStatus === 'terminal') {
+      const cancellationStatus = await cancelDownloadWithRetry(
+        record.downloadId,
+        'request',
+        () => tracked.terminalObserved
+      );
+      if (cancellationStatus === 'terminal' || tracked.terminalObserved) {
+        if (activeDownloadIds.get(requestId) === tracked) {
+          activeDownloadIds.delete(requestId);
+        }
         await downloadTracking.remove(requestId);
         continue;
       }
     }
 
-    restored.set(requestId, {
-      downloadId: record.downloadId,
-      retainUntilTerminal: true,
-      ownerSettled: true,
-      terminalObserved: false,
-    });
-  }
-
-  activeDownloadIds.clear();
-  for (const [requestId, tracked] of restored) {
-    activeDownloadIds.set(requestId, tracked);
+    if (tracked.terminalObserved) {
+      if (activeDownloadIds.get(requestId) === tracked) {
+        activeDownloadIds.delete(requestId);
+      }
+      await downloadTracking.remove(requestId);
+    }
   }
 }
 
@@ -493,9 +518,9 @@ async function cancelDownloadWithRetry(
 async function handleDownloadCancelRequest(message: DownloadCancelRequestMessage): Promise<void> {
   const { requestId } = message.payload;
 
+  await restoreTrackedDownloads();
   let tracked = activeDownloadIds.get(requestId);
   if (tracked === undefined) {
-    await restoreTrackedDownloads();
     const persisted = downloadTracking.get(requestId);
     if (persisted?.downloadId === undefined) {
       // The cancel message can arrive before downloads.download() resolves.
