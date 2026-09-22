@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { describe, expect, it } from 'vitest';
+import { DOWNLOAD_PRE_ID_CANCELLATION_TTL_MS } from '@constants/performance';
 import { DownloadTrackingStore } from '@extension/download-tracking';
 import type { StorageAdapter } from '@platform/types';
 
@@ -94,13 +95,17 @@ describe('DownloadTrackingStore', () => {
 
   it('persists cancellation intent before a download ID is available', async () => {
     const worker = createStorage();
-    const store = new DownloadTrackingStore(worker.storage);
+    const now = 1_000;
+    const store = new DownloadTrackingStore(worker.storage, undefined, () => now);
 
     await store.requestCancellation('request-2');
 
-    const restored = new DownloadTrackingStore(worker.storage);
+    const restored = new DownloadTrackingStore(worker.storage, undefined, () => now);
     await restored.ready();
-    expect(restored.get('request-2')).toEqual({ cancellationRequested: true });
+    expect(restored.get('request-2')).toEqual({
+      cancellationRequested: true,
+      cancellationRequestedAt: now,
+    });
   });
 
   it('serializes a reload before a concurrent mutation', async () => {
@@ -129,12 +134,16 @@ describe('DownloadTrackingStore', () => {
     await expect(store.requestCancellation('request-write-failure')).rejects.toThrow(
       'Download tracking storage write failed: quota exceeded'
     );
-    expect(store.get('request-write-failure')).toEqual({ cancellationRequested: true });
+    expect(store.get('request-write-failure')).toEqual(
+      expect.objectContaining({ cancellationRequested: true })
+    );
 
     await store.requestCancellation('request-write-failure');
     const restored = new DownloadTrackingStore(worker.storage);
     await restored.ready();
-    expect(restored.get('request-write-failure')).toEqual({ cancellationRequested: true });
+    expect(restored.get('request-write-failure')).toEqual(
+      expect.objectContaining({ cancellationRequested: true })
+    );
   });
 
   it('preserves storage contents across a read failure and retries later', async () => {
@@ -168,5 +177,71 @@ describe('DownloadTrackingStore', () => {
     await store.reload();
 
     expect(store.get('request-dirty')).toEqual({ cancellationRequested: false });
+  });
+
+  it('expires and removes a pre-ID cancellation marker after its bounded lifetime', async () => {
+    const worker = createStorage();
+    let now = 1_000;
+    const store = new DownloadTrackingStore(worker.storage, undefined, () => now);
+    await store.requestCancellation('request-expired');
+
+    now += DOWNLOAD_PRE_ID_CANCELLATION_TTL_MS;
+    const restored = new DownloadTrackingStore(worker.storage, undefined, () => now);
+    await restored.ready();
+
+    expect(restored.get('request-expired')).toBeUndefined();
+    expect(worker.values['xeg.download-tracking.v1']).toEqual({});
+  });
+
+  it('does not apply an expired pre-ID cancellation to a late download ID', async () => {
+    const worker = createStorage();
+    let now = 2_000;
+    const store = new DownloadTrackingStore(worker.storage, undefined, () => now);
+    await store.requestCancellation('request-late-id');
+
+    now += DOWNLOAD_PRE_ID_CANCELLATION_TTL_MS;
+    await expect(store.bindDownload('request-late-id', 77)).resolves.toBe(false);
+    expect(store.get('request-late-id')).toEqual({
+      downloadId: 77,
+      cancellationRequested: false,
+    });
+  });
+
+  it('keeps an active download relationship beyond the pre-ID TTL', async () => {
+    const worker = createStorage();
+    let now = 3_000;
+    const store = new DownloadTrackingStore(worker.storage, undefined, () => now);
+    await store.registerRequest('request-active');
+    await store.bindDownload('request-active', 88);
+    await store.requestCancellation('request-active');
+
+    now += DOWNLOAD_PRE_ID_CANCELLATION_TTL_MS * 2;
+    const restored = new DownloadTrackingStore(worker.storage, undefined, () => now);
+    await restored.ready();
+
+    expect(restored.get('request-active')).toEqual({
+      downloadId: 88,
+      cancellationRequested: true,
+      cancellationRequestedAt: 3_000,
+    });
+  });
+
+  it('normalizes legacy pre-ID markers with a bounded grace timestamp', async () => {
+    const worker = createStorage();
+    worker.values['xeg.download-tracking.v1'] = {
+      'request-legacy': { cancellationRequested: true },
+    };
+    const now = 4_000;
+    const store = new DownloadTrackingStore(worker.storage, undefined, () => now);
+
+    await store.ready();
+
+    expect(store.get('request-legacy')).toEqual({
+      cancellationRequested: true,
+      cancellationRequestedAt: now,
+    });
+    expect(worker.values['xeg.download-tracking.v1']).toEqual({
+      'request-legacy': { cancellationRequested: true, cancellationRequestedAt: now },
+    });
   });
 });
