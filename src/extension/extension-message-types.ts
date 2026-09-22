@@ -87,3 +87,9 @@ export interface ExtensionMessageResponse {
   readonly error?: string;
   readonly data?: unknown;
 }
+
+/** Lifecycle metadata returned when the background cannot confirm completion. */
+export interface DownloadLifecycleResponse {
+  readonly requestId?: string;
+  readonly terminal: boolean;
+}
