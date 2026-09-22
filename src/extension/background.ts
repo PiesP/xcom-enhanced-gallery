@@ -20,7 +20,11 @@
  * Content scripts send messages here and receive progress/completion updates.
  */
 
-import type { ChromeDownloadOptions, ChromeInstalledDetails } from '@platform/chrome.d.ts';
+import type {
+  ChromeDownloadDelta,
+  ChromeDownloadOptions,
+  ChromeInstalledDetails,
+} from '@platform/chrome.d.ts';
 import { browserApi } from '@platform/chrome-runtime';
 import { createLogger } from '@shared/logging/logger';
 import { isAllowedUrl } from '@shared/utils/url/url-safety';
@@ -36,8 +40,41 @@ import type {
 import { isValidIncomingMessage } from './message-validation';
 
 const log = createLogger('SW');
-const activeDownloadIds = new Map<string, number>();
+type TrackedDownload = {
+  downloadId: number;
+  retainUntilTerminal: boolean;
+  ownerSettled: boolean;
+};
+
+type DownloadCancellationStatus = 'terminal' | 'pending' | 'unknown';
+
+const activeDownloadIds = new Map<string, TrackedDownload>();
 const cancelledRequestIds = new Set<string>();
+
+function readDownloadState(value: ChromeDownloadDelta['state']): string | undefined {
+  return typeof value === 'string' ? value : value?.current;
+}
+
+function isTerminalDownloadState(state: string | undefined): boolean {
+  return state === 'complete' || state === 'interrupted';
+}
+
+/**
+ * A timed-out request remains addressable until Chrome reports its terminal
+ * state. This lets a later user cancellation retry an unconfirmed cancel
+ * without retaining every completed request forever.
+ */
+function handleTrackedDownloadChange(delta: ChromeDownloadDelta): void {
+  if (!isTerminalDownloadState(readDownloadState(delta.state))) return;
+
+  for (const [requestId, tracked] of activeDownloadIds) {
+    if (tracked.retainUntilTerminal && tracked.ownerSettled && tracked.downloadId === delta.id) {
+      activeDownloadIds.delete(requestId);
+    }
+  }
+}
+
+browserApi.downloads.onChanged.addListener(handleTrackedDownloadChange);
 
 // ── Message handler ──────────────────────────────────────────────────────────
 
@@ -180,12 +217,19 @@ async function runTrackedDownload(
   requestId?: string
 ): Promise<void> {
   let downloadId: number | undefined;
+  let retainTrackingAfterFailure = false;
   try {
     downloadId = await browserApi.downloads.download(downloadOptions);
     if (requestId) {
-      activeDownloadIds.set(requestId, downloadId);
+      const tracked: TrackedDownload = {
+        downloadId,
+        retainUntilTerminal: false,
+        ownerSettled: false,
+      };
+      activeDownloadIds.set(requestId, tracked);
       if (cancelledRequestIds.delete(requestId)) {
-        await browserApi.downloads.cancel(downloadId).catch(() => undefined);
+        tracked.retainUntilTerminal = true;
+        await cancelAndInspectDownload(downloadId, 'request');
       }
     }
     await waitForDownloadComplete(browserApi.downloads, downloadId);
@@ -195,7 +239,10 @@ async function runTrackedDownload(
       error instanceof Error &&
       error.name === 'DownloadTimeoutError'
     ) {
-      await cancelTimedOutDownload(downloadId);
+      const tracked = requestId ? activeDownloadIds.get(requestId) : undefined;
+      if (tracked?.downloadId === downloadId) tracked.retainUntilTerminal = true;
+      const cancellationStatus = await cancelTimedOutDownload(downloadId);
+      retainTrackingAfterFailure = cancellationStatus !== 'terminal';
     }
     throw error;
   } finally {
@@ -204,14 +251,21 @@ async function runTrackedDownload(
       // that pending marker even when ID allocation rejects so a later request
       // cannot inherit stale cancellation state.
       cancelledRequestIds.delete(requestId);
-      if (downloadId !== undefined && activeDownloadIds.get(requestId) === downloadId) {
-        activeDownloadIds.delete(requestId);
+      if (downloadId !== undefined) {
+        const tracked = activeDownloadIds.get(requestId);
+        if (tracked?.downloadId === downloadId) {
+          tracked.ownerSettled = true;
+          if (!retainTrackingAfterFailure) activeDownloadIds.delete(requestId);
+        }
       }
     }
   }
 }
 
-async function cancelTimedOutDownload(downloadId: number): Promise<void> {
+async function cancelAndInspectDownload(
+  downloadId: number,
+  reason: 'request' | 'timeout'
+): Promise<DownloadCancellationStatus> {
   let cancelError: unknown;
   try {
     await browserApi.downloads.cancel(downloadId);
@@ -219,37 +273,50 @@ async function cancelTimedOutDownload(downloadId: number): Promise<void> {
     cancelError = error;
   }
 
-  try {
-    const [item] = await browserApi.downloads.search({ id: downloadId });
-    if (item?.state === 'in_progress') {
-      log.warn('download.timeout-cancellation-unconfirmed', { downloadId });
-    }
-  } catch (error: unknown) {
-    log.warn('download.timeout-cancellation-state-check-failed', {
-      downloadId,
-      error: error instanceof Error ? error.message : String(error),
-    });
-  }
-
   if (cancelError !== undefined) {
-    log.warn('download.timeout-cancellation-failed', {
+    log.warn(`download.${reason}-cancellation-failed`, {
       downloadId,
       error: cancelError instanceof Error ? cancelError.message : String(cancelError),
     });
   }
+
+  try {
+    const [item] = await browserApi.downloads.search({ id: downloadId });
+    if (isTerminalDownloadState(item?.state)) return 'terminal';
+    if (item?.state === 'in_progress') {
+      log.warn(`download.${reason}-cancellation-unconfirmed`, { downloadId });
+      return 'pending';
+    }
+    log.warn(`download.${reason}-cancellation-state-unknown`, { downloadId });
+    return 'unknown';
+  } catch (error: unknown) {
+    log.warn(`download.${reason}-cancellation-state-check-failed`, {
+      downloadId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return 'unknown';
+  }
+}
+
+async function cancelTimedOutDownload(downloadId: number): Promise<DownloadCancellationStatus> {
+  return cancelAndInspectDownload(downloadId, 'timeout');
 }
 
 async function handleDownloadCancelRequest(message: DownloadCancelRequestMessage): Promise<void> {
   const { requestId } = message.payload;
-  const downloadId = activeDownloadIds.get(requestId);
-  if (downloadId === undefined) {
+  const tracked = activeDownloadIds.get(requestId);
+  if (tracked === undefined) {
     // The cancel message can arrive before downloads.download() resolves.
     // Remember it so the request is cancelled as soon as an ID is available.
     cancelledRequestIds.add(requestId);
     return;
   }
 
-  await browserApi.downloads.cancel(downloadId).catch(() => undefined);
+  tracked.retainUntilTerminal = true;
+  const cancellationStatus = await cancelAndInspectDownload(tracked.downloadId, 'request');
+  if (cancellationStatus === 'terminal' && tracked.ownerSettled) {
+    if (activeDownloadIds.get(requestId) === tracked) activeDownloadIds.delete(requestId);
+  }
 }
 
 // ── Extension lifecycle ───────────────────────────────────────────────────────

@@ -6,6 +6,11 @@ type MessageListener = (
   sendResponse: (response?: unknown) => void
 ) => boolean | undefined;
 
+type DownloadChangedListener = (delta: {
+  id: number;
+  state?: string | { current: string };
+}) => void;
+
 const state = vi.hoisted(() => ({
   cancelDownload: vi.fn(),
   listener: null as MessageListener | null,
@@ -13,6 +18,7 @@ const state = vi.hoisted(() => ({
   download: vi.fn(),
   searchDownload: vi.fn(),
   waitForDownloadComplete: vi.fn(),
+  downloadChangedListener: null as DownloadChangedListener | null,
 }));
 
 vi.mock('@platform/chrome-runtime', () => ({
@@ -33,7 +39,12 @@ vi.mock('@platform/chrome-runtime', () => ({
       download: state.download,
       cancel: state.cancelDownload,
       search: state.searchDownload,
-      onChanged: { addListener: vi.fn(), removeListener: vi.fn() },
+      onChanged: {
+        addListener: vi.fn((listener: DownloadChangedListener) => {
+          state.downloadChangedListener = listener;
+        }),
+        removeListener: vi.fn(),
+      },
     },
     notifications: { create: state.createNotification },
   },
@@ -203,5 +214,32 @@ describe.each([
 
     expect(state.cancelDownload).toHaveBeenCalledWith(202);
     expect(state.searchDownload).toHaveBeenCalledWith({ id: 202 });
+  });
+
+  it('keeps an unconfirmed timeout addressable for a later cancellation retry', async () => {
+    const requestId = `cancel-retry-${crypto.randomUUID()}`;
+    state.download.mockResolvedValueOnce(303);
+    state.waitForDownloadComplete.mockRejectedValueOnce(
+      Object.assign(new Error('Download timed out after 5 minutes (id: 303)'), {
+        name: 'DownloadTimeoutError',
+      })
+    );
+    state.cancelDownload.mockRejectedValueOnce(new Error('download is still active'));
+    state.searchDownload.mockResolvedValueOnce([{ id: 303, state: 'in_progress' }]);
+
+    await expect(sendMessage(request(requestId))).resolves.toEqual({
+      success: false,
+      error: 'Download timed out after 5 minutes (id: 303)',
+    });
+
+    state.searchDownload.mockResolvedValueOnce([{ id: 303, state: 'interrupted' }]);
+    await expect(
+      sendMessage({ type: 'DOWNLOAD_CANCEL_REQUEST', payload: { requestId } })
+    ).resolves.toEqual({ success: true });
+
+    expect(state.cancelDownload).toHaveBeenCalledTimes(2);
+    expect(state.cancelDownload).toHaveBeenNthCalledWith(1, 303);
+    expect(state.cancelDownload).toHaveBeenNthCalledWith(2, 303);
+    expect(state.searchDownload).toHaveBeenCalledTimes(2);
   });
 });
