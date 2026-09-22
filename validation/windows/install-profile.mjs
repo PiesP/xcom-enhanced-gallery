@@ -324,7 +324,7 @@ function imageIndex(url) {
 async function installFixtureRoutes(context, root, images, heldDownloadServer) {
   const html = await readFile(join(root, 'test/e2e/fixtures/installed-gallery-page.html'), 'utf8');
   const apiResponses = [];
-  await context.route('**/*', async (route) => {
+  const routeHandler = async (route) => {
     const url = new URL(route.request().url());
     if (url.protocol === 'chrome-extension:') {
       await route.continue();
@@ -381,12 +381,27 @@ async function installFixtureRoutes(context, root, images, heldDownloadServer) {
       return;
     }
     await route.abort('blockedbyclient');
-  });
-  return { apiResponses };
+  };
+  await context.route('**/*', routeHandler);
+  return {
+    apiResponses,
+    async remove() {
+      await context.unroute('**/*', routeHandler);
+    },
+  };
 }
 
 async function queryDownloads(extensionPage) {
   return extensionPage.evaluate(() => chrome.downloads.search({ orderBy: ['-startTime'] }));
+}
+
+async function findOwnedDownload(extensionPage, initialDownloadIds, filename) {
+  const matches = (await queryDownloads(extensionPage)).filter(
+    (download) =>
+      !initialDownloadIds.has(download.id) && basename(download.filename) === filename
+  );
+  assert(matches.length <= 1, `Expected at most one owned download, found ${matches.length}`);
+  return matches[0];
 }
 
 async function readMv3LifecycleState(extensionPage, requestId, downloadId) {
@@ -417,6 +432,9 @@ async function verifyMv3RestartCancellation({
   const filename = `xeg-mv3-restart-${randomUUID()}.bin`;
   const requestId = `xeg-mv3-restart-${randomUUID()}`;
   const initialFiles = new Set(await readdir(downloads));
+  const initialDownloadIds = new Set(
+    (await queryDownloads(extensionPage)).map((download) => download.id)
+  );
   Object.assign(evidence, {
     cleanup: {},
     filename,
@@ -452,6 +470,12 @@ async function verifyMv3RestartCancellation({
       'owned loopback download stream request'
     );
     assert.equal(serverRequest.method, 'GET');
+    const ownedDownload = await waitForValue(
+      () => findOwnedDownload(extensionPage, initialDownloadIds, filename),
+      'owned Chrome download item'
+    );
+    downloadId = ownedDownload.id;
+    assert.equal(ownedDownload.url, MV3_RESTART_DOWNLOAD_URL);
     const bound = await waitForValue(async () => {
       const stored = await extensionPage.evaluate(async ({ trackingKey, trackedRequestId }) => {
         const values = await chrome.storage.local.get(trackingKey);
@@ -462,7 +486,7 @@ async function verifyMv3RestartCancellation({
       });
       return Number.isInteger(stored?.downloadId) ? stored : undefined;
     }, 'persisted request-to-download relationship');
-    downloadId = bound.downloadId;
+    assert.equal(bound.downloadId, downloadId);
 
     const beforeStop = await waitForValue(async () => {
       const state = await readMv3LifecycleState(extensionPage, requestId, downloadId);
@@ -536,9 +560,16 @@ async function verifyMv3RestartCancellation({
       const additions = entries.filter((entry) => !initialFiles.has(entry));
       return additions.length === 0 ? entries : undefined;
     }, 'cancelled download files to be removed');
-    const originalResponse = await extensionPage.evaluate(async () =>
-      globalThis.__xegMv3RestartStart ?? null
-    );
+    const originalRequestOutcome = await extensionPage.evaluate(async (timeoutMs) => {
+      const outcome = globalThis.__xegMv3RestartStart;
+      if (!outcome) return { status: 'missing' };
+      return Promise.race([
+        outcome,
+        new Promise((resolveOutcome) => {
+          setTimeout(() => resolveOutcome({ status: 'pending' }), timeoutMs);
+        }),
+      ]);
+    }, 1_000);
 
     evidence.afterCancel = {
       download: {
@@ -550,7 +581,7 @@ async function verifyMv3RestartCancellation({
         state: afterCancel.download.state,
       },
       filesAdded: remainingFiles.filter((entry) => !initialFiles.has(entry)),
-      originalRequestResponse: originalResponse,
+      originalRequestOutcome,
       storageRecord: afterCancel.record,
       trackingKeys: afterCancel.trackingKeys,
       worker: newWorker,
@@ -567,6 +598,18 @@ async function verifyMv3RestartCancellation({
     primarySeen = true;
     primaryError = error;
     evidence.error = safeError(error);
+    let ownershipRecoveryError;
+    if (downloadId === undefined) {
+      try {
+        downloadId = (await findOwnedDownload(
+          extensionPage,
+          initialDownloadIds,
+          filename
+        ))?.id;
+      } catch (recoveryError) {
+        ownershipRecoveryError = recoveryError;
+      }
+    }
     const failureReads = await Promise.allSettled([
       readMv3LifecycleState(extensionPage, requestId, downloadId),
       readdir(downloads),
@@ -591,11 +634,30 @@ async function verifyMv3RestartCancellation({
       ...(files.status === 'fulfilled'
         ? { filesAdded: files.value.filter((entry) => !initialFiles.has(entry)) }
         : { fileReadError: safeError(files.reason) }),
+      ...(ownershipRecoveryError === undefined
+        ? { recoveredDownloadId: downloadId ?? null }
+        : { ownershipRecoveryError: safeError(ownershipRecoveryError) }),
       serverRequests: heldDownloadServer.requests.map((request) => ({ ...request })),
       workerTargetEvents: workerObserver.snapshotEvents(extensionId),
     };
     evidence.status = 'failed';
   } finally {
+    if (downloadId === undefined) {
+      try {
+        const recoverOwnedDownload = () =>
+          findOwnedDownload(extensionPage, initialDownloadIds, filename);
+        const ownedDownload = heldDownloadServer.requests.length > 0
+          ? await waitForValue(
+              recoverOwnedDownload,
+              'owned Chrome download item during cleanup',
+              2_000
+            )
+          : await recoverOwnedDownload();
+        downloadId = ownedDownload?.id;
+      } catch (error) {
+        cleanupErrors.push(error);
+      }
+    }
     if (downloadId !== undefined) {
       try {
         evidence.cleanup.download = await extensionPage.evaluate(async (id) => {
@@ -1105,15 +1167,17 @@ async function exerciseInstalledExtension(
   images,
   workerObserver
 ) {
-  const heldDownloadServer = await createHeldDownloadServer();
-  const fixtureRoutes = await installFixtureRoutes(context, root, images, heldDownloadServer);
-  const extensionPage = await context.newPage();
-  const page = await context.newPage();
   const pageErrors = [];
   const consoleErrors = [];
   const failedRequests = [];
   const cycles = [];
   const mv3RestartCancellation = {};
+  const flowCleanup = {};
+  const cleanupErrors = [];
+  let heldDownloadServer;
+  let fixtureRoutes;
+  let extensionPage;
+  let page;
   let packagingAssets;
   let notification;
   let publicDom;
@@ -1122,17 +1186,25 @@ async function exerciseInstalledExtension(
   let primarySeen = false;
   let observationError;
   let observationErrorSeen = false;
-  page.on('pageerror', (error) => pageErrors.push(error.message));
-  page.on('console', (message) => {
-    if (message.type() === 'error') {
-      consoleErrors.push({ location: message.location().url, text: message.text() });
-    }
-  });
-  page.on('requestfailed', (request) => {
-    const url = new URL(request.url());
-    failedRequests.push({ host: url.hostname, path: url.pathname, error: request.failure()?.errorText });
-  });
   try {
+    heldDownloadServer = await createHeldDownloadServer();
+    fixtureRoutes = await installFixtureRoutes(context, root, images, heldDownloadServer);
+    extensionPage = await context.newPage();
+    page = await context.newPage();
+    page.on('pageerror', (error) => pageErrors.push(error.message));
+    page.on('console', (message) => {
+      if (message.type() === 'error') {
+        consoleErrors.push({ location: message.location().url, text: message.text() });
+      }
+    });
+    page.on('requestfailed', (request) => {
+      const url = new URL(request.url());
+      failedRequests.push({
+        error: request.failure()?.errorText,
+        host: url.hostname,
+        path: url.pathname,
+      });
+    });
     await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
     assert.equal(
       await extensionPage.evaluate(() => chrome.runtime.getManifest().name),
@@ -1169,6 +1241,7 @@ async function exerciseInstalledExtension(
     );
     assert(cycles.every(({ scroll }) => scroll.restored), 'Every close must restore the saved scroll position');
     flowResult = {
+      cleanup: flowCleanup,
       cycles,
       pageErrors,
       consoleErrors,
@@ -1181,8 +1254,40 @@ async function exerciseInstalledExtension(
   } catch (error) {
     primarySeen = true;
     primaryError = error;
-    await page.screenshot({ path: join(output, 'installed-flow-error.png') }).catch(() => {});
+    if (page) {
+      await page.screenshot({ path: join(output, 'installed-flow-error.png') }).catch(() => {});
+    }
   } finally {
+    if (heldDownloadServer) {
+      try {
+        await heldDownloadServer.close();
+        flowCleanup.heldDownloadServerClosed = true;
+      } catch (error) {
+        cleanupErrors.push(error);
+      }
+    }
+    for (const [name, ownedPage] of [
+      ['fixturePage', page],
+      ['extensionPage', extensionPage],
+    ]) {
+      if (!ownedPage) continue;
+      try {
+        await ownedPage.close();
+        flowCleanup[`${name}Closed`] = true;
+      } catch (error) {
+        cleanupErrors.push(error);
+      }
+    }
+    if (fixtureRoutes) {
+      try {
+        await fixtureRoutes.remove();
+        flowCleanup.fixtureRoutesRemoved = true;
+      } catch (error) {
+        cleanupErrors.push(error);
+      }
+    }
+    flowCleanup.errorCount = cleanupErrors.length;
+    if (cleanupErrors.length) flowCleanup.errors = cleanupErrors.map(safeError);
     try {
       await writeFile(
         join(output, 'installed-flow-observations.json'),
@@ -1192,7 +1297,8 @@ async function exerciseInstalledExtension(
             pageErrors,
             consoleErrors,
             failedRequests,
-            fixtureApiResponses: fixtureRoutes.apiResponses,
+            fixtureApiResponses: fixtureRoutes?.apiResponses ?? [],
+            flowCleanup,
             mv3RestartCancellation,
             notification,
             packagingAssets,
@@ -1205,18 +1311,21 @@ async function exerciseInstalledExtension(
     } catch (error) {
       observationErrorSeen = true;
       observationError = error;
-    } finally {
-      await heldDownloadServer.close().catch(() => {});
-      await Promise.allSettled([page.close(), extensionPage.close()]);
     }
   }
-  if (primarySeen && observationErrorSeen) {
+  const combinedErrors = [
+    ...(primarySeen ? [primaryError] : []),
+    ...cleanupErrors,
+    ...(observationErrorSeen ? [observationError] : []),
+  ];
+  if (combinedErrors.length > 1) {
     throw new AggregateError(
-      [primaryError, observationError],
-      `Installed flow and observation evidence write failed: ${safeError(primaryError)}; ${safeError(observationError)}`
+      combinedErrors,
+      `Installed flow stages failed: ${combinedErrors.map(safeError).join('; ')}`
     );
   }
   if (primarySeen) throw primaryError;
+  if (cleanupErrors.length) throw cleanupErrors[0];
   if (observationErrorSeen) throw observationError;
   return flowResult;
 }

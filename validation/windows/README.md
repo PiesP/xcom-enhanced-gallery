@@ -57,8 +57,13 @@ different Worker target, restore the request-to-download relationship, leave the
 browser download `interrupted` with `USER_CANCELED`, and remove the tracking
 record. The result also requires the held response to close and the task download
 directory to contain neither a completed payload nor a `.crdownload` residue.
-The loopback listener, exact download history item, tracking record, and any
-task-created partial file are cleaned in `finally`, including failed runs.
+The profile identifies the new browser download independently by its unique
+filename before requiring the matching storage binding, so an early persistence
+failure still retains an owned item for diagnosis and cleanup. The original
+request channel outcome is a bounded diagnostic and may be recorded as pending.
+The loopback listener, exact download history item, tracking record, route,
+pages, and any task-created partial file are cleaned in `finally`, including
+failed runs.
 
 Only installed Chrome or Edge with `--installation extension` is supported.
 Userscript managers, Firefox installation, authenticated X.com, native Save As,
