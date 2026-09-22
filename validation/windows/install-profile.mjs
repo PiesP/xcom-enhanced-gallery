@@ -152,7 +152,9 @@ async function createHeldDownloadServer() {
   };
 }
 
-async function createServiceWorkerObserver(cdp) {
+async function createServiceWorkerObserver(browserCdp, pageCdp) {
+  // Chromium exposes target discovery on the browser agent host and the
+  // ServiceWorker domain through a render-frame agent host.
   const serviceWorkerTargetIds = new Set();
   const targetEvents = [];
   const versions = new Map();
@@ -179,15 +181,39 @@ async function createServiceWorkerObserver(cdp) {
       });
     }
   };
-  cdp.on('Target.targetCreated', onTargetCreated);
-  cdp.on('Target.targetDestroyed', onTargetDestroyed);
-  cdp.on('ServiceWorker.workerVersionUpdated', onWorkerVersionUpdated);
-  await cdp.send('Target.setDiscoverTargets', { discover: true });
-  await cdp.send('ServiceWorker.enable');
+  const removeListeners = () => {
+    browserCdp.off('Target.targetCreated', onTargetCreated);
+    browserCdp.off('Target.targetDestroyed', onTargetDestroyed);
+    pageCdp.off('ServiceWorker.workerVersionUpdated', onWorkerVersionUpdated);
+  };
+  try {
+    browserCdp.on('Target.targetCreated', onTargetCreated);
+    browserCdp.on('Target.targetDestroyed', onTargetDestroyed);
+    pageCdp.on('ServiceWorker.workerVersionUpdated', onWorkerVersionUpdated);
+    await browserCdp.send('Target.setDiscoverTargets', { discover: true });
+    await pageCdp.send('ServiceWorker.enable');
+  } catch (error) {
+    removeListeners();
+    const cleanup = await Promise.allSettled([
+      pageCdp.send('ServiceWorker.disable'),
+      browserCdp.send('Target.setDiscoverTargets', { discover: false }),
+    ]);
+    const detach = await Promise.allSettled([pageCdp.detach()]);
+    const failures = [...cleanup, ...detach]
+      .filter((result) => result.status === 'rejected')
+      .map((result) => result.reason);
+    if (failures.length) {
+      throw new AggregateError(
+        [error, ...failures],
+        'Service Worker observer initialization and cleanup failed'
+      );
+    }
+    throw error;
+  }
 
   const workerScriptUrl = (extensionId) => `chrome-extension://${extensionId}/background.js`;
   const currentTargets = async (extensionId) => {
-    const { targetInfos } = await cdp.send('Target.getTargets');
+    const { targetInfos } = await browserCdp.send('Target.getTargets');
     return targetInfos.filter(
       ({ type, url }) => type === 'service_worker' && url === workerScriptUrl(extensionId)
     );
@@ -211,7 +237,7 @@ async function createServiceWorkerObserver(cdp) {
       }, 'running extension service worker');
     },
     async stopAndWait(extensionId, worker) {
-      await cdp.send('ServiceWorker.stopWorker', { versionId: worker.versionId });
+      await pageCdp.send('ServiceWorker.stopWorker', { versionId: worker.versionId });
       return waitForValue(async () => {
         const targets = await currentTargets(extensionId);
         const oldTargetPresent = targets.some(({ targetId }) => targetId === worker.targetId);
@@ -243,14 +269,13 @@ async function createServiceWorkerObserver(cdp) {
         .map((event) => ({ ...event }));
     },
     async dispose() {
-      cdp.off('Target.targetCreated', onTargetCreated);
-      cdp.off('Target.targetDestroyed', onTargetDestroyed);
-      cdp.off('ServiceWorker.workerVersionUpdated', onWorkerVersionUpdated);
+      removeListeners();
       const cleanup = await Promise.allSettled([
-        cdp.send('ServiceWorker.disable'),
-        cdp.send('Target.setDiscoverTargets', { discover: false }),
+        pageCdp.send('ServiceWorker.disable'),
+        browserCdp.send('Target.setDiscoverTargets', { discover: false }),
       ]);
-      const failures = cleanup
+      const detach = await Promise.allSettled([pageCdp.detach()]);
+      const failures = [...cleanup, ...detach]
         .filter((result) => result.status === 'rejected')
         .map((result) => result.reason);
       if (failures.length) {
@@ -324,6 +349,7 @@ function imageIndex(url) {
 async function installFixtureRoutes(context, root, images, heldDownloadServer) {
   const html = await readFile(join(root, 'test/e2e/fixtures/installed-gallery-page.html'), 'utf8');
   const apiResponses = [];
+  const mv3Redirects = [];
   const routeHandler = async (route) => {
     const url = new URL(route.request().url());
     if (url.protocol === 'chrome-extension:') {
@@ -352,6 +378,11 @@ async function installFixtureRoutes(context, root, images, heldDownloadServer) {
       return;
     }
     if (url.hostname === 'pbs.twimg.com' && url.pathname === MV3_RESTART_DOWNLOAD_PATH) {
+      mv3Redirects.push({
+        method: route.request().method(),
+        path: url.pathname,
+        status: 307,
+      });
       await route.fulfill({
         status: 307,
         headers: {
@@ -385,6 +416,7 @@ async function installFixtureRoutes(context, root, images, heldDownloadServer) {
   await context.route('**/*', routeHandler);
   return {
     apiResponses,
+    mv3Redirects,
     async remove() {
       await context.unroute('**/*', routeHandler);
     },
@@ -427,6 +459,7 @@ async function verifyMv3RestartCancellation({
   extensionPage,
   evidence,
   heldDownloadServer,
+  redirectHits,
   workerObserver,
 }) {
   const filename = `xeg-mv3-restart-${randomUUID()}.bin`;
@@ -439,9 +472,14 @@ async function verifyMv3RestartCancellation({
     cleanup: {},
     filename,
     requestId,
+    route: {
+      configuredPath: MV3_RESTART_DOWNLOAD_PATH,
+      expectedStatus: 307,
+      hits: [],
+    },
     source: {
+      loopbackRedirectConfigured: true,
       productionMessageType: 'DOWNLOAD_REQUEST',
-      redirectedToOwnedLoopbackStream: true,
       url: MV3_RESTART_DOWNLOAD_URL,
     },
   });
@@ -470,6 +508,12 @@ async function verifyMv3RestartCancellation({
       'owned loopback download stream request'
     );
     assert.equal(serverRequest.method, 'GET');
+    assert.deepEqual(redirectHits, [{
+      method: 'GET',
+      path: MV3_RESTART_DOWNLOAD_PATH,
+      status: 307,
+    }]);
+    evidence.route.hits = redirectHits.map((hit) => ({ ...hit }));
     const ownedDownload = await waitForValue(
       () => findOwnedDownload(extensionPage, initialDownloadIds, filename),
       'owned Chrome download item'
@@ -598,6 +642,7 @@ async function verifyMv3RestartCancellation({
     primarySeen = true;
     primaryError = error;
     evidence.error = safeError(error);
+    evidence.route.hits = redirectHits.map((hit) => ({ ...hit }));
     let ownershipRecoveryError;
     if (downloadId === undefined) {
       try {
@@ -638,6 +683,7 @@ async function verifyMv3RestartCancellation({
         ? { recoveredDownloadId: downloadId ?? null }
         : { ownershipRecoveryError: safeError(ownershipRecoveryError) }),
       serverRequests: heldDownloadServer.requests.map((request) => ({ ...request })),
+      routeHits: redirectHits.map((hit) => ({ ...hit })),
       workerTargetEvents: workerObserver.snapshotEvents(extensionId),
     };
     evidence.status = 'failed';
@@ -1165,7 +1211,7 @@ async function exerciseInstalledExtension(
   output,
   downloads,
   images,
-  workerObserver
+  browserCdp
 ) {
   const pageErrors = [];
   const consoleErrors = [];
@@ -1178,6 +1224,7 @@ async function exerciseInstalledExtension(
   let fixtureRoutes;
   let extensionPage;
   let page;
+  let workerObserver;
   let packagingAssets;
   let notification;
   let publicDom;
@@ -1206,6 +1253,8 @@ async function exerciseInstalledExtension(
       });
     });
     await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
+    const pageCdp = await context.newCDPSession(extensionPage);
+    workerObserver = await createServiceWorkerObserver(browserCdp, pageCdp);
     assert.equal(
       await extensionPage.evaluate(() => chrome.runtime.getManifest().name),
       'X.com Enhanced Gallery'
@@ -1217,6 +1266,7 @@ async function exerciseInstalledExtension(
       extensionId,
       extensionPage,
       heldDownloadServer,
+      redirectHits: fixtureRoutes.mv3Redirects,
       workerObserver,
     });
     notification = await verifyDefaultNotification(extensionPage);
@@ -1246,6 +1296,7 @@ async function exerciseInstalledExtension(
       pageErrors,
       consoleErrors,
       fixtureApiResponses: fixtureRoutes.apiResponses,
+      fixtureMv3Redirects: fixtureRoutes.mv3Redirects,
       mv3RestartCancellation,
       notification,
       packagingAssets,
@@ -1262,6 +1313,14 @@ async function exerciseInstalledExtension(
       try {
         await heldDownloadServer.close();
         flowCleanup.heldDownloadServerClosed = true;
+      } catch (error) {
+        cleanupErrors.push(error);
+      }
+    }
+    if (workerObserver) {
+      try {
+        await workerObserver.dispose();
+        flowCleanup.workerObserverDisposed = true;
       } catch (error) {
         cleanupErrors.push(error);
       }
@@ -1298,6 +1357,7 @@ async function exerciseInstalledExtension(
             consoleErrors,
             failedRequests,
             fixtureApiResponses: fixtureRoutes?.apiResponses ?? [],
+            fixtureMv3Redirects: fixtureRoutes?.mv3Redirects ?? [],
             flowCleanup,
             mv3RestartCancellation,
             notification,
@@ -1355,8 +1415,7 @@ export async function run({
   }));
 
   let context;
-  let cdp;
-  let workerObserver;
+  let browserCdp;
   let extensionId;
   let primaryError;
   let primarySeen = false;
@@ -1389,14 +1448,13 @@ export async function run({
     result.browserVersion = context.browser().version();
     await enableDeveloperMode(context);
     await verifyDownloadDirectory(context, downloads);
-    cdp = await context.browser().newBrowserCDPSession();
+    browserCdp = await context.browser().newBrowserCDPSession();
     // Use Chrome's download manager and this fresh profile's directory preference
     // so the extension's filename selection reaches the normal browser delegate.
-    await cdp.send('Browser.setDownloadBehavior', {
+    await browserCdp.send('Browser.setDownloadBehavior', {
       behavior: 'default', eventsEnabled: true,
     });
-    workerObserver = await createServiceWorkerObserver(cdp);
-    ({ id: extensionId } = await cdp.send('Extensions.loadUnpacked', {
+    ({ id: extensionId } = await browserCdp.send('Extensions.loadUnpacked', {
       path: join(root, 'dist-extension'),
     }));
     assert.equal(typeof extensionId, 'string');
@@ -1408,7 +1466,7 @@ export async function run({
       output,
       downloads,
       images,
-      workerObserver
+      browserCdp
     );
     await context.unrouteAll({ behavior: 'wait' });
     result.live = await observeLiveUrls({
@@ -1427,17 +1485,9 @@ export async function run({
     result.error = safeError(error);
     if (error && typeof error === 'object' && 'summary' in error) result.live = error.summary;
   } finally {
-    if (workerObserver) {
+    if (browserCdp && extensionId) {
       try {
-        await workerObserver.dispose();
-        result.cleanup.workerObserverDisposed = true;
-      } catch (error) {
-        cleanupErrors.push(error);
-      }
-    }
-    if (cdp && extensionId) {
-      try {
-        await cdp.send('Extensions.uninstall', { id: extensionId });
+        await browserCdp.send('Extensions.uninstall', { id: extensionId });
         result.cleanup.extensionUninstalled = true;
       } catch (error) {
         cleanupErrors.push(error);
