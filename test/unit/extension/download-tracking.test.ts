@@ -8,15 +8,64 @@ import type { StorageAdapter } from '@platform/types';
 function createStorage(): {
   storage: StorageAdapter;
   values: Record<string, unknown>;
+  failNextRead: (error: unknown) => void;
+  failNextWrite: (error: unknown) => void;
+  deferNextRead: () => Promise<unknown>;
+  resolveDeferredRead: (value: unknown) => void;
 } {
   const values: Record<string, unknown> = {};
+  let readError: unknown;
+  let writeError: unknown;
+  let deferredRead:
+    | {
+        resolveStarted: () => void;
+        resolveValue?: (value: unknown) => void;
+      }
+    | undefined;
+  const failNextRead = (error: unknown): void => {
+    readError = error;
+  };
+  const failNextWrite = (error: unknown): void => {
+    writeError = error;
+  };
+  const deferNextRead = (): Promise<unknown> =>
+    new Promise((resolve) => {
+      deferredRead = { resolveStarted: () => resolve(undefined) };
+    });
+  const resolveDeferredRead = (value: unknown): void => {
+    const pendingRead = deferredRead;
+    deferredRead = undefined;
+    pendingRead?.resolveValue?.(value);
+  };
+
   return {
     values,
+    failNextRead,
+    failNextWrite,
+    deferNextRead,
+    resolveDeferredRead,
     storage: {
       get: async <T>(key: string, defaultValue?: T): Promise<T | undefined> => {
+        if (readError !== undefined) {
+          const error = readError;
+          readError = undefined;
+          throw error;
+        }
+        if (deferredRead !== undefined) {
+          const pendingRead = deferredRead;
+          pendingRead.resolveStarted();
+          return (await new Promise<unknown>((resolve) => {
+            pendingRead.resolveValue = resolve;
+          })) as T | undefined;
+        }
         return key in values ? (values[key] as T) : defaultValue;
       },
       set: async <T>(key: string, value: T): Promise<void> => {
+        if (writeError !== undefined) {
+          const error = writeError;
+          writeError = undefined;
+          throw error;
+        }
         values[key] = value;
       },
       remove: async (key: string): Promise<void> => {
@@ -52,5 +101,72 @@ describe('DownloadTrackingStore', () => {
     const restored = new DownloadTrackingStore(worker.storage);
     await restored.ready();
     expect(restored.get('request-2')).toEqual({ cancellationRequested: true });
+  });
+
+  it('serializes a reload before a concurrent mutation', async () => {
+    const worker = createStorage();
+    const store = new DownloadTrackingStore(worker.storage);
+    await store.registerRequest('request-existing');
+
+    const pendingRead = worker.deferNextRead();
+    const reload = store.reload();
+    await pendingRead;
+
+    const register = store.registerRequest('request-new');
+    worker.resolveDeferredRead({
+      'request-existing': { cancellationRequested: false },
+    });
+
+    await Promise.all([reload, register]);
+    expect(store.get('request-new')).toEqual({ cancellationRequested: false });
+  });
+
+  it('rejects storage write failures without reporting a successful transition', async () => {
+    const worker = createStorage();
+    const store = new DownloadTrackingStore(worker.storage);
+    worker.failNextWrite(new Error('quota exceeded'));
+
+    await expect(store.requestCancellation('request-write-failure')).rejects.toThrow(
+      'Download tracking storage write failed: quota exceeded'
+    );
+    expect(store.get('request-write-failure')).toEqual({ cancellationRequested: true });
+
+    await store.requestCancellation('request-write-failure');
+    const restored = new DownloadTrackingStore(worker.storage);
+    await restored.ready();
+    expect(restored.get('request-write-failure')).toEqual({ cancellationRequested: true });
+  });
+
+  it('preserves storage contents across a read failure and retries later', async () => {
+    const worker = createStorage();
+    worker.values['xeg.download-tracking.v1'] = {
+      'request-read-failure': { downloadId: 41, cancellationRequested: false },
+    };
+    worker.failNextRead(new Error('storage unavailable'));
+    const store = new DownloadTrackingStore(worker.storage);
+
+    await expect(store.ready()).rejects.toThrow(
+      'Download tracking storage read failed: storage unavailable'
+    );
+    expect(worker.values['xeg.download-tracking.v1']).toEqual({
+      'request-read-failure': { downloadId: 41, cancellationRequested: false },
+    });
+
+    await store.reload();
+    expect(store.get('request-read-failure')).toEqual({
+      downloadId: 41,
+      cancellationRequested: false,
+    });
+  });
+
+  it('does not replace an unpersisted snapshot with an older reload', async () => {
+    const worker = createStorage();
+    const store = new DownloadTrackingStore(worker.storage);
+    worker.failNextWrite(new Error('temporary write failure'));
+
+    await expect(store.registerRequest('request-dirty')).rejects.toThrow('temporary write failure');
+    await store.reload();
+
+    expect(store.get('request-dirty')).toEqual({ cancellationRequested: false });
   });
 });
