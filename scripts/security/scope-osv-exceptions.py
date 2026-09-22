@@ -375,7 +375,7 @@ def paths_refer_to_same_file(first: Path, second: Path) -> bool:
 
 def prepare_output(output: Path, protected_paths: tuple[Path, ...]) -> None:
     if any(paths_refer_to_same_file(output, protected) for protected in protected_paths):
-        raise ValidationError("output must differ from policy and input")
+        raise ValidationError("output must differ from policy, CLI review inputs, and input")
     output.unlink(missing_ok=True)
 
 
@@ -392,7 +392,10 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     try:
-        prepare_output(args.output, (args.policy, args.input))
+        prepare_output(
+            args.output,
+            (args.policy, args.cli_package, args.cli_lock, args.input),
+        )
         active_ids = load_policy(args.policy, datetime.now(timezone.utc).date())
         validate_cli_review(args.policy, args.cli_package, args.cli_lock)
         report = validate_and_filter_report(load_report(args.input), active_ids)

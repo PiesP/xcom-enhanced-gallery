@@ -33,6 +33,7 @@ type RunResult = {
 };
 
 type RunOptions = {
+  cliLockIsOutput?: boolean;
   cliLockContent?: string;
   inputIsOutput?: boolean;
   staleOutput?: boolean;
@@ -117,7 +118,11 @@ function runHelper(input: unknown, policy: string, options: RunOptions = {}): Ru
   const policyPath = join(directory, 'policy.toml');
   const cliLockPathForRun = join(directory, 'cli-package-lock.json');
   const inputPath = join(directory, 'input.json');
-  const outputPath = options.inputIsOutput ? inputPath : join(directory, 'output.json');
+  const outputPath = options.inputIsOutput
+    ? inputPath
+    : options.cliLockIsOutput
+      ? cliLockPathForRun
+      : join(directory, 'output.json');
 
   writeFileSync(policyPath, policy);
   writeFileSync(cliLockPathForRun, options.cliLockContent ?? readFileSync(cliLockPath, 'utf8'));
@@ -379,7 +384,17 @@ reason = "Scoped test exception"
 
     expect(execution.status).not.toBe(0);
     expect(execution.output).toEqual(input);
-    expect(execution.stderr).toContain('output must differ from policy and input');
+    expect(execution.stderr).toContain('output must differ from policy, CLI review inputs, and input');
+  });
+
+  it('rejects an output path that aliases the CLI lock without deleting the lock', () => {
+    const execution = runHelper(report([]), policyWithDates(utcDateWithOffset(30)), {
+      cliLockIsOutput: true,
+    });
+
+    expect(execution.status).not.toBe(0);
+    expect(execution.outputExists).toBe(true);
+    expect(execution.stderr).toContain('output must differ from policy, CLI review inputs, and input');
   });
 
   it.each([
