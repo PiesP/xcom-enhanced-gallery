@@ -8,6 +8,22 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.3.2] - 2026-09-22
+
+### Added
+
+- **Durable extension download tracking** — Persisted request-to-download ownership and cancellation intent across MV3 service-worker restarts.
+
+### Changed
+
+- **Gallery recovery** — Added a modeless, themed recovery surface with visible retry, reset, and close actions while preserving host keyboard input and scroll.
+- **Toolbar feedback** — Grouped controls semantically, retained the selected fit state, and announced download preparation, browser handoff, and failures.
+
+### Fixed
+
+- **Extension download cancellation** — Canceled timed-out browser downloads, retained cancellation requests made before a download ID was assigned or ownership was confirmed, and expired stale early requests.
+- **Gallery continuity** — Preserved host scroll and the selected item through focus restoration and viewport changes, and added a public-post article fallback for media discovery.
+
 ## [2.3.1] - 2026-08-23
 
 ### Changed
