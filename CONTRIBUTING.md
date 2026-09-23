@@ -1,7 +1,9 @@
 # Contributing
 
-Thanks for improving **X.com Enhanced Gallery**. Source, comments,
-documentation, commit messages, and issue content should be written in English.
+Thanks for improving **X.com Enhanced Gallery**. Source, comments, commit
+messages, and issue content should be written in English. Supported root README
+translations may be written in Korean or Japanese when they remain aligned with
+`README.md`.
 
 ## Report an issue
 

@@ -1,5 +1,7 @@
 # X.com Enhanced Gallery
 
+[English](./README.md) | [한국어](./README.ko.md) | [日本語](./README.ja.md)
+
 Browse images and videos from an X.com post in a focused, keyboard-friendly
 gallery and download the original media. The project is available as a
 userscript and as unpacked Chrome and temporary Firefox extension builds.
@@ -80,30 +82,8 @@ storage details and [Security](./.github/SECURITY.md) for vulnerability reports.
 
 This project is developed with assistance from AI tools.
 
-Use the toolchain pinned in `package.json`, initialize the shared browser-core
-submodule, and install dependencies:
-
-```bash
-git submodule update --init --recursive
-pnpm install
-```
-
-| Command | Purpose |
-| --- | --- |
-| `pnpm test` | Run the Vitest suite |
-| `pnpm test:e2e` | Run the full Chromium userscript suite plus Firefox/WebKit smoke tests |
-| `pnpm test:e2e:extension` | Run Chrome installed-extension and Firefox artifact/runtime Playwright checks |
-| `pnpm test:e2e:extension:firefox` | Install the Firefox build temporarily and run its Selenium smoke test |
-| `pnpm test:e2e:all` | Run every userscript and extension browser lane |
-| `pnpm quality` | Run static quality checks |
-| `pnpm verify` | Run quality and all production builds |
-| `pnpm verify:full` | Add coverage and browser tests to `verify` |
-
-Browser lanes consume generated userscript and extension artifacts. See the
-[contributing commands](./CONTRIBUTING.md#commands) for preparation details.
-
-See [Contributing](./CONTRIBUTING.md) for project constraints and pull request
-expectations.
+See [Contributing](./CONTRIBUTING.md) for setup, commands, project constraints,
+and pull request expectations.
 
 ## Support
 
