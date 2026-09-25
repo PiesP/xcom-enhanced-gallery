@@ -585,10 +585,10 @@ jobs:
     permissions:
       contents: read
       security-events: write
-    # semgrep/semgrep:1.177.0 (linux/amd64) — last checked: 2026-09-14
+    # semgrep/semgrep:1.178.0 (linux/amd64) — last checked: 2026-09-25
     # Check for updates: https://github.com/semgrep/semgrep/releases
     container:
-      image: semgrep/semgrep:1.177.0@sha256:d1825c2c72110b5bfbf0602ff68f7f117322597a7c33037a79dba9f897f5f1f0
+      image: semgrep/semgrep:1.178.0@sha256:fbba1f23d2ef94630c828e8692758f8bc6353a8089841a396a5c041451966ffb
     steps:
       - name: ⏭️ No Semgrep-relevant changes
         if: ${{ needs.changes.result == 'success' && needs.changes.outputs.semgrep == 'false' }}
