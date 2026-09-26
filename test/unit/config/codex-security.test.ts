@@ -103,7 +103,7 @@ describe('Codex Security CLI supply-chain controls', () => {
     ).toBe(true);
   });
 
-  it('binds the extract-zip advisory exception to the reviewed CLI lock', () => {
+  it('binds the reviewed CLI lock and removes exceptions with the vulnerable dependency', () => {
     const cliPackage = JSON.parse(readFileSync(cliPackagePath, 'utf8')) as CliPackage;
     const cliLock = JSON.parse(readFileSync(cliLockPath, 'utf8')) as CliLock;
     const declaredVersion = cliPackage.dependencies['@openai/codex-security'];
@@ -118,12 +118,11 @@ describe('Codex Security CLI supply-chain controls', () => {
     expect(osvConfig).toContain(`integrity = "${reviewedIntegrity}"`);
     expect(osvConfig).toContain(`lockfileSha256 = "${lockfileSha256}"`);
     expect(osvConfig).toMatch(/reviewedOn = \d{4}-\d{2}-\d{2}/);
-    expect(osvConfig).toContain('id = "GHSA-jmr9-qjv8-65gv"');
-    expect(osvConfig).toContain('id = "GHSA-7pqw-9j4j-h8q3"');
-    expect(osvConfig.match(/ignoreUntil = 2026-09-28/g)).toHaveLength(2);
-    expect(osvConfig).toContain('/src/scripts/security/codex-security/package-lock.json');
-    expect(osvConfig).toContain('ignoreUntil = 2026-09-28');
-    expect(osvConfig).toContain('rejects all symlink ZIP entries before extraction');
+    expect(cliLock.packages['node_modules/extract-zip']).toBeUndefined();
+    expect(cliLock.packages['node_modules/fd-slicer']).toBeUndefined();
+    expect(osvConfig).toContain('IgnoredVulns = []');
+    expect(osvConfig).not.toContain('[[IgnoredVulns]]');
+    expect(osvConfig).not.toContain('ignoreUntil =');
 
     const recursiveScanCount = securityWorkflow.match(/\s-r \\\n/g)?.length ?? 0;
     const configuredScanCount =
