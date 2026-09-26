@@ -72,7 +72,7 @@ export const USERSCRIPT_CONFIG = {
     'GM_xmlhttpRequest',
     'GM_cookie',
   ],
-  connect: ['pbs.twimg.com', 'video.twimg.com', 'api.twitter.com'],
+  connect: ['twitter.com', 'x.com', 'pbs.twimg.com', 'video.twimg.com'],
   runAt: 'document-idle' as const,
   supportURL: 'https://github.com/PiesP/xcom-enhanced-gallery/issues',
   homepageURL: 'https://github.com/PiesP/xcom-enhanced-gallery',
