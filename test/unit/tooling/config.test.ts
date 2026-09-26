@@ -142,11 +142,18 @@ describe('tooling configuration', () => {
 
   it('scans the exact default-branch push with OSV and Semgrep', () => {
     const osvJob = securityWorkflow.match(/osv-scan-dispatch:[\s\S]*?codeql:/)?.[0] ?? '';
-    const semgrepJob = securityWorkflow.match(/semgrep:[\s\S]*?report-pr-gate-statuses:/)?.[0] ?? '';
+    const semgrepJob = securityWorkflow.match(/semgrep:[\s\S]*$/)?.[0] ?? '';
 
     expect(osvJob).toContain("github.event_name == 'push'");
     expect(semgrepJob).toContain("github.event_name == 'push'");
     expect(semgrepJob).toContain('semgrep/semgrep:1.178.0@sha256:');
+  });
+
+  it('does not publish duplicate manual status contexts', () => {
+    expect(ciWorkflow).not.toContain('statuses: write');
+    expect(securityWorkflow).not.toContain('statuses: write');
+    expect(ciWorkflow).not.toContain('report-pr-gate-statuses:');
+    expect(securityWorkflow).not.toContain('report-pr-gate-statuses:');
   });
 
   it('lets pnpm run extension prebuild hooks exactly once', () => {
