@@ -356,12 +356,9 @@ export function getUserscript(): UserscriptAPI {
         });
       }
 
-      // Strategy 2: GM_download legacy options-object form
-      if (gmDownloadLegacy) {
-        // The legacy API returns void, so there is no portable handle for
-        // cancelling an in-flight download. Its AbortSignal semantics are
-        // intentionally pre-flight only (checked above); once invoked, the
-        // promise settles from GM_download's own completion callbacks.
+      // Strategy 2: GM_download legacy options-object form. It cannot cancel
+      // an in-flight download, so use it only when the caller supplied no signal.
+      if (gmDownloadLegacy && !signal) {
         return new Promise<void>((resolve, reject) => {
           gmDownloadLegacy({
             url,
@@ -375,7 +372,8 @@ export function getUserscript(): UserscriptAPI {
         });
       }
 
-      // Strategy 3: Blob-based fallback via GM_xmlhttpRequest
+      // Strategy 3: Blob-based fallback via GM_xmlhttpRequest. This path keeps
+      // signal-aware downloads cancellable when the legacy API is present.
       return downloadViaBlob(url, filename, gmXmlHttpRequest, signal);
     },
 
