@@ -31,7 +31,7 @@ describe('browser-core update automation', () => {
     expect(expectedHead).toBeGreaterThan(-1);
     expect(liveHead).toBeGreaterThan(expectedHead);
     expect(handoff).toBeGreaterThan(liveHead);
-    expect(workflow).toContain('manual review');
+    expect(workflow).toContain('review the exact head');
     expect(workflow).not.toContain('AUTO_MERGE_TOKEN');
     expect(workflow).not.toContain('gh pr merge');
     expect(workflow).not.toContain('event=APPROVE');
