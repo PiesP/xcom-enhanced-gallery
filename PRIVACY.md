@@ -16,6 +16,9 @@ a server operated by this project.
 - Extension builds store settings in the browser extension's local storage.
 - The userscript stores settings through the installed userscript manager's
   `GM_*` storage APIs.
+- If the primary settings storage API fails, the application makes a best-effort
+  fallback to `localStorage` using the `xeg-fallback:` key prefix. This fallback
+  contains settings only and may be unavailable in some browser contexts.
 - Storage contains preferences such as theme, language, gallery behavior, and
   playback settings; it is not used for analytics.
 
