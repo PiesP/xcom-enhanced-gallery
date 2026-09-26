@@ -374,8 +374,17 @@ if (isAllowedStartPage()) {
 // would never start. This listener catches SPA route changes.
 if (typeof navigation !== 'undefined') {
   navigation.addEventListener('navigate', (event: Event) => {
-    const destination = (event as Event & { destination?: { url?: string } }).destination?.url;
+    const navigationEvent = event as Event & {
+      destination?: { url?: string };
+      downloadRequest?: string | null;
+    };
+    const destination = navigationEvent.destination?.url;
     if (!destination) return;
+
+    // Blob URLs are used by the userscript download fallback. Treat download
+    // requests as browser handoffs instead of tearing down the current gallery.
+    if (navigationEvent.downloadRequest != null || destination.startsWith('blob:')) return;
+
     reconcileApplication(isAllowedStartUrl(destination));
   });
 } else {

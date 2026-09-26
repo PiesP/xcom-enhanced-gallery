@@ -5,7 +5,8 @@
  * @fileoverview E2E tests for download flow in X.com Enhanced Gallery.
  *
  * Tests verify:
- * 1. Clicking the download button triggers GM_download with correct data
+ * 1. Clicking the download button fetches through the cancellable userscript
+ *    request path and hands the correctly named file to the browser
  * 2. Download button is accessible via toolbar
  * 3. Video media keeps its native playback controls
  *
@@ -114,21 +115,25 @@ test.describe('X.com Enhanced Gallery Download Flow', () => {
     await expect(downloadButton).not.toBeDisabled();
   });
 
-  test('Download flow calls GM_download via the orchestrator chain', async ({ page }) => {
+  test('Download flow uses the cancellable request path and hands off the file', async ({ page }) => {
     await setupGalleryPage(page);
     await openGallery(page);
 
     const downloadButton = page.locator('[data-gallery-element="toolbar"] button[aria-label*="Download" i]');
     await expect(downloadButton).toBeVisible();
+    const downloadPromise = page.waitForEvent('download');
     await downloadButton.click();
 
-    const marker = page.locator('[data-gm-download="true"]');
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toBe('Example1.jpg');
+
+    const marker = page.locator('[data-gm-xhr-download="true"]');
     await expect(marker).toHaveCount(1);
     await expect(marker).toHaveAttribute(
-      'data-gm-download-url',
+      'data-gm-xhr-download-url',
       /^https:\/\/pbs\.twimg\.com\/media\/Example1\.jpg(?:\?.*)?$/
     );
-    await expect(marker).toHaveAttribute('data-gm-download-name', 'Example1.jpg');
+    await expect(page.locator('[data-gm-download="true"]')).toHaveCount(0);
     await expect(page.locator('[data-xeg-gallery-container]')).toBeVisible();
     await expect(
       page.locator('[data-gallery-element="toolbar"]').getByRole('status')

@@ -3,7 +3,11 @@
 
 import type { Page } from '@playwright/test';
 import type { CookieAPI } from '../../../src/shared/types/core/cookie.types';
-import type { GMNotificationDetails } from '../../../src/shared/types/core/userscript';
+import type {
+  GMNotificationDetails,
+  GMXMLHttpRequestDetails,
+  GMXMLHttpRequestResponse,
+} from '../../../src/shared/types/core/userscript';
 
 interface GMMockOptions {
   readonly persistentStorage?: boolean;
@@ -84,7 +88,29 @@ export async function installGMMock(
       marker.textContent = `${notification.title ?? ''}: ${notification.text ?? ''}`;
       document.body.append(marker);
     };
-    host.GM_xmlhttpRequest = () => ({ abort: () => undefined });
+    host.GM_xmlhttpRequest = (details: GMXMLHttpRequestDetails) => {
+      if (details.responseType === 'blob') {
+        const marker = document.createElement('span');
+        marker.dataset.gmXhrDownload = 'true';
+        marker.dataset.gmXhrDownloadUrl = details.url;
+        marker.hidden = true;
+        document.body.append(marker);
+
+        const response: GMXMLHttpRequestResponse<Blob> = {
+          finalUrl: details.url,
+          readyState: 4,
+          status: 200,
+          statusText: 'OK',
+          responseHeaders: 'content-type: application/octet-stream',
+          response: new Blob(['fixture media'], { type: 'application/octet-stream' }),
+          responseText: '',
+          context: details.context,
+        };
+        queueMicrotask(() => details.onload?.(response));
+      }
+
+      return { abort: () => undefined };
+    };
     host.GM_cookie = {
       list: (_details, callback) => {
         const cookies = document.cookie

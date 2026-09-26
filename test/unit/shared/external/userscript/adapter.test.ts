@@ -108,6 +108,43 @@ describe('userscript download adapter failure handling', () => {
     );
   });
 
+  it('uses the cancellable fallback instead of legacy GM_download when a signal is supplied', async () => {
+    const legacyDownload = vi.fn();
+    const abortRequest = vi.fn();
+    const xmlHttpRequest = vi.fn(() => ({ abort: abortRequest }));
+    userscriptGlobals.GM_download = legacyDownload;
+    userscriptGlobals.GM_xmlhttpRequest = xmlHttpRequest;
+    const controller = new AbortController();
+    const api = await loadUserscriptAdapter();
+
+    const pending = api.download(
+      'https://pbs.twimg.com/media/image.jpg',
+      'image.jpg',
+      controller.signal
+    );
+    controller.abort();
+
+    await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+    expect(legacyDownload).not.toHaveBeenCalled();
+    expect(xmlHttpRequest).toHaveBeenCalledOnce();
+    expect(abortRequest).toHaveBeenCalledOnce();
+  });
+
+  it('keeps legacy GM_download for callers that do not request cancellation', async () => {
+    const legacyDownload = vi.fn((details: GMDownloadDetails) => details.onload?.());
+    const xmlHttpRequest = vi.fn(() => ({ abort: vi.fn() }));
+    userscriptGlobals.GM_download = legacyDownload as unknown as typeof GM_download;
+    userscriptGlobals.GM_xmlhttpRequest = xmlHttpRequest;
+    const api = await loadUserscriptAdapter();
+
+    await expect(
+      api.download('https://pbs.twimg.com/media/image.jpg', 'image.jpg')
+    ).resolves.toBeUndefined();
+
+    expect(legacyDownload).toHaveBeenCalledOnce();
+    expect(xmlHttpRequest).not.toHaveBeenCalled();
+  });
+
   it('uses the Blob fallback when GM.download APIs are unavailable', async () => {
     const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
     const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test-download');
@@ -131,6 +168,42 @@ describe('userscript download adapter failure handling', () => {
     expect(createObjectURL).toHaveBeenCalledOnce();
     expect(click).toHaveBeenCalledOnce();
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:test-download');
+  });
+
+  it('clicks the Blob fallback anchor inside the open gallery container', async () => {
+    const galleryContainer = document.createElement('div');
+    galleryContainer.className = 'xeg-gallery-root';
+    document.body.append(galleryContainer);
+    let clickParent: Element | null = null;
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(function (this: HTMLAnchorElement) {
+        clickParent = this.parentElement;
+      });
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test-gallery-download');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+    userscriptGlobals.GM_xmlhttpRequest = vi.fn((details) => {
+      queueMicrotask(() =>
+        details.onload?.({
+          status: 200,
+          statusText: 'OK',
+          response: new Blob(['image']),
+        } as never)
+      );
+      return { abort: vi.fn() };
+    });
+    const api = await loadUserscriptAdapter();
+
+    await expect(
+      api.download(
+        'https://pbs.twimg.com/media/image.jpg',
+        'image.jpg',
+        new AbortController().signal
+      )
+    ).resolves.toBeUndefined();
+
+    expect(click).toHaveBeenCalledOnce();
+    expect(clickParent).toBe(galleryContainer);
   });
 
   it('aborts the Blob fallback when streamed bytes exceed the response limit', async () => {
