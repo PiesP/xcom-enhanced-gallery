@@ -327,7 +327,7 @@ describe('executable OSV workflow boundary', () => {
     expect(workflow).toContain("steps.osv-report.outputs.sarif-upload == 'true'");
   });
 
-  it('expires the fixed policy at the exact UTC date boundary without changing the policy', () => {
+  it('keeps the fixed policy exception-free across the former expiry boundary', () => {
     const execution = spawnSync('python3', ['-', helper, policy], {
       encoding: 'utf8',
       input: `
@@ -346,7 +346,7 @@ for instant in ("2026-09-27", "2026-09-28"):
 
     expect(execution.status, execution.stderr).toBe(0);
     expect(execution.stdout.trim().split('\n')).toEqual([
-      '2026-09-27:GHSA-7pqw-9j4j-h8q3,GHSA-jmr9-qjv8-65gv',
+      '2026-09-27:',
       '2026-09-28:',
     ]);
   });
