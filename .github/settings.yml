@@ -1,0 +1,46 @@
+# Repository and branch-protection baseline for the GitHub Settings app or REST API.
+# Actions permissions and release/tag rules are managed separately.
+repository:
+  allow_merge_commit: false
+  allow_squash_merge: true
+  allow_rebase_merge: false
+  allow_auto_merge: true
+  allow_update_branch: true
+  delete_branch_on_merge: true
+  squash_merge_commit_title: PR_TITLE
+  squash_merge_commit_message: PR_BODY
+
+branches:
+  - name: master
+    protection:
+      required_pull_request_reviews:
+        required_approving_review_count: 1
+        dismiss_stale_reviews: true
+        require_code_owner_reviews: false
+        require_last_push_approval: true
+      required_status_checks:
+        strict: true
+        # Bind every required check to GitHub Actions explicitly.
+        contexts: []
+        checks:
+          - context: "pr-gate/quality"
+            app_id: 15368
+          - context: "pr-gate/build"
+            app_id: 15368
+          - context: "pr-gate/unit"
+            app_id: 15368
+          - context: "pr-gate/e2e"
+            app_id: 15368
+          - context: "pr-gate/duplication"
+            app_id: 15368
+          - context: "pr-gate/osv / osv-scan"
+            app_id: 15368
+          - context: "pr-gate/semgrep"
+            app_id: 15368
+      enforce_admins: false
+      required_linear_history: false
+      allow_force_pushes: false
+      allow_deletions: false
+      required_conversation_resolution: true
+      lock_branch: false
+      restrictions: null

@@ -176,7 +176,7 @@ classify_path() {
   esac
 
   case "$path" in
-    .github/workflows/* | .github/actions/* | .github/settings.yaml)
+    .github/workflows/* | .github/actions/* | .github/settings.yml)
       known=true
       # Workflow and required-context contracts are exercised by Vitest.
       select_output unit

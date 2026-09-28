@@ -18,7 +18,7 @@ const updateCoreWorkflow = readFileSync(
   resolve(root, '.github/workflows/update-browser-core.yaml'),
   'utf8'
 );
-const settings = readFileSync(resolve(root, '.github/settings.yaml'), 'utf8');
+const settings = readFileSync(resolve(root, '.github/settings.yml'), 'utf8');
 
 const ciOutputs = ['quality', 'unit', 'e2e', 'build', 'duplication'] as const;
 const securityOutputs = ['osv', 'semgrep', 'codeql_actions', 'codeql_javascript'] as const;
@@ -156,7 +156,7 @@ describe('workflow change policy', () => {
     expectAll(security, securityOutputs);
 
     expect(classify(['.github/workflows/update-browser-core.yaml']).unit).toBe('true');
-    expect(classify(['.github/settings.yaml']).unit).toBe('true');
+    expect(classify(['.github/settings.yml']).unit).toBe('true');
 
     const sharedFixture = classify(['test/fixtures/quoted-video-tweet-response.ts']);
     expectAll(sharedFixture, ['unit', 'e2e', 'semgrep', 'codeql_javascript']);
@@ -192,7 +192,7 @@ describe('workflow change policy', () => {
     ];
 
     for (const context of contexts) {
-      expect(settings).toContain(`- "${context}"`);
+      expect(settings).toContain(`- context: "${context}"\n            app_id: 15368`);
       expect(`${ciWorkflow}\n${securityWorkflow}`).toContain(`name: ${context}`);
     }
 

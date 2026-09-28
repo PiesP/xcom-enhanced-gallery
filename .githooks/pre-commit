@@ -19,6 +19,6 @@ if is_default_branch "$branch" && [[ -f "$git_dir/MERGE_HEAD" ]]; then
 fi
 
 if is_default_branch "$branch"; then
-  echo "Direct commits on '$branch' are blocked. Use a work branch and a pull request." >&2
+  echo "Direct commits on '$branch' are blocked. Create a work branch, then merge with --no-ff." >&2
   exit 1
 fi
