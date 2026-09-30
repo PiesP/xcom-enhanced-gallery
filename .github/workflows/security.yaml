@@ -123,13 +123,45 @@ jobs:
           git switch --force --detach "$BASE_SHA"
           git submodule update --init --recursive
 
-      - name: 📁 Prepare base-pinned OSV policy and result directory
+      - name: 📁 Prepare base-pinned OSV validator and result directory
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           set -euo pipefail
+          [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]]
           install -d -m 0700 "$RUNNER_TEMP/osv-results"
-          install -m 0600 .github/codex-security/osv-scanner.toml "$RUNNER_TEMP/osv-results/osv-scanner.toml"
-          install -m 0600 scripts/security/scope-osv-exceptions.py "$RUNNER_TEMP/osv-results/scope-osv-exceptions.py"
+          if git cat-file -e "$BASE_SHA:scripts/security/validate-osv-results.py" 2>/dev/null; then
+            git show "$BASE_SHA:scripts/security/validate-osv-results.py" > "$RUNNER_TEMP/osv-results/validate-osv-results.py"
+          else
+            git show "$BASE_SHA:scripts/security/scope-osv-exceptions.py" > "$RUNNER_TEMP/osv-results/legacy-osv-helper.py"
+            cat > "$RUNNER_TEMP/osv-results/validate-osv-results.py" <<'PY'
+          # Temporary bridge for PRs based on the revision before the validator rename.
+          import argparse
+          from pathlib import Path
+          import runpy
+          import sys
+
+          legacy = runpy.run_path(str(Path(__file__).with_name("legacy-osv-helper.py")))
+          load_report = legacy["load_report"]
+
+          def validate_osv_report(report):
+              return legacy["validate_and_filter_report"](report, frozenset())
+
+          if __name__ == "__main__":
+              parser = argparse.ArgumentParser()
+              parser.add_argument("--input", required=True, type=Path)
+              parser.add_argument("--output", required=True, type=Path)
+              args = parser.parse_args()
+              try:
+                  legacy["prepare_output"](args.output, (args.input,))
+                  legacy["write_report"](args.output, validate_osv_report(load_report(args.input)))
+              except (OSError, ValueError) as error:
+                  print(f"validate-osv-results: {error}", file=sys.stderr)
+                  sys.exit(2)
+          PY
+          fi
+          chmod 0600 "$RUNNER_TEMP/osv-results/validate-osv-results.py"
           : > "$RUNNER_TEMP/osv-results/osv-empty.toml"
 
       - name: 🛡️ Scan dependencies before the PR
@@ -177,10 +209,7 @@ jobs:
           if ((raw_report_status != 0)); then
             exit "$raw_report_status"
           fi
-          python3 "$RUNNER_TEMP/osv-results/scope-osv-exceptions.py" \
-            --policy "$RUNNER_TEMP/osv-results/osv-scanner.toml" \
-            --cli-package "$GITHUB_WORKSPACE/scripts/security/codex-security/package.json" \
-            --cli-lock "$GITHUB_WORKSPACE/scripts/security/codex-security/package-lock.json" \
+          python3 "$RUNNER_TEMP/osv-results/validate-osv-results.py" \
             --input "$RUNNER_TEMP/osv-results/old-results.raw.json" \
             --output "$RUNNER_TEMP/osv-results/old-results.json"
 
@@ -236,10 +265,7 @@ jobs:
           if ((raw_report_status != 0)); then
             exit "$raw_report_status"
           fi
-          python3 "$RUNNER_TEMP/osv-results/scope-osv-exceptions.py" \
-            --policy "$RUNNER_TEMP/osv-results/osv-scanner.toml" \
-            --cli-package "$GITHUB_WORKSPACE/scripts/security/codex-security/package.json" \
-            --cli-lock "$GITHUB_WORKSPACE/scripts/security/codex-security/package-lock.json" \
+          python3 "$RUNNER_TEMP/osv-results/validate-osv-results.py" \
             --input "$RUNNER_TEMP/osv-results/new-results.raw.json" \
             --output "$RUNNER_TEMP/osv-results/new-results.json"
 
@@ -258,12 +284,12 @@ jobs:
 
           results_dir = Path(sys.argv[1])
           validator = runpy.run_path(
-              str(results_dir / "scope-osv-exceptions.py"),
-              run_name="scope_osv_validator",
+              str(results_dir / "validate-osv-results.py"),
+              run_name="osv_validator",
           )
           for name in sys.argv[2:]:
               report = validator["load_report"](results_dir / name)
-              validator["validate_and_filter_report"](report, frozenset())
+              validator["validate_osv_report"](report)
           PY
           set +e
           docker run --rm \
@@ -351,7 +377,7 @@ jobs:
           submodules: true
           persist-credentials: false
 
-      - name: 📁 Prepare trusted OSV policy and result directory
+      - name: 📁 Prepare trusted OSV validator and result directory
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
         env:
           POLICY_SHA: ${{ github.event.merge_group.base_sha || github.sha }}
@@ -368,13 +394,39 @@ jobs:
               fi
             fi
             git cat-file -e "$POLICY_SHA^{commit}"
-            git show "$POLICY_SHA:.github/codex-security/osv-scanner.toml" > "$RUNNER_TEMP/osv-results/osv-scanner.toml"
-            git show "$POLICY_SHA:scripts/security/scope-osv-exceptions.py" > "$RUNNER_TEMP/osv-results/scope-osv-exceptions.py"
-            chmod 0600 "$RUNNER_TEMP/osv-results/osv-scanner.toml"
-            chmod 0600 "$RUNNER_TEMP/osv-results/scope-osv-exceptions.py"
+            if git cat-file -e "$POLICY_SHA:scripts/security/validate-osv-results.py" 2>/dev/null; then
+              git show "$POLICY_SHA:scripts/security/validate-osv-results.py" > "$RUNNER_TEMP/osv-results/validate-osv-results.py"
+            else
+              git show "$POLICY_SHA:scripts/security/scope-osv-exceptions.py" > "$RUNNER_TEMP/osv-results/legacy-osv-helper.py"
+              cat > "$RUNNER_TEMP/osv-results/validate-osv-results.py" <<'PY'
+          # Temporary bridge for merge groups based on the revision before the validator rename.
+          import argparse
+          from pathlib import Path
+          import runpy
+          import sys
+
+          legacy = runpy.run_path(str(Path(__file__).with_name("legacy-osv-helper.py")))
+          load_report = legacy["load_report"]
+
+          def validate_osv_report(report):
+              return legacy["validate_and_filter_report"](report, frozenset())
+
+          if __name__ == "__main__":
+              parser = argparse.ArgumentParser()
+              parser.add_argument("--input", required=True, type=Path)
+              parser.add_argument("--output", required=True, type=Path)
+              args = parser.parse_args()
+              try:
+                  legacy["prepare_output"](args.output, (args.input,))
+                  legacy["write_report"](args.output, validate_osv_report(load_report(args.input)))
+              except (OSError, ValueError) as error:
+                  print(f"validate-osv-results: {error}", file=sys.stderr)
+                  sys.exit(2)
+          PY
+            fi
+            chmod 0600 "$RUNNER_TEMP/osv-results/validate-osv-results.py"
           else
-            install -m 0600 .github/codex-security/osv-scanner.toml "$RUNNER_TEMP/osv-results/osv-scanner.toml"
-            install -m 0600 scripts/security/scope-osv-exceptions.py "$RUNNER_TEMP/osv-results/scope-osv-exceptions.py"
+            install -m 0600 scripts/security/validate-osv-results.py "$RUNNER_TEMP/osv-results/validate-osv-results.py"
           fi
           : > "$RUNNER_TEMP/osv-results/osv-empty.toml"
 
@@ -423,10 +475,7 @@ jobs:
           if ((raw_report_status != 0)); then
             exit "$raw_report_status"
           fi
-          python3 "$RUNNER_TEMP/osv-results/scope-osv-exceptions.py" \
-            --policy "$RUNNER_TEMP/osv-results/osv-scanner.toml" \
-            --cli-package "$GITHUB_WORKSPACE/scripts/security/codex-security/package.json" \
-            --cli-lock "$GITHUB_WORKSPACE/scripts/security/codex-security/package-lock.json" \
+          python3 "$RUNNER_TEMP/osv-results/validate-osv-results.py" \
             --input "$RUNNER_TEMP/osv-results/osv-results.raw.json" \
             --output "$RUNNER_TEMP/osv-results/osv-results.json"
 
@@ -445,12 +494,12 @@ jobs:
 
           results_dir = Path(sys.argv[1])
           validator = runpy.run_path(
-              str(results_dir / "scope-osv-exceptions.py"),
-              run_name="scope_osv_validator",
+              str(results_dir / "validate-osv-results.py"),
+              run_name="osv_validator",
           )
           for name in sys.argv[2:]:
               report = validator["load_report"](results_dir / name)
-              validator["validate_and_filter_report"](report, frozenset())
+              validator["validate_osv_report"](report)
           PY
           set +e
           docker run --rm \

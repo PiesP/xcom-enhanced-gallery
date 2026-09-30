@@ -9,7 +9,6 @@ const classifier = resolve(root, 'scripts/ci/classify-changes.sh');
 const ciWorkflow = readFileSync(resolve(root, '.github/workflows/ci.yaml'), 'utf8');
 const securityWorkflow = readFileSync(resolve(root, '.github/workflows/security.yaml'), 'utf8');
 const deepWorkflow = readFileSync(resolve(root, '.github/workflows/deep-checks.yaml'), 'utf8');
-const codexWorkflow = readFileSync(resolve(root, '.github/workflows/codex-security.yaml'), 'utf8');
 const dependabotWorkflow = readFileSync(
   resolve(root, '.github/workflows/dependabot-auto-merge.yaml'),
   'utf8'
@@ -165,19 +164,9 @@ describe('workflow change policy', () => {
     expectAll(windowsValidation, ['unit', 'e2e', 'semgrep', 'codeql_javascript']);
     expect(windowsValidation.build).toBe('false');
 
-    for (const cliClosurePath of [
-      'scripts/security/codex-security/package.json',
-      'scripts/security/codex-security/package-lock.json',
-      'scripts/security/scope-osv-exceptions.py',
-    ]) {
-      const codexSecurityClosure = classify([cliClosurePath]);
-      expect(codexSecurityClosure.unit).toBe('true');
-      expect(codexSecurityClosure.osv).toBe('true');
-    }
-
-    const codexSecurityPolicy = classify(['.github/codex-security/scan.md']);
-    expect(codexSecurityPolicy.unit).toBe('true');
-    expect(codexSecurityPolicy.osv).toBe('true');
+    const validator = classify(['scripts/security/validate-osv-results.py']);
+    expect(validator.unit).toBe('true');
+    expect(validator.osv).toBe('true');
   });
 
   it('preserves every required context while adding explicit no-op success paths', () => {
@@ -258,7 +247,6 @@ describe('workflow change policy', () => {
 
     expect(deepWorkflow.slice(0, deepWorkflow.indexOf('\nenv:'))).toContain('schedule:');
     expect(deepWorkflow.slice(0, deepWorkflow.indexOf('\nenv:'))).not.toContain('paths:');
-    expect(codexWorkflow.slice(0, codexWorkflow.indexOf('\npermissions:'))).toContain('paths:');
     expect(dependabotWorkflow.slice(0, dependabotWorkflow.indexOf('\npermissions:'))).toContain(
       'paths:'
     );
