@@ -10,4 +10,4 @@ package = "@openai/codex-security"
 version = "0.1.31"
 integrity = "sha512-XdxIQ+JQH3iysFPW2VdFcKAJJo+M+G4hR9x/KlVimMcbmocDVtQT+trjjfNPqZUdb2ZHrW7HHGepeRhMbMvCHQ=="
 lockfileSha256 = "6cd121ce6d4731953ab0d1591b240956a51c26701b098ea23e7a48442e2975c2"
-reviewedOn = 2026-10-01
+reviewedOn = 2026-09-30
