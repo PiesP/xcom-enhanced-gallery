@@ -163,12 +163,11 @@ classify_path() {
       ;;
     .github/workflows/dependabot-auto-merge.yaml | \
       .github/workflows/dependabot-auto-merge-apply.yaml | \
-      .github/workflows/codex-security.yaml | \
       .github/actions/*)
       known=true
       select_output unit
       ;;
-    .github/codex-security/* | scripts/security/scope-osv-exceptions.py)
+    scripts/security/validate-osv-results.py)
       known=true
       select_output unit
       select_output osv
@@ -187,10 +186,6 @@ classify_path() {
     .github/workflows/* | .github/actions/*)
       known=true
       select_output codeql_actions
-      ;;
-    scripts/security/codex-security/package.json | scripts/security/codex-security/package-lock.json)
-      known=true
-      select_output osv
       ;;
   esac
 

@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import {
   chmodSync,
@@ -16,20 +15,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 const root = resolve(import.meta.dirname, '../../..');
 const workflow = readFileSync(resolve(root, '.github/workflows/security.yaml'), 'utf8');
-const helper = resolve(root, 'scripts/security/scope-osv-exceptions.py');
-const policy = resolve(root, '.github/codex-security/osv-scanner.toml');
-const cliPackage = JSON.parse(
-  readFileSync(resolve(root, 'scripts/security/codex-security/package.json'), 'utf8')
-) as { dependencies: Record<string, string> };
-const cliLock = JSON.parse(
-  readFileSync(resolve(root, 'scripts/security/codex-security/package-lock.json'), 'utf8')
-) as { packages: Record<string, { integrity?: string }> };
-const cliVersion = cliPackage.dependencies['@openai/codex-security'];
-const cliIntegrity = cliLock.packages['node_modules/@openai/codex-security']?.integrity;
-if (!cliVersion || !cliIntegrity) throw new Error('Codex Security lock metadata is incomplete');
-const cliLockfileSha256 = createHash('sha256')
-  .update(readFileSync(resolve(root, 'scripts/security/codex-security/package-lock.json')))
-  .digest('hex');
+const helper = resolve(root, 'scripts/security/validate-osv-results.py');
 const image = workflow.match(/OSV_SCANNER_IMAGE: "([^"]+)"/)?.[1];
 const actualContainerRuntime = process.env.OSV_TEST_CONTAINER_RUNTIME;
 const temporaryDirectories: string[] = [];
@@ -115,7 +101,7 @@ function reportWith(
       {
         source: {
           path: target
-            ? '/src/scripts/security/codex-security/package-lock.json'
+            ? '/src/other-lock.yaml'
             : '/src/pnpm-lock.yaml',
           type: 'lockfile',
         },
@@ -135,27 +121,6 @@ function reportWith(
   };
 }
 
-function activePolicy(): string {
-  return `
-[[IgnoredVulns]]
-id = "GHSA-jmr9-qjv8-65gv"
-ignoreUntil = 2099-01-01
-reason = "Workflow test"
-
-[[IgnoredVulns]]
-id = "GHSA-7pqw-9j4j-h8q3"
-ignoreUntil = 2099-01-01
-reason = "Workflow test"
-
-[CodexSecurityReview]
-package = "@openai/codex-security"
-version = "${cliVersion}"
-integrity = "${cliIntegrity}"
-lockfileSha256 = "${cliLockfileSha256}"
-reviewedOn = ${new Date().toISOString().slice(0, 10)}
-`;
-}
-
 function createSandbox(): Sandbox {
   const runnerTemp = mkdtempSync(join(tmpdir(), 'osv-workflow-'));
   temporaryDirectories.push(runnerTemp);
@@ -163,8 +128,7 @@ function createSandbox(): Sandbox {
   const bin = join(runnerTemp, 'bin');
   mkdirSync(results);
   mkdirSync(bin);
-  copyFileSync(helper, join(results, 'scope-osv-exceptions.py'));
-  writeFileSync(join(results, 'osv-scanner.toml'), activePolicy());
+  copyFileSync(helper, join(results, 'validate-osv-results.py'));
   writeFileSync(join(results, 'osv-empty.toml'), '');
   const githubOutput = join(runnerTemp, 'github-output');
   writeFileSync(githubOutput, '');
@@ -313,55 +277,19 @@ describe('executable OSV workflow boundary', () => {
     '📋 Convert OSV results to SARIF and enforce the vulnerability gate'
   );
   const materializePolicy = extractFirstStep([
-    '📁 Prepare trusted OSV policy and result directory',
-    '📁 Materialize trusted OSV policy',
+    '📁 Prepare trusted OSV validator and result directory',
   ]);
   const materializePrPolicy = extractFirstStep([
-    '📁 Prepare base-pinned OSV policy and result directory',
-    '📁 Materialize base OSV policy',
-    '📁 Materialize trusted OSV policy from PR base',
+    '📁 Prepare base-pinned OSV validator and result directory',
   ]);
 
-  it('does not tolerate scanner or filter step failures at the job boundary', () => {
+  it('does not tolerate scanner or validator step failures at the job boundary', () => {
     expect(scanSteps.every((step) => !step.continueOnError)).toBe(true);
     expect(workflow).toContain("steps.osv-report.outputs.sarif-upload == 'true'");
   });
 
-  it('keeps the fixed policy exception-free across the former expiry boundary', () => {
-    const sandbox = createSandbox();
-    const historicalPolicy = join(sandbox.results, 'historical-policy.toml');
-    writeFileSync(
-      historicalPolicy,
-      readFileSync(policy, 'utf8').replace(
-        /reviewedOn = \d{4}-\d{2}-\d{2}/,
-        'reviewedOn = 2026-09-26'
-      )
-    );
-    const execution = spawnSync('python3', ['-', helper, historicalPolicy], {
-      encoding: 'utf8',
-      input: `
-from datetime import date
-from pathlib import Path
-import runpy
-import sys
-
-validator = runpy.run_path(sys.argv[1], run_name="scope_osv_validator")
-policy = Path(sys.argv[2])
-for instant in ("2026-09-27", "2026-09-28"):
-    active = validator["load_policy"](policy, date.fromisoformat(instant))
-    print(instant + ":" + ",".join(sorted(active)))
-`,
-    });
-
-    expect(execution.status, execution.stderr).toBe(0);
-    expect(execution.stdout.trim().split('\n')).toEqual([
-      '2026-09-27:',
-      '2026-09-28:',
-    ]);
-  });
-
   it.each(['push', 'schedule', 'workflow_dispatch'])(
-    'executes the current-source policy path for the %s event',
+    'executes the current-source validator path for the %s event',
     (eventName) => {
       const sandbox = createSandbox();
       const execution = runStep(materializePolicy, sandbox, {
@@ -370,26 +298,34 @@ for instant in ("2026-09-27", "2026-09-28"):
       });
 
       expect(execution.status, execution.stderr).toBe(0);
-      expect(readFileSync(join(sandbox.results, 'osv-scanner.toml'), 'utf8')).toBe(
-        readFileSync(policy, 'utf8')
-      );
-      expect(readFileSync(join(sandbox.results, 'scope-osv-exceptions.py'), 'utf8')).toBe(
+      expect(readFileSync(join(sandbox.results, 'validate-osv-results.py'), 'utf8')).toBe(
         readFileSync(helper, 'utf8')
       );
     }
   );
 
-  it('executes the PR-base policy materialization body', () => {
+  it('executes the PR-base validator materialization body', () => {
     const sandbox = createSandbox();
-    const execution = runStep(materializePrPolicy, sandbox);
+    const head = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).stdout.trim();
+    const execution = runStep(materializePrPolicy, sandbox, { BASE_SHA: head });
 
     expect(execution.status, execution.stderr).toBe(0);
-    expect(readFileSync(join(sandbox.results, 'osv-scanner.toml'), 'utf8')).toBe(
-      readFileSync(policy, 'utf8')
-    );
-    expect(readFileSync(join(sandbox.results, 'scope-osv-exceptions.py'), 'utf8')).toBe(
-      readFileSync(helper, 'utf8')
-    );
+    const trustedValidator = spawnSync('git', ['show', `${head}:scripts/security/validate-osv-results.py`], {
+      cwd: root,
+      encoding: 'utf8',
+    });
+    if (trustedValidator.status === 0) {
+      expect(readFileSync(join(sandbox.results, 'validate-osv-results.py'), 'utf8')).toBe(trustedValidator.stdout);
+    } else {
+      expect(existsSync(join(sandbox.results, 'legacy-osv-helper.py'))).toBe(true);
+      const input = join(sandbox.results, 'legacy-input.json');
+      const output = join(sandbox.results, 'legacy-output.json');
+      const vulnerable = reportWith(['GHSA-jmr9-qjv8-65gv']);
+      writeJson(input, vulnerable);
+      const validation = spawnSync('python3', [join(sandbox.results, 'validate-osv-results.py'), '--input', input, '--output', output], { encoding: 'utf8' });
+      expect(validation.status, validation.stderr).toBe(0);
+      expect(JSON.parse(readFileSync(output, 'utf8'))).toEqual(vulnerable);
+    }
   });
 
   it('executes the merge-group path against the trusted base commit', () => {
@@ -405,17 +341,14 @@ for instant in ("2026-09-27", "2026-09-28"):
     });
 
     expect(execution.status, execution.stderr).toBe(0);
-    const trustedFiles: Array<[string, string]> = [
-      ['.github/codex-security/osv-scanner.toml', 'osv-scanner.toml'],
-      ['scripts/security/scope-osv-exceptions.py', 'scope-osv-exceptions.py'],
-    ];
-    for (const [repositoryPath, resultName] of trustedFiles) {
-      const expected = spawnSync('git', ['show', `${head}:${repositoryPath}`], {
-        cwd: root,
-        encoding: 'utf8',
-      });
-      expect(expected.status, expected.stderr).toBe(0);
-      expect(readFileSync(join(sandbox.results, resultName), 'utf8')).toBe(expected.stdout);
+    const trustedValidator = spawnSync('git', ['show', `${head}:scripts/security/validate-osv-results.py`], {
+      cwd: root,
+      encoding: 'utf8',
+    });
+    if (trustedValidator.status === 0) {
+      expect(readFileSync(join(sandbox.results, 'validate-osv-results.py'), 'utf8')).toBe(trustedValidator.stdout);
+    } else {
+      expect(existsSync(join(sandbox.results, 'legacy-osv-helper.py'))).toBe(true);
     }
   });
 
@@ -466,7 +399,7 @@ for instant in ("2026-09-27", "2026-09-28"):
     expect(existsSync(join(sandbox.results, 'osv-results.json'))).toBe(false);
   });
 
-  it('fails in the trusted filter when a successful scanner produces no raw file', () => {
+  it('fails in the trusted validator when a successful scanner produces no raw file', () => {
     const sandbox = createSandbox();
     installFakeDocker(sandbox.bin);
 
@@ -478,7 +411,7 @@ for instant in ("2026-09-27", "2026-09-28"):
     expect(uploadAllowed(sandbox)).toBe(false);
   });
 
-  it('fails in the trusted filter and removes stale filtered output for malformed raw JSON', () => {
+  it('fails in the trusted validator and removes stale validated output for malformed raw JSON', () => {
     const sandbox = createSandbox();
     installFakeDocker(sandbox.bin);
     const raw = join(sandbox.runnerTemp, 'malformed.json');
@@ -494,7 +427,7 @@ for instant in ("2026-09-27", "2026-09-28"):
     expect(existsSync(join(sandbox.results, 'osv-results.json'))).toBe(false);
   });
 
-  it('preserves a normal scanner success as a valid empty filtered result', () => {
+  it('preserves a normal scanner success as a valid empty validated result', () => {
     const sandbox = createSandbox();
     installFakeDocker(sandbox.bin);
     const raw = join(sandbox.runnerTemp, 'empty.json');
@@ -511,52 +444,20 @@ for instant in ("2026-09-27", "2026-09-28"):
     );
   });
 
-  it('normalizes scanner exit 1 when every vulnerability has an exact active exception', () => {
-    const sandbox = createSandbox();
-    installFakeDocker(sandbox.bin);
-    const raw = join(sandbox.runnerTemp, 'approved.json');
-    writeJson(
-      raw,
-      reportWith(['GHSA-jmr9-qjv8-65gv', 'GHSA-7pqw-9j4j-h8q3'], true)
-    );
-
-    const execution = runStep(dispatchScan, sandbox, {
-      FAKE_SCANNER_RAW: raw,
-      FAKE_SCANNER_STATUS: '1',
-    });
-    const filtered = JSON.parse(
-      readFileSync(join(sandbox.results, 'osv-results.json'), 'utf8')
-    ) as { results: Array<{ packages: Array<{ vulnerabilities: unknown[] }> }> };
-
-    expect(execution.status).toBe(0);
-    expect(filtered.results[0]?.packages[0]?.vulnerabilities).toEqual([]);
-  });
-
-  it('normalizes scanner exit 1 and filters only the exact active exceptions', () => {
+  it('retains every vulnerability when the scanner exits 1', () => {
     const sandbox = createSandbox();
     installFakeDocker(sandbox.bin);
     const raw = join(sandbox.runnerTemp, 'vulnerable.json');
-    writeJson(
-      raw,
-      reportWith([
-        'GHSA-jmr9-qjv8-65gv',
-        'GHSA-7pqw-9j4j-h8q3',
-        'GHSA-test-test-test',
-      ], true)
-    );
+    const input = reportWith(['GHSA-jmr9-qjv8-65gv', 'GHSA-test-test-test']);
+    writeJson(raw, input);
 
     const execution = runStep(dispatchScan, sandbox, {
       FAKE_SCANNER_RAW: raw,
       FAKE_SCANNER_STATUS: '1',
     });
-    const filtered = JSON.parse(
-      readFileSync(join(sandbox.results, 'osv-results.json'), 'utf8')
-    ) as { results: Array<{ packages: Array<{ vulnerabilities: Array<{ id: string }> }> }> };
 
-    expect(execution.status).toBe(0);
-    expect(filtered.results[0]?.packages[0]?.vulnerabilities.map(({ id }) => id)).toEqual([
-      'GHSA-test-test-test',
-    ]);
+    expect(execution.status, execution.stderr).toBe(0);
+    expect(JSON.parse(readFileSync(join(sandbox.results, 'osv-results.json'), 'utf8'))).toEqual(input);
   });
 
   it.each([
@@ -594,14 +495,14 @@ describe.runIf(Boolean(actualContainerRuntime))('pinned reporter integration thr
   }
 
   it.each([
-    ['valid approved report', {}, 0, true],
-    ['approved report with invalid published metadata', { published: 42 }, 2, false],
+    ['valid vulnerable report', {}, 0, true],
+    ['vulnerable report with invalid published metadata', { published: 42 }, 2, false],
   ])(
-    'validates raw scanner JSON before filtering: %s',
-    (_label, vulnerabilityMetadata, expectedStatus, expectedFiltered) => {
+    'validates raw scanner JSON before reporting: %s',
+    (_label, vulnerabilityMetadata, expectedStatus, expectedValidated) => {
       const sandbox = createSandbox();
       installScannerStubRuntimeReporter(sandbox.bin, actualContainerRuntime ?? 'podman');
-      const raw = join(sandbox.runnerTemp, 'approved-raw.json');
+      const raw = join(sandbox.runnerTemp, 'vulnerable-raw.json');
       writeJson(
         raw,
         reportWith(['GHSA-jmr9-qjv8-65gv'], true, vulnerabilityMetadata)
@@ -613,7 +514,7 @@ describe.runIf(Boolean(actualContainerRuntime))('pinned reporter integration thr
       });
 
       expect(execution.status, `${execution.stdout}\n${execution.stderr}`).toBe(expectedStatus);
-      expect(existsSync(join(sandbox.results, 'osv-results.json'))).toBe(expectedFiltered);
+      expect(existsSync(join(sandbox.results, 'osv-results.json'))).toBe(expectedValidated);
       expect(existsSync(join(sandbox.results, 'osv-results.raw.reporter.log'))).toBe(true);
     },
     30_000
@@ -621,7 +522,7 @@ describe.runIf(Boolean(actualContainerRuntime))('pinned reporter integration thr
 
   it.each([
     ['normal empty result', emptyReport(), 0, 0],
-    ['unapproved vulnerability', reportWith(['GHSA-test-test-test']), 1, 1],
+    ['vulnerability', reportWith(['GHSA-test-test-test']), 1, 1],
   ])('%s preserves reporter exit and SARIF', (_label, input, expectedStatus, expectedResults) => {
     const sandbox = actualSandbox();
     writeJson(join(sandbox.results, 'osv-results.json'), input);
@@ -671,7 +572,7 @@ describe.runIf(Boolean(actualContainerRuntime))('pinned reporter integration thr
     30_000
   );
 
-  it('fails a full scan when the post-expiry filtered result retains the approved IDs', () => {
+  it('fails a full scan when vulnerabilities remain', () => {
     const sandbox = actualSandbox();
     writeJson(
       join(sandbox.results, 'osv-results.json'),
@@ -685,7 +586,7 @@ describe.runIf(Boolean(actualContainerRuntime))('pinned reporter integration thr
     expect(sarifResultCount(join(sandbox.results, 'osv-results.sarif'))).toBe(2);
   }, 30_000);
 
-  it('passes a PR diff when the same post-expiry vulnerabilities exist in old and new', () => {
+  it('passes a PR diff when the same vulnerabilities exist in old and new', () => {
     const sandbox = actualSandbox();
     const retained = reportWith(
       ['GHSA-jmr9-qjv8-65gv', 'GHSA-7pqw-9j4j-h8q3'],

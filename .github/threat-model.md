@@ -55,8 +55,6 @@ artifacts.
 - DOM/API traversal, response parsing, media caches, concurrent downloads, ZIP
   assembly, retries, timeouts, and cancellation remain bounded. A remote post or
   media payload must not reliably exhaust memory, CPU, disk, or the browser tab.
-- ChatGPT/Codex scan artifacts are development outputs and must not disclose
-  private X.com content beyond access-controlled, short-retention storage.
 - Published userscript and extension artifacts must correspond to reviewed source
   and trusted build/release automation.
 
