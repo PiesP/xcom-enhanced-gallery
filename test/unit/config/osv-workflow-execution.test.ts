@@ -328,7 +328,16 @@ describe('executable OSV workflow boundary', () => {
   });
 
   it('keeps the fixed policy exception-free across the former expiry boundary', () => {
-    const execution = spawnSync('python3', ['-', helper, policy], {
+    const sandbox = createSandbox();
+    const historicalPolicy = join(sandbox.results, 'historical-policy.toml');
+    writeFileSync(
+      historicalPolicy,
+      readFileSync(policy, 'utf8').replace(
+        /reviewedOn = \d{4}-\d{2}-\d{2}/,
+        'reviewedOn = 2026-09-26'
+      )
+    );
+    const execution = spawnSync('python3', ['-', helper, historicalPolicy], {
       encoding: 'utf8',
       input: `
 from datetime import date
