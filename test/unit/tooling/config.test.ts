@@ -252,7 +252,7 @@ describe('tooling configuration', () => {
 
     expect(deepWorkflow).not.toContain('\n  push:\n');
     expect(duplicationJob).toContain('run: nose query src --baseline .nose-baseline.json --fail-on new');
-    expect(ciWorkflow).toContain('name: pr-gate/duplication');
+    expect(ciWorkflow).not.toContain('name: pr-gate/duplication');
   });
 
   it('retains actionable browser diagnostics and labels Firefox coverage honestly', () => {
