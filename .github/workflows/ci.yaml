@@ -5,7 +5,7 @@ name: 🏗️ CI
 # - Run unit tests with coverage thresholds
 # - Run browser E2E tests
 # - Build all distribution targets
-# - Report the required duplication status; strict duplication runs in Deep Verification
+# - Strict duplication runs in Deep Verification
 #
 # Expensive mutation testing lives in deep-checks.yaml so PR feedback is not
 # blocked by a long-running, resource-heavy analysis.
@@ -235,13 +235,3 @@ jobs:
           if-no-files-found: error
           retention-days: 7
           compression-level: 9
-
-  duplication:
-    name: pr-gate/duplication
-    needs: changes
-    if: ${{ !cancelled() }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    steps:
-      - name: ℹ️ Duplication is checked by Deep Verification
-        run: echo "Duplication is informational for PR CI; the weekly or manual Deep Verification gate owns this check."

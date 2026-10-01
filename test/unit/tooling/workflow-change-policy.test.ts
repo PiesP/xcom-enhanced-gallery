@@ -175,7 +175,6 @@ describe('workflow change policy', () => {
       'pr-gate/build',
       'pr-gate/unit',
       'pr-gate/e2e',
-      'pr-gate/duplication',
       'pr-gate/osv / osv-scan',
       'pr-gate/semgrep',
     ];
@@ -189,7 +188,8 @@ describe('workflow change policy', () => {
     expect(ciWorkflow).toContain('No unit-relevant changes');
     expect(ciWorkflow).toContain('No browser-relevant changes');
     expect(ciWorkflow).toContain('No build-relevant changes');
-    expect(ciWorkflow).toContain('Duplication is informational for PR CI');
+    expect(ciWorkflow).not.toContain('name: pr-gate/duplication');
+    expect(deepWorkflow).toContain('name: 🔍 Duplication');
     expect(securityWorkflow).toContain('No dependency-relevant changes');
     expect(securityWorkflow).toContain('No Semgrep-relevant changes');
   });
@@ -201,7 +201,6 @@ describe('workflow change policy', () => {
       );
       expect(ciWorkflow).toContain(`needs.changes.outputs.${output} == 'false'`);
     }
-    expect(jobBlock(ciWorkflow, 'duplication')).toContain('Duplication is informational for PR CI');
     for (const output of ['osv', 'semgrep'] as const) {
       expect(securityWorkflow).toContain(
         `needs.changes.result != 'success' || needs.changes.outputs.${output} != 'false'`
@@ -211,7 +210,7 @@ describe('workflow change policy', () => {
 
     expect(ciWorkflow).not.toContain('Require successful change classification');
     expect(securityWorkflow).not.toContain('Require successful change classification');
-    for (const job of ['quality', 'unit', 'e2e', 'build', 'duplication']) {
+    for (const job of ['quality', 'unit', 'e2e', 'build']) {
       expect(jobBlock(ciWorkflow, job), job).toContain('needs:');
       expect(jobBlock(ciWorkflow, job), job).toContain('if: ${{ !cancelled() }}');
     }

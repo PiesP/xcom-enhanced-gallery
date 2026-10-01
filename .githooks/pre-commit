@@ -2,7 +2,6 @@
 set -euo pipefail
 
 branch="$(git symbolic-ref --quiet --short HEAD || true)"
-git_dir="$(git rev-parse --git-dir)"
 
 is_default_branch() {
   [[ "$1" == "master" || "$1" == "main" ]]
@@ -13,12 +12,7 @@ if [[ -z "$branch" ]]; then
   exit 1
 fi
 
-# Completing a merge on the default branch is allowed; ordinary commits are not.
-if is_default_branch "$branch" && [[ -f "$git_dir/MERGE_HEAD" ]]; then
-  exit 0
-fi
-
 if is_default_branch "$branch"; then
-  echo "Direct commits on '$branch' are blocked. Create a work branch, then merge with --no-ff." >&2
+  echo "Commits on '$branch' are blocked. Create a work branch and use a pull request." >&2
   exit 1
 fi
