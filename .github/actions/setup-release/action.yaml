@@ -3,17 +3,24 @@ description: Configure the pinned release toolchain and install locked dependenc
 
 inputs:
   node-version:
-    description: Node.js version passed to pnpm/setup
-    required: true
+    description: Verified source manifest pin, retained for older tagged action compatibility
+    required: false
 
 runs:
   using: composite
   steps:
+    - name: Resolve the official manifest-pinned runtime
+      id: runtime
+      shell: bash
+      env:
+        REQUESTED_NODE_VERSION: ${{ inputs.node-version }}
+      run: node "$GITHUB_ACTION_PATH/resolve-runtime.mjs"
+
     - name: Install pnpm and Node.js
       uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
       with:
         package-json-file: package.json
-        runtime: "node@${{ inputs.node-version }}"
+        runtime: "node@${{ steps.runtime.outputs.version }}"
         cache: false
         install: false
 

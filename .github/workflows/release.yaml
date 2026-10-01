@@ -15,9 +15,6 @@ on:
         required: true
         type: string
 
-env:
-  NODE_VERSION: "26"
-
 permissions:
   contents: read
 
@@ -34,6 +31,7 @@ jobs:
     outputs:
       release-sha: ${{ steps.verify.outputs.release-sha }}
       version: ${{ steps.verify.outputs.version }}
+      node-version: ${{ steps.verify.outputs.node-version }}
     steps:
       - name: 📥 Checkout protected workflow source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -59,6 +57,18 @@ jobs:
             echo "❌ Release tag $RELEASE_TAG is not contained in protected master $GITHUB_SHA"
             exit 1
           fi
+          # Resolve from the verified tagged source, including older tags whose
+          # locally reviewed setup action still requires node-version input.
+          node - "$release_sha" <<'JS'
+          const { execFileSync } = require('node:child_process');
+          const { appendFileSync } = require('node:fs');
+          const manifest = JSON.parse(execFileSync('git', ['show', `${process.argv[2]}:package.json`], { encoding: 'utf8' }));
+          const version = manifest.volta?.node;
+          if (typeof version !== 'string' || !/^\d+\.\d+\.\d+$/.test(version)) {
+            throw new Error('Release source must declare an exact volta.node pin');
+          }
+          appendFileSync(process.env.GITHUB_OUTPUT, `node-version=${version}\n`);
+          JS
           echo "release-sha=$release_sha" >> "$GITHUB_OUTPUT"
           echo "version=${RELEASE_TAG#v}" >> "$GITHUB_OUTPUT"
 
@@ -88,7 +98,7 @@ jobs:
       - name: 📦 Setup project
         uses: ./.github/actions/setup-release
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: ${{ needs.provenance.outputs.node-version }}
 
       - name: ✅ Run quality gate
         run: pnpm quality
@@ -119,7 +129,7 @@ jobs:
       - name: 📦 Setup project
         uses: ./.github/actions/setup-release
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: ${{ needs.provenance.outputs.node-version }}
 
       - name: 🧪 Run unit tests and coverage thresholds
         run: pnpm test:cov
@@ -150,7 +160,7 @@ jobs:
       - name: 📦 Setup project
         uses: ./.github/actions/setup-release
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: ${{ needs.provenance.outputs.node-version }}
 
       - name: 🏗️ Build bundles for E2E
         run: pnpm build:e2e
@@ -215,7 +225,7 @@ jobs:
       - name: 📦 Setup project
         uses: ./.github/actions/setup-release
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: ${{ needs.provenance.outputs.node-version }}
 
       - name: 🧬 Run mutation gate
         run: pnpm mut:fast
@@ -247,7 +257,7 @@ jobs:
       - name: 📦 Setup project
         uses: ./.github/actions/setup-release
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: ${{ needs.provenance.outputs.node-version }}
 
       - name: 📝 Determine version
         shell: bash
