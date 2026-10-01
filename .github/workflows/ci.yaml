@@ -113,6 +113,10 @@ jobs:
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.unit != 'false' }}
         uses: PiesP/browser-core/automation/actions/setup-project@1e3de928cb6828dc81b19f18a450f8320985720b
 
+      - name: 🧪 Run deep-check regression tests
+        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.unit != 'false' }}
+        run: pnpm test:ci
+
       - name: 🧪 Run unit tests and coverage thresholds
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.unit != 'false' }}
         run: pnpm test:cov
