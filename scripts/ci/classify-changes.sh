@@ -125,7 +125,7 @@ classify_path() {
   esac
 
   case "$path" in
-    vite*.ts | tsconfig.json | tsconfig.e2e.json | biome.json | knip.json)
+    vite*.ts | tsconfig.json | tsconfig.e2e.json | tsconfig.scripts.json | biome.json | knip.json)
       known=true
       for output in quality unit e2e build codeql_javascript; do
         select_output "$output"

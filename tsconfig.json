@@ -36,5 +36,13 @@
     "allowImportingTsExtensions": true
   },
   "include": ["src/**/*", "scripts/**/*.ts", "tooling/**/*", "vite.config.ts", "vite.*.config.ts"],
-  "exclude": ["node_modules", "dist", ".stryker-tmp", ".stryker-tmp-debug", ".vscode"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".stryker-tmp",
+    ".stryker-tmp-debug",
+    ".vscode",
+    "scripts/ci/deep-check-reuse.ts",
+    "scripts/ci/deep-check-reuse.test.ts"
+  ]
 }

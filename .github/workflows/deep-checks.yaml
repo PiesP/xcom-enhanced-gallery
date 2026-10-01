@@ -48,12 +48,17 @@ jobs:
         with:
           submodules: true
 
+      - name: 📦 Setup fingerprint runtime
+        uses: PiesP/browser-core/automation/actions/setup-project@1e3de928cb6828dc81b19f18a450f8320985720b
+        with:
+          install-dependencies: 'false'
+
       - name: 🔑 Fingerprint duplication inputs
         id: fingerprint
         continue-on-error: true
         env:
           DEEP_RUNNER_LABEL: ubuntu-24.04
-        run: node scripts/ci/deep-check-reuse.mjs fingerprint duplication
+        run: node --experimental-strip-types scripts/ci/deep-check-reuse.ts fingerprint duplication
 
       - name: 📥 Restore successful duplication marker
         id: restore
@@ -73,7 +78,7 @@ jobs:
           RESTORE_OUTCOME: ${{ steps.restore.outcome }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           REUSE_SUCCESS: ${{ inputs.reuse_success }}
-        run: node scripts/ci/deep-check-reuse.mjs verify duplication "$FINGERPRINT" .deep-check-cache/duplication.json
+        run: node --experimental-strip-types scripts/ci/deep-check-reuse.ts verify duplication "$FINGERPRINT" .deep-check-cache/duplication.json
 
       - name: ♻️ Reuse successful duplication
         if: ${{ steps.marker.outputs.reuse == 'true' }}
@@ -100,7 +105,7 @@ jobs:
         continue-on-error: true
         env:
           FINGERPRINT: ${{ steps.fingerprint.outputs.fingerprint }}
-        run: node scripts/ci/deep-check-reuse.mjs mark duplication "$FINGERPRINT" .deep-check-cache/duplication.json
+        run: node --experimental-strip-types scripts/ci/deep-check-reuse.ts mark duplication "$FINGERPRINT" .deep-check-cache/duplication.json
 
       - name: 💾 Save successful duplication marker
         if: ${{ steps.mark.outcome == 'success' }}
@@ -121,12 +126,17 @@ jobs:
         with:
           submodules: true
 
+      - name: 📦 Setup fingerprint runtime
+        uses: PiesP/browser-core/automation/actions/setup-project@1e3de928cb6828dc81b19f18a450f8320985720b
+        with:
+          install-dependencies: 'false'
+
       - name: 🔑 Fingerprint mutation inputs
         id: fingerprint
         continue-on-error: true
         env:
           DEEP_RUNNER_LABEL: ubuntu-24.04
-        run: node scripts/ci/deep-check-reuse.mjs fingerprint mutation
+        run: node --experimental-strip-types scripts/ci/deep-check-reuse.ts fingerprint mutation
 
       - name: 📥 Restore successful mutation marker
         id: restore
@@ -146,7 +156,7 @@ jobs:
           RESTORE_OUTCOME: ${{ steps.restore.outcome }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           REUSE_SUCCESS: ${{ inputs.reuse_success }}
-        run: node scripts/ci/deep-check-reuse.mjs verify mutation "$FINGERPRINT" .deep-check-cache/mutation.json
+        run: node --experimental-strip-types scripts/ci/deep-check-reuse.ts verify mutation "$FINGERPRINT" .deep-check-cache/mutation.json
 
       - name: ♻️ Reuse successful mutation
         if: ${{ steps.marker.outputs.reuse == 'true' }}
@@ -155,7 +165,7 @@ jobs:
 
       - name: 📦 Setup project
         if: ${{ steps.marker.outputs.reuse != 'true' }}
-        uses: PiesP/browser-core/automation/actions/setup-project@b382fa99a8b8ed5570ab6f4e1fd065a1423ea3f2
+        uses: PiesP/browser-core/automation/actions/setup-project@1e3de928cb6828dc81b19f18a450f8320985720b
 
       - name: 🧬 Run mutation gate
         id: check
@@ -184,7 +194,7 @@ jobs:
         continue-on-error: true
         env:
           FINGERPRINT: ${{ steps.fingerprint.outputs.fingerprint }}
-        run: node scripts/ci/deep-check-reuse.mjs mark mutation "$FINGERPRINT" .deep-check-cache/mutation.json
+        run: node --experimental-strip-types scripts/ci/deep-check-reuse.ts mark mutation "$FINGERPRINT" .deep-check-cache/mutation.json
 
       - name: 💾 Save successful mutation marker
         if: ${{ steps.mark.outcome == 'success' }}

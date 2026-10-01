@@ -1,0 +1,19 @@
+# Deep check reuse
+
+`deep-check-reuse.ts` fingerprints tracked input bytes, pinned tool versions, the
+selected gate, and the runner platform. A valid marker records a successful run
+of that fingerprint. The weekly Deep Verification workflow may reuse it; a
+manual run needs the `reuse_success` option. Changes to `ImageVersion` alone do
+not invalidate a marker, but the version is recorded for provenance.
+
+Check the script with the repository's pinned toolchain:
+
+```sh
+pnpm test:ci
+pnpm check:scripts
+```
+
+The workflow invokes the TypeScript CLI using `node --experimental-strip-types`
+and provides its required runner metadata and `GITHUB_OUTPUT` path. It installs
+the pinned runtime before reading a fingerprint, then installs project
+dependencies only when a fresh mutation analysis is needed.
