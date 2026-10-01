@@ -21,7 +21,9 @@ dependencies only when a fresh mutation analysis is needed.
 Successful version 3 markers record the originating run ID, attempt, SHA, and
 analysis time. Before reuse, bounded paginated Actions history must confirm the
 original gate and every later selected gate. New failures, cancellations,
-unfinished checks, changed attempts, and unavailable history run fresh. Each
-fresh success saves a new immutable run-specific key so recovery after failure
-can be reused later. The workflow records decision reasons and an estimate based
-on the original completed job duration; this is not billable-cost evidence.
+unfinished checks, changed attempts, and unavailable history run fresh. Eligible
+successful default-branch runs attempt to publish a new immutable run-specific
+key so recovery after failure can be reused later. Publication is best-effort.
+The workflow records decision reasons and estimates avoided analysis seconds
+from the original successful analysis step. Missing or invalid timing leaves
+the estimate unavailable; it excludes restore/API overhead and net billing.

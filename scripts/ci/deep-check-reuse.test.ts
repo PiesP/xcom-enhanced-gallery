@@ -264,12 +264,28 @@ const oldJob: {
   conclusion: string | null;
   started_at: string | null;
   completed_at: string | null;
+  steps?: Array<{
+    name: string;
+    status: string;
+    conclusion: string | null;
+    started_at: string | null;
+    completed_at: string | null;
+  } | null> | null;
 } = {
   name: '🔍 Duplication',
   status: 'completed',
   conclusion: 'success',
   started_at: '2026-09-30T01:00:00Z',
   completed_at: '2026-09-30T01:04:00Z',
+  steps: [
+    {
+      name: '🔎 Check for new duplication',
+      status: 'completed',
+      conclusion: 'success',
+      started_at: '2026-09-30T01:03:40Z',
+      completed_at: '2026-09-30T01:04:00Z',
+    },
+  ],
 };
 const verifyEnv = {
   ...runner,
@@ -317,16 +333,73 @@ function historyApi(
   return { api, requests };
 }
 
-test('verified origin reuses success and reports the completed job duration', async () => {
+test('verified origin reports only the completed analysis step duration', async () => {
   const marker = join(fixture, 'history-marker.json');
   markerWithTime(marker);
   const { api, requests } = historyApi();
   assert.deepEqual(await evaluateReuse(marker, 'duplication', baseline, verifyEnv, api), {
     reuse: true,
     reason: 'validated-history',
-    savedSeconds: 240,
+    savedSeconds: 20,
   });
   assert.ok(requests.some((request) => request.includes('/attempts/1/jobs')));
+});
+
+test('missing, skipped, duplicate, or invalid analysis timing omits the estimate', async () => {
+  const marker = join(fixture, 'history-marker.json');
+  markerWithTime(marker);
+  const analysis = oldJob.steps![0]!;
+  for (const steps of [
+    null,
+    [],
+    [{ ...analysis, name: '📦 Setup project' }],
+    [{ ...analysis, status: 'completed', conclusion: 'skipped' }],
+    [{ ...analysis, started_at: 'invalid' }],
+    [{ ...analysis, completed_at: '2026-09-30T01:03:39Z' }],
+    [{ ...analysis, started_at: '2026-09-30T00:59:00Z' }],
+    [null, analysis],
+    [analysis, analysis],
+  ]) {
+    const { api } = historyApi([oldRun], { 100: [{ ...oldJob, steps }] });
+    assert.deepEqual(await evaluateReuse(marker, 'duplication', baseline, verifyEnv, api), {
+      reuse: true,
+      reason: 'validated-history',
+    });
+  }
+});
+
+test('zero-second analysis and mutation gate use their exact step durations', async () => {
+  const marker = join(fixture, 'history-marker.json');
+  markerWithTime(marker);
+  const analysis = oldJob.steps![0]!;
+  const zero = historyApi([oldRun], {
+    100: [{ ...oldJob, steps: [{ ...analysis, completed_at: analysis.started_at }] }],
+  });
+  assert.deepEqual(await evaluateReuse(marker, 'duplication', baseline, verifyEnv, zero.api), {
+    reuse: true,
+    reason: 'validated-history',
+    savedSeconds: 0,
+  });
+
+  const mutationFingerprint = fingerprint('mutation', fixture, runner);
+  if (!mutationFingerprint) throw new Error('Mutation fixture must be fingerprintable');
+  writeMarker(marker, 'mutation', mutationFingerprint, runner);
+  const mutationMarker = JSON.parse(readFileSync(marker, 'utf8')) as Record<string, unknown>;
+  mutationMarker.analyzedAt = analyzedAt;
+  writeFileSync(marker, JSON.stringify(mutationMarker));
+  const mutation = historyApi([oldRun], {
+    100: [
+      { ...oldJob, name: '🧬 Mutation', steps: [{ ...analysis, name: '🧬 Run mutation gate' }] },
+    ],
+  });
+  assert.deepEqual(
+    await evaluateReuse(marker, 'mutation', mutationFingerprint, verifyEnv, mutation.api),
+    {
+      reuse: true,
+      reason: 'validated-history',
+      savedSeconds: 20,
+    }
+  );
 });
 
 test('later failed, cancelled, and ongoing selected gates invalidate a prior success', async () => {
