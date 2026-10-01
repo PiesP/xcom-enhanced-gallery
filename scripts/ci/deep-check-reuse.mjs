@@ -2,14 +2,7 @@
 
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import {
-  appendFileSync,
-  mkdirSync,
-  readFileSync,
-  readlinkSync,
-  statSync,
-  writeFileSync,
-} from 'node:fs';
+import { appendFileSync, mkdirSync, readFileSync, readlinkSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
 export const SCHEMA = 2;
@@ -67,9 +60,9 @@ export function fingerprint(gate, cwd = process.cwd(), env = process.env) {
       hash.update(readlinkSync(`${cwd}/${path}`));
     } else {
       const file = `${cwd}/${path}`;
-      const stat = statSync(file);
       const bytes = readFileSync(file);
-      hash.update(String(stat.size));
+      // Derive size and content from the same read result.
+      hash.update(String(bytes.length));
       hash.update('\0');
       hash.update(bytes);
     }

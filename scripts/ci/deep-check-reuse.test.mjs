@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import fs, { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { syncBuiltinESMExports } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, test } from 'node:test';
@@ -104,6 +105,37 @@ test('each tracked source, test, configuration, lock, and tool input invalidates
       volta: { node: '26.9.0', pnpm: '11.26.0' },
     })
   );
+});
+
+test('fingerprint uses the length of the bytes read when a tracked file changes', (t) => {
+  const path = join(fixture, 'src/app.ts');
+  const read = fs.readFileSync;
+  try {
+    for (const replacement of [Buffer.alloc(0), Buffer.from('changed longer content\n')]) {
+      write('src/app.ts', replacement);
+      const expected = fingerprint('duplication', fixture, runner);
+      write('src/app.ts', 'original\n');
+      let replaced = false;
+      t.mock.method(fs, 'readFileSync', (file, ...args) => {
+        if (file === path && !replaced) {
+          // Change the file at the read boundary, after any separate metadata lookup.
+          writeFileSync(path, replacement);
+          replaced = true;
+        }
+        return read(file, ...args);
+      });
+      syncBuiltinESMExports();
+      assert.equal(fingerprint('duplication', fixture, runner), expected);
+      assert.equal(replaced, true);
+      t.mock.restoreAll();
+      syncBuiltinESMExports();
+    }
+  } finally {
+    t.mock.restoreAll();
+    syncBuiltinESMExports();
+    write('src/app.ts', 'original\n');
+  }
+  assert.equal(fingerprint('duplication', fixture, runner), baseline);
 });
 
 test('gitlink, runner platform and label, and gate identity invalidate success', () => {
