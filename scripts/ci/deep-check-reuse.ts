@@ -36,6 +36,13 @@ type ApiJob = {
   conclusion: string | null;
   started_at: string | null;
   completed_at: string | null;
+  steps?: Array<{
+    name?: string;
+    status?: string;
+    conclusion?: string | null;
+    started_at?: string | null;
+    completed_at?: string | null;
+  } | null> | null;
 };
 type Decision = { reuse: boolean; reason: string; savedSeconds?: number };
 type Manifest = {
@@ -200,6 +207,42 @@ const JOB_NAMES: Record<Gate, string> = {
   duplication: '🔍 Duplication',
   mutation: '🧬 Mutation',
 };
+const ANALYSIS_STEP_NAMES: Record<Gate, string> = {
+  duplication: '🔎 Check for new duplication',
+  mutation: '🧬 Run mutation gate',
+};
+
+function analysisSeconds(job: ApiJob, gate: Gate): number | undefined {
+  if (!Array.isArray(job.steps)) return undefined;
+  if (job.steps.some((step) => !step || typeof step !== 'object' || Array.isArray(step)))
+    return undefined;
+  const selected = job.steps.filter((step) => step?.name === ANALYSIS_STEP_NAMES[gate]);
+  if (selected.length !== 1) return undefined;
+  const step = selected[0];
+  if (!step) return undefined;
+  if (
+    step.status !== 'completed' ||
+    step.conclusion !== 'success' ||
+    typeof step.started_at !== 'string' ||
+    typeof step.completed_at !== 'string' ||
+    typeof job.started_at !== 'string' ||
+    typeof job.completed_at !== 'string'
+  )
+    return undefined;
+  const start = Date.parse(step.started_at);
+  const end = Date.parse(step.completed_at);
+  const jobStart = Date.parse(job.started_at);
+  const jobEnd = Date.parse(job.completed_at);
+  if (
+    ![start, end, jobStart, jobEnd].every(Number.isFinite) ||
+    start < jobStart ||
+    end > jobEnd ||
+    end < start ||
+    end - start >= 24 * 60 * 60_000
+  )
+    return undefined;
+  return Math.floor((end - start) / 1000);
+}
 
 function date(value: string): number {
   const timestamp = Date.parse(value);
@@ -351,8 +394,7 @@ export async function evaluateReuse(
           date(job.completed_at) > analyzedAt + 120_000
         )
           return { reuse: false, reason: 'origin-invalid' };
-        const duration = Math.floor((date(job.completed_at) - date(job.started_at)) / 1000);
-        if (duration > 0 && duration < 24 * 60 * 60) savedSeconds = duration;
+        savedSeconds = analysisSeconds(job, gate);
       }
     }
     return savedSeconds === undefined
