@@ -27,3 +27,9 @@ key so recovery after failure can be reused later. Publication is best-effort.
 The workflow records decision reasons and estimates avoided analysis seconds
 from the original successful analysis step. Missing or invalid timing leaves
 the estimate unavailable; it excludes restore/API overhead and net billing.
+
+Reruns (`GITHUB_RUN_ATTEMPT > 1`) always analyze selected gates afresh, including
+scheduled runs and manual reuse opt-ins. Actions run listings expose only the
+latest attempt, so excluding the current attempt can hide its prior failures.
+A successful fresh rerun may still publish its own marker for a later run's
+first-attempt reuse.

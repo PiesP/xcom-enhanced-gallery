@@ -437,6 +437,93 @@ test('later failed, cancelled, and ongoing selected gates invalidate a prior suc
   );
 });
 
+test('same-run retries run fresh after API errors and failed analysis', async () => {
+  const marker = join(fixture, 'rerun-marker.json');
+  markerWithTime(marker);
+  for (const event of ['schedule', 'workflow_dispatch']) {
+    const current = {
+      ...verifyEnv,
+      GITHUB_EVENT_NAME: event,
+      REUSE_SUCCESS: 'true',
+      GITHUB_RUN_ID: '101',
+      GITHUB_RUN_ATTEMPT: '1',
+    };
+    const unavailable = async () => ({ ok: false, json: async () => ({}) });
+    assert.equal(
+      (await evaluateReuse(marker, 'duplication', baseline, current, unavailable)).reason,
+      'api-unavailable-or-incomplete'
+    );
+    // The resulting fresh analysis failed in this run's first attempt. A new
+    // run sees that failure, but the runs API exposes only the current attempt
+    // when this same run is retried.
+    const failedRun = { ...laterRun, conclusion: 'failure' };
+    const failedJob = { ...oldJob, conclusion: 'failure' };
+    const failed = historyApi([failedRun, oldRun], { 100: [oldJob], 101: [failedJob] });
+    assert.equal(
+      (await evaluateReuse(marker, 'duplication', baseline, verifyEnv, failed.api)).reason,
+      'newer-gate-invalid'
+    );
+    for (const attempt of [2, 3]) {
+      const history = historyApi(
+        [{ ...laterRun, run_attempt: attempt, status: 'in_progress', conclusion: null }, oldRun],
+        { 100: [oldJob], 101: [failedJob] }
+      );
+      assert.deepEqual(
+        await evaluateReuse(
+          marker,
+          'duplication',
+          baseline,
+          { ...current, GITHUB_RUN_ATTEMPT: String(attempt) },
+          history.api
+        ),
+        { reuse: false, reason: 'rerun-fresh' },
+        `${event} attempt ${attempt}`
+      );
+      assert.deepEqual(history.requests, [], 'reruns must not accept API history');
+    }
+  }
+});
+
+test('reruns stay fresh even when the earlier selected attempt succeeded', async () => {
+  const marker = join(fixture, 'rerun-success-marker.json');
+  markerWithTime(marker);
+  const history = historyApi(
+    [{ ...laterRun, run_attempt: 2, status: 'in_progress', conclusion: null }, oldRun],
+    { 100: [oldJob], 101: [oldJob] }
+  );
+  assert.deepEqual(
+    await evaluateReuse(
+      marker,
+      'duplication',
+      baseline,
+      { ...verifyEnv, GITHUB_RUN_ID: '101', GITHUB_RUN_ATTEMPT: '2' },
+      history.api
+    ),
+    { reuse: false, reason: 'rerun-fresh' }
+  );
+  assert.deepEqual(history.requests, []);
+});
+
+test('invalid current attempt provenance refuses reuse before Actions lookup', async () => {
+  const marker = join(fixture, 'invalid-attempt-marker.json');
+  markerWithTime(marker);
+  for (const attempt of ['', '0', '-1', '1.5', 'invalid', '9007199254740992']) {
+    const history = historyApi();
+    assert.deepEqual(
+      await evaluateReuse(
+        marker,
+        'duplication',
+        baseline,
+        { ...verifyEnv, GITHUB_RUN_ATTEMPT: attempt },
+        history.api
+      ),
+      { reuse: false, reason: 'provenance-unavailable' },
+      attempt
+    );
+    assert.deepEqual(history.requests, []);
+  }
+});
+
 test('complete second pages of workflow runs and jobs are required', async () => {
   const marker = join(fixture, 'history-marker.json');
   markerWithTime(marker);
@@ -510,25 +597,36 @@ test('skipped unrelated gate is safe, while missing selected gate and reruns run
 });
 
 test('a newer successful marker restores reuse after the earlier failed run', async () => {
-  const marker = join(fixture, 'recovered-marker.json');
-  const recovered = { ...runner, GITHUB_RUN_ID: '102', GITHUB_SHA: 'c'.repeat(40) };
-  markerWithTime(marker, '2026-09-30T04:05:00Z', recovered);
-  const recoveredRun = {
-    ...laterRun,
-    id: 102,
-    head_sha: recovered.GITHUB_SHA,
-    created_at: '2026-09-30T04:00:00Z',
-    updated_at: '2026-09-30T04:07:00Z',
-  };
-  const recoveredJob = {
-    ...oldJob,
-    started_at: '2026-09-30T04:00:00Z',
-    completed_at: '2026-09-30T04:04:00Z',
-  };
-  const { api } = historyApi([recoveredRun, { ...laterRun, conclusion: 'failure' }, oldRun], {
-    102: [recoveredJob],
-  });
-  assert.equal((await evaluateReuse(marker, 'duplication', baseline, verifyEnv, api)).reuse, true);
+  for (const attempt of ['1', '2']) {
+    const marker = join(fixture, 'recovered-marker.json');
+    const recovered = {
+      ...runner,
+      GITHUB_RUN_ID: '102',
+      GITHUB_RUN_ATTEMPT: attempt,
+      GITHUB_SHA: 'c'.repeat(40),
+    };
+    markerWithTime(marker, '2026-09-30T04:05:00Z', recovered);
+    const recoveredRun = {
+      ...laterRun,
+      id: 102,
+      run_attempt: Number(attempt),
+      head_sha: recovered.GITHUB_SHA,
+      created_at: '2026-09-30T04:00:00Z',
+      updated_at: '2026-09-30T04:07:00Z',
+    };
+    const recoveredJob = {
+      ...oldJob,
+      started_at: '2026-09-30T04:00:00Z',
+      completed_at: '2026-09-30T04:04:00Z',
+    };
+    const { api } = historyApi([recoveredRun, { ...laterRun, conclusion: 'failure' }, oldRun], {
+      102: [recoveredJob],
+    });
+    assert.equal(
+      (await evaluateReuse(marker, 'duplication', baseline, verifyEnv, api)).reuse,
+      true
+    );
+  }
 });
 
 test('unavailable, truncated, or forged Actions history always runs fresh', async () => {
