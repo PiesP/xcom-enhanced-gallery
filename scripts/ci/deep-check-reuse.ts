@@ -294,6 +294,8 @@ export async function evaluateReuse(
     runId === marker.runId
   )
     return { reuse: false, reason: 'provenance-unavailable' };
+  // The runs API exposes the latest attempt, hiding this run's earlier failures.
+  if (runAttempt > 1) return { reuse: false, reason: 'rerun-fresh' };
 
   const deadline = Date.now() + API_BUDGET_MS;
   const base = `${env.GITHUB_API_URL || 'https://api.github.com'}/repos/${repository}`;
