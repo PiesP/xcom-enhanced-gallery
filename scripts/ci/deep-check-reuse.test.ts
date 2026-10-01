@@ -6,18 +6,24 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { fingerprint, shouldReuse, validMarker, writeMarker } from './deep-check-reuse.ts';
+import {
+  evaluateReuse,
+  fingerprint,
+  shouldReuse,
+  validMarker,
+  writeMarker,
+} from './deep-check-reuse.ts';
 
 const fixture = mkdtempSync(join(tmpdir(), 'deep-check-reuse-'));
 after(() => rmSync(fixture, { recursive: true, force: true }));
 
-function write(path: string, content: string | Uint8Array): void {
+function write(path: string, content: string | Uint8Array) {
   const fullPath = join(fixture, path);
   mkdirSync(join(fullPath, '..'), { recursive: true });
   writeFileSync(fullPath, content);
 }
 
-function git(...args: string[]): void {
+function git(...args: string[]) {
   execFileSync('git', args, { cwd: fixture });
 }
 
@@ -53,9 +59,12 @@ const runner = {
   ImageOS: 'ubuntu24',
   ImageVersion: '20261001.1',
   DEEP_RUNNER_LABEL: 'ubuntu-24.04',
+  GITHUB_RUN_ID: '100',
+  GITHUB_RUN_ATTEMPT: '1',
+  GITHUB_SHA: 'a'.repeat(40),
 };
 const baseline = fingerprint('duplication', fixture, runner);
-assert.ok(baseline);
+if (!baseline) throw new Error('Fixture runner identity must be complete');
 
 test('each tracked source, test, configuration, lock, and tool input invalidates success', () => {
   assert.match(baseline, /^[0-9a-f]{64}$/);
@@ -117,13 +126,14 @@ test('fingerprint uses the length of the bytes read when a tracked file changes'
       const expected = fingerprint('duplication', fixture, runner);
       write('src/app.ts', 'original\n');
       let replaced = false;
-      t.mock.method(fs, 'readFileSync', (file: Parameters<typeof read>[0], ...args: unknown[]) => {
+      t.mock.method(fs, 'readFileSync', (...args: Parameters<typeof fs.readFileSync>) => {
+        const [file] = args;
         if (file === path && !replaced) {
           // Change the file at the read boundary, after any separate metadata lookup.
           writeFileSync(path, replacement);
           replaced = true;
         }
-        return Reflect.apply(read, fs, [file, ...args]);
+        return read(...args);
       });
       syncBuiltinESMExports();
       assert.equal(fingerprint('duplication', fixture, runner), expected);
@@ -176,6 +186,7 @@ test('only a valid successful marker can be reused', () => {
   writeMarker(marker, 'duplication', baseline, runner);
   assert.equal(validMarker(marker, 'duplication', baseline), true);
   assert.equal(JSON.parse(readFileSync(marker, 'utf8')).imageVersion, runner.ImageVersion);
+  assert.equal(JSON.parse(readFileSync(marker, 'utf8')).runId, 100);
   assert.equal(
     validMarker(
       marker,
@@ -192,7 +203,7 @@ test('only a valid successful marker can be reused', () => {
   writeFileSync(
     marker,
     JSON.stringify({
-      schema: 2,
+      schema: 3,
       gate: 'duplication',
       fingerprint: baseline,
       result: 'failure',
@@ -211,7 +222,7 @@ test('schedule reuses success; manual defaults to fresh and can opt in', () => {
     choice: string,
     hit = 'true',
     outcome = 'success'
-  ): boolean => shouldReuse(valid, hit, outcome, event, choice);
+  ) => shouldReuse(valid, hit, outcome, event, choice);
   assert.equal(decide(true, 'schedule', ''), true);
   assert.equal(decide(false, 'schedule', ''), false);
   assert.equal(decide(true, 'schedule', '', '', 'success'), false);
@@ -222,11 +233,266 @@ test('schedule reuses success; manual defaults to fresh and can opt in', () => {
   assert.equal(decide(true, 'push', 'true'), false);
 });
 
-test('CLI emits a reusable result only after a successful marker is present', () => {
+const analyzedAt = '2026-09-30T01:05:00Z';
+const oldRun: {
+  id: number;
+  run_attempt: number;
+  head_sha: string;
+  status: string;
+  conclusion: string | null;
+  created_at: string;
+  updated_at: string;
+} = {
+  id: 100,
+  run_attempt: 1,
+  head_sha: runner.GITHUB_SHA,
+  status: 'completed',
+  conclusion: 'success',
+  created_at: '2026-09-30T00:50:00Z',
+  updated_at: '2026-09-30T01:07:00Z',
+};
+const laterRun = {
+  ...oldRun,
+  id: 101,
+  head_sha: 'b'.repeat(40),
+  created_at: '2026-09-30T02:00:00Z',
+  updated_at: '2026-09-30T02:20:00Z',
+};
+const oldJob: {
+  name: string;
+  status: string;
+  conclusion: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+} = {
+  name: '🔍 Duplication',
+  status: 'completed',
+  conclusion: 'success',
+  started_at: '2026-09-30T01:00:00Z',
+  completed_at: '2026-09-30T01:04:00Z',
+};
+const verifyEnv = {
+  ...runner,
+  CACHE_HIT: 'true',
+  RESTORE_OUTCOME: 'success',
+  GITHUB_EVENT_NAME: 'schedule',
+  GITHUB_REPOSITORY: 'PiesP/xcom-enhanced-gallery',
+  GITHUB_REF: 'refs/heads/master',
+  DEFAULT_BRANCH: 'master',
+  GITHUB_RUN_ID: '103',
+  GH_TOKEN: 'test-token',
+};
+
+function markerWithTime(path: string, time = analyzedAt, source = runner) {
+  writeMarker(path, 'duplication', baseline!, source);
+  const marker = JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
+  marker.analyzedAt = time;
+  writeFileSync(path, JSON.stringify(marker));
+}
+
+function historyApi(
+  runs = [oldRun],
+  jobs: Record<number, (typeof oldJob)[]> = { 100: [oldJob] },
+  override?: (url: URL) => unknown
+) {
+  const requests: string[] = [];
+  const api = async (rawUrl: string) => {
+    const url = new URL(rawUrl);
+    requests.push(url.pathname + url.search);
+    const custom = override?.(url);
+    let body: unknown;
+    if (custom !== undefined) body = custom;
+    else if (url.pathname.endsWith('/runs')) {
+      const page = Number(url.searchParams.get('page'));
+      body = { total_count: runs.length, workflow_runs: runs.slice((page - 1) * 100, page * 100) };
+    } else {
+      const match = /\/actions\/runs\/(\d+)\/attempts\/(\d+)\/jobs$/.exec(url.pathname);
+      if (!match) throw new Error(`Unexpected API path: ${url.pathname}`);
+      const list = jobs[Number(match[1])] ?? [];
+      const page = Number(url.searchParams.get('page'));
+      body = { total_count: list.length, jobs: list.slice((page - 1) * 100, page * 100) };
+    }
+    return { ok: true, json: async () => body };
+  };
+  return { api, requests };
+}
+
+test('verified origin reuses success and reports the completed job duration', async () => {
+  const marker = join(fixture, 'history-marker.json');
+  markerWithTime(marker);
+  const { api, requests } = historyApi();
+  assert.deepEqual(await evaluateReuse(marker, 'duplication', baseline, verifyEnv, api), {
+    reuse: true,
+    reason: 'validated-history',
+    savedSeconds: 240,
+  });
+  assert.ok(requests.some((request) => request.includes('/attempts/1/jobs')));
+});
+
+test('later failed, cancelled, and ongoing selected gates invalidate a prior success', async () => {
+  const marker = join(fixture, 'history-marker.json');
+  markerWithTime(marker);
+  for (const [status, conclusion] of [
+    ['completed', 'failure'],
+    ['completed', 'cancelled'],
+    ['in_progress', null],
+  ] as const) {
+    const changed = { ...laterRun, status, conclusion };
+    const { api } = historyApi([changed, oldRun], {
+      100: [oldJob],
+      101: [{ ...oldJob, status, conclusion }],
+    });
+    const decision = await evaluateReuse(marker, 'duplication', baseline, verifyEnv, api);
+    assert.equal(decision.reuse, false, `${status}/${conclusion}`);
+  }
+  // A failure that finished while the origin job was marking success must not
+  // hide behind the marker's later local timestamp.
+  const interleaved = {
+    ...oldRun,
+    id: 99,
+    created_at: '2026-09-30T00:30:00Z',
+    updated_at: '2026-09-30T01:04:30Z',
+    conclusion: 'failure',
+  };
+  const history = historyApi([oldRun, interleaved], {
+    100: [oldJob],
+    99: [{ ...oldJob, conclusion: 'failure', completed_at: '2026-09-30T01:04:30Z' }],
+  });
+  assert.equal(
+    (await evaluateReuse(marker, 'duplication', baseline, verifyEnv, history.api)).reason,
+    'newer-gate-invalid'
+  );
+});
+
+test('complete second pages of workflow runs and jobs are required', async () => {
+  const marker = join(fixture, 'history-marker.json');
+  markerWithTime(marker);
+  const older = Array.from({ length: 100 }, (_, index) => ({
+    ...oldRun,
+    id: 1000 + index,
+    created_at: '2026-09-29T00:00:00Z',
+    updated_at: '2026-09-29T00:05:00Z',
+  }));
+  const unrelatedJobs = Array.from({ length: 100 }, (_, index) => ({
+    ...oldJob,
+    name: `Other ${index}`,
+  }));
+  const complete = historyApi([...older, oldRun], { 100: [...unrelatedJobs, oldJob] });
+  assert.equal(
+    (await evaluateReuse(marker, 'duplication', baseline, verifyEnv, complete.api)).reuse,
+    true
+  );
+  assert.ok(
+    complete.requests.some((request) => request.includes('/runs?') && request.includes('page=2'))
+  );
+  assert.ok(
+    complete.requests.some((request) => request.includes('/jobs?') && request.includes('page=2'))
+  );
+  const rerun = {
+    ...oldRun,
+    id: 99,
+    created_at: '2026-09-29T00:00:00Z',
+    updated_at: '2026-09-30T01:04:30Z',
+    conclusion: 'failure',
+  };
+  const invalid = historyApi([...older.slice(0, 99), oldRun, rerun], {
+    100: [oldJob],
+    99: [{ ...oldJob, conclusion: 'failure' }],
+  });
+  assert.equal(
+    (await evaluateReuse(marker, 'duplication', baseline, verifyEnv, invalid.api)).reason,
+    'newer-gate-invalid'
+  );
+});
+
+test('skipped unrelated gate is safe, while missing selected gate and reruns run fresh', async () => {
+  const marker = join(fixture, 'history-marker.json');
+  markerWithTime(marker);
+  const skipped = historyApi([laterRun, oldRun], {
+    100: [oldJob],
+    101: [{ ...oldJob, conclusion: 'skipped' }],
+  });
+  assert.equal(
+    (await evaluateReuse(marker, 'duplication', baseline, verifyEnv, skipped.api)).reuse,
+    true
+  );
+  const missing = historyApi([laterRun, oldRun], { 100: [oldJob], 101: [] });
+  assert.equal(
+    (await evaluateReuse(marker, 'duplication', baseline, verifyEnv, missing.api)).reason,
+    'gate-history-incomplete'
+  );
+  const rerun = historyApi([{ ...oldRun, run_attempt: 2 }, laterRun], { 100: [oldJob] });
+  assert.equal(
+    (await evaluateReuse(marker, 'duplication', baseline, verifyEnv, rerun.api)).reason,
+    'origin-invalid'
+  );
+  const olderRerun = historyApi(
+    [oldRun, { ...oldRun, id: 99, updated_at: '2026-09-30T03:00:00Z', conclusion: 'failure' }],
+    { 100: [oldJob], 99: [{ ...oldJob, conclusion: 'failure' }] }
+  );
+  assert.equal(
+    (await evaluateReuse(marker, 'duplication', baseline, verifyEnv, olderRerun.api)).reason,
+    'newer-gate-invalid'
+  );
+});
+
+test('a newer successful marker restores reuse after the earlier failed run', async () => {
+  const marker = join(fixture, 'recovered-marker.json');
+  const recovered = { ...runner, GITHUB_RUN_ID: '102', GITHUB_SHA: 'c'.repeat(40) };
+  markerWithTime(marker, '2026-09-30T04:05:00Z', recovered);
+  const recoveredRun = {
+    ...laterRun,
+    id: 102,
+    head_sha: recovered.GITHUB_SHA,
+    created_at: '2026-09-30T04:00:00Z',
+    updated_at: '2026-09-30T04:07:00Z',
+  };
+  const recoveredJob = {
+    ...oldJob,
+    started_at: '2026-09-30T04:00:00Z',
+    completed_at: '2026-09-30T04:04:00Z',
+  };
+  const { api } = historyApi([recoveredRun, { ...laterRun, conclusion: 'failure' }, oldRun], {
+    102: [recoveredJob],
+  });
+  assert.equal((await evaluateReuse(marker, 'duplication', baseline, verifyEnv, api)).reuse, true);
+});
+
+test('unavailable, truncated, or forged Actions history always runs fresh', async () => {
+  const marker = join(fixture, 'history-marker.json');
+  markerWithTime(marker);
+  const absent = historyApi([laterRun]);
+  assert.equal(
+    (await evaluateReuse(marker, 'duplication', baseline, verifyEnv, absent.api)).reason,
+    'origin-invalid'
+  );
+  const unavailable = async () => ({ ok: false, json: async () => ({}) });
+  assert.equal(
+    (await evaluateReuse(marker, 'duplication', baseline, verifyEnv, unavailable)).reason,
+    'api-unavailable-or-incomplete'
+  );
+  const truncated = historyApi([oldRun], { 100: [oldJob] }, (url) =>
+    url.pathname.endsWith('/runs') ? { total_count: 101, workflow_runs: [oldRun] } : undefined
+  );
+  assert.equal(
+    (await evaluateReuse(marker, 'duplication', baseline, verifyEnv, truncated.api)).reason,
+    'api-unavailable-or-incomplete'
+  );
+  markerWithTime(marker, '2099-01-01T00:00:00Z');
+  assert.equal(validMarker(marker, 'duplication', baseline), false);
+  markerWithTime(marker, '2026-09-30T00:55:00Z');
+  const validApi = historyApi();
+  assert.equal(
+    (await evaluateReuse(marker, 'duplication', baseline, verifyEnv, validApi.api)).reason,
+    'origin-invalid'
+  );
+});
+
+test('CLI fails closed when Actions history cannot be authenticated', () => {
   const script = fileURLToPath(new URL('./deep-check-reuse.ts', import.meta.url));
   const output = join(fixture, 'output.txt');
   const marker = join(fixture, 'cli-marker.json');
-  const run = (args: string[], extraEnv: NodeJS.ProcessEnv = {}): string => {
+  const run = (args: string[], extraEnv: Record<string, string> = {}) => {
     writeFileSync(output, '');
     execFileSync(process.execPath, ['--experimental-strip-types', script, ...args], {
       cwd: fixture,
@@ -242,7 +508,12 @@ test('CLI emits a reusable result only after a successful marker is present', ()
   };
   assert.match(run(['verify', 'duplication', baseline, marker], verifyEnv), /reuse=false/);
   run(['mark', 'duplication', baseline, marker]);
-  assert.match(run(['verify', 'duplication', baseline, marker], verifyEnv), /reuse=true/);
+  assert.match(run(['verify', 'duplication', baseline, marker], verifyEnv), /reuse=false/);
+  assert.match(
+    run(['verify', 'duplication', baseline, marker], verifyEnv),
+    /reason=provenance-unavailable/
+  );
+  assert.match(run(['verify', 'duplication', baseline, marker], verifyEnv), /origin_run_id=100/);
   assert.match(
     run(['verify', 'duplication', baseline, marker], {
       ...verifyEnv,
@@ -261,7 +532,7 @@ test('mutation marker follows a required successful report upload', () => {
   assert.ok(mutation);
   const starts = [...mutation.matchAll(/^ {6}- name: /gm)].map((match) => match.index);
   const steps = starts.map((start, index) => mutation.slice(start, starts[index + 1]));
-  const byName = (name: string): number =>
+  const byName = (name: string) =>
     steps.findIndex((step) => step.startsWith(`      - name: ${name}`));
 
   const check = byName('🧬 Run mutation gate');
@@ -271,44 +542,48 @@ test('mutation marker follows a required successful report upload', () => {
   const save = byName('💾 Save successful mutation marker');
   assert.ok(check >= 0 && check < upload && upload < summary && summary < mark && mark < save);
   assert.equal(save, steps.length - 1); // No later required step can fail after the marker is saved.
-  assert.match(steps[check] ?? '', /if:.*steps\.marker\.outputs\.reuse != 'true'/);
-  assert.match(steps[upload] ?? '', /id: upload/);
-  assert.match(steps[upload] ?? '', /if:.*steps\.check\.outcome != 'skipped'/);
-  assert.match(steps[upload] ?? '', /if-no-files-found: error/);
-  for (const step of [steps[summary] ?? '', steps[mark] ?? '']) {
+  assert.match(steps[check]!, /if:.*steps\.marker\.outputs\.reuse != 'true'/);
+  assert.match(steps[upload]!, /id: upload/);
+  assert.match(steps[upload]!, /if:.*steps\.check\.outcome != 'skipped'/);
+  assert.match(steps[upload]!, /if-no-files-found: error/);
+  for (const step of [steps[summary]!, steps[mark]!]) {
     assert.match(step, /steps\.check\.outcome == 'success' && steps\.upload\.outcome == 'success'/);
   }
-  assert.match(steps[save] ?? '', /if:.*steps\.mark\.outcome == 'success'/);
+  assert.match(steps[save]!, /if:.*steps\.mark\.outcome == 'success'/);
 });
 
-test('both deep gates pin Node before fingerprinting and defer mutation dependencies', () => {
+test('each deep job pins Node before fingerprint without installing dependencies', () => {
   const workflow = readFileSync(
     fileURLToPath(new URL('../../.github/workflows/deep-checks.yaml', import.meta.url)),
     'utf8'
   );
-  for (const gate of ['duplication', 'mutation']) {
-    const job = workflow.split(`\n  ${gate}:\n`)[1]?.split(/^ {2}[a-z-]+:\s*$/m)[0];
-    assert.ok(job, `${gate} job`);
-    const runtime = job.indexOf('name: 📦 Setup fingerprint runtime');
-    const fingerprint = job.indexOf(`name: 🔑 Fingerprint ${gate} inputs`);
-    assert.ok(runtime >= 0 && runtime < fingerprint, `${gate} runtime order`);
+  const duplication = workflow.split('\n  duplication:\n')[1]?.split('\n  mutation:\n')[0];
+  const mutation = workflow.split('\n  mutation:\n')[1];
+  assert.ok(duplication);
+  assert.ok(mutation);
+
+  for (const job of [duplication, mutation]) {
+    const checkout = job.indexOf('      - name: 📥 Checkout code');
+    const setup = job.indexOf('      - name: 📦 Setup fingerprint runtime');
+    const fingerprint = job.indexOf('      - name: 🔑 Fingerprint');
+    assert.ok(checkout >= 0 && checkout < setup && setup < fingerprint);
     assert.match(
-      job,
-      /name: 📦 Setup fingerprint runtime\n\s+uses: PiesP\/browser-core\/automation\/actions\/setup-project@[^\n]+\n\s+with:\n\s+install-dependencies: 'false'/
+      job.slice(setup, fingerprint),
+      /uses: PiesP\/browser-core\/automation\/actions\/setup-project@[0-9a-f]{40}/
     );
-    for (const command of ['fingerprint', 'verify', 'mark']) {
-      assert.match(
-        job,
-        new RegExp(
-          `node --experimental-strip-types scripts/ci/deep-check-reuse\\.ts ${command} ${gate}`
-        )
-      );
-    }
-    if (gate === 'mutation') {
-      const restore = job.indexOf('name: 🔎 Validate successful mutation marker');
-      const freshSetup = job.indexOf('name: 📦 Setup project');
-      assert.ok(restore >= 0 && restore < freshSetup, 'install only after reuse decision');
-      assert.match(job.slice(freshSetup), /if:.*steps\.marker\.outputs\.reuse != 'true'/);
-    }
+    assert.match(job.slice(setup, fingerprint), /install-dependencies: 'false'/);
+    assert.match(
+      job.slice(fingerprint),
+      /node --experimental-strip-types scripts\/ci\/deep-check-reuse\.ts fingerprint/
+    );
   }
+
+  const marker = mutation.indexOf('      - name: 🔎 Validate successful mutation marker');
+  const freshSetup = mutation.indexOf('      - name: 📦 Setup project');
+  const mutationCheck = mutation.indexOf('      - name: 🧬 Run mutation gate');
+  assert.ok(marker >= 0 && marker < freshSetup && freshSetup < mutationCheck);
+  assert.match(
+    mutation.slice(freshSetup, mutationCheck),
+    /if:.*steps\.marker\.outputs\.reuse != 'true'/
+  );
 });

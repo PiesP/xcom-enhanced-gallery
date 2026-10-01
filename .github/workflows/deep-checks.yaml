@@ -31,6 +31,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: deep-${{ github.event_name }}-${{ github.ref }}
@@ -67,23 +68,44 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .deep-check-cache/duplication.json
-          key: deep-success-v2-duplication-${{ steps.fingerprint.outputs.fingerprint }}
+          key: deep-success-v3-duplication-${{ steps.fingerprint.outputs.fingerprint }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            deep-success-v3-duplication-${{ steps.fingerprint.outputs.fingerprint }}-
 
       - name: 🔎 Validate successful duplication marker
         id: marker
         continue-on-error: true
         env:
           FINGERPRINT: ${{ steps.fingerprint.outputs.fingerprint }}
-          CACHE_HIT: ${{ steps.restore.outputs.cache-hit }}
+          CACHE_HIT: ${{ steps.restore.outputs.cache-matched-key != '' }}
           RESTORE_OUTCOME: ${{ steps.restore.outcome }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           REUSE_SUCCESS: ${{ inputs.reuse_success }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          GH_TOKEN: ${{ github.token }}
         run: node --experimental-strip-types scripts/ci/deep-check-reuse.ts verify duplication "$FINGERPRINT" .deep-check-cache/duplication.json
 
       - name: ♻️ Reuse successful duplication
         if: ${{ steps.marker.outputs.reuse == 'true' }}
+        env:
+          REASON: ${{ steps.marker.outputs.reason }}
+          SAVED_SECONDS: ${{ steps.marker.outputs.saved_seconds }}
+          ORIGIN_RUN_ID: ${{ steps.marker.outputs.origin_run_id }}
+          ORIGIN_RUN_ATTEMPT: ${{ steps.marker.outputs.origin_run_attempt }}
+          ORIGIN_SHA: ${{ steps.marker.outputs.origin_sha }}
+          ORIGIN_ANALYZED_AT: ${{ steps.marker.outputs.origin_analyzed_at }}
         run: |
-          echo 'Duplication: reused a successful result for identical inputs.' >> "$GITHUB_STEP_SUMMARY"
+          echo "Duplication: reused successful result from run ${ORIGIN_RUN_ID}/${ORIGIN_RUN_ATTEMPT} (${ORIGIN_SHA}, analyzed ${ORIGIN_ANALYZED_AT}); reason: $REASON; estimated saved seconds: ${SAVED_SECONDS:-unavailable}." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 🧾 Explain fresh duplication analysis
+        if: ${{ steps.marker.outputs.reuse != 'true' }}
+        env:
+          REASON: ${{ steps.marker.outputs.reason }}
+          ORIGIN_RUN_ID: ${{ steps.marker.outputs.origin_run_id }}
+          ORIGIN_RUN_ATTEMPT: ${{ steps.marker.outputs.origin_run_attempt }}
+          ORIGIN_SHA: ${{ steps.marker.outputs.origin_sha }}
+        run: |
+          echo "Duplication: running fresh analysis (reason: ${REASON:-verify-unavailable}; restored origin: ${ORIGIN_RUN_ID:-unavailable}/${ORIGIN_RUN_ATTEMPT:-unavailable} ${ORIGIN_SHA:-unavailable})." >> "$GITHUB_STEP_SUMMARY"
 
       - name: 🔧 Install nose
         if: ${{ steps.marker.outputs.reuse != 'true' }}
@@ -101,7 +123,7 @@ jobs:
 
       - name: 📝 Mark successful duplication
         id: mark
-        if: ${{ steps.check.outcome == 'success' && steps.fingerprint.outputs.cacheable == 'true' && steps.restore.outputs.cache-hit != 'true' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+        if: ${{ steps.check.outcome == 'success' && steps.fingerprint.outputs.cacheable == 'true' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
         continue-on-error: true
         env:
           FINGERPRINT: ${{ steps.fingerprint.outputs.fingerprint }}
@@ -113,7 +135,7 @@ jobs:
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .deep-check-cache/duplication.json
-          key: deep-success-v2-duplication-${{ steps.fingerprint.outputs.fingerprint }}
+          key: deep-success-v3-duplication-${{ steps.fingerprint.outputs.fingerprint }}-${{ github.run_id }}-${{ github.run_attempt }}
 
   mutation:
     name: 🧬 Mutation
@@ -145,23 +167,44 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .deep-check-cache/mutation.json
-          key: deep-success-v2-mutation-${{ steps.fingerprint.outputs.fingerprint }}
+          key: deep-success-v3-mutation-${{ steps.fingerprint.outputs.fingerprint }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            deep-success-v3-mutation-${{ steps.fingerprint.outputs.fingerprint }}-
 
       - name: 🔎 Validate successful mutation marker
         id: marker
         continue-on-error: true
         env:
           FINGERPRINT: ${{ steps.fingerprint.outputs.fingerprint }}
-          CACHE_HIT: ${{ steps.restore.outputs.cache-hit }}
+          CACHE_HIT: ${{ steps.restore.outputs.cache-matched-key != '' }}
           RESTORE_OUTCOME: ${{ steps.restore.outcome }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           REUSE_SUCCESS: ${{ inputs.reuse_success }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          GH_TOKEN: ${{ github.token }}
         run: node --experimental-strip-types scripts/ci/deep-check-reuse.ts verify mutation "$FINGERPRINT" .deep-check-cache/mutation.json
 
       - name: ♻️ Reuse successful mutation
         if: ${{ steps.marker.outputs.reuse == 'true' }}
+        env:
+          REASON: ${{ steps.marker.outputs.reason }}
+          SAVED_SECONDS: ${{ steps.marker.outputs.saved_seconds }}
+          ORIGIN_RUN_ID: ${{ steps.marker.outputs.origin_run_id }}
+          ORIGIN_RUN_ATTEMPT: ${{ steps.marker.outputs.origin_run_attempt }}
+          ORIGIN_SHA: ${{ steps.marker.outputs.origin_sha }}
+          ORIGIN_ANALYZED_AT: ${{ steps.marker.outputs.origin_analyzed_at }}
         run: |
-          echo 'Mutation: reused a successful result for identical inputs.' >> "$GITHUB_STEP_SUMMARY"
+          echo "Mutation: reused successful result from run ${ORIGIN_RUN_ID}/${ORIGIN_RUN_ATTEMPT} (${ORIGIN_SHA}, analyzed ${ORIGIN_ANALYZED_AT}); reason: $REASON; estimated saved seconds: ${SAVED_SECONDS:-unavailable}." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 🧾 Explain fresh mutation analysis
+        if: ${{ steps.marker.outputs.reuse != 'true' }}
+        env:
+          REASON: ${{ steps.marker.outputs.reason }}
+          ORIGIN_RUN_ID: ${{ steps.marker.outputs.origin_run_id }}
+          ORIGIN_RUN_ATTEMPT: ${{ steps.marker.outputs.origin_run_attempt }}
+          ORIGIN_SHA: ${{ steps.marker.outputs.origin_sha }}
+        run: |
+          echo "Mutation: running fresh analysis (reason: ${REASON:-verify-unavailable}; restored origin: ${ORIGIN_RUN_ID:-unavailable}/${ORIGIN_RUN_ATTEMPT:-unavailable} ${ORIGIN_SHA:-unavailable})." >> "$GITHUB_STEP_SUMMARY"
 
       - name: 📦 Setup project
         if: ${{ steps.marker.outputs.reuse != 'true' }}
@@ -190,7 +233,7 @@ jobs:
 
       - name: 📝 Mark successful mutation
         id: mark
-        if: ${{ steps.check.outcome == 'success' && steps.upload.outcome == 'success' && steps.fingerprint.outputs.cacheable == 'true' && steps.restore.outputs.cache-hit != 'true' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+        if: ${{ steps.check.outcome == 'success' && steps.upload.outcome == 'success' && steps.fingerprint.outputs.cacheable == 'true' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
         continue-on-error: true
         env:
           FINGERPRINT: ${{ steps.fingerprint.outputs.fingerprint }}
@@ -202,4 +245,4 @@ jobs:
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .deep-check-cache/mutation.json
-          key: deep-success-v2-mutation-${{ steps.fingerprint.outputs.fingerprint }}
+          key: deep-success-v3-mutation-${{ steps.fingerprint.outputs.fingerprint }}-${{ github.run_id }}-${{ github.run_attempt }}

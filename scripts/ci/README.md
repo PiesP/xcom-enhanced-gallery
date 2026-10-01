@@ -17,3 +17,11 @@ The workflow invokes the TypeScript CLI using `node --experimental-strip-types`
 and provides its required runner metadata and `GITHUB_OUTPUT` path. It installs
 the pinned runtime before reading a fingerprint, then installs project
 dependencies only when a fresh mutation analysis is needed.
+
+Successful version 3 markers record the originating run ID, attempt, SHA, and
+analysis time. Before reuse, bounded paginated Actions history must confirm the
+original gate and every later selected gate. New failures, cancellations,
+unfinished checks, changed attempts, and unavailable history run fresh. Each
+fresh success saves a new immutable run-specific key so recovery after failure
+can be reused later. The workflow records decision reasons and an estimate based
+on the original completed job duration; this is not billable-cost evidence.
