@@ -8,6 +8,19 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.3.3] - 2026-10-04
+
+### Fixed
+
+- **Video selection** — Open the clicked video when playback URLs are hidden behind blob URLs, including quoted media and reply cards without a status link.
+- **Media ownership** — Keep article fallback results tied to the clicked post and reject unrelated or ambiguous media owners.
+- **Download recovery** — Restore cancellation intent after extension service-worker restarts and abort userscript downloads consistently.
+- **Release provenance** — Record the actual Node.js runtime version in release metadata.
+
+### Changed
+
+- **Verification** — Execute Deep Verification scripts as native TypeScript and require fresh deep verification on reruns or after failed cache candidates.
+
 ## [2.3.2] - 2026-09-22
 
 ### Added
