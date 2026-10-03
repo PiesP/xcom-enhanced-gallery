@@ -11,6 +11,7 @@ import { logger } from '@shared/logging/logger';
 import type { TweetInfo } from '@shared/types/media.types';
 import { closestWithFallback } from '@shared/utils/dom/query-helpers';
 import { extractUsernameFromUrl, isHostMatching, TWITTER_HOSTS } from '@shared/utils/url/host';
+import { isValidMediaUrl } from '@shared/utils/url/validator';
 
 type ExtractionStrategy = (element: HTMLElement) => TweetInfo | null;
 
@@ -88,19 +89,55 @@ const extractFromElement: ExtractionStrategy = (element) => {
   return null;
 };
 
+/** Keep permalinks within the clicked ownership branch, excluding adjacent media. */
+function getOwnStatusLinks(
+  container: HTMLElement,
+  element: HTMLElement
+): Array<{ anchor: Element; link: TrustedStatusLink }> {
+  return Array.from(container.querySelectorAll(STATUS_LINK_SELECTOR)).flatMap((anchor) => {
+    if (anchor.closest('article') !== container.closest('article')) return [];
+    if (anchor.closest('[data-testid="tweetText"]')) return [];
+    const link = parseTrustedStatusLink(anchor.getAttribute('href') ?? '');
+    if (!link) return [];
+    let branch: Element | null = anchor;
+    while (branch && branch !== container && !branch.contains(element)) {
+      if (branch.matches('[role="link"], [data-testid="quoteTweet"], [data-testid="card.wrapper"]'))
+        return [];
+      if (
+        Array.from(branch.querySelectorAll('img, video')).some((media) =>
+          [media.getAttribute('src'), media.getAttribute('poster')].some(
+            (url) => url && isValidMediaUrl(url)
+          )
+        )
+      )
+        return [];
+      branch = branch.parentElement;
+    }
+    return [{ anchor, link }];
+  });
+}
+
 /** Strategy 3: Tweet container fallback */
 const extractFromDOM: ExtractionStrategy = (element) => {
-  const container = closestWithFallback<HTMLElement>(element, TWEET_CONTAINER_SELECTORS);
-  if (!container) return null;
-
-  // Find status link
-  const statusLink = container.querySelector(STATUS_LINK_SELECTOR);
-  if (!statusLink) return null;
-
-  const href = statusLink.getAttribute('href');
-  if (!href) return null;
-
-  const link = parseTrustedStatusLink(href);
+  const article = closestWithFallback<HTMLElement>(element, TWEET_CONTAINER_SELECTORS);
+  if (!article) return null;
+  let container = article;
+  // Resolve the nearest branch's own permalink before the surrounding article.
+  // Nested quote timestamps have already been excluded by getOwnStatusLinks.
+  for (let scope = element.parentElement; scope && scope !== article; scope = scope.parentElement) {
+    if (!article.contains(scope)) break;
+    const scopeLinks = getOwnStatusLinks(scope, element);
+    if (scope.matches('[data-testid="quoteTweet"]') || scopeLinks.length > 0) {
+      container = scope;
+      break;
+    }
+  }
+  const ownLinks = getOwnStatusLinks(container, element);
+  const timestamps = ownLinks.filter(({ anchor }) => anchor.querySelector('time'));
+  const owners = timestamps.length ? timestamps : ownLinks;
+  const ownerIds = new Set(owners.map(({ link }) => link?.tweetId));
+  if (ownerIds.size !== 1) return null;
+  const link = owners[0]?.link;
   if (!link) return null;
 
   return {

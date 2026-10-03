@@ -3,6 +3,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createQuotedVideoTweetResponse } from '../../../../fixtures/quoted-video-tweet-response';
+import { unanchoredVideoPreview } from '../../../../fixtures/unanchored-video-preview';
 
 const httpGet = vi.hoisted(() => vi.fn());
 
@@ -29,6 +30,116 @@ describe('MediaExtractionService quoted media selection', () => {
 
   afterEach(() => {
     document.body.replaceChildren();
+  });
+
+  it('requests the main owner for an unanchored preview before quoted links', async () => {
+    document.body.innerHTML = unanchoredVideoPreview;
+    const result = await new MediaExtractionService().extractFromClickedElement(
+      document.querySelector<HTMLImageElement>('#main-poster')!
+    );
+    const requestedUrl = new URL(httpGet.mock.calls[0]?.[0] as string);
+    const variables = JSON.parse(requestedUrl.searchParams.get('variables') ?? '{}');
+    expect(variables.tweetId).toBe('222');
+    expect(result.success).toBe(true);
+    expect(result.clickedIndex).toBe(1);
+    expect(result.mediaItems[result.clickedIndex ?? 0]?.type).toBe('video');
+  });
+
+  it('does not replace a poster-only failed video with a quoted photo', async () => {
+    httpGet.mockResolvedValue({ ok: false, status: 403, data: {} });
+    document.body.innerHTML = unanchoredVideoPreview;
+    const result = await new MediaExtractionService().extractFromClickedElement(
+      document.querySelector<HTMLImageElement>('#main-poster')!
+    );
+    expect(result.success).toBe(false);
+    expect(result.mediaItems).toEqual([]);
+  });
+
+  it('selects the sole API video when the preview has no URL evidence', async () => {
+    document.body.innerHTML = unanchoredVideoPreview;
+    const poster = document.querySelector<HTMLImageElement>('#main-poster')!;
+    poster.removeAttribute('src');
+    const result = await new MediaExtractionService().extractFromClickedElement(poster);
+    expect(result.success).toBe(true);
+    expect(result.clickedIndex).toBe(1);
+    expect(result.metadata?.clickedMatch).toBe('unknown');
+    expect(result.mediaItems[1]?.type).toBe('video');
+  });
+
+  it('requests an unanchored quote video owner rather than the outer article', async () => {
+    httpGet.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: JSON.parse(JSON.stringify(createQuotedVideoTweetResponse()).replaceAll('222', '444')),
+    });
+    document.body.innerHTML = unanchoredVideoPreview;
+    const quote = document.querySelector('[data-testid="quoteTweet"]')!;
+    quote.removeAttribute('role');
+    quote.removeAttribute('data-testid');
+    quote.innerHTML =
+      '<div data-testid="tweetPhoto"><div data-testid="previewInterstitial"><img id="quote-video" src="https://pbs.twimg.com/ext_tw_video_thumb/444/pu/img/quote-video.jpg"><button data-testid="playButton">Play</button></div></div><a href="/quote_author/status/444">Quote permalink</a>';
+    const result = await new MediaExtractionService().extractFromClickedElement(
+      document.querySelector<HTMLImageElement>('#quote-video')!
+    );
+    const variables = JSON.parse(
+      new URL(httpGet.mock.calls[0]?.[0] as string).searchParams.get('variables') ?? '{}'
+    );
+    expect(variables.tweetId).toBe('444');
+    expect(result.success).toBe(true);
+    expect(result.clickedIndex).toBe(1);
+    expect(result.tweetInfo?.tweetId).toBe('444');
+  });
+
+  it('does not return quoted API photos when the requested video has no MP4 variant', async () => {
+    httpGet.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: JSON.parse(
+        JSON.stringify(createQuotedVideoTweetResponse()).replaceAll(
+          'video/mp4',
+          'application/x-mpegURL'
+        )
+      ),
+    });
+    document.body.innerHTML = unanchoredVideoPreview;
+    const result = await new MediaExtractionService().extractFromClickedElement(
+      document.querySelector<HTMLImageElement>('#main-poster')!
+    );
+    expect(result.success).toBe(false);
+    expect(result.mediaItems).toEqual([]);
+    expect(result.metadata?.error).toBe('API media does not match the clicked media');
+  });
+
+  it('rejects contradictory successful API media instead of selecting index zero', async () => {
+    httpGet.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: JSON.parse(
+        JSON.stringify(createQuotedVideoTweetResponse()).replaceAll(
+          'quote-video',
+          'unrelated-video'
+        )
+      ),
+    });
+    document.body.innerHTML = unanchoredVideoPreview;
+    const result = await new MediaExtractionService().extractFromClickedElement(
+      document.querySelector<HTMLImageElement>('#main-poster')!
+    );
+    expect(result.success).toBe(false);
+    expect(result.mediaItems).toEqual([]);
+    expect(result.metadata?.error).toBe('API media does not match the clicked media');
+  });
+
+  it('keeps quote metadata and excludes the main poster during photo fallback', async () => {
+    httpGet.mockResolvedValue({ ok: false, status: 403, data: {} });
+    document.body.innerHTML = unanchoredVideoPreview;
+    const result = await new MediaExtractionService().extractFromClickedElement(
+      document.querySelector<HTMLImageElement>('#quoted-photo')!
+    );
+    expect(result.success).toBe(true);
+    expect(result.mediaItems).toHaveLength(1);
+    expect(result.mediaItems[0]?.tweetId).toBe('111');
+    expect(result.mediaItems[0]?.type).toBe('image');
   });
 
   it('requests the outer tweet and selects its video after the quoted image', async () => {
@@ -105,9 +216,7 @@ describe('MediaExtractionService quoted media selection', () => {
       </article>
     `;
 
-    const clickedOverlay = document.querySelector<HTMLAnchorElement>(
-      'a[href$="/photo/2"]'
-    );
+    const clickedOverlay = document.querySelector<HTMLAnchorElement>('a[href$="/photo/2"]');
     expect(clickedOverlay).toBeInstanceOf(HTMLAnchorElement);
 
     const service = new MediaExtractionService();

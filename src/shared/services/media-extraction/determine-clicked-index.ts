@@ -9,32 +9,52 @@ import {
   findMediaElementInDOM,
 } from '@shared/utils/media/media-element-utils';
 import { normalizeMediaUrl } from '@shared/utils/media/media-url-utils';
+import { isVideoPreview } from '@shared/utils/media/video-preview';
 
-export function determineClickedIndex(
+type ClickedMediaMatch =
+  | { status: 'matched'; index: number }
+  | { status: 'unknown'; index: number | null }
+  | { status: 'contradictory'; index: 0 };
+
+/** Preserve evidence instead of turning a confirmed mismatch into index zero. */
+export function matchClickedMedia(
   clickedElement: HTMLElement,
   mediaItems: MediaInfo[]
-): number {
+): ClickedMediaMatch {
   try {
+    const mediaElement = findMediaElementInDOM(clickedElement);
+    const expectsVideo =
+      mediaElement instanceof HTMLVideoElement ||
+      isVideoPreview(clickedElement) ||
+      (mediaElement !== null && isVideoPreview(mediaElement));
     const normalizedElementUrls = resolveClickedElementUrls(clickedElement)
       .map((url) => normalizeMediaUrl(url))
       .filter((url): url is string => !!url);
-    if (normalizedElementUrls.length === 0) return 0;
+    if (normalizedElementUrls.length === 0) {
+      if (!expectsVideo) return { status: 'unknown', index: 0 };
+      const videos = mediaItems.flatMap((item, index) =>
+        item.type === 'video' || item.type === 'gif' ? [index] : []
+      );
+      if (!videos.length) return { status: 'contradictory', index: 0 };
+      return { status: 'unknown', index: videos.length === 1 ? videos[0]! : null };
+    }
 
     const clickedCandidates = new Set(normalizedElementUrls);
 
     const index = mediaItems.findIndex((item) => {
       if (!item) return false;
+      if (expectsVideo && item.type !== 'video' && item.type !== 'gif') return false;
       return getNormalizedMediaCandidates(item).some((candidate) =>
         clickedCandidates.has(candidate)
       );
     });
 
-    return index >= 0 ? index : 0;
+    return index >= 0 ? { status: 'matched', index } : { status: 'contradictory', index: 0 };
   } catch (error) {
     if (__DEV__) {
       logger.warn('[determineClickedIndex] failed', error);
     }
-    return 0;
+    return { status: 'unknown', index: null };
   }
 }
 

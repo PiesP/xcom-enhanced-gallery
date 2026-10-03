@@ -20,6 +20,7 @@ import { DEV_USERSCRIPT_PATH, MOCK_GALLERY_HTML, MOCK_IMAGE } from '../fixtures/
 import { installGMMock } from '../fixtures/gm-mock';
 import { injectDevUserscript, waitForGalleryApp } from '../fixtures/userscript-harness';
 import { createQuotedVideoTweetResponse } from '../../fixtures/quoted-video-tweet-response';
+import { unanchoredVideoPreview } from '../../fixtures/unanchored-video-preview';
 
 /**
  * Setup: Install GM_* mocks + navigate to x.com + inject userscript.
@@ -27,7 +28,8 @@ import { createQuotedVideoTweetResponse } from '../../fixtures/quoted-video-twee
 async function setupGalleryPage(
   page: Page,
   url: string,
-  twitterResponse?: Record<string, unknown>
+  twitterResponse?: Record<string, unknown>,
+  apiStatus = 200
 ): Promise<void> {
   await page.route('https://x.com/**', async (route) => {
     await route.fulfill({ status: 200, contentType: 'text/html', body: MOCK_GALLERY_HTML });
@@ -42,39 +44,42 @@ async function setupGalleryPage(
   await installGMMock(page);
 
   if (twitterResponse) {
-    await page.evaluate((response) => {
-      type RequestDetails = {
-        url: string;
-        onload?: (result: Record<string, unknown>) => void;
-      };
-      document.cookie = 'ct0=e2e-csrf-token; path=/';
-      const w = window as unknown as {
-        GM_xmlhttpRequest?: (details: RequestDetails) => { abort: () => void };
-        __xegRequestedTweetIds?: string[];
-      };
-      w.__xegRequestedTweetIds = [];
-      w.GM_xmlhttpRequest = (details) => {
-        const url = new URL(details.url);
-        const variables = JSON.parse(url.searchParams.get('variables') ?? '{}') as {
-          tweetId?: string;
+    await page.evaluate(
+      ({ response, apiStatus }) => {
+        type RequestDetails = {
+          url: string;
+          onload?: (result: Record<string, unknown>) => void;
         };
-        if (variables.tweetId) w.__xegRequestedTweetIds?.push(variables.tweetId);
+        document.cookie = 'ct0=e2e-csrf-token; path=/';
+        const w = window as unknown as {
+          GM_xmlhttpRequest?: (details: RequestDetails) => { abort: () => void };
+          __xegRequestedTweetIds?: string[];
+        };
+        w.__xegRequestedTweetIds = [];
+        w.GM_xmlhttpRequest = (details) => {
+          const url = new URL(details.url);
+          const variables = JSON.parse(url.searchParams.get('variables') ?? '{}') as {
+            tweetId?: string;
+          };
+          if (variables.tweetId) w.__xegRequestedTweetIds?.push(variables.tweetId);
 
-        queueMicrotask(() => {
-          details.onload?.({
-            finalUrl: details.url,
-            readyState: 4,
-            status: 200,
-            statusText: 'OK',
-            responseHeaders: 'content-type: application/json',
-            response,
-            responseText: JSON.stringify(response),
-            context: null,
+          queueMicrotask(() => {
+            details.onload?.({
+              finalUrl: details.url,
+              readyState: 4,
+              status: apiStatus,
+              statusText: 'OK',
+              responseHeaders: 'content-type: application/json',
+              response,
+              responseText: JSON.stringify(response),
+              context: null,
+            });
           });
-        });
-        return { abort: () => undefined };
-      };
-    }, twitterResponse);
+          return { abort: () => undefined };
+        };
+      },
+      { response: twitterResponse, apiStatus }
+    );
   }
 
   await injectDevUserscript(page);
@@ -90,6 +95,61 @@ test.describe('X.com Enhanced Gallery E2E', () => {
     }
   });
 
+  for (const apiSuccess of [true, false]) {
+    test(`unanchored preview routes native play and extracts only its video: API success=${apiSuccess}`, async ({
+      page,
+    }) => {
+      const errors: string[] = [];
+      page.on('pageerror', (error) => errors.push(error.message));
+      await page.route('https://pbs.twimg.com/**', async (route) => {
+        await route.fulfill({ status: 200, contentType: 'image/png', body: MOCK_IMAGE });
+      });
+      await page.route('https://video.twimg.com/**', (route) =>
+        route.fulfill({ status: 200, contentType: 'video/mp4', body: '' })
+      );
+      await setupGalleryPage(
+        page,
+        'https://x.com/quote_author/status/222',
+        createQuotedVideoTweetResponse(),
+        apiSuccess ? 200 : 403
+      );
+      await page.evaluate((markup) => {
+        document.querySelectorAll('article').forEach((article) => article.remove());
+        document.body.insertAdjacentHTML('beforeend', markup);
+        const poster = document.querySelector<HTMLImageElement>('#main-poster')!;
+        poster.style.cssText = 'display:block;width:320px;height:180px';
+        document.querySelector('[data-testid="playButton"]')!.addEventListener('click', () => {
+          document.body.dataset.nativePlay = 'true';
+        });
+      }, unanchoredVideoPreview);
+      await page.locator('[data-testid="playButton"]').click();
+      await expect(page.locator('body')).toHaveAttribute('data-native-play', 'true');
+      expect(
+        await page.evaluate(
+          () => (window as unknown as { __xegRequestedTweetIds: string[] }).__xegRequestedTweetIds
+        )
+      ).toEqual([]);
+      await page.locator('#main-poster').click();
+      await expect
+        .poll(() =>
+          page.evaluate(
+            () => (window as unknown as { __xegRequestedTweetIds: string[] }).__xegRequestedTweetIds
+          )
+        )
+        .toEqual(['222']);
+      const gallery = page.locator('[data-xeg-gallery-container]');
+      if (apiSuccess) {
+        await expect(gallery).toBeVisible();
+        await expect(gallery.locator('[role="progressbar"]')).toHaveAttribute('aria-valuenow', '2');
+        await expect(gallery.locator('video')).toHaveAttribute('src', /quote-video\.mp4/);
+      } else {
+        await expect(page.locator('[data-gm-notification]')).toContainText('Failed to load media');
+        await expect(gallery).toHaveCount(0);
+      }
+      expect(errors).toEqual([]);
+    });
+  }
+
   test('cross-browser smoke: userscript injects without errors on x.com', async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', (err) => errors.push(err.message));
@@ -100,8 +160,8 @@ test.describe('X.com Enhanced Gallery E2E', () => {
     await setupGalleryPage(page, 'https://x.com');
 
     // Verify no critical errors from our script
-    const xegErrors = errors.filter((e) =>
-      e.includes('XEG') || e.includes('xcom-enhanced') || e.includes('gallery')
+    const xegErrors = errors.filter(
+      (e) => e.includes('XEG') || e.includes('xcom-enhanced') || e.includes('gallery')
     );
     expect(xegErrors).toHaveLength(0);
   });
@@ -113,8 +173,8 @@ test.describe('X.com Enhanced Gallery E2E', () => {
     await setupGalleryPage(page, 'https://x.com');
     await page.goto('https://x.com/explore', { waitUntil: 'domcontentloaded' });
 
-    const xegErrors = errors.filter((e) =>
-      e.includes('XEG') || e.includes('xcom-enhanced') || e.includes('gallery')
+    const xegErrors = errors.filter(
+      (e) => e.includes('XEG') || e.includes('xcom-enhanced') || e.includes('gallery')
     );
     expect(xegErrors).toHaveLength(0);
   });
@@ -172,8 +232,8 @@ test.describe('X.com Enhanced Gallery E2E', () => {
       .poll(() =>
         page.evaluate(
           () =>
-            (window as unknown as { __xegRequestedTweetIds?: string[] })
-              .__xegRequestedTweetIds ?? []
+            (window as unknown as { __xegRequestedTweetIds?: string[] }).__xegRequestedTweetIds ??
+            []
         )
       )
       .toEqual(['222']);

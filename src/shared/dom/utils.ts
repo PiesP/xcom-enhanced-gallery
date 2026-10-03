@@ -10,6 +10,7 @@ import { CSS as CSS_CONST } from '@constants/css';
 import { VIDEO_PLAYER_CONTEXT_SELECTOR } from '@constants/selectors';
 import { logger } from '@shared/logging/logger';
 import type { VideoClickMode } from '@shared/types/settings.types';
+import { isVideoPreview } from '@shared/utils/media/video-preview';
 import { isHTMLElement } from '@shared/utils/types/guards';
 
 const VIDEO_CONTROL_DATASET_PREFIXES = [
@@ -46,7 +47,11 @@ const VIDEO_CONTROL_ARIA_TOKENS = [
 
 const GALLERY_SELECTORS = CSS_CONST.INTERNAL_SELECTORS;
 const GALLERY_RECOVERY_SELECTOR = '[data-xeg-error-boundary]';
-const VIDEO_CONTROL_SELECTORS = ['.video-controls', '.video-progress button'] as const;
+const VIDEO_CONTROL_SELECTORS = [
+  '.video-controls',
+  '.video-progress button',
+  '[data-testid="playButton"]',
+] as const;
 
 /** Characters treated as word boundaries for token matching */
 const WORD_SEPARATORS: readonly string[] = ['-', '_', ' '];
@@ -116,7 +121,7 @@ function getNearestAttributeValue(
 }
 
 function isWithinVideoPlayer(element: HTMLElement): boolean {
-  return element.closest(VIDEO_PLAYER_CONTEXT_SELECTOR) !== null;
+  return element.closest(VIDEO_PLAYER_CONTEXT_SELECTOR) !== null || isVideoPreview(element);
 }
 
 function matchesVideoControlSelectors(element: HTMLElement): boolean {

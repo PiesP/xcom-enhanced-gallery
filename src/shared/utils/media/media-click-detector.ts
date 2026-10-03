@@ -30,6 +30,8 @@ const MEDIA_LINK_SELECTOR = [STATUS_LINK_SELECTOR, 'a[href*="/photo/"]', 'a[href
 const MEDIA_CONTAINER_SELECTOR = MEDIA_CONTAINER_SELECTORS.join(', ');
 const INTERACTIVE_SELECTOR = [
   'button',
+  'input',
+  '[role="slider"]',
   'a',
   '[role="button"]',
   '[data-testid="like"]',
