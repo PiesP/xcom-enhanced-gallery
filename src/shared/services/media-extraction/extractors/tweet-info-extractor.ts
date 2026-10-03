@@ -101,7 +101,11 @@ function getOwnStatusLinks(
     if (!link) return [];
     let branch: Element | null = anchor;
     while (branch && branch !== container && !branch.contains(element)) {
-      if (branch.matches('[role="link"], [data-testid="quoteTweet"], [data-testid="card.wrapper"]'))
+      // A native permalink's own link role is not a surrounding quote boundary.
+      if (
+        (branch !== anchor && branch.matches('[role="link"]')) ||
+        branch.matches('[data-testid="quoteTweet"], [data-testid="card.wrapper"]')
+      )
         return [];
       if (
         Array.from(branch.querySelectorAll('img, video')).some((media) =>

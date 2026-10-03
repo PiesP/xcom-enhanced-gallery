@@ -37,7 +37,7 @@ describe('unanchored preview ownership', () => {
     }
     quote.insertAdjacentHTML(
       'afterbegin',
-      '<a href="/original_author/status/111"><time>Quote</time></a>'
+      '<a role="link" href="/original_author/status/111"><time>Quote</time></a>'
     );
     expect(extractor.extract(main)?.tweetId).toBe('222');
     quote.parentElement!.prepend(quote);
@@ -56,7 +56,7 @@ describe('unanchored preview ownership', () => {
       mount();
       const quote = document.querySelector('[data-testid="quoteTweet"]')!;
       quote.innerHTML =
-        '<div data-testid="tweetPhoto"><div data-testid="previewInterstitial"><img id="quote-poster" src="https://pbs.twimg.com/amplify_video_thumb/333/img/quote.jpg"><button data-testid="playButton">Play</button></div></div><a href="/original_author/status/111"><time>Quoted time</time></a>';
+        '<div data-testid="tweetPhoto"><div data-testid="previewInterstitial"><img id="quote-poster" src="https://pbs.twimg.com/amplify_video_thumb/333/img/quote.jpg"><button data-testid="playButton">Play</button></div></div><a role="link" href="/original_author/status/111"><time>Quoted time</time></a>';
       if (layout.startsWith('unmarked')) {
         quote.removeAttribute('role');
         quote.removeAttribute('data-testid');
@@ -77,7 +77,7 @@ describe('unanchored preview ownership', () => {
     quote.removeAttribute('role');
     quote.removeAttribute('data-testid');
     quote.innerHTML =
-      '<div data-testid="tweetPhoto"><img src="https://pbs.twimg.com/amplify_video_thumb/333/img/quote.jpg"></div><a href="/original_author/status/111"><time>Quoted time</time></a>';
+      '<div data-testid="tweetPhoto"><img src="https://pbs.twimg.com/amplify_video_thumb/333/img/quote.jpg"></div><a role="link" href="/original_author/status/111"><time>Quoted time</time></a>';
     expect(extractor.extract(main)?.tweetId).toBe('222');
     document.querySelector('a[href="/quote_author/status/222"]')!.remove();
     expect(extractor.extract(main)).toBeNull();
@@ -107,7 +107,7 @@ describe('unanchored preview ownership', () => {
       .querySelector('[data-testid="quoteTweet"]')!
       .insertAdjacentHTML(
         'beforeend',
-        '<a href="/original_author/status/111"><time>Quote</time></a>'
+        '<a role="link" href="/original_author/status/111"><time>Quote</time></a>'
       );
     expect(extractor.extract(main)?.tweetId).toBe('222');
   });
@@ -118,12 +118,15 @@ describe('unanchored preview ownership', () => {
       .closest('article')!
       .insertAdjacentHTML(
         'beforeend',
-        '<a href="https://evil.test/a/status/444"><time>Hostile</time></a>'
+        '<a role="link" href="https://evil.test/a/status/444"><time>Hostile</time></a>'
       );
     expect(extractor.extract(main)?.tweetId).toBe('222');
     main
       .closest('article')!
-      .insertAdjacentHTML('beforeend', '<a href="/other/status/444"><time>Ambiguous</time></a>');
+      .insertAdjacentHTML(
+        'beforeend',
+        '<a role="link" href="/other/status/444"><time>Ambiguous</time></a>'
+      );
     expect(extractor.extract(main)).toBeNull();
   });
 
@@ -133,11 +136,11 @@ describe('unanchored preview ownership', () => {
       .closest('article')!
       .insertAdjacentHTML(
         'beforeend',
-        '<article><a href="/nested/status/555"><time>Nested</time></a></article>'
+        '<article><a role="link" href="/nested/status/555"><time>Nested</time></a></article>'
       );
     document.body.insertAdjacentHTML(
       'beforeend',
-      '<article><div data-testid="tweetPhoto"><img id="reply" src="https://pbs.twimg.com/amplify_video_thumb/333/img/reply.jpg"></div><a href="/reply/status/444"><time>Reply</time></a></article>'
+      '<article><div data-testid="tweetPhoto"><img id="reply" src="https://pbs.twimg.com/amplify_video_thumb/333/img/reply.jpg"></div><a role="link" href="/reply/status/444"><time>Reply</time></a></article>'
     );
     expect(extractor.extract(main)?.tweetId).toBe('222');
     expect(extractor.extract(document.querySelector<HTMLImageElement>('#reply')!)?.tweetId).toBe(

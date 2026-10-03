@@ -51,7 +51,7 @@ export class TwitterAPIExtractor implements MediaExtractorStrategy {
       const mediaItems = convertAPIMediaToMediaInfo(apiMedias, tweetInfo, tweetTextContent);
 
       // Step 4: Calculate which media user clicked
-      const match = matchClickedMedia(clickedElement, mediaItems);
+      const match = matchClickedMedia(clickedElement, mediaItems, tweetInfo.tweetId);
       if (match.status === 'contradictory') {
         return createFailureResult(
           'API media does not match the clicked media',

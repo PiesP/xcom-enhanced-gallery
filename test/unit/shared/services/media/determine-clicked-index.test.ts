@@ -20,6 +20,7 @@ const quoteTweetVideo: MediaInfo = {
   sourceLocation: 'original',
   metadata: {
     apiData: {
+      tweet_id: '222',
       download_url: 'https://video.twimg.com/ext_tw_video/222/pu/vid/1280x720/quote-video.mp4',
       preview_url: 'https://pbs.twimg.com/ext_tw_video_thumb/222/pu/img/quote-video.jpg',
     },
@@ -32,7 +33,7 @@ describe('matchClickedMedia', () => {
     video.src = 'blob:https://x.com/runtime-playback';
     video.poster = quoteTweetVideo.thumbnailUrl ?? '';
 
-    expect(matchClickedMedia(video, [quotedImage, quoteTweetVideo])).toEqual({
+    expect(matchClickedMedia(video, [quotedImage, quoteTweetVideo], '222')).toEqual({
       status: 'matched',
       index: 1,
     });
@@ -40,15 +41,18 @@ describe('matchClickedMedia', () => {
 
   it('distinguishes missing URL evidence from contradictory media', () => {
     const image = document.createElement('img');
-    expect(matchClickedMedia(image, [quotedImage])).toEqual({ status: 'unknown', index: 0 });
+    expect(matchClickedMedia(image, [quotedImage], '222')).toEqual({ status: 'unknown', index: 0 });
     image.src = 'https://pbs.twimg.com/media/another-image.jpg';
-    expect(matchClickedMedia(image, [quotedImage])).toEqual({ status: 'contradictory', index: 0 });
+    expect(matchClickedMedia(image, [quotedImage], '222')).toEqual({
+      status: 'contradictory',
+      index: 0,
+    });
   });
 
   it('does not match a video thumbnail to an API photo with the same URL', () => {
     const image = document.createElement('img');
     image.src = quoteTweetVideo.thumbnailUrl!;
-    expect(matchClickedMedia(image, [{ ...quotedImage, url: image.src }])).toEqual({
+    expect(matchClickedMedia(image, [{ ...quotedImage, url: image.src }], '222')).toEqual({
       status: 'contradictory',
       index: 0,
     });
@@ -57,7 +61,7 @@ describe('matchClickedMedia', () => {
   it('matches a non-first ordinary image in mixed media', () => {
     const image = document.createElement('img');
     image.src = quotedImage.url;
-    expect(matchClickedMedia(image, [quoteTweetVideo, quotedImage])).toEqual({
+    expect(matchClickedMedia(image, [quoteTweetVideo, quotedImage], '222')).toEqual({
       status: 'matched',
       index: 1,
     });
@@ -69,16 +73,32 @@ describe('matchClickedMedia', () => {
     preview.innerHTML =
       '<div data-testid="previewInterstitial"><img><button data-testid="playButton">Play</button></div>';
     const poster = preview.querySelector('img')!;
-    expect(matchClickedMedia(poster, [quotedImage, quoteTweetVideo])).toEqual({
+    expect(matchClickedMedia(poster, [quotedImage, quoteTweetVideo], '222')).toEqual({
       status: 'unknown',
       index: 1,
     });
     expect(
-      matchClickedMedia(poster, [
-        quotedImage,
-        quoteTweetVideo,
-        { ...quoteTweetVideo, id: 'another' },
-      ])
+      matchClickedMedia(
+        poster,
+        [quotedImage, quoteTweetVideo, { ...quoteTweetVideo, id: 'another' }],
+        '222'
+      )
     ).toEqual({ status: 'unknown', index: null });
+  });
+
+  it('cannot infer API ownership from request-level IDs or source-location labels', () => {
+    const video = document.createElement('video');
+    video.src = 'blob:https://x.com/runtime-playback';
+    const missingOwner = { ...quoteTweetVideo, tweetId: '222', metadata: undefined };
+    const conflictingOwner = {
+      ...quoteTweetVideo,
+      tweetId: '222',
+      metadata: {
+        apiData: { tweet_id: '111' },
+      },
+    };
+    for (const item of [missingOwner, conflictingOwner]) {
+      expect(matchClickedMedia(video, [item], '222')).toEqual({ status: 'unknown', index: null });
+    }
   });
 });
