@@ -38,6 +38,7 @@ declare const process: {
     VITEST?: string;
     [key: string]: string | undefined;
   };
+  versions: { node: string };
   cwd: () => string;
   argv: string[];
   exit: (code?: number) => never;
