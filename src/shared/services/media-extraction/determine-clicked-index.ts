@@ -19,7 +19,8 @@ type ClickedMediaMatch =
 /** Preserve evidence instead of turning a confirmed mismatch into index zero. */
 export function matchClickedMedia(
   clickedElement: HTMLElement,
-  mediaItems: MediaInfo[]
+  mediaItems: MediaInfo[],
+  clickedTweetId: string
 ): ClickedMediaMatch {
   try {
     const mediaElement = findMediaElementInDOM(clickedElement);
@@ -36,7 +37,18 @@ export function matchClickedMedia(
         item.type === 'video' || item.type === 'gif' ? [index] : []
       );
       if (!videos.length) return { status: 'contradictory', index: 0 };
-      return { status: 'unknown', index: videos.length === 1 ? videos[0]! : null };
+      // The combined API list includes quote media. Only originating API IDs
+      // establish ownership; MediaInfo.tweetId retains the request/gallery context.
+      const compatible = videos.filter((index) => {
+        const apiData = mediaItems[index]?.metadata?.apiData;
+        if (!apiData || typeof apiData !== 'object' || !('tweet_id' in apiData)) return false;
+        return (
+          typeof apiData.tweet_id === 'string' &&
+          /^\d+$/u.test(apiData.tweet_id) &&
+          apiData.tweet_id === clickedTweetId
+        );
+      });
+      return { status: 'unknown', index: compatible.length === 1 ? compatible[0]! : null };
     }
 
     const clickedCandidates = new Set(normalizedElementUrls);

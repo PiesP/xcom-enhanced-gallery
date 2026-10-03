@@ -21,6 +21,7 @@ import { installGMMock } from '../fixtures/gm-mock';
 import { injectDevUserscript, waitForGalleryApp } from '../fixtures/userscript-harness';
 import { createQuotedVideoTweetResponse } from '../../fixtures/quoted-video-tweet-response';
 import { unanchoredVideoPreview } from '../../fixtures/unanchored-video-preview';
+import { createMixedOwnerVideoResponse } from '../../fixtures/mixed-owner-video-response';
 
 /**
  * Setup: Install GM_* mocks + navigate to x.com + inject userscript.
@@ -142,6 +143,62 @@ test.describe('X.com Enhanced Gallery E2E', () => {
         await expect(gallery).toBeVisible();
         await expect(gallery.locator('[role="progressbar"]')).toHaveAttribute('aria-valuenow', '2');
         await expect(gallery.locator('video')).toHaveAttribute('src', /quote-video\.mp4/);
+      } else {
+        await expect(page.locator('[data-gm-notification]')).toContainText('Failed to load media');
+        await expect(gallery).toHaveCount(0);
+      }
+      expect(errors).toEqual([]);
+    });
+  }
+
+  for (const mainPlayable of [true, false]) {
+    test(`URL-less main preview uses its API owner, main MP4 available=${mainPlayable}`, async ({
+      page,
+    }) => {
+      const errors: string[] = [];
+      page.on('pageerror', (error) => errors.push(error.message));
+      await page.route('https://pbs.twimg.com/**', (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: 'image/png',
+          body: MOCK_IMAGE,
+        })
+      );
+      await page.route('https://video.twimg.com/**', (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: 'video/mp4',
+          body: '',
+        })
+      );
+      await setupGalleryPage(
+        page,
+        'https://x.com/quote_author/status/222',
+        createMixedOwnerVideoResponse(mainPlayable)
+      );
+      await page.evaluate((markup) => {
+        document.querySelectorAll('article').forEach((article) => article.remove());
+        document.body.insertAdjacentHTML('beforeend', markup);
+        const poster = document.querySelector<HTMLImageElement>('#main-poster')!;
+        poster.removeAttribute('src');
+        poster.style.cssText = 'display:block;width:320px;height:180px';
+      }, unanchoredVideoPreview);
+      await page.locator('#main-poster').click();
+      await expect
+        .poll(() =>
+          page.evaluate(
+            () => (window as unknown as { __xegRequestedTweetIds: string[] }).__xegRequestedTweetIds
+          )
+        )
+        .toEqual(['222']);
+      const gallery = page.locator('[data-xeg-gallery-container]');
+      if (mainPlayable) {
+        await expect(gallery).toBeVisible();
+        await expect(gallery.locator('[role="progressbar"]')).toHaveAttribute('aria-valuenow', '2');
+        const items = gallery.locator('[data-gallery-element="item"]');
+        await expect(items).toHaveCount(2);
+        await expect(items.nth(0).locator('video')).toHaveAttribute('src', /video-444\.mp4/);
+        await expect(items.nth(1).locator('video')).toHaveAttribute('src', /video-333\.mp4/);
       } else {
         await expect(page.locator('[data-gm-notification]')).toContainText('Failed to load media');
         await expect(gallery).toHaveCount(0);

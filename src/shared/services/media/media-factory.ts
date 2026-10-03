@@ -53,6 +53,8 @@ function createMediaInfoFromAPI(
       type: mediaType,
       filename: '',
       tweetUsername: username,
+      // Gallery/request context for existing metadata and filename behavior.
+      // The originating post (including quotes) remains in metadata.apiData.tweet_id.
       tweetId: tweetInfo.tweetId,
       tweetUrl: tweetInfo.tweetUrl,
       tweetText: apiMedia.tweet_text,
