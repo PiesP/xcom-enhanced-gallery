@@ -11,6 +11,7 @@ import { MEDIA } from '@constants/media';
 import { TWEET_CONTAINER_SELECTORS } from '@constants/selectors';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
+import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
 import type {
   MediaExtractionOptions,
   MediaExtractionResult,
@@ -27,6 +28,7 @@ import {
   isMediaElement,
   type MediaElement,
 } from '@shared/utils/media/media-element-utils';
+import { isVideoPreview, isVideoThumbnailUrl } from '@shared/utils/media/video-preview';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
 
 /**
@@ -70,11 +72,22 @@ function createMediaInfoFromDOM(
   tweetTextContent?: string
 ): MediaInfo | null {
   try {
-    const mediaUrl = extractMediaUrlFromElement(element);
+    // A video's poster is a matching hint, not a playable fallback source.
+    const mediaUrl =
+      element instanceof HTMLVideoElement
+        ? element.currentSrc || element.getAttribute('src') || element.querySelector('source')?.src
+        : extractMediaUrlFromElement(element);
     if (!mediaUrl || !isValidMediaUrl(mediaUrl)) {
       return null;
     }
+    if (element instanceof HTMLVideoElement && new URL(mediaUrl).hostname !== 'video.twimg.com')
+      return null;
 
+    if (
+      isVideoThumbnailUrl(mediaUrl) ||
+      (element instanceof HTMLImageElement && isVideoPreview(element))
+    )
+      return null;
     const mediaType = element.tagName.toLowerCase() === 'video' ? 'video' : 'image';
 
     // Extract dimensions if available
@@ -171,10 +184,13 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
       // Build mapping from element to mediaItems index
       const mediaItems: MediaInfo[] = [];
       const elementToIndexMap = new Map<MediaElement, number>();
+      const ownerExtractor = new TweetInfoExtractor();
 
       for (let i = 0; i < mediaElements.length; i++) {
         const element = mediaElements[i];
         if (!element) continue;
+        const owner = ownerExtractor.extract(element);
+        if (!owner || owner.tweetId !== tweetInfo.tweetId) continue;
 
         const mediaInfo = createMediaInfoFromDOM(element, tweetInfo, i, tweetTextContent);
         if (mediaInfo) {
@@ -197,9 +213,13 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
 
       if (clickedMedia) {
         const mappedIndex = elementToIndexMap.get(clickedMedia);
-        if (mappedIndex !== undefined) {
-          clickedIndex = mappedIndex;
-        }
+        if (mappedIndex === undefined)
+          return createFailureResult(
+            'Clicked media is not available as an original DOM source',
+            'dom-fallback',
+            'dom-clicked-media-unavailable'
+          );
+        clickedIndex = mappedIndex;
       }
 
       if (__DEV__) {

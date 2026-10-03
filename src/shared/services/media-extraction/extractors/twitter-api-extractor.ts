@@ -9,7 +9,7 @@ import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
 import { convertAPIMediaToMediaInfo } from '@shared/services/media/media-factory';
 import { getTweetMedias } from '@shared/services/media/twitter-api-client';
-import { determineClickedIndex } from '@shared/services/media-extraction/determine-clicked-index';
+import { matchClickedMedia } from '@shared/services/media-extraction/determine-clicked-index';
 import type {
   MediaExtractionOptions,
   MediaExtractionResult,
@@ -51,7 +51,22 @@ export class TwitterAPIExtractor implements MediaExtractorStrategy {
       const mediaItems = convertAPIMediaToMediaInfo(apiMedias, tweetInfo, tweetTextContent);
 
       // Step 4: Calculate which media user clicked
-      const clickedIndex = determineClickedIndex(clickedElement, mediaItems);
+      const match = matchClickedMedia(clickedElement, mediaItems);
+      if (match.status === 'contradictory') {
+        return createFailureResult(
+          'API media does not match the clicked media',
+          'twitter-api',
+          'api-media-mismatch'
+        );
+      }
+      const clickedIndex = match.index;
+      if (clickedIndex === null) {
+        return createFailureResult(
+          'Insufficient evidence to select the clicked video',
+          'twitter-api',
+          'api-media-ambiguous'
+        );
+      }
 
       return {
         success: true,
@@ -62,6 +77,7 @@ export class TwitterAPIExtractor implements MediaExtractorStrategy {
           sourceType: 'twitter-api',
           strategy: 'api-extraction',
           apiMediaCount: apiMedias.length,
+          clickedMatch: match.status,
         },
         tweetInfo,
       };
