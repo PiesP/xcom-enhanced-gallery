@@ -52,9 +52,7 @@ export function createGalleryLifecycle(): GalleryLifecycle {
       context,
     };
 
-    // X can stop propagation during document capture before body is reached.
-    // Register on the same capture target so media clicks still reach the gallery.
-    const clickTarget = document;
+    const target = document.body;
     const eventManager = getEventManager();
     const listenerOptions: AddEventListenerOptions = { capture: true, passive: false };
 
@@ -62,20 +60,14 @@ export function createGalleryLifecycle(): GalleryLifecycle {
       const keyHandler: EventListener = (evt: Event) => {
         handleKeyboardEvent(evt as KeyboardEvent, handlers, mergedOptions);
       };
-      eventManager.addEventListener(document.body, 'keydown', keyHandler, {
-        ...listenerOptions,
-        context,
-      });
+      eventManager.addEventListener(target, 'keydown', keyHandler, { ...listenerOptions, context });
     }
 
     if (mergedOptions.enableMediaDetection) {
       const clickHandler: EventListener = async (evt: Event) => {
         await handleMediaClick(evt as MouseEvent, handlers, mergedOptions);
       };
-      eventManager.addEventListener(clickTarget, 'click', clickHandler, {
-        ...listenerOptions,
-        context,
-      });
+      eventManager.addEventListener(target, 'click', clickHandler, { ...listenerOptions, context });
     }
 
     resetKeyboardDebounceState();

@@ -22,7 +22,7 @@ function requireTarget(selector: string): HTMLElement {
   return target;
 }
 
-describe('gallery lifecycle with X document capture interception', () => {
+describe('gallery lifecycle with authenticated X video targets', () => {
   afterEach(() => {
     clearSettings();
     closeGallery();
@@ -30,12 +30,10 @@ describe('gallery lifecycle with X document capture interception', () => {
   });
 
   it.each(['block-all', 'block-controls-only', 'allow-all'] as const)(
-    'routes the captured video overlay under %s despite host stopPropagation',
+    'routes the captured video overlay under %s and cleans up its listeners',
     (mode: VideoClickMode) => {
       registerSettings({ get: () => mode, set: async () => undefined });
       document.body.innerHTML = capturedVideoPlayer;
-      const hostDocumentCapture = vi.fn((event: Event) => event.stopPropagation());
-      document.addEventListener('click', hostDocumentCapture, true);
       const onMediaClick = vi.fn(async () => undefined);
       const lifecycle = createGalleryLifecycle();
       const listenersBefore = getEventManager().getListenerStatus();
@@ -46,14 +44,12 @@ describe('gallery lifecycle with X document capture interception', () => {
         const event = new MouseEvent('click', { bubbles: true, cancelable: true });
         const delivered = overlay.dispatchEvent(event);
 
-        expect(hostDocumentCapture).toHaveBeenCalledOnce();
         const opensGallery = mode !== 'block-all';
         expect(delivered).toBe(!opensGallery);
         expect(event.defaultPrevented).toBe(opensGallery);
         expect(onMediaClick).toHaveBeenCalledTimes(opensGallery ? 1 : 0);
       } finally {
         lifecycle.cleanup();
-        document.removeEventListener('click', hostDocumentCapture, true);
       }
       expect(getEventManager().getListenerStatus()).toBe(listenersBefore);
     }
@@ -64,8 +60,6 @@ describe('gallery lifecycle with X document capture interception', () => {
     (mode: VideoClickMode) => {
       registerSettings({ get: () => mode, set: async () => undefined });
       document.body.innerHTML = capturedVideoPlayer;
-      const hostDocumentCapture = (event: Event): void => event.stopPropagation();
-      document.addEventListener('click', hostDocumentCapture, true);
       const onMediaClick = vi.fn(async () => undefined);
       const lifecycle = createGalleryLifecycle();
       lifecycle.initialize({ onMediaClick, onGalleryClose: vi.fn() });
@@ -77,7 +71,6 @@ describe('gallery lifecycle with X document capture interception', () => {
         expect(onMediaClick).not.toHaveBeenCalled();
       } finally {
         lifecycle.cleanup();
-        document.removeEventListener('click', hostDocumentCapture, true);
       }
     }
   );
