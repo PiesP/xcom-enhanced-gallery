@@ -69,6 +69,20 @@ export function extractMediaUrlFromElement(element: MediaElement): string | null
   return extractMediaUrlCandidatesFromElement(element)[0] ?? null;
 }
 
+/** The source used for DOM output; posters and backgrounds cannot supply it. */
+export function selectMediaSourceUrl(element: MediaElement): string | null {
+  if (element instanceof HTMLImageElement)
+    return element.currentSrc || (element.getAttribute('src') ? element.src : null);
+
+  if (element.currentSrc) return element.currentSrc;
+  if (element.getAttribute('src')) return element.src;
+
+  const sources = Array.from(element.querySelectorAll<HTMLSourceElement>(':scope > source'))
+    .map((source) => (source.getAttribute('src') ? source.src : null))
+    .filter((source): source is string => !!source);
+  return sources.length === 1 ? sources[0]! : null;
+}
+
 export function extractMediaUrlCandidatesFromElement(element: MediaElement): string[] {
   const isImage = element instanceof HTMLImageElement;
 
@@ -84,7 +98,8 @@ export function extractMediaUrlCandidatesFromElement(element: MediaElement): str
   const current = element.currentSrc || null;
   const resolved = attr ? element.src : null;
   const posterResolved = posterAttr ? element.poster : null;
-  return collectUniqueTruthy([current, resolved, attr, posterResolved, posterAttr]);
+  const selected = selectMediaSourceUrl(element);
+  return collectUniqueTruthy([current, resolved, attr, selected, posterResolved, posterAttr]);
 }
 
 function findMediaDescendant(

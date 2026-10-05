@@ -101,4 +101,12 @@ describe('matchClickedMedia', () => {
       expect(matchClickedMedia(video, [item], '222')).toEqual({ status: 'unknown', index: null });
     }
   });
+
+  it('does not let a conflicting src authorize API media over the selected currentSrc', () => {
+    const image = document.createElement('img');
+    image.src = 'https://pbs.twimg.com/media/review-B.jpg';
+    Object.defineProperty(image, 'currentSrc', { configurable: true, get: () => 'https://pbs.twimg.com/media/review-A.jpg' });
+    const replacement = { ...quotedImage, url: image.src };
+    expect(matchClickedMedia(image, [replacement], '222')).toEqual({ status: 'contradictory', index: 0 });
+  });
 });

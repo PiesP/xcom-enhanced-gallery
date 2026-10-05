@@ -40,6 +40,9 @@ declare module '../../../src/platform/chrome' {
   interface ChromeDownloadItem {
     readonly filename: string;
   }
+  interface ChromeNotificationsModule {
+    getAll(): Promise<Record<string, boolean>>;
+  }
 }
 
 test.beforeAll(() => {
@@ -502,3 +505,64 @@ test('loads the Chrome extension and scopes article-less tile recovery with tear
     rmSync(userDataDir, { recursive: true, force: true });
   }
 });
+
+for (const replaceSource of [false, true]) {
+  test(`loads the Chrome extension and preserves image identity after delayed HTTP failure: replaced=${replaceSource}`, async ({ browserName }) => {
+    test.skip(browserName !== 'chromium', 'Chrome extension loading requires Chromium');
+    const userDataDir = mkdtempSync(join(tmpdir(), 'xeg-identity-extension-'));
+    const context = await chromium.launchPersistentContext(userDataDir, {
+      channel: 'chromium', headless: true,
+      args: [`--disable-extensions-except=${CHROME_EXTENSION_DIR}`, `--load-extension=${CHROME_EXTENSION_DIR}`],
+    });
+    let releaseApi: (() => void) | undefined;
+    const apiGate = new Promise<void>((resolve) => { releaseApi = resolve; });
+    try {
+      const owners: string[] = [];
+      await context.route('https://x.com/**', async (route) => {
+        const url = new URL(route.request().url());
+        if (url.pathname.endsWith('/TweetResultByRestId')) {
+          owners.push(JSON.parse(url.searchParams.get('variables') ?? '{}').tweetId);
+          await apiGate;
+          await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+        } else await route.fulfill({ status: 200, contentType: 'text/html', body: MOCK_GALLERY_HTML });
+      });
+      await context.route('https://pbs.twimg.com/**', (route) => route.fulfill({ status: 200, contentType: 'image/png', body: MOCK_IMAGE }));
+      const page = await context.newPage();
+      const errors: string[] = [];
+      page.on('pageerror', (error) => errors.push(error.message));
+      const background = context.serviceWorkers()[0] ?? await context.waitForEvent('serviceworker');
+      await page.goto('https://x.com/author/status/222');
+      await expect(page.locator('html')).toHaveAttribute('data-xeg-gallery-ready', 'true');
+      await page.evaluate(() => {
+        document.querySelector('main')!.innerHTML = `<article data-testid="tweet">
+          <a role="link" href="/author/status/222"><time>Fixture permalink</time></a>
+          <div data-testid="tweetPhoto" style="background-image:url(https://pbs.twimg.com/media/identity-A.jpg)">
+            <img id="identity-target" src="https://pbs.twimg.com/media/identity-A.jpg" width="320" height="200">
+          </div>
+        </article>`;
+        Object.defineProperty(document.querySelector('#identity-target'), 'currentSrc', { get: () => '' });
+      });
+      await page.locator('#identity-target').click();
+      await expect.poll(() => owners).toEqual(['222']);
+      if (replaceSource) await page.locator('#identity-target').evaluate((element) => { element.setAttribute('src', 'https://pbs.twimg.com/media/identity-B.jpg'); });
+      releaseApi?.();
+      const gallery = page.locator('[data-xeg-gallery-container]');
+      if (replaceSource) {
+        // The real notification transport provides a completion signal for failed extraction.
+        await expect.poll(() => background.evaluate(async () => Object.keys(await chrome.notifications.getAll()).length)).toBe(1);
+        await expect(gallery).toHaveCount(0);
+        expect(await background.evaluate(() => chrome.downloads.search({}))).toEqual([]);
+      } else {
+        await expect(gallery).toBeVisible();
+        await expect(gallery.locator('img')).toHaveAttribute('src', /identity-A/);
+        await page.keyboard.press('Escape');
+        await expect(gallery).toHaveCount(0);
+      }
+      expect(errors).toEqual([]);
+    } finally {
+      releaseApi?.();
+      await context.close();
+      rmSync(userDataDir, { recursive: true, force: true });
+    }
+  });
+}

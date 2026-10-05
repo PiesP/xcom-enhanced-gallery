@@ -11,7 +11,10 @@ import { MEDIA } from '@constants/media';
 import { STATUS_LINK_SELECTOR, TWEET_CONTAINER_SELECTORS } from '@constants/selectors';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
-import { captureClickedMediaEvidence } from '@shared/services/media-extraction/determine-clicked-index';
+import {
+  captureClickedMediaEvidence,
+  getMediaSourceKey,
+} from '@shared/services/media-extraction/determine-clicked-index';
 import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
 import type {
   MediaExtractionOptions,
@@ -28,6 +31,7 @@ import {
   findMediaElementInDOM,
   isMediaElement,
   type MediaElement,
+  selectMediaSourceUrl,
 } from '@shared/utils/media/media-element-utils';
 import { isVideoPreview, isVideoThumbnailUrl } from '@shared/utils/media/video-preview';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
@@ -62,7 +66,7 @@ function createMediaInfoFromDOM(
     // A video's poster is a matching hint, not a playable fallback source.
     const mediaUrl =
       element instanceof HTMLVideoElement
-        ? element.currentSrc || element.getAttribute('src') || element.querySelector('source')?.src
+        ? selectMediaSourceUrl(element)
         : extractMediaUrlFromElement(element);
     if (!mediaUrl || !isValidMediaUrl(mediaUrl)) {
       return null;
@@ -210,9 +214,12 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
 
       if (options.clickedMediaEvidence) {
         const currentEvidence = captureClickedMediaEvidence(clickedElement);
+        const selectedSource = mediaItems[clickedIndex]?.url ?? null;
         if (
           currentEvidence.mediaType !== options.clickedMediaEvidence.mediaType ||
-          !currentEvidence.urls.some((url) => options.clickedMediaEvidence?.urls.includes(url))
+          !options.clickedMediaEvidence.sourceKey ||
+          currentEvidence.sourceKey !== options.clickedMediaEvidence.sourceKey ||
+          getMediaSourceKey(selectedSource) !== options.clickedMediaEvidence.sourceKey
         )
           return createFailureResult(
             'Clicked media changed during extraction',

@@ -31,7 +31,8 @@ async function setupGalleryPage(
   page: Page,
   url: string,
   twitterResponse?: Record<string, unknown>,
-  apiStatus = 200
+  apiStatus = 200,
+  deferApi = false
 ): Promise<void> {
   await page.route('https://x.com/**', async (route) => {
     await route.fulfill({ status: 200, contentType: 'text/html', body: MOCK_GALLERY_HTML });
@@ -47,7 +48,7 @@ async function setupGalleryPage(
 
   if (twitterResponse) {
     await page.evaluate(
-      ({ response, apiStatus }) => {
+      ({ response, apiStatus, deferApi }) => {
         type RequestDetails = {
           url: string;
           onload?: (result: Record<string, unknown>) => void;
@@ -56,6 +57,7 @@ async function setupGalleryPage(
         const w = window as unknown as {
           GM_xmlhttpRequest?: (details: RequestDetails) => { abort: () => void };
           __xegRequestedTweetIds?: string[];
+          __xegReleaseApi?: () => void;
         };
         w.__xegRequestedTweetIds = [];
         w.GM_xmlhttpRequest = (details) => {
@@ -65,7 +67,7 @@ async function setupGalleryPage(
           };
           if (variables.tweetId) w.__xegRequestedTweetIds?.push(variables.tweetId);
 
-          queueMicrotask(() => {
+          const respond = (): void => {
             details.onload?.({
               finalUrl: details.url,
               readyState: 4,
@@ -76,11 +78,13 @@ async function setupGalleryPage(
               responseText: JSON.stringify(response),
               context: null,
             });
-          });
+          };
+          if (deferApi) w.__xegReleaseApi = respond;
+          else queueMicrotask(respond);
           return { abort: () => undefined };
         };
       },
-      { response: twitterResponse, apiStatus }
+      { response: twitterResponse, apiStatus, deferApi }
     );
   }
 
@@ -96,6 +100,45 @@ test.describe('X.com Enhanced Gallery E2E', () => {
       );
     }
   });
+
+  for (const replaceSource of [false, true]) {
+    test(`delayed HTTP failure preserves image identity with a retained background: replaced=${replaceSource}`, async ({ page }) => {
+      const errors: string[] = [];
+      page.on('pageerror', (error) => errors.push(error.message));
+      await page.route('https://pbs.twimg.com/**', (route) => route.fulfill({ status: 200, contentType: 'image/png', body: MOCK_IMAGE }));
+      await setupGalleryPage(page, 'https://x.com/author/status/222', {}, 503, true);
+      await page.evaluate(() => {
+        document.querySelector('main')!.innerHTML = `<article data-testid="tweet">
+          <a role="link" href="/author/status/222"><time>Fixture permalink</time></a>
+          <div data-testid="tweetPhoto" style="background-image:url(https://pbs.twimg.com/media/identity-A.jpg)">
+            <img id="identity-target" src="https://pbs.twimg.com/media/identity-A.jpg" width="320" height="200">
+          </div>
+        </article>`;
+        // Control source selection explicitly instead of relying on image loading races.
+        Object.defineProperty(document.querySelector('#identity-target'), 'currentSrc', { get: () => '' });
+      });
+      await page.locator('#identity-target').click();
+      await expect.poll(() => page.evaluate(() => (window as unknown as { __xegRequestedTweetIds: string[] }).__xegRequestedTweetIds)).toEqual(['222']);
+      await page.evaluate((replace) => {
+        if (replace) document.querySelector<HTMLImageElement>('#identity-target')!.src = 'https://pbs.twimg.com/media/identity-B.jpg';
+        const host = window as unknown as { __xegReleaseApi?: () => void };
+        if (!host.__xegReleaseApi) throw new Error('Deferred HTTP request was not observed');
+        host.__xegReleaseApi();
+      }, replaceSource);
+      const gallery = page.locator('[data-xeg-gallery-container]');
+      if (replaceSource) {
+        await expect(gallery).toHaveCount(0);
+        await expect(page.locator('[data-gm-notification]').last()).toContainText('Failed to load media');
+        await expect(page.locator('[data-gm-download], [data-gm-xhr-download]')).toHaveCount(0);
+      } else {
+        await expect(gallery).toBeVisible();
+        await expect(gallery.locator('img')).toHaveAttribute('src', /identity-A/);
+        await page.keyboard.press('Escape');
+        await expect(gallery).toHaveCount(0);
+      }
+      expect(errors).toEqual([]);
+    });
+  }
 
   test('API-off mixed DOM retains document order and clicked item through repeated opens', async ({ page }) => {
     const errors: string[] = [];
