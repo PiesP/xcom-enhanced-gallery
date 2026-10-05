@@ -4,6 +4,7 @@
 import { schedulerYield } from '@piesp/browser-core/util';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
+import { captureClickedMediaEvidence } from '@shared/services/media-extraction/determine-clicked-index';
 import { DOMFallbackExtractor } from '@shared/services/media-extraction/extractors/dom-fallback-extractor';
 import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
 import { TwitterAPIExtractor } from '@shared/services/media-extraction/extractors/twitter-api-extractor';
@@ -125,7 +126,12 @@ export class MediaExtractionService implements MediaExtractor {
         return createErrorResult('No tweet information found');
       }
 
-      const apiResult = this.isApiCircuitOpen()
+      const extractionOptions = {
+        ...options,
+        clickedMediaEvidence: captureClickedMediaEvidence(element),
+      };
+
+      const apiResult: MediaExtractionResult = this.isApiCircuitOpen()
         ? {
             success: false,
             mediaItems: [],
@@ -134,7 +140,7 @@ export class MediaExtractionService implements MediaExtractor {
             tweetInfo: null,
             errors: [],
           }
-        : await this.apiExtractor.extract(tweetInfo, element, options, extractionId);
+        : await this.apiExtractor.extract(tweetInfo, element, extractionOptions, extractionId);
 
       // Some request adapters can resolve after abort. Currentness must be
       // checked before API success resets the circuit breaker or returns data.
@@ -142,18 +148,20 @@ export class MediaExtractionService implements MediaExtractor {
         return createErrorResult('Extraction cancelled');
       }
 
-      if (apiResult.success && apiResult.mediaItems.length > 0) {
-        // Reset circuit on success
+      if (apiResult.apiRequestOutcome === 'healthy' || apiResult.success) {
+        // A successful provider response is healthy even when media is absent
+        // or cannot be matched to the clicked element.
         this.apiFailureCount = 0;
         this.apiCircuitOpen = false;
+      } else if (apiResult.apiRequestOutcome === 'failed') {
+        this.recordApiFailure();
+      }
+
+      if (apiResult.success && apiResult.mediaItems.length > 0) {
         return finalizeResult({
           ...apiResult,
           tweetInfo: mergeTweetInfo(tweetInfo, apiResult.tweetInfo),
         });
-      }
-
-      if (!apiResult.success) {
-        this.recordApiFailure();
       }
 
       __DEV__ && logger.info(`[MediaExtractor] ${extractionId}: API failed, trying DOM fallback`);
@@ -164,7 +172,7 @@ export class MediaExtractionService implements MediaExtractor {
       const domResult = await this.domFallbackExtractor.extract(
         tweetInfo,
         element,
-        options,
+        extractionOptions,
         extractionId
       );
 
