@@ -95,6 +95,20 @@ cooling window. Keep pnpm trust, build-script, and transitive-source controls
 enabled. `package.json`, `pnpm-workspace.yaml`, the lockfile, and pinned workflow
 references are authoritative.
 
+## Release publication
+
+The ordinary release workflow publishes existing protected-source stable tags
+in increasing semantic-version order. Validation can run in parallel, but all
+tags share a publication lock. After acquiring it, the workflow rechecks the tag,
+source manifest, bundle metadata, public release history and Latest selection
+before writing. Historical targets and unavailable or conflicting state stop
+publication; this workflow has no archive or rollback mode.
+
+New releases explicitly become Latest. A complete same-version retry verifies
+the published source metadata and skips publication, preserving existing assets
+and Latest. Incomplete releases, drafts and archive retries require maintainer
+review; the workflow does not overwrite assets or move tags to repair them.
+
 ## Pull requests
 
 Keep changes focused and describe what changed, why it changed, and how it was
