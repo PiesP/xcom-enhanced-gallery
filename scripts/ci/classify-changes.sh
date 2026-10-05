@@ -258,7 +258,7 @@ if ! diff_file="$(mktemp)"; then
   exit 0
 fi
 trap 'rm -f "$diff_file"' EXIT
-if ! git diff --name-only -z "$diff_range" > "$diff_file" 2>/dev/null; then
+if ! git diff --no-renames --name-only -z "$diff_range" -- > "$diff_file" 2>/dev/null; then
   select_all
   emit_outputs "diff-failed-full"
   exit 0
