@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import assert from 'node:assert/strict';
+import { STATUS_TILE_DOM } from '../fixtures/issue-217-dom.ts';
 import { execFileSync } from 'node:child_process';
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:https';
@@ -572,6 +573,16 @@ test(
       WAIT_TIMEOUT_MS
     );
     assert.equal(await gallery.isDisplayed(), true);
+
+    await firefoxDriver.executeScript("document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))");
+    await firefoxDriver.wait(async () => (await firefoxDriver.findElements(By.css('[data-xeg-gallery-container]'))).length === 0, WAIT_TIMEOUT_MS);
+    await firefoxDriver.executeScript("document.querySelector('main').innerHTML = arguments[0]", STATUS_TILE_DOM);
+    await (await firefoxDriver.findElement(By.id('tile-target'))).click();
+    const tileGallery = await firefoxDriver.wait(until.elementLocated(By.css('[data-xeg-gallery-container]')), WAIT_TIMEOUT_MS);
+    assert.equal(await tileGallery.isDisplayed(), true);
+    const tileItems = await tileGallery.findElements(By.css('[data-gallery-element="item"]'));
+    assert.equal(tileItems.length, 1);
+    assert.match((await tileItems[0]!.findElement(By.css('img')).getAttribute('src')) ?? '', /tile-photo/);
 
     const backgroundResponse = await firefoxDriver.wait(
       async () => {
