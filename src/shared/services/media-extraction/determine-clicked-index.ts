@@ -7,9 +7,11 @@ import type { ClickedMediaEvidence, MediaInfo } from '@shared/types/media.types'
 import {
   extractMediaUrlCandidatesFromElement,
   findMediaElementInDOM,
+  selectMediaSourceUrl,
 } from '@shared/utils/media/media-element-utils';
 import { normalizeMediaUrl } from '@shared/utils/media/media-url-utils';
 import { isVideoPreview } from '@shared/utils/media/video-preview';
+import { isValidMediaUrl } from '@shared/utils/url/validator';
 
 type ClickedMediaMatch =
   | { status: 'matched'; index: number }
@@ -29,7 +31,21 @@ export function captureClickedMediaEvidence(clickedElement: HTMLElement): Clicke
   return {
     urls: Object.freeze([...new Set(urls)]),
     mediaType: expectsVideo ? 'video' : mediaElement instanceof HTMLImageElement ? 'image' : null,
+    sourceKey:
+      mediaElement && (!expectsVideo || mediaElement instanceof HTMLVideoElement)
+        ? getMediaSourceKey(selectMediaSourceUrl(mediaElement))
+        : null,
   };
+}
+
+/** Preserve host and parent path while allowing supported size/format URL variants. */
+export function getMediaSourceKey(url: string | null): string | null {
+  if (!url || !isValidMediaUrl(url)) return null;
+  const parsed = new URL(url);
+  if (parsed.hostname === 'video.twimg.com') return `${parsed.hostname}${parsed.pathname}`;
+  const name = normalizeMediaUrl(url);
+  if (!name) return null;
+  return `${parsed.hostname}${parsed.pathname.slice(0, parsed.pathname.lastIndexOf('/') + 1)}${name}`;
 }
 
 /** Preserve evidence instead of turning a confirmed mismatch into index zero. */
@@ -79,9 +95,13 @@ export function matchClickedMedia(
         return false;
       if (expectsVideo && item.type !== 'video' && item.type !== 'gif') return false;
       if (evidence.mediaType === 'image' && item.type !== 'image') return false;
-      return getNormalizedMediaCandidates(item).some((candidate) =>
-        clickedCandidates.has(candidate)
-      );
+      const candidates = getMediaCandidates(item);
+      return evidence.sourceKey
+        ? candidates.some((candidate) => getMediaSourceKey(candidate) === evidence.sourceKey)
+        : candidates.some((candidate) => {
+            const normalized = normalizeMediaUrl(candidate);
+            return !!normalized && clickedCandidates.has(normalized);
+          });
     });
 
     return index >= 0 ? { status: 'matched', index } : { status: 'contradictory', index: 0 };
@@ -126,7 +146,7 @@ function extractUrlFromCssValue(value: string): string | null {
   return match?.[1]?.trim() || null;
 }
 
-function getNormalizedMediaCandidates(item: MediaInfo): string[] {
+function getMediaCandidates(item: MediaInfo): string[] {
   const candidates: Array<string | null | undefined> = [
     item.url,
     item.originalUrl,
@@ -146,9 +166,5 @@ function getNormalizedMediaCandidates(item: MediaInfo): string[] {
     );
   }
 
-  const normalized = candidates
-    .map((candidate) => (candidate ? normalizeMediaUrl(candidate) : null))
-    .filter((candidate): candidate is string => !!candidate);
-
-  return Array.from(new Set(normalized));
+  return Array.from(new Set(candidates.filter((candidate): candidate is string => !!candidate)));
 }

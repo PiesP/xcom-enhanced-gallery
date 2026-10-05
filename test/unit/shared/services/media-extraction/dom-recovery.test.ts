@@ -2,6 +2,8 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { DOMFallbackExtractor } from '@shared/services/media-extraction/extractors/dom-fallback-extractor';
+import { captureClickedMediaEvidence } from '@shared/services/media-extraction/determine-clicked-index';
+import { selectMediaSourceUrl } from '@shared/utils/media/media-element-utils';
 import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -55,6 +57,85 @@ describe('scoped DOM recovery', () => {
   it('never turns a blob-only video into another photo', async () => {
     document.body.innerHTML = `<a href="/author/status/222/video/1"><video id="target" src="blob:https://x.com/playback" poster="https://pbs.twimg.com/ext_tw_video_thumb/900/pu/img/poster.jpg"></video>${photo('other')}</a>`;
     const result = await recover('target');
+    expect(result.success).toBe(false);
+  });
+
+  it.each([true, false])('does not accept image replacement through a retained background (background: %s)', async (background) => {
+    document.body.innerHTML = `<article><a href="/author/status/222"><time>Now</time></a><div data-testid="tweetPhoto" ${background ? 'style="background-image: url(https://pbs.twimg.com/media/review-A.jpg)"' : ''}><img id="target" src="https://pbs.twimg.com/media/review-A.jpg"></div></article>`;
+    const target = document.getElementById('target')!;
+    const owner = new TweetInfoExtractor().extract(target)!;
+    const clickedMediaEvidence = captureClickedMediaEvidence(target);
+    target.setAttribute('src', 'https://pbs.twimg.com/media/review-B.jpg');
+    const result = await new DOMFallbackExtractor().extract(owner, target, { clickedMediaEvidence }, 'replaced');
+    expect(result.success).toBe(false);
+  });
+
+  it('recovers an unchanged image with a matching background', async () => {
+    document.body.innerHTML = '<article><a href="/author/status/222"><time>Now</time></a><div style="background-image: url(https://pbs.twimg.com/media/review-A.jpg)"><img id="target" src="https://pbs.twimg.com/media/review-A.jpg"></div></article>';
+    const target = document.getElementById('target')!;
+    const owner = new TweetInfoExtractor().extract(target)!;
+    const result = await new DOMFallbackExtractor().extract(owner, target, { clickedMediaEvidence: captureClickedMediaEvidence(target) }, 'unchanged');
+    expect(result.success).toBe(true);
+    expect(result.mediaItems[result.clickedIndex!]?.url).toBe('https://pbs.twimg.com/media/review-A.jpg');
+  });
+
+  it.each([false, true])('recovers only an unchanged single child source (mutated: %s)', async (mutated) => {
+    document.body.innerHTML = '<article><a href="/author/status/222"><time>Now</time></a><video id="target" preload="none"><source src="https://video.twimg.com/ext_tw_video/222/pu/vid/review-A.mp4" type="video/mp4"></video></article>';
+    const target = document.getElementById('target')!;
+    expect((target as HTMLVideoElement).currentSrc).toBe('');
+    const owner = new TweetInfoExtractor().extract(target)!;
+    const clickedMediaEvidence = captureClickedMediaEvidence(target);
+    if (mutated) target.querySelector('source')!.src = 'https://video.twimg.com/ext_tw_video/222/pu/vid/review-B.mp4';
+    const result = await new DOMFallbackExtractor().extract(owner, target, { clickedMediaEvidence }, 'child-source');
+    expect(result.success).toBe(!mutated);
+    if (!mutated) expect(result.mediaItems[result.clickedIndex!]?.url).toContain('review-A.mp4');
+  });
+
+  it('rejects multiple unresolved child video sources', async () => {
+    document.body.innerHTML = '<article><a href="/author/status/222"><time>Now</time></a><video id="target" preload="none"><source src="https://video.twimg.com/ext_tw_video/222/pu/vid/review-A.mp4"><source src="https://video.twimg.com/ext_tw_video/222/pu/vid/review-B.mp4"></video></article>';
+    const target = document.getElementById('target')!;
+    const owner = new TweetInfoExtractor().extract(target)!;
+    const result = await new DOMFallbackExtractor().extract(owner, target, { clickedMediaEvidence: captureClickedMediaEvidence(target) }, 'ambiguous-sources');
+    expect(result.success).toBe(false);
+  });
+
+  it('keeps video identity when currentSrc initializes to its unchanged child source', async () => {
+    document.body.innerHTML = '<article><a href="/author/status/222"><time>Now</time></a><video id="target" preload="none"><source src="https://video.twimg.com/ext_tw_video/222/pu/vid/review-A.mp4"></video></article>';
+    const target = document.getElementById('target') as HTMLVideoElement;
+    const owner = new TweetInfoExtractor().extract(target)!;
+    const clickedMediaEvidence = captureClickedMediaEvidence(target);
+    Object.defineProperty(target, 'currentSrc', { configurable: true, get: () => 'https://video.twimg.com/ext_tw_video/222/pu/vid/review-A.mp4' });
+    const result = await new DOMFallbackExtractor().extract(owner, target, { clickedMediaEvidence }, 'initialized-current-source');
+    expect(result.success).toBe(true);
+    expect(result.mediaItems[result.clickedIndex!]?.url).toContain('review-A.mp4');
+  });
+
+  it('uses currentSrc ahead of a conflicting src and refuses a different selected source', async () => {
+    document.body.innerHTML = '<article><a href="/author/status/222"><time>Now</time></a><img id="target" src="https://pbs.twimg.com/media/review-B.jpg"></article>';
+    const target = document.getElementById('target') as HTMLImageElement;
+    let current = 'https://pbs.twimg.com/media/review-A.jpg?name=small';
+    Object.defineProperty(target, 'currentSrc', { configurable: true, get: () => current });
+    const owner = new TweetInfoExtractor().extract(target)!;
+    const clickedMediaEvidence = captureClickedMediaEvidence(target);
+    expect(selectMediaSourceUrl(target)).toBe(current);
+    current = 'https://pbs.twimg.com/media/review-A?format=jpg&name=orig';
+    const variant = await new DOMFallbackExtractor().extract(owner, target, { clickedMediaEvidence }, 'variant');
+    expect(variant.success).toBe(true);
+    expect(variant.mediaItems[variant.clickedIndex!]?.url).toBe(current);
+    current = 'https://pbs.twimg.com/media/review-B.jpg';
+    const changed = await new DOMFallbackExtractor().extract(owner, target, { clickedMediaEvidence }, 'different-current');
+    expect(changed.success).toBe(false);
+  });
+
+  it.each([
+    '<source src="https://evil.invalid/review-A.mp4">',
+    '<source src="blob:https://x.com/review-A">',
+    '',
+  ])('rejects child-source video without a trusted original: %s', async (source) => {
+    document.body.innerHTML = `<article><a href="/author/status/222"><time>Now</time></a><video id="target" poster="https://pbs.twimg.com/ext_tw_video_thumb/222/pu/img/poster.jpg">${source}</video></article>`;
+    const target = document.getElementById('target')!;
+    const owner = new TweetInfoExtractor().extract(target)!;
+    const result = await new DOMFallbackExtractor().extract(owner, target, { clickedMediaEvidence: captureClickedMediaEvidence(target) }, 'untrusted-source');
     expect(result.success).toBe(false);
   });
 });
