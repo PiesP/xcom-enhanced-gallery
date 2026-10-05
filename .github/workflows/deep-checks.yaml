@@ -50,7 +50,7 @@ jobs:
           submodules: true
 
       - name: 📦 Setup fingerprint runtime
-        uses: PiesP/browser-core/automation/actions/setup-project@1e3de928cb6828dc81b19f18a450f8320985720b
+        uses: PiesP/browser-core/automation/actions/setup-project@279124fa998847bd0184d2de12bdaadcd6d2f969
         with:
           install-dependencies: 'false'
 
@@ -149,7 +149,7 @@ jobs:
           submodules: true
 
       - name: 📦 Setup fingerprint runtime
-        uses: PiesP/browser-core/automation/actions/setup-project@1e3de928cb6828dc81b19f18a450f8320985720b
+        uses: PiesP/browser-core/automation/actions/setup-project@279124fa998847bd0184d2de12bdaadcd6d2f969
         with:
           install-dependencies: 'false'
 
@@ -208,7 +208,7 @@ jobs:
 
       - name: 📦 Setup project
         if: ${{ steps.marker.outputs.reuse != 'true' }}
-        uses: PiesP/browser-core/automation/actions/setup-project@1e3de928cb6828dc81b19f18a450f8320985720b
+        uses: PiesP/browser-core/automation/actions/setup-project@279124fa998847bd0184d2de12bdaadcd6d2f969
 
       - name: 🧬 Run mutation gate
         id: check
