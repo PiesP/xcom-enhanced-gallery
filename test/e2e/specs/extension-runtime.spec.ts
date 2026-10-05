@@ -462,7 +462,7 @@ test('executes the Firefox background module and registers its runtime listeners
 });
 
 
-test('installed Chrome extension scopes article-less tile recovery and preserves teardown', async ({ browserName }) => {
+test('loads the Chrome extension and scopes article-less tile recovery with teardown', async ({ browserName }) => {
   test.skip(browserName !== 'chromium', 'Chrome extension loading requires Chromium');
   const userDataDir = mkdtempSync(join(tmpdir(), 'xeg-tile-extension-'));
   const context = await chromium.launchPersistentContext(userDataDir, {

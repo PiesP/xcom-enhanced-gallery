@@ -10,7 +10,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, test } from 'node:test';
 import { createContext, Script } from 'node:vm';
-import { By, until } from 'selenium-webdriver';
+import { By, Key, until } from 'selenium-webdriver';
 import * as firefox from 'selenium-webdriver/firefox.js';
 import { FIREFOX_EXTENSION_DIR, MOCK_GALLERY_HTML } from './fixtures/artifacts.ts';
 
@@ -574,8 +574,8 @@ test(
     );
     assert.equal(await gallery.isDisplayed(), true);
 
-    await firefoxDriver.executeScript("document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))");
-    await firefoxDriver.wait(async () => (await firefoxDriver.findElements(By.css('[data-xeg-gallery-container]'))).length === 0, WAIT_TIMEOUT_MS);
+    await firefoxDriver.actions().sendKeys(Key.ESCAPE).perform();
+    await firefoxDriver.wait(async () => (await firefoxDriver.findElements(By.css('[data-xeg-gallery-container]'))).length === 0, WAIT_TIMEOUT_MS, 'Firefox gallery did not close before tile recovery');
     await firefoxDriver.executeScript("document.querySelector('main').innerHTML = arguments[0]", STATUS_TILE_DOM);
     await (await firefoxDriver.findElement(By.id('tile-target'))).click();
     const tileGallery = await firefoxDriver.wait(until.elementLocated(By.css('[data-xeg-gallery-container]')), WAIT_TIMEOUT_MS);
