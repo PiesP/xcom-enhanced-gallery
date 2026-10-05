@@ -7,6 +7,11 @@
 
 import { MAX_ANCESTOR_HOPS, MAX_DESCENDANT_DEPTH } from '@constants/performance';
 
+const VIDEO_PLAYER_SELECTOR = '[data-testid="videoPlayer"]';
+// The authenticated X click target was seven ancestors below its videoPlayer.
+// Leave a bounded margin for equivalent overlays without searching the page.
+const MAX_VIDEO_PLAYER_ANCESTOR_HOPS = 12;
+
 export type MediaElement = HTMLImageElement | HTMLVideoElement;
 
 export type MediaTraversalOptions = {
@@ -45,6 +50,16 @@ export function findMediaElementInDOM(
 
   if (isMediaElement(target)) return target;
 
+  // X can place a click overlay deeper than the generic ancestor limit. A
+  // videoPlayer is an explicit boundary: select only its one owned video, never
+  // a video from an adjacent or nested player.
+  const playerHopLimit =
+    options.maxAncestorHops === undefined
+      ? MAX_VIDEO_PLAYER_ANCESTOR_HOPS
+      : Math.max(0, Math.min(maxAncestorHops, MAX_VIDEO_PLAYER_ANCESTOR_HOPS));
+  const player = findNearestVideoPlayer(target, playerHopLimit);
+  if (player) return findUniqueVideoInPlayer(player, maxDescendantDepth);
+
   const descendant = findMediaDescendant(target, {
     includeRoot: false,
     maxDepth: maxDescendantDepth,
@@ -63,6 +78,38 @@ export function findMediaElementInDOM(
   }
 
   return null;
+}
+
+function findNearestVideoPlayer(target: HTMLElement, maxHops: number): HTMLElement | null {
+  let branch: HTMLElement | null = target;
+  for (let hops = 0; hops <= maxHops && branch; hops++) {
+    if (branch.matches(VIDEO_PLAYER_SELECTOR)) return branch;
+    branch = branch.parentElement;
+  }
+  return null;
+}
+
+function findUniqueVideoInPlayer(player: HTMLElement, maxDepth: number): HTMLVideoElement | null {
+  const queue: QueueNode[] = [{ node: player, depth: 0 }];
+  let head = 0;
+  let found: HTMLVideoElement | null = null;
+
+  while (head < queue.length) {
+    const current = queue[head++];
+    if (!current) break;
+    const { node, depth } = current;
+    if (node !== player && node.matches(VIDEO_PLAYER_SELECTOR)) continue;
+    if (node instanceof HTMLVideoElement) {
+      if (found) return null;
+      found = node;
+    }
+    if (depth >= maxDepth) continue;
+    for (const child of Array.from(node.children)) {
+      if (child instanceof HTMLElement) queue.push({ node: child, depth: depth + 1 });
+    }
+  }
+
+  return found;
 }
 
 export function extractMediaUrlFromElement(element: MediaElement): string | null {

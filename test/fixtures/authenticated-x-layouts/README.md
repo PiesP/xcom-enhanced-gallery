@@ -1,9 +1,10 @@
 # Authenticated X layout captures
 
 Each HTML file is the exact, complete `html` field of its namesake entry in a
-bounded sanitized capture record, except `video-surface-controls.html`, which
-is the `video-click-observed` record's `capture.html` for the
-`block-controls-only` mode. Capture provenance:
+bounded sanitized capture record, except `video-surface-controls.html` and
+`video-deep-overlay.html`, which are the respective `video-click-observed`
+records' `capture.html` fields for the `block-controls-only` mode. Capture
+provenance:
 
 | Record | Fixtures | UTC capture time |
 | --- | --- | --- |
@@ -12,13 +13,15 @@ is the `video-click-observed` record's `capture.html` for the
 | `edge-shapes5/output/sanitized-captures.json` | `quote`, `profile-media-tile` | 2026-10-05 13:35 |
 | `edge-bounded-states/output/sanitized-captures.json` | `video-before-interaction`, `video-after-native-interaction`, `x-article-media-ancestry` | 2026-10-05 13:37 |
 | `edge-live-hit/output/live-acceptance.json` | `video-surface-controls` | Not separately stamped in the record |
+| `edge-live-owner-shape/output/live-acceptance.json` | `video-deep-overlay` | 2026-10-05 14:15–14:16 |
 
 The captures came from an authenticated X session in Microsoft Edge
 154.0.4258.53 on Windows 11 Pro 26300. The X UI language was Korean and the
 viewport was 1912 × 901. Other extensions were disabled for the `edge-shapes`
 and `edge-bounded-states` captures, and XCOM was not enabled in those captures.
-The `edge-live-hit` record was collected with the Chrome MV3 unpacked XCOM
-extension 2.3.3 enabled in Edge. The repository source at capture was
+The `edge-live-hit` and `edge-live-owner-shape` records were collected with the
+Chrome MV3 unpacked XCOM extension 2.3.3 enabled in Edge. The latter record
+had zero other enabled extensions. The repository source at capture was
 `09b0b6734618ef25d58f5a73e1d2a3e13ea9b03c`.
 
 The capture replaced author and post IDs, media URLs, unknown test IDs, and
@@ -40,6 +43,13 @@ after the native interaction it had `readyState=4`, was playing, had width
 sanitized HTML. The 12-element X Article fixture retains the path through nine
 ancestor levels to `twitterArticleReadView` while omitting sibling subtrees;
 it proves the image's guarded context, not the full Article layout.
+
+The `video-deep-overlay` click is an actual trusted event target in a complete
+333-element sanitized post. Its target is seven ancestors below the nearest
+`videoPlayer`, while that player's one video is six descendants below it. The
+generic three-ancestor lookup misses the video. Its regression test resolves
+only the uniquely owned video within bounded player traversal; adjacent,
+nested, ambiguous, and out-of-bound video candidates remain excluded.
 
 The inline row has Korean previous/next controls but no
 `aria-roledescription="carousel"`; the native viewer has that role description
