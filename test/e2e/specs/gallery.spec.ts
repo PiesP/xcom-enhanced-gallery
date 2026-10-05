@@ -136,8 +136,8 @@ test.describe('X.com Enhanced Gallery E2E', () => {
       await expect(gallery).toBeVisible();
       await expect(gallery.locator('[data-gallery-element="item"]')).toHaveCount(1);
       await expect(gallery.locator('img')).toHaveAttribute('src', /tile-photo/);
-      await expect(page.locator('[data-gm-notification]')).toContainText('Visible media only');
-      await expect(page.locator('[data-gm-notification]')).toContainText('Bulk download includes only the items shown.');
+      await expect(page.locator('[data-gm-notification]').last()).toContainText('Visible media only');
+      await expect(page.locator('[data-gm-notification]').last()).toContainText('Bulk download includes only the items shown.');
       await page.keyboard.press('Escape');
       await expect(gallery).toHaveCount(0);
     }
