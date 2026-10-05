@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { DOMFallbackExtractor } from '@shared/services/media-extraction/extractors/dom-fallback-extractor';
 import { captureClickedMediaEvidence } from '@shared/services/media-extraction/determine-clicked-index';
-import { selectMediaSourceUrl } from '@shared/utils/media/media-element-utils';
+import { findMediaElementInDOM, selectMediaSourceUrl } from '@shared/utils/media/media-element-utils';
 import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -58,6 +60,98 @@ describe('scoped DOM recovery', () => {
     document.body.innerHTML = `<a href="/author/status/222/video/1"><video id="target" src="blob:https://x.com/playback" poster="https://pbs.twimg.com/ext_tw_video_thumb/900/pu/img/poster.jpg"></video>${photo('other')}</a>`;
     const result = await recover('target');
     expect(result.success).toBe(false);
+  });
+
+  it('resolves the uniquely owned video from the actual deep X overlay click', () => {
+    document.body.innerHTML = readFileSync(
+      resolve('test/fixtures/authenticated-x-layouts/video-deep-overlay.html'),
+      'utf8'
+    );
+    const target = document.querySelector<HTMLElement>('[data-capture-event-target="true"]');
+    const player = target?.closest('[data-testid="videoPlayer"]');
+    const video = player?.querySelector('video');
+    expect(target).not.toBeNull();
+    expect(player).not.toBeNull();
+    expect(video).not.toBeNull();
+    expect(findMediaElementInDOM(target!)).toBe(video);
+    const evidence = captureClickedMediaEvidence(target!);
+    expect(evidence.mediaType).toBe('video');
+    expect(evidence.urls).toContain('media-901');
+    expect(evidence.sourceKey).toBeNull();
+  });
+
+  it('does not choose between two videos in the captured click player', () => {
+    document.body.innerHTML = readFileSync(
+      resolve('test/fixtures/authenticated-x-layouts/video-deep-overlay.html'),
+      'utf8'
+    );
+    const target = document.querySelector<HTMLElement>('[data-capture-event-target="true"]')!;
+    const player = target.closest<HTMLElement>('[data-testid="videoPlayer"]')!;
+    const second = document.createElement('video');
+    second.src = 'blob:https://x.com/another-video';
+    player.append(second);
+    expect(findMediaElementInDOM(target)).toBeNull();
+    expect(captureClickedMediaEvidence(target).mediaType).toBeNull();
+  });
+
+  it('keeps adjacent and nested players outside the clicked player ownership', () => {
+    document.body.innerHTML = readFileSync(
+      resolve('test/fixtures/authenticated-x-layouts/video-deep-overlay.html'),
+      'utf8'
+    );
+    const target = document.querySelector<HTMLElement>('[data-capture-event-target="true"]')!;
+    const player = target.closest<HTMLElement>('[data-testid="videoPlayer"]')!;
+    const ownedVideo = player.querySelector('video')!;
+
+    const adjacent = document.createElement('div');
+    adjacent.dataset.testid = 'videoPlayer';
+    adjacent.innerHTML = '<video src="blob:https://x.com/adjacent-video"></video>';
+    player.after(adjacent);
+
+    const nested = document.createElement('div');
+    nested.dataset.testid = 'videoPlayer';
+    nested.innerHTML = '<div data-nested-click></div><video src="blob:https://x.com/nested-video"></video>';
+    player.append(nested);
+
+    expect(findMediaElementInDOM(target)).toBe(ownedVideo);
+    expect(findMediaElementInDOM(nested.querySelector<HTMLElement>('[data-nested-click]')!)).toBe(
+      nested.querySelector('video')
+    );
+    expect(findMediaElementInDOM(adjacent)).toBe(adjacent.querySelector('video'));
+  });
+
+  it('keeps the explicit player video lookup within the descendant depth bound', () => {
+    document.body.innerHTML = readFileSync(
+      resolve('test/fixtures/authenticated-x-layouts/video-deep-overlay.html'),
+      'utf8'
+    );
+    const target = document.querySelector<HTMLElement>('[data-capture-event-target="true"]')!;
+    expect(findMediaElementInDOM(target, { maxAncestorHops: 0 })).toBeNull();
+    expect(findMediaElementInDOM(target, { maxAncestorHops: 7 })).toBe(
+      target.closest('[data-testid="videoPlayer"]')?.querySelector('video')
+    );
+    expect(findMediaElementInDOM(target, { maxDescendantDepth: 5 })).toBeNull();
+    expect(findMediaElementInDOM(target, { maxDescendantDepth: 6 })).toBe(
+      target.closest('[data-testid="videoPlayer"]')?.querySelector('video')
+    );
+  });
+
+  it('does not search more than twelve ancestors for an explicit player', () => {
+    const player = document.createElement('div');
+    player.dataset.testid = 'videoPlayer';
+    const video = document.createElement('video');
+    player.append(video);
+    let branch: HTMLElement = player;
+    for (let i = 0; i < 13; i++) {
+      const wrapper = document.createElement('div');
+      branch.append(wrapper);
+      branch = wrapper;
+    }
+    const target = document.createElement('div');
+    branch.append(target);
+    document.body.append(player);
+    expect(target.closest('[data-testid="videoPlayer"]')).toBe(player);
+    expect(findMediaElementInDOM(target)).toBeNull();
   });
 
   it.each([true, false])('does not accept image replacement through a retained background (background: %s)', async (background) => {
