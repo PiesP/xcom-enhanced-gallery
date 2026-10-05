@@ -76,6 +76,8 @@ export interface MediaExtractionOptions {
 export interface ClickedMediaEvidence {
   readonly urls: readonly string[];
   readonly mediaType: 'image' | 'video' | null;
+  /** Identity of the selected source, separate from poster/background hints. */
+  readonly sourceKey: string | null;
 }
 
 /**

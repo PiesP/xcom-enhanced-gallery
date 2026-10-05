@@ -69,6 +69,20 @@ describe('integrated scoped recovery and delayed identity', () => {
     expect((await pending).success).toBe(false);
   });
 
+  it('does not substitute a replaced image after a delayed HTTP failure when the old background remains', async () => {
+    let finish!: (value: { ok: boolean; status: number; data: object }) => void;
+    httpGet.mockReturnValue(new Promise((resolve) => { finish = resolve; }));
+    document.body.innerHTML = '<article><a href="/author/status/222"><time>Now</time></a><div style="background-image: url(https://pbs.twimg.com/media/review-A.jpg)"><img id="target" src="https://pbs.twimg.com/media/review-A.jpg"></div></article>';
+    const target = document.getElementById('target')!;
+    const pending = new MediaExtractionService().extractFromClickedElement(target);
+    await vi.waitFor(() => expect(httpGet).toHaveBeenCalledTimes(1));
+    target.setAttribute('src', 'https://pbs.twimg.com/media/review-B.jpg');
+    finish({ ok: false, status: 503, data: {} });
+    const result = await pending;
+    expect(result.success).toBe(false);
+    expect(result.mediaItems.some((item) => item.url.includes('review-B.jpg'))).toBe(false);
+  });
+
   it('preserves the clicked duplicate through DOM filtering and final deduplication', async () => {
     httpGet.mockResolvedValue({ ok: false, status: 503, data: {} });
     document.body.innerHTML = '<article><a href="/author/status/222"><time>Now</time></a><div><img src="https://pbs.twimg.com/media/same.jpg"><img src="https://pbs.twimg.com/profile_images/900/avatar.jpg"><img id="target" src="https://pbs.twimg.com/media/same.jpg"></div></article>';
