@@ -89,7 +89,7 @@ export class MediaExtractionService implements MediaExtractor {
 
   private isApiCircuitOpen(): boolean {
     if (!this.apiCircuitOpen) return false;
-    if (Date.now() - this.lastApiFailureTime > MediaExtractionService.CIRCUIT_RESET_MS) {
+    if (Date.now() - this.lastApiFailureTime >= MediaExtractionService.CIRCUIT_RESET_MS) {
       this.apiCircuitOpen = false;
       this.apiFailureCount = 0;
       return false;
@@ -168,6 +168,7 @@ export class MediaExtractionService implements MediaExtractor {
 
       // Yield before CPU-intensive DOM fallback extraction
       await schedulerYield();
+      if (options.signal?.aborted) return createErrorResult('Extraction cancelled');
 
       const domResult = await this.domFallbackExtractor.extract(
         tweetInfo,

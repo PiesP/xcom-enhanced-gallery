@@ -56,6 +56,11 @@ userscript for a persistent installation.
 4. Use the toolbar to change fit mode, download the current item, or download
    all media as a ZIP.
 
+If post extraction is unavailable, a status-linked media tile may recover only
+its visible, accessible media. A notification identifies this partial recovery;
+bulk ZIP downloads include only the items shown in the gallery. A tile does not
+establish all attachments of the post.
+
 The gallery targets desktop browsers and does not provide a mobile/touch flow.
 
 ## Browser support

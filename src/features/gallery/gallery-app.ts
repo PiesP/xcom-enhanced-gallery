@@ -114,6 +114,14 @@ export class GalleryApp {
         this.openGallery(result.mediaItems, result.clickedIndex, {
           reason: 'media-click',
         });
+        if (result.metadata?.recoveryScope === 'visible-tile') {
+          const lang = getLanguageService();
+          notifySafely(
+            getNotificationAdapter(),
+            lang.translate('msg.gal.partialRecovery.title'),
+            lang.translate('msg.gal.partialRecovery.body')
+          );
+        }
       } else {
         mediaErrorReporter.warn(new Error('Media extraction returned no items'), {
           code: 'MEDIA_EXTRACTION_EMPTY',

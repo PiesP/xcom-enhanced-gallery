@@ -8,6 +8,12 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **DOM recovery** — Preserve mixed image/video order and recover accessible media from a trusted status-linked tile without collecting neighboring posts. Tile recovery is disclosed as partial; bulk downloads include only the gallery items.
+- **Clicked media** — Preserve click-time identity across delayed requests and DOM replacement. Fail explicitly when image selection lacks sufficient evidence instead of opening an arbitrary first item.
+- **API recovery** — Allow recovery after the existing cooldown despite skipped clicks, and keep cancellation, missing media, and selection failures out of API outage accounting.
+
 ## [2.3.3] - 2026-10-04
 
 ### Fixed

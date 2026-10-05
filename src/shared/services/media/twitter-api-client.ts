@@ -21,6 +21,14 @@ import {
 import type { TweetMediaEntry, TwitterAPIResponse } from '@shared/services/media/types';
 import { sortMediaByVisualOrder } from '@shared/utils/media/media-dimensions';
 
+/** An attempted transport or provider failure, distinct from local extraction. */
+export class TwitterAPIRequestError extends Error {
+  constructor(message: string, cause?: unknown) {
+    super(message, { cause });
+    this.name = 'TwitterAPIRequestError';
+  }
+}
+
 // ============================================================================
 // Location Config (injected for referential transparency / testability)
 // ============================================================================
@@ -153,20 +161,29 @@ async function apiRequest(
   }
 
   const httpService = getHttpRequestService();
-  const response = await httpService.get<TwitterAPIResponse>(url, {
-    headers: Object.fromEntries(headers.entries()),
-    responseType: 'json',
-    ...(signal ? { signal } : {}),
-  });
+  const response = await httpService
+    .get<TwitterAPIResponse>(url, {
+      headers: Object.fromEntries(headers.entries()),
+      responseType: 'json',
+      ...(signal ? { signal } : {}),
+    })
+    .catch((error: unknown) => {
+      if (signal?.aborted || (error instanceof Error && error.name === 'AbortError')) throw error;
+      throw new TwitterAPIRequestError('Twitter API transport failed', error);
+    });
 
   if (!response.ok) {
     if (__DEV__) {
       logger.warn(`Twitter API request failed: ${response.status}`, response.data);
     }
-    throw new Error(`TW:${response.status}`);
+    throw new TwitterAPIRequestError(`TW:${response.status}`);
   }
 
   const json = response.data;
+  // Successful responses without media are not outages. Provider error responses are.
+  if (json.errors?.length && !json.data?.tweetResult?.result) {
+    throw new TwitterAPIRequestError('Twitter API returned a provider error');
+  }
 
   if (__DEV__ && json.errors && json.errors.length > 0) {
     logger.warn('Twitter API returned errors:', json.errors);

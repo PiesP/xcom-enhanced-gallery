@@ -8,9 +8,10 @@
  */
 
 import { MEDIA } from '@constants/media';
-import { TWEET_CONTAINER_SELECTORS } from '@constants/selectors';
+import { STATUS_LINK_SELECTOR, TWEET_CONTAINER_SELECTORS } from '@constants/selectors';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
+import { captureClickedMediaEvidence } from '@shared/services/media-extraction/determine-clicked-index';
 import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
 import type {
   MediaExtractionOptions,
@@ -37,25 +38,11 @@ import { isValidMediaUrl } from '@shared/utils/url/validator';
  * @returns Array of media elements (img, video)
  */
 function findAllMediaInContainer(container: HTMLElement): MediaElement[] {
-  const mediaElements: MediaElement[] = [];
-
   const cdnSelector = MEDIA.HOSTS.MEDIA_CDN.map((h) => `img[src*="${h}"]`).join(', ');
-  const images = container.querySelectorAll<HTMLImageElement>(cdnSelector);
-  for (const img of images) {
-    if (isMediaElement(img)) {
-      mediaElements.push(img);
-    }
-  }
-
-  // Find all videos
-  const videos = container.querySelectorAll<HTMLVideoElement>('video');
-  for (const video of videos) {
-    if (isMediaElement(video)) {
-      mediaElements.push(video);
-    }
-  }
-
-  return mediaElements;
+  // A single selector list retains document order across media types.
+  return Array.from(container.querySelectorAll<HTMLElement>(`${cdnSelector}, video`)).filter(
+    isMediaElement
+  );
 }
 
 /**
@@ -142,7 +129,7 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
   async extract(
     tweetInfo: TweetInfo,
     clickedElement: HTMLElement,
-    _options: MediaExtractionOptions,
+    options: MediaExtractionOptions,
     extractionId: string
   ): Promise<MediaExtractionResult> {
     try {
@@ -153,12 +140,16 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
       }
 
       // Step 1: Find the tweet container
-      const tweetContainer = closestWithFallback<HTMLElement>(
-        clickedElement,
-        TWEET_CONTAINER_SELECTORS
-      );
+      const article = closestWithFallback<HTMLElement>(clickedElement, TWEET_CONTAINER_SELECTORS);
 
-      if (!tweetContainer || !(tweetContainer instanceof HTMLElement)) {
+      const ownerExtractor = new TweetInfoExtractor();
+      const anchor = clickedElement.closest<HTMLElement>(STATUS_LINK_SELECTOR);
+      const anchorOwner = anchor ? ownerExtractor.extract(anchor) : null;
+      // Article-less recovery is bounded to a positively owned enclosing link.
+      const tile = anchorOwner?.tweetId === tweetInfo.tweetId ? anchor : null;
+      const tweetContainer = article ?? tile;
+      const currentOwner = ownerExtractor.extract(clickedElement);
+      if (!tweetContainer || currentOwner?.tweetId !== tweetInfo.tweetId) {
         return createFailureResult(
           'No tweet container found',
           'dom-fallback',
@@ -184,7 +175,6 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
       // Build mapping from element to mediaItems index
       const mediaItems: MediaInfo[] = [];
       const elementToIndexMap = new Map<MediaElement, number>();
-      const ownerExtractor = new TweetInfoExtractor();
 
       for (let i = 0; i < mediaElements.length; i++) {
         const element = mediaElements[i];
@@ -209,17 +199,26 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
 
       // Step 5: Determine which media was clicked
       const clickedMedia = findMediaElementInDOM(clickedElement);
-      let clickedIndex = 0;
+      const mappedIndex = clickedMedia ? elementToIndexMap.get(clickedMedia) : undefined;
+      if (mappedIndex === undefined)
+        return createFailureResult(
+          'Clicked media is not available as an original DOM source',
+          'dom-fallback',
+          'dom-clicked-media-unavailable'
+        );
+      const clickedIndex = mappedIndex;
 
-      if (clickedMedia) {
-        const mappedIndex = elementToIndexMap.get(clickedMedia);
-        if (mappedIndex === undefined)
+      if (options.clickedMediaEvidence) {
+        const currentEvidence = captureClickedMediaEvidence(clickedElement);
+        if (
+          currentEvidence.mediaType !== options.clickedMediaEvidence.mediaType ||
+          !currentEvidence.urls.some((url) => options.clickedMediaEvidence?.urls.includes(url))
+        )
           return createFailureResult(
-            'Clicked media is not available as an original DOM source',
+            'Clicked media changed during extraction',
             'dom-fallback',
             'dom-clicked-media-unavailable'
           );
-        clickedIndex = mappedIndex;
       }
 
       if (__DEV__) {
@@ -240,6 +239,7 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
           sourceType: 'dom-fallback',
           strategy: 'dom-extraction',
           domMediaCount: mediaItems.length,
+          recoveryScope: article ? 'visible-article' : 'visible-tile',
         },
         tweetInfo,
       };

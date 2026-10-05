@@ -158,4 +158,15 @@ describe('GalleryApp media-click currentness', () => {
     expect(state.notify).not.toHaveBeenCalled();
     await app.cleanup();
   });
+  it('discloses visible-tile recovery and still opens only the recovered items', async () => {
+    const result = { ...success('tile'), metadata: { recoveryScope: 'visible-tile' } };
+    state.extract.mockResolvedValue(result);
+    const app = new GalleryApp({ destroy: vi.fn() } as never);
+    await app.initialize();
+    await state.handlers?.onMediaClick(document.createElement('img'), new MouseEvent('click'));
+    expect(state.openGallery).toHaveBeenCalledWith(result.mediaItems, 0);
+    expect(state.notify).toHaveBeenCalledWith({}, 'msg.gal.partialRecovery.title', 'msg.gal.partialRecovery.body');
+    await app.cleanup();
+  });
+
 });

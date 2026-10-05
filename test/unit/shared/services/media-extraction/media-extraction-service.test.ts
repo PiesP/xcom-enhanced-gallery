@@ -355,7 +355,7 @@ describe('MediaExtractionService API circuit', () => {
     for (let skipped = 0; skipped < 4; skipped++) await click(service);
     expect(httpGet).toHaveBeenCalledTimes(3);
 
-    now += 1_001;
+    now += 1_000;
     httpGet.mockResolvedValue({ ok: true, status: 200, data: createQuotedVideoTweetResponse() });
     expect((await click(service)).success).toBe(true);
     expect(httpGet).toHaveBeenCalledTimes(4);

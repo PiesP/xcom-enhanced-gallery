@@ -191,6 +191,11 @@ export interface LanguageStrings {
     };
     /** Gallery messages */
     readonly gal: {
+      /** Article-less DOM recovery includes only the visible tile's accessible media. */
+      readonly partialRecovery: {
+        readonly title: string;
+        readonly body: string;
+      };
       /** Empty gallery title */
       readonly emptyT: string;
       /** Empty gallery description */

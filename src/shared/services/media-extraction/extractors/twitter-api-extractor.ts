@@ -8,8 +8,12 @@
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
 import { convertAPIMediaToMediaInfo } from '@shared/services/media/media-factory';
-import { getTweetMedias } from '@shared/services/media/twitter-api-client';
-import { matchClickedMedia } from '@shared/services/media-extraction/determine-clicked-index';
+import { getTweetMedias, TwitterAPIRequestError } from '@shared/services/media/twitter-api-client';
+import type { TweetMediaEntry } from '@shared/services/media/types';
+import {
+  captureClickedMediaEvidence,
+  matchClickedMedia,
+} from '@shared/services/media-extraction/determine-clicked-index';
 import type {
   MediaExtractionOptions,
   MediaExtractionResult,
@@ -33,43 +37,58 @@ export class TwitterAPIExtractor implements MediaExtractorStrategy {
         });
       }
 
-      // Step 1: Fetch media from API
-      const apiMedias = await getTweetMedias(tweetInfo.tweetId, undefined, options.signal);
+      const clickEvidence =
+        options.clickedMediaEvidence ?? captureClickedMediaEvidence(clickedElement);
+      const tweetTextContent = extractTweetTextHTMLFromClickedElement(clickedElement);
+      // Request failures are distinct from parsing, missing media and click matching.
+      let apiMedias: TweetMediaEntry[];
+      try {
+        apiMedias = await getTweetMedias(tweetInfo.tweetId, undefined, options.signal);
+      } catch (error) {
+        return {
+          ...createFailureResult(
+            normalizeErrorMessage(error),
+            'twitter-api',
+            'api-extraction-failed'
+          ),
+          apiRequestOutcome:
+            options.signal?.aborted || (error instanceof Error && error.name === 'AbortError')
+              ? 'cancelled'
+              : error instanceof TwitterAPIRequestError
+                ? 'failed'
+                : undefined,
+        };
+      }
+      const healthyFailure = (message: string, strategy: string): MediaExtractionResult => ({
+        ...createFailureResult(message, 'twitter-api', strategy),
+        apiRequestOutcome: 'healthy',
+      });
 
       if (!apiMedias || apiMedias.length === 0) {
-        return createFailureResult(
-          'No media found in API response',
-          'twitter-api',
-          'api-extraction-failed'
-        );
+        return healthyFailure('No media found in API response', 'api-media-unavailable');
       }
-
-      // Step 2: Extract tweet text content
-      const tweetTextContent = extractTweetTextHTMLFromClickedElement(clickedElement);
 
       // Step 3: Transform API response to MediaInfo[]
       const mediaItems = convertAPIMediaToMediaInfo(apiMedias, tweetInfo, tweetTextContent);
 
       // Step 4: Calculate which media user clicked
-      const match = matchClickedMedia(clickedElement, mediaItems, tweetInfo.tweetId);
+      const match = matchClickedMedia(clickEvidence, mediaItems, tweetInfo.tweetId);
       if (match.status === 'contradictory') {
-        return createFailureResult(
-          'API media does not match the clicked media',
-          'twitter-api',
-          'api-media-mismatch'
-        );
+        return healthyFailure('API media does not match the clicked media', 'api-media-mismatch');
       }
       const clickedIndex = match.index;
       if (clickedIndex === null) {
-        return createFailureResult(
-          'Insufficient evidence to select the clicked video',
-          'twitter-api',
+        return healthyFailure(
+          clickEvidence.mediaType === 'video'
+            ? 'Insufficient evidence to select the clicked video'
+            : 'Insufficient evidence to select the clicked media',
           'api-media-ambiguous'
         );
       }
 
       return {
         success: true,
+        apiRequestOutcome: 'healthy',
         mediaItems,
         clickedIndex,
         metadata: {
