@@ -91,12 +91,27 @@ describe('scoped DOM recovery', () => {
     if (!mutated) expect(result.mediaItems[result.clickedIndex!]?.url).toContain('review-A.mp4');
   });
 
-  it('rejects multiple unresolved child video sources', async () => {
-    document.body.innerHTML = '<article><a href="/author/status/222"><time>Now</time></a><video id="target" preload="none"><source src="https://video.twimg.com/ext_tw_video/222/pu/vid/review-A.mp4"><source src="https://video.twimg.com/ext_tw_video/222/pu/vid/review-B.mp4"></video></article>';
+  it.each(['https://video.twimg.com/ext_tw_video/222/pu/vid/review-B.mp4', 'https://evil.invalid/review-B.mp4'])('rejects multiple unresolved child video sources, including %s', async (secondSource) => {
+    document.body.innerHTML = `<article><a href="/author/status/222"><time>Now</time></a><video id="target" preload="none"><source src="https://video.twimg.com/ext_tw_video/222/pu/vid/review-A.mp4"><source src="${secondSource}"></video></article>`;
     const target = document.getElementById('target')!;
     const owner = new TweetInfoExtractor().extract(target)!;
     const result = await new DOMFallbackExtractor().extract(owner, target, { clickedMediaEvidence: captureClickedMediaEvidence(target) }, 'ambiguous-sources');
     expect(result.success).toBe(false);
+  });
+
+  it('keeps video currentSrc precedence and rejects replacement despite a retained poster', async () => {
+    document.body.innerHTML = '<article><a href="/author/status/222"><time>Now</time></a><video id="target" src="https://video.twimg.com/ext_tw_video/222/pu/vid/review-B.mp4" poster="https://pbs.twimg.com/ext_tw_video_thumb/222/pu/img/poster-A.jpg"></video></article>';
+    const target = document.getElementById('target') as HTMLVideoElement;
+    let current = 'https://video.twimg.com/ext_tw_video/222/pu/vid/review-A.mp4';
+    Object.defineProperty(target, 'currentSrc', { get: () => current });
+    const owner = new TweetInfoExtractor().extract(target)!;
+    const clickedMediaEvidence = captureClickedMediaEvidence(target);
+    const unchanged = await new DOMFallbackExtractor().extract(owner, target, { clickedMediaEvidence }, 'video-primary-source');
+    expect(unchanged.success).toBe(true);
+    expect(unchanged.mediaItems[unchanged.clickedIndex!]?.url).toBe(current);
+    current = target.src;
+    const changed = await new DOMFallbackExtractor().extract(owner, target, { clickedMediaEvidence }, 'video-replaced-source');
+    expect(changed.success).toBe(false);
   });
 
   it('keeps video identity when currentSrc initializes to its unchanged child source', async () => {
