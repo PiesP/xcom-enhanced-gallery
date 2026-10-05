@@ -95,6 +95,10 @@ export const zhCn: LanguageStrings = {
       zipTooLarge: '此 ZIP 过大，无法在浏览器中安全处理。请单独下载大型媒体文件。',
     },
     gal: {
+      partialRecovery: {
+        title: '仅恢复可见媒体',
+        body: '仅恢复了此卡片中的媒体。批量下载仅包含显示的项目。',
+      },
       emptyT: '无可用媒体',
       emptyD: '没有可显示的图片或视频。',
       itemLbl: '媒体 {index}：{filename}',

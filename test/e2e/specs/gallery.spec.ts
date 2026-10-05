@@ -19,6 +19,7 @@ import { existsSync } from 'node:fs';
 import { DEV_USERSCRIPT_PATH, MOCK_GALLERY_HTML, MOCK_IMAGE } from '../fixtures/artifacts';
 import { installGMMock } from '../fixtures/gm-mock';
 import { injectDevUserscript, waitForGalleryApp } from '../fixtures/userscript-harness';
+import { INTERLEAVED_DOM, STATUS_TILE_DOM } from '../../fixtures/issue-217-dom';
 import { createQuotedVideoTweetResponse } from '../../fixtures/quoted-video-tweet-response';
 import { unanchoredVideoPreview } from '../../fixtures/unanchored-video-preview';
 import { createMixedOwnerVideoResponse } from '../../fixtures/mixed-owner-video-response';
@@ -94,6 +95,54 @@ test.describe('X.com Enhanced Gallery E2E', () => {
         `Dev userscript bundle not found at ${DEV_USERSCRIPT_PATH}. Run 'pnpm build:dev' first.`
       );
     }
+  });
+
+  test('API-off mixed DOM retains document order and clicked item through repeated opens', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.route('https://pbs.twimg.com/**', (route) => route.fulfill({ status: 200, contentType: 'image/png', body: MOCK_IMAGE }));
+    // Empty MP4 fixtures exercise extraction/routing, not video decoding.
+    await page.route('https://video.twimg.com/**', (route) => route.fulfill({ status: 200, contentType: 'video/mp4', body: '' }));
+    await setupGalleryPage(page, 'https://x.com/author/status/222', {}, 503);
+    await page.evaluate((markup) => { document.querySelector('main')!.innerHTML = markup; }, INTERLEAVED_DOM);
+    for (let cycle = 0; cycle < 4; cycle++) {
+      await page.locator('#ordered-target').click();
+      const gallery = page.locator('[data-xeg-gallery-container]');
+      await expect(gallery).toBeVisible();
+      await expect(gallery.locator('[role="progressbar"]')).toHaveAttribute('aria-valuenow', '4');
+      await expect(gallery.locator('[role="progressbar"]')).toHaveAttribute('aria-valuemax', '4');
+      const items = gallery.locator('[data-gallery-element="item"]');
+      await expect(items).toHaveCount(4);
+      await expect(items.nth(0).locator('video')).toHaveAttribute('src', /first\.mp4/);
+      await expect(items.nth(1).locator('img')).toHaveAttribute('src', /first-photo/);
+      await expect(items.nth(2).locator('video')).toHaveAttribute('src', /second\.mp4/);
+      await expect(items.nth(3).locator('img')).toHaveAttribute('src', /second-photo/);
+      await page.keyboard.press('Escape');
+      await expect(gallery).toHaveCount(0);
+    }
+    expect(await page.evaluate(() => (window as unknown as { __xegRequestedTweetIds: string[] }).__xegRequestedTweetIds)).toEqual(['222', '222', '222']);
+    expect(errors).toEqual([]);
+  });
+
+  test('article-less tile is scoped and disclosed under API failure and circuit-open', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.route('https://pbs.twimg.com/**', (route) => route.fulfill({ status: 200, contentType: 'image/png', body: MOCK_IMAGE }));
+    await setupGalleryPage(page, 'https://x.com/author/status/222', {}, 503);
+    await page.evaluate((markup) => { document.querySelector('main')!.innerHTML = markup; }, STATUS_TILE_DOM);
+    for (let cycle = 0; cycle < 4; cycle++) {
+      await page.locator('#tile-target').click();
+      const gallery = page.locator('[data-xeg-gallery-container]');
+      await expect(gallery).toBeVisible();
+      await expect(gallery.locator('[data-gallery-element="item"]')).toHaveCount(1);
+      await expect(gallery.locator('img')).toHaveAttribute('src', /tile-photo/);
+      await expect(page.locator('[data-gm-notification]').last()).toContainText('Visible media only');
+      await expect(page.locator('[data-gm-notification]').last()).toContainText('Bulk download includes only the items shown.');
+      await page.keyboard.press('Escape');
+      await expect(gallery).toHaveCount(0);
+    }
+    expect(await page.evaluate(() => (window as unknown as { __xegRequestedTweetIds: string[] }).__xegRequestedTweetIds)).toEqual(['222', '222', '222']);
+    expect(errors).toEqual([]);
   });
 
   for (const apiSuccess of [true, false]) {

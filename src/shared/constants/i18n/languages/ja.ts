@@ -96,6 +96,10 @@ export const ja: LanguageStrings = {
         'このZIPはブラウザーで安全に処理するには大きすぎます。大きなメディアは個別にダウンロードしてください。',
     },
     gal: {
+      partialRecovery: {
+        title: '表示中のメディアのみ',
+        body: 'このタイルのメディアのみを復元しました。一括ダウンロードには表示中の項目のみが含まれます。',
+      },
       emptyT: 'メディアがありません',
       emptyD: '表示する画像や動画がありません。',
       itemLbl: 'メディア {index}: {filename}',

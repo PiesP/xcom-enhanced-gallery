@@ -41,7 +41,7 @@ describe('matchClickedMedia', () => {
 
   it('distinguishes missing URL evidence from contradictory media', () => {
     const image = document.createElement('img');
-    expect(matchClickedMedia(image, [quotedImage], '222')).toEqual({ status: 'unknown', index: 0 });
+    expect(matchClickedMedia(image, [quotedImage], '222')).toEqual({ status: 'unknown', index: null });
     image.src = 'https://pbs.twimg.com/media/another-image.jpg';
     expect(matchClickedMedia(image, [quotedImage], '222')).toEqual({
       status: 'contradictory',

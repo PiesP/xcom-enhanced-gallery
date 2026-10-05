@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
+import { STATUS_TILE_DOM } from '../../fixtures/issue-217-dom';
 import { chromium, expect, test } from '@playwright/test';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -458,4 +459,46 @@ test('executes the Firefox background module and registers its runtime listeners
     keepsChannelOpen: true,
     response: { success: true },
   });
+});
+
+
+test('loads the Chrome extension and scopes article-less tile recovery with teardown', async ({ browserName }) => {
+  test.skip(browserName !== 'chromium', 'Chrome extension loading requires Chromium');
+  const userDataDir = mkdtempSync(join(tmpdir(), 'xeg-tile-extension-'));
+  const context = await chromium.launchPersistentContext(userDataDir, {
+    channel: 'chromium', headless: true,
+    args: [`--disable-extensions-except=${CHROME_EXTENSION_DIR}`, `--load-extension=${CHROME_EXTENSION_DIR}`],
+  });
+  try {
+    const owners: string[] = [];
+    await context.route('https://x.com/**', async (route) => {
+      const url = new URL(route.request().url());
+      if (url.pathname.endsWith('/TweetResultByRestId')) {
+        owners.push(JSON.parse(url.searchParams.get('variables') ?? '{}').tweetId);
+        await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+      } else await route.fulfill({ status: 200, contentType: 'text/html', body: MOCK_GALLERY_HTML });
+    });
+    await context.route('https://pbs.twimg.com/**', (route) => route.fulfill({ status: 200, contentType: 'image/png', body: MOCK_IMAGE }));
+    const page = await context.newPage();
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.goto('https://x.com/author/status/222');
+    await expect(page.locator('html')).toHaveAttribute('data-xeg-gallery-ready', 'true');
+    await page.evaluate((markup) => { document.querySelector('main')!.innerHTML = markup; }, STATUS_TILE_DOM);
+    for (let cycle = 0; cycle < 4; cycle++) {
+      await page.locator('#tile-target').click();
+      const gallery = page.locator('[data-xeg-gallery-container]');
+      await expect(gallery).toBeVisible();
+      await expect(gallery.locator('[data-gallery-element="item"]')).toHaveCount(1);
+      await expect(gallery.locator('img')).toHaveAttribute('src', /tile-photo/);
+      await page.keyboard.press('Escape');
+      await expect(gallery).toHaveCount(0);
+      await expect(page.locator('body')).not.toHaveCSS('overflow', 'hidden');
+    }
+    expect(owners).toEqual(['222', '222', '222']);
+    expect(errors).toEqual([]);
+  } finally {
+    await context.close();
+    rmSync(userDataDir, { recursive: true, force: true });
+  }
 });

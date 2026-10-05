@@ -96,6 +96,10 @@ export const ko: LanguageStrings = {
         '이 ZIP은 브라우저에서 안전하게 처리하기에는 너무 큽니다. 큰 미디어는 개별적으로 다운로드하세요.',
     },
     gal: {
+      partialRecovery: {
+        title: '보이는 미디어만 복구했습니다',
+        body: '이 타일의 미디어만 복구했습니다. 일괄 다운로드에는 표시된 항목만 포함됩니다.',
+      },
       emptyT: '미디어 없음',
       emptyD: '표시할 이미지 또는 동영상이 없습니다.',
       itemLbl: '미디어 {index}: {filename}',

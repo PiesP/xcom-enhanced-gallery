@@ -3,7 +3,7 @@
 
 import { MAX_ANCESTOR_HOPS } from '@constants/performance';
 import { logger } from '@shared/logging/logger';
-import type { MediaInfo } from '@shared/types/media.types';
+import type { ClickedMediaEvidence, MediaInfo } from '@shared/types/media.types';
 import {
   extractMediaUrlCandidatesFromElement,
   findMediaElementInDOM,
@@ -16,23 +16,38 @@ type ClickedMediaMatch =
   | { status: 'unknown'; index: number | null }
   | { status: 'contradictory'; index: 0 };
 
+/** Snapshot only immutable selection evidence before asynchronous extraction. */
+export function captureClickedMediaEvidence(clickedElement: HTMLElement): ClickedMediaEvidence {
+  const mediaElement = findMediaElementInDOM(clickedElement);
+  const expectsVideo =
+    mediaElement instanceof HTMLVideoElement ||
+    isVideoPreview(clickedElement) ||
+    (mediaElement !== null && isVideoPreview(mediaElement));
+  const urls = resolveClickedElementUrls(clickedElement)
+    .map((url) => normalizeMediaUrl(url))
+    .filter((url): url is string => !!url);
+  return {
+    urls: Object.freeze([...new Set(urls)]),
+    mediaType: expectsVideo ? 'video' : mediaElement instanceof HTMLImageElement ? 'image' : null,
+  };
+}
+
 /** Preserve evidence instead of turning a confirmed mismatch into index zero. */
 export function matchClickedMedia(
-  clickedElement: HTMLElement,
+  clickedElement: HTMLElement | ClickedMediaEvidence,
   mediaItems: MediaInfo[],
   clickedTweetId: string
 ): ClickedMediaMatch {
   try {
-    const mediaElement = findMediaElementInDOM(clickedElement);
-    const expectsVideo =
-      mediaElement instanceof HTMLVideoElement ||
-      isVideoPreview(clickedElement) ||
-      (mediaElement !== null && isVideoPreview(mediaElement));
-    const normalizedElementUrls = resolveClickedElementUrls(clickedElement)
-      .map((url) => normalizeMediaUrl(url))
-      .filter((url): url is string => !!url);
+    const evidence =
+      clickedElement instanceof HTMLElement
+        ? captureClickedMediaEvidence(clickedElement)
+        : clickedElement;
+    const expectsVideo = evidence.mediaType === 'video';
+    const normalizedElementUrls = evidence.urls;
     if (normalizedElementUrls.length === 0) {
-      if (!expectsVideo) return { status: 'unknown', index: 0 };
+      // Missing image evidence cannot establish attachment identity or order.
+      if (!expectsVideo) return { status: 'unknown', index: null };
       const videos = mediaItems.flatMap((item, index) =>
         item.type === 'video' || item.type === 'gif' ? [index] : []
       );
@@ -55,7 +70,15 @@ export function matchClickedMedia(
 
     const index = mediaItems.findIndex((item) => {
       if (!item) return false;
+      const apiData = item.metadata?.apiData;
+      if (
+        apiData &&
+        typeof apiData === 'object' &&
+        (!('tweet_id' in apiData) || apiData.tweet_id !== clickedTweetId)
+      )
+        return false;
       if (expectsVideo && item.type !== 'video' && item.type !== 'gif') return false;
+      if (evidence.mediaType === 'image' && item.type !== 'image') return false;
       return getNormalizedMediaCandidates(item).some((candidate) =>
         clickedCandidates.has(candidate)
       );

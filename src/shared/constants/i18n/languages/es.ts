@@ -96,6 +96,10 @@ export const es: LanguageStrings = {
         'Este ZIP es demasiado grande para procesarlo de forma segura en el navegador. Descarga los archivos grandes por separado.',
     },
     gal: {
+      partialRecovery: {
+        title: 'Solo los medios visibles',
+        body: 'Solo se recuperaron los medios de este recuadro. La descarga masiva incluye solo los elementos mostrados.',
+      },
       emptyT: 'Sin medios disponibles',
       emptyD: 'No hay imágenes ni videos para mostrar.',
       itemLbl: 'Medio {index}: {filename}',

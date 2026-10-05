@@ -96,6 +96,10 @@ export const en: LanguageStrings = {
         'This bulk ZIP is too large for safe in-browser processing. Download large media individually.',
     },
     gal: {
+      partialRecovery: {
+        title: 'Visible media only',
+        body: 'Recovered media from this tile only. Bulk download includes only the items shown.',
+      },
       emptyT: 'No media available',
       emptyD: 'There are no images or videos to display.',
       itemLbl: 'Media {index}: {filename}',

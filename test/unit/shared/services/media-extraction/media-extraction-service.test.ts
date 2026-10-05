@@ -19,6 +19,7 @@ vi.mock('@shared/services/media/twitter-auth/twitter-auth', () => ({
 
 import { MediaExtractionService } from '@shared/services/media-extraction/media-extraction-service';
 import { getTweetMedias } from '@shared/services/media/twitter-api-client';
+import type { MediaExtractionResult } from '@shared/types/media.types';
 
 describe('MediaExtractionService quoted media selection', () => {
   beforeEach(() => {
@@ -314,5 +315,116 @@ describe('MediaExtractionService quoted media selection', () => {
     const result = await pending;
     expect(result.success).toBe(false);
     expect(result.metadata?.error).toBe('Extraction cancelled');
+  });
+});
+
+describe('MediaExtractionService API circuit', () => {
+  let now = 1_000_000;
+
+  beforeEach(() => {
+    now = 1_000_000;
+    vi.spyOn(Date, 'now').mockImplementation(() => now);
+    httpGet.mockReset();
+    document.body.innerHTML = `
+      <article data-testid="tweet">
+        <a href="/quote_author/status/222/video/1">
+          <div data-testid="videoPlayer">
+            <video poster="https://pbs.twimg.com/ext_tw_video_thumb/222/pu/img/quote-video.jpg"></video>
+          </div>
+        </a>
+      </article>
+    `;
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    document.body.replaceChildren();
+  });
+
+  const click = (service: MediaExtractionService): Promise<MediaExtractionResult> =>
+    service.extractFromClickedElement(document.querySelector('video')!);
+
+  it('skips open-circuit requests without postponing recovery and resets after success', async () => {
+    const service = new MediaExtractionService();
+    httpGet.mockResolvedValue({ ok: false, status: 503, data: {} });
+
+    for (let attempt = 0; attempt < 3; attempt++) await click(service);
+    expect(httpGet).toHaveBeenCalledTimes(3);
+
+    now += 59_000;
+    for (let skipped = 0; skipped < 4; skipped++) await click(service);
+    expect(httpGet).toHaveBeenCalledTimes(3);
+
+    now += 1_000;
+    httpGet.mockResolvedValue({ ok: true, status: 200, data: createQuotedVideoTweetResponse() });
+    expect((await click(service)).success).toBe(true);
+    expect(httpGet).toHaveBeenCalledTimes(4);
+
+    httpGet.mockResolvedValue({ ok: false, status: 503, data: {} });
+    await click(service);
+    expect(httpGet).toHaveBeenCalledTimes(5);
+    httpGet.mockResolvedValue({ ok: true, status: 200, data: createQuotedVideoTweetResponse() });
+    expect((await click(service)).success).toBe(true);
+    expect(httpGet).toHaveBeenCalledTimes(6);
+  });
+
+  it('does not open the circuit for response matching or missing-media failures', async () => {
+    const service = new MediaExtractionService();
+    const mismatchedResponse = JSON.parse(
+      JSON.stringify(createQuotedVideoTweetResponse()).replaceAll('quote-video', 'unrelated-video')
+    );
+    httpGet.mockResolvedValue({ ok: true, status: 200, data: mismatchedResponse });
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const result = await click(service);
+      expect(result.success).toBe(false);
+      expect(result.metadata?.error).toBe('API media does not match the clicked media');
+    }
+    httpGet.mockResolvedValue({ ok: true, status: 200, data: {} });
+    await click(service);
+    expect(httpGet).toHaveBeenCalledTimes(4);
+  });
+
+  it('clears earlier provider failures when a response is healthy but mismatched', async () => {
+    const service = new MediaExtractionService();
+    httpGet.mockResolvedValue({ ok: false, status: 503, data: {} });
+    await click(service);
+    await click(service);
+
+    httpGet.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: JSON.parse(
+        JSON.stringify(createQuotedVideoTweetResponse()).replaceAll('quote-video', 'unrelated-video')
+      ),
+    });
+    expect((await click(service)).success).toBe(false);
+
+    httpGet.mockResolvedValue({ ok: false, status: 503, data: {} });
+    await click(service);
+    httpGet.mockResolvedValue({ ok: true, status: 200, data: createQuotedVideoTweetResponse() });
+    expect((await click(service)).success).toBe(true);
+    expect(httpGet).toHaveBeenCalledTimes(5);
+  });
+
+  it('does not count an aborted response as an API failure', async () => {
+    const service = new MediaExtractionService();
+    httpGet.mockResolvedValue({ ok: false, status: 503, data: {} });
+    await click(service);
+    await click(service);
+
+    const controller = new AbortController();
+    httpGet.mockImplementationOnce(async () => {
+      controller.abort();
+      return { ok: false, status: 503, data: {} };
+    });
+    const cancelled = await service.extractFromClickedElement(document.querySelector('video')!, {
+      signal: controller.signal,
+    });
+    expect(cancelled.metadata?.error).toBe('Extraction cancelled');
+
+    httpGet.mockResolvedValue({ ok: true, status: 200, data: createQuotedVideoTweetResponse() });
+    expect((await click(service)).success).toBe(true);
+    expect(httpGet).toHaveBeenCalledTimes(4);
   });
 });
