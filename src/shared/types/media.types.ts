@@ -69,6 +69,13 @@ export interface MediaExtractionOptions {
   readonly enableBackgroundLoading?: boolean | undefined;
   readonly enableValidation?: boolean | undefined;
   readonly signal?: AbortSignal | undefined;
+  /** Immutable click-time evidence retained across asynchronous extraction. */
+  readonly clickedMediaEvidence?: ClickedMediaEvidence | undefined;
+}
+
+export interface ClickedMediaEvidence {
+  readonly urls: readonly string[];
+  readonly mediaType: 'image' | 'video' | null;
 }
 
 /**
@@ -81,6 +88,8 @@ export interface MediaExtractionResult {
   readonly clickedIndex?: number | undefined;
   readonly tweetInfo?: TweetInfo | null | undefined;
   readonly metadata?: Record<string, unknown> | undefined;
+  /** Health of an attempted API request, independent of media matching. */
+  readonly apiRequestOutcome?: 'healthy' | 'failed' | 'cancelled' | undefined;
 }
 
 /** Extraction error class */
