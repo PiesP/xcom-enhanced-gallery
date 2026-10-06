@@ -30,7 +30,7 @@
     "mut:fast": "stryker run stryker.conf.fast.json",
     "check:src": "tsc --noEmit",
     "check:test": "tsc -p tsconfig.test.json --noEmit",
-    "check:scripts": "tsc -p tsconfig.scripts.json --noEmit",
+    "check:scripts": "tsc -p tsconfig.scripts.json --noEmit && tsc -p tsconfig.node-tests.json --noEmit",
     "check": "pnpm -s check:src && pnpm -s check:test && pnpm -s check:scripts",
     "check:versions": "node --experimental-strip-types scripts/release/version.ts check",
     "sync:versions": "node --experimental-strip-types scripts/release/version.ts sync",
