@@ -39,6 +39,7 @@ be integrated here as a reviewed gitlink update.
 
 | Command | Purpose |
 | --- | --- |
+| `pnpm install` | Its `preinstall` TypeScript check requires the recorded `packages/core` submodule before dependencies exist; it prints the initialization commands on failure |
 | `pnpm build` | Build the production userscript |
 | `pnpm build:all:ci` | Build userscript, Chrome, and Firefox outputs |
 | `pnpm test` | Run the Vitest suite |
@@ -48,6 +49,7 @@ be integrated here as a reviewed gitlink update.
 | `pnpm test:e2e:extension:firefox` | Run the installed Firefox extension smoke test with Selenium |
 | `pnpm test:e2e:all` | Run every userscript and extension browser lane |
 | `pnpm quality` | Run formatting, lint, type, dependency, and source checks |
+| `pnpm quality:nose` | Run the local Nose query when installed; an absent `nose` prints an explicit skip, while an installed failure fails the command |
 | `pnpm verify` | Run the quality gate and all production builds |
 | `pnpm verify:full` | Add coverage and browser tests to `verify` |
 
@@ -58,6 +60,16 @@ prepares those artifacts as part of its full gate.
 Run the narrowest relevant check while working. Use `pnpm verify` before a
 pull request and `pnpm verify:full` for publication-level or browser behavior
 changes.
+
+These two package commands run repository-local TypeScript via the pinned Node
+runtime. `preinstall` uses only Node built-ins, so it also runs in a checkout
+without `node_modules`. `quality:nose` passes its fixed query arguments and
+inherits the environment; it never installs Nose. Required CI Nose installation
+and scanning stay in the workflow and installer shell scripts because they
+include a pinned vendor installer and integrity checks. Review that boundary
+when the vendor installation contract or workflow order changes. Knip exempts
+the optional, externally installed `nose` binary from package dependency
+reporting; that exemption does not make an installed Nose failure optional.
 
 ## Project constraints
 
