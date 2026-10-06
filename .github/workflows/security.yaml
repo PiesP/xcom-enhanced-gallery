@@ -55,12 +55,9 @@ jobs:
           submodules: false
 
       - name: 📦 Setup classifier runtime
-        uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
+        uses: PiesP/browser-core/automation/actions/setup-project@279124fa998847bd0184d2de12bdaadcd6d2f969
         with:
-          package-json-file: package.json
-          runtime: node@26.9.0
-          cache: false
-          install: false
+          install-dependencies: 'false'
 
       - name: 🧭 Classify changed paths
         id: classify

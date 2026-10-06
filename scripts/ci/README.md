@@ -1,7 +1,8 @@
 # Change classification
 
-`classify-changes.ts` uses only Node.js built-ins, so CI sets up its pinned Node
-runtime without installing project dependencies or initializing the submodule.
+`classify-changes.ts` uses only Node.js built-ins, so CI sets up the manifest-pinned
+Node runtime through the shared action without installing project dependencies
+or initializing the submodule.
 It writes the existing gate keys and a reason to `GITHUB_OUTPUT`; `--files`
 accepts explicit paths for policy checks. Pushes compare `BASE_SHA..HEAD_SHA`,
 while pull requests and merge groups compare `BASE_SHA...HEAD_SHA`. Git paths

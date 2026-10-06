@@ -230,7 +230,9 @@ describe('workflow change policy', () => {
       expect(changes).toContain('git show "$BASE_SHA:scripts/ci/classify-changes.ts"');
       expect(changes).toContain('node --experimental-strip-types "$classifier"');
       expect(changes).toContain('reason=trusted-classifier-unavailable-full');
-      expect(changes).toContain('install: false');
+      expect(changes).toContain('uses: PiesP/browser-core/automation/actions/setup-project@279124fa998847bd0184d2de12bdaadcd6d2f969');
+      expect(changes).toContain("install-dependencies: 'false'");
+      expect(changes).not.toContain('runtime: node@');
       expect(changes).toContain('submodules: false');
       expect(changes).toContain('for output in quality unit e2e build duplication osv semgrep codeql_actions codeql_javascript');
       expect(changes).not.toContain('classify-changes.sh');

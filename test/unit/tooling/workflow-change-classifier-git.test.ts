@@ -1,8 +1,10 @@
-import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { classifyChanges } from '../../../scripts/ci/classify-changes.ts';
 
 const classifier = resolve(import.meta.dirname, '../../../scripts/ci/classify-changes.ts');
 const ciOutputs = ['quality', 'unit', 'e2e', 'build', 'duplication'] as const;
@@ -81,6 +83,56 @@ function expectOnly(outputs: Record<string, string>, names: readonly string[]): 
 }
 
 describe('classifier Git event path extraction', () => {
+  it('has no output, Git process, or output-file side effect when imported', () => {
+    fixture((cwd) => {
+      const gitMarker = join(cwd, 'git-called');
+      const outputPath = join(cwd, 'outputs.txt');
+      const fakeGit = join(cwd, 'git');
+      writeFileSync(outputPath, 'sentinel\n');
+      writeFileSync(fakeGit, '#!/bin/sh\nprintf called > "$CLASSIFIER_GIT_MARKER"\n');
+      chmodSync(fakeGit, 0o755);
+      const imported = spawnSync(process.execPath, [
+        '--experimental-strip-types', '--input-type=module', '--eval',
+        `await import(${JSON.stringify(pathToFileURL(classifier).href)})`,
+      ], {
+        cwd,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          PATH: cwd,
+          CLASSIFIER_GIT_MARKER: gitMarker,
+          GITHUB_EVENT_NAME: 'push',
+          BASE_SHA: 'a'.repeat(40),
+          HEAD_SHA: 'b'.repeat(40),
+          GITHUB_OUTPUT: outputPath,
+        },
+      });
+      expect(imported.status, imported.stderr).toBe(0);
+      expect(imported.stdout).toBe('');
+      expect(imported.stderr).toBe('');
+      expect(readFileSync(outputPath, 'utf8')).toBe('sentinel\n');
+      expect(existsSync(gitMarker)).toBe(false);
+    });
+  });
+
+  it('keeps selections independent across calls and runs through a symlink', () => {
+    const source = classifyChanges(['--files', 'src/example.ts']);
+    const docs = classifyChanges(['--files', 'docs/guide.md']);
+    expect(source.selected.has('quality')).toBe(true);
+    expect(docs.selected.has('quality')).toBe(false);
+    expect(docs.selected.has('semgrep')).toBe(true);
+
+    fixture((cwd) => {
+      const alias = join(cwd, 'classifier.ts');
+      symlinkSync(classifier, alias);
+      const output = execFileSync(process.execPath, [
+        '--experimental-strip-types', alias, '--files', 'docs/guide.md',
+      ], { cwd, encoding: 'utf8', env: { ...process.env, GITHUB_OUTPUT: '' } });
+      expect(output).toContain('semgrep=true\n');
+      expect(output).toContain('reason=explicit-file-list\n');
+    });
+  });
+
   it.each(['docs/audit-example.ts', 'test/unit/audit-example.ts'])(
     'classifies both sides of a source move to %s on push',
     (destination) => {
