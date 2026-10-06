@@ -67,7 +67,6 @@ describe('central setup-project action', () => {
 
     expect(topLevelBlock(workflow, 'on')).toContain('workflow_dispatch:');
     expect(topLevelBlock(workflow, 'on')).toContain('tag:');
-    expect(workflow).not.toContain(centralSetupAction);
     expect(workflow).not.toContain('pnpm install --frozen-lockfile');
 
     for (const job of releaseWorkflowJobs) {
@@ -75,7 +74,13 @@ describe('central setup-project action', () => {
 
       expect(block, `release ${job} job`).toContain(`uses: ${releaseSetupAction}`);
       expect(block).toContain('node-version: ${{ needs.provenance.outputs.node-version }}');
+      expect(block).not.toContain(centralSetupAction);
     }
+
+    const duplication = jobBlock(workflow, 'duplication');
+    expect(duplication).toContain(`uses: ${centralSetupAction}`);
+    expect(duplication).toContain("install-dependencies: 'false'");
+    expect(duplication.indexOf(centralSetupAction)).toBeLessThan(duplication.indexOf('Checkout verified release commit'));
 
     expect(workflow.split(releaseSetupAction)).toHaveLength(releaseWorkflowJobs.length + 1);
     expect(action).toContain(
