@@ -146,7 +146,8 @@ describe('tooling configuration', () => {
 
     expect(osvJob).toContain("github.event_name == 'push'");
     expect(semgrepJob).toContain("github.event_name == 'push'");
-    expect(semgrepJob).toContain('semgrep/semgrep:1.178.0@sha256:');
+    expect(semgrepJob).toContain("needs['pin-metadata'].outputs.SEMGREP_IMAGE");
+    expect(securityWorkflow).toContain('GITHUB_ENV="$GITHUB_OUTPUT" node --experimental-strip-types');
   });
 
   it('does not publish duplicate manual status contexts', () => {
@@ -220,7 +221,7 @@ describe('tooling configuration', () => {
       quality: 'uses: ./.github/actions/setup-release',
       unit: 'uses: ./.github/actions/setup-release',
       e2e: 'uses: ./.github/actions/setup-release',
-      duplication: 'run: bash scripts/ci/install-nose.sh',
+      duplication: 'node --experimental-strip-types "$pinned_dir/install-nose.ts"',
       mutation: 'uses: ./.github/actions/setup-release',
       build: 'uses: ./.github/actions/setup-release',
     } as const;

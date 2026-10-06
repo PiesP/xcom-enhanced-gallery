@@ -184,6 +184,11 @@ jobs:
           submodules: true
           persist-credentials: false
 
+      - name: 📦 Setup protected pin runtime
+        uses: PiesP/browser-core/automation/actions/setup-project@279124fa998847bd0184d2de12bdaadcd6d2f969
+        with:
+          install-dependencies: 'false'
+
       - name: Checkout verified release commit
         shell: bash
         env:
@@ -194,7 +199,16 @@ jobs:
           git submodule update --init --recursive
 
       - name: 🔧 Install nose
-        run: bash scripts/ci/install-nose.sh
+        run: |
+          set -euo pipefail
+          trusted_sha=a1fd01821cab105c6a6430ee81e18030532843e8
+          git cat-file -e "$trusted_sha^{commit}"
+          pinned_dir="$(mktemp -d "$RUNNER_TEMP/pinned-tools.XXXXXXXX")"
+          for name in pinned-tools.json pinned-tools.ts check-pinned-tools.ts install-nose.ts; do
+            git show "$trusted_sha:scripts/ci/$name" > "$pinned_dir/$name"
+            chmod 0600 "$pinned_dir/$name"
+          done
+          node --experimental-strip-types "$pinned_dir/install-nose.ts"
 
       - name: 🔎 Check for new duplication
         run: nose query src --baseline .nose-baseline.json --fail-on new

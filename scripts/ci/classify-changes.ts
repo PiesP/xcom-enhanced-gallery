@@ -102,9 +102,21 @@ export function classifyChanges(
     ) {
       known = true;
       select('quality', 'unit', 'e2e', 'build', 'codeql_javascript');
-    } else if (['.nose-baseline.json', 'nose.toml', 'scripts/ci/install-nose.sh'].includes(path)) {
+    } else if (
+      [
+        '.nose-baseline.json',
+        'nose.toml',
+        'scripts/ci/install-nose.sh', // Retain the deleted path for rename/delete classification.
+        'scripts/ci/install-nose.ts',
+        'scripts/ci/pinned-tools.ts',
+        'scripts/ci/pinned-tools.json',
+      ].includes(path)
+    ) {
       known = true;
       select('quality', 'duplication');
+      if (path === 'scripts/ci/pinned-tools.ts' || path === 'scripts/ci/pinned-tools.json') {
+        select('osv', 'semgrep');
+      }
     } else if (['stryker.conf.json', 'stryker.conf.fast.json', 'README.md'].includes(path)) {
       known = true;
       select('unit');

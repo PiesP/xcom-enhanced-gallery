@@ -65,8 +65,8 @@ These two package commands run repository-local TypeScript via the pinned Node
 runtime. `preinstall` uses only Node built-ins, so it also runs in a checkout
 without `node_modules`. `quality:nose` passes its fixed query arguments and
 inherits the environment; it never installs Nose. Required CI Nose installation
-and scanning stay in the workflow and installer shell scripts because they
-include a pinned vendor installer and integrity checks. Review that boundary
+and scanning stay in the workflow and dependency-free TypeScript installer
+because they include a pinned vendor installer and integrity checks. Review that boundary
 when the vendor installation contract or workflow order changes. Knip exempts
 the optional, externally installed `nose` binary from package dependency
 reporting; that exemption does not make an installed Nose failure optional.
