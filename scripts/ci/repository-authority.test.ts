@@ -262,6 +262,34 @@ test('publish rejects invalid impact before any remote write', () => {
   assert.deepEqual(f.calls(), []);
 });
 
+test('dry-run never closes a stale PR or publishes a changed gitlink', () => {
+  for (const impact of ['false', 'true']) {
+    const f = fixture([
+      { match: `git -C packages/core checkout --detach ${head}`, result: '' },
+      { match: 'git diff --quiet -- packages/core', code: 1 },
+    ]);
+    const result = cli('update-browser-core.ts', 'publish', {
+      ...f.env,
+      CORE_SHA: head,
+      CURRENT_CORE_SHA: other,
+      OPEN_PR: '12',
+      CONSUMER_IMPACT: impact,
+      DRY_RUN: 'true',
+      PREFLIGHT: 'true',
+    });
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(
+      f
+        .calls()
+        .some(
+          (call) =>
+            call.startsWith('gh ') || call.startsWith('git push') || call.startsWith('git add')
+        ),
+      false
+    );
+  }
+});
+
 test('publish stops before push when the generated commit changes another file', () => {
   const f = fixture([
     { match: `git -C packages/core checkout --detach ${head}`, result: '' },
