@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { spawnSync } from 'node:child_process';
-import { appendFileSync, existsSync, realpathSync } from 'node:fs';
+import { appendFileSync, existsSync, realpathSync, writeSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const outputs = [
@@ -172,7 +172,7 @@ export function classifyChanges(
     }
 
     if (!known) {
-      process.stderr.write(`Unknown changed path; enabling every check: ${path}\n`);
+      writeSync(2, `Unknown changed path; enabling every check: ${path}\n`);
       selectAll();
     }
   }
@@ -239,7 +239,7 @@ export function classifyChanges(
 function emit({ selected, reason }: Decision, env: NodeJS.ProcessEnv): void {
   const body = `${outputs.map((name) => `${name}=${selected.has(name)}`).join('\n')}\nreason=${reason}\n`;
   if (env.GITHUB_OUTPUT) appendFileSync(env.GITHUB_OUTPUT, body);
-  else process.stdout.write(body);
+  else writeSync(1, body);
 }
 
 // Compare resolved paths so invoking a symlink to this CLI still runs it.
