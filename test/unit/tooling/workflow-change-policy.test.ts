@@ -107,7 +107,7 @@ describe('workflow change policy', () => {
 
   it('type-checks every test source and selects quality for test-only changes', () => {
     const checkedFiles = new Set<string>();
-    for (const project of ['tsconfig.test.json', 'tsconfig.e2e.json']) {
+    for (const project of ['tsconfig.test.json', 'tsconfig.e2e.json', 'tsconfig.node-tests.json']) {
       const config = JSON.parse(execFileSync(process.execPath, [
         resolve(root, 'node_modules/typescript/bin/tsc'),
         '--project', project, '--showConfig',
