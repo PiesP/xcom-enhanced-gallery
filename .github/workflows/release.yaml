@@ -40,37 +40,16 @@ jobs:
           fetch-tags: true
           persist-credentials: false
 
+      - name: 📦 Setup trusted provenance runtime
+        uses: PiesP/browser-core/automation/actions/setup-project@279124fa998847bd0184d2de12bdaadcd6d2f969
+        with:
+          install-dependencies: 'false'
+
       - name: 🔐 Verify tag belongs to protected master
         id: verify
-        shell: bash
         env:
           RELEASE_TAG: ${{ inputs.tag }}
-        run: |
-          set -euo pipefail
-          if ! [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "❌ Invalid release tag: $RELEASE_TAG (expected vX.Y.Z)"
-            exit 1
-          fi
-          git fetch --force origin "refs/tags/${RELEASE_TAG}:refs/tags/${RELEASE_TAG}"
-          release_sha="$(git rev-parse --verify "${RELEASE_TAG}^{commit}")"
-          if ! git merge-base --is-ancestor "$release_sha" "$GITHUB_SHA"; then
-            echo "❌ Release tag $RELEASE_TAG is not contained in protected master $GITHUB_SHA"
-            exit 1
-          fi
-          # Resolve from the verified tagged source, including older tags whose
-          # locally reviewed setup action still requires node-version input.
-          node - "$release_sha" <<'JS'
-          const { execFileSync } = require('node:child_process');
-          const { appendFileSync } = require('node:fs');
-          const manifest = JSON.parse(execFileSync('git', ['show', `${process.argv[2]}:package.json`], { encoding: 'utf8' }));
-          const version = manifest.volta?.node;
-          if (typeof version !== 'string' || !/^\d+\.\d+\.\d+$/.test(version)) {
-            throw new Error('Release source must declare an exact volta.node pin');
-          }
-          appendFileSync(process.env.GITHUB_OUTPUT, `node-version=${version}\n`);
-          JS
-          echo "release-sha=$release_sha" >> "$GITHUB_OUTPUT"
-          echo "version=${RELEASE_TAG#v}" >> "$GITHUB_OUTPUT"
+        run: node --experimental-strip-types scripts/release/verify-source.ts
 
   quality:
     name: ✅ Release quality
@@ -272,19 +251,6 @@ jobs:
         uses: ./.github/actions/setup-release
         with:
           node-version: ${{ needs.provenance.outputs.node-version }}
-
-      - name: 📝 Determine version
-        shell: bash
-        env:
-          VERSION: ${{ needs.provenance.outputs.version }}
-        run: |
-          set -euo pipefail
-          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
-          if [[ "$PACKAGE_VERSION" != "$VERSION" ]]; then
-            echo "❌ Tag version $VERSION does not match package.json $PACKAGE_VERSION"
-            exit 1
-          fi
-          echo "📦 Release version: $VERSION"
 
       - name: 🏗️ Build all targets
         env:

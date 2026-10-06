@@ -195,7 +195,7 @@ describe('tooling configuration', () => {
 
   it('binds manual releases to a tag contained in protected master', () => {
     expect(releaseWorkflow).toContain("github.ref == 'refs/heads/master'");
-    expect(releaseWorkflow).toContain('git merge-base --is-ancestor "$release_sha" "$GITHUB_SHA"');
+    expect(releaseWorkflow).toContain('run: node --experimental-strip-types scripts/release/verify-source.ts');
     expect(releaseWorkflow).toContain('ref: ${{ github.sha }}');
     expect(releaseWorkflow).toContain(
       'git -c advice.detachedHead=false checkout --detach "$RELEASE_SHA"'
