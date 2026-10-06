@@ -34,7 +34,7 @@ function fixture(rules: Rule[]) {
   const envFile = join(root, 'env');
   writeFileSync(plan, JSON.stringify(rules));
   for (const path of [log, output, summary, envFile]) writeFileSync(path, '');
-  const fake = `#!/usr/bin/env node
+  const fake = `#!${process.execPath}
 const fs = require('node:fs');
 const args = process.argv.slice(2);
 const key = process.argv[1].split('/').at(-1) + ' ' + args.join(' ');
@@ -83,6 +83,36 @@ function cli(file: string, mode: string, env: NodeJS.ProcessEnv) {
     encoding: 'utf8',
   });
 }
+
+test('CLIs preserve child failures and stay inert on unrelated missing argv paths', () => {
+  for (const [file, mode] of [
+    ['dependabot-apply.ts', 'validate'],
+    ['update-browser-core.ts', 'prepare'],
+  ]) {
+    const f = fixture([
+      { match: file === 'dependabot-apply.ts' ? 'gh api' : 'git ls-remote', code: 7 },
+    ]);
+    const result = cli(file ?? '', mode ?? '', {
+      ...f.env,
+      PR_NUMBER: '12',
+      HEAD_SHA: head,
+      BASE_REF: 'master',
+      CORE_REPOSITORY: 'PiesP/browser-core',
+    });
+    assert.equal(result.status, 7, result.stderr);
+    const imported = spawnSync(
+      process.execPath,
+      [
+        '--experimental-strip-types',
+        '--input-type=module',
+        '-e',
+        `process.argv[1] = ${JSON.stringify(join(f.root, 'absent.ts'))}; await import(${JSON.stringify(new URL(file ?? '', import.meta.url).href)});`,
+      ],
+      { env: f.env, encoding: 'utf8' }
+    );
+    assert.equal(imported.status, 0, imported.stderr);
+  }
+});
 
 const pull = (sha = head) =>
   JSON.stringify({

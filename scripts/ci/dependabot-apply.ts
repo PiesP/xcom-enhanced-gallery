@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 import { execFileSync } from 'node:child_process';
-import { appendFileSync, readFileSync } from 'node:fs';
+import { appendFileSync, readFileSync, realpathSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 type Json = Record<string, unknown>;
 const shaPattern = /^[0-9a-f]{40}$/;
@@ -231,4 +232,26 @@ function main(): void {
   }
 }
 
-if (process.argv[1]?.endsWith('/dependabot-apply.ts')) main();
+function isCliEntry(): boolean {
+  if (!process.argv[1]) return false;
+  try {
+    return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return false;
+  }
+}
+
+if (isCliEntry()) {
+  try {
+    main();
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    const failure = error as { status?: number; signal?: string };
+    process.exitCode =
+      failure.signal === 'SIGINT'
+        ? 130
+        : failure.signal === 'SIGTERM'
+          ? 143
+          : (failure.status ?? 1);
+  }
+}
