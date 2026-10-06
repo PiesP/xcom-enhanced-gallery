@@ -537,12 +537,17 @@ export async function run({ browser, root, output }) {
       )
     );
     await page.screenshot({ path: path.join(output, 'gallery-portrait.png') });
-    const progress = gallery.locator('[role="progressbar"]');
-    const initial = await progress.getAttribute('aria-valuenow');
+    const progress = gallery.locator('#xeg-toolbar-counter');
+    const initial = await progress.getAttribute('data-position');
     assert.equal(initial, '1', 'Gallery must open on the clicked first image');
 
     const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
     await toolbar.locator('button[aria-label="Fit Window"]').click();
+    assert.equal(
+      await toolbar.locator('[data-gallery-element="fit-mode-label"]').textContent(),
+      'Fit: Fit Window',
+      'Visible fit label must follow the effective mode'
+    );
     const selectedFit = toolbar.locator('button[aria-label="Fit Window"][aria-pressed="true"]');
     const selectedStyle = () =>
       selectedFit.evaluate(async (element) => {
@@ -709,11 +714,11 @@ export async function run({ browser, root, output }) {
     await page.waitForFunction(
       (previous) =>
         document
-          .querySelector('[data-xeg-gallery-container] [role="progressbar"]')
-          ?.getAttribute('aria-valuenow') !== previous,
+          .querySelector('[data-xeg-gallery-container] #xeg-toolbar-counter')
+          ?.getAttribute('data-position') !== previous,
       initial
     );
-    const next = await progress.getAttribute('aria-valuenow');
+    const next = await progress.getAttribute('data-position');
     assert.equal(next, '2', 'ArrowRight must select the second image');
     await page.screenshot({ path: path.join(output, 'gallery-panorama.png') });
     await page.setViewportSize({ width: 401, height: 592 });
@@ -730,7 +735,7 @@ export async function run({ browser, root, output }) {
         && Math.abs(selectedTop - itemsTop) <= 1;
     });
     assert.equal(
-      await progress.getAttribute('aria-valuenow'),
+      await progress.getAttribute('data-position'),
       '2',
       'Viewport resize must preserve the selected second image'
     );
@@ -754,10 +759,14 @@ export async function run({ browser, root, output }) {
     await page.screenshot({ path: path.join(output, 'gallery-narrow-dark.png') });
     const narrowGeometry = await toolbar.evaluate((element) => {
       const rect = element.getBoundingClientRect();
-      return { left: rect.left, right: rect.right, viewport: innerWidth };
+      const labelRect = element.querySelector('[data-gallery-element="fit-mode-label"]')?.getBoundingClientRect();
+      return { left: rect.left, right: rect.right, viewport: innerWidth,
+        labelLeft: labelRect?.left, labelRight: labelRect?.right };
     });
     assert(narrowGeometry.left >= 0 && narrowGeometry.right <= narrowGeometry.viewport,
       'Toolbar must fit the narrow viewport');
+    assert(narrowGeometry.labelLeft >= 0 && narrowGeometry.labelRight <= narrowGeometry.viewport,
+      'Visible fit label must fit the narrow viewport');
     await page.mouse.move(200, 500);
     await page.waitForFunction(() => {
       const toolbar = document.querySelector('[data-gallery-element="toolbar"]');

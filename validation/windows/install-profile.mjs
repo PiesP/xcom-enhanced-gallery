@@ -1266,7 +1266,7 @@ async function runPublicFixtureCycle({ apiResponses, output, page }) {
   assert.equal(await gallery.getAttribute('role'), 'dialog');
   assert.equal(await gallery.getAttribute('aria-modal'), 'true');
   assert.equal(
-    await gallery.locator('[role="progressbar"]').getAttribute('aria-valuenow'),
+    await gallery.locator('#xeg-toolbar-counter').getAttribute('data-position'),
     '2',
     'Public View media overlay must select the second image'
   );
@@ -1342,8 +1342,8 @@ async function runCycle({ cycle, downloads, extensionPage, output, page, images 
   const gallery = page.locator('[data-xeg-gallery-container]');
   await gallery.waitFor({ state: 'visible', timeout: 15_000 });
   const openMs = performance.now() - openStarted;
-  const progress = gallery.locator('[role="progressbar"]');
-  assert.equal(Number(await progress.getAttribute('aria-valuenow')), cycle.triggerIndex + 1);
+  const progress = gallery.locator('#xeg-toolbar-counter');
+  assert.equal(Number(await progress.getAttribute('data-position')), cycle.triggerIndex + 1);
 
   const lateBackground = await page.evaluate(() => {
     const node = document.createElement('aside');
@@ -1368,8 +1368,8 @@ async function runCycle({ cycle, downloads, extensionPage, output, page, images 
   await page.waitForFunction(
     (expected) =>
       document
-        .querySelector('[data-xeg-gallery-container] [role="progressbar"]')
-        ?.getAttribute('aria-valuenow') === String(expected),
+        .querySelector('[data-xeg-gallery-container] #xeg-toolbar-counter')
+        ?.getAttribute('data-position') === String(expected),
     cycle.expectedIndex + 1
   );
   const navigationMs = performance.now() - navigationStarted;

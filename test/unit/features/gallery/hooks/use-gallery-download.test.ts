@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const state = vi.hoisted(() => ({
   downloadBulk: vi.fn(),
+  downloadSingle: vi.fn(),
+  displayedIndex: 0 as number | null,
   getDownloadMedia: vi.fn(),
   notify: vi.fn(),
   notifySafely: vi.fn(),
@@ -15,7 +17,7 @@ vi.mock('@platform/index', () => ({
   notifySafely: state.notifySafely,
 }));
 vi.mock('@shared/services/download/download-orchestrator', () => ({
-  getDownloadOrchestrator: () => ({ downloadBulk: state.downloadBulk }),
+  getDownloadOrchestrator: () => ({ downloadBulk: state.downloadBulk, downloadSingle: state.downloadSingle }),
 }));
 vi.mock('@shared/services/language-service', () => ({
   getLanguageService: () => ({ translate: state.translate }),
@@ -26,8 +28,12 @@ vi.mock('@shared/services/media-service', () => ({
 vi.mock('@shared/state/signals/gallery.signals', () => ({
   gallerySignals: {
     currentIndex: 0,
-    mediaItems: [{ id: 'safe', type: 'image', url: 'https://example.test/safe.jpg' }],
+    mediaItems: [
+      { id: 'first', type: 'image', url: 'https://example.test/first.jpg' },
+      { id: 'shown', type: 'image', url: 'https://example.test/shown.jpg' },
+    ],
   },
+  getDisplayedMediaIndex: () => state.displayedIndex,
   setError: state.setError,
 }));
 vi.mock('@shared/state/signals/gallery-download-signals', () => ({
@@ -39,6 +45,7 @@ import { createDownloadHandler } from '@features/gallery/hooks/use-gallery-downl
 describe('createDownloadHandler bulk resource limits', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    state.displayedIndex = 0;
     state.translate.mockImplementation((key: string) => key);
   });
 
@@ -67,6 +74,39 @@ describe('createDownloadHandler bulk resource limits', () => {
       count: 1,
       failed: 1,
     });
+  });
+
+  it('downloads the displayed item after scroll focus moves beyond the manually selected item', async () => {
+    state.displayedIndex = 1;
+    state.downloadSingle.mockResolvedValue({ success: true });
+
+    await createDownloadHandler().handleDownload('current');
+
+    expect(state.downloadSingle).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'shown' }),
+      expect.objectContaining({ signal: expect.any(AbortSignal) })
+    );
+    expect(state.setDownloadStatus).toHaveBeenLastCalledWith('handedOff');
+  });
+
+  it('passes only opened media items to the bulk ZIP boundary in their displayed order', async () => {
+    state.downloadBulk.mockResolvedValue({
+      success: true,
+      status: 'success',
+      filesProcessed: 2,
+      filesSuccessful: 2,
+      code: 'NONE',
+    });
+
+    await createDownloadHandler().handleDownload('all');
+
+    expect(state.downloadBulk).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({ id: 'first' }),
+        expect.objectContaining({ id: 'shown' }),
+      ],
+      expect.objectContaining({ signal: expect.any(AbortSignal) })
+    );
   });
 
   it('keeps a resource-limit result with no saved files as a download failure', async () => {

@@ -63,7 +63,7 @@ interface ToolbarViewProps {
   /** Navigation state generator */
   readonly navState: () => ToolbarViewNavState;
   /** Displayed index generator */
-  readonly displayedIndex: () => number;
+  readonly displayedIndex: () => number | null;
   /** Progress width generator */
   readonly progressWidth: () => string;
   /** Fit mode order */
@@ -179,7 +179,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
     if (!toolbar && !counter) return;
 
     const current = String(currentIndex());
-    const focused = String(local.displayedIndex());
+    const focused = String(local.displayedIndex() ?? -1);
 
     if (toolbar) {
       toolbar.dataset.currentIndex = current;
@@ -191,6 +191,12 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
     }
   });
   const hasTweetContent = () => !!(tweetTextContent() ?? tweetText() ?? tweetUrl());
+  const positionLabel = () => {
+    const displayed = local.displayedIndex();
+    return displayed === null
+      ? translate('tb.noMedia')
+      : translate('tb.mediaPosition', { index: displayed + 1, total: totalCount() });
+  };
   const downloadStatusLabel = (): string => {
     switch (downloadStatus()) {
       case 'working':
@@ -330,22 +336,25 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
                     setCounterElement(element);
                   }}
                   id="xeg-toolbar-counter"
+                  data-gallery-element="position"
+                  data-position={local.displayedIndex() === null ? 0 : local.displayedIndex()! + 1}
+                  data-total={totalCount()}
                   class={cx(styles.mediaCounter, 'xeg-inline-center')}
-                  aria-live="polite"
                 >
-                  <span class={styles.currentIndex}>{local.displayedIndex() + 1}</span>
-                  <span class={styles.separator}>/</span>
-                  <span class={styles.totalCount}>{totalCount()}</span>
+                  <span class="xeg-sr-only">{positionLabel()}</span>
+                  <span aria-hidden="true" class={styles.currentIndex}>
+                    {local.displayedIndex() === null ? '—' : local.displayedIndex()! + 1}
+                  </span>
+                  <Show when={local.displayedIndex() !== null}>
+                    <span aria-hidden="true" class={styles.separator}>
+                      /
+                    </span>
+                    <span aria-hidden="true" class={styles.totalCount}>
+                      {totalCount()}
+                    </span>
+                  </Show>
                 </span>
-                <div
-                  class={styles.progressBar}
-                  role="progressbar"
-                  aria-label={translate('tb.progress')}
-                  aria-valuenow={local.displayedIndex() + 1}
-                  aria-valuemin={1}
-                  aria-valuemax={totalCount()}
-                  aria-labelledby="xeg-toolbar-counter"
-                >
+                <div class={styles.progressBar} aria-hidden="true">
                   <div class={styles.progressFill} style={{ width: local.progressWidth() }} />
                 </div>
               </div>
@@ -363,7 +372,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             </IconButton>
           </fieldset>
 
-          <fieldset class={styles.toolbarGroup}>
+          <fieldset class={cx(styles.toolbarGroup, styles.fitGroup)}>
             <legend class="xeg-sr-only">{translate('tb.fitGroup')}</legend>
             {local.fitModeOrder.map(({ mode, iconName }) => {
               const label = fitModeLabels()[mode];
@@ -381,6 +390,13 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
                 </IconButton>
               );
             })}
+            <span
+              class={styles.fitModeLabel}
+              data-gallery-element="fit-mode-label"
+              aria-hidden="true"
+            >
+              {translate('tb.currentFit', { mode: fitModeLabels()[activeFitMode()].label })}
+            </span>
           </fieldset>
 
           <fieldset class={styles.toolbarGroup}>

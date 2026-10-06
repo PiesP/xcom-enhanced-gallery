@@ -12,7 +12,11 @@ import { logger } from '@shared/logging/logger';
 import { getDownloadOrchestrator } from '@shared/services/download/download-orchestrator';
 import { getLanguageService } from '@shared/services/language-service';
 import { getMediaService } from '@shared/services/media-service';
-import { gallerySignals, setError } from '@shared/state/signals/gallery.signals';
+import {
+  gallerySignals,
+  getDisplayedMediaIndex,
+  setError,
+} from '@shared/state/signals/gallery.signals';
 import { setDownloadStatus } from '@shared/state/signals/gallery-download-signals';
 
 /**
@@ -82,7 +86,8 @@ export function createDownloadHandler() {
       const downloadService = getDownloadOrchestrator();
 
       if (type === 'current') {
-        const currentMedia = mediaItems[gallerySignals.currentIndex];
+        const displayedIndex = getDisplayedMediaIndex();
+        const currentMedia = displayedIndex === null ? undefined : mediaItems[displayedIndex];
         if (currentMedia) {
           // Single downloads are already demand-driven through the platform
           // adapter. Avoid a duplicate Blob fetch that would delay GM_download.

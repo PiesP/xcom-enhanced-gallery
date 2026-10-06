@@ -245,8 +245,8 @@ test('loads the Chrome extension, completes a privileged download, and restores 
     const publicGallery = page.locator('[data-xeg-gallery-container]');
     await expect(publicGallery).toBeVisible();
     await expect(publicGallery).toHaveAttribute('role', 'dialog');
-    await expect(publicGallery.locator('[role="progressbar"]')).toHaveAttribute(
-      'aria-valuenow',
+    await expect(publicGallery.locator('#xeg-toolbar-counter')).toHaveAttribute(
+      'data-position',
       '2'
     );
     await expect(publicGallery.locator('[data-gallery-element="item"] img')).toHaveCount(2);

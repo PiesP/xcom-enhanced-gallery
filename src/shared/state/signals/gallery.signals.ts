@@ -17,7 +17,7 @@ import type { MediaInfo } from '@shared/types/media.types';
 import { createEventEmitter } from '@shared/utils/events/emitter';
 import { batch, createSignal } from 'solid-js';
 import { _setDownloadStatus } from './gallery-download-signals';
-import { resolveAdjacentNavigationTarget } from './gallery-navigation';
+import { resolveAdjacentNavigationTarget, resolveDisplayedIndex } from './gallery-navigation';
 import {
   INITIAL_NAV_SOURCE,
   type NavigationSource,
@@ -206,12 +206,12 @@ export function closeGallery(): void {
  * Only uses focusedIndex when it is a valid in-bounds value.
  */
 function _resolveNavAnchor(): number {
-  const focus = focusedIndexSig();
-  const items = mediaItemsSig();
-  if (typeof focus === 'number' && focus >= 0 && focus < items.length) {
-    return focus;
-  }
-  return currentIndexSig();
+  return resolveDisplayedIndex(currentIndexSig(), focusedIndexSig(), mediaItemsSig().length) ?? 0;
+}
+
+/** The media item described by the toolbar and used for current-item actions. */
+export function getDisplayedMediaIndex(): number | null {
+  return resolveDisplayedIndex(currentIndexSig(), focusedIndexSig(), mediaItemsSig().length);
 }
 
 function commitNavigation(targetIndex: number, source: NavigationSource): void {

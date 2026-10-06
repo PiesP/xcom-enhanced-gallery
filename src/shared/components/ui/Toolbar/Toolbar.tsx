@@ -11,6 +11,7 @@ import { useToolbarSettingsController } from '@shared/hooks/toolbar/use-toolbar-
 import type { ToolbarSettingsControllerResult } from '@shared/hooks/toolbar/use-toolbar-settings-controller.types';
 import { useToolbarState } from '@shared/hooks/use-toolbar-state';
 import { useTranslation } from '@shared/hooks/use-translation';
+import { resolveDisplayedIndex } from '@shared/state/signals/gallery-navigation';
 import type { ImageFitMode } from '@shared/types/settings.types';
 import type { ToolbarDataState, ToolbarState } from '@shared/types/toolbar.types';
 import type { JSXElement } from 'solid-js';
@@ -68,17 +69,13 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
 
   const displayedIndex = createMemo(() => {
     const total = totalItems();
-    const currentIdx = currentIndexForNav();
-    const focusIdx = local.focusedIndex?.() ?? null;
-    if (total <= 0) return 0;
-    if (typeof focusIdx === 'number' && focusIdx >= 0 && focusIdx < total) return focusIdx;
-    return currentIdx;
+    return resolveDisplayedIndex(currentIndexForNav(), local.focusedIndex?.() ?? null, total);
   });
 
   const progressWidth = createMemo(() => {
     const total = totalItems();
     const idx = displayedIndex();
-    return total <= 0 ? '0%' : `${((idx + 1) / total) * 100}%`;
+    return idx === null ? '0%' : `${((idx + 1) / total) * 100}%`;
   });
 
   const toolbarDataState = createMemo(() => getToolbarDataState(toolbarState));
@@ -90,8 +87,8 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
     const toolbarDisabled = local.disabled?.() ?? false;
     const downloadBusy = (local.isDownloading?.() ?? false) || toolbarState.isDownloading();
     return {
-      prevDisabled: toolbarDisabled || !hasItems || displayed <= 0,
-      nextDisabled: toolbarDisabled || !hasItems || displayed >= total - 1,
+      prevDisabled: toolbarDisabled || displayed === null || displayed <= 0,
+      nextDisabled: toolbarDisabled || displayed === null || displayed >= total - 1,
       canDownloadAll: total > 1,
       downloadDisabled: toolbarDisabled || downloadBusy || !hasItems,
       anyActionDisabled: toolbarDisabled,

@@ -368,10 +368,26 @@ button.fitButton {
   pointer-events: auto;
 }
 
+.fitGroup {
+  flex-wrap: wrap;
+  max-inline-size: calc(4 * max(var(--xeg-size-button-md), 44px) + 3 * var(--xeg-spacing-xs));
+}
+
 .fitButton:focus,
 .fitButton:focus-visible {
   /* Defensive override: ensure fit buttons never reintroduce borders via overrides. */
   border: none;
+}
+
+.fitModeLabel {
+  flex: 1 1 100%;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  color: var(--xeg-toolbar-text-color, var(--xeg-color-text-primary));
+  font-size: var(--xeg-font-size-sm);
+  line-height: var(--xeg-line-height-snug);
+  overflow-wrap: anywhere;
+  text-align: center;
 }
 
 @media (forced-colors: active) {

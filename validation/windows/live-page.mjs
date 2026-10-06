@@ -297,7 +297,7 @@ async function inspectHitTestedAction(image, identity) {
 
 export function inspectSelectedGalleryDocument({ expectedIndex, expectedPath }) {
   const gallery = document.querySelector('[data-xeg-gallery-container]');
-  const progress = gallery?.querySelector('[role="progressbar"]');
+  const progress = gallery?.querySelector('#xeg-toolbar-counter');
   const item = gallery?.querySelector(
     `[data-gallery-element="item"][data-index="${expectedIndex - 1}"]`
   );
@@ -320,7 +320,7 @@ export function inspectSelectedGalleryDocument({ expectedIndex, expectedPath }) 
       return false;
     }
   });
-  if (progress?.getAttribute('aria-valuenow') !== String(expectedIndex) ||
+  if (progress?.getAttribute('data-position') !== String(expectedIndex) ||
       item.getAttribute('data-media-loaded') !== 'true' || !isVisible(item) || !selectedImage) {
     return false;
   }
@@ -329,7 +329,7 @@ export function inspectSelectedGalleryDocument({ expectedIndex, expectedPath }) 
     imageSource: { host: source.hostname, path: source.pathname },
     itemIndex: Number(item.getAttribute('data-index')),
     itemVisible: true,
-    progressValue: Number(progress.getAttribute('aria-valuenow')),
+    progressValue: Number(progress.getAttribute('data-position')),
   };
 }
 
