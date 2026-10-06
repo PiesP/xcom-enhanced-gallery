@@ -49,6 +49,14 @@ jobs:
           persist-credentials: false
           submodules: false
 
+      - name: 📦 Setup classifier runtime
+        uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
+        with:
+          package-json-file: package.json
+          runtime: node@26.9.0
+          cache: false
+          install: false
+
       - name: 🧭 Classify changed paths
         id: classify
         env:
@@ -57,15 +65,23 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha || github.sha }}
         run: |
           set -euo pipefail
-          classifier=scripts/ci/classify-changes.sh
+          classifier=scripts/ci/classify-changes.ts
           case "$EVENT_NAME" in
             pull_request | merge_group)
-              classifier="$RUNNER_TEMP/trusted-classify-changes.sh"
-              [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]]
-              git show "$BASE_SHA:scripts/ci/classify-changes.sh" > "$classifier"
+              classifier="$RUNNER_TEMP/trusted-classify-changes.ts"
+              # The first rollout has no TypeScript classifier in its base.
+              # Select every gate without running code from the proposed head.
+              if [[ ! "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]] ||
+                 ! git show "$BASE_SHA:scripts/ci/classify-changes.ts" > "$classifier"; then
+                for output in quality unit e2e build duplication osv semgrep codeql_actions codeql_javascript; do
+                  echo "$output=true" >> "$GITHUB_OUTPUT"
+                done
+                echo 'reason=trusted-classifier-unavailable-full' >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
               ;;
           esac
-          bash "$classifier"
+          node --experimental-strip-types "$classifier"
 
   quality:
     name: pr-gate/quality

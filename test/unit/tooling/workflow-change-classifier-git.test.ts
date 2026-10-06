@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const classifier = resolve(import.meta.dirname, '../../../scripts/ci/classify-changes.sh');
+const classifier = resolve(import.meta.dirname, '../../../scripts/ci/classify-changes.ts');
 const ciOutputs = ['quality', 'unit', 'e2e', 'build', 'duplication'] as const;
 const allOutputs = [...ciOutputs, 'osv', 'semgrep', 'codeql_actions', 'codeql_javascript'] as const;
 
@@ -45,7 +45,7 @@ function classifyEvent(
   const outputDirectory = mkdtempSync(join(tmpdir(), 'xeg-classifier-output-'));
   const outputPath = join(outputDirectory, 'outputs.txt');
   try {
-    execFileSync('bash', [classifier], {
+    execFileSync(process.execPath, ['--experimental-strip-types', classifier], {
       cwd,
       env: {
         ...process.env,
