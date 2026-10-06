@@ -45,12 +45,18 @@ describe('central setup-project action', () => {
       expect(workflow).not.toContain('pnpm install --frozen-lockfile');
       expect(workflow).not.toContain('uses: pnpm/setup@');
       expect(workflow).not.toContain('uses: actions/setup-node@');
-
       for (const job of jobs) {
         const block = jobBlock(workflow, job);
 
         expect(block, `${filename} ${job} job`).toContain(`uses: ${centralSetupAction}`);
         expect(block).not.toContain('node-version:');
+      }
+
+      if (filename === 'ci.yaml') {
+        const changes = jobBlock(workflow, 'changes');
+        expect(changes).toContain(`uses: ${centralSetupAction}`);
+        expect(changes).toContain("install-dependencies: 'false'");
+        expect(changes).not.toContain('pnpm install');
       }
     }
   });

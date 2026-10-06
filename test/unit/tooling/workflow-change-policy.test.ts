@@ -3,9 +3,10 @@ import { globSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { classifyChanges } from '../../../scripts/ci/classify-changes.ts';
 
 const root = resolve(import.meta.dirname, '../../..');
-const classifier = resolve(root, 'scripts/ci/classify-changes.sh');
+const classifier = resolve(root, 'scripts/ci/classify-changes.ts');
 const ciWorkflow = readFileSync(resolve(root, '.github/workflows/ci.yaml'), 'utf8');
 const securityWorkflow = readFileSync(resolve(root, '.github/workflows/security.yaml'), 'utf8');
 const deepWorkflow = readFileSync(resolve(root, '.github/workflows/deep-checks.yaml'), 'utf8');
@@ -30,7 +31,7 @@ function classify(
   const outputPath = join(tempDirectory, 'outputs.txt');
 
   try {
-    execFileSync('bash', [classifier, ...(files.length > 0 ? ['--files', ...files] : [])], {
+    execFileSync(process.execPath, ['--experimental-strip-types', classifier, ...(files.length > 0 ? ['--files', ...files] : [])], {
       cwd: root,
       env: {
         ...process.env,
@@ -122,9 +123,10 @@ describe('workflow change policy', () => {
       cwd: root, exclude: ['test/node_modules/**'],
     });
     expect(testFiles.length).toBeGreaterThan(0);
+    expect(classify(['test/unit/tooling/workflow-change-policy.test.ts']).quality).toBe('true');
     for (const file of testFiles) {
       expect(checkedFiles.has(resolve(root, file)), file).toBe(true);
-      expect(classify([file.replaceAll('\\', '/')]).quality, file).toBe('true');
+      expect(classifyChanges(['--files', file.replaceAll('\\', '/')]).selected.has('quality'), file).toBe(true);
     }
   });
 
@@ -227,8 +229,15 @@ describe('workflow change policy', () => {
     for (const workflow of [ciWorkflow, securityWorkflow]) {
       const changes = jobBlock(workflow, 'changes');
       expect(changes).toContain('pull_request | merge_group');
-      expect(changes).toContain('git show "$BASE_SHA:scripts/ci/classify-changes.sh"');
-      expect(changes).toContain('bash "$classifier"');
+      expect(changes).toContain('git show "$BASE_SHA:scripts/ci/classify-changes.ts"');
+      expect(changes).toContain('node --experimental-strip-types "$classifier"');
+      expect(changes).toContain('reason=trusted-classifier-unavailable-full');
+      expect(changes).toContain('uses: PiesP/browser-core/automation/actions/setup-project@279124fa998847bd0184d2de12bdaadcd6d2f969');
+      expect(changes).toContain("install-dependencies: 'false'");
+      expect(changes).not.toContain('runtime: node@');
+      expect(changes).toContain('submodules: false');
+      expect(changes).toContain('for output in quality unit e2e build duplication osv semgrep codeql_actions codeql_javascript');
+      expect(changes).not.toContain('classify-changes.sh');
     }
   });
 

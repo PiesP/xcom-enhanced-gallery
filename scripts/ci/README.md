@@ -1,3 +1,19 @@
+# Change classification
+
+`classify-changes.ts` uses only Node.js built-ins, so CI sets up the manifest-pinned
+Node runtime through the shared action without installing project dependencies
+or initializing the submodule.
+It writes the existing gate keys and a reason to `GITHUB_OUTPUT`; `--files`
+accepts explicit paths for policy checks. Pushes compare `BASE_SHA..HEAD_SHA`,
+while pull requests and merge groups compare `BASE_SHA...HEAD_SHA`. Git paths
+are NUL-delimited, and renames include both removed and added paths.
+
+For pull requests and merge groups, the workflows load this CLI from the base
+revision. If that revision lacks the TypeScript CLI during the first rollout,
+every gate is selected. Failed diffs, empty diffs, and unknown paths also select
+every gate. The candidate revision never supplies executable classifier code
+for its own pull request check.
+
 # Deep check reuse
 
 `deep-check-reuse.ts` fingerprints tracked input bytes, pinned tool versions, the
