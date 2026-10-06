@@ -147,6 +147,19 @@ describe('pinned tool checker CLI', () => {
     expect(result.status).not.toBe(0);
     expect(result.stderr).not.toContain('fixture-token');
   });
+
+  it('continues checking every pin after an API failure', () => {
+    const { run } = fixture();
+    const { result, calls } = run('check-pinned-tools.ts', 'api-fail');
+    expect(result.status).toBe(1);
+    expect(calls.filter((call) => call.command === 'gh').map((call) => call.args[1])).toEqual([
+      'repos/corca-ai/nose/releases?per_page=100',
+      expect.stringMatching(/^repos\/corca-ai\/nose\/releases\/tags\/v/),
+      'repos/google/osv-scanner/releases?per_page=100',
+      'repos/semgrep/semgrep/releases?per_page=100',
+    ]);
+    expect(result.stdout).toContain('runtime digest matches GHCR');
+  });
 });
 
 describe('Nose installer CLI', () => {
