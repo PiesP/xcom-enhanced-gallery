@@ -3,6 +3,7 @@ import { globSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { classifyChanges } from '../../../scripts/ci/classify-changes.ts';
 
 const root = resolve(import.meta.dirname, '../../..');
 const classifier = resolve(root, 'scripts/ci/classify-changes.ts');
@@ -122,9 +123,10 @@ describe('workflow change policy', () => {
       cwd: root, exclude: ['test/node_modules/**'],
     });
     expect(testFiles.length).toBeGreaterThan(0);
+    expect(classify(['test/unit/tooling/workflow-change-policy.test.ts']).quality).toBe('true');
     for (const file of testFiles) {
       expect(checkedFiles.has(resolve(root, file)), file).toBe(true);
-      expect(classify([file.replaceAll('\\', '/')]).quality, file).toBe('true');
+      expect(classifyChanges(['--files', file.replaceAll('\\', '/')]).selected.has('quality'), file).toBe(true);
     }
   });
 
