@@ -1,4 +1,6 @@
-# Change classification
+# CI automation
+
+## Change classification
 
 `classify-changes.ts` uses only Node.js built-ins, so CI sets up the manifest-pinned
 Node runtime through the shared action without installing project dependencies
@@ -14,7 +16,31 @@ every gate is selected. Failed diffs, empty diffs, and unknown paths also select
 every gate. The candidate revision never supplies executable classifier code
 for its own pull request check.
 
-# Deep check reuse
+## Pinned security tools
+
+`pinned-tools.json` records the Nose installer version and SHA-256, OSV scanner
+image version and digest, and Semgrep version and image digest. The
+dependency-free `check-pinned-tools.ts` reads that file, checks the newest stable
+GitHub release older than 24 hours, verifies the Nose release asset digest, and
+compares the OSV tag's GHCR manifest digest. Version drift is a warning;
+missing/malformed metadata, API failure, or digest drift fails. The
+dependency-free `install-nose.ts` downloads over HTTPS, verifies the installer
+bytes before invoking `sh` without GitHub tokens, and adds Nose to `GITHUB_PATH`
+only after installation succeeds, preserving child exit codes and signals.
+`pinned-tools.ts env` appends validated OSV and Semgrep image references to
+`GITHUB_ENV`; it accepts no arbitrary metadata path. All three CLIs are inert
+when imported.
+
+These TypeScript helpers are staged for workflow adoption. The active workflows
+still invoke the existing shell helpers and retain their current pinned values.
+Adoption must install the reviewed Node runtime before either CLI and select
+both helpers and metadata from a trusted immutable source revision. In the
+privileged security job, the PR candidate must not supply that revision or its
+code. Keep the current workflow checks active until that bootstrap and the
+exact-image references are changed and validated together. Run the focused CLI
+fixture test with `pnpm test test/unit/config/pinned-tools-cli.test.ts`.
+
+## Deep check reuse
 
 `deep-check-reuse.ts` fingerprints tracked input bytes, pinned tool versions, the
 selected gate, and the runner platform. A valid marker records a successful run
