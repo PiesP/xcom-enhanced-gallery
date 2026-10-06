@@ -144,10 +144,6 @@ export function classifyChanges(
       known = true;
       select('unit');
     }
-    if (path === 'scripts/security/validate-osv-results.py') {
-      known = true;
-      select('unit', 'osv');
-    }
     if (
       path.startsWith('.github/workflows/') ||
       path.startsWith('.github/actions/') ||
