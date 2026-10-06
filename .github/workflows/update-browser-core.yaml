@@ -53,6 +53,13 @@ jobs:
           # was rewritten and the old SHA disappeared, this workflow must still
           # be able to repair the consumer repository.
           submodules: false
+          # Dispatch and scheduled runs also execute the reviewed default branch.
+          ref: master
+
+      - name: Setup trusted script runtime
+        uses: PiesP/browser-core/automation/actions/setup-project@279124fa998847bd0184d2de12bdaadcd6d2f969
+        with:
+          install-dependencies: 'false'
 
       - name: Prepare browser-core update
         id: prepare
@@ -61,87 +68,7 @@ jobs:
           EVENT_CORE_REPOSITORY: ${{ github.event.client_payload.core_repository }}
           EVENT_CORE_SHA: ${{ github.event.client_payload.core_sha }}
           INPUT_CORE_SHA: ${{ inputs.core_sha }}
-        run: |
-          set -euo pipefail
-
-          if [[ -n "$EVENT_CORE_SHA" ]]; then
-            CORE_SHA="$EVENT_CORE_SHA"
-            if [[ "$EVENT_CORE_REPOSITORY" != "$CORE_REPOSITORY" ]]; then
-              echo "::error::Unexpected core repository: $EVENT_CORE_REPOSITORY"
-              exit 1
-            fi
-          elif [[ -n "$INPUT_CORE_SHA" ]]; then
-            CORE_SHA="$INPUT_CORE_SHA"
-          else
-            CORE_SHA="$(git ls-remote "https://github.com/$CORE_REPOSITORY.git" refs/heads/master | cut -f1)"
-          fi
-
-          if [[ ! "$CORE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
-            echo "::error::Unable to resolve a valid browser-core commit SHA"
-            exit 1
-          fi
-
-          SHORT_SHA="${CORE_SHA:0:12}"
-          BRANCH="automation/update-browser-core"
-          REMOTE_BRANCH_SHA="$(git ls-remote --heads origin "$BRANCH" | cut -f1)"
-          if [[ -n "$REMOTE_BRANCH_SHA" && ! "$REMOTE_BRANCH_SHA" =~ ^[0-9a-f]{40}$ ]]; then
-            echo "::error::Unable to resolve a valid automation branch SHA"
-            exit 1
-          fi
-
-          # A branch-name filter can also match a fork PR. Only trust a PR whose
-          # head is in this repository before closing, editing, or approving it.
-          OPEN_PR="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --base master --head "$BRANCH" \
-            --json number,headRepository,isCrossRepository \
-            --jq "[.[] | select(.isCrossRepository == false and .headRepository.nameWithOwner == \"$GITHUB_REPOSITORY\")][0].number // empty")"
-          if [[ "$GITHUB_EVENT_NAME" == "push" && -z "$OPEN_PR" ]]; then
-            echo "No open browser-core update PR requires rebasing after this master push."
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "No open browser-core update PR; skipping classification and publication." >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-
-          # Rebuild the automation branch from the current default branch on
-          # every run. This prevents merge accumulation and guarantees that the
-          # PR satisfies strict up-to-date branch protection.
-          git fetch origin master
-          git switch -C "$BRANCH" origin/master
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          CURRENT_CORE_SHA="$(git rev-parse origin/master:packages/core)"
-
-          # Clone independently of the recorded gitlink so an unreachable old
-          # submodule SHA cannot prevent this repair workflow from starting.
-          git clone --filter=blob:none --no-checkout \
-            "https://github.com/$CORE_REPOSITORY.git" packages/core
-          git -C packages/core fetch --no-tags origin master
-          if ! git -C packages/core cat-file -e "$CORE_SHA^{commit}"; then
-            echo "::error::browser-core commit does not exist: $CORE_SHA"
-            exit 1
-          fi
-          if ! git -C packages/core merge-base --is-ancestor "$CORE_SHA" origin/master; then
-            echo "::error::browser-core commit is not reachable from origin/master: $CORE_SHA"
-            exit 1
-          fi
-          if git -C packages/core cat-file -e "$CURRENT_CORE_SHA^{commit}" \
-            && ! git -C packages/core merge-base --is-ancestor "$CURRENT_CORE_SHA" "$CORE_SHA"; then
-            echo "::error::browser-core update would downgrade or diverge: $CURRENT_CORE_SHA -> $CORE_SHA"
-            exit 1
-          fi
-
-          {
-            printf 'CORE_SHA=%s\n' "$CORE_SHA"
-            printf 'CURRENT_CORE_SHA=%s\n' "$CURRENT_CORE_SHA"
-            printf 'SHORT_SHA=%s\n' "$SHORT_SHA"
-            printf 'BRANCH=%s\n' "$BRANCH"
-            printf 'REMOTE_BRANCH_SHA=%s\n' "$REMOTE_BRANCH_SHA"
-            printf 'OPEN_PR=%s\n' "$OPEN_PR"
-          } >> "$GITHUB_ENV"
-          {
-            echo "ready=true"
-            printf 'base=%s\n' "$CURRENT_CORE_SHA"
-            printf 'head=%s\n' "$CORE_SHA"
-          } >> "$GITHUB_OUTPUT"
+        run: node --experimental-strip-types scripts/ci/update-browser-core.ts prepare
 
       - name: Classify browser-core consumer impact
         id: impact
@@ -158,112 +85,4 @@ jobs:
           DRY_RUN: ${{ inputs.dry_run }}
           PREFLIGHT: ${{ inputs.preflight }}
           CONSUMER_IMPACT: ${{ steps.impact.outputs.impact }}
-        run: |
-          set -euo pipefail
-
-          {
-            echo "### browser-core update classification"
-            printf 'Consumer impact: %s\n\n' "$CONSUMER_IMPACT"
-            printf 'Current gitlink: %s\n\n' "$CURRENT_CORE_SHA"
-            printf 'Target core: %s\n\n' "$CORE_SHA"
-            printf 'Automation branch: %s at %s\n\n' "$BRANCH" "${REMOTE_BRANCH_SHA:-absent}"
-            printf 'Open same-repository PR: %s\n\n' "${OPEN_PR:-absent}"
-            printf 'Dry run: %s\n' "${DRY_RUN:-false}"
-          } >> "$GITHUB_STEP_SUMMARY"
-
-          if [[ "$CONSUMER_IMPACT" != "true" && "$CONSUMER_IMPACT" != "false" ]]; then
-            echo "::error::Invalid consumer impact result: $CONSUMER_IMPACT"
-            exit 1
-          fi
-          if [[ "$CONSUMER_IMPACT" == "false" ]]; then
-            if [[ -n "$OPEN_PR" ]]; then
-              if [[ "$DRY_RUN" == "true" ]]; then
-                echo "Dry run: would close stale browser-core update PR #$OPEN_PR."
-              else
-                gh pr close "$OPEN_PR" --comment "Closing this stale update PR because browser-core $SHORT_SHA has no consumer-facing changes."
-              fi
-            fi
-            echo "browser-core $SHORT_SHA has no consumer-facing changes."
-            exit 0
-          fi
-
-          git -C packages/core checkout --detach "$CORE_SHA"
-
-          if git diff --quiet -- packages/core; then
-            if [[ -n "$OPEN_PR" ]]; then
-              if [[ "$DRY_RUN" == "true" ]]; then
-                echo "Dry run: would close stale browser-core update PR #$OPEN_PR."
-              else
-                gh pr close "$OPEN_PR" --comment "Closing this stale update PR because master already contains browser-core $SHORT_SHA."
-              fi
-            fi
-            echo "browser-core is already at $SHORT_SHA."
-            exit 0
-          fi
-
-          if [[ "$DRY_RUN" == "true" ]]; then
-            echo "Dry run: would update the packages/core gitlink to $CORE_SHA."
-            exit 0
-          fi
-
-          git add packages/core
-          git commit -m "chore(deps): update browser-core to $SHORT_SHA"
-          EXPECTED_HEAD_SHA="$(git rev-parse HEAD)"
-
-          mapfile -t CHANGED_FILES < <(git diff --name-only origin/master...HEAD)
-          if [[ "${#CHANGED_FILES[@]}" -ne 1 || "${CHANGED_FILES[0]}" != "packages/core" ]]; then
-            echo "::error::Refusing to publish an update that changes files other than packages/core"
-            printf 'Changed: %s\n' "${CHANGED_FILES[@]}"
-            exit 1
-          fi
-
-          if [[ -n "$REMOTE_BRANCH_SHA" ]]; then
-            git push --set-upstream origin "$BRANCH" \
-              --force-with-lease="refs/heads/$BRANCH:$REMOTE_BRANCH_SHA"
-          else
-            git push --set-upstream origin "$BRANCH"
-          fi
-
-          PR_TITLE="chore(deps): update browser-core to $SHORT_SHA"
-          PR_BODY="$(cat <<EOF
-          This PR updates the packages/core git submodule to browser-core commit $CORE_SHA.
-
-          The repository's pull-request CI and security workflows provide the required checks.
-          Because this PR uses GITHUB_TOKEN, GitHub may hold their initial runs for approval.
-
-          Generated by the browser-core update workflow.
-          EOF
-            )"
-
-          if [[ -n "$OPEN_PR" ]]; then
-            PR_NUMBER="$OPEN_PR"
-            gh pr edit "$PR_NUMBER" --title "$PR_TITLE" --body "$PR_BODY"
-            echo "Updated browser-core PR #$PR_NUMBER to $SHORT_SHA on top of current master."
-          else
-            PR_URL="$(gh pr create \
-              --base master \
-              --head "$BRANCH" \
-              --title "$PR_TITLE" \
-              --body "$PR_BODY")"
-            PR_NUMBER="${PR_URL##*/}"
-            echo "Created browser-core update PR #$PR_NUMBER."
-          fi
-
-          # Bind the open PR to the exact commit generated above. A later
-          # branch write must fail closed and wait for reconciliation; review
-          # and merge remain governed by repository policy and humans.
-          PR_HEAD_SHA="$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json headRefOid --jq .headRefOid)"
-          if [[ "$PR_HEAD_SHA" != "$EXPECTED_HEAD_SHA" ]]; then
-            echo "::error::PR head changed before handoff: expected $EXPECTED_HEAD_SHA, found $PR_HEAD_SHA"
-            exit 1
-          fi
-
-          # Optional manual diagnostics never satisfy the pull-request checks.
-          # Their failure must not prevent the canonical PR from being handed off.
-          if [[ "$PREFLIGHT" == "true" ]]; then
-            gh workflow run "🏗️ CI" --repo "$GITHUB_REPOSITORY" --ref "$BRANCH" \
-              || echo "::warning::Optional CI preflight dispatch failed"
-            gh workflow run "🔒 Security Scanning" --repo "$GITHUB_REPOSITORY" --ref "$BRANCH" \
-              || echo "::warning::Optional security preflight dispatch failed"
-          fi
-          echo "✅ PR #$PR_NUMBER is open at $EXPECTED_HEAD_SHA. Approve its pull-request workflows to run the required checks, then review the exact head."
+        run: node --experimental-strip-types scripts/ci/update-browser-core.ts publish
