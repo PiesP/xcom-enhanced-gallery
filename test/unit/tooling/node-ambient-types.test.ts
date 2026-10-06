@@ -4,11 +4,22 @@ import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 const root = resolve(import.meta.dirname, '../../..');
-const scriptConfig = resolve(root, 'tsconfig.scripts.json');
 const tsc = resolve(root, 'node_modules/typescript/bin/tsc');
 const temporaryRoots: string[] = [];
+const projects = [
+  {
+    name: 'scripts',
+    config: resolve(root, 'tsconfig.scripts.json'),
+    roots: [resolve(root, 'scripts/check/bootstrap.ts'), resolve(root, 'scripts/release/prepare.ts')],
+  },
+  {
+    name: 'direct Firefox test',
+    config: resolve(root, 'tsconfig.node-tests.json'),
+    roots: [resolve(root, 'test/e2e/firefox-extension-runtime.test.ts')],
+  },
+] as const;
 
-function compileProbe(addDom: boolean) {
+function compileProbe(project: (typeof projects)[number], addDom: boolean) {
   const directory = mkdtempSync(join(root, '.node-ambient-probe-'));
   temporaryRoots.push(directory);
   const source = join(directory, 'probe.ts');
@@ -25,7 +36,7 @@ function compileProbe(addDom: boolean) {
 
   const config = join(directory, 'tsconfig.json');
   writeFileSync(config, JSON.stringify({
-    extends: scriptConfig,
+    extends: project.config,
     // `files` adds the probe while retaining the real project's inherited `include`.
     files: [source],
     ...(addDom && { compilerOptions: { lib: ['ESNext', 'DOM'] } }),
@@ -40,8 +51,7 @@ function compileProbe(addDom: boolean) {
   });
   expect(listed.status, listed.stdout + listed.stderr).toBe(0);
   const files = listed.stdout.trim().split('\n');
-  expect(files).toContain(resolve(root, 'scripts/check/bootstrap.ts'));
-  expect(files).toContain(resolve(root, 'scripts/release/prepare.ts'));
+  for (const requiredRoot of project.roots) expect(files).toContain(requiredRoot);
   return { ...result, files };
 }
 
@@ -50,20 +60,22 @@ afterEach(() => {
 });
 
 describe('Node tooling ambient types', () => {
-  it('rejects browser globals through the actual script project while accepting Node APIs', () => {
-    const result = compileProbe(false);
-    expect(result.status, result.stderr).toBe(1);
-    expect(result.stderr).toBe('');
-    const diagnostics = result.stdout.trim().split('\n');
-    expect(diagnostics).toHaveLength(2);
-    expect(diagnostics[0]).toMatch(/^.*probe\.ts\(7,6\): error TS2584: Cannot find name 'document'\./);
-    expect(diagnostics[1]).toMatch(/^.*probe\.ts\(8,6\): error TS2304: Cannot find name 'window'\./);
-    expect(result.files.some((file) => file.endsWith('/lib.dom.d.ts'))).toBe(false);
-  });
+  for (const project of projects) {
+    it(`rejects browser globals in ${project.name} while accepting Node APIs`, () => {
+      const result = compileProbe(project, false);
+      expect(result.status, result.stderr).toBe(1);
+      expect(result.stderr).toBe('');
+      const diagnostics = result.stdout.trim().split('\n');
+      expect(diagnostics).toHaveLength(2);
+      expect(diagnostics[0]).toMatch(/^.*probe\.ts\(7,6\): error TS2584: Cannot find name 'document'\./);
+      expect(diagnostics[1]).toMatch(/^.*probe\.ts\(8,6\): error TS2304: Cannot find name 'window'\./);
+      expect(result.files.some((file) => file.endsWith('/lib.dom.d.ts'))).toBe(false);
+    });
 
-  it('detects DOM reintroduction in a disposable extension of the real config', () => {
-    const result = compileProbe(true);
-    expect(result.status, result.stdout + result.stderr).toBe(0);
-    expect(result.files.some((file) => file.endsWith('/lib.dom.d.ts'))).toBe(true);
-  });
+    it(`detects DOM reintroduction in a disposable ${project.name} config`, () => {
+      const result = compileProbe(project, true);
+      expect(result.status, result.stdout + result.stderr).toBe(0);
+      expect(result.files.some((file) => file.endsWith('/lib.dom.d.ts'))).toBe(true);
+    });
+  }
 });
