@@ -19,7 +19,7 @@ type LivePageModule = {
     imageSource: { host: string; path: string };
     itemIndex: number;
     itemVisible: boolean;
-    progressValue: number;
+    positionValue: number;
   };
   observeLiveUrls(options: {
     context: unknown;
@@ -191,7 +191,10 @@ describe('Windows X live page validation', () => {
   it('rejects a matching image outside the selected gallery index', () => {
     document.body.innerHTML = `
       <div data-xeg-gallery-container>
-        <div role="progressbar" aria-valuenow="2"></div>
+        <fieldset data-gallery-element="toolbar" data-current-index="1" data-focused-index="1">
+          <span id="xeg-toolbar-counter" data-gallery-element="position"
+            data-position="2" data-total="2" data-current-index="1" data-focused-index="1"></span>
+        </fieldset>
         <ol>
           <li data-gallery-element="item" data-index="0" data-media-loaded="true">
             <img src="https://pbs.twimg.com/media/target.jpg" alt="Target in wrong item">
@@ -235,11 +238,38 @@ describe('Windows X live page validation', () => {
     );
     if (!selectedImage) throw new Error('Selected gallery image fixture missing');
     selectedImage.src = 'https://pbs.twimg.com/media/target.jpg?name=orig';
+    const wrongImage = document.querySelector<HTMLImageElement>(
+      '[data-gallery-element="item"][data-index="0"] img'
+    );
+    if (!wrongImage) throw new Error('Other gallery image fixture missing');
+    wrongImage.src = 'https://pbs.twimg.com/media/other.jpg';
     expect(livePage.inspectSelectedGalleryDocument(expected)).toEqual({
       imageSource: { host: 'pbs.twimg.com', path: '/media/target.jpg' },
       itemIndex: 1,
       itemVisible: true,
-      progressValue: 2,
+      positionValue: 2,
     });
+
+    const position = document.querySelector<HTMLElement>('#xeg-toolbar-counter');
+    const toolbar = document.querySelector<HTMLElement>('[data-gallery-element="toolbar"]');
+    if (!position || !toolbar) throw new Error('Gallery context fixture missing');
+
+    for (const [element, attribute, value] of [
+      [position, 'data-position', '1'],
+      [position, 'data-total', '3'],
+      [position, 'data-focused-index', '0'],
+      [position, 'data-current-index', '0'],
+      [toolbar, 'data-focused-index', '0'],
+      [toolbar, 'data-current-index', '0'],
+    ] as const) {
+      const original = element.getAttribute(attribute);
+      element.setAttribute(attribute, value);
+      expect(livePage.inspectSelectedGalleryDocument(expected), attribute).toBe(false);
+      if (original === null) element.removeAttribute(attribute);
+      else element.setAttribute(attribute, original);
+    }
+
+    wrongImage.src = 'https://pbs.twimg.com/media/target.jpg';
+    expect(livePage.inspectSelectedGalleryDocument(expected)).toBe(false);
   });
 });

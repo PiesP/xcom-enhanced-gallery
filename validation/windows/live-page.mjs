@@ -296,12 +296,25 @@ async function inspectHitTestedAction(image, identity) {
 }
 
 export function inspectSelectedGalleryDocument({ expectedIndex, expectedPath }) {
-  const gallery = document.querySelector('[data-xeg-gallery-container]');
-  const progress = gallery?.querySelector('#xeg-toolbar-counter');
-  const item = gallery?.querySelector(
-    `[data-gallery-element="item"][data-index="${expectedIndex - 1}"]`
-  );
-  if (!(gallery instanceof HTMLElement) || !(item instanceof HTMLElement)) return false;
+  const galleries = document.querySelectorAll('[data-xeg-gallery-container]');
+  const gallery = galleries.length === 1 ? galleries[0] : null;
+  const toolbar = gallery?.querySelector('[data-gallery-element="toolbar"]');
+  const position = toolbar?.querySelector('#xeg-toolbar-counter[data-gallery-element="position"]');
+  const items = [...(gallery?.querySelectorAll('[data-gallery-element="item"]') ?? [])];
+  const selectedItems = items.filter((candidate) =>
+    candidate.getAttribute('data-index') === String(expectedIndex - 1));
+  const item = selectedItems.length === 1 ? selectedItems[0] : null;
+  if (!(gallery instanceof HTMLElement) || !(toolbar instanceof HTMLElement) ||
+      !(position instanceof HTMLElement) || !(item instanceof HTMLElement)) return false;
+
+  const total = Number(position.getAttribute('data-total'));
+  if (!Number.isSafeInteger(expectedIndex) || expectedIndex < 1 ||
+      !Number.isSafeInteger(total) || total !== items.length || expectedIndex > total ||
+      position.getAttribute('data-position') !== String(expectedIndex) ||
+      position.getAttribute('data-current-index') !== String(expectedIndex - 1) ||
+      position.getAttribute('data-focused-index') !== String(expectedIndex - 1) ||
+      toolbar.getAttribute('data-current-index') !== String(expectedIndex - 1) ||
+      toolbar.getAttribute('data-focused-index') !== String(expectedIndex - 1)) return false;
 
   const isVisible = (element) => {
     const style = getComputedStyle(element);
@@ -310,7 +323,7 @@ export function inspectSelectedGalleryDocument({ expectedIndex, expectedPath }) 
       Number(style.opacity) !== 0 && rectangle.bottom > 0 && rectangle.top < innerHeight &&
       rectangle.right > 0 && rectangle.left < innerWidth;
   };
-  const selectedImage = [...item.querySelectorAll('img')].find((candidate) => {
+  const matchingImages = [...gallery.querySelectorAll('[data-gallery-element="item"] img')].filter((candidate) => {
     if (!(candidate instanceof HTMLImageElement) || !candidate.complete ||
         candidate.naturalWidth <= 0 || !isVisible(candidate)) return false;
     try {
@@ -320,8 +333,9 @@ export function inspectSelectedGalleryDocument({ expectedIndex, expectedPath }) 
       return false;
     }
   });
-  if (progress?.getAttribute('data-position') !== String(expectedIndex) ||
-      item.getAttribute('data-media-loaded') !== 'true' || !isVisible(item) || !selectedImage) {
+  const selectedImage = matchingImages.length === 1 ? matchingImages[0] : null;
+  if (item.getAttribute('data-media-loaded') !== 'true' || !isVisible(item) ||
+      !(selectedImage instanceof HTMLImageElement) || !item.contains(selectedImage)) {
     return false;
   }
   const source = new URL(selectedImage.currentSrc || selectedImage.src);
@@ -329,7 +343,7 @@ export function inspectSelectedGalleryDocument({ expectedIndex, expectedPath }) 
     imageSource: { host: source.hostname, path: source.pathname },
     itemIndex: Number(item.getAttribute('data-index')),
     itemVisible: true,
-    progressValue: Number(progress.getAttribute('data-position')),
+    positionValue: Number(position.getAttribute('data-position')),
   };
 }
 
