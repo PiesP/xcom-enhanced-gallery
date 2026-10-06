@@ -294,9 +294,8 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
         const splitGroups = await toolbar.getByRole('group').evaluateAll((groups) =>
           groups.flatMap((group) => {
             const buttons = [...group.querySelectorAll('button')];
-            const rowTops = new Set(
-              buttons.map((button) => Math.round(button.getBoundingClientRect().top))
-            );
+            // Layout offsets exclude the 1px hover lift applied to the last clicked button.
+            const rowTops = new Set(buttons.map((button) => button.offsetTop));
             if (rowTops.size <= 1) return [];
             return [group.querySelector('legend')?.textContent?.trim() ?? 'unnamed group'];
           })

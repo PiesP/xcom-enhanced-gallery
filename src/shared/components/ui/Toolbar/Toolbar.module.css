@@ -369,8 +369,7 @@ button.fitButton {
 }
 
 .fitGroup {
-  flex-wrap: wrap;
-  max-inline-size: calc(4 * max(var(--xeg-size-button-md), 44px) + 3 * var(--xeg-spacing-xs));
+  max-inline-size: 100%;
 }
 
 .fitButton:focus,
@@ -380,9 +379,9 @@ button.fitButton {
 }
 
 .fitModeLabel {
-  flex: 1 1 100%;
+  flex: 0 1 auto;
   min-inline-size: 0;
-  max-inline-size: 100%;
+  max-inline-size: 7em;
   color: var(--xeg-toolbar-text-color, var(--xeg-color-text-primary));
   font-size: var(--xeg-font-size-sm);
   line-height: var(--xeg-line-height-snug);
