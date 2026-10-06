@@ -1,4 +1,4 @@
-import { readFileSync, realpathSync } from 'node:fs';
+import { appendFileSync, readFileSync, realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 export type PinnedTools = {
@@ -65,8 +65,26 @@ export function readPins(
 export function isCliEntry(metaUrl: string): boolean {
   if (!process.argv[1]) return false;
   try {
-    return realpathSync(process.argv[1]) === fileURLToPath(metaUrl);
+    return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(metaUrl));
   } catch {
     return false;
   }
 }
+
+export function main(args: readonly string[]): number {
+  try {
+    if (args.length !== 1 || args[0] !== 'env') throw new Error('Usage: pinned-tools.ts env');
+    if (!process.env.GITHUB_ENV) throw new Error('GITHUB_ENV is required');
+    const pins = readPins();
+    appendFileSync(
+      process.env.GITHUB_ENV,
+      `OSV_SCANNER_IMAGE=${pins.osv.image}\nSEMGREP_IMAGE=${pins.semgrep.image}\n`
+    );
+    return 0;
+  } catch (error) {
+    console.error(`pinned-tools: ${error instanceof Error ? error.message : String(error)}`);
+    return 1;
+  }
+}
+
+if (isCliEntry(import.meta.url)) process.exitCode = main(process.argv.slice(2));

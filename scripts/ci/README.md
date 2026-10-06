@@ -26,7 +26,10 @@ compares the OSV tag's GHCR manifest digest. Version drift is a warning;
 missing/malformed metadata, API failure, or digest drift fails. The
 dependency-free `install-nose.ts` downloads over HTTPS, verifies the installer
 bytes before invoking `sh` without GitHub tokens, and adds Nose to `GITHUB_PATH`
-only after installation succeeds. Both CLIs are inert when imported.
+only after installation succeeds, preserving child exit codes and signals.
+`pinned-tools.ts env` appends validated OSV and Semgrep image references to
+`GITHUB_ENV`; it accepts no arbitrary metadata path. All three CLIs are inert
+when imported.
 
 These TypeScript helpers are staged for workflow adoption. The active workflows
 still invoke the existing shell helpers and retain their current pinned values.

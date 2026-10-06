@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { chmodSync, copyFileSync, existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, copyFileSync, existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -29,7 +29,7 @@ function fixture() {
   pins.nose.installerSha256 = createHash('sha256').update(installerBody).digest('hex');
   writeFileSync(join(scripts, 'pinned-tools.json'), JSON.stringify(pins));
   const stub = join(bin, 'mock');
-  writeFileSync(stub, `#!/usr/bin/env node
+  writeFileSync(stub, `#!${process.execPath}
 import fs from 'node:fs';
 import path from 'node:path';
 const command = path.basename(process.argv[1]);
@@ -59,6 +59,7 @@ if (command === 'gh') {
     process.stdout.write(JSON.stringify({ assets }));
   }
 } else if (command === 'curl') {
+  if (scenario === 'download-signal') process.kill(process.pid, 'SIGTERM');
   if (scenario === 'download-fail' && args.includes('--location')) process.exit(7);
   if (scenario === 'manifest-fail' && args.includes('--dump-header')) process.exit(7);
   if (args.includes('--location')) fs.writeFileSync(args[args.indexOf('--output') + 1], ${JSON.stringify(installerBody)});
@@ -67,6 +68,7 @@ if (command === 'gh') {
   else if (scenario !== 'no-image-digest')
     process.stdout.write('Docker-Content-Digest: ' + (scenario === 'image-mismatch' ? 'sha256:' + '0'.repeat(64) : pins.osv.image.split('@')[1]) + '\\r\\n');
 } else if (command === 'sh') {
+  if (scenario === 'installer-signal') process.kill(process.pid, 'SIGTERM');
   if (scenario === 'installer-fail') process.exit(7);
 }
 `);
@@ -79,12 +81,13 @@ if (command === 'gh') {
     RUNNER_TEMP: root,
     HOME: join(root, 'home with spaces'),
     GITHUB_PATH: join(root, 'github path'),
+    GITHUB_ENV: join(root, 'github env'),
     GH_TOKEN: 'secret-gh',
     GITHUB_TOKEN: 'secret-github',
     NOSE_CLI_GITHUB_TOKEN: 'secret-nose',
   };
-  const run = (name: string, scenario = '') => {
-    const result = spawnSync(process.execPath, ['--experimental-strip-types', join(scripts, name)], {
+  const run = (name: string, scenario = '', args: string[] = []) => {
+    const result = spawnSync(process.execPath, ['--experimental-strip-types', join(scripts, name), ...args], {
       cwd: root,
       env: { ...env, MOCK_SCENARIO: scenario },
       encoding: 'utf8',
@@ -162,11 +165,29 @@ describe('Nose installer CLI', () => {
     it(`propagates ${scenario} without publishing PATH`, () => {
       const { run, root } = fixture();
       const { result, calls } = run('install-nose.ts', scenario);
-      expect(result.status).not.toBe(0);
+      expect(result.status).toBe(7);
       expect(existsSync(join(root, 'github path'))).toBe(false);
       expect(calls.map((call) => call.command)).toEqual(scenario === 'download-fail' ? ['curl'] : ['curl', 'sh']);
+      expect(readdirSync(root).filter((name) => name.startsWith('nose-installer-'))).toEqual([]);
     });
   }
+
+  for (const scenario of ['download-signal', 'installer-signal']) {
+    it(`preserves ${scenario} and removes temporary files`, () => {
+      const { run, root } = fixture();
+      const { result } = run('install-nose.ts', scenario);
+      expect(result.status, result.stderr).toBe(143);
+      expect(existsSync(join(root, 'github path'))).toBe(false);
+      expect(readdirSync(root).filter((name) => name.startsWith('nose-installer-'))).toEqual([]);
+    });
+  }
+
+  it('preserves command-not-found without reaching a system downloader', () => {
+    const { run, env, root } = fixture();
+    env.PATH = join(root, 'missing-bin');
+    expect(run('install-nose.ts').result.status).toBe(127);
+    expect(existsSync(join(root, 'github path'))).toBe(false);
+  });
 
   it('rejects a checksum mismatch before execution', () => {
     const { run, scripts, root, pins } = fixture();
@@ -177,6 +198,37 @@ describe('Nose installer CLI', () => {
     expect(result.stderr).toContain('SHA-256 mismatch');
     expect(calls.map((call) => call.command)).toEqual(['curl']);
     expect(existsSync(join(root, 'github path'))).toBe(false);
+  });
+});
+
+describe('pinned image environment CLI', () => {
+  it('appends only validated pinned images without external commands', () => {
+    const { run, pins, root } = fixture();
+    writeFileSync(join(root, 'github env'), 'EXISTING=value\n');
+    const { result, calls } = run('pinned-tools.ts', '', ['env']);
+    expect(result.status).toBe(0);
+    expect(calls).toEqual([]);
+    expect(readFileSync(join(root, 'github env'), 'utf8')).toBe(
+      `EXISTING=value\nOSV_SCANNER_IMAGE=${pins.osv.image}\nSEMGREP_IMAGE=${pins.semgrep.image}\n`
+    );
+  });
+
+  it('rejects other modes and malformed images before writing', () => {
+    const { run, pins, scripts, root } = fixture();
+    expect(run('pinned-tools.ts', '', ['other']).result.status).toBe(1);
+    pins.osv.image += '\nINJECTED=value';
+    writeFileSync(join(scripts, 'pinned-tools.json'), JSON.stringify(pins));
+    expect(run('pinned-tools.ts', '', ['env']).result.status).toBe(1);
+    expect(existsSync(join(root, 'github env'))).toBe(false);
+  });
+
+  it('requires the workflow environment output path', () => {
+    const { env, scripts } = fixture();
+    const result = spawnSync(process.execPath, ['--experimental-strip-types', join(scripts, 'pinned-tools.ts'), 'env'], {
+      env: { ...env, GITHUB_ENV: '' }, encoding: 'utf8',
+    });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('GITHUB_ENV is required');
   });
 });
 

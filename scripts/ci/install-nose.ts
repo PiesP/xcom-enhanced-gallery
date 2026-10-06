@@ -1,16 +1,33 @@
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { appendFileSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { constants, tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { isCliEntry, readPins } from './pinned-tools.ts';
 
+class CommandFailure extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
 function run(file: string, args: string[], env = process.env): void {
   const result = spawnSync(file, args, { env, stdio: 'inherit' });
-  if (result.error) throw result.error;
-  if (result.signal) throw new Error(`${file} terminated by ${result.signal}`);
-  if (result.status !== 0) throw new Error(`${file} exited with status ${result.status}`);
+  if (result.error) {
+    const code = (result.error as NodeJS.ErrnoException).code;
+    const status = code === 'ENOENT' ? 127 : code === 'EACCES' ? 126 : 1;
+    throw new CommandFailure(`${file}: ${result.error.message}`, status);
+  }
+  if (result.signal) {
+    const signal = constants.signals[result.signal];
+    throw new CommandFailure(`${file} terminated by ${result.signal}`, 128 + signal);
+  }
+  if (result.status !== 0)
+    throw new CommandFailure(`${file} exited with status ${result.status}`, result.status ?? 1);
 }
 
 export function main(args: readonly string[]): number {
@@ -52,7 +69,7 @@ export function main(args: readonly string[]): number {
     }
   } catch (error) {
     console.error(`install-nose: ${error instanceof Error ? error.message : String(error)}`);
-    return 1;
+    return error instanceof CommandFailure ? error.status : 1;
   }
 }
 
