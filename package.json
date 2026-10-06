@@ -50,7 +50,7 @@
     "verify": "pnpm -s quality && pnpm -s build:all:ci",
     "verify:full": "pnpm verify && pnpm test:cov && pnpm build:dev && pnpm -s test:e2e:all",
     "test": "vitest run",
-    "test:ci": "node --experimental-strip-types --test scripts/ci/deep-check-reuse.test.ts scripts/release/verify-source.test.ts scripts/ci/repository-authority.test.ts",
+    "test:ci": "node --experimental-strip-types --test scripts/ci/deep-check-reuse.test.ts scripts/release/verify-source.test.ts scripts/ci/repository-authority.test.ts && vitest run test/unit/tooling/node-ambient-types.test.ts",
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
     "test:e2e": "playwright test --config test/e2e/playwright.config.ts",
