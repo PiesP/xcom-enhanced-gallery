@@ -128,12 +128,24 @@ export function main(args: readonly string[], now = Date.now()): number {
     if (args.length !== 0) throw new Error('check-pinned-tools takes no arguments');
     if (!process.env.GH_TOKEN) throw new Error('GH_TOKEN is required');
     const pins = readPins();
-    checkRelease('nose', pins.nose.version, 'corca-ai/nose', now);
-    checkInstallerDigest(pins.nose.version, pins.nose.installerSha256);
-    checkRelease('osv-scanner', pins.osv.version, 'google/osv-scanner', now);
-    checkOsvDigest(pins.osv.version, pins.osv.image);
-    checkRelease('semgrep', pins.semgrep.version, 'semgrep/semgrep', now);
-    return 0;
+    let failed = false;
+    for (const check of [
+      () => checkRelease('nose', pins.nose.version, 'corca-ai/nose', now),
+      () => checkInstallerDigest(pins.nose.version, pins.nose.installerSha256),
+      () => checkRelease('osv-scanner', pins.osv.version, 'google/osv-scanner', now),
+      () => checkOsvDigest(pins.osv.version, pins.osv.image),
+      () => checkRelease('semgrep', pins.semgrep.version, 'semgrep/semgrep', now),
+    ]) {
+      try {
+        check();
+      } catch (error) {
+        console.error(
+          `check-pinned-tools: ${error instanceof Error ? error.message : String(error)}`
+        );
+        failed = true;
+      }
+    }
+    return failed ? 1 : 0;
   } catch (error) {
     console.error(`check-pinned-tools: ${error instanceof Error ? error.message : String(error)}`);
     return 1;
