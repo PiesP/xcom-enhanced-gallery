@@ -1,0 +1,14 @@
+{
+  "nose": {
+    "version": "0.21.0",
+    "installerSha256": "0203a9c1204ca4ce4b233253a595375c0747c8f48ac8c88beeead64b4be71f55"
+  },
+  "osv": {
+    "version": "2.6.0",
+    "image": "ghcr.io/google/osv-scanner-action@sha256:71ad04ab2f8798be47870f9b18817ad317c2f8f2f97aa6726ba10d5578bc174a"
+  },
+  "semgrep": {
+    "version": "1.178.0",
+    "image": "semgrep/semgrep:1.178.0@sha256:fbba1f23d2ef94630c828e8692758f8bc6353a8089841a396a5c041451966ffb"
+  }
+}
