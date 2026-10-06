@@ -161,113 +161,50 @@ jobs:
         if: ${{ needs.changes.result == 'success' && needs.changes.outputs.osv == 'false' }}
         run: echo "No dependency-relevant changes; required check satisfied."
 
-      - name: 📥 Checkout code
+      - name: 📥 Checkout PR result and history
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ github.sha }}
           fetch-depth: 0
-          submodules: true
+          submodules: false
           persist-credentials: false
 
-      - name: ⏪ Checkout the PR base
+      - name: ⏪ Checkout the trusted PR base
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           set -euo pipefail
           [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          git cat-file -e "$BASE_SHA^{commit}"
           git switch --force --detach "$BASE_SHA"
           git submodule update --init --recursive
 
-      - name: 📁 Prepare base-pinned OSV validator and result directory
+      - name: 📦 Setup trusted OSV runtime
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        uses: PiesP/browser-core/automation/actions/setup-project@279124fa998847bd0184d2de12bdaadcd6d2f969
+        with:
+          install-dependencies: 'false'
+
+      - name: 🔒 Prepare pinned OSV helper
+        id: osv-helper
+        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
+        uses: PiesP/browser-core/automation/actions/prepare-osv@9a9471ad301e439bcd1ebc52334cf6b4399510e7
+
+      - name: 📁 Prepare private OSV result directory
+        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
         run: |
           set -euo pipefail
-          [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          umask 077
           install -d -m 0700 "$RUNNER_TEMP/osv-results"
-          if git cat-file -e "$BASE_SHA:scripts/security/validate-osv-results.py" 2>/dev/null; then
-            git show "$BASE_SHA:scripts/security/validate-osv-results.py" > "$RUNNER_TEMP/osv-results/validate-osv-results.py"
-          else
-            git show "$BASE_SHA:scripts/security/scope-osv-exceptions.py" > "$RUNNER_TEMP/osv-results/legacy-osv-helper.py"
-            cat > "$RUNNER_TEMP/osv-results/validate-osv-results.py" <<'PY'
-          # Temporary bridge for PRs based on the revision before the validator rename.
-          import argparse
-          from pathlib import Path
-          import runpy
-          import sys
-
-          legacy = runpy.run_path(str(Path(__file__).with_name("legacy-osv-helper.py")))
-          load_report = legacy["load_report"]
-
-          def validate_osv_report(report):
-              return legacy["validate_and_filter_report"](report, frozenset())
-
-          if __name__ == "__main__":
-              parser = argparse.ArgumentParser()
-              parser.add_argument("--input", required=True, type=Path)
-              parser.add_argument("--output", required=True, type=Path)
-              args = parser.parse_args()
-              try:
-                  legacy["prepare_output"](args.output, (args.input,))
-                  legacy["write_report"](args.output, validate_osv_report(load_report(args.input)))
-              except (OSError, ValueError) as error:
-                  print(f"validate-osv-results: {error}", file=sys.stderr)
-                  sys.exit(2)
-          PY
-          fi
-          chmod 0600 "$RUNNER_TEMP/osv-results/validate-osv-results.py"
           : > "$RUNNER_TEMP/osv-results/osv-empty.toml"
 
       - name: 🛡️ Scan dependencies before the PR
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
-        run: |
-          set -euo pipefail
-          results_dir="$RUNNER_TEMP/osv-results"
-          raw_reporter_log="$results_dir/old-results.raw.reporter.log"
-          rm -f "$results_dir/old-results.raw.json" "$results_dir/old-results.json" "$raw_reporter_log"
-          scan_status=0
-          docker run --rm \
-            --env GOTOOLCHAIN=auto \
-            --volume "$GITHUB_WORKSPACE:/src" \
-            --volume "$RUNNER_TEMP/osv-results:/results" \
-            --workdir /src \
-            "$OSV_SCANNER_IMAGE" \
-            --config=/results/osv-empty.toml \
-            --format=json \
-            --output-file=/results/old-results.raw.json \
-            -r \
-            --lockfile=pnpm-lock.yaml \
-            . || scan_status=$?
-          if ((scan_status > 1)); then
-            exit "$scan_status"
-          fi
-          set +e
-          docker run --rm \
-            --entrypoint /root/osv-reporter \
-            --volume "$RUNNER_TEMP/osv-results:/results" \
-            --workdir /results \
-            "$OSV_SCANNER_IMAGE" \
-            --new=old-results.raw.json \
-            --output-files=json:/dev/null \
-            --fail-on-vuln=false 2>&1 | tee "$raw_reporter_log"
-          raw_pipeline_status=("${PIPESTATUS[@]}")
-          set -e
-          raw_report_status="${raw_pipeline_status[0]}"
-          if ((raw_pipeline_status[1] != 0)); then
-            exit "${raw_pipeline_status[1]}"
-          fi
-          if grep -Eq '^failed to open (old|new) results at ' "$raw_reporter_log"; then
-            echo "OSV reporter rejected the raw scanner output." >&2
-            exit 2
-          fi
-          if ((raw_report_status != 0)); then
-            exit "$raw_report_status"
-          fi
-          python3 "$RUNNER_TEMP/osv-results/validate-osv-results.py" \
-            --input "$RUNNER_TEMP/osv-results/old-results.raw.json" \
-            --output "$RUNNER_TEMP/osv-results/old-results.json"
+        env:
+          OSV_HELPER: ${{ steps.osv-helper.outputs.helper-path }}
+        run: node --strip-types "$OSV_HELPER" scan-old consumer
 
       - name: ⏩ Checkout the PR result
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
@@ -278,136 +215,16 @@ jobs:
 
       - name: 🛡️ Scan dependencies after the PR
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
-        run: |
-          set -euo pipefail
-          results_dir="$RUNNER_TEMP/osv-results"
-          raw_reporter_log="$results_dir/new-results.raw.reporter.log"
-          rm -f "$results_dir/new-results.raw.json" "$results_dir/new-results.json" "$raw_reporter_log"
-          scan_status=0
-          docker run --rm \
-            --env GOTOOLCHAIN=auto \
-            --volume "$GITHUB_WORKSPACE:/src" \
-            --volume "$RUNNER_TEMP/osv-results:/results" \
-            --workdir /src \
-            "$OSV_SCANNER_IMAGE" \
-            --config=/results/osv-empty.toml \
-            --format=json \
-            --output-file=/results/new-results.raw.json \
-            -r \
-            --lockfile=pnpm-lock.yaml \
-            . || scan_status=$?
-          if ((scan_status > 1)); then
-            exit "$scan_status"
-          fi
-          set +e
-          docker run --rm \
-            --entrypoint /root/osv-reporter \
-            --volume "$RUNNER_TEMP/osv-results:/results" \
-            --workdir /results \
-            "$OSV_SCANNER_IMAGE" \
-            --new=new-results.raw.json \
-            --output-files=json:/dev/null \
-            --fail-on-vuln=false 2>&1 | tee "$raw_reporter_log"
-          raw_pipeline_status=("${PIPESTATUS[@]}")
-          set -e
-          raw_report_status="${raw_pipeline_status[0]}"
-          if ((raw_pipeline_status[1] != 0)); then
-            exit "${raw_pipeline_status[1]}"
-          fi
-          if grep -Eq '^failed to open (old|new) results at ' "$raw_reporter_log"; then
-            echo "OSV reporter rejected the raw scanner output." >&2
-            exit 2
-          fi
-          if ((raw_report_status != 0)); then
-            exit "$raw_report_status"
-          fi
-          python3 "$RUNNER_TEMP/osv-results/validate-osv-results.py" \
-            --input "$RUNNER_TEMP/osv-results/new-results.raw.json" \
-            --output "$RUNNER_TEMP/osv-results/new-results.json"
+        env:
+          OSV_HELPER: ${{ steps.osv-helper.outputs.helper-path }}
+        run: node --strip-types "$OSV_HELPER" scan-new consumer
 
       - name: 📋 Report newly introduced vulnerabilities
         id: osv-report
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
-        run: |
-          set -euo pipefail
-          results_dir="$RUNNER_TEMP/osv-results"
-          reporter_log="$results_dir/osv-reporter.log"
-          rm -f "$results_dir/osv-results.sarif" "$reporter_log"
-          python3 -I - "$results_dir" old-results.json new-results.json <<'PY'
-          from pathlib import Path
-          import runpy
-          import sys
-
-          results_dir = Path(sys.argv[1])
-          validator = runpy.run_path(
-              str(results_dir / "validate-osv-results.py"),
-              run_name="osv_validator",
-          )
-          for name in sys.argv[2:]:
-              report = validator["load_report"](results_dir / name)
-              validator["validate_osv_report"](report)
-          PY
-          set +e
-          docker run --rm \
-            --entrypoint /root/osv-reporter \
-            --volume "$RUNNER_TEMP/osv-results:/results" \
-            --workdir /results \
-            "$OSV_SCANNER_IMAGE" \
-            --old=old-results.json \
-            --new=new-results.json \
-            --output-files=sarif:osv-results.sarif \
-            '--output-files=gh-annotations:#stderr' \
-            --fail-on-vuln=true 2>&1 | tee "$reporter_log"
-          pipeline_status=("${PIPESTATUS[@]}")
-          set -e
-          report_status="${pipeline_status[0]}"
-          if ((pipeline_status[1] != 0)); then
-            exit "${pipeline_status[1]}"
-          fi
-          if grep -Eq '^failed to open (old|new) results at ' "$reporter_log"; then
-            echo "OSV reporter rejected an input document." >&2
-            exit 2
-          fi
-          if ((report_status > 1)); then
-            exit "$report_status"
-          fi
-          SARIF_PATH="$results_dir/osv-results.sarif" REPORT_STATUS="$report_status" python3 -I - <<'PY'
-          import json
-          import os
-          from pathlib import Path
-
-          def reject_duplicate_keys(pairs):
-              document = {}
-              for key, value in pairs:
-                  if key in document:
-                      raise ValueError(f"SARIF contains duplicate key: {key}")
-                  document[key] = value
-              return document
-
-          sarif_path = Path(os.environ["SARIF_PATH"])
-          with sarif_path.open("r", encoding="utf-8") as sarif_file:
-              sarif = json.load(sarif_file, object_pairs_hook=reject_duplicate_keys)
-          if not isinstance(sarif, dict) or sarif.get("version") != "2.1.0":
-              raise ValueError("reporter output is not SARIF 2.1.0")
-          runs = sarif.get("runs")
-          if not isinstance(runs, list) or len(runs) != 1:
-              raise ValueError("reporter SARIF must contain exactly one run")
-          run = runs[0]
-          if not isinstance(run, dict):
-              raise ValueError("reporter SARIF run must be an object")
-          tool = run.get("tool")
-          driver = tool.get("driver") if isinstance(tool, dict) else None
-          if not isinstance(driver, dict) or driver.get("name") != "osv-scanner":
-              raise ValueError("reporter SARIF tool identity is invalid")
-          results = run.get("results")
-          if not isinstance(results, list) or not all(isinstance(item, dict) for item in results):
-              raise ValueError("reporter SARIF results must be an array of objects")
-          report_status = int(os.environ["REPORT_STATUS"])
-          if report_status == 1 and not results:
-              raise ValueError("reporter failed for vulnerabilities but emitted no SARIF results")
-          PY
-          echo "sarif-upload=true" >> "$GITHUB_OUTPUT"
-          exit "$report_status"
+        env:
+          OSV_HELPER: ${{ steps.osv-helper.outputs.helper-path }}
+        run: node --strip-types "$OSV_HELPER" report-pr consumer
 
       - name: 📊 Upload OSV SARIF to GitHub Security
         if: ${{ !cancelled() && steps.osv-report.outputs.sarif-upload == 'true' && (needs.changes.result != 'success' || needs.changes.outputs.osv != 'false') }}
@@ -432,196 +249,72 @@ jobs:
         if: ${{ needs.changes.result == 'success' && needs.changes.outputs.osv == 'false' }}
         run: echo "No dependency-relevant changes; required check satisfied."
 
-      - name: 📥 Checkout code
+      - name: 📥 Checkout target and history
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          submodules: true
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          submodules: false
           persist-credentials: false
 
-      - name: 📁 Prepare trusted OSV validator and result directory
+      - name: 🔒 Select trusted OSV runtime manifest
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
         env:
           POLICY_SHA: ${{ github.event.merge_group.base_sha || github.sha }}
         run: |
           set -euo pipefail
-          install -d -m 0700 "$RUNNER_TEMP/osv-results"
+          [[ "$GITHUB_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$POLICY_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$(git rev-parse HEAD)" == "$GITHUB_SHA" ]]
           if [[ "$GITHUB_EVENT_NAME" == "merge_group" ]]; then
-            [[ "$POLICY_SHA" =~ ^[0-9a-f]{40}$ ]]
             if ! git cat-file -e "$POLICY_SHA^{commit}" 2>/dev/null; then
-              if [[ "$(git rev-parse --is-shallow-repository)" == "true" ]]; then
-                git fetch --no-tags --prune --unshallow origin
-              else
-                git fetch --no-tags --prune origin '+refs/heads/*:refs/remotes/origin/*'
-              fi
+              git fetch --no-tags --prune origin '+refs/heads/*:refs/remotes/origin/*'
             fi
             git cat-file -e "$POLICY_SHA^{commit}"
-            if git cat-file -e "$POLICY_SHA:scripts/security/validate-osv-results.py" 2>/dev/null; then
-              git show "$POLICY_SHA:scripts/security/validate-osv-results.py" > "$RUNNER_TEMP/osv-results/validate-osv-results.py"
-            else
-              git show "$POLICY_SHA:scripts/security/scope-osv-exceptions.py" > "$RUNNER_TEMP/osv-results/legacy-osv-helper.py"
-              cat > "$RUNNER_TEMP/osv-results/validate-osv-results.py" <<'PY'
-          # Temporary bridge for merge groups based on the revision before the validator rename.
-          import argparse
-          from pathlib import Path
-          import runpy
-          import sys
-
-          legacy = runpy.run_path(str(Path(__file__).with_name("legacy-osv-helper.py")))
-          load_report = legacy["load_report"]
-
-          def validate_osv_report(report):
-              return legacy["validate_and_filter_report"](report, frozenset())
-
-          if __name__ == "__main__":
-              parser = argparse.ArgumentParser()
-              parser.add_argument("--input", required=True, type=Path)
-              parser.add_argument("--output", required=True, type=Path)
-              args = parser.parse_args()
-              try:
-                  legacy["prepare_output"](args.output, (args.input,))
-                  legacy["write_report"](args.output, validate_osv_report(load_report(args.input)))
-              except (OSError, ValueError) as error:
-                  print(f"validate-osv-results: {error}", file=sys.stderr)
-                  sys.exit(2)
-          PY
-            fi
-            chmod 0600 "$RUNNER_TEMP/osv-results/validate-osv-results.py"
+            git switch --force --detach "$POLICY_SHA"
           else
-            install -m 0600 scripts/security/validate-osv-results.py "$RUNNER_TEMP/osv-results/validate-osv-results.py"
+            [[ "$POLICY_SHA" == "$GITHUB_SHA" ]]
           fi
-          : > "$RUNNER_TEMP/osv-results/osv-empty.toml"
 
-      - name: 🛡️ Run OSV scan
+      - name: 📦 Setup trusted OSV runtime
+        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
+        uses: PiesP/browser-core/automation/actions/setup-project@279124fa998847bd0184d2de12bdaadcd6d2f969
+        with:
+          install-dependencies: 'false'
+
+      - name: 🔒 Prepare pinned OSV helper
+        id: osv-helper
+        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
+        uses: PiesP/browser-core/automation/actions/prepare-osv@9a9471ad301e439bcd1ebc52334cf6b4399510e7
+
+      - name: 📁 Prepare private OSV result directory
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
         run: |
           set -euo pipefail
-          results_dir="$RUNNER_TEMP/osv-results"
-          raw_reporter_log="$results_dir/osv-results.raw.reporter.log"
-          rm -f "$results_dir/osv-results.raw.json" "$results_dir/osv-results.json" "$raw_reporter_log"
-          scan_status=0
-          docker run --rm \
-            --env GOTOOLCHAIN=auto \
-            --volume "$GITHUB_WORKSPACE:/src" \
-            --volume "$RUNNER_TEMP/osv-results:/results" \
-            --workdir /src \
-            "$OSV_SCANNER_IMAGE" \
-            --config=/results/osv-empty.toml \
-            --format=json \
-            --output-file=/results/osv-results.raw.json \
-            -r \
-            --lockfile=pnpm-lock.yaml \
-            . || scan_status=$?
-          if ((scan_status > 1)); then
-            exit "$scan_status"
-          fi
-          set +e
-          docker run --rm \
-            --entrypoint /root/osv-reporter \
-            --volume "$RUNNER_TEMP/osv-results:/results" \
-            --workdir /results \
-            "$OSV_SCANNER_IMAGE" \
-            --new=osv-results.raw.json \
-            --output-files=json:/dev/null \
-            --fail-on-vuln=false 2>&1 | tee "$raw_reporter_log"
-          raw_pipeline_status=("${PIPESTATUS[@]}")
-          set -e
-          raw_report_status="${raw_pipeline_status[0]}"
-          if ((raw_pipeline_status[1] != 0)); then
-            exit "${raw_pipeline_status[1]}"
-          fi
-          if grep -Eq '^failed to open (old|new) results at ' "$raw_reporter_log"; then
-            echo "OSV reporter rejected the raw scanner output." >&2
-            exit 2
-          fi
-          if ((raw_report_status != 0)); then
-            exit "$raw_report_status"
-          fi
-          python3 "$RUNNER_TEMP/osv-results/validate-osv-results.py" \
-            --input "$RUNNER_TEMP/osv-results/osv-results.raw.json" \
-            --output "$RUNNER_TEMP/osv-results/osv-results.json"
+          umask 077
+          install -d -m 0700 "$RUNNER_TEMP/osv-results"
+          : > "$RUNNER_TEMP/osv-results/osv-empty.toml"
+
+      - name: ⏩ Restore target for the full scan
+        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
+        run: |
+          set -euo pipefail
+          git switch --force --detach "$GITHUB_SHA"
+          git submodule update --init --recursive
+
+      - name: 🛡️ Run OSV scan
+        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
+        env:
+          OSV_HELPER: ${{ steps.osv-helper.outputs.helper-path }}
+        run: node --strip-types "$OSV_HELPER" scan-full consumer
 
       - name: 📋 Convert OSV results to SARIF and enforce the vulnerability gate
         id: osv-report
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
-        run: |
-          set -euo pipefail
-          results_dir="$RUNNER_TEMP/osv-results"
-          reporter_log="$results_dir/osv-reporter.log"
-          rm -f "$results_dir/osv-results.sarif" "$reporter_log"
-          python3 -I - "$results_dir" osv-results.json <<'PY'
-          from pathlib import Path
-          import runpy
-          import sys
-
-          results_dir = Path(sys.argv[1])
-          validator = runpy.run_path(
-              str(results_dir / "validate-osv-results.py"),
-              run_name="osv_validator",
-          )
-          for name in sys.argv[2:]:
-              report = validator["load_report"](results_dir / name)
-              validator["validate_osv_report"](report)
-          PY
-          set +e
-          docker run --rm \
-            --entrypoint /root/osv-reporter \
-            --volume "$RUNNER_TEMP/osv-results:/results" \
-            --workdir /results \
-            "$OSV_SCANNER_IMAGE" \
-            --output-files=sarif:osv-results.sarif \
-            --new=osv-results.json \
-            --fail-on-vuln=true 2>&1 | tee "$reporter_log"
-          pipeline_status=("${PIPESTATUS[@]}")
-          set -e
-          report_status="${pipeline_status[0]}"
-          if ((pipeline_status[1] != 0)); then
-            exit "${pipeline_status[1]}"
-          fi
-          if grep -Eq '^failed to open (old|new) results at ' "$reporter_log"; then
-            echo "OSV reporter rejected an input document." >&2
-            exit 2
-          fi
-          if ((report_status > 1)); then
-            exit "$report_status"
-          fi
-          SARIF_PATH="$results_dir/osv-results.sarif" REPORT_STATUS="$report_status" python3 -I - <<'PY'
-          import json
-          import os
-          from pathlib import Path
-
-          def reject_duplicate_keys(pairs):
-              document = {}
-              for key, value in pairs:
-                  if key in document:
-                      raise ValueError(f"SARIF contains duplicate key: {key}")
-                  document[key] = value
-              return document
-
-          sarif_path = Path(os.environ["SARIF_PATH"])
-          with sarif_path.open("r", encoding="utf-8") as sarif_file:
-              sarif = json.load(sarif_file, object_pairs_hook=reject_duplicate_keys)
-          if not isinstance(sarif, dict) or sarif.get("version") != "2.1.0":
-              raise ValueError("reporter output is not SARIF 2.1.0")
-          runs = sarif.get("runs")
-          if not isinstance(runs, list) or len(runs) != 1:
-              raise ValueError("reporter SARIF must contain exactly one run")
-          run = runs[0]
-          if not isinstance(run, dict):
-              raise ValueError("reporter SARIF run must be an object")
-          tool = run.get("tool")
-          driver = tool.get("driver") if isinstance(tool, dict) else None
-          if not isinstance(driver, dict) or driver.get("name") != "osv-scanner":
-              raise ValueError("reporter SARIF tool identity is invalid")
-          results = run.get("results")
-          if not isinstance(results, list) or not all(isinstance(item, dict) for item in results):
-              raise ValueError("reporter SARIF results must be an array of objects")
-          report_status = int(os.environ["REPORT_STATUS"])
-          if report_status == 1 and not results:
-              raise ValueError("reporter failed for vulnerabilities but emitted no SARIF results")
-          PY
-          echo "sarif-upload=true" >> "$GITHUB_OUTPUT"
-          exit "$report_status"
+        env:
+          OSV_HELPER: ${{ steps.osv-helper.outputs.helper-path }}
+        run: node --strip-types "$OSV_HELPER" report-full consumer
 
       - name: 📊 Upload OSV SARIF to GitHub Security
         if: ${{ !cancelled() && steps.osv-report.outputs.sarif-upload == 'true' && (needs.changes.result != 'success' || needs.changes.outputs.osv != 'false') }}

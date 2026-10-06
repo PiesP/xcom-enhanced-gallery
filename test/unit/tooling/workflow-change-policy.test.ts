@@ -165,11 +165,6 @@ describe('workflow change policy', () => {
     const windowsValidation = classify(['validation/windows/live-page.mjs']);
     expectAll(windowsValidation, ['unit', 'e2e', 'semgrep', 'codeql_javascript']);
     expect(windowsValidation.build).toBe('false');
-
-    const validator = classify(['scripts/security/validate-osv-results.py']);
-    expect(validator.unit).toBe('true');
-    expect(validator.osv).toBe('true');
-
     const pins = classify(['scripts/ci/pinned-tools.json']);
     expectAll(pins, ['quality', 'duplication', 'osv', 'semgrep']);
     const installer = classify(['scripts/ci/install-nose.ts']);
