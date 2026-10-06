@@ -28,6 +28,6 @@
   },
   "node": false,
   "playwright": false,
-  "ignoreBinaries": ["openssl"],
+  "ignoreBinaries": ["openssl", "nose"],
   "ignoreExportsUsedInFile": true
 }
