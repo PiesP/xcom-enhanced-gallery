@@ -6,5 +6,8 @@
   "include": [
     "test/e2e/**/*.ts",
     "src/**/*.d.ts"
+  ],
+  "exclude": [
+    "test/e2e/firefox-extension-runtime.test.ts"
   ]
 }

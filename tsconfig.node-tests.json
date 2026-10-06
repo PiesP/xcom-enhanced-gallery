@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.scripts.json",
+  "compilerOptions": {
+    "lib": ["ESNext", "DOM", "DOM.Iterable"]
+  },
+  "include": ["test/e2e/firefox-extension-runtime.test.ts"]
+}
