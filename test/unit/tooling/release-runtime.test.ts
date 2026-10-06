@@ -39,29 +39,17 @@ describe('release runtime selection', () => {
     expect(() => resolveRuntime('26.9.0', '26.10.1')).toThrow();
   });
 
-  it('resolves a historical source manifest for older tagged setup actions', () => {
+  it('runs the trusted provenance helper before tagged release setup', () => {
     const workflow = readFileSync(resolve(import.meta.dirname, '../../../.github/workflows/release.yaml'), 'utf8');
-    const selection = workflow.match(/node - "\$release_sha" <<'JS'\n([\s\S]*?)\n          JS/)?.[1];
-    if (!selection) throw new Error('Release provenance runtime selector is missing');
-    const fixture = mkdtempSync(join(tmpdir(), 'historical-release-runtime-'));
-    try {
-      execFileSync('git', ['init', '-q'], { cwd: fixture });
-      writeFileSync(join(fixture, 'package.json'), JSON.stringify({ volta: { node: '24.15.0' } }));
-      execFileSync('git', ['add', 'package.json'], { cwd: fixture });
-      execFileSync('git', ['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', 'historical source'], { cwd: fixture });
-      const sha = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: fixture, encoding: 'utf8' }).trim();
-      const output = join(fixture, 'output');
-      execFileSync(process.execPath, ['-', sha], {
-        cwd: fixture,
-        input: selection,
-        env: { ...process.env, GITHUB_OUTPUT: output },
-        stdio: ['pipe', 'pipe', 'pipe']
-      });
-      expect(readFileSync(output, 'utf8')).toBe('node-version=24.15.0\n');
-      expect(workflow.match(/node-version: \$\{\{ needs.provenance.outputs.node-version \}\}/g)).toHaveLength(5);
-    } finally {
-      rmSync(fixture, { recursive: true, force: true });
-    }
+    const provenance = workflow.split('  provenance:\n')[1]?.split('\n  quality:')[0] ?? '';
+    const checkout = provenance.indexOf('name: 📥 Checkout protected workflow source');
+    const runtime = provenance.indexOf('name: 📦 Setup trusted provenance runtime');
+    const verify = provenance.indexOf('run: node --experimental-strip-types scripts/release/verify-source.ts');
+    expect(checkout).toBeGreaterThan(-1);
+    expect(runtime).toBeGreaterThan(checkout);
+    expect(verify).toBeGreaterThan(runtime);
+    expect(provenance).toContain("install-dependencies: 'false'");
+    expect(workflow.match(/node-version: \$\{\{ needs.provenance.outputs.node-version \}\}/g)).toHaveLength(5);
   });
 
   it.each([undefined, 26, '26', 'latest', '26.9.0\nextra=value'])(
