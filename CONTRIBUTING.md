@@ -35,41 +35,59 @@ pnpm install
 submodule. Shared changes belong in the `PiesP/browser-core` repository and must
 be integrated here as a reviewed gitlink update.
 
-## Commands
+## Command catalog
 
-| Command | Purpose |
-| --- | --- |
-| `pnpm install` | Its `preinstall` TypeScript check requires the recorded `packages/core` submodule before dependencies exist; it prints the initialization commands on failure |
-| `pnpm build` | Build the production userscript |
-| `pnpm build:all:ci` | Build userscript, Chrome, and Firefox outputs |
-| `pnpm test` | Run the Vitest suite |
-| `pnpm test:cov` | Run tests with coverage thresholds |
-| `pnpm test:e2e` | Run the userscript browser flow |
-| `pnpm test:e2e:extension` | Run Chrome installed-extension and Firefox artifact/runtime Playwright checks |
-| `pnpm test:e2e:extension:firefox` | Run the installed Firefox extension smoke test with Selenium |
-| `pnpm test:e2e:all` | Run every userscript and extension browser lane |
-| `pnpm quality` | Run formatting, lint, type, dependency, and source checks |
-| `pnpm quality:nose` | Run the local Nose query when installed; an absent `nose` prints an explicit skip, while an installed failure fails the command |
-| `pnpm verify` | Run the quality gate and all production builds |
-| `pnpm verify:full` | Add coverage and browser tests to `verify` |
+Run package commands from the repository root with manifest-pinned Node and
+pnpm after restoring the recorded `packages/core` gitlink. The dependency-free
+`preinstall` check can run before dependencies exist. `packages/core` provides
+product runtime code; automation helpers are consumer-owned or separately pinned.
+The table gives each command family, execution stage, side effects, and checks.
 
-Run `pnpm build:e2e` before invoking the browser lanes directly so their
-generated userscript and extension inputs are current. `pnpm verify:full`
-prepares those artifacts as part of its full gate.
+### Package commands
 
-Run the narrowest relevant check while working. Use `pnpm verify` before a
-pull request and `pnpm verify:full` for publication-level or browser behavior
-changes.
+| Public command or family | Purpose; owner and execution stage | Inputs, outputs, side effects; verification |
+| --- | --- | --- |
+| `pnpm install` (`preinstall`) | Before dependencies, Node built-ins in `scripts/check/bootstrap.ts` check the `packages/core` manifest. | Reads the submodule path; no writes by the check; missing core prints recovery steps and fails. `test/unit/tooling/command-adapters.test.ts`, `pnpm check:scripts`; frozen install is a separate package-manager operation. |
+| `pnpm quality:nose` | Optional local duplication query through `scripts/check/nose.ts`; installed Nose is external. | Reads `src` and `.nose-baseline.json`; inherits cwd/environment, forwards status and signal; absent binary prints a skip, installed failure fails. `test/unit/tooling/command-adapters.test.ts`; CI Nose installation/check remains mandatory. |
+| `pnpm build`, `build:fast`, `build:dev`, `build:ci` | Vite userscript builds; `build:dev` selects development mode. Ordinary `build` has the `prebuild` quality/version gate (`check:prebuild` runs versions then quality); `:ci` is the explicit gate-free build step. | Reads `src`, Vite configs, core; writes `dist/`. Check `pnpm verify` and the relevant userscript Playwright lane. |
+| `pnpm build:extension`, `build:extension:firefox`, their `:ci` variants | Vite background/content builds plus `scripts/check/extension-build.ts`; ordinary names trigger `prebuild:extension` or `prebuild:extension:firefox`, both delegating to `check:prebuild`. | Writes `dist-extension*`; checker verifies classic content script and assets and fails on a bad bundle. `pnpm verify`, `test/unit/extension`, `test:e2e:extension`, and Firefox runtime lane as applicable. |
+| `pnpm build:all`, `build:all:ci`, `build:e2e` | Chain userscript and both extension targets; `build:e2e` first calls `clean` then produces development and extension fixtures. `build:all:ci` checks versions before the three CI builds; `prebuild:all` delegates to `check:prebuild` for the ordinary lifecycle command. | Mutates generated `dist*`; `build:e2e` removes generated outputs first. Validate with `verify`, artifact tests, and affected browser lanes; `:ci` is not a replacement for quality when invoked alone. |
+| `pnpm clean` | `scripts/build/clean.ts` removes generated build directories. | Destructive only for the declared generated outputs; test CLI/import boundary in `test/unit/tooling/node-script-boundaries.test.ts`. |
+| `pnpm check:versions`, `sync:versions` | `scripts/release/version.ts` checks or synchronizes package/extension versions. | `check` reads and fails on mismatch; `sync` writes manifests. `test/unit/tooling/release-runtime.test.ts` plus version check. |
+| `pnpm package:extension`, `package:all`, `release:prepare` | `scripts/release/package-extension.ts` archives built Chrome/Firefox extensions; `package:all` builds first. `scripts/release/prepare.ts` prepares a version- and commit-bound release bundle after builds. | Reads `RELEASE_VERSION` and optional commit identity, `dist*`, package metadata; writes ZIPs, release bundle and metadata, with external `zip` required. `test/unit/tooling/release-runtime.test.ts`, release/publication tests and actual artifact inspection. These commands prepare files; they do not publish a release. |
+| `pnpm check:src`, `check:test`, `check:scripts`, `check:e2e`, `check`, `typecheck` | TypeScript checks in browser, Vitest, NodeNext/erasable (`tsconfig.scripts.json` plus `tsconfig.node-tests.json` for the direct Firefox `node:test`), and Playwright projects respectively. `check` chains source/test/scripts. | Read-only; `tsconfig.e2e.json` excludes the direct Firefox test so it is checked in the Node project instead. `pnpm quality` includes all four boundaries. |
+| `pnpm fmt`, `fmt:check`, `lint`, `knip`, `knip:full`, `knip:production`, `circular` | Biome formatting/lint, dependency/entry analysis, and source graph checks. | Read-only; Knip's `scripts/**/*.ts` entry/project patterns cover CLI modules, and `ignoreBinaries` includes external Nose/OpenSSL. `fmt:fix`, `lint:fix`, `quality:fix` write formatting fixes and must be reviewed separately. |
+| `pnpm quality`, `verify`, `verify:full` | `quality` chains format, lint, type/E2E type, Node CI tests, circular, Knip and optional local Nose. `verify` adds production targets; `verify:full` adds coverage, development build, and all E2E browser lanes. | Build/test outputs and browser profiles are generated; `verify` alone does not prove E2E. Read exact command outcomes and artifacts; no VM/publication inference. |
+| `pnpm test`, `test:watch`, `test:cov`, `test:ci` | Vitest suites and direct Node CI policy tests in `scripts/ci/{deep-check-reuse,repository-authority}.test.ts` and `scripts/release/verify-source.test.ts`. | Watch persists; coverage writes reports. `test:ci` checks cache, repository authority and tagged source, not browser behavior. |
+| `pnpm test:e2e`, `test:e2e:headed`, `test:e2e:extension`, `test:e2e:extension:firefox`, `test:e2e:all` | Playwright configs under `test/e2e/`; direct Firefox lane executes `test/e2e/firefox-extension-runtime.test.ts` with Node/Selenium. | Requires built artifacts, browser binaries and loopback fixtures; may create browser profiles/downloads. `test:e2e:all` chains the lanes; distinguish fixture browser evidence from authenticated Windows/live-site evidence. |
+| `pnpm mut`, `mut:fast` | Stryker full/fast mutation profiles. | Writes reports/temp work; use mutation/deep-check workflow receipts, not a passing unit suite as substitute. |
 
-These two package commands run repository-local TypeScript via the pinned Node
-runtime. `preinstall` uses only Node built-ins, so it also runs in a checkout
-without `node_modules`. `quality:nose` passes its fixed query arguments and
-inherits the environment; it never installs Nose. Required CI Nose installation
-and scanning stay in the workflow and dependency-free TypeScript installer
-because they include a pinned vendor installer and integrity checks. Review that boundary
-when the vendor installation contract or workflow order changes. Knip exempts
-the optional, externally installed `nose` binary from package dependency
-reporting; that exemption does not make an installed Nose failure optional.
+### Workflow and subprocess entrypoints
+
+| Surface | Contract; stage and side effects | Verification / status |
+| --- | --- | --- |
+| `.github/workflows/ci.yaml`, `security.yaml` changed-path jobs | Node is set up without dependencies; `scripts/ci/classify-changes.ts` is selected from the trusted base for PR/merge-group or checked-out protected revision for push. It reads the Git event and NUL-safe Git diff, conservatively emits fixed `GITHUB_OUTPUT` gates. | `test/unit/tooling/workflow-change-classifier-git.test.ts`, `workflow-change-policy.test.ts`; verify exact-SHA hosted gates execute real work, not only no-change routes. |
+| `.github/workflows/deep-checks.yaml` | `scripts/ci/deep-check-reuse.ts` owns bounded duplication/mutation reuse. The workflow copies `scripts/ci/{pinned-tools.json,pinned-tools.ts,install-nose.ts}` from the reviewed tool revision before required Nose installation. | `scripts/ci/deep-check-reuse.test.ts` and pinned-tools CLI tests; installer digest or network failure is fatal. |
+| `.github/workflows/security.yaml` pinned tools and OSV | `scripts/ci/pinned-tools.json` owns tool versions and digests; trusted private copies of `pinned-tools.ts` and `check-pinned-tools.ts` supply image environment and freshness checks. The independently pinned browser-core `automation/actions/prepare-osv` supplies the private `consumer` OSV helper; `packages/core` remains the runtime gitlink. | `test/unit/config/pinned-tools-cli.test.ts`, `test/unit/config/osv-workflow-composition.test.ts`, and provider OSV fixtures; `docs/osv-workflow.md` records trust order and live-container limits. |
+| `.github/workflows/release.yaml` | `scripts/release/verify-source.ts` checks protected tagged source before fan-out; `prepare.ts` creates local release files and `verify-publication.ts` checks the public write decision in the locked publish job. Runner `run:` blocks still select checkout, append short outputs, and launch artifacts/actions. | `scripts/release/verify-source.test.ts`, `test/unit/tooling/{release-runtime,release-publication}.test.ts`, and exact-source artifact inspection. Preparation does not publish. |
+| `.github/workflows/dependabot-auto-merge*.yaml`, `update-browser-core.yaml` | The read-only Dependabot gate passes an artifact; `scripts/ci/dependabot-apply.ts` validates it and rechecks PR/commit identity before approval/merge. `scripts/ci/update-browser-core.ts` verifies remote SHA/impact and owns gitlink PR preparation/publication. Workflow shell supplies event inputs and bounded output/checkout glue. | `test/unit/config/dependabot-auto-merge.test.ts`, `test/unit/tooling/browser-core-automation.test.ts`, `scripts/ci/repository-authority.test.ts`; privileged results require exact-SHA hosted evidence. |
+| `.githooks/pre-commit`, `.githooks/pre-push` | Small Git-invoked Bash guards before any Node setup: reject detached/default-branch commit and direct default-branch push; no network or write by the hooks. | `test/unit/tooling/git-hooks.test.ts`. Retained minimal pre-runtime Git transport exception; revisit if the hook execution contract guarantees pinned Node before invocation without weakening the branch guard. |
+| Test subprocess callers | `test/unit/tooling/{command-adapters,workflow-change-classifier-git,node-script-boundaries,release-runtime,git-hooks}.test.ts` and `test/e2e/firefox-extension-runtime.test.ts` invoke CLI, Git, Node, or browser helpers with fixtures. `scripts/ci/repository-authority.test.ts` exercises privileged command policy; provider tests own OSV parser/scanner behavior. | Run the focused suite and NodeNext checks after an entrypoint change; fixtures do not prove live browser or publication behavior. |
+
+### Windows bundle and retained languages
+
+The Windows profile uses `profile.mjs`; `validation/windows/profile.json` declares installation `install-profile.mjs`, `live-page.mjs`, and built extension/userscript assets. The controller ships portable Windows Node and `playwright-core`, then imports raw `.mjs` with `run({ browser, root, output })`; no TypeScript transpilation/loader or duplicate generated source is declared.
+
+Retain these handwritten JavaScript modules with a concrete review trigger: revisit when the controller supports a source-bound TS build plus stale-output check, updates every profile asset/import, and completes focused prepared-VM smoke. `validation/windows/README.md` describes bundle inputs and targeted `node --check` commands; the Node boundary suite runs `node --check` over every `validation/windows/**/*.mjs` file, followed by the existing Windows-focused unit tests. A syntax check is not VM acceptance.
+
+Small workflow shell blocks remain runner bootstrap, checkout, output, and action-launch adapters; revisit them when tested Node entrypoints can preserve trusted-source and write ordering. The Git hooks remain Bash because Git invokes them before pinned Node setup.
+The external `zip`, Git, Nose, browser, and vendor installer are tools, not handwritten project languages.
+
+Run `pnpm build:e2e` before direct browser lanes so generated fixtures are
+current. Use the narrowest relevant check while working, `pnpm verify` before
+a pull request, and `pnpm verify:full` for publication-level or browser
+behavior changes. A local build or fixture run does not establish Windows,
+live-site, hosted-CI, or public-release evidence.
 
 ## Project constraints
 
