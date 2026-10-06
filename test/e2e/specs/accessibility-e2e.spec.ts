@@ -268,8 +268,8 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await setupGalleryPage(page);
     await openGallery(page);
 
-    const progress = page.locator('[role="progressbar"]');
-    await expect(progress).toHaveAttribute('aria-valuenow', '1');
+    const progress = page.locator('#xeg-toolbar-counter');
+    await expect(progress).toHaveAttribute('data-position', '1');
 
     await page.locator('[data-gallery-element="item"] video').dispatchEvent('keyup', {
       key: ' ',
@@ -277,7 +277,7 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
       cancelable: true,
     });
 
-    await expect(progress).toHaveAttribute('aria-valuenow', '1');
+    await expect(progress).toHaveAttribute('data-position', '1');
     await closeGallery(page);
   });
 
@@ -292,11 +292,11 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await expect(toolbar.getByRole('group', { name: 'View fit' })).toBeVisible();
     await expect(toolbar.getByRole('group', { name: 'Downloads' })).toBeVisible();
     await expect(toolbar.getByRole('group', { name: 'More actions' })).toBeVisible();
-    await expect(toolbar.locator('#xeg-toolbar-counter')).toHaveAttribute('aria-live', 'polite');
-    await expect(toolbar.locator('[role="progressbar"]')).toHaveAttribute(
-      'aria-label',
-      'Progress'
-    );
+    await expect(toolbar.locator('#xeg-toolbar-counter')).not.toHaveAttribute('aria-live', /.+/);
+    await expect(toolbar.locator('#xeg-toolbar-counter')).toContainText('Media 1 of 3');
+    await expect(toolbar.locator('[role="progressbar"]')).toHaveCount(0);
+    await expect(toolbar.locator('button[aria-pressed="true"]')).toHaveCount(1);
+    await expect(toolbar).toContainText('Fit: Fit Width');
 
     await closeGallery(page);
   });

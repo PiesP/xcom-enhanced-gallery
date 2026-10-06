@@ -60,12 +60,14 @@ async function setupGalleryPage(
           __xegReleaseApi?: () => void;
         };
         w.__xegRequestedTweetIds = [];
+        const fixtureMediaRequest = w.GM_xmlhttpRequest;
         w.GM_xmlhttpRequest = (details) => {
           const url = new URL(details.url);
           const variables = JSON.parse(url.searchParams.get('variables') ?? '{}') as {
             tweetId?: string;
           };
-          if (variables.tweetId) w.__xegRequestedTweetIds?.push(variables.tweetId);
+          if (!variables.tweetId) return fixtureMediaRequest?.(details) ?? { abort: () => undefined };
+          w.__xegRequestedTweetIds?.push(variables.tweetId);
 
           const respond = (): void => {
             details.onload?.({
@@ -152,8 +154,11 @@ test.describe('X.com Enhanced Gallery E2E', () => {
       await page.locator('#ordered-target').click();
       const gallery = page.locator('[data-xeg-gallery-container]');
       await expect(gallery).toBeVisible();
-      await expect(gallery.locator('[role="progressbar"]')).toHaveAttribute('aria-valuenow', '4');
-      await expect(gallery.locator('[role="progressbar"]')).toHaveAttribute('aria-valuemax', '4');
+      await expect(gallery.locator('#xeg-toolbar-counter')).toHaveAttribute('data-position', '4');
+      await expect(gallery.locator('#xeg-toolbar-counter')).toHaveAttribute('data-total', '4');
+      await expect(
+        gallery.getByRole('button', { name: 'Download 4 shown files as ZIP' })
+      ).toBeVisible();
       const items = gallery.locator('[data-gallery-element="item"]');
       await expect(items).toHaveCount(4);
       await expect(items.nth(0).locator('video')).toHaveAttribute('src', /first\.mp4/);
@@ -179,8 +184,17 @@ test.describe('X.com Enhanced Gallery E2E', () => {
       await expect(gallery).toBeVisible();
       await expect(gallery.locator('[data-gallery-element="item"]')).toHaveCount(1);
       await expect(gallery.locator('img')).toHaveAttribute('src', /tile-photo/);
+      await expect(gallery.locator('#xeg-toolbar-counter')).toHaveAttribute('data-position', '1');
+      await expect(gallery.locator('#xeg-toolbar-counter')).toHaveAttribute('data-total', '1');
+      await expect(gallery.getByRole('button', { name: /ZIP/ })).toHaveCount(0);
       await expect(page.locator('[data-gm-notification]').last()).toContainText('Visible media only');
       await expect(page.locator('[data-gm-notification]').last()).toContainText('Bulk download includes only the items shown.');
+      await gallery.getByRole('button', { name: 'Download', exact: true }).click();
+      await expect(page.locator('[data-gm-xhr-download="true"]')).toHaveCount(cycle + 1);
+      await expect(page.locator('[data-gm-xhr-download="true"]').last()).toHaveAttribute(
+        'data-gm-xhr-download-url',
+        /tile-photo/
+      );
       await page.keyboard.press('Escape');
       await expect(gallery).toHaveCount(0);
     }
@@ -233,7 +247,7 @@ test.describe('X.com Enhanced Gallery E2E', () => {
       const gallery = page.locator('[data-xeg-gallery-container]');
       if (apiSuccess) {
         await expect(gallery).toBeVisible();
-        await expect(gallery.locator('[role="progressbar"]')).toHaveAttribute('aria-valuenow', '2');
+        await expect(gallery.locator('#xeg-toolbar-counter')).toHaveAttribute('data-position', '2');
         await expect(gallery.locator('video')).toHaveAttribute('src', /quote-video\.mp4/);
       } else {
         await expect(page.locator('[data-gm-notification]')).toContainText('Failed to load media');
@@ -286,7 +300,7 @@ test.describe('X.com Enhanced Gallery E2E', () => {
       const gallery = page.locator('[data-xeg-gallery-container]');
       if (mainPlayable) {
         await expect(gallery).toBeVisible();
-        await expect(gallery.locator('[role="progressbar"]')).toHaveAttribute('aria-valuenow', '2');
+        await expect(gallery.locator('#xeg-toolbar-counter')).toHaveAttribute('data-position', '2');
         const items = gallery.locator('[data-gallery-element="item"]');
         await expect(items).toHaveCount(2);
         await expect(items.nth(0).locator('video')).toHaveAttribute('src', /video-444\.mp4/);
@@ -389,7 +403,7 @@ test.describe('X.com Enhanced Gallery E2E', () => {
 
     const gallery = page.locator('[data-xeg-gallery-container]');
     await expect(gallery).toBeVisible();
-    await expect(gallery.locator('[role="progressbar"]')).toHaveAttribute('aria-valuenow', '2');
+    await expect(gallery.locator('#xeg-toolbar-counter')).toHaveAttribute('data-position', '2');
 
     const items = gallery.locator('[data-gallery-element="item"]');
     await expect(items).toHaveCount(2);
@@ -397,7 +411,7 @@ test.describe('X.com Enhanced Gallery E2E', () => {
     await expect(items.nth(1).locator('video')).toHaveAttribute('src', /quote-video\.mp4/);
 
     await page.keyboard.press('ArrowLeft');
-    await expect(gallery.locator('[role="progressbar"]')).toHaveAttribute('aria-valuenow', '1');
+    await expect(gallery.locator('#xeg-toolbar-counter')).toHaveAttribute('data-position', '1');
     expect(errors).toEqual([]);
   });
 });

@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { resolveAdjacentNavigationTarget } from '@shared/state/signals/gallery-navigation';
+import { resolveAdjacentNavigationTarget, resolveDisplayedIndex } from '@shared/state/signals/gallery-navigation';
 import {
   disposeGallerySignals,
   galleryIndexEvents,
   gallerySignals,
+  getDisplayedMediaIndex,
   navigateNext,
   navigatePrevious,
   navigateToItem,
@@ -36,6 +37,27 @@ describe('resolveAdjacentNavigationTarget', () => {
     [0, 1, 1, null],
   ] as const)('resolves anchor %i, direction %i, count %i to %s', (anchor, direction, count, expected) => {
     expect(resolveAdjacentNavigationTarget(anchor, direction, count)).toBe(expected);
+  });
+});
+
+describe('displayed media identity', () => {
+  it.each([
+    [0, null, 0, null],
+    [0, null, 1, 0],
+    [0, null, 4, 0],
+    [3, null, 4, 3],
+    [0, 2, 4, 2],
+    [3, 9, 4, 3],
+  ] as const)('resolves current %s, focus %s, count %s to %s', (current, focus, count, expected) => {
+    expect(resolveDisplayedIndex(current, focus, count)).toBe(expected);
+  });
+
+  it('uses the same focused item for the displayed position and navigation', () => {
+    openGallery([media('a'), media('b'), media('c')]);
+    setFocusedIndexOnly(1);
+    expect(getDisplayedMediaIndex()).toBe(1);
+    navigateNext('button');
+    expect(getDisplayedMediaIndex()).toBe(2);
   });
 });
 

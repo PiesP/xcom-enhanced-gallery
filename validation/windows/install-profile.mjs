@@ -1177,6 +1177,217 @@ async function waitForDownload(extensionPage, knownIds, filename) {
   )}`);
 }
 
+async function fixtureTabZoom(context, extensionId, page, factor = null, restoreSettings = null) {
+  assert.equal(page.url(), FIXTURE_URL, 'Browser zoom must target the exact owned fixture page');
+  const workerUrl = `chrome-extension://${extensionId}/background.js`;
+  const workers = context.serviceWorkers().filter((worker) => worker.url() === workerUrl);
+  assert.equal(workers.length, 1, 'Browser zoom requires the exact installed extension worker');
+  return workers[0].evaluate(async ({ url, zoomFactor, restore }) => {
+    const tabs = await chrome.tabs.query({ url });
+    if (tabs.length !== 1 || tabs[0].url !== url || !Number.isInteger(tabs[0].id)) {
+      throw new Error('Browser zoom requires one exact fixture tab');
+    }
+    const id = tabs[0].id;
+    const previous = await chrome.tabs.getZoom(id);
+    const settings = await chrome.tabs.getZoomSettings(id);
+    if (zoomFactor !== null) {
+      await chrome.tabs.setZoomSettings(id, { mode: 'automatic', scope: 'per-tab' });
+      await chrome.tabs.setZoom(id, zoomFactor);
+      if (restore) {
+        await chrome.tabs.setZoomSettings(id, { mode: restore.mode, scope: restore.scope });
+      }
+    }
+    return { previous, settings, observed: await chrome.tabs.getZoom(id),
+      observedSettings: await chrome.tabs.getZoomSettings(id) };
+  }, { url: FIXTURE_URL, zoomFactor: factor, restore: restoreSettings });
+}
+
+async function runZoomSpanishCycle({ context, downloads, extensionId, extensionPage, images, output, page }) {
+  const baseline = await page.evaluate(() => ({
+    devicePixelRatio: devicePixelRatio,
+    innerWidth,
+    viewportScale: visualViewport?.scale ?? null,
+  }));
+  const priorZoom = await fixtureTabZoom(context, extensionId, page);
+  let zoomAttempted = false;
+  try {
+    zoomAttempted = true;
+    const changedZoom = await fixtureTabZoom(context, extensionId, page, 2);
+    assert.equal(changedZoom.observed, 2, 'Installed browser did not accept 200% tab zoom');
+    const zoomRatio = changedZoom.observed / priorZoom.previous;
+    await page.waitForFunction((before) =>
+      devicePixelRatio >= before.devicePixelRatio * before.zoomRatio * 0.95 &&
+      innerWidth <= before.innerWidth / (before.zoomRatio * 0.95) &&
+      Math.abs((visualViewport?.scale ?? 1) - 1) <= 0.05,
+    { ...baseline, zoomRatio });
+
+    const trigger = page.locator('[data-testid="tweetPhoto"] img').first();
+    await trigger.scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollBy(0, -120));
+    await trigger.focus();
+    const before = await hostSnapshot(page, 0);
+    assert(before.scrollY > 0, 'Zoom fixture must open from a nonzero host scroll position');
+    await trigger.evaluate((element) => {
+      element.addEventListener('pointerdown', () => {
+        element.dataset.openingScrollY = String(window.scrollY);
+      }, { once: true, capture: true });
+    });
+    await trigger.click();
+    before.scrollY = Number(await trigger.getAttribute('data-opening-scroll-y'));
+    const gallery = page.locator('[data-xeg-gallery-container]');
+    await gallery.waitFor({ state: 'visible', timeout: 15_000 });
+    const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
+    const settingsButton = toolbar.locator('#settings-button');
+    await settingsButton.click();
+    const languageSelect = gallery.locator('#settings-language-select');
+    const priorLanguage = await languageSelect.inputValue();
+    await languageSelect.selectOption('es');
+    await page.waitForFunction(() =>
+      document.querySelector('[data-gallery-element="fit-mode-label"]')?.textContent?.startsWith('Ajuste: ')
+    );
+    await settingsButton.click();
+    await toolbar.locator('button[aria-label="Ajustar ventana"]').click();
+    await page.waitForFunction(() =>
+      document.querySelector('[data-gallery-element="fit-mode-label"]')?.textContent ===
+        'Ajuste: Ajustar ventana'
+    );
+
+    await gallery.locator('[data-gallery-element="item"][data-index="0"] button').focus();
+    await page.keyboard.press('ArrowRight');
+    await page.waitForFunction(() =>
+      document.querySelector('#xeg-toolbar-counter')?.getAttribute('data-position') === '2'
+    );
+    const position = toolbar.locator('#xeg-toolbar-counter');
+    assert.notEqual(await position.getAttribute('role'), 'progressbar',
+      'Collection position must not announce task progress');
+    assert.equal(await position.getAttribute('data-total'), '3');
+    assert.equal(await position.getAttribute('data-focused-index'), '1');
+    assert.equal(await toolbar.getAttribute('data-current-index'), '1');
+    assert.equal(await toolbar.getAttribute('data-focused-index'), '1');
+    assert.match(await position.textContent(), /Archivo 2 de 3/u);
+    const selectedSource = await gallery.locator('[data-gallery-element="item"][data-index="1"] img').getAttribute('src');
+    assert(selectedSource?.includes('GkE5678'), 'Displayed second item has wrong media provenance');
+    assert.equal(await toolbar.locator('button[aria-label="Ajustar ventana"]').getAttribute('aria-pressed'), 'true');
+    const bulkLabel = 'Descargar los 3 archivos visibles como ZIP';
+    assert.equal(await toolbar.locator(`button[aria-label="${bulkLabel}"]`).count(), 1);
+
+    const layout = await toolbar.evaluate((element) => {
+      const toolbarRect = element.getBoundingClientRect();
+      const label = element.querySelector('[data-gallery-element="fit-mode-label"]');
+      const labelRect = label?.getBoundingClientRect();
+      const counter = element.querySelector('#xeg-toolbar-counter');
+      const counterRect = counter?.getBoundingClientRect();
+      return {
+        viewportWidth: innerWidth,
+        devicePixelRatio,
+        viewportScale: visualViewport?.scale ?? null,
+        toolbar: { left: toolbarRect.left, right: toolbarRect.right, width: toolbarRect.width,
+          scrollWidth: element.scrollWidth, clientWidth: element.clientWidth },
+        fitLabel: { text: label?.textContent?.trim() ?? null, left: labelRect?.left ?? null,
+          right: labelRect?.right ?? null, height: labelRect?.height ?? null,
+          fontSizePx: label ? Number.parseFloat(getComputedStyle(label).fontSize) : null,
+          scrollWidth: label?.scrollWidth ?? null, clientWidth: label?.clientWidth ?? null,
+          scrollHeight: label?.scrollHeight ?? null, clientHeight: label?.clientHeight ?? null },
+        position: { left: counterRect?.left ?? null, right: counterRect?.right ?? null,
+          text: counter?.textContent?.trim() ?? null,
+          scrollWidth: counter?.scrollWidth ?? null, clientWidth: counter?.clientWidth ?? null },
+      };
+    });
+    assert(layout.toolbar.left >= -1 && layout.toolbar.right <= layout.viewportWidth + 1,
+      '200% toolbar is clipped by the viewport');
+    assert(layout.toolbar.scrollWidth <= layout.toolbar.clientWidth + 1,
+      '200% toolbar content overflows horizontally');
+    for (const target of [layout.fitLabel, layout.position]) {
+      assert(target.left !== null && target.left >= -1 &&
+        target.right !== null && target.right <= layout.viewportWidth + 1,
+      '200% fit or position label is clipped');
+    }
+    assert(layout.fitLabel.height > 0, 'Spanish effective fit label is not displayed');
+    assert(layout.fitLabel.fontSizePx >= 12, 'Spanish effective fit label is too small');
+    assert(layout.fitLabel.scrollWidth <= layout.fitLabel.clientWidth + 1 &&
+      layout.fitLabel.scrollHeight <= layout.fitLabel.clientHeight + 1,
+    'Spanish effective fit label is clipped within its control');
+    assert(layout.position.scrollWidth <= layout.position.clientWidth + 1,
+      'Spanish displayed position is clipped within its control');
+    assert(layout.viewportWidth <= 700, '200% browser zoom did not produce a narrow CSS viewport');
+    await page.screenshot({ path: join(output, 'installed-zoom-200-spanish-gallery.png') });
+
+    const essential = new Set([
+      'Anterior', 'Siguiente', 'Ajustar ventana', 'Descargar', bulkLabel, 'Cerrar',
+    ]);
+    const reached = new Set();
+    await gallery.locator('[data-gallery-element="item"][data-index="1"] button').focus();
+    for (let step = 0; step < 40 && reached.size < essential.size; step += 1) {
+      await page.keyboard.press('Tab');
+      const focused = await page.evaluate(() => {
+        const element = document.activeElement;
+        const rect = element?.getBoundingClientRect();
+        return { label: element?.getAttribute('aria-label') ?? null,
+          left: rect?.left ?? null, right: rect?.right ?? null,
+          visibility: element ? getComputedStyle(element).visibility : null };
+      });
+      if (!essential.has(focused.label)) continue;
+      assert(focused.left >= -1 && focused.right <= layout.viewportWidth + 1,
+        `200% keyboard control ${focused.label} is clipped`);
+      assert.equal(focused.visibility, 'visible', `200% keyboard control ${focused.label} is hidden`);
+      reached.add(focused.label);
+    }
+    assert.deepEqual([...reached].sort(), [...essential].sort(),
+      'Keyboard cannot reach every essential Spanish toolbar action');
+
+    const knownDownloadIds = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+    await toolbar.locator('button[aria-label="Descargar"]').click();
+    const selectedDownload = await waitForValue(async () => {
+      const created = (await queryDownloads(extensionPage))
+        .filter(({ id }) => !knownDownloadIds.has(id));
+      assert(created.length <= 1, 'Zoom current-item action created multiple downloads');
+      if (created[0]?.state === 'interrupted') {
+        throw new Error(`Zoom current-item download interrupted: ${created[0].error}`);
+      }
+      return created[0]?.state === 'complete' ? created[0] : undefined;
+    }, '200% selected-item download', 20_000);
+    const relativeDownload = relative(downloads, selectedDownload.filename);
+    assert(relativeDownload && !relativeDownload.startsWith('..') && !isAbsolute(relativeDownload),
+      'Zoom current-item download escaped the task-owned directory');
+    assert(basename(selectedDownload.filename).startsWith(`testuser_${TWEET_ID}_1`),
+      'Zoom current-item filename does not identify the displayed second item');
+    const selectedBytes = await readFile(selectedDownload.filename);
+    assert(images[1].equals(selectedBytes),
+      'Zoom current-item download bytes do not match the displayed second item');
+    await copyFile(selectedDownload.filename, join(output, 'zoom-200-selected-download.jpg'));
+
+    await settingsButton.click();
+    await gallery.locator('#settings-language-select').selectOption(priorLanguage);
+    await page.waitForFunction(() =>
+      document.querySelector('[data-gallery-element="toolbar"] button[aria-label="Close"]') !== null
+    );
+    await settingsButton.click();
+    await toolbar.locator('button[aria-label="Close"]').click();
+    await gallery.waitFor({ state: 'detached' });
+    const after = await hostSnapshot(page, 0);
+    assert.deepEqual(after.background, before.background, '200% close did not restore host isolation');
+    assert.deepEqual(after.bodyStyle, before.bodyStyle, '200% close did not restore body styles');
+    assert.equal(after.scrollRestoration, before.scrollRestoration);
+    assert.equal(after.scrollY, before.scrollY, '200% close did not restore host scroll');
+    assert.equal(after.activeElementAlt, before.triggerAlt, '200% close did not restore trigger focus');
+    await page.screenshot({ path: join(output, 'installed-zoom-200-spanish-after.png') });
+    return { status: 'passed', actualBrowserZoom: changedZoom.observed, baseline, layout, priorZoom,
+      keyboardReachable: [...reached].sort(), shownCount: 3,
+      selectedIndex: 1, selectedSourceMarker: 'GkE5678',
+      download: { bytes: selectedBytes.length, file: 'zoom-200-selected-download.jpg',
+        filename: basename(selectedDownload.filename), sha256: createHash('sha256').update(selectedBytes).digest('hex') },
+      hostRestored: true, language: 'es' };
+  } finally {
+    if (zoomAttempted) {
+      const restored = await fixtureTabZoom(context, extensionId, page,
+        priorZoom.previous, priorZoom.settings);
+      assert.equal(restored.observed, priorZoom.previous, 'Fixture browser zoom was not restored');
+      assert.equal(restored.observedSettings.mode, priorZoom.settings.mode);
+      assert.equal(restored.observedSettings.scope, priorZoom.settings.scope);
+    }
+  }
+}
+
 async function hostSnapshot(page, triggerIndex) {
   return page.evaluate((index) => {
     const trigger = document.querySelectorAll('[data-testid="tweetPhoto"] img')[index];
@@ -1266,7 +1477,7 @@ async function runPublicFixtureCycle({ apiResponses, output, page }) {
   assert.equal(await gallery.getAttribute('role'), 'dialog');
   assert.equal(await gallery.getAttribute('aria-modal'), 'true');
   assert.equal(
-    await gallery.locator('[role="progressbar"]').getAttribute('aria-valuenow'),
+    await gallery.locator('#xeg-toolbar-counter').getAttribute('data-position'),
     '2',
     'Public View media overlay must select the second image'
   );
@@ -1342,8 +1553,8 @@ async function runCycle({ cycle, downloads, extensionPage, output, page, images 
   const gallery = page.locator('[data-xeg-gallery-container]');
   await gallery.waitFor({ state: 'visible', timeout: 15_000 });
   const openMs = performance.now() - openStarted;
-  const progress = gallery.locator('[role="progressbar"]');
-  assert.equal(Number(await progress.getAttribute('aria-valuenow')), cycle.triggerIndex + 1);
+  const progress = gallery.locator('#xeg-toolbar-counter');
+  assert.equal(Number(await progress.getAttribute('data-position')), cycle.triggerIndex + 1);
 
   const lateBackground = await page.evaluate(() => {
     const node = document.createElement('aside');
@@ -1368,8 +1579,8 @@ async function runCycle({ cycle, downloads, extensionPage, output, page, images 
   await page.waitForFunction(
     (expected) =>
       document
-        .querySelector('[data-xeg-gallery-container] [role="progressbar"]')
-        ?.getAttribute('aria-valuenow') === String(expected),
+        .querySelector('[data-xeg-gallery-container] #xeg-toolbar-counter')
+        ?.getAttribute('data-position') === String(expected),
     cycle.expectedIndex + 1
   );
   const navigationMs = performance.now() - navigationStarted;
@@ -1467,6 +1678,7 @@ async function exerciseInstalledExtension(
   let packagingAssets;
   let notification;
   let publicDom;
+  let zoomSpanish;
   let flowResult;
   let primaryError;
   let primarySeen = false;
@@ -1515,6 +1727,13 @@ async function exerciseInstalledExtension(
     for (const cycle of CYCLES) {
       cycles.push(await runCycle({ cycle, downloads, extensionPage, output, page, images }));
     }
+    try {
+      zoomSpanish = await runZoomSpanishCycle({ context, downloads, extensionId,
+        extensionPage, images, output, page });
+    } catch (error) {
+      zoomSpanish = { status: 'failed', error: safeError(error) };
+      throw error;
+    }
     publicDom = await runPublicFixtureCycle({
       apiResponses: fixtureRoutes.apiResponses,
       output,
@@ -1540,6 +1759,7 @@ async function exerciseInstalledExtension(
       notification,
       packagingAssets,
       publicDom,
+      zoomSpanish,
     };
   } catch (error) {
     primarySeen = true;
@@ -1593,6 +1813,7 @@ async function exerciseInstalledExtension(
             notification,
             packagingAssets,
             publicDom,
+            zoomSpanish,
           },
           null,
           2

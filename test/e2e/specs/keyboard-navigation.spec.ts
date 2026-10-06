@@ -131,7 +131,7 @@ async function openGalleryWithDimensions(
 }
 
 async function getIndex(page: Page): Promise<number> {
-  const v = await page.locator('[role="progressbar"]').getAttribute('aria-valuenow');
+  const v = await page.locator('#xeg-toolbar-counter').getAttribute('data-position');
   return v ? parseInt(v, 10) - 1 : -1;
 }
 
@@ -143,7 +143,7 @@ function getNextButton(page: Page) {
   return page.getByRole('button', { name: 'Next' });
 }
 
-const RESPONSIVE_VIEWPORT_WIDTHS = [320, 375, 414, 768, 1024, 1280] as const;
+const RESPONSIVE_VIEWPORT_WIDTHS = [320, 375, 414, 640, 768, 1024, 1280] as const;
 
 test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
   test.beforeAll(() => {
@@ -205,7 +205,7 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
     await openGallery(page);
     expect(await getIndex(page)).toBe(0);
     await page.keyboard.press('ArrowLeft');
-    await expect(page.locator('[role="progressbar"]')).toHaveAttribute('aria-valuenow', '1');
+    await expect(page.locator('#xeg-toolbar-counter')).toHaveAttribute('data-position', '1');
   });
 
   test('ArrowRight at last item is a no-op', async ({ page }) => {
@@ -215,7 +215,7 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
     await page.keyboard.press('ArrowRight');
     await expect.poll(() => getIndex(page)).toBe(2);
     await page.keyboard.press('ArrowRight');
-    await expect(page.locator('[role="progressbar"]')).toHaveAttribute('aria-valuenow', '3');
+    await expect(page.locator('#xeg-toolbar-counter')).toHaveAttribute('data-position', '3');
   });
 
   test('toolbar previous/next buttons navigate and expose correct boundary state', async ({ page }) => {
@@ -250,6 +250,12 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
     await openGallery(page);
 
     const toolbar = page.locator('[data-gallery-element="toolbar"]');
+    await toolbar.locator('#settings-button').click();
+    await page.locator('[data-gallery-element="settings-panel"] select').nth(1).selectOption('es');
+    await toolbar.locator('#settings-button').click();
+    await expect(toolbar.locator('[data-gallery-element="fit-mode-label"]')).toContainText(
+      'Ajuste: Ajustar ancho'
+    );
 
     for (const width of RESPONSIVE_VIEWPORT_WIDTHS) {
       await test.step(`${width}px viewport`, async () => {
@@ -259,7 +265,8 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
           const toolbarRect = element.getBoundingClientRect();
           const controls = [
             ...element.querySelectorAll<HTMLButtonElement>('button'),
-            element.querySelector<HTMLElement>('[role="progressbar"]'),
+            element.querySelector<HTMLElement>('#xeg-toolbar-counter'),
+            element.querySelector<HTMLElement>('[data-gallery-element="fit-mode-label"]'),
           ].filter((control): control is HTMLElement => control !== null);
 
           return controls.flatMap((control) => {
@@ -287,9 +294,8 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
         const splitGroups = await toolbar.getByRole('group').evaluateAll((groups) =>
           groups.flatMap((group) => {
             const buttons = [...group.querySelectorAll('button')];
-            const rowTops = new Set(
-              buttons.map((button) => Math.round(button.getBoundingClientRect().top))
-            );
+            // Layout offsets exclude the 1px hover lift applied to the last clicked button.
+            const rowTops = new Set(buttons.map((button) => button.offsetTop));
             if (rowTops.size <= 1) return [];
             return [group.querySelector('legend')?.textContent?.trim() ?? 'unnamed group'];
           })
@@ -344,7 +350,7 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
         new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
     );
 
-    await expect(page.locator('[role="progressbar"]')).toHaveAttribute('aria-valuenow', '2');
+    await expect(page.locator('#xeg-toolbar-counter')).toHaveAttribute('data-position', '2');
     await expect(toolbar).toHaveAttribute('data-current-index', '1');
     await expect(toolbar).toHaveAttribute('data-focused-index', '1');
     await expect.poll(selectedTopOffset).toBe(0);
@@ -361,6 +367,9 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
       '[data-gallery-element="toolbar"] [aria-label="Fit Window"][aria-pressed="true"]'
     );
     await expect(selected).toBeEnabled();
+    await expect(page.locator('[data-gallery-element="fit-mode-label"]')).toHaveText(
+      'Fit: Fit Window'
+    );
 
     const selectedStyle = async () =>
       selected.evaluate(async (element) => {
@@ -478,8 +487,16 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
 
     const toolbar = page.locator('[data-gallery-element="toolbar"]');
     await expect(toolbar).toHaveAttribute('data-focused-index', '2');
+    await expect(toolbar).toHaveAttribute('data-current-index', '0');
+    await expect(toolbar.locator('#xeg-toolbar-counter')).toHaveAttribute('data-position', '3');
     await expect(getPreviousButton(page)).toBeEnabled();
     await expect(getNextButton(page)).toBeDisabled();
+
+    await toolbar.getByRole('button', { name: 'Download', exact: true }).click();
+    await expect(page.locator('[data-gm-xhr-download="true"]')).toHaveAttribute(
+      'data-gm-xhr-download-url',
+      /E3\.jpg/
+    );
 
     await getPreviousButton(page).click();
     await expect.poll(() => getIndex(page)).toBe(1);

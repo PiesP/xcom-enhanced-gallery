@@ -57,6 +57,12 @@ export interface LanguageStrings {
     readonly fitH: string;
     /** Fit container label */
     readonly fitC: string;
+    /** Visible label for the effective image fit mode */
+    readonly currentFit: string;
+    /** Collection position of the displayed media item */
+    readonly mediaPosition: string;
+    /** Empty collection position */
+    readonly noMedia: string;
     /** Gallery toolbar label */
     readonly galleryToolbar: string;
     /** Navigation and position control group */
@@ -67,8 +73,6 @@ export interface LanguageStrings {
     readonly downloadGroup: string;
     /** Auxiliary control group */
     readonly auxGroup: string;
-    /** Progress bar label */
-    readonly progress: string;
     /** Settings panel label */
     readonly settingsPanel: string;
   };

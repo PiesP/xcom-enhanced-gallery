@@ -368,10 +368,25 @@ button.fitButton {
   pointer-events: auto;
 }
 
+.fitGroup {
+  max-inline-size: 100%;
+}
+
 .fitButton:focus,
 .fitButton:focus-visible {
   /* Defensive override: ensure fit buttons never reintroduce borders via overrides. */
   border: none;
+}
+
+.fitModeLabel {
+  flex: 0 1 auto;
+  min-inline-size: 0;
+  max-inline-size: 7em;
+  color: var(--xeg-toolbar-text-color, var(--xeg-color-text-primary));
+  font-size: var(--xeg-font-size-sm);
+  line-height: var(--xeg-line-height-snug);
+  overflow-wrap: anywhere;
+  text-align: center;
 }
 
 @media (forced-colors: active) {

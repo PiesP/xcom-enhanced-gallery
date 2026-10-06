@@ -33,6 +33,10 @@ downloads through an explicitly mocked GM bridge, verifies the actual downloaded
 bytes, and closes with Escape. A failed assertion throws; screenshot review is a
 separate decision.
 
+This artifact-only result records browser zoom as `not-run`: the injected
+userscript has no installed extension worker with access to the browser tab's
+actual zoom setting. CSS zoom or pinch emulation is not used as a substitute.
+
 This does not test userscript-manager installation, unpacked extension installation,
 privileged extension downloads, live authenticated X.com, Windows native Save As,
 Explorer, OS compositor, actual DPI changes, or physical GPU performance. A headless
@@ -57,6 +61,17 @@ keeps the scroll-versus-focus restoration order observable instead of hiding a
 host layout-shift regression. Page screenshots, per-cycle timings, file hashes,
 and cleanup metadata are retained as evidence; the timings are observations,
 not a performance claim.
+
+After those cycles, the installed profile uses the exact installed extension
+worker and exact owned fixture tab to set real `chrome.tabs` zoom to 200%, then
+restores the prior factor and tab zoom settings in `finally`. At that zoom it
+selects Spanish through the product settings, navigates by keyboard, checks the
+displayed position and visible-item count against the selected media and current
+download, verifies the effective fit label and essential controls fit and remain
+keyboard reachable, and checks the privileged downloaded bytes. It captures
+the gallery and the closed host, including focus, scroll, body-style, and
+background-isolation restoration. This is browser tab zoom in the fresh task
+profile; it does not claim an OS DPI change or a live X.com observation.
 
 The deterministic fixture also exercises the MV3 download restart boundary. A
 bounded 32 MiB Blob belongs to the routed `https://x.com` fixture and enters the
