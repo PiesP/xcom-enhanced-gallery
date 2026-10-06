@@ -850,6 +850,7 @@ export async function run({ browser, root, output }) {
       },
       scope:
         'fixture userscript rendering and mocked-GM browser download; no extension installation or live X.com',
+      browserZoom: { status: 'not-run', reason: 'Artifact-only context has no installed extension tab-zoom API' },
       visualReview: 'pending',
     };
   } finally {
