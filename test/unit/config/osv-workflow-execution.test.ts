@@ -16,7 +16,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 const root = resolve(import.meta.dirname, '../../..');
 const workflow = readFileSync(resolve(root, '.github/workflows/security.yaml'), 'utf8');
 const helper = resolve(root, 'scripts/security/validate-osv-results.py');
-const image = workflow.match(/OSV_SCANNER_IMAGE: "([^"]+)"/)?.[1];
+const image = (JSON.parse(readFileSync(resolve(root, 'scripts/ci/pinned-tools.json'), 'utf8')) as {
+  osv: { image: string };
+}).osv.image;
 const actualContainerRuntime = process.env.OSV_TEST_CONTAINER_RUNTIME;
 const temporaryDirectories: string[] = [];
 

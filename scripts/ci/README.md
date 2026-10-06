@@ -31,14 +31,17 @@ only after installation succeeds, preserving child exit codes and signals.
 `GITHUB_ENV`; it accepts no arbitrary metadata path. All three CLIs are inert
 when imported.
 
-These TypeScript helpers are staged for workflow adoption. The active workflows
-still invoke the existing shell helpers and retain their current pinned values.
-Adoption must install the reviewed Node runtime before either CLI and select
-both helpers and metadata from a trusted immutable source revision. In the
-privileged security job, the PR candidate must not supply that revision or its
-code. Keep the current workflow checks active until that bootstrap and the
-exact-image references are changed and validated together. Run the focused CLI
-fixture test with `pnpm test test/unit/config/pinned-tools-cli.test.ts`.
+The security workflow resolves both scanner images in a separate job from the
+reviewed `a1fd01821cab105c6a6430ee81e18030532843e8` revision, then passes
+the validated values to the OSV and Semgrep jobs. Its scheduled freshness job
+uses the same revision. Deep verification and release duplication read the
+installer and metadata from that revision with `git show`, even when the
+checkout changes to a release commit. Each job sets up Node before running a
+private copy of the dependency-free helpers. PR candidate code cannot replace
+these pinned tools for its own privileged check. Update the immutable revision
+only with a reviewed pin change, and keep the scanner images and installer
+source together. Run the focused CLI fixture test with
+`pnpm test test/unit/config/pinned-tools-cli.test.ts`.
 
 ## Deep check reuse
 

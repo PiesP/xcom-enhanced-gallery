@@ -169,6 +169,11 @@ describe('workflow change policy', () => {
     const validator = classify(['scripts/security/validate-osv-results.py']);
     expect(validator.unit).toBe('true');
     expect(validator.osv).toBe('true');
+
+    const pins = classify(['scripts/ci/pinned-tools.json']);
+    expectAll(pins, ['quality', 'duplication', 'osv', 'semgrep']);
+    const installer = classify(['scripts/ci/install-nose.ts']);
+    expectAll(installer, ['quality', 'duplication']);
   });
 
   it('preserves every required context while adding explicit no-op success paths', () => {
@@ -217,7 +222,7 @@ describe('workflow change policy', () => {
       expect(jobBlock(ciWorkflow, job), job).toContain('if: ${{ !cancelled() }}');
     }
     for (const job of ['osv-scan-pr', 'osv-scan-dispatch', 'semgrep']) {
-      expect(jobBlock(securityWorkflow, job), job).toContain('needs: changes');
+      expect(jobBlock(securityWorkflow, job), job).toContain('needs: [changes, pin-metadata]');
       expect(jobBlock(securityWorkflow, job), job).toContain('!cancelled()');
     }
     expect(securityWorkflow).toContain(
