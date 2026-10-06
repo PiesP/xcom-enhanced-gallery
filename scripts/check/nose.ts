@@ -1,10 +1,30 @@
 #!/usr/bin/env node
 /** Run the optional local Nose check without a shell. */
 import { spawnSync } from 'node:child_process';
-import { realpathSync, statSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { lstatSync, realpathSync, statSync } from 'node:fs';
+import { platform } from 'node:os';
+import { delimiter, resolve } from 'node:path';
 import process, { argv, env, exit } from 'node:process';
 import { fileURLToPath } from 'node:url';
+
+function hasNosePathCandidate(root: string): boolean {
+  const searchPath = env.PATH ?? env.Path;
+  if (searchPath === undefined) return true; // An unknown search path cannot prove absence.
+  const suffixes =
+    platform() === 'win32' ? ['', ...(env.PATHEXT ?? '.COM;.EXE;.BAT;.CMD').split(';')] : [''];
+  for (const directory of searchPath.split(delimiter)) {
+    for (const suffix of suffixes) {
+      try {
+        lstatSync(resolve(root, directory || '.', `nose${suffix}`));
+        return true;
+      } catch (error) {
+        const code = (error as NodeJS.ErrnoException).code;
+        if (code !== 'ENOENT' && code !== 'ENOTDIR') return true;
+      }
+    }
+  }
+  return false;
+}
 
 export function runOptionalNose(root: string): number | NodeJS.Signals {
   try {
@@ -23,7 +43,7 @@ export function runOptionalNose(root: string): number | NodeJS.Signals {
     }
   );
   if (result.error) {
-    if ((result.error as NodeJS.ErrnoException).code === 'ENOENT') {
+    if ((result.error as NodeJS.ErrnoException).code === 'ENOENT' && !hasNosePathCandidate(root)) {
       console.log('[nose] not installed — skipping');
       return 0;
     }

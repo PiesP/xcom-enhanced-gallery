@@ -199,6 +199,17 @@ describe('dependency-free command adapters', () => {
     expect(inaccessible.stdout).not.toContain('skipping');
   });
 
+  it.skipIf(process.platform === 'win32')('fails when Nose exists but its shebang interpreter is missing', () => {
+    const root = fixtureRoot();
+    const fakeBin = join(root, 'fake-bin');
+    mkdirSync(fakeBin);
+    writeFileSync(join(fakeBin, 'nose'), '#!/no/such/nose-interpreter\n', { mode: 0o755 });
+    const result = runCli(root, 'nose.ts', { ...process.env, PATH: fakeBin });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('[nose] could not run:');
+    expect(result.stdout).not.toContain('skipping');
+  });
+
   it.skipIf(process.platform === 'win32')('propagates a Nose termination signal', () => {
     const root = fixtureRoot();
     const fakeBin = join(root, 'fake-bin');
