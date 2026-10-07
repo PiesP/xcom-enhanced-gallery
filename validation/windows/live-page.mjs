@@ -870,7 +870,8 @@ export function inspectHostVideoDocument(video, { posterPath }) {
   };
 }
 
-async function observeQuotedVideo(page, observation, identity, output, index, settleApi) {
+async function observeQuotedVideo(page, observation, identity, output, index, settleApi,
+  controlledVideoClickMode) {
   const target = observation.target;
   const article = page.locator('article').nth(target.articleIndex);
   let clickSurface = target.playerIndex >= 0
@@ -885,7 +886,8 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
   let hit = await clickSurface.evaluate(inspectHitTestedVideoActionDocument,
     { posterPath: target.posterSource?.path ?? null });
   observation.target.initialHitTest = hit;
-  if (!hit?.inQuote && hit?.nativePlay && target.videoIndex >= 0) {
+  if (!hit?.inQuote && hit?.nativePlay && target.videoIndex >= 0 &&
+      controlledVideoClickMode !== 'allow-all') {
     const hostVideo = article.locator('video').nth(target.videoIndex);
     const beforeNative = await hostVideo.evaluate(inspectHostVideoDocument,
       { posterPath: target.posterSource?.path ?? null });
@@ -943,7 +945,15 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
       { posterPath: target.posterSource?.path ?? null });
     observation.target.hitTestAfterNativePlayback = hit;
   }
-  if (!hit?.inQuote) throw new Error('No non-control quoted video gallery action was hit-tested');
+  const controlledAction = controlledVideoClickMode === 'allow-all' && hit?.nativePlay;
+  if (!hit?.inQuote && !controlledAction) {
+    if (observation.target.nativePlayback?.status === 'playing') {
+      observation.classification = 'native-play-observed-gallery-action-unavailable';
+    }
+    throw new Error('No non-control quoted video gallery action was hit-tested');
+  }
+  observation.target.galleryActionKind = controlledAction
+    ? 'media-scoped-control-under-allow-all' : 'non-control-media-surface';
   const actionHandle = await clickSurface.elementHandle();
   if (!actionHandle) throw new Error('Quoted video detached before interaction');
   let focusHandle;
@@ -959,14 +969,24 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
     observation.screenshots.before = await captureScreenshot(page, output, `live-page-${index}-before.png`);
     const finalHit = await clickSurface.evaluate(inspectHitTestedVideoActionDocument,
       { posterPath: target.posterSource?.path ?? null });
-    observation.gallery.identityBeforeClick = Boolean(finalHit?.inQuote);
+    const clickPoint = finalHit?.inQuote ? finalHit
+      : controlledVideoClickMode === 'allow-all' && finalHit?.nativePlay
+        ? finalHit.nativePlay : null;
+    observation.gallery.identityBeforeClick = Boolean(clickPoint);
     observation.gallery.hitTestBeforeClick = finalHit;
     if (!observation.gallery.identityBeforeClick) {
       throw new Error('Quoted video hit target changed before click');
     }
-    await page.mouse.click(finalHit.x, finalHit.y);
+    await page.mouse.click(clickPoint.x, clickPoint.y);
     const gallery = page.locator('[data-xeg-gallery-container]');
-    await gallery.waitFor({ state: 'visible', timeout: ACTION_TIMEOUT_MS });
+    const openedGallery = await gallery.waitFor({ state: 'visible', timeout: ACTION_TIMEOUT_MS })
+      .then(() => true, () => false);
+    if (!openedGallery) {
+      if (controlledVideoClickMode === 'allow-all') {
+        observation.classification = 'controlled-media-click-did-not-open-gallery';
+      }
+      throw new Error('Quoted video media click did not open the gallery');
+    }
     const selectedHandle = await page.waitForFunction(() => {
       const item = document.querySelector('[data-xeg-gallery-container] [data-gallery-element="item"] video');
       return item?.readyState >= 2 && item.videoWidth > 0 && item.videoHeight > 0;
@@ -1055,7 +1075,8 @@ function photoIndexFromActionPath(path) {
   return value;
 }
 
-async function observeOne(context, extensionId, targetUrl, output, index) {
+async function observeOne(context, extensionId, targetUrl, output, index,
+  controlledVideoClickMode = null, verifyControlledMode = null) {
   const identity = targetIdentity(targetUrl);
   const page = await context.newPage();
   const observation = {
@@ -1065,6 +1086,7 @@ async function observeOne(context, extensionId, targetUrl, output, index) {
     finalUrl: null,
     responseStatus: null,
     extension: { id: extensionId, readinessMarker: null },
+    videoClickMode: controlledVideoClickMode ?? 'default',
     target: null,
     gallery: { status: 'not-run' },
     api: { tweetResultByRestId: { requests: 0, responses: [] }, observations: [], overflow: 0 },
@@ -1125,9 +1147,16 @@ async function observeOne(context, extensionId, targetUrl, output, index) {
       observation.missingAssertions.push('extensionInjected');
       throw new Error('Installed extension readiness marker was not observed');
     }
+    if (controlledVideoClickMode === 'allow-all') {
+      observation.extension.storedModeAfterReadiness = await verifyControlledMode?.();
+      if (observation.extension.storedModeAfterReadiness !== 'allow-all') {
+        throw new Error('Controlled video click mode was not observed after live-page readiness');
+      }
+    }
 
     if (observation.target.kind === 'quoted-video') {
-      await observeQuotedVideo(page, observation, identity, output, index, settleApi);
+      await observeQuotedVideo(page, observation, identity, output, index, settleApi,
+        controlledVideoClickMode);
       observation.status = 'core-flow-observed';
       observation.evidenceStatus = observation.hostDiagnostics.length ||
         observation.hostDiagnosticOverflow > 0 ? 'unverified' : 'observed';
@@ -1279,6 +1308,95 @@ async function observeOne(context, extensionId, targetUrl, output, index) {
   return observation;
 }
 
+export function createControlledVideoSettings(priorValue, timestamp) {
+  const base = priorValue && typeof priorValue === 'object' && !Array.isArray(priorValue)
+    ? priorValue : { version: '1', lastModified: timestamp, gallery: {} };
+  return {
+    ...base,
+    gallery: { ...(base.gallery && typeof base.gallery === 'object' &&
+      !Array.isArray(base.gallery) ? base.gallery : {}), videoClickMode: 'allow-all' },
+    __schemaHash: '1',
+  };
+}
+
+async function observeControlledVideoMode(context, extensionId, targetUrl, output, index) {
+  const key = 'xeg-app-settings';
+  const extensionPage = await context.newPage();
+  const result = {
+    kind: 'task-owned-extension-setting-probe',
+    requestedMode: 'allow-all',
+    priorStoredMode: null,
+    appliedMode: null,
+    observation: null,
+    cleanup: { restored: false, extensionPageClosed: false },
+    status: 'pending',
+  };
+  let prior;
+  let mutated = false;
+  try {
+    await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
+    prior = await extensionPage.evaluate(async (storageKey) => {
+      const values = await chrome.storage.local.get(storageKey);
+      return { exists: Object.hasOwn(values, storageKey), value: values[storageKey] ?? null };
+    }, key);
+    result.priorStoredMode = ['allow-all', 'block-all', 'block-controls-only']
+      .includes(prior.value?.gallery?.videoClickMode)
+      ? prior.value.gallery.videoClickMode : null;
+    const next = createControlledVideoSettings(prior.value, Date.now());
+    mutated = true;
+    await extensionPage.evaluate(async ({ storageKey, value }) => {
+      await chrome.storage.local.set({ [storageKey]: value });
+    }, { storageKey: key, value: next });
+    result.appliedMode = await extensionPage.evaluate(async (storageKey) => {
+      const values = await chrome.storage.local.get(storageKey);
+      return values[storageKey]?.gallery?.videoClickMode ?? null;
+    }, key);
+    if (result.appliedMode !== 'allow-all') {
+      throw new Error('Controlled video click mode was not stored');
+    }
+    result.observation = await observeOne(context, extensionId, targetUrl, output,
+      `${index}-allow-all`, 'allow-all', async () => extensionPage.evaluate(async (storageKey) => {
+        const values = await chrome.storage.local.get(storageKey);
+        return values[storageKey]?.gallery?.videoClickMode ?? null;
+      }, key));
+    result.modeAfterObservation = await extensionPage.evaluate(async (storageKey) => {
+      const values = await chrome.storage.local.get(storageKey);
+      return values[storageKey]?.gallery?.videoClickMode ?? null;
+    }, key);
+    if (result.modeAfterObservation !== 'allow-all') {
+      throw new Error('Controlled video click mode changed during observation');
+    }
+    result.status = result.observation.status;
+  } catch (error) {
+    result.status = 'failed';
+    result.error = safeError(error);
+  } finally {
+    if (!mutated) result.cleanup.restored = true;
+    if (mutated) {
+      try {
+        await extensionPage.evaluate(async ({ storageKey, previous }) => {
+          if (previous.exists) await chrome.storage.local.set({ [storageKey]: previous.value });
+          else await chrome.storage.local.remove(storageKey);
+        }, { storageKey: key, previous: prior });
+        result.cleanup.restored = await extensionPage.evaluate(async ({ storageKey, previous }) => {
+          const values = await chrome.storage.local.get(storageKey);
+          return Object.hasOwn(values, storageKey) === previous.exists &&
+            (!previous.exists || JSON.stringify(values[storageKey]) === JSON.stringify(previous.value));
+        }, { storageKey: key, previous: prior });
+      } catch (error) {
+        result.cleanup.restoreError = safeError(error);
+      }
+    }
+    await extensionPage.close().then(() => { result.cleanup.extensionPageClosed = true; },
+      (error) => { result.cleanup.extensionPageError = safeError(error); });
+    if (!result.cleanup.restored || !result.cleanup.extensionPageClosed) {
+      result.status = 'failed';
+      result.error ??= 'Task-owned extension settings or page cleanup was incomplete';
+    }
+  }
+  return result;
+}
+
 export async function observeLiveUrls({ context, extensionId, liveUrls, output }) {
   const urls = validateLiveUrls(liveUrls);
   if (!urls.length) {
@@ -1286,12 +1404,26 @@ export async function observeLiveUrls({ context, extensionId, liveUrls, output }
   }
   const pages = [];
   for (let index = 0; index < urls.length; index += 1) {
-    pages.push(await observeOne(context, extensionId, urls[index], output, index + 1));
+    const page = await observeOne(context, extensionId, urls[index], output, index + 1);
+    if (page.classification === 'native-play-observed-gallery-action-unavailable') {
+      page.controlledProbe = await observeControlledVideoMode(
+        context, extensionId, urls[index], output, index + 1)
+        .catch((error) => ({ status: 'failed', error: safeError(error),
+          cleanup: { restored: false, extensionPageClosed: false } }));
+    }
+    pages.push(page);
   }
-  const failed = pages.filter((page) => page.status === 'failed');
+  const passedPage = (page) => page.status === 'core-flow-observed' ||
+    page.controlledProbe?.observation?.status === 'core-flow-observed' &&
+      page.controlledProbe?.cleanup?.restored === true;
+  const failed = pages.filter((page) => !passedPage(page));
+  const controlled = pages.some((page) => page.controlledProbe?.observation?.status ===
+    'core-flow-observed');
   const summary = {
-    status: failed.length ? 'failed' : 'core-flow-observed',
-    evidenceStatus: pages.every((page) => page.evidenceStatus === 'observed')
+    status: failed.length ? 'failed' : controlled ? 'controlled-flow-observed' : 'core-flow-observed',
+    evidenceStatus: pages.every((page) => passedPage(page) &&
+      (page.status === 'core-flow-observed' ? page.evidenceStatus :
+        page.controlledProbe?.observation?.evidenceStatus) === 'observed')
       ? 'observed'
       : 'unverified',
     pages,
@@ -1299,7 +1431,8 @@ export async function observeLiveUrls({ context, extensionId, liveUrls, output }
   await writeFile(join(output, 'live-observations.json'), JSON.stringify(summary, null, 2));
   if (failed.length) {
     const error = new AggregateError(
-      failed.map((page) => new Error(page.error)),
+      failed.map((page) => new Error(page.controlledProbe?.error ??
+        page.controlledProbe?.observation?.error ?? page.error)),
       `${failed.length} live X observation(s) missed required assertions`
     );
     error.summary = summary;
