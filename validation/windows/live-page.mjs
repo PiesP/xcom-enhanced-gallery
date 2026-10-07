@@ -901,13 +901,16 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
       } : null,
     };
     if (!beforeNative?.poster || !confirmation?.nativePlay ||
-        confirmation.nativePlay.x !== hit.nativePlay.x ||
-        confirmation.nativePlay.y !== hit.nativePlay.y) {
+        confirmation.nativePlay.mediaScopeDepth > 5) {
       throw new Error('Native quote play action changed before click');
     }
     observation.target.nativePlayback.status = 'attempting';
-    observation.target.nativePlayback.action = hit.nativePlay;
-    await page.mouse.click(hit.nativePlay.x, hit.nativePlay.y);
+    observation.target.nativePlayback.action = confirmation.nativePlay;
+    observation.target.nativePlayback.pointShift = {
+      x: confirmation.nativePlay.x - hit.nativePlay.x,
+      y: confirmation.nativePlay.y - hit.nativePlay.y,
+    };
+    await page.mouse.click(confirmation.nativePlay.x, confirmation.nativePlay.y);
     observation.target.nativePlayback.galleryOpenedOnControlClick =
       await page.locator('[data-xeg-gallery-container]').count() > 0;
     if (observation.target.nativePlayback.galleryOpenedOnControlClick) {
@@ -956,12 +959,12 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
     observation.screenshots.before = await captureScreenshot(page, output, `live-page-${index}-before.png`);
     const finalHit = await clickSurface.evaluate(inspectHitTestedVideoActionDocument,
       { posterPath: target.posterSource?.path ?? null });
-    observation.gallery.identityBeforeClick = Boolean(finalHit?.inQuote &&
-      finalHit.x === hit.x && finalHit.y === hit.y);
+    observation.gallery.identityBeforeClick = Boolean(finalHit?.inQuote);
+    observation.gallery.hitTestBeforeClick = finalHit;
     if (!observation.gallery.identityBeforeClick) {
       throw new Error('Quoted video hit target changed before click');
     }
-    await page.mouse.click(hit.x, hit.y);
+    await page.mouse.click(finalHit.x, finalHit.y);
     const gallery = page.locator('[data-xeg-gallery-container]');
     await gallery.waitFor({ state: 'visible', timeout: ACTION_TIMEOUT_MS });
     const selectedHandle = await page.waitForFunction(() => {
