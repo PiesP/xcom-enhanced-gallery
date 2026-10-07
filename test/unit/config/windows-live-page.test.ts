@@ -399,6 +399,47 @@ describe('Windows X live page validation', () => {
     expect(JSON.stringify(observation)).not.toMatch(/private|Private|token=|blob:https/u);
   });
 
+  it('targets a direct nested quote article while excluding media in its deeper quote', () => {
+    document.body.innerHTML = `
+      <article>
+        <a href="https://x.com/outer/status/123">A</a>
+        <article>
+          <a href="https://x.com/quoted/status/456">B</a>
+          <video style="display:none" poster="https://pbs.twimg.com/amplify_video_thumb/456/img/b.jpg"></video>
+          <img src="https://pbs.twimg.com/amplify_video_thumb/456/img/b.jpg">
+          <article><a href="https://x.com/deeper/status/789">C</a>
+            <video poster="https://pbs.twimg.com/amplify_video_thumb/789/img/c.jpg"></video>
+          </article>
+        </article>
+      </article>
+    `;
+    const image = document.querySelector<HTMLImageElement>('img');
+    if (!image) throw new Error('Quoted poster fixture missing');
+    image.getBoundingClientRect = () => ({
+      bottom: 200, height: 100, left: 0, right: 200, toJSON: () => ({}),
+      top: 100, width: 200, x: 0, y: 100,
+    });
+    Object.defineProperties(image, {
+      complete: { configurable: true, value: true },
+      naturalWidth: { configurable: true, value: 200 },
+    });
+    const identity = { handle: 'outer', statusId: '123' };
+    expect(livePage.inspectLiveTargetDocument(identity)).toMatchObject({
+      state: 'ready', target: {
+        kind: 'quoted-video', quoteBoundary: 'nested-article', quoteStatusIds: ['456'],
+        posterIndex: 0, posterSource: { path: '/amplify_video_thumb/456/img/b.jpg' },
+      },
+    });
+    expect(livePage.inspectLiveCandidateDocument(identity)).toMatchObject({
+      videoDetails: [
+        { nearestArticleIndex: 1, ancestorArticleIndexes: [1, 0],
+          ownStatusPaths: ['/quoted/status/456'] },
+        { nearestArticleIndex: 2, ancestorArticleIndexes: [2, 1, 0],
+          ownStatusPaths: ['/deeper/status/789'] },
+      ],
+    });
+  });
+
   it('summarizes direct quote API relationships and playable variants without response text', () => {
     const url = 'https://x.com/i/api/graphql/query/TweetResultByRestId?variables=%7B%22tweetId%22%3A%22123%22%7D';
     const result = livePage.summarizeTweetResultResponse(url, 200, {

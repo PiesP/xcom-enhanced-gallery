@@ -329,15 +329,19 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
     });
     if (!ownsStatus) continue;
 
+    const directNestedArticles = [...article.querySelectorAll('article')]
+      .filter((nested) => nested.parentElement?.closest('article') === article);
     const quoteCards = [...article.querySelectorAll('[data-testid="quoteTweet"]')]
       .filter((card) => card.closest('article') === article);
-    const scopes = quoteCards.length ? quoteCards : [article];
+    const scopes = directNestedArticles.length ? directNestedArticles
+      : quoteCards.length ? quoteCards : [article];
     const videoTargets = [];
     for (let scopeIndex = 0; scopeIndex < scopes.length; scopeIndex += 1) {
       const quote = scopes[scopeIndex];
       const players = [...quote.querySelectorAll(
         '[data-testid="videoPlayer"], video, [data-testid="previewInterstitial"]')]
-        .filter((candidate) => candidate.closest('article') === article &&
+        .filter((candidate) => candidate.closest('article') ===
+          (directNestedArticles.length ? quote : article) &&
           (candidate.matches('[data-testid="videoPlayer"]') ||
            !candidate.closest('[data-testid="videoPlayer"]')) &&
           (!candidate.matches('[data-testid="previewInterstitial"]') ||
@@ -349,12 +353,21 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
         const preview = player.matches('video') ? null : player.querySelector('img');
         const playButton = player.matches('[data-testid="previewInterstitial"]')
           ? player.querySelector('[data-testid="playButton"]') : null;
+        const poster = parsePoster(video?.poster);
+        const matchingPosters = poster ? [...quote.querySelectorAll('img')].filter((image) => {
+          const source = parsePoster(image.currentSrc || image.src);
+          return image.closest('article') === (directNestedArticles.length ? quote : article) &&
+            source?.path === poster.path && isVisible(image) && image.complete &&
+            image.naturalWidth > 0;
+        }) : [];
+        const matchingPoster = matchingPosters.length === 1 ? matchingPosters[0] : null;
         const hitTarget = playButton && isVisible(playButton) ? playButton
           : video && isVisible(video) ? video
           : preview && isVisible(preview) && preview.complete && preview.naturalWidth > 0
-            ? preview : isVisible(player) ? player : null;
+            ? preview : matchingPoster ?? (isVisible(player) ? player : null);
         if (!hitTarget) continue;
         const quoteLinks = [...quote.querySelectorAll('a[href]')].flatMap((anchor) => {
+          if (directNestedArticles.length && anchor.closest('article') !== quote) return [];
           const link = parseLink(anchor);
           const match = link?.path.match(/^\/[A-Za-z0-9_]{1,15}\/status\/(\d+)(?:\/|$)/u);
           return match && match[1] !== statusId ? [match[1]] : [];
@@ -373,15 +386,20 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
           state: 'ready',
           target: {
             kind: 'quoted-video', articleIndex,
-            quoteBoundary: quoteCards.length ? 'quoteTweet' : 'unmarked-candidate',
-            quoteIndex: quoteCards.length ? scopeIndex : -1,
+            quoteBoundary: directNestedArticles.length ? 'nested-article'
+              : quoteCards.length ? 'quoteTweet' : 'unmarked-candidate',
+            quoteIndex: quoteCards.length && !directNestedArticles.length ? scopeIndex : -1,
+            nestedArticleIndex: directNestedArticles.length ?
+              [...article.querySelectorAll('article')].indexOf(quote) : -1,
             quoteStatusIds, ownershipPath: path,
             videoIndex: [...article.querySelectorAll('video')].indexOf(video),
             playerIndex: [...article.querySelectorAll('[data-testid="videoPlayer"]')].indexOf(player),
             previewIndex: [...article.querySelectorAll('[data-testid="previewInterstitial"]')]
               .indexOf(player),
+            posterIndex: hitTarget instanceof HTMLImageElement
+              ? [...article.querySelectorAll('img')].indexOf(hitTarget) : -1,
             hitKind: hitTarget.tagName.toLowerCase(),
-            posterSource: parsePoster(video?.poster || preview?.currentSrc || preview?.src),
+            posterSource: poster ?? parsePoster(preview?.currentSrc || preview?.src),
             hostVideoSource: video ? parseVideo(video.currentSrc || video.src) : null,
           },
         });
@@ -469,6 +487,23 @@ export function inspectLiveCandidateDocument({ handle, statusId }) {
     }
     return nodes;
   };
+  const articleOwnership = (element, outerArticle) => {
+    const ancestorArticleIndexes = [];
+    for (let node = element.closest('article'); node && outerArticle.contains(node);
+      node = node.parentElement?.closest('article')) {
+      ancestorArticleIndexes.push(articles.indexOf(node));
+      if (node === outerArticle || ancestorArticleIndexes.length >= 6) break;
+    }
+    const nearest = element.closest('article');
+    const ownStatusPaths = nearest ? [...nearest.querySelectorAll('a[href]')]
+      .filter((anchor) => anchor.closest('article') === nearest)
+      .flatMap((anchor) => {
+        const path = statusPath(anchor.href);
+        return path ? [path] : [];
+      }).slice(0, 8) : [];
+    return { nearestArticleIndex: articles.indexOf(nearest),
+      ancestorArticleIndexes, ownStatusPaths };
+  };
   const article = articles.find((candidate) => [...candidate.querySelectorAll('a[href]')]
     .some((anchor) => {
       try {
@@ -480,8 +515,7 @@ export function inspectLiveCandidateDocument({ handle, statusId }) {
       }
     }));
   if (!article) return { exactArticleFound: false, articleCount: Math.min(articles.length, 50) };
-  const videoDetails = [...article.querySelectorAll('video')]
-    .filter((video) => video.closest('article') === article).slice(0, 6).map((video) => {
+  const videoDetails = [...article.querySelectorAll('video')].slice(0, 6).map((video) => {
       const rect = video.getBoundingClientRect();
       const x = Math.min(innerWidth - 1, Math.max(0, rect.x + rect.width / 2));
       const y = Math.min(innerHeight - 1, Math.max(0, rect.y + rect.height / 2));
@@ -489,6 +523,7 @@ export function inspectLiveCandidateDocument({ handle, statusId }) {
         sourceKind: video.currentSrc?.startsWith('blob:') || video.src.startsWith('blob:')
           ? 'blob' : video.currentSrc || video.src ? 'other' : 'none',
         poster: mediaPath(video.poster),
+        ...articleOwnership(video, article),
         nodePath: nodePath(video, article),
         hitPath: rect.width > 0 && rect.height > 0 && typeof document.elementsFromPoint === 'function'
           ? document.elementsFromPoint(x, y).slice(0, 4).map((node) => ({
@@ -510,6 +545,7 @@ export function inspectLiveCandidateDocument({ handle, statusId }) {
     thumbnailDetails.push({
       source: image ?? backgroundSource,
       sourceKind: image ? 'image' : 'background',
+      ...articleOwnership(element, article),
       nodePath: nodePath(element, article),
     });
   }
@@ -724,6 +760,8 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
     ? article.locator('[data-testid="videoPlayer"]').nth(target.playerIndex)
     : target.previewIndex >= 0
       ? article.locator('[data-testid="previewInterstitial"]').nth(target.previewIndex)
+    : target.posterIndex >= 0
+      ? article.locator('img').nth(target.posterIndex)
     : article.locator('video').nth(target.videoIndex);
   await player.scrollIntoViewIfNeeded({ timeout: ACTION_TIMEOUT_MS });
   if ((await hostSnapshot(page)).scrollY === 0) await page.mouse.wheel(0, 160);
