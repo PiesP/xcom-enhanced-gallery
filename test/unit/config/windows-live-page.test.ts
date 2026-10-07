@@ -23,6 +23,8 @@ type LivePageModule = {
     statusIds?: string[];
     quoteCardCount?: number;
     videoPlayerCount?: number;
+    previewInterstitialCount?: number;
+    playButtonCount?: number;
   };
   inspectSelectedGalleryVideoDocument(): false | {
     index: number;
@@ -292,7 +294,12 @@ describe('Windows X live page validation', () => {
       state: 'ready',
       target: {
         kind: 'quoted-video', quoteBoundary: 'quoteTweet', quoteStatusIds: ['456'],
-        ownershipPath: [{ tag: 'video', testId: null }],
+        posterSource: { host: 'pbs.twimg.com', path: '/ext_tw_video_thumb/456/pu/img/poster.jpg' },
+        ownershipPath: [
+          { tag: 'video', testId: null },
+          { tag: 'div', testId: 'videoPlayer' },
+          { tag: 'div', testId: 'quoteTweet' },
+        ],
       },
     });
     expect(livePage.inspectLiveCandidateDocument(identity)).toMatchObject({
@@ -317,6 +324,53 @@ describe('Windows X live page validation', () => {
       .toMatchObject({ state: 'ready', target: {
         kind: 'quoted-video', quoteBoundary: 'unmarked-candidate', quoteStatusIds: [],
       } });
+  });
+
+  it('recognizes a pre-player video quote by its play button and rejects multiple unmarked candidates', () => {
+    document.body.innerHTML = `
+      <article>
+        <a href="https://x.com/outer/status/123">A</a>
+        <div data-testid="quoteTweet"><div data-testid="tweetPhoto">
+          <div data-testid="previewInterstitial">
+            <img src="https://pbs.twimg.com/amplify_video_thumb/456/img/poster.jpg">
+            <button data-testid="playButton">Play</button>
+          </div>
+        </div></div>
+      </article>
+    `;
+    const button = document.querySelector<HTMLButtonElement>('[data-testid="playButton"]');
+    if (!button) throw new Error('Play button fixture missing');
+    button.getBoundingClientRect = () => ({
+      bottom: 200, height: 100, left: 0, right: 200, toJSON: () => ({}),
+      top: 100, width: 200, x: 0, y: 100,
+    });
+    const identity = { handle: 'outer', statusId: '123' };
+    expect(livePage.inspectLiveTargetDocument(identity)).toMatchObject({
+      state: 'ready', target: {
+        kind: 'quoted-video', quoteBoundary: 'quoteTweet', previewIndex: 0,
+        posterSource: { path: '/amplify_video_thumb/456/img/poster.jpg' },
+      },
+    });
+    expect(livePage.inspectLiveCandidateDocument(identity)).toMatchObject({
+      previewInterstitialCount: 1, playButtonCount: 1,
+    });
+
+    document.body.innerHTML = `
+      <article>
+        <a href="https://x.com/outer/status/123">A</a>
+        <div data-testid="videoPlayer"><video></video></div>
+        <div data-testid="videoPlayer"><video></video></div>
+      </article>
+    `;
+    for (const player of document.querySelectorAll<HTMLElement>('[data-testid="videoPlayer"]')) {
+      player.getBoundingClientRect = () => ({
+        bottom: 200, height: 100, left: 0, right: 200, toJSON: () => ({}),
+        top: 100, width: 200, x: 0, y: 100,
+      });
+    }
+    expect(livePage.inspectLiveTargetDocument(identity)).toEqual({
+      state: 'ambiguous', reason: 'multiple-visible-video-candidates', candidateCount: 2,
+    });
   });
 
   it('summarizes direct quote API relationships and playable variants without response text', () => {

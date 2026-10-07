@@ -309,6 +309,16 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
     }
     return null;
   };
+  const parsePoster = (value) => {
+    try {
+      const url = new URL(value, location.href);
+      return url.protocol === 'https:' && url.hostname.toLowerCase() === 'pbs.twimg.com' &&
+        /^\/(?:amplify_video_thumb|ext_tw_video_thumb|tweet_video_thumb|video_thumb)\//u.test(url.pathname)
+        ? { host: url.hostname.toLowerCase(), path: url.pathname } : null;
+    } catch {
+      return null;
+    }
+  };
 
   const articles = [...document.querySelectorAll('article')];
   for (let articleIndex = 0; articleIndex < articles.length; articleIndex += 1) {
@@ -322,16 +332,25 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
     const quoteCards = [...article.querySelectorAll('[data-testid="quoteTweet"]')]
       .filter((card) => card.closest('article') === article);
     const scopes = quoteCards.length ? quoteCards : [article];
+    const videoTargets = [];
     for (let scopeIndex = 0; scopeIndex < scopes.length; scopeIndex += 1) {
       const quote = scopes[scopeIndex];
-      const players = [...quote.querySelectorAll('[data-testid="videoPlayer"], video')]
+      const players = [...quote.querySelectorAll(
+        '[data-testid="videoPlayer"], video, [data-testid="previewInterstitial"]')]
         .filter((candidate) => candidate.closest('article') === article &&
           (candidate.matches('[data-testid="videoPlayer"]') ||
-           !candidate.closest('[data-testid="videoPlayer"]')));
+           !candidate.closest('[data-testid="videoPlayer"]')) &&
+          (!candidate.matches('[data-testid="previewInterstitial"]') ||
+            (candidate.closest('[data-testid="tweetPhoto"]') &&
+              candidate.querySelector('[data-testid="playButton"]') &&
+              !candidate.closest('[data-testid="videoPlayer"]'))));
       for (const player of players) {
         const video = player.matches('video') ? player : player.querySelector('video');
         const preview = player.matches('video') ? null : player.querySelector('img');
-        const hitTarget = video && isVisible(video) ? video
+        const playButton = player.matches('[data-testid="previewInterstitial"]')
+          ? player.querySelector('[data-testid="playButton"]') : null;
+        const hitTarget = playButton && isVisible(playButton) ? playButton
+          : video && isVisible(video) ? video
           : preview && isVisible(preview) && preview.complete && preview.naturalWidth > 0
             ? preview : isVisible(player) ? player : null;
         if (!hitTarget) continue;
@@ -350,7 +369,7 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
               ? node.getAttribute('data-testid') : null,
           });
         }
-        return {
+        videoTargets.push({
           state: 'ready',
           target: {
             kind: 'quoted-video', articleIndex,
@@ -359,15 +378,22 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
             quoteStatusIds, ownershipPath: path,
             videoIndex: [...article.querySelectorAll('video')].indexOf(video),
             playerIndex: [...article.querySelectorAll('[data-testid="videoPlayer"]')].indexOf(player),
+            previewIndex: [...article.querySelectorAll('[data-testid="previewInterstitial"]')]
+              .indexOf(player),
             hitKind: hitTarget.tagName.toLowerCase(),
-            posterSource: video ? parseMedia({ currentSrc: video.poster, src: video.poster,
-              getAttribute: () => video.poster }) : preview ? parseMedia(preview) : null,
+            posterSource: parsePoster(video?.poster || preview?.currentSrc || preview?.src),
             hostVideoSource: video ? parseVideo(video.currentSrc || video.src) : null,
           },
-        };
+        });
       }
     }
-    if (scopes.some((quote) => quote.querySelector('[data-testid="videoPlayer"], video'))) {
+    if (videoTargets.length > 1) {
+      return { state: 'ambiguous', reason: 'multiple-visible-video-candidates',
+        candidateCount: Math.min(videoTargets.length, 20) };
+    }
+    if (videoTargets.length === 1) return videoTargets[0];
+    if (scopes.some((quote) => quote.querySelector(
+      '[data-testid="videoPlayer"], video, [data-testid="previewInterstitial"]'))) {
       return false;
     }
 
@@ -375,7 +401,8 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
     for (let imageIndex = 0; imageIndex < images.length; imageIndex += 1) {
       const image = images[imageIndex];
       const source = parseMedia(image);
-      if (image.closest('article') !== article || image.closest('[data-testid="videoPlayer"]') ||
+      if (image.closest('article') !== article ||
+          image.closest('[data-testid="videoPlayer"], [data-testid="previewInterstitial"]') ||
           !source || !isVisible(image) ||
           !image.complete || image.naturalWidth <= 0) continue;
       return {
@@ -427,6 +454,8 @@ export function inspectLiveCandidateDocument({ handle, statusId }) {
     articleIndex: articles.indexOf(article),
     quoteCardCount: Math.min(article.querySelectorAll('[data-testid="quoteTweet"]').length, 20),
     videoPlayerCount: Math.min(article.querySelectorAll('[data-testid="videoPlayer"]').length, 20),
+    previewInterstitialCount: Math.min(article.querySelectorAll('[data-testid="previewInterstitial"]').length, 20),
+    playButtonCount: Math.min(article.querySelectorAll('[data-testid="playButton"]').length, 20),
     videoCount: Math.min(article.querySelectorAll('video').length, 20),
     statusIds,
   };
@@ -617,6 +646,8 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
   const article = page.locator('article').nth(target.articleIndex);
   const player = target.playerIndex >= 0
     ? article.locator('[data-testid="videoPlayer"]').nth(target.playerIndex)
+    : target.previewIndex >= 0
+      ? article.locator('[data-testid="previewInterstitial"]').nth(target.previewIndex)
     : article.locator('video').nth(target.videoIndex);
   await player.scrollIntoViewIfNeeded({ timeout: ACTION_TIMEOUT_MS });
   if ((await hostSnapshot(page)).scrollY === 0) await page.mouse.wheel(0, 160);
@@ -626,13 +657,14 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
     const y = Math.max(0, Math.min(innerHeight - 1, rect.top + rect.height / 2));
     const top = document.elementsFromPoint(x, y)[0];
     const scope = element.closest('[data-testid="quoteTweet"]') ?? element.closest('article');
-    const player = element.closest('[data-testid="videoPlayer"]');
+    const mediaSurface = element.closest('[data-testid="videoPlayer"], [data-testid="previewInterstitial"]');
     return {
       x, y,
       inQuote: Boolean(top && scope?.contains(top) &&
-        (element.contains(top) || (player && top.closest('[data-testid="videoPlayer"]') === player))),
+        (element.contains(top) || (mediaSurface &&
+          top.closest('[data-testid="videoPlayer"], [data-testid="previewInterstitial"]') === mediaSurface))),
       topTag: top?.tagName.toLowerCase() ?? null,
-      topTestId: ['videoPlayer', 'videoPlayerOverlay', 'videoPlayerControls'].includes(
+      topTestId: ['videoPlayer', 'videoPlayerOverlay', 'videoPlayerControls', 'playButton'].includes(
         top?.getAttribute('data-testid')) ? top.getAttribute('data-testid') : null,
     };
   });

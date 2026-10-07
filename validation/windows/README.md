@@ -145,7 +145,7 @@ page-error checks. The profile then removes every fixture route before opening
 the caller's unchanged URL. It does not intercept traffic, add authentication,
 accept consent or CAPTCHA prompts, start downloads, force clicks, or edit the
 host DOM. For an image it checks the exact status-owned photo action and loaded
-gallery image. For a visible video in that status's quote card, it records a
+gallery image. For a visible video or video preview in that status's quote card, it records a
 bounded ownership path and observed status links, uses an ordinary hit-tested
 click, and checks the selected gallery video, playable source, dimensions,
 readiness, error state, and playback progress. A video in an unmarked branch is
