@@ -119,8 +119,12 @@ export interface TweetMediaEntry {
   readonly original_width?: number;
   readonly original_height?: number;
   readonly aspect_ratio?: [number, number];
+  /** Validated playable MP4 variants for exact video source matching (max 32). */
+  readonly videoVariantUrls?: readonly string[];
   /** Media source: 'original' | 'quoted' */
   readonly sourceLocation?: 'original' | 'quoted';
+  /** Requested parent tweet ID for media directly owned by its quote. */
+  readonly quoteParentTweetId?: string;
   /** Quoted tweet ID (if from quote) */
   readonly quotedTweetId?: string;
   /** Author-written alt text from Twitter API or DOM */
