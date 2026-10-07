@@ -4,6 +4,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildTweetResultByRestIdUrl } from '@shared/core/twitter-api/endpoint';
 import type { BuildTweetResultByRestIdUrlArgs } from '@shared/core/twitter-api/endpoint';
+import { createQuotedVideoTweetResponse } from '../../../../fixtures/quoted-video-tweet-response';
 
 const { getCsrfTokenAsync, httpGet, resolveBearerToken } = vi.hoisted(() => ({
   getCsrfTokenAsync: vi.fn(async (): Promise<string | undefined> => 'csrf-token'),
@@ -20,7 +21,7 @@ vi.mock('@shared/services/media/twitter-auth/twitter-auth', () => ({
   resolveBearerToken,
 }));
 
-import { getTweetMedias } from '@shared/services/media/twitter-api-client';
+import { getTweetMedias, TwitterAPIRequestError } from '@shared/services/media/twitter-api-client';
 
 const BASE_ARGS: BuildTweetResultByRestIdUrlArgs = {
   host: 'x.com',
@@ -235,5 +236,44 @@ describe('twitter-api-client request boundary', () => {
     await expect(
       getTweetMedias('123', { hostname: 'x.com', href: undefined, origin: undefined })
     ).rejects.toThrow('TW:403');
+  });
+
+  it('classifies transport failure as an outage but preserves cancellation', async () => {
+    const networkError = new Error('network unavailable');
+    httpGet.mockRejectedValueOnce(networkError);
+    await expect(getTweetMedias('123')).rejects.toMatchObject({
+      name: 'TwitterAPIRequestError',
+      cause: networkError,
+    });
+
+    const controller = new AbortController();
+    const cancellation = new DOMException('cancelled', 'AbortError');
+    httpGet.mockRejectedValueOnce(cancellation);
+    await expect(getTweetMedias('123', undefined, controller.signal)).rejects.toBe(cancellation);
+
+    controller.abort();
+    const abortRace = new Error('request stopped after abort');
+    httpGet.mockRejectedValueOnce(abortRace);
+    await expect(getTweetMedias('123', undefined, controller.signal)).rejects.toBe(abortRace);
+  });
+
+  it('treats a provider error without a tweet as an outage but accepts usable media', async () => {
+    const providerErrors = [{ code: 88, message: 'Rate limit' }];
+    httpGet.mockResolvedValueOnce({ ok: true, status: 200, data: { errors: providerErrors } });
+    await expect(getTweetMedias('123')).rejects.toBeInstanceOf(TwitterAPIRequestError);
+
+    httpGet.mockResolvedValueOnce({ ok: true, status: 200, data: {} });
+    await expect(getTweetMedias('123')).resolves.toEqual([]);
+
+    const usableResponse = createQuotedVideoTweetResponse();
+    httpGet.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      data: { ...usableResponse, errors: providerErrors },
+    });
+    await expect(getTweetMedias('222')).resolves.toMatchObject([
+      { tweet_id: '111', type: 'photo' },
+      { tweet_id: '222', type: 'video' },
+    ]);
   });
 });
