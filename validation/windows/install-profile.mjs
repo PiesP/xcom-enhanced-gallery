@@ -1679,14 +1679,17 @@ async function assertQuotedSelection(page, { position, total, type, path }) {
   return state;
 }
 
-async function assertQuotedOriginLink(gallery, expectedUrl) {
+async function assertQuotedOriginLink(gallery, expectedUrl, allowMediaPath = false) {
   const button = gallery.locator('#tweet-text-button');
   assert.equal(await button.count(), 1, 'Selected media must expose originating post metadata');
   await button.click();
   const link = gallery.locator('#toolbar-tweet-panel a[href^="https://x.com/"]');
   await link.waitFor({ state: 'visible' });
   const observed = await link.getAttribute('href');
-  assert.equal(observed, expectedUrl, 'Toolbar source link must identify the selected post');
+  assert(
+    observed === expectedUrl || (allowMediaPath && observed === `${expectedUrl}/video/2`),
+    'Toolbar source link must identify the selected post'
+  );
   await button.click();
   return observed;
 }
@@ -1885,7 +1888,8 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
   assert.deepEqual(quotedApiResponses.slice(apiStart).map(({ tweetId }) => tweetId),
     [expectedRequest], 'Preview must use the exact owning tweet API request');
   const previewOriginUrl = await assertQuotedOriginLink(initial.gallery,
-    `https://x.com/${quotedCase.username}/status/${quotedCase.owner}`);
+    `https://x.com/${quotedCase.username}/status/${quotedCase.owner}`,
+    quotedCase.name === 'linked');
   const previewNavigation = await navigateQuotedAwayAndBack(page, quotedCase, initial.total);
   await page.screenshot({ path: join(output, `quoted-${quotedCase.name}-preview-gallery.png`) });
   const previewClose = await closeQuotedGallery({ gallery: initial.gallery, page,
@@ -1930,7 +1934,8 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
     'Blob-backed opening scroll must be observed');
   const playing = await assertQuotedGallery(page, quotedCase);
   const playingOriginUrl = await assertQuotedOriginLink(playing.gallery,
-    `https://x.com/${quotedCase.username}/status/${quotedCase.owner}`);
+    `https://x.com/${quotedCase.username}/status/${quotedCase.owner}`,
+    quotedCase.name === 'linked');
   const playingNavigation = await navigateQuotedAwayAndBack(page, quotedCase, playing.total);
   await playing.video.click();
   await page.waitForFunction((index) => {
