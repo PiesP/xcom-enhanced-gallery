@@ -34,6 +34,15 @@ type LivePageModule = {
     height: number;
     mediaErrorCode: number | null;
   };
+  inspectHitTestedVideoActionDocument(element: HTMLElement, expected: {
+    posterPath: string | null;
+  }): null | {
+    inQuote: boolean;
+    x: number | null;
+    y: number | null;
+    rejectedControls: number;
+    mediaScopeDepth: number | null;
+  };
   summarizeTweetResultResponse(url: string, status: number, body: unknown): unknown;
   inspectSelectedGalleryDocument(expected: {
     expectedIndex: number;
@@ -438,6 +447,43 @@ describe('Windows X live page validation', () => {
           ownStatusPaths: ['/deeper/status/789'] },
       ],
     });
+  });
+
+  it('uses a non-control poster point within the quote media scope', () => {
+    document.body.innerHTML = `
+      <article><img src="https://pbs.twimg.com/amplify_video_thumb/456/img/b.jpg">
+        <button>Native play control</button></article>
+    `;
+    const image = document.querySelector<HTMLImageElement>('img');
+    const button = document.querySelector<HTMLButtonElement>('button');
+    if (!image || !button) throw new Error('Hit-test fixture missing');
+    image.getBoundingClientRect = () => ({
+      bottom: 200, height: 100, left: 0, right: 200, toJSON: () => ({}),
+      top: 100, width: 200, x: 0, y: 100,
+    });
+    Object.defineProperty(document, 'elementsFromPoint', {
+      configurable: true,
+      value: (x: number) => x < 100 ? [button] : [image],
+    });
+    try {
+      expect(livePage.inspectHitTestedVideoActionDocument(image, {
+        posterPath: '/amplify_video_thumb/456/img/b.jpg',
+      })).toMatchObject({
+        inQuote: true, x: 160, y: 120, rejectedControls: 1, mediaScopeDepth: 0,
+      });
+      expect(livePage.inspectHitTestedVideoActionDocument(image, {
+        posterPath: '/amplify_video_thumb/other/img/b.jpg',
+      })).toBeNull();
+      Object.defineProperty(document, 'elementsFromPoint', {
+        configurable: true,
+        value: () => [button],
+      });
+      expect(livePage.inspectHitTestedVideoActionDocument(image, {
+        posterPath: '/amplify_video_thumb/456/img/b.jpg',
+      })).toMatchObject({ inQuote: false, rejectedControls: 9 });
+    } finally {
+      Reflect.deleteProperty(document, 'elementsFromPoint');
+    }
   });
 
   it('summarizes direct quote API relationships and playable variants without response text', () => {
