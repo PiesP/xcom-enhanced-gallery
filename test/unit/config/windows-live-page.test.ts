@@ -44,6 +44,11 @@ type LivePageModule = {
     mediaScopeDepth: number | null;
     nativePlay?: { x: number; y: number; mediaScopeDepth: number } | null;
   };
+  findHitTestedVideoControlDocument(element: HTMLElement, expected: {
+    x: number;
+    y: number;
+    posterPath: string;
+  }): HTMLElement | null;
   inspectHostVideoDocument(video: HTMLVideoElement, expected: {
     posterPath: string;
   }): null | {
@@ -547,11 +552,33 @@ describe('Windows X live page validation', () => {
         inQuote: false,
         nativePlay: { x: 40, y: 120, mediaScopeDepth: 1 },
       });
+      const focusTarget = livePage.findHitTestedVideoControlDocument(image, {
+        x: 40, y: 120, posterPath: '/amplify_video_thumb/456/img/b.jpg',
+      });
+      expect(focusTarget).toBe(button);
+      focusTarget?.focus();
+      expect(document.activeElement).toBe(button);
+      expect(livePage.findHitTestedVideoControlDocument(image, {
+        x: 40, y: 120, posterPath: '/amplify_video_thumb/999/img/other.jpg',
+      })).toBeNull();
+      const outside = document.createElement('button');
+      document.body.append(outside);
+      Object.defineProperty(document, 'elementsFromPoint', {
+        configurable: true,
+        value: () => [outside],
+      });
+      expect(livePage.findHitTestedVideoControlDocument(image, {
+        x: 40, y: 120, posterPath: '/amplify_video_thumb/456/img/b.jpg',
+      })).toBeNull();
       expect(livePage.inspectHostVideoDocument(video, {
         posterPath: '/amplify_video_thumb/456/img/b.jpg',
       })).toMatchObject({
         sourceKind: 'blob',
         poster: { host: 'pbs.twimg.com', path: '/amplify_video_thumb/456/img/b.jpg' },
+      });
+      Object.defineProperty(document, 'elementsFromPoint', {
+        configurable: true,
+        value: () => [button],
       });
       top = 260;
       expect(livePage.inspectHitTestedVideoActionDocument(image, {
