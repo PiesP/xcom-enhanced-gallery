@@ -312,7 +312,21 @@ function extractClickContext(element: HTMLElement): TweetClickContext | null {
     // A narrower media branch can contain a credit permalink while the nested
     // article has a different header. Neither non-enclosing link proves which
     // tweet owns the media, even when legacy extraction found one narrow link.
-    if (!boundary && ownIds.size > 1) owner = null;
+    if (ownIds.size > 1) {
+      if (boundary?.matches('[data-testid="quoteTweet"]')) {
+        const markedIds = new Set<string>();
+        for (const anchor of articleAnchors.filter((anchor) => boundary?.contains(anchor))) {
+          const link = strictStatusLink(anchor);
+          if (link) markedIds.add(link.tweetId);
+        }
+        // A marked inner quote with its own sole permalink is an explicit
+        // ownership region. A generic clickable player/credit wrapper is not.
+        if (markedIds.size !== 1 || !owner || !markedIds.has(owner.tweetId)) return null;
+      } else {
+        owner = null;
+        boundary = null;
+      }
+    }
   }
   if (
     !boundary &&

@@ -95,6 +95,35 @@ describe('nested quote request context with separate header and credit links', (
     expect(result.mediaItems[result.clickedIndex!]?.tweetId).toBe('111');
   });
 
+  it('keeps a generic inner clickable player out of confirmed credit ownership', async () => {
+    const target = nestedTarget();
+    document.querySelector('#player')!.setAttribute('role', 'link');
+    const result = await new MediaExtractionService().extractFromClickedElement(target);
+    expect(requestedId(httpGet.mock.calls[0]![0])).toBe('222');
+    expect(result.success).toBe(true);
+    expect(result.mediaItems[result.clickedIndex!]?.tweetId).toBe('111');
+  });
+
+  it('retains a marked inner quote with one explicit own permalink', async () => {
+    const target = nestedTarget();
+    target.poster = poster('900');
+    document.querySelector('#player')!.setAttribute('data-testid', 'quoteTweet');
+    const result = await new MediaExtractionService().extractFromClickedElement(target);
+    expect(requestedId(httpGet.mock.calls[0]![0])).toBe('333');
+    expect(result.success).toBe(true);
+    expect(result.mediaItems[result.clickedIndex!]?.tweetId).toBe('333');
+  });
+
+  it('refuses a marked inner quote with another ID hidden in a clickable branch', async () => {
+    const target = nestedTarget();
+    document.querySelector('#player')!.setAttribute('data-testid', 'quoteTweet');
+    document.querySelector('#player')!.insertAdjacentHTML('afterbegin',
+      '<div role="link"><a href="/other/status/444">Another quote status</a></div>');
+    const result = await new MediaExtractionService().extractFromClickedElement(target);
+    expect(result.success).toBe(false);
+    expect(httpGet).not.toHaveBeenCalled();
+  });
+
   it('preserves an enclosing B permalink as explicit ownership', async () => {
     const target = nestedTarget();
     const link = document.createElement('a');
