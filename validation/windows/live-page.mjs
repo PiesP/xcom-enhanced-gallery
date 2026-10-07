@@ -817,6 +817,35 @@ export function inspectHitTestedVideoActionDocument(element, { posterPath }) {
     topTestId: null, mediaScopeDepth: null, rejectedControls, nativePlay };
 }
 
+export function findHitTestedVideoControlDocument(element, { x, y, posterPath }) {
+  if (!(element instanceof HTMLElement) || typeof document.elementsFromPoint !== 'function') return null;
+  const quoteArticle = element.closest('article');
+  if (!quoteArticle || !Number.isFinite(x) || !Number.isFinite(y) ||
+      x < 0 || y < 0 || x >= innerWidth || y >= innerHeight) return null;
+  if (posterPath) {
+    const value = element instanceof HTMLImageElement ? element.currentSrc || element.src
+      : element instanceof HTMLVideoElement ? element.poster
+      : element.querySelector('video')?.poster || element.querySelector('img')?.currentSrc ||
+        element.querySelector('img')?.src;
+    try {
+      const url = new URL(value, location.href);
+      if (url.protocol !== 'https:' || url.hostname !== 'pbs.twimg.com' ||
+          url.pathname !== posterPath) return null;
+    } catch {
+      return null;
+    }
+  }
+  const top = document.elementsFromPoint(x, y)[0];
+  if (!top || top.closest('article') !== quoteArticle) return null;
+  const control = top.closest('button, [role="button"]');
+  if (!(control instanceof HTMLElement)) return null;
+  for (let scope = element, depth = 0; scope && scope !== quoteArticle && depth <= 5;
+    scope = scope.parentElement, depth += 1) {
+    if (scope.contains(control)) return control;
+  }
+  return null;
+}
+
 export function inspectHostVideoDocument(video, { posterPath }) {
   if (!(video instanceof HTMLVideoElement) || !video.closest('article')) return null;
   const parsePoster = (value) => {
@@ -958,14 +987,38 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
   if (!actionHandle) throw new Error('Quoted video detached before interaction');
   let focusHandle;
   try {
-    focusHandle = await actionHandle.evaluateHandle((element) => {
-      const focusable = element.closest('a[href], button, [tabindex]');
-      if (focusable instanceof HTMLElement) focusable.focus();
-      return document.activeElement;
-    });
+    if (controlledAction) {
+      const focusHit = await clickSurface.evaluate(inspectHitTestedVideoActionDocument,
+        { posterPath: target.posterSource?.path ?? null });
+      if (!focusHit?.nativePlay) throw new Error('Controlled quote control changed before focus');
+      focusHandle = await actionHandle.evaluateHandle(findHitTestedVideoControlDocument, {
+        x: focusHit.nativePlay.x, y: focusHit.nativePlay.y,
+        posterPath: target.posterSource?.path ?? null,
+      });
+      if (!focusHandle.asElement()) {
+        throw new Error('Controlled quote focus target was not a bounded media button');
+      }
+      await focusHandle.evaluate((element) => element.focus());
+    } else {
+      focusHandle = await actionHandle.evaluateHandle((element) => {
+        const focusable = element instanceof HTMLVideoElement && element.controls
+          ? element : element.closest('a[href], button, [tabindex]');
+        if (focusable instanceof HTMLElement) focusable.focus();
+        return document.activeElement;
+      });
+    }
     const before = await hostSnapshot(page);
-    const focusPrepared = await actionHandle.evaluate((element) => document.activeElement === element);
-    observation.gallery = { status: 'attempting', before, focusPrepared };
+    const focusPrepared = await focusHandle.evaluate((element) => document.activeElement === element);
+    const meaningfulFocusTarget = await focusHandle.evaluate((element) =>
+      element instanceof HTMLElement && !['BODY', 'HTML'].includes(element.tagName));
+    observation.gallery = {
+      status: 'attempting', before, focusPrepared,
+      focusTarget: controlledAction ? 'bounded-native-video-control'
+        : meaningfulFocusTarget ? 'native-media-focus' : 'body-only',
+    };
+    if (controlledAction && (!focusPrepared || !meaningfulFocusTarget)) {
+      throw new Error('Controlled quote button could not be focused before gallery click');
+    }
     observation.screenshots.before = await captureScreenshot(page, output, `live-page-${index}-before.png`);
     const finalHit = await clickSurface.evaluate(inspectHitTestedVideoActionDocument,
       { posterPath: target.posterSource?.path ?? null });
@@ -976,6 +1029,15 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
     observation.gallery.hitTestBeforeClick = finalHit;
     if (!observation.gallery.identityBeforeClick) {
       throw new Error('Quoted video hit target changed before click');
+    }
+    if (controlledAction) {
+      const sameControl = await focusHandle.evaluate((element, point) => {
+        const top = document.elementsFromPoint(point.x, point.y)[0];
+        return top?.closest('button, [role="button"]') === element &&
+          document.activeElement === element;
+      }, clickPoint);
+      observation.gallery.focusedControlStillOwnsClick = sameControl;
+      if (!sameControl) throw new Error('Focused quote button changed before click');
     }
     await page.mouse.click(clickPoint.x, clickPoint.y);
     const gallery = page.locator('[data-xeg-gallery-container]');
@@ -1049,7 +1111,7 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
         (target.quoteStatusIds.length === 0 || target.quoteStatusIds.includes(observation.gallery.owner.ownerId)),
       playbackProgress: observation.gallery.playback.progressed,
       escapeClosed: detached,
-      exactFocusRestored: restored.focusRestored,
+      exactFocusRestored: meaningfulFocusTarget && focusPrepared && restored.focusRestored,
       scrollRestored: restored.scrollRestored,
       scrollRestorationRestored: restored.scrollRestorationRestored,
       bodyStylesRestored: restored.bodyStylesRestored,
