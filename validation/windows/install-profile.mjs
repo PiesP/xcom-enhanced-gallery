@@ -479,6 +479,7 @@ async function installFixtureRoutes(context, root, images) {
       await route.fulfill({ status: match ? 206 : 200, contentType: 'video/mp4',
         body: selectedBytes,
         headers: { 'Access-Control-Allow-Origin': 'https://x.com',
+          'Access-Control-Allow-Credentials': 'true',
           'Accept-Ranges': 'bytes', 'Content-Length': String(selectedBytes.length),
           ...(match ? { 'Content-Range': `bytes ${start}-${end}/${payload.length}` } : {}) } });
       return;
@@ -1702,11 +1703,16 @@ async function navigateQuotedAwayAndBack(page, quotedCase, total) {
   await page.keyboard.press(awayKey);
   const away = await assertQuotedSelection(page, { position: to, total,
     type: quotedCase.away.type, path: quotedCase.away.path });
+  const gallery = page.locator('[data-xeg-gallery-container]');
+  const awayOrigin = await assertQuotedOriginLink(gallery, quotedCase.away.origin);
   await page.keyboard.press(returnKey);
   const returned = await assertQuotedSelection(page, { position: from, total,
     type: 'video',
     path: `/ext_tw_video/${quotedCase.owner}/pu/vid/320x180/${quotedCase.media}.mp4` });
-  return { awayKey, returnKey, away, returned };
+  const returnedOrigin = await assertQuotedOriginLink(gallery,
+    `https://x.com/${quotedCase.username}/status/${quotedCase.owner}`,
+    quotedCase.name === 'linked');
+  return { awayKey, returnKey, away, awayOrigin, returned, returnedOrigin };
 }
 
 async function assertQuotedGallery(page, quotedCase) {

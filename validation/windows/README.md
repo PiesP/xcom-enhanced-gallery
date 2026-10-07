@@ -90,7 +90,7 @@ background-isolation restoration. This is browser tab zoom in the fresh task
 profile; it does not claim an OS DPI change or a live X.com observation.
 
 The deterministic fixture also exercises the MV3 download restart boundary. A
-bounded 32 MiB Blob belongs to the routed `https://x.com` fixture and enters the
+bounded 256 MiB Blob belongs to the routed `https://x.com` fixture and enters the
 existing `DOWNLOAD_BLOB_URL_REQUEST` path. An extension utility page listens for
 the exact Blob URL through `chrome.downloads.onCreated` and immediately invokes
 the real `chrome.downloads.pause`. The check fails if pause loses the race. It
