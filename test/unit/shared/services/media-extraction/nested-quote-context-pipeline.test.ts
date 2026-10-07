@@ -3,6 +3,7 @@
 
 import type { TwitterMedia, TwitterTweet } from '@shared/services/media/types';
 import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
+import { captureClickedMediaEvidence } from '@shared/services/media-extraction/determine-clicked-index';
 import { MediaExtractionService } from '@shared/services/media-extraction/media-extraction-service';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -84,6 +85,25 @@ describe('nested quote request context with separate header and credit links', (
       metadata: { apiData: { tweet_id: '111', quoteParentTweetId: '222', quotedTweetId: '111' } },
     });
     expect(result.mediaItems.some((media) => media.tweetId === '333')).toBe(false);
+  });
+
+  it('combines preplayer thumbnail capture with nested header/credit ambiguity recovery', async () => {
+    const target = nestedTarget();
+    target.outerHTML = `<div>
+      <img src="https://pbs.twimg.com/profile_images/1/avatar-b.jpg">
+      <img src="https://pbs.twimg.com/profile_images/2/avatar-c.jpg">
+      <img src="${poster('700')}">
+      <div><button id="target">Native play</button></div>
+    </div>`;
+    const button = document.getElementById('target')!;
+    expect(captureClickedMediaEvidence(button)).toMatchObject({
+      mediaType: 'video', sourceKey: null, invalidSource: false,
+      identityKeys: ['pbs.twimg.com/amplify_video_thumb/700/img/poster.jpg'],
+    });
+    const result = await new MediaExtractionService().extractFromClickedElement(button);
+    expect(requestedId(httpGet.mock.calls[0]![0])).toBe('222');
+    expect(result.success).toBe(true);
+    expect(result.mediaItems[result.clickedIndex!]).toMatchObject({ tweetId: '111', url: source('700') });
   });
 
   it('counts a same-article B header even inside its own clickable branch', async () => {
