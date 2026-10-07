@@ -158,9 +158,37 @@ describe('production quoted-video pipeline', () => {
     const image = document.querySelector<HTMLImageElement>('#thumbnail')!;
     Object.defineProperty(image, 'currentSrc', { get: () => poster('800') });
     expect(captureClickedMediaEvidence(button).identityKeys).toEqual([]);
-    const { result } = await clickThroughProduction(button);
-    expect(result?.success).toBe(false);
+    const { event } = await clickThroughProduction(button);
+    expect(event.defaultPrevented).toBe(false);
+    expect(httpGet).not.toHaveBeenCalled();
   });
+
+  it('keeps the native click when a video thumbnail has an extra ordinary image', async () => {
+    const button = thumbnailButton('quote', 'empty');
+    document.querySelector('#thumbnail')!.insertAdjacentHTML('afterend',
+      '<img src="https://pbs.twimg.com/media/outer-photo.jpg">');
+    const { event } = await clickThroughProduction(button);
+    expect(event.defaultPrevented).toBe(false);
+    expect(httpGet).not.toHaveBeenCalled();
+  });
+
+  it.each(['poster', 'source'] as const)(
+    'keeps an IMG-first ordinary photo native despite a valid video %s', async (kind) => {
+      const button = thumbnailButton('unmarked', 'empty');
+      const image = document.querySelector<HTMLImageElement>('#thumbnail')!;
+      image.src = 'https://pbs.twimg.com/media/outer-photo.jpg';
+      image.parentElement!.insertBefore(image, document.querySelector('video')!);
+      const player = document.querySelector('video')!;
+      if (kind === 'poster') player.poster = poster('700');
+      else player.src = source('700');
+      respond(tweet('222', [
+        { type: 'photo', id_str: '500', media_url_https: image.src },
+      ], tweet('111', [video('700')])));
+      const { event } = await clickThroughProduction(button);
+      expect(event.defaultPrevented).toBe(false);
+      expect(httpGet).not.toHaveBeenCalled();
+    }
+  );
 
   it.each(['foreign', 'ambiguous', 'nested-article'] as const)(
     'refuses %s sibling hints before an API query', async (kind) => {

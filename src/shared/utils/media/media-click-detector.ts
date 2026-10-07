@@ -46,6 +46,17 @@ const INTERACTIVE_SELECTOR = [
 const STATUS_MEDIA_RE = /\/status\/\d+|\/photo\/\d+|\/video\/\d+/iu;
 const MAX_UNMARKED_VIDEO_SCOPE_HOPS = 3;
 
+function thumbnailIdentity(url: string): string | null {
+  if (!isVideoThumbnailUrl(url)) return null;
+  const parsed = new URL(url, 'https://x.com');
+  let path = parsed.pathname;
+  if (!/\.[A-Za-z0-9]+$/u.test(path)) {
+    const format = parsed.searchParams.get('format');
+    if (format && /^(?:jpg|jpeg|png|webp|gif)$/u.test(format)) path += `.${format}`;
+  }
+  return `${parsed.hostname}${path}`;
+}
+
 /** X also renders a native video control beside an unmarked VIDEO in a quote. */
 function findAllowAllUnmarkedVideoControl(
   target: HTMLElement,
@@ -73,6 +84,20 @@ function findAllowAllUnmarkedVideoControl(
     const video = videos[0];
     if (video instanceof HTMLVideoElement) {
       if (video.closest('article') !== article) return null;
+      const images = scope.querySelectorAll('img');
+      if (images.length > 1) return null;
+      const image = images[0];
+      if (image) {
+        if (image.closest('article') !== article) return null;
+        const selected = image.currentSrc || image.src;
+        const attribute = image.getAttribute('src') ? image.src : null;
+        const identity = thumbnailIdentity(selected);
+        if (
+          !identity ||
+          (image.currentSrc && attribute && thumbnailIdentity(attribute) !== identity)
+        )
+          return null;
+      }
       const source = selectMediaSourceUrl(video);
       const trustedSource =
         !!source &&
@@ -83,10 +108,7 @@ function findAllowAllUnmarkedVideoControl(
       const poster = video.getAttribute('poster');
       if (poster && !isVideoThumbnailUrl(video.poster)) return null;
       if (trustedSource || poster) return video;
-      const thumbnails = Array.from(scope.querySelectorAll('img')).filter((image) =>
-        isVideoThumbnailUrl(image.src)
-      );
-      return thumbnails.length === 1 ? video : null;
+      return image ? video : null;
     }
     scope = scope.parentElement;
   }

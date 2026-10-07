@@ -167,6 +167,9 @@ describe('unmarked native video controls in quoted posts', () => {
     '<video src="blob:https://x.com/started"></video>',
     '<video></video>',
     '<video></video><img src="https://pbs.twimg.com/media/ordinary-photo.jpg">',
+    '<video src="https://video.twimg.com/ext_tw_video/222/pu/vid/clip.mp4"></video><img src="https://pbs.twimg.com/media/ordinary-photo.jpg">',
+    `<img src="https://pbs.twimg.com/media/ordinary-photo.jpg"><video poster="${thumb}"></video>`,
+    `<video></video><img src="${thumb}"><img src="https://pbs.twimg.com/media/ordinary-photo.jpg">`,
     `<video></video><img src="${thumb}"><img src="https://pbs.twimg.com/video_thumb/other/frame.jpg">`,
     `<video poster="${thumb}"></video><video poster="${thumb}"></video>`,
   ])('rejects a control without one trustworthy video owner: %s', (video) => {
