@@ -95,12 +95,14 @@ export class FocusCoordinator {
       const containerRect = container.getBoundingClientRect();
       const selection = selectBestFocusCandidate(
         { top: containerRect.top, height: containerRect.height },
-        this.collectVisibleItemRects()
+        this.collectVisibleItemRects(),
+        this.options.activeIndex()
       );
       if (!selection) return;
-      if (this.options.activeIndex() !== selection.index) {
-        this.options.onFocusChange(selection.index, 'auto');
-      }
+      // currentIndex and focusedIndex intentionally diverge after user scroll.
+      // Always publish the measured choice: comparing only with currentIndex
+      // leaves a stale focusedIndex unchanged when navigation returns to it.
+      this.options.onFocusChange(selection.index, 'auto');
     });
   }
 
@@ -117,7 +119,10 @@ export class FocusCoordinator {
   private collectVisibleItemRects(): FocusItemRect[] {
     const itemRects: FocusItemRect[] = [];
     for (const [index, item] of this.items) {
-      if (!item.isVisible || !item.element.isConnected) continue;
+      // Observer entries can lag a late media load or a programmatic scroll.
+      // Measure the active item directly so full visibility remains provable.
+      if ((!item.isVisible && index !== this.options.activeIndex()) || !item.element.isConnected)
+        continue;
       const rect = item.element.getBoundingClientRect();
       itemRects.push({ index, top: rect.top, height: rect.height });
     }
