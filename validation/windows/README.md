@@ -144,9 +144,14 @@ The deterministic installed fixture always runs first with strict console and
 page-error checks. The profile then removes every fixture route before opening
 the caller's unchanged URL. It does not intercept traffic, add authentication,
 accept consent or CAPTCHA prompts, start downloads, force clicks, or edit the
-host DOM. It finds the exact status-owned media action through an element hit
-test, performs an ordinary click, and checks the loaded host image, gallery
-dialog, Escape close, exact focus, scroll, and body-style restoration.
+host DOM. For an image it checks the exact status-owned photo action and loaded
+gallery image. For a visible video in that status's quote card, it records a
+bounded ownership path and observed status links, uses an ordinary hit-tested
+click, and checks the selected gallery video, playable source, dimensions,
+readiness, error state, and playback progress. A video in an unmarked branch is
+only a candidate until observed API relationships and its selected playable
+variant establish the directly quoted owner. Both paths check dialog opening,
+Escape close, focus, scroll, and body-style restoration.
 
 Each page writes a partial JSON record and screenshots even when a required
 assertion is missing; the profile then fails rather than treating an unavailable
@@ -154,7 +159,12 @@ guest page as success. Host console, HTTP, and request diagnostics are retained
 separately from extension-origin errors with URL queries and credentials
 removed. A `TweetResultByRestId` 403 can coexist with an observed gallery flow,
 but leaves the overall live evidence `unverified` instead of classifying the
-response as a product defect.
+response as a product defect. The JSON records only allowlisted
+`TweetResultByRestId` operation, requested ID, HTTP outcome, direct quote and
+nested quote IDs, media IDs/types, and approved poster/video source paths; it
+does not retain response bodies, text, headers, or URL queries. A blocked page,
+missing quote, unavailable API relation, or nonplaying video remains unverified.
+Review the retained screenshots separately before making a live-page claim.
 
 Run `node --check validation/windows/install-profile.mjs` for the installed
 profile syntax check.

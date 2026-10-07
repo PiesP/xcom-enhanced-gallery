@@ -8,6 +8,8 @@ const ACTION_TIMEOUT_MS = 15_000;
 const NAVIGATION_TIMEOUT_MS = 45_000;
 const READINESS_TIMEOUT_MS = 20_000;
 const MAX_DIAGNOSTICS = 50;
+const MAX_API_OBSERVATIONS = 12;
+const MAX_API_BODY_BYTES = 2_000_000;
 const LIVE_URL_PATTERN = /^https:\/\/(x\.com|twitter\.com)\/([A-Za-z0-9_]{1,15})\/status\/(\d+)$/u;
 
 export function validateLiveUrls(values) {
@@ -66,6 +68,70 @@ function addBounded(list, value, observation, overflowKey) {
   else observation[overflowKey] += 1;
 }
 
+function mediaSource(value, kind) {
+  try {
+    const url = new URL(value);
+    const allowed = kind === 'video'
+      ? url.protocol === 'https:' && url.hostname === 'video.twimg.com'
+      : url.protocol === 'https:' && url.hostname === 'pbs.twimg.com' &&
+        (/^\/media\//u.test(url.pathname) || /^\/(?:ext_tw_video_thumb|amplify_video_thumb)\//u.test(url.pathname));
+    return allowed ? { host: url.hostname, path: url.pathname } : null;
+  } catch {
+    return null;
+  }
+}
+
+function unwrapTweet(value) {
+  const result = value?.result ?? value;
+  return result?.tweet ?? result;
+}
+
+function summarizeTweet(value) {
+  const tweet = unwrapTweet(value);
+  if (!tweet || typeof tweet !== 'object') return null;
+  const id = tweet.rest_id ?? tweet.legacy?.id_str ?? tweet.id_str;
+  const media = tweet.legacy?.extended_entities?.media ?? tweet.extended_entities?.media ?? [];
+  return {
+    id: typeof id === 'string' && /^\d+$/u.test(id) ? id : null,
+    media: Array.isArray(media) ? media.slice(0, 12).map((item) => ({
+      id: typeof item.id_str === 'string' && /^\d{1,40}$/u.test(item.id_str)
+        ? item.id_str : null,
+      type: ['photo', 'video', 'animated_gif'].includes(item.type) ? item.type : 'unknown',
+      poster: mediaSource(item.media_url_https, 'image'),
+      playableVariants: Array.isArray(item.video_info?.variants)
+        ? item.video_info.variants.slice(0, 12).filter((variant) =>
+          variant.content_type === 'video/mp4' && mediaSource(variant.url, 'video'))
+          .map((variant) => mediaSource(variant.url, 'video'))
+        : [],
+    })) : [],
+  };
+}
+
+export function summarizeTweetResultResponse(urlValue, status, body) {
+  const url = new URL(urlValue);
+  if (!url.pathname.endsWith('/TweetResultByRestId')) return null;
+  let requestedTweetId = null;
+  try {
+    const variables = JSON.parse(url.searchParams.get('variables') ?? '{}');
+    if (typeof variables.tweetId === 'string' && /^\d+$/u.test(variables.tweetId)) {
+      requestedTweetId = variables.tweetId;
+    }
+  } catch {
+    // Record a missing ID without retaining the request query.
+  }
+  const result = unwrapTweet(body?.data?.tweetResult?.result);
+  const directQuote = unwrapTweet(result?.quoted_status_result);
+  return {
+    operation: 'TweetResultByRestId',
+    requestedTweetId,
+    httpStatus: status,
+    providerErrors: Array.isArray(body?.errors) && body.errors.length > 0,
+    result: summarizeTweet(result),
+    directQuote: summarizeTweet(directQuote),
+    nestedQuoteId: summarizeTweet(unwrapTweet(directQuote?.quoted_status_result))?.id ?? null,
+  };
+}
+
 function isProductConsoleError(record) {
   return record.location.startsWith('chrome-extension:') ||
     /\bXEG\b|X\.com Enhanced Gallery|\[(?:MediaExtractor|DOMFallbackExtractor|Gallery)\]/iu.test(
@@ -74,6 +140,7 @@ function isProductConsoleError(record) {
 }
 
 function attachDiagnostics(page, observation) {
+  const pendingResponses = new Set();
   page.on('console', (message) => {
     if (message.type() !== 'error') return;
     const record = {
@@ -107,6 +174,30 @@ function attachDiagnostics(page, observation) {
     const path = new URL(url).pathname;
     if (path.endsWith('/TweetResultByRestId')) {
       observation.api.tweetResultByRestId.responses.push(response.status());
+      if (observation.api.observations.length + pendingResponses.size < MAX_API_OBSERVATIONS) {
+        const capture = (async () => {
+          let body = null;
+          let bodyOutcome = 'not-readable';
+          const length = Number(response.headers()['content-length']);
+          if (!Number.isFinite(length) || length <= MAX_API_BODY_BYTES) {
+            try {
+              const bytes = await response.body();
+              if (bytes.length <= MAX_API_BODY_BYTES) {
+                body = JSON.parse(bytes.toString('utf8'));
+                bodyOutcome = 'parsed';
+              } else bodyOutcome = 'too-large';
+            } catch {
+              bodyOutcome = 'not-readable';
+            }
+          } else bodyOutcome = 'too-large';
+          observation.api.observations.push({
+            ...summarizeTweetResultResponse(url, response.status(), body),
+            bodyOutcome,
+          });
+        })();
+        pendingResponses.add(capture);
+        capture.finally(() => pendingResponses.delete(capture));
+      } else observation.api.overflow += 1;
     }
     if (response.status() >= 400) {
       addBounded(
@@ -131,6 +222,7 @@ function attachDiagnostics(page, observation) {
       product ? 'productErrorOverflow' : 'hostDiagnosticOverflow'
     );
   });
+  return async () => { await Promise.allSettled([...pendingResponses]); };
 }
 
 async function hostSnapshot(page) {
@@ -179,6 +271,15 @@ async function captureScreenshot(page, output, filename) {
 
 export function inspectLiveTargetDocument({ handle, statusId }) {
   const statusPath = `/${handle}/status/${statusId}`.toLowerCase();
+  const parseVideo = (value) => {
+    try {
+      const url = new URL(value);
+      return url.protocol === 'https:' && url.hostname === 'video.twimg.com'
+        ? { host: url.hostname, path: url.pathname } : null;
+    } catch {
+      return null;
+    }
+  };
   const isVisible = (element) => {
     const style = getComputedStyle(element);
     const rectangle = element.getBoundingClientRect();
@@ -218,15 +319,69 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
     });
     if (!ownsStatus) continue;
 
+    const quoteCards = [...article.querySelectorAll('[data-testid="quoteTweet"]')]
+      .filter((card) => card.closest('article') === article);
+    const scopes = quoteCards.length ? quoteCards : [article];
+    for (let scopeIndex = 0; scopeIndex < scopes.length; scopeIndex += 1) {
+      const quote = scopes[scopeIndex];
+      const players = [...quote.querySelectorAll('[data-testid="videoPlayer"], video')]
+        .filter((candidate) => candidate.closest('article') === article &&
+          (candidate.matches('[data-testid="videoPlayer"]') ||
+           !candidate.closest('[data-testid="videoPlayer"]')));
+      for (const player of players) {
+        const video = player.matches('video') ? player : player.querySelector('video');
+        const preview = player.matches('video') ? null : player.querySelector('img');
+        const hitTarget = video && isVisible(video) ? video
+          : preview && isVisible(preview) && preview.complete && preview.naturalWidth > 0
+            ? preview : isVisible(player) ? player : null;
+        if (!hitTarget) continue;
+        const quoteLinks = [...quote.querySelectorAll('a[href]')].flatMap((anchor) => {
+          const link = parseLink(anchor);
+          const match = link?.path.match(/^\/[A-Za-z0-9_]{1,15}\/status\/(\d+)(?:\/|$)/u);
+          return match && match[1] !== statusId ? [match[1]] : [];
+        });
+        const quoteStatusIds = [...new Set(quoteLinks)].slice(0, 8);
+        const path = [];
+        for (let node = hitTarget; node && node !== article && path.length < 10; node = node.parentElement) {
+          path.push({
+            tag: node.tagName.toLowerCase(),
+            testId: ['quoteTweet', 'videoPlayer', 'tweetPhoto', 'videoComponent',
+              'videoPlayerOverlay', 'videoPlayerControls'].includes(node.getAttribute('data-testid'))
+              ? node.getAttribute('data-testid') : null,
+          });
+        }
+        return {
+          state: 'ready',
+          target: {
+            kind: 'quoted-video', articleIndex,
+            quoteBoundary: quoteCards.length ? 'quoteTweet' : 'unmarked-candidate',
+            quoteIndex: quoteCards.length ? scopeIndex : -1,
+            quoteStatusIds, ownershipPath: path,
+            videoIndex: [...article.querySelectorAll('video')].indexOf(video),
+            playerIndex: [...article.querySelectorAll('[data-testid="videoPlayer"]')].indexOf(player),
+            hitKind: hitTarget.tagName.toLowerCase(),
+            posterSource: video ? parseMedia({ currentSrc: video.poster, src: video.poster,
+              getAttribute: () => video.poster }) : preview ? parseMedia(preview) : null,
+            hostVideoSource: video ? parseVideo(video.currentSrc || video.src) : null,
+          },
+        };
+      }
+    }
+    if (scopes.some((quote) => quote.querySelector('[data-testid="videoPlayer"], video'))) {
+      return false;
+    }
+
     const images = [...article.querySelectorAll('img')];
     for (let imageIndex = 0; imageIndex < images.length; imageIndex += 1) {
       const image = images[imageIndex];
       const source = parseMedia(image);
-      if (image.closest('article') !== article || !source || !isVisible(image) ||
+      if (image.closest('article') !== article || image.closest('[data-testid="videoPlayer"]') ||
+          !source || !isVisible(image) ||
           !image.complete || image.naturalWidth <= 0) continue;
       return {
         state: 'ready',
         target: {
+          kind: 'image',
           articleIndex,
           imageIndex,
           imageLoaded: true,
@@ -241,6 +396,40 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
     return { state: 'terminal', reason: 'host-challenge-or-unavailable' };
   }
   return false;
+}
+
+export function inspectLiveCandidateDocument({ handle, statusId }) {
+  const path = `/${handle}/status/${statusId}`.toLowerCase();
+  const articles = [...document.querySelectorAll('article')];
+  const article = articles.find((candidate) => [...candidate.querySelectorAll('a[href]')]
+    .some((anchor) => {
+      try {
+        const url = new URL(anchor.href, location.href);
+        return ['x.com', 'twitter.com'].includes(url.hostname.toLowerCase()) &&
+          url.pathname.toLowerCase() === path && anchor.closest('article') === candidate;
+      } catch {
+        return false;
+      }
+    }));
+  if (!article) return { exactArticleFound: false, articleCount: Math.min(articles.length, 50) };
+  const statusIds = [...new Set([...article.querySelectorAll('a[href]')].flatMap((anchor) => {
+    try {
+      const url = new URL(anchor.href, location.href);
+      const match = ['x.com', 'twitter.com'].includes(url.hostname.toLowerCase())
+        ? url.pathname.match(/^\/[A-Za-z0-9_]{1,15}\/status\/(\d+)(?:\/|$)/u) : null;
+      return match ? [match[1]] : [];
+    } catch {
+      return [];
+    }
+  }))].slice(0, 12);
+  return {
+    exactArticleFound: true,
+    articleIndex: articles.indexOf(article),
+    quoteCardCount: Math.min(article.querySelectorAll('[data-testid="quoteTweet"]').length, 20),
+    videoPlayerCount: Math.min(article.querySelectorAll('[data-testid="videoPlayer"]').length, 20),
+    videoCount: Math.min(article.querySelectorAll('video').length, 20),
+    statusIds,
+  };
 }
 
 async function waitForTarget(page, identity) {
@@ -347,6 +536,199 @@ export function inspectSelectedGalleryDocument({ expectedIndex, expectedPath }) 
   };
 }
 
+export function inspectSelectedGalleryVideoDocument() {
+  const galleries = document.querySelectorAll('[data-xeg-gallery-container]');
+  const gallery = galleries.length === 1 ? galleries[0] : null;
+  const toolbar = gallery?.querySelector('[data-gallery-element="toolbar"]');
+  const position = toolbar?.querySelector('#xeg-toolbar-counter[data-gallery-element="position"]');
+  const items = [...(gallery?.querySelectorAll('[data-gallery-element="item"]') ?? [])];
+  const current = Number(position?.getAttribute('data-current-index'));
+  const total = Number(position?.getAttribute('data-total'));
+  const item = Number.isSafeInteger(current) && current >= 0 ? items[current] : null;
+  const video = item?.querySelector('video');
+  if (!(gallery instanceof HTMLElement) || !(toolbar instanceof HTMLElement) ||
+      !(position instanceof HTMLElement) || !(item instanceof HTMLElement) ||
+      !(video instanceof HTMLVideoElement) || !Number.isSafeInteger(total) ||
+      total !== items.length || current >= total ||
+      position.getAttribute('data-position') !== String(current + 1) ||
+      position.getAttribute('data-focused-index') !== String(current) ||
+      toolbar.getAttribute('data-current-index') !== String(current) ||
+      toolbar.getAttribute('data-focused-index') !== String(current)) return false;
+  const style = getComputedStyle(video);
+  const rect = video.getBoundingClientRect();
+  const visible = style.display !== 'none' && style.visibility !== 'hidden' &&
+    Number(style.opacity) !== 0 && rect.width > 0 && rect.height > 0 &&
+    rect.bottom > 0 && rect.top < innerHeight && rect.right > 0 && rect.left < innerWidth;
+  let source = null;
+  try {
+    const url = new URL(video.currentSrc || video.src);
+    if (url.protocol === 'https:' && url.hostname === 'video.twimg.com') {
+      source = { host: url.hostname, path: url.pathname };
+    }
+  } catch {
+    // An unrecognized or blob-only source cannot establish video identity.
+  }
+  return {
+    index: current,
+    position: current + 1,
+    total,
+    itemLoaded: item.getAttribute('data-media-loaded') === 'true',
+    visible,
+    source,
+    readyState: video.readyState,
+    width: video.videoWidth,
+    height: video.videoHeight,
+    mediaErrorCode: video.error?.code ?? null,
+    currentTime: video.currentTime,
+  };
+}
+
+function quotedOwnerForSource(apiObservations, outerId, source) {
+  if (!source) return { status: 'missing-video-source', ownerId: null, mediaId: null };
+  const matches = new Map();
+  const quotedIds = new Set();
+  for (const entry of apiObservations) {
+    if (entry.result?.id === outerId && entry.directQuote?.id) quotedIds.add(entry.directQuote.id);
+  }
+  for (const entry of apiObservations) {
+    for (const tweet of [entry.result, entry.directQuote]) {
+      if (!tweet?.id) continue;
+      const directlyQuoted = quotedIds.has(tweet.id) ||
+        entry.requestedTweetId === outerId && entry.directQuote === tweet;
+      if (!directlyQuoted) continue;
+      tweet.media.forEach((media, mediaIndex) => {
+        if (media.playableVariants.some((variant) =>
+          variant.host === source.host && variant.path === source.path)) {
+          matches.set(`${tweet.id}:${mediaIndex}`, {
+            ownerId: tweet.id, mediaId: media.id, mediaIndex,
+          });
+        }
+      });
+    }
+  }
+  return matches.size === 1
+    ? { status: 'matched-direct-quote-variant', ...[...matches.values()][0] }
+    : { status: matches.size > 1 ? 'ambiguous-media' : 'no-direct-quote-variant',
+      ownerId: null, mediaId: null };
+}
+
+async function observeQuotedVideo(page, observation, identity, output, index, settleApi) {
+  const target = observation.target;
+  const article = page.locator('article').nth(target.articleIndex);
+  const player = target.playerIndex >= 0
+    ? article.locator('[data-testid="videoPlayer"]').nth(target.playerIndex)
+    : article.locator('video').nth(target.videoIndex);
+  await player.scrollIntoViewIfNeeded({ timeout: ACTION_TIMEOUT_MS });
+  if ((await hostSnapshot(page)).scrollY === 0) await page.mouse.wheel(0, 160);
+  const hit = await player.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const x = Math.max(0, Math.min(innerWidth - 1, rect.left + rect.width / 2));
+    const y = Math.max(0, Math.min(innerHeight - 1, rect.top + rect.height / 2));
+    const top = document.elementsFromPoint(x, y)[0];
+    const scope = element.closest('[data-testid="quoteTweet"]') ?? element.closest('article');
+    const player = element.closest('[data-testid="videoPlayer"]');
+    return {
+      x, y,
+      inQuote: Boolean(top && scope?.contains(top) &&
+        (element.contains(top) || (player && top.closest('[data-testid="videoPlayer"]') === player))),
+      topTag: top?.tagName.toLowerCase() ?? null,
+      topTestId: ['videoPlayer', 'videoPlayerOverlay', 'videoPlayerControls'].includes(
+        top?.getAttribute('data-testid')) ? top.getAttribute('data-testid') : null,
+    };
+  });
+  observation.target.hitTest = { inQuote: hit.inQuote, topTag: hit.topTag, topTestId: hit.topTestId };
+  if (!hit.inQuote) throw new Error('Quoted video did not own the hit-tested point');
+  const actionHandle = await player.elementHandle();
+  if (!actionHandle) throw new Error('Quoted video detached before interaction');
+  try {
+    await actionHandle.evaluate((element) => element.focus());
+    const before = await hostSnapshot(page);
+    const focusPrepared = await actionHandle.evaluate((element) => document.activeElement === element);
+    observation.gallery = { status: 'attempting', before, focusPrepared };
+    observation.screenshots.before = await captureScreenshot(page, output, `live-page-${index}-before.png`);
+    await page.mouse.click(hit.x, hit.y);
+    const gallery = page.locator('[data-xeg-gallery-container]');
+    await gallery.waitFor({ state: 'visible', timeout: ACTION_TIMEOUT_MS });
+    const selectedHandle = await page.waitForFunction(() => {
+      const item = document.querySelector('[data-xeg-gallery-container] [data-gallery-element="item"] video');
+      return item?.readyState >= 2 && item.videoWidth > 0 && item.videoHeight > 0;
+    }, null, { timeout: ACTION_TIMEOUT_MS, polling: 100 }).catch(() => null);
+    await selectedHandle?.dispose();
+    const opened = await page.evaluate(inspectSelectedGalleryVideoDocument);
+    observation.gallery.opened = {
+      ariaModal: await gallery.getAttribute('aria-modal'),
+      role: await gallery.getAttribute('role'),
+      selectedVideo: opened || null,
+    };
+    observation.screenshots.open = await captureScreenshot(page, output, `live-page-${index}-gallery.png`);
+    const selectedVideo = gallery.locator('[data-gallery-element="item"]')
+      .nth(opened?.index ?? 0).locator('video');
+    const startTime = opened?.currentTime ?? 0;
+    if (opened && opened.readyState >= 2) {
+      await page.waitForTimeout(400);
+      const inProgress = await page.evaluate(inspectSelectedGalleryVideoDocument);
+      if (!inProgress || inProgress.currentTime < startTime + 0.15) {
+        await selectedVideo.click({ timeout: ACTION_TIMEOUT_MS }).catch(() => {});
+      }
+      await page.waitForFunction(({ index, start }) => {
+        const item = document.querySelectorAll('[data-xeg-gallery-container] [data-gallery-element="item"]')[index];
+        const video = item?.querySelector('video');
+        return video && !video.error && video.currentTime >= start + 0.15;
+      }, { index: opened.index, start: startTime }, { timeout: 5_000, polling: 100 }).catch(() => {});
+    }
+    const afterPlayback = await page.evaluate(inspectSelectedGalleryVideoDocument);
+    observation.gallery.playback = {
+      startTime,
+      endTime: afterPlayback?.currentTime ?? null,
+      progressed: Boolean(afterPlayback && afterPlayback.currentTime >= startTime + 0.15),
+    };
+    await settleApi();
+    observation.gallery.owner = quotedOwnerForSource(
+      observation.api.observations, identity.statusId, afterPlayback?.source);
+    await page.keyboard.press('Escape');
+    const detached = await gallery.waitFor({ state: 'detached', timeout: ACTION_TIMEOUT_MS })
+      .then(() => true, () => false);
+    const restored = await waitForRestoredHostState(page, actionHandle, before);
+    observation.gallery = {
+      ...observation.gallery, status: 'observed', closeMethod: 'Escape', detached,
+      focusRestored: restored.focusRestored, after: restored.after,
+      bodyStylesRestored: restored.bodyStylesRestored,
+      scrollRestorationRestored: restored.scrollRestorationRestored,
+      scrollRestored: restored.scrollRestored,
+    };
+    observation.screenshots.after = await captureScreenshot(page, output, `live-page-${index}-after.png`);
+    const video = observation.gallery.opened.selectedVideo;
+    const finalUrl = new URL(page.url());
+    const required = {
+      exactFinalStatus: ['x.com', 'twitter.com'].includes(finalUrl.hostname.toLowerCase()) &&
+        finalUrl.pathname.toLowerCase() === `/${identity.handle}/status/${identity.statusId}`.toLowerCase(),
+      quotedVideoHitTest: hit.inQuote,
+      galleryDialog: observation.gallery.opened.role === 'dialog' &&
+        observation.gallery.opened.ariaModal === 'true',
+      selectedPlayableVideo: Boolean(video?.visible && video.itemLoaded && video.readyState >= 2 &&
+        video.width > 0 && video.height > 0 && video.mediaErrorCode === null),
+      directQuotedOwner: observation.gallery.owner.status === 'matched-direct-quote-variant' &&
+        (target.quoteStatusIds.length === 0 || target.quoteStatusIds.includes(observation.gallery.owner.ownerId)),
+      playbackProgress: observation.gallery.playback.progressed,
+      escapeClosed: detached,
+      exactFocusRestored: restored.focusRestored,
+      scrollRestored: restored.scrollRestored,
+      scrollRestorationRestored: restored.scrollRestorationRestored,
+      bodyStylesRestored: restored.bodyStylesRestored,
+      noProductErrors: observation.productErrors.length === 0 && observation.productErrorOverflow === 0,
+      noPageErrors: observation.pageErrors.length === 0 && observation.pageErrorOverflow === 0,
+    };
+    observation.requiredAssertions = required;
+    observation.missingAssertions = Object.entries(required).filter(([, passed]) => !passed)
+      .map(([name]) => name);
+    if (observation.missingAssertions.length) {
+      throw new Error(`Missing live quoted-video assertions: ${observation.missingAssertions.join(', ')}`);
+    }
+  } finally {
+    await actionHandle.dispose().catch(() => {});
+  }
+}
+
 function photoIndexFromActionPath(path) {
   const match = path.match(/\/photo\/([1-9]\d*)$/u);
   const value = Number(match?.[1]);
@@ -358,7 +740,7 @@ async function observeOne(context, extensionId, targetUrl, output, index) {
   const identity = targetIdentity(targetUrl);
   const page = await context.newPage();
   const observation = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     kind: 'public-x-status-observation',
     requestedUrl: targetUrl,
     finalUrl: null,
@@ -366,7 +748,7 @@ async function observeOne(context, extensionId, targetUrl, output, index) {
     extension: { id: extensionId, readinessMarker: false },
     target: null,
     gallery: { status: 'not-run' },
-    api: { tweetResultByRestId: { requests: 0, responses: [] } },
+    api: { tweetResultByRestId: { requests: 0, responses: [] }, observations: [], overflow: 0 },
     productErrors: [],
     productErrorOverflow: 0,
     pageErrors: [],
@@ -378,7 +760,7 @@ async function observeOne(context, extensionId, targetUrl, output, index) {
     evidenceStatus: 'unverified',
     status: 'pending',
   };
-  attachDiagnostics(page, observation);
+  const settleApi = attachDiagnostics(page, observation);
   let actionHandle;
   try {
     const response = await page.goto(targetUrl, {
@@ -391,11 +773,15 @@ async function observeOne(context, extensionId, targetUrl, output, index) {
     try {
       readiness = await waitForTarget(page, identity);
     } catch (error) {
-      observation.missingAssertions.push('loadedTargetImage');
+      observation.missingAssertions.push('targetMediaReady');
+      observation.classification = 'quote-unavailable-or-page-blocked';
+      observation.targetCandidates = await page.evaluate(inspectLiveCandidateDocument, identity)
+        .catch(() => null);
       throw error;
     }
     if (readiness.state !== 'ready') {
-      observation.missingAssertions.push('loadedTargetImage');
+      observation.missingAssertions.push('targetMediaReady');
+      observation.classification = 'provider-or-page-unavailable';
       throw new Error(`Live target stopped before media readiness: ${readiness.reason}`);
     }
     observation.target = readiness.target;
@@ -409,6 +795,14 @@ async function observeOne(context, extensionId, targetUrl, output, index) {
     if (!observation.extension.readinessMarker) {
       observation.missingAssertions.push('extensionInjected');
       throw new Error('Installed extension readiness marker was not observed');
+    }
+
+    if (observation.target.kind === 'quoted-video') {
+      await observeQuotedVideo(page, observation, identity, output, index, settleApi);
+      observation.status = 'core-flow-observed';
+      observation.evidenceStatus = observation.hostDiagnostics.length ||
+        observation.hostDiagnosticOverflow > 0 ? 'unverified' : 'observed';
+      return observation;
     }
 
     const article = page.locator('article').nth(observation.target.articleIndex);
@@ -531,12 +925,20 @@ async function observeOne(context, extensionId, targetUrl, output, index) {
   } catch (error) {
     observation.status = 'failed';
     observation.error = safeError(error);
+    await settleApi();
+    if (!observation.classification) {
+      observation.classification = observation.api.tweetResultByRestId.responses.some((status) => status >= 400)
+        ? 'provider-failure-with-unverified-product-flow'
+        : observation.gallery.status === 'attempting' || observation.gallery.status === 'observed'
+          ? 'product-flow-unverified' : 'target-or-product-unverified';
+    }
     const errorScreenshot = `live-page-${index}-error.png`;
     if (await page.screenshot({ path: join(output, errorScreenshot) })
       .then(() => true, () => false)) {
       observation.screenshots.error = errorScreenshot;
     }
   } finally {
+    await settleApi();
     if (actionHandle) await actionHandle.dispose().catch(() => {});
     observation.finalUrl = sanitizedUrl(page.url());
     await writeFile(
