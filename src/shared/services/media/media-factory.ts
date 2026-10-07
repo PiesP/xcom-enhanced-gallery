@@ -60,7 +60,7 @@ function createMediaInfoFromAPI(
     }
 
     return {
-      id: `${tweetInfo.tweetId}_api_${index}`,
+      id: `${ownerId}_api_${index}`,
       url: apiMedia.download_url,
       type: mediaType,
       filename: '',

@@ -149,8 +149,13 @@ function unwrapAndNormalizeTweet(input: TwitterTweet): TwitterTweet {
 }
 
 function numericTweetId(tweet: TwitterTweet): string | null {
-  const id = tweet.rest_id ?? tweet.id_str;
-  return typeof id === 'string' && /^[1-9]\d*$/u.test(id) ? id : null;
+  const ids = [tweet.rest_id, tweet.id_str, tweet.legacy?.id_str].filter((id) => id !== undefined);
+  if (
+    ids.some((id) => typeof id !== 'string' || !/^[1-9]\d*$/u.test(id)) ||
+    new Set(ids).size !== 1
+  )
+    return null;
+  return ids[0] ?? null;
 }
 
 async function apiRequest(

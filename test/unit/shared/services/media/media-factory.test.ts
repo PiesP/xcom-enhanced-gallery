@@ -42,7 +42,7 @@ describe('API media factory ownership', () => {
 
     expect(result).toHaveLength(2);
     expect(result[0]).toMatchObject({
-      id: '222_api_0', tweetId: '111', tweetUsername: 'quoted_user',
+      id: '111_api_0', tweetId: '111', tweetUsername: 'quoted_user',
       tweetUrl: 'https://x.com/quoted_user/status/111', tweetText: 'API B text',
       sourceLocation: 'quoted', quotedTweetId: '111', quotedUsername: 'quoted_user',
       quotedTweetUrl: 'https://x.com/quoted_user/status/111',

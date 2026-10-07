@@ -78,6 +78,22 @@ export interface ClickedMediaEvidence {
   readonly mediaType: 'image' | 'video' | null;
   /** Identity of the selected source, separate from poster/background hints. */
   readonly sourceKey: string | null;
+  /** Direct media hints suitable for establishing an uncertain owner. */
+  readonly identityKeys?: readonly string[];
+  readonly invalidSource?: boolean;
+  readonly ownership?: ClickedMediaOwnership;
+}
+
+export interface ClickedMediaOwnership {
+  readonly requestTweetId: string;
+  readonly ownerTweetId: string | null;
+  /** A clickable branch is a candidate, not proof of a quote relationship. */
+  readonly scope: 'owned' | 'quoted' | 'clickable';
+}
+
+export interface TweetClickContext {
+  readonly tweetInfo: TweetInfo;
+  readonly ownership: ClickedMediaOwnership;
 }
 
 /**

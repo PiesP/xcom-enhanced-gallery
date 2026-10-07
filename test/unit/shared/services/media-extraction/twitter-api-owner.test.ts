@@ -27,6 +27,7 @@ function videoEntry(
     tweet_id: tweetId,
     screen_name: 'author',
     sourceLocation,
+    ...(sourceLocation === 'quoted' ? { quoteParentTweetId: '222', quotedTweetId: tweetId } : {}),
     type: 'video',
     typeOriginal: 'video',
     media_id: mediaId,
