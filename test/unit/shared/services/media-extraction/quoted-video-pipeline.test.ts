@@ -5,6 +5,7 @@ import { generateMediaFilename } from '@shared/core/filename/filename-utils';
 import type { TwitterMedia, TwitterTweet } from '@shared/services/media/types';
 import { getTweetMedias } from '@shared/services/media/twitter-api-client';
 import { MediaExtractionService } from '@shared/services/media-extraction/media-extraction-service';
+import { captureClickedMediaEvidence } from '@shared/services/media-extraction/determine-clicked-index';
 import { handleMediaClick } from '@shared/utils/events/handlers/media-click';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -54,9 +55,129 @@ function requestedId(): string {
   return JSON.parse(new URL(httpGet.mock.calls.at(-1)?.[0] as string).searchParams.get('variables')!).tweetId;
 }
 
+function thumbnailButton(scope: 'quote' | 'unmarked', sourceKind: 'empty' | 'blob'): HTMLButtonElement {
+  document.body.innerHTML = `<article><a href="/author_222/status/222"><time>A</time></a>
+    <div ${scope === 'quote' ? 'data-testid="quoteTweet"' : 'role="link"'}><article>
+      <div class="player"><video ${sourceKind === 'blob' ? 'src="blob:https://x.com/started"' : ''}></video>
+        <img id="thumbnail" src="${poster('700')}">
+        <button id="target">Native play</button>
+      </div>
+    </article></div></article>`;
+  return document.querySelector<HTMLButtonElement>('#target')!;
+}
+
+async function clickThroughProduction(button: HTMLButtonElement) {
+  const service = new MediaExtractionService();
+  let result: Awaited<ReturnType<typeof service.extractFromClickedElement>> | undefined;
+  let pending: Promise<void> | undefined;
+  button.addEventListener('click', (event) => {
+    pending = handleMediaClick(event as MouseEvent, {
+      onMediaClick: async (element) => { result = await service.extractFromClickedElement(element); },
+      onGalleryClose: () => { throw new Error('Unexpected gallery close'); },
+    }, { enableKeyboard: true, enableMediaDetection: true, debugMode: false,
+      preventBubbling: true, context: 'sibling-thumbnail-regression' });
+  });
+  const event = new MouseEvent('click', { bubbles: true, cancelable: true });
+  button.dispatchEvent(event);
+  await pending;
+  return { event, result };
+}
+
 describe('production quoted-video pipeline', () => {
   beforeEach(() => { settings.mode = 'allow-all'; httpGet.mockReset(); respond(tweet('222', [], tweet('111', [video('700')]))); });
   afterEach(() => { vi.restoreAllMocks(); document.body.replaceChildren(); });
+
+  it.each([
+    ['quote', 'empty'], ['quote', 'blob'], ['unmarked', 'empty'], ['unmarked', 'blob'],
+  ] as const)('opens the %s quote from a %s video with one sibling thumbnail', async (scope, sourceKind) => {
+    respond(tweet('222', [video('800')], tweet('111', [
+      { type: 'photo', id_str: '600', media_url_https: 'https://pbs.twimg.com/media/b-photo.jpg' },
+      video('700'),
+    ])));
+    const button = thumbnailButton(scope, sourceKind);
+    const { event, result } = await clickThroughProduction(button);
+    expect(event.defaultPrevented).toBe(true);
+    expect(requestedId()).toBe('222');
+    expect(result?.success).toBe(true);
+    expect(result?.clickedIndex).toBe(1);
+    expect(result?.mediaItems[result.clickedIndex!]).toMatchObject({
+      tweetId: '111', tweetUsername: 'author_111', type: 'video', url: source('700'),
+      metadata: { apiData: { tweet_id: '111', sourceLocation: 'quoted' } },
+    });
+  });
+
+  it('keeps video selection when the sibling thumbnail precedes the VIDEO in DOM order', async () => {
+    const button = thumbnailButton('unmarked', 'empty');
+    const thumbnail = document.querySelector('#thumbnail')!;
+    thumbnail.parentElement!.insertBefore(thumbnail, document.querySelector('video')!);
+    expect(captureClickedMediaEvidence(button)).toMatchObject({ mediaType: 'video', sourceKey: null });
+    const { result } = await clickThroughProduction(button);
+    expect(result?.success).toBe(true);
+    expect(result?.mediaItems[result.clickedIndex!]?.url).toBe(source('700'));
+  });
+
+  it('keeps the sibling thumbnail as an immutable hint, separate from a playable source', async () => {
+    let finish!: (value: unknown) => void;
+    httpGet.mockImplementationOnce(() => new Promise((resolve) => { finish = resolve; }));
+    const button = thumbnailButton('quote', 'empty');
+    const evidence = captureClickedMediaEvidence(button);
+    expect(evidence.mediaType).toBe('video');
+    expect(evidence.sourceKey).toBeNull();
+    expect(evidence.identityKeys).toEqual(['pbs.twimg.com/amplify_video_thumb/700/img/poster.jpg']);
+    const pending = clickThroughProduction(button);
+    await vi.waitFor(() => expect(httpGet).toHaveBeenCalledTimes(1));
+    document.querySelector<HTMLImageElement>('#thumbnail')!.src = poster('800');
+    expect(evidence.identityKeys).toEqual(['pbs.twimg.com/amplify_video_thumb/700/img/poster.jpg']);
+    finish({ ok: true, status: 200, data: { data: { tweetResult: { result:
+      tweet('222', [video('800')], tweet('111', [video('700')])) } } } });
+    const { result } = await pending;
+    expect(result?.success).toBe(true);
+    expect(result?.mediaItems[result.clickedIndex!]?.url).toBe(source('700'));
+  });
+
+  it('rejects a sibling hint that conflicts with the direct video source', async () => {
+    respond(tweet('222', [video('800')], tweet('111', [video('700')])));
+    const button = thumbnailButton('quote', 'empty');
+    document.querySelector('video')!.src = source('800');
+    const { event, result } = await clickThroughProduction(button);
+    expect(event.defaultPrevented).toBe(true);
+    expect(result?.success).toBe(false);
+    expect(result?.mediaItems).toEqual([]);
+  });
+
+  it('rejects a sibling hint that matches more than one B video', async () => {
+    respond(tweet('222', [], tweet('111', [video('700'), { ...video('701'), media_url_https: poster('700') }])));
+    const { event, result } = await clickThroughProduction(thumbnailButton('quote', 'empty'));
+    expect(event.defaultPrevented).toBe(true);
+    expect(result?.success).toBe(false);
+    expect(result?.metadata?.strategy).toBe('api-media-ambiguous');
+  });
+
+  it('refuses conflicting currentSrc and src on the sibling thumbnail', async () => {
+    const button = thumbnailButton('quote', 'empty');
+    const image = document.querySelector<HTMLImageElement>('#thumbnail')!;
+    Object.defineProperty(image, 'currentSrc', { get: () => poster('800') });
+    expect(captureClickedMediaEvidence(button).identityKeys).toEqual([]);
+    const { result } = await clickThroughProduction(button);
+    expect(result?.success).toBe(false);
+  });
+
+  it.each(['foreign', 'ambiguous', 'nested-article'] as const)(
+    'refuses %s sibling hints before an API query', async (kind) => {
+      const button = thumbnailButton('quote', 'empty');
+      const thumbnail = document.querySelector<HTMLImageElement>('#thumbnail')!;
+      if (kind === 'foreign') thumbnail.src = 'https://evil.example/amplify_video_thumb/700/img/poster.jpg';
+      if (kind === 'ambiguous') thumbnail.insertAdjacentHTML('afterend', `<img src="${poster('800')}">`);
+      if (kind === 'nested-article') {
+        const nested = document.createElement('article');
+        thumbnail.parentElement!.insertBefore(nested, thumbnail);
+        nested.append(thumbnail, document.querySelector('video')!);
+      }
+      const { event } = await clickThroughProduction(button);
+      expect(event.defaultPrevented).toBe(false);
+      expect(httpGet).not.toHaveBeenCalled();
+    }
+  );
 
   it.each(['quote', 'unmarked'])(
     'recovers a linkless %s video only from the queried direct quote and exact source', async (scope) => {
