@@ -508,9 +508,10 @@ describe('Windows X live page validation', () => {
     const button = document.querySelector<HTMLButtonElement>('button');
     const video = document.querySelector<HTMLVideoElement>('video');
     if (!image || !button || !video) throw new Error('Native play fixture missing');
+    let top = 100;
     image.getBoundingClientRect = () => ({
-      bottom: 200, height: 100, left: 0, right: 200, toJSON: () => ({}),
-      top: 100, width: 200, x: 0, y: 100,
+      bottom: top + 100, height: 100, left: 0, right: 200, toJSON: () => ({}),
+      top, width: 200, x: 0, y: top,
     });
     Object.defineProperty(document, 'elementsFromPoint', {
       configurable: true,
@@ -528,6 +529,13 @@ describe('Windows X live page validation', () => {
       })).toMatchObject({
         sourceKind: 'blob',
         poster: { host: 'pbs.twimg.com', path: '/amplify_video_thumb/456/img/b.jpg' },
+      });
+      top = 260;
+      expect(livePage.inspectHitTestedVideoActionDocument(image, {
+        posterPath: '/amplify_video_thumb/456/img/b.jpg',
+      })).toMatchObject({
+        inQuote: false,
+        nativePlay: { x: 40, y: 280, mediaScopeDepth: 1 },
       });
     } finally {
       Reflect.deleteProperty(document, 'elementsFromPoint');
