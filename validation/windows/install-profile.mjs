@@ -1963,7 +1963,7 @@ async function runPublicPreplayerCycle({ quotedCase, quotedApiResponses, apiResp
     ]);
     assert.deepEqual(precondition.quoteStatusAnchors, [
       { path: `/${quotedCase.username}/status/${quotedCase.owner}`, containsTime: false },
-      { path: `/credit_preplayer/status/${quotedCase.credit}`, containsTime: false },
+      { path: `/credit_preplay/status/${quotedCase.credit}`, containsTime: false },
     ]);
     assert.equal(precondition.nestedArticleCount, 1);
     assert.equal(precondition.roleLink, 'link');
@@ -2028,7 +2028,7 @@ async function runPublicPreplayerCycle({ quotedCase, quotedApiResponses, apiResp
     const panelText = await opened.gallery.locator('#toolbar-tweet-panel').textContent();
     assert(panelText?.includes(`${quotedCase.username} deterministic installed media`),
       'Selected video text must identify B');
-    assert(!panelText.includes('credit_preplayer deterministic installed media'),
+    assert(!panelText.includes('credit_preplay deterministic installed media'),
       'Nested C text must not replace B');
     await opened.gallery.locator('#tweet-text-button').click();
     const navigation = await navigateQuotedAwayAndBack(page, quotedCase, opened.total);

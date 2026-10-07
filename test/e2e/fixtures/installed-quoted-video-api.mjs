@@ -100,7 +100,7 @@ function tweet(id, username, media, quoted) {
 
 export function quotedVideoApiResponse(tweetId) {
   if (tweetId === PUBLIC_PREPLAYER_CASE.outer) {
-    const credit = tweet(PREPLAYER_CREDIT, 'credit_preplayer', [
+    const credit = tweet(PREPLAYER_CREDIT, 'credit_preplay', [
       video(PREPLAYER_CREDIT, 'nested-c', 0),
     ]);
     const quote = tweet(PREPLAYER_QUOTE, 'quote_preplayer', [

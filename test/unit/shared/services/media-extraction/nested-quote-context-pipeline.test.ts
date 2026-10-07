@@ -2,6 +2,8 @@
 // Copyright (c) 2026 PiesP
 
 import type { TwitterMedia, TwitterTweet } from '@shared/services/media/types';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
 import { captureClickedMediaEvidence } from '@shared/services/media-extraction/determine-clicked-index';
 import { MediaExtractionService } from '@shared/services/media-extraction/media-extraction-service';
@@ -27,10 +29,11 @@ function video(id: string): TwitterMedia {
     video_info: { variants: [{ content_type: 'video/mp4', bitrate: 100, url: source(id) }] },
   };
 }
-function tweet(id: string, medias: TwitterMedia[] = [], quoted?: TwitterTweet): TwitterTweet {
+function tweet(id: string, medias: TwitterMedia[] = [], quoted?: TwitterTweet,
+  username = `author_${id}`): TwitterTweet {
   return {
     rest_id: id,
-    core: { user_results: { result: { legacy: { screen_name: `author_${id}` } } } },
+    core: { user_results: { result: { legacy: { screen_name: username } } } },
     legacy: { id_str: id, full_text: `Post ${id}`, extended_entities: { media: medias } },
     ...(quoted ? { quoted_status_result: { result: quoted } } : {}),
   };
@@ -104,6 +107,38 @@ describe('nested quote request context with separate header and credit links', (
     expect(requestedId(httpGet.mock.calls[0]![0])).toBe('222');
     expect(result.success).toBe(true);
     expect(result.mediaItems[result.clickedIndex!]).toMatchObject({ tweetId: '111', url: source('700') });
+  });
+
+  it('runs the exact installed preplayer HTML through production context and media extraction', async () => {
+    document.body.innerHTML = readFileSync(resolve(process.cwd(),
+      'test/e2e/fixtures/installed-public-preplayer-page.html'), 'utf8');
+    const button = document.querySelector<HTMLButtonElement>('[data-preplayer-media] button')!;
+    const outer = '8555555555555555555';
+    const owner = '9555555555555555555';
+    const credit = '7555555555555555555';
+    const thumbnail = `https://pbs.twimg.com/ext_tw_video_thumb/${owner}/pu/img/quote-two.jpg`;
+    const playable = `https://video.twimg.com/ext_tw_video/${owner}/pu/vid/320x180/quote-two.mp4`;
+    const apiVideo: TwitterMedia = { ...video(owner), media_url_https: thumbnail,
+      video_info: { variants: [{ content_type: 'video/mp4', bitrate: 100, url: playable }] } };
+    httpGet.mockResolvedValue(response(tweet(outer, [], tweet(owner, [
+      { type: 'photo', id_str: '600', media_url_https: 'https://pbs.twimg.com/media/QPreplayerPhoto.jpg' },
+      apiVideo,
+    ], tweet(credit, [video('900')], undefined, 'credit_preplay'), 'quote_preplayer'), 'outer_preplayer')));
+    expect(new TweetInfoExtractor().extractContext(button)?.ownership).toEqual({
+      requestTweetId: outer, ownerTweetId: null, scope: 'clickable',
+    });
+    expect(captureClickedMediaEvidence(button).identityKeys).toEqual([
+      `pbs.twimg.com/ext_tw_video_thumb/${owner}/pu/img/quote-two.jpg`,
+    ]);
+    const result = await new MediaExtractionService().extractFromClickedElement(button);
+    expect(requestedId(httpGet.mock.calls[0]![0])).toBe(outer);
+    expect(result.success).toBe(true);
+    expect(result.clickedIndex).toBe(1);
+    expect(result.mediaItems[result.clickedIndex!]).toMatchObject({
+      tweetId: owner, tweetUsername: 'quote_preplayer', url: playable,
+      metadata: { apiData: { tweet_id: owner, quoteParentTweetId: outer, quotedTweetId: owner } },
+    });
+    expect(result.mediaItems.some((media) => media.tweetId === credit)).toBe(false);
   });
 
   it('counts a same-article B header even inside its own clickable branch', async () => {

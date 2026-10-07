@@ -279,7 +279,9 @@ function extractClickContext(element: HTMLElement): TweetClickContext | null {
   });
   if (enclosingOwner || attributeId) return owner ? owned(owner) : null;
 
-  const article = closestWithFallback<HTMLElement>(element, TWEET_CONTAINER_SELECTORS);
+  // Selector preference must not jump over an unmarked nested article to a
+  // farther article carrying X's tweet marker.
+  const article = element.closest<HTMLElement>('article');
   if (!article) return owner ? owned(owner) : null;
   if (element.closest('[data-testid="card.wrapper"], [data-testid="reply"]')) return null;
 
