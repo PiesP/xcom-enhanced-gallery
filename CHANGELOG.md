@@ -15,7 +15,7 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **DOM source identity** — Reject replacement media concealed by a retained background or poster. Recover unchanged videos with a single trusted child source while rejecting unresolved sources.
 - **DOM recovery** — Preserve mixed image/video order and recover accessible media from a trusted status-linked tile without collecting neighboring posts. Tile recovery is disclosed as partial; bulk downloads include only the collected gallery items, not an unverified complete post.
 - **Clicked media** — Preserve click-time identity across delayed requests and DOM replacement. Fail explicitly when image selection lacks sufficient evidence instead of opening an arbitrary first item.
-- **API recovery** — Allow recovery after the existing cooldown despite skipped clicks, and keep cancellation, missing media, and selection failures out of API outage accounting, including browser `AbortError` exceptions that do not inherit from `Error`.
+- **API recovery** — Allow recovery after the existing cooldown despite skipped clicks, and keep cancellation, missing media, and selection failures out of API outage accounting. Preserve `DOMException`-based `AbortError` cancellation across API transports.
 - **Gallery toolbar** — Show the current item and collected total, the effective fit mode, and the collected-item ZIP count while keeping current-item download available. Keep fit controls accessible in narrow and zoomed layouts with existing fit settings intact.
 
 ## [2.3.3] - 2026-10-04
