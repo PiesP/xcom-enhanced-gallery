@@ -27,7 +27,6 @@
   <main>
     <article class="quote-case" data-case="recognized" data-testid="tweet">
       <a href="/outer_one/status/8111111111111111111"><time>Outer one</time></a>
-      <div data-testid="tweetPhoto"><img src="https://pbs.twimg.com/media/QOuterOnePhoto.jpg" alt="Outer one image" width="320" height="180"></div>
       <div data-testid="quoteTweet" class="quote-branch">
         <span>Quote one, no quoted permalink</span>
         <div data-testid="tweetPhoto"><img src="https://pbs.twimg.com/media/QQuoteOnePhoto.jpg" alt="Quote one image" width="320" height="180"></div>
@@ -41,7 +40,10 @@
 
     <article class="quote-case" data-case="unmarked" data-testid="tweet">
       <a href="/outer_two/status/8222222222222222222"><time>Outer two</time></a>
-      <div data-testid="videoPlayer" class="video-shell"><video poster="https://pbs.twimg.com/ext_tw_video_thumb/8222222222222222222/pu/img/outer-unmarked.jpg"></video></div>
+      <div data-testid="videoPlayer" class="video-shell">
+        <img data-outer-target tabindex="0" src="https://pbs.twimg.com/ext_tw_video_thumb/8222222222222222222/pu/img/outer-unmarked.jpg" alt="Outer two video preview">
+        <video poster="https://pbs.twimg.com/ext_tw_video_thumb/8222222222222222222/pu/img/outer-unmarked.jpg"></video>
+      </div>
       <div role="link" tabindex="0" class="quote-branch">
         <span>Quote two clickable card without a permalink or quote marker</span>
         <div data-testid="tweetPhoto"><img src="https://pbs.twimg.com/media/QQuoteTwoPhoto.jpg" alt="Quote two image" width="320" height="180"></div>

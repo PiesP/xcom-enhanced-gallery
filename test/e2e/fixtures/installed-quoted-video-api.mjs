@@ -2,40 +2,45 @@
 // Copyright (c) 2026 PiesP
 
 // These are routed X responses, not substitutes for extension code or its API client.
+export const NESTED_OWNER = '7333333333333333333';
 export const QUOTED_CASES = [
   {
     name: 'recognized', route: 'recognized', handle: 'outer_one', outer: '8111111111111111111',
     owner: '9111111111111111111', username: 'quote_one',
     media: 'quote-one', expectedPosition: 2, close: 'escape',
     poster: 'quote-one',
+    away: { type: 'image', path: '/media/QQuoteOnePhoto.jpg' },
   },
   {
     name: 'unmarked', route: 'unmarked', handle: 'outer_two', outer: '8222222222222222222',
     owner: '9222222222222222222', username: 'quote_two',
     media: 'quote-two', expectedPosition: 2, close: 'button',
     poster: 'quote-two',
+    away: { type: 'image', path: '/media/QQuoteTwoPhoto.jpg' },
   },
   {
     name: 'linked', route: 'linked', handle: 'outer_four', outer: '8444444444444444444',
     owner: '9444444444444444444', username: 'quote_four',
     media: 'linked-four', expectedPosition: 2, close: 'escape',
     poster: 'linked-four',
+    away: { type: 'image', path: '/media/QQuoteFourPhoto.jpg' },
   },
   {
     name: 'nested-from-outer', route: 'nested', handle: 'outer_three', outer: '8333333333333333333',
     owner: '9333333333333333333', username: 'quote_three',
     media: 'quote-three', expectedPosition: 1, close: 'escape',
     poster: 'quote-three',
+    away: { type: 'image', path: '/media/QOuterThreePhoto.jpg' },
   },
   {
     name: 'nested-direct-quote', route: 'nested-direct', handle: 'quote_three', outer: '9333333333333333333',
     owner: '9333333333333333333', username: 'quote_three',
     media: 'quote-three', expectedPosition: 2, close: 'button',
     poster: 'quote-three',
+    away: { type: 'video', path: `/ext_tw_video/${NESTED_OWNER}/pu/vid/320x180/nested-c.mp4` },
   },
 ];
 
-export const NESTED_OWNER = '7333333333333333333';
 const outerNames = {
   '8111111111111111111': 'outer_one',
   '8222222222222222222': 'outer_two',
@@ -104,9 +109,10 @@ export function quotedVideoApiResponse(tweetId) {
   const quoted = selected.name === 'recognized' ? quoteOne
     : selected.name === 'unmarked' ? quoteTwo
     : selected.name === 'linked' ? quoteFour : quoteThree;
-  const outerMedia = selected.name === 'nested-from-outer'
-    ? [photo(tweetId, 'QOuterThreePhoto', 0)]
-    : [video(tweetId, `outer-${selected.name}`, 0)];
+  const outerMedia = selected.name === 'recognized' || selected.name === 'linked' ? []
+    : selected.name === 'nested-from-outer'
+      ? [photo(tweetId, 'QOuterThreePhoto', 0)]
+      : [video(tweetId, `outer-${selected.name}`, 0)];
   return { data: { tweetResult: { result: tweet(
     tweetId, outerNames[tweetId], outerMedia, quoted
   ) } } };

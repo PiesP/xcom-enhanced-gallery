@@ -1642,19 +1642,87 @@ async function captureQuotedOpeningScroll(trigger) {
   });
 }
 
+async function assertQuotedSelection(page, { position, total, type, path }) {
+  const index = position - 1;
+  const state = await waitForValue(async () => {
+    const observed = await page.evaluate(({ selectedIndex, mediaType }) => {
+      const gallery = document.querySelector('[data-xeg-gallery-container]');
+      const toolbar = gallery?.querySelector('[data-gallery-element="toolbar"]');
+      const counter = toolbar?.querySelector('#xeg-toolbar-counter');
+      const item = gallery?.querySelector(
+        `[data-gallery-element="item"][data-index="${selectedIndex}"]`
+      );
+      const media = item?.querySelector(mediaType === 'video' ? 'video' : 'img');
+      return {
+        position: counter?.getAttribute('data-position') ?? null,
+        total: counter?.getAttribute('data-total') ?? null,
+        counterFocusedIndex: counter?.getAttribute('data-focused-index') ?? null,
+        currentIndex: toolbar?.getAttribute('data-current-index') ?? null,
+        focusedIndex: toolbar?.getAttribute('data-focused-index') ?? null,
+        source: media?.currentSrc || media?.src || null,
+        mediaReady: mediaType === 'video'
+          ? media instanceof HTMLVideoElement && media.readyState >= HTMLMediaElement.HAVE_METADATA &&
+            media.videoWidth > 0 && media.videoHeight > 0 && media.error === null
+          : media instanceof HTMLImageElement && media.complete && media.naturalWidth > 0,
+        loaded: item?.getAttribute('data-media-loaded') ?? null,
+      };
+    }, { selectedIndex: index, mediaType: type });
+    return observed.position === String(position) && observed.total === String(total) &&
+      observed.counterFocusedIndex === String(index) &&
+      observed.currentIndex === String(index) &&
+      observed.focusedIndex === String(index) && observed.mediaReady &&
+      observed.loaded === 'true' ? observed : undefined;
+  }, `quoted selection ${position}/${total}`);
+  const source = new URL(state.source);
+  assert.equal(source.pathname, path, 'Selected media source must match the expected owner');
+  assert.equal(source.hostname, type === 'video' ? 'video.twimg.com' : 'pbs.twimg.com');
+  return state;
+}
+
+async function assertQuotedOriginLink(gallery, expectedUrl) {
+  const button = gallery.locator('#tweet-text-button');
+  assert.equal(await button.count(), 1, 'Selected media must expose originating post metadata');
+  await button.click();
+  const link = gallery.locator('#toolbar-tweet-panel a[href^="https://x.com/"]');
+  await link.waitFor({ state: 'visible' });
+  const observed = await link.getAttribute('href');
+  assert.equal(observed, expectedUrl, 'Toolbar source link must identify the selected post');
+  await button.click();
+  return observed;
+}
+
+async function navigateQuotedAwayAndBack(page, quotedCase, total) {
+  const from = quotedCase.expectedPosition;
+  const to = from === 1 ? 2 : from - 1;
+  const awayKey = from === 1 ? 'ArrowRight' : 'ArrowLeft';
+  const returnKey = from === 1 ? 'ArrowLeft' : 'ArrowRight';
+  await page.keyboard.press(awayKey);
+  const away = await assertQuotedSelection(page, { position: to, total,
+    type: quotedCase.away.type, path: quotedCase.away.path });
+  await page.keyboard.press(returnKey);
+  const returned = await assertQuotedSelection(page, { position: from, total,
+    type: 'video',
+    path: `/ext_tw_video/${quotedCase.owner}/pu/vid/320x180/${quotedCase.media}.mp4` });
+  return { awayKey, returnKey, away, returned };
+}
+
 async function assertQuotedGallery(page, quotedCase) {
   const gallery = page.locator('[data-xeg-gallery-container]');
   await gallery.waitFor({ state: 'visible', timeout: 15_000 });
   assert.equal(await gallery.getAttribute('role'), 'dialog');
   assert.equal(await gallery.getAttribute('aria-modal'), 'true');
   const counter = gallery.locator('#xeg-toolbar-counter');
-  const expectedTotal = quotedCase.name === 'linked' ? 2
+  const expectedTotal = quotedCase.name === 'linked' || quotedCase.name === 'recognized' ? 2
     : quotedCase.name === 'nested-from-outer' || quotedCase.name === 'nested-direct-quote'
       ? 2 : 3;
   assert.equal(Number(await counter.getAttribute('data-position')),
     quotedCase.expectedPosition, 'Quoted video selection must preserve its collection index');
   assert.equal(Number(await counter.getAttribute('data-total')), expectedTotal,
     'Quoted collection must include only the expected owners');
+  const selection = await assertQuotedSelection(page, {
+    position: quotedCase.expectedPosition, total: expectedTotal, type: 'video',
+    path: `/ext_tw_video/${quotedCase.owner}/pu/vid/320x180/${quotedCase.media}.mp4`,
+  });
   assert.equal(await gallery.locator('[data-gallery-element="item"]').count(), expectedTotal);
   const selected = gallery.locator(
     `[data-gallery-element="item"][data-index="${quotedCase.expectedPosition - 1}"]`
@@ -1680,7 +1748,8 @@ async function assertQuotedGallery(page, quotedCase) {
     error: element.error?.code ?? null,
   }));
   assert.equal(new URL(selectedMedia.src).hostname, 'video.twimg.com');
-  assert(selectedMedia.src.endsWith(`/${quotedCase.media}.mp4`),
+  assert.equal(new URL(selectedMedia.src).pathname,
+    `/ext_tw_video/${quotedCase.owner}/pu/vid/320x180/${quotedCase.media}.mp4`,
     'The selected video must use the owner-specific API MP4');
   assert.equal(selectedMedia.width, 320);
   assert.equal(selectedMedia.height, 180);
@@ -1688,7 +1757,7 @@ async function assertQuotedGallery(page, quotedCase) {
   assert.equal(selectedMedia.error, null);
   assert.equal(await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download"]').count(), 1);
   assert.equal(await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]').count(), 1);
-  return { gallery, selected, selectedMedia, video };
+  return { gallery, selected, selectedMedia, selection, total: expectedTotal, video };
 }
 
 async function closeQuotedGallery({ gallery, page, method, before, caseName, selector }) {
@@ -1709,6 +1778,67 @@ async function closeQuotedGallery({ gallery, page, method, before, caseName, sel
   assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0);
   return { focusRestored: after.active, scrollRestored: after.scrollY === before.scrollY,
     backgroundRestored: true, bodyStyleRestored: true };
+}
+
+async function runOuterVideoControl({ quotedCase, quotedApiResponses, downloads,
+  extensionPage, output, page, videoPayloads }) {
+  const article = page.locator(`[data-case="${quotedCase.route}"]`);
+  const trigger = article.locator('[data-outer-target]');
+  await trigger.scrollIntoViewIfNeeded();
+  await page.evaluate(() => window.scrollBy(0, -120));
+  await trigger.focus();
+  const before = await quotedHostSnapshot(page, quotedCase.route, '[data-outer-target]');
+  assert.equal(before.active, true, 'Outer video control must hold focus');
+  assert(before.scrollY > 0, 'Outer video control must open at nonzero scroll');
+  const hit = await trigger.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return document.elementFromPoint(rect.left + rect.width / 2,
+      rect.top + rect.height / 2) === element;
+  });
+  assert.equal(hit, true, 'Outer video must be the ordinary hit-tested target');
+  await page.screenshot({ path: join(output, 'quoted-outer-control-before.png') });
+  const apiStart = quotedApiResponses.length;
+  await captureQuotedOpeningScroll(trigger);
+  await trigger.click();
+  before.scrollY = Number(await trigger.getAttribute('data-opening-scroll-y'));
+  assert(Number.isFinite(before.scrollY) && before.scrollY > 0);
+  const gallery = page.locator('[data-xeg-gallery-container]');
+  await gallery.waitFor({ state: 'visible', timeout: 15_000 });
+  const outerPath = `/ext_tw_video/${quotedCase.outer}/pu/vid/320x180/outer-unmarked.mp4`;
+  const selected = await assertQuotedSelection(page, { position: 3, total: 3,
+    type: 'video', path: outerPath });
+  const sourceLink = await assertQuotedOriginLink(gallery,
+    `https://x.com/${quotedCase.handle}/status/${quotedCase.outer}`);
+  assert.deepEqual(quotedApiResponses.slice(apiStart).map(({ tweetId }) => tweetId),
+    [quotedCase.outer], 'Outer video must request and select A');
+  await page.keyboard.press('ArrowLeft');
+  const quoted = await assertQuotedSelection(page, { position: 2, total: 3,
+    type: 'video',
+    path: `/ext_tw_video/${quotedCase.owner}/pu/vid/320x180/${quotedCase.media}.mp4` });
+  await page.keyboard.press('ArrowRight');
+  const returned = await assertQuotedSelection(page, { position: 3, total: 3,
+    type: 'video', path: outerPath });
+  await page.screenshot({ path: join(output, 'quoted-outer-control-gallery.png') });
+
+  const knownIds = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+  const filename = `${quotedCase.handle}_${quotedCase.outer}_2.mp4`;
+  await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download"]').click();
+  const download = await waitForDownload(extensionPage, knownIds, filename);
+  const relativeDownload = relative(downloads, download.filename);
+  assert(relativeDownload && !relativeDownload.startsWith('..') && !isAbsolute(relativeDownload),
+    'Outer video download escaped the task-owned directory');
+  const bytes = await readFile(download.filename);
+  assert(videoPayloads['nested-c'].equals(bytes),
+    'Outer A privileged download must match its routed playable bytes');
+  const file = 'quoted-outer-control-download.mp4';
+  await copyFile(download.filename, join(output, file));
+  const close = await closeQuotedGallery({ gallery, page, method: 'button', before,
+    caseName: quotedCase.route, selector: '[data-outer-target]' });
+  await page.screenshot({ path: join(output, 'quoted-outer-control-after.png') });
+  return { api: quotedApiResponses.slice(apiStart), sourceLink, selected,
+    navigation: { awayKey: 'ArrowLeft', returnKey: 'ArrowRight', quoted, returned },
+    download: { filename, file, bytes: bytes.length,
+      sha256: createHash('sha256').update(bytes).digest('hex') }, close };
 }
 
 async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
@@ -1754,6 +1884,9 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
     quotedCase.name === 'nested-direct-quote' ? quotedCase.owner : quotedCase.outer;
   assert.deepEqual(quotedApiResponses.slice(apiStart).map(({ tweetId }) => tweetId),
     [expectedRequest], 'Preview must use the exact owning tweet API request');
+  const previewOriginUrl = await assertQuotedOriginLink(initial.gallery,
+    `https://x.com/${quotedCase.username}/status/${quotedCase.owner}`);
+  const previewNavigation = await navigateQuotedAwayAndBack(page, quotedCase, initial.total);
   await page.screenshot({ path: join(output, `quoted-${quotedCase.name}-preview-gallery.png`) });
   const previewClose = await closeQuotedGallery({ gallery: initial.gallery, page,
     method: 'escape', before: previewBefore, caseName: quotedCase.route,
@@ -1796,6 +1929,9 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
   assert(Number.isFinite(playingBefore.scrollY) && playingBefore.scrollY > 0,
     'Blob-backed opening scroll must be observed');
   const playing = await assertQuotedGallery(page, quotedCase);
+  const playingOriginUrl = await assertQuotedOriginLink(playing.gallery,
+    `https://x.com/${quotedCase.username}/status/${quotedCase.owner}`);
+  const playingNavigation = await navigateQuotedAwayAndBack(page, quotedCase, playing.total);
   await playing.video.click();
   await page.waitForFunction((index) => {
     const video = document.querySelector(
@@ -1849,19 +1985,26 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
   assert.deepEqual(restoredPanel, { ariaHidden: 'false', hiddenMarker: false, inert: false });
   await page.locator(`#${latePanel}`).evaluate((element) => element.remove());
   await page.screenshot({ path: join(output, `quoted-${quotedCase.name}-after.png`) });
+  const outerControl = quotedCase.name === 'unmarked'
+    ? await runOuterVideoControl({ quotedCase, quotedApiResponses, downloads,
+      extensionPage, output, page, videoPayloads })
+    : null;
   return {
     name: quotedCase.name, pageUrl, requestedTweetId: expectedRequest,
     api: quotedApiResponses.slice(apiStart), selectedPosition: quotedCase.expectedPosition,
     preview: { source: previewState.poster, selected: initial.selectedMedia,
+      originUrl: previewOriginUrl, navigation: previewNavigation,
       close: previewClose },
     hostPlaying: { blobBacked: hostPlaying.source.startsWith('blob:'),
       currentTime: hostPlaying.time, width: hostPlaying.width, height: hostPlaying.height },
-    playing: { selected: playing.selectedMedia, galleryPlaybackTime,
+    playing: { selected: playing.selectedMedia, originUrl: playingOriginUrl,
+      navigation: playingNavigation, galleryPlaybackTime,
       closeMethod: quotedCase.close,
       close: playingClose },
     download: { filename, bytes: bytes.length, file: copiedName,
       sha256: createHash('sha256').update(bytes).digest('hex'),
       sourceSha256: createHash('sha256').update(sourceBytes).digest('hex') },
+    outerControl,
   };
 }
 
@@ -2103,8 +2246,47 @@ async function exerciseInstalledExtension(
           videoPayloads: fixtureRoutes.videoPayloads,
         }));
       } catch (error) {
-        quotedVideoCycles.push({ name: quotedCase.name, status: 'failed',
-          error: safeError(error) });
+        const diagnostic = { name: quotedCase.name, status: 'failed',
+          error: safeError(error),
+          api: fixtureRoutes.quotedApiResponses.filter(({ tweetId }) =>
+            tweetId === quotedCase.outer || tweetId === quotedCase.owner),
+          screenshot: `quoted-${quotedCase.name}-failure.png` };
+        const [snapshot, screenshot] = await Promise.allSettled([
+          page.evaluate(() => {
+            const gallery = document.querySelector('[data-xeg-gallery-container]');
+            const toolbar = gallery?.querySelector('[data-gallery-element="toolbar"]');
+            const counter = toolbar?.querySelector('#xeg-toolbar-counter');
+            return {
+              url: location.href,
+              activeTag: document.activeElement?.tagName ?? null,
+              bodyVideoError: document.body.dataset.videoError ?? null,
+              bodyVideoReady: document.body.dataset.videoReady ?? null,
+              galleryPresent: gallery !== null,
+              position: counter?.getAttribute('data-position') ?? null,
+              total: counter?.getAttribute('data-total') ?? null,
+              currentIndex: toolbar?.getAttribute('data-current-index') ?? null,
+              focusedIndex: toolbar?.getAttribute('data-focused-index') ?? null,
+              items: [...(gallery?.querySelectorAll('[data-gallery-element="item"]') ?? [])]
+                .map((item) => {
+                  const media = item.querySelector('video, img');
+                  return { index: item.getAttribute('data-index'),
+                    loaded: item.getAttribute('data-media-loaded'),
+                    source: media?.currentSrc || media?.src || null,
+                    mediaError: media instanceof HTMLVideoElement ? media.error?.code ?? null : null,
+                    readyState: media instanceof HTMLVideoElement ? media.readyState : null };
+                }),
+            };
+          }),
+          page.screenshot({ path: join(output, diagnostic.screenshot) }),
+        ]);
+        diagnostic.snapshot = snapshot.status === 'fulfilled' ? snapshot.value
+          : { error: safeError(snapshot.reason) };
+        if (screenshot.status === 'rejected') {
+          diagnostic.screenshotError = safeError(screenshot.reason);
+        }
+        quotedVideoCycles.push(diagnostic);
+        await writeFile(join(output, `quoted-${quotedCase.name}-failure.json`),
+          JSON.stringify(diagnostic, null, 2)).catch(() => {});
         throw error;
       }
     }
