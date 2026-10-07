@@ -611,6 +611,7 @@ export function inspectLiveCandidateDocument({ handle, statusId }) {
   return {
     exactArticleFound: true,
     articleIndex: articles.indexOf(article),
+    outerArticleOwnStatusAnchors: articleOwnership(article, article).ownStatusAnchors,
     quoteCardCount: Math.min(article.querySelectorAll('[data-testid="quoteTweet"]').length, 20),
     videoPlayerCount: Math.min(article.querySelectorAll('[data-testid="videoPlayer"]').length, 20),
     previewInterstitialCount: Math.min(article.querySelectorAll('[data-testid="previewInterstitial"]').length, 20),
@@ -806,6 +807,32 @@ export function inspectHitTestedVideoActionDocument(element, { posterPath }) {
   if (!(element instanceof HTMLElement) || typeof document.elementsFromPoint !== 'function') return null;
   const quoteArticle = element.closest('article');
   if (!quoteArticle) return null;
+  const scopeCounts = (scope, depth) => {
+    if (depth > 3) return null;
+    const counts = { scopeDepth: depth, videoCount: 0, totalImageCount: 0,
+      trustedVideoThumbnailCount: 0, ordinaryImageCount: 0 };
+    const media = [scope, ...scope.querySelectorAll('video, img')];
+    for (const node of media) {
+      if (node.closest('article') !== quoteArticle) continue;
+      if (node instanceof HTMLVideoElement) {
+        counts.videoCount = Math.min(counts.videoCount + 1, 20);
+        continue;
+      }
+      if (!(node instanceof HTMLImageElement)) continue;
+      counts.totalImageCount = Math.min(counts.totalImageCount + 1, 20);
+      let trusted = false;
+      try {
+        const url = new URL(node.currentSrc || node.src, location.href);
+        trusted = url.protocol === 'https:' && url.hostname === 'pbs.twimg.com' &&
+          /^\/(?:amplify_video_thumb|ext_tw_video_thumb|tweet_video_thumb|video_thumb)\//u.test(url.pathname);
+      } catch {
+        // Count unknown images without retaining their source.
+      }
+      const key = trusted ? 'trustedVideoThumbnailCount' : 'ordinaryImageCount';
+      counts[key] = Math.min(counts[key] + 1, 20);
+    }
+    return counts;
+  };
   if (posterPath) {
     const value = element instanceof HTMLImageElement ? element.currentSrc || element.src
       : element instanceof HTMLVideoElement ? element.poster
@@ -838,7 +865,8 @@ export function inspectHitTestedVideoActionDocument(element, { posterPath }) {
         for (let depth = 0; mediaScope && depth <= 5 && mediaScope !== quoteArticle;
           depth += 1, mediaScope = mediaScope.parentElement) {
           if (mediaScope.contains(control)) {
-            nativePlay = { x, y, topTag: top.tagName.toLowerCase(), mediaScopeDepth: depth };
+            nativePlay = { x, y, topTag: top.tagName.toLowerCase(), mediaScopeDepth: depth,
+              scopeCounts: scopeCounts(mediaScope, depth) };
             break;
           }
         }

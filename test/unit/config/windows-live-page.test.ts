@@ -21,6 +21,8 @@ type LivePageModule = {
   inspectLiveCandidateDocument(identity: { handle: string; statusId: string }): {
     exactArticleFound: boolean;
     statusIds?: string[];
+    outerArticleOwnStatusAnchors?: Array<{ path: string; containsTime: boolean;
+      nearestArticleIndex: number; structure: unknown[] }>;
     quoteCardCount?: number;
     videoPlayerCount?: number;
     previewInterstitialCount?: number;
@@ -42,7 +44,9 @@ type LivePageModule = {
     y: number | null;
     rejectedControls: number;
     mediaScopeDepth: number | null;
-    nativePlay?: { x: number; y: number; mediaScopeDepth: number } | null;
+    nativePlay?: { x: number; y: number; mediaScopeDepth: number;
+      scopeCounts?: { scopeDepth: number; videoCount: number; totalImageCount: number;
+        trustedVideoThumbnailCount: number; ordinaryImageCount: number } | null } | null;
   };
   findHitTestedVideoControlDocument(element: HTMLElement, expected: {
     x: number;
@@ -457,7 +461,7 @@ describe('Windows X live page validation', () => {
   it('targets a direct nested quote article while excluding media in its deeper quote', () => {
     document.body.innerHTML = `
       <article>
-        <a href="https://x.com/outer/status/123">A</a>
+        <a href="https://x.com/outer/status/123?token=private"><time>A</time></a>
         <article>
           <a href="https://x.com/quoted/status/456">B</a>
           <video style="display:none" poster="https://pbs.twimg.com/amplify_video_thumb/456/img/b.jpg"></video>
@@ -485,7 +489,10 @@ describe('Windows X live page validation', () => {
         posterIndex: 0, posterSource: { path: '/amplify_video_thumb/456/img/b.jpg' },
       },
     });
-    expect(livePage.inspectLiveCandidateDocument(identity)).toMatchObject({
+    const candidate = livePage.inspectLiveCandidateDocument(identity);
+    expect(candidate).toMatchObject({
+      outerArticleOwnStatusAnchors: [{ path: '/outer/status/123', containsTime: true,
+        nearestArticleIndex: 0, structure: [{ tag: 'a', role: null, testId: null }] }],
       videoDetails: [
         { nearestArticleIndex: 1, ancestorArticleIndexes: [1, 0],
           ownStatusPaths: ['/quoted/status/456'] },
@@ -493,6 +500,7 @@ describe('Windows X live page validation', () => {
           ownStatusPaths: ['/deeper/status/789'] },
       ],
     });
+    expect(JSON.stringify(candidate)).not.toContain('token=private');
   });
 
   it('records bounded status-anchor timing within the video article only', () => {
@@ -565,9 +573,11 @@ describe('Windows X live page validation', () => {
     document.body.innerHTML = `
       <article><div>
         <img src="https://pbs.twimg.com/amplify_video_thumb/456/img/b.jpg">
+        <img src="https://pbs.twimg.com/profile_images/1/avatar.jpg?token=private">
         <button>Native play</button>
         <video src="blob:https://x.com/private" poster="https://pbs.twimg.com/amplify_video_thumb/456/img/b.jpg"></video>
-      </div></article>
+        <article><img src="https://pbs.twimg.com/amplify_video_thumb/789/img/nested.jpg"></article>
+      </div><img src="https://pbs.twimg.com/profile_images/2/outside.jpg"></article>
     `;
     const image = document.querySelector<HTMLImageElement>('img');
     const button = document.querySelector<HTMLButtonElement>('button');
@@ -583,12 +593,16 @@ describe('Windows X live page validation', () => {
       value: () => [button],
     });
     try {
-      expect(livePage.inspectHitTestedVideoActionDocument(image, {
+      const hit = livePage.inspectHitTestedVideoActionDocument(image, {
         posterPath: '/amplify_video_thumb/456/img/b.jpg',
-      })).toMatchObject({
-        inQuote: false,
-        nativePlay: { x: 40, y: 120, mediaScopeDepth: 1 },
       });
+      expect(hit).toMatchObject({
+        inQuote: false,
+        nativePlay: { x: 40, y: 120, mediaScopeDepth: 1,
+          scopeCounts: { scopeDepth: 1, videoCount: 1, totalImageCount: 2,
+            trustedVideoThumbnailCount: 1, ordinaryImageCount: 1 } },
+      });
+      expect(JSON.stringify(hit)).not.toMatch(/avatar|token=private|nested\.jpg|outside\.jpg/u);
       const focusTarget = livePage.findHitTestedVideoControlDocument(image, {
         x: 40, y: 120, posterPath: '/amplify_video_thumb/456/img/b.jpg',
       });
@@ -617,6 +631,19 @@ describe('Windows X live page validation', () => {
         configurable: true,
         value: () => [button],
       });
+      const scope = document.querySelector<HTMLElement>('article > div');
+      if (!scope) throw new Error('Native play scope missing');
+      for (let index = 0; index < 25; index += 1) {
+        const avatar = document.createElement('img');
+        avatar.src = `https://pbs.twimg.com/profile_images/${index}/avatar.jpg?token=private`;
+        scope.append(avatar);
+      }
+      expect(livePage.inspectHitTestedVideoActionDocument(image, {
+        posterPath: '/amplify_video_thumb/456/img/b.jpg',
+      })).toMatchObject({ nativePlay: { scopeCounts: {
+        videoCount: 1, totalImageCount: 20,
+        trustedVideoThumbnailCount: 1, ordinaryImageCount: 20,
+      } } });
       top = 260;
       expect(livePage.inspectHitTestedVideoActionDocument(image, {
         posterPath: '/amplify_video_thumb/456/img/b.jpg',
