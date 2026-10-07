@@ -22,6 +22,7 @@ const FORBIDDEN_CONTROL_CONTEXT = [
   '[data-testid="share"]',
   '[data-testid="bookmark"]',
 ].join(', ');
+const CANDIDATE_OWNER_BOUNDARY = `${FORBIDDEN_CONTROL_CONTEXT}, button, [role="link"], [data-testid="quoteTweet"]`;
 
 export interface NativeVideoControlMedia {
   readonly video: HTMLVideoElement | null;
@@ -84,6 +85,11 @@ function hasTrustedVideoInput(video: HTMLVideoElement): boolean | null {
   return trusted;
 }
 
+function sharesControlOwner(candidate: HTMLElement, button: HTMLButtonElement): boolean {
+  const boundary = candidate.closest(CANDIDATE_OWNER_BOUNDARY);
+  return !boundary || boundary.contains(button);
+}
+
 /**
  * Select the nearest small scope with one trusted video thumbnail, or one
  * directly trusted VIDEO. Ordinary images never identify media or owners.
@@ -101,7 +107,8 @@ export function findNativeVideoControlMedia(target: HTMLElement): NativeVideoCon
     const videos: NodeListOf<HTMLVideoElement> = scope.querySelectorAll('video');
     if (videos.length > 1) return null;
     const video: HTMLVideoElement | null = videos[0] ?? null;
-    if (video && video.closest('article') !== article) return null;
+    if (video && (video.closest('article') !== article || !sharesControlOwner(video, button)))
+      return null;
 
     let thumbnail: HTMLImageElement | null = null;
     let thumbnailUrl: string | null = null;
@@ -112,6 +119,7 @@ export function findNativeVideoControlMedia(target: HTMLElement): NativeVideoCon
       const check = inspectThumbnail(image);
       if (check.kind === 'invalid') return null;
       if (check.kind !== 'trusted') continue;
+      if (!sharesControlOwner(image, button)) return null;
       if (thumbnail) return null;
       thumbnail = image;
       thumbnailUrl = check.url;

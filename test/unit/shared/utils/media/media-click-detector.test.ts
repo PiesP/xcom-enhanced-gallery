@@ -176,6 +176,19 @@ describe('unmarked native video controls in quoted posts', () => {
     expect(isProcessableMedia(target)).toBe(true);
   });
 
+  it.each([
+    'data-testid="card.wrapper"',
+    'data-testid="reply"',
+    'role="link"',
+    'data-testid="quoteTweet"',
+  ])('does not borrow a trusted candidate from a sibling %s boundary', (boundary) => {
+    setVideoMode('allow-all');
+    for (const candidate of [`<img src="${thumb}">`, `<video poster="${thumb}"></video>`]) {
+      const target = renderUnmarkedQuote(`<div ${boundary}>${candidate}</div>`);
+      expect(isProcessableMedia(target)).toBe(false);
+    }
+  });
+
   it('accepts a unique direct trusted MP4 video without a poster', () => {
     setVideoMode('allow-all');
     const target = renderUnmarkedQuote(

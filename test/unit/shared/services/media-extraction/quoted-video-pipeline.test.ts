@@ -290,6 +290,26 @@ describe('production quoted-video pipeline', () => {
     }
   );
 
+  it.each(['card.wrapper', 'reply'] as const)(
+    'leaves a native control beside %s-owned media untouched', async (boundary) => {
+      for (const candidate of ['thumbnail', 'video'] as const) {
+        const button = candidate === 'thumbnail'
+          ? preplayButton('quote')
+          : thumbnailButton('quote', 'empty');
+        const media = candidate === 'thumbnail'
+          ? document.querySelector('#thumbnail')!
+          : document.querySelector('video')!;
+        const owner = document.createElement('div');
+        owner.setAttribute('data-testid', boundary);
+        media.replaceWith(owner);
+        owner.append(media);
+        const { event } = await clickThroughProduction(button);
+        expect(event.defaultPrevented).toBe(false);
+        expect(httpGet).not.toHaveBeenCalled();
+      }
+    }
+  );
+
   it.each(['quote', 'unmarked'])(
     'recovers a linkless %s video only from the queried direct quote and exact source', async (scope) => {
       const result = await new MediaExtractionService().extractFromClickedElement(target(scope));
