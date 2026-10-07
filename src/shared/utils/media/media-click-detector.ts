@@ -20,7 +20,9 @@ import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import {
   extractMediaUrlFromElement,
   findMediaElementInDOM,
+  selectMediaSourceUrl,
 } from '@shared/utils/media/media-element-utils';
+import { isVideoThumbnailUrl } from '@shared/utils/media/video-preview';
 import { isHostMatching, TWITTER_HOSTS, tryParseUrl } from '@shared/utils/url/host';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
 
@@ -42,6 +44,54 @@ const INTERACTIVE_SELECTOR = [
 ].join(', ');
 
 const STATUS_MEDIA_RE = /\/status\/\d+|\/photo\/\d+|\/video\/\d+/iu;
+const MAX_UNMARKED_VIDEO_SCOPE_HOPS = 3;
+
+/** X also renders a native video control beside an unmarked VIDEO in a quote. */
+function findAllowAllUnmarkedVideoControl(
+  target: HTMLElement,
+  videoMode: string
+): HTMLVideoElement | null {
+  if (videoMode !== 'allow-all') return null;
+  const button = target.closest('button');
+  if (!(button instanceof HTMLButtonElement)) return null;
+  if (
+    button.hasAttribute('data-testid') ||
+    button.closest(
+      'a, nav, [role="toolbar"], [role="menu"], form, [data-testid="videoPlayer"], [data-testid="card.wrapper"], [data-testid="reply"], [data-testid="like"], [data-testid="retweet"], [data-testid="share"], [data-testid="bookmark"]'
+    )
+  ) {
+    return null;
+  }
+
+  const article = button.closest('article');
+  if (!article) return null;
+  let scope: HTMLElement | null = button.parentElement;
+  for (let hops = 0; hops < MAX_UNMARKED_VIDEO_SCOPE_HOPS && scope && scope !== article; hops++) {
+    if (scope.querySelector('article')) return null;
+    const videos = scope.querySelectorAll('video');
+    if (videos.length > 1) return null;
+    const video = videos[0];
+    if (video instanceof HTMLVideoElement) {
+      if (video.closest('article') !== article) return null;
+      const source = selectMediaSourceUrl(video);
+      const trustedSource =
+        !!source &&
+        isValidMediaUrl(source) &&
+        new URL(source).hostname === 'video.twimg.com' &&
+        new URL(source).pathname.endsWith('.mp4');
+      if (source && !source.startsWith('blob:') && !trustedSource) return null;
+      const poster = video.getAttribute('poster');
+      if (poster && !isVideoThumbnailUrl(video.poster)) return null;
+      if (trustedSource || poster) return video;
+      const thumbnails = Array.from(scope.querySelectorAll('img')).filter((image) =>
+        isVideoThumbnailUrl(image.src)
+      );
+      return thumbnails.length === 1 ? video : null;
+    }
+    scope = scope.parentElement;
+  }
+  return null;
+}
 
 function isNativeStatusMediaLink(href: string | null | undefined): boolean {
   if (!href) return false;
@@ -114,7 +164,7 @@ function shouldBlockMediaTrigger(target: HTMLElement | null, event?: MouseEvent)
         : interactive.matches(MEDIA_LINK_SELECTOR) ||
           interactive.matches(MEDIA_CONTAINER_SELECTOR) ||
           interactive.querySelector(MEDIA_CONTAINER_SELECTOR) !== null;
-    return !isMediaLink;
+    return !isMediaLink && !findAllowAllUnmarkedVideoControl(target, videoMode);
   }
 
   return false;
@@ -122,6 +172,12 @@ function shouldBlockMediaTrigger(target: HTMLElement | null, event?: MouseEvent)
 
 export function isProcessableMedia(target: HTMLElement | null, event?: MouseEvent): boolean {
   if (!target || gallerySignals.isOpen || shouldBlockMediaTrigger(target, event)) return false;
+
+  const settings = tryGetSettings();
+  const videoMode = settings
+    ? getTypedSettingOr('gallery.videoClickMode', DEFAULT_SETTINGS.gallery.videoClickMode)
+    : DEFAULT_SETTINGS.gallery.videoClickMode;
+  if (findAllowAllUnmarkedVideoControl(target, videoMode)) return true;
 
   const mediaElement = findMediaElementInDOM(target);
   if (mediaElement) {
