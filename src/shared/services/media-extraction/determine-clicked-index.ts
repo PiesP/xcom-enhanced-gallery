@@ -10,7 +10,8 @@ import {
   selectMediaSourceUrl,
 } from '@shared/utils/media/media-element-utils';
 import { normalizeMediaUrl } from '@shared/utils/media/media-url-utils';
-import { isVideoPreview, isVideoThumbnailUrl } from '@shared/utils/media/video-preview';
+import { findNativeVideoControlMedia } from '@shared/utils/media/native-video-control';
+import { isVideoPreview } from '@shared/utils/media/video-preview';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
 
 type ClickedMediaMatch =
@@ -20,15 +21,17 @@ type ClickedMediaMatch =
 
 /** Snapshot only immutable selection evidence before asynchronous extraction. */
 export function captureClickedMediaEvidence(clickedElement: HTMLElement): ClickedMediaEvidence {
-  const siblingPreview = findBoundedSiblingVideoThumbnail(clickedElement);
-  const mediaElement = siblingPreview?.video ?? findMediaElementInDOM(clickedElement);
+  const nativeControl = findNativeVideoControlMedia(clickedElement);
+  const mediaElement =
+    nativeControl?.video ?? nativeControl?.thumbnail ?? findMediaElementInDOM(clickedElement);
   const expectsVideo =
+    nativeControl !== null ||
     mediaElement instanceof HTMLVideoElement ||
     isVideoPreview(clickedElement) ||
     (mediaElement !== null && isVideoPreview(mediaElement));
   const urls = [
     ...resolveClickedElementUrls(clickedElement, mediaElement),
-    ...(siblingPreview ? [siblingPreview.thumbnailUrl] : []),
+    ...(nativeControl?.thumbnailUrl ? [nativeControl.thumbnailUrl] : []),
   ]
     .map((url) => normalizeMediaUrl(url))
     .filter((url): url is string => !!url);
@@ -48,17 +51,18 @@ export function captureClickedMediaEvidence(clickedElement: HTMLElement): Clicke
           mediaElement.getAttribute('src') ? mediaElement.src : null,
           ...sources.slice(0, 8).map((source) => (source.getAttribute('src') ? source.src : null)),
           mediaElement.getAttribute('poster') ? mediaElement.poster : null,
-          siblingPreview?.thumbnailUrl ?? null,
+          nativeControl?.thumbnailUrl ?? null,
         ]
       : mediaElement
         ? [selectMediaSourceUrl(mediaElement)]
         : [];
-  const identityKeys = isBoundedClickedMedia(clickedElement, mediaElement)
-    ? directUrls.flatMap((url) => {
-        const key = getMediaIdentityKey(url);
-        return key ? [key] : [];
-      })
-    : [];
+  const identityKeys =
+    nativeControl || isBoundedClickedMedia(clickedElement, mediaElement)
+      ? directUrls.flatMap((url) => {
+          const key = getMediaIdentityKey(url);
+          return key ? [key] : [];
+        })
+      : [];
   return Object.freeze({
     urls: Object.freeze([...new Set(urls)]),
     mediaType: expectsVideo ? 'video' : mediaElement instanceof HTMLImageElement ? 'image' : null,
@@ -68,49 +72,6 @@ export function captureClickedMediaEvidence(clickedElement: HTMLElement): Clicke
       sources.length > 8 ||
       directUrls.some((url) => !!url && !url.startsWith('blob:') && !getMediaIdentityKey(url)),
   });
-}
-
-/** A native control can share one unmarked VIDEO and its one trusted preview image. */
-function findBoundedSiblingVideoThumbnail(
-  target: HTMLElement
-): { readonly video: HTMLVideoElement; readonly thumbnailUrl: string } | null {
-  const button = target.closest('button');
-  if (!(button instanceof HTMLButtonElement)) return null;
-  if (
-    button.hasAttribute('data-testid') ||
-    button.closest(
-      'a, nav, [role="toolbar"], [role="menu"], form, [data-testid="videoPlayer"], [data-testid="card.wrapper"], [data-testid="reply"], [data-testid="like"], [data-testid="retweet"], [data-testid="share"], [data-testid="bookmark"]'
-    )
-  )
-    return null;
-
-  const article = button.closest('article');
-  if (!article) return null;
-  let scope: HTMLElement | null = button.parentElement;
-  for (let hops = 0; hops < 3 && scope && scope !== article; hops++) {
-    if (scope.querySelector('article')) return null;
-    const videos = scope.querySelectorAll('video');
-    if (videos.length > 1) return null;
-    const video = videos[0];
-    if (video instanceof HTMLVideoElement) {
-      const images = scope.querySelectorAll('img');
-      if (images.length !== 1) return null;
-      const image = images[0];
-      if (!(image instanceof HTMLImageElement)) return null;
-      if (video.closest('article') !== article || image.closest('article') !== article) return null;
-      const thumbnailUrl = image.currentSrc || image.src;
-      const attributeUrl = image.getAttribute('src') ? image.src : null;
-      if (
-        image.currentSrc &&
-        attributeUrl &&
-        getMediaIdentityKey(image.currentSrc) !== getMediaIdentityKey(attributeUrl)
-      )
-        return null;
-      return isVideoThumbnailUrl(thumbnailUrl) ? { video, thumbnailUrl } : null;
-    }
-    scope = scope.parentElement;
-  }
-  return null;
 }
 
 function isBoundedClickedMedia(element: HTMLElement, media: HTMLElement | null): boolean {
