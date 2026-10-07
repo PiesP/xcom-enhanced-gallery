@@ -257,6 +257,18 @@ describe('production quoted-video pipeline', () => {
     expect(result.success).toBe(false);
   });
 
+  it('does not promote a nested attribution timestamp over the direct quote owner', async () => {
+    document.body.innerHTML = `<article><a href="/author_222/status/222"><time>A</time></a>
+      <div role="link"><article><a href="/author_111/status/111">B</a>
+        <a href="/author_333/status/333"><time>Attribution</time></a>
+        <video id="target" src="blob:https://x.com/nested" poster="${poster('700')}"></video>
+      </article></div></article>`;
+    const result = await new MediaExtractionService().extractFromClickedElement(document.getElementById('target')!);
+    expect(requestedId()).toBe('222');
+    expect(result.success).toBe(true);
+    expect(result.mediaItems[result.clickedIndex!]?.tweetId).toBe('111');
+  });
+
   it('refuses an unknown overlay containing multiple unmarked players', async () => {
     const clicked = target('unmarked');
     clicked.parentElement!.removeAttribute('data-testid');

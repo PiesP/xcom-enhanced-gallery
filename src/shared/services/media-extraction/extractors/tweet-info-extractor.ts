@@ -148,7 +148,10 @@ const extractFromDOM: ExtractionStrategy = (element) => {
     ...link,
     extractionMethod: 'dom-structure',
     confidence: 0.85,
-    metadata: { containerTag: container.tagName.toLowerCase() },
+    metadata: {
+      containerTag: container.tagName.toLowerCase(),
+      isTweetContainer: container === article,
+    },
   };
 };
 
@@ -246,7 +249,7 @@ function requestInfo(
 
 /** Keep query context separate from ownership in a bounded clickable branch. */
 function extractClickContext(element: HTMLElement): TweetClickContext | null {
-  const owner = extractTweetInfo(element);
+  let owner = extractTweetInfo(element);
   const enclosing = element.closest(STATUS_LINK_SELECTOR);
   const enclosingOwner = enclosing ? strictStatusLink(enclosing) : null;
   const attributeId = element.dataset.tweetId;
@@ -282,6 +285,12 @@ function extractClickContext(element: HTMLElement): TweetClickContext | null {
       boundary = node;
   }
   let requestArticle = article;
+  if (
+    !boundary &&
+    owner?.metadata?.isTweetContainer === true &&
+    new Set(getOwnStatusLinks(article, element).map(({ link }) => link.tweetId)).size > 1
+  )
+    owner = null;
   if (!boundary && !owner) {
     // A nested article can be a quote candidate only inside its immediate
     // parent's clickable boundary. Never borrow a neighboring reply or page URL.
@@ -307,7 +316,11 @@ function extractClickContext(element: HTMLElement): TweetClickContext | null {
   if (!boundary) return owner ? owned(owner) : null;
 
   const boundaryLinks = getOwnStatusLinks(boundary, element);
-  if (owner && boundaryLinks.some(({ link }) => link.tweetId === owner.tweetId))
+  if (
+    owner &&
+    new Set(boundaryLinks.map(({ link }) => link.tweetId)).size === 1 &&
+    boundaryLinks.some(({ link }) => link.tweetId === owner.tweetId)
+  )
     return owned(owner);
   // An explicit foreign or conflicting permalink is not missing evidence.
   if (
