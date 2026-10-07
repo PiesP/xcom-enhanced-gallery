@@ -276,16 +276,14 @@ describe('twitter-response-parser (pure functions)', () => {
         extended_entities: {
           media: [
             {
-              type: 'photo',
+              type: 'photo' as const,
               id_str: 'quoted-photo',
               media_url_https: 'https://pbs.twimg.com/media/quoted-photo.png',
             },
           ],
         },
       };
-      const tweet = { quoted_status_result: { result: quoted } } as any;
-
-      const entries = extractMediaFromTweet(tweet, { screen_name: 'bob' }, 'quoted');
+      const entries = extractMediaFromTweet(quoted, { screen_name: 'bob' }, 'quoted');
 
       expect(entries).toHaveLength(1);
       expect(entries[0]).toMatchObject({
@@ -293,6 +291,18 @@ describe('twitter-response-parser (pure functions)', () => {
         media_id: 'quoted-photo',
         sourceLocation: 'quoted',
       });
+    });
+
+    it('keeps supplied B media and author when B also quotes C', () => {
+      const supplied = {
+        rest_id: '111',
+        full_text: 'B text',
+        extended_entities: { media: [{ type: 'photo' as const, id_str: 'B-photo', media_url_https: 'https://pbs.twimg.com/media/B.png' }] },
+        quoted_status_result: { result: { rest_id: '333', full_text: 'C text', extended_entities: { media: [{ type: 'photo' as const, id_str: 'C-photo', media_url_https: 'https://pbs.twimg.com/media/C.png' }] } } },
+      };
+      expect(extractMediaFromTweet(supplied, { screen_name: 'B_author' }, 'quoted')).toMatchObject([
+        { tweet_id: '111', screen_name: 'B_author', tweet_text: 'B text', media_id: 'B-photo', sourceLocation: 'quoted' },
+      ]);
     });
   });
 

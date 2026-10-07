@@ -177,9 +177,9 @@ export function extractMediaFromTweet(
   tweetUser: TwitterUser,
   sourceLocation: 'original' | 'quoted' = 'original'
 ): TweetMediaEntry[] {
-  const quotedResult = tweetResult.quoted_status_result?.result;
-  const target: TwitterTweet =
-    sourceLocation === 'quoted' && quotedResult ? quotedResult : tweetResult;
+  // The client selects and normalizes the intended tweet exactly once.
+  // Provenance labels never authorize traversing another quote descendant.
+  const target = tweetResult;
 
   if (!target.extended_entities?.media) return [];
 
