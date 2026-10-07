@@ -333,14 +333,14 @@ async function createServiceWorkerObserver(browserCdp, pageCdp) {
   };
 }
 
-async function enableDeveloperMode(context) {
+export async function enableDeveloperMode(context, browserName) {
   const page = await context.newPage();
   try {
-    await page.goto('chrome://extensions/');
-    const toggle = page.locator('#devMode');
+    await page.goto(browserName === 'msedge' ? 'edge://extensions/' : 'chrome://extensions/');
+    const toggle = page.locator(browserName === 'msedge' ? '#dev-switch:visible' : '#devMode');
     await toggle.waitFor({ state: 'visible' });
     if (!(await toggle.evaluate((element) => element.checked))) await toggle.click();
-    assert(await toggle.evaluate((element) => element.checked), 'Chrome extension developer mode is disabled');
+    assert(await toggle.evaluate((element) => element.checked), 'Extension developer mode is disabled');
   } finally {
     await page.close();
   }
@@ -1897,7 +1897,7 @@ export async function run({
       args: ['--enable-unsafe-extension-debugging'],
     });
     result.browserVersion = context.browser().version();
-    await enableDeveloperMode(context);
+    await enableDeveloperMode(context, browserName);
     await verifyDownloadDirectory(context, downloads);
     browserCdp = await context.browser().newBrowserCDPSession();
     // Use Chrome's download manager and this fresh profile's directory preference

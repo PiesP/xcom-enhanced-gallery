@@ -5,7 +5,7 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 type LivePageModule = {
   inspectLiveTargetDocument(identity: {
@@ -32,6 +32,7 @@ type LivePageModule = {
 };
 
 type InstallProfileModule = {
+  enableDeveloperMode(context: unknown, browserName: string): Promise<void>;
   run(options: {
     browserName: string;
     chromium: { launchPersistentContext(): Promise<never> };
@@ -51,6 +52,49 @@ const installProfile = (await import(
 )) as InstallProfileModule;
 
 describe('Windows X live page validation', () => {
+  it('uses the visible Edge switch and its checked property, while keeping Chrome controls', async () => {
+    for (const browserName of ['msedge', 'chrome']) {
+      const visible = { checked: browserName === 'chrome', getAttribute: () => 'false' };
+      const click = vi.fn(async () => { visible.checked = true; });
+      const locator = vi.fn((selector: string) => {
+        const expected = browserName === 'msedge' ? '#dev-switch:visible' : '#devMode';
+        if (selector !== expected) throw new Error('Selected a hidden or unsupported toggle');
+        return {
+          waitFor: vi.fn(async () => {}),
+          evaluate: async (read: (element: typeof visible) => boolean) => read(visible),
+          click,
+        };
+      });
+      const page = { goto: vi.fn(async () => {}), locator, close: vi.fn(async () => {}) };
+      await installProfile.enableDeveloperMode({ newPage: async () => page }, browserName);
+      expect(page.goto).toHaveBeenCalledWith(
+        browserName === 'msedge' ? 'edge://extensions/' : 'chrome://extensions/'
+      );
+      expect(locator).toHaveBeenCalledWith(
+        browserName === 'msedge' ? '#dev-switch:visible' : '#devMode'
+      );
+      expect(click).toHaveBeenCalledTimes(browserName === 'msedge' ? 1 : 0);
+      expect(visible.checked).toBe(true);
+      expect(page.close).toHaveBeenCalledOnce();
+    }
+  });
+
+  it('rejects an Edge switch that remains disabled after clicking', async () => {
+    const switchElement = { checked: false };
+    const page = {
+      goto: vi.fn(async () => {}),
+      locator: vi.fn(() => ({
+        waitFor: async () => {},
+        evaluate: async (read: (element: typeof switchElement) => boolean) => read(switchElement),
+        click: async () => {},
+      })),
+      close: vi.fn(async () => {}),
+    };
+    await expect(installProfile.enableDeveloperMode({ newPage: async () => page }, 'msedge'))
+      .rejects.toThrow('developer mode is disabled');
+    expect(page.close).toHaveBeenCalledOnce();
+  });
+
   it('accepts only exact public X and Twitter status URLs', () => {
     expect(
       livePage.validateLiveUrls([
