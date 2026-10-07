@@ -776,14 +776,26 @@ export function inspectHitTestedVideoActionDocument(element, { posterPath }) {
   const samples = [[0.2, 0.2], [0.8, 0.2], [0.2, 0.4], [0.8, 0.4],
     [0.5, 0.25], [0.5, 0.45], [0.2, 0.6], [0.8, 0.6], [0.5, 0.7]];
   let rejectedControls = 0;
+  let nativePlay = null;
   for (const [fx, fy] of samples) {
     const x = Math.round(rect.left + rect.width * fx);
     const y = Math.round(rect.top + rect.height * fy);
     if (x < 0 || y < 0 || x >= innerWidth || y >= innerHeight) continue;
     const top = document.elementsFromPoint(x, y)[0];
     if (!top || top.closest('article') !== quoteArticle) continue;
-    if (top.closest('button, [role="button"], input, select, textarea, [data-testid="videoPlayerControls"]')) {
+    const control = top.closest('button, [role="button"], input, select, textarea, [data-testid="videoPlayerControls"]');
+    if (control) {
       rejectedControls += 1;
+      if (!nativePlay && control.matches('button, [role="button"]')) {
+        let mediaScope = element;
+        for (let depth = 0; mediaScope && depth <= 5 && mediaScope !== quoteArticle;
+          depth += 1, mediaScope = mediaScope.parentElement) {
+          if (mediaScope.contains(control)) {
+            nativePlay = { x, y, topTag: top.tagName.toLowerCase(), mediaScopeDepth: depth };
+            break;
+          }
+        }
+      }
       continue;
     }
     let mediaScope = element;
@@ -796,31 +808,116 @@ export function inspectHitTestedVideoActionDocument(element, { posterPath }) {
             .includes(top.getAttribute('data-testid')) ? top.getAttribute('data-testid') : null,
           mediaScopeDepth: depth,
           rejectedControls,
+          nativePlay,
         };
       }
     }
   }
   return { inQuote: false, x: null, y: null, topTag: null,
-    topTestId: null, mediaScopeDepth: null, rejectedControls };
+    topTestId: null, mediaScopeDepth: null, rejectedControls, nativePlay };
+}
+
+export function inspectHostVideoDocument(video, { posterPath }) {
+  if (!(video instanceof HTMLVideoElement) || !video.closest('article')) return null;
+  let poster = null;
+  try {
+    const url = new URL(video.poster, location.href);
+    if (url.protocol === 'https:' && url.hostname === 'pbs.twimg.com' &&
+        url.pathname === posterPath) poster = { host: url.hostname, path: url.pathname };
+  } catch {
+    // Keep the missing poster explicit.
+  }
+  const sourceValue = video.currentSrc || video.src;
+  let sourceKind = 'none';
+  let source = null;
+  if (sourceValue.startsWith('blob:')) sourceKind = 'blob';
+  else if (sourceValue) {
+    try {
+      const url = new URL(sourceValue);
+      if (url.protocol === 'https:' && url.hostname === 'video.twimg.com') {
+        sourceKind = 'trusted-video-cdn';
+        source = { host: url.hostname, path: url.pathname };
+      } else sourceKind = 'other';
+    } catch {
+      sourceKind = 'other';
+    }
+  }
+  return {
+    poster,
+    sourceKind,
+    source,
+    readyState: video.readyState,
+    width: video.videoWidth,
+    height: video.videoHeight,
+    mediaErrorCode: video.error?.code ?? null,
+    currentTime: video.currentTime,
+    paused: video.paused,
+  };
 }
 
 async function observeQuotedVideo(page, observation, identity, output, index, settleApi) {
   const target = observation.target;
   const article = page.locator('article').nth(target.articleIndex);
-  const player = target.playerIndex >= 0
+  let clickSurface = target.playerIndex >= 0
     ? article.locator('[data-testid="videoPlayer"]').nth(target.playerIndex)
     : target.previewIndex >= 0
       ? article.locator('[data-testid="previewInterstitial"]').nth(target.previewIndex)
     : target.posterIndex >= 0
       ? article.locator('img').nth(target.posterIndex)
     : article.locator('video').nth(target.videoIndex);
-  await player.scrollIntoViewIfNeeded({ timeout: ACTION_TIMEOUT_MS });
+  await clickSurface.scrollIntoViewIfNeeded({ timeout: ACTION_TIMEOUT_MS });
   if ((await hostSnapshot(page)).scrollY === 0) await page.mouse.wheel(0, 160);
-  const hit = await player.evaluate(inspectHitTestedVideoActionDocument,
+  let hit = await clickSurface.evaluate(inspectHitTestedVideoActionDocument,
     { posterPath: target.posterSource?.path ?? null });
-  observation.target.hitTest = hit;
-  if (!hit?.inQuote) throw new Error('Quoted video did not own the hit-tested point');
-  const actionHandle = await player.elementHandle();
+  observation.target.initialHitTest = hit;
+  if (!hit?.inQuote && hit?.nativePlay && target.videoIndex >= 0) {
+    const hostVideo = article.locator('video').nth(target.videoIndex);
+    const beforeNative = await hostVideo.evaluate(inspectHostVideoDocument,
+      { posterPath: target.posterSource?.path ?? null });
+    const confirmation = await clickSurface.evaluate(inspectHitTestedVideoActionDocument,
+      { posterPath: target.posterSource?.path ?? null });
+    if (!beforeNative?.poster || !confirmation?.nativePlay ||
+        confirmation.nativePlay.x !== hit.nativePlay.x ||
+        confirmation.nativePlay.y !== hit.nativePlay.y) {
+      throw new Error('Native quote play action changed before click');
+    }
+    observation.target.nativePlayback = { status: 'attempting', before: beforeNative,
+      action: hit.nativePlay };
+    await page.mouse.click(hit.nativePlay.x, hit.nativePlay.y);
+    observation.target.nativePlayback.galleryOpenedOnControlClick =
+      await page.locator('[data-xeg-gallery-container]').count() > 0;
+    if (observation.target.nativePlayback.galleryOpenedOnControlClick) {
+      throw new Error('Native play control unexpectedly opened the gallery');
+    }
+    await page.waitForFunction(({ articleIndex, videoIndex, startTime }) => {
+      const article = document.querySelectorAll('article')[articleIndex];
+      const video = article?.querySelectorAll('video')[videoIndex];
+      return video && !video.error && video.readyState >= 2 &&
+        video.videoWidth > 0 && video.videoHeight > 0 &&
+        video.currentTime >= startTime + 0.15;
+    }, { articleIndex: target.articleIndex, videoIndex: target.videoIndex,
+      startTime: beforeNative.currentTime }, { timeout: 8_000, polling: 100 }).catch(() => {});
+    const afterNative = await hostVideo.evaluate(inspectHostVideoDocument,
+      { posterPath: target.posterSource?.path ?? null }).catch(() => null);
+    observation.target.nativePlayback = {
+      ...observation.target.nativePlayback,
+      status: afterNative && afterNative.readyState >= 2 &&
+        afterNative.width > 0 && afterNative.height > 0 &&
+        afterNative.mediaErrorCode === null &&
+        afterNative.currentTime >= beforeNative.currentTime + 0.15 ? 'playing' : 'unverified',
+      after: afterNative,
+    };
+    if (observation.target.nativePlayback.status !== 'playing') {
+      observation.classification = 'host-video-provider-unavailable';
+      throw new Error('Native quote video did not play after ordinary control click');
+    }
+    clickSurface = hostVideo;
+    hit = await clickSurface.evaluate(inspectHitTestedVideoActionDocument,
+      { posterPath: target.posterSource?.path ?? null });
+    observation.target.hitTestAfterNativePlayback = hit;
+  }
+  if (!hit?.inQuote) throw new Error('No non-control quoted video gallery action was hit-tested');
+  const actionHandle = await clickSurface.elementHandle();
   if (!actionHandle) throw new Error('Quoted video detached before interaction');
   let focusHandle;
   try {
@@ -833,7 +930,7 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
     const focusPrepared = await actionHandle.evaluate((element) => document.activeElement === element);
     observation.gallery = { status: 'attempting', before, focusPrepared };
     observation.screenshots.before = await captureScreenshot(page, output, `live-page-${index}-before.png`);
-    const finalHit = await player.evaluate(inspectHitTestedVideoActionDocument,
+    const finalHit = await clickSurface.evaluate(inspectHitTestedVideoActionDocument,
       { posterPath: target.posterSource?.path ?? null });
     observation.gallery.identityBeforeClick = Boolean(finalHit?.inQuote &&
       finalHit.x === hit.x && finalHit.y === hit.y);

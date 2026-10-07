@@ -42,6 +42,14 @@ type LivePageModule = {
     y: number | null;
     rejectedControls: number;
     mediaScopeDepth: number | null;
+    nativePlay?: { x: number; y: number; mediaScopeDepth: number } | null;
+  };
+  inspectHostVideoDocument(video: HTMLVideoElement, expected: {
+    posterPath: string;
+  }): null | {
+    sourceKind: string;
+    poster: { host: string; path: string } | null;
+    currentTime: number;
   };
   summarizeTweetResultResponse(url: string, status: number, body: unknown): unknown;
   inspectSelectedGalleryDocument(expected: {
@@ -481,6 +489,44 @@ describe('Windows X live page validation', () => {
       expect(livePage.inspectHitTestedVideoActionDocument(image, {
         posterPath: '/amplify_video_thumb/456/img/b.jpg',
       })).toMatchObject({ inQuote: false, rejectedControls: 9 });
+    } finally {
+      Reflect.deleteProperty(document, 'elementsFromPoint');
+    }
+  });
+
+  it('identifies a bounded native play control separately from a gallery action', () => {
+    document.body.innerHTML = `
+      <article><div>
+        <img src="https://pbs.twimg.com/amplify_video_thumb/456/img/b.jpg">
+        <button>Native play</button>
+        <video src="blob:https://x.com/private" poster="https://pbs.twimg.com/amplify_video_thumb/456/img/b.jpg"></video>
+      </div></article>
+    `;
+    const image = document.querySelector<HTMLImageElement>('img');
+    const button = document.querySelector<HTMLButtonElement>('button');
+    const video = document.querySelector<HTMLVideoElement>('video');
+    if (!image || !button || !video) throw new Error('Native play fixture missing');
+    image.getBoundingClientRect = () => ({
+      bottom: 200, height: 100, left: 0, right: 200, toJSON: () => ({}),
+      top: 100, width: 200, x: 0, y: 100,
+    });
+    Object.defineProperty(document, 'elementsFromPoint', {
+      configurable: true,
+      value: () => [button],
+    });
+    try {
+      expect(livePage.inspectHitTestedVideoActionDocument(image, {
+        posterPath: '/amplify_video_thumb/456/img/b.jpg',
+      })).toMatchObject({
+        inQuote: false,
+        nativePlay: { x: 40, y: 120, mediaScopeDepth: 1 },
+      });
+      expect(livePage.inspectHostVideoDocument(video, {
+        posterPath: '/amplify_video_thumb/456/img/b.jpg',
+      })).toMatchObject({
+        sourceKind: 'blob',
+        poster: { host: 'pbs.twimg.com', path: '/amplify_video_thumb/456/img/b.jpg' },
+      });
     } finally {
       Reflect.deleteProperty(document, 'elementsFromPoint');
     }
