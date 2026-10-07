@@ -32,6 +32,7 @@ type LivePageModule = {
 };
 
 type InstallProfileModule = {
+  assertDownloadIncomplete(download: unknown, stage: string): void;
   enableDeveloperMode(context: unknown, browserName: string): Promise<void>;
   run(options: {
     browserName: string;
@@ -52,6 +53,22 @@ const installProfile = (await import(
 )) as InstallProfileModule;
 
 describe('Windows X live page validation', () => {
+  it('rejects a paused in-progress download after all bytes have arrived', () => {
+    const download = {
+      bytesReceived: 256 * 1024 * 1024,
+      id: 7,
+      paused: true,
+      state: 'in_progress',
+      totalBytes: 256 * 1024 * 1024,
+    };
+    expect(() => installProfile.assertDownloadIncomplete(download, 'before worker stop'))
+      .toThrow(/before worker stop.*bytesReceived.*268435456.*totalBytes.*268435456/u);
+    expect(() => installProfile.assertDownloadIncomplete({
+      ...download,
+      bytesReceived: download.totalBytes - 1,
+    }, 'before worker stop')).not.toThrow();
+  });
+
   it('uses the visible Edge switch and its checked property, while keeping Chrome controls', async () => {
     for (const browserName of ['msedge', 'chrome']) {
       const visible = { checked: browserName === 'chrome', getAttribute: () => 'false' };
