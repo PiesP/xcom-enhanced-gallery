@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Installed quoted video fixture</title>
+  <style>
+    body { margin: 0; padding: 20px; background: #000; color: #e7e9ea; font: 16px "Segoe UI", sans-serif; }
+    #host-layout-spacer { height: 1200px; }
+    .quote-case { display: none; max-width: 640px; margin: 0 auto; }
+    body[data-quote-case="recognized"] [data-case="recognized"],
+    body[data-quote-case="unmarked"] [data-case="unmarked"],
+    body[data-quote-case="linked"] [data-case="linked"],
+    body[data-quote-case="nested"] [data-case="nested"],
+    body[data-quote-case="nested-direct"] [data-case="nested-direct"] { display: block; }
+    .quote-branch { margin: 20px; padding: 12px; border: 1px solid #555; }
+    .video-shell { width: 320px; height: 180px; position: relative; }
+    .video-shell img, .video-shell video { width: 320px; height: 180px; display: block; }
+    .video-shell video { display: none; }
+    .video-shell [data-testid="playButton"] { position: absolute; right: 8px; bottom: 8px; z-index: 1; }
+    .video-shell[data-playing="true"] [data-testid="previewInterstitial"] { display: none; }
+    .video-shell[data-playing="true"] video { display: block; }
+  </style>
+</head>
+<body data-quote-case="recognized">
+  <div id="host-layout-spacer" aria-hidden="true"></div>
+  <main>
+    <article class="quote-case" data-case="recognized" data-testid="tweet">
+      <a href="/outer_one/status/8111111111111111111"><time>Outer one</time></a>
+      <div data-testid="quoteTweet" class="quote-branch">
+        <span>Quote one, no quoted permalink</span>
+        <div data-testid="tweetPhoto"><img src="https://pbs.twimg.com/media/QQuoteOnePhoto.jpg" alt="Quote one image" width="320" height="180"></div>
+        <div data-testid="videoPlayer" class="video-shell" data-video-key="quote-one">
+          <div data-testid="previewInterstitial"><img data-quote-target tabindex="0" src="https://pbs.twimg.com/ext_tw_video_thumb/9111111111111111111/pu/img/quote-one.jpg" alt="Quote one video preview"></div>
+          <button data-testid="playButton" type="button" aria-label="Play quoted video">Play</button>
+          <video controls poster="https://pbs.twimg.com/ext_tw_video_thumb/9111111111111111111/pu/img/quote-one.jpg"></video>
+        </div>
+      </div>
+    </article>
+
+    <article class="quote-case" data-case="unmarked" data-testid="tweet">
+      <a href="/outer_two/status/8222222222222222222"><time>Outer two</time></a>
+      <div data-testid="videoPlayer" class="video-shell">
+        <img data-outer-target tabindex="0" src="https://pbs.twimg.com/ext_tw_video_thumb/8222222222222222222/pu/img/outer-unmarked.jpg" alt="Outer two video preview">
+        <video poster="https://pbs.twimg.com/ext_tw_video_thumb/8222222222222222222/pu/img/outer-unmarked.jpg"></video>
+      </div>
+      <div role="link" tabindex="0" class="quote-branch">
+        <span>Quote two clickable card without a permalink or quote marker</span>
+        <div data-testid="tweetPhoto"><img src="https://pbs.twimg.com/media/QQuoteTwoPhoto.jpg" alt="Quote two image" width="320" height="180"></div>
+        <div data-testid="videoPlayer" class="video-shell" data-video-key="quote-two">
+          <div data-testid="previewInterstitial"><img data-quote-target tabindex="0" src="https://pbs.twimg.com/ext_tw_video_thumb/9222222222222222222/pu/img/quote-two.jpg" alt="Quote two video preview"></div>
+          <button data-testid="playButton" type="button" aria-label="Play quoted video">Play</button>
+          <video controls poster="https://pbs.twimg.com/ext_tw_video_thumb/9222222222222222222/pu/img/quote-two.jpg"></video>
+        </div>
+      </div>
+    </article>
+
+    <article class="quote-case" data-case="linked" data-testid="tweet">
+      <a href="/outer_four/status/8444444444444444444"><time>Outer four</time></a>
+      <div data-testid="quoteTweet" class="quote-branch">
+        <a href="/quote_four/status/9444444444444444444"><time>Quote four permalink</time></a>
+        <div data-testid="tweetPhoto"><img src="https://pbs.twimg.com/media/QQuoteFourPhoto.jpg" alt="Linked quote image" width="320" height="180"></div>
+        <a href="/quote_four/status/9444444444444444444/video/2">
+          <div data-testid="videoPlayer" class="video-shell" data-video-key="linked-four">
+            <div data-testid="previewInterstitial"><img data-quote-target tabindex="0" src="https://pbs.twimg.com/ext_tw_video_thumb/9444444444444444444/pu/img/linked-four.jpg" alt="Linked quote video preview"></div>
+            <button data-testid="playButton" type="button" aria-label="Play quoted video">Play</button>
+            <video controls poster="https://pbs.twimg.com/ext_tw_video_thumb/9444444444444444444/pu/img/linked-four.jpg"></video>
+          </div>
+        </a>
+      </div>
+    </article>
+
+    <article class="quote-case" data-case="nested" data-testid="tweet">
+      <a href="/outer_three/status/8333333333333333333"><time>Outer three</time></a>
+      <div data-testid="tweetPhoto"><img src="https://pbs.twimg.com/media/QOuterThreePhoto.jpg" alt="Outer three image" width="320" height="180"></div>
+      <div data-testid="quoteTweet" class="quote-branch">
+        <span>Quote three, no quoted permalink</span>
+        <div data-testid="videoPlayer" class="video-shell" data-video-key="quote-three">
+          <div data-testid="previewInterstitial"><img data-quote-target tabindex="0" src="https://pbs.twimg.com/ext_tw_video_thumb/9333333333333333333/pu/img/quote-three.jpg" alt="Quote three video preview"></div>
+          <button data-testid="playButton" type="button" aria-label="Play quoted video">Play</button>
+          <video controls poster="https://pbs.twimg.com/ext_tw_video_thumb/9333333333333333333/pu/img/quote-three.jpg"></video>
+        </div>
+        <div data-testid="quoteTweet" class="quote-branch">
+          <a href="/nested_c/status/7333333333333333333"><time>Nested C permalink</time></a>
+          <div data-testid="videoPlayer" class="video-shell"><video poster="https://pbs.twimg.com/ext_tw_video_thumb/7333333333333333333/pu/img/nested-c.jpg"></video></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="quote-case" data-case="nested-direct" data-testid="tweet">
+      <a href="/quote_three/status/9333333333333333333"><time>Quote three direct permalink</time></a>
+      <div data-testid="videoPlayer" class="video-shell" data-video-key="quote-three">
+        <div data-testid="previewInterstitial"><img data-quote-target tabindex="0" src="https://pbs.twimg.com/ext_tw_video_thumb/9333333333333333333/pu/img/quote-three.jpg" alt="Quote three direct video preview"></div>
+        <button data-testid="playButton" type="button" aria-label="Play quoted video">Play</button>
+        <video controls poster="https://pbs.twimg.com/ext_tw_video_thumb/9333333333333333333/pu/img/quote-three.jpg"></video>
+      </div>
+      <div data-testid="quoteTweet" class="quote-branch">
+        <a href="/nested_c/status/7333333333333333333"><time>Nested C permalink</time></a>
+        <div data-testid="videoPlayer" class="video-shell"><video poster="https://pbs.twimg.com/ext_tw_video_thumb/7333333333333333333/pu/img/nested-c.jpg"></video></div>
+      </div>
+    </article>
+  </main>
+  <script>
+    const currentCase = document.querySelector(`[data-case="${document.body.dataset.quoteCase}"]`);
+    const shell = currentCase.querySelector('[data-video-key]');
+    const key = shell.dataset.videoKey;
+    let playableBytes;
+    fetch(`https://video.twimg.com/fixture/${key}.mp4`)
+      .then((response) => {
+        if (!response.ok) throw new Error(`Host video fixture HTTP ${response.status}`);
+        return response.arrayBuffer();
+      })
+      .then((bytes) => { playableBytes = bytes; document.body.dataset.videoReady = 'true'; })
+      .catch((error) => { document.body.dataset.videoError = error.message; });
+    shell.querySelector('[data-testid="playButton"]').addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!playableBytes) throw new Error('Host playable bytes unavailable');
+      const video = shell.querySelector('video');
+      const objectUrl = URL.createObjectURL(new Blob([playableBytes], { type: 'video/mp4' }));
+      video.src = objectUrl;
+      shell.dataset.playing = 'true';
+      document.body.dataset.hostBlobUrl = objectUrl;
+      video.play().catch((error) => { document.body.dataset.videoError = error.message; });
+    });
+    window.addEventListener('pagehide', () => {
+      if (document.body.dataset.hostBlobUrl) URL.revokeObjectURL(document.body.dataset.hostBlobUrl);
+    });
+  </script>
+</body>
+</html>
