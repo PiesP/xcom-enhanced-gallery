@@ -153,6 +153,29 @@ describe('unmarked native video controls in quoted posts', () => {
     expect(isProcessableMedia(target)).toBe(true);
   });
 
+  it.each(['block-all', 'block-controls-only', 'allow-all'] as const)(
+    'accepts a pre-player thumbnail beside ordinary images only under %s when configured',
+    (mode) => {
+      setVideoMode(mode);
+      const target = renderUnmarkedQuote(
+        `<img src="https://pbs.twimg.com/profile_images/one.jpg">
+         <img src="https://pbs.twimg.com/media/ordinary-photo.jpg">
+         <img src="${thumb}">`
+      );
+      expect(isProcessableMedia(target)).toBe(mode === 'allow-all');
+    }
+  );
+
+  it('accepts one video and one trusted thumbnail among ordinary images', () => {
+    setVideoMode('allow-all');
+    const target = renderUnmarkedQuote(
+      `<img src="https://pbs.twimg.com/profile_images/one.jpg">
+       <video src="blob:https://x.com/started"></video>
+       <img src="${thumb}"><img src="https://pbs.twimg.com/media/ordinary-photo.jpg">`
+    );
+    expect(isProcessableMedia(target)).toBe(true);
+  });
+
   it('accepts a unique direct trusted MP4 video without a poster', () => {
     setVideoMode('allow-all');
     const target = renderUnmarkedQuote(
@@ -169,7 +192,8 @@ describe('unmarked native video controls in quoted posts', () => {
     '<video></video><img src="https://pbs.twimg.com/media/ordinary-photo.jpg">',
     '<video src="https://video.twimg.com/ext_tw_video/222/pu/vid/clip.mp4"></video><img src="https://pbs.twimg.com/media/ordinary-photo.jpg">',
     `<img src="https://pbs.twimg.com/media/ordinary-photo.jpg"><video poster="${thumb}"></video>`,
-    `<video></video><img src="${thumb}"><img src="https://pbs.twimg.com/media/ordinary-photo.jpg">`,
+    '<img src="https://pbs.twimg.com/media/ordinary-photo.jpg">',
+    `<img src="${thumb}"><img src="${thumb}">`,
     `<video></video><img src="${thumb}"><img src="https://pbs.twimg.com/video_thumb/other/frame.jpg">`,
     `<video poster="${thumb}"></video><video poster="${thumb}"></video>`,
   ])('rejects a control without one trustworthy video owner: %s', (video) => {
