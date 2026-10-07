@@ -16,6 +16,7 @@ import {
 } from 'node:fs/promises';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import {
+  createControlledVideoSettings,
   observeLiveUrls,
   validateLiveObservation,
   validateLiveUrls,
@@ -403,6 +404,9 @@ async function installFixtureRoutes(context, root, images) {
   const quotedHtml = await readFile(
     join(root, 'test/e2e/fixtures/installed-quoted-video-page.html'), 'utf8'
   );
+  const preplayerHtml = await readFile(
+    join(root, 'test/e2e/fixtures/installed-public-preplayer-page.html'), 'utf8'
+  );
   const videoPayloads = Object.fromEntries(await Promise.all(
     ['quote-one', 'quote-two', 'linked-four', 'quote-three', 'nested-c'].map(async (name) => [
       name, await readFile(join(root, `test/e2e/fixtures/installed-${name}.mp4`)),
@@ -446,7 +450,8 @@ async function installFixtureRoutes(context, root, images) {
       await route.fulfill({
         contentType: 'text/html',
         body: quotedCase
-          ? quotedHtml.replace('<body data-quote-case="recognized">',
+          ? quotedCase.name === 'public-preplayer' ? preplayerHtml
+            : quotedHtml.replace('<body data-quote-case="recognized">',
               `<body data-quote-case="${quotedCase.route}">`)
           : url.pathname === new URL(PUBLIC_FIXTURE_URL).pathname
           ? html.replace(
@@ -1721,9 +1726,10 @@ async function assertQuotedGallery(page, quotedCase) {
   assert.equal(await gallery.getAttribute('role'), 'dialog');
   assert.equal(await gallery.getAttribute('aria-modal'), 'true');
   const counter = gallery.locator('#xeg-toolbar-counter');
-  const expectedTotal = quotedCase.name === 'linked' || quotedCase.name === 'recognized' ? 2
+  const expectedTotal = quotedCase.expectedTotal ?? (quotedCase.name === 'linked' ||
+    quotedCase.name === 'recognized' ? 2
     : quotedCase.name === 'nested-from-outer' || quotedCase.name === 'nested-direct-quote'
-      ? 2 : 3;
+      ? 2 : 3);
   assert.equal(Number(await counter.getAttribute('data-position')),
     quotedCase.expectedPosition, 'Quoted video selection must preserve its collection index');
   assert.equal(Number(await counter.getAttribute('data-total')), expectedTotal,
@@ -1848,6 +1854,210 @@ async function runOuterVideoControl({ quotedCase, quotedApiResponses, downloads,
     navigation: { awayKey: 'ArrowLeft', returnKey: 'ArrowRight', quoted, returned },
     download: { filename, file, bytes: bytes.length,
       sha256: createHash('sha256').update(bytes).digest('hex') }, close };
+}
+
+async function withControlledFixtureVideoMode(extensionPage, evidence, action) {
+  const key = 'xeg-app-settings';
+  let prior;
+  let mutated = false;
+  let result;
+  let validationError;
+  let cleanupError;
+  let restored = false;
+  try {
+    prior = await extensionPage.evaluate(async (storageKey) => {
+      const values = await chrome.storage.local.get(storageKey);
+      return { exists: Object.hasOwn(values, storageKey), value: values[storageKey] ?? null };
+    }, key);
+    evidence.priorStoredMode = prior.value?.gallery?.videoClickMode ?? null;
+    const next = createControlledVideoSettings(prior.value, Date.now());
+    mutated = true;
+    await extensionPage.evaluate(async ({ storageKey, value }) => {
+      await chrome.storage.local.set({ [storageKey]: value });
+    }, { storageKey: key, value: next });
+    const effective = await extensionPage.evaluate(async (storageKey) => {
+      const values = await chrome.storage.local.get(storageKey);
+      return values[storageKey]?.gallery?.videoClickMode ?? null;
+    }, key);
+    assert.equal(effective, 'allow-all', 'Preplayer fixture must use the supported allow-all mode');
+    evidence.effectiveMode = effective;
+    result = await action();
+  } catch (error) {
+    validationError = error;
+  } finally {
+    try {
+      if (mutated) {
+        await extensionPage.evaluate(async ({ storageKey, previous }) => {
+          if (previous.exists) await chrome.storage.local.set({ [storageKey]: previous.value });
+          else await chrome.storage.local.remove(storageKey);
+        }, { storageKey: key, previous: prior });
+        restored = await extensionPage.evaluate(async ({ storageKey, previous }) => {
+          const values = await chrome.storage.local.get(storageKey);
+          return Object.hasOwn(values, storageKey) === previous.exists &&
+            (!previous.exists || JSON.stringify(values[storageKey]) === JSON.stringify(previous.value));
+        }, { storageKey: key, previous: prior });
+      } else restored = true;
+      evidence.restored = restored;
+      assert.equal(restored, true, 'Preplayer fixture must restore the full prior settings value');
+    } catch (error) {
+      evidence.restored = false;
+      cleanupError = error;
+    }
+  }
+  if (validationError && cleanupError) {
+    throw new AggregateError([validationError, cleanupError],
+      'Preplayer fixture validation and settings restoration both failed');
+  }
+  if (validationError) throw validationError;
+  if (cleanupError) throw cleanupError;
+  return { ...result, controlledSetting: evidence };
+}
+
+async function runPublicPreplayerCycle({ quotedCase, quotedApiResponses, apiResponses, downloads,
+  extensionPage, output, page, videoPayloads, settingEvidence }) {
+  return withControlledFixtureVideoMode(extensionPage, settingEvidence, async () => {
+    const pageUrl = `https://x.com/${quotedCase.handle}/status/${quotedCase.outer}`;
+    await page.goto(pageUrl);
+    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({
+      state: 'attached', timeout: 15_000,
+    });
+    const effective = await extensionPage.evaluate(async () => {
+      const values = await chrome.storage.local.get('xeg-app-settings');
+      return values['xeg-app-settings']?.gallery?.videoClickMode ?? null;
+    });
+    assert.equal(effective, 'allow-all', 'Preplayer mode must remain active after page readiness');
+    const precondition = await page.evaluate(() => {
+      const outer = document.querySelector('[data-case="public-preplayer"]');
+      const quote = outer?.querySelector('[role="link"] > article');
+      const media = quote?.querySelector('[data-preplayer-media]');
+      const button = media?.querySelector('button');
+      const ownPaths = (article) => [...(article?.querySelectorAll('a[href]') ?? [])]
+        .filter((anchor) => anchor.closest('article') === article)
+        .map((anchor) => ({ path: new URL(anchor.href).pathname,
+          containsTime: anchor.querySelector('time') !== null }));
+      return {
+        outerStatusAnchors: ownPaths(outer), quoteStatusAnchors: ownPaths(quote),
+        nestedArticleCount: outer?.querySelectorAll('article').length ?? 0,
+        roleLink: quote?.parentElement?.getAttribute('role') ?? null,
+        videoCount: outer?.querySelectorAll('video').length ?? -1,
+        totalImageCount: quote?.querySelectorAll('img').length ?? -1,
+        trustedThumbnailCount: [...(quote?.querySelectorAll('img') ?? [])]
+          .filter((image) => new URL(image.src).hostname === 'pbs.twimg.com' &&
+            new URL(image.src).pathname.startsWith('/ext_tw_video_thumb/')).length,
+        ordinaryAvatarCount: quote?.querySelectorAll('img.avatar').length ?? -1,
+        mediaImageCount: media?.querySelectorAll('img').length ?? -1,
+        mediaButtonCount: media?.querySelectorAll('button').length ?? -1,
+        buttonUnmarked: button?.hasAttribute('data-testid') === false,
+        creditOutsideMedia: !media?.contains(quote?.querySelector('.credit a')),
+      };
+    });
+    assert.deepEqual(precondition.outerStatusAnchors, [
+      { path: `/${quotedCase.handle}/status/${quotedCase.outer}`, containsTime: false },
+      { path: `/${quotedCase.handle}/status/${quotedCase.outer}`, containsTime: false },
+    ]);
+    assert.deepEqual(precondition.quoteStatusAnchors, [
+      { path: `/${quotedCase.username}/status/${quotedCase.owner}`, containsTime: false },
+      { path: `/credit_preplayer/status/${quotedCase.credit}`, containsTime: false },
+    ]);
+    assert.equal(precondition.nestedArticleCount, 1);
+    assert.equal(precondition.roleLink, 'link');
+    assert.equal(precondition.videoCount, 0);
+    assert.equal(precondition.totalImageCount, 3);
+    assert.equal(precondition.trustedThumbnailCount, 1);
+    assert.equal(precondition.ordinaryAvatarCount, 2);
+    assert.equal(precondition.mediaImageCount, 1);
+    assert.equal(precondition.mediaButtonCount, 1);
+    assert.equal(precondition.buttonUnmarked, true);
+    assert.equal(precondition.creditOutsideMedia, true);
+
+    const trigger = page.locator('[data-case="public-preplayer"] [data-preplayer-media] > button');
+    await trigger.scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollBy(0, -120));
+    await trigger.focus();
+    const before = await quotedHostSnapshot(page, quotedCase.route,
+      '[data-preplayer-media] > button');
+    assert.equal(before.active, true, 'Preplayer native button must hold focus');
+    assert(before.scrollY > 0, 'Preplayer must open at nonzero host scroll');
+    const hit = await trigger.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      const x = Math.round(rect.left + rect.width * 0.2);
+      const y = Math.round(rect.top + rect.height * 0.2);
+      const media = element.parentElement;
+      return { x, y, topIsButton: document.elementFromPoint(x, y) === element,
+        thumbnailSiblings: media?.querySelectorAll(':scope > img').length ?? -1,
+        videoSiblings: media?.querySelectorAll(':scope > video').length ?? -1 };
+    });
+    assert.equal(hit.topIsButton, true, 'Ordinary pointer point must hit the native button');
+    assert.equal(hit.thumbnailSiblings, 1);
+    assert.equal(hit.videoSiblings, 0);
+    await page.screenshot({ path: join(output, 'quoted-public-preplayer-before.png') });
+
+    const apiStart = quotedApiResponses.length;
+    const rejectedApiStart = apiResponses.length;
+    await page.mouse.click(hit.x, hit.y);
+    const opened = await assertQuotedGallery(page, quotedCase);
+    assert.deepEqual(quotedApiResponses.slice(apiStart).map(({ tweetId }) => tweetId),
+      [quotedCase.outer], 'Preplayer must request A and derive B from its direct quote');
+    assert.deepEqual(apiResponses.slice(rejectedApiStart), [],
+      'Preplayer must not request unsupported B or C API targets');
+    const originUrl = await assertQuotedOriginLink(opened.gallery,
+      `https://x.com/${quotedCase.username}/status/${quotedCase.owner}`);
+    await opened.gallery.locator('#tweet-text-button').click();
+    const panelText = await opened.gallery.locator('#toolbar-tweet-panel').textContent();
+    assert(panelText?.includes(`${quotedCase.username} deterministic installed media`),
+      'Selected video text must identify B');
+    assert(!panelText.includes('credit_preplayer deterministic installed media'),
+      'Nested C text must not replace B');
+    await opened.gallery.locator('#tweet-text-button').click();
+    const navigation = await navigateQuotedAwayAndBack(page, quotedCase, opened.total);
+    assert.equal(await opened.gallery.locator('[data-gallery-element="item"] video').count(), 1,
+      'Nested C video must not enter the gallery');
+    const playbackStart = await opened.video.evaluate((video) => video.currentTime);
+    await opened.video.click();
+    await page.waitForFunction(({ index, start }) => {
+      const video = document.querySelector(
+        `[data-xeg-gallery-container] [data-gallery-element="item"][data-index="${index}"] video`
+      );
+      return video instanceof HTMLVideoElement && !video.paused && video.error === null &&
+        video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
+        video.currentTime >= start + 0.15;
+    }, { index: quotedCase.expectedPosition - 1, start: playbackStart }, { timeout: 15_000 });
+    const playbackEnd = await opened.video.evaluate((video) => video.currentTime);
+    await page.screenshot({ path: join(output, 'quoted-public-preplayer-gallery.png') });
+
+    const knownIds = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+    const filename = `${quotedCase.username}_${quotedCase.owner}_${quotedCase.expectedPosition - 1}.mp4`;
+    await opened.gallery.locator(
+      '[data-gallery-element="toolbar"] button[aria-label="Download"]'
+    ).click();
+    const download = await waitForDownload(extensionPage, knownIds, filename);
+    const relativeDownload = relative(downloads, download.filename);
+    assert(relativeDownload && !relativeDownload.startsWith('..') && !isAbsolute(relativeDownload),
+      'Preplayer download escaped the task-owned directory');
+    const bytes = await readFile(download.filename);
+    const sourceBytes = videoPayloads[quotedCase.media];
+    assert(sourceBytes.equals(bytes), 'Preplayer bytes must match B video MP4 exactly');
+    const file = 'quoted-public-preplayer-download.mp4';
+    await copyFile(download.filename, join(output, file));
+    const close = await closeQuotedGallery({ gallery: opened.gallery, page,
+      method: 'escape', before, caseName: quotedCase.route,
+      selector: '[data-preplayer-media] > button' });
+    assert.deepEqual(quotedApiResponses.slice(apiStart).map(({ tweetId }) => tweetId),
+      [quotedCase.outer], 'Preplayer navigation and download must retain the A request');
+    assert.deepEqual(apiResponses.slice(rejectedApiStart), [],
+      'Preplayer must not add rejected B or C API requests');
+    await page.screenshot({ path: join(output, 'quoted-public-preplayer-after.png') });
+    return {
+      name: quotedCase.name, pageUrl, precondition, hit, requestedTweetId: quotedCase.outer,
+      api: quotedApiResponses.slice(apiStart), selectedPosition: quotedCase.expectedPosition,
+      selected: opened.selectedMedia, originUrl, textOwner: quotedCase.username,
+      navigation, playbackStart, playbackEnd,
+      download: { filename, bytes: bytes.length, file,
+        sha256: createHash('sha256').update(bytes).digest('hex'),
+        sourceSha256: createHash('sha256').update(sourceBytes).digest('hex') },
+      close,
+    };
+  });
 }
 
 async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
@@ -2247,19 +2457,26 @@ async function exerciseInstalledExtension(
       page,
     });
     for (const quotedCase of QUOTED_CASES) {
+      const settingEvidence = {};
       try {
-        quotedVideoCycles.push(await runQuotedVideoCycle({
+        const runQuotedCase = quotedCase.name === 'public-preplayer'
+          ? runPublicPreplayerCycle : runQuotedVideoCycle;
+        quotedVideoCycles.push(await runQuotedCase({
           quotedCase,
           quotedApiResponses: fixtureRoutes.quotedApiResponses,
+          apiResponses: fixtureRoutes.apiResponses,
           downloads,
           extensionPage,
           output,
           page,
           videoPayloads: fixtureRoutes.videoPayloads,
+          settingEvidence,
         }));
       } catch (error) {
         const diagnostic = { name: quotedCase.name, status: 'failed',
           error: safeError(error),
+          ...(quotedCase.name === 'public-preplayer'
+            ? { controlledSetting: settingEvidence } : {}),
           api: fixtureRoutes.quotedApiResponses.filter(({ tweetId }) =>
             tweetId === quotedCase.outer || tweetId === quotedCase.owner),
           screenshot: `quoted-${quotedCase.name}-failure.png` };
