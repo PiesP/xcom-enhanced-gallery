@@ -232,16 +232,28 @@ function strictStatusLink(anchor: Element): TrustedStatusLink | null {
 function requestInfo(
   article: HTMLElement,
   element: HTMLElement,
-  boundary: HTMLElement
+  boundary: HTMLElement,
+  allowUntimed: boolean
 ): TweetInfo | null {
-  const links = getOwnStatusLinks(article, element)
-    .filter(({ anchor }) => !boundary.contains(anchor))
-    .flatMap(({ anchor }) => {
-      const link = strictStatusLink(anchor);
-      return link ? [{ anchor, link }] : [];
-    });
+  const anchors = allowUntimed
+    ? Array.from(article.querySelectorAll(STATUS_LINK_SELECTOR)).filter(
+        (anchor) =>
+          anchor.closest('article') === article &&
+          !boundary.contains(anchor) &&
+          !anchor.closest('[data-testid="tweetText"]')
+      )
+    : getOwnStatusLinks(article, element)
+        .filter(({ anchor }) => !boundary.contains(anchor))
+        .map(({ anchor }) => anchor);
+  const links = anchors.flatMap((anchor) => {
+    const link = strictStatusLink(anchor);
+    return link ? [{ anchor, link }] : [];
+  });
+  if (allowUntimed && links.length !== anchors.length) return null;
   const timestamps = links.filter(({ anchor }) => anchor.querySelector('time'));
-  const owners = timestamps;
+  // An immediate parent of a bounded nested quote may expose only untimed
+  // permalinks. They establish a unique request, never a confirmed owner.
+  const owners = allowUntimed ? links : timestamps;
   if (new Set(owners.map(({ link }) => link.tweetId)).size !== 1) return null;
   const link = owners[0]?.link;
   return link ? { ...link, extractionMethod: 'request-context', confidence: 0.85 } : null;
@@ -285,6 +297,23 @@ function extractClickContext(element: HTMLElement): TweetClickContext | null {
       boundary = node;
   }
   let requestArticle = article;
+  const parentArticle = article.parentElement?.closest<HTMLElement>('article');
+  if (parentArticle) {
+    const articleAnchors = Array.from(article.querySelectorAll(STATUS_LINK_SELECTOR)).filter(
+      (anchor) =>
+        anchor.closest('article') === article && !anchor.closest('[data-testid="tweetText"]')
+    );
+    const ownIds = new Set<string>();
+    for (const anchor of articleAnchors) {
+      const link = strictStatusLink(anchor);
+      if (!link) return null;
+      ownIds.add(link.tweetId);
+    }
+    // A narrower media branch can contain a credit permalink while the nested
+    // article has a different header. Neither non-enclosing link proves which
+    // tweet owns the media, even when legacy extraction found one narrow link.
+    if (!boundary && ownIds.size > 1) owner = null;
+  }
   if (
     !boundary &&
     owner?.metadata?.isTweetContainer === true &&
@@ -294,7 +323,6 @@ function extractClickContext(element: HTMLElement): TweetClickContext | null {
   if (!boundary && !owner) {
     // A nested article can be a quote candidate only inside its immediate
     // parent's clickable boundary. Never borrow a neighboring reply or page URL.
-    const parentArticle = article.parentElement?.closest<HTMLElement>('article');
     if (parentArticle) {
       for (
         let node = article.parentElement, hops = 0;
@@ -333,7 +361,7 @@ function extractClickContext(element: HTMLElement): TweetClickContext | null {
   )
     return null;
   if (boundaryLinks.length > 0 && requestArticle === article) return null;
-  const context = requestInfo(requestArticle, element, boundary);
+  const context = requestInfo(requestArticle, element, boundary, requestArticle !== article);
   if (!context) return null;
   const quoteMarked = element.closest('[data-testid="quoteTweet"]');
   return {
