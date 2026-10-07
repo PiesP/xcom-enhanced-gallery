@@ -52,7 +52,9 @@ export class TwitterAPIExtractor implements MediaExtractorStrategy {
             'api-extraction-failed'
           ),
           apiRequestOutcome:
-            options.signal?.aborted || (error instanceof Error && error.name === 'AbortError')
+            options.signal?.aborted ||
+            ((error instanceof Error || error instanceof DOMException) &&
+              error.name === 'AbortError')
               ? 'cancelled'
               : error instanceof TwitterAPIRequestError
                 ? 'failed'

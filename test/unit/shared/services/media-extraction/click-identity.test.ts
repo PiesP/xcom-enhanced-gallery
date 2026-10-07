@@ -46,4 +46,17 @@ describe('API click-time identity', () => {
     const result = await new TwitterAPIExtractor().extract(owner, document.getElementById('target')!, {}, 'ordinal');
     expect(result.success).toBe(false);
   });
+
+  it('does not count a browser AbortError as an API outage', async () => {
+    getTweetMedias.mockRejectedValue(new DOMException('cancelled', 'AbortError'));
+    const result = await new TwitterAPIExtractor().extract(
+      owner,
+      document.createElement('img'),
+      {},
+      'cancelled'
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.apiRequestOutcome).toBe('cancelled');
+  });
 });

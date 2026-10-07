@@ -168,7 +168,11 @@ async function apiRequest(
       ...(signal ? { signal } : {}),
     })
     .catch((error: unknown) => {
-      if (signal?.aborted || (error instanceof Error && error.name === 'AbortError')) throw error;
+      if (
+        signal?.aborted ||
+        ((error instanceof Error || error instanceof DOMException) && error.name === 'AbortError')
+      )
+        throw error;
       throw new TwitterAPIRequestError('Twitter API transport failed', error);
     });
 
