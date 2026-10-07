@@ -373,6 +373,32 @@ describe('Windows X live page validation', () => {
     });
   });
 
+  it('records only bounded paths and trusted thumbnail identity around a hidden live video', () => {
+    document.body.innerHTML = `
+      <article>
+        <a href="https://x.com/outer/status/123">Outer private text</a>
+        <div role="link"><a href="https://x.com/quoted/status/456">Quoted private text</a>
+          <video src="blob:https://x.com/private" poster="https://pbs.twimg.com/amplify_video_thumb/456/img/poster.jpg?token=private"></video>
+          <img src="https://pbs.twimg.com/amplify_video_thumb/456/img/poster.jpg?token=private" alt="Private description">
+        </div>
+      </article>
+    `;
+    const observation = livePage.inspectLiveCandidateDocument({ handle: 'outer', statusId: '123' });
+    expect(observation).toMatchObject({
+      exactArticleFound: true,
+      statusIds: ['123', '456'],
+      videoDetails: [{
+        sourceKind: 'blob',
+        poster: { host: 'pbs.twimg.com', path: '/amplify_video_thumb/456/img/poster.jpg' },
+      }],
+      thumbnailDetails: [{
+        sourceKind: 'image',
+        source: { host: 'pbs.twimg.com', path: '/amplify_video_thumb/456/img/poster.jpg' },
+      }],
+    });
+    expect(JSON.stringify(observation)).not.toMatch(/private|Private|token=|blob:https/u);
+  });
+
   it('summarizes direct quote API relationships and playable variants without response text', () => {
     const url = 'https://x.com/i/api/graphql/query/TweetResultByRestId?variables=%7B%22tweetId%22%3A%22123%22%7D';
     const result = livePage.summarizeTweetResultResponse(url, 200, {

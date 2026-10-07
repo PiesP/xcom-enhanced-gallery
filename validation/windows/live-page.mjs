@@ -428,6 +428,47 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
 export function inspectLiveCandidateDocument({ handle, statusId }) {
   const path = `/${handle}/status/${statusId}`.toLowerCase();
   const articles = [...document.querySelectorAll('article')];
+  const statusPath = (value) => {
+    try {
+      const url = new URL(value, location.href);
+      return url.protocol === 'https:' && ['x.com', 'twitter.com'].includes(url.hostname.toLowerCase()) &&
+        /^\/[A-Za-z0-9_]{1,15}\/status\/\d+(?:\/|$)/u.test(url.pathname)
+        ? url.pathname : null;
+    } catch {
+      return null;
+    }
+  };
+  const mediaPath = (value) => {
+    try {
+      const url = new URL(value, location.href);
+      return url.protocol === 'https:' && url.hostname === 'pbs.twimg.com' &&
+        /^\/(?:amplify_video_thumb|ext_tw_video_thumb|tweet_video_thumb|video_thumb)\//u.test(url.pathname)
+        ? { host: url.hostname, path: url.pathname } : null;
+    } catch {
+      return null;
+    }
+  };
+  const nodePath = (element, article) => {
+    const nodes = [];
+    for (let node = element; node && node !== article && nodes.length < 12; node = node.parentElement) {
+      const rect = node.getBoundingClientRect();
+      const style = getComputedStyle(node);
+      const testId = node.getAttribute('data-testid');
+      const role = node.getAttribute('role');
+      nodes.push({
+        tag: node.tagName.toLowerCase(),
+        testId: ['quoteTweet', 'tweetPhoto', 'videoPlayer', 'videoComponent',
+          'previewInterstitial', 'playButton', 'card.wrapper'].includes(testId) ? testId : null,
+        role: ['link', 'button', 'presentation', 'application'].includes(role) ? role : null,
+        statusPath: node instanceof HTMLAnchorElement ? statusPath(node.href) : null,
+        visibleBox: rect.width > 0 && rect.height > 0 && style.display !== 'none' &&
+          style.visibility !== 'hidden' && Number(style.opacity) !== 0,
+        bounds: { x: Math.round(rect.x), y: Math.round(rect.y),
+          width: Math.round(rect.width), height: Math.round(rect.height) },
+      });
+    }
+    return nodes;
+  };
   const article = articles.find((candidate) => [...candidate.querySelectorAll('a[href]')]
     .some((anchor) => {
       try {
@@ -439,6 +480,39 @@ export function inspectLiveCandidateDocument({ handle, statusId }) {
       }
     }));
   if (!article) return { exactArticleFound: false, articleCount: Math.min(articles.length, 50) };
+  const videoDetails = [...article.querySelectorAll('video')]
+    .filter((video) => video.closest('article') === article).slice(0, 6).map((video) => {
+      const rect = video.getBoundingClientRect();
+      const x = Math.min(innerWidth - 1, Math.max(0, rect.x + rect.width / 2));
+      const y = Math.min(innerHeight - 1, Math.max(0, rect.y + rect.height / 2));
+      return {
+        sourceKind: video.currentSrc?.startsWith('blob:') || video.src.startsWith('blob:')
+          ? 'blob' : video.currentSrc || video.src ? 'other' : 'none',
+        poster: mediaPath(video.poster),
+        nodePath: nodePath(video, article),
+        hitPath: rect.width > 0 && rect.height > 0 && typeof document.elementsFromPoint === 'function'
+          ? document.elementsFromPoint(x, y).slice(0, 4).map((node) => ({
+            tag: node.tagName.toLowerCase(),
+            testId: ['videoPlayer', 'videoComponent', 'playButton', 'previewInterstitial']
+              .includes(node.getAttribute('data-testid')) ? node.getAttribute('data-testid') : null,
+          })) : [],
+      };
+    });
+  const thumbnailDetails = [];
+  for (const element of [...article.querySelectorAll('*')].slice(0, 800)) {
+    if (thumbnailDetails.length >= 8) break;
+    const image = element instanceof HTMLImageElement
+      ? mediaPath(element.currentSrc || element.src) : null;
+    const background = getComputedStyle(element).backgroundImage;
+    const backgroundUrl = background.match(/^url\(["']?(.*?)["']?\)$/u)?.[1];
+    const backgroundSource = backgroundUrl ? mediaPath(backgroundUrl) : null;
+    if (!image && !backgroundSource) continue;
+    thumbnailDetails.push({
+      source: image ?? backgroundSource,
+      sourceKind: image ? 'image' : 'background',
+      nodePath: nodePath(element, article),
+    });
+  }
   const statusIds = [...new Set([...article.querySelectorAll('a[href]')].flatMap((anchor) => {
     try {
       const url = new URL(anchor.href, location.href);
@@ -458,6 +532,8 @@ export function inspectLiveCandidateDocument({ handle, statusId }) {
     playButtonCount: Math.min(article.querySelectorAll('[data-testid="playButton"]').length, 20),
     videoCount: Math.min(article.querySelectorAll('video').length, 20),
     statusIds,
+    videoDetails,
+    thumbnailDetails,
   };
 }
 
@@ -801,6 +877,8 @@ async function observeOne(context, extensionId, targetUrl, output, index) {
     });
     observation.responseStatus = response?.status() ?? null;
     observation.finalUrl = sanitizedUrl(page.url());
+    observation.targetCandidatesBefore = await page.evaluate(inspectLiveCandidateDocument, identity)
+      .catch(() => null);
     let readiness;
     try {
       readiness = await waitForTarget(page, identity);
@@ -817,6 +895,8 @@ async function observeOne(context, extensionId, targetUrl, output, index) {
       throw new Error(`Live target stopped before media readiness: ${readiness.reason}`);
     }
     observation.target = readiness.target;
+    observation.targetCandidates = await page.evaluate(inspectLiveCandidateDocument, identity)
+      .catch(() => null);
     await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({
       state: 'attached',
       timeout: ACTION_TIMEOUT_MS,
