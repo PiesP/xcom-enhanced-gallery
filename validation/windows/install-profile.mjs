@@ -28,7 +28,7 @@ const FIXTURE_URL = `https://x.com/testuser/status/${TWEET_ID}`;
 const PUBLIC_TWEET_ID = '9876543210987654321';
 const PUBLIC_FIXTURE_URL = `https://x.com/public_user/status/${PUBLIC_TWEET_ID}`;
 const DOWNLOAD_TRACKING_STORAGE_KEY = 'xeg.download-tracking.v1';
-const MV3_RESTART_BLOB_BYTES = 32 * 1024 * 1024;
+const MV3_RESTART_BLOB_BYTES = 256 * 1024 * 1024;
 const IMAGE_URL_MARKERS = ['GkE1234', 'GkE5678', 'GkE9012'];
 const MAX_AGGREGATE_DEPTH = 2;
 const MAX_AGGREGATE_ERRORS = 4;
@@ -333,14 +333,14 @@ async function createServiceWorkerObserver(browserCdp, pageCdp) {
   };
 }
 
-async function enableDeveloperMode(context) {
+export async function enableDeveloperMode(context, browserName) {
   const page = await context.newPage();
   try {
-    await page.goto('chrome://extensions/');
-    const toggle = page.locator('#devMode');
+    await page.goto(browserName === 'msedge' ? 'edge://extensions/' : 'chrome://extensions/');
+    const toggle = page.locator(browserName === 'msedge' ? '#dev-switch:visible' : '#devMode');
     await toggle.waitFor({ state: 'visible' });
     if (!(await toggle.evaluate((element) => element.checked))) await toggle.click();
-    assert(await toggle.evaluate((element) => element.checked), 'Chrome extension developer mode is disabled');
+    assert(await toggle.evaluate((element) => element.checked), 'Extension developer mode is disabled');
   } finally {
     await page.close();
   }
@@ -505,6 +505,23 @@ async function readMv3LifecycleState(extensionPage, requestId, downloadId) {
   });
 }
 
+export function assertDownloadIncomplete(download, stage) {
+  assert(
+    Number.isSafeInteger(download?.bytesReceived) &&
+    download.bytesReceived >= 0 &&
+    Number.isSafeInteger(download.totalBytes) &&
+    download.totalBytes > 0 &&
+    download.bytesReceived < download.totalBytes,
+    stage + ': paused download must have bytes remaining: ' + JSON.stringify({
+      id: download?.id,
+      state: download?.state,
+      paused: download?.paused,
+      bytesReceived: download?.bytesReceived,
+      totalBytes: download?.totalBytes,
+    })
+  );
+}
+
 async function verifyMv3RestartCancellation({
   downloads,
   extensionId,
@@ -644,13 +661,16 @@ async function verifyMv3RestartCancellation({
 
     const beforeStop = await waitForValue(async () => {
       const state = await readMv3LifecycleState(extensionPage, requestId, downloadId);
-      return (
+      const ready = (
         state.download?.state === 'in_progress' &&
         state.download.paused === true &&
         state.download.totalBytes === MV3_RESTART_BLOB_BYTES &&
         typeof state.download.filename === 'string' &&
         basename(state.download.filename) === filename
-      ) ? state : undefined;
+      );
+      if (!ready) return undefined;
+      assertDownloadIncomplete(state.download, 'before worker stop');
+      return state;
     }, 'paused in-progress Chrome download before worker stop');
     assert.deepEqual(beforeStop.record, {
       cancellationRequested: false,
@@ -680,6 +700,7 @@ async function verifyMv3RestartCancellation({
     const afterStop = await readMv3LifecycleState(extensionPage, requestId, downloadId);
     assert.equal(afterStop.download?.state, 'in_progress');
     assert.equal(afterStop.download?.paused, true);
+    assertDownloadIncomplete(afterStop.download, 'after worker stop');
     assert.deepEqual(
       afterStop.record,
       beforeStop.record,
@@ -706,6 +727,7 @@ async function verifyMv3RestartCancellation({
     assert.equal(preCancellationState.download.url, objectUrl);
     assert.equal(basename(preCancellationState.download.filename), filename);
     assert.equal(preCancellationState.download.totalBytes, MV3_RESTART_BLOB_BYTES);
+    assertDownloadIncomplete(preCancellationState.download, 'before cancellation');
     assert.deepEqual(preCancellationState.record, beforeStop.record);
     assert.deepEqual(preCancellationState.trackingKeys, [requestId]);
     const newDownloadsBeforeCancellation = (await queryDownloads(extensionPage))
@@ -1897,7 +1919,7 @@ export async function run({
       args: ['--enable-unsafe-extension-debugging'],
     });
     result.browserVersion = context.browser().version();
-    await enableDeveloperMode(context);
+    await enableDeveloperMode(context, browserName);
     await verifyDownloadDirectory(context, downloads);
     browserCdp = await context.browser().newBrowserCDPSession();
     // Use Chrome's download manager and this fresh profile's directory preference
