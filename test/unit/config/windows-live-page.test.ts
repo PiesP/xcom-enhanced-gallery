@@ -54,6 +54,11 @@ type LivePageModule = {
     currentTime: number;
   };
   summarizeTweetResultResponse(url: string, status: number, body: unknown): unknown;
+  createControlledVideoSettings(prior: unknown, timestamp: number): {
+    gallery: { videoClickMode: string; [key: string]: unknown };
+    __schemaHash: string;
+    [key: string]: unknown;
+  };
   inspectSelectedGalleryDocument(expected: {
     expectedIndex: number;
     expectedPath: string;
@@ -243,6 +248,24 @@ describe('Windows X live page validation', () => {
       readFileSync(resolve(import.meta.dirname, '../../../validation/windows/profile.json'), 'utf8')
     ) as { installation?: { assets?: string[] } };
     expect(profile.installation?.assets).toContain('validation/windows/live-page.mjs');
+  });
+
+  it('changes only the supported video click setting in a complete task-owned copy', () => {
+    const prior = {
+      __schemaHash: '1', version: '1', lastModified: 42,
+      gallery: { theme: 'dark', videoClickMode: 'block-controls-only', preloadCount: 3 },
+      toolbar: { autoHideDelay: 3000 }, features: { gallery: true },
+    };
+    const controlled = livePage.createControlledVideoSettings(prior, 100);
+    expect(controlled).toEqual({
+      ...prior,
+      gallery: { ...prior.gallery, videoClickMode: 'allow-all' },
+    });
+    expect(prior.gallery.videoClickMode).toBe('block-controls-only');
+    expect(livePage.createControlledVideoSettings(null, 100)).toMatchObject({
+      version: '1', lastModified: 100, __schemaHash: '1',
+      gallery: { videoClickMode: 'allow-all' },
+    });
   });
 
   it('waits when the exact article precedes its image and terminates on a challenge', () => {

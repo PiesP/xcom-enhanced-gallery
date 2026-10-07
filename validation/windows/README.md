@@ -153,6 +153,16 @@ only a candidate until observed API relationships and its selected playable
 variant establish the directly quoted owner. Both paths check dialog opening,
 Escape close, focus, scroll, and body-style restoration.
 
+When a native player covers every point with controls, the observer first
+makes a bounded ordinary Play click and records host-video readiness and
+playback separately. If it plays but no non-control gallery point remains,
+the observer retries the unchanged URL in the same fresh owned profile with
+the supported `gallery.videoClickMode: allow-all` setting. It records both
+attempts, verifies the stored mode, and restores the complete prior extension
+setting in `finally`. The original user's installed setting is unknown; the
+controlled result applies only to the recorded mode. Native playback alone
+never counts as an XEG gallery pass.
+
 Each page writes a partial JSON record and screenshots even when a required
 assertion is missing; the profile then fails rather than treating an unavailable
 guest page as success. Host console, HTTP, and request diagnostics are retained
