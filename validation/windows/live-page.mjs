@@ -155,7 +155,7 @@ export function summarizeQuoteProviderRejection(api) {
 
 export function classifyLiveFailure(classification, galleryStatus, providerRejection) {
   if (classification === 'controlled-media-click-did-not-open-gallery' && providerRejection) {
-    return 'provider-rejected-quote-lookup-gallery-unverified';
+    return 'provider-rejection-observed-gallery-unverified';
   }
   if (classification) return classification;
   if (providerRejection) return 'provider-failure-with-unverified-product-flow';

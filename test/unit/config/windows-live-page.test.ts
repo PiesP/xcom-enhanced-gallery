@@ -692,7 +692,7 @@ describe('Windows X live page validation', () => {
     expect(rejection).toEqual({ operation: 'TweetResultByRestId', kind: 'http-rejection',
       httpStatus: 403, requestedTweetId: '456' });
     expect(livePage.classifyLiveFailure('controlled-media-click-did-not-open-gallery',
-      'attempting', rejection)).toBe('provider-rejected-quote-lookup-gallery-unverified');
+      'attempting', rejection)).toBe('provider-rejection-observed-gallery-unverified');
     expect(livePage.classifyLiveFailure('controlled-media-click-did-not-open-gallery',
       'attempting', null)).toBe('controlled-media-click-did-not-open-gallery');
     expect(livePage.summarizeQuoteProviderRejection({
