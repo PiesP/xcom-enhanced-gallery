@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import type { MediaInfo } from '@shared/types/media.types';
+import type { ToolbarProps } from '@shared/components/ui/Toolbar/Toolbar.types';
 import { createComponent } from 'solid-js';
 import { render } from 'solid-js/web';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -80,7 +81,11 @@ vi.mock(
   })
 );
 
-vi.mock('@shared/components/ui/Toolbar/Toolbar', () => ({ Toolbar: () => null }));
+vi.mock('@shared/components/ui/Toolbar/Toolbar', () => ({
+  Toolbar: (props: ToolbarProps) => (
+    <div data-toolbar-text={props.tweetText?.()} data-toolbar-url={props.tweetUrl?.()} />
+  ),
+}));
 vi.mock('@shared/container/settings-registry', () => ({
   getTypedSettingOr: (key: string, fallback: unknown) =>
     key === 'gallery.preloadCount' ? 1 : fallback,
@@ -92,8 +97,11 @@ vi.mock('@shared/hooks/use-translation', () => ({
 import { VerticalGalleryView } from '@features/gallery/components/vertical-gallery-view/VerticalGalleryView';
 import {
   disposeGallerySignals,
+  gallerySignals,
+  getDisplayedMediaIndex,
   navigateToItem,
   openGallery,
+  setFocusedIndexOnly,
 } from '@shared/state/signals/gallery.signals';
 
 function media(id: string): MediaInfo {
@@ -170,5 +178,27 @@ describe('VerticalGalleryView preload reactivity', () => {
     expect(image(container, 'e').getAttribute('loading')).toBe('eager');
     expect(image(container, 'e').getAttribute('fetchpriority')).toBe('high');
     expect(image(container, 'd').getAttribute('loading')).toBe('lazy');
+  });
+
+  it('keeps toolbar attribution on the displayed download item after scroll changes focus', async () => {
+    const items = ['a', 'b'].map((id) => ({
+      ...media(id), tweetText: `Post ${id}`, tweetUrl: `https://x.com/author/status/${id === 'a' ? '111' : '222'}`,
+    }));
+    openGallery(items, 0);
+    dispose = render(() => createComponent(VerticalGalleryView, {}), container);
+    await flushEffects();
+    const toolbar = container.querySelector('[data-toolbar-url]')!;
+    expect(toolbar.getAttribute('data-toolbar-url')).toBe(items[0]!.tweetUrl);
+
+    setFocusedIndexOnly(1);
+    await flushEffects();
+    expect(gallerySignals.currentIndex).toBe(0);
+    expect(getDisplayedMediaIndex()).toBe(1);
+    expect(toolbar.getAttribute('data-toolbar-text')).toBe('Post b');
+    expect(toolbar.getAttribute('data-toolbar-url')).toBe(items[1]!.tweetUrl);
+
+    setFocusedIndexOnly(null);
+    await flushEffects();
+    expect(toolbar.getAttribute('data-toolbar-url')).toBe(items[0]!.tweetUrl);
   });
 });

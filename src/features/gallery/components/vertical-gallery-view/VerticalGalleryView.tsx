@@ -18,7 +18,11 @@ import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
 import { getTypedSettingOr } from '@shared/container/settings-registry';
 import { useTranslation } from '@shared/hooks/use-translation';
 import { logger } from '@shared/logging/logger';
-import { gallerySignals, navigateToItem } from '@shared/state/signals/gallery.signals';
+import {
+  gallerySignals,
+  getDisplayedMediaIndex,
+  navigateToItem,
+} from '@shared/state/signals/gallery.signals';
 import { downloadState } from '@shared/state/signals/gallery-download-signals';
 import { computePreloadIndices } from '@shared/utils/performance/preload';
 import { cx } from '@shared/utils/text/formatting';
@@ -72,9 +76,13 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
     return items[index] ?? null;
   });
 
-  const tweetText = () => activeMedia()?.tweetText ?? null;
-  const tweetTextContent = () => activeMedia()?.tweetTextContent ?? null;
-  const tweetUrl = () => activeMedia()?.tweetUrl ?? null;
+  const displayedMedia = createMemo(() => {
+    const index = getDisplayedMediaIndex();
+    return index === null ? null : (mediaItems()[index] ?? null);
+  });
+  const tweetText = () => displayedMedia()?.tweetText ?? null;
+  const tweetTextContent = () => displayedMedia()?.tweetTextContent ?? null;
+  const tweetUrl = () => displayedMedia()?.tweetUrl ?? null;
 
   const preloadCount = createMemo(() => getTypedSettingOr('gallery.preloadCount', 3));
   const preloadIndices = createMemo(() =>
