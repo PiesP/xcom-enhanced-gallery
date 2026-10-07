@@ -1929,8 +1929,11 @@ async function runPublicPreplayerCycle({ quotedCase, quotedApiResponses, apiResp
     const precondition = await page.evaluate(() => {
       const outer = document.querySelector('[data-case="public-preplayer"]');
       const quote = outer?.querySelector('[role="link"] > article');
+      const wrapper = quote?.querySelector('[data-preplayer-wrapper]');
       const media = quote?.querySelector('[data-preplayer-media]');
       const button = media?.querySelector('button');
+      const credit = wrapper?.querySelector('.credit a');
+      const header = quote?.querySelector('.quote-header a');
       const ownPaths = (article) => [...(article?.querySelectorAll('a[href]') ?? [])]
         .filter((anchor) => anchor.closest('article') === article)
         .map((anchor) => ({ path: new URL(anchor.href).pathname,
@@ -1946,9 +1949,12 @@ async function runPublicPreplayerCycle({ quotedCase, quotedApiResponses, apiResp
             new URL(image.src).pathname.startsWith('/ext_tw_video_thumb/')).length,
         ordinaryAvatarCount: quote?.querySelectorAll('img.avatar').length ?? -1,
         mediaImageCount: media?.querySelectorAll('img').length ?? -1,
+        buttonParentImageCount: button?.parentElement?.querySelectorAll('img').length ?? -1,
         mediaButtonCount: media?.querySelectorAll('button').length ?? -1,
         buttonUnmarked: button?.hasAttribute('data-testid') === false,
-        creditOutsideMedia: !media?.contains(quote?.querySelector('.credit a')),
+        headerOutsideWrapper: !!header && !wrapper?.contains(header),
+        creditInsideWrapper: !!credit && wrapper?.contains(credit),
+        creditOutsideMedia: !!credit && !media?.contains(credit),
       };
     });
     assert.deepEqual(precondition.outerStatusAnchors, [
@@ -1965,31 +1971,47 @@ async function runPublicPreplayerCycle({ quotedCase, quotedApiResponses, apiResp
     assert.equal(precondition.totalImageCount, 3);
     assert.equal(precondition.trustedThumbnailCount, 1);
     assert.equal(precondition.ordinaryAvatarCount, 2);
-    assert.equal(precondition.mediaImageCount, 1);
+    assert.equal(precondition.mediaImageCount, 3);
+    assert.equal(precondition.buttonParentImageCount, 0);
     assert.equal(precondition.mediaButtonCount, 1);
     assert.equal(precondition.buttonUnmarked, true);
+    assert.equal(precondition.headerOutsideWrapper, true);
+    assert.equal(precondition.creditInsideWrapper, true);
     assert.equal(precondition.creditOutsideMedia, true);
 
-    const trigger = page.locator('[data-case="public-preplayer"] [data-preplayer-media] > button');
+    const trigger = page.locator('[data-case="public-preplayer"] [data-preplayer-media] button');
     await trigger.scrollIntoViewIfNeeded();
     await page.evaluate(() => window.scrollBy(0, -120));
     await trigger.focus();
     const before = await quotedHostSnapshot(page, quotedCase.route,
-      '[data-preplayer-media] > button');
+      '[data-preplayer-media] button');
     assert.equal(before.active, true, 'Preplayer native button must hold focus');
     assert(before.scrollY > 0, 'Preplayer must open at nonzero host scroll');
     const hit = await trigger.evaluate((element) => {
       const rect = element.getBoundingClientRect();
       const x = Math.round(rect.left + rect.width * 0.2);
       const y = Math.round(rect.top + rect.height * 0.2);
-      const media = element.parentElement;
+      const controlSurface = element.parentElement;
+      const media = controlSurface?.parentElement;
+      const images = [...(media?.querySelectorAll('img') ?? [])];
       return { x, y, topIsButton: document.elementFromPoint(x, y) === element,
-        thumbnailSiblings: media?.querySelectorAll(':scope > img').length ?? -1,
-        videoSiblings: media?.querySelectorAll(':scope > video').length ?? -1 };
+        scopeDepth: media?.hasAttribute('data-preplayer-media') ? 2 : null,
+        buttonParentImages: controlSurface?.querySelectorAll('img').length ?? -1,
+        scopeImages: images.length,
+        scopeTrustedThumbs: images.filter((image) =>
+          new URL(image.src).hostname === 'pbs.twimg.com' &&
+          new URL(image.src).pathname.startsWith('/ext_tw_video_thumb/')).length,
+        scopeOrdinaryImages: images.filter((image) =>
+          !new URL(image.src).pathname.startsWith('/ext_tw_video_thumb/')).length,
+        scopeVideos: media?.querySelectorAll('video').length ?? -1 };
     });
     assert.equal(hit.topIsButton, true, 'Ordinary pointer point must hit the native button');
-    assert.equal(hit.thumbnailSiblings, 1);
-    assert.equal(hit.videoSiblings, 0);
+    assert.equal(hit.scopeDepth, 2, 'Clicked button must reach the exact media shell in two hops');
+    assert.equal(hit.buttonParentImages, 0);
+    assert.equal(hit.scopeImages, 3);
+    assert.equal(hit.scopeTrustedThumbs, 1);
+    assert.equal(hit.scopeOrdinaryImages, 2);
+    assert.equal(hit.scopeVideos, 0);
     await page.screenshot({ path: join(output, 'quoted-public-preplayer-before.png') });
 
     const apiStart = quotedApiResponses.length;
@@ -2041,7 +2063,7 @@ async function runPublicPreplayerCycle({ quotedCase, quotedApiResponses, apiResp
     await copyFile(download.filename, join(output, file));
     const close = await closeQuotedGallery({ gallery: opened.gallery, page,
       method: 'escape', before, caseName: quotedCase.route,
-      selector: '[data-preplayer-media] > button' });
+      selector: '[data-preplayer-media] button' });
     assert.deepEqual(quotedApiResponses.slice(apiStart).map(({ tweetId }) => tweetId),
       [quotedCase.outer], 'Preplayer navigation and download must retain the A request');
     assert.deepEqual(apiResponses.slice(rejectedApiStart), [],

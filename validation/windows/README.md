@@ -76,8 +76,10 @@ focus/scroll/body/isolation restoration, and teardown are recorded per case.
 The outer-video control proves that selecting A and B remains independent.
 An additional installed pre-player case mirrors the bounded public-page shape:
 two same-ID A header links without `<time>`, an unmarked role-link quote with a
-nested B article, a separate C credit link, one trusted B video thumbnail, two
-ordinary avatar images, and no host `<video>` before the click. It temporarily
+nested B article, and a narrow wrapper containing a non-enclosing C credit
+link. Two ordinary avatar images and one trusted B video thumbnail share the
+media shell two ancestors above a bare button; no host `<video>` exists before
+the click. It temporarily
 sets the supported `allow-all` video-click mode in the task-owned extension
 storage, reloads the fixture, and restores the exact previous value in `finally`.
 An ordinary hit-tested click on the bare preview button must request A, select
