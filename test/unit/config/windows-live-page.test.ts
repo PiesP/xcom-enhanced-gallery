@@ -11,7 +11,71 @@ type LivePageModule = {
   inspectLiveTargetDocument(identity: {
     handle: string;
     statusId: string;
-  }): false | { state: string; reason?: string; target?: { imageSource: { path: string } } };
+  }): false | { state: string; reason?: string; target?: {
+    kind: string;
+    imageSource?: { path: string };
+    quoteBoundary?: string;
+    quoteStatusIds?: string[];
+    ownershipPath?: unknown[];
+  } };
+  inspectLiveCandidateDocument(identity: { handle: string; statusId: string }): {
+    exactArticleFound: boolean;
+    statusIds?: string[];
+    outerArticleOwnStatusAnchors?: Array<{ path: string; containsTime: boolean;
+      nearestArticleIndex: number; structure: unknown[] }>;
+    quoteCardCount?: number;
+    videoPlayerCount?: number;
+    previewInterstitialCount?: number;
+    playButtonCount?: number;
+  };
+  inspectSelectedGalleryVideoDocument(): false | {
+    index: number;
+    source: { host: string; path: string } | null;
+    readyState: number;
+    width: number;
+    height: number;
+    mediaErrorCode: number | null;
+  };
+  inspectHitTestedVideoActionDocument(element: HTMLElement, expected: {
+    posterPath: string | null;
+  }): null | {
+    inQuote: boolean;
+    x: number | null;
+    y: number | null;
+    rejectedControls: number;
+    mediaScopeDepth: number | null;
+    nativePlay?: { x: number; y: number; mediaScopeDepth: number;
+      scopeCounts?: { scopeDepth: number; videoCount: number; totalImageCount: number;
+        trustedVideoThumbnailCount: number; ordinaryImageCount: number } | null } | null;
+  };
+  findHitTestedVideoControlDocument(element: HTMLElement, expected: {
+    x: number;
+    y: number;
+    posterPath: string;
+  }): HTMLElement | null;
+  inspectHostVideoDocument(video: HTMLVideoElement, expected: {
+    posterPath: string;
+  }): null | {
+    sourceKind: string;
+    poster: { host: string; path: string } | null;
+    posterEvidence: string;
+    matchingSiblingCount: number;
+    currentTime: number;
+  };
+  summarizeTweetResultResponse(url: string, status: number, body: unknown): unknown;
+  summarizeQuoteProviderRejection(api: unknown): null | {
+    operation: string;
+    kind: string;
+    httpStatus: number | null;
+    requestedTweetId: string | null;
+  };
+  classifyLiveFailure(classification: string | undefined, galleryStatus: string,
+    providerRejection: unknown): string;
+  createControlledVideoSettings(prior: unknown, timestamp: number): {
+    gallery: { videoClickMode: string; [key: string]: unknown };
+    __schemaHash: string;
+    [key: string]: unknown;
+  };
   inspectSelectedGalleryDocument(expected: {
     expectedIndex: number;
     expectedPath: string;
@@ -203,6 +267,24 @@ describe('Windows X live page validation', () => {
     expect(profile.installation?.assets).toContain('validation/windows/live-page.mjs');
   });
 
+  it('changes only the supported video click setting in a complete task-owned copy', () => {
+    const prior = {
+      __schemaHash: '1', version: '1', lastModified: 42,
+      gallery: { theme: 'dark', videoClickMode: 'block-controls-only', preloadCount: 3 },
+      toolbar: { autoHideDelay: 3000 }, features: { gallery: true },
+    };
+    const controlled = livePage.createControlledVideoSettings(prior, 100);
+    expect(controlled).toEqual({
+      ...prior,
+      gallery: { ...prior.gallery, videoClickMode: 'allow-all' },
+    });
+    expect(prior.gallery.videoClickMode).toBe('block-controls-only');
+    expect(livePage.createControlledVideoSettings(null, 100)).toMatchObject({
+      version: '1', lastModified: 100, __schemaHash: '1',
+      gallery: { videoClickMode: 'allow-all' },
+    });
+  });
+
   it('waits when the exact article precedes its image and terminates on a challenge', () => {
     document.body.innerHTML = `
       <article>
@@ -247,6 +329,412 @@ describe('Windows X live page validation', () => {
       state: 'terminal',
       reason: 'host-challenge-or-unavailable',
     });
+  });
+
+  it('prefers the exact article quoted video and retains only bounded ownership evidence', () => {
+    document.body.innerHTML = `
+      <article>
+        <a href="https://x.com/outer/status/123">A</a>
+        <div data-testid="quoteTweet">
+          <a href="https://x.com/quoted/status/456">B</a>
+          <div data-testid="videoPlayer"><video poster="https://pbs.twimg.com/ext_tw_video_thumb/456/pu/img/poster.jpg"></video></div>
+        </div>
+        <img src="https://pbs.twimg.com/media/outer.jpg">
+      </article>
+    `;
+    const video = document.querySelector<HTMLVideoElement>('video');
+    if (!video) throw new Error('Video fixture missing');
+    video.getBoundingClientRect = () => ({
+      bottom: 200, height: 100, left: 0, right: 200, toJSON: () => ({}),
+      top: 100, width: 200, x: 0, y: 100,
+    });
+    const identity = { handle: 'outer', statusId: '123' };
+    expect(livePage.inspectLiveTargetDocument(identity)).toMatchObject({
+      state: 'ready',
+      target: {
+        kind: 'quoted-video', quoteBoundary: 'quoteTweet', quoteStatusIds: ['456'],
+        posterSource: { host: 'pbs.twimg.com', path: '/ext_tw_video_thumb/456/pu/img/poster.jpg' },
+        ownershipPath: [
+          { tag: 'video', testId: null },
+          { tag: 'div', testId: 'videoPlayer' },
+          { tag: 'div', testId: 'quoteTweet' },
+        ],
+      },
+    });
+    expect(livePage.inspectLiveCandidateDocument(identity)).toMatchObject({
+      exactArticleFound: true, statusIds: ['123', '456'], quoteCardCount: 1, videoPlayerCount: 1,
+    });
+  });
+
+  it('records an unmarked video candidate without inventing a quoted post ID', () => {
+    document.body.innerHTML = `
+      <article>
+        <a href="https://x.com/outer/status/123">A</a>
+        <div role="link"><div data-testid="videoPlayer"><video></video></div></div>
+      </article>
+    `;
+    const video = document.querySelector<HTMLVideoElement>('video');
+    if (!video) throw new Error('Video fixture missing');
+    video.getBoundingClientRect = () => ({
+      bottom: 200, height: 100, left: 0, right: 200, toJSON: () => ({}),
+      top: 100, width: 200, x: 0, y: 100,
+    });
+    expect(livePage.inspectLiveTargetDocument({ handle: 'outer', statusId: '123' }))
+      .toMatchObject({ state: 'ready', target: {
+        kind: 'quoted-video', quoteBoundary: 'unmarked-candidate', quoteStatusIds: [],
+      } });
+  });
+
+  it('recognizes a pre-player video quote by its play button and rejects multiple unmarked candidates', () => {
+    document.body.innerHTML = `
+      <article>
+        <a href="https://x.com/outer/status/123">A</a>
+        <div data-testid="quoteTweet"><div data-testid="tweetPhoto">
+          <div data-testid="previewInterstitial">
+            <img src="https://pbs.twimg.com/amplify_video_thumb/456/img/poster.jpg">
+            <button data-testid="playButton">Play</button>
+          </div>
+        </div></div>
+      </article>
+    `;
+    const button = document.querySelector<HTMLButtonElement>('[data-testid="playButton"]');
+    if (!button) throw new Error('Play button fixture missing');
+    button.getBoundingClientRect = () => ({
+      bottom: 200, height: 100, left: 0, right: 200, toJSON: () => ({}),
+      top: 100, width: 200, x: 0, y: 100,
+    });
+    const identity = { handle: 'outer', statusId: '123' };
+    expect(livePage.inspectLiveTargetDocument(identity)).toMatchObject({
+      state: 'ready', target: {
+        kind: 'quoted-video', quoteBoundary: 'quoteTweet', previewIndex: 0,
+        posterSource: { path: '/amplify_video_thumb/456/img/poster.jpg' },
+      },
+    });
+    expect(livePage.inspectLiveCandidateDocument(identity)).toMatchObject({
+      previewInterstitialCount: 1, playButtonCount: 1,
+    });
+
+    document.body.innerHTML = `
+      <article>
+        <a href="https://x.com/outer/status/123">A</a>
+        <div data-testid="videoPlayer"><video></video></div>
+        <div data-testid="videoPlayer"><video></video></div>
+      </article>
+    `;
+    for (const player of document.querySelectorAll<HTMLElement>('[data-testid="videoPlayer"]')) {
+      player.getBoundingClientRect = () => ({
+        bottom: 200, height: 100, left: 0, right: 200, toJSON: () => ({}),
+        top: 100, width: 200, x: 0, y: 100,
+      });
+    }
+    expect(livePage.inspectLiveTargetDocument(identity)).toEqual({
+      state: 'ambiguous', reason: 'multiple-visible-video-candidates', candidateCount: 2,
+    });
+  });
+
+  it('records only bounded paths and trusted thumbnail identity around a hidden live video', () => {
+    document.body.innerHTML = `
+      <article>
+        <a href="https://x.com/outer/status/123">Outer private text</a>
+        <div role="link"><a href="https://x.com/quoted/status/456">Quoted private text</a>
+          <video src="blob:https://x.com/private" poster="https://pbs.twimg.com/amplify_video_thumb/456/img/poster.jpg?token=private"></video>
+          <img src="https://pbs.twimg.com/amplify_video_thumb/456/img/poster.jpg?token=private" alt="Private description">
+        </div>
+      </article>
+    `;
+    const observation = livePage.inspectLiveCandidateDocument({ handle: 'outer', statusId: '123' });
+    expect(observation).toMatchObject({
+      exactArticleFound: true,
+      statusIds: ['123', '456'],
+      videoDetails: [{
+        sourceKind: 'blob',
+        poster: { host: 'pbs.twimg.com', path: '/amplify_video_thumb/456/img/poster.jpg' },
+      }],
+      thumbnailDetails: [{
+        sourceKind: 'image',
+        source: { host: 'pbs.twimg.com', path: '/amplify_video_thumb/456/img/poster.jpg' },
+      }],
+    });
+    expect(JSON.stringify(observation)).not.toMatch(/private|Private|token=|blob:https/u);
+  });
+
+  it('targets a direct nested quote article while excluding media in its deeper quote', () => {
+    document.body.innerHTML = `
+      <article>
+        <a href="https://x.com/outer/status/123?token=private"><time>A</time></a>
+        <article>
+          <a href="https://x.com/quoted/status/456">B</a>
+          <video style="display:none" poster="https://pbs.twimg.com/amplify_video_thumb/456/img/b.jpg"></video>
+          <img src="https://pbs.twimg.com/amplify_video_thumb/456/img/b.jpg">
+          <article><a href="https://x.com/deeper/status/789">C</a>
+            <video poster="https://pbs.twimg.com/amplify_video_thumb/789/img/c.jpg"></video>
+          </article>
+        </article>
+      </article>
+    `;
+    const image = document.querySelector<HTMLImageElement>('img');
+    if (!image) throw new Error('Quoted poster fixture missing');
+    image.getBoundingClientRect = () => ({
+      bottom: 200, height: 100, left: 0, right: 200, toJSON: () => ({}),
+      top: 100, width: 200, x: 0, y: 100,
+    });
+    Object.defineProperties(image, {
+      complete: { configurable: true, value: true },
+      naturalWidth: { configurable: true, value: 200 },
+    });
+    const identity = { handle: 'outer', statusId: '123' };
+    expect(livePage.inspectLiveTargetDocument(identity)).toMatchObject({
+      state: 'ready', target: {
+        kind: 'quoted-video', quoteBoundary: 'nested-article', quoteStatusIds: ['456'],
+        posterIndex: 0, posterSource: { path: '/amplify_video_thumb/456/img/b.jpg' },
+      },
+    });
+    const candidate = livePage.inspectLiveCandidateDocument(identity);
+    expect(candidate).toMatchObject({
+      outerArticleOwnStatusAnchors: [{ path: '/outer/status/123', containsTime: true,
+        nearestArticleIndex: 0, structure: [{ tag: 'a', role: null, testId: null }] }],
+      videoDetails: [
+        { nearestArticleIndex: 1, ancestorArticleIndexes: [1, 0],
+          ownStatusPaths: ['/quoted/status/456'] },
+        { nearestArticleIndex: 2, ancestorArticleIndexes: [2, 1, 0],
+          ownStatusPaths: ['/deeper/status/789'] },
+      ],
+    });
+    expect(JSON.stringify(candidate)).not.toContain('token=private');
+  });
+
+  it('records bounded status-anchor timing within the video article only', () => {
+    document.body.innerHTML = `
+      <article><a href="https://x.com/outer/status/123">A</a>
+        <article>
+          <div role="link"><a href="https://x.com/quoted/status/456?token=private">B</a></div>
+          <div data-testid="User-Name"><a href="https://x.com/other/status/457">
+            <time datetime="2026-10-08">timestamp</time></a></div>
+          <a href="https://evil.example/attacker/status/999">external</a>
+          <video></video>
+          <article><a href="https://x.com/deeper/status/789"><time>nested</time></a></article>
+        </article>
+      </article>
+    `;
+    const observation = livePage.inspectLiveCandidateDocument({ handle: 'outer', statusId: '123' });
+    expect(observation).toMatchObject({ videoDetails: [{
+      nearestArticleIndex: 1,
+      ownStatusPaths: ['/quoted/status/456', '/other/status/457'],
+      ownStatusAnchors: [
+        { path: '/quoted/status/456', containsTime: false, nearestArticleIndex: 1,
+          structure: [{ tag: 'a', role: null, testId: null },
+            { tag: 'div', role: 'link', testId: null }] },
+        { path: '/other/status/457', containsTime: true, nearestArticleIndex: 1,
+          structure: [{ tag: 'a', role: null, testId: null },
+            { tag: 'div', role: null, testId: 'User-Name' }] },
+      ],
+    }] });
+    expect(JSON.stringify(observation)).not.toMatch(/token=private|evil\.example|timestamp/u);
+  });
+
+  it('uses a non-control poster point within the quote media scope', () => {
+    document.body.innerHTML = `
+      <article><img src="https://pbs.twimg.com/amplify_video_thumb/456/img/b.jpg">
+        <button>Native play control</button></article>
+    `;
+    const image = document.querySelector<HTMLImageElement>('img');
+    const button = document.querySelector<HTMLButtonElement>('button');
+    if (!image || !button) throw new Error('Hit-test fixture missing');
+    image.getBoundingClientRect = () => ({
+      bottom: 200, height: 100, left: 0, right: 200, toJSON: () => ({}),
+      top: 100, width: 200, x: 0, y: 100,
+    });
+    Object.defineProperty(document, 'elementsFromPoint', {
+      configurable: true,
+      value: (x: number) => x < 100 ? [button] : [image],
+    });
+    try {
+      expect(livePage.inspectHitTestedVideoActionDocument(image, {
+        posterPath: '/amplify_video_thumb/456/img/b.jpg',
+      })).toMatchObject({
+        inQuote: true, x: 160, y: 120, rejectedControls: 1, mediaScopeDepth: 0,
+      });
+      expect(livePage.inspectHitTestedVideoActionDocument(image, {
+        posterPath: '/amplify_video_thumb/other/img/b.jpg',
+      })).toBeNull();
+      Object.defineProperty(document, 'elementsFromPoint', {
+        configurable: true,
+        value: () => [button],
+      });
+      expect(livePage.inspectHitTestedVideoActionDocument(image, {
+        posterPath: '/amplify_video_thumb/456/img/b.jpg',
+      })).toMatchObject({ inQuote: false, rejectedControls: 9 });
+    } finally {
+      Reflect.deleteProperty(document, 'elementsFromPoint');
+    }
+  });
+
+  it('identifies a bounded native play control separately from a gallery action', () => {
+    document.body.innerHTML = `
+      <article><div>
+        <img src="https://pbs.twimg.com/amplify_video_thumb/456/img/b.jpg">
+        <img src="https://pbs.twimg.com/profile_images/1/avatar.jpg?token=private">
+        <button>Native play</button>
+        <video src="blob:https://x.com/private" poster="https://pbs.twimg.com/amplify_video_thumb/456/img/b.jpg"></video>
+        <article><img src="https://pbs.twimg.com/amplify_video_thumb/789/img/nested.jpg"></article>
+      </div><img src="https://pbs.twimg.com/profile_images/2/outside.jpg"></article>
+    `;
+    const image = document.querySelector<HTMLImageElement>('img');
+    const button = document.querySelector<HTMLButtonElement>('button');
+    const video = document.querySelector<HTMLVideoElement>('video');
+    if (!image || !button || !video) throw new Error('Native play fixture missing');
+    let top = 100;
+    image.getBoundingClientRect = () => ({
+      bottom: top + 100, height: 100, left: 0, right: 200, toJSON: () => ({}),
+      top, width: 200, x: 0, y: top,
+    });
+    Object.defineProperty(document, 'elementsFromPoint', {
+      configurable: true,
+      value: () => [button],
+    });
+    try {
+      const hit = livePage.inspectHitTestedVideoActionDocument(image, {
+        posterPath: '/amplify_video_thumb/456/img/b.jpg',
+      });
+      expect(hit).toMatchObject({
+        inQuote: false,
+        nativePlay: { x: 40, y: 120, mediaScopeDepth: 1,
+          scopeCounts: { scopeDepth: 1, videoCount: 1, totalImageCount: 2,
+            trustedVideoThumbnailCount: 1, ordinaryImageCount: 1 } },
+      });
+      expect(JSON.stringify(hit)).not.toMatch(/avatar|token=private|nested\.jpg|outside\.jpg/u);
+      const focusTarget = livePage.findHitTestedVideoControlDocument(image, {
+        x: 40, y: 120, posterPath: '/amplify_video_thumb/456/img/b.jpg',
+      });
+      expect(focusTarget).toBe(button);
+      focusTarget?.focus();
+      expect(document.activeElement).toBe(button);
+      expect(livePage.findHitTestedVideoControlDocument(image, {
+        x: 40, y: 120, posterPath: '/amplify_video_thumb/999/img/other.jpg',
+      })).toBeNull();
+      const outside = document.createElement('button');
+      document.body.append(outside);
+      Object.defineProperty(document, 'elementsFromPoint', {
+        configurable: true,
+        value: () => [outside],
+      });
+      expect(livePage.findHitTestedVideoControlDocument(image, {
+        x: 40, y: 120, posterPath: '/amplify_video_thumb/456/img/b.jpg',
+      })).toBeNull();
+      expect(livePage.inspectHostVideoDocument(video, {
+        posterPath: '/amplify_video_thumb/456/img/b.jpg',
+      })).toMatchObject({
+        sourceKind: 'blob',
+        poster: { host: 'pbs.twimg.com', path: '/amplify_video_thumb/456/img/b.jpg' },
+      });
+      Object.defineProperty(document, 'elementsFromPoint', {
+        configurable: true,
+        value: () => [button],
+      });
+      const scope = document.querySelector<HTMLElement>('article > div');
+      if (!scope) throw new Error('Native play scope missing');
+      for (let index = 0; index < 25; index += 1) {
+        const avatar = document.createElement('img');
+        avatar.src = `https://pbs.twimg.com/profile_images/${index}/avatar.jpg?token=private`;
+        scope.append(avatar);
+      }
+      expect(livePage.inspectHitTestedVideoActionDocument(image, {
+        posterPath: '/amplify_video_thumb/456/img/b.jpg',
+      })).toMatchObject({ nativePlay: { scopeCounts: {
+        videoCount: 1, totalImageCount: 20,
+        trustedVideoThumbnailCount: 1, ordinaryImageCount: 20,
+      } } });
+      top = 260;
+      expect(livePage.inspectHitTestedVideoActionDocument(image, {
+        posterPath: '/amplify_video_thumb/456/img/b.jpg',
+      })).toMatchObject({
+        inQuote: false,
+        nativePlay: { x: 40, y: 280, mediaScopeDepth: 1 },
+      });
+    } finally {
+      Reflect.deleteProperty(document, 'elementsFromPoint');
+    }
+  });
+
+  it('accepts one sibling poster after the host clears video.poster and rejects conflicts', () => {
+    document.body.innerHTML = `
+      <article>
+        <video src="blob:https://x.com/private"></video>
+        <img src="https://pbs.twimg.com/amplify_video_thumb/456/img/b.jpg?token=private">
+        <article><img src="https://pbs.twimg.com/amplify_video_thumb/456/img/b.jpg"></article>
+      </article>
+    `;
+    const video = document.querySelector<HTMLVideoElement>('video');
+    const sibling = document.querySelector<HTMLImageElement>('article > img');
+    if (!video || !sibling) throw new Error('Sibling poster fixture missing');
+    const expected = { posterPath: '/amplify_video_thumb/456/img/b.jpg' };
+    expect(livePage.inspectHostVideoDocument(video, expected)).toMatchObject({
+      poster: { host: 'pbs.twimg.com', path: expected.posterPath },
+      posterEvidence: 'unique-sibling-image', matchingSiblingCount: 1,
+    });
+    video.poster = 'https://pbs.twimg.com/amplify_video_thumb/999/img/other.jpg';
+    expect(livePage.inspectHostVideoDocument(video, expected)).toMatchObject({
+      poster: null, posterEvidence: 'conflict',
+    });
+    video.removeAttribute('poster');
+    sibling.insertAdjacentHTML('afterend',
+      '<img src="https://pbs.twimg.com/amplify_video_thumb/456/img/b.jpg">');
+    expect(livePage.inspectHostVideoDocument(video, expected)).toMatchObject({
+      poster: null, posterEvidence: 'ambiguous-sibling-images', matchingSiblingCount: 2,
+    });
+  });
+
+  it('summarizes direct quote API relationships and playable variants without response text', () => {
+    const url = 'https://x.com/i/api/graphql/query/TweetResultByRestId?variables=%7B%22tweetId%22%3A%22123%22%7D';
+    const result = livePage.summarizeTweetResultResponse(url, 200, {
+      data: { tweetResult: { result: {
+        rest_id: '123', legacy: { full_text: 'Private text' },
+        quoted_status_result: { result: {
+          rest_id: '456', legacy: { full_text: 'Another private text', extended_entities: { media: [{
+            id_str: '789', type: 'video',
+            media_url_https: 'https://pbs.twimg.com/ext_tw_video_thumb/456/pu/img/poster.jpg',
+            video_info: { variants: [
+              { content_type: 'video/mp4', url: 'https://video.twimg.com/ext_tw_video/456/pu/vid/clip.mp4?token=secret' },
+              { content_type: 'application/x-mpegURL', url: 'https://video.twimg.com/playlist.m3u8' },
+            ] },
+          }] } },
+        } },
+      } } },
+    });
+    expect(result).toMatchObject({
+      operation: 'TweetResultByRestId', requestedTweetId: '123', httpStatus: 200,
+      result: { id: '123' }, directQuote: { id: '456', media: [{
+        id: '789', type: 'video', playableVariants: [{ host: 'video.twimg.com', path: '/ext_tw_video/456/pu/vid/clip.mp4' }],
+      }] },
+    });
+    expect(JSON.stringify(result)).not.toMatch(/Private text|Another private text|secret|playlist/u);
+  });
+
+  it('marks a rejected quote lookup without inferring login or product success', () => {
+    const rejection = livePage.summarizeQuoteProviderRejection({
+      tweetResultByRestId: { responses: [403] },
+      observations: [{ operation: 'TweetResultByRestId', requestedTweetId: '456',
+        httpStatus: 403, providerErrors: false, result: null, bodyOutcome: 'not-readable' }],
+    });
+    expect(rejection).toEqual({ operation: 'TweetResultByRestId', kind: 'http-rejection',
+      httpStatus: 403, requestedTweetId: '456' });
+    expect(livePage.classifyLiveFailure('controlled-media-click-did-not-open-gallery',
+      'attempting', rejection)).toBe('provider-rejection-observed-gallery-unverified');
+    expect(livePage.classifyLiveFailure('controlled-media-click-did-not-open-gallery',
+      'attempting', null)).toBe('controlled-media-click-did-not-open-gallery');
+    expect(livePage.summarizeQuoteProviderRejection({
+      tweetResultByRestId: { responses: [200] },
+      observations: [{ operation: 'TweetResultByRestId', requestedTweetId: '456',
+        httpStatus: 200, providerErrors: true }],
+    })).toEqual({ operation: 'TweetResultByRestId', kind: 'graphql-errors',
+      httpStatus: 200, requestedTweetId: '456' });
+    expect(livePage.summarizeQuoteProviderRejection({
+      tweetResultByRestId: { responses: [403] }, observations: [],
+    })).toEqual({ operation: 'TweetResultByRestId', kind: 'http-rejection',
+      httpStatus: 403, requestedTweetId: null });
+    expect(livePage.summarizeQuoteProviderRejection({
+      tweetResultByRestId: { responses: [200] }, observations: [],
+    })).toBeNull();
   });
 
   it('rejects a matching image outside the selected gallery index', () => {

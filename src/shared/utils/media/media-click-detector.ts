@@ -21,6 +21,7 @@ import {
   extractMediaUrlFromElement,
   findMediaElementInDOM,
 } from '@shared/utils/media/media-element-utils';
+import { findNativeVideoControlMedia } from '@shared/utils/media/native-video-control';
 import { isHostMatching, TWITTER_HOSTS, tryParseUrl } from '@shared/utils/url/host';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
 
@@ -42,6 +43,8 @@ const INTERACTIVE_SELECTOR = [
 ].join(', ');
 
 const STATUS_MEDIA_RE = /\/status\/\d+|\/photo\/\d+|\/video\/\d+/iu;
+const isAllowAllNativeVideoControl = (target: HTMLElement, mode: string): boolean =>
+  mode === 'allow-all' && findNativeVideoControlMedia(target) !== null;
 
 function isNativeStatusMediaLink(href: string | null | undefined): boolean {
   if (!href) return false;
@@ -114,7 +117,7 @@ function shouldBlockMediaTrigger(target: HTMLElement | null, event?: MouseEvent)
         : interactive.matches(MEDIA_LINK_SELECTOR) ||
           interactive.matches(MEDIA_CONTAINER_SELECTOR) ||
           interactive.querySelector(MEDIA_CONTAINER_SELECTOR) !== null;
-    return !isMediaLink;
+    return !isMediaLink && !isAllowAllNativeVideoControl(target, videoMode);
   }
 
   return false;
@@ -122,6 +125,12 @@ function shouldBlockMediaTrigger(target: HTMLElement | null, event?: MouseEvent)
 
 export function isProcessableMedia(target: HTMLElement | null, event?: MouseEvent): boolean {
   if (!target || gallerySignals.isOpen || shouldBlockMediaTrigger(target, event)) return false;
+
+  const settings = tryGetSettings();
+  const videoMode = settings
+    ? getTypedSettingOr('gallery.videoClickMode', DEFAULT_SETTINGS.gallery.videoClickMode)
+    : DEFAULT_SETTINGS.gallery.videoClickMode;
+  if (isAllowAllNativeVideoControl(target, videoMode)) return true;
 
   const mediaElement = findMediaElementInDOM(target);
   if (mediaElement) {

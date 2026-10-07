@@ -4,7 +4,33 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildTweetResultByRestIdUrl } from '@shared/core/twitter-api/endpoint';
 import type { BuildTweetResultByRestIdUrlArgs } from '@shared/core/twitter-api/endpoint';
-import { createQuotedVideoTweetResponse } from '../../../../fixtures/quoted-video-tweet-response';
+
+function createQuotedVideoTweetResponse() {
+  const user = (screenName: string) => ({ user_results: { result: {
+    legacy: { screen_name: screenName },
+  } } });
+  return { data: { tweetResult: { result: {
+    rest_id: '222', core: user('outer'),
+    legacy: { full_text: 'Outer text', extended_entities: { media: [{
+      type: 'video', id_str: 'outer-video',
+      media_url_https: 'https://pbs.twimg.com/ext_tw_video_thumb/222/outer.jpg',
+      video_info: { variants: [{ content_type: 'video/mp4', bitrate: 512000,
+        url: 'https://video.twimg.com/ext_tw_video/222/outer.mp4' }] },
+    }] } },
+    quoted_status_result: { result: {
+      rest_id: '111', core: user('quote'),
+      legacy: { full_text: 'Quote text', extended_entities: { media: [{
+        type: 'photo', id_str: 'quote-photo',
+        media_url_https: 'https://pbs.twimg.com/media/quote-photo.jpg',
+      }] } },
+      quoted_status_result: { result: {
+        rest_id: '333', core: user('nested'),
+        legacy: { extended_entities: { media: [{ type: 'photo', id_str: 'nested-photo',
+          media_url_https: 'https://pbs.twimg.com/media/nested-photo.jpg' }] } },
+      } },
+    } },
+  } } } };
+}
 
 const { getCsrfTokenAsync, httpGet, resolveBearerToken } = vi.hoisted(() => ({
   getCsrfTokenAsync: vi.fn(async (): Promise<string | undefined> => 'csrf-token'),
@@ -272,8 +298,36 @@ describe('twitter-api-client request boundary', () => {
       data: { ...usableResponse, errors: providerErrors },
     });
     await expect(getTweetMedias('222')).resolves.toMatchObject([
-      { tweet_id: '111', type: 'photo' },
-      { tweet_id: '222', type: 'video' },
+      { tweet_id: '111', type: 'photo', sourceLocation: 'quoted',
+        quoteParentTweetId: '222', quotedTweetId: '111' },
+      { tweet_id: '222', type: 'video', sourceLocation: 'original' },
     ]);
+  });
+
+  it('rejects a mismatched numeric root before using its direct quote', async () => {
+    httpGet.mockResolvedValueOnce({ ok: true, status: 200,
+      data: createQuotedVideoTweetResponse() });
+
+    await expect(getTweetMedias('999')).rejects.toThrow('unexpected tweet owner');
+  });
+
+  it('normalizes wrapped A and B, returns direct B before A, and excludes C', async () => {
+    const response = createQuotedVideoTweetResponse();
+    const root = response.data.tweetResult.result;
+    httpGet.mockResolvedValueOnce({ ok: true, status: 200,
+      data: { data: { tweetResult: { result: { tweet: {
+        ...root, quoted_status_result: { result: { tweet: root.quoted_status_result.result } },
+      } } } } } });
+
+    const entries = await getTweetMedias('222');
+    expect(entries).toHaveLength(2);
+    expect(entries.map(({ tweet_id }) => tweet_id)).toEqual(['111', '222']);
+    expect(entries[0]).toMatchObject({ sourceLocation: 'quoted',
+      quoteParentTweetId: '222', quotedTweetId: '111',
+      screen_name: 'quote', tweet_text: 'Quote text' });
+    expect(entries[1]).toMatchObject({ sourceLocation: 'original',
+      screen_name: 'outer', tweet_text: 'Outer text',
+      videoVariantUrls: ['https://video.twimg.com/ext_tw_video/222/outer.mp4'] });
+    expect(entries.some(({ tweet_id }) => tweet_id === '333')).toBe(false);
   });
 });

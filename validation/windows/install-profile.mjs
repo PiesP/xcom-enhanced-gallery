@@ -16,10 +16,15 @@ import {
 } from 'node:fs/promises';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import {
+  createControlledVideoSettings,
   observeLiveUrls,
   validateLiveObservation,
   validateLiveUrls,
 } from './live-page.mjs';
+import {
+  QUOTED_CASES,
+  quotedVideoApiResponse,
+} from '../../test/e2e/fixtures/installed-quoted-video-api.mjs';
 
 const PROFILE_PREFIX = 'xeg-chrome-install-';
 const DEFAULT_NOTIFICATION_ICON = 'icons/icon-128x128.png';
@@ -396,7 +401,19 @@ function imageIndex(url) {
 
 async function installFixtureRoutes(context, root, images) {
   const html = await readFile(join(root, 'test/e2e/fixtures/installed-gallery-page.html'), 'utf8');
+  const quotedHtml = await readFile(
+    join(root, 'test/e2e/fixtures/installed-quoted-video-page.html'), 'utf8'
+  );
+  const preplayerHtml = await readFile(
+    join(root, 'test/e2e/fixtures/installed-public-preplayer-page.html'), 'utf8'
+  );
+  const videoPayloads = Object.fromEntries(await Promise.all(
+    ['quote-one', 'quote-two', 'linked-four', 'quote-three', 'nested-c'].map(async (name) => [
+      name, await readFile(join(root, `test/e2e/fixtures/installed-${name}.mp4`)),
+    ])
+  ));
   const apiResponses = [];
+  const quotedApiResponses = [];
   const routeHandler = async (route) => {
     const url = new URL(route.request().url());
     if (url.protocol === 'chrome-extension:') {
@@ -408,20 +425,68 @@ async function installFixtureRoutes(context, root, images) {
       return;
     }
     if (url.hostname === 'x.com' && url.pathname.endsWith('/TweetResultByRestId')) {
+      let tweetId;
+      try {
+        tweetId = JSON.parse(url.searchParams.get('variables') ?? '{}').tweetId;
+      } catch {
+        tweetId = undefined;
+      }
+      const quotedResponse = quotedVideoApiResponse(tweetId);
+      if (quotedResponse) {
+        quotedApiResponses.push({ method: route.request().method(), status: 200,
+          tweetId, url: url.pathname });
+        await route.fulfill({ status: 200, contentType: 'application/json',
+          body: JSON.stringify(quotedResponse) });
+        return;
+      }
       apiResponses.push({ method: route.request().method(), status: 403, url: url.pathname });
       await route.fulfill({ status: 403, contentType: 'application/json', body: '{}' });
       return;
     }
     if (url.hostname === 'x.com' && route.request().isNavigationRequest()) {
+      const quotedCase = QUOTED_CASES.find(({ handle, outer }) =>
+        url.pathname === `/${handle}/status/${outer}`
+      );
       await route.fulfill({
         contentType: 'text/html',
-        body: url.pathname === new URL(PUBLIC_FIXTURE_URL).pathname
+        body: quotedCase
+          ? quotedCase.name === 'public-preplayer' ? preplayerHtml
+            : quotedHtml.replace('<body data-quote-case="recognized">',
+              `<body data-quote-case="${quotedCase.route}">`)
+          : url.pathname === new URL(PUBLIC_FIXTURE_URL).pathname
           ? html.replace(
               '<body data-fixture-route="classic">',
               '<body data-fixture-route="public">'
             )
           : html,
       });
+      return;
+    }
+    if (url.hostname === 'video.twimg.com') {
+      const name = url.pathname.split('/').at(-1)?.replace(/\.mp4$/u, '');
+      const payload = videoPayloads[name] ??
+        (name?.startsWith('outer-') ? videoPayloads['nested-c'] : undefined);
+      if (!payload) {
+        await route.abort('blockedbyclient');
+        return;
+      }
+      const range = route.request().headers()['range'];
+      const match = range?.match(/^bytes=(\d+)-(\d*)$/u);
+      const start = match ? Number(match[1]) : 0;
+      const requestedEnd = match?.[2] ? Number(match[2]) : payload.length - 1;
+      const end = Math.min(requestedEnd, payload.length - 1);
+      if (match && (start >= payload.length || end < start)) {
+        await route.fulfill({ status: 416, headers: {
+          'Content-Range': `bytes */${payload.length}` } });
+        return;
+      }
+      const selectedBytes = match ? payload.subarray(start, end + 1) : payload;
+      await route.fulfill({ status: match ? 206 : 200, contentType: 'video/mp4',
+        body: selectedBytes,
+        headers: { 'Access-Control-Allow-Origin': 'https://x.com',
+          'Access-Control-Allow-Credentials': 'true',
+          'Accept-Ranges': 'bytes', 'Content-Length': String(selectedBytes.length),
+          ...(match ? { 'Content-Range': `bytes ${start}-${end}/${payload.length}` } : {}) } });
       return;
     }
     if (url.hostname === 'pbs.twimg.com') {
@@ -440,6 +505,8 @@ async function installFixtureRoutes(context, root, images) {
   await context.route('**/*', routeHandler);
   return {
     apiResponses,
+    quotedApiResponses,
+    videoPayloads,
     async remove() {
       await context.unroute('**/*', routeHandler);
     },
@@ -1549,6 +1616,642 @@ async function runPublicFixtureCycle({ apiResponses, output, page }) {
   };
 }
 
+async function quotedHostSnapshot(page, caseName, triggerSelector) {
+  return page.evaluate(({ name, selector }) => {
+    const article = document.querySelector(`[data-case="${name}"]`);
+    const trigger = article?.querySelector(selector);
+    const style = document.body.style;
+    return {
+      active: document.activeElement === trigger,
+      background: ['#host-layout-spacer', 'main'].map((target) => {
+        const element = document.querySelector(target);
+        return {
+          ariaHidden: element?.getAttribute('aria-hidden') ?? null,
+          hiddenMarker: element?.hasAttribute('data-xeg-gallery-hidden') ?? false,
+          inert: element?.hasAttribute('inert') ?? false,
+          selector: target,
+        };
+      }),
+      bodyStyle: { left: style.left, overflow: style.overflow, position: style.position,
+        right: style.right, top: style.top },
+      scrollRestoration: history.scrollRestoration,
+      scrollY: window.scrollY,
+    };
+  }, { name: caseName, selector: triggerSelector });
+}
+
+async function captureQuotedOpeningScroll(trigger) {
+  await trigger.evaluate((element) => {
+    element.addEventListener('pointerdown', () => {
+      element.dataset.openingScrollY = String(window.scrollY);
+    }, { once: true, capture: true });
+  });
+}
+
+async function assertQuotedSelection(page, { position, total, type, path }) {
+  const index = position - 1;
+  const state = await waitForValue(async () => {
+    const observed = await page.evaluate(({ selectedIndex, mediaType }) => {
+      const gallery = document.querySelector('[data-xeg-gallery-container]');
+      const toolbar = gallery?.querySelector('[data-gallery-element="toolbar"]');
+      const counter = toolbar?.querySelector('#xeg-toolbar-counter');
+      const item = gallery?.querySelector(
+        `[data-gallery-element="item"][data-index="${selectedIndex}"]`
+      );
+      const media = item?.querySelector(mediaType === 'video' ? 'video' : 'img');
+      return {
+        position: counter?.getAttribute('data-position') ?? null,
+        total: counter?.getAttribute('data-total') ?? null,
+        counterFocusedIndex: counter?.getAttribute('data-focused-index') ?? null,
+        currentIndex: toolbar?.getAttribute('data-current-index') ?? null,
+        focusedIndex: toolbar?.getAttribute('data-focused-index') ?? null,
+        source: media?.currentSrc || media?.src || null,
+        mediaReady: mediaType === 'video'
+          ? media instanceof HTMLVideoElement && media.readyState >= HTMLMediaElement.HAVE_METADATA &&
+            media.videoWidth > 0 && media.videoHeight > 0 && media.error === null
+          : media instanceof HTMLImageElement && media.complete && media.naturalWidth > 0,
+        loaded: item?.getAttribute('data-media-loaded') ?? null,
+      };
+    }, { selectedIndex: index, mediaType: type });
+    return observed.position === String(position) && observed.total === String(total) &&
+      observed.counterFocusedIndex === String(index) &&
+      observed.currentIndex === String(index) &&
+      observed.focusedIndex === String(index) && observed.mediaReady &&
+      observed.loaded === 'true' ? observed : undefined;
+  }, `quoted selection ${position}/${total}`);
+  const source = new URL(state.source);
+  assert.equal(source.pathname, path, 'Selected media source must match the expected owner');
+  assert.equal(source.hostname, type === 'video' ? 'video.twimg.com' : 'pbs.twimg.com');
+  return state;
+}
+
+async function assertQuotedOriginLink(gallery, expectedUrl, allowMediaPath = false) {
+  const button = gallery.locator('#tweet-text-button');
+  assert.equal(await button.count(), 1, 'Selected media must expose originating post metadata');
+  await button.click();
+  const link = gallery.locator('#toolbar-tweet-panel a[href^="https://x.com/"]');
+  await link.waitFor({ state: 'visible' });
+  const observed = await link.getAttribute('href');
+  assert(
+    observed === expectedUrl || (allowMediaPath && observed === `${expectedUrl}/video/2`),
+    'Toolbar source link must identify the selected post'
+  );
+  await button.click();
+  return observed;
+}
+
+async function navigateQuotedAwayAndBack(page, quotedCase, total) {
+  const from = quotedCase.expectedPosition;
+  const to = from === 1 ? 2 : from - 1;
+  const awayKey = from === 1 ? 'ArrowRight' : 'ArrowLeft';
+  const returnKey = from === 1 ? 'ArrowLeft' : 'ArrowRight';
+  await page.keyboard.press(awayKey);
+  const away = await assertQuotedSelection(page, { position: to, total,
+    type: quotedCase.away.type, path: quotedCase.away.path });
+  const gallery = page.locator('[data-xeg-gallery-container]');
+  const awayOrigin = await assertQuotedOriginLink(gallery, quotedCase.away.origin);
+  await page.keyboard.press(returnKey);
+  const returned = await assertQuotedSelection(page, { position: from, total,
+    type: 'video',
+    path: `/ext_tw_video/${quotedCase.owner}/pu/vid/320x180/${quotedCase.media}.mp4` });
+  const returnedOrigin = await assertQuotedOriginLink(gallery,
+    `https://x.com/${quotedCase.username}/status/${quotedCase.owner}`,
+    quotedCase.name === 'linked');
+  return { awayKey, returnKey, away, awayOrigin, returned, returnedOrigin };
+}
+
+async function assertQuotedGallery(page, quotedCase) {
+  const gallery = page.locator('[data-xeg-gallery-container]');
+  await gallery.waitFor({ state: 'visible', timeout: 15_000 });
+  assert.equal(await gallery.getAttribute('role'), 'dialog');
+  assert.equal(await gallery.getAttribute('aria-modal'), 'true');
+  const counter = gallery.locator('#xeg-toolbar-counter');
+  const expectedTotal = quotedCase.expectedTotal ?? (quotedCase.name === 'linked' ||
+    quotedCase.name === 'recognized' ? 2
+    : quotedCase.name === 'nested-from-outer' || quotedCase.name === 'nested-direct-quote'
+      ? 2 : 3);
+  assert.equal(Number(await counter.getAttribute('data-position')),
+    quotedCase.expectedPosition, 'Quoted video selection must preserve its collection index');
+  assert.equal(Number(await counter.getAttribute('data-total')), expectedTotal,
+    'Quoted collection must include only the expected owners');
+  const selection = await assertQuotedSelection(page, {
+    position: quotedCase.expectedPosition, total: expectedTotal, type: 'video',
+    path: `/ext_tw_video/${quotedCase.owner}/pu/vid/320x180/${quotedCase.media}.mp4`,
+  });
+  assert.equal(await gallery.locator('[data-gallery-element="item"]').count(), expectedTotal);
+  const selected = gallery.locator(
+    `[data-gallery-element="item"][data-index="${quotedCase.expectedPosition - 1}"]`
+  );
+  await selected.waitFor({ state: 'visible' });
+  const video = selected.locator('video');
+  await video.waitFor({ state: 'visible' });
+  await page.waitForFunction(({ index }) => {
+    const item = document.querySelector(
+      `[data-xeg-gallery-container] [data-gallery-element="item"][data-index="${index}"]`
+    );
+    const element = item?.querySelector('video');
+    return item?.getAttribute('data-media-loaded') === 'true' &&
+      element instanceof HTMLVideoElement && element.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
+      element.videoWidth > 0 && element.videoHeight > 0 && element.error === null;
+  }, { index: quotedCase.expectedPosition - 1 }, { timeout: 15_000 });
+  const selectedMedia = await video.evaluate((element) => ({
+    src: element.currentSrc || element.src,
+    readyState: element.readyState,
+    width: element.videoWidth,
+    height: element.videoHeight,
+    duration: element.duration,
+    error: element.error?.code ?? null,
+  }));
+  assert.equal(new URL(selectedMedia.src).hostname, 'video.twimg.com');
+  assert.equal(new URL(selectedMedia.src).pathname,
+    `/ext_tw_video/${quotedCase.owner}/pu/vid/320x180/${quotedCase.media}.mp4`,
+    'The selected video must use the owner-specific API MP4');
+  assert.equal(selectedMedia.width, 320);
+  assert.equal(selectedMedia.height, 180);
+  assert(Number.isFinite(selectedMedia.duration) && selectedMedia.duration > 1);
+  assert.equal(selectedMedia.error, null);
+  assert.equal(await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download"]').count(), 1);
+  assert.equal(await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]').count(), 1);
+  return { gallery, selected, selectedMedia, selection, total: expectedTotal, video };
+}
+
+async function closeQuotedGallery({ gallery, page, method, before, caseName, selector }) {
+  if (method === 'button') {
+    await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]').click();
+  } else {
+    await page.keyboard.press('Escape');
+  }
+  await gallery.waitFor({ state: 'detached', timeout: 15_000 });
+  const after = await quotedHostSnapshot(page, caseName, selector);
+  assert.equal(after.active, true, `${caseName}: close must restore the exact trigger focus`);
+  assert.equal(after.scrollY, before.scrollY, `${caseName}: close must restore host scroll`);
+  assert.equal(after.scrollRestoration, before.scrollRestoration);
+  assert.deepEqual(after.bodyStyle, before.bodyStyle,
+    `${caseName}: close must restore body inline styles`);
+  assert.deepEqual(after.background, before.background,
+    `${caseName}: close must restore host isolation`);
+  assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0);
+  return { focusRestored: after.active, scrollRestored: after.scrollY === before.scrollY,
+    backgroundRestored: true, bodyStyleRestored: true };
+}
+
+async function runOuterVideoControl({ quotedCase, quotedApiResponses, downloads,
+  extensionPage, output, page, videoPayloads }) {
+  const article = page.locator(`[data-case="${quotedCase.route}"]`);
+  const trigger = article.locator('[data-outer-target]');
+  await trigger.scrollIntoViewIfNeeded();
+  await page.evaluate(() => window.scrollBy(0, -120));
+  await trigger.focus();
+  const before = await quotedHostSnapshot(page, quotedCase.route, '[data-outer-target]');
+  assert.equal(before.active, true, 'Outer video control must hold focus');
+  assert(before.scrollY > 0, 'Outer video control must open at nonzero scroll');
+  const hit = await trigger.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return document.elementFromPoint(rect.left + rect.width / 2,
+      rect.top + rect.height / 2) === element;
+  });
+  assert.equal(hit, true, 'Outer video must be the ordinary hit-tested target');
+  await page.screenshot({ path: join(output, 'quoted-outer-control-before.png') });
+  const apiStart = quotedApiResponses.length;
+  await captureQuotedOpeningScroll(trigger);
+  await trigger.click();
+  before.scrollY = Number(await trigger.getAttribute('data-opening-scroll-y'));
+  assert(Number.isFinite(before.scrollY) && before.scrollY > 0);
+  const gallery = page.locator('[data-xeg-gallery-container]');
+  await gallery.waitFor({ state: 'visible', timeout: 15_000 });
+  const outerPath = `/ext_tw_video/${quotedCase.outer}/pu/vid/320x180/outer-unmarked.mp4`;
+  const selected = await assertQuotedSelection(page, { position: 3, total: 3,
+    type: 'video', path: outerPath });
+  const sourceLink = await assertQuotedOriginLink(gallery,
+    `https://x.com/${quotedCase.handle}/status/${quotedCase.outer}`);
+  assert.deepEqual(quotedApiResponses.slice(apiStart).map(({ tweetId }) => tweetId),
+    [quotedCase.outer], 'Outer video must request and select A');
+  await page.keyboard.press('ArrowLeft');
+  const quoted = await assertQuotedSelection(page, { position: 2, total: 3,
+    type: 'video',
+    path: `/ext_tw_video/${quotedCase.owner}/pu/vid/320x180/${quotedCase.media}.mp4` });
+  await page.keyboard.press('ArrowRight');
+  const returned = await assertQuotedSelection(page, { position: 3, total: 3,
+    type: 'video', path: outerPath });
+  await page.screenshot({ path: join(output, 'quoted-outer-control-gallery.png') });
+
+  const knownIds = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+  const filename = `${quotedCase.handle}_${quotedCase.outer}_2.mp4`;
+  await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download"]').click();
+  const download = await waitForDownload(extensionPage, knownIds, filename);
+  const relativeDownload = relative(downloads, download.filename);
+  assert(relativeDownload && !relativeDownload.startsWith('..') && !isAbsolute(relativeDownload),
+    'Outer video download escaped the task-owned directory');
+  const bytes = await readFile(download.filename);
+  assert(videoPayloads['nested-c'].equals(bytes),
+    'Outer A privileged download must match its routed playable bytes');
+  const file = 'quoted-outer-control-download.mp4';
+  await copyFile(download.filename, join(output, file));
+  const close = await closeQuotedGallery({ gallery, page, method: 'button', before,
+    caseName: quotedCase.route, selector: '[data-outer-target]' });
+  await page.screenshot({ path: join(output, 'quoted-outer-control-after.png') });
+  return { api: quotedApiResponses.slice(apiStart), sourceLink, selected,
+    navigation: { awayKey: 'ArrowLeft', returnKey: 'ArrowRight', quoted, returned },
+    download: { filename, file, bytes: bytes.length,
+      sha256: createHash('sha256').update(bytes).digest('hex') }, close };
+}
+
+async function withControlledFixtureVideoMode(extensionPage, evidence, action) {
+  const key = 'xeg-app-settings';
+  let prior;
+  let mutated = false;
+  let result;
+  let validationError;
+  let cleanupError;
+  let restored = false;
+  try {
+    prior = await extensionPage.evaluate(async (storageKey) => {
+      const values = await chrome.storage.local.get(storageKey);
+      return { exists: Object.hasOwn(values, storageKey), value: values[storageKey] ?? null };
+    }, key);
+    evidence.priorStoredMode = prior.value?.gallery?.videoClickMode ?? null;
+    const next = createControlledVideoSettings(prior.value, Date.now());
+    mutated = true;
+    await extensionPage.evaluate(async ({ storageKey, value }) => {
+      await chrome.storage.local.set({ [storageKey]: value });
+    }, { storageKey: key, value: next });
+    const effective = await extensionPage.evaluate(async (storageKey) => {
+      const values = await chrome.storage.local.get(storageKey);
+      return values[storageKey]?.gallery?.videoClickMode ?? null;
+    }, key);
+    assert.equal(effective, 'allow-all', 'Preplayer fixture must use the supported allow-all mode');
+    evidence.effectiveMode = effective;
+    result = await action();
+  } catch (error) {
+    validationError = error;
+  } finally {
+    try {
+      if (mutated) {
+        await extensionPage.evaluate(async ({ storageKey, previous }) => {
+          if (previous.exists) await chrome.storage.local.set({ [storageKey]: previous.value });
+          else await chrome.storage.local.remove(storageKey);
+        }, { storageKey: key, previous: prior });
+        restored = await extensionPage.evaluate(async ({ storageKey, previous }) => {
+          const values = await chrome.storage.local.get(storageKey);
+          return Object.hasOwn(values, storageKey) === previous.exists &&
+            (!previous.exists || JSON.stringify(values[storageKey]) === JSON.stringify(previous.value));
+        }, { storageKey: key, previous: prior });
+      } else restored = true;
+      evidence.restored = restored;
+      assert.equal(restored, true, 'Preplayer fixture must restore the full prior settings value');
+    } catch (error) {
+      evidence.restored = false;
+      cleanupError = error;
+    }
+  }
+  if (validationError && cleanupError) {
+    throw new AggregateError([validationError, cleanupError],
+      'Preplayer fixture validation and settings restoration both failed');
+  }
+  if (validationError) throw validationError;
+  if (cleanupError) throw cleanupError;
+  return { ...result, controlledSetting: evidence };
+}
+
+async function runPublicPreplayerCycle({ quotedCase, quotedApiResponses, apiResponses, downloads,
+  extensionPage, output, page, videoPayloads, settingEvidence }) {
+  return withControlledFixtureVideoMode(extensionPage, settingEvidence, async () => {
+    const pageUrl = `https://x.com/${quotedCase.handle}/status/${quotedCase.outer}`;
+    await page.goto(pageUrl);
+    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({
+      state: 'attached', timeout: 15_000,
+    });
+    const effective = await extensionPage.evaluate(async () => {
+      const values = await chrome.storage.local.get('xeg-app-settings');
+      return values['xeg-app-settings']?.gallery?.videoClickMode ?? null;
+    });
+    assert.equal(effective, 'allow-all', 'Preplayer mode must remain active after page readiness');
+    const precondition = await page.evaluate(() => {
+      const outer = document.querySelector('[data-case="public-preplayer"]');
+      const quote = outer?.querySelector('[role="link"] > article');
+      const wrapper = quote?.querySelector('[data-preplayer-wrapper]');
+      const media = quote?.querySelector('[data-preplayer-media]');
+      const button = media?.querySelector('button');
+      const credit = wrapper?.querySelector('.credit a');
+      const header = quote?.querySelector('.quote-header a');
+      const ownPaths = (article) => [...(article?.querySelectorAll('a[href]') ?? [])]
+        .filter((anchor) => anchor.closest('article') === article)
+        .map((anchor) => ({ path: new URL(anchor.href).pathname,
+          containsTime: anchor.querySelector('time') !== null }));
+      return {
+        outerStatusAnchors: ownPaths(outer), quoteStatusAnchors: ownPaths(quote),
+        nestedArticleCount: outer?.querySelectorAll('article').length ?? 0,
+        roleLink: quote?.parentElement?.getAttribute('role') ?? null,
+        videoCount: outer?.querySelectorAll('video').length ?? -1,
+        totalImageCount: quote?.querySelectorAll('img').length ?? -1,
+        trustedThumbnailCount: [...(quote?.querySelectorAll('img') ?? [])]
+          .filter((image) => new URL(image.src).hostname === 'pbs.twimg.com' &&
+            new URL(image.src).pathname.startsWith('/ext_tw_video_thumb/')).length,
+        ordinaryAvatarCount: quote?.querySelectorAll('img.avatar').length ?? -1,
+        mediaImageCount: media?.querySelectorAll('img').length ?? -1,
+        buttonParentImageCount: button?.parentElement?.querySelectorAll('img').length ?? -1,
+        mediaButtonCount: media?.querySelectorAll('button').length ?? -1,
+        buttonUnmarked: button?.hasAttribute('data-testid') === false,
+        headerOutsideWrapper: !!header && !wrapper?.contains(header),
+        creditInsideWrapper: !!credit && wrapper?.contains(credit),
+        creditOutsideMedia: !!credit && !media?.contains(credit),
+      };
+    });
+    assert.deepEqual(precondition.outerStatusAnchors, [
+      { path: `/${quotedCase.handle}/status/${quotedCase.outer}`, containsTime: false },
+      { path: `/${quotedCase.handle}/status/${quotedCase.outer}`, containsTime: false },
+    ]);
+    assert.deepEqual(precondition.quoteStatusAnchors, [
+      { path: `/${quotedCase.username}/status/${quotedCase.owner}`, containsTime: false },
+      { path: `/credit_preplay/status/${quotedCase.credit}`, containsTime: false },
+    ]);
+    assert.equal(precondition.nestedArticleCount, 1);
+    assert.equal(precondition.roleLink, 'link');
+    assert.equal(precondition.videoCount, 0);
+    assert.equal(precondition.totalImageCount, 3);
+    assert.equal(precondition.trustedThumbnailCount, 1);
+    assert.equal(precondition.ordinaryAvatarCount, 2);
+    assert.equal(precondition.mediaImageCount, 3);
+    assert.equal(precondition.buttonParentImageCount, 0);
+    assert.equal(precondition.mediaButtonCount, 1);
+    assert.equal(precondition.buttonUnmarked, true);
+    assert.equal(precondition.headerOutsideWrapper, true);
+    assert.equal(precondition.creditInsideWrapper, true);
+    assert.equal(precondition.creditOutsideMedia, true);
+
+    const trigger = page.locator('[data-case="public-preplayer"] [data-preplayer-media] button');
+    await trigger.scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollBy(0, -120));
+    await trigger.focus();
+    const before = await quotedHostSnapshot(page, quotedCase.route,
+      '[data-preplayer-media] button');
+    assert.equal(before.active, true, 'Preplayer native button must hold focus');
+    assert(before.scrollY > 0, 'Preplayer must open at nonzero host scroll');
+    const hit = await trigger.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      const x = Math.round(rect.left + rect.width * 0.2);
+      const y = Math.round(rect.top + rect.height * 0.2);
+      const controlSurface = element.parentElement;
+      const media = controlSurface?.parentElement;
+      const images = [...(media?.querySelectorAll('img') ?? [])];
+      return { x, y, topIsButton: document.elementFromPoint(x, y) === element,
+        scopeDepth: media?.hasAttribute('data-preplayer-media') ? 2 : null,
+        buttonParentImages: controlSurface?.querySelectorAll('img').length ?? -1,
+        scopeImages: images.length,
+        scopeTrustedThumbs: images.filter((image) =>
+          new URL(image.src).hostname === 'pbs.twimg.com' &&
+          new URL(image.src).pathname.startsWith('/ext_tw_video_thumb/')).length,
+        scopeOrdinaryImages: images.filter((image) =>
+          !new URL(image.src).pathname.startsWith('/ext_tw_video_thumb/')).length,
+        scopeVideos: media?.querySelectorAll('video').length ?? -1 };
+    });
+    assert.equal(hit.topIsButton, true, 'Ordinary pointer point must hit the native button');
+    assert.equal(hit.scopeDepth, 2, 'Clicked button must reach the exact media shell in two hops');
+    assert.equal(hit.buttonParentImages, 0);
+    assert.equal(hit.scopeImages, 3);
+    assert.equal(hit.scopeTrustedThumbs, 1);
+    assert.equal(hit.scopeOrdinaryImages, 2);
+    assert.equal(hit.scopeVideos, 0);
+    await page.screenshot({ path: join(output, 'quoted-public-preplayer-before.png') });
+
+    const apiStart = quotedApiResponses.length;
+    const rejectedApiStart = apiResponses.length;
+    await page.mouse.click(hit.x, hit.y);
+    const opened = await assertQuotedGallery(page, quotedCase);
+    assert.deepEqual(quotedApiResponses.slice(apiStart).map(({ tweetId }) => tweetId),
+      [quotedCase.outer], 'Preplayer must request A and derive B from its direct quote');
+    assert.deepEqual(apiResponses.slice(rejectedApiStart), [],
+      'Preplayer must not request unsupported B or C API targets');
+    const originUrl = await assertQuotedOriginLink(opened.gallery,
+      `https://x.com/${quotedCase.username}/status/${quotedCase.owner}`);
+    await opened.gallery.locator('#tweet-text-button').click();
+    const panelText = await opened.gallery.locator('#toolbar-tweet-panel').textContent();
+    assert(panelText?.includes(`${quotedCase.username} deterministic installed media`),
+      'Selected video text must identify B');
+    assert(!panelText.includes('credit_preplay deterministic installed media'),
+      'Nested C text must not replace B');
+    await opened.gallery.locator('#tweet-text-button').click();
+    const navigation = await navigateQuotedAwayAndBack(page, quotedCase, opened.total);
+    assert.equal(await opened.gallery.locator('[data-gallery-element="item"] video').count(), 1,
+      'Nested C video must not enter the gallery');
+    const playbackStart = await opened.video.evaluate((video) => video.currentTime);
+    await opened.video.click();
+    await page.waitForFunction(({ index, start }) => {
+      const video = document.querySelector(
+        `[data-xeg-gallery-container] [data-gallery-element="item"][data-index="${index}"] video`
+      );
+      return video instanceof HTMLVideoElement && !video.paused && video.error === null &&
+        video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
+        video.currentTime >= start + 0.15;
+    }, { index: quotedCase.expectedPosition - 1, start: playbackStart }, { timeout: 15_000 });
+    const playbackEnd = await opened.video.evaluate((video) => video.currentTime);
+    await page.screenshot({ path: join(output, 'quoted-public-preplayer-gallery.png') });
+
+    const knownIds = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+    const filename = `${quotedCase.username}_${quotedCase.owner}_${quotedCase.expectedPosition - 1}.mp4`;
+    await opened.gallery.locator(
+      '[data-gallery-element="toolbar"] button[aria-label="Download"]'
+    ).click();
+    const download = await waitForDownload(extensionPage, knownIds, filename);
+    const relativeDownload = relative(downloads, download.filename);
+    assert(relativeDownload && !relativeDownload.startsWith('..') && !isAbsolute(relativeDownload),
+      'Preplayer download escaped the task-owned directory');
+    const bytes = await readFile(download.filename);
+    const sourceBytes = videoPayloads[quotedCase.media];
+    assert(sourceBytes.equals(bytes), 'Preplayer bytes must match B video MP4 exactly');
+    const file = 'quoted-public-preplayer-download.mp4';
+    await copyFile(download.filename, join(output, file));
+    const close = await closeQuotedGallery({ gallery: opened.gallery, page,
+      method: 'escape', before, caseName: quotedCase.route,
+      selector: '[data-preplayer-media] button' });
+    assert.deepEqual(quotedApiResponses.slice(apiStart).map(({ tweetId }) => tweetId),
+      [quotedCase.outer], 'Preplayer navigation and download must retain the A request');
+    assert.deepEqual(apiResponses.slice(rejectedApiStart), [],
+      'Preplayer must not add rejected B or C API requests');
+    await page.screenshot({ path: join(output, 'quoted-public-preplayer-after.png') });
+    return {
+      name: quotedCase.name, pageUrl, precondition, hit, requestedTweetId: quotedCase.outer,
+      api: quotedApiResponses.slice(apiStart), selectedPosition: quotedCase.expectedPosition,
+      selected: opened.selectedMedia, originUrl, textOwner: quotedCase.username,
+      navigation, playbackStart, playbackEnd,
+      download: { filename, bytes: bytes.length, file,
+        sha256: createHash('sha256').update(bytes).digest('hex'),
+        sourceSha256: createHash('sha256').update(sourceBytes).digest('hex') },
+      close,
+    };
+  });
+}
+
+async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
+  extensionPage, output, page, videoPayloads }) {
+  const pageUrl = `https://x.com/${quotedCase.handle}/status/${quotedCase.outer}`;
+  await page.goto(pageUrl);
+  await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({
+    state: 'attached', timeout: 15_000,
+  });
+  await page.locator('body[data-video-ready="true"]').waitFor({
+    state: 'attached', timeout: 15_000,
+  });
+  const article = page.locator(`[data-case="${quotedCase.route}"]`);
+  const shell = article.locator('[data-video-key]');
+  const preview = shell.locator('[data-quote-target]');
+  await preview.scrollIntoViewIfNeeded();
+  await page.evaluate(() => window.scrollBy(0, -120));
+  await preview.focus();
+  const previewBefore = await quotedHostSnapshot(page, quotedCase.route, '[data-quote-target]');
+  assert.equal(previewBefore.active, true, 'Preview must hold focus before opening');
+  assert(previewBefore.scrollY > 0, 'Quote fixture must start at nonzero host scroll');
+  const previewState = await preview.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const hit = document.elementFromPoint(rect.left + rect.width / 2,
+      rect.top + rect.height / 2);
+    const video = element.closest('[data-testid="videoPlayer"]')?.querySelector('video');
+    return { hit: hit === element, poster: element.getAttribute('src'),
+      videoSource: video?.getAttribute('src') ?? null };
+  });
+  assert.equal(previewState.hit, true, 'Preview must be the ordinary hit-tested click target');
+  assert.equal(previewState.videoSource, null, 'Preview check must precede native playback');
+  assert(previewState.poster?.endsWith(`/${quotedCase.poster}.jpg`));
+  await page.screenshot({ path: join(output, `quoted-${quotedCase.name}-before.png`) });
+
+  const apiStart = quotedApiResponses.length;
+  await captureQuotedOpeningScroll(preview);
+  await preview.click();
+  previewBefore.scrollY = Number(await preview.getAttribute('data-opening-scroll-y'));
+  assert(Number.isFinite(previewBefore.scrollY) && previewBefore.scrollY > 0,
+    'Preview opening scroll must be observed');
+  const initial = await assertQuotedGallery(page, quotedCase);
+  const expectedRequest = quotedCase.name === 'linked' ||
+    quotedCase.name === 'nested-direct-quote' ? quotedCase.owner : quotedCase.outer;
+  assert.deepEqual(quotedApiResponses.slice(apiStart).map(({ tweetId }) => tweetId),
+    [expectedRequest], 'Preview must use the exact owning tweet API request');
+  const previewOriginUrl = await assertQuotedOriginLink(initial.gallery,
+    `https://x.com/${quotedCase.username}/status/${quotedCase.owner}`,
+    quotedCase.name === 'linked');
+  const previewNavigation = await navigateQuotedAwayAndBack(page, quotedCase, initial.total);
+  await page.screenshot({ path: join(output, `quoted-${quotedCase.name}-preview-gallery.png`) });
+  const previewClose = await closeQuotedGallery({ gallery: initial.gallery, page,
+    method: 'escape', before: previewBefore, caseName: quotedCase.route,
+    selector: '[data-quote-target]' });
+
+  const hostPlay = shell.locator('[data-testid="playButton"]');
+  const galleryCountBeforePlay = await page.locator('[data-xeg-gallery-container]').count();
+  assert.equal(galleryCountBeforePlay, 0);
+  await hostPlay.click();
+  const hostVideo = shell.locator('video');
+  await page.waitForFunction((name) => {
+    const shell = document.querySelector(`[data-case="${name}"] [data-video-key]`);
+    const video = shell?.querySelector('video');
+    return shell?.getAttribute('data-playing') === 'true' &&
+      video instanceof HTMLVideoElement && video.currentSrc.startsWith('blob:') &&
+      video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
+      video.currentTime > 0 && !video.paused && video.error === null;
+  }, quotedCase.route, { timeout: 15_000 });
+  assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0,
+    'Native play control must not open the gallery');
+  const hostPlaying = await hostVideo.evaluate((video) => ({
+    source: video.currentSrc, time: video.currentTime, width: video.videoWidth,
+    height: video.videoHeight, error: video.error?.code ?? null,
+  }));
+  assert.equal(hostPlaying.width, 320);
+  assert.equal(hostPlaying.height, 180);
+  assert.equal(hostPlaying.error, null);
+  await hostVideo.focus();
+  const playingBefore = await quotedHostSnapshot(page, quotedCase.route, '[data-video-key] video');
+  assert.equal(playingBefore.active, true, 'Blob-backed host player must hold focus');
+  const hostHit = await hostVideo.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return document.elementFromPoint(rect.left + rect.width / 2,
+      rect.top + rect.height / 2) === element;
+  });
+  assert.equal(hostHit, true, 'Blob-backed player must be the ordinary hit-tested click target');
+  await captureQuotedOpeningScroll(hostVideo);
+  await hostVideo.click();
+  playingBefore.scrollY = Number(await hostVideo.getAttribute('data-opening-scroll-y'));
+  assert(Number.isFinite(playingBefore.scrollY) && playingBefore.scrollY > 0,
+    'Blob-backed opening scroll must be observed');
+  const playing = await assertQuotedGallery(page, quotedCase);
+  const playingOriginUrl = await assertQuotedOriginLink(playing.gallery,
+    `https://x.com/${quotedCase.username}/status/${quotedCase.owner}`,
+    quotedCase.name === 'linked');
+  const playingNavigation = await navigateQuotedAwayAndBack(page, quotedCase, playing.total);
+  const galleryPlaybackStart = await playing.video.evaluate((video) => video.currentTime);
+  await playing.video.click();
+  await page.waitForFunction(({ index, start }) => {
+    const video = document.querySelector(
+      `[data-xeg-gallery-container] [data-gallery-element="item"][data-index="${index}"] video`
+    );
+    return video instanceof HTMLVideoElement && video.currentTime >= start + 0.15 &&
+      video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && !video.paused && video.error === null;
+  }, { index: quotedCase.expectedPosition - 1, start: galleryPlaybackStart }, { timeout: 15_000 });
+  const galleryPlaybackTime = await playing.video.evaluate((video) => video.currentTime);
+  assert(quotedApiResponses.slice(apiStart).every(({ tweetId }) => tweetId === expectedRequest),
+    'Blob-backed click must retain the same owner request');
+  const latePanel = await page.evaluate(() => {
+    const panel = document.createElement('aside');
+    panel.id = 'late-quote-panel';
+    panel.setAttribute('aria-hidden', 'false');
+    panel.textContent = 'Late quote host panel';
+    document.body.append(panel);
+    return panel.id;
+  });
+  await page.locator(`#${latePanel}[data-xeg-gallery-hidden]`).waitFor({ state: 'attached' });
+  await page.screenshot({ path: join(output, `quoted-${quotedCase.name}-playing-gallery.png`) });
+
+  const knownIds = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+  const filename = `${quotedCase.username}_${quotedCase.owner}_${quotedCase.expectedPosition - 1}.mp4`;
+  await playing.gallery.locator(
+    '[data-gallery-element="toolbar"] button[aria-label="Download"]'
+  ).click();
+  const download = await waitForDownload(extensionPage, knownIds, filename);
+  const relativeDownload = relative(downloads, download.filename);
+  assert(relativeDownload && !relativeDownload.startsWith('..') && !isAbsolute(relativeDownload),
+    'Quoted video download escaped the task-owned directory');
+  const bytes = await readFile(download.filename);
+  const sourceBytes = videoPayloads[quotedCase.media];
+  assert(sourceBytes.equals(bytes), 'Privileged video bytes must match the selected MP4 asset');
+  const copiedName = `quoted-${quotedCase.name}-download.mp4`;
+  await copyFile(download.filename, join(output, copiedName));
+  const lateState = await page.locator(`#${latePanel}`).evaluate((element) => ({
+    hiddenMarker: element.hasAttribute('data-xeg-gallery-hidden'),
+    inert: element.hasAttribute('inert'),
+  }));
+  assert.deepEqual(lateState, { hiddenMarker: true, inert: true },
+    'Late-added host panel must be isolated while the gallery is open');
+  const playingClose = await closeQuotedGallery({ gallery: playing.gallery, page,
+    method: quotedCase.close, before: playingBefore, caseName: quotedCase.route,
+    selector: '[data-video-key] video' });
+  const restoredPanel = await page.locator(`#${latePanel}`).evaluate((element) => ({
+    ariaHidden: element.getAttribute('aria-hidden'),
+    hiddenMarker: element.hasAttribute('data-xeg-gallery-hidden'),
+    inert: element.hasAttribute('inert'),
+  }));
+  assert.deepEqual(restoredPanel, { ariaHidden: 'false', hiddenMarker: false, inert: false });
+  await page.locator(`#${latePanel}`).evaluate((element) => element.remove());
+  await page.screenshot({ path: join(output, `quoted-${quotedCase.name}-after.png`) });
+  const outerControl = quotedCase.name === 'unmarked'
+    ? await runOuterVideoControl({ quotedCase, quotedApiResponses, downloads,
+      extensionPage, output, page, videoPayloads })
+    : null;
+  return {
+    name: quotedCase.name, pageUrl, requestedTweetId: expectedRequest,
+    api: quotedApiResponses.slice(apiStart), selectedPosition: quotedCase.expectedPosition,
+    preview: { source: previewState.poster, selected: initial.selectedMedia,
+      originUrl: previewOriginUrl, navigation: previewNavigation,
+      close: previewClose },
+    hostPlaying: { blobBacked: hostPlaying.source.startsWith('blob:'),
+      currentTime: hostPlaying.time, width: hostPlaying.width, height: hostPlaying.height },
+    playing: { selected: playing.selectedMedia, originUrl: playingOriginUrl,
+      navigation: playingNavigation, galleryPlaybackStart, galleryPlaybackTime,
+      closeMethod: quotedCase.close,
+      close: playingClose },
+    download: { filename, bytes: bytes.length, file: copiedName,
+      sha256: createHash('sha256').update(bytes).digest('hex'),
+      sourceSha256: createHash('sha256').update(sourceBytes).digest('hex') },
+    outerControl,
+  };
+}
+
 async function runCycle({ cycle, downloads, extensionPage, output, page, images }) {
   const number = cycle.expectedIndex + 1;
   const trigger = page.locator('[data-testid="tweetPhoto"] img').nth(cycle.triggerIndex);
@@ -1690,6 +2393,8 @@ async function exerciseInstalledExtension(
   const consoleErrors = [];
   const failedRequests = [];
   const cycles = [];
+  const quotedVideoCycles = [];
+  let fixtureVideoAssets;
   const mv3RestartCancellation = {};
   const flowCleanup = {};
   const cleanupErrors = [];
@@ -1700,6 +2405,7 @@ async function exerciseInstalledExtension(
   let packagingAssets;
   let notification;
   let publicDom;
+  let videoClickConfiguration;
   let zoomSpanish;
   let flowResult;
   let primaryError;
@@ -1708,6 +2414,9 @@ async function exerciseInstalledExtension(
   let observationErrorSeen = false;
   try {
     fixtureRoutes = await installFixtureRoutes(context, root, images);
+    fixtureVideoAssets = Object.fromEntries(Object.entries(fixtureRoutes.videoPayloads)
+      .map(([name, bytes]) => [name, { bytes: bytes.length,
+        sha256: createHash('sha256').update(bytes).digest('hex') }]));
     extensionPage = await context.newPage();
     page = await context.newPage();
     page.on('pageerror', (error) => pageErrors.push(error.message));
@@ -1737,6 +2446,14 @@ async function exerciseInstalledExtension(
       state: 'attached',
       timeout: 15_000,
     });
+    videoClickConfiguration = await extensionPage.evaluate(async () => {
+      const stored = (await chrome.storage.local.get('xeg-app-settings'))['xeg-app-settings'];
+      return { storagePresent: stored !== undefined,
+        storedMode: stored?.gallery?.videoClickMode ?? null,
+        effectiveMode: stored?.gallery?.videoClickMode ?? 'block-controls-only' };
+    });
+    assert.equal(videoClickConfiguration.effectiveMode, 'block-controls-only',
+      'Installed profile must use the configured noncontrol video click mode');
     await verifyMv3RestartCancellation({
       downloads,
       evidence: mv3RestartCancellation,
@@ -1761,6 +2478,69 @@ async function exerciseInstalledExtension(
       output,
       page,
     });
+    for (const quotedCase of QUOTED_CASES) {
+      const settingEvidence = {};
+      try {
+        const runQuotedCase = quotedCase.name === 'public-preplayer'
+          ? runPublicPreplayerCycle : runQuotedVideoCycle;
+        quotedVideoCycles.push(await runQuotedCase({
+          quotedCase,
+          quotedApiResponses: fixtureRoutes.quotedApiResponses,
+          apiResponses: fixtureRoutes.apiResponses,
+          downloads,
+          extensionPage,
+          output,
+          page,
+          videoPayloads: fixtureRoutes.videoPayloads,
+          settingEvidence,
+        }));
+      } catch (error) {
+        const diagnostic = { name: quotedCase.name, status: 'failed',
+          error: safeError(error),
+          ...(quotedCase.name === 'public-preplayer'
+            ? { controlledSetting: settingEvidence } : {}),
+          api: fixtureRoutes.quotedApiResponses.filter(({ tweetId }) =>
+            tweetId === quotedCase.outer || tweetId === quotedCase.owner),
+          screenshot: `quoted-${quotedCase.name}-failure.png` };
+        const [snapshot, screenshot] = await Promise.allSettled([
+          page.evaluate(() => {
+            const gallery = document.querySelector('[data-xeg-gallery-container]');
+            const toolbar = gallery?.querySelector('[data-gallery-element="toolbar"]');
+            const counter = toolbar?.querySelector('#xeg-toolbar-counter');
+            return {
+              url: location.href,
+              activeTag: document.activeElement?.tagName ?? null,
+              bodyVideoError: document.body.dataset.videoError ?? null,
+              bodyVideoReady: document.body.dataset.videoReady ?? null,
+              galleryPresent: gallery !== null,
+              position: counter?.getAttribute('data-position') ?? null,
+              total: counter?.getAttribute('data-total') ?? null,
+              currentIndex: toolbar?.getAttribute('data-current-index') ?? null,
+              focusedIndex: toolbar?.getAttribute('data-focused-index') ?? null,
+              items: [...(gallery?.querySelectorAll('[data-gallery-element="item"]') ?? [])]
+                .map((item) => {
+                  const media = item.querySelector('video, img');
+                  return { index: item.getAttribute('data-index'),
+                    loaded: item.getAttribute('data-media-loaded'),
+                    source: media?.currentSrc || media?.src || null,
+                    mediaError: media instanceof HTMLVideoElement ? media.error?.code ?? null : null,
+                    readyState: media instanceof HTMLVideoElement ? media.readyState : null };
+                }),
+            };
+          }),
+          page.screenshot({ path: join(output, diagnostic.screenshot) }),
+        ]);
+        diagnostic.snapshot = snapshot.status === 'fulfilled' ? snapshot.value
+          : { error: safeError(snapshot.reason) };
+        if (screenshot.status === 'rejected') {
+          diagnostic.screenshotError = safeError(screenshot.reason);
+        }
+        quotedVideoCycles.push(diagnostic);
+        await writeFile(join(output, `quoted-${quotedCase.name}-failure.json`),
+          JSON.stringify(diagnostic, null, 2)).catch(() => {});
+        throw error;
+      }
+    }
     const unexpectedConsoleErrors = consoleErrors.filter(
       (record) => !isExpectedFixtureApiConsoleError(record)
     );
@@ -1781,6 +2561,9 @@ async function exerciseInstalledExtension(
       notification,
       packagingAssets,
       publicDom,
+      quotedVideoCycles,
+      fixtureVideoAssets,
+      videoClickConfiguration,
       zoomSpanish,
     };
   } catch (error) {
@@ -1830,11 +2613,15 @@ async function exerciseInstalledExtension(
             consoleErrors,
             failedRequests,
             fixtureApiResponses: fixtureRoutes?.apiResponses ?? [],
+            quotedApiResponses: fixtureRoutes?.quotedApiResponses ?? [],
             flowCleanup,
             mv3RestartCancellation,
             notification,
             packagingAssets,
             publicDom,
+            quotedVideoCycles,
+            fixtureVideoAssets,
+            videoClickConfiguration,
             zoomSpanish,
           },
           null,

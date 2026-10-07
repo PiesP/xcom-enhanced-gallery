@@ -6,7 +6,7 @@
  * original tweet containing an image. The API client intentionally returns
  * quoted media first, so clicking the outer video must resolve to index 1.
  */
-export function createQuotedVideoTweetResponse(): Record<string, unknown> {
+export function createQuotedVideoTweetResponse(posterMediaId = '222'): Record<string, unknown> {
   return {
     data: {
       tweetResult: {
@@ -32,7 +32,7 @@ export function createQuotedVideoTweetResponse(): Record<string, unknown> {
                   id_str: 'video-222',
                   media_key: '7_video-222',
                   media_url_https:
-                    'https://pbs.twimg.com/ext_tw_video_thumb/222/pu/img/quote-video.jpg',
+                    `https://pbs.twimg.com/ext_tw_video_thumb/${posterMediaId}/pu/img/quote-video.jpg`,
                   expanded_url: 'https://x.com/quote_author/status/222/video/1',
                   display_url: 'pic.x.com/outer-video',
                   url: 'https://t.co/outer-video',

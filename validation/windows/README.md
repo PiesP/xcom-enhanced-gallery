@@ -62,6 +62,35 @@ host layout-shift regression. Page screenshots, per-cycle timings, file hashes,
 and cleanup metadata are retained as evidence; the timings are observations,
 not a performance claim.
 
+The installed profile also serves the declared small MP4 assets and
+`installed-quoted-video-page.html` with deterministic `TweetResultByRestId`
+responses from `installed-quoted-video-api.mjs`. Its quote cases cover a marked
+branch without a permalink, an unmarked clickable branch with an outer video,
+an explicit quoted permalink, and nested quotes opened from the outer post or
+the directly quoted post. Each case opens the preview before native playback,
+then uses the blob-backed host player. It checks the selected API video path,
+originating-post toolbar link, collection/current/focused indices, dimensions,
+readiness, media errors, and playback after a gesture. Navigation away and back,
+privileged MP4 filename and exact byte/hash checks, Escape/button close,
+focus/scroll/body/isolation restoration, and teardown are recorded per case.
+The outer-video control proves that selecting A and B remains independent.
+An additional installed pre-player case mirrors the bounded public-page shape:
+two same-ID A header links without `<time>`, an unmarked role-link quote with a
+nested B article, and a narrow wrapper containing a non-enclosing C credit
+link. Two ordinary avatar images and one trusted B video thumbnail share the
+media shell two ancestors above a bare button; no host `<video>` exists before
+the click. It temporarily
+sets the supported `allow-all` video-click mode in the task-owned extension
+storage, reloads the fixture, and restores the exact previous value in `finally`.
+An ordinary hit-tested click on the bare preview button must request A, select
+and attribute B's video, preserve B's text and source link, play with nonzero
+progress, exclude C, and download B's exact MP4 bytes and filename. The case
+also checks navigation and host-state restoration. These fixture IDs are
+synthetic and do not identify posts on the reported public page.
+Fixture routes supply transport and host media only; extraction and downloads
+use the installed production extension. These results do not establish the
+reported live page's quote relationship or availability.
+
 After those cycles, the installed profile uses the exact installed extension
 worker and exact owned fixture tab to set real `chrome.tabs` zoom to 200%, then
 restores the prior factor and tab zoom settings in `finally`. At that zoom it
@@ -74,7 +103,7 @@ background-isolation restoration. This is browser tab zoom in the fresh task
 profile; it does not claim an OS DPI change or a live X.com observation.
 
 The deterministic fixture also exercises the MV3 download restart boundary. A
-bounded 32 MiB Blob belongs to the routed `https://x.com` fixture and enters the
+bounded 256 MiB Blob belongs to the routed `https://x.com` fixture and enters the
 existing `DOWNLOAD_BLOB_URL_REQUEST` path. An extension utility page listens for
 the exact Blob URL through `chrome.downloads.onCreated` and immediately invokes
 the real `chrome.downloads.pause`. The check fails if pause loses the race. It
@@ -144,9 +173,24 @@ The deterministic installed fixture always runs first with strict console and
 page-error checks. The profile then removes every fixture route before opening
 the caller's unchanged URL. It does not intercept traffic, add authentication,
 accept consent or CAPTCHA prompts, start downloads, force clicks, or edit the
-host DOM. It finds the exact status-owned media action through an element hit
-test, performs an ordinary click, and checks the loaded host image, gallery
-dialog, Escape close, exact focus, scroll, and body-style restoration.
+host DOM. For an image it checks the exact status-owned photo action and loaded
+gallery image. For a visible video or video preview in that status's quote card, it records a
+bounded ownership path and observed status links, uses an ordinary hit-tested
+click, and checks the selected gallery video, playable source, dimensions,
+readiness, error state, and playback progress. A video in an unmarked branch is
+only a candidate until observed API relationships and its selected playable
+variant establish the directly quoted owner. Both paths check dialog opening,
+Escape close, focus, scroll, and body-style restoration.
+
+When a native player covers every point with controls, the observer first
+makes a bounded ordinary Play click and records host-video readiness and
+playback separately. If it plays but no non-control gallery point remains,
+the observer retries the unchanged URL in the same fresh owned profile with
+the supported `gallery.videoClickMode: allow-all` setting. It records both
+attempts, verifies the stored mode, and restores the complete prior extension
+setting in `finally`. The original user's installed setting is unknown; the
+controlled result applies only to the recorded mode. Native playback alone
+never counts as an XEG gallery pass.
 
 Each page writes a partial JSON record and screenshots even when a required
 assertion is missing; the profile then fails rather than treating an unavailable
@@ -154,7 +198,12 @@ guest page as success. Host console, HTTP, and request diagnostics are retained
 separately from extension-origin errors with URL queries and credentials
 removed. A `TweetResultByRestId` 403 can coexist with an observed gallery flow,
 but leaves the overall live evidence `unverified` instead of classifying the
-response as a product defect.
+response as a product defect. The JSON records only allowlisted
+`TweetResultByRestId` operation, requested ID, HTTP outcome, direct quote and
+nested quote IDs, media IDs/types, and approved poster/video source paths; it
+does not retain response bodies, text, headers, or URL queries. A blocked page,
+missing quote, unavailable API relation, or nonplaying video remains unverified.
+Review the retained screenshots separately before making a live-page claim.
 
 Run `node --check validation/windows/install-profile.mjs` for the installed
 profile syntax check.

@@ -119,16 +119,20 @@ export class MediaExtractionService implements MediaExtractor {
     }
 
     try {
-      const tweetInfo = this.tweetInfoExtractor.extract(element);
+      const context = this.tweetInfoExtractor.extractContext(element);
+      const tweetInfo = context?.tweetInfo;
 
-      if (!tweetInfo?.tweetId) {
+      if (!context || !tweetInfo?.tweetId) {
         __DEV__ && logger.warn(`[MediaExtractor] ${extractionId}: No tweet info found`);
         return createErrorResult('No tweet information found');
       }
 
       const extractionOptions = {
         ...options,
-        clickedMediaEvidence: captureClickedMediaEvidence(element),
+        clickedMediaEvidence: Object.freeze({
+          ...captureClickedMediaEvidence(element),
+          ownership: context.ownership,
+        }),
       };
 
       const apiResult: MediaExtractionResult = this.isApiCircuitOpen()
@@ -166,6 +170,16 @@ export class MediaExtractionService implements MediaExtractor {
 
       __DEV__ && logger.info(`[MediaExtractor] ${extractionId}: API failed, trying DOM fallback`);
 
+      // DOM-only sources cannot prove a missing quote owner. Retain the API
+      // diagnosis and outage accounting without relabeling the quote as A.
+      if (context?.ownership.ownerTweetId === null) {
+        return {
+          ...apiResult,
+          tweetInfo,
+          metadata: { ...apiResult.metadata, domRecovery: 'owner-unconfirmed' },
+        };
+      }
+
       // Yield before CPU-intensive DOM fallback extraction
       await schedulerYield();
       if (options.signal?.aborted) return createErrorResult('Extraction cancelled');
@@ -199,7 +213,8 @@ export class MediaExtractionService implements MediaExtractor {
         metadata: {
           ...base.metadata,
           ...(apiResult.metadata ?? {}),
-          strategy: 'api-extraction',
+          strategy: apiResult.metadata?.strategy ?? 'api-extraction',
+          domRecovery: domResult.metadata?.strategy ?? 'dom-unavailable',
           sourceType: 'extraction-failed',
         },
         tweetInfo: mergeTweetInfo(tweetInfo, apiResult.tweetInfo),

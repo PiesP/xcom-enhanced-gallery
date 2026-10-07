@@ -8,6 +8,12 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Quoted video** — Recover a quoted video's owner from a direct API quote relationship and unique click-time media identity when its permalink is missing or separate header and credit links leave ownership unresolved. Keep nested quotes, ambiguous sources, and conflicting owners from substituting another attachment, and retain each item's originating post, author, text, and download metadata.
+- **Video controls** — Honor the `allow-all` click setting for a native button in a bounded, identifiable video preview or player without X's player markers.
+- **Current download** — Keep a fully visible selected video active when neighboring media also fits in the gallery. After scrolling changes the displayed item, keep its post text and source link aligned with the download target.
+
 ## [2.3.4] - 2026-10-07
 
 ### Fixed

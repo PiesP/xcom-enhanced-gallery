@@ -152,8 +152,8 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
       // Article-less recovery is bounded to a positively owned enclosing link.
       const tile = anchorOwner?.tweetId === tweetInfo.tweetId ? anchor : null;
       const tweetContainer = article ?? tile;
-      const currentOwner = ownerExtractor.extract(clickedElement);
-      if (!tweetContainer || currentOwner?.tweetId !== tweetInfo.tweetId) {
+      const currentOwner = ownerExtractor.extractContext(clickedElement);
+      if (!tweetContainer || currentOwner?.ownership.ownerTweetId !== tweetInfo.tweetId) {
         return createFailureResult(
           'No tweet container found',
           'dom-fallback',
@@ -183,8 +183,8 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
       for (let i = 0; i < mediaElements.length; i++) {
         const element = mediaElements[i];
         if (!element) continue;
-        const owner = ownerExtractor.extract(element);
-        if (!owner || owner.tweetId !== tweetInfo.tweetId) continue;
+        const owner = ownerExtractor.extractContext(element);
+        if (owner?.ownership.ownerTweetId !== tweetInfo.tweetId) continue;
 
         const mediaInfo = createMediaInfoFromDOM(element, tweetInfo, i, tweetTextContent);
         if (mediaInfo) {

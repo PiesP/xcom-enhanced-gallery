@@ -8,7 +8,7 @@
 
 import { STATUS_LINK_SELECTOR, TWEET_CONTAINER_SELECTORS } from '@constants/selectors';
 import { logger } from '@shared/logging/logger';
-import type { TweetInfo } from '@shared/types/media.types';
+import type { TweetClickContext, TweetInfo } from '@shared/types/media.types';
 import { closestWithFallback } from '@shared/utils/dom/query-helpers';
 import { extractUsernameFromUrl, isHostMatching, TWITTER_HOSTS } from '@shared/utils/url/host';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
@@ -148,7 +148,10 @@ const extractFromDOM: ExtractionStrategy = (element) => {
     ...link,
     extractionMethod: 'dom-structure',
     confidence: 0.85,
-    metadata: { containerTag: container.tagName.toLowerCase() },
+    metadata: {
+      containerTag: container.tagName.toLowerCase(),
+      isTweetContainer: container === article,
+    },
   };
 };
 
@@ -208,9 +211,196 @@ function extractTweetInfo(element: HTMLElement): TweetInfo | null {
   return null;
 }
 
+function strictStatusLink(anchor: Element): TrustedStatusLink | null {
+  try {
+    const url = new URL(anchor.getAttribute('href') ?? '', DEFAULT_TWEET_ORIGIN);
+    if (
+      url.protocol !== 'https:' ||
+      !['x.com', 'twitter.com'].includes(url.hostname) ||
+      url.port ||
+      url.username ||
+      url.password ||
+      !/^\/[A-Za-z0-9_]{1,15}\/status\/[1-9]\d*(?:\/(?:photo|video)\/\d+)?\/?$/u.test(url.pathname)
+    )
+      return null;
+    return parseTrustedStatusLink(url.toString());
+  } catch {
+    return null;
+  }
+}
+
+function requestInfo(
+  article: HTMLElement,
+  element: HTMLElement,
+  boundary: HTMLElement,
+  allowUntimed: boolean
+): TweetInfo | null {
+  const anchors = allowUntimed
+    ? Array.from(article.querySelectorAll(STATUS_LINK_SELECTOR)).filter(
+        (anchor) =>
+          anchor.closest('article') === article &&
+          !boundary.contains(anchor) &&
+          !anchor.closest('[data-testid="tweetText"]')
+      )
+    : getOwnStatusLinks(article, element)
+        .filter(({ anchor }) => !boundary.contains(anchor))
+        .map(({ anchor }) => anchor);
+  const links = anchors.flatMap((anchor) => {
+    const link = strictStatusLink(anchor);
+    return link ? [{ anchor, link }] : [];
+  });
+  if (allowUntimed && links.length !== anchors.length) return null;
+  const timestamps = links.filter(({ anchor }) => anchor.querySelector('time'));
+  // An immediate parent of a bounded nested quote may expose only untimed
+  // permalinks. They establish a unique request, never a confirmed owner.
+  const owners = allowUntimed ? links : timestamps;
+  if (new Set(owners.map(({ link }) => link.tweetId)).size !== 1) return null;
+  const link = owners[0]?.link;
+  return link ? { ...link, extractionMethod: 'request-context', confidence: 0.85 } : null;
+}
+
+/** Keep query context separate from ownership in a bounded clickable branch. */
+function extractClickContext(element: HTMLElement): TweetClickContext | null {
+  let owner = extractTweetInfo(element);
+  const enclosing = element.closest(STATUS_LINK_SELECTOR);
+  const enclosingOwner = enclosing ? strictStatusLink(enclosing) : null;
+  const attributeId = element.dataset.tweetId;
+  if (attributeId && enclosingOwner && attributeId !== enclosingOwner.tweetId) return null;
+  const domOwner = extractFromDOM(element);
+  if (attributeId && domOwner && attributeId !== domOwner.tweetId) return null;
+
+  const owned = (info: TweetInfo): TweetClickContext => ({
+    tweetInfo: info,
+    ownership: Object.freeze({
+      requestTweetId: info.tweetId,
+      ownerTweetId: info.tweetId,
+      scope: 'owned',
+    }),
+  });
+  if (enclosingOwner || attributeId) return owner ? owned(owner) : null;
+
+  // Selector preference must not jump over an unmarked nested article to a
+  // farther article carrying X's tweet marker.
+  const article = element.closest<HTMLElement>('article');
+  if (!article) return owner ? owned(owner) : null;
+  if (element.closest('[data-testid="card.wrapper"], [data-testid="reply"]')) return null;
+
+  let boundary: HTMLElement | null = null;
+  for (
+    let node = element.parentElement, hops = 0;
+    node && node !== article && hops < 16;
+    node = node.parentElement, hops++
+  ) {
+    if (node.matches('[data-testid="quoteTweet"]')) {
+      boundary = node;
+      break;
+    }
+    if (!boundary && node.matches('[role="link"]') && !(node instanceof HTMLAnchorElement))
+      boundary = node;
+  }
+  let requestArticle = article;
+  const parentArticle = article.parentElement?.closest<HTMLElement>('article');
+  if (parentArticle) {
+    const articleAnchors = Array.from(article.querySelectorAll(STATUS_LINK_SELECTOR)).filter(
+      (anchor) =>
+        anchor.closest('article') === article && !anchor.closest('[data-testid="tweetText"]')
+    );
+    const ownIds = new Set<string>();
+    for (const anchor of articleAnchors) {
+      const link = strictStatusLink(anchor);
+      if (!link) return null;
+      ownIds.add(link.tweetId);
+    }
+    // A narrower media branch can contain a credit permalink while the nested
+    // article has a different header. Neither non-enclosing link proves which
+    // tweet owns the media, even when legacy extraction found one narrow link.
+    if (ownIds.size > 1) {
+      if (boundary?.matches('[data-testid="quoteTweet"]')) {
+        const markedIds = new Set<string>();
+        for (const anchor of articleAnchors.filter((anchor) => boundary?.contains(anchor))) {
+          const link = strictStatusLink(anchor);
+          if (link) markedIds.add(link.tweetId);
+        }
+        // A marked inner quote with its own sole permalink is an explicit
+        // ownership region. A generic clickable player/credit wrapper is not.
+        if (markedIds.size !== 1 || !owner || !markedIds.has(owner.tweetId)) return null;
+      } else {
+        owner = null;
+        boundary = null;
+      }
+    }
+  }
+  if (
+    !boundary &&
+    owner?.metadata?.isTweetContainer === true &&
+    new Set(getOwnStatusLinks(article, element).map(({ link }) => link.tweetId)).size > 1
+  )
+    owner = null;
+  if (!boundary && !owner) {
+    // A nested article can be a quote candidate only inside its immediate
+    // parent's clickable boundary. Never borrow a neighboring reply or page URL.
+    if (parentArticle) {
+      for (
+        let node = article.parentElement, hops = 0;
+        node && node !== parentArticle && hops < 16;
+        node = node.parentElement, hops++
+      ) {
+        if (node.matches('[data-testid="card.wrapper"], [data-testid="reply"]')) return null;
+        if (
+          node.matches('[data-testid="quoteTweet"], [role="link"]') &&
+          !(node instanceof HTMLAnchorElement)
+        ) {
+          boundary = node;
+          break;
+        }
+      }
+      if (boundary) requestArticle = parentArticle;
+    }
+  }
+  if (!boundary) return owner ? owned(owner) : null;
+
+  const boundaryLinks = getOwnStatusLinks(boundary, element);
+  if (
+    owner &&
+    new Set(boundaryLinks.map(({ link }) => link.tweetId)).size === 1 &&
+    boundaryLinks.some(({ link }) => link.tweetId === owner.tweetId)
+  )
+    return owned(owner);
+  // An explicit foreign or conflicting permalink is not missing evidence.
+  if (
+    Array.from(boundary.querySelectorAll(STATUS_LINK_SELECTOR)).some(
+      (anchor) =>
+        anchor.closest('article') === article &&
+        !anchor.closest('[data-testid="tweetText"]') &&
+        !strictStatusLink(anchor)
+    )
+  )
+    return null;
+  if (boundaryLinks.length > 0 && requestArticle === article) return null;
+  const context = requestInfo(requestArticle, element, boundary, requestArticle !== article);
+  if (!context) return null;
+  const quoteMarked = element.closest('[data-testid="quoteTweet"]');
+  return {
+    tweetInfo: context,
+    ownership: Object.freeze({
+      requestTweetId: context.tweetId,
+      ownerTweetId: null,
+      scope:
+        boundary.matches('[data-testid="quoteTweet"]') ||
+        (quoteMarked && requestArticle.contains(quoteMarked))
+          ? 'quoted'
+          : 'clickable',
+    }),
+  };
+}
+
 // Backward-compatible class wrapper (for existing callers)
 export class TweetInfoExtractor {
   extract(element: HTMLElement): TweetInfo | null {
     return extractTweetInfo(element);
+  }
+
+  extractContext(element: HTMLElement): TweetClickContext | null {
+    return extractClickContext(element);
   }
 }

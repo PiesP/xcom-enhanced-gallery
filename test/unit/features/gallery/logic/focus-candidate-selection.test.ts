@@ -64,4 +64,23 @@ describe('selectBestFocusCandidate', () => {
   ])('$name', ({ itemRects, expected }) => {
     expect(selectBestFocusCandidate(viewport, itemRects)).toEqual(expected);
   });
+
+  it('keeps the selected small video when it and the preceding photo both fit', () => {
+    const items = [
+      { index: 0, top: 0, height: 330 },
+      { index: 1, top: 363, height: 180 },
+    ];
+    expect(selectBestFocusCandidate({ top: 0, height: 800 }, items, 1)).toEqual({
+      index: 1,
+      distance: 0,
+    });
+  });
+
+  it('tracks actual scrolling after the selected video leaves full view', () => {
+    const items = [
+      { index: 0, top: 0, height: 330 },
+      { index: 1, top: 770, height: 180 },
+    ];
+    expect(selectBestFocusCandidate({ top: 0, height: 800 }, items, 1)?.index).toBe(0);
+  });
 });

@@ -11,6 +11,9 @@ import type {
 import { extractDimensionsFromUrl, normalizeDimension } from '@shared/utils/media/media-dimensions';
 import { escapeRegExp } from '@shared/utils/text/formatting';
 import { tryParseUrl } from '@shared/utils/url/host';
+import { isValidMediaUrl } from '@shared/utils/url/validator';
+
+const MAX_VIDEO_VARIANT_URLS = 32;
 
 interface MediaDimensions {
   readonly width?: number;
@@ -98,10 +101,36 @@ function getPhotoHighQualityUrl(mediaUrlHttps?: string): string | undefined {
   return isAbsolute ? parsed.toString() : `${parsed.pathname}${parsed.search}`;
 }
 
+function getVideoVariantUrls(media: TwitterMedia): readonly string[] {
+  const variants = Array.isArray(media.video_info?.variants) ? media.video_info.variants : [];
+  const seen = new Set<string>();
+  const accepted: Array<{ url: string; bitrate: number }> = [];
+  for (const variant of variants) {
+    if (
+      variant?.content_type !== 'video/mp4' ||
+      typeof variant.url !== 'string' ||
+      !isValidMediaUrl(variant.url)
+    )
+      continue;
+    const parsed = new URL(variant.url);
+    if (
+      parsed.hostname !== 'video.twimg.com' ||
+      !parsed.pathname.toLowerCase().endsWith('.mp4') ||
+      seen.has(variant.url)
+    )
+      continue;
+    seen.add(variant.url);
+    accepted.push({
+      url: variant.url,
+      bitrate: Number.isFinite(variant.bitrate) ? (variant.bitrate ?? 0) : 0,
+    });
+  }
+  accepted.sort((left, right) => right.bitrate - left.bitrate);
+  return Object.freeze(accepted.slice(0, MAX_VIDEO_VARIANT_URLS).map(({ url }) => url));
+}
+
 function getVideoHighQualityUrl(media: TwitterMedia): string | null {
-  const mp4s = (media.video_info?.variants ?? []).filter((v) => v.content_type === 'video/mp4');
-  if (mp4s.length === 0) return null;
-  return mp4s.reduce((best, cur) => ((cur.bitrate ?? 0) > (best.bitrate ?? 0) ? cur : best)).url;
+  return getVideoVariantUrls(media)[0] ?? null;
 }
 
 export function getHighQualityMediaUrl(media: TwitterMedia): string | null {
@@ -138,6 +167,7 @@ function createMediaEntry(
     short_tweet_url: media.url ?? '',
     tweet_text: tweetText,
     sourceLocation,
+    ...(mediaType === 'video' && { videoVariantUrls: getVideoVariantUrls(media) }),
     ...(media.ext_alt_text?.trim() ? { alt_text: media.ext_alt_text.trim() } : {}),
     ...(dims.width && { original_width: dims.width }),
     ...(dims.height && { original_height: dims.height }),
@@ -177,9 +207,9 @@ export function extractMediaFromTweet(
   tweetUser: TwitterUser,
   sourceLocation: 'original' | 'quoted' = 'original'
 ): TweetMediaEntry[] {
-  const quotedResult = tweetResult.quoted_status_result?.result;
-  const target: TwitterTweet =
-    sourceLocation === 'quoted' && quotedResult ? quotedResult : tweetResult;
+  // The client selects and normalizes the intended tweet exactly once.
+  // Provenance labels never authorize traversing another quote descendant.
+  const target = tweetResult;
 
   if (!target.extended_entities?.media) return [];
 
@@ -198,11 +228,17 @@ export function extractMediaFromTweet(
 
   for (let i = 0; i < orderedMedia.length; i++) {
     const media = orderedMedia[i];
-    if (!media?.type || !media.id_str || !media.media_url_https) continue;
+    if (
+      !media?.type ||
+      !media.id_str ||
+      !media.media_url_https ||
+      !isValidMediaUrl(media.media_url_https)
+    )
+      continue;
 
     try {
       const mediaUrl = getHighQualityMediaUrl(media);
-      if (!mediaUrl) continue;
+      if (!mediaUrl || !isValidMediaUrl(mediaUrl)) continue;
       mediaItems.push(
         createMediaEntry(
           media,
@@ -214,8 +250,8 @@ export function extractMediaFromTweet(
           sourceLocation
         )
       );
-    } catch (error) {
-      __DEV__ && logger.debug('[TwitterParser] Skipping media entry', { error });
+    } catch {
+      __DEV__ && logger.debug('[TwitterParser] Skipping invalid media entry');
     }
   }
 

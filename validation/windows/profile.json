@@ -10,6 +10,14 @@
     "assets": [
       "dist-extension",
       "test/e2e/fixtures/installed-gallery-page.html",
+      "test/e2e/fixtures/installed-quoted-video-page.html",
+      "test/e2e/fixtures/installed-public-preplayer-page.html",
+      "test/e2e/fixtures/installed-quoted-video-api.mjs",
+      "test/e2e/fixtures/installed-quote-one.mp4",
+      "test/e2e/fixtures/installed-quote-two.mp4",
+      "test/e2e/fixtures/installed-linked-four.mp4",
+      "test/e2e/fixtures/installed-quote-three.mp4",
+      "test/e2e/fixtures/installed-nested-c.mp4",
       "validation/windows/live-page.mjs"
     ],
     "build_commands": [

@@ -36,6 +36,9 @@ describe('MediaExtractionService quoted media selection', () => {
   });
 
   it('requests the main owner for an unanchored preview before quoted links', async () => {
+    // The preview media ID is independent of its tweet owner. Match the entire
+    // API poster path instead of relying on the fixture's shared basename.
+    httpGet.mockResolvedValue({ ok: true, status: 200, data: createQuotedVideoTweetResponse('333') });
     document.body.innerHTML = unanchoredVideoPreview;
     const result = await new MediaExtractionService().extractFromClickedElement(
       document.querySelector<HTMLImageElement>('#main-poster')!

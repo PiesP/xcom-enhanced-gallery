@@ -18,7 +18,11 @@ import {
   normalizeLegacyTweet,
   normalizeLegacyUser,
 } from '@shared/services/media/twitter-parser/twitter-response-parser';
-import type { TweetMediaEntry, TwitterAPIResponse } from '@shared/services/media/types';
+import type {
+  TweetMediaEntry,
+  TwitterAPIResponse,
+  TwitterTweet,
+} from '@shared/services/media/types';
 import { sortMediaByVisualOrder } from '@shared/utils/media/media-dimensions';
 
 /** An attempted transport or provider failure, distinct from local extraction. */
@@ -135,6 +139,25 @@ function createTweetEndpointUrl(tweetId: string, location?: LocationConfig): str
   });
 }
 
+function unwrapAndNormalizeTweet(input: TwitterTweet): TwitterTweet {
+  let result = input;
+  // Visibility wrappers can nest, but quoted_status_result is a separate owner.
+  for (let depth = 0; depth < 2 && result.tweet; depth += 1) {
+    result = result.tweet;
+  }
+  return normalizeLegacyTweet(result);
+}
+
+function numericTweetId(tweet: TwitterTweet): string | null {
+  const ids = [tweet.rest_id, tweet.id_str, tweet.legacy?.id_str].filter((id) => id !== undefined);
+  if (
+    ids.some((id) => typeof id !== 'string' || !/^[1-9]\d*$/u.test(id)) ||
+    new Set(ids).size !== 1
+  )
+    return null;
+  return ids[0] ?? null;
+}
+
 async function apiRequest(
   url: string,
   location?: LocationConfig,
@@ -177,10 +200,14 @@ async function apiRequest(
     });
 
   if (!response.ok) {
+    const status =
+      Number.isInteger(response.status) && response.status >= 100 && response.status <= 599
+        ? response.status
+        : 'invalid';
     if (__DEV__) {
-      logger.warn(`Twitter API request failed: ${response.status}`, response.data);
+      logger.warn('Twitter API request failed', { status });
     }
-    throw new TwitterAPIRequestError(`TW:${response.status}`);
+    throw new TwitterAPIRequestError(`TW:${status}`);
   }
 
   const json = response.data;
@@ -190,7 +217,12 @@ async function apiRequest(
   }
 
   if (__DEV__ && json.errors && json.errors.length > 0) {
-    logger.warn('Twitter API returned errors:', json.errors);
+    logger.warn('Twitter API returned provider errors', {
+      count: json.errors.length,
+      codes: json.errors
+        .slice(0, 8)
+        .map((error) => (Number.isSafeInteger(error?.code) ? error.code : 'invalid')),
+    });
   }
 
   return json;
@@ -213,12 +245,13 @@ export async function getTweetMedias(
 
   if (!json.data?.tweetResult?.result) return [];
 
-  let tweetResult = json.data.tweetResult.result;
-  if (tweetResult.tweet) tweetResult = tweetResult.tweet;
+  const tweetResult = unwrapAndNormalizeTweet(json.data.tweetResult.result);
+  const rootId = numericTweetId(tweetResult);
+  if (!rootId || rootId !== tweetId) {
+    throw new TwitterAPIRequestError('Twitter API returned an unexpected tweet owner');
+  }
 
   let tweetUser = tweetResult.core?.user_results?.result;
-
-  tweetResult = normalizeLegacyTweet(tweetResult);
 
   if (!tweetUser) return [];
   tweetUser = normalizeLegacyUser(tweetUser);
@@ -228,17 +261,15 @@ export async function getTweetMedias(
   result = sortMediaByVisualOrder(result);
 
   if (tweetResult.quoted_status_result?.result) {
-    let quotedTweet = tweetResult.quoted_status_result.result;
-    if (quotedTweet.tweet) {
-      quotedTweet = quotedTweet.tweet;
-    }
-
+    const quotedTweet = unwrapAndNormalizeTweet(tweetResult.quoted_status_result.result);
+    const quotedId = numericTweetId(quotedTweet);
     let quotedUser = quotedTweet.core?.user_results?.result;
-    if (quotedTweet && quotedUser) {
-      quotedTweet = normalizeLegacyTweet(quotedTweet);
+    if (quotedId && quotedId !== rootId && quotedUser) {
       quotedUser = normalizeLegacyUser(quotedUser);
 
-      const quotedMedia = extractMediaFromTweet(quotedTweet, quotedUser, 'quoted');
+      const quotedMedia = extractMediaFromTweet(quotedTweet, quotedUser, 'quoted')
+        .filter((media) => media.tweet_id === quotedId)
+        .map((media) => ({ ...media, quoteParentTweetId: rootId, quotedTweetId: quotedId }));
 
       const sortedQuotedMedia = sortMediaByVisualOrder(quotedMedia);
 
