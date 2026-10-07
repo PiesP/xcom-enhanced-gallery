@@ -132,6 +132,37 @@ export function summarizeTweetResultResponse(urlValue, status, body) {
   };
 }
 
+export function summarizeQuoteProviderRejection(api) {
+  const observations = Array.isArray(api?.observations) ? api.observations : [];
+  const rejected = observations.find((item) => item?.operation === 'TweetResultByRestId' &&
+    ((Number.isInteger(item.httpStatus) && item.httpStatus >= 400 && item.httpStatus <= 599) ||
+      item.providerErrors === true));
+  const statuses = api?.tweetResultByRestId?.responses;
+  const fallbackStatus = Array.isArray(statuses)
+    ? statuses.find((status) => Number.isInteger(status) && status >= 400 && status <= 599)
+    : null;
+  if (!rejected && fallbackStatus == null) return null;
+  const status = rejected?.httpStatus ?? fallbackStatus;
+  return {
+    operation: 'TweetResultByRestId',
+    kind: Number.isInteger(status) && status >= 400 && status <= 599
+      ? 'http-rejection' : 'graphql-errors',
+    httpStatus: Number.isInteger(status) && status >= 100 && status <= 599 ? status : null,
+    requestedTweetId: typeof rejected?.requestedTweetId === 'string' &&
+      /^\d+$/u.test(rejected.requestedTweetId) ? rejected.requestedTweetId : null,
+  };
+}
+
+export function classifyLiveFailure(classification, galleryStatus, providerRejection) {
+  if (classification === 'controlled-media-click-did-not-open-gallery' && providerRejection) {
+    return 'provider-rejected-quote-lookup-gallery-unverified';
+  }
+  if (classification) return classification;
+  if (providerRejection) return 'provider-failure-with-unverified-product-flow';
+  return galleryStatus === 'attempting' || galleryStatus === 'observed'
+    ? 'product-flow-unverified' : 'target-or-product-unverified';
+}
+
 function isProductConsoleError(record) {
   return record.location.startsWith('chrome-extension:') ||
     /\bXEG\b|X\.com Enhanced Gallery|\[(?:MediaExtractor|DOMFallbackExtractor|Gallery)\]/iu.test(
@@ -497,14 +528,30 @@ export function inspectLiveCandidateDocument({ handle, statusId }) {
       if (node === outerArticle || ancestorArticleIndexes.length >= 6) break;
     }
     const nearest = element.closest('article');
-    const ownStatusPaths = nearest ? [...nearest.querySelectorAll('a[href]')]
+    const ownStatusAnchors = nearest ? [...nearest.querySelectorAll('a[href]')]
       .filter((anchor) => anchor.closest('article') === nearest)
       .flatMap((anchor) => {
         const path = statusPath(anchor.href);
-        return path ? [path] : [];
+        if (!path) return [];
+        const structure = [];
+        for (let node = anchor; node && node !== nearest && structure.length < 6;
+          node = node.parentElement) {
+          const role = node.getAttribute('role');
+          const testId = node.getAttribute('data-testid');
+          structure.push({
+            tag: ['a', 'div', 'span', 'time', 'article'].includes(node.tagName.toLowerCase())
+              ? node.tagName.toLowerCase() : 'other',
+            role: ['link', 'button', 'presentation'].includes(role) ? role : null,
+            testId: ['User-Name', 'tweet', 'quoteTweet', 'videoPlayer'].includes(testId)
+              ? testId : null,
+          });
+        }
+        return [{ path, containsTime: Boolean(anchor.querySelector('time')),
+          nearestArticleIndex: articles.indexOf(nearest), structure }];
       }).slice(0, 8) : [];
+    const ownStatusPaths = ownStatusAnchors.map((anchor) => anchor.path);
     return { nearestArticleIndex: articles.indexOf(nearest),
-      ancestorArticleIndexes, ownStatusPaths };
+      ancestorArticleIndexes, ownStatusPaths, ownStatusAnchors };
   };
   const article = articles.find((candidate) => [...candidate.querySelectorAll('a[href]')]
     .some((anchor) => {
@@ -1344,14 +1391,13 @@ async function observeOne(context, extensionId, targetUrl, output, index,
       : 'observed';
   } catch (error) {
     observation.status = 'failed';
+    observation.evidenceStatus = 'unverified';
     observation.error = safeError(error);
     await settleApi();
-    if (!observation.classification) {
-      observation.classification = observation.api.tweetResultByRestId.responses.some((status) => status >= 400)
-        ? 'provider-failure-with-unverified-product-flow'
-        : observation.gallery.status === 'attempting' || observation.gallery.status === 'observed'
-          ? 'product-flow-unverified' : 'target-or-product-unverified';
-    }
+    const providerRejection = summarizeQuoteProviderRejection(observation.api);
+    if (providerRejection) observation.providerRejection = providerRejection;
+    observation.classification = classifyLiveFailure(
+      observation.classification, observation.gallery.status, providerRejection);
     const errorScreenshot = `live-page-${index}-error.png`;
     if (await page.screenshot({ path: join(output, errorScreenshot) })
       .then(() => true, () => false)) {

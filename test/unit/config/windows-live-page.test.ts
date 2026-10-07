@@ -59,6 +59,14 @@ type LivePageModule = {
     currentTime: number;
   };
   summarizeTweetResultResponse(url: string, status: number, body: unknown): unknown;
+  summarizeQuoteProviderRejection(api: unknown): null | {
+    operation: string;
+    kind: string;
+    httpStatus: number | null;
+    requestedTweetId: string | null;
+  };
+  classifyLiveFailure(classification: string | undefined, galleryStatus: string,
+    providerRejection: unknown): string;
   createControlledVideoSettings(prior: unknown, timestamp: number): {
     gallery: { videoClickMode: string; [key: string]: unknown };
     __schemaHash: string;
@@ -487,6 +495,35 @@ describe('Windows X live page validation', () => {
     });
   });
 
+  it('records bounded status-anchor timing within the video article only', () => {
+    document.body.innerHTML = `
+      <article><a href="https://x.com/outer/status/123">A</a>
+        <article>
+          <div role="link"><a href="https://x.com/quoted/status/456?token=private">B</a></div>
+          <div data-testid="User-Name"><a href="https://x.com/other/status/457">
+            <time datetime="2026-10-08">timestamp</time></a></div>
+          <a href="https://evil.example/attacker/status/999">external</a>
+          <video></video>
+          <article><a href="https://x.com/deeper/status/789"><time>nested</time></a></article>
+        </article>
+      </article>
+    `;
+    const observation = livePage.inspectLiveCandidateDocument({ handle: 'outer', statusId: '123' });
+    expect(observation).toMatchObject({ videoDetails: [{
+      nearestArticleIndex: 1,
+      ownStatusPaths: ['/quoted/status/456', '/other/status/457'],
+      ownStatusAnchors: [
+        { path: '/quoted/status/456', containsTime: false, nearestArticleIndex: 1,
+          structure: [{ tag: 'a', role: null, testId: null },
+            { tag: 'div', role: 'link', testId: null }] },
+        { path: '/other/status/457', containsTime: true, nearestArticleIndex: 1,
+          structure: [{ tag: 'a', role: null, testId: null },
+            { tag: 'div', role: null, testId: 'User-Name' }] },
+      ],
+    }] });
+    expect(JSON.stringify(observation)).not.toMatch(/token=private|evil\.example|timestamp/u);
+  });
+
   it('uses a non-control poster point within the quote media scope', () => {
     document.body.innerHTML = `
       <article><img src="https://pbs.twimg.com/amplify_video_thumb/456/img/b.jpg">
@@ -644,6 +681,33 @@ describe('Windows X live page validation', () => {
       }] },
     });
     expect(JSON.stringify(result)).not.toMatch(/Private text|Another private text|secret|playlist/u);
+  });
+
+  it('marks a rejected quote lookup without inferring login or product success', () => {
+    const rejection = livePage.summarizeQuoteProviderRejection({
+      tweetResultByRestId: { responses: [403] },
+      observations: [{ operation: 'TweetResultByRestId', requestedTweetId: '456',
+        httpStatus: 403, providerErrors: false, result: null, bodyOutcome: 'not-readable' }],
+    });
+    expect(rejection).toEqual({ operation: 'TweetResultByRestId', kind: 'http-rejection',
+      httpStatus: 403, requestedTweetId: '456' });
+    expect(livePage.classifyLiveFailure('controlled-media-click-did-not-open-gallery',
+      'attempting', rejection)).toBe('provider-rejected-quote-lookup-gallery-unverified');
+    expect(livePage.classifyLiveFailure('controlled-media-click-did-not-open-gallery',
+      'attempting', null)).toBe('controlled-media-click-did-not-open-gallery');
+    expect(livePage.summarizeQuoteProviderRejection({
+      tweetResultByRestId: { responses: [200] },
+      observations: [{ operation: 'TweetResultByRestId', requestedTweetId: '456',
+        httpStatus: 200, providerErrors: true }],
+    })).toEqual({ operation: 'TweetResultByRestId', kind: 'graphql-errors',
+      httpStatus: 200, requestedTweetId: '456' });
+    expect(livePage.summarizeQuoteProviderRejection({
+      tweetResultByRestId: { responses: [403] }, observations: [],
+    })).toEqual({ operation: 'TweetResultByRestId', kind: 'http-rejection',
+      httpStatus: 403, requestedTweetId: null });
+    expect(livePage.summarizeQuoteProviderRejection({
+      tweetResultByRestId: { responses: [200] }, observations: [],
+    })).toBeNull();
   });
 
   it('rejects a matching image outside the selected gallery index', () => {
