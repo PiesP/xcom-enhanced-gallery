@@ -74,6 +74,17 @@ readiness, media errors, and playback after a gesture. Navigation away and back,
 privileged MP4 filename and exact byte/hash checks, Escape/button close,
 focus/scroll/body/isolation restoration, and teardown are recorded per case.
 The outer-video control proves that selecting A and B remains independent.
+An additional installed pre-player case mirrors the bounded public-page shape:
+two same-ID A header links without `<time>`, an unmarked role-link quote with a
+nested B article, a separate C credit link, one trusted B video thumbnail, two
+ordinary avatar images, and no host `<video>` before the click. It temporarily
+sets the supported `allow-all` video-click mode in the task-owned extension
+storage, reloads the fixture, and restores the exact previous value in `finally`.
+An ordinary hit-tested click on the bare preview button must request A, select
+and attribute B's video, preserve B's text and source link, play with nonzero
+progress, exclude C, and download B's exact MP4 bytes and filename. The case
+also checks navigation and host-state restoration. These fixture IDs are
+synthetic and do not identify posts on the reported public page.
 Fixture routes supply transport and host media only; extraction and downloads
 use the installed production extension. These results do not establish the
 reported live page's quote relationship or availability.

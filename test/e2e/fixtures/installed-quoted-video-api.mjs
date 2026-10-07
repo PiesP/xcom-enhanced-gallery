@@ -3,6 +3,17 @@
 
 // These are routed X responses, not substitutes for extension code or its API client.
 export const NESTED_OWNER = '7333333333333333333';
+export const PREPLAYER_OUTER = '8555555555555555555';
+export const PREPLAYER_QUOTE = '9555555555555555555';
+export const PREPLAYER_CREDIT = '7555555555555555555';
+export const PUBLIC_PREPLAYER_CASE = {
+  name: 'public-preplayer', route: 'public-preplayer', handle: 'outer_preplayer',
+  outer: PREPLAYER_OUTER, owner: PREPLAYER_QUOTE, username: 'quote_preplayer',
+  credit: PREPLAYER_CREDIT, media: 'quote-two', poster: 'quote-two',
+  expectedPosition: 2, expectedTotal: 2, close: 'escape',
+  away: { type: 'image', path: '/media/QPreplayerPhoto.jpg',
+    origin: `https://x.com/quote_preplayer/status/${PREPLAYER_QUOTE}` },
+};
 export const QUOTED_CASES = [
   {
     name: 'recognized', route: 'recognized', handle: 'outer_one', outer: '8111111111111111111',
@@ -44,6 +55,7 @@ export const QUOTED_CASES = [
     away: { type: 'video', path: `/ext_tw_video/${NESTED_OWNER}/pu/vid/320x180/nested-c.mp4`,
       origin: `https://x.com/nested_c/status/${NESTED_OWNER}` },
   },
+  PUBLIC_PREPLAYER_CASE,
 ];
 
 const outerNames = {
@@ -87,6 +99,18 @@ function tweet(id, username, media, quoted) {
 }
 
 export function quotedVideoApiResponse(tweetId) {
+  if (tweetId === PUBLIC_PREPLAYER_CASE.outer) {
+    const credit = tweet(PREPLAYER_CREDIT, 'credit_preplayer', [
+      video(PREPLAYER_CREDIT, 'nested-c', 0),
+    ]);
+    const quote = tweet(PREPLAYER_QUOTE, 'quote_preplayer', [
+      photo(PREPLAYER_QUOTE, 'QPreplayerPhoto', 0),
+      video(PREPLAYER_QUOTE, PUBLIC_PREPLAYER_CASE.media, 1),
+    ], credit);
+    return { data: { tweetResult: { result: tweet(
+      PREPLAYER_OUTER, 'outer_preplayer', [], quote
+    ) } } };
+  }
   const selected = QUOTED_CASES.find(({ outer }) => outer === tweetId);
   if (!selected && tweetId !== QUOTED_CASES[2].owner) return null;
   const quoteOne = tweet(QUOTED_CASES[0].owner, 'quote_one', [
