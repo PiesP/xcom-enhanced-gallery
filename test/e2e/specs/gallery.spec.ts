@@ -217,7 +217,7 @@ test.describe('X.com Enhanced Gallery E2E', () => {
       await setupGalleryPage(
         page,
         'https://x.com/quote_author/status/222',
-        createQuotedVideoTweetResponse(),
+        createQuotedVideoTweetResponse('333'),
         apiSuccess ? 200 : 403
       );
       await page.evaluate((markup) => {

@@ -62,6 +62,22 @@ host layout-shift regression. Page screenshots, per-cycle timings, file hashes,
 and cleanup metadata are retained as evidence; the timings are observations,
 not a performance claim.
 
+The installed profile also serves the declared small MP4 assets and
+`installed-quoted-video-page.html` with deterministic `TweetResultByRestId`
+responses from `installed-quoted-video-api.mjs`. Its quote cases cover a marked
+branch without a permalink, an unmarked clickable branch with an outer video,
+an explicit quoted permalink, and nested quotes opened from the outer post or
+the directly quoted post. Each case opens the preview before native playback,
+then uses the blob-backed host player. It checks the selected API video path,
+originating-post toolbar link, collection/current/focused indices, dimensions,
+readiness, media errors, and playback after a gesture. Navigation away and back,
+privileged MP4 filename and exact byte/hash checks, Escape/button close,
+focus/scroll/body/isolation restoration, and teardown are recorded per case.
+The outer-video control proves that selecting A and B remains independent.
+Fixture routes supply transport and host media only; extraction and downloads
+use the installed production extension. These results do not establish the
+reported live page's quote relationship or availability.
+
 After those cycles, the installed profile uses the exact installed extension
 worker and exact owned fixture tab to set real `chrome.tabs` zoom to 200%, then
 restores the prior factor and tab zoom settings in `finally`. At that zoom it

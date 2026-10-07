@@ -1739,7 +1739,7 @@ async function assertQuotedGallery(page, quotedCase) {
     );
     const element = item?.querySelector('video');
     return item?.getAttribute('data-media-loaded') === 'true' &&
-      element instanceof HTMLVideoElement && element.readyState >= HTMLMediaElement.HAVE_METADATA &&
+      element instanceof HTMLVideoElement && element.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
       element.videoWidth > 0 && element.videoHeight > 0 && element.error === null;
   }, { index: quotedCase.expectedPosition - 1 }, { timeout: 15_000 });
   const selectedMedia = await video.evaluate((element) => ({
@@ -1937,14 +1937,15 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
     `https://x.com/${quotedCase.username}/status/${quotedCase.owner}`,
     quotedCase.name === 'linked');
   const playingNavigation = await navigateQuotedAwayAndBack(page, quotedCase, playing.total);
+  const galleryPlaybackStart = await playing.video.evaluate((video) => video.currentTime);
   await playing.video.click();
-  await page.waitForFunction((index) => {
+  await page.waitForFunction(({ index, start }) => {
     const video = document.querySelector(
       `[data-xeg-gallery-container] [data-gallery-element="item"][data-index="${index}"] video`
     );
-    return video instanceof HTMLVideoElement && video.currentTime > 0 &&
-      !video.paused && video.error === null;
-  }, quotedCase.expectedPosition - 1, { timeout: 15_000 });
+    return video instanceof HTMLVideoElement && video.currentTime >= start + 0.15 &&
+      video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && !video.paused && video.error === null;
+  }, { index: quotedCase.expectedPosition - 1, start: galleryPlaybackStart }, { timeout: 15_000 });
   const galleryPlaybackTime = await playing.video.evaluate((video) => video.currentTime);
   assert(quotedApiResponses.slice(apiStart).every(({ tweetId }) => tweetId === expectedRequest),
     'Blob-backed click must retain the same owner request');
@@ -2003,7 +2004,7 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
     hostPlaying: { blobBacked: hostPlaying.source.startsWith('blob:'),
       currentTime: hostPlaying.time, width: hostPlaying.width, height: hostPlaying.height },
     playing: { selected: playing.selectedMedia, originUrl: playingOriginUrl,
-      navigation: playingNavigation, galleryPlaybackTime,
+      navigation: playingNavigation, galleryPlaybackStart, galleryPlaybackTime,
       closeMethod: quotedCase.close,
       close: playingClose },
     download: { filename, bytes: bytes.length, file: copiedName,

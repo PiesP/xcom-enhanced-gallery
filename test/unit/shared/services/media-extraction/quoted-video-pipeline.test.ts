@@ -5,9 +5,14 @@ import { generateMediaFilename } from '@shared/core/filename/filename-utils';
 import type { TwitterMedia, TwitterTweet } from '@shared/services/media/types';
 import { getTweetMedias } from '@shared/services/media/twitter-api-client';
 import { MediaExtractionService } from '@shared/services/media-extraction/media-extraction-service';
+import { handleMediaClick } from '@shared/utils/events/handlers/media-click';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const httpGet = vi.hoisted(() => vi.fn());
+const settings = vi.hoisted(() => ({ mode: 'allow-all' }));
+vi.mock('@shared/container/settings-registry', () => ({
+  tryGetSettings: () => ({}), getTypedSettingOr: () => settings.mode,
+}));
 vi.mock('@shared/services/http-request-service', () => ({
   getHttpRequestService: () => ({ get: httpGet }),
 }));
@@ -50,7 +55,7 @@ function requestedId(): string {
 }
 
 describe('production quoted-video pipeline', () => {
-  beforeEach(() => { httpGet.mockReset(); respond(tweet('222', [], tweet('111', [video('700')]))); });
+  beforeEach(() => { settings.mode = 'allow-all'; httpGet.mockReset(); respond(tweet('222', [], tweet('111', [video('700')]))); });
   afterEach(() => { vi.restoreAllMocks(); document.body.replaceChildren(); });
 
   it.each(['quote', 'unmarked'])(
@@ -352,4 +357,36 @@ describe('production quoted-video pipeline', () => {
     expect(result.mediaItems[result.clickedIndex!]?.tweetId).toBe('111');
     } finally { base.remove(); }
   });
+
+  it.each(['allow-all', 'block-controls-only', 'block-all'])(
+    'routes the observed unmarked native button through production extraction only in %s', async (mode) => {
+      settings.mode = mode;
+      document.body.innerHTML = `<article><a href="/author_222/status/222"><time>A</time></a>
+        <div role="link"><article><a href="/author_111/status/111">B</a>
+          <a href="/author_333/status/333">Attribution</a><div><div>
+            <video poster="${poster('700')}"></video><button id="target">Native play</button>
+          </div></div></article></div></article>`;
+      const service = new MediaExtractionService();
+      let result: Awaited<ReturnType<typeof service.extractFromClickedElement>> | undefined;
+      let pending: Promise<void> | undefined;
+      const button = document.getElementById('target')!;
+      button.addEventListener('click', (event) => { pending = handleMediaClick(event as MouseEvent, {
+        onMediaClick: async (element) => { result = await service.extractFromClickedElement(element); },
+        onGalleryClose: () => { throw new Error('Unexpected gallery close'); },
+      }, { enableKeyboard: true, enableMediaDetection: true, debugMode: false,
+        preventBubbling: true, context: 'native-quote-regression' }); });
+      const event = new MouseEvent('click', { bubbles: true, cancelable: true });
+      button.dispatchEvent(event);
+      await pending;
+      if (mode === 'allow-all') {
+        expect(event.defaultPrevented).toBe(true);
+        expect(requestedId()).toBe('222');
+        expect(result?.success).toBe(true);
+        expect(result?.mediaItems[result.clickedIndex!]).toMatchObject({ tweetId: '111', url: source('700') });
+      } else {
+        expect(event.defaultPrevented).toBe(false);
+        expect(httpGet).not.toHaveBeenCalled();
+      }
+    }
+  );
 });
