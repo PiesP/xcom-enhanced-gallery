@@ -974,6 +974,23 @@ export function inspectHostVideoDocument(video, { posterPath }) {
   };
 }
 
+export function quotedVideoHitTestPassed({ controlledVideoClickMode, galleryActionKind,
+  initialHit, finalHit, identityBeforeClick, focusPrepared, meaningfulFocusTarget,
+  focusedControlStillOwnsClick }) {
+  if (!identityBeforeClick) return false;
+  if (galleryActionKind === 'non-control-media-surface') {
+    return initialHit?.inQuote === true && finalHit?.inQuote === true;
+  }
+  if (galleryActionKind !== 'media-scoped-control-under-allow-all' ||
+      controlledVideoClickMode !== 'allow-all' || initialHit?.inQuote !== false ||
+      finalHit?.inQuote !== false || !focusPrepared || !meaningfulFocusTarget ||
+      focusedControlStillOwnsClick !== true) return false;
+  return [initialHit.nativePlay, finalHit.nativePlay].every((control) =>
+    control && Number.isFinite(control.x) && Number.isFinite(control.y) &&
+    Number.isInteger(control.mediaScopeDepth) &&
+    control.mediaScopeDepth >= 0 && control.mediaScopeDepth <= 5);
+}
+
 async function observeQuotedVideo(page, observation, identity, output, index, settleApi,
   controlledVideoClickMode) {
   const target = observation.target;
@@ -1049,7 +1066,8 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
       { posterPath: target.posterSource?.path ?? null });
     observation.target.hitTestAfterNativePlayback = hit;
   }
-  const controlledAction = controlledVideoClickMode === 'allow-all' && hit?.nativePlay;
+  const controlledAction = controlledVideoClickMode === 'allow-all' &&
+    !hit?.inQuote && hit?.nativePlay;
   if (!hit?.inQuote && !controlledAction) {
     if (observation.target.nativePlayback?.status === 'playing') {
       observation.classification = 'native-play-observed-gallery-action-unavailable';
@@ -1097,9 +1115,9 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
     observation.screenshots.before = await captureScreenshot(page, output, `live-page-${index}-before.png`);
     const finalHit = await clickSurface.evaluate(inspectHitTestedVideoActionDocument,
       { posterPath: target.posterSource?.path ?? null });
-    const clickPoint = finalHit?.inQuote ? finalHit
-      : controlledVideoClickMode === 'allow-all' && finalHit?.nativePlay
-        ? finalHit.nativePlay : null;
+    const clickPoint = controlledAction
+      ? !finalHit?.inQuote ? finalHit?.nativePlay : null
+      : finalHit?.inQuote ? finalHit : null;
     observation.gallery.identityBeforeClick = Boolean(clickPoint);
     observation.gallery.hitTestBeforeClick = finalHit;
     if (!observation.gallery.identityBeforeClick) {
@@ -1177,7 +1195,16 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
     const required = {
       exactFinalStatus: ['x.com', 'twitter.com'].includes(finalUrl.hostname.toLowerCase()) &&
         finalUrl.pathname.toLowerCase() === `/${identity.handle}/status/${identity.statusId}`.toLowerCase(),
-      quotedVideoHitTest: hit.inQuote,
+      quotedVideoHitTest: quotedVideoHitTestPassed({
+        controlledVideoClickMode,
+        galleryActionKind: observation.target.galleryActionKind,
+        initialHit: hit,
+        finalHit: observation.gallery.hitTestBeforeClick,
+        identityBeforeClick: observation.gallery.identityBeforeClick,
+        focusPrepared,
+        meaningfulFocusTarget,
+        focusedControlStillOwnsClick: observation.gallery.focusedControlStillOwnsClick,
+      }),
       galleryDialog: observation.gallery.opened.role === 'dialog' &&
         observation.gallery.opened.ariaModal === 'true',
       selectedPlayableVideo: Boolean(video?.visible && video.itemLoaded && video.readyState >= 2 &&

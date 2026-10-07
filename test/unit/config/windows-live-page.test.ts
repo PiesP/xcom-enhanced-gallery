@@ -53,6 +53,16 @@ type LivePageModule = {
     y: number;
     posterPath: string;
   }): HTMLElement | null;
+  quotedVideoHitTestPassed(evidence: {
+    controlledVideoClickMode: string | null;
+    galleryActionKind: string;
+    initialHit: ReturnType<LivePageModule['inspectHitTestedVideoActionDocument']>;
+    finalHit: ReturnType<LivePageModule['inspectHitTestedVideoActionDocument']>;
+    identityBeforeClick: boolean;
+    focusPrepared: boolean;
+    meaningfulFocusTarget: boolean;
+    focusedControlStillOwnsClick: boolean | undefined;
+  }): boolean;
   inspectHostVideoDocument(video: HTMLVideoElement, expected: {
     posterPath: string;
   }): null | {
@@ -651,6 +661,105 @@ describe('Windows X live page validation', () => {
         inQuote: false,
         nativePlay: { x: 40, y: 280, mediaScopeDepth: 1 },
       });
+    } finally {
+      Reflect.deleteProperty(document, 'elementsFromPoint');
+    }
+  });
+
+  it('passes the final quoted-video hit assertion only for the same focused control in allow-all mode', () => {
+    document.body.innerHTML = `
+      <article><div>
+        <img src="https://pbs.twimg.com/amplify_video_thumb/456/img/b.jpg">
+        <button>Native play</button>
+        <button>Other media control</button>
+      </div><button>Other article control</button></article>
+    `;
+    const image = document.querySelector<HTMLImageElement>('img');
+    const mediaButton = document.querySelector<HTMLButtonElement>('article > div > button');
+    const otherMediaButton = document.querySelector<HTMLButtonElement>(
+      'article > div > button + button'
+    );
+    const otherButton = document.querySelector<HTMLButtonElement>('article > button');
+    if (!image || !mediaButton || !otherMediaButton || !otherButton) {
+      throw new Error('Control verdict fixture missing');
+    }
+    image.getBoundingClientRect = () => ({
+      bottom: 200, height: 100, left: 0, right: 200, toJSON: () => ({}),
+      top: 100, width: 200, x: 0, y: 100,
+    });
+    let top: Element = mediaButton;
+    Object.defineProperty(document, 'elementsFromPoint', {
+      configurable: true,
+      value: () => [top],
+    });
+    try {
+      const expected = { posterPath: '/amplify_video_thumb/456/img/b.jpg' };
+      const initialHit = livePage.inspectHitTestedVideoActionDocument(image, expected);
+      const control = livePage.findHitTestedVideoControlDocument(image, {
+        x: initialHit?.nativePlay?.x ?? -1, y: initialHit?.nativePlay?.y ?? -1,
+        ...expected,
+      });
+      expect(initialHit).toMatchObject({ inQuote: false,
+        nativePlay: { x: 40, y: 120, mediaScopeDepth: 1 } });
+      expect(control).toBe(mediaButton);
+      control?.focus();
+      const finalHit = livePage.inspectHitTestedVideoActionDocument(image, expected);
+      const evidence = {
+        controlledVideoClickMode: 'allow-all',
+        galleryActionKind: 'media-scoped-control-under-allow-all',
+        initialHit, finalHit,
+        identityBeforeClick: true,
+        focusPrepared: document.activeElement === control,
+        meaningfulFocusTarget: control instanceof HTMLElement,
+        focusedControlStillOwnsClick: document.activeElement === control &&
+          document.elementsFromPoint(finalHit?.nativePlay?.x ?? -1,
+            finalHit?.nativePlay?.y ?? -1)[0]?.closest('button') === control,
+      };
+      expect(livePage.quotedVideoHitTestPassed(evidence)).toBe(true);
+      expect(livePage.quotedVideoHitTestPassed({
+        ...evidence, controlledVideoClickMode: 'block-controls-only',
+      })).toBe(false);
+      expect(livePage.quotedVideoHitTestPassed({
+        ...evidence, focusedControlStillOwnsClick: false,
+      })).toBe(false);
+      expect(livePage.quotedVideoHitTestPassed({
+        ...evidence, focusPrepared: false,
+      })).toBe(false);
+      expect(livePage.quotedVideoHitTestPassed({
+        ...evidence, identityBeforeClick: false,
+      })).toBe(false);
+
+      top = otherMediaButton;
+      const changedControlHit = livePage.inspectHitTestedVideoActionDocument(image, expected);
+      expect(changedControlHit).toMatchObject({ inQuote: false,
+        nativePlay: { mediaScopeDepth: 1 } });
+      expect(livePage.quotedVideoHitTestPassed({
+        ...evidence, finalHit: changedControlHit,
+        focusedControlStillOwnsClick: document.elementsFromPoint(
+          changedControlHit?.nativePlay?.x ?? -1,
+          changedControlHit?.nativePlay?.y ?? -1
+        )[0]?.closest('button') === control,
+      })).toBe(false);
+
+      top = otherButton;
+      const outOfScopeHit = livePage.inspectHitTestedVideoActionDocument(image, expected);
+      expect(outOfScopeHit).toMatchObject({ inQuote: false, nativePlay: null });
+      expect(livePage.quotedVideoHitTestPassed({
+        ...evidence, finalHit: outOfScopeHit,
+      })).toBe(false);
+
+      top = image;
+      const ordinaryHit = livePage.inspectHitTestedVideoActionDocument(image, expected);
+      expect(ordinaryHit).toMatchObject({ inQuote: true, nativePlay: null });
+      expect(livePage.quotedVideoHitTestPassed({
+        ...evidence, finalHit: ordinaryHit,
+      })).toBe(false);
+      expect(livePage.quotedVideoHitTestPassed({
+        ...evidence, controlledVideoClickMode: null,
+        galleryActionKind: 'non-control-media-surface',
+        initialHit: ordinaryHit, finalHit: ordinaryHit,
+        focusedControlStillOwnsClick: undefined,
+      })).toBe(true);
     } finally {
       Reflect.deleteProperty(document, 'elementsFromPoint');
     }
