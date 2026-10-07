@@ -49,6 +49,8 @@ type LivePageModule = {
   }): null | {
     sourceKind: string;
     poster: { host: string; path: string } | null;
+    posterEvidence: string;
+    matchingSiblingCount: number;
     currentTime: number;
   };
   summarizeTweetResultResponse(url: string, status: number, body: unknown): unknown;
@@ -530,6 +532,34 @@ describe('Windows X live page validation', () => {
     } finally {
       Reflect.deleteProperty(document, 'elementsFromPoint');
     }
+  });
+
+  it('accepts one sibling poster after the host clears video.poster and rejects conflicts', () => {
+    document.body.innerHTML = `
+      <article>
+        <video src="blob:https://x.com/private"></video>
+        <img src="https://pbs.twimg.com/amplify_video_thumb/456/img/b.jpg?token=private">
+        <article><img src="https://pbs.twimg.com/amplify_video_thumb/456/img/b.jpg"></article>
+      </article>
+    `;
+    const video = document.querySelector<HTMLVideoElement>('video');
+    const sibling = document.querySelector<HTMLImageElement>('article > img');
+    if (!video || !sibling) throw new Error('Sibling poster fixture missing');
+    const expected = { posterPath: '/amplify_video_thumb/456/img/b.jpg' };
+    expect(livePage.inspectHostVideoDocument(video, expected)).toMatchObject({
+      poster: { host: 'pbs.twimg.com', path: expected.posterPath },
+      posterEvidence: 'unique-sibling-image', matchingSiblingCount: 1,
+    });
+    video.poster = 'https://pbs.twimg.com/amplify_video_thumb/999/img/other.jpg';
+    expect(livePage.inspectHostVideoDocument(video, expected)).toMatchObject({
+      poster: null, posterEvidence: 'conflict',
+    });
+    video.removeAttribute('poster');
+    sibling.insertAdjacentHTML('afterend',
+      '<img src="https://pbs.twimg.com/amplify_video_thumb/456/img/b.jpg">');
+    expect(livePage.inspectHostVideoDocument(video, expected)).toMatchObject({
+      poster: null, posterEvidence: 'ambiguous-sibling-images', matchingSiblingCount: 2,
+    });
   });
 
   it('summarizes direct quote API relationships and playable variants without response text', () => {

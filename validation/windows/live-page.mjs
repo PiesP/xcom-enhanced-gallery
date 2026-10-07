@@ -819,14 +819,27 @@ export function inspectHitTestedVideoActionDocument(element, { posterPath }) {
 
 export function inspectHostVideoDocument(video, { posterPath }) {
   if (!(video instanceof HTMLVideoElement) || !video.closest('article')) return null;
-  let poster = null;
-  try {
-    const url = new URL(video.poster, location.href);
-    if (url.protocol === 'https:' && url.hostname === 'pbs.twimg.com' &&
-        url.pathname === posterPath) poster = { host: url.hostname, path: url.pathname };
-  } catch {
-    // Keep the missing poster explicit.
-  }
+  const parsePoster = (value) => {
+    try {
+      const url = new URL(value, location.href);
+      return url.protocol === 'https:' && url.hostname === 'pbs.twimg.com' &&
+        /^\/(?:amplify_video_thumb|ext_tw_video_thumb|tweet_video_thumb|video_thumb)\//u.test(url.pathname)
+        ? { host: url.hostname, path: url.pathname } : null;
+    } catch {
+      return null;
+    }
+  };
+  const ownArticle = video.closest('article');
+  const attributePoster = video.poster ? parsePoster(video.poster) : null;
+  const matchingSiblings = [...ownArticle.querySelectorAll('img')].filter((image) =>
+    image.closest('article') === ownArticle &&
+    parsePoster(image.currentSrc || image.src)?.path === posterPath);
+  const posterEvidence = video.poster && attributePoster?.path !== posterPath
+    ? 'conflict' : attributePoster?.path === posterPath ? 'video-attribute'
+      : matchingSiblings.length === 1 ? 'unique-sibling-image'
+        : matchingSiblings.length > 1 ? 'ambiguous-sibling-images' : 'missing';
+  const poster = ['video-attribute', 'unique-sibling-image'].includes(posterEvidence)
+    ? { host: 'pbs.twimg.com', path: posterPath } : null;
   const sourceValue = video.currentSrc || video.src;
   let sourceKind = 'none';
   let source = null;
@@ -844,6 +857,8 @@ export function inspectHostVideoDocument(video, { posterPath }) {
   }
   return {
     poster,
+    posterEvidence,
+    matchingSiblingCount: Math.min(matchingSiblings.length, 20),
     sourceKind,
     source,
     readyState: video.readyState,
@@ -876,13 +891,22 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
       { posterPath: target.posterSource?.path ?? null });
     const confirmation = await clickSurface.evaluate(inspectHitTestedVideoActionDocument,
       { posterPath: target.posterSource?.path ?? null });
+    observation.target.nativePlayback = {
+      status: 'preflight',
+      before: beforeNative,
+      confirmation: confirmation ? {
+        inQuote: confirmation.inQuote,
+        nativePlay: confirmation.nativePlay,
+        rejectedControls: confirmation.rejectedControls,
+      } : null,
+    };
     if (!beforeNative?.poster || !confirmation?.nativePlay ||
         confirmation.nativePlay.x !== hit.nativePlay.x ||
         confirmation.nativePlay.y !== hit.nativePlay.y) {
       throw new Error('Native quote play action changed before click');
     }
-    observation.target.nativePlayback = { status: 'attempting', before: beforeNative,
-      action: hit.nativePlay };
+    observation.target.nativePlayback.status = 'attempting';
+    observation.target.nativePlayback.action = hit.nativePlay;
     await page.mouse.click(hit.nativePlay.x, hit.nativePlay.y);
     observation.target.nativePlayback.galleryOpenedOnControlClick =
       await page.locator('[data-xeg-gallery-container]').count() > 0;
