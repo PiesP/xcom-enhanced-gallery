@@ -347,6 +347,181 @@ describe('MediaExtractionService API circuit', () => {
   const click = (service: MediaExtractionService): Promise<MediaExtractionResult> =>
     service.extractFromClickedElement(document.querySelector('video')!);
 
+  const clickTweet = (
+    service: MediaExtractionService,
+    tweetId: string,
+    signal?: AbortSignal
+  ): Promise<MediaExtractionResult> => {
+    document.body.innerHTML = `
+      <article data-testid="tweet">
+        <a href="/quote_author/status/${tweetId}/video/1">
+          <div data-testid="videoPlayer">
+            <video poster="https://pbs.twimg.com/ext_tw_video_thumb/${tweetId}/pu/img/quote-video.jpg"></video>
+          </div>
+        </a>
+      </article>
+    `;
+    return service.extractFromClickedElement(document.querySelector('video')!, { signal });
+  };
+
+  const unavailableResponse = (typename: 'TweetUnavailable' | 'TweetTombstone') => ({
+    ok: true,
+    status: 200,
+    data: { data: { tweetResult: { result: { __typename: typename } } } },
+  });
+
+  const requestedTweetIds = (): string[] =>
+    httpGet.mock.calls.map(([url]) =>
+      JSON.parse(new URL(url as string).searchParams.get('variables') ?? '{}').tweetId
+    );
+
+  it('keeps the circuit closed across three explicit unavailable tweets and selects the next video', async () => {
+    const service = new MediaExtractionService();
+    const unavailable = { __typename: 'TweetUnavailable' };
+    httpGet
+      .mockResolvedValueOnce(unavailableResponse('TweetUnavailable'))
+      .mockResolvedValueOnce(unavailableResponse('TweetTombstone'))
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        data: {
+          data: {
+            tweetResult: {
+              result: {
+                __typename: 'TweetWithVisibilityResults',
+                tweet: { __typename: 'TweetWithVisibilityResults', tweet: unavailable },
+              },
+            },
+          },
+        },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        data: JSON.parse(JSON.stringify(createQuotedVideoTweetResponse()).replaceAll('222', '906')),
+      });
+
+    const unavailableResults = [];
+    for (const tweetId of ['903', '904', '905']) {
+      unavailableResults.push(await clickTweet(service, tweetId));
+    }
+    const selected = await clickTweet(service, '906');
+    expect(httpGet).toHaveBeenCalledTimes(4);
+    expect(requestedTweetIds()).toEqual(['903', '904', '905', '906']);
+    for (const result of unavailableResults) {
+      expect(result.success).toBe(false);
+      expect(result.metadata?.error).toBe('No media found in API response');
+      expect(result.metadata?.strategy).toBe('api-media-unavailable');
+    }
+    expect(selected.success).toBe(true);
+    expect(selected.clickedIndex).toBe(1);
+    expect(selected.tweetInfo?.tweetId).toBe('906');
+    expect(selected.mediaItems.map((media) => media.tweetId)).toEqual(['111', '906']);
+    expect(selected.mediaItems[1]?.metadata?.apiData).toMatchObject({
+      tweet_id: '906',
+      sourceLocation: 'original',
+    });
+    expect(selected.mediaItems[1]?.url).toBe('https://video.twimg.com/ext_tw_video/906/pu/vid/1280x720/quote-video.mp4');
+  });
+
+  it('clears earlier provider failures when an unavailable tweet is healthy', async () => {
+    const service = new MediaExtractionService();
+    httpGet
+      .mockResolvedValueOnce({ ok: false, status: 503, data: {} })
+      .mockResolvedValueOnce({ ok: false, status: 503, data: {} })
+      .mockResolvedValueOnce(unavailableResponse('TweetUnavailable'))
+      .mockResolvedValueOnce({ ok: false, status: 503, data: {} })
+      .mockResolvedValueOnce({ ok: false, status: 503, data: {} })
+      .mockResolvedValueOnce({ ok: true, status: 200, data: createQuotedVideoTweetResponse() });
+
+    await click(service);
+    await click(service);
+    const unavailable = await click(service);
+    expect(unavailable.metadata?.error).toBe('No media found in API response');
+    await click(service);
+    await click(service);
+    expect((await click(service)).success).toBe(true);
+    expect(httpGet).toHaveBeenCalledTimes(6);
+  });
+
+  it('opens the circuit for transport, HTTP and provider errors attached to unavailable tweets', async () => {
+    const service = new MediaExtractionService();
+    httpGet
+      .mockRejectedValueOnce(new Error('network failed'))
+      .mockResolvedValueOnce({ ok: false, status: 503, data: {} })
+      .mockResolvedValueOnce({
+        ...unavailableResponse('TweetUnavailable'),
+        data: {
+          ...unavailableResponse('TweetUnavailable').data,
+          errors: [{ code: 88, message: 'Provider unavailable' }],
+        },
+      });
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const result = await click(service);
+      expect(result.success).toBe(false);
+      if (attempt === 2) {
+        expect(result.metadata?.error).toBe('Twitter API returned a provider error');
+      }
+    }
+    expect(httpGet).toHaveBeenCalledTimes(3);
+
+    httpGet.mockResolvedValue({ ok: true, status: 200, data: createQuotedVideoTweetResponse() });
+    expect((await click(service)).success).toBe(false);
+    now += 59_999;
+    expect((await click(service)).success).toBe(false);
+    expect(httpGet).toHaveBeenCalledTimes(3);
+
+    now += 1;
+    expect((await click(service)).success).toBe(true);
+    expect(httpGet).toHaveBeenCalledTimes(4);
+  });
+
+  it('does not let an unavailable response resolved after abort clear failure history', async () => {
+    const service = new MediaExtractionService();
+    httpGet.mockResolvedValue({ ok: false, status: 503, data: {} });
+    await click(service);
+    await click(service);
+
+    let resolveUnavailable!: (value: ReturnType<typeof unavailableResponse>) => void;
+    httpGet.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveUnavailable = resolve;
+      })
+    );
+    const controller = new AbortController();
+    const pending = service.extractFromClickedElement(document.querySelector('video')!, {
+      signal: controller.signal,
+    });
+    await vi.waitFor(() => expect(httpGet).toHaveBeenCalledTimes(3));
+    controller.abort();
+    resolveUnavailable(unavailableResponse('TweetUnavailable'));
+    const cancelled = await pending;
+    expect(cancelled.metadata?.error).toBe('Extraction cancelled');
+
+    httpGet.mockResolvedValue({ ok: false, status: 503, data: {} });
+    expect((await click(service)).metadata?.error).toBe('TW:503');
+    expect(httpGet).toHaveBeenCalledTimes(4);
+    httpGet.mockResolvedValue({ ok: true, status: 200, data: createQuotedVideoTweetResponse() });
+    expect((await click(service)).success).toBe(false);
+    expect(httpGet).toHaveBeenCalledTimes(4);
+  });
+
+  it('does not issue a request for a pre-aborted unavailable tweet extraction', async () => {
+    const controller = new AbortController();
+    controller.abort();
+    httpGet.mockResolvedValue(unavailableResponse('TweetUnavailable'));
+
+    const result = await new MediaExtractionService().extractFromClickedElement(
+      document.querySelector('video')!,
+      { signal: controller.signal }
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.metadata?.error).toBe('Extraction cancelled');
+    expect(httpGet).not.toHaveBeenCalled();
+  });
+
   it('skips open-circuit requests without postponing recovery and resets after success', async () => {
     const service = new MediaExtractionService();
     httpGet.mockResolvedValue({ ok: false, status: 503, data: {} });

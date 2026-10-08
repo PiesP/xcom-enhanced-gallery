@@ -2,6 +2,7 @@
 // Copyright (c) 2026 PiesP
 
 import { generateMediaFilename } from '@shared/core/filename/filename-utils';
+import { readFileSync } from 'node:fs';
 import type { TwitterMedia, TwitterTweet } from '@shared/services/media/types';
 import { getTweetMedias } from '@shared/services/media/twitter-api-client';
 import { MediaExtractionService } from '@shared/services/media-extraction/media-extraction-service';
@@ -98,6 +99,37 @@ async function clickThroughProduction(button: HTMLButtonElement) {
 describe('production quoted-video pipeline', () => {
   beforeEach(() => { settings.mode = 'allow-all'; httpGet.mockReset(); respond(tweet('222', [], tweet('111', [video('700')]))); });
   afterEach(() => { vi.restoreAllMocks(); document.body.replaceChildren(); });
+
+  it('routes each installed unavailable fixture button through the production click handler', async () => {
+    document.body.innerHTML = readFileSync('test/e2e/fixtures/installed-unavailable-sequence-page.html', 'utf8');
+    const service = new MediaExtractionService();
+    const buttons = document.querySelectorAll<HTMLButtonElement>('[data-unavailable-poster] + div button');
+    expect(buttons).toHaveLength(3);
+    for (const [index, button] of Array.from(buttons).entries()) {
+      respond(index === 2
+        ? { __typename: 'TweetWithVisibilityResults', tweet: {
+          __typename: 'TweetWithVisibilityResults', tweet: { __typename: 'TweetUnavailable' } } }
+        : { __typename: index === 0 ? 'TweetUnavailable' : 'TweetTombstone' });
+      let result: Awaited<ReturnType<typeof service.extractFromClickedElement>> | undefined;
+      let pending: Promise<void> | undefined;
+      button.addEventListener('click', (event) => {
+        pending = handleMediaClick(event as MouseEvent, {
+          onMediaClick: async (element) => { result = await service.extractFromClickedElement(element); },
+          onGalleryClose: () => { throw new Error('Unexpected gallery close'); },
+        }, { enableKeyboard: true, enableMediaDetection: true, debugMode: false,
+          preventBubbling: true, context: 'installed-unavailable-sequence' });
+      });
+      const event = new MouseEvent('click', { bubbles: true, cancelable: true });
+      button.dispatchEvent(event);
+      await pending;
+      expect(event.defaultPrevented).toBe(true);
+      expect(result).toMatchObject({ success: false, mediaItems: [], apiRequestOutcome: 'healthy',
+        metadata: { strategy: 'api-media-unavailable', domRecovery: 'owner-unconfirmed' } });
+    }
+    expect(httpGet).toHaveBeenCalledTimes(3);
+    expect(httpGet.mock.calls.map(([url]) => JSON.parse(new URL(url).searchParams.get('variables')!).tweetId))
+      .toEqual(['8666666666666666661', '8666666666666666662', '8666666666666666663']);
+  });
 
   it.each([
     ['quote', 'empty'], ['quote', 'blob'], ['unmarked', 'empty'], ['unmarked', 'blob'],
@@ -413,6 +445,16 @@ describe('production quoted-video pipeline', () => {
     expect(result.success).toBe(false);
     expect(result.mediaItems).toEqual([]);
   });
+
+  it.each(['TweetUnavailable', 'TweetTombstone'])(
+    'keeps the linkless quote owner unknown after a healthy %s response', async (__typename) => {
+      respond({ __typename });
+      const result = await new MediaExtractionService().extractFromClickedElement(target());
+      expect(requestedId()).toBe('222');
+      expect(result).toMatchObject({ success: false, mediaItems: [], apiRequestOutcome: 'healthy',
+        metadata: { strategy: 'api-media-unavailable', domRecovery: 'owner-unconfirmed' } });
+    }
+  );
 
   it('rejects conflicting attribute and permalink owners', async () => {
     const clicked = target('quote', true);

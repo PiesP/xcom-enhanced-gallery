@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Installed unavailable sequence fixture</title>
+  <style>
+    body { margin: 0; padding: 20px; background: #000; color: #e7e9ea; font: 16px "Segoe UI", sans-serif; }
+    #host-layout-spacer { height: 900px; }
+    article[data-sequence-step] { max-width: 640px; margin: 0 auto 32px; padding: 12px; border: 1px solid #555; }
+    .quote-branch { margin: 12px; padding: 12px; border: 1px solid #555; }
+    .media-shell { width: 320px; height: 180px; position: relative; }
+    .media-shell > video, .media-shell > img { width: 320px; height: 180px; display: block; }
+    .control-surface { position: absolute; inset: 0; z-index: 2; }
+    .control-surface > button { width: 100%; height: 100%; border: 0;
+      background: transparent; color: white; cursor: pointer; }
+    .control-surface > button > span { display: inline-grid; place-items: center;
+      width: 54px; height: 54px; border-radius: 50%; background: #1d9bf0; }
+  </style>
+</head>
+<body>
+  <div id="host-layout-spacer" aria-hidden="true"></div>
+  <main>
+    <article data-testid="tweet" data-sequence-step="unavailable" data-case="unavailable">
+      <a href="/unavail_seq/status/8666666666666666661"><time>Unavailable A</time></a>
+      <div role="link" class="quote-branch">
+        <div class="media-shell">
+          <video data-unavailable-poster poster="https://pbs.twimg.com/ext_tw_video_thumb/8666666666666666661/pu/img/unavailable.jpg" aria-label="Unavailable quoted video preview"></video>
+          <div class="control-surface"><button type="button" aria-label="Open unavailable quoted video"><span aria-hidden="true">▶</span></button></div>
+        </div>
+      </div>
+    </article>
+    <article data-testid="tweet" data-sequence-step="tombstone" data-case="tombstone">
+      <a href="/unavail_seq/status/8666666666666666662"><time>Tombstone A</time></a>
+      <div role="link" class="quote-branch">
+        <div class="media-shell">
+          <video data-unavailable-poster poster="https://pbs.twimg.com/ext_tw_video_thumb/8666666666666666662/pu/img/unavailable.jpg" aria-label="Tombstone quoted video preview"></video>
+          <div class="control-surface"><button type="button" aria-label="Open tombstone quoted video"><span aria-hidden="true">▶</span></button></div>
+        </div>
+      </div>
+    </article>
+    <article data-testid="tweet" data-sequence-step="visibility" data-case="visibility">
+      <a href="/unavail_seq/status/8666666666666666663"><time>Visibility A</time></a>
+      <div role="link" class="quote-branch">
+        <div class="media-shell">
+          <video data-unavailable-poster poster="https://pbs.twimg.com/ext_tw_video_thumb/8666666666666666663/pu/img/unavailable.jpg" aria-label="Visibility quoted video preview"></video>
+          <div class="control-surface"><button type="button" aria-label="Open visibility quoted video"><span aria-hidden="true">▶</span></button></div>
+        </div>
+      </div>
+    </article>
+    <article data-testid="tweet" data-sequence-step="control" data-case="control">
+      <header>
+        <a href="/outer_preplayer/status/8555555555555555555">Available outer A</a>
+        <a href="/outer_preplayer/status/8555555555555555555">Available outer context</a>
+      </header>
+      <div role="link" class="quote-branch">
+        <article>
+          <a href="/quote_preplayer/status/9555555555555555555">Quoted B header</a>
+          <div data-preplayer-wrapper>
+            <div data-preplayer-media class="media-shell">
+              <img src="https://pbs.twimg.com/ext_tw_video_thumb/9555555555555555555/pu/img/quote-two.jpg" alt="Available quoted video preview">
+              <div class="control-surface"><button type="button" aria-label="Open available quoted video"><span aria-hidden="true">▶</span></button></div>
+            </div>
+            <a href="/credit_preplay/status/7555555555555555555">Credit C</a>
+          </div>
+        </article>
+      </div>
+    </article>
+  </main>
+</body>
+</html>
