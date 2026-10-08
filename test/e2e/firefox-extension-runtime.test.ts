@@ -412,6 +412,7 @@ test('generated Firefox background removes a rejected pre-ID allocation without 
   assert.deepEqual(await rejectedAllocationResponse, {
     success: false,
     error: 'download ID unavailable',
+    data: { requestId, terminal: true },
   });
   assert.equal(readStoredDownload(storage, requestId), undefined);
   assert.deepEqual(harness.cancelCalls, []);
