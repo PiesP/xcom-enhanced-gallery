@@ -55,13 +55,13 @@ function createBoundedStream(
   });
 }
 
-async function readBoundedBytes(
-  source: ReadableStream<Uint8Array>,
+async function readBoundedChunks(
+  source: ReadableStream<Uint8Array<ArrayBuffer>>,
   maxBytes: number,
   abortTransport?: (reason: unknown) => void
-): Promise<Uint8Array<ArrayBuffer>> {
+): Promise<{ chunks: Uint8Array<ArrayBuffer>[]; receivedBytes: number }> {
   const reader = source.getReader();
-  const chunks: Uint8Array[] = [];
+  const chunks: Uint8Array<ArrayBuffer>[] = [];
   let receivedBytes = 0;
 
   try {
@@ -82,6 +82,13 @@ async function readBoundedBytes(
     reader.releaseLock();
   }
 
+  return { chunks, receivedBytes };
+}
+
+function joinChunks(
+  chunks: Uint8Array<ArrayBuffer>[],
+  receivedBytes: number
+): Uint8Array<ArrayBuffer> {
   const bytes = new Uint8Array(receivedBytes);
   let offset = 0;
   for (const chunk of chunks) {
@@ -91,13 +98,8 @@ async function readBoundedBytes(
   return bytes;
 }
 
-function decodeBytes(
-  bytes: Uint8Array<ArrayBuffer>,
-  responseType: BufferedResponseType,
-  mimeType: string
-): unknown {
+function decodeBytes(bytes: Uint8Array<ArrayBuffer>, responseType: BufferedResponseType): unknown {
   if (responseType === 'arraybuffer') return bytes.buffer;
-  if (responseType === 'blob') return new Blob([bytes], { type: mimeType });
 
   const text = new TextDecoder().decode(bytes);
   return responseType === 'json' ? JSON.parse(text) : text;
@@ -135,12 +137,21 @@ export async function readResponseBody(
 
   if (!response.body) {
     if (responseType === 'stream') return null;
-    return decodeBytes(new Uint8Array(), responseType, response.headers.get('content-type') ?? '');
+    if (responseType === 'blob') {
+      return new Blob([], { type: response.headers.get('content-type') ?? '' });
+    }
+    return decodeBytes(new Uint8Array(), responseType);
   }
   if (responseType === 'stream') {
     return createBoundedStream(response.body, maxBytes, abortTransport);
   }
 
-  const bytes = await readBoundedBytes(response.body, maxBytes, abortTransport);
-  return decodeBytes(bytes, responseType, response.headers.get('content-type') ?? '');
+  const { chunks, receivedBytes } = await readBoundedChunks(
+    response.body,
+    maxBytes,
+    abortTransport
+  );
+  const mimeType = response.headers.get('content-type') ?? '';
+  if (responseType === 'blob') return new Blob(chunks, { type: mimeType });
+  return decodeBytes(joinChunks(chunks, receivedBytes), responseType);
 }

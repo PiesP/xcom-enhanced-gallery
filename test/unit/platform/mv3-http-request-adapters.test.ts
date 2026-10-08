@@ -85,6 +85,107 @@ describe('MV3HttpRequestAdapter', () => {
     expect(new Uint8Array(response.response)).toEqual(new Uint8Array([1, 2, 3, 4]));
   });
 
+  it('builds a bounded Blob from streamed chunks in their original order', async () => {
+    const stream = new ReadableStream<Uint8Array<ArrayBuffer>>({
+      start(controller) {
+        controller.enqueue(new Uint8Array([1, 2]));
+        controller.enqueue(new Uint8Array([3, 4, 5]));
+        controller.close();
+      },
+    });
+    const fetchResponse = new Response(stream, {
+      status: 200,
+      headers: { 'content-type': 'image/jpeg' },
+    });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(fetchResponse));
+
+    const blobParts: number[][] = [];
+    const NativeBlob = Blob;
+    vi.stubGlobal(
+      'Blob',
+      class extends NativeBlob {
+        constructor(parts?: BlobPart[], options?: BlobPropertyBag) {
+          super(parts, options);
+          blobParts.push((parts ?? []).map((part) => (part instanceof Uint8Array ? part.byteLength : -1)));
+        }
+      }
+    );
+
+    const response = await new Promise<HttpRequestResponse<Blob>>((resolve) => {
+      new MV3HttpRequestAdapter().request({
+        url: ALLOWED_URL,
+        responseType: 'blob',
+        maxResponseBytes: 5,
+        onload: (value) => resolve(value as HttpRequestResponse<Blob>),
+      });
+    });
+
+    expect(blobParts).toEqual([[2, 3]]);
+    expect(response.response.type).toBe('image/jpeg');
+    expect(new Uint8Array(await response.response.arrayBuffer())).toEqual(
+      new Uint8Array([1, 2, 3, 4, 5])
+    );
+  });
+
+  it('rejects an understated streamed Blob once its actual bytes exceed the limit', async () => {
+    const cancel = vi.fn();
+    const stream = new ReadableStream<Uint8Array<ArrayBuffer>>({
+      start(controller) {
+        controller.enqueue(new Uint8Array([1, 2]));
+        controller.enqueue(new Uint8Array([3, 4]));
+      },
+      cancel,
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(stream, {
+          status: 200,
+          headers: { 'content-length': '2', 'content-type': 'image/jpeg' },
+        })
+      )
+    );
+    const onload = vi.fn();
+
+    const error = await new Promise<HttpRequestResponse>((resolve) => {
+      new MV3HttpRequestAdapter().request({
+        url: ALLOWED_URL,
+        responseType: 'blob',
+        maxResponseBytes: 3,
+        onload,
+        onerror: resolve,
+      });
+    });
+
+    expect(error.statusText).toBe('RESOURCE_LIMIT');
+    expect(onload).not.toHaveBeenCalled();
+    expect(cancel).toHaveBeenCalledOnce();
+  });
+
+  it('returns an empty Blob for a bounded response without a body', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(null, {
+          status: 200,
+          headers: { 'content-type': 'image/jpeg' },
+        })
+      )
+    );
+
+    const response = await new Promise<HttpRequestResponse<Blob>>((resolve) => {
+      new MV3HttpRequestAdapter().request({
+        url: ALLOWED_URL,
+        responseType: 'blob',
+        maxResponseBytes: 0,
+        onload: (value) => resolve(value as HttpRequestResponse<Blob>),
+      });
+    });
+
+    expect(response.response.size).toBe(0);
+    expect(response.response.type).toBe('image/jpeg');
+  });
+
   it('rejects an oversized Content-Length before consuming the response body', async () => {
     const body = new ReadableStream<Uint8Array>({
       pull: vi.fn(),
