@@ -6,14 +6,12 @@ import { Buffer } from 'node:buffer';
 import { createHash, randomUUID } from 'node:crypto';
 import {
   copyFile,
-  lstat,
   mkdir,
   mkdtemp,
   readdir,
   readFile,
   rm,
   stat,
-  unlink,
   writeFile,
 } from 'node:fs/promises';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
@@ -25,8 +23,10 @@ import {
 } from './live-page.mjs';
 import {
   expectedStoredZipBytes,
+  readExactDownloadFile,
   readDownloadLiveLimit,
   verifyStoredZip,
+  waitForRemovedDownloadFile,
 } from './download-memory.mjs';
 import {
   QUOTED_CASES,
@@ -1927,14 +1927,13 @@ async function runDownloadMemoryCycle({ consoleErrors, downloads, extensionPage,
     const singlePath = relative(downloads, single.filename);
     assert(singlePath && !singlePath.startsWith('..') && !isAbsolute(singlePath),
       'Recovered single download escaped the owned directory');
-    const singleBytes = await readFile(single.filename);
+    const { bytes: singleBytes, identity: singleIdentity } =
+      await readExactDownloadFile(single.filename, images[0].length);
     assert(singleBytes.equals(images[0]), 'Recovered single download bytes differ');
     assert.deepEqual((await queryDownloads(extensionPage))
       .filter(({ id }) => !knownBeforeSingle.has(id)).map(({ id }) => id), [single.id],
     'Recovered single action must create exactly one native download ID');
-    await copyFile(single.filename, join(output, 'installed-memory-single.jpg'));
-    const singleIdentity = await lstat(single.filename);
-    assert(singleIdentity.isFile(), 'Recovered single download is not a regular file');
+    await writeFile(join(output, 'installed-memory-single.jpg'), singleBytes);
     verifiedDownloads.set(single.id, { filename: single.filename, identity: singleIdentity,
       sha256: createHash('sha256').update(singleBytes).digest('hex') });
     evidence.downloads.push({ kind: 'single', id: single.id,
@@ -1954,16 +1953,13 @@ async function runDownloadMemoryCycle({ consoleErrors, downloads, extensionPage,
       'Recovered ZIP escaped the owned directory');
     const expectedEntries = images.map((bytes, index) => ({ filename: expectedFilename(index), bytes }));
     const expectedZipBytes = expectedStoredZipBytes(expectedEntries);
-    assert.equal((await stat(zip.filename)).size, expectedZipBytes,
-      'ZIP exceeded the exact small fixture archive size before reading it');
-    const zipBytes = await readFile(zip.filename);
+    const { bytes: zipBytes, identity: zipIdentity } =
+      await readExactDownloadFile(zip.filename, expectedZipBytes);
     const parsedZip = verifyStoredZip(zipBytes, expectedEntries);
     assert.deepEqual((await queryDownloads(extensionPage))
       .filter(({ id }) => !knownBeforeZip.has(id)).map(({ id }) => id), [zip.id],
     'Recovered ZIP action must create exactly one native download ID');
-    await copyFile(zip.filename, join(output, 'installed-memory-bulk.zip'));
-    const zipIdentity = await lstat(zip.filename);
-    assert(zipIdentity.isFile(), 'Recovered ZIP is not a regular file');
+    await writeFile(join(output, 'installed-memory-bulk.zip'), zipBytes);
     verifiedDownloads.set(zip.id, { filename: zip.filename, identity: zipIdentity,
       sha256: createHash('sha256').update(zipBytes).digest('hex') });
     evidence.downloads.push({ kind: 'zip', id: zip.id, filename: basename(zip.filename),
@@ -2012,7 +2008,9 @@ async function runDownloadMemoryCycle({ consoleErrors, downloads, extensionPage,
         await page.unroute(routePattern, routeHandler);
         evidence.cleanup.exactPageRouteRemoved = true;
       } catch (error) {
-        cleanupError = error;
+        cleanupError = cleanupError
+          ? new AggregateError([cleanupError, error], 'Memory cleanup failed in multiple steps')
+          : error;
         evidence.cleanup.routeError = safeError(error);
       }
     }
@@ -2031,19 +2029,24 @@ async function runDownloadMemoryCycle({ consoleErrors, downloads, extensionPage,
         evidence.cleanup.downloads = [];
         for (const item of observed) {
           const verified = verifiedDownloads.get(item.id);
+          const cleanupRecord = { id: item.id, filename: basename(item.filename),
+            verifiedFileRemoved: false };
+          evidence.cleanup.downloads.push(cleanupRecord);
           if (verified) {
             assert.equal(item.filename, verified.filename,
               'Verified memory download filename changed before cleanup');
-            const current = await lstat(item.filename);
-            assert(current.isFile() && current.dev === verified.identity.dev &&
-              current.ino === verified.identity.ino && current.size === verified.identity.size,
-            'Verified memory download file identity changed before cleanup');
-            const hash = createHash('sha256').update(await readFile(item.filename)).digest('hex');
+            const { bytes, identity } = await readExactDownloadFile(item.filename,
+              verified.identity.size);
+            assert.deepEqual(identity, verified.identity,
+              'Verified memory download file identity changed before cleanup');
+            const hash = createHash('sha256').update(bytes).digest('hex');
             assert.equal(hash, verified.sha256, 'Verified memory download bytes changed before cleanup');
-            await unlink(item.filename);
           }
-          const removal = await extensionPage.evaluate(async (id) => {
+          const removal = await extensionPage.evaluate(async ({ id, filename, removeFile }) => {
             let [download] = await chrome.downloads.search({ id });
+            if (!download || download.filename !== filename) {
+              throw new Error(`Memory download ${id} changed before cleanup`);
+            }
             if (download?.state === 'in_progress') {
               await chrome.downloads.cancel(id);
               const deadline = Date.now() + 10_000;
@@ -2054,15 +2057,29 @@ async function runDownloadMemoryCycle({ consoleErrors, downloads, extensionPage,
               }
             }
             if (download?.state === 'in_progress') throw new Error(`Memory download ${id} did not stop`);
+            if (removeFile) {
+              if (download?.state !== 'complete') {
+                throw new Error(`Verified memory download ${id} is not complete`);
+              }
+              await chrome.downloads.removeFile(id);
+            }
+            return { terminalState: download?.state ?? null, nativeRemoveFileCalled: removeFile };
+          }, { id: item.id, filename: item.filename, removeFile: Boolean(verified) });
+          Object.assign(cleanupRecord, removal);
+          if (verified) {
+            cleanupRecord.fileAbsence = await waitForRemovedDownloadFile(item.filename,
+              verified.identity);
+            cleanupRecord.verifiedFileRemoved = true;
+          }
+          const history = await extensionPage.evaluate(async (id) => {
             const erasedIds = await chrome.downloads.erase({ id });
             const remaining = await chrome.downloads.search({ id });
             if (!erasedIds.includes(id) || remaining.length) {
               throw new Error(`Memory download ${id} remained in browser history`);
             }
-            return { erasedIds, terminalState: download?.state ?? null };
+            return { erasedIds, historyRemoved: true };
           }, item.id);
-          evidence.cleanup.downloads.push({ id: item.id, filename: basename(item.filename),
-            verifiedFileRemoved: Boolean(verified), ...removal });
+          Object.assign(cleanupRecord, history);
         }
       } catch (error) {
         cleanupError = cleanupError

@@ -3,7 +3,8 @@
 
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { lstat, open, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { crc32 } from 'node:zlib';
 
@@ -14,6 +15,58 @@ const EOCD_SIGNATURE = 0x06054b50;
 const LOCAL_HEADER_BYTES = 30;
 const CENTRAL_HEADER_BYTES = 46;
 const EOCD_BYTES = 22;
+const MAX_FIXTURE_FILE_BYTES = 4 * 1024 * 1024;
+
+/** Read exactly one small owned download through a single regular-file handle. */
+export async function readExactDownloadFile(path, expectedBytes) {
+  assert(Number.isSafeInteger(expectedBytes) && expectedBytes > 0 &&
+    expectedBytes <= MAX_FIXTURE_FILE_BYTES, 'Expected fixture size is out of bounds');
+  const handle = await open(path, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
+  try {
+    const before = await handle.stat();
+    assert(before.isFile(), 'Native download must be a regular file');
+    assert.equal(before.size, expectedBytes, 'Native download has an unexpected size');
+    const bounded = Buffer.alloc(expectedBytes + 1);
+    let offset = 0;
+    while (offset < bounded.length) {
+      const { bytesRead } = await handle.read(bounded, offset, bounded.length - offset, offset);
+      if (bytesRead === 0) break;
+      offset += bytesRead;
+    }
+    assert.equal(offset, expectedBytes, 'Native download changed size while reading');
+    const after = await handle.stat();
+    assert(after.isFile() && after.dev === before.dev && after.ino === before.ino &&
+      after.size === before.size && after.mtimeMs === before.mtimeMs &&
+      after.ctimeMs === before.ctimeMs, 'Native download changed while reading');
+    return { bytes: bounded.subarray(0, offset), identity: {
+      dev: after.dev, ino: after.ino, size: after.size,
+      mtimeMs: after.mtimeMs, ctimeMs: after.ctimeMs,
+    } };
+  } finally {
+    await handle.close();
+  }
+}
+
+/** Observe deletion of the exact verified path without deleting it by pathname. */
+export async function waitForRemovedDownloadFile(path, identity, timeoutMs = 5_000) {
+  const started = Date.now();
+  const deadline = started + timeoutMs;
+  do {
+    let current;
+    try {
+      current = await lstat(path);
+    } catch (error) {
+      if (error?.code === 'ENOENT') return { absent: true, waitMs: Date.now() - started };
+      throw error;
+    }
+    assert(current.isFile() && current.dev === identity.dev && current.ino === identity.ino &&
+      current.size === identity.size && current.mtimeMs === identity.mtimeMs &&
+      current.ctimeMs === identity.ctimeMs,
+    'Verified memory download path changed before native removal completed');
+    await new Promise((resolveDelay) => setTimeout(resolveDelay, 50));
+  } while (Date.now() < deadline);
+  throw new Error('Verified memory download file remained after native removal');
+}
 
 export async function readDownloadLiveLimit(root) {
   const source = await readFile(join(root, LIVE_BUDGET_SOURCE), 'utf8');
