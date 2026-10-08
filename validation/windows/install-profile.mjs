@@ -1914,7 +1914,10 @@ async function runDownloadMemoryCycle({ consoleErrors, downloads, extensionPage,
     await page.keyboard.press('ArrowLeft');
     await page.waitForFunction(() => document.querySelector(
       '[data-xeg-gallery-container] #xeg-toolbar-counter')?.getAttribute('data-position') === '1');
-    assert(await currentButton.isEnabled(), 'Gallery must accept another download after rejection');
+    // The production toolbar deliberately keeps the busy state briefly to
+    // avoid flicker. Wait for its actual recovery instead of resetting state.
+    await waitForValue(async () => await currentButton.isEnabled() ? true : undefined,
+      'download control recovery after rejection', 5_000);
 
     phase = 'small-single';
     const knownBeforeSingle = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
