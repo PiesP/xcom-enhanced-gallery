@@ -691,11 +691,18 @@ async function verifyTrustedDownloadInput({ context, downloads, extensionId, ext
       return matches[0] ? { requestId: matches[0][0], record: matches[0][1] } : undefined;
     }, { id: downloadId, key: DOWNLOAD_TRACKING_STORAGE_KEY }), 'private request-to-download binding');
     requestId = binding.requestId;
-    const before = await readMv3LifecycleState(extensionPage, requestId, downloadId);
-    assert.equal(before.download?.state, 'in_progress');
-    assert.equal(before.download.paused, true);
-    assert.equal(before.download.totalBytes, TRUSTED_INPUT_DOWNLOAD_BYTES);
-    assertDownloadIncomplete(before.download, 'before synthetic input');
+    const before = await waitForValue(async () => {
+      const state = await readMv3LifecycleState(extensionPage, requestId, downloadId);
+      evidence.precondition = state;
+      if (!state.download || state.download.state !== 'in_progress') {
+        throw new Error('Owned download ended before synthetic input');
+      }
+      assertDownloadIncomplete(state.download, 'before synthetic input');
+      return state.download.paused === true &&
+        state.download.totalBytes === TRUSTED_INPUT_DOWNLOAD_BYTES &&
+        typeof state.download.filename === 'string' && state.download.filename.length > 0
+        ? state : undefined;
+    }, 'paused download filename and size to settle before synthetic input');
     assert.deepEqual(before.record, { cancellationRequested: false, downloadId });
     filename = basename(before.download.filename);
     assert.equal(resolve(before.download.filename), resolve(join(downloads, filename)));
