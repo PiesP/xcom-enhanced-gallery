@@ -14,18 +14,22 @@ import {
 import { schedulerYield } from '@piesp/browser-core/util';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { getUserCancelledAbortErrorFromSignal } from '@shared/error/cancellation';
-import {
-  HttpResponseSizeLimitError,
-  isHttpResponseSizeLimitError,
-} from '@shared/error/http-response-size-limit-error';
+import { isHttpResponseSizeLimitError } from '@shared/error/http-response-size-limit-error';
 import {
   StreamingZipWriter,
   type ZipEntryReservation,
   ZipResourceLimitError,
 } from '@shared/external/zip/streaming-zip-writer';
-import { fetchArrayBufferWithRetry } from '@shared/network/retry-fetch';
+import { fetchOwnedArrayBufferWithRetry } from '@shared/network/retry-fetch';
 import type { DownloadOptions, OrchestratorItem, ZipResult } from '@shared/services/download/types';
 import { reportProgress } from '@shared/services/download/types';
+import {
+  combineLiveByteLeases,
+  DownloadResourceLimitError,
+  downloadLiveByteBudget,
+  type LiveByteLease,
+  type OwnedBlob,
+} from './live-byte-budget';
 
 type UniqueFilenameFactory = (desired: string) => string;
 
@@ -142,16 +146,7 @@ const throwIfAborted = (signal?: AbortSignal): void => {
   }
 };
 
-/**
- * Download multiple media items as a ZIP archive using parallel fetch workers.
- * Each completed file is written to the ZIP writer immediately to minimize
- * peak memory usage — only one file's data is buffered beyond the fetch buffer
- * at any time, instead of holding all files in memory before writing.
- *
- * @param items - Media items to download
- * @param options - Download options (concurrency, retries, signal, progress)
- * @returns ZIP result with file success/failure counts and binary data
- */
+/** Assemble stored ZIP entries while retaining binary and future Blob-copy reservations. */
 export async function downloadAsZip(
   items: readonly OrchestratorItem[],
   options: DownloadOptions = {}
@@ -160,6 +155,7 @@ export async function downloadAsZip(
   const retries = clampRetries(options.retries);
   const abortSignal = options.signal;
   const onProgress = options.onProgress;
+  const liveBudget = options.liveBudget ?? downloadLiveByteBudget;
   const maxBufferedBytes = resolvePositiveByteLimit(
     options.maxBufferedBytes,
     ZIP_BUFFER_BUDGET_BYTES
@@ -168,166 +164,221 @@ export async function downloadAsZip(
     maxBufferedBytes,
     resolvePositiveByteLimit(options.maxEntryBytes, ZIP_MAX_ENTRY_BYTES)
   );
-  const maxArchiveBytes = resolvePositiveByteLimit(options.maxArchiveBytes, ZIP_MAX_ARCHIVE_BYTES);
-  const writer = new StreamingZipWriter(maxArchiveBytes);
-  const byteBudget = new RetainedByteBudget(maxBufferedBytes, options.onBufferUsage);
-
+  const writer = new StreamingZipWriter(
+    resolvePositiveByteLimit(options.maxArchiveBytes, ZIP_MAX_ARCHIVE_BYTES)
+  );
+  // This queue controls worker admission only. Committed storage remains in liveBudget.
+  const workerBudget = new RetainedByteBudget(maxBufferedBytes, options.onBufferUsage);
+  const partLeases: LiveByteLease[] = [];
+  const blobLeases: LiveByteLease[] = [];
   throwIfAborted(abortSignal);
-
+  const ensureUniqueFilename = ensureUniqueFilenameFactory();
+  const assignedFilenames = items.map((item) => ensureUniqueFilename(item.desiredName));
+  // EOCD plus its final Blob snapshot are admitted before the writer can allocate them.
+  partLeases.push(liveBudget.reserve(22));
+  try {
+    blobLeases.push(liveBudget.reserve(22));
+  } catch (error) {
+    for (const lease of partLeases) lease.release();
+    throw error;
+  }
   const total = items.length;
   let processed = 0;
   let successful = 0;
   let resourceLimitExceeded = false;
   const failures: { url: string; error: string }[] = [];
-
-  const ensureUniqueFilename = ensureUniqueFilenameFactory();
-  const assignedFilenames = items.map((item) => ensureUniqueFilename(item.desiredName));
-
-  // Track which indices have been written to preserve ordering info for progress
   let currentIndex = 0;
 
   const runNext = async (): Promise<void> => {
     while (currentIndex < total) {
       throwIfAborted(abortSignal);
-
       const index = currentIndex++;
       const item = items[index];
       if (!item) continue;
-
       const filename = assignedFilenames[index] ?? item.desiredName;
-      let releaseReservation: ReleaseReservation | undefined;
+      let releaseWorker: ReleaseReservation | undefined;
       let archiveReservation: ZipEntryReservation | undefined;
-
+      let overhead: LiveByteLease | undefined;
+      let blobOverhead: LiveByteLease | undefined;
+      let futureBlob: LiveByteLease | undefined;
+      let body: LiveByteLease | undefined;
+      let borrowed: OwnedBlob | undefined;
       try {
-        const knownSize = item.blob instanceof Blob ? item.blob.size : item.expectedSizeBytes;
+        const supplied = item.blob && !(item.blob instanceof Promise) ? item.blob : undefined;
+        const knownSize = supplied ? supplied.value.size : item.expectedSizeBytes;
         if (knownSize !== undefined && knownSize > maxEntryBytes) {
           throw new ZipResourceLimitError(
             `Bulk ZIP limit exceeded: ${filename} is ${knownSize} bytes (limit ${maxEntryBytes})`
           );
         }
-        // Unknown-size providers reserve the full budget before fetching, so they
-        // cannot leave multiple whole response buffers waiting for the writer.
-        const reservationBytes =
-          item.blob instanceof Blob ? Math.max(1, item.blob.size) : maxBufferedBytes;
-        releaseReservation = await byteBudget.reserve(reservationBytes, abortSignal);
-
-        archiveReservation = writer.reserveEntry(
-          filename,
-          item.blob instanceof Blob ? item.blob.size : maxEntryBytes
+        releaseWorker = await workerBudget.reserve(
+          supplied ? Math.max(1, supplied.value.size) : maxBufferedBytes,
+          abortSignal
         );
-        const remainingEntryBytes = Math.min(maxEntryBytes, archiveReservation.maxDataBytes);
-        if (knownSize !== undefined && knownSize > remainingEntryBytes) {
+        // Conservative UTF-8/header/directory scratch and the corresponding Blob copy.
+        // Admit before encodeUtf8/reserveEntry; string lengths are already bounded by the planner.
+        overhead = liveBudget.reserve(256 + filename.length * 8);
+        blobOverhead = liveBudget.reserve(256 + filename.length * 8);
+        const usesBlob = !!(item.blob || item.getBlob);
+        // Chunks + response copy + final archive copy (and Blob-to-buffer copy for providers).
+        const liveEntryCap = Math.min(
+          maxEntryBytes,
+          supplied
+            ? supplied.value.size
+            : Math.floor(liveBudget.availableBytes / (usesBlob ? 4 : 3))
+        );
+        if (knownSize !== undefined && knownSize > liveEntryCap)
+          throw new DownloadResourceLimitError();
+        if (liveEntryCap === 0 && knownSize !== 0) throw new DownloadResourceLimitError();
+        archiveReservation = writer.reserveEntry(filename, liveEntryCap);
+        const remainingEntryBytes = Math.min(liveEntryCap, archiveReservation.maxDataBytes);
+        if (knownSize !== undefined && knownSize > remainingEntryBytes)
           throw new ZipResourceLimitError(
-            `Bulk ZIP limit exceeded: ${filename} is ${knownSize} bytes ` +
-              `(remaining ${remainingEntryBytes})`
+            `Bulk ZIP limit exceeded: ${filename} has insufficient remaining archive capacity`
           );
-        }
-        if (!(item.blob instanceof Blob) && remainingEntryBytes === 0) {
+        if (remainingEntryBytes === 0 && knownSize !== 0)
           throw new ZipResourceLimitError(
             `Bulk ZIP limit exceeded: no data capacity remains for ${filename}`
           );
-        }
-
+        futureBlob = liveBudget.reserve(remainingEntryBytes);
         let data: Uint8Array;
-        if (item.blob || item.getBlob) {
-          // Try the demand-driven cache first; fall back to network on failure
+        if (usesBlob) {
+          // Reserve arrayBuffer's distinct storage before invoking a provider or copying a Blob.
+          body = liveBudget.reserve(remainingEntryBytes);
           let blob: Blob | undefined;
           try {
-            const provided =
-              item.blob ?? item.getBlob?.(abortSignal, remainingEntryBytes) ?? undefined;
-            blob = provided instanceof Promise ? await provided : provided;
+            if (item.blob) {
+              const owner = item.blob instanceof Promise ? await item.blob : item.blob;
+              borrowed = { value: owner.value, lease: owner.lease.fork() };
+              blob = borrowed.value;
+            } else {
+              borrowed = (await item.getBlob?.(abortSignal, remainingEntryBytes)) ?? undefined;
+              blob = borrowed?.value;
+            }
           } catch (error) {
             throwIfAborted(abortSignal);
-            if (
-              error instanceof HttpResponseSizeLimitError &&
-              error.maxBytes === remainingEntryBytes
-            ) {
+            // A size/memory rejection must never start another whole-body fallback.
+            if (isHttpResponseSizeLimitError(error) || error instanceof DownloadResourceLimitError)
               throw error;
-            }
-            // Cache request failed or expired — fall through to network
           }
-
           if (blob) {
             throwIfAborted(abortSignal);
-            if (blob.size > remainingEntryBytes) {
+            if (blob.size > remainingEntryBytes)
               throw new ZipResourceLimitError(
-                `Bulk ZIP limit exceeded: ${filename} is ${blob.size} bytes ` +
-                  `(remaining ${remainingEntryBytes})`
+                `Bulk ZIP limit exceeded: ${filename} is ${blob.size} bytes (remaining ${remainingEntryBytes})`
               );
-            }
             data = new Uint8Array(await blob.arrayBuffer());
+            body.shrink(data.byteLength);
           } else {
-            data = await fetchArrayBufferWithRetry(
+            body.release();
+            body = undefined;
+            const fetched = await fetchOwnedArrayBufferWithRetry(
               item.url,
               retries,
               abortSignal,
               DEFAULT_BACKOFF_BASE_MS,
-              remainingEntryBytes
+              remainingEntryBytes,
+              liveBudget
             );
+            data = fetched.value;
+            body = fetched.lease;
           }
         } else {
-          data = await fetchArrayBufferWithRetry(
+          const fetched = await fetchOwnedArrayBufferWithRetry(
             item.url,
             retries,
             abortSignal,
             DEFAULT_BACKOFF_BASE_MS,
-            remainingEntryBytes
+            remainingEntryBytes,
+            liveBudget
           );
+          data = fetched.value;
+          body = fetched.lease;
         }
-
         throwIfAborted(abortSignal);
-        if (data.byteLength > remainingEntryBytes) {
+        if (data.byteLength > remainingEntryBytes)
           throw new ZipResourceLimitError(
-            `Bulk ZIP limit exceeded: ${filename} is ${data.byteLength} bytes ` +
-              `(remaining ${remainingEntryBytes})`
+            `Bulk ZIP limit exceeded: ${filename} is ${data.byteLength} bytes (remaining ${remainingEntryBytes})`
           );
-        }
-
-        // Yield to main thread between items to keep UI responsive
-        if (index > 0) {
-          await schedulerYield();
-        }
-
-        // Write immediately to ZIP — avoids holding all files in memory
+        futureBlob.shrink(data.byteLength);
+        if (index > 0) await schedulerYield();
         await archiveReservation.commit(data, abortSignal ? { signal: abortSignal } : {});
+        partLeases.push(body, overhead);
+        blobLeases.push(futureBlob, blobOverhead);
+        body = undefined;
+        futureBlob = undefined;
+        overhead = undefined;
+        blobOverhead = undefined;
         successful++;
       } catch (error) {
         throwIfAborted(abortSignal);
-        if (error instanceof ZipResourceLimitError || isHttpResponseSizeLimitError(error)) {
+        if (
+          error instanceof ZipResourceLimitError ||
+          isHttpResponseSizeLimitError(error) ||
+          error instanceof DownloadResourceLimitError
+        )
           resourceLimitExceeded = true;
-        }
         failures.push({ url: item.url, error: normalizeErrorMessage(error) });
       } finally {
+        borrowed?.lease.release();
+        body?.release();
+        futureBlob?.release();
+        overhead?.release();
+        blobOverhead?.release();
         archiveReservation?.release();
-        releaseReservation?.();
+        releaseWorker?.();
         processed++;
-        reportProgress(onProgress, {
-          phase: 'downloading',
-          current: processed,
-          total,
-          filename,
-        });
+        reportProgress(onProgress, { phase: 'downloading', current: processed, total, filename });
       }
     }
   };
-
-  const workerCount = Math.min(concurrency, total);
-  const workers = Array.from({ length: workerCount }, () => runNext());
-  await Promise.all(workers);
-
-  reportProgress(onProgress, {
-    phase: 'complete',
-    current: processed,
-    total,
-    percentage: 100,
-  });
-
-  const zipBytes = writer.finalize();
-
+  const workers = Array.from({ length: Math.min(concurrency, total) }, () => runNext());
+  // An abort must wait for every worker's actual copy/commit cleanup before dropping writer parts.
+  const settled = await Promise.allSettled(workers);
+  const rejected = settled.find((result) => result.status === 'rejected');
+  if (rejected?.status === 'rejected') {
+    writer.dispose();
+    for (const lease of [...partLeases, ...blobLeases]) lease.release();
+    throw rejected.reason;
+  }
+  let parts: BlobPart[];
+  try {
+    reportProgress(onProgress, { phase: 'complete', current: processed, total, percentage: 100 });
+    parts = writer.finalize();
+  } catch (error) {
+    writer.dispose();
+    for (const lease of [...partLeases, ...blobLeases]) lease.release();
+    throw error;
+  }
+  const partOwner = combineLiveByteLeases(partLeases);
+  const blobOwner = combineLiveByteLeases(blobLeases);
+  let transferred = false;
+  let disposed = false;
+  const dropParts = (): void => {
+    parts.length = 0;
+    writer.dispose();
+  };
   return {
     filesSuccessful: successful,
     failures,
-    zipData: zipBytes,
+    zipData: parts,
     resourceLimitExceeded,
+    createBlob: () => {
+      if (transferred || disposed) throw new Error('ZIP ownership is no longer available');
+      // Future Blob capacity was reserved before reading every accepted entry.
+      const value = new Blob(parts, { type: 'application/zip' });
+      transferred = true;
+      dropParts();
+      partOwner.release();
+      blobOwner.shrink(value.size);
+      return { value, lease: blobOwner };
+    },
+    dispose: () => {
+      if (disposed) return;
+      disposed = true;
+      dropParts();
+      partOwner.release();
+      if (!transferred) blobOwner.release();
+    },
   };
 }

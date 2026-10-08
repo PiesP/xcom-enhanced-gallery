@@ -1,5 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { downloadAsZip } from '@shared/services/download/zip-download';
+import { downloadLiveByteBudget, type OwnedBlob } from '@shared/services/download/live-byte-budget';
+import { downloadAsZip as assembleZip } from '@shared/services/download/zip-download';
+import type { DownloadOptions, OrchestratorItem, ZipResult } from '@shared/services/download/types';
+const results: ZipResult[] = [];
+async function downloadAsZip(items: readonly OrchestratorItem[], options: DownloadOptions = {}): Promise<ZipResult> {
+ const result = await assembleZip(items,options);
+ results.push(result);
+ return result;
+}
+afterEach(() => {for(const result of results.splice(0)) result.dispose();});
 
 interface DeferredBlob {
   readonly promise: Promise<Blob>;
@@ -17,6 +26,14 @@ function deferredBlob(): DeferredBlob {
   return { promise, reject, resolve };
 }
 
+const inputOwners: OwnedBlob[] = [];
+function ownedBlob(value: Blob): OwnedBlob {
+  const owner = {value, lease: downloadLiveByteBudget.reserve(value.size)};
+  inputOwners.push(owner);
+  return owner;
+}
+afterEach(() => { for (const owner of inputOwners.splice(0)) owner.lease.release(); });
+
 describe('user-facing bulk ZIP download', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -29,12 +46,12 @@ describe('user-facing bulk ZIP download', () => {
         {
           url: 'https://pbs.twimg.com/media/one.jpg',
           desiredName: 'photo.jpg',
-          blob: new Blob(['one']),
+          blob: ownedBlob(new Blob(['one'])),
         },
         {
           url: 'https://pbs.twimg.com/media/two.jpg',
           desiredName: 'photo.jpg',
-          blob: new Blob(['two']),
+          blob: ownedBlob(new Blob(['two'])),
         },
       ],
       { onProgress: (entry) => progress.push(entry) }
@@ -65,7 +82,7 @@ describe('user-facing bulk ZIP download', () => {
         {
           url: 'https://pbs.twimg.com/media/available.jpg',
           desiredName: 'available.jpg',
-          blob: new Blob(['cached']),
+          blob: ownedBlob(new Blob(['cached'])),
         },
         {
           url: 'https://pbs.twimg.com/media/missing.jpg',
@@ -95,7 +112,7 @@ describe('user-facing bulk ZIP download', () => {
           {
             url: 'https://pbs.twimg.com/media/large.jpg',
             desiredName: 'large.jpg',
-            blob: new Blob([new Uint8Array(2 * 1024 * 1024)]),
+            blob: ownedBlob(new Blob([new Uint8Array(2 * 1024 * 1024)])),
           },
         ],
         { signal: controller.signal }
@@ -116,7 +133,8 @@ describe('user-facing bulk ZIP download', () => {
         active++;
         maxActive = Math.max(maxActive, active);
         try {
-          return await entry.promise;
+          const value = await entry.promise;
+          return {value, lease: downloadLiveByteBudget.reserve(value.size)};
         } finally {
           active--;
         }
@@ -142,7 +160,7 @@ describe('user-facing bulk ZIP download', () => {
     const items = Array.from({ length: 4 }, (_, index) => ({
       url: `https://pbs.twimg.com/media/bounded-${index}.jpg`,
       desiredName: `bounded-${index}.jpg`,
-      blob: new Blob([new Uint8Array(2 * 1024 * 1024)]),
+      blob: ownedBlob(new Blob([new Uint8Array(2 * 1024 * 1024)])),
     }));
 
     const result = await downloadAsZip(items, {
@@ -162,7 +180,7 @@ describe('user-facing bulk ZIP download', () => {
         {
           url: 'https://pbs.twimg.com/media/oversized.jpg',
           desiredName: 'oversized.jpg',
-          blob: new Blob([new Uint8Array(6)]),
+          blob: ownedBlob(new Blob([new Uint8Array(6)])),
         },
       ],
       { maxBufferedBytes: 5, maxEntryBytes: 5 }
@@ -186,12 +204,12 @@ describe('user-facing bulk ZIP download', () => {
         {
           url: 'https://pbs.twimg.com/media/archive-one.jpg',
           desiredName: 'archive-one.jpg',
-          blob: new Blob([new Uint8Array(3)]),
+          blob: ownedBlob(new Blob([new Uint8Array(3)])),
         },
         {
           url: 'https://pbs.twimg.com/media/archive-two.jpg',
           desiredName: 'archive-two.jpg',
-          blob: new Blob([new Uint8Array(3)]),
+          blob: ownedBlob(new Blob([new Uint8Array(3)])),
         },
       ],
       {
@@ -220,7 +238,7 @@ describe('user-facing bulk ZIP download', () => {
       url: `https://pbs.twimg.com/media/cancel-${index}.jpg`,
       desiredName: `cancel-${index}.jpg`,
       getBlob: (signal?: AbortSignal) =>
-        new Promise<Blob>((_resolve, reject) => {
+        new Promise<OwnedBlob>((_resolve, reject) => {
           started.push(index);
           signal?.addEventListener(
             'abort',

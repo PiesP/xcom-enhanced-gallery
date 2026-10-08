@@ -90,11 +90,12 @@ export const zhCn: LanguageStrings = {
         t: '部分失败',
         b: '{count} 个项目下载失败。',
         resourceLimit:
-          '已在 ZIP 中保存 {count} 个项目；由于达到浏览器资源限制，已省略 {failed} 个项目。请单独下载大型媒体文件。',
+          'ZIP 中包含 {count} 个文件；另有 {failed} 个文件未包含在内。已达到下载内存上限。请先等待正在进行的下载完成。如果没有进行中的下载，但仍达到上限，请重新加载此页面。然后减少文件数量并重试。',
       },
       noMedia: '未选择媒体项。请重新打开图库后重试。',
       zipFail: 'ZIP 文件保存失败',
-      zipTooLarge: '此 ZIP 过大，无法在浏览器中安全处理。请单独下载大型媒体文件。',
+      resourceLimit:
+        '已达到下载内存上限。请先等待正在进行的下载完成。如果没有进行中的下载，但仍达到上限，请重新加载此页面。然后减少文件数量并重试。',
     },
     gal: {
       partialRecovery: {

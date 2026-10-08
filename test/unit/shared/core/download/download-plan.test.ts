@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { describe, expect, it, vi } from 'vitest';
+import { LiveByteBudget } from '@shared/services/download/live-byte-budget';
 import { planBulkDownload } from '@shared/core/download/download-plan';
 
 describe('download-plan', () => {
@@ -24,11 +25,14 @@ describe('download-plan', () => {
 
   it('defers Blob loading until a ZIP worker requests the planned item', async () => {
     const media = { id: 'lazy', type: 'image' as const, url: 'https://example.com/lazy.jpg' };
-    const provider = vi.fn(async () => new Blob(['lazy']));
+    const budget = new LiveByteBudget(32);
+    const provider = vi.fn(async () => ({value: new Blob(['lazy']), lease: budget.reserve(4)}));
     const plan = planBulkDownload({ mediaItems: [media], mediaBlobProvider: provider });
 
     expect(provider).not.toHaveBeenCalled();
-    await expect(plan.items[0]?.getBlob?.()).resolves.toBeInstanceOf(Blob);
+    const owned = await plan.items[0]?.getBlob?.();
+    expect(owned?.value).toBeInstanceOf(Blob);
+    owned?.lease.release();
     expect(provider).toHaveBeenCalledWith(media, undefined);
   });
 });

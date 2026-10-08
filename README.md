@@ -61,6 +61,13 @@ its visible, accessible media. A notification identifies this partial recovery;
 bulk ZIP downloads include only the items shown in the gallery. A tile does not
 establish all attachments of the post.
 
+Downloads share an in-page memory allowance for their data. If it is reached,
+wait for active downloads to finish. If none are active and the limit remains,
+reload this page, then try fewer files at once. A userscript save can keep its
+allowance until the page is reloaded or closed. A partial ZIP reports both
+included and omitted file counts. See the
+[download ownership contract](./docs/download-memory.md) for its scope.
+
 The gallery targets desktop browsers and does not provide a mobile/touch flow.
 
 ## Browser support

@@ -90,12 +90,12 @@ export const en: LanguageStrings = {
         t: 'Partial Failure',
         b: 'Failed to download {count} items.',
         resourceLimit:
-          'Saved {count} items in the ZIP; {failed} items were omitted because the browser resource limit was reached. Download large media individually.',
+          'The ZIP includes {count} files; {failed} files were left out. The download memory limit was reached. Wait for active downloads to finish. If none are active and the limit remains, reload this page. Then retry with fewer files.',
       },
       noMedia: 'No media item selected. Please re-open the gallery and try again.',
       zipFail: 'Failed to save ZIP file',
-      zipTooLarge:
-        'This bulk ZIP is too large for safe in-browser processing. Download large media individually.',
+      resourceLimit:
+        'The download memory limit was reached. Wait for active downloads to finish. If none are active and the limit remains, reload this page. Then retry with fewer files.',
     },
     gal: {
       partialRecovery: {

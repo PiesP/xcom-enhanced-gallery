@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const state = vi.hoisted(() => ({
   downloadBlob: vi.fn(),
@@ -12,11 +12,20 @@ vi.mock('@platform/index', () => ({
   }),
 }));
 
+import { downloadLiveByteBudget, type OwnedBlob } from '@shared/services/download/live-byte-budget';
 import { DownloadOrchestrator } from '@shared/services/download/download-orchestrator';
+
+const inputOwners: OwnedBlob[] = [];
+function ownedBlob(value: Blob): OwnedBlob {
+  const owner = {value, lease: downloadLiveByteBudget.reserve(value.size)};
+  inputOwners.push(owner);
+  return owner;
+}
+afterEach(() => { for (const owner of inputOwners.splice(0)) owner.lease.release(); });
 
 describe('DownloadOrchestrator bulk resource limits', () => {
   beforeEach(() => {
-    state.downloadBlob.mockReset().mockResolvedValue(undefined);
+    state.downloadBlob.mockReset().mockImplementation(async (_blob, _filename, _signal, released) => {released?.();});
   });
 
   it('returns a dedicated error code when every selected item exceeds the ZIP memory limit', async () => {
@@ -38,7 +47,7 @@ describe('DownloadOrchestrator bulk resource limits', () => {
     expect(result).toMatchObject({
       success: false,
       code: 'RESOURCE_LIMIT',
-      error: expect.stringContaining('individually'),
+      error: expect.stringContaining('reload this page'),
       filesSuccessful: 0,
     });
     expect(state.downloadBlob).not.toHaveBeenCalled();
@@ -60,7 +69,7 @@ describe('DownloadOrchestrator bulk resource limits', () => {
         },
       ],
       {
-        cachedBlobs: new Map([[safeUrl, new Blob(['safe'])]]),
+        cachedBlobs: new Map([[safeUrl, ownedBlob(new Blob(['safe']))]]),
         maxBufferedBytes: 5,
         maxEntryBytes: 5,
       }

@@ -76,4 +76,23 @@ describe('extension message validation', () => {
       })
     ).toBe(false);
   });
+
+  it('allows blob status queries only for bounded IDs and page-owned URLs', () => {
+    const query = (requestId: string, objectUrl: string) => ({
+      type: 'DOWNLOAD_BLOB_STATUS_REQUEST',
+      payload: { requestId, objectUrl },
+    });
+    expect(isValidIncomingMessage(query('request-1', 'blob:https://x.com/resource'))).toBe(true);
+    expect(isValidIncomingMessage(query('', 'blob:https://x.com/resource'))).toBe(false);
+    expect(isValidIncomingMessage(query('request-1', 'blob:https://attacker.example/resource'))).toBe(false);
+    expect(isValidIncomingMessage(query('request-1', 'https://x.com/resource'))).toBe(false);
+    expect(isValidIncomingMessage({
+      type: 'DOWNLOAD_BLOB_STATUS_REQUEST',
+      payload: {
+        requestId: 'request-1',
+        objectUrl: 'blob:https://x.com/resource',
+        cancelRequested: 'yes',
+      },
+    })).toBe(false);
+  });
 });

@@ -88,6 +88,13 @@ export function isValidIncomingMessage(message: unknown): message is IncomingMes
     }
     case 'DOWNLOAD_CANCEL_REQUEST':
       return isSafeText(message.payload.requestId, 128);
+    case 'DOWNLOAD_BLOB_STATUS_REQUEST':
+      return (
+        isSafeText(message.payload.requestId, 128) &&
+        isPageBlobUrl(message.payload.objectUrl) &&
+        (message.payload.cancelRequested === undefined ||
+          typeof message.payload.cancelRequested === 'boolean')
+      );
     case 'SHOW_NOTIFICATION': {
       const payload = message.payload;
       return (

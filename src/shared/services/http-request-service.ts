@@ -7,9 +7,15 @@
 
 import { createDeferred } from '@piesp/browser-core/async';
 import { getHttpRequestAdapter } from '@platform/index';
-import type { HttpRequestControl, HttpRequestDetails } from '@platform/types';
+import type { HttpRequestControl, HttpRequestDetails, HttpRequestResponse } from '@platform/types';
 import { getAbortReasonOrAbortErrorFromSignal } from '@shared/error/cancellation';
 import { HttpResponseSizeLimitError } from '@shared/error/http-response-size-limit-error';
+import {
+  downloadLiveByteBudget,
+  type LiveByteBudget,
+  type LiveByteLease,
+  reserveBinaryResponse,
+} from '@shared/services/download/live-byte-budget';
 
 interface HttpRequestOptions {
   readonly headers?: Record<string, string>;
@@ -24,6 +30,33 @@ interface HttpResponse<T = unknown> {
   readonly ok: boolean;
   readonly status: number;
   readonly data: T;
+}
+
+interface OwnedBinaryRequestOptions
+  extends Omit<HttpRequestOptions, 'responseType' | 'maxResponseBytes'> {
+  readonly responseType: 'blob' | 'arraybuffer';
+  readonly maxResponseBytes: number;
+  readonly budget?: LiveByteBudget;
+}
+
+interface OwnedBinaryResponse<T extends Blob | ArrayBuffer> extends HttpResponse<T> {
+  readonly lease: LiveByteLease;
+}
+
+function responseFailure(response: HttpRequestResponse): Error {
+  if (response.response instanceof HttpResponseSizeLimitError) return response.response;
+  const status = response.status ?? 0;
+  const error = new Error(status === 0 ? 'NET' : `HTTP:${status}`) as Error & {
+    status: number;
+  };
+  error.status = status;
+  return error;
+}
+
+function timeoutFailure(): Error {
+  const error = new Error('TIMEOUT') as Error & { status: number };
+  error.status = 0;
+  return error;
 }
 
 export class HttpRequestService {
@@ -42,6 +75,121 @@ export class HttpRequestService {
 
   async get<T = unknown>(url: string, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
     return this.request<T>('GET', url, options);
+  }
+
+  /** Reserve transport and output storage before starting a binary request. */
+  async getOwnedBinary<T extends Blob | ArrayBuffer>(
+    url: string,
+    options: OwnedBinaryRequestOptions
+  ): Promise<OwnedBinaryResponse<T>> {
+    if (options.signal?.aborted) {
+      throw getAbortReasonOrAbortErrorFromSignal(options.signal);
+    }
+
+    const { maxBytes, lease } = reserveBinaryResponse(
+      options.budget ?? downloadLiveByteBudget,
+      options.maxResponseBytes
+    );
+    const deferred = createDeferred<OwnedBinaryResponse<T>>();
+    const signal = options.signal;
+    let settled = false;
+    let transportSettled = false;
+    let control: HttpRequestControl | null = null;
+    let abortRequested = false;
+    let receivedBytes: number | null = null;
+
+    const onTransportSettled = (): void => {
+      if (transportSettled) return;
+      transportSettled = true;
+      if (receivedBytes !== null) lease.shrink(receivedBytes);
+      lease.release();
+    };
+    const settle = (fn: () => void): boolean => {
+      if (settled) return false;
+      settled = true;
+      signal?.removeEventListener('abort', onAbort);
+      fn();
+      return true;
+    };
+    const abortTransport = (): void => {
+      try {
+        control?.abort();
+      } catch {
+        // A failed cancel call does not prove the opaque transport has stopped.
+        // Its actual terminal callback still owns the response reservation.
+      }
+    };
+    const onAbort = (): void => {
+      abortRequested = true;
+      if (!settle(() => deferred.reject(getAbortReasonOrAbortErrorFromSignal(signal)))) return;
+      abortTransport();
+    };
+
+    signal?.addEventListener('abort', onAbort, { once: true });
+    if (signal?.aborted) {
+      onAbort();
+      onTransportSettled();
+      return deferred.promise;
+    }
+
+    const details: HttpRequestDetails = {
+      method: 'GET',
+      url,
+      timeout: options.timeout ?? this.defaultTimeout,
+      responseType: options.responseType,
+      maxResponseBytes: maxBytes,
+      ...(options.headers ? { headers: options.headers } : {}),
+      onload: (response) => {
+        if (settled) return;
+        const data = response.response;
+        if (
+          (options.responseType === 'blob' && !(data instanceof Blob)) ||
+          (options.responseType === 'arraybuffer' && !(data instanceof ArrayBuffer))
+        ) {
+          settle(() => deferred.reject(new TypeError('Invalid binary HTTP response')));
+          return;
+        }
+        const size = data instanceof Blob ? data.size : (data as ArrayBuffer).byteLength;
+        if (size > maxBytes) {
+          settle(() => deferred.reject(new HttpResponseSizeLimitError(maxBytes, size)));
+          return;
+        }
+        receivedBytes = size;
+        settle(() =>
+          deferred.resolve({
+            ok: response.status >= 200 && response.status < 300,
+            status: response.status,
+            data: data as T,
+            lease: lease.fork(),
+          })
+        );
+      },
+      onerror: (response) => {
+        settle(() => deferred.reject(responseFailure(response)));
+      },
+      ontimeout: () => {
+        settle(() => deferred.reject(timeoutFailure()));
+      },
+      onabort: () => {
+        settle(() =>
+          deferred.reject(
+            signal
+              ? getAbortReasonOrAbortErrorFromSignal(signal)
+              : new DOMException('Aborted', 'AbortError')
+          )
+        );
+      },
+      onsettled: onTransportSettled,
+    };
+
+    try {
+      control = getHttpRequestAdapter().request(details);
+      if (abortRequested) abortTransport();
+    } catch (error) {
+      settle(() => deferred.reject(error));
+      onTransportSettled();
+    }
+    return deferred.promise;
   }
 
   private async request<T>(
@@ -105,25 +253,10 @@ export class HttpRequestService {
         });
       },
       onerror: (response) => {
-        settle(() => {
-          if (response.response instanceof HttpResponseSizeLimitError) {
-            deferred.reject(response.response);
-            return;
-          }
-          const status = response.status ?? 0;
-          const error = new Error(status === 0 ? 'NET' : `HTTP:${status}`) as Error & {
-            status?: number;
-          };
-          error.status = status;
-          deferred.reject(error);
-        });
+        settle(() => deferred.reject(responseFailure(response)));
       },
       ontimeout: () => {
-        settle(() => {
-          const error = new Error('TIMEOUT') as Error & { status?: number };
-          error.status = 0;
-          deferred.reject(error);
-        });
+        settle(() => deferred.reject(timeoutFailure()));
       },
       onabort: () => {
         settle(() => {

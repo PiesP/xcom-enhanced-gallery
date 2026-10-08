@@ -22,6 +22,13 @@ import {
   validateLiveUrls,
 } from './live-page.mjs';
 import {
+  expectedStoredZipBytes,
+  readExactDownloadFile,
+  readDownloadLiveLimit,
+  verifyStoredZip,
+  waitForRemovedDownloadFile,
+} from './download-memory.mjs';
+import {
   QUOTED_CASES,
   UNAVAILABLE_SEQUENCE,
   quotedVideoApiResponse,
@@ -1785,6 +1792,317 @@ function isExpectedFixtureApiConsoleError(record) {
   }
 }
 
+function isExpectedMemoryFixtureConsoleError(record, memory) {
+  if (memory?.status !== 'passed' || !memory.rejection?.declaredBytes) return false;
+  const declared = String(memory.rejection.declaredBytes);
+  if (record.text.startsWith('[XEG] Download failed ') &&
+      record.text.includes(`Response requires ${declared} bytes (limit `)) return true;
+  try {
+    return new URL(record.location).pathname === memory.rejection.pathname &&
+      /net::ERR_(?:ABORTED|CONTENT_LENGTH_MISMATCH)/u.test(record.text);
+  } catch {
+    return false;
+  }
+}
+
+async function runDownloadMemoryCycle({ consoleErrors, downloads, extensionPage, images,
+  output, page, root, evidence }) {
+  Object.assign(evidence, { status: 'pending', cleanup: {}, requests: [], downloads: [] });
+  const routePattern = 'https://pbs.twimg.com/**';
+  let routeInstalled = false;
+  let phase = 'declared-large';
+  let primaryError;
+  let cleanupError;
+  let galleryHandle;
+  let initialDownloadIds;
+  const verifiedDownloads = new Map();
+  let navigations = 0;
+  const onNavigated = (frame) => {
+    if (frame === page.mainFrame()) navigations += 1;
+  };
+  const routeHandler = async (route) => {
+    const resourceType = route.request().resourceType();
+    if (resourceType !== 'fetch' && resourceType !== 'xhr') {
+      await route.fallback();
+      return;
+    }
+    const url = new URL(route.request().url());
+    const marker = IMAGE_URL_MARKERS.find((value) => url.pathname.includes(value));
+    assert(marker, 'Memory fixture intercepted a download outside the three owned images');
+    assert(evidence.requests.length < 8, 'Memory fixture received too many media fetches');
+    if (phase === 'declared-large') {
+      assert.equal(marker, IMAGE_URL_MARKERS[0], 'Oversize response must target selected image');
+    }
+    const body = images[IMAGE_URL_MARKERS.indexOf(marker)];
+    const declaredBytes = phase === 'declared-large'
+      ? evidence.policy.declaredBytes : body.length;
+    const request = { phase, marker, resourceType, pathname: url.pathname,
+      declaredBytes, actualBodyBytes: body.length, startedAtMs: performance.now() };
+    evidence.requests.push(request);
+    await route.fulfill({ status: 200, contentType: 'image/jpeg', body,
+      headers: { 'Access-Control-Allow-Origin': 'https://x.com',
+        'Access-Control-Allow-Credentials': 'true',
+        'Content-Length': String(declaredBytes) } });
+    request.fulfilledAtMs = performance.now();
+  };
+
+  try {
+    assert.equal(page.url(), FIXTURE_URL, 'Memory validation must stay on the owned fixture');
+    const policy = await readDownloadLiveLimit(root);
+    evidence.policy = { ...policy, declaredBytes: policy.limitBytes + 1,
+      maximumPossibleAdmittedBytes: Math.floor(policy.limitBytes / 2),
+      admission: 'Binary response capacity is reserved for the body and its output copy',
+      memoryMetric: 'Policy admission only; browser heap and RSS are not measured' };
+    assert(evidence.policy.declaredBytes > evidence.policy.maximumPossibleAdmittedBytes);
+    assert(images[0].length > 0 && images[0].length <= 1024 * 1024,
+      'Oversized-header fixture body must stay within one MiB');
+    evidence.policy.maximumFixtureBodyBytes = 1024 * 1024;
+    evidence.document = { url: page.url(), timeOrigin: await page.evaluate(() => performance.timeOrigin) };
+    const before = await hostSnapshot(page, 0);
+    const knownBeforeFailure = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+    initialDownloadIds = knownBeforeFailure;
+    const consoleStart = consoleErrors.length;
+    page.on('framenavigated', onNavigated);
+    await page.route(routePattern, routeHandler);
+    routeInstalled = true;
+
+    await page.locator('[data-testid="tweetPhoto"] img').first().click();
+    const gallery = page.locator('[data-xeg-gallery-container]');
+    await gallery.waitFor({ state: 'visible', timeout: 15_000 });
+    galleryHandle = await gallery.elementHandle();
+    assert(galleryHandle, 'Memory cycle requires one actual gallery element');
+    const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
+    const currentButton = toolbar.locator('button[aria-label="Download"]');
+    const startedAtMs = performance.now();
+    const oversizedResponse = page.waitForResponse((response) =>
+      response.url().includes(IMAGE_URL_MARKERS[0]) &&
+      ['fetch', 'xhr'].includes(response.request().resourceType()), { timeout: 15_000 });
+    await currentButton.click();
+    const rejectedResponse = await oversizedResponse;
+    const observedLength = await rejectedResponse.headerValue('content-length');
+    assert.equal(observedLength, String(evidence.policy.declaredBytes),
+      'Browser did not observe the declared oversized Content-Length');
+    await page.waitForFunction(() => {
+      const root = document.querySelector('[data-xeg-gallery-container]');
+      const status = root?.querySelector('[data-download-status="error"]');
+      const error = root?.querySelector('[aria-live="polite"][aria-atomic="true"]');
+      const text = error?.textContent?.toLowerCase() ?? '';
+      return !!status && text.includes('download memory limit') && text.includes('reload this page');
+    }, null, { timeout: 15_000 });
+    const errorText = (await gallery.locator('[aria-live="polite"][aria-atomic="true"]')
+      .first().textContent())?.trim() ?? '';
+    assert(errorText.length > 0 && errorText.length <= 512,
+      'Rejection must show a bounded, understandable error');
+    assert.equal((await queryDownloads(extensionPage))
+      .filter(({ id }) => !knownBeforeFailure.has(id)).length, 0,
+    'Rejected download must not create a native browser download');
+    evidence.rejection = { declaredBytes: evidence.policy.declaredBytes,
+      actualBodyBytes: images[0].length, observedContentLength: observedLength,
+      pathname: new URL(rejectedResponse.url()).pathname, errorText,
+      elapsedMs: performance.now() - startedAtMs, nativeDownloadsCreated: 0 };
+    await page.screenshot({ path: join(output, 'installed-memory-rejection.png') });
+    evidence.rejection.screenshot = 'installed-memory-rejection.png';
+    await delay(100);
+    evidence.expectedConsoleErrors = consoleErrors.slice(consoleStart)
+      .filter((record) => isExpectedMemoryFixtureConsoleError(record,
+        { status: 'passed', rejection: evidence.rejection }));
+    assert(evidence.expectedConsoleErrors.length <= 2,
+      'Oversized fixture generated unexpected repeated console errors');
+    await page.keyboard.press('ArrowRight');
+    await page.waitForFunction(() => document.querySelector(
+      '[data-xeg-gallery-container] #xeg-toolbar-counter')?.getAttribute('data-position') === '2');
+    await page.keyboard.press('ArrowLeft');
+    await page.waitForFunction(() => document.querySelector(
+      '[data-xeg-gallery-container] #xeg-toolbar-counter')?.getAttribute('data-position') === '1');
+    // The production toolbar deliberately keeps the busy state briefly to
+    // avoid flicker. Wait for its actual recovery instead of resetting state.
+    await waitForValue(async () => await currentButton.isEnabled() ? true : undefined,
+      'download control recovery after rejection', 5_000);
+
+    phase = 'small-single';
+    const knownBeforeSingle = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+    const singleStartedAtMs = performance.now();
+    await currentButton.click();
+    const single = await waitForDownload(extensionPage, knownBeforeSingle, expectedFilename(0));
+    const singlePath = relative(downloads, single.filename);
+    assert(singlePath && !singlePath.startsWith('..') && !isAbsolute(singlePath),
+      'Recovered single download escaped the owned directory');
+    const { bytes: singleBytes, identity: singleIdentity } =
+      await readExactDownloadFile(single.filename, images[0].length);
+    assert(singleBytes.equals(images[0]), 'Recovered single download bytes differ');
+    assert.deepEqual((await queryDownloads(extensionPage))
+      .filter(({ id }) => !knownBeforeSingle.has(id)).map(({ id }) => id), [single.id],
+    'Recovered single action must create exactly one native download ID');
+    await writeFile(join(output, 'installed-memory-single.jpg'), singleBytes);
+    verifiedDownloads.set(single.id, { filename: single.filename, identity: singleIdentity,
+      sha256: createHash('sha256').update(singleBytes).digest('hex') });
+    evidence.downloads.push({ kind: 'single', id: single.id,
+      filename: basename(single.filename), bytes: singleBytes.length,
+      sha256: createHash('sha256').update(singleBytes).digest('hex'),
+      elapsedMs: performance.now() - singleStartedAtMs });
+
+    phase = 'small-zip';
+    const knownBeforeZip = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+    const zipFilename = `testuser_${TWEET_ID}.zip`;
+    const zipStartedAtMs = performance.now();
+    await toolbar.locator('button[aria-label="Download 3 shown files as ZIP"]').click();
+    const zip = await waitForDownload(extensionPage, knownBeforeZip, zipFilename);
+    assert.notEqual(zip.id, single.id, 'ZIP and single actions must have distinct native IDs');
+    const zipPath = relative(downloads, zip.filename);
+    assert(zipPath && !zipPath.startsWith('..') && !isAbsolute(zipPath),
+      'Recovered ZIP escaped the owned directory');
+    const expectedEntries = images.map((bytes, index) => ({ filename: expectedFilename(index), bytes }));
+    const expectedZipBytes = expectedStoredZipBytes(expectedEntries);
+    const { bytes: zipBytes, identity: zipIdentity } =
+      await readExactDownloadFile(zip.filename, expectedZipBytes);
+    const parsedZip = verifyStoredZip(zipBytes, expectedEntries);
+    assert.deepEqual((await queryDownloads(extensionPage))
+      .filter(({ id }) => !knownBeforeZip.has(id)).map(({ id }) => id), [zip.id],
+    'Recovered ZIP action must create exactly one native download ID');
+    await writeFile(join(output, 'installed-memory-bulk.zip'), zipBytes);
+    verifiedDownloads.set(zip.id, { filename: zip.filename, identity: zipIdentity,
+      sha256: createHash('sha256').update(zipBytes).digest('hex') });
+    evidence.downloads.push({ kind: 'zip', id: zip.id, filename: basename(zip.filename),
+      bytes: zipBytes.length, sha256: createHash('sha256').update(zipBytes).digest('hex'),
+      elapsedMs: performance.now() - zipStartedAtMs, verified: parsedZip });
+    assert.deepEqual(evidence.requests.filter(({ phase: requestPhase }) =>
+      requestPhase === 'declared-large').map(({ marker }) => marker), [IMAGE_URL_MARKERS[0]]);
+    assert.deepEqual(evidence.requests.filter(({ phase: requestPhase }) =>
+      requestPhase === 'small-single').map(({ marker }) => marker), [IMAGE_URL_MARKERS[0]]);
+    assert.deepEqual(evidence.requests.filter(({ phase: requestPhase }) =>
+      requestPhase === 'small-zip').map(({ marker }) => marker).sort(),
+    [...IMAGE_URL_MARKERS].sort(), 'ZIP must fetch all three exact fixture images');
+    assert(await gallery.evaluate((node, original) => node === original, galleryHandle),
+      'Memory recovery replaced the gallery app element');
+    await page.screenshot({ path: join(output, 'installed-memory-recovery.png') });
+    evidence.recoveryScreenshot = 'installed-memory-recovery.png';
+    await toolbar.locator('button[aria-label="Close"]').click();
+    await gallery.waitFor({ state: 'detached' });
+    const after = await hostSnapshot(page, 0);
+    assert.deepEqual(after.background, before.background, 'Memory cycle did not restore host isolation');
+    assert.deepEqual(after.bodyStyle, before.bodyStyle, 'Memory cycle did not restore body style');
+    assert.equal(navigations, 0, 'Memory cycle navigated the fixture document');
+    assert.equal(page.url(), evidence.document.url, 'Memory cycle changed the fixture URL');
+    assert.equal(await page.evaluate(() => performance.timeOrigin), evidence.document.timeOrigin,
+      'Memory cycle changed document time origin');
+    evidence.status = 'passed';
+  } catch (error) {
+    primaryError = error;
+    evidence.status = 'failed';
+    evidence.error = safeError(error);
+    await page.screenshot({ path: join(output, 'installed-memory-failure.png') })
+      .then(() => { evidence.failureScreenshot = 'installed-memory-failure.png'; })
+      .catch((screenshotError) => { evidence.screenshotError = safeError(screenshotError); });
+  } finally {
+    page.off('framenavigated', onNavigated);
+    if (galleryHandle) {
+      try {
+        await galleryHandle.dispose();
+      } catch (error) {
+        cleanupError ??= error;
+        evidence.cleanup.galleryHandleError = safeError(error);
+      }
+    }
+    if (routeInstalled) {
+      try {
+        await page.unroute(routePattern, routeHandler);
+        evidence.cleanup.exactPageRouteRemoved = true;
+      } catch (error) {
+        cleanupError = cleanupError
+          ? new AggregateError([cleanupError, error], 'Memory cleanup failed in multiple steps')
+          : error;
+        evidence.cleanup.routeError = safeError(error);
+      }
+    }
+    if (initialDownloadIds) {
+      try {
+        const observed = (await queryDownloads(extensionPage)).filter(({ id }) =>
+          !initialDownloadIds.has(id));
+        const allowedNames = new Set([expectedFilename(0), `testuser_${TWEET_ID}.zip`]);
+        assert(observed.every(({ filename }) =>
+          dirname(resolve(filename)) === resolve(downloads) && allowedNames.has(basename(filename))),
+        'Memory cleanup found a new download outside its exact owned filenames');
+        if (!primaryError) {
+          assert.deepEqual(new Set(observed.map(({ id }) => id)),
+            new Set(verifiedDownloads.keys()), 'Memory cleanup download IDs differ');
+        }
+        evidence.cleanup.downloads = [];
+        for (const item of observed) {
+          const verified = verifiedDownloads.get(item.id);
+          const cleanupRecord = { id: item.id, filename: basename(item.filename),
+            verifiedFileRemoved: false };
+          evidence.cleanup.downloads.push(cleanupRecord);
+          if (verified) {
+            assert.equal(item.filename, verified.filename,
+              'Verified memory download filename changed before cleanup');
+            const { bytes, identity } = await readExactDownloadFile(item.filename,
+              verified.identity.size);
+            assert.deepEqual(identity, verified.identity,
+              'Verified memory download file identity changed before cleanup');
+            const hash = createHash('sha256').update(bytes).digest('hex');
+            assert.equal(hash, verified.sha256, 'Verified memory download bytes changed before cleanup');
+          }
+          const removal = await extensionPage.evaluate(async ({ id, filename, removeFile }) => {
+            let [download] = await chrome.downloads.search({ id });
+            if (!download || download.filename !== filename) {
+              throw new Error(`Memory download ${id} changed before cleanup`);
+            }
+            if (download?.state === 'in_progress') {
+              await chrome.downloads.cancel(id);
+              const deadline = Date.now() + 10_000;
+              while (Date.now() < deadline) {
+                [download] = await chrome.downloads.search({ id });
+                if (!download || download.state !== 'in_progress') break;
+                await new Promise((resolveDelay) => setTimeout(resolveDelay, 50));
+              }
+            }
+            if (download?.state === 'in_progress') throw new Error(`Memory download ${id} did not stop`);
+            if (removeFile) {
+              if (download?.state !== 'complete') {
+                throw new Error(`Verified memory download ${id} is not complete`);
+              }
+              await chrome.downloads.removeFile(id);
+            }
+            return { terminalState: download?.state ?? null, nativeRemoveFileCalled: removeFile };
+          }, { id: item.id, filename: item.filename, removeFile: Boolean(verified) });
+          Object.assign(cleanupRecord, removal);
+          if (verified) {
+            cleanupRecord.fileAbsence = await waitForRemovedDownloadFile(item.filename,
+              verified.identity);
+            cleanupRecord.verifiedFileRemoved = true;
+          }
+          const history = await extensionPage.evaluate(async (id) => {
+            const erasedIds = await chrome.downloads.erase({ id });
+            const remaining = await chrome.downloads.search({ id });
+            if (!erasedIds.includes(id) || remaining.length) {
+              throw new Error(`Memory download ${id} remained in browser history`);
+            }
+            return { erasedIds, historyRemoved: true };
+          }, item.id);
+          Object.assign(cleanupRecord, history);
+        }
+      } catch (error) {
+        cleanupError = cleanupError
+          ? new AggregateError([cleanupError, error], 'Memory cleanup failed in multiple steps')
+          : error;
+        evidence.cleanup.downloadError = safeError(error);
+      }
+    }
+  }
+  if (cleanupError) evidence.status = 'failed';
+  if (primaryError || cleanupError) {
+    await writeFile(join(output, 'installed-memory-failure.json'),
+      JSON.stringify(evidence, null, 2)).catch((error) => {
+      evidence.failureReceiptError = safeError(error);
+    });
+  }
+  if (primaryError && cleanupError) throw new AggregateError([primaryError, cleanupError],
+    'Memory fixture validation and exact route cleanup both failed');
+  if (primaryError) throw primaryError;
+  if (cleanupError) throw cleanupError;
+  return evidence;
+}
+
 async function runPublicFixtureCycle({ apiResponses, output, page }) {
   await page.goto(PUBLIC_FIXTURE_URL);
   await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({
@@ -2851,6 +3169,7 @@ async function exerciseInstalledExtension(
   let fixtureVideoAssets;
   const mv3RestartCancellation = {};
   const trustedDownloadInput = {};
+  const downloadMemory = { status: 'pending' };
   const flowCleanup = {};
   const cleanupErrors = [];
   let fixtureRoutes;
@@ -2919,6 +3238,8 @@ async function exerciseInstalledExtension(
       page,
       workerObserver,
     });
+    await runDownloadMemoryCycle({ consoleErrors, downloads, extensionPage, images,
+      output, page, root, evidence: downloadMemory });
     notification = await verifyDefaultNotification(extensionPage);
     for (const cycle of CYCLES) {
       cycles.push(await runCycle({ cycle, downloads, extensionPage, output, page, images }));
@@ -3024,9 +3345,9 @@ async function exerciseInstalledExtension(
         JSON.stringify(unavailableSequence, null, 2)).catch(() => {});
       throw error;
     }
-    const unexpectedConsoleErrors = consoleErrors.filter(
-      (record) => !isExpectedFixtureApiConsoleError(record)
-    );
+    const expectedMemoryErrors = new Set(downloadMemory.expectedConsoleErrors ?? []);
+    const unexpectedConsoleErrors = consoleErrors.filter((record) =>
+      !isExpectedFixtureApiConsoleError(record) && !expectedMemoryErrors.has(record));
     assert.deepEqual(pageErrors, [], 'Installed content script must not raise page errors');
     assert.deepEqual(
       unexpectedConsoleErrors,
@@ -3042,6 +3363,7 @@ async function exerciseInstalledExtension(
       fixtureApiResponses: fixtureRoutes.apiResponses,
       mv3RestartCancellation,
       trustedDownloadInput,
+      downloadMemory,
       notification,
       packagingAssets,
       publicDom,
@@ -3102,6 +3424,7 @@ async function exerciseInstalledExtension(
             flowCleanup,
             mv3RestartCancellation,
             trustedDownloadInput,
+            downloadMemory,
             notification,
             packagingAssets,
             publicDom,

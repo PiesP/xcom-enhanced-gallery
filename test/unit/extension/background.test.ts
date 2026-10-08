@@ -24,6 +24,7 @@ const state = vi.hoisted(() => ({
   startupListener: null as StartupListener | null,
   storageValues: {} as Record<string, unknown>,
   storageSetError: null as unknown,
+  storageSetFailuresRemaining: 1,
 }));
 
 vi.mock('@platform/chrome-runtime', () => ({
@@ -59,7 +60,8 @@ vi.mock('@platform/chrome-runtime', () => ({
         set: vi.fn(async (items: Record<string, unknown>) => {
           if (state.storageSetError !== null) {
             const error = state.storageSetError;
-            state.storageSetError = null;
+            state.storageSetFailuresRemaining -= 1;
+            if (state.storageSetFailuresRemaining <= 0) state.storageSetError = null;
             throw error;
           }
           Object.assign(state.storageValues, items);
@@ -119,6 +121,7 @@ beforeEach(() => {
   state.searchDownload.mockReset().mockResolvedValue([{ id: 101, state: 'interrupted' }]);
   state.waitForDownloadComplete.mockReset().mockResolvedValue(undefined);
   state.storageSetError = null;
+  state.storageSetFailuresRemaining = 1;
 });
 
 describe.each([
@@ -143,6 +146,13 @@ describe.each([
     {
       label: 'download cancellation',
       message: { type: 'DOWNLOAD_CANCEL_REQUEST', payload: { requestId: 'request-1' } },
+    },
+    {
+      label: 'Blob status',
+      message: {
+        type: 'DOWNLOAD_BLOB_STATUS_REQUEST',
+        payload: { requestId: 'request-1', objectUrl: 'blob:https://x.com/resource' },
+      },
     },
     {
       label: 'notification',
@@ -222,6 +232,192 @@ describe('background notification messages', () => {
   });
 });
 
+describe('background blob lifetime status', () => {
+  const objectUrl = 'blob:https://x.com/lifetime-resource';
+  const statusRequest = (requestId: string, cancelRequested = false) => ({
+    type: 'DOWNLOAD_BLOB_STATUS_REQUEST',
+    payload: { requestId, objectUrl, ...(cancelRequested ? { cancelRequested: true } : {}) },
+  });
+
+  it('cancels a proven stored-ID download even when cancellation persistence fails', async () => {
+    const requestId = `status-stored-write-failure-${crypto.randomUUID()}`;
+    const storageKey = 'xeg.download-tracking.v1';
+    state.storageValues[storageKey] = {
+      [requestId]: { downloadId: 1101, cancellationRequested: false },
+    };
+    let cancelled = false;
+    state.cancelDownload.mockImplementation(async () => { cancelled = true; });
+    state.searchDownload.mockImplementation(async () => [{
+      id: 1101, url: objectUrl, state: cancelled ? 'interrupted' : 'in_progress',
+    }]);
+    vi.resetModules();
+    await import('@extension/background');
+    await vi.waitFor(() => expect(state.searchDownload).toHaveBeenCalledWith({ id: 1101 }));
+    state.storageSetError = new Error('storage quota exceeded');
+
+    await expect(sendMessage(statusRequest(requestId, true))).resolves.toEqual({
+      success: true, data: { requestId, status: 'terminal' },
+    });
+    expect(state.cancelDownload).toHaveBeenCalledWith(1101);
+  });
+
+  it('retains the recovered RAM ID after bind persistence fails and later cancels it', async () => {
+    const requestId = `status-bind-write-failure-${crypto.randomUUID()}`;
+    const storageKey = 'xeg.download-tracking.v1';
+    state.storageValues[storageKey] = {
+      [requestId]: { cancellationRequested: false },
+    };
+    let cancelled = false;
+    state.cancelDownload.mockImplementation(async () => { cancelled = true; });
+    state.searchDownload.mockImplementation(async () => [{
+      id: 1102, url: objectUrl, state: cancelled ? 'interrupted' : 'in_progress',
+    }]);
+    vi.resetModules();
+    await import('@extension/background');
+    state.storageSetError = new Error('storage quota exceeded');
+
+    await expect(sendMessage(statusRequest(requestId))).resolves.toEqual({
+      success: true, data: { requestId, status: 'active' },
+    });
+    expect(state.searchDownload).toHaveBeenCalledWith({ url: objectUrl });
+    state.searchDownload.mockClear();
+    await expect(sendMessage(statusRequest(requestId, true))).resolves.toEqual({
+      success: true, data: { requestId, status: 'terminal' },
+    });
+    expect(state.searchDownload).toHaveBeenCalledWith({ id: 1102 });
+    expect(state.searchDownload).not.toHaveBeenCalledWith({ url: objectUrl });
+    expect(state.cancelDownload).toHaveBeenCalledWith(1102);
+  });
+
+  it('cancels a newly recovered exact-URL ID despite both bind and intent write failures', async () => {
+    const requestId = `status-rebind-cancel-write-failure-${crypto.randomUUID()}`;
+    const storageKey = 'xeg.download-tracking.v1';
+    state.storageValues[storageKey] = {
+      [requestId]: { cancellationRequested: false },
+    };
+    let cancelled = false;
+    state.cancelDownload.mockImplementation(async () => { cancelled = true; });
+    state.searchDownload.mockImplementation(async () => [{
+      id: 1104, url: objectUrl, state: cancelled ? 'interrupted' : 'in_progress',
+    }]);
+    vi.resetModules();
+    await import('@extension/background');
+    state.storageSetError = new Error('storage quota exceeded');
+    state.storageSetFailuresRemaining = 2;
+
+    await expect(sendMessage(statusRequest(requestId, true))).resolves.toEqual({
+      success: true, data: { requestId, status: 'terminal' },
+    });
+    expect(state.searchDownload).toHaveBeenCalledWith({ url: objectUrl });
+    expect(state.cancelDownload).toHaveBeenCalledWith(1104);
+  });
+
+  it('reports proven terminal status when tracking removal cannot persist', async () => {
+    const requestId = `status-terminal-write-failure-${crypto.randomUUID()}`;
+    const storageKey = 'xeg.download-tracking.v1';
+    state.storageValues[storageKey] = {
+      [requestId]: { cancellationRequested: false },
+    };
+    state.searchDownload.mockResolvedValue([{ id: 1103, url: objectUrl, state: 'complete' }]);
+    vi.resetModules();
+    await import('@extension/background');
+    state.storageSetError = new Error('storage quota exceeded');
+
+    await expect(sendMessage(statusRequest(requestId))).resolves.toEqual({
+      success: true, data: { requestId, status: 'terminal' },
+    });
+    expect(state.cancelDownload).not.toHaveBeenCalled();
+  });
+
+  it.each(['complete', 'interrupted'])('removes an unbound request after exact URL %s is observed', async (terminalState) => {
+    const requestId = `status-unbound-${crypto.randomUUID()}`;
+    const storageKey = 'xeg.download-tracking.v1';
+    state.storageValues[storageKey] = {
+      [requestId]: { cancellationRequested: false },
+    };
+    state.searchDownload.mockResolvedValue([{ id: 918, url: objectUrl, state: terminalState }]);
+    vi.resetModules();
+    await import('@extension/background');
+    await expect(sendMessage(statusRequest(requestId))).resolves.toEqual({
+      success: true, data: { requestId, status: 'terminal' },
+    });
+    expect(state.storageValues[storageKey]).not.toHaveProperty(requestId);
+  });
+
+  it('does not treat a mismatched download ID result as terminal', async () => {
+    const requestId = `status-mismatch-${crypto.randomUUID()}`;
+    const storageKey = 'xeg.download-tracking.v1';
+    state.storageValues[storageKey] = {
+      [requestId]: { downloadId: 714, cancellationRequested: false },
+    };
+    state.searchDownload.mockResolvedValue([{ id: 714, url: 'blob:https://x.com/other', state: 'complete' }]);
+
+    vi.resetModules();
+    await import('@extension/background');
+    await expect(sendMessage(statusRequest(requestId, true))).resolves.toEqual({
+      success: true,
+      data: { requestId, status: 'unknown' },
+    });
+    expect(state.cancelDownload).not.toHaveBeenCalled();
+  });
+
+  it('rediscovers a native download after a pre-ID worker restart and keeps cancellation linked', async () => {
+    const requestId = `status-pre-id-${crypto.randomUUID()}`;
+    const storageKey = 'xeg.download-tracking.v1';
+    state.storageValues[storageKey] = {
+      [requestId]: { cancellationRequested: true, cancellationRequestedAt: Date.now() - 60_000 },
+    };
+    state.searchDownload.mockImplementation((query: { id?: number; url?: string }) => {
+      if (query.url === objectUrl) {
+        return Promise.resolve([{ id: 815, url: objectUrl, state: 'in_progress' }]);
+      }
+      return Promise.resolve([{ id: 815, url: objectUrl, state: 'interrupted' }]);
+    });
+
+    vi.resetModules();
+    await import('@extension/background');
+    await expect(sendMessage(statusRequest(requestId, true))).resolves.toEqual({
+      success: true,
+      data: { requestId, status: 'terminal' },
+    });
+    expect(state.searchDownload).toHaveBeenCalledWith({ url: objectUrl });
+    expect(state.cancelDownload).toHaveBeenCalledWith(815);
+    expect(state.storageValues[storageKey]).not.toHaveProperty(requestId);
+  });
+
+  it('treats empty URL search results as unknown after a terminal record was removed', async () => {
+    const requestId = `status-empty-${crypto.randomUUID()}`;
+    const storageKey = 'xeg.download-tracking.v1';
+    state.storageValues[storageKey] = {
+      [requestId]: { downloadId: 916, cancellationRequested: false },
+    };
+    state.searchDownload.mockResolvedValue([]);
+
+    vi.resetModules();
+    await import('@extension/background');
+    await expect(sendMessage(statusRequest(requestId))).resolves.toEqual({
+      success: true,
+      data: { requestId, status: 'unknown' },
+    });
+    expect(state.searchDownload).toHaveBeenCalledWith({ url: objectUrl });
+  });
+
+  it('confirms a terminal exact URL after the persisted record is gone', async () => {
+    const requestId = `status-terminal-${crypto.randomUUID()}`;
+    const storageKey = 'xeg.download-tracking.v1';
+    state.storageValues[storageKey] = {};
+    state.searchDownload.mockResolvedValue([{ id: 917, url: objectUrl, state: 'complete' }]);
+
+    vi.resetModules();
+    await import('@extension/background');
+    await expect(sendMessage(statusRequest(requestId))).resolves.toEqual({
+      success: true,
+      data: { requestId, status: 'terminal' },
+    });
+    expect(state.searchDownload).toHaveBeenCalledWith({ url: objectUrl });
+  });
+});
+
 describe.each([
   {
     label: 'URL',
@@ -259,6 +455,7 @@ describe.each([
     await expect(failedResponse).resolves.toEqual({
       success: false,
       error: 'download ID unavailable',
+      data: { requestId, terminal: true },
     });
 
     state.download.mockResolvedValueOnce(101);
@@ -284,6 +481,7 @@ describe.each([
     await expect(downloadResponse).resolves.toEqual({
       success: false,
       error: 'Download interrupted: USER_CANCELED',
+      data: { requestId, terminal: true },
     });
     expect(state.cancelDownload).toHaveBeenCalledTimes(1);
     expect(state.cancelDownload).toHaveBeenCalledWith(151);
@@ -300,6 +498,7 @@ describe.each([
     await expect(sendMessage(request(requestId))).resolves.toEqual({
       success: false,
       error: 'Download timed out after 5 minutes (id: 202)',
+      data: { requestId, terminal: true },
     });
 
     expect(state.cancelDownload).toHaveBeenCalledWith(202);
@@ -401,6 +600,7 @@ describe.each([
     ).resolves.toEqual({
       success: false,
       error: 'Download timed out after 5 minutes (id: 404)',
+      data: { requestId, terminal: true },
     });
 
     await expect(
@@ -466,6 +666,7 @@ describe.each([
     ).resolves.toEqual({
       success: false,
       error: 'Download tracking storage write failed: storage quota exceeded',
+      data: { requestId, terminal: true },
     });
 
     expect(state.cancelDownload).toHaveBeenCalledTimes(3);

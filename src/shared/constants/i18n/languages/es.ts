@@ -90,12 +90,12 @@ export const es: LanguageStrings = {
         t: 'Fallo parcial',
         b: 'No se pudieron descargar {count} elementos.',
         resourceLimit:
-          'Se guardaron {count} elementos en el ZIP; se omitieron {failed} elementos porque se alcanzó el límite de recursos del navegador. Descarga los archivos grandes por separado.',
+          'El ZIP incluye {count} archivos; se omitieron {failed}. Se alcanzó el límite de memoria para descargas. Espera a que terminen las descargas en curso. Si no hay ninguna activa y el límite persiste, recarga esta página. Después, vuelve a intentarlo con menos archivos.',
       },
       noMedia: 'Ningún elemento multimedia seleccionado. Reabra la galería e intente de nuevo.',
       zipFail: 'Error al guardar el archivo ZIP',
-      zipTooLarge:
-        'Este ZIP es demasiado grande para procesarlo de forma segura en el navegador. Descarga los archivos grandes por separado.',
+      resourceLimit:
+        'Se alcanzó el límite de memoria para descargas. Espera a que terminen las descargas en curso. Si no hay ninguna activa y el límite persiste, recarga esta página. Después, vuelve a intentarlo con menos archivos.',
     },
     gal: {
       partialRecovery: {

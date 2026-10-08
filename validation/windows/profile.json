@@ -19,6 +19,8 @@
       "test/e2e/fixtures/installed-linked-four.mp4",
       "test/e2e/fixtures/installed-quote-three.mp4",
       "test/e2e/fixtures/installed-nested-c.mp4",
+      "src/shared/services/download/live-byte-budget.ts",
+      "validation/windows/download-memory.mjs",
       "validation/windows/live-page.mjs"
     ],
     "build_commands": [

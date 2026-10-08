@@ -5,7 +5,7 @@ import type { MediaInfo } from '@shared/types/media.types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const http = vi.hoisted(() => ({
-  get: vi.fn(),
+  getOwnedBinary: vi.fn(),
 }));
 
 vi.mock('@shared/services/http-request-service', () => ({
@@ -13,19 +13,35 @@ vi.mock('@shared/services/http-request-service', () => ({
 }));
 
 import { DownloadMediaCache } from '@shared/services/media/download-media-cache';
-import { downloadAsZip } from '@shared/services/download/zip-download';
+import {
+  DownloadResourceLimitError,
+  LiveByteBudget,
+  type OwnedBlob,
+} from '@shared/services/download/live-byte-budget';
 
 interface DeferredResponse {
-  readonly promise: Promise<{ ok: boolean; status: number; data: Blob }>;
-  readonly resolve: (response: { ok: boolean; status: number; data: Blob }) => void;
+  readonly promise: Promise<{ ok: boolean; status: number; data: Blob; lease: OwnedBlob['lease'] }>;
+  readonly resolve: (response: {
+    ok: boolean;
+    status: number;
+    data: Blob;
+    lease: OwnedBlob['lease'];
+  }) => void;
 }
 
 function deferredResponse(): DeferredResponse {
   let resolve!: DeferredResponse['resolve'];
-  const promise = new Promise<{ ok: boolean; status: number; data: Blob }>((accept) => {
+  const promise = new Promise<Awaited<DeferredResponse['promise']>>((accept) => {
     resolve = accept;
   });
   return { promise, resolve };
+}
+
+let budget: LiveByteBudget;
+
+function ownedResponse(data: string): Awaited<DeferredResponse['promise']> {
+  const blob = new Blob([data]);
+  return { ok: true, status: 200, data: blob, lease: budget.reserve(blob.size) };
 }
 
 function media(id: string, type: MediaInfo['type'] = 'image'): MediaInfo {
@@ -38,115 +54,156 @@ function media(id: string, type: MediaInfo['type'] = 'image'): MediaInfo {
 
 describe('DownloadMediaCache', () => {
   beforeEach(() => {
-    http.get.mockReset();
+    http.getOwnedBinary.mockReset();
+    budget = new LiveByteBudget(128);
   });
 
   it('starts requests only when an image download asks for media', () => {
-    const cache = new DownloadMediaCache();
+    const cache = new DownloadMediaCache(5, 100, budget);
 
-    expect(http.get).not.toHaveBeenCalled();
+    expect(http.getOwnedBinary).not.toHaveBeenCalled();
     expect(cache.getOrFetch(media('video', 'video'))).toBeNull();
     expect(cache.getOrFetch(media('gif', 'gif'))).toBeNull();
-    expect(http.get).not.toHaveBeenCalled();
+    expect(http.getOwnedBinary).not.toHaveBeenCalled();
 
     cache.destroy();
   });
 
   it('reuses the same demand-driven request', async () => {
     const response = deferredResponse();
-    http.get.mockReturnValue(response.promise);
-    const cache = new DownloadMediaCache();
+    http.getOwnedBinary.mockReturnValue(response.promise);
+    const cache = new DownloadMediaCache(5, 100, budget);
     const item = media('same');
 
-    const first = cache.getOrFetch(item);
-    const second = cache.getOrFetch(item);
+    const first = cache.getOrFetch(item)!;
+    const second = cache.getOrFetch(item)!;
 
-    expect(first).toBe(second);
-    expect(http.get).toHaveBeenCalledTimes(1);
+    expect(first).not.toBe(second);
+    expect(http.getOwnedBinary).toHaveBeenCalledTimes(1);
 
-    response.resolve({ ok: true, status: 200, data: new Blob(['image']) });
-    await expect(first).resolves.toBeInstanceOf(Blob);
+    response.resolve(ownedResponse('image'));
+    const firstOwner = await first;
+    const secondOwner = await second;
+    expect(firstOwner.value).toBe(secondOwner.value);
+    expect(firstOwner.lease).not.toBe(secondOwner.lease);
+    expect(budget.usedBytes).toBe(5);
+    firstOwner.lease.release();
     cache.destroy();
+    expect(budget.usedBytes).toBe(5);
+    secondOwner.lease.release();
+    expect(budget.usedBytes).toBe(0);
   });
 
-  it('reuses one cached request for duplicate URLs in a lazy bulk download', async () => {
-    http.get.mockResolvedValue({ ok: true, status: 200, data: new Blob(['shared-image']) });
-    const cache = new DownloadMediaCache();
+  it('reuses one completed cache entry while giving a later caller its own lease', async () => {
+    http.getOwnedBinary.mockImplementation(async () => ownedResponse('shared-image'));
+    const cache = new DownloadMediaCache(5, 100, budget);
     const item = media('shared');
 
-    const result = await downloadAsZip(
-      [
-        {
-          url: item.url,
-          desiredName: 'shared.jpg',
-          getBlob: (signal) => cache.getOrFetch(item, signal),
-        },
-        {
-          url: item.url,
-          desiredName: 'shared-copy.jpg',
-          getBlob: (signal) => cache.getOrFetch(item, signal),
-        },
-      ],
-      { concurrency: 2 }
-    );
-
-    expect(result.filesSuccessful).toBe(2);
-    expect(http.get).toHaveBeenCalledTimes(1);
+    const first = await cache.getOrFetch(item)!;
+    const second = await cache.getOrFetch(item)!;
+    expect(first.value).toBe(second.value);
+    expect(first.lease).not.toBe(second.lease);
+    expect(http.getOwnedBinary).toHaveBeenCalledTimes(1);
+    first.lease.release();
+    second.lease.release();
     cache.destroy();
+    expect(budget.usedBytes).toBe(0);
+  });
+
+  it('keeps an evicted entry charged while a borrower still owns it', async () => {
+    budget = new LiveByteBudget(5);
+    http.getOwnedBinary.mockImplementation(async () => ownedResponse('four'));
+    const cache = new DownloadMediaCache(1, 5, budget);
+    const first = await cache.getOrFetch(media('first'));
+
+    await expect(cache.getOrFetch(media('second'))).rejects.toBeInstanceOf(
+      DownloadResourceLimitError
+    );
+    expect(budget.usedBytes).toBe(4);
+
+    first?.lease.release();
+    expect(budget.usedBytes).toBe(0);
+    const retry = await cache.getOrFetch(media('second'));
+    retry?.lease.release();
+    cache.destroy();
+    expect(budget.usedBytes).toBe(0);
   });
 
   it('does not retain an image that exceeds the byte budget', async () => {
-    http.get.mockResolvedValue({ ok: true, status: 200, data: new Blob(['oversized']) });
-    const cache = new DownloadMediaCache(2, 4);
+    http.getOwnedBinary.mockImplementation(async () => ownedResponse('oversized'));
+    const cache = new DownloadMediaCache(2, 4, budget);
     const item = media('oversized');
 
-    await cache.getOrFetch(item);
-    await cache.getOrFetch(item);
+    const first = await cache.getOrFetch(item);
+    first?.lease.release();
+    const second = await cache.getOrFetch(item);
+    second?.lease.release();
 
-    expect(http.get).toHaveBeenCalledTimes(2);
-    expect(http.get).toHaveBeenCalledWith(
+    expect(http.getOwnedBinary).toHaveBeenCalledTimes(2);
+    expect(http.getOwnedBinary).toHaveBeenCalledWith(
       item.url,
       expect.objectContaining({ maxResponseBytes: 4 })
     );
     cache.destroy();
+    expect(budget.usedBytes).toBe(0);
   });
 
   it('uses a smaller caller response budget before materializing a cache entry', async () => {
-    http.get.mockResolvedValue({ ok: true, status: 200, data: new Blob(['ok']) });
-    const cache = new DownloadMediaCache(2, 10);
+    http.getOwnedBinary.mockImplementation(async () => ownedResponse('ok'));
+    const cache = new DownloadMediaCache(2, 10, budget);
     const item = media('caller-budget');
 
-    await cache.getOrFetch(item, undefined, 3);
+    const borrowed = await cache.getOrFetch(item, undefined, 3);
+    borrowed?.lease.release();
 
-    expect(http.get).toHaveBeenCalledWith(
+    expect(http.getOwnedBinary).toHaveBeenCalledWith(
       item.url,
       expect.objectContaining({ maxResponseBytes: 3 })
     );
     cache.destroy();
+    expect(budget.usedBytes).toBe(0);
+  });
+
+  it('rejects a cached Blob for a later caller with a smaller response cap', async () => {
+    http.getOwnedBinary.mockImplementation(async () => ownedResponse('four'));
+    const cache = new DownloadMediaCache(2, 10, budget);
+    const item = media('later-cap');
+    const first = await cache.getOrFetch(item);
+
+    await expect(cache.getOrFetch(item, undefined, 3)).rejects.toMatchObject({
+      name: 'HttpResponseSizeLimitError',
+    });
+    expect(http.getOwnedBinary).toHaveBeenCalledTimes(1);
+    first?.lease.release();
+    cache.destroy();
+    expect(budget.usedBytes).toBe(0);
   });
 
   it('removes a failed request so the download path can retry', async () => {
-    http.get
+    http.getOwnedBinary
       .mockRejectedValueOnce(new Error('cache request failed'))
-      .mockResolvedValueOnce({ ok: true, status: 200, data: new Blob(['retry']) });
-    const cache = new DownloadMediaCache();
+      .mockImplementationOnce(async () => ownedResponse('retry'));
+    const cache = new DownloadMediaCache(5, 100, budget);
     const item = media('retry');
 
     await expect(cache.getOrFetch(item)).rejects.toThrow('cache request failed');
-    await expect(cache.getOrFetch(item)).resolves.toBeInstanceOf(Blob);
+    const borrowed = await cache.getOrFetch(item);
+    expect(borrowed?.value).toBeInstanceOf(Blob);
+    borrowed?.lease.release();
 
-    expect(http.get).toHaveBeenCalledTimes(2);
+    expect(http.getOwnedBinary).toHaveBeenCalledTimes(2);
     cache.destroy();
+    expect(budget.usedBytes).toBe(0);
   });
 
   it('propagates caller cancellation and does not revive the cache after teardown', async () => {
     const response = deferredResponse();
     let requestSignal: AbortSignal | undefined;
-    http.get.mockImplementation((_url: string, options: { signal: AbortSignal }) => {
+    http.getOwnedBinary.mockImplementation((_url: string, options: { signal: AbortSignal }) => {
       requestSignal = options.signal;
       return response.promise;
     });
-    const cache = new DownloadMediaCache();
+    const cache = new DownloadMediaCache(5, 100, budget);
     const controller = new AbortController();
     const item = media('cancelled');
 
@@ -154,10 +211,11 @@ describe('DownloadMediaCache', () => {
     controller.abort();
 
     expect(requestSignal?.aborted).toBe(true);
+    await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
 
-    // Simulate an adapter that resolves after abort; it must not repopulate state.
-    response.resolve({ ok: true, status: 200, data: new Blob(['late']) });
-    await pending;
+    // A transport may still materialize after the caller-facing abort settles.
+    response.resolve(ownedResponse('late'));
+    await vi.waitFor(() => expect(budget.usedBytes).toBe(0));
     cache.destroy();
 
     expect(cache.getOrFetch(item)).toBeNull();
@@ -167,11 +225,11 @@ describe('DownloadMediaCache', () => {
     const first = deferredResponse();
     const current = deferredResponse();
     const signals: AbortSignal[] = [];
-    http.get.mockImplementation((_url: string, options: { signal: AbortSignal }) => {
+    http.getOwnedBinary.mockImplementation((_url: string, options: { signal: AbortSignal }) => {
       signals.push(options.signal);
       return signals.length === 1 ? first.promise : current.promise;
     });
-    const cache = new DownloadMediaCache(1, 5);
+    const cache = new DownloadMediaCache(1, 5, budget);
     const firstMedia = media('first');
     const currentMedia = media('current');
 
@@ -180,14 +238,20 @@ describe('DownloadMediaCache', () => {
 
     expect(signals[0]?.aborted).toBe(true);
     expect(signals[1]?.aborted).toBe(false);
+    await expect(firstRequest).rejects.toMatchObject({ name: 'AbortError' });
 
-    first.resolve({ ok: true, status: 200, data: new Blob(['stale-data']) });
-    await firstRequest;
+    first.resolve(ownedResponse('stale-data'));
+    await vi.waitFor(() => expect(budget.usedBytes).toBe(0));
     expect(signals[1]?.aborted).toBe(false);
 
-    current.resolve({ ok: true, status: 200, data: new Blob(['live']) });
-    await currentRequest;
-    expect(cache.getOrFetch(currentMedia)).toBe(currentRequest);
+    current.resolve(ownedResponse('live'));
+    const currentOwner = await currentRequest;
+    const secondOwner = await cache.getOrFetch(currentMedia);
+    expect(currentOwner?.value).toBe(secondOwner?.value);
+    expect(http.getOwnedBinary).toHaveBeenCalledTimes(2);
+    currentOwner?.lease.release();
+    secondOwner?.lease.release();
     cache.destroy();
+    expect(budget.usedBytes).toBe(0);
   });
 });

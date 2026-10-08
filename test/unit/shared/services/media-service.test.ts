@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   extract: vi.fn(),
-  httpGet: vi.fn(),
+  httpGetOwnedBinary: vi.fn(),
 }));
 
 vi.mock('@shared/services/media-extraction/media-extraction-service', () => ({
@@ -16,15 +16,16 @@ vi.mock('@shared/services/media-extraction/media-extraction-service', () => ({
 }));
 
 vi.mock('@shared/services/http-request-service', () => ({
-  getHttpRequestService: () => ({ get: mocks.httpGet }),
+  getHttpRequestService: () => ({ getOwnedBinary: mocks.httpGetOwnedBinary }),
 }));
 
+import { downloadLiveByteBudget } from '@shared/services/download/live-byte-budget';
 import { MediaService } from '@shared/services/media-service';
 
 describe('MediaService', () => {
   beforeEach(() => {
     mocks.extract.mockReset();
-    mocks.httpGet.mockReset();
+    mocks.httpGetOwnedBinary.mockReset();
   });
 
   it('does not download media while opening a gallery', async () => {
@@ -43,25 +44,33 @@ describe('MediaService', () => {
     await expect(service.extractFromClickedElement(document.createElement('img'))).resolves.toBe(
       result
     );
-    expect(mocks.httpGet).not.toHaveBeenCalled();
+    expect(mocks.httpGetOwnedBinary).not.toHaveBeenCalled();
 
     service.destroy();
   });
 
   it('clears completed download Blobs on global teardown and recreates the cache on restart', async () => {
-    mocks.httpGet.mockResolvedValue({ ok: true, status: 200, data: new Blob(['cached-image']) });
+    mocks.httpGetOwnedBinary.mockImplementation(async () => {
+      const data = new Blob(['cached-image']);
+      return { ok: true, status: 200, data, lease: downloadLiveByteBudget.reserve(data.size) };
+    });
     const service = new MediaService();
     const item = { id: 'cached', type: 'image' as const, url: 'https://pbs.twimg.com/media/cached.jpg' };
+    const beforeBytes = downloadLiveByteBudget.usedBytes;
 
     await service.initialize();
-    await service.getDownloadMedia(item);
+    const first = await service.getDownloadMedia(item);
     service.destroy();
+    expect(downloadLiveByteBudget.usedBytes).toBe(beforeBytes + 'cached-image'.length);
 
     expect(service.getDownloadMedia(item)).toBeNull();
 
     await service.initialize();
-    await service.getDownloadMedia(item);
-    expect(mocks.httpGet).toHaveBeenCalledTimes(2);
+    const second = await service.getDownloadMedia(item);
+    expect(mocks.httpGetOwnedBinary).toHaveBeenCalledTimes(2);
+    first?.lease.release();
+    second?.lease.release();
     service.destroy();
+    expect(downloadLiveByteBudget.usedBytes).toBe(beforeBytes);
   });
 });

@@ -101,7 +101,10 @@ export function createDownloadHandler() {
             publishStatus('error');
             const error = result.error || 'Unknown error';
             const title = languageService.translate('msg.dl.one.err.t');
-            const body = languageService.translate('msg.dl.one.err.b', { error });
+            const body =
+              result.code === 'RESOURCE_LIMIT'
+                ? languageService.translate('msg.dl.resourceLimit')
+                : languageService.translate('msg.dl.one.err.b', { error });
             setError(body);
             notifyError(title, body);
           }
@@ -139,7 +142,7 @@ export function createDownloadHandler() {
         if (result.code === 'RESOURCE_LIMIT') {
           publishStatus('error');
           const title = languageService.translate('msg.dl.one.err.t');
-          const body = languageService.translate('msg.dl.zipTooLarge');
+          const body = languageService.translate('msg.dl.resourceLimit');
           setError(body);
           notifyError(title, body);
           return;

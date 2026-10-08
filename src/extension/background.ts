@@ -37,6 +37,8 @@ import { isAllowedUrl } from '@shared/utils/url/url-safety';
 import { waitForDownloadComplete } from './download-completion';
 import { DownloadTrackingStore } from './download-tracking';
 import type {
+  DownloadBlobStatusRequestMessage,
+  DownloadBlobStatusResponse,
   DownloadBlobUrlRequestMessage,
   DownloadCancelRequestMessage,
   DownloadLifecycleResponse,
@@ -254,7 +256,7 @@ function toErrorResponse(error: unknown): ExtensionMessageResponse {
     return {
       success: false,
       error: error.message,
-      ...(error.lifecycle.requestId && !error.lifecycle.terminal ? { data: error.lifecycle } : {}),
+      ...(error.lifecycle.requestId ? { data: error.lifecycle } : {}),
     };
   }
   return {
@@ -297,6 +299,13 @@ browserApi.runtime.onMessage.addListener(
       case 'DOWNLOAD_CANCEL_REQUEST':
         respondAsync(
           () => handleDownloadCancelRequest(msg).then(() => ({ success: true })),
+          sendResponse
+        );
+        return true;
+
+      case 'DOWNLOAD_BLOB_STATUS_REQUEST':
+        respondAsync(
+          () => handleDownloadBlobStatusRequest(msg).then((data) => ({ success: true, data })),
           sendResponse
         );
         return true;
@@ -361,21 +370,155 @@ async function handleDownloadBlobUrlRequest(message: DownloadBlobUrlRequestMessa
   );
 }
 
+/** A URL-only lookup covers the gap before a download ID is persisted and SW restarts. */
+async function settleObservedDownload(requestId: string): Promise<void> {
+  const tracked = activeDownloadIds.get(requestId);
+  if (tracked && !tracked.ownerSettled) {
+    // The original native allocation/await owner still performs its own cleanup.
+    tracked.terminalObserved = true;
+    return;
+  }
+  activeDownloadIds.delete(requestId);
+  try {
+    await downloadTracking.remove(requestId);
+  } catch (error: unknown) {
+    log.warn('download-tracking-terminal-cleanup-failed', {
+      requestId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
+async function handleDownloadBlobStatusRequest(
+  message: DownloadBlobStatusRequestMessage
+): Promise<DownloadBlobStatusResponse> {
+  const { requestId, objectUrl, cancelRequested } = message.payload;
+  const result = (status: DownloadBlobStatusResponse['status']): DownloadBlobStatusResponse => ({
+    requestId,
+    status,
+  });
+
+  try {
+    await restoreTrackedDownloads();
+    const downloadId =
+      activeDownloadIds.get(requestId)?.downloadId ?? downloadTracking.get(requestId)?.downloadId;
+    if (downloadId !== undefined) {
+      const [item] = await browserApi.downloads.search({ id: downloadId });
+      if (item !== undefined) {
+        if (item.id !== downloadId || item.url !== objectUrl) return result('unknown');
+        if (item.state === 'in_progress' && cancelRequested) {
+          try {
+            await downloadTracking.requestCancellation(requestId);
+          } catch (error: unknown) {
+            log.warn('download-tracking-cancellation-persist-failed', {
+              requestId,
+              error: error instanceof Error ? error.message : String(error),
+            });
+          }
+          const tracked = activeDownloadIds.get(requestId);
+          const cancellationStatus = await cancelDownloadWithRetry(
+            downloadId,
+            'request',
+            () => tracked?.terminalObserved === true
+          );
+          if (cancellationStatus === 'terminal' || tracked?.terminalObserved) {
+            await settleObservedDownload(requestId);
+            return result('terminal');
+          }
+        }
+        if (isTerminalDownloadState(item.state)) {
+          await settleObservedDownload(requestId);
+          return result('terminal');
+        }
+        return result(item.state === 'in_progress' ? 'active' : 'unknown');
+      }
+    }
+
+    const matches = (await browserApi.downloads.search({ url: objectUrl })).filter(
+      (item) => item.url === objectUrl
+    );
+    const active = matches.find((item) => item.state === 'in_progress');
+    if (active) {
+      // A worker may restart after Chrome allocates an ID but before bindDownload
+      // persists it. Recover the exact URL relationship and any pending cancel.
+      if (downloadId === undefined) {
+        const priorCancellationRequested =
+          cancelRequested === true ||
+          downloadTracking.get(requestId)?.cancellationRequested === true;
+        const tracked: TrackedDownload = {
+          downloadId: active.id,
+          retainUntilTerminal: true,
+          ownerSettled: true,
+          terminalObserved: false,
+        };
+        activeDownloadIds.set(requestId, tracked);
+        let cancellationRequested = priorCancellationRequested;
+        let boundCancellationRequested = false;
+        try {
+          boundCancellationRequested = await downloadTracking.bindDownload(requestId, active.id);
+          cancellationRequested ||= boundCancellationRequested;
+        } catch (error: unknown) {
+          // The store keeps a newer dirty RAM snapshot after a failed write.
+          // Keep the exact-URL mapping alive even when that snapshot cannot persist.
+          cancellationRequested ||= downloadTracking.get(requestId)?.cancellationRequested === true;
+          log.warn('download-tracking-bind-persist-failed', {
+            requestId,
+            downloadId: active.id,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+        if (cancellationRequested && !boundCancellationRequested) {
+          try {
+            await downloadTracking.requestCancellation(requestId);
+          } catch (error: unknown) {
+            log.warn('download-tracking-cancellation-persist-failed', {
+              requestId,
+              error: error instanceof Error ? error.message : String(error),
+            });
+          }
+        }
+        if (cancellationRequested) {
+          const cancellationStatus = await cancelDownloadWithRetry(
+            active.id,
+            'request',
+            () => tracked.terminalObserved
+          );
+          if (cancellationStatus === 'terminal' || tracked.terminalObserved) {
+            await settleObservedDownload(requestId);
+            return result('terminal');
+          }
+        }
+      }
+      return result('active');
+    }
+    if (matches.some((item) => isTerminalDownloadState(item.state))) {
+      await settleObservedDownload(requestId);
+      return result('terminal');
+    }
+    return result('unknown');
+  } catch (error: unknown) {
+    log.warn('download-blob-status-check-failed', {
+      requestId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return result('unknown');
+  }
+}
+
 async function runTrackedDownload(
   downloadOptions: ChromeDownloadOptions,
   requestId?: string
 ): Promise<void> {
-  if (requestId) {
-    await restoreTrackedDownloads();
-    await downloadTracking.registerRequest(requestId);
-  }
-
   let downloadId: number | undefined;
   let cancellationAlreadyTerminal = false;
   let retainTrackingAfterFailure = false;
   let operationFailure: DownloadOperationError | undefined;
   let cleanupFailure: unknown;
   try {
+    if (requestId) {
+      await restoreTrackedDownloads();
+      await downloadTracking.registerRequest(requestId);
+    }
     downloadId = await browserApi.downloads.download(downloadOptions);
     if (requestId) {
       const tracked: TrackedDownload = {

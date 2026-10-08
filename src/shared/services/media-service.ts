@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { DOWNLOAD_CACHE_MAX_BYTES, DOWNLOAD_CACHE_MAX_ENTRIES } from '@constants/performance';
+import type { OwnedBlob } from '@shared/services/download/live-byte-budget';
 import { DownloadMediaCache } from '@shared/services/media/download-media-cache';
 import { MediaExtractionService } from '@shared/services/media-extraction/media-extraction-service';
 import { createSingleton } from '@shared/services/singleton-base';
@@ -65,7 +66,7 @@ export class MediaService {
     media: MediaInfo,
     signal?: AbortSignal,
     maxResponseBytes?: number
-  ): Promise<Blob> | null {
+  ): Promise<OwnedBlob> | null {
     return this.downloadCache?.getOrFetch(media, signal, maxResponseBytes) ?? null;
   }
 

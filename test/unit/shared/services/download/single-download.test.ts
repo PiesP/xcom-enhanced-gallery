@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
+import { LiveByteBudget } from '@shared/services/download/live-byte-budget';
+import { DownloadOrchestrator } from '@shared/services/download/download-orchestrator';
 import { USER_CANCELLED_MESSAGE } from '@shared/error/cancellation';
 import {
   DEFAULT_REQUEST_TIMEOUT_MS,
@@ -41,8 +43,33 @@ describe('downloadSingleFile fetch fallback', () => {
     vi.clearAllMocks();
     getDownloadAdapter.mockReturnValue(adapter);
     adapter.download.mockResolvedValue(undefined);
-    adapter.downloadBlob.mockResolvedValue(undefined);
+    adapter.downloadBlob.mockReset().mockImplementation(async (_blob, _filename, _signal, released) => {released?.();});
     adapter.needsBlobFallback.mockReturnValue(true);
+  });
+
+  it('keeps a fetched Blob charged when cancellation settles before native URL release', async () => {
+    const budget = new LiveByteBudget(20);
+    const controller = new AbortController();
+    let nativeRelease: (() => void) | undefined;
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(new Uint8Array([1,2,3,4,5,6,7,8]), {status:200}));
+    adapter.downloadBlob.mockImplementationOnce((_blob, _name, signal, released) => {
+      nativeRelease = released;
+      return new Promise<void>((_resolve, reject) => {
+        signal?.addEventListener('abort', () => reject(signal.reason), {once:true});
+      });
+    });
+    const pending = downloadSingleFile(media, {liveBudget:budget,signal:controller.signal});
+    await vi.waitFor(() => expect(nativeRelease).toBeTypeOf('function'));
+    controller.abort();
+    await expect(pending).resolves.toMatchObject({success:false});
+    expect(budget.usedBytes).toBe(8);
+    await expect(downloadSingleFile(media, {liveBudget:budget,blob:new Blob(['1234567890123'])})).resolves.toMatchObject({success:false});
+    expect(budget.usedBytes).toBe(8);
+    nativeRelease?.();
+    expect(budget.usedBytes).toBe(0);
+    await expect(downloadSingleFile(media, {liveBudget:budget})).resolves.toMatchObject({success:true});
+    expect(budget.usedBytes).toBe(0);
+    expect(adapter.download).not.toHaveBeenCalled();
   });
 
   it('rejects an HTTP media URL before any privileged adapter call', async () => {
@@ -71,7 +98,7 @@ describe('downloadSingleFile fetch fallback', () => {
     ]);
   });
 
-  it('uses the browser-managed direct fallback instead of buffering an oversized response', async () => {
+  it('returns a resource failure without an alternate download for an oversized response', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(new Uint8Array([1]), {
         status: 200,
@@ -81,10 +108,10 @@ describe('downloadSingleFile fetch fallback', () => {
       })
     );
 
-    await expect(downloadSingleFile(media)).resolves.toMatchObject({ success: true });
+    await expect(downloadSingleFile(media)).resolves.toMatchObject({ success: false, code: 'RESOURCE_LIMIT', error: expect.stringContaining('limit') });
 
     expect(adapter.downloadBlob).not.toHaveBeenCalled();
-    expect(adapter.download).toHaveBeenCalledOnce();
+    expect(adapter.download).not.toHaveBeenCalled();
   });
 
   it('cleans caller, timeout, and adapter-race abort listeners after a successful download', async () => {
@@ -211,4 +238,33 @@ describe('downloadSingleFile fetch fallback', () => {
       error: USER_CANCELLED_MESSAGE,
     });
   });
+  it('retains cancelled native Blob ownership across orchestrator restart until URL release', async () => {
+    const budget = new LiveByteBudget(10);
+    const controller = new AbortController();
+    let releaseNative: (() => void) | undefined;
+    adapter.downloadBlob.mockImplementationOnce((_blob, _filename, signal, released) => {
+      releaseNative = released;
+      return new Promise<void>((_resolve, reject) => {
+        signal?.addEventListener('abort', () => reject(signal.reason), {once:true});
+      });
+    });
+    const orchestrator = new DownloadOrchestrator();
+    orchestrator.initialize();
+    const pending = orchestrator.downloadSingle(media, {blob:new Blob(['12345678']), liveBudget:budget, signal:controller.signal});
+    await vi.waitFor(() => expect(releaseNative).toBeTypeOf('function'));
+    controller.abort();
+    await expect(pending).resolves.toMatchObject({success:false});
+    expect(budget.usedBytes).toBe(8);
+    orchestrator.destroy();
+    orchestrator.initialize();
+    const rejected = await orchestrator.downloadSingle(media, {blob:new Blob(['123']), liveBudget:budget});
+    expect(rejected).toMatchObject({success:false,error:expect.stringContaining('memory limit')});
+    expect(budget.usedBytes).toBe(8);
+    releaseNative?.();
+    expect(budget.usedBytes).toBe(0);
+    await expect(orchestrator.downloadSingle(media, {blob:new Blob(['ok']), liveBudget:budget})).resolves.toMatchObject({success:true});
+    expect(budget.usedBytes).toBe(0);
+    expect(adapter.download).not.toHaveBeenCalled();
+  });
+
 });

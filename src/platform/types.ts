@@ -24,7 +24,12 @@ export interface DownloadAdapter {
     headers?: Record<string, string>,
     signal?: AbortSignal
   ): Promise<void>;
-  downloadBlob(blob: Blob, filename: string, signal?: AbortSignal): Promise<void>;
+  downloadBlob(
+    blob: Blob,
+    filename: string,
+    signal?: AbortSignal,
+    onObjectUrlReleased?: () => void
+  ): Promise<void>;
   /**
    * Whether the adapter requires a blob-based fallback for downloads.
    *
@@ -62,6 +67,8 @@ export interface HttpRequestDetails {
   onload?: (response: HttpRequestResponse) => void;
   ontimeout?: (response: HttpRequestResponse) => void;
   onprogress?: (response: HttpRequestProgressResponse) => void;
+  /** Transport has settled and cannot materialize another response, even after caller abort. */
+  onsettled?: () => void;
 }
 
 export interface HttpRequestResponse<TResponse = unknown> {

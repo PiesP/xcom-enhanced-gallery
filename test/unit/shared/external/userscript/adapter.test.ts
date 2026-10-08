@@ -41,14 +41,25 @@ async function loadUserscriptAdapter() {
   return (await import('@shared/external/userscript/adapter')).getUserscript();
 }
 
+function invokeTrustedPageHide(persisted: boolean): void {
+  const event = { isTrusted: true, persisted } as PageTransitionEvent;
+  for (const [type, listener] of vi.mocked(window.addEventListener).mock.calls) {
+    if (type === 'pagehide' && typeof listener === 'function') {
+      (listener as (event: PageTransitionEvent) => void)(event);
+    }
+  }
+}
+
 describe('userscript download adapter failure handling', () => {
   beforeEach(() => {
+    vi.spyOn(window, 'addEventListener');
     delete userscriptGlobals.GM;
     delete userscriptGlobals.GM_download;
     delete userscriptGlobals.GM_xmlhttpRequest;
   });
 
   afterEach(() => {
+    invokeTrustedPageHide(false);
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
     restoreUserscriptGlobals();
@@ -160,6 +171,7 @@ describe('userscript download adapter failure handling', () => {
       return { abort: vi.fn() };
     });
     const api = await loadUserscriptAdapter();
+    const { downloadLiveByteBudget } = await import('@shared/services/download/live-byte-budget');
 
     await expect(
       api.download('https://pbs.twimg.com/media/image.jpg', 'image.jpg')
@@ -167,7 +179,95 @@ describe('userscript download adapter failure handling', () => {
 
     expect(createObjectURL).toHaveBeenCalledOnce();
     expect(click).toHaveBeenCalledOnce();
+    expect(downloadLiveByteBudget.usedBytes).toBe(5);
+    expect(revokeObjectURL).not.toHaveBeenCalled();
+    window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }));
+    expect(downloadLiveByteBudget.usedBytes).toBe(5);
+    expect(revokeObjectURL).not.toHaveBeenCalled();
+    window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: false }));
+    expect(downloadLiveByteBudget.usedBytes).toBe(5);
+    expect(revokeObjectURL).not.toHaveBeenCalled();
+    invokeTrustedPageHide(true);
+    expect(downloadLiveByteBudget.usedBytes).toBe(5);
+    invokeTrustedPageHide(false);
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:test-download');
+    expect(downloadLiveByteBudget.usedBytes).toBe(0);
+  });
+
+  it('holds a GM response reservation until a late load callback after caller abort', async () => {
+    let request: GMXMLHttpRequestDetails | undefined;
+    userscriptGlobals.GM_xmlhttpRequest = vi.fn((details) => {
+      request = details;
+      return { abort: vi.fn() };
+    });
+    const controller = new AbortController();
+    const api = await loadUserscriptAdapter();
+    const { downloadLiveByteBudget } = await import('@shared/services/download/live-byte-budget');
+
+    const pending = api.download('https://pbs.twimg.com/media/image.jpg', 'image.jpg', controller.signal);
+    expect(downloadLiveByteBudget.usedBytes).toBe(2 * TEST_MAX_RESPONSE_BYTES);
+    controller.abort();
+    await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+    expect(downloadLiveByteBudget.usedBytes).toBe(2 * TEST_MAX_RESPONSE_BYTES);
+    request?.onload?.({ status: 200, response: new Blob(['late']) } as never);
+    expect(downloadLiveByteBudget.usedBytes).toBe(0);
+  });
+
+  it('holds a GM response reservation after an oversized progress report until abort settles', async () => {
+    let request: GMXMLHttpRequestDetails | undefined;
+    userscriptGlobals.GM_xmlhttpRequest = vi.fn((details) => {
+      request = details;
+      return { abort: vi.fn() };
+    });
+    const api = await loadUserscriptAdapter();
+    const { downloadLiveByteBudget } = await import('@shared/services/download/live-byte-budget');
+
+    const pending = api.download('https://pbs.twimg.com/media/image.jpg', 'image.jpg');
+    request?.onprogress?.({ loaded: TEST_MAX_RESPONSE_BYTES + 1, total: 0,
+      lengthComputable: false } as never);
+    await expect(pending).rejects.toMatchObject({ name: 'HttpResponseSizeLimitError' });
+    expect(downloadLiveByteBudget.usedBytes).toBe(2 * TEST_MAX_RESPONSE_BYTES);
+    request?.onabort?.({} as never);
+    expect(downloadLiveByteBudget.usedBytes).toBe(0);
+  });
+
+  it('holds a Blob URL lease through the anchor microtask and BFCache entry', async () => {
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test-owned-download');
+    const revoke = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+    const released = vi.fn();
+    userscriptGlobals.GM_xmlhttpRequest = vi.fn(() => ({ abort: vi.fn() }));
+    const api = await loadUserscriptAdapter();
+
+    await api.downloadBlob(new Blob(['owned']), 'original-name.jpg', undefined, released);
+    expect(revoke).not.toHaveBeenCalled();
+    expect(released).not.toHaveBeenCalled();
+    window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }));
+    expect(released).not.toHaveBeenCalled();
+    window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: false }));
+    expect(released).not.toHaveBeenCalled();
+    invokeTrustedPageHide(true);
+    expect(released).not.toHaveBeenCalled();
+    invokeTrustedPageHide(false);
+    expect(revoke).toHaveBeenCalledWith('blob:test-owned-download');
+    expect(released).toHaveBeenCalledOnce();
+  });
+
+  it('returns ownership exactly once for a pre-aborted or URL creation failure', async () => {
+    userscriptGlobals.GM_xmlhttpRequest = vi.fn(() => ({ abort: vi.fn() }));
+    const api = await loadUserscriptAdapter();
+    const controller = new AbortController();
+    controller.abort();
+    const preAbortedRelease = vi.fn();
+    await expect(api.downloadBlob(new Blob(['owned']), 'name.jpg', controller.signal,
+      preAbortedRelease)).rejects.toMatchObject({ name: 'AbortError' });
+    expect(preAbortedRelease).toHaveBeenCalledOnce();
+
+    vi.spyOn(URL, 'createObjectURL').mockImplementation(() => { throw new Error('URL unavailable'); });
+    const failedRelease = vi.fn();
+    await expect(api.downloadBlob(new Blob(['owned']), 'name.jpg', undefined,
+      failedRelease)).rejects.toThrow('URL unavailable');
+    expect(failedRelease).toHaveBeenCalledOnce();
   });
 
   it('clicks the Blob fallback anchor inside the open gallery container', async () => {
