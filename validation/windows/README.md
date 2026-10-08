@@ -91,6 +91,21 @@ Fixture routes supply transport and host media only; extraction and downloads
 use the installed production extension. These results do not establish the
 reported live page's quote relationship or availability.
 
+The installed profile also opens one routed unavailable-sequence document under
+the same extension installation. Three ordinary `allow-all` preview clicks
+request distinct synthetic post IDs whose `TweetResultByRestId` replies are HTTP
+200 with no provider errors: `TweetUnavailable`, `TweetTombstone`, and two nested
+visibility wrappers around `TweetUnavailable`. Each preview has a Blob poster
+but no playable DOM source or image fallback. The profile waits for each normal
+extension notification before the next click and requires extraction to finish
+without opening fallback media. A fourth click on the same document, before the
+circuit reset interval, must make a fresh HTTP request and open the directly
+quoted B video with its exact source, owner, text, collection indices, nonzero
+dimensions, error-free playback progress, and normal close restoration. It
+records bounded request IDs, HTTP and provider outcomes, timestamps, each step,
+settings restoration, and partial failure evidence. This is a deterministic
+routed fixture, not an observation of live X availability.
+
 After those cycles, the installed profile uses the exact installed extension
 worker and exact owned fixture tab to set real `chrome.tabs` zoom to 200%, then
 restores the prior factor and tab zoom settings in `finally`. At that zoom it

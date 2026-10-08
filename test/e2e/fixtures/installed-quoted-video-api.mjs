@@ -14,6 +14,16 @@ export const PUBLIC_PREPLAYER_CASE = {
   away: { type: 'image', path: '/media/QPreplayerPhoto.jpg',
     origin: `https://x.com/quote_preplayer/status/${PREPLAYER_QUOTE}` },
 };
+export const UNAVAILABLE_SEQUENCE = {
+  route: 'unavailable-sequence', handle: 'unavail_seq',
+  failures: [
+    { name: 'unavailable', outer: '8666666666666666661', typename: 'TweetUnavailable' },
+    { name: 'tombstone', outer: '8666666666666666662', typename: 'TweetTombstone' },
+    { name: 'visibility', outer: '8666666666666666663',
+      typename: 'TweetWithVisibilityResults' },
+  ],
+  control: PUBLIC_PREPLAYER_CASE,
+};
 export const QUOTED_CASES = [
   {
     name: 'recognized', route: 'recognized', handle: 'outer_one', outer: '8111111111111111111',
@@ -99,6 +109,15 @@ function tweet(id, username, media, quoted) {
 }
 
 export function quotedVideoApiResponse(tweetId) {
+  const unavailable = UNAVAILABLE_SEQUENCE.failures.find(({ outer }) => outer === tweetId);
+  if (unavailable) {
+    const result = unavailable.name === 'visibility'
+      ? { __typename: 'TweetWithVisibilityResults', tweet: {
+        __typename: 'TweetWithVisibilityResults', tweet: { __typename: 'TweetUnavailable' },
+      } }
+      : { __typename: unavailable.typename };
+    return { data: { tweetResult: { result } } };
+  }
   if (tweetId === PUBLIC_PREPLAYER_CASE.outer) {
     const credit = tweet(PREPLAYER_CREDIT, 'credit_preplay', [
       video(PREPLAYER_CREDIT, 'nested-c', 0),
