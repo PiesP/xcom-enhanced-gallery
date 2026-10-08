@@ -95,7 +95,7 @@ The installed profile also opens one routed unavailable-sequence document under
 the same extension installation. Three ordinary `allow-all` preview clicks
 request distinct synthetic post IDs whose `TweetResultByRestId` replies are HTTP
 200 with no provider errors: `TweetUnavailable`, `TweetTombstone`, and two nested
-visibility wrappers around `TweetUnavailable`. Each preview has a Blob poster
+visibility wrappers around `TweetUnavailable`. Each preview has a trusted video poster
 but no playable DOM source or image fallback. The profile waits for each normal
 extension notification before the next click and requires extraction to finish
 without opening fallback media. A fourth click on the same document, before the

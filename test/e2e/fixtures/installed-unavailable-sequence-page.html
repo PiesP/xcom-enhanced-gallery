@@ -25,7 +25,7 @@
       <a href="/unavail_seq/status/8666666666666666661"><time>Unavailable A</time></a>
       <div role="link" class="quote-branch">
         <div data-testid="videoPlayer" class="media-shell">
-          <video data-unavailable-poster aria-label="Unavailable quoted video preview"></video>
+          <video data-unavailable-poster poster="https://pbs.twimg.com/ext_tw_video_thumb/8666666666666666661/pu/img/unavailable.jpg" aria-label="Unavailable quoted video preview"></video>
           <div class="control-surface"><button type="button" aria-label="Open unavailable quoted video"><span aria-hidden="true">▶</span></button></div>
         </div>
       </div>
@@ -34,7 +34,7 @@
       <a href="/unavail_seq/status/8666666666666666662"><time>Tombstone A</time></a>
       <div role="link" class="quote-branch">
         <div data-testid="videoPlayer" class="media-shell">
-          <video data-unavailable-poster aria-label="Tombstone quoted video preview"></video>
+          <video data-unavailable-poster poster="https://pbs.twimg.com/ext_tw_video_thumb/8666666666666666662/pu/img/unavailable.jpg" aria-label="Tombstone quoted video preview"></video>
           <div class="control-surface"><button type="button" aria-label="Open tombstone quoted video"><span aria-hidden="true">▶</span></button></div>
         </div>
       </div>
@@ -43,7 +43,7 @@
       <a href="/unavail_seq/status/8666666666666666663"><time>Visibility A</time></a>
       <div role="link" class="quote-branch">
         <div data-testid="videoPlayer" class="media-shell">
-          <video data-unavailable-poster aria-label="Visibility quoted video preview"></video>
+          <video data-unavailable-poster poster="https://pbs.twimg.com/ext_tw_video_thumb/8666666666666666663/pu/img/unavailable.jpg" aria-label="Visibility quoted video preview"></video>
           <div class="control-surface"><button type="button" aria-label="Open visibility quoted video"><span aria-hidden="true">▶</span></button></div>
         </div>
       </div>
@@ -67,14 +67,5 @@
       </div>
     </article>
   </main>
-  <script>
-    const poster = URL.createObjectURL(new Blob([
-      '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180"><rect width="320" height="180" fill="#333"/></svg>'
-    ], { type: 'image/svg+xml' }));
-    for (const video of document.querySelectorAll('[data-unavailable-poster]')) {
-      video.poster = poster;
-    }
-    window.addEventListener('pagehide', () => URL.revokeObjectURL(poster), { once: true });
-  </script>
 </body>
 </html>

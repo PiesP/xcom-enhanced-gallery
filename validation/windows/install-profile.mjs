@@ -2154,12 +2154,14 @@ async function runUnavailableSequence({ apiResponses, extensionPage, output, pag
           imageCount: element.querySelectorAll('img').length,
           hit: document.elementFromPoint(x, y) === button, x, y };
       });
-      assert(preview.poster?.startsWith('blob:'), 'Unavailable preview must have a Blob poster');
+      assert.equal(preview.poster,
+        `https://pbs.twimg.com/ext_tw_video_thumb/${failure.outer}/pu/img/unavailable.jpg`,
+        'Unavailable preview must have one trusted video poster');
       assert.equal(preview.src, null, 'Unavailable preview must have no playable DOM source');
       assert.equal(preview.sourceCount, 0);
       assert.equal(preview.imageCount, 0, 'Unavailable preview must have no DOM image fallback');
       assert.equal(preview.hit, true, 'Failure click must hit the ordinary preview button');
-      step.preview = { blobPoster: true, sourceCount: 0, imageCount: 0, hit: true };
+      step.preview = { trustedPoster: true, sourceCount: 0, imageCount: 0, hit: true };
       const knownNotifications = await extensionPage.evaluate(async () =>
         Object.keys(await chrome.notifications.getAll()));
       const requestIndex = sequenceApiResponses.length;
