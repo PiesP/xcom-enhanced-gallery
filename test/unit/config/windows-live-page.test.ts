@@ -81,6 +81,26 @@ type LivePageModule = {
   };
   classifyLiveFailure(classification: string | undefined, galleryStatus: string,
     providerRejection: unknown): string;
+  classifyLiveHostDiagnostics(observation: unknown): {
+    expectedLifecycleCancellationCount: number;
+    evidenceStatus: string;
+  };
+  refreshQuotedVideoErrorAssertions(observation: {
+    requiredAssertions: Record<string, boolean>;
+    missingAssertions: string[];
+    productErrors: unknown[];
+    productErrorOverflow: number;
+    pageErrors: unknown[];
+    pageErrorOverflow: number;
+  }): string[];
+  captureActivationFocusDocument(surface: HTMLElement, expected: {
+    articleIndex: number;
+    point: { x: number; y: number };
+  }): { readonly focus: HTMLElement | null; readonly captured: boolean; dispose(): void };
+  findActivationHitDocument(surface: HTMLElement, expected: {
+    articleIndex: number;
+    point: { x: number; y: number };
+  }): Element | null;
   createControlledVideoSettings(prior: unknown, timestamp: number): {
     gallery: { videoClickMode: string; [key: string]: unknown };
     __schemaHash: string;
@@ -763,6 +783,164 @@ describe('Windows X live page validation', () => {
     } finally {
       Reflect.deleteProperty(document, 'elementsFromPoint');
     }
+  });
+
+  it('compares Escape restoration with focus at the trusted activation click', () => {
+    document.body.innerHTML = `<article><a href="/source">Prepared</a>
+      <div data-testid="videoPlayer"><video tabindex="0"></video><div class="overlay"></div></div>
+      <button>Adjacent</button></article><article><button>Foreign</button></article>`;
+    const article = document.querySelector('article');
+    const prepared = article?.querySelector('a');
+    const player = article?.querySelector('video');
+    const overlay = article?.querySelector('.overlay');
+    const adjacent = article?.querySelector('button');
+    const foreign = document.querySelectorAll('article')[1]?.querySelector('button');
+    if (!article || !prepared || !player || !overlay || !adjacent || !foreign) {
+      throw new Error('Activation fixture missing');
+    }
+    let top: Element = overlay;
+    Object.defineProperty(document, 'elementsFromPoint', {
+      configurable: true, value: () => [top],
+    });
+    const add = vi.spyOn(window, 'addEventListener');
+    const remove = vi.spyOn(window, 'removeEventListener');
+    let capture: ReturnType<LivePageModule['captureActivationFocusDocument']> | undefined;
+    try {
+      prepared.focus();
+      expect(document.activeElement).toBe(prepared);
+      const hit = livePage.findActivationHitDocument(player, {
+        articleIndex: 0, point: { x: 40, y: 120 },
+      });
+      expect(hit).toBe(overlay);
+      if (!(hit instanceof HTMLElement)) throw new Error('Activation hit missing');
+      capture = livePage.captureActivationFocusDocument(hit, {
+        articleIndex: 0, point: { x: 40, y: 120 },
+      });
+      const listener = add.mock.calls.find(([type]) => type === 'click')?.[1];
+      if (typeof listener !== 'function') throw new Error('Activation listener missing');
+      player.focus(); // Native pointer behavior before the click event.
+      listener({ isTrusted: true, button: 0, clientX: 40, clientY: 120,
+        target: overlay } as unknown as MouseEvent);
+      expect(capture.captured).toBe(true);
+      expect(capture.focus).toBe(player);
+      expect(capture.focus).not.toBe(prepared);
+      prepared.focus(); // Gallery focus while open.
+      player.focus(); // Escape restores the actual activation focus.
+      expect(document.activeElement).toBe(capture.focus);
+      capture.dispose();
+      expect(remove).toHaveBeenCalledWith('click', listener, true);
+      top = adjacent;
+      expect(livePage.findActivationHitDocument(player, {
+        articleIndex: 0, point: { x: 40, y: 120 },
+      })).toBeNull();
+      top = foreign;
+      expect(livePage.findActivationHitDocument(player, {
+        articleIndex: 0, point: { x: 40, y: 120 },
+      })).toBeNull();
+    } finally {
+      capture?.dispose();
+      add.mockRestore();
+      remove.mockRestore();
+      Reflect.deleteProperty(document, 'elementsFromPoint');
+    }
+  });
+
+  it('rejects missing, untrusted, out-of-scope, and non-meaningful activation focus', () => {
+    document.body.innerHTML = '<article><button>Inside</button></article><article><button>Outside</button></article>';
+    const article = document.querySelector('article');
+    const inside = article?.querySelector('button');
+    const outside = document.querySelectorAll('article')[1]?.querySelector('button');
+    if (!article || !inside || !outside) throw new Error('Activation fixture missing');
+    const add = vi.spyOn(window, 'addEventListener');
+    const capture = livePage.captureActivationFocusDocument(article, {
+      articleIndex: 0, point: { x: 40, y: 120 },
+    });
+    try {
+      const listener = add.mock.calls.find(([type]) => type === 'click')?.[1];
+      if (typeof listener !== 'function') throw new Error('Activation listener missing');
+      expect(capture.captured).toBe(false);
+      inside.focus();
+      inside.click();
+      expect(capture.captured).toBe(false);
+      const click = (target: Element, x = 40, y = 120, button = 0): void => {
+        listener({ isTrusted: true, button, clientX: x, clientY: y,
+          target } as unknown as MouseEvent);
+      };
+      click(outside);
+      click(inside, 50);
+      click(inside, 40, 120, 2);
+      outside.focus();
+      click(inside);
+      document.body.focus();
+      inside.blur();
+      click(inside);
+      expect(capture.captured).toBe(false);
+      expect(capture.focus).toBeNull();
+    } finally {
+      capture.dispose();
+      add.mockRestore();
+    }
+  });
+
+  it('accepts only aborts from the selected, proven quoted video', () => {
+    const source = { host: 'video.twimg.com', path: '/amplify_video/456/vid/clip.mp4' };
+    const abort = { kind: 'request-failed', error: 'net::ERR_ABORTED',
+      url: 'https://video.twimg.com/amplify_video/456/aud/chunk.m4s' };
+    const observation = {
+      requiredAssertions: Object.fromEntries(Array.from({ length: 13 }, (_, index) =>
+        [`assertion${index}`, true])),
+      gallery: { owner: { status: 'matched-direct-quote-variant', mediaId: '456' },
+        opened: { selectedVideo: { source } } },
+      hostDiagnostics: [abort], hostDiagnosticOverflow: 0,
+      productErrors: [] as unknown[], productErrorOverflow: 0,
+      pageErrors: [] as unknown[], pageErrorOverflow: 0,
+      missingAssertions: [] as string[],
+    };
+    expect(livePage.classifyLiveHostDiagnostics(observation)).toEqual({
+      expectedLifecycleCancellationCount: 1, evidenceStatus: 'observed',
+    });
+    const unverified = (override: Record<string, unknown>): void => {
+      expect(livePage.classifyLiveHostDiagnostics({ ...observation, ...override }).evidenceStatus)
+        .toBe('unverified');
+    };
+    unverified({ hostDiagnostics: [{ ...abort,
+      url: 'https://video.twimg.com/amplify_video/789/aud/chunk.m4s' }] });
+    unverified({ hostDiagnostics: [{ ...abort,
+      url: 'https://video.twimg.com/ext_tw_video/456/aud/chunk.m4s' }] });
+    unverified({ hostDiagnostics: [{ ...abort, error: 'HTTP 403' }] });
+    unverified({ hostDiagnostics: [{ ...abort, hadQuery: true }] });
+    unverified({ hostDiagnostics: [{ ...abort, hadCredentials: true }] });
+    unverified({ hostDiagnostics: [{ ...abort, hadPort: true }] });
+    unverified({ hostDiagnostics: [{ ...abort,
+      url: `${abort.url}?private=redacted` }] });
+    unverified({ hostDiagnostics: [{ ...abort,
+      url: 'https://user:pass@video.twimg.com/amplify_video/456/aud/chunk.m4s' }] });
+    unverified({ hostDiagnostics: [{ ...abort,
+      url: 'https://video.twimg.com:444/amplify_video/456/aud/chunk.m4s' }] });
+    unverified({ hostDiagnostics: [{ ...abort,
+      url: 'https://video.twimg.com:443/amplify_video/456/aud/chunk.m4s' }] });
+    unverified({ hostDiagnostics: [{ kind: 'http-response', status: 403,
+      url: 'https://x.com/i/api/graphql/TweetResultByRestId' }] });
+    unverified({ hostDiagnostics: [{ ...abort,
+      url: 'https://foreign.example/amplify_video/456/aud/chunk.m4s' }] });
+    unverified({ hostDiagnostics: [{ kind: 'console', location: 'https://x.com',
+      text: 'Host failed' }] });
+    unverified({ requiredAssertions: { ...observation.requiredAssertions,
+      playbackProgress: false } });
+    unverified({ hostDiagnosticOverflow: 1 });
+    unverified({ gallery: { ...observation.gallery,
+      opened: { selectedVideo: { source: { ...source,
+        path: '/amplify_video/789/vid/clip.mp4' } } } } });
+
+    // A page or product error can arrive while the post-close screenshot is awaited.
+    observation.productErrors.push({ kind: 'console' });
+    expect(livePage.classifyLiveHostDiagnostics(observation).evidenceStatus).toBe('unverified');
+    expect(livePage.refreshQuotedVideoErrorAssertions(observation)).toContain('noProductErrors');
+    expect(observation.requiredAssertions.noProductErrors).toBe(false);
+    observation.productErrors.pop();
+    observation.pageErrors.push({ kind: 'page-error' });
+    expect(livePage.refreshQuotedVideoErrorAssertions(observation)).toContain('noPageErrors');
+    expect(observation.requiredAssertions.noPageErrors).toBe(false);
   });
 
   it('accepts one sibling poster after the host clears video.poster and rejects conflicts', () => {
