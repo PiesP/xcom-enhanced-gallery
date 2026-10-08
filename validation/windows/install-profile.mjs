@@ -694,9 +694,15 @@ async function verifyTrustedDownloadInput({ context, downloads, extensionId, ext
     const before = await waitForValue(async () => {
       const state = await readMv3LifecycleState(extensionPage, requestId, downloadId);
       evidence.precondition = state;
-      if (!state.download || state.download.state !== 'in_progress') {
+      if (!state.download) return undefined;
+      if (state.download.state !== 'in_progress') {
         throw new Error('Owned download ended before synthetic input');
       }
+      if (state.download.bytesReceived >= TRUSTED_INPUT_DOWNLOAD_BYTES) {
+        throw new Error('Owned download received the complete fixture before synthetic input');
+      }
+      if (state.download.totalBytes !== TRUSTED_INPUT_DOWNLOAD_BYTES ||
+        !Number.isInteger(state.download.bytesReceived) || state.download.bytesReceived < 0) return undefined;
       assertDownloadIncomplete(state.download, 'before synthetic input');
       return state.download.paused === true &&
         state.download.totalBytes === TRUSTED_INPUT_DOWNLOAD_BYTES &&
