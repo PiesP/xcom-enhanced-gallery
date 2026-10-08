@@ -176,6 +176,22 @@ recorded as pending. The on-created listener, page Blob URL, exact download
 history item, tracking record, route, pages, and any task-created partial file
 are cleaned in `finally`, including failed runs.
 
+Immediately after the trusted-input and Worker-restart checks, the same installed
+fixture page exercises the download memory limit. Only the three fixture image
+`fetch`/XHR requests receive a temporary page route; visible `<img>` requests
+continue through the normal fixture route. The first selected-image response
+declares a `Content-Length` greater than the limit read from the packaged
+`live-byte-budget.ts`, while its actual body stays below one MiB. The browser
+must observe that header, the gallery must show localized resource guidance,
+and no native download may start. Without reloading or replacing the gallery,
+keyboard navigation and a small single download must still work. A subsequent
+bulk action must save a separate native ZIP download with the exact three image
+names and contents; the profile verifies its stored-entry boundaries, local and
+central order, CRCs, and bytes. It records exact Chrome download IDs, elapsed
+times, request phases, page time origin, screenshots, and exact route cleanup.
+The declared limit is an admission-policy check; browser heap and RSS are not
+measured, and the oversized body is never allocated.
+
 Only installed Chrome or Edge with `--installation extension` is supported.
 Userscript managers, Firefox installation, authenticated X.com, native Save As,
 Explorer, OS theme/DPI matrices, and physical GPU behavior remain outside this
