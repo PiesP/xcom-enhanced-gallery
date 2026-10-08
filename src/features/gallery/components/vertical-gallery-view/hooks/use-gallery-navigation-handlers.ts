@@ -10,6 +10,7 @@
 import { CSS } from '@constants/css';
 import { navigateToItem } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
+import { withTrustedEvent } from '@shared/utils/events/trusted-event';
 import type { JSX } from 'solid-js';
 
 /**
@@ -102,22 +103,24 @@ export function useGalleryNavigationHandlers(
     }
   };
 
-  const handleBackgroundClick: JSX.EventHandlerUnion<HTMLDivElement, MouseEvent> = (event) => {
-    const target = event.target;
-    if (!(target instanceof Element)) {
-      return;
-    }
+  const handleBackgroundClick: JSX.EventHandlerUnion<HTMLDivElement, MouseEvent> = withTrustedEvent(
+    (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
 
-    // Ignore clicks on interactive gallery elements (toolbar, items, panels).
-    // Uses GALLERY_ELEMENT_SELECTORS — intentionally excludes overlay/container
-    // so that clicks on the gallery background ARE treated as close triggers.
-    if (CSS.GALLERY_ELEMENT_SELECTORS.some((sel) => target.closest(sel))) {
-      return;
-    }
+      // Ignore clicks on interactive gallery elements (toolbar, items, panels).
+      // Uses GALLERY_ELEMENT_SELECTORS — intentionally excludes overlay/container
+      // so that clicks on the gallery background ARE treated as close triggers.
+      if (CSS.GALLERY_ELEMENT_SELECTORS.some((sel) => target.closest(sel))) {
+        return;
+      }
 
-    // Close gallery when clicking on background area (outside items and toolbar)
-    onClose();
-  };
+      // Close gallery when clicking on background area (outside items and toolbar)
+      onClose();
+    }
+  );
 
   const handleMediaItemClick = (index: number) => {
     const items = mediaItems();

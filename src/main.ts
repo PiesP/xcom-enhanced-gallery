@@ -40,6 +40,7 @@ import '@shared/styles/isolated-gallery.css';
 interface GalleryLifecycleApp {
   initialize(): Promise<void>;
   cleanup(): Promise<void>;
+  resumeEarlyMediaClick(event: MouseEvent): Promise<void>;
 }
 
 const isTestMode = import.meta.env.MODE === 'test';
@@ -269,6 +270,12 @@ export function cleanup(): Promise<void> {
   );
   lifecycleState.cleanupPromise = cleanupRun;
   return cleanupRun;
+}
+
+/** Private bundle capability for a trusted click held during MV3 startup. */
+export async function resumeEarlyMediaClick(event: MouseEvent): Promise<void> {
+  if (!lifecycleState.started || !isAllowedStartPage()) return;
+  await lifecycleState.galleryApp?.resumeEarlyMediaClick(event);
 }
 
 export async function startApplication(): Promise<void> {

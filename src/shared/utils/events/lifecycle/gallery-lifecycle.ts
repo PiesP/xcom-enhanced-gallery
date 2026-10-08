@@ -11,6 +11,7 @@ import {
   resetKeyboardDebounceState,
 } from '@shared/utils/events/handlers/keyboard';
 import { handleMediaClick } from '@shared/utils/events/handlers/media-click';
+import { withTrustedEvent } from '@shared/utils/events/trusted-event';
 
 export interface GalleryLifecycle {
   initialize(handlers: EventHandlers, options?: Partial<GalleryEventOptions>): () => void;
@@ -57,16 +58,16 @@ export function createGalleryLifecycle(): GalleryLifecycle {
     const listenerOptions: AddEventListenerOptions = { capture: true, passive: false };
 
     if (mergedOptions.enableKeyboard) {
-      const keyHandler: EventListener = (evt: Event) => {
+      const keyHandler: EventListener = withTrustedEvent((evt: Event) => {
         handleKeyboardEvent(evt as KeyboardEvent, handlers, mergedOptions);
-      };
+      });
       eventManager.addEventListener(target, 'keydown', keyHandler, { ...listenerOptions, context });
     }
 
     if (mergedOptions.enableMediaDetection) {
-      const clickHandler: EventListener = async (evt: Event) => {
+      const clickHandler: EventListener = withTrustedEvent(async (evt: Event) => {
         await handleMediaClick(evt as MouseEvent, handlers, mergedOptions);
-      };
+      });
       eventManager.addEventListener(target, 'click', clickHandler, { ...listenerOptions, context });
     }
 

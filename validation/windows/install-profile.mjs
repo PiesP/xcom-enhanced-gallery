@@ -35,6 +35,7 @@ const PUBLIC_TWEET_ID = '9876543210987654321';
 const PUBLIC_FIXTURE_URL = `https://x.com/public_user/status/${PUBLIC_TWEET_ID}`;
 const DOWNLOAD_TRACKING_STORAGE_KEY = 'xeg.download-tracking.v1';
 const MV3_RESTART_BLOB_BYTES = 256 * 1024 * 1024;
+const TRUSTED_INPUT_DOWNLOAD_BYTES = 4 * 1024 * 1024;
 const IMAGE_URL_MARKERS = ['GkE1234', 'GkE5678', 'GkE9012'];
 const MAX_AGGREGATE_DEPTH = 2;
 const MAX_AGGREGATE_ERRORS = 4;
@@ -610,6 +611,252 @@ export function assertDownloadIncomplete(download, stage) {
       totalBytes: download?.totalBytes,
     })
   );
+}
+
+async function verifyTrustedDownloadInput({ context, downloads, extensionId, extensionPage, page, evidence }) {
+  const initialIds = (await queryDownloads(extensionPage)).map((item) => item.id);
+  const initialFiles = new Set(await readdir(downloads));
+  const worker = context.serviceWorkers().find((item) => item.url().startsWith(`chrome-extension://${extensionId}/`));
+  assert(worker, 'Installed worker must be available for the notification-count seam');
+  const payload = Buffer.alloc(TRUSTED_INPUT_DOWNLOAD_BYTES, 0x58);
+  const fetches = [];
+  const routeHandler = async (route) => {
+    if (!['fetch', 'xhr'].includes(route.request().resourceType())) {
+      await route.fallback();
+      return;
+    }
+    assert(fetches.length < 2, 'Unexpected repeated download fetch');
+    assert(route.request().url().includes(IMAGE_URL_MARKERS[0]), 'Download must select the first image');
+    fetches.push({ bytes: payload.length, resourceType: route.request().resourceType() });
+    await route.fulfill({ status: 200, contentType: 'image/jpeg', body: payload,
+      headers: { 'Access-Control-Allow-Origin': 'https://x.com', 'Access-Control-Allow-Credentials': 'true' } });
+  };
+  let downloadId;
+  let requestId;
+  let primaryError;
+  let notificationSeamInstalled = false;
+  let pauseInstalled = false;
+  const cleanupErrors = [];
+  Object.assign(evidence, { bytes: TRUSTED_INPUT_DOWNLOAD_BYTES, fetches, syntheticInputs: [],
+    notificationScope: 'Production SHOW_NOTIFICATION path counted at native create boundary; delivery suppressed during this case',
+    downloadScope: 'Real Blob download held active by an asynchronous native onDeterminingFilename listener; received bytes may reach total before cancellation',
+    cleanup: {}, status: 'pending' });
+  try {
+    await page.route('https://pbs.twimg.com/**', routeHandler);
+    await worker.evaluate(() => {
+      const original = chrome.notifications.create;
+      const state = { calls: 0, original };
+      globalThis.__xegIngressNotifications = state;
+      chrome.notifications.create = async (id) => {
+        state.calls += 1;
+        return id;
+      };
+    });
+    notificationSeamInstalled = true;
+    await extensionPage.evaluate((oldIds) => {
+      const state = { downloadId: null, pause: 'waiting', duplicates: 0,
+        filenameGate: { downloadId: null, status: 'waiting' } };
+      const listener = (item) => {
+        if (oldIds.includes(item.id) || !item.url.startsWith('blob:https://x.com/')) return;
+        if (state.downloadId !== null) { state.duplicates += 1; return; }
+        state.downloadId = item.id;
+        Promise.resolve(chrome.downloads.pause(item.id)).then(
+          () => { state.pause = 'fulfilled'; },
+          (error) => { state.pause = `rejected: ${String(error)}`; }
+        );
+      };
+      let pendingSuggestion;
+      const filenameListener = (item, suggest) => {
+        if (oldIds.includes(item.id) || !item.url.startsWith('blob:https://x.com/')) {
+          suggest();
+          return;
+        }
+        if (pendingSuggestion) {
+          state.duplicates += 1;
+          suggest();
+          return;
+        }
+        state.filenameGate = { downloadId: item.id, status: 'held' };
+        pendingSuggestion = suggest;
+        return true;
+      };
+      const releaseFilename = () => {
+        if (!pendingSuggestion) return;
+        const suggest = pendingSuggestion;
+        pendingSuggestion = undefined;
+        state.filenameGate.status = 'released';
+        suggest();
+      };
+      globalThis.__xegIngressPause = { state, listener, filenameListener, releaseFilename };
+      try {
+        chrome.downloads.onDeterminingFilename.addListener(filenameListener);
+        chrome.downloads.onCreated.addListener(listener);
+      } catch (error) {
+        try { releaseFilename(); }
+        finally {
+          chrome.downloads.onDeterminingFilename.removeListener(filenameListener);
+          chrome.downloads.onCreated.removeListener(listener);
+          delete globalThis.__xegIngressPause;
+        }
+        throw error;
+      }
+    }, initialIds);
+    pauseInstalled = true;
+    const trigger = page.locator('[data-testid="tweetPhoto"] img').first();
+    await trigger.click();
+    const gallery = page.locator('[data-xeg-gallery-container]');
+    await gallery.waitFor({ state: 'visible' });
+    await page.keyboard.press('?');
+    await waitForValue(async () => (await worker.evaluate(() => globalThis.__xegIngressNotifications.calls)) === 1
+      ? true : undefined, 'trusted help input to reach the notification boundary');
+    await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download"]').click();
+    const control = await waitForValue(async () => {
+      const value = await extensionPage.evaluate(() => globalThis.__xegIngressPause.state);
+      if (value.pause.startsWith('rejected:')) throw new Error(value.pause);
+      return Number.isInteger(value.downloadId) && value.pause === 'fulfilled' &&
+        value.filenameGate.status === 'held' && value.filenameGate.downloadId === value.downloadId
+        ? value : undefined;
+    }, 'gallery-initiated native download to pause');
+    downloadId = control.downloadId;
+    assert.equal(control.duplicates, 0);
+    assert.equal(fetches.length, 1);
+    const binding = await waitForValue(async () => extensionPage.evaluate(async ({ id, key }) => {
+      const records = (await chrome.storage.local.get(key))[key] ?? {};
+      const matches = Object.entries(records).filter(([, record]) => record.downloadId === id);
+      if (matches.length > 1) throw new Error('Ambiguous native request ownership');
+      return matches[0] ? { requestId: matches[0][0], record: matches[0][1] } : undefined;
+    }, { id: downloadId, key: DOWNLOAD_TRACKING_STORAGE_KEY }), 'private request-to-download binding');
+    requestId = binding.requestId;
+    const before = await waitForValue(async () => {
+      const state = await readMv3LifecycleState(extensionPage, requestId, downloadId);
+      evidence.precondition = state;
+      if (!state.download) return undefined;
+      if (state.download.state !== 'in_progress') {
+        throw new Error('Owned download ended before synthetic input');
+      }
+      if (state.download.totalBytes !== TRUSTED_INPUT_DOWNLOAD_BYTES ||
+        !Number.isInteger(state.download.bytesReceived) || state.download.bytesReceived < 0) return undefined;
+      assert(state.download.bytesReceived <= TRUSTED_INPUT_DOWNLOAD_BYTES);
+      return state.download.paused === true ? state : undefined;
+    }, 'paused native download metadata while filename completion is gated');
+    assert.deepEqual(before.record, { cancellationRequested: false, downloadId });
+    evidence.before = { downloadId, bytesReceived: before.download.bytesReceived,
+      totalBytes: before.download.totalBytes, state: before.download.state,
+      paused: before.download.paused, requestBinding: before.record, filenameGate: control.filenameGate,
+      notificationCalls: 1 };
+    for (const input of ['Escape', 'help', 'outside', 'backdrop', 'close', 'reparented-close', 'download']) {
+      await page.evaluate((kind) => {
+        if (kind === 'Escape' || kind === 'help') {
+          document.body.dispatchEvent(new KeyboardEvent('keydown', {
+            key: kind === 'Escape' ? 'Escape' : '?', bubbles: true, cancelable: true,
+          }));
+        } else if (kind === 'outside') document.body.click();
+        else if (kind === 'backdrop') document.querySelector('[data-gallery-element="items"]')?.click();
+        else {
+          const button = document.querySelector(`[data-gallery-element="toolbar"] button[aria-label="${kind === 'download' ? 'Download' : 'Close'}"]`);
+          if (!(button instanceof HTMLButtonElement)) throw new Error('Missing actual toolbar button');
+          if (kind === 'reparented-close') {
+            const parent = button.parentNode;
+            const next = button.nextSibling;
+            try { document.body.append(button); button.click(); }
+            finally { parent.insertBefore(button, next); }
+          } else button.click();
+        }
+      }, input);
+      await delay(150);
+      assert.equal(await gallery.isVisible(), true, `${input}: gallery must remain open`);
+      const current = await readMv3LifecycleState(extensionPage, requestId, downloadId);
+      assert.equal(current.download?.state, 'in_progress', `${input}: native download must remain active`);
+      assert.equal(current.download.paused, true);
+      assert.equal(current.download.totalBytes, TRUSTED_INPUT_DOWNLOAD_BYTES);
+      assert(current.download.bytesReceived >= 0 && current.download.bytesReceived <= TRUSTED_INPUT_DOWNLOAD_BYTES);
+      const filenameGate = await extensionPage.evaluate(() => globalThis.__xegIngressPause.state.filenameGate);
+      assert.deepEqual(filenameGate, { downloadId, status: 'held' });
+      assert.deepEqual(current.record, before.record);
+      assert.equal(await worker.evaluate(() => globalThis.__xegIngressNotifications.calls), 1,
+        `${input}: synthetic input must not induce a notification`);
+      evidence.syntheticInputs.push({ input, galleryOpen: true, downloadId,
+        state: current.download.state, paused: true, bytesReceived: current.download.bytesReceived,
+        filenameGate, cancellationRequested: false, notificationCalls: 1 });
+    }
+    await page.keyboard.press('Escape');
+    await gallery.waitFor({ state: 'detached' });
+    const terminal = await waitForValue(async () => {
+      const value = await readMv3LifecycleState(extensionPage, requestId, downloadId);
+      return value.download?.state === 'interrupted' && value.record === null ? value : undefined;
+    }, 'genuine Escape to cancel the exact owned download');
+    assert.equal(terminal.download.error, 'USER_CANCELED');
+    await waitForValue(async () => (await readdir(downloads)).every((entry) => initialFiles.has(entry))
+      ? true : undefined, 'cancelled task files to disappear');
+    evidence.after = { downloadId, state: terminal.download.state, error: terminal.download.error,
+      requestBinding: terminal.record, filesAdded: [], galleryDetached: true,
+      notificationCalls: await worker.evaluate(() => globalThis.__xegIngressNotifications.calls) };
+    assert.equal(evidence.after.notificationCalls, 1);
+    evidence.status = 'passed';
+  } catch (error) {
+    primaryError = error;
+    evidence.status = 'failed';
+    evidence.error = safeError(error);
+  } finally {
+    if (pauseInstalled) {
+      try {
+        const state = await extensionPage.evaluate(() => {
+          const control = globalThis.__xegIngressPause;
+          try { control.releaseFilename(); }
+          finally {
+            chrome.downloads.onDeterminingFilename.removeListener(control.filenameListener);
+            chrome.downloads.onCreated.removeListener(control.listener);
+            delete globalThis.__xegIngressPause;
+          }
+          return control.state;
+        });
+        downloadId ??= state.downloadId ?? undefined;
+        evidence.cleanup.pauseListenerRemoved = true;
+        evidence.cleanup.filenameGateReleased = state.filenameGate.status === 'released';
+        evidence.cleanup.filenameListenerRemoved = true;
+      } catch (error) { cleanupErrors.push(error); }
+    }
+    if (downloadId !== undefined) {
+      try {
+        assert(!initialIds.includes(downloadId), 'Refusing cleanup of a pre-existing download');
+        await extensionPage.evaluate(async (id) => {
+          let [item] = await chrome.downloads.search({ id });
+          if (!item?.url.startsWith('blob:https://x.com/')) throw new Error('Owned download URL mismatch');
+          if (item.state === 'in_progress') await chrome.downloads.cancel(id);
+        }, downloadId);
+        await waitForValue(async () => {
+          const [item] = await extensionPage.evaluate((id) => chrome.downloads.search({ id }), downloadId);
+          return item?.state !== 'in_progress' ? true : undefined;
+        }, 'owned download to reach terminal cleanup state');
+        await extensionPage.evaluate((id) => chrome.downloads.erase({ id }), downloadId);
+        evidence.cleanup.downloadHistoryRemoved = true;
+      } catch (error) { cleanupErrors.push(error); }
+    }
+    if (notificationSeamInstalled) {
+      try {
+        await worker.evaluate(() => {
+          chrome.notifications.create = globalThis.__xegIngressNotifications.original;
+          delete globalThis.__xegIngressNotifications;
+        });
+        evidence.cleanup.notificationSeamRestored = true;
+      } catch (error) { cleanupErrors.push(error); }
+    }
+    try {
+      await page.unroute('https://pbs.twimg.com/**', routeHandler);
+      evidence.cleanup.routeRemoved = true;
+      for (const entry of await readdir(downloads)) {
+        if (initialFiles.has(entry)) continue;
+        const candidate = resolve(downloads, entry);
+        assert.equal(dirname(candidate), resolve(downloads));
+        await rm(candidate, { recursive: true, force: true });
+      }
+      evidence.cleanup.addedFilesRemoved = true;
+    } catch (error) { cleanupErrors.push(error); }
+    evidence.cleanup.errorCount = cleanupErrors.length;
+    if (cleanupErrors.length) evidence.cleanup.errors = cleanupErrors.map(safeError);
+  }
+  const errors = [...(primaryError ? [primaryError] : []), ...cleanupErrors];
+  if (errors.length) throw new AggregateError(errors, `Trusted input validation/cleanup failed: ${errors.map(safeError).join('; ')}`);
 }
 
 async function verifyMv3RestartCancellation({
@@ -1733,14 +1980,29 @@ async function navigateQuotedAwayAndBack(page, quotedCase, total) {
     type: quotedCase.away.type, path: quotedCase.away.path });
   const gallery = page.locator('[data-xeg-gallery-container]');
   const awayOrigin = await assertQuotedOriginLink(gallery, quotedCase.away.origin);
+  const beforeReturn = await page.evaluate(() => {
+    const toolbar = document.querySelector('[data-gallery-element="toolbar"]');
+    const counter = toolbar?.querySelector('#xeg-toolbar-counter');
+    const items = document.querySelector('[data-gallery-element="items"]');
+    return { currentIndex: toolbar?.getAttribute('data-current-index'),
+      focusedIndex: toolbar?.getAttribute('data-focused-index'),
+      position: counter?.getAttribute('data-position'), scrollTop: items?.scrollTop,
+      outerScrollTop: document.querySelector('.xeg-gallery-container')?.scrollTop,
+      itemRects: [...document.querySelectorAll('[data-gallery-element="item"]')].map((item) => {
+        const rect = item.getBoundingClientRect();
+        return { index: item.getAttribute('data-index'), top: rect.top, bottom: rect.bottom };
+      }), activeTag: document.activeElement?.tagName };
+  });
   await page.keyboard.press(returnKey);
-  const returned = await assertQuotedSelection(page, { position: from, total,
+  let returned;
+  try { returned = await assertQuotedSelection(page, { position: from, total,
     type: 'video',
-    path: `/ext_tw_video/${quotedCase.owner}/pu/vid/320x180/${quotedCase.media}.mp4` });
+    path: `/ext_tw_video/${quotedCase.owner}/pu/vid/320x180/${quotedCase.media}.mp4` }); }
+  catch (error) { throw new Error(`${safeError(error)}; before return: ${JSON.stringify(beforeReturn)}`, { cause: error }); }
   const returnedOrigin = await assertQuotedOriginLink(gallery,
     `https://x.com/${quotedCase.username}/status/${quotedCase.owner}`,
     quotedCase.name === 'linked');
-  return { awayKey, returnKey, away, awayOrigin, returned, returnedOrigin };
+  return { awayKey, returnKey, away, awayOrigin, beforeReturn, returned, returnedOrigin };
 }
 
 async function assertQuotedGallery(page, quotedCase) {
@@ -2588,6 +2850,7 @@ async function exerciseInstalledExtension(
   const unavailableSequence = { status: 'pending' };
   let fixtureVideoAssets;
   const mv3RestartCancellation = {};
+  const trustedDownloadInput = {};
   const flowCleanup = {};
   const cleanupErrors = [];
   let fixtureRoutes;
@@ -2646,6 +2909,8 @@ async function exerciseInstalledExtension(
     });
     assert.equal(videoClickConfiguration.effectiveMode, 'block-controls-only',
       'Installed profile must use the configured noncontrol video click mode');
+    await verifyTrustedDownloadInput({ context, downloads, extensionId, extensionPage,
+      page, evidence: trustedDownloadInput });
     await verifyMv3RestartCancellation({
       downloads,
       evidence: mv3RestartCancellation,
@@ -2776,6 +3041,7 @@ async function exerciseInstalledExtension(
       consoleErrors,
       fixtureApiResponses: fixtureRoutes.apiResponses,
       mv3RestartCancellation,
+      trustedDownloadInput,
       notification,
       packagingAssets,
       publicDom,
@@ -2835,6 +3101,7 @@ async function exerciseInstalledExtension(
             quotedApiResponses: fixtureRoutes?.quotedApiResponses ?? [],
             flowCleanup,
             mv3RestartCancellation,
+            trustedDownloadInput,
             notification,
             packagingAssets,
             publicDom,

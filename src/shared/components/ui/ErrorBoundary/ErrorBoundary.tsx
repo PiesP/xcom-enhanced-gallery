@@ -11,6 +11,7 @@ import { getNotificationAdapter, notifySafely } from '@platform/index';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import type { TranslationKey } from '@shared/i18n/types';
 import { getLanguageService } from '@shared/services/language-service';
+import { withTrustedEvent } from '@shared/utils/events/trusted-event';
 import type { ComponentChildren } from '@shared/utils/solid/accessor-utils';
 import type { JSXElement } from 'solid-js';
 import {
@@ -222,7 +223,7 @@ export function ErrorBoundary(props: ErrorBoundaryProps): JSXElement {
                 class={styles.recoveryAction}
                 data-xeg-error-action="retry"
                 disabled={retryCount() >= MAX_RETRIES}
-                onClick={handleRetry}
+                onClick={withTrustedEvent(handleRetry)}
                 type="button"
               >
                 {getRetryLabel()}
@@ -231,7 +232,7 @@ export function ErrorBoundary(props: ErrorBoundaryProps): JSXElement {
                 <button
                   class={`${styles.recoveryAction} ${styles.recoveryReset}`}
                   data-xeg-error-action="reset"
-                  onClick={handleReset}
+                  onClick={withTrustedEvent(handleReset)}
                   type="button"
                 >
                   {translate('msg.err.reset', 'Reset')}
@@ -240,7 +241,7 @@ export function ErrorBoundary(props: ErrorBoundaryProps): JSXElement {
               <button
                 class={`${styles.recoveryAction} ${styles.recoveryClose}`}
                 data-xeg-error-action="close"
-                onClick={handleClose}
+                onClick={withTrustedEvent(handleClose)}
                 type="button"
               >
                 {translate('tb.cls', 'Close')}

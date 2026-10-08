@@ -17,26 +17,28 @@ describe('extension content readiness', () => {
     document.body.replaceChildren();
   });
 
-  it('holds the first eligible click until the gallery listener is ready', () => {
+  it('does not retain or consume a page-synthetic eligible click during startup', async () => {
     const image = document.createElement('img');
     document.body.append(image);
     const downstream = vi.fn();
     document.body.addEventListener('click', downstream);
     const gate = installEarlyMediaClickReplay(document);
+    const resume = vi.fn(async () => undefined);
     const earlyClick = new MouseEvent('click', { bubbles: true, cancelable: true, composed: true });
 
     image.dispatchEvent(earlyClick);
 
-    expect(earlyClick.defaultPrevented).toBe(true);
-    expect(downstream).not.toHaveBeenCalled();
+    expect(earlyClick.defaultPrevented).toBe(false);
+    expect(downstream).toHaveBeenCalledOnce();
 
-    gate.complete();
+    await gate.complete(resume);
 
     expect(downstream).toHaveBeenCalledTimes(1);
+    expect(resume).not.toHaveBeenCalled();
     gate.dispose();
   });
 
-  it('does not intercept ineligible clicks or replay after disposal', () => {
+  it('does not intercept ineligible clicks or resume after disposal', async () => {
     state.processable = false;
     const button = document.createElement('button');
     document.body.append(button);
@@ -46,8 +48,10 @@ describe('extension content readiness', () => {
 
     button.click();
     gate.dispose();
-    gate.complete();
+    const resume = vi.fn(async () => undefined);
+    await gate.complete(resume);
 
     expect(downstream).toHaveBeenCalledTimes(1);
+    expect(resume).not.toHaveBeenCalled();
   });
 });

@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { Tooltip } from '@shared/components/ui/Tooltip/Tooltip';
+import { withTrustedEvent } from '@shared/utils/events/trusted-event';
 import type { ComponentChildren } from '@shared/utils/solid/accessor-utils';
 import { cx } from '@shared/utils/text/formatting';
 import { type JSXElement, splitProps } from 'solid-js';
@@ -76,7 +77,7 @@ export function IconButton(props: IconButtonProps): JSXElement {
       aria-expanded={local['aria-expanded']}
       aria-pressed={local['aria-pressed']}
       aria-busy={local['aria-busy']}
-      onClick={local.onClick}
+      onClick={withTrustedEvent((event: MouseEvent) => local.onClick?.(event))}
       onMouseDown={local.onMouseDown}
     >
       {local.children}
