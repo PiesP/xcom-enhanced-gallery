@@ -10,7 +10,7 @@
 export interface TwitterAPIResponse {
   readonly data?: {
     readonly tweetResult?: {
-      readonly result?: TwitterTweet;
+      readonly result?: TwitterTweet | null;
     };
   };
   readonly errors?: Array<{ message: string; code: number; [key: string]: unknown }>;

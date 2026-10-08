@@ -4,6 +4,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildTweetResultByRestIdUrl } from '@shared/core/twitter-api/endpoint';
 import type { BuildTweetResultByRestIdUrlArgs } from '@shared/core/twitter-api/endpoint';
+import type { TwitterTweet } from '@shared/services/media/types';
+import { TwitterAPIExtractor } from '@shared/services/media-extraction/extractors/twitter-api-extractor';
 
 function createQuotedVideoTweetResponse() {
   const user = (screenName: string) => ({ user_results: { result: {
@@ -310,6 +312,109 @@ describe('twitter-api-client request boundary', () => {
 
     await expect(getTweetMedias('999')).rejects.toThrow('unexpected tweet owner');
   });
+
+  it.each(['TweetUnavailable', 'TweetTombstone'])(
+    'returns healthy no-media for %s through zero, one or two visibility wrappers', async (__typename) => {
+      for (let depth = 0; depth <= 2; depth += 1) {
+        let result: TwitterTweet = { __typename };
+        for (let wrapper = 0; wrapper < depth; wrapper += 1) {
+          result = { __typename: 'TweetWithVisibilityResults', tweet: result };
+        }
+        httpGet.mockResolvedValue({ ok: true, status: 200,
+          data: { data: { tweetResult: { result } } } });
+        await expect(getTweetMedias('222')).resolves.toEqual([]);
+        const extracted = await new TwitterAPIExtractor().extract(
+          { tweetId: '222', username: 'outer', tweetUrl: 'https://x.com/outer/status/222',
+            extractionMethod: 'fixture', confidence: 1 }, document.createElement('video'), {}, 'unavailable'
+        );
+        expect(extracted).toMatchObject({ success: false, mediaItems: [],
+          apiRequestOutcome: 'healthy', metadata: { strategy: 'api-media-unavailable' } });
+      }
+    }
+  );
+
+  it.each([
+    null, undefined,
+    { __typename: 'Tweet', rest_id: '222' },
+    { __typename: 'Tweet', rest_id: '222', core: { user_results: { result: {} } } },
+  ])('keeps absent or matching media-less results empty: %j', async (result) => {
+    httpGet.mockResolvedValue({ ok: true, status: 200,
+      data: { data: { tweetResult: { result } } } });
+    await expect(getTweetMedias('222')).resolves.toEqual([]);
+  });
+
+  it.each([
+    {}, [], 'TweetUnavailable', false, 0,
+    { __typename: 'UnknownResult' }, { __typename: 'UnknownResult', rest_id: '222' },
+    { __typename: 'Tweet', rest_id: '999' },
+    { rest_id: '222', id_str: '111' },
+    { rest_id: '222', legacy: { id_str: '111' } },
+    { id_str: '222', legacy: { id_str: '111' } },
+    { __typename: 'TweetUnavailable', rest_id: '999' },
+    { __typename: 'TweetTombstone', rest_id: '222', id_str: '111' },
+    { __typename: 'TweetWithVisibilityResults' },
+    { __typename: 'UnknownWrapper', tweet: { __typename: 'TweetUnavailable' } },
+    { __typename: 'TweetWithVisibilityResults', tweet: null },
+    { __typename: 'TweetWithVisibilityResults', tweet: { __typename: 'TweetWithVisibilityResults',
+      tweet: { __typename: 'TweetWithVisibilityResults', tweet: { __typename: 'TweetUnavailable' } } } },
+    { __typename: 'TweetUnavailable', tweet: { __typename: 'TweetUnavailable' } },
+  ])('rejects unsupported, malformed or conflicting roots: %j', async (result) => {
+    httpGet.mockResolvedValue({ ok: true, status: 200,
+      data: { data: { tweetResult: { result } } } });
+    await expect(getTweetMedias('222')).rejects.toBeInstanceOf(TwitterAPIRequestError);
+  });
+
+  it.each(['TweetUnavailable', 'TweetTombstone'])(
+    'supports the legacy untagged visibility envelope for %s', async (__typename) => {
+      httpGet.mockResolvedValue({ ok: true, status: 200,
+        data: { data: { tweetResult: { result: { tweet: { tweet: { __typename } } } } } } });
+      await expect(getTweetMedias('222')).resolves.toEqual([]);
+    }
+  );
+
+  it.each(['TweetUnavailable', 'TweetTombstone'])(
+    'does not substitute an available quote for an unavailable %s root', async (__typename) => {
+      httpGet.mockResolvedValue({ ok: true, status: 200,
+        data: { data: { tweetResult: { result: { __typename,
+          quoted_status_result: { result: createQuotedVideoTweetResponse().data.tweetResult.result } } } } } });
+      await expect(getTweetMedias('222')).resolves.toEqual([]);
+    }
+  );
+
+  it.each(['TweetUnavailable', 'TweetTombstone'])(
+    'keeps provider and HTTP errors ahead of unavailable %s', async (__typename) => {
+      for (const result of [{ __typename },
+        { __typename: 'TweetWithVisibilityResults', tweet: { __typename } }]) {
+        httpGet.mockResolvedValue({ ok: true, status: 200,
+          data: { data: { tweetResult: { result } }, errors: [{ code: 88, message: 'Rate limit' }] } });
+        await expect(getTweetMedias('222')).rejects.toThrow('provider error');
+        httpGet.mockResolvedValue({ ok: false, status: 503,
+          data: { data: { tweetResult: { result } } } });
+        await expect(getTweetMedias('222')).rejects.toThrow('TW:503');
+      }
+    }
+  );
+
+  it('rejects provider errors with matching but unusable partial data', async () => {
+    httpGet.mockResolvedValue({ ok: true, status: 200,
+      data: { data: { tweetResult: { result: { rest_id: '222' } } },
+        errors: [{ code: 88, message: 'Rate limit' }] } });
+    await expect(getTweetMedias('222')).rejects.toThrow('provider error');
+  });
+
+  it.each(['TweetUnavailable', 'TweetTombstone'])(
+    'retains valid root media when its direct quote is %s with an available deeper quote', async (__typename) => {
+      const root = createQuotedVideoTweetResponse().data.tweetResult.result;
+      httpGet.mockResolvedValue({ ok: true, status: 200,
+        data: { data: { tweetResult: { result: { ...root,
+          quoted_status_result: { result: { __typename,
+            quoted_status_result: root.quoted_status_result } } } } } } });
+      await expect(getTweetMedias('222')).resolves.toMatchObject([
+        { tweet_id: '222', type: 'video', sourceLocation: 'original',
+          download_url: 'https://video.twimg.com/ext_tw_video/222/outer.mp4' },
+      ]);
+    }
+  );
 
   it('normalizes wrapped A and B, returns direct B before A, and excludes C', async () => {
     const response = createQuotedVideoTweetResponse();

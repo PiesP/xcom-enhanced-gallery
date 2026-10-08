@@ -414,6 +414,16 @@ describe('production quoted-video pipeline', () => {
     expect(result.mediaItems).toEqual([]);
   });
 
+  it.each(['TweetUnavailable', 'TweetTombstone'])(
+    'keeps the linkless quote owner unknown after a healthy %s response', async (__typename) => {
+      respond({ __typename });
+      const result = await new MediaExtractionService().extractFromClickedElement(target());
+      expect(requestedId()).toBe('222');
+      expect(result).toMatchObject({ success: false, mediaItems: [], apiRequestOutcome: 'healthy',
+        metadata: { strategy: 'api-media-unavailable', domRecovery: 'owner-unconfirmed' } });
+    }
+  );
+
   it('rejects conflicting attribute and permalink owners', async () => {
     const clicked = target('quote', true);
     clicked.dataset.tweetId = '222';

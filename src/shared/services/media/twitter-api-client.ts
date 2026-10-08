@@ -139,13 +139,28 @@ function createTweetEndpointUrl(tweetId: string, location?: LocationConfig): str
   });
 }
 
-function unwrapAndNormalizeTweet(input: TwitterTweet): TwitterTweet {
+function unwrapTweet(input: TwitterTweet): TwitterTweet | null {
   let result = input;
-  // Visibility wrappers can nest, but quoted_status_result is a separate owner.
-  for (let depth = 0; depth < 2 && result.tweet; depth += 1) {
+  // Support at most two TweetWithVisibilityResults wrappers, including legacy
+  // untagged { tweet } envelopes. Never traverse quoted_status_result here.
+  for (let depth = 0; depth <= 2; depth += 1) {
+    if (!result || typeof result !== 'object' || Array.isArray(result)) return null;
+    if (result.tweet === undefined) {
+      return result.__typename === undefined ||
+        result.__typename === 'Tweet' ||
+        result.__typename === 'TweetUnavailable' ||
+        result.__typename === 'TweetTombstone'
+        ? result
+        : null;
+    }
+    if (
+      depth === 2 ||
+      (result.__typename !== undefined && result.__typename !== 'TweetWithVisibilityResults')
+    )
+      return null;
     result = result.tweet;
   }
-  return normalizeLegacyTweet(result);
+  return null;
 }
 
 function numericTweetId(tweet: TwitterTweet): string | null {
@@ -156,6 +171,15 @@ function numericTweetId(tweet: TwitterTweet): string | null {
   )
     return null;
   return ids[0] ?? null;
+}
+
+function noApiMedia(json: TwitterAPIResponse): TweetMediaEntry[] {
+  // An unavailable-looking result must not conceal provider errors. Usable
+  // partial-data responses still pass through normal parsing and ownership.
+  if (json.errors?.length) {
+    throw new TwitterAPIRequestError('Twitter API returned a provider error');
+  }
+  return [];
 }
 
 async function apiRequest(
@@ -243,17 +267,28 @@ export async function getTweetMedias(
   const url = createTweetEndpointUrl(tweetId, location);
   const json = await apiRequest(url, location, signal);
 
-  if (!json.data?.tweetResult?.result) return [];
+  if (json.data?.tweetResult?.result == null) return noApiMedia(json);
 
-  const tweetResult = unwrapAndNormalizeTweet(json.data.tweetResult.result);
-  const rootId = numericTweetId(tweetResult);
+  const root = unwrapTweet(json.data.tweetResult.result);
+  if (!root) {
+    throw new TwitterAPIRequestError('Twitter API returned an unexpected tweet owner');
+  }
+  const rootId = numericTweetId(root);
+  if (root.__typename === 'TweetUnavailable' || root.__typename === 'TweetTombstone') {
+    const hasId = [root.rest_id, root.id_str, root.legacy?.id_str].some((id) => id !== undefined);
+    if (hasId && rootId !== tweetId) {
+      throw new TwitterAPIRequestError('Twitter API returned an unexpected tweet owner');
+    }
+    return noApiMedia(json);
+  }
   if (!rootId || rootId !== tweetId) {
     throw new TwitterAPIRequestError('Twitter API returned an unexpected tweet owner');
   }
+  const tweetResult = normalizeLegacyTweet(root);
 
   let tweetUser = tweetResult.core?.user_results?.result;
 
-  if (!tweetUser) return [];
+  if (!tweetUser) return noApiMedia(json);
   tweetUser = normalizeLegacyUser(tweetUser);
 
   let result = extractMediaFromTweet(tweetResult, tweetUser, 'original');
@@ -261,10 +296,18 @@ export async function getTweetMedias(
   result = sortMediaByVisualOrder(result);
 
   if (tweetResult.quoted_status_result?.result) {
-    const quotedTweet = unwrapAndNormalizeTweet(tweetResult.quoted_status_result.result);
-    const quotedId = numericTweetId(quotedTweet);
-    let quotedUser = quotedTweet.core?.user_results?.result;
-    if (quotedId && quotedId !== rootId && quotedUser) {
+    const quote = unwrapTweet(tweetResult.quoted_status_result.result);
+    const quotedId = quote && numericTweetId(quote);
+    const quotedTweet = quote && normalizeLegacyTweet(quote);
+    let quotedUser = quotedTweet?.core?.user_results?.result;
+    if (
+      quotedTweet &&
+      quotedId &&
+      quotedId !== rootId &&
+      quotedUser &&
+      quotedTweet.__typename !== 'TweetUnavailable' &&
+      quotedTweet.__typename !== 'TweetTombstone'
+    ) {
       quotedUser = normalizeLegacyUser(quotedUser);
 
       const quotedMedia = extractMediaFromTweet(quotedTweet, quotedUser, 'quoted')
@@ -281,5 +324,5 @@ export async function getTweetMedias(
       result = [...sortedQuotedMedia, ...adjustedResult];
     }
   }
-  return result;
+  return result.length ? result : noApiMedia(json);
 }
