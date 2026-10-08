@@ -1980,14 +1980,29 @@ async function navigateQuotedAwayAndBack(page, quotedCase, total) {
     type: quotedCase.away.type, path: quotedCase.away.path });
   const gallery = page.locator('[data-xeg-gallery-container]');
   const awayOrigin = await assertQuotedOriginLink(gallery, quotedCase.away.origin);
+  const beforeReturn = await page.evaluate(() => {
+    const toolbar = document.querySelector('[data-gallery-element="toolbar"]');
+    const counter = toolbar?.querySelector('#xeg-toolbar-counter');
+    const items = document.querySelector('[data-gallery-element="items"]');
+    return { currentIndex: toolbar?.getAttribute('data-current-index'),
+      focusedIndex: toolbar?.getAttribute('data-focused-index'),
+      position: counter?.getAttribute('data-position'), scrollTop: items?.scrollTop,
+      outerScrollTop: document.querySelector('.xeg-gallery-container')?.scrollTop,
+      itemRects: [...document.querySelectorAll('[data-gallery-element="item"]')].map((item) => {
+        const rect = item.getBoundingClientRect();
+        return { index: item.getAttribute('data-index'), top: rect.top, bottom: rect.bottom };
+      }), activeTag: document.activeElement?.tagName };
+  });
   await page.keyboard.press(returnKey);
-  const returned = await assertQuotedSelection(page, { position: from, total,
+  let returned;
+  try { returned = await assertQuotedSelection(page, { position: from, total,
     type: 'video',
-    path: `/ext_tw_video/${quotedCase.owner}/pu/vid/320x180/${quotedCase.media}.mp4` });
+    path: `/ext_tw_video/${quotedCase.owner}/pu/vid/320x180/${quotedCase.media}.mp4` }); }
+  catch (error) { throw new Error(`${safeError(error)}; before return: ${JSON.stringify(beforeReturn)}`, { cause: error }); }
   const returnedOrigin = await assertQuotedOriginLink(gallery,
     `https://x.com/${quotedCase.username}/status/${quotedCase.owner}`,
     quotedCase.name === 'linked');
-  return { awayKey, returnKey, away, awayOrigin, returned, returnedOrigin };
+  return { awayKey, returnKey, away, awayOrigin, beforeReturn, returned, returnedOrigin };
 }
 
 async function assertQuotedGallery(page, quotedCase) {
