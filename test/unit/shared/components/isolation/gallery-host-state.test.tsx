@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { notifySafely } from '@platform/index';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ErrorBoundary } from '@shared/components/ui/ErrorBoundary/ErrorBoundary';
 import {
@@ -150,13 +151,12 @@ describe('gallery host-state recovery', () => {
     close?.click();
     await Promise.resolve();
 
-    expect(onClose).toHaveBeenCalledOnce();
-    expect(host.querySelector('[data-xeg-error-boundary]')).toBeNull();
-    expect(document.activeElement).toBe(outside);
+    expect(onClose).not.toHaveBeenCalled();
+    expect(host.querySelector('[data-xeg-error-boundary]')).toBe(recovery);
     unmountGallery(host);
   });
 
-  it('offers a localized reset after bounded failed retries', async () => {
+  it('does not retry or notify again after page-synthetic recovery clicks', async () => {
     const outside = document.createElement('button');
     document.body.append(outside);
     outside.focus();
@@ -164,7 +164,9 @@ describe('gallery host-state recovery', () => {
     document.body.append(host);
     getLanguageService().setLanguage('ko');
 
+    let renderCount = 0;
     function AlwaysThrows(): JSXElement {
+      renderCount += 1;
       throw new Error('Persistent render failure');
     }
 
@@ -173,6 +175,8 @@ describe('gallery host-state recovery', () => {
         <AlwaysThrows />
       </ErrorBoundary>
     ));
+    await Promise.resolve();
+    const notificationCount = vi.mocked(notifySafely).mock.calls.length;
 
     for (let attempt = 0; attempt < 3; attempt += 1) {
       await Promise.resolve();
@@ -183,23 +187,15 @@ describe('gallery host-state recovery', () => {
 
     const retry = host.querySelector<HTMLButtonElement>('[data-xeg-error-action="retry"]');
     const reset = host.querySelector<HTMLButtonElement>('[data-xeg-error-action="reset"]');
-    expect(retry?.disabled).toBe(true);
-    expect(retry?.textContent).toBe('더 이상 재시도할 수 없음');
-    expect(reset?.textContent).toBe('초기화');
-
-    reset?.click();
-    await Promise.resolve();
-    await Promise.resolve();
-    expect(
-      host.querySelector<HTMLButtonElement>('[data-xeg-error-action="retry"]')?.disabled
-    ).toBe(false);
-    expect(
-      host.querySelector<HTMLButtonElement>('[data-xeg-error-action="retry"]')?.textContent
-    ).toBe('다시 시도');
+    expect(retry?.disabled).toBe(false);
+    expect(retry?.textContent).toBe('다시 시도');
+    expect(reset).toBeNull();
+    expect(renderCount).toBe(1);
+    expect(vi.mocked(notifySafely).mock.calls.length).toBe(notificationCount);
     unmountGallery(host);
   });
 
-  it('does not schedule a stale reset after the third retry succeeds', async () => {
+  it('does not schedule an automatic reset from synthetic retries', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
     const outside = document.createElement('button');
@@ -229,13 +225,13 @@ describe('gallery host-state recovery', () => {
     }
 
     const recovered = host.querySelector('[data-stable-gallery]');
-    expect(recovered).not.toBeNull();
-    expect(renderCount).toBe(4);
+    expect(recovered).toBeNull();
+    expect(renderCount).toBe(1);
     expect(setTimeoutSpy).not.toHaveBeenCalledWith(expect.any(Function), 30_000);
     vi.advanceTimersByTime(30_000);
     await Promise.resolve();
     expect(host.querySelector('[data-stable-gallery]')).toBe(recovered);
-    expect(renderCount).toBe(4);
+    expect(renderCount).toBe(1);
     expect(document.activeElement).toBe(outside);
     unmountGallery(host);
   });
@@ -323,29 +319,22 @@ describe('gallery host-state recovery', () => {
     await Promise.resolve();
     await Promise.resolve();
 
-    expect(host.querySelector('[data-xeg-error-boundary]')).toBeNull();
-    expect(host.querySelector('[data-xeg-gallery-container]')).not.toBeNull();
-    expect(document.body.style.position).toBe('fixed');
-    expect(outside.hasAttribute('inert')).toBe(true);
-
-    triggerError();
-    await Promise.resolve();
+    expect(host.querySelector('[data-xeg-error-boundary]')).toBe(recovery);
+    expect(host.querySelector('[data-xeg-gallery-container]')).toBeNull();
     expect(document.body.style.position).toBe('relative');
     expect(outside.hasAttribute('inert')).toBe(false);
-    expect(document.activeElement).toBe(outside);
 
     const close = host.querySelector<HTMLButtonElement>('[data-xeg-error-action="close"]');
     close?.focus();
     close?.click();
     await Promise.resolve();
-    expect(onClose).toHaveBeenCalledOnce();
-    expect(host.querySelector('[data-xeg-error-boundary]')).toBeNull();
-    expect(document.activeElement).toBe(outside);
+    expect(onClose).not.toHaveBeenCalled();
+    expect(host.querySelector('[data-xeg-error-boundary]')).toBe(recovery);
 
-    expect(scrollTo).toHaveBeenCalledTimes(2);
+    expect(scrollTo).toHaveBeenCalledTimes(1);
     restoreActiveGalleryHostState();
     expect(document.body.style.position).toBe('relative');
-    expect(scrollTo).toHaveBeenCalledTimes(2);
+    expect(scrollTo).toHaveBeenCalledTimes(1);
     unmountGallery(host);
   });
 });

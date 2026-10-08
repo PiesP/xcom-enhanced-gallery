@@ -30,7 +30,7 @@ describe('gallery lifecycle with authenticated X video targets', () => {
   });
 
   it.each(['block-all', 'block-controls-only', 'allow-all'] as const)(
-    'routes the captured video overlay under %s and cleans up its listeners',
+    'ignores a page-synthetic video click under %s and cleans up its listeners',
     (mode: VideoClickMode) => {
       registerSettings({ get: () => mode, set: async () => undefined });
       document.body.innerHTML = capturedVideoPlayer;
@@ -44,16 +44,34 @@ describe('gallery lifecycle with authenticated X video targets', () => {
         const event = new MouseEvent('click', { bubbles: true, cancelable: true });
         const delivered = overlay.dispatchEvent(event);
 
-        const opensGallery = mode !== 'block-all';
-        expect(delivered).toBe(!opensGallery);
-        expect(event.defaultPrevented).toBe(opensGallery);
-        expect(onMediaClick).toHaveBeenCalledTimes(opensGallery ? 1 : 0);
+        expect(delivered).toBe(true);
+        expect(event.defaultPrevented).toBe(false);
+        expect(onMediaClick).not.toHaveBeenCalled();
       } finally {
         lifecycle.cleanup();
       }
       expect(getEventManager().getListenerStatus()).toBe(listenersBefore);
     }
   );
+
+  it('ignores synthetic keyboard and outside-click input at the registered listeners', () => {
+    const onGalleryClose = vi.fn();
+    const onMediaClick = vi.fn(async () => undefined);
+    const lifecycle = createGalleryLifecycle();
+    lifecycle.initialize({ onGalleryClose, onMediaClick });
+    try {
+      for (const key of ['Escape', '?', 'ArrowRight']) {
+        const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
+        document.body.dispatchEvent(event);
+        expect(event.defaultPrevented).toBe(false);
+      }
+      document.body.click();
+      expect(onGalleryClose).not.toHaveBeenCalled();
+      expect(onMediaClick).not.toHaveBeenCalled();
+    } finally {
+      lifecycle.cleanup();
+    }
+  });
 
   it.each(['block-all', 'block-controls-only', 'allow-all'] as const)(
     'does not cancel the captured Korean fullscreen control under %s',

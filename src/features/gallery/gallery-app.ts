@@ -11,6 +11,7 @@ import { mergeAbortSignalsWithCleanup } from '@piesp/browser-core/error';
 import { clampIndex } from '@piesp/browser-core/util';
 import { getNotificationAdapter, notifySafely } from '@platform/index';
 import { tryGetSettings } from '@shared/container/settings-registry';
+import { isGalleryRecoveryActive } from '@shared/dom/utils';
 import {
   galleryErrorReporter,
   mediaErrorReporter,
@@ -35,6 +36,7 @@ import {
   pauseAmbientVideosForGallery,
   startAmbientVideoGuard,
 } from '@shared/utils/media/ambient-video-coordinator';
+import { isProcessableMedia } from '@shared/utils/media/media-click-detector';
 
 export class GalleryApp {
   private initialized = false;
@@ -89,6 +91,22 @@ export class GalleryApp {
         context: 'gallery',
       }
     );
+  }
+
+  /** Resume one trusted click retained privately during extension bootstrap. */
+  async resumeEarlyMediaClick(event: MouseEvent): Promise<void> {
+    const target = event.target;
+    if (
+      !this.initialized ||
+      !event.isTrusted ||
+      !(target instanceof HTMLElement) ||
+      !target.isConnected ||
+      isGalleryRecoveryActive() ||
+      !isProcessableMedia(target)
+    ) {
+      return;
+    }
+    await this.handleMediaClick(target, event);
   }
 
   private async handleMediaClick(element: HTMLElement, _event: MouseEvent): Promise<void> {

@@ -43,12 +43,12 @@ describe('useGalleryNavigationHandlers background dismissal', () => {
     document.body.replaceChildren();
   });
 
-  it('closes when the scroll surface outside a media item is clicked', () => {
+  it('ignores page-synthetic clicks on the scroll surface outside a media item', () => {
     const { items, onClose } = setupBackgroundClickFixture();
 
     items.click();
 
-    expect(onClose).toHaveBeenCalledOnce();
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   it('keeps the gallery open when media or toolbar controls are clicked', () => {
