@@ -7,12 +7,13 @@ import { fileURLToPath } from 'node:url';
 type Json = Record<string, unknown>;
 const shaPattern = /^[0-9a-f]{40}$/;
 const reasons = new Set([
-  'manual review required',
-  'maintainer changes require manual review',
-  'security advisory update (open alert)',
-  'safe github-actions patch/minor',
-  'safe npm patch/minor set',
+  'maintainer review required for all dependency updates',
+  'security update requires prioritized maintainer review',
 ]);
+
+function requireAutomaticAdmission(): void {
+  throw new Error('Automatic dependency admission is disabled; maintainer review required');
+}
 
 function required(name: string): string {
   const value = process.env[name];
@@ -78,7 +79,8 @@ export function parseGate(
   const gate = object(value);
   const number = gate.pull_request_number;
   if (
-    gate.schema_version !== 1 ||
+    gate.schema_version !== 2 ||
+    gate.policy_id !== 'maintainer-review-v1' ||
     gate.repository !== repository ||
     !Number.isSafeInteger(number) ||
     Number(number) < 1 ||
@@ -87,7 +89,7 @@ export function parseGate(
     typeof gate.base_ref !== 'string' ||
     !gate.base_ref ||
     /[\r\n]/.test(gate.base_ref) ||
-    typeof gate.eligible !== 'boolean' ||
+    gate.eligible !== false ||
     typeof gate.reason !== 'string' ||
     !reasons.has(gate.reason)
   )
@@ -152,6 +154,7 @@ function recheck(): void {
 }
 
 function approve(): void {
+  requireAutomaticAdmission();
   const id = identity();
   const pages = api(`repos/${id.repository}/pulls/${id.number}/reviews`, true);
   if (!Array.isArray(pages)) throw new Error('Invalid review pagination');
@@ -192,6 +195,7 @@ function reason(): string {
 }
 
 function merge(): void {
+  requireAutomaticAdmission();
   const id = identity();
   command('gh', [
     'pr',

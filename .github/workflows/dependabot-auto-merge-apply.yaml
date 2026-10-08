@@ -1,9 +1,9 @@
 name: 🤖 Dependabot Auto-Merge Apply
 
-# Responsibility: Approve only an immutable, revalidated Dependabot gate result
-# - Downloads and validates the gate artifact with read-only permissions
-# - Starts a separate write-capable job only for the validated exact head SHA
-# - Leaves required CI and branch-protection rules in control of the merge
+# Responsibility: Validate the current review policy without admission authority
+# - Rejects old or positive gate artifacts before exporting a decision
+# - Retains exact PR/commit provenance checks and leaves admission to maintainers
+# - Never approves or queues a dependency update
 
 on:
   workflow_run:
@@ -65,7 +65,6 @@ jobs:
         run: node --experimental-strip-types scripts/ci/dependabot-apply.ts gate
 
       - name: 🔒 Revalidate pull request and commits
-        if: steps.gate.outputs.eligible == 'true'
         env:
           BASE_REF: ${{ steps.gate.outputs.base_ref }}
           HEAD_SHA: ${{ steps.gate.outputs.head_sha }}
@@ -74,55 +73,6 @@ jobs:
         run: node --experimental-strip-types scripts/ci/dependabot-apply.ts validate
 
       - name: ⏭️ Keep for manual review
-        if: steps.gate.outputs.eligible != 'true'
         env:
           REASON_BASE64: ${{ steps.gate.outputs.reason_base64 }}
         run: node --experimental-strip-types scripts/ci/dependabot-apply.ts manual
-
-  approve:
-    name: 🔐 Approve validated Dependabot head
-    needs: validate
-    if: needs.validate.outputs.eligible == 'true'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    permissions:
-      contents: write
-      pull-requests: write
-    steps:
-      # The write-capable job also starts from trusted default-branch code.
-      - name: 📥 Checkout trusted default branch
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.event.repository.default_branch }}
-          persist-credentials: false
-          submodules: false
-
-      - name: 📦 Setup trusted script runtime
-        uses: PiesP/browser-core/automation/actions/setup-project@279124fa998847bd0184d2de12bdaadcd6d2f969
-        with:
-          install-dependencies: 'false'
-
-      - name: 🔒 Recheck exact live head
-        env:
-          BASE_REF: ${{ needs.validate.outputs.base_ref }}
-          HEAD_SHA: ${{ needs.validate.outputs.head_sha }}
-          PR_NUMBER: ${{ needs.validate.outputs.pull_request_number }}
-          GH_TOKEN: ${{ github.token }}
-        run: node --experimental-strip-types scripts/ci/dependabot-apply.ts recheck
-
-      - name: ✅ Approve exact validated head
-        env:
-          BASE_REF: ${{ needs.validate.outputs.base_ref }}
-          HEAD_SHA: ${{ needs.validate.outputs.head_sha }}
-          PR_NUMBER: ${{ needs.validate.outputs.pull_request_number }}
-          GH_TOKEN: ${{ github.token }}
-        run: node --experimental-strip-types scripts/ci/dependabot-apply.ts approve
-
-      - name: 🔄 Queue auto-merge
-        env:
-          BASE_REF: ${{ needs.validate.outputs.base_ref }}
-          HEAD_SHA: ${{ needs.validate.outputs.head_sha }}
-          PR_NUMBER: ${{ needs.validate.outputs.pull_request_number }}
-          REASON_BASE64: ${{ needs.validate.outputs.reason_base64 }}
-          GH_TOKEN: ${{ github.token }}
-        run: node --experimental-strip-types scripts/ci/dependabot-apply.ts merge

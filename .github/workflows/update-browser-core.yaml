@@ -28,9 +28,8 @@ on:
         type: boolean
 
 permissions:
-  actions: write
-  contents: write
-  pull-requests: write
+  contents: read
+  pull-requests: read
 
 env:
   CORE_REPOSITORY: PiesP/browser-core
@@ -40,10 +39,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  update:
-    name: Create browser-core update PR
+  classify:
+    name: Classify browser-core update without write authority
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    outputs:
+      ready: ${{ steps.prepare.outputs.ready }}
+      base: ${{ steps.prepare.outputs.base }}
+      head: ${{ steps.prepare.outputs.head }}
+      impact: ${{ steps.impact.outputs.impact }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -55,6 +59,7 @@ jobs:
           submodules: false
           # Dispatch and scheduled runs also execute the reviewed default branch.
           ref: master
+          persist-credentials: false
 
       - name: Setup trusted script runtime
         uses: PiesP/browser-core/automation/actions/setup-project@279124fa998847bd0184d2de12bdaadcd6d2f969
@@ -78,11 +83,53 @@ jobs:
           base-sha: ${{ steps.prepare.outputs.base }}
           head-sha: ${{ steps.prepare.outputs.head }}
 
-      - name: Publish browser-core update
+      - name: Preview browser-core publication without writes
         if: steps.prepare.outputs.ready == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-          DRY_RUN: ${{ inputs.dry_run }}
-          PREFLIGHT: ${{ inputs.preflight }}
+          DRY_RUN: 'true'
+          PREFLIGHT: 'false'
           CONSUMER_IMPACT: ${{ steps.impact.outputs.impact }}
+        run: node --experimental-strip-types scripts/ci/update-browser-core.ts publish
+
+  publish:
+    name: Publish revalidated browser-core update PR
+    needs: classify
+    if: needs.classify.outputs.ready == 'true' && inputs.dry_run != true
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout trusted current source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          submodules: false
+          ref: master
+          persist-credentials: false
+
+      - name: Setup trusted script runtime without dependencies
+        uses: PiesP/browser-core/automation/actions/setup-project@279124fa998847bd0184d2de12bdaadcd6d2f969
+        with:
+          install-dependencies: 'false'
+
+      - name: Reprepare and revalidate current revisions
+        id: prepare
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_CORE_SHA: ${{ needs.classify.outputs.head }}
+        run: node --experimental-strip-types scripts/ci/update-browser-core.ts prepare
+
+      - name: Publish only the classified revisions
+        if: steps.prepare.outputs.ready == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CLASSIFIED_BASE_SHA: ${{ needs.classify.outputs.base }}
+          CLASSIFIED_CORE_SHA: ${{ needs.classify.outputs.head }}
+          CONSUMER_IMPACT: ${{ needs.classify.outputs.impact }}
+          DRY_RUN: 'false'
+          PREFLIGHT: ${{ inputs.preflight }}
         run: node --experimental-strip-types scripts/ci/update-browser-core.ts publish

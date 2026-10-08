@@ -1,9 +1,8 @@
 name: 🤖 Dependabot Auto-Merge Gate
 
-# Responsibility: Evaluate safe Dependabot updates in a read-only context
-# - GitHub Actions: patch/minor updates
-# - npm: patch/minor updates for specific safe packages
-# - Publishes only metadata for the trusted workflow_run apply stage
+# Responsibility: Keep every dependency update visible for maintainer review
+# - Security alerts prioritize review; they never authorize automatic admission
+# - Publishes a policy-bound negative decision in a read-only context
 # - Never checks out or executes pull-request code
 
 on:
@@ -54,34 +53,9 @@ jobs:
           set -euo pipefail
 
           SHOULD_MERGE="false"
-          REASON="manual review required"
-
-          if [[ "$MAINTAINER_CHANGES" == "true" ]]; then
-            REASON="maintainer changes require manual review"
-          elif [[ "$ALERT_STATE" == "open" || "$ALERT_STATE" == "OPEN" ]]; then
-            SHOULD_MERGE="true"
-            REASON="security advisory update (open alert)"
-          elif [[ "$ECOSYSTEM" == "github-actions" && ("$UPDATE_TYPE" == "version-update:semver-patch" || "$UPDATE_TYPE" == "version-update:semver-minor") ]]; then
-            SHOULD_MERGE="true"
-            REASON="safe github-actions patch/minor"
-          elif [[ ("$ECOSYSTEM" == "npm" || "$ECOSYSTEM" == "npm_and_yarn") && ("$UPDATE_TYPE" == "version-update:semver-patch" || "$UPDATE_TYPE" == "version-update:semver-minor") ]]; then
-            SAFE="true"
-            IFS=',' read -ra DEPS <<< "$DEPENDENCIES"
-            for dep in "${DEPS[@]}"; do
-              dep=$(echo "$dep" | xargs)
-              case "$dep" in
-                typescript|knip|vite|vite-plugin-solid|@types/*|@biomejs/*|solid-js|@playwright/test|@stryker-mutator/*|@vitest/*|dpdm|jsdom|vitest)
-                  ;;
-                *)
-                  SAFE="false"
-                  ;;
-              esac
-            done
-
-            if [[ "$SAFE" == "true" ]]; then
-              SHOULD_MERGE="true"
-              REASON="safe npm patch/minor set"
-            fi
+          REASON="maintainer review required for all dependency updates"
+          if [[ "$ALERT_STATE" == "open" || "$ALERT_STATE" == "OPEN" ]]; then
+            REASON="security update requires prioritized maintainer review"
           fi
 
           echo "should_merge=$SHOULD_MERGE" >> "$GITHUB_OUTPUT"
@@ -106,7 +80,7 @@ jobs:
             --arg base_ref "$BASE_REF" \
             --argjson eligible "$SHOULD_MERGE" \
             --arg reason "$REASON" \
-            '{schema_version: 1, repository: $repository, pull_request_number: $pull_request_number, head_sha: $head_sha, base_ref: $base_ref, eligible: $eligible, reason: $reason}' \
+            '{schema_version: 2, policy_id: "maintainer-review-v1", repository: $repository, pull_request_number: $pull_request_number, head_sha: $head_sha, base_ref: $base_ref, eligible: $eligible, reason: $reason}' \
             > "$GATE_DIR/gate.json"
 
       - name: 📤 Publish gate result
