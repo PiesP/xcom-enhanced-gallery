@@ -35,7 +35,7 @@ const PUBLIC_TWEET_ID = '9876543210987654321';
 const PUBLIC_FIXTURE_URL = `https://x.com/public_user/status/${PUBLIC_TWEET_ID}`;
 const DOWNLOAD_TRACKING_STORAGE_KEY = 'xeg.download-tracking.v1';
 const MV3_RESTART_BLOB_BYTES = 256 * 1024 * 1024;
-const TRUSTED_INPUT_DOWNLOAD_BYTES = 64 * 1024 * 1024;
+const TRUSTED_INPUT_DOWNLOAD_BYTES = 4 * 1024 * 1024;
 const IMAGE_URL_MARKERS = ['GkE1234', 'GkE5678', 'GkE9012'];
 const MAX_AGGREGATE_DEPTH = 2;
 const MAX_AGGREGATE_ERRORS = 4;
@@ -633,13 +633,13 @@ async function verifyTrustedDownloadInput({ context, downloads, extensionId, ext
   };
   let downloadId;
   let requestId;
-  let filename;
   let primaryError;
   let notificationSeamInstalled = false;
   let pauseInstalled = false;
   const cleanupErrors = [];
   Object.assign(evidence, { bytes: TRUSTED_INPUT_DOWNLOAD_BYTES, fetches, syntheticInputs: [],
     notificationScope: 'Production SHOW_NOTIFICATION path counted at native create boundary; delivery suppressed during this case',
+    downloadScope: 'Real Blob download held active by an asynchronous native onDeterminingFilename listener; received bytes may reach total before cancellation',
     cleanup: {}, status: 'pending' });
   try {
     await page.route('https://pbs.twimg.com/**', routeHandler);
@@ -654,7 +654,8 @@ async function verifyTrustedDownloadInput({ context, downloads, extensionId, ext
     });
     notificationSeamInstalled = true;
     await extensionPage.evaluate((oldIds) => {
-      const state = { downloadId: null, pause: 'waiting', duplicates: 0 };
+      const state = { downloadId: null, pause: 'waiting', duplicates: 0,
+        filenameGate: { downloadId: null, status: 'waiting' } };
       const listener = (item) => {
         if (oldIds.includes(item.id) || !item.url.startsWith('blob:https://x.com/')) return;
         if (state.downloadId !== null) { state.duplicates += 1; return; }
@@ -664,8 +665,41 @@ async function verifyTrustedDownloadInput({ context, downloads, extensionId, ext
           (error) => { state.pause = `rejected: ${String(error)}`; }
         );
       };
-      globalThis.__xegIngressPause = { state, listener };
-      chrome.downloads.onCreated.addListener(listener);
+      let pendingSuggestion;
+      const filenameListener = (item, suggest) => {
+        if (oldIds.includes(item.id) || !item.url.startsWith('blob:https://x.com/')) {
+          suggest();
+          return;
+        }
+        if (pendingSuggestion) {
+          state.duplicates += 1;
+          suggest();
+          return;
+        }
+        state.filenameGate = { downloadId: item.id, status: 'held' };
+        pendingSuggestion = suggest;
+        return true;
+      };
+      const releaseFilename = () => {
+        if (!pendingSuggestion) return;
+        const suggest = pendingSuggestion;
+        pendingSuggestion = undefined;
+        state.filenameGate.status = 'released';
+        suggest();
+      };
+      globalThis.__xegIngressPause = { state, listener, filenameListener, releaseFilename };
+      try {
+        chrome.downloads.onDeterminingFilename.addListener(filenameListener);
+        chrome.downloads.onCreated.addListener(listener);
+      } catch (error) {
+        try { releaseFilename(); }
+        finally {
+          chrome.downloads.onDeterminingFilename.removeListener(filenameListener);
+          chrome.downloads.onCreated.removeListener(listener);
+          delete globalThis.__xegIngressPause;
+        }
+        throw error;
+      }
     }, initialIds);
     pauseInstalled = true;
     const trigger = page.locator('[data-testid="tweetPhoto"] img').first();
@@ -679,7 +713,9 @@ async function verifyTrustedDownloadInput({ context, downloads, extensionId, ext
     const control = await waitForValue(async () => {
       const value = await extensionPage.evaluate(() => globalThis.__xegIngressPause.state);
       if (value.pause.startsWith('rejected:')) throw new Error(value.pause);
-      return Number.isInteger(value.downloadId) && value.pause === 'fulfilled' ? value : undefined;
+      return Number.isInteger(value.downloadId) && value.pause === 'fulfilled' &&
+        value.filenameGate.status === 'held' && value.filenameGate.downloadId === value.downloadId
+        ? value : undefined;
     }, 'gallery-initiated native download to pause');
     downloadId = control.downloadId;
     assert.equal(control.duplicates, 0);
@@ -698,23 +734,15 @@ async function verifyTrustedDownloadInput({ context, downloads, extensionId, ext
       if (state.download.state !== 'in_progress') {
         throw new Error('Owned download ended before synthetic input');
       }
-      if (state.download.bytesReceived >= TRUSTED_INPUT_DOWNLOAD_BYTES) {
-        throw new Error('Owned download received the complete fixture before synthetic input');
-      }
       if (state.download.totalBytes !== TRUSTED_INPUT_DOWNLOAD_BYTES ||
         !Number.isInteger(state.download.bytesReceived) || state.download.bytesReceived < 0) return undefined;
-      assertDownloadIncomplete(state.download, 'before synthetic input');
-      return state.download.paused === true &&
-        state.download.totalBytes === TRUSTED_INPUT_DOWNLOAD_BYTES &&
-        typeof state.download.filename === 'string' && state.download.filename.length > 0
-        ? state : undefined;
-    }, 'paused download filename and size to settle before synthetic input');
+      assert(state.download.bytesReceived <= TRUSTED_INPUT_DOWNLOAD_BYTES);
+      return state.download.paused === true ? state : undefined;
+    }, 'paused native download metadata while filename completion is gated');
     assert.deepEqual(before.record, { cancellationRequested: false, downloadId });
-    filename = basename(before.download.filename);
-    assert.equal(resolve(before.download.filename), resolve(join(downloads, filename)));
     evidence.before = { downloadId, bytesReceived: before.download.bytesReceived,
       totalBytes: before.download.totalBytes, state: before.download.state,
-      paused: before.download.paused, requestBinding: before.record, filename,
+      paused: before.download.paused, requestBinding: before.record, filenameGate: control.filenameGate,
       notificationCalls: 1 };
     for (const input of ['Escape', 'help', 'outside', 'backdrop', 'close', 'reparented-close', 'download']) {
       await page.evaluate((kind) => {
@@ -740,12 +768,16 @@ async function verifyTrustedDownloadInput({ context, downloads, extensionId, ext
       const current = await readMv3LifecycleState(extensionPage, requestId, downloadId);
       assert.equal(current.download?.state, 'in_progress', `${input}: native download must remain active`);
       assert.equal(current.download.paused, true);
-      assertDownloadIncomplete(current.download, input);
+      assert.equal(current.download.totalBytes, TRUSTED_INPUT_DOWNLOAD_BYTES);
+      assert(current.download.bytesReceived >= 0 && current.download.bytesReceived <= TRUSTED_INPUT_DOWNLOAD_BYTES);
+      const filenameGate = await extensionPage.evaluate(() => globalThis.__xegIngressPause.state.filenameGate);
+      assert.deepEqual(filenameGate, { downloadId, status: 'held' });
       assert.deepEqual(current.record, before.record);
       assert.equal(await worker.evaluate(() => globalThis.__xegIngressNotifications.calls), 1,
         `${input}: synthetic input must not induce a notification`);
       evidence.syntheticInputs.push({ input, galleryOpen: true, downloadId,
-        state: current.download.state, paused: true, cancellationRequested: false, notificationCalls: 1 });
+        state: current.download.state, paused: true, bytesReceived: current.download.bytesReceived,
+        filenameGate, cancellationRequested: false, notificationCalls: 1 });
     }
     await page.keyboard.press('Escape');
     await gallery.waitFor({ state: 'detached' });
@@ -770,12 +802,18 @@ async function verifyTrustedDownloadInput({ context, downloads, extensionId, ext
       try {
         const state = await extensionPage.evaluate(() => {
           const control = globalThis.__xegIngressPause;
-          chrome.downloads.onCreated.removeListener(control.listener);
-          delete globalThis.__xegIngressPause;
+          try { control.releaseFilename(); }
+          finally {
+            chrome.downloads.onDeterminingFilename.removeListener(control.filenameListener);
+            chrome.downloads.onCreated.removeListener(control.listener);
+            delete globalThis.__xegIngressPause;
+          }
           return control.state;
         });
         downloadId ??= state.downloadId ?? undefined;
         evidence.cleanup.pauseListenerRemoved = true;
+        evidence.cleanup.filenameGateReleased = state.filenameGate.status === 'released';
+        evidence.cleanup.filenameListenerRemoved = true;
       } catch (error) { cleanupErrors.push(error); }
     }
     if (downloadId !== undefined) {

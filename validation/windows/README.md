@@ -118,17 +118,22 @@ background-isolation restoration. This is browser tab zoom in the fresh task
 profile; it does not claim an OS DPI change or a live X.com observation.
 
 The installed profile first starts a gallery download through real media and
-toolbar clicks. A routed 64 MiB download response is separate from the ordinary
-display image. The native download must pause with bytes remaining and retain
-its private request binding. Page-synthetic Escape/help, outside/backdrop,
+toolbar clicks. A routed 4 MiB download response is separate from the ordinary
+display image. A native `onDeterminingFilename` listener holds that exact new
+Blob download active until cancellation; its asynchronous `suggest()` callback
+is released exactly once during cleanup. The native item must be paused and
+`in_progress` with its private request binding. Blob bytes can finish receiving
+while filename completion is held; this case does not claim bytes remain.
+Page-synthetic Escape/help, outside/backdrop,
 toolbar Download/Close and a temporarily reparented Close button must leave the
 same download active and the gallery open. Genuine keyboard help reaches a
 notification-count seam that suppresses OS delivery for this case; synthetic
 input must not increase it. Genuine Escape must cancel that exact download with
 `USER_CANCELED`, remove its tracking and leave no output or partial file. The
 profile restores the notification seam, route and button and removes only its
-owned download/history/files. A lost pause race fails rather than counting a
-completed download as an active cancellation regression.
+owned download/history/files. Missing gate ownership or an item reaching a
+terminal state before genuine cancellation fails this regression. Download
+creation, pause, search, cancellation and history remain the real Edge APIs.
 
 The deterministic fixture also exercises the MV3 download restart boundary. A
 bounded 256 MiB Blob belongs to the routed `https://x.com` fixture and enters the
