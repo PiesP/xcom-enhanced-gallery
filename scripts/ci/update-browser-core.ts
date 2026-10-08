@@ -170,6 +170,15 @@ function closeStale(pr: string, dryRun: boolean, comment: string): void {
 function publish(): void {
   const coreSha = sha(required('CORE_SHA'), 'target core');
   const currentCoreSha = sha(required('CURRENT_CORE_SHA'), 'current gitlink');
+  const classifiedBase = process.env.CLASSIFIED_BASE_SHA;
+  const classifiedCore = process.env.CLASSIFIED_CORE_SHA;
+  if (classifiedBase !== undefined || classifiedCore !== undefined) {
+    if (
+      sha(classifiedBase ?? '', 'classified base') !== currentCoreSha ||
+      sha(classifiedCore ?? '', 'classified target') !== coreSha
+    )
+      throw new Error('browser-core revisions changed after read-only classification');
+  }
   const shortSha = coreSha.slice(0, 12);
   const remoteBranchSha = process.env.REMOTE_BRANCH_SHA ?? '';
   if (remoteBranchSha) sha(remoteBranchSha, 'automation branch');
@@ -228,7 +237,12 @@ function publish(): void {
     .filter(Boolean);
   if (changed.length !== 1 || changed[0] !== 'packages/core')
     throw new Error(`Refusing to publish non-gitlink changes: ${changed.join(', ')}`);
+  // Credentials are resolved only for this push; checkout retains no token.
   run('git', [
+    '-c',
+    'credential.helper=',
+    '-c',
+    'credential.https://github.com.helper=!gh auth git-credential',
     'push',
     '--set-upstream',
     'origin',

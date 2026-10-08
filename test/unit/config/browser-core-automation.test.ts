@@ -24,12 +24,24 @@ describe('browser-core workflow composition', () => {
     expect(workflow).toContain('base-sha: ${{ steps.prepare.outputs.base }}');
     expect(workflow).toContain('head-sha: ${{ steps.prepare.outputs.head }}');
     expect(workflow).toContain('CONSUMER_IMPACT: ${{ steps.impact.outputs.impact }}');
-    expect(workflow.match(/if: steps\.prepare\.outputs\.ready == 'true'/g)).toHaveLength(2);
+    expect(workflow.match(/if: steps\.prepare\.outputs\.ready == 'true'/g)).toHaveLength(3);
     expect(workflow).toContain('paths-ignore:\n      - packages/core');
   });
 
   it('keeps dry-run and diagnostics explicit and registers actual CLI tests', () => {
-    expect(workflow).toContain('DRY_RUN: ${{ inputs.dry_run }}');
+    const classify = workflow.slice(workflow.indexOf('  classify:'), workflow.indexOf('  publish:'));
+    const publish = workflow.slice(workflow.indexOf('  publish:'));
+    expect(workflow.slice(0, workflow.indexOf('jobs:'))).not.toMatch(/(?:actions|contents|pull-requests): write/);
+    expect(classify).not.toMatch(/(?:actions|contents|pull-requests): write/);
+    expect(classify).toContain("DRY_RUN: 'true'");
+    expect(classify).toContain('persist-credentials: false');
+    expect(publish).not.toContain('automation/actions/consumer-impact');
+    expect(publish).toContain('needs: classify');
+    expect(publish).toContain('INPUT_CORE_SHA: ${{ needs.classify.outputs.head }}');
+    expect(publish).toContain('CLASSIFIED_BASE_SHA: ${{ needs.classify.outputs.base }}');
+    expect(publish).toContain('CLASSIFIED_CORE_SHA: ${{ needs.classify.outputs.head }}');
+    expect(publish).toContain('persist-credentials: false');
+    expect(publish).toContain("install-dependencies: 'false'");
     expect(workflow).toContain('PREFLIGHT: ${{ inputs.preflight }}');
     expect(workflow).not.toContain('AUTO_MERGE_TOKEN');
     expect(workflow).not.toContain('gh pr merge');

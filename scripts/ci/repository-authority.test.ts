@@ -125,16 +125,17 @@ const pull = (sha = head) =>
 
 test('gate accepts the expected artifact and rejects altered identity or decisions', () => {
   const gate = {
-    schema_version: 1,
+    schema_version: 2,
+    policy_id: 'maintainer-review-v1',
     repository,
     pull_request_number: 12,
     head_sha: head,
     base_ref: 'master',
-    eligible: true,
-    reason: 'safe npm patch/minor set',
+    eligible: false,
+    reason: 'maintainer review required for all dependency updates',
   };
   assert.deepEqual(parseGate(gate, repository), {
-    eligible: true,
+    eligible: false,
     number: '12',
     head,
     base: 'master',
@@ -202,24 +203,22 @@ test('validation fails closed when the head moves during provenance checks', () 
   assert.match(result.stderr, /Head changed/);
 });
 
-test('approval posts the exact head only if an exact-head approval is absent', () => {
-  const f = fixture([
-    {
-      match: `gh api --paginate --slurp repos/${repository}/pulls/12/reviews`,
-      result: JSON.stringify([
-        [{ user: { login: 'github-actions[bot]' }, state: 'APPROVED', commit_id: other }],
-      ]),
-    },
-    { match: `gh api --method POST repos/${repository}/pulls/12/reviews`, result: '{}' },
-  ]);
-  const result = cli('dependabot-apply.ts', 'approve', {
-    ...f.env,
-    PR_NUMBER: '12',
-    HEAD_SHA: head,
-    BASE_REF: 'master',
-  });
-  assert.equal(result.status, 0, result.stderr);
-  assert.match(f.calls().at(-1) ?? '', new RegExp(`commit_id=${head}`));
+test('automatic approval and merge are inert even with a valid exact identity', () => {
+  for (const mode of ['approve', 'merge']) {
+    const f = fixture([]);
+    const result = cli('dependabot-apply.ts', mode, {
+      ...f.env,
+      PR_NUMBER: '12',
+      HEAD_SHA: head,
+      BASE_REF: 'master',
+      REASON_BASE64: Buffer.from('security update requires prioritized maintainer review').toString(
+        'base64'
+      ),
+    });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /Automatic dependency admission is disabled/);
+    assert.deepEqual(f.calls(), []);
+  }
 });
 
 test('prepare skips classification on a master push without a same-repository PR', () => {
@@ -283,7 +282,11 @@ test('dry-run never closes a stale PR or publishes a changed gitlink', () => {
         .calls()
         .some(
           (call) =>
-            call.startsWith('gh ') || call.startsWith('git push') || call.startsWith('git add')
+            call.startsWith('gh ') ||
+            call.startsWith(
+              'git -c credential.helper= -c credential.https://github.com.helper=!gh auth git-credential push'
+            ) ||
+            call.startsWith('git add')
         ),
       false
     );
@@ -308,7 +311,13 @@ test('publish stops before push when the generated commit changes another file',
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /non-gitlink changes/);
   assert.equal(
-    f.calls().some((call) => call.includes('git push')),
+    f
+      .calls()
+      .some((call) =>
+        call.includes(
+          'git -c credential.helper= -c credential.https://github.com.helper=!gh auth git-credential push'
+        )
+      ),
     false
   );
 });
@@ -379,7 +388,7 @@ test('publish leases the branch and verifies the generated PR head before diagno
     { match: 'git rev-parse HEAD', result: other },
     { match: 'git diff --name-only origin/master...HEAD', result: 'packages/core' },
     {
-      match: `git push --set-upstream origin automation/update-browser-core --force-with-lease=refs/heads/automation/update-browser-core:${other}`,
+      match: `git -c credential.helper= -c credential.https://github.com.helper=!gh auth git-credential push --set-upstream origin automation/update-browser-core --force-with-lease=refs/heads/automation/update-browser-core:${other}`,
       result: '',
     },
     { match: 'gh pr edit 12', result: '' },
@@ -390,6 +399,8 @@ test('publish leases the branch and verifies the generated PR head before diagno
     ...f.env,
     CORE_SHA: head,
     CURRENT_CORE_SHA: other,
+    CLASSIFIED_BASE_SHA: other,
+    CLASSIFIED_CORE_SHA: head,
     REMOTE_BRANCH_SHA: other,
     OPEN_PR: '12',
     CONSUMER_IMPACT: 'true',
@@ -397,7 +408,11 @@ test('publish leases the branch and verifies the generated PR head before diagno
   });
   assert.equal(result.status, 0, result.stderr);
   const calls = f.calls();
-  const pushIndex = calls.findIndex((call) => call.includes('git push'));
+  const pushIndex = calls.findIndex((call) =>
+    call.includes(
+      'git -c credential.helper= -c credential.https://github.com.helper=!gh auth git-credential push'
+    )
+  );
   const editIndex = calls.findIndex((call) => call.includes('gh pr edit'));
   const viewIndex = calls.findIndex((call) => call.includes('gh pr view'));
   const diagnosticIndex = calls.findIndex((call) => call.includes('gh workflow run'));
@@ -415,7 +430,11 @@ test('publish fails closed when a PR head changes after the push', () => {
     { match: 'git commit -m', result: '' },
     { match: 'git rev-parse HEAD', result: other },
     { match: 'git diff --name-only origin/master...HEAD', result: 'packages/core' },
-    { match: 'git push', result: '' },
+    {
+      match:
+        'git -c credential.helper= -c credential.https://github.com.helper=!gh auth git-credential push',
+      result: '',
+    },
     { match: 'gh pr edit 12', result: '' },
     { match: 'gh pr view 12', result: JSON.stringify({ headRefOid: head }) },
   ]);
@@ -455,18 +474,90 @@ test('prepare stops on a signaled Git operation without publishing a ready resul
   );
 });
 
-test('auto-merge queues only the exact validated head with branch protection active', () => {
-  const f = fixture([{ match: 'gh pr merge', result: '' }]);
-  const result = cli('dependabot-apply.ts', 'merge', {
-    ...f.env,
-    PR_NUMBER: '12',
-    HEAD_SHA: head,
-    BASE_REF: 'master',
-    REASON_BASE64: Buffer.from('safe npm patch/minor set').toString('base64'),
-  });
-  assert.equal(result.status, 0, result.stderr);
-  assert.equal(
-    f.calls()[0],
-    `gh pr merge 12 --repo ${repository} --match-head-commit ${head} --auto --squash`
-  );
+test('current apply rejects old and positive decisions before any output or API call', () => {
+  for (const decision of [
+    { schema_version: 1, eligible: true, reason: 'safe npm patch/minor set' },
+    { schema_version: 1, eligible: true, reason: 'security advisory update (open alert)' },
+    { schema_version: 1, eligible: false, reason: 'manual review required' },
+    { schema_version: 2, policy_id: 'obsolete-policy', eligible: false },
+    { schema_version: 2, policy_id: 'maintainer-review-v1', eligible: true },
+  ]) {
+    const f = fixture([]);
+    const path = join(f.root, 'gate.json');
+    writeFileSync(
+      path,
+      JSON.stringify({
+        repository,
+        pull_request_number: 12,
+        head_sha: head,
+        base_ref: 'master',
+        reason: 'maintainer review required for all dependency updates',
+        ...decision,
+      })
+    );
+    const result = cli('dependabot-apply.ts', 'gate', { ...f.env, GATE_PATH: path });
+    assert.notEqual(result.status, 0);
+    assert.equal(readFileSync(f.output, 'utf8'), '');
+    assert.deepEqual(f.calls(), []);
+  }
+});
+
+test('publication rejects classification drift before running any command', () => {
+  for (const classified of [
+    { CLASSIFIED_BASE_SHA: head, CLASSIFIED_CORE_SHA: head },
+    { CLASSIFIED_BASE_SHA: other, CLASSIFIED_CORE_SHA: other },
+    { CLASSIFIED_BASE_SHA: other },
+    { CLASSIFIED_CORE_SHA: 'malformed' },
+  ]) {
+    const f = fixture([]);
+    const result = cli('update-browser-core.ts', 'publish', {
+      ...f.env,
+      CORE_SHA: head,
+      CURRENT_CORE_SHA: other,
+      ...classified,
+      CONSUMER_IMPACT: 'true',
+    });
+    assert.notEqual(result.status, 0);
+    assert.deepEqual(f.calls(), []);
+  }
+});
+
+test('current provenance validation rejects foreign identity, base and unsigned commits', () => {
+  const validPull = JSON.parse(pull());
+  const validCommit = {
+    sha: head,
+    author: { login: 'dependabot[bot]' },
+    committer: { login: 'web-flow' },
+    commit: { verification: { verified: true } },
+  };
+  for (const [pr, commit] of [
+    [{ ...validPull, user: { login: 'other-bot' } }, validCommit],
+    [
+      { ...validPull, head: { ...validPull.head, repo: { full_name: 'foreign/repo' } } },
+      validCommit,
+    ],
+    [{ ...validPull, base: { ref: 'other-base' } }, validCommit],
+    [validPull, { ...validCommit, commit: { verification: { verified: false } } }],
+    [validPull, { ...validCommit, committer: { login: 'attacker' } }],
+  ]) {
+    const f = fixture([
+      {
+        match: `gh api --paginate --slurp repos/${repository}/pulls/12/commits`,
+        result: JSON.stringify([[commit]]),
+      },
+      { match: `gh api repos/${repository}/pulls/12`, result: JSON.stringify(pr) },
+      { match: `gh api repos/${repository}`, result: JSON.stringify({ default_branch: 'master' }) },
+    ]);
+    const result = cli('dependabot-apply.ts', 'validate', {
+      ...f.env,
+      PR_NUMBER: '12',
+      HEAD_SHA: head,
+      BASE_REF: 'master',
+    });
+    assert.notEqual(result.status, 0);
+    assert.equal(
+      f.calls().some((call) => call.includes('--method POST') || call.includes('pr merge')),
+      false
+    );
+  }
 });
