@@ -41,15 +41,25 @@ async function loadUserscriptAdapter() {
   return (await import('@shared/external/userscript/adapter')).getUserscript();
 }
 
+function invokeTrustedPageHide(persisted: boolean): void {
+  const event = { isTrusted: true, persisted } as PageTransitionEvent;
+  for (const [type, listener] of vi.mocked(window.addEventListener).mock.calls) {
+    if (type === 'pagehide' && typeof listener === 'function') {
+      (listener as (event: PageTransitionEvent) => void)(event);
+    }
+  }
+}
+
 describe('userscript download adapter failure handling', () => {
   beforeEach(() => {
+    vi.spyOn(window, 'addEventListener');
     delete userscriptGlobals.GM;
     delete userscriptGlobals.GM_download;
     delete userscriptGlobals.GM_xmlhttpRequest;
   });
 
   afterEach(() => {
-    window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: false }));
+    invokeTrustedPageHide(false);
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
     restoreUserscriptGlobals();
@@ -175,6 +185,11 @@ describe('userscript download adapter failure handling', () => {
     expect(downloadLiveByteBudget.usedBytes).toBe(5);
     expect(revokeObjectURL).not.toHaveBeenCalled();
     window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: false }));
+    expect(downloadLiveByteBudget.usedBytes).toBe(5);
+    expect(revokeObjectURL).not.toHaveBeenCalled();
+    invokeTrustedPageHide(true);
+    expect(downloadLiveByteBudget.usedBytes).toBe(5);
+    invokeTrustedPageHide(false);
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:test-download');
     expect(downloadLiveByteBudget.usedBytes).toBe(0);
   });
@@ -230,6 +245,10 @@ describe('userscript download adapter failure handling', () => {
     window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }));
     expect(released).not.toHaveBeenCalled();
     window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: false }));
+    expect(released).not.toHaveBeenCalled();
+    invokeTrustedPageHide(true);
+    expect(released).not.toHaveBeenCalled();
+    invokeTrustedPageHide(false);
     expect(revoke).toHaveBeenCalledWith('blob:test-owned-download');
     expect(released).toHaveBeenCalledOnce();
   });

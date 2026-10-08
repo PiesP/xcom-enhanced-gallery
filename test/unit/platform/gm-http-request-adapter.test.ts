@@ -2,7 +2,7 @@
 // Copyright (c) 2026 PiesP
 
 import type { GMXMLHttpRequestDetails } from '@shared/types/core/userscript';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const xmlHttpRequest = vi.hoisted(() => vi.fn());
 
@@ -12,8 +12,21 @@ vi.mock('@shared/external/userscript/adapter', () => ({
 
 import { GMHttpRequestAdapter } from '@platform/gm-http-request-adapter';
 
+function invokeTrustedPageHide(persisted: boolean): void {
+  const event = { isTrusted: true, persisted } as PageTransitionEvent;
+  for (const [type, listener] of vi.mocked(window.addEventListener).mock.calls) {
+    if (type === 'pagehide' && typeof listener === 'function') {
+      (listener as (event: PageTransitionEvent) => void)(event);
+    }
+  }
+}
+
+beforeEach(() => {
+  vi.spyOn(window, 'addEventListener');
+});
+
 afterEach(() => {
-  window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: false }));
+  invokeTrustedPageHide(false);
   xmlHttpRequest.mockReset();
   vi.restoreAllMocks();
 });
@@ -40,6 +53,8 @@ describe('GMHttpRequestAdapter response bounds', () => {
     expect(onerror).toHaveBeenCalledWith(expect.objectContaining({ statusText: 'NETWORK_ERROR' }));
     expect(onsettled).not.toHaveBeenCalled();
     expect(addEventListener).toHaveBeenCalledWith('pagehide', expect.any(Function));
+    window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: false }));
+    expect(onsettled).not.toHaveBeenCalled();
     gmDetails?.onload?.({
       finalUrl: 'https://pbs.twimg.com/media/example.jpg',
       readyState: 4,
@@ -82,6 +97,10 @@ describe('GMHttpRequestAdapter response bounds', () => {
     window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }));
     expect(onsettled).not.toHaveBeenCalled();
     window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: false }));
+    expect(onsettled).not.toHaveBeenCalled();
+    invokeTrustedPageHide(true);
+    expect(onsettled).not.toHaveBeenCalled();
+    invokeTrustedPageHide(false);
     expect(onsettled).toHaveBeenCalledOnce();
     gmDetails?.onabort?.({} as never);
     expect(onsettled).toHaveBeenCalledOnce();

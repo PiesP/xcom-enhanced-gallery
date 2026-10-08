@@ -159,7 +159,7 @@ const retainedPageResources = new Set<() => void>();
 let pageHideListening = false;
 
 function onPageHide(event: PageTransitionEvent): void {
-  if (event.persisted) return;
+  if (!event.isTrusted || event.persisted) return;
   for (const release of [...retainedPageResources]) {
     try {
       release();

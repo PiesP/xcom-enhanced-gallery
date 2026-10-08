@@ -27,7 +27,7 @@ function validateUrl(url: string): void {
 const pendingAmbiguousSettlements = new Set<() => void>();
 
 function onPageHide(event: PageTransitionEvent): void {
-  if (event.persisted) return;
+  if (!event.isTrusted || event.persisted) return;
   for (const settle of [...pendingAmbiguousSettlements]) {
     try {
       settle();

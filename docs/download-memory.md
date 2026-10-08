@@ -20,7 +20,7 @@ A response chunk rejected on arrival is not accepted into retained storage.
 | ZIP entry | Admit filename/header/directory scratch, body storage and future final-Blob copy capacity before fetching or copying. Unknown responses use serialized worker admission. Committed entry data stays charged after the worker finishes. |
 | ZIP finalization | Directory/EOCD and Blob-copy capacity were reserved before reading entries. `createBlob()` transfers ownership and clears writer/part arrays. `dispose()` drops an untransferred result. Source part/scratch leases are released after the snapshot and array clear. Only the final Blob size remains charged through its URL lifetime. |
 | MV3 Blob URL | The adapter owns the URL and release callback independently of the caller Promise. Release after native `complete`/`interrupted` or a proven never-started outcome, plus the cleanup delay. Exact-URL status queries recover the relationship after a worker restart. Empty, failed or mismatched searches remain unknown. |
-| Userscript anchor | An anchor click has no native completion observer. Its Blob URL and owner remain until page teardown; entering the back/forward cache does not release them. This preserves the existing filename behavior. |
+| Userscript anchor | An anchor click has no native completion observer. Its Blob URL and owner remain until genuine page teardown; synthetic lifecycle events and entering the back/forward cache do not release them. This preserves the existing filename behavior. |
 
 `OwnedBlob` input promises and providers must reserve storage before starting
 their producer. A cached input keeps its own lease; ZIP workers borrow it and
