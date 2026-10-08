@@ -163,6 +163,60 @@ export function classifyLiveFailure(classification, galleryStatus, providerRejec
     ? 'product-flow-unverified' : 'target-or-product-unverified';
 }
 
+function ownedVideoPath(source, mediaId) {
+  const match = /^\/(amplify_video|ext_tw_video)\/(\d{1,40})\//u.exec(source?.path ?? '');
+  return source?.host === 'video.twimg.com' && match?.[2] === mediaId ? match[1] : null;
+}
+
+function hasExplicitUrlPort(value) {
+  const authority = /^https:\/\/([^/?#]+)/iu.exec(value)?.[1];
+  return /:\d+$/u.test(authority ?? '');
+}
+
+export function classifyLiveHostDiagnostics(observation) {
+  const required = observation.requiredAssertions;
+  const allRequired = required && Object.keys(required).length >= 13 &&
+    Object.values(required).every((passed) => passed === true) &&
+    observation.productErrors?.length === 0 && observation.productErrorOverflow === 0 &&
+    observation.pageErrors?.length === 0 && observation.pageErrorOverflow === 0;
+  const owner = observation.gallery?.owner;
+  const source = observation.gallery?.opened?.selectedVideo?.source;
+  const family = owner?.status === 'matched-direct-quote-variant' &&
+    /^\d{1,40}$/u.test(owner.mediaId ?? '')
+    ? ownedVideoPath(source, owner.mediaId) : null;
+  const expectedLifecycleCancellationCount = allRequired && family
+    ? observation.hostDiagnostics.filter((record) => {
+      if (record.kind !== 'request-failed' || record.error !== 'net::ERR_ABORTED' ||
+          record.hadQuery === true || record.hadCredentials === true ||
+          record.hadPort === true) return false;
+      try {
+        const url = new URL(record.url);
+        return url.protocol === 'https:' && !url.username && !url.password &&
+          !hasExplicitUrlPort(record.url) && !url.search && !url.hash &&
+          ownedVideoPath({ host: url.hostname, path: url.pathname }, owner.mediaId) === family;
+      } catch {
+        return false;
+      }
+    }).length : 0;
+  return {
+    expectedLifecycleCancellationCount,
+    evidenceStatus: allRequired && observation.hostDiagnosticOverflow === 0 &&
+      expectedLifecycleCancellationCount === observation.hostDiagnostics.length
+      ? 'observed' : 'unverified',
+  };
+}
+
+export function refreshQuotedVideoErrorAssertions(observation) {
+  const required = observation.requiredAssertions;
+  required.noProductErrors = observation.productErrors.length === 0 &&
+    observation.productErrorOverflow === 0;
+  required.noPageErrors = observation.pageErrors.length === 0 &&
+    observation.pageErrorOverflow === 0;
+  observation.missingAssertions = Object.entries(required).filter(([, passed]) => !passed)
+    .map(([name]) => name);
+  return observation.missingAssertions;
+}
+
 function isProductConsoleError(record) {
   return record.location.startsWith('chrome-extension:') ||
     /\bXEG\b|X\.com Enhanced Gallery|\[(?:MediaExtractor|DOMFallbackExtractor|Gallery)\]/iu.test(
@@ -240,10 +294,14 @@ function attachDiagnostics(page, observation) {
     }
   });
   page.on('requestfailed', (request) => {
+    const url = new URL(request.url());
     const record = {
       kind: 'request-failed',
       error: sanitizedText(request.failure()?.errorText ?? 'unknown', 200),
       url: sanitizedUrl(request.url()),
+      hadQuery: Boolean(url.search || url.hash),
+      hadCredentials: Boolean(url.username || url.password),
+      hadPort: hasExplicitUrlPort(request.url()),
     };
     const product = record.url.startsWith('chrome-extension:');
     addBounded(
@@ -991,6 +1049,38 @@ export function quotedVideoHitTestPassed({ controlledVideoClickMode, galleryActi
     control.mediaScopeDepth >= 0 && control.mediaScopeDepth <= 5);
 }
 
+export function captureActivationFocusDocument(surface, { articleIndex, point }) {
+  const article = document.querySelectorAll('article')[articleIndex];
+  const state = { focus: null, captured: false };
+  const onClick = (event) => {
+    if (state.captured || !event.isTrusted || event.button !== 0 ||
+        Math.abs(event.clientX - point.x) > 1 || Math.abs(event.clientY - point.y) > 1 ||
+        !(event.target instanceof Element) || !article?.contains(surface) ||
+        !surface.contains(event.target) || !article.contains(event.target)) return;
+    const focused = document.activeElement;
+    if (!(focused instanceof HTMLElement) || !focused.isConnected ||
+        !article.contains(focused) || ['BODY', 'HTML'].includes(focused.tagName)) return;
+    state.focus = focused;
+    state.captured = true;
+  };
+  window.addEventListener('click', onClick, true);
+  return {
+    get focus() { return state.focus; },
+    get captured() { return state.captured; },
+    dispose() { window.removeEventListener('click', onClick, true); },
+  };
+}
+
+export function findActivationHitDocument(surface, { articleIndex, point }) {
+  const article = document.querySelectorAll('article')[articleIndex];
+  const top = document.elementsFromPoint(point.x, point.y)[0];
+  if (!(top instanceof Element) || !article?.contains(surface) ||
+      !article.contains(top) || surface.closest('article') !== top.closest('article')) return null;
+  if (surface === top || surface.contains(top)) return top;
+  const mediaShell = surface.closest('[data-testid="videoPlayer"], [data-testid="previewInterstitial"]');
+  return mediaShell?.contains(top) ? top : null;
+}
+
 async function observeQuotedVideo(page, observation, identity, output, index, settleApi,
   controlledVideoClickMode) {
   const target = observation.target;
@@ -1079,6 +1169,9 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
   const actionHandle = await clickSurface.elementHandle();
   if (!actionHandle) throw new Error('Quoted video detached before interaction');
   let focusHandle;
+  let activationCaptureHandle;
+  let activationFocusHandle;
+  let activationHitHandle;
   try {
     if (controlledAction) {
       const focusHit = await clickSurface.evaluate(inspectHitTestedVideoActionDocument,
@@ -1106,6 +1199,8 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
       element instanceof HTMLElement && !['BODY', 'HTML'].includes(element.tagName));
     observation.gallery = {
       status: 'attempting', before, focusPrepared,
+      activationFocusCaptured: false,
+      activationFocusChanged: false,
       focusTarget: controlledAction ? 'bounded-native-video-control'
         : meaningfulFocusTarget ? 'native-media-focus' : 'body-only',
     };
@@ -1132,7 +1227,26 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
       observation.gallery.focusedControlStillOwnsClick = sameControl;
       if (!sameControl) throw new Error('Focused quote button changed before click');
     }
+    activationHitHandle = await actionHandle.evaluateHandle(findActivationHitDocument, {
+      articleIndex: target.articleIndex, point: clickPoint,
+    });
+    if (!activationHitHandle.asElement()) {
+      throw new Error('Quoted-video activation hit changed outside the bounded media surface');
+    }
+    activationCaptureHandle = await activationHitHandle.evaluateHandle(captureActivationFocusDocument, {
+      articleIndex: target.articleIndex, point: clickPoint,
+    });
     await page.mouse.click(clickPoint.x, clickPoint.y);
+    observation.gallery.activationFocusCaptured = await activationCaptureHandle.evaluate(
+      (capture) => capture.captured);
+    if (!observation.gallery.activationFocusCaptured) {
+      observation.missingAssertions.push('exactFocusRestored');
+      throw new Error('Trusted quoted-video activation focus was not captured');
+    }
+    activationFocusHandle = await activationCaptureHandle.evaluateHandle((capture) => capture.focus);
+    observation.gallery.activationFocusChanged = await focusHandle.evaluate(
+      (prepared, actual) => prepared !== actual, activationFocusHandle);
+    await activationCaptureHandle.evaluate((capture) => capture.dispose());
     const gallery = page.locator('[data-xeg-gallery-container]');
     const openedGallery = await gallery.waitFor({ state: 'visible', timeout: ACTION_TIMEOUT_MS })
       .then(() => true, () => false);
@@ -1181,7 +1295,7 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
     await page.keyboard.press('Escape');
     const detached = await gallery.waitFor({ state: 'detached', timeout: ACTION_TIMEOUT_MS })
       .then(() => true, () => false);
-    const restored = await waitForRestoredHostState(page, focusHandle, before);
+    const restored = await waitForRestoredHostState(page, activationFocusHandle, before);
     observation.gallery = {
       ...observation.gallery, status: 'observed', closeMethod: 'Escape', detached,
       focusRestored: restored.focusRestored, after: restored.after,
@@ -1189,7 +1303,6 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
       scrollRestorationRestored: restored.scrollRestorationRestored,
       scrollRestored: restored.scrollRestored,
     };
-    observation.screenshots.after = await captureScreenshot(page, output, `live-page-${index}-after.png`);
     const video = observation.gallery.opened.selectedVideo;
     const finalUrl = new URL(page.url());
     const required = {
@@ -1213,7 +1326,8 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
         (target.quoteStatusIds.length === 0 || target.quoteStatusIds.includes(observation.gallery.owner.ownerId)),
       playbackProgress: observation.gallery.playback.progressed,
       escapeClosed: detached,
-      exactFocusRestored: meaningfulFocusTarget && focusPrepared && restored.focusRestored,
+      exactFocusRestored: meaningfulFocusTarget && focusPrepared &&
+        observation.gallery.activationFocusCaptured && restored.focusRestored,
       scrollRestored: restored.scrollRestored,
       scrollRestorationRestored: restored.scrollRestorationRestored,
       bodyStylesRestored: restored.bodyStylesRestored,
@@ -1223,10 +1337,15 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
     observation.requiredAssertions = required;
     observation.missingAssertions = Object.entries(required).filter(([, passed]) => !passed)
       .map(([name]) => name);
-    if (observation.missingAssertions.length) {
+    observation.screenshots.after = await captureScreenshot(page, output, `live-page-${index}-after.png`);
+    if (refreshQuotedVideoErrorAssertions(observation).length) {
       throw new Error(`Missing live quoted-video assertions: ${observation.missingAssertions.join(', ')}`);
     }
   } finally {
+    await activationCaptureHandle?.evaluate((capture) => capture.dispose()).catch(() => {});
+    await activationFocusHandle?.dispose().catch(() => {});
+    await activationCaptureHandle?.dispose().catch(() => {});
+    await activationHitHandle?.dispose().catch(() => {});
     await focusHandle?.dispose().catch(() => {});
     await actionHandle.dispose().catch(() => {});
   }
@@ -1321,9 +1440,11 @@ async function observeOne(context, extensionId, targetUrl, output, index,
     if (observation.target.kind === 'quoted-video') {
       await observeQuotedVideo(page, observation, identity, output, index, settleApi,
         controlledVideoClickMode);
+      await settleApi();
+      if (refreshQuotedVideoErrorAssertions(observation).length) {
+        throw new Error(`Missing live quoted-video assertions: ${observation.missingAssertions.join(', ')}`);
+      }
       observation.status = 'core-flow-observed';
-      observation.evidenceStatus = observation.hostDiagnostics.length ||
-        observation.hostDiagnosticOverflow > 0 ? 'unverified' : 'observed';
       return observation;
     }
 
@@ -1460,6 +1581,17 @@ async function observeOne(context, extensionId, targetUrl, output, index,
     }
   } finally {
     await settleApi();
+    if (observation.target?.kind === 'quoted-video' &&
+        observation.status === 'core-flow-observed') {
+      if (refreshQuotedVideoErrorAssertions(observation).length) {
+        observation.status = 'failed';
+        observation.evidenceStatus = 'unverified';
+        observation.error = `Missing live quoted-video assertions: ${observation.missingAssertions.join(', ')}`;
+        observation.classification = classifyLiveFailure(
+          observation.classification, observation.gallery.status,
+          summarizeQuoteProviderRejection(observation.api));
+      } else Object.assign(observation, classifyLiveHostDiagnostics(observation));
+    }
     if (actionHandle) await actionHandle.dispose().catch(() => {});
     observation.finalUrl = sanitizedUrl(page.url());
     await writeFile(

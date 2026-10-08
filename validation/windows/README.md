@@ -180,7 +180,10 @@ click, and checks the selected gallery video, playable source, dimensions,
 readiness, error state, and playback progress. A video in an unmarked branch is
 only a candidate until observed API relationships and its selected playable
 variant establish the directly quoted owner. Both paths check dialog opening,
-Escape close, focus, scroll, and body-style restoration.
+Escape close, focus, scroll, and body-style restoration. The video observer
+records the focused host element at the trusted gallery activation click,
+after native pointer focus changes, and checks that exact element after Escape.
+It also requires a meaningful prepared focus target before the click.
 
 When a native player covers every point with controls, the observer first
 makes a bounded ordinary Play click and records host-video readiness and
@@ -203,6 +206,11 @@ response as a product defect. The JSON records only allowlisted
 nested quote IDs, media IDs/types, and approved poster/video source paths; it
 does not retain response bodies, text, headers, or URL queries. A blocked page,
 missing quote, unavailable API relation, or nonplaying video remains unverified.
+When all quoted-video assertions pass, an aborted request for a chunk of the
+selected, directly quoted video may be counted as an expected host media
+lifecycle cancellation. The request must be from the same `video.twimg.com`
+media family and media ID as the selected source. Other host diagnostics,
+diagnostic overflow, or any failed assertion keep the evidence unverified.
 Review the retained screenshots separately before making a live-page claim.
 
 Run `node --check validation/windows/install-profile.mjs` for the installed
