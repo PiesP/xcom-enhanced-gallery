@@ -118,7 +118,7 @@ background-isolation restoration. This is browser tab zoom in the fresh task
 profile; it does not claim an OS DPI change or a live X.com observation.
 
 The installed profile first starts a gallery download through real media and
-toolbar clicks. A routed 16 MiB download response is separate from the ordinary
+toolbar clicks. A routed 64 MiB download response is separate from the ordinary
 display image. The native download must pause with bytes remaining and retain
 its private request binding. Page-synthetic Escape/help, outside/backdrop,
 toolbar Download/Close and a temporarily reparented Close button must leave the
