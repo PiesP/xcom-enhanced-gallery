@@ -443,6 +443,7 @@ async function installFixtureRoutes(context, root, images) {
       if (quotedResponse) {
         const record = { method: route.request().method(), status: 200,
           tweetId, url: url.pathname, requestedAt: new Date().toISOString(),
+          requestedAtMonotonicMs: performance.now(),
           resultTypename: quotedResponse.data?.tweetResult?.result?.__typename ?? null,
           providerErrors: quotedResponse.errors?.length ?? 0 };
         quotedApiResponses.push(record);
@@ -2126,7 +2127,7 @@ async function runUnavailableSequence({ apiResponses, extensionPage, output, pag
     evidence.mode = 'allow-all';
     const apiStart = sequenceApiResponses.length;
     const rejectedStart = apiResponses.length;
-    const sequenceStartedAt = Date.now();
+    const sequenceStartedAt = performance.now();
     const assertSameDocument = async () => {
       assert.equal(page.url(), pageUrl, 'Sequence must retain the exact fixture URL');
       assert.equal(await page.evaluate(() => performance.timeOrigin), documentStartedAt,
@@ -2169,8 +2170,7 @@ async function runUnavailableSequence({ apiResponses, extensionPage, output, pag
           const active = await chrome.notifications.getAll();
           const entry = Object.entries(active).find(([id]) =>
             id.startsWith('xeg-') && !known.includes(id));
-          return entry ? { id: entry[0], title: entry[1].title,
-            message: entry[1].message } : undefined;
+          return entry ? { id: entry[0] } : undefined;
         }, knownNotifications), `${failure.name} extraction completion`);
       step.completedAt = new Date().toISOString();
       step.notification = notification;
@@ -2192,7 +2192,7 @@ async function runUnavailableSequence({ apiResponses, extensionPage, output, pag
       await assertSameDocument();
       step.status = 'failed-extraction-completed';
     }
-    assert(Date.now() - sequenceStartedAt < 60_000,
+    assert(performance.now() - sequenceStartedAt < 60_000,
       'Available control must run before the circuit reset interval');
     const control = sequence.control;
     const step = { name: 'available-control', tweetId: control.outer, status: 'started' };
@@ -2221,6 +2221,9 @@ async function runUnavailableSequence({ apiResponses, extensionPage, output, pag
     assert.equal(step.api[0].resultTypename, 'Tweet');
     assert.equal(step.api[0].providerErrors, 0);
     assert.equal(step.api[0].fulfilledAt !== undefined, true);
+    evidence.durationToFourthRequestMs = step.api[0].requestedAtMonotonicMs - sequenceStartedAt;
+    assert(evidence.durationToFourthRequestMs >= 0 && evidence.durationToFourthRequestMs < 60_000,
+      'The actual fourth HTTP request must precede the circuit cooldown');
     const originUrl = await assertQuotedOriginLink(opened.gallery,
       `https://x.com/${control.username}/status/${control.owner}`);
     await opened.gallery.locator('#tweet-text-button').click();
