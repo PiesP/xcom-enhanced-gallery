@@ -20,6 +20,7 @@ import { downloadAsZip } from '@shared/services/download/zip-download';
 import { createSingleton } from '@shared/services/singleton-base';
 import type { MediaInfo } from '@shared/types/media.types';
 import { ErrorCode } from '@shared/types/media.types';
+import { DownloadResourceLimitError, type OwnedBlob } from './live-byte-budget';
 
 /**
  * Create a standardized error response for bulk download operations.
@@ -138,52 +139,53 @@ export class DownloadOrchestrator {
       try {
         const result = await downloadAsZip(items, { ...options, signal: mergedSignal });
 
-        if (result.filesSuccessful === 0) {
-          return createErrorResponse(
-            result.resourceLimitExceeded
-              ? 'Bulk ZIP memory limit exceeded. Download large media individually.'
-              : 'No files downloaded',
-            result.resourceLimitExceeded ? ErrorCode.RESOURCE_LIMIT : ErrorCode.ALL_FAILED,
-            items.length,
-            { failures: result.failures }
-          );
-        }
-
-        // Build Blob directly from parts — no monolithic Uint8Array allocation
-        const zipBlob = new Blob(result.zipData, {
-          type: 'application/zip',
-        });
-        const filename = plan.zipFilename;
-
-        // Save ZIP using the download adapter
-        const saveResult = await this.saveWithDownloadAdapter(zipBlob, filename, mergedSignal);
-
-        if (!saveResult.success) {
-          if (mergedSignal.aborted) {
+        try {
+          if (result.filesSuccessful === 0) {
             return createErrorResponse(
-              normalizeErrorMessage(getUserCancelledAbortErrorFromSignal(mergedSignal)),
-              ErrorCode.CANCELLED,
+              result.resourceLimitExceeded
+                ? new DownloadResourceLimitError().message
+                : 'No files downloaded',
+              result.resourceLimitExceeded ? ErrorCode.RESOURCE_LIMIT : ErrorCode.ALL_FAILED,
+              items.length,
+              { failures: result.failures }
+            );
+          }
+
+          const zipBlob = result.createBlob();
+          const filename = plan.zipFilename;
+
+          // Save ZIP using the download adapter
+          const saveResult = await this.saveWithDownloadAdapter(zipBlob, filename, mergedSignal);
+
+          if (!saveResult.success) {
+            if (mergedSignal.aborted) {
+              return createErrorResponse(
+                normalizeErrorMessage(getUserCancelledAbortErrorFromSignal(mergedSignal)),
+                ErrorCode.CANCELLED,
+                items.length,
+                { filesSuccessful: result.filesSuccessful, failures: result.failures }
+              );
+            }
+            return createErrorResponse(
+              saveResult.error || 'Failed to save ZIP file',
+              ErrorCode.ALL_FAILED,
               items.length,
               { filesSuccessful: result.filesSuccessful, failures: result.failures }
             );
           }
-          return createErrorResponse(
-            saveResult.error || 'Failed to save ZIP file',
-            ErrorCode.ALL_FAILED,
-            items.length,
-            { filesSuccessful: result.filesSuccessful, failures: result.failures }
-          );
-        }
 
-        return {
-          success: true,
-          status: result.filesSuccessful === items.length ? 'success' : 'partial',
-          filesProcessed: items.length,
-          filesSuccessful: result.filesSuccessful,
-          filename,
-          failures: result.failures,
-          code: result.resourceLimitExceeded ? ErrorCode.RESOURCE_LIMIT : ErrorCode.NONE,
-        };
+          return {
+            success: true,
+            status: result.filesSuccessful === items.length ? 'success' : 'partial',
+            filesProcessed: items.length,
+            filesSuccessful: result.filesSuccessful,
+            filename,
+            failures: result.failures,
+            code: result.resourceLimitExceeded ? ErrorCode.RESOURCE_LIMIT : ErrorCode.NONE,
+          };
+        } finally {
+          result.dispose();
+        }
       } catch (error) {
         if (isAbortError(error)) {
           return createErrorResponse(
@@ -195,7 +197,9 @@ export class DownloadOrchestrator {
 
         return createErrorResponse(
           normalizeErrorMessage(error),
-          ErrorCode.ALL_FAILED,
+          error instanceof DownloadResourceLimitError
+            ? ErrorCode.RESOURCE_LIMIT
+            : ErrorCode.ALL_FAILED,
           items.length
         );
       }
@@ -228,13 +232,13 @@ export class DownloadOrchestrator {
    * @internal
    */
   private async saveWithDownloadAdapter(
-    blob: Blob,
+    blob: OwnedBlob,
     filename: string,
     signal?: AbortSignal
   ): Promise<{ success: boolean; error?: string }> {
     const adapter = getDownloadAdapter();
     try {
-      await adapter.downloadBlob(blob, filename, signal);
+      await adapter.downloadBlob(blob.value, filename, signal, () => blob.lease.release());
       return { success: true };
     } catch (error) {
       return {

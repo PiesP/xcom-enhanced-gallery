@@ -8,6 +8,7 @@
  */
 
 import { generateMediaFilename, generateZipFilename } from '@shared/core/filename/filename-utils';
+import type { OwnedBlob } from '@shared/services/download/live-byte-budget';
 import type { MediaBlobProvider } from '@shared/services/download/types';
 import type { MediaInfo } from '@shared/types/media.types';
 
@@ -15,15 +16,15 @@ export interface PlannedZipItem {
   readonly url: string;
   readonly desiredName: string;
   readonly expectedSizeBytes?: number | undefined;
-  readonly blob?: Blob | Promise<Blob> | undefined;
+  readonly blob?: OwnedBlob | Promise<OwnedBlob> | undefined;
   readonly getBlob?:
-    | ((signal?: AbortSignal, maxResponseBytes?: number) => Promise<Blob> | null)
+    | ((signal?: AbortSignal, maxResponseBytes?: number) => Promise<OwnedBlob> | null)
     | undefined;
 }
 
 interface BulkDownloadPlanningInput {
   readonly mediaItems: readonly MediaInfo[];
-  readonly cachedBlobs?: Map<string, Blob | Promise<Blob>> | undefined;
+  readonly cachedBlobs?: Map<string, OwnedBlob | Promise<OwnedBlob>> | undefined;
   readonly mediaBlobProvider?: MediaBlobProvider | undefined;
   readonly zipFilename?: string | undefined;
   readonly nowMs?: number | undefined;

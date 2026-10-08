@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { mergeAbortSignalsWithCleanup } from '@piesp/browser-core/error';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
+import { getAbortReasonOrAbortErrorFromSignal } from '@shared/error/cancellation';
+import { HttpResponseSizeLimitError } from '@shared/error/http-response-size-limit-error';
 import { logger } from '@shared/logging/logger';
+import type { LiveByteBudget, OwnedBlob } from '@shared/services/download/live-byte-budget';
+import { downloadLiveByteBudget } from '@shared/services/download/live-byte-budget';
 import { getHttpRequestService } from '@shared/services/http-request-service';
 import type { MediaInfo } from '@shared/types/media.types';
 
@@ -13,17 +16,26 @@ type LRUNode = {
   next: LRUNode | null;
 };
 
+type Borrower = {
+  readonly signal: AbortSignal | undefined;
+  readonly maxResponseBytes: number | undefined;
+  readonly resolve: (owned: OwnedBlob) => void;
+  readonly reject: (error: unknown) => void;
+  readonly onAbort: () => void;
+};
+
+type CacheEntry = {
+  readonly url: string;
+  readonly controller: AbortController;
+  readonly borrowers: Set<Borrower>;
+  owner?: OwnedBlob;
+};
+
 const DEFAULT_CACHE_MAX_ENTRIES = 5;
 
-/**
- * Demand-driven Blob cache for image downloads.
- *
- * Requests start only when a download asks for media. Videos and GIFs keep
- * using the direct download path because retaining their Blobs can consume
- * hundreds of megabytes.
- */
+/** Demand-driven Blob cache for image downloads. Video and GIF use direct downloads. */
 export class DownloadMediaCache {
-  private readonly cache = new Map<string, Promise<Blob>>();
+  private readonly cache = new Map<string, CacheEntry>();
   private readonly activeRequests = new Map<string, AbortController>();
   private readonly resolvedSizes = new Map<string, number>();
   private readonly nodeMap = new Map<string, LRUNode>();
@@ -34,7 +46,11 @@ export class DownloadMediaCache {
   private head: LRUNode | null = null;
   private tail: LRUNode | null = null;
 
-  constructor(maxEntries = DEFAULT_CACHE_MAX_ENTRIES, maxBytes = 100 * 1024 * 1024) {
+  constructor(
+    maxEntries = DEFAULT_CACHE_MAX_ENTRIES,
+    maxBytes = 100 * 1024 * 1024,
+    private readonly budget: LiveByteBudget = downloadLiveByteBudget
+  ) {
     this.maxEntries = maxEntries;
     this.maxBytes = maxBytes;
   }
@@ -43,33 +59,44 @@ export class DownloadMediaCache {
     media: MediaInfo,
     signal?: AbortSignal,
     maxResponseBytes?: number
-  ): Promise<Blob> | null {
-    if (this.disposed || media.type === 'video' || media.type === 'gif') {
-      return null;
-    }
+  ): Promise<OwnedBlob> | null {
+    if (this.disposed || media.type === 'video' || media.type === 'gif') return null;
+    if (signal?.aborted) return Promise.reject(getAbortReasonOrAbortErrorFromSignal(signal));
 
     const existing = this.cache.get(media.url);
     if (existing) {
       this.moveToTail(media.url);
-      return existing;
+      return this.borrow(existing, signal, maxResponseBytes);
     }
 
-    return this.fetchAndCache(media.url, signal, maxResponseBytes);
+    if (this.cache.size >= this.maxEntries) this.evictOldest();
+    const entry: CacheEntry = {
+      url: media.url,
+      controller: new AbortController(),
+      borrowers: new Set(),
+    };
+    this.cache.set(media.url, entry);
+    this.activeRequests.set(media.url, entry.controller);
+    this.addToLRU(media.url);
+    // Register the first borrower before a transport may settle synchronously.
+    const borrowed = this.borrow(entry, signal, maxResponseBytes);
+    if (!entry.controller.signal.aborted) void this.fetchAndCache(entry, maxResponseBytes);
+    return borrowed;
   }
 
   /** Cancel only in-flight requests while retaining completed cache entries. */
   cancelPending(): void {
     for (const [url, controller] of this.activeRequests) {
-      controller.abort();
-      if (this.activeRequests.get(url) === controller) {
-        this.activeRequests.delete(url);
-        this.cache.delete(url);
-        this.removeFromLRU(url);
-      }
+      const entry = this.cache.get(url);
+      if (entry?.controller === controller) this.evictNode(this.nodeMap.get(url)!);
     }
   }
 
-  private clear(): void {
+  destroy(): void {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.cancelPending();
+    for (const entry of this.cache.values()) entry.owner?.lease.release();
     this.cache.clear();
     this.nodeMap.clear();
     this.resolvedSizes.clear();
@@ -78,84 +105,100 @@ export class DownloadMediaCache {
     this.totalBytes = 0;
   }
 
-  destroy(): void {
-    if (this.disposed) return;
-    this.disposed = true;
-    this.cancelPending();
-    this.clear();
-  }
-
-  private fetchAndCache(
-    url: string,
-    callerSignal?: AbortSignal,
+  private borrow(
+    entry: CacheEntry,
+    signal?: AbortSignal,
     maxResponseBytes?: number
-  ): Promise<Blob> {
-    const controller = new AbortController();
-    const signalScope = callerSignal
-      ? mergeAbortSignalsWithCleanup([controller.signal, callerSignal])
-      : { signal: controller.signal, cleanup: () => undefined };
-
-    this.activeRequests.set(url, controller);
-    if (this.cache.size >= this.maxEntries) {
-      this.evictOldest();
+  ): Promise<OwnedBlob> {
+    const owner = entry.owner;
+    if (owner) {
+      if (maxResponseBytes !== undefined && owner.value.size > maxResponseBytes) {
+        return Promise.reject(new HttpResponseSizeLimitError(maxResponseBytes, owner.value.size));
+      }
+      return Promise.resolve({ value: owner.value, lease: owner.lease.fork() });
     }
 
-    let cachePromise: Promise<Blob>;
-    cachePromise = getHttpRequestService()
-      .get<Blob>(url, {
-        signal: signalScope.signal,
+    let resolve!: Borrower['resolve'];
+    let reject!: Borrower['reject'];
+    const result = new Promise<OwnedBlob>((accept, decline) => {
+      resolve = accept;
+      reject = decline;
+    });
+    const onAbort = (): void => {
+      entry.borrowers.delete(borrower);
+      reject(getAbortReasonOrAbortErrorFromSignal(signal));
+      if (entry.borrowers.size === 0 && !entry.owner) {
+        if (this.cache.get(entry.url) === entry) this.evictNode(this.nodeMap.get(entry.url)!);
+        else entry.controller.abort();
+      }
+    };
+    const borrower: Borrower = { signal, maxResponseBytes, resolve, reject, onAbort };
+    entry.borrowers.add(borrower);
+    signal?.addEventListener('abort', onAbort, { once: true });
+    if (signal?.aborted) onAbort();
+    // Bulk downloads may collect promises before workers await them.
+    void result.catch(() => undefined);
+    return result;
+  }
+
+  private async fetchAndCache(entry: CacheEntry, maxResponseBytes?: number): Promise<void> {
+    const { url, controller } = entry;
+    try {
+      const response = await getHttpRequestService().getOwnedBinary<Blob>(url, {
+        signal: controller.signal,
         responseType: 'blob',
         maxResponseBytes: Math.min(this.maxBytes, maxResponseBytes ?? this.maxBytes),
-      })
-      .then((response) => {
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        return response.data;
-      })
-      .then(
-        (blob) => {
-          if (this.activeRequests.get(url) === controller) {
-            this.activeRequests.delete(url);
-          }
-          // Adapters can resolve after abort. Only the current cache owner may
-          // update accounting or evict entries after an asynchronous gap.
-          if (!this.disposed && this.cache.get(url) === cachePromise) {
-            this.totalBytes += blob.size;
-            this.resolvedSizes.set(url, blob.size);
-            this.evictByByteBudget();
-          }
-          return blob;
-        },
-        (error: unknown) => {
-          if (this.activeRequests.get(url) === controller) {
-            this.activeRequests.delete(url);
-          }
-          if (this.cache.get(url) === cachePromise) {
-            this.cache.delete(url);
-            this.removeFromLRU(url);
-          }
-          if (__DEV__) {
-            logger.debug('[DownloadMediaCache] Media request failed', {
-              url,
-              error: normalizeErrorMessage(error),
-            });
-          }
-          throw error;
-        }
-      )
-      .finally(() => {
-        signalScope.cleanup();
-        if (this.activeRequests.get(url) === controller) {
-          this.activeRequests.delete(url);
-        }
+        budget: this.budget,
       });
+      const owner: OwnedBlob = { value: response.data, lease: response.lease };
+      if (!response.ok) {
+        owner.lease.release();
+        throw new Error(`HTTP ${response.status}`);
+      }
 
-    // Bulk downloads collect several promises before workers await them. Observe
-    // early failures now so they cannot surface as unhandled rejections; callers
-    // still receive the original rejecting promise and use the network fallback.
-    void cachePromise.catch(() => undefined);
-    this.cache.set(url, cachePromise);
-    this.addToLRU(url);
-    return cachePromise;
+      for (const borrower of entry.borrowers) {
+        borrower.signal?.removeEventListener('abort', borrower.onAbort);
+        if (borrower.signal?.aborted) {
+          borrower.reject(getAbortReasonOrAbortErrorFromSignal(borrower.signal));
+        } else if (
+          borrower.maxResponseBytes !== undefined &&
+          owner.value.size > borrower.maxResponseBytes
+        ) {
+          borrower.reject(
+            new HttpResponseSizeLimitError(borrower.maxResponseBytes, owner.value.size)
+          );
+        } else {
+          borrower.resolve({ value: owner.value, lease: owner.lease.fork() });
+        }
+      }
+      entry.borrowers.clear();
+
+      if (this.activeRequests.get(url) === controller) this.activeRequests.delete(url);
+      if (!this.disposed && this.cache.get(url) === entry) {
+        entry.owner = owner;
+        this.totalBytes += owner.value.size;
+        this.resolvedSizes.set(url, owner.value.size);
+        this.evictByByteBudget();
+      } else {
+        // Eviction may abort a request whose adapter still resolves later.
+        owner.lease.release();
+      }
+    } catch (error) {
+      for (const borrower of entry.borrowers) {
+        borrower.signal?.removeEventListener('abort', borrower.onAbort);
+        borrower.reject(error);
+      }
+      entry.borrowers.clear();
+      if (this.cache.get(url) === entry) this.evictNode(this.nodeMap.get(url)!);
+      if (__DEV__) {
+        logger.debug('[DownloadMediaCache] Media request failed', {
+          url,
+          error: normalizeErrorMessage(error),
+        });
+      }
+    } finally {
+      if (this.activeRequests.get(url) === controller) this.activeRequests.delete(url);
+    }
   }
 
   private evictOldest(): void {
@@ -167,28 +210,31 @@ export class DownloadMediaCache {
       }
       node = node.next;
     }
-
-    if (this.head) {
-      const url = this.head.url;
-      this.activeRequests.get(url)?.abort();
-      this.activeRequests.delete(url);
-      this.evictNode(this.head);
-    }
+    if (this.head) this.evictNode(this.head);
   }
 
   private evictByByteBudget(): void {
-    while (this.totalBytes > this.maxBytes && this.head) {
-      this.evictOldest();
-    }
+    while (this.totalBytes > this.maxBytes && this.head) this.evictOldest();
   }
 
   private evictNode(node: LRUNode): void {
+    const entry = this.cache.get(node.url);
+    entry?.owner?.lease.release();
+    if (entry && !entry.owner) {
+      for (const borrower of entry.borrowers) {
+        borrower.signal?.removeEventListener('abort', borrower.onAbort);
+        borrower.reject(new DOMException('Aborted', 'AbortError'));
+      }
+      entry.borrowers.clear();
+    }
+    entry?.controller.abort();
     const size = this.resolvedSizes.get(node.url);
     if (size !== undefined) {
       this.totalBytes -= size;
       this.resolvedSizes.delete(node.url);
     }
     this.cache.delete(node.url);
+    this.activeRequests.delete(node.url);
     this.removeNode(node);
   }
 
@@ -218,10 +264,5 @@ export class DownloadMediaCache {
     if (this.head === node) this.head = node.next;
     if (this.tail === node) this.tail = node.prev;
     this.nodeMap.delete(node.url);
-  }
-
-  private removeFromLRU(url: string): void {
-    const node = this.nodeMap.get(url);
-    if (node) this.removeNode(node);
   }
 }

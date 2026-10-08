@@ -27,7 +27,11 @@ export class MV3HttpRequestAdapter implements HttpRequestAdapter {
   request(details: HttpRequestDetails): HttpRequestControl {
     // SSRF prevention: validate URL before making the request (M1)
     if (!isAllowedUrl(details.url)) {
-      details.onerror?.(this.createErrorResponse(details.url, 0));
+      try {
+        details.onerror?.(this.createErrorResponse(details.url, 0));
+      } finally {
+        details.onsettled?.();
+      }
       return { abort: () => {} };
     }
 
@@ -38,24 +42,31 @@ export class MV3HttpRequestAdapter implements HttpRequestAdapter {
       controller.abort();
     }, details.timeout ?? DEFAULT_REQUEST_TIMEOUT_MS);
 
-    this.fetchWithController(details, controller)
-      .then((response) => {
-        clearTimeout(timeoutId);
-        details.onload?.(response);
-      })
-      .catch((error: unknown) => {
-        clearTimeout(timeoutId);
-        if (isHttpResponseSizeLimitError(error)) {
-          details.onerror?.(this.createErrorResponse(details.url, 0, 'RESOURCE_LIMIT', error));
-        } else if (timedOut) {
-          // M3: Distinguish timeout from abort — set timedOut flag before abort
-          details.ontimeout?.(this.createErrorResponse(details.url, 0));
-        } else if (error instanceof DOMException && error.name === 'AbortError') {
-          details.onabort?.(this.createErrorResponse(details.url, 0));
-        } else {
-          details.onerror?.(this.createErrorResponse(details.url, 0));
+    void this.fetchWithController(details, controller)
+      .then(
+        (response) => {
+          details.onload?.(response);
+        },
+        (error: unknown) => {
+          clearTimeout(timeoutId);
+          if (isHttpResponseSizeLimitError(error)) {
+            details.onerror?.(this.createErrorResponse(details.url, 0, 'RESOURCE_LIMIT', error));
+          } else if (timedOut) {
+            // M3: Distinguish timeout from abort — set timedOut flag before abort
+            details.ontimeout?.(this.createErrorResponse(details.url, 0));
+          } else if (error instanceof DOMException && error.name === 'AbortError') {
+            details.onabort?.(this.createErrorResponse(details.url, 0));
+          } else {
+            details.onerror?.(this.createErrorResponse(details.url, 0));
+          }
         }
-      });
+      )
+      .finally(() => {
+        clearTimeout(timeoutId);
+        details.onsettled?.();
+      })
+      // Caller callbacks are outside fetch; their exceptions must not strand the task promise.
+      .catch(() => undefined);
 
     return {
       abort: () => {

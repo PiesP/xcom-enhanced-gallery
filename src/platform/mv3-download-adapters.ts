@@ -19,9 +19,8 @@
  *   idle timeout, causing silent download failures.
  * - Promise-based sendMessage is required; the callback pattern (3rd arg)
  *   does not work when the receiver responds asynchronously.
- * - URL revocation for blob downloads is delayed to avoid a race condition
- *   where Chrome's download manager hasn't started reading the blob data
- *   before the object URL is revoked, resulting in 0-byte or corrupted files.
+ * - Blob URLs remain owned by the content script until Chrome reports a
+ *   terminal download state; ambiguous responses are reconciled by URL.
  * - Timeout is handled exclusively by the SW's waitForDownloadComplete.
  *   The adapter does not impose its own timeout — the SW's 5-minute timeout
  *   is the single point of timeout responsibility.
@@ -29,6 +28,7 @@
 
 import { BLOB_URL_REVOKE_DELAY_MS, DOWNLOAD_TIMEOUT_MS } from '@constants/performance';
 import type {
+  DownloadBlobStatusResponse,
   DownloadBlobUrlRequestMessage,
   DownloadLifecycleResponse,
   DownloadRequestMessage,
@@ -65,12 +65,16 @@ function isNonTerminalDownloadResponse(
 type DownloadMessage = DownloadRequestMessage | DownloadBlobUrlRequestMessage;
 
 function sendCancelRequest(requestId: string): void {
-  void browserApi.runtime
-    .sendMessage({
-      type: 'DOWNLOAD_CANCEL_REQUEST',
-      payload: { requestId },
-    })
-    .catch(() => undefined);
+  try {
+    void browserApi.runtime
+      .sendMessage({
+        type: 'DOWNLOAD_CANCEL_REQUEST',
+        payload: { requestId },
+      })
+      .catch(() => undefined);
+  } catch {
+    // An unavailable runtime must not prevent local cancellation or status reconciliation.
+  }
 }
 
 export class MV3DownloadAdapter implements DownloadAdapter {
@@ -94,28 +98,143 @@ export class MV3DownloadAdapter implements DownloadAdapter {
     );
   }
 
-  async downloadBlob(blob: Blob, filename: string, signal?: AbortSignal): Promise<void> {
-    // URL.createObjectURL is unavailable in Service Workers — create in content script.
-    // The object URL persists with the page lifetime, avoiding the SW termination
-    // race condition that causes silent download failures with SW-created blob URLs.
-    const objectUrl = URL.createObjectURL(blob);
-    try {
-      await this.sendDownloadRequest(
-        {
-          type: 'DOWNLOAD_BLOB_URL_REQUEST',
-          payload: { objectUrl, filename, mimeType: blob.type },
-        },
-        signal
-      );
-    } finally {
-      // Delay revocation to avoid a race condition where Chrome's download
-      // manager hasn't started reading the blob before the URL is revoked.
-      // A short delay after the SW confirms receipt gives Chrome time to
-      // begin reading the blob data, preventing 0-byte or corrupted downloads.
-      setTimeout(() => {
-        URL.revokeObjectURL(objectUrl);
-      }, BLOB_URL_REVOKE_DELAY_MS);
+  async downloadBlob(
+    blob: Blob,
+    filename: string,
+    signal?: AbortSignal,
+    onObjectUrlReleased?: () => void
+  ): Promise<void> {
+    if (signal?.aborted) {
+      onObjectUrlReleased?.();
+      throw getUserCancelledAbortErrorFromSignal(signal);
     }
+    let objectUrl: string;
+    let requestId: string;
+    try {
+      requestId = crypto.randomUUID();
+      objectUrl = URL.createObjectURL(blob);
+    } catch (error: unknown) {
+      onObjectUrlReleased?.();
+      throw error;
+    }
+    let released = false;
+    let terminalObserved = false;
+    let polling = false;
+    let pollDelayMs = 250;
+    let pollTimer: ReturnType<typeof setTimeout> | undefined;
+    let requestSettled = false;
+    let rejectAbort: ((reason: unknown) => void) | undefined;
+    const release = (): void => {
+      if (released) return;
+      released = true;
+      try {
+        URL.revokeObjectURL(objectUrl);
+      } finally {
+        onObjectUrlReleased?.();
+      }
+    };
+    const scheduleRelease = (): void => {
+      if (terminalObserved || released) return;
+      terminalObserved = true;
+      signal?.removeEventListener('abort', onAbort);
+      if (pollTimer !== undefined) clearTimeout(pollTimer);
+      setTimeout(release, BLOB_URL_REVOKE_DELAY_MS);
+    };
+    const inspectStatus = async (): Promise<void> => {
+      if (terminalObserved || polling) return;
+      polling = true;
+      try {
+        const response: unknown = await browserApi.runtime.sendMessage({
+          type: 'DOWNLOAD_BLOB_STATUS_REQUEST',
+          payload: { requestId, objectUrl, ...(signal?.aborted ? { cancelRequested: true } : {}) },
+        });
+        if (
+          response &&
+          typeof response === 'object' &&
+          'success' in response &&
+          response.success === true &&
+          'data' in response &&
+          response.data &&
+          typeof response.data === 'object'
+        ) {
+          const data = response.data as Partial<DownloadBlobStatusResponse>;
+          if (data.requestId === requestId && data.status === 'terminal') scheduleRelease();
+        }
+      } catch {
+        // An unavailable worker or failed lookup cannot prove native completion.
+      } finally {
+        polling = false;
+        if (!terminalObserved) {
+          pollTimer = setTimeout(() => void inspectStatus(), pollDelayMs);
+          pollDelayMs = Math.min(pollDelayMs * 2, 5_000);
+        }
+      }
+    };
+    const startInspection = (): void => {
+      if (!terminalObserved && pollTimer === undefined && !polling) void inspectStatus();
+    };
+    const onAbort = (): void => {
+      sendCancelRequest(requestId);
+      startInspection();
+      if (!requestSettled) rejectAbort?.(getUserCancelledAbortErrorFromSignal(signal));
+    };
+    const abortPromise = signal
+      ? new Promise<never>((_, reject) => {
+          rejectAbort = reject;
+        })
+      : null;
+    signal?.addEventListener('abort', onAbort, { once: true });
+    const request: DownloadBlobUrlRequestMessage = {
+      type: 'DOWNLOAD_BLOB_URL_REQUEST',
+      payload: { objectUrl, filename, mimeType: blob.type, requestId },
+    };
+
+    let dispatched: Promise<unknown>;
+    try {
+      dispatched = browserApi.runtime.sendMessage(request);
+    } catch (error: unknown) {
+      // A synchronous throw happens before the request is handed to Chrome.
+      scheduleRelease();
+      throw error;
+    }
+    const responsePromise = dispatched.then(
+      (response: unknown) => {
+        requestSettled = true;
+        if (
+          response &&
+          typeof response === 'object' &&
+          'success' in response &&
+          response.success === true
+        ) {
+          scheduleRelease();
+        } else if (
+          response &&
+          typeof response === 'object' &&
+          'data' in response &&
+          response.data &&
+          typeof response.data === 'object' &&
+          'requestId' in response.data &&
+          response.data.requestId === requestId &&
+          'terminal' in response.data &&
+          response.data.terminal === true
+        ) {
+          scheduleRelease();
+        } else {
+          startInspection();
+        }
+        return response as ExtensionMessageResponse;
+      },
+      (error: unknown) => {
+        requestSettled = true;
+        startInspection();
+        throw error;
+      }
+    );
+    const response = await (abortPromise
+      ? Promise.race([responsePromise, abortPromise])
+      : responsePromise);
+    const error = unwrapResponse(response);
+    if (error) throw new Error(error);
   }
 
   private async sendDownloadRequest(message: DownloadMessage, signal?: AbortSignal): Promise<void> {

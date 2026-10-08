@@ -89,6 +89,15 @@ describe('createDownloadHandler bulk resource limits', () => {
     expect(state.setDownloadStatus).toHaveBeenLastCalledWith('handedOff');
   });
 
+  it('shows localized recovery guidance for an over-budget single download', async () => {
+    state.downloadSingle.mockResolvedValue({ success: false, code: 'RESOURCE_LIMIT', error: 'Response requires 100 bytes (limit 10)' });
+    await createDownloadHandler().handleDownload('current');
+    expect(state.setDownloadStatus).toHaveBeenLastCalledWith('error');
+    expect(state.setError).toHaveBeenLastCalledWith('msg.dl.resourceLimit');
+    expect(state.notifySafely).toHaveBeenCalledWith(state.notify, 'msg.dl.one.err.t', 'msg.dl.resourceLimit');
+    expect(state.translate).not.toHaveBeenCalledWith('msg.dl.one.err.b', expect.anything());
+  });
+
   it('passes only opened media items to the bulk ZIP boundary in their displayed order', async () => {
     state.downloadBulk.mockResolvedValue({
       success: true,
@@ -124,11 +133,11 @@ describe('createDownloadHandler bulk resource limits', () => {
       'working',
       'error',
     ]);
-    expect(state.setError).toHaveBeenLastCalledWith('msg.dl.zipTooLarge');
+    expect(state.setError).toHaveBeenLastCalledWith('msg.dl.resourceLimit');
     expect(state.notifySafely).toHaveBeenCalledWith(
       state.notify,
       'msg.dl.one.err.t',
-      'msg.dl.zipTooLarge'
+      'msg.dl.resourceLimit'
     );
   });
 

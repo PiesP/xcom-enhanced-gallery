@@ -27,6 +27,10 @@
 
 import { GM_DOWNLOAD_TIMEOUT_MS, SINGLE_DOWNLOAD_MAX_RESPONSE_BYTES } from '@constants/performance';
 import { HttpResponseSizeLimitError } from '@shared/error/http-response-size-limit-error';
+import {
+  downloadLiveByteBudget,
+  reserveBinaryResponse,
+} from '@shared/services/download/live-byte-budget';
 import type { CookieAPI } from '@shared/types/core/cookie.types';
 import type {
   GMDownloadDetails,
@@ -53,7 +57,12 @@ import { isValidMediaUrl } from '@shared/utils/url/validator';
 
 export interface UserscriptAPI {
   readonly download: (url: string, filename: string, signal?: AbortSignal) => Promise<void>;
-  readonly downloadBlob: (blob: Blob, filename: string, signal?: AbortSignal) => Promise<void>;
+  readonly downloadBlob: (
+    blob: Blob,
+    filename: string,
+    signal?: AbortSignal,
+    onObjectUrlReleased?: () => void
+  ) => Promise<void>;
   readonly setValue: (key: string, value: unknown) => Promise<void>;
   readonly getValue: <T>(key: string, defaultValue?: T) => Promise<T | undefined>;
   readonly getValueSync: <T>(key: string, defaultValue?: T) => T | undefined;
@@ -113,24 +122,89 @@ function abortReason(signal: AbortSignal): Error {
  * document.body capture-phase listeners (gallery close-on-outside-click).
  * Falls back to document.body when gallery is not open.
  */
-function anchorDownload(url: string, filename: string): Promise<void> {
+function anchorDownload(
+  url: string,
+  filename: string,
+  onBeforeDispatchFailure?: () => void
+): Promise<void> {
   return new Promise<void>((resolve, reject) => {
+    let a: HTMLAnchorElement;
     try {
-      const a = document.createElement('a');
+      a = document.createElement('a');
       a.href = url;
       a.download = filename;
       a.style.display = 'none';
       const container = document.querySelector('.xeg-gallery-root') ?? document.body;
       container.appendChild(a);
+    } catch (error) {
+      onBeforeDispatchFailure?.();
+      reject(error);
+      return;
+    }
+    try {
       a.click();
       queueMicrotask(() => {
         a.remove();
         resolve();
       });
     } catch (error) {
+      a.remove();
+      // A click can throw after dispatch. Its Blob URL remains live until pagehide.
       reject(error);
     }
   });
+}
+
+const retainedPageResources = new Set<() => void>();
+let pageHideListening = false;
+
+function onPageHide(event: PageTransitionEvent): void {
+  if (event.persisted) return;
+  for (const release of [...retainedPageResources]) {
+    try {
+      release();
+    } catch {
+      // Continue releasing unrelated URLs even if one callback fails.
+    }
+  }
+}
+
+function retainPageResource(onReleased: () => void): {
+  release: () => void;
+  detach: () => void;
+} {
+  let registered = true;
+  const detach = (): void => {
+    if (!registered) return;
+    registered = false;
+    retainedPageResources.delete(release);
+    if (retainedPageResources.size === 0 && pageHideListening) {
+      window.removeEventListener('pagehide', onPageHide);
+      pageHideListening = false;
+    }
+  };
+  const release = (): void => {
+    if (!registered) return;
+    detach();
+    onReleased();
+  };
+  if (!pageHideListening) {
+    window.addEventListener('pagehide', onPageHide);
+    pageHideListening = true;
+  }
+  retainedPageResources.add(release);
+  return { release, detach };
+}
+
+/** The anchor microtask cannot establish when the browser has finished reading a Blob URL. */
+function retainBlobUrl(url: string, onReleased?: () => void): () => void {
+  return retainPageResource(() => {
+    try {
+      URL.revokeObjectURL(url);
+    } finally {
+      onReleased?.();
+    }
+  }).release;
 }
 
 /**
@@ -144,70 +218,116 @@ async function downloadViaBlob(
   signal?: AbortSignal
 ): Promise<void> {
   if (signal?.aborted) throw abortReason(signal);
+  const { maxBytes, lease } = reserveBinaryResponse(
+    downloadLiveByteBudget,
+    SINGLE_DOWNLOAD_MAX_RESPONSE_BYTES
+  );
+  let pageLease: ReturnType<typeof retainPageResource>;
+  try {
+    pageLease = retainPageResource(() => lease.release());
+  } catch (error) {
+    lease.release();
+    throw error;
+  }
 
   return new Promise<void>((resolve, reject) => {
-    let objectUrl: string | null = null;
     let control: GMXMLHttpRequestControl | null = null;
     let abortHandler: (() => void) | null = null;
     let abortAfterStart = false;
     let settled = false;
+    let transportTerminated = false;
+    let transferred = false;
 
     const cleanup = (): void => {
       if (signal && abortHandler) signal.removeEventListener('abort', abortHandler);
       abortHandler = null;
     };
-    const revokeObjectUrl = (): void => {
-      if (!objectUrl) return;
-      URL.revokeObjectURL(objectUrl);
-      objectUrl = null;
+    const releaseLease = (): void => {
+      pageLease.release();
     };
     const fail = (error: unknown): void => {
       if (settled) return;
       settled = true;
       cleanup();
-      revokeObjectUrl();
       reject(error);
+    };
+    const terminate = (error: unknown): void => {
+      if (transportTerminated) return;
+      transportTerminated = true;
+      if (!transferred) releaseLease();
+      fail(error);
     };
     const failForResourceLimit = (receivedBytes: number): void => {
       if (settled) return;
-      fail(new HttpResponseSizeLimitError(SINGLE_DOWNLOAD_MAX_RESPONSE_BYTES, receivedBytes));
+      fail(new HttpResponseSizeLimitError(maxBytes, receivedBytes));
       if (control) control.abort();
       else abortAfterStart = true;
     };
     const handleLoad: NonNullable<GMXMLHttpRequestDetails['onload']> = (response) => {
-      if (settled) return;
+      if (transportTerminated) return;
+      transportTerminated = true;
+      if (settled) {
+        releaseLease();
+        return;
+      }
       if (response.status < 200 || response.status >= 300) {
         fail(new Error(`HTTP ${response.status}: ${response.statusText || 'Request failed'}`));
+        releaseLease();
         return;
       }
       if (!(response.response instanceof Blob)) {
         fail(new Error('GM_xmlhttpRequest returned an invalid Blob response'));
+        releaseLease();
         return;
       }
-      if (response.response.size > SINGLE_DOWNLOAD_MAX_RESPONSE_BYTES) {
-        failForResourceLimit(response.response.size);
+      if (response.response.size > maxBytes) {
+        fail(new HttpResponseSizeLimitError(maxBytes, response.response.size));
+        releaseLease();
+        control?.abort();
         return;
       }
 
+      let objectUrl: string;
       try {
+        lease.shrink(response.response.size);
         objectUrl = URL.createObjectURL(response.response);
       } catch (error) {
+        fail(error);
+        releaseLease();
+        return;
+      }
+
+      let releaseUrl: () => void;
+      try {
+        releaseUrl = retainBlobUrl(objectUrl, () => lease.release());
+      } catch (error) {
+        try {
+          URL.revokeObjectURL(objectUrl);
+        } catch {
+          // Preserve the registration failure; the URL was never dispatched.
+        } finally {
+          releaseLease();
+        }
         fail(error);
         return;
       }
 
       // The network request is complete and the synthetic anchor click cannot
       // be cancelled once it starts. Stop observing cancellation before it.
+      pageLease.detach();
+      transferred = true;
       settled = true;
       cleanup();
-      void anchorDownload(objectUrl, filename).then(resolve, reject).finally(revokeObjectUrl);
+      void anchorDownload(objectUrl, filename, releaseUrl).then(resolve, reject);
     };
 
     abortHandler = () => {
+      fail(signal ? abortReason(signal) : new DOMException('Aborted', 'AbortError'));
       try {
-        control?.abort();
-      } finally {
-        fail(signal ? abortReason(signal) : new DOMException('Aborted', 'AbortError'));
+        if (control) control.abort();
+        else abortAfterStart = true;
+      } catch {
+        // A failed abort has no terminal evidence; retain the lease until a callback.
       }
     };
     signal?.addEventListener('abort', abortHandler, { once: true });
@@ -219,14 +339,14 @@ async function downloadViaBlob(
         responseType: 'blob',
         timeout: GM_DOWNLOAD_TIMEOUT_MS,
         onload: handleLoad,
-        onerror: () => fail(new Error('GM_xmlhttpRequest failed')),
-        ontimeout: () => fail(new Error('GM_xmlhttpRequest timed out')),
-        onabort: () => fail(new DOMException('Aborted', 'AbortError')),
+        onerror: () => terminate(new Error('GM_xmlhttpRequest failed')),
+        ontimeout: () => terminate(new Error('GM_xmlhttpRequest timed out')),
+        onabort: () => terminate(new DOMException('Aborted', 'AbortError')),
         onprogress: (response) => {
           if (
             settled ||
-            (response.loaded <= SINGLE_DOWNLOAD_MAX_RESPONSE_BYTES &&
-              (!response.lengthComputable || response.total <= SINGLE_DOWNLOAD_MAX_RESPONSE_BYTES))
+            (response.loaded <= maxBytes &&
+              (!response.lengthComputable || response.total <= maxBytes))
           ) {
             return;
           }
@@ -237,6 +357,8 @@ async function downloadViaBlob(
       else if (signal?.aborted && !settled) abortHandler();
     } catch (error) {
       fail(error);
+      // A synchronous throw may follow dispatch. Keep an unconfirmed response
+      // reserved until a terminal callback or page teardown.
     }
   });
 }
@@ -377,19 +499,41 @@ export function getUserscript(): UserscriptAPI {
       return downloadViaBlob(url, filename, gmXmlHttpRequest, signal);
     },
 
-    async downloadBlob(blob: Blob, filename: string, signal?: AbortSignal): Promise<void> {
+    async downloadBlob(
+      blob: Blob,
+      filename: string,
+      signal?: AbortSignal,
+      onObjectUrlReleased?: () => void
+    ): Promise<void> {
       // Anchor downloads cannot be cancelled after the synthetic click. Honor
       // cancellation before creating the object URL and starting the save.
-      if (signal?.aborted) throw abortReason(signal);
-      const url = URL.createObjectURL(blob);
-      try {
-        // Use anchor download instead of GM.download because GM.download
-        // extracts the blob URL's UUID as the filename instead of honoring
-        // the filename parameter (Tampermonkey/Violentmonkey behavior).
-        await anchorDownload(url, filename);
-      } finally {
-        URL.revokeObjectURL(url);
+      if (signal?.aborted) {
+        onObjectUrlReleased?.();
+        throw abortReason(signal);
       }
+      let url: string;
+      try {
+        url = URL.createObjectURL(blob);
+      } catch (error) {
+        onObjectUrlReleased?.();
+        throw error;
+      }
+      let releaseUrl: () => void;
+      try {
+        releaseUrl = retainBlobUrl(url, onObjectUrlReleased);
+      } catch (error) {
+        try {
+          URL.revokeObjectURL(url);
+        } catch {
+          // Preserve the registration failure; the URL was never dispatched.
+        } finally {
+          onObjectUrlReleased?.();
+        }
+        throw error;
+      }
+      // GM.download ignores the requested filename for blob URLs. A successful
+      // anchor click does not prove the browser has finished reading this URL.
+      await anchorDownload(url, filename, releaseUrl);
     },
 
     async setValue(key: string, value: unknown): Promise<void> {

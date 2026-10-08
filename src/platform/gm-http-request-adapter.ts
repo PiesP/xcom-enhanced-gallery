@@ -24,6 +24,29 @@ function validateUrl(url: string): void {
   }
 }
 
+const pendingAmbiguousSettlements = new Set<() => void>();
+
+function onPageHide(event: PageTransitionEvent): void {
+  if (event.persisted) return;
+  for (const settle of [...pendingAmbiguousSettlements]) {
+    try {
+      settle();
+    } catch {
+      // Continue settling other requests as this page realm ends.
+    }
+  }
+}
+
+function retainAmbiguousSettlement(settle: () => void): void {
+  if (pendingAmbiguousSettlements.size === 0) window.addEventListener('pagehide', onPageHide);
+  pendingAmbiguousSettlements.add(settle);
+}
+
+function forgetAmbiguousSettlement(settle: () => void): void {
+  pendingAmbiguousSettlements.delete(settle);
+  if (pendingAmbiguousSettlements.size === 0) window.removeEventListener('pagehide', onPageHide);
+}
+
 export class GMHttpRequestAdapter implements HttpRequestAdapter {
   request(details: HttpRequestDetails): HttpRequestControl {
     // SSRF prevention: validate URL before making the request
@@ -41,6 +64,13 @@ export class GMHttpRequestAdapter implements HttpRequestAdapter {
     let gmControl: { abort: () => void } | null = null;
     let resourceLimitExceeded = false;
     let abortAfterStart = false;
+    let transportSettled = false;
+    const reportSettled = (): void => {
+      if (transportSettled) return;
+      transportSettled = true;
+      if (details.onsettled) forgetAmbiguousSettlement(reportSettled);
+      details.onsettled?.();
+    };
 
     const reportResourceLimit = (receivedBytes?: number): void => {
       if (maxResponseBytes === undefined || resourceLimitExceeded) return;
@@ -87,34 +117,50 @@ export class GMHttpRequestAdapter implements HttpRequestAdapter {
     if (details.timeout !== undefined) {
       gmDetails.timeout = details.timeout;
     }
-    if (details.onload !== undefined || maxResponseBytes !== undefined) {
+    if (details.onload !== undefined || maxResponseBytes !== undefined || details.onsettled) {
       gmDetails.onload = (response) => {
-        if (resourceLimitExceeded) return;
-        const responseSize = getResponseSize(response.response);
-        if (
-          maxResponseBytes !== undefined &&
-          responseSize !== undefined &&
-          responseSize > maxResponseBytes
-        ) {
-          reportResourceLimit(responseSize);
-          return;
+        try {
+          if (resourceLimitExceeded) return;
+          const responseSize = getResponseSize(response.response);
+          if (
+            maxResponseBytes !== undefined &&
+            responseSize !== undefined &&
+            responseSize > maxResponseBytes
+          ) {
+            reportResourceLimit(responseSize);
+            return;
+          }
+          details.onload?.(response);
+        } finally {
+          reportSettled();
         }
-        details.onload?.(response);
       };
     }
-    if (details.onerror !== undefined || maxResponseBytes !== undefined) {
+    if (details.onerror !== undefined || maxResponseBytes !== undefined || details.onsettled) {
       gmDetails.onerror = (response) => {
-        if (!resourceLimitExceeded) details.onerror?.(response);
+        try {
+          if (!resourceLimitExceeded) details.onerror?.(response);
+        } finally {
+          reportSettled();
+        }
       };
     }
-    if (details.ontimeout !== undefined) {
+    if (details.ontimeout !== undefined || details.onsettled) {
       gmDetails.ontimeout = (response) => {
-        if (!resourceLimitExceeded) details.ontimeout?.(response);
+        try {
+          if (!resourceLimitExceeded) details.ontimeout?.(response);
+        } finally {
+          reportSettled();
+        }
       };
     }
-    if (details.onabort !== undefined) {
+    if (details.onabort !== undefined || details.onsettled) {
       gmDetails.onabort = (response) => {
-        if (!resourceLimitExceeded) details.onabort?.(response);
+        try {
+          if (!resourceLimitExceeded) details.onabort?.(response);
+        } finally {
+          reportSettled();
+        }
       };
     }
     if (details.onprogress !== undefined || maxResponseBytes !== undefined) {
@@ -136,17 +182,30 @@ export class GMHttpRequestAdapter implements HttpRequestAdapter {
       gmControl = gm.xmlHttpRequest(gmDetails);
       if (abortAfterStart) gmControl.abort();
     } catch (_error) {
-      if (resourceLimitExceeded) return { abort: () => {} };
+      // A GM implementation may dispatch and then throw without returning a
+      // control object. Keep a bounded response owner until a real callback or
+      // this page realm ends; caller failure alone is not terminal evidence.
+      if (details.onsettled && !transportSettled) {
+        retainAmbiguousSettlement(reportSettled);
+      }
+      if (transportSettled) return { abort: () => {} };
+      if (resourceLimitExceeded) {
+        return { abort: () => {} };
+      }
       // L2: GM_xmlhttpRequest can throw synchronously outside of validateUrl
-      details.onerror?.({
-        finalUrl: details.url,
-        readyState: 0,
-        status: 0,
-        statusText: 'NETWORK_ERROR',
-        responseHeaders: '',
-        response: null,
-        responseText: '',
-      });
+      try {
+        details.onerror?.({
+          finalUrl: details.url,
+          readyState: 0,
+          status: 0,
+          statusText: 'NETWORK_ERROR',
+          responseHeaders: '',
+          response: null,
+          responseText: '',
+        });
+      } catch {
+        // A caller callback failure cannot prove an opaque GM request ended.
+      }
       return { abort: () => {} };
     }
 

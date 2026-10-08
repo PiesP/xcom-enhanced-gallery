@@ -9,6 +9,12 @@ import { DEFAULT_BACKOFF_BASE_MS, DEFAULT_REQUEST_TIMEOUT_MS } from '@constants/
 import { withRetry } from '@shared/async/retry';
 import { getUserCancelledAbortErrorFromSignal, isAbortError } from '@shared/error/cancellation';
 import { isHttpResponseSizeLimitError } from '@shared/error/http-response-size-limit-error';
+import {
+  DownloadResourceLimitError,
+  downloadLiveByteBudget,
+  type LiveByteBudget,
+  type OwnedBinary,
+} from '@shared/services/download/live-byte-budget';
 import { getHttpRequestService } from '@shared/services/http-request-service';
 
 class HttpStatusError extends Error {
@@ -32,74 +38,48 @@ const getStatusFromError = (error: unknown): number | null => {
   return typeof statusValue === 'number' ? statusValue : null;
 };
 
-/**
- * Fetches a URL as an ArrayBuffer with configurable retries and exponential backoff.
- *
- * @param url - The URL to fetch
- * @param retries - Maximum number of retry attempts
- * @param signal - Optional AbortSignal for cancellation
- * @param backoffBaseMs - Base delay for exponential backoff (default: 200ms)
- * @param maxResponseBytes - Optional hard limit applied before whole-body materialization
- * @returns Response body as Uint8Array
- * @throws On non-retryable HTTP errors or abort signal rejection
- */
-export async function fetchArrayBufferWithRetry(
+/** Fetch a bounded binary response while retaining its live storage owner. */
+export async function fetchOwnedArrayBufferWithRetry(
   url: string,
   retries: number,
-  signal?: AbortSignal,
-  backoffBaseMs: number = DEFAULT_BACKOFF_BASE_MS,
-  maxResponseBytes?: number
-): Promise<Uint8Array> {
-  if (signal?.aborted) {
-    throw getUserCancelledAbortErrorFromSignal(signal);
-  }
-
-  const httpService = getHttpRequestService();
-  const maxAttempts = Math.max(1, retries + 1);
+  signal: AbortSignal | undefined,
+  backoffBaseMs: number | undefined,
+  maxResponseBytes: number,
+  budget: LiveByteBudget = downloadLiveByteBudget
+): Promise<OwnedBinary<Uint8Array>> {
+  if (signal?.aborted) throw getUserCancelledAbortErrorFromSignal(signal);
 
   const result = await withRetry(
     async () => {
-      if (signal?.aborted) {
-        throw getUserCancelledAbortErrorFromSignal(signal);
-      }
-
-      const response = await httpService.get<ArrayBuffer>(url, {
-        responseType: 'arraybuffer' as const,
+      if (signal?.aborted) throw getUserCancelledAbortErrorFromSignal(signal);
+      const response = await getHttpRequestService().getOwnedBinary<ArrayBuffer>(url, {
+        responseType: 'arraybuffer',
         timeout: DEFAULT_REQUEST_TIMEOUT_MS,
-        ...(maxResponseBytes !== undefined ? { maxResponseBytes } : {}),
+        maxResponseBytes,
+        budget,
         ...(signal ? { signal } : {}),
       });
-
       if (!response.ok) {
+        response.lease.release();
         throw new HttpStatusError(response.status);
       }
-
-      return new Uint8Array(response.data);
+      return { value: new Uint8Array(response.data), lease: response.lease };
     },
     {
-      maxAttempts,
-      baseDelayMs: backoffBaseMs,
+      maxAttempts: Math.max(1, retries + 1),
+      baseDelayMs: backoffBaseMs ?? DEFAULT_BACKOFF_BASE_MS,
       ...(signal ? { signal } : {}),
       shouldRetry: (error) => {
         if (isAbortError(error)) return false;
         if (isHttpResponseSizeLimitError(error)) return false;
+        if (error instanceof DownloadResourceLimitError) return false;
         const status = getStatusFromError(error);
-        if (status === null) return true;
-        return isRetryableStatus(status);
+        return status === null || isRetryableStatus(status);
       },
     }
   );
 
-  // If successful, return data
-  if (result.success) {
-    return result.data;
-  }
-
-  // If the caller's signal is aborted, always normalize to user-facing AbortError
-  if (signal?.aborted) {
-    throw getUserCancelledAbortErrorFromSignal(signal);
-  }
-
-  // Otherwise, throw the error from the last failed attempt
+  if (result.success) return result.data;
+  if (signal?.aborted) throw getUserCancelledAbortErrorFromSignal(signal);
   throw result.error;
 }

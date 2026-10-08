@@ -71,10 +71,12 @@ export interface ChromeDownloadsModule {
 
 export interface ChromeDownloadQuery {
   readonly id?: number;
+  readonly url?: string;
 }
 
 export interface ChromeDownloadItem {
   readonly id: number;
+  readonly url?: string;
   readonly state?: string;
   readonly error?: string;
 }

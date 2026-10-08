@@ -11,11 +11,18 @@ import type { DownloadAdapter } from '@platform/types';
 import { generateMediaFilename } from '@shared/core/filename/filename-utils';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { USER_CANCELLED_MESSAGE } from '@shared/error/cancellation';
+import { isHttpResponseSizeLimitError } from '@shared/error/http-response-size-limit-error';
 import { readResponseBody } from '@shared/network/bounded-response';
 import type { DownloadOptions, SingleDownloadResult } from '@shared/services/download/types';
 import { reportProgress } from '@shared/services/download/types';
-import type { MediaInfo } from '@shared/types/media.types';
+import { ErrorCode, type MediaInfo } from '@shared/types/media.types';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
+import {
+  DownloadResourceLimitError,
+  downloadLiveByteBudget,
+  type LiveByteLease,
+  reserveBinaryResponse,
+} from './live-byte-budget';
 
 const createAbortResult = (): SingleDownloadResult => ({
   success: false,
@@ -25,6 +32,9 @@ const createAbortResult = (): SingleDownloadResult => ({
 const createErrorDownloadResult = (error: unknown): SingleDownloadResult => ({
   success: false,
   error: normalizeErrorMessage(error),
+  ...(isHttpResponseSizeLimitError(error) || error instanceof DownloadResourceLimitError
+    ? { code: ErrorCode.RESOURCE_LIMIT }
+    : {}),
 });
 
 /**
@@ -72,7 +82,7 @@ export async function downloadSingleFile(
   const filename = generateMediaFilename(media, { nowMs: Date.now() });
 
   if (options.blob) {
-    return downloadBlobWithAdapter(options.blob, filename, abortSignal);
+    return downloadBlobWithAdapter(options.blob, filename, abortSignal, options);
   }
 
   if (!isValidMediaUrl(media.url)) {
@@ -162,7 +172,13 @@ async function downloadWithFetchFallback(
     responseSizeController.signal,
   ]);
 
+  let responseLease: LiveByteLease | undefined;
   try {
+    const reserved = reserveBinaryResponse(
+      options.liveBudget ?? downloadLiveByteBudget,
+      SINGLE_DOWNLOAD_MAX_RESPONSE_BYTES
+    );
+    responseLease = reserved.lease;
     // Fetch in content script context (has host_permissions to bypass CORS).
     // Service Workers cannot bypass CORS for twimg.com without specific headers.
     // Apply a timeout race via AbortSignal.timeout so the fetch doesn't hang
@@ -174,20 +190,19 @@ async function downloadWithFetchFallback(
         signal: fetchSignalScope.signal,
       });
       if (!response.ok) {
+        await response.body?.cancel();
         return createErrorDownloadResult(
           new Error(`HTTP ${response.status}: ${response.statusText}`)
         );
       }
-      blob = (await readResponseBody(
-        response,
-        'blob',
-        SINGLE_DOWNLOAD_MAX_RESPONSE_BYTES,
-        (reason) => responseSizeController.abort(reason)
+      blob = (await readResponseBody(response, 'blob', reserved.maxBytes, (reason) =>
+        responseSizeController.abort(reason)
       )) as Blob;
     } finally {
       fetchSignalScope.cleanup();
     }
 
+    responseLease.shrink(blob.size);
     reportProgress(options.onProgress, {
       phase: 'downloading',
       current: 50,
@@ -195,17 +210,22 @@ async function downloadWithFetchFallback(
       percentage: 50,
       filename,
     });
+    // The caller may settle before the browser stops using the object URL.
+    // The response owner is local; this distinct owner belongs to the adapter.
+    const downloadOwner = responseLease.fork();
 
     // Preserve the existing no-signal behavior: adapter failures reach the
     // outer catch and attempt the direct URL fallback. With a caller signal,
     // failures are returned directly while cancellation wins the race.
-    const downloadBlobPromise = adapter.downloadBlob(blob, filename, abortSignal).then(
-      () => ({ success: true, filename }) satisfies SingleDownloadResult,
-      (error: unknown) => {
-        if (!abortSignal) throw error;
-        return createErrorDownloadResult(error);
-      }
-    );
+    const downloadBlobPromise = adapter
+      .downloadBlob(blob, filename, abortSignal, () => downloadOwner.release())
+      .then(
+        () => ({ success: true, filename }) satisfies SingleDownloadResult,
+        (error: unknown) => {
+          if (!abortSignal) throw error;
+          return createErrorDownloadResult(error);
+        }
+      );
     const result = abortSignal
       ? await raceWithAbort(downloadBlobPromise, abortSignal, createAbortResult)
       : await downloadBlobPromise;
@@ -227,6 +247,14 @@ async function downloadWithFetchFallback(
       return createAbortResult();
     }
 
+    // Fetch/body work has settled here. A separate adapter owner, if created,
+    // keeps any still-live native URL charged while a direct fallback runs.
+    responseLease?.release();
+    responseLease = undefined;
+
+    if (isHttpResponseSizeLimitError(error) || error instanceof DownloadResourceLimitError) {
+      return createErrorDownloadResult(error);
+    }
     const fetchError = timeoutSignal.aborted
       ? new Error(`Download fetch timed out after ${DEFAULT_REQUEST_TIMEOUT_MS}ms`)
       : error;
@@ -254,23 +282,30 @@ async function downloadWithFetchFallback(
       }
     }
     return createErrorDownloadResult(fetchError);
+  } finally {
+    responseLease?.release();
+    fetchSignalScope.cleanup();
   }
 }
 
 async function downloadBlobWithAdapter(
   blob: Blob,
   filename: string,
-  abortSignal: AbortSignal | undefined
+  abortSignal: AbortSignal | undefined,
+  options: DownloadOptions
 ): Promise<SingleDownloadResult> {
   const adapter = getDownloadAdapter();
 
   if (abortSignal?.aborted) return createAbortResult();
 
   try {
-    const download = adapter.downloadBlob(blob, filename, abortSignal).then(
-      () => ({ success: true, filename }) satisfies SingleDownloadResult,
-      (error: unknown) => createErrorDownloadResult(error)
-    );
+    const owner = (options.liveBudget ?? downloadLiveByteBudget).reserve(blob.size);
+    const download = adapter
+      .downloadBlob(blob, filename, abortSignal, () => owner.release())
+      .then(
+        () => ({ success: true, filename }) satisfies SingleDownloadResult,
+        (error: unknown) => createErrorDownloadResult(error)
+      );
     if (!abortSignal) return await download;
     return await raceWithAbort(download, abortSignal, createAbortResult);
   } catch (error) {

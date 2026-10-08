@@ -165,6 +165,12 @@ export class StreamingZipWriter {
   private centralDirectorySize = 0;
   private reservedArchiveBytes = 0;
 
+  /** Call only after all queued entry writes have settled. */
+  dispose(): void {
+    this.chunks.length = 0;
+    this.entries.length = 0;
+  }
+
   constructor(private readonly maxArchiveBytes = Number.MAX_SAFE_INTEGER) {}
 
   /**
@@ -337,9 +343,8 @@ export class StreamingZipWriter {
    * Finalize ZIP file (add Central Directory).
    *
    * Returns an array of parts suitable for `new Blob(parts, {type:'application/zip'})`.
-   * Unlike the previous implementation, this does NOT allocate a monolithic
-   * Uint8Array — the Blob constructor natively concatenates the parts without
-   * duplicating data in JS heap, halving peak memory (~4× → ~2× archive size).
+   * Avoids a monolithic Uint8Array. Callers must still reserve storage for the
+   * Blob snapshot while these entry and directory buffers remain reachable.
    *
    * @returns BlobPart[] — file data chunks followed by central directory + EOCD
    * @throws Error if archive exceeds Zip32 limits
@@ -436,7 +441,7 @@ export class StreamingZipWriter {
     eocd.set(writeUint16LE(0), epos); // Comment length
 
     // Return parts: file data chunks + central directory + EOCD.
-    // Blob constructor natively concatenates without duplicating in JS heap.
+    // The caller accounts for both these parts and the Blob snapshot.
     // Cast required: Uint8Array<ArrayBufferLike> is not assignable to BlobPart
     // because SharedArrayBuffer lacks resizable/resize/transfer/etc.
     return [...this.chunks, centralDir, eocd] as unknown as BlobPart[];

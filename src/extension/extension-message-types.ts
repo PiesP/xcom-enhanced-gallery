@@ -58,6 +58,16 @@ export interface DownloadCancelRequestMessage {
   };
 }
 
+export interface DownloadBlobStatusRequestMessage {
+  readonly type: 'DOWNLOAD_BLOB_STATUS_REQUEST';
+  readonly payload: {
+    readonly requestId: string;
+    readonly objectUrl: string;
+    /** Reasserts a user abort if a worker restart lost a pre-ID cancellation marker. */
+    readonly cancelRequested?: boolean;
+  };
+}
+
 export interface ShowNotificationMessage {
   readonly type: 'SHOW_NOTIFICATION';
   readonly payload: {
@@ -73,6 +83,7 @@ export interface ShowNotificationMessage {
 export type IncomingMessage =
   | DownloadRequestMessage
   | DownloadBlobUrlRequestMessage
+  | DownloadBlobStatusRequestMessage
   | DownloadCancelRequestMessage
   | ShowNotificationMessage;
 
@@ -93,4 +104,9 @@ export interface ExtensionMessageResponse {
 export interface DownloadLifecycleResponse {
   readonly requestId?: string;
   readonly terminal: boolean;
+}
+
+export interface DownloadBlobStatusResponse {
+  readonly requestId: string;
+  readonly status: 'terminal' | 'active' | 'unknown';
 }
