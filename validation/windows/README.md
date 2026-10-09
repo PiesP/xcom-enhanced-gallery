@@ -24,6 +24,10 @@ for another, and none is a required CI lane.
    not automated. An independent manager permission probe records whether the
    permission was actually granted or remains pending. Native completion and
    saved bytes require separate evidence.
+   The fresh manager profile sets General > LogLevel to Info (60) through its
+   options UI, and the manager-console receipt keeps only bounded known branch counts.
+   That setting is removed with the owned profile after browser closure; failed
+   cleanup preserves the profile and receipt for review.
    The production byte budget is unchanged.
 4. **Optional public-page observation:** observes up to three unchanged public
    X/Twitter status URLs after the installed deterministic fixture. It remains

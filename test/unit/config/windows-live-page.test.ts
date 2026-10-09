@@ -185,6 +185,8 @@ const userscriptInstall = (await import(
   probeManagerDownloadsPermission(page: { url(): string;
     evaluate(callback: (id: string) => Promise<boolean>, id: string): Promise<boolean> },
   managerId: string): Promise<boolean>;
+  configureManagerInfoLogging(page: unknown, managerId: string): Promise<{
+    original: string; requested: string; observed: string; scope: string }>;
   inspectFirstCurrentDownload(page: { url(): string;
     evaluate(callback: (url: string) => unknown, url: string): Promise<unknown> }): Promise<unknown>;
   classifyManagerDownloadConsole(value: unknown): string | null;
@@ -654,6 +656,10 @@ describe('Windows X live page validation', () => {
               <span class="optiondesc">설정 모드: </span>
               <select><option value="50">초보자</option></select>
             </div></td></tr>
+            <tr class="settingstr" id="loglevel-setting"><td><div>
+              <span class="optiondesc">로그 수준: </span>
+              <select><option value="60">정보</option></select>
+            </div></td></tr>
           </tbody></table></div>
         </td></tr>
         <tr class="settingstr" id="downloads-outer"><td>
@@ -698,6 +704,7 @@ describe('Windows X live page validation', () => {
       .filter((row) => row.textContent?.includes('설정 모드:'))).toHaveLength(2);
     for (const [scope, label, expectedId] of [
       [document.body, '설정 모드', 'config-setting'],
+      [document.querySelector('.section.type_general'), '로그 수준', 'loglevel-setting'],
       [downloads, '다운로드 모드', 'download-mode-setting'],
       [downloads, '파일 확장자 화이트리스트', 'whitelist-setting'],
     ] as const) {
@@ -757,6 +764,80 @@ describe('Windows X live page validation', () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+
+  it('sets only the owned manager General LogLevel row to Info and verifies persistence', async () => {
+    const managerId = 'a'.repeat(32);
+    const optionsUrl = `chrome-extension://${managerId}/options.html`;
+    const labels: Record<string, string> = {
+      Settings: 'Settings', General: 'General', LogLevel: 'Log level', Info: 'Info',
+    };
+    let currentUrl = optionsUrl;
+    let selected = '0';
+    let saved = '0';
+    let persist = true;
+    let sectionCount = 1;
+    const infoOption = { count: async () => 1, innerText: async () => labels.Info };
+    const selectOption = vi.fn(async (option: { label: string }) => {
+      expect(option).toEqual({ label: labels.Info });
+      selected = '60';
+      if (persist) saved = '60';
+    });
+    const select = { count: async () => 1, inputValue: async () => selected,
+      locator: (query: string) => {
+        expect(query).toBe('option[value="60"]');
+        return infoOption;
+      }, selectOption };
+    const row = { waitFor: async () => undefined, count: async () => 1,
+      locator: (query: string) => {
+        expect(query).toBe('select');
+        return select;
+      } };
+    const general = { waitFor: async () => undefined, count: async () => sectionCount,
+      locator: (query: string) => {
+        expect(query).toBe('.section_head');
+        return { innerText: async () => labels.General };
+      }, getByText: (label: string, options: { exact: boolean }) => {
+        expect([label, options]).toEqual(['Log level:', { exact: true }]);
+        return { locator: (query: string) => {
+          expect(query).toMatch(/^xpath=ancestor::tr\[/u);
+          return row;
+        } };
+      } };
+    const page = { url: () => currentUrl,
+      evaluate: async (callback: (id: string) => unknown, id: string) => callback(id),
+      getByText: (label: string, options: { exact: boolean }) => {
+        expect([label, options]).toEqual([labels.Settings, { exact: true }]);
+        return { first: () => ({ click: async () => undefined }) };
+      },
+      locator: (query: string) => {
+        expect(query).toBe('div.section.type_general');
+        return general;
+      },
+      reload: async () => { selected = saved; } };
+    try {
+      vi.stubGlobal('location', { href: optionsUrl });
+      vi.stubGlobal('chrome', { i18n: { getMessage: (key: string) => labels[key] } });
+      await expect(userscriptInstall.configureManagerInfoLogging(page, managerId))
+        .resolves.toEqual({ original: '0', requested: '60', observed: '60',
+          scope: 'fresh-owned-profile' });
+      expect(selectOption).toHaveBeenCalledOnce();
+      currentUrl = 'chrome-extension://other/options.html';
+      await expect(userscriptInstall.configureManagerInfoLogging(page, managerId))
+        .rejects.toThrow('owned options page');
+      expect(selectOption).toHaveBeenCalledOnce();
+      currentUrl = optionsUrl;
+      sectionCount = 2;
+      await expect(userscriptInstall.configureManagerInfoLogging(page, managerId))
+        .rejects.toThrow('exactly one manager General section');
+      expect(selectOption).toHaveBeenCalledOnce();
+      sectionCount = 1;
+      selected = saved = '0';
+      persist = false;
+      await expect(userscriptInstall.configureManagerInfoLogging(page, managerId))
+        .rejects.toThrow('Info logging did not persist');
+      expect(selectOption).toHaveBeenCalledTimes(2);
+    } finally { vi.unstubAllGlobals(); }
   });
 
   it('bounds and redacts the owned fixture download error live region', async () => {
@@ -834,13 +915,15 @@ describe('Windows X live page validation', () => {
       worker.emit('console', { text: () =>
         'downs: download of secret.jpg (https://secret.example/?token=abc) failed NETWORK_FAILED' });
       worker.emit('console', { text: () => 'downs: download permission is missing' });
+      worker.emit('console', { text: () => 'downs: feature is not enabled' });
       worker.emit('console', { text: () => 'downs: permission to use downloads -> true' });
       worker.emit('console', { text: () => 'downs: permission to use downloads -> false' });
       const receipt = watcher.snapshotSince(before);
-      expect(receipt).toMatchObject({ status: 'known-branch-observed', matchedEvents: 4,
+      expect(receipt).toMatchObject({ status: 'known-branch-observed', matchedEvents: 6,
         availability: 'attached-before-click',
         branchCounts: { native_interrupted_branch: 1, not_permitted_branch: 1,
-          permission_true: 1, permission_false: 1 },
+          permission_true: 1, permission_false: 1, manager_request_branch: 1,
+          not_enabled_branch: 1 },
         workersAttachedBeforeClick: 1, workersAttachedAfterClick: 1,
         attachmentOverflow: false, messageOverflow: false, eventOverflow: false });
       expect(JSON.stringify(receipt)).not.toMatch(/secret|token|NETWORK_FAILED|https?:/u);
@@ -859,6 +942,8 @@ describe('Windows X live page validation', () => {
       expect(userscriptInstall.classifyManagerDownloadConsole('downs: this download mode is not supported'))
         .toBe('not_supported_branch');
       expect(userscriptInstall.classifyManagerDownloadConsole('downs: start private'))
+        .toBe('manager_request_branch');
+      expect(userscriptInstall.classifyManagerDownloadConsole('downs: unrelated private'))
         .toBeNull();
     } finally { watcher.dispose(); }
     expect(context.listenerCount('serviceworker')).toBe(0);
@@ -914,7 +999,7 @@ describe('Windows X live page validation', () => {
         availability: 'no-worker-observed', matchedEvents: 0 });
       for (const worker of workers) context.emit('serviceworker', worker);
       for (let i = 0; i < 260; i++)
-        workers[0]?.emit('console', { text: () => 'downs: start private' });
+        workers[0]?.emit('console', { text: () => 'downs: unrelated private' });
       expect(watcher.snapshotSince(before)).toMatchObject({ status: 'inconclusive',
         availability: 'attached-after-click', matchedEvents: 0,
         workersAttachedAfterClick: 8, attachmentOverflow: true, messageOverflow: true });

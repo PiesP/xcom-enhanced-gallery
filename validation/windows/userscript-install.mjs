@@ -569,6 +569,62 @@ export async function configureManagerBrowserDownloads(page, managerId, output,
     nativeDiagnostic };
 }
 
+/** Enable only the ordinary Info setting in this owned manager profile. */
+export async function configureManagerInfoLogging(page, managerId) {
+  assert(isOwnedManagerOptionsUrl(page.url(), managerId),
+    'Manager logging requires its owned options page');
+  const labels = await page.evaluate((expectedId) => {
+    const url = new URL(location.href);
+    if (url.protocol !== 'chrome-extension:' || url.hostname !== expectedId ||
+      url.pathname !== '/options.html' || url.search) {
+      throw new Error('Manager options page navigated away');
+    }
+    return Object.fromEntries(['Settings', 'General', 'LogLevel', 'Info']
+      .map((key) => [key, chrome.i18n.getMessage(key)]));
+  }, managerId);
+  for (const label of Object.values(labels)) {
+    assert(typeof label === 'string' && label.length > 0 && label.length <= 120 &&
+      label.trim() === label && !/[\r\n\u0000-\u001f]/u.test(label),
+    'Manager returned an invalid logging label');
+  }
+  assert(isOwnedManagerOptionsUrl(page.url(), managerId), 'Manager options page navigated away');
+  await page.getByText(labels.Settings, { exact: true }).first().click();
+  const general = page.locator('div.section.type_general');
+  await general.waitFor({ state: 'visible', timeout: 10_000 });
+  assert.equal(await general.count(), 1, 'Expected exactly one manager General section');
+  assert.equal((await general.locator('.section_head').innerText()).trim(), labels.General,
+    'Manager General heading differs');
+  const row = managerSettingRow(general, labels.LogLevel);
+  await row.waitFor({ state: 'visible', timeout: 10_000 });
+  assert.equal(await row.count(), 1, 'Expected exactly one manager LogLevel row');
+  const select = row.locator('select');
+  assert.equal(await select.count(), 1, 'Expected one manager LogLevel selector');
+  const original = await select.inputValue();
+  assert(['0', '30', '60', '80'].includes(original), 'Unknown manager LogLevel value');
+  const info = select.locator('option[value="60"]');
+  assert.equal(await info.count(), 1, 'Expected one manager Info logging option');
+  assert.equal((await info.innerText()).trim(), labels.Info, 'Manager Info label differs');
+  assert(isOwnedManagerOptionsUrl(page.url(), managerId), 'Manager options page navigated away');
+  await select.selectOption({ label: labels.Info });
+  assert(isOwnedManagerOptionsUrl(page.url(), managerId), 'Manager options page navigated away');
+  assert.equal(await select.inputValue(), '60', 'Manager did not select Info logging');
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  assert(isOwnedManagerOptionsUrl(page.url(), managerId), 'Manager options page navigated away');
+  await page.getByText(labels.Settings, { exact: true }).first().click();
+  const savedGeneral = page.locator('div.section.type_general');
+  await savedGeneral.waitFor({ state: 'visible', timeout: 10_000 });
+  assert.equal(await savedGeneral.count(), 1, 'Expected one saved manager General section');
+  const savedRow = managerSettingRow(savedGeneral, labels.LogLevel);
+  await savedRow.waitFor({ state: 'visible', timeout: 10_000 });
+  assert.equal(await savedRow.count(), 1, 'Expected one saved manager LogLevel row');
+  const savedSelect = savedRow.locator('select');
+  assert.equal(await savedSelect.count(), 1, 'Expected one saved manager LogLevel selector');
+  const observed = await savedSelect.inputValue();
+  assert.equal(observed, '60', 'Manager Info logging did not persist');
+  assert(isOwnedManagerOptionsUrl(page.url(), managerId), 'Manager options page navigated away');
+  return { original, requested: '60', observed, scope: 'fresh-owned-profile' };
+}
+
 async function captureManagerDownloadsPermission(context, managerId) {
   let page;
   try {
@@ -728,7 +784,7 @@ async function captureManagerPermissionDiagnostics(page, detailsUrl, output, pro
   await writeFile(join(output, 'userscript-manager-permission.json'), JSON.stringify(diagnostics, null, 2));
 }
 
-async function installUserscript(context, id, root, output, browserName, sourceSha256,
+async function installUserscript(context, id, root, output, browserName, sourceSha256, profile,
   captureNativePermission) {
   const manifest = JSON.parse(await readFile(join(root, 'test-tools/userscript-manager/manifest.json'), 'utf8'));
   assert(/^\d+(?:\.\d+){1,3}$/.test(manifest.version), 'Manager version is invalid');
@@ -817,6 +873,13 @@ async function installUserscript(context, id, root, output, browserName, sourceS
       throw error;
     }
     await writeFile(admissionPath, JSON.stringify({ ...admission, labels, downloadMode }, null, 2));
+    assertOwned(root, profile);
+    assert.equal(manifest.version, '5.5.1', 'Unknown manager logging source version');
+    assert.equal(sha256(await readFile(join(root, 'test-tools/userscript-manager/background.js'))),
+      MANAGER_BACKGROUND_SHA256, 'Manager logging source changed');
+    const logging = await configureManagerInfoLogging(page, id);
+    await writeFile(admissionPath,
+      JSON.stringify({ ...admission, labels, downloadMode, logging }, null, 2));
     await page.getByText(labels.utilities, { exact: true }).click();
     const confirmationPromise = context.waitForEvent('page');
     await page.locator('input[type=file]').setInputFiles(join(root, 'dist/xcom-enhanced-gallery.user.js'));
@@ -838,7 +901,7 @@ async function installUserscript(context, id, root, output, browserName, sourceS
       scriptName: SCRIPT_NAME, method: 'real-manager-ui-import',
       userScriptsPermission: { path: permissionPath,
         available: permission.available, registeredScriptCount: permission.registeredScriptCount },
-      downloadMode };
+      downloadMode, logging };
   } finally {
     await page.close();
   }
@@ -986,9 +1049,10 @@ export async function inspectFirstCurrentDownload(page) {
   return page.url() === FIXTURE_URL ? observation : { scope: 'navigated-away' };
 }
 
-const MANAGER_CONSOLE_BRANCHES = ['permission_true', 'permission_false', 'not_supported_branch',
-  'not_permitted_branch', 'download_failed_branch', 'not_whitelisted_branch',
-  'native_interrupted_branch', 'native_query_failed_branch'];
+const MANAGER_CONSOLE_BRANCHES = ['manager_request_branch', 'permission_true',
+  'permission_false', 'not_enabled_branch', 'not_supported_branch', 'not_permitted_branch',
+  'download_failed_branch', 'not_whitelisted_branch', 'native_interrupted_branch',
+  'native_query_failed_branch'];
 const MANAGER_BACKGROUND_SHA256 = '7377109daee3340f6f1f89d06f8099e92583229231b25d0f950653a63fb7dd32';
 
 /** Match only known Tampermonkey 5.5.1 background.js download log shapes. */
@@ -997,8 +1061,10 @@ export function classifyManagerDownloadConsole(value) {
   const offset = value.indexOf('downs: ');
   if (offset < 0 || offset > 64) return null;
   const line = value.slice(offset);
+  if (/^downs: start(?:\s|$)/u.test(line)) return 'manager_request_branch';
   if (line === 'downs: permission to use downloads -> true') return 'permission_true';
   if (line === 'downs: permission to use downloads -> false') return 'permission_false';
+  if (line === 'downs: feature is not enabled') return 'not_enabled_branch';
   if (/^downs: (?:this download mode is not supported|invalid transferable|can't get URL from transferable)$/u.test(line))
     return 'not_supported_branch';
   if (line === 'downs: download permission is missing') return 'not_permitted_branch';
@@ -1416,7 +1482,8 @@ export async function runUserscriptInstallation({ chromium, root, output, browse
     }));
     assert.equal(typeof managerId, 'string');
     result.manager = await installUserscript(context, managerId, root, output, browserName,
-      result.sourceSha256, (ask, id, context) => inspectAndAllowNativeManagerPermission(cdp,
+      result.sourceSha256, profile,
+      (ask, id, context) => inspectAndAllowNativeManagerPermission(cdp,
         root, output, profile, browserName, ask, id, context));
     const images = await createImageFixtures(context);
     result.fixtureLimits = { imageBytes: images.map((image) => image.length),
