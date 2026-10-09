@@ -986,7 +986,114 @@ export async function inspectFirstCurrentDownload(page) {
   return page.url() === FIXTURE_URL ? observation : { scope: 'navigated-away' };
 }
 
-async function runFixture(context, observer, root, output, downloads, images, managerId) {
+const MANAGER_CONSOLE_BRANCHES = ['permission_boolean', 'not_supported_branch',
+  'not_permitted_branch', 'download_failed_branch', 'not_whitelisted_branch',
+  'native_interrupted_branch', 'native_query_failed_branch'];
+const MANAGER_BACKGROUND_SHA256 = '7377109daee3340f6f1f89d06f8099e92583229231b25d0f950653a63fb7dd32';
+
+/** Match only known Tampermonkey 5.5.1 background.js download log shapes. */
+export function classifyManagerDownloadConsole(value) {
+  if (typeof value !== 'string' || value.length > 4_096) return null;
+  const offset = value.indexOf('downs: ');
+  if (offset < 0 || offset > 64) return null;
+  const line = value.slice(offset);
+  if (/^downs: permission to use downloads -> (?:true|false)$/u.test(line))
+    return 'permission_boolean';
+  if (/^downs: (?:this download mode is not supported|invalid transferable|can't get URL from transferable)$/u.test(line))
+    return 'not_supported_branch';
+  if (line === 'downs: download permission is missing') return 'not_permitted_branch';
+  if (line === 'downs: download failed') return 'download_failed_branch';
+  if (/^downs: "[^\n]+" is not whitelisted$/u.test(line)) return 'not_whitelisted_branch';
+  if (/^downs: download of .+ \(.+\) failed(?:\s.*)?$/u.test(line))
+    return 'native_interrupted_branch';
+  if (/^downs: unable to query download ID(?:\s.*)?$/u.test(line))
+    return 'native_query_failed_branch';
+  return null;
+}
+
+/** Passive, bounded observation of the one admitted manager's service worker. */
+export function watchManagerDownloadConsole(context, managerId) {
+  assert(/^[a-p]{32}$/u.test(managerId), 'Invalid manager extension ID');
+  const expectedUrl = `chrome-extension://${managerId}/background.js`;
+  const listeners = new Map();
+  const counts = Object.fromEntries(MANAGER_CONSOLE_BRANCHES.map((branch) => [branch, 0]));
+  let attachments = 0;
+  let attachmentOverflow = false;
+  let inspectedMessages = 0;
+  let messageOverflow = false;
+  let recognizedEvents = 0;
+  let eventOverflow = false;
+  let consoleUnavailable = false;
+  let disposed = false;
+  const attach = (worker) => {
+    if (disposed || listeners.has(worker)) return;
+    try { if (worker.url() !== expectedUrl) return; } catch { consoleUnavailable = true; return; }
+    if (attachments >= 8) { attachmentOverflow = true; return; }
+    const onConsole = (message) => {
+      if (disposed) return;
+      if (inspectedMessages >= 256) { messageOverflow = true; return; }
+      inspectedMessages++;
+      let value;
+      try { value = message.text(); } catch { consoleUnavailable = true; return; }
+      const branch = classifyManagerDownloadConsole(value);
+      if (!branch) return;
+      if (recognizedEvents >= 16) { eventOverflow = true; return; }
+      counts[branch]++;
+      recognizedEvents++;
+    };
+    const onClose = () => {
+      worker.off('console', onConsole);
+      worker.off('close', onClose);
+      listeners.delete(worker);
+    };
+    try {
+      worker.on('console', onConsole);
+      worker.on('close', onClose);
+    } catch {
+      worker.off('console', onConsole);
+      worker.off('close', onClose);
+      consoleUnavailable = true;
+      return;
+    }
+    listeners.set(worker, { onConsole, onClose });
+    attachments++;
+  };
+  context.on('serviceworker', attach);
+  try {
+    for (const worker of context.serviceWorkers()) attach(worker);
+  } catch {
+    consoleUnavailable = true;
+  }
+  const mark = () => ({ counts: { ...counts }, attachments, recognizedEvents });
+  return {
+    mark,
+    snapshotSince(before) {
+      const branches = Object.fromEntries(MANAGER_CONSOLE_BRANCHES.map((branch) =>
+        [branch, counts[branch] - before.counts[branch]]));
+      const matched = recognizedEvents - before.recognizedEvents;
+      return { status: matched > 0 ? 'known-branch-observed' : 'inconclusive',
+        availability: consoleUnavailable ? 'unavailable'
+          : before.attachments > 0 ? 'attached-before-click'
+            : attachments > 0 ? 'attached-after-click' : 'no-worker-observed',
+        branchCounts: branches, matchedEvents: matched,
+        workersAttachedBeforeClick: before.attachments,
+        workersAttachedAfterClick: attachments,
+        attachmentOverflow, messageOverflow, eventOverflow, consoleUnavailable };
+    },
+    dispose() {
+      disposed = true;
+      context.off('serviceworker', attach);
+      for (const [worker, { onConsole, onClose }] of listeners) {
+        worker.off('console', onConsole);
+        worker.off('close', onClose);
+      }
+      listeners.clear();
+    },
+  };
+}
+
+async function runFixture(context, observer, root, output, downloads, images, managerId,
+  managerVersion, profile, sourceSha256) {
   const html = await readFile(join(root, 'test/e2e/fixtures/installed-gallery-page.html'), 'utf8');
   const routeRecords = [];
   const result = { status: 'failed', downloads: [], routes: routeRecords, routeFailures: [],
@@ -996,6 +1103,7 @@ async function runFixture(context, observer, root, output, downloads, images, ma
   let releaseHeld;
   let heldRouteInvocation;
   let heldTerminalObserver;
+  let managerConsole;
   const mediaNetwork = watchFixtureMediaNetwork(context);
   const routeFixture = async (route) => {
     const url = new URL(route.request().url());
@@ -1096,11 +1204,19 @@ async function runFixture(context, observer, root, output, downloads, images, ma
     };
     assert.equal(observer.snapshot(), 0, 'Task profile has prior native downloads');
     assert.deepEqual(await readdir(downloads), [], 'Task download directory is not empty');
+    assertOwned(root, profile);
+    assert.equal(managerVersion, '5.5.1', 'Unknown manager download log version');
+    assert.equal(sha256(await readFile(join(root, 'test-tools/userscript-manager/background.js'))),
+      MANAGER_BACKGROUND_SHA256, 'Manager download log source changed');
+    assert.equal(sha256(await readFile(join(root, 'dist/xcom-enhanced-gallery.user.js'))),
+      sourceSha256, 'Userscript source changed before manager console observation');
+    managerConsole = watchManagerDownloadConsole(context, managerId);
     for (let repetition = 0; repetition < 2; repetition++) {
       const routedBeforeSingle = routeRecords.filter(({ phase: p, mediaPhase, index }) =>
         p === 'normal' && mediaPhase === 'normal' && index === 0).length;
       const singleSince = observer.snapshot();
       const singleBefore = new Set(await readdir(downloads));
+      const consoleBefore = repetition === 0 ? managerConsole.mark() : null;
       let single;
       try {
         await current.click();
@@ -1108,10 +1224,12 @@ async function runFixture(context, observer, root, output, downloads, images, ma
           filename(0), browserFilename(filename(0), repetition), downloads, images[0].length);
       } catch (error) {
         if (repetition === 0) {
+          const managerConsoleClick = managerConsole.snapshotSince(consoleBefore);
           result.firstCurrentDownload = {
             fixture: await inspectFirstCurrentDownload(page).catch((captureError) =>
               ({ errorType: captureError instanceof Error ? captureError.name : typeof captureError })),
             managerDownloadsPermission: await captureManagerDownloadsPermission(context, managerId),
+            managerConsole: managerConsoleClick,
           };
         }
         throw error;
@@ -1237,6 +1355,12 @@ async function runFixture(context, observer, root, output, downloads, images, ma
     throw error;
   } finally {
     if (releaseHeld) releaseHeld();
+    if (managerConsole) {
+      try {
+        managerConsole.dispose();
+        result.cleanup.managerConsoleListenersRemoved = true;
+      } catch { result.cleanup.managerConsoleListenersRemoved = false; }
+    }
     await page.close().catch((error) => { result.cleanup.pageError = String(error); });
     heldTerminalObserver?.dispose();
     mediaNetwork.dispose();
@@ -1246,7 +1370,10 @@ async function runFixture(context, observer, root, output, downloads, images, ma
     result.fixtureMediaNetwork = { events: mediaNetwork.events,
       overflow: mediaNetwork.overflow() };
     await writeFile(join(output, 'userscript-fixture-result.json'), JSON.stringify(result, null, 2));
-    assert.deepEqual(result.cleanup, { routeRemoved: true }, 'Fixture cleanup failed');
+    assert.deepEqual(result.cleanup, managerConsole
+      ? { managerConsoleListenersRemoved: true, routeRemoved: true }
+      : { routeRemoved: true },
+      'Fixture cleanup failed');
   }
 }
 
@@ -1297,7 +1424,8 @@ export async function runUserscriptInstallation({ chromium, root, output, browse
       maxDownloads: MAX_DOWNLOADS, maxRoutedImageRequests: 64,
       productionBudget: 'unchanged' };
     observer = createBrowserDownloadObserver(cdp);
-    result.fixture = await runFixture(context, observer, root, output, downloads, images, managerId);
+    result.fixture = await runFixture(context, observer, root, output, downloads, images, managerId,
+      result.manager.managerVersion, profile, result.sourceSha256);
     result.status = 'passed';
   } catch (error) {
     primaryError = error;

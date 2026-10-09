@@ -187,6 +187,9 @@ const userscriptInstall = (await import(
   managerId: string): Promise<boolean>;
   inspectFirstCurrentDownload(page: { url(): string;
     evaluate(callback: (url: string) => unknown, url: string): Promise<unknown> }): Promise<unknown>;
+  classifyManagerDownloadConsole(value: unknown): string | null;
+  watchManagerDownloadConsole(context: EventEmitter & { serviceWorkers(): EventEmitter[] },
+    managerId: string): { mark(): unknown; snapshotSince(before: unknown): unknown; dispose(): void };
   findEdgeUserScriptsControl(page: unknown, managerId: string): Promise<unknown>;
   watchFixtureMediaNetwork(context: EventEmitter): {
     events: Array<{ kind: string; cohort: string; index: number; method: string;
@@ -815,6 +818,103 @@ describe('Windows X live page validation', () => {
       vi.unstubAllGlobals();
       document.body.innerHTML = '';
     }
+  });
+
+  it('classifies only known manager download branches without retaining console data', () => {
+    const id = 'a'.repeat(32);
+    const managerUrl = `chrome-extension://${id}/background.js`;
+    const context = new EventEmitter() as EventEmitter & { serviceWorkers(): EventEmitter[] };
+    const worker = new EventEmitter() as EventEmitter & { url(): string };
+    worker.url = () => managerUrl;
+    context.serviceWorkers = () => [worker];
+    const watcher = userscriptInstall.watchManagerDownloadConsole(context, id);
+    try {
+      const before = watcher.mark();
+      worker.emit('console', { text: () => 'downs: start https://secret.example/?token=abc' });
+      worker.emit('console', { text: () =>
+        'downs: download of secret.jpg (https://secret.example/?token=abc) failed NETWORK_FAILED' });
+      worker.emit('console', { text: () => 'downs: download permission is missing' });
+      const receipt = watcher.snapshotSince(before);
+      expect(receipt).toMatchObject({ status: 'known-branch-observed', matchedEvents: 2,
+        availability: 'attached-before-click',
+        branchCounts: { native_interrupted_branch: 1, not_permitted_branch: 1 },
+        workersAttachedBeforeClick: 1, workersAttachedAfterClick: 1,
+        attachmentOverflow: false, messageOverflow: false, eventOverflow: false });
+      expect(JSON.stringify(receipt)).not.toMatch(/secret|token|NETWORK_FAILED|https?:/u);
+      expect(userscriptInstall.classifyManagerDownloadConsole(
+        'downs: permission to use downloads -> false')).toBe('permission_boolean');
+      expect(userscriptInstall.classifyManagerDownloadConsole('downs: download failed'))
+        .toBe('download_failed_branch');
+      expect(userscriptInstall.classifyManagerDownloadConsole('downs: "private" is not whitelisted'))
+        .toBe('not_whitelisted_branch');
+      expect(userscriptInstall.classifyManagerDownloadConsole('downs: unable to query download ID 123'))
+        .toBe('native_query_failed_branch');
+      expect(userscriptInstall.classifyManagerDownloadConsole('downs: this download mode is not supported'))
+        .toBe('not_supported_branch');
+      expect(userscriptInstall.classifyManagerDownloadConsole('downs: start private'))
+        .toBeNull();
+    } finally { watcher.dispose(); }
+    expect(context.listenerCount('serviceworker')).toBe(0);
+    expect(worker.listenerCount('console')).toBe(0);
+    expect(worker.listenerCount('close')).toBe(0);
+  });
+
+  it('follows only the exact manager service worker across restarts and bounds events', () => {
+    const id = 'b'.repeat(32);
+    const ownedUrl = `chrome-extension://${id}/background.js`;
+    const context = new EventEmitter() as EventEmitter & { serviceWorkers(): EventEmitter[] };
+    context.serviceWorkers = () => [];
+    const worker = (url: string) => Object.assign(new EventEmitter(), { url: () => url });
+    const foreign = worker(`chrome-extension://${'c'.repeat(32)}/background.js`);
+    const first = worker(ownedUrl);
+    const second = worker(ownedUrl);
+    const watcher = userscriptInstall.watchManagerDownloadConsole(context, id);
+    try {
+      const before = watcher.mark();
+      context.emit('serviceworker', foreign);
+      foreign.emit('console', { text: () => 'downs: download failed' });
+      context.emit('serviceworker', first);
+      first.emit('console', { text: () => 'downs: download failed' });
+      first.emit('close');
+      context.emit('serviceworker', second);
+      for (let i = 0; i < 20; i++)
+        second.emit('console', { text: () => 'downs: download failed' });
+      expect(watcher.snapshotSince(before)).toMatchObject({
+        status: 'known-branch-observed', matchedEvents: 16,
+        availability: 'attached-after-click',
+        branchCounts: { download_failed_branch: 16 },
+        workersAttachedBeforeClick: 0, workersAttachedAfterClick: 2,
+        eventOverflow: true,
+      });
+      expect(first.listenerCount('console')).toBe(0);
+    } finally { watcher.dispose(); }
+    expect(context.listenerCount('serviceworker')).toBe(0);
+    expect(second.listenerCount('console')).toBe(0);
+    expect(second.listenerCount('close')).toBe(0);
+    expect(foreign.listenerCount('console')).toBe(0);
+  });
+
+  it('reports silent and capped manager console observation as inconclusive', () => {
+    const id = 'd'.repeat(32);
+    const context = new EventEmitter() as EventEmitter & { serviceWorkers(): EventEmitter[] };
+    context.serviceWorkers = () => [];
+    const watcher = userscriptInstall.watchManagerDownloadConsole(context, id);
+    const workers = Array.from({ length: 9 }, () =>
+      Object.assign(new EventEmitter(), { url: () => `chrome-extension://${id}/background.js` }));
+    try {
+      const before = watcher.mark();
+      expect(watcher.snapshotSince(before)).toMatchObject({ status: 'inconclusive',
+        availability: 'no-worker-observed', matchedEvents: 0 });
+      for (const worker of workers) context.emit('serviceworker', worker);
+      for (let i = 0; i < 260; i++)
+        workers[0]?.emit('console', { text: () => 'downs: start private' });
+      expect(watcher.snapshotSince(before)).toMatchObject({ status: 'inconclusive',
+        availability: 'attached-after-click', matchedEvents: 0,
+        workersAttachedAfterClick: 8, attachmentOverflow: true, messageOverflow: true });
+      expect(workers[8]?.listenerCount('console')).toBe(0);
+    } finally { watcher.dispose(); }
+    expect(context.listenerCount('serviceworker')).toBe(0);
+    expect(workers.every((worker) => worker.listenerCount('console') === 0)).toBe(true);
   });
 
   it('keeps same-document userscript phases on distinct media cache keys with stable ZIP entries', () => {
