@@ -16,9 +16,14 @@ for another, and none is a required CI lane.
    independently read saved files. It configures Browser API mode in the
    task-owned Tampermonkey options UI, checks the existing JPG/ZIP whitelist,
    and confirms the manager's own permission page when shown. That UI may
-   request the optional downloads permission; the receipt records whether it
-   was granted or remains pending. A browser-native prompt may remain
-   unapproved; native completion and saved bytes require separate evidence.
+   request Tampermonkey's optional downloads permission. On Chrome, a bounded
+   Windows UI Automation step may invoke the ordinary **Allow** button only
+   for the fully recognized downloads-only prompt in that fresh owned profile.
+   It rechecks the browser process, session and foreground window before acting;
+   unrecognized, incomplete or changed prompts are skipped. Edge prompts are
+   not automated. An independent manager permission probe records whether the
+   permission was actually granted or remains pending. Native completion and
+   saved bytes require separate evidence.
    The production byte budget is unchanged.
 4. **Optional public-page observation:** observes up to three unchanged public
    X/Twitter status URLs after the installed deterministic fixture. It remains
