@@ -277,6 +277,12 @@ export function managerSettingRowLabel(localizedName) {
   return `${localizedName}:`;
 }
 
+export function managerSettingRow(scope, localizedName) {
+  const settingRowClass = 'contains(concat(" ", normalize-space(@class), " "), " settingstr ")';
+  return scope.getByText(managerSettingRowLabel(localizedName), { exact: true })
+    .locator(`xpath=ancestor::tr[${settingRowClass}][not(descendant::tr[${settingRowClass}])]`);
+}
+
 export async function captureAndConfirmManagerPermissionAsk(ask, managerId, output, okLabel) {
   assert(isOwnedManagerPermissionAskUrl(ask.url(), managerId),
     'Manager permission confirmation navigated away');
@@ -362,9 +368,7 @@ export async function configureManagerBrowserDownloads(page, managerId, output) 
   }
   assert(isOwnedManagerOptionsUrl(page.url(), managerId), 'Manager options page navigated away');
   await page.getByText(labels.Settings, { exact: true }).first().click();
-  const configRow = page.locator('tr.settingstr').filter({
-    has: page.getByText(managerSettingRowLabel(labels.Config_Mode), { exact: true }),
-  });
+  const configRow = managerSettingRow(page, labels.Config_Mode);
   await configRow.waitFor({ state: 'visible', timeout: 10_000 });
   assert.equal(await configRow.count(), 1, 'Expected exactly one manager config-mode row');
   const configSelect = configRow.locator('select');
@@ -375,18 +379,14 @@ export async function configureManagerBrowserDownloads(page, managerId, output) 
   await downloads.waitFor({ state: 'visible', timeout: 10_000 });
   assert.equal(await downloads.count(), 1, 'Expected exactly one manager Downloads section');
   requireManagerDownloadsHeading(await downloads.locator('.section_head').innerText(), labels.Downloads);
-  const whitelistRow = downloads.locator('tr.settingstr').filter({
-    has: page.getByText(managerSettingRowLabel(labels.Whitelisted_File_Extensions), { exact: true }),
-  });
+  const whitelistRow = managerSettingRow(downloads, labels.Whitelisted_File_Extensions);
   assert.equal(await whitelistRow.count(), 1, 'Expected exactly one manager whitelist row');
   const whitelist = await whitelistRow.locator('input, textarea').evaluateAll((elements) =>
     elements.slice(0, 64).map((element) => element.value).filter((value) => typeof value === 'string'));
   assert(whitelist.some((value) => value.includes('jpe?g')) &&
     whitelist.some((value) => value.includes('zip')),
   'Manager whitelist does not visibly include JPG and ZIP');
-  const modeRow = downloads.locator('tr.settingstr').filter({
-    has: page.getByText(managerSettingRowLabel(labels.Download_Mode), { exact: true }),
-  });
+  const modeRow = managerSettingRow(downloads, labels.Download_Mode);
   assert.equal(await modeRow.count(), 1, 'Expected exactly one manager Download Mode row');
   const modeSelect = modeRow.locator('select');
   assert.equal(await modeSelect.count(), 1, 'Expected one manager Download Mode selector');
@@ -421,10 +421,10 @@ export async function configureManagerBrowserDownloads(page, managerId, output) 
   await page.reload({ waitUntil: 'domcontentloaded' });
   assert(isOwnedManagerOptionsUrl(page.url(), managerId), 'Manager options page navigated away');
   await page.getByText(labels.Settings, { exact: true }).first().click();
-  const savedMode = page.locator('div.section.type_downloads tr.settingstr').filter({
-    has: page.getByText(managerSettingRowLabel(labels.Download_Mode), { exact: true }),
-  }).locator('select');
+  const savedMode = managerSettingRow(page.locator('div.section.type_downloads'),
+    labels.Download_Mode).locator('select');
   await savedMode.waitFor({ state: 'visible', timeout: 10_000 });
+  assert.equal(await savedMode.count(), 1, 'Expected one saved manager Download Mode selector');
   const observed = await savedMode.inputValue();
   assert.equal(observed, 'chrome', 'Manager Browser API mode did not persist');
   const downloadsPermissionGranted = await probeManagerDownloadsPermission(page, managerId);

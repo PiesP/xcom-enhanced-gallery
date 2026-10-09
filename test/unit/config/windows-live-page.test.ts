@@ -164,6 +164,7 @@ const userscriptInstall = (await import(
   isOwnedManagerPermissionAskUrl(value: string, managerId: string): boolean;
   requireManagerDownloadsHeading(actual: string, localizedDownloads: string): void;
   managerSettingRowLabel(localizedName: string): string;
+  managerSettingRow(scope: unknown, localizedName: string): unknown;
   captureAndConfirmManagerPermissionAsk(ask: unknown, managerId: string, output: string,
     okLabel: string): Promise<void>;
   requireManagerUiLabels(labels: Record<string, unknown>): Record<string, string>;
@@ -438,31 +439,62 @@ describe('Windows X live page validation', () => {
 
   it('matches the bundled Downloads BETA heading in localized options markup', () => {
     document.body.innerHTML = `
-      <div class="section type_general"><table class="section_content">
-        <tr class="settingstr"><td><div><span class="optiondesc">설정 모드: </span>
-          <select><option value="50">초보자</option></select></div></td></tr>
-      </table></div>
-      <div class="section type_downloads"><div class="section_head">다운로드 BETA</div>
-        <table class="section_content">
-          <tr class="settingstr"><td><div><span class="optiondesc">다운로드 모드: </span>
-            <select><option value="chrome">브라우저 API</option></select></div></td></tr>
-          <tr class="settingstr"><td><div><span>파일 확장자 화이트리스트:</span>
-            <textarea>/\\.(jpe?g|png)$/\n/\\.(zip|tar)$/</textarea></div></td></tr>
-        </table>
-      </div>`;
+      <table><tbody>
+        <tr class="settingstr" id="general-outer"><td>
+          <div class="section type_general"><table class="section_content"><tbody>
+            <tr class="settingstr" id="config-setting"><td><div>
+              <span class="optiondesc">설정 모드: </span>
+              <select><option value="50">초보자</option></select>
+            </div></td></tr>
+          </tbody></table></div>
+        </td></tr>
+        <tr class="settingstr" id="downloads-outer"><td>
+          <div class="section type_downloads"><div class="section_head">다운로드 BETA</div>
+            <table class="section_content"><tbody>
+              <tr class="settingstr" id="download-mode-setting"><td><div>
+                <span class="optiondesc">다운로드 모드: </span>
+                <select><option value="chrome">브라우저 API</option></select>
+              </div></td></tr>
+              <tr class="settingstr" id="whitelist-setting"><td><div>
+                <span>파일 확장자 화이트리스트:</span>
+                <textarea>/\\.(jpe?g|png)$/\n/\\.(zip|tar)$/</textarea>
+              </div></td></tr>
+            </tbody></table>
+          </div>
+        </td></tr>
+      </tbody></table>`;
     const heading = document.querySelector('.section.type_downloads .section_head');
     expect(heading).not.toBeNull();
     expect(() => userscriptInstall.requireManagerDownloadsHeading(
       heading?.textContent ?? '', '다운로드')).not.toThrow();
     expect(() => userscriptInstall.requireManagerDownloadsHeading('다운로드', '다운로드'))
       .toThrow('Manager Downloads section label differs');
-    for (const localizedName of ['설정 모드', '다운로드 모드', '파일 확장자 화이트리스트']) {
-      const exactLabel = userscriptInstall.managerSettingRowLabel(localizedName);
-      const rows = [...document.querySelectorAll('tr.settingstr')].filter((row) =>
-        [...row.querySelectorAll('span')].some((span) => span.textContent?.trim() === exactLabel));
-      expect(rows).toHaveLength(1);
-      expect(rows[0]?.querySelector('span')?.textContent?.trim()).toBe(exactLabel);
-      expect(exactLabel).not.toBe(localizedName);
+    const domScope = (root: Element) => ({
+      getByText(label: string, options: { exact: boolean }) {
+        expect(options).toEqual({ exact: true });
+        const matches = [...root.querySelectorAll('span')]
+          .filter((span) => span.textContent?.trim() === label);
+        expect(matches).toHaveLength(1);
+        const labelElement = matches[0];
+        if (!labelElement) throw new Error('Missing exact manager setting label');
+        return { locator(selector: string) {
+          expect(selector).toMatch(/^xpath=ancestor::tr\[/u);
+          return document.evaluate(selector.slice('xpath='.length), labelElement, null,
+            XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+        } };
+      },
+    });
+    const downloads = document.querySelector('.section.type_downloads');
+    expect(downloads).not.toBeNull();
+    expect([...document.querySelectorAll('tr.settingstr')]
+      .filter((row) => row.textContent?.includes('설정 모드:'))).toHaveLength(2);
+    for (const [scope, label, expectedId] of [
+      [document.body, '설정 모드', 'config-setting'],
+      [downloads, '다운로드 모드', 'download-mode-setting'],
+      [downloads, '파일 확장자 화이트리스트', 'whitelist-setting'],
+    ] as const) {
+      expect(userscriptInstall.managerSettingRow(domScope(scope as Element), label))
+        .toBe(document.getElementById(expectedId));
     }
   });
 
