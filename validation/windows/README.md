@@ -13,7 +13,8 @@ for another, and none is a required CI lane.
    `.user.js` through the reviewed manager UI in a fresh owned profile. It checks
    repeated native singles and ZIPs, a partial ZIP, routed transport failure,
    cancellation before dispatch, gallery close/reopen, and reload recovery with
-   independently read saved files. It does not alter the production byte budget.
+   independently read saved files. It does not alter the production byte budget
+   or request Tampermonkey's optional downloads permission.
 4. **Optional public-page observation:** observes up to three unchanged public
    X/Twitter status URLs after the installed deterministic fixture. It remains
    observational and can finish as `unverified`.
@@ -217,11 +218,13 @@ diagnosis rather than terminating unrelated processes.
 
 ## Installed Tampermonkey userscript flow
 
-Prepare the reviewed unpacked Tampermonkey package with the maintained YT
-`validation/windows/prepare-userscript-manager.py` helper, then pass its output
-as `--manager-directory` to the shared controller. The helper pins Tampermonkey
-5.5.0; the controller independently verifies the manager tree and bundles its
-file hashes. Use a clean committed checkout and run:
+Prepare a reviewed unpacked Tampermonkey package outside the checkout, then
+pass that directory as `--manager-directory` to the shared controller. The
+maintained YT `validation/windows/prepare-userscript-manager.py` helper pins
+5.5.0 and must not be used for a different Store version. The controller
+validates the manager identity and bundles its exact file hashes. Record the
+original package digest and installation source separately. Use a clean
+committed checkout and run:
 
 ```bash
 python3 /home/piesp/projects/windows-acceptance/vmctl.py run \
@@ -233,9 +236,11 @@ python3 /home/piesp/projects/windows-acceptance/vmctl.py run \
 
 Use a separate invocation for Edge. The manager is imported as an unpacked
 extension, the production userscript is installed through its confirmation UI,
-and native downloads use the owned browser directory. The independent ZIP reader
+and native downloads use the owned browser directory. Browser-level CDP download
+events establish `completed` for each unique GUID without manager API permissions;
+the only new owned file is then read independently. The independent ZIP reader
 checks stored entries, central directory, order, CRCs, names, and bytes. Browser
-download history must report `complete` before file bytes are read. A completed
+download progress must report `completed` before file bytes are read. A completed
 native save does not release the userscript's page-owned Blob reservation: that
 reservation remains until genuine page teardown. Gallery reopen alone cannot
 recover it. The 512 MiB ledger covers all live reservations, so it is not a

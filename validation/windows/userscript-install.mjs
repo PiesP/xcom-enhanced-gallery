@@ -3,8 +3,8 @@
 
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
-import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
+import { basename, dirname, join, resolve } from 'node:path';
 import { expectedStoredZipBytes, readExactDownloadFile, verifyStoredZip } from './download-memory.mjs';
 import { createImageFixtures, enableDeveloperMode, verifyDownloadDirectory } from './install-profile.mjs';
 
@@ -71,31 +71,70 @@ async function installUserscript(context, id, root, output) {
   }
 }
 
-async function downloadsIn(managerPage) {
-  return managerPage.evaluate(() => new Promise((resolveItems, rejectItems) => {
-    chrome.downloads.search({}, (items) => {
-      const error = chrome.runtime.lastError;
-      if (error) rejectItems(new Error(error.message));
-      else resolveItems(items);
-    });
-  }));
+/** Browser-level events require no optional permissions from Tampermonkey. */
+export function createBrowserDownloadObserver(cdp) {
+  const begun = [];
+  const progress = new Map();
+  const onBegin = (event) => {
+    assert(begun.length < MAX_DOWNLOADS + 4, 'Too many task-profile downloads');
+    begun.push({ guid: event.guid, suggestedFilename: event.suggestedFilename,
+      url: event.url });
+  };
+  const onProgress = (event) => {
+    progress.set(event.guid, { state: event.state,
+      receivedBytes: event.receivedBytes, totalBytes: event.totalBytes,
+      filePath: event.filePath ?? null });
+  };
+  cdp.on('Browser.downloadWillBegin', onBegin);
+  cdp.on('Browser.downloadProgress', onProgress);
+  return {
+    snapshot: () => begun.length,
+    events: () => structuredClone(begun),
+    async flush() { await cdp.send('Browser.getVersion'); },
+    async waitForCompletion(since, ...expectedNames) {
+      const item = await waitFor(() => {
+        const created = begun.slice(since);
+        assert(created.length <= 1, `One action created ${created.length} native downloads`);
+        if (!created.length) return undefined;
+        const candidate = created[0];
+        assert(expectedNames.includes(candidate.suggestedFilename),
+          'Browser download request used an unexpected filename');
+        const status = progress.get(candidate.guid);
+        if (status?.state === 'canceled') throw new Error('Browser canceled the native download');
+        return status?.state === 'completed' ? { ...candidate, ...status } : undefined;
+      }, `CDP native completion of ${expectedNames[0]}`, 30_000);
+      return item;
+    },
+    async assertNoneSince(since, label) {
+      await cdp.send('Browser.getVersion');
+      assert.deepEqual(begun.slice(since), [], `${label} created a native download`);
+    },
+    dispose() {
+      cdp.off('Browser.downloadWillBegin', onBegin);
+      cdp.off('Browser.downloadProgress', onProgress);
+    },
+  };
 }
 
-async function waitForDownload(managerPage, knownIds, expectedName, downloads, expectedBytes) {
-  const item = await waitFor(async () => {
-    const created = (await downloadsIn(managerPage)).filter(({ id }) => !knownIds.has(id));
-    assert(created.length <= 1, `One action created ${created.length} downloads`);
-    if (created.length === 0) return undefined;
-    const candidate = created[0];
-    if (candidate.state === 'interrupted') throw new Error(`Native download interrupted: ${candidate.error}`);
-    return candidate.state === 'complete' ? candidate : undefined;
-  }, `native completion of ${expectedName}`, 30_000);
-  assert.equal(basename(item.filename), expectedName, 'Native saved filename differs');
-  const child = relative(downloads, item.filename);
-  assert(child && !child.startsWith('..') && !isAbsolute(child), 'Native download escaped owned directory');
-  const { bytes } = await readExactDownloadFile(item.filename, expectedBytes);
-  return { id: item.id, filename: expectedName, bytes, sha256: sha256(bytes),
-    nativeState: item.state, browserBytesReceived: item.bytesReceived };
+async function waitForDownload(observer, since, beforeFiles, requestedName, savedName,
+  downloads, expectedBytes) {
+  const item = await observer.waitForCompletion(since, requestedName, savedName);
+  const added = await waitFor(async () => {
+    const names = await readdir(downloads);
+    const newNames = names.filter((name) => !beforeFiles.has(name) && !name.endsWith('.crdownload'));
+    assert(newNames.length <= 1, `One action saved ${newNames.length} files`);
+    return newNames.length ? newNames : undefined;
+  }, `native saved file for ${savedName}`);
+  assert.deepEqual(added, [savedName], 'Native saved filename differs');
+  if (item.filePath !== null) {
+    assert.equal(resolve(item.filePath), resolve(downloads, savedName),
+      'CDP completed a file outside the exact owned download path');
+  }
+  const { bytes } = await readExactDownloadFile(join(downloads, savedName), expectedBytes);
+  assert.equal((await readdir(downloads)).filter((name) => name.endsWith('.crdownload')).length,
+    0, 'Partial native download remained');
+  return { guid: item.guid, requestedName, filename: savedName, bytes, sha256: sha256(bytes),
+    nativeState: item.state, browserBytesReceived: item.receivedBytes };
 }
 
 function browserFilename(name, duplicate) {
@@ -104,18 +143,20 @@ function browserFilename(name, duplicate) {
   return `${name.slice(0, dot)} (${duplicate})${name.slice(dot)}`;
 }
 
-async function assertNoDownload(managerPage, knownIds, label) {
+async function assertNoDownload(observer, since, beforeFiles, downloads, label) {
   // The routed request must reach a terminal failure/cancellation before this check.
-  const created = (await downloadsIn(managerPage)).filter(({ id }) => !knownIds.has(id));
-  assert.deepEqual(created, [], `${label} created a native download`);
+  await observer.assertNoneSince(since, label);
+  assert.deepEqual((await readdir(downloads)).sort(), [...beforeFiles].sort(),
+    `${label} left a file in the owned directory`);
 }
 
-async function runFixture(context, managerId, root, output, downloads, images) {
+async function runFixture(context, observer, root, output, downloads, images) {
   const html = await readFile(join(root, 'test/e2e/fixtures/installed-gallery-page.html'), 'utf8');
   const routeRecords = [];
   let phase = 'normal';
   let heldRequest;
   let releaseHeld;
+  let heldRouteSettled = false;
   const handler = async (route) => {
     const url = new URL(route.request().url());
     if (url.protocol === 'chrome-extension:') {
@@ -137,7 +178,7 @@ async function runFixture(context, managerId, root, output, downloads, images) {
       const record = { phase, index, resourceType: route.request().resourceType(),
         method: route.request().method() };
       routeRecords.push(record);
-      if ((phase === 'failure' && index === 0) || (phase === 'partial' && index === 1)) {
+      if (phase === 'failure' || (phase === 'partial' && index === 1)) {
         record.result = 'http-503';
         await route.fulfill({ status: 503, contentType: 'text/plain', body: 'fixture unavailable' });
         return;
@@ -146,7 +187,15 @@ async function runFixture(context, managerId, root, output, downloads, images) {
         assert(!heldRequest, 'More than one held request');
         heldRequest = record;
         await new Promise((resolveHeld) => { releaseHeld = resolveHeld; });
-        record.result = 'released-after-close';
+        try {
+          await route.fulfill({ status: 200, contentType: 'image/jpeg', body: images[index] });
+          record.result = 'fulfilled-after-close';
+        } catch {
+          record.result = 'request-ended-before-late-response';
+        } finally {
+          heldRouteSettled = true;
+        }
+        return;
       }
       record.result ??= 'image';
       await route.fulfill({ status: 200, contentType: 'image/jpeg', body: images[index] });
@@ -159,11 +208,9 @@ async function runFixture(context, managerId, root, output, downloads, images) {
     await route.abort('blockedbyclient');
   };
   await context.route('**/*', handler);
-  const managerPage = await context.newPage();
   const page = await context.newPage();
   const result = { status: 'failed', downloads: [], routes: routeRecords, cases: {}, cleanup: {} };
   try {
-    await managerPage.goto(`chrome-extension://${managerId}/options.html`);
     await page.goto(FIXTURE_URL, { waitUntil: 'domcontentloaded' });
     const trigger = page.locator('[data-testid="tweetPhoto"] img').first();
     await trigger.click();
@@ -172,33 +219,36 @@ async function runFixture(context, managerId, root, output, downloads, images) {
     const current = gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download"]');
     const all = gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download 3 shown files as ZIP"]');
     const expectedEntries = images.map((bytes, index) => ({ filename: filename(index), bytes }));
-    let known = new Set((await downloadsIn(managerPage)).map(({ id }) => id));
-    assert.equal(known.size, 0, 'Task profile has prior downloads');
+    assert.equal(observer.snapshot(), 0, 'Task profile has prior native downloads');
+    assert.deepEqual(await readdir(downloads), [], 'Task download directory is not empty');
     for (let repetition = 0; repetition < 2; repetition++) {
       const routedBeforeSingle = routeRecords.filter(({ phase: p, index }) =>
         p === 'normal' && index === 0).length;
+      const singleSince = observer.snapshot();
+      const singleBefore = new Set(await readdir(downloads));
       await current.click();
-      const single = await waitForDownload(managerPage, known,
-        browserFilename(filename(0), repetition), downloads, images[0].length);
+      const single = await waitForDownload(observer, singleSince, singleBefore,
+        filename(0), browserFilename(filename(0), repetition), downloads, images[0].length);
       assert(routeRecords.filter(({ phase: p, index }) =>
         p === 'normal' && index === 0).length > routedBeforeSingle,
       'Single download did not use the bounded media route');
       assert(single.bytes.equals(images[0]), 'Single saved bytes differ');
-      known.add(single.id);
       result.downloads.push({ kind: 'single', repetition, ...single, bytes: single.bytes.length });
       await waitFor(async () => await current.isEnabled() ? true : undefined, 'single control ready');
+      const zipSince = observer.snapshot();
+      const zipBefore = new Set(await readdir(downloads));
       await all.click();
-      const zip = await waitForDownload(managerPage, known,
-        browserFilename(`testuser_${TWEET_ID}.zip`, repetition),
-        downloads, expectedStoredZipBytes(expectedEntries));
+      const zipName = `testuser_${TWEET_ID}.zip`;
+      const zip = await waitForDownload(observer, zipSince, zipBefore,
+        zipName, browserFilename(zipName, repetition), downloads,
+        expectedStoredZipBytes(expectedEntries));
       const verified = verifyStoredZip(zip.bytes, expectedEntries);
-      known.add(zip.id);
       result.downloads.push({ kind: 'zip', repetition, ...zip, bytes: zip.bytes.length,
         entryOrder: verified.entryOrder, included: verified.entries.length, omitted: 0 });
       await waitFor(async () => await all.isEnabled() ? true : undefined, 'ZIP control ready');
     }
     result.cases.repeated = 'passed';
-    assert(known.size <= MAX_DOWNLOADS, 'Fixture created too many downloads');
+    assert(result.downloads.length <= MAX_DOWNLOADS, 'Fixture created too many downloads');
 
     await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]').click();
     await gallery.waitFor({ state: 'detached' });
@@ -207,22 +257,26 @@ async function runFixture(context, managerId, root, output, downloads, images) {
     result.cases.closeReopen = 'passed';
 
     phase = 'failure';
-    await current.click();
+    const failureSince = observer.snapshot();
+    const failureBefore = new Set(await readdir(downloads));
+    await all.click();
     await waitFor(async () => routeRecords.some(({ phase: p, index, result: outcome }) =>
       p === 'failure' && index === 0 && outcome === 'http-503') ? true : undefined,
     'routed transport failure');
-    await waitFor(async () => await current.isEnabled() ? true : undefined, 'failed control ready');
-    await assertNoDownload(managerPage, known, 'Transport failure');
+    await waitFor(async () => await all.isEnabled() ? true : undefined, 'failed control ready');
+    await assertNoDownload(observer, failureSince, failureBefore, downloads, 'Transport failure');
     result.cases.networkFailure = 'passed';
 
     phase = 'partial';
+    const partialSince = observer.snapshot();
+    const partialBefore = new Set(await readdir(downloads));
     await all.click();
     const includedEntries = expectedEntries.filter((_, index) => index !== 1);
-    const partial = await waitForDownload(managerPage, known,
-      browserFilename(`testuser_${TWEET_ID}.zip`, 2), downloads,
+    const partialName = `testuser_${TWEET_ID}.zip`;
+    const partial = await waitForDownload(observer, partialSince, partialBefore,
+      partialName, browserFilename(partialName, 2), downloads,
       expectedStoredZipBytes(includedEntries));
     const partialZip = verifyStoredZip(partial.bytes, includedEntries);
-    known.add(partial.id);
     result.downloads.push({ kind: 'partial-zip', ...partial, bytes: partial.bytes.length,
       entryOrder: partialZip.entryOrder, included: 2, omitted: 1 });
     assert(routeRecords.some(({ phase: p, index, result: outcome }) =>
@@ -230,14 +284,17 @@ async function runFixture(context, managerId, root, output, downloads, images) {
     result.cases.partialZip = 'passed';
 
     phase = 'held';
-    await current.click();
+    const heldSince = observer.snapshot();
+    const heldBefore = new Set(await readdir(downloads));
+    await all.click();
     await waitFor(async () => heldRequest ? true : undefined, 'held media request');
     await page.keyboard.press('Escape');
     await gallery.waitFor({ state: 'detached' });
     releaseHeld();
     releaseHeld = undefined;
-    await waitFor(async () => heldRequest.result ? true : undefined, 'late transport settlement');
-    await assertNoDownload(managerPage, known, 'Pre-dispatch cancellation');
+    await waitFor(async () => heldRouteSettled ? true : undefined, 'late transport settlement');
+    await assertNoDownload(observer, heldSince, heldBefore, downloads,
+      'Pre-dispatch cancellation');
     result.cases.preDispatchCancellation = 'passed';
     result.cases.delayedSettlement = 'passed';
 
@@ -245,23 +302,26 @@ async function runFixture(context, managerId, root, output, downloads, images) {
     await page.reload({ waitUntil: 'domcontentloaded' });
     await trigger.click();
     await gallery.waitFor({ state: 'visible' });
+    const recoverySince = observer.snapshot();
+    const recoveryBefore = new Set(await readdir(downloads));
     await current.click();
-    const recovered = await waitForDownload(managerPage, known,
-      browserFilename(filename(0), 2), downloads, images[0].length);
+    const recovered = await waitForDownload(observer, recoverySince, recoveryBefore,
+      filename(0), browserFilename(filename(0), 2), downloads, images[0].length);
     assert(recovered.bytes.equals(images[0]), 'Reload recovery saved bytes differ');
-    known.add(recovered.id);
     result.downloads.push({ kind: 'single-after-reload', ...recovered, bytes: recovered.bytes.length });
     result.cases.reloadRecovery = 'passed';
-    assert.equal((await downloadsIn(managerPage)).length, known.size, 'Unexpected native download count');
+    await observer.flush();
+    assert.equal(observer.snapshot(), result.downloads.length,
+      'Unexpected native download count');
     await page.screenshot({ path: join(output, 'userscript-fixture.png') });
     result.status = 'passed';
     return result;
   } finally {
     if (releaseHeld) releaseHeld();
     await page.close().catch((error) => { result.cleanup.pageError = String(error); });
-    await managerPage.close().catch((error) => { result.cleanup.managerPageError = String(error); });
     await context.unroute('**/*', handler).then(() => { result.cleanup.routeRemoved = true; },
       (error) => { result.cleanup.routeError = String(error); });
+    result.browserDownloadEvents = observer.events();
     await writeFile(join(output, 'userscript-fixture-result.json'), JSON.stringify(result, null, 2));
     assert.deepEqual(result.cleanup, { routeRemoved: true }, 'Fixture cleanup failed');
   }
@@ -282,11 +342,12 @@ export async function runUserscriptInstallation({ chromium, root, output, browse
   const result = { status: 'failed', browserName, installation: 'userscript',
     installationMethod: 'real-manager-ui-import', sourceSha256: sha256(source),
     profileId: 'xeg-gallery', profilePrefix: PROFILE_PREFIX,
-    scope: 'small routed fixture; native saved bytes and history; no heap/RSS or native Save As claim',
+    scope: 'small routed fixture; CDP native completion and saved bytes; no heap/RSS or native Save As claim',
     cleanup: {} };
   let context;
   let cdp;
   let managerId;
+  let observer;
   let primaryError;
   try {
     context = await chromium.launchPersistentContext(profile, {
@@ -310,13 +371,18 @@ export async function runUserscriptInstallation({ chromium, root, output, browse
       imageSha256: images.map(sha256),
       maxDownloads: MAX_DOWNLOADS, maxRoutedImageRequests: 64,
       productionBudget: 'unchanged' };
-    result.fixture = await runFixture(context, managerId, root, output, downloads, images);
+    observer = createBrowserDownloadObserver(cdp);
+    result.fixture = await runFixture(context, observer, root, output, downloads, images);
     result.status = 'passed';
   } catch (error) {
     primaryError = error;
     result.error = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
   } finally {
     const errors = [];
+    if (observer) {
+      observer.dispose();
+      result.cleanup.browserDownloadObserverRemoved = true;
+    }
     if (cdp && managerId) {
       await cdp.send('Extensions.uninstall', { id: managerId }).then(
         () => { result.cleanup.managerUninstalled = true; }, (error) => errors.push(error));

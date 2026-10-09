@@ -2,6 +2,7 @@
 // Copyright (c) 2026 PiesP
 
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { EventEmitter } from 'node:events';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -145,8 +146,36 @@ const livePage = (await import(
 const installProfile = (await import(
   pathToFileURL(resolve(import.meta.dirname, '../../../validation/windows/install-profile.mjs')).href
 )) as InstallProfileModule;
+const userscriptInstall = (await import(
+  pathToFileURL(resolve(import.meta.dirname, '../../../validation/windows/userscript-install.mjs')).href
+)) as { createBrowserDownloadObserver(cdp: EventEmitter & { send(method: string): Promise<unknown> }): {
+  snapshot(): number;
+  waitForCompletion(since: number, name: string): Promise<{ guid: string; state: string }>;
+  assertNoneSince(since: number, label: string): Promise<void>;
+  dispose(): void;
+} };
 
 describe('Windows X live page validation', () => {
+  it('binds native completion to the browser download GUID without manager privileges', async () => {
+    const cdp = Object.assign(new EventEmitter(), { send: vi.fn(async () => ({})) });
+    const observer = userscriptInstall.createBrowserDownloadObserver(cdp);
+    const since = observer.snapshot();
+    cdp.emit('Browser.downloadWillBegin', {
+      guid: 'owned-download', suggestedFilename: 'image.jpg', url: 'blob:https://x.com/owned',
+    });
+    cdp.emit('Browser.downloadProgress', {
+      guid: 'owned-download', state: 'completed', receivedBytes: 5, totalBytes: 5,
+    });
+    await expect(observer.waitForCompletion(since, 'image.jpg')).resolves.toMatchObject({
+      guid: 'owned-download', state: 'completed', receivedBytes: 5,
+    });
+    await expect(observer.assertNoneSince(observer.snapshot(), 'cancelled action')).resolves.toBeUndefined();
+    expect(cdp.send).toHaveBeenCalledWith('Browser.getVersion');
+    observer.dispose();
+    expect(cdp.listenerCount('Browser.downloadWillBegin')).toBe(0);
+    expect(cdp.listenerCount('Browser.downloadProgress')).toBe(0);
+  });
+
   it('rejects a paused in-progress download after all bytes have arrived', () => {
     const download = {
       bytesReceived: 256 * 1024 * 1024,
