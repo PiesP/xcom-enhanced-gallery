@@ -277,6 +277,18 @@ describe('Windows X live page validation', () => {
     }
   });
 
+  it('routes the installed userscript separately and rejects public URLs', async () => {
+    const chromium = {
+      launchPersistentContext: async (): Promise<never> => {
+        throw new Error('browser must not launch');
+      },
+    };
+    await expect(installProfile.run({
+      browserName: 'chrome', chromium, headless: true, installation: 'userscript',
+      liveUrls: ['https://x.com/a/status/1'], output: '/unused', root: '/unused',
+    })).rejects.toThrow('does not support public URLs');
+  });
+
   it('keeps live observation opt-in and bundles its imported module', async () => {
     await expect(
       livePage.observeLiveUrls({
@@ -295,6 +307,8 @@ describe('Windows X live page validation', () => {
       readFileSync(resolve(import.meta.dirname, '../../../validation/windows/profile.json'), 'utf8')
     ) as { installation?: { assets?: string[] } };
     expect(profile.installation?.assets).toContain('validation/windows/live-page.mjs');
+    expect(profile.installation?.assets).toContain('validation/windows/userscript-install.mjs');
+    expect(profile.installation?.assets).toContain('dist/xcom-enhanced-gallery.user.js');
   });
 
   it('changes only the supported video click setting in a complete task-owned copy', () => {

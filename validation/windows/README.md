@@ -1,6 +1,6 @@
 # Windows stable-browser gallery validation
 
-This optional validation has three separate evidence tiers. None substitutes
+This optional validation has four separate evidence tiers. None substitutes
 for another, and none is a required CI lane.
 
 1. **Artifact-only smoke:** injects the production userscript into a
@@ -9,7 +9,12 @@ for another, and none is a required CI lane.
 2. **Installed Chrome/Edge profile:** loads the production unpacked extension
    in a fresh task-owned browser profile and checks the real privileged download
    and extension lifecycle paths against a deterministic fixture.
-3. **Optional public-page observation:** observes up to three unchanged public
+3. **Installed Chrome/Edge Tampermonkey profile:** installs the exact production
+   `.user.js` through the reviewed manager UI in a fresh owned profile. It checks
+   repeated native singles and ZIPs, a partial ZIP, routed transport failure,
+   cancellation before dispatch, gallery close/reopen, and reload recovery with
+   independently read saved files. It does not alter the production byte budget.
+4. **Optional public-page observation:** observes up to three unchanged public
    X/Twitter status URLs after the installed deterministic fixture. It remains
    observational and can finish as `unverified`.
 
@@ -192,8 +197,9 @@ times, request phases, page time origin, screenshots, and exact route cleanup.
 The declared limit is an admission-policy check; browser heap and RSS are not
 measured, and the oversized body is never allocated.
 
-Only installed Chrome or Edge with `--installation extension` is supported.
-Userscript managers, Firefox installation, authenticated X.com, native Save As,
+Installed Chrome or Edge supports `--installation extension` and the separate
+`--installation userscript` Tampermonkey fixture. Firefox userscript installation,
+Violentmonkey, authenticated X.com, native Save As,
 Explorer, OS theme/DPI matrices, and physical GPU behavior remain outside this
 profile. This restart check covers an explicit forced stop in the generated
 Chromium MV3 extension; it does not exercise natural idle termination, browser
@@ -208,6 +214,36 @@ outside the checkout.
 The entry uninstalls the extension and removes its profile after the owned
 browser closes. If browser cleanup fails, it preserves that profile for bounded
 diagnosis rather than terminating unrelated processes.
+
+## Installed Tampermonkey userscript flow
+
+Prepare the reviewed unpacked Tampermonkey package with the maintained YT
+`validation/windows/prepare-userscript-manager.py` helper, then pass its output
+as `--manager-directory` to the shared controller. The helper pins Tampermonkey
+5.5.0; the controller independently verifies the manager tree and bundles its
+file hashes. Use a clean committed checkout and run:
+
+```bash
+python3 /home/piesp/projects/windows-acceptance/vmctl.py run \
+  --repo /home/piesp/projects/xcom-enhanced-gallery \
+  --browser chrome --mode desktop --installation userscript \
+  --manager-directory /path/to/unpacked/tampermonkey \
+  --output /path/to/private/xcom-userscript-evidence
+```
+
+Use a separate invocation for Edge. The manager is imported as an unpacked
+extension, the production userscript is installed through its confirmation UI,
+and native downloads use the owned browser directory. The independent ZIP reader
+checks stored entries, central directory, order, CRCs, names, and bytes. Browser
+download history must report `complete` before file bytes are read. A completed
+native save does not release the userscript's page-owned Blob reservation: that
+reservation remains until genuine page teardown. Gallery reopen alone cannot
+recover it. The 512 MiB ledger covers all live reservations, so it is not a
+per-file allowance. After no download is active, a real reload starts a new
+page lifetime. This fixture records policy behavior; exact and over-limit
+arithmetic, BFCache, and synthetic event boundaries belong to production unit
+tests. It measures neither heap nor RSS and makes no elapsed-time completion
+claim. Firefox userscript and Violentmonkey remain untested by this controller.
 
 ### Optional public status observation
 
