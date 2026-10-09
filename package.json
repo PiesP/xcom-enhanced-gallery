@@ -1,6 +1,6 @@
 {
   "name": "xcom-enhanced-gallery",
-  "version": "2.3.4",
+  "version": "2.3.5",
   "description": "Desktop media gallery and original-quality downloader for X.com.",
   "type": "module",
   "private": true,

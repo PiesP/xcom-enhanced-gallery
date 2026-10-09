@@ -46,6 +46,10 @@ then retry fewer files. Reloading while a native download still reads a
 page-owned Blob URL can interrupt it. The ledger does not infer terminal status
 from elapsed time.
 
+The allowance is shared by the whole page, not granted separately to each file.
+Closing and reopening the gallery does not release userscript anchor ownership.
+Wait for the browser to finish active saves before reloading or closing the page.
+
 Regression tests use small injected `LiveByteBudget` instances and the production
 reader, writer, HTTP service and download adapters. Installed Edge acceptance
 separately verifies routed fixture rejection, normal single/ZIP file bytes and

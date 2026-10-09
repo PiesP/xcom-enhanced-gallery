@@ -8,12 +8,22 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.3.5] - 2026-10-09
+
 ### Fixed
 
 - **API recovery** — Keep explicit unavailable or deleted tweet responses out of API outage accounting so later posts remain immediately extractable. Preserve bounded visibility wrappers, tweet ownership checks, provider-error precedence, cancellation, and the existing circuit cooldown.
 - **Quoted video** — Recover a quoted video's owner from a direct API quote relationship and unique click-time media identity when its permalink is missing or separate header and credit links leave ownership unresolved. Keep nested quotes, ambiguous sources, and conflicting owners from substituting another attachment, and retain each item's originating post, author, text, and download metadata.
 - **Video controls** — Honor the `allow-all` click setting for a native button in a bounded, identifiable video preview or player without X's player markers.
 - **Current download** — Keep a fully visible selected video active when neighboring media also fits in the gallery. After scrolling changes the displayed item, keep its post text and source link aligned with the download target.
+- **Trusted controls** — Require trusted keyboard and click input before privileged gallery actions. Preserve normal navigation, focus restoration, downloads, and private cancellation binding.
+- **Download ownership** — Share one page-level allowance across retained media, response copies, ZIP work, and Blob handoffs. Reject resource limits without retrying through an unbounded fallback. Partial ZIPs report the exact included and omitted counts.
+
+### Changed
+
+- **Userscript recovery** — Keep saved Blob ownership until the page is genuinely reloaded or closed. Reopening the gallery does not return this allowance. Wait for active saves to finish before reloading, and retry fewer files after an allowance rejection; this policy does not measure browser heap or process memory.
+- **Maintenance admission** — Require an explicit maintainer decision before executable dependency updates can be admitted, while preserving exact source checks and immutable workflow references.
+- **Installed acceptance** — Add a separate production-userscript profile for real Tampermonkey installation and bounded repeated-download fixtures. Keep browser completion, saved-byte verification, and post-cancellation observation separate from application ownership accounting.
 
 ## [2.3.4] - 2026-10-07
 
