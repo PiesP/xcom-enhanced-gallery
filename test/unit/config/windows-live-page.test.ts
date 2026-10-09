@@ -181,6 +181,10 @@ const userscriptInstall = (await import(
     overflow(): number;
     dispose(): void;
   };
+  findPostClickFailedMediaTransport(records: Array<{ phase: string; mediaPhase: string;
+    index: number; method: string; resourceType: string; result: string }>, startIndex: number,
+  phase: string, mediaIndex: number): { routeIndex: number; phase: string; mediaIndex: number;
+    method: string; resourceType: string; result: string } | undefined;
   createBrowserDownloadObserver(cdp: EventEmitter & { send(method: string): Promise<unknown> }): {
   snapshot(): number;
   waitForCompletion(since: number, name: string): Promise<{ guid: string; state: string }>;
@@ -311,6 +315,44 @@ describe('Windows X live page validation', () => {
     watcher.dispose();
     context.emit('request', owned);
     expect(watcher.events).toHaveLength(3);
+  });
+
+  it('requires a post-click GET transport failure rather than a preload or stale route', () => {
+    const failed = { phase: 'failure', mediaPhase: 'failure', index: 0,
+      method: 'GET', resourceType: 'fetch', result: 'http-503' };
+    const baseline = [failed];
+    const candidates = [
+      { ...failed, resourceType: 'image' },
+      { ...failed, phase: 'partial' },
+      { ...failed, mediaPhase: 'partial' },
+      { ...failed, index: 1 },
+      { ...failed, method: 'POST' },
+      { ...failed, resourceType: 'document' },
+      { ...failed, result: 'image' },
+    ];
+    const records = [...baseline, ...candidates];
+    expect(userscriptInstall.findPostClickFailedMediaTransport(records, 1, 'failure', 0))
+      .toBeUndefined();
+    records.push(failed);
+    expect(userscriptInstall.findPostClickFailedMediaTransport(records, 1, 'failure', 0))
+      .toEqual({ routeIndex: records.length - 1, phase: 'failure', mediaIndex: 0,
+        method: 'GET', resourceType: 'fetch', result: 'http-503' });
+    expect(() => userscriptInstall.findPostClickFailedMediaTransport(records,
+      records.length + 1, 'failure', 0)).toThrow('baseline');
+  });
+
+  it('correlates partial ZIP index one with a post-click XHR or other transport', () => {
+    const failed = { phase: 'partial', mediaPhase: 'partial', index: 1,
+      method: 'GET', resourceType: 'xhr', result: 'http-503' };
+    const records = [{ ...failed, resourceType: 'image' }, failed];
+    expect(userscriptInstall.findPostClickFailedMediaTransport(records, 1, 'partial', 1))
+      .toEqual({ routeIndex: 1, phase: 'partial', mediaIndex: 1,
+        method: 'GET', resourceType: 'xhr', result: 'http-503' });
+    expect(userscriptInstall.findPostClickFailedMediaTransport(records, 1, 'partial', 0))
+      .toBeUndefined();
+    records.push({ ...failed, resourceType: 'other' });
+    expect(userscriptInstall.findPostClickFailedMediaTransport(records, 2, 'partial', 1))
+      .toMatchObject({ routeIndex: 2, resourceType: 'other' });
   });
 
   it('keeps permission-diagnostic frame URLs on owned origins without query tokens', () => {

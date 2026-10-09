@@ -151,6 +151,23 @@ export function requireHeldRouteOutcome(routeInvocation, requestTerminal) {
   return { routeInvocation, requestTerminal };
 }
 
+/** Correlate a failed media transport with the ZIP action, excluding image preloads. */
+export function findPostClickFailedMediaTransport(records, startIndex, phase, mediaIndex) {
+  assert(Number.isSafeInteger(startIndex) && startIndex >= 0 && startIndex <= records.length,
+    'Invalid pre-click media route baseline');
+  assert(['failure', 'partial'].includes(phase), 'Unexpected failure fixture phase');
+  for (let routeIndex = startIndex; routeIndex < records.length; routeIndex++) {
+    const record = records[routeIndex];
+    if (record.phase === phase && record.mediaPhase === phase && record.index === mediaIndex &&
+      record.method === 'GET' && ['fetch', 'xhr', 'other'].includes(record.resourceType) &&
+      record.result === 'http-503') {
+      return { routeIndex, phase, mediaIndex, method: record.method,
+        resourceType: record.resourceType, result: record.result };
+    }
+  }
+  return undefined;
+}
+
 export function managerDetailsUrl(browserName, id) {
   assert(['chrome', 'msedge'].includes(browserName), 'Unsupported manager browser');
   return `${browserName === 'msedge' ? 'edge' : 'chrome'}://extensions/?id=${encodeURIComponent(id)}`;
@@ -810,7 +827,7 @@ async function runFixture(context, observer, root, output, downloads, images, ma
   const html = await readFile(join(root, 'test/e2e/fixtures/installed-gallery-page.html'), 'utf8');
   const routeRecords = [];
   const result = { status: 'failed', downloads: [], routes: routeRecords, routeFailures: [],
-    routeFailureOverflow: 0, cases: {}, cleanup: {} };
+    routeFailureOverflow: 0, transportReceipts: {}, cases: {}, cleanup: {} };
   let phase = 'normal';
   let heldRequest;
   let releaseHeld;
@@ -968,11 +985,12 @@ async function runFixture(context, observer, root, output, downloads, images, ma
     await showPhase('failure');
     const failureSince = observer.snapshot();
     const failureBefore = new Set(await readdir(downloads));
+    const failureRouteStart = routeRecords.length;
     await all.click();
-    await waitFor(async () => routeRecords.some(({ phase: p, mediaPhase, index, result: outcome }) =>
-      p === 'failure' && mediaPhase === 'failure' && index === 0 && outcome === 'http-503')
-      ? true : undefined,
-    'routed transport failure');
+    const failedTransport = await waitFor(() =>
+      findPostClickFailedMediaTransport(routeRecords, failureRouteStart, 'failure', 0),
+    'post-click routed transport failure');
+    result.transportReceipts.networkFailure = { startIndex: failureRouteStart, ...failedTransport };
     await waitFor(async () => await all.isEnabled() ? true : undefined, 'failed control ready');
     await observeNoNativeDownload(observer, failureSince, failureBefore, downloads,
       'Transport failure');
@@ -981,6 +999,7 @@ async function runFixture(context, observer, root, output, downloads, images, ma
     await showPhase('partial');
     const partialSince = observer.snapshot();
     const partialBefore = new Set(await readdir(downloads));
+    const partialRouteStart = routeRecords.length;
     await all.click();
     const includedEntries = expectedEntries.filter((_, index) => index !== 1);
     const partialName = FIXTURE_ZIP_NAME;
@@ -989,10 +1008,13 @@ async function runFixture(context, observer, root, output, downloads, images, ma
       expectedStoredZipBytes(includedEntries));
     const partialZip = verifyStoredZip(partial.bytes, includedEntries);
     result.downloads.push({ kind: 'partial-zip', ...partial, bytes: partial.bytes.length,
-      entryOrder: partialZip.entryOrder, included: 2, omitted: 1 });
-    assert(routeRecords.some(({ phase: p, mediaPhase, index, result: outcome }) =>
-      p === 'partial' && mediaPhase === 'partial' && index === 1 && outcome === 'http-503'),
-    'Partial ZIP failure was not routed');
+      entryOrder: partialZip.entryOrder, included: partialZip.entries.length,
+      omitted: expectedEntries.length - partialZip.entries.length,
+      countSource: 'verified-zip-inventory-vs-expected-fixture' });
+    const partialFailedTransport = await waitFor(() =>
+      findPostClickFailedMediaTransport(routeRecords, partialRouteStart, 'partial', 1),
+    'post-click partial ZIP transport failure');
+    result.transportReceipts.partialZip = { startIndex: partialRouteStart, ...partialFailedTransport };
     result.cases.partialZip = 'passed';
     await waitFor(async () => await all.isEnabled() ? true : undefined, 'partial ZIP control ready');
 
