@@ -130,6 +130,10 @@ export async function run({ browser, root, output }) {
       // Exercise an actual browser download through an explicitly mocked GM host.
       window.GM_download = (details, name) => {
         const options = typeof details === 'string' ? { url: details, name } : details;
+        if (!options.name) {
+          options.onerror?.(new Error('GM_download requires name'));
+          return;
+        }
         document.documentElement.dataset.xegAcceptanceDownload = options.url;
         const index = options.url.includes('5678') ? 1 : options.url.includes('9012') ? 2 : 0;
         const binary = atob(encodedFixtures[index]);
@@ -139,7 +143,7 @@ export async function run({ browser, root, output }) {
           const url = URL.createObjectURL(blob);
           const anchor = document.createElement('a');
           anchor.href = url;
-          anchor.download = options.filename ?? options.name ?? 'fixture.png';
+          anchor.download = options.name;
           (document.querySelector('.xeg-gallery-root') ?? document.body).append(anchor);
           anchor.click();
           anchor.remove();

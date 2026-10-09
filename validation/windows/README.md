@@ -1,6 +1,6 @@
 # Windows stable-browser gallery validation
 
-This optional validation has three separate evidence tiers. None substitutes
+This optional validation has four separate evidence tiers. None substitutes
 for another, and none is a required CI lane.
 
 1. **Artifact-only smoke:** injects the production userscript into a
@@ -9,7 +9,27 @@ for another, and none is a required CI lane.
 2. **Installed Chrome/Edge profile:** loads the production unpacked extension
    in a fresh task-owned browser profile and checks the real privileged download
    and extension lifecycle paths against a deterministic fixture.
-3. **Optional public-page observation:** observes up to three unchanged public
+3. **Installed Chrome/Edge Tampermonkey profile:** installs the exact production
+   `.user.js` through the reviewed manager UI in a fresh owned profile. It checks
+   repeated native singles and ZIPs, a partial ZIP, routed transport failure,
+   cancellation before dispatch, gallery close/reopen, and reload recovery with
+   independently read saved files. It configures Browser API mode in the
+   task-owned Tampermonkey options UI, checks the existing JPG/ZIP whitelist,
+   and confirms the manager's own permission page when shown. That UI may
+   request Tampermonkey's optional downloads permission. On Chrome, a bounded
+   Windows UI Automation step may invoke the ordinary **Allow** button only
+   for the fully recognized downloads-only prompt in that fresh owned profile.
+   It rechecks the browser process, session and foreground window before acting;
+   unrecognized, incomplete or changed prompts are skipped. Edge prompts are
+   not automated. An independent manager permission probe records whether the
+   permission was actually granted or remains pending. Native completion and
+   saved bytes require separate evidence.
+   The fresh manager profile sets General > LogLevel to Info (60) through its
+   options UI, and the manager-console receipt keeps only bounded known branch counts.
+   That setting is removed with the owned profile after browser closure; failed
+   cleanup preserves the profile and receipt for review.
+   The production byte budget is unchanged.
+4. **Optional public-page observation:** observes up to three unchanged public
    X/Twitter status URLs after the installed deterministic fixture. It remains
    observational and can finish as `unverified`.
 
@@ -192,8 +212,9 @@ times, request phases, page time origin, screenshots, and exact route cleanup.
 The declared limit is an admission-policy check; browser heap and RSS are not
 measured, and the oversized body is never allocated.
 
-Only installed Chrome or Edge with `--installation extension` is supported.
-Userscript managers, Firefox installation, authenticated X.com, native Save As,
+Installed Chrome or Edge supports `--installation extension` and the separate
+`--installation userscript` Tampermonkey fixture. Firefox userscript installation,
+Violentmonkey, authenticated X.com, native Save As,
 Explorer, OS theme/DPI matrices, and physical GPU behavior remain outside this
 profile. This restart check covers an explicit forced stop in the generated
 Chromium MV3 extension; it does not exercise natural idle termination, browser
@@ -208,6 +229,63 @@ outside the checkout.
 The entry uninstalls the extension and removes its profile after the owned
 browser closes. If browser cleanup fails, it preserves that profile for bounded
 diagnosis rather than terminating unrelated processes.
+
+## Installed Tampermonkey userscript flow
+
+Prepare a reviewed unpacked Tampermonkey package outside the checkout, then
+pass that directory as `--manager-directory` to the shared controller. The
+maintained YT `validation/windows/prepare-userscript-manager.py` helper pins
+5.5.0 and must not be used for a different Store version. The controller
+validates the manager identity and bundles its exact file hashes. Record the
+original package digest and installation source separately. Use a clean
+committed checkout and run:
+
+```bash
+python3 /home/piesp/projects/windows-acceptance/vmctl.py run \
+  --repo /home/piesp/projects/xcom-enhanced-gallery \
+  --browser chrome --mode desktop --installation userscript \
+  --manager-directory /path/to/unpacked/tampermonkey \
+  --output /path/to/private/xcom-userscript-evidence
+```
+
+The HTTPS userscript fixture currently supports Chrome only; Edge userscript
+acceptance remains unverified. The manager is imported as an unpacked
+extension, the production userscript is installed through its confirmation UI,
+and native downloads use the owned browser directory. The fixture starts a
+task-owned HTTPS listener on ephemeral `127.0.0.1` before launching the fresh
+profile. A one-run SPKI exception and exact `pbs.twimg.com:443` host mapping let
+the real manager and browser download API fetch only the declared fixture JPEGs.
+The generated private key stays in process memory; no OS trust or hosts setting
+is changed. For each single image, a read-only query from the exact manager
+options page requires one new native download ID for the fixture URL, a complete
+state, the exact owned saved path and name, and the expected file size. The
+only new owned file is then read and checked against the fixture bytes. CDP
+download events are checked when present for these manager API downloads, but
+their absence is recorded separately. ZIPs still require browser-level CDP
+`completed` for each unique GUID and an independently read owned file. The ZIP
+reader checks stored entries, central directory, order, CRCs, names, and bytes.
+Queries return only bounded IDs, states, interrupt enums, and match booleans;
+unavailable or ambiguous history fails the native completion gate. A completed
+native save does not release the userscript's page-owned Blob reservation: that
+reservation remains until genuine page teardown. Gallery reopen alone cannot
+recover it. The 512 MiB ledger covers all live reservations, so it is not a
+per-file allowance. After no download is active, a real reload starts a new
+page lifetime. Normal, failed, partial, and held transfers use distinct fixture
+media IDs, and each phase opens its own article in the same document; completed
+media cache entries cannot mask the later transport cases. The first normal ZIP
+requires three loopback responses. Its same-page repeat may reuse completed
+media cache entries and is verified by the saved ZIP inventory and bytes. The
+cancellation case holds one armed loopback response and requires its connection
+to close after gallery
+cancellation, then keeps the same document alive for a bounded two-second
+observation, checking browser
+download events and owned files repeatedly. It does not prove that an
+unobservable manager callback can never arrive later. ZIP receipts record only
+the source scheme and origin and require the expected X.com page Blob origin;
+they omit the Blob UUID. This fixture records policy behavior; exact and over-limit
+arithmetic, BFCache, and synthetic event boundaries belong to production unit
+tests. It measures neither heap nor RSS and makes no elapsed-time completion
+claim. Firefox userscript and Violentmonkey remain untested by this controller.
 
 ### Optional public status observation
 

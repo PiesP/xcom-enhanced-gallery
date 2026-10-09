@@ -361,7 +361,7 @@ export async function enableDeveloperMode(context, browserName) {
   }
 }
 
-async function verifyDownloadDirectory(context, downloads) {
+export async function verifyDownloadDirectory(context, downloads) {
   const page = await context.newPage();
   try {
     await page.goto('chrome://settings/downloads');
@@ -376,7 +376,7 @@ async function verifyDownloadDirectory(context, downloads) {
   }
 }
 
-async function createImageFixtures(context) {
+export async function createImageFixtures(context) {
   const page = await context.newPage();
   try {
     await page.goto('about:blank');
@@ -3471,7 +3471,13 @@ export async function run({
   liveObservation = null,
 }) {
   assert(['chrome', 'msedge'].includes(browserName), 'Installed XCOM profile supports Chrome and Edge only');
-  assert.equal(installation, 'extension', 'Installed XCOM profile supports extension installation only');
+  assert(['extension', 'userscript'].includes(installation), 'Unknown XCOM installation mode');
+  if (installation === 'userscript') {
+    assert.equal(liveUrls.length, 0, 'Installed userscript fixture does not support public URLs');
+    assert.equal(liveObservation, null, 'Installed userscript fixture does not support duration observation');
+    const { runUserscriptInstallation } = await import('./userscript-install.mjs');
+    return runUserscriptInstallation({ chromium, root, output, browserName, headless });
+  }
   const validatedLiveUrls = validateLiveUrls(liveUrls);
   validateLiveObservation(liveObservation);
   await mkdir(output, { recursive: true });

@@ -32,9 +32,9 @@ Per-response, entry and serialized-archive limits are additional ceilings.
 The effective admitted size can be lower when another operation or cache owns
 part of the page budget. The ledger deliberately rejects admission instead of
 waiting indefinitely for memory retained by the same archive. Resource-limit
-errors do not retry or start an alternate whole-body download. A partial ZIP
-reports the exact successful/failed counts and retains the resource-limit code;
-an archive with no accepted files is a failure.
+errors do not retry or start an alternate whole-body download. A resource-limit
+partial ZIP reports the exact successful/failed counts and retains the resource-limit
+code; an archive with no accepted files is a failure.
 
 For ordinary completed extension downloads, terminal observation returns the
 reservation and permits subsequent downloads in the same page. An unknown
@@ -45,6 +45,10 @@ the limit remains, reload the page to release conservative page-lifetime holds,
 then retry fewer files. Reloading while a native download still reads a
 page-owned Blob URL can interrupt it. The ledger does not infer terminal status
 from elapsed time.
+
+The allowance is shared by the whole page, not granted separately to each file.
+Closing and reopening the gallery does not release userscript anchor ownership.
+Wait for the browser to finish active saves before reloading or closing the page.
 
 Regression tests use small injected `LiveByteBudget` instances and the production
 reader, writer, HTTP service and download adapters. Installed Edge acceptance

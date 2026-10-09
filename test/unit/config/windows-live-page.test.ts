@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 PiesP
 
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { EventEmitter } from 'node:events';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -145,8 +146,1067 @@ const livePage = (await import(
 const installProfile = (await import(
   pathToFileURL(resolve(import.meta.dirname, '../../../validation/windows/install-profile.mjs')).href
 )) as InstallProfileModule;
+const userscriptInstall = (await import(
+  pathToFileURL(resolve(import.meta.dirname, '../../../validation/windows/userscript-install.mjs')).href
+)) as { MEDIA_COHORTS: Record<'normal' | 'failure' | 'partial' | 'held', string[]>;
+  PUBLIC_AVATAR_PATH: string;
+  isPublicAvatarFixtureUrl(value: string): boolean;
+  FIXTURE_ZIP_NAME: string;
+  fixtureZipEntries(images: Uint8Array[]): Array<{ filename: string; bytes: Uint8Array }>;
+  managerDetailsUrl(browserName: string, id: string): string;
+  probeManagerUserScripts(page: { evaluate(callback: () => Promise<unknown>): Promise<unknown> }):
+    Promise<{ available: boolean; registeredScriptCount?: number; errorType?: string }>;
+  hasKnownChromeUserScriptsLabel(text: string): boolean;
+  summarizeManagerFrameUrl(value: string, managerId: string): string | null;
+  isOwnedManagerDetailsUrl(value: string, detailsUrl: string): boolean;
+  isOwnedManagerInspectionUrl(value: string, detailsUrl: string, managerId: string): boolean;
+  isOwnedManagerOptionsUrl(value: string, managerId: string): boolean;
+  isOwnedManagerPermissionAskUrl(value: string, managerId: string): boolean;
+  browserProcessId(value: unknown): number | null;
+  isObservedChromeNativeDownloadPrompt(value: unknown): boolean;
+  captureNativeManagerPermission(cdp: { send(method: string): Promise<unknown> }, root: string,
+    output: string, profile: string, browserName: string,
+    run: (file: string, args: string[], options: unknown) => Promise<unknown>):
+    Promise<{ status: string; reason: string | null }>;
+  inspectAndAllowNativeManagerPermission(cdp: { send(method: string): Promise<unknown> },
+    root: string, output: string, profile: string, browserName: string,
+    ask: { isClosed(): boolean; context(): unknown; url(): string }, managerId: string,
+    context: unknown, run: (file: string, args: string[], options: unknown) => Promise<unknown>):
+    Promise<{ status: string; action: { status: string; reason: string | null } }>;
+  requireManagerDownloadsHeading(actual: string, localizedDownloads: string): void;
+  managerSettingRowLabel(localizedName: string): string;
+  managerSettingRow(scope: unknown, localizedName: string): unknown;
+  captureAndConfirmManagerPermissionAsk(ask: unknown, managerId: string, output: string,
+    okLabel: string): Promise<void>;
+  requireManagerUiLabels(labels: Record<string, unknown>): Record<string, string>;
+  readManagerUiLabels(page: { url(): string;
+    evaluate(callback: (id: string) => unknown, id: string): Promise<unknown> },
+  managerId: string): Promise<Record<string, string>>;
+  probeManagerDownloadsPermission(page: { url(): string;
+    evaluate(callback: (id: string) => Promise<boolean>, id: string): Promise<boolean> },
+  managerId: string): Promise<boolean>;
+  configureManagerInfoLogging(page: unknown, managerId: string): Promise<{
+    original: string; requested: string; observed: string; scope: string }>;
+  inspectFirstCurrentDownload(page: { url(): string;
+    evaluate(callback: (url: string) => unknown, url: string): Promise<unknown> }): Promise<unknown>;
+  inspectManagerDownloadHistoryDocument(args: { managerId: string; fixtureUrl: string;
+    expectedName: string; expectedPath: string; expectedBytes: number }): Promise<{
+      status: string; items: Array<{ id: number; state: string; interruptReason: string | null;
+        requestedNameMatch: boolean; ownedPathMatch: boolean; expectedSizeMatch: boolean;
+        fixtureUrlMatch: boolean }> }>;
+  firstCurrentManagerDownloadHistory(before: { status: string; items: Array<{ id: number }> },
+    after: { status: string; items: Array<{ id: number }> }): { status: string;
+      items: Array<{ id: number }> };
+  selectCompletedManagerDownload(before: unknown, after: unknown):
+    { nativeId: number; nativeState: string; completionSource: string } | undefined;
+  runUserscriptInstallation(options: { browserName: string; chromium: unknown; root: string;
+    output: string; headless: boolean }): Promise<unknown>;
+  classifyManagerDownloadConsole(value: unknown): string | null;
+  watchManagerDownloadConsole(context: EventEmitter & { serviceWorkers(): EventEmitter[] },
+    managerId: string): { mark(): unknown; snapshotSince(before: unknown): unknown; dispose(): void };
+  findEdgeUserScriptsControl(page: unknown, managerId: string): Promise<unknown>;
+  watchFixtureMediaNetwork(context: EventEmitter): {
+    events: Array<{ kind: string; cohort: string; index: number; method: string;
+      resourceType: string; status: number | null }>;
+    overflow(): number;
+    dispose(): void;
+  };
+  createBrowserDownloadObserver(cdp: EventEmitter & { send(method: string): Promise<unknown> }): {
+  snapshot(): number;
+  waitForCompletion(since: number, name: string): Promise<{ guid: string; state: string }>;
+  assertNoneSince(since: number, label: string): Promise<void>;
+  events(): Array<{ guid: string; source: { scheme: string; origin: string } }>;
+  dispose(): void;
+};
+  requirePageBlobZipSource(value: string): { scheme: string; origin: string };
+  observeNoNativeDownload(observer: { assertNoneSince(since: number, label: string): Promise<void> },
+    since: number, files: Set<string>, directory: string, label: string,
+    durationMs: number): Promise<{ samples: number }>;
+};
 
 describe('Windows X live page validation', () => {
+  it('keeps the loopback certificate exception scoped to Chrome', async () => {
+    const chromium = { launchPersistentContext: vi.fn() };
+    await expect(userscriptInstall.runUserscriptInstallation({ browserName: 'msedge', chromium,
+      root: '/unused', output: '/unused', headless: false })).rejects.toThrow('Chrome only');
+    expect(chromium.launchPersistentContext).not.toHaveBeenCalled();
+  });
+
+  const nativePrompt = () => ({ status: 'captured', capture: 'uia-only',
+    screenshot: 'not-captured', permissionGrantAttempted: false, truncated: true,
+    browserPid: 42, creationUtcTicks: '639271195545735820', browserSessionId: 2,
+    observerSessionId: 2, foregroundHandle: '8259362',
+    foregroundOwnedAndVisible: true, uiaRootProcessId: 42,
+    controls: [
+      { name: "'Tampermonkey'이(가) 추가 승인을 요청했습니다.", controlType: 'ControlType.Window', depth: 3 },
+      { name: '허용', controlType: 'ControlType.Button', depth: 8 },
+      { name: '거부', controlType: 'ControlType.Button', depth: 8 },
+    ],
+    promptScope: { complete: true, reason: null as string | null, windowCount: 1,
+      nameTruncated: false, rootProcessId: 42, visitedControls: 6, attemptedNodes: 6,
+      controls: [
+        { name: "'Tampermonkey'이(가) 추가 승인을 요청했습니다.", controlType: 'ControlType.Window',
+          depth: 0, isEnabled: true, isOffscreen: false },
+        { name: "'Tampermonkey'이(가) 추가 승인을 요청했습니다.", controlType: 'ControlType.Text',
+          depth: 1, isEnabled: true, isOffscreen: false },
+        { name: '이전에 가능했던 대상:', controlType: 'ControlType.Text',
+          depth: 2, isEnabled: true, isOffscreen: false },
+        { name: '다운로드 관리', controlType: 'ControlType.Text',
+          depth: 2, isEnabled: true, isOffscreen: false },
+        { name: '허용', controlType: 'ControlType.Button',
+          depth: 1, isEnabled: true, isOffscreen: false },
+        { name: '거부', controlType: 'ControlType.Button',
+          depth: 1, isEnabled: true, isOffscreen: false },
+      ] } });
+
+  it('rejects a changed native title, extra permission, ambiguous Allow, and mismatched process', () => {
+    expect(userscriptInstall.isObservedChromeNativeDownloadPrompt(nativePrompt())).toBe(true);
+    const wrongTitle = nativePrompt();
+    wrongTitle.promptScope.controls[0]!.name = 'Another extension requested approval';
+    expect(userscriptInstall.isObservedChromeNativeDownloadPrompt(wrongTitle)).toBe(false);
+    const otherPermission = nativePrompt();
+    otherPermission.promptScope.controls.push({ name: '방문 기록 읽기',
+      controlType: 'ControlType.Text', depth: 2, isEnabled: true, isOffscreen: false });
+    otherPermission.promptScope.visitedControls++;
+    expect(userscriptInstall.isObservedChromeNativeDownloadPrompt(otherPermission)).toBe(false);
+    const ambiguousAllow = nativePrompt();
+    ambiguousAllow.promptScope.controls.push({ name: '허용', controlType: 'ControlType.Button',
+      depth: 1, isEnabled: true, isOffscreen: false });
+    ambiguousAllow.promptScope.visitedControls++;
+    expect(userscriptInstall.isObservedChromeNativeDownloadPrompt(ambiguousAllow)).toBe(false);
+    const differentProcess = nativePrompt();
+    differentProcess.uiaRootProcessId = 77;
+    expect(userscriptInstall.isObservedChromeNativeDownloadPrompt(differentProcess)).toBe(false);
+    const incompleteScope = nativePrompt();
+    incompleteScope.promptScope.complete = false;
+    incompleteScope.promptScope.reason = 'depth-cap';
+    incompleteScope.promptScope.controls.pop();
+    incompleteScope.promptScope.visitedControls--;
+    expect(userscriptInstall.isObservedChromeNativeDownloadPrompt(incompleteScope)).toBe(false);
+    const disabledAllow = nativePrompt();
+    disabledAllow.promptScope.controls[4]!.isEnabled = false;
+    expect(userscriptInstall.isObservedChromeNativeDownloadPrompt(disabledAllow)).toBe(false);
+  });
+
+  it('requires a current owned manager ask before guarded native Invoke', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'xeg-native-invoke-'));
+    const profile = join(root, 'xeg-userscript-install-owned');
+    const output = join(root, 'output');
+    mkdirSync(profile);
+    mkdirSync(output);
+    const context = {};
+    let closed = false;
+    let url = 'chrome-extension://owned/ask.html?aid=opaque';
+    let promptReceipt = nativePrompt();
+    const ask = { isClosed: () => closed, context: () => context,
+      url: () => url };
+    const cdp = { send: vi.fn(async () => ({ processInfo: [{ type: 'browser', id: 42 }] })) };
+    const run = vi.fn(async (_file: string, args: string[], _options: unknown) => {
+      writeFileSync(join(output, args.includes('-InvokeAllow')
+        ? 'userscript-manager-native-permission-action.json'
+        : 'userscript-manager-native-permission.json'), JSON.stringify(args.includes('-InvokeAllow')
+        ? { status: 'invoked', capture: 'uia-only', screenshot: 'not-captured',
+            permissionGrantAttempted: true, postProcessStable: true, postForegroundOwned: true }
+        : promptReceipt));
+    });
+    try {
+      closed = true;
+      const skipped = await userscriptInstall.inspectAndAllowNativeManagerPermission(cdp,
+        root, output, profile, 'chrome', ask, 'owned', context, run);
+      expect(skipped.action).toEqual({ status: 'skipped', reason: 'manager-ask-not-current' });
+      expect(run).toHaveBeenCalledOnce();
+      run.mockClear();
+      closed = false;
+      url = 'chrome-extension://other/ask.html?aid=opaque';
+      const otherManager = await userscriptInstall.inspectAndAllowNativeManagerPermission(cdp,
+        root, output, profile, 'chrome', ask, 'owned', context, run);
+      expect(otherManager.action).toEqual({ status: 'skipped', reason: 'manager-ask-not-current' });
+      expect(run).toHaveBeenCalledOnce();
+      run.mockClear();
+      url = 'chrome-extension://owned/ask.html?aid=opaque';
+      promptReceipt = nativePrompt();
+      promptReceipt.promptScope.complete = false;
+      promptReceipt.promptScope.reason = 'depth-cap';
+      promptReceipt.promptScope.controls.pop();
+      promptReceipt.promptScope.visitedControls--;
+      const incomplete = await userscriptInstall.inspectAndAllowNativeManagerPermission(cdp,
+        root, output, profile, 'chrome', ask, 'owned', context, run);
+      expect(incomplete.action).toEqual({ status: 'skipped', reason: 'prompt-scope-depth-cap' });
+      expect(run).toHaveBeenCalledOnce();
+      run.mockClear();
+      promptReceipt = nativePrompt();
+      const invoked = await userscriptInstall.inspectAndAllowNativeManagerPermission(cdp,
+        root, output, profile, 'chrome', ask, 'owned', context, run);
+      expect(invoked.action.status).toBe('invoked');
+      expect(run).toHaveBeenCalledTimes(2);
+      expect(run.mock.calls[1]?.[1]).toEqual(expect.arrayContaining([
+        '-InvokeAllow', '-ExpectedCreationUtcTicks', '639271195545735820',
+        '-ExpectedSessionId', '2', '-ExpectedForegroundHandle', '8259362']));
+      expect(cdp.send).toHaveBeenCalledWith('SystemInfo.getProcessInfo');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps native permission evidence UIA-only and bound to the browser process', () => {
+    const source = readFileSync(resolve(import.meta.dirname,
+      '../../../validation/windows/manager-permission-window.ps1'), 'utf8');
+    expect(source).not.toMatch(/CopyFromScreen|PrintWindow|BitBlt|System\.Drawing|GetWindowRect|SendInput|SetForegroundWindow/u);
+    expect(source).toContain("screenshot = 'not-captured'");
+    expect(source).toContain('@($child, ($depth + 1))');
+    for (const proof of ['browserPid =', 'creationUtcTicks =', 'browserSessionId =',
+      'foregroundHandle =', 'foregroundOwnedAndVisible =', 'uiaRootProcessId =']) {
+      expect(source).toContain(proof);
+    }
+  });
+
+  it('keeps PowerShell 5.1 prompt labels ASCII-source and exact to observed ko-KR UIA', () => {
+    const source = readFileSync(resolve(import.meta.dirname,
+      '../../../validation/windows/manager-permission-window.ps1'));
+    expect(source.every((byte) => byte < 128)).toBe(true);
+    const codePoints = (name: string) => {
+      const script = source.toString('ascii');
+      const start = script.indexOf(`$script:${name} =`);
+      expect(start).toBeGreaterThanOrEqual(0);
+      const end = script.indexOf('))', start);
+      expect(end).toBeGreaterThan(start);
+      return String.fromCharCode(...[...script.slice(start, end).matchAll(/0x[0-9A-F]{4}/gu)]
+        .map(([hex]) => Number(hex)));
+    };
+    expect(`'Tampermonkey'${codePoints('PermissionTitle')}`)
+      .toBe("'Tampermonkey'이(가) 추가 승인을 요청했습니다.");
+    expect(codePoints('PriorPermissionsLabel')).toBe('이전에 가능했던 대상:');
+    expect(codePoints('DownloadsPermissionLabel')).toBe('다운로드 관리');
+    expect(codePoints('AllowButtonLabel')).toBe('허용');
+    expect(codePoints('DenyButtonLabel')).toBe('거부');
+  });
+
+  it('collects read-only UIA diagnostics only with one CDP browser PID and an owned profile', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'xeg-native-permission-'));
+    const profile = join(root, 'xeg-userscript-install-owned');
+    const output = join(root, 'output');
+    mkdirSync(profile);
+    mkdirSync(output);
+    const run = vi.fn(async (_file: string, _args: string[], _options: unknown) => {
+      writeFileSync(join(output, 'userscript-manager-native-permission.json'),
+        JSON.stringify({ status: 'skipped', reason: 'owned-window-not-foreground',
+          capture: 'uia-only', screenshot: 'not-captured', permissionGrantAttempted: false }));
+    });
+    try {
+      expect(userscriptInstall.browserProcessId({ processInfo: [
+        { type: 'browser', id: 42 }, { type: 'renderer', id: 43 },
+      ] })).toBe(42);
+      for (const processInfo of [{ processInfo: [] }, { processInfo: [
+        { type: 'browser', id: 42 }, { type: 'browser', id: 43 },
+      ] }, { processInfo: [{ type: 'browser', id: '42' }] }]) {
+        expect(userscriptInstall.browserProcessId(processInfo)).toBeNull();
+      }
+      const cdp = { send: vi.fn(async () => ({ processInfo: [
+        { type: 'browser', id: 42 }, { type: 'renderer', id: 43 },
+      ] })) };
+      await expect(userscriptInstall.captureNativeManagerPermission(cdp, root, output,
+        profile, 'chrome', run)).resolves.toEqual({ status: 'skipped',
+        reason: 'owned-window-not-foreground' });
+      expect(cdp.send).toHaveBeenCalledWith('SystemInfo.getProcessInfo');
+      expect(run).toHaveBeenCalledOnce();
+      expect(run.mock.calls[0]?.[0]).toBe('powershell.exe');
+      expect(run.mock.calls[0]?.[1]).toEqual(expect.arrayContaining([
+        '-BrowserPid', '42', '-BrowserName', 'chrome', '-Profile', profile]));
+      run.mockClear();
+      await expect(userscriptInstall.captureNativeManagerPermission(
+        { send: async () => ({ processInfo: [] }) }, root, output, profile, 'chrome', run))
+        .resolves.toEqual({ status: 'unavailable', reason: 'AssertionError' });
+      expect(run).not.toHaveBeenCalled();
+      await expect(userscriptInstall.captureNativeManagerPermission(cdp, root, output,
+        join(root, 'unowned'), 'chrome', run)).resolves.toEqual({ status: 'unavailable',
+          reason: 'AssertionError' });
+      expect(run).not.toHaveBeenCalled();
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('checks the actual manager userScripts API and uses the browser-specific details URL', async () => {
+    expect(userscriptInstall.managerDetailsUrl('msedge', 'manager-id'))
+      .toBe('edge://extensions/?id=manager-id');
+    expect(userscriptInstall.managerDetailsUrl('chrome', 'manager-id'))
+      .toBe('chrome://extensions/?id=manager-id');
+    const page = { evaluate: async (callback: () => Promise<unknown>) => callback() };
+    try {
+      vi.stubGlobal('chrome', { userScripts: { getScripts: async () => ['private-script'] } });
+      expect(await userscriptInstall.probeManagerUserScripts(page)).toEqual({
+        available: true, registeredScriptCount: 1,
+      });
+      vi.stubGlobal('chrome', { userScripts: { getScripts: async () => {
+        throw new DOMException('denied', 'NotAllowedError');
+      } } });
+      expect(await userscriptInstall.probeManagerUserScripts(page)).toEqual({
+        available: false, errorType: 'NotAllowedError',
+      });
+      vi.stubGlobal('chrome', {});
+      expect(await userscriptInstall.probeManagerUserScripts(page)).toEqual({
+        available: false, errorType: 'TypeError',
+      });
+      expect(await userscriptInstall.probeManagerUserScripts({
+        evaluate: async () => { throw new Error('extension page unavailable'); },
+      })).toEqual({ available: false, errorType: 'PageEvaluationError' });
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('targets the observed Edge switch inside the exact owned labeled row', async () => {
+    const id = 'a'.repeat(32);
+    const control = { count: async () => 1, isVisible: async () => true,
+      waitFor: vi.fn(async () => {}) };
+    const row = { count: async () => 1,
+      locator: vi.fn((selector: string) => {
+        expect(selector).toBe('fluent-switch#checkbox-1');
+        return control;
+      }) };
+    const section = { count: async () => 1, waitFor: vi.fn(async () => {}),
+      evaluate: async (callback: (element: { id: string }, id: string) => boolean, id: string) =>
+        callback({ id }, id),
+      locator: vi.fn((selector: string) => {
+        expect(selector).toBe('standard-row');
+        return { filter: ({ has }: { has: unknown }) => {
+          expect(has).toBe('known-label');
+          return row;
+        } };
+      }) };
+    const page = { url: () => userscriptInstall.managerDetailsUrl('msedge', id),
+      locator: vi.fn((selector: string) => {
+        expect(selector).toBe('access-section');
+        return { filter: ({ has }: { has: unknown }) => {
+          expect(has).toBe('known-label');
+          return section;
+        } };
+      }),
+      getByText: vi.fn((name: RegExp) => {
+        expect(name.test('사용자 스크립트 허용')).toBe(true);
+        expect(name.test('Allow user scripts')).toBe(true);
+        expect(name.test('InPrivate에서 허용')).toBe(false);
+        return 'known-label';
+      }) };
+    await expect(userscriptInstall.findEdgeUserScriptsControl(page, id)).resolves.toBe(control);
+    expect(section.waitFor).toHaveBeenCalledWith({ state: 'visible', timeout: 10_000 });
+    expect(control.waitFor).toHaveBeenCalledWith({ state: 'visible', timeout: 10_000 });
+    expect(page.locator).toHaveBeenCalledTimes(1);
+    await expect(userscriptInstall.findEdgeUserScriptsControl({ ...page,
+      url: () => userscriptInstall.managerDetailsUrl('msedge', 'b'.repeat(32)),
+    }, id)).rejects.toThrow('owned extension details');
+    await expect(userscriptInstall.findEdgeUserScriptsControl({ ...page,
+      locator: () => ({ filter: () => ({ ...section, count: async () => 2 }) }),
+    }, id)).rejects.toThrow('one owned Edge access section');
+    const missingRowSection = { ...section,
+      locator: () => ({ filter: () => ({ ...row, count: async () => 0 }) }) };
+    await expect(userscriptInstall.findEdgeUserScriptsControl({ ...page,
+      locator: () => ({ filter: () => missingRowSection }),
+    }, id)).rejects.toThrow('one labeled Edge user-scripts row');
+  });
+
+  it('accepts only the observed Chrome user-scripts label in English or Korean', () => {
+    expect(userscriptInstall.hasKnownChromeUserScriptsLabel(
+      '사용자 스크립트 허용\n이 확장 프로그램은 검토되지 않은 코드를 실행할 수 있습니다.'
+    )).toBe(true);
+    expect(userscriptInstall.hasKnownChromeUserScriptsLabel('Allow user scripts')).toBe(true);
+    expect(userscriptInstall.hasKnownChromeUserScriptsLabel('InPrivate에서 허용')).toBe(false);
+    expect(userscriptInstall.hasKnownChromeUserScriptsLabel('Not Allow user scripts')).toBe(false);
+  });
+
+  it('records only bounded fixture-media network metadata', () => {
+    const context = new EventEmitter();
+    const watcher = userscriptInstall.watchFixtureMediaNetwork(context);
+    const request = (url: string) => ({ url: () => url,
+      method: () => 'GET', resourceType: () => 'fetch' });
+    const owned = request('https://pbs.twimg.com/media/GkE1234ABCDEF.jpg?name=orig&private=secret');
+    context.emit('request', request('https://pbs.twimg.com/profile_images/123456789/public-avatar.jpg'));
+    context.emit('request', request('https://other.example/media/GkE1234ABCDEF.jpg'));
+    context.emit('request', owned);
+    context.emit('response', { request: () => owned, status: () => 200 });
+    context.emit('requestfailed', owned);
+    expect(watcher.events).toEqual([
+      { kind: 'request', cohort: 'normal', index: 0, method: 'GET', resourceType: 'fetch', status: null },
+      { kind: 'response', cohort: 'normal', index: 0, method: 'GET', resourceType: 'fetch', status: 200 },
+      { kind: 'requestfailed', cohort: 'normal', index: 0, method: 'GET', resourceType: 'fetch', status: null },
+    ]);
+    expect(JSON.stringify(watcher.events)).not.toContain('secret');
+    watcher.dispose();
+    context.emit('request', owned);
+    expect(watcher.events).toHaveLength(3);
+  });
+
+  it('keeps permission-diagnostic frame URLs on owned origins without query tokens', () => {
+    expect(userscriptInstall.summarizeManagerFrameUrl(
+      'edge://extensions/?id=owned&secret=ignored', 'owned'
+    )).toBe('edge://extensions/');
+    expect(userscriptInstall.summarizeManagerFrameUrl(
+      'chrome-extension://owned/options.html?token=ignored#part', 'owned'
+    )).toBe('chrome-extension://owned/options.html');
+    expect(userscriptInstall.summarizeManagerFrameUrl(
+      'chrome-extension://other/options.html?token=ignored', 'owned'
+    )).toBeNull();
+    expect(userscriptInstall.summarizeManagerFrameUrl(
+      'https://private.example/path?token=ignored', 'owned'
+    )).toBeNull();
+    expect(userscriptInstall.summarizeManagerFrameUrl('about:blank', 'owned')).toBeNull();
+  });
+
+  it('admits diagnostic DOM reads only on the exact owned details route or manager origin', () => {
+    const details = 'edge://extensions/?id=owned';
+    expect(userscriptInstall.isOwnedManagerDetailsUrl(details, details)).toBe(true);
+    expect(userscriptInstall.isOwnedManagerInspectionUrl(details, details, 'owned')).toBe(true);
+    expect(userscriptInstall.isOwnedManagerInspectionUrl(
+      'chrome-extension://owned/options.html', details, 'owned'
+    )).toBe(true);
+    expect(userscriptInstall.isOwnedManagerInspectionUrl(
+      'chrome-extension://other/options.html', details, 'other'
+    )).toBe(false);
+    for (const value of [
+      'edge://extensions/?id=other',
+      'edge://extensions/?id=owned&token=secret',
+      'edge://extensions/',
+      'chrome://extensions/?id=owned',
+      'chrome-extension://other/options.html',
+      'chrome-extension://owned/options.html?token=secret',
+      'about:blank',
+      'https://private.example/path',
+    ]) {
+      expect(userscriptInstall.isOwnedManagerDetailsUrl(value, details)).toBe(false);
+      expect(userscriptInstall.isOwnedManagerInspectionUrl(value, details, 'owned')).toBe(false);
+    }
+  });
+
+  it('reads bounded bundled manager labels only from its own options page', async () => {
+    const optionsUrl = 'chrome-extension://owned/options.html';
+    expect(userscriptInstall.isOwnedManagerOptionsUrl(optionsUrl, 'owned')).toBe(true);
+    for (const value of ['about:blank', 'https://x.com/',
+      'chrome-extension://other/options.html', 'chrome-extension://owned/ask.html',
+      'chrome-extension://owned/options.html?token=private']) {
+      expect(userscriptInstall.isOwnedManagerOptionsUrl(value, 'owned')).toBe(false);
+    }
+    const messages: Record<string, string> = {
+      Utilities: '도구', Install: '설치', Installed_userscripts: '설치된 유저 스크립트',
+    };
+    const page = { url: () => optionsUrl,
+      evaluate: async (callback: (id: string) => unknown, id: string) => callback(id) };
+    try {
+      vi.stubGlobal('location', { href: optionsUrl });
+      vi.stubGlobal('chrome', { i18n: { getMessage: (key: string) => messages[key] ?? '' } });
+      expect(await userscriptInstall.readManagerUiLabels(page, 'owned')).toEqual({
+        utilities: '도구', install: '설치', installedUserscripts: '설치된 유저 스크립트',
+      });
+      expect(userscriptInstall.requireManagerUiLabels({
+        utilities: 'Utilities', install: 'Install', installedUserscripts: 'Installed Userscripts',
+      })).toMatchObject({ utilities: 'Utilities' });
+      expect(() => userscriptInstall.requireManagerUiLabels({
+        utilities: 'x'.repeat(81), install: 'Install', installedUserscripts: 'Installed Userscripts',
+      })).toThrow('invalid UI label');
+      expect(() => userscriptInstall.requireManagerUiLabels({
+        utilities: 'Utilities\nother', install: 'Install', installedUserscripts: 'Installed Userscripts',
+      })).toThrow('invalid UI label');
+      await expect(userscriptInstall.readManagerUiLabels({ ...page,
+        url: () => 'chrome-extension://other/options.html',
+      }, 'owned')).rejects.toThrow('owned options page');
+      vi.stubGlobal('location', { href: 'https://private.example/' });
+      await expect(userscriptInstall.readManagerUiLabels(page, 'owned'))
+        .rejects.toThrow('navigated away');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('matches the bundled Downloads BETA heading in localized options markup', () => {
+    document.body.innerHTML = `
+      <table><tbody>
+        <tr class="settingstr" id="general-outer"><td>
+          <div class="section type_general"><table class="section_content"><tbody>
+            <tr class="settingstr" id="config-setting"><td><div>
+              <span class="optiondesc">설정 모드: </span>
+              <select><option value="50">초보자</option></select>
+            </div></td></tr>
+            <tr class="settingstr" id="loglevel-setting"><td><div>
+              <span class="optiondesc">로그 수준: </span>
+              <select><option value="60">정보</option></select>
+            </div></td></tr>
+          </tbody></table></div>
+        </td></tr>
+        <tr class="settingstr" id="downloads-outer"><td>
+          <div class="section type_downloads"><div class="section_head">다운로드 BETA</div>
+            <table class="section_content"><tbody>
+              <tr class="settingstr" id="download-mode-setting"><td><div>
+                <span class="optiondesc">다운로드 모드: </span>
+                <select><option value="chrome">브라우저 API</option></select>
+              </div></td></tr>
+              <tr class="settingstr" id="whitelist-setting"><td><div>
+                <span>파일 확장자 화이트리스트:</span>
+                <textarea>/\\.(jpe?g|png)$/\n/\\.(zip|tar)$/</textarea>
+              </div></td></tr>
+            </tbody></table>
+          </div>
+        </td></tr>
+      </tbody></table>`;
+    const heading = document.querySelector('.section.type_downloads .section_head');
+    expect(heading).not.toBeNull();
+    expect(() => userscriptInstall.requireManagerDownloadsHeading(
+      heading?.textContent ?? '', '다운로드')).not.toThrow();
+    expect(() => userscriptInstall.requireManagerDownloadsHeading('다운로드', '다운로드'))
+      .toThrow('Manager Downloads section label differs');
+    const domScope = (root: Element) => ({
+      getByText(label: string, options: { exact: boolean }) {
+        expect(options).toEqual({ exact: true });
+        const matches = [...root.querySelectorAll('span')]
+          .filter((span) => span.textContent?.trim() === label);
+        expect(matches).toHaveLength(1);
+        const labelElement = matches[0];
+        if (!labelElement) throw new Error('Missing exact manager setting label');
+        return { locator(selector: string) {
+          expect(selector).toMatch(/^xpath=ancestor::tr\[/u);
+          return document.evaluate(selector.slice('xpath='.length), labelElement, null,
+            XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+        } };
+      },
+    });
+    const downloads = document.querySelector('.section.type_downloads');
+    expect(downloads).not.toBeNull();
+    expect([...document.querySelectorAll('tr.settingstr')]
+      .filter((row) => row.textContent?.includes('설정 모드:'))).toHaveLength(2);
+    for (const [scope, label, expectedId] of [
+      [document.body, '설정 모드', 'config-setting'],
+      [document.querySelector('.section.type_general'), '로그 수준', 'loglevel-setting'],
+      [downloads, '다운로드 모드', 'download-mode-setting'],
+      [downloads, '파일 확장자 화이트리스트', 'whitelist-setting'],
+    ] as const) {
+      expect(userscriptInstall.managerSettingRow(domScope(scope as Element), label))
+        .toBe(document.getElementById(expectedId));
+    }
+  });
+
+  it('accepts only an owned Tampermonkey permission ask page with its aid', () => {
+    expect(userscriptInstall.isOwnedManagerPermissionAskUrl(
+      'chrome-extension://owned/ask.html?aid=opaque', 'owned')).toBe(true);
+    for (const url of ['chrome-extension://other/ask.html?aid=opaque',
+      'chrome-extension://owned/ask.html', 'chrome-extension://owned/ask.html?aid=opaque&next=x',
+      'chrome-extension://owned/options.html?aid=opaque',
+      'chrome-extension://owned/ask.html?aid=opaque#fragment']) {
+      expect(userscriptInstall.isOwnedManagerPermissionAskUrl(url, 'owned')).toBe(false);
+    }
+  });
+
+  it('does not persist or confirm an ask screenshot after navigation escapes the manager', async () => {
+    const output = mkdtempSync(join(tmpdir(), 'xeg-manager-ask-'));
+    let url = 'chrome-extension://owned/ask.html?aid=opaque';
+    const click = vi.fn(async () => {});
+    const ask = { url: () => url,
+      screenshot: async () => {
+        url = 'https://other.example/private';
+        return Buffer.from('external-page');
+      },
+      getByRole: () => ({ click }) };
+    try {
+      await expect(userscriptInstall.captureAndConfirmManagerPermissionAsk(
+        ask, 'owned', output, 'Ok')).rejects.toThrow('navigated away during capture');
+      expect(existsSync(join(output, 'userscript-manager-download-permission.png'))).toBe(false);
+      expect(click).not.toHaveBeenCalled();
+    } finally {
+      rmSync(output, { recursive: true, force: true });
+    }
+  });
+
+  it('reads the optional manager downloads permission only on its owned options page', async () => {
+    const optionsUrl = 'chrome-extension://owned/options.html';
+    const page = { url: () => optionsUrl,
+      evaluate: async (callback: (id: string) => Promise<boolean>, id: string) => callback(id) };
+    try {
+      vi.stubGlobal('location', { href: optionsUrl });
+      const contains = vi.fn(async () => false);
+      vi.stubGlobal('chrome', { permissions: { contains } });
+      await expect(userscriptInstall.probeManagerDownloadsPermission(page, 'owned'))
+        .resolves.toBe(false);
+      expect(contains).toHaveBeenCalledWith({ permissions: ['downloads'] });
+      await expect(userscriptInstall.probeManagerDownloadsPermission({ ...page,
+        url: () => 'chrome-extension://other/options.html',
+      }, 'owned')).rejects.toThrow('owned options page');
+      vi.stubGlobal('location', { href: 'https://private.example/' });
+      await expect(userscriptInstall.probeManagerDownloadsPermission(page, 'owned'))
+        .rejects.toThrow('navigated away');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('sets only the owned manager General LogLevel row to Info and verifies persistence', async () => {
+    const managerId = 'a'.repeat(32);
+    const optionsUrl = `chrome-extension://${managerId}/options.html`;
+    const labels: Record<string, string> = {
+      Settings: 'Settings', General: 'General', LogLevel: 'Log level', Info: 'Info',
+    };
+    let currentUrl = optionsUrl;
+    let selected = '0';
+    let saved = '0';
+    let persist = true;
+    let sectionCount = 1;
+    const infoOption = { count: async () => 1, innerText: async () => labels.Info };
+    const selectOption = vi.fn(async (option: { label: string }) => {
+      expect(option).toEqual({ label: labels.Info });
+      selected = '60';
+      if (persist) saved = '60';
+    });
+    const select = { count: async () => 1, inputValue: async () => selected,
+      locator: (query: string) => {
+        expect(query).toBe('option[value="60"]');
+        return infoOption;
+      }, selectOption };
+    const row = { waitFor: async () => undefined, count: async () => 1,
+      locator: (query: string) => {
+        expect(query).toBe('select');
+        return select;
+      } };
+    const general = { waitFor: async () => undefined, count: async () => sectionCount,
+      locator: (query: string) => {
+        expect(query).toBe('.section_head');
+        return { innerText: async () => labels.General };
+      }, getByText: (label: string, options: { exact: boolean }) => {
+        expect([label, options]).toEqual(['Log level:', { exact: true }]);
+        return { locator: (query: string) => {
+          expect(query).toMatch(/^xpath=ancestor::tr\[/u);
+          return row;
+        } };
+      } };
+    const page = { url: () => currentUrl,
+      evaluate: async (callback: (id: string) => unknown, id: string) => callback(id),
+      getByText: (label: string, options: { exact: boolean }) => {
+        expect([label, options]).toEqual([labels.Settings, { exact: true }]);
+        return { first: () => ({ click: async () => undefined }) };
+      },
+      locator: (query: string) => {
+        expect(query).toBe('div.section.type_general');
+        return general;
+      },
+      reload: async () => { selected = saved; } };
+    try {
+      vi.stubGlobal('location', { href: optionsUrl });
+      vi.stubGlobal('chrome', { i18n: { getMessage: (key: string) => labels[key] } });
+      await expect(userscriptInstall.configureManagerInfoLogging(page, managerId))
+        .resolves.toEqual({ original: '0', requested: '60', observed: '60',
+          scope: 'fresh-owned-profile' });
+      expect(selectOption).toHaveBeenCalledOnce();
+      currentUrl = 'chrome-extension://other/options.html';
+      await expect(userscriptInstall.configureManagerInfoLogging(page, managerId))
+        .rejects.toThrow('owned options page');
+      expect(selectOption).toHaveBeenCalledOnce();
+      currentUrl = optionsUrl;
+      sectionCount = 2;
+      await expect(userscriptInstall.configureManagerInfoLogging(page, managerId))
+        .rejects.toThrow('exactly one manager General section');
+      expect(selectOption).toHaveBeenCalledOnce();
+      sectionCount = 1;
+      selected = saved = '0';
+      persist = false;
+      await expect(userscriptInstall.configureManagerInfoLogging(page, managerId))
+        .rejects.toThrow('Info logging did not persist');
+      expect(selectOption).toHaveBeenCalledTimes(2);
+    } finally { vi.unstubAllGlobals(); }
+  });
+
+  it('bounds and redacts the owned fixture download error live region', async () => {
+    const fixtureUrl = 'https://x.com/testuser/status/1234567890123456789';
+    const page = { url: () => fixtureUrl,
+      evaluate: async (callback: (url: string) => unknown, url: string) => callback(url) };
+    document.body.innerHTML = `<div data-xeg-gallery-container>
+      <div data-gallery-element="toolbar">
+        <button aria-label="Download" aria-busy="false"></button>
+        <span role="status" data-download-status="error">private failure text</span>
+      </div>
+      <div class="xeg-sr-only" aria-live="polite" aria-atomic="true">Failed https://private.example/media?key=secret
+      C:\\Users\\Alice\\secret.jpg
+      Bearer rawCredentialValue</div>
+      <li data-gallery-element="item" data-index="0">
+        <img src="https://pbs.twimg.com/media/GkE1234ABCDEF.jpg?format=jpg&name=large">
+      </li>
+    </div>`;
+    try {
+      vi.stubGlobal('location', { href: fixtureUrl });
+      expect(await userscriptInstall.inspectFirstCurrentDownload(page)).toEqual({
+        scope: 'owned-fixture', galleryPresent: true, currentControlPresent: true,
+        currentControlDisabled: false, currentControlBusy: false,
+        selectedFirstFixtureMedia: true, downloadStatus: 'error',
+        errorLiveRegionPresent: true,
+        errorLiveRegionText: 'Failed [url] [path] [credential]',
+      });
+      const liveRegion = document.querySelector('.xeg-sr-only[aria-live="polite"]');
+      expect(liveRegion).not.toBeNull();
+      liveRegion!.textContent = 'failure '.repeat(100);
+      const bounded = await userscriptInstall.inspectFirstCurrentDownload(page) as {
+        errorLiveRegionText: string;
+      };
+      expect(bounded.errorLiveRegionText).toHaveLength(256);
+      liveRegion!.textContent = 'token=privateValue';
+      const token = await userscriptInstall.inspectFirstCurrentDownload(page) as {
+        errorLiveRegionText: string;
+      };
+      expect(token.errorLiveRegionText).toBe('[credential]');
+      const status = document.querySelector('[data-download-status]');
+      status?.setAttribute('data-download-status', 'working');
+      const working = await userscriptInstall.inspectFirstCurrentDownload(page) as {
+        errorLiveRegionText: string | null;
+      };
+      expect(working.errorLiveRegionText).toBeNull();
+      status?.setAttribute('data-download-status', 'error');
+      await expect(userscriptInstall.inspectFirstCurrentDownload({ ...page,
+        url: () => 'https://private.example/',
+      })).resolves.toEqual({ scope: 'unowned-page' });
+      document.body.insertAdjacentHTML('beforeend',
+        '<div data-xeg-gallery-container><div class="xeg-sr-only" aria-live="polite">secret</div></div>');
+      await expect(userscriptInstall.inspectFirstCurrentDownload(page))
+        .resolves.toEqual({ scope: 'unowned-gallery' });
+      document.body.lastElementChild?.remove();
+      vi.stubGlobal('location', { href: 'https://private.example/' });
+      await expect(userscriptInstall.inspectFirstCurrentDownload(page))
+        .resolves.toEqual({ scope: 'navigated-away' });
+    } finally {
+      vi.unstubAllGlobals();
+      document.body.innerHTML = '';
+    }
+  });
+
+  it('classifies only known manager download branches without retaining console data', () => {
+    const id = 'a'.repeat(32);
+    const managerUrl = `chrome-extension://${id}/background.js`;
+    const context = new EventEmitter() as EventEmitter & { serviceWorkers(): EventEmitter[] };
+    const worker = new EventEmitter() as EventEmitter & { url(): string };
+    worker.url = () => managerUrl;
+    context.serviceWorkers = () => [worker];
+    const watcher = userscriptInstall.watchManagerDownloadConsole(context, id);
+    try {
+      const before = watcher.mark();
+      worker.emit('console', { text: () => 'downs: start https://secret.example/?token=abc' });
+      worker.emit('console', { text: () =>
+        'downs: download of secret.jpg (https://secret.example/?token=abc) failed NETWORK_FAILED' });
+      worker.emit('console', { text: () => 'downs: download permission is missing' });
+      worker.emit('console', { text: () => 'downs: feature is not enabled' });
+      worker.emit('console', { text: () => 'downs: permission to use downloads -> true' });
+      worker.emit('console', { text: () => 'downs: permission to use downloads -> false' });
+      const receipt = watcher.snapshotSince(before);
+      expect(receipt).toMatchObject({ status: 'known-branch-observed', matchedEvents: 6,
+        availability: 'attached-before-click',
+        branchCounts: { native_interrupted_branch: 1, not_permitted_branch: 1,
+          permission_true: 1, permission_false: 1, manager_request_branch: 1,
+          not_enabled_branch: 1 },
+        workersAttachedBeforeClick: 1, workersAttachedAfterClick: 1,
+        attachmentOverflow: false, messageOverflow: false, eventOverflow: false });
+      expect(JSON.stringify(receipt)).not.toMatch(/secret|token|NETWORK_FAILED|https?:/u);
+      expect(userscriptInstall.classifyManagerDownloadConsole(
+        'downs: permission to use downloads -> true')).toBe('permission_true');
+      expect(userscriptInstall.classifyManagerDownloadConsole(
+        'downs: permission to use downloads -> false')).toBe('permission_false');
+      expect(userscriptInstall.classifyManagerDownloadConsole(
+        'downs: permission to use downloads -> private')).toBeNull();
+      expect(userscriptInstall.classifyManagerDownloadConsole('downs: download failed'))
+        .toBe('download_failed_branch');
+      expect(userscriptInstall.classifyManagerDownloadConsole('downs: "private" is not whitelisted'))
+        .toBe('not_whitelisted_branch');
+      expect(userscriptInstall.classifyManagerDownloadConsole('downs: unable to query download ID 123'))
+        .toBe('native_query_failed_branch');
+      expect(userscriptInstall.classifyManagerDownloadConsole('downs: this download mode is not supported'))
+        .toBe('not_supported_branch');
+      expect(userscriptInstall.classifyManagerDownloadConsole('downs: start private'))
+        .toBe('manager_request_branch');
+      expect(userscriptInstall.classifyManagerDownloadConsole('downs: unrelated private'))
+        .toBeNull();
+    } finally { watcher.dispose(); }
+    expect(context.listenerCount('serviceworker')).toBe(0);
+    expect(worker.listenerCount('console')).toBe(0);
+    expect(worker.listenerCount('close')).toBe(0);
+  });
+
+  it('follows only the exact manager service worker across restarts and bounds events', () => {
+    const id = 'b'.repeat(32);
+    const ownedUrl = `chrome-extension://${id}/background.js`;
+    const context = new EventEmitter() as EventEmitter & { serviceWorkers(): EventEmitter[] };
+    context.serviceWorkers = () => [];
+    const worker = (url: string) => Object.assign(new EventEmitter(), { url: () => url });
+    const foreign = worker(`chrome-extension://${'c'.repeat(32)}/background.js`);
+    const first = worker(ownedUrl);
+    const second = worker(ownedUrl);
+    const watcher = userscriptInstall.watchManagerDownloadConsole(context, id);
+    try {
+      const before = watcher.mark();
+      context.emit('serviceworker', foreign);
+      foreign.emit('console', { text: () => 'downs: download failed' });
+      context.emit('serviceworker', first);
+      first.emit('console', { text: () => 'downs: download failed' });
+      first.emit('close');
+      context.emit('serviceworker', second);
+      for (let i = 0; i < 20; i++)
+        second.emit('console', { text: () => 'downs: download failed' });
+      expect(watcher.snapshotSince(before)).toMatchObject({
+        status: 'known-branch-observed', matchedEvents: 16,
+        availability: 'attached-after-click',
+        branchCounts: { download_failed_branch: 16 },
+        workersAttachedBeforeClick: 0, workersAttachedAfterClick: 2,
+        eventOverflow: true,
+      });
+      expect(first.listenerCount('console')).toBe(0);
+    } finally { watcher.dispose(); }
+    expect(context.listenerCount('serviceworker')).toBe(0);
+    expect(second.listenerCount('console')).toBe(0);
+    expect(second.listenerCount('close')).toBe(0);
+    expect(foreign.listenerCount('console')).toBe(0);
+  });
+
+  it('reports silent and capped manager console observation as inconclusive', () => {
+    const id = 'd'.repeat(32);
+    const context = new EventEmitter() as EventEmitter & { serviceWorkers(): EventEmitter[] };
+    context.serviceWorkers = () => [];
+    const watcher = userscriptInstall.watchManagerDownloadConsole(context, id);
+    const workers = Array.from({ length: 9 }, () =>
+      Object.assign(new EventEmitter(), { url: () => `chrome-extension://${id}/background.js` }));
+    try {
+      const before = watcher.mark();
+      expect(watcher.snapshotSince(before)).toMatchObject({ status: 'inconclusive',
+        availability: 'no-worker-observed', matchedEvents: 0 });
+      for (const worker of workers) context.emit('serviceworker', worker);
+      for (let i = 0; i < 260; i++)
+        workers[0]?.emit('console', { text: () => 'downs: unrelated private' });
+      expect(watcher.snapshotSince(before)).toMatchObject({ status: 'inconclusive',
+        availability: 'attached-after-click', matchedEvents: 0,
+        workersAttachedAfterClick: 8, attachmentOverflow: true, messageOverflow: true });
+      expect(workers[8]?.listenerCount('console')).toBe(0);
+    } finally { watcher.dispose(); }
+    expect(context.listenerCount('serviceworker')).toBe(0);
+    expect(workers.every((worker) => worker.listenerCount('console') === 0)).toBe(true);
+  });
+
+  it('keeps same-document userscript phases on distinct media cache keys with stable ZIP entries', () => {
+    const html = readFileSync(resolve(import.meta.dirname,
+      '../../e2e/fixtures/installed-gallery-page.html'), 'utf8');
+    const allMarkers: string[] = [];
+    for (const [phase, markers] of Object.entries(userscriptInstall.MEDIA_COHORTS)) {
+      expect(html).toContain(`[data-fixture-phase="${phase}"] [data-phase]:not([data-phase="${phase}"])`);
+      const article = html.match(new RegExp(`<article data-route="classic" data-phase="${phase}"[\\s\\S]*?</article>`, 'u'));
+      expect(article, `Missing ${phase} article`).not.toBeNull();
+      const phaseDocument = new DOMParser().parseFromString(article?.[0] ?? '', 'text/html');
+      if (phase === 'normal') {
+        expect(phaseDocument.querySelector('img[src]')?.getAttribute('src')).toBe(
+          'https://pbs.twimg.com/media/GkE1234ABCDEF.jpg?format=jpg&name=large');
+      }
+      const actual = [...phaseDocument.querySelectorAll('img[src]')].map((image) => {
+        const url = new URL(image.getAttribute('src') ?? '');
+        expect(url.origin).toBe('https://pbs.twimg.com');
+        const mediaPath = url.pathname.match(/^\/media\/([A-Za-z0-9]+)\.jpg$/u);
+        expect(mediaPath).not.toBeNull();
+        return mediaPath?.[1];
+      });
+      expect(actual).toEqual(markers);
+      allMarkers.push(...markers);
+    }
+    expect(new Set(allMarkers).size).toBe(12);
+    expect(html).toContain('<body data-fixture-route="classic">');
+    expect(html).toContain('<main data-fixture-phase="normal">');
+    expect(html.replace('<body data-fixture-route="classic">',
+      '<body data-fixture-route="public">')).toContain('<body data-fixture-route="public">');
+    const entries = userscriptInstall.fixtureZipEntries([
+      Uint8Array.of(0), Uint8Array.of(1), Uint8Array.of(2),
+    ]);
+    expect(entries.map(({ filename }) => filename)).toEqual([
+      'testuser_1234567890123456789_0.jpg',
+      'testuser_1234567890123456789_1.jpg',
+      'testuser_1234567890123456789_2.jpg',
+    ]);
+    expect(entries.map(({ bytes }) => bytes[0])).toEqual([0, 1, 2]);
+    expect(userscriptInstall.FIXTURE_ZIP_NAME).toBe('testuser_1234567890123456789.zip');
+  });
+
+  it('serves only the public fixture avatar as an auxiliary pbs image', () => {
+    const html = readFileSync(resolve(import.meta.dirname,
+      '../../e2e/fixtures/installed-gallery-page.html'), 'utf8');
+    const document = new DOMParser().parseFromString(html, 'text/html');
+    const avatar = document.querySelector<HTMLImageElement>('article[data-route="public"] img.public-avatar');
+    expect(avatar).not.toBeNull();
+    const url = avatar?.src ?? '';
+    expect(new URL(url).pathname).toBe(userscriptInstall.PUBLIC_AVATAR_PATH);
+    expect(userscriptInstall.isPublicAvatarFixtureUrl(url)).toBe(true);
+    const mediaMarkers = Object.values(userscriptInstall.MEDIA_COHORTS).flat();
+    const fixtureImages = [...document.querySelectorAll<HTMLImageElement>('img[src]')];
+    expect(fixtureImages.filter((image) => userscriptInstall.isPublicAvatarFixtureUrl(image.src)))
+      .toHaveLength(1);
+    expect(fixtureImages.every((image) => userscriptInstall.isPublicAvatarFixtureUrl(image.src) ||
+      mediaMarkers.some((marker) => new URL(image.src).pathname.includes(marker)))).toBe(true);
+    expect(userscriptInstall.isPublicAvatarFixtureUrl(`${url}?name=large`)).toBe(false);
+    expect(userscriptInstall.isPublicAvatarFixtureUrl(url.replace('pbs.twimg.com', 'other.example')))
+      .toBe(false);
+    expect(userscriptInstall.isPublicAvatarFixtureUrl(url.replace('public-avatar', 'other-avatar')))
+      .toBe(false);
+    expect(userscriptInstall.isPublicAvatarFixtureUrl(url.replace('https:', 'http:'))).toBe(false);
+  });
+
+  it('limits manager history to the exact first fixture request and redacts native fields', async () => {
+    const fixtureUrl = 'https://pbs.twimg.com/media/GkE1234ABCDEF.jpg?format=jpg&name=large';
+    const expectedName = 'testuser_1234567890123456789_0.jpg';
+    const expectedPath = `C:\\owned\\${expectedName}`;
+    const search = vi.fn(async () => [
+      { id: 11, url: fixtureUrl, filename: expectedPath, fileSize: 4237,
+        state: 'interrupted', error: 'NETWORK_FAILED', finalUrl: 'https://secret.example/',
+        byExtensionId: 'secret-id', referrer: 'https://private.example/' },
+      { id: 12, url: `${fixtureUrl}&other=1`, filename: 'C:\\private\\file.jpg',
+        state: 'complete' },
+    ]);
+    vi.stubGlobal('location', { href: 'chrome-extension://manager/options.html' });
+    vi.stubGlobal('chrome', { downloads: { search } });
+    try {
+      const observation = await userscriptInstall.inspectManagerDownloadHistoryDocument({
+        managerId: 'manager', fixtureUrl, expectedName, expectedPath, expectedBytes: 4237 });
+      expect(search).toHaveBeenCalledWith({ url: fixtureUrl, limit: 9 });
+      expect(observation).toEqual({ status: 'observed', items: [{ id: 11,
+        state: 'interrupted', interruptReason: 'NETWORK_FAILED',
+        requestedNameMatch: true, ownedPathMatch: true, expectedSizeMatch: true,
+        fixtureUrlMatch: true }] });
+      expect(JSON.stringify(observation)).not.toMatch(/private|secret|chrome-extension|pbs\.twimg/u);
+      expect(userscriptInstall.firstCurrentManagerDownloadHistory(
+        { status: 'observed', items: [] }, observation)).toMatchObject({
+        status: 'observed', items: [{ id: 11 }] });
+      expect(userscriptInstall.firstCurrentManagerDownloadHistory(observation, observation))
+        .toMatchObject({ status: 'observed', items: [] });
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('marks incomplete or ambiguous manager history unknown without leaking items', async () => {
+    const args = { managerId: 'manager', fixtureUrl: 'https://pbs.twimg.com/media/first.jpg',
+      expectedName: 'first.jpg', expectedPath: 'C:\\owned\\first.jpg', expectedBytes: 5 };
+    vi.stubGlobal('location', { href: 'chrome-extension://manager/options.html' });
+    vi.stubGlobal('chrome', { downloads: { search: vi.fn(async () => Array.from({ length: 9 },
+      (_, id) => ({ id, url: args.fixtureUrl, state: 'complete', filename: 'first.jpg' }))) } });
+    try {
+      const overflow = await userscriptInstall.inspectManagerDownloadHistoryDocument(args);
+      expect(overflow).toEqual({ status: 'overflow', items: [] });
+      expect(userscriptInstall.firstCurrentManagerDownloadHistory(
+        { status: 'observed', items: [] }, overflow)).toEqual({ status: 'unknown',
+        baselineStatus: 'observed', queryStatus: 'overflow', items: [] });
+      expect(userscriptInstall.firstCurrentManagerDownloadHistory(
+        { status: 'observed', items: [] }, { status: 'observed', items: [{ id: 1 }, { id: 2 }] }))
+        .toEqual({ status: 'ambiguous', baselineCount: 0, items: [] });
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('requires one fresh complete native item with exact owned filename, path, and size', () => {
+    const valid = { id: 2, state: 'complete', interruptReason: null,
+      fixtureUrlMatch: true, requestedNameMatch: true, ownedPathMatch: true,
+      expectedSizeMatch: true };
+    const baseline = { status: 'observed', items: [{ ...valid, id: 1 }] };
+    const after = (items: unknown[]) => ({ status: 'observed', items });
+    expect(userscriptInstall.selectCompletedManagerDownload(baseline,
+      after([{ ...valid, id: 1 }]))).toBeUndefined();
+    expect(userscriptInstall.selectCompletedManagerDownload(baseline,
+      after([{ ...valid, id: 1 }, { ...valid, state: 'in_progress' }]))).toBeUndefined();
+    expect(userscriptInstall.selectCompletedManagerDownload(baseline,
+      after([{ ...valid, id: 1 }, valid]))).toEqual({ nativeId: 2,
+      nativeState: 'complete', completionSource: 'chrome.downloads.search' });
+    expect(() => userscriptInstall.selectCompletedManagerDownload(baseline,
+      after([{ ...valid, id: 1 }, valid, { ...valid, id: 3 }]))).toThrow(/multiple/u);
+    for (const changed of [{ requestedNameMatch: false }, { ownedPathMatch: false },
+      { expectedSizeMatch: false }, { fixtureUrlMatch: false },
+      { state: 'interrupted', interruptReason: 'NETWORK_FAILED' }]) {
+      expect(() => userscriptInstall.selectCompletedManagerDownload(baseline,
+        after([{ ...valid, id: 1 }, { ...valid, ...changed }]))).toThrow();
+    }
+    expect(() => userscriptInstall.selectCompletedManagerDownload(baseline,
+      { status: 'overflow', items: [] })).toThrow(/unavailable/u);
+  });
+
+  it('projects exact native path and size matches without returning private fields', async () => {
+    const fixtureUrl = 'https://pbs.twimg.com/media/GkE1234ABCDEF.jpg?format=jpg&name=large';
+    const expectedName = 'first (1).jpg';
+    const expectedPath = `C:\\owned\\${expectedName}`;
+    vi.stubGlobal('location', { href: 'chrome-extension://manager/options.html' });
+    vi.stubGlobal('chrome', { downloads: { search: vi.fn(async () => [
+      { id: 1, url: fixtureUrl, filename: 'C:\\other\\first (1).jpg', fileSize: 5,
+        state: 'complete', byExtensionId: 'private-extension' },
+      { id: 2, url: fixtureUrl, filename: expectedPath, fileSize: 4, state: 'complete' },
+    ]) } });
+    try {
+      const result = await userscriptInstall.inspectManagerDownloadHistoryDocument({
+        managerId: 'manager', fixtureUrl, expectedName, expectedPath, expectedBytes: 5 });
+      expect(result.items).toMatchObject([
+        { id: 1, requestedNameMatch: true, ownedPathMatch: false, expectedSizeMatch: true },
+        { id: 2, requestedNameMatch: true, ownedPathMatch: true, expectedSizeMatch: false },
+      ]);
+      expect(JSON.stringify(result)).not.toMatch(/C:\\\\|private-extension|pbs\.twimg/u);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('binds native completion to the browser download GUID without manager privileges', async () => {
+    const cdp = Object.assign(new EventEmitter(), { send: vi.fn(async () => ({})) });
+    const observer = userscriptInstall.createBrowserDownloadObserver(cdp);
+    const since = observer.snapshot();
+    cdp.emit('Browser.downloadWillBegin', {
+      guid: 'owned-download', suggestedFilename: 'image.jpg', url: 'blob:https://x.com/owned',
+    });
+    cdp.emit('Browser.downloadProgress', {
+      guid: 'owned-download', state: 'completed', receivedBytes: 5, totalBytes: 5,
+    });
+    await expect(observer.waitForCompletion(since, 'image.jpg')).resolves.toMatchObject({
+      guid: 'owned-download', state: 'completed', receivedBytes: 5,
+    });
+    await expect(observer.assertNoneSince(observer.snapshot(), 'cancelled action')).resolves.toBeUndefined();
+    expect(observer.events()).toEqual([{ guid: 'owned-download',
+      suggestedFilename: 'image.jpg', source: { scheme: 'blob:', origin: 'https://x.com' } }]);
+    expect(cdp.send).toHaveBeenCalledWith('Browser.getVersion');
+    observer.dispose();
+    expect(cdp.listenerCount('Browser.downloadWillBegin')).toBe(0);
+    expect(cdp.listenerCount('Browser.downloadProgress')).toBe(0);
+  });
+
+  it('requires a page-origin Blob URL for a ZIP save', () => {
+    expect(userscriptInstall.requirePageBlobZipSource('blob:https://x.com/owned'))
+      .toEqual({ scheme: 'blob:', origin: 'https://x.com' });
+    expect(() => userscriptInstall.requirePageBlobZipSource('blob:https://other.example/owned'))
+      .toThrow('page-origin Blob URL');
+    expect(() => userscriptInstall.requirePageBlobZipSource('https://x.com/archive.zip'))
+      .toThrow('page-origin Blob URL');
+  });
+
+  it('catches a native save dispatched after the routed response returns', async () => {
+    const directory = mkdtempSync(join(tmpdir(), 'xeg-late-native-save-'));
+    const cdp = Object.assign(new EventEmitter(), { send: vi.fn(async () => ({})) });
+    const observer = userscriptInstall.createBrowserDownloadObserver(cdp);
+    const since = observer.snapshot();
+    const lateEvent = setTimeout(() => cdp.emit('Browser.downloadWillBegin', {
+      guid: 'late-save', suggestedFilename: 'late.zip', url: 'blob:https://x.com/late',
+    }), 25);
+    try {
+      await expect(userscriptInstall.observeNoNativeDownload(
+        observer, since, new Set(), directory, 'late response', 150
+      )).rejects.toThrow('created a native download');
+    } finally {
+      clearTimeout(lateEvent);
+      observer.dispose();
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  it('catches a late owned file even when no CDP begin event arrived', async () => {
+    const directory = mkdtempSync(join(tmpdir(), 'xeg-late-native-file-'));
+    const cdp = Object.assign(new EventEmitter(), { send: vi.fn(async () => ({})) });
+    const observer = userscriptInstall.createBrowserDownloadObserver(cdp);
+    const lateFile = setTimeout(() => writeFileSync(join(directory, 'late.zip'), 'late'), 25);
+    try {
+      await expect(userscriptInstall.observeNoNativeDownload(
+        observer, observer.snapshot(), new Set(), directory, 'late response', 150
+      )).rejects.toThrow('left a file');
+    } finally {
+      clearTimeout(lateFile);
+      observer.dispose();
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
   it('rejects a paused in-progress download after all bytes have arrived', () => {
     const download = {
       bytesReceived: 256 * 1024 * 1024,
@@ -277,6 +1337,18 @@ describe('Windows X live page validation', () => {
     }
   });
 
+  it('routes the installed userscript separately and rejects public URLs', async () => {
+    const chromium = {
+      launchPersistentContext: async (): Promise<never> => {
+        throw new Error('browser must not launch');
+      },
+    };
+    await expect(installProfile.run({
+      browserName: 'chrome', chromium, headless: true, installation: 'userscript',
+      liveUrls: ['https://x.com/a/status/1'], output: '/unused', root: '/unused',
+    })).rejects.toThrow('does not support public URLs');
+  });
+
   it('keeps live observation opt-in and bundles its imported module', async () => {
     await expect(
       livePage.observeLiveUrls({
@@ -295,6 +1367,8 @@ describe('Windows X live page validation', () => {
       readFileSync(resolve(import.meta.dirname, '../../../validation/windows/profile.json'), 'utf8')
     ) as { installation?: { assets?: string[] } };
     expect(profile.installation?.assets).toContain('validation/windows/live-page.mjs');
+    expect(profile.installation?.assets).toContain('validation/windows/userscript-install.mjs');
+    expect(profile.installation?.assets).toContain('dist/xcom-enhanced-gallery.user.js');
   });
 
   it('changes only the supported video click setting in a complete task-owned copy', () => {

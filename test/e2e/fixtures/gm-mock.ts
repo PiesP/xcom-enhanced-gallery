@@ -58,23 +58,23 @@ export async function installGMMock(
         | string
         | {
             url: string;
-            name?: string;
-            filename?: string;
+            name: string;
             onload?: () => void;
           },
       name?: string
     ): void => {
       const details =
         typeof urlOrDetails === 'string'
-          ? { url: urlOrDetails, name: name ?? 'download' }
+          ? { url: urlOrDetails, name }
           : urlOrDetails;
+      if (!details.name) throw new Error('GM_download requires name');
       const marker = document.createElement('span');
       marker.dataset.gmDownload = 'true';
       marker.dataset.gmDownloadUrl = details.url;
-      marker.dataset.gmDownloadName = details.filename ?? details.name ?? 'download';
+      marker.dataset.gmDownloadName = details.name;
       marker.hidden = true;
       document.body.append(marker);
-      queueMicrotask(() => details.onload?.());
+      queueMicrotask(() => { if ('onload' in details) details.onload?.(); });
     };
     window.GM_notification = (
       details: GMNotificationDetails | string,
