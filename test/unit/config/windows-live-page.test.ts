@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 PiesP
 
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { EventEmitter } from 'node:events';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -162,6 +162,11 @@ const userscriptInstall = (await import(
   isOwnedManagerInspectionUrl(value: string, detailsUrl: string, managerId: string): boolean;
   isOwnedManagerOptionsUrl(value: string, managerId: string): boolean;
   isOwnedManagerPermissionAskUrl(value: string, managerId: string): boolean;
+  browserProcessId(value: unknown): number | null;
+  captureNativeManagerPermission(cdp: { send(method: string): Promise<unknown> }, root: string,
+    output: string, profile: string, browserName: string,
+    run: (file: string, args: string[], options: unknown) => Promise<unknown>):
+    Promise<{ status: string; reason: string | null }>;
   requireManagerDownloadsHeading(actual: string, localizedDownloads: string): void;
   managerSettingRowLabel(localizedName: string): string;
   managerSettingRow(scope: unknown, localizedName: string): unknown;
@@ -209,6 +214,51 @@ const userscriptInstall = (await import(
 };
 
 describe('Windows X live page validation', () => {
+  it('runs native permission inspection only with one CDP browser PID and an owned profile', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'xeg-native-permission-'));
+    const profile = join(root, 'xeg-userscript-install-owned');
+    const output = join(root, 'output');
+    mkdirSync(profile);
+    mkdirSync(output);
+    const run = vi.fn(async (_file: string, _args: string[], _options: unknown) => {
+      writeFileSync(join(output, 'userscript-manager-native-permission.json'),
+        JSON.stringify({ status: 'skipped', reason: 'owned-window-not-foreground',
+          permissionGrantAttempted: false }));
+    });
+    try {
+      expect(userscriptInstall.browserProcessId({ processInfo: [
+        { type: 'browser', id: 42 }, { type: 'renderer', id: 43 },
+      ] })).toBe(42);
+      for (const processInfo of [{ processInfo: [] }, { processInfo: [
+        { type: 'browser', id: 42 }, { type: 'browser', id: 43 },
+      ] }, { processInfo: [{ type: 'browser', id: '42' }] }]) {
+        expect(userscriptInstall.browserProcessId(processInfo)).toBeNull();
+      }
+      const cdp = { send: vi.fn(async () => ({ processInfo: [
+        { type: 'browser', id: 42 }, { type: 'renderer', id: 43 },
+      ] })) };
+      await expect(userscriptInstall.captureNativeManagerPermission(cdp, root, output,
+        profile, 'chrome', run)).resolves.toEqual({ status: 'skipped',
+        reason: 'owned-window-not-foreground' });
+      expect(cdp.send).toHaveBeenCalledWith('SystemInfo.getProcessInfo');
+      expect(run).toHaveBeenCalledOnce();
+      expect(run.mock.calls[0]?.[0]).toBe('powershell.exe');
+      expect(run.mock.calls[0]?.[1]).toEqual(expect.arrayContaining([
+        '-BrowserPid', '42', '-BrowserName', 'chrome', '-Profile', profile]));
+      run.mockClear();
+      await expect(userscriptInstall.captureNativeManagerPermission(
+        { send: async () => ({ processInfo: [] }) }, root, output, profile, 'chrome', run))
+        .resolves.toEqual({ status: 'unavailable', reason: 'AssertionError' });
+      expect(run).not.toHaveBeenCalled();
+      await expect(userscriptInstall.captureNativeManagerPermission(cdp, root, output,
+        join(root, 'unowned'), 'chrome', run)).resolves.toEqual({ status: 'unavailable',
+          reason: 'AssertionError' });
+      expect(run).not.toHaveBeenCalled();
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it('checks the actual manager userScripts API and uses the browser-specific details URL', async () => {
     expect(userscriptInstall.managerDetailsUrl('msedge', 'manager-id'))
       .toBe('edge://extensions/?id=manager-id');

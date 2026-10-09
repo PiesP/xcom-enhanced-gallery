@@ -3,8 +3,10 @@
 
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { execFile } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { basename, dirname, join, resolve } from 'node:path';
+import { promisify } from 'node:util';
 import { expectedStoredZipBytes, readExactDownloadFile, verifyStoredZip } from './download-memory.mjs';
 import { createImageFixtures, enableDeveloperMode, verifyDownloadDirectory } from './install-profile.mjs';
 
@@ -28,6 +30,39 @@ export function isPublicAvatarFixtureUrl(value) {
 }
 export const FIXTURE_ZIP_NAME = `testuser_${TWEET_ID}.zip`;
 const MAX_DOWNLOADS = 8;
+const execFileAsync = promisify(execFile);
+const NATIVE_PERMISSION_RECEIPT = 'userscript-manager-native-permission.json';
+
+export function browserProcessId(processInfo) {
+  const browsers = processInfo?.processInfo?.filter((process) => process.type === 'browser') ?? [];
+  return browsers.length === 1 && Number.isSafeInteger(browsers[0].id) && browsers[0].id > 0
+    ? browsers[0].id : null;
+}
+
+/** Native UI is diagnostic only; an absent or unowned window never implies permission. */
+export async function captureNativeManagerPermission(cdp, root, output, profile, browserName,
+  run = execFileAsync) {
+  const receiptPath = join(output, NATIVE_PERMISSION_RECEIPT);
+  let receipt;
+  try {
+    assertOwned(root, profile);
+    assert(['chrome', 'msedge'].includes(browserName), 'Unsupported native browser');
+    const pid = browserProcessId(await cdp.send('SystemInfo.getProcessInfo'));
+    assert(pid, 'CDP did not identify one browser process');
+    await run('powershell.exe', ['-NoProfile', '-NonInteractive', '-File',
+      join(root, 'validation/windows/manager-permission-window.ps1'),
+      '-BrowserPid', String(pid), '-BrowserName', browserName,
+      '-Profile', profile, '-Output', output], { timeout: 12_000, windowsHide: true, maxBuffer: 4_096 });
+    receipt = JSON.parse(await readFile(receiptPath, 'utf8'));
+    assert(['captured', 'skipped'].includes(receipt.status), 'Invalid native diagnostic receipt');
+    assert.equal(receipt.permissionGrantAttempted, false,
+      'Native diagnostic cannot change permission');
+  } catch (error) {
+    receipt = { status: 'unavailable', reason: error instanceof Error ? error.name : typeof error };
+    await writeFile(receiptPath, JSON.stringify(receipt, null, 2));
+  }
+  return { status: receipt.status, reason: receipt.reason ?? null };
+}
 
 function sha256(bytes) { return createHash('sha256').update(bytes).digest('hex'); }
 function filename(index) { return `testuser_${TWEET_ID}_${index}.jpg`; }
@@ -348,7 +383,8 @@ export async function probeManagerDownloadsPermission(page, managerId) {
 }
 
 /** Select Tampermonkey's own Browser API option through its ordinary options UI. */
-export async function configureManagerBrowserDownloads(page, managerId, output) {
+export async function configureManagerBrowserDownloads(page, managerId, output,
+  captureNativePermission = async () => null) {
   assert(isOwnedManagerOptionsUrl(page.url(), managerId),
     'Manager download settings require its owned options page');
   const labels = await page.evaluate((expectedId) => {
@@ -418,6 +454,7 @@ export async function configureManagerBrowserDownloads(page, managerId, output) 
     await captureAndConfirmManagerPermissionAsk(ask, managerId, output, labels.Ok);
     permissionOkClicked = true;
   }
+  const nativeDiagnostic = permissionOkClicked ? await captureNativePermission() : null;
   await page.reload({ waitUntil: 'domcontentloaded' });
   assert(isOwnedManagerOptionsUrl(page.url(), managerId), 'Manager options page navigated away');
   await page.getByText(labels.Settings, { exact: true }).first().click();
@@ -430,7 +467,8 @@ export async function configureManagerBrowserDownloads(page, managerId, output) 
   const downloadsPermissionGranted = await probeManagerDownloadsPermission(page, managerId);
   return { requested: 'chrome', observed, configMode: '50',
     whitelistJpgZipPresent: true, permissionAskShown, permissionOkClicked,
-    downloadsPermissionGranted, permissionPending: !downloadsPermissionGranted };
+    downloadsPermissionGranted, permissionPending: !downloadsPermissionGranted,
+    nativeDiagnostic };
 }
 
 async function captureManagerDownloadsPermission(context, managerId) {
@@ -592,7 +630,8 @@ async function captureManagerPermissionDiagnostics(page, detailsUrl, output, pro
   await writeFile(join(output, 'userscript-manager-permission.json'), JSON.stringify(diagnostics, null, 2));
 }
 
-async function installUserscript(context, id, root, output, browserName, sourceSha256) {
+async function installUserscript(context, id, root, output, browserName, sourceSha256,
+  captureNativePermission) {
   const manifest = JSON.parse(await readFile(join(root, 'test-tools/userscript-manager/manifest.json'), 'utf8'));
   assert(/^\d+(?:\.\d+){1,3}$/.test(manifest.version), 'Manager version is invalid');
   assert(manifest.permissions?.includes('userScripts'), 'Manager lacks userScripts permission');
@@ -658,7 +697,8 @@ async function installUserscript(context, id, root, output, browserName, sourceS
     await writeFile(admissionPath, JSON.stringify({ ...admission, labels }, null, 2));
     let downloadMode;
     try {
-      downloadMode = await configureManagerBrowserDownloads(page, id, output);
+      downloadMode = await configureManagerBrowserDownloads(page, id, output,
+        captureNativePermission);
     } catch (error) {
       const ownedOptions = isOwnedManagerOptionsUrl(page.url(), id);
       const diagnostic = { errorType: error instanceof Error ? error.name : typeof error,
@@ -1130,7 +1170,8 @@ export async function runUserscriptInstallation({ chromium, root, output, browse
     }));
     assert.equal(typeof managerId, 'string');
     result.manager = await installUserscript(context, managerId, root, output, browserName,
-      result.sourceSha256);
+      result.sourceSha256, () => captureNativeManagerPermission(cdp, root, output, profile,
+        browserName));
     const images = await createImageFixtures(context);
     result.fixtureLimits = { imageBytes: images.map((image) => image.length),
       imageSha256: images.map(sha256),
