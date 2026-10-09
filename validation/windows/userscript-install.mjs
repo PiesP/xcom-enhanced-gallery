@@ -273,6 +273,10 @@ export function requireManagerDownloadsHeading(actual, localizedDownloads) {
     'Manager Downloads section label differs');
 }
 
+export function managerSettingRowLabel(localizedName) {
+  return `${localizedName}:`;
+}
+
 export async function captureAndConfirmManagerPermissionAsk(ask, managerId, output, okLabel) {
   assert(isOwnedManagerPermissionAskUrl(ask.url(), managerId),
     'Manager permission confirmation navigated away');
@@ -359,7 +363,7 @@ export async function configureManagerBrowserDownloads(page, managerId, output) 
   assert(isOwnedManagerOptionsUrl(page.url(), managerId), 'Manager options page navigated away');
   await page.getByText(labels.Settings, { exact: true }).first().click();
   const configRow = page.locator('tr.settingstr').filter({
-    has: page.getByText(labels.Config_Mode, { exact: true }),
+    has: page.getByText(managerSettingRowLabel(labels.Config_Mode), { exact: true }),
   });
   await configRow.waitFor({ state: 'visible', timeout: 10_000 });
   assert.equal(await configRow.count(), 1, 'Expected exactly one manager config-mode row');
@@ -372,7 +376,7 @@ export async function configureManagerBrowserDownloads(page, managerId, output) 
   assert.equal(await downloads.count(), 1, 'Expected exactly one manager Downloads section');
   requireManagerDownloadsHeading(await downloads.locator('.section_head').innerText(), labels.Downloads);
   const whitelistRow = downloads.locator('tr.settingstr').filter({
-    has: page.getByText(labels.Whitelisted_File_Extensions, { exact: true }),
+    has: page.getByText(managerSettingRowLabel(labels.Whitelisted_File_Extensions), { exact: true }),
   });
   assert.equal(await whitelistRow.count(), 1, 'Expected exactly one manager whitelist row');
   const whitelist = await whitelistRow.locator('input, textarea').evaluateAll((elements) =>
@@ -381,7 +385,7 @@ export async function configureManagerBrowserDownloads(page, managerId, output) 
     whitelist.some((value) => value.includes('zip')),
   'Manager whitelist does not visibly include JPG and ZIP');
   const modeRow = downloads.locator('tr.settingstr').filter({
-    has: page.getByText(labels.Download_Mode, { exact: true }),
+    has: page.getByText(managerSettingRowLabel(labels.Download_Mode), { exact: true }),
   });
   assert.equal(await modeRow.count(), 1, 'Expected exactly one manager Download Mode row');
   const modeSelect = modeRow.locator('select');
@@ -418,7 +422,7 @@ export async function configureManagerBrowserDownloads(page, managerId, output) 
   assert(isOwnedManagerOptionsUrl(page.url(), managerId), 'Manager options page navigated away');
   await page.getByText(labels.Settings, { exact: true }).first().click();
   const savedMode = page.locator('div.section.type_downloads tr.settingstr').filter({
-    has: page.getByText(labels.Download_Mode, { exact: true }),
+    has: page.getByText(managerSettingRowLabel(labels.Download_Mode), { exact: true }),
   }).locator('select');
   await savedMode.waitFor({ state: 'visible', timeout: 10_000 });
   const observed = await savedMode.inputValue();

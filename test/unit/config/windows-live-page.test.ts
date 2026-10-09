@@ -163,6 +163,7 @@ const userscriptInstall = (await import(
   isOwnedManagerOptionsUrl(value: string, managerId: string): boolean;
   isOwnedManagerPermissionAskUrl(value: string, managerId: string): boolean;
   requireManagerDownloadsHeading(actual: string, localizedDownloads: string): void;
+  managerSettingRowLabel(localizedName: string): string;
   captureAndConfirmManagerPermissionAsk(ask: unknown, managerId: string, output: string,
     okLabel: string): Promise<void>;
   requireManagerUiLabels(labels: Record<string, unknown>): Record<string, string>;
@@ -436,15 +437,33 @@ describe('Windows X live page validation', () => {
   });
 
   it('matches the bundled Downloads BETA heading in localized options markup', () => {
-    document.body.innerHTML = '<div class="section type_downloads"><div class="section_head">다운로드 BETA</div>' +
-      '<table class="section_content"><tr class="settingstr"><td>다운로드 모드</td>' +
-      '<td><select><option value="chrome">브라우저 API</option></select></td></tr></table></div>';
+    document.body.innerHTML = `
+      <div class="section type_general"><table class="section_content">
+        <tr class="settingstr"><td><div><span class="optiondesc">설정 모드: </span>
+          <select><option value="50">초보자</option></select></div></td></tr>
+      </table></div>
+      <div class="section type_downloads"><div class="section_head">다운로드 BETA</div>
+        <table class="section_content">
+          <tr class="settingstr"><td><div><span class="optiondesc">다운로드 모드: </span>
+            <select><option value="chrome">브라우저 API</option></select></div></td></tr>
+          <tr class="settingstr"><td><div><span>파일 확장자 화이트리스트:</span>
+            <textarea>/\\.(jpe?g|png)$/\n/\\.(zip|tar)$/</textarea></div></td></tr>
+        </table>
+      </div>`;
     const heading = document.querySelector('.section.type_downloads .section_head');
     expect(heading).not.toBeNull();
     expect(() => userscriptInstall.requireManagerDownloadsHeading(
       heading?.textContent ?? '', '다운로드')).not.toThrow();
     expect(() => userscriptInstall.requireManagerDownloadsHeading('다운로드', '다운로드'))
       .toThrow('Manager Downloads section label differs');
+    for (const localizedName of ['설정 모드', '다운로드 모드', '파일 확장자 화이트리스트']) {
+      const exactLabel = userscriptInstall.managerSettingRowLabel(localizedName);
+      const rows = [...document.querySelectorAll('tr.settingstr')].filter((row) =>
+        [...row.querySelectorAll('span')].some((span) => span.textContent?.trim() === exactLabel));
+      expect(rows).toHaveLength(1);
+      expect(rows[0]?.querySelector('span')?.textContent?.trim()).toBe(exactLabel);
+      expect(exactLabel).not.toBe(localizedName);
+    }
   });
 
   it('accepts only an owned Tampermonkey permission ask page with its aid', () => {
