@@ -78,7 +78,7 @@ jobs:
       - name: Classify browser-core consumer impact
         id: impact
         if: steps.prepare.outputs.ready == 'true'
-        uses: PiesP/browser-core/automation/actions/consumer-impact@49969d6847f1a7c5130304d4aa25455fdd87e4eb
+        uses: PiesP/browser-core/automation/actions/consumer-impact@f9a7feec01970394bc6291b63abdd792b6d050e1
         with:
           base-sha: ${{ steps.prepare.outputs.base }}
           head-sha: ${{ steps.prepare.outputs.head }}
