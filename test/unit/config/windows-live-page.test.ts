@@ -151,6 +151,9 @@ const userscriptInstall = (await import(
 )) as { MEDIA_COHORTS: Record<'normal' | 'failure' | 'partial' | 'held', string[]>;
   FIXTURE_ZIP_NAME: string;
   fixtureZipEntries(images: Uint8Array[]): Array<{ filename: string; bytes: Uint8Array }>;
+  managerDetailsUrl(browserName: string, id: string): string;
+  probeManagerUserScripts(page: { evaluate(callback: () => Promise<unknown>): Promise<unknown> }):
+    Promise<{ available: boolean; registeredScriptCount?: number; errorType?: string }>;
   createBrowserDownloadObserver(cdp: EventEmitter & { send(method: string): Promise<unknown> }): {
   snapshot(): number;
   waitForCompletion(since: number, name: string): Promise<{ guid: string; state: string }>;
@@ -173,6 +176,35 @@ const userscriptInstall = (await import(
 };
 
 describe('Windows X live page validation', () => {
+  it('checks the actual manager userScripts API and uses the browser-specific details URL', async () => {
+    expect(userscriptInstall.managerDetailsUrl('msedge', 'manager-id'))
+      .toBe('edge://extensions/?id=manager-id');
+    expect(userscriptInstall.managerDetailsUrl('chrome', 'manager-id'))
+      .toBe('chrome://extensions/?id=manager-id');
+    const page = { evaluate: async (callback: () => Promise<unknown>) => callback() };
+    try {
+      vi.stubGlobal('chrome', { userScripts: { getScripts: async () => ['private-script'] } });
+      expect(await userscriptInstall.probeManagerUserScripts(page)).toEqual({
+        available: true, registeredScriptCount: 1,
+      });
+      vi.stubGlobal('chrome', { userScripts: { getScripts: async () => {
+        throw new DOMException('denied', 'NotAllowedError');
+      } } });
+      expect(await userscriptInstall.probeManagerUserScripts(page)).toEqual({
+        available: false, errorType: 'NotAllowedError',
+      });
+      vi.stubGlobal('chrome', {});
+      expect(await userscriptInstall.probeManagerUserScripts(page)).toEqual({
+        available: false, errorType: 'TypeError',
+      });
+      expect(await userscriptInstall.probeManagerUserScripts({
+        evaluate: async () => { throw new Error('extension page unavailable'); },
+      })).toEqual({ available: false, errorType: 'PageEvaluationError' });
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('keeps same-document userscript phases on distinct media cache keys with stable ZIP entries', () => {
     const html = readFileSync(resolve(import.meta.dirname,
       '../../e2e/fixtures/installed-gallery-page.html'), 'utf8');

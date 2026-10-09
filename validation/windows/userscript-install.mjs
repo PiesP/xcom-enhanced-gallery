@@ -107,24 +107,87 @@ export function requireHeldRouteOutcome(routeInvocation, requestTerminal) {
   return { routeInvocation, requestTerminal };
 }
 
-async function installUserscript(context, id, root, output) {
+export function managerDetailsUrl(browserName, id) {
+  assert(['chrome', 'msedge'].includes(browserName), 'Unsupported manager browser');
+  return `${browserName === 'msedge' ? 'edge' : 'chrome'}://extensions/?id=${encodeURIComponent(id)}`;
+}
+
+export async function probeManagerUserScripts(page) {
+  try {
+    return await page.evaluate(async () => {
+      try {
+        const scripts = await chrome.userScripts.getScripts();
+        return { available: true, registeredScriptCount: scripts.length };
+      } catch (error) {
+        return { available: false, errorType: error && typeof error.name === 'string'
+          ? error.name : typeof error };
+      }
+    });
+  } catch {
+    return { available: false, errorType: 'PageEvaluationError' };
+  }
+}
+
+async function captureManagerPermissionDiagnostics(page, detailsUrl, output, probe) {
+  const diagnostics = { api: probe, requestedUrl: detailsUrl };
+  try {
+    await page.goto(detailsUrl, { waitUntil: 'domcontentloaded', timeout: 10_000 });
+    diagnostics.finalUrl = page.url();
+    diagnostics.title = (await page.title()).slice(0, 120);
+    diagnostics.allowUserScriptsVisible = await page.locator('#allow-user-scripts cr-toggle').isVisible();
+    diagnostics.toggleControls = await page.locator('cr-toggle').evaluateAll((elements) =>
+      elements.slice(0, 32).map((element) => ({
+        id: element.id.slice(0, 80),
+        ariaLabel: element.getAttribute('aria-label')?.slice(0, 80) ?? null,
+        checked: Boolean(element.checked),
+      })));
+    await page.screenshot({ path: join(output, 'userscript-manager-permission.png') });
+  } catch (error) {
+    diagnostics.captureErrorType = error instanceof Error ? error.name : typeof error;
+  }
+  await writeFile(join(output, 'userscript-manager-permission.json'), JSON.stringify(diagnostics, null, 2));
+}
+
+async function installUserscript(context, id, root, output, browserName) {
   const manifest = JSON.parse(await readFile(join(root, 'test-tools/userscript-manager/manifest.json'), 'utf8'));
   assert(/^\d+(?:\.\d+){1,3}$/.test(manifest.version), 'Manager version is invalid');
+  assert(manifest.permissions?.includes('userScripts'), 'Manager lacks userScripts permission');
   const page = await context.newPage();
+  const detailsUrl = managerDetailsUrl(browserName, id);
+  const optionsUrl = `chrome-extension://${id}/options.html`;
   try {
-    await page.goto(`chrome://extensions/?id=${id}`);
-    const toggle = page.locator('#allow-user-scripts cr-toggle');
-    await toggle.waitFor({ state: 'visible' });
-    if (!(await toggle.evaluate((element) => element.checked))) await toggle.click();
-    assert(await toggle.evaluate((element) => element.checked), 'Manager user-scripts permission is disabled');
-    const keep = page.getByRole('button', { name: 'Keep', exact: true });
-    if (await keep.isVisible()) await keep.click();
-    const restarted = context.waitForEvent('serviceworker', {
-      predicate: (worker) => worker.url().startsWith(`chrome-extension://${id}/`), timeout: 15_000,
-    });
-    await page.locator('extensions-detail-view #dev-reload-button').click();
-    await restarted;
-    await page.goto(`chrome-extension://${id}/options.html`);
+    await page.goto(optionsUrl);
+    let permission = await probeManagerUserScripts(page);
+    let permissionPath = 'already-enabled';
+    if (!permission.available) {
+      try {
+        await page.goto(detailsUrl, { waitUntil: 'domcontentloaded', timeout: 10_000 });
+        const toggle = page.locator('#allow-user-scripts cr-toggle');
+        const label = page.locator('#allow-user-scripts');
+        if (!await toggle.isVisible() ||
+          !/allow user scripts/iu.test(await label.innerText())) {
+          throw new Error('Manager userScripts API unavailable and no verified UI permission control');
+        }
+        if (!await toggle.evaluate((element) => element.checked)) await toggle.click();
+        assert(await toggle.evaluate((element) => element.checked), 'Manager user-scripts control stayed disabled');
+        const keep = page.getByRole('button', { name: 'Keep', exact: true });
+        if (await keep.isVisible()) await keep.click();
+        const reload = page.locator('extensions-detail-view #dev-reload-button');
+        assert(await reload.isVisible(), 'Manager permission changed but extension reload control is unavailable');
+        const restarted = context.waitForEvent('serviceworker', {
+          predicate: (worker) => worker.url().startsWith(`chrome-extension://${id}/`), timeout: 15_000,
+        });
+        await reload.click();
+        await restarted;
+        await page.goto(optionsUrl);
+        permission = await probeManagerUserScripts(page);
+        permissionPath = 'verified-ui-toggle';
+        assert(permission.available, 'Manager userScripts API unavailable after UI permission change');
+      } catch (error) {
+        await captureManagerPermissionDiagnostics(page, detailsUrl, output, permission);
+        throw error;
+      }
+    }
     await page.getByText('Utilities', { exact: true }).click();
     const confirmationPromise = context.waitForEvent('page');
     await page.locator('input[type=file]').setInputFiles(join(root, 'dist/xcom-enhanced-gallery.user.js'));
@@ -138,7 +201,9 @@ async function installUserscript(context, id, root, output) {
     await page.getByText(SCRIPT_NAME, { exact: true }).first().waitFor({ state: 'visible' });
     await page.screenshot({ path: join(output, 'userscript-installed.png') });
     return { id, managerName: 'Tampermonkey', managerVersion: manifest.version,
-      scriptName: SCRIPT_NAME, method: 'real-manager-ui-import' };
+      scriptName: SCRIPT_NAME, method: 'real-manager-ui-import',
+      userScriptsPermission: { path: permissionPath,
+        available: permission.available, registeredScriptCount: permission.registeredScriptCount } };
   } finally {
     await page.close();
   }
@@ -496,7 +561,7 @@ export async function runUserscriptInstallation({ chromium, root, output, browse
       path: join(root, 'test-tools/userscript-manager'),
     }));
     assert.equal(typeof managerId, 'string');
-    result.manager = await installUserscript(context, managerId, root, output);
+    result.manager = await installUserscript(context, managerId, root, output, browserName);
     const images = await createImageFixtures(context);
     result.fixtureLimits = { imageBytes: images.map((image) => image.length),
       imageSha256: images.map(sha256),
