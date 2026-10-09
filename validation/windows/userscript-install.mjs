@@ -319,8 +319,8 @@ async function runFixture(context, observer, root, output, downloads, images) {
       await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]').click();
       await gallery.waitFor({ state: 'detached' });
       phase = nextPhase;
-      await page.locator('body').evaluate((body, selected) => {
-        body.dataset.fixturePhase = selected;
+      await page.locator('main').evaluate((main, selected) => {
+        main.dataset.fixturePhase = selected;
       }, nextPhase);
       const nextTrigger = page.locator(`[data-phase="${nextPhase}"] [data-testid="tweetPhoto"] img`).first();
       await nextTrigger.click();
@@ -413,8 +413,8 @@ async function runFixture(context, observer, root, output, downloads, images) {
     heldRequest.requestTerminal = requestTerminal;
     // cleanupGallery() resets the busy signal synchronously. A detached gallery
     // and enabled toolbar cannot prove that an old manager callback has settled.
-    // Keep this document alive after the late route response and inspect browser
-    // events and owned files throughout a bounded post-response interval.
+    // Keep this document alive after the exact held request reaches a terminal
+    // state and inspect browser events and owned files during the bounded interval.
     await heldTrigger.click();
     await gallery.waitFor({ state: 'visible' });
     await waitFor(async () => await all.isEnabled() ? true : undefined,

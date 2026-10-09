@@ -187,7 +187,10 @@ describe('Windows X live page validation', () => {
       allMarkers.push(...markers);
     }
     expect(new Set(allMarkers).size).toBe(12);
-    expect(html).toContain('data-fixture-phase="normal"');
+    expect(html).toContain('<body data-fixture-route="classic">');
+    expect(html).toContain('<main data-fixture-phase="normal">');
+    expect(html.replace('<body data-fixture-route="classic">',
+      '<body data-fixture-route="public">')).toContain('<body data-fixture-route="public">');
     const entries = userscriptInstall.fixtureZipEntries([
       Uint8Array.of(0), Uint8Array.of(1), Uint8Array.of(2),
     ]);
