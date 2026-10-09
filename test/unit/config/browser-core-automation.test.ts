@@ -18,7 +18,7 @@ describe('browser-core workflow composition', () => {
   });
 
   it('classifies before publication and passes the exact prepared revisions', () => {
-    const impact = workflow.indexOf('automation/actions/consumer-impact@49969d6847f1a7c5130304d4aa25455fdd87e4eb');
+    const impact = workflow.indexOf('automation/actions/consumer-impact@f9a7feec01970394bc6291b63abdd792b6d050e1');
     expect(impact).toBeGreaterThan(workflow.indexOf('scripts/ci/update-browser-core.ts prepare'));
     expect(workflow.indexOf('scripts/ci/update-browser-core.ts publish')).toBeGreaterThan(impact);
     expect(workflow).toContain('base-sha: ${{ steps.prepare.outputs.base }}');
