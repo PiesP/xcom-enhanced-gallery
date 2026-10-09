@@ -230,8 +230,9 @@ describe('Windows X live page validation', () => {
       { name: '허용', controlType: 'ControlType.Button', depth: 8 },
       { name: '거부', controlType: 'ControlType.Button', depth: 8 },
     ],
-    promptScope: { complete: true, windowCount: 1, nameTruncated: false,
-      rootProcessId: 42, visitedControls: 6, controls: [
+    promptScope: { complete: true, reason: null as string | null, windowCount: 1,
+      nameTruncated: false, rootProcessId: 42, visitedControls: 6, attemptedNodes: 6,
+      controls: [
         { name: "'Tampermonkey'이(가) 추가 승인을 요청했습니다.", controlType: 'ControlType.Window',
           depth: 0, isEnabled: true, isOffscreen: false },
         { name: "'Tampermonkey'이(가) 추가 승인을 요청했습니다.", controlType: 'ControlType.Text',
@@ -266,6 +267,9 @@ describe('Windows X live page validation', () => {
     expect(userscriptInstall.isObservedChromeNativeDownloadPrompt(differentProcess)).toBe(false);
     const incompleteScope = nativePrompt();
     incompleteScope.promptScope.complete = false;
+    incompleteScope.promptScope.reason = 'depth-cap';
+    incompleteScope.promptScope.controls.pop();
+    incompleteScope.promptScope.visitedControls--;
     expect(userscriptInstall.isObservedChromeNativeDownloadPrompt(incompleteScope)).toBe(false);
     const disabledAllow = nativePrompt();
     disabledAllow.promptScope.controls[4]!.isEnabled = false;
@@ -281,6 +285,7 @@ describe('Windows X live page validation', () => {
     const context = {};
     let closed = false;
     let url = 'chrome-extension://owned/ask.html?aid=opaque';
+    let promptReceipt = nativePrompt();
     const ask = { isClosed: () => closed, context: () => context,
       url: () => url };
     const cdp = { send: vi.fn(async () => ({ processInfo: [{ type: 'browser', id: 42 }] })) };
@@ -290,7 +295,7 @@ describe('Windows X live page validation', () => {
         : 'userscript-manager-native-permission.json'), JSON.stringify(args.includes('-InvokeAllow')
         ? { status: 'invoked', capture: 'uia-only', screenshot: 'not-captured',
             permissionGrantAttempted: true, postProcessStable: true, postForegroundOwned: true }
-        : nativePrompt()));
+        : promptReceipt));
     });
     try {
       closed = true;
@@ -307,6 +312,17 @@ describe('Windows X live page validation', () => {
       expect(run).toHaveBeenCalledOnce();
       run.mockClear();
       url = 'chrome-extension://owned/ask.html?aid=opaque';
+      promptReceipt = nativePrompt();
+      promptReceipt.promptScope.complete = false;
+      promptReceipt.promptScope.reason = 'depth-cap';
+      promptReceipt.promptScope.controls.pop();
+      promptReceipt.promptScope.visitedControls--;
+      const incomplete = await userscriptInstall.inspectAndAllowNativeManagerPermission(cdp,
+        root, output, profile, 'chrome', ask, 'owned', context, run);
+      expect(incomplete.action).toEqual({ status: 'skipped', reason: 'prompt-scope-depth-cap' });
+      expect(run).toHaveBeenCalledOnce();
+      run.mockClear();
+      promptReceipt = nativePrompt();
       const invoked = await userscriptInstall.inspectAndAllowNativeManagerPermission(cdp,
         root, output, profile, 'chrome', ask, 'owned', context, run);
       expect(invoked.action.status).toBe('invoked');

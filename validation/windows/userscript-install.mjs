@@ -34,6 +34,9 @@ const execFileAsync = promisify(execFile);
 const NATIVE_PERMISSION_RECEIPT = 'userscript-manager-native-permission.json';
 const NATIVE_PERMISSION_ACTION_RECEIPT = 'userscript-manager-native-permission-action.json';
 const CHROME_KO_PERMISSION_TITLE = "'Tampermonkey'이(가) 추가 승인을 요청했습니다.";
+const PROMPT_SCOPE_REASONS = new Set(['prompt-window-not-unique', 'prompt-identity-changed',
+  'provider-error', 'runtime-id-unavailable', 'duplicate-runtime-id', 'cross-process',
+  'name-cap', 'depth-cap', 'sibling-cap', 'node-cap']);
 
 export function browserProcessId(processInfo) {
   const browsers = processInfo?.processInfo?.filter((process) => process.type === 'browser') ?? [];
@@ -83,10 +86,12 @@ export function isObservedChromeNativeDownloadPrompt(receipt) {
       typeof receipt.foregroundHandle !== 'string' || !/^[1-9]\d{0,19}$/u.test(receipt.foregroundHandle) ||
       !Array.isArray(receipt.controls) || receipt.controls.length > 256 ||
       scope?.complete !== true || scope.nameTruncated !== false || scope.windowCount !== 1 ||
+      scope.reason !== null ||
       scope.rootProcessId !== receipt.browserPid ||
       !Number.isSafeInteger(scope.visitedControls) || scope.visitedControls <= 0 ||
       scope.visitedControls > 128 || !Array.isArray(scope.controls) ||
-      scope.controls.length !== scope.visitedControls) return false;
+      scope.controls.length !== scope.visitedControls ||
+      scope.attemptedNodes !== scope.visitedControls) return false;
   const controls = scope.controls;
   const count = (type, name) => controls.filter((control) =>
     control.controlType === type && control.name === name).length;
@@ -116,6 +121,11 @@ export async function inspectAndAllowNativeManagerPermission(cdp, root, output, 
   if (diagnostic.status !== 'captured') return skipped('prompt-not-captured');
   try {
     const receipt = JSON.parse(await readFile(join(output, NATIVE_PERMISSION_RECEIPT), 'utf8'));
+    if (receipt.promptScope?.complete === false) {
+      const reason = PROMPT_SCOPE_REASONS.has(receipt.promptScope.reason)
+        ? receipt.promptScope.reason : 'incomplete';
+      return skipped(`prompt-scope-${reason}`);
+    }
     if (!isObservedChromeNativeDownloadPrompt(receipt)) return skipped('prompt-not-exact');
     const currentPid = browserProcessId(await cdp.send('SystemInfo.getProcessInfo'));
     if (currentPid !== receipt.browserPid) return skipped('browser-pid-changed');

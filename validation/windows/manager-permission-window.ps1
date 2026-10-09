@@ -87,57 +87,76 @@ function Test-OwnedProcess {
 
 function Get-PromptInspection {
     param([Windows.Automation.AutomationElement]$Prompt, [int]$ExpectedPid)
-    if ($Prompt.Current.ProcessId -ne $ExpectedPid -or
-        $Prompt.Current.ControlType.ProgrammaticName -cne 'ControlType.Window' -or
-        $Prompt.Current.Name -cne $script:PermissionTitle -or
-        $Prompt.Current.IsOffscreen) { throw 'prompt-identity-changed' }
     $queue = New-Object System.Collections.Queue
-    $queue.Enqueue(@($Prompt, 0))
     $visited = 0
     $controls = New-Object System.Collections.ArrayList
     $allow = New-Object System.Collections.ArrayList
     $deny = New-Object System.Collections.ArrayList
-    $nameTruncated = $false
-    while ($queue.Count -gt 0 -and $visited -lt 128) {
+    $seen = [Collections.Generic.HashSet[string]]::new()
+    $reason = $null
+    $rootProcessId = $null
+    try {
+        $currentRoot = $Prompt.Current
+        $rootProcessId = [int]$currentRoot.ProcessId
+        if ($rootProcessId -ne $ExpectedPid -or
+            $currentRoot.ControlType.ProgrammaticName -cne 'ControlType.Window' -or
+            $currentRoot.Name -cne $script:PermissionTitle -or
+            $currentRoot.IsOffscreen) { $reason = 'prompt-identity-changed' }
+    } catch { $reason = 'provider-error' }
+    if ($null -eq $reason) { $queue.Enqueue(@($Prompt, 0)) }
+    while ($queue.Count -gt 0 -and $visited -lt 128 -and $null -eq $reason) {
         $entry = $queue.Dequeue()
         $element = $entry[0]
         $depth = [int]$entry[1]
         $visited++
-        $current = $element.Current
-        if ($current.ProcessId -ne $ExpectedPid) { throw 'prompt-process-mismatch' }
-        $name = [string]$current.Name
-        $type = [string]$current.ControlType.ProgrammaticName
-        if ($name.Length -gt 120 -or $type.Length -gt 80) { $nameTruncated = $true }
-        [void]$controls.Add(@{ depth = $depth; rawName = $name; rawType = $type;
-            name = $name.Substring(0, [Math]::Min(120, $name.Length));
-            controlType = $type.Substring(0, [Math]::Min(80, $type.Length));
-            isEnabled = [bool]$current.IsEnabled; isOffscreen = [bool]$current.IsOffscreen })
-        if ($type -eq 'ControlType.Button') {
-            if ($name -ceq $script:AllowButtonLabel) { [void]$allow.Add($element) }
-            if ($name -ceq $script:DenyButtonLabel) { [void]$deny.Add($element) }
-        }
-        if ($depth -ge 8) {
-            if ($null -ne $walker.GetFirstChild($element)) { throw 'prompt-traversal-truncated' }
-            continue
-        }
-        $child = $walker.GetFirstChild($element)
-        $siblings = 0
-        while ($null -ne $child -and $siblings -lt 64 -and $queue.Count -lt 128) {
-            $queue.Enqueue(@($child, ($depth + 1)))
-            $siblings++
-            $child = $walker.GetNextSibling($child)
-        }
-        if ($null -ne $child) { throw 'prompt-traversal-truncated' }
+        try {
+            $runtimeId = $element.GetRuntimeId()
+            if ($null -eq $runtimeId -or $runtimeId.Length -eq 0) {
+                $reason = 'runtime-id-unavailable'; break
+            }
+            if (-not $seen.Add(($runtimeId -join ','))) {
+                $reason = 'duplicate-runtime-id'; break
+            }
+            $current = $element.Current
+            if ($current.ProcessId -ne $ExpectedPid) { $reason = 'cross-process'; break }
+            $name = [string]$current.Name
+            $type = [string]$current.ControlType.ProgrammaticName
+            [void]$controls.Add(@{ depth = $depth; rawName = $name; rawType = $type;
+                name = $name.Substring(0, [Math]::Min(120, $name.Length));
+                controlType = $type.Substring(0, [Math]::Min(80, $type.Length));
+                isEnabled = [bool]$current.IsEnabled; isOffscreen = [bool]$current.IsOffscreen })
+            if ($name.Length -gt 120 -or $type.Length -gt 80) { $reason = 'name-cap'; break }
+            if ($type -eq 'ControlType.Button') {
+                if ($name -ceq $script:AllowButtonLabel) { [void]$allow.Add($element) }
+                if ($name -ceq $script:DenyButtonLabel) { [void]$deny.Add($element) }
+            }
+            if ($depth -ge 16) {
+                if ($null -ne $walker.GetFirstChild($element)) { $reason = 'depth-cap' }
+                continue
+            }
+            $child = $walker.GetFirstChild($element)
+            $siblings = 0
+            while ($null -ne $child -and $siblings -lt 64 -and $queue.Count -lt 128) {
+                $queue.Enqueue(@($child, ($depth + 1)))
+                $siblings++
+                $child = $walker.GetNextSibling($child)
+            }
+            if ($null -ne $child) {
+                $reason = $(if ($siblings -ge 64) { 'sibling-cap' } else { 'node-cap' })
+            }
+        } catch { $reason = 'provider-error' }
     }
-    if ($queue.Count -gt 0) { throw 'prompt-traversal-truncated' }
+    if ($null -eq $reason -and $queue.Count -gt 0) { $reason = 'node-cap' }
     $serialized = @($controls | ForEach-Object {
         @{ depth = $_.depth; name = $_.name; controlType = $_.controlType;
             isEnabled = $_.isEnabled; isOffscreen = $_.isOffscreen }
     })
     return @{ controls = $serialized; rawControls = @($controls.ToArray());
         allowElements = @($allow.ToArray()); denyElements = @($deny.ToArray());
-        visitedControls = $visited; nameTruncated = $nameTruncated;
-        rootProcessId = [int]$Prompt.Current.ProcessId; complete = (-not $nameTruncated) }
+        visitedControls = $controls.Count; attemptedNodes = $visited;
+        nameTruncated = ($reason -eq 'name-cap');
+        rootProcessId = $rootProcessId; complete = ($null -eq $reason);
+        reason = $reason }
 }
 
 function Get-PromptAction {
@@ -229,11 +248,14 @@ try {
     }
     if ($controls.Count -eq 0) { throw 'uia-inspection-empty' }
     $promptScope = @{ complete = $false; windowCount = $promptWindows.Count;
-        controls = @(); visitedControls = 0; rootProcessId = $null; nameTruncated = $false }
+        controls = @(); visitedControls = 0; attemptedNodes = 0;
+        rootProcessId = $null; nameTruncated = $false;
+        reason = 'prompt-window-not-unique' }
     if ($promptWindows.Count -eq 1) {
         $inspection = Get-PromptInspection -Prompt $promptWindows[0] -ExpectedPid $BrowserPid
         $promptScope = @{ complete = $inspection.complete; windowCount = 1;
             controls = $inspection.controls; visitedControls = $inspection.visitedControls;
+            attemptedNodes = $inspection.attemptedNodes; reason = $inspection.reason;
             rootProcessId = $inspection.rootProcessId;
             nameTruncated = $inspection.nameTruncated }
     }
@@ -267,6 +289,12 @@ try {
             throw 'action-identity-or-prompt-mismatch'
         }
         $actionInspection = Get-PromptInspection -Prompt $promptWindows[0] -ExpectedPid $BrowserPid
+        $receipt.actionPromptScope = @{ complete = $actionInspection.complete;
+            reason = $actionInspection.reason; controls = $actionInspection.controls;
+            visitedControls = $actionInspection.visitedControls;
+            attemptedNodes = $actionInspection.attemptedNodes;
+            rootProcessId = $actionInspection.rootProcessId;
+            nameTruncated = $actionInspection.nameTruncated }
         $allow = Get-PromptAction -Inspection $actionInspection
         $justBefore = Test-OwnedProcess
         if ($justBefore.CreationDate -ne $before.CreationDate -or
