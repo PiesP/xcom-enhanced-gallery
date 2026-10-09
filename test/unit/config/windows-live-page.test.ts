@@ -163,10 +163,16 @@ const userscriptInstall = (await import(
   isOwnedManagerOptionsUrl(value: string, managerId: string): boolean;
   isOwnedManagerPermissionAskUrl(value: string, managerId: string): boolean;
   browserProcessId(value: unknown): number | null;
+  isObservedChromeNativeDownloadPrompt(value: unknown): boolean;
   captureNativeManagerPermission(cdp: { send(method: string): Promise<unknown> }, root: string,
     output: string, profile: string, browserName: string,
     run: (file: string, args: string[], options: unknown) => Promise<unknown>):
     Promise<{ status: string; reason: string | null }>;
+  inspectAndAllowNativeManagerPermission(cdp: { send(method: string): Promise<unknown> },
+    root: string, output: string, profile: string, browserName: string,
+    ask: { isClosed(): boolean; context(): unknown; url(): string }, managerId: string,
+    context: unknown, run: (file: string, args: string[], options: unknown) => Promise<unknown>):
+    Promise<{ status: string; action: { status: string; reason: string | null } }>;
   requireManagerDownloadsHeading(actual: string, localizedDownloads: string): void;
   managerSettingRowLabel(localizedName: string): string;
   managerSettingRow(scope: unknown, localizedName: string): unknown;
@@ -214,11 +220,90 @@ const userscriptInstall = (await import(
 };
 
 describe('Windows X live page validation', () => {
+  const nativePrompt = () => ({ status: 'captured', capture: 'uia-only',
+    screenshot: 'not-captured', permissionGrantAttempted: false, truncated: false,
+    browserPid: 42, creationUtcTicks: '639271195545735820', browserSessionId: 2,
+    observerSessionId: 2, foregroundHandle: '8259362',
+    foregroundOwnedAndVisible: true, uiaRootProcessId: 42,
+    controls: [
+      { name: "'Tampermonkey'이(가) 추가 승인을 요청했습니다.", controlType: 'ControlType.Window' },
+      { name: "'Tampermonkey'이(가) 추가 승인을 요청했습니다.", controlType: 'ControlType.Text' },
+      { name: '이전에 가능했던 대상:', controlType: 'ControlType.Text' },
+      { name: '다운로드 관리', controlType: 'ControlType.Text' },
+      { name: '허용', controlType: 'ControlType.Button' },
+      { name: '거부', controlType: 'ControlType.Button' },
+    ] });
+
+  it('rejects a changed native title, extra permission, ambiguous Allow, and mismatched process', () => {
+    expect(userscriptInstall.isObservedChromeNativeDownloadPrompt(nativePrompt())).toBe(true);
+    const wrongTitle = nativePrompt();
+    wrongTitle.controls[0]!.name = 'Another extension requested approval';
+    expect(userscriptInstall.isObservedChromeNativeDownloadPrompt(wrongTitle)).toBe(false);
+    const otherPermission = nativePrompt();
+    otherPermission.controls.push({ name: '방문 기록 읽기', controlType: 'ControlType.Text' });
+    expect(userscriptInstall.isObservedChromeNativeDownloadPrompt(otherPermission)).toBe(false);
+    const ambiguousAllow = nativePrompt();
+    ambiguousAllow.controls.push({ name: '허용', controlType: 'ControlType.Button' });
+    expect(userscriptInstall.isObservedChromeNativeDownloadPrompt(ambiguousAllow)).toBe(false);
+    const differentProcess = nativePrompt();
+    differentProcess.uiaRootProcessId = 77;
+    expect(userscriptInstall.isObservedChromeNativeDownloadPrompt(differentProcess)).toBe(false);
+  });
+
+  it('requires a current owned manager ask before guarded native Invoke', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'xeg-native-invoke-'));
+    const profile = join(root, 'xeg-userscript-install-owned');
+    const output = join(root, 'output');
+    mkdirSync(profile);
+    mkdirSync(output);
+    const context = {};
+    let closed = false;
+    let url = 'chrome-extension://owned/ask.html?aid=opaque';
+    const ask = { isClosed: () => closed, context: () => context,
+      url: () => url };
+    const cdp = { send: vi.fn(async () => ({ processInfo: [{ type: 'browser', id: 42 }] })) };
+    const run = vi.fn(async (_file: string, args: string[], _options: unknown) => {
+      writeFileSync(join(output, args.includes('-InvokeAllow')
+        ? 'userscript-manager-native-permission-action.json'
+        : 'userscript-manager-native-permission.json'), JSON.stringify(args.includes('-InvokeAllow')
+        ? { status: 'invoked', capture: 'uia-only', screenshot: 'not-captured',
+            permissionGrantAttempted: true, postProcessStable: true, postForegroundOwned: true }
+        : nativePrompt()));
+    });
+    try {
+      closed = true;
+      const skipped = await userscriptInstall.inspectAndAllowNativeManagerPermission(cdp,
+        root, output, profile, 'chrome', ask, 'owned', context, run);
+      expect(skipped.action).toEqual({ status: 'skipped', reason: 'manager-ask-not-current' });
+      expect(run).toHaveBeenCalledOnce();
+      run.mockClear();
+      closed = false;
+      url = 'chrome-extension://other/ask.html?aid=opaque';
+      const otherManager = await userscriptInstall.inspectAndAllowNativeManagerPermission(cdp,
+        root, output, profile, 'chrome', ask, 'owned', context, run);
+      expect(otherManager.action).toEqual({ status: 'skipped', reason: 'manager-ask-not-current' });
+      expect(run).toHaveBeenCalledOnce();
+      run.mockClear();
+      url = 'chrome-extension://owned/ask.html?aid=opaque';
+      const invoked = await userscriptInstall.inspectAndAllowNativeManagerPermission(cdp,
+        root, output, profile, 'chrome', ask, 'owned', context, run);
+      expect(invoked.action.status).toBe('invoked');
+      expect(run).toHaveBeenCalledTimes(2);
+      expect(run.mock.calls[1]?.[1]).toEqual(expect.arrayContaining([
+        '-InvokeAllow', '-ExpectedCreationUtcTicks', '639271195545735820',
+        '-ExpectedSessionId', '2', '-ExpectedForegroundHandle', '8259362']));
+      expect(cdp.send).toHaveBeenCalledWith('SystemInfo.getProcessInfo');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it('keeps native permission evidence UIA-only and bound to the browser process', () => {
     const source = readFileSync(resolve(import.meta.dirname,
       '../../../validation/windows/manager-permission-window.ps1'), 'utf8');
     expect(source).not.toMatch(/CopyFromScreen|PrintWindow|BitBlt|System\.Drawing|GetWindowRect|SendInput|SetForegroundWindow/u);
     expect(source).toContain("screenshot = 'not-captured'");
+    expect(source).toContain('@($child, ($depth + 1))');
     for (const proof of ['browserPid =', 'creationUtcTicks =', 'browserSessionId =',
       'foregroundHandle =', 'foregroundOwnedAndVisible =', 'uiaRootProcessId =']) {
       expect(source).toContain(proof);

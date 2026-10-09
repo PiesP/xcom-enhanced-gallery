@@ -32,6 +32,8 @@ export const FIXTURE_ZIP_NAME = `testuser_${TWEET_ID}.zip`;
 const MAX_DOWNLOADS = 8;
 const execFileAsync = promisify(execFile);
 const NATIVE_PERMISSION_RECEIPT = 'userscript-manager-native-permission.json';
+const NATIVE_PERMISSION_ACTION_RECEIPT = 'userscript-manager-native-permission-action.json';
+const CHROME_KO_PERMISSION_TITLE = "'Tampermonkey'이(가) 추가 승인을 요청했습니다.";
 
 export function browserProcessId(processInfo) {
   const browsers = processInfo?.processInfo?.filter((process) => process.type === 'browser') ?? [];
@@ -65,6 +67,76 @@ export async function captureNativeManagerPermission(cdp, root, output, profile,
     await writeFile(receiptPath, JSON.stringify(receipt, null, 2));
   }
   return { status: receipt.status, reason: receipt.reason ?? null };
+}
+
+/** Only the observed Korean Chrome downloads-only prompt is eligible for native Invoke. */
+export function isObservedChromeNativeDownloadPrompt(receipt) {
+  if (receipt?.status !== 'captured' || receipt.capture !== 'uia-only' ||
+      receipt.screenshot !== 'not-captured' || receipt.permissionGrantAttempted !== false ||
+      receipt.truncated !== false || receipt.foregroundOwnedAndVisible !== true ||
+      !Number.isSafeInteger(receipt.browserPid) || receipt.browserPid <= 0 ||
+      receipt.uiaRootProcessId !== receipt.browserPid ||
+      !Number.isSafeInteger(receipt.browserSessionId) || receipt.browserSessionId <= 0 ||
+      receipt.observerSessionId !== receipt.browserSessionId ||
+      typeof receipt.creationUtcTicks !== 'string' || !/^\d{15,20}$/u.test(receipt.creationUtcTicks) ||
+      typeof receipt.foregroundHandle !== 'string' || !/^[1-9]\d{0,19}$/u.test(receipt.foregroundHandle) ||
+      !Array.isArray(receipt.controls) || receipt.controls.length > 256) return false;
+  const count = (type, name) => receipt.controls.filter((control) =>
+    control.controlType === type && control.name === name).length;
+  return count('ControlType.Window', CHROME_KO_PERMISSION_TITLE) === 1 &&
+    count('ControlType.Text', CHROME_KO_PERMISSION_TITLE) === 1 &&
+    count('ControlType.Text', '이전에 가능했던 대상:') === 1 &&
+    count('ControlType.Text', '다운로드 관리') === 1 &&
+    count('ControlType.Button', '허용') === 1 &&
+    count('ControlType.Button', '거부') === 1 &&
+    receipt.controls.filter((control) => control.controlType === 'ControlType.Text' &&
+      control.name && ![CHROME_KO_PERMISSION_TITLE, '이전에 가능했던 대상:',
+        '다운로드 관리'].includes(control.name)).length === 0;
+}
+
+/** Recheck the owned manager ask before a second, OS-bound UIA-only Invoke pass. */
+export async function inspectAndAllowNativeManagerPermission(cdp, root, output, profile,
+  browserName, ask, managerId, context, run = execFileAsync) {
+  const diagnostic = await captureNativeManagerPermission(cdp, root, output, profile,
+    browserName, run);
+  const skipped = (reason) => ({ ...diagnostic, action: { status: 'skipped', reason } });
+  if (browserName !== 'chrome') return skipped('browser-not-observed');
+  if (diagnostic.status !== 'captured') return skipped('prompt-not-captured');
+  try {
+    const receipt = JSON.parse(await readFile(join(output, NATIVE_PERMISSION_RECEIPT), 'utf8'));
+    if (!isObservedChromeNativeDownloadPrompt(receipt)) return skipped('prompt-not-exact');
+    const currentPid = browserProcessId(await cdp.send('SystemInfo.getProcessInfo'));
+    if (currentPid !== receipt.browserPid) return skipped('browser-pid-changed');
+    if (ask.isClosed() || ask.context() !== context ||
+        !isOwnedManagerPermissionAskUrl(ask.url(), managerId)) return skipped('manager-ask-not-current');
+    const args = ['-NoProfile', '-NonInteractive', '-File',
+      join(root, 'validation/windows/manager-permission-window.ps1'),
+      '-BrowserPid', String(currentPid), '-BrowserName', browserName,
+      '-Profile', profile, '-Output', output, '-InvokeAllow',
+      '-ExpectedCreationUtcTicks', receipt.creationUtcTicks,
+      '-ExpectedSessionId', String(receipt.browserSessionId),
+      '-ExpectedForegroundHandle', receipt.foregroundHandle];
+    await run('powershell.exe', args,
+      { timeout: 12_000, windowsHide: true, maxBuffer: 4_096 });
+    const action = JSON.parse(await readFile(join(output, NATIVE_PERMISSION_ACTION_RECEIPT), 'utf8'));
+    assert(['skipped', 'invoked', 'unverified-after-invoke'].includes(action.status),
+      'Invalid native action receipt');
+    assert.equal(action.capture, 'uia-only');
+    assert.equal(action.screenshot, 'not-captured');
+    assert.equal(action.permissionGrantAttempted, action.status !== 'skipped',
+      'Native action attempt marker differs');
+    if (action.status === 'invoked') {
+      assert.equal(action.postProcessStable, true);
+      assert.equal(action.postForegroundOwned, true);
+    }
+    return { ...diagnostic, action: { status: action.status, reason: action.reason ?? null,
+      permissionGrantAttempted: action.permissionGrantAttempted,
+      postProcessStable: action.postProcessStable ?? null,
+      postForegroundOwned: action.postForegroundOwned ?? null } };
+  } catch (error) {
+    return { ...diagnostic, action: { status: 'unavailable',
+      reason: error instanceof Error ? error.name : typeof error } };
+  }
 }
 
 function sha256(bytes) { return createHash('sha256').update(bytes).digest('hex'); }
@@ -457,7 +529,8 @@ export async function configureManagerBrowserDownloads(page, managerId, output,
     await captureAndConfirmManagerPermissionAsk(ask, managerId, output, labels.Ok);
     permissionOkClicked = true;
   }
-  const nativeDiagnostic = permissionOkClicked ? await captureNativePermission() : null;
+  const nativeDiagnostic = permissionOkClicked
+    ? await captureNativePermission(ask, managerId, context) : null;
   await page.reload({ waitUntil: 'domcontentloaded' });
   assert(isOwnedManagerOptionsUrl(page.url(), managerId), 'Manager options page navigated away');
   await page.getByText(labels.Settings, { exact: true }).first().click();
@@ -1173,8 +1246,8 @@ export async function runUserscriptInstallation({ chromium, root, output, browse
     }));
     assert.equal(typeof managerId, 'string');
     result.manager = await installUserscript(context, managerId, root, output, browserName,
-      result.sourceSha256, () => captureNativeManagerPermission(cdp, root, output, profile,
-        browserName));
+      result.sourceSha256, (ask, id, context) => inspectAndAllowNativeManagerPermission(cdp,
+        root, output, profile, browserName, ask, id, context));
     const images = await createImageFixtures(context);
     result.fixtureLimits = { imageBytes: images.map((image) => image.length),
       imageSha256: images.map(sha256),
