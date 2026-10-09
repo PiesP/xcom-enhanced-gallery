@@ -136,15 +136,19 @@ export async function probeManagerUserScripts(page) {
   }
 }
 
-export async function findEdgeUserScriptsControl(page) {
-  const name = /^(?:사용자 스크립트 허용|Allow user scripts)$/iu;
-  const switches = page.getByRole('switch', { name });
-  const checkboxes = page.getByRole('checkbox', { name });
-  const switchCount = await switches.count();
-  const checkboxCount = await checkboxes.count();
-  assert.equal(switchCount + checkboxCount, 1,
-    'Expected exactly one labeled Edge user-scripts permission control');
-  const control = switchCount === 1 ? switches : checkboxes;
+export async function findEdgeUserScriptsControl(page, managerId) {
+  assert(/^[a-p]{32}$/u.test(managerId), 'Invalid manager extension ID');
+  assert(isOwnedManagerDetailsUrl(page.url(), managerDetailsUrl('msedge', managerId)),
+    'Edge permission control requires owned extension details');
+  const section = page.locator(`access-section[id="${managerId}"]`);
+  assert.equal(await section.count(), 1, 'Expected exactly one owned Edge access section');
+  assert(await section.isVisible(), 'Owned Edge access section is hidden');
+  const row = section.locator('standard-row').filter({
+    has: page.getByText(/^(?:사용자 스크립트 허용|Allow user scripts)$/iu),
+  });
+  assert.equal(await row.count(), 1, 'Expected exactly one labeled Edge user-scripts row');
+  const control = row.locator('fluent-switch#checkbox-1');
+  assert.equal(await control.count(), 1, 'Expected exactly one Edge user-scripts switch');
   assert(await control.isVisible(), 'Edge user-scripts permission control is hidden');
   return control;
 }
@@ -228,6 +232,37 @@ export async function readManagerUiLabels(page, managerId) {
   assert(isOwnedManagerOptionsUrl(page.url(), managerId),
     'Manager options page navigated away after label lookup');
   return requireManagerUiLabels(labels);
+}
+
+export async function probeManagerDownloadsPermission(page, managerId) {
+  assert(isOwnedManagerOptionsUrl(page.url(), managerId),
+    'Manager downloads permission requires its owned options page');
+  const granted = await page.evaluate(async (expectedId) => {
+    const url = new URL(location.href);
+    if (url.protocol !== 'chrome-extension:' || url.hostname !== expectedId ||
+      url.pathname !== '/options.html' || url.search) {
+      throw new Error('Manager options page navigated away');
+    }
+    return chrome.permissions.contains({ permissions: ['downloads'] });
+  }, managerId);
+  assert(isOwnedManagerOptionsUrl(page.url(), managerId),
+    'Manager options page navigated away after permission lookup');
+  assert.equal(typeof granted, 'boolean', 'Manager returned invalid downloads permission');
+  return granted;
+}
+
+async function captureManagerDownloadsPermission(context, managerId) {
+  let page;
+  try {
+    page = await context.newPage();
+    await page.goto(`chrome-extension://${managerId}/options.html`,
+      { waitUntil: 'domcontentloaded', timeout: 10_000 });
+    return { granted: await probeManagerDownloadsPermission(page, managerId) };
+  } catch (error) {
+    return { errorType: error instanceof Error ? error.name : typeof error };
+  } finally {
+    await page?.close().catch(() => {});
+  }
 }
 
 async function captureManagerPermissionDiagnostics(page, detailsUrl, output, probe) {
@@ -390,10 +425,14 @@ async function installUserscript(context, id, root, output, browserName, sourceS
       try {
         await page.goto(detailsUrl, { waitUntil: 'domcontentloaded', timeout: 10_000 });
         if (browserName === 'msedge') {
-          const control = await findEdgeUserScriptsControl(page);
-          if (!await control.isChecked()) await control.click();
-          await waitFor(async () => await control.isChecked() ? true : undefined,
+          const control = await findEdgeUserScriptsControl(page, id);
+          if (!await control.evaluate((element) => element.checked)) await control.click();
+          await waitFor(async () => await control.evaluate((element) => element.checked)
+            ? true : undefined,
             'Edge user-scripts permission enabled', 5_000);
+          await page.reload({ waitUntil: 'domcontentloaded' });
+          assert(isOwnedManagerDetailsUrl(page.url(), detailsUrl),
+            'Edge extension details navigated away after permission change');
           permissionPath = 'edge-labeled-ui-control';
         } else {
           const toggle = page.locator('#allow-user-scripts cr-toggle');
@@ -557,7 +596,32 @@ export async function observeNoNativeDownload(observer, since, beforeFiles, down
     boundary: 'bounded browser events and owned files after held request terminal; not manager callback completion' };
 }
 
-async function runFixture(context, observer, root, output, downloads, images) {
+export async function inspectFirstCurrentDownload(page) {
+  if (page.url() !== FIXTURE_URL) return { scope: 'unowned-page' };
+  const observation = await page.evaluate((expectedUrl) => {
+    if (location.href !== expectedUrl) return { scope: 'navigated-away' };
+    const gallery = document.querySelector('[data-xeg-gallery-container]');
+    const toolbar = gallery?.querySelector('[data-gallery-element="toolbar"]');
+    const current = toolbar?.querySelector('button[aria-label="Download"]');
+    const selected = gallery?.querySelector('[data-gallery-element="item"][data-index="0"] img');
+    const source = selected instanceof HTMLImageElement ? new URL(selected.src) : null;
+    const status = toolbar?.querySelector('[role="status"][data-download-status]')
+      ?.getAttribute('data-download-status');
+    return {
+      scope: 'owned-fixture',
+      galleryPresent: Boolean(gallery),
+      currentControlPresent: Boolean(current),
+      currentControlDisabled: current instanceof HTMLButtonElement ? current.disabled : null,
+      currentControlBusy: current?.getAttribute('aria-busy') === 'true',
+      selectedFirstFixtureMedia: source?.origin === 'https://pbs.twimg.com' &&
+        source.pathname === '/media/GkE1234ABCDEF.jpg',
+      downloadStatus: ['working', 'handedOff', 'error'].includes(status) ? status : null,
+    };
+  }, FIXTURE_URL);
+  return page.url() === FIXTURE_URL ? observation : { scope: 'navigated-away' };
+}
+
+async function runFixture(context, observer, root, output, downloads, images, managerId) {
   const html = await readFile(join(root, 'test/e2e/fixtures/installed-gallery-page.html'), 'utf8');
   const routeRecords = [];
   const result = { status: 'failed', downloads: [], routes: routeRecords, routeFailures: [],
@@ -671,9 +735,21 @@ async function runFixture(context, observer, root, output, downloads, images) {
         p === 'normal' && mediaPhase === 'normal' && index === 0).length;
       const singleSince = observer.snapshot();
       const singleBefore = new Set(await readdir(downloads));
-      await current.click();
-      const single = await waitForDownload(observer, singleSince, singleBefore,
-        filename(0), browserFilename(filename(0), repetition), downloads, images[0].length);
+      let single;
+      try {
+        await current.click();
+        single = await waitForDownload(observer, singleSince, singleBefore,
+          filename(0), browserFilename(filename(0), repetition), downloads, images[0].length);
+      } catch (error) {
+        if (repetition === 0) {
+          result.firstCurrentDownload = {
+            fixture: await inspectFirstCurrentDownload(page).catch((captureError) =>
+              ({ errorType: captureError instanceof Error ? captureError.name : typeof captureError })),
+            managerDownloadsPermission: await captureManagerDownloadsPermission(context, managerId),
+          };
+        }
+        throw error;
+      }
       if (repetition === 0) {
         assert(routeRecords.filter(({ phase: p, mediaPhase, index }) =>
           p === 'normal' && mediaPhase === 'normal' && index === 0).length > routedBeforeSingle,
@@ -846,7 +922,7 @@ export async function runUserscriptInstallation({ chromium, root, output, browse
       maxDownloads: MAX_DOWNLOADS, maxRoutedImageRequests: 64,
       productionBudget: 'unchanged' };
     observer = createBrowserDownloadObserver(cdp);
-    result.fixture = await runFixture(context, observer, root, output, downloads, images);
+    result.fixture = await runFixture(context, observer, root, output, downloads, images, managerId);
     result.status = 'passed';
   } catch (error) {
     primaryError = error;

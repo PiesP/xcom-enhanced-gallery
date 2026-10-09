@@ -165,9 +165,12 @@ const userscriptInstall = (await import(
   readManagerUiLabels(page: { url(): string;
     evaluate(callback: (id: string) => unknown, id: string): Promise<unknown> },
   managerId: string): Promise<Record<string, string>>;
-  findEdgeUserScriptsControl(page: { getByRole(role: string, options: { name: RegExp }): {
-    count(): Promise<number>; isVisible(): Promise<boolean>;
-  } }): Promise<unknown>;
+  probeManagerDownloadsPermission(page: { url(): string;
+    evaluate(callback: (id: string) => Promise<boolean>, id: string): Promise<boolean> },
+  managerId: string): Promise<boolean>;
+  inspectFirstCurrentDownload(page: { url(): string;
+    evaluate(callback: (url: string) => unknown, url: string): Promise<unknown> }): Promise<unknown>;
+  findEdgeUserScriptsControl(page: unknown, managerId: string): Promise<unknown>;
   createBrowserDownloadObserver(cdp: EventEmitter & { send(method: string): Promise<unknown> }): {
   snapshot(): number;
   waitForCompletion(since: number, name: string): Promise<{ guid: string; state: string }>;
@@ -219,20 +222,45 @@ describe('Windows X live page validation', () => {
     }
   });
 
-  it('requires exactly one visible Edge control with the observed user-scripts label', async () => {
-    const target = { count: async () => 1, isVisible: async () => true };
-    const absent = { count: async () => 0, isVisible: async () => false };
-    const getByRole = vi.fn((role: string, options: { name: RegExp }) => {
-      expect(options.name.test('사용자 스크립트 허용')).toBe(true);
-      expect(options.name.test('Allow user scripts')).toBe(true);
-      expect(options.name.test('InPrivate에서 허용')).toBe(false);
-      return role === 'switch' ? target : absent;
-    });
-    await expect(userscriptInstall.findEdgeUserScriptsControl({ getByRole })).resolves.toBe(target);
-    expect(getByRole).toHaveBeenCalledTimes(2);
-    await expect(userscriptInstall.findEdgeUserScriptsControl({
-      getByRole: () => target,
-    })).rejects.toThrow('exactly one labeled Edge');
+  it('targets the observed Edge switch inside the exact owned labeled row', async () => {
+    const id = 'a'.repeat(32);
+    const control = { count: async () => 1, isVisible: async () => true };
+    const row = { count: async () => 1,
+      locator: vi.fn((selector: string) => {
+        expect(selector).toBe('fluent-switch#checkbox-1');
+        return control;
+      }) };
+    const section = { count: async () => 1, isVisible: async () => true,
+      locator: vi.fn((selector: string) => {
+        expect(selector).toBe('standard-row');
+        return { filter: ({ has }: { has: unknown }) => {
+          expect(has).toBe('known-label');
+          return row;
+        } };
+      }) };
+    const page = { url: () => userscriptInstall.managerDetailsUrl('msedge', id),
+      locator: vi.fn((selector: string) => {
+        expect(selector).toBe(`access-section[id="${id}"]`);
+        return section;
+      }),
+      getByText: vi.fn((name: RegExp) => {
+        expect(name.test('사용자 스크립트 허용')).toBe(true);
+        expect(name.test('Allow user scripts')).toBe(true);
+        expect(name.test('InPrivate에서 허용')).toBe(false);
+        return 'known-label';
+      }) };
+    await expect(userscriptInstall.findEdgeUserScriptsControl(page, id)).resolves.toBe(control);
+    expect(page.locator).toHaveBeenCalledTimes(1);
+    await expect(userscriptInstall.findEdgeUserScriptsControl({ ...page,
+      url: () => userscriptInstall.managerDetailsUrl('msedge', 'b'.repeat(32)),
+    }, id)).rejects.toThrow('owned extension details');
+    await expect(userscriptInstall.findEdgeUserScriptsControl({ ...page,
+      locator: () => ({ ...section, count: async () => 2 }),
+    }, id)).rejects.toThrow('one owned Edge access section');
+    await expect(userscriptInstall.findEdgeUserScriptsControl({ ...page,
+      locator: () => ({ ...section, locator: () => ({ filter: () => ({ ...row,
+        count: async () => 0 }) }) }),
+    }, id)).rejects.toThrow('one labeled Edge user-scripts row');
   });
 
   it('accepts only the observed Chrome user-scripts label in English or Korean', () => {
@@ -321,6 +349,60 @@ describe('Windows X live page validation', () => {
         .rejects.toThrow('navigated away');
     } finally {
       vi.unstubAllGlobals();
+    }
+  });
+
+  it('reads the optional manager downloads permission only on its owned options page', async () => {
+    const optionsUrl = 'chrome-extension://owned/options.html';
+    const page = { url: () => optionsUrl,
+      evaluate: async (callback: (id: string) => Promise<boolean>, id: string) => callback(id) };
+    try {
+      vi.stubGlobal('location', { href: optionsUrl });
+      const contains = vi.fn(async () => false);
+      vi.stubGlobal('chrome', { permissions: { contains } });
+      await expect(userscriptInstall.probeManagerDownloadsPermission(page, 'owned'))
+        .resolves.toBe(false);
+      expect(contains).toHaveBeenCalledWith({ permissions: ['downloads'] });
+      await expect(userscriptInstall.probeManagerDownloadsPermission({ ...page,
+        url: () => 'chrome-extension://other/options.html',
+      }, 'owned')).rejects.toThrow('owned options page');
+      vi.stubGlobal('location', { href: 'https://private.example/' });
+      await expect(userscriptInstall.probeManagerDownloadsPermission(page, 'owned'))
+        .rejects.toThrow('navigated away');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('bounds failed current-download diagnostics to the owned fixture and status attributes', async () => {
+    const fixtureUrl = 'https://x.com/testuser/status/1234567890123456789';
+    const page = { url: () => fixtureUrl,
+      evaluate: async (callback: (url: string) => unknown, url: string) => callback(url) };
+    document.body.innerHTML = `<div data-xeg-gallery-container>
+      <div data-gallery-element="toolbar">
+        <button aria-label="Download" aria-busy="false"></button>
+        <span role="status" data-download-status="error">private failure text</span>
+      </div>
+      <li data-gallery-element="item" data-index="0">
+        <img src="https://pbs.twimg.com/media/GkE1234ABCDEF.jpg?format=jpg&name=large">
+      </li>
+    </div>`;
+    try {
+      vi.stubGlobal('location', { href: fixtureUrl });
+      expect(await userscriptInstall.inspectFirstCurrentDownload(page)).toEqual({
+        scope: 'owned-fixture', galleryPresent: true, currentControlPresent: true,
+        currentControlDisabled: false, currentControlBusy: false,
+        selectedFirstFixtureMedia: true, downloadStatus: 'error',
+      });
+      await expect(userscriptInstall.inspectFirstCurrentDownload({ ...page,
+        url: () => 'https://private.example/',
+      })).resolves.toEqual({ scope: 'unowned-page' });
+      vi.stubGlobal('location', { href: 'https://private.example/' });
+      await expect(userscriptInstall.inspectFirstCurrentDownload(page))
+        .resolves.toEqual({ scope: 'navigated-away' });
+    } finally {
+      vi.unstubAllGlobals();
+      document.body.innerHTML = '';
     }
   });
 
