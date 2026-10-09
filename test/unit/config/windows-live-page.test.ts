@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 PiesP
 
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { EventEmitter } from 'node:events';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -152,8 +152,14 @@ const userscriptInstall = (await import(
   snapshot(): number;
   waitForCompletion(since: number, name: string): Promise<{ guid: string; state: string }>;
   assertNoneSince(since: number, label: string): Promise<void>;
+  events(): Array<{ guid: string; source: { scheme: string; origin: string } }>;
   dispose(): void;
-} };
+};
+  requirePageBlobZipSource(value: string): { scheme: string; origin: string };
+  observeNoNativeDownload(observer: { assertNoneSince(since: number, label: string): Promise<void> },
+    since: number, files: Set<string>, directory: string, label: string,
+    durationMs: number): Promise<{ samples: number }>;
+};
 
 describe('Windows X live page validation', () => {
   it('binds native completion to the browser download GUID without manager privileges', async () => {
@@ -170,10 +176,56 @@ describe('Windows X live page validation', () => {
       guid: 'owned-download', state: 'completed', receivedBytes: 5,
     });
     await expect(observer.assertNoneSince(observer.snapshot(), 'cancelled action')).resolves.toBeUndefined();
+    expect(observer.events()).toEqual([{ guid: 'owned-download',
+      suggestedFilename: 'image.jpg', source: { scheme: 'blob:', origin: 'https://x.com' } }]);
     expect(cdp.send).toHaveBeenCalledWith('Browser.getVersion');
     observer.dispose();
     expect(cdp.listenerCount('Browser.downloadWillBegin')).toBe(0);
     expect(cdp.listenerCount('Browser.downloadProgress')).toBe(0);
+  });
+
+  it('requires a page-origin Blob URL for a ZIP save', () => {
+    expect(userscriptInstall.requirePageBlobZipSource('blob:https://x.com/owned'))
+      .toEqual({ scheme: 'blob:', origin: 'https://x.com' });
+    expect(() => userscriptInstall.requirePageBlobZipSource('blob:https://other.example/owned'))
+      .toThrow('page-origin Blob URL');
+    expect(() => userscriptInstall.requirePageBlobZipSource('https://x.com/archive.zip'))
+      .toThrow('page-origin Blob URL');
+  });
+
+  it('catches a native save dispatched after the routed response returns', async () => {
+    const directory = mkdtempSync(join(tmpdir(), 'xeg-late-native-save-'));
+    const cdp = Object.assign(new EventEmitter(), { send: vi.fn(async () => ({})) });
+    const observer = userscriptInstall.createBrowserDownloadObserver(cdp);
+    const since = observer.snapshot();
+    const lateEvent = setTimeout(() => cdp.emit('Browser.downloadWillBegin', {
+      guid: 'late-save', suggestedFilename: 'late.zip', url: 'blob:https://x.com/late',
+    }), 25);
+    try {
+      await expect(userscriptInstall.observeNoNativeDownload(
+        observer, since, new Set(), directory, 'late response', 150
+      )).rejects.toThrow('created a native download');
+    } finally {
+      clearTimeout(lateEvent);
+      observer.dispose();
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  it('catches a late owned file even when no CDP begin event arrived', async () => {
+    const directory = mkdtempSync(join(tmpdir(), 'xeg-late-native-file-'));
+    const cdp = Object.assign(new EventEmitter(), { send: vi.fn(async () => ({})) });
+    const observer = userscriptInstall.createBrowserDownloadObserver(cdp);
+    const lateFile = setTimeout(() => writeFileSync(join(directory, 'late.zip'), 'late'), 25);
+    try {
+      await expect(userscriptInstall.observeNoNativeDownload(
+        observer, observer.snapshot(), new Set(), directory, 'late response', 150
+      )).rejects.toThrow('left a file');
+    } finally {
+      clearTimeout(lateFile);
+      observer.dispose();
+      rmSync(directory, { recursive: true, force: true });
+    }
   });
 
   it('rejects a paused in-progress download after all bytes have arrived', () => {

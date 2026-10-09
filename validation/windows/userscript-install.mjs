@@ -19,6 +19,18 @@ function sha256(bytes) { return createHash('sha256').update(bytes).digest('hex')
 function filename(index) { return `testuser_${TWEET_ID}_${index}.jpg`; }
 function delay(ms) { return new Promise((resolveDelay) => setTimeout(resolveDelay, ms)); }
 
+export function summarizeDownloadUrl(value) {
+  const url = new URL(value);
+  return { scheme: url.protocol, origin: url.origin };
+}
+
+export function requirePageBlobZipSource(value) {
+  const source = summarizeDownloadUrl(value);
+  assert.deepEqual(source, { scheme: 'blob:', origin: 'https://x.com' },
+    'ZIP must be saved from a page-origin Blob URL');
+  return source;
+}
+
 async function waitFor(read, label, timeoutMs = 15_000) {
   const until = Date.now() + timeoutMs;
   while (Date.now() < until) {
@@ -89,7 +101,9 @@ export function createBrowserDownloadObserver(cdp) {
   cdp.on('Browser.downloadProgress', onProgress);
   return {
     snapshot: () => begun.length,
-    events: () => structuredClone(begun),
+    events: () => begun.map(({ guid, suggestedFilename, url }) => ({
+      guid, suggestedFilename, source: summarizeDownloadUrl(url),
+    })),
     async flush() { await cdp.send('Browser.getVersion'); },
     async waitForCompletion(since, ...expectedNames) {
       const item = await waitFor(() => {
@@ -126,6 +140,8 @@ async function waitForDownload(observer, since, beforeFiles, requestedName, save
     return newNames.length ? newNames : undefined;
   }, `native saved file for ${savedName}`);
   assert.deepEqual(added, [savedName], 'Native saved filename differs');
+  const source = requestedName.endsWith('.zip')
+    ? requirePageBlobZipSource(item.url) : summarizeDownloadUrl(item.url);
   if (item.filePath !== null) {
     assert.equal(resolve(item.filePath), resolve(downloads, savedName),
       'CDP completed a file outside the exact owned download path');
@@ -133,7 +149,8 @@ async function waitForDownload(observer, since, beforeFiles, requestedName, save
   const { bytes } = await readExactDownloadFile(join(downloads, savedName), expectedBytes);
   assert.equal((await readdir(downloads)).filter((name) => name.endsWith('.crdownload')).length,
     0, 'Partial native download remained');
-  return { guid: item.guid, requestedName, filename: savedName, bytes, sha256: sha256(bytes),
+  return { guid: item.guid, requestedName, filename: savedName, source,
+    bytes, sha256: sha256(bytes),
     nativeState: item.state, browserBytesReceived: item.receivedBytes };
 }
 
@@ -143,11 +160,23 @@ function browserFilename(name, duplicate) {
   return `${name.slice(0, dot)} (${duplicate})${name.slice(dot)}`;
 }
 
-async function assertNoDownload(observer, since, beforeFiles, downloads, label) {
-  // The routed request must reach a terminal failure/cancellation before this check.
-  await observer.assertNoneSince(since, label);
-  assert.deepEqual((await readdir(downloads)).sort(), [...beforeFiles].sort(),
-    `${label} left a file in the owned directory`);
+export async function observeNoNativeDownload(observer, since, beforeFiles, downloads,
+  label, durationMs = 0) {
+  assert(Number.isSafeInteger(durationMs) && durationMs >= 0 && durationMs <= 5_000,
+    'Native absence observation must be bounded');
+  const started = Date.now();
+  let samples = 0;
+  do {
+    await observer.assertNoneSince(since, label);
+    assert.deepEqual((await readdir(downloads)).sort(), [...beforeFiles].sort(),
+      `${label} left a file in the owned directory`);
+    samples += 1;
+    const remaining = durationMs - (Date.now() - started);
+    if (remaining <= 0) break;
+    await delay(Math.min(50, remaining));
+  } while (true);
+  return { observedMs: Date.now() - started, samples,
+    boundary: 'bounded browser events and owned files after routed response; not manager callback completion' };
 }
 
 async function runFixture(context, observer, root, output, downloads, images) {
@@ -264,7 +293,8 @@ async function runFixture(context, observer, root, output, downloads, images) {
       p === 'failure' && index === 0 && outcome === 'http-503') ? true : undefined,
     'routed transport failure');
     await waitFor(async () => await all.isEnabled() ? true : undefined, 'failed control ready');
-    await assertNoDownload(observer, failureSince, failureBefore, downloads, 'Transport failure');
+    await observeNoNativeDownload(observer, failureSince, failureBefore, downloads,
+      'Transport failure');
     result.cases.networkFailure = 'passed';
 
     phase = 'partial';
@@ -293,12 +323,23 @@ async function runFixture(context, observer, root, output, downloads, images) {
     releaseHeld();
     releaseHeld = undefined;
     await waitFor(async () => heldRouteSettled ? true : undefined, 'late transport settlement');
-    await assertNoDownload(observer, heldSince, heldBefore, downloads,
-      'Pre-dispatch cancellation');
+    // cleanupGallery() resets the busy signal synchronously. A detached gallery
+    // and enabled toolbar cannot prove that an old manager callback has settled.
+    // Keep this document alive after the late route response and inspect browser
+    // events and owned files throughout a bounded post-response interval.
+    await trigger.click();
+    await gallery.waitFor({ state: 'visible' });
+    await waitFor(async () => await all.isEnabled() ? true : undefined,
+      'same-document toolbar ready after cancellation');
+    result.cases.lateAbsence = await observeNoNativeDownload(observer, heldSince,
+      heldBefore, downloads, 'Pre-dispatch cancellation', 2_000);
     result.cases.preDispatchCancellation = 'passed';
-    result.cases.delayedSettlement = 'passed';
+    result.cases.delayedSettlement = { status: 'bounded-no-native-save',
+      routeOutcome: heldRequest.result };
 
     phase = 'normal';
+    await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]').click();
+    await gallery.waitFor({ state: 'detached' });
     await page.reload({ waitUntil: 'domcontentloaded' });
     await trigger.click();
     await gallery.waitFor({ state: 'visible' });
