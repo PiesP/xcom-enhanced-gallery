@@ -221,33 +221,55 @@ const userscriptInstall = (await import(
 
 describe('Windows X live page validation', () => {
   const nativePrompt = () => ({ status: 'captured', capture: 'uia-only',
-    screenshot: 'not-captured', permissionGrantAttempted: false, truncated: false,
+    screenshot: 'not-captured', permissionGrantAttempted: false, truncated: true,
     browserPid: 42, creationUtcTicks: '639271195545735820', browserSessionId: 2,
     observerSessionId: 2, foregroundHandle: '8259362',
     foregroundOwnedAndVisible: true, uiaRootProcessId: 42,
     controls: [
-      { name: "'Tampermonkey'이(가) 추가 승인을 요청했습니다.", controlType: 'ControlType.Window' },
-      { name: "'Tampermonkey'이(가) 추가 승인을 요청했습니다.", controlType: 'ControlType.Text' },
-      { name: '이전에 가능했던 대상:', controlType: 'ControlType.Text' },
-      { name: '다운로드 관리', controlType: 'ControlType.Text' },
-      { name: '허용', controlType: 'ControlType.Button' },
-      { name: '거부', controlType: 'ControlType.Button' },
-    ] });
+      { name: "'Tampermonkey'이(가) 추가 승인을 요청했습니다.", controlType: 'ControlType.Window', depth: 3 },
+      { name: '허용', controlType: 'ControlType.Button', depth: 8 },
+      { name: '거부', controlType: 'ControlType.Button', depth: 8 },
+    ],
+    promptScope: { complete: true, windowCount: 1, nameTruncated: false,
+      rootProcessId: 42, visitedControls: 6, controls: [
+        { name: "'Tampermonkey'이(가) 추가 승인을 요청했습니다.", controlType: 'ControlType.Window',
+          depth: 0, isEnabled: true, isOffscreen: false },
+        { name: "'Tampermonkey'이(가) 추가 승인을 요청했습니다.", controlType: 'ControlType.Text',
+          depth: 1, isEnabled: true, isOffscreen: false },
+        { name: '이전에 가능했던 대상:', controlType: 'ControlType.Text',
+          depth: 2, isEnabled: true, isOffscreen: false },
+        { name: '다운로드 관리', controlType: 'ControlType.Text',
+          depth: 2, isEnabled: true, isOffscreen: false },
+        { name: '허용', controlType: 'ControlType.Button',
+          depth: 1, isEnabled: true, isOffscreen: false },
+        { name: '거부', controlType: 'ControlType.Button',
+          depth: 1, isEnabled: true, isOffscreen: false },
+      ] } });
 
   it('rejects a changed native title, extra permission, ambiguous Allow, and mismatched process', () => {
     expect(userscriptInstall.isObservedChromeNativeDownloadPrompt(nativePrompt())).toBe(true);
     const wrongTitle = nativePrompt();
-    wrongTitle.controls[0]!.name = 'Another extension requested approval';
+    wrongTitle.promptScope.controls[0]!.name = 'Another extension requested approval';
     expect(userscriptInstall.isObservedChromeNativeDownloadPrompt(wrongTitle)).toBe(false);
     const otherPermission = nativePrompt();
-    otherPermission.controls.push({ name: '방문 기록 읽기', controlType: 'ControlType.Text' });
+    otherPermission.promptScope.controls.push({ name: '방문 기록 읽기',
+      controlType: 'ControlType.Text', depth: 2, isEnabled: true, isOffscreen: false });
+    otherPermission.promptScope.visitedControls++;
     expect(userscriptInstall.isObservedChromeNativeDownloadPrompt(otherPermission)).toBe(false);
     const ambiguousAllow = nativePrompt();
-    ambiguousAllow.controls.push({ name: '허용', controlType: 'ControlType.Button' });
+    ambiguousAllow.promptScope.controls.push({ name: '허용', controlType: 'ControlType.Button',
+      depth: 1, isEnabled: true, isOffscreen: false });
+    ambiguousAllow.promptScope.visitedControls++;
     expect(userscriptInstall.isObservedChromeNativeDownloadPrompt(ambiguousAllow)).toBe(false);
     const differentProcess = nativePrompt();
     differentProcess.uiaRootProcessId = 77;
     expect(userscriptInstall.isObservedChromeNativeDownloadPrompt(differentProcess)).toBe(false);
+    const incompleteScope = nativePrompt();
+    incompleteScope.promptScope.complete = false;
+    expect(userscriptInstall.isObservedChromeNativeDownloadPrompt(incompleteScope)).toBe(false);
+    const disabledAllow = nativePrompt();
+    disabledAllow.promptScope.controls[4]!.isEnabled = false;
+    expect(userscriptInstall.isObservedChromeNativeDownloadPrompt(disabledAllow)).toBe(false);
   });
 
   it('requires a current owned manager ask before guarded native Invoke', async () => {

@@ -85,7 +85,7 @@ function Test-OwnedProcess {
     return $process
 }
 
-function Get-PromptAction {
+function Get-PromptInspection {
     param([Windows.Automation.AutomationElement]$Prompt, [int]$ExpectedPid)
     if ($Prompt.Current.ProcessId -ne $ExpectedPid -or
         $Prompt.Current.ControlType.ProgrammaticName -cne 'ControlType.Window' -or
@@ -94,11 +94,10 @@ function Get-PromptAction {
     $queue = New-Object System.Collections.Queue
     $queue.Enqueue(@($Prompt, 0))
     $visited = 0
+    $controls = New-Object System.Collections.ArrayList
     $allow = New-Object System.Collections.ArrayList
     $deny = New-Object System.Collections.ArrayList
-    $download = 0
-    $titleText = 0
-    $previouslyAllowed = 0
+    $nameTruncated = $false
     while ($queue.Count -gt 0 -and $visited -lt 128) {
         $entry = $queue.Dequeue()
         $element = $entry[0]
@@ -108,16 +107,11 @@ function Get-PromptAction {
         if ($current.ProcessId -ne $ExpectedPid) { throw 'prompt-process-mismatch' }
         $name = [string]$current.Name
         $type = [string]$current.ControlType.ProgrammaticName
-        if ($name.Length -gt 0 -and $name -cnotin @(
-            $script:PermissionTitle, $script:PriorPermissionsLabel,
-            $script:DownloadsPermissionLabel, $script:AllowButtonLabel,
-            $script:DenyButtonLabel)) { throw 'prompt-has-other-named-control' }
-        if ($type -eq 'ControlType.Text' -and $name.Length -gt 0) {
-            if ($name -ceq $script:PermissionTitle) { $titleText++ }
-            elseif ($name -ceq $script:PriorPermissionsLabel) { $previouslyAllowed++ }
-            elseif ($name -ceq $script:DownloadsPermissionLabel) { $download++ }
-            else { throw 'prompt-has-other-permission-text' }
-        }
+        if ($name.Length -gt 120 -or $type.Length -gt 80) { $nameTruncated = $true }
+        [void]$controls.Add(@{ depth = $depth; rawName = $name; rawType = $type;
+            name = $name.Substring(0, [Math]::Min(120, $name.Length));
+            controlType = $type.Substring(0, [Math]::Min(80, $type.Length));
+            isEnabled = [bool]$current.IsEnabled; isOffscreen = [bool]$current.IsOffscreen })
         if ($type -eq 'ControlType.Button') {
             if ($name -ceq $script:AllowButtonLabel) { [void]$allow.Add($element) }
             if ($name -ceq $script:DenyButtonLabel) { [void]$deny.Add($element) }
@@ -135,15 +129,53 @@ function Get-PromptAction {
         }
         if ($null -ne $child) { throw 'prompt-traversal-truncated' }
     }
-    if ($queue.Count -gt 0 -or $download -ne 1 -or $titleText -ne 1 -or
-        $previouslyAllowed -ne 1 -or $allow.Count -ne 1 -or $deny.Count -ne 1) {
-        throw 'prompt-controls-not-unique'
+    if ($queue.Count -gt 0) { throw 'prompt-traversal-truncated' }
+    $serialized = @($controls | ForEach-Object {
+        @{ depth = $_.depth; name = $_.name; controlType = $_.controlType;
+            isEnabled = $_.isEnabled; isOffscreen = $_.isOffscreen }
+    })
+    return @{ controls = $serialized; rawControls = @($controls.ToArray());
+        allowElements = @($allow.ToArray()); denyElements = @($deny.ToArray());
+        visitedControls = $visited; nameTruncated = $nameTruncated;
+        rootProcessId = [int]$Prompt.Current.ProcessId; complete = (-not $nameTruncated) }
+}
+
+function Get-PromptAction {
+    param($Inspection)
+    if (-not $Inspection.complete -or $Inspection.nameTruncated) {
+        throw 'prompt-traversal-truncated'
     }
-    if (-not $allow[0].Current.IsEnabled -or $allow[0].Current.IsOffscreen -or
-        -not $deny[0].Current.IsEnabled -or $deny[0].Current.IsOffscreen) {
+    $download = 0
+    $titleText = 0
+    $previouslyAllowed = 0
+    $titleWindow = 0
+    foreach ($control in $Inspection.rawControls) {
+        $name = $control.rawName
+        $type = $control.rawType
+        if ($name.Length -gt 0 -and $name -cnotin @(
+            $script:PermissionTitle, $script:PriorPermissionsLabel,
+            $script:DownloadsPermissionLabel, $script:AllowButtonLabel,
+            $script:DenyButtonLabel)) { throw 'prompt-has-other-named-control' }
+        if ($type -ceq 'ControlType.Window' -and $name -ceq $script:PermissionTitle) {
+            $titleWindow++
+        }
+        if ($type -ceq 'ControlType.Text' -and $name.Length -gt 0) {
+            if ($name -ceq $script:PermissionTitle) { $titleText++ }
+            elseif ($name -ceq $script:PriorPermissionsLabel) { $previouslyAllowed++ }
+            elseif ($name -ceq $script:DownloadsPermissionLabel) { $download++ }
+            else { throw 'prompt-has-other-permission-text' }
+        }
+    }
+    if ($titleWindow -ne 1 -or $download -ne 1 -or $titleText -ne 1 -or
+        $previouslyAllowed -ne 1 -or $Inspection.allowElements.Count -ne 1 -or
+        $Inspection.denyElements.Count -ne 1) { throw 'prompt-controls-not-unique' }
+    $allow = $Inspection.allowElements[0]
+    $deny = $Inspection.denyElements[0]
+    if (-not $allow.Current.IsEnabled -or $allow.Current.IsOffscreen -or
+        -not $deny.Current.IsEnabled -or $deny.Current.IsOffscreen) {
         throw 'prompt-buttons-not-visible-enabled'
     }
-    return $allow[0]
+    return $allow
 }
 
 try {
@@ -163,6 +195,7 @@ try {
     $queue.Enqueue(@($root, 0))
     $controls = New-Object System.Collections.ArrayList
     $promptWindows = New-Object System.Collections.ArrayList
+    $globalTruncated = $false
     $visited = 0
     while ($queue.Count -gt 0 -and $visited -lt 256) {
         $entry = $queue.Dequeue()
@@ -180,7 +213,10 @@ try {
                 $name -ceq $script:PermissionTitle) {
                 [void]$promptWindows.Add($element)
             }
-            if ($depth -ge 8) { continue }
+            if ($depth -ge 8) {
+                if ($null -ne $walker.GetFirstChild($element)) { $globalTruncated = $true }
+                continue
+            }
             $child = $walker.GetFirstChild($element)
             $siblings = 0
             while ($null -ne $child -and $siblings -lt 64 -and $queue.Count -lt 256) {
@@ -188,9 +224,19 @@ try {
                 $siblings++
                 $child = $walker.GetNextSibling($child)
             }
+            if ($null -ne $child) { $globalTruncated = $true }
         } catch { throw 'uia-inspection-unavailable' }
     }
     if ($controls.Count -eq 0) { throw 'uia-inspection-empty' }
+    $promptScope = @{ complete = $false; windowCount = $promptWindows.Count;
+        controls = @(); visitedControls = 0; rootProcessId = $null; nameTruncated = $false }
+    if ($promptWindows.Count -eq 1) {
+        $inspection = Get-PromptInspection -Prompt $promptWindows[0] -ExpectedPid $BrowserPid
+        $promptScope = @{ complete = $inspection.complete; windowCount = 1;
+            controls = $inspection.controls; visitedControls = $inspection.visitedControls;
+            rootProcessId = $inspection.rootProcessId;
+            nameTruncated = $inspection.nameTruncated }
+    }
     $after = Test-OwnedProcess
     $foregroundOwnedAndVisible = [XegPermissionWindow]::IsOwned($foreground, [uint32]$BrowserPid)
     if ($before.CreationDate -ne $after.CreationDate -or
@@ -209,17 +255,19 @@ try {
         uiaRootProcessId = [int]$root.Current.ProcessId;
         windowCount = $windows.Count;
         controls = @($controls.ToArray()); visitedControls = $visited;
-        truncated = ($queue.Count -gt 0) }
+        truncated = ($globalTruncated -or $queue.Count -gt 0);
+        promptScope = $promptScope }
     if ($InvokeAllow) {
         $receipt.permissionGrantAttempted = $false
         if ($BrowserName -ne 'chrome' -or
             $ExpectedCreationUtcTicks -cne $receipt.creationUtcTicks -or
             $ExpectedSessionId -ne $receipt.browserSessionId -or
             $ExpectedForegroundHandle -cne $receipt.foregroundHandle -or
-            $queue.Count -gt 0 -or $promptWindows.Count -ne 1) {
+            -not $promptScope.complete -or $promptWindows.Count -ne 1) {
             throw 'action-identity-or-prompt-mismatch'
         }
-        $allow = Get-PromptAction -Prompt $promptWindows[0] -ExpectedPid $BrowserPid
+        $actionInspection = Get-PromptInspection -Prompt $promptWindows[0] -ExpectedPid $BrowserPid
+        $allow = Get-PromptAction -Inspection $actionInspection
         $justBefore = Test-OwnedProcess
         if ($justBefore.CreationDate -ne $before.CreationDate -or
             [XegPermissionWindow]::GetForegroundWindow() -ne $foreground -or

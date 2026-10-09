@@ -71,27 +71,39 @@ export async function captureNativeManagerPermission(cdp, root, output, profile,
 
 /** Only the observed Korean Chrome downloads-only prompt is eligible for native Invoke. */
 export function isObservedChromeNativeDownloadPrompt(receipt) {
+  const scope = receipt?.promptScope;
   if (receipt?.status !== 'captured' || receipt.capture !== 'uia-only' ||
       receipt.screenshot !== 'not-captured' || receipt.permissionGrantAttempted !== false ||
-      receipt.truncated !== false || receipt.foregroundOwnedAndVisible !== true ||
+      receipt.foregroundOwnedAndVisible !== true ||
       !Number.isSafeInteger(receipt.browserPid) || receipt.browserPid <= 0 ||
       receipt.uiaRootProcessId !== receipt.browserPid ||
       !Number.isSafeInteger(receipt.browserSessionId) || receipt.browserSessionId <= 0 ||
       receipt.observerSessionId !== receipt.browserSessionId ||
       typeof receipt.creationUtcTicks !== 'string' || !/^\d{15,20}$/u.test(receipt.creationUtcTicks) ||
       typeof receipt.foregroundHandle !== 'string' || !/^[1-9]\d{0,19}$/u.test(receipt.foregroundHandle) ||
-      !Array.isArray(receipt.controls) || receipt.controls.length > 256) return false;
-  const count = (type, name) => receipt.controls.filter((control) =>
+      !Array.isArray(receipt.controls) || receipt.controls.length > 256 ||
+      scope?.complete !== true || scope.nameTruncated !== false || scope.windowCount !== 1 ||
+      scope.rootProcessId !== receipt.browserPid ||
+      !Number.isSafeInteger(scope.visitedControls) || scope.visitedControls <= 0 ||
+      scope.visitedControls > 128 || !Array.isArray(scope.controls) ||
+      scope.controls.length !== scope.visitedControls) return false;
+  const controls = scope.controls;
+  const count = (type, name) => controls.filter((control) =>
     control.controlType === type && control.name === name).length;
-  return count('ControlType.Window', CHROME_KO_PERMISSION_TITLE) === 1 &&
+  return receipt.controls.filter((control) => control.controlType === 'ControlType.Window' &&
+      control.name === CHROME_KO_PERMISSION_TITLE).length === 1 &&
+    count('ControlType.Window', CHROME_KO_PERMISSION_TITLE) === 1 &&
     count('ControlType.Text', CHROME_KO_PERMISSION_TITLE) === 1 &&
     count('ControlType.Text', '이전에 가능했던 대상:') === 1 &&
     count('ControlType.Text', '다운로드 관리') === 1 &&
     count('ControlType.Button', '허용') === 1 &&
     count('ControlType.Button', '거부') === 1 &&
-    receipt.controls.filter((control) => control.controlType === 'ControlType.Text' &&
-      control.name && ![CHROME_KO_PERMISSION_TITLE, '이전에 가능했던 대상:',
-        '다운로드 관리'].includes(control.name)).length === 0;
+    controls.filter((control) => control.name &&
+      ![CHROME_KO_PERMISSION_TITLE, '이전에 가능했던 대상:',
+        '다운로드 관리', '허용', '거부'].includes(control.name)).length === 0 &&
+    controls.filter((control) => control.controlType === 'ControlType.Button' &&
+      ['허용', '거부'].includes(control.name)).every((control) =>
+      control.isEnabled === true && control.isOffscreen === false);
 }
 
 /** Recheck the owned manager ask before a second, OS-bound UIA-only Invoke pass. */
