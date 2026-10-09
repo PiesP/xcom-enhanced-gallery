@@ -171,6 +171,12 @@ const userscriptInstall = (await import(
   inspectFirstCurrentDownload(page: { url(): string;
     evaluate(callback: (url: string) => unknown, url: string): Promise<unknown> }): Promise<unknown>;
   findEdgeUserScriptsControl(page: unknown, managerId: string): Promise<unknown>;
+  watchFixtureMediaNetwork(context: EventEmitter): {
+    events: Array<{ kind: string; cohort: string; index: number; method: string;
+      resourceType: string; status: number | null }>;
+    overflow(): number;
+    dispose(): void;
+  };
   createBrowserDownloadObserver(cdp: EventEmitter & { send(method: string): Promise<unknown> }): {
   snapshot(): number;
   waitForCompletion(since: number, name: string): Promise<{ guid: string; state: string }>;
@@ -224,13 +230,16 @@ describe('Windows X live page validation', () => {
 
   it('targets the observed Edge switch inside the exact owned labeled row', async () => {
     const id = 'a'.repeat(32);
-    const control = { count: async () => 1, isVisible: async () => true };
+    const control = { count: async () => 1, isVisible: async () => true,
+      waitFor: vi.fn(async () => {}) };
     const row = { count: async () => 1,
       locator: vi.fn((selector: string) => {
         expect(selector).toBe('fluent-switch#checkbox-1');
         return control;
       }) };
-    const section = { count: async () => 1, isVisible: async () => true,
+    const section = { count: async () => 1, waitFor: vi.fn(async () => {}),
+      evaluate: async (callback: (element: { id: string }, id: string) => boolean, id: string) =>
+        callback({ id }, id),
       locator: vi.fn((selector: string) => {
         expect(selector).toBe('standard-row');
         return { filter: ({ has }: { has: unknown }) => {
@@ -240,8 +249,11 @@ describe('Windows X live page validation', () => {
       }) };
     const page = { url: () => userscriptInstall.managerDetailsUrl('msedge', id),
       locator: vi.fn((selector: string) => {
-        expect(selector).toBe(`access-section[id="${id}"]`);
-        return section;
+        expect(selector).toBe('access-section');
+        return { filter: ({ has }: { has: unknown }) => {
+          expect(has).toBe('known-label');
+          return section;
+        } };
       }),
       getByText: vi.fn((name: RegExp) => {
         expect(name.test('사용자 스크립트 허용')).toBe(true);
@@ -250,16 +262,19 @@ describe('Windows X live page validation', () => {
         return 'known-label';
       }) };
     await expect(userscriptInstall.findEdgeUserScriptsControl(page, id)).resolves.toBe(control);
+    expect(section.waitFor).toHaveBeenCalledWith({ state: 'visible', timeout: 10_000 });
+    expect(control.waitFor).toHaveBeenCalledWith({ state: 'visible', timeout: 10_000 });
     expect(page.locator).toHaveBeenCalledTimes(1);
     await expect(userscriptInstall.findEdgeUserScriptsControl({ ...page,
       url: () => userscriptInstall.managerDetailsUrl('msedge', 'b'.repeat(32)),
     }, id)).rejects.toThrow('owned extension details');
     await expect(userscriptInstall.findEdgeUserScriptsControl({ ...page,
-      locator: () => ({ ...section, count: async () => 2 }),
+      locator: () => ({ filter: () => ({ ...section, count: async () => 2 }) }),
     }, id)).rejects.toThrow('one owned Edge access section');
+    const missingRowSection = { ...section,
+      locator: () => ({ filter: () => ({ ...row, count: async () => 0 }) }) };
     await expect(userscriptInstall.findEdgeUserScriptsControl({ ...page,
-      locator: () => ({ ...section, locator: () => ({ filter: () => ({ ...row,
-        count: async () => 0 }) }) }),
+      locator: () => ({ filter: () => missingRowSection }),
     }, id)).rejects.toThrow('one labeled Edge user-scripts row');
   });
 
@@ -270,6 +285,28 @@ describe('Windows X live page validation', () => {
     expect(userscriptInstall.hasKnownChromeUserScriptsLabel('Allow user scripts')).toBe(true);
     expect(userscriptInstall.hasKnownChromeUserScriptsLabel('InPrivate에서 허용')).toBe(false);
     expect(userscriptInstall.hasKnownChromeUserScriptsLabel('Not Allow user scripts')).toBe(false);
+  });
+
+  it('records only bounded fixture-media network metadata', () => {
+    const context = new EventEmitter();
+    const watcher = userscriptInstall.watchFixtureMediaNetwork(context);
+    const request = (url: string) => ({ url: () => url,
+      method: () => 'GET', resourceType: () => 'fetch' });
+    const owned = request('https://pbs.twimg.com/media/GkE1234ABCDEF.jpg?name=orig&private=secret');
+    context.emit('request', request('https://pbs.twimg.com/profile_images/123456789/public-avatar.jpg'));
+    context.emit('request', request('https://other.example/media/GkE1234ABCDEF.jpg'));
+    context.emit('request', owned);
+    context.emit('response', { request: () => owned, status: () => 200 });
+    context.emit('requestfailed', owned);
+    expect(watcher.events).toEqual([
+      { kind: 'request', cohort: 'normal', index: 0, method: 'GET', resourceType: 'fetch', status: null },
+      { kind: 'response', cohort: 'normal', index: 0, method: 'GET', resourceType: 'fetch', status: 200 },
+      { kind: 'requestfailed', cohort: 'normal', index: 0, method: 'GET', resourceType: 'fetch', status: null },
+    ]);
+    expect(JSON.stringify(watcher.events)).not.toContain('secret');
+    watcher.dispose();
+    context.emit('request', owned);
+    expect(watcher.events).toHaveLength(3);
   });
 
   it('keeps permission-diagnostic frame URLs on owned origins without query tokens', () => {

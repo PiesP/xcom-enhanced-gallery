@@ -104,6 +104,42 @@ export function watchExactRequestTerminal(context) {
   };
 }
 
+/** Report only the twelve fixture media identities, without URLs or response bodies. */
+export function watchFixtureMediaNetwork(context) {
+  const events = [];
+  let overflow = 0;
+  const identify = (request) => {
+    try {
+      const url = new URL(request.url());
+      if (url.protocol !== 'https:' || url.hostname !== 'pbs.twimg.com') return null;
+      for (const [cohort, markers] of Object.entries(MEDIA_COHORTS)) {
+        const index = markers.findIndex((marker) =>
+          url.pathname === `/media/${marker}.jpg`);
+        if (index >= 0) return { cohort, index };
+      }
+    } catch { /* Ignore non-URL browser requests. */ }
+    return null;
+  };
+  const append = (kind, request, status = null) => {
+    const media = identify(request);
+    if (!media) return;
+    if (events.length >= 64) { overflow += 1; return; }
+    events.push({ kind, ...media, method: request.method(),
+      resourceType: request.resourceType(), status });
+  };
+  const onRequest = (request) => append('request', request);
+  const onResponse = (response) => append('response', response.request(), response.status());
+  const onFailed = (request) => append('requestfailed', request);
+  context.on('request', onRequest);
+  context.on('response', onResponse);
+  context.on('requestfailed', onFailed);
+  return { events, overflow: () => overflow, dispose() {
+    context.off('request', onRequest);
+    context.off('response', onResponse);
+    context.off('requestfailed', onFailed);
+  } };
+}
+
 export function requireHeldRouteOutcome(routeInvocation, requestTerminal) {
   assert(requestTerminal?.kind === 'requestfinished' || requestTerminal?.kind === 'requestfailed',
     'Held request has no correlated transport terminal');
@@ -140,14 +176,19 @@ export async function findEdgeUserScriptsControl(page, managerId) {
   assert(/^[a-p]{32}$/u.test(managerId), 'Invalid manager extension ID');
   assert(isOwnedManagerDetailsUrl(page.url(), managerDetailsUrl('msedge', managerId)),
     'Edge permission control requires owned extension details');
-  const section = page.locator(`access-section[id="${managerId}"]`);
+  const section = page.locator('access-section').filter({
+    has: page.getByText(/^(?:사용자 스크립트 허용|Allow user scripts)$/iu),
+  });
+  await section.waitFor({ state: 'visible', timeout: 10_000 });
   assert.equal(await section.count(), 1, 'Expected exactly one owned Edge access section');
-  assert(await section.isVisible(), 'Owned Edge access section is hidden');
+  assert(await section.evaluate((element, id) => element.id === id, managerId),
+    'Labeled Edge access section belongs to another extension');
   const row = section.locator('standard-row').filter({
     has: page.getByText(/^(?:사용자 스크립트 허용|Allow user scripts)$/iu),
   });
   assert.equal(await row.count(), 1, 'Expected exactly one labeled Edge user-scripts row');
   const control = row.locator('fluent-switch#checkbox-1');
+  await control.waitFor({ state: 'visible', timeout: 10_000 });
   assert.equal(await control.count(), 1, 'Expected exactly one Edge user-scripts switch');
   assert(await control.isVisible(), 'Edge user-scripts permission control is hidden');
   return control;
@@ -249,6 +290,75 @@ export async function probeManagerDownloadsPermission(page, managerId) {
     'Manager options page navigated away after permission lookup');
   assert.equal(typeof granted, 'boolean', 'Manager returned invalid downloads permission');
   return granted;
+}
+
+/** Select Tampermonkey's own Browser API option through its ordinary options UI. */
+export async function configureManagerBrowserDownloads(page, managerId) {
+  assert(isOwnedManagerOptionsUrl(page.url(), managerId),
+    'Manager download settings require its owned options page');
+  const labels = await page.evaluate((expectedId) => {
+    const url = new URL(location.href);
+    if (url.protocol !== 'chrome-extension:' || url.hostname !== expectedId ||
+      url.pathname !== '/options.html' || url.search) {
+      throw new Error('Manager options page navigated away');
+    }
+    return Object.fromEntries(['Settings', 'Config_Mode', 'Beginner', 'Downloads',
+      'Download_Mode', 'Browser_API', 'Whitelisted_File_Extensions', 'Save']
+      .map((key) => [key, chrome.i18n.getMessage(key)]));
+  }, managerId);
+  for (const label of Object.values(labels)) {
+    assert(typeof label === 'string' && label.length > 0 && label.length <= 120,
+      'Manager returned an invalid download setting label');
+  }
+  assert(isOwnedManagerOptionsUrl(page.url(), managerId), 'Manager options page navigated away');
+  await page.getByText(labels.Settings, { exact: true }).first().click();
+  const configRow = page.locator('tr.settingstr').filter({
+    has: page.getByText(labels.Config_Mode, { exact: true }),
+  });
+  await configRow.waitFor({ state: 'visible', timeout: 10_000 });
+  assert.equal(await configRow.count(), 1, 'Expected exactly one manager config-mode row');
+  const configSelect = configRow.locator('select');
+  assert.equal(await configSelect.count(), 1, 'Expected one manager config-mode selector');
+  await configSelect.selectOption({ label: labels.Beginner });
+  assert.equal(await configSelect.inputValue(), '50', 'Manager did not select Beginner mode');
+  const downloads = page.locator('div.section.type_downloads');
+  await downloads.waitFor({ state: 'visible', timeout: 10_000 });
+  assert.equal(await downloads.count(), 1, 'Expected exactly one manager Downloads section');
+  assert.equal((await downloads.locator('.section_head').innerText()).trim(), labels.Downloads,
+    'Manager Downloads section label differs');
+  const whitelistRow = downloads.locator('tr.settingstr').filter({
+    has: page.getByText(labels.Whitelisted_File_Extensions, { exact: true }),
+  });
+  assert.equal(await whitelistRow.count(), 1, 'Expected exactly one manager whitelist row');
+  const whitelist = await whitelistRow.locator('input, textarea').evaluateAll((elements) =>
+    elements.slice(0, 64).map((element) => element.value).filter((value) => typeof value === 'string'));
+  assert(whitelist.some((value) => value.includes('jpe?g')) &&
+    whitelist.some((value) => value.includes('zip')),
+  'Manager whitelist does not visibly include JPG and ZIP');
+  const modeRow = downloads.locator('tr.settingstr').filter({
+    has: page.getByText(labels.Download_Mode, { exact: true }),
+  });
+  assert.equal(await modeRow.count(), 1, 'Expected exactly one manager Download Mode row');
+  const modeSelect = modeRow.locator('select');
+  assert.equal(await modeSelect.count(), 1, 'Expected one manager Download Mode selector');
+  await modeSelect.selectOption({ label: labels.Browser_API });
+  assert.equal(await modeSelect.inputValue(), 'chrome', 'Manager did not select Browser API');
+  const save = downloads.getByRole('button', { name: labels.Save, exact: true });
+  assert.equal(await save.count(), 1, 'Expected exactly one manager Downloads Save button');
+  assert.equal(await save.inputValue(), labels.Save, 'Manager Downloads Save label differs');
+  await save.click();
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  assert(isOwnedManagerOptionsUrl(page.url(), managerId), 'Manager options page navigated away');
+  await page.getByText(labels.Settings, { exact: true }).first().click();
+  const savedMode = page.locator('div.section.type_downloads tr.settingstr').filter({
+    has: page.getByText(labels.Download_Mode, { exact: true }),
+  }).locator('select');
+  await savedMode.waitFor({ state: 'visible', timeout: 10_000 });
+  const observed = await savedMode.inputValue();
+  assert.equal(observed, 'chrome', 'Manager Browser API mode did not persist');
+  return { requested: 'chrome', observed, configMode: '50',
+    whitelistJpgZipPresent: true, downloadsPermissionGranted:
+      await probeManagerDownloadsPermission(page, managerId) };
 }
 
 async function captureManagerDownloadsPermission(context, managerId) {
@@ -474,6 +584,8 @@ async function installUserscript(context, id, root, output, browserName, sourceS
     await writeFile(join(output, 'userscript-manager-options.png'), optionsScreenshot);
     const labels = await readManagerUiLabels(page, id);
     await writeFile(admissionPath, JSON.stringify({ ...admission, labels }, null, 2));
+    const downloadMode = await configureManagerBrowserDownloads(page, id);
+    await writeFile(admissionPath, JSON.stringify({ ...admission, labels, downloadMode }, null, 2));
     await page.getByText(labels.utilities, { exact: true }).click();
     const confirmationPromise = context.waitForEvent('page');
     await page.locator('input[type=file]').setInputFiles(join(root, 'dist/xcom-enhanced-gallery.user.js'));
@@ -494,7 +606,8 @@ async function installUserscript(context, id, root, output, browserName, sourceS
     return { id, managerName: 'Tampermonkey', managerVersion: manifest.version,
       scriptName: SCRIPT_NAME, method: 'real-manager-ui-import',
       userScriptsPermission: { path: permissionPath,
-        available: permission.available, registeredScriptCount: permission.registeredScriptCount } };
+        available: permission.available, registeredScriptCount: permission.registeredScriptCount },
+      downloadMode };
   } finally {
     await page.close();
   }
@@ -631,6 +744,7 @@ async function runFixture(context, observer, root, output, downloads, images, ma
   let releaseHeld;
   let heldRouteInvocation;
   let heldTerminalObserver;
+  const mediaNetwork = watchFixtureMediaNetwork(context);
   const routeFixture = async (route) => {
     const url = new URL(route.request().url());
     if (url.protocol === 'chrome-extension:') {
@@ -868,9 +982,12 @@ async function runFixture(context, observer, root, output, downloads, images, ma
     if (releaseHeld) releaseHeld();
     await page.close().catch((error) => { result.cleanup.pageError = String(error); });
     heldTerminalObserver?.dispose();
+    mediaNetwork.dispose();
     await context.unroute('**/*', handler).then(() => { result.cleanup.routeRemoved = true; },
       (error) => { result.cleanup.routeError = String(error); });
     result.browserDownloadEvents = observer.events();
+    result.fixtureMediaNetwork = { events: mediaNetwork.events,
+      overflow: mediaNetwork.overflow() };
     await writeFile(join(output, 'userscript-fixture-result.json'), JSON.stringify(result, null, 2));
     assert.deepEqual(result.cleanup, { routeRemoved: true }, 'Fixture cleanup failed');
   }
