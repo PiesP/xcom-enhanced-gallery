@@ -18,6 +18,17 @@ $receiptPath = Join-Path $Output $(if ($InvokeAllow) {
 $receipt = @{ status = 'skipped'; reason = 'ownership-unverified';
     capture = 'uia-only'; screenshot = 'not-captured'; permissionGrantAttempted = $false }
 
+# Exact Chrome ko-KR UIA names from the owned permission prompt; keep this file ASCII for Windows PowerShell 5.1 -File.
+$script:PermissionTitle = "'Tampermonkey'" + [string]::Concat([char[]]@(
+    0xC774,0x0028,0xAC00,0x0029,0x0020,0xCD94,0xAC00,0x0020,0xC2B9,0xC778,
+    0xC744,0x0020,0xC694,0xCCAD,0xD588,0xC2B5,0xB2C8,0xB2E4,0x002E))
+$script:PriorPermissionsLabel = [string]::Concat([char[]]@(
+    0xC774,0xC804,0xC5D0,0x0020,0xAC00,0xB2A5,0xD588,0xB358,0x0020,0xB300,0xC0C1,0x003A))
+$script:DownloadsPermissionLabel = [string]::Concat([char[]]@(
+    0xB2E4,0xC6B4,0xB85C,0xB4DC,0x0020,0xAD00,0xB9AC))
+$script:AllowButtonLabel = [string]::Concat([char[]]@(0xD5C8,0xC6A9))
+$script:DenyButtonLabel = [string]::Concat([char[]]@(0xAC70,0xBD80))
+
 Add-Type -TypeDefinition @'
 using System;
 using System.Collections.Generic;
@@ -78,7 +89,7 @@ function Get-PromptAction {
     param([Windows.Automation.AutomationElement]$Prompt, [int]$ExpectedPid)
     if ($Prompt.Current.ProcessId -ne $ExpectedPid -or
         $Prompt.Current.ControlType.ProgrammaticName -cne 'ControlType.Window' -or
-        $Prompt.Current.Name -cne "'Tampermonkey'이(가) 추가 승인을 요청했습니다." -or
+        $Prompt.Current.Name -cne $script:PermissionTitle -or
         $Prompt.Current.IsOffscreen) { throw 'prompt-identity-changed' }
     $queue = New-Object System.Collections.Queue
     $queue.Enqueue(@($Prompt, 0))
@@ -98,19 +109,18 @@ function Get-PromptAction {
         $name = [string]$current.Name
         $type = [string]$current.ControlType.ProgrammaticName
         if ($name.Length -gt 0 -and $name -cnotin @(
-            "'Tampermonkey'이(가) 추가 승인을 요청했습니다.", '이전에 가능했던 대상:',
-            '다운로드 관리', '허용', '거부')) { throw 'prompt-has-other-named-control' }
+            $script:PermissionTitle, $script:PriorPermissionsLabel,
+            $script:DownloadsPermissionLabel, $script:AllowButtonLabel,
+            $script:DenyButtonLabel)) { throw 'prompt-has-other-named-control' }
         if ($type -eq 'ControlType.Text' -and $name.Length -gt 0) {
-            switch -CaseSensitive ($name) {
-                "'Tampermonkey'이(가) 추가 승인을 요청했습니다." { $titleText++ }
-                '이전에 가능했던 대상:' { $previouslyAllowed++ }
-                '다운로드 관리' { $download++ }
-                default { throw 'prompt-has-other-permission-text' }
-            }
+            if ($name -ceq $script:PermissionTitle) { $titleText++ }
+            elseif ($name -ceq $script:PriorPermissionsLabel) { $previouslyAllowed++ }
+            elseif ($name -ceq $script:DownloadsPermissionLabel) { $download++ }
+            else { throw 'prompt-has-other-permission-text' }
         }
         if ($type -eq 'ControlType.Button') {
-            if ($name -ceq '허용') { [void]$allow.Add($element) }
-            if ($name -ceq '거부') { [void]$deny.Add($element) }
+            if ($name -ceq $script:AllowButtonLabel) { [void]$allow.Add($element) }
+            if ($name -ceq $script:DenyButtonLabel) { [void]$deny.Add($element) }
         }
         if ($depth -ge 8) {
             if ($null -ne $walker.GetFirstChild($element)) { throw 'prompt-traversal-truncated' }
@@ -167,7 +177,7 @@ try {
             [void]$controls.Add(@{ depth = $depth; name = $name.Substring(0, [Math]::Min(120, $name.Length));
                 controlType = $type.Substring(0, [Math]::Min(80, $type.Length)) })
             if ($type -eq 'ControlType.Window' -and
-                $name -ceq "'Tampermonkey'이(가) 추가 승인을 요청했습니다.") {
+                $name -ceq $script:PermissionTitle) {
                 [void]$promptWindows.Add($element)
             }
             if ($depth -ge 8) { continue }

@@ -310,6 +310,27 @@ describe('Windows X live page validation', () => {
     }
   });
 
+  it('keeps PowerShell 5.1 prompt labels ASCII-source and exact to observed ko-KR UIA', () => {
+    const source = readFileSync(resolve(import.meta.dirname,
+      '../../../validation/windows/manager-permission-window.ps1'));
+    expect(source.every((byte) => byte < 128)).toBe(true);
+    const codePoints = (name: string) => {
+      const script = source.toString('ascii');
+      const start = script.indexOf(`$script:${name} =`);
+      expect(start).toBeGreaterThanOrEqual(0);
+      const end = script.indexOf('))', start);
+      expect(end).toBeGreaterThan(start);
+      return String.fromCharCode(...[...script.slice(start, end).matchAll(/0x[0-9A-F]{4}/gu)]
+        .map(([hex]) => Number(hex)));
+    };
+    expect(`'Tampermonkey'${codePoints('PermissionTitle')}`)
+      .toBe("'Tampermonkey'이(가) 추가 승인을 요청했습니다.");
+    expect(codePoints('PriorPermissionsLabel')).toBe('이전에 가능했던 대상:');
+    expect(codePoints('DownloadsPermissionLabel')).toBe('다운로드 관리');
+    expect(codePoints('AllowButtonLabel')).toBe('허용');
+    expect(codePoints('DenyButtonLabel')).toBe('거부');
+  });
+
   it('collects read-only UIA diagnostics only with one CDP browser PID and an owned profile', async () => {
     const root = mkdtempSync(join(tmpdir(), 'xeg-native-permission-'));
     const profile = join(root, 'xeg-userscript-install-owned');
