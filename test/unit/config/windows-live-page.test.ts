@@ -756,7 +756,7 @@ describe('Windows X live page validation', () => {
     }
   });
 
-  it('bounds failed current-download diagnostics to the owned fixture and status attributes', async () => {
+  it('bounds and redacts the owned fixture download error live region', async () => {
     const fixtureUrl = 'https://x.com/testuser/status/1234567890123456789';
     const page = { url: () => fixtureUrl,
       evaluate: async (callback: (url: string) => unknown, url: string) => callback(url) };
@@ -765,6 +765,9 @@ describe('Windows X live page validation', () => {
         <button aria-label="Download" aria-busy="false"></button>
         <span role="status" data-download-status="error">private failure text</span>
       </div>
+      <div class="xeg-sr-only" aria-live="polite" aria-atomic="true">Failed https://private.example/media?key=secret
+      C:\\Users\\Alice\\secret.jpg
+      Bearer rawCredentialValue</div>
       <li data-gallery-element="item" data-index="0">
         <img src="https://pbs.twimg.com/media/GkE1234ABCDEF.jpg?format=jpg&name=large">
       </li>
@@ -775,10 +778,36 @@ describe('Windows X live page validation', () => {
         scope: 'owned-fixture', galleryPresent: true, currentControlPresent: true,
         currentControlDisabled: false, currentControlBusy: false,
         selectedFirstFixtureMedia: true, downloadStatus: 'error',
+        errorLiveRegionPresent: true,
+        errorLiveRegionText: 'Failed [url] [path] [credential]',
       });
+      const liveRegion = document.querySelector('.xeg-sr-only[aria-live="polite"]');
+      expect(liveRegion).not.toBeNull();
+      liveRegion!.textContent = 'failure '.repeat(100);
+      const bounded = await userscriptInstall.inspectFirstCurrentDownload(page) as {
+        errorLiveRegionText: string;
+      };
+      expect(bounded.errorLiveRegionText).toHaveLength(256);
+      liveRegion!.textContent = 'token=privateValue';
+      const token = await userscriptInstall.inspectFirstCurrentDownload(page) as {
+        errorLiveRegionText: string;
+      };
+      expect(token.errorLiveRegionText).toBe('[credential]');
+      const status = document.querySelector('[data-download-status]');
+      status?.setAttribute('data-download-status', 'working');
+      const working = await userscriptInstall.inspectFirstCurrentDownload(page) as {
+        errorLiveRegionText: string | null;
+      };
+      expect(working.errorLiveRegionText).toBeNull();
+      status?.setAttribute('data-download-status', 'error');
       await expect(userscriptInstall.inspectFirstCurrentDownload({ ...page,
         url: () => 'https://private.example/',
       })).resolves.toEqual({ scope: 'unowned-page' });
+      document.body.insertAdjacentHTML('beforeend',
+        '<div data-xeg-gallery-container><div class="xeg-sr-only" aria-live="polite">secret</div></div>');
+      await expect(userscriptInstall.inspectFirstCurrentDownload(page))
+        .resolves.toEqual({ scope: 'unowned-gallery' });
+      document.body.lastElementChild?.remove();
       vi.stubGlobal('location', { href: 'https://private.example/' });
       await expect(userscriptInstall.inspectFirstCurrentDownload(page))
         .resolves.toEqual({ scope: 'navigated-away' });

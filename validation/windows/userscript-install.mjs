@@ -944,22 +944,43 @@ export async function inspectFirstCurrentDownload(page) {
   if (page.url() !== FIXTURE_URL) return { scope: 'unowned-page' };
   const observation = await page.evaluate((expectedUrl) => {
     if (location.href !== expectedUrl) return { scope: 'navigated-away' };
-    const gallery = document.querySelector('[data-xeg-gallery-container]');
-    const toolbar = gallery?.querySelector('[data-gallery-element="toolbar"]');
+    const galleries = document.querySelectorAll('[data-xeg-gallery-container]');
+    if (galleries.length !== 1) return { scope: 'unowned-gallery' };
+    const gallery = galleries[0];
+    const toolbar = gallery.querySelector('[data-gallery-element="toolbar"]');
     const current = toolbar?.querySelector('button[aria-label="Download"]');
-    const selected = gallery?.querySelector('[data-gallery-element="item"][data-index="0"] img');
+    const selected = gallery.querySelector('[data-gallery-element="item"][data-index="0"] img');
     const source = selected instanceof HTMLImageElement ? new URL(selected.src) : null;
+    const selectedFirstFixtureMedia = source?.origin === 'https://pbs.twimg.com' &&
+      source.pathname === '/media/GkE1234ABCDEF.jpg';
     const status = toolbar?.querySelector('[role="status"][data-download-status]')
       ?.getAttribute('data-download-status');
+    const liveRegions = gallery.querySelectorAll('div.xeg-sr-only[aria-live="polite"][aria-atomic="true"]');
+    const errorText = selectedFirstFixtureMedia && status === 'error' && liveRegions.length === 1
+      ? liveRegions[0].textContent?.slice(0, 2_048) : null;
+    const normalizedError = errorText?.replace(/(?:https?|blob|file|chrome-extension):\/\/[^\s<>"']+/giu, '[url]')
+      .replace(/(?:[A-Za-z]:\\|\\\\)[^\r\n]*/gu, '[path]')
+      .replace(/\/(?:home|Users|tmp|var|mnt|etc)\/[^\r\n]*/gu, '[path]')
+      .replace(/\b(?:bearer|token|api[-_]?key|secret|session|authorization|cookie|password)\b[^\r\n]*/giu,
+        '[credential]')
+      .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/giu, '[email]')
+      .replace(/\b[A-Za-z0-9_-]{32,}\b/gu, '[opaque]')
+      .replace(/\s+/gu, ' ').trim().slice(0, 256) || null;
+    if (location.href !== expectedUrl || !gallery.isConnected ||
+        document.querySelectorAll('[data-xeg-gallery-container]').length !== 1 ||
+        document.querySelector('[data-xeg-gallery-container]') !== gallery) {
+      return { scope: 'gallery-changed' };
+    }
     return {
       scope: 'owned-fixture',
-      galleryPresent: Boolean(gallery),
+      galleryPresent: true,
       currentControlPresent: Boolean(current),
       currentControlDisabled: current instanceof HTMLButtonElement ? current.disabled : null,
       currentControlBusy: current?.getAttribute('aria-busy') === 'true',
-      selectedFirstFixtureMedia: source?.origin === 'https://pbs.twimg.com' &&
-        source.pathname === '/media/GkE1234ABCDEF.jpg',
+      selectedFirstFixtureMedia,
       downloadStatus: ['working', 'handedOff', 'error'].includes(status) ? status : null,
+      errorLiveRegionPresent: liveRegions.length === 1,
+      errorLiveRegionText: normalizedError,
     };
   }, FIXTURE_URL);
   return page.url() === FIXTURE_URL ? observation : { scope: 'navigated-away' };
