@@ -146,11 +146,27 @@ export function hasKnownChromeUserScriptsLabel(text) {
     /^(?:사용자 스크립트 허용|Allow user scripts)$/iu.test(line.trim()));
 }
 
+export function summarizeManagerFrameUrl(value, managerId) {
+  try {
+    const url = new URL(value);
+    if (['edge:', 'chrome:'].includes(url.protocol) && url.hostname === 'extensions') {
+      return `${url.protocol}//${url.hostname}${url.pathname}`;
+    }
+    if (url.protocol === 'chrome-extension:' && url.hostname === managerId) {
+      return `${url.protocol}//${url.hostname}${url.pathname}`;
+    }
+    if (value === 'about:blank') return value;
+  } catch { /* Unknown frame URLs are deliberately omitted. */ }
+  return null;
+}
+
 async function captureManagerPermissionDiagnostics(page, detailsUrl, output, probe) {
-  const diagnostics = { api: probe, requestedUrl: detailsUrl };
+  const managerId = new URL(detailsUrl).searchParams.get('id');
+  const diagnostics = { api: probe,
+    requestedUrl: summarizeManagerFrameUrl(detailsUrl, managerId) };
   try {
     await page.goto(detailsUrl, { waitUntil: 'domcontentloaded', timeout: 10_000 });
-    diagnostics.finalUrl = page.url();
+    diagnostics.finalUrl = summarizeManagerFrameUrl(page.url(), managerId);
     diagnostics.title = (await page.title()).slice(0, 120);
     await page.screenshot({ path: join(output, 'userscript-manager-permission.png') });
     diagnostics.allowUserScriptsVisible = await page.locator('#allow-user-scripts cr-toggle').isVisible();
@@ -160,17 +176,94 @@ async function captureManagerPermissionDiagnostics(page, detailsUrl, output, pro
         ariaLabel: element.getAttribute('aria-label')?.slice(0, 80) ?? null,
         checked: Boolean(element.checked),
       })));
-    diagnostics.semanticControls = [];
-    for (const role of ['switch', 'checkbox']) {
-      const controls = page.getByRole(role);
-      const count = Math.min(await controls.count(), 32);
-      for (let index = 0; index < count; index++) {
-        diagnostics.semanticControls.push({ role,
-          snapshot: (await controls.nth(index).ariaSnapshot()).slice(0, 180) });
-      }
-    }
   } catch (error) {
     diagnostics.captureErrorType = error instanceof Error ? error.name : typeof error;
+  }
+  try {
+    const frames = page.frames();
+    diagnostics.frameCount = frames.length;
+    diagnostics.frames = await Promise.all(frames.slice(0, 12).map(async (frame, index) => {
+      const summary = { index, url: summarizeManagerFrameUrl(frame.url(), managerId) };
+      try {
+        summary.document = await frame.evaluate(() => {
+          const knownLabels = new Set(['사용자 스크립트 허용', 'Allow user scripts']);
+          const describe = (element) => ({
+            tag: element.tagName.toLowerCase().slice(0, 40),
+            id: element.id?.slice(0, 80) ?? null,
+            role: element.getAttribute('role')?.slice(0, 40) ?? null,
+            type: element.getAttribute('type')?.slice(0, 40) ?? null,
+            label: (element.getAttribute('label') ?? element.labels?.[0]?.textContent?.trim())
+              ?.slice(0, 80) ?? null,
+            ariaLabel: element.getAttribute('aria-label')?.slice(0, 80) ?? null,
+            ariaChecked: element.getAttribute('aria-checked')?.slice(0, 12) ?? null,
+            checked: typeof element.checked === 'boolean' ? element.checked : null,
+          });
+          const labels = [];
+          const controls = [];
+          const embedded = [];
+          let visited = 0;
+          const visit = (node) => {
+            if (++visited > 4_000) return;
+            if (node.nodeType === Node.TEXT_NODE && labels.length < 4 &&
+              knownLabels.has(node.textContent?.trim())) {
+              const ancestry = [];
+              const nearbyControls = [];
+              for (let element = node.parentElement; element && ancestry.length < 5;
+                element = element.parentElement ?? element.getRootNode().host ?? null) {
+                ancestry.push(describe(element));
+                if (ancestry.length <= 3) {
+                  const candidates = element.querySelectorAll(
+                    'input, button, [role="switch"], [role="checkbox"], fluent-switch, cr-toggle'
+                  );
+                  for (const candidate of Array.from(candidates).slice(0, 8)) {
+                    if (nearbyControls.length < 16) nearbyControls.push(describe(candidate));
+                  }
+                }
+              }
+              labels.push({ ancestry, nearbyControls });
+            }
+            if (node instanceof Element) {
+              const tag = node.tagName.toLowerCase();
+              if (controls.length < 64 &&
+                (/switch|toggle|checkbox/u.test(tag) ||
+                  ['input', 'button'].includes(tag) ||
+                  ['switch', 'checkbox'].includes(node.getAttribute('role')))) {
+                controls.push(describe(node));
+              }
+              if (embedded.length < 16 && ['iframe', 'webview', 'object'].includes(tag)) {
+                embedded.push(describe(node));
+              }
+              if (node.shadowRoot) visit(node.shadowRoot);
+            }
+            for (const child of node.childNodes) {
+              if (visited >= 4_000) break;
+              visit(child);
+            }
+          };
+          visit(document.documentElement);
+          return { readyState: document.readyState, visitedNodes: visited,
+            labelMatches: labels, controls, embedded };
+        });
+      } catch (error) {
+        summary.errorType = error instanceof Error ? error.name : typeof error;
+      }
+      return summary;
+    }));
+  } catch (error) {
+    diagnostics.frameErrorType = error instanceof Error ? error.name : typeof error;
+  }
+  try {
+    const snapshot = await page.locator('body').ariaSnapshot({ timeout: 5_000 });
+    const safe = snapshot.replace(/[A-Za-z]:\\[^\n]*/gu, '[path]')
+      .replace(/https?:\/\/[^\s"']+/gu, '[url]');
+    const lines = safe.split('\n');
+    const labelIndex = lines.findIndex((line) =>
+      line.includes('사용자 스크립트 허용') || line.includes('Allow user scripts'));
+    diagnostics.ariaSnapshot = { head: safe.slice(0, 512),
+      labelContext: labelIndex < 0 ? null
+        : lines.slice(Math.max(0, labelIndex - 2), labelIndex + 3).join('\n').slice(0, 1_024) };
+  } catch (error) {
+    diagnostics.ariaSnapshotErrorType = error instanceof Error ? error.name : typeof error;
   }
   await writeFile(join(output, 'userscript-manager-permission.json'), JSON.stringify(diagnostics, null, 2));
 }

@@ -155,6 +155,7 @@ const userscriptInstall = (await import(
   probeManagerUserScripts(page: { evaluate(callback: () => Promise<unknown>): Promise<unknown> }):
     Promise<{ available: boolean; registeredScriptCount?: number; errorType?: string }>;
   hasKnownChromeUserScriptsLabel(text: string): boolean;
+  summarizeManagerFrameUrl(value: string, managerId: string): string | null;
   findEdgeUserScriptsControl(page: { getByRole(role: string, options: { name: RegExp }): {
     count(): Promise<number>; isVisible(): Promise<boolean>;
   } }): Promise<unknown>;
@@ -232,6 +233,21 @@ describe('Windows X live page validation', () => {
     expect(userscriptInstall.hasKnownChromeUserScriptsLabel('Allow user scripts')).toBe(true);
     expect(userscriptInstall.hasKnownChromeUserScriptsLabel('InPrivate에서 허용')).toBe(false);
     expect(userscriptInstall.hasKnownChromeUserScriptsLabel('Not Allow user scripts')).toBe(false);
+  });
+
+  it('keeps permission-diagnostic frame URLs on owned origins without query tokens', () => {
+    expect(userscriptInstall.summarizeManagerFrameUrl(
+      'edge://extensions/?id=owned&secret=ignored', 'owned'
+    )).toBe('edge://extensions/');
+    expect(userscriptInstall.summarizeManagerFrameUrl(
+      'chrome-extension://owned/options.html?token=ignored#part', 'owned'
+    )).toBe('chrome-extension://owned/options.html');
+    expect(userscriptInstall.summarizeManagerFrameUrl(
+      'chrome-extension://other/options.html?token=ignored', 'owned'
+    )).toBeNull();
+    expect(userscriptInstall.summarizeManagerFrameUrl(
+      'https://private.example/path?token=ignored', 'owned'
+    )).toBeNull();
   });
 
   it('keeps same-document userscript phases on distinct media cache keys with stable ZIP entries', () => {
