@@ -986,7 +986,7 @@ export async function inspectFirstCurrentDownload(page) {
   return page.url() === FIXTURE_URL ? observation : { scope: 'navigated-away' };
 }
 
-const MANAGER_CONSOLE_BRANCHES = ['permission_boolean', 'not_supported_branch',
+const MANAGER_CONSOLE_BRANCHES = ['permission_true', 'permission_false', 'not_supported_branch',
   'not_permitted_branch', 'download_failed_branch', 'not_whitelisted_branch',
   'native_interrupted_branch', 'native_query_failed_branch'];
 const MANAGER_BACKGROUND_SHA256 = '7377109daee3340f6f1f89d06f8099e92583229231b25d0f950653a63fb7dd32';
@@ -997,8 +997,8 @@ export function classifyManagerDownloadConsole(value) {
   const offset = value.indexOf('downs: ');
   if (offset < 0 || offset > 64) return null;
   const line = value.slice(offset);
-  if (/^downs: permission to use downloads -> (?:true|false)$/u.test(line))
-    return 'permission_boolean';
+  if (line === 'downs: permission to use downloads -> true') return 'permission_true';
+  if (line === 'downs: permission to use downloads -> false') return 'permission_false';
   if (/^downs: (?:this download mode is not supported|invalid transferable|can't get URL from transferable)$/u.test(line))
     return 'not_supported_branch';
   if (line === 'downs: download permission is missing') return 'not_permitted_branch';

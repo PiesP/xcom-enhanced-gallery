@@ -834,15 +834,22 @@ describe('Windows X live page validation', () => {
       worker.emit('console', { text: () =>
         'downs: download of secret.jpg (https://secret.example/?token=abc) failed NETWORK_FAILED' });
       worker.emit('console', { text: () => 'downs: download permission is missing' });
+      worker.emit('console', { text: () => 'downs: permission to use downloads -> true' });
+      worker.emit('console', { text: () => 'downs: permission to use downloads -> false' });
       const receipt = watcher.snapshotSince(before);
-      expect(receipt).toMatchObject({ status: 'known-branch-observed', matchedEvents: 2,
+      expect(receipt).toMatchObject({ status: 'known-branch-observed', matchedEvents: 4,
         availability: 'attached-before-click',
-        branchCounts: { native_interrupted_branch: 1, not_permitted_branch: 1 },
+        branchCounts: { native_interrupted_branch: 1, not_permitted_branch: 1,
+          permission_true: 1, permission_false: 1 },
         workersAttachedBeforeClick: 1, workersAttachedAfterClick: 1,
         attachmentOverflow: false, messageOverflow: false, eventOverflow: false });
       expect(JSON.stringify(receipt)).not.toMatch(/secret|token|NETWORK_FAILED|https?:/u);
       expect(userscriptInstall.classifyManagerDownloadConsole(
-        'downs: permission to use downloads -> false')).toBe('permission_boolean');
+        'downs: permission to use downloads -> true')).toBe('permission_true');
+      expect(userscriptInstall.classifyManagerDownloadConsole(
+        'downs: permission to use downloads -> false')).toBe('permission_false');
+      expect(userscriptInstall.classifyManagerDownloadConsole(
+        'downs: permission to use downloads -> private')).toBeNull();
       expect(userscriptInstall.classifyManagerDownloadConsole('downs: download failed'))
         .toBe('download_failed_branch');
       expect(userscriptInstall.classifyManagerDownloadConsole('downs: "private" is not whitelisted'))
