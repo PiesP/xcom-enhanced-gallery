@@ -181,8 +181,14 @@ describe('Windows X live page validation', () => {
       expect(html).toContain(`[data-fixture-phase="${phase}"] [data-phase]:not([data-phase="${phase}"])`);
       const article = html.match(new RegExp(`<article data-route="classic" data-phase="${phase}"[\\s\\S]*?</article>`, 'u'));
       expect(article, `Missing ${phase} article`).not.toBeNull();
-      const actual = [...(article?.[0] ?? '').matchAll(/pbs\.twimg\.com\/media\/([A-Za-z0-9]+)\.jpg/gu)]
-        .map((match) => match[1]);
+      const phaseDocument = new DOMParser().parseFromString(article?.[0] ?? '', 'text/html');
+      const actual = [...phaseDocument.querySelectorAll('img[src]')].map((image) => {
+        const url = new URL(image.getAttribute('src') ?? '');
+        expect(url.origin).toBe('https://pbs.twimg.com');
+        const mediaPath = url.pathname.match(/^\/media\/([A-Za-z0-9]+)\.jpg$/u);
+        expect(mediaPath).not.toBeNull();
+        return mediaPath?.[1];
+      });
       expect(actual).toEqual(markers);
       allMarkers.push(...markers);
     }
