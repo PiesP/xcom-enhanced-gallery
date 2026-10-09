@@ -94,7 +94,7 @@ type LivePageModule = {
     pageErrors: unknown[];
     pageErrorOverflow: number;
   }): string[];
-  captureActivationFocusDocument(surface: HTMLElement, expected: {
+  captureActivationFocusDocument(surface: Element, expected: {
     articleIndex: number;
     point: { x: number; y: number };
   }): { readonly focus: HTMLElement | null; readonly captured: boolean; dispose(): void };
@@ -1855,6 +1855,68 @@ describe('Windows X live page validation', () => {
         focusedControlStillOwnsClick: undefined,
       })).toBe(true);
     } finally {
+      Reflect.deleteProperty(document, 'elementsFromPoint');
+    }
+  });
+
+  it('captures a trusted activation on the verified sibling play control of an unmarked poster', () => {
+    document.body.innerHTML = `<article><div class="unmarked-media">
+      <img src="https://pbs.twimg.com/amplify_video_thumb/456/img/b.jpg">
+      <button id="play"><svg><path></path></svg></button>
+      <button id="changed">Changed media control</button>
+    </div><button id="adjacent">Adjacent</button></article>
+    <article><button id="foreign">Foreign</button></article>`;
+    const image = document.querySelector<HTMLImageElement>('img');
+    const play = document.querySelector<HTMLButtonElement>('#play');
+    const icon = play?.querySelector<SVGElement>('svg');
+    const changed = document.querySelector<HTMLButtonElement>('#changed');
+    const adjacent = document.querySelector<HTMLButtonElement>('#adjacent');
+    const foreign = document.querySelector<HTMLButtonElement>('#foreign');
+    if (!image || !play || !icon || !changed || !adjacent || !foreign) {
+      throw new Error('Unmarked poster control fixture missing');
+    }
+    image.getBoundingClientRect = () => ({
+      bottom: 200, height: 100, left: 0, right: 200, toJSON: () => ({}),
+      top: 100, width: 200, x: 0, y: 100,
+    });
+    let top: Element = icon;
+    Object.defineProperty(document, 'elementsFromPoint', {
+      configurable: true, value: () => [top],
+    });
+    const add = vi.spyOn(window, 'addEventListener');
+    let capture: ReturnType<LivePageModule['captureActivationFocusDocument']> | undefined;
+    try {
+      const point = { x: 40, y: 120 };
+      const posterPath = '/amplify_video_thumb/456/img/b.jpg';
+      expect(livePage.inspectHitTestedVideoActionDocument(image, { posterPath }))
+        .toMatchObject({ inQuote: false, nativePlay: { ...point, mediaScopeDepth: 1 } });
+      const control = livePage.findHitTestedVideoControlDocument(image, { ...point, posterPath });
+      expect(control).toBe(play);
+      expect(livePage.findHitTestedVideoControlDocument(image, { ...point,
+        posterPath: '/amplify_video_thumb/999/img/other.jpg' })).toBeNull();
+      control?.focus();
+      expect(document.activeElement).toBe(play);
+      expect(livePage.findActivationHitDocument(image, { articleIndex: 0, point })).toBeNull();
+      const hit = livePage.findActivationHitDocument(play, { articleIndex: 0, point });
+      expect(hit).toBe(icon);
+      if (!(hit instanceof Element)) throw new Error('Activation hit missing');
+      capture = livePage.captureActivationFocusDocument(hit, { articleIndex: 0, point });
+      const listener = add.mock.calls.find(([type]) => type === 'click')?.[1];
+      if (typeof listener !== 'function') throw new Error('Activation listener missing');
+      listener({ isTrusted: false, button: 0, clientX: point.x, clientY: point.y,
+        target: icon } as unknown as MouseEvent);
+      expect(capture.captured).toBe(false);
+      listener({ isTrusted: true, button: 0, clientX: point.x, clientY: point.y,
+        target: icon } as unknown as MouseEvent);
+      expect(capture.captured).toBe(true);
+      expect(capture.focus).toBe(play);
+      for (const other of [changed, adjacent, foreign]) {
+        top = other;
+        expect(livePage.findActivationHitDocument(play, { articleIndex: 0, point })).toBeNull();
+      }
+    } finally {
+      capture?.dispose();
+      add.mockRestore();
       Reflect.deleteProperty(document, 'elementsFromPoint');
     }
   });
