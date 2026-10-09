@@ -171,6 +171,7 @@ test('synthetic gallery input has no effect while real keyboard and button input
   await page.keyboard.press('Enter');
   await expect(gallery).toHaveCount(0);
   await trigger.click();
+  await expect(gallery).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(gallery).toHaveCount(0);
 });
