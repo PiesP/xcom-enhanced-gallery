@@ -256,15 +256,16 @@ task-owned HTTPS listener on ephemeral `127.0.0.1` before launching the fresh
 profile. A one-run SPKI exception and exact `pbs.twimg.com:443` host mapping let
 the real manager and browser download API fetch only the declared fixture JPEGs.
 The generated private key stays in process memory; no OS trust or hosts setting
-is changed. Browser-level CDP download
-events establish `completed` for each unique GUID without manager API permissions;
-the only new owned file is then read independently. The independent ZIP reader
-checks stored entries, central directory, order, CRCs, names, and bytes. Browser
-download progress must report `completed` before file bytes are read. On a first
-single-download failure, the runner also compares exact-URL manager download
-history before and after the click. It records only bounded IDs, states,
-interrupt reasons, and expected-name matches; unavailable or ambiguous history
-remains unknown without replacing the original failure. A completed
+is changed. For each single image, a read-only query from the exact manager
+options page requires one new native download ID for the fixture URL, a complete
+state, the exact owned saved path and name, and the expected file size. The
+only new owned file is then read and checked against the fixture bytes. CDP
+download events are checked when present for these manager API downloads, but
+their absence is recorded separately. ZIPs still require browser-level CDP
+`completed` for each unique GUID and an independently read owned file. The ZIP
+reader checks stored entries, central directory, order, CRCs, names, and bytes.
+Queries return only bounded IDs, states, interrupt enums, and match booleans;
+unavailable or ambiguous history fails the native completion gate. A completed
 native save does not release the userscript's page-owned Blob reservation: that
 reservation remains until genuine page teardown. Gallery reopen alone cannot
 recover it. The 512 MiB ledger covers all live reservations, so it is not a

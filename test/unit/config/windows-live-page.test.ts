@@ -190,11 +190,15 @@ const userscriptInstall = (await import(
   inspectFirstCurrentDownload(page: { url(): string;
     evaluate(callback: (url: string) => unknown, url: string): Promise<unknown> }): Promise<unknown>;
   inspectManagerDownloadHistoryDocument(args: { managerId: string; fixtureUrl: string;
-    expectedName: string }): Promise<{ status: string; items: Array<{ id: number; state: string;
-      interruptReason: string | null; requestedNameMatch: boolean; fixtureUrlMatch: boolean }> }>;
+    expectedName: string; expectedPath: string; expectedBytes: number }): Promise<{
+      status: string; items: Array<{ id: number; state: string; interruptReason: string | null;
+        requestedNameMatch: boolean; ownedPathMatch: boolean; expectedSizeMatch: boolean;
+        fixtureUrlMatch: boolean }> }>;
   firstCurrentManagerDownloadHistory(before: { status: string; items: Array<{ id: number }> },
     after: { status: string; items: Array<{ id: number }> }): { status: string;
       items: Array<{ id: number }> };
+  selectCompletedManagerDownload(before: unknown, after: unknown):
+    { nativeId: number; nativeState: string; completionSource: string } | undefined;
   runUserscriptInstallation(options: { browserName: string; chromium: unknown; root: string;
     output: string; headless: boolean }): Promise<unknown>;
   classifyManagerDownloadConsole(value: unknown): string | null;
@@ -1040,8 +1044,9 @@ describe('Windows X live page validation', () => {
   it('limits manager history to the exact first fixture request and redacts native fields', async () => {
     const fixtureUrl = 'https://pbs.twimg.com/media/GkE1234ABCDEF.jpg?format=jpg&name=large';
     const expectedName = 'testuser_1234567890123456789_0.jpg';
+    const expectedPath = `C:\\owned\\${expectedName}`;
     const search = vi.fn(async () => [
-      { id: 11, url: fixtureUrl, filename: `C:\\owned\\${expectedName}`,
+      { id: 11, url: fixtureUrl, filename: expectedPath, fileSize: 4237,
         state: 'interrupted', error: 'NETWORK_FAILED', finalUrl: 'https://secret.example/',
         byExtensionId: 'secret-id', referrer: 'https://private.example/' },
       { id: 12, url: `${fixtureUrl}&other=1`, filename: 'C:\\private\\file.jpg',
@@ -1051,11 +1056,12 @@ describe('Windows X live page validation', () => {
     vi.stubGlobal('chrome', { downloads: { search } });
     try {
       const observation = await userscriptInstall.inspectManagerDownloadHistoryDocument({
-        managerId: 'manager', fixtureUrl, expectedName });
+        managerId: 'manager', fixtureUrl, expectedName, expectedPath, expectedBytes: 4237 });
       expect(search).toHaveBeenCalledWith({ url: fixtureUrl, limit: 9 });
       expect(observation).toEqual({ status: 'observed', items: [{ id: 11,
         state: 'interrupted', interruptReason: 'NETWORK_FAILED',
-        requestedNameMatch: true, fixtureUrlMatch: true }] });
+        requestedNameMatch: true, ownedPathMatch: true, expectedSizeMatch: true,
+        fixtureUrlMatch: true }] });
       expect(JSON.stringify(observation)).not.toMatch(/private|secret|chrome-extension|pbs\.twimg/u);
       expect(userscriptInstall.firstCurrentManagerDownloadHistory(
         { status: 'observed', items: [] }, observation)).toMatchObject({
@@ -1069,7 +1075,7 @@ describe('Windows X live page validation', () => {
 
   it('marks incomplete or ambiguous manager history unknown without leaking items', async () => {
     const args = { managerId: 'manager', fixtureUrl: 'https://pbs.twimg.com/media/first.jpg',
-      expectedName: 'first.jpg' };
+      expectedName: 'first.jpg', expectedPath: 'C:\\owned\\first.jpg', expectedBytes: 5 };
     vi.stubGlobal('location', { href: 'chrome-extension://manager/options.html' });
     vi.stubGlobal('chrome', { downloads: { search: vi.fn(async () => Array.from({ length: 9 },
       (_, id) => ({ id, url: args.fixtureUrl, state: 'complete', filename: 'first.jpg' }))) } });
@@ -1082,6 +1088,54 @@ describe('Windows X live page validation', () => {
       expect(userscriptInstall.firstCurrentManagerDownloadHistory(
         { status: 'observed', items: [] }, { status: 'observed', items: [{ id: 1 }, { id: 2 }] }))
         .toEqual({ status: 'ambiguous', baselineCount: 0, items: [] });
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('requires one fresh complete native item with exact owned filename, path, and size', () => {
+    const valid = { id: 2, state: 'complete', interruptReason: null,
+      fixtureUrlMatch: true, requestedNameMatch: true, ownedPathMatch: true,
+      expectedSizeMatch: true };
+    const baseline = { status: 'observed', items: [{ ...valid, id: 1 }] };
+    const after = (items: unknown[]) => ({ status: 'observed', items });
+    expect(userscriptInstall.selectCompletedManagerDownload(baseline,
+      after([{ ...valid, id: 1 }]))).toBeUndefined();
+    expect(userscriptInstall.selectCompletedManagerDownload(baseline,
+      after([{ ...valid, id: 1 }, { ...valid, state: 'in_progress' }]))).toBeUndefined();
+    expect(userscriptInstall.selectCompletedManagerDownload(baseline,
+      after([{ ...valid, id: 1 }, valid]))).toEqual({ nativeId: 2,
+      nativeState: 'complete', completionSource: 'chrome.downloads.search' });
+    expect(() => userscriptInstall.selectCompletedManagerDownload(baseline,
+      after([{ ...valid, id: 1 }, valid, { ...valid, id: 3 }]))).toThrow(/multiple/u);
+    for (const changed of [{ requestedNameMatch: false }, { ownedPathMatch: false },
+      { expectedSizeMatch: false }, { fixtureUrlMatch: false },
+      { state: 'interrupted', interruptReason: 'NETWORK_FAILED' }]) {
+      expect(() => userscriptInstall.selectCompletedManagerDownload(baseline,
+        after([{ ...valid, id: 1 }, { ...valid, ...changed }]))).toThrow();
+    }
+    expect(() => userscriptInstall.selectCompletedManagerDownload(baseline,
+      { status: 'overflow', items: [] })).toThrow(/unavailable/u);
+  });
+
+  it('projects exact native path and size matches without returning private fields', async () => {
+    const fixtureUrl = 'https://pbs.twimg.com/media/GkE1234ABCDEF.jpg?format=jpg&name=large';
+    const expectedName = 'first (1).jpg';
+    const expectedPath = `C:\\owned\\${expectedName}`;
+    vi.stubGlobal('location', { href: 'chrome-extension://manager/options.html' });
+    vi.stubGlobal('chrome', { downloads: { search: vi.fn(async () => [
+      { id: 1, url: fixtureUrl, filename: 'C:\\other\\first (1).jpg', fileSize: 5,
+        state: 'complete', byExtensionId: 'private-extension' },
+      { id: 2, url: fixtureUrl, filename: expectedPath, fileSize: 4, state: 'complete' },
+    ]) } });
+    try {
+      const result = await userscriptInstall.inspectManagerDownloadHistoryDocument({
+        managerId: 'manager', fixtureUrl, expectedName, expectedPath, expectedBytes: 5 });
+      expect(result.items).toMatchObject([
+        { id: 1, requestedNameMatch: true, ownedPathMatch: false, expectedSizeMatch: true },
+        { id: 2, requestedNameMatch: true, ownedPathMatch: true, expectedSizeMatch: false },
+      ]);
+      expect(JSON.stringify(result)).not.toMatch(/C:\\\\|private-extension|pbs\.twimg/u);
     } finally {
       vi.unstubAllGlobals();
     }

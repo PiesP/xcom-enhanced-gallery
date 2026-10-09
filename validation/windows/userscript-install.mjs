@@ -580,7 +580,8 @@ async function captureManagerDownloadsPermission(context, managerId) {
 }
 
 /** Run only in the owned manager options page; return no download URL or local path. */
-export async function inspectManagerDownloadHistoryDocument({ managerId, fixtureUrl, expectedName }) {
+export async function inspectManagerDownloadHistoryDocument({ managerId, fixtureUrl, expectedName,
+  expectedPath, expectedBytes }) {
   const current = new URL(location.href);
   if (current.protocol !== 'chrome-extension:' || current.hostname !== managerId ||
       current.pathname !== '/options.html' || current.search || current.hash) {
@@ -614,10 +615,14 @@ export async function inspectManagerDownloadHistoryDocument({ managerId, fixture
     }
     const nameMatch = typeof item.filename === 'string' &&
       item.filename.split(/[\\/]/u).at(-1) === expectedName;
+    const pathMatch = typeof item.filename === 'string' &&
+      item.filename.replaceAll('/', '\\').toLowerCase() ===
+        expectedPath.replaceAll('/', '\\').toLowerCase();
     items.push({ id: item.id, state: item.state,
       interruptReason: item.error === undefined ? null
         : reasons.has(item.error) ? item.error : 'unknown',
-      requestedNameMatch: nameMatch, fixtureUrlMatch: true });
+      requestedNameMatch: nameMatch, ownedPathMatch: pathMatch,
+      expectedSizeMatch: item.fileSize === expectedBytes, fixtureUrlMatch: true });
   }
   if (new Set(items.map(({ id }) => id)).size !== items.length) {
     return { status: 'ambiguous-ids', items: [] };
@@ -625,7 +630,7 @@ export async function inspectManagerDownloadHistoryDocument({ managerId, fixture
   return { status: 'observed', items };
 }
 
-async function captureManagerDownloadHistory(context, managerId) {
+async function captureManagerDownloadHistory(context, managerId, downloads, savedName, expectedBytes) {
   let page;
   try {
     page = await context.newPage();
@@ -635,7 +640,8 @@ async function captureManagerDownloadHistory(context, managerId) {
       return { status: 'unowned-page', items: [] };
     }
     const result = await page.evaluate(inspectManagerDownloadHistoryDocument,
-      { managerId, fixtureUrl: FIRST_MEDIA_URL, expectedName: filename(0) });
+      { managerId, fixtureUrl: FIRST_MEDIA_URL, expectedName: savedName,
+        expectedPath: join(downloads, savedName), expectedBytes });
     if (!isOwnedManagerOptionsUrl(page.url(), managerId)) {
       return { status: 'unowned-page', items: [] };
     }
@@ -657,6 +663,25 @@ export function firstCurrentManagerDownloadHistory(before, after) {
   const items = after.items.filter(({ id }) => !seen.has(id));
   return { status: items.length > 1 ? 'ambiguous' : 'observed',
     baselineCount: before.items.length, items: items.length > 1 ? [] : items };
+}
+
+/** Each action must produce one new, complete native item with the exact saved file. */
+export function selectCompletedManagerDownload(before, after) {
+  assert.equal(before.status, 'observed', 'Native download baseline is unavailable');
+  assert.equal(after.status, 'observed', 'Native download history is unavailable');
+  const seen = new Set(before.items.map(({ id }) => id));
+  const created = after.items.filter(({ id }) => !seen.has(id));
+  assert(created.length <= 1, 'One action created multiple native download items');
+  if (!created.length) return undefined;
+  const item = created[0];
+  if (item.state === 'in_progress') return undefined;
+  assert.equal(item.state, 'complete', 'Native download did not complete');
+  assert.equal(item.interruptReason, null, 'Completed native download has an interrupt reason');
+  assert.equal(item.fixtureUrlMatch, true, 'Native download URL differs');
+  assert.equal(item.requestedNameMatch, true, 'Native saved filename differs');
+  assert.equal(item.ownedPathMatch, true, 'Native download escaped the owned directory');
+  assert.equal(item.expectedSizeMatch, true, 'Native download size differs');
+  return { nativeId: item.id, nativeState: 'complete', completionSource: 'chrome.downloads.search' };
 }
 
 async function captureManagerPermissionDiagnostics(page, detailsUrl, output, probe) {
@@ -977,25 +1002,55 @@ export function createBrowserDownloadObserver(cdp) {
 async function waitForDownload(observer, since, beforeFiles, requestedName, savedName,
   downloads, expectedBytes) {
   const item = await observer.waitForCompletion(since, requestedName, savedName);
+  const source = requestedName.endsWith('.zip')
+    ? requirePageBlobZipSource(item.url) : summarizeDownloadUrl(item.url);
+  if (item.filePath !== null) {
+    assert(resolve(item.filePath) === resolve(downloads, savedName),
+      'CDP completed a file outside the exact owned download path');
+  }
+  const bytes = await readOwnedDownload(beforeFiles, savedName, downloads, expectedBytes);
+  return { guid: item.guid, requestedName, filename: savedName, source,
+    bytes, sha256: sha256(bytes),
+    nativeState: item.state, browserBytesReceived: item.receivedBytes };
+}
+
+async function readOwnedDownload(beforeFiles, savedName, downloads, expectedBytes) {
   const added = await waitFor(async () => {
     const names = await readdir(downloads);
     const newNames = names.filter((name) => !beforeFiles.has(name) && !name.endsWith('.crdownload'));
     assert(newNames.length <= 1, `One action saved ${newNames.length} files`);
     return newNames.length ? newNames : undefined;
   }, `native saved file for ${savedName}`);
-  assert.deepEqual(added, [savedName], 'Native saved filename differs');
-  const source = requestedName.endsWith('.zip')
-    ? requirePageBlobZipSource(item.url) : summarizeDownloadUrl(item.url);
-  if (item.filePath !== null) {
-    assert.equal(resolve(item.filePath), resolve(downloads, savedName),
-      'CDP completed a file outside the exact owned download path');
-  }
+  assert(added.length === 1 && added[0] === savedName, 'Native saved filename differs');
   const { bytes } = await readExactDownloadFile(join(downloads, savedName), expectedBytes);
   assert.equal((await readdir(downloads)).filter((name) => name.endsWith('.crdownload')).length,
     0, 'Partial native download remained');
-  return { guid: item.guid, requestedName, filename: savedName, source,
-    bytes, sha256: sha256(bytes),
-    nativeState: item.state, browserBytesReceived: item.receivedBytes };
+  return bytes;
+}
+
+async function waitForManagerDownload(context, managerId, observer, since, beforeFiles,
+  historyBefore, requestedName, savedName, downloads, expectedBytes) {
+  const native = await waitFor(async () => selectCompletedManagerDownload(historyBefore,
+    await captureManagerDownloadHistory(context, managerId, downloads, savedName, expectedBytes)),
+  `native manager completion of ${savedName}`, 30_000);
+  const bytes = await readOwnedDownload(beforeFiles, savedName, downloads, expectedBytes);
+  await observer.flush();
+  const cdpCount = observer.snapshot() - since;
+  assert(cdpCount <= 1, 'One manager action created multiple CDP downloads');
+  const cdpItem = cdpCount
+    ? await observer.waitForCompletion(since, requestedName, savedName) : null;
+  if (cdpItem) {
+    assert(cdpItem.url === FIRST_MEDIA_URL, 'Manager CDP download URL differs');
+    assert.equal(cdpItem.receivedBytes, expectedBytes, 'Manager CDP received byte count differs');
+    if (cdpItem.filePath !== null) {
+      assert(resolve(cdpItem.filePath) === resolve(downloads, savedName),
+        'Manager CDP completed outside the owned download path');
+    }
+  }
+  return { ...native, guid: cdpItem?.guid ?? null, requestedName, filename: savedName,
+    source: summarizeDownloadUrl(FIRST_MEDIA_URL), bytes, sha256: sha256(bytes),
+    browserBytesReceived: cdpItem?.receivedBytes ?? null,
+    cdpObservation: cdpItem ? 'completed' : 'absent' };
 }
 
 function browserFilename(name, duplicate) {
@@ -1287,15 +1342,17 @@ async function runFixture(context, observer, root, output, downloads, images, lo
     for (let repetition = 0; repetition < 2; repetition++) {
       const singleSince = observer.snapshot();
       const singleBefore = new Set(await readdir(downloads));
-      const historyBefore = repetition === 0
-        ? await captureManagerDownloadHistory(context, managerId) : null;
+      const savedSingleName = browserFilename(filename(0), repetition);
+      const historyBefore = await captureManagerDownloadHistory(context, managerId,
+        downloads, savedSingleName, images[0].length);
+      assert.equal(historyBefore.status, 'observed', 'Native download baseline is unavailable');
       const consoleBefore = repetition === 0 ? managerConsole.mark() : null;
       const singleTransportStart = loopback.mark();
       let single;
       try {
         await current.click();
-        single = await waitForDownload(observer, singleSince, singleBefore,
-          filename(0), browserFilename(filename(0), repetition), downloads, images[0].length);
+        single = await waitForManagerDownload(context, managerId, observer, singleSince,
+          singleBefore, historyBefore, filename(0), savedSingleName, downloads, images[0].length);
       } catch (error) {
         if (repetition === 0) {
           const managerConsoleClick = managerConsole.snapshotSince(consoleBefore);
@@ -1305,7 +1362,8 @@ async function runFixture(context, observer, root, output, downloads, images, lo
             managerDownloadsPermission: await captureManagerDownloadsPermission(context, managerId),
             managerConsole: managerConsoleClick,
             managerDownloadHistory: firstCurrentManagerDownloadHistory(historyBefore,
-              await captureManagerDownloadHistory(context, managerId)),
+              await captureManagerDownloadHistory(context, managerId, downloads,
+                savedSingleName, images[0].length)),
           };
         }
         throw error;
@@ -1438,10 +1496,15 @@ async function runFixture(context, observer, root, output, downloads, images, lo
     await gallery.waitFor({ state: 'visible' });
     const recoverySince = observer.snapshot();
     const recoveryBefore = new Set(await readdir(downloads));
+    const recoveryName = browserFilename(filename(0), 2);
+    const recoveryHistoryBefore = await captureManagerDownloadHistory(context, managerId,
+      downloads, recoveryName, images[0].length);
+    assert.equal(recoveryHistoryBefore.status, 'observed',
+      'Recovery native download baseline is unavailable');
     const recoveryTransportStart = loopback.mark();
     await current.click();
-    const recovered = await waitForDownload(observer, recoverySince, recoveryBefore,
-      filename(0), browserFilename(filename(0), 2), downloads, images[0].length);
+    const recovered = await waitForManagerDownload(context, managerId, observer, recoverySince,
+      recoveryBefore, recoveryHistoryBefore, filename(0), recoveryName, downloads, images[0].length);
     assert(recovered.bytes.equals(images[0]), 'Reload recovery saved bytes differ');
     const recoveredTransport = await waitFor(() =>
       loopback.findSince(recoveryTransportStart, 'normal', 0, 'served'),
@@ -1452,8 +1515,8 @@ async function runFixture(context, observer, root, output, downloads, images, lo
     await observer.flush();
     assert.equal(result.routeFailures.length + result.routeFailureOverflow, 0,
       'Fixture route failed');
-    assert.equal(observer.snapshot(), result.downloads.length,
-      'Unexpected native download count');
+    assert.equal(observer.snapshot(), result.downloads.filter((download) => download.guid).length,
+      'Unexpected CDP download count');
     const loopbackResult = loopback.snapshot();
     assert.equal(loopbackResult.unexpectedCount, 0, 'Unexpected loopback request');
     assert.equal(loopbackResult.overflow, false, 'Loopback fixture exceeded bounds');
@@ -1505,7 +1568,7 @@ export async function runUserscriptInstallation({ chromium, root, output, browse
   const result = { status: 'failed', browserName, installation: 'userscript',
     installationMethod: 'real-manager-ui-import', sourceSha256: sha256(source),
     profileId: 'xeg-gallery', profilePrefix: PROFILE_PREFIX,
-    scope: 'small HTTPS loopback fixture; CDP native completion and saved bytes; no heap/RSS or native Save As claim',
+    scope: 'small HTTPS loopback fixture; singles require native downloads.search completion and owned saved bytes; ZIPs require CDP completion and owned saved bytes; no heap/RSS or native Save As claim',
     cleanup: {} };
   let context;
   let cdp;
