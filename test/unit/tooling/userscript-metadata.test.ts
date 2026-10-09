@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 PiesP
 
-import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { Script } from 'node:vm';
 import { describe, expect, it } from 'vitest';
 import { TWITTER_API_CONFIG } from '@shared/core/twitter-api/endpoint';
 import { buildSummaryPlugin } from '../../../tooling/vite/plugins/build-summary.ts';
-import { DISTRIBUTION_NOTICE_PATHS } from '../../../tooling/vite/utils/distribution-licenses.ts';
+import { DISTRIBUTION_NOTICE_PATHS, readDistributionNotices, readRegularNoticeFile } from '../../../tooling/vite/utils/distribution-licenses.ts';
 import {
   generateMetaOnlyHeader,
   generateUserscriptHeader,
@@ -29,6 +29,24 @@ function userscriptBundle(root: string, isDev: boolean): { code: string } {
 }
 
 describe('userscript release metadata provenance', () => {
+  it('reads canonical notice bytes from a held regular-file descriptor', () => {
+    const root = mkdtempSync(join(tmpdir(), 'xeg-notice-descriptor-'));
+    try {
+      const source = join(root, 'LICENSE');
+      copyFileSync(join(projectRoot, 'LICENSE'), source);
+      expect(readRegularNoticeFile(source)).toEqual(readFileSync(join(projectRoot, 'LICENSE')));
+      expect(() => readRegularNoticeFile(root)).toThrow();
+      if (process.platform !== 'win32') {
+        const linked = join(root, 'linked');
+        symlinkSync(source, linked);
+        expect(() => readRegularNoticeFile(linked)).toThrow();
+      }
+      expect(() => readDistributionNotices(root)).toThrow(/NOTICE\.md.*missing or invalid/u);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it.each([false, true])('keeps the %s userscript metadata first and embeds every canonical notice',
     (isDev) => {
       const root = mkdtempSync(join(tmpdir(), 'xeg-userscript-notices-'));

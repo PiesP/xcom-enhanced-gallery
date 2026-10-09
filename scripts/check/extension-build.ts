@@ -3,10 +3,13 @@
 // Copyright (c) 2024-2026 PiesP
 
 /** Verify that an extension build contains classic IIFE content code and required assets. */
-import { existsSync, lstatSync, readFileSync, realpathSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readDistributionNotices } from '../../tooling/vite/utils/distribution-licenses.ts';
+import {
+  readDistributionNotices,
+  readRegularNoticeFile,
+} from '../../tooling/vite/utils/distribution-licenses.ts';
 import {
   type ExtensionIconDeclaration,
   readExtensionIconDeclarations,
@@ -88,11 +91,19 @@ export function verifyExtensionBuild(): void {
   try {
     for (const notice of readDistributionNotices(root)) {
       const output = resolve(root, distDir, notice.path);
-      if (!existsSync(output)) {
-        fail(`${distDir}/${notice.path} required distribution notice was not produced`);
-      } else if (!lstatSync(output).isFile()) {
-        fail(`${distDir}/${notice.path} required distribution notice is not a file`);
-      } else if (!readFileSync(output).equals(notice.bytes)) {
+      let bytes: Buffer;
+      try {
+        bytes = readRegularNoticeFile(output);
+      } catch (error: unknown) {
+        const missing = error instanceof Error && 'code' in error && error.code === 'ENOENT';
+        fail(
+          `${distDir}/${notice.path} required distribution notice ${
+            missing ? 'was not produced' : 'is not a stable regular file'
+          }`
+        );
+        continue;
+      }
+      if (!bytes.equals(notice.bytes)) {
         fail(`${distDir}/${notice.path} differs from the canonical source`);
       } else {
         pass(`${notice.path} matches the canonical source`);

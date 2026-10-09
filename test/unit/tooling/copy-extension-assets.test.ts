@@ -6,6 +6,7 @@ import {
   readFileSync,
   readdirSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -199,6 +200,19 @@ describe('extension build asset check', () => {
       const missing = runExtensionBuildCheck(outDir);
       expect(missing.status).toBe(1);
       expect(missing.output).toMatch(/LICENSES\/lucide-ISC\.txt.*was not produced/u);
+      write(outDir, 'LICENSES/lucide-ISC.txt', readFileSync(join(projectRoot, 'LICENSES/lucide-ISC.txt')));
+      rmSync(join(outDir, 'NOTICE.md'));
+      mkdirSync(join(outDir, 'NOTICE.md'));
+      const directory = runExtensionBuildCheck(outDir);
+      expect(directory.status).toBe(1);
+      expect(directory.output).toMatch(/NOTICE\.md.*not a stable regular file/u);
+      rmSync(join(outDir, 'NOTICE.md'), { recursive: true });
+      if (process.platform !== 'win32') {
+        symlinkSync(join(projectRoot, 'NOTICE.md'), join(outDir, 'NOTICE.md'));
+        const linked = runExtensionBuildCheck(outDir);
+        expect(linked.status).toBe(1);
+        expect(linked.output).toMatch(/NOTICE\.md.*not a stable regular file/u);
+      }
     } finally {
       rmSync(outDir, { force: true, recursive: true });
     }
