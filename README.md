@@ -64,11 +64,12 @@ establish all attachments of the post.
 Downloads share an in-page memory allowance for their data. If it is reached,
 wait for active downloads to finish. If none are active and the limit remains,
 reload this page, then try fewer files at once. A userscript save can keep its
-allowance until the page is reloaded or closed. A partial ZIP reports both
-included and omitted file counts. Reopening the gallery does not return the
-userscript allowance, and the shared allowance is not a per-file entitlement.
-See the
-[download ownership contract](./docs/download-memory.md) for its scope.
+allowance until the page is reloaded or closed. A memory-limit partial ZIP
+notification reports included and omitted counts; other partial ZIP
+notifications report the failed-item count. Reopening the gallery does not
+return the userscript allowance, and the shared allowance is not a per-file
+entitlement. See the [download ownership contract](./docs/download-memory.md)
+for its scope.
 
 The gallery targets desktop browsers and does not provide a mobile/touch flow.
 

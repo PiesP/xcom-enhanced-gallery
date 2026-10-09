@@ -17,7 +17,7 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Video controls** — Honor the `allow-all` click setting for a native button in a bounded, identifiable video preview or player without X's player markers.
 - **Current download** — Keep a fully visible selected video active when neighboring media also fits in the gallery. After scrolling changes the displayed item, keep its post text and source link aligned with the download target.
 - **Trusted controls** — Require trusted keyboard and click input before privileged gallery actions. Preserve normal navigation, focus restoration, downloads, and private cancellation binding.
-- **Download ownership** — Share one page-level allowance across retained media, response copies, ZIP work, and Blob handoffs. Reject resource limits without retrying through an unbounded fallback. Partial ZIPs report the exact included and omitted counts.
+- **Download ownership** — Share one page-level allowance across retained media, response copies, ZIP work, and Blob handoffs. Reject resource limits without retrying through an unbounded fallback. Memory-limit partial ZIP notifications report included and omitted counts; other partial ZIP notifications report the failed-item count.
 
 ### Changed
 

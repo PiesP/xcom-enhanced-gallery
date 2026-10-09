@@ -32,9 +32,9 @@ Per-response, entry and serialized-archive limits are additional ceilings.
 The effective admitted size can be lower when another operation or cache owns
 part of the page budget. The ledger deliberately rejects admission instead of
 waiting indefinitely for memory retained by the same archive. Resource-limit
-errors do not retry or start an alternate whole-body download. A partial ZIP
-reports the exact successful/failed counts and retains the resource-limit code;
-an archive with no accepted files is a failure.
+errors do not retry or start an alternate whole-body download. A resource-limit
+partial ZIP reports the exact successful/failed counts and retains the resource-limit
+code; an archive with no accepted files is a failure.
 
 For ordinary completed extension downloads, terminal observation returns the
 reservation and permits subsequent downloads in the same page. An unknown
