@@ -161,6 +161,8 @@ const userscriptInstall = (await import(
   isOwnedManagerDetailsUrl(value: string, detailsUrl: string): boolean;
   isOwnedManagerInspectionUrl(value: string, detailsUrl: string, managerId: string): boolean;
   isOwnedManagerOptionsUrl(value: string, managerId: string): boolean;
+  isOwnedManagerPermissionAskUrl(value: string, managerId: string): boolean;
+  requireManagerDownloadsHeading(actual: string, localizedDownloads: string): void;
   requireManagerUiLabels(labels: Record<string, unknown>): Record<string, string>;
   readManagerUiLabels(page: { url(): string;
     evaluate(callback: (id: string) => unknown, id: string): Promise<unknown> },
@@ -386,6 +388,29 @@ describe('Windows X live page validation', () => {
         .rejects.toThrow('navigated away');
     } finally {
       vi.unstubAllGlobals();
+    }
+  });
+
+  it('matches the bundled Downloads BETA heading in localized options markup', () => {
+    document.body.innerHTML = '<div class="section type_downloads"><div class="section_head">다운로드 BETA</div>' +
+      '<table class="section_content"><tr class="settingstr"><td>다운로드 모드</td>' +
+      '<td><select><option value="chrome">브라우저 API</option></select></td></tr></table></div>';
+    const heading = document.querySelector('.section.type_downloads .section_head');
+    expect(heading).not.toBeNull();
+    expect(() => userscriptInstall.requireManagerDownloadsHeading(
+      heading?.textContent ?? '', '다운로드')).not.toThrow();
+    expect(() => userscriptInstall.requireManagerDownloadsHeading('다운로드', '다운로드'))
+      .toThrow('Manager Downloads section label differs');
+  });
+
+  it('accepts only an owned Tampermonkey permission ask page with its aid', () => {
+    expect(userscriptInstall.isOwnedManagerPermissionAskUrl(
+      'chrome-extension://owned/ask.html?aid=opaque', 'owned')).toBe(true);
+    for (const url of ['chrome-extension://other/ask.html?aid=opaque',
+      'chrome-extension://owned/ask.html', 'chrome-extension://owned/ask.html?aid=opaque&next=x',
+      'chrome-extension://owned/options.html?aid=opaque',
+      'chrome-extension://owned/ask.html?aid=opaque#fragment']) {
+      expect(userscriptInstall.isOwnedManagerPermissionAskUrl(url, 'owned')).toBe(false);
     }
   });
 

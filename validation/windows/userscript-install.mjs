@@ -242,6 +242,20 @@ export function isOwnedManagerOptionsUrl(value, managerId) {
   } catch { return false; }
 }
 
+export function isOwnedManagerPermissionAskUrl(value, managerId) {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'chrome-extension:' && url.hostname === managerId &&
+      url.pathname === '/ask.html' && !url.hash && url.searchParams.size === 1 &&
+      Boolean(url.searchParams.get('aid'));
+  } catch { return false; }
+}
+
+export function requireManagerDownloadsHeading(actual, localizedDownloads) {
+  assert.equal(actual.trim(), `${localizedDownloads} BETA`,
+    'Manager Downloads section label differs');
+}
+
 export function requireManagerUiLabels(labels) {
   assert(labels && typeof labels === 'object' && !Array.isArray(labels),
     'Manager returned invalid UI labels');
@@ -293,7 +307,7 @@ export async function probeManagerDownloadsPermission(page, managerId) {
 }
 
 /** Select Tampermonkey's own Browser API option through its ordinary options UI. */
-export async function configureManagerBrowserDownloads(page, managerId) {
+export async function configureManagerBrowserDownloads(page, managerId, output) {
   assert(isOwnedManagerOptionsUrl(page.url(), managerId),
     'Manager download settings require its owned options page');
   const labels = await page.evaluate((expectedId) => {
@@ -303,7 +317,8 @@ export async function configureManagerBrowserDownloads(page, managerId) {
       throw new Error('Manager options page navigated away');
     }
     return Object.fromEntries(['Settings', 'Config_Mode', 'Beginner', 'Downloads',
-      'Download_Mode', 'Browser_API', 'Whitelisted_File_Extensions', 'Save']
+      'Download_Mode', 'Browser_API', 'Whitelisted_File_Extensions', 'Save',
+      'Browser_API_Downloads', 'Click_here_to_allow_TM_to_start_downloads', 'Ok']
       .map((key) => [key, chrome.i18n.getMessage(key)]));
   }, managerId);
   for (const label of Object.values(labels)) {
@@ -324,8 +339,7 @@ export async function configureManagerBrowserDownloads(page, managerId) {
   const downloads = page.locator('div.section.type_downloads');
   await downloads.waitFor({ state: 'visible', timeout: 10_000 });
   assert.equal(await downloads.count(), 1, 'Expected exactly one manager Downloads section');
-  assert.equal((await downloads.locator('.section_head').innerText()).trim(), labels.Downloads,
-    'Manager Downloads section label differs');
+  requireManagerDownloadsHeading(await downloads.locator('.section_head').innerText(), labels.Downloads);
   const whitelistRow = downloads.locator('tr.settingstr').filter({
     has: page.getByText(labels.Whitelisted_File_Extensions, { exact: true }),
   });
@@ -346,7 +360,30 @@ export async function configureManagerBrowserDownloads(page, managerId) {
   const save = downloads.getByRole('button', { name: labels.Save, exact: true });
   assert.equal(await save.count(), 1, 'Expected exactly one manager Downloads Save button');
   assert.equal(await save.inputValue(), labels.Save, 'Manager Downloads Save label differs');
+  const context = page.context();
+  const permissionWasGranted = await probeManagerDownloadsPermission(page, managerId);
+  const askPromise = permissionWasGranted ? null : context.waitForEvent('page', {
+    timeout: 5_000,
+  }).catch(() => null);
   await save.click();
+  let permissionAskShown = false;
+  let permissionOkClicked = false;
+  const ask = await askPromise;
+  if (ask) {
+    await ask.waitForURL(`chrome-extension://${managerId}/ask.html*`, { timeout: 5_000 });
+    assert(isOwnedManagerPermissionAskUrl(ask.url(), managerId),
+      'Manager permission confirmation navigated away');
+    await ask.getByText(labels.Browser_API_Downloads, { exact: true })
+      .waitFor({ state: 'visible', timeout: 5_000 });
+    await ask.getByText(labels.Click_here_to_allow_TM_to_start_downloads, { exact: true })
+      .waitFor({ state: 'visible', timeout: 5_000 });
+    permissionAskShown = true;
+    assert(isOwnedManagerPermissionAskUrl(ask.url(), managerId),
+      'Manager permission confirmation navigated away');
+    if (output) await ask.screenshot({ path: join(output, 'userscript-manager-download-permission.png') });
+    await ask.getByRole('button', { name: labels.Ok, exact: true }).click();
+    permissionOkClicked = true;
+  }
   await page.reload({ waitUntil: 'domcontentloaded' });
   assert(isOwnedManagerOptionsUrl(page.url(), managerId), 'Manager options page navigated away');
   await page.getByText(labels.Settings, { exact: true }).first().click();
@@ -356,9 +393,10 @@ export async function configureManagerBrowserDownloads(page, managerId) {
   await savedMode.waitFor({ state: 'visible', timeout: 10_000 });
   const observed = await savedMode.inputValue();
   assert.equal(observed, 'chrome', 'Manager Browser API mode did not persist');
+  const downloadsPermissionGranted = await probeManagerDownloadsPermission(page, managerId);
   return { requested: 'chrome', observed, configMode: '50',
-    whitelistJpgZipPresent: true, downloadsPermissionGranted:
-      await probeManagerDownloadsPermission(page, managerId) };
+    whitelistJpgZipPresent: true, permissionAskShown, permissionOkClicked,
+    downloadsPermissionGranted, permissionPending: !downloadsPermissionGranted };
 }
 
 async function captureManagerDownloadsPermission(context, managerId) {
@@ -584,7 +622,28 @@ async function installUserscript(context, id, root, output, browserName, sourceS
     await writeFile(join(output, 'userscript-manager-options.png'), optionsScreenshot);
     const labels = await readManagerUiLabels(page, id);
     await writeFile(admissionPath, JSON.stringify({ ...admission, labels }, null, 2));
-    const downloadMode = await configureManagerBrowserDownloads(page, id);
+    let downloadMode;
+    try {
+      downloadMode = await configureManagerBrowserDownloads(page, id, output);
+    } catch (error) {
+      const ownedOptions = isOwnedManagerOptionsUrl(page.url(), id);
+      const diagnostic = { errorType: error instanceof Error ? error.name : typeof error,
+        ownedOptions, downloadsSections: null, captureErrorType: null };
+      if (ownedOptions) {
+        try {
+          diagnostic.downloadsSections = await page.locator('div.section.type_downloads').count();
+          const screenshot = await page.screenshot();
+          assert(isOwnedManagerOptionsUrl(page.url(), id), 'Manager options page navigated away');
+          await writeFile(join(output, 'userscript-manager-download-settings-failed.png'), screenshot);
+        } catch (captureError) {
+          diagnostic.captureErrorType = captureError instanceof Error ? captureError.name
+            : typeof captureError;
+        }
+      }
+      await writeFile(join(output, 'userscript-manager-download-settings-failed.json'),
+        JSON.stringify(diagnostic, null, 2));
+      throw error;
+    }
     await writeFile(admissionPath, JSON.stringify({ ...admission, labels, downloadMode }, null, 2));
     await page.getByText(labels.utilities, { exact: true }).click();
     const confirmationPromise = context.waitForEvent('page');
