@@ -97,6 +97,23 @@ describe('userscript download adapter failure handling', () => {
     expect(removeEventListener).toHaveBeenCalledWith('abort', expect.any(Function));
   });
 
+  it('passes the documented name to modern GM.download and waits for onload', async () => {
+    const modernDownload = vi.fn((details: GMDownloadDetails) => {
+      if (details.name !== 'image.jpg' || 'filename' in details) {
+        throw new Error('GM.download requires name');
+      }
+      queueMicrotask(() => details.onload?.());
+      return { abort: vi.fn() };
+    });
+    userscriptGlobals.GM = { download: modernDownload };
+    userscriptGlobals.GM_xmlhttpRequest = vi.fn(() => ({ abort: vi.fn() }));
+    const api = await loadUserscriptAdapter();
+
+    await expect(api.download('https://pbs.twimg.com/media/image.jpg', 'image.jpg'))
+      .resolves.toBeUndefined();
+    expect(modernDownload).toHaveBeenCalledOnce();
+  });
+
   it('observes a Promise-based GM.download rejection even when callbacks are not invoked', async () => {
     const error = new Error('download permission denied');
     const handle = {
@@ -142,7 +159,12 @@ describe('userscript download adapter failure handling', () => {
   });
 
   it('keeps legacy GM_download for callers that do not request cancellation', async () => {
-    const legacyDownload = vi.fn((details: GMDownloadDetails) => details.onload?.());
+    const legacyDownload = vi.fn((details: GMDownloadDetails) => {
+      if (details.name !== 'image.jpg' || 'filename' in details) {
+        throw new Error('GM_download requires name');
+      }
+      details.onload?.();
+    });
     const xmlHttpRequest = vi.fn(() => ({ abort: vi.fn() }));
     userscriptGlobals.GM_download = legacyDownload as unknown as typeof GM_download;
     userscriptGlobals.GM_xmlhttpRequest = xmlHttpRequest;

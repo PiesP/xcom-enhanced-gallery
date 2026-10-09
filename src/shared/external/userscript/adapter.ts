@@ -441,7 +441,7 @@ export function getUserscript(): UserscriptAPI {
           try {
             const handle = gmDownloadModern({
               url,
-              filename,
+              name: filename,
               saveAs: false,
               timeout: GM_DOWNLOAD_TIMEOUT_MS,
               onload: complete,
@@ -484,7 +484,7 @@ export function getUserscript(): UserscriptAPI {
         return new Promise<void>((resolve, reject) => {
           gmDownloadLegacy({
             url,
-            filename,
+            name: filename,
             saveAs: false,
             timeout: GM_DOWNLOAD_TIMEOUT_MS,
             onload: () => resolve(),
