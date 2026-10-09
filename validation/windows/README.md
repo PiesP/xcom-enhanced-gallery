@@ -245,10 +245,14 @@ native save does not release the userscript's page-owned Blob reservation: that
 reservation remains until genuine page teardown. Gallery reopen alone cannot
 recover it. The 512 MiB ledger covers all live reservations, so it is not a
 per-file allowance. After no download is active, a real reload starts a new
-page lifetime. The cancellation case correlates the exact held request with its
-Playwright `requestfinished` or `requestfailed` event, records the separate route
+page lifetime. Normal, failed, partial, and held transfers use distinct fixture
+media IDs, and each phase opens its own article in the same document; completed
+media cache entries cannot mask the later transport cases. The cancellation case
+correlates the exact held request with its Playwright `requestfinished` or
+`requestfailed` event, records the separate route
 fulfillment outcome and any request failure reason, then keeps the same document
-alive for a bounded two-second observation, checking browser
+alive for a bounded two-second observation after that request reaches a terminal
+state, checking browser
 download events and owned files repeatedly. It does not prove that an
 unobservable manager callback can never arrive later. ZIP receipts record only
 the source scheme and origin and require the expected X.com page Blob origin;

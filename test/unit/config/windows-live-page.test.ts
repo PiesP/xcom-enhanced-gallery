@@ -148,7 +148,10 @@ const installProfile = (await import(
 )) as InstallProfileModule;
 const userscriptInstall = (await import(
   pathToFileURL(resolve(import.meta.dirname, '../../../validation/windows/userscript-install.mjs')).href
-)) as { createBrowserDownloadObserver(cdp: EventEmitter & { send(method: string): Promise<unknown> }): {
+)) as { MEDIA_COHORTS: Record<'normal' | 'failure' | 'partial' | 'held', string[]>;
+  FIXTURE_ZIP_NAME: string;
+  fixtureZipEntries(images: Uint8Array[]): Array<{ filename: string; bytes: Uint8Array }>;
+  createBrowserDownloadObserver(cdp: EventEmitter & { send(method: string): Promise<unknown> }): {
   snapshot(): number;
   waitForCompletion(since: number, name: string): Promise<{ guid: string; state: string }>;
   assertNoneSince(since: number, label: string): Promise<void>;
@@ -170,6 +173,33 @@ const userscriptInstall = (await import(
 };
 
 describe('Windows X live page validation', () => {
+  it('keeps same-document userscript phases on distinct media cache keys with stable ZIP entries', () => {
+    const html = readFileSync(resolve(import.meta.dirname,
+      '../../e2e/fixtures/installed-gallery-page.html'), 'utf8');
+    const allMarkers: string[] = [];
+    for (const [phase, markers] of Object.entries(userscriptInstall.MEDIA_COHORTS)) {
+      expect(html).toContain(`[data-fixture-phase="${phase}"] [data-phase]:not([data-phase="${phase}"])`);
+      const article = html.match(new RegExp(`<article data-route="classic" data-phase="${phase}"[\\s\\S]*?</article>`, 'u'));
+      expect(article, `Missing ${phase} article`).not.toBeNull();
+      const actual = [...(article?.[0] ?? '').matchAll(/pbs\.twimg\.com\/media\/([A-Za-z0-9]+)\.jpg/gu)]
+        .map((match) => match[1]);
+      expect(actual).toEqual(markers);
+      allMarkers.push(...markers);
+    }
+    expect(new Set(allMarkers).size).toBe(12);
+    expect(html).toContain('data-fixture-phase="normal"');
+    const entries = userscriptInstall.fixtureZipEntries([
+      Uint8Array.of(0), Uint8Array.of(1), Uint8Array.of(2),
+    ]);
+    expect(entries.map(({ filename }) => filename)).toEqual([
+      'testuser_1234567890123456789_0.jpg',
+      'testuser_1234567890123456789_1.jpg',
+      'testuser_1234567890123456789_2.jpg',
+    ]);
+    expect(entries.map(({ bytes }) => bytes[0])).toEqual([0, 1, 2]);
+    expect(userscriptInstall.FIXTURE_ZIP_NAME).toBe('testuser_1234567890123456789.zip');
+  });
+
   it('binds native completion to the browser download GUID without manager privileges', async () => {
     const cdp = Object.assign(new EventEmitter(), { send: vi.fn(async () => ({})) });
     const observer = userscriptInstall.createBrowserDownloadObserver(cdp);

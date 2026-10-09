@@ -11,6 +11,10 @@
     .tweet-photo { margin: 4px 0; }
     [data-fixture-route="public"] [data-route="classic"],
     [data-fixture-route="classic"] [data-route="public"] { display: none; }
+    [data-fixture-phase="normal"] [data-phase]:not([data-phase="normal"]),
+    [data-fixture-phase="failure"] [data-phase]:not([data-phase="failure"]),
+    [data-fixture-phase="partial"] [data-phase]:not([data-phase="partial"]),
+    [data-fixture-phase="held"] [data-phase]:not([data-phase="held"]) { display: none; }
     .public-avatar { width: 48px; height: 48px; border-radius: 50%; }
     .public-media { position: relative; margin: 4px 0; }
     .public-media > a { display: block; }
@@ -22,11 +26,11 @@
     img { display: block; max-width: 100%; height: auto; }
   </style>
 </head>
-<body data-fixture-route="classic">
+<body data-fixture-route="classic" data-fixture-phase="normal">
   <div id="host-layout-spacer" aria-hidden="true"></div>
   <main>
     <div class="tweet-container">
-      <article data-route="classic" data-testid="tweet">
+      <article data-route="classic" data-phase="normal" data-testid="tweet">
         <span>Test User</span>
         <span>@testuser</span>
         <a href="/testuser/status/1234567890123456789">
@@ -42,6 +46,30 @@
         <div data-testid="tweetPhoto" class="tweet-photo">
           <img src="https://pbs.twimg.com/media/GkE9012MNOPQR.jpg?format=jpg&amp;name=large" alt="Forest path" width="320" height="180" tabindex="0">
         </div>
+      </article>
+      <article data-route="classic" data-phase="failure" data-testid="tweet">
+        <span>Test User</span><span>@testuser</span>
+        <a href="/testuser/status/1234567890123456789"><time datetime="2026-06-25T10:00:00.000Z">10:00 AM · Jun 25, 2026</time></a>
+        <div data-testid="tweetText"><p>Three failure fixtures.</p></div>
+        <div data-testid="tweetPhoto" class="tweet-photo"><img src="https://pbs.twimg.com/media/GkF1234ABCDEF.jpg?format=jpg&amp;name=large" alt="Failure mountain" width="320" height="180" tabindex="0"></div>
+        <div data-testid="tweetPhoto" class="tweet-photo"><img src="https://pbs.twimg.com/media/GkF5678GHIJKL.jpg?format=jpg&amp;name=large" alt="Failure ocean" width="320" height="180" tabindex="0"></div>
+        <div data-testid="tweetPhoto" class="tweet-photo"><img src="https://pbs.twimg.com/media/GkF9012MNOPQR.jpg?format=jpg&amp;name=large" alt="Failure forest" width="320" height="180" tabindex="0"></div>
+      </article>
+      <article data-route="classic" data-phase="partial" data-testid="tweet">
+        <span>Test User</span><span>@testuser</span>
+        <a href="/testuser/status/1234567890123456789"><time datetime="2026-06-25T10:00:00.000Z">10:00 AM · Jun 25, 2026</time></a>
+        <div data-testid="tweetText"><p>Three partial fixtures.</p></div>
+        <div data-testid="tweetPhoto" class="tweet-photo"><img src="https://pbs.twimg.com/media/GkP1234ABCDEF.jpg?format=jpg&amp;name=large" alt="Partial mountain" width="320" height="180" tabindex="0"></div>
+        <div data-testid="tweetPhoto" class="tweet-photo"><img src="https://pbs.twimg.com/media/GkP5678GHIJKL.jpg?format=jpg&amp;name=large" alt="Partial ocean" width="320" height="180" tabindex="0"></div>
+        <div data-testid="tweetPhoto" class="tweet-photo"><img src="https://pbs.twimg.com/media/GkP9012MNOPQR.jpg?format=jpg&amp;name=large" alt="Partial forest" width="320" height="180" tabindex="0"></div>
+      </article>
+      <article data-route="classic" data-phase="held" data-testid="tweet">
+        <span>Test User</span><span>@testuser</span>
+        <a href="/testuser/status/1234567890123456789"><time datetime="2026-06-25T10:00:00.000Z">10:00 AM · Jun 25, 2026</time></a>
+        <div data-testid="tweetText"><p>Three held fixtures.</p></div>
+        <div data-testid="tweetPhoto" class="tweet-photo"><img src="https://pbs.twimg.com/media/GkH1234ABCDEF.jpg?format=jpg&amp;name=large" alt="Held mountain" width="320" height="180" tabindex="0"></div>
+        <div data-testid="tweetPhoto" class="tweet-photo"><img src="https://pbs.twimg.com/media/GkH5678GHIJKL.jpg?format=jpg&amp;name=large" alt="Held ocean" width="320" height="180" tabindex="0"></div>
+        <div data-testid="tweetPhoto" class="tweet-photo"><img src="https://pbs.twimg.com/media/GkH9012MNOPQR.jpg?format=jpg&amp;name=large" alt="Held forest" width="320" height="180" tabindex="0"></div>
       </article>
       <article data-route="public">
         <img class="public-avatar" src="https://pbs.twimg.com/profile_images/123456789/public-avatar.jpg" alt="Public User">

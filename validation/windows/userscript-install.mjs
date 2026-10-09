@@ -12,11 +12,20 @@ const SCRIPT_NAME = 'X.com Enhanced Gallery';
 const PROFILE_PREFIX = 'xeg-userscript-install-';
 const TWEET_ID = '1234567890123456789';
 const FIXTURE_URL = `https://x.com/testuser/status/${TWEET_ID}`;
-const IMAGE_MARKERS = ['GkE1234', 'GkE5678', 'GkE9012'];
+export const MEDIA_COHORTS = {
+  normal: ['GkE1234ABCDEF', 'GkE5678GHIJKL', 'GkE9012MNOPQR'],
+  failure: ['GkF1234ABCDEF', 'GkF5678GHIJKL', 'GkF9012MNOPQR'],
+  partial: ['GkP1234ABCDEF', 'GkP5678GHIJKL', 'GkP9012MNOPQR'],
+  held: ['GkH1234ABCDEF', 'GkH5678GHIJKL', 'GkH9012MNOPQR'],
+};
+export const FIXTURE_ZIP_NAME = `testuser_${TWEET_ID}.zip`;
 const MAX_DOWNLOADS = 8;
 
 function sha256(bytes) { return createHash('sha256').update(bytes).digest('hex'); }
 function filename(index) { return `testuser_${TWEET_ID}_${index}.jpg`; }
+export function fixtureZipEntries(images) {
+  return images.map((bytes, index) => ({ filename: filename(index), bytes }));
+}
 function delay(ms) { return new Promise((resolveDelay) => setTimeout(resolveDelay, ms)); }
 
 export function summarizeDownloadUrl(value) {
@@ -228,7 +237,7 @@ export async function observeNoNativeDownload(observer, since, beforeFiles, down
     await delay(Math.min(50, remaining));
   } while (true);
   return { observedMs: Date.now() - started, samples,
-    boundary: 'bounded browser events and owned files after routed response; not manager callback completion' };
+    boundary: 'bounded browser events and owned files after held request terminal; not manager callback completion' };
 }
 
 async function runFixture(context, observer, root, output, downloads, images) {
@@ -254,18 +263,22 @@ async function runFixture(context, observer, root, output, downloads, images) {
       return;
     }
     if (url.hostname === 'pbs.twimg.com') {
-      const index = IMAGE_MARKERS.findIndex((marker) => url.pathname.includes(marker));
-      assert(index >= 0, 'Unknown media fixture request');
+      const cohort = Object.entries(MEDIA_COHORTS).find(([, markers]) =>
+        markers.some((marker) => url.pathname.includes(marker)));
+      assert(cohort, 'Unknown media fixture request');
+      const [mediaPhase, markers] = cohort;
+      const index = markers.findIndex((marker) => url.pathname.includes(marker));
       assert(routeRecords.length < 64, 'Fixture exceeded its routed request limit');
-      const record = { phase, index, resourceType: route.request().resourceType(),
+      const record = { phase, mediaPhase, index, resourceType: route.request().resourceType(),
         method: route.request().method() };
       routeRecords.push(record);
-      if (phase === 'failure' || (phase === 'partial' && index === 1)) {
+      if (mediaPhase === phase && (phase === 'failure' || (phase === 'partial' && index === 1))) {
         record.result = 'http-503';
         await route.fulfill({ status: 503, contentType: 'text/plain', body: 'fixture unavailable' });
         return;
       }
-      if (phase === 'held' && index === 0 && route.request().resourceType() !== 'image') {
+      if (mediaPhase === 'held' && phase === 'held' && index === 0 &&
+        route.request().resourceType() !== 'image') {
         assert(!heldRequest, 'More than one held request');
         heldRequest = record;
         heldTerminalObserver.bind(route.request());
@@ -295,33 +308,47 @@ async function runFixture(context, observer, root, output, downloads, images) {
   const result = { status: 'failed', downloads: [], routes: routeRecords, cases: {}, cleanup: {} };
   try {
     await page.goto(FIXTURE_URL, { waitUntil: 'domcontentloaded' });
-    const trigger = page.locator('[data-testid="tweetPhoto"] img').first();
+    const trigger = page.locator('[data-phase="normal"] [data-testid="tweetPhoto"] img').first();
     await trigger.click();
     const gallery = page.locator('[data-xeg-gallery-container]');
     await gallery.waitFor({ state: 'visible' });
     const current = gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download"]');
     const all = gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download 3 shown files as ZIP"]');
-    const expectedEntries = images.map((bytes, index) => ({ filename: filename(index), bytes }));
+    const expectedEntries = fixtureZipEntries(images);
+    const showPhase = async (nextPhase) => {
+      await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]').click();
+      await gallery.waitFor({ state: 'detached' });
+      phase = nextPhase;
+      await page.locator('body').evaluate((body, selected) => {
+        body.dataset.fixturePhase = selected;
+      }, nextPhase);
+      const nextTrigger = page.locator(`[data-phase="${nextPhase}"] [data-testid="tweetPhoto"] img`).first();
+      await nextTrigger.click();
+      await gallery.waitFor({ state: 'visible' });
+      return nextTrigger;
+    };
     assert.equal(observer.snapshot(), 0, 'Task profile has prior native downloads');
     assert.deepEqual(await readdir(downloads), [], 'Task download directory is not empty');
     for (let repetition = 0; repetition < 2; repetition++) {
-      const routedBeforeSingle = routeRecords.filter(({ phase: p, index }) =>
-        p === 'normal' && index === 0).length;
+      const routedBeforeSingle = routeRecords.filter(({ phase: p, mediaPhase, index }) =>
+        p === 'normal' && mediaPhase === 'normal' && index === 0).length;
       const singleSince = observer.snapshot();
       const singleBefore = new Set(await readdir(downloads));
       await current.click();
       const single = await waitForDownload(observer, singleSince, singleBefore,
         filename(0), browserFilename(filename(0), repetition), downloads, images[0].length);
-      assert(routeRecords.filter(({ phase: p, index }) =>
-        p === 'normal' && index === 0).length > routedBeforeSingle,
-      'Single download did not use the bounded media route');
+      if (repetition === 0) {
+        assert(routeRecords.filter(({ phase: p, mediaPhase, index }) =>
+          p === 'normal' && mediaPhase === 'normal' && index === 0).length > routedBeforeSingle,
+        'First single download did not use the bounded media route');
+      }
       assert(single.bytes.equals(images[0]), 'Single saved bytes differ');
       result.downloads.push({ kind: 'single', repetition, ...single, bytes: single.bytes.length });
       await waitFor(async () => await current.isEnabled() ? true : undefined, 'single control ready');
       const zipSince = observer.snapshot();
       const zipBefore = new Set(await readdir(downloads));
       await all.click();
-      const zipName = `testuser_${TWEET_ID}.zip`;
+      const zipName = FIXTURE_ZIP_NAME;
       const zip = await waitForDownload(observer, zipSince, zipBefore,
         zipName, browserFilename(zipName, repetition), downloads,
         expectedStoredZipBytes(expectedEntries));
@@ -339,36 +366,39 @@ async function runFixture(context, observer, root, output, downloads, images) {
     await gallery.waitFor({ state: 'visible' });
     result.cases.closeReopen = 'passed';
 
-    phase = 'failure';
+    await showPhase('failure');
     const failureSince = observer.snapshot();
     const failureBefore = new Set(await readdir(downloads));
     await all.click();
-    await waitFor(async () => routeRecords.some(({ phase: p, index, result: outcome }) =>
-      p === 'failure' && index === 0 && outcome === 'http-503') ? true : undefined,
+    await waitFor(async () => routeRecords.some(({ phase: p, mediaPhase, index, result: outcome }) =>
+      p === 'failure' && mediaPhase === 'failure' && index === 0 && outcome === 'http-503')
+      ? true : undefined,
     'routed transport failure');
     await waitFor(async () => await all.isEnabled() ? true : undefined, 'failed control ready');
     await observeNoNativeDownload(observer, failureSince, failureBefore, downloads,
       'Transport failure');
     result.cases.networkFailure = 'passed';
 
-    phase = 'partial';
+    await showPhase('partial');
     const partialSince = observer.snapshot();
     const partialBefore = new Set(await readdir(downloads));
     await all.click();
     const includedEntries = expectedEntries.filter((_, index) => index !== 1);
-    const partialName = `testuser_${TWEET_ID}.zip`;
+    const partialName = FIXTURE_ZIP_NAME;
     const partial = await waitForDownload(observer, partialSince, partialBefore,
       partialName, browserFilename(partialName, 2), downloads,
       expectedStoredZipBytes(includedEntries));
     const partialZip = verifyStoredZip(partial.bytes, includedEntries);
     result.downloads.push({ kind: 'partial-zip', ...partial, bytes: partial.bytes.length,
       entryOrder: partialZip.entryOrder, included: 2, omitted: 1 });
-    assert(routeRecords.some(({ phase: p, index, result: outcome }) =>
-      p === 'partial' && index === 1 && outcome === 'http-503'), 'Partial ZIP failure was not routed');
+    assert(routeRecords.some(({ phase: p, mediaPhase, index, result: outcome }) =>
+      p === 'partial' && mediaPhase === 'partial' && index === 1 && outcome === 'http-503'),
+    'Partial ZIP failure was not routed');
     result.cases.partialZip = 'passed';
+    await waitFor(async () => await all.isEnabled() ? true : undefined, 'partial ZIP control ready');
 
     heldTerminalObserver = watchExactRequestTerminal(context);
-    phase = 'held';
+    const heldTrigger = await showPhase('held');
     const heldSince = observer.snapshot();
     const heldBefore = new Set(await readdir(downloads));
     await all.click();
@@ -385,7 +415,7 @@ async function runFixture(context, observer, root, output, downloads, images) {
     // and enabled toolbar cannot prove that an old manager callback has settled.
     // Keep this document alive after the late route response and inspect browser
     // events and owned files throughout a bounded post-response interval.
-    await trigger.click();
+    await heldTrigger.click();
     await gallery.waitFor({ state: 'visible' });
     await waitFor(async () => await all.isEnabled() ? true : undefined,
       'same-document toolbar ready after cancellation');
