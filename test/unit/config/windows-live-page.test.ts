@@ -156,6 +156,8 @@ const userscriptInstall = (await import(
     Promise<{ available: boolean; registeredScriptCount?: number; errorType?: string }>;
   hasKnownChromeUserScriptsLabel(text: string): boolean;
   summarizeManagerFrameUrl(value: string, managerId: string): string | null;
+  isOwnedManagerDetailsUrl(value: string, detailsUrl: string): boolean;
+  isOwnedManagerInspectionUrl(value: string, detailsUrl: string, managerId: string): boolean;
   findEdgeUserScriptsControl(page: { getByRole(role: string, options: { name: RegExp }): {
     count(): Promise<number>; isVisible(): Promise<boolean>;
   } }): Promise<unknown>;
@@ -248,6 +250,32 @@ describe('Windows X live page validation', () => {
     expect(userscriptInstall.summarizeManagerFrameUrl(
       'https://private.example/path?token=ignored', 'owned'
     )).toBeNull();
+    expect(userscriptInstall.summarizeManagerFrameUrl('about:blank', 'owned')).toBeNull();
+  });
+
+  it('admits diagnostic DOM reads only on the exact owned details route or manager origin', () => {
+    const details = 'edge://extensions/?id=owned';
+    expect(userscriptInstall.isOwnedManagerDetailsUrl(details, details)).toBe(true);
+    expect(userscriptInstall.isOwnedManagerInspectionUrl(details, details, 'owned')).toBe(true);
+    expect(userscriptInstall.isOwnedManagerInspectionUrl(
+      'chrome-extension://owned/options.html', details, 'owned'
+    )).toBe(true);
+    expect(userscriptInstall.isOwnedManagerInspectionUrl(
+      'chrome-extension://other/options.html', details, 'other'
+    )).toBe(false);
+    for (const value of [
+      'edge://extensions/?id=other',
+      'edge://extensions/?id=owned&token=secret',
+      'edge://extensions/',
+      'chrome://extensions/?id=owned',
+      'chrome-extension://other/options.html',
+      'chrome-extension://owned/options.html?token=secret',
+      'about:blank',
+      'https://private.example/path',
+    ]) {
+      expect(userscriptInstall.isOwnedManagerDetailsUrl(value, details)).toBe(false);
+      expect(userscriptInstall.isOwnedManagerInspectionUrl(value, details, 'owned')).toBe(false);
+    }
   });
 
   it('keeps same-document userscript phases on distinct media cache keys with stable ZIP entries', () => {

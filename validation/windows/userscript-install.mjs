@@ -155,37 +155,87 @@ export function summarizeManagerFrameUrl(value, managerId) {
     if (url.protocol === 'chrome-extension:' && url.hostname === managerId) {
       return `${url.protocol}//${url.hostname}${url.pathname}`;
     }
-    if (value === 'about:blank') return value;
   } catch { /* Unknown frame URLs are deliberately omitted. */ }
   return null;
+}
+
+export function isOwnedManagerDetailsUrl(value, detailsUrl) {
+  try {
+    const actual = new URL(value);
+    const expected = new URL(detailsUrl);
+    return ['edge:', 'chrome:'].includes(expected.protocol) &&
+      expected.hostname === 'extensions' && expected.pathname === '/' &&
+      expected.searchParams.size === 1 && expected.searchParams.has('id') &&
+      actual.href === expected.href;
+  } catch { return false; }
+}
+
+export function isOwnedManagerInspectionUrl(value, detailsUrl, managerId) {
+  if (!isOwnedManagerDetailsUrl(detailsUrl, detailsUrl) ||
+    new URL(detailsUrl).searchParams.get('id') !== managerId) return false;
+  if (isOwnedManagerDetailsUrl(value, detailsUrl)) return true;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'chrome-extension:' && url.hostname === managerId &&
+      !url.search && !url.hash;
+  } catch { return false; }
 }
 
 async function captureManagerPermissionDiagnostics(page, detailsUrl, output, probe) {
   const managerId = new URL(detailsUrl).searchParams.get('id');
   const diagnostics = { api: probe,
     requestedUrl: summarizeManagerFrameUrl(detailsUrl, managerId) };
+  let ownedDetailsPage = false;
   try {
     await page.goto(detailsUrl, { waitUntil: 'domcontentloaded', timeout: 10_000 });
-    diagnostics.finalUrl = summarizeManagerFrameUrl(page.url(), managerId);
-    diagnostics.title = (await page.title()).slice(0, 120);
-    await page.screenshot({ path: join(output, 'userscript-manager-permission.png') });
-    diagnostics.allowUserScriptsVisible = await page.locator('#allow-user-scripts cr-toggle').isVisible();
-    diagnostics.toggleControls = await page.locator('cr-toggle').evaluateAll((elements) =>
+    assert(isOwnedManagerDetailsUrl(page.url(), detailsUrl),
+      'Permission diagnostic did not reach the owned extension details page');
+    ownedDetailsPage = true;
+    const title = (await page.title()).slice(0, 120);
+    assert(isOwnedManagerDetailsUrl(page.url(), detailsUrl), 'Permission details page navigated away');
+    const screenshot = await page.screenshot();
+    assert(isOwnedManagerDetailsUrl(page.url(), detailsUrl), 'Permission details page navigated away');
+    const allowUserScriptsVisible = await page.locator('#allow-user-scripts cr-toggle').isVisible();
+    const toggleControls = await page.locator('cr-toggle').evaluateAll((elements) =>
       elements.slice(0, 32).map((element) => ({
         id: element.id.slice(0, 80),
         ariaLabel: element.getAttribute('aria-label')?.slice(0, 80) ?? null,
         checked: Boolean(element.checked),
       })));
+    assert(isOwnedManagerDetailsUrl(page.url(), detailsUrl), 'Permission details page navigated away');
+    await writeFile(join(output, 'userscript-manager-permission.png'), screenshot);
+    diagnostics.finalUrl = summarizeManagerFrameUrl(page.url(), managerId);
+    diagnostics.title = title;
+    diagnostics.allowUserScriptsVisible = allowUserScriptsVisible;
+    diagnostics.toggleControls = toggleControls;
   } catch (error) {
     diagnostics.captureErrorType = error instanceof Error ? error.name : typeof error;
   }
+  diagnostics.frameCount = page.frames().length;
+  if (!ownedDetailsPage || !isOwnedManagerDetailsUrl(page.url(), detailsUrl)) {
+    const skipped = { api: probe, requestedUrl: diagnostics.requestedUrl,
+      frameCount: diagnostics.frameCount,
+      captureErrorType: diagnostics.captureErrorType ?? null,
+      contentSkipped: 'unowned-or-unavailable-details-page' };
+    await writeFile(join(output, 'userscript-manager-permission.json'), JSON.stringify(skipped, null, 2));
+    return;
+  }
   try {
     const frames = page.frames();
-    diagnostics.frameCount = frames.length;
     diagnostics.frames = await Promise.all(frames.slice(0, 12).map(async (frame, index) => {
       const summary = { index, url: summarizeManagerFrameUrl(frame.url(), managerId) };
+      if (!isOwnedManagerDetailsUrl(page.url(), detailsUrl) ||
+        !isOwnedManagerInspectionUrl(frame.url(), detailsUrl, managerId)) {
+        summary.skipped = 'unowned-frame';
+        return summary;
+      }
       try {
-        summary.document = await frame.evaluate(() => {
+        summary.document = await frame.evaluate(({ expectedDetailsUrl, expectedManagerId }) => {
+          const current = new URL(location.href);
+          const ownedDetails = location.href === expectedDetailsUrl;
+          const ownedExtension = current.protocol === 'chrome-extension:' &&
+            current.hostname === expectedManagerId && !current.search && !current.hash;
+          if (!ownedDetails && !ownedExtension) return { skipped: 'frame-navigated-away' };
           const knownLabels = new Set(['사용자 스크립트 허용', 'Allow user scripts']);
           const describe = (element) => ({
             tag: element.tagName.toLowerCase().slice(0, 40),
@@ -243,7 +293,7 @@ async function captureManagerPermissionDiagnostics(page, detailsUrl, output, pro
           visit(document.documentElement);
           return { readyState: document.readyState, visitedNodes: visited,
             labelMatches: labels, controls, embedded };
-        });
+        }, { expectedDetailsUrl: detailsUrl, expectedManagerId: managerId });
       } catch (error) {
         summary.errorType = error instanceof Error ? error.name : typeof error;
       }
@@ -252,18 +302,26 @@ async function captureManagerPermissionDiagnostics(page, detailsUrl, output, pro
   } catch (error) {
     diagnostics.frameErrorType = error instanceof Error ? error.name : typeof error;
   }
-  try {
-    const snapshot = await page.locator('body').ariaSnapshot({ timeout: 5_000 });
-    const safe = snapshot.replace(/[A-Za-z]:\\[^\n]*/gu, '[path]')
-      .replace(/https?:\/\/[^\s"']+/gu, '[url]');
-    const lines = safe.split('\n');
-    const labelIndex = lines.findIndex((line) =>
-      line.includes('사용자 스크립트 허용') || line.includes('Allow user scripts'));
-    diagnostics.ariaSnapshot = { head: safe.slice(0, 512),
-      labelContext: labelIndex < 0 ? null
-        : lines.slice(Math.max(0, labelIndex - 2), labelIndex + 3).join('\n').slice(0, 1_024) };
-  } catch (error) {
-    diagnostics.ariaSnapshotErrorType = error instanceof Error ? error.name : typeof error;
+  if (isOwnedManagerDetailsUrl(page.url(), detailsUrl)) {
+    try {
+      const snapshot = await page.locator('body').ariaSnapshot({ timeout: 5_000 });
+      assert(isOwnedManagerDetailsUrl(page.url(), detailsUrl), 'Permission details page navigated away');
+      const safe = snapshot.replace(/[A-Za-z]:\\[^\n]*/gu, '[path]')
+        .replace(/https?:\/\/[^\s"']+/gu, '[url]');
+      const lines = safe.split('\n');
+      const labelIndex = lines.findIndex((line) =>
+        line.includes('사용자 스크립트 허용') || line.includes('Allow user scripts'));
+      diagnostics.ariaSnapshot = { labelContext: labelIndex < 0 ? null
+        : lines.slice(Math.max(0, labelIndex - 1), labelIndex + 2).join('\n').slice(0, 1_024) };
+    } catch (error) {
+      diagnostics.ariaSnapshotErrorType = error instanceof Error ? error.name : typeof error;
+    }
+  }
+  if (!isOwnedManagerDetailsUrl(page.url(), detailsUrl)) {
+    const skipped = { api: probe, requestedUrl: diagnostics.requestedUrl,
+      frameCount: diagnostics.frameCount, contentSkipped: 'details-page-navigated-away' };
+    await writeFile(join(output, 'userscript-manager-permission.json'), JSON.stringify(skipped, null, 2));
+    return;
   }
   await writeFile(join(output, 'userscript-manager-permission.json'), JSON.stringify(diagnostics, null, 2));
 }
