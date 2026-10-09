@@ -128,12 +128,26 @@ export async function probeManagerUserScripts(page) {
   }
 }
 
+export async function findEdgeUserScriptsControl(page) {
+  const name = /^(?:사용자 스크립트 허용|Allow user scripts)$/iu;
+  const switches = page.getByRole('switch', { name });
+  const checkboxes = page.getByRole('checkbox', { name });
+  const switchCount = await switches.count();
+  const checkboxCount = await checkboxes.count();
+  assert.equal(switchCount + checkboxCount, 1,
+    'Expected exactly one labeled Edge user-scripts permission control');
+  const control = switchCount === 1 ? switches : checkboxes;
+  assert(await control.isVisible(), 'Edge user-scripts permission control is hidden');
+  return control;
+}
+
 async function captureManagerPermissionDiagnostics(page, detailsUrl, output, probe) {
   const diagnostics = { api: probe, requestedUrl: detailsUrl };
   try {
     await page.goto(detailsUrl, { waitUntil: 'domcontentloaded', timeout: 10_000 });
     diagnostics.finalUrl = page.url();
     diagnostics.title = (await page.title()).slice(0, 120);
+    await page.screenshot({ path: join(output, 'userscript-manager-permission.png') });
     diagnostics.allowUserScriptsVisible = await page.locator('#allow-user-scripts cr-toggle').isVisible();
     diagnostics.toggleControls = await page.locator('cr-toggle').evaluateAll((elements) =>
       elements.slice(0, 32).map((element) => ({
@@ -141,7 +155,15 @@ async function captureManagerPermissionDiagnostics(page, detailsUrl, output, pro
         ariaLabel: element.getAttribute('aria-label')?.slice(0, 80) ?? null,
         checked: Boolean(element.checked),
       })));
-    await page.screenshot({ path: join(output, 'userscript-manager-permission.png') });
+    diagnostics.semanticControls = [];
+    for (const role of ['switch', 'checkbox']) {
+      const controls = page.getByRole(role);
+      const count = Math.min(await controls.count(), 32);
+      for (let index = 0; index < count; index++) {
+        diagnostics.semanticControls.push({ role,
+          snapshot: (await controls.nth(index).ariaSnapshot()).slice(0, 180) });
+      }
+    }
   } catch (error) {
     diagnostics.captureErrorType = error instanceof Error ? error.name : typeof error;
   }
@@ -162,26 +184,34 @@ async function installUserscript(context, id, root, output, browserName) {
     if (!permission.available) {
       try {
         await page.goto(detailsUrl, { waitUntil: 'domcontentloaded', timeout: 10_000 });
-        const toggle = page.locator('#allow-user-scripts cr-toggle');
-        const label = page.locator('#allow-user-scripts');
-        if (!await toggle.isVisible() ||
-          !/allow user scripts/iu.test(await label.innerText())) {
-          throw new Error('Manager userScripts API unavailable and no verified UI permission control');
+        if (browserName === 'msedge') {
+          const control = await findEdgeUserScriptsControl(page);
+          if (!await control.isChecked()) await control.click();
+          await waitFor(async () => await control.isChecked() ? true : undefined,
+            'Edge user-scripts permission enabled', 5_000);
+          permissionPath = 'edge-labeled-ui-control';
+        } else {
+          const toggle = page.locator('#allow-user-scripts cr-toggle');
+          const label = page.locator('#allow-user-scripts');
+          if (!await toggle.isVisible() ||
+            !/allow user scripts/iu.test(await label.innerText())) {
+            throw new Error('Manager userScripts API unavailable and no verified UI permission control');
+          }
+          if (!await toggle.evaluate((element) => element.checked)) await toggle.click();
+          assert(await toggle.evaluate((element) => element.checked), 'Manager user-scripts control stayed disabled');
+          const keep = page.getByRole('button', { name: 'Keep', exact: true });
+          if (await keep.isVisible()) await keep.click();
+          const reload = page.locator('extensions-detail-view #dev-reload-button');
+          assert(await reload.isVisible(), 'Manager permission changed but extension reload control is unavailable');
+          const restarted = context.waitForEvent('serviceworker', {
+            predicate: (worker) => worker.url().startsWith(`chrome-extension://${id}/`), timeout: 15_000,
+          });
+          await reload.click();
+          await restarted;
+          permissionPath = 'chrome-labeled-ui-toggle-and-reload';
         }
-        if (!await toggle.evaluate((element) => element.checked)) await toggle.click();
-        assert(await toggle.evaluate((element) => element.checked), 'Manager user-scripts control stayed disabled');
-        const keep = page.getByRole('button', { name: 'Keep', exact: true });
-        if (await keep.isVisible()) await keep.click();
-        const reload = page.locator('extensions-detail-view #dev-reload-button');
-        assert(await reload.isVisible(), 'Manager permission changed but extension reload control is unavailable');
-        const restarted = context.waitForEvent('serviceworker', {
-          predicate: (worker) => worker.url().startsWith(`chrome-extension://${id}/`), timeout: 15_000,
-        });
-        await reload.click();
-        await restarted;
         await page.goto(optionsUrl);
         permission = await probeManagerUserScripts(page);
-        permissionPath = 'verified-ui-toggle';
         assert(permission.available, 'Manager userScripts API unavailable after UI permission change');
       } catch (error) {
         await captureManagerPermissionDiagnostics(page, detailsUrl, output, permission);
