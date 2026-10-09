@@ -13,8 +13,13 @@ for another, and none is a required CI lane.
    `.user.js` through the reviewed manager UI in a fresh owned profile. It checks
    repeated native singles and ZIPs, a partial ZIP, routed transport failure,
    cancellation before dispatch, gallery close/reopen, and reload recovery with
-   independently read saved files. It does not alter the production byte budget
-   or request Tampermonkey's optional downloads permission.
+   independently read saved files. It configures Browser API mode in the
+   task-owned Tampermonkey options UI, checks the existing JPG/ZIP whitelist,
+   and confirms the manager's own permission page when shown. That UI may
+   request the optional downloads permission; the receipt records whether it
+   was granted or remains pending. A browser-native prompt may remain
+   unapproved; native completion and saved bytes require separate evidence.
+   The production byte budget is unchanged.
 4. **Optional public-page observation:** observes up to three unchanged public
    X/Twitter status URLs after the installed deterministic fixture. It remains
    observational and can finish as `unverified`.
