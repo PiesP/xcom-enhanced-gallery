@@ -181,6 +181,47 @@ export function isOwnedManagerInspectionUrl(value, detailsUrl, managerId) {
   } catch { return false; }
 }
 
+export function isOwnedManagerOptionsUrl(value, managerId) {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'chrome-extension:' && url.hostname === managerId &&
+      url.pathname === '/options.html' && !url.search;
+  } catch { return false; }
+}
+
+export function requireManagerUiLabels(labels) {
+  assert(labels && typeof labels === 'object' && !Array.isArray(labels),
+    'Manager returned invalid UI labels');
+  assert.deepEqual(Object.keys(labels).sort(), ['install', 'installedUserscripts', 'utilities'],
+    'Manager UI label keys differ');
+  for (const value of Object.values(labels)) {
+    assert(typeof value === 'string' && value.length > 0 && value.length <= 80 &&
+      value.trim() === value && !/[\r\n\u0000-\u001f]/u.test(value),
+    'Manager returned an invalid UI label');
+  }
+  return labels;
+}
+
+export async function readManagerUiLabels(page, managerId) {
+  assert(isOwnedManagerOptionsUrl(page.url(), managerId),
+    'Manager labels require its owned options page');
+  const labels = await page.evaluate((expectedId) => {
+    const url = new URL(location.href);
+    if (url.protocol !== 'chrome-extension:' || url.hostname !== expectedId ||
+      url.pathname !== '/options.html' || url.search) {
+      throw new Error('Manager options page navigated away');
+    }
+    return {
+      utilities: chrome.i18n.getMessage('Utilities'),
+      install: chrome.i18n.getMessage('Install'),
+      installedUserscripts: chrome.i18n.getMessage('Installed_userscripts'),
+    };
+  }, managerId);
+  assert(isOwnedManagerOptionsUrl(page.url(), managerId),
+    'Manager options page navigated away after label lookup');
+  return requireManagerUiLabels(labels);
+}
+
 async function captureManagerPermissionDiagnostics(page, detailsUrl, output, probe) {
   const managerId = new URL(detailsUrl).searchParams.get('id');
   const diagnostics = { api: probe,
@@ -326,7 +367,7 @@ async function captureManagerPermissionDiagnostics(page, detailsUrl, output, pro
   await writeFile(join(output, 'userscript-manager-permission.json'), JSON.stringify(diagnostics, null, 2));
 }
 
-async function installUserscript(context, id, root, output, browserName) {
+async function installUserscript(context, id, root, output, browserName, sourceSha256) {
   const manifest = JSON.parse(await readFile(join(root, 'test-tools/userscript-manager/manifest.json'), 'utf8'));
   assert(/^\d+(?:\.\d+){1,3}$/.test(manifest.version), 'Manager version is invalid');
   assert(manifest.permissions?.includes('userScripts'), 'Manager lacks userScripts permission');
@@ -375,16 +416,32 @@ async function installUserscript(context, id, root, output, browserName) {
         throw error;
       }
     }
-    await page.getByText('Utilities', { exact: true }).click();
+    assert(isOwnedManagerOptionsUrl(page.url(), id), 'Manager options page is not owned');
+    const admission = { browserName, managerId: id, managerVersion: manifest.version,
+      sourceSha256, permission: { path: permissionPath, available: permission.available,
+        registeredScriptCount: permission.registeredScriptCount } };
+    const admissionPath = join(output, 'userscript-manager-admission.json');
+    await writeFile(admissionPath, JSON.stringify(admission, null, 2));
+    const optionsScreenshot = await page.screenshot();
+    assert(isOwnedManagerOptionsUrl(page.url(), id), 'Manager options page navigated away');
+    await writeFile(join(output, 'userscript-manager-options.png'), optionsScreenshot);
+    const labels = await readManagerUiLabels(page, id);
+    await writeFile(admissionPath, JSON.stringify({ ...admission, labels }, null, 2));
+    await page.getByText(labels.utilities, { exact: true }).click();
     const confirmationPromise = context.waitForEvent('page');
     await page.locator('input[type=file]').setInputFiles(join(root, 'dist/xcom-enhanced-gallery.user.js'));
     const confirmation = await confirmationPromise;
     await confirmation.waitForURL(`chrome-extension://${id}/ask.html*`);
+    const confirmationUrl = new URL(confirmation.url());
+    assert(confirmationUrl.protocol === 'chrome-extension:' &&
+      confirmationUrl.hostname === id && confirmationUrl.pathname === '/ask.html',
+    'Manager confirmation page is not owned');
     const closed = confirmation.waitForEvent('close');
-    await confirmation.getByRole('button', { name: 'Install', exact: true }).click();
+    await confirmation.getByRole('button', { name: labels.install, exact: true }).click();
     await closed;
     await page.reload();
-    await page.getByText('Installed Userscripts', { exact: true }).first().click();
+    assert(isOwnedManagerOptionsUrl(page.url(), id), 'Manager options page is not owned after reload');
+    await page.getByText(labels.installedUserscripts, { exact: true }).first().click();
     await page.getByText(SCRIPT_NAME, { exact: true }).first().waitFor({ state: 'visible' });
     await page.screenshot({ path: join(output, 'userscript-installed.png') });
     return { id, managerName: 'Tampermonkey', managerVersion: manifest.version,
@@ -748,7 +805,8 @@ export async function runUserscriptInstallation({ chromium, root, output, browse
       path: join(root, 'test-tools/userscript-manager'),
     }));
     assert.equal(typeof managerId, 'string');
-    result.manager = await installUserscript(context, managerId, root, output, browserName);
+    result.manager = await installUserscript(context, managerId, root, output, browserName,
+      result.sourceSha256);
     const images = await createImageFixtures(context);
     result.fixtureLimits = { imageBytes: images.map((image) => image.length),
       imageSha256: images.map(sha256),

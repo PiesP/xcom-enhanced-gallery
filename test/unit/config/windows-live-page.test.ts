@@ -158,6 +158,11 @@ const userscriptInstall = (await import(
   summarizeManagerFrameUrl(value: string, managerId: string): string | null;
   isOwnedManagerDetailsUrl(value: string, detailsUrl: string): boolean;
   isOwnedManagerInspectionUrl(value: string, detailsUrl: string, managerId: string): boolean;
+  isOwnedManagerOptionsUrl(value: string, managerId: string): boolean;
+  requireManagerUiLabels(labels: Record<string, unknown>): Record<string, string>;
+  readManagerUiLabels(page: { url(): string;
+    evaluate(callback: (id: string) => unknown, id: string): Promise<unknown> },
+  managerId: string): Promise<Record<string, string>>;
   findEdgeUserScriptsControl(page: { getByRole(role: string, options: { name: RegExp }): {
     count(): Promise<number>; isVisible(): Promise<boolean>;
   } }): Promise<unknown>;
@@ -275,6 +280,45 @@ describe('Windows X live page validation', () => {
     ]) {
       expect(userscriptInstall.isOwnedManagerDetailsUrl(value, details)).toBe(false);
       expect(userscriptInstall.isOwnedManagerInspectionUrl(value, details, 'owned')).toBe(false);
+    }
+  });
+
+  it('reads bounded bundled manager labels only from its own options page', async () => {
+    const optionsUrl = 'chrome-extension://owned/options.html';
+    expect(userscriptInstall.isOwnedManagerOptionsUrl(optionsUrl, 'owned')).toBe(true);
+    for (const value of ['about:blank', 'https://x.com/',
+      'chrome-extension://other/options.html', 'chrome-extension://owned/ask.html',
+      'chrome-extension://owned/options.html?token=private']) {
+      expect(userscriptInstall.isOwnedManagerOptionsUrl(value, 'owned')).toBe(false);
+    }
+    const messages: Record<string, string> = {
+      Utilities: '도구', Install: '설치', Installed_userscripts: '설치된 유저 스크립트',
+    };
+    const page = { url: () => optionsUrl,
+      evaluate: async (callback: (id: string) => unknown, id: string) => callback(id) };
+    try {
+      vi.stubGlobal('location', { href: optionsUrl });
+      vi.stubGlobal('chrome', { i18n: { getMessage: (key: string) => messages[key] ?? '' } });
+      expect(await userscriptInstall.readManagerUiLabels(page, 'owned')).toEqual({
+        utilities: '도구', install: '설치', installedUserscripts: '설치된 유저 스크립트',
+      });
+      expect(userscriptInstall.requireManagerUiLabels({
+        utilities: 'Utilities', install: 'Install', installedUserscripts: 'Installed Userscripts',
+      })).toMatchObject({ utilities: 'Utilities' });
+      expect(() => userscriptInstall.requireManagerUiLabels({
+        utilities: 'x'.repeat(81), install: 'Install', installedUserscripts: 'Installed Userscripts',
+      })).toThrow('invalid UI label');
+      expect(() => userscriptInstall.requireManagerUiLabels({
+        utilities: 'Utilities\nother', install: 'Install', installedUserscripts: 'Installed Userscripts',
+      })).toThrow('invalid UI label');
+      await expect(userscriptInstall.readManagerUiLabels({ ...page,
+        url: () => 'chrome-extension://other/options.html',
+      }, 'owned')).rejects.toThrow('owned options page');
+      vi.stubGlobal('location', { href: 'https://private.example/' });
+      await expect(userscriptInstall.readManagerUiLabels(page, 'owned'))
+        .rejects.toThrow('navigated away');
+    } finally {
+      vi.unstubAllGlobals();
     }
   });
 
