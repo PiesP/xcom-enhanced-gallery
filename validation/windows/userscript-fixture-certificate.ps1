@@ -16,8 +16,10 @@ try {
     $length = [System.BitConverter]::GetBytes([int]2048)
     $creation.Parameters.Add([System.Security.Cryptography.CngProperty]::new(
         'Length', $length, [System.Security.Cryptography.CngPropertyOptions]::None))
+    # WinPS converts ordinary $null to an empty string here; NullString preserves an unnamed key.
     $key = [System.Security.Cryptography.CngKey]::Create(
-        [System.Security.Cryptography.CngAlgorithm]::Rsa, $null, $creation)
+        [System.Security.Cryptography.CngAlgorithm]::Rsa,
+        [System.Management.Automation.Language.NullString]::Value, $creation)
     if (!$key.IsEphemeral -or $key.Provider.Provider -ne
         [System.Security.Cryptography.CngProvider]::MicrosoftSoftwareKeyStorageProvider.Provider -or
         ($key.ExportPolicy -band $policy) -ne $policy) { throw 'key-policy-mismatch' }
