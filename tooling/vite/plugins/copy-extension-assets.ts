@@ -1,6 +1,7 @@
-import { copyFileSync, existsSync, mkdirSync, rmSync, statSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import type { Plugin } from 'vite';
+import { readDistributionNotices } from '../utils/distribution-licenses.ts';
 import { readExtensionIconDeclarations } from '../utils/extension-icons.ts';
 
 export function copyExtensionAssetsPlugin(options: {
@@ -33,6 +34,7 @@ export function copyExtensionAssetsPlugin(options: {
           );
         }
       }
+      const notices = readDistributionNotices(root);
 
       mkdirSync(outDir, { recursive: true });
       copyFileSync(manifestSource, resolve(outDir, 'manifest.json'));
@@ -41,6 +43,12 @@ export function copyExtensionAssetsPlugin(options: {
       for (const icon of copies) {
         mkdirSync(dirname(icon.destination), { recursive: true });
         copyFileSync(icon.source, icon.destination);
+      }
+      rmSync(resolve(outDir, 'LICENSES'), { force: true, recursive: true });
+      for (const notice of notices) {
+        const destination = resolve(outDir, notice.path);
+        mkdirSync(dirname(destination), { recursive: true });
+        writeFileSync(destination, notice.bytes);
       }
     },
   };
