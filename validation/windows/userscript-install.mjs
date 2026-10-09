@@ -30,6 +30,7 @@ export function isPublicAvatarFixtureUrl(value) {
 }
 export const FIXTURE_ZIP_NAME = `testuser_${TWEET_ID}.zip`;
 const MAX_DOWNLOADS = 8;
+const FIRST_MEDIA_URL = `https://pbs.twimg.com/media/${MEDIA_COHORTS.normal[0]}.jpg?format=jpg&name=large`;
 const execFileAsync = promisify(execFile);
 const NATIVE_PERMISSION_RECEIPT = 'userscript-manager-native-permission.json';
 const NATIVE_PERMISSION_ACTION_RECEIPT = 'userscript-manager-native-permission-action.json';
@@ -637,6 +638,86 @@ async function captureManagerDownloadsPermission(context, managerId) {
   } finally {
     await page?.close().catch(() => {});
   }
+}
+
+/** Run only in the owned manager options page; return no download URL or local path. */
+export async function inspectManagerDownloadHistoryDocument({ managerId, fixtureUrl, expectedName }) {
+  const current = new URL(location.href);
+  if (current.protocol !== 'chrome-extension:' || current.hostname !== managerId ||
+      current.pathname !== '/options.html' || current.search || current.hash) {
+    return { status: 'unowned-page', items: [] };
+  }
+  if (!chrome.downloads?.search) return { status: 'api-unavailable', items: [] };
+  let found;
+  try {
+    found = await chrome.downloads.search({ url: fixtureUrl, limit: 9 });
+  } catch {
+    return { status: 'query-rejected', items: [] };
+  }
+  if (!Array.isArray(found)) return { status: 'invalid-result', items: [] };
+  if (found.length > 8) return { status: 'overflow', items: [] };
+  const reasons = new Set(['FILE_FAILED', 'FILE_ACCESS_DENIED', 'FILE_NO_SPACE',
+    'FILE_NAME_TOO_LONG', 'FILE_TOO_LARGE', 'FILE_VIRUS_INFECTED',
+    'FILE_TRANSIENT_ERROR', 'FILE_BLOCKED', 'FILE_SECURITY_CHECK_FAILED',
+    'FILE_TOO_SHORT', 'FILE_HASH_MISMATCH', 'FILE_SAME_AS_SOURCE',
+    'NETWORK_FAILED', 'NETWORK_TIMEOUT', 'NETWORK_DISCONNECTED',
+    'NETWORK_SERVER_DOWN', 'NETWORK_INVALID_REQUEST', 'SERVER_FAILED',
+    'SERVER_NO_RANGE', 'SERVER_BAD_CONTENT', 'SERVER_UNAUTHORIZED',
+    'SERVER_CERT_PROBLEM', 'SERVER_FORBIDDEN', 'SERVER_UNREACHABLE',
+    'SERVER_CONTENT_LENGTH_MISMATCH', 'SERVER_CROSS_ORIGIN_REDIRECT',
+    'USER_CANCELED', 'USER_SHUTDOWN', 'CRASH']);
+  const items = [];
+  for (const item of found) {
+    if (item?.url !== fixtureUrl) continue;
+    if (!Number.isSafeInteger(item.id) || item.id < 0 ||
+        !['in_progress', 'interrupted', 'complete'].includes(item.state)) {
+      return { status: 'invalid-item', items: [] };
+    }
+    const nameMatch = typeof item.filename === 'string' &&
+      item.filename.split(/[\\/]/u).at(-1) === expectedName;
+    items.push({ id: item.id, state: item.state,
+      interruptReason: item.error === undefined ? null
+        : reasons.has(item.error) ? item.error : 'unknown',
+      requestedNameMatch: nameMatch, fixtureUrlMatch: true });
+  }
+  if (new Set(items.map(({ id }) => id)).size !== items.length) {
+    return { status: 'ambiguous-ids', items: [] };
+  }
+  return { status: 'observed', items };
+}
+
+async function captureManagerDownloadHistory(context, managerId) {
+  let page;
+  try {
+    page = await context.newPage();
+    await page.goto(`chrome-extension://${managerId}/options.html`,
+      { waitUntil: 'domcontentloaded', timeout: 10_000 });
+    if (!isOwnedManagerOptionsUrl(page.url(), managerId)) {
+      return { status: 'unowned-page', items: [] };
+    }
+    const result = await page.evaluate(inspectManagerDownloadHistoryDocument,
+      { managerId, fixtureUrl: FIRST_MEDIA_URL, expectedName: filename(0) });
+    if (!isOwnedManagerOptionsUrl(page.url(), managerId)) {
+      return { status: 'unowned-page', items: [] };
+    }
+    return result;
+  } catch (error) {
+    return { status: 'capture-error', errorType: error instanceof Error ? error.name : typeof error,
+      items: [] };
+  } finally {
+    await page?.close().catch(() => {});
+  }
+}
+
+export function firstCurrentManagerDownloadHistory(before, after) {
+  if (before.status !== 'observed' || after.status !== 'observed') {
+    return { status: 'unknown', baselineStatus: before.status, queryStatus: after.status,
+      items: [] };
+  }
+  const seen = new Set(before.items.map(({ id }) => id));
+  const items = after.items.filter(({ id }) => !seen.has(id));
+  return { status: items.length > 1 ? 'ambiguous' : 'observed',
+    baselineCount: before.items.length, items: items.length > 1 ? [] : items };
 }
 
 async function captureManagerPermissionDiagnostics(page, detailsUrl, output, probe) {
@@ -1282,6 +1363,8 @@ async function runFixture(context, observer, root, output, downloads, images, ma
         p === 'normal' && mediaPhase === 'normal' && index === 0).length;
       const singleSince = observer.snapshot();
       const singleBefore = new Set(await readdir(downloads));
+      const historyBefore = repetition === 0
+        ? await captureManagerDownloadHistory(context, managerId) : null;
       const consoleBefore = repetition === 0 ? managerConsole.mark() : null;
       let single;
       try {
@@ -1296,6 +1379,8 @@ async function runFixture(context, observer, root, output, downloads, images, ma
               ({ errorType: captureError instanceof Error ? captureError.name : typeof captureError })),
             managerDownloadsPermission: await captureManagerDownloadsPermission(context, managerId),
             managerConsole: managerConsoleClick,
+            managerDownloadHistory: firstCurrentManagerDownloadHistory(historyBefore,
+              await captureManagerDownloadHistory(context, managerId)),
           };
         }
         throw error;

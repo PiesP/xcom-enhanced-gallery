@@ -254,7 +254,11 @@ and native downloads use the owned browser directory. Browser-level CDP download
 events establish `completed` for each unique GUID without manager API permissions;
 the only new owned file is then read independently. The independent ZIP reader
 checks stored entries, central directory, order, CRCs, names, and bytes. Browser
-download progress must report `completed` before file bytes are read. A completed
+download progress must report `completed` before file bytes are read. On a first
+single-download failure, the runner also compares exact-URL manager download
+history before and after the click. It records only bounded IDs, states,
+interrupt reasons, and expected-name matches; unavailable or ambiguous history
+remains unknown without replacing the original failure. A completed
 native save does not release the userscript's page-owned Blob reservation: that
 reservation remains until genuine page teardown. Gallery reopen alone cannot
 recover it. The 512 MiB ledger covers all live reservations, so it is not a

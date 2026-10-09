@@ -189,6 +189,12 @@ const userscriptInstall = (await import(
     original: string; requested: string; observed: string; scope: string }>;
   inspectFirstCurrentDownload(page: { url(): string;
     evaluate(callback: (url: string) => unknown, url: string): Promise<unknown> }): Promise<unknown>;
+  inspectManagerDownloadHistoryDocument(args: { managerId: string; fixtureUrl: string;
+    expectedName: string }): Promise<{ status: string; items: Array<{ id: number; state: string;
+      interruptReason: string | null; requestedNameMatch: boolean; fixtureUrlMatch: boolean }> }>;
+  firstCurrentManagerDownloadHistory(before: { status: string; items: Array<{ id: number }> },
+    after: { status: string; items: Array<{ id: number }> }): { status: string;
+      items: Array<{ id: number }> };
   classifyManagerDownloadConsole(value: unknown): string | null;
   watchManagerDownloadConsole(context: EventEmitter & { serviceWorkers(): EventEmitter[] },
     managerId: string): { mark(): unknown; snapshotSince(before: unknown): unknown; dispose(): void };
@@ -1018,6 +1024,10 @@ describe('Windows X live page validation', () => {
       const article = html.match(new RegExp(`<article data-route="classic" data-phase="${phase}"[\\s\\S]*?</article>`, 'u'));
       expect(article, `Missing ${phase} article`).not.toBeNull();
       const phaseDocument = new DOMParser().parseFromString(article?.[0] ?? '', 'text/html');
+      if (phase === 'normal') {
+        expect(phaseDocument.querySelector('img[src]')?.getAttribute('src')).toBe(
+          'https://pbs.twimg.com/media/GkE1234ABCDEF.jpg?format=jpg&name=large');
+      }
       const actual = [...phaseDocument.querySelectorAll('img[src]')].map((image) => {
         const url = new URL(image.getAttribute('src') ?? '');
         expect(url.origin).toBe('https://pbs.twimg.com');
@@ -1066,6 +1076,56 @@ describe('Windows X live page validation', () => {
     expect(userscriptInstall.isPublicAvatarFixtureUrl(url.replace('public-avatar', 'other-avatar')))
       .toBe(false);
     expect(userscriptInstall.isPublicAvatarFixtureUrl(url.replace('https:', 'http:'))).toBe(false);
+  });
+
+  it('limits manager history to the exact first fixture request and redacts native fields', async () => {
+    const fixtureUrl = 'https://pbs.twimg.com/media/GkE1234ABCDEF.jpg?format=jpg&name=large';
+    const expectedName = 'testuser_1234567890123456789_0.jpg';
+    const search = vi.fn(async () => [
+      { id: 11, url: fixtureUrl, filename: `C:\\owned\\${expectedName}`,
+        state: 'interrupted', error: 'NETWORK_FAILED', finalUrl: 'https://secret.example/',
+        byExtensionId: 'secret-id', referrer: 'https://private.example/' },
+      { id: 12, url: `${fixtureUrl}&other=1`, filename: 'C:\\private\\file.jpg',
+        state: 'complete' },
+    ]);
+    vi.stubGlobal('location', { href: 'chrome-extension://manager/options.html' });
+    vi.stubGlobal('chrome', { downloads: { search } });
+    try {
+      const observation = await userscriptInstall.inspectManagerDownloadHistoryDocument({
+        managerId: 'manager', fixtureUrl, expectedName });
+      expect(search).toHaveBeenCalledWith({ url: fixtureUrl, limit: 9 });
+      expect(observation).toEqual({ status: 'observed', items: [{ id: 11,
+        state: 'interrupted', interruptReason: 'NETWORK_FAILED',
+        requestedNameMatch: true, fixtureUrlMatch: true }] });
+      expect(JSON.stringify(observation)).not.toMatch(/private|secret|chrome-extension|pbs\.twimg/u);
+      expect(userscriptInstall.firstCurrentManagerDownloadHistory(
+        { status: 'observed', items: [] }, observation)).toMatchObject({
+        status: 'observed', items: [{ id: 11 }] });
+      expect(userscriptInstall.firstCurrentManagerDownloadHistory(observation, observation))
+        .toMatchObject({ status: 'observed', items: [] });
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('marks incomplete or ambiguous manager history unknown without leaking items', async () => {
+    const args = { managerId: 'manager', fixtureUrl: 'https://pbs.twimg.com/media/first.jpg',
+      expectedName: 'first.jpg' };
+    vi.stubGlobal('location', { href: 'chrome-extension://manager/options.html' });
+    vi.stubGlobal('chrome', { downloads: { search: vi.fn(async () => Array.from({ length: 9 },
+      (_, id) => ({ id, url: args.fixtureUrl, state: 'complete', filename: 'first.jpg' }))) } });
+    try {
+      const overflow = await userscriptInstall.inspectManagerDownloadHistoryDocument(args);
+      expect(overflow).toEqual({ status: 'overflow', items: [] });
+      expect(userscriptInstall.firstCurrentManagerDownloadHistory(
+        { status: 'observed', items: [] }, overflow)).toEqual({ status: 'unknown',
+        baselineStatus: 'observed', queryStatus: 'overflow', items: [] });
+      expect(userscriptInstall.firstCurrentManagerDownloadHistory(
+        { status: 'observed', items: [] }, { status: 'observed', items: [{ id: 1 }, { id: 2 }] }))
+        .toEqual({ status: 'ambiguous', baselineCount: 0, items: [] });
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('binds native completion to the browser download GUID without manager privileges', async () => {
