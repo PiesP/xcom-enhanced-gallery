@@ -248,9 +248,15 @@ python3 /home/piesp/projects/windows-acceptance/vmctl.py run \
   --output /path/to/private/xcom-userscript-evidence
 ```
 
-Use a separate invocation for Edge. The manager is imported as an unpacked
+The HTTPS userscript fixture currently supports Chrome only; Edge userscript
+acceptance remains unverified. The manager is imported as an unpacked
 extension, the production userscript is installed through its confirmation UI,
-and native downloads use the owned browser directory. Browser-level CDP download
+and native downloads use the owned browser directory. The fixture starts a
+task-owned HTTPS listener on ephemeral `127.0.0.1` before launching the fresh
+profile. A one-run SPKI exception and exact `pbs.twimg.com:443` host mapping let
+the real manager and browser download API fetch only the declared fixture JPEGs.
+The generated private key stays in process memory; no OS trust or hosts setting
+is changed. Browser-level CDP download
 events establish `completed` for each unique GUID without manager API permissions;
 the only new owned file is then read independently. The independent ZIP reader
 checks stored entries, central directory, order, CRCs, names, and bytes. Browser
@@ -265,12 +271,13 @@ recover it. The 512 MiB ledger covers all live reservations, so it is not a
 per-file allowance. After no download is active, a real reload starts a new
 page lifetime. Normal, failed, partial, and held transfers use distinct fixture
 media IDs, and each phase opens its own article in the same document; completed
-media cache entries cannot mask the later transport cases. The cancellation case
-correlates the exact held request with its Playwright `requestfinished` or
-`requestfailed` event, records the separate route
-fulfillment outcome and any request failure reason, then keeps the same document
-alive for a bounded two-second observation after that request reaches a terminal
-state, checking browser
+media cache entries cannot mask the later transport cases. The first normal ZIP
+requires three loopback responses. Its same-page repeat may reuse completed
+media cache entries and is verified by the saved ZIP inventory and bytes. The
+cancellation case holds one armed loopback response and requires its connection
+to close after gallery
+cancellation, then keeps the same document alive for a bounded two-second
+observation, checking browser
 download events and owned files repeatedly. It does not prove that an
 unobservable manager callback can never arrive later. ZIP receipts record only
 the source scheme and origin and require the expected X.com page Blob origin;

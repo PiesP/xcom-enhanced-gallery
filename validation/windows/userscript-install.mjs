@@ -9,6 +9,7 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { promisify } from 'node:util';
 import { expectedStoredZipBytes, readExactDownloadFile, verifyStoredZip } from './download-memory.mjs';
 import { createImageFixtures, enableDeveloperMode, verifyDownloadDirectory } from './install-profile.mjs';
+import { startUserscriptFixtureLoopback } from './userscript-loopback.mjs';
 
 const SCRIPT_NAME = 'X.com Enhanced Gallery';
 const PROFILE_PREFIX = 'xeg-userscript-install-';
@@ -203,40 +204,6 @@ function safeRouteError(error) {
   return { name, message };
 }
 
-/** Correlate Playwright's request lifecycle to the exact held route request. */
-export function watchExactRequestTerminal(context) {
-  let ownedRequest;
-  let terminal;
-  const finished = (request) => {
-    if (request === ownedRequest) terminal = { kind: 'requestfinished' };
-  };
-  const failed = (request) => {
-    if (request !== ownedRequest) return;
-    const errorText = request.failure()?.errorText ?? null;
-    terminal = {
-      kind: 'requestfailed',
-      errorText: errorText?.replace(/https?:\/\/[^\s)]+/gu, '[url]').slice(0, 256) ?? null,
-    };
-  };
-  context.on('requestfinished', finished);
-  context.on('requestfailed', failed);
-  return {
-    bind(request) {
-      assert(!ownedRequest, 'Held transport was bound more than once');
-      ownedRequest = request;
-    },
-    async waitForTerminal() {
-      assert(ownedRequest, 'Held transport was not bound');
-      return waitFor(() => terminal, 'exact held request terminal', 15_000);
-    },
-    terminal: () => terminal,
-    dispose() {
-      context.off('requestfinished', finished);
-      context.off('requestfailed', failed);
-    },
-  };
-}
-
 /** Report only the twelve fixture media identities, without URLs or response bodies. */
 export function watchFixtureMediaNetwork(context) {
   const events = [];
@@ -271,34 +238,6 @@ export function watchFixtureMediaNetwork(context) {
     context.off('response', onResponse);
     context.off('requestfailed', onFailed);
   } };
-}
-
-export function requireHeldRouteOutcome(routeInvocation, requestTerminal) {
-  assert(requestTerminal?.kind === 'requestfinished' || requestTerminal?.kind === 'requestfailed',
-    'Held request has no correlated transport terminal');
-  if (routeInvocation?.kind === 'rejected' && requestTerminal.kind !== 'requestfailed') {
-    throw new Error('Held route fulfillment failed without a matching failed request');
-  }
-  assert(['fulfilled', 'rejected'].includes(routeInvocation?.kind),
-    'Held route invocation has no completion outcome');
-  return { routeInvocation, requestTerminal };
-}
-
-/** Correlate a failed media transport with the ZIP action, excluding image preloads. */
-export function findPostClickFailedMediaTransport(records, startIndex, phase, mediaIndex) {
-  assert(Number.isSafeInteger(startIndex) && startIndex >= 0 && startIndex <= records.length,
-    'Invalid pre-click media route baseline');
-  assert(['failure', 'partial'].includes(phase), 'Unexpected failure fixture phase');
-  for (let routeIndex = startIndex; routeIndex < records.length; routeIndex++) {
-    const record = records[routeIndex];
-    if (record.phase === phase && record.mediaPhase === phase && record.index === mediaIndex &&
-      record.method === 'GET' && ['fetch', 'xhr', 'other'].includes(record.resourceType) &&
-      record.result === 'http-503') {
-      return { routeIndex, phase, mediaIndex, method: record.method,
-        resourceType: record.resourceType, result: record.result };
-    }
-  }
-  return undefined;
 }
 
 export function managerDetailsUrl(browserName, id) {
@@ -1239,17 +1178,13 @@ export function watchManagerDownloadConsole(context, managerId) {
   };
 }
 
-async function runFixture(context, observer, root, output, downloads, images, managerId,
+async function runFixture(context, observer, root, output, downloads, images, loopback, managerId,
   managerVersion, profile, sourceSha256) {
   const html = await readFile(join(root, 'test/e2e/fixtures/installed-gallery-page.html'), 'utf8');
   const routeRecords = [];
   const result = { status: 'failed', downloads: [], routes: routeRecords, routeFailures: [],
     routeFailureOverflow: 0, transportReceipts: {}, cases: {}, cleanup: {} };
   let phase = 'normal';
-  let heldRequest;
-  let releaseHeld;
-  let heldRouteInvocation;
-  let heldTerminalObserver;
   let managerConsole;
   const mediaNetwork = watchFixtureMediaNetwork(context);
   const routeFixture = async (route) => {
@@ -1280,25 +1215,15 @@ async function runFixture(context, observer, root, output, downloads, images, ma
       const record = { phase, mediaPhase, index, resourceType: route.request().resourceType(),
         method: route.request().method() };
       routeRecords.push(record);
+      if (route.request().resourceType() !== 'image') {
+        assert.equal(route.request().method(), 'GET', 'Fixture download used an unexpected method');
+        record.result = 'loopback';
+        await route.continue();
+        return;
+      }
       if (mediaPhase === phase && (phase === 'failure' || (phase === 'partial' && index === 1))) {
         record.result = 'http-503';
         await route.fulfill({ status: 503, contentType: 'text/plain', body: 'fixture unavailable' });
-        return;
-      }
-      if (mediaPhase === 'held' && phase === 'held' && index === 0 &&
-        route.request().resourceType() !== 'image') {
-        assert(!heldRequest, 'More than one held request');
-        heldRequest = record;
-        heldTerminalObserver.bind(route.request());
-        await new Promise((resolveHeld) => { releaseHeld = resolveHeld; });
-        try {
-          await route.fulfill({ status: 200, contentType: 'image/jpeg', body: images[index] });
-          heldRouteInvocation = { kind: 'fulfilled' };
-        } catch (error) {
-          heldRouteInvocation = { kind: 'rejected', error: safeRouteError(error) };
-        } finally {
-          record.routeInvocation = heldRouteInvocation;
-        }
         return;
       }
       record.result ??= 'image';
@@ -1340,6 +1265,7 @@ async function runFixture(context, observer, root, output, downloads, images, ma
     const showPhase = async (nextPhase) => {
       await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]').click();
       await gallery.waitFor({ state: 'detached' });
+      loopback.setPhase(nextPhase);
       phase = nextPhase;
       await page.locator('main').evaluate((main, selected) => {
         main.dataset.fixturePhase = selected;
@@ -1359,13 +1285,12 @@ async function runFixture(context, observer, root, output, downloads, images, ma
       sourceSha256, 'Userscript source changed before manager console observation');
     managerConsole = watchManagerDownloadConsole(context, managerId);
     for (let repetition = 0; repetition < 2; repetition++) {
-      const routedBeforeSingle = routeRecords.filter(({ phase: p, mediaPhase, index }) =>
-        p === 'normal' && mediaPhase === 'normal' && index === 0).length;
       const singleSince = observer.snapshot();
       const singleBefore = new Set(await readdir(downloads));
       const historyBefore = repetition === 0
         ? await captureManagerDownloadHistory(context, managerId) : null;
       const consoleBefore = repetition === 0 ? managerConsole.mark() : null;
+      const singleTransportStart = loopback.mark();
       let single;
       try {
         await current.click();
@@ -1385,22 +1310,42 @@ async function runFixture(context, observer, root, output, downloads, images, ma
         }
         throw error;
       }
-      if (repetition === 0) {
-        assert(routeRecords.filter(({ phase: p, mediaPhase, index }) =>
-          p === 'normal' && mediaPhase === 'normal' && index === 0).length > routedBeforeSingle,
-        'First single download did not use the bounded media route');
-      }
+      const singleTransport = await waitFor(() =>
+        loopback.findSince(singleTransportStart, 'normal', 0, 'served'),
+      'first media HTTPS loopback response');
+      assert.equal(singleTransport.sha256, sha256(images[0]));
       assert(single.bytes.equals(images[0]), 'Single saved bytes differ');
       result.downloads.push({ kind: 'single', repetition, ...single, bytes: single.bytes.length });
       await waitFor(async () => await current.isEnabled() ? true : undefined, 'single control ready');
       const zipSince = observer.snapshot();
       const zipBefore = new Set(await readdir(downloads));
+      const zipTransportStart = loopback.mark();
       await all.click();
       const zipName = FIXTURE_ZIP_NAME;
       const zip = await waitForDownload(observer, zipSince, zipBefore,
         zipName, browserFilename(zipName, repetition), downloads,
         expectedStoredZipBytes(expectedEntries));
       const verified = verifyStoredZip(zip.bytes, expectedEntries);
+      if (repetition === 0) {
+        const firstResponses = [];
+        for (const index of [0, 1, 2]) {
+          const transport = await waitFor(() =>
+            loopback.findSince(zipTransportStart, 'normal', index, 'served'),
+          `first ZIP media ${index} HTTPS loopback response`);
+          assert.equal(transport.sha256, sha256(images[index]));
+          firstResponses.push({ ...transport });
+        }
+        result.transportReceipts.normalZip = { firstResponses };
+      } else {
+        assert.equal(result.transportReceipts.normalZip.firstResponses.length, 3,
+          'Repeated ZIP has no verified first ZIP transport provenance');
+        result.transportReceipts.normalZip.repeated = {
+          source: 'same-page-first-zip-verified-media-cache-or-refetch',
+          additionalTransferResponses: loopback.snapshot().events.slice(zipTransportStart)
+            .filter((event) => event.phase === 'normal' && event.purpose === 'transfer' &&
+              event.result === 'served').length,
+        };
+      }
       result.downloads.push({ kind: 'zip', repetition, ...zip, bytes: zip.bytes.length,
         entryOrder: verified.entryOrder, included: verified.entries.length, omitted: 0 });
       await waitFor(async () => await all.isEnabled() ? true : undefined, 'ZIP control ready');
@@ -1417,12 +1362,12 @@ async function runFixture(context, observer, root, output, downloads, images, ma
     await showPhase('failure');
     const failureSince = observer.snapshot();
     const failureBefore = new Set(await readdir(downloads));
-    const failureRouteStart = routeRecords.length;
+    const failureTransportStart = loopback.mark();
     await all.click();
     const failedTransport = await waitFor(() =>
-      findPostClickFailedMediaTransport(routeRecords, failureRouteStart, 'failure', 0),
-    'post-click routed transport failure');
-    result.transportReceipts.networkFailure = { startIndex: failureRouteStart, ...failedTransport };
+      loopback.findSince(failureTransportStart, 'failure', 0, 'http-503'),
+    'post-click HTTPS loopback transport failure');
+    result.transportReceipts.networkFailure = { ...failedTransport };
     await waitFor(async () => await all.isEnabled() ? true : undefined, 'failed control ready');
     await observeNoNativeDownload(observer, failureSince, failureBefore, downloads,
       'Transport failure');
@@ -1431,7 +1376,7 @@ async function runFixture(context, observer, root, output, downloads, images, ma
     await showPhase('partial');
     const partialSince = observer.snapshot();
     const partialBefore = new Set(await readdir(downloads));
-    const partialRouteStart = routeRecords.length;
+    const partialTransportStart = loopback.mark();
     await all.click();
     const includedEntries = expectedEntries.filter((_, index) => index !== 1);
     const partialName = FIXTURE_ZIP_NAME;
@@ -1444,26 +1389,32 @@ async function runFixture(context, observer, root, output, downloads, images, ma
       omitted: expectedEntries.length - partialZip.entries.length,
       countSource: 'verified-zip-inventory-vs-expected-fixture' });
     const partialFailedTransport = await waitFor(() =>
-      findPostClickFailedMediaTransport(routeRecords, partialRouteStart, 'partial', 1),
-    'post-click partial ZIP transport failure');
-    result.transportReceipts.partialZip = { startIndex: partialRouteStart, ...partialFailedTransport };
+      loopback.findSince(partialTransportStart, 'partial', 1, 'http-503'),
+    'post-click partial ZIP HTTPS loopback failure');
+    for (const index of [0, 2]) {
+      const transport = await waitFor(() =>
+        loopback.findSince(partialTransportStart, 'partial', index, 'served'),
+      `partial ZIP media ${index} HTTPS loopback response`);
+      assert.equal(transport.sha256, sha256(images[index]));
+    }
+    result.transportReceipts.partialZip = { ...partialFailedTransport };
     result.cases.partialZip = 'passed';
     await waitFor(async () => await all.isEnabled() ? true : undefined, 'partial ZIP control ready');
 
-    heldTerminalObserver = watchExactRequestTerminal(context);
     const heldTrigger = await showPhase('held');
+    loopback.armHeld();
     const heldSince = observer.snapshot();
     const heldBefore = new Set(await readdir(downloads));
+    const heldTransportStart = loopback.mark();
     await all.click();
-    await waitFor(async () => heldRequest ? true : undefined, 'held media request');
+    await waitFor(() => loopback.findSince(heldTransportStart, 'held', 0, 'started'),
+      'held HTTPS loopback request');
     await page.keyboard.press('Escape');
     await gallery.waitFor({ state: 'detached' });
-    releaseHeld();
-    releaseHeld = undefined;
-    await waitFor(() => heldRouteInvocation, 'held route invocation completion');
-    const requestTerminal = await heldTerminalObserver.waitForTerminal();
-    const heldOutcome = requireHeldRouteOutcome(heldRouteInvocation, requestTerminal);
-    heldRequest.requestTerminal = requestTerminal;
+    const heldTerminal = await waitFor(() =>
+      loopback.findSince(heldTransportStart, 'held', 0, 'aborted'),
+    'held HTTPS loopback response closure');
+    assert.equal(loopback.activeCount(), 0, 'Held response remains active after cancellation');
     // cleanupGallery() resets the busy signal synchronously. A detached gallery
     // and enabled toolbar cannot prove that an old manager callback has settled.
     // Keep this document alive after the exact held request reaches a terminal
@@ -1476,10 +1427,10 @@ async function runFixture(context, observer, root, output, downloads, images, ma
       heldBefore, downloads, 'Pre-dispatch cancellation', 2_000);
     result.cases.preDispatchCancellation = 'passed';
     result.cases.delayedSettlement = { status: 'bounded-no-native-save',
-      ...heldOutcome };
+      transport: { ...heldTerminal } };
 
+    loopback.setPhase('normal');
     phase = 'normal';
-    assert(heldTerminalObserver.terminal(), 'Held request remains active before reload');
     await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]').click();
     await gallery.waitFor({ state: 'detached' });
     await page.reload({ waitUntil: 'domcontentloaded' });
@@ -1487,10 +1438,15 @@ async function runFixture(context, observer, root, output, downloads, images, ma
     await gallery.waitFor({ state: 'visible' });
     const recoverySince = observer.snapshot();
     const recoveryBefore = new Set(await readdir(downloads));
+    const recoveryTransportStart = loopback.mark();
     await current.click();
     const recovered = await waitForDownload(observer, recoverySince, recoveryBefore,
       filename(0), browserFilename(filename(0), 2), downloads, images[0].length);
     assert(recovered.bytes.equals(images[0]), 'Reload recovery saved bytes differ');
+    const recoveredTransport = await waitFor(() =>
+      loopback.findSince(recoveryTransportStart, 'normal', 0, 'served'),
+    'reload recovery HTTPS loopback response');
+    assert.equal(recoveredTransport.sha256, sha256(images[0]));
     result.downloads.push({ kind: 'single-after-reload', ...recovered, bytes: recovered.bytes.length });
     result.cases.reloadRecovery = 'passed';
     await observer.flush();
@@ -1498,6 +1454,13 @@ async function runFixture(context, observer, root, output, downloads, images, ma
       'Fixture route failed');
     assert.equal(observer.snapshot(), result.downloads.length,
       'Unexpected native download count');
+    const loopbackResult = loopback.snapshot();
+    assert.equal(loopbackResult.unexpectedCount, 0, 'Unexpected loopback request');
+    assert.equal(loopbackResult.overflow, false, 'Loopback fixture exceeded bounds');
+    assert.equal(loopbackResult.serverError, false, 'Loopback server reported an error');
+    assert.equal(loopbackResult.activeCount, 0, 'Loopback response remains active');
+    assert(loopbackResult.events.every((event) => event.result !== 'started'),
+      'Loopback transport lacks a terminal result');
     await page.screenshot({ path: join(output, 'userscript-fixture.png') });
     result.status = 'passed';
     return result;
@@ -1505,7 +1468,6 @@ async function runFixture(context, observer, root, output, downloads, images, ma
     result.error = safeRouteError(error);
     throw error;
   } finally {
-    if (releaseHeld) releaseHeld();
     if (managerConsole) {
       try {
         managerConsole.dispose();
@@ -1513,13 +1475,13 @@ async function runFixture(context, observer, root, output, downloads, images, ma
       } catch { result.cleanup.managerConsoleListenersRemoved = false; }
     }
     await page.close().catch((error) => { result.cleanup.pageError = String(error); });
-    heldTerminalObserver?.dispose();
     mediaNetwork.dispose();
     await context.unroute('**/*', handler).then(() => { result.cleanup.routeRemoved = true; },
       (error) => { result.cleanup.routeError = String(error); });
     result.browserDownloadEvents = observer.events();
     result.fixtureMediaNetwork = { events: mediaNetwork.events,
       overflow: mediaNetwork.overflow() };
+    result.loopbackTransport = loopback.snapshot();
     await writeFile(join(output, 'userscript-fixture-result.json'), JSON.stringify(result, null, 2));
     assert.deepEqual(result.cleanup, managerConsole
       ? { managerConsoleListenersRemoved: true, routeRemoved: true }
@@ -1529,7 +1491,7 @@ async function runFixture(context, observer, root, output, downloads, images, ma
 }
 
 export async function runUserscriptInstallation({ chromium, root, output, browserName, headless }) {
-  assert(['chrome', 'msedge'].includes(browserName), 'Userscript installation requires Chrome or Edge');
+  assert.equal(browserName, 'chrome', 'HTTPS userscript fixture currently supports Chrome only');
   await mkdir(output, { recursive: true });
   const source = await readFile(join(root, 'dist/xcom-enhanced-gallery.user.js'));
   const profile = await mkdtemp(join(root, PROFILE_PREFIX));
@@ -1543,18 +1505,29 @@ export async function runUserscriptInstallation({ chromium, root, output, browse
   const result = { status: 'failed', browserName, installation: 'userscript',
     installationMethod: 'real-manager-ui-import', sourceSha256: sha256(source),
     profileId: 'xeg-gallery', profilePrefix: PROFILE_PREFIX,
-    scope: 'small routed fixture; CDP native completion and saved bytes; no heap/RSS or native Save As claim',
+    scope: 'small HTTPS loopback fixture; CDP native completion and saved bytes; no heap/RSS or native Save As claim',
     cleanup: {} };
   let context;
   let cdp;
   let managerId;
   let observer;
+  let loopback;
   let primaryError;
   try {
+    loopback = await startUserscriptFixtureLoopback(
+      join(root, 'validation/windows/userscript-fixture-certificate.ps1'),
+      MEDIA_COHORTS, PUBLIC_AVATAR_PATH);
+    result.fixtureTransport = { kind: 'task-owned-https-loopback',
+      bind: '127.0.0.1', port: loopback.port, host: 'pbs.twimg.com',
+      certificateScope: 'one-run-spki' };
     context = await chromium.launchPersistentContext(profile, {
       channel: browserName, headless, acceptDownloads: true, downloadsPath: downloads,
       locale: 'en-US', viewport: { width: 1280, height: 800 },
-      ignoreDefaultArgs: ['--disable-extensions'], args: ['--enable-unsafe-extension-debugging'],
+      ignoreDefaultArgs: ['--disable-extensions'], args: [
+        '--enable-unsafe-extension-debugging',
+        `--host-resolver-rules=MAP pbs.twimg.com:443 127.0.0.1:${loopback.port}`,
+        `--ignore-certificate-errors-spki-list=${loopback.spkiSha256}`,
+      ],
     });
     result.browserVersion = context.browser().version();
     await enableDeveloperMode(context, browserName);
@@ -1571,12 +1544,16 @@ export async function runUserscriptInstallation({ chromium, root, output, browse
       (ask, id, context) => inspectAndAllowNativeManagerPermission(cdp,
         root, output, profile, browserName, ask, id, context));
     const images = await createImageFixtures(context);
+    loopback.setImages(images);
     result.fixtureLimits = { imageBytes: images.map((image) => image.length),
       imageSha256: images.map(sha256),
       maxDownloads: MAX_DOWNLOADS, maxRoutedImageRequests: 64,
+      maxLoopbackRequests: 64, maxLoopbackImageBytes: 64 * 1024,
+      maxLoopbackServedBytes: 2 * 1024 * 1024,
       productionBudget: 'unchanged' };
     observer = createBrowserDownloadObserver(cdp);
-    result.fixture = await runFixture(context, observer, root, output, downloads, images, managerId,
+    result.fixture = await runFixture(context, observer, root, output, downloads, images, loopback,
+      managerId,
       result.manager.managerVersion, profile, result.sourceSha256);
     result.status = 'passed';
   } catch (error) {
@@ -1588,6 +1565,10 @@ export async function runUserscriptInstallation({ chromium, root, output, browse
       observer.dispose();
       result.cleanup.browserDownloadObserverRemoved = true;
     }
+    if (loopback?.activeCount()) {
+      loopback.destroyActive();
+      result.cleanup.activeLoopbackResponsesDestroyed = true;
+    }
     if (cdp && managerId) {
       await cdp.send('Extensions.uninstall', { id: managerId }).then(
         () => { result.cleanup.managerUninstalled = true; }, (error) => errors.push(error));
@@ -1595,6 +1576,10 @@ export async function runUserscriptInstallation({ chromium, root, output, browse
     if (context) {
       await context.close().then(() => { result.cleanup.browserClosed = true; },
         (error) => errors.push(error));
+    }
+    if (loopback) {
+      await loopback.close().then(() => { result.cleanup.loopbackClosed = true; },
+        () => errors.push(new Error('fixture-loopback-cleanup-failed')));
     }
     if (result.cleanup.browserClosed || !context) {
       try {

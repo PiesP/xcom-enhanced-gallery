@@ -195,6 +195,8 @@ const userscriptInstall = (await import(
   firstCurrentManagerDownloadHistory(before: { status: string; items: Array<{ id: number }> },
     after: { status: string; items: Array<{ id: number }> }): { status: string;
       items: Array<{ id: number }> };
+  runUserscriptInstallation(options: { browserName: string; chromium: unknown; root: string;
+    output: string; headless: boolean }): Promise<unknown>;
   classifyManagerDownloadConsole(value: unknown): string | null;
   watchManagerDownloadConsole(context: EventEmitter & { serviceWorkers(): EventEmitter[] },
     managerId: string): { mark(): unknown; snapshotSince(before: unknown): unknown; dispose(): void };
@@ -205,10 +207,6 @@ const userscriptInstall = (await import(
     overflow(): number;
     dispose(): void;
   };
-  findPostClickFailedMediaTransport(records: Array<{ phase: string; mediaPhase: string;
-    index: number; method: string; resourceType: string; result: string }>, startIndex: number,
-  phase: string, mediaIndex: number): { routeIndex: number; phase: string; mediaIndex: number;
-    method: string; resourceType: string; result: string } | undefined;
   createBrowserDownloadObserver(cdp: EventEmitter & { send(method: string): Promise<unknown> }): {
   snapshot(): number;
   waitForCompletion(since: number, name: string): Promise<{ guid: string; state: string }>;
@@ -220,17 +218,16 @@ const userscriptInstall = (await import(
   observeNoNativeDownload(observer: { assertNoneSince(since: number, label: string): Promise<void> },
     since: number, files: Set<string>, directory: string, label: string,
     durationMs: number): Promise<{ samples: number }>;
-  watchExactRequestTerminal(context: EventEmitter): {
-    bind(request: unknown): void;
-    waitForTerminal(): Promise<{ kind: string; errorText?: string | null }>;
-    terminal(): { kind: string; errorText?: string | null } | undefined;
-    dispose(): void;
-  };
-  requireHeldRouteOutcome(route: { kind: string; error?: unknown },
-    terminal?: { kind: string; errorText?: string | null }): unknown;
 };
 
 describe('Windows X live page validation', () => {
+  it('keeps the loopback certificate exception scoped to Chrome', async () => {
+    const chromium = { launchPersistentContext: vi.fn() };
+    await expect(userscriptInstall.runUserscriptInstallation({ browserName: 'msedge', chromium,
+      root: '/unused', output: '/unused', headless: false })).rejects.toThrow('Chrome only');
+    expect(chromium.launchPersistentContext).not.toHaveBeenCalled();
+  });
+
   const nativePrompt = () => ({ status: 'captured', capture: 'uia-only',
     screenshot: 'not-captured', permissionGrantAttempted: false, truncated: true,
     browserPid: 42, creationUtcTicks: '639271195545735820', browserSessionId: 2,
@@ -533,44 +530,6 @@ describe('Windows X live page validation', () => {
     watcher.dispose();
     context.emit('request', owned);
     expect(watcher.events).toHaveLength(3);
-  });
-
-  it('requires a post-click GET transport failure rather than a preload or stale route', () => {
-    const failed = { phase: 'failure', mediaPhase: 'failure', index: 0,
-      method: 'GET', resourceType: 'fetch', result: 'http-503' };
-    const baseline = [failed];
-    const candidates = [
-      { ...failed, resourceType: 'image' },
-      { ...failed, phase: 'partial' },
-      { ...failed, mediaPhase: 'partial' },
-      { ...failed, index: 1 },
-      { ...failed, method: 'POST' },
-      { ...failed, resourceType: 'document' },
-      { ...failed, result: 'image' },
-    ];
-    const records = [...baseline, ...candidates];
-    expect(userscriptInstall.findPostClickFailedMediaTransport(records, 1, 'failure', 0))
-      .toBeUndefined();
-    records.push(failed);
-    expect(userscriptInstall.findPostClickFailedMediaTransport(records, 1, 'failure', 0))
-      .toEqual({ routeIndex: records.length - 1, phase: 'failure', mediaIndex: 0,
-        method: 'GET', resourceType: 'fetch', result: 'http-503' });
-    expect(() => userscriptInstall.findPostClickFailedMediaTransport(records,
-      records.length + 1, 'failure', 0)).toThrow('baseline');
-  });
-
-  it('correlates partial ZIP index one with a post-click XHR or other transport', () => {
-    const failed = { phase: 'partial', mediaPhase: 'partial', index: 1,
-      method: 'GET', resourceType: 'xhr', result: 'http-503' };
-    const records = [{ ...failed, resourceType: 'image' }, failed];
-    expect(userscriptInstall.findPostClickFailedMediaTransport(records, 1, 'partial', 1))
-      .toEqual({ routeIndex: 1, phase: 'partial', mediaIndex: 1,
-        method: 'GET', resourceType: 'xhr', result: 'http-503' });
-    expect(userscriptInstall.findPostClickFailedMediaTransport(records, 1, 'partial', 0))
-      .toBeUndefined();
-    records.push({ ...failed, resourceType: 'other' });
-    expect(userscriptInstall.findPostClickFailedMediaTransport(records, 2, 'partial', 1))
-      .toMatchObject({ routeIndex: 2, resourceType: 'other' });
   });
 
   it('keeps permission-diagnostic frame URLs on owned origins without query tokens', () => {
@@ -1192,32 +1151,6 @@ describe('Windows X live page validation', () => {
       observer.dispose();
       rmSync(directory, { recursive: true, force: true });
     }
-  });
-
-  it('requires an exact held-request terminal before accepting a route failure', async () => {
-    const context = new EventEmitter();
-    const held = { failure: () => ({ errorText: 'net::ERR_ABORTED' }) };
-    const unrelated = { failure: () => ({ errorText: 'net::ERR_FAILED' }) };
-    const watcher = userscriptInstall.watchExactRequestTerminal(context);
-    try {
-      watcher.bind(held);
-      context.emit('requestfinished', unrelated);
-      context.emit('requestfailed', unrelated);
-      expect(watcher.terminal()).toBeUndefined();
-      expect(() => userscriptInstall.requireHeldRouteOutcome({ kind: 'rejected' }))
-        .toThrow('no correlated transport terminal');
-      context.emit('requestfailed', held);
-      const terminal = await watcher.waitForTerminal();
-      expect(terminal).toEqual({ kind: 'requestfailed', errorText: 'net::ERR_ABORTED' });
-      expect(userscriptInstall.requireHeldRouteOutcome({ kind: 'rejected' }, terminal))
-        .toMatchObject({ requestTerminal: terminal });
-      expect(() => userscriptInstall.requireHeldRouteOutcome({ kind: 'rejected' },
-        { kind: 'requestfinished' })).toThrow('without a matching failed request');
-    } finally {
-      watcher.dispose();
-    }
-    expect(context.listenerCount('requestfinished')).toBe(0);
-    expect(context.listenerCount('requestfailed')).toBe(0);
   });
 
   it('rejects a paused in-progress download after all bytes have arrived', () => {
