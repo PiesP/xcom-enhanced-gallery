@@ -154,6 +154,7 @@ const userscriptInstall = (await import(
   managerDetailsUrl(browserName: string, id: string): string;
   probeManagerUserScripts(page: { evaluate(callback: () => Promise<unknown>): Promise<unknown> }):
     Promise<{ available: boolean; registeredScriptCount?: number; errorType?: string }>;
+  hasKnownChromeUserScriptsLabel(text: string): boolean;
   findEdgeUserScriptsControl(page: { getByRole(role: string, options: { name: RegExp }): {
     count(): Promise<number>; isVisible(): Promise<boolean>;
   } }): Promise<unknown>;
@@ -222,6 +223,15 @@ describe('Windows X live page validation', () => {
     await expect(userscriptInstall.findEdgeUserScriptsControl({
       getByRole: () => target,
     })).rejects.toThrow('exactly one labeled Edge');
+  });
+
+  it('accepts only the observed Chrome user-scripts label in English or Korean', () => {
+    expect(userscriptInstall.hasKnownChromeUserScriptsLabel(
+      '사용자 스크립트 허용\n이 확장 프로그램은 검토되지 않은 코드를 실행할 수 있습니다.'
+    )).toBe(true);
+    expect(userscriptInstall.hasKnownChromeUserScriptsLabel('Allow user scripts')).toBe(true);
+    expect(userscriptInstall.hasKnownChromeUserScriptsLabel('InPrivate에서 허용')).toBe(false);
+    expect(userscriptInstall.hasKnownChromeUserScriptsLabel('Not Allow user scripts')).toBe(false);
   });
 
   it('keeps same-document userscript phases on distinct media cache keys with stable ZIP entries', () => {

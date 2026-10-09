@@ -141,6 +141,11 @@ export async function findEdgeUserScriptsControl(page) {
   return control;
 }
 
+export function hasKnownChromeUserScriptsLabel(text) {
+  return text.split(/\r?\n/u).some((line) =>
+    /^(?:사용자 스크립트 허용|Allow user scripts)$/iu.test(line.trim()));
+}
+
 async function captureManagerPermissionDiagnostics(page, detailsUrl, output, probe) {
   const diagnostics = { api: probe, requestedUrl: detailsUrl };
   try {
@@ -193,8 +198,9 @@ async function installUserscript(context, id, root, output, browserName) {
         } else {
           const toggle = page.locator('#allow-user-scripts cr-toggle');
           const label = page.locator('#allow-user-scripts');
-          if (!await toggle.isVisible() ||
-            !/allow user scripts/iu.test(await label.innerText())) {
+          if (await toggle.count() !== 1 || !await toggle.isVisible() ||
+            await label.count() !== 1 ||
+            !hasKnownChromeUserScriptsLabel(await label.innerText())) {
             throw new Error('Manager userScripts API unavailable and no verified UI permission control');
           }
           if (!await toggle.evaluate((element) => element.checked)) await toggle.click();
