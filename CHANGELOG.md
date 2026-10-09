@@ -22,6 +22,7 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **Distribution notices** — Include the project and third-party license notices in the userscript and both extension archives.
 - **Userscript recovery** — Keep saved Blob ownership until the page is genuinely reloaded or closed. Reopening the gallery does not return this allowance. Wait for active saves to finish before reloading, and retry fewer files after an allowance rejection; this policy does not measure browser heap or process memory.
 - **Maintenance admission** — Require an explicit maintainer decision before executable dependency updates can be admitted, while preserving exact source checks and immutable workflow references.
 - **Installed acceptance** — Add a separate production-userscript profile for real Tampermonkey installation and bounded repeated-download fixtures. Keep browser completion, saved-byte verification, and post-cancellation observation separate from application ownership accounting.
