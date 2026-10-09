@@ -46,6 +46,58 @@ function assertOwned(root, profile) {
   assert(basename(profile).startsWith(PROFILE_PREFIX), 'Profile prefix differs');
 }
 
+function safeRouteError(error) {
+  const name = error instanceof Error ? error.name : typeof error;
+  const message = (error instanceof Error ? error.message : String(error))
+    .replace(/https?:\/\/[^\s)]+/gu, '[url]').slice(0, 256);
+  return { name, message };
+}
+
+/** Correlate Playwright's request lifecycle to the exact held route request. */
+export function watchExactRequestTerminal(context) {
+  let ownedRequest;
+  let terminal;
+  const finished = (request) => {
+    if (request === ownedRequest) terminal = { kind: 'requestfinished' };
+  };
+  const failed = (request) => {
+    if (request !== ownedRequest) return;
+    const errorText = request.failure()?.errorText ?? null;
+    terminal = {
+      kind: 'requestfailed',
+      errorText: errorText?.replace(/https?:\/\/[^\s)]+/gu, '[url]').slice(0, 256) ?? null,
+    };
+  };
+  context.on('requestfinished', finished);
+  context.on('requestfailed', failed);
+  return {
+    bind(request) {
+      assert(!ownedRequest, 'Held transport was bound more than once');
+      ownedRequest = request;
+    },
+    async waitForTerminal() {
+      assert(ownedRequest, 'Held transport was not bound');
+      return waitFor(() => terminal, 'exact held request terminal', 15_000);
+    },
+    terminal: () => terminal,
+    dispose() {
+      context.off('requestfinished', finished);
+      context.off('requestfailed', failed);
+    },
+  };
+}
+
+export function requireHeldRouteOutcome(routeInvocation, requestTerminal) {
+  assert(requestTerminal?.kind === 'requestfinished' || requestTerminal?.kind === 'requestfailed',
+    'Held request has no correlated transport terminal');
+  if (routeInvocation?.kind === 'rejected' && requestTerminal.kind !== 'requestfailed') {
+    throw new Error('Held route fulfillment failed without a matching failed request');
+  }
+  assert(['fulfilled', 'rejected'].includes(routeInvocation?.kind),
+    'Held route invocation has no completion outcome');
+  return { routeInvocation, requestTerminal };
+}
+
 async function installUserscript(context, id, root, output) {
   const manifest = JSON.parse(await readFile(join(root, 'test-tools/userscript-manager/manifest.json'), 'utf8'));
   assert(/^\d+(?:\.\d+){1,3}$/.test(manifest.version), 'Manager version is invalid');
@@ -185,7 +237,8 @@ async function runFixture(context, observer, root, output, downloads, images) {
   let phase = 'normal';
   let heldRequest;
   let releaseHeld;
-  let heldRouteSettled = false;
+  let heldRouteInvocation;
+  let heldTerminalObserver;
   const handler = async (route) => {
     const url = new URL(route.request().url());
     if (url.protocol === 'chrome-extension:') {
@@ -215,14 +268,15 @@ async function runFixture(context, observer, root, output, downloads, images) {
       if (phase === 'held' && index === 0 && route.request().resourceType() !== 'image') {
         assert(!heldRequest, 'More than one held request');
         heldRequest = record;
+        heldTerminalObserver.bind(route.request());
         await new Promise((resolveHeld) => { releaseHeld = resolveHeld; });
         try {
           await route.fulfill({ status: 200, contentType: 'image/jpeg', body: images[index] });
-          record.result = 'fulfilled-after-close';
-        } catch {
-          record.result = 'request-ended-before-late-response';
+          heldRouteInvocation = { kind: 'fulfilled' };
+        } catch (error) {
+          heldRouteInvocation = { kind: 'rejected', error: safeRouteError(error) };
         } finally {
-          heldRouteSettled = true;
+          record.routeInvocation = heldRouteInvocation;
         }
         return;
       }
@@ -313,6 +367,7 @@ async function runFixture(context, observer, root, output, downloads, images) {
       p === 'partial' && index === 1 && outcome === 'http-503'), 'Partial ZIP failure was not routed');
     result.cases.partialZip = 'passed';
 
+    heldTerminalObserver = watchExactRequestTerminal(context);
     phase = 'held';
     const heldSince = observer.snapshot();
     const heldBefore = new Set(await readdir(downloads));
@@ -322,7 +377,10 @@ async function runFixture(context, observer, root, output, downloads, images) {
     await gallery.waitFor({ state: 'detached' });
     releaseHeld();
     releaseHeld = undefined;
-    await waitFor(async () => heldRouteSettled ? true : undefined, 'late transport settlement');
+    await waitFor(() => heldRouteInvocation, 'held route invocation completion');
+    const requestTerminal = await heldTerminalObserver.waitForTerminal();
+    const heldOutcome = requireHeldRouteOutcome(heldRouteInvocation, requestTerminal);
+    heldRequest.requestTerminal = requestTerminal;
     // cleanupGallery() resets the busy signal synchronously. A detached gallery
     // and enabled toolbar cannot prove that an old manager callback has settled.
     // Keep this document alive after the late route response and inspect browser
@@ -335,9 +393,10 @@ async function runFixture(context, observer, root, output, downloads, images) {
       heldBefore, downloads, 'Pre-dispatch cancellation', 2_000);
     result.cases.preDispatchCancellation = 'passed';
     result.cases.delayedSettlement = { status: 'bounded-no-native-save',
-      routeOutcome: heldRequest.result };
+      ...heldOutcome };
 
     phase = 'normal';
+    assert(heldTerminalObserver.terminal(), 'Held request remains active before reload');
     await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]').click();
     await gallery.waitFor({ state: 'detached' });
     await page.reload({ waitUntil: 'domcontentloaded' });
@@ -360,6 +419,7 @@ async function runFixture(context, observer, root, output, downloads, images) {
   } finally {
     if (releaseHeld) releaseHeld();
     await page.close().catch((error) => { result.cleanup.pageError = String(error); });
+    heldTerminalObserver?.dispose();
     await context.unroute('**/*', handler).then(() => { result.cleanup.routeRemoved = true; },
       (error) => { result.cleanup.routeError = String(error); });
     result.browserDownloadEvents = observer.events();

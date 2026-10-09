@@ -195,6 +195,8 @@ describe('userscript download adapter failure handling', () => {
   });
 
   it('holds a GM response reservation until a late load callback after caller abort', async () => {
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+    const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:late-after-abort');
     let request: GMXMLHttpRequestDetails | undefined;
     userscriptGlobals.GM_xmlhttpRequest = vi.fn((details) => {
       request = details;
@@ -211,6 +213,8 @@ describe('userscript download adapter failure handling', () => {
     expect(downloadLiveByteBudget.usedBytes).toBe(2 * TEST_MAX_RESPONSE_BYTES);
     request?.onload?.({ status: 200, response: new Blob(['late']) } as never);
     expect(downloadLiveByteBudget.usedBytes).toBe(0);
+    expect(createObjectURL).not.toHaveBeenCalled();
+    expect(click).not.toHaveBeenCalled();
   });
 
   it('holds a GM response reservation after an oversized progress report until abort settles', async () => {

@@ -159,6 +159,14 @@ const userscriptInstall = (await import(
   observeNoNativeDownload(observer: { assertNoneSince(since: number, label: string): Promise<void> },
     since: number, files: Set<string>, directory: string, label: string,
     durationMs: number): Promise<{ samples: number }>;
+  watchExactRequestTerminal(context: EventEmitter): {
+    bind(request: unknown): void;
+    waitForTerminal(): Promise<{ kind: string; errorText?: string | null }>;
+    terminal(): { kind: string; errorText?: string | null } | undefined;
+    dispose(): void;
+  };
+  requireHeldRouteOutcome(route: { kind: string; error?: unknown },
+    terminal?: { kind: string; errorText?: string | null }): unknown;
 };
 
 describe('Windows X live page validation', () => {
@@ -226,6 +234,32 @@ describe('Windows X live page validation', () => {
       observer.dispose();
       rmSync(directory, { recursive: true, force: true });
     }
+  });
+
+  it('requires an exact held-request terminal before accepting a route failure', async () => {
+    const context = new EventEmitter();
+    const held = { failure: () => ({ errorText: 'net::ERR_ABORTED' }) };
+    const unrelated = { failure: () => ({ errorText: 'net::ERR_FAILED' }) };
+    const watcher = userscriptInstall.watchExactRequestTerminal(context);
+    try {
+      watcher.bind(held);
+      context.emit('requestfinished', unrelated);
+      context.emit('requestfailed', unrelated);
+      expect(watcher.terminal()).toBeUndefined();
+      expect(() => userscriptInstall.requireHeldRouteOutcome({ kind: 'rejected' }))
+        .toThrow('no correlated transport terminal');
+      context.emit('requestfailed', held);
+      const terminal = await watcher.waitForTerminal();
+      expect(terminal).toEqual({ kind: 'requestfailed', errorText: 'net::ERR_ABORTED' });
+      expect(userscriptInstall.requireHeldRouteOutcome({ kind: 'rejected' }, terminal))
+        .toMatchObject({ requestTerminal: terminal });
+      expect(() => userscriptInstall.requireHeldRouteOutcome({ kind: 'rejected' },
+        { kind: 'requestfinished' })).toThrow('without a matching failed request');
+    } finally {
+      watcher.dispose();
+    }
+    expect(context.listenerCount('requestfinished')).toBe(0);
+    expect(context.listenerCount('requestfailed')).toBe(0);
   });
 
   it('rejects a paused in-progress download after all bytes have arrived', () => {
