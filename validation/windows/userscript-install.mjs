@@ -18,6 +18,14 @@ export const MEDIA_COHORTS = {
   partial: ['GkP1234ABCDEF', 'GkP5678GHIJKL', 'GkP9012MNOPQR'],
   held: ['GkH1234ABCDEF', 'GkH5678GHIJKL', 'GkH9012MNOPQR'],
 };
+export const PUBLIC_AVATAR_PATH = '/profile_images/123456789/public-avatar.jpg';
+export function isPublicAvatarFixtureUrl(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && url.hostname === 'pbs.twimg.com' &&
+      url.pathname === PUBLIC_AVATAR_PATH && !url.search && !url.hash;
+  } catch { return false; }
+}
 export const FIXTURE_ZIP_NAME = `testuser_${TWEET_ID}.zip`;
 const MAX_DOWNLOADS = 8;
 
@@ -552,12 +560,14 @@ export async function observeNoNativeDownload(observer, since, beforeFiles, down
 async function runFixture(context, observer, root, output, downloads, images) {
   const html = await readFile(join(root, 'test/e2e/fixtures/installed-gallery-page.html'), 'utf8');
   const routeRecords = [];
+  const result = { status: 'failed', downloads: [], routes: routeRecords, routeFailures: [],
+    routeFailureOverflow: 0, cases: {}, cleanup: {} };
   let phase = 'normal';
   let heldRequest;
   let releaseHeld;
   let heldRouteInvocation;
   let heldTerminalObserver;
-  const handler = async (route) => {
+  const routeFixture = async (route) => {
     const url = new URL(route.request().url());
     if (url.protocol === 'chrome-extension:') {
       await route.continue();
@@ -572,6 +582,10 @@ async function runFixture(context, observer, root, output, downloads, images) {
       return;
     }
     if (url.hostname === 'pbs.twimg.com') {
+      if (isPublicAvatarFixtureUrl(url.href)) {
+        await route.fulfill({ status: 200, contentType: 'image/jpeg', body: images[0] });
+        return;
+      }
       const cohort = Object.entries(MEDIA_COHORTS).find(([, markers]) =>
         markers.some((marker) => url.pathname.includes(marker)));
       assert(cohort, 'Unknown media fixture request');
@@ -612,9 +626,23 @@ async function runFixture(context, observer, root, output, downloads, images) {
     }
     await route.abort('blockedbyclient');
   };
+  const handler = async (route) => {
+    try {
+      await routeFixture(route);
+    } catch (error) {
+      const url = new URL(route.request().url());
+      if (result.routeFailures.length < 8) {
+        result.routeFailures.push({ phase, error: safeRouteError(error),
+          request: { host: ['x.com', 'pbs.twimg.com'].includes(url.hostname) ? url.hostname : 'other',
+            pathKind: url.pathname === PUBLIC_AVATAR_PATH ? 'fixture-avatar'
+              : url.pathname.startsWith('/media/') ? 'media' : 'other',
+            resourceType: route.request().resourceType() } });
+      } else result.routeFailureOverflow += 1;
+      await route.abort('blockedbyclient').catch(() => {});
+    }
+  };
   await context.route('**/*', handler);
   const page = await context.newPage();
-  const result = { status: 'failed', downloads: [], routes: routeRecords, cases: {}, cleanup: {} };
   try {
     await page.goto(FIXTURE_URL, { waitUntil: 'domcontentloaded' });
     const trigger = page.locator('[data-phase="normal"] [data-testid="tweetPhoto"] img').first();
@@ -750,11 +778,16 @@ async function runFixture(context, observer, root, output, downloads, images) {
     result.downloads.push({ kind: 'single-after-reload', ...recovered, bytes: recovered.bytes.length });
     result.cases.reloadRecovery = 'passed';
     await observer.flush();
+    assert.equal(result.routeFailures.length + result.routeFailureOverflow, 0,
+      'Fixture route failed');
     assert.equal(observer.snapshot(), result.downloads.length,
       'Unexpected native download count');
     await page.screenshot({ path: join(output, 'userscript-fixture.png') });
     result.status = 'passed';
     return result;
+  } catch (error) {
+    result.error = safeRouteError(error);
+    throw error;
   } finally {
     if (releaseHeld) releaseHeld();
     await page.close().catch((error) => { result.cleanup.pageError = String(error); });

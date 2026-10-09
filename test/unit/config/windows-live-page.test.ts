@@ -149,6 +149,8 @@ const installProfile = (await import(
 const userscriptInstall = (await import(
   pathToFileURL(resolve(import.meta.dirname, '../../../validation/windows/userscript-install.mjs')).href
 )) as { MEDIA_COHORTS: Record<'normal' | 'failure' | 'partial' | 'held', string[]>;
+  PUBLIC_AVATAR_PATH: string;
+  isPublicAvatarFixtureUrl(value: string): boolean;
   FIXTURE_ZIP_NAME: string;
   fixtureZipEntries(images: Uint8Array[]): Array<{ filename: string; bytes: Uint8Array }>;
   managerDetailsUrl(browserName: string, id: string): string;
@@ -356,6 +358,29 @@ describe('Windows X live page validation', () => {
     ]);
     expect(entries.map(({ bytes }) => bytes[0])).toEqual([0, 1, 2]);
     expect(userscriptInstall.FIXTURE_ZIP_NAME).toBe('testuser_1234567890123456789.zip');
+  });
+
+  it('serves only the public fixture avatar as an auxiliary pbs image', () => {
+    const html = readFileSync(resolve(import.meta.dirname,
+      '../../e2e/fixtures/installed-gallery-page.html'), 'utf8');
+    const document = new DOMParser().parseFromString(html, 'text/html');
+    const avatar = document.querySelector<HTMLImageElement>('article[data-route="public"] img.public-avatar');
+    expect(avatar).not.toBeNull();
+    const url = avatar?.src ?? '';
+    expect(new URL(url).pathname).toBe(userscriptInstall.PUBLIC_AVATAR_PATH);
+    expect(userscriptInstall.isPublicAvatarFixtureUrl(url)).toBe(true);
+    const mediaMarkers = Object.values(userscriptInstall.MEDIA_COHORTS).flat();
+    const fixtureImages = [...document.querySelectorAll<HTMLImageElement>('img[src]')];
+    expect(fixtureImages.filter((image) => userscriptInstall.isPublicAvatarFixtureUrl(image.src)))
+      .toHaveLength(1);
+    expect(fixtureImages.every((image) => userscriptInstall.isPublicAvatarFixtureUrl(image.src) ||
+      mediaMarkers.some((marker) => new URL(image.src).pathname.includes(marker)))).toBe(true);
+    expect(userscriptInstall.isPublicAvatarFixtureUrl(`${url}?name=large`)).toBe(false);
+    expect(userscriptInstall.isPublicAvatarFixtureUrl(url.replace('pbs.twimg.com', 'other.example')))
+      .toBe(false);
+    expect(userscriptInstall.isPublicAvatarFixtureUrl(url.replace('public-avatar', 'other-avatar')))
+      .toBe(false);
+    expect(userscriptInstall.isPublicAvatarFixtureUrl(url.replace('https:', 'http:'))).toBe(false);
   });
 
   it('binds native completion to the browser download GUID without manager privileges', async () => {
