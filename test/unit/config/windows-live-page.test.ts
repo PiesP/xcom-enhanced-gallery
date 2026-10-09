@@ -214,7 +214,18 @@ const userscriptInstall = (await import(
 };
 
 describe('Windows X live page validation', () => {
-  it('runs native permission inspection only with one CDP browser PID and an owned profile', async () => {
+  it('keeps native permission evidence UIA-only and bound to the browser process', () => {
+    const source = readFileSync(resolve(import.meta.dirname,
+      '../../../validation/windows/manager-permission-window.ps1'), 'utf8');
+    expect(source).not.toMatch(/CopyFromScreen|PrintWindow|BitBlt|System\.Drawing|GetWindowRect|SendInput|SetForegroundWindow/u);
+    expect(source).toContain("screenshot = 'not-captured'");
+    for (const proof of ['browserPid =', 'creationUtcTicks =', 'browserSessionId =',
+      'foregroundHandle =', 'foregroundOwnedAndVisible =', 'uiaRootProcessId =']) {
+      expect(source).toContain(proof);
+    }
+  });
+
+  it('collects read-only UIA diagnostics only with one CDP browser PID and an owned profile', async () => {
     const root = mkdtempSync(join(tmpdir(), 'xeg-native-permission-'));
     const profile = join(root, 'xeg-userscript-install-owned');
     const output = join(root, 'output');
@@ -223,7 +234,7 @@ describe('Windows X live page validation', () => {
     const run = vi.fn(async (_file: string, _args: string[], _options: unknown) => {
       writeFileSync(join(output, 'userscript-manager-native-permission.json'),
         JSON.stringify({ status: 'skipped', reason: 'owned-window-not-foreground',
-          permissionGrantAttempted: false }));
+          capture: 'uia-only', screenshot: 'not-captured', permissionGrantAttempted: false }));
     });
     try {
       expect(userscriptInstall.browserProcessId({ processInfo: [

@@ -39,7 +39,7 @@ export function browserProcessId(processInfo) {
     ? browsers[0].id : null;
 }
 
-/** Native UI is diagnostic only; an absent or unowned window never implies permission. */
+/** Read-only native UIA evidence only: no screen capture, click, or permission grant. */
 export async function captureNativeManagerPermission(cdp, root, output, profile, browserName,
   run = execFileAsync) {
   const receiptPath = join(output, NATIVE_PERMISSION_RECEIPT);
@@ -55,10 +55,13 @@ export async function captureNativeManagerPermission(cdp, root, output, profile,
       '-Profile', profile, '-Output', output], { timeout: 12_000, windowsHide: true, maxBuffer: 4_096 });
     receipt = JSON.parse(await readFile(receiptPath, 'utf8'));
     assert(['captured', 'skipped'].includes(receipt.status), 'Invalid native diagnostic receipt');
+    assert.equal(receipt.capture, 'uia-only', 'Native diagnostic must be UIA-only');
+    assert.equal(receipt.screenshot, 'not-captured', 'Native diagnostic cannot capture the screen');
     assert.equal(receipt.permissionGrantAttempted, false,
       'Native diagnostic cannot change permission');
   } catch (error) {
-    receipt = { status: 'unavailable', reason: error instanceof Error ? error.name : typeof error };
+    receipt = { status: 'unavailable', reason: error instanceof Error ? error.name : typeof error,
+      capture: 'uia-only', screenshot: 'not-captured', permissionGrantAttempted: false };
     await writeFile(receiptPath, JSON.stringify(receipt, null, 2));
   }
   return { status: receipt.status, reason: receipt.reason ?? null };

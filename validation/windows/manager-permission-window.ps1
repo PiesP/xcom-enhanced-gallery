@@ -9,24 +9,19 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $receiptPath = Join-Path $Output 'userscript-manager-native-permission.json'
-$imagePath = Join-Path $Output 'userscript-manager-native-permission.png'
-$tempImagePath = Join-Path $Output "userscript-manager-native-permission-$([Guid]::NewGuid().ToString('N')).tmp.png"
-$receipt = @{ status = 'skipped'; reason = 'ownership-unverified'; permissionGrantAttempted = $false }
+$receipt = @{ status = 'skipped'; reason = 'ownership-unverified';
+    capture = 'uia-only'; screenshot = 'not-captured'; permissionGrantAttempted = $false }
 
 Add-Type -TypeDefinition @'
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 public static class XegPermissionWindow {
-    [StructLayout(LayoutKind.Sequential)] public struct Rect {
-        public int Left, Top, Right, Bottom;
-    }
     private delegate bool EnumCallback(IntPtr hwnd, IntPtr value);
     [DllImport("user32.dll")] private static extern bool EnumWindows(EnumCallback callback, IntPtr value);
     [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr hwnd);
     [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint pid);
     [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
-    [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hwnd, out Rect rect);
     public static IntPtr[] OwnedVisibleWindows(uint expectedPid) {
         var found = new List<IntPtr>();
         int visited = 0;
@@ -79,16 +74,6 @@ try {
     $foreground = [XegPermissionWindow]::GetForegroundWindow()
     if ($windows.Count -eq 0 -or $foreground -eq [IntPtr]::Zero -or
         -not ($windows -contains $foreground)) { throw 'owned-window-not-foreground' }
-    $rect = [XegPermissionWindow+Rect]::new()
-    if (-not [XegPermissionWindow]::GetWindowRect($foreground, [ref]$rect)) {
-        throw 'window-rect-unavailable'
-    }
-    $width = $rect.Right - $rect.Left
-    $height = $rect.Bottom - $rect.Top
-    if ($width -lt 200 -or $height -lt 100 -or $width -gt 1920 -or $height -gt 1200) {
-        throw 'window-size-out-of-bounds'
-    }
-
     Add-Type -AssemblyName UIAutomationClient
     Add-Type -AssemblyName UIAutomationTypes
     $root = [Windows.Automation.AutomationElement]::FromHandle($foreground)
@@ -124,43 +109,35 @@ try {
     }
     if ($controls.Count -eq 0) { throw 'uia-inspection-empty' }
     $after = Test-OwnedProcess
+    $foregroundOwnedAndVisible = [XegPermissionWindow]::IsOwned($foreground, [uint32]$BrowserPid)
     if ($before.CreationDate -ne $after.CreationDate -or
         [XegPermissionWindow]::GetForegroundWindow() -ne $foreground -or
-        -not [XegPermissionWindow]::IsOwned($foreground, [uint32]$BrowserPid)) {
+        -not $foregroundOwnedAndVisible) {
         throw 'window-identity-changed'
     }
-    Add-Type -AssemblyName System.Drawing
-    $bitmap = [Drawing.Bitmap]::new($width, $height,
-        [Drawing.Imaging.PixelFormat]::Format24bppRgb)
-    try {
-        $graphics = [Drawing.Graphics]::FromImage($bitmap)
-        try {
-            $graphics.CopyFromScreen($rect.Left, $rect.Top, 0, 0, $bitmap.Size,
-                [Drawing.CopyPixelOperation]::SourceCopy)
-        } finally { $graphics.Dispose() }
-        $final = Test-OwnedProcess
-        if ($before.CreationDate -ne $final.CreationDate -or
-            [XegPermissionWindow]::GetForegroundWindow() -ne $foreground) {
-            throw 'window-identity-changed-after-capture'
-        }
-        $bitmap.Save($tempImagePath, [Drawing.Imaging.ImageFormat]::Png)
-    } finally { $bitmap.Dispose() }
-    Move-Item -LiteralPath $tempImagePath -Destination $imagePath
-    $receipt = @{ status = 'captured'; permissionGrantAttempted = $false;
-        windowCount = $windows.Count; width = $width; height = $height;
+    $receipt = @{ status = 'captured'; capture = 'uia-only'; screenshot = 'not-captured';
+        permissionGrantAttempted = $false;
+        browserPid = [int]$before.ProcessId;
+        creationUtcTicks = ([datetime]$before.CreationDate).ToUniversalTime().Ticks;
+        browserSessionId = [int]$before.SessionId;
+        observerSessionId = [Diagnostics.Process]::GetCurrentProcess().SessionId;
+        foregroundHandle = $foreground.ToInt64();
+        foregroundOwnedAndVisible = $foregroundOwnedAndVisible;
+        uiaRootProcessId = [int]$root.Current.ProcessId;
+        windowCount = $windows.Count;
         controls = @($controls.ToArray()); visitedControls = $visited;
         truncated = ($queue.Count -gt 0) }
 } catch {
-    if (Test-Path -LiteralPath $tempImagePath) { Remove-Item -LiteralPath $tempImagePath -Force }
     $reason = [string]$_.Exception.Message
     if ($reason -notin @('browser-process-unavailable','browser-executable-unverified',
         'browser-profile-unverified','browser-session-unverified','window-enumeration-limit',
-        'owned-window-not-foreground','window-rect-unavailable','window-size-out-of-bounds',
+        'owned-window-not-foreground',
         'uia-root-unverified','uia-inspection-unavailable','uia-inspection-empty',
-        'window-identity-changed','window-identity-changed-after-capture')) {
+        'window-identity-changed')) {
         $reason = 'native-capture-unavailable'
     }
-    $receipt = @{ status = 'skipped'; reason = $reason; permissionGrantAttempted = $false }
+    $receipt = @{ status = 'skipped'; reason = $reason; capture = 'uia-only';
+        screenshot = 'not-captured'; permissionGrantAttempted = $false }
 } finally {
     [IO.File]::WriteAllText($receiptPath, ($receipt | ConvertTo-Json -Depth 6))
 }
