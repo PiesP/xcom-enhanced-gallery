@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 PiesP
 
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { EventEmitter } from 'node:events';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -163,6 +163,8 @@ const userscriptInstall = (await import(
   isOwnedManagerOptionsUrl(value: string, managerId: string): boolean;
   isOwnedManagerPermissionAskUrl(value: string, managerId: string): boolean;
   requireManagerDownloadsHeading(actual: string, localizedDownloads: string): void;
+  captureAndConfirmManagerPermissionAsk(ask: unknown, managerId: string, output: string,
+    okLabel: string): Promise<void>;
   requireManagerUiLabels(labels: Record<string, unknown>): Record<string, string>;
   readManagerUiLabels(page: { url(): string;
     evaluate(callback: (id: string) => unknown, id: string): Promise<unknown> },
@@ -411,6 +413,26 @@ describe('Windows X live page validation', () => {
       'chrome-extension://owned/options.html?aid=opaque',
       'chrome-extension://owned/ask.html?aid=opaque#fragment']) {
       expect(userscriptInstall.isOwnedManagerPermissionAskUrl(url, 'owned')).toBe(false);
+    }
+  });
+
+  it('does not persist or confirm an ask screenshot after navigation escapes the manager', async () => {
+    const output = mkdtempSync(join(tmpdir(), 'xeg-manager-ask-'));
+    let url = 'chrome-extension://owned/ask.html?aid=opaque';
+    const click = vi.fn(async () => {});
+    const ask = { url: () => url,
+      screenshot: async () => {
+        url = 'https://other.example/private';
+        return Buffer.from('external-page');
+      },
+      getByRole: () => ({ click }) };
+    try {
+      await expect(userscriptInstall.captureAndConfirmManagerPermissionAsk(
+        ask, 'owned', output, 'Ok')).rejects.toThrow('navigated away during capture');
+      expect(existsSync(join(output, 'userscript-manager-download-permission.png'))).toBe(false);
+      expect(click).not.toHaveBeenCalled();
+    } finally {
+      rmSync(output, { recursive: true, force: true });
     }
   });
 

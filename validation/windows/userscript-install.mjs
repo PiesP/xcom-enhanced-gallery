@@ -256,6 +256,20 @@ export function requireManagerDownloadsHeading(actual, localizedDownloads) {
     'Manager Downloads section label differs');
 }
 
+export async function captureAndConfirmManagerPermissionAsk(ask, managerId, output, okLabel) {
+  assert(isOwnedManagerPermissionAskUrl(ask.url(), managerId),
+    'Manager permission confirmation navigated away');
+  if (output) {
+    const screenshot = await ask.screenshot();
+    assert(isOwnedManagerPermissionAskUrl(ask.url(), managerId),
+      'Manager permission confirmation navigated away during capture');
+    await writeFile(join(output, 'userscript-manager-download-permission.png'), screenshot);
+  }
+  assert(isOwnedManagerPermissionAskUrl(ask.url(), managerId),
+    'Manager permission confirmation navigated away before confirmation');
+  await ask.getByRole('button', { name: okLabel, exact: true }).click();
+}
+
 export function requireManagerUiLabels(labels) {
   assert(labels && typeof labels === 'object' && !Array.isArray(labels),
     'Manager returned invalid UI labels');
@@ -380,8 +394,7 @@ export async function configureManagerBrowserDownloads(page, managerId, output) 
     permissionAskShown = true;
     assert(isOwnedManagerPermissionAskUrl(ask.url(), managerId),
       'Manager permission confirmation navigated away');
-    if (output) await ask.screenshot({ path: join(output, 'userscript-manager-download-permission.png') });
-    await ask.getByRole('button', { name: labels.Ok, exact: true }).click();
+    await captureAndConfirmManagerPermissionAsk(ask, managerId, output, labels.Ok);
     permissionOkClicked = true;
   }
   await page.reload({ waitUntil: 'domcontentloaded' });
