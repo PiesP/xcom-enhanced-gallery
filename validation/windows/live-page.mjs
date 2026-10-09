@@ -1077,6 +1077,7 @@ export function findActivationHitDocument(surface, { articleIndex, point }) {
   if (!(top instanceof Element) || !article?.contains(surface) ||
       !article.contains(top) || surface.closest('article') !== top.closest('article')) return null;
   if (surface === top || surface.contains(top)) return top;
+  if (surface.matches('button, [role="button"]')) return null;
   const mediaShell = surface.closest('[data-testid="videoPlayer"], [data-testid="previewInterstitial"]');
   return mediaShell?.contains(top) ? top : null;
 }
@@ -1227,7 +1228,8 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
       observation.gallery.focusedControlStillOwnsClick = sameControl;
       if (!sameControl) throw new Error('Focused quote button changed before click');
     }
-    activationHitHandle = await actionHandle.evaluateHandle(findActivationHitDocument, {
+    const activationSurfaceHandle = controlledAction ? focusHandle : actionHandle;
+    activationHitHandle = await activationSurfaceHandle.evaluateHandle(findActivationHitDocument, {
       articleIndex: target.articleIndex, point: clickPoint,
     });
     if (!activationHitHandle.asElement()) {

@@ -10,8 +10,10 @@
  */
 
 import { readdirSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import type { Plugin } from 'vite';
+import { readDistributionNotices, renderUserscriptNotices } from '../utils/distribution-licenses.ts';
 import { generateUserscriptHeader, OUTPUT_FILE_NAMES } from '../utils/userscript.ts';
 
 /** Configuration options for build mode optimization (development vs production). */
@@ -26,6 +28,7 @@ export function buildSummaryPlugin(opts: {
   version: string;
   config: BuildModeConfig;
   baseConfig: Parameters<typeof generateUserscriptHeader>[0]['baseConfig'];
+  root?: string;
 }): Plugin {
   const { isDev, version, config, baseConfig } = opts;
   const header = generateUserscriptHeader({ version, isDev, baseConfig });
@@ -36,9 +39,12 @@ export function buildSummaryPlugin(opts: {
     enforce: 'post',
 
     generateBundle(_options, bundle): void {
+      const notices = renderUserscriptNotices(readDistributionNotices(
+        opts.root ?? resolve(import.meta.dirname, '..', '..', '..')
+      ));
       for (const chunk of Object.values(bundle)) {
         if (chunk.type === 'chunk' && chunk.isEntry) {
-          chunk.code = `${header}\n${chunk.code}`;
+          chunk.code = `${header}\n${notices}\n${chunk.code}`;
           break;
         }
       }

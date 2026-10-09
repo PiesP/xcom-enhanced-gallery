@@ -7,6 +7,10 @@ import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  readDistributionNotices,
+  readRegularNoticeFile,
+} from '../../tooling/vite/utils/distribution-licenses.ts';
+import {
   type ExtensionIconDeclaration,
   readExtensionIconDeclarations,
 } from '../../tooling/vite/utils/extension-icons.ts';
@@ -82,6 +86,31 @@ export function verifyExtensionBuild(): void {
     } else {
       pass(`${icon.path} produced`);
     }
+  }
+
+  try {
+    for (const notice of readDistributionNotices(root)) {
+      const output = resolve(root, distDir, notice.path);
+      let bytes: Buffer;
+      try {
+        bytes = readRegularNoticeFile(output);
+      } catch (error: unknown) {
+        const missing = error instanceof Error && 'code' in error && error.code === 'ENOENT';
+        fail(
+          `${distDir}/${notice.path} required distribution notice ${
+            missing ? 'was not produced' : 'is not a stable regular file'
+          }`
+        );
+        continue;
+      }
+      if (!bytes.equals(notice.bytes)) {
+        fail(`${distDir}/${notice.path} differs from the canonical source`);
+      } else {
+        pass(`${notice.path} matches the canonical source`);
+      }
+    }
+  } catch (error: unknown) {
+    fail(error instanceof Error ? error.message : String(error));
   }
 
   const manifestFallback = icons.find((icon) => icon.size === '128')?.path;

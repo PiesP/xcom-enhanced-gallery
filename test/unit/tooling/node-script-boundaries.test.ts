@@ -14,6 +14,7 @@ import {
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
+import { DISTRIBUTION_NOTICE_PATHS } from '../../../tooling/vite/utils/distribution-licenses.ts';
 
 const sourceRoot = resolve(import.meta.dirname, '../../..');
 const roots: string[] = [];
@@ -23,6 +24,7 @@ const scripts = [
   'scripts/release/package-extension.ts',
   'scripts/release/prepare.ts',
   'scripts/release/version.ts',
+  'tooling/vite/utils/distribution-licenses.ts',
   'tooling/vite/utils/extension-icons.ts',
 ] as const;
 
@@ -135,6 +137,12 @@ describe('Node script import boundary', () => {
     writeFileSync(join(dist, 'background.js'), 'background');
     writeFileSync(join(dist, 'manifest.json'), '{"icons":{"128":"icons/icon-128x128.png"}}');
     writeFileSync(join(dist, 'icons/icon-128x128.png'), 'icon');
+    for (const path of DISTRIBUTION_NOTICE_PATHS) {
+      mkdirSync(dirname(join(root, path)), { recursive: true });
+      mkdirSync(dirname(join(dist, path)), { recursive: true });
+      copyFileSync(join(sourceRoot, path), join(root, path));
+      copyFileSync(join(sourceRoot, path), join(dist, path));
+    }
     expect(command('scripts/check/extension-build.ts', ['dist-extension']).status).toBe(0);
     rmSync(join(dist, 'icons/icon-128x128.png'));
     const result = command('scripts/check/extension-build.ts', ['dist-extension']);
