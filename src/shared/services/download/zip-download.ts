@@ -14,6 +14,7 @@ import {
 import { schedulerYield } from '@piesp/browser-core/util';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { getUserCancelledAbortErrorFromSignal } from '@shared/error/cancellation';
+import { DownloadSourceUnavailableError } from '@shared/error/download-source-unavailable-error';
 import { isHttpResponseSizeLimitError } from '@shared/error/http-response-size-limit-error';
 import {
   StreamingZipWriter,
@@ -186,6 +187,7 @@ export async function downloadAsZip(
   let processed = 0;
   let successful = 0;
   let resourceLimitExceeded = false;
+  let sourceUnavailable = false;
   const failures: { url: string; error: string }[] = [];
   let currentIndex = 0;
 
@@ -204,6 +206,7 @@ export async function downloadAsZip(
       let body: LiveByteLease | undefined;
       let borrowed: OwnedBlob | undefined;
       try {
+        if (item.sourceUnavailable && !item.blob) throw new DownloadSourceUnavailableError();
         const supplied = item.blob && !(item.blob instanceof Promise) ? item.blob : undefined;
         const knownSize = supplied ? supplied.value.size : item.expectedSizeBytes;
         if (knownSize !== undefined && knownSize > maxEntryBytes) {
@@ -258,7 +261,11 @@ export async function downloadAsZip(
           } catch (error) {
             throwIfAborted(abortSignal);
             // A size/memory rejection must never start another whole-body fallback.
-            if (isHttpResponseSizeLimitError(error) || error instanceof DownloadResourceLimitError)
+            if (
+              isHttpResponseSizeLimitError(error) ||
+              error instanceof DownloadResourceLimitError ||
+              error instanceof DownloadSourceUnavailableError
+            )
               throw error;
           }
           if (blob) {
@@ -312,6 +319,7 @@ export async function downloadAsZip(
         successful++;
       } catch (error) {
         throwIfAborted(abortSignal);
+        if (error instanceof DownloadSourceUnavailableError) sourceUnavailable = true;
         if (
           error instanceof ZipResourceLimitError ||
           isHttpResponseSizeLimitError(error) ||
@@ -363,6 +371,7 @@ export async function downloadAsZip(
     failures,
     zipData: parts,
     resourceLimitExceeded,
+    sourceUnavailable,
     createBlob: () => {
       if (transferred || disposed) throw new Error('ZIP ownership is no longer available');
       // Future Blob capacity was reserved before reading every accepted entry.

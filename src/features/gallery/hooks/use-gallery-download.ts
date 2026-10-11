@@ -104,7 +104,9 @@ export function createDownloadHandler() {
             const body =
               result.code === 'RESOURCE_LIMIT'
                 ? languageService.translate('msg.dl.resourceLimit')
-                : languageService.translate('msg.dl.one.err.b', { error });
+                : result.code === 'SOURCE_UNAVAILABLE'
+                  ? languageService.translate('msg.dl.sourceUnavailable')
+                  : languageService.translate('msg.dl.one.err.b', { error });
             setError(body);
             notifyError(title, body);
           }
@@ -143,6 +145,19 @@ export function createDownloadHandler() {
           publishStatus('error');
           const title = languageService.translate('msg.dl.one.err.t');
           const body = languageService.translate('msg.dl.resourceLimit');
+          setError(body);
+          notifyError(title, body);
+          return;
+        }
+        if (result.code === 'SOURCE_UNAVAILABLE') {
+          publishStatus(result.success ? 'handedOff' : 'error');
+          const title = languageService.translate(
+            result.success ? 'msg.dl.part.t' : 'msg.dl.one.err.t'
+          );
+          const body =
+            (result.success
+              ? `${languageService.translate('msg.dl.part.b', { count: result.filesProcessed - result.filesSuccessful })} `
+              : '') + languageService.translate('msg.dl.sourceUnavailable');
           setError(body);
           notifyError(title, body);
           return;

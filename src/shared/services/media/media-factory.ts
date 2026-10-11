@@ -7,12 +7,54 @@
 
 import { logger } from '@shared/logging/logger';
 import type { TweetMediaEntry } from '@shared/services/media/types';
-import type { MediaInfo, TweetInfo } from '@shared/types/media.types';
+import type { MediaInfo, MediaSelectionItem, TweetInfo } from '@shared/types/media.types';
 import { normalizeDimension } from '@shared/utils/media/media-dimensions';
+import { getImageDownloadSource } from '@shared/utils/media/media-source';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
 
 const TWEET_ID_PATTERN = /^[1-9]\d*$/u;
 const HANDLE_PATTERN = /^[A-Za-z0-9_]{1,15}$/u;
+
+function resolveAPIMediaOwner(apiMedia: TweetMediaEntry, tweetInfo: TweetInfo) {
+  const ownerId = apiMedia.tweet_id;
+  const requestedId = tweetInfo.tweetId;
+  if (!TWEET_ID_PATTERN.test(ownerId) || !TWEET_ID_PATTERN.test(requestedId)) return null;
+  const isQuoted =
+    apiMedia.sourceLocation === 'quoted' &&
+    apiMedia.quoteParentTweetId === requestedId &&
+    apiMedia.quotedTweetId === ownerId &&
+    ownerId !== requestedId;
+  if (!isQuoted && (ownerId !== requestedId || apiMedia.sourceLocation === 'quoted')) return null;
+  const ownerHandle = HANDLE_PATTERN.test(apiMedia.screen_name) ? apiMedia.screen_name : null;
+  return {
+    ownerId,
+    requestedId,
+    isQuoted,
+    ownerHandle,
+    ownerUrl: `https://x.com/${ownerHandle ?? 'i'}/status/${ownerId}`,
+  };
+}
+
+/** Match all owned attachments before filtering unsupported playback sources. */
+export function getAPIMediaSelectionItems(
+  apiMedias: TweetMediaEntry[],
+  tweetInfo: TweetInfo
+): MediaSelectionItem[] {
+  return apiMedias.map((apiMedia) => {
+    const owned = resolveAPIMediaOwner(apiMedia, tweetInfo);
+    return {
+      url:
+        owned &&
+        apiMedia.availability !== 'unsupported-hls' &&
+        isValidMediaUrl(apiMedia.download_url)
+          ? apiMedia.download_url
+          : '',
+      type: apiMedia.type === 'photo' ? 'image' : 'video',
+      thumbnailUrl: owned && isValidMediaUrl(apiMedia.preview_url) ? apiMedia.preview_url : '',
+      metadata: owned ? { apiData: apiMedia } : {},
+    };
+  });
+}
 
 /**
  * Create MediaInfo from API Response
@@ -23,19 +65,9 @@ function createMediaInfoFromAPI(
   index: number
 ): MediaInfo | null {
   try {
-    const ownerId = apiMedia.tweet_id;
-    const requestedId = tweetInfo.tweetId;
-    if (!TWEET_ID_PATTERN.test(ownerId) || !TWEET_ID_PATTERN.test(requestedId)) return null;
-    const isQuoted =
-      apiMedia.sourceLocation === 'quoted' &&
-      apiMedia.quoteParentTweetId === requestedId &&
-      apiMedia.quotedTweetId === ownerId &&
-      ownerId !== requestedId;
-    if (!isQuoted && (ownerId !== requestedId || apiMedia.sourceLocation === 'quoted')) {
-      return null;
-    }
-    const ownerHandle = HANDLE_PATTERN.test(apiMedia.screen_name) ? apiMedia.screen_name : null;
-    const ownerUrl = `https://x.com/${ownerHandle ?? 'i'}/status/${ownerId}`;
+    const owner = resolveAPIMediaOwner(apiMedia, tweetInfo);
+    if (!owner || apiMedia.availability === 'unsupported-hls') return null;
+    const { ownerId, requestedId, isQuoted, ownerHandle, ownerUrl } = owner;
     const mediaType = apiMedia.type === 'photo' ? 'image' : 'video';
     const width = normalizeDimension(apiMedia.original_width);
     const height = normalizeDimension(apiMedia.original_height);
@@ -77,6 +109,11 @@ function createMediaInfoFromAPI(
           }
         : {}),
       originalUrl: apiMedia.download_url,
+      downloadSource:
+        mediaType === 'image'
+          ? getImageDownloadSource(apiMedia.download_url, 'api')
+          : { url: apiMedia.download_url, quality: 'best-mp4', provenance: 'api' },
+      ...(apiMedia.videoVariants ? { videoVariants: apiMedia.videoVariants } : {}),
       thumbnailUrl: apiMedia.preview_url,
       alt: apiMedia.alt_text?.trim() || `${mediaType} ${index + 1}`,
       ...(dimensions && {

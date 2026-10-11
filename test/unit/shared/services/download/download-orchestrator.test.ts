@@ -28,6 +28,36 @@ describe('DownloadOrchestrator bulk resource limits', () => {
     state.downloadBlob.mockReset().mockImplementation(async (_blob, _filename, _signal, released) => {released?.();});
   });
 
+  it('does not invoke a provider, fetch a substitute, or save a ZIP for unverified original photos', async () => {
+    const orchestrator = new DownloadOrchestrator();
+    orchestrator.initialize();
+    const provider = vi.fn();
+    const fetch = vi.spyOn(globalThis, 'fetch');
+    const result = await orchestrator.downloadBulk([{ id: '222_dom_0', type: 'image', url: 'https://pbs.twimg.com/media/photo.jpg?name=small&name=large',
+      downloadSource: { url: '', quality: 'unverified-original', provenance: 'dom' } }], { mediaBlobProvider: provider });
+    expect(result).toMatchObject({ success: false, code: 'SOURCE_UNAVAILABLE', filesSuccessful: 0, filesProcessed: 1 });
+    expect(provider).not.toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalled();
+    expect(state.downloadBlob).not.toHaveBeenCalled();
+    expect(downloadLiveByteBudget.usedBytes).toBe(0);
+    fetch.mockRestore();
+    orchestrator.destroy();
+  });
+
+  it('saves verified ZIP entries and reports excluded unverified originals as a partial result', async () => {
+    const orchestrator = new DownloadOrchestrator();
+    orchestrator.initialize();
+    const safeUrl = 'https://pbs.twimg.com/media/verified.jpg?name=orig';
+    const result = await orchestrator.downloadBulk([
+      { id: '222_dom_0', type: 'image', url: 'https://pbs.twimg.com/media/photo.jpg?name=small&name=large', downloadSource: { url: '', quality: 'unverified-original', provenance: 'dom' } },
+      { id: '222_dom_1', type: 'image', url: safeUrl, downloadSource: { url: safeUrl, quality: 'cdn-original', provenance: 'dom' } },
+    ], { cachedBlobs: new Map([[safeUrl, ownedBlob(new Blob(['verified original bytes']))]]) });
+    expect(result).toMatchObject({ success: true, status: 'partial', code: 'SOURCE_UNAVAILABLE', filesSuccessful: 1, filesProcessed: 2 });
+    expect(result.failures).toHaveLength(1);
+    expect(state.downloadBlob).toHaveBeenCalledOnce();
+    orchestrator.destroy();
+  });
+
   it('returns a dedicated error code when every selected item exceeds the ZIP memory limit', async () => {
     const orchestrator = new DownloadOrchestrator();
     orchestrator.initialize();

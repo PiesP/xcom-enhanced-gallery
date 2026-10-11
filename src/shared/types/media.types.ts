@@ -16,6 +16,7 @@ export const ErrorCode = {
   EMPTY_INPUT: 'EMPTY_INPUT',
   ALL_FAILED: 'ALL_FAILED',
   RESOURCE_LIMIT: 'RESOURCE_LIMIT',
+  SOURCE_UNAVAILABLE: 'SOURCE_UNAVAILABLE',
   NO_MEDIA_FOUND: 'NO_MEDIA_FOUND',
 } as const;
 
@@ -23,10 +24,26 @@ export const ErrorCode = {
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
 
 /** Basic media information */
+export interface VideoSourceVariant {
+  readonly url: string;
+  readonly contentType: 'video/mp4';
+  readonly bitrate?: number;
+  readonly width?: number;
+  readonly height?: number;
+}
+
+export type MediaDownloadSource = { readonly provenance: 'api' | 'dom' } & (
+  | { readonly url: string; readonly quality: 'cdn-original' | 'best-mp4' | 'observed' }
+  | { readonly url: ''; readonly quality: 'unverified-original' }
+);
+
 export interface MediaInfo {
   readonly id: string;
+  /** Display source. Playback recovery never changes the preferred save source. */
   readonly url: string;
   readonly originalUrl?: string | undefined;
+  readonly downloadSource?: MediaDownloadSource;
+  readonly videoVariants?: readonly VideoSourceVariant[];
   readonly type: 'image' | 'video' | 'gif';
   readonly filename?: string | undefined;
   readonly fileSize?: number | undefined;
@@ -50,6 +67,12 @@ export interface MediaInfo {
   /** Quoted tweet URL (quote tweet case) */
   readonly quotedTweetUrl?: string | undefined;
 }
+
+/** Source hints for matching; diagnostic attachments cannot enter the renderer. */
+export type MediaSelectionItem = Pick<
+  MediaInfo,
+  'url' | 'originalUrl' | 'thumbnailUrl' | 'type' | 'metadata'
+>;
 
 /** Tweet information interface */
 export interface TweetInfo {
@@ -108,6 +131,7 @@ export interface MediaExtractionResult {
   readonly metadata?: Record<string, unknown> | undefined;
   /** Health of an attempted API request, independent of media matching. */
   readonly apiRequestOutcome?: 'healthy' | 'failed' | 'cancelled' | undefined;
+  readonly failureKind?: 'unsupported-source';
 }
 
 /** Extraction error class */

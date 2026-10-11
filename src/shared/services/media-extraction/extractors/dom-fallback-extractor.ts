@@ -33,6 +33,7 @@ import {
   type MediaElement,
   selectMediaSourceUrl,
 } from '@shared/utils/media/media-element-utils';
+import { getImageDownloadSource } from '@shared/utils/media/media-source';
 import { isVideoPreview, isVideoThumbnailUrl } from '@shared/utils/media/video-preview';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
 
@@ -80,6 +81,10 @@ function createMediaInfoFromDOM(
     )
       return null;
     const mediaType = element.tagName.toLowerCase() === 'video' ? 'video' : 'image';
+    const downloadSource =
+      mediaType === 'image'
+        ? getImageDownloadSource(mediaUrl, 'dom')
+        : { url: mediaUrl, quality: 'observed' as const, provenance: 'dom' as const };
 
     // Extract dimensions if available
     let width: number | undefined;
@@ -107,7 +112,8 @@ function createMediaInfoFromDOM(
       tweetUrl: tweetInfo.tweetUrl,
       tweetText: undefined,
       tweetTextContent,
-      originalUrl: mediaUrl,
+      originalUrl: downloadSource.url || mediaUrl,
+      downloadSource,
       thumbnailUrl: mediaUrl,
       alt: domAlt || `${mediaType} ${index + 1}`,
       ...(width && height && { width, height }),

@@ -3,12 +3,14 @@
 
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { getAbortReasonOrAbortErrorFromSignal } from '@shared/error/cancellation';
+import { DownloadSourceUnavailableError } from '@shared/error/download-source-unavailable-error';
 import { HttpResponseSizeLimitError } from '@shared/error/http-response-size-limit-error';
 import { logger } from '@shared/logging/logger';
 import type { LiveByteBudget, OwnedBlob } from '@shared/services/download/live-byte-budget';
 import { downloadLiveByteBudget } from '@shared/services/download/live-byte-budget';
 import { getHttpRequestService } from '@shared/services/http-request-service';
 import type { MediaInfo } from '@shared/types/media.types';
+import { getMediaDownloadUrl } from '@shared/utils/media/media-source';
 
 type LRUNode = {
   url: string;
@@ -62,22 +64,25 @@ export class DownloadMediaCache {
   ): Promise<OwnedBlob> | null {
     if (this.disposed || media.type === 'video' || media.type === 'gif') return null;
     if (signal?.aborted) return Promise.reject(getAbortReasonOrAbortErrorFromSignal(signal));
+    if (media.downloadSource?.quality === 'unverified-original')
+      return Promise.reject(new DownloadSourceUnavailableError());
 
-    const existing = this.cache.get(media.url);
+    const url = getMediaDownloadUrl(media);
+    const existing = this.cache.get(url);
     if (existing) {
-      this.moveToTail(media.url);
+      this.moveToTail(url);
       return this.borrow(existing, signal, maxResponseBytes);
     }
 
     if (this.cache.size >= this.maxEntries) this.evictOldest();
     const entry: CacheEntry = {
-      url: media.url,
+      url,
       controller: new AbortController(),
       borrowers: new Set(),
     };
-    this.cache.set(media.url, entry);
-    this.activeRequests.set(media.url, entry.controller);
-    this.addToLRU(media.url);
+    this.cache.set(url, entry);
+    this.activeRequests.set(url, entry.controller);
+    this.addToLRU(url);
     // Register the first borrower before a transport may settle synchronously.
     const borrowed = this.borrow(entry, signal, maxResponseBytes);
     if (!entry.controller.signal.aborted) void this.fetchAndCache(entry, maxResponseBytes);

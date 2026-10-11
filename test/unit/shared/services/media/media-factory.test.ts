@@ -11,7 +11,7 @@ const request: TweetInfo = {
   extractionMethod: 'dom-structure', confidence: 1,
 };
 
-function entry(overrides: Partial<TweetMediaEntry> = {}): TweetMediaEntry {
+function entry(overrides: Partial<Extract<TweetMediaEntry, { availability?: 'playable' }>> = {}): TweetMediaEntry {
   return {
     screen_name: 'outer', tweet_id: '222',
     download_url: 'https://pbs.twimg.com/media/outer.jpg',

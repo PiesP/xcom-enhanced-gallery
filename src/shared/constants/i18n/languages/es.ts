@@ -50,6 +50,8 @@ export const es: LanguageStrings = {
       t: 'Ocurrió un error',
       b: 'Ocurrió un error inesperado: {error}',
       loadMedia: {
+        unsupported:
+          'Este vídeo solo ofrece streaming HLS. La reproducción y descarga en la galería requieren una fuente MP4 verificada.',
         title: 'Error al cargar contenido multimedia',
         body: 'No se encontraron imágenes ni videos.',
       },
@@ -94,10 +96,16 @@ export const es: LanguageStrings = {
       },
       noMedia: 'Ningún elemento multimedia seleccionado. Reabra la galería e intente de nuevo.',
       zipFail: 'Error al guardar el archivo ZIP',
+      sourceUnavailable:
+        'No se pudo verificar la fuente de la imagen original. Este elemento no se guardó. Abre de nuevo la publicación e inténtalo otra vez.',
       resourceLimit:
         'Se alcanzó el límite de memoria para descargas. Espera a que terminen las descargas en curso. Si no hay ninguna activa y el límite persiste, recarga esta página. Después, vuelve a intentarlo con menos archivos.',
     },
     gal: {
+      observedQuality: {
+        title: 'Calidad de la fuente recuperada',
+        body: 'No se pudo verificar la calidad de algunos elementos. Las imágenes sin un original verificado no se pueden guardar; los vídeos recuperados usan la fuente observada.',
+      },
       partialRecovery: {
         title: 'Solo los medios visibles',
         body: 'Solo se recuperaron los medios de este recuadro. La descarga masiva incluye solo los elementos mostrados.',

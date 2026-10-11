@@ -117,6 +117,7 @@ export interface LanguageStrings {
         readonly title: string;
         /** Load media error body */
         readonly body: string;
+        readonly unsupported: string;
       };
       /** Generic error title */
       readonly generic: string;
@@ -192,9 +193,14 @@ export interface LanguageStrings {
       readonly zipFail: string;
       /** Download memory-limit guidance */
       readonly resourceLimit: string;
+      readonly sourceUnavailable: string;
     };
     /** Gallery messages */
     readonly gal: {
+      readonly observedQuality: {
+        readonly title: string;
+        readonly body: string;
+      };
       /** Article-less DOM recovery includes only the visible tile's accessible media. */
       readonly partialRecovery: {
         readonly title: string;

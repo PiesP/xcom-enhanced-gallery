@@ -21,6 +21,7 @@ import {
   createIntrinsicSizingStyle,
   resolveMediaDimensionsWithIntrinsicFlag,
 } from '@shared/utils/media/media-dimensions';
+import { getMediaDisplayUrl } from '@shared/utils/media/media-source';
 import { cx } from '@shared/utils/text/formatting';
 import { isUrlAllowed, MEDIA_URL_POLICY } from '@shared/utils/url/safety';
 import type { JSX, JSXElement } from 'solid-js';
@@ -71,7 +72,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
    * mismatches requiring complex workarounds. loading=\"lazy\" already
    * defers off-screen network requests, making thumbnail URLs redundant.
    */
-  const displaySrc = createMemo(() => local.media.url);
+  const displaySrc = createMemo(() => getMediaDisplayUrl(local.media));
   const [isLoaded, setIsLoaded] = createSignal(false);
   const [isError, setIsError] = createSignal(false);
 

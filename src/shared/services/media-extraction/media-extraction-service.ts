@@ -161,6 +161,8 @@ export class MediaExtractionService implements MediaExtractor {
         this.recordApiFailure();
       }
 
+      if (apiResult.failureKind === 'unsupported-source') return { ...apiResult, tweetInfo };
+
       if (apiResult.success && apiResult.mediaItems.length > 0) {
         return finalizeResult({
           ...apiResult,

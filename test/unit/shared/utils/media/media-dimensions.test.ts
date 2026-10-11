@@ -31,6 +31,13 @@ describe('media-dimensions (pure functions)', () => {
       expect(extractDimensionsFromUrl('https://example.com/1280x720')).toEqual({ width: 1280, height: 720 });
     });
 
+    it('ignores dimensions in query data or fragments and rejects malformed URLs', () => {
+      expect(extractDimensionsFromUrl('https://video.twimg.com/video.mp4?metadata=/999x999/')).toBeNull();
+      expect(extractDimensionsFromUrl('https://video.twimg.com/video.mp4#/999x999/')).toBeNull();
+      expect(extractDimensionsFromUrl('invalid/999x999/')).toBeNull();
+      expect(extractDimensionsFromUrl('https://video.twimg.com/320x180/video.mp4?metadata=/999x999/')).toEqual({ width: 320, height: 180 });
+    });
+
     it('should reject invalid dimensions', () => {
       expect(extractDimensionsFromUrl('https://example.com/0x1080/image.jpg')).toBeNull();
       expect(extractDimensionsFromUrl('https://example.com/1920x0/image.jpg')).toBeNull();
