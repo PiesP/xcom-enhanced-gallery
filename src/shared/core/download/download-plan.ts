@@ -9,18 +9,23 @@
 
 import { generateMediaFilename, generateZipFilename } from '@shared/core/filename/filename-utils';
 import type { OwnedBlob } from '@shared/services/download/live-byte-budget';
-import type { MediaBlobProvider } from '@shared/services/download/types';
+import {
+  getZipInputKind,
+  type MediaBlobProvider,
+  type ZipInputKind,
+} from '@shared/services/download/types';
 import type { MediaInfo } from '@shared/types/media.types';
 import { getMediaDownloadUrl } from '@shared/utils/media/media-source';
 
 export interface PlannedZipItem {
   readonly url: string;
   readonly desiredName: string;
+  readonly inputKind: ZipInputKind;
   readonly sourceUnavailable?: boolean;
   readonly expectedSizeBytes?: number | undefined;
   readonly blob?: OwnedBlob | Promise<OwnedBlob> | undefined;
   readonly getBlob?:
-    | ((signal?: AbortSignal, maxResponseBytes?: number) => Promise<OwnedBlob> | null)
+    | ((signal?: AbortSignal, maxResponseBytes?: number) => Promise<OwnedBlob | null> | null)
     | undefined;
 }
 
@@ -55,19 +60,29 @@ function generateZipName(items: readonly MediaInfo[], nowMs?: number): string {
  * @returns Plan containing items with URLs, filenames, and optional blobs, plus ZIP filename
  */
 export function planBulkDownload(input: BulkDownloadPlanningInput): BulkDownloadPlan {
-  const items: PlannedZipItem[] = input.mediaItems.map((media) => ({
-    url: getMediaDownloadUrl(media),
-    desiredName: generateDesiredName(media, input.nowMs),
-    ...(media.downloadSource?.quality === 'unverified-original' ? { sourceUnavailable: true } : {}),
-    expectedSizeBytes: media.fileSize,
-    blob: input.cachedBlobs?.get(getMediaDownloadUrl(media)),
-    getBlob: input.mediaBlobProvider
-      ? (signal?: AbortSignal, maxResponseBytes?: number) =>
-          (maxResponseBytes === undefined
-            ? input.mediaBlobProvider?.(media, signal)
-            : input.mediaBlobProvider?.(media, signal, maxResponseBytes)) ?? null
-      : undefined,
-  }));
+  const items: PlannedZipItem[] = input.mediaItems.map((media) => {
+    const url = getMediaDownloadUrl(media);
+    const blob = input.cachedBlobs?.get(url);
+    const provider = input.mediaBlobProvider;
+    const getBlob =
+      !blob && provider && (provider.supports?.(media) ?? true)
+        ? (signal?: AbortSignal, maxResponseBytes?: number) =>
+            maxResponseBytes === undefined
+              ? provider(media, signal)
+              : provider(media, signal, maxResponseBytes)
+        : undefined;
+    return {
+      url,
+      desiredName: generateDesiredName(media, input.nowMs),
+      inputKind: getZipInputKind({ blob, getBlob }),
+      ...(media.downloadSource?.quality === 'unverified-original'
+        ? { sourceUnavailable: true }
+        : {}),
+      expectedSizeBytes: media.fileSize,
+      blob,
+      getBlob,
+    };
+  });
 
   const zipFilename = input.zipFilename ?? generateZipName(input.mediaItems, input.nowMs);
 

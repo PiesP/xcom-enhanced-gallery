@@ -18,6 +18,7 @@ import {
   setError,
 } from '@shared/state/signals/gallery.signals';
 import { setDownloadStatus } from '@shared/state/signals/gallery-download-signals';
+import type { MediaInfo } from '@shared/types/media.types';
 
 /**
  * Hook providing gallery download functionality.
@@ -119,8 +120,11 @@ export function createDownloadHandler() {
         }
       } else {
         const result = await downloadService.downloadBulk([...mediaItems], {
-          mediaBlobProvider: (item, requestSignal, maxResponseBytes) =>
-            mediaService.getDownloadMedia(item, requestSignal, maxResponseBytes),
+          mediaBlobProvider: Object.assign(
+            (item: MediaInfo, requestSignal?: AbortSignal, maxResponseBytes?: number) =>
+              mediaService.getDownloadMedia(item, requestSignal, maxResponseBytes),
+            { supports: (item: MediaInfo) => item.type === 'image' }
+          ),
           signal,
         });
         if (!isCurrentOperation()) return;

@@ -8,11 +8,13 @@ const http = vi.hoisted(() => ({
   getOwnedBinary: vi.fn(),
 }));
 
-vi.mock('@shared/services/http-request-service', () => ({
+vi.mock('@shared/services/http-request-service', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@shared/services/http-request-service')>(),
   getHttpRequestService: () => http,
 }));
 
 import { DownloadMediaCache } from '@shared/services/media/download-media-cache';
+import { HttpRequestError } from '@shared/services/http-request-service';
 import {
   DownloadResourceLimitError,
   LiveByteBudget,
@@ -217,6 +219,33 @@ describe('DownloadMediaCache', () => {
     expect(borrowed?.value).toBeInstanceOf(Blob);
     borrowed?.lease.release();
 
+    expect(http.getOwnedBinary).toHaveBeenCalledTimes(2);
+    cache.destroy();
+    expect(budget.usedBytes).toBe(0);
+  });
+
+  it.each([
+    { status: 403, readable: true, errorCategory: 'http', retryAfterMs: undefined },
+    { status: 429, readable: true, errorCategory: 'http', retryAfterMs: 2500 },
+    { status: 0, readable: false, errorCategory: 'network', retryAfterMs: undefined },
+  ])('keeps failed response metadata and releases its binary owner: $status', async (metadata) => {
+    const data = new Blob(['denied']);
+    http.getOwnedBinary.mockImplementation(async () => ({
+      ok: false,
+      data,
+      lease: budget.reserve(data.size),
+      ...metadata,
+    }));
+    const cache = new DownloadMediaCache(5, 100, budget);
+
+    await expect(cache.getOrFetch(media('failed'))).rejects.toMatchObject({
+      status: metadata.status,
+      readable: metadata.readable,
+      category: metadata.errorCategory,
+      retryAfterMs: metadata.retryAfterMs,
+    });
+    expect(budget.usedBytes).toBe(0);
+    await expect(cache.getOrFetch(media('failed'))).rejects.toBeInstanceOf(HttpRequestError);
     expect(http.getOwnedBinary).toHaveBeenCalledTimes(2);
     cache.destroy();
     expect(budget.usedBytes).toBe(0);
