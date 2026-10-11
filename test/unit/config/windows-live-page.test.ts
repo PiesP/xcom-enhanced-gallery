@@ -1316,11 +1316,12 @@ describe('Windows X live page validation', () => {
     const root = mkdtempSync(join(tmpdir(), 'xeg-live-observation-default-'));
     const output = join(root, 'output');
     const chromium = {
-      launchPersistentContext: async (): Promise<never> => {
+      launchPersistentContext: vi.fn(async (): Promise<never> => {
         throw new Error('browser launch reached');
-      },
+      }),
     };
     try {
+      // This temporary root deliberately has no native fixture certificate helper.
       await expect(
         installProfile.run({
           browserName: 'chrome',
@@ -1331,7 +1332,12 @@ describe('Windows X live page validation', () => {
           output,
           root,
         })
-      ).rejects.toThrow('browser launch reached');
+      ).rejects.toThrow('fixture-certificate-unavailable');
+      const receipt = JSON.parse(readFileSync(join(output, 'installation-result.json'), 'utf8'));
+      expect(receipt.liveObservation).toBeNull();
+      expect(receipt.liveUrls).toEqual([]);
+      expect(receipt.cleanup).toMatchObject({ profileRemoved: true, errorCount: 0 });
+      expect(chromium.launchPersistentContext).not.toHaveBeenCalled();
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

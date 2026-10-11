@@ -43,6 +43,7 @@ export function createExtensionNativeFixtureHandler() {
   const active = new Set();
   let holdPath = null;
   let heldResponse = null;
+  let heldTail = null;
   const reject = (response, status = 404) => {
     unexpectedCount += 1;
     response.writeHead(status, { 'Content-Length': '0', 'Cache-Control': 'no-store' });
@@ -103,6 +104,10 @@ export function createExtensionNativeFixtureHandler() {
         event.closedAtMs = performance.now();
       }
       active.delete(response);
+      if (response === heldResponse) {
+        heldResponse = null;
+        heldTail = null;
+      }
     });
     response.once('finish', () => {
       event.result = 'served';
@@ -126,6 +131,7 @@ export function createExtensionNativeFixtureHandler() {
       assert.equal(heldResponse, null, 'Only one native fixture response may be held');
       holdPath = null;
       heldResponse = response;
+      heldTail = body.subarray(1);
       response.write(body.subarray(0, 1));
       event.firstByteQueuedAtMs = performance.now();
       event.result = 'held';
@@ -174,10 +180,18 @@ export function createExtensionNativeFixtureHandler() {
       holdPath = `${host}${path}`;
     },
     held: () => heldResponse !== null && !heldResponse.destroyed,
+    completeHold() {
+      assert(heldResponse && !heldResponse.destroyed && heldTail !== null,
+        'A live held response is required');
+      heldResponse.end(heldTail);
+      heldResponse = null;
+      heldTail = null;
+    },
     releaseHold() {
       holdPath = null;
       if (heldResponse && !heldResponse.destroyed) heldResponse.destroy();
       heldResponse = null;
+      heldTail = null;
     },
     since(mark) {
       assert(Number.isSafeInteger(mark) && mark >= 0 && mark <= events.length);

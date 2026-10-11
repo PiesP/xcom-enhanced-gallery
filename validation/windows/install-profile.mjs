@@ -3482,12 +3482,50 @@ async function runCycle({ cycle, downloads, extensionPage, output, page, images,
   const filename = expectedFilename(cycle.expectedIndex);
   const nativeMark = nativeLoopback.mark();
   const fetchMark = pageFetches.length;
+  const expectedSource = expectedOriginalImageUrl(expectedDisplayUrl);
+  if (number === 1) nativeLoopback.armHold('pbs.twimg.com', new URL(expectedSource).pathname);
   const downloadStarted = performance.now();
   await gallery
     .locator('[data-gallery-element="toolbar"] button[aria-label="Download"]')
     .click();
+  let slowTransfer;
+  if (number === 1) {
+    const active = await waitForValue(async () => {
+      const added = (await queryDownloads(extensionPage)).filter(({ id }) => !knownIds.has(id));
+      assert(added.length <= 1, 'Slow single save allocated more than one native ID');
+      const entry = added[0];
+      return entry?.state === 'in_progress' && entry.url === expectedSource &&
+        entry.totalBytes === images[cycle.expectedIndex].length &&
+        entry.bytesReceived < entry.totalBytes ? entry : undefined;
+    }, 'held single save to start before full transfer', 5_000);
+    const nativeStartAfterMs = performance.now() - downloadStarted;
+    const holdStarted = performance.now();
+    await delay(3_500);
+    const unchanged = (await queryDownloads(extensionPage))
+      .filter(({ id }) => !knownIds.has(id));
+    assert.equal(unchanged.length, 1);
+    assert.equal(unchanged[0].id, active.id);
+    assert.equal(unchanged[0].state, 'in_progress');
+    assert.equal(nativeLoopback.held(), true);
+    const button = gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download"]');
+    assert.equal(await button.isDisabled(), true,
+      'Confirmed active transfer must keep download controls disabled after initial checks');
+    assert.equal(await button.getAttribute('aria-busy'), 'true');
+    await page.screenshot({ path: join(output, 'cycle-1-pending-native.png') });
+    slowTransfer = { downloadId: active.id, nativeStartAfterMs,
+      heldAfterStartMs: performance.now() - holdStarted,
+      beforeRelease: { state: unchanged[0].state, bytesReceived: unchanged[0].bytesReceived,
+        totalBytes: unchanged[0].totalBytes }, controlsBusy: true,
+      screenshot: 'cycle-1-pending-native.png' };
+    nativeLoopback.completeHold();
+  }
   const download = await waitForDownload(extensionPage, knownIds, filename);
   const downloadMs = performance.now() - downloadStarted;
+  if (slowTransfer) {
+    assert.equal(download.id, slowTransfer.downloadId);
+    assert(slowTransfer.nativeStartAfterMs < downloadMs);
+    slowTransfer.completeAfterMs = downloadMs;
+  }
   assert.equal(typeof download.filename, 'string');
   const relativeDownload = relative(downloads, download.filename);
   assert(
@@ -3548,6 +3586,7 @@ async function runCycle({ cycle, downloads, extensionPage, output, page, images,
       filename,
       sha256: createHash('sha256').update(bytes).digest('hex'),
       native,
+      ...(slowTransfer ? { slowTransfer } : {}),
     },
     expectedIndex: cycle.expectedIndex,
     sourceQuality: {

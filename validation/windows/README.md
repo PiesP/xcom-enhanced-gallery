@@ -89,6 +89,12 @@ host layout-shift regression. Page screenshots, per-cycle timings, file hashes,
 and cleanup metadata are retained as evidence; the timings are observations,
 not a performance claim.
 
+The first native single holds its response after one byte for at least 3.5
+seconds, records native start separately from full completion, and requires
+the same download ID and busy controls throughout. Releasing that bounded
+response must yield the exact original file. This distinguishes a confirmed
+active transfer from an uncertain worker reply without a throughput claim.
+
 The extension-only classic route serves smaller display JPEGs, including one
 extensionless query-format photo URL, and separate original JPEGs. Each DOM
 recovery cycle asserts the observed display URL and natural dimensions, then
