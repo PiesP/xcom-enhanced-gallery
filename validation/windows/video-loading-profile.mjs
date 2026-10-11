@@ -333,6 +333,7 @@ export async function runVideoLoadingProfile({
       return video instanceof HTMLVideoElement && !video.paused && video.currentTime > time + 0.15;
     }, start, { timeout: 15_000 });
     observation.recovered = { ...recovered, playbackEnd: (await itemState(page, 0)).currentTime, hint };
+    await page.screenshot({ path: join(output, 'video-recovery-gallery.png') });
     observation.checks.push('same-item-recovery-metadata-first-frame-playback-and-geometry');
 
     await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download"]').focus();
@@ -405,9 +406,10 @@ export async function runVideoLoadingProfile({
     assert(file.bytes.equals(BAD_MP4), 'Native file differs from canonical best MP4 transport bytes');
     const fileSha256 = createHash('sha256').update(file.bytes).digest('hex');
     assert.equal(fileSha256, badSha256, 'Native file digest differs from served best MP4 bytes');
+    await writeFile(join(output, 'video-recovery-current.mp4'), file.bytes, { flag: 'wx' });
     observation.download = { id: native.id, loopback: served,
       finalUrl: native.finalUrl, filename: expectedName, bytes: file.bytes.length,
-      sha256: fileSha256,
+      sha256: fileSha256, file: 'video-recovery-current.mp4',
       expectedDecode: 'invalid-controlled-best-bytes' };
     observation.checks.push('native-download-retains-canonical-best-bytes');
 
@@ -434,9 +436,11 @@ export async function runVideoLoadingProfile({
       'Video ZIP escaped the task-owned download directory');
     const zipFile = await readExactDownloadFile(zip.filename, expectedStoredZipBytes(expectedEntries));
     const verified = verifyStoredZip(zipFile.bytes, expectedEntries);
+    await writeFile(join(output, 'video-recovery.zip'), zipFile.bytes, { flag: 'wx' });
     observation.zip = { id: zip.id, filename: basename(zip.filename),
       bytes: zipFile.bytes.length, sha256: createHash('sha256').update(zipFile.bytes).digest('hex'),
-      verified, firstEntrySource: bestUrl, firstEntryDecode: 'invalid-controlled-best-bytes' };
+      file: 'video-recovery.zip', verified,
+      firstEntrySource: bestUrl, firstEntryDecode: 'invalid-controlled-best-bytes' };
     observation.timingsMs.zipCompletion = performance.now() - zipStartedAtMs;
     observation.checks.push('zip-retains-canonical-best-bytes-order-and-crc-after-playback-fallback');
 

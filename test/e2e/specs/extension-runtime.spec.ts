@@ -12,6 +12,10 @@ import {
   MOCK_GALLERY_HTML,
   MOCK_IMAGE,
 } from '../fixtures/artifacts';
+import {
+  NATIVE_ORIGINAL_URL,
+  startNativeDownloadLoopback,
+} from '../fixtures/native-download-loopback';
 
 const INSTALLED_GALLERY_HTML = readFileSync(
   resolve(import.meta.dirname, '../fixtures/installed-gallery-page.html'),
@@ -59,18 +63,23 @@ test('loads the Chrome extension, completes a privileged download, and restores 
   test.skip(browserName !== 'chromium', 'Chrome extension loading requires Chromium');
   const userDataDir = mkdtempSync(join(tmpdir(), 'xeg-extension-'));
   const downloadDirectory = resolve(userDataDir, 'downloads');
-  const context = await chromium.launchPersistentContext(userDataDir, {
-    channel: 'chromium',
-    headless: true,
-    acceptDownloads: true,
-    downloadsPath: downloadDirectory,
-    args: [
-      `--disable-extensions-except=${CHROME_EXTENSION_DIR}`,
-      `--load-extension=${CHROME_EXTENSION_DIR}`,
-    ],
-  });
-
+  let nativeLoopback: Awaited<ReturnType<typeof startNativeDownloadLoopback>> | undefined;
+  let context: Awaited<ReturnType<typeof chromium.launchPersistentContext>> | undefined;
   try {
+    nativeLoopback = await startNativeDownloadLoopback(MOCK_IMAGE);
+    context = await chromium.launchPersistentContext(userDataDir, {
+      channel: 'chromium',
+      headless: true,
+      acceptDownloads: true,
+      downloadsPath: downloadDirectory,
+      args: [
+        `--disable-extensions-except=${CHROME_EXTENSION_DIR}`,
+        `--load-extension=${CHROME_EXTENSION_DIR}`,
+        `--host-resolver-rules=MAP pbs.twimg.com:443 127.0.0.1:${nativeLoopback.port}`,
+        `--ignore-certificate-errors-spki-list=${nativeLoopback.spkiSha256}`,
+      ],
+    });
+    let routedOriginalRequests = 0;
     await context.route('https://x.com/**', async (route) => {
       const url = new URL(route.request().url());
       if (url.pathname.endsWith('/TweetResultByRestId')) {
@@ -90,6 +99,11 @@ test('loads the Chrome extension, completes a privileged download, and restores 
       });
     });
     await context.route('https://pbs.twimg.com/**', async (route) => {
+      if (route.request().url() === NATIVE_ORIGINAL_URL) {
+        routedOriginalRequests += 1;
+        await route.abort();
+        return;
+      }
       await route.fulfill({ status: 200, contentType: 'image/png', body: MOCK_IMAGE });
     });
 
@@ -198,8 +212,19 @@ test('loads the Chrome extension, completes a privileged download, and restores 
     const [completedDownload] = await background.evaluate(() =>
       chrome.downloads.search({ orderBy: ['-startTime'], limit: 1 })
     );
+    expect(completedDownload?.url).toBe(NATIVE_ORIGINAL_URL);
     expect(completedDownload?.filename.startsWith(downloadDirectory)).toBe(true);
     expect(readFileSync(completedDownload?.filename ?? '')).toEqual(MOCK_IMAGE);
+    const nativeTransfer = nativeLoopback.snapshot();
+    expect(nativeTransfer).toMatchObject({
+      servedGets: 1,
+      servedBytes: MOCK_IMAGE.length,
+      previewRequests: 0,
+      unexpected: 0,
+      overflow: false,
+      serverError: false,
+    });
+    expect(routedOriginalRequests).toBe(0);
 
     await page.evaluate(() => {
       const spacer = document.querySelector<HTMLElement>('#host-layout-spacer');
@@ -294,8 +319,15 @@ test('loads the Chrome extension, completes a privileged download, and restores 
     expect(pageErrors).toEqual([]);
     expect(consoleErrors.filter((record) => !isExpectedFixtureApiConsoleError(record))).toEqual([]);
   } finally {
-    await context.close();
-    rmSync(userDataDir, { recursive: true, force: true });
+    try {
+      await context?.close();
+    } finally {
+      try {
+        await nativeLoopback?.close();
+      } finally {
+        rmSync(userDataDir, { recursive: true, force: true });
+      }
+    }
   }
 });
 
