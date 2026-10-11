@@ -1,30 +1,17 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import {
-  DEFAULT_REQUEST_TIMEOUT_MS,
-  SINGLE_DOWNLOAD_MAX_RESPONSE_BYTES,
-} from '@constants/performance';
-import { mergeAbortSignalsWithCleanup } from '@piesp/browser-core/error';
 import { getDownloadAdapter } from '@platform/index';
-import type { DownloadAdapter } from '@platform/types';
 import { generateMediaFilename } from '@shared/core/filename/filename-utils';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { USER_CANCELLED_MESSAGE } from '@shared/error/cancellation';
 import { DownloadSourceUnavailableError } from '@shared/error/download-source-unavailable-error';
-import { isHttpResponseSizeLimitError } from '@shared/error/http-response-size-limit-error';
-import { readResponseBody } from '@shared/network/bounded-response';
 import type { DownloadOptions, SingleDownloadResult } from '@shared/services/download/types';
 import { reportProgress } from '@shared/services/download/types';
 import { ErrorCode, type MediaInfo } from '@shared/types/media.types';
 import { getMediaDownloadUrl } from '@shared/utils/media/media-source';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
-import {
-  DownloadResourceLimitError,
-  downloadLiveByteBudget,
-  type LiveByteLease,
-  reserveBinaryResponse,
-} from './live-byte-budget';
+import { DownloadResourceLimitError, downloadLiveByteBudget } from './live-byte-budget';
 
 const createAbortResult = (): SingleDownloadResult => ({
   success: false,
@@ -34,7 +21,7 @@ const createAbortResult = (): SingleDownloadResult => ({
 const createErrorDownloadResult = (error: unknown): SingleDownloadResult => ({
   success: false,
   error: normalizeErrorMessage(error),
-  ...(isHttpResponseSizeLimitError(error) || error instanceof DownloadResourceLimitError
+  ...(error instanceof DownloadResourceLimitError
     ? { code: ErrorCode.RESOURCE_LIMIT }
     : error instanceof DownloadSourceUnavailableError
       ? { code: ErrorCode.SOURCE_UNAVAILABLE }
@@ -109,10 +96,13 @@ async function downloadWithAdapter(
 ): Promise<SingleDownloadResult> {
   const adapter = getDownloadAdapter();
 
-  // Adapter needs blob-based fallback (MV3: content script fetch required)
-  if (adapter.needsBlobFallback()) {
-    return downloadWithFetchFallback(url, filename, options, abortSignal, adapter);
-  }
+  reportProgress(options.onProgress, {
+    phase: 'preparing',
+    current: 0,
+    total: 1,
+    percentage: 0,
+    filename,
+  });
 
   // Set up abort listener to race against the adapter download
   if (abortSignal) {
@@ -135,14 +125,6 @@ async function downloadWithAdapter(
     );
   }
 
-  reportProgress(options.onProgress, {
-    phase: 'preparing',
-    current: 0,
-    total: 1,
-    percentage: 0,
-    filename,
-  });
-
   try {
     await adapter.download(url, filename, undefined, abortSignal);
     reportProgress(options.onProgress, {
@@ -155,145 +137,6 @@ async function downloadWithAdapter(
     return { success: true, filename };
   } catch (error) {
     return createErrorDownloadResult(error);
-  }
-}
-
-async function downloadWithFetchFallback(
-  url: string,
-  filename: string,
-  options: DownloadOptions,
-  abortSignal: AbortSignal | undefined,
-  adapter: DownloadAdapter
-): Promise<SingleDownloadResult> {
-  reportProgress(options.onProgress, {
-    phase: 'preparing',
-    current: 0,
-    total: 1,
-    percentage: 0,
-    filename,
-  });
-
-  const timeoutSignal = AbortSignal.timeout(DEFAULT_REQUEST_TIMEOUT_MS);
-  const responseSizeController = new AbortController();
-  const fetchSignalScope = mergeAbortSignalsWithCleanup([
-    ...(abortSignal ? [abortSignal] : []),
-    timeoutSignal,
-    responseSizeController.signal,
-  ]);
-
-  let responseLease: LiveByteLease | undefined;
-  try {
-    const reserved = reserveBinaryResponse(
-      options.liveBudget ?? downloadLiveByteBudget,
-      SINGLE_DOWNLOAD_MAX_RESPONSE_BYTES
-    );
-    responseLease = reserved.lease;
-    // Fetch in content script context (has host_permissions to bypass CORS).
-    // Service Workers cannot bypass CORS for twimg.com without specific headers.
-    // Apply a timeout race via AbortSignal.timeout so the fetch doesn't hang
-    // indefinitely if the network stalls or the server doesn't respond.
-    let blob: Blob;
-    try {
-      const response = await fetch(url, {
-        credentials: 'include',
-        signal: fetchSignalScope.signal,
-      });
-      if (!response.ok) {
-        await response.body?.cancel();
-        return createErrorDownloadResult(
-          new Error(`HTTP ${response.status}: ${response.statusText}`)
-        );
-      }
-      blob = (await readResponseBody(response, 'blob', reserved.maxBytes, (reason) =>
-        responseSizeController.abort(reason)
-      )) as Blob;
-    } finally {
-      fetchSignalScope.cleanup();
-    }
-
-    responseLease.shrink(blob.size);
-    reportProgress(options.onProgress, {
-      phase: 'downloading',
-      current: 50,
-      total: 100,
-      percentage: 50,
-      filename,
-    });
-    // The caller may settle before the browser stops using the object URL.
-    // The response owner is local; this distinct owner belongs to the adapter.
-    const downloadOwner = responseLease.fork();
-
-    // Preserve the existing no-signal behavior: adapter failures reach the
-    // outer catch and attempt the direct URL fallback. With a caller signal,
-    // failures are returned directly while cancellation wins the race.
-    const downloadBlobPromise = adapter
-      .downloadBlob(blob, filename, abortSignal, () => downloadOwner.release())
-      .then(
-        () => ({ success: true, filename }) satisfies SingleDownloadResult,
-        (error: unknown) => {
-          if (!abortSignal) throw error;
-          return createErrorDownloadResult(error);
-        }
-      );
-    const result = abortSignal
-      ? await raceWithAbort(downloadBlobPromise, abortSignal, createAbortResult)
-      : await downloadBlobPromise;
-
-    if (!result.success) return result;
-
-    reportProgress(options.onProgress, {
-      phase: 'complete',
-      current: 1,
-      total: 1,
-      percentage: 100,
-      filename,
-    });
-    return result;
-  } catch (error) {
-    // Only the caller-owned signal represents user cancellation. The internal
-    // timeout is a fetch failure and should use the direct URL fallback.
-    if (abortSignal?.aborted) {
-      return createAbortResult();
-    }
-
-    // Fetch/body work has settled here. A separate adapter owner, if created,
-    // keeps any still-live native URL charged while a direct fallback runs.
-    responseLease?.release();
-    responseLease = undefined;
-
-    if (isHttpResponseSizeLimitError(error) || error instanceof DownloadResourceLimitError) {
-      return createErrorDownloadResult(error);
-    }
-    const fetchError = timeoutSignal.aborted
-      ? new Error(`Download fetch timed out after ${DEFAULT_REQUEST_TIMEOUT_MS}ms`)
-      : error;
-
-    // If fetch failed (CORS/network), fall back to direct URL download via background SW.
-    // Content-script fetch with host_permissions follows CORS rules — CDN hosts
-    // (pbs.twimg.com, video.twimg.com) typically serve permissive CORS headers,
-    // but this fallback ensures downloads work even when they don't.
-    if (adapter.needsBlobFallback()) {
-      try {
-        await adapter.download(url, filename, undefined, abortSignal);
-        reportProgress(options.onProgress, {
-          phase: 'complete',
-          current: 1,
-          total: 1,
-          percentage: 100,
-          filename,
-        });
-        return { success: true, filename };
-      } catch {
-        if (abortSignal?.aborted) {
-          return createAbortResult();
-        }
-        return createErrorDownloadResult(fetchError);
-      }
-    }
-    return createErrorDownloadResult(fetchError);
-  } finally {
-    responseLease?.release();
-    fetchSignalScope.cleanup();
   }
 }
 

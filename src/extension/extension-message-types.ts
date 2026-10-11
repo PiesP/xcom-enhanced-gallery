@@ -17,9 +17,8 @@
  *   and DOM access live in the content script. If a new feature needs SW
  *   privileges (clipboard, printing, native messaging, cross-origin fetch
  *   proxying), the message protocol must be extended here.
- * - URL downloads via twimg.com are restricted to the blob fallback
- *   path because the background SW lacks the auth cookies present in
- *   the content script context. `needsBlobFallback()` returns true.
+ * - Validated single-media URLs use browser-managed downloads. The browser
+ *   owns their network transfer and persists a download ID for reconciliation.
  * - Blob URLs are created in the CONTENT SCRIPT context (not the SW)
  *   because content-script blob URLs persist with the page lifetime.
  *   SW-created blob URLs become invalid when the ephemeral SW is
@@ -36,6 +35,8 @@ export interface DownloadRequestMessage {
     readonly filename: string;
     readonly headers?: Record<string, string>;
     readonly requestId?: string;
+    /** New direct owner contract; absent for existing extension utility callers. */
+    readonly mode?: 'direct';
   };
 }
 
@@ -55,6 +56,8 @@ export interface DownloadCancelRequestMessage {
   readonly type: 'DOWNLOAD_CANCEL_REQUEST';
   readonly payload: {
     readonly requestId: string;
+    /** Initial URL for a direct request; Blob cancellation leaves this absent. */
+    readonly url?: string;
   };
 }
 
@@ -64,6 +67,15 @@ export interface DownloadBlobStatusRequestMessage {
     readonly requestId: string;
     readonly objectUrl: string;
     /** Reasserts a user abort if a worker restart lost a pre-ID cancellation marker. */
+    readonly cancelRequested?: boolean;
+  };
+}
+
+export interface DownloadDirectStatusRequestMessage {
+  readonly type: 'DOWNLOAD_DIRECT_STATUS_REQUEST';
+  readonly payload: {
+    readonly requestId: string;
+    readonly url: string;
     readonly cancelRequested?: boolean;
   };
 }
@@ -84,6 +96,7 @@ export type IncomingMessage =
   | DownloadRequestMessage
   | DownloadBlobUrlRequestMessage
   | DownloadBlobStatusRequestMessage
+  | DownloadDirectStatusRequestMessage
   | DownloadCancelRequestMessage
   | ShowNotificationMessage;
 
@@ -109,4 +122,10 @@ export interface DownloadLifecycleResponse {
 export interface DownloadBlobStatusResponse {
   readonly requestId: string;
   readonly status: 'terminal' | 'active' | 'unknown';
+}
+
+export interface DownloadDirectStatusResponse {
+  readonly requestId: string;
+  readonly status: 'never-started' | 'active' | 'complete' | 'interrupted' | 'unknown';
+  readonly reason?: 'browser-rejected' | 'browser-interrupted' | 'user-cancelled' | 'timeout';
 }

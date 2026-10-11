@@ -1,3 +1,4 @@
+import { DOWNLOAD_TIMEOUT_MS } from '@constants/performance';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { sendMessage } = vi.hoisted(() => ({
@@ -184,35 +185,165 @@ describe('MV3DownloadAdapter', () => {
     expect(sendMessage).not.toHaveBeenCalled();
   });
 
-  it('keeps the original request cancellable after a non-terminal background failure', async () => {
-    const controller = new AbortController();
-    sendMessage.mockImplementationOnce((message: { payload: { requestId: string } }) =>
-      Promise.resolve({
-        success: false,
-        error: 'Download timed out after 5 minutes',
-        data: { requestId: message.payload.requestId, terminal: false },
-      })
-    );
-    const adapter = new MV3DownloadAdapter();
+  it('reconciles a lost reply to the original completed ID without redispatch', async () => {
+    const url = 'https://pbs.twimg.com/media/example.jpg';
+    sendMessage.mockImplementation((message: { type: string; payload: { requestId: string } }) => {
+      if (message.type === 'DOWNLOAD_REQUEST') return Promise.reject(new Error('Worker reply lost'));
+      return Promise.resolve({ success: true, data: { requestId: message.payload.requestId, status: 'complete' } });
+    });
 
-    await expect(
-      adapter.download(
-        'https://pbs.twimg.com/media/example.jpg',
-        'example.jpg',
-        undefined,
-        controller.signal
-      )
-    ).rejects.toThrow('Download timed out after 5 minutes');
+    await expect(new MV3DownloadAdapter().download(url, 'example.jpg')).resolves.toBeUndefined();
+    expect(sendMessage.mock.calls.filter(([message]) => (message as { type: string }).type === 'DOWNLOAD_REQUEST')).toHaveLength(1);
+    expect(sendMessage.mock.calls[0]?.[0]).toMatchObject({
+      type: 'DOWNLOAD_REQUEST', payload: { url, filename: 'example.jpg', mode: 'direct' },
+    });
+  });
+
+  it.each(['active reply', 'lost reply'])(
+    'waits past the initial checks for one %s download to complete',
+    async (replyKind) => {
+      vi.useFakeTimers();
+      let nativeStatus = 'active';
+      const url = 'https://pbs.twimg.com/media/example.jpg';
+      sendMessage.mockImplementation((message: { type: string; payload: { requestId: string } }) => {
+        if (message.type === 'DOWNLOAD_REQUEST') {
+          return replyKind === 'lost reply'
+            ? Promise.reject(new Error('Worker reply lost'))
+            : Promise.resolve({
+                success: false,
+                data: { requestId: message.payload.requestId, status: 'active' },
+              });
+        }
+        return Promise.resolve({
+          success: true,
+          data: { requestId: message.payload.requestId, status: nativeStatus },
+        });
+      });
+
+      let settled = false;
+      const pending = new MV3DownloadAdapter().download(url, 'example.jpg').finally(() => {
+        settled = true;
+      });
+      await vi.advanceTimersByTimeAsync(4_000);
+      expect(settled).toBe(false);
+      expect(sendMessage.mock.calls.filter(([message]) =>
+        (message as { type: string }).type === 'DOWNLOAD_REQUEST')).toHaveLength(1);
+
+      nativeStatus = 'complete';
+      await vi.advanceTimersByTimeAsync(5_000);
+      await expect(pending).resolves.toBeUndefined();
+      expect(sendMessage.mock.calls.filter(([message]) =>
+        (message as { type: string }).type === 'DOWNLOAD_REQUEST')).toHaveLength(1);
+    }
+  );
+
+  it('reports a terminal interrupted download without a Blob replacement', async () => {
+    sendMessage.mockImplementation((message: { type: string; payload: { requestId: string } }) => {
+      if (message.type === 'DOWNLOAD_REQUEST') return Promise.reject(new Error('Worker reply lost'));
+      return Promise.resolve({ success: true, data: { requestId: message.payload.requestId, status: 'interrupted' } });
+    });
+
+    await expect(new MV3DownloadAdapter().download(
+      'https://pbs.twimg.com/media/example.jpg', 'example.jpg'
+    )).rejects.toThrow('Browser download was interrupted');
+    expect(sendMessage.mock.calls.filter(([message]) => (message as { type: string }).type === 'DOWNLOAD_REQUEST')).toHaveLength(1);
+  });
+
+  it('cancels the original request while an active download remains pending', async () => {
+    vi.useFakeTimers();
+    const controller = new AbortController();
+    sendMessage.mockImplementation((message: { type: string; payload: { requestId: string } }) => {
+      if (message.type === 'DOWNLOAD_REQUEST') return Promise.reject(new Error('Worker reply lost'));
+      if (message.type === 'DOWNLOAD_CANCEL_REQUEST') return Promise.resolve({ success: true });
+      return Promise.resolve({ success: true, data: { requestId: message.payload.requestId, status: 'active' } });
+    });
+    const adapter = new MV3DownloadAdapter();
+    const pending = adapter.download(
+      'https://pbs.twimg.com/media/example.jpg', 'example.jpg', undefined, controller.signal
+    );
+    let settled = false;
+    const outcome = pending.catch((error: unknown) => {
+      settled = true;
+      return error;
+    });
+    await vi.advanceTimersByTimeAsync(4_000);
+    expect(settled).toBe(false);
 
     const firstMessage = sendMessage.mock.calls[0]?.[0] as {
       payload: { requestId: string };
     };
     controller.abort();
-    await vi.waitFor(() => expect(sendMessage).toHaveBeenCalledTimes(2));
+    expect(await outcome).toMatchObject({ name: 'AbortError' });
 
-    expect(sendMessage.mock.calls[1]?.[0]).toEqual({
+    expect(sendMessage.mock.calls.find(([message]) => (message as { type: string }).type === 'DOWNLOAD_CANCEL_REQUEST')?.[0]).toEqual({
       type: 'DOWNLOAD_CANCEL_REQUEST',
-      payload: { requestId: firstMessage.payload.requestId },
+      payload: { requestId: firstMessage.payload.requestId, url: 'https://pbs.twimg.com/media/example.jpg' },
     });
+    expect(sendMessage.mock.calls.filter(([message]) =>
+      (message as { type: string }).type === 'DOWNLOAD_REQUEST')).toHaveLength(1);
+  });
+
+  it('keeps an unknown original request cancellable after the bounded checks settle', async () => {
+    vi.useFakeTimers();
+    const controller = new AbortController();
+    sendMessage.mockImplementation((message: { type: string; payload: { requestId: string } }) => {
+      if (message.type === 'DOWNLOAD_REQUEST') return Promise.reject(new Error('Worker reply lost'));
+      if (message.type === 'DOWNLOAD_CANCEL_REQUEST') return Promise.resolve({ success: true });
+      return Promise.resolve({
+        success: true,
+        data: { requestId: message.payload.requestId, status: 'unknown' },
+      });
+    });
+
+    const pending = new MV3DownloadAdapter().download(
+      'https://pbs.twimg.com/media/example.jpg', 'example.jpg', undefined, controller.signal
+    );
+    const outcome = expect(pending).rejects.toThrow('Browser download state is unknown');
+    await vi.advanceTimersByTimeAsync(4_000);
+    await outcome;
+
+    const request = sendMessage.mock.calls[0]?.[0] as { payload: { requestId: string } };
+    controller.abort();
+    expect(sendMessage.mock.calls.find(([message]) =>
+      (message as { type: string }).type === 'DOWNLOAD_CANCEL_REQUEST')?.[0]).toEqual({
+      type: 'DOWNLOAD_CANCEL_REQUEST',
+      payload: {
+        requestId: request.payload.requestId,
+        url: 'https://pbs.twimg.com/media/example.jpg',
+      },
+    });
+    expect(sendMessage.mock.calls.filter(([message]) =>
+      (message as { type: string }).type === 'DOWNLOAD_REQUEST')).toHaveLength(1);
+  });
+
+  it('requests cancellation of the active original when the deadline expires', async () => {
+    vi.useFakeTimers();
+    sendMessage.mockImplementation((message: { type: string; payload: { requestId: string } }) => {
+      if (message.type === 'DOWNLOAD_REQUEST') return Promise.reject(new Error('Worker reply lost'));
+      if (message.type === 'DOWNLOAD_CANCEL_REQUEST') return Promise.resolve({ success: true });
+      return Promise.resolve({
+        success: true,
+        data: { requestId: message.payload.requestId, status: 'active' },
+      });
+    });
+
+    const pending = new MV3DownloadAdapter().download(
+      'https://pbs.twimg.com/media/example.jpg', 'example.jpg'
+    );
+    const outcome = expect(pending).rejects.toThrow('Browser download state is unknown');
+    await vi.advanceTimersByTimeAsync(DOWNLOAD_TIMEOUT_MS);
+    await outcome;
+
+    const request = sendMessage.mock.calls[0]?.[0] as { payload: { requestId: string } };
+    expect(sendMessage.mock.calls.find(([message]) =>
+      (message as { type: string }).type === 'DOWNLOAD_CANCEL_REQUEST')?.[0]).toEqual({
+      type: 'DOWNLOAD_CANCEL_REQUEST',
+      payload: {
+        requestId: request.payload.requestId,
+        url: 'https://pbs.twimg.com/media/example.jpg',
+      },
+    });
+    expect(sendMessage.mock.calls.filter(([message]) =>
+      (message as { type: string }).type === 'DOWNLOAD_REQUEST')).toHaveLength(1);
   });
 });

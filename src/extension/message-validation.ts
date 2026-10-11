@@ -1,4 +1,5 @@
 import { isAllowedUrl } from '@shared/utils/url/url-safety';
+import { isValidMediaUrl } from '@shared/utils/url/validator';
 import type { IncomingMessage } from './extension-message-types';
 
 const MAX_FILENAME_LENGTH = 255;
@@ -69,8 +70,11 @@ export function isValidIncomingMessage(message: unknown): message is IncomingMes
       return (
         typeof payload.url === 'string' &&
         isAllowedUrl(payload.url) &&
+        (payload.mode !== 'direct' || isValidMediaUrl(payload.url)) &&
         isSafeFilename(payload.filename) &&
         isSafeHeaders(payload.headers) &&
+        (payload.mode === undefined || payload.mode === 'direct') &&
+        (payload.mode !== 'direct' || isSafeText(payload.requestId, 128)) &&
         (payload.requestId === undefined || isSafeText(payload.requestId, 128))
       );
     }
@@ -87,11 +91,23 @@ export function isValidIncomingMessage(message: unknown): message is IncomingMes
       );
     }
     case 'DOWNLOAD_CANCEL_REQUEST':
-      return isSafeText(message.payload.requestId, 128);
+      return (
+        isSafeText(message.payload.requestId, 128) &&
+        (message.payload.url === undefined ||
+          (typeof message.payload.url === 'string' && isValidMediaUrl(message.payload.url)))
+      );
     case 'DOWNLOAD_BLOB_STATUS_REQUEST':
       return (
         isSafeText(message.payload.requestId, 128) &&
         isPageBlobUrl(message.payload.objectUrl) &&
+        (message.payload.cancelRequested === undefined ||
+          typeof message.payload.cancelRequested === 'boolean')
+      );
+    case 'DOWNLOAD_DIRECT_STATUS_REQUEST':
+      return (
+        isSafeText(message.payload.requestId, 128) &&
+        typeof message.payload.url === 'string' &&
+        isValidMediaUrl(message.payload.url) &&
         (message.payload.cancelRequested === undefined ||
           typeof message.payload.cancelRequested === 'boolean')
       );

@@ -31,12 +31,8 @@ export interface DownloadAdapter {
     onObjectUrlReleased?: () => void
   ): Promise<void>;
   /**
-   * Whether the adapter requires a blob-based fallback for downloads.
-   *
-   * MV3 background service workers cannot directly download from twimg.com
-   * (CORS/auth restrictions), so the content script must fetch the resource
-   * (which has cookies and host permissions) and pass the resulting blob to
-   * the adapter. Userscript adapters can download URLs directly via GM_download.
+   * Whether this runtime requires page-owned Blob handoff for a URL download.
+   * Generated and supplied Blobs use downloadBlob independently of this policy.
    */
   needsBlobFallback(): boolean;
 }

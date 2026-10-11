@@ -1,5 +1,5 @@
-import { DOWNLOAD_CANCEL_RETRY_DELAY_MS, DOWNLOAD_TIMEOUT_MS } from '@constants/performance';
 import { MV3DownloadAdapter } from '@platform/mv3-download-adapters';
+import { webcrypto } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 type MessageListener = (
@@ -30,7 +30,9 @@ vi.mock('@platform/chrome-runtime', () => ({
       sendMessage: (message: unknown) => {
         state.messages.push(message);
         return new Promise<unknown>((resolve) => {
-          const keepChannelOpen = state.listener?.(message, { id: 'extension-id' }, resolve);
+          const keepChannelOpen = state.listener?.(message, {
+            id: 'extension-id', tab: { id: 7 }, url: 'https://x.com/author/status/1',
+          }, resolve);
           if (keepChannelOpen !== true) resolve(undefined);
         });
       },
@@ -81,13 +83,12 @@ vi.mock('@platform/chrome-runtime', () => ({
 
 import '@extension/background';
 
-async function flushPromises(): Promise<void> {
-  for (let index = 0; index < 20; index += 1) await Promise.resolve();
-}
-
 describe('MV3 download lifecycle integration', () => {
   beforeEach(() => {
-    vi.useFakeTimers();
+    // Native URL hashing runs on WebCrypto's real task queue. Keep this
+    // integration on real timers so reconciliation cannot outrun that queue.
+    vi.useRealTimers();
+    vi.stubGlobal('crypto', webcrypto);
     state.cancelDownload.mockReset().mockResolvedValue(undefined);
     state.download.mockReset().mockResolvedValue(301);
     state.searchDownload.mockReset().mockResolvedValue([{ id: 301, state: 'interrupted' }]);
@@ -97,33 +98,43 @@ describe('MV3 download lifecycle integration', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.unstubAllGlobals();
   });
 
-  it('keeps timeout ownership connected from the adapter through the background retry path', async () => {
-    state.searchDownload
-      .mockResolvedValueOnce([{ id: 301, state: 'in_progress' }])
-      .mockResolvedValueOnce([{ id: 301, state: 'in_progress' }])
-      .mockResolvedValueOnce([{ id: 301, state: 'in_progress' }])
-      .mockResolvedValueOnce([{ id: 301, state: 'interrupted' }]);
-    state.cancelDownload.mockRejectedValueOnce(new Error('download is still active'));
+  it('keeps an active native request pending and cancellable past the initial checks', async () => {
+    const url = 'https://pbs.twimg.com/media/example.jpg';
+    let nativeState = 'in_progress';
+    state.searchDownload.mockImplementation(async () => [{ id: 301, url, state: nativeState }]);
+    state.cancelDownload.mockImplementation(async (downloadId: number) => {
+      nativeState = 'interrupted';
+      state.downloadChangedListener?.({ id: downloadId, state: 'interrupted' });
+    });
 
     const controller = new AbortController();
     const adapter = new MV3DownloadAdapter();
     const pending = adapter.download(
-      'https://pbs.twimg.com/media/example.jpg',
+      url,
       'example.jpg',
       undefined,
       controller.signal
     );
-    const outcome = expect(pending).rejects.toThrow('Download timed out after 5 minutes');
+    let settled = false;
+    const outcome = pending.catch((error: unknown) => {
+      settled = true;
+      return error;
+    });
 
-    await flushPromises();
-    expect(state.searchDownload).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => {
+      expect(state.download).toHaveBeenCalledOnce();
+      const records = state.storageValues['xeg.download-tracking.v1'];
+      expect(Object.values(records as Record<string, {downloadId?: number}>)).toEqual(
+        expect.arrayContaining([expect.objectContaining({downloadId: 301})])
+      );
+    });
+    await new Promise((resolve) => setTimeout(resolve, 3_500));
+    expect(settled).toBe(false);
 
-    await vi.advanceTimersByTimeAsync(DOWNLOAD_TIMEOUT_MS + DOWNLOAD_CANCEL_RETRY_DELAY_MS);
-    await outcome;
-
-    expect(state.cancelDownload).toHaveBeenCalledTimes(2);
+    expect(state.download).toHaveBeenCalledOnce();
     expect(
       state.messages.filter(
         (message) =>
@@ -134,10 +145,8 @@ describe('MV3 download lifecycle integration', () => {
     ).toHaveLength(0);
 
     controller.abort();
-    await flushPromises();
-
-    expect(state.cancelDownload).toHaveBeenCalledTimes(3);
-    expect(state.searchDownload).toHaveBeenCalledTimes(4);
+    expect(await outcome).toMatchObject({ name: 'AbortError' });
+    await vi.waitFor(() => expect(state.cancelDownload).toHaveBeenCalledWith(301));
     expect(
       state.messages.filter(
         (message) =>
@@ -146,5 +155,6 @@ describe('MV3 download lifecycle integration', () => {
           (message as { type?: unknown }).type === 'DOWNLOAD_CANCEL_REQUEST'
       )
     ).toHaveLength(1);
-  });
+    expect(state.download).toHaveBeenCalledOnce();
+  }, 10_000);
 });
