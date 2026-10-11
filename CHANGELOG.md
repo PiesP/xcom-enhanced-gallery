@@ -10,12 +10,17 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **Extension single downloads** — Hand validated original images and MP4 files directly to the browser download manager, and reconcile uncertain worker responses against the original tab and download ID. Keep generated and supplied Blobs on their bounded ownership path without starting a replacement after an ambiguous native result.
+- **Video loading** — Attach sources when active or near the gallery viewport, retain admitted buffers across selection changes, and recover supported decode failures using only typed variants of the same attachment. Preserve the original save source.
+- **API requests** — Reuse bounded successful metadata briefly while selecting the clicked attachment independently. Keep failures uncached, invalidate reuse on navigation and teardown, and preserve denied, unreadable, rate-limited and server-guided retry outcomes.
+- **ZIP admission** — Reserve the input path actually used by each entry. Route uncached video and GIF data directly, retain supplied and cached Blob ownership, and propagate provider failures without a second whole-file fetch.
 - **Original images** — Normalize ordinary CDN photo URLs consistently across API and DOM extraction, including query-format URLs. Preserve the observed DOM display while single saves, ZIP entries, filenames and cache keys use the verified original. Refuse unverified original sources without silently saving a smaller image, and preserve both source and memory-limit causes in mixed ZIP failures.
 - **Video source identity** — Retain bounded, typed best-first MP4 variants with only valid bitrate and path-derived dimensions. Recognize positively selected HLS-only API media as a healthy unsupported-source result without substituting a poster, another attachment or a DOM source.
 
 ### Changed
 
 - **Installed acceptance** — Compare distinct small display images with exact original single-save and ZIP entry bytes for API and DOM recovery in installed Edge fixtures. Keep the public-page and userscript fixture contracts intact.
+- **Media pipeline acceptance** — Exercise native HTTPS fixture transfers, cancellation after worker replacement, bounded API reuse and failure cases, and far-video admission with playback recovery in the installed profile. Record file bytes and transport observations separately from application-owned memory accounting.
 
 ## [2.3.5] - 2026-10-09
 

@@ -28,6 +28,9 @@ import {
   verifyStoredZip,
   waitForRemovedDownloadFile,
 } from './download-memory.mjs';
+import { startExtensionNativeFixtureLoopback } from './extension-native-loopback.mjs';
+import { runInstalledMediaApiReuseProfile } from './media-api-reuse-profile.mjs';
+import { runVideoLoadingProfile } from './video-loading-profile.mjs';
 import {
   QUOTED_CASES,
   UNAVAILABLE_SEQUENCE,
@@ -45,7 +48,6 @@ const PUBLIC_TWEET_ID = '9876543210987654321';
 const PUBLIC_FIXTURE_URL = `https://x.com/public_user/status/${PUBLIC_TWEET_ID}`;
 const DOWNLOAD_TRACKING_STORAGE_KEY = 'xeg.download-tracking.v1';
 const MV3_RESTART_BLOB_BYTES = 256 * 1024 * 1024;
-const TRUSTED_INPUT_DOWNLOAD_BYTES = 4 * 1024 * 1024;
 const IMAGE_URL_MARKERS = ['GkE1234', 'GkE5678', 'GkE9012'];
 const MAX_AGGREGATE_DEPTH = 2;
 const MAX_AGGREGATE_ERRORS = 4;
@@ -677,36 +679,27 @@ export function assertDownloadIncomplete(download, stage) {
   );
 }
 
-async function verifyTrustedDownloadInput({ context, downloads, extensionId, extensionPage, page, evidence }) {
+async function verifyTrustedDownloadInput({ context, downloads, extensionId, extensionPage,
+  page, evidence, nativeLoopback, images, pageFetches }) {
   const initialIds = (await queryDownloads(extensionPage)).map((item) => item.id);
   const initialFiles = new Set(await readdir(downloads));
   const worker = context.serviceWorkers().find((item) => item.url().startsWith(`chrome-extension://${extensionId}/`));
   assert(worker, 'Installed worker must be available for the notification-count seam');
-  const payload = Buffer.alloc(TRUSTED_INPUT_DOWNLOAD_BYTES, 0x58);
-  const fetches = [];
-  const routeHandler = async (route) => {
-    if (!['fetch', 'xhr'].includes(route.request().resourceType())) {
-      await route.fallback();
-      return;
-    }
-    assert(fetches.length < 2, 'Unexpected repeated download fetch');
-    assert(route.request().url().includes(IMAGE_URL_MARKERS[0]), 'Download must select the first image');
-    fetches.push({ bytes: payload.length, resourceType: route.request().resourceType() });
-    await route.fulfill({ status: 200, contentType: 'image/jpeg', body: payload,
-      headers: { 'Access-Control-Allow-Origin': 'https://x.com', 'Access-Control-Allow-Credentials': 'true' } });
-  };
+  const sourceUrl = `https://pbs.twimg.com/media/${QUALITY_IMAGE_PATHS[0]}?format=jpg&name=orig`;
+  const transferMark = nativeLoopback.mark();
+  const fetchMark = pageFetches.length;
   let downloadId;
   let requestId;
   let primaryError;
   let notificationSeamInstalled = false;
   let pauseInstalled = false;
   const cleanupErrors = [];
-  Object.assign(evidence, { bytes: TRUSTED_INPUT_DOWNLOAD_BYTES, fetches, syntheticInputs: [],
+  Object.assign(evidence, { bytes: images[0].length, sourceUrl, syntheticInputs: [],
     notificationScope: 'Production SHOW_NOTIFICATION path counted at native create boundary; delivery suppressed during this case',
-    downloadScope: 'Real Blob download held active by an asynchronous native onDeterminingFilename listener; received bytes may reach total before cancellation',
+    downloadScope: 'Real direct URL download held by bounded fixture body and asynchronous native onDeterminingFilename listener',
     cleanup: {}, status: 'pending' });
   try {
-    await page.route('https://pbs.twimg.com/**', routeHandler);
+    nativeLoopback.armHold('pbs.twimg.com', `/media/${QUALITY_IMAGE_PATHS[0]}`);
     await worker.evaluate(() => {
       const original = chrome.notifications.create;
       const state = { calls: 0, original };
@@ -717,11 +710,11 @@ async function verifyTrustedDownloadInput({ context, downloads, extensionId, ext
       };
     });
     notificationSeamInstalled = true;
-    await extensionPage.evaluate((oldIds) => {
+    await extensionPage.evaluate(({ oldIds, sourceUrl }) => {
       const state = { downloadId: null, pause: 'waiting', duplicates: 0,
         filenameGate: { downloadId: null, status: 'waiting' } };
       const listener = (item) => {
-        if (oldIds.includes(item.id) || !item.url.startsWith('blob:https://x.com/')) return;
+        if (oldIds.includes(item.id) || item.url !== sourceUrl) return;
         if (state.downloadId !== null) { state.duplicates += 1; return; }
         state.downloadId = item.id;
         Promise.resolve(chrome.downloads.pause(item.id)).then(
@@ -731,7 +724,7 @@ async function verifyTrustedDownloadInput({ context, downloads, extensionId, ext
       };
       let pendingSuggestion;
       const filenameListener = (item, suggest) => {
-        if (oldIds.includes(item.id) || !item.url.startsWith('blob:https://x.com/')) {
+        if (oldIds.includes(item.id) || item.url !== sourceUrl) {
           suggest();
           return;
         }
@@ -764,7 +757,7 @@ async function verifyTrustedDownloadInput({ context, downloads, extensionId, ext
         }
         throw error;
       }
-    }, initialIds);
+    }, { oldIds: initialIds, sourceUrl });
     pauseInstalled = true;
     const trigger = page.locator('[data-testid="tweetPhoto"] img').first();
     await trigger.click();
@@ -783,7 +776,7 @@ async function verifyTrustedDownloadInput({ context, downloads, extensionId, ext
     }, 'gallery-initiated native download to pause');
     downloadId = control.downloadId;
     assert.equal(control.duplicates, 0);
-    assert.equal(fetches.length, 1);
+    assert.equal(nativeLoopback.held(), true, 'Exact native source response must remain held');
     const binding = await waitForValue(async () => extensionPage.evaluate(async ({ id, key }) => {
       const records = (await chrome.storage.local.get(key))[key] ?? {};
       const matches = Object.entries(records).filter(([, record]) => record.downloadId === id);
@@ -798,12 +791,16 @@ async function verifyTrustedDownloadInput({ context, downloads, extensionId, ext
       if (state.download.state !== 'in_progress') {
         throw new Error('Owned download ended before synthetic input');
       }
-      if (state.download.totalBytes !== TRUSTED_INPUT_DOWNLOAD_BYTES ||
+      if (state.download.totalBytes !== images[0].length ||
         !Number.isInteger(state.download.bytesReceived) || state.download.bytesReceived < 0) return undefined;
-      assert(state.download.bytesReceived <= TRUSTED_INPUT_DOWNLOAD_BYTES);
+      assert(state.download.bytesReceived < images[0].length);
       return state.download.paused === true ? state : undefined;
     }, 'paused native download metadata while filename completion is gated');
-    assert.deepEqual(before.record, { cancellationRequested: false, downloadId });
+    assert.equal(before.record.downloadId, downloadId);
+    assert.equal(before.record.route, 'direct');
+    assert.equal(before.record.cancellationRequested, false);
+    assert.equal(typeof before.record.ownerTabId, 'number');
+    assert.match(before.record.urlHash, /^[a-f0-9]{64}$/u);
     evidence.before = { downloadId, bytesReceived: before.download.bytesReceived,
       totalBytes: before.download.totalBytes, state: before.download.state,
       paused: before.download.paused, requestBinding: before.record, filenameGate: control.filenameGate,
@@ -832,8 +829,8 @@ async function verifyTrustedDownloadInput({ context, downloads, extensionId, ext
       const current = await readMv3LifecycleState(extensionPage, requestId, downloadId);
       assert.equal(current.download?.state, 'in_progress', `${input}: native download must remain active`);
       assert.equal(current.download.paused, true);
-      assert.equal(current.download.totalBytes, TRUSTED_INPUT_DOWNLOAD_BYTES);
-      assert(current.download.bytesReceived >= 0 && current.download.bytesReceived <= TRUSTED_INPUT_DOWNLOAD_BYTES);
+      assert.equal(current.download.totalBytes, images[0].length);
+      assert(current.download.bytesReceived >= 0 && current.download.bytesReceived < images[0].length);
       const filenameGate = await extensionPage.evaluate(() => globalThis.__xegIngressPause.state.filenameGate);
       assert.deepEqual(filenameGate, { downloadId, status: 'held' });
       assert.deepEqual(current.record, before.record);
@@ -847,9 +844,23 @@ async function verifyTrustedDownloadInput({ context, downloads, extensionId, ext
     await gallery.waitFor({ state: 'detached' });
     const terminal = await waitForValue(async () => {
       const value = await readMv3LifecycleState(extensionPage, requestId, downloadId);
-      return value.download?.state === 'interrupted' && value.record === null ? value : undefined;
+      return value.download?.state === 'interrupted' &&
+        value.record?.terminalState === 'interrupted' ? value : undefined;
     }, 'genuine Escape to cancel the exact owned download');
     assert.equal(terminal.download.error, 'USER_CANCELED');
+    assert.equal(terminal.download.url, sourceUrl);
+    assert.deepEqual((await queryDownloads(extensionPage))
+      .filter(({ id }) => !initialIds.includes(id)).map(({ id }) => id), [downloadId],
+    'Held direct cancellation must allocate exactly one native download');
+    assert.deepEqual(pageFetches.slice(fetchMark), [],
+      'Held direct save must not fetch the media in the page');
+    evidence.transport = await waitForValue(() => {
+      const observed = nativeLoopback.since(transferMark);
+      const transfer = observed.find(({ host, path, method, result }) =>
+        host === 'pbs.twimg.com' && path === `/media/${QUALITY_IMAGE_PATHS[0]}` &&
+        method === 'GET' && result === 'aborted');
+      return transfer ? { transfer, events: observed } : undefined;
+    }, 'cancelled direct fixture connection to close');
     await waitForValue(async () => (await readdir(downloads)).every((entry) => initialFiles.has(entry))
       ? true : undefined, 'cancelled task files to disappear');
     evidence.after = { downloadId, state: terminal.download.state, error: terminal.download.error,
@@ -883,11 +894,11 @@ async function verifyTrustedDownloadInput({ context, downloads, extensionId, ext
     if (downloadId !== undefined) {
       try {
         assert(!initialIds.includes(downloadId), 'Refusing cleanup of a pre-existing download');
-        await extensionPage.evaluate(async (id) => {
+        await extensionPage.evaluate(async ({ id, sourceUrl }) => {
           let [item] = await chrome.downloads.search({ id });
-          if (!item?.url.startsWith('blob:https://x.com/')) throw new Error('Owned download URL mismatch');
+          if (item?.url !== sourceUrl) throw new Error('Owned download URL mismatch');
           if (item.state === 'in_progress') await chrome.downloads.cancel(id);
-        }, downloadId);
+        }, { id: downloadId, sourceUrl });
         await waitForValue(async () => {
           const [item] = await extensionPage.evaluate((id) => chrome.downloads.search({ id }), downloadId);
           return item?.state !== 'in_progress' ? true : undefined;
@@ -906,8 +917,8 @@ async function verifyTrustedDownloadInput({ context, downloads, extensionId, ext
       } catch (error) { cleanupErrors.push(error); }
     }
     try {
-      await page.unroute('https://pbs.twimg.com/**', routeHandler);
-      evidence.cleanup.routeRemoved = true;
+      nativeLoopback.releaseHold();
+      evidence.cleanup.heldResponseReleased = true;
       for (const entry of await readdir(downloads)) {
         if (initialFiles.has(entry)) continue;
         const candidate = resolve(downloads, entry);
@@ -921,6 +932,251 @@ async function verifyTrustedDownloadInput({ context, downloads, extensionId, ext
   }
   const errors = [...(primaryError ? [primaryError] : []), ...cleanupErrors];
   if (errors.length) throw new AggregateError(errors, `Trusted input validation/cleanup failed: ${errors.map(safeError).join('; ')}`);
+}
+
+async function verifyDirectRestartCancellation({ downloads, extensionId, extensionPage,
+  page, workerObserver, nativeLoopback, images, pageFetches, output, evidence }) {
+  const sourceUrl = `https://pbs.twimg.com/media/${QUALITY_IMAGE_PATHS[0]}?format=jpg&name=orig`;
+  const sourcePath = `/media/${QUALITY_IMAGE_PATHS[0]}`;
+  const filename = expectedFilename(0);
+  const sourceHash = createHash('sha256').update(sourceUrl).digest('hex');
+  const initialIds = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+  const initialFiles = new Set(await readdir(downloads));
+  const initialKeys = new Set(await extensionPage.evaluate(async (key) =>
+    Object.keys((await chrome.storage.local.get(key))[key] ?? {}),
+  DOWNLOAD_TRACKING_STORAGE_KEY));
+  const transportMark = nativeLoopback.mark();
+  const fetchMark = pageFetches.length;
+  const startedAtMs = performance.now();
+  const deadline = Date.now() + 18_000;
+  let downloadId;
+  let requestId;
+  let listenerInstalled = false;
+  let primaryError;
+  const cleanupErrors = [];
+  Object.assign(evidence, { status: 'pending', sourceUrl, filename,
+    expectedBytes: images[0].length, cleanup: {},
+    callerOutcome: 'not-observed across the stopped Worker boundary' });
+  try {
+    assert.equal(page.url(), FIXTURE_URL, 'Direct restart must use the owned X fixture tab');
+    assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0);
+    nativeLoopback.armHold('pbs.twimg.com', sourcePath);
+    await extensionPage.evaluate(({ knownIds, url }) => {
+      const state = { downloadId: null, duplicateEvents: 0, events: [] };
+      const listener = (item) => {
+        if (knownIds.includes(item.id) || item.url !== url) return;
+        state.events.push({ id: item.id, state: item.state,
+          bytesReceived: item.bytesReceived, totalBytes: item.totalBytes });
+        if (state.downloadId !== null) state.duplicateEvents += 1;
+        else state.downloadId = item.id;
+      };
+      globalThis.__xegDirectRestartObserver = { state, listener };
+      chrome.downloads.onCreated.addListener(listener);
+    }, { knownIds: [...initialIds], url: sourceUrl });
+    listenerInstalled = true;
+
+    const trigger = page.locator('[data-testid="tweetPhoto"] img').first();
+    await trigger.click();
+    const gallery = page.locator('[data-xeg-gallery-container]');
+    await gallery.waitFor({ state: 'visible', timeout: 5_000 });
+    const observedDisplay = await trigger.getAttribute('src');
+    assert.equal(expectedOriginalImageUrl(observedDisplay), sourceUrl);
+    const nativeActionAtMs = performance.now();
+    await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download"]').click();
+    const created = await waitForValue(async () => {
+      const value = await extensionPage.evaluate(() =>
+        structuredClone(globalThis.__xegDirectRestartObserver.state));
+      return Number.isSafeInteger(value.downloadId) ? value : undefined;
+    }, 'gallery direct download to receive a native ID', 5_000);
+    downloadId = created.downloadId;
+    evidence.nativeIdObservedAfterMs = performance.now() - nativeActionAtMs;
+    assert.equal(created.duplicateEvents, 0);
+    assert.deepEqual(created.events.map(({ id }) => id), [downloadId]);
+    assert.equal(nativeLoopback.held(), true);
+    const owner = await extensionPage.evaluate(async (url) => {
+      const tabs = await chrome.tabs.query({ url });
+      return tabs.length === 1 && tabs[0].url === url ? tabs[0].id : null;
+    }, FIXTURE_URL);
+    assert(Number.isSafeInteger(owner) && owner >= 0, 'Exact content tab owner is missing');
+    const binding = await waitForValue(async () => extensionPage.evaluate(async ({ id, key }) => {
+      const records = (await chrome.storage.local.get(key))[key] ?? {};
+      const matches = Object.entries(records).filter(([, record]) =>
+        record.route === 'direct' && record.downloadId === id);
+      if (matches.length > 1) throw new Error('Ambiguous direct request binding');
+      return matches[0] ? { requestId: matches[0][0], record: matches[0][1] } : undefined;
+    }, { id: downloadId, key: DOWNLOAD_TRACKING_STORAGE_KEY }),
+    'persisted direct request binding', 5_000);
+    requestId = binding.requestId;
+    assert.equal(initialKeys.has(requestId), false);
+    assert.equal(binding.record.ownerTabId, owner);
+    assert.equal(binding.record.urlHash, sourceHash);
+    assert.equal(binding.record.cancellationRequested, false);
+    assert.equal(binding.record.terminalState, undefined);
+
+    const before = await waitForValue(async () => {
+      const state = await readMv3LifecycleState(extensionPage, requestId, downloadId);
+      if (state.download?.state !== 'in_progress' ||
+          state.download.totalBytes !== images[0].length) return undefined;
+      assertDownloadIncomplete(state.download, 'direct transfer before Worker stop');
+      return state;
+    }, 'incomplete native direct transfer', 5_000);
+    assert.equal(before.download.url, sourceUrl);
+    assert.equal(basename(before.download.filename), filename);
+    assert.deepEqual(before.record, binding.record);
+    assert.deepEqual((await queryDownloads(extensionPage))
+      .filter(({ id }) => !initialIds.has(id)).map(({ id }) => id), [downloadId]);
+    evidence.beforeStop = { download: {
+      id: downloadId, state: before.download.state,
+      bytesReceived: before.download.bytesReceived,
+      totalBytes: before.download.totalBytes,
+      filename: basename(before.download.filename),
+    }, requestId, binding: before.record,
+    transport: nativeLoopback.since(transportMark),
+    elapsedMs: performance.now() - startedAtMs };
+    assert(Date.now() < deadline, 'Held direct fixture expired before Worker stop');
+    const oldWorker = await workerObserver.waitForRunning(extensionId);
+    evidence.stop = await workerObserver.stopAndWait(extensionId, oldWorker);
+    const afterStop = await readMv3LifecycleState(extensionPage, requestId, downloadId);
+    assert.equal(afterStop.download?.id, downloadId);
+    assert.equal(afterStop.download?.url, sourceUrl);
+    assert.equal(afterStop.download?.state, 'in_progress');
+    assertDownloadIncomplete(afterStop.download, 'direct transfer after Worker stop');
+    assert.deepEqual(afterStop.record, before.record,
+      'Direct owner and source binding changed when the Worker stopped');
+    evidence.afterStop = { download: {
+      id: downloadId, state: afterStop.download.state,
+      bytesReceived: afterStop.download.bytesReceived,
+      totalBytes: afterStop.download.totalBytes,
+    }, binding: afterStop.record, elapsedMs: performance.now() - startedAtMs };
+    evidence.preCancel = await workerObserver.capturePreCancelObservation(
+      extensionId, oldWorker, evidence.stop);
+    assert.equal(nativeLoopback.held(), true, 'Native source closed before trusted cancellation');
+    assert(Date.now() < deadline, 'Held direct fixture expired before trusted cancellation');
+    assert.deepEqual((await queryDownloads(extensionPage))
+      .filter(({ id }) => !initialIds.has(id)).map(({ id }) => id), [downloadId],
+    'Worker stop allocated an extra direct download');
+
+    await page.keyboard.press('Escape');
+    await gallery.waitFor({ state: 'detached', timeout: 5_000 });
+    const terminal = await waitForValue(async () => {
+      const state = await readMv3LifecycleState(extensionPage, requestId, downloadId);
+      return state.download?.state === 'interrupted' &&
+        state.record?.terminalState === 'interrupted' ? state : undefined;
+    }, 'trusted Escape to cancel the persisted direct download', 5_000);
+    assert.equal(terminal.download.id, downloadId);
+    assert.equal(terminal.download.url, sourceUrl);
+    assert.equal(terminal.download.error, 'USER_CANCELED');
+    assert.equal(terminal.record.ownerTabId, owner);
+    assert.equal(terminal.record.urlHash, sourceHash);
+    const replacement = evidence.preCancel.replacementWorker ??
+      await workerObserver.waitForRunningAfter(extensionId, oldWorker,
+        evidence.stop.lifecycle.sequence);
+    assert.equal(replacement.versionId, oldWorker.versionId);
+    assert(replacement.lifecycle.sequence > evidence.stop.lifecycle.sequence);
+    const transport = await waitForValue(() => {
+      const events = nativeLoopback.since(transportMark).filter(({ host, path }) =>
+        host === 'pbs.twimg.com' && path === sourcePath);
+      return events.length === 1 && events[0].result === 'aborted' ? events : undefined;
+    }, 'single held direct connection to close after cancellation', 5_000);
+    assert.deepEqual(pageFetches.slice(fetchMark).filter(({ host, path }) =>
+      host === 'pbs.twimg.com' && path === sourcePath), [],
+    'Direct restart path fetched a full source in the page');
+    assert.deepEqual((await queryDownloads(extensionPage))
+      .filter(({ id }) => !initialIds.has(id)).map(({ id }) => id), [downloadId]);
+    const residue = (await readdir(downloads)).filter((entry) => !initialFiles.has(entry));
+    assert.deepEqual(residue, [], 'Cancelled direct transfer left a task file or partial residue');
+    await page.screenshot({ path: join(output, 'direct-restart-after.png') });
+    evidence.afterCancel = { id: downloadId, state: terminal.download.state,
+      error: terminal.download.error, binding: terminal.record,
+      worker: replacement, transport, residue,
+      elapsedMs: performance.now() - startedAtMs };
+    evidence.status = 'passed';
+  } catch (error) {
+    primaryError = error;
+    evidence.status = 'failed';
+    evidence.error = safeError(error);
+    const [downloadsRead, storageRead, filesRead, workerRead, screenshot] =
+      await Promise.allSettled([
+        queryDownloads(extensionPage),
+        extensionPage.evaluate(async (key) =>
+          (await chrome.storage.local.get(key))[key] ?? {},
+        DOWNLOAD_TRACKING_STORAGE_KEY),
+        readdir(downloads),
+        workerObserver.snapshot(extensionId),
+        page.screenshot({ path: join(output, 'direct-restart-failure.png') }),
+      ]);
+    evidence.failure = {
+      downloads: downloadsRead.status === 'fulfilled'
+        ? downloadsRead.value.filter(({ id }) => !initialIds.has(id)).map(({ id, state, error, filename: path }) =>
+          ({ id, state, error, filename: basename(path) }))
+        : { error: safeError(downloadsRead.reason) },
+      binding: storageRead.status === 'fulfilled' && requestId
+        ? storageRead.value[requestId] ?? null : null,
+      files: filesRead.status === 'fulfilled'
+        ? filesRead.value.filter((entry) => !initialFiles.has(entry)) : null,
+      worker: workerRead.status === 'fulfilled' ? workerRead.value
+        : { error: safeError(workerRead.reason) },
+      transport: nativeLoopback.since(transportMark),
+      screenshot: screenshot.status === 'fulfilled' ? 'direct-restart-failure.png' : null,
+    };
+  } finally {
+    if (listenerInstalled) {
+      try {
+        const observed = await extensionPage.evaluate(() => {
+          const control = globalThis.__xegDirectRestartObserver;
+          chrome.downloads.onCreated.removeListener(control.listener);
+          delete globalThis.__xegDirectRestartObserver;
+          return control.state;
+        });
+        downloadId ??= observed.downloadId ?? undefined;
+        evidence.cleanup.listenerRemoved = true;
+      } catch (error) { cleanupErrors.push(error); }
+    }
+    nativeLoopback.releaseHold();
+    evidence.cleanup.heldResponseReleased = true;
+    try {
+      const owned = (await queryDownloads(extensionPage)).filter(({ id, url }) =>
+        !initialIds.has(id) && url === sourceUrl);
+      evidence.cleanup.downloads = [];
+      for (const item of owned) {
+        const cleaned = await extensionPage.evaluate(async ({ id, url }) => {
+          let [download] = await chrome.downloads.search({ id });
+          if (download?.url !== url) throw new Error('Direct cleanup owner changed');
+          if (download.state === 'in_progress') await chrome.downloads.cancel(id);
+          const deadline = Date.now() + 5_000;
+          while (download.state === 'in_progress' && Date.now() < deadline) {
+            await new Promise((resolveDelay) => setTimeout(resolveDelay, 50));
+            [download] = await chrome.downloads.search({ id });
+            if (!download || download.url !== url) throw new Error('Direct cleanup owner disappeared');
+          }
+          if (download.state === 'in_progress') throw new Error('Direct cleanup did not reach terminal state');
+          const erased = await chrome.downloads.erase({ id });
+          if (!erased.includes(id) || (await chrome.downloads.search({ id })).length) {
+            throw new Error('Direct cleanup history remained');
+          }
+          return { id, erased, terminalState: download.state };
+        }, { id: item.id, url: sourceUrl });
+        evidence.cleanup.downloads.push(cleaned);
+      }
+    } catch (error) { cleanupErrors.push(error); }
+    try {
+      const added = (await readdir(downloads)).filter((entry) => !initialFiles.has(entry));
+      for (const entry of added) {
+        assert(entry === filename || entry.startsWith(`${filename}.crdownload`),
+          'Direct cleanup found an unexpected task file');
+        const path = resolve(downloads, entry);
+        assert.equal(dirname(path), resolve(downloads));
+        await rm(path, { force: true });
+      }
+      evidence.cleanup.filesRemoved = added;
+    } catch (error) { cleanupErrors.push(error); }
+    evidence.cleanup.errors = cleanupErrors.map(safeError);
+    await writeFile(join(output, 'direct-restart-observation.json'),
+      JSON.stringify(evidence, null, 2)).catch((error) => cleanupErrors.push(error));
+  }
+  const errors = [...(primaryError ? [primaryError] : []), ...cleanupErrors];
+  if (errors.length) throw new AggregateError(errors,
+    `Direct restart validation/cleanup failed: ${errors.map(safeError).join('; ')}`);
 }
 
 async function verifyMv3RestartCancellation({
@@ -1600,6 +1856,35 @@ async function waitForDownload(extensionPage, knownIds, filename) {
   )}`);
 }
 
+async function assertNativeSingle({ extensionPage, knownIds, download, expectedUrl,
+  expectedBytes, nativeLoopback, nativeMark, pageFetches = [] }) {
+  const created = (await queryDownloads(extensionPage)).filter(({ id }) => !knownIds.has(id));
+  assert.deepEqual(created.map(({ id }) => id), [download.id],
+    'One single action must create exactly one native download ID');
+  assert.equal(download.state, 'complete');
+  assert.equal(download.url, expectedUrl, 'Native initial URL must be the selected source');
+  if (download.finalUrl) assert.equal(download.finalUrl, expectedUrl,
+    'A native redirect escaped the selected fixture source');
+  assert.equal(download.totalBytes, expectedBytes.length);
+  assert.equal(download.bytesReceived, expectedBytes.length);
+  const expected = new URL(expectedUrl);
+  const appWholeFileFetches = pageFetches.filter(({ host, path }) =>
+    host === expected.hostname && path === expected.pathname);
+  assert.deepEqual(appWholeFileFetches, [],
+    'Native single must not first fetch its whole source in the page');
+  const events = nativeLoopback.since(nativeMark).filter((event) =>
+    event.host === expected.hostname && event.path === expected.pathname);
+  assert(events.length > 0 && events.every((event) =>
+    ['GET', 'HEAD'].includes(event.method) && event.result === 'served'),
+  'Native transfer must complete the selected task-owned CDN fixture');
+  assert(events.some(({ method, bytes }) => method === 'GET' && bytes > 0),
+    'Native browser transport did not receive a fixture body');
+  return { id: download.id, initialUrl: download.url,
+    finalUrl: download.finalUrl || null, serverEvents: events,
+    appWholeFileFetches: appWholeFileFetches.length, expectedBytes: expectedBytes.length,
+    elapsedTransportMs: events.at(-1).finishedAtMs - events[0].atMs };
+}
+
 async function fixtureTabZoom(context, extensionId, page, factor = null, restoreSettings = null) {
   assert.equal(page.url(), FIXTURE_URL, 'Browser zoom must target the exact owned fixture page');
   const workerUrl = `chrome-extension://${extensionId}/background.js`;
@@ -1625,7 +1910,8 @@ async function fixtureTabZoom(context, extensionId, page, factor = null, restore
   }, { url: FIXTURE_URL, zoomFactor: factor, restore: restoreSettings });
 }
 
-async function runZoomSpanishCycle({ context, downloads, extensionId, extensionPage, images, output, page }) {
+async function runZoomSpanishCycle({ context, downloads, extensionId, extensionPage,
+  images, output, page, nativeLoopback, pageFetches }) {
   const baseline = await page.evaluate(() => ({
     devicePixelRatio: devicePixelRatio,
     innerWidth,
@@ -1759,6 +2045,8 @@ async function runZoomSpanishCycle({ context, downloads, extensionId, extensionP
       'Keyboard cannot reach every essential Spanish toolbar action');
 
     const knownDownloadIds = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+    const nativeMark = nativeLoopback.mark();
+    const fetchMark = pageFetches.length;
     await toolbar.locator('button[aria-label="Descargar"]').click();
     const selectedDownload = await waitForValue(async () => {
       const created = (await queryDownloads(extensionPage))
@@ -1777,6 +2065,10 @@ async function runZoomSpanishCycle({ context, downloads, extensionId, extensionP
     const selectedBytes = await readFile(selectedDownload.filename);
     assert(images[1].equals(selectedBytes),
       'Zoom current-item download bytes do not match the displayed second item');
+    const native = await assertNativeSingle({ extensionPage, knownIds: knownDownloadIds,
+      download: selectedDownload, expectedUrl: expectedOriginalImageUrl(selectedSource),
+      expectedBytes: images[1], nativeLoopback, nativeMark,
+      pageFetches: pageFetches.slice(fetchMark) });
     await copyFile(selectedDownload.filename, join(output, 'zoom-200-selected-download.jpg'));
 
     await settingsButton.click();
@@ -1798,7 +2090,8 @@ async function runZoomSpanishCycle({ context, downloads, extensionId, extensionP
       keyboardReachable: [...reached].sort(), shownCount: 3,
       selectedIndex: 1, selectedSourceMarker: 'GkE5678',
       download: { bytes: selectedBytes.length, file: 'zoom-200-selected-download.jpg',
-        filename: basename(selectedDownload.filename), sha256: createHash('sha256').update(selectedBytes).digest('hex') },
+        filename: basename(selectedDownload.filename),
+        sha256: createHash('sha256').update(selectedBytes).digest('hex'), native },
       hostRestored: true, language: 'es' };
   } finally {
     if (zoomAttempted) {
@@ -1863,7 +2156,7 @@ function isExpectedMemoryFixtureConsoleError(record, memory) {
 }
 
 async function runDownloadMemoryCycle({ consoleErrors, downloads, extensionPage, images,
-  output, page, root, evidence }) {
+  output, page, root, evidence, nativeLoopback, pageFetches }) {
   Object.assign(evidence, { status: 'pending', cleanup: {}, requests: [], downloads: [] });
   const routePattern = 'https://pbs.twimg.com/**';
   let routeInstalled = false;
@@ -1887,11 +2180,8 @@ async function runDownloadMemoryCycle({ consoleErrors, downloads, extensionPage,
     const marker = IMAGE_URL_MARKERS.find((value) => url.pathname.includes(value));
     assert(marker, 'Memory fixture intercepted a download outside the three owned images');
     assert(evidence.requests.length < 8, 'Memory fixture received too many media fetches');
-    if (phase === 'declared-large') {
-      assert.equal(marker, IMAGE_URL_MARKERS[0], 'Oversize response must target selected image');
-    }
     const body = images[IMAGE_URL_MARKERS.indexOf(marker)];
-    const declaredBytes = phase === 'declared-large'
+    const declaredBytes = phase === 'declared-large' && marker === IMAGE_URL_MARKERS[0]
       ? evidence.policy.declaredBytes : body.length;
     const request = { phase, marker, resourceType, pathname: url.pathname,
       declaredBytes, actualBodyBytes: body.length, startedAtMs: performance.now() };
@@ -1908,7 +2198,7 @@ async function runDownloadMemoryCycle({ consoleErrors, downloads, extensionPage,
     const policy = await readDownloadLiveLimit(root);
     evidence.policy = { ...policy, declaredBytes: policy.limitBytes + 1,
       maximumPossibleAdmittedBytes: Math.floor(policy.limitBytes / 2),
-      admission: 'Binary response capacity is reserved for the body and its output copy',
+      admission: 'ZIP provider reserves application-owned response capacity; native single does not',
       memoryMetric: 'Policy admission only; browser heap and RSS are not measured' };
     assert(evidence.policy.declaredBytes > evidence.policy.maximumPossibleAdmittedBytes);
     assert(images[0].length > 0 && images[0].length <= 1024 * 1024,
@@ -1930,11 +2220,12 @@ async function runDownloadMemoryCycle({ consoleErrors, downloads, extensionPage,
     assert(galleryHandle, 'Memory cycle requires one actual gallery element');
     const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
     const currentButton = toolbar.locator('button[aria-label="Download"]');
+    const bulkButton = toolbar.locator('button[aria-label="Download 3 shown files as ZIP"]');
     const startedAtMs = performance.now();
     const oversizedResponse = page.waitForResponse((response) =>
       response.url().includes(IMAGE_URL_MARKERS[0]) &&
       ['fetch', 'xhr'].includes(response.request().resourceType()), { timeout: 15_000 });
-    await currentButton.click();
+    await bulkButton.click();
     const rejectedResponse = await oversizedResponse;
     const observedLength = await rejectedResponse.headerValue('content-length');
     assert.equal(observedLength, String(evidence.policy.declaredBytes),
@@ -1952,7 +2243,7 @@ async function runDownloadMemoryCycle({ consoleErrors, downloads, extensionPage,
       'Rejection must show a bounded, understandable error');
     assert.equal((await queryDownloads(extensionPage))
       .filter(({ id }) => !knownBeforeFailure.has(id)).length, 0,
-    'Rejected download must not create a native browser download');
+      'Rejected ZIP must not create a native browser download');
     evidence.rejection = { declaredBytes: evidence.policy.declaredBytes,
       actualBodyBytes: images[0].length, observedContentLength: observedLength,
       pathname: new URL(rejectedResponse.url()).pathname, errorText,
@@ -1978,6 +2269,8 @@ async function runDownloadMemoryCycle({ consoleErrors, downloads, extensionPage,
 
     phase = 'small-single';
     const knownBeforeSingle = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+    const nativeMark = nativeLoopback.mark();
+    const fetchMark = pageFetches.length;
     const singleStartedAtMs = performance.now();
     await currentButton.click();
     const single = await waitForDownload(extensionPage, knownBeforeSingle, expectedFilename(0));
@@ -1990,19 +2283,24 @@ async function runDownloadMemoryCycle({ consoleErrors, downloads, extensionPage,
     assert.deepEqual((await queryDownloads(extensionPage))
       .filter(({ id }) => !knownBeforeSingle.has(id)).map(({ id }) => id), [single.id],
     'Recovered single action must create exactly one native download ID');
+    const native = await assertNativeSingle({ extensionPage, knownIds: knownBeforeSingle,
+      download: single,
+      expectedUrl: `https://pbs.twimg.com/media/${QUALITY_IMAGE_PATHS[0]}?format=jpg&name=orig`,
+      expectedBytes: images[0], nativeLoopback, nativeMark,
+      pageFetches: pageFetches.slice(fetchMark) });
     await writeFile(join(output, 'installed-memory-single.jpg'), singleBytes);
     verifiedDownloads.set(single.id, { filename: single.filename, identity: singleIdentity,
       sha256: createHash('sha256').update(singleBytes).digest('hex') });
     evidence.downloads.push({ kind: 'single', id: single.id,
       filename: basename(single.filename), bytes: singleBytes.length,
       sha256: createHash('sha256').update(singleBytes).digest('hex'),
-      elapsedMs: performance.now() - singleStartedAtMs });
+      elapsedMs: performance.now() - singleStartedAtMs, native });
 
     phase = 'small-zip';
     const knownBeforeZip = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
     const zipFilename = `testuser_${TWEET_ID}.zip`;
     const zipStartedAtMs = performance.now();
-    await toolbar.locator('button[aria-label="Download 3 shown files as ZIP"]').click();
+    await bulkButton.click();
     const zip = await waitForDownload(extensionPage, knownBeforeZip, zipFilename);
     assert.notEqual(zip.id, single.id, 'ZIP and single actions must have distinct native IDs');
     const zipPath = relative(downloads, zip.filename);
@@ -2022,10 +2320,12 @@ async function runDownloadMemoryCycle({ consoleErrors, downloads, extensionPage,
     evidence.downloads.push({ kind: 'zip', id: zip.id, filename: basename(zip.filename),
       bytes: zipBytes.length, sha256: createHash('sha256').update(zipBytes).digest('hex'),
       elapsedMs: performance.now() - zipStartedAtMs, verified: parsedZip });
+    assert(evidence.requests.some(({ phase: requestPhase, marker }) =>
+      requestPhase === 'declared-large' && marker === IMAGE_URL_MARKERS[0]),
+    'Rejected ZIP must request the oversized selected image');
     assert.deepEqual(evidence.requests.filter(({ phase: requestPhase }) =>
-      requestPhase === 'declared-large').map(({ marker }) => marker), [IMAGE_URL_MARKERS[0]]);
-    assert.deepEqual(evidence.requests.filter(({ phase: requestPhase }) =>
-      requestPhase === 'small-single').map(({ marker }) => marker), [IMAGE_URL_MARKERS[0]]);
+      requestPhase === 'small-single').map(({ marker }) => marker), [],
+    'Native single recovery must not use application fetch');
     assert.deepEqual(evidence.requests.filter(({ phase: requestPhase }) =>
       requestPhase === 'small-zip').map(({ marker }) => marker).sort(),
     [...IMAGE_URL_MARKERS].sort(), 'ZIP must fetch all three exact fixture images');
@@ -2456,7 +2756,7 @@ async function closeQuotedGallery({ gallery, page, method, before, caseName, sel
 }
 
 async function runOuterVideoControl({ quotedCase, quotedApiResponses, downloads,
-  extensionPage, output, page, videoPayloads }) {
+  extensionPage, output, page, videoPayloads, nativeLoopback, pageFetches }) {
   const article = page.locator(`[data-case="${quotedCase.route}"]`);
   const trigger = article.locator('[data-outer-target]');
   await trigger.scrollIntoViewIfNeeded();
@@ -2496,6 +2796,8 @@ async function runOuterVideoControl({ quotedCase, quotedApiResponses, downloads,
   await page.screenshot({ path: join(output, 'quoted-outer-control-gallery.png') });
 
   const knownIds = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+  const nativeMark = nativeLoopback.mark();
+  const fetchMark = pageFetches.length;
   const filename = `${quotedCase.handle}_${quotedCase.outer}_2.mp4`;
   await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download"]').click();
   const download = await waitForDownload(extensionPage, knownIds, filename);
@@ -2505,6 +2807,9 @@ async function runOuterVideoControl({ quotedCase, quotedApiResponses, downloads,
   const bytes = await readFile(download.filename);
   assert(videoPayloads['nested-c'].equals(bytes),
     'Outer A privileged download must match its routed playable bytes');
+  const native = await assertNativeSingle({ extensionPage, knownIds, download,
+    expectedUrl: selected.source, expectedBytes: videoPayloads['nested-c'],
+    nativeLoopback, nativeMark, pageFetches: pageFetches.slice(fetchMark) });
   const file = 'quoted-outer-control-download.mp4';
   await copyFile(download.filename, join(output, file));
   const close = await closeQuotedGallery({ gallery, page, method: 'button', before,
@@ -2512,7 +2817,7 @@ async function runOuterVideoControl({ quotedCase, quotedApiResponses, downloads,
   await page.screenshot({ path: join(output, 'quoted-outer-control-after.png') });
   return { api: quotedApiResponses.slice(apiStart), sourceLink, selected,
     navigation: { awayKey: 'ArrowLeft', returnKey: 'ArrowRight', quoted, returned },
-    download: { filename, file, bytes: bytes.length,
+    download: { filename, file, bytes: bytes.length, native,
       sha256: createHash('sha256').update(bytes).digest('hex') }, close };
 }
 
@@ -2574,7 +2879,8 @@ async function withControlledFixtureVideoMode(extensionPage, evidence, action) {
 }
 
 async function runPublicPreplayerCycle({ quotedCase, quotedApiResponses, apiResponses, downloads,
-  extensionPage, output, page, videoPayloads, settingEvidence }) {
+  extensionPage, output, page, videoPayloads, settingEvidence, nativeLoopback,
+  pageFetches }) {
   return withControlledFixtureVideoMode(extensionPage, settingEvidence, async () => {
     const pageUrl = `https://x.com/${quotedCase.handle}/status/${quotedCase.outer}`;
     await page.goto(pageUrl);
@@ -2708,6 +3014,8 @@ async function runPublicPreplayerCycle({ quotedCase, quotedApiResponses, apiResp
     await page.screenshot({ path: join(output, 'quoted-public-preplayer-gallery.png') });
 
     const knownIds = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+    const nativeMark = nativeLoopback.mark();
+    const fetchMark = pageFetches.length;
     const filename = `${quotedCase.username}_${quotedCase.owner}_${quotedCase.expectedPosition - 1}.mp4`;
     await opened.gallery.locator(
       '[data-gallery-element="toolbar"] button[aria-label="Download"]'
@@ -2719,6 +3027,9 @@ async function runPublicPreplayerCycle({ quotedCase, quotedApiResponses, apiResp
     const bytes = await readFile(download.filename);
     const sourceBytes = videoPayloads[quotedCase.media];
     assert(sourceBytes.equals(bytes), 'Preplayer bytes must match B video MP4 exactly');
+    const native = await assertNativeSingle({ extensionPage, knownIds, download,
+      expectedUrl: opened.selectedMedia.src, expectedBytes: sourceBytes,
+      nativeLoopback, nativeMark, pageFetches: pageFetches.slice(fetchMark) });
     const file = 'quoted-public-preplayer-download.mp4';
     await copyFile(download.filename, join(output, file));
     const close = await closeQuotedGallery({ gallery: opened.gallery, page,
@@ -2734,7 +3045,7 @@ async function runPublicPreplayerCycle({ quotedCase, quotedApiResponses, apiResp
       api: quotedApiResponses.slice(apiStart), selectedPosition: quotedCase.expectedPosition,
       selected: opened.selectedMedia, originUrl, textOwner: quotedCase.username,
       navigation, playbackStart, playbackEnd,
-      download: { filename, bytes: bytes.length, file,
+      download: { filename, bytes: bytes.length, file, native,
         sha256: createHash('sha256').update(bytes).digest('hex'),
         sourceSha256: createHash('sha256').update(sourceBytes).digest('hex') },
       close,
@@ -2911,7 +3222,7 @@ async function runUnavailableSequence({ apiResponses, extensionPage, output, pag
 }
 
 async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
-  extensionPage, output, page, videoPayloads }) {
+  extensionPage, output, page, videoPayloads, nativeLoopback, pageFetches }) {
   const pageUrl = `https://x.com/${quotedCase.handle}/status/${quotedCase.outer}`;
   await page.goto(pageUrl);
   await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({
@@ -3027,6 +3338,8 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
   await page.screenshot({ path: join(output, `quoted-${quotedCase.name}-playing-gallery.png`) });
 
   const knownIds = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+  const nativeMark = nativeLoopback.mark();
+  const fetchMark = pageFetches.length;
   const filename = `${quotedCase.username}_${quotedCase.owner}_${quotedCase.expectedPosition - 1}.mp4`;
   await playing.gallery.locator(
     '[data-gallery-element="toolbar"] button[aria-label="Download"]'
@@ -3038,6 +3351,9 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
   const bytes = await readFile(download.filename);
   const sourceBytes = videoPayloads[quotedCase.media];
   assert(sourceBytes.equals(bytes), 'Privileged video bytes must match the selected MP4 asset');
+  const native = await assertNativeSingle({ extensionPage, knownIds, download,
+    expectedUrl: playing.selectedMedia.src, expectedBytes: sourceBytes,
+    nativeLoopback, nativeMark, pageFetches: pageFetches.slice(fetchMark) });
   const copiedName = `quoted-${quotedCase.name}-download.mp4`;
   await copyFile(download.filename, join(output, copiedName));
   const lateState = await page.locator(`#${latePanel}`).evaluate((element) => ({
@@ -3059,7 +3375,7 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
   await page.screenshot({ path: join(output, `quoted-${quotedCase.name}-after.png`) });
   const outerControl = quotedCase.name === 'unmarked'
     ? await runOuterVideoControl({ quotedCase, quotedApiResponses, downloads,
-      extensionPage, output, page, videoPayloads })
+      extensionPage, output, page, videoPayloads, nativeLoopback, pageFetches })
     : null;
   return {
     name: quotedCase.name, pageUrl, requestedTweetId: expectedRequest,
@@ -3073,7 +3389,7 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
       navigation: playingNavigation, galleryPlaybackStart, galleryPlaybackTime,
       closeMethod: quotedCase.close,
       close: playingClose },
-    download: { filename, bytes: bytes.length, file: copiedName,
+    download: { filename, bytes: bytes.length, file: copiedName, native,
       sha256: createHash('sha256').update(bytes).digest('hex'),
       sourceSha256: createHash('sha256').update(sourceBytes).digest('hex') },
     outerControl,
@@ -3081,7 +3397,7 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
 }
 
 async function runCycle({ cycle, downloads, extensionPage, output, page, images,
-  displayImages, qualityRequests }) {
+  displayImages, qualityRequests, nativeLoopback, pageFetches }) {
   const number = cycle.expectedIndex + 1;
   const requestStart = qualityRequests.length;
   const trigger = page.locator('[data-testid="tweetPhoto"] img').nth(cycle.triggerIndex);
@@ -3164,6 +3480,8 @@ async function runCycle({ cycle, downloads, extensionPage, output, page, images,
 
   const knownIds = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
   const filename = expectedFilename(cycle.expectedIndex);
+  const nativeMark = nativeLoopback.mark();
+  const fetchMark = pageFetches.length;
   const downloadStarted = performance.now();
   await gallery
     .locator('[data-gallery-element="toolbar"] button[aria-label="Download"]')
@@ -3180,6 +3498,10 @@ async function runCycle({ cycle, downloads, extensionPage, output, page, images,
   assert(images[cycle.expectedIndex].equals(bytes), 'Downloaded bytes must match the selected fixture');
   assert(!displayImages[cycle.expectedIndex].equals(bytes),
     'Single download must not save the smaller display payload');
+  const native = await assertNativeSingle({ extensionPage, knownIds, download,
+    expectedUrl: expectedOriginalImageUrl(expectedDisplayUrl),
+    expectedBytes: images[cycle.expectedIndex], nativeLoopback, nativeMark,
+    pageFetches: pageFetches.slice(fetchMark) });
   const copiedName = `cycle-${number}-download.jpg`;
   await copyFile(download.filename, join(output, copiedName));
 
@@ -3225,6 +3547,7 @@ async function runCycle({ cycle, downloads, extensionPage, output, page, images,
       file: copiedName,
       filename,
       sha256: createHash('sha256').update(bytes).digest('hex'),
+      native,
     },
     expectedIndex: cycle.expectedIndex,
     sourceQuality: {
@@ -3244,7 +3567,8 @@ async function runCycle({ cycle, downloads, extensionPage, output, page, images,
 }
 
 async function runSourceQualityCycle({ downloads, extensionPage, images, displayImages,
-  output, page, qualityApiResponses, qualityRequests, evidence }) {
+  output, page, qualityApiResponses, qualityRequests, evidence, nativeLoopback,
+  pageFetches }) {
   const apiStart = qualityApiResponses.length;
   const requestStart = qualityRequests.length;
   const startedAtMs = performance.now();
@@ -3309,6 +3633,8 @@ async function runSourceQualityCycle({ downloads, extensionPage, images, display
   await page.screenshot({ path: join(output, 'source-quality-gallery.png') });
 
   const knownBeforeCurrent = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+  const nativeMark = nativeLoopback.mark();
+  const fetchMark = pageFetches.length;
   const currentStartedAtMs = performance.now();
   await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download"]').click();
   const current = await waitForDownload(extensionPage, knownBeforeCurrent, qualityFilename(1));
@@ -3321,10 +3647,14 @@ async function runSourceQualityCycle({ downloads, extensionPage, images, display
   assert.deepEqual((await queryDownloads(extensionPage))
     .filter(({ id }) => !knownBeforeCurrent.has(id)).map(({ id }) => id), [current.id],
   'Source-quality single must create exactly one native download');
+  const native = await assertNativeSingle({ extensionPage, knownIds: knownBeforeCurrent,
+    download: current, expectedUrl: evidence.sources[1].originalUrl,
+    expectedBytes: images[1], nativeLoopback, nativeMark,
+    pageFetches: pageFetches.slice(fetchMark) });
   await copyFile(current.filename, join(output, 'source-quality-current.jpg'));
   evidence.current = { id: current.id, filename: basename(current.filename),
     file: 'source-quality-current.jpg', ...imageReceipt(currentBytes),
-    elapsedMs: performance.now() - currentStartedAtMs };
+    elapsedMs: performance.now() - currentStartedAtMs, native };
 
   const knownBeforeZip = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
   const zipStartedAtMs = performance.now();
@@ -3381,19 +3711,24 @@ async function exerciseInstalledExtension(
   downloads,
   images,
   displayImages,
-  browserCdp
+  browserCdp,
+  nativeLoopback
 ) {
   const pageErrors = [];
   const consoleErrors = [];
   const failedRequests = [];
+  const pageFetches = [];
   const cycles = [];
   const quotedVideoCycles = [];
   const unavailableSequence = { status: 'pending' };
   let fixtureVideoAssets;
   const mv3RestartCancellation = {};
+  const directRestart = { status: 'pending' };
   const trustedDownloadInput = {};
   const downloadMemory = { status: 'pending' };
   const sourceQuality = { status: 'pending' };
+  let apiReuse = { status: 'pending' };
+  let videoLoading = { status: 'pending' };
   const flowCleanup = {};
   const cleanupErrors = [];
   let fixtureRoutes;
@@ -3415,6 +3750,7 @@ async function exerciseInstalledExtension(
     fixtureVideoAssets = Object.fromEntries(Object.entries(fixtureRoutes.videoPayloads)
       .map(([name, bytes]) => [name, { bytes: bytes.length,
         sha256: createHash('sha256').update(bytes).digest('hex') }]));
+    nativeLoopback.setPayloads(images, fixtureRoutes.videoPayloads);
     extensionPage = await context.newPage();
     page = await context.newPage();
     page.on('pageerror', (error) => pageErrors.push(error.message));
@@ -3430,6 +3766,14 @@ async function exerciseInstalledExtension(
         host: url.hostname,
         path: url.pathname,
       });
+    });
+    page.on('request', (request) => {
+      if (!['fetch', 'xhr'].includes(request.resourceType())) return;
+      const url = new URL(request.url());
+      if (!['pbs.twimg.com', 'video.twimg.com'].includes(url.hostname)) return;
+      assert(pageFetches.length < 128, 'Fixture page media fetch observation overflow');
+      pageFetches.push({ host: url.hostname, path: url.pathname,
+        resourceType: request.resourceType() });
     });
     await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
     const pageCdp = await context.newCDPSession(extensionPage);
@@ -3452,8 +3796,6 @@ async function exerciseInstalledExtension(
     });
     assert.equal(videoClickConfiguration.effectiveMode, 'block-controls-only',
       'Installed profile must use the configured noncontrol video click mode');
-    await verifyTrustedDownloadInput({ context, downloads, extensionId, extensionPage,
-      page, evidence: trustedDownloadInput });
     await verifyMv3RestartCancellation({
       downloads,
       evidence: mv3RestartCancellation,
@@ -3462,17 +3804,24 @@ async function exerciseInstalledExtension(
       page,
       workerObserver,
     });
+    await verifyDirectRestartCancellation({ downloads, extensionId, extensionPage,
+      page, workerObserver, nativeLoopback, images, pageFetches, output,
+      evidence: directRestart });
+    await verifyTrustedDownloadInput({ context, downloads, extensionId, extensionPage,
+      page, evidence: trustedDownloadInput, nativeLoopback, images, pageFetches });
     await runDownloadMemoryCycle({ consoleErrors, downloads, extensionPage, images,
-      output, page, root, evidence: downloadMemory });
+      output, page, root, evidence: downloadMemory, nativeLoopback, pageFetches });
     notification = await verifyDefaultNotification(extensionPage);
     for (const cycle of CYCLES) {
       cycles.push(await runCycle({ cycle, downloads, extensionPage, output, page, images,
-        displayImages, qualityRequests: fixtureRoutes.qualityRequests }));
+        displayImages, qualityRequests: fixtureRoutes.qualityRequests,
+        nativeLoopback, pageFetches }));
     }
     try {
       await runSourceQualityCycle({ downloads, extensionPage, images, displayImages,
         output, page, qualityApiResponses: fixtureRoutes.qualityApiResponses,
-        qualityRequests: fixtureRoutes.qualityRequests, evidence: sourceQuality });
+        qualityRequests: fixtureRoutes.qualityRequests, evidence: sourceQuality,
+        nativeLoopback, pageFetches });
     } catch (error) {
       sourceQuality.status = 'failed';
       sourceQuality.error = safeError(error);
@@ -3487,7 +3836,7 @@ async function exerciseInstalledExtension(
     await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
     try {
       zoomSpanish = await runZoomSpanishCycle({ context, downloads, extensionId,
-        extensionPage, images, output, page });
+        extensionPage, images, output, page, nativeLoopback, pageFetches });
     } catch (error) {
       zoomSpanish = { status: 'failed', error: safeError(error) };
       throw error;
@@ -3512,6 +3861,8 @@ async function exerciseInstalledExtension(
           page,
           videoPayloads: fixtureRoutes.videoPayloads,
           settingEvidence,
+          nativeLoopback,
+          pageFetches,
         }));
       } catch (error) {
         const diagnostic = { name: quotedCase.name, status: 'failed',
@@ -3586,6 +3937,13 @@ async function exerciseInstalledExtension(
         JSON.stringify(unavailableSequence, null, 2)).catch(() => {});
       throw error;
     }
+    apiReuse = await runInstalledMediaApiReuseProfile({ context, page,
+      qualityFixtureUrl: QUALITY_FIXTURE_URL, qualityTweetId: QUALITY_TWEET_ID,
+      qualityImagePaths: QUALITY_IMAGE_PATHS, output });
+    videoLoading = await runVideoLoadingProfile({ context, page, extensionPage,
+      fixtureUrl: 'https://x.com/videofixture/status/4666000111222333444',
+      tweetId: '4666000111222333444', videoPayloads: fixtureRoutes.videoPayloads,
+      downloads, output, nativeLoopback });
     const expectedMemoryErrors = new Set(downloadMemory.expectedConsoleErrors ?? []);
     const unexpectedConsoleErrors = consoleErrors.filter((record) =>
       !isExpectedFixtureApiConsoleError(record) && !expectedMemoryErrors.has(record));
@@ -3595,6 +3953,12 @@ async function exerciseInstalledExtension(
       [],
       'Installed fixture must not log errors beyond its exact mocked API 403'
     );
+    const nativeTransport = nativeLoopback.snapshot();
+    assert.equal(nativeTransport.unexpectedCount, 0,
+      'Native fixture received an unallowlisted CDN request');
+    assert.equal(nativeTransport.overflow, false, 'Native fixture exceeded its request or byte cap');
+    assert.equal(nativeTransport.serverError, false, 'Native fixture listener failed');
+    assert.equal(nativeTransport.activeCount, 0, 'Native fixture retains an active response');
     assert(cycles.every(({ scroll }) => scroll.restored), 'Every close must restore the saved scroll position');
     flowResult = {
       cleanup: flowCleanup,
@@ -3603,12 +3967,16 @@ async function exerciseInstalledExtension(
       consoleErrors,
       fixtureApiResponses: fixtureRoutes.apiResponses,
       sourceQuality,
+      apiReuse,
+      videoLoading,
       sourceQualityApiResponses: fixtureRoutes.qualityApiResponses,
       sourceQualityRequests: fixtureRoutes.qualityRequests,
       mv3RestartCancellation,
+      directRestart,
       trustedDownloadInput,
       downloadMemory,
       notification,
+      nativeTransport,
       packagingAssets,
       publicDom,
       quotedVideoCycles,
@@ -3665,14 +4033,18 @@ async function exerciseInstalledExtension(
             failedRequests,
             fixtureApiResponses: fixtureRoutes?.apiResponses ?? [],
             sourceQuality,
+            apiReuse,
+            videoLoading,
             sourceQualityApiResponses: fixtureRoutes?.qualityApiResponses ?? [],
             sourceQualityRequests: fixtureRoutes?.qualityRequests ?? [],
             quotedApiResponses: fixtureRoutes?.quotedApiResponses ?? [],
             flowCleanup,
             mv3RestartCancellation,
+            directRestart,
             trustedDownloadInput,
             downloadMemory,
             notification,
+            nativeTransport: nativeLoopback.snapshot(),
             packagingAssets,
             publicDom,
             quotedVideoCycles,
@@ -3739,6 +4111,7 @@ export async function run({
 
   let context;
   let browserCdp;
+  let nativeLoopback;
   let extensionId;
   let primaryError;
   let primarySeen = false;
@@ -3758,6 +4131,11 @@ export async function run({
     status: 'failed',
   };
   try {
+    nativeLoopback = await startExtensionNativeFixtureLoopback(
+      join(root, 'validation/windows/userscript-fixture-certificate.ps1'));
+    result.fixtureTransport = { kind: 'task-owned-https-loopback', bind: '127.0.0.1',
+      port: nativeLoopback.port, hosts: ['pbs.twimg.com', 'video.twimg.com'],
+      certificateScope: 'one-run-spki' };
     context = await chromium.launchPersistentContext(profile, {
       channel: browserName,
       headless,
@@ -3766,7 +4144,9 @@ export async function run({
       locale: 'en-US',
       viewport: { width: 1280, height: 800 },
       ignoreDefaultArgs: ['--disable-extensions'],
-      args: ['--enable-unsafe-extension-debugging'],
+      args: ['--enable-unsafe-extension-debugging',
+        `--host-resolver-rules=MAP pbs.twimg.com:443 127.0.0.1:${nativeLoopback.port},MAP video.twimg.com:443 127.0.0.1:${nativeLoopback.port}`,
+        `--ignore-certificate-errors-spki-list=${nativeLoopback.spkiSha256}`],
     });
     result.browserVersion = context.browser().version();
     await enableDeveloperMode(context, browserName);
@@ -3791,9 +4171,37 @@ export async function run({
       downloads,
       images,
       displayImages,
-      browserCdp
+      browserCdp,
+      nativeLoopback
     );
     await context.unrouteAll({ behavior: 'wait' });
+    if (validatedLiveUrls.length) {
+      await browserCdp.send('Extensions.uninstall', { id: extensionId });
+      extensionId = undefined;
+      result.cleanup.fixtureExtensionUninstalled = true;
+      await context.close();
+      context = undefined;
+      browserCdp = undefined;
+      result.cleanup.fixtureBrowserClosed = true;
+      result.fixtureTransport.observations = nativeLoopback.snapshot();
+      await nativeLoopback.close();
+      nativeLoopback = undefined;
+      result.cleanup.fixtureLoopbackClosed = true;
+      context = await chromium.launchPersistentContext(profile, {
+        channel: browserName, headless, acceptDownloads: true, downloadsPath: downloads,
+        locale: 'en-US', viewport: { width: 1280, height: 800 },
+        ignoreDefaultArgs: ['--disable-extensions'],
+        args: ['--enable-unsafe-extension-debugging'],
+      });
+      await enableDeveloperMode(context, browserName);
+      await verifyDownloadDirectory(context, downloads);
+      browserCdp = await context.browser().newBrowserCDPSession();
+      ({ id: extensionId } = await browserCdp.send('Extensions.loadUnpacked', {
+        path: join(root, 'dist-extension'),
+      }));
+      assert.equal(typeof extensionId, 'string');
+      result.liveBrowserScope = 'fresh browser process without fixture host mapping or SPKI exception';
+    }
     result.live = await observeLiveUrls({
       context,
       extensionId,
@@ -3823,6 +4231,13 @@ export async function run({
       result.cleanup.browserClosed = true;
     } catch (error) {
       cleanupErrors.push(error);
+    }
+    if (nativeLoopback) {
+      result.fixtureTransport.observations = nativeLoopback.snapshot();
+      try {
+        await nativeLoopback.close();
+        result.cleanup.fixtureLoopbackClosed = true;
+      } catch (error) { cleanupErrors.push(error); }
     }
     if (result.cleanup.browserClosed) {
       try {

@@ -14,7 +14,7 @@ const MAX_IMAGE_BYTES = 64 * 1024;
 const MAX_SERVED_BYTES = 2 * 1024 * 1024;
 
 /** Validate the public certificate and private key without exposing child output on failure. */
-export function validateFixtureCertificate(value) {
+export function validateFixtureCertificate(value, includeVideo = false) {
   try {
     assert.deepEqual(Object.keys(value).sort(), ['certDerBase64', 'jwk']);
     assert(typeof value.certDerBase64 === 'string' &&
@@ -35,8 +35,13 @@ export function validateFixtureCertificate(value) {
     assert.equal(privateKey.asymmetricKeyDetails?.modulusLength, 2048);
     assert.equal(certificate.subject, `CN=${HOST}`);
     assert.equal(certificate.issuer, certificate.subject);
-    assert.equal(certificate.subjectAltName, `DNS:${HOST}`);
+    assert.equal(certificate.subjectAltName, includeVideo
+      ? `DNS:${HOST}, DNS:video.twimg.com` : `DNS:${HOST}`);
     assert.equal(certificate.checkHost(HOST, { subject: 'never' }), HOST);
+    if (includeVideo) {
+      assert.equal(certificate.checkHost('video.twimg.com', { subject: 'never' }),
+        'video.twimg.com');
+    }
     assert.equal(certificate.ca, false);
     assert(certificate.checkPrivateKey(privateKey));
     assert(certificate.verify(certificate.publicKey));
@@ -54,17 +59,19 @@ export function validateFixtureCertificate(value) {
   }
 }
 
-export async function generateFixtureCertificate(helperPath, run = execFileAsync) {
+export async function generateFixtureCertificate(helperPath, run = execFileAsync,
+  includeVideo = false) {
   let stdout;
   try {
     ({ stdout } = await run('powershell.exe',
-      ['-NoProfile', '-NonInteractive', '-File', helperPath],
+      ['-NoProfile', '-NonInteractive', '-File', helperPath,
+        ...(includeVideo ? ['-IncludeVideo'] : [])],
       { timeout: 12_000, windowsHide: true, maxBuffer: 16_384, encoding: 'utf8' }));
   } catch {
     throw new Error('fixture-certificate-unavailable');
   }
   try {
-    return validateFixtureCertificate(JSON.parse(stdout));
+    return validateFixtureCertificate(JSON.parse(stdout), includeVideo);
   } catch {
     throw new Error('fixture-certificate-invalid');
   }
