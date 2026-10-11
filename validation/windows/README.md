@@ -116,7 +116,12 @@ and a screenshot on failure. `video-loading-profile.mjs` opens eight synthetic
 videos with a high image-preload setting, checks geometry-based admission and
 far entries without attached sources, and verifies metadata, first frame,
 playback progress and same-attachment decode recovery. The separate HTTPS
-loopback verifies that saving still uses the preferred MP4 bytes. These helpers
+loopback verifies that a current save still uses the preferred MP4 bytes. A
+native eight-video ZIP is independently read for entry order, names, bytes and
+CRC after playback fallback; its first entry must retain the preferred source.
+The helper records active-source, metadata, first-frame and completion timings
+as fixture observations, including the deliberately gated response boundary.
+These helpers
 restore owned routes and settings; provider access and live-CDN compatibility
 remain outside the fixture evidence.
 

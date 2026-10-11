@@ -6,7 +6,11 @@ import { Buffer } from 'node:buffer';
 import { createHash } from 'node:crypto';
 import { writeFile } from 'node:fs/promises';
 import { basename, isAbsolute, join, relative, resolve } from 'node:path';
-import { readExactDownloadFile } from './download-memory.mjs';
+import {
+  expectedStoredZipBytes,
+  readExactDownloadFile,
+  verifyStoredZip,
+} from './download-memory.mjs';
 
 const VIDEO_COUNT = 8;
 const MAX_REQUESTS = 64;
@@ -141,7 +145,7 @@ export async function runVideoLoadingProfile({
   const records = { api: [], video: [], unexpectedVideo: [], overflow: 0 };
   const observation = { fixtureUrl, tweetId, expectedVideoCount: VIDEO_COUNT,
     canonicalBest: bestUrl, playableFallback: lowerUrl, requests: records,
-    checks: [], cleanup: { routeRemoved: false, settingsRestored: false,
+    checks: [], timingsMs: {}, cleanup: { routeRemoved: false, settingsRestored: false,
       viewportRestored: false } };
   const viewportBefore = page.viewportSize();
   assert(viewportBefore, 'The owned page must have an explicit viewport');
@@ -187,7 +191,8 @@ export async function runVideoLoadingProfile({
       }
       const index = Number(matched[1]);
       const quality = matched[2];
-      const record = { index, quality, range: request.headers().range ?? null, status: null };
+      const record = { index, quality, resourceType: request.resourceType(),
+        atMs: performance.now(), range: request.headers().range ?? null, status: null };
       if (records.video.length < MAX_REQUESTS) records.video.push(record);
       else records.overflow++;
       if (index === 0 && quality === 'best') await bestGate;
@@ -240,6 +245,7 @@ export async function runVideoLoadingProfile({
     const trigger = page.locator('[data-video-target="0"]');
     await trigger.scrollIntoViewIfNeeded();
     const beforeHost = await page.evaluate(() => ({ scrollY, bodyStyle: document.body.getAttribute('style') }));
+    const openStartedAtMs = performance.now();
     await trigger.click();
     const gallery = page.locator('[data-xeg-gallery-container]');
     await gallery.waitFor({ state: 'visible' });
@@ -251,6 +257,7 @@ export async function runVideoLoadingProfile({
     await waitForValue(async () => (await itemState(page, 0))?.src === bestUrl
       ? true : undefined, 'active video source to attach before transport settlement');
     observation.initial = await itemState(page, 0);
+    observation.timingsMs.activeSourceAttached = performance.now() - openStartedAtMs;
     assert.equal(observation.initial.admitted, 'true');
     assert.equal(observation.initial.preload, 'metadata');
     assertBestSource(observation.initial, bestUrl);
@@ -281,6 +288,7 @@ export async function runVideoLoadingProfile({
     observation.beforeRecovery = beforeRecovery;
     observation.checks.push('distant-video-urls-absent-with-preload-count-20');
 
+    const lowerReleasedAtMs = performance.now();
     releaseLower();
     await page.waitForFunction(() => {
       const item = document.querySelector('[data-xeg-gallery-container] [data-gallery-element="item"][data-index="0"]');
@@ -290,6 +298,7 @@ export async function runVideoLoadingProfile({
         video.videoWidth > 0 && video.videoHeight > 0 && !video.error;
     }, null, { timeout: 20_000 });
     observation.metadata = await itemState(page, 0);
+    observation.timingsMs.metadataAfterLowerRelease = performance.now() - lowerReleasedAtMs;
     assert.equal(observation.metadata.controls, true);
     observation.checks.push('metadata-ready-with-native-controls');
     await page.waitForFunction(() => {
@@ -301,6 +310,7 @@ export async function runVideoLoadingProfile({
         video.videoWidth > 0 && video.videoHeight > 0 && !video.error;
     }, null, { timeout: 20_000 });
     const recovered = await itemState(page, 0);
+    observation.timingsMs.firstFrameAfterLowerRelease = performance.now() - lowerReleasedAtMs;
     assertBestSource(recovered, bestUrl);
     assert.equal(recovered.currentSrc, lowerUrl);
     assert.equal(recovered.metadata, 'true');
@@ -355,6 +365,7 @@ export async function runVideoLoadingProfile({
     const nativeBaseline = nativeLoopback.snapshot();
     assert(Number.isSafeInteger(nativeMark) && nativeMark >= 0,
       'Native loopback marker must identify the pre-download event boundary');
+    const nativeStartedAtMs = performance.now();
     await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download"]').click();
     const native = await waitForValue(async () => {
       const matches = (await extensionPage.evaluate(() => chrome.downloads.search({})))
@@ -365,6 +376,7 @@ export async function runVideoLoadingProfile({
       }
       return matches[0]?.state === 'complete' ? matches[0] : undefined;
     }, 'canonical best MP4 native download', 30_000);
+    observation.timingsMs.nativeBestCompletion = performance.now() - nativeStartedAtMs;
     const expectedName = `${handle}_${tweetId}_0.mp4`;
     assert.equal(basename(native.filename), expectedName);
     assert.equal(native.state, 'complete', 'Native browser download did not reach terminal success');
@@ -398,6 +410,35 @@ export async function runVideoLoadingProfile({
       sha256: fileSha256,
       expectedDecode: 'invalid-controlled-best-bytes' };
     observation.checks.push('native-download-retains-canonical-best-bytes');
+
+    const knownBeforeZip = new Set((await extensionPage.evaluate(() => chrome.downloads.search({})))
+      .map(({ id }) => id));
+    const zipStartedAtMs = performance.now();
+    await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download 8 shown files as ZIP"]').click();
+    const zip = await waitForValue(async () => {
+      const matches = (await extensionPage.evaluate(() => chrome.downloads.search({})))
+        .filter((item) => !knownBeforeZip.has(item.id));
+      assert(matches.length <= 1, 'More than one native ZIP download began');
+      if (matches[0]?.state === 'interrupted') {
+        throw new Error(`Canonical video ZIP download interrupted: ${matches[0].error ?? 'unknown'}`);
+      }
+      return matches[0]?.state === 'complete' ? matches[0] : undefined;
+    }, 'canonical video ZIP native download', 30_000);
+    const expectedEntries = Array.from({ length: VIDEO_COUNT }, (_, index) => ({
+      filename: `${handle}_${tweetId}_${index}.mp4`,
+      bytes: index === 0 ? BAD_MP4 : validMp4,
+    }));
+    assert.equal(basename(zip.filename), `${handle}_${tweetId}.zip`);
+    const zipRelativeFile = relative(resolve(downloads), resolve(zip.filename));
+    assert(zipRelativeFile && !zipRelativeFile.startsWith('..') && !isAbsolute(zipRelativeFile),
+      'Video ZIP escaped the task-owned download directory');
+    const zipFile = await readExactDownloadFile(zip.filename, expectedStoredZipBytes(expectedEntries));
+    const verified = verifyStoredZip(zipFile.bytes, expectedEntries);
+    observation.zip = { id: zip.id, filename: basename(zip.filename),
+      bytes: zipFile.bytes.length, sha256: createHash('sha256').update(zipFile.bytes).digest('hex'),
+      verified, firstEntrySource: bestUrl, firstEntryDecode: 'invalid-controlled-best-bytes' };
+    observation.timingsMs.zipCompletion = performance.now() - zipStartedAtMs;
+    observation.checks.push('zip-retains-canonical-best-bytes-order-and-crc-after-playback-fallback');
 
     await page.keyboard.press('Escape');
     await gallery.waitFor({ state: 'detached' });
