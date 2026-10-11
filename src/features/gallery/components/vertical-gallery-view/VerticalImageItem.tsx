@@ -10,6 +10,11 @@
 import { CSS } from '@constants/css';
 import { useVideoVisibility } from '@features/gallery/components/vertical-gallery-view/hooks/use-video-visibility';
 import { useVideoVolumePersistence } from '@features/gallery/components/vertical-gallery-view/hooks/use-video-volume-persistence';
+import {
+  hasKnownVideoAccessDenial,
+  isRecoverableVideoError,
+  nextVideoPlaybackSource,
+} from '@features/gallery/components/vertical-gallery-view/utils/video-playback-recovery';
 import { cleanFilename } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.helpers';
 import styles from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css';
 import type { VerticalImageItemProps } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.types';
@@ -25,7 +30,15 @@ import { getMediaDisplayUrl } from '@shared/utils/media/media-source';
 import { cx } from '@shared/utils/text/formatting';
 import { isUrlAllowed, MEDIA_URL_POLICY } from '@shared/utils/url/safety';
 import type { JSX, JSXElement } from 'solid-js';
-import { createEffect, createMemo, createSignal, splitProps, untrack } from 'solid-js';
+import {
+  createEffect,
+  createMemo,
+  createSignal,
+  on,
+  onCleanup,
+  splitProps,
+  untrack,
+} from 'solid-js';
 
 const FIT_MODE_CLASSES: Record<ImageFitMode, string> = {
   original: styles.fitOriginal as string,
@@ -55,14 +68,14 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
 
   const isFocused = () => local.isFocused ?? false;
   const className = () => local.className ?? '';
-  const shouldEagerLoad = () => (local.forceVisible ?? false) || (local.isActive ?? false);
+  const shouldEagerLoadImage = () => (local.forceVisible ?? false) || (local.isActive ?? false);
+  const shouldAdmitVideoImmediately = () => (local.isActive ?? false) || isFocused();
   const translate = useTranslation();
-
-  /** Priority hint for media fetch — high for above-the-fold (active, focused, preloaded),
-   *  low for below-the-fold items yet to be scrolled into view. */
-  const fetchPriority = () => (shouldEagerLoad() ? 'high' : 'low') as 'high' | 'low';
-
   const isVideo = () => local.media.type === 'video' || local.media.type === 'gif';
+
+  /** Image preload neighbors are index-based; video priority follows actual admission. */
+  const fetchPriority = () =>
+    (isVideo() ? shouldAdmitVideoImmediately() : shouldEagerLoadImage()) ? 'high' : 'low';
 
   /**
    * Resolve the image source URL for display.
@@ -75,18 +88,85 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   const displaySrc = createMemo(() => getMediaDisplayUrl(local.media));
   const [isLoaded, setIsLoaded] = createSignal(false);
   const [isError, setIsError] = createSignal(false);
+  const [isVideoAdmitted, setIsVideoAdmitted] = createSignal(false);
+  const [videoHasFirstFrame, setVideoHasFirstFrame] = createSignal(false);
+  const [playbackSrc, setPlaybackSrc] = createSignal(displaySrc());
+  const [isPlaybackFallback, setIsPlaybackFallback] = createSignal(false);
+  let attemptedSources = new Set([displaySrc()]);
+  let sourceAttachedAt = performance.now();
+  let armedSource: string | null = null;
+  let geometryReported = false;
+  let wantsPlayback = false;
+  let disposed = false;
+  let pendingResume: {
+    readonly media: typeof local.media;
+    readonly source: string;
+    readonly time: number;
+    readonly volume: number;
+    readonly muted: boolean;
+    readonly playing: boolean;
+  } | null = null;
 
   // Defense-in-depth: validate the rendered URL
   const isDisplaySrcValid = createMemo(() => isUrlAllowed(displaySrc(), MEDIA_URL_POLICY));
+  const posterSrc = createMemo(() => {
+    if (!isVideo()) return undefined;
+    const candidate = local.media.thumbnailUrl;
+    if (!candidate || !isUrlAllowed(candidate, MEDIA_URL_POLICY)) return undefined;
+    try {
+      const parsed = new URL(candidate);
+      return parsed.protocol === 'https:' &&
+        parsed.hostname === 'pbs.twimg.com' &&
+        !parsed.username &&
+        !parsed.password &&
+        !parsed.hash &&
+        /\.(?:jpe?g|png|webp)$/i.test(parsed.pathname)
+        ? candidate
+        : undefined;
+    } catch {
+      return undefined;
+    }
+  });
 
-  // MED-2: Track both media.id and index to handle item reorder.
-  // <For> keys by item identity, so a component persists across reorders
-  // while its reactive index prop changes — track both values to reset state.
+  // A keyed item may move to another index. Keep its source and admission sticky;
+  // reset only when the owned MediaInfo object changes.
+  let resetMedia = local.media;
+  createEffect(
+    on(
+      () => local.media,
+      (media) => {
+        // The parent accessor can update for index/focus changes while returning
+        // the same object; `on` observes that update even when its value is equal.
+        if (media === resetMedia) return;
+        resetMedia = media;
+        setIsLoaded(false);
+        setIsError(false);
+        setVideoHasFirstFrame(false);
+        setIsPlaybackFallback(false);
+        setIsVideoAdmitted(false);
+        attemptedSources = new Set([media.url]);
+        sourceAttachedAt = performance.now();
+        armedSource = null;
+        geometryReported = false;
+        wantsPlayback = false;
+        pendingResume = null;
+        setPlaybackSrc(media.url);
+      },
+      { defer: true }
+    )
+  );
+
+  const admitVideo = (): void => {
+    if (isVideo() && !disposed) setIsVideoAdmitted(true);
+  };
+
   createEffect(() => {
-    void local.media.id;
-    void local.index;
-    setIsLoaded(false);
-    setIsError(false);
+    if (isVideo() && shouldAdmitVideoImmediately()) admitVideo();
+  });
+
+  onCleanup(() => {
+    disposed = true;
+    pendingResume = null;
   });
 
   const [containerRef, setContainerRef] = createSignal<HTMLElement | null>(null);
@@ -99,15 +179,15 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
 
   const intrinsicSizingStyle = createMemo(() => createIntrinsicSizingStyle(dimensions()));
 
-  const { applyMutedProgrammatically, handleVolumeChange } = useVideoVolumePersistence({
-    videoRef,
-    isVideo,
-  });
+  const { applyMutedProgrammatically, applyVolumeProgrammatically, handleVolumeChange } =
+    useVideoVolumePersistence({ videoRef, isVideo });
 
   useVideoVisibility({
     container: containerRef,
     video: videoRef,
     isVideo,
+    mediaIdentity: () => local.media,
+    admit: admitVideo,
     setMuted: applyMutedProgrammatically,
   });
 
@@ -147,7 +227,10 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     if (!isLoaded()) {
       setIsLoaded(true);
       setIsError(false);
-      local.onMediaLoad?.(local.media.id, local.index);
+      if (!isVideo() || !geometryReported) {
+        geometryReported = true;
+        local.onMediaLoad?.(local.media.id, local.index);
+      }
     }
   };
 
@@ -156,13 +239,110 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     setIsLoaded(false);
   };
 
+  const isCurrentVideoEvent = (video: HTMLVideoElement): boolean => {
+    const source = playbackSrc();
+    return (
+      !disposed &&
+      video.isConnected &&
+      videoRef() === video &&
+      video.getAttribute('src') === source &&
+      (!video.currentSrc || video.currentSrc === video.src) &&
+      (armedSource === source || video.currentSrc === video.src)
+    );
+  };
+
+  const handleVideoLoadStart: JSX.EventHandlerUnion<HTMLVideoElement, Event> = (event) => {
+    const video = event.currentTarget;
+    const source = playbackSrc();
+    if (
+      !disposed &&
+      video.isConnected &&
+      videoRef() === video &&
+      video.getAttribute('src') === source &&
+      (!video.currentSrc || video.currentSrc === video.src)
+    )
+      armedSource = source;
+  };
+
+  const handleVideoMetadata: JSX.EventHandlerUnion<HTMLVideoElement, Event> = (event) => {
+    const video = event.currentTarget;
+    if (!isCurrentVideoEvent(video) || video.readyState < 1) return;
+    handleMediaLoad();
+    if (video.readyState >= 2) setVideoHasFirstFrame(true);
+    const resume = pendingResume;
+    if (!resume || resume.media !== local.media || resume.source !== playbackSrc()) return;
+    pendingResume = null;
+    try {
+      applyMutedProgrammatically(video, resume.muted);
+      applyVolumeProgrammatically(video, resume.volume);
+      if (resume.time > 0) {
+        video.currentTime = Number.isFinite(video.duration)
+          ? Math.min(resume.time, Math.max(0, video.duration - 0.1))
+          : resume.time;
+      }
+    } catch {
+      // A source can reject a seek; the controls remain usable at the start.
+    }
+    if (resume.playing) {
+      try {
+        void video.play().catch(() => {
+          if (local.media === resume.media && playbackSrc() === resume.source)
+            wantsPlayback = false;
+        });
+      } catch {
+        if (local.media === resume.media && playbackSrc() === resume.source) wantsPlayback = false;
+      }
+    }
+  };
+
+  const handleVideoData: JSX.EventHandlerUnion<HTMLVideoElement, Event> = (event) => {
+    if (isCurrentVideoEvent(event.currentTarget) && event.currentTarget.readyState >= 2) {
+      setVideoHasFirstFrame(true);
+      handleMediaLoad();
+    }
+  };
+
+  const handleVideoError: JSX.EventHandlerUnion<HTMLVideoElement, Event> = (event) => {
+    const video = event.currentTarget;
+    if (!isCurrentVideoEvent(video) || !isVideoAdmitted()) return;
+    const source = playbackSrc();
+    const code = video.error?.code;
+    const next =
+      isRecoverableVideoError(code) && !hasKnownVideoAccessDenial(source, sourceAttachedAt)
+        ? nextVideoPlaybackSource(local.media, attemptedSources)
+        : null;
+    if (!next) {
+      pendingResume = null;
+      handleMediaError();
+      return;
+    }
+    pendingResume = {
+      media: local.media,
+      source: next,
+      time: Number.isFinite(video.currentTime) ? video.currentTime : 0,
+      volume: video.volume,
+      muted: video.muted,
+      playing: wantsPlayback || !video.paused,
+    };
+    attemptedSources.add(next);
+    sourceAttachedAt = performance.now();
+    armedSource = null;
+    setIsLoaded(false);
+    setVideoHasFirstFrame(false);
+    setIsPlaybackFallback(true);
+    setPlaybackSrc(next);
+  };
+
   // M8: No dependency on isLoaded() — this effect is a one-shot cached-image
   // check for images that load before the native onLoad fires (e.g. browser
   // cache). The native onLoad/onLoadedMetadata handlers are the primary paths.
   createEffect(() => {
     if (isVideo()) {
       const video = videoRef();
-      if (video && video.readyState >= 1 && !isLoaded()) handleMediaLoad();
+      if (video && isCurrentVideoEvent(video) && video.readyState >= 1 && !isLoaded()) {
+        handleMediaLoad();
+        if (video.readyState >= 2) setVideoHasFirstFrame(true);
+      }
     } else {
       const image = imageRef();
       if (image?.complete && !isLoaded()) {
@@ -241,6 +421,9 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       data-index={local.index}
       data-fit-mode={resolvedFitMode()}
       data-media-loaded={isLoaded() ? 'true' : 'false'}
+      data-video-admitted={isVideo() ? String(isVideoAdmitted()) : undefined}
+      data-video-first-frame={isVideo() ? String(videoHasFirstFrame()) : undefined}
+      data-media-display-url={displaySrc()}
       data-has-intrinsic-size={hasIntrinsicSize() ? 'true' : undefined}
       style={mergedStyle()}
       aria-posinset={local.index + 1}
@@ -249,7 +432,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       data-testid={__DEV__ ? local['data-testid'] : undefined}
     >
       <div class={styles.imageWrapper}>
-        {!isLoaded() && !isError() && (
+        {!isVideo() && !isLoaded() && !isError() && (
           <div class={styles.placeholder}>
             <div
               class={cx('xeg-spinner', styles.loadingSpinner)}
@@ -262,16 +445,33 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
 
         {isVideo() && isDisplaySrcValid() ? (
           <video
-            src={displaySrc()}
+            src={isVideoAdmitted() ? playbackSrc() : undefined}
+            poster={posterSrc()}
+            preload={isVideoAdmitted() ? 'metadata' : 'none'}
             controls
             ref={setVideoRef}
-            class={cx(styles.video, fitModeClass(), isLoaded() ? styles.loaded : styles.loading)}
+            width={dimensions().width}
+            height={dimensions().height}
+            class={cx(styles.video, fitModeClass(), styles.loaded)}
             aria-label={local['aria-label'] || imageAltText()}
             aria-describedby={local['aria-describedby']}
             tabIndex={isFocused() ? 0 : -1}
-            onFocus={local.onFocus}
-            onLoadedMetadata={handleMediaLoad}
-            onError={handleMediaError}
+            onFocus={(event) => {
+              admitVideo();
+              local.onFocus?.(event);
+            }}
+            onPointerDown={admitVideo}
+            onLoadStart={handleVideoLoadStart}
+            onLoadedMetadata={handleVideoMetadata}
+            onLoadedData={handleVideoData}
+            onPlay={(event) => {
+              if (isCurrentVideoEvent(event.currentTarget)) wantsPlayback = true;
+            }}
+            onPause={(event) => {
+              if (isCurrentVideoEvent(event.currentTarget) && !event.currentTarget.error)
+                wantsPlayback = false;
+            }}
+            onError={handleVideoError}
             onDragStart={preventDragStart}
             onVolumeChange={handleVolumeChange}
           />
@@ -291,7 +491,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
               alt={imageAltText()}
               width={dimensions().width}
               height={dimensions().height}
-              loading={shouldEagerLoad() ? 'eager' : 'lazy'}
+              loading={shouldEagerLoadImage() ? 'eager' : 'lazy'}
               decoding="async"
               class={cx(styles.image, fitModeClass(), isLoaded() ? styles.loaded : styles.loading)}
               onLoad={handleMediaLoad}
@@ -307,6 +507,11 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
             <span class={styles.errorText}>
               {translate('msg.gal.loadFail', { type: isVideo() ? 'video' : 'image' })}
             </span>
+          </div>
+        )}
+        {isVideo() && isPlaybackFallback() && !isError() && (
+          <div class={styles.playbackFallback} role="status">
+            {translate('msg.gal.video.playbackFallback')}
           </div>
         )}
       </div>

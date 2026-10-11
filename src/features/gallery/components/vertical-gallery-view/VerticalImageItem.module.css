@@ -169,6 +169,7 @@
 /* Video-specific base */
 .video {
   inline-size: 100%;
+  aspect-ratio: var(--xeg-aspect-default);
   overflow: clip;
 }
 
@@ -228,6 +229,18 @@
   background: var(--xeg-color-error-bg);
   color: var(--xeg-color-error);
   min-height: var(--xeg-spacing-3xl);
+}
+
+.playbackFallback {
+  position: absolute;
+  inset-inline: var(--xeg-spacing-sm);
+  top: var(--xeg-spacing-sm);
+  padding: var(--xeg-spacing-xs) var(--xeg-spacing-sm);
+  border-radius: var(--xeg-radius-sm);
+  background: var(--xeg-color-bg-secondary);
+  color: var(--xeg-color-text-primary);
+  font-size: var(--xeg-font-size-sm);
+  pointer-events: none;
 }
 
 /* Container adjustments per fit mode (intrinsic sizing integration) */

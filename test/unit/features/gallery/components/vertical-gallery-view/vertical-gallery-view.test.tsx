@@ -7,6 +7,8 @@ import { createComponent } from 'solid-js';
 import { render } from 'solid-js/web';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+const preloadSetting = vi.hoisted(() => ({ count: 1 }));
+
 vi.mock('@features/gallery/components/vertical-gallery-view/hooks/use-gallery-fit-mode', () => ({
   useGalleryFitMode: () => ({
     imageFitMode: () => 'fitWidth',
@@ -88,7 +90,7 @@ vi.mock('@shared/components/ui/Toolbar/Toolbar', () => ({
 }));
 vi.mock('@shared/container/settings-registry', () => ({
   getTypedSettingOr: (key: string, fallback: unknown) =>
-    key === 'gallery.preloadCount' ? 1 : fallback,
+    key === 'gallery.preloadCount' ? preloadSetting.count : fallback,
 }));
 vi.mock('@shared/hooks/use-translation', () => ({
   useTranslation: () => (key: string) => key,
@@ -114,6 +116,16 @@ function media(id: string): MediaInfo {
   };
 }
 
+function video(id: string): MediaInfo {
+  return {
+    id,
+    type: 'video',
+    url: `https://video.twimg.com/ext_tw_video/222/pu/vid/${id}.mp4`,
+    width: 640,
+    height: 360,
+  };
+}
+
 function image(container: HTMLElement, id: string): HTMLImageElement {
   const element = container.querySelector<HTMLImageElement>(
     `img[src="https://pbs.twimg.com/media/${id}.jpg"]`
@@ -131,6 +143,7 @@ describe('VerticalGalleryView preload reactivity', () => {
   let dispose: (() => void) | undefined;
 
   beforeEach(() => {
+    preloadSetting.count = 1;
     container = document.createElement('div');
     document.body.appendChild(container);
   });
@@ -178,6 +191,27 @@ describe('VerticalGalleryView preload reactivity', () => {
     expect(image(container, 'e').getAttribute('loading')).toBe('eager');
     expect(image(container, 'e').getAttribute('fetchpriority')).toBe('high');
     expect(image(container, 'd').getAttribute('loading')).toBe('lazy');
+  });
+
+  it('does not attach all video sources when image preloadCount is high', async () => {
+    preloadSetting.count = 20;
+    const items = ['a', 'b', 'c', 'd', 'e', 'f'].map(video);
+    openGallery(items, 0);
+    dispose = render(() => createComponent(VerticalGalleryView, {}), container);
+    await flushEffects();
+
+    const rows = [...container.querySelectorAll<HTMLElement>('[data-gallery-element="item"]')];
+    expect(rows).toHaveLength(items.length);
+    expect(rows[0]!.querySelector('video')?.getAttribute('src')).toBe(items[0]!.url);
+    for (const row of rows.slice(1)) {
+      expect(row.dataset.videoAdmitted).toBe('false');
+      expect(row.querySelector('video')?.hasAttribute('src')).toBe(false);
+    }
+
+    navigateToItem(5, 'programmatic');
+    await flushEffects();
+    expect(rows[5]!.querySelector('video')?.getAttribute('src')).toBe(items[5]!.url);
+    expect(rows[1]!.querySelector('video')?.hasAttribute('src')).toBe(false);
   });
 
   it('keeps toolbar attribution on the displayed download item after scroll changes focus', async () => {
