@@ -428,8 +428,9 @@ function imageIndex(url) {
 
 async function installFixtureRoutes(context, root, images, displayImages) {
   const html = await readFile(join(root, 'test/e2e/fixtures/installed-gallery-page.html'), 'utf8');
-  const extensionHtml = QUALITY_IMAGE_PATHS.reduce((page, path, index) => {
-    const sharedSource = `https://pbs.twimg.com/media/${IMAGE_URL_MARKERS[index]}.jpg?format=jpg&amp;name=large`;
+  const extensionHtml = QUALITY_IMAGE_PATHS.reduce((page, path) => {
+    const sharedPath = path.endsWith('.jpg') ? path : `${path}.jpg`;
+    const sharedSource = `https://pbs.twimg.com/media/${sharedPath}?format=jpg&amp;name=large`;
     assert(page.includes(sharedSource), 'Expected shared fixture image source is missing');
     return page.replace(sharedSource,
       `https://pbs.twimg.com/media/${path}?format=jpg&amp;name=small`);
