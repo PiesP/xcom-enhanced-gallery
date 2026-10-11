@@ -61,6 +61,12 @@ its visible, accessible media. A notification identifies this partial recovery;
 bulk ZIP downloads include only the items shown in the gallery. A tile does not
 establish all attachments of the post.
 
+Ordinary CDN photos keep a separate original-quality save source. If that
+source cannot be verified, saving reports a failure instead of silently saving
+a smaller image. Recovered DOM videos disclose their source-quality limit.
+HLS-only attachments require a supported MP4 source in this flow. See the
+[media source policy](./docs/media-sources.md) for selection and quality details.
+
 Downloads share an in-page memory allowance for their data. If it is reached,
 wait for active downloads to finish. If none are active and the limit remains,
 reload this page, then try fewer files at once. A userscript save can keep its

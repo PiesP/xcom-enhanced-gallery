@@ -31,7 +31,11 @@ function createErrorResponse(
   error: string,
   code: ErrorCode,
   filesProcessed: number,
-  options?: { filesSuccessful?: number; failures?: BulkDownloadResult['failures'] }
+  options?: {
+    filesSuccessful?: number;
+    failures?: BulkDownloadResult['failures'];
+    sourceUnavailable?: boolean;
+  }
 ): BulkDownloadResult {
   return {
     success: false,
@@ -40,6 +44,7 @@ function createErrorResponse(
     filesSuccessful: options?.filesSuccessful ?? 0,
     error,
     ...(options?.failures ? { failures: options.failures } : {}),
+    ...(options?.sourceUnavailable ? { sourceUnavailable: true } : {}),
     code,
   };
 }
@@ -154,7 +159,10 @@ export class DownloadOrchestrator {
                   ? ErrorCode.SOURCE_UNAVAILABLE
                   : ErrorCode.ALL_FAILED,
               items.length,
-              { failures: result.failures }
+              {
+                failures: result.failures,
+                ...(result.sourceUnavailable ? { sourceUnavailable: true } : {}),
+              }
             );
           }
 
@@ -188,6 +196,7 @@ export class DownloadOrchestrator {
             filesSuccessful: result.filesSuccessful,
             filename,
             failures: result.failures,
+            ...(result.sourceUnavailable ? { sourceUnavailable: true } : {}),
             code: result.resourceLimitExceeded
               ? ErrorCode.RESOURCE_LIMIT
               : result.sourceUnavailable

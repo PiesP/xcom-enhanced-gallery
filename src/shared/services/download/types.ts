@@ -86,6 +86,8 @@ export interface BulkDownloadResult {
   error?: string;
   failures?: Array<{ url: string; error: string }>;
   code: ErrorCode;
+  /** Retain this cause even when resource rejection takes code precedence. */
+  sourceUnavailable?: boolean;
 }
 
 export function reportProgress(

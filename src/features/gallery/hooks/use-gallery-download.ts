@@ -133,10 +133,14 @@ export function createDownloadHandler() {
           publishStatus('handedOff');
           const failures = Math.max(0, result.filesProcessed - result.filesSuccessful);
           const title = languageService.translate('msg.dl.part.t');
-          const body = languageService.translate('msg.dl.part.resourceLimit', {
-            count: result.filesSuccessful,
-            failed: failures,
-          });
+          const body =
+            languageService.translate('msg.dl.part.resourceLimit', {
+              count: result.filesSuccessful,
+              failed: failures,
+            }) +
+            (result.sourceUnavailable
+              ? ` ${languageService.translate('msg.dl.sourceUnavailable')}`
+              : '');
           setError(body);
           notifyError(title, body);
           return;
@@ -144,7 +148,11 @@ export function createDownloadHandler() {
         if (result.code === 'RESOURCE_LIMIT') {
           publishStatus('error');
           const title = languageService.translate('msg.dl.one.err.t');
-          const body = languageService.translate('msg.dl.resourceLimit');
+          const body =
+            languageService.translate('msg.dl.resourceLimit') +
+            (result.sourceUnavailable
+              ? ` ${languageService.translate('msg.dl.sourceUnavailable')}`
+              : '');
           setError(body);
           notifyError(title, body);
           return;

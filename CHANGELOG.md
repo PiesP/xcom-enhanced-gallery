@@ -8,6 +8,15 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Original images** — Normalize ordinary CDN photo URLs consistently across API and DOM extraction, including query-format URLs. Preserve the observed DOM display while single saves, ZIP entries, filenames and cache keys use the verified original. Refuse unverified original sources without silently saving a smaller image, and preserve both source and memory-limit causes in mixed ZIP failures.
+- **Video source identity** — Retain bounded, typed best-first MP4 variants with only valid bitrate and path-derived dimensions. Recognize positively selected HLS-only API media as a healthy unsupported-source result without substituting a poster, another attachment or a DOM source.
+
+### Changed
+
+- **Installed acceptance** — Compare distinct small display images with exact original single-save and ZIP entry bytes for API and DOM recovery in installed Edge fixtures. Keep the public-page and userscript fixture contracts intact.
+
 ## [2.3.5] - 2026-10-09
 
 ### Fixed

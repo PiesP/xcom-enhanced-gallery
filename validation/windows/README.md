@@ -82,6 +82,18 @@ host layout-shift regression. Page screenshots, per-cycle timings, file hashes,
 and cleanup metadata are retained as evidence; the timings are observations,
 not a performance claim.
 
+The extension-only classic route serves smaller display JPEGs, including one
+extensionless query-format photo URL, and separate original JPEGs. Each DOM
+recovery cycle asserts the observed display URL and natural dimensions, then
+checks that the native current save contains the original bytes. A separate
+healthy production-shaped API photo response starts from the same small sources,
+opens the second of three owned images, preserves original-quality API display,
+and verifies its source link, current filename and exact original bytes. Its ZIP
+must contain all three original entries with expected filenames, order, contents
+and CRC. Screenshots, source URLs, request observations, timings and hashes remain
+in normal and partial failure receipts. Shared HTML and userscript routes retain
+their existing allowlisted paths. This is fixture evidence, not live-CDN proof.
+
 The installed profile also serves the declared small MP4 assets and
 `installed-quoted-video-page.html` with deterministic `TweetResultByRestId`
 responses from `installed-quoted-video-api.mjs`. Its quote cases cover a marked
