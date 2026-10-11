@@ -27,12 +27,19 @@ export function normalizeOriginalImageUrl(source: string): string | null {
     return null;
   }
 
-  const controls = (key: string): string[] =>
-    [...parsed.searchParams]
-      .filter(([name]) => name.toLowerCase() === key)
-      .map(([, value]) => value.toLowerCase());
-  const formats = [...new Set(controls('format'))];
-  const sizes = [...new Set(controls('name'))];
+  const formats: string[] = [];
+  const sizes: string[] = [];
+  const controlKeys: string[] = [];
+  // Firefox content-script wrappers can expose non-iterable keys() results.
+  // Collect before deleting so mutation cannot skip duplicate parameters.
+  parsed.searchParams.forEach((value, name) => {
+    const key = name.toLowerCase();
+    const values = key === 'format' ? formats : key === 'name' ? sizes : null;
+    if (!values) return;
+    const normalizedValue = value.toLowerCase();
+    if (!values.includes(normalizedValue)) values.push(normalizedValue);
+    if (!controlKeys.includes(name)) controlKeys.push(name);
+  });
   if (formats.length > 1 || sizes.length > 1) return null;
   const format = formats[0] ?? match[2]?.toLowerCase();
   const pathSize = match[3]?.toLowerCase();
@@ -40,10 +47,7 @@ export function normalizeOriginalImageUrl(source: string): string | null {
   if (sizes[0] !== undefined && !PHOTO_SIZES.has(sizes[0])) return null;
   if (pathSize && (!PHOTO_SIZES.has(pathSize) || (sizes[0] && sizes[0] !== pathSize))) return null;
 
-  for (const key of [...parsed.searchParams.keys()]) {
-    if (key.toLowerCase() === 'format' || key.toLowerCase() === 'name')
-      parsed.searchParams.delete(key);
-  }
+  for (const key of controlKeys) parsed.searchParams.delete(key);
   if (pathSize) parsed.pathname = parsed.pathname.slice(0, -(pathSize.length + 1));
   parsed.searchParams.set('format', format);
   parsed.searchParams.set('name', 'orig');

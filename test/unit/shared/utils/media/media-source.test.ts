@@ -2,9 +2,24 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { normalizeOriginalImageUrl } from '@shared/utils/media/media-source';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 describe('ordinary CDN photo originals', () => {
+  it('normalizes supported photos without URLSearchParams iterators', () => {
+    const keys = vi.spyOn(URLSearchParams.prototype, 'keys').mockImplementation(() => {
+      throw new TypeError('Extension URLSearchParams keys are not iterable');
+    });
+    try {
+      expect(
+        normalizeOriginalImageUrl(
+          'https://pbs.twimg.com/media/EXAMPLE?FORMAT=JPG&format=jpg&NAME=SMALL&name=small'
+        )
+      ).toBe('https://pbs.twimg.com/media/EXAMPLE?format=jpg&name=orig');
+    } finally {
+      keys.mockRestore();
+    }
+  });
+
   it.each([
     ['EXAMPLE.jpg', 'EXAMPLE.jpg?format=jpg&name=orig'],
     ['EXAMPLE.jpeg:large', 'EXAMPLE.jpeg?format=jpeg&name=orig'],
