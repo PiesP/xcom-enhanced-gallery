@@ -264,7 +264,9 @@ Without reloading or replacing the gallery, keyboard navigation and a small
 direct single download must still work. A subsequent
 bulk action must save a separate native ZIP download with the exact three image
 names and contents; the profile verifies its stored-entry boundaries, local and
-central order, CRCs, and bytes. It records exact Chrome download IDs, elapsed
+central order, CRCs, and bytes. Only the previously rejected image needs a new
+application fetch; the two successful partial entries are reused from the same
+page's media cache. It records exact Chrome download IDs, elapsed
 times, request phases, page time origin, screenshots, and exact route cleanup.
 The declared limit is an admission-policy check; browser heap and RSS are not
 measured, and the oversized body is never allocated.

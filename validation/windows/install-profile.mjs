@@ -2349,15 +2349,22 @@ async function runDownloadMemoryCycle({ consoleErrors, downloads, extensionPage,
     evidence.downloads.push({ kind: 'zip', id: zip.id, filename: basename(zip.filename),
       bytes: zipBytes.length, sha256: createHash('sha256').update(zipBytes).digest('hex'),
       elapsedMs: performance.now() - zipStartedAtMs, verified: parsedZip });
-    assert(evidence.requests.some(({ phase: requestPhase, marker }) =>
-      requestPhase === 'declared-large' && marker === IMAGE_URL_MARKERS[0]),
-    'Rejected ZIP must request the oversized selected image');
+    assert.deepEqual(evidence.requests.filter(({ phase: requestPhase }) =>
+      requestPhase === 'declared-large').map(({ marker }) => marker).sort(),
+    [...IMAGE_URL_MARKERS].sort(), 'Partial ZIP must request all three exact fixture images');
     assert.deepEqual(evidence.requests.filter(({ phase: requestPhase }) =>
       requestPhase === 'small-single').map(({ marker }) => marker), [],
     'Native single recovery must not use application fetch');
-    assert.deepEqual(evidence.requests.filter(({ phase: requestPhase }) =>
-      requestPhase === 'small-zip').map(({ marker }) => marker).sort(),
-    [...IMAGE_URL_MARKERS].sort(), 'ZIP must fetch all three exact fixture images');
+    // The two successful partial-ZIP entries remain in the page's media cache.
+    // Only the rejected entry needs another fetch; all saved bytes are checked above.
+    const recoveryRequests = evidence.requests.filter(({ phase: requestPhase }) =>
+      requestPhase === 'small-zip').map(({ marker }) => marker);
+    assert.deepEqual(recoveryRequests, [IMAGE_URL_MARKERS[0]],
+      'Recovered ZIP must fetch only the previously rejected image');
+    evidence.recoveryTransport = { freshMediaRequests: recoveryRequests,
+      reusedEntries: partialVerified.entryOrder,
+      savedEntries: parsedZip.entryOrder,
+      verification: 'Exact ZIP bytes and CRCs; successful partial entries need no new application fetch' };
     assert(await gallery.evaluate((node, original) => node === original, galleryHandle),
       'Memory recovery replaced the gallery app element');
     await page.screenshot({ path: join(output, 'installed-memory-recovery.png') });
