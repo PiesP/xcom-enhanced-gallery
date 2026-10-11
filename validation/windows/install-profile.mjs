@@ -1016,7 +1016,8 @@ async function verifyDirectRestartCancellation({ downloads, extensionId, extensi
     const before = await waitForValue(async () => {
       const state = await readMv3LifecycleState(extensionPage, requestId, downloadId);
       if (state.download?.state !== 'in_progress' ||
-          state.download.totalBytes !== images[0].length) return undefined;
+          state.download.totalBytes !== images[0].length ||
+          basename(state.download.filename) !== filename) return undefined;
       assertDownloadIncomplete(state.download, 'direct transfer before Worker stop');
       return state;
     }, 'incomplete native direct transfer', 5_000);

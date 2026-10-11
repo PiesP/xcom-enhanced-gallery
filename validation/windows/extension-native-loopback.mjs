@@ -131,8 +131,11 @@ export function createExtensionNativeFixtureHandler() {
       assert.equal(heldResponse, null, 'Only one native fixture response may be held');
       holdPath = null;
       heldResponse = response;
-      heldTail = body.subarray(1);
-      response.write(body.subarray(0, 1));
+      assert(body.length > 1, 'The held fixture must retain an unfinished response');
+      const prefixBytes = Math.min(1_024, body.length - 1);
+      heldTail = body.subarray(prefixBytes);
+      response.write(body.subarray(0, prefixBytes));
+      event.prefixBytesQueued = prefixBytes;
       event.firstByteQueuedAtMs = performance.now();
       event.result = 'held';
       return;

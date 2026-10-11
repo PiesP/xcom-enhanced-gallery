@@ -89,8 +89,8 @@ host layout-shift regression. Page screenshots, per-cycle timings, file hashes,
 and cleanup metadata are retained as evidence; the timings are observations,
 not a performance claim.
 
-The first native single holds its response after one byte for at least 3.5
-seconds, records native start separately from full completion, and requires
+The first native single holds its response after a prefix of at most 1 KiB for
+at least 3.5 seconds, records native start separately from full completion, and requires
 the same download ID and busy controls throughout. Releasing that bounded
 response must yield the exact original file. This distinguishes a confirmed
 active transfer from an uncertain worker reply without a throughput claim.
@@ -182,7 +182,7 @@ profile; it does not claim an OS DPI change or a live X.com observation.
 
 The installed profile first starts a direct image download through real media and
 toolbar clicks. The loopback listener holds its original-image response after
-the first byte while the smaller display image stays on the page route. A native
+a bounded header prefix while the smaller display image stays on the page route. A native
 `onDeterminingFilename` listener holds that exact new download active until
 cancellation; its asynchronous `suggest()` callback
 is released exactly once during cleanup. The native item must be paused and
