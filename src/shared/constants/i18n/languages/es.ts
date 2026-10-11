@@ -52,6 +52,18 @@ export const es: LanguageStrings = {
       loadMedia: {
         unsupported:
           'Este vídeo solo ofrece streaming HLS. La reproducción y descarga en la galería requieren una fuente MP4 verificada.',
+        noMedia: 'No se devolvió contenido multimedia para esta publicación.',
+        denied: 'El servicio multimedia rechazó la solicitud. Inténtalo más tarde.',
+        unreadable: 'No se pudo leer la respuesta multimedia. Inténtalo más tarde.',
+        rateLimited: 'El servicio multimedia está limitando las solicitudes. Inténtalo más tarde.',
+        deferred: 'El servicio multimedia pidió esperar. Inténtalo más tarde.',
+        providerError:
+          'El servicio multimedia no pudo proporcionar esta publicación. Inténtalo más tarde.',
+        transport: 'No se pudo contactar con el servicio multimedia. Inténtalo más tarde.',
+        ownerUnconfirmed:
+          'No se pudo confirmar a qué publicación pertenece el contenido seleccionado.',
+        mismatch: 'El contenido recibido no coincide con el elemento seleccionado.',
+        cancelled: 'Se canceló la carga del contenido multimedia.',
         title: 'Error al cargar contenido multimedia',
         body: 'No se encontraron imágenes ni videos.',
       },
@@ -102,6 +114,10 @@ export const es: LanguageStrings = {
         'Se alcanzó el límite de memoria para descargas. Espera a que terminen las descargas en curso. Si no hay ninguna activa y el límite persiste, recarga esta página. Después, vuelve a intentarlo con menos archivos.',
     },
     gal: {
+      video: {
+        playbackFallback:
+          'La reproducción usa otra versión; la descarga conserva la mejor fuente disponible.',
+      },
       observedQuality: {
         title: 'Calidad de la fuente recuperada',
         body: 'No se pudo verificar la calidad de algunos elementos. Las imágenes sin un original verificado no se pueden guardar; los vídeos recuperados usan la fuente observada.',

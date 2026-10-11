@@ -6,6 +6,7 @@ import { buildTweetResultByRestIdUrl } from '@shared/core/twitter-api/endpoint';
 import type { BuildTweetResultByRestIdUrlArgs } from '@shared/core/twitter-api/endpoint';
 import type { TwitterTweet } from '@shared/services/media/types';
 import { TwitterAPIExtractor } from '@shared/services/media-extraction/extractors/twitter-api-extractor';
+import { captureClickedMediaEvidence } from '@shared/services/media-extraction/determine-clicked-index';
 
 function createQuotedVideoTweetResponse() {
   const user = (screenName: string) => ({ user_results: { result: {
@@ -49,7 +50,11 @@ vi.mock('@shared/services/media/twitter-auth/twitter-auth', () => ({
   resolveBearerToken,
 }));
 
-import { getTweetMedias, TwitterAPIRequestError } from '@shared/services/media/twitter-api-client';
+import {
+  getTweetMedias,
+  TweetMetadataReuse,
+  TwitterAPIRequestError,
+} from '@shared/services/media/twitter-api-client';
 
 const BASE_ARGS: BuildTweetResultByRestIdUrlArgs = {
   host: 'x.com',
@@ -138,6 +143,154 @@ describe('twitter-api-client (URL building — pure functions)', () => {
       expect(parsed.searchParams.has('features')).toBe(true);
       expect(parsed.searchParams.has('fieldToggles')).toBe(true);
     });
+  });
+});
+
+describe('TweetMetadataReuse', () => {
+  beforeEach(() => {
+    httpGet.mockReset();
+    httpGet.mockResolvedValue({ ok: true, status: 200, data: createQuotedVideoTweetResponse() });
+    getCsrfTokenAsync.mockResolvedValue('csrf-token');
+    resolveBearerToken.mockReturnValue('Bearer test-token');
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it('reuses only normalized successful media and gives each caller a private copy', async () => {
+    const reuse = new TweetMetadataReuse();
+    const first = await reuse.get('222');
+    expect(first.entries.map((entry) => entry.tweet_id)).toEqual(['111', '222']);
+    Object.assign(first.entries[0]!, { screen_name: 'changed-by-caller' });
+
+    const second = await reuse.get('222');
+    expect(second.entries[0]?.screen_name).toBe('quote');
+    expect(second.physicalRequestToken).toBeUndefined();
+    expect(httpGet).toHaveBeenCalledTimes(1);
+    reuse.dispose();
+  });
+
+  it('recomputes direct and quoted selection for each click on reused metadata', async () => {
+    const extractor = new TwitterAPIExtractor();
+    const info = {
+      tweetId: '222', username: 'quote_author', tweetUrl: 'https://x.com/quote_author/status/222',
+      extractionMethod: 'test', confidence: 1,
+    };
+    document.body.innerHTML = '<img id="quote" src="https://pbs.twimg.com/media/quote-photo.jpg">';
+    const clickedQuote = document.querySelector<HTMLElement>('#quote')!;
+    const quote = await extractor.extract(info, clickedQuote, {
+      clickedMediaEvidence: {
+        ...captureClickedMediaEvidence(clickedQuote),
+        ownership: {requestTweetId: '222', ownerTweetId: null, scope: 'quoted'},
+      },
+    }, 'quote');
+    document.body.innerHTML = '<video id="direct" poster="https://pbs.twimg.com/ext_tw_video_thumb/222/outer.jpg"></video>';
+    const direct = await extractor.extract(info, document.querySelector<HTMLElement>('#direct')!, {}, 'direct');
+    expect(quote).toMatchObject({ success: true });
+    expect(quote.clickedIndex).toBe(0);
+    expect(direct.success).toBe(true);
+    expect(direct.clickedIndex).toBe(1);
+    expect(httpGet).toHaveBeenCalledTimes(1);
+    extractor.dispose();
+    document.body.replaceChildren();
+  });
+
+  it('observes a failed response after its sole caller aborts during dispatch', async () => {
+    const reuse = new TweetMetadataReuse();
+    const controller = new AbortController();
+    httpGet.mockImplementationOnce(async () => {
+      controller.abort();
+      return { ok: false, status: 503, data: {} };
+    });
+    await expect(reuse.get('222', undefined, controller.signal)).rejects.toMatchObject({ name: 'AbortError' });
+    await expect(reuse.get('222')).resolves.toMatchObject({
+      entries: expect.any(Array), physicalRequestToken: expect.any(Object),
+    });
+    expect(httpGet).toHaveBeenCalledTimes(2);
+    reuse.dispose();
+  });
+
+  it('coalesces two callers while allowing one to leave without cancelling the other', async () => {
+    let complete!: (value: unknown) => void;
+    httpGet.mockImplementation(() => new Promise<unknown>((resolve) => { complete = resolve; }));
+    const reuse = new TweetMetadataReuse();
+    const firstController = new AbortController();
+    const secondController = new AbortController();
+    const first = reuse.get('222', undefined, firstController.signal);
+    const second = reuse.get('222', undefined, secondController.signal);
+    await vi.waitFor(() => expect(httpGet).toHaveBeenCalledTimes(1));
+    firstController.abort();
+    await expect(first).rejects.toMatchObject({ name: 'AbortError' });
+    complete({ ok: true, status: 200, data: createQuotedVideoTweetResponse() });
+    const accepted = await second;
+    expect(accepted.entries).toHaveLength(2);
+    expect(accepted.physicalRequestToken).toBeDefined();
+    reuse.dispose();
+  });
+
+  it('aborts the last waiter and never publishes a late, ignored transport result', async () => {
+    let complete!: (value: unknown) => void;
+    httpGet.mockImplementationOnce(() => new Promise<unknown>((resolve) => { complete = resolve; }));
+    const reuse = new TweetMetadataReuse();
+    const controller = new AbortController();
+    const pending = reuse.get('222', undefined, controller.signal);
+    await vi.waitFor(() => expect(httpGet).toHaveBeenCalledTimes(1));
+    controller.abort();
+    await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+    complete({ ok: true, status: 200, data: createQuotedVideoTweetResponse() });
+    await Promise.resolve();
+    expect((await reuse.get('222')).entries).toHaveLength(2);
+    expect(httpGet).toHaveBeenCalledTimes(2);
+    reuse.dispose();
+  });
+
+  it('rejects an in-flight request immediately on explicit refresh', async () => {
+    let complete!: (value: unknown) => void;
+    httpGet.mockImplementationOnce(() => new Promise<unknown>((resolve) => { complete = resolve; }));
+    const reuse = new TweetMetadataReuse();
+    const pending = reuse.get('222');
+    await vi.waitFor(() => expect(httpGet).toHaveBeenCalledTimes(1));
+    reuse.invalidate();
+    await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+    complete({ ok: true, status: 200, data: createQuotedVideoTweetResponse() });
+    expect((await reuse.get('222')).entries).toHaveLength(2);
+    expect(httpGet).toHaveBeenCalledTimes(2);
+    reuse.dispose();
+  });
+
+  it('expires, refreshes, and invalidates on authentication or navigation changes', async () => {
+    let now = 1_000;
+    vi.spyOn(performance, 'now').mockImplementation(() => now);
+    const reuse = new TweetMetadataReuse();
+    const location = { hostname: 'x.com', origin: 'https://x.com', href: 'https://x.com/a/status/222' };
+    await reuse.get('222', location);
+    await reuse.get('222', location);
+    expect(httpGet).toHaveBeenCalledTimes(1);
+    now += 5_000;
+    await reuse.get('222', location);
+    expect(httpGet).toHaveBeenCalledTimes(2);
+    resolveBearerToken.mockReturnValue('Bearer changed-token');
+    await reuse.get('222', location);
+    expect(httpGet).toHaveBeenCalledTimes(3);
+    await reuse.get('222', { ...location, href: 'https://x.com/b/status/222' });
+    expect(httpGet).toHaveBeenCalledTimes(4);
+    reuse.invalidate();
+    await reuse.get('222', { ...location, href: 'https://x.com/b/status/222' });
+    expect(httpGet).toHaveBeenCalledTimes(5);
+    reuse.dispose();
+  });
+
+  it('never caches an empty or failed provider response', async () => {
+    const reuse = new TweetMetadataReuse();
+    httpGet.mockResolvedValueOnce({ ok: true, status: 200, data: {} });
+    expect((await reuse.get('222')).entries).toEqual([]);
+    httpGet.mockResolvedValueOnce({ ok: false, status: 403, readable: true, data: {} });
+    await expect(reuse.get('222')).rejects.toMatchObject({ category: 'denied' });
+    expect((await reuse.get('222')).entries).toHaveLength(2);
+    expect(httpGet).toHaveBeenCalledTimes(3);
+    reuse.dispose();
   });
 });
 
@@ -264,6 +417,34 @@ describe('twitter-api-client request boundary', () => {
     await expect(
       getTweetMedias('123', { hostname: 'x.com', href: undefined, origin: undefined })
     ).rejects.toThrow('TW:403');
+  });
+
+  it.each([
+    [{ ok: false, status: 403, readable: true, retryAfterMs: 30_000, data: {} }, 'denied'],
+    [{ ok: false, status: 0, readable: false, errorCategory: 'unreadable', data: {} }, 'unreadable'],
+    [{ ok: false, status: 429, readable: true, retryAfterMs: 120_000, data: {} }, 'rate-limited'],
+    [{ ok: false, status: 503, readable: true, retryAfterMs: 120_000, data: {} }, 'deferred'],
+    [{ ok: false, status: 503, readable: false, errorCategory: 'unreadable', retryAfterMs: 120_000, data: {} }, 'unreadable'],
+  ])('classifies safe HTTP metadata without guessing provider intent', async (response, category) => {
+    httpGet.mockResolvedValueOnce(response);
+    await expect(getTweetMedias('222')).rejects.toMatchObject({
+      category,
+      ...('retryAfterMs' in response && response.retryAfterMs !== undefined
+        ? { retryAfterMs: response.retryAfterMs } : {}),
+    });
+  });
+
+  it('uses typed transport metadata without exposing the transport error text', async () => {
+    const underlying = Object.assign(new Error('private response detail'), {
+      status: 0,
+      readable: false,
+      category: 'unreadable',
+    });
+    httpGet.mockRejectedValueOnce(underlying);
+    await expect(getTweetMedias('222')).rejects.toMatchObject({
+      category: 'unreadable',
+      message: 'Twitter API transport failed',
+    });
   });
 
   it('classifies transport failure as an outage but preserves cancellation', async () => {

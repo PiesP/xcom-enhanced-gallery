@@ -31,6 +31,7 @@ describe('integrated scoped recovery and delayed identity', () => {
     expect(api.success).toBe(true);
     expect(api.clickedIndex).toBe(1);
     expect(api.metadata?.recoveryScope).toBeUndefined();
+    service.invalidateApiMetadata();
     httpGet.mockResolvedValue({ ok: false, status: 503, data: {} });
     for (let click = 0; click < 4; click++) {
       const dom = await service.extractFromClickedElement(target);

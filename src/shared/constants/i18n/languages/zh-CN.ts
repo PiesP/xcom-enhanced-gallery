@@ -51,6 +51,16 @@ export const zhCn: LanguageStrings = {
       b: '发生了意外错误：{error}',
       loadMedia: {
         unsupported: '此视频仅提供 HLS 流。图库播放和下载需要经过确认的 MP4 来源。',
+        noMedia: '此帖子未返回媒体内容。',
+        denied: '媒体服务拒绝了请求。请稍后重试。',
+        unreadable: '无法读取媒体响应。请稍后重试。',
+        rateLimited: '媒体服务限制了请求频率。请稍后重试。',
+        deferred: '媒体服务要求等待。请稍后重试。',
+        providerError: '媒体服务无法提供此帖子。请稍后重试。',
+        transport: '无法连接到媒体服务。请稍后重试。',
+        ownerUnconfirmed: '无法确认所选媒体属于哪个帖子。',
+        mismatch: '返回的媒体与所选项目不匹配。',
+        cancelled: '媒体加载已取消。',
         title: '加载媒体失败',
         body: '找不到图片或视频。',
       },
@@ -100,6 +110,9 @@ export const zhCn: LanguageStrings = {
         '已达到下载内存上限。请先等待正在进行的下载完成。如果没有进行中的下载，但仍达到上限，请重新加载此页面。然后减少文件数量并重试。',
     },
     gal: {
+      video: {
+        playbackFallback: '播放使用其他画质；下载仍使用可用的最佳来源。',
+      },
       observedQuality: {
         title: '恢复来源的质量',
         body: '无法确认部分项目的来源质量。未确认原始来源的图像无法保存；恢复的视频使用页面显示的来源保存。',

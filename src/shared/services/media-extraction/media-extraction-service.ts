@@ -23,6 +23,15 @@ import {
 
 const generateExtractionId = (): string => createPrefixedId('simp');
 
+function acceptsServerRetryGuidance(status: number | undefined): boolean {
+  return (
+    status === 408 ||
+    status === 425 ||
+    status === 429 ||
+    (status !== undefined && status >= 500 && status <= 599)
+  );
+}
+
 function createErrorResult(
   error: unknown,
   code: ErrorCode = ErrorCode.NO_MEDIA_FOUND
@@ -77,6 +86,9 @@ export class MediaExtractionService implements MediaExtractor {
   private apiFailureCount = 0;
   private apiCircuitOpen = false;
   private lastApiFailureTime = 0;
+  private apiDeferredUntil = 0;
+  private apiDeferredKind: 'rate-limited' | 'deferred' | 'unreadable' | null = null;
+  private readonly accountedRequests = new WeakSet<object>();
 
   private static readonly CIRCUIT_THRESHOLD = 3;
   private static readonly CIRCUIT_RESET_MS = 60_000; // 1 minute
@@ -87,7 +99,19 @@ export class MediaExtractionService implements MediaExtractor {
     this.domFallbackExtractor = new DOMFallbackExtractor();
   }
 
+  /** Revalidate on explicit refresh; navigation and auth changes also invalidate on the next request. */
+  invalidateApiMetadata(): void {
+    this.apiExtractor.invalidateMetadata();
+  }
+
+  dispose(): void {
+    this.apiExtractor.dispose();
+  }
+
   private isApiCircuitOpen(): boolean {
+    if (performance.now() < this.apiDeferredUntil) return true;
+    this.apiDeferredUntil = 0;
+    this.apiDeferredKind = null;
     if (!this.apiCircuitOpen) return false;
     if (Date.now() - this.lastApiFailureTime >= MediaExtractionService.CIRCUIT_RESET_MS) {
       this.apiCircuitOpen = false;
@@ -143,6 +167,7 @@ export class MediaExtractionService implements MediaExtractor {
             metadata: { sourceType: 'circuit-open' },
             tweetInfo: null,
             errors: [],
+            ...(this.apiDeferredKind ? { failureKind: this.apiDeferredKind } : {}),
           }
         : await this.apiExtractor.extract(tweetInfo, element, extractionOptions, extractionId);
 
@@ -152,13 +177,29 @@ export class MediaExtractionService implements MediaExtractor {
         return createErrorResult('Extraction cancelled');
       }
 
-      if (apiResult.apiRequestOutcome === 'healthy' || apiResult.success) {
+      const physicalRequest = apiResult.apiRequestToken;
+      const shouldAccount = physicalRequest && !this.accountedRequests.has(physicalRequest);
+      if (shouldAccount) this.accountedRequests.add(physicalRequest);
+      if (shouldAccount && apiResult.apiRequestOutcome === 'healthy') {
         // A successful provider response is healthy even when media is absent
         // or cannot be matched to the clicked element.
         this.apiFailureCount = 0;
         this.apiCircuitOpen = false;
-      } else if (apiResult.apiRequestOutcome === 'failed') {
+      } else if (shouldAccount && apiResult.apiRequestOutcome === 'failed') {
         this.recordApiFailure();
+        if (
+          apiResult.retryAfterMs !== undefined &&
+          apiResult.retryAfterMs > 0 &&
+          acceptsServerRetryGuidance(apiResult.apiHttpStatus)
+        ) {
+          this.apiDeferredUntil = performance.now() + apiResult.retryAfterMs;
+          this.apiDeferredKind =
+            apiResult.failureKind === 'rate-limited'
+              ? 'rate-limited'
+              : apiResult.failureKind === 'unreadable'
+                ? 'unreadable'
+                : 'deferred';
+        }
       }
 
       if (apiResult.failureKind === 'unsupported-source') return { ...apiResult, tweetInfo };
@@ -178,6 +219,7 @@ export class MediaExtractionService implements MediaExtractor {
         return {
           ...apiResult,
           tweetInfo,
+          failureKind: apiResult.failureKind ?? 'owner-unconfirmed',
           metadata: { ...apiResult.metadata, domRecovery: 'owner-unconfirmed' },
         };
       }
@@ -220,6 +262,14 @@ export class MediaExtractionService implements MediaExtractor {
           sourceType: 'extraction-failed',
         },
         tweetInfo: mergeTweetInfo(tweetInfo, apiResult.tweetInfo),
+        ...(apiResult.failureKind ? { failureKind: apiResult.failureKind } : {}),
+        ...(apiResult.retryAfterMs !== undefined ? { retryAfterMs: apiResult.retryAfterMs } : {}),
+        ...(apiResult.apiHttpStatus !== undefined
+          ? { apiHttpStatus: apiResult.apiHttpStatus }
+          : {}),
+        ...(apiResult.apiResponseReadable !== undefined
+          ? { apiResponseReadable: apiResult.apiResponseReadable }
+          : {}),
       };
     } catch (error) {
       __DEV__ && logger.error('Extract failed', extractionId, error);

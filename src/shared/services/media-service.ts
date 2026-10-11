@@ -52,6 +52,8 @@ export class MediaService {
 
     this.downloadCache?.destroy();
     this.downloadCache = null;
+    this.mediaExtraction?.dispose();
+    this.mediaExtraction = null;
   }
 
   async extractFromClickedElement(
@@ -72,6 +74,11 @@ export class MediaService {
 
   cancelPendingMediaRequests(): void {
     this.downloadCache?.cancelPending();
+  }
+
+  /** Force the next API metadata extraction to revalidate against the provider. */
+  refreshApiMetadata(): void {
+    this.mediaExtraction?.invalidateApiMetadata();
   }
 }
 

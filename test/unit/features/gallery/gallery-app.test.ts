@@ -169,4 +169,18 @@ describe('GalleryApp media-click currentness', () => {
     await app.cleanup();
   });
 
+  it.each([
+    ['denied', 'msg.err.loadMedia.denied'],
+    ['rate-limited', 'msg.err.loadMedia.rateLimited'],
+    ['owner-unconfirmed', 'msg.err.loadMedia.ownerUnconfirmed'],
+    ['no-media', 'msg.err.loadMedia.noMedia'],
+  ] as const)('shows the safe %s extraction diagnosis', async (failureKind, message) => {
+    state.extract.mockResolvedValue({ success: false, mediaItems: [], failureKind });
+    const app = new GalleryApp({ destroy: vi.fn() } as never);
+    await app.initialize();
+    await state.handlers?.onMediaClick(document.createElement('img'), new MouseEvent('click'));
+    expect(state.notify).toHaveBeenCalledWith({}, 'msg.err.loadMedia.title', message);
+    await app.cleanup();
+  });
+
 });

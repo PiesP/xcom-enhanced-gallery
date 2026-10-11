@@ -54,6 +54,16 @@ export const en: LanguageStrings = {
         body: 'Could not find images or videos.',
         unsupported:
           'This video only provides HLS streaming. Gallery playback and download require a verified MP4 source.',
+        noMedia: 'No media was returned for this post.',
+        denied: 'The media service denied this request. Try again later.',
+        unreadable: 'The media response could not be read. Try again later.',
+        rateLimited: 'The media service is rate limiting requests. Try again later.',
+        deferred: 'The media service asked us to wait. Try again later.',
+        providerError: 'The media service could not provide this post. Try again later.',
+        transport: 'Could not reach the media service. Try again later.',
+        ownerUnconfirmed: 'Could not confirm which post owns the selected media.',
+        mismatch: 'The returned media did not match the selected item.',
+        cancelled: 'Media loading was cancelled.',
       },
       generic: 'Error occurred',
       loadGallery: 'Failed to load gallery',
@@ -102,6 +112,10 @@ export const en: LanguageStrings = {
         'The download memory limit was reached. Wait for active downloads to finish. If none are active and the limit remains, reload this page. Then retry with fewer files.',
     },
     gal: {
+      video: {
+        playbackFallback:
+          'Playback uses another rendition; downloads keep the best available source.',
+      },
       observedQuality: {
         title: 'Recovered source quality',
         body: 'Source quality could not be verified for some items. Images without a verified original cannot be saved; recovered videos use the observed source.',

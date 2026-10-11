@@ -480,6 +480,100 @@ describe('MediaExtractionService API circuit', () => {
     expect(httpGet).toHaveBeenCalledTimes(4);
   });
 
+  it('counts one coalesced failed request once and opens only after three physical failures', async () => {
+    const service = new MediaExtractionService();
+    let complete!: (value: unknown) => void;
+    httpGet.mockImplementationOnce(() => new Promise<unknown>((resolve) => { complete = resolve; }));
+    const first = click(service);
+    const second = click(service);
+    await vi.waitFor(() => expect(httpGet).toHaveBeenCalledTimes(1));
+    complete({ ok: false, status: 503, data: {} });
+    await Promise.all([first, second]);
+    expect(httpGet).toHaveBeenCalledTimes(1);
+
+    httpGet.mockResolvedValue({ ok: false, status: 503, data: {} });
+    await click(service);
+    await click(service);
+    expect(httpGet).toHaveBeenCalledTimes(3);
+    await click(service);
+    expect(httpGet).toHaveBeenCalledTimes(3);
+    service.dispose();
+  });
+
+  it('does not let a cache hit erase an actual provider outage history', async () => {
+    const service = new MediaExtractionService();
+    httpGet.mockResolvedValueOnce({
+      ok: true, status: 200,
+      data: JSON.parse(JSON.stringify(createQuotedVideoTweetResponse()).replaceAll('222', '906')),
+    });
+    expect((await clickTweet(service, '906')).success).toBe(true);
+    httpGet.mockResolvedValue({ ok: false, status: 503, data: {} });
+    await clickTweet(service, '903');
+    await clickTweet(service, '904');
+    expect((await clickTweet(service, '906')).success).toBe(true);
+    expect(httpGet).toHaveBeenCalledTimes(3);
+    await clickTweet(service, '905');
+    expect(httpGet).toHaveBeenCalledTimes(4);
+    await clickTweet(service, '907');
+    expect(httpGet).toHaveBeenCalledTimes(4);
+    service.dispose();
+  });
+
+  it('defers a rate-limited request until its bounded server wait expires', async () => {
+    const service = new MediaExtractionService();
+    let monotonicNow = 10_000;
+    vi.spyOn(performance, 'now').mockImplementation(() => monotonicNow);
+    httpGet.mockResolvedValueOnce({
+      ok: false, status: 429, readable: true, retryAfterMs: 120_000, data: {},
+    });
+    const limited = await click(service);
+    expect(limited.failureKind).toBe('rate-limited');
+    expect(httpGet).toHaveBeenCalledTimes(1);
+    monotonicNow += 119_999;
+    expect((await click(service)).failureKind).toBe('rate-limited');
+    expect(httpGet).toHaveBeenCalledTimes(1);
+    monotonicNow += 1;
+    httpGet.mockResolvedValue({ ok: true, status: 200, data: createQuotedVideoTweetResponse() });
+    expect((await click(service)).success).toBe(true);
+    expect(httpGet).toHaveBeenCalledTimes(2);
+    service.dispose();
+  });
+
+  it('keeps an unreadable 503 diagnosis while honoring its known server wait', async () => {
+    const service = new MediaExtractionService();
+    let monotonicNow = 10_000;
+    vi.spyOn(performance, 'now').mockImplementation(() => monotonicNow);
+    httpGet.mockResolvedValueOnce({
+      ok: false, status: 503, readable: false, errorCategory: 'unreadable',
+      retryAfterMs: 120_000, data: {},
+    });
+    const unreadable = await click(service);
+    expect(unreadable).toMatchObject({
+      failureKind: 'unreadable', apiHttpStatus: 503,
+      apiResponseReadable: false, retryAfterMs: 120_000,
+    });
+    expect(httpGet).toHaveBeenCalledTimes(1);
+    monotonicNow += 119_999;
+    expect((await click(service)).failureKind).toBe('unreadable');
+    expect(httpGet).toHaveBeenCalledTimes(1);
+    monotonicNow += 1;
+    httpGet.mockResolvedValue({ ok: true, status: 200, data: createQuotedVideoTweetResponse() });
+    expect((await click(service)).success).toBe(true);
+    expect(httpGet).toHaveBeenCalledTimes(2);
+    service.dispose();
+  });
+
+  it('does not defer a denied 403 even when the response carries Retry-After', async () => {
+    const service = new MediaExtractionService();
+    httpGet.mockResolvedValue({
+      ok: false, status: 403, readable: true, retryAfterMs: 120_000, data: {},
+    });
+    expect((await click(service)).failureKind).toBe('denied');
+    expect((await click(service)).failureKind).toBe('denied');
+    expect(httpGet).toHaveBeenCalledTimes(2);
+    service.dispose();
+  });
+
   it('does not let an unavailable response resolved after abort clear failure history', async () => {
     const service = new MediaExtractionService();
     httpGet.mockResolvedValue({ ok: false, status: 503, data: {} });
@@ -541,6 +635,7 @@ describe('MediaExtractionService API circuit', () => {
     expect((await click(service)).success).toBe(true);
     expect(httpGet).toHaveBeenCalledTimes(4);
 
+    service.invalidateApiMetadata();
     httpGet.mockResolvedValue({ ok: false, status: 503, data: {} });
     await click(service);
     expect(httpGet).toHaveBeenCalledTimes(5);
@@ -561,9 +656,11 @@ describe('MediaExtractionService API circuit', () => {
       expect(result.success).toBe(false);
       expect(result.metadata?.error).toBe('API media does not match the clicked media');
     }
+    expect(httpGet).toHaveBeenCalledTimes(1);
+    service.invalidateApiMetadata();
     httpGet.mockResolvedValue({ ok: true, status: 200, data: {} });
     await click(service);
-    expect(httpGet).toHaveBeenCalledTimes(4);
+    expect(httpGet).toHaveBeenCalledTimes(2);
   });
 
   it('clears earlier provider failures when a response is healthy but mismatched', async () => {
@@ -581,6 +678,7 @@ describe('MediaExtractionService API circuit', () => {
     });
     expect((await click(service)).success).toBe(false);
 
+    service.invalidateApiMetadata();
     httpGet.mockResolvedValue({ ok: false, status: 503, data: {} });
     await click(service);
     httpGet.mockResolvedValue({ ok: true, status: 200, data: createQuotedVideoTweetResponse() });
