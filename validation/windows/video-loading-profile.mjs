@@ -43,7 +43,7 @@ function fixtureHtml(tweetId, handle) {
       body{margin:0;padding:20px;background:#000;color:#e7e9ea;font:16px Segoe UI,sans-serif}
       #spacer{height:900px}.player{display:inline-block;position:relative;width:320px;height:180px;margin:8px}
       .player img{display:block;width:320px;height:180px}.player video{display:none}
-    </style></head><body><div id="spacer" aria-hidden="true"></div><main>
+    </style></head><body style="--xeg-fixture-host-state: retained;"><div id="spacer" aria-hidden="true"></div><main>
     <article data-testid="tweet"><a href="/${handle}/status/${tweetId}"><time>Video fixture</time></a>
     <div data-testid="tweetText">Eight deterministic video variants</div>${players}
     </article></main></body></html>`;
@@ -447,6 +447,7 @@ export async function runVideoLoadingProfile({
     await page.keyboard.press('Escape');
     await gallery.waitFor({ state: 'detached' });
     const afterHost = await page.evaluate(() => ({ scrollY, bodyStyle: document.body.getAttribute('style') }));
+    observation.hostRestoration = { before: beforeHost, after: afterHost };
     assert.deepEqual(afterHost, beforeHost, 'Gallery close did not restore host scroll and inline style');
     observation.checks.push('host-scroll-and-style-restored');
     return observation;
