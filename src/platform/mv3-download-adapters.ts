@@ -20,17 +20,17 @@
  * - Promise-based sendMessage is required; the callback pattern (3rd arg)
  *   does not work when the receiver responds asynchronously.
  * - Blob URLs remain owned by the content script until Chrome reports a
- *   terminal download state; ambiguous responses are reconciled by URL.
- * - Timeout is handled exclusively by the SW's waitForDownloadComplete.
- *   The adapter does not impose its own timeout — the SW's 5-minute timeout
- *   is the single point of timeout responsibility.
+ *   terminal download state; ambiguous Blob responses are reconciled by URL.
+ * - Direct URL downloads use the browser's native transfer and a persisted
+ *   request-to-ID relationship. A lost response is reconciled without starting
+ *   another download.
  */
 
 import { BLOB_URL_REVOKE_DELAY_MS, DOWNLOAD_TIMEOUT_MS } from '@constants/performance';
 import type {
   DownloadBlobStatusResponse,
   DownloadBlobUrlRequestMessage,
-  DownloadLifecycleResponse,
+  DownloadDirectStatusResponse,
   DownloadRequestMessage,
   ExtensionMessageResponse,
 } from '@extension/extension-message-types';
@@ -53,23 +53,12 @@ function unwrapResponse(response: unknown): string | undefined {
   return typeof r.error === 'string' && r.error.length > 0 ? r.error : 'Download failed';
 }
 
-function isNonTerminalDownloadResponse(
-  response: ExtensionMessageResponse,
-  requestId: string
-): boolean {
-  if (!response.data || typeof response.data !== 'object') return false;
-  const data = response.data as Partial<DownloadLifecycleResponse>;
-  return data.requestId === requestId && data.terminal === false;
-}
-
-type DownloadMessage = DownloadRequestMessage | DownloadBlobUrlRequestMessage;
-
-function sendCancelRequest(requestId: string): void {
+function sendCancelRequest(requestId: string, url?: string): void {
   try {
     void browserApi.runtime
       .sendMessage({
         type: 'DOWNLOAD_CANCEL_REQUEST',
-        payload: { requestId },
+        payload: { requestId, ...(url === undefined ? {} : { url }) },
       })
       .catch(() => undefined);
   } catch {
@@ -78,9 +67,9 @@ function sendCancelRequest(requestId: string): void {
 }
 
 export class MV3DownloadAdapter implements DownloadAdapter {
-  /** MV3 background SW cannot download twimg.com URLs directly — needs content-script fetch */
+  /** Browser-managed URL downloads do not materialize a full response in the page. */
   needsBlobFallback(): boolean {
-    return true;
+    return false;
   }
 
   async download(
@@ -89,13 +78,7 @@ export class MV3DownloadAdapter implements DownloadAdapter {
     headers?: Record<string, string>,
     signal?: AbortSignal
   ): Promise<void> {
-    await this.sendDownloadRequest(
-      {
-        type: 'DOWNLOAD_REQUEST',
-        payload: { url, filename, ...(headers ? { headers } : {}) },
-      },
-      signal
-    );
+    await this.sendDirectDownloadRequest(url, filename, headers, signal);
   }
 
   async downloadBlob(
@@ -237,18 +220,23 @@ export class MV3DownloadAdapter implements DownloadAdapter {
     if (error) throw new Error(error);
   }
 
-  private async sendDownloadRequest(message: DownloadMessage, signal?: AbortSignal): Promise<void> {
+  private async sendDirectDownloadRequest(
+    url: string,
+    filename: string,
+    headers?: Record<string, string>,
+    signal?: AbortSignal
+  ): Promise<void> {
     if (signal?.aborted) {
       throw getUserCancelledAbortErrorFromSignal(signal);
     }
 
     const requestId = crypto.randomUUID();
-    const request = {
-      ...message,
-      payload: { ...message.payload, requestId },
-    } as DownloadMessage;
+    const request: DownloadRequestMessage = {
+      type: 'DOWNLOAD_REQUEST',
+      payload: { url, filename, requestId, mode: 'direct', ...(headers ? { headers } : {}) },
+    };
 
-    let rejectAbort: ((reason: unknown) => void) | null = null;
+    let rejectAbort: ((reason: unknown) => void) | undefined;
     let retainAbortListener = false;
     let handoffTimer: ReturnType<typeof setTimeout> | null = null;
     const cleanupAbortListener = (): void => {
@@ -264,31 +252,112 @@ export class MV3DownloadAdapter implements DownloadAdapter {
         })
       : null;
     const onAbort = (): void => {
-      sendCancelRequest(requestId);
+      sendCancelRequest(requestId, url);
       cleanupAbortListener();
       rejectAbort?.(getUserCancelledAbortErrorFromSignal(signal));
     };
 
     signal?.addEventListener('abort', onAbort, { once: true });
     try {
-      const responsePromise = browserApi.runtime
-        .sendMessage(request)
-        .then((response) => response as ExtensionMessageResponse);
-      const response = await (abortPromise
-        ? Promise.race([responsePromise, abortPromise])
-        : responsePromise);
-      const error = unwrapResponse(response);
-      if (error) {
-        // A background failure can mean that Chrome still has an active
-        // download after the response promise settles. Keep the caller's
-        // cancellation signal connected for a bounded handoff window so a
-        // later user cancellation can still address the original request ID.
-        if (!signal?.aborted && isNonTerminalDownloadResponse(response, requestId)) {
-          retainAbortListener = true;
-          handoffTimer = setTimeout(cleanupAbortListener, DOWNLOAD_TIMEOUT_MS);
+      const deadline = performance.now() + DOWNLOAD_TIMEOUT_MS;
+      const responsePromise = browserApi.runtime.sendMessage(request).then(
+        (response: unknown) => ({ responded: true as const, response }),
+        () => ({ responded: true as const, response: undefined })
+      );
+      const inspect = async (): Promise<DownloadDirectStatusResponse | undefined> => {
+        try {
+          const response: unknown = await browserApi.runtime.sendMessage({
+            type: 'DOWNLOAD_DIRECT_STATUS_REQUEST',
+            payload: { requestId, url, ...(signal?.aborted ? { cancelRequested: true } : {}) },
+          });
+          if (
+            !response ||
+            typeof response !== 'object' ||
+            !('success' in response) ||
+            response.success !== true ||
+            !('data' in response) ||
+            !response.data ||
+            typeof response.data !== 'object'
+          )
+            return undefined;
+          const data = response.data as Partial<DownloadDirectStatusResponse>;
+          if (
+            data.requestId !== requestId ||
+            !['never-started', 'active', 'complete', 'interrupted', 'unknown'].includes(
+              data.status ?? ''
+            )
+          ) {
+            return undefined;
+          }
+          return data as DownloadDirectStatusResponse;
+        } catch {
+          return undefined;
         }
-        throw new Error(error);
+      };
+      let lastError = 'Browser download state is unknown';
+      let responsePending = true;
+      let activeObserved = false;
+      for (let attempt = 0; attempt < 3 || activeObserved; attempt += 1) {
+        const remainingMs = deadline - performance.now();
+        if (remainingMs <= 0) break;
+        const delayMs = Math.min(attempt === 0 ? 1_500 : attempt < 3 ? 500 : 5_000, remainingMs);
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const tick = new Promise<{ responded: false; response: undefined }>((resolve) => {
+          timer = setTimeout(() => resolve({ responded: false, response: undefined }), delayMs);
+        });
+        let reply: { responded: boolean; response: unknown };
+        try {
+          reply = await (abortPromise
+            ? Promise.race([...(responsePending ? [responsePromise] : []), tick, abortPromise])
+            : Promise.race([...(responsePending ? [responsePromise] : []), tick]));
+        } finally {
+          if (timer !== undefined) clearTimeout(timer);
+        }
+        if (reply.responded) {
+          responsePending = false;
+          const message = reply.response as ExtensionMessageResponse | undefined;
+          const data = message?.data as Partial<DownloadDirectStatusResponse> | undefined;
+          if (
+            data?.requestId === requestId &&
+            data.status === 'complete' &&
+            message?.success === true
+          )
+            return;
+          if (data?.requestId === requestId && data.status === 'active') activeObserved = true;
+          if (message?.success === false && typeof message.error === 'string')
+            lastError = message.error;
+          if (
+            data?.requestId === requestId &&
+            (data.status === 'never-started' || data.status === 'interrupted')
+          ) {
+            throw new Error(lastError);
+          }
+        }
+        const statusRemainingMs = deadline - performance.now();
+        if (statusRemainingMs <= 0) break;
+        let statusTimer: ReturnType<typeof setTimeout> | undefined;
+        const statusTimeout = new Promise<undefined>((resolve) => {
+          statusTimer = setTimeout(() => resolve(undefined), Math.min(1_000, statusRemainingMs));
+        });
+        let status: DownloadDirectStatusResponse | undefined;
+        try {
+          status = await (abortPromise
+            ? Promise.race([inspect(), statusTimeout, abortPromise])
+            : Promise.race([inspect(), statusTimeout]));
+        } finally {
+          if (statusTimer !== undefined) clearTimeout(statusTimer);
+        }
+        if (status?.status === 'complete') return;
+        if (status?.status === 'never-started') throw new Error(lastError);
+        if (status?.status === 'interrupted') throw new Error('Browser download was interrupted');
+        if (status?.status === 'active') activeObserved = true;
       }
+      // The worker may have lost its reply while the browser still owns the
+      // transfer. Ask it to cancel the original ID before reporting uncertainty.
+      if (activeObserved) sendCancelRequest(requestId, url);
+      retainAbortListener = !signal?.aborted;
+      if (retainAbortListener) handoffTimer = setTimeout(cleanupAbortListener, DOWNLOAD_TIMEOUT_MS);
+      throw new Error(lastError);
     } finally {
       if (!retainAbortListener) cleanupAbortListener();
     }

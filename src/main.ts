@@ -349,6 +349,8 @@ export function isAllowedStartUrl(value: string): boolean {
 
 function reconcileApplication(allowed: boolean): void {
   const intent = ++navigationIntent;
+  const mediaService = getMediaService();
+  if (mediaService.isInitialized()) mediaService.refreshApiMetadata();
 
   if (allowed) {
     if (lifecycleState.started && !lifecycleState.cleanupPromise) return;

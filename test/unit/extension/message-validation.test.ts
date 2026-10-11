@@ -3,6 +3,30 @@ import { describe, expect, it } from 'vitest';
 import { isValidIncomingMessage } from '../../../src/extension/message-validation';
 
 describe('extension message validation', () => {
+  it('validates direct request, status and cancellation URLs', () => {
+    const url = 'https://pbs.twimg.com/media/example.jpg';
+    expect(isValidIncomingMessage({
+      type: 'DOWNLOAD_REQUEST',
+      payload: { url, filename: 'example.jpg', requestId: 'direct-1', mode: 'direct' },
+    })).toBe(true);
+    expect(isValidIncomingMessage({
+      type: 'DOWNLOAD_DIRECT_STATUS_REQUEST',
+      payload: { requestId: 'direct-1', url, cancelRequested: true },
+    })).toBe(true);
+    expect(isValidIncomingMessage({
+      type: 'DOWNLOAD_CANCEL_REQUEST',
+      payload: { requestId: 'direct-1', url },
+    })).toBe(true);
+    expect(isValidIncomingMessage({
+      type: 'DOWNLOAD_DIRECT_STATUS_REQUEST',
+      payload: { requestId: 'direct-1', url: 'https://attacker.example/file' },
+    })).toBe(false);
+    expect(isValidIncomingMessage({
+      type: 'DOWNLOAD_CANCEL_REQUEST',
+      payload: { requestId: 'direct-1', url: 'https://attacker.example/file' },
+    })).toBe(false);
+  });
+
   it('accepts a whitelisted URL download message', () => {
     expect(
       isValidIncomingMessage({

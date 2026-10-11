@@ -17,11 +17,21 @@ export interface RetryOptions {
   readonly shouldRetry?: (error: unknown) => boolean;
   /** Optional random function for jitter (inject for deterministic tests) */
   readonly random?: () => number;
+  /** Elapsed interactive budget, including operation time and retry waits. */
+  readonly maxElapsedMs?: number;
+  /** Monotonic elapsed clock; injected only for deterministic tests. */
+  readonly now?: () => number;
+  readonly retryAfterMs?: (error: unknown) => number | undefined;
 }
 
 export type RetryResult<T> =
   | { readonly success: true; readonly data: T; readonly attempts: number }
-  | { readonly success: false; readonly error: unknown; readonly attempts: number };
+  | {
+      readonly success: false;
+      readonly error: unknown;
+      readonly attempts: number;
+      readonly deferredForMs?: number;
+    };
 
 const DEFAULTS = {
   maxAttempts: 3,
@@ -50,7 +60,7 @@ export function calcBackoff(
 }
 
 export async function withRetry<T>(
-  operation: () => Promise<T>,
+  operation: (remainingMs: number | undefined) => Promise<T>,
   options: RetryOptions = {}
 ): Promise<RetryResult<T>> {
   const {
@@ -61,11 +71,24 @@ export async function withRetry<T>(
     onRetry,
     shouldRetry,
     random,
+    maxElapsedMs,
+    now = () => performance.now(),
+    retryAfterMs,
   } = options;
 
   let lastError: unknown;
+  const startedAt = now();
+  const boundedAttempts = Number.isFinite(maxAttempts)
+    ? Math.max(1, Math.min(5, Math.floor(maxAttempts)))
+    : DEFAULTS.maxAttempts;
+  const boundedBudget =
+    maxElapsedMs === undefined
+      ? undefined
+      : Number.isFinite(maxElapsedMs)
+        ? Math.max(0, maxElapsedMs)
+        : 0;
 
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+  for (let attempt = 0; attempt < boundedAttempts; attempt++) {
     if (signal?.aborted) {
       return {
         success: false,
@@ -74,8 +97,14 @@ export async function withRetry<T>(
       };
     }
 
+    const remainingBeforeAttempt =
+      boundedBudget === undefined ? undefined : Math.max(0, boundedBudget - (now() - startedAt));
+    if (attempt > 0 && remainingBeforeAttempt === 0) {
+      return { success: false, error: lastError, attempts: attempt };
+    }
+
     try {
-      const data = await operation();
+      const data = await operation(remainingBeforeAttempt);
       return { success: true, data, attempts: attempt + 1 };
     } catch (error) {
       lastError = error;
@@ -88,9 +117,27 @@ export async function withRetry<T>(
         return { success: false, error, attempts: attempt + 1 };
       }
 
-      if (attempt + 1 >= maxAttempts) break;
+      if (attempt + 1 >= boundedAttempts) break;
 
-      const delayMs = calcBackoff(attempt, baseDelayMs, maxDelayMs, random);
+      const backoffMs = calcBackoff(attempt, baseDelayMs, maxDelayMs, random);
+      const guidedMs = retryAfterMs?.(error);
+      const usableGuidance =
+        typeof guidedMs === 'number' && Number.isFinite(guidedMs) && guidedMs >= 0
+          ? guidedMs
+          : undefined;
+      const delayMs = Math.max(backoffMs, usableGuidance ?? 0);
+      const remainingMs =
+        boundedBudget === undefined ? undefined : boundedBudget - (now() - startedAt);
+      if (remainingMs !== undefined && delayMs > remainingMs) {
+        return {
+          success: false,
+          error,
+          attempts: attempt + 1,
+          ...(usableGuidance !== undefined && usableGuidance > remainingMs
+            ? { deferredForMs: usableGuidance }
+            : {}),
+        };
+      }
       onRetry?.(attempt + 1, error, delayMs);
 
       try {
@@ -104,5 +151,5 @@ export async function withRetry<T>(
     }
   }
 
-  return { success: false, error: lastError, attempts: maxAttempts };
+  return { success: false, error: lastError, attempts: boundedAttempts };
 }

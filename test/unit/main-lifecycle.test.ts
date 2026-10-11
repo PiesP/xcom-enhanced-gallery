@@ -6,6 +6,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const state = vi.hoisted(() => ({
   initializeCoreBaseServices: vi.fn(),
   mediaDestroy: vi.fn(),
+  mediaRefresh: vi.fn(),
+  navigationCallback: null as ((url: string) => void) | null,
   settingsPrepareForRestart: vi.fn(),
   themeDestroy: vi.fn(),
 }));
@@ -17,7 +19,11 @@ vi.mock('@bootstrap/gallery-init', () => ({
 }));
 
 vi.mock('@shared/services/media-service', () => ({
-  getMediaService: () => ({ destroy: state.mediaDestroy, isInitialized: () => true }),
+  getMediaService: () => ({
+    destroy: state.mediaDestroy,
+    isInitialized: () => true,
+    refreshApiMetadata: state.mediaRefresh,
+  }),
 }));
 
 vi.mock('@shared/services/theme-service', () => ({
@@ -42,7 +48,10 @@ vi.mock('@shared/error/error-handler', () => ({
 vi.mock('@shared/container/settings-registry', () => ({ clearSettings: vi.fn() }));
 vi.mock('@shared/devtools/dev-namespace', () => ({ mutateDevNamespace: vi.fn() }));
 vi.mock('@shared/utils/url/history-navigation', () => ({
-  installHistoryNavigationFallback: vi.fn(),
+  installHistoryNavigationFallback: vi.fn((callback: (url: string) => void) => {
+    state.navigationCallback = callback;
+    return vi.fn();
+  }),
 }));
 vi.mock('@shared/error/app-error-reporter', () => ({
   bootstrapErrorReporter: { error: vi.fn() },
@@ -55,6 +64,7 @@ describe('application media-service lifecycle', () => {
   beforeEach(() => {
     state.initializeCoreBaseServices.mockClear();
     state.mediaDestroy.mockClear();
+    state.mediaRefresh.mockClear();
     state.settingsPrepareForRestart.mockClear();
     state.themeDestroy.mockClear();
   });
@@ -69,6 +79,15 @@ describe('application media-service lifecycle', () => {
 
     await startApplication();
     expect(state.initializeCoreBaseServices).toHaveBeenCalledTimes(2);
+    await cleanup();
+  });
+
+  it('invalidates API metadata on every accepted SPA route signal, including the same URL', async () => {
+    await startApplication();
+    expect(state.navigationCallback).toBeTypeOf('function');
+    state.navigationCallback?.('https://x.com/user/status/123');
+    state.navigationCallback?.('https://x.com/user/status/123');
+    expect(state.mediaRefresh).toHaveBeenCalledTimes(2);
     await cleanup();
   });
 });

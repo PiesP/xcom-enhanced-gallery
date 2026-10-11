@@ -32,6 +32,69 @@ afterEach(() => {
 });
 
 describe('GMHttpRequestAdapter response bounds', () => {
+  it('allowlists status, readability, and Retry-After on an unreadable error', () => {
+    let gmDetails: GMXMLHttpRequestDetails | undefined;
+    xmlHttpRequest.mockImplementation((details: GMXMLHttpRequestDetails) => {
+      gmDetails = details;
+      return { abort: vi.fn() };
+    });
+    const onerror = vi.fn();
+    new GMHttpRequestAdapter().request({
+      url: 'https://x.com/i/api/graphql/fixture/TweetResultByRestId',
+      onerror,
+    });
+    gmDetails?.onerror?.({
+      finalUrl: 'https://x.com/i/api/graphql/fixture/TweetResultByRestId',
+      readyState: 4,
+      status: 429,
+      statusText: 'Too Many Requests',
+      responseHeaders: 'Retry-After: 4\r\nAuthorization: secret',
+      response: null,
+      responseText: 'private body',
+      context: undefined,
+    });
+    expect(onerror).toHaveBeenCalledWith(expect.objectContaining({
+      status: 429,
+      readable: false,
+      retryAfterMs: 4_000,
+      errorCategory: 'unreadable',
+      responseHeaders: '',
+    }));
+  });
+
+  it('does not report malformed JSON as a readable success', () => {
+    let gmDetails: GMXMLHttpRequestDetails | undefined;
+    xmlHttpRequest.mockImplementation((details: GMXMLHttpRequestDetails) => {
+      gmDetails = details;
+      return { abort: vi.fn() };
+    });
+    const onload = vi.fn();
+    const onerror = vi.fn();
+    new GMHttpRequestAdapter().request({
+      url: 'https://x.com/i/api/graphql/fixture/TweetResultByRestId',
+      responseType: 'json',
+      onload,
+      onerror,
+    });
+    gmDetails?.onload?.({
+      finalUrl: 'https://x.com/i/api/graphql/fixture/TweetResultByRestId',
+      readyState: 4,
+      status: 429,
+      statusText: 'Too Many Requests',
+      responseHeaders: 'Retry-After: 2',
+      response: null,
+      responseText: '{invalid',
+      context: undefined,
+    });
+    expect(onload).not.toHaveBeenCalled();
+    expect(onerror).toHaveBeenCalledWith(expect.objectContaining({
+      status: 429,
+      readable: false,
+      retryAfterMs: 2_000,
+      errorCategory: 'unreadable',
+    }));
+  });
+
   it('keeps an ambiguous synchronous throw unsettled until a late real terminal callback', () => {
     const onerror = vi.fn();
     const onsettled = vi.fn();
@@ -136,7 +199,11 @@ describe('GMHttpRequestAdapter response bounds', () => {
       total: 0,
     };
     gmDetails?.onprogress?.(event);
-    expect(onerror).toHaveBeenCalledWith(expect.objectContaining({ statusText: 'RESOURCE_LIMIT' }));
+    expect(onerror).toHaveBeenCalledWith(expect.objectContaining({
+      status: 200,
+      statusText: 'RESOURCE_LIMIT',
+      errorCategory: 'resource_limit',
+    }));
     expect(abort).toHaveBeenCalledOnce();
     expect(onsettled).not.toHaveBeenCalled();
     gmDetails?.onabort?.(event);
@@ -222,7 +289,14 @@ describe('GMHttpRequestAdapter response bounds', () => {
       response: new ArrayBuffer(4),
     });
 
-    expect(onprogress).toHaveBeenCalledWith(progress);
+    expect(onprogress).toHaveBeenCalledWith(expect.objectContaining({
+      status: 200,
+      loaded: 4,
+      total: 4,
+      responseHeaders: '',
+      responseText: '',
+      finalUrl: '',
+    }));
     expect(onload).toHaveBeenCalledOnce();
     expect(onerror).not.toHaveBeenCalled();
     expect(abort).not.toHaveBeenCalled();

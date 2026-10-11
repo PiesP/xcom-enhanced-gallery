@@ -23,7 +23,7 @@ import {
 } from '@shared/external/zip/streaming-zip-writer';
 import { fetchOwnedArrayBufferWithRetry } from '@shared/network/retry-fetch';
 import type { DownloadOptions, OrchestratorItem, ZipResult } from '@shared/services/download/types';
-import { reportProgress } from '@shared/services/download/types';
+import { getZipInputKind, reportProgress } from '@shared/services/download/types';
 import {
   combineLiveByteLeases,
   DownloadResourceLimitError,
@@ -222,7 +222,8 @@ export async function downloadAsZip(
         // Admit before encodeUtf8/reserveEntry; string lengths are already bounded by the planner.
         overhead = liveBudget.reserve(256 + filename.length * 8);
         blobOverhead = liveBudget.reserve(256 + filename.length * 8);
-        const usesBlob = !!(item.blob || item.getBlob);
+        const inputKind = getZipInputKind(item);
+        const usesBlob = inputKind !== 'direct-url';
         // Chunks + response copy + final archive copy (and Blob-to-buffer copy for providers).
         const liveEntryCap = Math.min(
           maxEntryBytes,
@@ -243,6 +244,12 @@ export async function downloadAsZip(
           throw new ZipResourceLimitError(
             `Bulk ZIP limit exceeded: no data capacity remains for ${filename}`
           );
+        options.onEntryAdmission?.({
+          index,
+          inputKind,
+          maxResponseBytes: remainingEntryBytes,
+          ...(knownSize !== undefined ? { knownSize } : {}),
+        });
         futureBlob = liveBudget.reserve(remainingEntryBytes);
         let data: Uint8Array;
         if (usesBlob) {
@@ -260,13 +267,9 @@ export async function downloadAsZip(
             }
           } catch (error) {
             throwIfAborted(abortSignal);
-            // A size/memory rejection must never start another whole-body fallback.
-            if (
-              isHttpResponseSizeLimitError(error) ||
-              error instanceof DownloadResourceLimitError ||
-              error instanceof DownloadSourceUnavailableError
-            )
-              throw error;
+            // Only a resolved cache/provider miss permits URL fallback. A
+            // rejected request may already be denied, rate-limited or active.
+            throw error;
           }
           if (blob) {
             throwIfAborted(abortSignal);

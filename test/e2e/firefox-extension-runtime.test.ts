@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import assert from 'node:assert/strict';
+import { webcrypto } from 'node:crypto';
 import { STATUS_TILE_DOM } from '../fixtures/issue-217-dom.ts';
 import { execFileSync } from 'node:child_process';
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -28,7 +29,7 @@ type DownloadChangedListener = (delta: {
 
 type MessageListener = (
   message: unknown,
-  sender: { id: string },
+  sender: { id: string; tab?: { id: number }; url?: string },
   sendResponse: (response?: unknown) => void
 ) => boolean | undefined;
 
@@ -46,7 +47,7 @@ type GeneratedBackgroundOptions = {
     saveAs?: boolean;
     url: string;
   }) => Promise<number>;
-  search: (query: { id: number }) => Promise<Array<{ error?: string; id: number; state: DownloadState }>>;
+  search: (query: { id: number }) => Promise<Array<{ error?: string; id: number; state: DownloadState; url?: string }>>;
   storage: Map<string, unknown>;
 };
 
@@ -57,7 +58,10 @@ type GeneratedBackgroundHarness = {
     id: string;
     options: { iconUrl: string; imageUrl?: string; message: string; title: string; type: string };
   }>;
-  sendMessage: (message: unknown) => Promise<unknown>;
+  sendMessage: (
+    message: unknown,
+    sender?: { id: string; tab?: { id: number }; url?: string }
+  ) => Promise<unknown>;
 };
 
 function copyStorageValue<T>(value: T): T {
@@ -135,10 +139,12 @@ function createGeneratedBackgroundHarness(
 
   const context = createContext({
     Error,
+    TextEncoder,
     URL,
     browser,
     clearTimeout,
     console,
+    crypto: webcrypto,
     setTimeout,
     structuredClone,
   });
@@ -153,7 +159,7 @@ function createGeneratedBackgroundHarness(
       for (const listener of [...downloadChangedListeners]) listener(delta);
     },
     notificationCalls,
-    sendMessage: (message) =>
+    sendMessage: (message, sender = { id: 'xcom-enhanced-gallery@piesp.dev' }) =>
       new Promise((resolve, reject) => {
         let settled = false;
         const timeoutId = setTimeout(() => {
@@ -167,7 +173,7 @@ function createGeneratedBackgroundHarness(
         };
         const keepChannelOpen = messageListener?.(
           message,
-          { id: 'xcom-enhanced-gallery@piesp.dev' },
+          sender,
           sendResponse
         );
         if (keepChannelOpen !== true && !settled) sendResponse(undefined);
@@ -311,6 +317,43 @@ async function startFixtureServer(): Promise<number> {
   if (!address || typeof address === 'string') throw new Error('Fixture server has no TCP port');
   return address.port;
 }
+
+test('generated Firefox background keeps a direct URL download bound to its source tab', async () => {
+  const storage = new Map<string, unknown>();
+  const url = 'https://pbs.twimg.com/media/firefox-original.jpg?format=jpg&name=orig';
+  let state: DownloadState = 'in_progress';
+  const harness = createGeneratedBackgroundHarness({
+    storage,
+    download: async () => 931,
+    cancel: async () => { state = 'interrupted'; },
+    search: async ({ id }) => [{ id, url, state }],
+  });
+  const requestId = 'generated-direct-original';
+  const owner = {
+    id: 'xcom-enhanced-gallery@piesp.dev',
+    tab: { id: 11 },
+    url: 'https://x.com/author/status/123',
+  };
+  const otherTab = { ...owner, tab: { id: 12 } };
+  const request = harness.sendMessage({
+    type: 'DOWNLOAD_REQUEST',
+    payload: { url, filename: 'original.jpg', requestId, mode: 'direct' },
+  }, owner);
+  await waitForCondition(
+    () => readStoredDownload(storage, requestId)?.downloadId === 931,
+    'Generated background did not bind its native download ID'
+  );
+  assert.deepEqual(await harness.sendMessage({
+    type: 'DOWNLOAD_DIRECT_STATUS_REQUEST', payload: { requestId, url },
+  }, otherTab), { success: true, data: { requestId, status: 'unknown' } });
+  state = 'complete';
+  harness.emitDownloadChanged({ id: 931, state: { current: 'complete' } });
+  assert.deepEqual(await request, {
+    success: true, data: { requestId, status: 'complete' },
+  });
+  assert.equal(readStoredDownload(storage, requestId)?.downloadId, 931);
+  assert.equal(JSON.stringify(storage.get(DOWNLOAD_TRACKING_STORAGE_KEY)).includes(url), false);
+});
 
 test('generated Firefox background applies one persisted pre-ID cancellation after allocation', async () => {
   const storage = new Map<string, unknown>();

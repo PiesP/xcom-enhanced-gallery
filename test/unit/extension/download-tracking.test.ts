@@ -78,6 +78,73 @@ function createStorage(): {
 }
 
 describe('DownloadTrackingStore', () => {
+  const urlHash = 'a'.repeat(64);
+
+  it('keeps a direct owner and terminal result across worker restart without storing a media URL', async () => {
+    const worker = createStorage();
+    const first = new DownloadTrackingStore(worker.storage);
+    expect(await first.registerDirectRequest('direct-1', 7, urlHash)).toBe('new');
+    expect(await first.bindDirectDownload('direct-1', 42, 7, urlHash)).toBe(false);
+    first.finishDirectAllocation('direct-1');
+    await first.markDirectTerminal('direct-1', 'complete');
+
+    const restarted = new DownloadTrackingStore(worker.storage);
+    await restarted.ready();
+    expect(restarted.get('direct-1')).toMatchObject({
+      route: 'direct', ownerTabId: 7, urlHash, downloadId: 42,
+      terminalState: 'complete', cancellationRequested: false,
+    });
+    expect(JSON.stringify(worker.values)).not.toContain('pbs.twimg.com');
+    expect(await restarted.registerDirectRequest('direct-1', 7, urlHash)).toBe('existing');
+    expect(await restarted.registerDirectRequest('direct-1', 8, urlHash)).toBe('wrong-owner');
+    expect(await restarted.registerDirectRequest('direct-1', 7, 'b'.repeat(64))).toBe('wrong-owner');
+  });
+
+  it('honors same-owner cancellation before an ID without allowing a second dispatch', async () => {
+    const worker = createStorage();
+    const store = new DownloadTrackingStore(worker.storage);
+    expect(await store.requestDirectCancellation('direct-2', 3, urlHash)).toBe(true);
+    expect(await store.registerDirectRequest('direct-2', 3, urlHash)).toBe('cancelled');
+    expect(await store.requestDirectCancellation('direct-2', 4, urlHash)).toBe(false);
+    expect(await store.bindDirectDownload('direct-2', 55, 3, urlHash)).toBe(true);
+    expect(store.get('direct-2')?.ownerTabId).toBe(3);
+  });
+
+  it('expires direct terminal tombstones but keeps an active assigned download', async () => {
+    const worker = createStorage();
+    let now = 1_000;
+    const store = new DownloadTrackingStore(worker.storage, undefined, () => now);
+    await store.registerDirectRequest('direct-terminal', 1, urlHash);
+    await store.markDirectTerminal('direct-terminal', 'never-started');
+    await store.registerDirectRequest('direct-active', 1, 'b'.repeat(64));
+    await store.bindDirectDownload('direct-active', 72, 1, 'b'.repeat(64));
+
+    now += 10 * 60_000;
+
+    const restarted = new DownloadTrackingStore(worker.storage, undefined, () => now);
+    await restarted.ready();
+    expect(restarted.get('direct-terminal')).toBeUndefined();
+    expect(restarted.get('direct-active')?.downloadId).toBe(72);
+  });
+
+  it('preserves a live delayed direct allocation and its cancellation past the pre-ID TTL', async () => {
+    const worker = createStorage();
+    let now = 5_000;
+    const store = new DownloadTrackingStore(worker.storage, undefined, () => now);
+    expect(await store.registerDirectRequest('slow', 9, urlHash)).toBe('new');
+    now += 10 * 60_000 + 1;
+    // A separate operation must not prune the live native allocation.
+    expect(await store.registerDirectRequest('other', 9, 'b'.repeat(64))).toBe('new');
+    expect(await store.requestDirectCancellation('slow', 9, urlHash)).toBe(true);
+    expect(await store.bindDirectDownload('slow', 77, 9, urlHash)).toBe(true);
+    store.finishDirectAllocation('slow');
+    expect(store.get('slow')).toMatchObject({
+      route: 'direct', ownerTabId: 9, urlHash, downloadId: 77, cancellationRequested: true,
+    });
+    expect(await store.bindDirectDownload('missing', 78, 9, urlHash)).toBeUndefined();
+    expect(store.get('missing')).toBeUndefined();
+  });
+
   it('restores the request-to-download relationship in a new worker instance', async () => {
     const firstWorker = createStorage();
     const firstStore = new DownloadTrackingStore(firstWorker.storage);

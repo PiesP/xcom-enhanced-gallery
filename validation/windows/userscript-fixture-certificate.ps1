@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 PiesP
 
+param([switch]$IncludeVideo)
+
 $ErrorActionPreference = 'Stop'
 $key = $null
 $rsa = $null
@@ -33,6 +35,7 @@ try {
         [System.Security.Cryptography.RSASignaturePadding]::Pkcs1)
     $san = [System.Security.Cryptography.X509Certificates.SubjectAlternativeNameBuilder]::new()
     $san.AddDnsName('pbs.twimg.com')
+    if ($IncludeVideo) { $san.AddDnsName('video.twimg.com') }
     $request.CertificateExtensions.Add($san.Build())
     $request.CertificateExtensions.Add(
         [System.Security.Cryptography.X509Certificates.X509BasicConstraintsExtension]::new(

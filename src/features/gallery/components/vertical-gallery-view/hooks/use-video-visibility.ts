@@ -12,8 +12,13 @@ interface UseVideoVisibilityOptions {
   readonly container: () => HTMLElement | null;
   readonly video: () => HTMLVideoElement | null;
   readonly isVideo: Accessor<boolean>;
+  readonly mediaIdentity: Accessor<object>;
+  readonly admit: () => void;
   readonly setMuted?: (video: HTMLVideoElement, nextMuted: boolean) => void;
 }
+
+/** One viewport of advance admission; source attachment enforces the policy. */
+export const VIDEO_ADMISSION_ROOT_MARGIN = '100% 0px';
 
 interface CreateVideoVisibilityControllerOptions {
   readonly video: HTMLVideoElement;
@@ -101,26 +106,39 @@ function createVideoVisibilityController(
 }
 
 export function useVideoVisibility(options: UseVideoVisibilityOptions): void {
-  const { container, video, isVideo, setMuted } = options;
+  const { container, video, isVideo, mediaIdentity, admit, setMuted } = options;
 
   createEffect(() => {
     if (!isVideo()) return;
 
     const containerEl = container();
     const videoEl = video();
+    const identity = mediaIdentity();
     if (!containerEl || !videoEl) return;
 
     const controller = createVideoVisibilityController(
       typeof setMuted === 'function' ? { video: videoEl, setMuted } : { video: videoEl }
     );
 
-    const unsubscribeObserver = SharedObserver.observe(containerEl, controller.handleEntry, {
-      threshold: 0,
-      rootMargin: '0px',
-    });
+    const unsubscribeVisibility = SharedObserver.observe(
+      containerEl,
+      (entry) => {
+        if (containerEl.isConnected && mediaIdentity() === identity) controller.handleEntry(entry);
+      },
+      { threshold: 0, rootMargin: '0px' }
+    );
+    const unsubscribeAdmission = SharedObserver.observe(
+      containerEl,
+      (entry) => {
+        if (entry.isIntersecting && containerEl.isConnected && mediaIdentity() === identity)
+          admit();
+      },
+      { threshold: 0, rootMargin: VIDEO_ADMISSION_ROOT_MARGIN }
+    );
 
     onCleanup(() => {
-      unsubscribeObserver();
+      unsubscribeAdmission();
+      unsubscribeVisibility();
     });
   });
 }

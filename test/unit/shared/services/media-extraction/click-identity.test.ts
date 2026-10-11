@@ -6,7 +6,23 @@ import type { TweetInfo } from '@shared/types/media.types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getTweetMedias = vi.hoisted(() => vi.fn());
-vi.mock('@shared/services/media/twitter-api-client', () => ({ getTweetMedias }));
+vi.mock('@shared/services/media/twitter-api-client', () => {
+  class TwitterAPIRequestError extends Error {
+    readonly category = 'transport';
+  }
+  return {
+    getTweetMedias,
+    TwitterAPIRequestError,
+    TweetMetadataRequestError: class extends TwitterAPIRequestError {},
+    TweetMetadataReuse: class {
+      async get(...args: Parameters<typeof getTweetMedias>) {
+        return { entries: await getTweetMedias(...args), physicalRequestToken: {} };
+      }
+      invalidate() {}
+      dispose() {}
+    },
+  };
+});
 import { TwitterAPIExtractor } from '@shared/services/media-extraction/extractors/twitter-api-extractor';
 
 const owner: TweetInfo = { tweetId: '222', username: 'author', tweetUrl: 'https://x.com/author/status/222', extractionMethod: 'test', confidence: 1 };

@@ -5,11 +5,22 @@ import { DOWNLOAD_PRE_ID_CANCELLATION_TTL_MS } from '@constants/performance';
 import type { StorageAdapter } from '@platform/types';
 
 const DOWNLOAD_TRACKING_STORAGE_KEY = 'xeg.download-tracking.v1';
+const DIRECT_TERMINAL_TTL_MS = 10 * 60_000;
+const DIRECT_UNASSIGNED_TTL_MS = 10 * 60_000;
+const MAX_DIRECT_RECORDS = 200;
+
+export type DirectTerminalState = 'never-started' | 'complete' | 'interrupted';
 
 export interface PersistedDownloadRecord {
   readonly downloadId?: number;
   readonly cancellationRequested: boolean;
   readonly cancellationRequestedAt?: number;
+  readonly route?: 'direct';
+  readonly ownerTabId?: number;
+  readonly urlHash?: string;
+  readonly createdAt?: number;
+  readonly terminalState?: DirectTerminalState;
+  readonly terminalAt?: number;
 }
 
 type StorageErrorHandler = (operation: 'read' | 'write', error: unknown) => void;
@@ -31,7 +42,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function parseStoredRecords(
   value: unknown,
-  nowMs: number
+  nowMs: number,
+  liveDirectAllocations: ReadonlySet<string>
 ): { records: Map<string, PersistedDownloadRecord>; needsPersistence: boolean } {
   const records = new Map<string, PersistedDownloadRecord>();
   let needsPersistence = false;
@@ -49,6 +61,53 @@ function parseStoredRecords(
       continue;
     }
 
+    const route = rawRecord.route;
+    if (route !== undefined && route !== 'direct') continue;
+    if (route === 'direct') {
+      if (
+        typeof rawRecord.ownerTabId !== 'number' ||
+        !Number.isSafeInteger(rawRecord.ownerTabId) ||
+        rawRecord.ownerTabId < 0 ||
+        typeof rawRecord.urlHash !== 'string' ||
+        !/^[a-f0-9]{64}$/.test(rawRecord.urlHash) ||
+        typeof rawRecord.createdAt !== 'number' ||
+        !Number.isSafeInteger(rawRecord.createdAt) ||
+        rawRecord.createdAt < 0
+      ) {
+        needsPersistence = true;
+        continue;
+      }
+      const terminalState = rawRecord.terminalState;
+      const terminalAt = rawRecord.terminalAt;
+      if (
+        (terminalState !== undefined &&
+          terminalState !== 'never-started' &&
+          terminalState !== 'complete' &&
+          terminalState !== 'interrupted') ||
+        (terminalState !== undefined &&
+          (typeof terminalAt !== 'number' ||
+            !Number.isSafeInteger(terminalAt) ||
+            terminalAt < 0)) ||
+        (terminalState === undefined && terminalAt !== undefined)
+      ) {
+        needsPersistence = true;
+        continue;
+      }
+      const referenceTime =
+        terminalState === undefined ? (rawRecord.createdAt as number) : (terminalAt as number);
+      const age = Math.max(0, nowMs - referenceTime);
+      if (
+        (terminalState !== undefined && age >= DIRECT_TERMINAL_TTL_MS) ||
+        (terminalState === undefined &&
+          downloadId === undefined &&
+          age >= DIRECT_UNASSIGNED_TTL_MS &&
+          !liveDirectAllocations.has(requestId))
+      ) {
+        needsPersistence = true;
+        continue;
+      }
+    }
+
     const rawCancellationRequestedAt = rawRecord.cancellationRequestedAt;
     const hasValidCancellationRequestedAt =
       rawCancellationRequestedAt === undefined ||
@@ -63,7 +122,7 @@ function parseStoredRecords(
     let cancellationRequestedAt = hasValidCancellationRequestedAt
       ? rawCancellationRequestedAt
       : undefined;
-    if (rawRecord.cancellationRequested && downloadId === undefined) {
+    if (rawRecord.cancellationRequested && downloadId === undefined && route !== 'direct') {
       if (cancellationRequestedAt === undefined) {
         // Records written before the timestamp field existed get one bounded
         // grace period, then are normalized on the next successful write.
@@ -82,6 +141,20 @@ function parseStoredRecords(
       ...(typeof downloadId === 'number' ? { downloadId } : {}),
       cancellationRequested: rawRecord.cancellationRequested,
       ...(cancellationRequestedAt === undefined ? {} : { cancellationRequestedAt }),
+      ...(route === 'direct'
+        ? {
+            route,
+            ownerTabId: rawRecord.ownerTabId as number,
+            urlHash: rawRecord.urlHash as string,
+            createdAt: rawRecord.createdAt as number,
+            ...(rawRecord.terminalState === undefined
+              ? {}
+              : {
+                  terminalState: rawRecord.terminalState as DirectTerminalState,
+                  terminalAt: rawRecord.terminalAt as number,
+                }),
+          }
+        : {}),
     });
   }
 
@@ -90,6 +163,7 @@ function parseStoredRecords(
 
 function isExpiredPreIdCancellation(record: PersistedDownloadRecord, nowMs: number): boolean {
   return (
+    record.route !== 'direct' &&
     record.downloadId === undefined &&
     record.cancellationRequested &&
     record.cancellationRequestedAt !== undefined &&
@@ -104,6 +178,8 @@ function isExpiredPreIdCancellation(record: PersistedDownloadRecord, nowMs: numb
  */
 export class DownloadTrackingStore {
   private readonly records = new Map<string, PersistedDownloadRecord>();
+  /** A live downloads.download() call may return an ID after the persisted pre-ID TTL. */
+  private readonly liveDirectAllocations = new Set<string>();
   private operationQueue: Promise<void> = Promise.resolve();
   private loaded = false;
   private dirty = false;
@@ -153,17 +229,137 @@ export class DownloadTrackingStore {
     });
   }
 
+  async registerDirectRequest(
+    requestId: string,
+    ownerTabId: number,
+    urlHash: string
+  ): Promise<'new' | 'cancelled' | 'existing' | 'wrong-owner' | 'capacity'> {
+    return this.enqueue(async () => {
+      await this.ensureLoaded();
+      this.pruneDirectRecords();
+      const current = this.records.get(requestId);
+      if (current !== undefined) {
+        if (
+          current.route !== 'direct' ||
+          current.ownerTabId !== ownerTabId ||
+          current.urlHash !== urlHash
+        )
+          return 'wrong-owner';
+        if (current.terminalState !== undefined || current.downloadId !== undefined)
+          return 'existing';
+        return current.cancellationRequested ? 'cancelled' : 'existing';
+      }
+      const directCount = [...this.records.values()].filter(
+        (record) => record.route === 'direct'
+      ).length;
+      if (directCount >= MAX_DIRECT_RECORDS) return 'capacity';
+      this.records.set(requestId, {
+        route: 'direct',
+        ownerTabId,
+        urlHash,
+        createdAt: this.now(),
+        cancellationRequested: false,
+      });
+      this.liveDirectAllocations.add(requestId);
+      try {
+        await this.persist();
+      } catch (error: unknown) {
+        this.liveDirectAllocations.delete(requestId);
+        throw error;
+      }
+      return 'new';
+    });
+  }
+
+  finishDirectAllocation(requestId: string): void {
+    this.liveDirectAllocations.delete(requestId);
+  }
+
+  /** A direct ID must never recreate a missing or differently owned record. */
+  async bindDirectDownload(
+    requestId: string,
+    downloadId: number,
+    ownerTabId: number,
+    urlHash: string
+  ): Promise<boolean | undefined> {
+    return this.enqueue(async () => {
+      await this.ensureLoaded();
+      const current = this.records.get(requestId);
+      if (
+        current?.route !== 'direct' ||
+        current.ownerTabId !== ownerTabId ||
+        current.urlHash !== urlHash ||
+        current.terminalState !== undefined ||
+        current.downloadId !== undefined
+      )
+        return undefined;
+      const updated = { ...current, downloadId };
+      this.records.set(requestId, updated);
+      await this.persist();
+      return current.cancellationRequested;
+    });
+  }
+
+  async requestDirectCancellation(
+    requestId: string,
+    ownerTabId: number,
+    urlHash: string
+  ): Promise<boolean> {
+    return this.enqueue(async () => {
+      await this.ensureLoaded();
+      this.pruneDirectRecords();
+      const current = this.records.get(requestId);
+      if (
+        current !== undefined &&
+        (current.route !== 'direct' ||
+          current.ownerTabId !== ownerTabId ||
+          current.urlHash !== urlHash)
+      )
+        return false;
+      if (current?.terminalState !== undefined) return true;
+      if (current === undefined) {
+        const directCount = [...this.records.values()].filter(
+          (record) => record.route === 'direct'
+        ).length;
+        if (directCount >= MAX_DIRECT_RECORDS) return false;
+      }
+      this.records.set(requestId, {
+        ...current,
+        route: 'direct',
+        ownerTabId,
+        urlHash,
+        createdAt: current?.createdAt ?? this.now(),
+        cancellationRequested: true,
+        cancellationRequestedAt: current?.cancellationRequestedAt ?? this.now(),
+      });
+      await this.persist();
+      return true;
+    });
+  }
+
+  async markDirectTerminal(requestId: string, terminalState: DirectTerminalState): Promise<void> {
+    await this.enqueue(async () => {
+      await this.ensureLoaded();
+      const current = this.records.get(requestId);
+      if (current?.route !== 'direct' || current.terminalState !== undefined) return;
+      this.records.set(requestId, { ...current, terminalState, terminalAt: this.now() });
+      await this.persist();
+    });
+  }
+
   async bindDownload(requestId: string, downloadId: number): Promise<boolean> {
     return this.enqueue(async () => {
       await this.ensureLoaded();
       const current = this.records.get(requestId);
       const cancellationRequested =
         current?.cancellationRequested === true && !isExpiredPreIdCancellation(current, this.now());
+      const { cancellationRequestedAt: priorCancellationAt, ...retained } = current ?? {};
       this.records.set(requestId, {
+        ...retained,
         downloadId,
         cancellationRequested,
-        ...(cancellationRequested && current?.cancellationRequestedAt !== undefined
-          ? { cancellationRequestedAt: current.cancellationRequestedAt }
+        ...(cancellationRequested && priorCancellationAt !== undefined
+          ? { cancellationRequestedAt: priorCancellationAt }
           : {}),
       });
       await this.persist();
@@ -182,6 +378,7 @@ export class DownloadTrackingStore {
           ? current.cancellationRequestedAt
           : this.now();
       this.records.set(requestId, {
+        ...current,
         ...(current?.downloadId === undefined ? {} : { downloadId: current.downloadId }),
         cancellationRequested: true,
         cancellationRequestedAt,
@@ -198,6 +395,23 @@ export class DownloadTrackingStore {
     });
   }
 
+  private pruneDirectRecords(): void {
+    const now = this.now();
+    for (const [requestId, record] of this.records) {
+      if (record.route !== 'direct') continue;
+      const expiredTerminal =
+        record.terminalAt !== undefined && now - record.terminalAt >= DIRECT_TERMINAL_TTL_MS;
+      const expiredUnassigned =
+        record.terminalAt === undefined &&
+        record.downloadId === undefined &&
+        record.createdAt !== undefined &&
+        now - record.createdAt >= DIRECT_UNASSIGNED_TTL_MS;
+      if ((expiredTerminal || expiredUnassigned) && !this.liveDirectAllocations.has(requestId)) {
+        this.records.delete(requestId);
+      }
+    }
+  }
+
   private async ensureLoaded(): Promise<void> {
     if (!this.loaded) await this.loadFromStorage();
     if (this.dirty) await this.persist();
@@ -206,7 +420,7 @@ export class DownloadTrackingStore {
   private async loadFromStorage(): Promise<void> {
     try {
       const stored = await this.storage.get<unknown>(DOWNLOAD_TRACKING_STORAGE_KEY);
-      const parsed = parseStoredRecords(stored, this.now());
+      const parsed = parseStoredRecords(stored, this.now(), this.liveDirectAllocations);
       this.records.clear();
       for (const [requestId, record] of parsed.records) {
         this.records.set(requestId, record);

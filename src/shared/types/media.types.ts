@@ -131,7 +131,26 @@ export interface MediaExtractionResult {
   readonly metadata?: Record<string, unknown> | undefined;
   /** Health of an attempted API request, independent of media matching. */
   readonly apiRequestOutcome?: 'healthy' | 'failed' | 'cancelled' | undefined;
-  readonly failureKind?: 'unsupported-source';
+  /** Shared only by callers of the same physical API request; absent on cache hits. */
+  readonly apiRequestToken?: object;
+  /** Safe UI diagnosis, independent of the untrusted provider error text. */
+  readonly failureKind?:
+    | 'unsupported-source'
+    | 'no-media'
+    | 'denied'
+    | 'unreadable'
+    | 'rate-limited'
+    | 'deferred'
+    | 'provider-error'
+    | 'transport'
+    | 'owner-unconfirmed'
+    | 'mismatch'
+    | 'cancelled';
+  readonly retryAfterMs?: number;
+  /** Validated response status for the one physical API request. */
+  readonly apiHttpStatus?: number;
+  /** Whether that response was readable to the request adapter, if known. */
+  readonly apiResponseReadable?: boolean;
 }
 
 /** Extraction error class */

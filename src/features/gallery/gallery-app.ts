@@ -17,6 +17,7 @@ import {
   mediaErrorReporter,
   normalizeErrorMessage,
 } from '@shared/error/app-error-reporter';
+import type { TranslationKey } from '@shared/i18n/types';
 import { logger } from '@shared/logging/logger';
 import { getLanguageService } from '@shared/services/language-service';
 import { getMediaService } from '@shared/services/media-service';
@@ -26,7 +27,7 @@ import {
   gallerySignals,
   openGallery,
 } from '@shared/state/signals/gallery.signals';
-import type { MediaInfo } from '@shared/types/media.types';
+import type { MediaExtractionResult, MediaInfo } from '@shared/types/media.types';
 import { disposeKeyboardDebouncer } from '@shared/utils/events/handlers/keyboard';
 import {
   createGalleryLifecycle,
@@ -37,6 +38,35 @@ import {
   startAmbientVideoGuard,
 } from '@shared/utils/media/ambient-video-coordinator';
 import { isProcessableMedia } from '@shared/utils/media/media-click-detector';
+
+function mediaFailureMessage(kind: MediaExtractionResult['failureKind']): TranslationKey {
+  switch (kind) {
+    case 'unsupported-source':
+      return 'msg.err.loadMedia.unsupported';
+    case 'no-media':
+      return 'msg.err.loadMedia.noMedia';
+    case 'denied':
+      return 'msg.err.loadMedia.denied';
+    case 'unreadable':
+      return 'msg.err.loadMedia.unreadable';
+    case 'rate-limited':
+      return 'msg.err.loadMedia.rateLimited';
+    case 'deferred':
+      return 'msg.err.loadMedia.deferred';
+    case 'provider-error':
+      return 'msg.err.loadMedia.providerError';
+    case 'transport':
+      return 'msg.err.loadMedia.transport';
+    case 'owner-unconfirmed':
+      return 'msg.err.loadMedia.ownerUnconfirmed';
+    case 'mismatch':
+      return 'msg.err.loadMedia.mismatch';
+    case 'cancelled':
+      return 'msg.err.loadMedia.cancelled';
+    default:
+      return 'msg.err.loadMedia.body';
+  }
+}
 
 export class GalleryApp {
   private initialized = false;
@@ -154,17 +184,13 @@ export class GalleryApp {
       } else {
         mediaErrorReporter.warn(new Error('Media extraction returned no items'), {
           code: 'MEDIA_EXTRACTION_EMPTY',
-          metadata: { success: result.success },
+          metadata: { success: result.success, failureKind: result.failureKind },
         });
         const lang = getLanguageService();
         notifySafely(
           getNotificationAdapter(),
           lang.translate('msg.err.loadMedia.title'),
-          lang.translate(
-            result.failureKind === 'unsupported-source'
-              ? 'msg.err.loadMedia.unsupported'
-              : 'msg.err.loadMedia.body'
-          )
+          lang.translate(mediaFailureMessage(result.failureKind))
         );
       }
     } catch (error) {

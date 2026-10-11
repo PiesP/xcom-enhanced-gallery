@@ -8,7 +8,7 @@ import { HttpResponseSizeLimitError } from '@shared/error/http-response-size-lim
 import { logger } from '@shared/logging/logger';
 import type { LiveByteBudget, OwnedBlob } from '@shared/services/download/live-byte-budget';
 import { downloadLiveByteBudget } from '@shared/services/download/live-byte-budget';
-import { getHttpRequestService } from '@shared/services/http-request-service';
+import { getHttpRequestService, HttpRequestError } from '@shared/services/http-request-service';
 import type { MediaInfo } from '@shared/types/media.types';
 import { getMediaDownloadUrl } from '@shared/utils/media/media-source';
 
@@ -158,7 +158,12 @@ export class DownloadMediaCache {
       const owner: OwnedBlob = { value: response.data, lease: response.lease };
       if (!response.ok) {
         owner.lease.release();
-        throw new Error(`HTTP ${response.status}`);
+        throw new HttpRequestError(
+          response.status,
+          response.readable ?? true,
+          response.errorCategory ?? 'http',
+          response.retryAfterMs
+        );
       }
 
       for (const borrower of entry.borrowers) {

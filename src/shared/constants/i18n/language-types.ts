@@ -118,6 +118,16 @@ export interface LanguageStrings {
         /** Load media error body */
         readonly body: string;
         readonly unsupported: string;
+        readonly noMedia: string;
+        readonly denied: string;
+        readonly unreadable: string;
+        readonly rateLimited: string;
+        readonly deferred: string;
+        readonly providerError: string;
+        readonly transport: string;
+        readonly ownerUnconfirmed: string;
+        readonly mismatch: string;
+        readonly cancelled: string;
       };
       /** Generic error title */
       readonly generic: string;
@@ -197,6 +207,9 @@ export interface LanguageStrings {
     };
     /** Gallery messages */
     readonly gal: {
+      readonly video: {
+        readonly playbackFallback: string;
+      };
       readonly observedQuality: {
         readonly title: string;
         readonly body: string;

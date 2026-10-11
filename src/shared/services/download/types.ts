@@ -12,19 +12,30 @@ import type { LiveByteBudget, OwnedBlob } from './live-byte-budget';
 export interface OrchestratorItem {
   readonly url: string;
   readonly desiredName: string;
+  readonly inputKind?: ZipInputKind;
   readonly sourceUnavailable?: boolean;
   readonly expectedSizeBytes?: number | undefined;
   readonly blob?: OwnedBlob | Promise<OwnedBlob> | undefined;
   readonly getBlob?:
-    | ((signal?: AbortSignal, maxResponseBytes?: number) => Promise<OwnedBlob> | null)
+    | ((signal?: AbortSignal, maxResponseBytes?: number) => Promise<OwnedBlob | null> | null)
     | undefined;
 }
 
-export type MediaBlobProvider = (
+export type ZipInputKind = 'direct-url' | 'blob-provider' | 'owned-blob';
+
+export type MediaBlobProvider = ((
   media: MediaInfo,
   signal?: AbortSignal,
   maxResponseBytes?: number
-) => Promise<OwnedBlob> | null;
+) => Promise<OwnedBlob | null> | null) & {
+  /** Pure capability check; no fetch or Blob creation during planning. */
+  readonly supports?: (media: MediaInfo) => boolean;
+};
+
+/** Infer actual input fields; callers cannot undercharge a Blob using a label. */
+export function getZipInputKind(item: Pick<OrchestratorItem, 'blob' | 'getBlob'>): ZipInputKind {
+  return item.blob ? 'owned-blob' : item.getBlob ? 'blob-provider' : 'direct-url';
+}
 
 export interface DownloadProgress {
   phase: string;
@@ -55,6 +66,13 @@ export interface DownloadOptions {
   maxArchiveBytes?: number;
   /** Optional diagnostics hook used to expose retained whole-file bytes. */
   onBufferUsage?: (bufferedBytes: number) => void;
+  /** Bounded per-entry diagnostics for controlled admission measurements. */
+  onEntryAdmission?: (entry: {
+    readonly index: number;
+    readonly inputKind: ZipInputKind;
+    readonly maxResponseBytes: number;
+    readonly knownSize?: number;
+  }) => void;
 }
 
 export interface SingleDownloadResult {

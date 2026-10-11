@@ -4,6 +4,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { LiveByteBudget } from '@shared/services/download/live-byte-budget';
 import { planBulkDownload } from '@shared/core/download/download-plan';
+import { generateMediaFilename } from '@shared/core/filename/filename-utils';
+import type { MediaBlobProvider } from '@shared/services/download/types';
 
 describe('download-plan', () => {
   it('plans a single download item', () => {
@@ -34,5 +36,49 @@ describe('download-plan', () => {
     expect(owned?.value).toBeInstanceOf(Blob);
     owned?.lease.release();
     expect(provider).toHaveBeenCalledWith(media, undefined);
+  });
+
+  it('keeps owned Blob precedence and gates only supported media without changing order or names', () => {
+    const mediaItems = [
+      { id: 'photo', type: 'image' as const, url: 'https://example.com/photo.jpg', filename: 'photo.jpg' },
+      { id: 'clip', type: 'video' as const, url: 'https://example.com/clip.mp4', filename: 'clip.mp4' },
+      { id: 'animation', type: 'gif' as const, url: 'https://example.com/animation.gif', filename: 'animation.gif' },
+      { id: 'cached', type: 'image' as const, url: 'https://example.com/cached.jpg', filename: 'cached.jpg' },
+    ];
+    const owner = { value: new Blob(['cached']), lease: new LiveByteBudget(6).reserve(6) };
+    const provider = vi.fn(async () => owner) as MediaBlobProvider;
+    const supports = vi.fn((media: (typeof mediaItems)[number]) => media.type === 'image');
+    Object.assign(provider, { supports });
+    const plan = planBulkDownload({
+      mediaItems,
+      cachedBlobs: new Map([[mediaItems[3]!.url, owner]]),
+      mediaBlobProvider: provider,
+      nowMs: 1,
+    });
+
+    expect(plan.items.map(({ url, desiredName, inputKind }) => ({ url, desiredName, inputKind }))).toEqual(
+      mediaItems.map((media, index) => ({
+        url: media.url,
+        desiredName: generateMediaFilename(media, { nowMs: 1 }),
+        inputKind: index === 0 ? 'blob-provider' : index === 3 ? 'owned-blob' : 'direct-url',
+      }))
+    );
+    expect(plan.items[3]?.blob).toBe(owner);
+    expect(plan.items[3]?.getBlob).toBeUndefined();
+    expect(supports.mock.calls.map(([media]) => media.id)).toEqual(['photo', 'clip', 'animation']);
+    expect(provider).not.toHaveBeenCalled();
+    owner.lease.release();
+  });
+
+  it('keeps a legacy provider without supports available across media kinds', () => {
+    const mediaItems = [
+      { id: 'clip', type: 'video' as const, url: 'https://example.com/clip.mp4' },
+      { id: 'animation', type: 'gif' as const, url: 'https://example.com/animation.gif' },
+    ];
+    const provider = vi.fn(async () => null);
+    const plan = planBulkDownload({ mediaItems, mediaBlobProvider: provider });
+
+    expect(plan.items.map((item) => item.inputKind)).toEqual(['blob-provider', 'blob-provider']);
+    expect(provider).not.toHaveBeenCalled();
   });
 });

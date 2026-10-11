@@ -169,6 +169,7 @@
 /* Video-specific base */
 .video {
   inline-size: 100%;
+  aspect-ratio: var(--xeg-aspect-default);
   overflow: clip;
 }
 
@@ -228,6 +229,18 @@
   background: var(--xeg-color-error-bg);
   color: var(--xeg-color-error);
   min-height: var(--xeg-spacing-3xl);
+}
+
+.playbackFallback {
+  position: absolute;
+  inset-inline: var(--xeg-spacing-sm);
+  top: var(--xeg-spacing-sm);
+  padding: var(--xeg-spacing-xs) var(--xeg-spacing-sm);
+  border-radius: var(--xeg-radius-sm);
+  background: var(--xeg-color-bg-secondary);
+  color: var(--xeg-color-text-primary);
+  font-size: var(--xeg-font-size-sm);
+  pointer-events: none;
 }
 
 /* Container adjustments per fit mode (intrinsic sizing integration) */
@@ -303,6 +316,62 @@
   :is(.image, .video) {
   inline-size: 100%;
   max-inline-size: 100%;
+}
+
+/* Keep video layout tied to the MediaInfo dimensions in every lifecycle state.
+   Without a source, the browser can use the poster's tiny intrinsic size; once
+   metadata arrives, that size can change again. The existing video-admitted
+   attribute identifies video rows without changing image fit behavior. */
+.container[data-video-admitted][data-fit-mode="original"] {
+  inline-size: max-content;
+  max-inline-size: none;
+  max-block-size: none;
+}
+
+.container[data-video-admitted][data-fit-mode="original"] .video.fitOriginal {
+  inline-size: var(--xeg-gallery-item-intrinsic-width);
+  block-size: auto;
+  max-inline-size: none;
+  max-block-size: none;
+}
+
+.container[data-video-admitted][data-fit-mode="fitWidth"] {
+  inline-size: 100%;
+  max-inline-size: 100%;
+}
+
+.container[data-video-admitted][data-fit-mode="fitWidth"] .imageWrapper,
+.container[data-video-admitted][data-fit-mode="fitWidth"] .video.fitWidth {
+  inline-size: 100%;
+}
+
+.container[data-video-admitted][data-media-loaded]:is(
+  [data-fit-mode="fitHeight"],
+  [data-fit-mode="fitContainer"]
+) {
+  --xeg-gallery-fit-height-target: min(
+    var(--xeg-gallery-item-intrinsic-height),
+    var(--xeg-viewport-height-constrained)
+  );
+  max-block-size: calc(
+    var(--xeg-gallery-fit-height-target) +
+    var(--xeg-spacing-sm) +
+    var(--xeg-spacing-sm) +
+    0.125rem
+  );
+  inline-size: min(
+    100%,
+    calc(var(--xeg-gallery-fit-height-target) * var(--xeg-gallery-item-intrinsic-ratio))
+  );
+  max-inline-size: min(
+    100%,
+    calc(var(--xeg-gallery-fit-height-target) * var(--xeg-gallery-item-intrinsic-ratio))
+  );
+}
+
+.container[data-video-admitted]:is([data-fit-mode="fitHeight"], [data-fit-mode="fitContainer"])
+  :is(.imageWrapper, .video) {
+  inline-size: 100%;
 }
 
 /* Container width now fits content by default - no forced 100% width needed */

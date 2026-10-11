@@ -69,8 +69,15 @@ Run `node --check validation/windows/profile.mjs` for the profile syntax check.
 The opt-in installed flow uses a fresh task-owned browser profile, enables
 extension developer mode, and loads the production unpacked MV3 distribution
 through CDP `Extensions.loadUnpacked`. It serves the existing deterministic X
-fixture and three distinct image payloads; no application script, download
-mock, GM bridge, or live-site response is injected.
+fixture and three distinct image payloads. A task-owned HTTPS listener binds
+ephemeral `127.0.0.1` and serves only synthetic original JPEG and MP4 paths.
+The fresh browser profile maps `pbs.twimg.com:443` and `video.twimg.com:443`
+to that listener and accepts its one-run SPKI certificate for those two names.
+The key is ephemeral; no OS trust or hosts setting changes. Each ordinary
+single requires one completed browser download ID, selected initial and final
+URL, matching listener transfer, exact filename and saved bytes, and no
+whole-file page fetch. ZIPs use the bounded provider and Blob handoff. No
+application script, download mock, GM bridge, or live-site response is injected.
 
 The flow repeats open, keyboard navigation, privileged `chrome.downloads`
 completion, and close three times. It proves the selected item's exact filename
@@ -81,6 +88,12 @@ keeps the scroll-versus-focus restoration order observable instead of hiding a
 host layout-shift regression. Page screenshots, per-cycle timings, file hashes,
 and cleanup metadata are retained as evidence; the timings are observations,
 not a performance claim.
+
+The first native single holds its response after a prefix of at most 1 KiB for
+at least 3.5 seconds, records native start separately from full completion, and requires
+the same download ID and busy controls throughout. Releasing that bounded
+response must yield the exact original file. This distinguishes a confirmed
+active transfer from an uncertain worker reply without a throughput claim.
 
 The extension-only classic route serves smaller display JPEGs, including one
 extensionless query-format photo URL, and separate original JPEGs. Each DOM
@@ -93,6 +106,24 @@ must contain all three original entries with expected filenames, order, contents
 and CRC. Screenshots, source URLs, request observations, timings and hashes remain
 in normal and partial failure receipts. Shared HTML and userscript routes retain
 their existing allowlisted paths. This is fixture evidence, not live-CDN proof.
+
+The same installed profile invokes `media-api-reuse-profile.mjs` to compare
+physical API requests across successive clicks, navigation, reload and a fresh
+page. It checks independent selected-photo identity, uncached provider failures,
+and the exact controlled 403/429/unreadable-503 retry guidance. Owned pages have
+bounded script and console observations, and the helper retains its JSON receipt
+and a screenshot on failure. `video-loading-profile.mjs` opens eight synthetic
+videos with a high image-preload setting, checks geometry-based admission and
+far entries without attached sources, and verifies metadata, first frame,
+playback progress and same-attachment decode recovery. The separate HTTPS
+loopback verifies that a current save still uses the preferred MP4 bytes. A
+native eight-video ZIP is independently read for entry order, names, bytes and
+CRC after playback fallback; its first entry must retain the preferred source.
+The helper records active-source, metadata, first-frame and completion timings
+as fixture observations, including the deliberately gated response boundary.
+These helpers
+restore owned routes and settings; provider access and live-CDN compatibility
+remain outside the fixture evidence.
 
 The installed profile also serves the declared small MP4 assets and
 `installed-quoted-video-page.html` with deterministic `TweetResultByRestId`
@@ -149,20 +180,20 @@ the gallery and the closed host, including focus, scroll, body-style, and
 background-isolation restoration. This is browser tab zoom in the fresh task
 profile; it does not claim an OS DPI change or a live X.com observation.
 
-The installed profile first starts a gallery download through real media and
-toolbar clicks. A routed 4 MiB download response is separate from the ordinary
-display image. A native `onDeterminingFilename` listener holds that exact new
-Blob download active until cancellation; its asynchronous `suggest()` callback
+The installed profile first starts a direct image download through real media and
+toolbar clicks. The loopback listener holds its original-image response after
+a bounded header prefix while the smaller display image stays on the page route. A native
+`onDeterminingFilename` listener holds that exact new download active until
+cancellation; its asynchronous `suggest()` callback
 is released exactly once during cleanup. The native item must be paused and
-`in_progress` with its private request binding. Blob bytes can finish receiving
-while filename completion is held; this case does not claim bytes remain.
+`in_progress` with its private direct request binding and bytes remaining.
 Page-synthetic Escape/help, outside/backdrop,
 toolbar Download/Close and a temporarily reparented Close button must leave the
 same download active and the gallery open. Genuine keyboard help reaches a
 notification-count seam that suppresses OS delivery for this case; synthetic
 input must not increase it. Genuine Escape must cancel that exact download with
-`USER_CANCELED`, remove its tracking and leave no output or partial file. The
-profile restores the notification seam, route and button and removes only its
+`USER_CANCELED`, persist its terminal direct status, and leave no output or partial file. The
+profile restores the notification seam, held response and button and removes only its
 owned download/history/files. Missing gate ownership or an item reaching a
 terminal state before genuine cancellation fails this regression. Download
 creation, pause, search, cancellation and history remain the real Edge APIs.
@@ -208,18 +239,34 @@ recorded as pending. The on-created listener, page Blob URL, exact download
 history item, tracking record, route, pages, and any task-created partial file
 are cleaned in `finally`, including failed runs.
 
-Immediately after the trusted-input and Worker-restart checks, the same installed
-fixture page exercises the download memory limit. Only the three fixture image
+The profile also stops the Worker during a separate, held direct JPEG transfer
+started by the gallery in the original fixture tab. It requires the one new
+native ID, matching source URL and persisted tab/hash ownership, an incomplete
+transfer before and after the stop, and the same ID after a real Escape from
+that tab. The replacement Worker must be observed, the download must finish
+`interrupted` with `USER_CANCELED`, and its single loopback connection must
+close without a page fetch or saved residue. The direct terminal record may
+remain until its bounded expiry. This test does not forge a content-script
+sender from an extension utility page or claim a known caller reply after the
+Worker stopped.
+
+Immediately after the Worker-restart and trusted-input checks, the same installed
+fixture page exercises the application-owned ZIP memory limit. Only the three fixture image
 `fetch`/XHR requests receive a temporary page route; visible `<img>` requests
 continue through the normal fixture route. The first selected-image response
 declares a `Content-Length` greater than the limit read from the packaged
 `live-byte-budget.ts`, while its actual body stays below one MiB. The browser
 must observe that header, the gallery must show localized resource guidance,
-and no native download may start. Without reloading or replacing the gallery,
-keyboard navigation and a small single download must still work. A subsequent
+and the native partial ZIP must include exactly the two remaining images with
+correct names, order, CRC and bytes. Its verified file is removed through the
+native API before reusing the same output name; its saved evidence is retained.
+Without reloading or replacing the gallery, keyboard navigation and a small
+direct single download must still work. A subsequent
 bulk action must save a separate native ZIP download with the exact three image
 names and contents; the profile verifies its stored-entry boundaries, local and
-central order, CRCs, and bytes. It records exact Chrome download IDs, elapsed
+central order, CRCs, and bytes. Only the previously rejected image needs a new
+application fetch; the two successful partial entries are reused from the same
+page's media cache. It records exact Chrome download IDs, elapsed
 times, request phases, page time origin, screenshots, and exact route cleanup.
 The declared limit is an admission-policy check; browser heap and RSS are not
 measured, and the oversized body is never allocated.
@@ -228,10 +275,10 @@ Installed Chrome or Edge supports `--installation extension` and the separate
 `--installation userscript` Tampermonkey fixture. Firefox userscript installation,
 Violentmonkey, authenticated X.com, native Save As,
 Explorer, OS theme/DPI matrices, and physical GPU behavior remain outside this
-profile. This restart check covers an explicit forced stop in the generated
-Chromium MV3 extension; it does not exercise natural idle termination, browser
-shutdown, OS crash recovery, or an actively streaming network transfer during
-the stop boundary.
+profile. These restart checks cover explicit forced stops in the generated
+Chromium MV3 extension, including one held direct HTTP response. They do not
+exercise natural idle termination, browser shutdown, OS crash recovery, or a
+continuously streaming network transfer during the stop boundary.
 
 After committing a clean named checkout and running the repository gates, use
 the configured controller in the prepared Windows validation environment to run
@@ -307,6 +354,9 @@ Up to three exact public status URLs may be supplied with repeatable
 credentials, ports, query strings, fragments, whitespace, backslashes, trailing
 paths, and handles outside X's 1–15 character public format are rejected. XCOM
 does not support the controller's duration observation mode.
+The fixture browser and HTTPS listener close before this observation. The same
+task-owned profile reopens as a fresh browser process without fixture host
+rules or SPKI exception, and the unpacked extension is loaded again.
 
 The deterministic installed fixture always runs first with strict console and
 page-error checks. The profile then removes every fixture route before opening

@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { webcrypto } from 'node:crypto';
 
 type MessageListener = (
   message: unknown,
@@ -93,9 +94,12 @@ vi.mock('@extension/download-completion', () => ({
 
 import '@extension/background';
 
-function sendMessage(message: unknown): Promise<unknown> {
+function sendMessage(
+  message: unknown,
+  sender: { id: string; tab?: { id: number }; url?: string } = { id: 'extension-id' }
+): Promise<unknown> {
   return new Promise((resolve, reject) => {
-    const keepChannelOpen = state.listener?.(message, { id: 'extension-id' }, resolve);
+    const keepChannelOpen = state.listener?.(message, sender, resolve);
     if (keepChannelOpen !== true) reject(new Error('Message channel was not kept open'));
   });
 }
@@ -115,6 +119,7 @@ function deferred<T>(): {
 }
 
 beforeEach(() => {
+  vi.stubGlobal('crypto', webcrypto);
   state.cancelDownload.mockReset().mockResolvedValue(undefined);
   state.createNotification.mockReset();
   state.download.mockReset();
@@ -122,6 +127,203 @@ beforeEach(() => {
   state.waitForDownloadComplete.mockReset().mockResolvedValue(undefined);
   state.storageSetError = null;
   state.storageSetFailuresRemaining = 1;
+});
+
+describe('background direct download ownership', () => {
+  const url = 'https://pbs.twimg.com/media/direct.jpg?format=jpg&name=orig';
+  const owner = { id: 'extension-id', tab: { id: 17 }, url: 'https://x.com/author/status/123' };
+  const otherTab = { id: 'extension-id', tab: { id: 18 }, url: 'https://x.com/other/status/456' };
+  const request = (requestId: string) => ({
+    type: 'DOWNLOAD_REQUEST',
+    payload: { url, filename: 'direct-original.jpg', requestId, mode: 'direct' },
+  });
+  const status = (requestId: string, requestedUrl = url) => ({
+    type: 'DOWNLOAD_DIRECT_STATUS_REQUEST',
+    payload: { requestId, url: requestedUrl },
+  });
+
+  afterAll(async () => {
+    delete state.storageValues['xeg.download-tracking.v1'];
+    vi.resetModules();
+    await import('@extension/background');
+    await state.startupListener?.();
+  });
+
+  it('starts once and reports completion only after the native lifecycle settles', async () => {
+    const requestId = `direct-complete-${crypto.randomUUID()}`;
+    const nativeCompletion = deferred<void>();
+    state.download.mockResolvedValueOnce(801);
+    state.waitForDownloadComplete.mockReturnValueOnce(nativeCompletion.promise);
+    state.searchDownload.mockResolvedValue([{ id: 801, url, state: 'in_progress' }]);
+
+    const pending = sendMessage(request(requestId), owner);
+    await vi.waitFor(() => expect(state.download).toHaveBeenCalledExactlyOnceWith({
+      url, filename: 'direct-original.jpg', saveAs: false,
+    }));
+    expect(await sendMessage(status(requestId), owner)).toEqual({
+      success: true, data: { requestId, status: 'active' },
+    });
+    expect(await sendMessage(status(requestId), otherTab)).toEqual({
+      success: true, data: { requestId, status: 'unknown' },
+    });
+    expect(await sendMessage(status(`${requestId}-different-request`), owner)).toEqual({
+      success: true, data: { requestId: `${requestId}-different-request`, status: 'unknown' },
+    });
+    expect(await sendMessage(status(requestId, 'https://pbs.twimg.com/media/other.jpg'), owner)).toEqual({
+      success: true, data: { requestId, status: 'unknown' },
+    });
+    nativeCompletion.resolve();
+    expect(await pending).toEqual({ success: true, data: { requestId, status: 'complete' } });
+    expect(await sendMessage(status(requestId), owner)).toEqual({
+      success: true, data: { requestId, status: 'complete' },
+    });
+    expect(state.download).toHaveBeenCalledOnce();
+    expect(JSON.stringify(state.storageValues)).not.toContain(url);
+  });
+
+  it('keeps an unassigned restarted request unknown even if another download has the same URL', async () => {
+    const requestId = `direct-unassigned-${crypto.randomUUID()}`;
+    const allocation = deferred<number>();
+    state.download.mockReturnValueOnce(allocation.promise);
+    state.searchDownload.mockResolvedValue([{ id: 999, url, state: 'complete' }]);
+    const pending = sendMessage(request(requestId), owner);
+    await vi.waitFor(() => expect(state.download).toHaveBeenCalledOnce());
+
+    expect(await sendMessage(status(requestId), owner)).toEqual({
+      success: true, data: { requestId, status: 'unknown' },
+    });
+    expect(state.searchDownload).not.toHaveBeenCalledWith({ url });
+    allocation.reject(new Error('allocation rejected'));
+    expect(await pending).toEqual({
+      success: false, error: 'Browser rejected the download',
+      data: { requestId, status: 'never-started', reason: 'browser-rejected' },
+    });
+    expect(state.download).toHaveBeenCalledOnce();
+  });
+
+  it('rejects a direct request from a sender without a verified content tab', async () => {
+    const requestId = `direct-no-tab-${crypto.randomUUID()}`;
+    expect(await sendMessage(request(requestId), { id: 'extension-id' })).toEqual({
+      success: false, error: 'Unauthorized download owner',
+    });
+    expect(await sendMessage(status(requestId), { id: 'extension-id' })).toEqual({
+      success: true, data: { requestId, status: 'unknown' },
+    });
+    expect(state.download).not.toHaveBeenCalled();
+  });
+
+  it('recovers a completed assigned ID after a worker restart without starting another download', async () => {
+    const requestId = `direct-restart-${crypto.randomUUID()}`;
+    const nativeCompletion = deferred<void>();
+    state.download.mockResolvedValueOnce(802);
+    state.waitForDownloadComplete.mockReturnValueOnce(nativeCompletion.promise);
+    state.searchDownload.mockResolvedValue([{ id: 802, url, state: 'in_progress' }]);
+    const firstWorker = sendMessage(request(requestId), owner);
+    await vi.waitFor(() => {
+      const records = state.storageValues['xeg.download-tracking.v1'] as Record<string, { downloadId?: number }>;
+      expect(records[requestId]?.downloadId).toBe(802);
+    });
+
+    state.searchDownload.mockResolvedValue([{ id: 802, url, state: 'complete' }]);
+    vi.resetModules();
+    await import('@extension/background');
+    expect(await sendMessage(status(requestId), owner)).toEqual({
+      success: true, data: { requestId, status: 'complete' },
+    });
+    expect(state.download).toHaveBeenCalledOnce();
+    nativeCompletion.resolve();
+    await firstWorker;
+  });
+
+  it('cancels only the original tab and ID, including an early cancellation', async () => {
+    const requestId = `direct-cancel-${crypto.randomUUID()}`;
+    const allocation = deferred<number>();
+    state.download.mockReturnValueOnce(allocation.promise);
+    state.searchDownload.mockResolvedValue([{ id: 803, url, state: 'in_progress' }]);
+    const pending = sendMessage(request(requestId), owner);
+    await vi.waitFor(() => expect(state.download).toHaveBeenCalledOnce());
+    expect(await sendMessage({
+      type: 'DOWNLOAD_CANCEL_REQUEST', payload: { requestId, url },
+    }, otherTab)).toMatchObject({ success: false });
+    expect(state.cancelDownload).not.toHaveBeenCalled();
+    expect(await sendMessage({
+      type: 'DOWNLOAD_CANCEL_REQUEST', payload: { requestId, url },
+    }, owner)).toEqual({ success: true });
+    state.waitForDownloadComplete.mockRejectedValueOnce(new Error('interrupted'));
+    allocation.resolve(803);
+    await vi.waitFor(() => expect(state.cancelDownload).toHaveBeenCalledWith(803));
+    const result = await pending;
+    expect(result).toMatchObject({ success: false });
+    expect(state.download).toHaveBeenCalledOnce();
+  });
+
+  it('cancels the exact returned ID when its original ownership cannot be bound', async () => {
+    const { DownloadTrackingStore } = await import('@extension/download-tracking');
+    const binding = vi.spyOn(DownloadTrackingStore.prototype, 'bindDirectDownload')
+      .mockResolvedValueOnce(undefined);
+    const requestId = `direct-unowned-${crypto.randomUUID()}`;
+    state.download.mockResolvedValueOnce(806);
+    state.searchDownload.mockResolvedValue([{ id: 806, url, state: 'interrupted' }]);
+    try {
+      expect(await sendMessage(request(requestId), owner)).toEqual({
+        success: false,
+        error: 'Browser download ownership is unknown',
+        data: { requestId, status: 'unknown' },
+      });
+      expect(state.cancelDownload).toHaveBeenCalledExactlyOnceWith(806);
+      expect(state.waitForDownloadComplete).not.toHaveBeenCalled();
+      expect(state.download).toHaveBeenCalledOnce();
+    } finally {
+      binding.mockRestore();
+    }
+  });
+
+  it('keeps a delayed native allocation owned through expiry, then cancels its exact late ID', async () => {
+    const requestId = `direct-slow-${crypto.randomUUID()}`;
+    const otherRequestId = `direct-other-${crypto.randomUUID()}`;
+    const allocation = deferred<number>();
+    const nativeCompletion = deferred<void>();
+    let now = 1_000;
+    const clock = vi.spyOn(Date, 'now').mockImplementation(() => now);
+    let nativeState = 'in_progress';
+    state.download.mockReturnValueOnce(allocation.promise)
+      .mockRejectedValueOnce(new Error('second request rejected'));
+    state.waitForDownloadComplete.mockReturnValueOnce(nativeCompletion.promise);
+    state.searchDownload.mockImplementation(async () => [{ id: 805, url, state: nativeState }]);
+    state.cancelDownload.mockImplementation(async (id: number) => {
+      if (id === 805) nativeState = 'interrupted';
+    });
+    try {
+      const pending = sendMessage(request(requestId), owner);
+      await vi.waitFor(() => expect(state.download).toHaveBeenCalledOnce());
+      now += 10 * 60_000 + 1;
+      // Another direct registration invokes pruning while the first Chrome call is pending.
+      expect(await sendMessage(request(otherRequestId), owner)).toMatchObject({ success: false });
+      const stored = state.storageValues['xeg.download-tracking.v1'] as Record<string, { ownerTabId?: number }>;
+      expect(stored[requestId]?.ownerTabId).toBe(17);
+
+      allocation.resolve(805);
+      await vi.waitFor(() => {
+        const records = state.storageValues['xeg.download-tracking.v1'] as Record<string, { downloadId?: number }>;
+        expect(records[requestId]?.downloadId).toBe(805);
+      });
+      expect(await sendMessage(status(requestId), owner)).toEqual({
+        success: true, data: { requestId, status: 'active' },
+      });
+      expect(await sendMessage({
+        type: 'DOWNLOAD_CANCEL_REQUEST', payload: { requestId, url },
+      }, owner)).toEqual({ success: true });
+      expect(state.cancelDownload).toHaveBeenCalledWith(805);
+      expect(await sendMessage(status(requestId), owner)).toEqual({
+        success: true, data: { requestId, status: 'interrupted', reason: 'user-cancelled' },
+      });
+      nativeCompletion.reject(new Error('interrupted'));
+      expect(await pending).toMatchObject({ success: false });
+      expect(state.download).toHaveBeenCalledTimes(2);
+    } finally {
+      clock.mockRestore();
+    }
+  });
 });
 
 describe.each([

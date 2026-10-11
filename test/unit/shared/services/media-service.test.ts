@@ -12,6 +12,8 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@shared/services/media-extraction/media-extraction-service', () => ({
   MediaExtractionService: class {
     extractFromClickedElement = mocks.extract;
+    dispose = vi.fn();
+    invalidateApiMetadata = vi.fn();
   },
 }));
 

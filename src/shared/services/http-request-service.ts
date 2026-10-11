@@ -6,8 +6,14 @@
  */
 
 import { createDeferred } from '@piesp/browser-core/async';
+import { safeResponseMetadata } from '@platform/http-response-metadata';
 import { getHttpRequestAdapter } from '@platform/index';
-import type { HttpRequestControl, HttpRequestDetails, HttpRequestResponse } from '@platform/types';
+import type {
+  HttpErrorCategory,
+  HttpRequestControl,
+  HttpRequestDetails,
+  HttpRequestResponse,
+} from '@platform/types';
 import { getAbortReasonOrAbortErrorFromSignal } from '@shared/error/cancellation';
 import { HttpResponseSizeLimitError } from '@shared/error/http-response-size-limit-error';
 import {
@@ -26,10 +32,13 @@ interface HttpRequestOptions {
   readonly maxResponseBytes?: number;
 }
 
-interface HttpResponse<T = unknown> {
+export interface HttpResponse<T = unknown> {
   readonly ok: boolean;
   readonly status: number;
   readonly data: T;
+  readonly readable?: boolean;
+  readonly retryAfterMs?: number;
+  readonly errorCategory?: HttpErrorCategory;
 }
 
 interface OwnedBinaryRequestOptions
@@ -43,20 +52,47 @@ interface OwnedBinaryResponse<T extends Blob | ArrayBuffer> extends HttpResponse
   readonly lease: LiveByteLease;
 }
 
-function responseFailure(response: HttpRequestResponse): Error {
-  if (response.response instanceof HttpResponseSizeLimitError) return response.response;
-  const status = response.status ?? 0;
-  const error = new Error(status === 0 ? 'NET' : `HTTP:${status}`) as Error & {
-    status: number;
-  };
-  error.status = status;
-  return error;
+export class HttpRequestError extends Error {
+  override readonly name = 'HttpRequestError';
+
+  constructor(
+    readonly status: number,
+    readonly readable: boolean,
+    readonly category: HttpErrorCategory,
+    readonly retryAfterMs?: number
+  ) {
+    super(category === 'timeout' ? 'TIMEOUT' : status === 0 ? 'NET' : `HTTP:${status}`);
+  }
 }
 
-function timeoutFailure(): Error {
-  const error = new Error('TIMEOUT') as Error & { status: number };
-  error.status = 0;
-  return error;
+function metadata(
+  response: HttpRequestResponse,
+  readable: boolean,
+  category?: HttpErrorCategory
+): Pick<HttpResponse, 'status' | 'readable' | 'retryAfterMs' | 'errorCategory'> {
+  const safe = safeResponseMetadata(response, readable, category);
+  return {
+    status: safe.status,
+    readable,
+    ...(safe.retryAfterMs !== undefined ? { retryAfterMs: safe.retryAfterMs } : {}),
+    ...(safe.errorCategory !== undefined ? { errorCategory: safe.errorCategory } : {}),
+  };
+}
+
+function responseFailure(response: HttpRequestResponse): Error {
+  if (response.response instanceof HttpResponseSizeLimitError) return response.response;
+  const safe = metadata(response, false);
+  return new HttpRequestError(
+    safe.status,
+    false,
+    response.errorCategory ?? (safe.status > 0 ? 'unreadable' : 'network'),
+    safe.retryAfterMs
+  );
+}
+
+function timeoutFailure(response?: HttpRequestResponse): Error {
+  const safe = response ? metadata(response, false) : undefined;
+  return new HttpRequestError(safe?.status ?? 0, false, 'timeout', safe?.retryAfterMs);
 }
 
 export class HttpRequestService {
@@ -146,7 +182,12 @@ export class HttpRequestService {
           (options.responseType === 'blob' && !(data instanceof Blob)) ||
           (options.responseType === 'arraybuffer' && !(data instanceof ArrayBuffer))
         ) {
-          settle(() => deferred.reject(new TypeError('Invalid binary HTTP response')));
+          const safe = metadata(response, false, 'unreadable');
+          settle(() =>
+            deferred.reject(
+              new HttpRequestError(safe.status, false, 'unreadable', safe.retryAfterMs)
+            )
+          );
           return;
         }
         const size = data instanceof Blob ? data.size : (data as ArrayBuffer).byteLength;
@@ -155,10 +196,11 @@ export class HttpRequestService {
           return;
         }
         receivedBytes = size;
+        const safe = metadata(response, true, response.status >= 400 ? 'http' : undefined);
         settle(() =>
           deferred.resolve({
-            ok: response.status >= 200 && response.status < 300,
-            status: response.status,
+            ok: safe.status >= 200 && safe.status < 300,
+            ...safe,
             data: data as T,
             lease: lease.fork(),
           })
@@ -167,8 +209,8 @@ export class HttpRequestService {
       onerror: (response) => {
         settle(() => deferred.reject(responseFailure(response)));
       },
-      ontimeout: () => {
-        settle(() => deferred.reject(timeoutFailure()));
+      ontimeout: (response) => {
+        settle(() => deferred.reject(timeoutFailure(response)));
       },
       onabort: () => {
         settle(() =>
@@ -245,9 +287,10 @@ export class HttpRequestService {
         : {}),
       onload: (response) => {
         settle(() => {
+          const safe = metadata(response, true, response.status >= 400 ? 'http' : undefined);
           deferred.resolve({
-            ok: response.status >= 200 && response.status < 300,
-            status: response.status,
+            ok: safe.status >= 200 && safe.status < 300,
+            ...safe,
             data: response.response as T,
           });
         });
@@ -255,8 +298,8 @@ export class HttpRequestService {
       onerror: (response) => {
         settle(() => deferred.reject(responseFailure(response)));
       },
-      ontimeout: () => {
-        settle(() => deferred.reject(timeoutFailure()));
+      ontimeout: (response) => {
+        settle(() => deferred.reject(timeoutFailure(response)));
       },
       onabort: () => {
         settle(() => {

@@ -67,7 +67,9 @@ a smaller image. Recovered DOM videos disclose their source-quality limit.
 HLS-only attachments require a supported MP4 source in this flow. See the
 [media source policy](./docs/media-sources.md) for selection and quality details.
 
-Downloads share an in-page memory allowance for their data. If it is reached,
+Generated Blob and ZIP downloads share an in-page memory allowance for their
+data. Extension single-file saves use the browser's download manager and do not
+reserve a whole-file page Blob. If the allowance is reached,
 wait for active downloads to finish. If none are active and the limit remains,
 reload this page, then try fewer files at once. A userscript save can keep its
 allowance until the page is reloaded or closed. A memory-limit partial ZIP
@@ -76,6 +78,12 @@ notifications report the failed-item count. Reopening the gallery does not
 return the userscript allowance, and the shared allowance is not a per-file
 entitlement. See the [download ownership contract](./docs/download-memory.md)
 for its scope.
+
+Video sources load when the item is active or near the gallery viewport. A
+supported alternate MP4 may restore playback after a decoding failure; saves
+retain the selected download quality. See [video loading](./docs/media-video-loading.md),
+[API reuse and failures](./docs/twitter-api-contract.md), and
+[ZIP input admission](./docs/zip-input-admission.md) for the related contracts.
 
 The gallery targets desktop browsers and does not provide a mobile/touch flow.
 

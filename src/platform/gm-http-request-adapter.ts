@@ -11,7 +11,14 @@ import { HttpResponseSizeLimitError } from '@shared/error/http-response-size-lim
 import { getUserscript } from '@shared/external/userscript/adapter';
 import type { GMXMLHttpRequestDetails } from '@shared/types/core/userscript';
 import { isAllowedUrl } from '@shared/utils/url/url-safety';
-import type { HttpRequestAdapter, HttpRequestControl, HttpRequestDetails } from './types';
+import { safeResponseMetadata } from './http-response-metadata';
+import type {
+  HttpErrorCategory,
+  HttpRequestAdapter,
+  HttpRequestControl,
+  HttpRequestDetails,
+  HttpRequestResponse,
+} from './types';
 
 /**
  * Validate that a URL target is allowed by the shared SSRF prevention policy.
@@ -20,8 +27,26 @@ import type { HttpRequestAdapter, HttpRequestControl, HttpRequestDetails } from 
  */
 function validateUrl(url: string): void {
   if (!isAllowedUrl(url)) {
-    throw new Error(`URL not in allowed whitelist: ${url}`);
+    throw Object.assign(new Error('URL not in allowed whitelist'), {
+      category: 'invalid_url' as const,
+    });
   }
+}
+
+function safeFailureResponse(
+  _url: string,
+  source: HttpRequestResponse,
+  category: HttpErrorCategory,
+  statusText: string
+): HttpRequestResponse {
+  return {
+    finalUrl: '',
+    readyState: 0,
+    statusText,
+    response: null,
+    responseText: '',
+    ...safeResponseMetadata(source, false, category),
+  };
 }
 
 const pendingAmbiguousSettlements = new Set<() => void>();
@@ -72,20 +97,26 @@ export class GMHttpRequestAdapter implements HttpRequestAdapter {
       details.onsettled?.();
     };
 
-    const reportResourceLimit = (receivedBytes?: number): void => {
+    const reportResourceLimit = (receivedBytes?: number, source?: HttpRequestResponse): void => {
       if (maxResponseBytes === undefined || resourceLimitExceeded) return;
       resourceLimitExceeded = true;
       const error = new HttpResponseSizeLimitError(maxResponseBytes, receivedBytes);
+      const sourceMetadata = source ? safeResponseMetadata(source, false) : undefined;
       if (gmControl) gmControl.abort();
       else abortAfterStart = true;
       details.onerror?.({
-        finalUrl: details.url,
+        finalUrl: '',
         readyState: 0,
-        status: 0,
+        status: sourceMetadata?.status ?? 0,
         statusText: 'RESOURCE_LIMIT',
         responseHeaders: '',
         response: error,
         responseText: '',
+        readable: false,
+        errorCategory: 'resource_limit',
+        ...(sourceMetadata?.retryAfterMs !== undefined
+          ? { retryAfterMs: sourceMetadata.retryAfterMs }
+          : {}),
       });
     };
 
@@ -127,10 +158,27 @@ export class GMHttpRequestAdapter implements HttpRequestAdapter {
             responseSize !== undefined &&
             responseSize > maxResponseBytes
           ) {
-            reportResourceLimit(responseSize);
+            reportResourceLimit(responseSize, response);
             return;
           }
-          details.onload?.(response);
+          if (
+            details.responseType === 'json' &&
+            response.response == null &&
+            (typeof response.responseText !== 'string' || response.responseText.trim() !== 'null')
+          ) {
+            details.onerror?.(
+              safeFailureResponse(details.url, response, 'unreadable', 'UNREADABLE')
+            );
+            return;
+          }
+          details.onload?.({
+            finalUrl: '',
+            readyState: 4,
+            statusText: '',
+            response: response.response,
+            responseText: '',
+            ...safeResponseMetadata(response, true),
+          });
         } finally {
           reportSettled();
         }
@@ -139,7 +187,17 @@ export class GMHttpRequestAdapter implements HttpRequestAdapter {
     if (details.onerror !== undefined || maxResponseBytes !== undefined || details.onsettled) {
       gmDetails.onerror = (response) => {
         try {
-          if (!resourceLimitExceeded) details.onerror?.(response);
+          if (!resourceLimitExceeded) {
+            const status = safeResponseMetadata(response, false).status;
+            details.onerror?.(
+              safeFailureResponse(
+                details.url,
+                response,
+                status > 0 ? 'unreadable' : 'network',
+                status > 0 ? 'UNREADABLE' : 'NETWORK_ERROR'
+              )
+            );
+          }
         } finally {
           reportSettled();
         }
@@ -148,7 +206,8 @@ export class GMHttpRequestAdapter implements HttpRequestAdapter {
     if (details.ontimeout !== undefined || details.onsettled) {
       gmDetails.ontimeout = (response) => {
         try {
-          if (!resourceLimitExceeded) details.ontimeout?.(response);
+          if (!resourceLimitExceeded)
+            details.ontimeout?.(safeFailureResponse(details.url, response, 'timeout', 'TIMEOUT'));
         } finally {
           reportSettled();
         }
@@ -157,7 +216,8 @@ export class GMHttpRequestAdapter implements HttpRequestAdapter {
     if (details.onabort !== undefined || details.onsettled) {
       gmDetails.onabort = (response) => {
         try {
-          if (!resourceLimitExceeded) details.onabort?.(response);
+          if (!resourceLimitExceeded)
+            details.onabort?.(safeFailureResponse(details.url, response, 'abort', 'ABORT'));
         } finally {
           reportSettled();
         }
@@ -171,10 +231,23 @@ export class GMHttpRequestAdapter implements HttpRequestAdapter {
           (response.loaded > maxResponseBytes ||
             (response.lengthComputable && response.total > maxResponseBytes))
         ) {
-          reportResourceLimit(Math.max(response.loaded, response.total));
+          reportResourceLimit(Math.max(response.loaded, response.total), response);
           return;
         }
-        details.onprogress?.(response);
+        const safe = safeResponseMetadata(response, false);
+        details.onprogress?.({
+          finalUrl: '',
+          readyState: response.readyState,
+          status: safe.status,
+          statusText: '',
+          responseHeaders: '',
+          response: null,
+          responseText: '',
+          ...(safe.retryAfterMs !== undefined ? { retryAfterMs: safe.retryAfterMs } : {}),
+          lengthComputable: response.lengthComputable,
+          loaded: response.loaded,
+          total: response.total,
+        });
       };
     }
 
@@ -195,13 +268,15 @@ export class GMHttpRequestAdapter implements HttpRequestAdapter {
       // L2: GM_xmlhttpRequest can throw synchronously outside of validateUrl
       try {
         details.onerror?.({
-          finalUrl: details.url,
+          finalUrl: '',
           readyState: 0,
           status: 0,
           statusText: 'NETWORK_ERROR',
           responseHeaders: '',
           response: null,
           responseText: '',
+          readable: false,
+          errorCategory: 'network',
         });
       } catch {
         // A caller callback failure cannot prove an opaque GM request ended.
