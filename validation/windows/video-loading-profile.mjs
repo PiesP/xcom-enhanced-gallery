@@ -141,7 +141,10 @@ export async function runVideoLoadingProfile({
   const records = { api: [], video: [], unexpectedVideo: [], overflow: 0 };
   const observation = { fixtureUrl, tweetId, expectedVideoCount: VIDEO_COUNT,
     canonicalBest: bestUrl, playableFallback: lowerUrl, requests: records,
-    checks: [], cleanup: { routeRemoved: false, settingsRestored: false } };
+    checks: [], cleanup: { routeRemoved: false, settingsRestored: false,
+      viewportRestored: false } };
+  const viewportBefore = page.viewportSize();
+  assert(viewportBefore, 'The owned page must have an explicit viewport');
   let releaseBest;
   const bestGate = new Promise((resolve) => { releaseBest = resolve; });
   let releaseLower;
@@ -211,6 +214,8 @@ export async function runVideoLoadingProfile({
   };
   await context.route('**/*', routeHandler);
   try {
+    await page.setViewportSize({ width: 1280, height: 500 });
+    observation.viewport = { width: 1280, height: 500 };
     settingsBefore = await extensionPage.evaluate(async (key) => {
       const values = await chrome.storage.local.get(key);
       return { exists: Object.hasOwn(values, key), value: values[key] ?? null };
@@ -435,6 +440,13 @@ export async function runVideoLoadingProfile({
         observation.cleanup.settingsError = String(error);
       }
     } else observation.cleanup.settingsRestored = true;
+    try {
+      await page.setViewportSize(viewportBefore);
+      observation.cleanup.viewportRestored = true;
+    } catch (error) {
+      cleanupFailures.push(error);
+      observation.cleanup.viewportError = String(error);
+    }
     if (primaryError || cleanupFailures.length) {
       await writeFile(join(output, 'video-loading-failure.json'), JSON.stringify(observation, null, 2))
         .catch(() => {});
