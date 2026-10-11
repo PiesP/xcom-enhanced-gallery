@@ -2812,6 +2812,9 @@ async function runOuterVideoControl({ quotedCase, quotedApiResponses, downloads,
   assert.equal(hit, true, 'Outer video must be the ordinary hit-tested target');
   await page.screenshot({ path: join(output, 'quoted-outer-control-before.png') });
   const apiStart = quotedApiResponses.length;
+  const precedingApi = quotedApiResponses.slice(0, apiStart).findLast(({ tweetId, status }) =>
+    tweetId === quotedCase.outer && status === 200);
+  assert(precedingApi, 'Outer control must follow a successful same-page owning API request');
   await captureQuotedOpeningScroll(trigger);
   await trigger.click();
   before.scrollY = Number(await trigger.getAttribute('data-opening-scroll-y'));
@@ -2823,8 +2826,12 @@ async function runOuterVideoControl({ quotedCase, quotedApiResponses, downloads,
     type: 'video', path: outerPath });
   const sourceLink = await assertQuotedOriginLink(gallery,
     `https://x.com/${quotedCase.handle}/status/${quotedCase.outer}`);
-  assert.deepEqual(quotedApiResponses.slice(apiStart).map(({ tweetId }) => tweetId),
-    [quotedCase.outer], 'Outer video must request and select A');
+  // This second click reselects A from the same owning metadata used for B.
+  // A still-live normalized cache entry needs no new provider dispatch.
+  const newApi = quotedApiResponses.slice(apiStart);
+  assert(newApi.length <= 1 && newApi.every(({ tweetId, status }) =>
+    tweetId === quotedCase.outer && status === 200),
+  'Outer video may reuse A or dispatch one fresh A request, without another owner');
   await page.keyboard.press('ArrowLeft');
   const quoted = await assertQuotedSelection(page, { position: 2, total: 3,
     type: 'video',
@@ -2854,7 +2861,11 @@ async function runOuterVideoControl({ quotedCase, quotedApiResponses, downloads,
   const close = await closeQuotedGallery({ gallery, page, method: 'button', before,
     caseName: quotedCase.route, selector: '[data-outer-target]' });
   await page.screenshot({ path: join(output, 'quoted-outer-control-after.png') });
-  return { api: quotedApiResponses.slice(apiStart), sourceLink, selected,
+  assert.deepEqual(quotedApiResponses.slice(apiStart), newApi,
+    'Outer navigation and download must not add provider requests');
+  return { api: newApi,
+    metadataReuse: { precedingApi, newRequestCount: newApi.length,
+      reused: newApi.length === 0 }, sourceLink, selected,
     navigation: { awayKey: 'ArrowLeft', returnKey: 'ArrowRight', quoted, returned },
     download: { filename, file, bytes: bytes.length, native,
       sha256: createHash('sha256').update(bytes).digest('hex') }, close };
