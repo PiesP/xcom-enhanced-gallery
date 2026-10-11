@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 PiesP
 
-import { fetchOwnedArrayBufferWithRetry } from '@shared/network/retry-fetch';
+import { fetchOwnedArrayBufferWithRetry, RetryDeferredError } from '@shared/network/retry-fetch';
+import { MAX_RETRY_AFTER_MS, parseRetryAfter } from '@platform/http-response-metadata';
 import { HttpResponseSizeLimitError } from '@shared/error/http-response-size-limit-error';
 import {
   DownloadResourceLimitError,
@@ -79,6 +80,18 @@ describe('owned arraybuffer retry', () => {
     expect(client.calls).toBe(1);
   });
 
+  it.each(['abort', 'resource_limit', 'invalid_url'])(
+    'does not retry a typed %s failure with an unknown status',
+    async (category) => {
+      const error = Object.assign(new Error('Transport stopped'), { status: 0, category });
+      client.impl = async () => { throw error; };
+      await expect(fetchOwnedArrayBufferWithRetry(
+        'https://pbs.twimg.com/media/test', 3, undefined, 0, 4
+      )).rejects.toBe(error);
+      expect(client.calls).toBe(1);
+    }
+  );
+
   it('does not retry a response-size limit', async () => {
     const error = new HttpResponseSizeLimitError(4, 5);
     client.impl = () => new Promise((_, reject) => setTimeout(() => reject(error), 0));
@@ -90,6 +103,65 @@ describe('owned arraybuffer retry', () => {
     }
     expect(observed).toBe(error);
     expect(client.calls).toBe(1);
+  });
+
+  it('releases a rate-limited response and defers guidance beyond the interactive budget', async () => {
+    const budget = new LiveByteBudget(8);
+    const future = new Date(Date.UTC(2075, 9, 12));
+    const weekday = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][future.getUTCDay()];
+    const retryAfterMs = parseRetryAfter(`${weekday}, 12-Oct-75 00:00:00 GMT`, Date.UTC(2026, 9, 12));
+    expect(retryAfterMs).toBe(MAX_RETRY_AFTER_MS);
+    client.impl = async () => ({
+      ok: false,
+      status: 429,
+      retryAfterMs,
+      data: new ArrayBuffer(2),
+      lease: budget.reserve(2),
+    });
+    await expect(fetchOwnedArrayBufferWithRetry(
+      'https://pbs.twimg.com/media/test', 2, undefined, 0, 4, budget
+    )).rejects.toMatchObject({
+      name: 'RetryDeferredError',
+      status: 429,
+      retryAfterMs: MAX_RETRY_AFTER_MS,
+    } satisfies Partial<RetryDeferredError>);
+    expect(client.calls).toBe(1);
+    expect(budget.usedBytes).toBe(0);
+  });
+
+  it('preserves unreadable 429 metadata from an adapter error path', async () => {
+    client.impl = async () => {
+      throw Object.assign(new Error('HTTP:429'), {
+        status: 429,
+        retryAfterMs: 24 * 60 * 60 * 1000,
+        readable: false,
+        category: 'unreadable',
+      });
+    };
+    await expect(fetchOwnedArrayBufferWithRetry(
+      'https://pbs.twimg.com/media/test', 2, undefined, 0, 4
+    )).rejects.toMatchObject({
+      name: 'RetryDeferredError',
+      status: 429,
+      readable: false,
+      transportCategory: 'unreadable',
+    });
+    expect(client.calls).toBe(1);
+  });
+
+  it('does not retry a denied HTTP response', async () => {
+    const budget = new LiveByteBudget(8);
+    client.impl = async () => ({
+      ok: false,
+      status: 403,
+      data: new ArrayBuffer(2),
+      lease: budget.reserve(2),
+    });
+    await expect(fetchOwnedArrayBufferWithRetry(
+      'https://pbs.twimg.com/media/test', 2, undefined, 0, 4, budget
+    )).rejects.toMatchObject({ status: 403 });
+    expect(client.calls).toBe(1);
+    expect(budget.usedBytes).toBe(0);
   });
 
   it('passes the response byte cap to HTTP and returns a releasable binary owner', async () => {

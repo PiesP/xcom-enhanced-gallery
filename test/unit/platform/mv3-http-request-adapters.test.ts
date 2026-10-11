@@ -15,6 +15,17 @@ function successfulResponse(body = 'ok'): Response {
   });
 }
 
+function stalledResponse(status: number, signal: AbortSignal | null | undefined): Response {
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      signal?.addEventListener('abort', () => {
+        controller.error(new DOMException('Aborted', 'AbortError'));
+      }, { once: true });
+    },
+  });
+  return new Response(body, { status, headers: { 'retry-after': '6' } });
+}
+
 afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
@@ -22,6 +33,88 @@ afterEach(() => {
 });
 
 describe('MV3HttpRequestAdapter', () => {
+  it.each([403, 429])('keeps known HTTP %i metadata when body reading times out', async (status) => {
+    vi.useFakeTimers();
+    vi.stubGlobal('fetch', vi.fn((_url: string, init?: RequestInit) =>
+      Promise.resolve(stalledResponse(status, init?.signal))));
+    const onload = vi.fn();
+    const onerror = vi.fn();
+    const onabort = vi.fn();
+    const pending = new Promise<HttpRequestResponse>((resolve) => {
+      new MV3HttpRequestAdapter().request({
+        url: ALLOWED_URL,
+        responseType: 'text',
+        timeout: 25,
+        onload,
+        onerror,
+        onabort,
+        ontimeout: resolve,
+      });
+    });
+    await Promise.resolve();
+    await vi.advanceTimersByTimeAsync(25);
+    await expect(pending).resolves.toMatchObject({
+      status,
+      retryAfterMs: 6_000,
+      readable: false,
+      errorCategory: 'timeout',
+    });
+    expect(onload).not.toHaveBeenCalled();
+    expect(onerror).not.toHaveBeenCalled();
+    expect(onabort).not.toHaveBeenCalled();
+  });
+
+  it('keeps caller abort as cancellation after headers', async () => {
+    vi.stubGlobal('fetch', vi.fn((_url: string, init?: RequestInit) =>
+      Promise.resolve(stalledResponse(429, init?.signal))));
+    const onload = vi.fn();
+    const onerror = vi.fn();
+    const ontimeout = vi.fn();
+    let control: ReturnType<MV3HttpRequestAdapter['request']> | undefined;
+    const pending = new Promise<HttpRequestResponse>((resolve) => {
+      control = new MV3HttpRequestAdapter().request({
+        url: ALLOWED_URL,
+        responseType: 'text',
+        onload,
+        onerror,
+        ontimeout,
+        onabort: resolve,
+      });
+    });
+    await Promise.resolve();
+    control?.abort();
+    await expect(pending).resolves.toMatchObject({
+      status: 429,
+      retryAfterMs: 6_000,
+      readable: false,
+      errorCategory: 'abort',
+    });
+    expect(onload).not.toHaveBeenCalled();
+    expect(onerror).not.toHaveBeenCalled();
+    expect(ontimeout).not.toHaveBeenCalled();
+  });
+
+  it('keeps status and Retry-After when JSON cannot be read', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{invalid', {
+      status: 429,
+      headers: { 'retry-after': '6', authorization: 'secret' },
+    })));
+    const response = await new Promise<HttpRequestResponse>((resolve) => {
+      new MV3HttpRequestAdapter().request({
+        url: ALLOWED_URL,
+        responseType: 'json',
+        onerror: resolve,
+      });
+    });
+    expect(response).toMatchObject({
+      status: 429,
+      readable: false,
+      retryAfterMs: 6_000,
+      errorCategory: 'unreadable',
+      responseHeaders: '',
+    });
+  });
+
   it('rejects an unknown-length streamed response before it exceeds the byte limit', async () => {
     const stream = new ReadableStream<Uint8Array>({
       start(controller) {

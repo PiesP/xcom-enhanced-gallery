@@ -79,7 +79,20 @@ export interface HttpRequestResponse<TResponse = unknown> {
   readonly responseHeaders: string;
   readonly response: TResponse;
   readonly responseText: string;
+  /** Safe transport metadata. Missing values were not observable. */
+  readonly readable?: boolean;
+  readonly retryAfterMs?: number;
+  readonly errorCategory?: HttpErrorCategory;
 }
+
+export type HttpErrorCategory =
+  | 'http'
+  | 'network'
+  | 'timeout'
+  | 'abort'
+  | 'resource_limit'
+  | 'unreadable'
+  | 'invalid_url';
 
 export interface HttpRequestProgressResponse extends HttpRequestResponse {
   readonly lengthComputable: boolean;

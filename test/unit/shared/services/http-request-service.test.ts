@@ -37,7 +37,7 @@ describe('HttpRequestService', () => {
       new HttpRequestService().get<{ value: number }>('https://api.x.com/2/example', {
         signal: controller.signal,
       })
-    ).resolves.toEqual({ ok: true, status: 200, data: { value: 1 } });
+    ).resolves.toEqual({ ok: true, status: 200, readable: true, data: { value: 1 } });
     expect(removeEventListener).toHaveBeenCalledWith('abort', expect.any(Function));
   });
 
@@ -61,6 +61,74 @@ describe('HttpRequestService', () => {
     });
 
     expect(mocks.request).toHaveBeenCalledWith(expect.objectContaining({ maxResponseBytes: 4 }));
+  });
+
+  it('preserves a bounded error contract for an unreadable 429 response', async () => {
+    mocks.request.mockImplementation((details) => {
+      details.onerror?.({
+        finalUrl: details.url,
+        readyState: 4,
+        status: 429,
+        statusText: 'UNREADABLE',
+        responseHeaders: 'Retry-After: 7\r\nAuthorization: secret',
+        response: null,
+        responseText: 'private response',
+      });
+      return { abort: vi.fn() };
+    });
+
+    await expect(new HttpRequestService().get('https://api.x.com/2/example')).rejects.toMatchObject({
+      name: 'HttpRequestError',
+      status: 429,
+      readable: false,
+      category: 'unreadable',
+      retryAfterMs: 7_000,
+    });
+  });
+
+  it('keeps the known status and retry guidance on timeout', async () => {
+    mocks.request.mockImplementation((details) => {
+      details.ontimeout?.({
+        finalUrl: details.url,
+        readyState: 0,
+        status: 403,
+        statusText: 'TIMEOUT',
+        responseHeaders: '',
+        response: null,
+        responseText: '',
+        readable: false,
+        errorCategory: 'timeout',
+        retryAfterMs: 6_000,
+      });
+      return { abort: vi.fn() };
+    });
+    await expect(new HttpRequestService().get('https://api.x.com/2/example')).rejects.toMatchObject({
+      name: 'HttpRequestError',
+      message: 'TIMEOUT',
+      status: 403,
+      readable: false,
+      category: 'timeout',
+      retryAfterMs: 6_000,
+    });
+  });
+
+  it('validates status and exposes only safe metadata on a failed onload', async () => {
+    mocks.request.mockImplementation((details) => {
+      details.onload?.({
+        finalUrl: details.url,
+        readyState: 4,
+        status: 403,
+        statusText: 'Forbidden',
+        responseHeaders: 'Secret: value',
+        response: { errors: ['private content'] },
+        responseText: 'private content',
+      });
+      return { abort: vi.fn() };
+    });
+
+    const response = await new HttpRequestService().get('https://api.x.com/2/example');
+    expect(response).toMatchObject({ status: 403, readable: true, errorCategory: 'http' });
+    expect(response).not.toHaveProperty('retryAfterMs');
   });
 
   it('preserves a pre-aborted signal reason and removes its listener', async () => {
