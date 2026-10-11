@@ -132,12 +132,23 @@ export class GalleryApp {
         this.openGallery(result.mediaItems, result.clickedIndex, {
           reason: 'media-click',
         });
-        if (result.metadata?.recoveryScope === 'visible-tile') {
+        const partialRecovery = result.metadata?.recoveryScope === 'visible-tile';
+        const observedQuality = result.mediaItems.some(
+          (media) =>
+            media.downloadSource?.quality === 'observed' ||
+            media.downloadSource?.quality === 'unverified-original'
+        );
+        if (partialRecovery || observedQuality) {
           const lang = getLanguageService();
           notifySafely(
             getNotificationAdapter(),
-            lang.translate('msg.gal.partialRecovery.title'),
-            lang.translate('msg.gal.partialRecovery.body')
+            lang.translate(
+              partialRecovery ? 'msg.gal.partialRecovery.title' : 'msg.gal.observedQuality.title'
+            ),
+            partialRecovery
+              ? lang.translate('msg.gal.partialRecovery.body') +
+                  (observedQuality ? ` ${lang.translate('msg.gal.observedQuality.body')}` : '')
+              : lang.translate('msg.gal.observedQuality.body')
           );
         }
       } else {
@@ -149,7 +160,11 @@ export class GalleryApp {
         notifySafely(
           getNotificationAdapter(),
           lang.translate('msg.err.loadMedia.title'),
-          lang.translate('msg.err.loadMedia.body')
+          lang.translate(
+            result.failureKind === 'unsupported-source'
+              ? 'msg.err.loadMedia.unsupported'
+              : 'msg.err.loadMedia.body'
+          )
         );
       }
     } catch (error) {

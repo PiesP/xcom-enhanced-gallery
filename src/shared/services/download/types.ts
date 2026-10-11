@@ -12,6 +12,7 @@ import type { LiveByteBudget, OwnedBlob } from './live-byte-budget';
 export interface OrchestratorItem {
   readonly url: string;
   readonly desiredName: string;
+  readonly sourceUnavailable?: boolean;
   readonly expectedSizeBytes?: number | undefined;
   readonly blob?: OwnedBlob | Promise<OwnedBlob> | undefined;
   readonly getBlob?:
@@ -69,6 +70,7 @@ export interface ZipResult {
   /** Parts ready for `new Blob(parts, {type:'application/zip'})` — no monolithic copy */
   zipData: BlobPart[];
   resourceLimitExceeded: boolean;
+  sourceUnavailable?: boolean;
   /** Uses copy capacity already reserved before entries were read. Transfers ownership. */
   createBlob(): OwnedBlob;
   /** Drop parts and return reservations when no Blob was handed to a download. */
@@ -84,6 +86,8 @@ export interface BulkDownloadResult {
   error?: string;
   failures?: Array<{ url: string; error: string }>;
   code: ErrorCode;
+  /** Retain this cause even when resource rejection takes code precedence. */
+  sourceUnavailable?: boolean;
 }
 
 export function reportProgress(

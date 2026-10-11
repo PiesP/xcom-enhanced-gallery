@@ -11,10 +11,12 @@ import { generateMediaFilename, generateZipFilename } from '@shared/core/filenam
 import type { OwnedBlob } from '@shared/services/download/live-byte-budget';
 import type { MediaBlobProvider } from '@shared/services/download/types';
 import type { MediaInfo } from '@shared/types/media.types';
+import { getMediaDownloadUrl } from '@shared/utils/media/media-source';
 
 export interface PlannedZipItem {
   readonly url: string;
   readonly desiredName: string;
+  readonly sourceUnavailable?: boolean;
   readonly expectedSizeBytes?: number | undefined;
   readonly blob?: OwnedBlob | Promise<OwnedBlob> | undefined;
   readonly getBlob?:
@@ -54,10 +56,11 @@ function generateZipName(items: readonly MediaInfo[], nowMs?: number): string {
  */
 export function planBulkDownload(input: BulkDownloadPlanningInput): BulkDownloadPlan {
   const items: PlannedZipItem[] = input.mediaItems.map((media) => ({
-    url: media.url,
+    url: getMediaDownloadUrl(media),
     desiredName: generateDesiredName(media, input.nowMs),
+    ...(media.downloadSource?.quality === 'unverified-original' ? { sourceUnavailable: true } : {}),
     expectedSizeBytes: media.fileSize,
-    blob: input.cachedBlobs?.get(media.url),
+    blob: input.cachedBlobs?.get(getMediaDownloadUrl(media)),
     getBlob: input.mediaBlobProvider
       ? (signal?: AbortSignal, maxResponseBytes?: number) =>
           (maxResponseBytes === undefined

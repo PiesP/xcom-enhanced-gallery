@@ -52,6 +52,8 @@ export const en: LanguageStrings = {
       loadMedia: {
         title: 'Failed to load media',
         body: 'Could not find images or videos.',
+        unsupported:
+          'This video only provides HLS streaming. Gallery playback and download require a verified MP4 source.',
       },
       generic: 'Error occurred',
       loadGallery: 'Failed to load gallery',
@@ -94,10 +96,16 @@ export const en: LanguageStrings = {
       },
       noMedia: 'No media item selected. Please re-open the gallery and try again.',
       zipFail: 'Failed to save ZIP file',
+      sourceUnavailable:
+        'The original image source could not be verified. This item was not saved. Reopen the post and try again.',
       resourceLimit:
         'The download memory limit was reached. Wait for active downloads to finish. If none are active and the limit remains, reload this page. Then retry with fewer files.',
     },
     gal: {
+      observedQuality: {
+        title: 'Recovered source quality',
+        body: 'Source quality could not be verified for some items. Images without a verified original cannot be saved; recovered videos use the observed source.',
+      },
       partialRecovery: {
         title: 'Visible media only',
         body: 'Recovered media from this tile only. Bulk download includes only the items shown.',

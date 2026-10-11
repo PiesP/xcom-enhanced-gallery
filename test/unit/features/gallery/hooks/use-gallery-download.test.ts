@@ -89,6 +89,23 @@ describe('createDownloadHandler bulk resource limits', () => {
     expect(state.setDownloadStatus).toHaveBeenLastCalledWith('handedOff');
   });
 
+  it.each([false, true])('discloses both unavailable originals and resource rejection, partial=%s', async (partial) => {
+    state.downloadBulk.mockResolvedValue({ success: partial, status: partial ? 'partial' : 'error', filesProcessed: 3,
+      filesSuccessful: partial ? 1 : 0, code: 'RESOURCE_LIMIT', sourceUnavailable: true });
+    await createDownloadHandler().handleDownload('all');
+    expect(state.setDownloadStatus).toHaveBeenLastCalledWith(partial ? 'handedOff' : 'error');
+    expect(state.setError).toHaveBeenLastCalledWith(`${partial ? 'msg.dl.part.resourceLimit' : 'msg.dl.resourceLimit'} msg.dl.sourceUnavailable`);
+    expect(state.notifySafely).toHaveBeenCalledWith(state.notify, partial ? 'msg.dl.part.t' : 'msg.dl.one.err.t',
+      `${partial ? 'msg.dl.part.resourceLimit' : 'msg.dl.resourceLimit'} msg.dl.sourceUnavailable`);
+  });
+
+  it('discloses the original-source failure for a single photo', async () => {
+    state.downloadSingle.mockResolvedValue({ success: false, code: 'SOURCE_UNAVAILABLE', error: 'Original source is unverified' });
+    await createDownloadHandler().handleDownload('current');
+    expect(state.setError).toHaveBeenLastCalledWith('msg.dl.sourceUnavailable');
+    expect(state.setDownloadStatus).toHaveBeenLastCalledWith('error');
+  });
+
   it('shows localized recovery guidance for an over-budget single download', async () => {
     state.downloadSingle.mockResolvedValue({ success: false, code: 'RESOURCE_LIMIT', error: 'Response requires 100 bytes (limit 10)' });
     await createDownloadHandler().handleDownload('current');

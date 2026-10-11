@@ -9,6 +9,7 @@ import { getDownloadAdapter } from '@platform/index';
 import { planBulkDownload } from '@shared/core/download/download-plan';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { getUserCancelledAbortErrorFromSignal, isAbortError } from '@shared/error/cancellation';
+import { DownloadSourceUnavailableError } from '@shared/error/download-source-unavailable-error';
 import { downloadSingleFile } from '@shared/services/download/single-download';
 import type {
   BulkDownloadResult,
@@ -30,7 +31,11 @@ function createErrorResponse(
   error: string,
   code: ErrorCode,
   filesProcessed: number,
-  options?: { filesSuccessful?: number; failures?: BulkDownloadResult['failures'] }
+  options?: {
+    filesSuccessful?: number;
+    failures?: BulkDownloadResult['failures'];
+    sourceUnavailable?: boolean;
+  }
 ): BulkDownloadResult {
   return {
     success: false,
@@ -39,6 +44,7 @@ function createErrorResponse(
     filesSuccessful: options?.filesSuccessful ?? 0,
     error,
     ...(options?.failures ? { failures: options.failures } : {}),
+    ...(options?.sourceUnavailable ? { sourceUnavailable: true } : {}),
     code,
   };
 }
@@ -144,10 +150,19 @@ export class DownloadOrchestrator {
             return createErrorResponse(
               result.resourceLimitExceeded
                 ? new DownloadResourceLimitError().message
-                : 'No files downloaded',
-              result.resourceLimitExceeded ? ErrorCode.RESOURCE_LIMIT : ErrorCode.ALL_FAILED,
+                : result.sourceUnavailable
+                  ? new DownloadSourceUnavailableError().message
+                  : 'No files downloaded',
+              result.resourceLimitExceeded
+                ? ErrorCode.RESOURCE_LIMIT
+                : result.sourceUnavailable
+                  ? ErrorCode.SOURCE_UNAVAILABLE
+                  : ErrorCode.ALL_FAILED,
               items.length,
-              { failures: result.failures }
+              {
+                failures: result.failures,
+                ...(result.sourceUnavailable ? { sourceUnavailable: true } : {}),
+              }
             );
           }
 
@@ -181,7 +196,12 @@ export class DownloadOrchestrator {
             filesSuccessful: result.filesSuccessful,
             filename,
             failures: result.failures,
-            code: result.resourceLimitExceeded ? ErrorCode.RESOURCE_LIMIT : ErrorCode.NONE,
+            ...(result.sourceUnavailable ? { sourceUnavailable: true } : {}),
+            code: result.resourceLimitExceeded
+              ? ErrorCode.RESOURCE_LIMIT
+              : result.sourceUnavailable
+                ? ErrorCode.SOURCE_UNAVAILABLE
+                : ErrorCode.NONE,
           };
         } finally {
           result.dispose();

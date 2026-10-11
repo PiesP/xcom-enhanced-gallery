@@ -11,11 +11,13 @@ import type { DownloadAdapter } from '@platform/types';
 import { generateMediaFilename } from '@shared/core/filename/filename-utils';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { USER_CANCELLED_MESSAGE } from '@shared/error/cancellation';
+import { DownloadSourceUnavailableError } from '@shared/error/download-source-unavailable-error';
 import { isHttpResponseSizeLimitError } from '@shared/error/http-response-size-limit-error';
 import { readResponseBody } from '@shared/network/bounded-response';
 import type { DownloadOptions, SingleDownloadResult } from '@shared/services/download/types';
 import { reportProgress } from '@shared/services/download/types';
 import { ErrorCode, type MediaInfo } from '@shared/types/media.types';
+import { getMediaDownloadUrl } from '@shared/utils/media/media-source';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
 import {
   DownloadResourceLimitError,
@@ -34,7 +36,9 @@ const createErrorDownloadResult = (error: unknown): SingleDownloadResult => ({
   error: normalizeErrorMessage(error),
   ...(isHttpResponseSizeLimitError(error) || error instanceof DownloadResourceLimitError
     ? { code: ErrorCode.RESOURCE_LIMIT }
-    : {}),
+    : error instanceof DownloadSourceUnavailableError
+      ? { code: ErrorCode.SOURCE_UNAVAILABLE }
+      : {}),
 });
 
 /**
@@ -85,11 +89,16 @@ export async function downloadSingleFile(
     return downloadBlobWithAdapter(options.blob, filename, abortSignal, options);
   }
 
-  if (!isValidMediaUrl(media.url)) {
+  if (media.downloadSource?.quality === 'unverified-original') {
+    return createErrorDownloadResult(new DownloadSourceUnavailableError());
+  }
+
+  const downloadUrl = getMediaDownloadUrl(media);
+  if (!isValidMediaUrl(downloadUrl)) {
     return createErrorDownloadResult(new Error('Invalid media download URL'));
   }
 
-  return downloadWithAdapter(media.url, filename, options, abortSignal);
+  return downloadWithAdapter(downloadUrl, filename, options, abortSignal);
 }
 
 async function downloadWithAdapter(

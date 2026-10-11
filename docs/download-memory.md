@@ -28,6 +28,12 @@ reserve the separate `arrayBuffer()` copy. Releasing a lease means its owner
 has stopped using that backing storage. Sharing an existing lease does not
 charge the same backing allocation twice.
 
+Download caching and ZIP planning use the preferred save URL from the
+[media source policy](media-sources.md), rather than the observed display URL.
+An unverified original photo fails before provider dispatch or entry admission;
+it never falls back to the displayed thumbnail. Mixed original-source and
+resource-limit failures retain both causes in the user guidance.
+
 Per-response, entry and serialized-archive limits are additional ceilings.
 The effective admitted size can be lower when another operation or cache owns
 part of the page budget. The ledger deliberately rejects admission instead of

@@ -8,9 +8,10 @@ import type {
   TwitterTweet,
   TwitterUser,
 } from '@shared/services/media/types';
+import type { VideoSourceVariant } from '@shared/types/media.types';
 import { extractDimensionsFromUrl, normalizeDimension } from '@shared/utils/media/media-dimensions';
+import { normalizeOriginalImageUrl } from '@shared/utils/media/media-source';
 import { escapeRegExp } from '@shared/utils/text/formatting';
-import { tryParseUrl } from '@shared/utils/url/host';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
 
 const MAX_VIDEO_VARIANT_URLS = 32;
@@ -58,53 +59,10 @@ function resolveAspectRatio(
   return undefined;
 }
 
-function buildHighQualityUrl(path: string, query: string): string {
-  const extMatch = path.match(/\.(jpe?g|png)$/i);
-  if (!extMatch) return `${path}?${query}`;
-  const ext = extMatch[1]!.toLowerCase();
-  const params = new URLSearchParams(query);
-  if (!Array.from(params.keys()).some((k) => k.toLowerCase() === 'format')) {
-    params.set('format', ext);
-  }
-  params.set('name', 'orig');
-  const q = params.toString();
-  return q ? `${path}?${q}` : path;
-}
-
-function getPhotoHighQualityUrl(mediaUrlHttps?: string): string | undefined {
-  if (!mediaUrlHttps) return mediaUrlHttps;
-
-  const isAbsolute = /^(https?:)?\/\//i.test(mediaUrlHttps);
-  const parsed = tryParseUrl(mediaUrlHttps, 'https://pbs.twimg.com');
-
-  if (!parsed) {
-    const [path = '', query = ''] = mediaUrlHttps.split('?');
-    return buildHighQualityUrl(path, query);
-  }
-
-  const setParamCI = (key: string, value: string): void => {
-    for (const k of Array.from(parsed.searchParams.keys())) {
-      if (k !== key && k.toLowerCase() === key) parsed.searchParams.delete(k);
-    }
-    parsed.searchParams.set(key, value);
-  };
-
-  const pathMatch = parsed.pathname.match(/\.(jpe?g|png)$/i);
-  if (!pathMatch) return mediaUrlHttps;
-  const ext = pathMatch[1]!.toLowerCase();
-
-  if (!Array.from(parsed.searchParams.keys()).some((k) => k.toLowerCase() === 'format')) {
-    setParamCI('format', ext);
-  }
-  setParamCI('name', 'orig');
-
-  return isAbsolute ? parsed.toString() : `${parsed.pathname}${parsed.search}`;
-}
-
-function getVideoVariantUrls(media: TwitterMedia): readonly string[] {
+function getVideoVariants(media: TwitterMedia): readonly VideoSourceVariant[] {
   const variants = Array.isArray(media.video_info?.variants) ? media.video_info.variants : [];
   const seen = new Set<string>();
-  const accepted: Array<{ url: string; bitrate: number }> = [];
+  const accepted: VideoSourceVariant[] = [];
   for (const variant of variants) {
     if (
       variant?.content_type !== 'video/mp4' ||
@@ -120,21 +78,53 @@ function getVideoVariantUrls(media: TwitterMedia): readonly string[] {
     )
       continue;
     seen.add(variant.url);
-    accepted.push({
-      url: variant.url,
-      bitrate: Number.isFinite(variant.bitrate) ? (variant.bitrate ?? 0) : 0,
-    });
+    const bitrate =
+      Number.isSafeInteger(variant.bitrate) && variant.bitrate! >= 0 ? variant.bitrate : undefined;
+    const dimensions = extractDimensionsFromUrl(variant.url);
+    accepted.push(
+      Object.freeze({
+        url: variant.url,
+        contentType: 'video/mp4',
+        ...(bitrate !== undefined ? { bitrate } : {}),
+        ...(dimensions ?? {}),
+      })
+    );
   }
-  accepted.sort((left, right) => right.bitrate - left.bitrate);
-  return Object.freeze(accepted.slice(0, MAX_VIDEO_VARIANT_URLS).map(({ url }) => url));
+  accepted.sort((left, right) => (right.bitrate ?? 0) - (left.bitrate ?? 0));
+  return Object.freeze(accepted.slice(0, MAX_VIDEO_VARIANT_URLS));
 }
 
 function getVideoHighQualityUrl(media: TwitterMedia): string | null {
-  return getVideoVariantUrls(media)[0] ?? null;
+  return getVideoVariants(media)[0]?.url ?? null;
+}
+
+function getUnsupportedHlsUrls(media: TwitterMedia): readonly string[] {
+  const accepted = new Set<string>();
+  if (Array.isArray(media.video_info?.variants)) {
+    for (const variant of media.video_info.variants) {
+      if (
+        !variant ||
+        !['application/x-mpegurl', 'application/vnd.apple.mpegurl'].includes(
+          variant.content_type?.toLowerCase()
+        ) ||
+        typeof variant.url !== 'string' ||
+        !isValidMediaUrl(variant.url)
+      )
+        continue;
+      const parsed = new URL(variant.url);
+      if (parsed.hostname === 'video.twimg.com' && parsed.pathname.toLowerCase().endsWith('.m3u8'))
+        accepted.add(variant.url);
+      if (accepted.size === MAX_VIDEO_VARIANT_URLS) break;
+    }
+  }
+  return Object.freeze([...accepted]);
 }
 
 export function getHighQualityMediaUrl(media: TwitterMedia): string | null {
-  if (media.type === 'photo') return getPhotoHighQualityUrl(media.media_url_https) ?? null;
+  if (media.type === 'photo')
+    return media.media_url_https
+      ? (normalizeOriginalImageUrl(media.media_url_https) ?? media.media_url_https)
+      : (media.media_url_https ?? null);
   if (media.type === 'video' || media.type === 'animated_gif') return getVideoHighQualityUrl(media);
   return null;
 }
@@ -151,6 +141,7 @@ function createMediaEntry(
   const mediaType = media.type === 'animated_gif' ? 'video' : media.type;
   const dims = resolveDimensions(media, mediaUrl);
   const aspectRatio = resolveAspectRatio(media, dims);
+  const videoVariants = mediaType === 'video' ? getVideoVariants(media) : undefined;
 
   return {
     screen_name: screenName,
@@ -167,7 +158,10 @@ function createMediaEntry(
     short_tweet_url: media.url ?? '',
     tweet_text: tweetText,
     sourceLocation,
-    ...(mediaType === 'video' && { videoVariantUrls: getVideoVariantUrls(media) }),
+    ...(videoVariants && {
+      videoVariants,
+      videoVariantUrls: Object.freeze(videoVariants.map(({ url }) => url)),
+    }),
     ...(media.ext_alt_text?.trim() ? { alt_text: media.ext_alt_text.trim() } : {}),
     ...(dims.width && { original_width: dims.width }),
     ...(dims.height && { original_height: dims.height }),
@@ -238,7 +232,29 @@ export function extractMediaFromTweet(
 
     try {
       const mediaUrl = getHighQualityMediaUrl(media);
-      if (!mediaUrl || !isValidMediaUrl(mediaUrl)) continue;
+      if (!mediaUrl || !isValidMediaUrl(mediaUrl)) {
+        const unsupportedVariantUrls = getUnsupportedHlsUrls(media);
+        if (
+          (media.type === 'video' || media.type === 'animated_gif') &&
+          unsupportedVariantUrls.length > 0
+        ) {
+          mediaItems.push({
+            ...createMediaEntry(
+              media,
+              '',
+              screenName,
+              tweetId,
+              normalizedTweetText,
+              i,
+              sourceLocation
+            ),
+            availability: 'unsupported-hls',
+            download_url: '',
+            unsupportedVariantUrls,
+          });
+        }
+        continue;
+      }
       mediaItems.push(
         createMediaEntry(
           media,

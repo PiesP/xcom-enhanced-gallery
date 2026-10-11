@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import type { TweetMediaEntry } from '@shared/services/media/types';
+import { extractMediaFromTweet } from '@shared/services/media/twitter-parser/twitter-response-parser';
 import type { TweetInfo } from '@shared/types/media.types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -53,6 +54,30 @@ function target(kind: 'preview' | 'blob-player'): HTMLElement {
 describe('TwitterAPIExtractor weak-evidence owner selection', () => {
   beforeEach(() => getTweetMedias.mockReset());
   afterEach(() => document.body.replaceChildren());
+
+  it('classifies the uniquely owned HLS attachment without making its poster playable', async () => {
+    const entries = extractMediaFromTweet({ rest_id: '222', extended_entities: { media: [{
+      type: 'video', id_str: '333', media_url_https: 'https://pbs.twimg.com/ext_tw_video_thumb/333/img/poster.jpg',
+      video_info: { variants: [{ content_type: 'application/x-mpegURL', url: 'https://video.twimg.com/ext_tw_video/333/pu/pl/playlist.m3u8' }] },
+    }] } }, { screen_name: 'main' });
+    expect(entries[0]).toMatchObject({ availability: 'unsupported-hls', download_url: '', videoVariantUrls: [] });
+    getTweetMedias.mockResolvedValue(entries);
+    const clicked = target('preview');
+    clicked.setAttribute('src', entries[0]!.preview_url);
+    const result = await new TwitterAPIExtractor().extract(owner, clicked, {}, 'unsupported');
+    expect(result).toMatchObject({ success: false, mediaItems: [], apiRequestOutcome: 'healthy', failureKind: 'unsupported-source', metadata: { strategy: 'api-media-unsupported' } });
+  });
+
+  it.each(['foreign', 'ambiguous', 'unresolved-quote'] as const)('does not invent an HLS match for %s evidence', async (kind) => {
+    const entry: TweetMediaEntry = { ...videoEntry(kind === 'foreign' ? '111' : '222', '333', 'original'), availability: 'unsupported-hls', download_url: '' };
+    getTweetMedias.mockResolvedValue(kind === 'ambiguous' ? [entry, { ...entry, media_id: '444' }] : [entry]);
+    const clicked = target('preview');
+    clicked.setAttribute('src', entry.preview_url);
+    const result = await new TwitterAPIExtractor().extract(owner, clicked,
+      kind === 'unresolved-quote' ? { clickedMediaEvidence: { mediaType: 'video', sourceKey: null, urls: [], identityKeys: [], ownership: { requestTweetId: '222', ownerTweetId: null, scope: 'quoted' } } } : {}, 'unsupported-guard');
+    expect(result.success).toBe(false);
+    expect(result.failureKind).toBeUndefined();
+  });
 
   it.each(['preview', 'blob-player'] as const)(
     'rejects the sole quoted video for a URL-less %s',

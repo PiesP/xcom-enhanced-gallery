@@ -8,6 +8,7 @@
  */
 
 import type { MediaInfo } from '@shared/types/media.types';
+import { getMediaDownloadUrl } from '@shared/utils/media/media-source';
 import { extractUsernameFromUrl } from '@shared/utils/url/host';
 
 export interface FilenameOptions {
@@ -140,7 +141,7 @@ export function generateMediaFilename(media: MediaInfo, options: FilenameOptions
     }
 
     const nowMs = resolveNowMs(options.nowMs);
-    const extension = options.extension ?? getExtension(media.originalUrl ?? media.url);
+    const extension = options.extension ?? getExtension(getMediaDownloadUrl(media));
     const index = getIndexFromMediaId(media.id) ?? normalizeIndex(options.index);
     const { username, tweetId } = resolveMetadata(media, options.fallbackUsername);
 

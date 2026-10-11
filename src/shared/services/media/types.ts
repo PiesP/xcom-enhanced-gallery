@@ -6,6 +6,8 @@
  * @module \@shared/services/media/types
  */
 
+import type { VideoSourceVariant } from '@shared/types/media.types';
+
 /** Twitter API response envelope */
 export interface TwitterAPIResponse {
   readonly data?: {
@@ -102,10 +104,9 @@ export interface TwitterMedia {
 }
 
 /** Unified media entry (application format) */
-export interface TweetMediaEntry {
+interface TweetMediaEntryBase {
   readonly screen_name: string;
   readonly tweet_id: string;
-  readonly download_url: string;
   readonly type: 'photo' | 'video';
   readonly typeOriginal: 'photo' | 'video' | 'animated_gif';
   readonly index: number;
@@ -121,6 +122,9 @@ export interface TweetMediaEntry {
   readonly aspect_ratio?: [number, number];
   /** Validated playable MP4 variants for exact video source matching (max 32). */
   readonly videoVariantUrls?: readonly string[];
+  readonly videoVariants?: readonly VideoSourceVariant[];
+  /** Bounded HLS identity hints; never admitted as playback or save sources. */
+  readonly unsupportedVariantUrls?: readonly string[];
   /** Media source: 'original' | 'quoted' */
   readonly sourceLocation?: 'original' | 'quoted';
   /** Requested parent tweet ID for media directly owned by its quote. */
@@ -130,3 +134,9 @@ export interface TweetMediaEntry {
   /** Author-written alt text from Twitter API or DOM */
   readonly alt_text?: string;
 }
+
+export type TweetMediaEntry = TweetMediaEntryBase &
+  (
+    | { readonly availability?: 'playable'; readonly download_url: string }
+    | { readonly availability: 'unsupported-hls'; readonly download_url: '' }
+  );

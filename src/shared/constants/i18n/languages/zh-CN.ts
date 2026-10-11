@@ -50,6 +50,7 @@ export const zhCn: LanguageStrings = {
       t: '发生错误',
       b: '发生了意外错误：{error}',
       loadMedia: {
+        unsupported: '此视频仅提供 HLS 流。图库播放和下载需要经过确认的 MP4 来源。',
         title: '加载媒体失败',
         body: '找不到图片或视频。',
       },
@@ -94,10 +95,15 @@ export const zhCn: LanguageStrings = {
       },
       noMedia: '未选择媒体项。请重新打开图库后重试。',
       zipFail: 'ZIP 文件保存失败',
+      sourceUnavailable: '无法确认原始图像来源，因此未保存此项目。请重新打开帖子后重试。',
       resourceLimit:
         '已达到下载内存上限。请先等待正在进行的下载完成。如果没有进行中的下载，但仍达到上限，请重新加载此页面。然后减少文件数量并重试。',
     },
     gal: {
+      observedQuality: {
+        title: '恢复来源的质量',
+        body: '无法确认部分项目的来源质量。未确认原始来源的图像无法保存；恢复的视频使用页面显示的来源保存。',
+      },
       partialRecovery: {
         title: '仅恢复可见媒体',
         body: '仅恢复了此卡片中的媒体。批量下载仅包含显示的项目。',

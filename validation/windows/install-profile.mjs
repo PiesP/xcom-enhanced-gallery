@@ -38,6 +38,9 @@ const PROFILE_PREFIX = 'xeg-chrome-install-';
 const DEFAULT_NOTIFICATION_ICON = 'icons/icon-128x128.png';
 const TWEET_ID = '1234567890123456789';
 const FIXTURE_URL = `https://x.com/testuser/status/${TWEET_ID}`;
+const QUALITY_TWEET_ID = '4666000000000000001';
+const QUALITY_FIXTURE_URL = `https://x.com/qualityuser/status/${QUALITY_TWEET_ID}`;
+const QUALITY_IMAGE_PATHS = ['GkE1234ABCDEF', 'GkE5678GHIJKL.jpg', 'GkE9012MNOPQR.jpg'];
 const PUBLIC_TWEET_ID = '9876543210987654321';
 const PUBLIC_FIXTURE_URL = `https://x.com/public_user/status/${PUBLIC_TWEET_ID}`;
 const DOWNLOAD_TRACKING_STORAGE_KEY = 'xeg.download-tracking.v1';
@@ -88,6 +91,20 @@ function safeError(error, depth = 0) {
 
 function expectedFilename(index) {
   return `testuser_${TWEET_ID}_${index}.jpg`;
+}
+
+function qualityFilename(index) {
+  return `qualityuser_${QUALITY_TWEET_ID}_${index}.jpg`;
+}
+
+function imageReceipt(bytes) {
+  return { bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') };
+}
+
+function expectedOriginalImageUrl(displayUrl) {
+  const url = new URL(displayUrl);
+  url.searchParams.set('name', 'orig');
+  return url.href;
 }
 
 function assertOwnedProfile(root, profile) {
@@ -376,27 +393,27 @@ export async function verifyDownloadDirectory(context, downloads) {
   }
 }
 
-export async function createImageFixtures(context) {
+export async function createImageFixtures(context, scale = 1) {
   const page = await context.newPage();
   try {
     await page.goto('about:blank');
-    const encoded = await page.evaluate(() =>
+    const encoded = await page.evaluate((scale) =>
       [
         { color: '#155a91', label: 'Fixture 1' },
         { color: '#9a5d16', label: 'Fixture 2' },
         { color: '#27764b', label: 'Fixture 3' },
       ].map(({ color, label }, index) => {
         const canvas = document.createElement('canvas');
-        canvas.width = 480 + index * 80;
-        canvas.height = 320 + index * 40;
+        canvas.width = (480 + index * 80) * scale;
+        canvas.height = (320 + index * 40) * scale;
         const drawing = canvas.getContext('2d');
         drawing.fillStyle = color;
         drawing.fillRect(0, 0, canvas.width, canvas.height);
         drawing.fillStyle = '#ffffff';
-        drawing.font = 'bold 36px Segoe UI';
-        drawing.fillText(label, 36, 72);
+        drawing.font = `bold ${36 * scale}px Segoe UI`;
+        drawing.fillText(label, 36 * scale, 72 * scale);
         return canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
-      })
+      }), scale
     );
     return encoded.map((value) => Buffer.from(value, 'base64'));
   } finally {
@@ -409,8 +426,15 @@ function imageIndex(url) {
   return index < 0 ? 0 : index;
 }
 
-async function installFixtureRoutes(context, root, images) {
+async function installFixtureRoutes(context, root, images, displayImages) {
   const html = await readFile(join(root, 'test/e2e/fixtures/installed-gallery-page.html'), 'utf8');
+  const extensionHtml = QUALITY_IMAGE_PATHS.reduce((page, path) => {
+    const sharedPath = path.endsWith('.jpg') ? path : `${path}.jpg`;
+    const sharedSource = `https://pbs.twimg.com/media/${sharedPath}?format=jpg&amp;name=large`;
+    assert(page.includes(sharedSource), 'Expected shared fixture image source is missing');
+    return page.replace(sharedSource,
+      `https://pbs.twimg.com/media/${path}?format=jpg&amp;name=small`);
+  }, html);
   const quotedHtml = await readFile(
     join(root, 'test/e2e/fixtures/installed-quoted-video-page.html'), 'utf8'
   );
@@ -428,6 +452,8 @@ async function installFixtureRoutes(context, root, images) {
   const apiResponses = [];
   const quotedApiResponses = [];
   const unavailableApiResponses = [];
+  const qualityApiResponses = [];
+  const qualityRequests = [];
   let unavailableApiOverflow = 0;
   let sequenceRouteActive = false;
   const routeHandler = async (route) => {
@@ -446,6 +472,24 @@ async function installFixtureRoutes(context, root, images) {
         tweetId = JSON.parse(url.searchParams.get('variables') ?? '{}').tweetId;
       } catch {
         tweetId = undefined;
+      }
+      if (tweetId === QUALITY_TWEET_ID) {
+        assert(qualityApiResponses.length < 8, 'Source-quality API observation overflow');
+        const record = { tweetId, method: route.request().method(), status: 200,
+          requestedAtMonotonicMs: performance.now() };
+        qualityApiResponses.push(record);
+        const media = QUALITY_IMAGE_PATHS.map((path, index) => ({
+          type: 'photo', id_str: `46660${index}`, media_url_https: `https://pbs.twimg.com/media/${path}?format=jpg&name=small`,
+          original_info: { width: 480 + index * 80, height: 320 + index * 40 },
+        }));
+        const result = { __typename: 'Tweet', rest_id: QUALITY_TWEET_ID,
+          core: { user_results: { result: { legacy: { screen_name: 'qualityuser',
+            name: 'qualityuser' } } } },
+          legacy: { id_str: QUALITY_TWEET_ID, full_text: 'Three source-quality fixtures',
+            extended_entities: { media } } };
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: { tweetResult: { result } } }) });
+        record.fulfilledAtMonotonicMs = performance.now();
+        return;
       }
       const quotedResponse = quotedVideoApiResponse(tweetId);
       if (quotedResponse) {
@@ -482,12 +526,15 @@ async function installFixtureRoutes(context, root, images) {
           ? quotedCase.name === 'public-preplayer' ? preplayerHtml
             : quotedHtml.replace('<body data-quote-case="recognized">',
               `<body data-quote-case="${quotedCase.route}">`)
+          : url.pathname === new URL(QUALITY_FIXTURE_URL).pathname
+          ? extensionHtml.replaceAll(TWEET_ID, QUALITY_TWEET_ID)
+            .replaceAll('testuser', 'qualityuser')
           : url.pathname === new URL(PUBLIC_FIXTURE_URL).pathname
           ? html.replace(
               '<body data-fixture-route="classic">',
               '<body data-fixture-route="public">'
             )
-          : html,
+          : extensionHtml,
       });
       return;
     }
@@ -519,9 +566,17 @@ async function installFixtureRoutes(context, root, images) {
       return;
     }
     if (url.hostname === 'pbs.twimg.com') {
+      const index = imageIndex(url.href);
+      const original = url.searchParams.get('name') === 'orig';
+      const body = original ? images[index] : displayImages[index];
+      if (url.pathname.startsWith('/media/') && IMAGE_URL_MARKERS.some((marker) => url.pathname.includes(marker))) {
+        assert(qualityRequests.length < 200, 'Source-quality request observation overflow');
+        qualityRequests.push({ path: url.pathname, name: url.searchParams.get('name'),
+          resourceType: route.request().resourceType(), ...imageReceipt(body) });
+      }
       await route.fulfill({
         contentType: 'image/jpeg',
-        body: images[imageIndex(url.href)],
+        body,
         headers: {
           'Access-Control-Allow-Origin': 'https://x.com',
           'Access-Control-Allow-Credentials': 'true',
@@ -534,8 +589,10 @@ async function installFixtureRoutes(context, root, images) {
   await context.route('**/*', routeHandler);
   return {
     apiResponses,
+    qualityApiResponses,
     quotedApiResponses,
     unavailableApiResponses,
+    qualityRequests,
     getUnavailableApiOverflow: () => unavailableApiOverflow,
     videoPayloads,
     async remove() {
@@ -3023,8 +3080,10 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
   };
 }
 
-async function runCycle({ cycle, downloads, extensionPage, output, page, images }) {
+async function runCycle({ cycle, downloads, extensionPage, output, page, images,
+  displayImages, qualityRequests }) {
   const number = cycle.expectedIndex + 1;
+  const requestStart = qualityRequests.length;
   const trigger = page.locator('[data-testid="tweetPhoto"] img').nth(cycle.triggerIndex);
   await trigger.scrollIntoViewIfNeeded();
   await page.evaluate(() => window.scrollBy(0, -120));
@@ -3081,6 +3140,28 @@ async function runCycle({ cycle, downloads, extensionPage, output, page, images 
   );
   const navigationMs = performance.now() - navigationStarted;
 
+  const expectedDisplayUrl = await page.locator('[data-testid="tweetPhoto"] img')
+    .nth(cycle.expectedIndex).getAttribute('src');
+  assert(expectedDisplayUrl, 'Selected fixture must have an observed display URL');
+  const selectedDisplay = await waitForValue(async () => {
+    const image = gallery.locator(
+      `[data-gallery-element="item"][data-index="${cycle.expectedIndex}"] img`
+    );
+    if (await image.count() !== 1) return undefined;
+    const state = await image.evaluate((element) => ({
+      source: element.currentSrc || element.src, complete: element.complete,
+      width: element.naturalWidth, height: element.naturalHeight,
+    }));
+    return state.complete && state.width > 0 && state.height > 0 ? state : undefined;
+  }, `observed display image ${cycle.expectedIndex}`);
+  assert.equal(selectedDisplay.source, expectedDisplayUrl,
+    'DOM recovery must retain the observed display source');
+  assert.equal(selectedDisplay.width, (480 + cycle.expectedIndex * 80) / 4);
+  assert.equal(selectedDisplay.height, (320 + cycle.expectedIndex * 40) / 4);
+  assert(!displayImages[cycle.expectedIndex].equals(images[cycle.expectedIndex]),
+    'The observed display and original payloads must differ');
+  await page.screenshot({ path: join(output, `cycle-${number}-gallery.png`) });
+
   const knownIds = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
   const filename = expectedFilename(cycle.expectedIndex);
   const downloadStarted = performance.now();
@@ -3097,6 +3178,8 @@ async function runCycle({ cycle, downloads, extensionPage, output, page, images 
   );
   const bytes = await readFile(download.filename);
   assert(images[cycle.expectedIndex].equals(bytes), 'Downloaded bytes must match the selected fixture');
+  assert(!displayImages[cycle.expectedIndex].equals(bytes),
+    'Single download must not save the smaller display payload');
   const copiedName = `cycle-${number}-download.jpg`;
   await copyFile(download.filename, join(output, copiedName));
 
@@ -3144,11 +3227,150 @@ async function runCycle({ cycle, downloads, extensionPage, output, page, images 
       sha256: createHash('sha256').update(bytes).digest('hex'),
     },
     expectedIndex: cycle.expectedIndex,
+    sourceQuality: {
+      displayUrl: expectedDisplayUrl,
+      displayed: { width: selectedDisplay.width, height: selectedDisplay.height,
+        ...imageReceipt(displayImages[cycle.expectedIndex]) },
+      originalUrl: expectedOriginalImageUrl(expectedDisplayUrl),
+      original: imageReceipt(images[cycle.expectedIndex]),
+      requests: qualityRequests.slice(requestStart),
+      screenshot: `cycle-${number}-gallery.png`,
+    },
     focusRestored: after.activeElementAlt === before.triggerAlt,
     layoutShiftedWhileOpen: shiftedLayout,
     scroll: { before: before.scrollY, after: after.scrollY, restored: after.scrollY === before.scrollY },
     timingsMs: { close: closeMs, download: downloadMs, navigation: navigationMs, open: openMs },
   };
+}
+
+async function runSourceQualityCycle({ downloads, extensionPage, images, displayImages,
+  output, page, qualityApiResponses, qualityRequests, evidence }) {
+  const apiStart = qualityApiResponses.length;
+  const requestStart = qualityRequests.length;
+  const startedAtMs = performance.now();
+  evidence.status = 'pending';
+  evidence.url = QUALITY_FIXTURE_URL;
+  evidence.selectedIndex = 1;
+  evidence.sources = QUALITY_IMAGE_PATHS.map((path, index) => ({
+    observedUrl: `https://pbs.twimg.com/media/${path}?format=jpg&name=small`,
+    originalUrl: `https://pbs.twimg.com/media/${path}?format=jpg&name=orig`,
+    display: { width: (480 + index * 80) / 4,
+      height: (320 + index * 40) / 4, ...imageReceipt(displayImages[index]) },
+    original: { width: 480 + index * 80,
+      height: 320 + index * 40, ...imageReceipt(images[index]) },
+  }));
+  assert(evidence.sources.every((source, index) =>
+    source.display.sha256 !== source.original.sha256 &&
+    displayImages[index].length < images[index].length),
+  'Every display fixture must be distinct and smaller than its original');
+
+  await page.goto(QUALITY_FIXTURE_URL);
+  await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+  const trigger = page.locator('[data-route="classic"][data-phase="normal"] [data-testid="tweetPhoto"] img').nth(1);
+  await trigger.scrollIntoViewIfNeeded();
+  await trigger.focus();
+  const before = await hostSnapshot(page, 1);
+  assert.equal(before.activeElementAlt, before.triggerAlt,
+    'Source-quality trigger must hold focus before open');
+  const observedUrl = await trigger.getAttribute('src');
+  assert.equal(observedUrl, evidence.sources[1].observedUrl,
+    'API quality fixture must start from the small observed image');
+  const hostImage = await waitForValue(async () => {
+    const state = await trigger.evaluate((element) => ({
+      complete: element.complete, width: element.naturalWidth, height: element.naturalHeight,
+    }));
+    return state.complete && state.width > 0 ? state : undefined;
+  }, 'small source-quality host image');
+  assert.equal(hostImage.width, evidence.sources[1].display.width);
+  assert.equal(hostImage.height, evidence.sources[1].display.height);
+  evidence.hostImage = { url: observedUrl, width: hostImage.width, height: hostImage.height };
+  await page.screenshot({ path: join(output, 'source-quality-before.png') });
+
+  const openStartedAtMs = performance.now();
+  await trigger.click();
+  const gallery = page.locator('[data-xeg-gallery-container]');
+  await gallery.waitFor({ state: 'visible', timeout: 15_000 });
+  const selected = await assertQuotedSelection(page, {
+    position: 2, total: 3, type: 'image', path: `/media/${QUALITY_IMAGE_PATHS[1]}`,
+  });
+  assert.equal(selected.source, evidence.sources[1].originalUrl,
+    'A healthy API result must render its verified original source');
+  const selectedImage = await gallery.locator('[data-gallery-element="item"][data-index="1"] img')
+    .evaluate((element) => ({ width: element.naturalWidth, height: element.naturalHeight }));
+  assert.equal(selectedImage.width, evidence.sources[1].original.width);
+  assert.equal(selectedImage.height, evidence.sources[1].original.height);
+  evidence.origin = await assertQuotedOriginLink(gallery, QUALITY_FIXTURE_URL);
+  assert.equal(qualityApiResponses.length, apiStart + 1,
+    'Source-quality open must make one healthy TweetResultByRestId request');
+  assert.equal(qualityApiResponses.at(-1)?.tweetId, QUALITY_TWEET_ID);
+  evidence.selection = { ...selected, ...selectedImage, api: qualityApiResponses.slice(apiStart),
+    openedInMs: performance.now() - openStartedAtMs,
+    provenance: 'healthy TweetResultByRestId response and original gallery source' };
+  await page.screenshot({ path: join(output, 'source-quality-gallery.png') });
+
+  const knownBeforeCurrent = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+  const currentStartedAtMs = performance.now();
+  await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download"]').click();
+  const current = await waitForDownload(extensionPage, knownBeforeCurrent, qualityFilename(1));
+  const currentPath = relative(downloads, current.filename);
+  assert(currentPath && !currentPath.startsWith('..') && !isAbsolute(currentPath),
+    'Source-quality single escaped the owned directory');
+  const { bytes: currentBytes } = await readExactDownloadFile(current.filename, images[1].length);
+  assert(currentBytes.equals(images[1]), 'API single must save the selected original bytes');
+  assert(!currentBytes.equals(displayImages[1]), 'API single must not save the smaller displayed bytes');
+  assert.deepEqual((await queryDownloads(extensionPage))
+    .filter(({ id }) => !knownBeforeCurrent.has(id)).map(({ id }) => id), [current.id],
+  'Source-quality single must create exactly one native download');
+  await copyFile(current.filename, join(output, 'source-quality-current.jpg'));
+  evidence.current = { id: current.id, filename: basename(current.filename),
+    file: 'source-quality-current.jpg', ...imageReceipt(currentBytes),
+    elapsedMs: performance.now() - currentStartedAtMs };
+
+  const knownBeforeZip = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+  const zipStartedAtMs = performance.now();
+  await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download 3 shown files as ZIP"]').click();
+  const zip = await waitForDownload(extensionPage, knownBeforeZip,
+    `qualityuser_${QUALITY_TWEET_ID}.zip`);
+  assert.notEqual(zip.id, current.id);
+  const zipPath = relative(downloads, zip.filename);
+  assert(zipPath && !zipPath.startsWith('..') && !isAbsolute(zipPath),
+    'Source-quality ZIP escaped the owned directory');
+  const expectedEntries = images.map((bytes, index) => ({ filename: qualityFilename(index), bytes }));
+  const { bytes: zipBytes } = await readExactDownloadFile(zip.filename,
+    expectedStoredZipBytes(expectedEntries));
+  const verified = verifyStoredZip(zipBytes, expectedEntries);
+  assert.deepEqual((await queryDownloads(extensionPage))
+    .filter(({ id }) => !knownBeforeZip.has(id)).map(({ id }) => id), [zip.id],
+  'Source-quality ZIP must create exactly one native download');
+  await copyFile(zip.filename, join(output, 'source-quality.zip'));
+  evidence.zip = { id: zip.id, filename: basename(zip.filename),
+    file: 'source-quality.zip', ...imageReceipt(zipBytes),
+    elapsedMs: performance.now() - zipStartedAtMs, verified };
+
+  await page.keyboard.press('Escape');
+  await gallery.waitFor({ state: 'detached' });
+  const after = await hostSnapshot(page, 1);
+  assert.deepEqual(after.background, before.background,
+    'Source-quality close must restore host isolation');
+  assert.deepEqual(after.bodyStyle, before.bodyStyle,
+    'Source-quality close must restore body style');
+  assert.equal(after.activeElementAlt, before.triggerAlt,
+    'Source-quality close must restore trigger focus');
+  assert.equal(after.scrollRestoration, before.scrollRestoration);
+  assert.equal(after.scrollY, before.scrollY,
+    'Source-quality close must restore host scroll position');
+  await page.screenshot({ path: join(output, 'source-quality-after.png') });
+  evidence.restoration = { focus: after.activeElementAlt === before.triggerAlt,
+    scroll: after.scrollY === before.scrollY, body: true, isolation: true };
+  evidence.api = qualityApiResponses.slice(apiStart);
+  evidence.requests = qualityRequests.slice(requestStart);
+  assert(QUALITY_IMAGE_PATHS.every((path) => evidence.requests.some((request) =>
+    request.path === `/media/${path}` && request.name === 'orig')),
+  'Source-quality ZIP must request the original form of all three images');
+  evidence.screenshots = ['source-quality-before.png', 'source-quality-gallery.png',
+    'source-quality-after.png'];
+  evidence.elapsedMs = performance.now() - startedAtMs;
+  evidence.status = 'passed';
 }
 
 async function exerciseInstalledExtension(
@@ -3158,6 +3380,7 @@ async function exerciseInstalledExtension(
   output,
   downloads,
   images,
+  displayImages,
   browserCdp
 ) {
   const pageErrors = [];
@@ -3170,6 +3393,7 @@ async function exerciseInstalledExtension(
   const mv3RestartCancellation = {};
   const trustedDownloadInput = {};
   const downloadMemory = { status: 'pending' };
+  const sourceQuality = { status: 'pending' };
   const flowCleanup = {};
   const cleanupErrors = [];
   let fixtureRoutes;
@@ -3187,7 +3411,7 @@ async function exerciseInstalledExtension(
   let observationError;
   let observationErrorSeen = false;
   try {
-    fixtureRoutes = await installFixtureRoutes(context, root, images);
+    fixtureRoutes = await installFixtureRoutes(context, root, images, displayImages);
     fixtureVideoAssets = Object.fromEntries(Object.entries(fixtureRoutes.videoPayloads)
       .map(([name, bytes]) => [name, { bytes: bytes.length,
         sha256: createHash('sha256').update(bytes).digest('hex') }]));
@@ -3242,8 +3466,25 @@ async function exerciseInstalledExtension(
       output, page, root, evidence: downloadMemory });
     notification = await verifyDefaultNotification(extensionPage);
     for (const cycle of CYCLES) {
-      cycles.push(await runCycle({ cycle, downloads, extensionPage, output, page, images }));
+      cycles.push(await runCycle({ cycle, downloads, extensionPage, output, page, images,
+        displayImages, qualityRequests: fixtureRoutes.qualityRequests }));
     }
+    try {
+      await runSourceQualityCycle({ downloads, extensionPage, images, displayImages,
+        output, page, qualityApiResponses: fixtureRoutes.qualityApiResponses,
+        qualityRequests: fixtureRoutes.qualityRequests, evidence: sourceQuality });
+    } catch (error) {
+      sourceQuality.status = 'failed';
+      sourceQuality.error = safeError(error);
+      sourceQuality.api = fixtureRoutes.qualityApiResponses;
+      sourceQuality.requests = fixtureRoutes.qualityRequests;
+      await page.screenshot({ path: join(output, 'source-quality-failure.png') })
+        .then(() => { sourceQuality.failureScreenshot = 'source-quality-failure.png'; })
+        .catch((screenshotError) => { sourceQuality.screenshotError = safeError(screenshotError); });
+      throw error;
+    }
+    await page.goto(FIXTURE_URL);
+    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
     try {
       zoomSpanish = await runZoomSpanishCycle({ context, downloads, extensionId,
         extensionPage, images, output, page });
@@ -3361,6 +3602,9 @@ async function exerciseInstalledExtension(
       pageErrors,
       consoleErrors,
       fixtureApiResponses: fixtureRoutes.apiResponses,
+      sourceQuality,
+      sourceQualityApiResponses: fixtureRoutes.qualityApiResponses,
+      sourceQualityRequests: fixtureRoutes.qualityRequests,
       mv3RestartCancellation,
       trustedDownloadInput,
       downloadMemory,
@@ -3420,6 +3664,9 @@ async function exerciseInstalledExtension(
             consoleErrors,
             failedRequests,
             fixtureApiResponses: fixtureRoutes?.apiResponses ?? [],
+            sourceQuality,
+            sourceQualityApiResponses: fixtureRoutes?.qualityApiResponses ?? [],
+            sourceQualityRequests: fixtureRoutes?.qualityRequests ?? [],
             quotedApiResponses: fixtureRoutes?.quotedApiResponses ?? [],
             flowCleanup,
             mv3RestartCancellation,
@@ -3535,6 +3782,7 @@ export async function run({
     }));
     assert.equal(typeof extensionId, 'string');
     const images = await createImageFixtures(context);
+    const displayImages = await createImageFixtures(context, 0.25);
     result.fixture = await exerciseInstalledExtension(
       context,
       extensionId,
@@ -3542,6 +3790,7 @@ export async function run({
       output,
       downloads,
       images,
+      displayImages,
       browserCdp
     );
     await context.unrouteAll({ behavior: 'wait' });

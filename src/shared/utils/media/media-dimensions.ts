@@ -56,7 +56,13 @@ export function sortMediaByVisualOrder(mediaItems: TweetMediaEntry[]): TweetMedi
 
 export function extractDimensionsFromUrl(url: string): DimensionPair | null {
   if (!url) return null;
-  const match = url.match(/\/(\d{2,6})x(\d{2,6})(?:\/|\.|$)/);
+  let pathname: string;
+  try {
+    pathname = new URL(url).pathname;
+  } catch {
+    return null;
+  }
+  const match = pathname.match(/\/(\d{2,6})x(\d{2,6})(?:\/|\.|$)/);
   if (!match) return null;
 
   const width = Number.parseInt(match[1] ?? '', 10);

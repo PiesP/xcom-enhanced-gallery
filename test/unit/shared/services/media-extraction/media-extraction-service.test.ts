@@ -82,7 +82,8 @@ describe('MediaExtractionService quoted media selection', () => {
       });
       // Exercise the actual parser: the quote still has a valid playable variant.
       const parsed = await getTweetMedias('222');
-      expect(parsed.map((entry) => entry.tweet_id)).toEqual(['111']);
+      expect(parsed.map((entry) => entry.tweet_id)).toEqual(['111', '222']);
+      expect(parsed[1]).toMatchObject({ availability: 'unsupported-hls', download_url: '' });
       expect(parsed[0]?.download_url).toContain('/444/');
       expect(parsed[0]?.sourceLocation).toBe('quoted');
       document.body.innerHTML = unanchoredVideoPreview;
@@ -97,7 +98,9 @@ describe('MediaExtractionService quoted media selection', () => {
       expect(result.success).toBe(false);
       expect(result.mediaItems).toEqual([]);
       expect(result.tweetInfo?.tweetId).toBe('222');
-      expect(result.metadata?.error).toBe('Insufficient evidence to select the clicked video');
+      expect(result.failureKind).toBe('unsupported-source');
+      expect(result.apiRequestOutcome).toBe('healthy');
+      expect(result.metadata?.strategy).toBe('api-media-unsupported');
       for (const [url] of httpGet.mock.calls) {
         expect(
           JSON.parse(new URL(url as string).searchParams.get('variables') ?? '{}').tweetId

@@ -47,6 +47,16 @@ describe('downloadSingleFile fetch fallback', () => {
     adapter.needsBlobFallback.mockReturnValue(true);
   });
 
+  it('hands the original download candidate to the adapter while preserving the displayed source', async () => {
+    adapter.needsBlobFallback.mockReturnValue(false);
+    const original = 'https://pbs.twimg.com/media/original?format=png&name=orig';
+    const displayed = { id: '222_api_1', type: 'image' as const, url: 'https://pbs.twimg.com/media/original?format=jpg&name=small', tweetId: '222', tweetUsername: 'author', downloadSource: { url: original, quality: 'cdn-original' as const, provenance: 'dom' as const } };
+    await expect(downloadSingleFile(displayed)).resolves.toEqual({ success: true, filename: 'author_222_1.png' });
+    expect(adapter.download).toHaveBeenCalledWith(original, 'author_222_1.png', undefined, undefined);
+    expect(adapter.downloadBlob).not.toHaveBeenCalled();
+    expect(displayed.url).toContain('name=small');
+  });
+
   it('keeps a fetched Blob charged when cancellation settles before native URL release', async () => {
     const budget = new LiveByteBudget(20);
     const controller = new AbortController();
@@ -70,6 +80,17 @@ describe('downloadSingleFile fetch fallback', () => {
     await expect(downloadSingleFile(media, {liveBudget:budget})).resolves.toMatchObject({success:true});
     expect(budget.usedBytes).toBe(0);
     expect(adapter.download).not.toHaveBeenCalled();
+  });
+
+  it('reports an unverified original without fetching or asking a privileged adapter to save the displayed photo', async () => {
+    const fetch = vi.spyOn(globalThis, 'fetch');
+    const displayed = { id: '222_dom_0', type: 'image' as const, url: 'https://pbs.twimg.com/media/photo?format=jpg&name=small&name=large',
+      downloadSource: { url: '' as const, quality: 'unverified-original' as const, provenance: 'dom' as const } };
+    await expect(downloadSingleFile(displayed)).resolves.toMatchObject({ success: false, code: 'SOURCE_UNAVAILABLE', error: expect.stringContaining('original image') });
+    expect(fetch).not.toHaveBeenCalled();
+    expect(getDownloadAdapter).not.toHaveBeenCalled();
+    expect(adapter.download).not.toHaveBeenCalled();
+    expect(adapter.downloadBlob).not.toHaveBeenCalled();
   });
 
   it('rejects an HTTP media URL before any privileged adapter call', async () => {

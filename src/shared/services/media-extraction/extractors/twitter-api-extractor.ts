@@ -7,7 +7,10 @@
 
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
-import { convertAPIMediaToMediaInfo } from '@shared/services/media/media-factory';
+import {
+  convertAPIMediaToMediaInfo,
+  getAPIMediaSelectionItems,
+} from '@shared/services/media/media-factory';
 import { getTweetMedias, TwitterAPIRequestError } from '@shared/services/media/twitter-api-client';
 import type { TweetMediaEntry } from '@shared/services/media/types';
 import {
@@ -68,6 +71,30 @@ export class TwitterAPIExtractor implements MediaExtractorStrategy {
 
       if (!apiMedias || apiMedias.length === 0) {
         return healthyFailure('No media found in API response', 'api-media-unavailable');
+      }
+
+      if (apiMedias.some((media) => media.availability === 'unsupported-hls')) {
+        const selection = matchClickedMedia(
+          clickEvidence,
+          getAPIMediaSelectionItems(apiMedias, tweetInfo),
+          tweetInfo.tweetId
+        );
+        if (selection.status === 'contradictory')
+          return healthyFailure('API media does not match the clicked media', 'api-media-mismatch');
+        if (selection.index === null)
+          return healthyFailure(
+            'Insufficient evidence to select the clicked media',
+            'api-media-ambiguous'
+          );
+        if (apiMedias[selection.index]?.availability === 'unsupported-hls') {
+          return {
+            ...healthyFailure(
+              'The selected video only provides an unsupported HLS source',
+              'api-media-unsupported'
+            ),
+            failureKind: 'unsupported-source',
+          };
+        }
       }
 
       // Step 3: Transform API response to MediaInfo[]

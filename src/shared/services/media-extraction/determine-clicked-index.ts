@@ -3,7 +3,7 @@
 
 import { MAX_ANCESTOR_HOPS } from '@constants/performance';
 import { logger } from '@shared/logging/logger';
-import type { ClickedMediaEvidence, MediaInfo } from '@shared/types/media.types';
+import type { ClickedMediaEvidence, MediaSelectionItem } from '@shared/types/media.types';
 import {
   extractMediaUrlCandidatesFromElement,
   findMediaElementInDOM,
@@ -122,7 +122,7 @@ function getMediaIdentityKey(url: string | null): string | null {
 /** Preserve evidence instead of turning a confirmed mismatch into index zero. */
 export function matchClickedMedia(
   clickedElement: HTMLElement | ClickedMediaEvidence,
-  mediaItems: MediaInfo[],
+  mediaItems: MediaSelectionItem[],
   clickedTweetId: string
 ): ClickedMediaMatch {
   try {
@@ -268,7 +268,7 @@ function extractUrlFromCssValue(value: string): string | null {
   return match?.[1]?.trim() || null;
 }
 
-function getMediaCandidates(item: MediaInfo): string[] {
+function getMediaCandidates(item: MediaSelectionItem): string[] {
   const candidates: Array<string | null | undefined> = [
     item.url,
     item.originalUrl,
@@ -278,6 +278,20 @@ function getMediaCandidates(item: MediaInfo): string[] {
   const metadata = item.metadata as Record<string, unknown> | undefined;
   const apiData = metadata?.apiData as Record<string, unknown> | undefined;
   if (apiData) {
+    if (
+      apiData.availability === 'unsupported-hls' &&
+      Array.isArray(apiData.unsupportedVariantUrls)
+    ) {
+      candidates.push(
+        ...apiData.unsupportedVariantUrls.slice(0, 32).filter((url): url is string => {
+          if (typeof url !== 'string' || !isValidMediaUrl(url)) return false;
+          const parsed = new URL(url);
+          return (
+            parsed.hostname === 'video.twimg.com' && parsed.pathname.toLowerCase().endsWith('.m3u8')
+          );
+        })
+      );
+    }
     if (Array.isArray(apiData.videoVariantUrls)) {
       candidates.push(
         ...apiData.videoVariantUrls

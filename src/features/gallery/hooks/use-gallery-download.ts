@@ -104,7 +104,9 @@ export function createDownloadHandler() {
             const body =
               result.code === 'RESOURCE_LIMIT'
                 ? languageService.translate('msg.dl.resourceLimit')
-                : languageService.translate('msg.dl.one.err.b', { error });
+                : result.code === 'SOURCE_UNAVAILABLE'
+                  ? languageService.translate('msg.dl.sourceUnavailable')
+                  : languageService.translate('msg.dl.one.err.b', { error });
             setError(body);
             notifyError(title, body);
           }
@@ -131,10 +133,14 @@ export function createDownloadHandler() {
           publishStatus('handedOff');
           const failures = Math.max(0, result.filesProcessed - result.filesSuccessful);
           const title = languageService.translate('msg.dl.part.t');
-          const body = languageService.translate('msg.dl.part.resourceLimit', {
-            count: result.filesSuccessful,
-            failed: failures,
-          });
+          const body =
+            languageService.translate('msg.dl.part.resourceLimit', {
+              count: result.filesSuccessful,
+              failed: failures,
+            }) +
+            (result.sourceUnavailable
+              ? ` ${languageService.translate('msg.dl.sourceUnavailable')}`
+              : '');
           setError(body);
           notifyError(title, body);
           return;
@@ -142,7 +148,24 @@ export function createDownloadHandler() {
         if (result.code === 'RESOURCE_LIMIT') {
           publishStatus('error');
           const title = languageService.translate('msg.dl.one.err.t');
-          const body = languageService.translate('msg.dl.resourceLimit');
+          const body =
+            languageService.translate('msg.dl.resourceLimit') +
+            (result.sourceUnavailable
+              ? ` ${languageService.translate('msg.dl.sourceUnavailable')}`
+              : '');
+          setError(body);
+          notifyError(title, body);
+          return;
+        }
+        if (result.code === 'SOURCE_UNAVAILABLE') {
+          publishStatus(result.success ? 'handedOff' : 'error');
+          const title = languageService.translate(
+            result.success ? 'msg.dl.part.t' : 'msg.dl.one.err.t'
+          );
+          const body =
+            (result.success
+              ? `${languageService.translate('msg.dl.part.b', { count: result.filesProcessed - result.filesSuccessful })} `
+              : '') + languageService.translate('msg.dl.sourceUnavailable');
           setError(body);
           notifyError(title, body);
           return;
