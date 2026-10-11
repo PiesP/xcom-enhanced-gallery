@@ -2233,22 +2233,50 @@ async function runDownloadMemoryCycle({ consoleErrors, downloads, extensionPage,
       'Browser did not observe the declared oversized Content-Length');
     await page.waitForFunction(() => {
       const root = document.querySelector('[data-xeg-gallery-container]');
-      const status = root?.querySelector('[data-download-status="error"]');
       const error = root?.querySelector('[aria-live="polite"][aria-atomic="true"]');
       const text = error?.textContent?.toLowerCase() ?? '';
-      return !!status && text.includes('download memory limit') && text.includes('reload this page');
+      return text.includes('zip includes 2 files') && text.includes('1 files were left out') &&
+        text.includes('download memory limit') && text.includes('reload this page');
     }, null, { timeout: 15_000 });
     const errorText = (await gallery.locator('[aria-live="polite"][aria-atomic="true"]')
       .first().textContent())?.trim() ?? '';
     assert(errorText.length > 0 && errorText.length <= 512,
       'Rejection must show a bounded, understandable error');
-    assert.equal((await queryDownloads(extensionPage))
-      .filter(({ id }) => !knownBeforeFailure.has(id)).length, 0,
-      'Rejected ZIP must not create a native browser download');
+    const partialName = `testuser_${TWEET_ID}.zip`;
+    const partial = await waitForDownload(extensionPage, knownBeforeFailure, partialName);
+    assert.deepEqual((await queryDownloads(extensionPage))
+      .filter(({ id }) => !knownBeforeFailure.has(id)).map(({ id }) => id), [partial.id],
+    'Partial ZIP must create exactly one native browser download');
+    assert.equal(dirname(resolve(partial.filename)), resolve(downloads));
+    const partialEntries = images.slice(1).map((bytes, index) => ({
+      filename: expectedFilename(index + 1), bytes,
+    }));
+    const { bytes: partialBytes, identity: partialIdentity } =
+      await readExactDownloadFile(partial.filename, expectedStoredZipBytes(partialEntries));
+    const partialVerified = verifyStoredZip(partialBytes, partialEntries);
+    await writeFile(join(output, 'installed-memory-partial.zip'), partialBytes);
+    const partialHash = createHash('sha256').update(partialBytes).digest('hex');
+    verifiedDownloads.set(partial.id, { filename: partial.filename, identity: partialIdentity,
+      sha256: partialHash });
+    await extensionPage.evaluate(async ({ id, filename }) => {
+      const [download] = await chrome.downloads.search({ id });
+      if (download?.state !== 'complete' || download.filename !== filename) {
+        throw new Error('Verified partial ZIP changed before native file cleanup');
+      }
+      await chrome.downloads.removeFile(id);
+    }, { id: partial.id, filename: partial.filename });
+    const partialAbsence = await waitForRemovedDownloadFile(partial.filename, partialIdentity);
+    Object.assign(verifiedDownloads.get(partial.id),
+      { removedEarlier: true, fileAbsence: partialAbsence });
+    evidence.downloads.push({ kind: 'resource-limit-partial-zip', id: partial.id,
+      filename: partialName, file: 'installed-memory-partial.zip', bytes: partialBytes.length,
+      sha256: partialHash, verified: partialVerified, included: 2, omitted: 1,
+      nativeFileRemoved: true, fileAbsence: partialAbsence });
     evidence.rejection = { declaredBytes: evidence.policy.declaredBytes,
       actualBodyBytes: images[0].length, observedContentLength: observedLength,
       pathname: new URL(rejectedResponse.url()).pathname, errorText,
-      elapsedMs: performance.now() - startedAtMs, nativeDownloadsCreated: 0 };
+      elapsedMs: performance.now() - startedAtMs, nativeDownloadsCreated: 1,
+      acceptedEntries: 2, rejectedEntries: 1, partialDownloadId: partial.id };
     await page.screenshot({ path: join(output, 'installed-memory-rejection.png') });
     evidence.rejection.screenshot = 'installed-memory-rejection.png';
     await delay(100);
@@ -2390,7 +2418,7 @@ async function runDownloadMemoryCycle({ consoleErrors, downloads, extensionPage,
           const cleanupRecord = { id: item.id, filename: basename(item.filename),
             verifiedFileRemoved: false };
           evidence.cleanup.downloads.push(cleanupRecord);
-          if (verified) {
+          if (verified && !verified.removedEarlier) {
             assert.equal(item.filename, verified.filename,
               'Verified memory download filename changed before cleanup');
             const { bytes, identity } = await readExactDownloadFile(item.filename,
@@ -2422,11 +2450,14 @@ async function runDownloadMemoryCycle({ consoleErrors, downloads, extensionPage,
               await chrome.downloads.removeFile(id);
             }
             return { terminalState: download?.state ?? null, nativeRemoveFileCalled: removeFile };
-          }, { id: item.id, filename: item.filename, removeFile: Boolean(verified) });
+          }, { id: item.id, filename: item.filename,
+            removeFile: Boolean(verified && !verified.removedEarlier) });
           Object.assign(cleanupRecord, removal);
+          if (verified?.removedEarlier) cleanupRecord.fileRemovedEarlier = true;
           if (verified) {
-            cleanupRecord.fileAbsence = await waitForRemovedDownloadFile(item.filename,
-              verified.identity);
+            cleanupRecord.fileAbsence = verified.removedEarlier
+              ? verified.fileAbsence
+              : await waitForRemovedDownloadFile(item.filename, verified.identity);
             cleanupRecord.verifiedFileRemoved = true;
           }
           const history = await extensionPage.evaluate(async (id) => {

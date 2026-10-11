@@ -257,8 +257,11 @@ continue through the normal fixture route. The first selected-image response
 declares a `Content-Length` greater than the limit read from the packaged
 `live-byte-budget.ts`, while its actual body stays below one MiB. The browser
 must observe that header, the gallery must show localized resource guidance,
-and the rejected ZIP must create no native download. Without reloading or replacing the gallery,
-keyboard navigation and a small direct single download must still work. A subsequent
+and the native partial ZIP must include exactly the two remaining images with
+correct names, order, CRC and bytes. Its verified file is removed through the
+native API before reusing the same output name; its saved evidence is retained.
+Without reloading or replacing the gallery, keyboard navigation and a small
+direct single download must still work. A subsequent
 bulk action must save a separate native ZIP download with the exact three image
 names and contents; the profile verifies its stored-entry boundaries, local and
 central order, CRCs, and bytes. It records exact Chrome download IDs, elapsed
