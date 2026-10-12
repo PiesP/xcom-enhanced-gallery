@@ -144,9 +144,25 @@ listener, so the browser can classify the document's network address space.
 No permission is overridden; TLS, CORS and OS protections stay enabled. These
 cases do not validate public-to-loopback permission behavior.
 
+The streaming asset is `test/e2e/fixtures/installed-recovery-intent.mp4`: a
+four-second, 24 fps, 320×180 H.264 test pattern below the 256 KiB fixture cap.
+It keeps metadata at the front and enough complete initial samples for native
+startup while the final second is held. Its source hash and late VCL length
+offsets are checked by `delayedDecodeFailure()`; update both when replacing the
+asset. The bounded fixture can be regenerated with:
+
+```bash
+ffmpeg -f lavfi -i 'testsrc2=size=320x180:rate=24:duration=4' -frames:v 96 -an \
+  -c:v libx264 -preset medium -profile:v baseline -level:v 3.0 -pix_fmt yuv420p \
+  -b:v 384k -minrate 384k -maxrate 384k -bufsize 384k \
+  -x264-params 'nal-hrd=cbr:force-cfr=1:scenecut=0:keyint=24:min-keyint=24:bframes=0' \
+  -movflags +faststart -map_metadata -1 -metadata creation_time=1970-01-01T00:00:00Z \
+  -f mp4 test/e2e/fixtures/installed-recovery-intent.mp4
+```
+
 These helpers restore owned routes, pages, response gates and settings, and
-verify that permission state stays unchanged. Their bounded event and request receipts retain failures as well as
-successes. Provider access, live-CDN compatibility and audible output remain
+verify that permission state stays unchanged. Their bounded event and request
+receipts retain failures as well as successes. Provider access, live-CDN compatibility and audible output remain
 outside the fixture evidence.
 
 The installed profile also serves the declared small MP4 assets and
