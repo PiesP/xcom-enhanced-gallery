@@ -219,6 +219,56 @@ describe('GalleryApp media-click currentness', () => {
     await app.cleanup();
   });
 
+  it('retires pending extraction at beforeunload before a transport rejection or pagehide', async () => {
+    const pending = deferredResult();
+    state.extract.mockReturnValue(pending.promise);
+    const app = new GalleryApp({ destroy: vi.fn() } as never);
+    await app.initialize();
+    try {
+      const click = state.handlers?.onMediaClick(document.createElement('video'), new MouseEvent('click'));
+      window.dispatchEvent(new Event('beforeunload'));
+      pending.reject(new Error('Transport closed during navigation'));
+      await click;
+      expect(state.extract.mock.calls[0]?.[1]?.signal.aborted).toBe(true);
+      expect(state.notify).not.toHaveBeenCalled();
+      expect(state.openGallery).not.toHaveBeenCalled();
+    } finally {
+      await app.cleanup();
+    }
+  });
+
+  it('ignores a result after the URL changes before navigation reconciliation', async () => {
+    const priorUrl = location.href;
+    const pending = deferredResult();
+    state.extract.mockReturnValue(pending.promise);
+    const app = new GalleryApp({ destroy: vi.fn() } as never);
+    await app.initialize();
+    try {
+      const click = state.handlers?.onMediaClick(document.createElement('video'), new MouseEvent('click'));
+      history.pushState({}, '', '/other/status/999');
+      pending.resolve(success('old-page'));
+      await click;
+      expect(state.notify).not.toHaveBeenCalled();
+      expect(state.openGallery).not.toHaveBeenCalled();
+    } finally {
+      history.replaceState({}, '', priorUrl);
+      await app.cleanup();
+    }
+  });
+
+  it('removes navigation cancellation after extraction settles', async () => {
+    state.extract.mockResolvedValue(success('settled'));
+    const app = new GalleryApp({ destroy: vi.fn() } as never);
+    await app.initialize();
+    try {
+      await state.handlers?.onMediaClick(document.createElement('img'), new MouseEvent('click'));
+      window.dispatchEvent(new Event('beforeunload'));
+      expect(state.extract.mock.calls[0]?.[1]?.signal.aborted).toBe(false);
+    } finally {
+      await app.cleanup();
+    }
+  });
+
   it('offers recovery for a bounded unmarked native-video button too', async () => {
     state.extract.mockResolvedValue({ success: false, mediaItems: [], failureKind: 'owner-unconfirmed' });
     const app = new GalleryApp({ destroy: vi.fn() } as never);

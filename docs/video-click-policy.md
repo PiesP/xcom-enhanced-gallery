@@ -27,7 +27,7 @@ offers native-player recovery: use X's video play/pause controls to continue
 watching, or press **Alt+Shift+V** after the failed video click to save `block-all`.
 The shortcut is available for the current failure when settings are loaded,
 ignores synthetic input and editable fields, and expires on a new media click,
-close or cleanup. Change **Video clicks** in gallery settings to restore another
+close, navigation or cleanup. Change **Video clicks** in gallery settings to restore another
 mode. XEG does not replay the intercepted click or replace an unconfirmed
 video with a poster, a different attachment, or an unknown streaming source.
 

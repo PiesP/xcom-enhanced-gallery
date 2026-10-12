@@ -148,6 +148,13 @@ export class GalleryApp {
     const signalScope = sessionSignal
       ? mergeAbortSignalsWithCleanup([sessionSignal, clickController.signal])
       : { signal: clickController.signal, cleanup: () => undefined };
+    // Transport can reject during navigation before pagehide runs session cleanup.
+    const cancelOnNavigation = (): void => clickController.abort();
+    window.addEventListener('beforeunload', cancelOnNavigation, {
+      once: true,
+      passive: true,
+      signal: clickController.signal,
+    });
 
     try {
       const mediaService = getMediaService();
@@ -155,7 +162,7 @@ export class GalleryApp {
         signal: signalScope.signal,
       });
 
-      if (!this.isCurrentMediaClick(opId, epoch, clickController)) return;
+      if (!this.isCurrentMediaClick(opId, epoch, clickController, clickUrl)) return;
 
       if (result.success && result.mediaItems.length > 0) {
         this.openGallery(result.mediaItems, result.clickedIndex);
@@ -194,7 +201,7 @@ export class GalleryApp {
         );
       }
     } catch (error) {
-      if (!this.isCurrentMediaClick(opId, epoch, clickController)) return;
+      if (!this.isCurrentMediaClick(opId, epoch, clickController, clickUrl)) return;
       mediaErrorReporter.error(error, { code: 'MEDIA_EXTRACTION_ERROR' });
       const lang = getLanguageService();
       notifySafely(
@@ -204,6 +211,7 @@ export class GalleryApp {
           (videoClick ? this.videoRecoveryMessage(opId, epoch, element, clickUrl) : '')
       );
     } finally {
+      window.removeEventListener('beforeunload', cancelOnNavigation);
       signalScope.cleanup();
       if (this.mediaClickAbortController === clickController) {
         this.mediaClickAbortController = null;
@@ -211,11 +219,17 @@ export class GalleryApp {
     }
   }
 
-  private isCurrentMediaClick(opId: number, epoch: number, controller: AbortController): boolean {
+  private isCurrentMediaClick(
+    opId: number,
+    epoch: number,
+    controller: AbortController,
+    clickUrl: string
+  ): boolean {
     return (
       opId === this.mediaClickCounter &&
       epoch === this.sessionEpoch &&
       this.initialized &&
+      location.href === clickUrl &&
       this.mediaClickAbortController === controller &&
       !controller.signal.aborted
     );
