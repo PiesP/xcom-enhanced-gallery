@@ -241,7 +241,9 @@ the held route's settlement, then reads the native worker boundary. Observer
 loss, replacement, overflow, or incomplete history fail the check.
 A bounded negative control sends two native notifications with the same owned
 ID through the installed background handler, clears the ID, and requires the
-same verdict to reject both creations despite an empty active list. The receipt
+same verdict to reject both creations after the control ID disappears from the
+active list. Pre-existing notifications remain untouched; a unit negative control
+also exercises a completely empty active list. The receipt
 retains that control, the legitimate failure notification history, observed
 active IDs, cursor counts, settlement, and observer restoration.
 Two valid owner-specific videos on one document also exercise a held A
