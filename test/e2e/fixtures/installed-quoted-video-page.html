@@ -110,9 +110,13 @@
         path: event.composedPath().filter((part) => part instanceof Element)
           .slice(0, 6).map((part) => part.tagName.toLowerCase()),
         defaultPrevented: false,
+        settled: false,
       };
       window.__quoteFixtureClicks.push(record);
-      setTimeout(() => { record.defaultPrevented = event.defaultPrevented; }, 0);
+      setTimeout(() => {
+        record.defaultPrevented = event.defaultPrevented;
+        record.settled = true;
+      }, 0);
     }, { capture: true });
     const currentCase = document.querySelector(`[data-case="${document.body.dataset.quoteCase}"]`);
     const shell = currentCase.querySelector('[data-video-key]');

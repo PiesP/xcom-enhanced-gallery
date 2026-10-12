@@ -1605,9 +1605,31 @@ async function observeOne(context, extensionId, targetUrl, output, index,
   return observation;
 }
 
+export function decodeStoredVideoSettings(raw) {
+  let parsed = raw;
+  if (typeof raw === 'string') {
+    try { parsed = JSON.parse(raw); }
+    catch { return null; }
+  }
+  if (parsed && typeof parsed === 'object' && !Array.isArray(parsed) &&
+    parsed.__xegStorageEnvelope === 1 && typeof parsed.updatedAt === 'number' &&
+    Object.hasOwn(parsed, 'value')) return parsed.value;
+  return parsed;
+}
+
+export async function readStoredVideoSettings(extensionPage) {
+  const key = 'xeg-app-settings';
+  const prior = await extensionPage.evaluate(async (storageKey) => {
+    const values = await chrome.storage.local.get(storageKey);
+    return { exists: Object.hasOwn(values, storageKey), value: values[storageKey] ?? null };
+  }, key);
+  return { ...prior, settings: decodeStoredVideoSettings(prior.value) };
+}
+
 export function createControlledVideoSettings(priorValue, timestamp) {
-  const base = priorValue && typeof priorValue === 'object' && !Array.isArray(priorValue)
-    ? priorValue : { version: '1', lastModified: timestamp, gallery: {} };
+  const decoded = decodeStoredVideoSettings(priorValue);
+  const base = decoded && typeof decoded === 'object' && !Array.isArray(decoded)
+    ? decoded : { version: '1', lastModified: timestamp, gallery: {} };
   return {
     ...base,
     gallery: { ...(base.gallery && typeof base.gallery === 'object' &&
@@ -1632,34 +1654,25 @@ async function observeControlledVideoMode(context, extensionId, targetUrl, outpu
   let mutated = false;
   try {
     await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
-    prior = await extensionPage.evaluate(async (storageKey) => {
-      const values = await chrome.storage.local.get(storageKey);
-      return { exists: Object.hasOwn(values, storageKey), value: values[storageKey] ?? null };
-    }, key);
+    prior = await readStoredVideoSettings(extensionPage);
     result.priorStoredMode = ['allow-all', 'block-all', 'block-controls-only']
-      .includes(prior.value?.gallery?.videoClickMode)
-      ? prior.value.gallery.videoClickMode : null;
+      .includes(prior.settings?.gallery?.videoClickMode)
+      ? prior.settings.gallery.videoClickMode : null;
     const next = createControlledVideoSettings(prior.value, Date.now());
     mutated = true;
     await extensionPage.evaluate(async ({ storageKey, value }) => {
       await chrome.storage.local.set({ [storageKey]: value });
     }, { storageKey: key, value: next });
-    result.appliedMode = await extensionPage.evaluate(async (storageKey) => {
-      const values = await chrome.storage.local.get(storageKey);
-      return values[storageKey]?.gallery?.videoClickMode ?? null;
-    }, key);
+    result.appliedMode = (await readStoredVideoSettings(extensionPage))
+      .settings?.gallery?.videoClickMode ?? null;
     if (result.appliedMode !== 'allow-all') {
       throw new Error('Controlled video click mode was not stored');
     }
     result.observation = await observeOne(context, extensionId, targetUrl, output,
-      `${index}-allow-all`, 'allow-all', async () => extensionPage.evaluate(async (storageKey) => {
-        const values = await chrome.storage.local.get(storageKey);
-        return values[storageKey]?.gallery?.videoClickMode ?? null;
-      }, key));
-    result.modeAfterObservation = await extensionPage.evaluate(async (storageKey) => {
-      const values = await chrome.storage.local.get(storageKey);
-      return values[storageKey]?.gallery?.videoClickMode ?? null;
-    }, key);
+      `${index}-allow-all`, 'allow-all', async () =>
+        (await readStoredVideoSettings(extensionPage)).settings?.gallery?.videoClickMode ?? null);
+    result.modeAfterObservation = (await readStoredVideoSettings(extensionPage))
+      .settings?.gallery?.videoClickMode ?? null;
     if (result.modeAfterObservation !== 'allow-all') {
       throw new Error('Controlled video click mode changed during observation');
     }

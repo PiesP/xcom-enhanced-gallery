@@ -18,6 +18,7 @@ import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:pat
 import {
   createControlledVideoSettings,
   observeLiveUrls,
+  readStoredVideoSettings,
   validateLiveObservation,
   validateLiveUrls,
 } from './live-page.mjs';
@@ -2688,7 +2689,10 @@ async function captureQuotedOpeningScroll(trigger) {
 }
 
 async function quotedClickRecord(page, beforeCount, expectedTag) {
-  await page.waitForTimeout(10);
+  await page.waitForFunction((count) => {
+    const records = window.__quoteFixtureClicks;
+    return records?.length === count + 1 && records.at(-1)?.settled === true;
+  }, beforeCount, { timeout: 5_000 });
   const records = await page.evaluate(() => window.__quoteFixtureClicks);
   assert.equal(records.length, beforeCount + 1, 'One ordinary trusted fixture click must be recorded');
   const record = records.at(-1);
@@ -3023,11 +3027,8 @@ async function withControlledFixtureVideoMode(extensionPage, evidence, action,
   let cleanupError;
   let restored = false;
   try {
-    prior = await extensionPage.evaluate(async (storageKey) => {
-      const values = await chrome.storage.local.get(storageKey);
-      return { exists: Object.hasOwn(values, storageKey), value: values[storageKey] ?? null };
-    }, key);
-    evidence.priorStoredMode = prior.value?.gallery?.videoClickMode ?? null;
+    prior = await readStoredVideoSettings(extensionPage);
+    evidence.priorStoredMode = prior.settings?.gallery?.videoClickMode ?? null;
     const next = createControlledVideoSettings(prior.value, Date.now());
     if (mode === 'default') delete next.gallery.videoClickMode;
     else next.gallery.videoClickMode = mode;
@@ -3035,10 +3036,8 @@ async function withControlledFixtureVideoMode(extensionPage, evidence, action,
     await extensionPage.evaluate(async ({ storageKey, value }) => {
       await chrome.storage.local.set({ [storageKey]: value });
     }, { storageKey: key, value: next });
-    const effective = await extensionPage.evaluate(async (storageKey) => {
-      const values = await chrome.storage.local.get(storageKey);
-      return values[storageKey]?.gallery?.videoClickMode ?? null;
-    }, key);
+    const effective = (await readStoredVideoSettings(extensionPage))
+      .settings?.gallery?.videoClickMode ?? null;
     assert.equal(effective, mode === 'default' ? null : mode,
       'Controlled fixture must persist its requested video-click mode');
     evidence.effectiveMode = mode === 'default' ? 'block-controls-only' : effective;
@@ -3076,11 +3075,8 @@ async function withControlledFixtureVideoMode(extensionPage, evidence, action,
 
 async function runVideoClickSettingsCycle({ extensionPage, gallery, output, page }) {
   const key = 'xeg-app-settings';
-  const prior = await extensionPage.evaluate(async (storageKey) => {
-    const values = await chrome.storage.local.get(storageKey);
-    return { exists: Object.hasOwn(values, storageKey), value: values[storageKey] ?? null };
-  }, key);
-  const initialMode = prior.value?.gallery?.videoClickMode ?? 'block-controls-only';
+  const prior = await readStoredVideoSettings(extensionPage);
+  const initialMode = prior.settings?.gallery?.videoClickMode ?? 'block-controls-only';
   const settingsButton = gallery.locator('[data-gallery-element="toolbar"] #settings-button');
   let receipt;
   let validationError;
@@ -3100,10 +3096,8 @@ async function runVideoClickSettingsCycle({ extensionPage, gallery, output, page
     ]) {
       await page.keyboard.press(keyPress);
       await waitForValue(async () => {
-        const stored = await extensionPage.evaluate(async (storageKey) => {
-          const values = await chrome.storage.local.get(storageKey);
-          return values[storageKey]?.gallery?.videoClickMode ?? null;
-        }, key);
+        const stored = (await readStoredVideoSettings(extensionPage))
+          .settings?.gallery?.videoClickMode ?? null;
         return stored === expectedMode ? stored : undefined;
       }, `trusted keyboard video-click setting ${expectedMode}`, 5_000);
       assert.equal(await select.inputValue(), expectedMode);
@@ -3117,10 +3111,8 @@ async function runVideoClickSettingsCycle({ extensionPage, gallery, output, page
       await page.keyboard.press('ArrowDown');
     } else await page.keyboard.press('End');
     await waitForValue(async () => {
-      const stored = await extensionPage.evaluate(async (storageKey) => {
-        const values = await chrome.storage.local.get(storageKey);
-        return values[storageKey]?.gallery?.videoClickMode ?? null;
-      }, key);
+      const stored = (await readStoredVideoSettings(extensionPage))
+        .settings?.gallery?.videoClickMode ?? null;
       return stored === initialMode ? stored : undefined;
     }, 'video-click setting restored through keyboard', 5_000);
     assert.equal(await select.inputValue(), initialMode);
@@ -3162,10 +3154,8 @@ async function runPublicPreplayerCycle({ quotedCase, quotedApiResponses, apiResp
     await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({
       state: 'attached', timeout: 15_000,
     });
-    const effective = await extensionPage.evaluate(async () => {
-      const values = await chrome.storage.local.get('xeg-app-settings');
-      return values['xeg-app-settings']?.gallery?.videoClickMode ?? null;
-    });
+    const effective = (await readStoredVideoSettings(extensionPage))
+      .settings?.gallery?.videoClickMode ?? null;
     assert.equal(effective, 'allow-all', 'Preplayer mode must remain active after page readiness');
     const precondition = await page.evaluate(() => {
       const outer = document.querySelector('[data-case="public-preplayer"]');
@@ -3337,10 +3327,8 @@ async function runUnavailableSequence({ apiResponses, extensionPage, output, pag
     await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({
       state: 'attached', timeout: 15_000,
     });
-    const effectiveMode = await extensionPage.evaluate(async () => {
-      const values = await chrome.storage.local.get('xeg-app-settings');
-      return values['xeg-app-settings']?.gallery?.videoClickMode ?? null;
-    });
+    const effectiveMode = (await readStoredVideoSettings(extensionPage))
+      .settings?.gallery?.videoClickMode ?? null;
     assert.equal(effectiveMode, 'allow-all',
       'Unavailable sequence must retain supported allow-all preview clicks');
     const documentStartedAt = await page.evaluate(() => performance.timeOrigin);
@@ -3562,7 +3550,57 @@ async function runSvgTargetMatrix({ extensionPage, output, page, quotedApiRespon
   });
 }
 
-async function runDelayedVideoFailures({ extensionPage, fixtureRoutes, output, page }) {
+async function observeNativeNotificationCreates(context, extensionId) {
+  const worker = context.serviceWorkers().find((item) =>
+    item.url() === `chrome-extension://${extensionId}/background.js`);
+  assert(worker, 'Installed worker must be available for the native notification observer');
+  await worker.evaluate(() => {
+    if (globalThis.__xegInstalledNotificationObserver) {
+      throw new Error('Bounded native notification observer already installed');
+    }
+    const original = chrome.notifications.create;
+    const state = { original, calls: [], overflow: false };
+    globalThis.__xegInstalledNotificationObserver = state;
+    chrome.notifications.create = function(...args) {
+      const [id, options] = args;
+      if (typeof id === 'string' && id.startsWith('xeg-')) {
+        if (state.calls.length < 8) state.calls.push({ id,
+          title: options?.title ?? null, message: options?.message ?? null });
+        else state.overflow = true;
+      }
+      return Reflect.apply(original, this, args);
+    };
+  });
+  return {
+    async snapshot() {
+      const state = await worker.evaluate(() => {
+        const current = globalThis.__xegInstalledNotificationObserver;
+        return current ? { calls: current.calls, overflow: current.overflow } : null;
+      });
+      assert(state, 'Native notification observer marker disappeared');
+      assert.equal(state.overflow, false, 'Native notification observer exceeded its bounded capacity');
+      return state;
+    },
+    async dispose() {
+      const restored = await worker.evaluate(() => {
+        const state = globalThis.__xegInstalledNotificationObserver;
+        if (!state) return { markerPresent: false, originalRestored: false,
+          markerGone: true };
+        chrome.notifications.create = state.original;
+        const originalRestored = chrome.notifications.create === state.original;
+        delete globalThis.__xegInstalledNotificationObserver;
+        return { markerPresent: true, originalRestored,
+          markerGone: !Object.hasOwn(globalThis, '__xegInstalledNotificationObserver') };
+      });
+      assert.deepEqual(restored, { markerPresent: true, originalRestored: true,
+        markerGone: true }, 'Native notification observer must restore the original create API');
+      return restored;
+    },
+  };
+}
+
+async function runDelayedVideoFailures({ context, extensionId, extensionPage,
+  fixtureRoutes, output, page }) {
   const cases = [];
   for (const [name, tweetId] of [
     ['failure', DELAYED_FAILURE_ID], ['navigation', DELAYED_NAVIGATION_ID],
@@ -3585,13 +3623,13 @@ async function runDelayedVideoFailures({ extensionPage, fixtureRoutes, output, p
     const knownNotifications = await extensionPage.evaluate(async () =>
       Object.keys(await chrome.notifications.getAll()));
     const priorSetting = name === 'failure'
-      ? await extensionPage.evaluate(async () => {
-        const values = await chrome.storage.local.get('xeg-app-settings');
-        return { exists: Object.hasOwn(values, 'xeg-app-settings'),
-          value: values['xeg-app-settings'] ?? null };
-      }) : null;
+      ? await readStoredVideoSettings(extensionPage) : null;
+    const notificationObserver = name === 'failure'
+      ? await observeNativeNotificationCreates(context, extensionId) : null;
     let shortcutIssued = false;
     let observation;
+    let validationError;
+    const cleanupErrors = [];
     const apiStart = fixtureRoutes.quotedApiResponses.length;
     fixtureRoutes.armDelayedFailure(tweetId);
     try {
@@ -3630,13 +3668,15 @@ async function runDelayedVideoFailures({ extensionPage, fixtureRoutes, output, p
           newNotificationCount: 0 };
       } else {
         fixtureRoutes.releaseDelayedFailure();
-        const notification = await waitForValue(async () => extensionPage.evaluate(
-          async (known) => {
-            const active = await chrome.notifications.getAll();
-            const entry = Object.entries(active).find(([id]) =>
-              id.startsWith('xeg-') && !known.includes(id));
-            return entry ? { id: entry[0], message: entry[1].message ?? '' } : undefined;
-          }, knownNotifications), 'delayed extraction failure notification');
+        const notification = await waitForValue(async () => {
+          const active = await extensionPage.evaluate(async () =>
+            Object.keys(await chrome.notifications.getAll()));
+          const observed = await notificationObserver.snapshot();
+          return observed.calls.find(({ id }) => active.includes(id) &&
+            !knownNotifications.includes(id));
+        }, 'delayed extraction failure native notification');
+        assert(notification.title && notification.message,
+          'Native notification must retain its production title and message');
         assert.match(notification.message,
           /play\/pause controls on X, or press Alt\+Shift\+V to keep video clicks in X/iu,
           'Failed video extraction must explain an actionable native recovery path');
@@ -3648,10 +3688,8 @@ async function runDelayedVideoFailures({ extensionPage, fixtureRoutes, output, p
         shortcutIssued = true;
         await page.keyboard.press('Alt+Shift+V');
         const switchedMode = await waitForValue(async () => {
-          const mode = await extensionPage.evaluate(async () => {
-            const values = await chrome.storage.local.get('xeg-app-settings');
-            return values['xeg-app-settings']?.gallery?.videoClickMode;
-          });
+          const mode = (await readStoredVideoSettings(extensionPage))
+            .settings?.gallery?.videoClickMode;
           return mode === 'block-all' ? mode : undefined;
         }, 'trusted native-video mode shortcut');
         assert.equal(switchedMode, 'block-all',
@@ -3675,22 +3713,39 @@ async function runDelayedVideoFailures({ extensionPage, fixtureRoutes, output, p
       }
       cases.push(observation);
       await page.screenshot({ path: join(output, `quoted-delayed-${name}.png`) });
+    } catch (error) {
+      validationError = error;
     } finally {
-      fixtureRoutes.releaseDelayedFailure();
+      try { fixtureRoutes.releaseDelayedFailure(); }
+      catch (error) { cleanupErrors.push(error); }
+      if (notificationObserver) {
+        try {
+          const restored = await notificationObserver.dispose();
+          if (observation) observation.notificationObserverRestored = restored;
+        } catch (error) { cleanupErrors.push(error); }
+      }
       if (shortcutIssued) {
-        await extensionPage.evaluate(async ({ exists, value }) => {
-          if (exists) await chrome.storage.local.set({ 'xeg-app-settings': value });
-          else await chrome.storage.local.remove('xeg-app-settings');
-        }, priorSetting);
-        const restored = await extensionPage.evaluate(async ({ exists, value }) => {
-          const values = await chrome.storage.local.get('xeg-app-settings');
-          return Object.hasOwn(values, 'xeg-app-settings') === exists &&
-            (!exists || JSON.stringify(values['xeg-app-settings']) === JSON.stringify(value));
-        }, priorSetting);
-        assert.equal(restored, true, 'Recovery shortcut must restore full prior task setting');
-        if (observation) observation.settingRestored = true;
+        try {
+          await extensionPage.evaluate(async ({ exists, value }) => {
+            if (exists) await chrome.storage.local.set({ 'xeg-app-settings': value });
+            else await chrome.storage.local.remove('xeg-app-settings');
+          }, priorSetting);
+          const restored = await extensionPage.evaluate(async ({ exists, value }) => {
+            const values = await chrome.storage.local.get('xeg-app-settings');
+            return Object.hasOwn(values, 'xeg-app-settings') === exists &&
+              (!exists || JSON.stringify(values['xeg-app-settings']) === JSON.stringify(value));
+          }, priorSetting);
+          assert.equal(restored, true, 'Recovery shortcut must restore full prior task setting');
+          if (observation) observation.settingRestored = true;
+        } catch (error) { cleanupErrors.push(error); }
       }
     }
+    if (validationError && cleanupErrors.length) throw new AggregateError(
+      [validationError, ...cleanupErrors],
+      `${name}: video failure validation and cleanup both failed`);
+    if (validationError) throw validationError;
+    if (cleanupErrors.length) throw new AggregateError(cleanupErrors,
+      `${name}: video failure cleanup failed`);
   }
   return { status: 'passed', cases };
 }
@@ -3886,7 +3941,7 @@ async function runModelessRenderRecovery({ consoleErrors, context, extensionId, 
   await page.locator('body[data-video-ready="true"]').waitFor({ state: 'attached' });
   const shell = page.locator('[data-case="recognized"] [data-video-key]');
   await shell.locator('[data-testid="playButton"]').click();
-  const hostVideo = shell.locator('video');
+  const hostVideo = shell.locator('video:not([data-host-action])');
   await page.waitForFunction(() => {
     const element = document.querySelector('[data-case="recognized"] [data-video-key] video');
     return element instanceof HTMLVideoElement && !element.paused &&
@@ -4156,7 +4211,7 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
   const nativePlayClick = await quotedClickRecord(page, nativePlayClickCount, 'button');
   assert.equal(nativePlayClick.defaultPrevented, true,
     'Fixture native play handler must receive and cancel its own trusted button click');
-  const hostVideo = shell.locator('video');
+  const hostVideo = shell.locator('video:not([data-host-action])');
   await page.waitForFunction((name) => {
     const shell = document.querySelector(`[data-case="${name}"] [data-video-key]`);
     const video = shell?.querySelector('video');
@@ -4186,11 +4241,9 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
     video.muted = true;
     video.loop = true;
   });
-  const galleryPreferences = await extensionPage.evaluate(async () => {
-    const value = (await chrome.storage.local.get('xeg-app-settings'))['xeg-app-settings'];
-    return { volume: value?.gallery?.videoVolume ?? 1,
-      muted: value?.gallery?.videoMuted ?? false };
-  });
+  const savedGallery = (await readStoredVideoSettings(extensionPage)).settings?.gallery;
+  const galleryPreferences = { volume: savedGallery?.videoVolume ?? 1,
+    muted: savedGallery?.videoMuted ?? false };
   await hostVideo.focus();
   const playingBefore = await quotedHostSnapshot(page, quotedCase.route, '[data-video-key] video');
   assert.equal(playingBefore.active, true, 'Blob-backed host player must hold focus');
@@ -4823,12 +4876,10 @@ async function exerciseInstalledExtension(
       state: 'attached',
       timeout: 15_000,
     });
-    videoClickConfiguration = await extensionPage.evaluate(async () => {
-      const stored = (await chrome.storage.local.get('xeg-app-settings'))['xeg-app-settings'];
-      return { storagePresent: stored !== undefined,
-        storedMode: stored?.gallery?.videoClickMode ?? null,
-        effectiveMode: stored?.gallery?.videoClickMode ?? 'block-controls-only' };
-    });
+    const installedSetting = await readStoredVideoSettings(extensionPage);
+    videoClickConfiguration = { storagePresent: installedSetting.exists,
+      storedMode: installedSetting.settings?.gallery?.videoClickMode ?? null,
+      effectiveMode: installedSetting.settings?.gallery?.videoClickMode ?? 'block-controls-only' };
     assert.equal(videoClickConfiguration.effectiveMode, 'block-controls-only',
       'Installed profile must use the configured noncontrol video click mode');
     await verifyMv3RestartCancellation({
@@ -4979,8 +5030,8 @@ async function exerciseInstalledExtension(
       acceptanceFailures.push(error);
     }
     try {
-      delayedVideoFailures = await runDelayedVideoFailures({ extensionPage,
-        fixtureRoutes, output, page });
+      delayedVideoFailures = await runDelayedVideoFailures({ context, extensionId,
+        extensionPage, fixtureRoutes, output, page });
     } catch (error) {
       delayedVideoFailures = { status: 'failed', error: safeError(error),
         api: fixtureRoutes.quotedApiResponses.filter(({ tweetId }) =>

@@ -209,7 +209,9 @@ counts as stopped only while decoded, unended and paused, and gallery progress
 is measured inside a short interval before the next loop boundary.
 The first gallery also opens its real Video clicks settings control, changes all
 three modes with trusted keyboard input, checks persisted values and visible
-help, then restores the full prior setting. This checks playback state and time progression,
+help, then restores the exact prior stored value. The profile decodes the
+production JSON storage envelope when reading settings while preserving its
+raw value for restoration. This checks playback state and time progression,
 not audible output or host-to-gallery time transfer.
 
 The same production installation routes a direct, unmarked MP4 under a valid
@@ -227,7 +229,10 @@ intercepted click does not pause the host during extraction. After release, the
 installed notification must describe the native play/pause recovery and
 Alt+Shift+V shortcut. Ordinary trusted input must persist `block-all`, leave a
 subsequent video click native without another API request, and restore the full
-prior task-owned setting after the check. A second held request is released after
+prior task-owned setting after the check. A bounded service-worker observer
+records the message at the actual `chrome.notifications.create` boundary,
+calls through to native delivery, and pairs its ID with `getAll`; it restores
+the original API in `finally`. A second held request is released after
 navigation to prove the old session cannot open a gallery or notify the new
 page. Two valid owner-specific videos on one document also exercise a held A
 response followed by an ordinary B click; after A completes or aborts, B must
