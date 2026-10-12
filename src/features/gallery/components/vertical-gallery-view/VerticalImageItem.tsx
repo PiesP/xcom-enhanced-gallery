@@ -21,6 +21,7 @@ import type { VerticalImageItemProps } from '@features/gallery/components/vertic
 import { useTranslation } from '@shared/hooks/use-translation';
 import { gallerySignals, setCurrentVideoElement } from '@shared/state/signals/gallery.signals';
 import type { ImageFitMode } from '@shared/types/settings.types';
+import { subscribeVideoPlaybackIntent } from '@shared/utils/events/handlers/video-control-helper';
 import {
   computeContainIntrinsicSizeOverride,
   createIntrinsicSizingStyle,
@@ -217,6 +218,22 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       if (!visible && wantsPlayback) needsResume = true;
       if (visible) resumeWhenReady();
     },
+  });
+
+  createEffect(() => {
+    const video = videoRef();
+    const media = local.media;
+    if (!video || !isVideo()) return;
+    onCleanup(
+      subscribeVideoPlaybackIntent(video, (playing) => {
+        if (disposed || videoRef() !== video || local.media !== media) return;
+        wantsPlayback = playing;
+        needsResume = playing && pendingResume !== null;
+        recoveringSource = null;
+        controlInteractionAfterError = false;
+        intentGeneration++;
+      })
+    );
   });
 
   createEffect(() => {

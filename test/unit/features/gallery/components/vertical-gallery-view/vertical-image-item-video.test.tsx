@@ -32,6 +32,8 @@ vi.mock('@shared/hooks/use-translation', () => ({
 
 import { VerticalImageItem } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem';
 import { MAX_VIDEO_PLAYBACK_ATTEMPTS, nextVideoPlaybackSource } from '@features/gallery/components/vertical-gallery-view/utils/video-playback-recovery';
+import { handleKeyboardEvent, resetKeyboardDebounceState } from '@shared/utils/events/handlers/keyboard';
+import { closeGallery, openGallery } from '@shared/state/signals/gallery.signals';
 
 const source = (name: string): string => `https://video.twimg.com/ext_tw_video/222/pu/vid/${name}.mp4`;
 const poster = 'https://pbs.twimg.com/ext_tw_video_thumb/222/pu/img/poster.jpg';
@@ -65,6 +67,7 @@ describe('VerticalImageItem video admission and playback', () => {
   });
 
   afterEach(() => {
+    closeGallery();
     dispose?.();
     dispose = undefined;
     host.remove();
@@ -251,6 +254,65 @@ describe('VerticalImageItem video admission and playback', () => {
     observers.get('0px')?.({ isIntersecting: false } as IntersectionObserverEntry);
     observers.get('0px')?.({ isIntersecting: true } as IntersectionObserverEntry);
     expect(play).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { laterPlay: false, caseName: 'pause' },
+    { laterPlay: true, caseName: 'pause then play' },
+  ])('keeps a body-captured Space $caseName as latest intent during pending fallback', ({ laterPlay }) => {
+    const item = media();
+    openGallery([item]);
+    resetKeyboardDebounceState();
+    const { video } = mount({ media: item, active: true });
+    Object.defineProperty(video, 'readyState', { configurable: true, get: () => 1 });
+    let paused = false;
+    Object.defineProperty(video, 'paused', { configurable: true, get: () => paused });
+    const play = vi.spyOn(video, 'play').mockResolvedValue(undefined);
+    const pause = vi.spyOn(video, 'pause').mockImplementation(() => {
+      paused = true;
+      mediaEvent(video, 'pause');
+    });
+    mediaEvent(video, 'loadstart');
+    mediaEvent(video, 'play');
+    setMediaError(video, 3);
+    mediaEvent(video, 'error');
+    expect(video.getAttribute('src')).toBe(source('middle'));
+    setMediaError(video, null);
+    play.mockClear();
+    const clock = vi.spyOn(performance, 'now').mockReturnValue(1000);
+
+    const capture = (event: KeyboardEvent) =>
+      handleKeyboardEvent(
+        event,
+        { onGalleryClose: vi.fn(), onMediaClick: vi.fn(async () => undefined) },
+        { enableKeyboard: true, enableMediaDetection: true, debugMode: false, preventBubbling: true, context: 'test' }
+      );
+    document.body.addEventListener('keydown', capture, { capture: true });
+    try {
+      const keydownAtVideo = vi.fn();
+      video.addEventListener('keydown', keydownAtVideo);
+      const event = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true });
+      video.dispatchEvent(event);
+      expect(event.defaultPrevented).toBe(true);
+      expect(keydownAtVideo).not.toHaveBeenCalled();
+      expect(video.paused).toBe(true);
+      video.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }));
+      expect(pause).toHaveBeenCalledOnce();
+      expect(play).not.toHaveBeenCalled();
+      if (laterPlay) {
+        clock.mockReturnValue(1200);
+        video.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }));
+        expect(play).toHaveBeenCalledOnce();
+      }
+    } finally {
+      document.body.removeEventListener('keydown', capture, { capture: true });
+    }
+    mediaEvent(video, 'loadstart');
+    mediaEvent(video, 'loadedmetadata');
+    expect(play).toHaveBeenCalledTimes(laterPlay ? 2 : 0);
+    observers.get('0px')?.({ isIntersecting: false } as IntersectionObserverEntry);
+    observers.get('0px')?.({ isIntersecting: true } as IntersectionObserverEntry);
+    expect(play).toHaveBeenCalledTimes(laterPlay ? 3 : 0);
   });
 
   it('keeps later native-control volume and mute changes during recovery', () => {
