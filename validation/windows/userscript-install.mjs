@@ -31,7 +31,7 @@ export function isPublicAvatarFixtureUrl(value) {
 }
 export const FIXTURE_ZIP_NAME = `testuser_${TWEET_ID}.zip`;
 const MAX_DOWNLOADS = 8;
-const FIRST_MEDIA_URL = `https://pbs.twimg.com/media/${MEDIA_COHORTS.normal[0]}.jpg?format=jpg&name=large`;
+const FIRST_MEDIA_URL = `https://pbs.twimg.com/media/${MEDIA_COHORTS.normal[0]}.jpg?format=jpg&name=orig`;
 const execFileAsync = promisify(execFile);
 const NATIVE_PERMISSION_RECEIPT = 'userscript-manager-native-permission.json';
 const NATIVE_PERMISSION_ACTION_RECEIPT = 'userscript-manager-native-permission-action.json';
@@ -1266,11 +1266,14 @@ async function runFixture(context, observer, root, output, downloads, images, lo
       assert(cohort, 'Unknown media fixture request');
       const [mediaPhase, markers] = cohort;
       const index = markers.findIndex((marker) => url.pathname.includes(marker));
+      const isPreview = route.request().resourceType() === 'image';
+      const expectedUrl = `https://pbs.twimg.com/media/${markers[index]}.jpg?format=jpg&name=${isPreview ? 'large' : 'orig'}`;
+      assert.equal(url.href, expectedUrl, 'Fixture media URL differs from its declared purpose');
       assert(routeRecords.length < 64, 'Fixture exceeded its routed request limit');
       const record = { phase, mediaPhase, index, resourceType: route.request().resourceType(),
         method: route.request().method() };
       routeRecords.push(record);
-      if (route.request().resourceType() !== 'image') {
+      if (!isPreview) {
         assert.equal(route.request().method(), 'GET', 'Fixture download used an unexpected method');
         record.result = 'loopback';
         await route.continue();

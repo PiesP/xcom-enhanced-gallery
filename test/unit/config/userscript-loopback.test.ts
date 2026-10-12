@@ -35,8 +35,8 @@ const cohorts = {
   held: ['GkH1234ABCDEF', 'GkH5678GHIJKL', 'GkH9012MNOPQR'],
 };
 const avatarPath = '/profile_images/123456789/public-avatar.jpg';
-const mediaPath = (cohort: keyof typeof cohorts, index: number) =>
-  `/media/${cohorts[cohort][index]}.jpg?format=jpg&name=large`;
+const mediaPath = (cohort: keyof typeof cohorts, index: number, name = 'orig') =>
+  `/media/${cohorts[cohort][index]}.jpg?format=jpg&name=${name}`;
 
 async function withServer(action: (fixture: Fixture, port: number) => Promise<void>) {
   const fixture = loopback.createUserscriptFixtureHandler(cohorts, avatarPath);
@@ -85,6 +85,10 @@ describe('userscript HTTPS loopback protocol', () => {
       fixture.setImages([Buffer.from('first'), Buffer.from('second'), Buffer.from('third')]);
       const normal = await get(port, mediaPath('normal', 0));
       expect(normal).toEqual({ status: 200, body: Buffer.from('first') });
+      expect((await get(port, mediaPath('normal', 0, 'large'))).status).toBe(404);
+      expect((await get(port, mediaPath('normal', 0), { destination: 'image' })).status).toBe(404);
+      expect((await get(port, mediaPath('normal', 0, 'large'),
+        { destination: 'image' })).status).toBe(200);
       expect((await get(port, `${mediaPath('normal', 0)}&unexpected=1`)).status).toBe(404);
       expect((await get(port, mediaPath('normal', 0), { host: 'other.example' })).status).toBe(404);
       expect((await get(port, mediaPath('normal', 0), { method: 'POST' })).status).toBe(404);
@@ -93,8 +97,8 @@ describe('userscript HTTPS loopback protocol', () => {
       expect((await get(port, mediaPath('failure', 0))).status).toBe(503);
       expect(fixture.findSince(before, 'failure', 0, 'http-503')).toMatchObject({
         phase: 'failure', cohort: 'failure', index: 0, bytes: 0 });
-      expect(fixture.snapshot()).toMatchObject({ requests: 5, unexpectedCount: 3,
-        overflow: false, servedBytes: 5, activeCount: 0 });
+      expect(fixture.snapshot()).toMatchObject({ requests: 8, unexpectedCount: 5,
+        overflow: false, servedBytes: 10, activeCount: 0 });
     });
   });
 
@@ -103,7 +107,8 @@ describe('userscript HTTPS loopback protocol', () => {
       fixture.setImages([Buffer.from('first'), Buffer.from('second'), Buffer.from('third')]);
       fixture.setPhase('held');
       const previewStart = fixture.mark();
-      expect((await get(port, mediaPath('held', 0), { destination: 'image' })).status).toBe(200);
+      expect((await get(port, mediaPath('held', 0, 'large'),
+        { destination: 'image' })).status).toBe(200);
       expect(fixture.findSince(previewStart, 'held', 0, 'served')).toBeUndefined();
       fixture.armHeld();
       const before = fixture.mark();
