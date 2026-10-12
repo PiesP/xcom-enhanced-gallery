@@ -40,6 +40,7 @@ export function startNativeVideoRecovery(options: NativeVideoRecoveryOptions): (
       .then(() => {
         if (active && options.isCurrent())
           return setTypedSetting('gallery.videoClickMode', 'block-all');
+        return undefined;
       })
       .then(
         () => {
