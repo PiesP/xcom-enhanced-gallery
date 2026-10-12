@@ -10,15 +10,14 @@ import {
   TWEET_CONTAINER_SELECTORS,
   VIDEO_CONTAINER_SELECTORS,
 } from '@constants/selectors';
+import { isGalleryInternalElement } from '@shared/dom/utils';
 import { logger } from '@shared/logging/logger';
-import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import { closestWithFallback } from '@shared/utils/dom/query-helpers';
 import type {
   PauseAmbientVideosOptions,
   PauseAmbientVideosResult,
 } from '@shared/utils/media/twitter-video-pauser';
 import { pauseActiveTwitterVideos } from '@shared/utils/media/twitter-video-pauser';
-import { createEffectRoot } from '@shared/utils/solid/accessor-utils';
 
 type QueryableRoot = Document | DocumentFragment | HTMLElement;
 
@@ -114,23 +113,35 @@ export function pauseAmbientVideosForGallery(
 }
 
 // ---------------------------------------------------------------------------
-// Ambient video guard (reactive watcher that pauses videos when gallery opens)
+// Owned by the mounted modal's host-state handle, including emergency restoration.
 // ---------------------------------------------------------------------------
 
 export function startAmbientVideoGuard(): () => void {
   let active = true;
-  const dispose = createEffectRoot(() => {
-    if (!gallerySignals.isOpen) return;
-
-    const result = pauseAmbientVideosForGallery({ trigger: 'guard', reason: 'guard' });
-    if (result.pausedCount > 0) {
-      __DEV__ && logger.debug('[AmbientVideoCoordinator] Ambient pause triggered', result);
+  const pause = (root: Document | HTMLElement): void => {
+    if (!active) return;
+    pauseAmbientVideosForGallery({ root, force: false, trigger: 'guard', reason: 'modal' });
+  };
+  const onPlay = (event: Event): void => {
+    if (event.target instanceof HTMLVideoElement) pause(event.target);
+  };
+  const observer = new MutationObserver((records) => {
+    if (!active) return;
+    for (const record of records) {
+      for (const node of record.addedNodes) {
+        if (node instanceof HTMLElement && !isGalleryInternalElement(node)) pause(node);
+      }
     }
   });
+  document.addEventListener('play', onPlay, true);
+  observer.observe(document.body, { childList: true, subtree: true });
+  // One initial sweep also catches playback whose play event predates mounting.
+  pause(document);
 
   return () => {
     if (!active) return;
     active = false;
-    dispose();
+    document.removeEventListener('play', onPlay, true);
+    observer.disconnect();
   };
 }

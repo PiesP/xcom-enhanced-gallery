@@ -64,6 +64,7 @@ export const en: LanguageStrings = {
         ownerUnconfirmed: 'Could not confirm which post owns the selected media.',
         mismatch: 'The returned media did not match the selected item.',
         cancelled: 'Media loading was cancelled.',
+        nativeVideoRecovery: 'Use the video’s play/pause controls on X to continue watching.',
       },
       generic: 'Error occurred',
       loadGallery: 'Failed to load gallery',

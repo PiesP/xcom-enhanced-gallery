@@ -20,6 +20,7 @@ import {
 import type { TranslationKey } from '@shared/i18n/types';
 import { logger } from '@shared/logging/logger';
 import { getLanguageService } from '@shared/services/language-service';
+import { captureClickedMediaEvidence } from '@shared/services/media-extraction/determine-clicked-index';
 import { getMediaService } from '@shared/services/media-service';
 import {
   closeGallery,
@@ -33,11 +34,8 @@ import {
   createGalleryLifecycle,
   type GalleryLifecycle,
 } from '@shared/utils/events/lifecycle/gallery-lifecycle';
-import {
-  pauseAmbientVideosForGallery,
-  startAmbientVideoGuard,
-} from '@shared/utils/media/ambient-video-coordinator';
 import { isProcessableMedia } from '@shared/utils/media/media-click-detector';
+import { getMediaClickTarget } from '@shared/utils/media/media-click-target';
 
 function mediaFailureMessage(kind: MediaExtractionResult['failureKind']): TranslationKey {
   switch (kind) {
@@ -70,7 +68,6 @@ function mediaFailureMessage(kind: MediaExtractionResult['failureKind']): Transl
 
 export class GalleryApp {
   private initialized = false;
-  private ambientVideoGuardDispose: (() => void) | null = null;
   private readonly lifecycle: GalleryLifecycle = createGalleryLifecycle();
   private readonly renderer: GalleryRenderer;
   private mediaClickCounter = 0;
@@ -90,9 +87,6 @@ export class GalleryApp {
 
     try {
       await this.setupEventHandlers();
-      if (!this.ambientVideoGuardDispose) {
-        this.ambientVideoGuardDispose = startAmbientVideoGuard();
-      }
       this.initialized = true;
       document.documentElement.setAttribute(GALLERY_READY_ATTRIBUTE, 'true');
     } catch (error) {
@@ -125,14 +119,13 @@ export class GalleryApp {
 
   /** Resume one trusted click retained privately during extension bootstrap. */
   async resumeEarlyMediaClick(event: MouseEvent): Promise<void> {
-    const target = event.target;
+    const target = getMediaClickTarget(event);
     if (
       !this.initialized ||
       !event.isTrusted ||
-      !(target instanceof HTMLElement) ||
-      !target.isConnected ||
+      !target?.isConnected ||
       isGalleryRecoveryActive() ||
-      !isProcessableMedia(target)
+      !isProcessableMedia(target, event)
     ) {
       return;
     }
@@ -140,6 +133,7 @@ export class GalleryApp {
   }
 
   private async handleMediaClick(element: HTMLElement, _event: MouseEvent): Promise<void> {
+    const videoClick = captureClickedMediaEvidence(element).mediaType === 'video';
     this.mediaClickAbortController?.abort();
     const clickController = new AbortController();
     this.mediaClickAbortController = clickController;
@@ -159,9 +153,7 @@ export class GalleryApp {
       if (!this.isCurrentMediaClick(opId, epoch, clickController)) return;
 
       if (result.success && result.mediaItems.length > 0) {
-        this.openGallery(result.mediaItems, result.clickedIndex, {
-          reason: 'media-click',
-        });
+        this.openGallery(result.mediaItems, result.clickedIndex);
         const partialRecovery = result.metadata?.recoveryScope === 'visible-tile';
         const observedQuality = result.mediaItems.some(
           (media) =>
@@ -187,10 +179,13 @@ export class GalleryApp {
           metadata: { success: result.success, failureKind: result.failureKind },
         });
         const lang = getLanguageService();
+        const recovery = videoClick
+          ? ` ${lang.translate('msg.err.loadMedia.nativeVideoRecovery')}`
+          : '';
         notifySafely(
           getNotificationAdapter(),
           lang.translate('msg.err.loadMedia.title'),
-          lang.translate(mediaFailureMessage(result.failureKind))
+          lang.translate(mediaFailureMessage(result.failureKind)) + recovery
         );
       }
     } catch (error) {
@@ -200,7 +195,8 @@ export class GalleryApp {
       notifySafely(
         getNotificationAdapter(),
         lang.translate('msg.err.generic'),
-        normalizeErrorMessage(error)
+        normalizeErrorMessage(error).slice(0, 240) +
+          (videoClick ? ` ${lang.translate('msg.err.loadMedia.nativeVideoRecovery')}` : '')
       );
     } finally {
       signalScope.cleanup();
@@ -220,14 +216,11 @@ export class GalleryApp {
     );
   }
 
-  openGallery(mediaItems: MediaInfo[], startIndex = 0, pauseContext?: { reason?: string }): void {
+  openGallery(mediaItems: MediaInfo[], startIndex = 0): void {
     if (mediaItems.length === 0) return;
 
     try {
       const validIndex = clampIndex(startIndex, mediaItems.length);
-      pauseAmbientVideosForGallery({
-        reason: pauseContext?.reason ?? 'media-click',
-      });
       openGallery(mediaItems, validIndex);
     } catch (error) {
       galleryErrorReporter.error(error, {
@@ -245,6 +238,9 @@ export class GalleryApp {
   }
 
   close(): void {
+    this.mediaClickAbortController?.abort();
+    this.mediaClickAbortController = null;
+    this.mediaClickCounter++;
     if (gallerySignals.isOpen) {
       closeGallery();
     }
@@ -261,9 +257,6 @@ export class GalleryApp {
     this.mediaClickAbortController = null;
     this.sessionAbortController?.abort();
     this.sessionAbortController = null;
-
-    this.ambientVideoGuardDispose?.();
-    this.ambientVideoGuardDispose = null;
 
     try {
       this.lifecycle.cleanup();

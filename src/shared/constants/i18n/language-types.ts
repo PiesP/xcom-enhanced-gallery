@@ -128,6 +128,7 @@ export interface LanguageStrings {
         readonly ownerUnconfirmed: string;
         readonly mismatch: string;
         readonly cancelled: string;
+        readonly nativeVideoRecovery: string;
       };
       /** Generic error title */
       readonly generic: string;

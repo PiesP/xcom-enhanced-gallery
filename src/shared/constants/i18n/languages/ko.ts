@@ -65,6 +65,7 @@ export const ko: LanguageStrings = {
         ownerUnconfirmed: '선택한 미디어가 어느 게시물에 속하는지 확인할 수 없습니다.',
         mismatch: '받은 미디어가 선택한 항목과 일치하지 않습니다.',
         cancelled: '미디어 불러오기가 취소되었습니다.',
+        nativeVideoRecovery: '계속 보려면 X 동영상의 재생·일시정지 컨트롤을 사용하세요.',
       },
       generic: '오류가 발생했습니다',
       loadGallery: '갤러리를 불러오지 못했습니다',

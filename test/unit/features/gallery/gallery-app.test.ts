@@ -183,4 +183,50 @@ describe('GalleryApp media-click currentness', () => {
     await app.cleanup();
   });
 
+  it.each(['denied', 'unreadable', 'unsupported-source', 'mismatch', 'transport'] as const)(
+    'keeps %s diagnosis and offers native-player recovery for a video click', async (failureKind) => {
+      state.extract.mockResolvedValue({ success: false, mediaItems: [], failureKind });
+      const app = new GalleryApp({ destroy: vi.fn() } as never);
+      await app.initialize();
+      const video = document.createElement('video');
+      document.body.append(video);
+      await state.handlers?.onMediaClick(video, new MouseEvent('click'));
+      expect(state.openGallery).not.toHaveBeenCalled();
+      expect(state.notify.mock.calls[0]?.[2]).toContain('msg.err.loadMedia.nativeVideoRecovery');
+      expect(state.notify.mock.calls[0]?.[2]).toContain('msg.err.loadMedia.');
+      video.remove();
+      await app.cleanup();
+    }
+  );
+
+  it('cancels a held extraction when the user closes, with no stale opening or feedback', async () => {
+    const pending = deferredResult();
+    state.extract.mockReturnValue(pending.promise);
+    const app = new GalleryApp({ destroy: vi.fn() } as never);
+    await app.initialize();
+    const click = state.handlers?.onMediaClick(document.createElement('video'), new MouseEvent('click'));
+    app.close();
+    expect(state.extract.mock.calls[0]?.[1]?.signal.aborted).toBe(true);
+    pending.resolve(success('late'));
+    await click;
+    expect(state.openGallery).not.toHaveBeenCalled();
+    expect(state.notify).not.toHaveBeenCalled();
+    await app.cleanup();
+  });
+
+  it('offers recovery for a bounded unmarked native-video button too', async () => {
+    state.extract.mockResolvedValue({ success: false, mediaItems: [], failureKind: 'owner-unconfirmed' });
+    const app = new GalleryApp({ destroy: vi.fn() } as never);
+    await app.initialize();
+    const frame = document.createElement('div');
+    frame.innerHTML = '<video poster="https://pbs.twimg.com/amplify_video_thumb/333/img/poster.jpg"></video><button type="button">Play</button>';
+    document.body.append(frame);
+    const button = frame.querySelector('button');
+    if (!button) throw new Error('Missing fixture button');
+    await state.handlers?.onMediaClick(button, new MouseEvent('click'));
+    expect(state.notify.mock.calls[0]?.[2]).toBe('msg.err.loadMedia.ownerUnconfirmed msg.err.loadMedia.nativeVideoRecovery');
+    frame.remove();
+    await app.cleanup();
+  });
+
 });

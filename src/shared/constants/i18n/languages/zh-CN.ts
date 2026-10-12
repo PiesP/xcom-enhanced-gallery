@@ -61,6 +61,7 @@ export const zhCn: LanguageStrings = {
         ownerUnconfirmed: '无法确认所选媒体属于哪个帖子。',
         mismatch: '返回的媒体与所选项目不匹配。',
         cancelled: '媒体加载已取消。',
+        nativeVideoRecovery: '要继续观看，请使用 X 视频的播放或暂停控件。',
         title: '加载媒体失败',
         body: '找不到图片或视频。',
       },

@@ -65,6 +65,7 @@ export const ja: LanguageStrings = {
         ownerUnconfirmed: '選択したメディアの投稿元を確認できませんでした。',
         mismatch: '取得したメディアが選択した項目と一致しません。',
         cancelled: 'メディアの読み込みがキャンセルされました。',
+        nativeVideoRecovery: '視聴を続けるには、Xの動画の再生・一時停止ボタンを使ってください。',
       },
       generic: 'エラーが発生しました',
       loadGallery: 'ギャラリーの読み込みに失敗しました',

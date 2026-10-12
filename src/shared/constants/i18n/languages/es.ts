@@ -64,6 +64,8 @@ export const es: LanguageStrings = {
           'No se pudo confirmar a qué publicación pertenece el contenido seleccionado.',
         mismatch: 'El contenido recibido no coincide con el elemento seleccionado.',
         cancelled: 'Se canceló la carga del contenido multimedia.',
+        nativeVideoRecovery:
+          'Usa los controles de reproducción y pausa del vídeo en X para seguir viendo.',
         title: 'Error al cargar contenido multimedia',
         body: 'No se encontraron imágenes ni videos.',
       },

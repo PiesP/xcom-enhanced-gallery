@@ -77,7 +77,8 @@ export function pauseActiveTwitterVideos(
   const root = resolveRoot(options.root ?? null);
   if (!root) return ZERO_RESULT;
 
-  const videos = Array.from(root.querySelectorAll('video'));
+  const videos =
+    root instanceof HTMLVideoElement ? [root] : Array.from(root.querySelectorAll('video'));
   const inspectedCount = videos.length;
   if (inspectedCount === 0) return ZERO_RESULT;
 
