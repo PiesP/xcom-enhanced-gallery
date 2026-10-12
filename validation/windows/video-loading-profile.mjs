@@ -459,7 +459,8 @@ export async function runVideoLoadingProfile({
     catch (error) { followupErrors.push(error); }
     try {
       const recoveryMp4 = await readFile(join(root, 'test/e2e/fixtures/installed-recovery-intent.mp4'));
-      observation.recoveryIntent = await runRecoveryIntentCases({ context, validMp4: recoveryMp4, output, nativeLoopback });
+      observation.recoveryIntent = await runRecoveryIntentCases({ context, validMp4: recoveryMp4,
+        auxiliaryMp4: validMp4, output, nativeLoopback });
     } catch (error) { followupErrors.push(error); }
     if (followupErrors.length) throw new AggregateError(followupErrors,
       'Required video admission and recovery intent cases failed');
@@ -536,7 +537,7 @@ function delayedDecodeFailure(validMp4) {
   return { bytes, prefixEnd: 153895 };
 }
 
-async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopback }) {
+async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output, nativeLoopback }) {
   assert(typeof nativeLoopback.armVideoHold === 'function' &&
     typeof nativeLoopback.completeVideoHold === 'function' &&
     typeof nativeLoopback.abortVideoHold === 'function');
@@ -584,15 +585,16 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
         return route.continue();
       }
       if (match[2] === 'lower') await active.lowerGate;
+      const payload = match[1] === '0' ? validMp4 : auxiliaryMp4;
       const range = /^bytes=(\d+)-(\d*)$/u.exec(route.request().headers().range ?? '');
       const start = range ? Number(range[1]) : 0;
-      const end = Math.min(range?.[2] ? Number(range[2]) : validMp4.length - 1, validMp4.length - 1);
-      assert(start >= 0 && start <= end && end < validMp4.length, 'Unexpected controlled media range');
-      const bytes = validMp4.subarray(start, end + 1);
+      const end = Math.min(range?.[2] ? Number(range[2]) : payload.length - 1, payload.length - 1);
+      assert(start >= 0 && start <= end && end < payload.length, 'Unexpected controlled media range');
+      const bytes = payload.subarray(start, end + 1);
       record.fulfilledAtMonotonicMs = performance.now();
       return route.fulfill({ status: range ? 206 : 200, contentType: 'video/mp4', body: bytes,
         headers: { 'Accept-Ranges': 'bytes', 'Content-Length': String(bytes.length),
-          ...(range ? { 'Content-Range': `bytes ${start}-${end}/${validMp4.length}` } : {}) } });
+          ...(range ? { 'Content-Range': `bytes ${start}-${end}/${payload.length}` } : {}) } });
     }
     return route.fallback();
   };
@@ -621,6 +623,7 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
     for (const state of [first, after]) {
       assert.equal(state.src, expectedSource, 'Paused observation changed the recovery source attribute');
       assert.equal(state.currentSrc, expectedSource, 'Paused observation used a different active source');
+      assert.equal(state.error, null, 'Paused replacement developed a native media error');
     }
     assert.equal(after.paused, true, 'Delayed recovery resumed contrary to fresh intent');
     assert(after.currentTime - first.currentTime <= 0.05,
@@ -837,7 +840,8 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
           const resumeStart = await stateWhen(page, (value) => value.metadata === 'true' &&
             value.currentSrc === observed.lower && !value.seeking,
           'replacement metadata before legitimate resume progress');
-          observed.resumed = await stateWhen(page, (value) => !value.paused && !value.muted &&
+          observed.resumed = await stateWhen(page, (value) => !value.error && value.readyState >= 2 &&
+            !value.paused && !value.muted &&
             value.currentTime > resumeStart.currentTime + 0.15,
           'latest visible playback intent to resume with positive progress');
         }
@@ -851,12 +855,22 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
         assert(observed.nativeRequests.some((record) => record.path === new URL(observed.best).pathname &&
           record.result === 'served'), 'The bounded real HTTPS source was not served');
         assert.deepEqual(observed.pageErrors, []);
+        observed.expectedLifecycleAborts = observed.requestFailures.filter((record) =>
+          record.reason === 'net::ERR_ABORTED' && [observed.best, observed.lower].includes(record.url) &&
+          requests.some((request) => request.case === name && request.index === 0 &&
+            request.quality === (record.url === observed.best ? 'best' : 'lower')));
         assert.deepEqual(observed.requestFailures.filter((record) =>
-          record.url !== observed.best || record.reason !== 'net::ERR_ABORTED'), [],
-        'Recovery fixture has failures beyond its exact intentionally damaged source');
+          !observed.expectedLifecycleAborts.includes(record)), [],
+        'Recovery fixture has failures beyond the current source range and seek lifecycle');
         assert.deepEqual(observed.consoleErrors.filter((record) =>
-          record.location !== observed.best || !record.text.includes('net::ERR_ABORTED')), [],
+          !observed.expectedLifecycleAborts.some((abort) => abort.url === record.location) ||
+            !record.text.includes('net::ERR_ABORTED')), [],
         'Recovery fixture logged an unexpected console error');
+        const replacementPlays = await page.evaluate(() =>
+          window.__xegRecoveryEventObservation.records.filter((event) => event.type === 'play'));
+        observed.replacementPlayCount = replacementPlays.filter((event) => event.source === observed.lower).length;
+        assert.equal(observed.replacementPlayCount, 1,
+          'The replacement must have exactly one intended native play transition');
         observed.status = 'passed';
       } catch (error) {
         observed.status = 'failed';
