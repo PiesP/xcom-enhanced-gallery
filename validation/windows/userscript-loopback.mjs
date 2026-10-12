@@ -89,12 +89,14 @@ export function createUserscriptFixtureHandler(cohorts, avatarPath) {
       Array.isArray(markers) && markers.length === 3);
     for (const [index, marker] of markers.entries()) {
       assert(/^[A-Za-z0-9]{13}$/u.test(marker));
-      const path = `/media/${marker}.jpg?format=jpg&name=large`;
-      assert(!allowed.has(path));
-      allowed.set(path, { cohort, index });
+      for (const [name, purpose] of [['large', 'preview'], ['orig', 'transfer']]) {
+        const path = `/media/${marker}.jpg?format=jpg&name=${name}`;
+        assert(!allowed.has(path));
+        allowed.set(path, { cohort, index, purpose });
+      }
     }
   }
-  assert.equal(allowed.size, 12);
+  assert.equal(allowed.size, 24);
   assert.equal(avatarPath, '/profile_images/123456789/public-avatar.jpg');
   allowed.set(avatarPath, { cohort: 'avatar', index: 0 });
   let images;
@@ -132,6 +134,10 @@ export function createUserscriptFixtureHandler(cohorts, avatarPath) {
       return;
     }
     const purpose = request.headers['sec-fetch-dest'] === 'image' ? 'preview' : 'transfer';
+    if (media.cohort !== 'avatar' && media.purpose !== purpose) {
+      reject(response);
+      return;
+    }
     const event = { phase, cohort: media.cohort, index: media.index,
       purpose, method: 'GET', result: 'started', bytes: 0, sha256: null };
     events.push(event);

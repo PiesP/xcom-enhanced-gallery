@@ -1042,7 +1042,7 @@ describe('Windows X live page validation', () => {
   });
 
   it('limits manager history to the exact first fixture request and redacts native fields', async () => {
-    const fixtureUrl = 'https://pbs.twimg.com/media/GkE1234ABCDEF.jpg?format=jpg&name=large';
+    const fixtureUrl = 'https://pbs.twimg.com/media/GkE1234ABCDEF.jpg?format=jpg&name=orig';
     const expectedName = 'testuser_1234567890123456789_0.jpg';
     const expectedPath = `C:\\owned\\${expectedName}`;
     const search = vi.fn(async () => [
@@ -1119,7 +1119,7 @@ describe('Windows X live page validation', () => {
   });
 
   it('projects exact native path and size matches without returning private fields', async () => {
-    const fixtureUrl = 'https://pbs.twimg.com/media/GkE1234ABCDEF.jpg?format=jpg&name=large';
+    const fixtureUrl = 'https://pbs.twimg.com/media/GkE1234ABCDEF.jpg?format=jpg&name=orig';
     const expectedName = 'first (1).jpg';
     const expectedPath = `C:\\owned\\${expectedName}`;
     vi.stubGlobal('location', { href: 'chrome-extension://manager/options.html' });
