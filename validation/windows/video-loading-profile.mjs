@@ -662,6 +662,10 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
       };
       protocol.on('Network.requestWillBeSent', (event) => {
         if (event.request.url !== observed.best) return;
+        if (nativeRequestIds.size >= MAX_REQUESTS && !nativeRequestIds.has(event.requestId)) {
+          observed.networkProtocol.overflow = true;
+          return;
+        }
         nativeRequestIds.add(event.requestId);
         boundedProtocolRecord(observed.networkProtocol.requests, { requestId: event.requestId,
           frameId: event.frameId, type: event.type, initiatorType: event.initiator.type });
@@ -695,16 +699,16 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
       await protocol.send('Network.enable');
       await protocol.send('Audits.enable');
       const onPageError = (error) => {
-        assert(observed.pageErrors.length < MAX_REQUESTS);
+        if (observed.pageErrors.length >= MAX_REQUESTS) { observed.eventOverflow = true; return; }
         observed.pageErrors.push(error.message.slice(0, 500));
       };
       const onRequestFailed = (request) => {
-        assert(observed.requestFailures.length < MAX_REQUESTS);
+        if (observed.requestFailures.length >= MAX_REQUESTS) { observed.eventOverflow = true; return; }
         observed.requestFailures.push({ url: request.url(), reason: request.failure()?.errorText });
       };
       const onConsole = (message) => {
         if (message.type() !== 'error') return;
-        assert(observed.consoleErrors.length < MAX_REQUESTS);
+        if (observed.consoleErrors.length >= MAX_REQUESTS) { observed.eventOverflow = true; return; }
         observed.consoleErrors.push({ text: message.text().slice(0, 500),
           location: message.location().url });
       };
@@ -827,6 +831,7 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
         }
         assertBestSource(await itemState(page, 0), observed.best);
         assert.equal(observed.networkProtocol.overflow, false, 'Native request protocol observations overflowed');
+        assert.equal(observed.eventOverflow ?? false, false, 'Native page observations overflowed');
         observed.nativeRequests = nativeLoopback.since(nativeMark);
         assert(observed.nativeRequests.some((record) => record.host === 'x.com' &&
           record.path === new URL(active.url).pathname && record.result === 'served'),
@@ -858,9 +863,9 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
             delete window.__xegRecoveryEventObservation;
             return { records: state.records, overflow: state.overflow };
           });
-          if (observed.networkProtocol.overflow) {
+          if (observed.networkProtocol.overflow || observed.eventOverflow) {
             observed.status = 'failed';
-            observed.error = `${observed.error ?? 'Native recovery case'}; request protocol observations overflowed`;
+            observed.error = `${observed.error ?? 'Native recovery case'}; bounded observations overflowed`;
           }
           assert.equal(observed.mediaEvents.overflow, false, 'Native media event observation overflowed');
           await page.screenshot({ path: join(output, `video-recovery-intent-${name}.png`) });
