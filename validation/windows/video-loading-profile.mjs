@@ -654,6 +654,36 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
       const observed = { name, id, status: 'running', best: videoUrl(id, 0),
         lower: videoUrl(id, 0, 'lower'), pageErrors: [], requestFailures: [], consoleErrors: [] };
       cases.push(observed);
+      const protocol = await context.newCDPSession(page);
+      observed.networkProtocol = { requests: [], failures: [], issues: [] };
+      const nativeRequestIds = new Set();
+      const boundedProtocolRecord = (records, record) => {
+        assert(records.length < MAX_REQUESTS, 'Native request protocol observations overflowed');
+        records.push(record);
+      };
+      protocol.on('Network.requestWillBeSent', (event) => {
+        if (event.request.url !== observed.best) return;
+        nativeRequestIds.add(event.requestId);
+        boundedProtocolRecord(observed.networkProtocol.requests, { requestId: event.requestId,
+          frameId: event.frameId, type: event.type, initiatorType: event.initiator.type });
+      });
+      protocol.on('Network.loadingFailed', (event) => {
+        if (!nativeRequestIds.has(event.requestId)) return;
+        boundedProtocolRecord(observed.networkProtocol.failures, { requestId: event.requestId,
+          errorText: event.errorText, blockedReason: event.blockedReason,
+          corsErrorStatus: event.corsErrorStatus });
+      });
+      protocol.on('Audits.issueAdded', ({ issue }) => {
+        const details = issue.details.corsIssueDetails;
+        if (details?.request?.url !== observed.best) return;
+        boundedProtocolRecord(observed.networkProtocol.issues, { code: issue.code,
+          corsErrorStatus: details.corsErrorStatus, requestId: details.request.requestId,
+          resourceIPAddressSpace: details.resourceIPAddressSpace,
+          clientSecurityState: details.clientSecurityState,
+          initiatorOrigin: details.initiatorOrigin });
+      });
+      await protocol.send('Network.enable');
+      await protocol.send('Audits.enable');
       const onPageError = (error) => {
         assert(observed.pageErrors.length < MAX_REQUESTS);
         observed.pageErrors.push(error.message.slice(0, 500));
@@ -678,6 +708,14 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
         observed.permission = await page.evaluate(async () =>
           (await navigator.permissions.query({ name: 'loopback-network' })).state);
         assert.equal(observed.permission, 'granted');
+        const { frameTree } = await protocol.send('Page.getFrameTree');
+        observed.requestingFrame = { id: frameTree.frame.id, securityOrigin: frameTree.frame.securityOrigin,
+          secureContextType: frameTree.frame.secureContextType,
+          childFrameCount: frameTree.childFrames?.length ?? 0 };
+        observed.documentSecurity = await page.evaluate(async () => ({
+          origin: location.origin, secureContext: isSecureContext,
+          permission: (await navigator.permissions.query({ name: 'loopback-network' })).state,
+        }));
         await page.locator('[data-video-target="0"]').click();
         await page.locator('[data-xeg-gallery-container]').waitFor({ state: 'visible' });
         const originalControl = page.locator('[data-xeg-gallery-container]')
@@ -814,6 +852,7 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
         page.off('pageerror', onPageError);
         page.off('requestfailed', onRequestFailed);
         page.off('console', onConsole);
+        await protocol.detach();
         await page.close();
       }
     }
