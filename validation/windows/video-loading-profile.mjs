@@ -643,7 +643,8 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
       const onConsole = (message) => {
         if (message.type() !== 'error') return;
         assert(observed.consoleErrors.length < MAX_REQUESTS);
-        observed.consoleErrors.push(message.text().slice(0, 500));
+        observed.consoleErrors.push({ text: message.text().slice(0, 500),
+          location: message.location().url });
       };
       page.on('pageerror', onPageError);
       page.on('requestfailed', onRequestFailed);
@@ -657,7 +658,9 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
         assert.equal(observed.permission, 'granted');
         await page.locator('[data-video-target="0"]').click();
         await page.locator('[data-xeg-gallery-container]').waitFor({ state: 'visible' });
-        await page.locator('[data-xeg-gallery-container]').getByRole('button', { name: 'Original', exact: true }).click();
+        const originalControl = page.locator('[data-xeg-gallery-container]')
+          .getByRole('button', { name: 'Original', exact: true });
+        if (await originalControl.getAttribute('aria-pressed') !== 'true') await originalControl.click();
         const video = page.locator('[data-gallery-element="item"][data-index="0"] video');
         await video.evaluate((element) => {
           const state = { records: [], overflow: false, listeners: [] };
@@ -744,6 +747,12 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
         assert(observed.nativeRequests.some((record) => record.path === new URL(observed.best).pathname &&
           record.result === 'served'), 'The bounded real HTTPS source was not served');
         assert.deepEqual(observed.pageErrors, []);
+        assert.deepEqual(observed.requestFailures.filter((record) =>
+          record.url !== observed.best || record.reason !== 'net::ERR_ABORTED'), [],
+        'Recovery fixture has failures beyond its exact intentionally damaged source');
+        assert.deepEqual(observed.consoleErrors.filter((record) =>
+          record.location !== observed.best || !record.text.includes('net::ERR_ABORTED')), [],
+        'Recovery fixture logged an unexpected console error');
         observed.status = 'passed';
       } catch (error) {
         observed.status = 'failed';

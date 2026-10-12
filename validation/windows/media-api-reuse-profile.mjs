@@ -426,7 +426,7 @@ async function runResponseAccountingCases({ context, output, videoPayloads }) {
       classification = 'foreign-root';
     }
     const record = { sequence: active.name, ordinal: records.length + 1, requestedId: id,
-      step, status, classification, method: route.request().method(),
+      step, status, fixtureResponseKind: classification, method: route.request().method(),
       requestedAtMonotonicMs: performance.now(), fulfilledAtMonotonicMs: null };
     assert.equal(record.method, 'GET');
     records.push(record);
