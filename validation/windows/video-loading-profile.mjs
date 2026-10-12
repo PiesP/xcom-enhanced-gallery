@@ -541,9 +541,12 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
     bestPayloadSha256: createHash('sha256').update(damaged.bytes).digest('hex'),
     pausedObservationMs: 700, maxMediaEvents: 64,
     cleanup: { routesRemoved: false, pagesClosed: false, videoHoldReleased: false,
-      fixturePermissionCleared: false } };
+      fixturePermissionRestored: false, permissionSessionDetached: false } };
   let active;
   let primaryError;
+  let permissionSession;
+  let permissionBefore;
+  let permissionPage;
   const handler = async (route) => {
     if (!active) return route.fallback();
     const target = new URL(route.request().url());
@@ -615,8 +618,23 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
   };
   await context.route('**/*', handler);
   try {
-    // Permission belongs only to this disposable fixture profile; no manifest/OS change.
-    await context.grantPermissions(['local-network-access'], { origin: 'https://x.com' });
+    // The compatibility query can be granted while loopback itself is denied.
+    // Set and restore only the actual descriptor in this owned persistent profile.
+    permissionPage = context.pages().find((value) => value.url().startsWith('https://x.com/'));
+    assert(permissionPage, 'An existing owned fixture page is required');
+    const browser = context.browser();
+    assert(browser, 'The installed persistent Chromium browser is required');
+    permissionSession = await browser.newBrowserCDPSession();
+    const contexts = await permissionSession.send('Target.getBrowserContexts');
+    assert.deepEqual(contexts.browserContextIds, [],
+      'This fixture requires its isolated persistent default context');
+    permissionBefore = await permissionPage.evaluate(async () =>
+      (await navigator.permissions.query({ name: 'loopback-network' })).state);
+    evidence.fixturePermission = { name: 'loopback-network', origin: 'https://x.com',
+      context: 'owned-persistent-default', before: permissionBefore };
+    evidence.browserVersion = await permissionSession.send('Browser.getVersion');
+    await permissionSession.send('Browser.setPermission', { permission: { name: 'loopback-network' },
+      setting: 'granted', origin: 'https://x.com' });
     for (const [index, name] of [
       'metadata-while-outside', 'reenter-before-metadata', 'later-user-pause-mute-volume',
     ].entries()) {
@@ -654,7 +672,7 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
         await page.goto(active.url);
         await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
         observed.permission = await page.evaluate(async () =>
-          (await navigator.permissions.query({ name: 'local-network-access' })).state);
+          (await navigator.permissions.query({ name: 'loopback-network' })).state);
         assert.equal(observed.permission, 'granted');
         await page.locator('[data-video-target="0"]').click();
         await page.locator('[data-xeg-gallery-container]').waitFor({ state: 'visible' });
@@ -795,8 +813,21 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
     evidence.cleanup.videoHoldReleased = !nativeLoopback.videoHeld();
     await context.unroute('**/*', handler).then(() => { evidence.cleanup.routesRemoved = true; })
       .catch((error) => errors.push(error));
-    await context.clearPermissions().then(() => { evidence.cleanup.fixturePermissionCleared = true; })
-      .catch((error) => errors.push(error));
+    if (permissionSession && permissionBefore) {
+      try {
+        await permissionSession.send('Browser.setPermission', { permission: { name: 'loopback-network' },
+          setting: permissionBefore, origin: 'https://x.com' });
+        const after = await permissionPage.evaluate(async () =>
+          (await navigator.permissions.query({ name: 'loopback-network' })).state);
+        assert.equal(after, permissionBefore, 'The exact fixture permission did not restore');
+        evidence.fixturePermission.after = after;
+        evidence.cleanup.fixturePermissionRestored = true;
+      } catch (error) { errors.push(error); }
+    } else evidence.cleanup.fixturePermissionRestored = true;
+    if (permissionSession) {
+      await permissionSession.detach().then(() => { evidence.cleanup.permissionSessionDetached = true; })
+        .catch((error) => errors.push(error));
+    } else evidence.cleanup.permissionSessionDetached = true;
     const closing = await Promise.allSettled(pages.filter((page) => !page.isClosed()).map((page) => page.close()));
     evidence.cleanup.pagesClosed = pages.every((page) => page.isClosed());
     errors.push(...closing.filter((result) => result.status === 'rejected').map((result) => result.reason));
