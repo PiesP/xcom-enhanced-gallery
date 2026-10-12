@@ -494,6 +494,26 @@ describe('twitter-api-client request boundary', () => {
     await expect(getTweetMedias('999')).rejects.toThrow('unexpected tweet owner');
   });
 
+  it('carries an invalid root through metadata reuse and extraction as one failed request', async () => {
+    httpGet.mockResolvedValueOnce({ ok: true, status: 200,
+      data: { data: { tweetResult: { result: {
+        __typename: 'Tweet', rest_id: '999',
+      } } } },
+    });
+    const extractor = new TwitterAPIExtractor();
+    const extracted = await extractor.extract(
+      { tweetId: '222', username: 'outer', tweetUrl: 'https://x.com/outer/status/222',
+        extractionMethod: 'fixture', confidence: 1 },
+      document.createElement('video'), {}, 'invalid-root'
+    );
+    expect(extracted).toMatchObject({
+      success: false, mediaItems: [], apiRequestOutcome: 'failed',
+      apiRequestToken: expect.any(Object), failureKind: 'provider-error',
+    });
+    expect(httpGet).toHaveBeenCalledTimes(1);
+    extractor.dispose();
+  });
+
   it.each(['TweetUnavailable', 'TweetTombstone'])(
     'returns healthy no-media for %s through zero, one or two visibility wrappers', async (__typename) => {
       for (let depth = 0; depth <= 2; depth += 1) {
@@ -542,7 +562,9 @@ describe('twitter-api-client request boundary', () => {
   ])('rejects unsupported, malformed or conflicting roots: %j', async (result) => {
     httpGet.mockResolvedValue({ ok: true, status: 200,
       data: { data: { tweetResult: { result } } } });
-    await expect(getTweetMedias('222')).rejects.toBeInstanceOf(TwitterAPIRequestError);
+    await expect(getTweetMedias('222')).rejects.toMatchObject({
+      name: 'TwitterAPIRequestError', category: 'provider-error',
+    });
   });
 
   it.each(['TweetUnavailable', 'TweetTombstone'])(
