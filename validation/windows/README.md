@@ -121,9 +121,30 @@ native eight-video ZIP is independently read for entry order, names, bytes and
 CRC after playback fallback; its first entry must retain the preferred source.
 The helper records active-source, metadata, first-frame and completion timings
 as fixture observations, including the deliberately gated response boundary.
-These helpers
-restore owned routes and settings; provider access and live-CDN compatibility
-remain outside the fixture evidence.
+The API helper also runs three response-contract failures before a fourth action
+in the same document: foreign owner responses, two server failures followed by a
+foreign owner, and missing result envelopes. It independently counts physical
+requests and requires the fourth action to remain suppressed before the normal
+circuit cooldown. Legitimate unavailable responses and a valid-owner click
+mismatch provide healthy controls whose fourth request must still run.
+
+The video helper checks unselected, unfocused videos just above and below the
+actual gallery scrollport, farther source-free items, height changes, and
+close/reopen root replacement. It records real element rectangles and requests;
+admission ahead of view must leave playback paused. Its recovery-intent cases
+hold later samples of the declared MP4 after valid initial frames, start playback
+through a normal control, then release a deliberately corrupt tail. A trusted
+native code-3 error must precede the held same-item replacement request. Real
+wheel scrolling tests metadata arrival outside view and reentry before metadata;
+supported keyboard controls test a later pause, mute and volume change. Paused
+observations require settled seeking and no playback progress. The fresh owned
+profile temporarily grants only `loopback-network` for `https://x.com` through
+CDP and restores its exact prior state; TLS, CORS and OS protections stay enabled.
+
+These helpers restore owned routes, pages, response gates, permissions and
+settings. Their bounded event and request receipts retain failures as well as
+successes. Provider access, live-CDN compatibility and audible output remain
+outside the fixture evidence.
 
 The installed profile also serves the declared small MP4 assets and
 `installed-quoted-video-page.html` with deterministic `TweetResultByRestId`
