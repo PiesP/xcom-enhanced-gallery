@@ -2,7 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { isProcessableMedia } from '@shared/utils/media/media-click-detector';
-import { isHTMLElement } from '@shared/utils/types/guards';
+import { getMediaClickTarget } from '@shared/utils/media/media-click-target';
 
 export interface EarlyMediaClickReplay {
   complete(resume: (event: MouseEvent) => Promise<void>): Promise<void>;
@@ -18,16 +18,20 @@ export function installEarlyMediaClickReplay(
   documentRef: Document = document
 ): EarlyMediaClickReplay {
   let pendingClick: MouseEvent | null = null;
+  let pendingTarget: HTMLElement | null = null;
   let disposed = false;
 
   const handleClick = (event: MouseEvent): void => {
     if (!event.isTrusted) return;
-    const target = event.target;
-    if (!isHTMLElement(target) || !isProcessableMedia(target, event)) return;
+    const target = getMediaClickTarget(event);
+    if (!target?.isConnected || !isProcessableMedia(target, event)) return;
 
     event.stopImmediatePropagation();
     event.preventDefault();
-    pendingClick ??= event;
+    if (!pendingClick) {
+      pendingClick = event;
+      pendingTarget = target;
+    }
   };
 
   documentRef.addEventListener('click', handleClick, { capture: true });
@@ -43,8 +47,10 @@ export function installEarlyMediaClickReplay(
       removeListener();
 
       const click = pendingClick;
+      const target = pendingTarget;
       pendingClick = null;
-      if (click && isHTMLElement(click.target) && click.target.isConnected) {
+      pendingTarget = null;
+      if (click && target?.isConnected && getMediaClickTarget(click) === target) {
         await resume(click);
       }
     },
@@ -52,6 +58,7 @@ export function installEarlyMediaClickReplay(
       if (disposed) return;
       disposed = true;
       pendingClick = null;
+      pendingTarget = null;
       removeListener();
     },
   };

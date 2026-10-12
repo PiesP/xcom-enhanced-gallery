@@ -17,6 +17,7 @@ import { DEFAULT_SETTINGS } from '@constants/settings';
 import { getTypedSettingOr, tryGetSettings } from '@shared/container/settings-registry';
 import { isVideoClickAllowed } from '@shared/dom/utils';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
+import { getMediaClickTarget } from '@shared/utils/media/media-click-target';
 import {
   extractMediaUrlFromElement,
   findMediaElementInDOM,
@@ -123,20 +124,27 @@ function shouldBlockMediaTrigger(target: HTMLElement | null, event?: MouseEvent)
   return false;
 }
 
-export function isProcessableMedia(target: HTMLElement | null, event?: MouseEvent): boolean {
-  if (!target || gallerySignals.isOpen || shouldBlockMediaTrigger(target, event)) return false;
+export function isProcessableMedia(target: Element | null, event?: MouseEvent): boolean {
+  const htmlTarget = event
+    ? getMediaClickTarget(event)
+    : target instanceof HTMLElement
+      ? target
+      : null;
+  if (event && target !== htmlTarget && target !== event.target) return false;
+  if (!htmlTarget || gallerySignals.isOpen || shouldBlockMediaTrigger(htmlTarget, event))
+    return false;
 
   const settings = tryGetSettings();
   const videoMode = settings
     ? getTypedSettingOr('gallery.videoClickMode', DEFAULT_SETTINGS.gallery.videoClickMode)
     : DEFAULT_SETTINGS.gallery.videoClickMode;
-  if (isAllowAllNativeVideoControl(target, videoMode)) return true;
+  if (isAllowAllNativeVideoControl(htmlTarget, videoMode)) return true;
 
-  const mediaElement = findMediaElementInDOM(target);
+  const mediaElement = findMediaElementInDOM(htmlTarget);
   if (mediaElement) {
     const url = extractMediaUrlFromElement(mediaElement);
     if (url && (url.startsWith('blob:') || isValidMediaUrl(url))) return true;
   }
 
-  return !!target.closest(MEDIA_CONTAINER_SELECTOR);
+  return !!htmlTarget.closest(MEDIA_CONTAINER_SELECTOR);
 }
