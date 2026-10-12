@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';
 import { createHash } from 'node:crypto';
-import { writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { basename, isAbsolute, join, relative, resolve } from 'node:path';
 import {
   expectedStoredZipBytes,
@@ -124,7 +124,7 @@ function assertBestSource(value, bestUrl) {
  */
 export async function runVideoLoadingProfile({
   context, page, extensionPage, fixtureUrl, tweetId, videoPayloads, downloads, output,
-  nativeLoopback,
+  nativeLoopback, root,
 }) {
   const url = new URL(fixtureUrl);
   const match = /^\/([A-Za-z0-9_]{1,15})\/status\/([1-9]\d{0,19})$/u.exec(url.pathname);
@@ -458,7 +458,8 @@ export async function runVideoLoadingProfile({
     try { observation.geometry = await runAdmissionGeometryCases({ context, validMp4, output }); }
     catch (error) { followupErrors.push(error); }
     try {
-      observation.recoveryIntent = await runRecoveryIntentCases({ context, validMp4, output, nativeLoopback });
+      const recoveryMp4 = await readFile(join(root, 'test/e2e/fixtures/installed-recovery-intent.mp4'));
+      observation.recoveryIntent = await runRecoveryIntentCases({ context, validMp4: recoveryMp4, output, nativeLoopback });
     } catch (error) { followupErrors.push(error); }
     if (followupErrors.length) throw new AggregateError(followupErrors,
       'Required video admission and recovery intent cases failed');
@@ -519,14 +520,20 @@ export async function runVideoLoadingProfile({
 /** A bounded real decode failure after playback; MP4 metadata and early samples stay valid. */
 function delayedDecodeFailure(validMp4) {
   assert.equal(createHash('sha256').update(validMp4).digest('hex'),
-    'ddffb3c8da4ab0b9ec96a8a92e1fa7d09fbbdf9a73d7ce34e819a05e1c536fd3',
+    '3b05e69ea7e64237743b75168c7c3b605ed6ffb0b8da74554ed97189a5b83916',
     'The declared four-second H.264 fixture changed; recheck its sample table');
-  assert.equal(validMp4.length, 3086);
+  assert.equal(validMp4.length, 207662);
   const bytes = Buffer.from(validMp4);
-  // ffprobe identifies 11-byte P samples from 0.75 s at byte 2228. Preserve
-  // atom/sample tables and every initial decodable sample, corrupt later AVCC lengths.
-  for (let offset = 2228; offset < bytes.length; offset += 11) bytes.writeUInt32BE(0xffffffff, offset);
-  return { bytes, prefixEnd: 2228 };
+  // The declared CBR fixture has 72 complete samples before byte 153895 (3 s).
+  // Corrupt only later VCL NAL length fields; atoms and sample tables stay intact.
+  const lateVclLengths = [153919, 161216, 163606, 165379, 167440, 169249,
+    171144, 172860, 174929, 177159, 179110, 181253, 183141, 185385,
+    187421, 189541, 191734, 193740, 195964, 197934, 200092, 202226, 204109, 206090];
+  for (const offset of lateVclLengths) {
+    assert([1, 5].includes(bytes[offset + 4] & 31), 'Expected a declared VCL sample');
+    bytes.writeUInt32BE(0xffffffff, offset);
+  }
+  return { bytes, prefixEnd: 153895 };
 }
 
 async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopback }) {
@@ -751,6 +758,9 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
           }
           window.__xegRecoveryEventObservation = state;
         });
+        observed.initialMetadata = await stateWhen(page, (value) => value.readyState >= 1 &&
+          !value.error && value.videoWidth === 320 && value.videoHeight === 180,
+        'initial metadata before the trusted playback control');
         await video.focus();
         if ((await itemState(page, 0)).muted) await page.keyboard.press('m');
         observed.beforePlay = await itemState(page, 0);

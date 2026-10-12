@@ -4039,7 +4039,7 @@ async function exerciseInstalledExtension(
       videoLoading = await runVideoLoadingProfile({ context, page, extensionPage,
         fixtureUrl: 'https://x.com/videofixture/status/4666000111222333444',
         tweetId: '4666000111222333444', videoPayloads: fixtureRoutes.videoPayloads,
-        downloads, output, nativeLoopback });
+        downloads, output, nativeLoopback, root });
     } catch (error) {
       videoLoading = { status: 'failed', error: safeError(error) };
       followupFailures.push(error);
