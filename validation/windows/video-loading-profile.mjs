@@ -805,6 +805,8 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
           await video.focus();
           await page.keyboard.press('Space');
           await stateWhen(page, (value) => !value.paused, 'pending-source play intent from supported Space control');
+          // The production Space control debounces consecutive presses for 150 ms.
+          await page.waitForTimeout(200);
           await page.keyboard.press('Space');
           observed.userPaused = await stateWhen(page, (value) => value.paused,
             'subsequent deliberate pause through supported Space control');
