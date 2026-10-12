@@ -160,6 +160,47 @@ describe('VerticalImageItem video admission and playback', () => {
     expect(play).toHaveBeenCalledOnce();
   });
 
+  it('does not turn temporary scroll-out mute into user intent across two fallbacks', () => {
+    const { video } = mount({ active: true });
+    Object.defineProperty(video, 'readyState', { configurable: true, get: () => 1 });
+    let paused = false;
+    Object.defineProperty(video, 'paused', { configurable: true, get: () => paused });
+    const play = vi.spyOn(video, 'play').mockImplementation(() => {
+      paused = false;
+      mediaEvent(video, 'play');
+      return Promise.resolve();
+    });
+    vi.spyOn(video, 'pause').mockImplementation(() => {
+      paused = true;
+      mediaEvent(video, 'pause');
+    });
+    video.muted = false;
+    mediaEvent(video, 'loadstart');
+    mediaEvent(video, 'play');
+
+    setMediaError(video, 3);
+    mediaEvent(video, 'error');
+    expect(video.getAttribute('src')).toBe(source('middle'));
+    observers.get('0px')?.({ isIntersecting: false } as IntersectionObserverEntry);
+    expect(video.muted).toBe(true);
+    setMediaError(video, null);
+    mediaEvent(video, 'loadstart');
+    mediaEvent(video, 'loadedmetadata');
+    expect(play).not.toHaveBeenCalled();
+
+    setMediaError(video, 3);
+    mediaEvent(video, 'error');
+    expect(video.getAttribute('src')).toBe(source('low'));
+    observers.get('0px')?.({ isIntersecting: true } as IntersectionObserverEntry);
+    expect(video.muted).toBe(false);
+    expect(play).not.toHaveBeenCalled();
+    setMediaError(video, null);
+    mediaEvent(video, 'loadstart');
+    mediaEvent(video, 'loadedmetadata');
+    expect(video.muted).toBe(false);
+    expect(play).toHaveBeenCalledOnce();
+  });
+
   it('replaces admission margins after resize and discards callbacks from a retired root', () => {
     const firstRoot = document.createElement('ul');
     const secondRoot = document.createElement('ul');

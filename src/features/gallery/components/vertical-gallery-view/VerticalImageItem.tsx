@@ -383,7 +383,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       source: next,
       time: Number.isFinite(video.currentTime) ? video.currentTime : 0,
       volume: video.volume,
-      muted: video.muted,
+      muted: visibility.recoveryMuted(video),
       playing: wantsPlayback || !video.paused,
       controlGeneration,
     };
