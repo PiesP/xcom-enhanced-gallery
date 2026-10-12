@@ -373,6 +373,14 @@ describe('MediaExtractionService API circuit', () => {
     data: { data: { tweetResult: { result: { __typename: typename } } } },
   });
 
+  const foreignRootResponse = () => ({
+    ok: true,
+    status: 200,
+    data: { data: { tweetResult: { result: { __typename: 'Tweet', rest_id: '999' } } } },
+  });
+
+  const missingEnvelopeResponse = () => ({ ok: true, status: 200, data: {} });
+
   const requestedTweetIds = (): string[] =>
     httpGet.mock.calls.map(([url]) =>
       JSON.parse(new URL(url as string).searchParams.get('variables') ?? '{}').tweetId
@@ -476,6 +484,171 @@ describe('MediaExtractionService API circuit', () => {
     expect(httpGet).toHaveBeenCalledTimes(3);
 
     now += 1;
+    expect((await click(service)).success).toBe(true);
+    expect(httpGet).toHaveBeenCalledTimes(4);
+  });
+
+  it('counts three foreign roots as failed physical requests and recovers at the existing cooldown', async () => {
+    const service = new MediaExtractionService();
+    httpGet.mockResolvedValue(foreignRootResponse());
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const result = await click(service);
+      expect(result).toMatchObject({ success: false, mediaItems: [], failureKind: 'provider-error' });
+      expect(result.metadata?.error).toBe('Twitter API returned an unexpected tweet owner');
+    }
+    expect(httpGet).toHaveBeenCalledTimes(3);
+
+    httpGet.mockResolvedValue({ ok: true, status: 200, data: createQuotedVideoTweetResponse() });
+    expect((await click(service)).success).toBe(false);
+    now += 59_999;
+    expect((await click(service)).success).toBe(false);
+    expect(httpGet).toHaveBeenCalledTimes(3);
+
+    now += 1;
+    const recovered = await click(service);
+    expect(recovered.success).toBe(true);
+    expect(recovered.clickedIndex).toBe(1);
+    expect(recovered.mediaItems[1]?.tweetId).toBe('222');
+    expect(httpGet).toHaveBeenCalledTimes(4);
+  });
+
+  it('does not reset two HTTP failures after a foreign root and suppresses the next request', async () => {
+    const service = new MediaExtractionService();
+    httpGet
+      .mockResolvedValueOnce({ ok: false, status: 503, data: {} })
+      .mockResolvedValueOnce({ ok: false, status: 503, data: {} })
+      .mockResolvedValueOnce(foreignRootResponse())
+      .mockResolvedValueOnce({ ok: true, status: 200, data: createQuotedVideoTweetResponse() });
+
+    expect((await click(service)).failureKind).toBe('transport');
+    expect((await click(service)).failureKind).toBe('transport');
+    expect((await click(service)).failureKind).toBe('provider-error');
+    expect((await click(service)).success).toBe(false);
+    expect(httpGet).toHaveBeenCalledTimes(3);
+  });
+
+  it('counts three missing envelopes as failed physical requests before cooldown', async () => {
+    const service = new MediaExtractionService();
+    httpGet.mockResolvedValue(missingEnvelopeResponse());
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const result = await click(service);
+      expect(result).toMatchObject({ success: false, failureKind: 'provider-error' });
+    }
+    expect(httpGet).toHaveBeenCalledTimes(3);
+
+    httpGet.mockResolvedValue({ ok: true, status: 200, data: createQuotedVideoTweetResponse() });
+    expect((await click(service)).success).toBe(false);
+    now += 59_999;
+    expect((await click(service)).success).toBe(false);
+    expect(httpGet).toHaveBeenCalledTimes(3);
+    now += 1;
+    const recovered = await click(service);
+    expect(recovered.success).toBe(true);
+    expect(recovered.clickedIndex).toBe(1);
+    expect(recovered.mediaItems[1]?.tweetId).toBe('222');
+    expect(httpGet).toHaveBeenCalledTimes(4);
+  });
+
+  it('does not let a missing envelope erase two earlier HTTP failures', async () => {
+    const service = new MediaExtractionService();
+    httpGet
+      .mockResolvedValueOnce({ ok: false, status: 503, data: {} })
+      .mockResolvedValueOnce({ ok: false, status: 503, data: {} })
+      .mockResolvedValueOnce(missingEnvelopeResponse())
+      .mockResolvedValueOnce({ ok: true, status: 200, data: createQuotedVideoTweetResponse() });
+    expect((await click(service)).failureKind).toBe('transport');
+    expect((await click(service)).failureKind).toBe('transport');
+    expect((await click(service)).failureKind).toBe('provider-error');
+    expect((await click(service)).success).toBe(false);
+    expect(httpGet).toHaveBeenCalledTimes(3);
+  });
+
+  it('accounts one coalesced missing envelope once and retries without caching it', async () => {
+    const service = new MediaExtractionService();
+    let complete!: (value: unknown) => void;
+    httpGet.mockImplementationOnce(() => new Promise<unknown>((resolve) => { complete = resolve; }));
+    const first = click(service);
+    const second = click(service);
+    await vi.waitFor(() => expect(httpGet).toHaveBeenCalledTimes(1));
+    complete(missingEnvelopeResponse());
+    for (const result of await Promise.all([first, second])) {
+      expect(result).toMatchObject({ success: false, failureKind: 'provider-error' });
+    }
+
+    httpGet.mockResolvedValue(missingEnvelopeResponse());
+    await click(service);
+    await click(service);
+    expect(httpGet).toHaveBeenCalledTimes(3);
+    await click(service);
+    expect(httpGet).toHaveBeenCalledTimes(3);
+  });
+
+  it.each([
+    { __typename: 'TweetUnavailable', rest_id: '999' },
+    { __typename: 'TweetTombstone', rest_id: '222', id_str: '999' },
+    { __typename: 'Tweet', rest_id: '222', legacy: { id_str: '999' } },
+    { __typename: 'UnknownResult', rest_id: '222' },
+    { __typename: 'TweetWithVisibilityResults', tweet: {
+      __typename: 'TweetWithVisibilityResults', tweet: {
+        __typename: 'TweetWithVisibilityResults', tweet: { __typename: 'Tweet', rest_id: '222' },
+      },
+    } },
+  ])('keeps invalid root %j as a failed, uncached response', async (root) => {
+    const service = new MediaExtractionService();
+    httpGet.mockResolvedValueOnce({ ok: true, status: 200,
+      data: { data: { tweetResult: { result: root } } },
+    });
+    const rejected = await click(service);
+    expect(rejected).toMatchObject({
+      success: false, mediaItems: [], failureKind: 'provider-error',
+    });
+    httpGet.mockResolvedValue({ ok: true, status: 200, data: createQuotedVideoTweetResponse() });
+    const valid = await click(service);
+    expect(valid.success).toBe(true);
+    expect(valid.clickedIndex).toBe(1);
+    expect(httpGet).toHaveBeenCalledTimes(2);
+  });
+
+  it('counts one shared invalid response only once and does not cache it', async () => {
+    const service = new MediaExtractionService();
+    let complete!: (value: unknown) => void;
+    httpGet.mockImplementationOnce(() => new Promise<unknown>((resolve) => { complete = resolve; }));
+    const first = click(service);
+    const second = click(service);
+    await vi.waitFor(() => expect(httpGet).toHaveBeenCalledTimes(1));
+    complete(foreignRootResponse());
+    const results = await Promise.all([first, second]);
+    for (const result of results) {
+      expect(result).toMatchObject({ success: false, failureKind: 'provider-error' });
+    }
+
+    httpGet.mockResolvedValue({ ok: false, status: 503, data: {} });
+    await click(service);
+    await click(service);
+    expect(httpGet).toHaveBeenCalledTimes(3);
+    await click(service);
+    expect(httpGet).toHaveBeenCalledTimes(3);
+  });
+
+  it('does not count a cancelled late invalid response toward the circuit', async () => {
+    const service = new MediaExtractionService();
+    httpGet.mockResolvedValue({ ok: false, status: 503, data: {} });
+    await click(service);
+    await click(service);
+
+    let complete!: (value: unknown) => void;
+    httpGet.mockImplementationOnce(() => new Promise<unknown>((resolve) => { complete = resolve; }));
+    const controller = new AbortController();
+    const pending = service.extractFromClickedElement(document.querySelector('video')!, {
+      signal: controller.signal,
+    });
+    await vi.waitFor(() => expect(httpGet).toHaveBeenCalledTimes(3));
+    controller.abort();
+    complete(foreignRootResponse());
+    expect((await pending).metadata?.error).toBe('Extraction cancelled');
+
+    httpGet.mockResolvedValue({ ok: true, status: 200, data: createQuotedVideoTweetResponse() });
     expect((await click(service)).success).toBe(true);
     expect(httpGet).toHaveBeenCalledTimes(4);
   });
@@ -658,7 +831,9 @@ describe('MediaExtractionService API circuit', () => {
     }
     expect(httpGet).toHaveBeenCalledTimes(1);
     service.invalidateApiMetadata();
-    httpGet.mockResolvedValue({ ok: true, status: 200, data: {} });
+    httpGet.mockResolvedValue({ ok: true, status: 200,
+      data: { data: { tweetResult: { result: null } } },
+    });
     await click(service);
     expect(httpGet).toHaveBeenCalledTimes(2);
   });

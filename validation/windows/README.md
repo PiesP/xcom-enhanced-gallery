@@ -70,9 +70,10 @@ The opt-in installed flow uses a fresh task-owned browser profile, enables
 extension developer mode, and loads the production unpacked MV3 distribution
 through CDP `Extensions.loadUnpacked`. It serves the existing deterministic X
 fixture and three distinct image payloads. A task-owned HTTPS listener binds
-ephemeral `127.0.0.1` and serves only synthetic original JPEG and MP4 paths.
-The fresh browser profile maps `pbs.twimg.com:443` and `video.twimg.com:443`
-to that listener and accepts its one-run SPKI certificate for those two names.
+ephemeral `127.0.0.1` and serves only synthetic original JPEG and MP4 paths,
+plus the declared recovery-intent fixture documents. The fresh browser profile
+maps `pbs.twimg.com:443`, `video.twimg.com:443` and `x.com:443` to that listener
+and accepts its one-run SPKI certificate for those three names.
 The key is ephemeral; no OS trust or hosts setting changes. Each ordinary
 single requires one completed browser download ID, selected initial and final
 URL, matching listener transfer, exact filename and saved bytes, and no
@@ -121,9 +122,48 @@ native eight-video ZIP is independently read for entry order, names, bytes and
 CRC after playback fallback; its first entry must retain the preferred source.
 The helper records active-source, metadata, first-frame and completion timings
 as fixture observations, including the deliberately gated response boundary.
-These helpers
-restore owned routes and settings; provider access and live-CDN compatibility
-remain outside the fixture evidence.
+The API helper also runs three response-contract failures before a fourth action
+in the same document: foreign owner responses, two server failures followed by a
+foreign owner, and missing result envelopes. It independently counts physical
+requests and requires the fourth action to remain suppressed before the normal
+circuit cooldown. Legitimate unavailable responses and a valid-owner click
+mismatch provide healthy controls whose fourth request must still run.
+
+The video helper checks unselected, unfocused videos just above and below the
+actual gallery scrollport, farther source-free items, height changes, and
+close/reopen root replacement. It records real element rectangles and requests;
+admission ahead of view must leave playback paused. Its recovery-intent cases
+hold later samples of the declared MP4 after valid initial frames, start playback
+through a normal control, then release a deliberately corrupt tail. A trusted
+native code-3 error must precede the held same-item replacement request. Real
+wheel scrolling tests metadata arrival outside view and reentry before metadata;
+supported keyboard controls test a later pause, mute and volume change. Paused
+observations require settled seeking and no playback progress. The recovery
+document and its held media use real HTTPS responses from the same loopback
+listener, so the browser can classify the document's network address space.
+No permission is overridden; TLS, CORS and OS protections stay enabled. These
+cases do not validate public-to-loopback permission behavior.
+
+The streaming asset is `test/e2e/fixtures/installed-recovery-intent.mp4`: a
+four-second, 24 fps, 320×180 H.264 test pattern below the 256 KiB fixture cap.
+It keeps metadata at the front and enough complete initial samples for native
+startup while the final second is held. Its source hash and late VCL length
+offsets are checked by `delayedDecodeFailure()`; update both when replacing the
+asset. The bounded fixture can be regenerated with:
+
+```bash
+ffmpeg -f lavfi -i 'testsrc2=size=320x180:rate=24:duration=4' -frames:v 96 -an \
+  -c:v libx264 -preset medium -profile:v baseline -level:v 3.0 -pix_fmt yuv420p \
+  -b:v 384k -minrate 384k -maxrate 384k -bufsize 384k \
+  -x264-params 'nal-hrd=cbr:force-cfr=1:scenecut=0:keyint=24:min-keyint=24:bframes=0' \
+  -movflags +faststart -map_metadata -1 -metadata creation_time=1970-01-01T00:00:00Z \
+  -f mp4 test/e2e/fixtures/installed-recovery-intent.mp4
+```
+
+These helpers restore owned routes, pages, response gates and settings, and
+verify that permission state stays unchanged. Their bounded event and request
+receipts retain failures as well as successes. Provider access, live-CDN compatibility and audible output remain
+outside the fixture evidence.
 
 The installed profile also serves the declared small MP4 assets and
 `installed-quoted-video-page.html` with deterministic `TweetResultByRestId`

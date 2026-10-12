@@ -10,6 +10,9 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **Video admission** — Measure advance loading from the gallery scrollport height, isolate pooled observers by their actual root, and retire callbacks when roots or media change.
+- **Playback recovery** — Keep delayed same-item recovery aligned with current visibility and native control intent, preserving later pause, mute and volume choices while allowing a legitimate return-to-view resume.
+- **API response validation** — Count missing result envelopes, rejected wrappers and foreign or conflicting root tweet IDs as failed physical requests. Preserve healthy accounting for supported unavailable results and valid local click mismatches.
 - **Extension single downloads** — Hand validated original images and MP4 files directly to the browser download manager, and reconcile uncertain worker responses against the original tab and download ID. Keep generated and supplied Blobs on their bounded ownership path without starting a replacement after an ambiguous native result.
 - **Video loading** — Attach sources when active or near the gallery viewport, retain admitted buffers across selection changes, and recover supported decode failures using only typed variants of the same attachment. Preserve the original save source.
 - **API requests** — Reuse bounded successful metadata briefly while selecting the clicked attachment independently. Keep failures uncached, invalidate reuse on navigation and teardown, and preserve denied, unreadable, rate-limited and server-guided retry outcomes.

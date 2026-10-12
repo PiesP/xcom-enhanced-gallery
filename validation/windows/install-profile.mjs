@@ -4026,13 +4026,26 @@ async function exerciseInstalledExtension(
         JSON.stringify(unavailableSequence, null, 2)).catch(() => {});
       throw error;
     }
-    apiReuse = await runInstalledMediaApiReuseProfile({ context, page,
-      qualityFixtureUrl: QUALITY_FIXTURE_URL, qualityTweetId: QUALITY_TWEET_ID,
-      qualityImagePaths: QUALITY_IMAGE_PATHS, output });
-    videoLoading = await runVideoLoadingProfile({ context, page, extensionPage,
-      fixtureUrl: 'https://x.com/videofixture/status/4666000111222333444',
-      tweetId: '4666000111222333444', videoPayloads: fixtureRoutes.videoPayloads,
-      downloads, output, nativeLoopback });
+    const followupFailures = [];
+    try {
+      apiReuse = await runInstalledMediaApiReuseProfile({ context, page,
+        qualityFixtureUrl: QUALITY_FIXTURE_URL, qualityTweetId: QUALITY_TWEET_ID,
+        qualityImagePaths: QUALITY_IMAGE_PATHS, output, videoPayloads: fixtureRoutes.videoPayloads });
+    } catch (error) {
+      apiReuse = { status: 'failed', error: safeError(error) };
+      followupFailures.push(error);
+    }
+    try {
+      videoLoading = await runVideoLoadingProfile({ context, page, extensionPage,
+        fixtureUrl: 'https://x.com/videofixture/status/4666000111222333444',
+        tweetId: '4666000111222333444', videoPayloads: fixtureRoutes.videoPayloads,
+        downloads, output, nativeLoopback, root });
+    } catch (error) {
+      videoLoading = { status: 'failed', error: safeError(error) };
+      followupFailures.push(error);
+    }
+    if (followupFailures.length) throw new AggregateError(followupFailures,
+      'Required installed media follow-up profiles failed');
     const expectedMemoryErrors = new Set(downloadMemory.expectedConsoleErrors ?? []);
     const unexpectedConsoleErrors = consoleErrors.filter((record) =>
       !isExpectedFixtureApiConsoleError(record) && !expectedMemoryErrors.has(record));
@@ -4223,7 +4236,7 @@ export async function run({
     nativeLoopback = await startExtensionNativeFixtureLoopback(
       join(root, 'validation/windows/userscript-fixture-certificate.ps1'));
     result.fixtureTransport = { kind: 'task-owned-https-loopback', bind: '127.0.0.1',
-      port: nativeLoopback.port, hosts: ['pbs.twimg.com', 'video.twimg.com'],
+      port: nativeLoopback.port, hosts: ['pbs.twimg.com', 'video.twimg.com', 'x.com'],
       certificateScope: 'one-run-spki' };
     context = await chromium.launchPersistentContext(profile, {
       channel: browserName,
@@ -4234,7 +4247,7 @@ export async function run({
       viewport: { width: 1280, height: 800 },
       ignoreDefaultArgs: ['--disable-extensions'],
       args: ['--enable-unsafe-extension-debugging',
-        `--host-resolver-rules=MAP pbs.twimg.com:443 127.0.0.1:${nativeLoopback.port},MAP video.twimg.com:443 127.0.0.1:${nativeLoopback.port}`,
+        `--host-resolver-rules=MAP pbs.twimg.com:443 127.0.0.1:${nativeLoopback.port},MAP video.twimg.com:443 127.0.0.1:${nativeLoopback.port},MAP x.com:443 127.0.0.1:${nativeLoopback.port}`,
         `--ignore-certificate-errors-spki-list=${nativeLoopback.spkiSha256}`],
     });
     result.browserVersion = context.browser().version();

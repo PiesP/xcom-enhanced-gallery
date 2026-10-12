@@ -80,13 +80,7 @@ export class TwitterAPIExtractor implements MediaExtractorStrategy {
             'twitter-api',
             'api-extraction-failed'
           ),
-          apiRequestOutcome: cancelled
-            ? 'cancelled'
-            : requestError
-              ? requestError.category === 'mismatch'
-                ? 'healthy'
-                : 'failed'
-              : undefined,
+          apiRequestOutcome: cancelled ? 'cancelled' : requestError ? 'failed' : undefined,
           ...(cancelled
             ? { failureKind: 'cancelled' as const }
             : requestError

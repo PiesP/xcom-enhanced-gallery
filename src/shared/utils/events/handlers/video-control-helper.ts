@@ -31,6 +31,36 @@ export interface VideoControlOptions {
   readonly context?: string;
 }
 
+export type VideoPlaybackIntentEvent =
+  | { readonly type: 'command'; readonly playing: boolean; readonly token: object }
+  | { readonly type: 'play-rejected'; readonly token: object };
+
+const playbackIntentListeners = new WeakMap<
+  HTMLVideoElement,
+  Set<(event: VideoPlaybackIntentEvent) => void>
+>();
+
+/** Observe playback commands executed through the gallery controls for one video. */
+export function subscribeVideoPlaybackIntent(
+  video: HTMLVideoElement,
+  listener: (event: VideoPlaybackIntentEvent) => void
+): () => void {
+  let listeners = playbackIntentListeners.get(video);
+  if (!listeners) {
+    listeners = new Set();
+    playbackIntentListeners.set(video, listeners);
+  }
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+    if (listeners.size === 0) playbackIntentListeners.delete(video);
+  };
+}
+
+function notifyPlaybackIntent(video: HTMLVideoElement, event: VideoPlaybackIntentEvent): void {
+  for (const listener of playbackIntentListeners.get(video) ?? []) listener(event);
+}
+
 /**
  * Executes video control action on gallery video element.
  *
@@ -110,10 +140,17 @@ function getGalleryVideo(video?: HTMLVideoElement | null): HTMLVideoElement | nu
  * @internal
  */
 function playVideo(video: HTMLVideoElement, context?: string): void {
-  video.play?.().catch(() => {
+  if (!video.play) return;
+  const token = {};
+  const result = video.play();
+  notifyPlaybackIntent(video, { type: 'command', playing: true, token });
+  result.catch((error: unknown) => {
     if (__DEV__) {
       logger.debug('Play failed', { context });
     }
+    if (error && typeof error === 'object' && 'name' in error && error.name === 'AbortError')
+      return;
+    notifyPlaybackIntent(video, { type: 'play-rejected', token });
   });
 }
 
@@ -122,7 +159,9 @@ function playVideo(video: HTMLVideoElement, context?: string): void {
  * @internal
  */
 function pauseVideo(video: HTMLVideoElement): void {
-  video.pause?.();
+  if (!video.pause) return;
+  video.pause();
+  notifyPlaybackIntent(video, { type: 'command', playing: false, token: {} });
 }
 
 /**

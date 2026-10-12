@@ -21,6 +21,7 @@ import type { VerticalImageItemProps } from '@features/gallery/components/vertic
 import { useTranslation } from '@shared/hooks/use-translation';
 import { gallerySignals, setCurrentVideoElement } from '@shared/state/signals/gallery.signals';
 import type { ImageFitMode } from '@shared/types/settings.types';
+import { subscribeVideoPlaybackIntent } from '@shared/utils/events/handlers/video-control-helper';
 import {
   computeContainIntrinsicSizeOverride,
   createIntrinsicSizingStyle,
@@ -50,6 +51,8 @@ const FIT_MODE_CLASSES: Record<ImageFitMode, string> = {
 export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | null {
   const [local] = splitProps(props, [
     'media',
+    'scrollRoot',
+    'scrollRootHeight',
     'index',
     'isActive',
     'isFocused',
@@ -97,6 +100,11 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   let armedSource: string | null = null;
   let geometryReported = false;
   let wantsPlayback = false;
+  let needsResume = false;
+  let recoveringSource: string | null = null;
+  let controlInteractionAfterError = false;
+  let controlGeneration = 0;
+  let intentGeneration = 0;
   let disposed = false;
   let pendingResume: {
     readonly media: typeof local.media;
@@ -105,6 +113,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     readonly volume: number;
     readonly muted: boolean;
     readonly playing: boolean;
+    readonly controlGeneration: number;
   } | null = null;
 
   // Defense-in-depth: validate the rendered URL
@@ -149,6 +158,11 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
         armedSource = null;
         geometryReported = false;
         wantsPlayback = false;
+        needsResume = false;
+        recoveringSource = null;
+        controlInteractionAfterError = false;
+        controlGeneration = 0;
+        intentGeneration++;
         pendingResume = null;
         setPlaybackSrc(media.url);
       },
@@ -167,6 +181,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   onCleanup(() => {
     disposed = true;
     pendingResume = null;
+    needsResume = false;
   });
 
   const [containerRef, setContainerRef] = createSignal<HTMLElement | null>(null);
@@ -180,15 +195,62 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   const intrinsicSizingStyle = createMemo(() => createIntrinsicSizingStyle(dimensions()));
 
   const { applyMutedProgrammatically, applyVolumeProgrammatically, handleVolumeChange } =
-    useVideoVolumePersistence({ videoRef, isVideo });
+    useVideoVolumePersistence({
+      videoRef,
+      isVideo,
+      onUserVolumeChange: (video) => {
+        if (videoRef() !== video || disposed) return;
+        controlGeneration++;
+        visibility.noteUserVolumeChange(video);
+      },
+    });
 
-  useVideoVisibility({
+  const visibility = useVideoVisibility({
     container: containerRef,
+    scrollRoot: () => local.scrollRoot(),
+    scrollRootHeight: () => local.scrollRootHeight(),
     video: videoRef,
     isVideo,
     mediaIdentity: () => local.media,
     admit: admitVideo,
     setMuted: applyMutedProgrammatically,
+    onVisibilityChange: (visible) => {
+      if (!visible && wantsPlayback) needsResume = true;
+      if (visible) resumeWhenReady();
+    },
+  });
+
+  createEffect(() => {
+    const video = videoRef();
+    const media = local.media;
+    if (!video || !isVideo()) return;
+    let latestPlay: { token: object; source: string; generation: number } | null = null;
+    onCleanup(
+      subscribeVideoPlaybackIntent(video, (event) => {
+        if (disposed || videoRef() !== video || local.media !== media) return;
+        if (event.type === 'play-rejected') {
+          if (
+            latestPlay?.token !== event.token ||
+            latestPlay.source !== playbackSrc() ||
+            latestPlay.generation !== intentGeneration
+          )
+            return;
+          latestPlay = null;
+          wantsPlayback = false;
+          needsResume = false;
+        } else {
+          wantsPlayback = event.playing;
+          needsResume = event.playing && pendingResume !== null;
+        }
+        recoveringSource = null;
+        controlInteractionAfterError = false;
+        intentGeneration++;
+        if (event.type === 'command')
+          latestPlay = event.playing
+            ? { token: event.token, source: playbackSrc(), generation: intentGeneration }
+            : null;
+      })
+    );
   });
 
   createEffect(() => {
@@ -251,6 +313,44 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     );
   };
 
+  const resumeWhenReady = (): void => {
+    const video = videoRef();
+    if (
+      !video ||
+      !needsResume ||
+      !wantsPlayback ||
+      pendingResume ||
+      !visibility.isVisible() ||
+      !isCurrentVideoEvent(video) ||
+      video.readyState < 1
+    )
+      return;
+    needsResume = false;
+    const media = local.media;
+    const source = playbackSrc();
+    const generation = intentGeneration;
+    try {
+      void video.play().catch(() => {
+        if (
+          !disposed &&
+          local.media === media &&
+          playbackSrc() === source &&
+          intentGeneration === generation &&
+          visibility.isVisible()
+        )
+          wantsPlayback = false;
+      });
+    } catch {
+      if (
+        local.media === media &&
+        playbackSrc() === source &&
+        intentGeneration === generation &&
+        visibility.isVisible()
+      )
+        wantsPlayback = false;
+    }
+  };
+
   const handleVideoLoadStart: JSX.EventHandlerUnion<HTMLVideoElement, Event> = (event) => {
     const video = event.currentTarget;
     const source = playbackSrc();
@@ -273,8 +373,10 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     if (!resume || resume.media !== local.media || resume.source !== playbackSrc()) return;
     pendingResume = null;
     try {
-      applyMutedProgrammatically(video, resume.muted);
-      applyVolumeProgrammatically(video, resume.volume);
+      if (controlGeneration === resume.controlGeneration) {
+        if (visibility.isVisible()) applyMutedProgrammatically(video, resume.muted);
+        applyVolumeProgrammatically(video, resume.volume);
+      }
       if (resume.time > 0) {
         video.currentTime = Number.isFinite(video.duration)
           ? Math.min(resume.time, Math.max(0, video.duration - 0.1))
@@ -283,16 +385,8 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     } catch {
       // A source can reject a seek; the controls remain usable at the start.
     }
-    if (resume.playing) {
-      try {
-        void video.play().catch(() => {
-          if (local.media === resume.media && playbackSrc() === resume.source)
-            wantsPlayback = false;
-        });
-      } catch {
-        if (local.media === resume.media && playbackSrc() === resume.source) wantsPlayback = false;
-      }
-    }
+    if (resume.playing && wantsPlayback) needsResume = true;
+    resumeWhenReady();
   };
 
   const handleVideoData: JSX.EventHandlerUnion<HTMLVideoElement, Event> = (event) => {
@@ -313,6 +407,8 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
         : null;
     if (!next) {
       pendingResume = null;
+      needsResume = false;
+      recoveringSource = null;
       handleMediaError();
       return;
     }
@@ -321,9 +417,14 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       source: next,
       time: Number.isFinite(video.currentTime) ? video.currentTime : 0,
       volume: video.volume,
-      muted: video.muted,
+      muted: visibility.recoveryMuted(video),
       playing: wantsPlayback || !video.paused,
+      controlGeneration,
     };
+    wantsPlayback = pendingResume.playing;
+    needsResume = pendingResume.playing;
+    recoveringSource = next;
+    controlInteractionAfterError = false;
     attemptedSources.add(next);
     sourceAttachedAt = performance.now();
     armedSource = null;
@@ -460,16 +561,42 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
               admitVideo();
               local.onFocus?.(event);
             }}
-            onPointerDown={admitVideo}
+            onPointerDown={() => {
+              admitVideo();
+              if (recoveringSource) controlInteractionAfterError = true;
+            }}
+            onKeyDown={() => {
+              if (recoveringSource) controlInteractionAfterError = true;
+            }}
             onLoadStart={handleVideoLoadStart}
             onLoadedMetadata={handleVideoMetadata}
             onLoadedData={handleVideoData}
             onPlay={(event) => {
-              if (isCurrentVideoEvent(event.currentTarget)) wantsPlayback = true;
+              if (!isCurrentVideoEvent(event.currentTarget)) return;
+              wantsPlayback = true;
+              intentGeneration++;
+              recoveringSource = null;
+              controlInteractionAfterError = false;
+              if (visibility.hasObservation() && !visibility.isVisible()) {
+                needsResume = true;
+                visibility.pauseIfHidden();
+              }
             }}
             onPause={(event) => {
-              if (isCurrentVideoEvent(event.currentTarget) && !event.currentTarget.error)
-                wantsPlayback = false;
+              const video = event.currentTarget;
+              const controlledRecovery =
+                recoveringSource === playbackSrc() &&
+                videoRef() === video &&
+                video.isConnected &&
+                video.getAttribute('src') === recoveringSource;
+              if ((!isCurrentVideoEvent(video) && !controlledRecovery) || video.error) return;
+              if (!visibility.isVisible() || visibility.isAutoPaused()) return;
+              if (recoveringSource && !controlInteractionAfterError) return;
+              wantsPlayback = false;
+              needsResume = false;
+              recoveringSource = null;
+              controlInteractionAfterError = false;
+              intentGeneration++;
             }}
             onError={handleVideoError}
             onDragStart={preventDragStart}

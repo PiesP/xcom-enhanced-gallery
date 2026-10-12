@@ -97,6 +97,7 @@ vi.mock('@shared/hooks/use-translation', () => ({
 }));
 
 import { VerticalGalleryView } from '@features/gallery/components/vertical-gallery-view/VerticalGalleryView';
+import { useVideoVisibility } from '@features/gallery/components/vertical-gallery-view/hooks/use-video-visibility';
 import {
   disposeGallerySignals,
   gallerySignals,
@@ -153,6 +154,7 @@ describe('VerticalGalleryView preload reactivity', () => {
     dispose = undefined;
     disposeGallerySignals();
     container.remove();
+    vi.unstubAllGlobals();
   });
 
   it('moves eager loading and fetch priority with the active index', async () => {
@@ -212,6 +214,42 @@ describe('VerticalGalleryView preload reactivity', () => {
     await flushEffects();
     expect(rows[5]!.querySelector('video')?.getAttribute('src')).toBe(items[5]!.url);
     expect(rows[1]!.querySelector('video')?.hasAttribute('src')).toBe(false);
+  });
+
+  it('measures the one shared gallery scrollport for every video on resize', async () => {
+    vi.mocked(useVideoVisibility).mockClear();
+    const instances: Array<{
+      readonly observe: ReturnType<typeof vi.fn>;
+      readonly disconnect: ReturnType<typeof vi.fn>;
+      readonly fire: () => void;
+    }> = [];
+    vi.stubGlobal('ResizeObserver', class {
+      readonly observe = vi.fn();
+      readonly disconnect = vi.fn();
+      constructor(private readonly callback: ResizeObserverCallback) {
+        instances.push({ observe: this.observe, disconnect: this.disconnect, fire: () => {
+          this.callback([], this as unknown as ResizeObserver);
+        } });
+      }
+    });
+    const items = ['a', 'b', 'c'].map(video);
+    openGallery(items, 0);
+    dispose = render(() => createComponent(VerticalGalleryView, {}), container);
+    await flushEffects();
+    const root = container.querySelector<HTMLElement>('[data-gallery-element="items"]')!;
+    Object.defineProperty(root, 'clientHeight', { configurable: true, get: () => 620 });
+    expect(instances).toHaveLength(1);
+    expect(instances[0]?.observe).toHaveBeenCalledWith(root);
+    instances[0]?.fire();
+    const calls = vi.mocked(useVideoVisibility).mock.calls;
+    expect(calls).toHaveLength(3);
+    for (const [options] of calls) {
+      expect(options.scrollRoot()).toBe(root);
+      expect(options.scrollRootHeight()).toBe(620);
+    }
+    dispose();
+    dispose = undefined;
+    expect(instances[0]?.disconnect).toHaveBeenCalledOnce();
   });
 
   it('keeps toolbar attribution on the displayed download item after scroll changes focus', async () => {

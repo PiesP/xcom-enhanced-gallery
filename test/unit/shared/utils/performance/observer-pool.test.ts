@@ -10,7 +10,10 @@ class MockIntersectionObserver {
   readonly unobserve = vi.fn<(target: Element) => void>();
   readonly disconnect = vi.fn<() => void>();
 
-  constructor(private readonly callback: IntersectionObserverCallback) {
+  constructor(
+    private readonly callback: IntersectionObserverCallback,
+    readonly options: IntersectionObserverInit
+  ) {
     MockIntersectionObserver.instances.push(this);
   }
 
@@ -63,6 +66,8 @@ describe('SharedObserver', () => {
     expect(MockIntersectionObserver.instances).toHaveLength(2);
 
     dispose();
+    observer?.emit(target);
+    expect(replacementCallback).not.toHaveBeenCalled();
     MockIntersectionObserver.instances[1]?.emit(target);
     expect(replacementCallback).toHaveBeenCalledOnce();
     disposeReplacement();
@@ -113,5 +118,63 @@ describe('SharedObserver', () => {
     disposeSecond();
     expect(observer?.unobserve).toHaveBeenCalledWith(target);
     expect(observer?.disconnect).toHaveBeenCalledOnce();
+  });
+
+  it('separates explicit scroll roots, shares equivalent options, and ignores a retired callback', () => {
+    const firstRoot = document.createElement('div');
+    const secondRoot = document.createElement('div');
+    const target = document.createElement('div');
+    document.body.append(firstRoot, secondRoot, target);
+    const first = vi.fn();
+    const second = vi.fn();
+    const sameRoot = vi.fn();
+    const disposeFirst = SharedObserver.observe(target, first, {
+      root: firstRoot, rootMargin: '400px 0px', threshold: 0,
+    });
+    const disposeSameRoot = SharedObserver.observe(target, sameRoot, {
+      threshold: [0], rootMargin: '400px 0px', root: firstRoot,
+    });
+    const disposeSecond = SharedObserver.observe(target, second, {
+      root: secondRoot, rootMargin: '400px 0px', threshold: 0,
+    });
+
+    expect(MockIntersectionObserver.instances).toHaveLength(2);
+    expect(MockIntersectionObserver.instances[0]?.options.root).toBe(firstRoot);
+    expect(MockIntersectionObserver.instances[1]?.options.root).toBe(secondRoot);
+    MockIntersectionObserver.instances[0]?.emit(target);
+    expect(first).toHaveBeenCalledOnce();
+    expect(sameRoot).toHaveBeenCalledOnce();
+    expect(second).not.toHaveBeenCalled();
+
+    disposeFirst();
+    MockIntersectionObserver.instances[0]?.emit(target);
+    expect(first).toHaveBeenCalledOnce();
+    expect(sameRoot).toHaveBeenCalledTimes(2);
+    disposeSameRoot();
+    MockIntersectionObserver.instances[0]?.emit(target);
+    expect(sameRoot).toHaveBeenCalledTimes(2);
+    expect(MockIntersectionObserver.instances[0]?.disconnect).toHaveBeenCalledOnce();
+    MockIntersectionObserver.instances[1]?.emit(target);
+    expect(second).toHaveBeenCalledOnce();
+    disposeSecond();
+  });
+
+  it('keeps implicit roots and scroll margins separate from an explicit root', () => {
+    const root = document.createElement('div');
+    const target = document.createElement('div');
+    document.body.append(root, target);
+    const disposeImplicit = SharedObserver.observe(target, vi.fn(), { rootMargin: '20px' });
+    const disposeExplicit = SharedObserver.observe(target, vi.fn(), {
+      root, rootMargin: '20px',
+    });
+    const disposeScrollMargin = SharedObserver.observe(target, vi.fn(), {
+      root, rootMargin: '20px', scrollMargin: '10px',
+    });
+    expect(MockIntersectionObserver.instances).toHaveLength(3);
+    disposeImplicit();
+    disposeExplicit();
+    disposeScrollMargin();
+    expect(MockIntersectionObserver.instances.every((observer) =>
+      observer.disconnect.mock.calls.length === 1)).toBe(true);
   });
 });

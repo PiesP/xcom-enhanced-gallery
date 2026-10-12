@@ -282,9 +282,11 @@ describe('TweetMetadataReuse', () => {
     reuse.dispose();
   });
 
-  it('never caches an empty or failed provider response', async () => {
+  it('never caches an explicit empty or failed provider response', async () => {
     const reuse = new TweetMetadataReuse();
-    httpGet.mockResolvedValueOnce({ ok: true, status: 200, data: {} });
+    httpGet.mockResolvedValueOnce({ ok: true, status: 200,
+      data: { data: { tweetResult: { result: null } } },
+    });
     expect((await reuse.get('222')).entries).toEqual([]);
     httpGet.mockResolvedValueOnce({ ok: false, status: 403, readable: true, data: {} });
     await expect(reuse.get('222')).rejects.toMatchObject({ category: 'denied' });
@@ -297,7 +299,9 @@ describe('TweetMetadataReuse', () => {
 describe('twitter-api-client request boundary', () => {
   beforeEach(() => {
     httpGet.mockReset();
-    httpGet.mockResolvedValue({ ok: true, status: 200, data: {} });
+    httpGet.mockResolvedValue({ ok: true, status: 200,
+      data: { data: { tweetResult: { result: null } } },
+    });
     getCsrfTokenAsync.mockReset();
     getCsrfTokenAsync.mockResolvedValue('csrf-token');
     resolveBearerToken.mockReset();
@@ -472,7 +476,7 @@ describe('twitter-api-client request boundary', () => {
     await expect(getTweetMedias('123')).rejects.toBeInstanceOf(TwitterAPIRequestError);
 
     httpGet.mockResolvedValueOnce({ ok: true, status: 200, data: {} });
-    await expect(getTweetMedias('123')).resolves.toEqual([]);
+    await expect(getTweetMedias('123')).rejects.toMatchObject({ category: 'provider-error' });
 
     const usableResponse = createQuotedVideoTweetResponse();
     httpGet.mockResolvedValueOnce({
@@ -487,11 +491,44 @@ describe('twitter-api-client request boundary', () => {
     ]);
   });
 
+  it.each([
+    {},
+    { data: {} },
+    { data: { tweetResult: {} } },
+    { data: { tweetResult: null } },
+    { data: { tweetResult: [] } },
+  ])('rejects a missing or unsupported result envelope: %j', async (data) => {
+    httpGet.mockResolvedValueOnce({ ok: true, status: 200, data });
+    await expect(getTweetMedias('222')).rejects.toMatchObject({
+      name: 'TwitterAPIRequestError', category: 'provider-error',
+    });
+  });
+
   it('rejects a mismatched numeric root before using its direct quote', async () => {
     httpGet.mockResolvedValueOnce({ ok: true, status: 200,
       data: createQuotedVideoTweetResponse() });
 
     await expect(getTweetMedias('999')).rejects.toThrow('unexpected tweet owner');
+  });
+
+  it('carries an invalid root through metadata reuse and extraction as one failed request', async () => {
+    httpGet.mockResolvedValueOnce({ ok: true, status: 200,
+      data: { data: { tweetResult: { result: {
+        __typename: 'Tweet', rest_id: '999',
+      } } } },
+    });
+    const extractor = new TwitterAPIExtractor();
+    const extracted = await extractor.extract(
+      { tweetId: '222', username: 'outer', tweetUrl: 'https://x.com/outer/status/222',
+        extractionMethod: 'fixture', confidence: 1 },
+      document.createElement('video'), {}, 'invalid-root'
+    );
+    expect(extracted).toMatchObject({
+      success: false, mediaItems: [], apiRequestOutcome: 'failed',
+      apiRequestToken: expect.any(Object), failureKind: 'provider-error',
+    });
+    expect(httpGet).toHaveBeenCalledTimes(1);
+    extractor.dispose();
   });
 
   it.each(['TweetUnavailable', 'TweetTombstone'])(
@@ -542,7 +579,9 @@ describe('twitter-api-client request boundary', () => {
   ])('rejects unsupported, malformed or conflicting roots: %j', async (result) => {
     httpGet.mockResolvedValue({ ok: true, status: 200,
       data: { data: { tweetResult: { result } } } });
-    await expect(getTweetMedias('222')).rejects.toBeInstanceOf(TwitterAPIRequestError);
+    await expect(getTweetMedias('222')).rejects.toMatchObject({
+      name: 'TwitterAPIRequestError', category: 'provider-error',
+    });
   });
 
   it.each(['TweetUnavailable', 'TweetTombstone'])(

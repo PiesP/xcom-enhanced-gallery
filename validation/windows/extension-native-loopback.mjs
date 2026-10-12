@@ -44,6 +44,7 @@ export function createExtensionNativeFixtureHandler() {
   let holdPath = null;
   let heldResponse = null;
   let heldTail = null;
+  let videoHold = null;
   const reject = (response, status = 404) => {
     unexpectedCount += 1;
     response.writeHead(status, { 'Content-Length': '0', 'Cache-Control': 'no-store' });
@@ -93,7 +94,8 @@ export function createExtensionNativeFixtureHandler() {
     reservedBytes += body.length;
     const status = range === undefined ? 200 : 206;
     const event = { host: route.host, path: route.path, method: request.method,
-      purpose: request.headers['sec-fetch-dest'] === 'image' ? 'image' : 'transfer',
+      purpose: request.headers['sec-fetch-dest'] === 'document' ? 'document' :
+        request.headers['sec-fetch-dest'] === 'image' ? 'image' : 'transfer',
       status, range: range === undefined ? null : { start, end },
       bytes: 0, sha256: null, result: 'started', atMs: performance.now() };
     events.push(event);
@@ -104,6 +106,7 @@ export function createExtensionNativeFixtureHandler() {
         event.closedAtMs = performance.now();
       }
       active.delete(response);
+      videoHold?.responses.delete(response);
       if (response === heldResponse) {
         heldResponse = null;
         heldTail = null;
@@ -117,7 +120,7 @@ export function createExtensionNativeFixtureHandler() {
       event.finishedAtMs = performance.now();
     });
     response.writeHead(status, {
-      'Content-Type': route.host === 'video.twimg.com' ? 'video/mp4' : 'image/jpeg',
+      'Content-Type': route.contentType ?? (route.host === 'video.twimg.com' ? 'video/mp4' : 'image/jpeg'),
       'Content-Length': String(request.method === 'HEAD' ? end - start + 1 : body.length),
       'Accept-Ranges': 'bytes',
       'Cache-Control': 'no-store',
@@ -126,6 +129,22 @@ export function createExtensionNativeFixtureHandler() {
       ...(range === undefined ? {} : { 'Content-Range': `bytes ${start}-${end}/${bytes.length}` }),
     });
     event.headersQueuedAtMs = performance.now();
+    if (request.method === 'GET' && videoHold?.path === `${route.host}${route.path}`) {
+      const prefixBytes = Math.max(0, Math.min(body.length, videoHold.prefixEnd - start));
+      assert(prefixBytes < body.length || end < videoHold.prefixEnd,
+        'A held video range must not expose its delayed samples');
+      if (prefixBytes === body.length) {
+        response.end(body);
+        event.bodyQueuedAtMs = performance.now();
+        return;
+      }
+      videoHold.responses.set(response, body.subarray(prefixBytes));
+      if (prefixBytes > 0) response.write(body.subarray(0, prefixBytes));
+      event.prefixBytesQueued = prefixBytes;
+      event.firstByteQueuedAtMs = prefixBytes > 0 ? performance.now() : null;
+      event.result = 'video-held';
+      return;
+    }
     if (request.method === 'GET' && range === undefined &&
         holdPath === `${route.host}${route.path}`) {
       assert.equal(heldResponse, null, 'Only one native fixture response may be held');
@@ -175,6 +194,41 @@ export function createExtensionNativeFixtureHandler() {
         allowed.set(`video.twimg.com${path}`, { bytes, host: 'video.twimg.com', path });
       }
     },
+    setRecoveryDocument({ tweetId, html }) {
+      assert(typeof tweetId === 'string' && /^[1-9][0-9]{0,19}$/u.test(tweetId));
+      assert(typeof html === 'string');
+      const bytes = Buffer.from(html);
+      assert(bytes.length > 0 && bytes.length <= MAX_BODY_BYTES);
+      const path = `/intentrecovery/status/${tweetId}`;
+      assert(!allowed.has(`x.com${path}`), 'Recovery document already installed');
+      allowed.set(`x.com${path}`, { bytes, host: 'x.com', path,
+        contentType: 'text/html; charset=utf-8' });
+    },
+    armVideoHold(path, prefixEnd) {
+      assert.equal(videoHold, null, 'Only one bounded video source may be held');
+      const route = allowed.get(`video.twimg.com${path}`);
+      assert(route && route.host === 'video.twimg.com', 'Only a declared video may be held');
+      assert(Number.isSafeInteger(prefixEnd) && prefixEnd > 0 && prefixEnd < route.bytes.length,
+        'The video prefix must leave declared samples outstanding');
+      videoHold = { path: `video.twimg.com${path}`, prefixEnd, responses: new Map() };
+    },
+    videoHeld: () => videoHold !== null && videoHold.responses.size > 0,
+    completeVideoHold() {
+      assert(videoHold && videoHold.responses.size > 0, 'A live held video response is required');
+      const pending = videoHold;
+      videoHold = null;
+      for (const [response, tail] of pending.responses) {
+        if (!response.destroyed) response.end(tail);
+      }
+      pending.responses.clear();
+    },
+    abortVideoHold() {
+      if (!videoHold) return;
+      const pending = videoHold;
+      videoHold = null;
+      for (const response of pending.responses.keys()) response.destroy();
+      pending.responses.clear();
+    },
     mark: () => events.length,
     armHold(host, path) {
       assert.equal(holdPath, null);
@@ -209,7 +263,7 @@ export function createExtensionNativeFixtureHandler() {
 }
 
 export async function startExtensionNativeFixtureLoopback(helperPath) {
-  const certificate = await generateFixtureCertificate(helperPath, undefined, true);
+  const certificate = await generateFixtureCertificate(helperPath, undefined, true, true);
   const fixture = createExtensionNativeFixtureHandler();
   const server = createServer({ key: certificate.keyPem, cert: certificate.certPem,
     maxHeaderSize: 4_096 }, fixture.handle);
