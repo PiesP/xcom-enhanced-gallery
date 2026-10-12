@@ -68,6 +68,18 @@ export function useToolbarSettingsController(
   const [settingsButtonRef, setSettingsButtonRef] = createSignal<HTMLButtonElement | undefined>(
     undefined
   );
+  let openingFocusTimeout: ReturnType<typeof setTimeout> | null = null;
+  const cancelOpeningFocus = (): void => {
+    clearScheduledTimeout(openingFocusTimeout);
+    openingFocusTimeout = null;
+  };
+
+  createEffect(() => {
+    if (!isSettingsExpanded()) {
+      cancelOpeningFocus();
+    }
+  });
+  onCleanup(cancelOpeningFocus);
 
   const toThemeOption = (value: unknown): ThemeOption => {
     return isThemeSetting(value) ? value : 'auto';
@@ -239,14 +251,24 @@ export function useToolbarSettingsController(
 
   const handleSettingsClick = (event: MouseEvent) => {
     event.stopImmediatePropagation?.();
+    cancelOpeningFocus();
     const wasExpanded = isSettingsExpanded();
+    const focusedAtOpen = documentRef?.activeElement;
 
     toggleSettingsExpanded();
 
     if (!wasExpanded) {
-      scheduleTimeout(() => {
+      openingFocusTimeout = scheduleTimeout(() => {
+        openingFocusTimeout = null;
+        // A user may have focused another control while the panel was opening.
+        if (!isSettingsExpanded() || documentRef?.activeElement !== focusedAtOpen) {
+          return;
+        }
         const panel = settingsPanelRef();
-        const firstControl = panel?.querySelector('select') as HTMLSelectElement | null;
+        if (!panel?.isConnected) {
+          return;
+        }
+        const firstControl = panel.querySelector<HTMLSelectElement>('select');
         if (firstControl) {
           firstControl.focus({ preventScroll: true });
         }
