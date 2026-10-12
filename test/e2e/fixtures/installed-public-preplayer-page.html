@@ -61,7 +61,9 @@
     window.addEventListener('click', (event) => {
       if (!event.isTrusted || window.__preplayerFixtureClicks.length >= 32) return;
       const record = { tag: event.target instanceof Element
-        ? event.target.tagName.toLowerCase() : null, prevented: false };
+        ? event.target.tagName.toLowerCase() : null, prevented: false,
+      path: event.composedPath().filter((part) => part instanceof Element)
+        .slice(0, 6).map((part) => part.tagName.toLowerCase()) };
       window.__preplayerFixtureClicks.push(record);
       setTimeout(() => { record.prevented = event.defaultPrevented; }, 0);
     }, { capture: true });

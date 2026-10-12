@@ -200,9 +200,12 @@ button, and blob-backed host video. It proves decoded host playback advances
 before opening, then checks the host pauses only after the gallery opens. The
 new gallery video must start at zero, paused, with XEG's saved volume and mute
 settings; an ordinary video click must then advance playback. While it plays,
-controlled host replay and insertion of a video already playing must stop
-without stopping the gallery video. Closing must release suppression so the
-same host video can play again. This checks playback state and time progression,
+controlled host replay, insertion of a video already playing, and replacement
+of an existing host video must stop without stopping the gallery video. Closing
+must release suppression so the original and replacement videos can play again.
+The first gallery also opens its real Video clicks settings control, changes all
+three modes with trusted keyboard input, checks persisted values and visible
+help, then restores the full prior setting. This checks playback state and time progression,
 not audible output or host-to-gallery time transfer.
 
 The same production installation routes a direct, unmarked MP4 under a valid
@@ -228,8 +231,12 @@ remain selected, focused and current, and its native download must match B's
 preferred MP4 source and bytes. The controlled renderer-fault case injects a
 single `CSSStyleDeclaration.setProperty('--xeg-viewport-w', ...)` failure into
 the installed extension's own isolated execution context through CDP. It
-restores the prototype in `finally`, checks the production modeless recovery
-surface, native host playback, a new gallery session and normal close.
+restores and verifies the original prototype descriptor in `finally`, checks
+the production modeless recovery surface and native host playback while that
+surface remains visible, then exercises a new gallery session and normal close.
+Click-boundary JSON checkpoints retain the fixture's actual event targets and
+paths, provider requests, gallery selection and host media state even when a
+later gallery assertion fails.
 
 The installed profile also opens one routed unavailable-sequence document under
 the same extension installation. Three ordinary `allow-all` preview clicks

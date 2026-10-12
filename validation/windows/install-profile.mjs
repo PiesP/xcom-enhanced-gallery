@@ -2696,6 +2696,47 @@ async function quotedClickRecord(page, beforeCount, expectedTag) {
   return record;
 }
 
+async function writeVideoBoundaryCheckpoint({ output, name, page, api }) {
+  const snapshot = await page.evaluate(() => {
+    const gallery = document.querySelector('[data-xeg-gallery-container]');
+    const toolbar = gallery?.querySelector('[data-gallery-element="toolbar"]');
+    return {
+      url: location.href,
+      clicks: {
+        quoted: window.__quoteFixtureClicks ?? null,
+        preplayer: window.__preplayerFixtureClicks ?? null,
+        direct: window.__directVideoClicks ?? null,
+      },
+      videos: [...document.querySelectorAll('video')].map((video) => ({
+        hostAction: video.dataset.hostAction ?? null,
+        currentTime: video.currentTime, paused: video.paused,
+        width: video.videoWidth, height: video.videoHeight,
+        readyState: video.readyState, error: video.error?.code ?? null,
+        source: video.currentSrc.startsWith('blob:') ? 'blob:' : video.currentSrc,
+      })),
+      gallery: { present: Boolean(gallery),
+        currentIndex: toolbar?.dataset.currentIndex ?? null,
+        focusedIndex: toolbar?.dataset.focusedIndex ?? null,
+        items: [...(gallery?.querySelectorAll('[data-gallery-element="item"]') ?? [])]
+          .map((item) => ({ index: item.dataset.index,
+            source: item.querySelector('video, img')?.currentSrc ||
+              item.querySelector('video, img')?.src || null })) },
+    };
+  });
+  const receipt = { name, capturedAt: new Date().toISOString(), ...snapshot, api };
+  const file = `quoted-${name}-checkpoint.json`;
+  await writeFile(join(output, file), JSON.stringify(receipt, null, 2));
+  return { file, ...receipt };
+}
+
+async function attachVideoBoundaryFailure(diagnostic, { output, name, page, api }) {
+  try {
+    diagnostic.boundary = await writeVideoBoundaryCheckpoint({ output, name, page, api });
+  } catch (error) {
+    diagnostic.boundaryError = safeError(error);
+  }
+}
+
 async function hostVideoState(video) {
   return video.evaluate((element) => ({
     currentTime: element.currentTime, paused: element.paused,
@@ -3022,6 +3063,85 @@ async function withControlledFixtureVideoMode(extensionPage, evidence, action,
   if (validationError) throw validationError;
   if (cleanupError) throw cleanupError;
   return { ...result, controlledSetting: evidence };
+}
+
+async function runVideoClickSettingsCycle({ extensionPage, gallery, output, page }) {
+  const key = 'xeg-app-settings';
+  const prior = await extensionPage.evaluate(async (storageKey) => {
+    const values = await chrome.storage.local.get(storageKey);
+    return { exists: Object.hasOwn(values, storageKey), value: values[storageKey] ?? null };
+  }, key);
+  const initialMode = prior.value?.gallery?.videoClickMode ?? 'block-controls-only';
+  const settingsButton = gallery.locator('[data-gallery-element="toolbar"] #settings-button');
+  let receipt;
+  let validationError;
+  let cleanupError;
+  try {
+    await settingsButton.click();
+    const select = gallery.getByLabel('Video clicks');
+    await select.waitFor({ state: 'visible' });
+    assert.equal(await select.getAttribute('id'), 'settings-video-click-select');
+    assert.equal(await select.inputValue(), initialMode);
+    const help = gallery.locator('#settings-video-click-help');
+    assert.match(await help.textContent(), /video surfaces open the gallery/i);
+    await select.focus();
+    const modes = [];
+    for (const [keyPress, expectedMode] of [
+      ['Home', 'block-all'], ['ArrowDown', 'block-controls-only'], ['End', 'allow-all'],
+    ]) {
+      await page.keyboard.press(keyPress);
+      await waitForValue(async () => {
+        const stored = await extensionPage.evaluate(async (storageKey) => {
+          const values = await chrome.storage.local.get(storageKey);
+          return values[storageKey]?.gallery?.videoClickMode ?? null;
+        }, key);
+        return stored === expectedMode ? stored : undefined;
+      }, `trusted keyboard video-click setting ${expectedMode}`, 5_000);
+      assert.equal(await select.inputValue(), expectedMode);
+      modes.push({ keyPress, selected: expectedMode, stored: expectedMode });
+    }
+    await page.screenshot({ path: join(output, 'quoted-video-click-settings.png') });
+    await select.focus();
+    if (initialMode === 'block-all') await page.keyboard.press('Home');
+    else if (initialMode === 'block-controls-only') {
+      await page.keyboard.press('Home');
+      await page.keyboard.press('ArrowDown');
+    } else await page.keyboard.press('End');
+    await waitForValue(async () => {
+      const stored = await extensionPage.evaluate(async (storageKey) => {
+        const values = await chrome.storage.local.get(storageKey);
+        return values[storageKey]?.gallery?.videoClickMode ?? null;
+      }, key);
+      return stored === initialMode ? stored : undefined;
+    }, 'video-click setting restored through keyboard', 5_000);
+    assert.equal(await select.inputValue(), initialMode);
+    await settingsButton.click();
+    receipt = { initialMode, modes, finalMode: initialMode,
+      screenshot: 'quoted-video-click-settings.png' };
+  } catch (error) {
+    validationError = error;
+  } finally {
+    try {
+      await extensionPage.evaluate(async ({ storageKey, previous }) => {
+        if (previous.exists) await chrome.storage.local.set({ [storageKey]: previous.value });
+        else await chrome.storage.local.remove(storageKey);
+      }, { storageKey: key, previous: prior });
+      const restored = await extensionPage.evaluate(async ({ storageKey, previous }) => {
+        const values = await chrome.storage.local.get(storageKey);
+        return Object.hasOwn(values, storageKey) === previous.exists &&
+          (!previous.exists || JSON.stringify(values[storageKey]) === JSON.stringify(previous.value));
+      }, { storageKey: key, previous: prior });
+      assert.equal(restored, true, 'Settings UI cycle must restore the full prior setting');
+      if (receipt) receipt.fullSettingRestored = true;
+    } catch (error) {
+      cleanupError = error;
+    }
+  }
+  if (validationError && cleanupError) throw new AggregateError([validationError, cleanupError],
+    'Video-click settings UI validation and setting restoration both failed');
+  if (validationError) throw validationError;
+  if (cleanupError) throw cleanupError;
+  return receipt;
 }
 
 async function runPublicPreplayerCycle({ quotedCase, quotedApiResponses, apiResponses, downloads,
@@ -3404,19 +3524,28 @@ async function runSvgTargetMatrix({ extensionPage, output, page, quotedApiRespon
       const apiStart = quotedApiResponses.length;
       await captureQuotedOpeningScroll(button);
       await page.mouse.click(hit.x, hit.y);
+      const pending = await writeVideoBoundaryCheckpoint({ output,
+        name: `svg-${target.name}`, page, api: quotedApiResponses.slice(apiStart) });
       before.scrollY = Number(await button.getAttribute('data-opening-scroll-y'));
       assert(Number.isFinite(before.scrollY) && before.scrollY > 0);
       const gallery = await assertQuotedGallery(page, quotedCase);
       await page.waitForTimeout(10);
       const clicks = await page.evaluate(() => window.__preplayerFixtureClicks);
-      assert.deepEqual(clicks, [{ tag: target.tag, prevented: true }],
+      assert.equal(clicks.length, 1,
+        `${target.name}: exactly one trusted fixture click must be recorded`);
+      assert.equal(clicks[0].tag, target.tag,
+        `${target.name}: the actual event target must match the hit test`);
+      assert.equal(clicks[0].prevented, true,
         `${target.name}: the original trusted event must open the gallery`);
+      assert.equal(clicks[0].path[0], target.tag);
+      assert(clicks[0].path.includes('button'),
+        `${target.name}: composed path must include the eligible button`);
       const originUrl = await assertQuotedOriginLink(gallery.gallery,
         `https://x.com/${quotedCase.username}/status/${quotedCase.owner}`);
       const close = await closeQuotedGallery({ gallery: gallery.gallery, page,
         method: 'escape', before, caseName: quotedCase.route,
         selector: '[data-preplayer-media] button' });
-      cases.push({ target: target.name, hit, clicks, selected: gallery.selectedMedia,
+      cases.push({ target: target.name, hit, pending, clicks, selected: gallery.selectedMedia,
         originUrl, api: quotedApiResponses.slice(apiStart), close });
     }
     await page.screenshot({ path: join(output, 'quoted-svg-targets-after.png') });
@@ -3461,6 +3590,9 @@ async function runDelayedVideoFailures({ extensionPage, fixtureRoutes, output, p
       const request = await waitForValue(async () => fixtureRoutes.quotedApiResponses
         .slice(apiStart).find((item) => item.tweetId === tweetId),
       `${name} extraction request`);
+      const pending = await writeVideoBoundaryCheckpoint({ output,
+        name: `delayed-${name}`, page,
+        api: fixtureRoutes.quotedApiResponses.slice(apiStart) });
       assert.equal(request.fulfilledAtMonotonicMs, null,
         `${name}: provider response must still be held`);
       assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0,
@@ -3472,7 +3604,7 @@ async function runDelayedVideoFailures({ extensionPage, fixtureRoutes, output, p
         `${name}: intercepted click must not pause host during extraction`);
       assert(pendingEnd.currentTime > pendingStart.currentTime + 0.15,
         `${name}: actual host playback must continue while extraction is pending`);
-      observation = { name, pageUrl, tweetId, before, request,
+      observation = { name, pageUrl, tweetId, before, request, pending,
         pendingStart, pendingEnd };
       if (name === 'navigation') {
         await page.goto(FIXTURE_URL);
@@ -3576,6 +3708,8 @@ async function runRapidVideoClicks({ downloads, extensionPage, fixtureRoutes,
     const before = await page.evaluate(() => ({ scrollY: window.scrollY,
       body: document.body.style.cssText }));
     await second.click();
+    const pendingB = await writeVideoBoundaryCheckpoint({ output,
+      name: 'rapid-a-b', page, api: fixtureRoutes.quotedApiResponses.slice(apiStart) });
     const expectedB = { name: 'rapid-b', expectedPosition: 2, expectedTotal: 2,
       owner: RAPID_CLICK_B, media: 'quote-two' };
     const opened = await assertQuotedGallery(page, expectedB);
@@ -3613,7 +3747,8 @@ async function runRapidVideoClicks({ downloads, extensionPage, fixtureRoutes,
       body: document.body.style.cssText }));
     assert.deepEqual(after, before, 'Rapid B close must restore host scroll and body styles');
     await page.screenshot({ path: join(output, 'quoted-rapid-a-b-after.png') });
-    return { status: 'passed', pageUrl, heldA, bRequests, selected: opened.selectedMedia,
+    return { status: 'passed', pageUrl, heldA, pendingB, bRequests,
+      selected: opened.selectedMedia,
       retained, originUrl, download: { filename, bytes: bytes.length, native,
         sha256: createHash('sha256').update(bytes).digest('hex') }, restoration: after };
   } finally {
@@ -3624,6 +3759,32 @@ async function runRapidVideoClicks({ downloads, extensionPage, fixtureRoutes,
 async function installBoundedExtensionRenderFault(context, page, extensionId) {
   const cdp = await context.newCDPSession(page);
   let isolated;
+  const restoreAndVerify = async (contextId, markerRequired) => {
+    const result = await cdp.send('Runtime.evaluate', { contextId,
+      expression: `(() => {
+        const marker = globalThis.__xegInstalledRenderFault;
+        if (!marker) return { markerPresent: false, descriptorRestored: false,
+          markerGone: true };
+        marker.restore();
+        const descriptorRestored = Object.getOwnPropertyDescriptor(
+          CSSStyleDeclaration.prototype, 'setProperty')?.value === marker.original;
+        delete globalThis.__xegInstalledRenderFault;
+        return { markerPresent: true, descriptorRestored,
+          markerGone: !Object.hasOwn(globalThis, '__xegInstalledRenderFault') };
+      })()`, returnByValue: true });
+    assert.equal(result.exceptionDetails, undefined,
+      'CDP render-fault restoration must not throw');
+    const restored = result.result.value;
+    if (markerRequired) assert.equal(restored.markerPresent, true,
+      'Installed render fault marker disappeared before verified cleanup');
+    if (restored.markerPresent) {
+      assert.equal(restored.descriptorRestored, true,
+        'CDP must restore the original CSS setProperty descriptor');
+      assert.equal(restored.markerGone, true,
+        'CDP must remove the bounded render-fault marker');
+    }
+    return restored;
+  };
   try {
     const contexts = [];
     cdp.on('Runtime.executionContextCreated', ({ context: observed }) => {
@@ -3645,7 +3806,7 @@ async function installBoundedExtensionRenderFault(context, page, extensionId) {
     if (!descriptor || typeof descriptor.value !== 'function') throw new Error('Missing CSS API');
     if (globalThis.__xegInstalledRenderFault) throw new Error('Render fault already installed');
     const original = descriptor.value;
-    const state = { remaining: 1, throws: 0, restore() {
+    const state = { remaining: 1, throws: 0, original, restore() {
       Object.defineProperty(prototype, 'setProperty', descriptor);
     } };
     Object.defineProperty(prototype, 'setProperty', { ...descriptor,
@@ -3678,22 +3839,33 @@ async function installBoundedExtensionRenderFault(context, page, extensionId) {
         return observed.result.value;
       },
       async dispose() {
+        let restoration;
+        let restoreError;
+        let detachError;
         try {
-          await cdp.send('Runtime.evaluate', { contextId: isolated.id,
-            expression: 'globalThis.__xegInstalledRenderFault?.restore(); delete globalThis.__xegInstalledRenderFault',
-            returnByValue: true });
-        } finally {
-          await cdp.detach();
+          restoration = await restoreAndVerify(isolated.id, true);
+        } catch (error) {
+          restoreError = error;
         }
+        try { await cdp.detach(); }
+        catch (error) { detachError = error; }
+        if (restoreError && detachError) throw new AggregateError([restoreError, detachError],
+          'Render-fault restoration and CDP detach both failed');
+        if (restoreError) throw restoreError;
+        if (detachError) throw detachError;
+        return restoration;
       },
     };
   } catch (error) {
+    const cleanupErrors = [];
     if (isolated) {
-      await cdp.send('Runtime.evaluate', { contextId: isolated.id,
-        expression: 'globalThis.__xegInstalledRenderFault?.restore(); delete globalThis.__xegInstalledRenderFault',
-        returnByValue: true }).catch(() => {});
+      try { await restoreAndVerify(isolated.id, false); }
+      catch (cleanupError) { cleanupErrors.push(cleanupError); }
     }
-    await cdp.detach().catch(() => {});
+    try { await cdp.detach(); }
+    catch (cleanupError) { cleanupErrors.push(cleanupError); }
+    if (cleanupErrors.length) throw new AggregateError([error, ...cleanupErrors],
+      'Render-fault setup and CDP cleanup failed');
     throw error;
   }
 }
@@ -3713,11 +3885,19 @@ async function runModelessRenderRecovery({ consoleErrors, context, extensionId, 
       element.videoHeight === 180 && element.error === null;
   }, null, { timeout: 15_000 });
   await hostVideo.evaluate((video) => { video.loop = true; });
+  await hostVideo.focus();
+  const hostBefore = await quotedHostSnapshot(page, 'recognized', '[data-video-key] video');
+  await captureQuotedOpeningScroll(hostVideo);
   const consoleStart = consoleErrors.length;
   const fault = await installBoundedExtensionRenderFault(context, page, extensionId);
   let observed;
+  let receipt;
+  let validationError;
+  let cleanupError;
   try {
     await hostVideo.click();
+    hostBefore.scrollY = Number(await hostVideo.getAttribute('data-opening-scroll-y'));
+    assert(Number.isFinite(hostBefore.scrollY));
     const recovery = page.locator('[data-xeg-error-boundary]');
     await recovery.waitFor({ state: 'visible', timeout: 15_000 });
     observed = await fault.snapshot();
@@ -3731,6 +3911,38 @@ async function runModelessRenderRecovery({ consoleErrors, context, extensionId, 
     }));
     assert.equal(modelessHost.hostInert, false,
       'Modeless recovery must release host interaction isolation');
+    const modelessRestoration = await quotedHostSnapshot(page,
+      'recognized', '[data-video-key] video');
+    assert.deepEqual(modelessRestoration.bodyStyle, hostBefore.bodyStyle,
+      'Modeless recovery must restore body inline styles');
+    assert.deepEqual(modelessRestoration.background, hostBefore.background,
+      'Modeless recovery must restore host isolation markers');
+    assert.equal(modelessRestoration.scrollRestoration, hostBefore.scrollRestoration);
+    assert.equal(modelessRestoration.scrollY, hostBefore.scrollY);
+    await shell.locator('[data-testid="playButton"]').click();
+    await page.waitForFunction(() => {
+      const video = document.querySelector('[data-case="recognized"] [data-video-key] video');
+      return video instanceof HTMLVideoElement && !video.paused &&
+        video.currentTime > 0.15 && video.videoWidth === 320 &&
+        video.videoHeight === 180 && video.error === null;
+    }, null, { timeout: 5_000 });
+    const visibleRecoveryStart = await hostVideoState(hostVideo);
+    await page.waitForFunction((start) => {
+      const video = document.querySelector('[data-case="recognized"] [data-video-key] video');
+      return video instanceof HTMLVideoElement && !video.paused &&
+        video.currentTime > start + 0.15 && video.error === null;
+    }, visibleRecoveryStart.currentTime, { timeout: 5_000 });
+    const visibleRecoveryEnd = await hostVideoState(hostVideo);
+    assert.equal(await recovery.isVisible(), true,
+      'Host playback must progress while modeless recovery is still visible');
+    const visibleRecoveryHost = await page.evaluate(() => ({
+      bodyInert: document.body.inert,
+      hostInert: document.querySelector('main')?.inert ?? null,
+      bodyOverflow: document.body.style.overflow,
+    }));
+    assert.deepEqual(visibleRecoveryHost, modelessHost,
+      'Native playback during modeless recovery must not reacquire host isolation');
+    await page.screenshot({ path: join(output, 'quoted-modeless-recovery-visible.png') });
     await recovery.locator('[data-xeg-error-action="close"]').click();
     await recovery.waitFor({ state: 'detached' });
     await shell.locator('[data-testid="playButton"]').click();
@@ -3760,13 +3972,27 @@ async function runModelessRenderRecovery({ consoleErrors, context, extensionId, 
     assert(expectedConsoleErrors.length <= 2,
       'One bounded renderer fault must not produce repeated console failures');
     await page.screenshot({ path: join(output, 'quoted-modeless-recovery.png') });
-    return { status: 'passed', isolatedContext: fault.context,
-      fault: observed, modelessHost, recoveredHost, expectedConsoleErrors,
+    receipt = { status: 'passed', isolatedContext: fault.context,
+      fault: observed, modelessHost, modelessRestoration, visibleRecoveryHost,
+      visibleRecoveryStart, visibleRecoveryEnd, recoveredHost, expectedConsoleErrors,
+      visibleRecoveryScreenshot: 'quoted-modeless-recovery-visible.png',
       retry: { selected: retried.selectedMedia, hostStopped: retryHostStopped,
         hostAfterClose: hostAfterRetryClose } };
+  } catch (error) {
+    validationError = error;
   } finally {
-    await fault.dispose();
+    try {
+      const restoration = await fault.dispose();
+      if (receipt) receipt.faultRestoration = restoration;
+    } catch (error) {
+      cleanupError = error;
+    }
   }
+  if (validationError && cleanupError) throw new AggregateError([validationError, cleanupError],
+    'Modeless recovery validation and bounded fault cleanup both failed');
+  if (validationError) throw validationError;
+  if (cleanupError) throw cleanupError;
+  return receipt;
 }
 
 async function runBlockAllDirectVideo({ extensionPage, output, page, quotedApiResponses }) {
@@ -3799,6 +4025,8 @@ async function runBlockAllDirectVideo({ extensionPage, output, page, quotedApiRe
     });
     assert.equal(hit.tag, 'video', 'Direct unmarked video must be the real hit target');
     await page.mouse.click(hit.x, hit.y);
+    const pending = await writeVideoBoundaryCheckpoint({ output,
+      name: 'unmarked-block-all', page, api: quotedApiResponses.slice(apiStart) });
     await page.waitForTimeout(50);
     const clicks = await page.evaluate(() => window.__directVideoClicks);
     assert.equal(clicks.length, 1, 'Host must receive one ordinary video click');
@@ -3810,7 +4038,7 @@ async function runBlockAllDirectVideo({ extensionPage, output, page, quotedApiRe
     const after = await hostVideoState(video);
     await page.screenshot({ path: join(output, 'quoted-unmarked-block-all-native.png') });
     return { status: 'passed', mode: 'block-all', pageUrl, source, before,
-      hit, clicks, after, controlledSetting };
+      hit, pending, clicks, after, controlledSetting };
   }, 'block-all');
 }
 
@@ -3829,6 +4057,8 @@ async function runDirectVideoAllowedModes({ extensionPage, output, page,
         await video.focus();
         const apiStart = quotedApiResponses.length;
         await video.click();
+        const pending = await writeVideoBoundaryCheckpoint({ output,
+          name: `unmarked-${mode}`, page, api: quotedApiResponses.slice(apiStart) });
         const selected = await assertQuotedGallery(page, QUOTED_CASES[0]);
         await page.waitForTimeout(10);
         const clicks = await page.evaluate(() => window.__directVideoClicks);
@@ -3841,7 +4071,7 @@ async function runDirectVideoAllowedModes({ extensionPage, output, page,
         await selected.gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]')
           .click();
         await selected.gallery.waitFor({ state: 'detached' });
-        return { mode, clicks, selected: selected.selectedMedia, originUrl,
+        return { mode, pending, clicks, selected: selected.selectedMedia, originUrl,
           api: quotedApiResponses.slice(apiStart), galleryClosed: true };
       }, mode);
     cases.push(result);
@@ -3886,11 +4116,16 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
   const previewClickCount = await page.evaluate(() => window.__quoteFixtureClicks.length);
   await captureQuotedOpeningScroll(preview);
   await preview.click();
+  const previewPending = await writeVideoBoundaryCheckpoint({ output,
+    name: `${quotedCase.name}-preview`, page, api: quotedApiResponses.slice(apiStart) });
   const previewClick = await quotedClickRecord(page, previewClickCount, 'img');
   previewBefore.scrollY = Number(await preview.getAttribute('data-opening-scroll-y'));
   assert(Number.isFinite(previewBefore.scrollY) && previewBefore.scrollY > 0,
     'Preview opening scroll must be observed');
   const initial = await assertQuotedGallery(page, quotedCase);
+  const videoClickSettings = quotedCase.name === QUOTED_CASES[0].name
+    ? await runVideoClickSettingsCycle({ extensionPage, gallery: initial.gallery,
+      output, page }) : null;
   const expectedRequest = quotedCase.name === 'linked' ||
     quotedCase.name === 'nested-direct-quote' ? quotedCase.owner : quotedCase.outer;
   assert.deepEqual(quotedApiResponses.slice(apiStart).map(({ tweetId }) => tweetId),
@@ -3955,6 +4190,8 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
   await captureQuotedOpeningScroll(hostVideo);
   const playingClickCount = await page.evaluate(() => window.__quoteFixtureClicks.length);
   await hostVideo.click();
+  const playingPending = await writeVideoBoundaryCheckpoint({ output,
+    name: `${quotedCase.name}-playing`, page, api: quotedApiResponses.slice(apiStart) });
   const playingClick = await quotedClickRecord(page, playingClickCount, 'video');
   playingBefore.scrollY = Number(await hostVideo.getAttribute('data-opening-scroll-y'));
   assert(Number.isFinite(playingBefore.scrollY) && playingBefore.scrollY > 0,
@@ -3990,12 +4227,17 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
   const insertedVideo = shell.locator('video[data-host-action="insert-playing"]');
   const stoppedInsertion = await assertHostStopped(page, insertedVideo,
     'Playing host video inserted during gallery');
+  const hostReplacement = await page.evaluate(() => window.__quoteFixtureHostAction('replace'));
+  const replacementVideo = shell.locator('video[data-host-action="replace"]');
+  const stoppedReplacement = await assertHostStopped(page, replacementVideo,
+    'Replacement host video during gallery');
+  assert.equal(stoppedReplacement.second.width, 320);
+  assert.equal(stoppedReplacement.second.height, 180);
   const galleryAfterHostActions = await hostVideoState(playing.video);
   assert.equal(galleryAfterHostActions.paused, false,
     'Host playback suppression must leave gallery video playing');
   assert(galleryAfterHostActions.currentTime > galleryPlaybackTime + 0.15,
     'Gallery video must progress through host replay and insertion');
-  await insertedVideo.evaluate((video) => { URL.revokeObjectURL(video.src); video.remove(); });
   assert(quotedApiResponses.slice(apiStart).every(({ tweetId }) => tweetId === expectedRequest),
     'Blob-backed click must retain the same owner request');
   const latePanel = await page.evaluate(() => {
@@ -4044,6 +4286,19 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
   }, { name: quotedCase.route, start: stoppedReplay.second.currentTime }, { timeout: 5_000 });
   const hostAfterClose = await hostVideoState(hostVideo);
   await hostVideo.evaluate((video) => video.pause());
+  const replacementStart = await hostVideoState(replacementVideo);
+  await replacementVideo.evaluate((video) => video.play());
+  await page.waitForFunction((start) => {
+    const video = document.querySelector('[data-host-action="replace"]');
+    return video instanceof HTMLVideoElement && !video.paused &&
+      video.currentTime > start + 0.15 && video.error === null;
+  }, replacementStart.currentTime, { timeout: 5_000 });
+  const replacementAfterClose = await hostVideoState(replacementVideo);
+  await replacementVideo.evaluate((video) => {
+    video.pause();
+    URL.revokeObjectURL(video.src);
+    video.remove();
+  });
   const restoredPanel = await page.locator(`#${latePanel}`).evaluate((element) => ({
     ariaHidden: element.getAttribute('aria-hidden'),
     hiddenMarker: element.hasAttribute('data-xeg-gallery-hidden'),
@@ -4059,17 +4314,21 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
   return {
     name: quotedCase.name, pageUrl, requestedTweetId: expectedRequest,
     api: quotedApiResponses.slice(apiStart), selectedPosition: quotedCase.expectedPosition,
-    preview: { source: previewState.poster, click: previewClick, selected: initial.selectedMedia,
+    videoClickSettings,
+    preview: { source: previewState.poster, click: previewClick, pending: previewPending,
+      selected: initial.selectedMedia,
       originUrl: previewOriginUrl, navigation: previewNavigation,
       close: previewClose },
     hostPlaying: { blobBacked: hostPlaying.source.startsWith('blob:'),
       currentTime: hostPlaying.time, progressEnd: hostProgressEnd,
       width: hostPlaying.width, height: hostPlaying.height,
       nativePlayClick, playingClick },
-    playing: { selected: playing.selectedMedia, originUrl: playingOriginUrl,
+    playing: { selected: playing.selectedMedia, pending: playingPending,
+      originUrl: playingOriginUrl,
       navigation: playingNavigation, galleryPlaybackStart, galleryPlaybackTime,
       galleryPreferences, freshStart, openingHost, hostReplay, stoppedReplay,
-      hostInsertion, stoppedInsertion, galleryAfterHostActions, hostAfterClose,
+      hostInsertion, stoppedInsertion, hostReplacement, stoppedReplacement,
+      galleryAfterHostActions, hostAfterClose, replacementAfterClose,
       closeMethod: quotedCase.close,
       close: playingClose },
     download: { filename, bytes: bytes.length, file: copiedName, native,
@@ -4601,6 +4860,8 @@ async function exerciseInstalledExtension(
           api: fixtureRoutes.quotedApiResponses.filter(({ tweetId }) =>
             tweetId === quotedCase.outer || tweetId === quotedCase.owner),
           screenshot: `quoted-${quotedCase.name}-failure.png` };
+        await attachVideoBoundaryFailure(diagnostic, { output,
+          name: `${quotedCase.name}-failure`, page, api: diagnostic.api });
         const [snapshot, screenshot] = await Promise.allSettled([
           page.evaluate(() => {
             const gallery = document.querySelector('[data-xeg-gallery-container]');
@@ -4645,6 +4906,8 @@ async function exerciseInstalledExtension(
         quotedApiResponses: fixtureRoutes.quotedApiResponses });
     } catch (error) {
       svgTargetMatrix = { status: 'failed', error: safeError(error) };
+      await attachVideoBoundaryFailure(svgTargetMatrix, { output,
+        name: 'svg-targets-failure', page, api: fixtureRoutes.quotedApiResponses });
       await page.screenshot({ path: join(output, 'quoted-svg-targets-failure.png') }).catch(() => {});
       acceptanceFailures.push(error);
     }
@@ -4653,6 +4916,8 @@ async function exerciseInstalledExtension(
         quotedApiResponses: fixtureRoutes.quotedApiResponses });
     } catch (error) {
       blockAllDirectVideo = { status: 'failed', error: safeError(error) };
+      await attachVideoBoundaryFailure(blockAllDirectVideo, { output,
+        name: 'unmarked-block-all-failure', page, api: fixtureRoutes.quotedApiResponses });
       await page.screenshot({ path: join(output, 'quoted-unmarked-block-all-failure.png') }).catch(() => {});
       acceptanceFailures.push(error);
     }
@@ -4661,6 +4926,8 @@ async function exerciseInstalledExtension(
         quotedApiResponses: fixtureRoutes.quotedApiResponses });
     } catch (error) {
       directVideoAllowedModes = { status: 'failed', error: safeError(error) };
+      await attachVideoBoundaryFailure(directVideoAllowedModes, { output,
+        name: 'unmarked-modes-failure', page, api: fixtureRoutes.quotedApiResponses });
       await page.screenshot({ path: join(output, 'quoted-unmarked-modes-failure.png') }).catch(() => {});
       acceptanceFailures.push(error);
     }
@@ -4671,6 +4938,8 @@ async function exerciseInstalledExtension(
       delayedVideoFailures = { status: 'failed', error: safeError(error),
         api: fixtureRoutes.quotedApiResponses.filter(({ tweetId }) =>
           tweetId === DELAYED_FAILURE_ID || tweetId === DELAYED_NAVIGATION_ID) };
+      await attachVideoBoundaryFailure(delayedVideoFailures, { output,
+        name: 'delayed-failure', page, api: delayedVideoFailures.api });
       await page.screenshot({ path: join(output, 'quoted-delayed-failure.png') }).catch(() => {});
       acceptanceFailures.push(error);
     }
@@ -4681,6 +4950,8 @@ async function exerciseInstalledExtension(
       rapidVideoClicks = { status: 'failed', error: safeError(error),
         api: fixtureRoutes.quotedApiResponses.filter(({ tweetId }) =>
           tweetId === RAPID_CLICK_A || tweetId === RAPID_CLICK_B) };
+      await attachVideoBoundaryFailure(rapidVideoClicks, { output,
+        name: 'rapid-a-b-failure', page, api: rapidVideoClicks.api });
       await page.screenshot({ path: join(output, 'quoted-rapid-a-b-failure.png') }).catch(() => {});
       acceptanceFailures.push(error);
     }
@@ -4689,6 +4960,8 @@ async function exerciseInstalledExtension(
         context, extensionId, output, page });
     } catch (error) {
       modelessRenderRecovery = { status: 'failed', error: safeError(error) };
+      await attachVideoBoundaryFailure(modelessRenderRecovery, { output,
+        name: 'modeless-recovery-failure', page, api: fixtureRoutes.quotedApiResponses });
       await page.screenshot({ path: join(output, 'quoted-modeless-recovery-failure.png') })
         .catch(() => {});
       acceptanceFailures.push(error);

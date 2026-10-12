@@ -149,13 +149,19 @@
       video.dataset.hostAction = action;
       video.src = makeHostUrl();
       video.muted = true;
+      video.style.position = 'absolute';
+      video.style.inset = '0';
       await new Promise((resolve, reject) => {
         video.addEventListener('loadeddata', resolve, { once: true });
         video.addEventListener('error', reject, { once: true });
       });
       if (action === 'insert-playing') await video.play();
       const playingBeforeInsertion = !video.paused;
-      if (action === 'replace') hostVideo.replaceWith(video);
+      if (action === 'replace') {
+        const previous = shell.querySelector('video[data-host-action="insert-playing"]') ?? hostVideo;
+        if (previous !== hostVideo) URL.revokeObjectURL(previous.src);
+        previous.replaceWith(video);
+      }
       else shell.append(video);
       if (action === 'replace') await video.play().catch(() => {});
       return { action, playingBeforeInsertion, tag: video.tagName.toLowerCase() };
