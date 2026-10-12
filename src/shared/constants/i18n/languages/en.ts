@@ -44,6 +44,14 @@ export const en: LanguageStrings = {
     langZhCn: 'Simplified Chinese',
     langEs: 'Spanish',
     langAr: 'Arabic',
+    videoClickMode: 'Video clicks',
+    videoClickNative: 'Keep video clicks in X',
+    videoClickSurfaces: 'Open video surfaces in gallery',
+    videoClickUnmarked: 'Also open eligible play buttons',
+    videoClickHelp:
+      'Eligible video surfaces open the gallery in the last two modes. Only validated unmarked play buttons join in the last mode; ordinary player controls stay in X.',
+    videoClickSaveError:
+      'Could not save Video clicks. The current setting is still active. Try again.',
   },
   msg: {
     err: {
@@ -64,6 +72,11 @@ export const en: LanguageStrings = {
         ownerUnconfirmed: 'Could not confirm which post owns the selected media.',
         mismatch: 'The returned media did not match the selected item.',
         cancelled: 'Media loading was cancelled.',
+        nativeVideoRecovery:
+          'Use the video’s play/pause controls on X, or press Alt+Shift+V to keep video clicks in X.',
+        nativeVideoControls: 'Use the video’s play/pause controls on X to continue watching.',
+        nativeVideoEnabled:
+          'Video clicks now stay in X. Change Video clicks in gallery settings to use the gallery again.',
       },
       generic: 'Error occurred',
       loadGallery: 'Failed to load gallery',

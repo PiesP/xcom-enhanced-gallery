@@ -194,6 +194,60 @@ Fixture routes supply transport and host media only; extraction and downloads
 use the installed production extension. These results do not establish the
 reported live page's quote relationship or availability.
 
+Issue #284 extends those installed quoted-video cycles. The fixture records the
+actual trusted click target and composed-path tags for the preview, native Play
+button, and blob-backed host video. It proves decoded host playback advances
+before opening, then checks the host pauses only after the gallery opens. The
+new gallery video must start at zero, paused, with XEG's saved volume and mute
+settings; an ordinary video click must then advance playback. While it plays,
+controlled host replay, insertion of a video already playing, and replacement
+of an existing host video must stop without stopping the gallery video. Closing
+must release suppression so the original and replacement videos can play again.
+The four-second fixture videos loop only for this prolonged host-action check;
+the receipt keeps the fresh gallery video's original non-looping state. A host
+counts as stopped only while decoded, unended and paused, and gallery progress
+is measured inside a short interval before the next loop boundary.
+The first gallery also opens its real Video clicks settings control, changes all
+three modes with trusted keyboard input, checks persisted values and visible
+help, then restores the exact prior stored value. The profile decodes the
+production JSON storage envelope when reading settings while preserving its
+raw value for restoration. This checks playback state and time progression,
+not audible output or host-to-gallery time transfer.
+
+The same production installation routes a direct, unmarked MP4 under a valid
+post owner. Its `block-all` click must reach the native video without a gallery
+or provider request. A missing setting, explicit `block-controls-only`, and
+`allow-all` must each open the exact owner-specific gallery video from that
+eligible video surface. A separate `allow-all` quote fixture clicks button
+padding, text, SVG background and path through ordinary hit-tested input. Each
+must retain its actual `event.target`, open the same B video, and restore host
+focus, scroll and isolation after closing. These are bounded fixture cases;
+other browser installation modes and live X remain separate evidence tiers.
+
+A held 403 response against a blob-only playing host video checks that the
+intercepted click does not pause the host during extraction. After release, the
+installed notification must describe the native play/pause recovery and
+Alt+Shift+V shortcut. Ordinary trusted input must persist `block-all`, leave a
+subsequent video click native without another API request, and restore the full
+prior task-owned setting after the check. A bounded service-worker observer
+records the message at the actual `chrome.notifications.create` boundary,
+calls through to native delivery, and pairs its ID with `getAll`; it restores
+the original API in `finally`. A second held request is released after
+navigation to prove the old session cannot open a gallery or notify the new
+page. Two valid owner-specific videos on one document also exercise a held A
+response followed by an ordinary B click; after A completes or aborts, B must
+remain selected, focused and current, and its native download must match B's
+preferred MP4 source and bytes. The native loopback serves that exact synthetic
+B path. The controlled renderer-fault case injects a
+single `CSSStyleDeclaration.setProperty('--xeg-viewport-w', ...)` failure into
+the installed extension's own isolated execution context through CDP. It
+restores and verifies the original prototype descriptor in `finally`, checks
+the production modeless recovery surface and native host playback while that
+surface remains visible, then exercises a new gallery session and normal close.
+Click-boundary JSON checkpoints retain the fixture's actual event targets and
+paths, provider requests, gallery selection and host media state even when a
+later gallery assertion fails.
+
 The installed profile also opens one routed unavailable-sequence document under
 the same extension installation. Three ordinary `allow-all` preview clicks
 request distinct synthetic post IDs whose `TweetResultByRestId` replies are HTTP

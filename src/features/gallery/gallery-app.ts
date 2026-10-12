@@ -20,6 +20,7 @@ import {
 import type { TranslationKey } from '@shared/i18n/types';
 import { logger } from '@shared/logging/logger';
 import { getLanguageService } from '@shared/services/language-service';
+import { captureClickedMediaEvidence } from '@shared/services/media-extraction/determine-clicked-index';
 import { getMediaService } from '@shared/services/media-service';
 import {
   closeGallery,
@@ -33,11 +34,9 @@ import {
   createGalleryLifecycle,
   type GalleryLifecycle,
 } from '@shared/utils/events/lifecycle/gallery-lifecycle';
-import {
-  pauseAmbientVideosForGallery,
-  startAmbientVideoGuard,
-} from '@shared/utils/media/ambient-video-coordinator';
 import { isProcessableMedia } from '@shared/utils/media/media-click-detector';
+import { getMediaClickTarget } from '@shared/utils/media/media-click-target';
+import { startNativeVideoRecovery } from '@shared/utils/media/native-video-recovery';
 
 function mediaFailureMessage(kind: MediaExtractionResult['failureKind']): TranslationKey {
   switch (kind) {
@@ -70,13 +69,13 @@ function mediaFailureMessage(kind: MediaExtractionResult['failureKind']): Transl
 
 export class GalleryApp {
   private initialized = false;
-  private ambientVideoGuardDispose: (() => void) | null = null;
   private readonly lifecycle: GalleryLifecycle = createGalleryLifecycle();
   private readonly renderer: GalleryRenderer;
   private mediaClickCounter = 0;
   private mediaClickAbortController: AbortController | null = null;
   private sessionEpoch = 0;
   private sessionAbortController: AbortController | null = null;
+  private nativeVideoRecoveryDispose: (() => void) | null = null;
 
   constructor(renderer: GalleryRenderer) {
     this.renderer = renderer;
@@ -90,9 +89,6 @@ export class GalleryApp {
 
     try {
       await this.setupEventHandlers();
-      if (!this.ambientVideoGuardDispose) {
-        this.ambientVideoGuardDispose = startAmbientVideoGuard();
-      }
       this.initialized = true;
       document.documentElement.setAttribute(GALLERY_READY_ATTRIBUTE, 'true');
     } catch (error) {
@@ -125,14 +121,13 @@ export class GalleryApp {
 
   /** Resume one trusted click retained privately during extension bootstrap. */
   async resumeEarlyMediaClick(event: MouseEvent): Promise<void> {
-    const target = event.target;
+    const target = getMediaClickTarget(event);
     if (
       !this.initialized ||
       !event.isTrusted ||
-      !(target instanceof HTMLElement) ||
-      !target.isConnected ||
+      !target?.isConnected ||
       isGalleryRecoveryActive() ||
-      !isProcessableMedia(target)
+      !isProcessableMedia(target, event)
     ) {
       return;
     }
@@ -140,6 +135,10 @@ export class GalleryApp {
   }
 
   private async handleMediaClick(element: HTMLElement, _event: MouseEvent): Promise<void> {
+    this.nativeVideoRecoveryDispose?.();
+    this.nativeVideoRecoveryDispose = null;
+    const videoClick = captureClickedMediaEvidence(element).mediaType === 'video';
+    const clickUrl = location.href;
     this.mediaClickAbortController?.abort();
     const clickController = new AbortController();
     this.mediaClickAbortController = clickController;
@@ -149,6 +148,13 @@ export class GalleryApp {
     const signalScope = sessionSignal
       ? mergeAbortSignalsWithCleanup([sessionSignal, clickController.signal])
       : { signal: clickController.signal, cleanup: () => undefined };
+    // Transport can reject during navigation before pagehide runs session cleanup.
+    const cancelOnNavigation = (): void => clickController.abort();
+    window.addEventListener('beforeunload', cancelOnNavigation, {
+      once: true,
+      passive: true,
+      signal: clickController.signal,
+    });
 
     try {
       const mediaService = getMediaService();
@@ -156,12 +162,10 @@ export class GalleryApp {
         signal: signalScope.signal,
       });
 
-      if (!this.isCurrentMediaClick(opId, epoch, clickController)) return;
+      if (!this.isCurrentMediaClick(opId, epoch, clickController, clickUrl)) return;
 
       if (result.success && result.mediaItems.length > 0) {
-        this.openGallery(result.mediaItems, result.clickedIndex, {
-          reason: 'media-click',
-        });
+        this.openGallery(result.mediaItems, result.clickedIndex);
         const partialRecovery = result.metadata?.recoveryScope === 'visible-tile';
         const observedQuality = result.mediaItems.some(
           (media) =>
@@ -187,22 +191,27 @@ export class GalleryApp {
           metadata: { success: result.success, failureKind: result.failureKind },
         });
         const lang = getLanguageService();
+        const recovery = videoClick
+          ? this.videoRecoveryMessage(opId, epoch, element, clickUrl)
+          : '';
         notifySafely(
           getNotificationAdapter(),
           lang.translate('msg.err.loadMedia.title'),
-          lang.translate(mediaFailureMessage(result.failureKind))
+          lang.translate(mediaFailureMessage(result.failureKind)) + recovery
         );
       }
     } catch (error) {
-      if (!this.isCurrentMediaClick(opId, epoch, clickController)) return;
+      if (!this.isCurrentMediaClick(opId, epoch, clickController, clickUrl)) return;
       mediaErrorReporter.error(error, { code: 'MEDIA_EXTRACTION_ERROR' });
       const lang = getLanguageService();
       notifySafely(
         getNotificationAdapter(),
         lang.translate('msg.err.generic'),
-        normalizeErrorMessage(error)
+        normalizeErrorMessage(error).slice(0, 240) +
+          (videoClick ? this.videoRecoveryMessage(opId, epoch, element, clickUrl) : '')
       );
     } finally {
+      window.removeEventListener('beforeunload', cancelOnNavigation);
       signalScope.cleanup();
       if (this.mediaClickAbortController === clickController) {
         this.mediaClickAbortController = null;
@@ -210,24 +219,61 @@ export class GalleryApp {
     }
   }
 
-  private isCurrentMediaClick(opId: number, epoch: number, controller: AbortController): boolean {
+  private isCurrentMediaClick(
+    opId: number,
+    epoch: number,
+    controller: AbortController,
+    clickUrl: string
+  ): boolean {
     return (
       opId === this.mediaClickCounter &&
       epoch === this.sessionEpoch &&
       this.initialized &&
+      location.href === clickUrl &&
       this.mediaClickAbortController === controller &&
       !controller.signal.aborted
     );
   }
 
-  openGallery(mediaItems: MediaInfo[], startIndex = 0, pauseContext?: { reason?: string }): void {
+  private videoRecoveryMessage(
+    opId: number,
+    epoch: number,
+    element: HTMLElement,
+    clickUrl: string
+  ): string {
+    const lang = getLanguageService();
+    if (!tryGetSettings()) return ` ${lang.translate('msg.err.loadMedia.nativeVideoControls')}`;
+    this.nativeVideoRecoveryDispose = startNativeVideoRecovery({
+      isCurrent: () =>
+        this.initialized &&
+        opId === this.mediaClickCounter &&
+        epoch === this.sessionEpoch &&
+        location.href === clickUrl &&
+        element.isConnected &&
+        !gallerySignals.isOpen,
+      onEnabled: () =>
+        notifySafely(
+          getNotificationAdapter(),
+          lang.translate('st.videoClickMode'),
+          lang.translate('msg.err.loadMedia.nativeVideoEnabled')
+        ),
+      onError: (error) => {
+        mediaErrorReporter.error(error, { code: 'NATIVE_VIDEO_MODE_SAVE_FAILED' });
+        notifySafely(
+          getNotificationAdapter(),
+          lang.translate('msg.err.generic'),
+          lang.translate('st.videoClickSaveError')
+        );
+      },
+    });
+    return ` ${lang.translate('msg.err.loadMedia.nativeVideoRecovery')}`;
+  }
+
+  openGallery(mediaItems: MediaInfo[], startIndex = 0): void {
     if (mediaItems.length === 0) return;
 
     try {
       const validIndex = clampIndex(startIndex, mediaItems.length);
-      pauseAmbientVideosForGallery({
-        reason: pauseContext?.reason ?? 'media-click',
-      });
       openGallery(mediaItems, validIndex);
     } catch (error) {
       galleryErrorReporter.error(error, {
@@ -245,12 +291,19 @@ export class GalleryApp {
   }
 
   close(): void {
+    this.nativeVideoRecoveryDispose?.();
+    this.nativeVideoRecoveryDispose = null;
+    this.mediaClickAbortController?.abort();
+    this.mediaClickAbortController = null;
+    this.mediaClickCounter++;
     if (gallerySignals.isOpen) {
       closeGallery();
     }
   }
 
   async cleanup(): Promise<void> {
+    this.nativeVideoRecoveryDispose?.();
+    this.nativeVideoRecoveryDispose = null;
     document.documentElement.removeAttribute(GALLERY_READY_ATTRIBUTE);
     if (gallerySignals.isOpen) {
       this.close();
@@ -261,9 +314,6 @@ export class GalleryApp {
     this.mediaClickAbortController = null;
     this.sessionAbortController?.abort();
     this.sessionAbortController = null;
-
-    this.ambientVideoGuardDispose?.();
-    this.ambientVideoGuardDispose = null;
 
     try {
       this.lifecycle.cleanup();

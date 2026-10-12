@@ -4,11 +4,12 @@
 /**
  * @fileoverview Settings Controls Component
  * @module shared/components/ui/Settings/SettingsControls
- * @description Theme and language selection controls for application settings
+ * @description Theme, language, and video click controls for application settings
  *
  * **Features**:
  * - Theme selection (auto, light, dark)
- * - Language selection (auto, Korean, English, Japanese)
+ * - Language selection (auto and six languages)
+ * - Video click routing selection
  * - Compact mode for toolbar integration
  * - Reactive translations via language service
  * - Fully accessible with proper ARIA labels
@@ -23,9 +24,14 @@
  * Component styles: `SettingsControls.module.css`
  */
 
-import { THEME_OPTIONS } from '@constants/setting-options';
+import { isVideoClickMode, THEME_OPTIONS, VIDEO_CLICK_MODES } from '@constants/setting-options';
+import { DEFAULT_SETTINGS } from '@constants/settings';
+import { getNotificationAdapter, notifySafely } from '@platform/index';
 import { Tooltip } from '@shared/components/ui/Tooltip/Tooltip';
+import { tryGetSettings } from '@shared/container/settings-registry';
 import { getLanguageService } from '@shared/services/language-service';
+import type { VideoClickMode } from '@shared/types/settings.types';
+import { withTrustedEvent } from '@shared/utils/events/trusted-event';
 import { resolve } from '@shared/utils/solid/accessor-utils';
 import { cx } from '@shared/utils/text/formatting';
 import type { JSXElement } from 'solid-js';
@@ -60,10 +66,15 @@ const LANGUAGE_NATIVE_LABELS: Record<LanguageOption, string> = {
   ar: 'العربية',
 };
 
+function readVideoClickMode(): VideoClickMode {
+  const current = tryGetSettings()?.get('gallery.videoClickMode');
+  return isVideoClickMode(current) ? current : DEFAULT_SETTINGS.gallery.videoClickMode;
+}
+
 /**
  * Settings Controls Component
  *
- * Renders theme and language selection controls with reactive translations.
+ * Renders theme, language, and video click controls with reactive translations.
  * Supports compact mode for toolbar integration.
  *
  * @param props - Component props
@@ -95,11 +106,20 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
 
   // Revision signal for reactive translation updates
   const [revision, setRevision] = createSignal(0);
+  const [videoClickMode, setVideoClickMode] = createSignal<VideoClickMode>(readVideoClickMode());
+  const [savingVideoClickMode, setSavingVideoClickMode] = createSignal(false);
 
   // Subscribe to language changes
   onMount(() => {
     const unsubscribe = languageService.onLanguageChange(() => setRevision((v) => v + 1));
     onCleanup(unsubscribe);
+
+    const settings = tryGetSettings();
+    setVideoClickMode(readVideoClickMode());
+    const unsubscribeSettings = settings?.subscribe?.((event) => {
+      if (event.key === 'gallery.videoClickMode') setVideoClickMode(readVideoClickMode());
+    });
+    if (unsubscribeSettings) onCleanup(unsubscribeSettings);
   });
 
   // Reactive translation strings
@@ -126,12 +146,52 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
           ar: languageService.translate('st.langAr'),
         } as Record<LanguageOption, string>,
       },
+      video: {
+        title: languageService.translate('st.videoClickMode'),
+        labels: {
+          'block-all': languageService.translate('st.videoClickNative'),
+          'block-controls-only': languageService.translate('st.videoClickSurfaces'),
+          'allow-all': languageService.translate('st.videoClickUnmarked'),
+        } as Record<VideoClickMode, string>,
+        help: languageService.translate('st.videoClickHelp'),
+        saveError: languageService.translate('st.videoClickSaveError'),
+      },
+      errorTitle: languageService.translate('msg.err.t'),
     };
   });
 
   // Reactive prop values
   const themeValue = () => resolve(local.currentTheme);
   const languageValue = () => resolve(local.currentLanguage);
+
+  const saveVideoClickMode = async (event: Event): Promise<void> => {
+    const select = event.currentTarget;
+    if (!(select instanceof HTMLSelectElement)) return;
+    const next = select.value;
+    if (!isVideoClickMode(next)) {
+      select.value = videoClickMode();
+      return;
+    }
+
+    const settings = tryGetSettings();
+    if (!settings) {
+      select.value = videoClickMode();
+      notifySafely(getNotificationAdapter(), strings().errorTitle, strings().video.saveError);
+      return;
+    }
+
+    setSavingVideoClickMode(true);
+    try {
+      await settings.set('gallery.videoClickMode', next);
+      setVideoClickMode(readVideoClickMode());
+    } catch {
+      setVideoClickMode(readVideoClickMode());
+      notifySafely(getNotificationAdapter(), strings().errorTitle, strings().video.saveError);
+    } finally {
+      select.value = readVideoClickMode();
+      setSavingVideoClickMode(false);
+    }
+  };
 
   // JSX return
   return (
@@ -219,6 +279,67 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
             ))}
           </select>
         </Tooltip>
+      </div>
+
+      <div class={cx(styles.setting, local.compact && styles.settingCompact)}>
+        <label
+          id={
+            local['data-testid']
+              ? `${local['data-testid']}-video-click-label`
+              : 'settings-video-click-label'
+          }
+          for={
+            local['data-testid']
+              ? `${local['data-testid']}-video-click-select`
+              : 'settings-video-click-select'
+          }
+          class={cx(styles.label, local.compact && styles.compactLabel)}
+        >
+          {strings().video.title}
+        </label>
+        <p
+          id={
+            local['data-testid']
+              ? `${local['data-testid']}-video-click-help`
+              : 'settings-video-click-help'
+          }
+          class={styles.help}
+        >
+          {strings().video.help}
+        </p>
+        <select
+          id={
+            local['data-testid']
+              ? `${local['data-testid']}-video-click-select`
+              : 'settings-video-click-select'
+          }
+          autocomplete="off"
+          class={cx('xeg-inline-center', styles.select)}
+          onChange={withTrustedEvent((event: Event) => {
+            void saveVideoClickMode(event);
+          })}
+          value={videoClickMode()}
+          disabled={savingVideoClickMode()}
+          aria-label={strings().video.title}
+          aria-labelledby={
+            local['data-testid']
+              ? `${local['data-testid']}-video-click-label`
+              : 'settings-video-click-label'
+          }
+          aria-describedby={
+            local['data-testid']
+              ? `${local['data-testid']}-video-click-help`
+              : 'settings-video-click-help'
+          }
+          required
+          data-testid={
+            __DEV__ && local['data-testid'] ? `${local['data-testid']}-video-click` : undefined
+          }
+        >
+          {VIDEO_CLICK_MODES.map((mode) => (
+            <option value={mode}>{strings().video.labels[mode]}</option>
+          ))}
+        </select>
       </div>
     </div>
   );

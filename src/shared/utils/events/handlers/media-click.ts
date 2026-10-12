@@ -18,7 +18,7 @@ import type { EventHandlers, GalleryEventOptions } from '@shared/services/event-
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import type { VideoClickMode } from '@shared/types/settings.types';
 import { isProcessableMedia } from '@shared/utils/media/media-click-detector';
-import { isHTMLElement } from '@shared/utils/types/guards';
+import { getMediaClickTarget } from '@shared/utils/media/media-click-target';
 
 /** Resolve video click mode safely, falling back when settings unavailable */
 function resolveVideoClickMode(): VideoClickMode {
@@ -52,22 +52,23 @@ export async function handleMediaClick(
     return;
   }
 
-  // Gallery is closed — check if this is a media click that should open it.
-  // Narrow to HTMLElement: video click detection needs HTMLElement-specific APIs.
-  if (!isHTMLElement(target)) return;
+  // Gallery is closed — locate the nearest HTML owner of an SVG hit while
+  // retaining the original event and its control ancestry.
+  const mediaTarget = getMediaClickTarget(event);
+  if (!mediaTarget) return;
 
   // Check video click mode from user settings — single decision point
   // for all video-click behavior (block-all / block-controls-only / allow-all).
   const videoMode = resolveVideoClickMode();
-  if (!isVideoClickAllowed(target, () => event.composedPath(), videoMode)) return;
+  if (!isVideoClickAllowed(mediaTarget, () => event.composedPath(), videoMode)) return;
 
-  if (!isProcessableMedia(target, event)) return;
+  if (!isProcessableMedia(mediaTarget, event)) return;
 
   event.stopImmediatePropagation();
   event.preventDefault();
 
   try {
-    await handlers.onMediaClick(target, event);
+    await handlers.onMediaClick(mediaTarget, event);
   } catch (error) {
     logger.warn('onMediaClick failed', error);
   }

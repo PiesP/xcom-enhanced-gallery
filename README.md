@@ -56,6 +56,10 @@ userscript for a persistent installation.
 4. Use the toolbar to change fit mode, download the current item, or download
    all media as a ZIP.
 
+Video clicks follow the saved click mode. The gallery opens a separate player
+at the beginning with its own saved volume; closing does not restart X's player.
+See the [video-click policy](./docs/video-click-policy.md) for modes and native-player recovery.
+
 If post extraction is unavailable, a status-linked media tile may recover only
 its visible, accessible media. A notification identifies this partial recovery;
 bulk ZIP downloads include only the items shown in the gallery. A tile does not

@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { hideBackgroundElement, restoreBackgroundElement } from '@shared/dom/background-visibility';
+import { startAmbientVideoGuard } from '@shared/utils/media/ambient-video-coordinator';
 
 interface BodyStyleSnapshot {
   readonly left: string;
@@ -23,6 +24,7 @@ class GalleryHostState implements GalleryHostStateHandle {
   private readonly scrollY: number;
   private readonly backgroundObserver: MutationObserver;
   private restored = false;
+  private disposeAmbientVideoGuard: (() => void) | null = null;
 
   constructor(private readonly container: HTMLElement) {
     this.bodyStyle = {
@@ -44,6 +46,8 @@ class GalleryHostState implements GalleryHostStateHandle {
   restore(): void {
     if (this.restored) return;
     this.restored = true;
+    this.disposeAmbientVideoGuard?.();
+    this.disposeAmbientVideoGuard = null;
     this.backgroundObserver.disconnect();
 
     document.body.style.overflow = this.bodyStyle.overflow;
@@ -84,6 +88,7 @@ class GalleryHostState implements GalleryHostStateHandle {
       this.hideBackground(child);
     }
     this.backgroundObserver.observe(document.body, { childList: true });
+    this.disposeAmbientVideoGuard = startAmbientVideoGuard();
 
     this.container.focus();
     if (document.activeElement !== this.container) {

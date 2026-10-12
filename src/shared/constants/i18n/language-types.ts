@@ -102,6 +102,18 @@ export interface LanguageStrings {
     readonly langEs: string;
     /** Arabic language option */
     readonly langAr: string;
+    /** Video click routing label */
+    readonly videoClickMode: string;
+    /** Keep recognized video clicks on X */
+    readonly videoClickNative: string;
+    /** Open eligible video surfaces in the gallery */
+    readonly videoClickSurfaces: string;
+    /** Include validated unmarked video buttons */
+    readonly videoClickUnmarked: string;
+    /** Mode boundaries and native control guidance */
+    readonly videoClickHelp: string;
+    /** Persisting the selected video click mode failed */
+    readonly videoClickSaveError: string;
   };
   /** Message strings */
   readonly msg: {
@@ -128,6 +140,9 @@ export interface LanguageStrings {
         readonly ownerUnconfirmed: string;
         readonly mismatch: string;
         readonly cancelled: string;
+        readonly nativeVideoRecovery: string;
+        readonly nativeVideoControls: string;
+        readonly nativeVideoEnabled: string;
       };
       /** Generic error title */
       readonly generic: string;

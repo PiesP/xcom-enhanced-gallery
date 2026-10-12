@@ -47,7 +47,7 @@ test.beforeAll(async () => {
   if (!earlyInputBundle) throw new Error('Readiness browser fixture build produced no code');
 });
 
-test('retains a genuine early media click as a private capability exactly once', async ({ page }) => {
+test('retains the latest genuine early media click and rejects stale targets', async ({ page }) => {
   await page.route('https://x.com/**', (route) => route.fulfill({
     status: 200, contentType: 'text/html', body: MOCK_GALLERY_HTML,
   }));
@@ -75,14 +75,134 @@ test('retains a genuine early media click as a private capability exactly once',
     await window.__xegEarlyInputObserver?.complete();
   });
   expect(await page.evaluate(() => window.__xegEarlyInputObserver?.observations())).toEqual([
-    { trusted: true, target: 'early-0' },
+    { trusted: true, target: 'early-1', mediaTarget: 'early-1' },
   ]);
   await page.evaluate(() => {
     window.__xegEarlyInputObserver = window.__xegEarlyInputFixture.observeEarlyClicks();
   });
   await page.locator('#early-0').click();
   await page.evaluate(async () => {
-    document.querySelector('#early-0')?.remove();
+    const image = document.querySelector('#early-0');
+    const parent = image?.parentElement;
+    image?.remove();
+    await window.__xegEarlyInputObserver?.complete();
+    if (image && parent) parent.append(image);
+  });
+  expect(await page.evaluate(() => window.__xegEarlyInputObserver?.observations())).toEqual([]);
+
+  await page.evaluate(() => {
+    window.__xegEarlyInputObserver = window.__xegEarlyInputFixture.observeEarlyClicks();
+  });
+  await page.locator('#early-0').click();
+  await page.evaluate(async () => {
+    const image = document.querySelector('#early-0');
+    document.querySelectorAll('[data-testid="tweetPhoto"]')[1]?.append(image!);
+    await window.__xegEarlyInputObserver?.complete();
+  });
+  expect(await page.evaluate(() => window.__xegEarlyInputObserver?.observations())).toEqual([]);
+
+  await page.evaluate(() => {
+    window.__xegEarlyInputObserver = window.__xegEarlyInputFixture.observeEarlyClicks();
+  });
+  await page.locator('#early-0').click();
+  await page.evaluate(async () => {
+    document.querySelector('#early-0')?.setAttribute('src',
+      'https://pbs.twimg.com/media/recycled-photo.jpg?format=jpg&name=large');
+    await window.__xegEarlyInputObserver?.complete();
+  });
+  expect(await page.evaluate(() => window.__xegEarlyInputObserver?.observations())).toEqual([]);
+
+  await page.evaluate(() => {
+    window.__xegEarlyInputObserver = window.__xegEarlyInputFixture.observeEarlyClicks();
+  });
+  await page.locator('#early-1').click();
+  await page.evaluate(async () => {
+    document.querySelector('article a[href*="/status/"]')?.setAttribute('href',
+      '/testuser/status/9876543210123456789');
+    await window.__xegEarlyInputObserver?.complete();
+  });
+  expect(await page.evaluate(() => window.__xegEarlyInputObserver?.observations())).toEqual([]);
+  await page.evaluate(() => {
+    window.__xegEarlyInputObserver = window.__xegEarlyInputFixture.observeEarlyClicks();
+  });
+  await page.locator('#early-1').click();
+  await page.evaluate(async () => {
+    history.pushState(null, '', '/testuser/status/5555555555555555555');
+    await window.__xegEarlyInputObserver?.complete();
+  });
+  expect(await page.evaluate(() => window.__xegEarlyInputObserver?.observations())).toEqual([]);
+});
+
+test('resumes the original trusted SVG path click through its bounded media link', async ({ page }) => {
+  await page.route('https://x.com/**', (route) => route.fulfill({
+    status: 200, contentType: 'text/html', body: MOCK_GALLERY_HTML,
+  }));
+  await page.route('https://pbs.twimg.com/**', (route) => route.fulfill({
+    status: 200, contentType: 'image/png', body: MOCK_IMAGE,
+  }));
+  await page.goto('https://x.com/testuser/status/1234567890123456789');
+  await page.addScriptTag({ content: earlyInputBundle });
+  await page.evaluate(() => {
+    const link = document.createElement('a');
+    link.id = 'early-svg-link';
+    link.href = '/testuser/status/1234567890123456789/photo/1';
+    link.innerHTML = `<img src="https://pbs.twimg.com/media/GkE1234ABCDEF.jpg" width="24" height="24">
+      <svg width="24" height="24" viewBox="0 0 24 24">
+        <path id="early-svg-path" d="M0 0h24v24H0z" fill="white"></path>
+      </svg>`;
+    document.querySelector('[data-testid="tweetPhoto"]')?.append(link);
+    window.__xegEarlyInputObserver = window.__xegEarlyInputFixture.observeEarlyClicks();
+  });
+  await page.locator('#early-svg-path').click();
+  await page.evaluate(() => window.__xegEarlyInputObserver?.complete());
+  expect(await page.evaluate(() => window.__xegEarlyInputObserver?.observations())).toEqual([
+    { trusted: true, target: 'early-svg-path', mediaTarget: 'early-svg-link' },
+  ]);
+});
+
+test('revalidates the video click mode before replaying a pending native control', async ({ page }) => {
+  await page.route('https://x.com/**', (route) => route.fulfill({
+    status: 200, contentType: 'text/html', body: MOCK_GALLERY_HTML,
+  }));
+  await page.route('https://pbs.twimg.com/**', (route) => route.fulfill({
+    status: 200, contentType: 'image/png', body: MOCK_IMAGE,
+  }));
+  await page.goto('https://x.com/testuser/status/1234567890123456789');
+  await page.addScriptTag({ content: earlyInputBundle });
+  await page.evaluate(() => {
+    const frame = document.createElement('div');
+    frame.innerHTML = `<video poster="https://pbs.twimg.com/amplify_video_thumb/700/img/poster.jpg"></video>
+      <button id="early-mode-control" type="button">Play</button>`;
+    document.querySelector('article')?.append(frame);
+    const observer = window.__xegEarlyInputFixture.observeEarlyClicks();
+    observer.setMode('allow-all');
+    window.__xegEarlyInputObserver = observer;
+  });
+  await page.locator('#early-mode-control').click();
+  await page.evaluate(async () => {
+    window.__xegEarlyInputObserver?.setMode('block-all');
+    await window.__xegEarlyInputObserver?.complete();
+  });
+  expect(await page.evaluate(() => window.__xegEarlyInputObserver?.observations())).toEqual([]);
+  await page.evaluate(() => window.__xegEarlyInputObserver?.dispose());
+});
+
+test('rejects a pending playing-video click when its raw blob source changes', async ({ page }) => {
+  await page.route('https://x.com/**', (route) => route.fulfill({
+    status: 200, contentType: 'text/html', body: MOCK_GALLERY_HTML,
+  }));
+  await page.goto('https://x.com/testuser/status/1234567890123456789');
+  await page.addScriptTag({ content: earlyInputBundle });
+  await page.evaluate(() => {
+    const video = document.createElement('video');
+    video.id = 'early-video';
+    video.src = 'blob:https://x.com/first';
+    document.querySelector('article')?.append(video);
+    window.__xegEarlyInputObserver = window.__xegEarlyInputFixture.observeEarlyClicks();
+  });
+  await page.locator('#early-video').click();
+  await page.evaluate(async () => {
+    document.querySelector('#early-video')?.setAttribute('src', 'blob:https://x.com/second');
     await window.__xegEarlyInputObserver?.complete();
   });
   expect(await page.evaluate(() => window.__xegEarlyInputObserver?.observations())).toEqual([]);

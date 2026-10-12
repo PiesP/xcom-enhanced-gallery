@@ -44,6 +44,13 @@ export const zhCn: LanguageStrings = {
     langZhCn: '简体中文',
     langEs: '西班牙语',
     langAr: '阿拉伯语',
+    videoClickMode: '视频点击',
+    videoClickNative: '在 X 中处理视频点击',
+    videoClickSurfaces: '点击视频画面时打开图库',
+    videoClickUnmarked: '符合条件的播放按钮也打开图库',
+    videoClickHelp:
+      '后两种模式可通过点击符合条件的视频画面打开图库。只有最后一种模式还包括已验证的无标记播放按钮；普通播放器控件始终由 X 处理。',
+    videoClickSaveError: '无法保存视频点击设置。当前设置仍然有效，请重试。',
   },
   msg: {
     err: {
@@ -61,6 +68,11 @@ export const zhCn: LanguageStrings = {
         ownerUnconfirmed: '无法确认所选媒体属于哪个帖子。',
         mismatch: '返回的媒体与所选项目不匹配。',
         cancelled: '媒体加载已取消。',
+        nativeVideoRecovery:
+          '使用 X 视频的播放或暂停控件，或按 Alt+Shift+V 让视频点击继续由 X 处理。',
+        nativeVideoControls: '要继续观看，请使用 X 视频的播放或暂停控件。',
+        nativeVideoEnabled:
+          '视频点击现在由 X 处理。若要再次使用图库，请在图库设置中更改“视频点击”。',
         title: '加载媒体失败',
         body: '找不到图片或视频。',
       },

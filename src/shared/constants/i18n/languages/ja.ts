@@ -44,6 +44,14 @@ export const ja: LanguageStrings = {
     langZhCn: '簡体字中国語',
     langEs: 'スペイン語',
     langAr: 'アラビア語',
+    videoClickMode: '動画のクリック',
+    videoClickNative: '動画のクリックをXで処理',
+    videoClickSurfaces: '動画画面からギャラリーを開く',
+    videoClickUnmarked: '対象の再生ボタンもギャラリーで開く',
+    videoClickHelp:
+      '後ろの2つのモードでは対象の動画画面からギャラリーを開きます。最後のモードのみ、検証済みの目印のない再生ボタンも対象です。通常のプレーヤー操作はXで行います。',
+    videoClickSaveError:
+      '動画のクリック設定を保存できませんでした。現在の設定が引き続き有効です。もう一度お試しください。',
   },
   msg: {
     err: {
@@ -65,6 +73,11 @@ export const ja: LanguageStrings = {
         ownerUnconfirmed: '選択したメディアの投稿元を確認できませんでした。',
         mismatch: '取得したメディアが選択した項目と一致しません。',
         cancelled: 'メディアの読み込みがキャンセルされました。',
+        nativeVideoRecovery:
+          'Xの動画の再生・一時停止ボタンを使うか、Alt+Shift+Vを押して動画のクリックをXで処理してください。',
+        nativeVideoControls: '視聴を続けるには、Xの動画の再生・一時停止ボタンを使ってください。',
+        nativeVideoEnabled:
+          '動画のクリックはXで処理されます。再びギャラリーを使うには、ギャラリー設定の「動画のクリック」を変更してください。',
       },
       generic: 'エラーが発生しました',
       loadGallery: 'ギャラリーの読み込みに失敗しました',

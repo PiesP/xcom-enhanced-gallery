@@ -475,6 +475,16 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
       element.scrollTop = element.scrollHeight;
     });
     await expect(panel.locator('select').last()).toBeInViewport();
+    const videoMode = panel.getByLabel('Video clicks');
+    await videoMode.focus();
+    await page.keyboard.press('Home');
+    await expect(videoMode).toHaveValue('block-all');
+    await expect(videoMode).toBeEnabled();
+    await page.keyboard.press('ArrowDown');
+    await expect(videoMode).toHaveValue('block-controls-only');
+    await expect(videoMode).toBeEnabled();
+    await page.keyboard.press('End');
+    await expect(videoMode).toHaveValue('allow-all');
   });
 
   test('toolbar boundaries follow the item currently focused by scrolling', async ({ page }) => {

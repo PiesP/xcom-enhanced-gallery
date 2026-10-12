@@ -121,7 +121,11 @@ function getNearestAttributeValue(
 }
 
 function isWithinVideoPlayer(element: HTMLElement): boolean {
-  return element.closest(VIDEO_PLAYER_CONTEXT_SELECTOR) !== null || isVideoPreview(element);
+  return (
+    element instanceof HTMLVideoElement ||
+    element.closest(VIDEO_PLAYER_CONTEXT_SELECTOR) !== null ||
+    isVideoPreview(element)
+  );
 }
 
 function matchesVideoControlSelectors(element: HTMLElement): boolean {

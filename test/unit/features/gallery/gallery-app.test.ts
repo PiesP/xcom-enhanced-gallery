@@ -2,7 +2,8 @@
 // Copyright (c) 2024-2026 PiesP
 
 import type { MediaExtractionResult } from '@shared/types/media.types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { clearSettings, registerSettings } from '@shared/container/settings-registry';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 type MediaClickHandler = (element: HTMLElement, event: MouseEvent) => Promise<void>;
 
@@ -14,6 +15,7 @@ const state = vi.hoisted(() => ({
   notify: vi.fn(),
   openGallery: vi.fn(),
   warn: vi.fn(),
+  setSetting: vi.fn(async () => undefined),
 }));
 
 vi.mock('@shared/utils/events/lifecycle/gallery-lifecycle', () => ({
@@ -88,7 +90,10 @@ function success(id: string): MediaExtractionResult {
 }
 
 describe('GalleryApp media-click currentness', () => {
+  afterEach(() => clearSettings());
   beforeEach(() => {
+    state.setSetting.mockClear();
+    registerSettings({ get: () => undefined, set: state.setSetting });
     state.cancelPending.mockClear();
     state.error.mockClear();
     state.extract.mockReset();
@@ -181,6 +186,132 @@ describe('GalleryApp media-click currentness', () => {
     await state.handlers?.onMediaClick(document.createElement('img'), new MouseEvent('click'));
     expect(state.notify).toHaveBeenCalledWith({}, 'msg.err.loadMedia.title', message);
     await app.cleanup();
+  });
+
+  it.each(['denied', 'unreadable', 'unsupported-source', 'mismatch', 'transport'] as const)(
+    'keeps %s diagnosis and offers native-player recovery for a video click', async (failureKind) => {
+      state.extract.mockResolvedValue({ success: false, mediaItems: [], failureKind });
+      const app = new GalleryApp({ destroy: vi.fn() } as never);
+      await app.initialize();
+      const video = document.createElement('video');
+      document.body.append(video);
+      await state.handlers?.onMediaClick(video, new MouseEvent('click'));
+      expect(state.openGallery).not.toHaveBeenCalled();
+      expect(state.notify.mock.calls[0]?.[2]).toContain('msg.err.loadMedia.nativeVideoRecovery');
+      expect(state.notify.mock.calls[0]?.[2]).toContain('msg.err.loadMedia.');
+      video.remove();
+      await app.cleanup();
+    }
+  );
+
+  it('cancels a held extraction when the user closes, with no stale opening or feedback', async () => {
+    const pending = deferredResult();
+    state.extract.mockReturnValue(pending.promise);
+    const app = new GalleryApp({ destroy: vi.fn() } as never);
+    await app.initialize();
+    const click = state.handlers?.onMediaClick(document.createElement('video'), new MouseEvent('click'));
+    app.close();
+    expect(state.extract.mock.calls[0]?.[1]?.signal.aborted).toBe(true);
+    pending.resolve(success('late'));
+    await click;
+    expect(state.openGallery).not.toHaveBeenCalled();
+    expect(state.notify).not.toHaveBeenCalled();
+    await app.cleanup();
+  });
+
+  it('retires pending extraction at beforeunload before a transport rejection or pagehide', async () => {
+    const pending = deferredResult();
+    state.extract.mockReturnValue(pending.promise);
+    const app = new GalleryApp({ destroy: vi.fn() } as never);
+    await app.initialize();
+    try {
+      const click = state.handlers?.onMediaClick(document.createElement('video'), new MouseEvent('click'));
+      window.dispatchEvent(new Event('beforeunload'));
+      pending.reject(new Error('Transport closed during navigation'));
+      await click;
+      expect(state.extract.mock.calls[0]?.[1]?.signal.aborted).toBe(true);
+      expect(state.notify).not.toHaveBeenCalled();
+      expect(state.openGallery).not.toHaveBeenCalled();
+    } finally {
+      await app.cleanup();
+    }
+  });
+
+  it('ignores a result after the URL changes before navigation reconciliation', async () => {
+    const priorUrl = location.href;
+    const pending = deferredResult();
+    state.extract.mockReturnValue(pending.promise);
+    const app = new GalleryApp({ destroy: vi.fn() } as never);
+    await app.initialize();
+    try {
+      const click = state.handlers?.onMediaClick(document.createElement('video'), new MouseEvent('click'));
+      history.pushState({}, '', '/other/status/999');
+      pending.resolve(success('old-page'));
+      await click;
+      expect(state.notify).not.toHaveBeenCalled();
+      expect(state.openGallery).not.toHaveBeenCalled();
+    } finally {
+      history.replaceState({}, '', priorUrl);
+      await app.cleanup();
+    }
+  });
+
+  it('removes navigation cancellation after extraction settles', async () => {
+    state.extract.mockResolvedValue(success('settled'));
+    const app = new GalleryApp({ destroy: vi.fn() } as never);
+    await app.initialize();
+    try {
+      await state.handlers?.onMediaClick(document.createElement('img'), new MouseEvent('click'));
+      window.dispatchEvent(new Event('beforeunload'));
+      expect(state.extract.mock.calls[0]?.[1]?.signal.aborted).toBe(false);
+    } finally {
+      await app.cleanup();
+    }
+  });
+
+  it('offers recovery for a bounded unmarked native-video button too', async () => {
+    state.extract.mockResolvedValue({ success: false, mediaItems: [], failureKind: 'owner-unconfirmed' });
+    const app = new GalleryApp({ destroy: vi.fn() } as never);
+    await app.initialize();
+    const frame = document.createElement('div');
+    frame.innerHTML = '<video poster="https://pbs.twimg.com/amplify_video_thumb/333/img/poster.jpg"></video><button type="button">Play</button>';
+    document.body.append(frame);
+    const button = frame.querySelector('button');
+    if (!button) throw new Error('Missing fixture button');
+    await state.handlers?.onMediaClick(button, new MouseEvent('click'));
+    expect(state.notify.mock.calls[0]?.[2]).toBe('msg.err.loadMedia.ownerUnconfirmed msg.err.loadMedia.nativeVideoRecovery');
+    frame.remove();
+    await app.cleanup();
+  });
+
+  it('never changes the mode automatically or after synthetic recovery input', async () => {
+    state.extract.mockResolvedValue({ success: false, mediaItems: [], failureKind: 'denied' });
+    const app = new GalleryApp({ destroy: vi.fn() } as never);
+    await app.initialize();
+    const video = document.createElement('video');
+    document.body.append(video);
+    await state.handlers?.onMediaClick(video, new MouseEvent('click'));
+    expect(state.setSetting).not.toHaveBeenCalled();
+    document.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyV', altKey: true, shiftKey: true }));
+    expect(state.setSetting).not.toHaveBeenCalled();
+    const remove = vi.spyOn(document, 'removeEventListener');
+    await app.cleanup();
+    expect(remove).toHaveBeenCalledWith('keydown', expect.any(Function), true);
+    video.remove();
+  });
+
+  it('ignores extraction completion after cleanup', async () => {
+    const pending = deferredResult();
+    state.extract.mockReturnValue(pending.promise);
+    const app = new GalleryApp({ destroy: vi.fn() } as never);
+    await app.initialize();
+    const click = state.handlers?.onMediaClick(document.createElement('video'), new MouseEvent('click'));
+    await app.cleanup();
+    expect(state.extract.mock.calls[0]?.[1]?.signal.aborted).toBe(true);
+    pending.resolve(success('after-cleanup'));
+    await click;
+    expect(state.openGallery).not.toHaveBeenCalled();
+    expect(state.notify).not.toHaveBeenCalled();
   });
 
 });

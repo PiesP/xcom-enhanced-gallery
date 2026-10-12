@@ -95,10 +95,9 @@ const NAVIGATION_KEYS = new Set([
 const VIDEO_CONTROL_KEYS = new Set(['ArrowUp', 'ArrowDown', 'm', 'M']);
 
 function isEditableTarget(target: EventTarget | null | undefined): boolean {
-  const element = target as HTMLElement | null;
-  if (!element) return false;
-  const tag = element.tagName?.toUpperCase();
-  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || !!element.isContentEditable;
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable;
 }
 
 /**
@@ -137,6 +136,8 @@ export function handleKeyboardEvent(
       handlers.onKeyboardEvent?.(event);
       return;
     }
+
+    if (isEditableTarget(event.target)) return;
 
     // isNavKey/isVideoKey: space bar included in both to pass the reject guard
     // below, then routed to video control (play/pause) before navigation check.
