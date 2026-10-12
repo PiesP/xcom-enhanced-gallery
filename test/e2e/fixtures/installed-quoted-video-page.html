@@ -101,6 +101,19 @@
     </article>
   </main>
   <script>
+    window.__quoteFixtureClicks = [];
+    window.addEventListener('click', (event) => {
+      if (!event.isTrusted || window.__quoteFixtureClicks.length >= 32) return;
+      const target = event.target;
+      const record = {
+        tag: target instanceof Element ? target.tagName.toLowerCase() : null,
+        path: event.composedPath().filter((part) => part instanceof Element)
+          .slice(0, 6).map((part) => part.tagName.toLowerCase()),
+        defaultPrevented: false,
+      };
+      window.__quoteFixtureClicks.push(record);
+      setTimeout(() => { record.defaultPrevented = event.defaultPrevented; }, 0);
+    }, { capture: true });
     const currentCase = document.querySelector(`[data-case="${document.body.dataset.quoteCase}"]`);
     const shell = currentCase.querySelector('[data-video-key]');
     const key = shell.dataset.videoKey;
@@ -112,19 +125,44 @@
       })
       .then((bytes) => { playableBytes = bytes; document.body.dataset.videoReady = 'true'; })
       .catch((error) => { document.body.dataset.videoError = error.message; });
+    const hostVideo = shell.querySelector('video');
+    const makeHostUrl = () => URL.createObjectURL(new Blob([playableBytes], { type: 'video/mp4' }));
     shell.querySelector('[data-testid="playButton"]').addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
       if (!playableBytes) throw new Error('Host playable bytes unavailable');
-      const video = shell.querySelector('video');
-      const objectUrl = URL.createObjectURL(new Blob([playableBytes], { type: 'video/mp4' }));
-      video.src = objectUrl;
+      const objectUrl = makeHostUrl();
+      hostVideo.src = objectUrl;
       shell.dataset.playing = 'true';
       document.body.dataset.hostBlobUrl = objectUrl;
-      video.play().catch((error) => { document.body.dataset.videoError = error.message; });
+      hostVideo.play().catch((error) => { document.body.dataset.videoError = error.message; });
     });
+    window.__quoteFixtureHostAction = async (action) => {
+      if (!playableBytes) throw new Error('Host playable bytes unavailable');
+      if (action === 'replay') {
+        const attempt = hostVideo.play();
+        await attempt.catch(() => {});
+        return { action, tag: hostVideo.tagName.toLowerCase() };
+      }
+      if (action !== 'insert-playing' && action !== 'replace') throw new Error('Unknown host action');
+      const video = document.createElement('video');
+      video.dataset.hostAction = action;
+      video.src = makeHostUrl();
+      video.muted = true;
+      await new Promise((resolve, reject) => {
+        video.addEventListener('loadeddata', resolve, { once: true });
+        video.addEventListener('error', reject, { once: true });
+      });
+      if (action === 'insert-playing') await video.play();
+      const playingBeforeInsertion = !video.paused;
+      if (action === 'replace') hostVideo.replaceWith(video);
+      else shell.append(video);
+      if (action === 'replace') await video.play().catch(() => {});
+      return { action, playingBeforeInsertion, tag: video.tagName.toLowerCase() };
+    };
     window.addEventListener('pagehide', () => {
       if (document.body.dataset.hostBlobUrl) URL.revokeObjectURL(document.body.dataset.hostBlobUrl);
+      shell.querySelectorAll('video[data-host-action]').forEach((video) => URL.revokeObjectURL(video.src));
     });
   </script>
 </body>
