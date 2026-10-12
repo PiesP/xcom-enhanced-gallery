@@ -234,7 +234,17 @@ records the message at the actual `chrome.notifications.create` boundary,
 calls through to native delivery, and pairs its ID with `getAll`; it restores
 the original API in `finally`. A second held request is released after
 navigation to prove the old session cannot open a gallery or notify the new
-page. Two valid owner-specific videos on one document also exercise a held A
+page. Its observer cursor starts before the click and survives navigation;
+the verdict requires zero subsequent creation calls independently of the active
+notification list. It waits for the exact request's finished/failed event and
+the held route's settlement, then reads the native worker boundary. Observer
+loss, replacement, overflow, or incomplete history fail the check.
+A bounded negative control sends two native notifications with the same owned
+ID through the installed background handler, clears the ID, and requires the
+same verdict to reject both creations despite an empty active list. The receipt
+retains that control, the legitimate failure notification history, observed
+active IDs, cursor counts, settlement, and observer restoration.
+Two valid owner-specific videos on one document also exercise a held A
 response followed by an ordinary B click; after A completes or aborts, B must
 remain selected, focused and current, and its native download must match B's
 preferred MP4 source and bytes. The native loopback serves that exact synthetic
