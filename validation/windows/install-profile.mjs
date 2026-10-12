@@ -471,6 +471,18 @@ async function installFixtureRoutes(context, root, images, displayImages) {
   let unavailableApiOverflow = 0;
   let sequenceRouteActive = false;
   let delayedFailureGate = null;
+  const delayedRequests = new Map();
+  const recordDelayedTransport = (request, state) => {
+    const record = delayedRequests.get(request);
+    if (record) {
+      record.transportState = state;
+      record.transportSettledAtMonotonicMs = performance.now();
+    }
+  };
+  const delayedRequestFinished = (request) => recordDelayedTransport(request, 'finished');
+  const delayedRequestFailed = (request) => recordDelayedTransport(request, 'failed');
+  context.on('requestfinished', delayedRequestFinished);
+  context.on('requestfailed', delayedRequestFailed);
   const routeHandler = async (route) => {
     const url = new URL(route.request().url());
     if (url.protocol === 'chrome-extension:') {
@@ -493,7 +505,10 @@ async function installFixtureRoutes(context, root, images, displayImages) {
         const rapidResponse = tweetId === RAPID_CLICK_A
           ? quotedVideoApiResponse(tweetId) : null;
         const record = { tweetId, method: route.request().method(), status: 403,
-          requestedAtMonotonicMs: performance.now(), fulfilledAtMonotonicMs: null };
+          requestedAtMonotonicMs: performance.now(), fulfilledAtMonotonicMs: null,
+          routeSettledAtMonotonicMs: null, transportState: 'pending',
+          transportSettledAtMonotonicMs: null };
+        delayedRequests.set(route.request(), record);
         if (rapidResponse) record.status = 200;
         quotedApiResponses.push(record);
         assert(delayedFailureGate?.tweetId === tweetId,
@@ -506,6 +521,8 @@ async function installFixtureRoutes(context, root, images, displayImages) {
         } catch (error) {
           if (tweetId !== DELAYED_NAVIGATION_ID && tweetId !== RAPID_CLICK_A) throw error;
           record.abortedAfterNavigation = true;
+        } finally {
+          record.routeSettledAtMonotonicMs = performance.now();
         }
         return;
       }
@@ -654,6 +671,9 @@ async function installFixtureRoutes(context, root, images, displayImages) {
     async remove() {
       delayedFailureGate?.release();
       delayedFailureGate = null;
+      context.off('requestfinished', delayedRequestFinished);
+      context.off('requestfailed', delayedRequestFailed);
+      delayedRequests.clear();
       await context.unroute('**/*', routeHandler);
     },
   };
@@ -3550,18 +3570,40 @@ async function runSvgTargetMatrix({ extensionPage, output, page, quotedApiRespon
   });
 }
 
+export function notificationCallsSince(cursor, observed) {
+  assert(cursor?.observerId && cursor.observerId === observed?.observerId,
+    'Notification observation identity must remain available');
+  assert.equal(cursor.apiIntact, true, 'Notification observer must own its native boundary');
+  assert.equal(observed.apiIntact, true, 'Notification observer must retain its native boundary');
+  assert.equal(cursor.overflow, false, 'Notification baseline must not overflow');
+  assert.equal(observed.overflow, false, 'Notification observation must not overflow');
+  assert(Array.isArray(cursor.calls) && Array.isArray(observed.calls),
+    'Notification observation history must be available');
+  assert.deepEqual(observed.calls.slice(0, cursor.calls.length), cursor.calls,
+    'Notification observation must retain its complete baseline history');
+  return observed.calls.slice(cursor.calls.length);
+}
+
+export function assertNoRetiredExtractionNotifications(cursor, observed) {
+  const creates = notificationCallsSince(cursor, observed);
+  assert.equal(creates.length, 0,
+    'Retired extraction must make zero notification-creation calls: ' + JSON.stringify(creates));
+  return creates;
+}
+
 async function observeNativeNotificationCreates(context, extensionId) {
   const worker = context.serviceWorkers().find((item) =>
     item.url() === `chrome-extension://${extensionId}/background.js`);
   assert(worker, 'Installed worker must be available for the native notification observer');
-  await worker.evaluate(() => {
+  const observerId = randomUUID();
+  await worker.evaluate((id) => {
     if (globalThis.__xegInstalledNotificationObserver) {
       throw new Error('Bounded native notification observer already installed');
     }
     const original = chrome.notifications.create;
-    const state = { original, calls: [], overflow: false };
+    const state = { observerId: id, original, calls: [], overflow: false, wrapper: null };
     globalThis.__xegInstalledNotificationObserver = state;
-    chrome.notifications.create = function(...args) {
+    state.wrapper = function(...args) {
       const [id, options] = args;
       if (typeof id === 'string' && id.startsWith('xeg-')) {
         if (state.calls.length < 8) state.calls.push({ id, createdAt: Date.now(),
@@ -3570,14 +3612,21 @@ async function observeNativeNotificationCreates(context, extensionId) {
       }
       return Reflect.apply(original, this, args);
     };
-  });
+    chrome.notifications.create = state.wrapper;
+  }, observerId);
   return {
     async snapshot() {
-      const state = await worker.evaluate(() => {
+      const state = await worker.evaluate(async () => {
+        // The native query yields to queued worker/API work before the final history read.
+        const active = await chrome.notifications.getAll();
         const current = globalThis.__xegInstalledNotificationObserver;
-        return current ? { calls: current.calls, overflow: current.overflow } : null;
+        return current ? { observerId: current.observerId, calls: current.calls,
+          apiIntact: chrome.notifications.create === current.wrapper,
+          overflow: current.overflow, activeIds: Object.keys(active), sampledAt: Date.now() } : null;
       });
       assert(state, 'Native notification observer marker disappeared');
+      assert.equal(state.observerId, observerId, 'Native notification observer was replaced');
+      assert.equal(state.apiIntact, true, 'Native notification observer API was replaced');
       assert.equal(state.overflow, false, 'Native notification observer exceeded its bounded capacity');
       return state;
     },
@@ -3597,6 +3646,50 @@ async function observeNativeNotificationCreates(context, extensionId) {
       return restored;
     },
   };
+}
+
+async function verifyTransientNotificationControl(extensionPage, observer, cursor) {
+  const id = `xeg-transient-control-${randomUUID()}`;
+  let cleared;
+  let evidence;
+  let validationError;
+  let cleanupError;
+  try {
+    for (const message of ['Transient control', 'Replacement control']) {
+      const response = await extensionPage.evaluate((payload) =>
+        chrome.runtime.sendMessage({ type: 'SHOW_NOTIFICATION', payload }),
+      { id, title: 'XEG assertion sensitivity control', message });
+      assert.deepEqual(response, { success: true }, 'Native control notification must be delivered');
+    }
+    cleared = await extensionPage.evaluate((notificationId) =>
+      chrome.notifications.clear(notificationId), id);
+    assert.equal(cleared, true, 'Transient native control must be cleared');
+    const observed = await observer.snapshot();
+    const finalActive = observed.activeIds.includes(id);
+    assert.equal(finalActive, false,
+      'Transient control must be absent from the final active-notification list');
+    const creates = notificationCallsSince(cursor, observed);
+    assert.equal(creates.length, 2, 'Repeated native ID must retain both creation calls');
+    assert(creates.every((call) => call.id === id));
+    assert.throws(() => assertNoRetiredExtractionNotifications(cursor, observed),
+      /zero notification-creation calls/u,
+      'The navigation verdict must reject a cleared/replaced transient notification');
+    evidence = { status: 'passed', expectedVerdict: 'rejected', baselineCallCount: cursor.calls.length,
+      phase: 'after-production-observation', createdCallCount: creates.length, creates,
+      finalActive, activeIds: observed.activeIds, cleared,
+      observationEndedAt: observed.sampledAt };
+  } catch (error) {
+    validationError = error;
+  } finally {
+    try {
+      await extensionPage.evaluate((notificationId) => chrome.notifications.clear(notificationId), id);
+    } catch (error) { cleanupError = error; }
+  }
+  if (validationError && cleanupError) throw new AggregateError([validationError, cleanupError],
+    'Transient notification control and cleanup failed');
+  if (validationError) throw validationError;
+  if (cleanupError) throw cleanupError;
+  return evidence;
 }
 
 async function runDelayedVideoFailures({ context, extensionId, extensionPage,
@@ -3620,6 +3713,7 @@ async function runDelayedVideoFailures({ context, extensionId, extensionPage,
     }, null, { timeout: 15_000 });
     await video.evaluate((element) => { element.loop = true; });
     const before = await hostVideoState(video);
+    const documentStartedAt = await page.evaluate(() => performance.timeOrigin);
     const knownNotifications = await extensionPage.evaluate(async () =>
       Object.keys(await chrome.notifications.getAll()));
     const priorSetting = name === 'failure'
@@ -3632,22 +3726,24 @@ async function runDelayedVideoFailures({ context, extensionId, extensionPage,
         navigationEvents.push(JSON.parse(text.slice('__xeg-fixture-navigation:'.length)));
       }
     };
-    if (name === 'navigation') {
-      page.on('console', recordNavigation);
-      await page.evaluate(() => {
-        for (const type of ['beforeunload', 'pagehide']) window.addEventListener(type,
-          (event) => console.log('__xeg-fixture-navigation:' + JSON.stringify({
-            type, trusted: event.isTrusted, at: Date.now(), url: location.href,
-          })), { once: true });
-      });
-    }
     let shortcutIssued = false;
     let observation;
+    let cursor;
     let validationError;
     const cleanupErrors = [];
     const apiStart = fixtureRoutes.quotedApiResponses.length;
-    fixtureRoutes.armDelayedFailure(tweetId);
     try {
+      fixtureRoutes.armDelayedFailure(tweetId);
+      if (name === 'navigation') {
+        page.on('console', recordNavigation);
+        await page.evaluate(() => {
+          for (const type of ['beforeunload', 'pagehide']) window.addEventListener(type,
+            (event) => console.log('__xeg-fixture-navigation:' + JSON.stringify({
+              type, trusted: event.isTrusted, at: Date.now(), url: location.href,
+            })), { once: true });
+        });
+      }
+      cursor = await notificationObserver.snapshot();
       await video.click();
       const request = await waitForValue(async () => fixtureRoutes.quotedApiResponses
         .slice(apiStart).find((item) => item.tweetId === tweetId),
@@ -3671,20 +3767,42 @@ async function runDelayedVideoFailures({ context, extensionId, extensionPage,
       if (name === 'navigation') {
         await page.goto(FIXTURE_URL);
         await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+        const nextDocumentStartedAt = await page.evaluate(() => performance.timeOrigin);
+        assert.notEqual(nextDocumentStartedAt, documentStartedAt,
+          'Navigation must retire the old document before its held response is released');
         fixtureRoutes.releaseDelayedFailure();
-        await page.waitForTimeout(350);
+        await waitForValue(async () => request.routeSettledAtMonotonicMs !== null &&
+          request.transportSettledAtMonotonicMs !== null ? request : undefined,
+        'retired extraction route and exact request transport settlement', 5_000);
+        assert(navigationEvents.some((event) => event.type === 'beforeunload' && event.trusted),
+          'Navigation must retain its genuine early cancellation event');
         assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0,
           'Late extraction after navigation must not open a gallery');
         const active = await extensionPage.evaluate(async () => chrome.notifications.getAll());
         const observed = await notificationObserver.snapshot();
+        const creates = assertNoRetiredExtractionNotifications(cursor, observed);
         assert.deepEqual(Object.keys(active).filter((id) => id.startsWith('xeg-') &&
           !knownNotifications.includes(id)), [],
         'Late extraction after navigation must not notify the new session: ' +
           JSON.stringify({ navigationEvents, creates: observed.calls }));
+        const transientControl = await verifyTransientNotificationControl(extensionPage,
+          notificationObserver, cursor);
         observation.navigation = { url: page.url(), galleryOpen: false,
-          newNotificationCount: 0, navigationEvents, creates: observed.calls };
+          newNotificationCount: Object.keys(active).filter((id) => id.startsWith('xeg-') &&
+            !knownNotifications.includes(id)).length,
+          baselineCallCount: cursor.calls.length, createdCallCount: creates.length,
+          activeIds: Object.keys(active), observerId: observed.observerId,
+          observationStartedAt: cursor.sampledAt, observationEndedAt: observed.sampledAt,
+          documentStartedAt, nextDocumentStartedAt,
+          requestSettlement: { routeAtMonotonicMs: request.routeSettledAtMonotonicMs,
+            transportState: request.transportState,
+            transportAtMonotonicMs: request.transportSettledAtMonotonicMs },
+          navigationEvents, creates, transientControl };
       } else {
         fixtureRoutes.releaseDelayedFailure();
+        await waitForValue(async () => request.routeSettledAtMonotonicMs !== null &&
+          request.transportSettledAtMonotonicMs !== null ? request : undefined,
+        'failure extraction route and exact request transport settlement', 5_000);
         const notification = await waitForValue(async () => {
           const active = await extensionPage.evaluate(async () =>
             Object.keys(await chrome.notifications.getAll()));
@@ -3702,6 +3820,14 @@ async function runDelayedVideoFailures({ context, extensionId, extensionPage,
         const failedHost = await hostVideoState(video);
         assert.equal(failedHost.paused, false,
           'Failed extraction must leave native host playback usable');
+        const observed = await notificationObserver.snapshot();
+        const creates = notificationCallsSince(cursor, observed);
+        assert(creates.some((call) => call.id === notification.id),
+          'The legitimate failure control must remain in independent creation history');
+        observation.failureObservation = { baselineCallCount: cursor.calls.length,
+          createdCallCount: creates.length, creates, activeIds: observed.activeIds,
+          observationStartedAt: cursor.sampledAt, observationEndedAt: observed.sampledAt,
+          observerId: observed.observerId };
         shortcutIssued = true;
         await page.keyboard.press('Alt+Shift+V');
         const switchedMode = await waitForValue(async () => {

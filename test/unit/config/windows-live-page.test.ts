@@ -127,6 +127,8 @@ type LivePageModule = {
 };
 
 type InstallProfileModule = {
+  notificationCallsSince(cursor: unknown, observed: unknown): unknown[];
+  assertNoRetiredExtractionNotifications(cursor: unknown, observed: unknown): unknown[];
   assertDownloadIncomplete(download: unknown, stage: string): void;
   enableDeveloperMode(context: unknown, browserName: string): Promise<void>;
   run(options: {
@@ -223,6 +225,40 @@ const userscriptInstall = (await import(
     since: number, files: Set<string>, directory: string, label: string,
     durationMs: number): Promise<{ samples: number }>;
 };
+
+describe('installed navigation notification creation history', () => {
+  const prior = { id: 'xeg-prior', message: 'Before the scenario' };
+  const cursor = { observerId: 'owned-worker-observer', apiIntact: true,
+    overflow: false, calls: [prior], activeIds: [] };
+
+  it('excludes intact pre-existing history and accepts zero new creations', () => {
+    expect(installProfile.assertNoRetiredExtractionNotifications(cursor, { ...cursor }))
+      .toEqual([]);
+  });
+
+  it('rejects a transient creation even after the active list is empty', () => {
+    const observed = { ...cursor, calls: [prior, { id: 'xeg-transient' }], activeIds: [] };
+    expect(installProfile.notificationCallsSince(cursor, observed)).toHaveLength(1);
+    expect(() => installProfile.assertNoRetiredExtractionNotifications(cursor, observed))
+      .toThrow('zero notification-creation calls');
+  });
+
+  it('rejects reuse of a prior notification ID even after it is cleared', () => {
+    const observed = { ...cursor, calls: [prior, { ...prior }], activeIds: [] };
+    expect(() => installProfile.assertNoRetiredExtractionNotifications(cursor, observed))
+      .toThrow('zero notification-creation calls');
+  });
+
+  it.each([
+    { ...cursor, observerId: 'restarted-worker' },
+    { ...cursor, apiIntact: false },
+    { ...cursor, overflow: true },
+    { ...cursor, calls: [] },
+    null,
+  ])('rejects lost or incomplete observation instead of reporting zero calls: %j', (observed) => {
+    expect(() => installProfile.assertNoRetiredExtractionNotifications(cursor, observed)).toThrow();
+  });
+});
 
 describe('Windows X live page validation', () => {
   it('keeps the loopback certificate exception scoped to Chrome', async () => {
