@@ -6,7 +6,6 @@ settings:
 
 overrides:
   qs@>=6.11.1 <6.15.2: ^6.16.0
-  solid-js@1.9.15>seroval: 1.6.3
 
 importers:
 
