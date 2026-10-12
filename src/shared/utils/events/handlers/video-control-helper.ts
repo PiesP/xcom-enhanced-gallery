@@ -31,6 +31,29 @@ export interface VideoControlOptions {
   readonly context?: string;
 }
 
+const playbackIntentListeners = new WeakMap<HTMLVideoElement, Set<(playing: boolean) => void>>();
+
+/** Observe playback commands executed through the gallery controls for one video. */
+export function subscribeVideoPlaybackIntent(
+  video: HTMLVideoElement,
+  listener: (playing: boolean) => void
+): () => void {
+  let listeners = playbackIntentListeners.get(video);
+  if (!listeners) {
+    listeners = new Set();
+    playbackIntentListeners.set(video, listeners);
+  }
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+    if (listeners.size === 0) playbackIntentListeners.delete(video);
+  };
+}
+
+function notifyPlaybackIntent(video: HTMLVideoElement, playing: boolean): void {
+  for (const listener of playbackIntentListeners.get(video) ?? []) listener(playing);
+}
+
 /**
  * Executes video control action on gallery video element.
  *
@@ -110,7 +133,10 @@ function getGalleryVideo(video?: HTMLVideoElement | null): HTMLVideoElement | nu
  * @internal
  */
 function playVideo(video: HTMLVideoElement, context?: string): void {
-  video.play?.().catch(() => {
+  if (!video.play) return;
+  const result = video.play();
+  notifyPlaybackIntent(video, true);
+  result.catch(() => {
     if (__DEV__) {
       logger.debug('Play failed', { context });
     }
@@ -122,7 +148,9 @@ function playVideo(video: HTMLVideoElement, context?: string): void {
  * @internal
  */
 function pauseVideo(video: HTMLVideoElement): void {
-  video.pause?.();
+  if (!video.pause) return;
+  video.pause();
+  notifyPlaybackIntent(video, false);
 }
 
 /**
