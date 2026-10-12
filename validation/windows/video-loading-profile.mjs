@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';
 import { createHash } from 'node:crypto';
-import { writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { basename, isAbsolute, join, relative, resolve } from 'node:path';
 import {
   expectedStoredZipBytes,
@@ -124,7 +124,7 @@ function assertBestSource(value, bestUrl) {
  */
 export async function runVideoLoadingProfile({
   context, page, extensionPage, fixtureUrl, tweetId, videoPayloads, downloads, output,
-  nativeLoopback,
+  nativeLoopback, root,
 }) {
   const url = new URL(fixtureUrl);
   const match = /^\/([A-Za-z0-9_]{1,15})\/status\/([1-9]\d{0,19})$/u.exec(url.pathname);
@@ -458,7 +458,9 @@ export async function runVideoLoadingProfile({
     try { observation.geometry = await runAdmissionGeometryCases({ context, validMp4, output }); }
     catch (error) { followupErrors.push(error); }
     try {
-      observation.recoveryIntent = await runRecoveryIntentCases({ context, validMp4, output, nativeLoopback });
+      const recoveryMp4 = await readFile(join(root, 'test/e2e/fixtures/installed-recovery-intent.mp4'));
+      observation.recoveryIntent = await runRecoveryIntentCases({ context, validMp4: recoveryMp4,
+        auxiliaryMp4: validMp4, output, nativeLoopback });
     } catch (error) { followupErrors.push(error); }
     if (followupErrors.length) throw new AggregateError(followupErrors,
       'Required video admission and recovery intent cases failed');
@@ -519,17 +521,23 @@ export async function runVideoLoadingProfile({
 /** A bounded real decode failure after playback; MP4 metadata and early samples stay valid. */
 function delayedDecodeFailure(validMp4) {
   assert.equal(createHash('sha256').update(validMp4).digest('hex'),
-    'ddffb3c8da4ab0b9ec96a8a92e1fa7d09fbbdf9a73d7ce34e819a05e1c536fd3',
+    '3b05e69ea7e64237743b75168c7c3b605ed6ffb0b8da74554ed97189a5b83916',
     'The declared four-second H.264 fixture changed; recheck its sample table');
-  assert.equal(validMp4.length, 3086);
+  assert.equal(validMp4.length, 207662);
   const bytes = Buffer.from(validMp4);
-  // ffprobe identifies 11-byte P samples from 0.75 s at byte 2228. Preserve
-  // atom/sample tables and every initial decodable sample, corrupt later AVCC lengths.
-  for (let offset = 2228; offset < bytes.length; offset += 11) bytes.writeUInt32BE(0xffffffff, offset);
-  return { bytes, prefixEnd: 2228 };
+  // The declared CBR fixture has 72 complete samples before byte 153895 (3 s).
+  // Corrupt only later VCL NAL length fields; atoms and sample tables stay intact.
+  const lateVclLengths = [153919, 161216, 163606, 165379, 167440, 169249,
+    171144, 172860, 174929, 177159, 179110, 181253, 183141, 185385,
+    187421, 189541, 191734, 193740, 195964, 197934, 200092, 202226, 204109, 206090];
+  for (const offset of lateVclLengths) {
+    assert([1, 5].includes(bytes[offset + 4] & 31), 'Expected a declared VCL sample');
+    bytes.writeUInt32BE(0xffffffff, offset);
+  }
+  return { bytes, prefixEnd: 153895 };
 }
 
-async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopback }) {
+async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output, nativeLoopback }) {
   assert(typeof nativeLoopback.armVideoHold === 'function' &&
     typeof nativeLoopback.completeVideoHold === 'function' &&
     typeof nativeLoopback.abortVideoHold === 'function');
@@ -577,15 +585,16 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
         return route.continue();
       }
       if (match[2] === 'lower') await active.lowerGate;
+      const payload = match[1] === '0' ? validMp4 : auxiliaryMp4;
       const range = /^bytes=(\d+)-(\d*)$/u.exec(route.request().headers().range ?? '');
       const start = range ? Number(range[1]) : 0;
-      const end = Math.min(range?.[2] ? Number(range[2]) : validMp4.length - 1, validMp4.length - 1);
-      assert(start >= 0 && start <= end && end < validMp4.length, 'Unexpected controlled media range');
-      const bytes = validMp4.subarray(start, end + 1);
+      const end = Math.min(range?.[2] ? Number(range[2]) : payload.length - 1, payload.length - 1);
+      assert(start >= 0 && start <= end && end < payload.length, 'Unexpected controlled media range');
+      const bytes = payload.subarray(start, end + 1);
       record.fulfilledAtMonotonicMs = performance.now();
       return route.fulfill({ status: range ? 206 : 200, contentType: 'video/mp4', body: bytes,
         headers: { 'Accept-Ranges': 'bytes', 'Content-Length': String(bytes.length),
-          ...(range ? { 'Content-Range': `bytes ${start}-${end}/${validMp4.length}` } : {}) } });
+          ...(range ? { 'Content-Range': `bytes ${start}-${end}/${payload.length}` } : {}) } });
     }
     return route.fallback();
   };
@@ -614,6 +623,7 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
     for (const state of [first, after]) {
       assert.equal(state.src, expectedSource, 'Paused observation changed the recovery source attribute');
       assert.equal(state.currentSrc, expectedSource, 'Paused observation used a different active source');
+      assert.equal(state.error, null, 'Paused replacement developed a native media error');
     }
     assert.equal(after.paused, true, 'Delayed recovery resumed contrary to fresh intent');
     assert(after.currentTime - first.currentTime <= 0.05,
@@ -654,14 +664,18 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
         lower: videoUrl(id, 0, 'lower'), pageErrors: [], requestFailures: [], consoleErrors: [] };
       cases.push(observed);
       const protocol = await context.newCDPSession(page);
-      observed.networkProtocol = { requests: [], clientSecurity: [], failures: [], issues: [] };
+      observed.networkProtocol = { requests: [], clientSecurity: [], failures: [], issues: [], overflow: false };
       const nativeRequestIds = new Set();
       const boundedProtocolRecord = (records, record) => {
-        assert(records.length < MAX_REQUESTS, 'Native request protocol observations overflowed');
+        if (records.length >= MAX_REQUESTS) { observed.networkProtocol.overflow = true; return; }
         records.push(record);
       };
       protocol.on('Network.requestWillBeSent', (event) => {
         if (event.request.url !== observed.best) return;
+        if (nativeRequestIds.size >= MAX_REQUESTS && !nativeRequestIds.has(event.requestId)) {
+          observed.networkProtocol.overflow = true;
+          return;
+        }
         nativeRequestIds.add(event.requestId);
         boundedProtocolRecord(observed.networkProtocol.requests, { requestId: event.requestId,
           frameId: event.frameId, type: event.type, initiatorType: event.initiator.type });
@@ -695,16 +709,16 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
       await protocol.send('Network.enable');
       await protocol.send('Audits.enable');
       const onPageError = (error) => {
-        assert(observed.pageErrors.length < MAX_REQUESTS);
+        if (observed.pageErrors.length >= MAX_REQUESTS) { observed.eventOverflow = true; return; }
         observed.pageErrors.push(error.message.slice(0, 500));
       };
       const onRequestFailed = (request) => {
-        assert(observed.requestFailures.length < MAX_REQUESTS);
+        if (observed.requestFailures.length >= MAX_REQUESTS) { observed.eventOverflow = true; return; }
         observed.requestFailures.push({ url: request.url(), reason: request.failure()?.errorText });
       };
       const onConsole = (message) => {
         if (message.type() !== 'error') return;
-        assert(observed.consoleErrors.length < MAX_REQUESTS);
+        if (observed.consoleErrors.length >= MAX_REQUESTS) { observed.eventOverflow = true; return; }
         observed.consoleErrors.push({ text: message.text().slice(0, 500),
           location: message.location().url });
       };
@@ -747,20 +761,22 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
           }
           window.__xegRecoveryEventObservation = state;
         });
-        const initial = await stateWhen(page, (value) => value.readyState >= 2 &&
-          value.videoWidth === 320 && value.videoHeight === 180 && !value.error,
-        'valid initial frames before the corrupt tail');
-        assert.equal(initial.currentSrc, observed.best, 'Initial frames must come from the preferred source');
-        assert.equal(nativeLoopback.videoHeld(), true,
-          'The native HTTPS source must still hold later samples');
+        observed.initialMetadata = await stateWhen(page, (value) => value.readyState >= 1 &&
+          !value.error && value.videoWidth === 320 && value.videoHeight === 180,
+        'initial metadata before the trusted playback control');
         await video.focus();
-        if (initial.muted) await page.keyboard.press('m');
+        if ((await itemState(page, 0)).muted) await page.keyboard.press('m');
         observed.beforePlay = await itemState(page, 0);
+        assert.equal(observed.beforePlay.src, observed.best,
+          'The trusted initial play action must target the preferred source');
         assert.equal(observed.beforePlay.muted, false, 'Ordinary mute control did not unmute the visible video');
         await video.click();
-        observed.playingOriginal = await stateWhen(page, (value) => !value.paused &&
+        observed.playingOriginal = await stateWhen(page, (value) => value.readyState >= 2 && !value.error &&
+          value.videoWidth === 320 && value.videoHeight === 180 && !value.paused &&
           value.currentTime > observed.beforePlay.currentTime + 0.15,
         'actual trusted playback progression before corruption');
+        assert.equal(nativeLoopback.videoHeld(), true,
+          'The native HTTPS source must still hold later samples during actual playback');
         assert.equal(observed.playingOriginal.currentSrc, observed.best,
           'Initial playback must progress on the preferred source');
         observed.lowerRequestsBeforeTailRelease = requests.filter((record) =>
@@ -792,6 +808,8 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
           await video.focus();
           await page.keyboard.press('Space');
           await stateWhen(page, (value) => !value.paused, 'pending-source play intent from supported Space control');
+          // The production Space control debounces consecutive presses for 150 ms.
+          await page.waitForTimeout(200);
           await page.keyboard.press('Space');
           observed.userPaused = await stateWhen(page, (value) => value.paused,
             'subsequent deliberate pause through supported Space control');
@@ -822,11 +840,14 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
           const resumeStart = await stateWhen(page, (value) => value.metadata === 'true' &&
             value.currentSrc === observed.lower && !value.seeking,
           'replacement metadata before legitimate resume progress');
-          observed.resumed = await stateWhen(page, (value) => !value.paused && !value.muted &&
+          observed.resumed = await stateWhen(page, (value) => !value.error && value.readyState >= 2 &&
+            !value.paused && !value.muted &&
             value.currentTime > resumeStart.currentTime + 0.15,
           'latest visible playback intent to resume with positive progress');
         }
         assertBestSource(await itemState(page, 0), observed.best);
+        assert.equal(observed.networkProtocol.overflow, false, 'Native request protocol observations overflowed');
+        assert.equal(observed.eventOverflow ?? false, false, 'Native page observations overflowed');
         observed.nativeRequests = nativeLoopback.since(nativeMark);
         assert(observed.nativeRequests.some((record) => record.host === 'x.com' &&
           record.path === new URL(active.url).pathname && record.result === 'served'),
@@ -834,16 +855,27 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
         assert(observed.nativeRequests.some((record) => record.path === new URL(observed.best).pathname &&
           record.result === 'served'), 'The bounded real HTTPS source was not served');
         assert.deepEqual(observed.pageErrors, []);
+        observed.expectedLifecycleAborts = observed.requestFailures.filter((record) =>
+          record.reason === 'net::ERR_ABORTED' && [observed.best, observed.lower].includes(record.url) &&
+          requests.some((request) => request.case === name && request.index === 0 &&
+            request.quality === (record.url === observed.best ? 'best' : 'lower')));
         assert.deepEqual(observed.requestFailures.filter((record) =>
-          record.url !== observed.best || record.reason !== 'net::ERR_ABORTED'), [],
-        'Recovery fixture has failures beyond its exact intentionally damaged source');
+          !observed.expectedLifecycleAborts.includes(record)), [],
+        'Recovery fixture has failures beyond the current source range and seek lifecycle');
         assert.deepEqual(observed.consoleErrors.filter((record) =>
-          record.location !== observed.best || !record.text.includes('net::ERR_ABORTED')), [],
+          !observed.expectedLifecycleAborts.some((abort) => abort.url === record.location) ||
+            !record.text.includes('net::ERR_ABORTED')), [],
         'Recovery fixture logged an unexpected console error');
+        const replacementPlays = await page.evaluate(() =>
+          window.__xegRecoveryEventObservation.records.filter((event) => event.type === 'play'));
+        observed.replacementPlayCount = replacementPlays.filter((event) => event.source === observed.lower).length;
+        assert.equal(observed.replacementPlayCount, 1,
+          'The replacement must have exactly one intended native play transition');
         observed.status = 'passed';
       } catch (error) {
         observed.status = 'failed';
         observed.error = error instanceof Error ? error.message : String(error);
+        observed.failureState = await itemState(page, 0).catch(() => null);
         observed.nativeRequests = nativeLoopback.since(nativeMark);
       } finally {
         releaseLower();
@@ -857,6 +889,10 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
             delete window.__xegRecoveryEventObservation;
             return { records: state.records, overflow: state.overflow };
           });
+          if (observed.networkProtocol.overflow || observed.eventOverflow) {
+            observed.status = 'failed';
+            observed.error = `${observed.error ?? 'Native recovery case'}; bounded observations overflowed`;
+          }
           assert.equal(observed.mediaEvents.overflow, false, 'Native media event observation overflowed');
           await page.screenshot({ path: join(output, `video-recovery-intent-${name}.png`) });
           if (await page.locator('[data-xeg-gallery-container]').count()) await page.keyboard.press('Escape');
