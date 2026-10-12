@@ -551,8 +551,8 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
     if (!active) return route.fallback();
     const target = new URL(route.request().url());
     if (route.request().isNavigationRequest() && target.href === active.url) {
-      return route.fulfill({ status: 200, contentType: 'text/html',
-        body: fixtureHtml(active.id, 'intentrecovery') });
+      // Keep the requesting document's address space observable to the browser.
+      return route.continue();
     }
     if (target.hostname === 'x.com' && target.pathname.endsWith('/TweetResultByRestId')) {
       let id;
@@ -622,8 +622,8 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
   };
   await context.route('**/*', handler);
   try {
-    // The compatibility query can be granted while loopback itself is denied.
-    // Set and restore only the actual descriptor in this owned persistent profile.
+    // Native HTTPS document and media share the owned loopback address space.
+    // Permission observations are read-only; no permission is overridden.
     permissionPage = context.pages().find((value) => value.url().startsWith('https://x.com/'));
     assert(permissionPage, 'An existing owned fixture page is required');
     const browser = context.browser();
@@ -635,10 +635,8 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
     permissionBefore = await permissionPage.evaluate(async () =>
       (await navigator.permissions.query({ name: 'loopback-network' })).state);
     evidence.fixturePermission = { name: 'loopback-network', origin: 'https://x.com',
-      context: 'owned-persistent-default', before: permissionBefore };
+      context: 'owned-persistent-default', before: permissionBefore, modified: false };
     evidence.browserVersion = await permissionSession.send('Browser.getVersion');
-    await permissionSession.send('Browser.setPermission', { permission: { name: 'loopback-network' },
-      setting: 'granted', origin: 'https://x.com' });
     for (const [index, name] of [
       'metadata-while-outside', 'reenter-before-metadata', 'later-user-pause-mute-volume',
     ].entries()) {
@@ -647,6 +645,7 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
       const lowerGate = new Promise((resolve) => { releaseLower = resolve; });
       active = { id, name, url: `https://x.com/intentrecovery/status/${id}`, lowerGate };
       nativeLoopback.setRecoveryPayloads({ tweetId: id, validMp4, badMp4: damaged.bytes });
+      nativeLoopback.setRecoveryDocument({ tweetId: id, html: fixtureHtml(id, 'intentrecovery') });
       const nativeMark = nativeLoopback.mark();
       nativeLoopback.armVideoHold(new URL(videoUrl(id, 0)).pathname, damaged.prefixEnd);
       const page = await context.newPage();
@@ -655,7 +654,7 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
         lower: videoUrl(id, 0, 'lower'), pageErrors: [], requestFailures: [], consoleErrors: [] };
       cases.push(observed);
       const protocol = await context.newCDPSession(page);
-      observed.networkProtocol = { requests: [], failures: [], issues: [] };
+      observed.networkProtocol = { requests: [], clientSecurity: [], failures: [], issues: [] };
       const nativeRequestIds = new Set();
       const boundedProtocolRecord = (records, record) => {
         assert(records.length < MAX_REQUESTS, 'Native request protocol observations overflowed');
@@ -672,6 +671,17 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
         boundedProtocolRecord(observed.networkProtocol.failures, { requestId: event.requestId,
           errorText: event.errorText, blockedReason: event.blockedReason,
           corsErrorStatus: event.corsErrorStatus });
+      });
+      protocol.on('Network.requestWillBeSentExtraInfo', (event) => {
+        if (!nativeRequestIds.has(event.requestId) || !event.clientSecurityState) return;
+        boundedProtocolRecord(observed.networkProtocol.clientSecurity, { requestId: event.requestId,
+          clientSecurityState: event.clientSecurityState });
+      });
+      protocol.on('Network.responseReceived', (event) => {
+        if (event.response.url !== active.url) return;
+        observed.requestingDocumentTransport = { remoteAddress: event.response.remoteIPAddress,
+          remotePort: event.response.remotePort, protocol: event.response.protocol,
+          fromServiceWorker: event.response.fromServiceWorker };
       });
       protocol.on('Audits.issueAdded', ({ issue }) => {
         const details = issue.details.corsIssueDetails;
@@ -707,7 +717,6 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
         await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
         observed.permission = await page.evaluate(async () =>
           (await navigator.permissions.query({ name: 'loopback-network' })).state);
-        assert.equal(observed.permission, 'granted');
         const { frameTree } = await protocol.send('Page.getFrameTree');
         observed.requestingFrame = { id: frameTree.frame.id, securityOrigin: frameTree.frame.securityOrigin,
           secureContextType: frameTree.frame.secureContextType,
@@ -819,6 +828,9 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
         }
         assertBestSource(await itemState(page, 0), observed.best);
         observed.nativeRequests = nativeLoopback.since(nativeMark);
+        assert(observed.nativeRequests.some((record) => record.host === 'x.com' &&
+          record.path === new URL(active.url).pathname && record.result === 'served'),
+        'The requesting document must come from the bounded real HTTPS fixture');
         assert(observed.nativeRequests.some((record) => record.path === new URL(observed.best).pathname &&
           record.result === 'served'), 'The bounded real HTTPS source was not served');
         assert.deepEqual(observed.pageErrors, []);
@@ -873,11 +885,9 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
       .catch((error) => errors.push(error));
     if (permissionSession && permissionBefore) {
       try {
-        await permissionSession.send('Browser.setPermission', { permission: { name: 'loopback-network' },
-          setting: permissionBefore, origin: 'https://x.com' });
         const after = await permissionPage.evaluate(async () =>
           (await navigator.permissions.query({ name: 'loopback-network' })).state);
-        assert.equal(after, permissionBefore, 'The exact fixture permission did not restore');
+        assert.equal(after, permissionBefore, 'The read-only fixture permission state changed');
         evidence.fixturePermission.after = after;
         evidence.cleanup.fixturePermissionRestored = true;
       } catch (error) { errors.push(error); }

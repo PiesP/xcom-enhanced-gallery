@@ -4236,7 +4236,7 @@ export async function run({
     nativeLoopback = await startExtensionNativeFixtureLoopback(
       join(root, 'validation/windows/userscript-fixture-certificate.ps1'));
     result.fixtureTransport = { kind: 'task-owned-https-loopback', bind: '127.0.0.1',
-      port: nativeLoopback.port, hosts: ['pbs.twimg.com', 'video.twimg.com'],
+      port: nativeLoopback.port, hosts: ['pbs.twimg.com', 'video.twimg.com', 'x.com'],
       certificateScope: 'one-run-spki' };
     context = await chromium.launchPersistentContext(profile, {
       channel: browserName,
@@ -4247,7 +4247,7 @@ export async function run({
       viewport: { width: 1280, height: 800 },
       ignoreDefaultArgs: ['--disable-extensions'],
       args: ['--enable-unsafe-extension-debugging',
-        `--host-resolver-rules=MAP pbs.twimg.com:443 127.0.0.1:${nativeLoopback.port},MAP video.twimg.com:443 127.0.0.1:${nativeLoopback.port}`,
+        `--host-resolver-rules=MAP pbs.twimg.com:443 127.0.0.1:${nativeLoopback.port},MAP video.twimg.com:443 127.0.0.1:${nativeLoopback.port},MAP x.com:443 127.0.0.1:${nativeLoopback.port}`,
         `--ignore-certificate-errors-spki-list=${nativeLoopback.spkiSha256}`],
     });
     result.browserVersion = context.browser().version();
