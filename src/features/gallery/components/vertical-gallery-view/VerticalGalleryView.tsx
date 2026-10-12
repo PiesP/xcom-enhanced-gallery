@@ -27,7 +27,7 @@ import { downloadState } from '@shared/state/signals/gallery-download-signals';
 import { computePreloadIndices } from '@shared/utils/performance/preload';
 import { cx } from '@shared/utils/text/formatting';
 import type { Accessor, JSXElement } from 'solid-js';
-import { createEffect, createMemo, createSignal, For, splitProps } from 'solid-js';
+import { createEffect, createMemo, createSignal, For, onCleanup, splitProps } from 'solid-js';
 
 export interface VerticalGalleryViewProps {
   /** Handler for closing the gallery */
@@ -66,6 +66,20 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
   const [containerEl, setContainerEl] = createSignal<HTMLDivElement | null>(null);
   const [toolbarWrapperEl, setToolbarWrapperEl] = createSignal<HTMLDivElement | null>(null);
   const [itemsContainerEl, setItemsContainerEl] = createSignal<HTMLUListElement | null>(null);
+  const [itemsContainerHeight, setItemsContainerHeight] = createSignal(0);
+
+  createEffect(() => {
+    const root = itemsContainerEl();
+    if (!root) return;
+    const updateHeight = (): void => {
+      setItemsContainerHeight(root.clientHeight);
+    };
+    updateHeight();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(root);
+    onCleanup(() => observer.disconnect());
+  });
 
   // Derived state — trivially computed from already-memoized values; plain getters suffice
   const isVisible = createMemo(() => mediaItems().length > 0);
@@ -238,6 +252,8 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
         <For each={mediaItems()}>
           {(item, index) => (
             <VerticalImageItem
+              scrollRoot={itemsContainerEl}
+              scrollRootHeight={itemsContainerHeight}
               media={item}
               index={index()}
               isActive={index() === currentIndex()}
