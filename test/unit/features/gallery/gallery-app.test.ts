@@ -188,19 +188,31 @@ describe('GalleryApp media-click currentness', () => {
     await app.cleanup();
   });
 
-  it.each(['denied', 'unreadable', 'unsupported-source', 'mismatch', 'transport'] as const)(
-    'keeps %s diagnosis and offers native-player recovery for a video click', async (failureKind) => {
+  it.each([
+    ['denied', 'msg.err.loadMedia.denied'],
+    ['unreadable', 'msg.err.loadMedia.unreadable'],
+    ['unsupported-source', 'msg.err.loadMedia.unsupported'],
+    ['mismatch', 'msg.err.loadMedia.mismatch'],
+    ['transport', 'msg.err.loadMedia.transport'],
+  ] as const)(
+    'keeps %s diagnosis and offers native-player recovery for a video click', async (failureKind, diagnosis) => {
       state.extract.mockResolvedValue({ success: false, mediaItems: [], failureKind });
       const app = new GalleryApp({ destroy: vi.fn() } as never);
-      await app.initialize();
       const video = document.createElement('video');
-      document.body.append(video);
-      await state.handlers?.onMediaClick(video, new MouseEvent('click'));
-      expect(state.openGallery).not.toHaveBeenCalled();
-      expect(state.notify.mock.calls[0]?.[2]).toContain('msg.err.loadMedia.nativeVideoRecovery');
-      expect(state.notify.mock.calls[0]?.[2]).toContain('msg.err.loadMedia.');
-      video.remove();
-      await app.cleanup();
+      try {
+        await app.initialize();
+        document.body.append(video);
+        await state.handlers?.onMediaClick(video, new MouseEvent('click'));
+        expect(state.openGallery).not.toHaveBeenCalled();
+        expect(state.notify).toHaveBeenCalledExactlyOnceWith(
+          {},
+          'msg.err.loadMedia.title',
+          `${diagnosis} msg.err.loadMedia.nativeVideoRecovery`
+        );
+      } finally {
+        video.remove();
+        await app.cleanup();
+      }
     }
   );
 
