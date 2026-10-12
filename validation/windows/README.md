@@ -70,9 +70,10 @@ The opt-in installed flow uses a fresh task-owned browser profile, enables
 extension developer mode, and loads the production unpacked MV3 distribution
 through CDP `Extensions.loadUnpacked`. It serves the existing deterministic X
 fixture and three distinct image payloads. A task-owned HTTPS listener binds
-ephemeral `127.0.0.1` and serves only synthetic original JPEG and MP4 paths.
-The fresh browser profile maps `pbs.twimg.com:443` and `video.twimg.com:443`
-to that listener and accepts its one-run SPKI certificate for those two names.
+ephemeral `127.0.0.1` and serves only synthetic original JPEG and MP4 paths,
+plus the declared recovery-intent fixture documents. The fresh browser profile
+maps `pbs.twimg.com:443`, `video.twimg.com:443` and `x.com:443` to that listener
+and accepts its one-run SPKI certificate for those three names.
 The key is ephemeral; no OS trust or hosts setting changes. Each ordinary
 single requires one completed browser download ID, selected initial and final
 URL, matching listener transfer, exact filename and saved bytes, and no
@@ -137,12 +138,14 @@ through a normal control, then release a deliberately corrupt tail. A trusted
 native code-3 error must precede the held same-item replacement request. Real
 wheel scrolling tests metadata arrival outside view and reentry before metadata;
 supported keyboard controls test a later pause, mute and volume change. Paused
-observations require settled seeking and no playback progress. The fresh owned
-profile temporarily grants only `loopback-network` for `https://x.com` through
-CDP and restores its exact prior state; TLS, CORS and OS protections stay enabled.
+observations require settled seeking and no playback progress. The recovery
+document and its held media use real HTTPS responses from the same loopback
+listener, so the browser can classify the document's network address space.
+No permission is overridden; TLS, CORS and OS protections stay enabled. These
+cases do not validate public-to-loopback permission behavior.
 
-These helpers restore owned routes, pages, response gates, permissions and
-settings. Their bounded event and request receipts retain failures as well as
+These helpers restore owned routes, pages, response gates and settings, and
+verify that permission state stays unchanged. Their bounded event and request receipts retain failures as well as
 successes. Provider access, live-CDN compatibility and audible output remain
 outside the fixture evidence.
 
