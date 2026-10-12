@@ -44,6 +44,14 @@ export const ko: LanguageStrings = {
     langZhCn: '중국어 간체',
     langEs: '스페인어',
     langAr: '아랍어',
+    videoClickMode: '동영상 클릭',
+    videoClickNative: '동영상 클릭을 X에서 처리',
+    videoClickSurfaces: '동영상 화면에서 갤러리 열기',
+    videoClickUnmarked: '적격 재생 버튼에서도 갤러리 열기',
+    videoClickHelp:
+      '뒤의 두 모드에서는 적격 동영상 화면을 클릭하면 갤러리가 열립니다. 마지막 모드는 확인된 표시 없는 재생 버튼도 포함합니다. 일반 플레이어 컨트롤은 X에서 작동합니다.',
+    videoClickSaveError:
+      '동영상 클릭 설정을 저장하지 못했습니다. 현재 설정이 계속 적용됩니다. 다시 시도하세요.',
   },
   msg: {
     err: {
@@ -65,7 +73,11 @@ export const ko: LanguageStrings = {
         ownerUnconfirmed: '선택한 미디어가 어느 게시물에 속하는지 확인할 수 없습니다.',
         mismatch: '받은 미디어가 선택한 항목과 일치하지 않습니다.',
         cancelled: '미디어 불러오기가 취소되었습니다.',
-        nativeVideoRecovery: '계속 보려면 X 동영상의 재생·일시정지 컨트롤을 사용하세요.',
+        nativeVideoRecovery:
+          'X 동영상의 재생·일시정지 컨트롤을 사용하거나 Alt+Shift+V를 눌러 동영상 클릭을 X에서 처리하세요.',
+        nativeVideoControls: '계속 보려면 X 동영상의 재생·일시정지 컨트롤을 사용하세요.',
+        nativeVideoEnabled:
+          '이제 동영상 클릭은 X에서 처리됩니다. 갤러리를 다시 사용하려면 갤러리 설정의 동영상 클릭을 변경하세요.',
       },
       generic: '오류가 발생했습니다',
       loadGallery: '갤러리를 불러오지 못했습니다',

@@ -44,6 +44,14 @@ export const es: LanguageStrings = {
     langZhCn: 'Chino simplificado',
     langEs: 'Español',
     langAr: 'Árabe',
+    videoClickMode: 'Clics en vídeos',
+    videoClickNative: 'Mantener los clics en X',
+    videoClickSurfaces: 'Abrir la galería desde el vídeo',
+    videoClickUnmarked: 'Incluir botones de reproducción aptos',
+    videoClickHelp:
+      'Los dos últimos modos abren la galería al pulsar un vídeo apto. Solo el último incluye botones de reproducción sin marcar y verificados; los controles normales siguen en X.',
+    videoClickSaveError:
+      'No se pudo guardar la opción de clics en vídeos. La configuración actual sigue activa. Inténtalo de nuevo.',
   },
   msg: {
     err: {
@@ -65,7 +73,11 @@ export const es: LanguageStrings = {
         mismatch: 'El contenido recibido no coincide con el elemento seleccionado.',
         cancelled: 'Se canceló la carga del contenido multimedia.',
         nativeVideoRecovery:
+          'Usa los controles de reproducción y pausa del vídeo en X o pulsa Alt+Shift+V para mantener los clics en X.',
+        nativeVideoControls:
           'Usa los controles de reproducción y pausa del vídeo en X para seguir viendo.',
+        nativeVideoEnabled:
+          'Los clics en vídeos ahora permanecen en X. Cambia Clics en vídeos en la configuración de la galería para volver a usarla.',
         title: 'Error al cargar contenido multimedia',
         body: 'No se encontraron imágenes ni videos.',
       },
