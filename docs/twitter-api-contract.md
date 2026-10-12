@@ -15,6 +15,15 @@ Provider errors without usable tweet data are failures. A readable unavailable
 tweet without provider errors is a healthy response with no media. Selection of
 direct or quoted attachments happens after normalization for every click.
 
+An unexpected result wrapper, conflicting root IDs, or a root belonging to a
+different tweet is an invalid provider response. It fails the physical request
+once, including when several clicks share that request, and never enters the
+metadata cache. A valid requested root may still yield a healthy request with
+no media, HLS-only media, or media that does not match the clicked source; those
+outcomes fail local selection without counting as provider outages. Three
+consecutive failed physical requests open the existing 60-second API circuit.
+Cancelled or stale requests and cache hits do not change that failure history.
+
 The sanitized response fixtures in `test/fixtures/quoted-video-tweet-response.ts`
 and `test/fixtures/mixed-owner-video-response.ts` exercise the accepted direct,
 quoted, and HLS-only shapes. Request and owner checks are in

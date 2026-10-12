@@ -36,7 +36,6 @@ export class TwitterAPIRequestError extends Error {
       | 'rate-limited'
       | 'deferred'
       | 'provider-error'
-      | 'mismatch'
       | 'transport' = 'transport',
     readonly retryAfterMs?: number,
     readonly status?: number,
@@ -403,7 +402,7 @@ export async function getTweetMedias(
     throw new TwitterAPIRequestError(
       'Twitter API returned an unexpected tweet owner',
       undefined,
-      'mismatch'
+      'provider-error'
     );
   }
   const rootId = numericTweetId(root);
@@ -413,7 +412,7 @@ export async function getTweetMedias(
       throw new TwitterAPIRequestError(
         'Twitter API returned an unexpected tweet owner',
         undefined,
-        'mismatch'
+        'provider-error'
       );
     }
     return noApiMedia(json);
@@ -422,7 +421,7 @@ export async function getTweetMedias(
     throw new TwitterAPIRequestError(
       'Twitter API returned an unexpected tweet owner',
       undefined,
-      'mismatch'
+      'provider-error'
     );
   }
   const tweetResult = normalizeLegacyTweet(root);
