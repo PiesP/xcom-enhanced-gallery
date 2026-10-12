@@ -1,8 +1,8 @@
 # Video clicks and native playback
 
 `gallery.videoClickMode` keeps its existing values and default. The setting is
-part of persisted XEG gallery settings; the current settings panel exposes only
-theme and language.
+part of persisted XEG gallery settings. Use **Settings → Video clicks** to select
+the mode; saved enum values and migration behavior stay the same.
 
 | Value | English | 한국어 | 日本語 |
 | --- | --- | --- | --- |
@@ -24,7 +24,11 @@ retains that gallery player's current intent instead.
 Extraction can take time or fail even when X's video is playing. While extraction
 is pending, XEG does not pause the host. A failure reports its specific cause and
 offers native-player recovery: use X's video play/pause controls to continue
-watching. XEG does not replay the intercepted click or replace an unconfirmed
+watching, or press **Alt+Shift+V** after the failed video click to save `block-all`.
+The shortcut is available for the current failure when settings are loaded,
+ignores synthetic input and editable fields, and expires on a new media click,
+close or cleanup. Change **Video clicks** in gallery settings to restore another
+mode. XEG does not replay the intercepted click or replace an unconfirmed
 video with a poster, a different attachment, or an unknown streaming source.
 
 While the modal is mounted, XEG pauses host videos on opening, later playback,

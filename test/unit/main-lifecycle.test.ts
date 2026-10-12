@@ -10,11 +10,15 @@ const state = vi.hoisted(() => ({
   navigationCallback: null as ((url: string) => void) | null,
   settingsPrepareForRestart: vi.fn(),
   themeDestroy: vi.fn(),
+  galleryClose: vi.fn(),
 }));
 
 vi.mock('@bootstrap/gallery-init', () => ({
   initializeCoreBaseServices: state.initializeCoreBaseServices,
-  initializeGalleryApp: vi.fn(),
+  initializeGalleryApp: vi.fn(async () => ({
+    initialize: vi.fn(async () => undefined), cleanup: vi.fn(async () => undefined),
+    resumeEarlyMediaClick: vi.fn(async () => undefined), close: state.galleryClose,
+  })),
   initializeGalleryServices: vi.fn(),
 }));
 
@@ -67,6 +71,7 @@ describe('application media-service lifecycle', () => {
     state.mediaRefresh.mockClear();
     state.settingsPrepareForRestart.mockClear();
     state.themeDestroy.mockClear();
+    state.galleryClose.mockClear();
   });
 
   it('destroys global media resources on cleanup and initializes them again after restart', async () => {
@@ -89,5 +94,20 @@ describe('application media-service lifecycle', () => {
     state.navigationCallback?.('https://x.com/user/status/123');
     expect(state.mediaRefresh).toHaveBeenCalledTimes(2);
     await cleanup();
+  });
+
+  it('retires gallery click and modal intent on allowed SPA navigation in an initialized app', async () => {
+    vi.stubEnv('MODE', 'development');
+    vi.resetModules();
+    const application = await import('../../src/main');
+    try {
+      await application.startApplication();
+      state.navigationCallback?.('https://x.com/user/status/123');
+      state.navigationCallback?.('https://x.com/user/status/456');
+      expect(state.galleryClose).toHaveBeenCalledTimes(2);
+    } finally {
+      await application.cleanup();
+      vi.unstubAllEnvs();
+    }
   });
 });

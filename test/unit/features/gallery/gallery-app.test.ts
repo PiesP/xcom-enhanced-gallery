@@ -2,7 +2,8 @@
 // Copyright (c) 2024-2026 PiesP
 
 import type { MediaExtractionResult } from '@shared/types/media.types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { clearSettings, registerSettings } from '@shared/container/settings-registry';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 type MediaClickHandler = (element: HTMLElement, event: MouseEvent) => Promise<void>;
 
@@ -14,6 +15,7 @@ const state = vi.hoisted(() => ({
   notify: vi.fn(),
   openGallery: vi.fn(),
   warn: vi.fn(),
+  setSetting: vi.fn(async () => undefined),
 }));
 
 vi.mock('@shared/utils/events/lifecycle/gallery-lifecycle', () => ({
@@ -88,7 +90,10 @@ function success(id: string): MediaExtractionResult {
 }
 
 describe('GalleryApp media-click currentness', () => {
+  afterEach(() => clearSettings());
   beforeEach(() => {
+    state.setSetting.mockClear();
+    registerSettings({ get: () => undefined, set: state.setSetting });
     state.cancelPending.mockClear();
     state.error.mockClear();
     state.extract.mockReset();
@@ -227,6 +232,36 @@ describe('GalleryApp media-click currentness', () => {
     expect(state.notify.mock.calls[0]?.[2]).toBe('msg.err.loadMedia.ownerUnconfirmed msg.err.loadMedia.nativeVideoRecovery');
     frame.remove();
     await app.cleanup();
+  });
+
+  it('never changes the mode automatically or after synthetic recovery input', async () => {
+    state.extract.mockResolvedValue({ success: false, mediaItems: [], failureKind: 'denied' });
+    const app = new GalleryApp({ destroy: vi.fn() } as never);
+    await app.initialize();
+    const video = document.createElement('video');
+    document.body.append(video);
+    await state.handlers?.onMediaClick(video, new MouseEvent('click'));
+    expect(state.setSetting).not.toHaveBeenCalled();
+    document.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyV', altKey: true, shiftKey: true }));
+    expect(state.setSetting).not.toHaveBeenCalled();
+    const remove = vi.spyOn(document, 'removeEventListener');
+    await app.cleanup();
+    expect(remove).toHaveBeenCalledWith('keydown', expect.any(Function), true);
+    video.remove();
+  });
+
+  it('ignores extraction completion after cleanup', async () => {
+    const pending = deferredResult();
+    state.extract.mockReturnValue(pending.promise);
+    const app = new GalleryApp({ destroy: vi.fn() } as never);
+    await app.initialize();
+    const click = state.handlers?.onMediaClick(document.createElement('video'), new MouseEvent('click'));
+    await app.cleanup();
+    expect(state.extract.mock.calls[0]?.[1]?.signal.aborted).toBe(true);
+    pending.resolve(success('after-cleanup'));
+    await click;
+    expect(state.openGallery).not.toHaveBeenCalled();
+    expect(state.notify).not.toHaveBeenCalled();
   });
 
 });

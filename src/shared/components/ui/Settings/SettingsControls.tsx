@@ -240,6 +240,51 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
         <label
           id={
             local['data-testid']
+              ? `${local['data-testid']}-language-label`
+              : 'settings-language-label'
+          }
+          for={
+            local['data-testid']
+              ? `${local['data-testid']}-language-select`
+              : 'settings-language-select'
+          }
+          class={cx(styles.label, local.compact && styles.compactLabel)}
+        >
+          {strings().language.title}
+        </label>
+        <Tooltip content={strings().language.title}>
+          <select
+            id={
+              local['data-testid']
+                ? `${local['data-testid']}-language-select`
+                : 'settings-language-select'
+            }
+            autocomplete="off"
+            class={cx('xeg-inline-center', styles.select)}
+            onChange={local.onLanguageChange}
+            value={languageValue()}
+            aria-label={strings().language.title}
+            aria-labelledby={
+              local['data-testid']
+                ? `${local['data-testid']}-language-label`
+                : 'settings-language-label'
+            }
+            required
+            data-testid={
+              __DEV__ && local['data-testid'] ? `${local['data-testid']}-language` : undefined
+            }
+          >
+            {LANGUAGE_OPTIONS.map((option) => (
+              <option value={option}>{LANGUAGE_NATIVE_LABELS[option] ?? option}</option>
+            ))}
+          </select>
+        </Tooltip>
+      </div>
+
+      <div class={cx(styles.setting, local.compact && styles.settingCompact)}>
+        <label
+          id={
+            local['data-testid']
               ? `${local['data-testid']}-video-click-label`
               : 'settings-video-click-label'
           }
@@ -295,51 +340,6 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
         >
           {strings().video.help}
         </p>
-      </div>
-
-      <div class={cx(styles.setting, local.compact && styles.settingCompact)}>
-        <label
-          id={
-            local['data-testid']
-              ? `${local['data-testid']}-language-label`
-              : 'settings-language-label'
-          }
-          for={
-            local['data-testid']
-              ? `${local['data-testid']}-language-select`
-              : 'settings-language-select'
-          }
-          class={cx(styles.label, local.compact && styles.compactLabel)}
-        >
-          {strings().language.title}
-        </label>
-        <Tooltip content={strings().language.title}>
-          <select
-            id={
-              local['data-testid']
-                ? `${local['data-testid']}-language-select`
-                : 'settings-language-select'
-            }
-            autocomplete="off"
-            class={cx('xeg-inline-center', styles.select)}
-            onChange={local.onLanguageChange}
-            value={languageValue()}
-            aria-label={strings().language.title}
-            aria-labelledby={
-              local['data-testid']
-                ? `${local['data-testid']}-language-label`
-                : 'settings-language-label'
-            }
-            required
-            data-testid={
-              __DEV__ && local['data-testid'] ? `${local['data-testid']}-language` : undefined
-            }
-          >
-            {LANGUAGE_OPTIONS.map((option) => (
-              <option value={option}>{LANGUAGE_NATIVE_LABELS[option] ?? option}</option>
-            ))}
-          </select>
-        </Tooltip>
       </div>
     </div>
   );

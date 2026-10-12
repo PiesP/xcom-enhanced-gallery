@@ -41,6 +41,7 @@ interface GalleryLifecycleApp {
   initialize(): Promise<void>;
   cleanup(): Promise<void>;
   resumeEarlyMediaClick(event: MouseEvent): Promise<void>;
+  close(): void;
 }
 
 const isTestMode = import.meta.env.MODE === 'test';
@@ -349,6 +350,8 @@ export function isAllowedStartUrl(value: string): boolean {
 
 function reconcileApplication(allowed: boolean): void {
   const intent = ++navigationIntent;
+  // An allowed SPA destination reuses services, but retires the old click/modal intent.
+  lifecycleState.galleryApp?.close();
   const mediaService = getMediaService();
   if (mediaService.isInitialized()) mediaService.refreshApiMetadata();
 

@@ -62,6 +62,33 @@ describe('unmarked video and icon click routing', () => {
     document.body.replaceChildren();
   });
 
+  it.each(['playing', 'paused', 'ended'] as const)('routes %s video surfaces by mode for marked and unmarked players', (state) => {
+    for (const marked of [false, true]) {
+      for (const mode of ['block-all', 'block-controls-only', 'allow-all'] as const) {
+        setMode(mode);
+        document.body.innerHTML = `<article><a href="/author/status/333"><time>Post</time></a>
+          <div ${marked ? 'data-testid="videoPlayer"' : ''}>
+            <video id="state-video" src="https://video.twimg.com/ext_tw_video/333/pu/vid/one.mp4"></video>
+          </div></article>`;
+        const video = requireElement('#state-video');
+        Object.defineProperty(video, 'paused', { get: () => state !== 'playing' });
+        Object.defineProperty(video, 'ended', { get: () => state === 'ended' });
+        const routed = click(video);
+        expect(routed.event.defaultPrevented).toBe(mode !== 'block-all');
+        expect(routed.onMediaClick).toHaveBeenCalledTimes(mode === 'block-all' ? 0 : 1);
+        expect(routed.nativeClick).toHaveBeenCalledTimes(mode === 'block-all' ? 1 : 0);
+      }
+    }
+  });
+
+  it('uses the default mode when no settings are registered', () => {
+    clearSettings();
+    document.body.innerHTML = '<article><a href="/author/status/333"><time>Post</time></a><video id="default-video" src="blob:https://x.com/playing"></video></article>';
+    const routed = click(requireElement('#default-video'));
+    expect(routed.event.defaultPrevented).toBe(true);
+    expect(routed.onMediaClick).toHaveBeenCalledOnce();
+  });
+
   it('rejects a detached HTML target when an early event is resumed', () => {
     const image = document.createElement('img');
     document.body.append(image);

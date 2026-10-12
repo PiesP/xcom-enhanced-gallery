@@ -36,6 +36,7 @@ import {
 } from '@shared/utils/events/lifecycle/gallery-lifecycle';
 import { isProcessableMedia } from '@shared/utils/media/media-click-detector';
 import { getMediaClickTarget } from '@shared/utils/media/media-click-target';
+import { startNativeVideoRecovery } from '@shared/utils/media/native-video-recovery';
 
 function mediaFailureMessage(kind: MediaExtractionResult['failureKind']): TranslationKey {
   switch (kind) {
@@ -74,6 +75,7 @@ export class GalleryApp {
   private mediaClickAbortController: AbortController | null = null;
   private sessionEpoch = 0;
   private sessionAbortController: AbortController | null = null;
+  private nativeVideoRecoveryDispose: (() => void) | null = null;
 
   constructor(renderer: GalleryRenderer) {
     this.renderer = renderer;
@@ -133,7 +135,10 @@ export class GalleryApp {
   }
 
   private async handleMediaClick(element: HTMLElement, _event: MouseEvent): Promise<void> {
+    this.nativeVideoRecoveryDispose?.();
+    this.nativeVideoRecoveryDispose = null;
     const videoClick = captureClickedMediaEvidence(element).mediaType === 'video';
+    const clickUrl = location.href;
     this.mediaClickAbortController?.abort();
     const clickController = new AbortController();
     this.mediaClickAbortController = clickController;
@@ -180,7 +185,7 @@ export class GalleryApp {
         });
         const lang = getLanguageService();
         const recovery = videoClick
-          ? ` ${lang.translate('msg.err.loadMedia.nativeVideoRecovery')}`
+          ? this.videoRecoveryMessage(opId, epoch, element, clickUrl)
           : '';
         notifySafely(
           getNotificationAdapter(),
@@ -196,7 +201,7 @@ export class GalleryApp {
         getNotificationAdapter(),
         lang.translate('msg.err.generic'),
         normalizeErrorMessage(error).slice(0, 240) +
-          (videoClick ? ` ${lang.translate('msg.err.loadMedia.nativeVideoRecovery')}` : '')
+          (videoClick ? this.videoRecoveryMessage(opId, epoch, element, clickUrl) : '')
       );
     } finally {
       signalScope.cleanup();
@@ -214,6 +219,40 @@ export class GalleryApp {
       this.mediaClickAbortController === controller &&
       !controller.signal.aborted
     );
+  }
+
+  private videoRecoveryMessage(
+    opId: number,
+    epoch: number,
+    element: HTMLElement,
+    clickUrl: string
+  ): string {
+    const lang = getLanguageService();
+    if (!tryGetSettings()) return ` ${lang.translate('msg.err.loadMedia.nativeVideoControls')}`;
+    this.nativeVideoRecoveryDispose = startNativeVideoRecovery({
+      isCurrent: () =>
+        this.initialized &&
+        opId === this.mediaClickCounter &&
+        epoch === this.sessionEpoch &&
+        location.href === clickUrl &&
+        element.isConnected &&
+        !gallerySignals.isOpen,
+      onEnabled: () =>
+        notifySafely(
+          getNotificationAdapter(),
+          lang.translate('st.videoClickMode'),
+          lang.translate('msg.err.loadMedia.nativeVideoEnabled')
+        ),
+      onError: (error) => {
+        mediaErrorReporter.error(error, { code: 'NATIVE_VIDEO_MODE_SAVE_FAILED' });
+        notifySafely(
+          getNotificationAdapter(),
+          lang.translate('msg.err.generic'),
+          lang.translate('st.videoClickSaveError')
+        );
+      },
+    });
+    return ` ${lang.translate('msg.err.loadMedia.nativeVideoRecovery')}`;
   }
 
   openGallery(mediaItems: MediaInfo[], startIndex = 0): void {
@@ -238,6 +277,8 @@ export class GalleryApp {
   }
 
   close(): void {
+    this.nativeVideoRecoveryDispose?.();
+    this.nativeVideoRecoveryDispose = null;
     this.mediaClickAbortController?.abort();
     this.mediaClickAbortController = null;
     this.mediaClickCounter++;
@@ -247,6 +288,8 @@ export class GalleryApp {
   }
 
   async cleanup(): Promise<void> {
+    this.nativeVideoRecoveryDispose?.();
+    this.nativeVideoRecoveryDispose = null;
     document.documentElement.removeAttribute(GALLERY_READY_ATTRIBUTE);
     if (gallerySignals.isOpen) {
       this.close();
