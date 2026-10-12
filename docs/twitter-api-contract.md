@@ -15,9 +15,11 @@ Provider errors without usable tweet data are failures. A readable unavailable
 tweet without provider errors is a healthy response with no media. Selection of
 direct or quoted attachments happens after normalization for every click.
 
-An unexpected result wrapper, conflicting root IDs, or a root belonging to a
-different tweet is an invalid provider response. It fails the physical request
-once, including when several clicks share that request, and never enters the
+An absent or unsupported result envelope, unexpected wrapper, conflicting root
+IDs, or a root belonging to a different tweet is an invalid provider response.
+An explicit null result and known unavailable/tombstone roots remain healthy
+absence outcomes. An invalid response fails the physical request once,
+including when several clicks share that request, and never enters the
 metadata cache. A valid requested root may still yield a healthy request with
 no media, HLS-only media, or media that does not match the clicked source; those
 outcomes fail local selection without counting as provider outages. Three

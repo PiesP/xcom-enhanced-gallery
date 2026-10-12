@@ -379,6 +379,8 @@ describe('MediaExtractionService API circuit', () => {
     data: { data: { tweetResult: { result: { __typename: 'Tweet', rest_id: '999' } } } },
   });
 
+  const missingEnvelopeResponse = () => ({ ok: true, status: 200, data: {} });
+
   const requestedTweetIds = (): string[] =>
     httpGet.mock.calls.map(([url]) =>
       JSON.parse(new URL(url as string).searchParams.get('variables') ?? '{}').tweetId
@@ -523,6 +525,62 @@ describe('MediaExtractionService API circuit', () => {
     expect((await click(service)).failureKind).toBe('transport');
     expect((await click(service)).failureKind).toBe('provider-error');
     expect((await click(service)).success).toBe(false);
+    expect(httpGet).toHaveBeenCalledTimes(3);
+  });
+
+  it('counts three missing envelopes as failed physical requests before cooldown', async () => {
+    const service = new MediaExtractionService();
+    httpGet.mockResolvedValue(missingEnvelopeResponse());
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const result = await click(service);
+      expect(result).toMatchObject({ success: false, failureKind: 'provider-error' });
+    }
+    expect(httpGet).toHaveBeenCalledTimes(3);
+
+    httpGet.mockResolvedValue({ ok: true, status: 200, data: createQuotedVideoTweetResponse() });
+    expect((await click(service)).success).toBe(false);
+    now += 59_999;
+    expect((await click(service)).success).toBe(false);
+    expect(httpGet).toHaveBeenCalledTimes(3);
+    now += 1;
+    const recovered = await click(service);
+    expect(recovered.success).toBe(true);
+    expect(recovered.clickedIndex).toBe(1);
+    expect(recovered.mediaItems[1]?.tweetId).toBe('222');
+    expect(httpGet).toHaveBeenCalledTimes(4);
+  });
+
+  it('does not let a missing envelope erase two earlier HTTP failures', async () => {
+    const service = new MediaExtractionService();
+    httpGet
+      .mockResolvedValueOnce({ ok: false, status: 503, data: {} })
+      .mockResolvedValueOnce({ ok: false, status: 503, data: {} })
+      .mockResolvedValueOnce(missingEnvelopeResponse())
+      .mockResolvedValueOnce({ ok: true, status: 200, data: createQuotedVideoTweetResponse() });
+    expect((await click(service)).failureKind).toBe('transport');
+    expect((await click(service)).failureKind).toBe('transport');
+    expect((await click(service)).failureKind).toBe('provider-error');
+    expect((await click(service)).success).toBe(false);
+    expect(httpGet).toHaveBeenCalledTimes(3);
+  });
+
+  it('accounts one coalesced missing envelope once and retries without caching it', async () => {
+    const service = new MediaExtractionService();
+    let complete!: (value: unknown) => void;
+    httpGet.mockImplementationOnce(() => new Promise<unknown>((resolve) => { complete = resolve; }));
+    const first = click(service);
+    const second = click(service);
+    await vi.waitFor(() => expect(httpGet).toHaveBeenCalledTimes(1));
+    complete(missingEnvelopeResponse());
+    for (const result of await Promise.all([first, second])) {
+      expect(result).toMatchObject({ success: false, failureKind: 'provider-error' });
+    }
+
+    httpGet.mockResolvedValue(missingEnvelopeResponse());
+    await click(service);
+    await click(service);
+    expect(httpGet).toHaveBeenCalledTimes(3);
+    await click(service);
     expect(httpGet).toHaveBeenCalledTimes(3);
   });
 
@@ -773,7 +831,9 @@ describe('MediaExtractionService API circuit', () => {
     }
     expect(httpGet).toHaveBeenCalledTimes(1);
     service.invalidateApiMetadata();
-    httpGet.mockResolvedValue({ ok: true, status: 200, data: {} });
+    httpGet.mockResolvedValue({ ok: true, status: 200,
+      data: { data: { tweetResult: { result: null } } },
+    });
     await click(service);
     expect(httpGet).toHaveBeenCalledTimes(2);
   });
