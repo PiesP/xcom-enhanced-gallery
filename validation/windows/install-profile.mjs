@@ -3564,7 +3564,7 @@ async function observeNativeNotificationCreates(context, extensionId) {
     chrome.notifications.create = function(...args) {
       const [id, options] = args;
       if (typeof id === 'string' && id.startsWith('xeg-')) {
-        if (state.calls.length < 8) state.calls.push({ id,
+        if (state.calls.length < 8) state.calls.push({ id, createdAt: Date.now(),
           title: options?.title ?? null, message: options?.message ?? null });
         else state.overflow = true;
       }
@@ -3624,8 +3624,23 @@ async function runDelayedVideoFailures({ context, extensionId, extensionPage,
       Object.keys(await chrome.notifications.getAll()));
     const priorSetting = name === 'failure'
       ? await readStoredVideoSettings(extensionPage) : null;
-    const notificationObserver = name === 'failure'
-      ? await observeNativeNotificationCreates(context, extensionId) : null;
+    const notificationObserver = await observeNativeNotificationCreates(context, extensionId);
+    const navigationEvents = [];
+    const recordNavigation = (message) => {
+      const text = message.text();
+      if (text.startsWith('__xeg-fixture-navigation:')) {
+        navigationEvents.push(JSON.parse(text.slice('__xeg-fixture-navigation:'.length)));
+      }
+    };
+    if (name === 'navigation') {
+      page.on('console', recordNavigation);
+      await page.evaluate(() => {
+        for (const type of ['beforeunload', 'pagehide']) window.addEventListener(type,
+          (event) => console.log('__xeg-fixture-navigation:' + JSON.stringify({
+            type, trusted: event.isTrusted, at: Date.now(), url: location.href,
+          })), { once: true });
+      });
+    }
     let shortcutIssued = false;
     let observation;
     let validationError;
@@ -3661,11 +3676,13 @@ async function runDelayedVideoFailures({ context, extensionId, extensionPage,
         assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0,
           'Late extraction after navigation must not open a gallery');
         const active = await extensionPage.evaluate(async () => chrome.notifications.getAll());
+        const observed = await notificationObserver.snapshot();
         assert.deepEqual(Object.keys(active).filter((id) => id.startsWith('xeg-') &&
           !knownNotifications.includes(id)), [],
-        'Late extraction after navigation must not notify the new session');
+        'Late extraction after navigation must not notify the new session: ' +
+          JSON.stringify({ navigationEvents, creates: observed.calls }));
         observation.navigation = { url: page.url(), galleryOpen: false,
-          newNotificationCount: 0 };
+          newNotificationCount: 0, navigationEvents, creates: observed.calls };
       } else {
         fixtureRoutes.releaseDelayedFailure();
         const notification = await waitForValue(async () => {
@@ -3716,6 +3733,7 @@ async function runDelayedVideoFailures({ context, extensionId, extensionPage,
     } catch (error) {
       validationError = error;
     } finally {
+      page.off('console', recordNavigation);
       try { fixtureRoutes.releaseDelayedFailure(); }
       catch (error) { cleanupErrors.push(error); }
       if (notificationObserver) {
