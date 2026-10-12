@@ -3907,8 +3907,9 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
   const hostPlay = shell.locator('[data-testid="playButton"]');
   const galleryCountBeforePlay = await page.locator('[data-xeg-gallery-container]').count();
   assert.equal(galleryCountBeforePlay, 0);
+  const nativePlayClickCount = await page.evaluate(() => window.__quoteFixtureClicks.length);
   await hostPlay.click();
-  const nativePlayClick = await quotedClickRecord(page, previewClickCount + 1, 'button');
+  const nativePlayClick = await quotedClickRecord(page, nativePlayClickCount, 'button');
   assert.equal(nativePlayClick.defaultPrevented, true,
     'Fixture native play handler must receive and cancel its own trusted button click');
   const hostVideo = shell.locator('video');
