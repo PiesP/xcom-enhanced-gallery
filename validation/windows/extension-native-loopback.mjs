@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { createServer } from 'node:https';
 import { generateFixtureCertificate } from './userscript-loopback.mjs';
-import { NESTED_OWNER, QUOTED_CASES } from '../../test/e2e/fixtures/installed-quoted-video-api.mjs';
+import { NESTED_OWNER, QUOTED_CASES, RAPID_CLICK_B } from '../../test/e2e/fixtures/installed-quoted-video-api.mjs';
 
 const MAX_REQUESTS = 128;
 const MAX_BODY_BYTES = 256 * 1024;
@@ -28,6 +28,7 @@ function allowedVideos(payloads) {
     }
   }
   add(NESTED_OWNER, 'nested-c');
+  add(RAPID_CLICK_B, 'quote-two');
   return videos;
 }
 

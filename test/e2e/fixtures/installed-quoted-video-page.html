@@ -149,13 +149,32 @@
       video.dataset.hostAction = action;
       video.src = makeHostUrl();
       video.muted = true;
+      video.loop = true;
       video.style.position = 'absolute';
       video.style.inset = '0';
       await new Promise((resolve, reject) => {
         video.addEventListener('loadeddata', resolve, { once: true });
         video.addEventListener('error', reject, { once: true });
       });
-      if (action === 'insert-playing') await video.play();
+      let beforeInsertion = null;
+      if (action === 'insert-playing') {
+        await video.play();
+        const start = video.currentTime;
+        await new Promise((resolve, reject) => {
+          const deadline = performance.now() + 3000;
+          const observe = () => {
+            if (video.error) reject(new Error(`Detached host video error ${video.error.code}`));
+            else if (video.paused || performance.now() >= deadline) {
+              reject(new Error('Detached host video did not progress before insertion'));
+            } else if (video.currentTime > start + 0.15 && video.videoWidth === 320 &&
+              video.videoHeight === 180) resolve();
+            else requestAnimationFrame(observe);
+          };
+          observe();
+        });
+        beforeInsertion = { start, end: video.currentTime, width: video.videoWidth,
+          height: video.videoHeight, error: video.error?.code ?? null, loop: video.loop };
+      }
       const playingBeforeInsertion = !video.paused;
       if (action === 'replace') {
         const previous = shell.querySelector('video[data-host-action="insert-playing"]') ?? hostVideo;
@@ -164,7 +183,8 @@
       }
       else shell.append(video);
       if (action === 'replace') await video.play().catch(() => {});
-      return { action, playingBeforeInsertion, tag: video.tagName.toLowerCase() };
+      return { action, playingBeforeInsertion, beforeInsertion,
+        loop: video.loop, tag: video.tagName.toLowerCase() };
     };
     window.addEventListener('pagehide', () => {
       if (document.body.dataset.hostBlobUrl) URL.revokeObjectURL(document.body.dataset.hostBlobUrl);

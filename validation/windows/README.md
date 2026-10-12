@@ -203,6 +203,10 @@ settings; an ordinary video click must then advance playback. While it plays,
 controlled host replay, insertion of a video already playing, and replacement
 of an existing host video must stop without stopping the gallery video. Closing
 must release suppression so the original and replacement videos can play again.
+The four-second fixture videos loop only for this prolonged host-action check;
+the receipt keeps the fresh gallery video's original non-looping state. A host
+counts as stopped only while decoded, unended and paused, and gallery progress
+is measured inside a short interval before the next loop boundary.
 The first gallery also opens its real Video clicks settings control, changes all
 three modes with trusted keyboard input, checks persisted values and visible
 help, then restores the full prior setting. This checks playback state and time progression,
@@ -228,7 +232,8 @@ navigation to prove the old session cannot open a gallery or notify the new
 page. Two valid owner-specific videos on one document also exercise a held A
 response followed by an ordinary B click; after A completes or aborts, B must
 remain selected, focused and current, and its native download must match B's
-preferred MP4 source and bytes. The controlled renderer-fault case injects a
+preferred MP4 source and bytes. The native loopback serves that exact synthetic
+B path. The controlled renderer-fault case injects a
 single `CSSStyleDeclaration.setProperty('--xeg-viewport-w', ...)` failure into
 the installed extension's own isolated execution context through CDP. It
 restores and verifies the original prototype descriptor in `finally`, checks

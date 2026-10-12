@@ -2740,6 +2740,7 @@ async function attachVideoBoundaryFailure(diagnostic, { output, name, page, api 
 async function hostVideoState(video) {
   return video.evaluate((element) => ({
     currentTime: element.currentTime, paused: element.paused,
+    ended: element.ended, loop: element.loop, duration: element.duration,
     readyState: element.readyState, width: element.videoWidth, height: element.videoHeight,
     error: element.error?.code ?? null, muted: element.muted, volume: element.volume,
   }));
@@ -2759,6 +2760,14 @@ async function assertHostStopped(page, video, label) {
   const second = await hostVideoState(video);
   assert.equal(first.paused, true, `${label}: host must pause`);
   assert.equal(second.paused, true, `${label}: host must remain paused`);
+  assert.equal(first.loop, true, `${label}: controlled host must loop during the pause check`);
+  assert.equal(second.loop, true, `${label}: controlled host must retain looping`);
+  assert.equal(first.ended, false, `${label}: an ended fixture cannot prove suppression`);
+  assert.equal(second.ended, false, `${label}: fixture must not naturally end`);
+  assert(first.readyState >= 2 && first.width > 0 && first.height > 0,
+    `${label}: host must have decoded playable media`);
+  assert(second.readyState >= 2 && second.width > 0 && second.height > 0,
+    `${label}: host must remain decoded and playable`);
   assert(second.currentTime - first.currentTime < 0.05,
     `${label}: host time must not progress after settling`);
   assert.equal(second.error, null, `${label}: host must retain a usable media source`);
@@ -4172,7 +4181,11 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
       video.currentTime >= start + 0.15;
   }, { name: quotedCase.route, start: hostProgressStart }, { timeout: 5_000 });
   const hostProgressEnd = await hostVideo.evaluate((video) => video.currentTime);
-  await hostVideo.evaluate((video) => { video.volume = 0.31; video.muted = true; });
+  await hostVideo.evaluate((video) => {
+    video.volume = 0.31;
+    video.muted = true;
+    video.loop = true;
+  });
   const galleryPreferences = await extensionPage.evaluate(async () => {
     const value = (await chrome.storage.local.get('xeg-app-settings'))['xeg-app-settings'];
     return { volume: value?.gallery?.videoVolume ?? 1,
@@ -4201,6 +4214,8 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
   const freshStart = await hostVideoState(playing.video);
   assert.equal(freshStart.paused, true, 'New gallery video starts paused');
   assert(freshStart.currentTime < 0.05, 'New gallery video starts from its own zero position');
+  assert.equal(freshStart.loop, false,
+    'Fresh gallery video must retain the production default before the bounded loop exercise');
   assert(Math.abs(freshStart.volume - galleryPreferences.volume) < 0.01,
     'New gallery video uses the saved XEG volume');
   assert.equal(freshStart.muted, galleryPreferences.muted,
@@ -4209,6 +4224,7 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
     `https://x.com/${quotedCase.username}/status/${quotedCase.owner}`,
     quotedCase.name === 'linked');
   const playingNavigation = await navigateQuotedAwayAndBack(page, quotedCase, playing.total);
+  await playing.video.evaluate((video) => { video.loop = true; });
   const galleryPlaybackStart = await playing.video.evaluate((video) => video.currentTime);
   await playing.video.click();
   await page.waitForFunction(({ index, start }) => {
@@ -4224,10 +4240,17 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
   const hostInsertion = await page.evaluate(() => window.__quoteFixtureHostAction('insert-playing'));
   assert.equal(hostInsertion.playingBeforeInsertion, true,
     'Controlled host video must already be playing before insertion');
+  assert.equal(hostInsertion.beforeInsertion?.loop, true);
+  assert.equal(hostInsertion.beforeInsertion?.width, 320);
+  assert.equal(hostInsertion.beforeInsertion?.height, 180);
+  assert.equal(hostInsertion.beforeInsertion?.error, null);
+  assert(hostInsertion.beforeInsertion.end > hostInsertion.beforeInsertion.start + 0.15,
+    'Detached host video must progress before insertion');
   const insertedVideo = shell.locator('video[data-host-action="insert-playing"]');
   const stoppedInsertion = await assertHostStopped(page, insertedVideo,
     'Playing host video inserted during gallery');
   const hostReplacement = await page.evaluate(() => window.__quoteFixtureHostAction('replace'));
+  assert.equal(hostReplacement.loop, true);
   const replacementVideo = shell.locator('video[data-host-action="replace"]');
   const stoppedReplacement = await assertHostStopped(page, replacementVideo,
     'Replacement host video during gallery');
@@ -4236,8 +4259,26 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
   const galleryAfterHostActions = await hostVideoState(playing.video);
   assert.equal(galleryAfterHostActions.paused, false,
     'Host playback suppression must leave gallery video playing');
-  assert(galleryAfterHostActions.currentTime > galleryPlaybackTime + 0.15,
-    'Gallery video must progress through host replay and insertion');
+  assert.equal(galleryAfterHostActions.ended, false);
+  assert.equal(galleryAfterHostActions.loop, true);
+  const galleryProgressStart = await page.waitForFunction((index) => {
+    const video = document.querySelector(
+      `[data-xeg-gallery-container] [data-gallery-element="item"][data-index="${index}"] video`
+    );
+    return video instanceof HTMLVideoElement && !video.paused && !video.ended &&
+      video.error === null && video.loop && Number.isFinite(video.duration) &&
+      video.currentTime < video.duration - 0.75 ? video.currentTime : false;
+  }, quotedCase.expectedPosition - 1, { timeout: 5_000 });
+  const progressStartTime = await galleryProgressStart.jsonValue();
+  await galleryProgressStart.dispose();
+  await page.waitForFunction(({ index, start }) => {
+    const video = document.querySelector(
+      `[data-xeg-gallery-container] [data-gallery-element="item"][data-index="${index}"] video`
+    );
+    return video instanceof HTMLVideoElement && !video.paused && !video.ended &&
+      video.error === null && video.currentTime > start + 0.15;
+  }, { index: quotedCase.expectedPosition - 1, start: progressStartTime }, { timeout: 5_000 });
+  const galleryProgressEnd = await hostVideoState(playing.video);
   assert(quotedApiResponses.slice(apiStart).every(({ tweetId }) => tweetId === expectedRequest),
     'Blob-backed click must retain the same owner request');
   const latePanel = await page.evaluate(() => {
@@ -4326,9 +4367,15 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
     playing: { selected: playing.selectedMedia, pending: playingPending,
       originUrl: playingOriginUrl,
       navigation: playingNavigation, galleryPlaybackStart, galleryPlaybackTime,
-      galleryPreferences, freshStart, openingHost, hostReplay, stoppedReplay,
+      galleryPreferences, freshStart,
+      controlledLooping: { host: openingHost.second.loop,
+        gallery: galleryAfterHostActions.loop,
+        inserted: stoppedInsertion.second.loop,
+        replacement: stoppedReplacement.second.loop },
+      openingHost, hostReplay, stoppedReplay,
       hostInsertion, stoppedInsertion, hostReplacement, stoppedReplacement,
-      galleryAfterHostActions, hostAfterClose, replacementAfterClose,
+      galleryAfterHostActions, galleryProgressStart: progressStartTime,
+      galleryProgressEnd, hostAfterClose, replacementAfterClose,
       closeMethod: quotedCase.close,
       close: playingClose },
     download: { filename, bytes: bytes.length, file: copiedName, native,
