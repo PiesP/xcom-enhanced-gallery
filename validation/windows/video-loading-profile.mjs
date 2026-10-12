@@ -606,11 +606,15 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
     return stateWhen(page, (value) => value.box.top >= value.viewport.top - 1 &&
       value.box.bottom <= value.viewport.bottom + 1, 'recovering video to return inside the scrollport');
   };
-  const stablePaused = async (page) => {
+  const stablePaused = async (page, expectedSource) => {
     const first = await stateWhen(page, (value) => value.metadata === 'true' &&
       value.readyState >= 1 && !value.seeking, 'replacement metadata and settled seek');
     await page.waitForTimeout(evidence.pausedObservationMs);
     const after = await itemState(page, 0);
+    for (const state of [first, after]) {
+      assert.equal(state.src, expectedSource, 'Paused observation changed the recovery source attribute');
+      assert.equal(state.currentSrc, expectedSource, 'Paused observation used a different active source');
+    }
     assert.equal(after.paused, true, 'Delayed recovery resumed contrary to fresh intent');
     assert(after.currentTime - first.currentTime <= 0.05,
       'Playback progressed during the required paused observation');
@@ -699,6 +703,7 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
         const initial = await stateWhen(page, (value) => value.readyState >= 2 &&
           value.videoWidth === 320 && value.videoHeight === 180 && !value.error,
         'valid initial frames before the corrupt tail');
+        assert.equal(initial.currentSrc, observed.best, 'Initial frames must come from the preferred source');
         assert.equal(nativeLoopback.videoHeld(), true,
           'The native HTTPS source must still hold later samples');
         await video.focus();
@@ -709,15 +714,29 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
         observed.playingOriginal = await stateWhen(page, (value) => !value.paused &&
           value.currentTime > observed.beforePlay.currentTime + 0.15,
         'actual trusted playback progression before corruption');
+        assert.equal(observed.playingOriginal.currentSrc, observed.best,
+          'Initial playback must progress on the preferred source');
+        observed.lowerRequestsBeforeTailRelease = requests.filter((record) =>
+          record.case === name && record.index === 0 && record.quality === 'lower').length;
+        assert.equal(observed.lowerRequestsBeforeTailRelease, 0,
+          'Recovery must not begin before the corrupt tail is released');
+        const beforeTailRelease = await page.evaluate(() => ({ atPageMonotonicMs: performance.now(),
+          errors: window.__xegRecoveryEventObservation.records.filter((event) => event.type === 'error') }));
+        assert.deepEqual(beforeTailRelease.errors, [],
+          'Initial playback must not have a native error before the corrupt tail release');
+        observed.corruptTailReleaseStartedAtPageMonotonicMs = beforeTailRelease.atPageMonotonicMs;
+        observed.corruptTailReleaseStartedAtMonotonicMs = performance.now();
         nativeLoopback.completeVideoHold();
         observed.corruptTailReleasedAtMonotonicMs = performance.now();
         await waitForValue(async () => requests.some((record) =>
-          record.case === name && record.index === 0 && record.quality === 'lower') ? true : undefined,
+          record.case === name && record.index === 0 && record.quality === 'lower' &&
+          record.atMonotonicMs >= observed.corruptTailReleaseStartedAtMonotonicMs) ? true : undefined,
         'native decoder error to select and request the same-item replacement');
         const eventRecords = await page.evaluate(() => window.__xegRecoveryEventObservation.records);
         // Match outside the page: the observer records native events without injecting them.
         observed.decodeError = eventRecords.find((event) => event.type === 'error' &&
-          event.error === 3 && event.source === observed.best && event.trusted);
+          event.error === 3 && event.source === observed.best && event.trusted &&
+          event.atPageMonotonicMs >= observed.corruptTailReleaseStartedAtPageMonotonicMs);
         assert(observed.decodeError, 'A real native code-3 error after playback is required');
         observed.pending = await itemState(page, 0);
         assert.equal(observed.pending.src, observed.lower);
@@ -737,18 +756,18 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
           observed.userControls = await stateWhen(page, (value) => value.muted,
             'later deliberate mute before replacement metadata');
           releaseLower();
-          observed.pausedAfterMetadata = await stablePaused(page);
+          observed.pausedAfterMetadata = await stablePaused(page, observed.lower);
           assert.equal(observed.pausedAfterMetadata.after.muted, observed.userControls.muted);
           assert.equal(observed.pausedAfterMetadata.after.volume, observed.userControls.volume);
           await scrollOut(page);
           await scrollBack(page);
-          observed.pausedAfterReentry = await stablePaused(page);
+          observed.pausedAfterReentry = await stablePaused(page, observed.lower);
         } else {
           observed.outsideBeforeMetadata = await scrollOut(page);
           if (name === 'reenter-before-metadata') observed.reenteredBeforeMetadata = await scrollBack(page);
           releaseLower();
           if (name === 'metadata-while-outside') {
-            observed.pausedOutside = await stablePaused(page);
+            observed.pausedOutside = await stablePaused(page, observed.lower);
             assert.equal(observed.pausedOutside.after.muted, true,
               'Recovery metadata undid visibility-imposed mute');
             observed.reentered = await scrollBack(page);
