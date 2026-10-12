@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 PiesP
 
-param([switch]$IncludeVideo)
+param([switch]$IncludeVideo, [switch]$IncludeFixturePage)
 
 $ErrorActionPreference = 'Stop'
 $key = $null
@@ -9,6 +9,7 @@ $rsa = $null
 $certificate = $null
 $parameters = $null
 try {
+    if ($IncludeFixturePage -and !$IncludeVideo) { throw 'fixture-page-needs-video' }
     if ([Environment]::Version.Major -ne 4) { throw 'unsupported-clr' }
     $creation = New-Object System.Security.Cryptography.CngKeyCreationParameters
     $creation.Provider = [System.Security.Cryptography.CngProvider]::MicrosoftSoftwareKeyStorageProvider
@@ -36,6 +37,7 @@ try {
     $san = [System.Security.Cryptography.X509Certificates.SubjectAlternativeNameBuilder]::new()
     $san.AddDnsName('pbs.twimg.com')
     if ($IncludeVideo) { $san.AddDnsName('video.twimg.com') }
+    if ($IncludeFixturePage) { $san.AddDnsName('x.com') }
     $request.CertificateExtensions.Add($san.Build())
     $request.CertificateExtensions.Add(
         [System.Security.Cryptography.X509Certificates.X509BasicConstraintsExtension]::new(

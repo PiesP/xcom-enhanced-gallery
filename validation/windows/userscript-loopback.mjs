@@ -14,8 +14,9 @@ const MAX_IMAGE_BYTES = 64 * 1024;
 const MAX_SERVED_BYTES = 2 * 1024 * 1024;
 
 /** Validate the public certificate and private key without exposing child output on failure. */
-export function validateFixtureCertificate(value, includeVideo = false) {
+export function validateFixtureCertificate(value, includeVideo = false, includeFixturePage = false) {
   try {
+    assert(!includeFixturePage || includeVideo, 'Fixture page certificate requires video scope');
     assert.deepEqual(Object.keys(value).sort(), ['certDerBase64', 'jwk']);
     assert(typeof value.certDerBase64 === 'string' &&
       /^[A-Za-z0-9+/]+={0,2}$/u.test(value.certDerBase64) &&
@@ -35,13 +36,15 @@ export function validateFixtureCertificate(value, includeVideo = false) {
     assert.equal(privateKey.asymmetricKeyDetails?.modulusLength, 2048);
     assert.equal(certificate.subject, `CN=${HOST}`);
     assert.equal(certificate.issuer, certificate.subject);
-    assert.equal(certificate.subjectAltName, includeVideo
-      ? `DNS:${HOST}, DNS:video.twimg.com` : `DNS:${HOST}`);
+    const names = [HOST, ...(includeVideo ? ['video.twimg.com'] : []),
+      ...(includeFixturePage ? ['x.com'] : [])];
+    assert.equal(certificate.subjectAltName, names.map((name) => `DNS:${name}`).join(', '));
     assert.equal(certificate.checkHost(HOST, { subject: 'never' }), HOST);
     if (includeVideo) {
       assert.equal(certificate.checkHost('video.twimg.com', { subject: 'never' }),
         'video.twimg.com');
     }
+    if (includeFixturePage) assert.equal(certificate.checkHost('x.com', { subject: 'never' }), 'x.com');
     assert.equal(certificate.ca, false);
     assert(certificate.checkPrivateKey(privateKey));
     assert(certificate.verify(certificate.publicKey));
@@ -60,18 +63,19 @@ export function validateFixtureCertificate(value, includeVideo = false) {
 }
 
 export async function generateFixtureCertificate(helperPath, run = execFileAsync,
-  includeVideo = false) {
+  includeVideo = false, includeFixturePage = false) {
   let stdout;
   try {
     ({ stdout } = await run('powershell.exe',
       ['-NoProfile', '-NonInteractive', '-File', helperPath,
-        ...(includeVideo ? ['-IncludeVideo'] : [])],
+        ...(includeVideo ? ['-IncludeVideo'] : []),
+        ...(includeFixturePage ? ['-IncludeFixturePage'] : [])],
       { timeout: 12_000, windowsHide: true, maxBuffer: 16_384, encoding: 'utf8' }));
   } catch {
     throw new Error('fixture-certificate-unavailable');
   }
   try {
-    return validateFixtureCertificate(JSON.parse(stdout), includeVideo);
+    return validateFixtureCertificate(JSON.parse(stdout), includeVideo, includeFixturePage);
   } catch {
     throw new Error('fixture-certificate-invalid');
   }
