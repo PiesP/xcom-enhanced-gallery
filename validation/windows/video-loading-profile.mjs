@@ -30,8 +30,8 @@ function posterUrl(tweetId, index) {
   return `https://pbs.twimg.com/ext_tw_video_thumb/${tweetId}/pu/img/video-${index}.png`;
 }
 
-function fixtureHtml(tweetId, handle) {
-  const players = Array.from({ length: VIDEO_COUNT }, (_, index) => `
+function fixtureHtml(tweetId, handle, count = VIDEO_COUNT) {
+  const players = Array.from({ length: count }, (_, index) => `
     <div data-testid="videoPlayer" class="player" data-fixture-index="${index}">
       <div data-testid="previewInterstitial"><img tabindex="0" data-video-target="${index}"
         src="${posterUrl(tweetId, index)}" alt="Video ${index + 1} preview" width="320" height="180"></div>
@@ -49,8 +49,8 @@ function fixtureHtml(tweetId, handle) {
     </article></main></body></html>`;
 }
 
-function apiResponse(tweetId, handle) {
-  const media = Array.from({ length: VIDEO_COUNT }, (_, index) => ({
+function apiResponse(tweetId, handle, count = VIDEO_COUNT) {
+  const media = Array.from({ length: count }, (_, index) => ({
     type: 'video', id_str: `${tweetId}${index}`, media_key: `7_${tweetId}${index}`,
     media_url_https: posterUrl(tweetId, index),
     expanded_url: `https://x.com/${handle}/status/${tweetId}/video/${index + 1}`,
@@ -100,8 +100,12 @@ async function itemState(page, index) {
       preload: video.preload, controls: video.controls, error: video.error?.code ?? null,
       readyState: video.readyState, videoWidth: video.videoWidth, videoHeight: video.videoHeight,
       currentTime: video.currentTime, paused: video.paused,
+      muted: video.muted, volume: video.volume,
+      currentIndex: Number(gallery?.querySelector('[data-gallery-element="toolbar"]')?.getAttribute('data-current-index')),
+      focusedIndex: Number(gallery?.querySelector('[data-gallery-element="toolbar"]')?.getAttribute('data-focused-index')),
       box: { top: rect.top, bottom: rect.bottom, width: rect.width, height: rect.height },
-      viewport: { top: rootRect.top, bottom: rootRect.bottom, height: rootRect.height },
+      viewport: { top: rootRect.top, bottom: rootRect.bottom, height: rootRect.height,
+        clientHeight: root.clientHeight, scrollTop: root.scrollTop },
     };
   }, index);
 }
@@ -450,6 +454,7 @@ export async function runVideoLoadingProfile({
     observation.hostRestoration = { before: beforeHost, after: afterHost };
     assert.deepEqual(afterHost, beforeHost, 'Gallery close did not restore host scroll and inline style');
     observation.checks.push('host-scroll-and-style-restored');
+    observation.geometry = await runAdmissionGeometryCases({ context, validMp4, output });
     return observation;
   } catch (error) {
     primaryError = error;
@@ -501,5 +506,170 @@ export async function runVideoLoadingProfile({
       throw new AggregateError(primaryError ? [primaryError, ...cleanupFailures] : cleanupFailures,
         'Video loading assertion and/or task-owned cleanup failed');
     }
+  }
+}
+
+/** Real layout/IntersectionObserver observations; no observer or application replacement. */
+async function runAdmissionGeometryCases({ context, validMp4, output }) {
+  const count = 12;
+  const cases = [];
+  const requests = [];
+  const pages = [];
+  const evidence = { status: 'running', cases, requests,
+    admissionDeadlineMs: 1_500, distantObservationMs: 800,
+    cleanup: { routesRemoved: false, pagesClosed: false } };
+  let active;
+  let primaryError;
+  const handler = async (route) => {
+    if (!active) return route.fallback();
+    const target = new URL(route.request().url());
+    if (route.request().isNavigationRequest() && target.href === active.url) {
+      return route.fulfill({ status: 200, contentType: 'text/html',
+        body: fixtureHtml(active.id, 'admissioncheck', count) });
+    }
+    if (target.hostname === 'x.com' && target.pathname.endsWith('/TweetResultByRestId')) {
+      let id;
+      try { id = JSON.parse(target.searchParams.get('variables') ?? '{}').tweetId; }
+      catch { return route.fallback(); }
+      if (id === active.id) {
+        return route.fulfill({ status: 200, contentType: 'application/json',
+          body: JSON.stringify(apiResponse(id, 'admissioncheck', count)) });
+      }
+    }
+    if (target.hostname === 'pbs.twimg.com' &&
+      target.pathname.startsWith(`/ext_tw_video_thumb/${active.id}/pu/img/video-`)) {
+      return route.fulfill({ status: 200, contentType: 'image/png', body: POSTER_PNG });
+    }
+    if (target.hostname === 'video.twimg.com') {
+      const matched = new RegExp(`^/ext_tw_video/${active.id}/pu/vid/320x180/video-(\\d+)-best\\.mp4$`, 'u').exec(target.pathname);
+      if (matched && Number(matched[1]) < count) {
+        assert(requests.length < MAX_REQUESTS, 'Geometry media request cap exceeded');
+        requests.push({ case: active.name, index: Number(matched[1]),
+          atMonotonicMs: performance.now(), range: route.request().headers().range ?? null });
+        return route.fulfill({ status: 200, contentType: 'video/mp4', body: validMp4 });
+      }
+    }
+    return route.fallback();
+  };
+  const readAll = async (page) => {
+    const states = [];
+    for (let index = 0; index < count; index++) states.push(await itemState(page, index));
+    assert(states.every(Boolean), 'The real gallery geometry inventory is incomplete');
+    return states;
+  };
+  const isNear = (state, direction) => state.index !== state.currentIndex &&
+    state.index !== state.focusedIndex && (direction === 'below'
+      ? state.box.top > state.viewport.bottom + 8 &&
+        state.box.top < state.viewport.bottom + state.viewport.clientHeight - 8
+      : state.box.bottom < state.viewport.top - 8 &&
+        state.box.bottom > state.viewport.top - state.viewport.clientHeight + 8);
+  const isFar = (state) => state.box.top > state.viewport.bottom + state.viewport.clientHeight + 8 ||
+    state.box.bottom < state.viewport.top - state.viewport.clientHeight - 8;
+  const checkNear = async (page, target, descriptor) => {
+    await waitForValue(async () => {
+      const now = await itemState(page, target.index);
+      return now?.admitted === 'true' && now.src === videoUrl(descriptor.id, target.index) &&
+        requests.some((record) => record.case === descriptor.name && record.index === target.index)
+        ? now : undefined;
+    }, `unselected ${descriptor.direction} video admission`, evidence.admissionDeadlineMs);
+    const now = await itemState(page, target.index);
+    assert(isNear(now, descriptor.direction), 'Admission must precede selection/focus/visible entry');
+    assert.equal(now.paused, true, 'Advance admission must not play the off-screen video');
+    return now;
+  };
+  await context.route('**/*', handler);
+  try {
+    for (const descriptor of [
+      { name: 'below-normal-resize', id: '4666000111222333661', selected: 0,
+        direction: 'below', viewport: { width: 1280, height: 500 }, resize: { width: 1280, height: 900 } },
+      { name: 'above-narrow-tall-resize', id: '4666000111222333662', selected: 11,
+        direction: 'above', viewport: { width: 700, height: 800 }, resize: { width: 700, height: 1000 } },
+    ]) {
+      active = { ...descriptor, url: `https://x.com/admissioncheck/status/${descriptor.id}` };
+      const page = await context.newPage();
+      pages.push(page);
+      const observed = { ...descriptor, status: 'running' };
+      cases.push(observed);
+      try {
+        await page.setViewportSize(descriptor.viewport);
+        await page.goto(active.url);
+        await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+        await page.locator(`[data-video-target="${descriptor.selected}"]`).click();
+        await page.locator('[data-xeg-gallery-container]').waitFor({ state: 'visible' });
+        await waitForValue(async () => {
+          const selected = await itemState(page, descriptor.selected);
+          return selected?.metadata === 'true' && selected.readyState >= 1 &&
+            selected.currentIndex === descriptor.selected && selected.focusedIndex === descriptor.selected
+            ? true : undefined;
+        }, 'selected real-layout video metadata and identity');
+        const states = await readAll(page);
+        observed.initial = states;
+        const near = states.find((state) => isNear(state, descriptor.direction));
+        assert(near, 'Fixture has no unselected/unfocused near-but-not-visible target');
+        const distant = states.filter((state) => isFar(state) && state.src === null);
+        assert(distant.length > 0, 'Fixture has no separate never-admitted far target');
+        observed.nearBefore = near;
+        observed.nearAfter = await checkNear(page, near, descriptor);
+        observed.distant = distant;
+        await page.waitForTimeout(evidence.distantObservationMs);
+        assert(distant.every((state) => !requests.some((record) =>
+          record.case === descriptor.name && record.index === state.index)),
+        'A never-admitted distant video requested its body');
+
+        await page.setViewportSize(descriptor.resize);
+        await page.waitForTimeout(100);
+        const resized = await readAll(page);
+        observed.resized = resized;
+        assert(resized[0].viewport.clientHeight > states[0].viewport.clientHeight,
+          'The actual gallery scrollport did not grow with the viewport');
+        const entering = resized.find((state) => distant.some((old) => old.index === state.index) &&
+          isNear(state, descriptor.direction));
+        assert(entering, 'Resize did not move a never-admitted item into the advance region');
+        observed.admittedAfterResize = await checkNear(page, entering, descriptor);
+        const oldRoot = await page.locator('[data-xeg-gallery-container] [data-gallery-element="items"]').elementHandle();
+        await page.keyboard.press('Escape');
+        await page.locator('[data-xeg-gallery-container]').waitFor({ state: 'detached' });
+        assert.equal(await oldRoot.evaluate((root) => root.isConnected), false);
+        await page.locator(`[data-video-target="${descriptor.selected}"]`).click();
+        await page.locator('[data-xeg-gallery-container]').waitFor({ state: 'visible' });
+        const reopened = await waitForValue(async () => {
+          const values = await readAll(page);
+          const target = values.find((value) => isNear(value, descriptor.direction));
+          return target ? target : undefined;
+        }, 'replacement gallery root near target');
+        observed.reopenedNear = await checkNear(page, reopened, descriptor);
+        observed.retiredRootDisconnected = true;
+        await oldRoot.dispose();
+        observed.status = 'passed';
+      } catch (error) {
+        observed.status = 'failed';
+        observed.error = error instanceof Error ? error.message : String(error);
+      } finally {
+        await page.screenshot({ path: join(output, `video-admission-${descriptor.name}.png`) });
+        if (await page.locator('[data-xeg-gallery-container]').count()) await page.keyboard.press('Escape');
+        await page.close();
+      }
+    }
+    assert.deepEqual(cases.filter((item) => item.status !== 'passed').map((item) =>
+      ({ name: item.name, error: item.error })), [], 'Required actual-scroll-root geometry cases failed');
+    evidence.status = 'passed';
+    return evidence;
+  } catch (error) {
+    primaryError = error;
+    evidence.status = 'failed';
+    evidence.error = error instanceof Error ? error.message : String(error);
+    throw error;
+  } finally {
+    const errors = [];
+    await context.unroute('**/*', handler).then(() => { evidence.cleanup.routesRemoved = true; })
+      .catch((error) => errors.push(error));
+    const closing = await Promise.allSettled(pages.filter((page) => !page.isClosed()).map((page) => page.close()));
+    evidence.cleanup.pagesClosed = pages.every((page) => page.isClosed());
+    errors.push(...closing.filter((result) => result.status === 'rejected').map((result) => result.reason));
+    evidence.cleanup.errors = errors.map((error) => error instanceof Error ? error.message : String(error));
+    if (errors.length) evidence.status = 'failed';
+    await writeFile(join(output, 'video-admission-geometry-observations.json'), JSON.stringify(evidence, null, 2));
+    if (errors.length) throw new AggregateError(primaryError ? [primaryError, ...errors] : errors,
+      'Geometry fixture cleanup failed');
   }
 }

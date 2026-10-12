@@ -4026,13 +4026,26 @@ async function exerciseInstalledExtension(
         JSON.stringify(unavailableSequence, null, 2)).catch(() => {});
       throw error;
     }
-    apiReuse = await runInstalledMediaApiReuseProfile({ context, page,
-      qualityFixtureUrl: QUALITY_FIXTURE_URL, qualityTweetId: QUALITY_TWEET_ID,
-      qualityImagePaths: QUALITY_IMAGE_PATHS, output });
-    videoLoading = await runVideoLoadingProfile({ context, page, extensionPage,
-      fixtureUrl: 'https://x.com/videofixture/status/4666000111222333444',
-      tweetId: '4666000111222333444', videoPayloads: fixtureRoutes.videoPayloads,
-      downloads, output, nativeLoopback });
+    const followupFailures = [];
+    try {
+      apiReuse = await runInstalledMediaApiReuseProfile({ context, page,
+        qualityFixtureUrl: QUALITY_FIXTURE_URL, qualityTweetId: QUALITY_TWEET_ID,
+        qualityImagePaths: QUALITY_IMAGE_PATHS, output, videoPayloads: fixtureRoutes.videoPayloads });
+    } catch (error) {
+      apiReuse = { status: 'failed', error: safeError(error) };
+      followupFailures.push(error);
+    }
+    try {
+      videoLoading = await runVideoLoadingProfile({ context, page, extensionPage,
+        fixtureUrl: 'https://x.com/videofixture/status/4666000111222333444',
+        tweetId: '4666000111222333444', videoPayloads: fixtureRoutes.videoPayloads,
+        downloads, output, nativeLoopback });
+    } catch (error) {
+      videoLoading = { status: 'failed', error: safeError(error) };
+      followupFailures.push(error);
+    }
+    if (followupFailures.length) throw new AggregateError(followupFailures,
+      'Required installed media follow-up profiles failed');
     const expectedMemoryErrors = new Set(downloadMemory.expectedConsoleErrors ?? []);
     const unexpectedConsoleErrors = consoleErrors.filter((record) =>
       !isExpectedFixtureApiConsoleError(record) && !expectedMemoryErrors.has(record));
