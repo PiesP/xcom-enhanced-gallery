@@ -25,6 +25,8 @@ export interface VideoVisibilityState {
   readonly isVisible: () => boolean;
   readonly hasObservation: () => boolean;
   readonly isAutoPaused: () => boolean;
+  /** User mute state before any temporary scroll-out mute. */
+  readonly recoveryMuted: (video: HTMLVideoElement) => boolean;
   readonly noteUserVolumeChange: (video: HTMLVideoElement) => void;
   readonly pauseIfHidden: () => void;
 }
@@ -164,6 +166,7 @@ export function useVideoVisibility(options: UseVideoVisibilityOptions): VideoVis
     isVisible: () => visible,
     hasObservation: () => observed,
     isAutoPaused: () => autoPaused,
+    recoveryMuted: (videoEl) => (autoMuted && videoEl.muted ? mutedBeforeHidden : videoEl.muted),
     noteUserVolumeChange: (videoEl) => {
       // A volume-only change does not alter the pre-scroll mute preference.
       if (autoMuted && !videoEl.muted) autoMuted = false;
