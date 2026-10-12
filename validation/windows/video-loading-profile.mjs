@@ -654,10 +654,10 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
         lower: videoUrl(id, 0, 'lower'), pageErrors: [], requestFailures: [], consoleErrors: [] };
       cases.push(observed);
       const protocol = await context.newCDPSession(page);
-      observed.networkProtocol = { requests: [], clientSecurity: [], failures: [], issues: [] };
+      observed.networkProtocol = { requests: [], clientSecurity: [], failures: [], issues: [], overflow: false };
       const nativeRequestIds = new Set();
       const boundedProtocolRecord = (records, record) => {
-        assert(records.length < MAX_REQUESTS, 'Native request protocol observations overflowed');
+        if (records.length >= MAX_REQUESTS) { observed.networkProtocol.overflow = true; return; }
         records.push(record);
       };
       protocol.on('Network.requestWillBeSent', (event) => {
@@ -747,20 +747,19 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
           }
           window.__xegRecoveryEventObservation = state;
         });
-        const initial = await stateWhen(page, (value) => value.readyState >= 2 &&
-          value.videoWidth === 320 && value.videoHeight === 180 && !value.error,
-        'valid initial frames before the corrupt tail');
-        assert.equal(initial.currentSrc, observed.best, 'Initial frames must come from the preferred source');
-        assert.equal(nativeLoopback.videoHeld(), true,
-          'The native HTTPS source must still hold later samples');
         await video.focus();
-        if (initial.muted) await page.keyboard.press('m');
+        if ((await itemState(page, 0)).muted) await page.keyboard.press('m');
         observed.beforePlay = await itemState(page, 0);
+        assert.equal(observed.beforePlay.src, observed.best,
+          'The trusted initial play action must target the preferred source');
         assert.equal(observed.beforePlay.muted, false, 'Ordinary mute control did not unmute the visible video');
         await video.click();
-        observed.playingOriginal = await stateWhen(page, (value) => !value.paused &&
+        observed.playingOriginal = await stateWhen(page, (value) => value.readyState >= 2 && !value.error &&
+          value.videoWidth === 320 && value.videoHeight === 180 && !value.paused &&
           value.currentTime > observed.beforePlay.currentTime + 0.15,
         'actual trusted playback progression before corruption');
+        assert.equal(nativeLoopback.videoHeld(), true,
+          'The native HTTPS source must still hold later samples during actual playback');
         assert.equal(observed.playingOriginal.currentSrc, observed.best,
           'Initial playback must progress on the preferred source');
         observed.lowerRequestsBeforeTailRelease = requests.filter((record) =>
@@ -827,6 +826,7 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
           'latest visible playback intent to resume with positive progress');
         }
         assertBestSource(await itemState(page, 0), observed.best);
+        assert.equal(observed.networkProtocol.overflow, false, 'Native request protocol observations overflowed');
         observed.nativeRequests = nativeLoopback.since(nativeMark);
         assert(observed.nativeRequests.some((record) => record.host === 'x.com' &&
           record.path === new URL(active.url).pathname && record.result === 'served'),
@@ -844,6 +844,7 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
       } catch (error) {
         observed.status = 'failed';
         observed.error = error instanceof Error ? error.message : String(error);
+        observed.failureState = await itemState(page, 0).catch(() => null);
         observed.nativeRequests = nativeLoopback.since(nativeMark);
       } finally {
         releaseLower();
@@ -857,6 +858,10 @@ async function runRecoveryIntentCases({ context, validMp4, output, nativeLoopbac
             delete window.__xegRecoveryEventObservation;
             return { records: state.records, overflow: state.overflow };
           });
+          if (observed.networkProtocol.overflow) {
+            observed.status = 'failed';
+            observed.error = `${observed.error ?? 'Native recovery case'}; request protocol observations overflowed`;
+          }
           assert.equal(observed.mediaEvents.overflow, false, 'Native media event observation overflowed');
           await page.screenshot({ path: join(output, `video-recovery-intent-${name}.png`) });
           if (await page.locator('[data-xeg-gallery-container]').count()) await page.keyboard.press('Escape');
