@@ -224,14 +224,31 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     const video = videoRef();
     const media = local.media;
     if (!video || !isVideo()) return;
+    let latestPlay: { token: object; source: string; generation: number } | null = null;
     onCleanup(
-      subscribeVideoPlaybackIntent(video, (playing) => {
+      subscribeVideoPlaybackIntent(video, (event) => {
         if (disposed || videoRef() !== video || local.media !== media) return;
-        wantsPlayback = playing;
-        needsResume = playing && pendingResume !== null;
+        if (event.type === 'play-rejected') {
+          if (
+            latestPlay?.token !== event.token ||
+            latestPlay.source !== playbackSrc() ||
+            latestPlay.generation !== intentGeneration
+          )
+            return;
+          latestPlay = null;
+          wantsPlayback = false;
+          needsResume = false;
+        } else {
+          wantsPlayback = event.playing;
+          needsResume = event.playing && pendingResume !== null;
+        }
         recoveringSource = null;
         controlInteractionAfterError = false;
         intentGeneration++;
+        if (event.type === 'command')
+          latestPlay = event.playing
+            ? { token: event.token, source: playbackSrc(), generation: intentGeneration }
+            : null;
       })
     );
   });

@@ -33,6 +33,7 @@ vi.mock('@shared/hooks/use-translation', () => ({
 import { VerticalImageItem } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem';
 import { MAX_VIDEO_PLAYBACK_ATTEMPTS, nextVideoPlaybackSource } from '@features/gallery/components/vertical-gallery-view/utils/video-playback-recovery';
 import { handleKeyboardEvent, resetKeyboardDebounceState } from '@shared/utils/events/handlers/keyboard';
+import { executeVideoControl } from '@shared/utils/events/handlers/video-control-helper';
 import { closeGallery, openGallery } from '@shared/state/signals/gallery.signals';
 
 const source = (name: string): string => `https://video.twimg.com/ext_tw_video/222/pu/vid/${name}.mp4`;
@@ -257,9 +258,12 @@ describe('VerticalImageItem video admission and playback', () => {
   });
 
   it.each([
-    { laterPlay: false, caseName: 'pause' },
-    { laterPlay: true, caseName: 'pause then play' },
-  ])('keeps a body-captured Space $caseName as latest intent during pending fallback', ({ laterPlay }) => {
+    { laterPlay: false, caseName: 'pause', rejectedName: null },
+    { laterPlay: true, caseName: 'pause then play', rejectedName: null },
+    { laterPlay: true, caseName: 'pause then blocked play', rejectedName: 'NotAllowedError' },
+    { laterPlay: true, caseName: 'pause then unsupported play', rejectedName: 'NotSupportedError' },
+    { laterPlay: true, caseName: 'pause then source-aborted play', rejectedName: 'AbortError' },
+  ])('keeps a body-captured Space $caseName as latest intent during pending fallback', async ({ laterPlay, rejectedName }) => {
     const item = media();
     openGallery([item]);
     resetKeyboardDebounceState();
@@ -300,6 +304,7 @@ describe('VerticalImageItem video admission and playback', () => {
       expect(pause).toHaveBeenCalledOnce();
       expect(play).not.toHaveBeenCalled();
       if (laterPlay) {
+        if (rejectedName) play.mockRejectedValueOnce(new DOMException('Playback rejected', rejectedName));
         clock.mockReturnValue(1200);
         video.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }));
         expect(play).toHaveBeenCalledOnce();
@@ -307,13 +312,68 @@ describe('VerticalImageItem video admission and playback', () => {
     } finally {
       document.body.removeEventListener('keydown', capture, { capture: true });
     }
+    await Promise.resolve();
     mediaEvent(video, 'loadstart');
     mediaEvent(video, 'loadedmetadata');
-    expect(play).toHaveBeenCalledTimes(laterPlay ? 2 : 0);
+    const shouldResume = laterPlay && (rejectedName === null || rejectedName === 'AbortError');
+    const beforeVisibility = shouldResume ? 2 : laterPlay ? 1 : 0;
+    expect(play).toHaveBeenCalledTimes(beforeVisibility);
     observers.get('0px')?.({ isIntersecting: false } as IntersectionObserverEntry);
     observers.get('0px')?.({ isIntersecting: true } as IntersectionObserverEntry);
-    expect(play).toHaveBeenCalledTimes(laterPlay ? 3 : 0);
+    expect(play).toHaveBeenCalledTimes(shouldResume ? 3 : beforeVisibility);
   });
+
+  it.each(['newer command', 'source replacement', 'media replacement'] as const)(
+    'ignores an older rejected play after %s during fallback',
+    async (change) => {
+      const { video, row, setState } = mount({ active: true });
+      Object.defineProperty(video, 'readyState', { configurable: true, get: () => 1 });
+      let paused = false;
+      Object.defineProperty(video, 'paused', { configurable: true, get: () => paused });
+      let rejectOld!: (error: Error) => void;
+      const play = vi.spyOn(video, 'play').mockImplementationOnce(
+        () => new Promise<void>((_resolve, reject) => { rejectOld = reject; })
+      ).mockResolvedValue(undefined);
+      vi.spyOn(video, 'pause').mockImplementation(() => { paused = true; });
+      mediaEvent(video, 'loadstart');
+      mediaEvent(video, 'play');
+      setMediaError(video, 3);
+      mediaEvent(video, 'error');
+      setMediaError(video, null);
+      mediaEvent(video, 'loadstart');
+      executeVideoControl('pause', { video });
+      executeVideoControl('play', { video });
+      expect(play).toHaveBeenCalledOnce();
+
+      if (change === 'newer command') {
+        executeVideoControl('pause', { video });
+        executeVideoControl('play', { video });
+      } else if (change === 'source replacement') {
+        setMediaError(video, 3);
+        mediaEvent(video, 'error');
+        expect(video.getAttribute('src')).toBe(source('low'));
+        setMediaError(video, null);
+      } else {
+        setState((current) => ({ ...current, media: media('333_api_1') }));
+        await Promise.resolve();
+        expect(host.querySelector('video')).toBe(video);
+        observers.get('0px')?.({ isIntersecting: true } as IntersectionObserverEntry);
+        mediaEvent(video, 'loadstart');
+        mediaEvent(video, 'play');
+        setMediaError(video, 3);
+        mediaEvent(video, 'error');
+        expect(video.getAttribute('src')).toBe(source('middle'));
+        setMediaError(video, null);
+        executeVideoControl('play', { video });
+      }
+      rejectOld(new DOMException('Old request blocked', 'NotAllowedError'));
+      await Promise.resolve();
+      mediaEvent(video, 'loadstart');
+      mediaEvent(video, 'loadedmetadata');
+      expect(row.dataset.mediaLoaded).toBe('true');
+      expect(play).toHaveBeenCalledTimes(change === 'source replacement' ? 2 : 3);
+    }
+  );
 
   it('keeps later native-control volume and mute changes during recovery', () => {
     const { video } = mount({ active: true });
