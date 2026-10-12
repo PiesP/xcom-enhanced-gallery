@@ -22,6 +22,7 @@ import { createEffect, createSignal, onCleanup, untrack } from 'solid-js';
 export interface UseVideoVolumePersistenceOptions {
   readonly videoRef: () => HTMLVideoElement | null;
   readonly isVideo: () => boolean;
+  readonly onUserVolumeChange?: (video: HTMLVideoElement) => void;
 }
 
 export interface UseVideoVolumePersistenceResult {
@@ -123,6 +124,7 @@ export function useVideoVolumePersistence(
     if (isApplyingVideoSettings() || volumeChangeGuard.shouldIgnoreChange(snapshot)) {
       return;
     }
+    options.onUserVolumeChange?.(video);
     const newVolume = normalizeVideoVolumeSetting(snapshot.volume, 1.0);
     const newMuted = normalizeVideoMutedSetting(snapshot.muted, false);
 

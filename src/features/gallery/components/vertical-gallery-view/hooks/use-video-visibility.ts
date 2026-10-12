@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-/** @fileoverview Auto-play/pause video based on viewport visibility via IntersectionObserver. */
+/** @fileoverview Gallery scrollport visibility and one-height video admission. */
 
 import { logger } from '@shared/logging/logger';
 import { SharedObserver } from '@shared/utils/performance/observer-pool';
@@ -10,135 +10,169 @@ import { createEffect, onCleanup } from 'solid-js';
 
 interface UseVideoVisibilityOptions {
   readonly container: () => HTMLElement | null;
+  readonly scrollRoot: () => HTMLElement | null;
+  readonly scrollRootHeight: () => number;
   readonly video: () => HTMLVideoElement | null;
   readonly isVideo: Accessor<boolean>;
   readonly mediaIdentity: Accessor<object>;
   readonly admit: () => void;
-  readonly setMuted?: (video: HTMLVideoElement, nextMuted: boolean) => void;
+  readonly setMuted: (video: HTMLVideoElement, nextMuted: boolean) => void;
+  readonly onVisibilityChange: (visible: boolean) => void;
 }
 
-/** One viewport of advance admission; source attachment enforces the policy. */
-export const VIDEO_ADMISSION_ROOT_MARGIN = '100% 0px';
-
-interface CreateVideoVisibilityControllerOptions {
-  readonly video: HTMLVideoElement;
-  readonly setMuted?: (video: HTMLVideoElement, nextMuted: boolean) => void;
+/** Playback intent remains with the component; this state describes geometry only. */
+export interface VideoVisibilityState {
+  readonly isVisible: () => boolean;
+  readonly hasObservation: () => boolean;
+  readonly isAutoPaused: () => boolean;
+  readonly noteUserVolumeChange: (video: HTMLVideoElement) => void;
+  readonly pauseIfHidden: () => void;
 }
 
-interface VideoVisibilityController {
-  readonly handleEntry: (entry: IntersectionObserverEntry) => void;
-}
+export function useVideoVisibility(options: UseVideoVisibilityOptions): VideoVisibilityState {
+  const {
+    container,
+    scrollRoot,
+    scrollRootHeight,
+    video,
+    isVideo,
+    mediaIdentity,
+    admit,
+    setMuted,
+    onVisibilityChange,
+  } = options;
+  let visible = false;
+  let observed = false;
+  let autoPaused = false;
+  let autoMuted = false;
+  let mutedBeforeHidden = false;
 
-function createVideoVisibilityController(
-  options: CreateVideoVisibilityControllerOptions
-): VideoVisibilityController {
-  const { video, setMuted } = options;
-
-  let wasPlayingBeforeHidden = false;
-  let wasMutedBeforeHidden: boolean | null = null;
-  let didAutoMute = false;
-
-  const pauseVideo = (): void => {
-    if (typeof video.pause === 'function') video.pause();
-  };
-
-  const playVideo = (): void => {
-    if (typeof video.play !== 'function') return;
+  const pauseOutside = (videoEl: HTMLVideoElement): void => {
     try {
-      const result = video.play();
-      if (result && typeof (result as Promise<void>).catch === 'function') {
-        void (result as Promise<void>).catch((err) => {
-          __DEV__ && logger.debug('Video play() was prevented', { error: err });
-        });
+      if (!autoMuted && !videoEl.muted) {
+        mutedBeforeHidden = videoEl.muted;
+        setMuted(videoEl, true);
+        autoMuted = true;
       }
-    } catch (err) {
-      __DEV__ && logger.debug('Video play() threw synchronously', { error: err });
+      if (!videoEl.paused) {
+        autoPaused = true;
+        videoEl.pause();
+      }
+    } catch (error) {
+      __DEV__ && logger.warn('Failed to pause video on scroll out', { error });
     }
   };
 
-  const applyMuted = (nextMuted: boolean): void => {
-    if (typeof setMuted === 'function') {
-      setMuted(video, nextMuted);
-      return;
-    }
-    video.muted = nextMuted;
-  };
-
-  return {
-    handleEntry(entry: IntersectionObserverEntry): void {
-      if (!entry.isIntersecting) {
-        try {
-          if (wasMutedBeforeHidden === null) {
-            wasPlayingBeforeHidden = !video.paused;
-            wasMutedBeforeHidden = video.muted;
-            didAutoMute = false;
-          }
-          if (!video.muted) {
-            applyMuted(true);
-            didAutoMute = true;
-          }
-          if (!video.paused) {
-            pauseVideo();
-          }
-        } catch (err) {
-          __DEV__ && logger.warn('Failed to pause video on scroll out', { error: err });
-        }
-      } else {
-        try {
-          if (wasMutedBeforeHidden !== null) {
-            if (didAutoMute && video.muted === true && wasMutedBeforeHidden === false) {
-              applyMuted(false);
-            }
-          }
-          if (wasPlayingBeforeHidden) {
-            playVideo();
-          }
-        } catch (err) {
-          __DEV__ && logger.warn('Failed to resume video on scroll in', { error: err });
-        } finally {
-          wasPlayingBeforeHidden = false;
-          wasMutedBeforeHidden = null;
-          didAutoMute = false;
-        }
-      }
-    },
-  };
-}
-
-export function useVideoVisibility(options: UseVideoVisibilityOptions): void {
-  const { container, video, isVideo, mediaIdentity, admit, setMuted } = options;
+  const isCurrent = (
+    root: HTMLElement,
+    containerEl: HTMLElement,
+    videoEl: HTMLVideoElement,
+    identity: object
+  ): boolean =>
+    root.isConnected &&
+    containerEl.isConnected &&
+    scrollRoot() === root &&
+    container() === containerEl &&
+    video() === videoEl &&
+    mediaIdentity() === identity;
 
   createEffect(() => {
     if (!isVideo()) return;
-
+    const root = scrollRoot();
     const containerEl = container();
     const videoEl = video();
     const identity = mediaIdentity();
-    if (!containerEl || !videoEl) return;
+    if (!root || !containerEl || !videoEl) return;
+    let active = true;
+    visible = false;
+    observed = false;
+    autoPaused = false;
+    autoMuted = false;
 
-    const controller = createVideoVisibilityController(
-      typeof setMuted === 'function' ? { video: videoEl, setMuted } : { video: videoEl }
-    );
-
-    const unsubscribeVisibility = SharedObserver.observe(
+    const unsubscribe = SharedObserver.observe(
       containerEl,
       (entry) => {
-        if (containerEl.isConnected && mediaIdentity() === identity) controller.handleEntry(entry);
+        if (!active || !isCurrent(root, containerEl, videoEl, identity)) return;
+        const nextVisible = entry.isIntersecting;
+        observed = true;
+        if (nextVisible === visible) {
+          if (nextVisible) return;
+          // Initial delivery may follow a user play before observation begins.
+          if (autoMuted || autoPaused || videoEl.paused) return;
+        }
+        if (!nextVisible) {
+          visible = false;
+          pauseOutside(videoEl);
+        } else {
+          visible = true;
+          try {
+            if (autoMuted && videoEl.muted) setMuted(videoEl, mutedBeforeHidden);
+          } catch (error) {
+            __DEV__ && logger.warn('Failed to restore video mute on scroll in', { error });
+          }
+          autoMuted = false;
+        }
+        onVisibilityChange(nextVisible);
+        if (nextVisible) autoPaused = false;
       },
-      { threshold: 0, rootMargin: '0px' }
-    );
-    const unsubscribeAdmission = SharedObserver.observe(
-      containerEl,
-      (entry) => {
-        if (entry.isIntersecting && containerEl.isConnected && mediaIdentity() === identity)
-          admit();
-      },
-      { threshold: 0, rootMargin: VIDEO_ADMISSION_ROOT_MARGIN }
+      { root, rootMargin: '0px', threshold: 0 }
     );
 
     onCleanup(() => {
-      unsubscribeAdmission();
-      unsubscribeVisibility();
+      active = false;
+      unsubscribe();
+      if (autoMuted && videoEl.isConnected && videoEl.muted) {
+        try {
+          setMuted(videoEl, mutedBeforeHidden);
+        } catch (error) {
+          __DEV__ && logger.warn('Failed to restore video mute on observer teardown', { error });
+        }
+      }
+      visible = false;
+      observed = false;
+      autoPaused = false;
+      autoMuted = false;
     });
   });
+
+  createEffect(() => {
+    if (!isVideo()) return;
+    const root = scrollRoot();
+    const height = scrollRootHeight();
+    const containerEl = container();
+    const videoEl = video();
+    const identity = mediaIdentity();
+    if (!root || !containerEl || !videoEl || height <= 0) return;
+    let active = true;
+    // IO percentage margins resolve against root width even on vertical sides.
+    const margin = `${Math.round(height)}px 0px`;
+    const unsubscribe = SharedObserver.observe(
+      containerEl,
+      (entry) => {
+        if (active && entry.isIntersecting && isCurrent(root, containerEl, videoEl, identity))
+          admit();
+      },
+      { root, rootMargin: margin, threshold: 0 }
+    );
+    onCleanup(() => {
+      active = false;
+      unsubscribe();
+    });
+  });
+
+  return {
+    isVisible: () => visible,
+    hasObservation: () => observed,
+    isAutoPaused: () => autoPaused,
+    noteUserVolumeChange: (videoEl) => {
+      // A volume-only change does not alter the pre-scroll mute preference.
+      if (autoMuted && !videoEl.muted) autoMuted = false;
+    },
+    pauseIfHidden: () => {
+      if (observed && !visible) {
+        const currentVideo = video();
+        if (currentVideo) pauseOutside(currentVideo);
+      }
+    },
+  };
 }

@@ -9,6 +9,10 @@ import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
 
 /** Props for VerticalImageItem component. */
 export interface VerticalImageItemProps {
+  /** Gallery scrollport used for video visibility and advance admission. */
+  readonly scrollRoot: () => HTMLElement | null;
+  /** Visible scrollport height, measured once by the gallery on resize. */
+  readonly scrollRootHeight: () => number;
   /**
    * Media item data to render
    */

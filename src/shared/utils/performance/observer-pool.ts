@@ -4,14 +4,13 @@
 import { logger } from '@shared/logging/logger';
 
 /**
- * True shared IntersectionObserver pool — keyed by options.
+ * Shared IntersectionObserver pool keyed by root identity and observer options.
  *
  * Before: each `observe()` call created a NEW `IntersectionObserver` instance,
  * resulting in N+V observers per gallery open (one per item + one per video).
  *
- * After: observers are pooled by serialized options. Only one observer exists
- * per unique configuration, regardless of how many elements are observed.
- * For this project: 2 unique configs → exactly 2 observers (not N+V).
+ * Equal options within one gallery scroll root share an observer. Separate
+ * gallery roots cannot share one, even when their margins are identical.
  */
 
 type ObserverCallback = (entry: IntersectionObserverEntry) => void;
@@ -22,21 +21,33 @@ interface ObserverPoolEntry {
   nextSubscriptionId: number;
 }
 
-/** Map from serialized options → shared observer + per-element subscriptions. */
+/** Map from root-aware options → shared observer + per-element subscriptions. */
 const observerPool = new Map<string, ObserverPoolEntry>();
+const rootIds = new WeakMap<Element | Document, number>();
+let nextRootId = 0;
 
-/** Serialize options into a stable key (sorted keys for determinism). */
+/** Include every supported option, retaining object identity only for root. */
 function optionsKey(options: IntersectionObserverInit): string {
-  // root is always null (viewport) in this codebase; omit it to keep keys simple
-  const threshold = options.threshold;
-  const rootMargin = options.rootMargin ?? '0px';
-  const t =
-    typeof threshold === 'number'
-      ? threshold
-      : Array.isArray(threshold)
-        ? threshold.join(',')
-        : '0';
-  return `t:${t}|m:${rootMargin}`;
+  const root = options.root ?? null;
+  let rootId = 0;
+  if (root) {
+    rootId = rootIds.get(root) ?? ++nextRootId;
+    rootIds.set(root, rootId);
+  }
+  const thresholds = Array.isArray(options.threshold)
+    ? [...options.threshold].sort((a, b) => a - b)
+    : [options.threshold ?? 0];
+  const { root: _root, threshold: _threshold, ...otherOptions } = options;
+  const normalized = {
+    ...otherOptions,
+    rootMargin: options.rootMargin ?? '0px',
+    scrollMargin: options.scrollMargin ?? '0px',
+  };
+  return JSON.stringify([
+    rootId,
+    thresholds,
+    Object.entries(normalized).sort(([a], [b]) => a.localeCompare(b)),
+  ]);
 }
 
 export const SharedObserver = {
@@ -52,6 +63,9 @@ export const SharedObserver = {
       const callbacks = new Map<Element, Map<number, ObserverCallback>>();
 
       const observer = new IntersectionObserver((entries) => {
+        // A queued delivery from a disconnected observer cannot reach a later
+        // subscription that happens to reuse the same target and options.
+        if (observerPool.get(key)?.observer !== observer) return;
         for (const e of entries) {
           // MED-3: Auto-cleanup disconnected elements in observer callback.
           // If element was removed from DOM without dispose(), remove it here.
@@ -68,7 +82,8 @@ export const SharedObserver = {
           }
           const targetCallbacks = callbacks.get(e.target);
           if (!targetCallbacks) continue;
-          for (const cb of [...targetCallbacks.values()]) {
+          for (const [subscriptionId, cb] of [...targetCallbacks]) {
+            if (targetCallbacks.get(subscriptionId) !== cb) continue;
             try {
               cb(e);
             } catch (error) {
