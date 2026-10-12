@@ -32,7 +32,10 @@ import { startExtensionNativeFixtureLoopback } from './extension-native-loopback
 import { runInstalledMediaApiReuseProfile } from './media-api-reuse-profile.mjs';
 import { runVideoLoadingProfile } from './video-loading-profile.mjs';
 import {
+  PUBLIC_PREPLAYER_CASE,
   QUOTED_CASES,
+  RAPID_CLICK_A,
+  RAPID_CLICK_B,
   UNAVAILABLE_SEQUENCE,
   quotedVideoApiResponse,
 } from '../../test/e2e/fixtures/installed-quoted-video-api.mjs';
@@ -40,6 +43,8 @@ import {
 const PROFILE_PREFIX = 'xeg-chrome-install-';
 const DEFAULT_NOTIFICATION_ICON = 'icons/icon-128x128.png';
 const TWEET_ID = '1234567890123456789';
+const DELAYED_FAILURE_ID = '8777777777777777777';
+const DELAYED_NAVIGATION_ID = '8777777777777777778';
 const FIXTURE_URL = `https://x.com/testuser/status/${TWEET_ID}`;
 const QUALITY_TWEET_ID = '4666000000000000001';
 const QUALITY_FIXTURE_URL = `https://x.com/qualityuser/status/${QUALITY_TWEET_ID}`;
@@ -446,6 +451,12 @@ async function installFixtureRoutes(context, root, images, displayImages) {
   const unavailableHtml = await readFile(
     join(root, 'test/e2e/fixtures/installed-unavailable-sequence-page.html'), 'utf8'
   );
+  const unmarkedVideoHtml = await readFile(
+    join(root, 'test/e2e/fixtures/installed-unmarked-video-page.html'), 'utf8'
+  );
+  const rapidVideoHtml = await readFile(
+    join(root, 'test/e2e/fixtures/installed-rapid-video-page.html'), 'utf8'
+  );
   const videoPayloads = Object.fromEntries(await Promise.all(
     ['quote-one', 'quote-two', 'linked-four', 'quote-three', 'nested-c'].map(async (name) => [
       name, await readFile(join(root, `test/e2e/fixtures/installed-${name}.mp4`)),
@@ -458,6 +469,7 @@ async function installFixtureRoutes(context, root, images, displayImages) {
   const qualityRequests = [];
   let unavailableApiOverflow = 0;
   let sequenceRouteActive = false;
+  let delayedFailureGate = null;
   const routeHandler = async (route) => {
     const url = new URL(route.request().url());
     if (url.protocol === 'chrome-extension:') {
@@ -474,6 +486,27 @@ async function installFixtureRoutes(context, root, images, displayImages) {
         tweetId = JSON.parse(url.searchParams.get('variables') ?? '{}').tweetId;
       } catch {
         tweetId = undefined;
+      }
+      if (tweetId === DELAYED_FAILURE_ID || tweetId === DELAYED_NAVIGATION_ID ||
+          tweetId === RAPID_CLICK_A) {
+        const rapidResponse = tweetId === RAPID_CLICK_A
+          ? quotedVideoApiResponse(tweetId) : null;
+        const record = { tweetId, method: route.request().method(), status: 403,
+          requestedAtMonotonicMs: performance.now(), fulfilledAtMonotonicMs: null };
+        if (rapidResponse) record.status = 200;
+        quotedApiResponses.push(record);
+        assert(delayedFailureGate?.tweetId === tweetId,
+          'Delayed extraction request must match its owned response gate');
+        await delayedFailureGate.promise;
+        try {
+          await route.fulfill({ status: record.status, contentType: 'application/json',
+            body: rapidResponse ? JSON.stringify(rapidResponse) : '{}' });
+          record.fulfilledAtMonotonicMs = performance.now();
+        } catch (error) {
+          if (tweetId !== DELAYED_NAVIGATION_ID && tweetId !== RAPID_CLICK_A) throw error;
+          record.abortedAfterNavigation = true;
+        }
+        return;
       }
       if (tweetId === QUALITY_TWEET_ID) {
         assert(qualityApiResponses.length < 8, 'Source-quality API observation overflow');
@@ -524,7 +557,16 @@ async function installFixtureRoutes(context, root, images, displayImages) {
       sequenceRouteActive = unavailableRoute;
       await route.fulfill({
         contentType: 'text/html',
-        body: unavailableRoute ? unavailableHtml : quotedCase
+        body: unavailableRoute ? unavailableHtml
+          : [DELAYED_FAILURE_ID, DELAYED_NAVIGATION_ID]
+              .some((id) => url.pathname === `/delayed_host/status/${id}`)
+            ? quotedHtml.replaceAll('8111111111111111111', url.pathname.split('/').at(-1))
+              .replaceAll('9111111111111111111', '9777777777777777777')
+              .replaceAll('/outer_one/status/', '/delayed_host/status/')
+          : url.pathname === '/quote_one/status/9111111111111111111'
+            ? unmarkedVideoHtml
+          : url.pathname === `/rapid_a/status/${RAPID_CLICK_A}`
+            ? rapidVideoHtml : quotedCase
           ? quotedCase.name === 'public-preplayer' ? preplayerHtml
             : quotedHtml.replace('<body data-quote-case="recognized">',
               `<body data-quote-case="${quotedCase.route}">`)
@@ -597,7 +639,20 @@ async function installFixtureRoutes(context, root, images, displayImages) {
     qualityRequests,
     getUnavailableApiOverflow: () => unavailableApiOverflow,
     videoPayloads,
+    armDelayedFailure(tweetId) {
+      assert.equal(delayedFailureGate, null, 'Only one delayed extraction may own the gate');
+      assert([DELAYED_FAILURE_ID, DELAYED_NAVIGATION_ID, RAPID_CLICK_A].includes(tweetId));
+      let release;
+      const promise = new Promise((resolve) => { release = resolve; });
+      delayedFailureGate = { tweetId, promise, release };
+    },
+    releaseDelayedFailure() {
+      delayedFailureGate?.release();
+      delayedFailureGate = null;
+    },
     async remove() {
+      delayedFailureGate?.release();
+      delayedFailureGate = null;
       await context.unroute('**/*', routeHandler);
     },
   };
@@ -2632,6 +2687,43 @@ async function captureQuotedOpeningScroll(trigger) {
   });
 }
 
+async function quotedClickRecord(page, beforeCount, expectedTag) {
+  await page.waitForTimeout(10);
+  const records = await page.evaluate(() => window.__quoteFixtureClicks);
+  assert.equal(records.length, beforeCount + 1, 'One ordinary trusted fixture click must be recorded');
+  const record = records.at(-1);
+  assert.equal(record.tag, expectedTag, 'Hit-tested event.target must match the intended element');
+  return record;
+}
+
+async function hostVideoState(video) {
+  return video.evaluate((element) => ({
+    currentTime: element.currentTime, paused: element.paused,
+    readyState: element.readyState, width: element.videoWidth, height: element.videoHeight,
+    error: element.error?.code ?? null, muted: element.muted, volume: element.volume,
+  }));
+}
+
+async function assertHostStopped(page, video, label) {
+  const element = await video.elementHandle();
+  assert(element, `${label}: host video must exist`);
+  try {
+    await page.waitForFunction((candidate) => candidate instanceof HTMLVideoElement && candidate.paused,
+      element, { timeout: 5_000 });
+  } finally {
+    await element.dispose();
+  }
+  const first = await hostVideoState(video);
+  await page.waitForTimeout(350);
+  const second = await hostVideoState(video);
+  assert.equal(first.paused, true, `${label}: host must pause`);
+  assert.equal(second.paused, true, `${label}: host must remain paused`);
+  assert(second.currentTime - first.currentTime < 0.05,
+    `${label}: host time must not progress after settling`);
+  assert.equal(second.error, null, `${label}: host must retain a usable media source`);
+  return { first, second };
+}
+
 async function assertQuotedSelection(page, { position, total, type, path }) {
   const index = position - 1;
   const state = await waitForValue(async () => {
@@ -2871,7 +2963,8 @@ async function runOuterVideoControl({ quotedCase, quotedApiResponses, downloads,
       sha256: createHash('sha256').update(bytes).digest('hex') }, close };
 }
 
-async function withControlledFixtureVideoMode(extensionPage, evidence, action) {
+async function withControlledFixtureVideoMode(extensionPage, evidence, action,
+  mode = 'allow-all') {
   const key = 'xeg-app-settings';
   let prior;
   let mutated = false;
@@ -2886,6 +2979,8 @@ async function withControlledFixtureVideoMode(extensionPage, evidence, action) {
     }, key);
     evidence.priorStoredMode = prior.value?.gallery?.videoClickMode ?? null;
     const next = createControlledVideoSettings(prior.value, Date.now());
+    if (mode === 'default') delete next.gallery.videoClickMode;
+    else next.gallery.videoClickMode = mode;
     mutated = true;
     await extensionPage.evaluate(async ({ storageKey, value }) => {
       await chrome.storage.local.set({ [storageKey]: value });
@@ -2894,8 +2989,9 @@ async function withControlledFixtureVideoMode(extensionPage, evidence, action) {
       const values = await chrome.storage.local.get(storageKey);
       return values[storageKey]?.gallery?.videoClickMode ?? null;
     }, key);
-    assert.equal(effective, 'allow-all', 'Preplayer fixture must use the supported allow-all mode');
-    evidence.effectiveMode = effective;
+    assert.equal(effective, mode === 'default' ? null : mode,
+      'Controlled fixture must persist its requested video-click mode');
+    evidence.effectiveMode = mode === 'default' ? 'block-controls-only' : effective;
     result = await action();
   } catch (error) {
     validationError = error;
@@ -3271,6 +3367,489 @@ async function runUnavailableSequence({ apiResponses, extensionPage, output, pag
   });
 }
 
+async function runSvgTargetMatrix({ extensionPage, output, page, quotedApiResponses }) {
+  const controlledSetting = {};
+  return withControlledFixtureVideoMode(extensionPage, controlledSetting, async () => {
+    const quotedCase = PUBLIC_PREPLAYER_CASE;
+    const pageUrl = `https://x.com/${quotedCase.handle}/status/${quotedCase.outer}`;
+    const targets = [
+      { name: 'padding', tag: 'button' },
+      { name: 'text', tag: 'span' },
+      { name: 'svg', tag: 'svg' },
+      { name: 'path', tag: 'path' },
+    ];
+    const cases = [];
+    for (const target of targets) {
+      await page.goto(pageUrl);
+      await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+      const button = page.locator('[data-preplayer-media] button');
+      await button.scrollIntoViewIfNeeded();
+      await page.evaluate(() => window.scrollBy(0, -120));
+      await button.focus();
+      const before = await quotedHostSnapshot(page, quotedCase.route,
+        '[data-preplayer-media] button');
+      const hit = await button.evaluate((element, name) => {
+        const rect = element.getBoundingClientRect();
+        const child = name === 'text' ? element.querySelector('span')
+          : name === 'svg' || name === 'path' ? element.querySelector(name) : element;
+        const childRect = child.getBoundingClientRect();
+        const x = name === 'padding' ? rect.left + 10
+          : name === 'svg' ? childRect.left + 2 : childRect.left + childRect.width / 2;
+        const y = name === 'padding' ? rect.top + 10
+          : name === 'svg' ? childRect.top + 2 : childRect.top + childRect.height / 2;
+        return { x, y, actualTag: document.elementFromPoint(x, y)?.tagName.toLowerCase() };
+      }, target.name);
+      assert.equal(hit.actualTag, target.tag,
+        `${target.name}: real hit-test must reach the intended event target`);
+      const apiStart = quotedApiResponses.length;
+      await captureQuotedOpeningScroll(button);
+      await page.mouse.click(hit.x, hit.y);
+      before.scrollY = Number(await button.getAttribute('data-opening-scroll-y'));
+      assert(Number.isFinite(before.scrollY) && before.scrollY > 0);
+      const gallery = await assertQuotedGallery(page, quotedCase);
+      await page.waitForTimeout(10);
+      const clicks = await page.evaluate(() => window.__preplayerFixtureClicks);
+      assert.deepEqual(clicks, [{ tag: target.tag, prevented: true }],
+        `${target.name}: the original trusted event must open the gallery`);
+      const originUrl = await assertQuotedOriginLink(gallery.gallery,
+        `https://x.com/${quotedCase.username}/status/${quotedCase.owner}`);
+      const close = await closeQuotedGallery({ gallery: gallery.gallery, page,
+        method: 'escape', before, caseName: quotedCase.route,
+        selector: '[data-preplayer-media] button' });
+      cases.push({ target: target.name, hit, clicks, selected: gallery.selectedMedia,
+        originUrl, api: quotedApiResponses.slice(apiStart), close });
+    }
+    await page.screenshot({ path: join(output, 'quoted-svg-targets-after.png') });
+    return { status: 'passed', mode: 'allow-all', cases, controlledSetting };
+  });
+}
+
+async function runDelayedVideoFailures({ extensionPage, fixtureRoutes, output, page }) {
+  const cases = [];
+  for (const [name, tweetId] of [
+    ['failure', DELAYED_FAILURE_ID], ['navigation', DELAYED_NAVIGATION_ID],
+  ]) {
+    const pageUrl = `https://x.com/delayed_host/status/${tweetId}`;
+    await page.goto(pageUrl);
+    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+    await page.locator('body[data-video-ready="true"]').waitFor({ state: 'attached' });
+    const shell = page.locator('[data-case="recognized"] [data-video-key]');
+    await shell.locator('[data-testid="playButton"]').click();
+    const video = shell.locator('video');
+    await page.waitForFunction(() => {
+      const element = document.querySelector('[data-case="recognized"] [data-video-key] video');
+      return element instanceof HTMLVideoElement && element.currentSrc.startsWith('blob:') &&
+        !element.paused && element.currentTime > 0.15 && element.videoWidth === 320 &&
+        element.videoHeight === 180 && element.error === null;
+    }, null, { timeout: 15_000 });
+    await video.evaluate((element) => { element.loop = true; });
+    const before = await hostVideoState(video);
+    const knownNotifications = await extensionPage.evaluate(async () =>
+      Object.keys(await chrome.notifications.getAll()));
+    const priorSetting = name === 'failure'
+      ? await extensionPage.evaluate(async () => {
+        const values = await chrome.storage.local.get('xeg-app-settings');
+        return { exists: Object.hasOwn(values, 'xeg-app-settings'),
+          value: values['xeg-app-settings'] ?? null };
+      }) : null;
+    let shortcutIssued = false;
+    let observation;
+    const apiStart = fixtureRoutes.quotedApiResponses.length;
+    fixtureRoutes.armDelayedFailure(tweetId);
+    try {
+      await video.click();
+      const request = await waitForValue(async () => fixtureRoutes.quotedApiResponses
+        .slice(apiStart).find((item) => item.tweetId === tweetId),
+      `${name} extraction request`);
+      assert.equal(request.fulfilledAtMonotonicMs, null,
+        `${name}: provider response must still be held`);
+      assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0,
+        `${name}: pending extraction must not open a gallery`);
+      const pendingStart = await hostVideoState(video);
+      await page.waitForTimeout(350);
+      const pendingEnd = await hostVideoState(video);
+      assert.equal(pendingEnd.paused, false,
+        `${name}: intercepted click must not pause host during extraction`);
+      assert(pendingEnd.currentTime > pendingStart.currentTime + 0.15,
+        `${name}: actual host playback must continue while extraction is pending`);
+      observation = { name, pageUrl, tweetId, before, request,
+        pendingStart, pendingEnd };
+      if (name === 'navigation') {
+        await page.goto(FIXTURE_URL);
+        await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+        fixtureRoutes.releaseDelayedFailure();
+        await page.waitForTimeout(350);
+        assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0,
+          'Late extraction after navigation must not open a gallery');
+        const active = await extensionPage.evaluate(async () => chrome.notifications.getAll());
+        assert.deepEqual(Object.keys(active).filter((id) => id.startsWith('xeg-') &&
+          !knownNotifications.includes(id)), [],
+        'Late extraction after navigation must not notify the new session');
+        observation.navigation = { url: page.url(), galleryOpen: false,
+          newNotificationCount: 0 };
+      } else {
+        fixtureRoutes.releaseDelayedFailure();
+        const notification = await waitForValue(async () => extensionPage.evaluate(
+          async (known) => {
+            const active = await chrome.notifications.getAll();
+            const entry = Object.entries(active).find(([id]) =>
+              id.startsWith('xeg-') && !known.includes(id));
+            return entry ? { id: entry[0], message: entry[1].message ?? '' } : undefined;
+          }, knownNotifications), 'delayed extraction failure notification');
+        assert.match(notification.message,
+          /play\/pause controls on X, or press Alt\+Shift\+V to keep video clicks in X/iu,
+          'Failed video extraction must explain an actionable native recovery path');
+        assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0,
+          'Failed extraction must not open a gallery from a blob-only host');
+        const failedHost = await hostVideoState(video);
+        assert.equal(failedHost.paused, false,
+          'Failed extraction must leave native host playback usable');
+        shortcutIssued = true;
+        await page.keyboard.press('Alt+Shift+V');
+        const switchedMode = await waitForValue(async () => {
+          const mode = await extensionPage.evaluate(async () => {
+            const values = await chrome.storage.local.get('xeg-app-settings');
+            return values['xeg-app-settings']?.gallery?.videoClickMode;
+          });
+          return mode === 'block-all' ? mode : undefined;
+        }, 'trusted native-video mode shortcut');
+        assert.equal(switchedMode, 'block-all',
+          'Trusted recovery shortcut must persist the native video-click mode');
+        await shell.locator('[data-testid="playButton"]').click();
+        await page.waitForFunction(() => {
+          const element = document.querySelector('[data-case="recognized"] [data-video-key] video');
+          return element instanceof HTMLVideoElement && !element.paused &&
+            element.currentTime > 0.15 && element.error === null;
+        }, null, { timeout: 5_000 });
+        const clickCount = await page.evaluate(() => window.__quoteFixtureClicks.length);
+        await video.click();
+        const nativeClick = await quotedClickRecord(page, clickCount, 'video');
+        assert.equal(nativeClick.defaultPrevented, false,
+          'After mode switch the direct video click must reach X natively');
+        assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0);
+        assert.equal(fixtureRoutes.quotedApiResponses.length, apiStart + 1,
+          'Native recovery must not start another extraction request');
+        observation.failure = { notification, failedHost, switchedMode, nativeClick,
+          nativeRecovery: await hostVideoState(video) };
+      }
+      cases.push(observation);
+      await page.screenshot({ path: join(output, `quoted-delayed-${name}.png`) });
+    } finally {
+      fixtureRoutes.releaseDelayedFailure();
+      if (shortcutIssued) {
+        await extensionPage.evaluate(async ({ exists, value }) => {
+          if (exists) await chrome.storage.local.set({ 'xeg-app-settings': value });
+          else await chrome.storage.local.remove('xeg-app-settings');
+        }, priorSetting);
+        const restored = await extensionPage.evaluate(async ({ exists, value }) => {
+          const values = await chrome.storage.local.get('xeg-app-settings');
+          return Object.hasOwn(values, 'xeg-app-settings') === exists &&
+            (!exists || JSON.stringify(values['xeg-app-settings']) === JSON.stringify(value));
+        }, priorSetting);
+        assert.equal(restored, true, 'Recovery shortcut must restore full prior task setting');
+        if (observation) observation.settingRestored = true;
+      }
+    }
+  }
+  return { status: 'passed', cases };
+}
+
+async function runRapidVideoClicks({ downloads, extensionPage, fixtureRoutes,
+  nativeLoopback, output, page, pageFetches }) {
+  const pageUrl = `https://x.com/rapid_a/status/${RAPID_CLICK_A}`;
+  await page.goto(pageUrl);
+  await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+  const first = page.locator('[data-rapid="a"] video');
+  const second = page.locator('[data-rapid="b"] video');
+  await first.scrollIntoViewIfNeeded();
+  await first.focus();
+  const apiStart = fixtureRoutes.quotedApiResponses.length;
+  fixtureRoutes.armDelayedFailure(RAPID_CLICK_A);
+  try {
+    await first.click();
+    const heldA = await waitForValue(async () => fixtureRoutes.quotedApiResponses
+      .slice(apiStart).find(({ tweetId }) => tweetId === RAPID_CLICK_A),
+    'rapid A held provider request');
+    assert.equal(heldA.fulfilledAtMonotonicMs, null,
+      'A response must remain pending at the B click');
+    await second.scrollIntoViewIfNeeded();
+    const before = await page.evaluate(() => ({ scrollY: window.scrollY,
+      body: document.body.style.cssText }));
+    await second.click();
+    const expectedB = { name: 'rapid-b', expectedPosition: 2, expectedTotal: 2,
+      owner: RAPID_CLICK_B, media: 'quote-two' };
+    const opened = await assertQuotedGallery(page, expectedB);
+    const originUrl = await assertQuotedOriginLink(opened.gallery,
+      `https://x.com/rapid_b/status/${RAPID_CLICK_B}`);
+    const bRequests = fixtureRoutes.quotedApiResponses.slice(apiStart)
+      .filter(({ tweetId }) => tweetId === RAPID_CLICK_B);
+    assert.equal(bRequests.length, 1, 'B must make one independent owner request');
+    assert.equal(bRequests[0].status, 200);
+    fixtureRoutes.releaseDelayedFailure();
+    await page.waitForTimeout(350);
+    const retained = await assertQuotedSelection(page, { position: 2, total: 2,
+      type: 'video', path: `/ext_tw_video/${RAPID_CLICK_B}/pu/vid/320x180/quote-two.mp4` });
+    const knownIds = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+    const nativeMark = nativeLoopback.mark();
+    const fetchMark = pageFetches.length;
+    const filename = `rapid_b_${RAPID_CLICK_B}_1.mp4`;
+    await opened.gallery.locator(
+      '[data-gallery-element="toolbar"] button[aria-label="Download"]'
+    ).click();
+    const download = await waitForDownload(extensionPage, knownIds, filename);
+    const relativeDownload = relative(downloads, download.filename);
+    assert(relativeDownload && !relativeDownload.startsWith('..') && !isAbsolute(relativeDownload));
+    const bytes = await readFile(download.filename);
+    const expectedBytes = fixtureRoutes.videoPayloads['quote-two'];
+    assert(expectedBytes.equals(bytes), 'Late A must not replace B preferred-save bytes');
+    const native = await assertNativeSingle({ extensionPage, knownIds, download,
+      expectedUrl: retained.source, expectedBytes, nativeLoopback, nativeMark,
+      pageFetches: pageFetches.slice(fetchMark) });
+    await opened.gallery.locator(
+      '[data-gallery-element="toolbar"] button[aria-label="Close"]'
+    ).click();
+    await opened.gallery.waitFor({ state: 'detached' });
+    const after = await page.evaluate(() => ({ scrollY: window.scrollY,
+      body: document.body.style.cssText }));
+    assert.deepEqual(after, before, 'Rapid B close must restore host scroll and body styles');
+    await page.screenshot({ path: join(output, 'quoted-rapid-a-b-after.png') });
+    return { status: 'passed', pageUrl, heldA, bRequests, selected: opened.selectedMedia,
+      retained, originUrl, download: { filename, bytes: bytes.length, native,
+        sha256: createHash('sha256').update(bytes).digest('hex') }, restoration: after };
+  } finally {
+    fixtureRoutes.releaseDelayedFailure();
+  }
+}
+
+async function installBoundedExtensionRenderFault(context, page, extensionId) {
+  const cdp = await context.newCDPSession(page);
+  let isolated;
+  try {
+    const contexts = [];
+    cdp.on('Runtime.executionContextCreated', ({ context: observed }) => {
+      if (contexts.length < 32) contexts.push(observed);
+    });
+    const { frameTree } = await cdp.send('Page.getFrameTree');
+    await cdp.send('Runtime.enable');
+    isolated = await waitForValue(() => {
+      const matching = contexts.filter(({ origin, auxData }) =>
+        (origin === `chrome-extension://${extensionId}` ||
+          origin === `chrome-extension://${extensionId}/`) &&
+        auxData?.frameId === frameTree.frame.id && auxData?.isDefault === false);
+      if (matching.length > 1) throw new Error('Ambiguous extension content-script contexts');
+      return matching[0];
+    }, 'installed extension isolated execution context', 5_000);
+    const expression = `(() => {
+    const prototype = CSSStyleDeclaration.prototype;
+    const descriptor = Object.getOwnPropertyDescriptor(prototype, 'setProperty');
+    if (!descriptor || typeof descriptor.value !== 'function') throw new Error('Missing CSS API');
+    if (globalThis.__xegInstalledRenderFault) throw new Error('Render fault already installed');
+    const original = descriptor.value;
+    const state = { remaining: 1, throws: 0, restore() {
+      Object.defineProperty(prototype, 'setProperty', descriptor);
+    } };
+    Object.defineProperty(prototype, 'setProperty', { ...descriptor,
+      value: function(property, value, priority) {
+        if (property === '--xeg-viewport-w' && state.remaining > 0) {
+          state.remaining = 0;
+          state.throws += 1;
+          state.restore();
+          throw new Error('Bounded installed gallery render failure');
+        }
+        return Reflect.apply(original, this, [property, value, priority]);
+      },
+    });
+    globalThis.__xegInstalledRenderFault = state;
+    return { installed: true, remaining: state.remaining };
+  })()`;
+    const installed = await cdp.send('Runtime.evaluate', { contextId: isolated.id,
+      expression, returnByValue: true });
+    assert.equal(installed.exceptionDetails, undefined,
+      'Extension isolated render-fault installation must not throw');
+    assert.equal(installed.result.value?.installed, true);
+    return {
+      context: { origin: isolated.origin, name: isolated.name,
+        frameId: isolated.auxData.frameId },
+      async snapshot() {
+        const observed = await cdp.send('Runtime.evaluate', { contextId: isolated.id,
+          expression: '({ throws: globalThis.__xegInstalledRenderFault?.throws ?? 0, remaining: globalThis.__xegInstalledRenderFault?.remaining ?? -1 })',
+          returnByValue: true });
+        assert.equal(observed.exceptionDetails, undefined);
+        return observed.result.value;
+      },
+      async dispose() {
+        try {
+          await cdp.send('Runtime.evaluate', { contextId: isolated.id,
+            expression: 'globalThis.__xegInstalledRenderFault?.restore(); delete globalThis.__xegInstalledRenderFault',
+            returnByValue: true });
+        } finally {
+          await cdp.detach();
+        }
+      },
+    };
+  } catch (error) {
+    if (isolated) {
+      await cdp.send('Runtime.evaluate', { contextId: isolated.id,
+        expression: 'globalThis.__xegInstalledRenderFault?.restore(); delete globalThis.__xegInstalledRenderFault',
+        returnByValue: true }).catch(() => {});
+    }
+    await cdp.detach().catch(() => {});
+    throw error;
+  }
+}
+
+async function runModelessRenderRecovery({ consoleErrors, context, extensionId, output, page }) {
+  const quotedCase = QUOTED_CASES[0];
+  await page.goto(`https://x.com/${quotedCase.handle}/status/${quotedCase.outer}`);
+  await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+  await page.locator('body[data-video-ready="true"]').waitFor({ state: 'attached' });
+  const shell = page.locator('[data-case="recognized"] [data-video-key]');
+  await shell.locator('[data-testid="playButton"]').click();
+  const hostVideo = shell.locator('video');
+  await page.waitForFunction(() => {
+    const element = document.querySelector('[data-case="recognized"] [data-video-key] video');
+    return element instanceof HTMLVideoElement && !element.paused &&
+      element.currentTime > 0.15 && element.videoWidth === 320 &&
+      element.videoHeight === 180 && element.error === null;
+  }, null, { timeout: 15_000 });
+  await hostVideo.evaluate((video) => { video.loop = true; });
+  const consoleStart = consoleErrors.length;
+  const fault = await installBoundedExtensionRenderFault(context, page, extensionId);
+  let observed;
+  try {
+    await hostVideo.click();
+    const recovery = page.locator('[data-xeg-error-boundary]');
+    await recovery.waitFor({ state: 'visible', timeout: 15_000 });
+    observed = await fault.snapshot();
+    assert.equal(observed.throws, 1, 'The production gallery render API must hit one bounded fault');
+    assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0,
+      'Failed renderer must leave the gallery modal unmounted');
+    const modelessHost = await page.evaluate(() => ({
+      bodyInert: document.body.inert,
+      hostInert: document.querySelector('main')?.inert ?? null,
+      bodyOverflow: document.body.style.overflow,
+    }));
+    assert.equal(modelessHost.hostInert, false,
+      'Modeless recovery must release host interaction isolation');
+    await recovery.locator('[data-xeg-error-action="close"]').click();
+    await recovery.waitFor({ state: 'detached' });
+    await shell.locator('[data-testid="playButton"]').click();
+    await page.waitForFunction(() => {
+      const video = document.querySelector('[data-case="recognized"] [data-video-key] video');
+      return video instanceof HTMLVideoElement && !video.paused &&
+        video.currentTime > 0.15 && video.error === null;
+    }, null, { timeout: 5_000 });
+    const recoveredHost = await hostVideoState(hostVideo);
+    await hostVideo.click();
+    const retried = await assertQuotedGallery(page, quotedCase);
+    const retryHostStopped = await assertHostStopped(page, hostVideo,
+      'New gallery after modeless recovery');
+    await retried.gallery.locator(
+      '[data-gallery-element="toolbar"] button[aria-label="Close"]'
+    ).click();
+    await retried.gallery.waitFor({ state: 'detached' });
+    await shell.locator('[data-testid="playButton"]').click();
+    await page.waitForFunction(() => {
+      const video = document.querySelector('[data-case="recognized"] [data-video-key] video');
+      return video instanceof HTMLVideoElement && !video.paused &&
+        video.currentTime > 0.15 && video.error === null;
+    }, null, { timeout: 5_000 });
+    const hostAfterRetryClose = await hostVideoState(hostVideo);
+    const expectedConsoleErrors = consoleErrors.slice(consoleStart).filter((record) =>
+      record.text.includes('Bounded installed gallery render failure'));
+    assert(expectedConsoleErrors.length <= 2,
+      'One bounded renderer fault must not produce repeated console failures');
+    await page.screenshot({ path: join(output, 'quoted-modeless-recovery.png') });
+    return { status: 'passed', isolatedContext: fault.context,
+      fault: observed, modelessHost, recoveredHost, expectedConsoleErrors,
+      retry: { selected: retried.selectedMedia, hostStopped: retryHostStopped,
+        hostAfterClose: hostAfterRetryClose } };
+  } finally {
+    await fault.dispose();
+  }
+}
+
+async function runBlockAllDirectVideo({ extensionPage, output, page, quotedApiResponses }) {
+  const controlledSetting = {};
+  return withControlledFixtureVideoMode(extensionPage, controlledSetting, async () => {
+    const pageUrl = 'https://x.com/quote_one/status/9111111111111111111';
+    await page.goto(pageUrl);
+    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+    const video = page.locator('[data-unmarked-direct]');
+    await video.scrollIntoViewIfNeeded();
+    await page.locator('[data-native-play]').click();
+    await page.waitForFunction(() => {
+      const element = document.querySelector('[data-unmarked-direct]');
+      return element instanceof HTMLVideoElement && !element.paused &&
+        element.videoWidth > 0 && element.videoHeight > 0 &&
+        element.error === null && element.currentTime > 0.15;
+    }, null, { timeout: 15_000 });
+    const before = await hostVideoState(video);
+    const source = await video.evaluate((element) => element.currentSrc);
+    assert.equal(new URL(source).pathname,
+      '/ext_tw_video/9111111111111111111/pu/vid/320x180/quote-one.mp4');
+    assert.equal(before.width, 320);
+    assert.equal(before.height, 180);
+    const apiStart = quotedApiResponses.length;
+    const hit = await video.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      return { x, y, tag: document.elementFromPoint(x, y)?.tagName.toLowerCase() };
+    });
+    assert.equal(hit.tag, 'video', 'Direct unmarked video must be the real hit target');
+    await page.mouse.click(hit.x, hit.y);
+    await page.waitForTimeout(50);
+    const clicks = await page.evaluate(() => window.__directVideoClicks);
+    assert.equal(clicks.length, 1, 'Host must receive one ordinary video click');
+    assert.equal(clicks[0].tag, 'video');
+    assert.equal(clicks[0].prevented, false, 'block-all must leave direct video click native');
+    assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0);
+    assert.deepEqual(quotedApiResponses.slice(apiStart), [],
+      'A blocked native video click must not start gallery extraction');
+    const after = await hostVideoState(video);
+    await page.screenshot({ path: join(output, 'quoted-unmarked-block-all-native.png') });
+    return { status: 'passed', mode: 'block-all', pageUrl, source, before,
+      hit, clicks, after, controlledSetting };
+  }, 'block-all');
+}
+
+async function runDirectVideoAllowedModes({ extensionPage, output, page,
+  quotedApiResponses }) {
+  const cases = [];
+  for (const mode of ['default', 'block-controls-only', 'allow-all']) {
+    const controlledSetting = {};
+    const result = await withControlledFixtureVideoMode(extensionPage,
+      controlledSetting, async () => {
+        const pageUrl = 'https://x.com/quote_one/status/9111111111111111111';
+        await page.goto(pageUrl);
+        await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+        const video = page.locator('[data-unmarked-direct]');
+        await video.scrollIntoViewIfNeeded();
+        await video.focus();
+        const apiStart = quotedApiResponses.length;
+        await video.click();
+        const selected = await assertQuotedGallery(page, QUOTED_CASES[0]);
+        await page.waitForTimeout(10);
+        const clicks = await page.evaluate(() => window.__directVideoClicks);
+        assert.equal(clicks.length, 1, `${mode}: one trusted direct-video click expected`);
+        assert.equal(clicks[0].tag, 'video');
+        assert.equal(clicks[0].prevented, true,
+          `${mode}: eligible video surface click must be captured for gallery`);
+        const originUrl = await assertQuotedOriginLink(selected.gallery,
+          'https://x.com/quote_one/status/9111111111111111111');
+        await selected.gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]')
+          .click();
+        await selected.gallery.waitFor({ state: 'detached' });
+        return { mode, clicks, selected: selected.selectedMedia, originUrl,
+          api: quotedApiResponses.slice(apiStart), galleryClosed: true };
+      }, mode);
+    cases.push(result);
+  }
+  await page.screenshot({ path: join(output, 'quoted-unmarked-modes-after.png') });
+  return { status: 'passed', cases };
+}
+
 async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
   extensionPage, output, page, videoPayloads, nativeLoopback, pageFetches }) {
   const pageUrl = `https://x.com/${quotedCase.handle}/status/${quotedCase.outer}`;
@@ -3304,8 +3883,10 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
   await page.screenshot({ path: join(output, `quoted-${quotedCase.name}-before.png`) });
 
   const apiStart = quotedApiResponses.length;
+  const previewClickCount = await page.evaluate(() => window.__quoteFixtureClicks.length);
   await captureQuotedOpeningScroll(preview);
   await preview.click();
+  const previewClick = await quotedClickRecord(page, previewClickCount, 'img');
   previewBefore.scrollY = Number(await preview.getAttribute('data-opening-scroll-y'));
   assert(Number.isFinite(previewBefore.scrollY) && previewBefore.scrollY > 0,
     'Preview opening scroll must be observed');
@@ -3326,7 +3907,11 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
   const hostPlay = shell.locator('[data-testid="playButton"]');
   const galleryCountBeforePlay = await page.locator('[data-xeg-gallery-container]').count();
   assert.equal(galleryCountBeforePlay, 0);
+  const nativePlayClickCount = await page.evaluate(() => window.__quoteFixtureClicks.length);
   await hostPlay.click();
+  const nativePlayClick = await quotedClickRecord(page, nativePlayClickCount, 'button');
+  assert.equal(nativePlayClick.defaultPrevented, true,
+    'Fixture native play handler must receive and cancel its own trusted button click');
   const hostVideo = shell.locator('video');
   await page.waitForFunction((name) => {
     const shell = document.querySelector(`[data-case="${name}"] [data-video-key]`);
@@ -3345,6 +3930,19 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
   assert.equal(hostPlaying.width, 320);
   assert.equal(hostPlaying.height, 180);
   assert.equal(hostPlaying.error, null);
+  const hostProgressStart = hostPlaying.time;
+  await page.waitForFunction(({ name, start }) => {
+    const video = document.querySelector(`[data-case="${name}"] [data-video-key] video`);
+    return video instanceof HTMLVideoElement && !video.paused && video.error === null &&
+      video.currentTime >= start + 0.15;
+  }, { name: quotedCase.route, start: hostProgressStart }, { timeout: 5_000 });
+  const hostProgressEnd = await hostVideo.evaluate((video) => video.currentTime);
+  await hostVideo.evaluate((video) => { video.volume = 0.31; video.muted = true; });
+  const galleryPreferences = await extensionPage.evaluate(async () => {
+    const value = (await chrome.storage.local.get('xeg-app-settings'))['xeg-app-settings'];
+    return { volume: value?.gallery?.videoVolume ?? 1,
+      muted: value?.gallery?.videoMuted ?? false };
+  });
   await hostVideo.focus();
   const playingBefore = await quotedHostSnapshot(page, quotedCase.route, '[data-video-key] video');
   assert.equal(playingBefore.active, true, 'Blob-backed host player must hold focus');
@@ -3355,11 +3953,21 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
   });
   assert.equal(hostHit, true, 'Blob-backed player must be the ordinary hit-tested click target');
   await captureQuotedOpeningScroll(hostVideo);
+  const playingClickCount = await page.evaluate(() => window.__quoteFixtureClicks.length);
   await hostVideo.click();
+  const playingClick = await quotedClickRecord(page, playingClickCount, 'video');
   playingBefore.scrollY = Number(await hostVideo.getAttribute('data-opening-scroll-y'));
   assert(Number.isFinite(playingBefore.scrollY) && playingBefore.scrollY > 0,
     'Blob-backed opening scroll must be observed');
   const playing = await assertQuotedGallery(page, quotedCase);
+  const openingHost = await assertHostStopped(page, hostVideo, 'Successful gallery opening');
+  const freshStart = await hostVideoState(playing.video);
+  assert.equal(freshStart.paused, true, 'New gallery video starts paused');
+  assert(freshStart.currentTime < 0.05, 'New gallery video starts from its own zero position');
+  assert(Math.abs(freshStart.volume - galleryPreferences.volume) < 0.01,
+    'New gallery video uses the saved XEG volume');
+  assert.equal(freshStart.muted, galleryPreferences.muted,
+    'New gallery video uses the saved XEG mute setting');
   const playingOriginUrl = await assertQuotedOriginLink(playing.gallery,
     `https://x.com/${quotedCase.username}/status/${quotedCase.owner}`,
     quotedCase.name === 'linked');
@@ -3374,6 +3982,20 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
       video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && !video.paused && video.error === null;
   }, { index: quotedCase.expectedPosition - 1, start: galleryPlaybackStart }, { timeout: 15_000 });
   const galleryPlaybackTime = await playing.video.evaluate((video) => video.currentTime);
+  const hostReplay = await page.evaluate(() => window.__quoteFixtureHostAction('replay'));
+  const stoppedReplay = await assertHostStopped(page, hostVideo, 'Host replay during gallery');
+  const hostInsertion = await page.evaluate(() => window.__quoteFixtureHostAction('insert-playing'));
+  assert.equal(hostInsertion.playingBeforeInsertion, true,
+    'Controlled host video must already be playing before insertion');
+  const insertedVideo = shell.locator('video[data-host-action="insert-playing"]');
+  const stoppedInsertion = await assertHostStopped(page, insertedVideo,
+    'Playing host video inserted during gallery');
+  const galleryAfterHostActions = await hostVideoState(playing.video);
+  assert.equal(galleryAfterHostActions.paused, false,
+    'Host playback suppression must leave gallery video playing');
+  assert(galleryAfterHostActions.currentTime > galleryPlaybackTime + 0.15,
+    'Gallery video must progress through host replay and insertion');
+  await insertedVideo.evaluate((video) => { URL.revokeObjectURL(video.src); video.remove(); });
   assert(quotedApiResponses.slice(apiStart).every(({ tweetId }) => tweetId === expectedRequest),
     'Blob-backed click must retain the same owner request');
   const latePanel = await page.evaluate(() => {
@@ -3415,6 +4037,13 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
   const playingClose = await closeQuotedGallery({ gallery: playing.gallery, page,
     method: quotedCase.close, before: playingBefore, caseName: quotedCase.route,
     selector: '[data-video-key] video' });
+  await page.evaluate(() => window.__quoteFixtureHostAction('replay'));
+  await page.waitForFunction(({ name, start }) => {
+    const video = document.querySelector(`[data-case="${name}"] [data-video-key] video`);
+    return video instanceof HTMLVideoElement && !video.paused && video.currentTime > start + 0.15;
+  }, { name: quotedCase.route, start: stoppedReplay.second.currentTime }, { timeout: 5_000 });
+  const hostAfterClose = await hostVideoState(hostVideo);
+  await hostVideo.evaluate((video) => video.pause());
   const restoredPanel = await page.locator(`#${latePanel}`).evaluate((element) => ({
     ariaHidden: element.getAttribute('aria-hidden'),
     hiddenMarker: element.hasAttribute('data-xeg-gallery-hidden'),
@@ -3430,13 +4059,17 @@ async function runQuotedVideoCycle({ quotedCase, quotedApiResponses, downloads,
   return {
     name: quotedCase.name, pageUrl, requestedTweetId: expectedRequest,
     api: quotedApiResponses.slice(apiStart), selectedPosition: quotedCase.expectedPosition,
-    preview: { source: previewState.poster, selected: initial.selectedMedia,
+    preview: { source: previewState.poster, click: previewClick, selected: initial.selectedMedia,
       originUrl: previewOriginUrl, navigation: previewNavigation,
       close: previewClose },
     hostPlaying: { blobBacked: hostPlaying.source.startsWith('blob:'),
-      currentTime: hostPlaying.time, width: hostPlaying.width, height: hostPlaying.height },
+      currentTime: hostPlaying.time, progressEnd: hostProgressEnd,
+      width: hostPlaying.width, height: hostPlaying.height,
+      nativePlayClick, playingClick },
     playing: { selected: playing.selectedMedia, originUrl: playingOriginUrl,
       navigation: playingNavigation, galleryPlaybackStart, galleryPlaybackTime,
+      galleryPreferences, freshStart, openingHost, hostReplay, stoppedReplay,
+      hostInsertion, stoppedInsertion, galleryAfterHostActions, hostAfterClose,
       closeMethod: quotedCase.close,
       close: playingClose },
     download: { filename, bytes: bytes.length, file: copiedName, native,
@@ -3809,6 +4442,13 @@ async function exerciseInstalledExtension(
   const pageFetches = [];
   const cycles = [];
   const quotedVideoCycles = [];
+  let svgTargetMatrix = { status: 'pending' };
+  let blockAllDirectVideo = { status: 'pending' };
+  let directVideoAllowedModes = { status: 'pending' };
+  let delayedVideoFailures = { status: 'pending' };
+  let rapidVideoClicks = { status: 'pending' };
+  let modelessRenderRecovery = { status: 'pending' };
+  const acceptanceFailures = [];
   const unavailableSequence = { status: 'pending' };
   let fixtureVideoAssets;
   const mv3RestartCancellation = {};
@@ -3997,9 +4637,64 @@ async function exerciseInstalledExtension(
         quotedVideoCycles.push(diagnostic);
         await writeFile(join(output, `quoted-${quotedCase.name}-failure.json`),
           JSON.stringify(diagnostic, null, 2)).catch(() => {});
-        throw error;
+        acceptanceFailures.push(error);
       }
     }
+    try {
+      svgTargetMatrix = await runSvgTargetMatrix({ extensionPage, output, page,
+        quotedApiResponses: fixtureRoutes.quotedApiResponses });
+    } catch (error) {
+      svgTargetMatrix = { status: 'failed', error: safeError(error) };
+      await page.screenshot({ path: join(output, 'quoted-svg-targets-failure.png') }).catch(() => {});
+      acceptanceFailures.push(error);
+    }
+    try {
+      blockAllDirectVideo = await runBlockAllDirectVideo({ extensionPage, output, page,
+        quotedApiResponses: fixtureRoutes.quotedApiResponses });
+    } catch (error) {
+      blockAllDirectVideo = { status: 'failed', error: safeError(error) };
+      await page.screenshot({ path: join(output, 'quoted-unmarked-block-all-failure.png') }).catch(() => {});
+      acceptanceFailures.push(error);
+    }
+    try {
+      directVideoAllowedModes = await runDirectVideoAllowedModes({ extensionPage, output, page,
+        quotedApiResponses: fixtureRoutes.quotedApiResponses });
+    } catch (error) {
+      directVideoAllowedModes = { status: 'failed', error: safeError(error) };
+      await page.screenshot({ path: join(output, 'quoted-unmarked-modes-failure.png') }).catch(() => {});
+      acceptanceFailures.push(error);
+    }
+    try {
+      delayedVideoFailures = await runDelayedVideoFailures({ extensionPage,
+        fixtureRoutes, output, page });
+    } catch (error) {
+      delayedVideoFailures = { status: 'failed', error: safeError(error),
+        api: fixtureRoutes.quotedApiResponses.filter(({ tweetId }) =>
+          tweetId === DELAYED_FAILURE_ID || tweetId === DELAYED_NAVIGATION_ID) };
+      await page.screenshot({ path: join(output, 'quoted-delayed-failure.png') }).catch(() => {});
+      acceptanceFailures.push(error);
+    }
+    try {
+      rapidVideoClicks = await runRapidVideoClicks({ downloads, extensionPage,
+        fixtureRoutes, nativeLoopback, output, page, pageFetches });
+    } catch (error) {
+      rapidVideoClicks = { status: 'failed', error: safeError(error),
+        api: fixtureRoutes.quotedApiResponses.filter(({ tweetId }) =>
+          tweetId === RAPID_CLICK_A || tweetId === RAPID_CLICK_B) };
+      await page.screenshot({ path: join(output, 'quoted-rapid-a-b-failure.png') }).catch(() => {});
+      acceptanceFailures.push(error);
+    }
+    try {
+      modelessRenderRecovery = await runModelessRenderRecovery({ consoleErrors,
+        context, extensionId, output, page });
+    } catch (error) {
+      modelessRenderRecovery = { status: 'failed', error: safeError(error) };
+      await page.screenshot({ path: join(output, 'quoted-modeless-recovery-failure.png') })
+        .catch(() => {});
+      acceptanceFailures.push(error);
+    }
+    if (acceptanceFailures.length) throw new AggregateError(acceptanceFailures,
+      'Installed quoted video routing, playback, or failure assertions failed');
     const unavailableSetting = {};
     try {
       await runUnavailableSequence({
@@ -4047,8 +4742,11 @@ async function exerciseInstalledExtension(
     if (followupFailures.length) throw new AggregateError(followupFailures,
       'Required installed media follow-up profiles failed');
     const expectedMemoryErrors = new Set(downloadMemory.expectedConsoleErrors ?? []);
+    const expectedRenderFaultErrors = new Set(
+      modelessRenderRecovery.expectedConsoleErrors ?? []);
     const unexpectedConsoleErrors = consoleErrors.filter((record) =>
-      !isExpectedFixtureApiConsoleError(record) && !expectedMemoryErrors.has(record));
+      !isExpectedFixtureApiConsoleError(record) && !expectedMemoryErrors.has(record) &&
+      !expectedRenderFaultErrors.has(record));
     assert.deepEqual(pageErrors, [], 'Installed content script must not raise page errors');
     assert.deepEqual(
       unexpectedConsoleErrors,
@@ -4082,6 +4780,12 @@ async function exerciseInstalledExtension(
       packagingAssets,
       publicDom,
       quotedVideoCycles,
+      svgTargetMatrix,
+      blockAllDirectVideo,
+      directVideoAllowedModes,
+      delayedVideoFailures,
+      rapidVideoClicks,
+      modelessRenderRecovery,
       unavailableSequence,
       fixtureVideoAssets,
       videoClickConfiguration,
@@ -4150,6 +4854,12 @@ async function exerciseInstalledExtension(
             packagingAssets,
             publicDom,
             quotedVideoCycles,
+            svgTargetMatrix,
+            blockAllDirectVideo,
+            directVideoAllowedModes,
+            delayedVideoFailures,
+            rapidVideoClicks,
+            modelessRenderRecovery,
             unavailableSequence,
             fixtureVideoAssets,
             videoClickConfiguration,

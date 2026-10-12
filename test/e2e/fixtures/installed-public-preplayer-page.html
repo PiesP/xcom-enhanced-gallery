@@ -16,10 +16,12 @@
     .media-shell > .avatar:nth-child(2) { right: 40px; }
     .media-shell > .thumbnail { width: 320px; height: 180px; display: block; }
     .control-surface { position: absolute; inset: 0; z-index: 2; }
-    .control-surface > button { width: 100%; height: 100%;
+    .control-surface > button { width: 100%; height: 100%; display: flex;
+      align-items: center; justify-content: center; gap: 8px;
       border: 0; background: transparent; color: white; cursor: pointer; }
     .control-surface > button > span { display: inline-grid; place-items: center;
       width: 54px; height: 54px; border-radius: 50%; background: #1d9bf0; }
+    .control-surface svg { width: 38px; height: 38px; background: #1d9bf0; }
   </style>
 </head>
 <body>
@@ -43,7 +45,7 @@
                 src="https://pbs.twimg.com/ext_tw_video_thumb/9555555555555555555/pu/img/quote-two.jpg"
                 alt="Quoted video thumbnail">
               <div class="control-surface">
-                <button type="button" aria-label="Play quoted video"><span aria-hidden="true">▶</span></button>
+                <button type="button" aria-label="Play quoted video"><span aria-hidden="true">Open</span><svg viewBox="0 0 38 38" aria-hidden="true"><path fill="white" d="M11 7 L32 19 L11 31 Z"></path></svg></button>
               </div>
             </div>
             <div class="credit">
@@ -54,5 +56,15 @@
       </div>
     </article>
   </main>
+  <script>
+    window.__preplayerFixtureClicks = [];
+    window.addEventListener('click', (event) => {
+      if (!event.isTrusted || window.__preplayerFixtureClicks.length >= 32) return;
+      const record = { tag: event.target instanceof Element
+        ? event.target.tagName.toLowerCase() : null, prevented: false };
+      window.__preplayerFixtureClicks.push(record);
+      setTimeout(() => { record.prevented = event.defaultPrevented; }, 0);
+    }, { capture: true });
+  </script>
 </body>
 </html>

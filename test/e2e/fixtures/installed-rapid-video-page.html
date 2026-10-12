@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Installed rapid video owner fixture</title>
+  <style>
+    body { margin: 0; padding: 20px; background: #000; color: #e7e9ea; font: 16px "Segoe UI", sans-serif; }
+    #host-layout-spacer { height: 700px; }
+    article { max-width: 640px; margin: 20px auto; padding: 12px; border: 1px solid #555; }
+    img, video { display: block; width: 320px; height: 180px; }
+  </style>
+</head>
+<body>
+  <div id="host-layout-spacer" aria-hidden="true"></div>
+  <main>
+    <article data-testid="tweet" data-rapid="a">
+      <a href="/rapid_a/status/8888888888888888881"><time>Rapid A owner</time></a>
+      <div data-testid="tweetPhoto"><img src="https://pbs.twimg.com/media/QQuoteOnePhoto.jpg" alt="A image"></div>
+      <div data-testid="videoPlayer"><video controls
+        poster="https://pbs.twimg.com/ext_tw_video_thumb/8888888888888888881/pu/img/quote-one.jpg"
+        src="https://video.twimg.com/ext_tw_video/8888888888888888881/pu/vid/320x180/quote-one.mp4"></video></div>
+    </article>
+    <article data-testid="tweet" data-rapid="b">
+      <a href="/rapid_b/status/8888888888888888882"><time>Rapid B owner</time></a>
+      <div data-testid="tweetPhoto"><img src="https://pbs.twimg.com/media/QQuoteTwoPhoto.jpg" alt="B image"></div>
+      <div data-testid="videoPlayer"><video controls
+        poster="https://pbs.twimg.com/ext_tw_video_thumb/8888888888888888882/pu/img/quote-two.jpg"
+        src="https://video.twimg.com/ext_tw_video/8888888888888888882/pu/vid/320x180/quote-two.mp4"></video></div>
+    </article>
+  </main>
+</body>
+</html>

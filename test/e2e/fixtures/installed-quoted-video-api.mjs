@@ -3,6 +3,8 @@
 
 // These are routed X responses, not substitutes for extension code or its API client.
 export const NESTED_OWNER = '7333333333333333333';
+export const RAPID_CLICK_A = '8888888888888888881';
+export const RAPID_CLICK_B = '8888888888888888882';
 export const PREPLAYER_OUTER = '8555555555555555555';
 export const PREPLAYER_QUOTE = '9555555555555555555';
 export const PREPLAYER_CREDIT = '7555555555555555555';
@@ -109,6 +111,14 @@ function tweet(id, username, media, quoted) {
 }
 
 export function quotedVideoApiResponse(tweetId) {
+  if (tweetId === RAPID_CLICK_A || tweetId === RAPID_CLICK_B) {
+    const marker = tweetId === RAPID_CLICK_A ? 'quote-one' : 'quote-two';
+    return { data: { tweetResult: { result: tweet(tweetId,
+      tweetId === RAPID_CLICK_A ? 'rapid_a' : 'rapid_b', [
+        photo(tweetId, tweetId === RAPID_CLICK_A ? 'QQuoteOnePhoto' : 'QQuoteTwoPhoto', 0),
+        video(tweetId, marker, 1),
+      ]) } } };
+  }
   const unavailable = UNAVAILABLE_SEQUENCE.failures.find(({ outer }) => outer === tweetId);
   if (unavailable) {
     const result = unavailable.name === 'visibility'
@@ -131,7 +141,8 @@ export function quotedVideoApiResponse(tweetId) {
     ) } } };
   }
   const selected = QUOTED_CASES.find(({ outer }) => outer === tweetId);
-  if (!selected && tweetId !== QUOTED_CASES[2].owner) return null;
+  if (!selected && tweetId !== QUOTED_CASES[0].owner &&
+      tweetId !== QUOTED_CASES[2].owner) return null;
   const quoteOne = tweet(QUOTED_CASES[0].owner, 'quote_one', [
     photo(QUOTED_CASES[0].owner, 'QQuoteOnePhoto', 0),
     video(QUOTED_CASES[0].owner, 'quote-one', 1),
@@ -148,6 +159,9 @@ export function quotedVideoApiResponse(tweetId) {
   const quoteThree = tweet(QUOTED_CASES[3].owner, 'quote_three', [
     video(QUOTED_CASES[3].owner, 'quote-three', 0),
   ], nested);
+  if (tweetId === quoteOne.rest_id) {
+    return { data: { tweetResult: { result: quoteOne } } };
+  }
   if (tweetId === quoteThree.rest_id) {
     return { data: { tweetResult: { result: quoteThree } } };
   }
