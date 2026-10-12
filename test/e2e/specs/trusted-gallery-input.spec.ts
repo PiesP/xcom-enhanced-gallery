@@ -122,6 +122,15 @@ test('retains the latest genuine early media click and rejects stale targets', a
     await window.__xegEarlyInputObserver?.complete();
   });
   expect(await page.evaluate(() => window.__xegEarlyInputObserver?.observations())).toEqual([]);
+  await page.evaluate(() => {
+    window.__xegEarlyInputObserver = window.__xegEarlyInputFixture.observeEarlyClicks();
+  });
+  await page.locator('#early-1').click();
+  await page.evaluate(async () => {
+    history.pushState(null, '', '/testuser/status/5555555555555555555');
+    await window.__xegEarlyInputObserver?.complete();
+  });
+  expect(await page.evaluate(() => window.__xegEarlyInputObserver?.observations())).toEqual([]);
 });
 
 test('resumes the original trusted SVG path click through its bounded media link', async ({ page }) => {

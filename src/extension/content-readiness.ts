@@ -13,6 +13,7 @@ const MAX_ANCESTRY_DEPTH = 64;
 const MAX_SOURCE_ELEMENTS = 8;
 
 interface ClickIdentity {
+  readonly documentUrl: string;
   readonly ancestry: readonly Element[];
   readonly owner: OwnerIdentity | null;
   readonly evidence: ClickedMediaEvidence;
@@ -93,6 +94,7 @@ function captureIdentity(
     const sourceValues = sourceValuesOf(media);
     if (!sourceValues) return null;
     return {
+      documentUrl: documentRef.URL,
       ancestry,
       owner: ownerOf(target, extractor),
       evidence: captureClickedMediaEvidence(target),
@@ -132,6 +134,7 @@ function sameEvidence(left: ClickedMediaEvidence, right: ClickedMediaEvidence): 
 
 function sameIdentity(left: ClickIdentity, right: ClickIdentity): boolean {
   return (
+    left.documentUrl === right.documentUrl &&
     sameList(left.ancestry, right.ancestry) &&
     sameOwner(left.owner, right.owner) &&
     sameEvidence(left.evidence, right.evidence) &&

@@ -297,6 +297,16 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
         >
           {strings().video.title}
         </label>
+        <p
+          id={
+            local['data-testid']
+              ? `${local['data-testid']}-video-click-help`
+              : 'settings-video-click-help'
+          }
+          class={styles.help}
+        >
+          {strings().video.help}
+        </p>
         <select
           id={
             local['data-testid']
@@ -330,16 +340,6 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
             <option value={mode}>{strings().video.labels[mode]}</option>
           ))}
         </select>
-        <p
-          id={
-            local['data-testid']
-              ? `${local['data-testid']}-video-click-help`
-              : 'settings-video-click-help'
-          }
-          class={styles.help}
-        >
-          {strings().video.help}
-        </p>
       </div>
     </div>
   );
