@@ -8,6 +8,7 @@ import { closeGallery } from '@shared/state/signals/gallery.signals';
 import type { VideoClickMode } from '@shared/types/settings.types';
 import { handleMediaClick } from '@shared/utils/events/handlers/media-click';
 import { isProcessableMedia } from '@shared/utils/media/media-click-detector';
+import { getMediaClickTarget } from '@shared/utils/media/media-click-target';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const options: GalleryEventOptions = {
@@ -59,6 +60,21 @@ describe('unmarked video and icon click routing', () => {
     clearSettings();
     closeGallery();
     document.body.replaceChildren();
+  });
+
+  it('rejects a detached HTML target when an early event is resumed', () => {
+    const image = document.createElement('img');
+    document.body.append(image);
+    const event = new MouseEvent('click', { bubbles: true, cancelable: true });
+    let duringDispatch: HTMLElement | null = null;
+    image.addEventListener('click', (clickEvent) => {
+      duringDispatch = getMediaClickTarget(clickEvent as MouseEvent);
+    });
+    image.dispatchEvent(event);
+    expect(duringDispatch).toBe(image);
+
+    image.remove();
+    expect(getMediaClickTarget(event)).toBeNull();
   });
 
   it('keeps a direct unmarked video native in block-all without classifying sibling media or links', () => {

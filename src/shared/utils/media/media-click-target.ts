@@ -8,7 +8,7 @@
  */
 export function getMediaClickTarget(event: MouseEvent): HTMLElement | null {
   const original = event.target;
-  if (original instanceof HTMLElement) return original;
+  if (original instanceof HTMLElement) return original.isConnected ? original : null;
   if (!(original instanceof SVGElement) || !original.isConnected) return null;
 
   let ancestor: Element | null = original.parentElement;
