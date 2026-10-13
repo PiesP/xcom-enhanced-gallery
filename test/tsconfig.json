@@ -1,0 +1,14 @@
+{
+  "extends": "../tsconfig.json",
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "../src/types/env.d.ts",
+    "../src/shared/types/core/userscript.d.ts"
+  ],
+  "exclude": ["e2e", "node_modules"],
+  "compilerOptions": {
+    "types": ["node", "vitest/globals"],
+    "tsBuildInfoFile": "../.vscode/.tsbuildinfo-test"
+  }
+}

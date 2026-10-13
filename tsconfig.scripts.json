@@ -6,18 +6,9 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "types": ["node"],
-    "strict": true,
-    "exactOptionalPropertyTypes": true,
-    "noUncheckedIndexedAccess": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "verbatimModuleSyntax": true,
     "erasableSyntaxOnly": true,
-    "allowImportingTsExtensions": true,
-    "noEmit": true,
-    "skipLibCheck": true
+    "allowImportingTsExtensions": true
   },
-  "include": ["scripts/**/*.ts"]
+  "include": ["scripts/**/*.ts"],
+  "extends": "./tsconfig.base.json"
 }

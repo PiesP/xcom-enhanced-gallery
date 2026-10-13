@@ -1,7 +1,8 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "types": ["node"]
+    "types": ["node"],
+    "tsBuildInfoFile": ".vscode/.tsbuildinfo-e2e"
   },
   "include": ["test/e2e/**/*.ts", "src/**/*.d.ts"],
   "exclude": ["test/e2e/firefox-extension-runtime.test.ts"]

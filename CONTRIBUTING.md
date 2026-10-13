@@ -55,8 +55,8 @@ The table gives each command family, execution stage, side effects, and checks.
 | `pnpm clean` | `scripts/build/clean.ts` removes generated build directories. | Destructive only for the declared generated outputs; test CLI/import boundary in `test/unit/tooling/node-script-boundaries.test.ts`. |
 | `pnpm check:versions`, `sync:versions` | `scripts/release/version.ts` checks or synchronizes package/extension versions. | `check` reads and fails on mismatch; `sync` writes manifests. `test/unit/tooling/release-runtime.test.ts` plus version check. |
 | `pnpm package:extension`, `package:all`, `release:prepare` | `scripts/release/package-extension.ts` archives built Chrome/Firefox extensions; `package:all` builds first. `scripts/release/prepare.ts` prepares a version- and commit-bound release bundle after builds. | Reads `RELEASE_VERSION` and optional commit identity, `dist*`, package metadata; writes ZIPs, release bundle and metadata, with external `zip` required. `test/unit/tooling/release-runtime.test.ts`, release/publication tests and actual artifact inspection. These commands prepare files; they do not publish a release. |
-| `pnpm check:src`, `check:test`, `check:scripts`, `check:e2e`, `check`, `typecheck` | TypeScript checks in browser, Vitest, NodeNext/erasable (`tsconfig.scripts.json` uses ECMAScript-only libraries; `tsconfig.node-tests.json` inherits them for the direct Firefox `node:test`), and Playwright projects respectively. `check` chains source/test/scripts. | Read-only; `tsconfig.e2e.json` excludes the direct Firefox test so it is checked in the Node project instead. `pnpm quality` includes all four boundaries. |
-| `pnpm fmt`, `fmt:check`, `lint`, `knip`, `knip:full`, `knip:production`, `circular` | Biome formatting/lint, dependency/entry analysis, and source graph checks. | Read-only; current Knip entry/project patterns cover CLI modules, and `ignoreBinaries` includes external Nose/OpenSSL. `fmt:fix`, `lint:fix`, `quality:fix` write formatting fixes and must be reviewed separately. |
+| `pnpm check:src`, `check:tooling`, `check:test`, `check:scripts`, `check:e2e`, `check`, `typecheck` | Separate browser, build/config, Vitest, NodeNext/erasable script/direct Firefox, and Playwright TypeScript projects. `check` chains source/tooling/test/scripts; `check:e2e` checks Playwright separately. | Read-only; `tsconfig.e2e.json` excludes the direct Firefox test so it is checked in the Node project instead. `pnpm quality` includes every project boundary. |
+| `pnpm fmt`, `fmt:check`, `lint`, `knip`, `knip:full`, `knip:production`, `circular` | Biome formatting/lint, dependency/entry analysis, and source graph checks. | Read-only; Knip uses real CLI/workflow/test/runtime entries and reports orphan helpers, and `ignoreBinaries` includes external Nose/OpenSSL. `fmt:fix`, `lint:fix`, `quality:fix` write formatting fixes and must be reviewed separately. |
 | `pnpm quality`, `verify`, `verify:full` | `quality` chains format, lint, type/E2E type, Node CI tests, circular, Knip and optional local Nose. `verify` adds production targets; `verify:full` adds coverage, development build, and all E2E browser lanes. | Build/test outputs and browser profiles are generated; `verify` alone does not prove E2E. Read exact command outcomes and artifacts; no VM/publication inference. |
 | `pnpm test`, `test:watch`, `test:cov`, `test:ci` | Vitest suites and direct Node CI policy tests in `scripts/ci/{deep-check-reuse,repository-authority}.test.ts` and `scripts/release/verify-source.test.ts`. | Watch persists; coverage writes reports. `test:ci` also compiles a negative browser-global probe through the real script project; run it alone with `pnpm test test/unit/tooling/node-ambient-types.test.ts`. It checks cache, repository authority, tagged source and tooling types, not browser behavior. |
 | `pnpm test:e2e`, `test:e2e:headed`, `test:e2e:extension`, `test:e2e:extension:firefox`, `test:e2e:all` | Playwright configs under `test/e2e/`; direct Firefox lane executes `test/e2e/firefox-extension-runtime.test.ts` with Node/Selenium. | Requires built artifacts, browser binaries and loopback fixtures; may create browser profiles/downloads. `test:e2e:all` chains the lanes; distinguish fixture browser evidence from authenticated Windows/live-site evidence. |
@@ -106,7 +106,7 @@ and new root configurations. Unknown changed paths still select every gate.
 | --- | --- | --- | --- |
 | `src` TS/TSX/CSS | Root Biome | `check:src`; behavior suites | Quality, unit, E2E, build; existing security gates |
 | Tests, fixtures and visual JS/TS/TSX/HTML | Root Biome | Test/Playwright/Node projects; unit and applicable browser suites | Quality plus existing unit/E2E selections |
-| `scripts`, `tooling`, root TS/JSON configs | Root Biome | Script/source projects, command/config regression suites | Quality plus existing unit/build/browser/security selections |
+| `scripts`, `tooling`, root TS/JSON configs | Root Biome | Runtime-specific projects, command/config regression suites | Quality plus existing unit/build/browser/security selections |
 | Windows validation `.mjs` and profile JSON | Root Biome | `node --check` through the Node-boundary suite; Windows profile tests | Quality, unit, E2E; existing JavaScript security gate |
 | Executable `.github/actions` helpers | Root Biome | Runtime-resolution and workflow trust/order tests | Quality, unit; existing Actions security gate |
 | Extension manifests | Root Biome | Version and built-package checks | Quality, unit, E2E, build |
@@ -151,6 +151,64 @@ coverage; syntax/fixture success is not Windows runtime acceptance.
   values. Avoid unnecessary `!important` rules.
 - Keep settings migrations, platform cleanup, and download cancellation
   behavior explicit.
+
+### Runtime and import boundaries
+
+`tsconfig.base.json` shares runtime-neutral strict/no-emit options only. The
+browser `tsconfig.json` owns the seven alias definitions and checks only `src`
+with DOM libraries, bundler resolution and `types: []`. Direct Node scripts
+and the direct Firefox test use NodeNext, real Node types, erasable syntax and
+explicit relative `.ts` imports. `tsconfig.tooling.json` checks Vite helpers,
+all Vite configs and `vitest.config.ts` with Node types and ECMAScript libraries.
+Each incremental project has its own build-info file.
+
+Vitest and Playwright execute in Node while their fixtures and serialized
+`page.evaluate` callbacks use browser APIs; their type projects intentionally
+include both Node and DOM. `tsconfig.test.json` forwards to `test/tsconfig.json`.
+That discoverable test config has explicit local includes so Vite's native
+`resolve.tsconfigPaths` matches test importers. Vite, Vitest and Knip consume the
+browser TypeScript paths directly; no synchronized alias map is maintained.
+Short relative imports remain valid within a cohesive module. Ordered CSS and
+other side-effect imports retain their cascade/order contracts.
+
+Browser source also has an error-level `noRestrictedImports` boundary for
+`node:*` and the pinned runtime's public bare builtin specifiers. It covers value
+imports, type-only imports/re-exports and dynamic imports. The installed
+`noNodejsModules` rule ignores type-only imports, so it cannot own this complete
+boundary alone. The builtin coverage test requires deliberate review when Node
+adds a public bare specifier. No browser `process` convenience ambient remains.
+`node-ambient-types.test.ts` invokes the real compiler projects and checks their
+loaded roots/declarations, valid inputs, intended errors and restored controls;
+`import-aliases.test.ts` resolves all seven alias families with Vite and executes
+a public-platform import under Vitest.
+
+The five repository-wide compiler/Biome/Knip probe suites run in a serial
+Vitest project after the ordinary parallel unit project. They temporarily create
+source files that another repository-wide tool could otherwise observe; both
+project ordering and one-file-at-a-time execution are required. Setup, aliases
+and coverage remain inherited, with all coverage thresholds unchanged.
+
+Knip's project globs include maintained Windows and Action `.mjs` helpers, but
+only actual package/workflow/direct-test and profile entrypoints are roots.
+Node and Playwright integrations are enabled; externally installed Nose/OpenSSL
+remain explicit binary exceptions. Full analysis covers Node/Windows tooling;
+production analysis deliberately excludes those nonproduct paths. Real probes
+reject full-mode script/MJS orphans and unnecessary product exports in both
+modes, and distinguish tagged test-only exports from accidental production APIs.
+
+`ignoreExportsUsedInFile: true` remains a reviewed limitation: exports used only
+inside their declaring file are not reported. Turning it off produced 103 full
+and 54 production findings, including Windows helpers exercised through computed
+test imports that static Knip cannot follow. Eight proven same-file-only export
+modifiers were removed without changing their bodies. This is not a claim that
+every remaining export is externally necessary. Keep genuine `@testOnly` tags
+on test-only seams; do not use them to hide product APIs or orphan helpers.
+
+dpdm remains the single cycle gate. Installed Knip can reject runtime TS/TSX and
+dynamic cycles with explicit error severity and dynamic-edge settings, but it
+drops type-only edges and passed a pure `import type` cycle that current dpdm
+rejects. Replacing dpdm would therefore change the current failing policy; no
+second permanent cycle gate is added.
 
 ### Rule policy and source conventions
 
