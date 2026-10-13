@@ -2,7 +2,6 @@ import { appendFileSync, readFileSync, realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 export type PinnedTools = {
-  nose: { version: string; installerSha256: string };
   osv: { version: string; image: string };
   semgrep: { version: string; image: string };
 };
@@ -27,22 +26,12 @@ export function readPins(
   path = fileURLToPath(new URL('./pinned-tools.json', import.meta.url))
 ): PinnedTools {
   const root = record(JSON.parse(readFileSync(path, 'utf8')) as unknown);
-  const nose = record(root.nose);
   const osv = record(root.osv);
   const semgrep = record(root.semgrep);
   const version = /^\d+\.\d+\.\d+$/u;
-  const noseVersion = string(nose.version, 'Nose version', version);
   const osvVersion = string(osv.version, 'OSV version', version);
   const semgrepVersion = string(semgrep.version, 'Semgrep version', version);
   return {
-    nose: {
-      version: noseVersion,
-      installerSha256: string(
-        nose.installerSha256,
-        'Nose installer SHA-256',
-        new RegExp(`^${digest}$`, 'u')
-      ),
-    },
     osv: {
       version: osvVersion,
       image: string(

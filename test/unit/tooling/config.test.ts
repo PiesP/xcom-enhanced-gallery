@@ -171,8 +171,9 @@ describe('tooling configuration', () => {
     const scripts = packageJson.scripts;
     expect(scripts['check:biome']).toBe('biome ci .');
     expect(scripts.quality).toBe(
-      'pnpm -s check:biome && pnpm -s check && pnpm -s check:e2e && pnpm -s test:ci && pnpm -s circular && pnpm -s knip && pnpm -s quality:nose'
+      'pnpm -s check:biome && pnpm -s check && pnpm -s check:e2e && pnpm -s test:ci && pnpm -s circular && pnpm -s knip'
     );
+    expect(scripts['quality:nose']).toBeUndefined();
     expect(scripts.lint).toBe('biome lint .');
     expect(scripts.fmt).toBe('biome check --linter-enabled=false .');
     expect(scripts['fmt:check']).toBe('pnpm -s fmt');
