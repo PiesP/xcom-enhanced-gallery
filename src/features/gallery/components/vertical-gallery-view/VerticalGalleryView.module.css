@@ -267,14 +267,11 @@
   contain: layout style;
 }
 
-/* Active gallery item highlight (animation removed in Phase 328 to avoid double emphasis) */
+/* Keep the active item above neighboring media without a second animated highlight. */
 .itemActive {
   position: relative;
   z-index: 1;
-  /* Legacy ::before glow animation removed to reduce distraction */
 }
-
-/* focusGlow animation removed (Phase 328) */
 
 /* Generated spacer lets the last item top-align without adding a non-list child to the <ul>. */
 .itemsContainer::after {
