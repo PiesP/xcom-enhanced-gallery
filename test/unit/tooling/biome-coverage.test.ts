@@ -54,7 +54,8 @@ function processed(report: BiomeReport): number {
 
 function withProbe(path: string, content: string, test: () => void): void {
   const absolutePath = resolve(root, path);
-  expect(existsSync(absolutePath), `Probe path already exists: ${path}`).toBe(false);
+  // Exclusive creation refuses collisions atomically; cleanup starts only after
+  // this invocation owns the file.
   writeFileSync(absolutePath, content, { flag: 'wx' });
   try {
     test();
