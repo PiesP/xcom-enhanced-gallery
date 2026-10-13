@@ -37,7 +37,7 @@ function fixture() {
     source,
     checkout,
     output,
-    commit(pin: unknown, version: unknown = '1.2.3', scripts: Record<string, string> = {}): string {
+    commit(pin: unknown, version: unknown = '1.2.3', scripts: unknown = {}): string {
       writeFileSync(
         join(source, 'package.json'),
         JSON.stringify({ version, volta: { node: pin }, scripts })
@@ -91,19 +91,40 @@ test('annotated tag resolves to its commit and reads the tagged historical Node 
   assert.equal(git(f.checkout, 'tag', '--list', 'v1.2.3'), 'v1.2.3');
 });
 
-test('protected workflow source verifies an older tagged manifest without publishing it', () => {
+test('protected workflow source rejects an older tag with a retired Nose script', () => {
   const f = fixture();
-  const releaseSha = f.commit('24.15.0', '1.2.3', { 'quality:nose': 'historical command' });
+  f.commit('24.15.0', '1.2.3', { 'quality:nose': 'historical command' });
+  f.tag('v1.2.3');
+  const protectedSha = f.commit('26.9.0', '1.2.4');
+  f.clone();
+  const result = f.run('v1.2.3', protectedSha);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Release source still declares retired quality:nose script/);
+  assert.equal(f.values(), '');
+});
+
+test('compatible older tag retains its tagged runtime and version', () => {
+  const f = fixture();
+  const releaseSha = f.commit('24.15.0', '1.2.3', { quality: 'pnpm check' });
   f.tag('v1.2.3');
   const protectedSha = f.commit('26.9.0', '1.2.4');
   f.clone();
   const result = f.run('v1.2.3', protectedSha);
   assert.equal(result.status, 0, result.stderr);
   assert.equal(f.values(), `node-version=24.15.0\nrelease-sha=${releaseSha}\nversion=1.2.3\n`);
-  assert.equal(
-    JSON.parse(git(f.checkout, 'show', `${releaseSha}:package.json`)).scripts['quality:nose'],
-    'historical command'
-  );
+});
+
+test('malformed tagged script maps fail before publishing outputs', () => {
+  for (const scripts of [null, 'quality', [], { quality: 1 }]) {
+    const f = fixture();
+    const head = f.commit('26.9.0', '1.2.3', scripts);
+    f.tag('v1.2.3');
+    f.clone();
+    const result = f.run('v1.2.3', head);
+    assert.notEqual(result.status, 0, String(scripts));
+    assert.match(result.stderr, /Invalid release source scripts/);
+    assert.equal(f.values(), '');
+  }
 });
 
 test('lightweight tag resolves to the same commit and emits only three fixed output keys', () => {
