@@ -41,14 +41,14 @@ const DEFAULTS = {
 
 /**
  * Calculate exponential backoff delay with jitter.
- * Exported for testability — accepts `random` for deterministic jitter.
+ * Accepts `random` for deterministic jitter.
  *
  * @param attempt - Current attempt number (0-indexed)
  * @param base - Base delay in milliseconds
  * @param max - Maximum delay in milliseconds
  * @param random - Random function returning [0, 1) (default: Math.random)
  */
-export function calcBackoff(
+function calcBackoff(
   attempt: number,
   base: number,
   max: number,

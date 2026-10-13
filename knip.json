@@ -4,9 +4,13 @@
     "src/main.ts!",
     "src/extension/background.ts!",
     "src/extension/content.ts!",
-    "scripts/**/*.ts",
+    "scripts/check/{bootstrap,extension-build,nose}.ts",
+    "scripts/ci/{check-pinned-tools,classify-changes,deep-check-reuse,dependabot-apply,install-nose,pinned-tools,update-browser-core}.ts",
+    "scripts/ci/*.test.ts",
+    "scripts/release/{package-extension,prepare,verify-publication,verify-source,version}.ts",
+    "scripts/release/*.test.ts",
     "test/e2e/specs/*.spec.ts",
-    "vite.*.config.ts"
+    "validation/windows/{install-profile,profile}.mjs"
   ],
   "project": [
     "src/**/*.ts!",
@@ -15,19 +19,11 @@
     "tooling/**/*.ts",
     "test/**/*.ts",
     "test/**/*.tsx",
+    "test/**/*.mjs",
+    "validation/windows/**/*.mjs",
+    ".github/actions/**/*.mjs",
     "vite*.ts"
   ],
-  "paths": {
-    "@bootstrap/*": ["src/bootstrap/*"],
-    "@constants/*": ["src/constants/*"],
-    "@extension/*": ["src/extension/*"],
-    "@shared/*": ["src/shared/*"],
-    "@features/*": ["src/features/*"],
-    "@platform/*": ["src/platform/*"],
-    "@main": ["src/main.ts"]
-  },
-  "node": false,
-  "playwright": false,
   "ignoreBinaries": ["openssl", "nose"],
   "ignoreExportsUsedInFile": true
 }
