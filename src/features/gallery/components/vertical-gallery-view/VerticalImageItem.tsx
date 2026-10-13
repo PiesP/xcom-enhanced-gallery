@@ -8,20 +8,15 @@
  */
 
 import { CSS } from '@constants/css';
+import { useVideoPlaybackRecovery } from '@features/gallery/components/vertical-gallery-view/hooks/use-video-playback-recovery';
 import { useVideoVisibility } from '@features/gallery/components/vertical-gallery-view/hooks/use-video-visibility';
 import { useVideoVolumePersistence } from '@features/gallery/components/vertical-gallery-view/hooks/use-video-volume-persistence';
-import {
-  hasKnownVideoAccessDenial,
-  isRecoverableVideoError,
-  nextVideoPlaybackSource,
-} from '@features/gallery/components/vertical-gallery-view/utils/video-playback-recovery';
 import { cleanFilename } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.helpers';
 import styles from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css';
 import type { VerticalImageItemProps } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.types';
 import { useTranslation } from '@shared/hooks/use-translation';
 import { gallerySignals, setCurrentVideoElement } from '@shared/state/signals/gallery.signals';
 import type { ImageFitMode } from '@shared/types/settings.types';
-import { subscribeVideoPlaybackIntent } from '@shared/utils/events/handlers/video-control-helper';
 import {
   computeContainIntrinsicSizeOverride,
   createIntrinsicSizingStyle,
@@ -31,15 +26,7 @@ import { getMediaDisplayUrl } from '@shared/utils/media/media-source';
 import { cx } from '@shared/utils/text/formatting';
 import { isUrlAllowed, MEDIA_URL_POLICY } from '@shared/utils/url/safety';
 import type { JSX, JSXElement } from 'solid-js';
-import {
-  createEffect,
-  createMemo,
-  createSignal,
-  on,
-  onCleanup,
-  splitProps,
-  untrack,
-} from 'solid-js';
+import { createEffect, createMemo, createSignal, splitProps, untrack } from 'solid-js';
 
 const FIT_MODE_CLASSES: Record<ImageFitMode, string> = {
   original: styles.fitOriginal as string,
@@ -80,41 +67,30 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   const fetchPriority = () =>
     (isVideo() ? shouldAdmitVideoImmediately() : shouldEagerLoadImage()) ? 'high' : 'low';
 
-  /**
-   * Resolve the image source URL for display.
-   *
-   * Uses media.url for all types. Non-active images previously used
-   * thumbnailUrl (perf optimization B5), but this caused dimension
-   * mismatches requiring complex workarounds. loading=\"lazy\" already
-   * defers off-screen network requests, making thumbnail URLs redundant.
-   */
+  /** Use the canonical display URL; native lazy loading defers off-screen images. */
   const displaySrc = createMemo(() => getMediaDisplayUrl(local.media));
   const [isLoaded, setIsLoaded] = createSignal(false);
   const [isError, setIsError] = createSignal(false);
-  const [isVideoAdmitted, setIsVideoAdmitted] = createSignal(false);
-  const [videoHasFirstFrame, setVideoHasFirstFrame] = createSignal(false);
-  const [playbackSrc, setPlaybackSrc] = createSignal(displaySrc());
-  const [isPlaybackFallback, setIsPlaybackFallback] = createSignal(false);
-  let attemptedSources = new Set([displaySrc()]);
-  let sourceAttachedAt = performance.now();
-  let armedSource: string | null = null;
   let geometryReported = false;
-  let wantsPlayback = false;
-  let needsResume = false;
-  let recoveringSource: string | null = null;
-  let controlInteractionAfterError = false;
-  let controlGeneration = 0;
-  let intentGeneration = 0;
-  let disposed = false;
-  let pendingResume: {
-    readonly media: typeof local.media;
-    readonly source: string;
-    readonly time: number;
-    readonly volume: number;
-    readonly muted: boolean;
-    readonly playing: boolean;
-    readonly controlGeneration: number;
-  } | null = null;
+  const recovery = useVideoPlaybackRecovery({
+    media: () => local.media,
+    displaySrc,
+    isVideo,
+    shouldAdmitImmediately: shouldAdmitVideoImmediately,
+    videoRef: () => videoRef(),
+    isLoaded,
+    visibility: () => visibility,
+    applyMutedProgrammatically: (video, muted) => applyMutedProgrammatically(video, muted),
+    applyVolumeProgrammatically: (video, volume) => applyVolumeProgrammatically(video, volume),
+    onReset: () => {
+      setIsLoaded(false);
+      setIsError(false);
+      geometryReported = false;
+    },
+    onFallback: () => setIsLoaded(false),
+    onReady: () => handleMediaLoad(),
+    onError: () => handleMediaError(),
+  });
 
   // Defense-in-depth: validate the rendered URL
   const isDisplaySrcValid = createMemo(() => isUrlAllowed(displaySrc(), MEDIA_URL_POLICY));
@@ -141,59 +117,6 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     }
   });
 
-  // A keyed item may move to another index. Keep its source and admission sticky;
-  // reset only when the owned MediaInfo object changes.
-  let resetMedia = local.media;
-  createEffect(
-    on(
-      () => local.media,
-      (media) => {
-        // The parent accessor can update for index/focus changes while returning
-        // the same object; `on` observes that update even when its value is equal.
-        if (media === resetMedia) {
-          return;
-        }
-        resetMedia = media;
-        setIsLoaded(false);
-        setIsError(false);
-        setVideoHasFirstFrame(false);
-        setIsPlaybackFallback(false);
-        setIsVideoAdmitted(false);
-        attemptedSources = new Set([media.url]);
-        sourceAttachedAt = performance.now();
-        armedSource = null;
-        geometryReported = false;
-        wantsPlayback = false;
-        needsResume = false;
-        recoveringSource = null;
-        controlInteractionAfterError = false;
-        controlGeneration = 0;
-        intentGeneration++;
-        pendingResume = null;
-        setPlaybackSrc(media.url);
-      },
-      { defer: true }
-    )
-  );
-
-  const admitVideo = (): void => {
-    if (isVideo() && !disposed) {
-      setIsVideoAdmitted(true);
-    }
-  };
-
-  createEffect(() => {
-    if (isVideo() && shouldAdmitVideoImmediately()) {
-      admitVideo();
-    }
-  });
-
-  onCleanup(() => {
-    disposed = true;
-    pendingResume = null;
-    needsResume = false;
-  });
-
   const [containerRef, setContainerRef] = createSignal<HTMLElement | null>(null);
   const [imageRef, setImageRef] = createSignal<HTMLImageElement | null>(null);
   const [videoRef, setVideoRef] = createSignal<HTMLVideoElement | null>(null);
@@ -208,13 +131,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     useVideoVolumePersistence({
       videoRef,
       isVideo,
-      onUserVolumeChange: (video) => {
-        if (videoRef() !== video || disposed) {
-          return;
-        }
-        controlGeneration++;
-        visibility.noteUserVolumeChange(video);
-      },
+      onUserVolumeChange: recovery.onUserVolumeChange,
     });
 
   const visibility = useVideoVisibility({
@@ -224,56 +141,12 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     video: videoRef,
     isVideo,
     mediaIdentity: () => local.media,
-    admit: admitVideo,
+    admit: recovery.admit,
     setMuted: applyMutedProgrammatically,
-    onVisibilityChange: (visible) => {
-      if (!visible && wantsPlayback) {
-        needsResume = true;
-      }
-      if (visible) {
-        resumeWhenReady();
-      }
-    },
+    onVisibilityChange: recovery.onVisibilityChange,
   });
 
-  createEffect(() => {
-    const video = videoRef();
-    const media = local.media;
-    if (!video || !isVideo()) {
-      return;
-    }
-    let latestPlay: { token: object; source: string; generation: number } | null = null;
-    onCleanup(
-      subscribeVideoPlaybackIntent(video, (event) => {
-        if (disposed || videoRef() !== video || local.media !== media) {
-          return;
-        }
-        if (event.type === 'play-rejected') {
-          if (
-            latestPlay?.token !== event.token ||
-            latestPlay.source !== playbackSrc() ||
-            latestPlay.generation !== intentGeneration
-          ) {
-            return;
-          }
-          latestPlay = null;
-          wantsPlayback = false;
-          needsResume = false;
-        } else {
-          wantsPlayback = event.playing;
-          needsResume = event.playing && pendingResume !== null;
-        }
-        recoveringSource = null;
-        controlInteractionAfterError = false;
-        intentGeneration++;
-        if (event.type === 'command') {
-          latestPlay = event.playing
-            ? { token: event.token, source: playbackSrc(), generation: intentGeneration }
-            : null;
-        }
-      })
-    );
-  });
+  recovery.observePlaybackIntent();
 
   createEffect(() => {
     const video = videoRef();
@@ -327,166 +200,13 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     setIsLoaded(false);
   };
 
-  const isCurrentVideoEvent = (video: HTMLVideoElement): boolean => {
-    const source = playbackSrc();
-    return (
-      !disposed &&
-      video.isConnected &&
-      videoRef() === video &&
-      video.getAttribute('src') === source &&
-      (!video.currentSrc || video.currentSrc === video.src) &&
-      (armedSource === source || video.currentSrc === video.src)
-    );
-  };
-
-  const resumeWhenReady = (): void => {
-    const video = videoRef();
-    if (
-      !video ||
-      !needsResume ||
-      !wantsPlayback ||
-      pendingResume ||
-      !visibility.isVisible() ||
-      !isCurrentVideoEvent(video) ||
-      video.readyState < 1
-    ) {
-      return;
-    }
-    needsResume = false;
-    const media = local.media;
-    const source = playbackSrc();
-    const generation = intentGeneration;
-    try {
-      void video.play().catch(() => {
-        if (
-          !disposed &&
-          local.media === media &&
-          playbackSrc() === source &&
-          intentGeneration === generation &&
-          visibility.isVisible()
-        ) {
-          wantsPlayback = false;
-        }
-      });
-    } catch {
-      if (
-        local.media === media &&
-        playbackSrc() === source &&
-        intentGeneration === generation &&
-        visibility.isVisible()
-      ) {
-        wantsPlayback = false;
-      }
-    }
-  };
-
-  const handleVideoLoadStart: JSX.EventHandlerUnion<HTMLVideoElement, Event> = (event) => {
-    const video = event.currentTarget;
-    const source = playbackSrc();
-    if (
-      !disposed &&
-      video.isConnected &&
-      videoRef() === video &&
-      video.getAttribute('src') === source &&
-      (!video.currentSrc || video.currentSrc === video.src)
-    ) {
-      armedSource = source;
-    }
-  };
-
-  const handleVideoMetadata: JSX.EventHandlerUnion<HTMLVideoElement, Event> = (event) => {
-    const video = event.currentTarget;
-    if (!isCurrentVideoEvent(video) || video.readyState < 1) {
-      return;
-    }
-    handleMediaLoad();
-    if (video.readyState >= 2) {
-      setVideoHasFirstFrame(true);
-    }
-    const resume = pendingResume;
-    if (!resume || resume.media !== local.media || resume.source !== playbackSrc()) {
-      return;
-    }
-    pendingResume = null;
-    try {
-      if (controlGeneration === resume.controlGeneration) {
-        if (visibility.isVisible()) {
-          applyMutedProgrammatically(video, resume.muted);
-        }
-        applyVolumeProgrammatically(video, resume.volume);
-      }
-      if (resume.time > 0) {
-        video.currentTime = Number.isFinite(video.duration)
-          ? Math.min(resume.time, Math.max(0, video.duration - 0.1))
-          : resume.time;
-      }
-    } catch {
-      // A source can reject a seek; the controls remain usable at the start.
-    }
-    if (resume.playing && wantsPlayback) {
-      needsResume = true;
-    }
-    resumeWhenReady();
-  };
-
-  const handleVideoData: JSX.EventHandlerUnion<HTMLVideoElement, Event> = (event) => {
-    if (isCurrentVideoEvent(event.currentTarget) && event.currentTarget.readyState >= 2) {
-      setVideoHasFirstFrame(true);
-      handleMediaLoad();
-    }
-  };
-
-  const handleVideoError: JSX.EventHandlerUnion<HTMLVideoElement, Event> = (event) => {
-    const video = event.currentTarget;
-    if (!isCurrentVideoEvent(video) || !isVideoAdmitted()) {
-      return;
-    }
-    const source = playbackSrc();
-    const code = video.error?.code;
-    const next =
-      isRecoverableVideoError(code) && !hasKnownVideoAccessDenial(source, sourceAttachedAt)
-        ? nextVideoPlaybackSource(local.media, attemptedSources)
-        : null;
-    if (!next) {
-      pendingResume = null;
-      needsResume = false;
-      recoveringSource = null;
-      handleMediaError();
-      return;
-    }
-    pendingResume = {
-      media: local.media,
-      source: next,
-      time: Number.isFinite(video.currentTime) ? video.currentTime : 0,
-      volume: video.volume,
-      muted: visibility.recoveryMuted(video),
-      playing: wantsPlayback || !video.paused,
-      controlGeneration,
-    };
-    wantsPlayback = pendingResume.playing;
-    needsResume = pendingResume.playing;
-    recoveringSource = next;
-    controlInteractionAfterError = false;
-    attemptedSources.add(next);
-    sourceAttachedAt = performance.now();
-    armedSource = null;
-    setIsLoaded(false);
-    setVideoHasFirstFrame(false);
-    setIsPlaybackFallback(true);
-    setPlaybackSrc(next);
-  };
-
-  // M8: No dependency on isLoaded() — this effect is a one-shot cached-image
-  // check for images that load before the native onLoad fires (e.g. browser
-  // cache). The native onLoad/onLoadedMetadata handlers are the primary paths.
+  // Supplement native readiness events for media that is already cached.
+  // Cached readiness does not consume recovery's pending resume snapshot.
   createEffect(() => {
     if (isVideo()) {
       const video = videoRef();
-      if (video && isCurrentVideoEvent(video) && video.readyState >= 1 && !isLoaded()) {
-        handleMediaLoad();
-        if (video.readyState >= 2) {
-          setVideoHasFirstFrame(true);
-        }
+      if (video) {
+        recovery.markCachedReady(video);
       }
     } else {
       const image = imageRef();
@@ -573,8 +293,8 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       data-index={local.index}
       data-fit-mode={resolvedFitMode()}
       data-media-loaded={isLoaded() ? 'true' : 'false'}
-      data-video-admitted={isVideo() ? String(isVideoAdmitted()) : undefined}
-      data-video-first-frame={isVideo() ? String(videoHasFirstFrame()) : undefined}
+      data-video-admitted={isVideo() ? String(recovery.isAdmitted()) : undefined}
+      data-video-first-frame={isVideo() ? String(recovery.hasFirstFrame()) : undefined}
       data-media-display-url={displaySrc()}
       data-has-intrinsic-size={hasIntrinsicSize() ? 'true' : undefined}
       style={mergedStyle()}
@@ -598,9 +318,9 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
         {isVideo() && isDisplaySrcValid() ? (
           // biome-ignore lint/a11y/useMediaCaption: X supplies external media without a caption track; a fabricated track would misrepresent it.
           <video
-            src={isVideoAdmitted() ? playbackSrc() : undefined}
+            src={recovery.isAdmitted() ? recovery.playbackSrc() : undefined}
             poster={posterSrc()}
-            preload={isVideoAdmitted() ? 'metadata' : 'none'}
+            preload={recovery.isAdmitted() ? 'metadata' : 'none'}
             controls
             ref={setVideoRef}
             width={dimensions().width}
@@ -610,59 +330,17 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
             aria-describedby={local['aria-describedby']}
             tabIndex={isFocused() ? 0 : -1}
             onFocus={(event) => {
-              admitVideo();
+              recovery.admit();
               local.onFocus?.(event);
             }}
-            onPointerDown={() => {
-              admitVideo();
-              if (recoveringSource) {
-                controlInteractionAfterError = true;
-              }
-            }}
-            onKeyDown={() => {
-              if (recoveringSource) {
-                controlInteractionAfterError = true;
-              }
-            }}
-            onLoadStart={handleVideoLoadStart}
-            onLoadedMetadata={handleVideoMetadata}
-            onLoadedData={handleVideoData}
-            onPlay={(event) => {
-              if (!isCurrentVideoEvent(event.currentTarget)) {
-                return;
-              }
-              wantsPlayback = true;
-              intentGeneration++;
-              recoveringSource = null;
-              controlInteractionAfterError = false;
-              if (visibility.hasObservation() && !visibility.isVisible()) {
-                needsResume = true;
-                visibility.pauseIfHidden();
-              }
-            }}
-            onPause={(event) => {
-              const video = event.currentTarget;
-              const controlledRecovery =
-                recoveringSource === playbackSrc() &&
-                videoRef() === video &&
-                video.isConnected &&
-                video.getAttribute('src') === recoveringSource;
-              if ((!isCurrentVideoEvent(video) && !controlledRecovery) || video.error) {
-                return;
-              }
-              if (!visibility.isVisible() || visibility.isAutoPaused()) {
-                return;
-              }
-              if (recoveringSource && !controlInteractionAfterError) {
-                return;
-              }
-              wantsPlayback = false;
-              needsResume = false;
-              recoveringSource = null;
-              controlInteractionAfterError = false;
-              intentGeneration++;
-            }}
-            onError={handleVideoError}
+            onPointerDown={recovery.handlePointerDown}
+            onKeyDown={recovery.handleKeyDown}
+            onLoadStart={recovery.handleLoadStart}
+            onLoadedMetadata={recovery.handleMetadata}
+            onLoadedData={recovery.handleData}
+            onPlay={recovery.handlePlay}
+            onPause={recovery.handlePause}
+            onError={recovery.handleError}
             onDragStart={preventDragStart}
             onVolumeChange={handleVolumeChange}
           />
@@ -700,7 +378,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
             </span>
           </div>
         )}
-        {isVideo() && isPlaybackFallback() && !isError() && (
+        {isVideo() && recovery.isFallback() && !isError() && (
           <div class={styles.playbackFallback} role="status">
             {translate('msg.gal.video.playbackFallback')}
           </div>

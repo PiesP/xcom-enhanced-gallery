@@ -631,6 +631,64 @@ describe('VerticalImageItem video admission and playback', () => {
     expect(row.dataset.videoFirstFrame).toBe('true');
   });
 
+  it('rejects late readiness from an old source and media before accepting current metadata', () => {
+    const { video, row, setState, onMediaLoad } = mount({ active: true });
+    let currentSrc = source('best');
+    Object.defineProperty(video, 'currentSrc', { configurable: true, get: () => currentSrc });
+    Object.defineProperty(video, 'readyState', { configurable: true, get: () => 2 });
+    video.currentTime = 18;
+    mediaEvent(video, 'loadstart');
+    setMediaError(video, 3);
+    mediaEvent(video, 'error');
+    expect(video.getAttribute('src')).toBe(source('middle'));
+
+    video.currentTime = 1;
+    for (const type of ['loadstart', 'loadedmetadata', 'loadeddata']) {
+      mediaEvent(video, type);
+    }
+    expect(row.dataset.mediaLoaded).toBe('false');
+    expect(row.dataset.videoFirstFrame).toBe('false');
+    expect(video.currentTime).toBe(1);
+    expect(onMediaLoad).not.toHaveBeenCalled();
+
+    currentSrc = source('middle');
+    setMediaError(video, null);
+    mediaEvent(video, 'loadstart');
+    mediaEvent(video, 'loadedmetadata');
+    expect(video.currentTime).toBe(18);
+    expect(row.dataset.mediaLoaded).toBe('true');
+    expect(row.dataset.videoFirstFrame).toBe('true');
+    expect(onMediaLoad).toHaveBeenCalledOnce();
+
+    const replacement = {
+      ...media('333_api_1'),
+      url: source('replacement'),
+      videoVariants: [{ url: source('replacement'), contentType: 'video/mp4' as const }],
+    };
+    setState((current) => ({ ...current, media: replacement }));
+    expect(host.querySelector('video')).toBe(video);
+    expect(video.getAttribute('src')).toBe(source('replacement'));
+    expect(row.dataset.mediaLoaded).toBe('false');
+    expect(row.dataset.videoFirstFrame).toBe('false');
+
+    video.currentTime = 7;
+    for (const type of ['loadstart', 'loadedmetadata', 'loadeddata']) {
+      mediaEvent(video, type);
+    }
+    expect(row.dataset.mediaLoaded).toBe('false');
+    expect(row.dataset.videoFirstFrame).toBe('false');
+    expect(video.currentTime).toBe(7);
+    expect(onMediaLoad).toHaveBeenCalledOnce();
+
+    currentSrc = source('replacement');
+    mediaEvent(video, 'loadstart');
+    mediaEvent(video, 'loadedmetadata');
+    expect(row.dataset.mediaLoaded).toBe('true');
+    expect(row.dataset.videoFirstFrame).toBe('true');
+    expect(video.currentTime).toBe(7);
+    expect(onMediaLoad).toHaveBeenCalledTimes(2);
+  });
+
   it('does not force play after a user pause or a blocked play promise', async () => {
     const { video } = mount({ active: true });
     Object.defineProperty(video, 'readyState', { configurable: true, get: () => 1 });
@@ -672,6 +730,52 @@ describe('VerticalImageItem video admission and playback', () => {
     dispose = undefined;
     mediaEvent(video, 'error');
     expect(video.getAttribute('src')).toBe(source('low'));
+  });
+
+  it('discards late play rejection, media events, and visibility after disposal during fallback', async () => {
+    const { video, row, onMediaLoad } = mount({ active: true });
+    Object.defineProperty(video, 'readyState', { configurable: true, get: () => 2 });
+    const oldVisibility = observers.get('0px')!;
+    let rejectPlay: ((error: Error) => void) | undefined;
+    const play = vi.spyOn(video, 'play').mockImplementation(
+      () =>
+        new Promise<void>((_resolve, reject) => {
+          rejectPlay = reject;
+        })
+    );
+    const pause = vi.spyOn(video, 'pause').mockImplementation(() => {});
+    video.currentTime = 9;
+    mediaEvent(video, 'loadstart');
+    mediaEvent(video, 'play');
+    setMediaError(video, 3);
+    mediaEvent(video, 'error');
+    expect(video.getAttribute('src')).toBe(source('middle'));
+    expect(row.dataset.mediaLoaded).toBe('false');
+    executeVideoControl('play', { video });
+    expect(play).toHaveBeenCalledOnce();
+    expect(rejectPlay).toBeDefined();
+
+    dispose?.();
+    dispose = undefined;
+    const pauseCalls = pause.mock.calls.length;
+    const muted = video.muted;
+    expect(row.isConnected).toBe(false);
+    rejectPlay?.(new DOMException('Late rejection', 'NotAllowedError'));
+    await Promise.resolve();
+    await Promise.resolve();
+    oldVisibility({ isIntersecting: false } as IntersectionObserverEntry);
+    oldVisibility({ isIntersecting: true } as IntersectionObserverEntry);
+    for (const type of ['loadstart', 'loadedmetadata', 'loadeddata', 'error', 'play', 'pause']) {
+      mediaEvent(video, type);
+    }
+    expect(play).toHaveBeenCalledOnce();
+    expect(pause).toHaveBeenCalledTimes(pauseCalls);
+    expect(video.getAttribute('src')).toBe(source('middle'));
+    expect(video.currentTime).toBe(9);
+    expect(video.muted).toBe(muted);
+    expect(row.dataset.mediaLoaded).toBe('false');
+    expect(row.dataset.videoFirstFrame).toBe('false');
+    expect(onMediaLoad).not.toHaveBeenCalled();
   });
 
   it('keeps an exposed 403 on the current attempt from selecting another rendition', () => {

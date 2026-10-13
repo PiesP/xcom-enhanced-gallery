@@ -2,21 +2,11 @@
 // Copyright (c) 2024-2026 PiesP
 
 /**
- * Vite Configuration for X.com Enhanced Gallery Userscript
+ * Userscript build: Solid bundling, inline CSS, and userscript metadata.
  *
- * This configuration handles the complete build pipeline:
- * - Vite bundling with Solid.js
- * - CSS processing and inlining
- * - Userscript metadata generation
- * - Quality checks (type checking, linting, TSDoc validation, unused-code checks)
- *
- * Build modes:
- *   pnpm build      - Production build (runs quality checks inline)
- *   pnpm build:dev  - Development build (no quality checks)
- *
- * Quality checks:
- *   pnpm quality     - Typecheck + Biome + TSDoc + Knip
- *   pnpm quality:fix - Typecheck + Biome (write) + TSDoc + Knip
+ * Ordinary `pnpm build` runs version/quality checks through its prebuild hook.
+ * `build:ci`, `build:dev`, and `build:fast` invoke the bundler without that gate.
+ * CONTRIBUTING.md owns the current command and validation contracts.
  */
 
 // External dependencies
