@@ -81,6 +81,7 @@ vi.mock(
   () => ({
     useVideoVolumePersistence: () => ({
       applyMutedProgrammatically: vi.fn(),
+      applyVolumeProgrammatically: vi.fn(),
       handleVolumeChange: vi.fn(),
     }),
   })
@@ -159,6 +160,7 @@ describe('VerticalGalleryView preload reactivity', () => {
     dispose = undefined;
     disposeGallerySignals();
     container.remove();
+    vi.mocked(useVideoVisibility).mockReset();
     vi.unstubAllGlobals();
   });
 
@@ -200,6 +202,67 @@ describe('VerticalGalleryView preload reactivity', () => {
     expect(image(container, 'e').getAttribute('loading')).toBe('eager');
     expect(image(container, 'e').getAttribute('fetchpriority')).toBe('high');
     expect(image(container, 'd').getAttribute('loading')).toBe('lazy');
+  });
+
+  it('keeps a keyed video element, fallback readiness, and attempt budget when reordered', async () => {
+    vi.mocked(useVideoVisibility).mockReturnValue({
+      isVisible: () => true,
+      hasObservation: () => false,
+      isAutoPaused: () => false,
+      recoveryMuted: (element) => element.muted,
+      noteUserVolumeChange: () => {},
+      pauseIfHidden: () => {},
+    });
+    const target = {
+      ...video('best'),
+      videoVariants: ['best', 'middle', 'low', 'fourth'].map((name) => ({
+        url: video(name).url,
+        contentType: 'video/mp4' as const,
+      })),
+    };
+    const sibling = video('other');
+    openGallery([target, sibling], 0);
+    dispose = render(() => createComponent(VerticalGalleryView, {}), container);
+    await flushEffects();
+
+    const element = container.querySelector('video')!;
+    const row = element.closest<HTMLElement>('[data-gallery-element="item"]')!;
+    let errorCode: number | null = null;
+    Object.defineProperty(element, 'error', {
+      configurable: true,
+      get: () => (errorCode === null ? null : { code: errorCode }),
+    });
+    Object.defineProperty(element, 'readyState', { configurable: true, get: () => 2 });
+    vi.spyOn(element, 'play').mockResolvedValue(undefined);
+    element.dispatchEvent(new Event('loadstart'));
+    element.dispatchEvent(new Event('play'));
+    errorCode = 3;
+    element.dispatchEvent(new Event('error'));
+    expect(element.getAttribute('src')).toBe(video('middle').url);
+    errorCode = null;
+    element.dispatchEvent(new Event('loadstart'));
+    element.dispatchEvent(new Event('loadedmetadata'));
+    expect(row.dataset.mediaLoaded).toBe('true');
+    expect(row.dataset.videoFirstFrame).toBe('true');
+
+    openGallery([sibling, target], 1);
+    await flushEffects();
+    const rows = [...container.querySelectorAll<HTMLElement>('[data-gallery-element="item"]')];
+    expect(rows[1]).toBe(row);
+    expect(row.querySelector('video')).toBe(element);
+    expect(row.dataset.index).toBe('1');
+    expect(row.dataset.videoAdmitted).toBe('true');
+    expect(row.dataset.mediaLoaded).toBe('true');
+    expect(row.dataset.videoFirstFrame).toBe('true');
+    expect(element.getAttribute('src')).toBe(video('middle').url);
+
+    errorCode = 3;
+    element.dispatchEvent(new Event('error'));
+    expect(element.getAttribute('src')).toBe(video('low').url);
+    element.dispatchEvent(new Event('loadstart'));
+    element.dispatchEvent(new Event('error'));
+    expect(element.getAttribute('src')).toBe(video('low').url);
+    expect(row.querySelector('[role="alert"]')).not.toBeNull();
   });
 
   it('does not attach all video sources when image preloadCount is high', async () => {
