@@ -67,14 +67,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   const fetchPriority = () =>
     (isVideo() ? shouldAdmitVideoImmediately() : shouldEagerLoadImage()) ? 'high' : 'low';
 
-  /**
-   * Resolve the image source URL for display.
-   *
-   * Uses media.url for all types. Non-active images previously used
-   * thumbnailUrl (perf optimization B5), but this caused dimension
-   * mismatches requiring complex workarounds. loading=\"lazy\" already
-   * defers off-screen network requests, making thumbnail URLs redundant.
-   */
+  /** Use the canonical display URL; native lazy loading defers off-screen images. */
   const displaySrc = createMemo(() => getMediaDisplayUrl(local.media));
   const [isLoaded, setIsLoaded] = createSignal(false);
   const [isError, setIsError] = createSignal(false);
@@ -207,9 +200,8 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     setIsLoaded(false);
   };
 
-  // M8: No dependency on isLoaded() — this effect is a one-shot cached-image
-  // check for images that load before the native onLoad fires (e.g. browser
-  // cache). The native onLoad/onLoadedMetadata handlers are the primary paths.
+  // Supplement native readiness events for media that is already cached.
+  // Cached readiness does not consume recovery's pending resume snapshot.
   createEffect(() => {
     if (isVideo()) {
       const video = videoRef();
