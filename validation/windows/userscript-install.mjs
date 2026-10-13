@@ -582,6 +582,7 @@ export function requireManagerUiLabels(labels) {
         value.length > 0 &&
         value.length <= 80 &&
         value.trim() === value &&
+        // biome-ignore lint/suspicious/noControlCharactersInRegex: This validation path deliberately rejects control characters in external metadata.
         !/[\r\n\u0000-\u001f]/u.test(value),
       'Manager returned an invalid UI label'
     );
@@ -810,6 +811,7 @@ export async function configureManagerInfoLogging(page, managerId) {
         label.length > 0 &&
         label.length <= 120 &&
         label.trim() === label &&
+        // biome-ignore lint/suspicious/noControlCharactersInRegex: This validation path deliberately rejects control characters in external metadata.
         !/[\r\n\u0000-\u001f]/u.test(label),
       'Manager returned an invalid logging label'
     );

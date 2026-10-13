@@ -50,7 +50,7 @@ function isValidJwt(token: string): boolean {
   const parts = token.split('.');
   if (parts.length !== 3) return false;
   try {
-    const payload = JSON.parse(atob(parts[1]!));
+    const payload = JSON.parse(atob(parts[1] ?? ''));
     if (typeof payload.exp !== 'number') return false;
     return payload.exp * 1000 > Date.now();
   } catch {

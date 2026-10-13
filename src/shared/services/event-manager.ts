@@ -116,10 +116,12 @@ export class EventManager {
         context,
       });
       // Track composite key for O(1) duplicate detection
-      if (!this.listenerKeys.has(type)) {
-        this.listenerKeys.set(type, new Set());
+      let keys = this.listenerKeys.get(type);
+      if (!keys) {
+        keys = new Set();
+        this.listenerKeys.set(type, keys);
       }
-      this.listenerKeys.get(type)!.add(compositeKey);
+      keys.add(compositeKey);
 
       // M6: Listen for abort on the signal to clean up tracking entries
       // when the signal fires and the DOM auto-removes the listener.

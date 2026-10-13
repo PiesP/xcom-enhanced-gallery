@@ -74,7 +74,7 @@ export function getIndexFromMediaId(mediaId?: string): string | null {
   if (!mediaId) return null;
   const match = mediaId.match(/_media_(\d+)$/) || mediaId.match(/_(\d+)$/);
   if (match) {
-    const idx = Number.parseInt(match[1]!, 10);
+    const idx = Number.parseInt(match[1] ?? '', 10);
     return mediaId.includes('_media_') ? (idx + 1).toString() : (match[1] ?? null);
   }
   return null;

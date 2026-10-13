@@ -65,6 +65,7 @@ async function calculateCRC32(data: Uint8Array, signal?: AbortSignal): Promise<n
     signal?.throwIfAborted();
     const chunkEnd = Math.min(chunkStart + CRC32_CHUNK_SIZE, data.length);
     for (let i = chunkStart; i < chunkEnd; i++) {
+      // biome-ignore lint/style/noNonNullAssertion: The loop bounds prove this typed-array byte exists; keep the CRC kernel branch-free.
       crc = (crc >>> 8) ^ (table[(crc ^ data[i]!) & 0xff] as number);
     }
 

@@ -32,28 +32,31 @@
       "preset": "recommended",
       "correctness": {
         "noUnusedImports": "error",
-        "noUnusedVariables": "warn",
-        "useExhaustiveDependencies": "warn",
-        "noUnknownMediaFeatureName": "off",
-        "noUnknownPseudoElement": "off"
+        "noUnusedVariables": "error",
+        "useExhaustiveDependencies": "off",
+        "noUnknownMediaFeatureName": "error",
+        "noUnknownPseudoElement": "error",
+        "noSolidDestructuredProps": "error"
       },
       "style": {
         "noNonNullAssertion": "off",
         "useConst": "error",
-        "noParameterAssign": "warn",
+        "noParameterAssign": "error",
         "noUnusedTemplateLiteral": "error",
-        "useExponentiationOperator": "error"
+        "useExponentiationOperator": "error",
+        "useBlockStatements": "off"
       },
       "suspicious": {
         "noExplicitAny": "error",
-        "noConfusingVoidType": "off",
-        "noControlCharactersInRegex": "off",
-        "noAssignInExpressions": "off",
-        "noDocumentCookie": "off",
-        "noSelfCompare": "warn",
+        "noConfusingVoidType": "warn",
+        "noControlCharactersInRegex": "error",
+        "noAssignInExpressions": "error",
+        "noDocumentCookie": "error",
+        "noSelfCompare": "error",
         "noArrayIndexKey": "off",
         "noImplicitAnyLet": "error",
-        "useIterableCallbackReturn": "error"
+        "useIterableCallbackReturn": "error",
+        "noFocusedTests": "error"
       },
       "complexity": {
         "noForEach": "off",
@@ -64,15 +67,20 @@
         "noUselessLoneBlockStatements": "error"
       },
       "performance": {
-        "noAccumulatingSpread": "error"
+        "noAccumulatingSpread": "error",
+        "useSolidForComponent": "warn"
       },
       "a11y": {
         "noStaticElementInteractions": "error",
         "useKeyWithClickEvents": "error",
-        "useMediaCaption": "off",
+        "useMediaCaption": "error",
         "noSvgWithoutTitle": "error",
         "useAriaPropsSupportedByRole": "error",
         "useSemanticElements": "error"
+      },
+      "nursery": {
+        "noFloatingPromises": "off",
+        "noMisusedPromises": "off"
       }
     }
   },
@@ -106,6 +114,16 @@
     }
   },
   "overrides": [
+    {
+      "includes": ["src/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noNonNullAssertion": "error"
+          }
+        }
+      }
+    },
     {
       "includes": ["test/e2e/fixtures/installed*-page.html"],
       "linter": {

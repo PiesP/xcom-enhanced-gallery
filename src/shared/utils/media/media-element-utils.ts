@@ -127,7 +127,7 @@ export function selectMediaSourceUrl(element: MediaElement): string | null {
   const sources = Array.from(element.querySelectorAll<HTMLSourceElement>(':scope > source'))
     .map((source) => (source.getAttribute('src') ? source.src : null))
     .filter((source): source is string => !!source);
-  return sources.length === 1 ? sources[0]! : null;
+  return sources.length === 1 ? (sources[0] ?? null) : null;
 }
 
 export function extractMediaUrlCandidatesFromElement(element: MediaElement): string[] {

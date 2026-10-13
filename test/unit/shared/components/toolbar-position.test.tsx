@@ -50,11 +50,11 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
-describe('toolbar collection position and effective fit', () => {
+describe('toolbar collection position and effective fitMode', () => {
   it('describes empty, single, first, and last positions without progress semantics or live updates', () => {
     const [total, setTotal] = createSignal(0);
     const [index, setIndex] = createSignal<number | null>(null);
-    const [fit, setFit] = createSignal<ImageFitMode>('fitWidth');
+    const [fitMode, setFit] = createSignal<ImageFitMode>('fitWidth');
     const root = document.createElement('div');
     document.body.append(root);
     dispose = render(
@@ -63,7 +63,7 @@ describe('toolbar collection position and effective fit', () => {
           currentIndex={0}
           totalCount={total()}
           disabled={false}
-          currentFitMode={fit()}
+          currentFitMode={fitMode()}
           downloadStatus="idle"
           tweetText={null}
           tweetTextContent={null}

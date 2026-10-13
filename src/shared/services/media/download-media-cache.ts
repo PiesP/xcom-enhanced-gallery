@@ -93,7 +93,7 @@ export class DownloadMediaCache {
   cancelPending(): void {
     for (const [url, controller] of this.activeRequests) {
       const entry = this.cache.get(url);
-      if (entry?.controller === controller) this.evictNode(this.nodeMap.get(url)!);
+      if (entry?.controller === controller) this.evictNode(this.nodeMap.get(url));
     }
   }
 
@@ -133,7 +133,7 @@ export class DownloadMediaCache {
       entry.borrowers.delete(borrower);
       reject(getAbortReasonOrAbortErrorFromSignal(signal));
       if (entry.borrowers.size === 0 && !entry.owner) {
-        if (this.cache.get(entry.url) === entry) this.evictNode(this.nodeMap.get(entry.url)!);
+        if (this.cache.get(entry.url) === entry) this.evictNode(this.nodeMap.get(entry.url));
         else entry.controller.abort();
       }
     };
@@ -199,7 +199,7 @@ export class DownloadMediaCache {
         borrower.reject(error);
       }
       entry.borrowers.clear();
-      if (this.cache.get(url) === entry) this.evictNode(this.nodeMap.get(url)!);
+      if (this.cache.get(url) === entry) this.evictNode(this.nodeMap.get(url));
       if (__DEV__) {
         logger.debug('[DownloadMediaCache] Media request failed', {
           url,
@@ -227,7 +227,8 @@ export class DownloadMediaCache {
     while (this.totalBytes > this.maxBytes && this.head) this.evictOldest();
   }
 
-  private evictNode(node: LRUNode): void {
+  private evictNode(node: LRUNode | undefined): void {
+    if (!node) throw new Error('Missing LRU node for an owned cache entry');
     const entry = this.cache.get(node.url);
     entry?.owner?.lease.release();
     if (entry && !entry.owner) {

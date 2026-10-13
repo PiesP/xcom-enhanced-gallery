@@ -191,6 +191,11 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
     }
   });
   const hasTweetContent = () => !!(tweetTextContent() ?? tweetText() ?? tweetUrl());
+  const displayedPosition = createMemo(() => {
+    const index = local.displayedIndex();
+    return index === null ? null : index + 1;
+  });
+
   const positionLabel = () => {
     const displayed = local.displayedIndex();
     return displayed === null
@@ -337,13 +342,13 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
                   }}
                   id="xeg-toolbar-counter"
                   data-gallery-element="position"
-                  data-position={local.displayedIndex() === null ? 0 : local.displayedIndex()! + 1}
+                  data-position={displayedPosition() ?? 0}
                   data-total={totalCount()}
                   class={cx(styles.mediaCounter, 'xeg-inline-center')}
                 >
                   <span class="xeg-sr-only">{positionLabel()}</span>
                   <span aria-hidden="true" class={styles.currentIndex}>
-                    {local.displayedIndex() === null ? '—' : local.displayedIndex()! + 1}
+                    {displayedPosition() ?? '—'}
                   </span>
                   <Show when={local.displayedIndex() !== null}>
                     <span aria-hidden="true" class={styles.separator}>

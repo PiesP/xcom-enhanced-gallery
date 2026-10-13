@@ -20,9 +20,9 @@ export function normalizeOriginalImageUrl(source: string): string | null {
   const match = parsed.pathname.match(
     /^\/media\/([^/:]+?)(?:\.(jpe?g|png|webp|gif))?(?::([a-z0-9]+))?$/iu
   );
-  if (!match) return null;
+  if (!match?.[1]) return null;
   try {
-    if (!/^[A-Za-z0-9_-]+$/u.test(decodeURIComponent(match[1]!))) return null;
+    if (!/^[A-Za-z0-9_-]+$/u.test(decodeURIComponent(match[1]))) return null;
   } catch {
     return null;
   }

@@ -203,7 +203,11 @@ export class ThemeService {
     getEventManager().addEventListener(
       this.mediaQueryList,
       'change',
-      (event) => this.mediaQueryListener!(event as MediaQueryListEvent),
+      (event) => {
+        const listener = this.mediaQueryListener;
+        if (!listener) throw new Error('Theme listener invoked after cleanup');
+        listener(event as MediaQueryListEvent);
+      },
       { signal: this.domEventsController.signal, context: 'theme-service' }
     );
   }

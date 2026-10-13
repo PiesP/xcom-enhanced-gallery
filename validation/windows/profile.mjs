@@ -123,6 +123,7 @@ export async function run({ browser, root, output }) {
     await page.evaluate((encodedFixtures) => {
       // Keep production media extraction deterministic: bypass the callback-only
       // GM_cookie fallback and make the unavailable fixture API fail into DOM extraction.
+      // biome-ignore lint/suspicious/noDocumentCookie: Controlled fixture cookie setup or reset stays isolated from live authentication.
       document.cookie = 'ct0=windows-acceptance-fixture; path=/; SameSite=Lax';
       window.GM_xmlhttpRequest = (details) => {
         queueMicrotask(() =>
@@ -179,7 +180,8 @@ export async function run({ browser, root, output }) {
           restoredBeforeThrow: false,
           throwCount: 0,
         };
-        const records = (window.__xegAcceptanceRenderFaults ??= []);
+        window.__xegAcceptanceRenderFaults ??= [];
+        const records = window.__xegAcceptanceRenderFaults;
         records.push(evidence);
         Object.defineProperty(prototype, 'setProperty', {
           ...descriptor,

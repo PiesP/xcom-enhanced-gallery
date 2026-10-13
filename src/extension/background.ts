@@ -780,7 +780,7 @@ async function runDirectDownload(
     await waitForDownloadComplete(browserApi.downloads, downloadId);
     await downloadTracking.markDirectTerminal(requestId, 'complete');
     return { success: true, data: directStatus(requestId, 'complete') };
-  } catch (error: unknown) {
+  } catch {
     if (downloadId === undefined) {
       await downloadTracking.markDirectTerminal(requestId, 'never-started');
       return {

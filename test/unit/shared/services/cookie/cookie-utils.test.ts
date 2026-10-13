@@ -11,6 +11,7 @@ describe('cookie-utils (pure functions)', () => {
     beforeEach(() => {
       // Clear all cookies before each test
       document.cookie.split(';').forEach((c) => {
+        // biome-ignore lint/suspicious/noDocumentCookie: Controlled fixture cookie setup or reset stays isolated from live authentication.
         document.cookie = `${c.split('=')[0]!.trim()}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/`;
       });
     });
@@ -24,13 +25,17 @@ describe('cookie-utils (pure functions)', () => {
     });
 
     it('should return value from a single cookie', () => {
+      // biome-ignore lint/suspicious/noDocumentCookie: Controlled fixture cookie setup or reset stays isolated from live authentication.
       document.cookie = 'test_cookie=hello_world';
       expect(getCookieValueSync('test_cookie')).toBe('hello_world');
     });
 
     it('should return the correct value among multiple cookies', () => {
+      // biome-ignore lint/suspicious/noDocumentCookie: Controlled fixture cookie setup or reset stays isolated from live authentication.
       document.cookie = 'first=alpha';
+      // biome-ignore lint/suspicious/noDocumentCookie: Controlled fixture cookie setup or reset stays isolated from live authentication.
       document.cookie = 'second=beta';
+      // biome-ignore lint/suspicious/noDocumentCookie: Controlled fixture cookie setup or reset stays isolated from live authentication.
       document.cookie = 'third=gamma';
 
       expect(getCookieValueSync('second')).toBe('beta');
@@ -39,17 +44,20 @@ describe('cookie-utils (pure functions)', () => {
     });
 
     it('should return undefined for a cookie that is not set', () => {
+      // biome-ignore lint/suspicious/noDocumentCookie: Controlled fixture cookie setup or reset stays isolated from live authentication.
       document.cookie = 'existing=value';
       expect(getCookieValueSync('missing')).toBeUndefined();
     });
 
     it('should handle URL-encoded cookie values', () => {
+      // biome-ignore lint/suspicious/noDocumentCookie: Controlled fixture cookie setup or reset stays isolated from live authentication.
       document.cookie = 'encoded=%7B%22key%22%3A%22value%22%7D';
       expect(getCookieValueSync('encoded')).toBe('{"key":"value"}');
     });
 
     it('should return raw value when decodeURIComponent fails', () => {
       // Set a cookie with an invalid percent-encoding
+      // biome-ignore lint/suspicious/noDocumentCookie: Controlled fixture cookie setup or reset stays isolated from live authentication.
       document.cookie = 'bad=%E0%A4';
       const result = getCookieValueSync('bad');
       // The value is already set as literal text, so decodeURIComponent may or may not throw
@@ -60,6 +68,7 @@ describe('cookie-utils (pure functions)', () => {
     it('should handle cookie with empty value', () => {
       // Set cookie with empty value directly on document.cookie
       // jsdom may strip trailing = so we verify the function handles it gracefully
+      // biome-ignore lint/suspicious/noDocumentCookie: Controlled fixture cookie setup or reset stays isolated from live authentication.
       document.cookie = 'empty=';
       const result = getCookieValueSync('empty');
       // Both '' and undefined are acceptable outcomes depending on jsdom behavior
@@ -67,12 +76,15 @@ describe('cookie-utils (pure functions)', () => {
     });
 
     it('should handle cookie name with special regex characters', () => {
+      // biome-ignore lint/suspicious/noDocumentCookie: Controlled fixture cookie setup or reset stays isolated from live authentication.
       document.cookie = 'a.b+$c=special_regex';
       expect(getCookieValueSync('a.b+$c')).toBe('special_regex');
     });
 
     it('should not confuse similarly named cookies', () => {
+      // biome-ignore lint/suspicious/noDocumentCookie: Controlled fixture cookie setup or reset stays isolated from live authentication.
       document.cookie = 'ct=short';
+      // biome-ignore lint/suspicious/noDocumentCookie: Controlled fixture cookie setup or reset stays isolated from live authentication.
       document.cookie = 'ct0=longer';
       expect(getCookieValueSync('ct')).toBe('short');
       expect(getCookieValueSync('ct0')).toBe('longer');

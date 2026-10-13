@@ -182,7 +182,7 @@ export function matchClickedMedia(
           apiData.tweet_id === clickedTweetId
         );
       });
-      return { status: 'unknown', index: compatible.length === 1 ? compatible[0]! : null };
+      return { status: 'unknown', index: compatible.length === 1 ? (compatible[0] ?? null) : null };
     }
 
     const clickedCandidates = new Set(normalizedElementUrls);

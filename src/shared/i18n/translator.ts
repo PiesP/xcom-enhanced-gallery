@@ -49,7 +49,8 @@ export function createTranslator(options: TranslatorBundleOptions = {}): Transla
     if (strings) bundleMap[lang] = strings;
   }
 
-  if (!bundleMap[fallbackLanguage]) {
+  const fallbackBundle = bundleMap[fallbackLanguage];
+  if (!fallbackBundle) {
     throw new Error(`Missing fallback language bundle: ${fallbackLanguage}`);
   }
 
@@ -59,7 +60,7 @@ export function createTranslator(options: TranslatorBundleOptions = {}): Transla
     },
 
     translate(language: BaseLanguageCode, key: TranslationKey, params?: TranslationParams): string {
-      const strings = bundleMap[language] ?? bundleMap[fallbackLanguage]!;
+      const strings = bundleMap[language] ?? fallbackBundle;
       const template = resolveNestedPath<string>(strings, key);
       if (!template) return key;
       if (!params) return template;
