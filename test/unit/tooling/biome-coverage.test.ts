@@ -48,6 +48,16 @@ function check(
   return { status: result.status, report };
 }
 
+function ci(path: string): { status: number | null; report: BiomeReport } {
+  const result = run(biome, ['ci', '--reporter=json', '--colors=off', path]);
+  expect(result.stdout, result.stderr).not.toBe('');
+  const report = JSON.parse(result.stdout) as BiomeReport;
+  expect(processed(report)).toBe(1);
+  expect(report.summary.skipped).toBe(0);
+  expect(report.diagnostics.some((diagnostic) => diagnostic.category === 'parse')).toBe(false);
+  return { status: result.status, report };
+}
+
 function processed(report: BiomeReport): number {
   return report.summary.changed + report.summary.unchanged;
 }
@@ -108,6 +118,55 @@ const examples = {
 } as const;
 
 describe('Biome managed-file coverage', () => {
+  it('loads the root configuration in the canonical read-only command', () => {
+    const result = ci('biome.json');
+    expect(result.status, JSON.stringify(result.report.diagnostics)).toBe(0);
+  });
+
+  it.each([
+    {
+      name: 'format',
+      valid: 'export const probe = 1;\n',
+      invalid: 'export const probe=1;\n',
+      diagnostic: 'format',
+    },
+    {
+      name: 'lint',
+      valid: 'export const probe: number = 1;\n',
+      invalid: 'export const probe: any = 1;\n',
+      diagnostic: 'lint/suspicious/noExplicitAny',
+    },
+    {
+      name: 'assist',
+      valid:
+        "import { createEffect, createSignal } from 'solid-js';\nexport const probe = [createEffect, createSignal];\n",
+      invalid:
+        "import { createSignal, createEffect } from 'solid-js';\nexport const probe = [createSignal, createEffect];\n",
+      diagnostic: 'assist/source/organizeImports',
+    },
+  ])('runs read-only Biome ci for isolated $name violations', (probe) => {
+    const path = `test/unit/tooling/xeg-biome-ci-${process.pid}-${randomUUID()}.ts`;
+    withProbe(path, probe.valid, () => {
+      const valid = ci(path);
+      expect(valid.status, JSON.stringify(valid.report.diagnostics)).toBe(0);
+      const absolutePath = resolve(root, path);
+
+      writeFileSync(absolutePath, probe.invalid);
+      const before = readFileSync(absolutePath);
+      const invalid = ci(path);
+      expect(invalid.status, JSON.stringify(invalid.report.diagnostics)).toBe(1);
+      expect(invalid.report.diagnostics.map((diagnostic) => diagnostic.category)).toEqual([
+        probe.diagnostic,
+      ]);
+      expect(readFileSync(absolutePath)).toEqual(before);
+
+      writeFileSync(absolutePath, probe.valid);
+      const restored = ci(path);
+      expect(restored.status, JSON.stringify(restored.report.diagnostics)).toBe(0);
+      expect(readFileSync(absolutePath, 'utf8')).toBe(probe.valid);
+    });
+  });
+
   it.each(probes)('checks valid and violating .$extension in $directory', (probe) => {
     const example = examples[probe.kind];
     const path = `${probe.directory}/xeg-biome-coverage-${process.pid}-${randomUUID()}.${probe.extension}`;

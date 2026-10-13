@@ -126,8 +126,9 @@ jobs:
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.unit != 'false' }}
         uses: PiesP/browser-core/automation/actions/setup-project@279124fa998847bd0184d2de12bdaadcd6d2f969
 
-      - name: 🧪 Run deep-check regression tests
-        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.unit != 'false' }}
+      # Quality owns policy tests when selected; unit-only changes need them here.
+      - name: 🧪 Run focused policy suite for unit-only changes
+        if: ${{ needs.changes.result == 'success' && needs.changes.outputs.unit != 'false' && needs.changes.outputs.quality == 'false' }}
         run: pnpm test:ci
 
       - name: 🧪 Run unit tests and coverage thresholds

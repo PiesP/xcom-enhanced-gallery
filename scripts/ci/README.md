@@ -58,6 +58,13 @@ pnpm test:ci
 pnpm check:scripts
 ```
 
+`test:ci` is the focused policy suite (direct Node reuse/source/authority tests
+and real runtime/import boundary probes), not the complete unit suite. Run
+`pnpm test:cov` for all unit tests and coverage. Local `quality` retains policy
+execution; hosted CI quality owns it when selected, and CI unit runs its explicit
+policy step only for a successful unit-only classification. Full unit coverage
+still includes its Vitest boundary tests.
+
 The workflow invokes the TypeScript CLI using `node --experimental-strip-types`
 and provides its required runner metadata and `GITHUB_OUTPUT` path. It installs
 the pinned runtime before reading a fingerprint, then installs project

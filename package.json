@@ -44,7 +44,7 @@
     "fmt:fix": "biome check --write --linter-enabled=false .",
     "fmt:check": "pnpm -s fmt",
     "circular": "dpdm --tsconfig tsconfig.json --circular --no-tree --no-warning --exit-code circular:1 src/**/*.ts src/**/*.tsx",
-    "quality": "pnpm -s fmt && pnpm -s lint && pnpm -s check && pnpm -s check:e2e && pnpm -s test:ci && pnpm -s circular && pnpm -s knip && pnpm -s quality:nose",
+    "quality": "pnpm -s check:biome && pnpm -s check && pnpm -s check:e2e && pnpm -s test:ci && pnpm -s circular && pnpm -s knip && pnpm -s quality:nose",
     "quality:fix": "pnpm -s fmt:fix && pnpm -s lint:fix && pnpm -s quality",
     "quality:nose": "node --experimental-strip-types scripts/check/nose.ts",
     "verify": "pnpm -s quality && pnpm -s build:all:ci",
@@ -59,7 +59,8 @@
     "test:e2e:all": "pnpm -s test:e2e && pnpm -s test:e2e:extension && pnpm -s test:e2e:extension:firefox",
     "check:e2e": "tsc -p tsconfig.e2e.json --noEmit",
     "test:e2e:headed": "playwright test --config test/e2e/playwright.config.ts --headed",
-    "check:tooling": "tsc -p tsconfig.tooling.json --noEmit"
+    "check:tooling": "tsc -p tsconfig.tooling.json --noEmit",
+    "check:biome": "biome ci ."
   },
   "keywords": [
     "userscript",
