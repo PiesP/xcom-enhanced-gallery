@@ -14,7 +14,9 @@ const RETRY_AFTER_SECONDS = 3;
 
 function targetRequest(route, tweetId) {
   const url = new URL(route.request().url());
-  if (url.hostname !== 'x.com' || !url.pathname.endsWith('/TweetResultByRestId')) return false;
+  if (url.hostname !== 'x.com' || !url.pathname.endsWith('/TweetResultByRestId')) {
+    return false;
+  }
   try {
     return JSON.parse(url.searchParams.get('variables') ?? '{}').tweetId === tweetId;
   } catch {
@@ -56,8 +58,9 @@ async function openAndClose(page, index, imagePaths, expectedUrl, original, veri
           !image.complete ||
           image.naturalWidth === 0 ||
           item?.getAttribute('data-media-loaded') !== 'true'
-        )
+        ) {
           return false;
+        }
         return {
           source: image.currentSrc || image.src,
           width: image.naturalWidth,
@@ -147,7 +150,9 @@ export async function runInstalledMediaApiReuseProfile({
   const originalPageUrl = page.url();
   let variant = 'healthy';
   const routeHandler = async (route) => {
-    if (!targetRequest(route, qualityTweetId)) return route.fallback();
+    if (!targetRequest(route, qualityTweetId)) {
+      return route.fallback();
+    }
     assert(requests.length < MAX_OBSERVATIONS, 'API reuse observation overflow');
     const record = {
       variant,
@@ -165,7 +170,9 @@ export async function runInstalledMediaApiReuseProfile({
     };
     requests.push(record);
     assert.equal(record.method, 'GET');
-    if (variant === 'healthy') return route.fallback();
+    if (variant === 'healthy') {
+      return route.fallback();
+    }
     if (variant === 'denied') {
       await route.fulfill({
         status: 403,
@@ -219,11 +226,16 @@ export async function runInstalledMediaApiReuseProfile({
   const observePage = (observed) => {
     const observedVariant = variant;
     const onPageError = (error) => {
-      if (pageErrors.length < MAX_OBSERVATIONS) pageErrors.push(error.message.slice(0, 500));
-      else errorOverflow = true;
+      if (pageErrors.length < MAX_OBSERVATIONS) {
+        pageErrors.push(error.message.slice(0, 500));
+      } else {
+        errorOverflow = true;
+      }
     };
     const onConsole = (message) => {
-      if (message.type() !== 'error') return;
+      if (message.type() !== 'error') {
+        return;
+      }
       let apiLocation = false;
       try {
         const url = new URL(message.location().url);
@@ -247,7 +259,9 @@ export async function runInstalledMediaApiReuseProfile({
         );
       if (consoleErrors.length < MAX_OBSERVATIONS) {
         consoleErrors.push({ variant: observedVariant, text, expected });
-      } else errorOverflow = true;
+      } else {
+        errorOverflow = true;
+      }
     };
     observed.on('pageerror', onPageError);
     observed.on('console', onConsole);
@@ -354,7 +368,9 @@ export async function runInstalledMediaApiReuseProfile({
           0,
           firstFulfilled + RETRY_AFTER_SECONDS * 1_000 + 100 - performance.now()
         );
-        if (remainingMs > 0) await new Promise((resolve) => setTimeout(resolve, remainingMs));
+        if (remainingMs > 0) {
+          await new Promise((resolve) => setTimeout(resolve, remainingMs));
+        }
         await openAndClose(failurePage, 0, qualityImagePaths, qualityFixtureUrl, false, false);
         assert.equal(count(name), 2, `${name} must retry after the server wait`);
       }
@@ -409,7 +425,9 @@ export async function runInstalledMediaApiReuseProfile({
     const pageCleanup = await Promise.allSettled(ownedPages.map((owned) => owned.close()));
     evidence.cleanup.pagesClosed = pageCleanup.every((result) => result.status === 'fulfilled');
     for (const result of pageCleanup) {
-      if (result.status === 'rejected') cleanupErrors.push(result.reason);
+      if (result.status === 'rejected') {
+        cleanupErrors.push(result.reason);
+      }
     }
     try {
       if (!page.isClosed() && (await page.locator(GALLERY).count())) {
@@ -422,15 +440,18 @@ export async function runInstalledMediaApiReuseProfile({
     } catch (error) {
       cleanupErrors.push(error);
     }
-    if (cleanupErrors.length > 0) evidence.status = 'failed';
+    if (cleanupErrors.length > 0) {
+      evidence.status = 'failed';
+    }
     evidence.cleanup.errors = cleanupErrors.map((error) =>
       error instanceof Error ? error.message : String(error)
     );
-    if (output)
+    if (output) {
       await writeFile(
         join(output, 'api-reuse-observations.json'),
         JSON.stringify(evidence, null, 2)
       );
+    }
     if (cleanupErrors.length > 0) {
       // biome-ignore lint/correctness/noUnsafeFinally: Retain the primary failure together with cleanup failures in the acceptance receipt.
       throw new AggregateError(
@@ -552,7 +573,9 @@ async function runResponseAccountingCases({ context, output, videoPayloads }) {
   let active;
   let primaryError;
   const routeHandler = async (route) => {
-    if (!active) return route.fallback();
+    if (!active) {
+      return route.fallback();
+    }
     const target = new URL(route.request().url());
     if (route.request().isNavigationRequest() && target.href === active.url) {
       return route.fulfill({
@@ -584,7 +607,9 @@ async function runResponseAccountingCases({ context, output, videoPayloads }) {
       return route.fallback();
     }
     const step = active.ids.indexOf(id);
-    if (step < 0) return route.fallback();
+    if (step < 0) {
+      return route.fallback();
+    }
     assert(records.length < MAX_OBSERVATIONS, 'API accounting record cap exceeded');
     let status = 200;
     let response;
@@ -665,7 +690,9 @@ async function runResponseAccountingCases({ context, output, videoPayloads }) {
         evidence.pageErrors.push({ sequence: state.name, error: error.message.slice(0, 500) });
       };
       const consoleError = (message) => {
-        if (message.type() !== 'error') return;
+        if (message.type() !== 'error') {
+          return;
+        }
         assert(evidence.consoleErrors.length < MAX_OBSERVATIONS);
         const text = message.text().slice(0, 500);
         let id;
@@ -822,8 +849,9 @@ async function runResponseAccountingCases({ context, output, videoPayloads }) {
         if (output && !owned.isClosed()) {
           await owned.screenshot({ path: join(output, `api-contract-${state.name}.png`) });
         }
-        if (!owned.isClosed() && (await owned.locator(GALLERY).count()))
+        if (!owned.isClosed() && (await owned.locator(GALLERY).count())) {
           await owned.keyboard.press('Escape');
+        }
         owned.off('pageerror', pageError);
         owned.off('console', consoleError);
         await owned.close();
@@ -866,17 +894,21 @@ async function runResponseAccountingCases({ context, output, videoPayloads }) {
     evidence.cleanup.errors = errors.map((error) =>
       error instanceof Error ? error.message : String(error)
     );
-    if (errors.length) evidence.status = 'failed';
-    if (output)
+    if (errors.length) {
+      evidence.status = 'failed';
+    }
+    if (output) {
       await writeFile(
         join(output, 'api-contract-accounting-observations.json'),
         JSON.stringify(evidence, null, 2)
       );
-    if (errors.length)
+    }
+    if (errors.length) {
       // biome-ignore lint/correctness/noUnsafeFinally: Retain the primary failure together with cleanup failures in the acceptance receipt.
       throw new AggregateError(
         primaryError ? [primaryError, ...errors] : errors,
         'API accounting fixture cleanup failed'
       );
+    }
   }
 }

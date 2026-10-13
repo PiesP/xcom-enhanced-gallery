@@ -117,9 +117,13 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
     const settings = tryGetSettings();
     setVideoClickMode(readVideoClickMode());
     const unsubscribeSettings = settings?.subscribe?.((event) => {
-      if (event.key === 'gallery.videoClickMode') setVideoClickMode(readVideoClickMode());
+      if (event.key === 'gallery.videoClickMode') {
+        setVideoClickMode(readVideoClickMode());
+      }
     });
-    if (unsubscribeSettings) onCleanup(unsubscribeSettings);
+    if (unsubscribeSettings) {
+      onCleanup(unsubscribeSettings);
+    }
   });
 
   // Reactive translation strings
@@ -166,7 +170,9 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
 
   const saveVideoClickMode = async (event: Event): Promise<void> => {
     const select = event.currentTarget;
-    if (!(select instanceof HTMLSelectElement)) return;
+    if (!(select instanceof HTMLSelectElement)) {
+      return;
+    }
     const next = select.value;
     if (!isVideoClickMode(next)) {
       select.value = videoClickMode();

@@ -92,10 +92,12 @@ describe('MediaExtractionService quoted media selection', () => {
       expect(parsed[0]?.sourceLocation).toBe('quoted');
       document.body.innerHTML = unanchoredVideoPreview;
       const poster = document.querySelector<HTMLImageElement>('#main-poster')!;
-      if (kind === 'preview') poster.removeAttribute('src');
-      else
+      if (kind === 'preview') {
+        poster.removeAttribute('src');
+      } else {
         poster.outerHTML =
           '<video id="main-poster" src="blob:https://x.com/runtime-playback"></video>';
+      }
       const result = await new MediaExtractionService().extractFromClickedElement(
         document.querySelector<HTMLElement>('#main-poster')!
       );
@@ -850,11 +852,15 @@ describe('MediaExtractionService API circuit', () => {
     const service = new MediaExtractionService();
     httpGet.mockResolvedValue({ ok: false, status: 503, data: {} });
 
-    for (let attempt = 0; attempt < 3; attempt++) await click(service);
+    for (let attempt = 0; attempt < 3; attempt++) {
+      await click(service);
+    }
     expect(httpGet).toHaveBeenCalledTimes(3);
 
     now += 59_000;
-    for (let skipped = 0; skipped < 4; skipped++) await click(service);
+    for (let skipped = 0; skipped < 4; skipped++) {
+      await click(service);
+    }
     expect(httpGet).toHaveBeenCalledTimes(3);
 
     now += 1_000;

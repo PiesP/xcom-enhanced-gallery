@@ -7,7 +7,9 @@ export type BufferedResponseType = 'text' | 'json' | 'blob' | 'arraybuffer' | 's
 
 function parseContentLength(response: Response): number | undefined {
   const value = response.headers.get('content-length');
-  if (!value || !/^\d+$/.test(value.trim())) return undefined;
+  if (!value || !/^\d+$/.test(value.trim())) {
+    return undefined;
+  }
   const parsed = Number(value);
   return Number.isSafeInteger(parsed) ? parsed : undefined;
 }
@@ -67,7 +69,9 @@ async function readBoundedChunks(
   try {
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done) {
+        break;
+      }
       const nextBytes = receivedBytes + value.byteLength;
       if (nextBytes > maxBytes) {
         const error = new HttpResponseSizeLimitError(maxBytes, nextBytes);
@@ -99,7 +103,9 @@ function joinChunks(
 }
 
 function decodeBytes(bytes: Uint8Array<ArrayBuffer>, responseType: BufferedResponseType): unknown {
-  if (responseType === 'arraybuffer') return bytes.buffer;
+  if (responseType === 'arraybuffer') {
+    return bytes.buffer;
+  }
 
   const text = new TextDecoder().decode(bytes);
   return responseType === 'json' ? JSON.parse(text) : text;
@@ -136,7 +142,9 @@ export async function readResponseBody(
   }
 
   if (!response.body) {
-    if (responseType === 'stream') return null;
+    if (responseType === 'stream') {
+      return null;
+    }
     if (responseType === 'blob') {
       return new Blob([], { type: response.headers.get('content-type') ?? '' });
     }
@@ -152,6 +160,8 @@ export async function readResponseBody(
     abortTransport
   );
   const mimeType = response.headers.get('content-type') ?? '';
-  if (responseType === 'blob') return new Blob(chunks, { type: mimeType });
+  if (responseType === 'blob') {
+    return new Blob(chunks, { type: mimeType });
+  }
   return decodeBytes(joinChunks(chunks, receivedBytes), responseType);
 }

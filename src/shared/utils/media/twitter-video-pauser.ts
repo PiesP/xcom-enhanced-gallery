@@ -32,7 +32,9 @@ export interface PauseAmbientVideosResult {
 
 /** Resolves queryable root, defaults to document */
 function resolveRoot(root?: QueryableRoot | null): QueryableRoot | null {
-  if (root && typeof root.querySelectorAll === 'function') return root;
+  if (root && typeof root.querySelectorAll === 'function') {
+    return root;
+  }
   return document;
 }
 
@@ -75,12 +77,16 @@ export function pauseActiveTwitterVideos(
   options: PauseAmbientVideosOptions = {}
 ): PauseAmbientVideosResult {
   const root = resolveRoot(options.root ?? null);
-  if (!root) return ZERO_RESULT;
+  if (!root) {
+    return ZERO_RESULT;
+  }
 
   const videos =
     root instanceof HTMLVideoElement ? [root] : Array.from(root.querySelectorAll('video'));
   const inspectedCount = videos.length;
-  if (inspectedCount === 0) return ZERO_RESULT;
+  if (inspectedCount === 0) {
+    return ZERO_RESULT;
+  }
 
   let pausedCount = 0;
   let totalCandidates = 0;

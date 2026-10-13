@@ -50,7 +50,9 @@ describe('handleKeyboardEvent', () => {
     'leaves %s editing keys native while the gallery is open',
     (tag) => {
       const element: HTMLElement = document.createElement(tag);
-      if (tag === 'div') Object.defineProperty(element, 'isContentEditable', { get: () => true });
+      if (tag === 'div') {
+        Object.defineProperty(element, 'isContentEditable', { get: () => true });
+      }
       document.body.append(element);
       const handler = (event: KeyboardEvent) =>
         handleKeyboardEvent(

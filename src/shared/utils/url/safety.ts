@@ -87,13 +87,19 @@ export const MEDIA_URL_POLICY = {
  * @returns True if the URL is allowed, false otherwise
  */
 export function isUrlAllowed(rawUrl: string | null | undefined, policy: UrlSafetyPolicy): boolean {
-  if (!rawUrl || typeof rawUrl !== 'string') return false;
+  if (!rawUrl || typeof rawUrl !== 'string') {
+    return false;
+  }
 
   const normalized = rawUrl.replace(CONTROL_CHARS_REGEX, '').trim();
-  if (!normalized) return false;
+  if (!normalized) {
+    return false;
+  }
 
   const blockedHints = policy.blockedProtocolHints ?? DEFAULT_BLOCKED_PROTOCOL_HINTS;
-  if (startsWithBlockedProtocolHint(normalized, blockedHints)) return false;
+  if (startsWithBlockedProtocolHint(normalized, blockedHints)) {
+    return false;
+  }
 
   const lower = normalized.toLowerCase();
 
@@ -101,12 +107,18 @@ export function isUrlAllowed(rawUrl: string | null | undefined, policy: UrlSafet
     return policy.allowDataUrls === true && isAllowedDataUrl(lower, policy.allowedDataMimePrefixes);
   }
 
-  if (lower.startsWith('//')) return handleProtocolRelative(normalized, policy);
+  if (lower.startsWith('//')) {
+    return handleProtocolRelative(normalized, policy);
+  }
 
-  if (policy.allowFragments && lower.startsWith('#')) return true;
+  if (policy.allowFragments && lower.startsWith('#')) {
+    return true;
+  }
 
   const hasScheme = EXPLICIT_SCHEME_REGEX.test(normalized);
-  if (!hasScheme) return policy.allowRelative === true;
+  if (!hasScheme) {
+    return policy.allowRelative === true;
+  }
 
   try {
     const parsed = new URL(normalized);
@@ -134,7 +146,9 @@ export function startsWithBlockedProtocolHint(value: string, hints: readonly str
   // If no scheme separator exists, check the whole probe.
   const schemeEnd = probe.indexOf(':');
   const schemeRegion = schemeEnd >= 0 ? probe.slice(0, schemeEnd) : probe;
-  if (/%(?![0-9A-Fa-f]{2})/.test(schemeRegion)) return true;
+  if (/%(?![0-9A-Fa-f]{2})/.test(schemeRegion)) {
+    return true;
+  }
 
   const variants = buildProbeVariants(probe);
   return variants.some((candidate) => hints.some((hint) => candidate.startsWith(hint)));
@@ -164,11 +178,15 @@ function isAllowedDataUrl(
   lowerCaseValue: string,
   allowedPrefixes: readonly string[] | undefined
 ): boolean {
-  if (!allowedPrefixes || allowedPrefixes.length === 0) return false;
+  if (!allowedPrefixes || allowedPrefixes.length === 0) {
+    return false;
+  }
 
   const metaSection = lowerCaseValue.slice('data:'.length);
   const [mime] = metaSection.split(';', 1);
-  if (!mime) return false;
+  if (!mime) {
+    return false;
+  }
 
   // MED-6: Strict MIME match — startsWith('image/png') matches 'image/png123'.
   // Use exact match or ensure the prefix is followed by a delimiter (+/-/; or EOS).
@@ -178,7 +196,9 @@ function isAllowedDataUrl(
 }
 
 function handleProtocolRelative(url: string, policy: UrlSafetyPolicy): boolean {
-  if (!policy.allowProtocolRelative) return false;
+  if (!policy.allowProtocolRelative) {
+    return false;
+  }
 
   const fallbackProtocol = policy.allowedProtocols.has('https:')
     ? 'https:'

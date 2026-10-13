@@ -61,12 +61,16 @@ export function useGalleryNavigation(
 
   createEffect(
     on(isVisible, (visible) => {
-      if (!visible) return;
+      if (!visible) {
+        return;
+      }
 
       const dispose = registerNavigationEvents({
         onTriggerChange: setLastNavigationTrigger,
         onNavigateComplete: ({ index, trigger }) => {
-          if (trigger === 'scroll' || trigger === 'auto-focus') return;
+          if (trigger === 'scroll' || trigger === 'auto-focus') {
+            return;
+          }
           scrollToItem(index);
         },
       });

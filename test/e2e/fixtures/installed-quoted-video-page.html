@@ -258,7 +258,9 @@
     window.addEventListener(
       'click',
       (event) => {
-        if (!event.isTrusted || window.__quoteFixtureClicks.length >= 32) return;
+        if (!event.isTrusted || window.__quoteFixtureClicks.length >= 32) {
+          return;
+        }
         const target = event.target;
         const record = {
           tag: target instanceof Element ? target.tagName.toLowerCase() : null,
@@ -284,7 +286,9 @@
     let playableBytes;
     fetch(`https://video.twimg.com/fixture/${key}.mp4`)
       .then((response) => {
-        if (!response.ok) throw new Error(`Host video fixture HTTP ${response.status}`);
+        if (!response.ok) {
+          throw new Error(`Host video fixture HTTP ${response.status}`);
+        }
         return response.arrayBuffer();
       })
       .then((bytes) => {
@@ -299,7 +303,9 @@
     shell.querySelector('[data-testid="playButton"]').addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
-      if (!playableBytes) throw new Error('Host playable bytes unavailable');
+      if (!playableBytes) {
+        throw new Error('Host playable bytes unavailable');
+      }
       const objectUrl = makeHostUrl();
       hostVideo.src = objectUrl;
       shell.dataset.playing = 'true';
@@ -309,14 +315,17 @@
       });
     });
     window.__quoteFixtureHostAction = async (action) => {
-      if (!playableBytes) throw new Error('Host playable bytes unavailable');
+      if (!playableBytes) {
+        throw new Error('Host playable bytes unavailable');
+      }
       if (action === 'replay') {
         const attempt = hostVideo.play();
         await attempt.catch(() => {});
         return { action, tag: hostVideo.tagName.toLowerCase() };
       }
-      if (action !== 'insert-playing' && action !== 'replace')
+      if (action !== 'insert-playing' && action !== 'replace') {
         throw new Error('Unknown host action');
+      }
       const video = document.createElement('video');
       video.dataset.hostAction = action;
       video.src = makeHostUrl();
@@ -335,16 +344,19 @@
         await new Promise((resolve, reject) => {
           const deadline = performance.now() + 3000;
           const observe = () => {
-            if (video.error) reject(new Error(`Detached host video error ${video.error.code}`));
-            else if (video.paused || performance.now() >= deadline) {
+            if (video.error) {
+              reject(new Error(`Detached host video error ${video.error.code}`));
+            } else if (video.paused || performance.now() >= deadline) {
               reject(new Error('Detached host video did not progress before insertion'));
             } else if (
               video.currentTime > start + 0.15 &&
               video.videoWidth === 320 &&
               video.videoHeight === 180
-            )
+            ) {
               resolve();
-            else requestAnimationFrame(observe);
+            } else {
+              requestAnimationFrame(observe);
+            }
           };
           observe();
         });
@@ -361,10 +373,16 @@
       if (action === 'replace') {
         const previous =
           shell.querySelector('video[data-host-action="insert-playing"]') ?? hostVideo;
-        if (previous !== hostVideo) URL.revokeObjectURL(previous.src);
+        if (previous !== hostVideo) {
+          URL.revokeObjectURL(previous.src);
+        }
         previous.replaceWith(video);
-      } else shell.append(video);
-      if (action === 'replace') await video.play().catch(() => {});
+      } else {
+        shell.append(video);
+      }
+      if (action === 'replace') {
+        await video.play().catch(() => {});
+      }
       return {
         action,
         playingBeforeInsertion,
@@ -374,7 +392,9 @@
       };
     };
     window.addEventListener('pagehide', () => {
-      if (document.body.dataset.hostBlobUrl) URL.revokeObjectURL(document.body.dataset.hostBlobUrl);
+      if (document.body.dataset.hostBlobUrl) {
+        URL.revokeObjectURL(document.body.dataset.hostBlobUrl);
+      }
       shell.querySelectorAll('video[data-host-action]').forEach((video) => {
         URL.revokeObjectURL(video.src);
       });

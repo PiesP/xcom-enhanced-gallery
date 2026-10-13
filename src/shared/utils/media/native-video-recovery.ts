@@ -15,7 +15,9 @@ export function startNativeVideoRecovery(options: NativeVideoRecoveryOptions): (
   let active = true;
   let saving = false;
   const listener = withTrustedEvent((event: KeyboardEvent): void => {
-    if (!active || saving || !options.isCurrent()) return;
+    if (!active || saving || !options.isCurrent()) {
+      return;
+    }
     if (
       event.code !== 'KeyV' ||
       !event.altKey ||
@@ -24,22 +26,25 @@ export function startNativeVideoRecovery(options: NativeVideoRecoveryOptions): (
       event.metaKey ||
       event.repeat ||
       event.isComposing
-    )
+    ) {
       return;
+    }
     if (
       event.target instanceof Element &&
       event.target.closest(
         'input, textarea, select, [contenteditable]:not([contenteditable="false"])'
       )
-    )
+    ) {
       return;
+    }
     event.preventDefault();
     event.stopPropagation();
     saving = true;
     void Promise.resolve()
       .then(() => {
-        if (active && options.isCurrent())
+        if (active && options.isCurrent()) {
           return setTypedSetting('gallery.videoClickMode', 'block-all');
+        }
         return undefined;
       })
       .then(
@@ -51,12 +56,16 @@ export function startNativeVideoRecovery(options: NativeVideoRecoveryOptions): (
         },
         (error: unknown) => {
           saving = false;
-          if (active && options.isCurrent()) options.onError(error);
+          if (active && options.isCurrent()) {
+            options.onError(error);
+          }
         }
       );
   });
   const dispose = (): void => {
-    if (!active) return;
+    if (!active) {
+      return;
+    }
     active = false;
     document.removeEventListener('keydown', listener, true);
   };

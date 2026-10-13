@@ -82,7 +82,9 @@ export class GalleryApp {
   }
 
   async initialize(): Promise<void> {
-    if (this.initialized) return;
+    if (this.initialized) {
+      return;
+    }
 
     this.sessionEpoch++;
     this.sessionAbortController = new AbortController();
@@ -162,7 +164,9 @@ export class GalleryApp {
         signal: signalScope.signal,
       });
 
-      if (!this.isCurrentMediaClick(opId, epoch, clickController, clickUrl)) return;
+      if (!this.isCurrentMediaClick(opId, epoch, clickController, clickUrl)) {
+        return;
+      }
 
       if (result.success && result.mediaItems.length > 0) {
         this.openGallery(result.mediaItems, result.clickedIndex);
@@ -201,7 +205,9 @@ export class GalleryApp {
         );
       }
     } catch (error) {
-      if (!this.isCurrentMediaClick(opId, epoch, clickController, clickUrl)) return;
+      if (!this.isCurrentMediaClick(opId, epoch, clickController, clickUrl)) {
+        return;
+      }
       mediaErrorReporter.error(error, { code: 'MEDIA_EXTRACTION_ERROR' });
       const lang = getLanguageService();
       notifySafely(
@@ -242,7 +248,9 @@ export class GalleryApp {
     clickUrl: string
   ): string {
     const lang = getLanguageService();
-    if (!tryGetSettings()) return ` ${lang.translate('msg.err.loadMedia.nativeVideoControls')}`;
+    if (!tryGetSettings()) {
+      return ` ${lang.translate('msg.err.loadMedia.nativeVideoControls')}`;
+    }
     this.nativeVideoRecoveryDispose = startNativeVideoRecovery({
       isCurrent: () =>
         this.initialized &&
@@ -270,7 +278,9 @@ export class GalleryApp {
   }
 
   openGallery(mediaItems: MediaInfo[], startIndex = 0): void {
-    if (mediaItems.length === 0) return;
+    if (mediaItems.length === 0) {
+      return;
+    }
 
     try {
       const validIndex = clampIndex(startIndex, mediaItems.length);

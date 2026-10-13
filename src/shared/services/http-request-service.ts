@@ -80,7 +80,9 @@ function metadata(
 }
 
 function responseFailure(response: HttpRequestResponse): Error {
-  if (response.response instanceof HttpResponseSizeLimitError) return response.response;
+  if (response.response instanceof HttpResponseSizeLimitError) {
+    return response.response;
+  }
   const safe = metadata(response, false);
   return new HttpRequestError(
     safe.status,
@@ -135,13 +137,19 @@ export class HttpRequestService {
     let receivedBytes: number | null = null;
 
     const onTransportSettled = (): void => {
-      if (transportSettled) return;
+      if (transportSettled) {
+        return;
+      }
       transportSettled = true;
-      if (receivedBytes !== null) lease.shrink(receivedBytes);
+      if (receivedBytes !== null) {
+        lease.shrink(receivedBytes);
+      }
       lease.release();
     };
     const settle = (fn: () => void): boolean => {
-      if (settled) return false;
+      if (settled) {
+        return false;
+      }
       settled = true;
       signal?.removeEventListener('abort', onAbort);
       fn();
@@ -157,7 +165,9 @@ export class HttpRequestService {
     };
     const onAbort = (): void => {
       abortRequested = true;
-      if (!settle(() => deferred.reject(getAbortReasonOrAbortErrorFromSignal(signal)))) return;
+      if (!settle(() => deferred.reject(getAbortReasonOrAbortErrorFromSignal(signal)))) {
+        return;
+      }
       abortTransport();
     };
 
@@ -176,7 +186,9 @@ export class HttpRequestService {
       maxResponseBytes: maxBytes,
       ...(options.headers ? { headers: options.headers } : {}),
       onload: (response) => {
-        if (settled) return;
+        if (settled) {
+          return;
+        }
         const data = response.response;
         if (
           (options.responseType === 'blob' && !(data instanceof Blob)) ||
@@ -226,7 +238,9 @@ export class HttpRequestService {
 
     try {
       control = getHttpRequestAdapter().request(details);
-      if (abortRequested) abortTransport();
+      if (abortRequested) {
+        abortTransport();
+      }
     } catch (error) {
       settle(() => deferred.reject(error));
       onTransportSettled();
@@ -251,7 +265,9 @@ export class HttpRequestService {
     };
 
     const settle = (fn: () => void): boolean => {
-      if (settled) return false;
+      if (settled) {
+        return false;
+      }
       settled = true;
       cleanup();
       fn();
@@ -260,7 +276,9 @@ export class HttpRequestService {
 
     const onAbort = (): void => {
       abortRequested = true;
-      if (!settle(() => deferred.reject(getAbortReasonOrAbortErrorFromSignal(signal)))) return;
+      if (!settle(() => deferred.reject(getAbortReasonOrAbortErrorFromSignal(signal)))) {
+        return;
+      }
       control?.abort();
     };
 
@@ -316,7 +334,9 @@ export class HttpRequestService {
       control = getHttpRequestAdapter().request(details);
       // An adapter can synchronously abort the caller's signal before it
       // returns its control object. Honor that abort after assignment.
-      if (abortRequested) control.abort();
+      if (abortRequested) {
+        control.abort();
+      }
     } catch (error) {
       settle(() => deferred.reject(error));
     }

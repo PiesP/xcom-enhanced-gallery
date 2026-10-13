@@ -53,12 +53,16 @@ export function subscribeVideoPlaybackIntent(
   listeners.add(listener);
   return () => {
     listeners.delete(listener);
-    if (listeners.size === 0) playbackIntentListeners.delete(video);
+    if (listeners.size === 0) {
+      playbackIntentListeners.delete(video);
+    }
   };
 }
 
 function notifyPlaybackIntent(video: HTMLVideoElement, event: VideoPlaybackIntentEvent): void {
-  for (const listener of playbackIntentListeners.get(video) ?? []) listener(event);
+  for (const listener of playbackIntentListeners.get(video) ?? []) {
+    listener(event);
+  }
 }
 
 /**
@@ -130,7 +134,9 @@ export function executeVideoControl(
  * @internal
  */
 function getGalleryVideo(video?: HTMLVideoElement | null): HTMLVideoElement | null {
-  if (video instanceof HTMLVideoElement) return video;
+  if (video instanceof HTMLVideoElement) {
+    return video;
+  }
   const signaled = gallerySignals.currentVideoElement;
   return signaled instanceof HTMLVideoElement ? signaled : null;
 }
@@ -140,7 +146,9 @@ function getGalleryVideo(video?: HTMLVideoElement | null): HTMLVideoElement | nu
  * @internal
  */
 function playVideo(video: HTMLVideoElement, context?: string): void {
-  if (!video.play) return;
+  if (!video.play) {
+    return;
+  }
   const token = {};
   const result = video.play();
   notifyPlaybackIntent(video, { type: 'command', playing: true, token });
@@ -148,8 +156,9 @@ function playVideo(video: HTMLVideoElement, context?: string): void {
     if (__DEV__) {
       logger.debug('Play failed', { context });
     }
-    if (error && typeof error === 'object' && 'name' in error && error.name === 'AbortError')
+    if (error && typeof error === 'object' && 'name' in error && error.name === 'AbortError') {
       return;
+    }
     notifyPlaybackIntent(video, { type: 'play-rejected', token });
   });
 }
@@ -159,7 +168,9 @@ function playVideo(video: HTMLVideoElement, context?: string): void {
  * @internal
  */
 function pauseVideo(video: HTMLVideoElement): void {
-  if (!video.pause) return;
+  if (!video.pause) {
+    return;
+  }
   video.pause();
   notifyPlaybackIntent(video, { type: 'command', playing: false, token: {} });
 }

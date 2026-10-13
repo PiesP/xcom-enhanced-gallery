@@ -134,7 +134,9 @@ function image(container: HTMLElement, id: string): HTMLImageElement {
   const element = container.querySelector<HTMLImageElement>(
     `img[src="https://pbs.twimg.com/media/${id}.jpg"]`
   );
-  if (!element) throw new Error(`Missing image ${id}`);
+  if (!element) {
+    throw new Error(`Missing image ${id}`);
+  }
   return element;
 }
 

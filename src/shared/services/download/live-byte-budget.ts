@@ -54,7 +54,9 @@ export class LiveByteBudget {
     if (!Number.isSafeInteger(bytes) || bytes < 0) {
       throw new RangeError('bytes must be a non-negative safe integer');
     }
-    if (bytes > this.availableBytes) throw new DownloadResourceLimitError();
+    if (bytes > this.availableBytes) {
+      throw new DownloadResourceLimitError();
+    }
     this.used += bytes;
     this.onUsage?.(this.used);
     let chargedBytes = bytes;
@@ -67,11 +69,15 @@ export class LiveByteBudget {
           return released ? 0 : chargedBytes;
         },
         fork: () => {
-          if (released) throw new Error('Binary owner has been released');
+          if (released) {
+            throw new Error('Binary owner has been released');
+          }
           return newOwner();
         },
         shrink: (nextBytes) => {
-          if (released) throw new Error('Binary owner has been released');
+          if (released) {
+            throw new Error('Binary owner has been released');
+          }
           if (!Number.isSafeInteger(nextBytes) || nextBytes < 0 || nextBytes > chargedBytes) {
             throw new RangeError('A binary reservation may only shrink');
           }
@@ -80,7 +86,9 @@ export class LiveByteBudget {
           this.onUsage?.(this.used);
         },
         release: () => {
-          if (released) return;
+          if (released) {
+            return;
+          }
           released = true;
           references--;
           if (references === 0) {
@@ -106,7 +114,9 @@ export function combineLiveByteLeases(leases: readonly LiveByteLease[]): LiveByt
       return released ? 0 : leases.reduce((sum, lease) => sum + lease.bytes, 0);
     },
     fork: () => {
-      if (released) throw new Error('Binary owner has been released');
+      if (released) {
+        throw new Error('Binary owner has been released');
+      }
       return combineLiveByteLeases(leases.map((lease) => lease.fork()));
     },
     shrink: (bytes) => {
@@ -122,9 +132,13 @@ export function combineLiveByteLeases(leases: readonly LiveByteLease[]): LiveByt
       }
     },
     release: () => {
-      if (released) return;
+      if (released) {
+        return;
+      }
       released = true;
-      for (const lease of leases) lease.release();
+      for (const lease of leases) {
+        lease.release();
+      }
     },
   };
 }
@@ -138,6 +152,8 @@ export function reserveBinaryResponse(
     throw new RangeError('requestedMaxBytes must be a non-negative safe integer');
   }
   const maxBytes = Math.min(requestedMaxBytes, Math.floor(budget.availableBytes / 2));
-  if (requestedMaxBytes > 0 && maxBytes === 0) throw new DownloadResourceLimitError();
+  if (requestedMaxBytes > 0 && maxBytes === 0) {
+    throw new DownloadResourceLimitError();
+  }
   return { maxBytes, lease: budget.reserve(maxBytes * 2) };
 }

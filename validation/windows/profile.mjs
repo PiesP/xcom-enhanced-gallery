@@ -201,7 +201,9 @@ export async function run({ browser, root, output }) {
     const prepareHostSnapshot = () =>
       page.evaluate(() => {
         const trigger = document.querySelector('[data-testid="tweetPhoto"] img');
-        if (!(trigger instanceof HTMLElement)) throw new Error('Missing gallery trigger');
+        if (!(trigger instanceof HTMLElement)) {
+          throw new Error('Missing gallery trigger');
+        }
         trigger.id = 'recovery-trigger';
         trigger.tabIndex = 0;
         trigger.scrollIntoView({ block: 'center' });
@@ -313,7 +315,9 @@ export async function run({ browser, root, output }) {
           tag: document.activeElement?.tagName,
         }));
         visited.push(focused);
-        if (focused.action === action) return visited;
+        if (focused.action === action) {
+          return visited;
+        }
       }
       const targets = await page.evaluate(() =>
         [...document.querySelectorAll('[data-xeg-error-action]')].map((element) => ({
@@ -404,7 +408,9 @@ export async function run({ browser, root, output }) {
     const localizedExpansionLabel = '더 이상 재시도할 수 없음';
     const largeTextRecovery = await retryRecovery.evaluate((element, label) => {
       const retry = element.querySelector('[data-xeg-error-action="retry"]');
-      if (!(retry instanceof HTMLButtonElement)) throw new Error('Missing recovery retry action');
+      if (!(retry instanceof HTMLButtonElement)) {
+        throw new Error('Missing recovery retry action');
+      }
       const originalLabel = retry.textContent ?? '';
       element.style.setProperty('--xeg-font-size-base', '2rem');
       retry.textContent = label;
@@ -457,7 +463,9 @@ export async function run({ browser, root, output }) {
     });
     await retryRecovery.evaluate((element, originalLabel) => {
       const retry = element.querySelector('[data-xeg-error-action="retry"]');
-      if (!(retry instanceof HTMLButtonElement)) throw new Error('Missing recovery retry action');
+      if (!(retry instanceof HTMLButtonElement)) {
+        throw new Error('Missing recovery retry action');
+      }
       element.style.removeProperty('--xeg-font-size-base');
       retry.textContent = originalLabel;
     }, largeTextRecovery.originalLabel);
@@ -748,8 +756,9 @@ export async function run({ browser, root, output }) {
         await page.evaluate(() =>
           Boolean(document.activeElement?.closest('[data-gallery-element="item"]'))
         )
-      )
+      ) {
         break;
+      }
     }
     assert.equal(
       await page.evaluate(() =>

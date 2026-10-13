@@ -105,7 +105,9 @@ function resolveTwitterApiHost(
   supportedHosts: readonly string[],
   defaultHost: string
 ): string {
-  if (!hostname) return defaultHost;
+  if (!hostname) {
+    return defaultHost;
+  }
 
   const normalized = hostname.toLowerCase();
 
@@ -186,7 +188,9 @@ function unwrapTweet(input: TwitterTweet): TwitterTweet | null {
   // Support at most two TweetWithVisibilityResults wrappers, including legacy
   // untagged { tweet } envelopes. Never traverse quoted_status_result here.
   for (let depth = 0; depth <= 2; depth += 1) {
-    if (!result || typeof result !== 'object' || Array.isArray(result)) return null;
+    if (!result || typeof result !== 'object' || Array.isArray(result)) {
+      return null;
+    }
     if (result.tweet === undefined) {
       return result.__typename === undefined ||
         result.__typename === 'Tweet' ||
@@ -198,8 +202,9 @@ function unwrapTweet(input: TwitterTweet): TwitterTweet | null {
     if (
       depth === 2 ||
       (result.__typename !== undefined && result.__typename !== 'TweetWithVisibilityResults')
-    )
+    ) {
       return null;
+    }
     result = result.tweet;
   }
   return null;
@@ -210,8 +215,9 @@ function numericTweetId(tweet: TwitterTweet): string | null {
   if (
     ids.some((id) => typeof id !== 'string' || !/^[1-9]\d*$/u.test(id)) ||
     new Set(ids).size !== 1
-  )
+  ) {
     return null;
+  }
   return ids[0] ?? null;
 }
 
@@ -251,12 +257,21 @@ function classifyHttpFailure(
   category: unknown,
   retryAfterMs?: number
 ): TwitterAPIRequestError['category'] {
-  if (status === 429) return 'rate-limited';
-  if (status === 401 || status === 403) return 'denied';
-  if (category === 'timeout' || category === 'network') return 'transport';
-  if (readable === false || category === 'unreadable') return 'unreadable';
-  if (retryAfterMs !== undefined && (status === 408 || status === 425 || status >= 500))
+  if (status === 429) {
+    return 'rate-limited';
+  }
+  if (status === 401 || status === 403) {
+    return 'denied';
+  }
+  if (category === 'timeout' || category === 'network') {
+    return 'transport';
+  }
+  if (readable === false || category === 'unreadable') {
+    return 'unreadable';
+  }
+  if (retryAfterMs !== undefined && (status === 408 || status === 425 || status >= 500)) {
     return 'deferred';
+  }
   return 'transport';
 }
 
@@ -325,8 +340,9 @@ async function apiRequest(
       if (
         signal?.aborted ||
         ((error instanceof Error || error instanceof DOMException) && error.name === 'AbortError')
-      )
+      ) {
         throw error;
+      }
       throw transportError(error);
     });
 
@@ -412,7 +428,9 @@ export async function getTweetMedias(
       'provider-error'
     );
   }
-  if (resultEnvelope.result == null) return noApiMedia(json);
+  if (resultEnvelope.result == null) {
+    return noApiMedia(json);
+  }
 
   const root = unwrapTweet(resultEnvelope.result);
   if (!root) {
@@ -445,7 +463,9 @@ export async function getTweetMedias(
 
   let tweetUser = tweetResult.core?.user_results?.result;
 
-  if (!tweetUser) return noApiMedia(json);
+  if (!tweetUser) {
+    return noApiMedia(json);
+  }
   tweetUser = normalizeLegacyUser(tweetUser);
 
   let result = extractMediaFromTweet(tweetResult, tweetUser, 'original');
@@ -524,12 +544,16 @@ export class TweetMetadataReuse {
   /** Explicit refresh, navigation or authentication-context change. */
   invalidate(): void {
     this.cache.clear();
-    for (const flight of this.flights.values()) flight.controller.abort();
+    for (const flight of this.flights.values()) {
+      flight.controller.abort();
+    }
     this.flights.clear();
   }
 
   dispose(): void {
-    if (this.disposed) return;
+    if (this.disposed) {
+      return;
+    }
     this.disposed = true;
     this.invalidate();
     this.context = null;
@@ -540,11 +564,17 @@ export class TweetMetadataReuse {
     location?: LocationConfig,
     signal?: AbortSignal
   ): Promise<TweetMetadataResult> {
-    if (this.disposed || signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+    if (this.disposed || signal?.aborted) {
+      throw new DOMException('Aborted', 'AbortError');
+    }
     const resolvedLocation = location ?? resolveLocationConfig();
     const nextContext = await resolveRequestContext(resolvedLocation);
-    if (this.disposed || signal?.aborted) throw new DOMException('Aborted', 'AbortError');
-    if (this.context && !this.sameContext(nextContext)) this.invalidate();
+    if (this.disposed || signal?.aborted) {
+      throw new DOMException('Aborted', 'AbortError');
+    }
+    if (this.context && !this.sameContext(nextContext)) {
+      this.invalidate();
+    }
     this.context = nextContext;
 
     // The endpoint URL contains the operation, feature contract and tweet ID.
@@ -593,7 +623,9 @@ export class TweetMetadataReuse {
             }
           )
           .finally(() => {
-            if (this.flights.get(key) === candidate) this.flights.delete(key);
+            if (this.flights.get(key) === candidate) {
+              this.flights.delete(key);
+            }
           }),
       };
       flight = candidate;
@@ -611,11 +643,14 @@ export class TweetMetadataReuse {
       entries.length === 0 ||
       entries.length > TweetMetadataReuse.MAX_MEDIA ||
       entries.every((entry) => entry.availability === 'unsupported-hls')
-    )
+    ) {
       return;
+    }
     // Oversized results still serve the current click without entering the cache.
     const serialized = JSON.stringify(entries);
-    if (serialized.length > TweetMetadataReuse.MAX_JSON_CHARS) return;
+    if (serialized.length > TweetMetadataReuse.MAX_JSON_CHARS) {
+      return;
+    }
     const copy = structuredClone(entries);
     this.cache.delete(key);
     this.cache.set(key, {
@@ -624,7 +659,9 @@ export class TweetMetadataReuse {
     });
     while (this.cache.size > TweetMetadataReuse.MAX_CACHE_ENTRIES) {
       const oldest = this.cache.keys().next();
-      if (oldest.done) throw new Error('Nonempty tweet cache has no oldest entry');
+      if (oldest.done) {
+        throw new Error('Nonempty tweet cache has no oldest entry');
+      }
       this.cache.delete(oldest.value);
     }
   }
@@ -638,19 +675,25 @@ export class TweetMetadataReuse {
     return new Promise((resolve, reject) => {
       let settled = false;
       const finish = (): boolean => {
-        if (settled) return false;
+        if (settled) {
+          return false;
+        }
         settled = true;
         signal?.removeEventListener('abort', onAbort);
         flight.controller.signal.removeEventListener('abort', onAbort);
         flight.waiters--;
         if (flight.waiters === 0) {
-          if (this.flights.get(key) === flight) this.flights.delete(key);
+          if (this.flights.get(key) === flight) {
+            this.flights.delete(key);
+          }
           flight.controller.abort();
         }
         return true;
       };
       const onAbort = (): void => {
-        if (finish()) reject(new DOMException('Aborted', 'AbortError'));
+        if (finish()) {
+          reject(new DOMException('Aborted', 'AbortError'));
+        }
       };
       signal?.addEventListener('abort', onAbort, { once: true });
       flight.controller.signal.addEventListener('abort', onAbort, { once: true });
@@ -661,7 +704,9 @@ export class TweetMetadataReuse {
       void flight.promise.then(
         (entries) => {
           const wasAborted = flight.controller.signal.aborted;
-          if (!finish()) return;
+          if (!finish()) {
+            return;
+          }
           if (
             wasAborted ||
             this.disposed ||
@@ -674,7 +719,9 @@ export class TweetMetadataReuse {
         },
         (error: unknown) => {
           const wasAborted = flight.controller.signal.aborted;
-          if (finish()) reject(wasAborted ? new DOMException('Aborted', 'AbortError') : error);
+          if (finish()) {
+            reject(wasAborted ? new DOMException('Aborted', 'AbortError') : error);
+          }
         }
       );
     });

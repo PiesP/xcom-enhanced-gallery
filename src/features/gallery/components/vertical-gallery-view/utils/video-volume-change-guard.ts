@@ -80,11 +80,15 @@ export function createVideoVolumeChangeGuard(
   let expectedMarks: ExpectedMark[] = [];
 
   const pruneExpiredMarks = (now: number): void => {
-    if (expectedMarks.length === 0) return;
+    if (expectedMarks.length === 0) {
+      return;
+    }
     expectedMarks = expectedMarks.filter((mark) => {
       const age = now - mark.markedAt;
       // If time goes backwards (or is stubbed inconsistently), treat marks as expired.
-      if (age < 0) return false;
+      if (age < 0) {
+        return false;
+      }
       return age <= windowMs;
     });
   };
@@ -101,7 +105,9 @@ export function createVideoVolumeChangeGuard(
     },
 
     shouldIgnoreChange(current) {
-      if (expectedMarks.length === 0) return false;
+      if (expectedMarks.length === 0) {
+        return false;
+      }
 
       const now = nowMs();
       pruneExpiredMarks(now);

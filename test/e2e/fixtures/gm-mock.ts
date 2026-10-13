@@ -30,7 +30,9 @@ export async function installGMMock(page: Page, options: GMMockOptions = {}): Pr
     }
 
     const persist = (): void => {
-      if (!persistentStorage) return;
+      if (!persistentStorage) {
+        return;
+      }
       try {
         localStorage.setItem(storageKey, JSON.stringify(Array.from(storage.entries())));
       } catch {
@@ -61,7 +63,9 @@ export async function installGMMock(page: Page, options: GMMockOptions = {}): Pr
       name?: string
     ): void => {
       const details = typeof urlOrDetails === 'string' ? { url: urlOrDetails, name } : urlOrDetails;
-      if (!details.name) throw new Error('GM_download requires name');
+      if (!details.name) {
+        throw new Error('GM_download requires name');
+      }
       const marker = document.createElement('span');
       marker.dataset.gmDownload = 'true';
       marker.dataset.gmDownloadUrl = details.url;
@@ -69,7 +73,9 @@ export async function installGMMock(page: Page, options: GMMockOptions = {}): Pr
       marker.hidden = true;
       document.body.append(marker);
       queueMicrotask(() => {
-        if ('onload' in details) details.onload?.();
+        if ('onload' in details) {
+          details.onload?.();
+        }
       });
     };
     window.GM_notification = (

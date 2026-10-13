@@ -22,7 +22,9 @@ function ownedBlob(value: Blob): OwnedBlob {
   return owner;
 }
 afterEach(() => {
-  for (const owner of inputOwners.splice(0)) owner.lease.release();
+  for (const owner of inputOwners.splice(0)) {
+    owner.lease.release();
+  }
 });
 
 describe('DownloadOrchestrator bulk resource limits', () => {

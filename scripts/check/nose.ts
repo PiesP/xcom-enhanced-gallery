@@ -9,7 +9,9 @@ import { fileURLToPath } from 'node:url';
 
 function hasNosePathCandidate(root: string): boolean {
   const searchPath = env.PATH ?? env.Path;
-  if (searchPath === undefined) return true; // An unknown search path cannot prove absence.
+  if (searchPath === undefined) {
+    return true;
+  } // An unknown search path cannot prove absence.
   const suffixes =
     platform() === 'win32' ? ['', ...(env.PATHEXT ?? '.COM;.EXE;.BAT;.CMD').split(';')] : [''];
   for (const directory of searchPath.split(delimiter)) {
@@ -19,7 +21,9 @@ function hasNosePathCandidate(root: string): boolean {
         return true;
       } catch (error) {
         const code = (error as NodeJS.ErrnoException).code;
-        if (code !== 'ENOENT' && code !== 'ENOTDIR') return true;
+        if (code !== 'ENOENT' && code !== 'ENOTDIR') {
+          return true;
+        }
       }
     }
   }
@@ -28,7 +32,9 @@ function hasNosePathCandidate(root: string): boolean {
 
 export function runOptionalNose(root: string): number | NodeJS.Signals {
   try {
-    if (!statSync(root).isDirectory()) throw new Error('not a directory');
+    if (!statSync(root).isDirectory()) {
+      throw new Error('not a directory');
+    }
   } catch (error) {
     console.error(`[nose] could not run in project directory: ${String(error)}`);
     return 1;
@@ -50,12 +56,16 @@ export function runOptionalNose(root: string): number | NodeJS.Signals {
     console.error(`[nose] could not run: ${result.error.message}`);
     return 1;
   }
-  if (result.signal) return result.signal;
+  if (result.signal) {
+    return result.signal;
+  }
   return result.status ?? 1;
 }
 
 function isDirectInvocation(): boolean {
-  if (!argv[1]) return false;
+  if (!argv[1]) {
+    return false;
+  }
   try {
     return realpathSync(argv[1]) === realpathSync(fileURLToPath(import.meta.url));
   } catch {

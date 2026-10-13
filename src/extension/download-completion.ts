@@ -28,18 +28,24 @@ export function waitForDownloadComplete(
 
     const cleanup = (): void => {
       downloads.onChanged.removeListener(listener);
-      if (timerId !== null) clearTimeout(timerId);
+      if (timerId !== null) {
+        clearTimeout(timerId);
+      }
     };
 
     const complete = (): void => {
-      if (settled) return;
+      if (settled) {
+        return;
+      }
       settled = true;
       cleanup();
       resolve();
     };
 
     const interrupt = (error?: string): void => {
-      if (settled) return;
+      if (settled) {
+        return;
+      }
       settled = true;
       cleanup();
       reject(new Error(`Download interrupted: ${error ?? 'unknown'}`));
@@ -54,7 +60,9 @@ export function waitForDownloadComplete(
     };
 
     const listener = (delta: ChromeDownloadDelta): void => {
-      if (delta.id !== downloadId) return;
+      if (delta.id !== downloadId) {
+        return;
+      }
       inspectState(readState(delta.state), readError(delta.error));
     };
 
@@ -66,11 +74,15 @@ export function waitForDownloadComplete(
     void downloads.search({ id: downloadId }).then(
       (items) => {
         const item = items[0];
-        if (!item || settled) return;
+        if (!item || settled) {
+          return;
+        }
         inspectState(item.state, item.error);
       },
       (error: unknown) => {
-        if (settled) return;
+        if (settled) {
+          return;
+        }
         settled = true;
         cleanup();
         const message = error instanceof Error ? error.message : String(error);
@@ -79,7 +91,9 @@ export function waitForDownloadComplete(
     );
 
     timerId = setTimeout(() => {
-      if (settled) return;
+      if (settled) {
+        return;
+      }
       settled = true;
       cleanup();
       const timeoutError = new Error(`Download timed out after 5 minutes (id: ${downloadId})`);

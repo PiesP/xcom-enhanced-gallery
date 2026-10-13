@@ -28,7 +28,9 @@ export class SettingsService {
   ) {}
 
   public async initialize(): Promise<void> {
-    if (this._initialized) return;
+    if (this._initialized) {
+      return;
+    }
     this.settings = await this.repository.load();
     this._initialized = true;
   }
@@ -71,7 +73,9 @@ export class SettingsService {
     const oldValue = this.get(key);
 
     // Skip if value is unchanged (idempotent — avoid unnecessary saves)
-    if (oldValue === value) return;
+    if (oldValue === value) {
+      return;
+    }
 
     const nextSettings = globalThis.structuredClone(this.settings);
     if (!this.assignNestedPath(nextSettings, key, value)) {
@@ -105,18 +109,26 @@ export class SettingsService {
 
   /** Assign value to nested object property by dot-notation path */
   private assignNestedPath(target: unknown, path: string, value: unknown): boolean {
-    if (target === null || typeof target !== 'object') return false;
-    if (typeof path !== 'string' || path === '') return false;
+    if (target === null || typeof target !== 'object') {
+      return false;
+    }
+    if (typeof path !== 'string' || path === '') {
+      return false;
+    }
 
     const segments = path.split('.');
     const last = segments[segments.length - 1];
-    if (!last) return false;
+    if (!last) {
+      return false;
+    }
 
     let current = target as Record<string, unknown>;
 
     for (let i = 0; i < segments.length - 1; i++) {
       const segment = segments[i];
-      if (!segment) return false;
+      if (!segment) {
+        return false;
+      }
       const existing = Object.hasOwn(current, segment) ? current[segment] : undefined;
       if (existing === null || typeof existing !== 'object') {
         const next = Object.create(null) as Record<string, unknown>;

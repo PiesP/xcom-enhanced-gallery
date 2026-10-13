@@ -19,10 +19,16 @@ function runCssAnimation(element: Element, className: string): Promise<void> {
     let observer: MutationObserver | undefined;
 
     const settle = (): void => {
-      if (settled) return;
+      if (settled) {
+        return;
+      }
       settled = true;
-      if (timer) clearTimeout(timer);
-      if (observer) observer.disconnect();
+      if (timer) {
+        clearTimeout(timer);
+      }
+      if (observer) {
+        observer.disconnect();
+      }
       element.classList.remove(className);
       element.removeEventListener('animationend', settle);
       element.removeEventListener('animationcancel', settle);

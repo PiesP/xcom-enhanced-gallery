@@ -34,7 +34,9 @@ export async function readExactDownloadFile(path, expectedBytes) {
     let offset = 0;
     while (offset < bounded.length) {
       const { bytesRead } = await handle.read(bounded, offset, bounded.length - offset, offset);
-      if (bytesRead === 0) break;
+      if (bytesRead === 0) {
+        break;
+      }
       offset += bytesRead;
     }
     assert.equal(offset, expectedBytes, 'Native download changed size while reading');
@@ -72,7 +74,9 @@ export async function waitForRemovedDownloadFile(path, identity, timeoutMs = 5_0
     try {
       current = await lstat(path);
     } catch (error) {
-      if (error?.code === 'ENOENT') return { absent: true, waitMs: Date.now() - started };
+      if (error?.code === 'ENOENT') {
+        return { absent: true, waitMs: Date.now() - started };
+      }
       throw error;
     }
     assert(

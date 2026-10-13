@@ -163,7 +163,9 @@ describe('Biome managed-file coverage', () => {
   it('does not process generated or exact-byte captured HTML fixtures', () => {
     const generatedDirectory = resolve(root, 'dist');
     const directoryExisted = existsSync(generatedDirectory);
-    if (!directoryExisted) mkdirSync(generatedDirectory);
+    if (!directoryExisted) {
+      mkdirSync(generatedDirectory);
+    }
     const generated = `dist/xeg-biome-coverage-${process.pid}-${randomUUID()}.ts`;
     try {
       withProbe(generated, 'export const probe: any = 1;\n', () => {
@@ -175,7 +177,9 @@ describe('Biome managed-file coverage', () => {
         expect(vcsIgnored.status).toBe(0);
       });
     } finally {
-      if (!directoryExisted) rmdirSync(generatedDirectory);
+      if (!directoryExisted) {
+        rmdirSync(generatedDirectory);
+      }
     }
 
     const captured = 'test/fixtures/authenticated-x-layouts/card.html';

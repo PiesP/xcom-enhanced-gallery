@@ -44,7 +44,9 @@ class GalleryHostState implements GalleryHostStateHandle {
   }
 
   restore(): void {
-    if (this.restored) return;
+    if (this.restored) {
+      return;
+    }
     this.restored = true;
     this.disposeAmbientVideoGuard?.();
     this.disposeAmbientVideoGuard = null;
@@ -58,7 +60,9 @@ class GalleryHostState implements GalleryHostStateHandle {
     if (this.previousScrollRestoration !== undefined) {
       window.history.scrollRestoration = this.previousScrollRestoration;
     }
-    for (const element of this.hiddenBackgroundElements) restoreBackgroundElement(element);
+    for (const element of this.hiddenBackgroundElements) {
+      restoreBackgroundElement(element);
+    }
     this.hiddenBackgroundElements.length = 0;
     window.scrollTo(0, this.scrollY);
 
@@ -69,7 +73,9 @@ class GalleryHostState implements GalleryHostStateHandle {
         // The host element may have been removed during SPA navigation.
       }
     }
-    if (activeHostState === this) activeHostState = null;
+    if (activeHostState === this) {
+      activeHostState = null;
+    }
   }
 
   private activate(): void {
@@ -83,8 +89,12 @@ class GalleryHostState implements GalleryHostStateHandle {
     document.body.style.right = '0';
 
     for (const child of Array.from(document.body.children)) {
-      if (!(child instanceof HTMLElement)) continue;
-      if (child === this.container || child.contains(this.container)) continue;
+      if (!(child instanceof HTMLElement)) {
+        continue;
+      }
+      if (child === this.container || child.contains(this.container)) {
+        continue;
+      }
       this.hideBackground(child);
     }
     this.backgroundObserver.observe(document.body, { childList: true });
@@ -103,15 +113,21 @@ class GalleryHostState implements GalleryHostStateHandle {
   private hideAddedBackground(records: MutationRecord[]): void {
     for (const record of records) {
       for (const node of record.addedNodes) {
-        if (!(node instanceof HTMLElement)) continue;
-        if (node === this.container || node.contains(this.container)) continue;
+        if (!(node instanceof HTMLElement)) {
+          continue;
+        }
+        if (node === this.container || node.contains(this.container)) {
+          continue;
+        }
         this.hideBackground(node);
       }
     }
   }
 
   private hideBackground(element: HTMLElement): void {
-    if (this.hiddenBackgroundElements.includes(element)) return;
+    if (this.hiddenBackgroundElements.includes(element)) {
+      return;
+    }
     this.hiddenBackgroundElements.push(element);
     hideBackgroundElement(element);
   }

@@ -20,8 +20,11 @@ describe('installHistoryNavigationFallback', () => {
     const start = vi.fn();
     const cleanup = vi.fn();
     uninstall = installHistoryNavigationFallback((url) => {
-      if (new URL(url).pathname.startsWith('/settings')) cleanup();
-      else start();
+      if (new URL(url).pathname.startsWith('/settings')) {
+        cleanup();
+      } else {
+        start();
+      }
     });
 
     window.history.pushState({}, '', '/home');
@@ -35,8 +38,11 @@ describe('installHistoryNavigationFallback', () => {
     const start = vi.fn();
     const cleanup = vi.fn();
     uninstall = installHistoryNavigationFallback((url) => {
-      if (new URL(url).pathname.startsWith('/settings')) cleanup();
-      else start();
+      if (new URL(url).pathname.startsWith('/settings')) {
+        cleanup();
+      } else {
+        start();
+      }
     });
 
     window.history.replaceState({}, '', '/settings/account');

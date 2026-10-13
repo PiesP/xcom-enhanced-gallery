@@ -17,7 +17,9 @@ function requireAutomaticAdmission(): void {
 
 function required(name: string): string {
   const value = process.env[name];
-  if (!value) throw new Error(`Missing ${name}`);
+  if (!value) {
+    throw new Error(`Missing ${name}`);
+  }
   return value;
 }
 
@@ -30,8 +32,9 @@ function api(path: string, paginate = false): unknown {
 }
 
 function object(value: unknown): Json {
-  if (!value || typeof value !== 'object' || Array.isArray(value))
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw new Error('Invalid GitHub response');
+  }
   return value as Json;
 }
 
@@ -62,8 +65,9 @@ function assertPull(pr: Json, id: ReturnType<typeof identity>, expectedBase: str
     nested(pr, 'base', 'ref') !== expectedBase ||
     pr.draft !== false ||
     pr.state !== 'open'
-  )
+  ) {
     throw new Error('Pull request changed after Dependabot validation');
+  }
 }
 
 export function parseGate(
@@ -92,8 +96,9 @@ export function parseGate(
     gate.eligible !== false ||
     typeof gate.reason !== 'string' ||
     !reasons.has(gate.reason)
-  )
+  ) {
     throw new Error('Invalid Dependabot gate result');
+  }
   return {
     eligible: gate.eligible as boolean,
     number: String(number),
@@ -123,28 +128,39 @@ function gate(): void {
 function validate(): void {
   const id = identity();
   const defaultBranch = nested(api(`repos/${id.repository}`), 'default_branch');
-  if (typeof defaultBranch !== 'string' || id.base !== defaultBranch)
+  if (typeof defaultBranch !== 'string' || id.base !== defaultBranch) {
     throw new Error('Gate base is not default branch');
+  }
   assertPull(livePull(id), id, defaultBranch);
   const pages = api(`repos/${id.repository}/pulls/${id.number}/commits`, true);
-  if (!Array.isArray(pages)) throw new Error('Invalid commit pagination');
+  if (!Array.isArray(pages)) {
+    throw new Error('Invalid commit pagination');
+  }
   let seenHead = false;
   for (const page of pages) {
-    if (!Array.isArray(page)) throw new Error('Invalid commit page');
+    if (!Array.isArray(page)) {
+      throw new Error('Invalid commit page');
+    }
     for (const rawCommit of page) {
       const commit = object(rawCommit);
       if (
         nested(commit, 'author', 'login') !== 'dependabot[bot]' ||
         nested(commit, 'committer', 'login') !== 'web-flow' ||
         nested(commit, 'commit', 'verification', 'verified') !== true
-      )
+      ) {
         throw new Error(`Unverified Dependabot commit ${String(commit.sha)}`);
-      if (commit.sha === id.head) seenHead = true;
+      }
+      if (commit.sha === id.head) {
+        seenHead = true;
+      }
     }
   }
-  if (!seenHead) throw new Error('Validated head absent from pull request commits');
-  if (nested(livePull(id), 'head', 'sha') !== id.head)
+  if (!seenHead) {
+    throw new Error('Validated head absent from pull request commits');
+  }
+  if (nested(livePull(id), 'head', 'sha') !== id.head) {
     throw new Error('Head changed during provenance validation');
+  }
   console.log(`Revalidated Dependabot head ${id.head}.`);
 }
 
@@ -157,9 +173,13 @@ function approve(): void {
   requireAutomaticAdmission();
   const id = identity();
   const pages = api(`repos/${id.repository}/pulls/${id.number}/reviews`, true);
-  if (!Array.isArray(pages)) throw new Error('Invalid review pagination');
+  if (!Array.isArray(pages)) {
+    throw new Error('Invalid review pagination');
+  }
   const alreadyApproved = pages.some((page: unknown) => {
-    if (!Array.isArray(page)) throw new Error('Invalid review page');
+    if (!Array.isArray(page)) {
+      throw new Error('Invalid review page');
+    }
     return page.some((raw: unknown) => {
       const review = object(raw);
       return (
@@ -190,7 +210,9 @@ function approve(): void {
 
 function reason(): string {
   const decoded = Buffer.from(required('REASON_BASE64'), 'base64').toString('utf8');
-  if (!reasons.has(decoded)) throw new Error('Invalid validated decision reason');
+  if (!reasons.has(decoded)) {
+    throw new Error('Invalid validated decision reason');
+  }
   return decoded;
 }
 
@@ -237,7 +259,9 @@ function main(): void {
 }
 
 function isCliEntry(): boolean {
-  if (!process.argv[1]) return false;
+  if (!process.argv[1]) {
+    return false;
+  }
   try {
     return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
   } catch {

@@ -60,13 +60,16 @@ function compileProbe(project: (typeof projects)[number], addDom: boolean) {
   });
   expect(listed.status, listed.stdout + listed.stderr).toBe(0);
   const files = listed.stdout.trim().split('\n');
-  for (const requiredRoot of project.roots) expect(files).toContain(requiredRoot);
+  for (const requiredRoot of project.roots) {
+    expect(files).toContain(requiredRoot);
+  }
   return { ...result, files };
 }
 
 afterEach(() => {
-  for (const directory of temporaryRoots.splice(0))
+  for (const directory of temporaryRoots.splice(0)) {
     rmSync(directory, { recursive: true, force: true });
+  }
 });
 
 describe('Node tooling ambient types', () => {

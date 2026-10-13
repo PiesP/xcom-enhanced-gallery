@@ -8,12 +8,22 @@
 type BooleanFlagValue = string | boolean | undefined;
 
 function parseBooleanFlag(value: BooleanFlagValue): boolean | undefined {
-  if (typeof value === 'boolean') return value;
-  if (typeof value !== 'string') return undefined;
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  if (typeof value !== 'string') {
+    return undefined;
+  }
   const normalized = value.trim().toLowerCase();
-  if (!normalized) return undefined;
-  if (['1', 'true', 'yes', 'on'].includes(normalized)) return true;
-  if (['0', 'false', 'no', 'off'].includes(normalized)) return false;
+  if (!normalized) {
+    return undefined;
+  }
+  if (['1', 'true', 'yes', 'on'].includes(normalized)) {
+    return true;
+  }
+  if (['0', 'false', 'no', 'off'].includes(normalized)) {
+    return false;
+  }
   return undefined;
 }
 

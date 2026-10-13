@@ -30,7 +30,9 @@ const pinnedFiles = [
 function stepScript(workflow: string, name: string): string {
   const section = workflow.split(`      - name: ${name}\n`)[1]?.split('\n      - name: ')[0] ?? '';
   const block = section.match(/        run: \|\n((?:          .*\n)*)/u)?.[1] ?? '';
-  if (!block) throw new Error(`Missing ${name} run block`);
+  if (!block) {
+    throw new Error(`Missing ${name} run block`);
+  }
   return block.replace(/^          /gmu, '');
 }
 
@@ -100,10 +102,11 @@ describe('Nose and scanner pin workflow contracts', () => {
         temp,
         readdirSync(temp).find((entry) => entry.startsWith('pinned-tools.')) ?? ''
       );
-      for (const name of pinnedFiles)
+      for (const name of pinnedFiles) {
         expect(readFileSync(join(copy, name))).toEqual(
           readFileSync(resolve(root, 'scripts/ci', name))
         );
+      }
     } finally {
       rmSync(temp, { recursive: true, force: true });
     }

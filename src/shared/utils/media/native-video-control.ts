@@ -31,12 +31,16 @@ export interface NativeVideoControlMedia {
 }
 
 function thumbnailIdentity(url: string): string | null {
-  if (!isVideoThumbnailUrl(url)) return null;
+  if (!isVideoThumbnailUrl(url)) {
+    return null;
+  }
   const parsed = new URL(url, 'https://x.com');
   let path = parsed.pathname;
   if (!/\.[A-Za-z0-9]+$/u.test(path)) {
     const format = parsed.searchParams.get('format');
-    if (format && /^(?:jpg|jpeg|png|webp|gif)$/u.test(format)) path += `.${format}`;
+    if (format && /^(?:jpg|jpeg|png|webp|gif)$/u.test(format)) {
+      path += `.${format}`;
+    }
   }
   return `${parsed.hostname}${path}`;
 }
@@ -51,16 +55,26 @@ function inspectThumbnail(image: HTMLImageElement): ThumbnailCheck {
   const attribute = image.getAttribute('src') ? image.src : null;
   const currentKey = current ? thumbnailIdentity(current) : null;
   const attributeKey = attribute ? thumbnailIdentity(attribute) : null;
-  if (!currentKey && !attributeKey) return { kind: 'ordinary' };
-  if ((current && !currentKey) || (attribute && !attributeKey)) return { kind: 'invalid' };
-  if (currentKey && attributeKey && currentKey !== attributeKey) return { kind: 'invalid' };
+  if (!currentKey && !attributeKey) {
+    return { kind: 'ordinary' };
+  }
+  if ((current && !currentKey) || (attribute && !attributeKey)) {
+    return { kind: 'invalid' };
+  }
+  if (currentKey && attributeKey && currentKey !== attributeKey) {
+    return { kind: 'invalid' };
+  }
   const url = current || attribute;
-  if (!url) return { kind: 'ordinary' };
+  if (!url) {
+    return { kind: 'ordinary' };
+  }
   return { kind: 'trusted', url };
 }
 
 function isTrustedVideoSource(url: string): boolean {
-  if (!isValidMediaUrl(url)) return false;
+  if (!isValidMediaUrl(url)) {
+    return false;
+  }
   const parsed = new URL(url);
   return parsed.hostname === 'video.twimg.com' && parsed.pathname.endsWith('.mp4');
 }
@@ -68,7 +82,9 @@ function isTrustedVideoSource(url: string): boolean {
 /** Reject invalid direct inputs while retaining every source for click-time capture. */
 function hasTrustedVideoInput(video: HTMLVideoElement): boolean | null {
   const sources = Array.from(video.querySelectorAll<HTMLSourceElement>(':scope > source'));
-  if (sources.length > MAX_VIDEO_SOURCES) return null;
+  if (sources.length > MAX_VIDEO_SOURCES) {
+    return null;
+  }
   const direct = [
     video.currentSrc,
     video.getAttribute('src') ? video.src : null,
@@ -76,12 +92,18 @@ function hasTrustedVideoInput(video: HTMLVideoElement): boolean | null {
   ];
   let trusted = false;
   for (const url of direct) {
-    if (!url || url.startsWith('blob:')) continue;
-    if (!isTrustedVideoSource(url)) return null;
+    if (!url || url.startsWith('blob:')) {
+      continue;
+    }
+    if (!isTrustedVideoSource(url)) {
+      return null;
+    }
     trusted = true;
   }
   if (video.getAttribute('poster')) {
-    if (!isVideoThumbnailUrl(video.poster)) return null;
+    if (!isVideoThumbnailUrl(video.poster)) {
+      return null;
+    }
     trusted = true;
   }
   return trusted;
@@ -98,37 +120,60 @@ function sharesControlOwner(candidate: HTMLElement, button: HTMLButtonElement): 
  */
 export function findNativeVideoControlMedia(target: HTMLElement): NativeVideoControlMedia | null {
   const button = target.closest('button');
-  if (!(button instanceof HTMLButtonElement)) return null;
-  if (button.hasAttribute('data-testid') || button.closest(FORBIDDEN_CONTROL_CONTEXT)) return null;
+  if (!(button instanceof HTMLButtonElement)) {
+    return null;
+  }
+  if (button.hasAttribute('data-testid') || button.closest(FORBIDDEN_CONTROL_CONTEXT)) {
+    return null;
+  }
   const article = button.closest('article');
-  if (!article) return null;
+  if (!article) {
+    return null;
+  }
 
   let scope: HTMLElement | null = button.parentElement;
   for (let hops = 0; hops < MAX_SCOPE_HOPS && scope && scope !== article; hops++) {
-    if (scope.querySelector('article')) return null;
-    const videos: NodeListOf<HTMLVideoElement> = scope.querySelectorAll('video');
-    if (videos.length > 1) return null;
-    const video: HTMLVideoElement | null = videos[0] ?? null;
-    if (video && (video.closest('article') !== article || !sharesControlOwner(video, button)))
+    if (scope.querySelector('article')) {
       return null;
+    }
+    const videos: NodeListOf<HTMLVideoElement> = scope.querySelectorAll('video');
+    if (videos.length > 1) {
+      return null;
+    }
+    const video: HTMLVideoElement | null = videos[0] ?? null;
+    if (video && (video.closest('article') !== article || !sharesControlOwner(video, button))) {
+      return null;
+    }
 
     let thumbnail: HTMLImageElement | null = null;
     let thumbnailUrl: string | null = null;
     let imageCount = 0;
     for (const image of scope.querySelectorAll('img')) {
       imageCount++;
-      if (image.closest('article') !== article) return null;
+      if (image.closest('article') !== article) {
+        return null;
+      }
       const check = inspectThumbnail(image);
-      if (check.kind === 'invalid') return null;
-      if (check.kind !== 'trusted') continue;
-      if (!sharesControlOwner(image, button)) return null;
-      if (thumbnail) return null;
+      if (check.kind === 'invalid') {
+        return null;
+      }
+      if (check.kind !== 'trusted') {
+        continue;
+      }
+      if (!sharesControlOwner(image, button)) {
+        return null;
+      }
+      if (thumbnail) {
+        return null;
+      }
       thumbnail = image;
       thumbnailUrl = check.url;
     }
 
     const trustedVideoInput = video ? hasTrustedVideoInput(video) : false;
-    if (trustedVideoInput === null) return null;
+    if (trustedVideoInput === null) {
+      return null;
+    }
     if (thumbnail || (video && trustedVideoInput && imageCount === 0)) {
       return { video, thumbnail, thumbnailUrl };
     }

@@ -57,24 +57,32 @@ const isRetryableStatus = (status: number): boolean =>
   (status >= 500 && status < 600);
 
 const getStatusFromError = (error: unknown): number | null => {
-  if (!error || typeof error !== 'object' || !('status' in error)) return null;
+  if (!error || typeof error !== 'object' || !('status' in error)) {
+    return null;
+  }
   const statusValue = (error as { status?: unknown }).status;
   return typeof statusValue === 'number' ? statusValue : null;
 };
 
 const getRetryAfterFromError = (error: unknown): number | undefined => {
-  if (!error || typeof error !== 'object' || !('retryAfterMs' in error)) return undefined;
+  if (!error || typeof error !== 'object' || !('retryAfterMs' in error)) {
+    return undefined;
+  }
   const value = error.retryAfterMs;
   return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : undefined;
 };
 
 const getReadabilityFromError = (error: unknown): boolean | undefined => {
-  if (!error || typeof error !== 'object' || !('readable' in error)) return undefined;
+  if (!error || typeof error !== 'object' || !('readable' in error)) {
+    return undefined;
+  }
   return typeof error.readable === 'boolean' ? error.readable : undefined;
 };
 
 const getCategoryFromError = (error: unknown): HttpErrorCategory | undefined => {
-  if (!error || typeof error !== 'object' || !('category' in error)) return undefined;
+  if (!error || typeof error !== 'object' || !('category' in error)) {
+    return undefined;
+  }
   const category = error.category;
   return category === 'http' ||
     category === 'network' ||
@@ -96,11 +104,15 @@ export async function fetchOwnedArrayBufferWithRetry(
   maxResponseBytes: number,
   budget: LiveByteBudget = downloadLiveByteBudget
 ): Promise<OwnedBinary<Uint8Array>> {
-  if (signal?.aborted) throw getUserCancelledAbortErrorFromSignal(signal);
+  if (signal?.aborted) {
+    throw getUserCancelledAbortErrorFromSignal(signal);
+  }
 
   const result = await withRetry(
     async (remainingMs) => {
-      if (signal?.aborted) throw getUserCancelledAbortErrorFromSignal(signal);
+      if (signal?.aborted) {
+        throw getUserCancelledAbortErrorFromSignal(signal);
+      }
       const response = await getHttpRequestService().getOwnedBinary<ArrayBuffer>(url, {
         responseType: 'arraybuffer',
         timeout: Math.max(
@@ -129,20 +141,31 @@ export async function fetchOwnedArrayBufferWithRetry(
       retryAfterMs: getRetryAfterFromError,
       ...(signal ? { signal } : {}),
       shouldRetry: (error) => {
-        if (isAbortError(error)) return false;
-        if (isHttpResponseSizeLimitError(error)) return false;
-        if (error instanceof DownloadResourceLimitError) return false;
-        const category = getCategoryFromError(error);
-        if (category === 'invalid_url' || category === 'abort' || category === 'resource_limit')
+        if (isAbortError(error)) {
           return false;
+        }
+        if (isHttpResponseSizeLimitError(error)) {
+          return false;
+        }
+        if (error instanceof DownloadResourceLimitError) {
+          return false;
+        }
+        const category = getCategoryFromError(error);
+        if (category === 'invalid_url' || category === 'abort' || category === 'resource_limit') {
+          return false;
+        }
         const status = getStatusFromError(error);
         return status === null || isRetryableStatus(status);
       },
     }
   );
 
-  if (result.success) return result.data;
-  if (signal?.aborted) throw getUserCancelledAbortErrorFromSignal(signal);
+  if (result.success) {
+    return result.data;
+  }
+  if (signal?.aborted) {
+    throw getUserCancelledAbortErrorFromSignal(signal);
+  }
   const deferredStatus = getStatusFromError(result.error);
   if (result.deferredForMs !== undefined && deferredStatus !== null) {
     throw new RetryDeferredError(

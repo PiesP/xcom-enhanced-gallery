@@ -9,9 +9,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@shared/hooks/use-translation', () => ({
   useTranslation: () => (key: string, params?: Record<string, string | number>) => {
-    if (key === 'tb.mediaPosition') return `Media ${params?.index} of ${params?.total}`;
-    if (key === 'tb.noMedia') return 'No media';
-    if (key === 'tb.currentFit') return `Fit: ${params?.mode}`;
+    if (key === 'tb.mediaPosition') {
+      return `Media ${params?.index} of ${params?.total}`;
+    }
+    if (key === 'tb.noMedia') {
+      return 'No media';
+    }
+    if (key === 'tb.currentFit') {
+      return `Fit: ${params?.mode}`;
+    }
     return key;
   },
 }));

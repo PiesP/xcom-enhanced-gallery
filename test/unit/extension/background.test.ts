@@ -50,7 +50,9 @@ vi.mock('@platform/chrome-runtime', () => ({
     storage: {
       local: {
         get: vi.fn(async (keys: string | string[] | null) => {
-          if (keys === null) return { ...state.storageValues };
+          if (keys === null) {
+            return { ...state.storageValues };
+          }
           const requested = Array.isArray(keys) ? keys : [keys];
           return Object.fromEntries(
             requested
@@ -62,13 +64,17 @@ vi.mock('@platform/chrome-runtime', () => ({
           if (state.storageSetError !== null) {
             const error = state.storageSetError;
             state.storageSetFailuresRemaining -= 1;
-            if (state.storageSetFailuresRemaining <= 0) state.storageSetError = null;
+            if (state.storageSetFailuresRemaining <= 0) {
+              state.storageSetError = null;
+            }
             throw error;
           }
           Object.assign(state.storageValues, items);
         }),
         remove: vi.fn(async (keys: string | string[]) => {
-          for (const key of Array.isArray(keys) ? keys : [keys]) delete state.storageValues[key];
+          for (const key of Array.isArray(keys) ? keys : [keys]) {
+            delete state.storageValues[key];
+          }
         }),
         getKeys: vi.fn(async () => Object.keys(state.storageValues)),
       },
@@ -100,7 +106,9 @@ function sendMessage(
 ): Promise<unknown> {
   return new Promise((resolve, reject) => {
     const keepChannelOpen = state.listener?.(message, sender, resolve);
-    if (keepChannelOpen !== true) reject(new Error('Message channel was not kept open'));
+    if (keepChannelOpen !== true) {
+      reject(new Error('Message channel was not kept open'));
+    }
   });
 }
 
@@ -324,7 +332,9 @@ describe('background direct download ownership', () => {
     state.waitForDownloadComplete.mockReturnValueOnce(nativeCompletion.promise);
     state.searchDownload.mockImplementation(async () => [{ id: 805, url, state: nativeState }]);
     state.cancelDownload.mockImplementation(async (id: number) => {
-      if (id === 805) nativeState = 'interrupted';
+      if (id === 805) {
+        nativeState = 'interrupted';
+      }
     });
     try {
       const pending = sendMessage(request(requestId), owner);

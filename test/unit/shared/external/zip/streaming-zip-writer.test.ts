@@ -21,7 +21,9 @@ function toHex(bytes: Uint8Array): string {
 function findBytes(haystack: Uint8Array, needle: Uint8Array): number {
   outer: for (let i = 0; i <= haystack.length - needle.length; i += 1) {
     for (let j = 0; j < needle.length; j += 1) {
-      if (haystack[i + j] !== needle[j]) continue outer;
+      if (haystack[i + j] !== needle[j]) {
+        continue outer;
+      }
     }
     return i;
   }

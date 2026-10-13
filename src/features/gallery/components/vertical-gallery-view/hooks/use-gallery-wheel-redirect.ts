@@ -29,13 +29,19 @@ interface UseGalleryWheelRedirectOptions {
  */
 function handleContainerWheel(event: WheelEvent, itemsContainerEl: () => HTMLElement | null): void {
   const itemsContainer = itemsContainerEl();
-  if (!itemsContainer) return;
+  if (!itemsContainer) {
+    return;
+  }
 
   const target = event.target;
-  if (!(target instanceof Element)) return;
+  if (!(target instanceof Element)) {
+    return;
+  }
 
   // Let the items container handle its own scroll naturally
-  if (itemsContainer.contains(target)) return;
+  if (itemsContainer.contains(target)) {
+    return;
+  }
 
   // For events outside the items container, redirect scroll to items container
   event.preventDefault();
@@ -45,7 +51,9 @@ function handleContainerWheel(event: WheelEvent, itemsContainerEl: () => HTMLEle
   // Skip when container has no overflow (not scrollable) and cap deltaY
   // to avoid excessive jumps on high-resolution scroll devices.
   const overflow = itemsContainer.scrollHeight - itemsContainer.clientHeight;
-  if (overflow <= 1) return; // not scrollable
+  if (overflow <= 1) {
+    return;
+  } // not scrollable
   const clampedDelta = Math.max(-150, Math.min(150, event.deltaY));
   itemsContainer.scrollTop += clampedDelta;
 }
@@ -66,7 +74,9 @@ export function useGalleryWheelRedirect(options: UseGalleryWheelRedirectOptions)
 
   createEffect(() => {
     const container = containerEl();
-    if (!container) return;
+    if (!container) {
+      return;
+    }
 
     const eventManager = getEventManager();
     const listener: EventListener = (event) => {

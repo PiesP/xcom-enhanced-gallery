@@ -72,14 +72,16 @@ function createMediaInfoFromDOM(
     if (!mediaUrl || !isValidMediaUrl(mediaUrl)) {
       return null;
     }
-    if (element instanceof HTMLVideoElement && new URL(mediaUrl).hostname !== 'video.twimg.com')
+    if (element instanceof HTMLVideoElement && new URL(mediaUrl).hostname !== 'video.twimg.com') {
       return null;
+    }
 
     if (
       isVideoThumbnailUrl(mediaUrl) ||
       (element instanceof HTMLImageElement && isVideoPreview(element))
-    )
+    ) {
       return null;
+    }
     const mediaType = element.tagName.toLowerCase() === 'video' ? 'video' : 'image';
     const downloadSource =
       mediaType === 'image'
@@ -188,9 +190,13 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
 
       for (let i = 0; i < mediaElements.length; i++) {
         const element = mediaElements[i];
-        if (!element) continue;
+        if (!element) {
+          continue;
+        }
         const owner = ownerExtractor.extractContext(element);
-        if (owner?.ownership.ownerTweetId !== tweetInfo.tweetId) continue;
+        if (owner?.ownership.ownerTweetId !== tweetInfo.tweetId) {
+          continue;
+        }
 
         const mediaInfo = createMediaInfoFromDOM(element, tweetInfo, i, tweetTextContent);
         if (mediaInfo) {
@@ -210,12 +216,13 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
       // Step 5: Determine which media was clicked
       const clickedMedia = findMediaElementInDOM(clickedElement);
       const mappedIndex = clickedMedia ? elementToIndexMap.get(clickedMedia) : undefined;
-      if (mappedIndex === undefined)
+      if (mappedIndex === undefined) {
         return createFailureResult(
           'Clicked media is not available as an original DOM source',
           'dom-fallback',
           'dom-clicked-media-unavailable'
         );
+      }
       const clickedIndex = mappedIndex;
 
       if (options.clickedMediaEvidence) {
@@ -226,12 +233,13 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
           !options.clickedMediaEvidence.sourceKey ||
           currentEvidence.sourceKey !== options.clickedMediaEvidence.sourceKey ||
           getMediaSourceKey(selectedSource) !== options.clickedMediaEvidence.sourceKey
-        )
+        ) {
           return createFailureResult(
             'Clicked media changed during extraction',
             'dom-fallback',
             'dom-clicked-media-unavailable'
           );
+        }
       }
 
       if (__DEV__) {

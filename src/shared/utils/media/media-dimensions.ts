@@ -27,15 +27,21 @@ interface ResolvedMediaDimensions {
 export function removeDuplicateMediaItems(
   mediaItems: ReadonlyArray<MediaInfo | undefined>
 ): MediaInfo[] {
-  if (!mediaItems?.length) return [];
+  if (!mediaItems?.length) {
+    return [];
+  }
 
   const seen = new Set<string>();
   const result: MediaInfo[] = [];
 
   for (const item of mediaItems) {
-    if (item == null) continue;
+    if (item == null) {
+      continue;
+    }
     const key = getMediaDedupKey(item);
-    if (!key) continue;
+    if (!key) {
+      continue;
+    }
     if (!seen.has(key)) {
       seen.add(key);
       result.push(item);
@@ -46,7 +52,9 @@ export function removeDuplicateMediaItems(
 }
 
 export function sortMediaByVisualOrder(mediaItems: TweetMediaEntry[]): TweetMediaEntry[] {
-  if (mediaItems.length <= 1) return mediaItems;
+  if (mediaItems.length <= 1) {
+    return mediaItems;
+  }
 
   return mediaItems
     .map((media) => ({ media, visualIndex: extractVisualIndexFromUrl(media.expanded_url || '') }))
@@ -55,7 +63,9 @@ export function sortMediaByVisualOrder(mediaItems: TweetMediaEntry[]): TweetMedi
 }
 
 export function extractDimensionsFromUrl(url: string): DimensionPair | null {
-  if (!url) return null;
+  if (!url) {
+    return null;
+  }
   let pathname: string;
   try {
     pathname = new URL(url).pathname;
@@ -63,7 +73,9 @@ export function extractDimensionsFromUrl(url: string): DimensionPair | null {
     return null;
   }
   const match = pathname.match(/\/(\d{2,6})x(\d{2,6})(?:\/|\.|$)/);
-  if (!match) return null;
+  if (!match) {
+    return null;
+  }
 
   const width = Number.parseInt(match[1] ?? '', 10);
   const height = Number.parseInt(match[2] ?? '', 10);
@@ -89,7 +101,9 @@ export function normalizeDimension(value: unknown): number | null {
 }
 
 function scaleAspectRatio(widthRatio: number, heightRatio: number): DimensionPair {
-  if (heightRatio <= 0 || widthRatio <= 0) return DEFAULT_MEDIA_DIMENSIONS;
+  if (heightRatio <= 0 || widthRatio <= 0) {
+    return DEFAULT_MEDIA_DIMENSIONS;
+  }
   return {
     width: Math.max(1, Math.round((widthRatio / heightRatio) * STANDARD_GALLERY_HEIGHT)),
     height: STANDARD_GALLERY_HEIGHT,
@@ -99,37 +113,51 @@ function scaleAspectRatio(widthRatio: number, heightRatio: number): DimensionPai
 function deriveDimensionsFromMetadata(
   metadata: Record<string, unknown> | undefined
 ): DimensionPair | null {
-  if (!metadata) return null;
+  if (!metadata) {
+    return null;
+  }
 
   const dims = metadata.dimensions as Record<string, unknown> | undefined;
   const w = normalizeDimension(dims?.width);
   const h = normalizeDimension(dims?.height);
-  if (w && h) return { width: w, height: h };
+  if (w && h) {
+    return { width: w, height: h };
+  }
 
   const apiData = metadata.apiData as Record<string, unknown> | undefined;
-  if (!apiData) return null;
+  if (!apiData) {
+    return null;
+  }
 
   const origW = normalizeDimension(apiData.original_width ?? apiData.originalWidth);
   const origH = normalizeDimension(apiData.original_height ?? apiData.originalHeight);
-  if (origW && origH) return { width: origW, height: origH };
+  if (origW && origH) {
+    return { width: origW, height: origH };
+  }
 
   const downloadUrl = apiData.download_url;
   if (typeof downloadUrl === 'string' && downloadUrl) {
     const fromUrl = extractDimensionsFromUrl(downloadUrl);
-    if (fromUrl) return fromUrl;
+    if (fromUrl) {
+      return fromUrl;
+    }
   }
 
   const previewUrl = apiData.preview_url;
   if (typeof previewUrl === 'string' && previewUrl) {
     const fromUrl = extractDimensionsFromUrl(previewUrl);
-    if (fromUrl) return fromUrl;
+    if (fromUrl) {
+      return fromUrl;
+    }
   }
 
   const aspectRatio = apiData.aspect_ratio;
   if (Array.isArray(aspectRatio) && aspectRatio.length >= 2) {
     const ratioW = normalizeDimension(aspectRatio[0]);
     const ratioH = normalizeDimension(aspectRatio[1]);
-    if (ratioW && ratioH) return scaleAspectRatio(ratioW, ratioH);
+    if (ratioW && ratioH) {
+      return scaleAspectRatio(ratioW, ratioH);
+    }
   }
 
   return null;
@@ -139,7 +167,9 @@ function deriveDimensionsFromMediaUrls(media: MediaInfo): DimensionPair | null {
   for (const candidate of [media.url, media.originalUrl, media.thumbnailUrl]) {
     if (typeof candidate === 'string' && candidate) {
       const dimensions = extractDimensionsFromUrl(candidate);
-      if (dimensions) return dimensions;
+      if (dimensions) {
+        return dimensions;
+      }
     }
   }
   return null;
@@ -148,7 +178,9 @@ function deriveDimensionsFromMediaUrls(media: MediaInfo): DimensionPair | null {
 export function resolveMediaDimensionsWithIntrinsicFlag(
   media: MediaInfo | undefined
 ): ResolvedMediaDimensions {
-  if (!media) return { dimensions: DEFAULT_MEDIA_DIMENSIONS, hasIntrinsicSize: false };
+  if (!media) {
+    return { dimensions: DEFAULT_MEDIA_DIMENSIONS, hasIntrinsicSize: false };
+  }
 
   const directW = normalizeDimension(media.width);
   const directH = normalizeDimension(media.height);
@@ -159,10 +191,14 @@ export function resolveMediaDimensionsWithIntrinsicFlag(
   const fromMetadata = deriveDimensionsFromMetadata(
     media.metadata as Record<string, unknown> | undefined
   );
-  if (fromMetadata) return { dimensions: fromMetadata, hasIntrinsicSize: true };
+  if (fromMetadata) {
+    return { dimensions: fromMetadata, hasIntrinsicSize: true };
+  }
 
   const fromUrls = deriveDimensionsFromMediaUrls(media);
-  if (fromUrls) return { dimensions: fromUrls, hasIntrinsicSize: true };
+  if (fromUrls) {
+    return { dimensions: fromUrls, hasIntrinsicSize: true };
+  }
 
   return { dimensions: DEFAULT_MEDIA_DIMENSIONS, hasIntrinsicSize: false };
 }
@@ -212,7 +248,9 @@ export function computeContainIntrinsicSizeOverride(
 ): string | null {
   const { intrinsicWidth, intrinsicHeight, hasIntrinsicSize, fitMode } = input;
 
-  if (!hasIntrinsicSize) return null;
+  if (!hasIntrinsicSize) {
+    return null;
+  }
 
   const ratio = intrinsicHeight > 0 ? intrinsicWidth / intrinsicHeight : 16 / 9;
   const ratioStr = ratio.toFixed(6);
@@ -253,14 +291,20 @@ export function adjustClickedIndexAfterDeduplication(
   uniqueItems: MediaInfo[],
   originalClickedIndex: number
 ): number {
-  if (uniqueItems.length === 0) return 0;
+  if (uniqueItems.length === 0) {
+    return 0;
+  }
 
   const safeOriginalIndex = clampIndex(originalClickedIndex, originalItems.length);
   const clickedItem = originalItems[safeOriginalIndex];
-  if (!clickedItem) return 0;
+  if (!clickedItem) {
+    return 0;
+  }
 
   const clickedKey = getMediaDedupKey(clickedItem);
-  if (!clickedKey) return 0;
+  if (!clickedKey) {
+    return 0;
+  }
 
   const newIndex = uniqueItems.findIndex((item) => getMediaDedupKey(item) === clickedKey);
   return newIndex >= 0 ? newIndex : 0;

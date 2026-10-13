@@ -70,12 +70,16 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
 
   createEffect(() => {
     const root = itemsContainerEl();
-    if (!root) return;
+    if (!root) {
+      return;
+    }
     const updateHeight = (): void => {
       setItemsContainerHeight(root.clientHeight);
     };
     updateHeight();
-    if (typeof ResizeObserver === 'undefined') return;
+    if (typeof ResizeObserver === 'undefined') {
+      return;
+    }
     const observer = new ResizeObserver(updateHeight);
     observer.observe(root);
     onCleanup(() => observer.disconnect());
@@ -149,7 +153,9 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
   const handleMediaLoad = (mediaId: string, indexValue: number): void => {
     const items = mediaItems();
     const item = items[indexValue];
-    if (item?.id !== mediaId) return;
+    if (item?.id !== mediaId) {
+      return;
+    }
     debouncedScrollCorrection(indexValue, mediaId);
   };
 

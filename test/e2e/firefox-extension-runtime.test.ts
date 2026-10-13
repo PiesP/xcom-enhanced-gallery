@@ -119,7 +119,9 @@ function createGeneratedBackgroundHarness(
     storage: {
       local: {
         get: async (keys: string | string[] | null) => {
-          if (keys === null) return Object.fromEntries(options.storage.entries());
+          if (keys === null) {
+            return Object.fromEntries(options.storage.entries());
+          }
           const requested = Array.isArray(keys) ? keys : [keys];
           return Object.fromEntries(
             requested
@@ -128,7 +130,9 @@ function createGeneratedBackgroundHarness(
           );
         },
         remove: async (keys: string | string[]) => {
-          for (const key of Array.isArray(keys) ? keys : [keys]) options.storage.delete(key);
+          for (const key of Array.isArray(keys) ? keys : [keys]) {
+            options.storage.delete(key);
+          }
         },
         set: async (items: Record<string, unknown>) => {
           for (const [key, value] of Object.entries(items)) {
@@ -153,28 +157,38 @@ function createGeneratedBackgroundHarness(
   new Script(readFileSync(GENERATED_BACKGROUND_PATH, 'utf8'), {
     filename: GENERATED_BACKGROUND_PATH,
   }).runInContext(context);
-  if (!messageListener) throw new Error('Generated Firefox background did not register onMessage');
+  if (!messageListener) {
+    throw new Error('Generated Firefox background did not register onMessage');
+  }
 
   return {
     cancelCalls,
     emitDownloadChanged: (delta) => {
-      for (const listener of [...downloadChangedListeners]) listener(delta);
+      for (const listener of [...downloadChangedListeners]) {
+        listener(delta);
+      }
     },
     notificationCalls,
     sendMessage: (message, sender = { id: 'xcom-enhanced-gallery@piesp.dev' }) =>
       new Promise((resolve, reject) => {
         let settled = false;
         const timeoutId = setTimeout(() => {
-          if (!settled) reject(new Error('Generated Firefox background did not respond'));
+          if (!settled) {
+            reject(new Error('Generated Firefox background did not respond'));
+          }
         }, 5_000);
         const sendResponse = (response?: unknown): void => {
-          if (settled) return;
+          if (settled) {
+            return;
+          }
           settled = true;
           clearTimeout(timeoutId);
           resolve(copyStorageValue(response));
         };
         const keepChannelOpen = messageListener?.(message, sender, sendResponse);
-        if (keepChannelOpen !== true && !settled) sendResponse(undefined);
+        if (keepChannelOpen !== true && !settled) {
+          sendResponse(undefined);
+        }
       }),
   };
 }
@@ -205,7 +219,9 @@ function readStoredDownload(
 
 async function waitForCondition(condition: () => boolean, failureMessage: string): Promise<void> {
   for (let attempt = 0; attempt < 100; attempt += 1) {
-    if (condition()) return;
+    if (condition()) {
+      return;
+    }
     await new Promise<void>((resolve) => setImmediate(resolve));
   }
   throw new Error(failureMessage);
@@ -219,7 +235,9 @@ let extensionDirectory: string | undefined;
 after(async () => {
   let cleanupError: unknown;
   try {
-    if (driver) await driver.quit();
+    if (driver) {
+      await driver.quit();
+    }
   } catch (error) {
     cleanupError = error;
   }
@@ -233,12 +251,18 @@ after(async () => {
     cleanupError ??= error;
   }
   try {
-    if (certificateDirectory) rmSync(certificateDirectory, { recursive: true, force: true });
-    if (extensionDirectory) rmSync(extensionDirectory, { recursive: true, force: true });
+    if (certificateDirectory) {
+      rmSync(certificateDirectory, { recursive: true, force: true });
+    }
+    if (extensionDirectory) {
+      rmSync(extensionDirectory, { recursive: true, force: true });
+    }
   } catch (error) {
     cleanupError ??= error;
   }
-  if (cleanupError) throw cleanupError;
+  if (cleanupError) {
+    throw cleanupError;
+  }
 });
 
 function createRuntimeTestExtension(): string {
@@ -249,7 +273,9 @@ function createRuntimeTestExtension(): string {
     content_scripts?: Array<{ js?: string[] }>;
   };
   const contentScript = manifest.content_scripts?.[0];
-  if (!contentScript?.js) throw new Error('Firefox manifest has no content script entry');
+  if (!contentScript?.js) {
+    throw new Error('Firefox manifest has no content script entry');
+  }
   contentScript.js.push('runtime-smoke.js');
   writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   writeFileSync(
@@ -310,7 +336,9 @@ async function startFixtureServer(): Promise<number> {
     server?.listen(0, '127.0.0.1', resolve);
   });
   const address = server.address();
-  if (!address || typeof address === 'string') throw new Error('Fixture server has no TCP port');
+  if (!address || typeof address === 'string') {
+    throw new Error('Fixture server has no TCP port');
+  }
   return address.port;
 }
 

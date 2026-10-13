@@ -181,7 +181,9 @@
         options.name,
         options.url ? options.url.substring(0, 50) + '...' : '(blob)'
       );
-      if (options.onload) options.onload();
+      if (options.onload) {
+        options.onload();
+      }
     };
     window.GM_notification = (text, title, image, onclick) => {
       console.log(
@@ -197,7 +199,9 @@
     };
     window.GM_cookie = (details, callback) => {
       console.log('[GM] cookie:', details.action, details.name);
-      if (callback) callback({ name: details.name, value: 'mock' }, null);
+      if (callback) {
+        callback({ name: details.name, value: 'mock' }, null);
+      }
     };
 
     // Auto-open gallery handler

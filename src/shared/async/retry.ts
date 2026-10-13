@@ -117,7 +117,9 @@ export async function withRetry<T>(
         return { success: false, error, attempts: attempt + 1 };
       }
 
-      if (attempt + 1 >= boundedAttempts) break;
+      if (attempt + 1 >= boundedAttempts) {
+        break;
+      }
 
       const backoffMs = calcBackoff(attempt, baseDelayMs, maxDelayMs, random);
       const guidedMs = retryAfterMs?.(error);

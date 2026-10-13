@@ -175,7 +175,9 @@ test.describe('X.com Enhanced Gallery Settings & Theme', () => {
     const consoleErrors: string[] = [];
     page.on('pageerror', (error) => pageErrors.push(error.message));
     page.on('console', (message) => {
-      if (message.type() === 'error') consoleErrors.push(message.text());
+      if (message.type() === 'error') {
+        consoleErrors.push(message.text());
+      }
     });
 
     await setupGalleryPage(page);
@@ -245,7 +247,9 @@ test.describe('X.com Enhanced Gallery Settings & Theme', () => {
     const consoleErrors: string[] = [];
     page.on('pageerror', (error) => pageErrors.push(error.message));
     page.on('console', (message) => {
-      if (message.type() === 'error') consoleErrors.push(message.text());
+      if (message.type() === 'error') {
+        consoleErrors.push(message.text());
+      }
     });
 
     await setupGalleryPage(page, true);
@@ -264,7 +268,9 @@ test.describe('X.com Enhanced Gallery Settings & Theme', () => {
       .poll(() =>
         page.evaluate(() => {
           const raw = window.GM_getValue?.<string>('xeg-app-settings');
-          if (typeof raw !== 'string') return undefined;
+          if (typeof raw !== 'string') {
+            return undefined;
+          }
           const envelope = JSON.parse(raw) as { value?: { gallery?: { theme?: string } } };
           return envelope.value?.gallery?.theme;
         })

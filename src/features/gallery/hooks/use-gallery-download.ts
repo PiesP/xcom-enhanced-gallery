@@ -64,7 +64,9 @@ export function createDownloadHandler() {
     const isCurrentOperation = (): boolean =>
       operationId === operationGeneration && !signal.aborted;
     const publishStatus = (status: Parameters<typeof setDownloadStatus>[0]): void => {
-      if (!isCurrentOperation()) return;
+      if (!isCurrentOperation()) {
+        return;
+      }
       setDownloadStatus(status);
     };
 
@@ -93,7 +95,9 @@ export function createDownloadHandler() {
           // Single downloads are already demand-driven through the platform
           // adapter. Avoid a duplicate Blob fetch that would delay GM_download.
           const result = await downloadService.downloadSingle(currentMedia, { signal });
-          if (!isCurrentOperation()) return;
+          if (!isCurrentOperation()) {
+            return;
+          }
           if (result.success) {
             publishStatus('handedOff');
           } else if (result.error === USER_CANCELLED_MESSAGE) {
@@ -127,7 +131,9 @@ export function createDownloadHandler() {
           ),
           signal,
         });
-        if (!isCurrentOperation()) return;
+        if (!isCurrentOperation()) {
+          return;
+        }
 
         if (result.code === 'CANCELLED') {
           publishStatus('idle');
@@ -204,7 +210,9 @@ export function createDownloadHandler() {
         publishStatus('handedOff');
       }
     } catch (error) {
-      if (!isCurrentOperation()) return;
+      if (!isCurrentOperation()) {
+        return;
+      }
       publishStatus('error');
       logger.error('Download failed', error);
       const { title, body } = getDownloadErrorNotification(error);

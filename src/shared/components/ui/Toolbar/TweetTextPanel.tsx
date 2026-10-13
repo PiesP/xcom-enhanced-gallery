@@ -66,7 +66,9 @@ const buildHashtagUrl = (tag: string): string => `https://x.com/hashtag/${encode
  */
 const splitUrlTrailingPunctuation = (value: string) => {
   const match = value.match(URL_TRAILING_PUNCTUATION);
-  if (!match) return { url: value, trailing: '' };
+  if (!match) {
+    return { url: value, trailing: '' };
+  }
 
   const trailing = match[0] ?? '';
   const url = value.slice(0, Math.max(0, value.length - trailing.length));

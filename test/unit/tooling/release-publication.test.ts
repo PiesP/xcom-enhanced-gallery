@@ -54,9 +54,13 @@ function fixture(tag = 'v2.3.10', published: unknown[] = []) {
         },
         async (path, asset) => {
           calls.push(`${asset ? 'asset' : 'api'} ${path}`);
-          if (!responses.has(path)) throw new Error(`Unexpected API read ${path}`);
+          if (!responses.has(path)) {
+            throw new Error(`Unexpected API read ${path}`);
+          }
           const response = responses.get(path);
-          if (response instanceof Error) throw response;
+          if (response instanceof Error) {
+            throw response;
+          }
           return response;
         }
       ),
@@ -166,7 +170,9 @@ describe('serialized release publication policy', () => {
       [`show ${sha}:package.json`, '{"version":"2.3.9"}'],
     ]) {
       const check = fixture();
-      if (key === undefined || value === undefined) throw new Error('Invalid test input');
+      if (key === undefined || value === undefined) {
+        throw new Error('Invalid test input');
+      }
       check.gitResponses.set(key, value);
       await expect(check.run()).rejects.toThrow();
       expect(check.calls.some((call) => call.startsWith('api '))).toBe(false);

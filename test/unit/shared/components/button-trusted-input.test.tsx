@@ -12,7 +12,9 @@ describe('icon-button DOM input', () => {
     const onClick = vi.fn();
     const dispose = render(() => <IconButton aria-label="Download" onClick={onClick} />, host);
     const button = host.querySelector('button');
-    if (!button) throw new Error('Missing icon button');
+    if (!button) {
+      throw new Error('Missing icon button');
+    }
     try {
       button.click();
       button.dispatchEvent(new MouseEvent('click', { bubbles: true }));

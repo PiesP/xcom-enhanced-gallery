@@ -29,14 +29,22 @@ function isSafeText(
 }
 
 function isSafeFilename(value: unknown): value is string {
-  if (!isSafeText(value, MAX_FILENAME_LENGTH)) return false;
-  if (value.startsWith('/') || /^[A-Za-z]:[\\/]/.test(value)) return false;
+  if (!isSafeText(value, MAX_FILENAME_LENGTH)) {
+    return false;
+  }
+  if (value.startsWith('/') || /^[A-Za-z]:[\\/]/.test(value)) {
+    return false;
+  }
   return !value.split(/[\\/]/).some((segment) => segment === '..');
 }
 
 function isSafeHeaders(value: unknown): value is Record<string, string> {
-  if (value === undefined) return true;
-  if (!isRecord(value)) return false;
+  if (value === undefined) {
+    return true;
+  }
+  if (!isRecord(value)) {
+    return false;
+  }
   return Object.entries(value).every(
     ([name, headerValue]) =>
       isSafeText(name, 128) && isSafeText(headerValue, 2048) && !/[\r\n]/.test(name + headerValue)
@@ -44,7 +52,9 @@ function isSafeHeaders(value: unknown): value is Record<string, string> {
 }
 
 function isPageBlobUrl(value: unknown): value is string {
-  if (typeof value !== 'string' || value.length > MAX_TEXT_LENGTH) return false;
+  if (typeof value !== 'string' || value.length > MAX_TEXT_LENGTH) {
+    return false;
+  }
   try {
     const url = new URL(value);
     return url.protocol === 'blob:' && PAGE_ORIGINS.has(url.origin) && url.pathname.length > 1;
@@ -54,7 +64,9 @@ function isPageBlobUrl(value: unknown): value is string {
 }
 
 function isSafeNotificationImage(value: unknown): value is string {
-  if (!isSafeText(value, MAX_TEXT_LENGTH)) return false;
+  if (!isSafeText(value, MAX_TEXT_LENGTH)) {
+    return false;
+  }
   if (value.startsWith('icons/')) {
     return !value.split('/').some((segment) => segment === '..');
   }

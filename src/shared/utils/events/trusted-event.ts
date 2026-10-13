@@ -6,7 +6,9 @@ export function withTrustedEvent<E extends Event, R>(
   handler: (event: E) => R
 ): (event: E) => R | undefined {
   return (event) => {
-    if (event.isTrusted) return handler(event);
+    if (event.isTrusted) {
+      return handler(event);
+    }
     return undefined;
   };
 }

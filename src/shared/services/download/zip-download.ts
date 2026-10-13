@@ -61,13 +61,17 @@ class RetainedByteBudget {
         )
       );
     }
-    if (signal?.aborted) return Promise.reject(getUserCancelledAbortErrorFromSignal(signal));
+    if (signal?.aborted) {
+      return Promise.reject(getUserCancelledAbortErrorFromSignal(signal));
+    }
 
     return new Promise<ReleaseReservation>((resolve, reject) => {
       const waiter: ByteBudgetWaiter = { bytes, resolve, reject, signal };
       const onAbort = (): void => {
         const index = this.waiters.indexOf(waiter);
-        if (index >= 0) this.waiters.splice(index, 1);
+        if (index >= 0) {
+          this.waiters.splice(index, 1);
+        }
         reject(getUserCancelledAbortErrorFromSignal(signal));
       };
       this.waiters.push(waiter);
@@ -85,7 +89,9 @@ class RetainedByteBudget {
 
   private drain(): void {
     const waiter = this.waiters[0];
-    if (!waiter || this.usedBytes + waiter.bytes > this.limitBytes) return;
+    if (!waiter || this.usedBytes + waiter.bytes > this.limitBytes) {
+      return;
+    }
     this.waiters.shift();
     if (waiter.signal && waiter.onAbort) {
       waiter.signal.removeEventListener('abort', waiter.onAbort);
@@ -94,7 +100,9 @@ class RetainedByteBudget {
     this.onUsage?.(this.usedBytes);
     let released = false;
     waiter.resolve(() => {
-      if (released) return;
+      if (released) {
+        return;
+      }
       released = true;
       this.usedBytes -= waiter.bytes;
       this.onUsage?.(this.usedBytes);
@@ -137,7 +145,9 @@ const clampConcurrency = (value: number | undefined): number => {
 const clampRetries = (value: number | undefined): number => Math.max(0, value ?? DEFAULT_RETRIES);
 
 const resolvePositiveByteLimit = (value: number | undefined, fallback: number): number => {
-  if (value === undefined || !Number.isFinite(value) || value <= 0) return fallback;
+  if (value === undefined || !Number.isFinite(value) || value <= 0) {
+    return fallback;
+  }
   return Math.max(1, Math.floor(value));
 };
 
@@ -180,7 +190,9 @@ export async function downloadAsZip(
   try {
     blobLeases.push(liveBudget.reserve(22));
   } catch (error) {
-    for (const lease of partLeases) lease.release();
+    for (const lease of partLeases) {
+      lease.release();
+    }
     throw error;
   }
   const total = items.length;
@@ -196,7 +208,9 @@ export async function downloadAsZip(
       throwIfAborted(abortSignal);
       const index = currentIndex++;
       const item = items[index];
-      if (!item) continue;
+      if (!item) {
+        continue;
+      }
       const filename = assignedFilenames[index] ?? item.desiredName;
       let releaseWorker: ReleaseReservation | undefined;
       let archiveReservation: ZipEntryReservation | undefined;
@@ -206,7 +220,9 @@ export async function downloadAsZip(
       let body: LiveByteLease | undefined;
       let borrowed: OwnedBlob | undefined;
       try {
-        if (item.sourceUnavailable && !item.blob) throw new DownloadSourceUnavailableError();
+        if (item.sourceUnavailable && !item.blob) {
+          throw new DownloadSourceUnavailableError();
+        }
         const supplied = item.blob && !(item.blob instanceof Promise) ? item.blob : undefined;
         const knownSize = supplied ? supplied.value.size : item.expectedSizeBytes;
         if (knownSize !== undefined && knownSize > maxEntryBytes) {
@@ -231,19 +247,24 @@ export async function downloadAsZip(
             ? supplied.value.size
             : Math.floor(liveBudget.availableBytes / (usesBlob ? 4 : 3))
         );
-        if (knownSize !== undefined && knownSize > liveEntryCap)
+        if (knownSize !== undefined && knownSize > liveEntryCap) {
           throw new DownloadResourceLimitError();
-        if (liveEntryCap === 0 && knownSize !== 0) throw new DownloadResourceLimitError();
+        }
+        if (liveEntryCap === 0 && knownSize !== 0) {
+          throw new DownloadResourceLimitError();
+        }
         archiveReservation = writer.reserveEntry(filename, liveEntryCap);
         const remainingEntryBytes = Math.min(liveEntryCap, archiveReservation.maxDataBytes);
-        if (knownSize !== undefined && knownSize > remainingEntryBytes)
+        if (knownSize !== undefined && knownSize > remainingEntryBytes) {
           throw new ZipResourceLimitError(
             `Bulk ZIP limit exceeded: ${filename} has insufficient remaining archive capacity`
           );
-        if (remainingEntryBytes === 0 && knownSize !== 0)
+        }
+        if (remainingEntryBytes === 0 && knownSize !== 0) {
           throw new ZipResourceLimitError(
             `Bulk ZIP limit exceeded: no data capacity remains for ${filename}`
           );
+        }
         options.onEntryAdmission?.({
           index,
           inputKind,
@@ -273,10 +294,11 @@ export async function downloadAsZip(
           }
           if (blob) {
             throwIfAborted(abortSignal);
-            if (blob.size > remainingEntryBytes)
+            if (blob.size > remainingEntryBytes) {
               throw new ZipResourceLimitError(
                 `Bulk ZIP limit exceeded: ${filename} is ${blob.size} bytes (remaining ${remainingEntryBytes})`
               );
+            }
             data = new Uint8Array(await blob.arrayBuffer());
             body.shrink(data.byteLength);
           } else {
@@ -306,12 +328,15 @@ export async function downloadAsZip(
           body = fetched.lease;
         }
         throwIfAborted(abortSignal);
-        if (data.byteLength > remainingEntryBytes)
+        if (data.byteLength > remainingEntryBytes) {
           throw new ZipResourceLimitError(
             `Bulk ZIP limit exceeded: ${filename} is ${data.byteLength} bytes (remaining ${remainingEntryBytes})`
           );
+        }
         futureBlob.shrink(data.byteLength);
-        if (index > 0) await schedulerYield();
+        if (index > 0) {
+          await schedulerYield();
+        }
         await archiveReservation.commit(data, abortSignal ? { signal: abortSignal } : {});
         partLeases.push(body, overhead);
         blobLeases.push(futureBlob, blobOverhead);
@@ -322,13 +347,16 @@ export async function downloadAsZip(
         successful++;
       } catch (error) {
         throwIfAborted(abortSignal);
-        if (error instanceof DownloadSourceUnavailableError) sourceUnavailable = true;
+        if (error instanceof DownloadSourceUnavailableError) {
+          sourceUnavailable = true;
+        }
         if (
           error instanceof ZipResourceLimitError ||
           isHttpResponseSizeLimitError(error) ||
           error instanceof DownloadResourceLimitError
-        )
+        ) {
           resourceLimitExceeded = true;
+        }
         failures.push({ url: item.url, error: normalizeErrorMessage(error) });
       } finally {
         borrowed?.lease.release();
@@ -349,7 +377,9 @@ export async function downloadAsZip(
   const rejected = settled.find((result) => result.status === 'rejected');
   if (rejected?.status === 'rejected') {
     writer.dispose();
-    for (const lease of [...partLeases, ...blobLeases]) lease.release();
+    for (const lease of [...partLeases, ...blobLeases]) {
+      lease.release();
+    }
     throw rejected.reason;
   }
   let parts: BlobPart[];
@@ -358,7 +388,9 @@ export async function downloadAsZip(
     parts = writer.finalize();
   } catch (error) {
     writer.dispose();
-    for (const lease of [...partLeases, ...blobLeases]) lease.release();
+    for (const lease of [...partLeases, ...blobLeases]) {
+      lease.release();
+    }
     throw error;
   }
   const partOwner = combineLiveByteLeases(partLeases);
@@ -376,7 +408,9 @@ export async function downloadAsZip(
     resourceLimitExceeded,
     sourceUnavailable,
     createBlob: () => {
-      if (transferred || disposed) throw new Error('ZIP ownership is no longer available');
+      if (transferred || disposed) {
+        throw new Error('ZIP ownership is no longer available');
+      }
       // Future Blob capacity was reserved before reading every accepted entry.
       const value = new Blob(parts, { type: 'application/zip' });
       transferred = true;
@@ -386,11 +420,15 @@ export async function downloadAsZip(
       return { value, lease: blobOwner };
     },
     dispose: () => {
-      if (disposed) return;
+      if (disposed) {
+        return;
+      }
       disposed = true;
       dropParts();
       partOwner.release();
-      if (!transferred) blobOwner.release();
+      if (!transferred) {
+        blobOwner.release();
+      }
     },
   };
 }

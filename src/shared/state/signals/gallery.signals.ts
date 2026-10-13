@@ -234,7 +234,9 @@ function commitNavigation(targetIndex: number, source: NavigationSource): void {
 export function navigateNext(trigger: NavigationSource = 'click'): void {
   const items = mediaItemsSig();
   const targetIndex = resolveAdjacentNavigationTarget(_resolveNavAnchor(), 1, items.length);
-  if (targetIndex === null) return;
+  if (targetIndex === null) {
+    return;
+  }
 
   commitNavigation(targetIndex, trigger);
 }
@@ -250,7 +252,9 @@ export function navigateNext(trigger: NavigationSource = 'click'): void {
 export function navigatePrevious(trigger: NavigationSource = 'click'): void {
   const items = mediaItemsSig();
   const targetIndex = resolveAdjacentNavigationTarget(_resolveNavAnchor(), -1, items.length);
-  if (targetIndex === null) return;
+  if (targetIndex === null) {
+    return;
+  }
 
   commitNavigation(targetIndex, trigger);
 }
@@ -276,7 +280,9 @@ export function navigateToItem(targetIndex: number, source: NavigationSource): v
     });
   }
 
-  if (clampedIndex === current) return;
+  if (clampedIndex === current) {
+    return;
+  }
 
   commitNavigation(clampedIndex, source);
 }

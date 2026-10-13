@@ -16,14 +16,20 @@ import { closestWithFallback } from '@shared/utils/dom/query-helpers';
  * @returns Text content or undefined if not found
  */
 function extractTweetText(tweetArticle: Element | null): string | undefined {
-  if (!tweetArticle) return undefined;
+  if (!tweetArticle) {
+    return undefined;
+  }
 
   try {
     const tweetTextElement = tweetArticle.querySelector(TWEET_TEXT_SELECTOR);
-    if (!tweetTextElement) return undefined;
+    if (!tweetTextElement) {
+      return undefined;
+    }
 
     const text = tweetTextElement.textContent?.trim();
-    if (!text) return undefined;
+    if (!text) {
+      return undefined;
+    }
 
     if (__DEV__) {
       logger.debug('[tweet] extracted', { length: text.length });

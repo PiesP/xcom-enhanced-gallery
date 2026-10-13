@@ -19,11 +19,17 @@ export function normalizeErrorMessage(error: unknown): string {
     if (error instanceof Error) {
       return ensureErrorMessage(error.message, ensureErrorMessage(error.name, 'Error'));
     }
-    if (typeof error === 'string') return ensureErrorMessage(error);
-    if (error == null) return UNKNOWN_ERROR_MESSAGE;
+    if (typeof error === 'string') {
+      return ensureErrorMessage(error);
+    }
+    if (error == null) {
+      return UNKNOWN_ERROR_MESSAGE;
+    }
     if (typeof error === 'object') {
       const msg = (error as Record<string, unknown>).message;
-      if (typeof msg === 'string') return ensureErrorMessage(msg);
+      if (typeof msg === 'string') {
+        return ensureErrorMessage(msg);
+      }
     }
     return ensureErrorMessage(String(error));
   } catch {
@@ -49,11 +55,17 @@ function createReporter(context: string): ErrorReporter {
   const report = (severity: ErrorSeverity) => (error: unknown, options?: ReporterOptions) => {
     const message = normalizeErrorMessage(error);
     const payload: Record<string, unknown> = { context, severity };
-    if (options?.code) payload.code = options.code;
-    if (options?.metadata) payload.metadata = options.metadata;
+    if (options?.code) {
+      payload.code = options.code;
+    }
+    if (options?.metadata) {
+      payload.metadata = options.metadata;
+    }
 
     if (severity === 'info') {
-      if (__DEV__) logger.info(message, payload);
+      if (__DEV__) {
+        logger.info(message, payload);
+      }
     } else if (severity === 'warning') {
       logger.warn(message, payload);
     } else {

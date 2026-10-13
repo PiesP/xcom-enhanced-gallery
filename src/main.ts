@@ -87,8 +87,11 @@ function setupDevNamespace(
     mainNamespace.createConfig = actions.createConfig;
     mainNamespace.cleanup = actions.cleanup;
     if (galleryAppInstance !== undefined) {
-      if (galleryAppInstance) mainNamespace.galleryApp = galleryAppInstance;
-      else delete mainNamespace.galleryApp;
+      if (galleryAppInstance) {
+        mainNamespace.galleryApp = galleryAppInstance;
+      } else {
+        delete mainNamespace.galleryApp;
+      }
     }
   });
 }
@@ -129,7 +132,9 @@ function wireBFCacheRecovery(restart: () => Promise<void>): () => void {
   const controller = new AbortController();
   const handler: EventListener = (event: Event) => {
     if ((event as PageTransitionEvent).persisted) {
-      if (!isAllowedStartPage()) return;
+      if (!isAllowedStartPage()) {
+        return;
+      }
       __DEV__ && logger.info('[bfcache] Page restored from BFCache, restarting app');
       (async () => {
         // Wait for any in-progress cleanup from pagehide to complete
@@ -223,15 +228,21 @@ async function performCleanup(): Promise<void> {
     await runOptionalCleanup('gallery', async () => {
       const app = lifecycleState.galleryApp;
       lifecycleState.galleryApp = null;
-      if (app) await app.cleanup();
+      if (app) {
+        await app.cleanup();
+      }
     });
     await runOptionalCleanup('media-service', () => {
       const mediaService = getMediaService();
-      if (mediaService.isInitialized()) mediaService.destroy();
+      if (mediaService.isInitialized()) {
+        mediaService.destroy();
+      }
     });
     await runOptionalCleanup('theme-service', () => {
       const ts = getThemeService();
-      if (ts.isInitialized()) ts.destroy();
+      if (ts.isInitialized()) {
+        ts.destroy();
+      }
     });
     await runOptionalCleanup('settings-service', async () => {
       await getSettingsService().prepareForRestart();
@@ -258,15 +269,21 @@ async function performCleanup(): Promise<void> {
 }
 
 export function cleanup(): Promise<void> {
-  if (lifecycleState.cleanupPromise) return lifecycleState.cleanupPromise;
+  if (lifecycleState.cleanupPromise) {
+    return lifecycleState.cleanupPromise;
+  }
 
   let cleanupRun: Promise<void>;
   cleanupRun = performCleanup().then(
     () => {
-      if (lifecycleState.cleanupPromise === cleanupRun) lifecycleState.cleanupPromise = null;
+      if (lifecycleState.cleanupPromise === cleanupRun) {
+        lifecycleState.cleanupPromise = null;
+      }
     },
     (error: unknown) => {
-      if (lifecycleState.cleanupPromise === cleanupRun) lifecycleState.cleanupPromise = null;
+      if (lifecycleState.cleanupPromise === cleanupRun) {
+        lifecycleState.cleanupPromise = null;
+      }
       throw error;
     }
   );
@@ -276,13 +293,19 @@ export function cleanup(): Promise<void> {
 
 /** Private bundle capability for a trusted click held during MV3 startup. */
 export async function resumeEarlyMediaClick(event: MouseEvent): Promise<void> {
-  if (!lifecycleState.started || !isAllowedStartPage()) return;
+  if (!lifecycleState.started || !isAllowedStartPage()) {
+    return;
+  }
   await lifecycleState.galleryApp?.resumeEarlyMediaClick(event);
 }
 
 export async function startApplication(): Promise<void> {
-  if (lifecycleState.startPromise) return lifecycleState.startPromise;
-  if (lifecycleState.started) return;
+  if (lifecycleState.startPromise) {
+    return lifecycleState.startPromise;
+  }
+  if (lifecycleState.started) {
+    return;
+  }
   if (lifecycleState.cleanupPromise) {
     await lifecycleState.cleanupPromise;
     return startApplication();
@@ -343,7 +366,9 @@ export function isAllowedStartUrl(value: string): boolean {
 
   const hostname = url.hostname.toLowerCase();
   const allowed = TWITTER_HOSTS.some((h) => hostname === h || hostname.endsWith(`.${h}`));
-  if (!allowed) return false;
+  if (!allowed) {
+    return false;
+  }
 
   const path = url.pathname;
   return !EXCLUDED_PATH_PREFIXES.some((prefix) => path.startsWith(prefix));
@@ -354,13 +379,21 @@ function reconcileApplication(allowed: boolean): void {
   // An allowed SPA destination reuses services, but retires the old click/modal intent.
   lifecycleState.galleryApp?.close();
   const mediaService = getMediaService();
-  if (mediaService.isInitialized()) mediaService.refreshApiMetadata();
+  if (mediaService.isInitialized()) {
+    mediaService.refreshApiMetadata();
+  }
 
   if (allowed) {
-    if (lifecycleState.started && !lifecycleState.cleanupPromise) return;
+    if (lifecycleState.started && !lifecycleState.cleanupPromise) {
+      return;
+    }
     void (async () => {
-      if (lifecycleState.cleanupPromise) await lifecycleState.cleanupPromise;
-      if (intent !== navigationIntent) return;
+      if (lifecycleState.cleanupPromise) {
+        await lifecycleState.cleanupPromise;
+      }
+      if (intent !== navigationIntent) {
+        return;
+      }
       await startApplication();
     })().catch((error) => {
       __DEV__ && logger.error('Application failed to start after navigation', error);
@@ -392,11 +425,15 @@ if (typeof navigation !== 'undefined') {
       downloadRequest?: string | null;
     };
     const destination = navigationEvent.destination?.url;
-    if (!destination) return;
+    if (!destination) {
+      return;
+    }
 
     // Blob URLs are used by the userscript download fallback. Treat download
     // requests as browser handoffs instead of tearing down the current gallery.
-    if (navigationEvent.downloadRequest != null || destination.startsWith('blob:')) return;
+    if (navigationEvent.downloadRequest != null || destination.startsWith('blob:')) {
+      return;
+    }
 
     reconcileApplication(isAllowedStartUrl(destination));
   });

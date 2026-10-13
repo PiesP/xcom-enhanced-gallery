@@ -18,7 +18,9 @@ export async function injectDevUserscript(page: Page): Promise<void> {
     }
   }, bundle);
 
-  if (!result.success) throw new Error(`Failed to inject userscript: ${result.error}`);
+  if (!result.success) {
+    throw new Error(`Failed to inject userscript: ${result.error}`);
+  }
 }
 
 export async function waitForGalleryApp(page: Page): Promise<void> {

@@ -26,17 +26,24 @@ function run(file: string, args: string[], env = process.env): void {
     const signal = constants.signals[result.signal];
     throw new CommandFailure(`${file} terminated by ${result.signal}`, 128 + signal);
   }
-  if (result.status !== 0)
+  if (result.status !== 0) {
     throw new CommandFailure(`${file} exited with status ${result.status}`, result.status ?? 1);
+  }
 }
 
 export function main(args: readonly string[]): number {
   try {
-    if (args.length !== 0) throw new Error('install-nose takes no arguments');
+    if (args.length !== 0) {
+      throw new Error('install-nose takes no arguments');
+    }
     const githubPath = process.env.GITHUB_PATH;
     const home = process.env.HOME;
-    if (!githubPath) throw new Error('GITHUB_PATH is required');
-    if (!home) throw new Error('HOME is required');
+    if (!githubPath) {
+      throw new Error('GITHUB_PATH is required');
+    }
+    if (!home) {
+      throw new Error('HOME is required');
+    }
     const { nose } = readPins();
     const temporary = mkdtempSync(
       join(process.env.RUNNER_TEMP || process.env.TMPDIR || tmpdir(), 'nose-installer-')
@@ -56,7 +63,9 @@ export function main(args: readonly string[]): number {
         installer,
       ]);
       const actual = createHash('sha256').update(readFileSync(installer)).digest('hex');
-      if (actual !== nose.installerSha256) throw new Error('Nose installer SHA-256 mismatch');
+      if (actual !== nose.installerSha256) {
+        throw new Error('Nose installer SHA-256 mismatch');
+      }
       const cleanEnv = { ...process.env };
       delete cleanEnv.GH_TOKEN;
       delete cleanEnv.GITHUB_TOKEN;
@@ -73,4 +82,6 @@ export function main(args: readonly string[]): number {
   }
 }
 
-if (isCliEntry(import.meta.url)) process.exitCode = main(process.argv.slice(2));
+if (isCliEntry(import.meta.url)) {
+  process.exitCode = main(process.argv.slice(2));
+}

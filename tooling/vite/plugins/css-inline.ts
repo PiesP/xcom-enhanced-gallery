@@ -24,7 +24,9 @@ export function cssInlinePlugin(): Plugin {
       const cssChunks: string[] = [];
 
       for (const [fileName, asset] of Object.entries(bundle)) {
-        if (!fileName.endsWith('.css') || asset.type !== 'asset') continue;
+        if (!fileName.endsWith('.css') || asset.type !== 'asset') {
+          continue;
+        }
         const source = (asset as { source?: string | Uint8Array }).source;
         if (typeof source === 'string') {
           cssChunks.push(source);
@@ -35,7 +37,9 @@ export function cssInlinePlugin(): Plugin {
       }
 
       const css = cssChunks.join('');
-      if (!css.trim()) return;
+      if (!css.trim()) {
+        return;
+      }
 
       const id = stringifyForScript(STYLE_ID);
       const code = stringifyForScript(css);

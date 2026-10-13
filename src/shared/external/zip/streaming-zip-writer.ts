@@ -116,7 +116,9 @@ const ZIP_CONST = {
 } as const;
 
 function assertZip32(condition: boolean, message: string): asserts condition {
-  if (condition) return;
+  if (condition) {
+    return;
+  }
   if (__DEV__) {
     throw new Error(`ZIP format limit exceeded (Zip64 not supported): ${message}`);
   }
@@ -144,7 +146,9 @@ export interface ZipEntryReservation {
 /** Optimized buffer concatenation (no function call overhead) */
 const concat = (arrays: readonly Uint8Array[]): Uint8Array => {
   let len = 0;
-  for (const array of arrays) len += array.length;
+  for (const array of arrays) {
+    len += array.length;
+  }
   const result = new Uint8Array(len);
   let offset = 0;
   for (const array of arrays) {
@@ -245,7 +249,9 @@ export class StreamingZipWriter {
     let committed = false;
     let released = false;
     const release = (): void => {
-      if (released) return;
+      if (released) {
+        return;
+      }
       released = true;
       this.reservedArchiveBytes -= reservationBytes;
     };

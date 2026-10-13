@@ -120,10 +120,15 @@ export function Tooltip(props: TooltipProps): JSXElement {
   };
 
   const attachDescription = (element: HTMLElement) => {
-    if (describedElement === element) return;
+    if (describedElement === element) {
+      return;
+    }
     if (describedElement) {
-      if (previousDescribedBy === null) describedElement.removeAttribute('aria-describedby');
-      else describedElement.setAttribute('aria-describedby', previousDescribedBy);
+      if (previousDescribedBy === null) {
+        describedElement.removeAttribute('aria-describedby');
+      } else {
+        describedElement.setAttribute('aria-describedby', previousDescribedBy);
+      }
     }
     describedElement = element;
     previousDescribedBy = element.getAttribute('aria-describedby');
@@ -133,9 +138,14 @@ export function Tooltip(props: TooltipProps): JSXElement {
   };
 
   const detachDescription = () => {
-    if (!describedElement) return;
-    if (previousDescribedBy === null) describedElement.removeAttribute('aria-describedby');
-    else describedElement.setAttribute('aria-describedby', previousDescribedBy);
+    if (!describedElement) {
+      return;
+    }
+    if (previousDescribedBy === null) {
+      describedElement.removeAttribute('aria-describedby');
+    } else {
+      describedElement.setAttribute('aria-describedby', previousDescribedBy);
+    }
     describedElement = undefined;
     previousDescribedBy = null;
   };
@@ -156,11 +166,15 @@ export function Tooltip(props: TooltipProps): JSXElement {
   };
 
   const updatePosition = () => {
-    if (!triggerRef) return;
+    if (!triggerRef) {
+      return;
+    }
 
     // Find the first child element (skip text nodes)
     const firstChild = triggerRef.firstElementChild;
-    if (!(firstChild instanceof HTMLElement)) return;
+    if (!(firstChild instanceof HTMLElement)) {
+      return;
+    }
 
     positionRafId = requestAnimationFrame(() => {
       const rect = firstChild.getBoundingClientRect();
@@ -175,13 +189,17 @@ export function Tooltip(props: TooltipProps): JSXElement {
     showTimer = setTimeout(() => {
       // Re-check position before showing (element may have moved)
       updatePosition();
-      if (triggerElement) attachDescription(triggerElement);
+      if (triggerElement) {
+        attachDescription(triggerElement);
+      }
       setVisible(true);
     }, delay);
   };
 
   const ensurePortalHost = (): HTMLDivElement => {
-    if (portalHost?.isConnected) return portalHost;
+    if (portalHost?.isConnected) {
+      return portalHost;
+    }
 
     const themeScope = triggerRef.closest<HTMLElement>('.xeg-theme-scope');
     portalHost = document.createElement('div');
@@ -194,8 +212,11 @@ export function Tooltip(props: TooltipProps): JSXElement {
       portalHost?.setAttribute('data-pp-theme', ppTheme);
 
       const theme = themeScope?.getAttribute('data-theme');
-      if (theme === null || theme === undefined) portalHost?.removeAttribute('data-theme');
-      else portalHost?.setAttribute('data-theme', theme);
+      if (theme === null || theme === undefined) {
+        portalHost?.removeAttribute('data-theme');
+      } else {
+        portalHost?.setAttribute('data-theme', theme);
+      }
     };
 
     mirrorThemeAttributes();
@@ -228,7 +249,9 @@ export function Tooltip(props: TooltipProps): JSXElement {
   };
 
   const handleKeyDown = (event: KeyboardEvent) => {
-    if (event.key !== 'Escape' || !visible()) return;
+    if (event.key !== 'Escape' || !visible()) {
+      return;
+    }
     clearTimers();
     setVisible(false);
     setPosition(null);
@@ -244,7 +267,9 @@ export function Tooltip(props: TooltipProps): JSXElement {
   // Derived: CSS style for tooltip positioning
   const tooltipStyle = createMemo((): Record<string, string> => {
     const pos = activePosition();
-    if (pos === null) return {};
+    if (pos === null) {
+      return {};
+    }
     return {
       left: `${pos.x}px`,
       top: `${pos.y}px`,
@@ -254,7 +279,9 @@ export function Tooltip(props: TooltipProps): JSXElement {
   // Derived: combined class string using cx() (avoids classList computed-key TS issues)
   const tooltipClass = createMemo(() => {
     const pos = activePosition();
-    if (pos === null) return styles.content;
+    if (pos === null) {
+      return styles.content;
+    }
     const placementClass =
       pos.actualPlacement === 'bottom' ? styles.placementBottom : styles.placementTop;
     return cx(styles.content, styles.visible, placementClass);
@@ -263,7 +290,9 @@ export function Tooltip(props: TooltipProps): JSXElement {
   // Derived: arrow class
   const arrowClass = createMemo(() => {
     const pos = activePosition();
-    if (pos === null) return styles.arrow;
+    if (pos === null) {
+      return styles.arrow;
+    }
     const placementClass =
       pos.actualPlacement === 'bottom' ? styles.placementBottomArrow : styles.placementTopArrow;
     return cx(styles.arrow, placementClass);
@@ -272,7 +301,9 @@ export function Tooltip(props: TooltipProps): JSXElement {
   // Derived: arrow inner fill class
   const arrowInnerClass = createMemo(() => {
     const pos = activePosition();
-    if (pos === null) return styles.arrowInner;
+    if (pos === null) {
+      return styles.arrowInner;
+    }
     const placementClass =
       pos.actualPlacement === 'bottom'
         ? styles.placementBottomArrowInner

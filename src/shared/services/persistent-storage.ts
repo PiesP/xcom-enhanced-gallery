@@ -148,9 +148,13 @@ export class PersistentStorage {
 
   async getString(key: string, defaultValue?: string): Promise<string | undefined> {
     const value = await this.get<unknown>(key);
-    if (value === undefined || value === null) return defaultValue;
+    if (value === undefined || value === null) {
+      return defaultValue;
+    }
     // L11: MV3 adapter may store raw objects; cast through String() for safety
-    if (typeof value === 'string') return value;
+    if (typeof value === 'string') {
+      return value;
+    }
     // If value is an object (MV3 stores raw), try toString to preserve compatibility
     if (typeof value === 'object') {
       try {
@@ -175,10 +179,14 @@ export class PersistentStorage {
    * Use ONLY for critical initialization paths (e.g., theme to prevent FOUC).
    */
   getSync<T>(key: string, defaultValue?: T): T | undefined {
-    if (!this.adapter.getSync) return defaultValue;
+    if (!this.adapter.getSync) {
+      return defaultValue;
+    }
     try {
       const value = this.adapter.getSync<string>(key);
-      if (value == null) return defaultValue;
+      if (value == null) {
+        return defaultValue;
+      }
       return (decodeValue(value)?.value as T | undefined) ?? defaultValue;
     } catch {
       return defaultValue;

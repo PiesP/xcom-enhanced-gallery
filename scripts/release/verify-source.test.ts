@@ -9,7 +9,9 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const script = fileURLToPath(new URL('./verify-source.ts', import.meta.url));
 const roots: string[] = [];
 after(() => {
-  for (const root of roots) rmSync(root, { recursive: true, force: true });
+  for (const root of roots) {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 function git(cwd: string, ...args: string[]): string {
@@ -45,8 +47,11 @@ function fixture() {
       return git(source, 'rev-parse', 'HEAD');
     },
     tag(name: string, annotated = false): void {
-      if (annotated) git(source, 'tag', '-a', name, '-m', name);
-      else git(source, 'tag', name);
+      if (annotated) {
+        git(source, 'tag', '-a', name, '-m', name);
+      } else {
+        git(source, 'tag', name);
+      }
     },
     clone(): void {
       git(source, 'push', '-q', 'origin', '--all');

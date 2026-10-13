@@ -61,7 +61,9 @@ describe('unanchored preview ownership', () => {
         quote.removeAttribute('role');
         quote.removeAttribute('data-testid');
       }
-      if (layout.endsWith('no-time')) quote.querySelector('time')!.replaceWith('Quoted permalink');
+      if (layout.endsWith('no-time')) {
+        quote.querySelector('time')!.replaceWith('Quoted permalink');
+      }
       expect(
         extractor.extract(document.querySelector<HTMLImageElement>('#quote-poster')!)?.tweetId
       ).toBe('111');

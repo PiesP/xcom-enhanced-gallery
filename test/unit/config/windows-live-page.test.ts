@@ -1102,7 +1102,9 @@ describe('Windows X live page validation', () => {
         );
         expect(matches).toHaveLength(1);
         const labelElement = matches[0];
-        if (!labelElement) throw new Error('Missing exact manager setting label');
+        if (!labelElement) {
+          throw new Error('Missing exact manager setting label');
+        }
         return {
           locator(selector: string) {
             expect(selector).toMatch(/^xpath=ancestor::tr\[/u);
@@ -1224,7 +1226,9 @@ describe('Windows X live page validation', () => {
     const selectOption = vi.fn(async (option: { label: string }) => {
       expect(option).toEqual({ label: labels.Info });
       selected = '60';
-      if (persist) saved = '60';
+      if (persist) {
+        saved = '60';
+      }
     });
     const select = {
       count: async () => 1,
@@ -1479,7 +1483,9 @@ describe('Windows X live page validation', () => {
       first.emit('console', { text: () => 'downs: download failed' });
       first.emit('close');
       context.emit('serviceworker', second);
-      for (let i = 0; i < 20; i++) second.emit('console', { text: () => 'downs: download failed' });
+      for (let i = 0; i < 20; i++) {
+        second.emit('console', { text: () => 'downs: download failed' });
+      }
       expect(watcher.snapshotSince(before)).toMatchObject({
         status: 'known-branch-observed',
         matchedEvents: 16,
@@ -1514,9 +1520,12 @@ describe('Windows X live page validation', () => {
         availability: 'no-worker-observed',
         matchedEvents: 0,
       });
-      for (const worker of workers) context.emit('serviceworker', worker);
-      for (let i = 0; i < 260; i++)
+      for (const worker of workers) {
+        context.emit('serviceworker', worker);
+      }
+      for (let i = 0; i < 260; i++) {
         workers[0]?.emit('console', { text: () => 'downs: unrelated private' });
+      }
       expect(watcher.snapshotSince(before)).toMatchObject({
         status: 'inconclusive',
         availability: 'attached-after-click',
@@ -1969,7 +1978,9 @@ describe('Windows X live page validation', () => {
       });
       const locator = vi.fn((selector: string) => {
         const expected = browserName === 'msedge' ? '#dev-switch:visible' : '#devMode';
-        if (selector !== expected) throw new Error('Selected a hidden or unsupported toggle');
+        if (selector !== expected) {
+          throw new Error('Selected a hidden or unsupported toggle');
+        }
         return {
           waitFor: vi.fn(async () => {}),
           evaluate: async (read: (element: typeof visible) => boolean) => read(visible),
@@ -2156,7 +2167,9 @@ describe('Windows X live page validation', () => {
       </article>
     `;
     const image = document.querySelector('img');
-    if (!(image instanceof HTMLImageElement)) throw new Error('Delayed media fixture missing');
+    if (!(image instanceof HTMLImageElement)) {
+      throw new Error('Delayed media fixture missing');
+    }
     image.style.display = 'block';
     image.style.opacity = '1';
     image.style.visibility = 'visible';
@@ -2206,7 +2219,9 @@ describe('Windows X live page validation', () => {
       </article>
     `;
     const video = document.querySelector<HTMLVideoElement>('video');
-    if (!video) throw new Error('Video fixture missing');
+    if (!video) {
+      throw new Error('Video fixture missing');
+    }
     video.getBoundingClientRect = () => ({
       bottom: 200,
       height: 100,
@@ -2249,7 +2264,9 @@ describe('Windows X live page validation', () => {
       </article>
     `;
     const video = document.querySelector<HTMLVideoElement>('video');
-    if (!video) throw new Error('Video fixture missing');
+    if (!video) {
+      throw new Error('Video fixture missing');
+    }
     video.getBoundingClientRect = () => ({
       bottom: 200,
       height: 100,
@@ -2284,7 +2301,9 @@ describe('Windows X live page validation', () => {
       </article>
     `;
     const button = document.querySelector<HTMLButtonElement>('[data-testid="playButton"]');
-    if (!button) throw new Error('Play button fixture missing');
+    if (!button) {
+      throw new Error('Play button fixture missing');
+    }
     button.getBoundingClientRect = () => ({
       bottom: 200,
       height: 100,
@@ -2383,7 +2402,9 @@ describe('Windows X live page validation', () => {
       </article>
     `;
     const image = document.querySelector<HTMLImageElement>('img');
-    if (!image) throw new Error('Quoted poster fixture missing');
+    if (!image) {
+      throw new Error('Quoted poster fixture missing');
+    }
     image.getBoundingClientRect = () => ({
       bottom: 200,
       height: 100,
@@ -2488,7 +2509,9 @@ describe('Windows X live page validation', () => {
     `;
     const image = document.querySelector<HTMLImageElement>('img');
     const button = document.querySelector<HTMLButtonElement>('button');
-    if (!image || !button) throw new Error('Hit-test fixture missing');
+    if (!image || !button) {
+      throw new Error('Hit-test fixture missing');
+    }
     image.getBoundingClientRect = () => ({
       bottom: 200,
       height: 100,
@@ -2548,7 +2571,9 @@ describe('Windows X live page validation', () => {
     const image = document.querySelector<HTMLImageElement>('img');
     const button = document.querySelector<HTMLButtonElement>('button');
     const video = document.querySelector<HTMLVideoElement>('video');
-    if (!image || !button || !video) throw new Error('Native play fixture missing');
+    if (!image || !button || !video) {
+      throw new Error('Native play fixture missing');
+    }
     let top = 100;
     image.getBoundingClientRect = () => ({
       bottom: top + 100,
@@ -2626,7 +2651,9 @@ describe('Windows X live page validation', () => {
         value: () => [button],
       });
       const scope = document.querySelector<HTMLElement>('article > div');
-      if (!scope) throw new Error('Native play scope missing');
+      if (!scope) {
+        throw new Error('Native play scope missing');
+      }
       for (let index = 0; index < 25; index += 1) {
         const avatar = document.createElement('img');
         avatar.src = `https://pbs.twimg.com/profile_images/${index}/avatar.jpg?token=private`;
@@ -2856,10 +2883,14 @@ describe('Windows X live page validation', () => {
       expect(livePage.findActivationHitDocument(image, { articleIndex: 0, point })).toBeNull();
       const hit = livePage.findActivationHitDocument(play, { articleIndex: 0, point });
       expect(hit).toBe(icon);
-      if (!(hit instanceof Element)) throw new Error('Activation hit missing');
+      if (!(hit instanceof Element)) {
+        throw new Error('Activation hit missing');
+      }
       capture = livePage.captureActivationFocusDocument(hit, { articleIndex: 0, point });
       const listener = add.mock.calls.find(([type]) => type === 'click')?.[1];
-      if (typeof listener !== 'function') throw new Error('Activation listener missing');
+      if (typeof listener !== 'function') {
+        throw new Error('Activation listener missing');
+      }
       listener({
         isTrusted: false,
         button: 0,
@@ -2917,13 +2948,17 @@ describe('Windows X live page validation', () => {
         point: { x: 40, y: 120 },
       });
       expect(hit).toBe(overlay);
-      if (!(hit instanceof HTMLElement)) throw new Error('Activation hit missing');
+      if (!(hit instanceof HTMLElement)) {
+        throw new Error('Activation hit missing');
+      }
       capture = livePage.captureActivationFocusDocument(hit, {
         articleIndex: 0,
         point: { x: 40, y: 120 },
       });
       const listener = add.mock.calls.find(([type]) => type === 'click')?.[1];
-      if (typeof listener !== 'function') throw new Error('Activation listener missing');
+      if (typeof listener !== 'function') {
+        throw new Error('Activation listener missing');
+      }
       player.focus(); // Native pointer behavior before the click event.
       listener({
         isTrusted: true,
@@ -2968,7 +3003,9 @@ describe('Windows X live page validation', () => {
     const article = document.querySelector('article');
     const inside = article?.querySelector('button');
     const outside = document.querySelectorAll('article')[1]?.querySelector('button');
-    if (!article || !inside || !outside) throw new Error('Activation fixture missing');
+    if (!article || !inside || !outside) {
+      throw new Error('Activation fixture missing');
+    }
     const add = vi.spyOn(window, 'addEventListener');
     const capture = livePage.captureActivationFocusDocument(article, {
       articleIndex: 0,
@@ -2976,7 +3013,9 @@ describe('Windows X live page validation', () => {
     });
     try {
       const listener = add.mock.calls.find(([type]) => type === 'click')?.[1];
-      if (typeof listener !== 'function') throw new Error('Activation listener missing');
+      if (typeof listener !== 'function') {
+        throw new Error('Activation listener missing');
+      }
       expect(capture.captured).toBe(false);
       inside.focus();
       inside.click();
@@ -3119,7 +3158,9 @@ describe('Windows X live page validation', () => {
     `;
     const video = document.querySelector<HTMLVideoElement>('video');
     const sibling = document.querySelector<HTMLImageElement>('article > img');
-    if (!video || !sibling) throw new Error('Sibling poster fixture missing');
+    if (!video || !sibling) {
+      throw new Error('Sibling poster fixture missing');
+    }
     const expected = { posterPath: '/amplify_video_thumb/456/img/b.jpg' };
     expect(livePage.inspectHostVideoDocument(video, expected)).toMatchObject({
       poster: { host: 'pbs.twimg.com', path: expected.posterPath },
@@ -3328,12 +3369,16 @@ describe('Windows X live page validation', () => {
     const selectedImage = document.querySelector<HTMLImageElement>(
       '[data-gallery-element="item"][data-index="1"] img'
     );
-    if (!selectedImage) throw new Error('Selected gallery image fixture missing');
+    if (!selectedImage) {
+      throw new Error('Selected gallery image fixture missing');
+    }
     selectedImage.src = 'https://pbs.twimg.com/media/target.jpg?name=orig';
     const wrongImage = document.querySelector<HTMLImageElement>(
       '[data-gallery-element="item"][data-index="0"] img'
     );
-    if (!wrongImage) throw new Error('Other gallery image fixture missing');
+    if (!wrongImage) {
+      throw new Error('Other gallery image fixture missing');
+    }
     wrongImage.src = 'https://pbs.twimg.com/media/other.jpg';
     expect(livePage.inspectSelectedGalleryDocument(expected)).toEqual({
       imageSource: { host: 'pbs.twimg.com', path: '/media/target.jpg' },
@@ -3344,7 +3389,9 @@ describe('Windows X live page validation', () => {
 
     const position = document.querySelector<HTMLElement>('#xeg-toolbar-counter');
     const toolbar = document.querySelector<HTMLElement>('[data-gallery-element="toolbar"]');
-    if (!position || !toolbar) throw new Error('Gallery context fixture missing');
+    if (!position || !toolbar) {
+      throw new Error('Gallery context fixture missing');
+    }
 
     for (const [element, attribute, value] of [
       [position, 'data-position', '1'],
@@ -3357,8 +3404,11 @@ describe('Windows X live page validation', () => {
       const original = element.getAttribute(attribute);
       element.setAttribute(attribute, value);
       expect(livePage.inspectSelectedGalleryDocument(expected), attribute).toBe(false);
-      if (original === null) element.removeAttribute(attribute);
-      else element.setAttribute(attribute, original);
+      if (original === null) {
+        element.removeAttribute(attribute);
+      } else {
+        element.setAttribute(attribute, original);
+      }
     }
 
     wrongImage.src = 'https://pbs.twimg.com/media/target.jpg';

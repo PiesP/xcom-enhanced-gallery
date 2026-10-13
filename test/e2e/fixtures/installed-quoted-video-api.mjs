@@ -226,8 +226,9 @@ export function quotedVideoApiResponse(tweetId) {
     };
   }
   const selected = QUOTED_CASES.find(({ outer }) => outer === tweetId);
-  if (!selected && tweetId !== QUOTED_CASES[0].owner && tweetId !== QUOTED_CASES[2].owner)
+  if (!selected && tweetId !== QUOTED_CASES[0].owner && tweetId !== QUOTED_CASES[2].owner) {
     return null;
+  }
   const quoteOne = tweet(QUOTED_CASES[0].owner, 'quote_one', [
     photo(QUOTED_CASES[0].owner, 'QQuoteOnePhoto', 0),
     video(QUOTED_CASES[0].owner, 'quote-one', 1),

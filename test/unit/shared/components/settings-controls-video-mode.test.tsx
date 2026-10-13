@@ -65,7 +65,9 @@ function mountSettings(initial: VideoClickMode) {
     host
   );
   const select = host.querySelector<HTMLSelectElement>('#settings-controls-video-click-select');
-  if (!select) throw new Error('Missing video click setting');
+  if (!select) {
+    throw new Error('Missing video click setting');
+  }
   return {
     select,
     set,

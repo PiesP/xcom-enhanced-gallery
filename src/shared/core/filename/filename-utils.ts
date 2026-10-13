@@ -53,7 +53,9 @@ function getExtension(url: string): string {
     }
     // Fallback: 경로 기반 확장자
     const path = parsed.pathname;
-    if (!path) return 'jpg';
+    if (!path) {
+      return 'jpg';
+    }
     const ext = path.split('.').pop();
     if (ext && /^(jpg|jpeg|png|gif|webp|mp4|mov|avi)$/i.test(ext)) {
       return ext.toLowerCase();
@@ -71,7 +73,9 @@ function getExtension(url: string): string {
  * @returns 1-indexed position string, or null if no match
  */
 export function getIndexFromMediaId(mediaId?: string): string | null {
-  if (!mediaId) return null;
+  if (!mediaId) {
+    return null;
+  }
   const match = mediaId.match(/_media_(\d+)$/) || mediaId.match(/_(\d+)$/);
   if (match) {
     const idx = Number.parseInt(match[1] ?? '', 10);
@@ -87,7 +91,9 @@ export function getIndexFromMediaId(mediaId?: string): string | null {
  * @returns Positive integer string, minimum '1'
  */
 export function normalizeIndex(index?: string | number): string {
-  if (index === undefined || index === null) return '1';
+  if (index === undefined || index === null) {
+    return '1';
+  }
   const num = typeof index === 'string' ? Number.parseInt(index, 10) : index;
   return Number.isNaN(num) || num < 1 ? '1' : num.toString();
 }

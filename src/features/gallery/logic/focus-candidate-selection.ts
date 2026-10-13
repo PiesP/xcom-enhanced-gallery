@@ -90,7 +90,11 @@ export function selectBestFocusCandidate(
     }
   }
 
-  if (topAlignedCandidate) return topAlignedCandidate;
-  if (highestVisibilityCandidate) return { index: highestVisibilityCandidate.index, distance: 0 };
+  if (topAlignedCandidate) {
+    return topAlignedCandidate;
+  }
+  if (highestVisibilityCandidate) {
+    return { index: highestVisibilityCandidate.index, distance: 0 };
+  }
   return bestCandidate;
 }

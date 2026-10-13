@@ -159,8 +159,9 @@ export function isObservedChromeNativeDownloadPrompt(receipt) {
     !Array.isArray(scope.controls) ||
     scope.controls.length !== scope.visitedControls ||
     scope.attemptedNodes !== scope.visitedControls
-  )
+  ) {
     return false;
+  }
   const controls = scope.controls;
   const count = (type, name) =>
     controls.filter((control) => control.controlType === type && control.name === name).length;
@@ -216,8 +217,12 @@ export async function inspectAndAllowNativeManagerPermission(
     run
   );
   const skipped = (reason) => ({ ...diagnostic, action: { status: 'skipped', reason } });
-  if (browserName !== 'chrome') return skipped('browser-not-observed');
-  if (diagnostic.status !== 'captured') return skipped('prompt-not-captured');
+  if (browserName !== 'chrome') {
+    return skipped('browser-not-observed');
+  }
+  if (diagnostic.status !== 'captured') {
+    return skipped('prompt-not-captured');
+  }
   try {
     const receipt = JSON.parse(await readFile(join(output, NATIVE_PERMISSION_RECEIPT), 'utf8'));
     if (receipt.promptScope?.complete === false) {
@@ -226,15 +231,20 @@ export async function inspectAndAllowNativeManagerPermission(
         : 'incomplete';
       return skipped(`prompt-scope-${reason}`);
     }
-    if (!isObservedChromeNativeDownloadPrompt(receipt)) return skipped('prompt-not-exact');
+    if (!isObservedChromeNativeDownloadPrompt(receipt)) {
+      return skipped('prompt-not-exact');
+    }
     const currentPid = browserProcessId(await cdp.send('SystemInfo.getProcessInfo'));
-    if (currentPid !== receipt.browserPid) return skipped('browser-pid-changed');
+    if (currentPid !== receipt.browserPid) {
+      return skipped('browser-pid-changed');
+    }
     if (
       ask.isClosed() ||
       ask.context() !== context ||
       !isOwnedManagerPermissionAskUrl(ask.url(), managerId)
-    )
+    ) {
       return skipped('manager-ask-not-current');
+    }
     const args = [
       '-NoProfile',
       '-NonInteractive',
@@ -325,7 +335,9 @@ async function waitFor(read, label, timeoutMs = 15_000) {
   const until = Date.now() + timeoutMs;
   while (Date.now() < until) {
     const value = await read();
-    if (value !== undefined) return value;
+    if (value !== undefined) {
+      return value;
+    }
     await delay(50);
   }
   throw new Error(`Timed out waiting for ${label}`);
@@ -351,10 +363,14 @@ export function watchFixtureMediaNetwork(context) {
   const identify = (request) => {
     try {
       const url = new URL(request.url());
-      if (url.protocol !== 'https:' || url.hostname !== 'pbs.twimg.com') return null;
+      if (url.protocol !== 'https:' || url.hostname !== 'pbs.twimg.com') {
+        return null;
+      }
       for (const [cohort, markers] of Object.entries(MEDIA_COHORTS)) {
         const index = markers.findIndex((marker) => url.pathname === `/media/${marker}.jpg`);
-        if (index >= 0) return { cohort, index };
+        if (index >= 0) {
+          return { cohort, index };
+        }
       }
     } catch {
       /* Ignore non-URL browser requests. */
@@ -363,7 +379,9 @@ export function watchFixtureMediaNetwork(context) {
   };
   const append = (kind, request, status = null) => {
     const media = identify(request);
-    if (!media) return;
+    if (!media) {
+      return;
+    }
     if (events.length >= 64) {
       overflow += 1;
       return;
@@ -484,9 +502,12 @@ export function isOwnedManagerInspectionUrl(value, detailsUrl, managerId) {
   if (
     !isOwnedManagerDetailsUrl(detailsUrl, detailsUrl) ||
     new URL(detailsUrl).searchParams.get('id') !== managerId
-  )
+  ) {
     return false;
-  if (isOwnedManagerDetailsUrl(value, detailsUrl)) return true;
+  }
+  if (isOwnedManagerDetailsUrl(value, detailsUrl)) {
+    return true;
+  }
   try {
     const url = new URL(value);
     return (
@@ -891,15 +912,21 @@ export async function inspectManagerDownloadHistoryDocument({
   ) {
     return { status: 'unowned-page', items: [] };
   }
-  if (!chrome.downloads?.search) return { status: 'api-unavailable', items: [] };
+  if (!chrome.downloads?.search) {
+    return { status: 'api-unavailable', items: [] };
+  }
   let found;
   try {
     found = await chrome.downloads.search({ url: fixtureUrl, limit: 9 });
   } catch {
     return { status: 'query-rejected', items: [] };
   }
-  if (!Array.isArray(found)) return { status: 'invalid-result', items: [] };
-  if (found.length > 8) return { status: 'overflow', items: [] };
+  if (!Array.isArray(found)) {
+    return { status: 'invalid-result', items: [] };
+  }
+  if (found.length > 8) {
+    return { status: 'overflow', items: [] };
+  }
   const reasons = new Set([
     'FILE_FAILED',
     'FILE_ACCESS_DENIED',
@@ -933,7 +960,9 @@ export async function inspectManagerDownloadHistoryDocument({
   ]);
   const items = [];
   for (const item of found) {
-    if (item?.url !== fixtureUrl) continue;
+    if (item?.url !== fixtureUrl) {
+      continue;
+    }
     if (
       !Number.isSafeInteger(item.id) ||
       item.id < 0 ||
@@ -1028,9 +1057,13 @@ export function selectCompletedManagerDownload(before, after) {
   const seen = new Set(before.items.map(({ id }) => id));
   const created = after.items.filter(({ id }) => !seen.has(id));
   assert(created.length <= 1, 'One action created multiple native download items');
-  if (!created.length) return undefined;
+  if (!created.length) {
+    return undefined;
+  }
   const item = created[0];
-  if (item.state === 'in_progress') return undefined;
+  if (item.state === 'in_progress') {
+    return undefined;
+  }
   assert.equal(item.state, 'complete', 'Native download did not complete');
   assert.equal(item.interruptReason, null, 'Completed native download has an interrupt reason');
   assert.equal(item.fixtureUrlMatch, true, 'Native download URL differs');
@@ -1122,7 +1155,9 @@ async function captureManagerPermissionDiagnostics(page, detailsUrl, output, pro
                 current.hostname === expectedManagerId &&
                 !current.search &&
                 !current.hash;
-              if (!ownedDetails && !ownedExtension) return { skipped: 'frame-navigated-away' };
+              if (!ownedDetails && !ownedExtension) {
+                return { skipped: 'frame-navigated-away' };
+              }
               const knownLabels = new Set(['사용자 스크립트 허용', 'Allow user scripts']);
               const describe = (element) => ({
                 tag: element.tagName.toLowerCase().slice(0, 40),
@@ -1142,7 +1177,9 @@ async function captureManagerPermissionDiagnostics(page, detailsUrl, output, pro
               const embedded = [];
               let visited = 0;
               const visit = (node) => {
-                if (++visited > 4_000) return;
+                if (++visited > 4_000) {
+                  return;
+                }
                 if (
                   node.nodeType === Node.TEXT_NODE &&
                   labels.length < 4 &&
@@ -1161,7 +1198,9 @@ async function captureManagerPermissionDiagnostics(page, detailsUrl, output, pro
                         'input, button, [role="switch"], [role="checkbox"], fluent-switch, cr-toggle'
                       );
                       for (const candidate of Array.from(candidates).slice(0, 8)) {
-                        if (nearbyControls.length < 16) nearbyControls.push(describe(candidate));
+                        if (nearbyControls.length < 16) {
+                          nearbyControls.push(describe(candidate));
+                        }
                       }
                     }
                   }
@@ -1180,10 +1219,14 @@ async function captureManagerPermissionDiagnostics(page, detailsUrl, output, pro
                   if (embedded.length < 16 && ['iframe', 'webview', 'object'].includes(tag)) {
                     embedded.push(describe(node));
                   }
-                  if (node.shadowRoot) visit(node.shadowRoot);
+                  if (node.shadowRoot) {
+                    visit(node.shadowRoot);
+                  }
                 }
                 for (const child of node.childNodes) {
-                  if (visited >= 4_000) break;
+                  if (visited >= 4_000) {
+                    break;
+                  }
                   visit(child);
                 }
               };
@@ -1280,7 +1323,9 @@ async function installUserscript(
         await page.goto(detailsUrl, { waitUntil: 'domcontentloaded', timeout: 10_000 });
         if (browserName === 'msedge') {
           const control = await findEdgeUserScriptsControl(page, id);
-          if (!(await control.evaluate((element) => element.checked))) await control.click();
+          if (!(await control.evaluate((element) => element.checked))) {
+            await control.click();
+          }
           await waitFor(
             async () => ((await control.evaluate((element) => element.checked)) ? true : undefined),
             'Edge user-scripts permission enabled',
@@ -1305,13 +1350,17 @@ async function installUserscript(
               'Manager userScripts API unavailable and no verified UI permission control'
             );
           }
-          if (!(await toggle.evaluate((element) => element.checked))) await toggle.click();
+          if (!(await toggle.evaluate((element) => element.checked))) {
+            await toggle.click();
+          }
           assert(
             await toggle.evaluate((element) => element.checked),
             'Manager user-scripts control stayed disabled'
           );
           const keep = page.getByRole('button', { name: 'Keep', exact: true });
-          if (await keep.isVisible()) await keep.click();
+          if (await keep.isVisible()) {
+            await keep.click();
+          }
           const reload = page.locator('extensions-detail-view #dev-reload-button');
           assert(
             await reload.isVisible(),
@@ -1482,14 +1531,18 @@ export function createBrowserDownloadObserver(cdp) {
         () => {
           const created = begun.slice(since);
           assert(created.length <= 1, `One action created ${created.length} native downloads`);
-          if (!created.length) return undefined;
+          if (!created.length) {
+            return undefined;
+          }
           const candidate = created[0];
           assert(
             expectedNames.includes(candidate.suggestedFilename),
             'Browser download request used an unexpected filename'
           );
           const status = progress.get(candidate.guid);
-          if (status?.state === 'canceled') throw new Error('Browser canceled the native download');
+          if (status?.state === 'canceled') {
+            throw new Error('Browser canceled the native download');
+          }
           return status?.state === 'completed' ? { ...candidate, ...status } : undefined;
         },
         `CDP native completion of ${expectedNames[0]}`,
@@ -1611,7 +1664,9 @@ async function waitForManagerDownload(
 }
 
 function browserFilename(name, duplicate) {
-  if (duplicate === 0) return name;
+  if (duplicate === 0) {
+    return name;
+  }
   const dot = name.lastIndexOf('.');
   return `${name.slice(0, dot)} (${duplicate})${name.slice(dot)}`;
 }
@@ -1639,7 +1694,9 @@ export async function observeNoNativeDownload(
     );
     samples += 1;
     const remaining = durationMs - (Date.now() - started);
-    if (remaining <= 0) break;
+    if (remaining <= 0) {
+      break;
+    }
     await delay(Math.min(50, remaining));
     // biome-ignore lint/correctness/noConstantCondition: The manager polling loop exits through its explicit deadline and terminal-state checks.
   } while (true);
@@ -1652,11 +1709,17 @@ export async function observeNoNativeDownload(
 }
 
 export async function inspectFirstCurrentDownload(page) {
-  if (page.url() !== FIXTURE_URL) return { scope: 'unowned-page' };
+  if (page.url() !== FIXTURE_URL) {
+    return { scope: 'unowned-page' };
+  }
   const observation = await page.evaluate((expectedUrl) => {
-    if (location.href !== expectedUrl) return { scope: 'navigated-away' };
+    if (location.href !== expectedUrl) {
+      return { scope: 'navigated-away' };
+    }
     const galleries = document.querySelectorAll('[data-xeg-gallery-container]');
-    if (galleries.length !== 1) return { scope: 'unowned-gallery' };
+    if (galleries.length !== 1) {
+      return { scope: 'unowned-gallery' };
+    }
     const gallery = galleries[0];
     const toolbar = gallery.querySelector('[data-gallery-element="toolbar"]');
     const current = toolbar?.querySelector('button[aria-label="Download"]');
@@ -1728,27 +1791,48 @@ const MANAGER_BACKGROUND_SHA256 =
 
 /** Match only known Tampermonkey 5.5.1 background.js download log shapes. */
 export function classifyManagerDownloadConsole(value) {
-  if (typeof value !== 'string' || value.length > 4_096) return null;
+  if (typeof value !== 'string' || value.length > 4_096) {
+    return null;
+  }
   const offset = value.indexOf('downs: ');
-  if (offset < 0 || offset > 64) return null;
+  if (offset < 0 || offset > 64) {
+    return null;
+  }
   const line = value.slice(offset);
-  if (/^downs: start(?:\s|$)/u.test(line)) return 'manager_request_branch';
-  if (line === 'downs: permission to use downloads -> true') return 'permission_true';
-  if (line === 'downs: permission to use downloads -> false') return 'permission_false';
-  if (line === 'downs: feature is not enabled') return 'not_enabled_branch';
+  if (/^downs: start(?:\s|$)/u.test(line)) {
+    return 'manager_request_branch';
+  }
+  if (line === 'downs: permission to use downloads -> true') {
+    return 'permission_true';
+  }
+  if (line === 'downs: permission to use downloads -> false') {
+    return 'permission_false';
+  }
+  if (line === 'downs: feature is not enabled') {
+    return 'not_enabled_branch';
+  }
   if (
     /^downs: (?:this download mode is not supported|invalid transferable|can't get URL from transferable)$/u.test(
       line
     )
-  )
+  ) {
     return 'not_supported_branch';
-  if (line === 'downs: download permission is missing') return 'not_permitted_branch';
-  if (line === 'downs: download failed') return 'download_failed_branch';
-  if (/^downs: "[^\n]+" is not whitelisted$/u.test(line)) return 'not_whitelisted_branch';
-  if (/^downs: download of .+ \(.+\) failed(?:\s.*)?$/u.test(line))
+  }
+  if (line === 'downs: download permission is missing') {
+    return 'not_permitted_branch';
+  }
+  if (line === 'downs: download failed') {
+    return 'download_failed_branch';
+  }
+  if (/^downs: "[^\n]+" is not whitelisted$/u.test(line)) {
+    return 'not_whitelisted_branch';
+  }
+  if (/^downs: download of .+ \(.+\) failed(?:\s.*)?$/u.test(line)) {
     return 'native_interrupted_branch';
-  if (/^downs: unable to query download ID(?:\s.*)?$/u.test(line))
+  }
+  if (/^downs: unable to query download ID(?:\s.*)?$/u.test(line)) {
     return 'native_query_failed_branch';
+  }
   return null;
 }
 
@@ -1767,9 +1851,13 @@ export function watchManagerDownloadConsole(context, managerId) {
   let consoleUnavailable = false;
   let disposed = false;
   const attach = (worker) => {
-    if (disposed || listeners.has(worker)) return;
+    if (disposed || listeners.has(worker)) {
+      return;
+    }
     try {
-      if (worker.url() !== expectedUrl) return;
+      if (worker.url() !== expectedUrl) {
+        return;
+      }
     } catch {
       consoleUnavailable = true;
       return;
@@ -1779,7 +1867,9 @@ export function watchManagerDownloadConsole(context, managerId) {
       return;
     }
     const onConsole = (message) => {
-      if (disposed) return;
+      if (disposed) {
+        return;
+      }
       if (inspectedMessages >= 256) {
         messageOverflow = true;
         return;
@@ -1793,7 +1883,9 @@ export function watchManagerDownloadConsole(context, managerId) {
         return;
       }
       const branch = classifyManagerDownloadConsole(value);
-      if (!branch) return;
+      if (!branch) {
+        return;
+      }
       if (recognizedEvents >= 16) {
         eventOverflow = true;
         return;
@@ -1820,7 +1912,9 @@ export function watchManagerDownloadConsole(context, managerId) {
   };
   context.on('serviceworker', attach);
   try {
-    for (const worker of context.serviceWorkers()) attach(worker);
+    for (const worker of context.serviceWorkers()) {
+      attach(worker);
+    }
   } catch {
     consoleUnavailable = true;
   }
@@ -1973,7 +2067,9 @@ async function runFixture(
             resourceType: route.request().resourceType(),
           },
         });
-      } else result.routeFailureOverflow += 1;
+      } else {
+        result.routeFailureOverflow += 1;
+      }
       await route.abort('blockedbyclient').catch(() => {});
     }
   };
@@ -2541,22 +2637,29 @@ export async function runUserscriptInstallation({ chromium, root, output, browse
       } catch (error) {
         errors.push(error);
       }
-    } else result.cleanup.profilePreserved = true;
+    } else {
+      result.cleanup.profilePreserved = true;
+    }
     result.cleanup.errorCount = errors.length;
     if (errors.length) {
       result.status = 'failed';
       result.cleanup.errors = errors.map(String);
     }
     await writeFile(join(output, 'installation-result.json'), JSON.stringify(result, null, 2));
-    if (primaryError && errors.length)
+    if (primaryError && errors.length) {
       // biome-ignore lint/correctness/noUnsafeFinally: Retain the primary failure together with cleanup failures in the acceptance receipt.
       throw new AggregateError(
         [primaryError, ...errors],
         'Userscript installation and cleanup failed'
       );
-    // biome-ignore lint/correctness/noUnsafeFinally: Retain the primary failure together with cleanup failures in the acceptance receipt.
-    if (errors.length) throw new AggregateError(errors, 'Userscript installation cleanup failed');
+    }
+    if (errors.length) {
+      // biome-ignore lint/correctness/noUnsafeFinally: Retain the primary failure together with cleanup failures in the acceptance receipt.
+      throw new AggregateError(errors, 'Userscript installation cleanup failed');
+    }
   }
-  if (primaryError) throw primaryError;
+  if (primaryError) {
+    throw primaryError;
+  }
   return result;
 }

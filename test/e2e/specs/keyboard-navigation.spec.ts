@@ -56,7 +56,9 @@ async function deferGalleryImages(page: Page): Promise<DeferredActiveImage> {
     fulfill: async (): Promise<void> => {
       await requested;
       const route = activeImageRoute;
-      if (!route) throw new Error('Active gallery image request was not intercepted');
+      if (!route) {
+        throw new Error('Active gallery image request was not intercepted');
+      }
       await route.fulfill({
         status: 200,
         contentType: 'image/svg+xml',
@@ -300,7 +302,9 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
               rect.top >= 0 &&
               rect.bottom <= window.innerHeight;
 
-            if (isContained) return [];
+            if (isContained) {
+              return [];
+            }
 
             return [
               control.getAttribute('aria-label') ?? control.textContent?.trim() ?? control.tagName,
@@ -315,7 +319,9 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
             const buttons = [...group.querySelectorAll('button')];
             // Layout offsets exclude the 1px hover lift applied to the last clicked button.
             const rowTops = new Set(buttons.map((button) => button.offsetTop));
-            if (rowTops.size <= 1) return [];
+            if (rowTops.size <= 1) {
+              return [];
+            }
             return [group.querySelector('legend')?.textContent?.trim() ?? 'unnamed group'];
           })
         );
@@ -351,7 +357,9 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
     const selectedTopOffset = () =>
       selectedItem.evaluate((item) => {
         const items = item.closest('[data-gallery-element="items"]');
-        if (!items) throw new Error('Missing gallery items container');
+        if (!items) {
+          throw new Error('Missing gallery items container');
+        }
         return Math.abs(
           Math.round(item.getBoundingClientRect().top - items.getBoundingClientRect().top)
         );

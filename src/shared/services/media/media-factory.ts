@@ -18,13 +18,17 @@ const HANDLE_PATTERN = /^[A-Za-z0-9_]{1,15}$/u;
 function resolveAPIMediaOwner(apiMedia: TweetMediaEntry, tweetInfo: TweetInfo) {
   const ownerId = apiMedia.tweet_id;
   const requestedId = tweetInfo.tweetId;
-  if (!TWEET_ID_PATTERN.test(ownerId) || !TWEET_ID_PATTERN.test(requestedId)) return null;
+  if (!TWEET_ID_PATTERN.test(ownerId) || !TWEET_ID_PATTERN.test(requestedId)) {
+    return null;
+  }
   const isQuoted =
     apiMedia.sourceLocation === 'quoted' &&
     apiMedia.quoteParentTweetId === requestedId &&
     apiMedia.quotedTweetId === ownerId &&
     ownerId !== requestedId;
-  if (!isQuoted && (ownerId !== requestedId || apiMedia.sourceLocation === 'quoted')) return null;
+  if (!isQuoted && (ownerId !== requestedId || apiMedia.sourceLocation === 'quoted')) {
+    return null;
+  }
   const ownerHandle = HANDLE_PATTERN.test(apiMedia.screen_name) ? apiMedia.screen_name : null;
   return {
     ownerId,
@@ -66,7 +70,9 @@ function createMediaInfoFromAPI(
 ): MediaInfo | null {
   try {
     const owner = resolveAPIMediaOwner(apiMedia, tweetInfo);
-    if (!owner || apiMedia.availability === 'unsupported-hls') return null;
+    if (!owner || apiMedia.availability === 'unsupported-hls') {
+      return null;
+    }
     const { ownerId, requestedId, isQuoted, ownerHandle, ownerUrl } = owner;
     const mediaType = apiMedia.type === 'photo' ? 'image' : 'video';
     const width = normalizeDimension(apiMedia.original_width);
@@ -142,7 +148,9 @@ export function convertAPIMediaToMediaInfo(
 
   for (let i = 0; i < apiMedias.length; i++) {
     const apiMedia = apiMedias[i];
-    if (!apiMedia) continue;
+    if (!apiMedia) {
+      continue;
+    }
 
     const mediaInfo = createMediaInfoFromAPI(apiMedia, tweetInfo, i);
     if (mediaInfo) {

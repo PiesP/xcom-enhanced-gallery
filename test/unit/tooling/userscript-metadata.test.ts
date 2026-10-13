@@ -30,7 +30,9 @@ function userscriptBundle(root: string, isDev: boolean): { code: string } {
     baseConfig: USERSCRIPT_CONFIG,
   });
   const hook = plugin.generateBundle;
-  if (typeof hook !== 'function') throw new Error('Missing userscript bundle hook');
+  if (typeof hook !== 'function') {
+    throw new Error('Missing userscript bundle hook');
+  }
   const chunk = { type: 'chunk', isEntry: true, code: '(()=>{return 7;})();' };
   Reflect.apply(hook, undefined, [{}, { 'x.user.js': chunk }]);
   return chunk;
@@ -101,7 +103,9 @@ describe('userscript release metadata provenance', () => {
         baseConfig: USERSCRIPT_CONFIG,
       });
       const hook = plugin.generateBundle;
-      if (typeof hook !== 'function') throw new Error('Missing userscript bundle hook');
+      if (typeof hook !== 'function') {
+        throw new Error('Missing userscript bundle hook');
+      }
       const chunk = { type: 'chunk', isEntry: true, code: 'original code' };
       expect(() => Reflect.apply(hook, undefined, [{}, { 'x.user.js': chunk }])).toThrow(
         /LICENSES\/xcom-enhanced-gallery-MIT\.txt.*missing or invalid/u

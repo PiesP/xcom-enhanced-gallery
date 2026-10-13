@@ -31,10 +31,14 @@ export function getUserCancelledAbortErrorFromSignal(signal?: AbortSignal): DOME
   const reason = signal?.reason;
 
   if (reason instanceof DOMException) {
-    if (reason.name === 'TimeoutError' || isUserCancelledAbortError(reason)) return reason;
+    if (reason.name === 'TimeoutError' || isUserCancelledAbortError(reason)) {
+      return reason;
+    }
   }
   if (reason instanceof Error) {
-    if (reason.name === 'TimeoutError' || isUserCancelledAbortError(reason)) return reason;
+    if (reason.name === 'TimeoutError' || isUserCancelledAbortError(reason)) {
+      return reason;
+    }
   }
 
   return createUserCancelledAbortError(reason);
@@ -43,8 +47,12 @@ export function getUserCancelledAbortErrorFromSignal(signal?: AbortSignal): DOME
 export function getAbortReasonOrAbortErrorFromSignal(signal?: AbortSignal): DOMException | Error {
   const reason = signal?.reason;
 
-  if (reason instanceof DOMException) return reason;
-  if (reason instanceof Error) return reason;
+  if (reason instanceof DOMException) {
+    return reason;
+  }
+  if (reason instanceof Error) {
+    return reason;
+  }
 
   return createAbortError('This operation was aborted', reason);
 }

@@ -47,11 +47,17 @@ function parseStoredRecords(
 ): { records: Map<string, PersistedDownloadRecord>; needsPersistence: boolean } {
   const records = new Map<string, PersistedDownloadRecord>();
   let needsPersistence = false;
-  if (!isRecord(value)) return { records, needsPersistence };
+  if (!isRecord(value)) {
+    return { records, needsPersistence };
+  }
 
   for (const [requestId, rawRecord] of Object.entries(value)) {
-    if (!requestId || !isRecord(rawRecord)) continue;
-    if (typeof rawRecord.cancellationRequested !== 'boolean') continue;
+    if (!requestId || !isRecord(rawRecord)) {
+      continue;
+    }
+    if (typeof rawRecord.cancellationRequested !== 'boolean') {
+      continue;
+    }
 
     const downloadId = rawRecord.downloadId;
     if (
@@ -62,7 +68,9 @@ function parseStoredRecords(
     }
 
     const route = rawRecord.route;
-    if (route !== undefined && route !== 'direct') continue;
+    if (route !== undefined && route !== 'direct') {
+      continue;
+    }
     if (route === 'direct') {
       if (
         typeof rawRecord.ownerTabId !== 'number' ||
@@ -116,7 +124,9 @@ function parseStoredRecords(
         rawCancellationRequestedAt >= 0);
     if (!hasValidCancellationRequestedAt) {
       needsPersistence = true;
-      if (downloadId === undefined && rawRecord.cancellationRequested) continue;
+      if (downloadId === undefined && rawRecord.cancellationRequested) {
+        continue;
+      }
     }
 
     let cancellationRequestedAt = hasValidCancellationRequestedAt
@@ -206,7 +216,9 @@ export class DownloadTrackingStore {
       }
 
       await this.loadFromStorage();
-      if (this.dirty) await this.persist();
+      if (this.dirty) {
+        await this.persist();
+      }
       return this.entries();
     });
   }
@@ -243,16 +255,20 @@ export class DownloadTrackingStore {
           current.route !== 'direct' ||
           current.ownerTabId !== ownerTabId ||
           current.urlHash !== urlHash
-        )
+        ) {
           return 'wrong-owner';
-        if (current.terminalState !== undefined || current.downloadId !== undefined)
+        }
+        if (current.terminalState !== undefined || current.downloadId !== undefined) {
           return 'existing';
+        }
         return current.cancellationRequested ? 'cancelled' : 'existing';
       }
       const directCount = [...this.records.values()].filter(
         (record) => record.route === 'direct'
       ).length;
-      if (directCount >= MAX_DIRECT_RECORDS) return 'capacity';
+      if (directCount >= MAX_DIRECT_RECORDS) {
+        return 'capacity';
+      }
       this.records.set(requestId, {
         route: 'direct',
         ownerTabId,
@@ -291,8 +307,9 @@ export class DownloadTrackingStore {
         current.urlHash !== urlHash ||
         current.terminalState !== undefined ||
         current.downloadId !== undefined
-      )
+      ) {
         return undefined;
+      }
       const updated = { ...current, downloadId };
       this.records.set(requestId, updated);
       await this.persist();
@@ -314,14 +331,19 @@ export class DownloadTrackingStore {
         (current.route !== 'direct' ||
           current.ownerTabId !== ownerTabId ||
           current.urlHash !== urlHash)
-      )
+      ) {
         return false;
-      if (current?.terminalState !== undefined) return true;
+      }
+      if (current?.terminalState !== undefined) {
+        return true;
+      }
       if (current === undefined) {
         const directCount = [...this.records.values()].filter(
           (record) => record.route === 'direct'
         ).length;
-        if (directCount >= MAX_DIRECT_RECORDS) return false;
+        if (directCount >= MAX_DIRECT_RECORDS) {
+          return false;
+        }
       }
       this.records.set(requestId, {
         ...current,
@@ -341,7 +363,9 @@ export class DownloadTrackingStore {
     await this.enqueue(async () => {
       await this.ensureLoaded();
       const current = this.records.get(requestId);
-      if (current?.route !== 'direct' || current.terminalState !== undefined) return;
+      if (current?.route !== 'direct' || current.terminalState !== undefined) {
+        return;
+      }
       this.records.set(requestId, { ...current, terminalState, terminalAt: this.now() });
       await this.persist();
     });
@@ -390,7 +414,9 @@ export class DownloadTrackingStore {
   async remove(requestId: string): Promise<void> {
     await this.enqueue(async () => {
       await this.ensureLoaded();
-      if (!this.records.delete(requestId)) return;
+      if (!this.records.delete(requestId)) {
+        return;
+      }
       await this.persist();
     });
   }
@@ -398,7 +424,9 @@ export class DownloadTrackingStore {
   private pruneDirectRecords(): void {
     const now = this.now();
     for (const [requestId, record] of this.records) {
-      if (record.route !== 'direct') continue;
+      if (record.route !== 'direct') {
+        continue;
+      }
       const expiredTerminal =
         record.terminalAt !== undefined && now - record.terminalAt >= DIRECT_TERMINAL_TTL_MS;
       const expiredUnassigned =
@@ -413,8 +441,12 @@ export class DownloadTrackingStore {
   }
 
   private async ensureLoaded(): Promise<void> {
-    if (!this.loaded) await this.loadFromStorage();
-    if (this.dirty) await this.persist();
+    if (!this.loaded) {
+      await this.loadFromStorage();
+    }
+    if (this.dirty) {
+      await this.persist();
+    }
   }
 
   private async loadFromStorage(): Promise<void> {

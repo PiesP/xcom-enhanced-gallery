@@ -26,7 +26,9 @@ function compare(left: unknown, right: unknown): number {
   const a = version(left);
   const b = version(right);
   for (let index = 0; index < 3; index++) {
-    if (a[index] !== b[index]) return (a[index] ?? 0n) > (b[index] ?? 0n) ? 1 : -1;
+    if (a[index] !== b[index]) {
+      return (a[index] ?? 0n) > (b[index] ?? 0n) ? 1 : -1;
+    }
   }
   return 0;
 }
@@ -59,28 +61,40 @@ export async function verifyPublication(
   }
   git(['merge-base', '--is-ancestor', sha, workflowSha]);
   const manifest = record(JSON.parse(git(['show', `${sha}:package.json`])));
-  if (manifest.version !== tag.slice(1)) throw new Error('Tag and source version differ');
+  if (manifest.version !== tag.slice(1)) {
+    throw new Error('Tag and source version differ');
+  }
   sourceMetadata(bundleMetadata, tag, sha);
 
   const published: Record<string, unknown>[] = [];
   for (let page = 1; ; page++) {
     const releases = await readApi(`/releases?per_page=100&page=${page}`);
-    if (!Array.isArray(releases)) throw new Error('Release listing is unavailable or malformed');
+    if (!Array.isArray(releases)) {
+      throw new Error('Release listing is unavailable or malformed');
+    }
     for (const item of releases) {
       const release = record(item);
       if (typeof release.draft !== 'boolean' || typeof release.prerelease !== 'boolean') {
         throw new Error('Release state is malformed');
       }
-      if (release.draft || release.prerelease) continue;
+      if (release.draft || release.prerelease) {
+        continue;
+      }
       version(release.tag_name);
       published.push(release);
     }
-    if (releases.length < 100) break;
-    if (page === 20) throw new Error('Release history exceeds the bounded publication check');
+    if (releases.length < 100) {
+      break;
+    }
+    if (page === 20) {
+      throw new Error('Release history exceeds the bounded publication check');
+    }
   }
   const latestValue = await readApi('/releases/latest');
   if (published.length === 0) {
-    if (latestValue !== null) throw new Error('First-release state is conflicting');
+    if (latestValue !== null) {
+      throw new Error('First-release state is conflicting');
+    }
   } else {
     const latest = record(latestValue);
     version(latest.tag_name);
@@ -92,14 +106,18 @@ export async function verifyPublication(
       throw new Error('Latest release state is conflicting');
     }
     for (const release of published) {
-      if (compare(tag, release.tag_name) < 0) throw new Error('Historical publication is refused');
+      if (compare(tag, release.tag_name) < 0) {
+        throw new Error('Historical publication is refused');
+      }
     }
   }
 
   const targetValue = await readApi(`/releases/tags/${tag}`);
   const existing = published.filter((item) => item.tag_name === tag);
   if (targetValue === null) {
-    if (existing.length !== 0) throw new Error('Requested release state changed during validation');
+    if (existing.length !== 0) {
+      throw new Error('Requested release state changed during validation');
+    }
     return { publish: true, makeLatest: true };
   }
   const target = record(targetValue);
@@ -112,7 +130,9 @@ export async function verifyPublication(
   ) {
     throw new Error('Existing draft, archive, or conflicting release requires maintainer review');
   }
-  if (!Array.isArray(target.assets)) throw new Error('Existing release assets are unavailable');
+  if (!Array.isArray(target.assets)) {
+    throw new Error('Existing release assets are unavailable');
+  }
   const assets = target.assets.map(record);
   for (const name of [
     'xcom-enhanced-gallery.user.js',
@@ -128,8 +148,9 @@ export async function verifyPublication(
       typeof matches[0]?.size !== 'number' ||
       matches[0].size <= 0 ||
       matches[0].state !== 'uploaded'
-    )
+    ) {
       throw new Error('Existing release is incomplete');
+    }
   }
   const metadata = assets.find((asset) => asset.name === 'metadata.json');
   if (!Number.isSafeInteger(metadata?.id) || Number(metadata?.id) <= 0) {
@@ -163,9 +184,12 @@ if (process.argv[1] && resolve(process.argv[1]) === import.meta.filename) {
         },
         signal: AbortSignal.timeout(30_000),
       });
-      if (response.status === 404) return null;
-      if (!response.ok)
+      if (response.status === 404) {
+        return null;
+      }
+      if (!response.ok) {
         throw new Error(`GitHub publication state request failed: HTTP ${response.status}`);
+      }
       return response.json();
     }
   );

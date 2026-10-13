@@ -65,18 +65,24 @@ const WORD_SEPARATORS: readonly string[] = ['-', '_', ' '];
  * tokens, then checks membership in O(1) per token instead of O(n*m) scanning.
  */
 function containsControlToken(value: string | null, tokens: readonly string[]): boolean {
-  if (!value) return false;
+  if (!value) {
+    return false;
+  }
   const normalized = value.toLowerCase();
 
   // Fast exact match against full string
-  if ((tokens as readonly string[]).includes(normalized)) return true;
+  if ((tokens as readonly string[]).includes(normalized)) {
+    return true;
+  }
 
   // Pre-tokenize the input into word-boundary-delimited segments
   const valueTokens = new Set<string>();
   // Split on word separators and add each segment
   const parts = normalized.split(/[-_\s]+/);
   for (const part of parts) {
-    if (part) valueTokens.add(part);
+    if (part) {
+      valueTokens.add(part);
+    }
   }
 
   // Also add the full normalized string and substrings between separators
@@ -85,14 +91,18 @@ function containsControlToken(value: string | null, tokens: readonly string[]): 
   return tokens.some((token) => {
     const tokenLower = token.toLowerCase();
     // O(1) Set lookup for exact token match
-    if (valueTokens.has(tokenLower)) return true;
+    if (valueTokens.has(tokenLower)) {
+      return true;
+    }
 
     // Fallback: check word-boundary substring match for compound identifiers
     // without separators (e.g., "volumeslider" should match "volume")
     let searchIndex = 0;
     while (searchIndex < normalized.length) {
       const foundIndex = normalized.indexOf(tokenLower, searchIndex);
-      if (foundIndex === -1) break;
+      if (foundIndex === -1) {
+        break;
+      }
 
       const beforeOk =
         foundIndex === 0 || WORD_SEPARATORS.includes(normalized[foundIndex - 1] ?? '');
@@ -100,7 +110,9 @@ function containsControlToken(value: string | null, tokens: readonly string[]): 
       const afterOk =
         afterEnd >= normalized.length || WORD_SEPARATORS.includes(normalized[afterEnd] ?? '');
 
-      if (beforeOk && afterOk) return true;
+      if (beforeOk && afterOk) {
+        return true;
+      }
 
       searchIndex = foundIndex + 1;
     }
@@ -164,23 +176,37 @@ export function isGalleryRecoveryActive(): boolean {
  *   (these are typically overlay areas, poster images, or dead space)
  */
 function isVideoControlElement(element: HTMLElement | null): boolean {
-  if (!isHTMLElement(element)) return false;
+  if (!isHTMLElement(element)) {
+    return false;
+  }
 
   // <video> itself is the media area, not a control — allow gallery launch.
   const tagName = element.tagName.toLowerCase();
-  if (tagName === 'video') return false;
+  if (tagName === 'video') {
+    return false;
+  }
 
-  if (typeof element.matches !== 'function') return false;
+  if (typeof element.matches !== 'function') {
+    return false;
+  }
 
-  if (matchesVideoControlSelectors(element)) return true;
+  if (matchesVideoControlSelectors(element)) {
+    return true;
+  }
 
   const dataTestId = getNearestAttributeValue(element, 'data-testid');
-  if (containsControlToken(dataTestId, VIDEO_CONTROL_DATASET_PREFIXES)) return true;
+  if (containsControlToken(dataTestId, VIDEO_CONTROL_DATASET_PREFIXES)) {
+    return true;
+  }
 
   const ariaLabel = getNearestAttributeValue(element, 'aria-label');
-  if (containsControlToken(ariaLabel, VIDEO_CONTROL_ARIA_TOKENS)) return true;
+  if (containsControlToken(ariaLabel, VIDEO_CONTROL_ARIA_TOKENS)) {
+    return true;
+  }
 
-  if (!isWithinVideoPlayer(element)) return false;
+  if (!isWithinVideoPlayer(element)) {
+    return false;
+  }
 
   const role = element.getAttribute('role');
   if (
@@ -190,7 +216,9 @@ function isVideoControlElement(element: HTMLElement | null): boolean {
     return true;
   }
 
-  if (element.matches('input[type="range"]')) return true;
+  if (element.matches('input[type="range"]')) {
+    return true;
+  }
 
   // Inside video player context but no explicit control tokens detected.
   // This is the video media area, poster, or overlay — allow gallery launch.
@@ -218,10 +246,14 @@ function isVideoControlEvent(
   element: HTMLElement | null,
   getComposedPath?: () => EventTarget[]
 ): boolean {
-  if (!isHTMLElement(element)) return false;
+  if (!isHTMLElement(element)) {
+    return false;
+  }
 
   // Fast path: check the element itself first
-  if (isVideoControlElement(element)) return true;
+  if (isVideoControlElement(element)) {
+    return true;
+  }
 
   // Check composed path if provided (covers Shadow DOM and nested components)
   if (typeof getComposedPath === 'function') {
@@ -229,11 +261,17 @@ function isVideoControlEvent(
       const path = getComposedPath();
       if (Array.isArray(path)) {
         for (const pathTarget of path) {
-          if (!(pathTarget instanceof HTMLElement)) continue;
+          if (!(pathTarget instanceof HTMLElement)) {
+            continue;
+          }
           // Stop if we leave the video player context — no need to check further
-          if (!isWithinVideoPlayer(pathTarget)) break;
+          if (!isWithinVideoPlayer(pathTarget)) {
+            break;
+          }
           // Check if this path element is a recognized video control UI
-          if (isVideoControlElement(pathTarget)) return true;
+          if (isVideoControlElement(pathTarget)) {
+            return true;
+          }
         }
       }
     } catch {
@@ -262,7 +300,9 @@ export function isVideoClickAllowed(
   getComposedPath: (() => EventTarget[]) | undefined,
   mode: VideoClickMode
 ): boolean {
-  if (!isHTMLElement(element)) return true;
+  if (!isHTMLElement(element)) {
+    return true;
+  }
 
   switch (mode) {
     case 'allow-all':
@@ -293,7 +333,9 @@ function isAnyInVideoPlayerPath(
   element: HTMLElement,
   getComposedPath: (() => EventTarget[]) | undefined
 ): boolean {
-  if (isWithinVideoPlayer(element)) return true;
+  if (isWithinVideoPlayer(element)) {
+    return true;
+  }
 
   if (typeof getComposedPath === 'function') {
     try {
@@ -317,7 +359,9 @@ function isAnyInVideoPlayerPath(
  * Check if element is inside the gallery UI.
  */
 export function isGalleryInternalElement(element: Element | null): boolean {
-  if (!(element instanceof Element)) return false;
+  if (!(element instanceof Element)) {
+    return false;
+  }
   if (typeof element.matches !== 'function') {
     if (__DEV__) {
       logger.warn('Invalid element: matches is not a function', element);

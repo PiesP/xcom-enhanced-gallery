@@ -65,7 +65,9 @@ async function waitForValue(readValue, description, timeoutMs = 15_000) {
   let lastValue;
   while (Date.now() < deadline) {
     lastValue = await readValue();
-    if (lastValue !== undefined) return lastValue;
+    if (lastValue !== undefined) {
+      return lastValue;
+    }
     await delay(50);
   }
   throw new Error(`Timed out waiting for ${description}: ${JSON.stringify(lastValue)}`);
@@ -77,7 +79,9 @@ function safeError(error, depth = 0) {
     rawSummary.length > MAX_ERROR_SUMMARY_LENGTH
       ? `${rawSummary.slice(0, MAX_ERROR_SUMMARY_LENGTH)}...`
       : rawSummary;
-  if (!(error instanceof AggregateError) || depth >= MAX_AGGREGATE_DEPTH) return summary;
+  if (!(error instanceof AggregateError) || depth >= MAX_AGGREGATE_DEPTH) {
+    return summary;
+  }
 
   const nestedErrors = Array.from(error.errors);
   const details = nestedErrors
@@ -125,7 +129,9 @@ async function pathExists(path) {
   return stat(path).then(
     () => true,
     (error) => {
-      if (error.code === 'ENOENT') return false;
+      if (error.code === 'ENOENT') {
+        return false;
+      }
       throw error;
     }
   );
@@ -236,7 +242,9 @@ async function createServiceWorkerObserver(browserCdp, pageCdp) {
         runningStatus === 'running'
     );
     const target = targets.find(({ targetId }) => targetId === runningEvent?.targetId);
-    if (!runningEvent || !target) return undefined;
+    if (!runningEvent || !target) {
+      return undefined;
+    }
     if (versions.get(runningEvent.versionId)?.sequence !== runningEvent.sequence) {
       return undefined;
     }
@@ -263,9 +271,15 @@ async function createServiceWorkerObserver(browserCdp, pageCdp) {
           (candidate) => candidate.runningStatus === 'running'
         );
         const target = targets.find(({ targetId }) => targetId === version?.targetId);
-        if (!version) return undefined;
-        if (versions.get(version.versionId)?.sequence !== version.sequence) return undefined;
-        if (!target) return undefined;
+        if (!version) {
+          return undefined;
+        }
+        if (versions.get(version.versionId)?.sequence !== version.sequence) {
+          return undefined;
+        }
+        if (!target) {
+          return undefined;
+        }
         return {
           lifecycle: structuredClone(version),
           target: structuredClone(target),
@@ -289,7 +303,9 @@ async function createServiceWorkerObserver(browserCdp, pageCdp) {
             runningStatus === 'stopped'
         );
         const observedCreatedTargetIds = createdTargetIds(extensionId);
-        if (!stoppedEvent) return undefined;
+        if (!stoppedEvent) {
+          return undefined;
+        }
         return {
           createdEventCount: stopCreatedTargetIds.length,
           createdTargetIds: stopCreatedTargetIds,
@@ -368,7 +384,9 @@ export async function enableDeveloperMode(context, browserName) {
     await page.goto(browserName === 'msedge' ? 'edge://extensions/' : 'chrome://extensions/');
     const toggle = page.locator(browserName === 'msedge' ? '#dev-switch:visible' : '#devMode');
     await toggle.waitFor({ state: 'visible' });
-    if (!(await toggle.evaluate((element) => element.checked))) await toggle.click();
+    if (!(await toggle.evaluate((element) => element.checked))) {
+      await toggle.click();
+    }
     assert(
       await toggle.evaluate((element) => element.checked),
       'Extension developer mode is disabled'
@@ -528,7 +546,9 @@ async function installFixtureRoutes(context, root, images, displayImages) {
           transportSettledAtMonotonicMs: null,
         };
         delayedRequests.set(route.request(), record);
-        if (rapidResponse) record.status = 200;
+        if (rapidResponse) {
+          record.status = 200;
+        }
         quotedApiResponses.push(record);
         assert(
           delayedFailureGate?.tweetId === tweetId,
@@ -543,7 +563,9 @@ async function installFixtureRoutes(context, root, images, displayImages) {
           });
           record.fulfilledAtMonotonicMs = performance.now();
         } catch (error) {
-          if (tweetId !== DELAYED_NAVIGATION_ID && tweetId !== RAPID_CLICK_A) throw error;
+          if (tweetId !== DELAYED_NAVIGATION_ID && tweetId !== RAPID_CLICK_A) {
+            throw error;
+          }
           record.abortedAfterNavigation = true;
         } finally {
           record.routeSettledAtMonotonicMs = performance.now();
@@ -603,7 +625,9 @@ async function installFixtureRoutes(context, root, images, displayImages) {
         if (sequenceRouteActive) {
           if (unavailableApiResponses.length < MAX_UNAVAILABLE_API_RECORDS) {
             unavailableApiResponses.push(record);
-          } else unavailableApiOverflow += 1;
+          } else {
+            unavailableApiOverflow += 1;
+          }
         }
         await route.fulfill({
           status: 200,
@@ -898,7 +922,9 @@ async function verifyTrustedDownloadInput({
           filenameGate: { downloadId: null, status: 'waiting' },
         };
         const listener = (item) => {
-          if (oldIds.includes(item.id) || item.url !== sourceUrl) return;
+          if (oldIds.includes(item.id) || item.url !== sourceUrl) {
+            return;
+          }
           if (state.downloadId !== null) {
             state.duplicates += 1;
             return;
@@ -929,7 +955,9 @@ async function verifyTrustedDownloadInput({
           return true;
         };
         const releaseFilename = () => {
-          if (!pendingSuggestion) return;
+          if (!pendingSuggestion) {
+            return;
+          }
           const suggest = pendingSuggestion;
           pendingSuggestion = undefined;
           state.filenameGate.status = 'released';
@@ -968,7 +996,9 @@ async function verifyTrustedDownloadInput({
     await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download"]').click();
     const control = await waitForValue(async () => {
       const value = await extensionPage.evaluate(() => globalThis.__xegIngressPause.state);
-      if (value.pause.startsWith('rejected:')) throw new Error(value.pause);
+      if (value.pause.startsWith('rejected:')) {
+        throw new Error(value.pause);
+      }
       return Number.isInteger(value.downloadId) &&
         value.pause === 'fulfilled' &&
         value.filenameGate.status === 'held' &&
@@ -987,7 +1017,9 @@ async function verifyTrustedDownloadInput({
             const matches = Object.entries(records).filter(
               ([, record]) => record.downloadId === id
             );
-            if (matches.length > 1) throw new Error('Ambiguous native request ownership');
+            if (matches.length > 1) {
+              throw new Error('Ambiguous native request ownership');
+            }
             return matches[0] ? { requestId: matches[0][0], record: matches[0][1] } : undefined;
           },
           { id: downloadId, key: DOWNLOAD_TRACKING_STORAGE_KEY }
@@ -998,7 +1030,9 @@ async function verifyTrustedDownloadInput({
     const before = await waitForValue(async () => {
       const state = await readMv3LifecycleState(extensionPage, requestId, downloadId);
       evidence.precondition = state;
-      if (!state.download) return undefined;
+      if (!state.download) {
+        return undefined;
+      }
       if (state.download.state !== 'in_progress') {
         throw new Error('Owned download ended before synthetic input');
       }
@@ -1006,8 +1040,9 @@ async function verifyTrustedDownloadInput({
         state.download.totalBytes !== images[0].length ||
         !Number.isInteger(state.download.bytesReceived) ||
         state.download.bytesReceived < 0
-      )
+      ) {
         return undefined;
+      }
       assert(state.download.bytesReceived < images[0].length);
       return state.download.paused === true ? state : undefined;
     }, 'paused native download metadata while filename completion is gated');
@@ -1044,15 +1079,17 @@ async function verifyTrustedDownloadInput({
               cancelable: true,
             })
           );
-        } else if (kind === 'outside') document.body.click();
-        else if (kind === 'backdrop')
+        } else if (kind === 'outside') {
+          document.body.click();
+        } else if (kind === 'backdrop') {
           document.querySelector('[data-gallery-element="items"]')?.click();
-        else {
+        } else {
           const button = document.querySelector(
             `[data-gallery-element="toolbar"] button[aria-label="${kind === 'download' ? 'Download' : 'Close'}"]`
           );
-          if (!(button instanceof HTMLButtonElement))
+          if (!(button instanceof HTMLButtonElement)) {
             throw new Error('Missing actual toolbar button');
+          }
           if (kind === 'reparented-close') {
             const parent = button.parentNode;
             const next = button.nextSibling;
@@ -1062,7 +1099,9 @@ async function verifyTrustedDownloadInput({
             } finally {
               parent.insertBefore(button, next);
             }
-          } else button.click();
+          } else {
+            button.click();
+          }
         }
       }, input);
       await delay(150);
@@ -1182,8 +1221,12 @@ async function verifyTrustedDownloadInput({
         await extensionPage.evaluate(
           async ({ id, sourceUrl }) => {
             const [item] = await chrome.downloads.search({ id });
-            if (item?.url !== sourceUrl) throw new Error('Owned download URL mismatch');
-            if (item.state === 'in_progress') await chrome.downloads.cancel(id);
+            if (item?.url !== sourceUrl) {
+              throw new Error('Owned download URL mismatch');
+            }
+            if (item.state === 'in_progress') {
+              await chrome.downloads.cancel(id);
+            }
           },
           { id: downloadId, sourceUrl }
         );
@@ -1215,7 +1258,9 @@ async function verifyTrustedDownloadInput({
       nativeLoopback.releaseHold();
       evidence.cleanup.heldResponseReleased = true;
       for (const entry of await readdir(downloads)) {
-        if (initialFiles.has(entry)) continue;
+        if (initialFiles.has(entry)) {
+          continue;
+        }
         const candidate = resolve(downloads, entry);
         assert.equal(dirname(candidate), resolve(downloads));
         await rm(candidate, { recursive: true, force: true });
@@ -1225,14 +1270,17 @@ async function verifyTrustedDownloadInput({
       cleanupErrors.push(error);
     }
     evidence.cleanup.errorCount = cleanupErrors.length;
-    if (cleanupErrors.length) evidence.cleanup.errors = cleanupErrors.map(safeError);
+    if (cleanupErrors.length) {
+      evidence.cleanup.errors = cleanupErrors.map(safeError);
+    }
   }
   const errors = [...(primaryError ? [primaryError] : []), ...cleanupErrors];
-  if (errors.length)
+  if (errors.length) {
     throw new AggregateError(
       errors,
       `Trusted input validation/cleanup failed: ${errors.map(safeError).join('; ')}`
     );
+  }
 }
 
 async function verifyDirectRestartCancellation({
@@ -1284,15 +1332,20 @@ async function verifyDirectRestartCancellation({
       ({ knownIds, url }) => {
         const state = { downloadId: null, duplicateEvents: 0, events: [] };
         const listener = (item) => {
-          if (knownIds.includes(item.id) || item.url !== url) return;
+          if (knownIds.includes(item.id) || item.url !== url) {
+            return;
+          }
           state.events.push({
             id: item.id,
             state: item.state,
             bytesReceived: item.bytesReceived,
             totalBytes: item.totalBytes,
           });
-          if (state.downloadId !== null) state.duplicateEvents += 1;
-          else state.downloadId = item.id;
+          if (state.downloadId !== null) {
+            state.duplicateEvents += 1;
+          } else {
+            state.downloadId = item.id;
+          }
         };
         globalThis.__xegDirectRestartObserver = { state, listener };
         chrome.downloads.onCreated.addListener(listener);
@@ -1340,7 +1393,9 @@ async function verifyDirectRestartCancellation({
             const matches = Object.entries(records).filter(
               ([, record]) => record.route === 'direct' && record.downloadId === id
             );
-            if (matches.length > 1) throw new Error('Ambiguous direct request binding');
+            if (matches.length > 1) {
+              throw new Error('Ambiguous direct request binding');
+            }
             return matches[0] ? { requestId: matches[0][0], record: matches[0][1] } : undefined;
           },
           { id: downloadId, key: DOWNLOAD_TRACKING_STORAGE_KEY }
@@ -1362,8 +1417,9 @@ async function verifyDirectRestartCancellation({
           state.download?.state !== 'in_progress' ||
           state.download.totalBytes !== images[0].length ||
           basename(state.download.filename) !== filename
-        )
+        ) {
           return undefined;
+        }
         assertDownloadIncomplete(state.download, 'direct transfer before Worker stop');
         return state;
       },
@@ -1562,17 +1618,23 @@ async function verifyDirectRestartCancellation({
         const cleaned = await extensionPage.evaluate(
           async ({ id, url }) => {
             let [download] = await chrome.downloads.search({ id });
-            if (download?.url !== url) throw new Error('Direct cleanup owner changed');
-            if (download.state === 'in_progress') await chrome.downloads.cancel(id);
+            if (download?.url !== url) {
+              throw new Error('Direct cleanup owner changed');
+            }
+            if (download.state === 'in_progress') {
+              await chrome.downloads.cancel(id);
+            }
             const deadline = Date.now() + 5_000;
             while (download.state === 'in_progress' && Date.now() < deadline) {
               await new Promise((resolveDelay) => setTimeout(resolveDelay, 50));
               [download] = await chrome.downloads.search({ id });
-              if (!download || download.url !== url)
+              if (!download || download.url !== url) {
                 throw new Error('Direct cleanup owner disappeared');
+              }
             }
-            if (download.state === 'in_progress')
+            if (download.state === 'in_progress') {
               throw new Error('Direct cleanup did not reach terminal state');
+            }
             const erased = await chrome.downloads.erase({ id });
             if (!erased.includes(id) || (await chrome.downloads.search({ id })).length) {
               throw new Error('Direct cleanup history remained');
@@ -1608,11 +1670,12 @@ async function verifyDirectRestartCancellation({
     ).catch((error) => cleanupErrors.push(error));
   }
   const errors = [...(primaryError ? [primaryError] : []), ...cleanupErrors];
-  if (errors.length)
+  if (errors.length) {
     throw new AggregateError(
       errors,
       `Direct restart validation/cleanup failed: ${errors.map(safeError).join('; ')}`
     );
+  }
 }
 
 async function verifyMv3RestartCancellation({
@@ -1653,7 +1716,9 @@ async function verifyMv3RestartCancellation({
       chunk.fill(0x58);
       const parts = Array.from({ length: bytes / chunk.byteLength }, () => chunk);
       const blob = new Blob(parts, { type: 'application/octet-stream' });
-      if (blob.size !== bytes) throw new Error(`Unexpected fixture Blob size: ${blob.size}`);
+      if (blob.size !== bytes) {
+        throw new Error(`Unexpected fixture Blob size: ${blob.size}`);
+      }
       const url = URL.createObjectURL(blob);
       globalThis.__xegMv3RestartBlobUrl = url;
       return { size: blob.size, url };
@@ -1671,7 +1736,9 @@ async function verifyMv3RestartCancellation({
         pause: { status: 'waiting' },
       };
       const listener = (download) => {
-        if (download.url !== ownedUrl) return;
+        if (download.url !== ownedUrl) {
+          return;
+        }
         state.events.push({
           bytesReceived: download.bytesReceived,
           filename:
@@ -1767,7 +1834,9 @@ async function verifyMv3RestartCancellation({
         state.download.totalBytes === MV3_RESTART_BLOB_BYTES &&
         typeof state.download.filename === 'string' &&
         basename(state.download.filename) === filename;
-      if (!ready) return undefined;
+      if (!ready) {
+        return undefined;
+      }
       assertDownloadIncomplete(state.download, 'before worker stop');
       return state;
     }, 'paused in-progress Chrome download before worker stop');
@@ -1894,7 +1963,9 @@ async function verifyMv3RestartCancellation({
         'Cancellation response and service worker restart observation failed'
       );
     }
-    if (cancellationFailures.length === 1) throw cancellationFailures[0];
+    if (cancellationFailures.length === 1) {
+      throw cancellationFailures[0];
+    }
     const cancellationResponse = cancellationResult.value;
     const newWorker = workerResult.value;
     assert.deepEqual(cancellationResponse, { success: true });
@@ -1922,7 +1993,9 @@ async function verifyMv3RestartCancellation({
     assert.equal(fileSystemFileExists, false);
     const originalRequestOutcome = await extensionPage.evaluate(async (timeoutMs) => {
       const outcome = globalThis.__xegMv3RestartStart;
-      if (!outcome) return { status: 'missing' };
+      if (!outcome) {
+        return { status: 'missing' };
+      }
       return Promise.race([
         outcome,
         new Promise((resolveOutcome) => {
@@ -2039,7 +2112,9 @@ async function verifyMv3RestartCancellation({
             const deadline = Date.now() + 10_000;
             while (Date.now() < deadline) {
               [download] = await chrome.downloads.search({ id });
-              if (download === undefined || download.state !== 'in_progress') break;
+              if (download === undefined || download.state !== 'in_progress') {
+                break;
+              }
               await new Promise((resolveDelay) => setTimeout(resolveDelay, 50));
             }
           }
@@ -2063,7 +2138,9 @@ async function verifyMv3RestartCancellation({
         async ({ trackingKey, trackedRequestId }) => {
           const stored = await chrome.storage.local.get(trackingKey);
           const records = stored[trackingKey];
-          if (!records || !Object.hasOwn(records, trackedRequestId)) return;
+          if (!records || !Object.hasOwn(records, trackedRequestId)) {
+            return;
+          }
           const nextRecords = { ...records };
           delete nextRecords[trackedRequestId];
           await chrome.storage.local.set({ [trackingKey]: nextRecords });
@@ -2081,7 +2158,9 @@ async function verifyMv3RestartCancellation({
       evidence.cleanup.pauseListener = await extensionPage.evaluate(() => {
         const control = globalThis.__xegMv3PauseControl;
         const state = control ? structuredClone(control.state) : null;
-        if (control) chrome.downloads.onCreated.removeListener(control.listener);
+        if (control) {
+          chrome.downloads.onCreated.removeListener(control.listener);
+        }
         delete globalThis.__xegMv3PauseControl;
         delete globalThis.__xegMv3RestartStart;
         return {
@@ -2119,7 +2198,9 @@ async function verifyMv3RestartCancellation({
     try {
       const currentFiles = await readdir(downloads);
       for (const entry of currentFiles) {
-        if (initialFiles.has(entry)) continue;
+        if (initialFiles.has(entry)) {
+          continue;
+        }
         const candidate = resolve(downloads, entry);
         assert.equal(
           dirname(candidate),
@@ -2133,7 +2214,9 @@ async function verifyMv3RestartCancellation({
       cleanupErrors.push(error);
     }
     evidence.cleanup.errorCount = cleanupErrors.length;
-    if (cleanupErrors.length) evidence.cleanup.errors = cleanupErrors.map(safeError);
+    if (cleanupErrors.length) {
+      evidence.cleanup.errors = cleanupErrors.map(safeError);
+    }
   }
 
   const combinedErrors = [...(primarySeen ? [primaryError] : []), ...cleanupErrors];
@@ -2143,15 +2226,21 @@ async function verifyMv3RestartCancellation({
       `MV3 restart validation and cleanup failed: ${combinedErrors.map(safeError).join('; ')}`
     );
   }
-  if (primarySeen) throw primaryError;
-  if (cleanupErrors.length) throw cleanupErrors[0];
+  if (primarySeen) {
+    throw primaryError;
+  }
+  if (cleanupErrors.length) {
+    throw cleanupErrors[0];
+  }
   return evidence;
 }
 
 async function verifyPackagedIcons(extensionPage) {
   const icons = await extensionPage.evaluate(async () => {
     const declarations = Object.entries(chrome.runtime.getManifest().icons ?? {});
-    if (!declarations.length) throw new Error('Installed extension manifest has no icons');
+    if (!declarations.length) {
+      throw new Error('Installed extension manifest has no icons');
+    }
 
     return Promise.all(
       declarations.map(async ([size, path]) => {
@@ -2273,8 +2362,12 @@ async function verifyDefaultNotification(extensionPage) {
       `Default notification validation and cleanup failed: ${safeError(validationError)}; ${safeError(cleanupError)}`
     );
   }
-  if (validationErrorSeen) throw validationError;
-  if (cleanupErrorSeen) throw cleanupError;
+  if (validationErrorSeen) {
+    throw validationError;
+  }
+  if (cleanupErrorSeen) {
+    throw cleanupError;
+  }
   return {
     cleared: cleanup.cleared,
     defaultIcon: DEFAULT_NOTIFICATION_ICON,
@@ -2294,7 +2387,9 @@ async function waitForDownload(extensionPage, knownIds, filename) {
     const item = observed.find(
       (download) => !knownIds.has(download.id) && basename(download.filename) === filename
     );
-    if (item?.state === 'complete') return item;
+    if (item?.state === 'complete') {
+      return item;
+    }
     if (item?.state === 'interrupted') {
       throw new Error(`Chrome interrupted ${filename}: ${item.error ?? 'unknown error'}`);
     }
@@ -2329,12 +2424,13 @@ async function assertNativeSingle({
   );
   assert.equal(download.state, 'complete');
   assert.equal(download.url, expectedUrl, 'Native initial URL must be the selected source');
-  if (download.finalUrl)
+  if (download.finalUrl) {
     assert.equal(
       download.finalUrl,
       expectedUrl,
       'A native redirect escaped the selected fixture source'
     );
+  }
   assert.equal(download.totalBytes, expectedBytes.length);
   assert.equal(download.bytesReceived, expectedBytes.length);
   const expected = new URL(expectedUrl);
@@ -2587,7 +2683,9 @@ async function runZoomSpanishCycle({
           visibility: element ? getComputedStyle(element).visibility : null,
         };
       });
-      if (!essential.has(focused.label)) continue;
+      if (!essential.has(focused.label)) {
+        continue;
+      }
       assert(
         focused.left >= -1 && focused.right <= layout.viewportWidth + 1,
         `200% keyboard control ${focused.label} is clipped`
@@ -2751,13 +2849,16 @@ function isExpectedFixtureApiConsoleError(record) {
 }
 
 function isExpectedMemoryFixtureConsoleError(record, memory) {
-  if (memory?.status !== 'passed' || !memory.rejection?.declaredBytes) return false;
+  if (memory?.status !== 'passed' || !memory.rejection?.declaredBytes) {
+    return false;
+  }
   const declared = String(memory.rejection.declaredBytes);
   if (
     record.text.startsWith('[XEG] Download failed ') &&
     record.text.includes(`Response requires ${declared} bytes (limit `)
-  )
+  ) {
     return true;
+  }
   try {
     return (
       new URL(record.location).pathname === memory.rejection.pathname &&
@@ -2791,7 +2892,9 @@ async function runDownloadMemoryCycle({
   const verifiedDownloads = new Map();
   let navigations = 0;
   const onNavigated = (frame) => {
-    if (frame === page.mainFrame()) navigations += 1;
+    if (frame === page.mainFrame()) {
+      navigations += 1;
+    }
   };
   const routeHandler = async (route) => {
     const resourceType = route.request().resourceType();
@@ -3252,12 +3355,15 @@ async function runDownloadMemoryCycle({
                 const deadline = Date.now() + 10_000;
                 while (Date.now() < deadline) {
                   [download] = await chrome.downloads.search({ id });
-                  if (!download || download.state !== 'in_progress') break;
+                  if (!download || download.state !== 'in_progress') {
+                    break;
+                  }
                   await new Promise((resolveDelay) => setTimeout(resolveDelay, 50));
                 }
               }
-              if (download?.state === 'in_progress')
+              if (download?.state === 'in_progress') {
                 throw new Error(`Memory download ${id} did not stop`);
+              }
               if (removeFile) {
                 if (download?.state !== 'complete') {
                   throw new Error(`Verified memory download ${id} is not complete`);
@@ -3273,7 +3379,9 @@ async function runDownloadMemoryCycle({
             }
           );
           Object.assign(cleanupRecord, removal);
-          if (verified?.removedEarlier) cleanupRecord.fileRemovedEarlier = true;
+          if (verified?.removedEarlier) {
+            cleanupRecord.fileRemovedEarlier = true;
+          }
           if (verified) {
             cleanupRecord.fileAbsence = verified.removedEarlier
               ? verified.fileAbsence
@@ -3298,7 +3406,9 @@ async function runDownloadMemoryCycle({
       }
     }
   }
-  if (cleanupError) evidence.status = 'failed';
+  if (cleanupError) {
+    evidence.status = 'failed';
+  }
   if (primaryError || cleanupError) {
     await writeFile(
       join(output, 'installed-memory-failure.json'),
@@ -3307,13 +3417,18 @@ async function runDownloadMemoryCycle({
       evidence.failureReceiptError = safeError(error);
     });
   }
-  if (primaryError && cleanupError)
+  if (primaryError && cleanupError) {
     throw new AggregateError(
       [primaryError, cleanupError],
       'Memory fixture validation and exact route cleanup both failed'
     );
-  if (primaryError) throw primaryError;
-  if (cleanupError) throw cleanupError;
+  }
+  if (primaryError) {
+    throw primaryError;
+  }
+  if (cleanupError) {
+    throw cleanupError;
+  }
   return evidence;
 }
 
@@ -3331,7 +3446,9 @@ async function runPublicFixtureCycle({ apiResponses, output, page }) {
   await trigger.focus();
   const before = await trigger.evaluate((element) => {
     const image = element.parentElement?.querySelector('img');
-    if (!(image instanceof HTMLImageElement)) throw new Error('Public fixture image missing');
+    if (!(image instanceof HTMLImageElement)) {
+      throw new Error('Public fixture image missing');
+    }
     const rectangle = image.getBoundingClientRect();
     const x = rectangle.left + rectangle.width / 2;
     const y = rectangle.top + rectangle.height / 2;
@@ -3985,8 +4102,11 @@ async function withControlledFixtureVideoMode(extensionPage, evidence, action, m
     prior = await readStoredVideoSettings(extensionPage);
     evidence.priorStoredMode = prior.settings?.gallery?.videoClickMode ?? null;
     const next = createControlledVideoSettings(prior.value, Date.now());
-    if (mode === 'default') delete next.gallery.videoClickMode;
-    else next.gallery.videoClickMode = mode;
+    if (mode === 'default') {
+      delete next.gallery.videoClickMode;
+    } else {
+      next.gallery.videoClickMode = mode;
+    }
     mutated = true;
     await extensionPage.evaluate(
       async ({ storageKey, value }) => {
@@ -4010,8 +4130,11 @@ async function withControlledFixtureVideoMode(extensionPage, evidence, action, m
       if (mutated) {
         await extensionPage.evaluate(
           async ({ storageKey, previous }) => {
-            if (previous.exists) await chrome.storage.local.set({ [storageKey]: previous.value });
-            else await chrome.storage.local.remove(storageKey);
+            if (previous.exists) {
+              await chrome.storage.local.set({ [storageKey]: previous.value });
+            } else {
+              await chrome.storage.local.remove(storageKey);
+            }
           },
           { storageKey: key, previous: prior }
         );
@@ -4026,7 +4149,9 @@ async function withControlledFixtureVideoMode(extensionPage, evidence, action, m
           },
           { storageKey: key, previous: prior }
         );
-      } else restored = true;
+      } else {
+        restored = true;
+      }
       evidence.restored = restored;
       assert.equal(restored, true, 'Preplayer fixture must restore the full prior settings value');
     } catch (error) {
@@ -4040,8 +4165,12 @@ async function withControlledFixtureVideoMode(extensionPage, evidence, action, m
       'Preplayer fixture validation and settings restoration both failed'
     );
   }
-  if (validationError) throw validationError;
-  if (cleanupError) throw cleanupError;
+  if (validationError) {
+    throw validationError;
+  }
+  if (cleanupError) {
+    throw cleanupError;
+  }
   return { ...result, controlledSetting: evidence };
 }
 
@@ -4084,11 +4213,14 @@ async function runVideoClickSettingsCycle({ extensionPage, gallery, output, page
     }
     await page.screenshot({ path: join(output, 'quoted-video-click-settings.png') });
     await select.focus();
-    if (initialMode === 'block-all') await page.keyboard.press('Home');
-    else if (initialMode === 'block-controls-only') {
+    if (initialMode === 'block-all') {
+      await page.keyboard.press('Home');
+    } else if (initialMode === 'block-controls-only') {
       await page.keyboard.press('Home');
       await page.keyboard.press('ArrowDown');
-    } else await page.keyboard.press('End');
+    } else {
+      await page.keyboard.press('End');
+    }
     await waitForValue(
       async () => {
         const stored =
@@ -4112,8 +4244,11 @@ async function runVideoClickSettingsCycle({ extensionPage, gallery, output, page
     try {
       await extensionPage.evaluate(
         async ({ storageKey, previous }) => {
-          if (previous.exists) await chrome.storage.local.set({ [storageKey]: previous.value });
-          else await chrome.storage.local.remove(storageKey);
+          if (previous.exists) {
+            await chrome.storage.local.set({ [storageKey]: previous.value });
+          } else {
+            await chrome.storage.local.remove(storageKey);
+          }
         },
         { storageKey: key, previous: prior }
       );
@@ -4129,18 +4264,25 @@ async function runVideoClickSettingsCycle({ extensionPage, gallery, output, page
         { storageKey: key, previous: prior }
       );
       assert.equal(restored, true, 'Settings UI cycle must restore the full prior setting');
-      if (receipt) receipt.fullSettingRestored = true;
+      if (receipt) {
+        receipt.fullSettingRestored = true;
+      }
     } catch (error) {
       cleanupError = error;
     }
   }
-  if (validationError && cleanupError)
+  if (validationError && cleanupError) {
     throw new AggregateError(
       [validationError, cleanupError],
       'Video-click settings UI validation and setting restoration both failed'
     );
-  if (validationError) throw validationError;
-  if (cleanupError) throw cleanupError;
+  }
+  if (validationError) {
+    throw validationError;
+  }
+  if (cleanupError) {
+    throw cleanupError;
+  }
   return receipt;
 }
 
@@ -4803,14 +4945,16 @@ async function observeNativeNotificationCreates(context, extensionId) {
     state.wrapper = function (...args) {
       const [id, options] = args;
       if (typeof id === 'string' && id.startsWith('xeg-')) {
-        if (state.calls.length < 8)
+        if (state.calls.length < 8) {
           state.calls.push({
             id,
             createdAt: Date.now(),
             title: options?.title ?? null,
             message: options?.message ?? null,
           });
-        else state.overflow = true;
+        } else {
+          state.overflow = true;
+        }
       }
       return Reflect.apply(original, this, args);
     };
@@ -4846,7 +4990,9 @@ async function observeNativeNotificationCreates(context, extensionId) {
     async dispose() {
       const restored = await worker.evaluate(() => {
         const state = globalThis.__xegInstalledNotificationObserver;
-        if (!state) return { markerPresent: false, originalRestored: false, markerGone: true };
+        if (!state) {
+          return { markerPresent: false, originalRestored: false, markerGone: true };
+        }
         chrome.notifications.create = state.original;
         const originalRestored = chrome.notifications.create === state.original;
         delete globalThis.__xegInstalledNotificationObserver;
@@ -4928,13 +5074,18 @@ async function verifyTransientNotificationControl(extensionPage, observer, curso
       cleanupError = error;
     }
   }
-  if (validationError && cleanupError)
+  if (validationError && cleanupError) {
     throw new AggregateError(
       [validationError, cleanupError],
       'Transient notification control and cleanup failed'
     );
-  if (validationError) throw validationError;
-  if (cleanupError) throw cleanupError;
+  }
+  if (validationError) {
+    throw validationError;
+  }
+  if (cleanupError) {
+    throw cleanupError;
+  }
   return evidence;
 }
 
@@ -5002,7 +5153,7 @@ async function runDelayedVideoFailures({
       if (name === 'navigation') {
         page.on('console', recordNavigation);
         await page.evaluate(() => {
-          for (const type of ['beforeunload', 'pagehide'])
+          for (const type of ['beforeunload', 'pagehide']) {
             window.addEventListener(
               type,
               (event) =>
@@ -5017,6 +5168,7 @@ async function runDelayedVideoFailures({
                 ),
               { once: true }
             );
+          }
         });
       }
       cursor = await notificationObserver.snapshot();
@@ -5241,7 +5393,9 @@ async function runDelayedVideoFailures({
       if (notificationObserver) {
         try {
           const restored = await notificationObserver.dispose();
-          if (observation) observation.notificationObserverRestored = restored;
+          if (observation) {
+            observation.notificationObserverRestored = restored;
+          }
         } catch (error) {
           cleanupErrors.push(error);
         }
@@ -5249,8 +5403,11 @@ async function runDelayedVideoFailures({
       if (shortcutIssued) {
         try {
           await extensionPage.evaluate(async ({ exists, value }) => {
-            if (exists) await chrome.storage.local.set({ 'xeg-app-settings': value });
-            else await chrome.storage.local.remove('xeg-app-settings');
+            if (exists) {
+              await chrome.storage.local.set({ 'xeg-app-settings': value });
+            } else {
+              await chrome.storage.local.remove('xeg-app-settings');
+            }
           }, priorSetting);
           const restored = await extensionPage.evaluate(async ({ exists, value }) => {
             const values = await chrome.storage.local.get('xeg-app-settings');
@@ -5260,20 +5417,26 @@ async function runDelayedVideoFailures({
             );
           }, priorSetting);
           assert.equal(restored, true, 'Recovery shortcut must restore full prior task setting');
-          if (observation) observation.settingRestored = true;
+          if (observation) {
+            observation.settingRestored = true;
+          }
         } catch (error) {
           cleanupErrors.push(error);
         }
       }
     }
-    if (validationError && cleanupErrors.length)
+    if (validationError && cleanupErrors.length) {
       throw new AggregateError(
         [validationError, ...cleanupErrors],
         `${name}: video failure validation and cleanup both failed`
       );
-    if (validationError) throw validationError;
-    if (cleanupErrors.length)
+    }
+    if (validationError) {
+      throw validationError;
+    }
+    if (cleanupErrors.length) {
       throw new AggregateError(cleanupErrors, `${name}: video failure cleanup failed`);
+    }
   }
   return { status: 'passed', cases };
 }
@@ -5423,12 +5586,13 @@ async function installBoundedExtensionRenderFault(context, page, extensionId) {
     });
     assert.equal(result.exceptionDetails, undefined, 'CDP render-fault restoration must not throw');
     const restored = result.result.value;
-    if (markerRequired)
+    if (markerRequired) {
       assert.equal(
         restored.markerPresent,
         true,
         'Installed render fault marker disappeared before verified cleanup'
       );
+    }
     if (restored.markerPresent) {
       assert.equal(
         restored.descriptorRestored,
@@ -5442,7 +5606,9 @@ async function installBoundedExtensionRenderFault(context, page, extensionId) {
   try {
     const contexts = [];
     cdp.on('Runtime.executionContextCreated', ({ context: observed }) => {
-      if (contexts.length < 32) contexts.push(observed);
+      if (contexts.length < 32) {
+        contexts.push(observed);
+      }
     });
     const { frameTree } = await cdp.send('Page.getFrameTree');
     await cdp.send('Runtime.enable');
@@ -5455,7 +5621,9 @@ async function installBoundedExtensionRenderFault(context, page, extensionId) {
             auxData?.frameId === frameTree.frame.id &&
             auxData?.isDefault === false
         );
-        if (matching.length > 1) throw new Error('Ambiguous extension content-script contexts');
+        if (matching.length > 1) {
+          throw new Error('Ambiguous extension content-script contexts');
+        }
         return matching[0];
       },
       'installed extension isolated execution context',
@@ -5521,13 +5689,18 @@ async function installBoundedExtensionRenderFault(context, page, extensionId) {
         } catch (error) {
           detachError = error;
         }
-        if (restoreError && detachError)
+        if (restoreError && detachError) {
           throw new AggregateError(
             [restoreError, detachError],
             'Render-fault restoration and CDP detach both failed'
           );
-        if (restoreError) throw restoreError;
-        if (detachError) throw detachError;
+        }
+        if (restoreError) {
+          throw restoreError;
+        }
+        if (detachError) {
+          throw detachError;
+        }
         return restoration;
       },
     };
@@ -5545,11 +5718,12 @@ async function installBoundedExtensionRenderFault(context, page, extensionId) {
     } catch (cleanupError) {
       cleanupErrors.push(cleanupError);
     }
-    if (cleanupErrors.length)
+    if (cleanupErrors.length) {
       throw new AggregateError(
         [error, ...cleanupErrors],
         'Render-fault setup and CDP cleanup failed'
       );
+    }
     throw error;
   }
 }
@@ -5754,18 +5928,25 @@ async function runModelessRenderRecovery({ consoleErrors, context, extensionId, 
   } finally {
     try {
       const restoration = await fault.dispose();
-      if (receipt) receipt.faultRestoration = restoration;
+      if (receipt) {
+        receipt.faultRestoration = restoration;
+      }
     } catch (error) {
       cleanupError = error;
     }
   }
-  if (validationError && cleanupError)
+  if (validationError && cleanupError) {
     throw new AggregateError(
       [validationError, cleanupError],
       'Modeless recovery validation and bounded fault cleanup both failed'
     );
-  if (validationError) throw validationError;
-  if (cleanupError) throw cleanupError;
+  }
+  if (validationError) {
+    throw validationError;
+  }
+  if (cleanupError) {
+    throw cleanupError;
+  }
   return receipt;
 }
 
@@ -6486,7 +6667,9 @@ async function runCycle({
     const image = gallery.locator(
       `[data-gallery-element="item"][data-index="${cycle.expectedIndex}"] img`
     );
-    if ((await image.count()) !== 1) return undefined;
+    if ((await image.count()) !== 1) {
+      return undefined;
+    }
     const state = await image.evaluate((element) => ({
       source: element.currentSrc || element.src,
       complete: element.complete,
@@ -6513,7 +6696,9 @@ async function runCycle({
   const nativeMark = nativeLoopback.mark();
   const fetchMark = pageFetches.length;
   const expectedSource = expectedOriginalImageUrl(expectedDisplayUrl);
-  if (number === 1) nativeLoopback.armHold('pbs.twimg.com', new URL(expectedSource).pathname);
+  if (number === 1) {
+    nativeLoopback.armHold('pbs.twimg.com', new URL(expectedSource).pathname);
+  }
   const downloadStarted = performance.now();
   await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download"]').click();
   let slowTransfer;
@@ -7002,9 +7187,13 @@ async function exerciseInstalledExtension(
       });
     });
     page.on('request', (request) => {
-      if (!['fetch', 'xhr'].includes(request.resourceType())) return;
+      if (!['fetch', 'xhr'].includes(request.resourceType())) {
+        return;
+      }
       const url = new URL(request.url());
-      if (!['pbs.twimg.com', 'video.twimg.com'].includes(url.hostname)) return;
+      if (!['pbs.twimg.com', 'video.twimg.com'].includes(url.hostname)) {
+        return;
+      }
       assert(pageFetches.length < 128, 'Fixture page media fetch observation overflow');
       pageFetches.push({
         host: url.hostname,
@@ -7364,11 +7553,12 @@ async function exerciseInstalledExtension(
         .catch(() => {});
       acceptanceFailures.push(error);
     }
-    if (acceptanceFailures.length)
+    if (acceptanceFailures.length) {
       throw new AggregateError(
         acceptanceFailures,
         'Installed quoted video routing, playback, or failure assertions failed'
       );
+    }
     const unavailableSetting = {};
     try {
       await runUnavailableSequence({
@@ -7430,11 +7620,12 @@ async function exerciseInstalledExtension(
       videoLoading = { status: 'failed', error: safeError(error) };
       followupFailures.push(error);
     }
-    if (followupFailures.length)
+    if (followupFailures.length) {
       throw new AggregateError(
         followupFailures,
         'Required installed media follow-up profiles failed'
       );
+    }
     const expectedMemoryErrors = new Set(downloadMemory.expectedConsoleErrors ?? []);
     const expectedRenderFaultErrors = new Set(modelessRenderRecovery.expectedConsoleErrors ?? []);
     const unexpectedConsoleErrors = consoleErrors.filter(
@@ -7516,7 +7707,9 @@ async function exerciseInstalledExtension(
       ['fixturePage', page],
       ['extensionPage', extensionPage],
     ]) {
-      if (!ownedPage) continue;
+      if (!ownedPage) {
+        continue;
+      }
       try {
         await ownedPage.close();
         flowCleanup[`${name}Closed`] = true;
@@ -7533,7 +7726,9 @@ async function exerciseInstalledExtension(
       }
     }
     flowCleanup.errorCount = cleanupErrors.length;
-    if (cleanupErrors.length) flowCleanup.errors = cleanupErrors.map(safeError);
+    if (cleanupErrors.length) {
+      flowCleanup.errors = cleanupErrors.map(safeError);
+    }
     try {
       await writeFile(
         join(output, 'installed-flow-observations.json'),
@@ -7591,9 +7786,15 @@ async function exerciseInstalledExtension(
       `Installed flow stages failed: ${combinedErrors.map(safeError).join('; ')}`
     );
   }
-  if (primarySeen) throw primaryError;
-  if (cleanupErrors.length) throw cleanupErrors[0];
-  if (observationErrorSeen) throw observationError;
+  if (primarySeen) {
+    throw primaryError;
+  }
+  if (cleanupErrors.length) {
+    throw cleanupErrors[0];
+  }
+  if (observationErrorSeen) {
+    throw observationError;
+  }
   return flowResult;
 }
 
@@ -7761,7 +7962,9 @@ export async function run({
     primarySeen = true;
     primaryError = error;
     result.error = safeError(error);
-    if (error && typeof error === 'object' && 'summary' in error) result.live = error.summary;
+    if (error && typeof error === 'object' && 'summary' in error) {
+      result.live = error.summary;
+    }
   } finally {
     if (browserCdp && extensionId) {
       try {
@@ -7830,13 +8033,17 @@ export async function run({
       `${failedStages.join(', ')} failed: ${combinedErrors.map((error) => safeError(error)).join('; ')}`
     );
   }
-  if (primarySeen) throw primaryError;
+  if (primarySeen) {
+    throw primaryError;
+  }
   if (cleanupErrors.length) {
     throw new AggregateError(
       cleanupErrors,
       `Installed flow cleanup failed: ${cleanupErrors.map((error) => safeError(error)).join('; ')}`
     );
   }
-  if (installationResultErrorSeen) throw installationResultError;
+  if (installationResultErrorSeen) {
+    throw installationResultError;
+  }
   return result;
 }

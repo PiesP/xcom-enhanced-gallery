@@ -14,7 +14,9 @@ function createMockRepository(): Mocked<SettingsRepository> {
   let savedSettings: AppSettings | null = null;
   return {
     load: vi.fn(async () => {
-      if (savedSettings) return savedSettings;
+      if (savedSettings) {
+        return savedSettings;
+      }
       return createDefaultSettings(Date.now());
     }),
     save: vi.fn(async (settings: AppSettings) => {
@@ -223,7 +225,9 @@ describe('SettingsService', () => {
       expect(mockRepo.save).toHaveBeenCalledTimes(1);
       const saved = mockRepo.save.mock.calls[0]?.[0];
       expect(saved).toBeDefined();
-      if (!saved) return;
+      if (!saved) {
+        return;
+      }
       expect(saved.gallery.theme).toBe('dark');
     });
 
@@ -337,7 +341,9 @@ describe('SettingsService', () => {
       expect(listener).toHaveBeenCalledTimes(1);
       const event = listener.mock.calls[0]?.[0];
       expect(event).toBeDefined();
-      if (!event) return;
+      if (!event) {
+        return;
+      }
       expect(event.key).toBe('gallery.theme');
       expect(event.oldValue).toBe('auto');
       expect(event.newValue).toBe('dark');
@@ -370,7 +376,9 @@ describe('SettingsService', () => {
 
       const event = listener.mock.calls[0]?.[0];
       expect(event).toBeDefined();
-      if (!event) return;
+      if (!event) {
+        return;
+      }
       expect(event.oldValue).toBe(1.0);
       expect(event.newValue).toBe(0.5);
     });

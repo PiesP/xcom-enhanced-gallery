@@ -52,7 +52,9 @@ function safeFailureResponse(
 const pendingAmbiguousSettlements = new Set<() => void>();
 
 function onPageHide(event: PageTransitionEvent): void {
-  if (!event.isTrusted || event.persisted) return;
+  if (!event.isTrusted || event.persisted) {
+    return;
+  }
   for (const settle of [...pendingAmbiguousSettlements]) {
     try {
       settle();
@@ -63,13 +65,17 @@ function onPageHide(event: PageTransitionEvent): void {
 }
 
 function retainAmbiguousSettlement(settle: () => void): void {
-  if (pendingAmbiguousSettlements.size === 0) window.addEventListener('pagehide', onPageHide);
+  if (pendingAmbiguousSettlements.size === 0) {
+    window.addEventListener('pagehide', onPageHide);
+  }
   pendingAmbiguousSettlements.add(settle);
 }
 
 function forgetAmbiguousSettlement(settle: () => void): void {
   pendingAmbiguousSettlements.delete(settle);
-  if (pendingAmbiguousSettlements.size === 0) window.removeEventListener('pagehide', onPageHide);
+  if (pendingAmbiguousSettlements.size === 0) {
+    window.removeEventListener('pagehide', onPageHide);
+  }
 }
 
 export class GMHttpRequestAdapter implements HttpRequestAdapter {
@@ -91,19 +97,28 @@ export class GMHttpRequestAdapter implements HttpRequestAdapter {
     let abortAfterStart = false;
     let transportSettled = false;
     const reportSettled = (): void => {
-      if (transportSettled) return;
+      if (transportSettled) {
+        return;
+      }
       transportSettled = true;
-      if (details.onsettled) forgetAmbiguousSettlement(reportSettled);
+      if (details.onsettled) {
+        forgetAmbiguousSettlement(reportSettled);
+      }
       details.onsettled?.();
     };
 
     const reportResourceLimit = (receivedBytes?: number, source?: HttpRequestResponse): void => {
-      if (maxResponseBytes === undefined || resourceLimitExceeded) return;
+      if (maxResponseBytes === undefined || resourceLimitExceeded) {
+        return;
+      }
       resourceLimitExceeded = true;
       const error = new HttpResponseSizeLimitError(maxResponseBytes, receivedBytes);
       const sourceMetadata = source ? safeResponseMetadata(source, false) : undefined;
-      if (gmControl) gmControl.abort();
-      else abortAfterStart = true;
+      if (gmControl) {
+        gmControl.abort();
+      } else {
+        abortAfterStart = true;
+      }
       details.onerror?.({
         finalUrl: '',
         readyState: 0,
@@ -121,10 +136,18 @@ export class GMHttpRequestAdapter implements HttpRequestAdapter {
     };
 
     const getResponseSize = (response: unknown): number | undefined => {
-      if (response instanceof Blob) return response.size;
-      if (response instanceof ArrayBuffer) return response.byteLength;
-      if (ArrayBuffer.isView(response)) return response.byteLength;
-      if (typeof response === 'string') return new TextEncoder().encode(response).byteLength;
+      if (response instanceof Blob) {
+        return response.size;
+      }
+      if (response instanceof ArrayBuffer) {
+        return response.byteLength;
+      }
+      if (ArrayBuffer.isView(response)) {
+        return response.byteLength;
+      }
+      if (typeof response === 'string') {
+        return new TextEncoder().encode(response).byteLength;
+      }
       return undefined;
     };
 
@@ -151,7 +174,9 @@ export class GMHttpRequestAdapter implements HttpRequestAdapter {
     if (details.onload !== undefined || maxResponseBytes !== undefined || details.onsettled) {
       gmDetails.onload = (response) => {
         try {
-          if (resourceLimitExceeded) return;
+          if (resourceLimitExceeded) {
+            return;
+          }
           const responseSize = getResponseSize(response.response);
           if (
             maxResponseBytes !== undefined &&
@@ -206,8 +231,9 @@ export class GMHttpRequestAdapter implements HttpRequestAdapter {
     if (details.ontimeout !== undefined || details.onsettled) {
       gmDetails.ontimeout = (response) => {
         try {
-          if (!resourceLimitExceeded)
+          if (!resourceLimitExceeded) {
             details.ontimeout?.(safeFailureResponse(details.url, response, 'timeout', 'TIMEOUT'));
+          }
         } finally {
           reportSettled();
         }
@@ -216,8 +242,9 @@ export class GMHttpRequestAdapter implements HttpRequestAdapter {
     if (details.onabort !== undefined || details.onsettled) {
       gmDetails.onabort = (response) => {
         try {
-          if (!resourceLimitExceeded)
+          if (!resourceLimitExceeded) {
             details.onabort?.(safeFailureResponse(details.url, response, 'abort', 'ABORT'));
+          }
         } finally {
           reportSettled();
         }
@@ -225,7 +252,9 @@ export class GMHttpRequestAdapter implements HttpRequestAdapter {
     }
     if (details.onprogress !== undefined || maxResponseBytes !== undefined) {
       gmDetails.onprogress = (response) => {
-        if (resourceLimitExceeded) return;
+        if (resourceLimitExceeded) {
+          return;
+        }
         if (
           maxResponseBytes !== undefined &&
           (response.loaded > maxResponseBytes ||
@@ -253,7 +282,9 @@ export class GMHttpRequestAdapter implements HttpRequestAdapter {
 
     try {
       gmControl = gm.xmlHttpRequest(gmDetails);
-      if (abortAfterStart) gmControl.abort();
+      if (abortAfterStart) {
+        gmControl.abort();
+      }
     } catch (_error) {
       // A GM implementation may dispatch and then throw without returning a
       // control object. Keep a bounded response owner until a real callback or
@@ -261,7 +292,9 @@ export class GMHttpRequestAdapter implements HttpRequestAdapter {
       if (details.onsettled && !transportSettled) {
         retainAmbiguousSettlement(reportSettled);
       }
-      if (transportSettled) return { abort: () => {} };
+      if (transportSettled) {
+        return { abort: () => {} };
+      }
       if (resourceLimitExceeded) {
         return { abort: () => {} };
       }

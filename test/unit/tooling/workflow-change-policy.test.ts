@@ -64,7 +64,9 @@ function classify(
 }
 
 function expectAll(outputs: Record<string, string>, names: readonly string[]): void {
-  for (const name of names) expect(outputs[name], name).toBe('true');
+  for (const name of names) {
+    expect(outputs[name], name).toBe('true');
+  }
 }
 
 function jobBlock(workflow: string, job: string): string {
@@ -153,7 +155,9 @@ describe('workflow change policy', () => {
       };
       expect(config.compilerOptions.noUnusedLocals, project).toBe(true);
       expect(config.compilerOptions.noUnusedParameters, project).toBe(true);
-      for (const file of config.files) checkedFiles.add(resolve(root, file));
+      for (const file of config.files) {
+        checkedFiles.add(resolve(root, file));
+      }
     }
     const testFiles = globSync('test/**/*.{ts,tsx}', {
       cwd: root,

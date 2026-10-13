@@ -117,12 +117,13 @@ export class TwitterAPIExtractor implements MediaExtractorStrategy {
           getAPIMediaSelectionItems(apiMedias, tweetInfo),
           tweetInfo.tweetId
         );
-        if (selection.status === 'contradictory')
+        if (selection.status === 'contradictory') {
           return {
             ...healthyFailure('API media does not match the clicked media', 'api-media-mismatch'),
             failureKind: 'mismatch',
           };
-        if (selection.index === null)
+        }
+        if (selection.index === null) {
           return {
             ...healthyFailure(
               'Insufficient evidence to select the clicked media',
@@ -130,6 +131,7 @@ export class TwitterAPIExtractor implements MediaExtractorStrategy {
             ),
             failureKind: 'owner-unconfirmed',
           };
+        }
         if (apiMedias[selection.index]?.availability === 'unsupported-hls') {
           return {
             ...healthyFailure(

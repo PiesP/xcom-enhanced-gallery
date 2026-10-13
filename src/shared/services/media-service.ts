@@ -23,7 +23,9 @@ export class MediaService {
 
   /** Initialize service (idempotent) */
   public async initialize(): Promise<void> {
-    if (this._initialized) return;
+    if (this._initialized) {
+      return;
+    }
     this.didCleanup = false;
     this.downloadCache ??= new DownloadMediaCache(
       DOWNLOAD_CACHE_MAX_ENTRIES,
@@ -60,7 +62,9 @@ export class MediaService {
     element: HTMLElement,
     options: MediaExtractionOptions = {}
   ): Promise<MediaExtractionResult> {
-    if (!this.mediaExtraction) throw new Error('Media Extraction not initialized');
+    if (!this.mediaExtraction) {
+      throw new Error('Media Extraction not initialized');
+    }
     return this.mediaExtraction.extractFromClickedElement(element, options);
   }
 

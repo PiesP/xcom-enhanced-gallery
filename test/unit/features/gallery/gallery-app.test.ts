@@ -309,7 +309,9 @@ describe('GalleryApp media-click currentness', () => {
       '<video poster="https://pbs.twimg.com/amplify_video_thumb/333/img/poster.jpg"></video><button type="button">Play</button>';
     document.body.append(frame);
     const button = frame.querySelector('button');
-    if (!button) throw new Error('Missing fixture button');
+    if (!button) {
+      throw new Error('Missing fixture button');
+    }
     await state.handlers?.onMediaClick(button, new MouseEvent('click'));
     expect(state.notify.mock.calls[0]?.[2]).toBe(
       'msg.err.loadMedia.ownerUnconfirmed msg.err.loadMedia.nativeVideoRecovery'

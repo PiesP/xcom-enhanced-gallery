@@ -12,7 +12,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 function renderTarget(markup: string, selector: string): HTMLElement {
   document.body.innerHTML = markup;
   const target = document.querySelector(selector);
-  if (!(target instanceof HTMLElement)) throw new Error(`Missing test target: ${selector}`);
+  if (!(target instanceof HTMLElement)) {
+    throw new Error(`Missing test target: ${selector}`);
+  }
   return target;
 }
 
@@ -125,7 +127,9 @@ describe('unmarked native video controls in quoted posts', () => {
     renderUnmarkedQuote(`<video src="blob:https://x.com/started" poster="${thumb}"></video>`);
     const button = document.getElementById('control');
     expect(button).toBeInstanceOf(HTMLButtonElement);
-    if (!(button instanceof HTMLButtonElement)) throw new Error('Missing video control');
+    if (!(button instanceof HTMLButtonElement)) {
+      throw new Error('Missing video control');
+    }
     const onMediaClick = vi.fn(async () => undefined);
     const handlers: EventHandlers = { onMediaClick, onGalleryClose: vi.fn() };
     const options: GalleryEventOptions = {

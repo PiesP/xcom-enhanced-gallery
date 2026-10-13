@@ -15,7 +15,9 @@ export class MV3StorageAdapter implements StorageAdapter {
   async get<T>(key: string, defaultValue?: T): Promise<T | undefined> {
     const result = await browserApi.storage.local.get(key);
     const value = result[key];
-    if (value === undefined || value === null) return defaultValue;
+    if (value === undefined || value === null) {
+      return defaultValue;
+    }
     return value as T;
   }
 

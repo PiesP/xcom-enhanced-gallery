@@ -7,7 +7,9 @@ import { getCookieValue, getCookieValueSync } from '@shared/services/cookie/cook
 export async function getCsrfTokenAsync(): Promise<string | undefined> {
   // ct0 cookie is readable synchronously (not HttpOnly)
   const syncToken = getCookieValueSync('ct0');
-  if (syncToken) return syncToken;
+  if (syncToken) {
+    return syncToken;
+  }
 
   const asyncToken = await getCookieValue('ct0');
   return asyncToken ?? undefined;
@@ -25,7 +27,9 @@ export async function getCsrfTokenAsync(): Promise<string | undefined> {
 export function resolveBearerToken(document_?: Document | null | undefined): string {
   try {
     const doc = document_ ?? globalThis.document;
-    if (!doc) return TWITTER_API_CONFIG.GUEST_AUTHORIZATION;
+    if (!doc) {
+      return TWITTER_API_CONFIG.GUEST_AUTHORIZATION;
+    }
 
     const nextDataScript = doc.getElementById('__NEXT_DATA__');
     if (nextDataScript?.textContent) {
@@ -48,10 +52,14 @@ export function resolveBearerToken(document_?: Document | null | undefined): str
  */
 function isValidJwt(token: string): boolean {
   const parts = token.split('.');
-  if (parts.length !== 3) return false;
+  if (parts.length !== 3) {
+    return false;
+  }
   try {
     const payload = JSON.parse(atob(parts[1] ?? ''));
-    if (typeof payload.exp !== 'number') return false;
+    if (typeof payload.exp !== 'number') {
+      return false;
+    }
     return payload.exp * 1000 > Date.now();
   } catch {
     return false;

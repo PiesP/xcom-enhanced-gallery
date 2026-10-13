@@ -8,7 +8,9 @@ import { isUrlAllowed, MEDIA_URL_POLICY } from '@shared/utils/url/safety';
 export const MAX_VIDEO_PLAYBACK_ATTEMPTS = 3;
 
 function isOwnedMp4Variant(url: string): boolean {
-  if (!isUrlAllowed(url, MEDIA_URL_POLICY)) return false;
+  if (!isUrlAllowed(url, MEDIA_URL_POLICY)) {
+    return false;
+  }
   try {
     const parsed = new URL(url);
     return (
@@ -29,21 +31,26 @@ export function nextVideoPlaybackSource(
   media: MediaInfo,
   attempted: ReadonlySet<string>
 ): string | null {
-  if (attempted.size >= MAX_VIDEO_PLAYBACK_ATTEMPTS) return null;
+  if (attempted.size >= MAX_VIDEO_PLAYBACK_ATTEMPTS) {
+    return null;
+  }
   for (const variant of media.videoVariants ?? []) {
     if (
       variant.contentType === 'video/mp4' &&
       !attempted.has(variant.url) &&
       isOwnedMp4Variant(variant.url)
-    )
+    ) {
       return variant.url;
+    }
   }
   return null;
 }
 
 /** An exposed HTTP denial is authoritative; opaque media errors remain unknown. */
 export function hasKnownVideoAccessDenial(url: string, sourceAttachedAt: number): boolean {
-  if (typeof performance?.getEntriesByName !== 'function') return false;
+  if (typeof performance?.getEntriesByName !== 'function') {
+    return false;
+  }
   try {
     const entries = performance.getEntriesByName(url, 'resource');
     const latest = entries.at(-1) as
@@ -53,8 +60,9 @@ export function hasKnownVideoAccessDenial(url: string, sourceAttachedAt: number)
       !latest ||
       latest.startTime < sourceAttachedAt ||
       performance.now() - latest.startTime > 120_000
-    )
+    ) {
       return false;
+    }
     return latest.responseStatus === 401 || latest.responseStatus === 403;
   } catch {
     return false;

@@ -12,10 +12,16 @@ const warnedInvalidSelectors: Record<string, true> = Object.create(null);
 let warnedSelectorCount = 0;
 
 const warnInvalidSelectorOnce = (selector: string, error: unknown): void => {
-  if (!__DEV__) return;
-  if (warnedInvalidSelectors[selector]) return;
+  if (!__DEV__) {
+    return;
+  }
+  if (warnedInvalidSelectors[selector]) {
+    return;
+  }
   // L7: Cap the cache to prevent unbounded growth
-  if (warnedSelectorCount >= MAX_WARNED_SELECTORS) return;
+  if (warnedSelectorCount >= MAX_WARNED_SELECTORS) {
+    return;
+  }
   warnedInvalidSelectors[selector] = true;
   warnedSelectorCount++;
   logger.warn(`[query-helpers] Invalid selector skipped: ${selector}`, { error });
@@ -28,7 +34,9 @@ export function closestWithFallback<T extends Element = Element>(
   for (const selector of selectors) {
     try {
       const match = element.closest<T>(selector);
-      if (match) return match;
+      if (match) {
+        return match;
+      }
     } catch (error) {
       warnInvalidSelectorOnce(selector, error);
     }

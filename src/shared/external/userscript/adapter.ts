@@ -159,7 +159,9 @@ const retainedPageResources = new Set<() => void>();
 let pageHideListening = false;
 
 function onPageHide(event: PageTransitionEvent): void {
-  if (!event.isTrusted || event.persisted) return;
+  if (!event.isTrusted || event.persisted) {
+    return;
+  }
   for (const release of [...retainedPageResources]) {
     try {
       release();
@@ -175,7 +177,9 @@ function retainPageResource(onReleased: () => void): {
 } {
   let registered = true;
   const detach = (): void => {
-    if (!registered) return;
+    if (!registered) {
+      return;
+    }
     registered = false;
     retainedPageResources.delete(release);
     if (retainedPageResources.size === 0 && pageHideListening) {
@@ -184,7 +188,9 @@ function retainPageResource(onReleased: () => void): {
     }
   };
   const release = (): void => {
-    if (!registered) return;
+    if (!registered) {
+      return;
+    }
     detach();
     onReleased();
   };
@@ -217,7 +223,9 @@ async function downloadViaBlob(
   xmlHttpRequest: (details: GMXMLHttpRequestDetails) => GMXMLHttpRequestControl,
   signal?: AbortSignal
 ): Promise<void> {
-  if (signal?.aborted) throw abortReason(signal);
+  if (signal?.aborted) {
+    throw abortReason(signal);
+  }
   const { maxBytes, lease } = reserveBinaryResponse(
     downloadLiveByteBudget,
     SINGLE_DOWNLOAD_MAX_RESPONSE_BYTES
@@ -239,32 +247,47 @@ async function downloadViaBlob(
     let transferred = false;
 
     const cleanup = (): void => {
-      if (signal && abortHandler) signal.removeEventListener('abort', abortHandler);
+      if (signal && abortHandler) {
+        signal.removeEventListener('abort', abortHandler);
+      }
       abortHandler = null;
     };
     const releaseLease = (): void => {
       pageLease.release();
     };
     const fail = (error: unknown): void => {
-      if (settled) return;
+      if (settled) {
+        return;
+      }
       settled = true;
       cleanup();
       reject(error);
     };
     const terminate = (error: unknown): void => {
-      if (transportTerminated) return;
+      if (transportTerminated) {
+        return;
+      }
       transportTerminated = true;
-      if (!transferred) releaseLease();
+      if (!transferred) {
+        releaseLease();
+      }
       fail(error);
     };
     const failForResourceLimit = (receivedBytes: number): void => {
-      if (settled) return;
+      if (settled) {
+        return;
+      }
       fail(new HttpResponseSizeLimitError(maxBytes, receivedBytes));
-      if (control) control.abort();
-      else abortAfterStart = true;
+      if (control) {
+        control.abort();
+      } else {
+        abortAfterStart = true;
+      }
     };
     const handleLoad: NonNullable<GMXMLHttpRequestDetails['onload']> = (response) => {
-      if (transportTerminated) return;
+      if (transportTerminated) {
+        return;
+      }
       transportTerminated = true;
       if (settled) {
         releaseLease();
@@ -324,8 +347,11 @@ async function downloadViaBlob(
     abortHandler = () => {
       fail(signal ? abortReason(signal) : new DOMException('Aborted', 'AbortError'));
       try {
-        if (control) control.abort();
-        else abortAfterStart = true;
+        if (control) {
+          control.abort();
+        } else {
+          abortAfterStart = true;
+        }
       } catch {
         // A failed abort has no terminal evidence; retain the lease until a callback.
       }
@@ -353,8 +379,11 @@ async function downloadViaBlob(
           failForResourceLimit(Math.max(response.loaded, response.total));
         },
       });
-      if (abortAfterStart) control.abort();
-      else if (signal?.aborted && !settled) abortHandler();
+      if (abortAfterStart) {
+        control.abort();
+      } else if (signal?.aborted && !settled) {
+        abortHandler();
+      }
     } catch (error) {
       fail(error);
       // A synchronous throw may follow dispatch. Keep an unconfirmed response
@@ -374,7 +403,9 @@ interface GMDownloadHandle {
 let cachedUserscriptAPI: UserscriptAPI | null = null;
 
 export function getUserscript(): UserscriptAPI {
-  if (cachedUserscriptAPI) return cachedUserscriptAPI;
+  if (cachedUserscriptAPI) {
+    return cachedUserscriptAPI;
+  }
 
   const g = getGMAPIs();
 
@@ -394,7 +425,9 @@ export function getUserscript(): UserscriptAPI {
     g.notification
   );
 
-  if (!gmXmlHttpRequest) throw new Error('GM_xmlhttpRequest unavailable');
+  if (!gmXmlHttpRequest) {
+    throw new Error('GM_xmlhttpRequest unavailable');
+  }
 
   const cookieCandidate = g.cookie;
   const cookie =
@@ -402,7 +435,9 @@ export function getUserscript(): UserscriptAPI {
 
   cachedUserscriptAPI = {
     async download(url: string, filename: string, signal?: AbortSignal): Promise<void> {
-      if (signal?.aborted) throw abortReason(signal);
+      if (signal?.aborted) {
+        throw abortReason(signal);
+      }
 
       // For blob: URLs, GM.download ignores the filename and uses the
       // URL's UUID instead. Use anchor download directly to guarantee
@@ -422,17 +457,23 @@ export function getUserscript(): UserscriptAPI {
           let abortHandler: (() => void) | null = null;
 
           const cleanup = (): void => {
-            if (signal && abortHandler) signal.removeEventListener('abort', abortHandler);
+            if (signal && abortHandler) {
+              signal.removeEventListener('abort', abortHandler);
+            }
             abortHandler = null;
           };
           const complete = (): void => {
-            if (settled) return;
+            if (settled) {
+              return;
+            }
             settled = true;
             cleanup();
             resolve();
           };
           const fail = (error: unknown): void => {
-            if (settled) return;
+            if (settled) {
+              return;
+            }
             settled = true;
             cleanup();
             reject(error);
@@ -449,7 +490,9 @@ export function getUserscript(): UserscriptAPI {
               ontimeout: () => fail(new Error('GM_download timed out')),
             });
 
-            if (settled) return;
+            if (settled) {
+              return;
+            }
             if (signal?.aborted) {
               handle.abort();
               fail(abortReason(signal));
@@ -537,35 +580,51 @@ export function getUserscript(): UserscriptAPI {
     },
 
     async setValue(key: string, value: unknown): Promise<void> {
-      if (!gmSetValue) throw new Error('GM_setValue unavailable');
+      if (!gmSetValue) {
+        throw new Error('GM_setValue unavailable');
+      }
       await Promise.resolve(gmSetValue(key, value));
     },
     async getValue<T>(key: string, defaultValue?: T): Promise<T | undefined> {
-      if (!gmGetValue) throw new Error('GM_getValue unavailable');
+      if (!gmGetValue) {
+        throw new Error('GM_getValue unavailable');
+      }
       const value = await Promise.resolve(gmGetValue(key, defaultValue));
       return value as T | undefined;
     },
     getValueSync<T>(key: string, defaultValue?: T): T | undefined {
-      if (!gmGetValue) return defaultValue;
+      if (!gmGetValue) {
+        return defaultValue;
+      }
       const value = gmGetValue(key, defaultValue);
-      if (value instanceof Promise) return defaultValue;
+      if (value instanceof Promise) {
+        return defaultValue;
+      }
       return value as T | undefined;
     },
     async deleteValue(key: string): Promise<void> {
-      if (!gmDeleteValue) throw new Error('GM_deleteValue unavailable');
+      if (!gmDeleteValue) {
+        throw new Error('GM_deleteValue unavailable');
+      }
       await Promise.resolve(gmDeleteValue(key));
     },
     async listValues(): Promise<string[]> {
-      if (!gmListValues) throw new Error('GM_listValues unavailable');
+      if (!gmListValues) {
+        throw new Error('GM_listValues unavailable');
+      }
       const values = await Promise.resolve(gmListValues());
       return Array.isArray(values) ? values : [];
     },
     xmlHttpRequest(details: GMXMLHttpRequestDetails): GMXMLHttpRequestControl {
-      if (!gmXmlHttpRequest) throw new Error('GM_xmlhttpRequest unavailable');
+      if (!gmXmlHttpRequest) {
+        throw new Error('GM_xmlhttpRequest unavailable');
+      }
       return gmXmlHttpRequest(details);
     },
     notification(details: GMNotificationDetails): void {
-      if (!gmNotification) return;
+      if (!gmNotification) {
+        return;
+      }
       try {
         gmNotification(details, undefined);
       } catch {

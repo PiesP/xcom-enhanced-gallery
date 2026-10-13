@@ -11,14 +11,20 @@ function pruneWithTemplate<T extends Record<string, unknown>>(
   template: T,
   depth = 0
 ): Partial<T> {
-  if (!isRecord(input)) return {} as Partial<T>;
-  if (depth > 10) return {} as Partial<T>; // Guard against deeply nested/corrupt data
+  if (!isRecord(input)) {
+    return {} as Partial<T>;
+  }
+  if (depth > 10) {
+    return {} as Partial<T>;
+  } // Guard against deeply nested/corrupt data
 
   const out: Record<string, unknown> = {};
   for (const key of Object.keys(template) as Array<keyof T>) {
     const tplVal = template[key];
     const inVal = input[key as string];
-    if (inVal === undefined) continue;
+    if (inVal === undefined) {
+      continue;
+    }
 
     if (isRecord(tplVal) && !Array.isArray(tplVal)) {
       out[key as string] = pruneWithTemplate(inVal, tplVal, depth + 1);

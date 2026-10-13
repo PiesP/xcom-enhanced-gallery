@@ -83,7 +83,9 @@ export function createGalleryLifecycle(): GalleryLifecycle {
   }
 
   function cleanup(): void {
-    if (!initialized) return;
+    if (!initialized) {
+      return;
+    }
 
     if (currentContext) {
       getEventManager().removeByContext(currentContext);

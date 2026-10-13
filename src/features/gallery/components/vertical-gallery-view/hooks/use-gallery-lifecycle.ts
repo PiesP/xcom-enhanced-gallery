@@ -15,7 +15,9 @@ import { createEffect, on, onCleanup } from 'solid-js';
  * Ensure gallery and content containers have scrollable overflow enabled.
  */
 function ensureGalleryScrollAvailable(element: HTMLElement | null): void {
-  if (!element) return;
+  if (!element) {
+    return;
+  }
 
   const scrollableElements = element.querySelectorAll(
     '[data-gallery-element="items"]'
@@ -41,7 +43,9 @@ export function useGalleryLifecycle(options: UseGalleryLifecycleOptions): void {
   // Effect 1: Scroll setup on container mount
   createEffect(
     on(containerEl, (element) => {
-      if (element) ensureGalleryScrollAvailable(element);
+      if (element) {
+        ensureGalleryScrollAvailable(element);
+      }
     })
   );
 
@@ -50,7 +54,9 @@ export function useGalleryLifecycle(options: UseGalleryLifecycleOptions): void {
     on(
       [containerEl, isVisible],
       ([container, visible]) => {
-        if (!container) return;
+        if (!container) {
+          return;
+        }
 
         // Respect prefers-reduced-motion for animation only. Media cleanup is
         // independent of motion preferences and must always run on close.
@@ -58,9 +64,13 @@ export function useGalleryLifecycle(options: UseGalleryLifecycleOptions): void {
           window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 
         if (visible) {
-          if (!prefersReducedMotion) animateGalleryEnter(container).catch(() => {});
+          if (!prefersReducedMotion) {
+            animateGalleryEnter(container).catch(() => {});
+          }
         } else {
-          if (!prefersReducedMotion) animateGalleryExit(container).catch(() => {});
+          if (!prefersReducedMotion) {
+            animateGalleryExit(container).catch(() => {});
+          }
 
           const logCleanupFailure = (error: unknown) => {
             __DEV__ && logger.warn('video cleanup failed', { error });
@@ -74,7 +84,9 @@ export function useGalleryLifecycle(options: UseGalleryLifecycleOptions): void {
               logCleanupFailure(error);
             }
             try {
-              if (video.currentTime !== 0) video.currentTime = 0;
+              if (video.currentTime !== 0) {
+                video.currentTime = 0;
+              }
             } catch (error) {
               logCleanupFailure(error);
             }
@@ -88,7 +100,9 @@ export function useGalleryLifecycle(options: UseGalleryLifecycleOptions): void {
   // Effect 3: Viewport CSS var sync via ResizeObserver
   createEffect(
     on([containerEl, toolbarWrapperEl], ([container, wrapper]) => {
-      if (!container || !wrapper) return;
+      if (!container || !wrapper) {
+        return;
+      }
 
       // Initial alignment reads scroll/focus state. Those reads must not
       // recreate this observer when a user scrolls or changes the focused item.

@@ -9,5 +9,7 @@ if (typeof version !== 'string' || !/^\d+\.\d+\.\d+$/.test(version)) {
 if (process.env.REQUESTED_NODE_VERSION && process.env.REQUESTED_NODE_VERSION !== version) {
   throw new Error('Release workflow runtime differs from the checked-out manifest pin');
 }
-if (!process.env.GITHUB_OUTPUT) throw new Error('GITHUB_OUTPUT is required');
+if (!process.env.GITHUB_OUTPUT) {
+  throw new Error('GITHUB_OUTPUT is required');
+}
 appendFileSync(process.env.GITHUB_OUTPUT, `version=${version}\n`);

@@ -100,13 +100,17 @@ export function ErrorBoundary(props: ErrorBoundaryProps): JSXElement {
   });
 
   const clearAutoReset = (): void => {
-    if (!autoResetTimer) return;
+    if (!autoResetTimer) {
+      return;
+    }
     clearTimeout(autoResetTimer);
     autoResetTimer = undefined;
   };
 
   const restoreRecoveryFocus = (): void => {
-    if (!recoveryFocus?.isConnected) return;
+    if (!recoveryFocus?.isConnected) {
+      return;
+    }
     try {
       recoveryFocus.focus({ preventScroll: true });
     } catch {
@@ -115,7 +119,9 @@ export function ErrorBoundary(props: ErrorBoundaryProps): JSXElement {
   };
 
   const scheduleAutoReset = (): void => {
-    if (autoResetTimer) clearTimeout(autoResetTimer);
+    if (autoResetTimer) {
+      clearTimeout(autoResetTimer);
+    }
     autoResetTimer = setTimeout(() => {
       handleReset();
     }, AUTO_RESET_MS);
@@ -126,14 +132,18 @@ export function ErrorBoundary(props: ErrorBoundaryProps): JSXElement {
   });
 
   const notifyError = (error: unknown): void => {
-    if (lastError() === error) return;
+    if (lastError() === error) {
+      return;
+    }
     setLastError(error);
     const { title, body } = translateError(error);
     notifySafely(getNotificationAdapter(), title, body);
   };
 
   const handleRetry = (): void => {
-    if (retryCount() >= MAX_RETRIES) return;
+    if (retryCount() >= MAX_RETRIES) {
+      return;
+    }
     restoreRecoveryFocus();
     setLastError(undefined);
     setCaughtError(undefined);
@@ -190,7 +200,9 @@ export function ErrorBoundary(props: ErrorBoundaryProps): JSXElement {
             local.onError?.(error);
             recoveryFocus =
               document.activeElement instanceof HTMLElement ? document.activeElement : null;
-            if (retryCount() >= MAX_RETRIES) scheduleAutoReset();
+            if (retryCount() >= MAX_RETRIES) {
+              scheduleAutoReset();
+            }
             return null;
           }}
         >

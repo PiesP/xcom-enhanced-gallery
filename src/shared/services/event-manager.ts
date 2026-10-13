@@ -132,7 +132,9 @@ export class EventManager {
           const keys = this.listenerKeys.get(type);
           if (keys) {
             keys.delete(compositeKey);
-            if (keys.size === 0) this.listenerKeys.delete(type);
+            if (keys.size === 0) {
+              this.listenerKeys.delete(type);
+            }
           }
         };
         signal.addEventListener('abort', onSignalAbort);
@@ -146,18 +148,24 @@ export class EventManager {
   }
 
   public removeListener(id: string): boolean {
-    if (!this.listeners.has(id)) return false;
+    if (!this.listeners.has(id)) {
+      return false;
+    }
     return this.removeListenerById(id);
   }
 
   public removeByContext(context: string): number {
     const toRemove: string[] = [];
     for (const [id, ctx] of this.listeners) {
-      if (ctx.context === context) toRemove.push(id);
+      if (ctx.context === context) {
+        toRemove.push(id);
+      }
     }
     let count = 0;
     for (const id of toRemove) {
-      if (this.removeListenerById(id)) count++;
+      if (this.removeListenerById(id)) {
+        count++;
+      }
     }
     return count;
   }
@@ -194,7 +202,9 @@ export class EventManager {
       const typeKeys = this.listenerKeys.get(ctx.type);
       if (typeKeys) {
         typeKeys.delete(compositeKey);
-        if (typeKeys.size === 0) this.listenerKeys.delete(ctx.type);
+        if (typeKeys.size === 0) {
+          this.listenerKeys.delete(ctx.type);
+        }
       }
       return true;
     } catch (error) {

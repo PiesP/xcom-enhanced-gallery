@@ -44,7 +44,9 @@ function ancestryOf(original: Element, documentRef: Document): readonly Element[
     element = element.parentElement
   ) {
     ancestry.push(element);
-    if (element === documentRef.documentElement) return ancestry;
+    if (element === documentRef.documentElement) {
+      return ancestry;
+    }
   }
   return null;
 }
@@ -52,12 +54,16 @@ function ancestryOf(original: Element, documentRef: Document): readonly Element[
 function sourceValuesOf(
   media: HTMLImageElement | HTMLVideoElement | null
 ): readonly string[] | null {
-  if (!media) return [];
+  if (!media) {
+    return [];
+  }
   if (media instanceof HTMLImageElement) {
     return [media.currentSrc, media.getAttribute('src') ?? '', media.getAttribute('srcset') ?? ''];
   }
   const sources = Array.from(media.querySelectorAll<HTMLSourceElement>(':scope > source'));
-  if (sources.length > MAX_SOURCE_ELEMENTS) return null;
+  if (sources.length > MAX_SOURCE_ELEMENTS) {
+    return null;
+  }
   return [
     media.currentSrc,
     media.getAttribute('src') ?? '',
@@ -68,7 +74,9 @@ function sourceValuesOf(
 
 function ownerOf(target: HTMLElement, extractor: TweetInfoExtractor): OwnerIdentity | null {
   const context = extractor.extractContext(target);
-  if (!context) return null;
+  if (!context) {
+    return null;
+  }
   return {
     tweetId: context.tweetInfo.tweetId,
     tweetUrl: context.tweetInfo.tweetUrl,
@@ -85,14 +93,20 @@ function captureIdentity(
   extractor: TweetInfoExtractor
 ): ClickIdentity | null {
   const original = event.target;
-  if (!(original instanceof Element)) return null;
+  if (!(original instanceof Element)) {
+    return null;
+  }
   const ancestry = ancestryOf(original, documentRef);
-  if (!ancestry) return null;
+  if (!ancestry) {
+    return null;
+  }
   try {
     const nativeControl = findNativeVideoControlMedia(target);
     const media = nativeControl?.video ?? nativeControl?.thumbnail ?? findMediaElementInDOM(target);
     const sourceValues = sourceValuesOf(media);
-    if (!sourceValues) return null;
+    if (!sourceValues) {
+      return null;
+    }
     return {
       documentUrl: documentRef.URL,
       ancestry,
@@ -112,7 +126,9 @@ function sameList<T>(left: readonly T[], right: readonly T[]): boolean {
 }
 
 function sameOwner(left: OwnerIdentity | null, right: OwnerIdentity | null): boolean {
-  if (!left || !right) return left === right;
+  if (!left || !right) {
+    return left === right;
+  }
   return (
     left.tweetId === right.tweetId &&
     left.tweetUrl === right.tweetUrl &&
@@ -162,11 +178,17 @@ export function installEarlyMediaClickReplay(
   const extractor = new TweetInfoExtractor();
 
   const handleClick = (event: MouseEvent): void => {
-    if (!event.isTrusted) return;
+    if (!event.isTrusted) {
+      return;
+    }
     const target = getMediaClickTarget(event);
-    if (!target?.isConnected || !isProcessableMedia(target, event)) return;
+    if (!target?.isConnected || !isProcessableMedia(target, event)) {
+      return;
+    }
     const identity = captureIdentity(event, target, documentRef, extractor);
-    if (!identity) return;
+    if (!identity) {
+      return;
+    }
 
     event.stopImmediatePropagation();
     event.preventDefault();
@@ -181,7 +203,9 @@ export function installEarlyMediaClickReplay(
 
   return {
     async complete(resume): Promise<void> {
-      if (disposed) return;
+      if (disposed) {
+        return;
+      }
       disposed = true;
       removeListener();
 
@@ -195,11 +219,15 @@ export function installEarlyMediaClickReplay(
         isProcessableMedia(pending.target, pending.event)
       ) {
         const current = captureIdentity(pending.event, pending.target, documentRef, extractor);
-        if (current && sameIdentity(pending.identity, current)) await resume(pending.event);
+        if (current && sameIdentity(pending.identity, current)) {
+          await resume(pending.event);
+        }
       }
     },
     dispose(): void {
-      if (disposed) return;
+      if (disposed) {
+        return;
+      }
       disposed = true;
       pendingClick = null;
       removeListener();

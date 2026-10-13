@@ -83,7 +83,9 @@ function classifyEvent(
 }
 
 function expectEnabled(outputs: Record<string, string>, names: readonly string[]): void {
-  for (const name of names) expect(outputs[name], name).toBe('true');
+  for (const name of names) {
+    expect(outputs[name], name).toBe('true');
+  }
 }
 
 function expectOnly(outputs: Record<string, string>, names: readonly string[]): void {

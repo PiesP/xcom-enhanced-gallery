@@ -17,7 +17,9 @@ const upload =
 
 function job(name: string): string {
   const start = workflow.search(new RegExp(`^  ${name}:$`, 'm'));
-  if (start < 0) throw new Error(`Missing OSV job: ${name}`);
+  if (start < 0) {
+    throw new Error(`Missing OSV job: ${name}`);
+  }
   const remaining = workflow.slice(start + name.length + 4);
   const end = remaining.search(/^  [a-z][a-z-]*:/m);
   return workflow.slice(start, end < 0 ? undefined : start + name.length + 4 + end);
@@ -26,9 +28,13 @@ function job(name: string): string {
 function step(jobBody: string, name: string): string {
   const lines = jobBody.split('\n');
   const start = lines.findIndex((line) => line.trim() === `- name: ${name}`);
-  if (start < 0) throw new Error(`Missing step: ${name}`);
+  if (start < 0) {
+    throw new Error(`Missing step: ${name}`);
+  }
   let end = start + 1;
-  while (end < lines.length && !lines[end]?.startsWith('      - name: ')) end += 1;
+  while (end < lines.length && !lines[end]?.startsWith('      - name: ')) {
+    end += 1;
+  }
   return lines.slice(start, end).join('\n');
 }
 
@@ -63,8 +69,9 @@ describe('shared consumer OSV workflow composition', () => {
         "OSV_SCANNER_IMAGE: ${{ needs['pin-metadata'].outputs.OSV_SCANNER_IMAGE }}"
       );
       const names = [...body.matchAll(/^      - name: (.+)$/gm)].map((match) => match[1]);
-      for (const name of names.slice(2, -1))
+      for (const name of names.slice(2, -1)) {
         expect(step(body, name ?? '')).toContain(`if: ${active}`);
+      }
     }
   });
 

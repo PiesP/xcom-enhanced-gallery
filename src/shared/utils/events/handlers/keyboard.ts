@@ -37,7 +37,9 @@ function createKeyboardDebouncer() {
   let disposed = false;
 
   function shouldExecute(key: string, minIntervalMs: number): boolean {
-    if (disposed) return false;
+    if (disposed) {
+      return false;
+    }
     const now = performance.now();
     const timeSinceLastExecution = now - state.lastExecutionTime;
 
@@ -95,7 +97,9 @@ const NAVIGATION_KEYS = new Set([
 const VIDEO_CONTROL_KEYS = new Set(['ArrowUp', 'ArrowDown', 'm', 'M']);
 
 function isEditableTarget(target: EventTarget | null | undefined): boolean {
-  if (!(target instanceof HTMLElement)) return false;
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
   const tag = target.tagName;
   return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable;
 }
@@ -113,18 +117,24 @@ export function handleKeyboardEvent(
   handlers: EventHandlers,
   options: GalleryEventOptions
 ): void {
-  if (!options.enableKeyboard) return;
+  if (!options.enableKeyboard) {
+    return;
+  }
 
   try {
     // Recovery is modeless: leave every key available to the host and recovery controls.
-    if (isGalleryRecoveryActive()) return;
+    if (isGalleryRecoveryActive()) {
+      return;
+    }
 
     const key = event.key;
     const isGalleryOpen = gallerySignals.isOpen;
 
     // ESC closes gallery regardless of other state, but not when editing form fields
     if (key === 'Escape' && isGalleryOpen) {
-      if (isEditableTarget(event.target)) return;
+      if (isEditableTarget(event.target)) {
+        return;
+      }
       handlers.onGalleryClose();
       event.preventDefault();
       event.stopPropagation();
@@ -137,7 +147,9 @@ export function handleKeyboardEvent(
       return;
     }
 
-    if (isEditableTarget(event.target)) return;
+    if (isEditableTarget(event.target)) {
+      return;
+    }
 
     // isNavKey/isVideoKey: space bar included in both to pass the reject guard
     // below, then routed to video control (play/pause) before navigation check.
@@ -251,7 +263,9 @@ function handleVideoControl(key: string): void {
  * @internal
  */
 function showKeyboardHelp(): void {
-  if (!keyboardDebouncer.shouldExecute('?', 500)) return;
+  if (!keyboardDebouncer.shouldExecute('?', 500)) {
+    return;
+  }
 
   try {
     const lang = getLanguageService();

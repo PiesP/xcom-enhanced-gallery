@@ -47,7 +47,9 @@ function unwrapResponse(response: unknown): string | undefined {
     return 'Empty or invalid response from background SW';
   }
   const r = response as Record<string, unknown>;
-  if (r.success === true) return undefined;
+  if (r.success === true) {
+    return undefined;
+  }
   // Always return a string error, never undefined/null — the caller can
   // provide a fallback message.
   return typeof r.error === 'string' && r.error.length > 0 ? r.error : 'Download failed';
@@ -108,7 +110,9 @@ export class MV3DownloadAdapter implements DownloadAdapter {
     let requestSettled = false;
     let rejectAbort: ((reason: unknown) => void) | undefined;
     const release = (): void => {
-      if (released) return;
+      if (released) {
+        return;
+      }
       released = true;
       try {
         URL.revokeObjectURL(objectUrl);
@@ -117,14 +121,20 @@ export class MV3DownloadAdapter implements DownloadAdapter {
       }
     };
     const scheduleRelease = (): void => {
-      if (terminalObserved || released) return;
+      if (terminalObserved || released) {
+        return;
+      }
       terminalObserved = true;
       signal?.removeEventListener('abort', onAbort);
-      if (pollTimer !== undefined) clearTimeout(pollTimer);
+      if (pollTimer !== undefined) {
+        clearTimeout(pollTimer);
+      }
       setTimeout(release, BLOB_URL_REVOKE_DELAY_MS);
     };
     const inspectStatus = async (): Promise<void> => {
-      if (terminalObserved || polling) return;
+      if (terminalObserved || polling) {
+        return;
+      }
       polling = true;
       try {
         const response: unknown = await browserApi.runtime.sendMessage({
@@ -141,7 +151,9 @@ export class MV3DownloadAdapter implements DownloadAdapter {
           typeof response.data === 'object'
         ) {
           const data = response.data as Partial<DownloadBlobStatusResponse>;
-          if (data.requestId === requestId && data.status === 'terminal') scheduleRelease();
+          if (data.requestId === requestId && data.status === 'terminal') {
+            scheduleRelease();
+          }
         }
       } catch {
         // An unavailable worker or failed lookup cannot prove native completion.
@@ -154,12 +166,16 @@ export class MV3DownloadAdapter implements DownloadAdapter {
       }
     };
     const startInspection = (): void => {
-      if (!terminalObserved && pollTimer === undefined && !polling) void inspectStatus();
+      if (!terminalObserved && pollTimer === undefined && !polling) {
+        void inspectStatus();
+      }
     };
     const onAbort = (): void => {
       sendCancelRequest(requestId);
       startInspection();
-      if (!requestSettled) rejectAbort?.(getUserCancelledAbortErrorFromSignal(signal));
+      if (!requestSettled) {
+        rejectAbort?.(getUserCancelledAbortErrorFromSignal(signal));
+      }
     };
     const abortPromise = signal
       ? new Promise<never>((_, reject) => {
@@ -217,7 +233,9 @@ export class MV3DownloadAdapter implements DownloadAdapter {
       ? Promise.race([responsePromise, abortPromise])
       : responsePromise);
     const error = unwrapResponse(response);
-    if (error) throw new Error(error);
+    if (error) {
+      throw new Error(error);
+    }
   }
 
   private async sendDirectDownloadRequest(
@@ -278,8 +296,9 @@ export class MV3DownloadAdapter implements DownloadAdapter {
             !('data' in response) ||
             !response.data ||
             typeof response.data !== 'object'
-          )
+          ) {
             return undefined;
+          }
           const data = response.data as Partial<DownloadDirectStatusResponse>;
           if (
             data.requestId !== requestId ||
@@ -299,7 +318,9 @@ export class MV3DownloadAdapter implements DownloadAdapter {
       let activeObserved = false;
       for (let attempt = 0; attempt < 3 || activeObserved; attempt += 1) {
         const remainingMs = deadline - performance.now();
-        if (remainingMs <= 0) break;
+        if (remainingMs <= 0) {
+          break;
+        }
         const delayMs = Math.min(attempt === 0 ? 1_500 : attempt < 3 ? 500 : 5_000, remainingMs);
         let timer: ReturnType<typeof setTimeout> | undefined;
         const tick = new Promise<{ responded: false; response: undefined }>((resolve) => {
@@ -311,7 +332,9 @@ export class MV3DownloadAdapter implements DownloadAdapter {
             ? Promise.race([...(responsePending ? [responsePromise] : []), tick, abortPromise])
             : Promise.race([...(responsePending ? [responsePromise] : []), tick]));
         } finally {
-          if (timer !== undefined) clearTimeout(timer);
+          if (timer !== undefined) {
+            clearTimeout(timer);
+          }
         }
         if (reply.responded) {
           responsePending = false;
@@ -321,11 +344,15 @@ export class MV3DownloadAdapter implements DownloadAdapter {
             data?.requestId === requestId &&
             data.status === 'complete' &&
             message?.success === true
-          )
+          ) {
             return;
-          if (data?.requestId === requestId && data.status === 'active') activeObserved = true;
-          if (message?.success === false && typeof message.error === 'string')
+          }
+          if (data?.requestId === requestId && data.status === 'active') {
+            activeObserved = true;
+          }
+          if (message?.success === false && typeof message.error === 'string') {
             lastError = message.error;
+          }
           if (
             data?.requestId === requestId &&
             (data.status === 'never-started' || data.status === 'interrupted')
@@ -334,7 +361,9 @@ export class MV3DownloadAdapter implements DownloadAdapter {
           }
         }
         const statusRemainingMs = deadline - performance.now();
-        if (statusRemainingMs <= 0) break;
+        if (statusRemainingMs <= 0) {
+          break;
+        }
         let statusTimer: ReturnType<typeof setTimeout> | undefined;
         const statusTimeout = new Promise<undefined>((resolve) => {
           statusTimer = setTimeout(() => resolve(undefined), Math.min(1_000, statusRemainingMs));
@@ -345,21 +374,37 @@ export class MV3DownloadAdapter implements DownloadAdapter {
             ? Promise.race([inspect(), statusTimeout, abortPromise])
             : Promise.race([inspect(), statusTimeout]));
         } finally {
-          if (statusTimer !== undefined) clearTimeout(statusTimer);
+          if (statusTimer !== undefined) {
+            clearTimeout(statusTimer);
+          }
         }
-        if (status?.status === 'complete') return;
-        if (status?.status === 'never-started') throw new Error(lastError);
-        if (status?.status === 'interrupted') throw new Error('Browser download was interrupted');
-        if (status?.status === 'active') activeObserved = true;
+        if (status?.status === 'complete') {
+          return;
+        }
+        if (status?.status === 'never-started') {
+          throw new Error(lastError);
+        }
+        if (status?.status === 'interrupted') {
+          throw new Error('Browser download was interrupted');
+        }
+        if (status?.status === 'active') {
+          activeObserved = true;
+        }
       }
       // The worker may have lost its reply while the browser still owns the
       // transfer. Ask it to cancel the original ID before reporting uncertainty.
-      if (activeObserved) sendCancelRequest(requestId, url);
+      if (activeObserved) {
+        sendCancelRequest(requestId, url);
+      }
       retainAbortListener = !signal?.aborted;
-      if (retainAbortListener) handoffTimer = setTimeout(cleanupAbortListener, DOWNLOAD_TIMEOUT_MS);
+      if (retainAbortListener) {
+        handoffTimer = setTimeout(cleanupAbortListener, DOWNLOAD_TIMEOUT_MS);
+      }
       throw new Error(lastError);
     } finally {
-      if (!retainAbortListener) cleanupAbortListener();
+      if (!retainAbortListener) {
+        cleanupAbortListener();
+      }
     }
   }
 }

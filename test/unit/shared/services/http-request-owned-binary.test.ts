@@ -15,7 +15,9 @@ vi.mock('@platform/index', () => ({
   getHttpRequestAdapter: () => ({
     request: (details: HttpRequestDetails): HttpRequestControl => {
       requestState.calls++;
-      if (!requestState.impl) throw new Error('Missing HTTP fixture');
+      if (!requestState.impl) {
+        throw new Error('Missing HTTP fixture');
+      }
       return requestState.impl(details);
     },
   }),
@@ -130,7 +132,9 @@ describe('owned binary HTTP response', () => {
       let details: HttpRequestDetails | undefined;
       requestState.impl = (value) => {
         details = value;
-        if (duringStart) controller.abort();
+        if (duringStart) {
+          controller.abort();
+        }
         return {
           abort: () => {
             throw new Error('manager cancel failed');
@@ -146,7 +150,9 @@ describe('owned binary HTTP response', () => {
           signal: controller.signal,
         }
       );
-      if (!duringStart) controller.abort();
+      if (!duringStart) {
+        controller.abort();
+      }
       await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
       expect(budget.usedBytes).toBe(12);
       expect(() => budget.reserve(1)).toThrow();

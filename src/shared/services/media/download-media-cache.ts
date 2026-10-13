@@ -62,10 +62,15 @@ export class DownloadMediaCache {
     signal?: AbortSignal,
     maxResponseBytes?: number
   ): Promise<OwnedBlob> | null {
-    if (this.disposed || media.type === 'video' || media.type === 'gif') return null;
-    if (signal?.aborted) return Promise.reject(getAbortReasonOrAbortErrorFromSignal(signal));
-    if (media.downloadSource?.quality === 'unverified-original')
+    if (this.disposed || media.type === 'video' || media.type === 'gif') {
+      return null;
+    }
+    if (signal?.aborted) {
+      return Promise.reject(getAbortReasonOrAbortErrorFromSignal(signal));
+    }
+    if (media.downloadSource?.quality === 'unverified-original') {
       return Promise.reject(new DownloadSourceUnavailableError());
+    }
 
     const url = getMediaDownloadUrl(media);
     const existing = this.cache.get(url);
@@ -74,7 +79,9 @@ export class DownloadMediaCache {
       return this.borrow(existing, signal, maxResponseBytes);
     }
 
-    if (this.cache.size >= this.maxEntries) this.evictOldest();
+    if (this.cache.size >= this.maxEntries) {
+      this.evictOldest();
+    }
     const entry: CacheEntry = {
       url,
       controller: new AbortController(),
@@ -85,7 +92,9 @@ export class DownloadMediaCache {
     this.addToLRU(url);
     // Register the first borrower before a transport may settle synchronously.
     const borrowed = this.borrow(entry, signal, maxResponseBytes);
-    if (!entry.controller.signal.aborted) void this.fetchAndCache(entry, maxResponseBytes);
+    if (!entry.controller.signal.aborted) {
+      void this.fetchAndCache(entry, maxResponseBytes);
+    }
     return borrowed;
   }
 
@@ -93,15 +102,21 @@ export class DownloadMediaCache {
   cancelPending(): void {
     for (const [url, controller] of this.activeRequests) {
       const entry = this.cache.get(url);
-      if (entry?.controller === controller) this.evictNode(this.nodeMap.get(url));
+      if (entry?.controller === controller) {
+        this.evictNode(this.nodeMap.get(url));
+      }
     }
   }
 
   destroy(): void {
-    if (this.disposed) return;
+    if (this.disposed) {
+      return;
+    }
     this.disposed = true;
     this.cancelPending();
-    for (const entry of this.cache.values()) entry.owner?.lease.release();
+    for (const entry of this.cache.values()) {
+      entry.owner?.lease.release();
+    }
     this.cache.clear();
     this.nodeMap.clear();
     this.resolvedSizes.clear();
@@ -133,14 +148,19 @@ export class DownloadMediaCache {
       entry.borrowers.delete(borrower);
       reject(getAbortReasonOrAbortErrorFromSignal(signal));
       if (entry.borrowers.size === 0 && !entry.owner) {
-        if (this.cache.get(entry.url) === entry) this.evictNode(this.nodeMap.get(entry.url));
-        else entry.controller.abort();
+        if (this.cache.get(entry.url) === entry) {
+          this.evictNode(this.nodeMap.get(entry.url));
+        } else {
+          entry.controller.abort();
+        }
       }
     };
     const borrower: Borrower = { signal, maxResponseBytes, resolve, reject, onAbort };
     entry.borrowers.add(borrower);
     signal?.addEventListener('abort', onAbort, { once: true });
-    if (signal?.aborted) onAbort();
+    if (signal?.aborted) {
+      onAbort();
+    }
     // Bulk downloads may collect promises before workers await them.
     void result.catch(() => undefined);
     return result;
@@ -183,7 +203,9 @@ export class DownloadMediaCache {
       }
       entry.borrowers.clear();
 
-      if (this.activeRequests.get(url) === controller) this.activeRequests.delete(url);
+      if (this.activeRequests.get(url) === controller) {
+        this.activeRequests.delete(url);
+      }
       if (!this.disposed && this.cache.get(url) === entry) {
         entry.owner = owner;
         this.totalBytes += owner.value.size;
@@ -199,7 +221,9 @@ export class DownloadMediaCache {
         borrower.reject(error);
       }
       entry.borrowers.clear();
-      if (this.cache.get(url) === entry) this.evictNode(this.nodeMap.get(url));
+      if (this.cache.get(url) === entry) {
+        this.evictNode(this.nodeMap.get(url));
+      }
       if (__DEV__) {
         logger.debug('[DownloadMediaCache] Media request failed', {
           url,
@@ -207,7 +231,9 @@ export class DownloadMediaCache {
         });
       }
     } finally {
-      if (this.activeRequests.get(url) === controller) this.activeRequests.delete(url);
+      if (this.activeRequests.get(url) === controller) {
+        this.activeRequests.delete(url);
+      }
     }
   }
 
@@ -220,15 +246,21 @@ export class DownloadMediaCache {
       }
       node = node.next;
     }
-    if (this.head) this.evictNode(this.head);
+    if (this.head) {
+      this.evictNode(this.head);
+    }
   }
 
   private evictByByteBudget(): void {
-    while (this.totalBytes > this.maxBytes && this.head) this.evictOldest();
+    while (this.totalBytes > this.maxBytes && this.head) {
+      this.evictOldest();
+    }
   }
 
   private evictNode(node: LRUNode | undefined): void {
-    if (!node) throw new Error('Missing LRU node for an owned cache entry');
+    if (!node) {
+      throw new Error('Missing LRU node for an owned cache entry');
+    }
     const entry = this.cache.get(node.url);
     entry?.owner?.lease.release();
     if (entry && !entry.owner) {
@@ -251,29 +283,47 @@ export class DownloadMediaCache {
 
   private addToLRU(url: string): void {
     const node: LRUNode = { url, prev: this.tail, next: null };
-    if (this.tail) this.tail.next = node;
+    if (this.tail) {
+      this.tail.next = node;
+    }
     this.tail = node;
-    if (!this.head) this.head = node;
+    if (!this.head) {
+      this.head = node;
+    }
     this.nodeMap.set(url, node);
   }
 
   private moveToTail(url: string): void {
     const node = this.nodeMap.get(url);
-    if (!node || this.tail === node) return;
+    if (!node || this.tail === node) {
+      return;
+    }
     this.removeNode(node);
     node.prev = this.tail;
     node.next = null;
-    if (this.tail) this.tail.next = node;
+    if (this.tail) {
+      this.tail.next = node;
+    }
     this.tail = node;
-    if (!this.head) this.head = node;
+    if (!this.head) {
+      this.head = node;
+    }
     this.nodeMap.set(url, node);
   }
 
   private removeNode(node: LRUNode): void {
-    if (node.prev) node.prev.next = node.next;
-    if (node.next) node.next.prev = node.prev;
-    if (this.head === node) this.head = node.next;
-    if (this.tail === node) this.tail = node.prev;
+    if (node.prev) {
+      node.prev.next = node.next;
+    }
+    if (node.next) {
+      node.next.prev = node.prev;
+    }
+    if (this.head === node) {
+      this.head = node.next;
+    }
+    if (this.tail === node) {
+      this.tail = node.prev;
+    }
     this.nodeMap.delete(node.url);
   }
 }

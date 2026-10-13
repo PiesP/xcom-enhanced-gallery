@@ -207,7 +207,9 @@ describe('gallery host-state recovery', () => {
 
     function SucceedsOnThirdRetry(): JSXElement {
       renderCount += 1;
-      if (renderCount <= 3) throw new Error(`Transient render failure ${renderCount}`);
+      if (renderCount <= 3) {
+        throw new Error(`Transient render failure ${renderCount}`);
+      }
       return (
         <button data-stable-gallery="" type="button">
           Recovered gallery
@@ -276,7 +278,9 @@ describe('gallery host-state recovery', () => {
       const [shouldThrow, setShouldThrow] = createSignal(false);
       triggerError = () => setShouldThrow(true);
       createEffect(() => {
-        if (shouldThrow()) throw new Error('Injected render failure');
+        if (shouldThrow()) {
+          throw new Error('Injected render failure');
+        }
       });
       return <button type="button">Inside</button>;
     }

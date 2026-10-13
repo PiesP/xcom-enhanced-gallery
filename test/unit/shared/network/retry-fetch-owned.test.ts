@@ -20,7 +20,9 @@ vi.mock('@shared/services/http-request-service', () => ({
     getOwnedBinary: (_url: string, options: unknown): Promise<unknown> => {
       client.calls++;
       client.lastOptions = options;
-      if (!client.impl) throw new Error('Missing HTTP fixture');
+      if (!client.impl) {
+        throw new Error('Missing HTTP fixture');
+      }
       return client.impl(options);
     },
   }),

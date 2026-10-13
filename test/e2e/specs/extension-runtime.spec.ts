@@ -155,7 +155,9 @@ test('loads the Chrome extension, completes a privileged download, and restores 
       document.body.prepend(spacer);
 
       const trigger = document.querySelector<HTMLElement>('[data-testid="tweetPhoto"] img');
-      if (!trigger) throw new Error('Gallery trigger missing');
+      if (!trigger) {
+        throw new Error('Gallery trigger missing');
+      }
       trigger.tabIndex = 0;
       trigger.addEventListener(
         'pointerdown',
@@ -186,7 +188,9 @@ test('loads the Chrome extension, completes a privileged download, and restores 
           __xegOpeningBoundary?: { scrollY: number; triggerFocused: boolean };
         }
       ).__xegOpeningBoundary;
-      if (!boundary) throw new Error('Gallery opening boundary was not observed');
+      if (!boundary) {
+        throw new Error('Gallery opening boundary was not observed');
+      }
       return boundary;
     });
     expect(openingBoundary).toMatchObject({ triggerFocused: true });
@@ -230,7 +234,9 @@ test('loads the Chrome extension, completes a privileged download, and restores 
 
     await page.evaluate(() => {
       const spacer = document.querySelector<HTMLElement>('#host-layout-spacer');
-      if (!spacer) throw new Error('Host layout spacer missing');
+      if (!spacer) {
+        throw new Error('Host layout spacer missing');
+      }
       spacer.style.height = '3200px';
     });
     await page.keyboard.press('Escape');
@@ -411,17 +417,23 @@ test('executes the Firefox background module and registers its runtime listeners
         storage: {
           local: {
             get: async (keys: string | string[] | null) => {
-              if (keys === null) return Object.fromEntries(storage.entries());
+              if (keys === null) {
+                return Object.fromEntries(storage.entries());
+              }
               const requested = Array.isArray(keys) ? keys : [keys];
               return Object.fromEntries(
                 requested.filter((key) => storage.has(key)).map((key) => [key, storage.get(key)])
               );
             },
             set: async (items: Record<string, unknown>) => {
-              for (const [key, value] of Object.entries(items)) storage.set(key, value);
+              for (const [key, value] of Object.entries(items)) {
+                storage.set(key, value);
+              }
             },
             remove: async (keys: string | string[]) => {
-              for (const key of Array.isArray(keys) ? keys : [keys]) storage.delete(key);
+              for (const key of Array.isArray(keys) ? keys : [keys]) {
+                storage.delete(key);
+              }
             },
           },
         },
@@ -517,8 +529,9 @@ test('loads the Chrome extension and scopes article-less tile recovery with tear
       if (url.pathname.endsWith('/TweetResultByRestId')) {
         owners.push(JSON.parse(url.searchParams.get('variables') ?? '{}').tweetId);
         await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
-      } else
+      } else {
         await route.fulfill({ status: 200, contentType: 'text/html', body: MOCK_GALLERY_HTML });
+      }
     });
     await context.route('https://pbs.twimg.com/**', (route) =>
       route.fulfill({ status: 200, contentType: 'image/png', body: MOCK_IMAGE })
@@ -575,8 +588,9 @@ for (const replaceSource of [false, true]) {
           owners.push(JSON.parse(url.searchParams.get('variables') ?? '{}').tweetId);
           await apiGate;
           await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
-        } else
+        } else {
           await route.fulfill({ status: 200, contentType: 'text/html', body: MOCK_GALLERY_HTML });
+        }
       });
       await context.route('https://pbs.twimg.com/**', (route) =>
         route.fulfill({ status: 200, contentType: 'image/png', body: MOCK_IMAGE })
@@ -601,10 +615,11 @@ for (const replaceSource of [false, true]) {
       });
       await page.locator('#identity-target').click();
       await expect.poll(() => owners).toEqual(['222']);
-      if (replaceSource)
+      if (replaceSource) {
         await page.locator('#identity-target').evaluate((element) => {
           element.setAttribute('src', 'https://pbs.twimg.com/media/identity-B.jpg');
         });
+      }
       releaseApi?.();
       const gallery = page.locator('[data-xeg-gallery-container]');
       if (replaceSource) {

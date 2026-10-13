@@ -14,7 +14,9 @@ interface FixtureRequest {
 }
 let httpFixture: ((details: FixtureRequest) => { abort: () => void }) | undefined;
 const dispatchFixture = (details: FixtureRequest) => {
-  if (!httpFixture) throw new Error('No ZIP HTTP fixture installed');
+  if (!httpFixture) {
+    throw new Error('No ZIP HTTP fixture installed');
+  }
   return httpFixture(details);
 };
 // The production userscript API captures the manager function once per page.
@@ -33,7 +35,9 @@ async function downloadAsZip(
   return result;
 }
 afterEach(() => {
-  for (const result of results.splice(0)) result.dispose();
+  for (const result of results.splice(0)) {
+    result.dispose();
+  }
 });
 
 interface DeferredBlob {
@@ -59,7 +63,9 @@ function ownedBlob(value: Blob): OwnedBlob {
   return owner;
 }
 afterEach(() => {
-  for (const owner of inputOwners.splice(0)) owner.lease.release();
+  for (const owner of inputOwners.splice(0)) {
+    owner.lease.release();
+  }
 });
 
 describe('user-facing bulk ZIP download', () => {

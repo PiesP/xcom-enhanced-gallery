@@ -46,8 +46,12 @@ describe('MV3DownloadAdapter', () => {
     const released = vi.fn();
     const controller = new AbortController();
     sendMessage.mockImplementation((message: { type: string; payload: { requestId: string } }) => {
-      if (message.type === 'DOWNLOAD_BLOB_URL_REQUEST') return new Promise(() => undefined);
-      if (message.type === 'DOWNLOAD_CANCEL_REQUEST') throw new Error('Runtime unavailable');
+      if (message.type === 'DOWNLOAD_BLOB_URL_REQUEST') {
+        return new Promise(() => undefined);
+      }
+      if (message.type === 'DOWNLOAD_CANCEL_REQUEST') {
+        throw new Error('Runtime unavailable');
+      }
       return Promise.resolve({
         success: true,
         data: { requestId: message.payload.requestId, status: 'terminal' },
@@ -113,8 +117,12 @@ describe('MV3DownloadAdapter', () => {
     const released = vi.fn();
     const controller = new AbortController();
     sendMessage.mockImplementation((message: { type: string; payload: { requestId: string } }) => {
-      if (message.type === 'DOWNLOAD_BLOB_URL_REQUEST') return new Promise(() => undefined);
-      if (message.type === 'DOWNLOAD_CANCEL_REQUEST') return Promise.resolve({ success: true });
+      if (message.type === 'DOWNLOAD_BLOB_URL_REQUEST') {
+        return new Promise(() => undefined);
+      }
+      if (message.type === 'DOWNLOAD_CANCEL_REQUEST') {
+        return Promise.resolve({ success: true });
+      }
       return Promise.resolve({
         success: true,
         data: { requestId: message.payload.requestId, status: 'unknown' },
@@ -232,8 +240,9 @@ describe('MV3DownloadAdapter', () => {
   it('reconciles a lost reply to the original completed ID without redispatch', async () => {
     const url = 'https://pbs.twimg.com/media/example.jpg';
     sendMessage.mockImplementation((message: { type: string; payload: { requestId: string } }) => {
-      if (message.type === 'DOWNLOAD_REQUEST')
+      if (message.type === 'DOWNLOAD_REQUEST') {
         return Promise.reject(new Error('Worker reply lost'));
+      }
       return Promise.resolve({
         success: true,
         data: { requestId: message.payload.requestId, status: 'complete' },
@@ -300,8 +309,9 @@ describe('MV3DownloadAdapter', () => {
 
   it('reports a terminal interrupted download without a Blob replacement', async () => {
     sendMessage.mockImplementation((message: { type: string; payload: { requestId: string } }) => {
-      if (message.type === 'DOWNLOAD_REQUEST')
+      if (message.type === 'DOWNLOAD_REQUEST') {
         return Promise.reject(new Error('Worker reply lost'));
+      }
       return Promise.resolve({
         success: true,
         data: { requestId: message.payload.requestId, status: 'interrupted' },
@@ -322,9 +332,12 @@ describe('MV3DownloadAdapter', () => {
     vi.useFakeTimers();
     const controller = new AbortController();
     sendMessage.mockImplementation((message: { type: string; payload: { requestId: string } }) => {
-      if (message.type === 'DOWNLOAD_REQUEST')
+      if (message.type === 'DOWNLOAD_REQUEST') {
         return Promise.reject(new Error('Worker reply lost'));
-      if (message.type === 'DOWNLOAD_CANCEL_REQUEST') return Promise.resolve({ success: true });
+      }
+      if (message.type === 'DOWNLOAD_CANCEL_REQUEST') {
+        return Promise.resolve({ success: true });
+      }
       return Promise.resolve({
         success: true,
         data: { requestId: message.payload.requestId, status: 'active' },
@@ -373,9 +386,12 @@ describe('MV3DownloadAdapter', () => {
     vi.useFakeTimers();
     const controller = new AbortController();
     sendMessage.mockImplementation((message: { type: string; payload: { requestId: string } }) => {
-      if (message.type === 'DOWNLOAD_REQUEST')
+      if (message.type === 'DOWNLOAD_REQUEST') {
         return Promise.reject(new Error('Worker reply lost'));
-      if (message.type === 'DOWNLOAD_CANCEL_REQUEST') return Promise.resolve({ success: true });
+      }
+      if (message.type === 'DOWNLOAD_CANCEL_REQUEST') {
+        return Promise.resolve({ success: true });
+      }
       return Promise.resolve({
         success: true,
         data: { requestId: message.payload.requestId, status: 'unknown' },
@@ -415,9 +431,12 @@ describe('MV3DownloadAdapter', () => {
   it('requests cancellation of the active original when the deadline expires', async () => {
     vi.useFakeTimers();
     sendMessage.mockImplementation((message: { type: string; payload: { requestId: string } }) => {
-      if (message.type === 'DOWNLOAD_REQUEST')
+      if (message.type === 'DOWNLOAD_REQUEST') {
         return Promise.reject(new Error('Worker reply lost'));
-      if (message.type === 'DOWNLOAD_CANCEL_REQUEST') return Promise.resolve({ success: true });
+      }
+      if (message.type === 'DOWNLOAD_CANCEL_REQUEST') {
+        return Promise.resolve({ success: true });
+      }
       return Promise.resolve({
         success: true,
         data: { requestId: message.payload.requestId, status: 'active' },

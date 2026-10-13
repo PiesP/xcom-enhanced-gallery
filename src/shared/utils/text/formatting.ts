@@ -32,16 +32,22 @@ export function cx(...inputs: ClassValue[]): string {
   const classes: string[] = [];
 
   for (const input of inputs) {
-    if (!input) continue;
+    if (!input) {
+      continue;
+    }
 
     if (typeof input === 'string' || typeof input === 'number') {
       classes.push(String(input));
     } else if (Array.isArray(input)) {
       const nested = cx(...input);
-      if (nested) classes.push(nested);
+      if (nested) {
+        classes.push(nested);
+      }
     } else if (typeof input === 'object') {
       for (const [key, value] of Object.entries(input as ClassRecord)) {
-        if (value) classes.push(key);
+        if (value) {
+          classes.push(key);
+        }
       }
     }
   }

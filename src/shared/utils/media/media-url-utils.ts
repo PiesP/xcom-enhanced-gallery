@@ -15,18 +15,26 @@ function hasValidUrlPrefix(str: string): boolean {
 }
 
 export function extractFilenameFromUrl(url: string): string | null {
-  if (!url) return null;
+  if (!url) {
+    return null;
+  }
   const trimmed = url.trim();
-  if (!trimmed || !hasValidUrlPrefix(trimmed)) return null;
+  if (!trimmed || !hasValidUrlPrefix(trimmed)) {
+    return null;
+  }
   const parsed = tryParseUrl(trimmed, 'https://example.invalid');
-  if (!parsed) return null;
+  if (!parsed) {
+    return null;
+  }
   const filename = parsed.pathname.split('/').pop();
   return filename && filename.length > 0 ? filename : null;
 }
 
 export function getMediaDedupKey(media: MediaInfo): string | null {
   const cached = dedupKeyCache.get(media as unknown as object);
-  if (cached !== undefined) return cached;
+  if (cached !== undefined) {
+    return cached;
+  }
 
   const urlCandidate =
     typeof media.originalUrl === 'string' && media.originalUrl.length > 0
@@ -64,22 +72,32 @@ export function getMediaDedupKey(media: MediaInfo): string | null {
 }
 
 export function extractVisualIndexFromUrl(url: string): number {
-  if (!url) return 0;
+  if (!url) {
+    return 0;
+  }
   const match = url.match(/\/(photo|video)\/(\d+)(?:[?#].*)?$/);
   const visualNumber = match?.[2] ? Number.parseInt(match[2], 10) : NaN;
   return Number.isFinite(visualNumber) && visualNumber > 0 ? visualNumber - 1 : 0;
 }
 
 export function normalizeMediaUrl(url: string): string | null {
-  if (!url) return null;
+  if (!url) {
+    return null;
+  }
   const trimmed = url.trim();
-  if (!trimmed || !hasValidUrlPrefix(trimmed)) return null;
+  if (!trimmed || !hasValidUrlPrefix(trimmed)) {
+    return null;
+  }
 
   const parsed = tryParseUrl(trimmed, 'https://example.invalid');
-  if (!parsed) return null;
+  if (!parsed) {
+    return null;
+  }
 
   let filename = parsed.pathname.split('/').pop();
-  if (!filename) return null;
+  if (!filename) {
+    return null;
+  }
 
   const dotIndex = filename.lastIndexOf('.');
   if (dotIndex !== -1) {
