@@ -58,7 +58,7 @@ jobs:
         run: |
           set -euo pipefail
           pinned_dir="$(mktemp -d "$RUNNER_TEMP/pinned-tools.XXXXXXXX")"
-          for name in pinned-tools.json pinned-tools.ts check-pinned-tools.ts install-nose.ts; do
+          for name in pinned-tools.json pinned-tools.ts check-pinned-tools.ts; do
             install -m 0600 "scripts/ci/$name" "$pinned_dir/$name"
           done
           GITHUB_ENV="$GITHUB_OUTPUT" node --experimental-strip-types "$pinned_dir/pinned-tools.ts" env
@@ -135,7 +135,7 @@ jobs:
         run: |
           set -euo pipefail
           pinned_dir="$(mktemp -d "$RUNNER_TEMP/pinned-tools.XXXXXXXX")"
-          for name in pinned-tools.json pinned-tools.ts check-pinned-tools.ts install-nose.ts; do
+          for name in pinned-tools.json pinned-tools.ts check-pinned-tools.ts; do
             install -m 0600 "scripts/ci/$name" "$pinned_dir/$name"
           done
           node --experimental-strip-types "$pinned_dir/check-pinned-tools.ts"

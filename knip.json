@@ -4,8 +4,8 @@
     "src/main.ts!",
     "src/extension/background.ts!",
     "src/extension/content.ts!",
-    "scripts/check/{bootstrap,extension-build,nose}.ts",
-    "scripts/ci/{check-pinned-tools,classify-changes,deep-check-reuse,dependabot-apply,install-nose,pinned-tools,update-browser-core}.ts",
+    "scripts/check/{bootstrap,extension-build}.ts",
+    "scripts/ci/{check-pinned-tools,classify-changes,deep-check-reuse,dependabot-apply,pinned-tools,update-browser-core}.ts",
     "scripts/ci/*.test.ts",
     "scripts/release/{package-extension,prepare,verify-publication,verify-source,version}.ts",
     "scripts/release/*.test.ts",
@@ -24,6 +24,6 @@
     ".github/actions/**/*.mjs",
     "vite*.ts"
   ],
-  "ignoreBinaries": ["openssl", "nose"],
+  "ignoreBinaries": ["openssl"],
   "ignoreExportsUsedInFile": true
 }

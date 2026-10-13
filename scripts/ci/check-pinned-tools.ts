@@ -78,25 +78,6 @@ function checkRelease(name: string, current: string, repository: string, now: nu
   }
 }
 
-function checkInstallerDigest(version: string, expected: string): void {
-  const release = object(
-    json(command('gh', ['api', `repos/corca-ai/nose/releases/tags/v${version}`]), 'Nose release'),
-    'Nose release'
-  );
-  if (!Array.isArray(release.assets)) {
-    throw new Error('Invalid Nose release assets');
-  }
-  const assets = release.assets.map((asset) => object(asset, 'Nose asset'));
-  const matches = assets.filter((asset) => asset.name === 'nose-cli-installer.sh');
-  const actual = matches.length === 1 ? matches[0]?.digest : undefined;
-  if (actual !== `sha256:${expected}`) {
-    throw new Error(
-      `::error title=nose-installer digest mismatch::Pinned digest ${expected}; v${version} asset resolves to ${typeof actual === 'string' ? actual : 'unknown'}.`
-    );
-  }
-  console.log(`✓ nose-installer v${version} installer digest matches the pinned SHA-256.`);
-}
-
 function checkOsvDigest(version: string, image: string): void {
   const token = object(
     json(
@@ -151,8 +132,6 @@ export function main(args: readonly string[], now = Date.now()): number {
     const pins = readPins();
     let failed = false;
     for (const check of [
-      () => checkRelease('nose', pins.nose.version, 'corca-ai/nose', now),
-      () => checkInstallerDigest(pins.nose.version, pins.nose.installerSha256),
       () => checkRelease('osv-scanner', pins.osv.version, 'google/osv-scanner', now),
       () => checkOsvDigest(pins.osv.version, pins.osv.image),
       () => checkRelease('semgrep', pins.semgrep.version, 'semgrep/semgrep', now),

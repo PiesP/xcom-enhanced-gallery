@@ -48,7 +48,6 @@ The table gives each command family, execution stage, side effects, and checks.
 | Public command or family | Purpose; owner and execution stage | Inputs, outputs, side effects; verification |
 | --- | --- | --- |
 | `pnpm install` (`preinstall`) | Before dependencies, Node built-ins in `scripts/check/bootstrap.ts` check the `packages/core` manifest. | Reads the submodule path; no writes by the check; missing core prints recovery steps and fails. `test/unit/tooling/command-adapters.test.ts`, `pnpm check:scripts`; frozen install is a separate package-manager operation. |
-| `pnpm quality:nose` | Optional local duplication query through `scripts/check/nose.ts`; installed Nose is external. | Reads `src` and `.nose-baseline.json`; inherits cwd/environment, forwards status and signal; absent binary prints a skip, installed failure fails. `test/unit/tooling/command-adapters.test.ts`; CI Nose installation/check remains mandatory. |
 | `pnpm build`, `build:fast`, `build:dev`, `build:ci` | Vite userscript builds; `build:dev` selects development mode. Ordinary `build` has the `prebuild` quality/version gate (`check:prebuild` runs versions then quality); `:ci` is the explicit gate-free build step. | Reads `src`, Vite configs, core; writes `dist/`. Check `pnpm verify` and the relevant userscript Playwright lane. |
 | `pnpm build:extension`, `build:extension:firefox`, their `:ci` variants | Vite background/content builds plus `scripts/check/extension-build.ts`; ordinary names trigger `prebuild:extension` or `prebuild:extension:firefox`, both delegating to `check:prebuild`. | Writes `dist-extension*`; checker verifies classic content script and assets and fails on a bad bundle. `pnpm verify`, `test/unit/extension`, `test:e2e:extension`, and Firefox runtime lane as applicable. |
 | `pnpm build:all`, `build:all:ci`, `build:e2e` | Chain userscript and both extension targets; `build:e2e` first calls `clean` then produces development and extension fixtures. `build:all:ci` checks versions before the three CI builds; `prebuild:all` delegates to `check:prebuild` for the ordinary lifecycle command. | Mutates generated `dist*`; `build:e2e` removes generated outputs first. Validate with `verify`, artifact tests, and affected browser lanes; `:ci` is not a replacement for quality when invoked alone. |
@@ -56,8 +55,8 @@ The table gives each command family, execution stage, side effects, and checks.
 | `pnpm check:versions`, `sync:versions` | `scripts/release/version.ts` checks or synchronizes package/extension versions. | `check` reads and fails on mismatch; `sync` writes manifests. `test/unit/tooling/release-runtime.test.ts` plus version check. |
 | `pnpm package:extension`, `package:all`, `release:prepare` | `scripts/release/package-extension.ts` archives built Chrome/Firefox extensions; `package:all` builds first. `scripts/release/prepare.ts` prepares a version- and commit-bound release bundle after builds. | Reads `RELEASE_VERSION` and optional commit identity, `dist*`, package metadata; writes ZIPs, release bundle and metadata, with external `zip` required. `test/unit/tooling/release-runtime.test.ts`, release/publication tests and actual artifact inspection. These commands prepare files; they do not publish a release. |
 | `pnpm check:src`, `check:tooling`, `check:test`, `check:scripts`, `check:e2e`, `check`, `typecheck` | Separate browser, build/config, Vitest, NodeNext/erasable script/direct Firefox, and Playwright TypeScript projects. `check` chains source/tooling/test/scripts; `check:e2e` checks Playwright separately. | Read-only; `tsconfig.e2e.json` excludes the direct Firefox test so it is checked in the Node project instead. `pnpm quality` includes every project boundary. |
-| `pnpm check:biome`, `fmt`, `fmt:check`, `lint`, `knip`, `knip:full`, `knip:production`, `circular` | Canonical Biome format/lint/assist inspection, convenient format-only/lint-only commands, dependency/entry analysis, and source graph checks. | Read-only; Knip uses real CLI/workflow/test/runtime entries and reports orphan helpers, and `ignoreBinaries` includes external Nose/OpenSSL. `fmt:fix`, `lint:fix`, `quality:fix` write formatting fixes and must be reviewed separately. |
-| `pnpm quality`, `verify`, `verify:full` | `quality` chains one read-only `biome ci` pass, all runtime type checks, the focused policy suite, circular, Knip and optional local Nose. `verify` adds production targets; `verify:full` adds coverage, development build, and all E2E browser lanes. | Build/test outputs and browser profiles are generated; `verify` alone does not prove E2E. Read exact command outcomes and artifacts; no VM/publication inference. |
+| `pnpm check:biome`, `fmt`, `fmt:check`, `lint`, `knip`, `knip:full`, `knip:production`, `circular` | Canonical Biome format/lint/assist inspection, convenient format-only/lint-only commands, dependency/entry analysis, and source graph checks. | Read-only; Knip uses real CLI/workflow/test/runtime entries and reports orphan helpers, and `ignoreBinaries` includes external OpenSSL. `fmt:fix`, `lint:fix`, `quality:fix` write formatting fixes and must be reviewed separately. |
+| `pnpm quality`, `verify`, `verify:full` | `quality` chains one read-only `biome ci` pass, all runtime type checks, the focused policy suite, circular, and Knip. `verify` adds production targets; `verify:full` adds coverage, development build, and all E2E browser lanes. | Build/test outputs and browser profiles are generated; `verify` alone does not prove E2E. Read exact command outcomes and artifacts; no VM/publication inference. |
 | `pnpm test`, `test:watch`, `test:cov`, `test:ci` | Vitest suites and direct Node CI policy tests in `scripts/ci/{deep-check-reuse,repository-authority}.test.ts` and `scripts/release/verify-source.test.ts`. | Watch persists; coverage writes reports. `test:ci` also runs real compiler/import boundary probes; run that part alone with `pnpm test test/unit/tooling/node-ambient-types.test.ts`. This focused suite checks cache, repository authority, tagged source and runtime types; it is not the complete unit suite. |
 | `pnpm test:e2e`, `test:e2e:headed`, `test:e2e:extension`, `test:e2e:extension:firefox`, `test:e2e:all` | Playwright configs under `test/e2e/`; direct Firefox lane executes `test/e2e/firefox-extension-runtime.test.ts` with Node/Selenium. | Requires built artifacts, browser binaries and loopback fixtures; may create browser profiles/downloads. `test:e2e:all` chains the lanes; distinguish fixture browser evidence from authenticated Windows/live-site evidence. |
 | `pnpm mut`, `mut:fast` | Stryker full/fast mutation profiles. | Writes reports/temp work; use mutation/deep-check workflow receipts, not a passing unit suite as substitute. |
@@ -75,7 +74,6 @@ errors. `fmt`/`lint` remain read-only conveniences; their `:fix` variants and
 | Focused direct Node policy tests and runtime/import boundary probes | `test:ci`; retained within `quality` | CI quality when selected, otherwise CI unit for an explicitly unit-only decision; release quality |
 | Complete unit suite and unchanged coverage thresholds | `test` / `test:cov`; `verify:full` uses coverage | CI/release unit |
 | Production distributions / browser fixtures | `build:all:ci` / browser lane commands | CI/release build and E2E |
-| Nose duplication query | Optional local `quality:nose` (absence prints a skip) | Required pinned/digest-verified deep/release duplication setup and query |
 | Mutation thresholds and security scans | Separate commands/workflows | Existing deep/release and security owners |
 
 CI unit runs its explicit `test:ci` step only when classification succeeded,
@@ -88,10 +86,7 @@ ambient suite again because it must remain the complete unit suite; only the
 extra explicit policy invocation is removed. Standalone `test:ci`, local quality,
 ordinary prebuild and release/deep/security contracts remain intact.
 
-An absent local Nose binary is a reported optional skip, not an executed success.
-Installed failures remain failures. Deep/release installation verifies the trusted
-pinned digest and is mandatory; no baseline reset absorbs new findings. Distinguish
-scheduled reuse, explicit no-op routing and actual executed checks in receipts.
+Distinguish scheduled reuse, explicit no-op routing and actual executed checks in receipts.
 
 ### Workflow and subprocess entrypoints
 
@@ -221,8 +216,8 @@ and coverage remain inherited, with all coverage thresholds unchanged.
 
 Knip's project globs include maintained Windows and Action `.mjs` helpers, but
 only actual package/workflow/direct-test and profile entrypoints are roots.
-Node and Playwright integrations are enabled; externally installed Nose/OpenSSL
-remain explicit binary exceptions. Full analysis covers Node/Windows tooling;
+Node and Playwright integrations are enabled; externally installed OpenSSL
+remains an explicit binary exception. Full analysis covers Node/Windows tooling;
 production analysis deliberately excludes those nonproduct paths. Real probes
 reject full-mode script/MJS orphans and unnecessary product exports in both
 modes, and distinguish tagged test-only exports from accidental production APIs.

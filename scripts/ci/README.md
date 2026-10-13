@@ -18,29 +18,24 @@ for its own pull request check.
 
 ## Pinned security tools
 
-`pinned-tools.json` records the Nose installer version and SHA-256, OSV scanner
-image version and digest, and Semgrep version and image digest. The
-dependency-free `check-pinned-tools.ts` reads that file, checks the newest stable
-GitHub release older than 24 hours, verifies the Nose release asset digest, and
-compares the OSV tag's GHCR manifest digest. Version drift is a warning;
-missing/malformed metadata, API failure, or digest drift fails. The
-dependency-free `install-nose.ts` downloads over HTTPS, verifies the installer
-bytes before invoking `sh` without GitHub tokens, and adds Nose to `GITHUB_PATH`
-only after installation succeeds, preserving child exit codes and signals.
+`pinned-tools.json` records the OSV scanner image version and digest, and
+Semgrep version and image digest. The dependency-free `check-pinned-tools.ts`
+reads that file, checks the newest stable GitHub releases older than 24 hours,
+and compares the OSV tag's GHCR manifest digest. Version drift is a warning;
+missing/malformed metadata, API failure, or digest drift fails.
 `pinned-tools.ts env` appends validated OSV and Semgrep image references to
-`GITHUB_ENV`; it accepts no arbitrary metadata path. All three CLIs are inert
+`GITHUB_ENV`; it accepts no arbitrary metadata path. Both CLIs are inert
 when imported.
 
 The security workflow resolves both scanner images in a separate job from the
 reviewed `a1fd01821cab105c6a6430ee81e18030532843e8` revision, then passes
 the validated values to the OSV and Semgrep jobs. Its scheduled freshness job
-uses the same revision. Deep verification and release duplication read the
-installer and metadata from that revision with `git show`, even when the
+uses the same revision. Deep verification and release duplication still read
+the historical installer and metadata from that revision with `git show`, even when the
 checkout changes to a release commit. Each job sets up Node before running a
 private copy of the dependency-free helpers. PR candidate code cannot replace
 these pinned tools for its own privileged check. Update the immutable revision
-only with a reviewed pin change, and keep the scanner images and installer
-source together. Run the focused CLI fixture test with
+only after the replacement helper closure lands and passes review. Run the focused CLI fixture test with
 `pnpm test test/unit/config/pinned-tools-cli.test.ts`.
 
 ## Deep check reuse
