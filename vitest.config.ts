@@ -1,13 +1,17 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { resolve } from 'path';
-import { fileURLToPath } from 'url';
 import solid from 'vite-plugin-solid';
 import { defineConfig } from 'vitest/config';
 
-const __dirname = fileURLToPath(new URL('.', import.meta.url));
-const srcDir = resolve(__dirname, 'src');
+// These suites temporarily mutate files observed by repository-wide tools.
+const repositoryProbeFiles = [
+  'test/unit/tooling/biome-coverage.test.ts',
+  'test/unit/tooling/biome-policy.test.ts',
+  'test/unit/tooling/biome-braces.test.ts',
+  'test/unit/tooling/node-ambient-types.test.ts',
+  'test/unit/tooling/knip-boundaries.test.ts',
+];
 
 export default defineConfig({
   define: { __DEV__: true },
@@ -16,8 +20,27 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./test/setup.ts'],
-    include: ['test/unit/**/*.test.{ts,tsx}'],
     exclude: ['node_modules', 'dist'],
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: 'unit',
+          include: ['test/unit/**/*.test.{ts,tsx}'],
+          exclude: ['node_modules', 'dist', ...repositoryProbeFiles],
+          sequence: { groupOrder: 0 },
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'repository-probes',
+          include: repositoryProbeFiles,
+          fileParallelism: false,
+          sequence: { groupOrder: 1 },
+        },
+      },
+    ],
     passWithNoTests: false,
     slowTestThreshold: 500,
     testTimeout: 10000,
@@ -50,15 +73,5 @@ export default defineConfig({
       },
     },
   },
-  resolve: {
-    alias: {
-      '@bootstrap': resolve(srcDir, 'bootstrap'),
-      '@constants': resolve(srcDir, 'constants'),
-      '@extension': resolve(srcDir, 'extension'),
-      '@extension/*': resolve(srcDir, 'extension/*'),
-      '@features': resolve(srcDir, 'features'),
-      '@platform': resolve(srcDir, 'platform'),
-      '@shared': resolve(srcDir, 'shared'),
-    },
-  },
+  resolve: { tsconfigPaths: true },
 });

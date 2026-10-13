@@ -31,7 +31,7 @@
     "check:src": "tsc --noEmit",
     "check:test": "tsc -p tsconfig.test.json --noEmit",
     "check:scripts": "tsc -p tsconfig.scripts.json --noEmit && tsc -p tsconfig.node-tests.json --noEmit",
-    "check": "pnpm -s check:src && pnpm -s check:test && pnpm -s check:scripts",
+    "check": "pnpm -s check:src && pnpm -s check:tooling && pnpm -s check:test && pnpm -s check:scripts",
     "check:versions": "node --experimental-strip-types scripts/release/version.ts check",
     "sync:versions": "node --experimental-strip-types scripts/release/version.ts sync",
     "typecheck": "pnpm -s check",
@@ -58,7 +58,8 @@
     "test:e2e:extension:firefox": "node --experimental-strip-types --test test/e2e/firefox-extension-runtime.test.ts",
     "test:e2e:all": "pnpm -s test:e2e && pnpm -s test:e2e:extension && pnpm -s test:e2e:extension:firefox",
     "check:e2e": "tsc -p tsconfig.e2e.json --noEmit",
-    "test:e2e:headed": "playwright test --config test/e2e/playwright.config.ts --headed"
+    "test:e2e:headed": "playwright test --config test/e2e/playwright.config.ts --headed",
+    "check:tooling": "tsc -p tsconfig.tooling.json --noEmit"
   },
   "keywords": [
     "userscript",

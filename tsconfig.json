@@ -7,18 +7,7 @@
     "moduleResolution": "bundler",
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
-    "strict": true,
-    "exactOptionalPropertyTypes": true,
-    "noUncheckedIndexedAccess": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noImplicitOverride": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "verbatimModuleSyntax": true,
     "resolveJsonModule": true,
-    "noEmit": true,
-    "skipLibCheck": true,
     "paths": {
       "@bootstrap/*": ["./src/bootstrap/*"],
       "@constants/*": ["./src/constants/*"],
@@ -30,11 +19,12 @@
     },
     "incremental": true,
     "stableTypeOrdering": true,
-    "tsBuildInfoFile": ".vscode/.tsbuildinfo",
+    "tsBuildInfoFile": ".vscode/.tsbuildinfo-browser",
     "useDefineForClassFields": true,
-    "forceConsistentCasingInFileNames": true,
-    "allowImportingTsExtensions": true
+    "allowImportingTsExtensions": true,
+    "types": []
   },
-  "include": ["src/**/*", "tooling/**/*", "vite.config.ts", "vite.*.config.ts"],
-  "exclude": ["node_modules", "dist", ".stryker-tmp", ".stryker-tmp-debug", ".vscode"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", ".stryker-tmp", ".stryker-tmp-debug", ".vscode"],
+  "extends": "./tsconfig.base.json"
 }

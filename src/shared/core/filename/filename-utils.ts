@@ -90,7 +90,7 @@ export function getIndexFromMediaId(mediaId?: string): string | null {
  * @param index - Index value to normalize
  * @returns Positive integer string, minimum '1'
  */
-export function normalizeIndex(index?: string | number): string {
+function normalizeIndex(index?: string | number): string {
   if (index === undefined || index === null) {
     return '1';
   }

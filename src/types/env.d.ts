@@ -22,27 +22,6 @@ interface ImportMetaEnv {
 }
 
 /** Extended ImportMeta interface with Vite environment augmentation. */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
-
-/**
- * Minimal process global typing for browser+test/tooling builds.
- *
- * - Keeps source code portable without importing Node types in browser bundles
- * - Exposes `env` and `cwd()` used by test/tooling code paths
- */
-declare const process: {
-  env: {
-    VITEST?: string;
-    [key: string]: string | undefined;
-  };
-  versions: { node: string };
-  cwd: () => string;
-  argv: string[];
-  exit: (code?: number) => never;
-  stderr?: {
-    write: (chunk: string | Uint8Array, encoding?: string, cb?: (err?: Error) => void) => boolean;
-  };
-};
