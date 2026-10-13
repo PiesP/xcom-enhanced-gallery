@@ -9,17 +9,17 @@ const http = vi.hoisted(() => ({
 }));
 
 vi.mock('@shared/services/http-request-service', async (importOriginal) => ({
-  ...await importOriginal<typeof import('@shared/services/http-request-service')>(),
+  ...(await importOriginal<typeof import('@shared/services/http-request-service')>()),
   getHttpRequestService: () => http,
 }));
 
-import { DownloadMediaCache } from '@shared/services/media/download-media-cache';
-import { HttpRequestError } from '@shared/services/http-request-service';
 import {
   DownloadResourceLimitError,
   LiveByteBudget,
   type OwnedBlob,
 } from '@shared/services/download/live-byte-budget';
+import { HttpRequestError } from '@shared/services/http-request-service';
+import { DownloadMediaCache } from '@shared/services/media/download-media-cache';
 
 interface DeferredResponse {
   readonly promise: Promise<{ ok: boolean; status: number; data: Blob; lease: OwnedBlob['lease'] }>;
@@ -62,7 +62,10 @@ describe('DownloadMediaCache', () => {
 
   it('rejects unverified original photos without a request, cache owner, or memory reservation', async () => {
     const cache = new DownloadMediaCache(5, 100, budget);
-    const image: MediaInfo = { ...media('unverified'), downloadSource: { url: '', quality: 'unverified-original', provenance: 'dom' } };
+    const image: MediaInfo = {
+      ...media('unverified'),
+      downloadSource: { url: '', quality: 'unverified-original', provenance: 'dom' },
+    };
     await expect(cache.getOrFetch(image)).rejects.toThrow('original image source');
     expect(http.getOwnedBinary).not.toHaveBeenCalled();
     expect(budget.usedBytes).toBe(0);
@@ -82,12 +85,20 @@ describe('DownloadMediaCache', () => {
   });
 
   it('keeps display and original representations under different byte-source cache keys', async () => {
-    http.getOwnedBinary.mockImplementation(async (url: string) => ownedResponse(url.includes('name=orig') ? 'original' : 'small'));
+    http.getOwnedBinary.mockImplementation(async (url: string) =>
+      ownedResponse(url.includes('name=orig') ? 'original' : 'small')
+    );
     const cache = new DownloadMediaCache(5, 100, budget);
-    const displayed = { ...media('same'), url: 'https://pbs.twimg.com/media/same?format=jpg&name=small' };
+    const displayed = {
+      ...media('same'),
+      url: 'https://pbs.twimg.com/media/same?format=jpg&name=small',
+    };
     const preferred = 'https://pbs.twimg.com/media/same?format=jpg&name=orig';
     const first = await cache.getOrFetch(displayed);
-    const second = await cache.getOrFetch({ ...displayed, downloadSource: { url: preferred, quality: 'cdn-original', provenance: 'dom' } });
+    const second = await cache.getOrFetch({
+      ...displayed,
+      downloadSource: { url: preferred, quality: 'cdn-original', provenance: 'dom' },
+    });
     expect(first?.value.size).toBe(5);
     expect(second?.value.size).toBe(8);
     expect(http.getOwnedBinary.mock.calls.map(([url]) => url)).toEqual([displayed.url, preferred]);

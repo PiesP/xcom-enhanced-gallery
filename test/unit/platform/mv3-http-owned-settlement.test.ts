@@ -49,7 +49,10 @@ describe('MV3 HTTP transport settlement', () => {
   });
 
   it('reports settlement even when a load callback throws', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => new Response(new Uint8Array([1]), { status: 200 })));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(new Uint8Array([1]), { status: 200 }))
+    );
     const onsettled = vi.fn();
     new MV3HttpRequestAdapter().request({
       url: 'https://pbs.twimg.com/media/test',

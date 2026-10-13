@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { describe, it, expect } from 'vitest';
-import { resolve } from 'node:path';
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { describe, expect, it } from 'vitest';
 
 const REPO_ROOT = resolve(__dirname, '../../..');
 const PKG_PATH = resolve(REPO_ROOT, 'package.json');

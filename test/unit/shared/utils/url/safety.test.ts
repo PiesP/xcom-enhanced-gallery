@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { describe, it, expect } from 'vitest';
 import {
   isUrlAllowed,
-  startsWithBlockedProtocolHint,
   MEDIA_URL_POLICY,
+  startsWithBlockedProtocolHint,
 } from '@shared/utils/url/safety';
+import { describe, expect, it } from 'vitest';
 
 describe('url/safety', () => {
   // ── isUrlAllowed ──────────────────────────────────────────────────
@@ -34,12 +34,18 @@ describe('url/safety', () => {
     });
 
     it('should allow valid https URLs', () => {
-      expect(isUrlAllowed('https://pbs.twimg.com/media/ABC?format=jpg', MEDIA_URL_POLICY)).toBe(true);
-      expect(isUrlAllowed('https://video.twimg.com/ext_tw_video/123/pu/vid.mp4', MEDIA_URL_POLICY)).toBe(true);
+      expect(isUrlAllowed('https://pbs.twimg.com/media/ABC?format=jpg', MEDIA_URL_POLICY)).toBe(
+        true
+      );
+      expect(
+        isUrlAllowed('https://video.twimg.com/ext_tw_video/123/pu/vid.mp4', MEDIA_URL_POLICY)
+      ).toBe(true);
     });
 
     it('should allow http URLs', () => {
-      expect(isUrlAllowed('http://pbs.twimg.com/media/ABC?format=jpg', MEDIA_URL_POLICY)).toBe(true);
+      expect(isUrlAllowed('http://pbs.twimg.com/media/ABC?format=jpg', MEDIA_URL_POLICY)).toBe(
+        true
+      );
     });
 
     it('should reject non-http protocols', () => {
@@ -143,7 +149,9 @@ describe('url/safety', () => {
     });
 
     it('should scope malformed percent checks to the scheme region', () => {
-      expect(startsWithBlockedProtocolHint('https://example.com/?discount=100%off', hints)).toBe(false);
+      expect(startsWithBlockedProtocolHint('https://example.com/?discount=100%off', hints)).toBe(
+        false
+      );
       expect(startsWithBlockedProtocolHint('test%GG:value', hints)).toBe(true);
     });
 

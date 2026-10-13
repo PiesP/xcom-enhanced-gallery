@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { resolveAdjacentNavigationTarget, resolveDisplayedIndex } from '@shared/state/signals/gallery-navigation';
 import {
   disposeGallerySignals,
   galleryIndexEvents,
@@ -13,10 +12,11 @@ import {
   openGallery,
   setFocusedIndexOnly,
 } from '@shared/state/signals/gallery.signals';
+import { downloadState, setDownloadStatus } from '@shared/state/signals/gallery-download-signals';
 import {
-  downloadState,
-  setDownloadStatus,
-} from '@shared/state/signals/gallery-download-signals';
+  resolveAdjacentNavigationTarget,
+  resolveDisplayedIndex,
+} from '@shared/state/signals/gallery-navigation';
 import type { MediaInfo } from '@shared/types/media.types';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -35,9 +35,12 @@ describe('resolveAdjacentNavigationTarget', () => {
     [2, 1, 3, null],
     [0, -1, 3, null],
     [0, 1, 1, null],
-  ] as const)('resolves anchor %i, direction %i, count %i to %s', (anchor, direction, count, expected) => {
-    expect(resolveAdjacentNavigationTarget(anchor, direction, count)).toBe(expected);
-  });
+  ] as const)(
+    'resolves anchor %i, direction %i, count %i to %s',
+    (anchor, direction, count, expected) => {
+      expect(resolveAdjacentNavigationTarget(anchor, direction, count)).toBe(expected);
+    }
+  );
 });
 
 describe('displayed media identity', () => {
@@ -48,9 +51,12 @@ describe('displayed media identity', () => {
     [3, null, 4, 3],
     [0, 2, 4, 2],
     [3, 9, 4, 3],
-  ] as const)('resolves current %s, focus %s, count %s to %s', (current, focus, count, expected) => {
-    expect(resolveDisplayedIndex(current, focus, count)).toBe(expected);
-  });
+  ] as const)(
+    'resolves current %s, focus %s, count %s to %s',
+    (current, focus, count, expected) => {
+      expect(resolveDisplayedIndex(current, focus, count)).toBe(expected);
+    }
+  );
 
   it('uses the same focused item for the displayed position and navigation', () => {
     openGallery([media('a'), media('b'), media('c')]);

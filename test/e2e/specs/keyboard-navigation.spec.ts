@@ -18,8 +18,8 @@
  * Test page: Mock HTML served under https://x.com via page.route()
  */
 
-import { test, expect, type Page, type Route } from '@playwright/test';
 import { existsSync } from 'node:fs';
+import { expect, type Page, type Route, test } from '@playwright/test';
 import { DEV_USERSCRIPT_PATH, MOCK_GALLERY_HTML } from '../fixtures/artifacts';
 import { installGMMock } from '../fixtures/gm-mock';
 import { injectDevUserscript, waitForGalleryApp } from '../fixtures/userscript-harness';
@@ -69,7 +69,15 @@ async function deferGalleryImages(page: Page): Promise<DeferredActiveImage> {
 async function setupGalleryPage(page: Page): Promise<void> {
   await page.route('**/*.x.com/**', async (route) => {
     const url = route.request().url();
-    if (url.includes('.css') || url.includes('.js') || url.includes('.jpg') || url.includes('.png') || url.includes('.svg') || url.includes('.webp') || url.includes('.gif')) {
+    if (
+      url.includes('.css') ||
+      url.includes('.js') ||
+      url.includes('.jpg') ||
+      url.includes('.png') ||
+      url.includes('.svg') ||
+      url.includes('.webp') ||
+      url.includes('.gif')
+    ) {
       await route.abort();
     } else {
       await route.fulfill({ status: 200, contentType: 'text/html', body: MOCK_GALLERY_HTML });
@@ -105,7 +113,11 @@ async function openGalleryWithDimensions(
   dimensionsByItem: readonly GalleryDimensions[]
 ): Promise<void> {
   await page.evaluate((dimensionsByItem) => {
-    const g = globalThis as any;
+    const g = globalThis as typeof globalThis & {
+      __XEG__: {
+        main: { galleryApp: { openGallery(items: unknown[], startIndex?: number): void } };
+      };
+    };
     const items = dimensionsByItem.map((dimensions, index) => {
       const number = index + 1;
       const url = `https://pbs.twimg.com/media/E${number}.jpg?format=jpg&name=large`;
@@ -196,8 +208,13 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
     await openGallery(page);
     await expect(page.locator('[data-xeg-gallery-container]')).toBeVisible();
     await page.keyboard.press('Escape');
-    await page.waitForSelector('[data-xeg-gallery-container]', { state: 'detached', timeout: 10_000 });
-    expect(await page.evaluate(() => !document.querySelector('[data-xeg-gallery-container]'))).toBe(true);
+    await page.waitForSelector('[data-xeg-gallery-container]', {
+      state: 'detached',
+      timeout: 10_000,
+    });
+    expect(await page.evaluate(() => !document.querySelector('[data-xeg-gallery-container]'))).toBe(
+      true
+    );
   });
 
   test('ArrowLeft at first item is a no-op', async ({ page }) => {
@@ -218,7 +235,9 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
     await expect(page.locator('#xeg-toolbar-counter')).toHaveAttribute('data-position', '3');
   });
 
-  test('toolbar previous/next buttons navigate and expose correct boundary state', async ({ page }) => {
+  test('toolbar previous/next buttons navigate and expose correct boundary state', async ({
+    page,
+  }) => {
     await setupGalleryPage(page);
     await openGallery(page);
 
@@ -341,13 +360,16 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
 
     await page.setViewportSize({ width: 401, height: 592 });
     await page.waitForFunction(() => {
-      const gallery = document.querySelector<HTMLElement>('[data-gallery-element="items"]')
-        ?.parentElement;
+      const gallery = document.querySelector<HTMLElement>(
+        '[data-gallery-element="items"]'
+      )?.parentElement;
       return gallery?.style.getPropertyValue('--xeg-viewport-w') === '401px';
     });
     await page.evaluate(
       () =>
-        new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
+        new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+        )
     );
 
     await expect(page.locator('#xeg-toolbar-counter')).toHaveAttribute('data-position', '2');
@@ -356,13 +378,13 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
     await expect.poll(selectedTopOffset).toBe(0);
   });
 
-  test('selected fit state survives hover, focus, disabled, and forced colors', async ({ page }) => {
+  test('selected fit state survives hover, focus, disabled, and forced colors', async ({
+    page,
+  }) => {
     await setupGalleryPage(page);
     await openGallery(page);
 
-    await page
-      .locator('[data-gallery-element="toolbar"] button[aria-label="Fit Window"]')
-      .click();
+    await page.locator('[data-gallery-element="toolbar"] button[aria-label="Fit Window"]').click();
     const selected = page.locator(
       '[data-gallery-element="toolbar"] [aria-label="Fit Window"][aria-pressed="true"]'
     );
@@ -568,19 +590,15 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
       previousScrollTop = currentScrollTop;
     }
 
-    const itemGeometry = await page
-      .locator('[data-gallery-element="item"]')
-      .evaluateAll((items) =>
-        items.map((item) => {
-          const intrinsicSize = getComputedStyle(item)
-            .getPropertyValue('--xeg-cis-override')
-            .trim();
-          return {
-            height: item.getBoundingClientRect().height,
-            intrinsicSizeSupported: CSS.supports('contain-intrinsic-size', intrinsicSize),
-          };
-        })
-      );
+    const itemGeometry = await page.locator('[data-gallery-element="item"]').evaluateAll((items) =>
+      items.map((item) => {
+        const intrinsicSize = getComputedStyle(item).getPropertyValue('--xeg-cis-override').trim();
+        return {
+          height: item.getBoundingClientRect().height,
+          intrinsicSizeSupported: CSS.supports('contain-intrinsic-size', intrinsicSize),
+        };
+      })
+    );
     expect(Math.min(...itemGeometry.map(({ height }) => height))).toBeGreaterThan(100);
     expect(itemGeometry.every(({ intrinsicSizeSupported }) => intrinsicSizeSupported)).toBe(true);
   });
@@ -594,7 +612,9 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
       document.querySelector('[data-xeg-gallery-container]')?.appendChild(ta);
     });
     await page.locator('#test-textarea').focus();
-    expect(await page.evaluate(() => document.activeElement === document.getElementById('test-textarea'))).toBe(true);
+    expect(
+      await page.evaluate(() => document.activeElement === document.getElementById('test-textarea'))
+    ).toBe(true);
     await page.keyboard.press('Escape');
     await expect(page.locator('[data-xeg-gallery-container]')).toBeVisible();
   });

@@ -1,6 +1,6 @@
 import { DOWNLOAD_TIMEOUT_MS } from '@constants/performance';
-import { afterEach, describe, expect, it, vi } from 'vitest';
 import { waitForDownloadComplete } from '@extension/download-completion';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 function createDownloads() {
   let listener: ((delta: { id: number; state?: string; error?: string }) => void) | null = null;

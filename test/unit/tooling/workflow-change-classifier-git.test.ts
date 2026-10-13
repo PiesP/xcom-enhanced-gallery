@@ -1,5 +1,15 @@
 import { execFileSync, spawnSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -83,6 +93,34 @@ function expectOnly(outputs: Record<string, string>, names: readonly string[]): 
 }
 
 describe('classifier Git event path extraction', () => {
+  it.each([
+    'validation/windows/profile.mjs',
+    '.github/actions/setup-release/resolve-runtime.mjs',
+    'extension/manifest.json',
+    'tooling/vite/plugins/css-inline.ts',
+    'test/e2e/fixtures/installed-gallery-page.html',
+    'test/visual/gm-mocks.js',
+    'tsconfig.future.json',
+  ])('routes additions, deletions and renames of %s through quality', (path) => {
+    fixture((cwd) => {
+      write(cwd, 'docs/control.md');
+      const base = commit(cwd);
+      write(cwd, path);
+      const added = commit(cwd);
+      expect(classifyEvent(cwd, 'push', base, added).quality).toBe('true');
+      const renamedPath = path.replace(/([^/]+)$/, 'renamed-$1');
+      renameSync(join(cwd, path), join(cwd, renamedPath));
+      const renamed = commit(cwd);
+      expect(classifyEvent(cwd, 'merge_group', added, renamed).quality).toBe('true');
+      rmSync(join(cwd, renamedPath));
+      write(cwd, path);
+      const restored = commit(cwd);
+      rmSync(join(cwd, path));
+      const deleted = commit(cwd);
+      expect(classifyEvent(cwd, 'pull_request', restored, deleted).quality).toBe('true');
+    });
+  });
+
   it('has no output, Git process, or output-file side effect when imported', () => {
     fixture((cwd) => {
       const gitMarker = join(cwd, 'git-called');
@@ -91,22 +129,28 @@ describe('classifier Git event path extraction', () => {
       writeFileSync(outputPath, 'sentinel\n');
       writeFileSync(fakeGit, '#!/bin/sh\nprintf called > "$CLASSIFIER_GIT_MARKER"\n');
       chmodSync(fakeGit, 0o755);
-      const imported = spawnSync(process.execPath, [
-        '--experimental-strip-types', '--input-type=module', '--eval',
-        `await import(${JSON.stringify(pathToFileURL(classifier).href)})`,
-      ], {
-        cwd,
-        encoding: 'utf8',
-        env: {
-          ...process.env,
-          PATH: cwd,
-          CLASSIFIER_GIT_MARKER: gitMarker,
-          GITHUB_EVENT_NAME: 'push',
-          BASE_SHA: 'a'.repeat(40),
-          HEAD_SHA: 'b'.repeat(40),
-          GITHUB_OUTPUT: outputPath,
-        },
-      });
+      const imported = spawnSync(
+        process.execPath,
+        [
+          '--experimental-strip-types',
+          '--input-type=module',
+          '--eval',
+          `await import(${JSON.stringify(pathToFileURL(classifier).href)})`,
+        ],
+        {
+          cwd,
+          encoding: 'utf8',
+          env: {
+            ...process.env,
+            PATH: cwd,
+            CLASSIFIER_GIT_MARKER: gitMarker,
+            GITHUB_EVENT_NAME: 'push',
+            BASE_SHA: 'a'.repeat(40),
+            HEAD_SHA: 'b'.repeat(40),
+            GITHUB_OUTPUT: outputPath,
+          },
+        }
+      );
       expect(imported.status, imported.stderr).toBe(0);
       expect(imported.stdout).toBe('');
       expect(imported.stderr).toBe('');
@@ -125,9 +169,11 @@ describe('classifier Git event path extraction', () => {
     fixture((cwd) => {
       const alias = join(cwd, 'classifier.ts');
       symlinkSync(classifier, alias);
-      const output = execFileSync(process.execPath, [
-        '--experimental-strip-types', alias, '--files', 'docs/guide.md',
-      ], { cwd, encoding: 'utf8', env: { ...process.env, GITHUB_OUTPUT: '' } });
+      const output = execFileSync(
+        process.execPath,
+        ['--experimental-strip-types', alias, '--files', 'docs/guide.md'],
+        { cwd, encoding: 'utf8', env: { ...process.env, GITHUB_OUTPUT: '' } }
+      );
       expect(output).toContain('semgrep=true\n');
       expect(output).toContain('reason=explicit-file-list\n');
     });

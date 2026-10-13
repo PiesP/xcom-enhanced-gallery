@@ -2,9 +2,9 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createMixedOwnerVideoResponse } from '../../../../fixtures/mixed-owner-video-response';
 import { createQuotedVideoTweetResponse } from '../../../../fixtures/quoted-video-tweet-response';
 import { unanchoredVideoPreview } from '../../../../fixtures/unanchored-video-preview';
-import { createMixedOwnerVideoResponse } from '../../../../fixtures/mixed-owner-video-response';
 
 const httpGet = vi.hoisted(() => vi.fn());
 
@@ -17,8 +17,8 @@ vi.mock('@shared/services/media/twitter-auth/twitter-auth', () => ({
   resolveBearerToken: vi.fn(() => 'Bearer test-token'),
 }));
 
-import { MediaExtractionService } from '@shared/services/media-extraction/media-extraction-service';
 import { getTweetMedias } from '@shared/services/media/twitter-api-client';
+import { MediaExtractionService } from '@shared/services/media-extraction/media-extraction-service';
 import type { MediaExtractionResult } from '@shared/types/media.types';
 
 describe('MediaExtractionService quoted media selection', () => {
@@ -38,7 +38,11 @@ describe('MediaExtractionService quoted media selection', () => {
   it('requests the main owner for an unanchored preview before quoted links', async () => {
     // The preview media ID is independent of its tweet owner. Match the entire
     // API poster path instead of relying on the fixture's shared basename.
-    httpGet.mockResolvedValue({ ok: true, status: 200, data: createQuotedVideoTweetResponse('333') });
+    httpGet.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: createQuotedVideoTweetResponse('333'),
+    });
     document.body.innerHTML = unanchoredVideoPreview;
     const result = await new MediaExtractionService().extractFromClickedElement(
       document.querySelector<HTMLImageElement>('#main-poster')!
@@ -382,8 +386,8 @@ describe('MediaExtractionService API circuit', () => {
   const missingEnvelopeResponse = () => ({ ok: true, status: 200, data: {} });
 
   const requestedTweetIds = (): string[] =>
-    httpGet.mock.calls.map(([url]) =>
-      JSON.parse(new URL(url as string).searchParams.get('variables') ?? '{}').tweetId
+    httpGet.mock.calls.map(
+      ([url]) => JSON.parse(new URL(url as string).searchParams.get('variables') ?? '{}').tweetId
     );
 
   it('keeps the circuit closed across three explicit unavailable tweets and selects the next video', async () => {
@@ -432,7 +436,9 @@ describe('MediaExtractionService API circuit', () => {
       tweet_id: '906',
       sourceLocation: 'original',
     });
-    expect(selected.mediaItems[1]?.url).toBe('https://video.twimg.com/ext_tw_video/906/pu/vid/1280x720/quote-video.mp4');
+    expect(selected.mediaItems[1]?.url).toBe(
+      'https://video.twimg.com/ext_tw_video/906/pu/vid/1280x720/quote-video.mp4'
+    );
   });
 
   it('clears earlier provider failures when an unavailable tweet is healthy', async () => {
@@ -494,7 +500,11 @@ describe('MediaExtractionService API circuit', () => {
 
     for (let attempt = 0; attempt < 3; attempt++) {
       const result = await click(service);
-      expect(result).toMatchObject({ success: false, mediaItems: [], failureKind: 'provider-error' });
+      expect(result).toMatchObject({
+        success: false,
+        mediaItems: [],
+        failureKind: 'provider-error',
+      });
       expect(result.metadata?.error).toBe('Twitter API returned an unexpected tweet owner');
     }
     expect(httpGet).toHaveBeenCalledTimes(3);
@@ -567,7 +577,12 @@ describe('MediaExtractionService API circuit', () => {
   it('accounts one coalesced missing envelope once and retries without caching it', async () => {
     const service = new MediaExtractionService();
     let complete!: (value: unknown) => void;
-    httpGet.mockImplementationOnce(() => new Promise<unknown>((resolve) => { complete = resolve; }));
+    httpGet.mockImplementationOnce(
+      () =>
+        new Promise<unknown>((resolve) => {
+          complete = resolve;
+        })
+    );
     const first = click(service);
     const second = click(service);
     await vi.waitFor(() => expect(httpGet).toHaveBeenCalledTimes(1));
@@ -589,19 +604,28 @@ describe('MediaExtractionService API circuit', () => {
     { __typename: 'TweetTombstone', rest_id: '222', id_str: '999' },
     { __typename: 'Tweet', rest_id: '222', legacy: { id_str: '999' } },
     { __typename: 'UnknownResult', rest_id: '222' },
-    { __typename: 'TweetWithVisibilityResults', tweet: {
-      __typename: 'TweetWithVisibilityResults', tweet: {
-        __typename: 'TweetWithVisibilityResults', tweet: { __typename: 'Tweet', rest_id: '222' },
+    {
+      __typename: 'TweetWithVisibilityResults',
+      tweet: {
+        __typename: 'TweetWithVisibilityResults',
+        tweet: {
+          __typename: 'TweetWithVisibilityResults',
+          tweet: { __typename: 'Tweet', rest_id: '222' },
+        },
       },
-    } },
+    },
   ])('keeps invalid root %j as a failed, uncached response', async (root) => {
     const service = new MediaExtractionService();
-    httpGet.mockResolvedValueOnce({ ok: true, status: 200,
+    httpGet.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
       data: { data: { tweetResult: { result: root } } },
     });
     const rejected = await click(service);
     expect(rejected).toMatchObject({
-      success: false, mediaItems: [], failureKind: 'provider-error',
+      success: false,
+      mediaItems: [],
+      failureKind: 'provider-error',
     });
     httpGet.mockResolvedValue({ ok: true, status: 200, data: createQuotedVideoTweetResponse() });
     const valid = await click(service);
@@ -613,7 +637,12 @@ describe('MediaExtractionService API circuit', () => {
   it('counts one shared invalid response only once and does not cache it', async () => {
     const service = new MediaExtractionService();
     let complete!: (value: unknown) => void;
-    httpGet.mockImplementationOnce(() => new Promise<unknown>((resolve) => { complete = resolve; }));
+    httpGet.mockImplementationOnce(
+      () =>
+        new Promise<unknown>((resolve) => {
+          complete = resolve;
+        })
+    );
     const first = click(service);
     const second = click(service);
     await vi.waitFor(() => expect(httpGet).toHaveBeenCalledTimes(1));
@@ -638,7 +667,12 @@ describe('MediaExtractionService API circuit', () => {
     await click(service);
 
     let complete!: (value: unknown) => void;
-    httpGet.mockImplementationOnce(() => new Promise<unknown>((resolve) => { complete = resolve; }));
+    httpGet.mockImplementationOnce(
+      () =>
+        new Promise<unknown>((resolve) => {
+          complete = resolve;
+        })
+    );
     const controller = new AbortController();
     const pending = service.extractFromClickedElement(document.querySelector('video')!, {
       signal: controller.signal,
@@ -656,7 +690,12 @@ describe('MediaExtractionService API circuit', () => {
   it('counts one coalesced failed request once and opens only after three physical failures', async () => {
     const service = new MediaExtractionService();
     let complete!: (value: unknown) => void;
-    httpGet.mockImplementationOnce(() => new Promise<unknown>((resolve) => { complete = resolve; }));
+    httpGet.mockImplementationOnce(
+      () =>
+        new Promise<unknown>((resolve) => {
+          complete = resolve;
+        })
+    );
     const first = click(service);
     const second = click(service);
     await vi.waitFor(() => expect(httpGet).toHaveBeenCalledTimes(1));
@@ -676,7 +715,8 @@ describe('MediaExtractionService API circuit', () => {
   it('does not let a cache hit erase an actual provider outage history', async () => {
     const service = new MediaExtractionService();
     httpGet.mockResolvedValueOnce({
-      ok: true, status: 200,
+      ok: true,
+      status: 200,
       data: JSON.parse(JSON.stringify(createQuotedVideoTweetResponse()).replaceAll('222', '906')),
     });
     expect((await clickTweet(service, '906')).success).toBe(true);
@@ -697,7 +737,11 @@ describe('MediaExtractionService API circuit', () => {
     let monotonicNow = 10_000;
     vi.spyOn(performance, 'now').mockImplementation(() => monotonicNow);
     httpGet.mockResolvedValueOnce({
-      ok: false, status: 429, readable: true, retryAfterMs: 120_000, data: {},
+      ok: false,
+      status: 429,
+      readable: true,
+      retryAfterMs: 120_000,
+      data: {},
     });
     const limited = await click(service);
     expect(limited.failureKind).toBe('rate-limited');
@@ -717,13 +761,19 @@ describe('MediaExtractionService API circuit', () => {
     let monotonicNow = 10_000;
     vi.spyOn(performance, 'now').mockImplementation(() => monotonicNow);
     httpGet.mockResolvedValueOnce({
-      ok: false, status: 503, readable: false, errorCategory: 'unreadable',
-      retryAfterMs: 120_000, data: {},
+      ok: false,
+      status: 503,
+      readable: false,
+      errorCategory: 'unreadable',
+      retryAfterMs: 120_000,
+      data: {},
     });
     const unreadable = await click(service);
     expect(unreadable).toMatchObject({
-      failureKind: 'unreadable', apiHttpStatus: 503,
-      apiResponseReadable: false, retryAfterMs: 120_000,
+      failureKind: 'unreadable',
+      apiHttpStatus: 503,
+      apiResponseReadable: false,
+      retryAfterMs: 120_000,
     });
     expect(httpGet).toHaveBeenCalledTimes(1);
     monotonicNow += 119_999;
@@ -739,7 +789,11 @@ describe('MediaExtractionService API circuit', () => {
   it('does not defer a denied 403 even when the response carries Retry-After', async () => {
     const service = new MediaExtractionService();
     httpGet.mockResolvedValue({
-      ok: false, status: 403, readable: true, retryAfterMs: 120_000, data: {},
+      ok: false,
+      status: 403,
+      readable: true,
+      retryAfterMs: 120_000,
+      data: {},
     });
     expect((await click(service)).failureKind).toBe('denied');
     expect((await click(service)).failureKind).toBe('denied');
@@ -831,7 +885,9 @@ describe('MediaExtractionService API circuit', () => {
     }
     expect(httpGet).toHaveBeenCalledTimes(1);
     service.invalidateApiMetadata();
-    httpGet.mockResolvedValue({ ok: true, status: 200,
+    httpGet.mockResolvedValue({
+      ok: true,
+      status: 200,
       data: { data: { tweetResult: { result: null } } },
     });
     await click(service);
@@ -848,7 +904,10 @@ describe('MediaExtractionService API circuit', () => {
       ok: true,
       status: 200,
       data: JSON.parse(
-        JSON.stringify(createQuotedVideoTweetResponse()).replaceAll('quote-video', 'unrelated-video')
+        JSON.stringify(createQuotedVideoTweetResponse()).replaceAll(
+          'quote-video',
+          'unrelated-video'
+        )
       ),
     });
     expect((await click(service)).success).toBe(false);

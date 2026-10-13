@@ -1,57 +1,57 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { describe, it, expect } from "vitest";
-import { generateUniqueId, createPrefixedId } from '@shared/utils/id';
+import { createPrefixedId, generateUniqueId } from '@shared/utils/id';
+import { describe, expect, it } from 'vitest';
 
-describe("generateUniqueId", () => {
-  it("returns a non-empty string", () => {
+describe('generateUniqueId', () => {
+  it('returns a non-empty string', () => {
     const id = generateUniqueId();
     expect(id).toBeTruthy();
-    expect(typeof id).toBe("string");
+    expect(typeof id).toBe('string');
   });
 
-  it("returns a string without dashes", () => {
+  it('returns a string without dashes', () => {
     const id = generateUniqueId();
-    expect(id).not.toContain("-");
+    expect(id).not.toContain('-');
   });
 
-  it("returns a string with only hex characters (lowercase)", () => {
+  it('returns a string with only hex characters (lowercase)', () => {
     const id = generateUniqueId();
     expect(id).toMatch(/^[0-9a-f]+$/);
   });
 
-  it("generates unique IDs on successive calls", () => {
+  it('generates unique IDs on successive calls', () => {
     const ids = new Set(Array.from({ length: 100 }, () => generateUniqueId()));
     expect(ids.size).toBe(100);
   });
 
-  it("returns exactly 32 characters (UUID without dashes)", () => {
+  it('returns exactly 32 characters (UUID without dashes)', () => {
     const id = generateUniqueId();
     expect(id.length).toBe(32);
   });
 });
 
-describe("createPrefixedId", () => {
-  it("returns a string with prefix and default separator", () => {
-    const id = createPrefixedId("gallery");
+describe('createPrefixedId', () => {
+  it('returns a string with prefix and default separator', () => {
+    const id = createPrefixedId('gallery');
     expect(id).toMatch(/^gallery_[0-9a-f]{32}$/);
   });
 
-  it("returns a string with custom separator", () => {
-    const id = createPrefixedId("btn", "-");
+  it('returns a string with custom separator', () => {
+    const id = createPrefixedId('btn', '-');
     expect(id).toMatch(/^btn-[0-9a-f]{32}$/);
   });
 
-  it("ends with a 32-char hex string after the separator", () => {
-    const id = createPrefixedId("x");
-    const parts = id.split("_");
+  it('ends with a 32-char hex string after the separator', () => {
+    const id = createPrefixedId('x');
+    const parts = id.split('_');
     expect(parts).toHaveLength(2);
     expect(parts[1]).toMatch(/^[0-9a-f]{32}$/);
   });
 
-  it("generates unique IDs on successive calls", () => {
-    const ids = new Set(Array.from({ length: 100 }, () => createPrefixedId("test")));
+  it('generates unique IDs on successive calls', () => {
+    const ids = new Set(Array.from({ length: 100 }, () => createPrefixedId('test')));
     expect(ids.size).toBe(100);
   });
 });

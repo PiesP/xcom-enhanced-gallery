@@ -4,8 +4,12 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { createServer } from 'node:https';
+import {
+  NESTED_OWNER,
+  QUOTED_CASES,
+  RAPID_CLICK_B,
+} from '../../test/e2e/fixtures/installed-quoted-video-api.mjs';
 import { generateFixtureCertificate } from './userscript-loopback.mjs';
-import { NESTED_OWNER, QUOTED_CASES, RAPID_CLICK_B } from '../../test/e2e/fixtures/installed-quoted-video-api.mjs';
 
 const MAX_REQUESTS = 128;
 const MAX_BODY_BYTES = 256 * 1024;
@@ -61,8 +65,7 @@ export function createExtensionNativeFixtureHandler() {
     const host = request.headers.host;
     const sni = request.socket.servername;
     const route = allowed.get(`${host?.replace(/:443$/u, '')}${request.url}`);
-    if (!['GET', 'HEAD'].includes(request.method) || !route ||
-      (sni && sni !== route.host)) {
+    if (!['GET', 'HEAD'].includes(request.method) || !route || (sni && sni !== route.host)) {
       reject(response);
       return;
     }
@@ -71,10 +74,12 @@ export function createExtensionNativeFixtureHandler() {
     let end = bytes.length - 1;
     const range = request.headers.range;
     if (range !== undefined) {
-      const match = typeof range === 'string'
-        ? /^bytes=(\d+)-(\d*)$/u.exec(range) : null;
-      if (!match || !Number.isSafeInteger(Number(match[1])) ||
-          (match[2] && !Number.isSafeInteger(Number(match[2])))) {
+      const match = typeof range === 'string' ? /^bytes=(\d+)-(\d*)$/u.exec(range) : null;
+      if (
+        !match ||
+        !Number.isSafeInteger(Number(match[1])) ||
+        (match[2] && !Number.isSafeInteger(Number(match[2])))
+      ) {
         reject(response, 416);
         return;
       }
@@ -94,11 +99,23 @@ export function createExtensionNativeFixtureHandler() {
     }
     reservedBytes += body.length;
     const status = range === undefined ? 200 : 206;
-    const event = { host: route.host, path: route.path, method: request.method,
-      purpose: request.headers['sec-fetch-dest'] === 'document' ? 'document' :
-        request.headers['sec-fetch-dest'] === 'image' ? 'image' : 'transfer',
-      status, range: range === undefined ? null : { start, end },
-      bytes: 0, sha256: null, result: 'started', atMs: performance.now() };
+    const event = {
+      host: route.host,
+      path: route.path,
+      method: request.method,
+      purpose:
+        request.headers['sec-fetch-dest'] === 'document'
+          ? 'document'
+          : request.headers['sec-fetch-dest'] === 'image'
+            ? 'image'
+            : 'transfer',
+      status,
+      range: range === undefined ? null : { start, end },
+      bytes: 0,
+      sha256: null,
+      result: 'started',
+      atMs: performance.now(),
+    };
     events.push(event);
     active.add(response);
     response.once('close', () => {
@@ -121,7 +138,8 @@ export function createExtensionNativeFixtureHandler() {
       event.finishedAtMs = performance.now();
     });
     response.writeHead(status, {
-      'Content-Type': route.contentType ?? (route.host === 'video.twimg.com' ? 'video/mp4' : 'image/jpeg'),
+      'Content-Type':
+        route.contentType ?? (route.host === 'video.twimg.com' ? 'video/mp4' : 'image/jpeg'),
       'Content-Length': String(request.method === 'HEAD' ? end - start + 1 : body.length),
       'Accept-Ranges': 'bytes',
       'Cache-Control': 'no-store',
@@ -132,8 +150,10 @@ export function createExtensionNativeFixtureHandler() {
     event.headersQueuedAtMs = performance.now();
     if (request.method === 'GET' && videoHold?.path === `${route.host}${route.path}`) {
       const prefixBytes = Math.max(0, Math.min(body.length, videoHold.prefixEnd - start));
-      assert(prefixBytes < body.length || end < videoHold.prefixEnd,
-        'A held video range must not expose its delayed samples');
+      assert(
+        prefixBytes < body.length || end < videoHold.prefixEnd,
+        'A held video range must not expose its delayed samples'
+      );
       if (prefixBytes === body.length) {
         response.end(body);
         event.bodyQueuedAtMs = performance.now();
@@ -146,8 +166,11 @@ export function createExtensionNativeFixtureHandler() {
       event.result = 'video-held';
       return;
     }
-    if (request.method === 'GET' && range === undefined &&
-        holdPath === `${route.host}${route.path}`) {
+    if (
+      request.method === 'GET' &&
+      range === undefined &&
+      holdPath === `${route.host}${route.path}`
+    ) {
       assert.equal(heldResponse, null, 'Only one native fixture response may be held');
       holdPath = null;
       heldResponse = response;
@@ -171,8 +194,11 @@ export function createExtensionNativeFixtureHandler() {
       for (const [index, path] of IMAGE_PATHS.entries()) {
         const bytes = images[index];
         assert(Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= MAX_BODY_BYTES);
-        allowed.set(`pbs.twimg.com/media/${path}?format=jpg&name=orig`,
-          { bytes, host: 'pbs.twimg.com', path: `/media/${path}` });
+        allowed.set(`pbs.twimg.com/media/${path}?format=jpg&name=orig`, {
+          bytes,
+          host: 'pbs.twimg.com',
+          path: `/media/${path}`,
+        });
       }
       for (const [path, bytes] of allowedVideos(videoPayloads)) {
         allowed.set(`video.twimg.com${path}`, { bytes, host: 'video.twimg.com', path });
@@ -185,8 +211,10 @@ export function createExtensionNativeFixtureHandler() {
         assert(Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= MAX_BODY_BYTES);
       }
       const prefix = `/ext_tw_video/${tweetId}/pu/vid/320x180/`;
-      const routes = Array.from({ length: 8 }, (_, index) =>
-        [`${prefix}video-${index}-best.mp4`, index === 0 ? badMp4 : validMp4]);
+      const routes = Array.from({ length: 8 }, (_, index) => [
+        `${prefix}video-${index}-best.mp4`,
+        index === 0 ? badMp4 : validMp4,
+      ]);
       routes.push([`${prefix}video-0-lower.mp4`, validMp4]);
       for (const [path] of routes) {
         assert(!allowed.has(`video.twimg.com${path}`), 'Recovery payloads already installed');
@@ -202,15 +230,21 @@ export function createExtensionNativeFixtureHandler() {
       assert(bytes.length > 0 && bytes.length <= MAX_BODY_BYTES);
       const path = `/intentrecovery/status/${tweetId}`;
       assert(!allowed.has(`x.com${path}`), 'Recovery document already installed');
-      allowed.set(`x.com${path}`, { bytes, host: 'x.com', path,
-        contentType: 'text/html; charset=utf-8' });
+      allowed.set(`x.com${path}`, {
+        bytes,
+        host: 'x.com',
+        path,
+        contentType: 'text/html; charset=utf-8',
+      });
     },
     armVideoHold(path, prefixEnd) {
       assert.equal(videoHold, null, 'Only one bounded video source may be held');
       const route = allowed.get(`video.twimg.com${path}`);
       assert(route && route.host === 'video.twimg.com', 'Only a declared video may be held');
-      assert(Number.isSafeInteger(prefixEnd) && prefixEnd > 0 && prefixEnd < route.bytes.length,
-        'The video prefix must leave declared samples outstanding');
+      assert(
+        Number.isSafeInteger(prefixEnd) && prefixEnd > 0 && prefixEnd < route.bytes.length,
+        'The video prefix must leave declared samples outstanding'
+      );
       videoHold = { path: `video.twimg.com${path}`, prefixEnd, responses: new Map() };
     },
     videoHeld: () => videoHold !== null && videoHold.responses.size > 0,
@@ -239,8 +273,10 @@ export function createExtensionNativeFixtureHandler() {
     },
     held: () => heldResponse !== null && !heldResponse.destroyed,
     completeHold() {
-      assert(heldResponse && !heldResponse.destroyed && heldTail !== null,
-        'A live held response is required');
+      assert(
+        heldResponse && !heldResponse.destroyed && heldTail !== null,
+        'A live held response is required'
+      );
       heldResponse.end(heldTail);
       heldResponse = null;
       heldTail = null;
@@ -255,26 +291,38 @@ export function createExtensionNativeFixtureHandler() {
       assert(Number.isSafeInteger(mark) && mark >= 0 && mark <= events.length);
       return events.slice(mark).map((event) => ({ ...event }));
     },
-    snapshot: () => ({ requests: requestCount, unexpectedCount, servedBytes,
-      reservedBytes, overflow,
-      activeCount: active.size, events: events.map((event) => ({ ...event })) }),
+    snapshot: () => ({
+      requests: requestCount,
+      unexpectedCount,
+      servedBytes,
+      reservedBytes,
+      overflow,
+      activeCount: active.size,
+      events: events.map((event) => ({ ...event })),
+    }),
     activeCount: () => active.size,
-    destroyActive() { for (const response of active) response.destroy(); },
+    destroyActive() {
+      for (const response of active) response.destroy();
+    },
   };
 }
 
 export async function startExtensionNativeFixtureLoopback(helperPath) {
   const certificate = await generateFixtureCertificate(helperPath, undefined, true, true);
   const fixture = createExtensionNativeFixtureHandler();
-  const server = createServer({ key: certificate.keyPem, cert: certificate.certPem,
-    maxHeaderSize: 4_096 }, fixture.handle);
+  const server = createServer(
+    { key: certificate.keyPem, cert: certificate.certPem, maxHeaderSize: 4_096 },
+    fixture.handle
+  );
   server.maxConnections = 8;
   server.headersTimeout = 5_000;
   server.requestTimeout = 5_000;
   server.keepAliveTimeout = 1_000;
   server.timeout = 20_000;
   let serverError = false;
-  server.on('error', () => { serverError = true; });
+  server.on('error', () => {
+    serverError = true;
+  });
   server.on('connection', (socket) => socket.setTimeout(20_000, () => socket.destroy()));
   try {
     await new Promise((resolveListen, rejectListen) => {
@@ -285,19 +333,33 @@ export async function startExtensionNativeFixtureLoopback(helperPath) {
       });
     });
     const address = server.address();
-    assert(address && typeof address !== 'string' && address.address === '127.0.0.1' &&
-      Number.isSafeInteger(address.port) && address.port > 0);
-    return { ...fixture, port: address.port, spkiSha256: certificate.spkiSha256,
+    assert(
+      address &&
+        typeof address !== 'string' &&
+        address.address === '127.0.0.1' &&
+        Number.isSafeInteger(address.port) &&
+        address.port > 0
+    );
+    return {
+      ...fixture,
+      port: address.port,
+      spkiSha256: certificate.spkiSha256,
       snapshot: () => ({ ...fixture.snapshot(), serverError }),
       async close() {
         fixture.destroyActive();
         server.closeAllConnections();
         await new Promise((resolveClose, rejectClose) =>
-          server.close((error) => error ? rejectClose(error) : resolveClose()));
-      } };
+          server.close((error) => (error ? rejectClose(error) : resolveClose()))
+        );
+      },
+    };
   } catch {
     server.closeAllConnections();
-    try { server.close(); } catch { /* The listener never started. */ }
+    try {
+      server.close();
+    } catch {
+      /* The listener never started. */
+    }
     throw new Error('extension-native-loopback-unavailable');
   }
 }

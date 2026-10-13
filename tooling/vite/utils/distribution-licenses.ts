@@ -12,14 +12,18 @@ export const DISTRIBUTION_NOTICE_PATHS = [
 
 /** Read from the same descriptor whose regular-file identity was validated. */
 export function readRegularNoticeFile(path: string): Buffer {
-  const posixSafety = platform() === 'win32'
-    ? 0 : (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0);
+  const posixSafety =
+    platform() === 'win32' ? 0 : (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0);
   const fd = openSync(path, constants.O_RDONLY | posixSafety);
   try {
     const opened = fstatSync(fd);
     const entry = lstatSync(path);
-    if (!opened.isFile() || !entry.isFile() ||
-        opened.dev !== entry.dev || opened.ino !== entry.ino) {
+    if (
+      !opened.isFile() ||
+      !entry.isFile() ||
+      opened.dev !== entry.dev ||
+      opened.ino !== entry.ino
+    ) {
       throw new Error('Notice is not a stable regular file.');
     }
     return readFileSync(fd);
@@ -39,12 +43,16 @@ export function readDistributionNotices(root: string): Array<{ path: string; byt
   });
 }
 
-export function renderUserscriptNotices(notices: ReadonlyArray<{ path: string; bytes: Buffer }>): string {
-  return notices.map(({ path, bytes }) => {
-    const text = bytes.toString('utf8');
-    if (!Buffer.from(text, 'utf8').equals(bytes) || text.includes('*/')) {
-      throw new Error(`Required distribution notice ${path} cannot be embedded as a JS comment.`);
-    }
-    return `/* ${path}\n${text}\n*/`;
-  }).join('\n');
+export function renderUserscriptNotices(
+  notices: ReadonlyArray<{ path: string; bytes: Buffer }>
+): string {
+  return notices
+    .map(({ path, bytes }) => {
+      const text = bytes.toString('utf8');
+      if (!Buffer.from(text, 'utf8').equals(bytes) || text.includes('*/')) {
+        throw new Error(`Required distribution notice ${path} cannot be embedded as a JS comment.`);
+      }
+      return `/* ${path}\n${text}\n*/`;
+    })
+    .join('\n');
 }

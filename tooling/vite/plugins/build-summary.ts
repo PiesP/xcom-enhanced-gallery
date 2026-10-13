@@ -13,7 +13,10 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import type { Plugin } from 'vite';
-import { readDistributionNotices, renderUserscriptNotices } from '../utils/distribution-licenses.ts';
+import {
+  readDistributionNotices,
+  renderUserscriptNotices,
+} from '../utils/distribution-licenses.ts';
 import { generateUserscriptHeader, OUTPUT_FILE_NAMES } from '../utils/userscript.ts';
 
 /** Configuration options for build mode optimization (development vs production). */
@@ -39,9 +42,9 @@ export function buildSummaryPlugin(opts: {
     enforce: 'post',
 
     generateBundle(_options, bundle): void {
-      const notices = renderUserscriptNotices(readDistributionNotices(
-        opts.root ?? resolve(import.meta.dirname, '..', '..', '..')
-      ));
+      const notices = renderUserscriptNotices(
+        readDistributionNotices(opts.root ?? resolve(import.meta.dirname, '..', '..', '..'))
+      );
       for (const chunk of Object.values(bundle)) {
         if (chunk.type === 'chunk' && chunk.isEntry) {
           chunk.code = `${header}\n${notices}\n${chunk.code}`;
@@ -107,7 +110,7 @@ export function buildSummaryPlugin(opts: {
         throw new Error(
           `Unexpected files in dist/: ${unexpected.join(', ')}. ` +
             `Expected only: ${[...expectedFiles].join(', ')}. ` +
-            `Check for url() references, ?url imports, or new URL() patterns.`
+            'Check for url() references, ?url imports, or new URL() patterns.'
         );
       }
     },

@@ -75,18 +75,29 @@ describe('Node script import boundary', () => {
     mkdirSync(bin);
     for (const name of ['git', 'zip']) {
       const path = join(bin, name);
-      writeFileSync(path, `#!/bin/sh\nprintf called >> ${JSON.stringify(join(root, 'spawned'))}\nexit 91\n`);
+      writeFileSync(
+        path,
+        `#!/bin/sh\nprintf called >> ${JSON.stringify(join(root, 'spawned'))}\nexit 91\n`
+      );
       // The accidental invocation would still leave an observable marker.
       chmodSync(path, 0o755);
     }
     for (const path of scripts.filter((candidate) => candidate.startsWith('scripts/'))) {
       const target = join(root, path);
       const code = `process.argv[1] = '/definitely/missing/cli.ts'; await import(${JSON.stringify(target)});`;
-      const result = spawnSync(process.execPath, ['--experimental-strip-types', '--input-type=module', '-e', code], {
-        cwd: root,
-        env: { ...process.env, PATH: `${bin}:${process.env.PATH ?? ''}`, RELEASE_VERSION: 'invalid' },
-        encoding: 'utf8',
-      });
+      const result = spawnSync(
+        process.execPath,
+        ['--experimental-strip-types', '--input-type=module', '-e', code],
+        {
+          cwd: root,
+          env: {
+            ...process.env,
+            PATH: `${bin}:${process.env.PATH ?? ''}`,
+            RELEASE_VERSION: 'invalid',
+          },
+          encoding: 'utf8',
+        }
+      );
       expect(result.status, `${path}: ${result.stderr}`).toBe(0);
       expect(result.stdout).toBe('');
     }
@@ -154,10 +165,16 @@ describe('Node script import boundary', () => {
     const { root, command } = fixture();
     mkdirSync(join(root, 'release-bundle'));
     writeFileSync(join(root, 'release-bundle/sentinel'), 'preserve');
-    const missing = command('scripts/release/prepare.ts', [], { ...process.env, RELEASE_VERSION: '' });
+    const missing = command('scripts/release/prepare.ts', [], {
+      ...process.env,
+      RELEASE_VERSION: '',
+    });
     expect(missing.status).not.toBe(0);
     expect(missing.stderr).toContain('RELEASE_VERSION must be');
-    const mismatch = command('scripts/release/prepare.ts', [], { ...process.env, RELEASE_VERSION: '2.3.2' });
+    const mismatch = command('scripts/release/prepare.ts', [], {
+      ...process.env,
+      RELEASE_VERSION: '2.3.2',
+    });
     expect(mismatch.status).not.toBe(0);
     expect(mismatch.stderr).toContain('does not match package.json');
     expect(readFileSync(join(root, 'release-bundle/sentinel'), 'utf8')).toBe('preserve');
@@ -172,11 +189,17 @@ describe('Node script import boundary', () => {
     writeFileSync(join(root, 'dist-extension/manifest.json'), 'chrome');
     writeFileSync(join(root, 'dist-extension-firefox/manifest.json'), 'firefox');
     writeFileSync(join(root, 'release-bundle/sentinel'), 'old bundle');
-    writeFileSync(join(root, 'CHANGELOG.md'), '## [2.3.3]\n\nRelease fixture notes.\n\n## [2.3.2]\n');
+    writeFileSync(
+      join(root, 'CHANGELOG.md'),
+      '## [2.3.3]\n\nRelease fixture notes.\n\n## [2.3.2]\n'
+    );
     const bin = join(root, 'bin');
     mkdirSync(bin);
     const git = join(bin, 'git');
-    writeFileSync(git, `#!/bin/sh\nprintf '%s\\n' "$*" >> "$FAKE_CALLS"\ncase "$1" in\n  rev-parse) printf '%s\\n' '${'a'.repeat(40)}' ;;\n  tag) printf '%s\\n' 'v2.3.2' ;;\nesac\n`);
+    writeFileSync(
+      git,
+      `#!/bin/sh\nprintf '%s\\n' "$*" >> "$FAKE_CALLS"\ncase "$1" in\n  rev-parse) printf '%s\\n' '${'a'.repeat(40)}' ;;\n  tag) printf '%s\\n' 'v2.3.2' ;;\nesac\n`
+    );
     chmodSync(git, 0o755);
     const zip = join(bin, 'zip');
     writeFileSync(zip, '#!/bin/sh\nprintf archive > "$3"\n');
@@ -196,7 +219,9 @@ describe('Node script import boundary', () => {
     expect(result.stdout).toContain('Prepared release-bundle/ for v2.3.3 (4 assets)');
     expect(readFileSync(join(root, 'calls'), 'utf8')).toBe('rev-parse HEAD\ntag --list v*\n');
     expect(existsSync(join(root, 'release-bundle/sentinel'))).toBe(false);
-    expect(readFileSync(join(root, 'release-bundle/deploy/dist/xcom-enhanced-gallery.user.js'), 'utf8')).toBe('userscript');
+    expect(
+      readFileSync(join(root, 'release-bundle/deploy/dist/xcom-enhanced-gallery.user.js'), 'utf8')
+    ).toBe('userscript');
     const release = join(root, 'release-bundle/release');
     expect(readFileSync(join(release, 'checksums.txt'), 'utf8').trim().split('\n')).toHaveLength(4);
     expect(existsSync(join(release, 'xcom-enhanced-gallery-chrome.zip'))).toBe(true);
@@ -210,7 +235,9 @@ describe('Node script import boundary', () => {
       runner_image: 'ubuntu24',
       runner_image_version: 'fixture',
     });
-    expect(readFileSync(join(root, 'release-bundle/RELEASE_NOTES.md'), 'utf8')).toContain('/compare/v2.3.2...v2.3.3');
+    expect(readFileSync(join(root, 'release-bundle/RELEASE_NOTES.md'), 'utf8')).toContain(
+      '/compare/v2.3.2...v2.3.3'
+    );
   });
 
   it('preserves the package CLI missing-build diagnostic', () => {

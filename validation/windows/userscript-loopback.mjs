@@ -14,19 +14,37 @@ const MAX_IMAGE_BYTES = 64 * 1024;
 const MAX_SERVED_BYTES = 2 * 1024 * 1024;
 
 /** Validate the public certificate and private key without exposing child output on failure. */
-export function validateFixtureCertificate(value, includeVideo = false, includeFixturePage = false) {
+export function validateFixtureCertificate(
+  value,
+  includeVideo = false,
+  includeFixturePage = false
+) {
   try {
     assert(!includeFixturePage || includeVideo, 'Fixture page certificate requires video scope');
     assert.deepEqual(Object.keys(value).sort(), ['certDerBase64', 'jwk']);
-    assert(typeof value.certDerBase64 === 'string' &&
-      /^[A-Za-z0-9+/]+={0,2}$/u.test(value.certDerBase64) &&
-      value.certDerBase64.length < 8_192);
-    assert.deepEqual(Object.keys(value.jwk).sort(),
-      ['d', 'dp', 'dq', 'e', 'kty', 'n', 'p', 'q', 'qi']);
+    assert(
+      typeof value.certDerBase64 === 'string' &&
+        /^[A-Za-z0-9+/]+={0,2}$/u.test(value.certDerBase64) &&
+        value.certDerBase64.length < 8_192
+    );
+    assert.deepEqual(Object.keys(value.jwk).sort(), [
+      'd',
+      'dp',
+      'dq',
+      'e',
+      'kty',
+      'n',
+      'p',
+      'q',
+      'qi',
+    ]);
     assert.equal(value.jwk.kty, 'RSA');
     for (const field of ['d', 'dp', 'dq', 'e', 'n', 'p', 'q', 'qi']) {
-      assert(typeof value.jwk[field] === 'string' &&
-        /^[A-Za-z0-9_-]+$/u.test(value.jwk[field]) && value.jwk[field].length < 1_024);
+      assert(
+        typeof value.jwk[field] === 'string' &&
+          /^[A-Za-z0-9_-]+$/u.test(value.jwk[field]) &&
+          value.jwk[field].length < 1_024
+      );
     }
     const der = Buffer.from(value.certDerBase64, 'base64');
     assert.equal(der.toString('base64'), value.certDerBase64);
@@ -36,41 +54,65 @@ export function validateFixtureCertificate(value, includeVideo = false, includeF
     assert.equal(privateKey.asymmetricKeyDetails?.modulusLength, 2048);
     assert.equal(certificate.subject, `CN=${HOST}`);
     assert.equal(certificate.issuer, certificate.subject);
-    const names = [HOST, ...(includeVideo ? ['video.twimg.com'] : []),
-      ...(includeFixturePage ? ['x.com'] : [])];
+    const names = [
+      HOST,
+      ...(includeVideo ? ['video.twimg.com'] : []),
+      ...(includeFixturePage ? ['x.com'] : []),
+    ];
     assert.equal(certificate.subjectAltName, names.map((name) => `DNS:${name}`).join(', '));
     assert.equal(certificate.checkHost(HOST, { subject: 'never' }), HOST);
     if (includeVideo) {
-      assert.equal(certificate.checkHost('video.twimg.com', { subject: 'never' }),
-        'video.twimg.com');
+      assert.equal(
+        certificate.checkHost('video.twimg.com', { subject: 'never' }),
+        'video.twimg.com'
+      );
     }
-    if (includeFixturePage) assert.equal(certificate.checkHost('x.com', { subject: 'never' }), 'x.com');
+    if (includeFixturePage)
+      assert.equal(certificate.checkHost('x.com', { subject: 'never' }), 'x.com');
     assert.equal(certificate.ca, false);
     assert(certificate.checkPrivateKey(privateKey));
     assert(certificate.verify(certificate.publicKey));
     const now = Date.now();
     const from = Date.parse(certificate.validFrom);
     const to = Date.parse(certificate.validTo);
-    assert(Number.isFinite(from) && Number.isFinite(to) &&
-      from <= now && to > now && to - from <= 40 * 60_000);
+    assert(
+      Number.isFinite(from) &&
+        Number.isFinite(to) &&
+        from <= now &&
+        to > now &&
+        to - from <= 40 * 60_000
+    );
     const spki = certificate.publicKey.export({ type: 'spki', format: 'der' });
-    return { certPem: certificate.toString(),
+    return {
+      certPem: certificate.toString(),
       keyPem: privateKey.export({ type: 'pkcs8', format: 'pem' }),
-      spkiSha256: createHash('sha256').update(spki).digest('base64') };
+      spkiSha256: createHash('sha256').update(spki).digest('base64'),
+    };
   } catch {
     throw new Error('fixture-certificate-invalid');
   }
 }
 
-export async function generateFixtureCertificate(helperPath, run = execFileAsync,
-  includeVideo = false, includeFixturePage = false) {
+export async function generateFixtureCertificate(
+  helperPath,
+  run = execFileAsync,
+  includeVideo = false,
+  includeFixturePage = false
+) {
   let stdout;
   try {
-    ({ stdout } = await run('powershell.exe',
-      ['-NoProfile', '-NonInteractive', '-File', helperPath,
+    ({ stdout } = await run(
+      'powershell.exe',
+      [
+        '-NoProfile',
+        '-NonInteractive',
+        '-File',
+        helperPath,
         ...(includeVideo ? ['-IncludeVideo'] : []),
-        ...(includeFixturePage ? ['-IncludeFixturePage'] : [])],
-      { timeout: 12_000, windowsHide: true, maxBuffer: 16_384, encoding: 'utf8' }));
+        ...(includeFixturePage ? ['-IncludeFixturePage'] : []),
+      ],
+      { timeout: 12_000, windowsHide: true, maxBuffer: 16_384, encoding: 'utf8' }
+    ));
   } catch {
     throw new Error('fixture-certificate-unavailable');
   }
@@ -85,11 +127,17 @@ export async function generateFixtureCertificate(helperPath, run = execFileAsync
 export function createUserscriptFixtureHandler(cohorts, avatarPath) {
   const allowed = new Map();
   for (const [cohort, markers] of Object.entries(cohorts)) {
-    assert(['normal', 'failure', 'partial', 'held'].includes(cohort) &&
-      Array.isArray(markers) && markers.length === 3);
+    assert(
+      ['normal', 'failure', 'partial', 'held'].includes(cohort) &&
+        Array.isArray(markers) &&
+        markers.length === 3
+    );
     for (const [index, marker] of markers.entries()) {
       assert(/^[A-Za-z0-9]{13}$/u.test(marker));
-      for (const [name, purpose] of [['large', 'preview'], ['orig', 'transfer']]) {
+      for (const [name, purpose] of [
+        ['large', 'preview'],
+        ['orig', 'transfer'],
+      ]) {
         const path = `/media/${marker}.jpg?format=jpg&name=${name}`;
         assert(!allowed.has(path));
         allowed.set(path, { cohort, index, purpose });
@@ -121,10 +169,13 @@ export function createUserscriptFixtureHandler(cohorts, avatarPath) {
       return;
     }
     const media = allowed.get(request.url);
-    if (request.method !== 'GET' ||
-        ![HOST, `${HOST}:443`].includes(request.headers.host) ||
-        !media || !images ||
-        (media.cohort !== 'avatar' && media.cohort !== phase)) {
+    if (
+      request.method !== 'GET' ||
+      ![HOST, `${HOST}:443`].includes(request.headers.host) ||
+      !media ||
+      !images ||
+      (media.cohort !== 'avatar' && media.cohort !== phase)
+    ) {
       reject(response);
       return;
     }
@@ -138,17 +189,32 @@ export function createUserscriptFixtureHandler(cohorts, avatarPath) {
       reject(response);
       return;
     }
-    const event = { phase, cohort: media.cohort, index: media.index,
-      purpose, method: 'GET', result: 'started', bytes: 0, sha256: null };
+    const event = {
+      phase,
+      cohort: media.cohort,
+      index: media.index,
+      purpose,
+      method: 'GET',
+      result: 'started',
+      bytes: 0,
+      sha256: null,
+    };
     events.push(event);
     active.add(response);
     response.once('close', () => {
       if (!response.writableFinished) event.result = 'aborted';
       active.delete(response);
     });
-    if (heldArmed && phase === 'held' && media.cohort === 'held' && media.index === 0 &&
-        purpose === 'transfer') return;
-    const unavailable = (phase === 'failure' && media.cohort === 'failure') ||
+    if (
+      heldArmed &&
+      phase === 'held' &&
+      media.cohort === 'held' &&
+      media.index === 0 &&
+      purpose === 'transfer'
+    )
+      return;
+    const unavailable =
+      (phase === 'failure' && media.cohort === 'failure') ||
       (phase === 'partial' && media.cohort === 'partial' && media.index === 1);
     const body = unavailable ? Buffer.alloc(0) : bytes;
     if (servedBytes + body.length > MAX_SERVED_BYTES) {
@@ -173,9 +239,15 @@ export function createUserscriptFixtureHandler(cohorts, avatarPath) {
   return {
     handle,
     setImages(next) {
-      assert(!images && Array.isArray(next) && next.length === 3 &&
-        next.every((bytes) => Buffer.isBuffer(bytes) && bytes.length > 0 &&
-          bytes.length <= MAX_IMAGE_BYTES), 'Invalid bounded fixture images');
+      assert(
+        !images &&
+          Array.isArray(next) &&
+          next.length === 3 &&
+          next.every(
+            (bytes) => Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= MAX_IMAGE_BYTES
+          ),
+        'Invalid bounded fixture images'
+      );
       images = next;
     },
     setPhase(next) {
@@ -192,24 +264,45 @@ export function createUserscriptFixtureHandler(cohorts, avatarPath) {
     mark: () => events.length,
     findSince(mark, cohort, index, result) {
       assert(Number.isSafeInteger(mark) && mark >= 0 && mark <= events.length);
-      return events.slice(mark).find((event) => event.cohort === cohort &&
-        event.index === index && event.purpose === 'transfer' && event.result === result);
+      return events
+        .slice(mark)
+        .find(
+          (event) =>
+            event.cohort === cohort &&
+            event.index === index &&
+            event.purpose === 'transfer' &&
+            event.result === result
+        );
     },
     activeCount: () => active.size,
-    snapshot: () => ({ requests: requestCount, unexpectedCount, overflow, servedBytes,
-      activeCount: active.size, events: events.map((event) => ({ ...event })) }),
-    destroyActive() { for (const response of active) response.destroy(); },
+    snapshot: () => ({
+      requests: requestCount,
+      unexpectedCount,
+      overflow,
+      servedBytes,
+      activeCount: active.size,
+      events: events.map((event) => ({ ...event })),
+    }),
+    destroyActive() {
+      for (const response of active) response.destroy();
+    },
   };
 }
 
-export async function startUserscriptFixtureLoopback(helperPath, cohorts, avatarPath,
-  run = execFileAsync) {
+export async function startUserscriptFixtureLoopback(
+  helperPath,
+  cohorts,
+  avatarPath,
+  run = execFileAsync
+) {
   const certificate = await generateFixtureCertificate(helperPath, run);
   const fixture = createUserscriptFixtureHandler(cohorts, avatarPath);
   let server;
   try {
-    server = createServer({ key: certificate.keyPem, cert: certificate.certPem,
-      maxHeaderSize: 4_096 }, fixture.handle);
+    server = createServer(
+      { key: certificate.keyPem, cert: certificate.certPem, maxHeaderSize: 4_096 },
+      fixture.handle
+    );
   } catch {
     throw new Error('fixture-loopback-unavailable');
   }
@@ -219,7 +312,9 @@ export async function startUserscriptFixtureLoopback(helperPath, cohorts, avatar
   server.keepAliveTimeout = 1_000;
   server.timeout = 20_000;
   let serverError = false;
-  server.on('error', () => { serverError = true; });
+  server.on('error', () => {
+    serverError = true;
+  });
   server.on('connection', (socket) => socket.setTimeout(20_000, () => socket.destroy()));
   try {
     await new Promise((resolveListen, rejectListen) => {
@@ -230,19 +325,33 @@ export async function startUserscriptFixtureLoopback(helperPath, cohorts, avatar
       });
     });
     const address = server.address();
-    assert(address && typeof address !== 'string' && address.address === '127.0.0.1' &&
-      Number.isSafeInteger(address.port) && address.port > 0);
-    return { ...fixture, port: address.port, spkiSha256: certificate.spkiSha256,
+    assert(
+      address &&
+        typeof address !== 'string' &&
+        address.address === '127.0.0.1' &&
+        Number.isSafeInteger(address.port) &&
+        address.port > 0
+    );
+    return {
+      ...fixture,
+      port: address.port,
+      spkiSha256: certificate.spkiSha256,
       snapshot: () => ({ ...fixture.snapshot(), serverError }),
       async close() {
         fixture.destroyActive();
         server.closeAllConnections();
         await new Promise((resolveClose, rejectClose) =>
-          server.close((error) => error ? rejectClose(error) : resolveClose()));
-      } };
+          server.close((error) => (error ? rejectClose(error) : resolveClose()))
+        );
+      },
+    };
   } catch {
     server.closeAllConnections();
-    try { server.close(); } catch { /* The listener never started. */ }
+    try {
+      server.close();
+    } catch {
+      /* The listener never started. */
+    }
     throw new Error('fixture-loopback-unavailable');
   }
 }

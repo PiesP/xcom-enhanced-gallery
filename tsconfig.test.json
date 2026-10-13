@@ -1,19 +1,10 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "types": [
-      "vitest/globals"
-    ],
+    "types": ["vitest/globals"],
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
-  "include": [
-    "test",
-    "src/types/env.d.ts",
-    "src/shared/types/core/userscript.d.ts"
-  ],
-  "exclude": [
-    "test/e2e",
-    "test/node_modules"
-  ]
+  "include": ["test", "src/types/env.d.ts", "src/shared/types/core/userscript.d.ts"],
+  "exclude": ["test/e2e", "test/node_modules"]
 }

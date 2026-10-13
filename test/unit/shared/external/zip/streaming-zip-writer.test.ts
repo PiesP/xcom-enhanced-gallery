@@ -102,10 +102,7 @@ describe('StreamingZipWriter cooperative CRC32', () => {
 
     expect(first.maxDataBytes).toBe(4);
     expect(second.maxDataBytes).toBe(2);
-    await Promise.all([
-      first.commit(new Uint8Array(4)),
-      second.commit(new Uint8Array(2)),
-    ]);
+    await Promise.all([first.commit(new Uint8Array(4)), second.commit(new Uint8Array(2))]);
     expect((await archiveBytes(writer)).byteLength).toBe(exactArchiveBytes);
   });
 });

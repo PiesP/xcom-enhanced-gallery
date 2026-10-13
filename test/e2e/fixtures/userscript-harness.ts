@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import type { Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+import type { Page } from '@playwright/test';
 import { DEV_USERSCRIPT_PATH } from './artifacts';
 
 export async function injectDevUserscript(page: Page): Promise<void> {
@@ -25,9 +25,11 @@ export async function waitForGalleryApp(page: Page): Promise<void> {
   await page.waitForFunction(
     () =>
       Boolean(
-        (globalThis as typeof globalThis & {
-          __XEG__?: { main?: { galleryApp?: unknown } };
-        }).__XEG__?.main?.galleryApp
+        (
+          globalThis as typeof globalThis & {
+            __XEG__?: { main?: { galleryApp?: unknown } };
+          }
+        ).__XEG__?.main?.galleryApp
       ),
     undefined,
     { timeout: 15_000 }

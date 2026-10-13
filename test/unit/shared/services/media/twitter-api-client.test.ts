@@ -1,38 +1,87 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { buildTweetResultByRestIdUrl } from '@shared/core/twitter-api/endpoint';
 import type { BuildTweetResultByRestIdUrlArgs } from '@shared/core/twitter-api/endpoint';
+import { buildTweetResultByRestIdUrl } from '@shared/core/twitter-api/endpoint';
 import type { TwitterTweet } from '@shared/services/media/types';
-import { TwitterAPIExtractor } from '@shared/services/media-extraction/extractors/twitter-api-extractor';
 import { captureClickedMediaEvidence } from '@shared/services/media-extraction/determine-clicked-index';
+import { TwitterAPIExtractor } from '@shared/services/media-extraction/extractors/twitter-api-extractor';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 function createQuotedVideoTweetResponse() {
-  const user = (screenName: string) => ({ user_results: { result: {
-    legacy: { screen_name: screenName },
-  } } });
-  return { data: { tweetResult: { result: {
-    rest_id: '222', core: user('outer'),
-    legacy: { full_text: 'Outer text', extended_entities: { media: [{
-      type: 'video', id_str: 'outer-video',
-      media_url_https: 'https://pbs.twimg.com/ext_tw_video_thumb/222/outer.jpg',
-      video_info: { variants: [{ content_type: 'video/mp4', bitrate: 512000,
-        url: 'https://video.twimg.com/ext_tw_video/222/outer.mp4' }] },
-    }] } },
-    quoted_status_result: { result: {
-      rest_id: '111', core: user('quote'),
-      legacy: { full_text: 'Quote text', extended_entities: { media: [{
-        type: 'photo', id_str: 'quote-photo',
-        media_url_https: 'https://pbs.twimg.com/media/quote-photo.jpg',
-      }] } },
-      quoted_status_result: { result: {
-        rest_id: '333', core: user('nested'),
-        legacy: { extended_entities: { media: [{ type: 'photo', id_str: 'nested-photo',
-          media_url_https: 'https://pbs.twimg.com/media/nested-photo.jpg' }] } },
-      } },
-    } },
-  } } } };
+  const user = (screenName: string) => ({
+    user_results: {
+      result: {
+        legacy: { screen_name: screenName },
+      },
+    },
+  });
+  return {
+    data: {
+      tweetResult: {
+        result: {
+          rest_id: '222',
+          core: user('outer'),
+          legacy: {
+            full_text: 'Outer text',
+            extended_entities: {
+              media: [
+                {
+                  type: 'video',
+                  id_str: 'outer-video',
+                  media_url_https: 'https://pbs.twimg.com/ext_tw_video_thumb/222/outer.jpg',
+                  video_info: {
+                    variants: [
+                      {
+                        content_type: 'video/mp4',
+                        bitrate: 512000,
+                        url: 'https://video.twimg.com/ext_tw_video/222/outer.mp4',
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+          quoted_status_result: {
+            result: {
+              rest_id: '111',
+              core: user('quote'),
+              legacy: {
+                full_text: 'Quote text',
+                extended_entities: {
+                  media: [
+                    {
+                      type: 'photo',
+                      id_str: 'quote-photo',
+                      media_url_https: 'https://pbs.twimg.com/media/quote-photo.jpg',
+                    },
+                  ],
+                },
+              },
+              quoted_status_result: {
+                result: {
+                  rest_id: '333',
+                  core: user('nested'),
+                  legacy: {
+                    extended_entities: {
+                      media: [
+                        {
+                          type: 'photo',
+                          id_str: 'nested-photo',
+                          media_url_https: 'https://pbs.twimg.com/media/nested-photo.jpg',
+                        },
+                      ],
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  };
 }
 
 const { getCsrfTokenAsync, httpGet, resolveBearerToken } = vi.hoisted(() => ({
@@ -59,7 +108,12 @@ import {
 const BASE_ARGS: BuildTweetResultByRestIdUrlArgs = {
   host: 'x.com',
   queryId: 'zAz9764BcLZOJ0JU2wrd1A',
-  variables: { tweetId: '1234567890', withCommunity: false, includePromotedContent: false, withVoice: false },
+  variables: {
+    tweetId: '1234567890',
+    withCommunity: false,
+    includePromotedContent: false,
+    withVoice: false,
+  },
   features: {
     creator_subscriptions_tweet_preview_api_enabled: true,
     responsive_web_edit_tweet_api_enabled: true,
@@ -74,7 +128,9 @@ describe('twitter-api-client (URL building — pure functions)', () => {
   describe('buildTweetResultByRestIdUrl', () => {
     it('should build a URL with the correct host and path', () => {
       const url = buildTweetResultByRestIdUrl(BASE_ARGS);
-      expect(url).toContain('https://x.com/i/api/graphql/zAz9764BcLZOJ0JU2wrd1A/TweetResultByRestId');
+      expect(url).toContain(
+        'https://x.com/i/api/graphql/zAz9764BcLZOJ0JU2wrd1A/TweetResultByRestId'
+      );
     });
 
     it('should serialize variables as JSON in the variables param', () => {
@@ -175,19 +231,33 @@ describe('TweetMetadataReuse', () => {
   it('recomputes direct and quoted selection for each click on reused metadata', async () => {
     const extractor = new TwitterAPIExtractor();
     const info = {
-      tweetId: '222', username: 'quote_author', tweetUrl: 'https://x.com/quote_author/status/222',
-      extractionMethod: 'test', confidence: 1,
+      tweetId: '222',
+      username: 'quote_author',
+      tweetUrl: 'https://x.com/quote_author/status/222',
+      extractionMethod: 'test',
+      confidence: 1,
     };
     document.body.innerHTML = '<img id="quote" src="https://pbs.twimg.com/media/quote-photo.jpg">';
     const clickedQuote = document.querySelector<HTMLElement>('#quote')!;
-    const quote = await extractor.extract(info, clickedQuote, {
-      clickedMediaEvidence: {
-        ...captureClickedMediaEvidence(clickedQuote),
-        ownership: {requestTweetId: '222', ownerTweetId: null, scope: 'quoted'},
+    const quote = await extractor.extract(
+      info,
+      clickedQuote,
+      {
+        clickedMediaEvidence: {
+          ...captureClickedMediaEvidence(clickedQuote),
+          ownership: { requestTweetId: '222', ownerTweetId: null, scope: 'quoted' },
+        },
       },
-    }, 'quote');
-    document.body.innerHTML = '<video id="direct" poster="https://pbs.twimg.com/ext_tw_video_thumb/222/outer.jpg"></video>';
-    const direct = await extractor.extract(info, document.querySelector<HTMLElement>('#direct')!, {}, 'direct');
+      'quote'
+    );
+    document.body.innerHTML =
+      '<video id="direct" poster="https://pbs.twimg.com/ext_tw_video_thumb/222/outer.jpg"></video>';
+    const direct = await extractor.extract(
+      info,
+      document.querySelector<HTMLElement>('#direct')!,
+      {},
+      'direct'
+    );
     expect(quote).toMatchObject({ success: true });
     expect(quote.clickedIndex).toBe(0);
     expect(direct.success).toBe(true);
@@ -204,9 +274,12 @@ describe('TweetMetadataReuse', () => {
       controller.abort();
       return { ok: false, status: 503, data: {} };
     });
-    await expect(reuse.get('222', undefined, controller.signal)).rejects.toMatchObject({ name: 'AbortError' });
+    await expect(reuse.get('222', undefined, controller.signal)).rejects.toMatchObject({
+      name: 'AbortError',
+    });
     await expect(reuse.get('222')).resolves.toMatchObject({
-      entries: expect.any(Array), physicalRequestToken: expect.any(Object),
+      entries: expect.any(Array),
+      physicalRequestToken: expect.any(Object),
     });
     expect(httpGet).toHaveBeenCalledTimes(2);
     reuse.dispose();
@@ -214,7 +287,12 @@ describe('TweetMetadataReuse', () => {
 
   it('coalesces two callers while allowing one to leave without cancelling the other', async () => {
     let complete!: (value: unknown) => void;
-    httpGet.mockImplementation(() => new Promise<unknown>((resolve) => { complete = resolve; }));
+    httpGet.mockImplementation(
+      () =>
+        new Promise<unknown>((resolve) => {
+          complete = resolve;
+        })
+    );
     const reuse = new TweetMetadataReuse();
     const firstController = new AbortController();
     const secondController = new AbortController();
@@ -232,7 +310,12 @@ describe('TweetMetadataReuse', () => {
 
   it('aborts the last waiter and never publishes a late, ignored transport result', async () => {
     let complete!: (value: unknown) => void;
-    httpGet.mockImplementationOnce(() => new Promise<unknown>((resolve) => { complete = resolve; }));
+    httpGet.mockImplementationOnce(
+      () =>
+        new Promise<unknown>((resolve) => {
+          complete = resolve;
+        })
+    );
     const reuse = new TweetMetadataReuse();
     const controller = new AbortController();
     const pending = reuse.get('222', undefined, controller.signal);
@@ -248,7 +331,12 @@ describe('TweetMetadataReuse', () => {
 
   it('rejects an in-flight request immediately on explicit refresh', async () => {
     let complete!: (value: unknown) => void;
-    httpGet.mockImplementationOnce(() => new Promise<unknown>((resolve) => { complete = resolve; }));
+    httpGet.mockImplementationOnce(
+      () =>
+        new Promise<unknown>((resolve) => {
+          complete = resolve;
+        })
+    );
     const reuse = new TweetMetadataReuse();
     const pending = reuse.get('222');
     await vi.waitFor(() => expect(httpGet).toHaveBeenCalledTimes(1));
@@ -264,7 +352,11 @@ describe('TweetMetadataReuse', () => {
     let now = 1_000;
     vi.spyOn(performance, 'now').mockImplementation(() => now);
     const reuse = new TweetMetadataReuse();
-    const location = { hostname: 'x.com', origin: 'https://x.com', href: 'https://x.com/a/status/222' };
+    const location = {
+      hostname: 'x.com',
+      origin: 'https://x.com',
+      href: 'https://x.com/a/status/222',
+    };
     await reuse.get('222', location);
     await reuse.get('222', location);
     expect(httpGet).toHaveBeenCalledTimes(1);
@@ -284,7 +376,9 @@ describe('TweetMetadataReuse', () => {
 
   it('never caches an explicit empty or failed provider response', async () => {
     const reuse = new TweetMetadataReuse();
-    httpGet.mockResolvedValueOnce({ ok: true, status: 200,
+    httpGet.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
       data: { data: { tweetResult: { result: null } } },
     });
     expect((await reuse.get('222')).entries).toEqual([]);
@@ -299,7 +393,9 @@ describe('TweetMetadataReuse', () => {
 describe('twitter-api-client request boundary', () => {
   beforeEach(() => {
     httpGet.mockReset();
-    httpGet.mockResolvedValue({ ok: true, status: 200,
+    httpGet.mockResolvedValue({
+      ok: true,
+      status: 200,
       data: { data: { tweetResult: { result: null } } },
     });
     getCsrfTokenAsync.mockReset();
@@ -425,18 +521,35 @@ describe('twitter-api-client request boundary', () => {
 
   it.each([
     [{ ok: false, status: 403, readable: true, retryAfterMs: 30_000, data: {} }, 'denied'],
-    [{ ok: false, status: 0, readable: false, errorCategory: 'unreadable', data: {} }, 'unreadable'],
+    [
+      { ok: false, status: 0, readable: false, errorCategory: 'unreadable', data: {} },
+      'unreadable',
+    ],
     [{ ok: false, status: 429, readable: true, retryAfterMs: 120_000, data: {} }, 'rate-limited'],
     [{ ok: false, status: 503, readable: true, retryAfterMs: 120_000, data: {} }, 'deferred'],
-    [{ ok: false, status: 503, readable: false, errorCategory: 'unreadable', retryAfterMs: 120_000, data: {} }, 'unreadable'],
-  ])('classifies safe HTTP metadata without guessing provider intent', async (response, category) => {
-    httpGet.mockResolvedValueOnce(response);
-    await expect(getTweetMedias('222')).rejects.toMatchObject({
-      category,
-      ...('retryAfterMs' in response && response.retryAfterMs !== undefined
-        ? { retryAfterMs: response.retryAfterMs } : {}),
-    });
-  });
+    [
+      {
+        ok: false,
+        status: 503,
+        readable: false,
+        errorCategory: 'unreadable',
+        retryAfterMs: 120_000,
+        data: {},
+      },
+      'unreadable',
+    ],
+  ])(
+    'classifies safe HTTP metadata without guessing provider intent',
+    async (response, category) => {
+      httpGet.mockResolvedValueOnce(response);
+      await expect(getTweetMedias('222')).rejects.toMatchObject({
+        category,
+        ...('retryAfterMs' in response && response.retryAfterMs !== undefined
+          ? { retryAfterMs: response.retryAfterMs }
+          : {}),
+      });
+    }
+  );
 
   it('uses typed transport metadata without exposing the transport error text', async () => {
     const underlying = Object.assign(new Error('private response detail'), {
@@ -485,8 +598,13 @@ describe('twitter-api-client request boundary', () => {
       data: { ...usableResponse, errors: providerErrors },
     });
     await expect(getTweetMedias('222')).resolves.toMatchObject([
-      { tweet_id: '111', type: 'photo', sourceLocation: 'quoted',
-        quoteParentTweetId: '222', quotedTweetId: '111' },
+      {
+        tweet_id: '111',
+        type: 'photo',
+        sourceLocation: 'quoted',
+        quoteParentTweetId: '222',
+        quotedTweetId: '111',
+      },
       { tweet_id: '222', type: 'video', sourceLocation: 'original' },
     ]);
   });
@@ -500,70 +618,118 @@ describe('twitter-api-client request boundary', () => {
   ])('rejects a missing or unsupported result envelope: %j', async (data) => {
     httpGet.mockResolvedValueOnce({ ok: true, status: 200, data });
     await expect(getTweetMedias('222')).rejects.toMatchObject({
-      name: 'TwitterAPIRequestError', category: 'provider-error',
+      name: 'TwitterAPIRequestError',
+      category: 'provider-error',
     });
   });
 
   it('rejects a mismatched numeric root before using its direct quote', async () => {
-    httpGet.mockResolvedValueOnce({ ok: true, status: 200,
-      data: createQuotedVideoTweetResponse() });
+    httpGet.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      data: createQuotedVideoTweetResponse(),
+    });
 
     await expect(getTweetMedias('999')).rejects.toThrow('unexpected tweet owner');
   });
 
   it('carries an invalid root through metadata reuse and extraction as one failed request', async () => {
-    httpGet.mockResolvedValueOnce({ ok: true, status: 200,
-      data: { data: { tweetResult: { result: {
-        __typename: 'Tweet', rest_id: '999',
-      } } } },
+    httpGet.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      data: {
+        data: {
+          tweetResult: {
+            result: {
+              __typename: 'Tweet',
+              rest_id: '999',
+            },
+          },
+        },
+      },
     });
     const extractor = new TwitterAPIExtractor();
     const extracted = await extractor.extract(
-      { tweetId: '222', username: 'outer', tweetUrl: 'https://x.com/outer/status/222',
-        extractionMethod: 'fixture', confidence: 1 },
-      document.createElement('video'), {}, 'invalid-root'
+      {
+        tweetId: '222',
+        username: 'outer',
+        tweetUrl: 'https://x.com/outer/status/222',
+        extractionMethod: 'fixture',
+        confidence: 1,
+      },
+      document.createElement('video'),
+      {},
+      'invalid-root'
     );
     expect(extracted).toMatchObject({
-      success: false, mediaItems: [], apiRequestOutcome: 'failed',
-      apiRequestToken: expect.any(Object), failureKind: 'provider-error',
+      success: false,
+      mediaItems: [],
+      apiRequestOutcome: 'failed',
+      apiRequestToken: expect.any(Object),
+      failureKind: 'provider-error',
     });
     expect(httpGet).toHaveBeenCalledTimes(1);
     extractor.dispose();
   });
 
   it.each(['TweetUnavailable', 'TweetTombstone'])(
-    'returns healthy no-media for %s through zero, one or two visibility wrappers', async (__typename) => {
+    'returns healthy no-media for %s through zero, one or two visibility wrappers',
+    async (__typename) => {
       for (let depth = 0; depth <= 2; depth += 1) {
         let result: TwitterTweet = { __typename };
         for (let wrapper = 0; wrapper < depth; wrapper += 1) {
           result = { __typename: 'TweetWithVisibilityResults', tweet: result };
         }
-        httpGet.mockResolvedValue({ ok: true, status: 200,
-          data: { data: { tweetResult: { result } } } });
+        httpGet.mockResolvedValue({
+          ok: true,
+          status: 200,
+          data: { data: { tweetResult: { result } } },
+        });
         await expect(getTweetMedias('222')).resolves.toEqual([]);
         const extracted = await new TwitterAPIExtractor().extract(
-          { tweetId: '222', username: 'outer', tweetUrl: 'https://x.com/outer/status/222',
-            extractionMethod: 'fixture', confidence: 1 }, document.createElement('video'), {}, 'unavailable'
+          {
+            tweetId: '222',
+            username: 'outer',
+            tweetUrl: 'https://x.com/outer/status/222',
+            extractionMethod: 'fixture',
+            confidence: 1,
+          },
+          document.createElement('video'),
+          {},
+          'unavailable'
         );
-        expect(extracted).toMatchObject({ success: false, mediaItems: [],
-          apiRequestOutcome: 'healthy', metadata: { strategy: 'api-media-unavailable' } });
+        expect(extracted).toMatchObject({
+          success: false,
+          mediaItems: [],
+          apiRequestOutcome: 'healthy',
+          metadata: { strategy: 'api-media-unavailable' },
+        });
       }
     }
   );
 
   it.each([
-    null, undefined,
+    null,
+    undefined,
     { __typename: 'Tweet', rest_id: '222' },
     { __typename: 'Tweet', rest_id: '222', core: { user_results: { result: {} } } },
   ])('keeps absent or matching media-less results empty: %j', async (result) => {
-    httpGet.mockResolvedValue({ ok: true, status: 200,
-      data: { data: { tweetResult: { result } } } });
+    httpGet.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { data: { tweetResult: { result } } },
+    });
     await expect(getTweetMedias('222')).resolves.toEqual([]);
   });
 
   it.each([
-    {}, [], 'TweetUnavailable', false, 0,
-    { __typename: 'UnknownResult' }, { __typename: 'UnknownResult', rest_id: '222' },
+    {},
+    [],
+    'TweetUnavailable',
+    false,
+    0,
+    { __typename: 'UnknownResult' },
+    { __typename: 'UnknownResult', rest_id: '222' },
     { __typename: 'Tweet', rest_id: '999' },
     { rest_id: '222', id_str: '111' },
     { rest_id: '222', legacy: { id_str: '111' } },
@@ -573,65 +739,129 @@ describe('twitter-api-client request boundary', () => {
     { __typename: 'TweetWithVisibilityResults' },
     { __typename: 'UnknownWrapper', tweet: { __typename: 'TweetUnavailable' } },
     { __typename: 'TweetWithVisibilityResults', tweet: null },
-    { __typename: 'TweetWithVisibilityResults', tweet: { __typename: 'TweetWithVisibilityResults',
-      tweet: { __typename: 'TweetWithVisibilityResults', tweet: { __typename: 'TweetUnavailable' } } } },
+    {
+      __typename: 'TweetWithVisibilityResults',
+      tweet: {
+        __typename: 'TweetWithVisibilityResults',
+        tweet: {
+          __typename: 'TweetWithVisibilityResults',
+          tweet: { __typename: 'TweetUnavailable' },
+        },
+      },
+    },
     { __typename: 'TweetUnavailable', tweet: { __typename: 'TweetUnavailable' } },
   ])('rejects unsupported, malformed or conflicting roots: %j', async (result) => {
-    httpGet.mockResolvedValue({ ok: true, status: 200,
-      data: { data: { tweetResult: { result } } } });
+    httpGet.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { data: { tweetResult: { result } } },
+    });
     await expect(getTweetMedias('222')).rejects.toMatchObject({
-      name: 'TwitterAPIRequestError', category: 'provider-error',
+      name: 'TwitterAPIRequestError',
+      category: 'provider-error',
     });
   });
 
   it.each(['TweetUnavailable', 'TweetTombstone'])(
-    'supports the legacy untagged visibility envelope for %s', async (__typename) => {
-      httpGet.mockResolvedValue({ ok: true, status: 200,
-        data: { data: { tweetResult: { result: { tweet: { tweet: { __typename } } } } } } });
+    'supports the legacy untagged visibility envelope for %s',
+    async (__typename) => {
+      httpGet.mockResolvedValue({
+        ok: true,
+        status: 200,
+        data: { data: { tweetResult: { result: { tweet: { tweet: { __typename } } } } } },
+      });
       await expect(getTweetMedias('222')).resolves.toEqual([]);
     }
   );
 
   it.each(['TweetUnavailable', 'TweetTombstone'])(
-    'does not substitute an available quote for an unavailable %s root', async (__typename) => {
-      httpGet.mockResolvedValue({ ok: true, status: 200,
-        data: { data: { tweetResult: { result: { __typename,
-          quoted_status_result: { result: createQuotedVideoTweetResponse().data.tweetResult.result } } } } } });
+    'does not substitute an available quote for an unavailable %s root',
+    async (__typename) => {
+      httpGet.mockResolvedValue({
+        ok: true,
+        status: 200,
+        data: {
+          data: {
+            tweetResult: {
+              result: {
+                __typename,
+                quoted_status_result: {
+                  result: createQuotedVideoTweetResponse().data.tweetResult.result,
+                },
+              },
+            },
+          },
+        },
+      });
       await expect(getTweetMedias('222')).resolves.toEqual([]);
     }
   );
 
   it.each(['TweetUnavailable', 'TweetTombstone'])(
-    'keeps provider and HTTP errors ahead of unavailable %s', async (__typename) => {
-      for (const result of [{ __typename },
-        { __typename: 'TweetWithVisibilityResults', tweet: { __typename } }]) {
-        httpGet.mockResolvedValue({ ok: true, status: 200,
-          data: { data: { tweetResult: { result } }, errors: [{ code: 88, message: 'Rate limit' }] } });
+    'keeps provider and HTTP errors ahead of unavailable %s',
+    async (__typename) => {
+      for (const result of [
+        { __typename },
+        { __typename: 'TweetWithVisibilityResults', tweet: { __typename } },
+      ]) {
+        httpGet.mockResolvedValue({
+          ok: true,
+          status: 200,
+          data: {
+            data: { tweetResult: { result } },
+            errors: [{ code: 88, message: 'Rate limit' }],
+          },
+        });
         await expect(getTweetMedias('222')).rejects.toThrow('provider error');
-        httpGet.mockResolvedValue({ ok: false, status: 503,
-          data: { data: { tweetResult: { result } } } });
+        httpGet.mockResolvedValue({
+          ok: false,
+          status: 503,
+          data: { data: { tweetResult: { result } } },
+        });
         await expect(getTweetMedias('222')).rejects.toThrow('TW:503');
       }
     }
   );
 
   it('rejects provider errors with matching but unusable partial data', async () => {
-    httpGet.mockResolvedValue({ ok: true, status: 200,
-      data: { data: { tweetResult: { result: { rest_id: '222' } } },
-        errors: [{ code: 88, message: 'Rate limit' }] } });
+    httpGet.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        data: { tweetResult: { result: { rest_id: '222' } } },
+        errors: [{ code: 88, message: 'Rate limit' }],
+      },
+    });
     await expect(getTweetMedias('222')).rejects.toThrow('provider error');
   });
 
   it.each(['TweetUnavailable', 'TweetTombstone'])(
-    'retains valid root media when its direct quote is %s with an available deeper quote', async (__typename) => {
+    'retains valid root media when its direct quote is %s with an available deeper quote',
+    async (__typename) => {
       const root = createQuotedVideoTweetResponse().data.tweetResult.result;
-      httpGet.mockResolvedValue({ ok: true, status: 200,
-        data: { data: { tweetResult: { result: { ...root,
-          quoted_status_result: { result: { __typename,
-            quoted_status_result: root.quoted_status_result } } } } } } });
+      httpGet.mockResolvedValue({
+        ok: true,
+        status: 200,
+        data: {
+          data: {
+            tweetResult: {
+              result: {
+                ...root,
+                quoted_status_result: {
+                  result: { __typename, quoted_status_result: root.quoted_status_result },
+                },
+              },
+            },
+          },
+        },
+      });
       await expect(getTweetMedias('222')).resolves.toMatchObject([
-        { tweet_id: '222', type: 'video', sourceLocation: 'original',
-          download_url: 'https://video.twimg.com/ext_tw_video/222/outer.mp4' },
+        {
+          tweet_id: '222',
+          type: 'video',
+          sourceLocation: 'original',
+          download_url: 'https://video.twimg.com/ext_tw_video/222/outer.mp4',
+        },
       ]);
     }
   );
@@ -639,20 +869,39 @@ describe('twitter-api-client request boundary', () => {
   it('normalizes wrapped A and B, returns direct B before A, and excludes C', async () => {
     const response = createQuotedVideoTweetResponse();
     const root = response.data.tweetResult.result;
-    httpGet.mockResolvedValueOnce({ ok: true, status: 200,
-      data: { data: { tweetResult: { result: { tweet: {
-        ...root, quoted_status_result: { result: { tweet: root.quoted_status_result.result } },
-      } } } } } });
+    httpGet.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      data: {
+        data: {
+          tweetResult: {
+            result: {
+              tweet: {
+                ...root,
+                quoted_status_result: { result: { tweet: root.quoted_status_result.result } },
+              },
+            },
+          },
+        },
+      },
+    });
 
     const entries = await getTweetMedias('222');
     expect(entries).toHaveLength(2);
     expect(entries.map(({ tweet_id }) => tweet_id)).toEqual(['111', '222']);
-    expect(entries[0]).toMatchObject({ sourceLocation: 'quoted',
-      quoteParentTweetId: '222', quotedTweetId: '111',
-      screen_name: 'quote', tweet_text: 'Quote text' });
-    expect(entries[1]).toMatchObject({ sourceLocation: 'original',
-      screen_name: 'outer', tweet_text: 'Outer text',
-      videoVariantUrls: ['https://video.twimg.com/ext_tw_video/222/outer.mp4'] });
+    expect(entries[0]).toMatchObject({
+      sourceLocation: 'quoted',
+      quoteParentTweetId: '222',
+      quotedTweetId: '111',
+      screen_name: 'quote',
+      tweet_text: 'Quote text',
+    });
+    expect(entries[1]).toMatchObject({
+      sourceLocation: 'original',
+      screen_name: 'outer',
+      tweet_text: 'Outer text',
+      videoVariantUrls: ['https://video.twimg.com/ext_tw_video/222/outer.mp4'],
+    });
     expect(entries.some(({ tweet_id }) => tweet_id === '333')).toBe(false);
   });
 });

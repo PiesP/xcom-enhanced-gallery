@@ -30,14 +30,14 @@ describe('FocusCoordinator for mixed-size media', () => {
     container.append(photo, video);
     document.body.append(container);
     let videoTop = 363;
-    vi.spyOn(container, 'getBoundingClientRect').mockImplementation(() =>
-      ({ top: 0, height: 800 }) as DOMRect
+    vi.spyOn(container, 'getBoundingClientRect').mockImplementation(
+      () => ({ top: 0, height: 800 }) as DOMRect
     );
-    vi.spyOn(photo, 'getBoundingClientRect').mockImplementation(() =>
-      ({ top: 0, height: 330 }) as DOMRect
+    vi.spyOn(photo, 'getBoundingClientRect').mockImplementation(
+      () => ({ top: 0, height: 330 }) as DOMRect
     );
-    vi.spyOn(video, 'getBoundingClientRect').mockImplementation(() =>
-      ({ top: videoTop, height: 180 }) as DOMRect
+    vi.spyOn(video, 'getBoundingClientRect').mockImplementation(
+      () => ({ top: videoTop, height: 180 }) as DOMRect
     );
 
     const onFocusChange = vi.fn();

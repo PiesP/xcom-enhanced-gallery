@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 PiesP
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MV3HttpRequestAdapter } from '@platform/mv3-http-request-adapters';
 import type { HttpRequestResponse } from '@platform/types';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const ALLOWED_URL = 'https://pbs.twimg.com/media/example.jpg';
 
@@ -18,9 +18,13 @@ function successfulResponse(body = 'ok'): Response {
 function stalledResponse(status: number, signal: AbortSignal | null | undefined): Response {
   const body = new ReadableStream<Uint8Array>({
     start(controller) {
-      signal?.addEventListener('abort', () => {
-        controller.error(new DOMException('Aborted', 'AbortError'));
-      }, { once: true });
+      signal?.addEventListener(
+        'abort',
+        () => {
+          controller.error(new DOMException('Aborted', 'AbortError'));
+        },
+        { once: true }
+      );
     },
   });
   return new Response(body, { status, headers: { 'retry-after': '6' } });
@@ -33,40 +37,51 @@ afterEach(() => {
 });
 
 describe('MV3HttpRequestAdapter', () => {
-  it.each([403, 429])('keeps known HTTP %i metadata when body reading times out', async (status) => {
-    vi.useFakeTimers();
-    vi.stubGlobal('fetch', vi.fn((_url: string, init?: RequestInit) =>
-      Promise.resolve(stalledResponse(status, init?.signal))));
-    const onload = vi.fn();
-    const onerror = vi.fn();
-    const onabort = vi.fn();
-    const pending = new Promise<HttpRequestResponse>((resolve) => {
-      new MV3HttpRequestAdapter().request({
-        url: ALLOWED_URL,
-        responseType: 'text',
-        timeout: 25,
-        onload,
-        onerror,
-        onabort,
-        ontimeout: resolve,
+  it.each([403, 429])(
+    'keeps known HTTP %i metadata when body reading times out',
+    async (status) => {
+      vi.useFakeTimers();
+      vi.stubGlobal(
+        'fetch',
+        vi.fn((_url: string, init?: RequestInit) =>
+          Promise.resolve(stalledResponse(status, init?.signal))
+        )
+      );
+      const onload = vi.fn();
+      const onerror = vi.fn();
+      const onabort = vi.fn();
+      const pending = new Promise<HttpRequestResponse>((resolve) => {
+        new MV3HttpRequestAdapter().request({
+          url: ALLOWED_URL,
+          responseType: 'text',
+          timeout: 25,
+          onload,
+          onerror,
+          onabort,
+          ontimeout: resolve,
+        });
       });
-    });
-    await Promise.resolve();
-    await vi.advanceTimersByTimeAsync(25);
-    await expect(pending).resolves.toMatchObject({
-      status,
-      retryAfterMs: 6_000,
-      readable: false,
-      errorCategory: 'timeout',
-    });
-    expect(onload).not.toHaveBeenCalled();
-    expect(onerror).not.toHaveBeenCalled();
-    expect(onabort).not.toHaveBeenCalled();
-  });
+      await Promise.resolve();
+      await vi.advanceTimersByTimeAsync(25);
+      await expect(pending).resolves.toMatchObject({
+        status,
+        retryAfterMs: 6_000,
+        readable: false,
+        errorCategory: 'timeout',
+      });
+      expect(onload).not.toHaveBeenCalled();
+      expect(onerror).not.toHaveBeenCalled();
+      expect(onabort).not.toHaveBeenCalled();
+    }
+  );
 
   it('keeps caller abort as cancellation after headers', async () => {
-    vi.stubGlobal('fetch', vi.fn((_url: string, init?: RequestInit) =>
-      Promise.resolve(stalledResponse(429, init?.signal))));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((_url: string, init?: RequestInit) =>
+        Promise.resolve(stalledResponse(429, init?.signal))
+      )
+    );
     const onload = vi.fn();
     const onerror = vi.fn();
     const ontimeout = vi.fn();
@@ -95,10 +110,15 @@ describe('MV3HttpRequestAdapter', () => {
   });
 
   it('keeps status and Retry-After when JSON cannot be read', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{invalid', {
-      status: 429,
-      headers: { 'retry-after': '6', authorization: 'secret' },
-    })));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response('{invalid', {
+          status: 429,
+          headers: { 'retry-after': '6', authorization: 'secret' },
+        })
+      )
+    );
     const response = await new Promise<HttpRequestResponse>((resolve) => {
       new MV3HttpRequestAdapter().request({
         url: ALLOWED_URL,
@@ -199,7 +219,9 @@ describe('MV3HttpRequestAdapter', () => {
       class extends NativeBlob {
         constructor(parts?: BlobPart[], options?: BlobPropertyBag) {
           super(parts, options);
-          blobParts.push((parts ?? []).map((part) => (part instanceof Uint8Array ? part.byteLength : -1)));
+          blobParts.push(
+            (parts ?? []).map((part) => (part instanceof Uint8Array ? part.byteLength : -1))
+          );
         }
       }
     );
@@ -417,14 +439,15 @@ describe('MV3HttpRequestAdapter', () => {
   });
 
   it('distinguishes a caller abort from a timeout', async () => {
-    const fetchSpy = vi.fn((_url: string, init?: RequestInit) =>
-      new Promise<Response>((_resolve, reject) => {
-        init?.signal?.addEventListener(
-          'abort',
-          () => reject(new DOMException('Aborted', 'AbortError')),
-          { once: true }
-        );
-      })
+    const fetchSpy = vi.fn(
+      (_url: string, init?: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener(
+            'abort',
+            () => reject(new DOMException('Aborted', 'AbortError')),
+            { once: true }
+          );
+        })
     );
     vi.stubGlobal('fetch', fetchSpy);
     const onabort = vi.fn();
@@ -445,14 +468,15 @@ describe('MV3HttpRequestAdapter', () => {
     vi.useFakeTimers();
     vi.stubGlobal(
       'fetch',
-      vi.fn((_url: string, init?: RequestInit) =>
-        new Promise<Response>((_resolve, reject) => {
-          init?.signal?.addEventListener(
-            'abort',
-            () => reject(new DOMException('Aborted', 'AbortError')),
-            { once: true }
-          );
-        })
+      vi.fn(
+        (_url: string, init?: RequestInit) =>
+          new Promise<Response>((_resolve, reject) => {
+            init?.signal?.addEventListener(
+              'abort',
+              () => reject(new DOMException('Aborted', 'AbortError')),
+              { once: true }
+            );
+          })
       )
     );
     const onabort = vi.fn();

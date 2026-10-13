@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import type { MediaInfo } from '@shared/types/media.types';
 import type { ToolbarProps } from '@shared/components/ui/Toolbar/Toolbar.types';
+import type { MediaInfo } from '@shared/types/media.types';
 import { createComponent } from 'solid-js';
 import { render } from 'solid-js/web';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -38,9 +38,12 @@ vi.mock(
   })
 );
 
-vi.mock('@features/gallery/components/vertical-gallery-view/hooks/use-gallery-wheel-redirect', () => ({
-  useGalleryWheelRedirect: vi.fn(),
-}));
+vi.mock(
+  '@features/gallery/components/vertical-gallery-view/hooks/use-gallery-wheel-redirect',
+  () => ({
+    useGalleryWheelRedirect: vi.fn(),
+  })
+);
 
 vi.mock('@features/gallery/components/vertical-gallery-view/hooks/use-vertical-gallery', () => ({
   useVerticalGallery: () => ({
@@ -96,8 +99,8 @@ vi.mock('@shared/hooks/use-translation', () => ({
   useTranslation: () => (key: string) => key,
 }));
 
-import { VerticalGalleryView } from '@features/gallery/components/vertical-gallery-view/VerticalGalleryView';
 import { useVideoVisibility } from '@features/gallery/components/vertical-gallery-view/hooks/use-video-visibility';
+import { VerticalGalleryView } from '@features/gallery/components/vertical-gallery-view/VerticalGalleryView';
 import {
   disposeGallerySignals,
   gallerySignals,
@@ -188,7 +191,9 @@ describe('VerticalGalleryView preload reactivity', () => {
     openGallery([items[4]!, items[0]!, items[1]!, items[2]!, items[3]!], 1);
     await flushEffects();
 
-    const renderedItems = [...container.querySelectorAll<HTMLElement>('[data-gallery-element="item"]')];
+    const renderedItems = [
+      ...container.querySelectorAll<HTMLElement>('[data-gallery-element="item"]'),
+    ];
     expect(renderedItems.map((item) => item.dataset.index)).toEqual(['0', '1', '2', '3', '4']);
     expect(image(container, 'e').getAttribute('loading')).toBe('eager');
     expect(image(container, 'e').getAttribute('fetchpriority')).toBe('high');
@@ -223,15 +228,22 @@ describe('VerticalGalleryView preload reactivity', () => {
       readonly disconnect: ReturnType<typeof vi.fn>;
       readonly fire: () => void;
     }> = [];
-    vi.stubGlobal('ResizeObserver', class {
-      readonly observe = vi.fn();
-      readonly disconnect = vi.fn();
-      constructor(private readonly callback: ResizeObserverCallback) {
-        instances.push({ observe: this.observe, disconnect: this.disconnect, fire: () => {
-          this.callback([], this as unknown as ResizeObserver);
-        } });
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        readonly observe = vi.fn();
+        readonly disconnect = vi.fn();
+        constructor(private readonly callback: ResizeObserverCallback) {
+          instances.push({
+            observe: this.observe,
+            disconnect: this.disconnect,
+            fire: () => {
+              this.callback([], this as unknown as ResizeObserver);
+            },
+          });
+        }
       }
-    });
+    );
     const items = ['a', 'b', 'c'].map(video);
     openGallery(items, 0);
     dispose = render(() => createComponent(VerticalGalleryView, {}), container);
@@ -254,7 +266,9 @@ describe('VerticalGalleryView preload reactivity', () => {
 
   it('keeps toolbar attribution on the displayed download item after scroll changes focus', async () => {
     const items = ['a', 'b'].map((id) => ({
-      ...media(id), tweetText: `Post ${id}`, tweetUrl: `https://x.com/author/status/${id === 'a' ? '111' : '222'}`,
+      ...media(id),
+      tweetText: `Post ${id}`,
+      tweetUrl: `https://x.com/author/status/${id === 'a' ? '111' : '222'}`,
     }));
     openGallery(items, 0);
     dispose = render(() => createComponent(VerticalGalleryView, {}), container);

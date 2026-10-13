@@ -31,17 +31,24 @@ function fixtureRoot(): string {
   const root = mkdtempSync(join(tmpdir(), 'xcom commands with spaces '));
   fixtures.push(root);
   mkdirSync(join(root, 'scripts/check'), { recursive: true });
-  copyFileSync(join(projectRoot, 'scripts/check/bootstrap.ts'), join(root, 'scripts/check/bootstrap.ts'));
+  copyFileSync(
+    join(projectRoot, 'scripts/check/bootstrap.ts'),
+    join(root, 'scripts/check/bootstrap.ts')
+  );
   copyFileSync(join(projectRoot, 'scripts/check/nose.ts'), join(root, 'scripts/check/nose.ts'));
   return root;
 }
 
 function runCli(root: string, name: string, env = process.env) {
-  return spawnSync(process.execPath, ['--experimental-strip-types', join(root, 'scripts/check', name)], {
-    cwd: tmpdir(),
-    env,
-    encoding: 'utf8',
-  });
+  return spawnSync(
+    process.execPath,
+    ['--experimental-strip-types', join(root, 'scripts/check', name)],
+    {
+      cwd: tmpdir(),
+      env,
+      encoding: 'utf8',
+    }
+  );
 }
 
 describe('dependency-free command adapters', () => {
@@ -92,7 +99,12 @@ describe('dependency-free command adapters', () => {
     const root = fixtureRoot();
     writeFileSync(
       join(root, 'package.json'),
-      JSON.stringify({ name: 'xcom-command-fixture', private: true, type: 'module', scripts: { preinstall: manifest.scripts.preinstall } })
+      JSON.stringify({
+        name: 'xcom-command-fixture',
+        private: true,
+        type: 'module',
+        scripts: { preinstall: manifest.scripts.preinstall },
+      })
     );
     const result = spawnSync('pnpm', ['run', 'preinstall'], {
       cwd: root,
@@ -116,7 +128,12 @@ describe('dependency-free command adapters', () => {
       const url = pathToFileURL(join(root, 'scripts/check', name)).href;
       const imported = spawnSync(
         process.execPath,
-        ['--experimental-strip-types', '--input-type=module', '-e', `import ${JSON.stringify(url)};`],
+        [
+          '--experimental-strip-types',
+          '--input-type=module',
+          '-e',
+          `import ${JSON.stringify(url)};`,
+        ],
         {
           cwd: tmpdir(),
           env: { ...process.env, PATH: fakeBin, NOSE_RECORD: record },
@@ -143,7 +160,9 @@ describe('dependency-free command adapters', () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     try {
       expect(runOptionalNose(join(tmpdir(), 'xcom-project-does-not-exist'))).toBe(1);
-      expect(error).toHaveBeenCalledWith(expect.stringContaining('could not run in project directory'));
+      expect(error).toHaveBeenCalledWith(
+        expect.stringContaining('could not run in project directory')
+      );
     } finally {
       error.mockRestore();
     }
@@ -199,16 +218,19 @@ describe('dependency-free command adapters', () => {
     expect(inaccessible.stdout).not.toContain('skipping');
   });
 
-  it.skipIf(process.platform === 'win32')('fails when Nose exists but its shebang interpreter is missing', () => {
-    const root = fixtureRoot();
-    const fakeBin = join(root, 'fake-bin');
-    mkdirSync(fakeBin);
-    writeFileSync(join(fakeBin, 'nose'), '#!/no/such/nose-interpreter\n', { mode: 0o755 });
-    const result = runCli(root, 'nose.ts', { ...process.env, PATH: fakeBin });
-    expect(result.status).toBe(1);
-    expect(result.stderr).toContain('[nose] could not run:');
-    expect(result.stdout).not.toContain('skipping');
-  });
+  it.skipIf(process.platform === 'win32')(
+    'fails when Nose exists but its shebang interpreter is missing',
+    () => {
+      const root = fixtureRoot();
+      const fakeBin = join(root, 'fake-bin');
+      mkdirSync(fakeBin);
+      writeFileSync(join(fakeBin, 'nose'), '#!/no/such/nose-interpreter\n', { mode: 0o755 });
+      const result = runCli(root, 'nose.ts', { ...process.env, PATH: fakeBin });
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain('[nose] could not run:');
+      expect(result.stdout).not.toContain('skipping');
+    }
+  );
 
   it.skipIf(process.platform === 'win32')('propagates a Nose termination signal', () => {
     const root = fixtureRoot();

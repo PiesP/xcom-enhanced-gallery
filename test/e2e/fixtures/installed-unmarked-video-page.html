@@ -1,41 +1,75 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Installed direct unmarked video fixture</title>
-  <style>
-    body { margin: 0; padding: 20px; background: #000; color: #e7e9ea; font: 16px "Segoe UI", sans-serif; }
-    #host-layout-spacer { height: 900px; }
-    article { max-width: 640px; margin: 0 auto; }
-    video { display: block; width: 320px; height: 180px; }
-  </style>
-</head>
-<body>
-  <div id="host-layout-spacer" aria-hidden="true"></div>
-  <main>
-    <article data-testid="tweet">
-      <a href="/quote_one/status/9111111111111111111"><time>Direct quote owner</time></a>
-      <button type="button" data-native-play>Play native video</button>
-      <video data-unmarked-direct controls
-        poster="https://pbs.twimg.com/ext_tw_video_thumb/9111111111111111111/pu/img/quote-one.jpg"
-        src="https://video.twimg.com/ext_tw_video/9111111111111111111/pu/vid/320x180/quote-one.mp4"></video>
-    </article>
-  </main>
-  <script>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Installed direct unmarked video fixture</title>
+    <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #000;
+      color: #e7e9ea;
+      font:
+        16px "Segoe UI",
+        sans-serif;
+    }
+    #host-layout-spacer {
+      height: 900px;
+    }
+    article {
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    video {
+      display: block;
+      width: 320px;
+      height: 180px;
+    }
+    </style>
+  </head>
+  <body>
+    <div id="host-layout-spacer" aria-hidden="true"></div>
+    <main>
+      <article data-testid="tweet">
+        <a href="/quote_one/status/9111111111111111111"><time>Direct quote owner</time></a>
+        <button type="button" data-native-play>Play native video</button>
+        <video
+          data-unmarked-direct
+          controls
+          poster="https://pbs.twimg.com/ext_tw_video_thumb/9111111111111111111/pu/img/quote-one.jpg"
+          src="https://video.twimg.com/ext_tw_video/9111111111111111111/pu/vid/320x180/quote-one.mp4"
+        ></video>
+      </article>
+    </main>
+    <script>
     const video = document.querySelector('[data-unmarked-direct]');
     document.querySelector('[data-native-play]').addEventListener('click', () => {
-      video.play().catch((error) => { document.body.dataset.videoError = error.message; });
+      video.play().catch((error) => {
+        document.body.dataset.videoError = error.message;
+      });
     });
     window.__directVideoClicks = [];
-    window.addEventListener('click', (event) => {
-      if (!event.isTrusted || event.target !== video) return;
-      const record = { tag: event.target.tagName.toLowerCase(), prevented: false,
-        path: event.composedPath().filter((part) => part instanceof Element)
-          .slice(0, 4).map((part) => part.tagName.toLowerCase()) };
-      window.__directVideoClicks.push(record);
-      setTimeout(() => { record.prevented = event.defaultPrevented; }, 0);
-    }, { capture: true });
-  </script>
-</body>
+    window.addEventListener(
+      'click',
+      (event) => {
+        if (!event.isTrusted || event.target !== video) return;
+        const record = {
+          tag: event.target.tagName.toLowerCase(),
+          prevented: false,
+          path: event
+            .composedPath()
+            .filter((part) => part instanceof Element)
+            .slice(0, 4)
+            .map((part) => part.tagName.toLowerCase()),
+        };
+        window.__directVideoClicks.push(record);
+        setTimeout(() => {
+          record.prevented = event.defaultPrevented;
+        }, 0);
+      },
+      { capture: true }
+    );
+    </script>
+  </body>
 </html>

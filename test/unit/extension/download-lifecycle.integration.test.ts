@@ -1,5 +1,5 @@
-import { MV3DownloadAdapter } from '@platform/mv3-download-adapters';
 import { webcrypto } from 'node:crypto';
+import { MV3DownloadAdapter } from '@platform/mv3-download-adapters';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 type MessageListener = (
@@ -30,9 +30,15 @@ vi.mock('@platform/chrome-runtime', () => ({
       sendMessage: (message: unknown) => {
         state.messages.push(message);
         return new Promise<unknown>((resolve) => {
-          const keepChannelOpen = state.listener?.(message, {
-            id: 'extension-id', tab: { id: 7 }, url: 'https://x.com/author/status/1',
-          }, resolve);
+          const keepChannelOpen = state.listener?.(
+            message,
+            {
+              id: 'extension-id',
+              tab: { id: 7 },
+              url: 'https://x.com/author/status/1',
+            },
+            resolve
+          );
           if (keepChannelOpen !== true) resolve(undefined);
         });
       },
@@ -112,12 +118,7 @@ describe('MV3 download lifecycle integration', () => {
 
     const controller = new AbortController();
     const adapter = new MV3DownloadAdapter();
-    const pending = adapter.download(
-      url,
-      'example.jpg',
-      undefined,
-      controller.signal
-    );
+    const pending = adapter.download(url, 'example.jpg', undefined, controller.signal);
     let settled = false;
     const outcome = pending.catch((error: unknown) => {
       settled = true;
@@ -127,8 +128,8 @@ describe('MV3 download lifecycle integration', () => {
     await vi.waitFor(() => {
       expect(state.download).toHaveBeenCalledOnce();
       const records = state.storageValues['xeg.download-tracking.v1'];
-      expect(Object.values(records as Record<string, {downloadId?: number}>)).toEqual(
-        expect.arrayContaining([expect.objectContaining({downloadId: 301})])
+      expect(Object.values(records as Record<string, { downloadId?: number }>)).toEqual(
+        expect.arrayContaining([expect.objectContaining({ downloadId: 301 })])
       );
     });
     await new Promise((resolve) => setTimeout(resolve, 3_500));

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { describe, it, expect, vi } from 'vitest';
 import { createSingleton } from '@shared/services/singleton-base';
+import { describe, expect, it, vi } from 'vitest';
 
 // ── Test helpers ──────────────────────────────────────────────────────
 

@@ -46,23 +46,35 @@ describe('handleKeyboardEvent', () => {
     document.body.replaceChildren();
   });
 
-  it.each(['select', 'input', 'textarea', 'div'] as const)('leaves %s editing keys native while the gallery is open', (tag) => {
-    const element: HTMLElement = document.createElement(tag);
-    if (tag === 'div') Object.defineProperty(element, 'isContentEditable', { get: () => true });
-    document.body.append(element);
-    const handler = (event: KeyboardEvent) => handleKeyboardEvent(event,
-      { onGalleryClose: vi.fn(), onMediaClick: vi.fn(async () => undefined) },
-      { enableKeyboard: true, enableMediaDetection: true, debugMode: false, preventBubbling: true, context: 'editing-test' });
-    element.addEventListener('keydown', handler);
-    for (const key of ['Home', 'End', 'ArrowDown', ' ']) {
-      const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
-      element.dispatchEvent(event);
-      expect(event.defaultPrevented).toBe(false);
+  it.each(['select', 'input', 'textarea', 'div'] as const)(
+    'leaves %s editing keys native while the gallery is open',
+    (tag) => {
+      const element: HTMLElement = document.createElement(tag);
+      if (tag === 'div') Object.defineProperty(element, 'isContentEditable', { get: () => true });
+      document.body.append(element);
+      const handler = (event: KeyboardEvent) =>
+        handleKeyboardEvent(
+          event,
+          { onGalleryClose: vi.fn(), onMediaClick: vi.fn(async () => undefined) },
+          {
+            enableKeyboard: true,
+            enableMediaDetection: true,
+            debugMode: false,
+            preventBubbling: true,
+            context: 'editing-test',
+          }
+        );
+      element.addEventListener('keydown', handler);
+      for (const key of ['Home', 'End', 'ArrowDown', ' ']) {
+        const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
+        element.dispatchEvent(event);
+        expect(event.defaultPrevented).toBe(false);
+      }
+      expect(executeVideoControl).not.toHaveBeenCalled();
+      expect(navigateToItem).not.toHaveBeenCalled();
+      expect(navigateNext).not.toHaveBeenCalled();
     }
-    expect(executeVideoControl).not.toHaveBeenCalled();
-    expect(navigateToItem).not.toHaveBeenCalled();
-    expect(navigateNext).not.toHaveBeenCalled();
-  });
+  );
 
   it('toggles video playback for the KeyboardEvent space key', () => {
     const event = new KeyboardEvent('keydown', { key: ' ', cancelable: true });

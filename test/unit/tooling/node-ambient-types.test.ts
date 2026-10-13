@@ -10,7 +10,10 @@ const projects = [
   {
     name: 'scripts',
     config: resolve(root, 'tsconfig.scripts.json'),
-    roots: [resolve(root, 'scripts/check/bootstrap.ts'), resolve(root, 'scripts/release/prepare.ts')],
+    roots: [
+      resolve(root, 'scripts/check/bootstrap.ts'),
+      resolve(root, 'scripts/release/prepare.ts'),
+    ],
   },
   {
     name: 'direct Firefox test',
@@ -23,24 +26,30 @@ function compileProbe(project: (typeof projects)[number], addDom: boolean) {
   const directory = mkdtempSync(join(root, '.node-ambient-probe-'));
   temporaryRoots.push(directory);
   const source = join(directory, 'probe.ts');
-  writeFileSync(source, [
-    "import { readFileSync } from 'node:fs';",
-    'void readFileSync;',
-    'void process.version;',
-    "void Buffer.from('node');",
-    "void fetch('https://example.invalid');",
-    'void AbortController;',
-    'void document.title;',
-    "void window.alert('browser');",
-  ].join('\n'));
+  writeFileSync(
+    source,
+    [
+      "import { readFileSync } from 'node:fs';",
+      'void readFileSync;',
+      'void process.version;',
+      "void Buffer.from('node');",
+      "void fetch('https://example.invalid');",
+      'void AbortController;',
+      'void document.title;',
+      "void window.alert('browser');",
+    ].join('\n')
+  );
 
   const config = join(directory, 'tsconfig.json');
-  writeFileSync(config, JSON.stringify({
-    extends: project.config,
-    // `files` adds the probe while retaining the real project's inherited `include`.
-    files: [source],
-    ...(addDom && { compilerOptions: { lib: ['ESNext', 'DOM'] } }),
-  }));
+  writeFileSync(
+    config,
+    JSON.stringify({
+      extends: project.config,
+      // `files` adds the probe while retaining the real project's inherited `include`.
+      files: [source],
+      ...(addDom && { compilerOptions: { lib: ['ESNext', 'DOM'] } }),
+    })
+  );
   const result = spawnSync(process.execPath, [tsc, '-p', config, '--noEmit', '--pretty', 'false'], {
     cwd: root,
     encoding: 'utf8',
@@ -56,7 +65,8 @@ function compileProbe(project: (typeof projects)[number], addDom: boolean) {
 }
 
 afterEach(() => {
-  for (const directory of temporaryRoots.splice(0)) rmSync(directory, { recursive: true, force: true });
+  for (const directory of temporaryRoots.splice(0))
+    rmSync(directory, { recursive: true, force: true });
 });
 
 describe('Node tooling ambient types', () => {
@@ -67,8 +77,12 @@ describe('Node tooling ambient types', () => {
       expect(result.stderr).toBe('');
       const diagnostics = result.stdout.trim().split('\n');
       expect(diagnostics).toHaveLength(2);
-      expect(diagnostics[0]).toMatch(/^.*probe\.ts\(7,6\): error TS2584: Cannot find name 'document'\./);
-      expect(diagnostics[1]).toMatch(/^.*probe\.ts\(8,6\): error TS2304: Cannot find name 'window'\./);
+      expect(diagnostics[0]).toMatch(
+        /^.*probe\.ts\(7,6\): error TS2584: Cannot find name 'document'\./
+      );
+      expect(diagnostics[1]).toMatch(
+        /^.*probe\.ts\(8,6\): error TS2304: Cannot find name 'window'\./
+      );
       expect(result.files.some((file) => file.endsWith('/lib.dom.d.ts'))).toBe(false);
     });
 

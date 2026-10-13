@@ -1,6 +1,16 @@
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { chmodSync, copyFileSync, existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -29,7 +39,9 @@ function fixture() {
   pins.nose.installerSha256 = createHash('sha256').update(installerBody).digest('hex');
   writeFileSync(join(scripts, 'pinned-tools.json'), JSON.stringify(pins));
   const stub = join(bin, 'mock');
-  writeFileSync(stub, `#!${process.execPath}
+  writeFileSync(
+    stub,
+    `#!${process.execPath}
 import fs from 'node:fs';
 import path from 'node:path';
 const command = path.basename(process.argv[1]);
@@ -71,7 +83,8 @@ if (command === 'gh') {
   if (scenario === 'installer-signal') process.kill(process.pid, 'SIGTERM');
   if (scenario === 'installer-fail') process.exit(7);
 }
-`);
+`
+  );
   chmodSync(stub, 0o755);
   for (const name of ['gh', 'curl', 'sh']) copyFileSync(stub, join(bin, name));
   const env = {
@@ -87,13 +100,23 @@ if (command === 'gh') {
     NOSE_CLI_GITHUB_TOKEN: 'secret-nose',
   };
   const run = (name: string, scenario = '', args: string[] = []) => {
-    const result = spawnSync(process.execPath, ['--experimental-strip-types', join(scripts, name), ...args], {
-      cwd: root,
-      env: { ...env, MOCK_SCENARIO: scenario },
-      encoding: 'utf8',
-    });
+    const result = spawnSync(
+      process.execPath,
+      ['--experimental-strip-types', join(scripts, name), ...args],
+      {
+        cwd: root,
+        env: { ...env, MOCK_SCENARIO: scenario },
+        encoding: 'utf8',
+      }
+    );
     const calls = existsSync(join(root, 'calls.jsonl'))
-      ? readFileSync(join(root, 'calls.jsonl'), 'utf8').trim().split('\n').map((line) => JSON.parse(line) as { command: string; args: string[]; tokens?: (string | null)[] })
+      ? readFileSync(join(root, 'calls.jsonl'), 'utf8')
+          .trim()
+          .split('\n')
+          .map(
+            (line) =>
+              JSON.parse(line) as { command: string; args: string[]; tokens?: (string | null)[] }
+          )
       : [];
     return { result, calls };
   };
@@ -113,8 +136,28 @@ describe('pinned tool checker CLI', () => {
       ['gh', 'api', 'repos/corca-ai/nose/releases?per_page=100'],
       ['gh', 'api', `repos/corca-ai/nose/releases/tags/v${pins.nose.version}`],
       ['gh', 'api', 'repos/google/osv-scanner/releases?per_page=100'],
-      ['curl', '--fail', '--silent', '--show-error', 'https://ghcr.io/token?scope=repository:google/osv-scanner-action:pull'],
-      ['curl', '--fail', '--silent', '--show-error', '--dump-header', '-', '--output', '/dev/null', '--header', 'Authorization: Bearer fixture-token', '--header', 'Accept: application/vnd.docker.distribution.manifest.v2+json', `https://ghcr.io/v2/google/osv-scanner-action/manifests/v${pins.osv.version}`],
+      [
+        'curl',
+        '--fail',
+        '--silent',
+        '--show-error',
+        'https://ghcr.io/token?scope=repository:google/osv-scanner-action:pull',
+      ],
+      [
+        'curl',
+        '--fail',
+        '--silent',
+        '--show-error',
+        '--dump-header',
+        '-',
+        '--output',
+        '/dev/null',
+        '--header',
+        'Authorization: Bearer fixture-token',
+        '--header',
+        'Accept: application/vnd.docker.distribution.manifest.v2+json',
+        `https://ghcr.io/v2/google/osv-scanner-action/manifests/v${pins.osv.version}`,
+      ],
       ['gh', 'api', 'repos/semgrep/semgrep/releases?per_page=100'],
     ]);
   });
@@ -127,10 +170,14 @@ describe('pinned tool checker CLI', () => {
   });
 
   for (const [scenario, message] of [
-    ['no-mature', 'No stable'], ['api-fail', 'check-pinned-tools:'],
-    ['malformed-api', 'Invalid'], ['no-asset', 'digest mismatch'],
-    ['digest-mismatch', 'digest mismatch'], ['no-token', 'Invalid GHCR token'],
-    ['no-image-digest', 'digest mismatch'], ['image-mismatch', 'digest mismatch'],
+    ['no-mature', 'No stable'],
+    ['api-fail', 'check-pinned-tools:'],
+    ['malformed-api', 'Invalid'],
+    ['no-asset', 'digest mismatch'],
+    ['digest-mismatch', 'digest mismatch'],
+    ['no-token', 'Invalid GHCR token'],
+    ['no-image-digest', 'digest mismatch'],
+    ['image-mismatch', 'digest mismatch'],
     ['manifest-fail', 'curl request failed (exit 7)'],
   ]) {
     it(`fails closed on ${scenario}`, () => {
@@ -168,10 +215,14 @@ describe('Nose installer CLI', () => {
     const { result, calls } = run('install-nose.ts');
     expect(result.status).toBe(0);
     expect(calls.map((call) => call.command)).toEqual(['curl', 'sh']);
-    expect(calls[0]?.args).toContain(`https://github.com/corca-ai/nose/releases/download/v${pins.nose.version}/nose-cli-installer.sh`);
+    expect(calls[0]?.args).toContain(
+      `https://github.com/corca-ai/nose/releases/download/v${pins.nose.version}/nose-cli-installer.sh`
+    );
     expect(calls[0]?.args).toContain('=https');
     expect(calls[1]?.tokens).toEqual([null, null, null]);
-    expect(readFileSync(join(root, 'github path'), 'utf8')).toBe(`${join(root, 'home with spaces/.cargo/bin')}\n`);
+    expect(readFileSync(join(root, 'github path'), 'utf8')).toBe(
+      `${join(root, 'home with spaces/.cargo/bin')}\n`
+    );
   });
 
   for (const scenario of ['download-fail', 'installer-fail']) {
@@ -180,7 +231,9 @@ describe('Nose installer CLI', () => {
       const { result, calls } = run('install-nose.ts', scenario);
       expect(result.status).toBe(7);
       expect(existsSync(join(root, 'github path'))).toBe(false);
-      expect(calls.map((call) => call.command)).toEqual(scenario === 'download-fail' ? ['curl'] : ['curl', 'sh']);
+      expect(calls.map((call) => call.command)).toEqual(
+        scenario === 'download-fail' ? ['curl'] : ['curl', 'sh']
+      );
       expect(readdirSync(root).filter((name) => name.startsWith('nose-installer-'))).toEqual([]);
     });
   }
@@ -237,9 +290,14 @@ describe('pinned image environment CLI', () => {
 
   it('requires the workflow environment output path', () => {
     const { env, scripts } = fixture();
-    const result = spawnSync(process.execPath, ['--experimental-strip-types', join(scripts, 'pinned-tools.ts'), 'env'], {
-      env: { ...env, GITHUB_ENV: '' }, encoding: 'utf8',
-    });
+    const result = spawnSync(
+      process.execPath,
+      ['--experimental-strip-types', join(scripts, 'pinned-tools.ts'), 'env'],
+      {
+        env: { ...env, GITHUB_ENV: '' },
+        encoding: 'utf8',
+      }
+    );
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('GITHUB_ENV is required');
   });
@@ -258,7 +316,16 @@ it('rejects missing or malformed metadata before external calls', () => {
 it('does no reads, writes, or subprocess calls on module import', () => {
   const { scripts, root, env } = fixture();
   for (const name of ['pinned-tools.ts', 'check-pinned-tools.ts', 'install-nose.ts']) {
-    const result = spawnSync(process.execPath, ['--experimental-strip-types', '--input-type=module', '-e', `await import(${JSON.stringify(join(scripts, name))})`], { env, encoding: 'utf8' });
+    const result = spawnSync(
+      process.execPath,
+      [
+        '--experimental-strip-types',
+        '--input-type=module',
+        '-e',
+        `await import(${JSON.stringify(join(scripts, name))})`,
+      ],
+      { env, encoding: 'utf8' }
+    );
     expect(result.status).toBe(0);
     expect(existsSync(join(root, 'calls.jsonl'))).toBe(false);
     expect(existsSync(join(root, 'github path'))).toBe(false);

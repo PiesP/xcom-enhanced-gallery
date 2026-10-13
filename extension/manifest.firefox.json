@@ -9,11 +9,7 @@
       "strict_min_version": "128.0"
     }
   },
-  "permissions": [
-    "downloads",
-    "storage",
-    "notifications"
-  ],
+  "permissions": ["downloads", "storage", "notifications"],
   "host_permissions": [
     "https://x.com/*",
     "https://twitter.com/*",
@@ -21,20 +17,13 @@
     "https://video.twimg.com/*"
   ],
   "background": {
-    "scripts": [
-      "background.js"
-    ],
+    "scripts": ["background.js"],
     "type": "module"
   },
   "content_scripts": [
     {
-      "matches": [
-        "https://x.com/*",
-        "https://twitter.com/*"
-      ],
-      "js": [
-        "content.js"
-      ],
+      "matches": ["https://x.com/*", "https://twitter.com/*"],
+      "js": ["content.js"],
       "run_at": "document_end"
     }
   ],

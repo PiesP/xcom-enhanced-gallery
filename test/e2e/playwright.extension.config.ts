@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { defineConfig, devices } from '@playwright/test';
 import { resolve } from 'node:path';
+import { defineConfig, devices } from '@playwright/test';
 
 const testDir = resolve(import.meta.dirname, 'specs');
 const projectRoot = resolve(import.meta.dirname, '../..');
@@ -17,10 +17,7 @@ export default defineConfig({
   outputDir: resolve(projectRoot, 'test-results/extension'),
   reporter: [
     ['list'],
-    [
-      'html',
-      { outputFolder: resolve(projectRoot, 'playwright-report/extension'), open: 'never' },
-    ],
+    ['html', { outputFolder: resolve(projectRoot, 'playwright-report/extension'), open: 'never' }],
   ],
   use: {
     screenshot: 'only-on-failure',

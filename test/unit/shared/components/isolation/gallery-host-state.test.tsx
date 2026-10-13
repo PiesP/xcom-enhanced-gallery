@@ -1,19 +1,19 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { notifySafely } from '@platform/index';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ErrorBoundary } from '@shared/components/ui/ErrorBoundary/ErrorBoundary';
 import {
   GalleryContainer,
   mountGallery,
   unmountGallery,
 } from '@shared/components/isolation/GalleryContainer';
 import { restoreActiveGalleryHostState } from '@shared/components/isolation/gallery-host-state';
+import { ErrorBoundary } from '@shared/components/ui/ErrorBoundary/ErrorBoundary';
 import {
   getLanguageService,
   resetLanguageServiceForTests,
 } from '@shared/services/language-service';
 import { createEffect, createSignal, type JSXElement } from 'solid-js';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const languageState = vi.hoisted(() => ({ current: 'en' }));
 
@@ -208,7 +208,11 @@ describe('gallery host-state recovery', () => {
     function SucceedsOnThirdRetry(): JSXElement {
       renderCount += 1;
       if (renderCount <= 3) throw new Error(`Transient render failure ${renderCount}`);
-      return <button data-stable-gallery="" type="button">Recovered gallery</button>;
+      return (
+        <button data-stable-gallery="" type="button">
+          Recovered gallery
+        </button>
+      );
     }
 
     mountGallery(host, () => (

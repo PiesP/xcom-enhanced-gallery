@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { describe, it, expect } from 'vitest';
+import type { MediaInfo } from '@shared/types/media.types';
 import {
   extractFilenameFromUrl,
   extractVisualIndexFromUrl,
   getMediaDedupKey,
   normalizeMediaUrl,
 } from '@shared/utils/media/media-url-utils';
-import type { MediaInfo } from '@shared/types/media.types';
+import { describe, expect, it } from 'vitest';
 
 function makeMedia(overrides: Partial<MediaInfo> = {}): MediaInfo {
   return {
@@ -24,7 +24,9 @@ describe('media-url-utils (pure functions)', () => {
   describe('extractFilenameFromUrl', () => {
     it('should extract filename from valid URL', () => {
       expect(extractFilenameFromUrl('https://pbs.twimg.com/media/ABC123.jpg')).toBe('ABC123.jpg');
-      expect(extractFilenameFromUrl('https://video.twimg.com/ext_tw_video/123/pu/vid/720x1280/abc.mp4')).toBe('abc.mp4');
+      expect(
+        extractFilenameFromUrl('https://video.twimg.com/ext_tw_video/123/pu/vid/720x1280/abc.mp4')
+      ).toBe('abc.mp4');
     });
 
     it('should return null for empty or invalid input', () => {
@@ -113,11 +115,14 @@ describe('media-url-utils (pure functions)', () => {
       ).toBe('image:pbs.twimg.com/media/original?format=png');
     });
 
-    it.each(['image', 'video', 'gif'] as const)('keeps %s media in a distinct namespace', (type) => {
-      expect(getMediaDedupKey(makeMedia({ type }))).toBe(
-        `${type}:pbs.twimg.com/media/fallback.jpg`
-      );
-    });
+    it.each(['image', 'video', 'gif'] as const)(
+      'keeps %s media in a distinct namespace',
+      (type) => {
+        expect(getMediaDedupKey(makeMedia({ type }))).toBe(
+          `${type}:pbs.twimg.com/media/fallback.jpg`
+        );
+      }
+    );
 
     it('falls back from an empty original URL to the primary URL', () => {
       expect(getMediaDedupKey(makeMedia({ originalUrl: '' }))).toBe(

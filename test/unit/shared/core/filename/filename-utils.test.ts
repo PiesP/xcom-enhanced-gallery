@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
+import { generateMediaFilename, getIndexFromMediaId } from '@shared/core/filename/filename-utils';
 import { describe, expect, it } from 'vitest';
-import { getIndexFromMediaId, generateMediaFilename } from '@shared/core/filename/filename-utils';
 
 describe('filename-utils', () => {
   describe('getIndexFromMediaId', () => {

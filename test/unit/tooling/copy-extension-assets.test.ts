@@ -3,8 +3,8 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
-  readFileSync,
   readdirSync,
+  readFileSync,
   rmSync,
   symlinkSync,
   writeFileSync,
@@ -77,7 +77,8 @@ describe('copyExtensionAssetsPlugin', () => {
         write(root, `assets/icons/${name}`, bytes);
       }
       const notices = DISTRIBUTION_NOTICE_PATHS.map((path, index) => ({
-        path, bytes: Buffer.from(`Canonical notice ${index} — ${path}\n`),
+        path,
+        bytes: Buffer.from(`Canonical notice ${index} — ${path}\n`),
       }));
       for (const notice of notices) write(root, notice.path, notice.bytes);
       write(chromeOut, 'background.js', 'preserve background');
@@ -141,7 +142,11 @@ describe('copyExtensionAssetsPlugin', () => {
     const root = mkdtempSync(join(tmpdir(), 'xeg-extension-notices-missing-'));
     const outDir = join(root, 'dist-extension');
     try {
-      write(root, 'extension/manifest.json', JSON.stringify({ icons: { 128: 'icons/icon-128x128.png' } }));
+      write(
+        root,
+        'extension/manifest.json',
+        JSON.stringify({ icons: { 128: 'icons/icon-128x128.png' } })
+      );
       write(root, 'assets/icons/icon-128x128.png', Uint8Array.from([128]));
       for (const path of DISTRIBUTION_NOTICE_PATHS.slice(0, -1)) {
         write(root, path, `Source ${path}\n`);
@@ -200,7 +205,11 @@ describe('extension build asset check', () => {
       const missing = runExtensionBuildCheck(outDir);
       expect(missing.status).toBe(1);
       expect(missing.output).toMatch(/LICENSES\/lucide-ISC\.txt.*was not produced/u);
-      write(outDir, 'LICENSES/lucide-ISC.txt', readFileSync(join(projectRoot, 'LICENSES/lucide-ISC.txt')));
+      write(
+        outDir,
+        'LICENSES/lucide-ISC.txt',
+        readFileSync(join(projectRoot, 'LICENSES/lucide-ISC.txt'))
+      );
       rmSync(join(outDir, 'NOTICE.md'));
       mkdirSync(join(outDir, 'NOTICE.md'));
       const directory = runExtensionBuildCheck(outDir);
@@ -251,11 +260,7 @@ describe('extension build asset check', () => {
     try {
       write(outDir, 'content.js', '(function() {})();');
       write(outDir, 'background.js', 'export {};');
-      write(
-        outDir,
-        'manifest.json',
-        JSON.stringify({ icons: { 128: 'icons/alternate-128.png' } })
-      );
+      write(outDir, 'manifest.json', JSON.stringify({ icons: { 128: 'icons/alternate-128.png' } }));
       write(outDir, 'icons/alternate-128.png', Uint8Array.from([128]));
 
       const result = runExtensionBuildCheck(outDir);

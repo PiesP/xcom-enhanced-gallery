@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { expect, type Page, test } from '@playwright/test';
 import { resolve } from 'node:path';
+import { expect, type Page, test } from '@playwright/test';
 import { build } from 'vite';
 import { basePreset } from '../../../tooling/vite/presets/base';
-import type { observeEarlyClicks } from '../fixtures/early-click-replay';
 import { MOCK_GALLERY_HTML, MOCK_IMAGE } from '../fixtures/artifacts';
+import type { observeEarlyClicks } from '../fixtures/early-click-replay';
 import { installGMMock } from '../fixtures/gm-mock';
 import { injectDevUserscript, waitForGalleryApp } from '../fixtures/userscript-harness';
 
@@ -48,12 +48,20 @@ test.beforeAll(async () => {
 });
 
 test('retains the latest genuine early media click and rejects stale targets', async ({ page }) => {
-  await page.route('https://x.com/**', (route) => route.fulfill({
-    status: 200, contentType: 'text/html', body: MOCK_GALLERY_HTML,
-  }));
-  await page.route('https://pbs.twimg.com/**', (route) => route.fulfill({
-    status: 200, contentType: 'image/png', body: MOCK_IMAGE,
-  }));
+  await page.route('https://x.com/**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'text/html',
+      body: MOCK_GALLERY_HTML,
+    })
+  );
+  await page.route('https://pbs.twimg.com/**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'image/png',
+      body: MOCK_IMAGE,
+    })
+  );
   await page.goto('https://x.com/testuser/status/1234567890123456789');
   await page.addScriptTag({ content: earlyInputBundle });
   await page.evaluate(() => {
@@ -106,8 +114,9 @@ test('retains the latest genuine early media click and rejects stale targets', a
   });
   await page.locator('#early-0').click();
   await page.evaluate(async () => {
-    document.querySelector('#early-0')?.setAttribute('src',
-      'https://pbs.twimg.com/media/recycled-photo.jpg?format=jpg&name=large');
+    document
+      .querySelector('#early-0')
+      ?.setAttribute('src', 'https://pbs.twimg.com/media/recycled-photo.jpg?format=jpg&name=large');
     await window.__xegEarlyInputObserver?.complete();
   });
   expect(await page.evaluate(() => window.__xegEarlyInputObserver?.observations())).toEqual([]);
@@ -117,8 +126,9 @@ test('retains the latest genuine early media click and rejects stale targets', a
   });
   await page.locator('#early-1').click();
   await page.evaluate(async () => {
-    document.querySelector('article a[href*="/status/"]')?.setAttribute('href',
-      '/testuser/status/9876543210123456789');
+    document
+      .querySelector('article a[href*="/status/"]')
+      ?.setAttribute('href', '/testuser/status/9876543210123456789');
     await window.__xegEarlyInputObserver?.complete();
   });
   expect(await page.evaluate(() => window.__xegEarlyInputObserver?.observations())).toEqual([]);
@@ -133,13 +143,23 @@ test('retains the latest genuine early media click and rejects stale targets', a
   expect(await page.evaluate(() => window.__xegEarlyInputObserver?.observations())).toEqual([]);
 });
 
-test('resumes the original trusted SVG path click through its bounded media link', async ({ page }) => {
-  await page.route('https://x.com/**', (route) => route.fulfill({
-    status: 200, contentType: 'text/html', body: MOCK_GALLERY_HTML,
-  }));
-  await page.route('https://pbs.twimg.com/**', (route) => route.fulfill({
-    status: 200, contentType: 'image/png', body: MOCK_IMAGE,
-  }));
+test('resumes the original trusted SVG path click through its bounded media link', async ({
+  page,
+}) => {
+  await page.route('https://x.com/**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'text/html',
+      body: MOCK_GALLERY_HTML,
+    })
+  );
+  await page.route('https://pbs.twimg.com/**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'image/png',
+      body: MOCK_IMAGE,
+    })
+  );
   await page.goto('https://x.com/testuser/status/1234567890123456789');
   await page.addScriptTag({ content: earlyInputBundle });
   await page.evaluate(() => {
@@ -160,13 +180,23 @@ test('resumes the original trusted SVG path click through its bounded media link
   ]);
 });
 
-test('revalidates the video click mode before replaying a pending native control', async ({ page }) => {
-  await page.route('https://x.com/**', (route) => route.fulfill({
-    status: 200, contentType: 'text/html', body: MOCK_GALLERY_HTML,
-  }));
-  await page.route('https://pbs.twimg.com/**', (route) => route.fulfill({
-    status: 200, contentType: 'image/png', body: MOCK_IMAGE,
-  }));
+test('revalidates the video click mode before replaying a pending native control', async ({
+  page,
+}) => {
+  await page.route('https://x.com/**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'text/html',
+      body: MOCK_GALLERY_HTML,
+    })
+  );
+  await page.route('https://pbs.twimg.com/**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'image/png',
+      body: MOCK_IMAGE,
+    })
+  );
   await page.goto('https://x.com/testuser/status/1234567890123456789');
   await page.addScriptTag({ content: earlyInputBundle });
   await page.evaluate(() => {
@@ -188,9 +218,13 @@ test('revalidates the video click mode before replaying a pending native control
 });
 
 test('rejects a pending playing-video click when its raw blob source changes', async ({ page }) => {
-  await page.route('https://x.com/**', (route) => route.fulfill({
-    status: 200, contentType: 'text/html', body: MOCK_GALLERY_HTML,
-  }));
+  await page.route('https://x.com/**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'text/html',
+      body: MOCK_GALLERY_HTML,
+    })
+  );
   await page.goto('https://x.com/testuser/status/1234567890123456789');
   await page.addScriptTag({ content: earlyInputBundle });
   await page.evaluate(() => {
@@ -209,28 +243,38 @@ test('rejects a pending playing-video click when its raw blob source changes', a
 });
 
 async function setup(page: Page): Promise<void> {
-  await page.route('https://x.com/**', (route) => route.fulfill({
-    status: 200, contentType: 'text/html', body: MOCK_GALLERY_HTML,
-  }));
-  await page.route('https://pbs.twimg.com/**', (route) => route.fulfill({
-    status: 200, contentType: 'image/png', body: MOCK_IMAGE,
-  }));
+  await page.route('https://x.com/**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'text/html',
+      body: MOCK_GALLERY_HTML,
+    })
+  );
+  await page.route('https://pbs.twimg.com/**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'image/png',
+      body: MOCK_IMAGE,
+    })
+  );
   await page.goto('https://x.com/testuser/status/1234567890123456789');
   await installGMMock(page);
   await page.evaluate(() => {
     const downloadRequest = window.GM_xmlhttpRequest;
     window.GM_xmlhttpRequest = (details) => {
       if (details.responseType === 'blob') return downloadRequest(details);
-      queueMicrotask(() => details.onload?.({
-        finalUrl: details.url,
-        readyState: 4,
-        status: 403,
-        statusText: 'Forbidden',
-        responseHeaders: 'content-type: application/json',
-        response: {},
-        responseText: '{}',
-        context: details.context,
-      }));
+      queueMicrotask(() =>
+        details.onload?.({
+          finalUrl: details.url,
+          readyState: 4,
+          status: 403,
+          statusText: 'Forbidden',
+          responseHeaders: 'content-type: application/json',
+          response: {},
+          responseText: '{}',
+          context: details.context,
+        })
+      );
       return { abort: () => undefined };
     };
   });
@@ -241,7 +285,10 @@ async function setup(page: Page): Promise<void> {
 /** Bounded test-only render fault through the production gallery DOM adapter. */
 async function installRenderFault(page: Page, failures: number): Promise<void> {
   await page.evaluate((remaining) => {
-    const descriptor = Object.getOwnPropertyDescriptor(CSSStyleDeclaration.prototype, 'setProperty');
+    const descriptor = Object.getOwnPropertyDescriptor(
+      CSSStyleDeclaration.prototype,
+      'setProperty'
+    );
     if (!descriptor || typeof descriptor.value !== 'function') throw new Error('Missing CSS API');
     const original = descriptor.value;
     const state: RenderFault = { remaining, throws: 0, autoResetTimers: 0 };
@@ -268,7 +315,9 @@ async function installRenderFault(page: Page, failures: number): Promise<void> {
 const action = (page: Page, name: string) => page.locator(`[data-xeg-error-action="${name}"]`);
 const notifications = (page: Page) => page.locator('[data-gm-notification="true"]');
 
-test('synthetic gallery input has no effect while real keyboard and button input still work', async ({ page }) => {
+test('synthetic gallery input has no effect while real keyboard and button input still work', async ({
+  page,
+}) => {
   await setup(page);
   const trigger = page.locator('[data-testid="tweetPhoto"] img').first();
   await trigger.evaluate((element) => (element as HTMLElement).click());
@@ -296,7 +345,9 @@ test('synthetic gallery input has no effect while real keyboard and button input
   await expect(gallery).toHaveCount(0);
 });
 
-test('trusted recovery retries remain bounded and a successful third retry has no stale reset', async ({ page }) => {
+test('trusted recovery retries remain bounded and a successful third retry has no stale reset', async ({
+  page,
+}) => {
   await page.clock.install();
   await setup(page);
   await installRenderFault(page, 3);
@@ -312,7 +363,9 @@ test('trusted recovery retries remain bounded and a successful third retry has n
     await action(page, 'retry').focus();
     await page.keyboard.press('Enter');
     if (attempt < 2) {
-      await expect.poll(() => page.evaluate(() => window.__xegTrustedInputFault?.throws)).toBe(attempt + 2);
+      await expect
+        .poll(() => page.evaluate(() => window.__xegTrustedInputFault?.throws))
+        .toBe(attempt + 2);
     }
   }
   await expect(page.locator('[data-xeg-gallery-container]')).toBeVisible();
@@ -330,7 +383,9 @@ test('trusted reset and close preserve recovery and host cleanup', async ({ page
   await page.locator('[data-testid="tweetPhoto"] img').first().click();
   for (let attempt = 0; attempt < 3; attempt += 1) {
     await action(page, 'retry').click();
-    await expect.poll(() => page.evaluate(() => window.__xegTrustedInputFault?.throws)).toBe(attempt + 2);
+    await expect
+      .poll(() => page.evaluate(() => window.__xegTrustedInputFault?.throws))
+      .toBe(attempt + 2);
   }
   await expect(action(page, 'retry')).toBeDisabled();
   await expect(action(page, 'reset')).toBeVisible();

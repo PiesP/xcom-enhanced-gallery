@@ -41,7 +41,10 @@ describe('matchClickedMedia', () => {
 
   it('distinguishes missing URL evidence from contradictory media', () => {
     const image = document.createElement('img');
-    expect(matchClickedMedia(image, [quotedImage], '222')).toEqual({ status: 'unknown', index: null });
+    expect(matchClickedMedia(image, [quotedImage], '222')).toEqual({
+      status: 'unknown',
+      index: null,
+    });
     image.src = 'https://pbs.twimg.com/media/another-image.jpg';
     expect(matchClickedMedia(image, [quotedImage], '222')).toEqual({
       status: 'contradictory',
@@ -105,8 +108,14 @@ describe('matchClickedMedia', () => {
   it('does not let a conflicting src authorize API media over the selected currentSrc', () => {
     const image = document.createElement('img');
     image.src = 'https://pbs.twimg.com/media/review-B.jpg';
-    Object.defineProperty(image, 'currentSrc', { configurable: true, get: () => 'https://pbs.twimg.com/media/review-A.jpg' });
+    Object.defineProperty(image, 'currentSrc', {
+      configurable: true,
+      get: () => 'https://pbs.twimg.com/media/review-A.jpg',
+    });
     const replacement = { ...quotedImage, url: image.src };
-    expect(matchClickedMedia(image, [replacement], '222')).toEqual({ status: 'contradictory', index: 0 });
+    expect(matchClickedMedia(image, [replacement], '222')).toEqual({
+      status: 'contradictory',
+      index: 0,
+    });
   });
 });

@@ -3,11 +3,11 @@
 
 import {
   IMAGE_FIT_MODES,
-  THEME_OPTIONS,
-  VIDEO_CLICK_MODES,
   isImageFitMode,
   isThemeSetting,
   isVideoClickMode,
+  THEME_OPTIONS,
+  VIDEO_CLICK_MODES,
 } from '@constants/setting-options';
 import { describe, expect, it } from 'vitest';
 

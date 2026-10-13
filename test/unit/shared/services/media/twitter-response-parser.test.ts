@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { describe, it, expect } from 'vitest';
 import {
   extractMediaFromTweet,
   getHighQualityMediaUrl,
   normalizeLegacyTweet,
   normalizeLegacyUser,
 } from '@shared/services/media/twitter-parser/twitter-response-parser';
+import type { TwitterMedia, TwitterTweet, TwitterUser } from '@shared/services/media/types';
+import { describe, expect, it } from 'vitest';
 
 describe('twitter-response-parser (pure functions)', () => {
   describe('getHighQualityMediaUrl', () => {
@@ -15,7 +16,7 @@ describe('twitter-response-parser (pure functions)', () => {
       const media = {
         type: 'photo',
         media_url_https: 'https://pbs.twimg.com/media/ABC?format=jpg&name=large',
-      } as any;
+      } as unknown as TwitterMedia;
       const result = getHighQualityMediaUrl(media);
       expect(result).toContain('format=jpg');
       expect(result).not.toBeNull();
@@ -25,7 +26,7 @@ describe('twitter-response-parser (pure functions)', () => {
       const media = {
         type: 'photo',
         media_url_https: 'https://pbs.twimg.com/media/ABC',
-      } as any;
+      } as unknown as TwitterMedia;
       const result = getHighQualityMediaUrl(media);
       expect(result).toBe('https://pbs.twimg.com/media/ABC');
     });
@@ -35,13 +36,29 @@ describe('twitter-response-parser (pure functions)', () => {
         type: 'video',
         video_info: {
           variants: [
-            { content_type: 'video/mp4', bitrate: 256000, url: 'https://video.twimg.com/ext_tw_video/1/low.mp4' },
-            { content_type: 'video/mp4', bitrate: 832000, url: 'https://video.twimg.com/ext_tw_video/1/mid.mp4' },
-            { content_type: 'video/mp4', bitrate: 2176000, url: 'https://video.twimg.com/ext_tw_video/1/high.mp4' },
-            { content_type: 'application/x-mpegURL', bitrate: 0, url: 'https://video.twimg.com/playlist.m3u8' },
+            {
+              content_type: 'video/mp4',
+              bitrate: 256000,
+              url: 'https://video.twimg.com/ext_tw_video/1/low.mp4',
+            },
+            {
+              content_type: 'video/mp4',
+              bitrate: 832000,
+              url: 'https://video.twimg.com/ext_tw_video/1/mid.mp4',
+            },
+            {
+              content_type: 'video/mp4',
+              bitrate: 2176000,
+              url: 'https://video.twimg.com/ext_tw_video/1/high.mp4',
+            },
+            {
+              content_type: 'application/x-mpegURL',
+              bitrate: 0,
+              url: 'https://video.twimg.com/playlist.m3u8',
+            },
           ],
         },
-      } as any;
+      } as unknown as TwitterMedia;
       const result = getHighQualityMediaUrl(media);
       expect(result).toBe('https://video.twimg.com/ext_tw_video/1/high.mp4');
     });
@@ -51,10 +68,14 @@ describe('twitter-response-parser (pure functions)', () => {
         type: 'video',
         video_info: {
           variants: [
-            { content_type: 'application/x-mpegURL', bitrate: 0, url: 'https://video.twimg.com/playlist.m3u8' },
+            {
+              content_type: 'application/x-mpegURL',
+              bitrate: 0,
+              url: 'https://video.twimg.com/playlist.m3u8',
+            },
           ],
         },
-      } as any;
+      } as unknown as TwitterMedia;
       const result = getHighQualityMediaUrl(media);
       expect(result).toBeNull();
     });
@@ -64,16 +85,20 @@ describe('twitter-response-parser (pure functions)', () => {
         type: 'animated_gif',
         video_info: {
           variants: [
-            { content_type: 'video/mp4', bitrate: 0, url: 'https://video.twimg.com/tweet_video/1/gif.mp4' },
+            {
+              content_type: 'video/mp4',
+              bitrate: 0,
+              url: 'https://video.twimg.com/tweet_video/1/gif.mp4',
+            },
           ],
         },
-      } as any;
+      } as unknown as TwitterMedia;
       const result = getHighQualityMediaUrl(media);
       expect(result).toBe('https://video.twimg.com/tweet_video/1/gif.mp4');
     });
 
     it('should return null for unknown type', () => {
-      const media = { type: 'unknown' } as any;
+      const media = { type: 'unknown' } as unknown as TwitterMedia;
       const result = getHighQualityMediaUrl(media);
       expect(result).toBeNull();
     });
@@ -82,7 +107,7 @@ describe('twitter-response-parser (pure functions)', () => {
       const media = {
         type: 'photo',
         media_url_https: 'https://pbs.twimg.com/media/ABC.png?name=large',
-      } as any;
+      } as unknown as TwitterMedia;
       const result = getHighQualityMediaUrl(media);
       expect(result).toContain('format=png');
       expect(result).toContain('name=orig');
@@ -92,7 +117,7 @@ describe('twitter-response-parser (pure functions)', () => {
       const media = {
         type: 'photo',
         media_url_https: 'https://pbs.twimg.com/media/ABC.jpeg?name=small',
-      } as any;
+      } as unknown as TwitterMedia;
       const result = getHighQualityMediaUrl(media);
       expect(result).toContain('format=jpeg');
       expect(result).toContain('name=orig');
@@ -104,20 +129,20 @@ describe('twitter-response-parser (pure functions)', () => {
       const media = {
         type: 'photo',
         media_url_https: 'https://pbs.twimg.com/media/ABC.jpg?name=large',
-      } as any;
+      } as unknown as TwitterMedia;
       const result = getHighQualityMediaUrl(media);
       expect(result).toContain('format=jpg');
       expect(result).toContain('name=orig');
     });
 
     it('should return null when media_url_https is undefined for photo', () => {
-      const media = { type: 'photo' } as any;
+      const media = { type: 'photo' } as unknown as TwitterMedia;
       const result = getHighQualityMediaUrl(media);
       expect(result).toBeNull();
     });
 
     it('should handle photo with empty media_url_https', () => {
-      const media = { type: 'photo', media_url_https: '' } as any;
+      const media = { type: 'photo', media_url_https: '' } as unknown as TwitterMedia;
       const result = getHighQualityMediaUrl(media);
       expect(result).toBe('');
     });
@@ -126,13 +151,13 @@ describe('twitter-response-parser (pure functions)', () => {
       const media = {
         type: 'video',
         video_info: { variants: [] },
-      } as any;
+      } as unknown as TwitterMedia;
       const result = getHighQualityMediaUrl(media);
       expect(result).toBeNull();
     });
 
     it('should return null for video with missing video_info', () => {
-      const media = { type: 'video' } as any;
+      const media = { type: 'video' } as unknown as TwitterMedia;
       const result = getHighQualityMediaUrl(media);
       expect(result).toBeNull();
     });
@@ -141,7 +166,7 @@ describe('twitter-response-parser (pure functions)', () => {
       const media = {
         type: 'animated_gif',
         video_info: { variants: [] },
-      } as any;
+      } as unknown as TwitterMedia;
       const result = getHighQualityMediaUrl(media);
       expect(result).toBeNull();
     });
@@ -150,7 +175,7 @@ describe('twitter-response-parser (pure functions)', () => {
       const media = {
         type: 'photo',
         media_url_https: 'https://pbs.twimg.com/media/ABC.jpg?format=jpg&name=orig',
-      } as any;
+      } as unknown as TwitterMedia;
       const result = getHighQualityMediaUrl(media);
       expect(result).toContain('format=jpg');
       expect(result).toContain('name=orig');
@@ -160,7 +185,7 @@ describe('twitter-response-parser (pure functions)', () => {
       const media = {
         type: 'photo',
         media_url_https: 'https://pbs.twimg.com/media/ABC.JPG?name=large',
-      } as any;
+      } as unknown as TwitterMedia;
       const result = getHighQualityMediaUrl(media);
       expect(result).toContain('format=jpg');
       expect(result).toContain('name=orig');
@@ -175,7 +200,7 @@ describe('twitter-response-parser (pure functions)', () => {
             { content_type: 'video/mp4', url: 'https://video.twimg.com/ext_tw_video/1/vid2.mp4' },
           ],
         },
-      } as any;
+      } as unknown as TwitterMedia;
       const result = getHighQualityMediaUrl(media);
       expect(result).toBe('https://video.twimg.com/ext_tw_video/1/vid.mp4');
     });
@@ -185,12 +210,24 @@ describe('twitter-response-parser (pure functions)', () => {
         type: 'video',
         video_info: {
           variants: [
-            { content_type: 'video/mp4', bitrate: 100000, url: 'https://video.twimg.com/ext_tw_video/1/low.mp4' },
-            { content_type: 'video/mp4', bitrate: 500000, url: 'https://video.twimg.com/ext_tw_video/1/high.mp4' },
-            { content_type: 'video/mp4', bitrate: 256000, url: 'https://video.twimg.com/ext_tw_video/1/mid.mp4' },
+            {
+              content_type: 'video/mp4',
+              bitrate: 100000,
+              url: 'https://video.twimg.com/ext_tw_video/1/low.mp4',
+            },
+            {
+              content_type: 'video/mp4',
+              bitrate: 500000,
+              url: 'https://video.twimg.com/ext_tw_video/1/high.mp4',
+            },
+            {
+              content_type: 'video/mp4',
+              bitrate: 256000,
+              url: 'https://video.twimg.com/ext_tw_video/1/mid.mp4',
+            },
           ],
         },
-      } as any;
+      } as unknown as TwitterMedia;
       const result = getHighQualityMediaUrl(media);
       expect(result).toBe('https://video.twimg.com/ext_tw_video/1/high.mp4');
     });
@@ -199,7 +236,7 @@ describe('twitter-response-parser (pure functions)', () => {
       const media = {
         type: 'photo',
         media_url_https: 'not-a-valid-url',
-      } as any;
+      } as unknown as TwitterMedia;
       const result = getHighQualityMediaUrl(media);
       expect(result).not.toBeNull();
     });
@@ -225,8 +262,16 @@ describe('twitter-response-parser (pure functions)', () => {
         video_info: {
           aspect_ratio: [16, 9],
           variants: [
-            { content_type: 'video/mp4', bitrate: 256_000, url: 'https://video.twimg.com/ext_tw_video/1/low.mp4' },
-            { content_type: 'video/mp4', bitrate: 1_024_000, url: 'https://video.twimg.com/ext_tw_video/1/high.mp4' },
+            {
+              content_type: 'video/mp4',
+              bitrate: 256_000,
+              url: 'https://video.twimg.com/ext_tw_video/1/low.mp4',
+            },
+            {
+              content_type: 'video/mp4',
+              bitrate: 1_024_000,
+              url: 'https://video.twimg.com/ext_tw_video/1/high.mp4',
+            },
           ],
         },
       };
@@ -246,7 +291,7 @@ describe('twitter-response-parser (pure functions)', () => {
             },
           },
         },
-      } as any;
+      } as unknown as TwitterTweet;
 
       const entries = extractMediaFromTweet(tweet, { screen_name: 'alice' });
 
@@ -301,47 +346,110 @@ describe('twitter-response-parser (pure functions)', () => {
       const supplied = {
         rest_id: '111',
         full_text: 'B text',
-        extended_entities: { media: [{ type: 'photo' as const, id_str: 'B-photo', media_url_https: 'https://pbs.twimg.com/media/B.png' }] },
-        quoted_status_result: { result: { rest_id: '333', full_text: 'C text', extended_entities: { media: [{ type: 'photo' as const, id_str: 'C-photo', media_url_https: 'https://pbs.twimg.com/media/C.png' }] } } },
+        extended_entities: {
+          media: [
+            {
+              type: 'photo' as const,
+              id_str: 'B-photo',
+              media_url_https: 'https://pbs.twimg.com/media/B.png',
+            },
+          ],
+        },
+        quoted_status_result: {
+          result: {
+            rest_id: '333',
+            full_text: 'C text',
+            extended_entities: {
+              media: [
+                {
+                  type: 'photo' as const,
+                  id_str: 'C-photo',
+                  media_url_https: 'https://pbs.twimg.com/media/C.png',
+                },
+              ],
+            },
+          },
+        },
       };
       expect(extractMediaFromTweet(supplied, { screen_name: 'B_author' }, 'quoted')).toMatchObject([
-        { tweet_id: '111', screen_name: 'B_author', tweet_text: 'B text', media_id: 'B-photo', sourceLocation: 'quoted' },
+        {
+          tweet_id: '111',
+          screen_name: 'B_author',
+          tweet_text: 'B text',
+          media_id: 'B-photo',
+          sourceLocation: 'quoted',
+        },
       ]);
     });
 
     it('reads only the supplied owner when that tweet quotes another media owner', () => {
-      const photo = (id: string) => ({ type: 'photo', id_str: id,
-        media_url_https: `https://pbs.twimg.com/media/${id}.jpg` });
+      const photo = (id: string) => ({
+        type: 'photo',
+        id_str: id,
+        media_url_https: `https://pbs.twimg.com/media/${id}.jpg`,
+      });
       const child = { rest_id: '333', extended_entities: { media: [photo('child')] } };
-      const quote = { rest_id: '222', extended_entities: { media: [photo('quote')] },
-        quoted_status_result: { result: child } };
-      const outer = { rest_id: '111', extended_entities: { media: [photo('outer')] },
-        quoted_status_result: { result: quote } };
+      const quote = {
+        rest_id: '222',
+        extended_entities: { media: [photo('quote')] },
+        quoted_status_result: { result: child },
+      };
+      const outer = {
+        rest_id: '111',
+        extended_entities: { media: [photo('outer')] },
+        quoted_status_result: { result: quote },
+      };
 
-      expect(extractMediaFromTweet(outer as any, { screen_name: 'outer' }))
-        .toMatchObject([{ tweet_id: '111', media_id: 'outer' }]);
-      expect(extractMediaFromTweet(quote as any, { screen_name: 'quote' }, 'quoted'))
-        .toMatchObject([{ tweet_id: '222', media_id: 'quote', sourceLocation: 'quoted' }]);
+      expect(
+        extractMediaFromTweet(outer as unknown as TwitterTweet, { screen_name: 'outer' })
+      ).toMatchObject([{ tweet_id: '111', media_id: 'outer' }]);
+      expect(
+        extractMediaFromTweet(quote as unknown as TwitterTweet, { screen_name: 'quote' }, 'quoted')
+      ).toMatchObject([{ tweet_id: '222', media_id: 'quote', sourceLocation: 'quoted' }]);
     });
 
     it('omits unsafe MP4 variants and retains at most 32 playable source identities', () => {
       const variants = Array.from({ length: 40 }, (_, index) => ({
-        content_type: 'video/mp4', bitrate: index,
+        content_type: 'video/mp4',
+        bitrate: index,
         url: `https://video.twimg.com/ext_tw_video/222/${index}.mp4`,
       }));
-      variants.push({ content_type: 'video/mp4', bitrate: 999,
-        url: 'https://video.twimg.com.evil.example/ext_tw_video/222/evil.mp4' });
-      const tweet = { rest_id: '222', extended_entities: { media: [
-        { type: 'video', id_str: 'video',
-          media_url_https: 'https://pbs.twimg.com/ext_tw_video_thumb/222/preview.jpg',
-          video_info: { variants } },
-        { type: 'video', id_str: 'unsafe',
-          media_url_https: 'https://pbs.twimg.com/ext_tw_video_thumb/222/unsafe.jpg',
-          video_info: { variants: [{ content_type: 'video/mp4', bitrate: 1000,
-            url: 'http://video.twimg.com/ext_tw_video/222/unsafe.mp4' }] } },
-      ] } };
+      variants.push({
+        content_type: 'video/mp4',
+        bitrate: 999,
+        url: 'https://video.twimg.com.evil.example/ext_tw_video/222/evil.mp4',
+      });
+      const tweet = {
+        rest_id: '222',
+        extended_entities: {
+          media: [
+            {
+              type: 'video',
+              id_str: 'video',
+              media_url_https: 'https://pbs.twimg.com/ext_tw_video_thumb/222/preview.jpg',
+              video_info: { variants },
+            },
+            {
+              type: 'video',
+              id_str: 'unsafe',
+              media_url_https: 'https://pbs.twimg.com/ext_tw_video_thumb/222/unsafe.jpg',
+              video_info: {
+                variants: [
+                  {
+                    content_type: 'video/mp4',
+                    bitrate: 1000,
+                    url: 'http://video.twimg.com/ext_tw_video/222/unsafe.mp4',
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      };
 
-      const entries = extractMediaFromTweet(tweet as any, { screen_name: 'quote' });
+      const entries = extractMediaFromTweet(tweet as unknown as TwitterTweet, {
+        screen_name: 'quote',
+      });
       expect(entries).toHaveLength(1);
       expect(entries[0]?.download_url).toBe('https://video.twimg.com/ext_tw_video/222/39.mp4');
       expect(entries[0]?.videoVariantUrls).toHaveLength(32);
@@ -349,7 +457,6 @@ describe('twitter-response-parser (pure functions)', () => {
       expect(entries[0]?.videoVariantUrls).not.toContain(
         'https://video.twimg.com.evil.example/ext_tw_video/222/evil.mp4'
       );
-
     });
   });
 
@@ -361,10 +468,10 @@ describe('twitter-response-parser (pure functions)', () => {
           full_text: 'Legacy text',
           extended_entities: { media: [] },
         },
-      } as any;
+      } as unknown as TwitterTweet;
       const user = {
         legacy: { screen_name: 'legacy-user', name: 'Legacy User' },
-      } as any;
+      } as TwitterUser;
 
       const normalizedTweet = normalizeLegacyTweet(tweet);
       const normalizedUser = normalizeLegacyUser(user);

@@ -21,9 +21,9 @@
  * Gallery trigger: Direct API call via dev build's __XEG__ namespace
  */
 
-import AxeBuilder from '@axe-core/playwright';
-import { test, expect, type Page } from '@playwright/test';
 import { existsSync } from 'node:fs';
+import AxeBuilder from '@axe-core/playwright';
+import { expect, type Page, test } from '@playwright/test';
 import { DEV_USERSCRIPT_PATH, MOCK_GALLERY_HTML } from '../fixtures/artifacts';
 import { installGMMock } from '../fixtures/gm-mock';
 import { injectDevUserscript, waitForGalleryApp } from '../fixtures/userscript-harness';
@@ -50,9 +50,14 @@ async function setupGalleryPage(page: Page): Promise<void> {
  */
 async function openGallery(page: Page): Promise<void> {
   await page.evaluate(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const g = globalThis as any;
-    const galleryApp = g.__XEG__.main.galleryApp as { openGallery: (items: unknown[], startIndex?: number) => void };
+    const g = globalThis as typeof globalThis & {
+      __XEG__: {
+        main: { galleryApp: { openGallery(items: unknown[], startIndex?: number): void } };
+      };
+    };
+    const galleryApp = g.__XEG__.main.galleryApp as {
+      openGallery: (items: unknown[], startIndex?: number) => void;
+    };
 
     const mockItems = [
       {
@@ -113,7 +118,10 @@ async function openGallery(page: Page): Promise<void> {
  */
 async function closeGallery(page: Page): Promise<void> {
   await page.keyboard.press('Escape');
-  await page.waitForSelector('[data-xeg-gallery-container]', { state: 'detached', timeout: 10_000 });
+  await page.waitForSelector('[data-xeg-gallery-container]', {
+    state: 'detached',
+    timeout: 10_000,
+  });
 }
 
 test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
@@ -215,7 +223,10 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
       await expect(item).not.toHaveAttribute('tabindex', /.+/);
     }
 
-    const imageAction = items.filter({ has: page.locator('img') }).first().locator('button');
+    const imageAction = items
+      .filter({ has: page.locator('img') })
+      .first()
+      .locator('button');
     await expect(imageAction).toHaveAttribute('type', 'button');
     await expect(imageAction).toHaveAttribute('aria-label', /Image \d+ of/);
 
@@ -264,7 +275,9 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await closeGallery(page);
   });
 
-  test('video control keyboard events do not activate the parent gallery item', async ({ page }) => {
+  test('video control keyboard events do not activate the parent gallery item', async ({
+    page,
+  }) => {
     await setupGalleryPage(page);
     await openGallery(page);
 
@@ -301,7 +314,9 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await closeGallery(page);
   });
 
-  test('background content is hidden from assistive technology when gallery is open', async ({ page }) => {
+  test('background content is hidden from assistive technology when gallery is open', async ({
+    page,
+  }) => {
     await setupGalleryPage(page);
 
     const outside = page.locator('main');
@@ -316,7 +331,9 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await expect(outside).not.toHaveAttribute('aria-hidden', 'true');
   });
 
-  test('body siblings added while open are hidden and restored with their prior state', async ({ page }) => {
+  test('body siblings added while open are hidden and restored with their prior state', async ({
+    page,
+  }) => {
     await setupGalleryPage(page);
     await openGallery(page);
 
