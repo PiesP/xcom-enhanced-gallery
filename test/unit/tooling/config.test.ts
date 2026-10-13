@@ -167,6 +167,35 @@ describe('tooling configuration', () => {
     );
   });
 
+  it('uses one read-only Biome pass while retaining the existing quality and fix contracts', () => {
+    const scripts = packageJson.scripts;
+    expect(scripts['check:biome']).toBe('biome ci .');
+    expect(scripts.quality).toBe(
+      'pnpm -s check:biome && pnpm -s check && pnpm -s check:e2e && pnpm -s test:ci && pnpm -s circular && pnpm -s knip && pnpm -s quality:nose'
+    );
+    expect(scripts.lint).toBe('biome lint .');
+    expect(scripts.fmt).toBe('biome check --linter-enabled=false .');
+    expect(scripts['fmt:check']).toBe('pnpm -s fmt');
+    expect(scripts['fmt:fix']).toBe('biome check --write --linter-enabled=false .');
+    expect(scripts['lint:fix']).toBe('biome lint --write .');
+    expect(scripts['quality:fix']).toBe('pnpm -s fmt:fix && pnpm -s lint:fix && pnpm -s quality');
+    expect(scripts['check:prebuild']).toBe('pnpm -s check:versions && pnpm -s quality');
+    expect(scripts.prebuild).toBe('pnpm -s check:prebuild');
+    expect(scripts['prebuild:extension']).toBe('pnpm -s check:prebuild');
+    expect(scripts['prebuild:extension:firefox']).toBe('pnpm -s check:prebuild');
+    expect(scripts['prebuild:all']).toBe('pnpm -s check:prebuild');
+    expect(scripts.verify).toBe('pnpm -s quality && pnpm -s build:all:ci');
+    expect(scripts['verify:full']).toBe(
+      'pnpm verify && pnpm test:cov && pnpm build:dev && pnpm -s test:e2e:all'
+    );
+    expect(scripts['test:ci']).toBe(
+      'node --experimental-strip-types --test scripts/ci/deep-check-reuse.test.ts scripts/release/verify-source.test.ts scripts/ci/repository-authority.test.ts && vitest run test/unit/tooling/node-ambient-types.test.ts'
+    );
+    expect(scripts['test:cov']).toBe('vitest run --coverage');
+    expect(jobBlock(ciWorkflow, 'quality')).toContain('run: pnpm quality');
+    expect(jobBlock(ciWorkflow, 'unit')).toContain('run: pnpm test:cov');
+  });
+
   it('centralizes the browser E2E build and test command contracts', () => {
     expect(packageJson.scripts['build:e2e']).toBe(
       'pnpm clean && pnpm build:ci && pnpm build:dev && pnpm build:extension:ci && pnpm build:extension:firefox:ci'

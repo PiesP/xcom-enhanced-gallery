@@ -76,7 +76,110 @@ function jobBlock(workflow: string, job: string): string {
   );
 }
 
+function focusedPolicyCondition(): string {
+  const unitJob = jobBlock(ciWorkflow, 'unit');
+  const marker = '- name: 🧪 Run focused policy suite for unit-only changes\n';
+  const start = unitJob.indexOf(marker);
+  expect(start).toBeGreaterThanOrEqual(0);
+  const step = unitJob.slice(start).split('\n      - name:')[0] ?? '';
+  expect(step).toContain('run: pnpm test:ci');
+  const expression = step.match(/^\s*if:\s*\$\{\{\s*(.*?)\s*\}\}\s*$/m)?.[1];
+  expect(expression).toBeDefined();
+  return expression ?? '';
+}
+
+function focusedPolicyRuns(
+  expression: string,
+  route: { result: string; unit?: string | undefined; quality?: string | undefined }
+): boolean {
+  const terms = expression.replace(/\s+/g, ' ').split(' && ');
+  expect(terms).toHaveLength(3);
+  const keys = new Set<string>();
+  const matches = terms.map((term) => {
+    const match = term.match(
+      /^needs\.changes\.(result|outputs\.unit|outputs\.quality) (==|!=) '(success|false)'$/
+    );
+    expect(match, term).not.toBeNull();
+    const [, key, operator, literal] = match ?? [];
+    keys.add(key ?? '');
+    const actual =
+      key === 'result' ? route.result : key === 'outputs.unit' ? route.unit : route.quality;
+    return operator === '==' ? actual === literal : actual !== literal;
+  });
+  expect(keys).toEqual(new Set(['result', 'outputs.unit', 'outputs.quality']));
+  return matches.every(Boolean);
+}
+
 describe('workflow change policy', () => {
+  it.each([
+    { path: 'README.md', focused: true, unit: 'true', quality: 'false' },
+    { path: '.github/workflows/security.yaml', focused: true, unit: 'true', quality: 'false' },
+    { path: '.github/workflows/deep-checks.yaml', focused: true, unit: 'true', quality: 'false' },
+    {
+      path: '.github/actions/setup-release/action.yaml',
+      focused: true,
+      unit: 'true',
+      quality: 'false',
+    },
+    {
+      path: 'test/fixtures/authenticated-x-layouts/card.html',
+      focused: true,
+      unit: 'true',
+      quality: 'false',
+    },
+    { path: 'src/main.ts', focused: false, unit: 'true', quality: 'true' },
+    { path: 'nose.toml', focused: false, unit: 'false', quality: 'true' },
+    { path: 'docs/policy.md', focused: false, unit: 'false', quality: 'false' },
+    // The classifier treats translated root READMEs as unknown and safely selects every gate.
+    { path: 'README.ko.md', focused: false, unit: 'true', quality: 'true' },
+  ])('routes $path through the actual focused-policy step condition', (entry) => {
+    const output = classify([entry.path]);
+    expect(output.unit).toBe(entry.unit);
+    expect(output.quality).toBe(entry.quality);
+    expect(
+      focusedPolicyRuns(focusedPolicyCondition(), {
+        result: 'success',
+        unit: output.unit,
+        quality: output.quality,
+      })
+    ).toBe(entry.focused);
+  });
+
+  it('runs focused policy only when classification succeeds, unit runs, and quality skips', () => {
+    const expression = focusedPolicyCondition();
+    expect(
+      focusedPolicyRuns(expression, { result: 'success', unit: 'true', quality: 'false' })
+    ).toBe(true);
+    expect(
+      focusedPolicyRuns(expression, { result: 'success', unit: 'false', quality: 'false' })
+    ).toBe(false);
+    expect(
+      focusedPolicyRuns(expression, { result: 'success', unit: 'true', quality: 'true' })
+    ).toBe(false);
+    expect(
+      focusedPolicyRuns(expression, { result: 'success', unit: 'false', quality: 'true' })
+    ).toBe(false);
+    expect(
+      focusedPolicyRuns(expression, { result: 'failure', unit: 'true', quality: 'false' })
+    ).toBe(false);
+    expect(focusedPolicyRuns(expression, { result: 'success', unit: 'true' })).toBe(false);
+    expect(focusedPolicyRuns(expression, { result: 'failure' })).toBe(false);
+    expect(focusedPolicyRuns(expression, { result: 'success', quality: 'false' })).toBe(true);
+
+    const qualityJob = jobBlock(ciWorkflow, 'quality');
+    const unitJob = jobBlock(ciWorkflow, 'unit');
+    expect(qualityJob).toContain(
+      "needs.changes.result != 'success' || needs.changes.outputs.quality != 'false'"
+    );
+    expect(unitJob).toContain(
+      "needs.changes.result != 'success' || needs.changes.outputs.unit != 'false'"
+    );
+    expect(unitJob).toContain('run: pnpm test:cov');
+    expect(unitJob).toContain(
+      "needs.changes.result == 'success' && needs.changes.outputs.unit == 'false'"
+    );
+  });
+
   it.each([
     'validation/windows/profile.mjs',
     'validation/windows/install-profile.mjs',
