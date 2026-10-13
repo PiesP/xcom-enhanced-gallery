@@ -9,7 +9,6 @@ const outputs = [
   'unit',
   'e2e',
   'build',
-  'duplication',
   'osv',
   'semgrep',
   'codeql_actions',
@@ -29,7 +28,7 @@ export function classifyChanges(
     }
   }
   const selectAll = () => select(...outputs);
-  const selectCiAll = () => select('quality', 'unit', 'e2e', 'build', 'duplication');
+  const selectCiAll = () => select('quality', 'unit', 'e2e', 'build');
   const selectSecurityAll = () => select('osv', 'semgrep', 'codeql_actions', 'codeql_javascript');
 
   function classifyPath(path: string): void {
@@ -47,7 +46,7 @@ export function classifyChanges(
       /\.(?:[cm]?[jt]sx?|jsonc?|css|html)$/.test(path) &&
       !path.startsWith('packages/core/') &&
       !/^test\/fixtures\/authenticated-x-layouts\/[^/]+\.html$/.test(path) &&
-      !['pnpm-lock.yaml', '.nose-baseline.json'].includes(path)
+      path !== 'pnpm-lock.yaml'
     ) {
       select('quality');
     }
@@ -114,21 +113,9 @@ export function classifyChanges(
     ) {
       known = true;
       select('quality', 'unit', 'e2e', 'build', 'codeql_javascript');
-    } else if (
-      [
-        '.nose-baseline.json',
-        'nose.toml',
-        'scripts/ci/install-nose.sh', // Retain the deleted path for rename/delete classification.
-        'scripts/ci/install-nose.ts',
-        'scripts/ci/pinned-tools.ts',
-        'scripts/ci/pinned-tools.json',
-      ].includes(path)
-    ) {
+    } else if (['scripts/ci/pinned-tools.ts', 'scripts/ci/pinned-tools.json'].includes(path)) {
       known = true;
-      select('quality', 'duplication');
-      if (path === 'scripts/ci/pinned-tools.ts' || path === 'scripts/ci/pinned-tools.json') {
-        select('osv', 'semgrep');
-      }
+      select('quality', 'osv', 'semgrep');
     } else if (['stryker.conf.json', 'stryker.conf.fast.json', 'README.md'].includes(path)) {
       known = true;
       select('unit');

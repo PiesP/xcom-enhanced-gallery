@@ -16,6 +16,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 const source = resolve(import.meta.dirname, '../../../scripts/ci');
 const root = resolve(import.meta.dirname, '../../..');
+const reviewedScannerHelper = 'd5fdf58387e43dec380331a1ab6577c0a2cb8f6a';
 const roots: string[] = [];
 
 type Pins = {
@@ -30,7 +31,7 @@ it('keeps scanner pins in a reviewed private three-file closure', () => {
     unknown
   >;
   expect(Object.keys(pins).sort()).toEqual(['osv', 'semgrep']);
-  expect(workflow).toMatch(/ref: [0-9a-f]{40}/u);
+  expect(workflow.match(new RegExp(`ref: ${reviewedScannerHelper}`, 'gu'))).toHaveLength(2);
   expect(
     workflow.match(/for name in pinned-tools\.json pinned-tools\.ts check-pinned-tools\.ts; do/gu)
   ).toHaveLength(2);

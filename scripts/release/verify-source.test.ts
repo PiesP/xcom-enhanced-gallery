@@ -37,10 +37,10 @@ function fixture() {
     source,
     checkout,
     output,
-    commit(pin: unknown, version: unknown = '1.2.3'): string {
+    commit(pin: unknown, version: unknown = '1.2.3', scripts: Record<string, string> = {}): string {
       writeFileSync(
         join(source, 'package.json'),
-        JSON.stringify({ version, volta: { node: pin } })
+        JSON.stringify({ version, volta: { node: pin }, scripts })
       );
       git(source, 'add', 'package.json');
       git(source, 'commit', '-qm', `manifest ${String(pin)}`);
@@ -89,6 +89,21 @@ test('annotated tag resolves to its commit and reads the tagged historical Node 
   assert.equal(result.status, 0, result.stderr);
   assert.equal(f.values(), `node-version=24.15.0\nrelease-sha=${releaseSha}\nversion=1.2.3\n`);
   assert.equal(git(f.checkout, 'tag', '--list', 'v1.2.3'), 'v1.2.3');
+});
+
+test('protected workflow source verifies an older tagged manifest without publishing it', () => {
+  const f = fixture();
+  const releaseSha = f.commit('24.15.0', '1.2.3', { 'quality:nose': 'historical command' });
+  f.tag('v1.2.3');
+  const protectedSha = f.commit('26.9.0', '1.2.4');
+  f.clone();
+  const result = f.run('v1.2.3', protectedSha);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(f.values(), `node-version=24.15.0\nrelease-sha=${releaseSha}\nversion=1.2.3\n`);
+  assert.equal(
+    JSON.parse(git(f.checkout, 'show', `${releaseSha}:package.json`)).scripts['quality:nose'],
+    'historical command'
+  );
 });
 
 test('lightweight tag resolves to the same commit and emits only three fixed output keys', () => {

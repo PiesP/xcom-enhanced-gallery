@@ -199,8 +199,27 @@ describe('serialized release publication policy', () => {
     expect(publish).toContain("if: steps.publication.outputs.publish == 'true'");
     expect(publish).toContain('make_latest: ${{ steps.publication.outputs.make-latest }}');
     expect(publish).toContain('overwrite_files: false');
-    expect(publish).toContain(
-      'needs: [provenance, quality, unit, e2e, duplication, mutation, build]'
+    expect(publish).toContain('needs: [provenance, quality, unit, e2e, mutation, build]');
+  });
+
+  it('blocks publication on every retained gate and ignores the retired gate', () => {
+    const workflow = readFileSync(
+      resolve(import.meta.dirname, '../../../.github/workflows/release.yaml'),
+      'utf8'
     );
+    const publish = workflow.slice(workflow.indexOf('\n  publish:'));
+    const needs = publish.match(/\n {4}needs: \[([^\]]+)\]/u)?.[1]?.split(', ');
+    expect(needs).toEqual(['provenance', 'quality', 'unit', 'e2e', 'mutation', 'build']);
+    const eligible = (results: Record<string, string>) =>
+      needs?.every((job) => results[job] === 'success');
+    const passing = Object.fromEntries((needs ?? []).map((job) => [job, 'success']));
+    expect(eligible(passing)).toBe(true);
+    for (const job of needs ?? []) {
+      for (const result of ['failure', 'cancelled', 'skipped', 'pending']) {
+        expect(eligible({ ...passing, [job]: result }), `${job}: ${result}`).toBe(false);
+      }
+    }
+    expect(eligible({ ...passing, duplication: 'failure' })).toBe(true);
+    expect(publish).toContain("if: steps.publication.outputs.publish == 'true'");
   });
 });

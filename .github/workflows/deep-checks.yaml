@@ -2,10 +2,8 @@ name: 🔬 Deep Verification
 
 # Responsibility: expensive checks that should not block quick PR feedback
 # - Mutation testing
-# - Duplication checking on the weekly schedule or on demand
 #
-# Manual runs can select one check to conserve Actions minutes and runner
-# concurrency when investigating a single gate.
+# Manual runs execute mutation afresh unless reuse is explicitly requested.
 
 # Security: All third-party actions pinned to full commit SHAs.
 
@@ -15,14 +13,13 @@ on:
   workflow_dispatch:
     inputs:
       scope:
-        description: "Run all deep checks or one selected gate"
+        description: "Run mutation verification"
         required: true
         default: all
         type: choice
         options:
           - all
           - mutation
-          - duplication
       reuse_success:
         description: "Reuse a prior successful result for identical inputs"
         required: true
@@ -38,117 +35,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  duplication:
-    name: 🔍 Duplication
-    if: ${{ github.event_name != 'workflow_dispatch' || inputs.scope == 'all' || inputs.scope == 'duplication' }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          submodules: true
-
-      - name: 📦 Setup fingerprint runtime
-        uses: PiesP/browser-core/automation/actions/setup-project@279124fa998847bd0184d2de12bdaadcd6d2f969
-        with:
-          install-dependencies: 'false'
-
-      - name: 🔑 Fingerprint duplication inputs
-        id: fingerprint
-        continue-on-error: true
-        env:
-          DEEP_RUNNER_LABEL: ubuntu-24.04
-        run: node --experimental-strip-types scripts/ci/deep-check-reuse.ts fingerprint duplication
-
-      - name: 📥 Restore successful duplication marker
-        id: restore
-        if: ${{ steps.fingerprint.outputs.cacheable == 'true' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
-        continue-on-error: true
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .deep-check-cache/duplication.json
-          key: deep-success-v3-duplication-${{ steps.fingerprint.outputs.fingerprint }}-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: |
-            deep-success-v3-duplication-${{ steps.fingerprint.outputs.fingerprint }}-
-
-      - name: 🔎 Validate successful duplication marker
-        id: marker
-        continue-on-error: true
-        env:
-          FINGERPRINT: ${{ steps.fingerprint.outputs.fingerprint }}
-          CACHE_HIT: ${{ steps.restore.outputs.cache-matched-key != '' }}
-          RESTORE_OUTCOME: ${{ steps.restore.outcome }}
-          GITHUB_EVENT_NAME: ${{ github.event_name }}
-          REUSE_SUCCESS: ${{ inputs.reuse_success }}
-          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-          GH_TOKEN: ${{ github.token }}
-        run: node --experimental-strip-types scripts/ci/deep-check-reuse.ts verify duplication "$FINGERPRINT" .deep-check-cache/duplication.json
-
-      - name: ♻️ Reuse successful duplication
-        if: ${{ steps.marker.outputs.reuse == 'true' }}
-        env:
-          REASON: ${{ steps.marker.outputs.reason }}
-          SAVED_SECONDS: ${{ steps.marker.outputs.saved_seconds }}
-          ORIGIN_RUN_ID: ${{ steps.marker.outputs.origin_run_id }}
-          ORIGIN_RUN_ATTEMPT: ${{ steps.marker.outputs.origin_run_attempt }}
-          ORIGIN_SHA: ${{ steps.marker.outputs.origin_sha }}
-          ORIGIN_ANALYZED_AT: ${{ steps.marker.outputs.origin_analyzed_at }}
-        run: |
-          echo "Duplication: reused successful result from run ${ORIGIN_RUN_ID}/${ORIGIN_RUN_ATTEMPT} (${ORIGIN_SHA}, analyzed ${ORIGIN_ANALYZED_AT}); reason: $REASON; estimated avoided analysis seconds: ${SAVED_SECONDS:-unavailable}." >> "$GITHUB_STEP_SUMMARY"
-
-      - name: 🧾 Explain fresh duplication analysis
-        if: ${{ steps.marker.outputs.reuse != 'true' }}
-        env:
-          REASON: ${{ steps.marker.outputs.reason }}
-          ORIGIN_RUN_ID: ${{ steps.marker.outputs.origin_run_id }}
-          ORIGIN_RUN_ATTEMPT: ${{ steps.marker.outputs.origin_run_attempt }}
-          ORIGIN_SHA: ${{ steps.marker.outputs.origin_sha }}
-        run: |
-          echo "Duplication: running fresh analysis (reason: ${REASON:-verify-unavailable}; restored origin: ${ORIGIN_RUN_ID:-unavailable}/${ORIGIN_RUN_ATTEMPT:-unavailable} ${ORIGIN_SHA:-unavailable})." >> "$GITHUB_STEP_SUMMARY"
-
-      - name: 🔧 Install nose
-        if: ${{ steps.marker.outputs.reuse != 'true' }}
-        run: |
-          set -euo pipefail
-          trusted_sha=a1fd01821cab105c6a6430ee81e18030532843e8
-          if ! git cat-file -e "$trusted_sha^{commit}" 2>/dev/null; then
-            git fetch --no-tags --depth=1 origin "$trusted_sha"
-          fi
-          git cat-file -e "$trusted_sha^{commit}"
-          pinned_dir="$(mktemp -d "$RUNNER_TEMP/pinned-tools.XXXXXXXX")"
-          for name in pinned-tools.json pinned-tools.ts check-pinned-tools.ts install-nose.ts; do
-            git show "$trusted_sha:scripts/ci/$name" > "$pinned_dir/$name"
-            chmod 0600 "$pinned_dir/$name"
-          done
-          node --experimental-strip-types "$pinned_dir/install-nose.ts"
-
-      - name: 🔎 Check for new duplication
-        id: check
-        if: ${{ steps.marker.outputs.reuse != 'true' }}
-        run: nose query src --baseline .nose-baseline.json --fail-on new
-
-      - name: ✅ Record fresh duplication pass
-        if: ${{ steps.check.outcome == 'success' }}
-        run: |
-          echo 'Duplication: passed a fresh analysis.' >> "$GITHUB_STEP_SUMMARY"
-
-      - name: 📝 Mark successful duplication
-        id: mark
-        if: ${{ steps.check.outcome == 'success' && steps.fingerprint.outputs.cacheable == 'true' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
-        continue-on-error: true
-        env:
-          FINGERPRINT: ${{ steps.fingerprint.outputs.fingerprint }}
-        run: node --experimental-strip-types scripts/ci/deep-check-reuse.ts mark duplication "$FINGERPRINT" .deep-check-cache/duplication.json
-
-      - name: 💾 Save successful duplication marker
-        if: ${{ steps.mark.outcome == 'success' }}
-        continue-on-error: true
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .deep-check-cache/duplication.json
-          key: deep-success-v3-duplication-${{ steps.fingerprint.outputs.fingerprint }}-${{ github.run_id }}-${{ github.run_attempt }}
-
   mutation:
     name: 🧬 Mutation
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.scope == 'all' || inputs.scope == 'mutation' }}

@@ -149,49 +149,6 @@ jobs:
           pnpm exec playwright install --with-deps chromium firefox webkit
           pnpm test:e2e:all
 
-  duplication:
-    name: 🔍 Release duplication
-    needs: provenance
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.sha }}
-          fetch-depth: 0
-          submodules: true
-          persist-credentials: false
-
-      - name: 📦 Setup protected pin runtime
-        uses: PiesP/browser-core/automation/actions/setup-project@279124fa998847bd0184d2de12bdaadcd6d2f969
-        with:
-          install-dependencies: 'false'
-
-      - name: Checkout verified release commit
-        shell: bash
-        env:
-          RELEASE_SHA: ${{ needs.provenance.outputs.release-sha }}
-        run: |
-          git -c advice.detachedHead=false checkout --detach "$RELEASE_SHA"
-          git submodule sync --recursive
-          git submodule update --init --recursive
-
-      - name: 🔧 Install nose
-        run: |
-          set -euo pipefail
-          trusted_sha=a1fd01821cab105c6a6430ee81e18030532843e8
-          git cat-file -e "$trusted_sha^{commit}"
-          pinned_dir="$(mktemp -d "$RUNNER_TEMP/pinned-tools.XXXXXXXX")"
-          for name in pinned-tools.json pinned-tools.ts check-pinned-tools.ts install-nose.ts; do
-            git show "$trusted_sha:scripts/ci/$name" > "$pinned_dir/$name"
-            chmod 0600 "$pinned_dir/$name"
-          done
-          node --experimental-strip-types "$pinned_dir/install-nose.ts"
-
-      - name: 🔎 Check for new duplication
-        run: nose query src --baseline .nose-baseline.json --fail-on new
-
   mutation:
     name: 🧬 Release mutation
     needs: provenance
@@ -274,7 +231,7 @@ jobs:
 
   publish:
     name: 🏷️ Publish GitHub Release
-    needs: [provenance, quality, unit, e2e, duplication, mutation, build]
+    needs: [provenance, quality, unit, e2e, mutation, build]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     concurrency:

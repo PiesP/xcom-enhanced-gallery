@@ -6,7 +6,7 @@ import { appendFileSync, mkdirSync, readFileSync, readlinkSync, writeFileSync } 
 import { dirname } from 'node:path';
 
 export const SCHEMA = 3;
-export const GATES = ['duplication', 'mutation'] as const;
+export const GATES = ['mutation'] as const;
 type Gate = (typeof GATES)[number];
 type RunnerEnv = Record<string, string | undefined>;
 type Marker = {
@@ -51,7 +51,7 @@ type Manifest = {
 };
 
 function assertGate(gate: string | undefined): asserts gate is Gate {
-  if (gate !== 'duplication' && gate !== 'mutation') {
+  if (gate !== 'mutation') {
     throw new Error(`Unknown deep gate: ${gate}`);
   }
 }
@@ -226,11 +226,9 @@ const MAX_PAGES = 10;
 const PAGE_SIZE = 100;
 const API_BUDGET_MS = 20_000;
 const JOB_NAMES: Record<Gate, string> = {
-  duplication: '🔍 Duplication',
   mutation: '🧬 Mutation',
 };
 const ANALYSIS_STEP_NAMES: Record<Gate, string> = {
-  duplication: '🔎 Check for new duplication',
   mutation: '🧬 Run mutation gate',
 };
 
@@ -440,9 +438,6 @@ export async function evaluateReuse(
         return { reuse: false, reason: 'gate-history-incomplete' };
       }
       const job = selected[0]!;
-      if (run.id !== marker.runId && job.status === 'completed' && job.conclusion === 'skipped') {
-        continue;
-      }
       if (job.status !== 'completed' || job.conclusion !== 'success') {
         return {
           reuse: false,

@@ -88,12 +88,16 @@ ordinary prebuild and release/deep/security contracts remain intact.
 
 Distinguish scheduled reuse, explicit no-op routing and actual executed checks in receipts.
 
+Before adding an implementation, inspect related existing responsibilities.
+Consolidate duplication when behavior, ownership, lifecycle, and reasons to
+change align; tests establish that preserved behavior still works.
+
 ### Workflow and subprocess entrypoints
 
 | Surface | Contract; stage and side effects | Verification / status |
 | --- | --- | --- |
 | `.github/workflows/ci.yaml`, `security.yaml` changed-path jobs | Node is set up without dependencies; `scripts/ci/classify-changes.ts` is selected from the trusted base for PR/merge-group or checked-out protected revision for push. It reads the Git event and NUL-safe Git diff, conservatively emits fixed `GITHUB_OUTPUT` gates. | `test/unit/tooling/workflow-change-classifier-git.test.ts`, `workflow-change-policy.test.ts`; verify exact-SHA hosted gates execute real work, not only no-change routes. |
-| `.github/workflows/deep-checks.yaml` | `scripts/ci/deep-check-reuse.ts` owns bounded duplication/mutation reuse. The workflow copies `scripts/ci/{pinned-tools.json,pinned-tools.ts,install-nose.ts}` from the reviewed tool revision before required Nose installation. | `scripts/ci/deep-check-reuse.test.ts` and pinned-tools CLI tests; installer digest or network failure is fatal. |
+| `.github/workflows/deep-checks.yaml` | `scripts/ci/deep-check-reuse.ts` owns bounded mutation reuse. A fresh run installs project dependencies and uploads mutation reports before recording success. | `scripts/ci/deep-check-reuse.test.ts`; invalid markers or unavailable history run fresh. |
 | `.github/workflows/security.yaml` pinned tools and OSV | `scripts/ci/pinned-tools.json` owns tool versions and digests; trusted private copies of `pinned-tools.ts` and `check-pinned-tools.ts` supply image environment and freshness checks. The independently pinned browser-core `automation/actions/prepare-osv` supplies the private `consumer` OSV helper; `packages/core` remains the runtime gitlink. | `test/unit/config/pinned-tools-cli.test.ts`, `test/unit/config/osv-workflow-composition.test.ts`, and provider OSV fixtures; `docs/osv-workflow.md` records trust order and live-container limits. |
 | `.github/workflows/release.yaml` | `scripts/release/verify-source.ts` checks protected tagged source before fan-out; `prepare.ts` creates local release files and `verify-publication.ts` checks the public write decision in the locked publish job. Runner `run:` blocks still select checkout, append short outputs, and launch artifacts/actions. | `scripts/release/verify-source.test.ts`, `test/unit/tooling/{release-runtime,release-publication}.test.ts`, and exact-source artifact inspection. Preparation does not publish. |
 | `.github/workflows/dependabot-auto-merge*.yaml`, `update-browser-core.yaml` | The read-only Dependabot gate passes an artifact; `scripts/ci/dependabot-apply.ts` rejects old or positive decisions and rechecks PR/commit identity before reporting required manual review. `scripts/ci/update-browser-core.ts` verifies remote SHA/impact and owns gitlink PR preparation/publication. Workflow shell supplies event inputs and bounded output/checkout glue. | `test/unit/config/dependabot-auto-merge.test.ts`, `test/unit/tooling/browser-core-automation.test.ts`, `scripts/ci/repository-authority.test.ts`; privileged results require exact-SHA hosted evidence. |
@@ -107,7 +111,7 @@ The Windows profile uses `profile.mjs`; `validation/windows/profile.json` declar
 Retain these handwritten JavaScript modules with a concrete review trigger: revisit when the controller supports a source-bound TS build plus stale-output check, updates every profile asset/import, and completes focused prepared-VM smoke. `validation/windows/README.md` describes bundle inputs and targeted `node --check` commands; the Node boundary suite runs `node --check` over every `validation/windows/**/*.mjs` file, followed by the existing Windows-focused unit tests. A syntax check is not VM acceptance.
 
 Small workflow shell blocks remain runner bootstrap, checkout, output, and action-launch adapters; revisit them when tested Node entrypoints can preserve trusted-source and write ordering. The Git hooks remain Bash because Git invokes them before pinned Node setup.
-The external `zip`, Git, Nose, browser, and vendor installer are tools, not handwritten project languages.
+The external `zip`, Git, browser, and vendor installer are tools, not handwritten project languages.
 
 Run `pnpm build:e2e` before direct browser lanes so generated fixtures are
 current. Use the narrowest relevant check while working, `pnpm verify` before
@@ -139,8 +143,8 @@ and new root configurations. Unknown changed paths still select every gate.
 | YAML/workflow embedded shell, Markdown, TOML, PowerShell and Git hooks | Not Biome languages in this gate | Existing configuration/command tests, Bash hook execution, GitHub workflow validation and Windows runner where applicable; no general prose/TOML/PowerShell linter is claimed | Existing workflow, documentation and conservative unknown-path routing |
 
 VCS ignores keep dependencies and generated outputs outside the managed scope.
-The reviewed `packages/core` provider gitlink, generated `pnpm-lock.yaml` and
-Nose baseline are explicitly excluded. Captured host markup in
+The reviewed `packages/core` provider gitlink and generated `pnpm-lock.yaml`
+are explicitly excluded. Captured host markup in
 `test/fixtures/authenticated-x-layouts/*.html` preserves its original bytes and
 structure; the routing suites consume these fragments unchanged. Other files in
 that directory are not excluded.

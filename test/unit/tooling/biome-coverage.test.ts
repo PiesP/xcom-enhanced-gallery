@@ -275,14 +275,12 @@ describe('Biome managed-file coverage', () => {
     const exclusions = new Set(
       supported.filter(
         (path) =>
-          path === '.nose-baseline.json' ||
-          (path.startsWith('test/fixtures/authenticated-x-layouts/') && path.endsWith('.html'))
+          path.startsWith('test/fixtures/authenticated-x-layouts/') && path.endsWith('.html')
       )
     );
     expect(config.files.includes).toContain('**');
     expect(config.files.includes).toContain('!!**/node_modules');
     expect(config.files.includes).toContain('!!packages/core');
-    expect(config.files.includes).toContain('!!.nose-baseline.json');
     expect(config.files.includes).toContain('!!pnpm-lock.yaml');
     expect(config.files.includes).toContain(capturedPattern);
 

@@ -20,7 +20,7 @@ const updateCoreWorkflow = readFileSync(
 );
 const settings = readFileSync(resolve(root, '.github/settings.yml'), 'utf8');
 
-const ciOutputs = ['quality', 'unit', 'e2e', 'build', 'duplication'] as const;
+const ciOutputs = ['quality', 'unit', 'e2e', 'build'] as const;
 const securityOutputs = ['osv', 'semgrep', 'codeql_actions', 'codeql_javascript'] as const;
 
 function classify(
@@ -128,7 +128,7 @@ describe('workflow change policy', () => {
       quality: 'false',
     },
     { path: 'src/main.ts', focused: false, unit: 'true', quality: 'true' },
-    { path: 'nose.toml', focused: false, unit: 'false', quality: 'true' },
+    { path: 'knip.json', focused: false, unit: 'true', quality: 'true' },
     { path: 'docs/policy.md', focused: false, unit: 'false', quality: 'false' },
     // The classifier treats translated root READMEs as unknown and safely selects every gate.
     { path: 'README.ko.md', focused: false, unit: 'true', quality: 'true' },
@@ -284,7 +284,6 @@ describe('workflow change policy', () => {
     expect(icon.build).toBe('true');
     expect(icon.quality).toBe('false');
     expect(icon.unit).toBe('false');
-    expect(icon.duplication).toBe('false');
     expect(icon.semgrep).toBe('false');
   });
 
@@ -313,9 +312,7 @@ describe('workflow change policy', () => {
     expectAll(windowsValidation, ['unit', 'e2e', 'semgrep', 'codeql_javascript']);
     expect(windowsValidation.build).toBe('false');
     const pins = classify(['scripts/ci/pinned-tools.json']);
-    expectAll(pins, ['quality', 'duplication', 'osv', 'semgrep']);
-    const installer = classify(['scripts/ci/install-nose.ts']);
-    expectAll(installer, ['quality', 'duplication']);
+    expectAll(pins, ['quality', 'unit', 'osv', 'semgrep']);
   });
 
   it('preserves every required context while adding explicit no-op success paths', () => {
@@ -338,7 +335,7 @@ describe('workflow change policy', () => {
     expect(ciWorkflow).toContain('No browser-relevant changes');
     expect(ciWorkflow).toContain('No build-relevant changes');
     expect(ciWorkflow).not.toContain('name: pr-gate/duplication');
-    expect(deepWorkflow).toContain('name: 🔍 Duplication');
+    expect(deepWorkflow).toContain('name: 🧬 Mutation');
     expect(securityWorkflow).toContain('No dependency-relevant changes');
     expect(securityWorkflow).toContain('No Semgrep-relevant changes');
   });
@@ -386,7 +383,7 @@ describe('workflow change policy', () => {
       expect(changes).not.toContain('runtime: node@');
       expect(changes).toContain('submodules: false');
       expect(changes).toContain(
-        'for output in quality unit e2e build duplication osv semgrep codeql_actions codeql_javascript'
+        'for output in quality unit e2e build osv semgrep codeql_actions codeql_javascript'
       );
       expect(changes).not.toContain('classify-changes.sh');
     }
