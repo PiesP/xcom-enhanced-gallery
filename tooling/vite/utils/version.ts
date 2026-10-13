@@ -34,7 +34,7 @@ export function getVersionFromPackageJson(): string | null {
  * Get short git commit hash (7 chars).
  * @returns Commit hash or null if not in a git repo
  */
-export function getGitCommitShort(): string | null {
+function getGitCommitShort(): string | null {
   try {
     return execSync('git rev-parse --short HEAD', {
       encoding: 'utf8',

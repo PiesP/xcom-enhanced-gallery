@@ -49,9 +49,9 @@ export const OUTPUT_FILE_NAMES = {
 } as const;
 
 /** Immutable versioned artifacts and the latest metadata live on GitHub Releases. */
-export const RELEASE_DOWNLOAD_BASE_URL =
+const RELEASE_DOWNLOAD_BASE_URL =
   'https://github.com/PiesP/xcom-enhanced-gallery/releases/download' as const;
-export const LATEST_RELEASE_DOWNLOAD_BASE_URL =
+const LATEST_RELEASE_DOWNLOAD_BASE_URL =
   'https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download' as const;
 
 /** Complete userscript metadata configuration. */
@@ -82,11 +82,11 @@ export const USERSCRIPT_CONFIG = {
 
 // ── Formatting helpers ───────────────────────────────────────────────────────
 
-export function formatMetaLine(key: string, value: string): string {
+function formatMetaLine(key: string, value: string): string {
   return `// @${key} ${value}`;
 }
 
-export function formatMetaLines(key: string, values: readonly string[]): string[] {
+function formatMetaLines(key: string, values: readonly string[]): string[] {
   return values.map((v) => formatMetaLine(key, v));
 }
 
@@ -97,7 +97,7 @@ export function formatMetaLines(key: string, values: readonly string[]): string[
  * @param config - Complete userscript metadata
  * @returns Formatted userscript header block
  */
-export function buildMetadataBlock(config: UserscriptMeta): string {
+function buildMetadataBlock(config: UserscriptMeta): string {
   const currentYear = new Date().getUTCFullYear();
   const copyrightRange = currentYear <= 2024 ? '2024' : `2024-${currentYear}`;
   const lines = [
