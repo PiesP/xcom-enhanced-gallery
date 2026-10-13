@@ -77,13 +77,15 @@ describe('HttpRequestService', () => {
       return { abort: vi.fn() };
     });
 
-    await expect(new HttpRequestService().get('https://api.x.com/2/example')).rejects.toMatchObject({
-      name: 'HttpRequestError',
-      status: 429,
-      readable: false,
-      category: 'unreadable',
-      retryAfterMs: 7_000,
-    });
+    await expect(new HttpRequestService().get('https://api.x.com/2/example')).rejects.toMatchObject(
+      {
+        name: 'HttpRequestError',
+        status: 429,
+        readable: false,
+        category: 'unreadable',
+        retryAfterMs: 7_000,
+      }
+    );
   });
 
   it('keeps the known status and retry guidance on timeout', async () => {
@@ -102,14 +104,16 @@ describe('HttpRequestService', () => {
       });
       return { abort: vi.fn() };
     });
-    await expect(new HttpRequestService().get('https://api.x.com/2/example')).rejects.toMatchObject({
-      name: 'HttpRequestError',
-      message: 'TIMEOUT',
-      status: 403,
-      readable: false,
-      category: 'timeout',
-      retryAfterMs: 6_000,
-    });
+    await expect(new HttpRequestService().get('https://api.x.com/2/example')).rejects.toMatchObject(
+      {
+        name: 'HttpRequestError',
+        message: 'TIMEOUT',
+        status: 403,
+        readable: false,
+        category: 'timeout',
+        retryAfterMs: 6_000,
+      }
+    );
   });
 
   it('validates status and exposes only safe metadata on a failed onload', async () => {

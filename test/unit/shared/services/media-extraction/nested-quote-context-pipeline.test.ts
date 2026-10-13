@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 PiesP
 
-import type { TwitterMedia, TwitterTweet } from '@shared/services/media/types';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
+import type { TwitterMedia, TwitterTweet } from '@shared/services/media/types';
 import { captureClickedMediaEvidence } from '@shared/services/media-extraction/determine-clicked-index';
+import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
 import { MediaExtractionService } from '@shared/services/media-extraction/media-extraction-service';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -20,17 +20,22 @@ vi.mock('@shared/services/media/twitter-auth/twitter-auth', () => ({
 
 const poster = (id: string): string =>
   `https://pbs.twimg.com/amplify_video_thumb/${id}/img/poster.jpg`;
-const source = (id: string): string =>
-  `https://video.twimg.com/amplify_video/${id}/vid/clip.mp4`;
+const source = (id: string): string => `https://video.twimg.com/amplify_video/${id}/vid/clip.mp4`;
 function video(id: string): TwitterMedia {
   return {
-    type: 'video', id_str: id, media_url_https: poster(id),
+    type: 'video',
+    id_str: id,
+    media_url_https: poster(id),
     original_info: { width: 320, height: 180 },
     video_info: { variants: [{ content_type: 'video/mp4', bitrate: 100, url: source(id) }] },
   };
 }
-function tweet(id: string, medias: TwitterMedia[] = [], quoted?: TwitterTweet,
-  username = `author_${id}`): TwitterTweet {
+function tweet(
+  id: string,
+  medias: TwitterMedia[] = [],
+  quoted?: TwitterTweet,
+  username = `author_${id}`
+): TwitterTweet {
   return {
     rest_id: id,
     core: { user_results: { result: { legacy: { screen_name: username } } } },
@@ -62,11 +67,18 @@ describe('nested quote request context with separate header and credit links', (
   beforeEach(() => {
     httpGet.mockReset();
     // A lookup exposes direct B; querying the unrelated credit C exposes only C.
-    httpGet.mockImplementation(async (url: string) => response(requestedId(url) === '222'
-      ? tweet('222', [], tweet('111', [video('700')], tweet('333', [video('900')])))
-      : tweet(requestedId(url), [video(requestedId(url) === '111' ? '700' : '900')])));
+    httpGet.mockImplementation(async (url: string) =>
+      response(
+        requestedId(url) === '222'
+          ? tweet('222', [], tweet('111', [video('700')], tweet('333', [video('900')])))
+          : tweet(requestedId(url), [video(requestedId(url) === '111' ? '700' : '900')])
+      )
+    );
   });
-  afterEach(() => { vi.restoreAllMocks(); document.body.replaceChildren(); });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    document.body.replaceChildren();
+  });
 
   it('keeps a narrow non-enclosing credit link out of confirmed ownership', () => {
     const target = nestedTarget();
@@ -84,7 +96,10 @@ describe('nested quote request context with separate header and credit links', (
     expect(requestedId(httpGet.mock.calls[0]![0])).toBe('222');
     expect(result.success).toBe(true);
     expect(result.mediaItems[result.clickedIndex!]).toMatchObject({
-      tweetId: '111', tweetUsername: 'author_111', tweetText: 'Post 111', url: source('700'),
+      tweetId: '111',
+      tweetUsername: 'author_111',
+      tweetText: 'Post 111',
+      url: source('700'),
       metadata: { apiData: { tweet_id: '111', quoteParentTweetId: '222', quotedTweetId: '111' } },
     });
     expect(result.mediaItems.some((media) => media.tweetId === '333')).toBe(false);
@@ -100,32 +115,62 @@ describe('nested quote request context with separate header and credit links', (
     </div>`;
     const button = document.getElementById('target')!;
     expect(captureClickedMediaEvidence(button)).toMatchObject({
-      mediaType: 'video', sourceKey: null, invalidSource: false,
+      mediaType: 'video',
+      sourceKey: null,
+      invalidSource: false,
       identityKeys: ['pbs.twimg.com/amplify_video_thumb/700/img/poster.jpg'],
     });
     const result = await new MediaExtractionService().extractFromClickedElement(button);
     expect(requestedId(httpGet.mock.calls[0]![0])).toBe('222');
     expect(result.success).toBe(true);
-    expect(result.mediaItems[result.clickedIndex!]).toMatchObject({ tweetId: '111', url: source('700') });
+    expect(result.mediaItems[result.clickedIndex!]).toMatchObject({
+      tweetId: '111',
+      url: source('700'),
+    });
   });
 
   it('runs the exact installed preplayer HTML through production context and media extraction', async () => {
-    document.body.innerHTML = readFileSync(resolve(process.cwd(),
-      'test/e2e/fixtures/installed-public-preplayer-page.html'), 'utf8');
+    document.body.innerHTML = readFileSync(
+      resolve(process.cwd(), 'test/e2e/fixtures/installed-public-preplayer-page.html'),
+      'utf8'
+    );
     const button = document.querySelector<HTMLButtonElement>('[data-preplayer-media] button')!;
     const outer = '8555555555555555555';
     const owner = '9555555555555555555';
     const credit = '7555555555555555555';
     const thumbnail = `https://pbs.twimg.com/ext_tw_video_thumb/${owner}/pu/img/quote-two.jpg`;
     const playable = `https://video.twimg.com/ext_tw_video/${owner}/pu/vid/320x180/quote-two.mp4`;
-    const apiVideo: TwitterMedia = { ...video(owner), media_url_https: thumbnail,
-      video_info: { variants: [{ content_type: 'video/mp4', bitrate: 100, url: playable }] } };
-    httpGet.mockResolvedValue(response(tweet(outer, [], tweet(owner, [
-      { type: 'photo', id_str: '600', media_url_https: 'https://pbs.twimg.com/media/QPreplayerPhoto.jpg' },
-      apiVideo,
-    ], tweet(credit, [video('900')], undefined, 'credit_preplay'), 'quote_preplayer'), 'outer_preplayer')));
+    const apiVideo: TwitterMedia = {
+      ...video(owner),
+      media_url_https: thumbnail,
+      video_info: { variants: [{ content_type: 'video/mp4', bitrate: 100, url: playable }] },
+    };
+    httpGet.mockResolvedValue(
+      response(
+        tweet(
+          outer,
+          [],
+          tweet(
+            owner,
+            [
+              {
+                type: 'photo',
+                id_str: '600',
+                media_url_https: 'https://pbs.twimg.com/media/QPreplayerPhoto.jpg',
+              },
+              apiVideo,
+            ],
+            tweet(credit, [video('900')], undefined, 'credit_preplay'),
+            'quote_preplayer'
+          ),
+          'outer_preplayer'
+        )
+      )
+    );
     expect(new TweetInfoExtractor().extractContext(button)?.ownership).toEqual({
-      requestTweetId: outer, ownerTweetId: null, scope: 'clickable',
+      requestTweetId: outer,
+      ownerTweetId: null,
+      scope: 'clickable',
     });
     expect(captureClickedMediaEvidence(button).identityKeys).toEqual([
       `pbs.twimg.com/ext_tw_video_thumb/${owner}/pu/img/quote-two.jpg`,
@@ -135,7 +180,9 @@ describe('nested quote request context with separate header and credit links', (
     expect(result.success).toBe(true);
     expect(result.clickedIndex).toBe(1);
     expect(result.mediaItems[result.clickedIndex!]).toMatchObject({
-      tweetId: owner, tweetUsername: 'quote_preplayer', url: playable,
+      tweetId: owner,
+      tweetUsername: 'quote_preplayer',
+      url: playable,
       metadata: { apiData: { tweet_id: owner, quoteParentTweetId: outer, quotedTweetId: owner } },
     });
     expect(result.mediaItems.some((media) => media.tweetId === credit)).toBe(false);
@@ -172,8 +219,12 @@ describe('nested quote request context with separate header and credit links', (
   it('refuses a marked inner quote with another ID hidden in a clickable branch', async () => {
     const target = nestedTarget();
     document.querySelector('#player')!.setAttribute('data-testid', 'quoteTweet');
-    document.querySelector('#player')!.insertAdjacentHTML('afterbegin',
-      '<div role="link"><a href="/other/status/444">Another quote status</a></div>');
+    document
+      .querySelector('#player')!
+      .insertAdjacentHTML(
+        'afterbegin',
+        '<div role="link"><a href="/other/status/444">Another quote status</a></div>'
+      );
     const result = await new MediaExtractionService().extractFromClickedElement(target);
     expect(result.success).toBe(false);
     expect(httpGet).not.toHaveBeenCalled();
@@ -196,14 +247,19 @@ describe('nested quote request context with separate header and credit links', (
       <div><a href="/author_111/status/111">B permalink</a>
         <video id="target" poster="${poster('700')}"></video>
       </div></article>`;
-    expect(new TweetInfoExtractor().extractContext(document.getElementById('target')!)).toMatchObject({
+    expect(
+      new TweetInfoExtractor().extractContext(document.getElementById('target')!)
+    ).toMatchObject({
       ownership: { requestTweetId: '111', ownerTweetId: '111', scope: 'owned' },
     });
   });
 
   it.each(['', 'data-testid="card.wrapper"', 'data-testid="reply"'])(
-    'refuses to borrow parent A through a nonquote boundary: %s', async (boundary) => {
-      const result = await new MediaExtractionService().extractFromClickedElement(nestedTarget(boundary));
+    'refuses to borrow parent A through a nonquote boundary: %s',
+    async (boundary) => {
+      const result = await new MediaExtractionService().extractFromClickedElement(
+        nestedTarget(boundary)
+      );
       expect(result.success).toBe(false);
       expect(httpGet).not.toHaveBeenCalled();
     }
@@ -212,7 +268,9 @@ describe('nested quote request context with separate header and credit links', (
   it('refuses distinct parent IDs even when only one parent anchor has TIME', async () => {
     const target = nestedTarget();
     document.querySelector('#outer > a')!.innerHTML = '<time>A</time>';
-    document.querySelector('#outer > a')!.insertAdjacentHTML('afterend', '<a href="/other/status/444">Other</a>');
+    document
+      .querySelector('#outer > a')!
+      .insertAdjacentHTML('afterend', '<a href="/other/status/444">Other</a>');
     const result = await new MediaExtractionService().extractFromClickedElement(target);
     expect(result.success).toBe(false);
     expect(httpGet).not.toHaveBeenCalled();
@@ -230,15 +288,16 @@ describe('nested quote request context with separate header and credit links', (
     expect(httpGet).not.toHaveBeenCalled();
   });
 
-  it.each(['https://evil.example/author_333/status/333', 'https://x.com.attacker.example/author_333/status/333'])(
-    'refuses a foreign nested credit: %s', async (href) => {
-      const target = nestedTarget();
-      document.querySelector('#credit')!.setAttribute('href', href);
-      const result = await new MediaExtractionService().extractFromClickedElement(target);
-      expect(result.success).toBe(false);
-      expect(httpGet).not.toHaveBeenCalled();
-    }
-  );
+  it.each([
+    'https://evil.example/author_333/status/333',
+    'https://x.com.attacker.example/author_333/status/333',
+  ])('refuses a foreign nested credit: %s', async (href) => {
+    const target = nestedTarget();
+    document.querySelector('#credit')!.setAttribute('href', href);
+    const result = await new MediaExtractionService().extractFromClickedElement(target);
+    expect(result.success).toBe(false);
+    expect(httpGet).not.toHaveBeenCalled();
+  });
 
   it('refuses a provider root that differs from the bounded A request', async () => {
     httpGet.mockResolvedValue(response(tweet('333', [video('700')])));

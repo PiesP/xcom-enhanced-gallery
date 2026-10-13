@@ -1,72 +1,163 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Installed unmarked quoted video preview fixture</title>
-  <style>
-    body { margin: 0; padding: 20px; background: #000; color: #e7e9ea; font: 16px "Segoe UI", sans-serif; }
-    #host-layout-spacer { height: 1200px; }
-    .quote-case { max-width: 640px; margin: 0 auto; }
-    .quote-branch { margin: 20px; padding: 12px; border: 1px solid #555; }
-    .quote-header, .credit { display: flex; gap: 8px; align-items: center; }
-    .avatar { width: 32px; height: 32px; border-radius: 50%; }
-    .media-shell { width: 320px; height: 180px; position: relative; margin: 12px 0; }
-    .media-shell > .avatar { position: absolute; top: 4px; right: 4px; z-index: 1; }
-    .media-shell > .avatar:nth-child(2) { right: 40px; }
-    .media-shell > .thumbnail { width: 320px; height: 180px; display: block; }
-    .control-surface { position: absolute; inset: 0; z-index: 2; }
-    .control-surface > button { width: 100%; height: 100%; display: flex;
-      align-items: center; justify-content: center; gap: 8px;
-      border: 0; background: transparent; color: white; cursor: pointer; }
-    .control-surface > button > span { display: inline-grid; place-items: center;
-      width: 54px; height: 54px; border-radius: 50%; background: #1d9bf0; }
-    .control-surface svg { width: 38px; height: 38px; background: #1d9bf0; }
-  </style>
-</head>
-<body>
-  <div id="host-layout-spacer" aria-hidden="true"></div>
-  <main>
-    <article class="quote-case" data-case="public-preplayer" data-testid="tweet">
-      <header>
-        <a href="/outer_preplayer/status/8555555555555555555">Outer A identity</a>
-        <a href="/outer_preplayer/status/8555555555555555555">Outer A context</a>
-      </header>
-      <div role="link" class="quote-branch">
-        <article>
-          <div class="quote-header">
-            <a href="/quote_preplayer/status/9555555555555555555">Quoted B header</a>
-          </div>
-          <div class="media-wrapper" data-preplayer-wrapper>
-            <div class="media-shell" data-preplayer-media>
-              <img class="avatar" src="https://pbs.twimg.com/profile_images/1/preplayer-b.jpg" alt="">
-              <img class="avatar" src="https://pbs.twimg.com/profile_images/2/preplayer-c.jpg" alt="">
-              <img class="thumbnail"
-                src="https://pbs.twimg.com/ext_tw_video_thumb/9555555555555555555/pu/img/quote-two.jpg"
-                alt="Quoted video thumbnail">
-              <div class="control-surface">
-                <button type="button" aria-label="Play quoted video"><span aria-hidden="true">Open</span><svg viewBox="0 0 38 38" aria-hidden="true"><path fill="white" d="M11 7 L32 19 L11 31 Z"></path></svg></button>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Installed unmarked quoted video preview fixture</title>
+    <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #000;
+      color: #e7e9ea;
+      font:
+        16px "Segoe UI",
+        sans-serif;
+    }
+    #host-layout-spacer {
+      height: 1200px;
+    }
+    .quote-case {
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    .quote-branch {
+      margin: 20px;
+      padding: 12px;
+      border: 1px solid #555;
+    }
+    .quote-header,
+    .credit {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+    }
+    .media-shell {
+      width: 320px;
+      height: 180px;
+      position: relative;
+      margin: 12px 0;
+    }
+    .media-shell > .avatar {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      z-index: 1;
+    }
+    .media-shell > .avatar:nth-child(2) {
+      right: 40px;
+    }
+    .media-shell > .thumbnail {
+      width: 320px;
+      height: 180px;
+      display: block;
+    }
+    .control-surface {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+    }
+    .control-surface > button {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 0;
+      background: transparent;
+      color: white;
+      cursor: pointer;
+    }
+    .control-surface > button > span {
+      display: inline-grid;
+      place-items: center;
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: #1d9bf0;
+    }
+    .control-surface svg {
+      width: 38px;
+      height: 38px;
+      background: #1d9bf0;
+    }
+    </style>
+  </head>
+  <body>
+    <div id="host-layout-spacer" aria-hidden="true"></div>
+    <main>
+      <article class="quote-case" data-case="public-preplayer" data-testid="tweet">
+        <header>
+          <a href="/outer_preplayer/status/8555555555555555555">Outer A identity</a>
+          <a href="/outer_preplayer/status/8555555555555555555">Outer A context</a>
+        </header>
+        <div role="link" class="quote-branch">
+          <article>
+            <div class="quote-header">
+              <a href="/quote_preplayer/status/9555555555555555555">Quoted B header</a>
+            </div>
+            <div class="media-wrapper" data-preplayer-wrapper>
+              <div class="media-shell" data-preplayer-media>
+                <img
+                  class="avatar"
+                  src="https://pbs.twimg.com/profile_images/1/preplayer-b.jpg"
+                  alt=""
+                >
+                <img
+                  class="avatar"
+                  src="https://pbs.twimg.com/profile_images/2/preplayer-c.jpg"
+                  alt=""
+                >
+                <img
+                  class="thumbnail"
+                  src="https://pbs.twimg.com/ext_tw_video_thumb/9555555555555555555/pu/img/quote-two.jpg"
+                  alt="Quoted video thumbnail"
+                >
+                <div class="control-surface">
+                  <button type="button" aria-label="Play quoted video">
+                    <span aria-hidden="true">Open</span
+                    ><svg viewBox="0 0 38 38" aria-hidden="true">
+                      <path fill="white" d="M11 7 L32 19 L11 31 Z"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div class="credit">
+                <a href="/credit_preplay/status/7555555555555555555">Credit C</a>
               </div>
             </div>
-            <div class="credit">
-              <a href="/credit_preplay/status/7555555555555555555">Credit C</a>
-            </div>
-          </div>
-        </article>
-      </div>
-    </article>
-  </main>
-  <script>
+          </article>
+        </div>
+      </article>
+    </main>
+    <script>
     window.__preplayerFixtureClicks = [];
-    window.addEventListener('click', (event) => {
-      if (!event.isTrusted || window.__preplayerFixtureClicks.length >= 32) return;
-      const record = { tag: event.target instanceof Element
-        ? event.target.tagName.toLowerCase() : null, prevented: false,
-      path: event.composedPath().filter((part) => part instanceof Element)
-        .slice(0, 6).map((part) => part.tagName.toLowerCase()) };
-      window.__preplayerFixtureClicks.push(record);
-      setTimeout(() => { record.prevented = event.defaultPrevented; }, 0);
-    }, { capture: true });
-  </script>
-</body>
+    window.addEventListener(
+      'click',
+      (event) => {
+        if (!event.isTrusted || window.__preplayerFixtureClicks.length >= 32) return;
+        const record = {
+          tag: event.target instanceof Element ? event.target.tagName.toLowerCase() : null,
+          prevented: false,
+          path: event
+            .composedPath()
+            .filter((part) => part instanceof Element)
+            .slice(0, 6)
+            .map((part) => part.tagName.toLowerCase()),
+        };
+        window.__preplayerFixtureClicks.push(record);
+        setTimeout(() => {
+          record.prevented = event.defaultPrevented;
+        }, 0);
+      },
+      { capture: true }
+    );
+    </script>
+  </body>
 </html>

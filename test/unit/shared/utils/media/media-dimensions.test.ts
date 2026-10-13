@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { describe, it, expect } from 'vitest';
+import type { TweetMediaEntry } from '@shared/services/media/types';
+import type { MediaInfo } from '@shared/types/media.types';
 import {
   adjustClickedIndexAfterDeduplication,
   computeContainIntrinsicSizeOverride,
@@ -12,7 +13,7 @@ import {
   resolveMediaDimensionsWithIntrinsicFlag,
   sortMediaByVisualOrder,
 } from '@shared/utils/media/media-dimensions';
-import type { MediaInfo } from '@shared/types/media.types';
+import { describe, expect, it } from 'vitest';
 
 function makeMedia(id: string, url: string, overrides: Partial<MediaInfo> = {}): MediaInfo {
   return { id, url, type: 'image', ...overrides };
@@ -23,19 +24,32 @@ describe('media-dimensions (pure functions)', () => {
   describe('extractDimensionsFromUrl', () => {
     it('should extract dimensions from URL path', () => {
       expect(extractDimensionsFromUrl('https://pbs.twimg.com/media/ABC?format=jpg')).toBeNull();
-      expect(extractDimensionsFromUrl('https://example.com/1920x1080/image.jpg')).toEqual({ width: 1920, height: 1080 });
-      expect(extractDimensionsFromUrl('https://example.com/800x600/')).toEqual({ width: 800, height: 600 });
+      expect(extractDimensionsFromUrl('https://example.com/1920x1080/image.jpg')).toEqual({
+        width: 1920,
+        height: 1080,
+      });
+      expect(extractDimensionsFromUrl('https://example.com/800x600/')).toEqual({
+        width: 800,
+        height: 600,
+      });
     });
 
     it('should handle dimensions at end of URL', () => {
-      expect(extractDimensionsFromUrl('https://example.com/1280x720')).toEqual({ width: 1280, height: 720 });
+      expect(extractDimensionsFromUrl('https://example.com/1280x720')).toEqual({
+        width: 1280,
+        height: 720,
+      });
     });
 
     it('ignores dimensions in query data or fragments and rejects malformed URLs', () => {
-      expect(extractDimensionsFromUrl('https://video.twimg.com/video.mp4?metadata=/999x999/')).toBeNull();
+      expect(
+        extractDimensionsFromUrl('https://video.twimg.com/video.mp4?metadata=/999x999/')
+      ).toBeNull();
       expect(extractDimensionsFromUrl('https://video.twimg.com/video.mp4#/999x999/')).toBeNull();
       expect(extractDimensionsFromUrl('invalid/999x999/')).toBeNull();
-      expect(extractDimensionsFromUrl('https://video.twimg.com/320x180/video.mp4?metadata=/999x999/')).toEqual({ width: 320, height: 180 });
+      expect(
+        extractDimensionsFromUrl('https://video.twimg.com/320x180/video.mp4?metadata=/999x999/')
+      ).toEqual({ width: 320, height: 180 });
     });
 
     it('should reject invalid dimensions', () => {
@@ -50,7 +64,10 @@ describe('media-dimensions (pure functions)', () => {
 
     it('should require at least 2-digit numbers', () => {
       expect(extractDimensionsFromUrl('https://example.com/1x2/image.jpg')).toBeNull();
-      expect(extractDimensionsFromUrl('https://example.com/10x20/image.jpg')).toEqual({ width: 10, height: 20 });
+      expect(extractDimensionsFromUrl('https://example.com/10x20/image.jpg')).toEqual({
+        width: 10,
+        height: 20,
+      });
     });
   });
 
@@ -82,7 +99,7 @@ describe('media-dimensions (pure functions)', () => {
   // ── resolveMediaDimensionsWithIntrinsicFlag ───────────────────────
   describe('resolveMediaDimensionsWithIntrinsicFlag', () => {
     it('should use direct width/height from media', () => {
-      const media = { width: 1920, height: 1080 } as any;
+      const media = { width: 1920, height: 1080 } as unknown as MediaInfo;
       const result = resolveMediaDimensionsWithIntrinsicFlag(media);
       expect(result.dimensions).toEqual({ width: 1920, height: 1080 });
       expect(result.hasIntrinsicSize).toBe(true);
@@ -91,7 +108,7 @@ describe('media-dimensions (pure functions)', () => {
     it('should extract from metadata.dimensions', () => {
       const media = {
         metadata: { dimensions: { width: 800, height: 600 } },
-      } as any;
+      } as unknown as MediaInfo;
       const result = resolveMediaDimensionsWithIntrinsicFlag(media);
       expect(result.dimensions).toEqual({ width: 800, height: 600 });
       expect(result.hasIntrinsicSize).toBe(true);
@@ -100,21 +117,21 @@ describe('media-dimensions (pure functions)', () => {
     it('should extract from metadata.apiData.original_width/height', () => {
       const media = {
         metadata: { apiData: { original_width: 1280, original_height: 720 } },
-      } as any;
+      } as unknown as MediaInfo;
       const result = resolveMediaDimensionsWithIntrinsicFlag(media);
       expect(result.dimensions).toEqual({ width: 1280, height: 720 });
       expect(result.hasIntrinsicSize).toBe(true);
     });
 
     it('should extract from URL dimensions', () => {
-      const media = { url: 'https://example.com/640x480/image.jpg' } as any;
+      const media = { url: 'https://example.com/640x480/image.jpg' } as unknown as MediaInfo;
       const result = resolveMediaDimensionsWithIntrinsicFlag(media);
       expect(result.dimensions).toEqual({ width: 640, height: 480 });
       expect(result.hasIntrinsicSize).toBe(true);
     });
 
     it('should return default dimensions when nothing found', () => {
-      const media = { url: 'https://example.com/image.jpg' } as any;
+      const media = { url: 'https://example.com/image.jpg' } as unknown as MediaInfo;
       const result = resolveMediaDimensionsWithIntrinsicFlag(media);
       expect(result.hasIntrinsicSize).toBe(false);
       expect(result.dimensions.height).toBe(720); // STANDARD_GALLERY_HEIGHT
@@ -131,7 +148,7 @@ describe('media-dimensions (pure functions)', () => {
         width: 1920,
         height: 1080,
         metadata: { dimensions: { width: 800, height: 600 } },
-      } as any;
+      } as unknown as MediaInfo;
       const result = resolveMediaDimensionsWithIntrinsicFlag(media);
       expect(result.dimensions).toEqual({ width: 1920, height: 1080 });
     });
@@ -226,7 +243,7 @@ describe('media-dimensions (pure functions)', () => {
         { expanded_url: 'https://x.com/user/status/123/photo/3' },
         { expanded_url: 'https://x.com/user/status/123/photo/1' },
         { expanded_url: 'https://x.com/user/status/123/photo/2' },
-      ] as any[];
+      ] as unknown as TweetMediaEntry[];
       const result = sortMediaByVisualOrder(items);
       expect(result[0]?.expanded_url).toContain('/photo/1');
       expect(result[1]?.expanded_url).toContain('/photo/2');
@@ -234,7 +251,9 @@ describe('media-dimensions (pure functions)', () => {
     });
 
     it('should handle single item', () => {
-      const items = [{ expanded_url: 'https://x.com/user/status/123/photo/1' }] as any[];
+      const items = [
+        { expanded_url: 'https://x.com/user/status/123/photo/1' },
+      ] as unknown as TweetMediaEntry[];
       const result = sortMediaByVisualOrder(items);
       expect(result).toHaveLength(1);
     });
@@ -248,7 +267,7 @@ describe('media-dimensions (pure functions)', () => {
       const items = [
         { expanded_url: 'https://x.com/user/status/123/photo/2', index: 5 },
         { expanded_url: 'https://x.com/user/status/123/photo/1', index: 3 },
-      ] as any[];
+      ] as unknown as TweetMediaEntry[];
       const result = sortMediaByVisualOrder(items);
       expect(result[0]?.index).toBe(0);
       expect(result[1]?.index).toBe(1);
@@ -258,7 +277,7 @@ describe('media-dimensions (pure functions)', () => {
       const items = [
         { expanded_url: 'https://x.com/user/status/123' },
         { expanded_url: 'https://x.com/user/status/123/photo/1' },
-      ] as any[];
+      ] as unknown as TweetMediaEntry[];
       const result = sortMediaByVisualOrder(items);
       // URL without visual index gets 0, so it comes first
       expect(result[0]?.expanded_url).toBe('https://x.com/user/status/123');
@@ -273,8 +292,9 @@ describe('media-dimensions (pure functions)', () => {
         type: 'video',
       });
 
-      expect(removeDuplicateMediaItems([undefined, first, duplicate, makeMedia('empty', ''), video]))
-        .toEqual([first, video]);
+      expect(
+        removeDuplicateMediaItems([undefined, first, duplicate, makeMedia('empty', ''), video])
+      ).toEqual([first, video]);
     });
 
     it('maps a clicked duplicate to the surviving visual index', () => {
@@ -300,7 +320,11 @@ describe('media-dimensions (pure functions)', () => {
 
     it('returns null when intrinsic dimensions are unavailable', () => {
       expect(
-        computeContainIntrinsicSizeOverride({ ...base, hasIntrinsicSize: false, fitMode: 'fitWidth' })
+        computeContainIntrinsicSizeOverride({
+          ...base,
+          hasIntrinsicSize: false,
+          fitMode: 'fitWidth',
+        })
       ).toBeNull();
     });
 

@@ -16,11 +16,7 @@
     "configFile": "vitest.config.ts",
     "related": false
   },
-  "reporters": [
-    "progress",
-    "clear-text",
-    "html"
-  ],
+  "reporters": ["progress", "clear-text", "html"],
   "coverageAnalysis": "all",
   "thresholds": {
     "high": 80,
@@ -30,7 +26,5 @@
   "inPlace": true,
   "concurrency": 2,
   "timeoutMS": 120000,
-  "plugins": [
-    "@stryker-mutator/vitest-runner"
-  ]
+  "plugins": ["@stryker-mutator/vitest-runner"]
 }

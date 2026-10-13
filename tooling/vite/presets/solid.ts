@@ -10,8 +10,8 @@
  * - Development-sourcemap for CSS
  */
 
-import solidPlugin from 'vite-plugin-solid';
 import type { UserConfig } from 'vite';
+import solidPlugin from 'vite-plugin-solid';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

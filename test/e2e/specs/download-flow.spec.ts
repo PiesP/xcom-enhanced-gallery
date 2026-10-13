@@ -15,8 +15,8 @@
  * Gallery trigger: Direct API call via dev build's __XEG__ namespace
  */
 
-import { test, expect, type Page } from '@playwright/test';
 import { existsSync } from 'node:fs';
+import { expect, type Page, test } from '@playwright/test';
 import { DEV_USERSCRIPT_PATH, MOCK_GALLERY_HTML, MOCK_IMAGE } from '../fixtures/artifacts';
 import { installGMMock } from '../fixtures/gm-mock';
 import { injectDevUserscript, waitForGalleryApp } from '../fixtures/userscript-harness';
@@ -37,7 +37,15 @@ async function setupGalleryPage(page: Page): Promise<void> {
   // Intercept all x.com requests
   await page.route('**/*.x.com/**', async (route) => {
     const url = route.request().url();
-    if (url.includes('.css') || url.includes('.js') || url.includes('.jpg') || url.includes('.png') || url.includes('.svg') || url.includes('.webp') || url.includes('.gif')) {
+    if (
+      url.includes('.css') ||
+      url.includes('.js') ||
+      url.includes('.jpg') ||
+      url.includes('.png') ||
+      url.includes('.svg') ||
+      url.includes('.webp') ||
+      url.includes('.gif')
+    ) {
       await route.abort();
     } else {
       await route.fulfill({ status: 200, contentType: 'text/html', body: MOCK_GALLERY_HTML });
@@ -64,8 +72,14 @@ async function setupGalleryPage(page: Page): Promise<void> {
  */
 async function openGallery(page: Page): Promise<void> {
   await page.evaluate(() => {
-    const g = globalThis as any;
-    const galleryApp = g.__XEG__.main.galleryApp as { openGallery: (items: unknown[], startIndex?: number) => void };
+    const g = globalThis as typeof globalThis & {
+      __XEG__: {
+        main: { galleryApp: { openGallery(items: unknown[], startIndex?: number): void } };
+      };
+    };
+    const galleryApp = g.__XEG__.main.galleryApp as {
+      openGallery: (items: unknown[], startIndex?: number) => void;
+    };
 
     const mockItems = [
       {
@@ -115,11 +129,15 @@ test.describe('X.com Enhanced Gallery Download Flow', () => {
     await expect(downloadButton).not.toBeDisabled();
   });
 
-  test('Download flow uses the cancellable request path and hands off the file', async ({ page }) => {
+  test('Download flow uses the cancellable request path and hands off the file', async ({
+    page,
+  }) => {
     await setupGalleryPage(page);
     await openGallery(page);
 
-    const downloadButton = page.locator('[data-gallery-element="toolbar"] button[aria-label*="Download" i]');
+    const downloadButton = page.locator(
+      '[data-gallery-element="toolbar"] button[aria-label*="Download" i]'
+    );
     await expect(downloadButton).toBeVisible();
     const downloadPromise = page.waitForEvent('download');
     await downloadButton.click();
@@ -135,9 +153,9 @@ test.describe('X.com Enhanced Gallery Download Flow', () => {
     );
     await expect(page.locator('[data-gm-download="true"]')).toHaveCount(0);
     await expect(page.locator('[data-xeg-gallery-container]')).toBeVisible();
-    await expect(
-      page.locator('[data-gallery-element="toolbar"]').getByRole('status')
-    ).toHaveText('Handed off to browser');
+    await expect(page.locator('[data-gallery-element="toolbar"]').getByRole('status')).toHaveText(
+      'Handed off to browser'
+    );
   });
 
   test('Download button is not disabled when gallery has items', async ({ page }) => {
@@ -161,24 +179,33 @@ test.describe('X.com Enhanced Gallery Download Flow', () => {
     await setupGalleryPage(page);
 
     await page.evaluate(() => {
-      const galleryApp = (globalThis as any).__XEG__.main.galleryApp;
-      galleryApp.openGallery([
-        {
-          id: 'test_video_1',
-          url: 'https://video.twimg.com/ext_tw_video/example.mp4',
-          type: 'video',
-          filename: 'example.mp4',
-          tweetUsername: 'testuser',
-          tweetId: '1234567890',
-          tweetUrl: 'https://x.com/testuser/status/1234567890',
-          originalUrl: 'https://video.twimg.com/ext_tw_video/example.mp4',
-          thumbnailUrl: 'https://pbs.twimg.com/media/example.jpg?format=jpg&name=thumb',
-          alt: 'Example video',
-          width: 1280,
-          height: 720,
-          metadata: {},
-        },
-      ], 0);
+      const galleryApp = (
+        globalThis as typeof globalThis & {
+          __XEG__: {
+            main: { galleryApp: { openGallery(items: unknown[], startIndex?: number): void } };
+          };
+        }
+      ).__XEG__.main.galleryApp;
+      galleryApp.openGallery(
+        [
+          {
+            id: 'test_video_1',
+            url: 'https://video.twimg.com/ext_tw_video/example.mp4',
+            type: 'video',
+            filename: 'example.mp4',
+            tweetUsername: 'testuser',
+            tweetId: '1234567890',
+            tweetUrl: 'https://x.com/testuser/status/1234567890',
+            originalUrl: 'https://video.twimg.com/ext_tw_video/example.mp4',
+            thumbnailUrl: 'https://pbs.twimg.com/media/example.jpg?format=jpg&name=thumb',
+            alt: 'Example video',
+            width: 1280,
+            height: 720,
+            metadata: {},
+          },
+        ],
+        0
+      );
     });
 
     const video = page.locator('[data-xeg-gallery-container] video');

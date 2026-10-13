@@ -6,14 +6,19 @@ import { verifyPublication } from '../../../scripts/release/verify-publication.t
 const sha = 'a'.repeat(40);
 const workflowSha = 'b'.repeat(40);
 const assetNames = [
-  'xcom-enhanced-gallery.user.js', 'xcom-enhanced-gallery.meta.js',
-  'xcom-enhanced-gallery-chrome.zip', 'xcom-enhanced-gallery-firefox.zip',
-  'checksums.txt', 'metadata.json',
+  'xcom-enhanced-gallery.user.js',
+  'xcom-enhanced-gallery.meta.js',
+  'xcom-enhanced-gallery-chrome.zip',
+  'xcom-enhanced-gallery-firefox.zip',
+  'checksums.txt',
+  'metadata.json',
 ];
 
 function release(tag: string) {
   return {
-    tag_name: tag, draft: false, prerelease: false,
+    tag_name: tag,
+    draft: false,
+    prerelease: false,
     assets: assetNames.map((name, index) => ({ name, id: index + 1, size: 10, state: 'uploaded' })),
   };
 }
@@ -33,17 +38,28 @@ function fixture(tag = 'v2.3.10', published: unknown[] = []) {
     [`show ${sha}:package.json`, JSON.stringify({ version: tag.slice(1) })],
   ]);
   return {
-    responses, gitResponses, metadata, calls,
-    run: () => verifyPublication(tag, sha, workflowSha, metadata, (args) => {
-      calls.push(`git ${args.join(' ')}`);
-      return gitResponses.get(args.join(' ')) ?? '';
-    }, async (path, asset) => {
-      calls.push(`${asset ? 'asset' : 'api'} ${path}`);
-      if (!responses.has(path)) throw new Error(`Unexpected API read ${path}`);
-      const response = responses.get(path);
-      if (response instanceof Error) throw response;
-      return response;
-    }),
+    responses,
+    gitResponses,
+    metadata,
+    calls,
+    run: () =>
+      verifyPublication(
+        tag,
+        sha,
+        workflowSha,
+        metadata,
+        (args) => {
+          calls.push(`git ${args.join(' ')}`);
+          return gitResponses.get(args.join(' ')) ?? '';
+        },
+        async (path, asset) => {
+          calls.push(`${asset ? 'asset' : 'api'} ${path}`);
+          if (!responses.has(path)) throw new Error(`Unexpected API read ${path}`);
+          const response = responses.get(path);
+          if (response instanceof Error) throw response;
+          return response;
+        }
+      ),
   };
 }
 
@@ -52,23 +68,28 @@ describe('serialized release publication policy', () => {
     const check = fixture();
     await expect(check.run()).resolves.toEqual({ publish: true, makeLatest: true });
     expect(check.calls.slice(0, 5)).toEqual([
-      `git rev-parse HEAD`,
-      `git fetch --force origin refs/tags/v2.3.10:refs/tags/v2.3.10`,
-      `git rev-parse --verify v2.3.10^{commit}`,
+      'git rev-parse HEAD',
+      'git fetch --force origin refs/tags/v2.3.10:refs/tags/v2.3.10',
+      'git rev-parse --verify v2.3.10^{commit}',
       `git merge-base --is-ancestor ${sha} ${workflowSha}`,
       `git show ${sha}:package.json`,
     ]);
   });
 
   it('compares numeric versions and rejects a delayed or manual historical target', async () => {
-    await expect(fixture('v2.3.10', [release('v2.3.9')]).run())
-      .resolves.toEqual({ publish: true, makeLatest: true });
-    await expect(fixture('v2.3.9', [release('v2.3.10')]).run())
-      .rejects.toThrow('Historical publication');
-    await expect(fixture('v2.3.9', [release('v2.3.10'), release('v2.3.8')]).run())
-      .rejects.toThrow('Historical publication');
-    await expect(fixture('v2.3.100000000000000000000', [release('v2.3.99999999999999999999')]).run())
-      .resolves.toEqual({ publish: true, makeLatest: true });
+    await expect(fixture('v2.3.10', [release('v2.3.9')]).run()).resolves.toEqual({
+      publish: true,
+      makeLatest: true,
+    });
+    await expect(fixture('v2.3.9', [release('v2.3.10')]).run()).rejects.toThrow(
+      'Historical publication'
+    );
+    await expect(fixture('v2.3.9', [release('v2.3.10'), release('v2.3.8')]).run()).rejects.toThrow(
+      'Historical publication'
+    );
+    await expect(
+      fixture('v2.3.100000000000000000000', [release('v2.3.99999999999999999999')]).run()
+    ).resolves.toEqual({ publish: true, makeLatest: true });
   });
 
   it('makes a complete same-version retry a no-op without changing assets or Latest', async () => {
@@ -101,10 +122,11 @@ describe('serialized release publication policy', () => {
   });
 
   it.each(['v2.3', 'v2.03.10', 'v2.3.10-beta', 'v2.3.10\n', 'latest'])(
-    'refuses malformed target and public versions: %s', async (tag) => {
+    'refuses malformed target and public versions: %s',
+    async (tag) => {
       await expect(fixture(tag).run()).rejects.toThrow();
       await expect(fixture('v2.3.10', [release(tag)]).run()).rejects.toThrow();
-    },
+    }
   );
 
   it('fails closed on malformed, unavailable and contradictory API state', async () => {
@@ -126,7 +148,10 @@ describe('serialized release publication policy', () => {
   });
 
   it('checks later release-history pages instead of assuming the first page is complete', async () => {
-    const check = fixture('v2.3.10', Array.from({ length: 100 }, () => ({ draft: true, prerelease: false })));
+    const check = fixture(
+      'v2.3.10',
+      Array.from({ length: 100 }, () => ({ draft: true, prerelease: false }))
+    );
     check.responses.set('/releases?per_page=100&page=2', [release('v2.3.11')]);
     check.responses.set('/releases/latest', release('v2.3.11'));
     await expect(check.run()).rejects.toThrow('Historical publication');
@@ -152,15 +177,24 @@ describe('serialized release publication policy', () => {
   });
 
   it('places live validation after the shared writer lock and before the only publication action', () => {
-    const workflow = readFileSync(resolve(import.meta.dirname, '../../../.github/workflows/release.yaml'), 'utf8');
+    const workflow = readFileSync(
+      resolve(import.meta.dirname, '../../../.github/workflows/release.yaml'),
+      'utf8'
+    );
     const publish = workflow.slice(workflow.indexOf('\n  publish:'));
     expect(publish).toContain('group: xcom-release-publication');
     expect(publish).toContain('cancel-in-progress: false');
-    expect(publish.indexOf('ref: ${{ github.sha }}')).toBeLessThan(publish.indexOf('node scripts/release/verify-publication.ts'));
-    expect(publish.indexOf('node scripts/release/verify-publication.ts')).toBeLessThan(publish.indexOf('uses: softprops/action-gh-release@'));
+    expect(publish.indexOf('ref: ${{ github.sha }}')).toBeLessThan(
+      publish.indexOf('node scripts/release/verify-publication.ts')
+    );
+    expect(publish.indexOf('node scripts/release/verify-publication.ts')).toBeLessThan(
+      publish.indexOf('uses: softprops/action-gh-release@')
+    );
     expect(publish).toContain("if: steps.publication.outputs.publish == 'true'");
     expect(publish).toContain('make_latest: ${{ steps.publication.outputs.make-latest }}');
     expect(publish).toContain('overwrite_files: false');
-    expect(publish).toContain('needs: [provenance, quality, unit, e2e, duplication, mutation, build]');
+    expect(publish).toContain(
+      'needs: [provenance, quality, unit, e2e, duplication, mutation, build]'
+    );
   });
 });

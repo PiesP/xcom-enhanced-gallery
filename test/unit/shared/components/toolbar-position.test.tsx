@@ -78,7 +78,7 @@ describe('toolbar collection position and effective fit', () => {
             anyActionDisabled: false,
           })}
           displayedIndex={index}
-          progressWidth={() => index() === null ? '0%' : `${((index()! + 1) / total()) * 100}%`}
+          progressWidth={() => (index() === null ? '0%' : `${((index()! + 1) / total()) * 100}%`)}
           fitModeOrder={[
             { mode: 'original', iconName: 'maximize-2' },
             { mode: 'fitWidth', iconName: 'move-horizontal' },
@@ -126,6 +126,8 @@ describe('toolbar collection position and effective fit', () => {
     expect(toolbar?.textContent).toContain('Fit: Fit Width');
     setFit('fitContainer');
     expect(toolbar?.textContent).toContain('Fit: Fit Window');
-    expect(root.querySelector('button[aria-label="Fit Window"]')?.getAttribute('aria-pressed')).toBe('true');
+    expect(
+      root.querySelector('button[aria-label="Fit Window"]')?.getAttribute('aria-pressed')
+    ).toBe('true');
   });
 });

@@ -14,10 +14,7 @@ interface GMMockOptions {
 }
 
 /** Install the userscript host contract used by behavior-level browser tests. */
-export async function installGMMock(
-  page: Page,
-  options: GMMockOptions = {}
-): Promise<void> {
+export async function installGMMock(page: Page, options: GMMockOptions = {}): Promise<void> {
   await page.evaluate(({ persistentStorage }) => {
     const host = window as unknown as Record<string, unknown>;
     const storageKey = '__xeg_e2e_gm_storage';
@@ -63,10 +60,7 @@ export async function installGMMock(
           },
       name?: string
     ): void => {
-      const details =
-        typeof urlOrDetails === 'string'
-          ? { url: urlOrDetails, name }
-          : urlOrDetails;
+      const details = typeof urlOrDetails === 'string' ? { url: urlOrDetails, name } : urlOrDetails;
       if (!details.name) throw new Error('GM_download requires name');
       const marker = document.createElement('span');
       marker.dataset.gmDownload = 'true';
@@ -74,15 +68,18 @@ export async function installGMMock(
       marker.dataset.gmDownloadName = details.name;
       marker.hidden = true;
       document.body.append(marker);
-      queueMicrotask(() => { if ('onload' in details) details.onload?.(); });
+      queueMicrotask(() => {
+        if ('onload' in details) details.onload?.();
+      });
     };
     window.GM_notification = (
       details: GMNotificationDetails | string,
       titleOrDone?: string | (() => void)
     ): void => {
-      const notification = typeof details === 'string'
-        ? { text: details, title: typeof titleOrDone === 'string' ? titleOrDone : undefined }
-        : details;
+      const notification =
+        typeof details === 'string'
+          ? { text: details, title: typeof titleOrDone === 'string' ? titleOrDone : undefined }
+          : details;
       const marker = document.createElement('div');
       marker.dataset.gmNotification = 'true';
       marker.textContent = `${notification.title ?? ''}: ${notification.text ?? ''}`;

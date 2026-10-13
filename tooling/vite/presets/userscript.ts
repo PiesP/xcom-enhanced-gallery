@@ -68,8 +68,7 @@ export function userscriptPreset(options: UserscriptPresetOptions): UserConfig {
           ? false
           : {
               // Preserve CSS imports as side-effects — required for module styles
-              moduleSideEffects: (id: string) =>
-                id.replace(/\\/g, '/').endsWith('.css'),
+              moduleSideEffects: (id: string) => id.replace(/\\/g, '/').endsWith('.css'),
               propertyReadSideEffects: false,
               unknownGlobalSideEffects: false,
             },

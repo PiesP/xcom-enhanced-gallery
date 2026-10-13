@@ -2,9 +2,8 @@
 // Copyright (c) 2024-2026 PiesP
 
 import assert from 'node:assert/strict';
-import { webcrypto } from 'node:crypto';
-import { STATUS_TILE_DOM } from '../fixtures/issue-217-dom.ts';
 import { execFileSync } from 'node:child_process';
+import { webcrypto } from 'node:crypto';
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:https';
 import { tmpdir } from 'node:os';
@@ -13,6 +12,7 @@ import { after, test } from 'node:test';
 import { createContext, Script } from 'node:vm';
 import { By, Key, until } from 'selenium-webdriver';
 import * as firefox from 'selenium-webdriver/firefox.js';
+import { STATUS_TILE_DOM } from '../fixtures/issue-217-dom.ts';
 import { FIREFOX_EXTENSION_DIR, MOCK_GALLERY_HTML } from './fixtures/artifacts.ts';
 
 const TEST_TIMEOUT_MS = 120_000;
@@ -47,7 +47,9 @@ type GeneratedBackgroundOptions = {
     saveAs?: boolean;
     url: string;
   }) => Promise<number>;
-  search: (query: { id: number }) => Promise<Array<{ error?: string; id: number; state: DownloadState; url?: string }>>;
+  search: (query: {
+    id: number;
+  }) => Promise<Array<{ error?: string; id: number; state: DownloadState; url?: string }>>;
   storage: Map<string, unknown>;
 };
 
@@ -171,11 +173,7 @@ function createGeneratedBackgroundHarness(
           clearTimeout(timeoutId);
           resolve(copyStorageValue(response));
         };
-        const keepChannelOpen = messageListener?.(
-          message,
-          sender,
-          sendResponse
-        );
+        const keepChannelOpen = messageListener?.(message, sender, sendResponse);
         if (keepChannelOpen !== true && !settled) sendResponse(undefined);
       }),
   };
@@ -205,10 +203,7 @@ function readStoredDownload(
   return records?.[requestId];
 }
 
-async function waitForCondition(
-  condition: () => boolean,
-  failureMessage: string
-): Promise<void> {
+async function waitForCondition(condition: () => boolean, failureMessage: string): Promise<void> {
   for (let attempt = 0; attempt < 100; attempt += 1) {
     if (condition()) return;
     await new Promise<void>((resolve) => setImmediate(resolve));
@@ -305,7 +300,8 @@ async function startFixtureServer(): Promise<number> {
     }
     response.writeHead(200, {
       'content-type': 'text/html; charset=utf-8',
-      'content-security-policy': "default-src 'self'; img-src 'self' data:; style-src 'unsafe-inline'",
+      'content-security-policy':
+        "default-src 'self'; img-src 'self' data:; style-src 'unsafe-inline'",
     });
     response.end(MOCK_GALLERY_HTML);
   });
@@ -325,7 +321,9 @@ test('generated Firefox background keeps a direct URL download bound to its sour
   const harness = createGeneratedBackgroundHarness({
     storage,
     download: async () => 931,
-    cancel: async () => { state = 'interrupted'; },
+    cancel: async () => {
+      state = 'interrupted';
+    },
     search: async ({ id }) => [{ id, url, state }],
   });
   const requestId = 'generated-direct-original';
@@ -335,21 +333,32 @@ test('generated Firefox background keeps a direct URL download bound to its sour
     url: 'https://x.com/author/status/123',
   };
   const otherTab = { ...owner, tab: { id: 12 } };
-  const request = harness.sendMessage({
-    type: 'DOWNLOAD_REQUEST',
-    payload: { url, filename: 'original.jpg', requestId, mode: 'direct' },
-  }, owner);
+  const request = harness.sendMessage(
+    {
+      type: 'DOWNLOAD_REQUEST',
+      payload: { url, filename: 'original.jpg', requestId, mode: 'direct' },
+    },
+    owner
+  );
   await waitForCondition(
     () => readStoredDownload(storage, requestId)?.downloadId === 931,
     'Generated background did not bind its native download ID'
   );
-  assert.deepEqual(await harness.sendMessage({
-    type: 'DOWNLOAD_DIRECT_STATUS_REQUEST', payload: { requestId, url },
-  }, otherTab), { success: true, data: { requestId, status: 'unknown' } });
+  assert.deepEqual(
+    await harness.sendMessage(
+      {
+        type: 'DOWNLOAD_DIRECT_STATUS_REQUEST',
+        payload: { requestId, url },
+      },
+      otherTab
+    ),
+    { success: true, data: { requestId, status: 'unknown' } }
+  );
   state = 'complete';
   harness.emitDownloadChanged({ id: 931, state: { current: 'complete' } });
   assert.deepEqual(await request, {
-    success: true, data: { requestId, status: 'complete' },
+    success: true,
+    data: { requestId, status: 'complete' },
   });
   assert.equal(readStoredDownload(storage, requestId)?.downloadId, 931);
   assert.equal(JSON.stringify(storage.get(DOWNLOAD_TRACKING_STORAGE_KEY)).includes(url), false);
@@ -585,59 +594,71 @@ test('generated Firefox background restores cancellation ownership and ignores l
   ]);
 });
 
-test(
-  'installs the Firefox extension and exercises content and background runtimes',
-  { timeout: TEST_TIMEOUT_MS },
-  async () => {
-    const port = await startFixtureServer();
-    const options = new firefox.Options()
-      .addArguments('-headless')
-      .setPreference('network.dns.localDomains', 'x.com');
-    options.setAcceptInsecureCerts(true);
+test('installs the Firefox extension and exercises content and background runtimes', {
+  timeout: TEST_TIMEOUT_MS,
+}, async () => {
+  const port = await startFixtureServer();
+  const options = new firefox.Options()
+    .addArguments('-headless')
+    .setPreference('network.dns.localDomains', 'x.com');
+  options.setAcceptInsecureCerts(true);
 
-    const firefoxDriver = firefox.Driver.createSession(options);
-    driver = firefoxDriver;
-    const addonId = await firefoxDriver.installAddon(createRuntimeTestExtension(), true);
-    assert.equal(addonId, 'xcom-enhanced-gallery@piesp.dev');
+  const firefoxDriver = firefox.Driver.createSession(options);
+  driver = firefoxDriver;
+  const addonId = await firefoxDriver.installAddon(createRuntimeTestExtension(), true);
+  assert.equal(addonId, 'xcom-enhanced-gallery@piesp.dev');
 
-    await firefoxDriver.get(`https://x.com:${port}/testuser/status/1234567890123456789`);
-    await firefoxDriver.wait(
-      async () =>
-        (await firefoxDriver.executeScript(
-          "return document.documentElement.getAttribute('data-xeg-gallery-ready')"
-        )) === 'true',
-      WAIT_TIMEOUT_MS,
-      'Firefox content script did not initialize the gallery'
-    );
+  await firefoxDriver.get(`https://x.com:${port}/testuser/status/1234567890123456789`);
+  await firefoxDriver.wait(
+    async () =>
+      (await firefoxDriver.executeScript(
+        "return document.documentElement.getAttribute('data-xeg-gallery-ready')"
+      )) === 'true',
+    WAIT_TIMEOUT_MS,
+    'Firefox content script did not initialize the gallery'
+  );
 
-    const firstPhoto = await firefoxDriver.findElement(By.css('[data-testid="tweetPhoto"] img'));
-    await firstPhoto.click();
-    const gallery = await firefoxDriver.wait(
-      until.elementLocated(By.css('[data-xeg-gallery-container]')),
-      WAIT_TIMEOUT_MS
-    );
-    assert.equal(await gallery.isDisplayed(), true);
+  const firstPhoto = await firefoxDriver.findElement(By.css('[data-testid="tweetPhoto"] img'));
+  await firstPhoto.click();
+  const gallery = await firefoxDriver.wait(
+    until.elementLocated(By.css('[data-xeg-gallery-container]')),
+    WAIT_TIMEOUT_MS
+  );
+  assert.equal(await gallery.isDisplayed(), true);
 
-    await firefoxDriver.actions().sendKeys(Key.ESCAPE).perform();
-    await firefoxDriver.wait(async () => (await firefoxDriver.findElements(By.css('[data-xeg-gallery-container]'))).length === 0, WAIT_TIMEOUT_MS, 'Firefox gallery did not close before tile recovery');
-    await firefoxDriver.executeScript("document.querySelector('main').innerHTML = arguments[0]", STATUS_TILE_DOM);
-    await (await firefoxDriver.findElement(By.id('tile-target'))).click();
-    const tileGallery = await firefoxDriver.wait(until.elementLocated(By.css('[data-xeg-gallery-container]')), WAIT_TIMEOUT_MS);
-    assert.equal(await tileGallery.isDisplayed(), true);
-    const tileItems = await tileGallery.findElements(By.css('[data-gallery-element="item"]'));
-    assert.equal(tileItems.length, 1);
-    assert.match((await tileItems[0]!.findElement(By.css('img')).getAttribute('src')) ?? '', /tile-photo/);
+  await firefoxDriver.actions().sendKeys(Key.ESCAPE).perform();
+  await firefoxDriver.wait(
+    async () =>
+      (await firefoxDriver.findElements(By.css('[data-xeg-gallery-container]'))).length === 0,
+    WAIT_TIMEOUT_MS,
+    'Firefox gallery did not close before tile recovery'
+  );
+  await firefoxDriver.executeScript(
+    "document.querySelector('main').innerHTML = arguments[0]",
+    STATUS_TILE_DOM
+  );
+  await (await firefoxDriver.findElement(By.id('tile-target'))).click();
+  const tileGallery = await firefoxDriver.wait(
+    until.elementLocated(By.css('[data-xeg-gallery-container]')),
+    WAIT_TIMEOUT_MS
+  );
+  assert.equal(await tileGallery.isDisplayed(), true);
+  const tileItems = await tileGallery.findElements(By.css('[data-gallery-element="item"]'));
+  assert.equal(tileItems.length, 1);
+  assert.match(
+    (await tileItems[0]!.findElement(By.css('img')).getAttribute('src')) ?? '',
+    /tile-photo/
+  );
 
-    const backgroundResponse = await firefoxDriver.wait(
-      async () => {
-        const value = await firefoxDriver.executeScript<string | null>(
-          "return document.documentElement.getAttribute('data-xeg-firefox-background')"
-        );
-        return value ? (JSON.parse(value) as { error?: string; success?: boolean }) : false;
-      },
-      WAIT_TIMEOUT_MS,
-      'Firefox background runtime did not answer the content-script probe'
-    );
-    assert.deepEqual(backgroundResponse, { success: false, error: 'Unknown message type' });
-  }
-);
+  const backgroundResponse = await firefoxDriver.wait(
+    async () => {
+      const value = await firefoxDriver.executeScript<string | null>(
+        "return document.documentElement.getAttribute('data-xeg-firefox-background')"
+      );
+      return value ? (JSON.parse(value) as { error?: string; success?: boolean }) : false;
+    },
+    WAIT_TIMEOUT_MS,
+    'Firefox background runtime did not answer the content-script probe'
+  );
+  assert.deepEqual(backgroundResponse, { success: false, error: 'Unknown message type' });
+});

@@ -26,12 +26,17 @@ describe('useGalleryItemScroll', () => {
     const dispose = createRoot((rootDispose) => {
       const [isScrolling, updateScrolling] = createSignal(true);
       setScrolling = updateScrolling;
-      ({ realignToItem } = useGalleryItemScroll(() => container, () => 0, () => 1, {
-        // Simulate a scroll-source navigation, which disables ordinary auto-alignment.
-        enabled: () => false,
-        isScrolling,
-        onScrollStart,
-      }));
+      ({ realignToItem } = useGalleryItemScroll(
+        () => container,
+        () => 0,
+        () => 1,
+        {
+          // Simulate a scroll-source navigation, which disables ordinary auto-alignment.
+          enabled: () => false,
+          isScrolling,
+          onScrollStart,
+        }
+      ));
       return rootDispose;
     });
 

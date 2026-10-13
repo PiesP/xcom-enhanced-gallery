@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 PiesP
 
-import { generateMediaFilename } from '@shared/core/filename/filename-utils';
 import { readFileSync } from 'node:fs';
-import type { TwitterMedia, TwitterTweet } from '@shared/services/media/types';
+import { generateMediaFilename } from '@shared/core/filename/filename-utils';
 import { getTweetMedias } from '@shared/services/media/twitter-api-client';
-import { MediaExtractionService } from '@shared/services/media-extraction/media-extraction-service';
+import type { TwitterMedia, TwitterTweet } from '@shared/services/media/types';
 import { captureClickedMediaEvidence } from '@shared/services/media-extraction/determine-clicked-index';
+import { MediaExtractionService } from '@shared/services/media-extraction/media-extraction-service';
 import { handleMediaClick } from '@shared/utils/events/handlers/media-click';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const httpGet = vi.hoisted(() => vi.fn());
 const settings = vi.hoisted(() => ({ mode: 'allow-all' }));
 vi.mock('@shared/container/settings-registry', () => ({
-  tryGetSettings: () => ({}), getTypedSettingOr: () => settings.mode,
+  tryGetSettings: () => ({}),
+  getTypedSettingOr: () => settings.mode,
 }));
 vi.mock('@shared/services/http-request-service', () => ({
   getHttpRequestService: () => ({ get: httpGet }),
@@ -23,11 +24,14 @@ vi.mock('@shared/services/media/twitter-auth/twitter-auth', () => ({
   resolveBearerToken: vi.fn(() => 'Bearer fixture'),
 }));
 
-const poster = (id: string): string => `https://pbs.twimg.com/amplify_video_thumb/${id}/img/poster.jpg`;
+const poster = (id: string): string =>
+  `https://pbs.twimg.com/amplify_video_thumb/${id}/img/poster.jpg`;
 const source = (id: string): string => `https://video.twimg.com/amplify_video/${id}/vid/clip.mp4`;
 function video(id: string): TwitterMedia {
   return {
-    type: 'video', id_str: id, media_url_https: poster(id),
+    type: 'video',
+    id_str: id,
+    media_url_https: poster(id),
     original_info: { width: 320, height: 180 },
     video_info: { variants: [{ content_type: 'video/mp4', bitrate: 100, url: source(id) }] },
   };
@@ -41,22 +45,36 @@ function tweet(id: string, medias: TwitterMedia[] = [], quoted?: TwitterTweet): 
   };
 }
 function respond(value: TwitterTweet): void {
-  httpGet.mockResolvedValue({ ok: true, status: 200, data: { data: { tweetResult: { result: value } } } });
+  httpGet.mockResolvedValue({
+    ok: true,
+    status: 200,
+    data: { data: { tweetResult: { result: value } } },
+  });
 }
 function target(scope = 'quote', link = false, kind = 'blob'): HTMLElement {
-  const attributes = scope === 'quote' ? 'data-testid="quoteTweet" role="link"'
-    : scope === 'unmarked' ? 'role="link" tabindex="0"' : '';
-  const media = kind === 'preview'
-    ? `<div data-testid="tweetPhoto"><div data-testid="previewInterstitial"><img id="target" src="${poster('700')}"><button data-testid="playButton">Play</button></div></div>`
-    : `<div data-testid="videoPlayer"><video id="target" src="blob:https://x.com/fixture" poster="${poster('700')}"></video></div>`;
+  const attributes =
+    scope === 'quote'
+      ? 'data-testid="quoteTweet" role="link"'
+      : scope === 'unmarked'
+        ? 'role="link" tabindex="0"'
+        : '';
+  const media =
+    kind === 'preview'
+      ? `<div data-testid="tweetPhoto"><div data-testid="previewInterstitial"><img id="target" src="${poster('700')}"><button data-testid="playButton">Play</button></div></div>`
+      : `<div data-testid="videoPlayer"><video id="target" src="blob:https://x.com/fixture" poster="${poster('700')}"></video></div>`;
   document.body.innerHTML = `<article><a href="/author_222/status/222"><time>Now</time></a><div ${attributes}>${link ? '<a href="/author_111/status/111"><time>Quote</time></a>' : ''}${media}</div></article>`;
   return document.getElementById('target')!;
 }
 function requestedId(): string {
-  return JSON.parse(new URL(httpGet.mock.calls.at(-1)?.[0] as string).searchParams.get('variables')!).tweetId;
+  return JSON.parse(
+    new URL(httpGet.mock.calls.at(-1)?.[0] as string).searchParams.get('variables')!
+  ).tweetId;
 }
 
-function thumbnailButton(scope: 'quote' | 'unmarked', sourceKind: 'empty' | 'blob'): HTMLButtonElement {
+function thumbnailButton(
+  scope: 'quote' | 'unmarked',
+  sourceKind: 'empty' | 'blob'
+): HTMLButtonElement {
   document.body.innerHTML = `<article><a href="/author_222/status/222"><time>A</time></a>
     <div ${scope === 'quote' ? 'data-testid="quoteTweet"' : 'role="link"'}><article>
       <div class="player"><video ${sourceKind === 'blob' ? 'src="blob:https://x.com/started"' : ''}></video>
@@ -84,11 +102,24 @@ async function clickThroughProduction(button: HTMLButtonElement) {
   let result: Awaited<ReturnType<typeof service.extractFromClickedElement>> | undefined;
   let pending: Promise<void> | undefined;
   button.addEventListener('click', (event) => {
-    pending = handleMediaClick(event as MouseEvent, {
-      onMediaClick: async (element) => { result = await service.extractFromClickedElement(element); },
-      onGalleryClose: () => { throw new Error('Unexpected gallery close'); },
-    }, { enableKeyboard: true, enableMediaDetection: true, debugMode: false,
-      preventBubbling: true, context: 'sibling-thumbnail-regression' });
+    pending = handleMediaClick(
+      event as MouseEvent,
+      {
+        onMediaClick: async (element) => {
+          result = await service.extractFromClickedElement(element);
+        },
+        onGalleryClose: () => {
+          throw new Error('Unexpected gallery close');
+        },
+      },
+      {
+        enableKeyboard: true,
+        enableMediaDetection: true,
+        debugMode: false,
+        preventBubbling: true,
+        context: 'sibling-thumbnail-regression',
+      }
+    );
   });
   const event = new MouseEvent('click', { bubbles: true, cancelable: true });
   button.dispatchEvent(event);
@@ -97,73 +128,146 @@ async function clickThroughProduction(button: HTMLButtonElement) {
 }
 
 describe('production quoted-video pipeline', () => {
-  beforeEach(() => { settings.mode = 'allow-all'; httpGet.mockReset(); respond(tweet('222', [], tweet('111', [video('700')]))); });
-  afterEach(() => { vi.restoreAllMocks(); document.body.replaceChildren(); });
+  beforeEach(() => {
+    settings.mode = 'allow-all';
+    httpGet.mockReset();
+    respond(tweet('222', [], tweet('111', [video('700')])));
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    document.body.replaceChildren();
+  });
 
   it('routes each installed unavailable fixture button through the production click handler', async () => {
-    document.body.innerHTML = readFileSync('test/e2e/fixtures/installed-unavailable-sequence-page.html', 'utf8');
+    document.body.innerHTML = readFileSync(
+      'test/e2e/fixtures/installed-unavailable-sequence-page.html',
+      'utf8'
+    );
     const service = new MediaExtractionService();
-    const buttons = document.querySelectorAll<HTMLButtonElement>('[data-unavailable-poster] + div button');
+    const buttons = document.querySelectorAll<HTMLButtonElement>(
+      '[data-unavailable-poster] + div button'
+    );
     expect(buttons).toHaveLength(3);
     for (const [index, button] of Array.from(buttons).entries()) {
-      respond(index === 2
-        ? { __typename: 'TweetWithVisibilityResults', tweet: {
-          __typename: 'TweetWithVisibilityResults', tweet: { __typename: 'TweetUnavailable' } } }
-        : { __typename: index === 0 ? 'TweetUnavailable' : 'TweetTombstone' });
+      respond(
+        index === 2
+          ? {
+              __typename: 'TweetWithVisibilityResults',
+              tweet: {
+                __typename: 'TweetWithVisibilityResults',
+                tweet: { __typename: 'TweetUnavailable' },
+              },
+            }
+          : { __typename: index === 0 ? 'TweetUnavailable' : 'TweetTombstone' }
+      );
       let result: Awaited<ReturnType<typeof service.extractFromClickedElement>> | undefined;
       let pending: Promise<void> | undefined;
       button.addEventListener('click', (event) => {
-        pending = handleMediaClick(event as MouseEvent, {
-          onMediaClick: async (element) => { result = await service.extractFromClickedElement(element); },
-          onGalleryClose: () => { throw new Error('Unexpected gallery close'); },
-        }, { enableKeyboard: true, enableMediaDetection: true, debugMode: false,
-          preventBubbling: true, context: 'installed-unavailable-sequence' });
+        pending = handleMediaClick(
+          event as MouseEvent,
+          {
+            onMediaClick: async (element) => {
+              result = await service.extractFromClickedElement(element);
+            },
+            onGalleryClose: () => {
+              throw new Error('Unexpected gallery close');
+            },
+          },
+          {
+            enableKeyboard: true,
+            enableMediaDetection: true,
+            debugMode: false,
+            preventBubbling: true,
+            context: 'installed-unavailable-sequence',
+          }
+        );
       });
       const event = new MouseEvent('click', { bubbles: true, cancelable: true });
       button.dispatchEvent(event);
       await pending;
       expect(event.defaultPrevented).toBe(true);
-      expect(result).toMatchObject({ success: false, mediaItems: [], apiRequestOutcome: 'healthy',
-        metadata: { strategy: 'api-media-unavailable', domRecovery: 'owner-unconfirmed' } });
+      expect(result).toMatchObject({
+        success: false,
+        mediaItems: [],
+        apiRequestOutcome: 'healthy',
+        metadata: { strategy: 'api-media-unavailable', domRecovery: 'owner-unconfirmed' },
+      });
     }
     expect(httpGet).toHaveBeenCalledTimes(3);
-    expect(httpGet.mock.calls.map(([url]) => JSON.parse(new URL(url).searchParams.get('variables')!).tweetId))
-      .toEqual(['8666666666666666661', '8666666666666666662', '8666666666666666663']);
+    expect(
+      httpGet.mock.calls.map(
+        ([url]) => JSON.parse(new URL(url).searchParams.get('variables')!).tweetId
+      )
+    ).toEqual(['8666666666666666661', '8666666666666666662', '8666666666666666663']);
   });
 
   it.each([
-    ['quote', 'empty'], ['quote', 'blob'], ['unmarked', 'empty'], ['unmarked', 'blob'],
-  ] as const)('opens the %s quote from a %s video with one sibling thumbnail', async (scope, sourceKind) => {
-    respond(tweet('222', [video('800')], tweet('111', [
-      { type: 'photo', id_str: '600', media_url_https: 'https://pbs.twimg.com/media/b-photo.jpg' },
-      video('700'),
-    ])));
-    const button = thumbnailButton(scope, sourceKind);
-    const { event, result } = await clickThroughProduction(button);
-    expect(event.defaultPrevented).toBe(true);
-    expect(requestedId()).toBe('222');
-    expect(result?.success).toBe(true);
-    expect(result?.clickedIndex).toBe(1);
-    expect(result?.mediaItems[result.clickedIndex!]).toMatchObject({
-      tweetId: '111', tweetUsername: 'author_111', type: 'video', url: source('700'),
-      metadata: { apiData: { tweet_id: '111', sourceLocation: 'quoted' } },
-    });
-  });
+    ['quote', 'empty'],
+    ['quote', 'blob'],
+    ['unmarked', 'empty'],
+    ['unmarked', 'blob'],
+  ] as const)(
+    'opens the %s quote from a %s video with one sibling thumbnail',
+    async (scope, sourceKind) => {
+      respond(
+        tweet(
+          '222',
+          [video('800')],
+          tweet('111', [
+            {
+              type: 'photo',
+              id_str: '600',
+              media_url_https: 'https://pbs.twimg.com/media/b-photo.jpg',
+            },
+            video('700'),
+          ])
+        )
+      );
+      const button = thumbnailButton(scope, sourceKind);
+      const { event, result } = await clickThroughProduction(button);
+      expect(event.defaultPrevented).toBe(true);
+      expect(requestedId()).toBe('222');
+      expect(result?.success).toBe(true);
+      expect(result?.clickedIndex).toBe(1);
+      expect(result?.mediaItems[result.clickedIndex!]).toMatchObject({
+        tweetId: '111',
+        tweetUsername: 'author_111',
+        type: 'video',
+        url: source('700'),
+        metadata: { apiData: { tweet_id: '111', sourceLocation: 'quoted' } },
+      });
+    }
+  );
 
   it.each([
-    ['quote', 'allow-all'], ['unmarked', 'allow-all'],
-    ['quote', 'block-controls-only'], ['quote', 'block-all'],
+    ['quote', 'allow-all'],
+    ['unmarked', 'allow-all'],
+    ['quote', 'block-controls-only'],
+    ['quote', 'block-all'],
   ] as const)('routes a %s pre-player with avatars under %s', async (scope, mode) => {
     settings.mode = mode;
-    respond(tweet('222', [video('800')], tweet('111', [
-      { type: 'photo', id_str: '600', media_url_https: 'https://pbs.twimg.com/media/b-photo.jpg' },
-      video('700'),
-    ])));
+    respond(
+      tweet(
+        '222',
+        [video('800')],
+        tweet('111', [
+          {
+            type: 'photo',
+            id_str: '600',
+            media_url_https: 'https://pbs.twimg.com/media/b-photo.jpg',
+          },
+          video('700'),
+        ])
+      )
+    );
     const button = preplayButton(scope);
     const evidence = captureClickedMediaEvidence(button);
     if (mode === 'allow-all') {
-      expect(evidence).toMatchObject({ mediaType: 'video', sourceKey: null,
-        identityKeys: ['pbs.twimg.com/amplify_video_thumb/700/img/poster.jpg'] });
+      expect(evidence).toMatchObject({
+        mediaType: 'video',
+        sourceKey: null,
+        identityKeys: ['pbs.twimg.com/amplify_video_thumb/700/img/poster.jpg'],
+      });
       expect(Object.isFrozen(evidence)).toBe(true);
       expect(Object.isFrozen(evidence.identityKeys)).toBe(true);
     }
@@ -174,8 +278,11 @@ describe('production quoted-video pipeline', () => {
       expect(result?.success).toBe(true);
       expect(result?.clickedIndex).toBe(1);
       expect(result?.mediaItems[result.clickedIndex!]).toMatchObject({
-        type: 'video', tweetId: '111', tweetUsername: 'author_111',
-        url: source('700'), metadata: { apiData: { tweet_id: '111' } },
+        type: 'video',
+        tweetId: '111',
+        tweetUsername: 'author_111',
+        url: source('700'),
+        metadata: { apiData: { tweet_id: '111' } },
       });
     } else expect(httpGet).not.toHaveBeenCalled();
   });
@@ -184,7 +291,10 @@ describe('production quoted-video pipeline', () => {
     const button = thumbnailButton('unmarked', 'empty');
     const thumbnail = document.querySelector('#thumbnail')!;
     thumbnail.parentElement!.insertBefore(thumbnail, document.querySelector('video')!);
-    expect(captureClickedMediaEvidence(button)).toMatchObject({ mediaType: 'video', sourceKey: null });
+    expect(captureClickedMediaEvidence(button)).toMatchObject({
+      mediaType: 'video',
+      sourceKey: null,
+    });
     const { result } = await clickThroughProduction(button);
     expect(result?.success).toBe(true);
     expect(result?.mediaItems[result.clickedIndex!]?.url).toBe(source('700'));
@@ -192,7 +302,12 @@ describe('production quoted-video pipeline', () => {
 
   it('keeps the sibling thumbnail as an immutable hint, separate from a playable source', async () => {
     let finish!: (value: unknown) => void;
-    httpGet.mockImplementationOnce(() => new Promise((resolve) => { finish = resolve; }));
+    httpGet.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        })
+    );
     const button = thumbnailButton('quote', 'empty');
     const evidence = captureClickedMediaEvidence(button);
     expect(evidence.mediaType).toBe('video');
@@ -202,8 +317,15 @@ describe('production quoted-video pipeline', () => {
     await vi.waitFor(() => expect(httpGet).toHaveBeenCalledTimes(1));
     document.querySelector<HTMLImageElement>('#thumbnail')!.src = poster('800');
     expect(evidence.identityKeys).toEqual(['pbs.twimg.com/amplify_video_thumb/700/img/poster.jpg']);
-    finish({ ok: true, status: 200, data: { data: { tweetResult: { result:
-      tweet('222', [video('800')], tweet('111', [video('700')])) } } } });
+    finish({
+      ok: true,
+      status: 200,
+      data: {
+        data: {
+          tweetResult: { result: tweet('222', [video('800')], tweet('111', [video('700')])) },
+        },
+      },
+    });
     const { result } = await pending;
     expect(result?.success).toBe(true);
     expect(result?.mediaItems[result.clickedIndex!]?.url).toBe(source('700'));
@@ -235,8 +357,13 @@ describe('production quoted-video pipeline', () => {
   });
 
   it('does not choose between A and B videos sharing the pre-player thumbnail', async () => {
-    respond(tweet('222', [{ ...video('800'), media_url_https: poster('700') }],
-      tweet('111', [video('700')])));
+    respond(
+      tweet(
+        '222',
+        [{ ...video('800'), media_url_https: poster('700') }],
+        tweet('111', [video('700')])
+      )
+    );
     const { event, result } = await clickThroughProduction(preplayButton('quote'));
     expect(event.defaultPrevented).toBe(true);
     expect(result?.success).toBe(false);
@@ -244,7 +371,13 @@ describe('production quoted-video pipeline', () => {
   });
 
   it('rejects a sibling hint that matches more than one B video', async () => {
-    respond(tweet('222', [], tweet('111', [video('700'), { ...video('701'), media_url_https: poster('700') }])));
+    respond(
+      tweet(
+        '222',
+        [],
+        tweet('111', [video('700'), { ...video('701'), media_url_https: poster('700') }])
+      )
+    );
     const { event, result } = await clickThroughProduction(thumbnailButton('quote', 'empty'));
     expect(event.defaultPrevented).toBe(true);
     expect(result?.success).toBe(false);
@@ -263,8 +396,9 @@ describe('production quoted-video pipeline', () => {
 
   it('ignores an extra ordinary image when one video thumbnail identifies the player', async () => {
     const button = thumbnailButton('quote', 'empty');
-    document.querySelector('#thumbnail')!.insertAdjacentHTML('afterend',
-      '<img src="https://pbs.twimg.com/media/outer-photo.jpg">');
+    document
+      .querySelector('#thumbnail')!
+      .insertAdjacentHTML('afterend', '<img src="https://pbs.twimg.com/media/outer-photo.jpg">');
     const { event, result } = await clickThroughProduction(button);
     expect(event.defaultPrevented).toBe(true);
     expect(result?.success).toBe(true);
@@ -272,7 +406,8 @@ describe('production quoted-video pipeline', () => {
   });
 
   it.each(['poster', 'source'] as const)(
-    'keeps an IMG-first ordinary photo native despite a valid video %s', async (kind) => {
+    'keeps an IMG-first ordinary photo native despite a valid video %s',
+    async (kind) => {
       const button = thumbnailButton('unmarked', 'empty');
       const image = document.querySelector<HTMLImageElement>('#thumbnail')!;
       image.src = 'https://pbs.twimg.com/media/outer-photo.jpg';
@@ -280,9 +415,13 @@ describe('production quoted-video pipeline', () => {
       const player = document.querySelector('video')!;
       if (kind === 'poster') player.poster = poster('700');
       else player.src = source('700');
-      respond(tweet('222', [
-        { type: 'photo', id_str: '500', media_url_https: image.src },
-      ], tweet('111', [video('700')])));
+      respond(
+        tweet(
+          '222',
+          [{ type: 'photo', id_str: '500', media_url_https: image.src }],
+          tweet('111', [video('700')])
+        )
+      );
       const { event } = await clickThroughProduction(button);
       expect(event.defaultPrevented).toBe(false);
       expect(httpGet).not.toHaveBeenCalled();
@@ -290,11 +429,14 @@ describe('production quoted-video pipeline', () => {
   );
 
   it.each(['foreign', 'ambiguous', 'nested-article'] as const)(
-    'refuses %s sibling hints before an API query', async (kind) => {
+    'refuses %s sibling hints before an API query',
+    async (kind) => {
       const button = thumbnailButton('quote', 'empty');
       const thumbnail = document.querySelector<HTMLImageElement>('#thumbnail')!;
-      if (kind === 'foreign') thumbnail.src = 'https://evil.example/amplify_video_thumb/700/img/poster.jpg';
-      if (kind === 'ambiguous') thumbnail.insertAdjacentHTML('afterend', `<img src="${poster('800')}">`);
+      if (kind === 'foreign')
+        thumbnail.src = 'https://evil.example/amplify_video_thumb/700/img/poster.jpg';
+      if (kind === 'ambiguous')
+        thumbnail.insertAdjacentHTML('afterend', `<img src="${poster('800')}">`);
       if (kind === 'nested-article') {
         const nested = document.createElement('article');
         thumbnail.parentElement!.insertBefore(nested, thumbnail);
@@ -307,7 +449,8 @@ describe('production quoted-video pipeline', () => {
   );
 
   it.each(['duplicate-thumb', 'split-thumb', 'two-videos'] as const)(
-    'leaves the %s pre-player button native', async (kind) => {
+    'leaves the %s pre-player button native',
+    async (kind) => {
       const button = preplayButton('quote');
       const thumbnail = document.querySelector<HTMLImageElement>('#thumbnail')!;
       if (kind === 'duplicate-thumb')
@@ -323,14 +466,15 @@ describe('production quoted-video pipeline', () => {
   );
 
   it.each(['card.wrapper', 'reply'] as const)(
-    'leaves a native control beside %s-owned media untouched', async (boundary) => {
+    'leaves a native control beside %s-owned media untouched',
+    async (boundary) => {
       for (const candidate of ['thumbnail', 'video'] as const) {
-        const button = candidate === 'thumbnail'
-          ? preplayButton('quote')
-          : thumbnailButton('quote', 'empty');
-        const media = candidate === 'thumbnail'
-          ? document.querySelector('#thumbnail')!
-          : document.querySelector('video')!;
+        const button =
+          candidate === 'thumbnail' ? preplayButton('quote') : thumbnailButton('quote', 'empty');
+        const media =
+          candidate === 'thumbnail'
+            ? document.querySelector('#thumbnail')!
+            : document.querySelector('video')!;
         const owner = document.createElement('div');
         owner.setAttribute('data-testid', boundary);
         media.replaceWith(owner);
@@ -343,15 +487,21 @@ describe('production quoted-video pipeline', () => {
   );
 
   it.each(['quote', 'unmarked'])(
-    'recovers a linkless %s video only from the queried direct quote and exact source', async (scope) => {
+    'recovers a linkless %s video only from the queried direct quote and exact source',
+    async (scope) => {
       const result = await new MediaExtractionService().extractFromClickedElement(target(scope));
       expect(requestedId()).toBe('222');
       expect(result.success).toBe(true);
       expect(result.clickedIndex).toBe(0);
       expect(result.tweetInfo?.tweetId).toBe('222');
       expect(result.mediaItems[0]).toMatchObject({
-        url: source('700'), type: 'video', tweetId: '111', tweetUsername: 'author_111',
-        tweetText: 'Post 111', sourceLocation: 'quoted', quotedTweetId: '111',
+        url: source('700'),
+        type: 'video',
+        tweetId: '111',
+        tweetUsername: 'author_111',
+        tweetText: 'Post 111',
+        sourceLocation: 'quoted',
+        quotedTweetId: '111',
         metadata: { apiData: { tweet_id: '111', sourceLocation: 'quoted' } },
       });
       expect(generateMediaFilename(result.mediaItems[0]!)).toMatch(/^author_111_111_\d+\.mp4$/u);
@@ -360,27 +510,45 @@ describe('production quoted-video pipeline', () => {
 
   it('retains explicit B lookup and its own metadata', async () => {
     respond(tweet('111', [video('700')]));
-    const result = await new MediaExtractionService().extractFromClickedElement(target('quote', true));
+    const result = await new MediaExtractionService().extractFromClickedElement(
+      target('quote', true)
+    );
     expect(requestedId()).toBe('111');
     expect(result.success).toBe(true);
-    expect(result.mediaItems[0]).toMatchObject({ tweetId: '111', tweetText: 'Post 111', url: source('700') });
+    expect(result.mediaItems[0]).toMatchObject({
+      tweetId: '111',
+      tweetText: 'Post 111',
+      url: source('700'),
+    });
   });
 
   it('opens the quoted preview before playback through the same production pipeline', async () => {
-    const result = await new MediaExtractionService().extractFromClickedElement(target('quote', false, 'preview'));
+    const result = await new MediaExtractionService().extractFromClickedElement(
+      target('quote', false, 'preview')
+    );
     expect(result.success).toBe(true);
     expect(result.mediaItems[0]?.url).toBe(source('700'));
   });
 
   it.each(['legacy', 'visibility', 'deleted', 'media'])(
-    'extracts supplied B once when C is %s, retaining B author/text/source', async (shape) => {
-      const c = shape === 'deleted' ? { __typename: 'TweetUnavailable' }
-        : shape === 'visibility' ? { __typename: 'TweetWithVisibilityResults', tweet: tweet('333', [video('900')]) }
-        : tweet('333', shape === 'media' ? [video('900')] : []);
+    'extracts supplied B once when C is %s, retaining B author/text/source',
+    async (shape) => {
+      const c =
+        shape === 'deleted'
+          ? { __typename: 'TweetUnavailable' }
+          : shape === 'visibility'
+            ? { __typename: 'TweetWithVisibilityResults', tweet: tweet('333', [video('900')]) }
+            : tweet('333', shape === 'media' ? [video('900')] : []);
       respond(tweet('222', [], tweet('111', [video('700')], c)));
       const entries = await getTweetMedias('222');
       expect(entries).toHaveLength(1);
-      expect(entries[0]).toMatchObject({ tweet_id: '111', screen_name: 'author_111', tweet_text: 'Post 111', sourceLocation: 'quoted', download_url: source('700') });
+      expect(entries[0]).toMatchObject({
+        tweet_id: '111',
+        screen_name: 'author_111',
+        tweet_text: 'Post 111',
+        sourceLocation: 'quoted',
+        download_url: source('700'),
+      });
       const result = await new MediaExtractionService().extractFromClickedElement(target());
       expect(result.success).toBe(true);
       expect(result.mediaItems[0]?.url).toBe(source('700'));
@@ -388,25 +556,48 @@ describe('production quoted-video pipeline', () => {
   );
 
   it('preserves quote-first ordering for direct B lookup, without mixing B/C provenance', async () => {
-    respond(tweet('111', [video('700')], { __typename: 'TweetWithVisibilityResults', tweet: tweet('333', [video('900')]) }));
-    const result = await new MediaExtractionService().extractFromClickedElement(target('quote', true));
+    respond(
+      tweet('111', [video('700')], {
+        __typename: 'TweetWithVisibilityResults',
+        tweet: tweet('333', [video('900')]),
+      })
+    );
+    const result = await new MediaExtractionService().extractFromClickedElement(
+      target('quote', true)
+    );
     expect(result.success).toBe(true);
     expect(result.clickedIndex).toBe(1);
-    expect(result.mediaItems.map((item) => [item.tweetId, item.tweetUsername, item.tweetText, item.url])).toEqual([
-      ['333', 'author_333', 'Post 333', source('900')], ['111', 'author_111', 'Post 111', source('700')],
+    expect(
+      result.mediaItems.map((item) => [item.tweetId, item.tweetUsername, item.tweetText, item.url])
+    ).toEqual([
+      ['333', 'author_333', 'Post 333', source('900')],
+      ['111', 'author_111', 'Post 111', source('700')],
     ]);
   });
 
   it('selects exact non-first B video and outer A independently in a mixed collection', async () => {
-    respond(tweet('222', [video('800')], tweet('111', [
-      { type: 'photo', id_str: '600', media_url_https: 'https://pbs.twimg.com/media/photo.jpg' }, video('700'),
-    ])));
+    respond(
+      tweet(
+        '222',
+        [video('800')],
+        tweet('111', [
+          {
+            type: 'photo',
+            id_str: '600',
+            media_url_https: 'https://pbs.twimg.com/media/photo.jpg',
+          },
+          video('700'),
+        ])
+      )
+    );
     const service = new MediaExtractionService();
     const b = await service.extractFromClickedElement(target('unmarked'));
     expect(b.success).toBe(true);
     expect(b.clickedIndex).toBe(1);
     expect(b.mediaItems.map((item) => [item.type, item.metadata?.apiData])).toMatchObject([
-      ['image', { tweet_id: '111' }], ['video', { tweet_id: '111' }], ['video', { tweet_id: '222' }],
+      ['image', { tweet_id: '111' }],
+      ['video', { tweet_id: '111' }],
+      ['video', { tweet_id: '222' }],
     ]);
     const aTarget = target('ordinary');
     aTarget.setAttribute('poster', poster('800'));
@@ -416,26 +607,60 @@ describe('production quoted-video pipeline', () => {
     expect(a.mediaItems[2]?.url).toBe(source('800'));
   });
 
-  it.each(['missing', 'foreign', 'same-filename', 'different-extension', 'conflicting-source', 'ambiguous', 'shared-owner-source', 'unrelated-root', 'root-legacy-conflict', 'quote-legacy-conflict', 'deeper-quote'])(
-    'fails closed for %s recovery evidence', async (kind) => {
-      const clicked = target();
-      if (kind === 'missing') clicked.removeAttribute('poster');
-      if (kind === 'foreign') clicked.setAttribute('poster', 'https://evil.example/amplify_video_thumb/700/img/poster.jpg');
-      if (kind === 'same-filename') clicked.setAttribute('poster', poster('777'));
-      if (kind === 'different-extension') clicked.setAttribute('poster', poster('700').replace('.jpg', '.png'));
-      if (kind === 'conflicting-source') clicked.setAttribute('src', source('999'));
-      if (kind === 'ambiguous') respond(tweet('222', [], tweet('111', [video('700'), { ...video('701'), media_url_https: poster('700') }])));
-      if (kind === 'shared-owner-source') respond(tweet('222', [{ ...video('800'), media_url_https: poster('700') }], tweet('111', [video('700')])));
-      if (kind === 'unrelated-root') respond(tweet('444', [], tweet('111', [video('700')])));
-      if (kind === 'root-legacy-conflict') respond({ ...tweet('222', [], tweet('111', [video('700')])), legacy: { id_str: '333' } });
-      if (kind === 'quote-legacy-conflict') respond(tweet('222', [], { ...tweet('111', [video('700')]), legacy: { id_str: '333', extended_entities: { media: [video('700')] } } }));
-      if (kind === 'deeper-quote') respond(tweet('222', [], tweet('111', [], tweet('333', [video('700')]))));
-      const result = await new MediaExtractionService().extractFromClickedElement(clicked);
-      expect(result.success).toBe(false);
-      expect(result.mediaItems).toEqual([]);
-      expect(result.metadata?.error).toBeTruthy();
-    }
-  );
+  it.each([
+    'missing',
+    'foreign',
+    'same-filename',
+    'different-extension',
+    'conflicting-source',
+    'ambiguous',
+    'shared-owner-source',
+    'unrelated-root',
+    'root-legacy-conflict',
+    'quote-legacy-conflict',
+    'deeper-quote',
+  ])('fails closed for %s recovery evidence', async (kind) => {
+    const clicked = target();
+    if (kind === 'missing') clicked.removeAttribute('poster');
+    if (kind === 'foreign')
+      clicked.setAttribute('poster', 'https://evil.example/amplify_video_thumb/700/img/poster.jpg');
+    if (kind === 'same-filename') clicked.setAttribute('poster', poster('777'));
+    if (kind === 'different-extension')
+      clicked.setAttribute('poster', poster('700').replace('.jpg', '.png'));
+    if (kind === 'conflicting-source') clicked.setAttribute('src', source('999'));
+    if (kind === 'ambiguous')
+      respond(
+        tweet(
+          '222',
+          [],
+          tweet('111', [video('700'), { ...video('701'), media_url_https: poster('700') }])
+        )
+      );
+    if (kind === 'shared-owner-source')
+      respond(
+        tweet(
+          '222',
+          [{ ...video('800'), media_url_https: poster('700') }],
+          tweet('111', [video('700')])
+        )
+      );
+    if (kind === 'unrelated-root') respond(tweet('444', [], tweet('111', [video('700')])));
+    if (kind === 'root-legacy-conflict')
+      respond({ ...tweet('222', [], tweet('111', [video('700')])), legacy: { id_str: '333' } });
+    if (kind === 'quote-legacy-conflict')
+      respond(
+        tweet('222', [], {
+          ...tweet('111', [video('700')]),
+          legacy: { id_str: '333', extended_entities: { media: [video('700')] } },
+        })
+      );
+    if (kind === 'deeper-quote')
+      respond(tweet('222', [], tweet('111', [], tweet('333', [video('700')]))));
+    const result = await new MediaExtractionService().extractFromClickedElement(clicked);
+    expect(result.success).toBe(false);
+    expect(result.mediaItems).toEqual([]);
+    expect(result.metadata?.error).toBeTruthy();
+  });
 
   it('does not relabel a linkless playable quote as A during provider failure', async () => {
     httpGet.mockResolvedValue({ ok: false, status: 503, data: {} });
@@ -447,12 +672,17 @@ describe('production quoted-video pipeline', () => {
   });
 
   it.each(['TweetUnavailable', 'TweetTombstone'])(
-    'keeps the linkless quote owner unknown after a healthy %s response', async (__typename) => {
+    'keeps the linkless quote owner unknown after a healthy %s response',
+    async (__typename) => {
       respond({ __typename });
       const result = await new MediaExtractionService().extractFromClickedElement(target());
       expect(requestedId()).toBe('222');
-      expect(result).toMatchObject({ success: false, mediaItems: [], apiRequestOutcome: 'healthy',
-        metadata: { strategy: 'api-media-unavailable', domRecovery: 'owner-unconfirmed' } });
+      expect(result).toMatchObject({
+        success: false,
+        mediaItems: [],
+        apiRequestOutcome: 'healthy',
+        metadata: { strategy: 'api-media-unavailable', domRecovery: 'owner-unconfirmed' },
+      });
     }
   );
 
@@ -466,10 +696,23 @@ describe('production quoted-video pipeline', () => {
   it('matches a lower-bitrate playable source only when the same B variant is returned', async () => {
     const high = video('700');
     const lowUrl = 'https://video.twimg.com/amplify_video/700/vid/low.mp4';
-    respond(tweet('222', [], tweet('111', [{ ...high, video_info: { variants: [
-      ...high.video_info!.variants,
-      { content_type: 'video/mp4', bitrate: 10, url: lowUrl },
-    ] } }])));
+    respond(
+      tweet(
+        '222',
+        [],
+        tweet('111', [
+          {
+            ...high,
+            video_info: {
+              variants: [
+                ...high.video_info!.variants,
+                { content_type: 'video/mp4', bitrate: 10, url: lowUrl },
+              ],
+            },
+          },
+        ])
+      )
+    );
     const clicked = target('unmarked');
     clicked.setAttribute('src', lowUrl);
     const result = await new MediaExtractionService().extractFromClickedElement(clicked);
@@ -481,35 +724,65 @@ describe('production quoted-video pipeline', () => {
     const controller = new AbortController();
     httpGet.mockImplementationOnce(async () => {
       controller.abort();
-      return { ok: true, status: 200, data: { data: { tweetResult: { result: tweet('222', [], tweet('111', [video('700')])) } } } };
+      return {
+        ok: true,
+        status: 200,
+        data: { data: { tweetResult: { result: tweet('222', [], tweet('111', [video('700')])) } } },
+      };
     });
-    const result = await new MediaExtractionService().extractFromClickedElement(target(), { signal: controller.signal });
+    const result = await new MediaExtractionService().extractFromClickedElement(target(), {
+      signal: controller.signal,
+    });
     expect(result.success).toBe(false);
     expect(result.metadata?.error).toBe('Extraction cancelled');
   });
 
   it.each(['foreign-link', 'card', 'reply', 'adjacent'])(
-    'does not borrow a quote owner across %s boundaries', async (kind) => {
+    'does not borrow a quote owner across %s boundaries',
+    async (kind) => {
       const clicked = target('unmarked');
-      if (kind === 'foreign-link') clicked.parentElement!.insertAdjacentHTML('beforebegin', '<a href="https://evil.example/author/status/111">Foreign</a>');
+      if (kind === 'foreign-link')
+        clicked.parentElement!.insertAdjacentHTML(
+          'beforebegin',
+          '<a href="https://evil.example/author/status/111">Foreign</a>'
+        );
       if (kind === 'card') clicked.parentElement!.setAttribute('data-testid', 'card.wrapper');
-      if (kind === 'reply') clicked.closest('article')!.outerHTML = `<article><a href="/author_222/status/222"><time>A</time></a></article><article><video id="target" poster="${poster('700')}"></video></article>`;
-      if (kind === 'adjacent') clicked.closest('article')!.outerHTML = `<article><a href="/author_222/status/222"><time>A</time></a></article><video id="target" poster="${poster('700')}"></video>`;
-      const result = await new MediaExtractionService().extractFromClickedElement(document.getElementById('target')!);
+      if (kind === 'reply')
+        clicked.closest('article')!.outerHTML =
+          `<article><a href="/author_222/status/222"><time>A</time></a></article><article><video id="target" poster="${poster('700')}"></video></article>`;
+      if (kind === 'adjacent')
+        clicked.closest('article')!.outerHTML =
+          `<article><a href="/author_222/status/222"><time>A</time></a></article><video id="target" poster="${poster('700')}"></video>`;
+      const result = await new MediaExtractionService().extractFromClickedElement(
+        document.getElementById('target')!
+      );
       expect(result.success).toBe(false);
     }
   );
 
   it('retains click-time quote source/scope if DOM is replaced while transport is pending', async () => {
     let finish!: (value: unknown) => void;
-    httpGet.mockImplementationOnce(() => new Promise((resolve) => { finish = resolve; }));
+    httpGet.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        })
+    );
     const clicked = target();
     const pending = new MediaExtractionService().extractFromClickedElement(clicked);
     await vi.waitFor(() => expect(httpGet).toHaveBeenCalledTimes(1));
     clicked.setAttribute('poster', poster('800'));
     clicked.setAttribute('src', source('800'));
     target('ordinary').setAttribute('poster', poster('800'));
-    finish({ ok: true, status: 200, data: { data: { tweetResult: { result: tweet('222', [video('800')], tweet('111', [video('700')])) } } } });
+    finish({
+      ok: true,
+      status: 200,
+      data: {
+        data: {
+          tweetResult: { result: tweet('222', [video('800')], tweet('111', [video('700')])) },
+        },
+      },
+    });
     const result = await pending;
     expect(result.success).toBe(true);
     expect(result.mediaItems[result.clickedIndex!]?.url).toBe(source('700'));
@@ -529,24 +802,34 @@ describe('production quoted-video pipeline', () => {
     expect(result.mediaItems).toEqual([]);
   });
 
-  it.each([true, false])('bounds ambiguous nested-article recovery to a clickable parent=%s', async (clickable) => {
-    document.body.innerHTML = `<article><a href="/author_222/status/222"><time>A</time></a>
+  it.each([true, false])(
+    'bounds ambiguous nested-article recovery to a clickable parent=%s',
+    async (clickable) => {
+      document.body.innerHTML = `<article><a href="/author_222/status/222"><time>A</time></a>
       <div ${clickable ? 'role="link"' : ''}><article>
         <a href="/author_111/status/111">B</a><a href="/author_333/status/333">Attribution</a>
         <video id="target" src="blob:https://x.com/nested" poster="${poster('700')}"></video>
       </article></div></article>`;
-    const result = await new MediaExtractionService().extractFromClickedElement(document.getElementById('target')!);
-    expect(result.success).toBe(clickable);
-    if (clickable) {
-      expect(requestedId()).toBe('222');
-      expect(result.mediaItems[result.clickedIndex!]).toMatchObject({ tweetId: '111', url: source('700') });
-    } else expect(httpGet).not.toHaveBeenCalled();
-  });
+      const result = await new MediaExtractionService().extractFromClickedElement(
+        document.getElementById('target')!
+      );
+      expect(result.success).toBe(clickable);
+      if (clickable) {
+        expect(requestedId()).toBe('222');
+        expect(result.mediaItems[result.clickedIndex!]).toMatchObject({
+          tweetId: '111',
+          url: source('700'),
+        });
+      } else expect(httpGet).not.toHaveBeenCalled();
+    }
+  );
 
   it('does not use an ancestor CSS background to establish an unknown owner', async () => {
     const clicked = target();
     clicked.removeAttribute('poster');
-    clicked.closest('[data-testid="quoteTweet"]')!.setAttribute('style', `background-image: url('${poster('700')}')`);
+    clicked
+      .closest('[data-testid="quoteTweet"]')!
+      .setAttribute('style', `background-image: url('${poster('700')}')`);
     const result = await new MediaExtractionService().extractFromClickedElement(clicked);
     expect(result.success).toBe(false);
   });
@@ -557,7 +840,9 @@ describe('production quoted-video pipeline', () => {
         <a href="/author_333/status/333"><time>Attribution</time></a>
         <video id="target" src="blob:https://x.com/nested" poster="${poster('700')}"></video>
       </article></div></article>`;
-    const result = await new MediaExtractionService().extractFromClickedElement(document.getElementById('target')!);
+    const result = await new MediaExtractionService().extractFromClickedElement(
+      document.getElementById('target')!
+    );
     expect(requestedId()).toBe('222');
     expect(result.success).toBe(true);
     expect(result.mediaItems[result.clickedIndex!]?.tweetId).toBe('111');
@@ -566,15 +851,36 @@ describe('production quoted-video pipeline', () => {
   it('refuses an unknown overlay containing multiple unmarked players', async () => {
     const clicked = target('unmarked');
     clicked.parentElement!.removeAttribute('data-testid');
-    clicked.insertAdjacentHTML('afterend', `<video poster="${poster('800')}"></video><span id="overlay">Overlay</span>`);
-    const result = await new MediaExtractionService().extractFromClickedElement(document.getElementById('overlay')!);
+    clicked.insertAdjacentHTML(
+      'afterend',
+      `<video poster="${poster('800')}"></video><span id="overlay">Overlay</span>`
+    );
+    const result = await new MediaExtractionService().extractFromClickedElement(
+      document.getElementById('overlay')!
+    );
     expect(result.success).toBe(false);
   });
 
   it('does not expose a poster when the direct quote has no playable MP4 variant', async () => {
-    respond(tweet('222', [], tweet('111', [{ ...video('700'), video_info: { variants: [
-      { content_type: 'application/x-mpegURL', url: 'https://video.twimg.com/amplify_video/700/playlist.m3u8' },
-    ] } }])));
+    respond(
+      tweet(
+        '222',
+        [],
+        tweet('111', [
+          {
+            ...video('700'),
+            video_info: {
+              variants: [
+                {
+                  content_type: 'application/x-mpegURL',
+                  url: 'https://video.twimg.com/amplify_video/700/playlist.m3u8',
+                },
+              ],
+            },
+          },
+        ])
+      )
+    );
     const result = await new MediaExtractionService().extractFromClickedElement(target());
     expect(result.success).toBe(false);
     expect(result.mediaItems).toEqual([]);
@@ -607,7 +913,9 @@ describe('production quoted-video pipeline', () => {
 
   it('rejects same-owner B attachments with an indistinguishable poster', async () => {
     respond(tweet('111', [video('700'), { ...video('701'), media_url_https: poster('700') }]));
-    const result = await new MediaExtractionService().extractFromClickedElement(target('quote', true));
+    const result = await new MediaExtractionService().extractFromClickedElement(
+      target('quote', true)
+    );
     expect(result.success).toBe(false);
     expect(result.metadata?.strategy).toBe('api-media-ambiguous');
   });
@@ -646,9 +954,13 @@ describe('production quoted-video pipeline', () => {
     b.setAttribute('src', source('700'));
     const article = b.closest('article')!;
     article.insertAdjacentHTML('beforeend', `<video id="outer" src="${source('800')}"></video>`);
-    const result = await new MediaExtractionService().extractFromClickedElement(document.getElementById('outer')!);
+    const result = await new MediaExtractionService().extractFromClickedElement(
+      document.getElementById('outer')!
+    );
     expect(result.success).toBe(true);
-    expect(result.mediaItems.map((item) => [item.tweetId, item.url])).toEqual([['222', source('800')]]);
+    expect(result.mediaItems.map((item) => [item.tweetId, item.url])).toEqual([
+      ['222', source('800')],
+    ]);
   });
 
   it('accepts a resolved protocol-relative B poster and an explicit format spelling', async () => {
@@ -656,16 +968,22 @@ describe('production quoted-video pipeline', () => {
     base.href = 'https://x.com';
     document.head.append(base);
     try {
-    const clicked = target();
-    clicked.setAttribute('poster', '//pbs.twimg.com/amplify_video_thumb/700/img/poster?format=jpg&name=small');
-    const result = await new MediaExtractionService().extractFromClickedElement(clicked);
-    expect(result.success).toBe(true);
-    expect(result.mediaItems[result.clickedIndex!]?.tweetId).toBe('111');
-    } finally { base.remove(); }
+      const clicked = target();
+      clicked.setAttribute(
+        'poster',
+        '//pbs.twimg.com/amplify_video_thumb/700/img/poster?format=jpg&name=small'
+      );
+      const result = await new MediaExtractionService().extractFromClickedElement(clicked);
+      expect(result.success).toBe(true);
+      expect(result.mediaItems[result.clickedIndex!]?.tweetId).toBe('111');
+    } finally {
+      base.remove();
+    }
   });
 
   it.each(['allow-all', 'block-controls-only', 'block-all'])(
-    'routes the observed unmarked native button through production extraction only in %s', async (mode) => {
+    'routes the observed unmarked native button through production extraction only in %s',
+    async (mode) => {
       settings.mode = mode;
       document.body.innerHTML = `<article><a href="/author_222/status/222"><time>A</time></a>
         <div role="link"><article><a href="/author_111/status/111">B</a>
@@ -676,11 +994,26 @@ describe('production quoted-video pipeline', () => {
       let result: Awaited<ReturnType<typeof service.extractFromClickedElement>> | undefined;
       let pending: Promise<void> | undefined;
       const button = document.getElementById('target')!;
-      button.addEventListener('click', (event) => { pending = handleMediaClick(event as MouseEvent, {
-        onMediaClick: async (element) => { result = await service.extractFromClickedElement(element); },
-        onGalleryClose: () => { throw new Error('Unexpected gallery close'); },
-      }, { enableKeyboard: true, enableMediaDetection: true, debugMode: false,
-        preventBubbling: true, context: 'native-quote-regression' }); });
+      button.addEventListener('click', (event) => {
+        pending = handleMediaClick(
+          event as MouseEvent,
+          {
+            onMediaClick: async (element) => {
+              result = await service.extractFromClickedElement(element);
+            },
+            onGalleryClose: () => {
+              throw new Error('Unexpected gallery close');
+            },
+          },
+          {
+            enableKeyboard: true,
+            enableMediaDetection: true,
+            debugMode: false,
+            preventBubbling: true,
+            context: 'native-quote-regression',
+          }
+        );
+      });
       const event = new MouseEvent('click', { bubbles: true, cancelable: true });
       button.dispatchEvent(event);
       await pending;
@@ -688,7 +1021,10 @@ describe('production quoted-video pipeline', () => {
         expect(event.defaultPrevented).toBe(true);
         expect(requestedId()).toBe('222');
         expect(result?.success).toBe(true);
-        expect(result?.mediaItems[result.clickedIndex!]).toMatchObject({ tweetId: '111', url: source('700') });
+        expect(result?.mediaItems[result.clickedIndex!]).toMatchObject({
+          tweetId: '111',
+          url: source('700'),
+        });
       } else {
         expect(event.defaultPrevented).toBe(false);
         expect(httpGet).not.toHaveBeenCalled();

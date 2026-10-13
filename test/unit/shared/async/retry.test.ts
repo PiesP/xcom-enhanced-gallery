@@ -13,7 +13,10 @@ describe('bounded guided retry', () => {
   it('waits for the server delay even when backoff is shorter', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(0);
-    const operation = vi.fn().mockRejectedValueOnce(new Error('rate limited')).mockResolvedValue('ok');
+    const operation = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('rate limited'))
+      .mockResolvedValue('ok');
     const pending = withRetry(operation, {
       maxAttempts: 2,
       baseDelayMs: 0,

@@ -23,9 +23,7 @@ const coreCss = readFileSync(
 describe('Quiet Instruments design adapter', () => {
   it('loads the scoped core tokens before the existing XEG token layers and adapter', () => {
     const layersIndex = mainSource.indexOf("import '@shared/styles/layers.css'");
-    const coreIndex = mainSource.indexOf(
-      "import '@piesp/browser-core/design/tokens.css'"
-    );
+    const coreIndex = mainSource.indexOf("import '@piesp/browser-core/design/tokens.css'");
     const primitiveIndex = mainSource.indexOf(
       "import '@shared/styles/design-tokens.primitive.css'"
     );

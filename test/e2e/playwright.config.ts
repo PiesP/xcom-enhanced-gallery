@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { defineConfig, devices } from '@playwright/test';
 import { resolve } from 'node:path';
+import { defineConfig, devices } from '@playwright/test';
 
 const __dirname = resolve(import.meta.dirname, '.');
 const distDir = resolve(__dirname, '../../dist');

@@ -2,8 +2,8 @@
 // Copyright (c) 2026 PiesP
 // @vitest-environment node
 
-import { createServer, request as httpRequest } from 'node:http';
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { createServer, request as httpRequest } from 'node:http';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -16,16 +16,26 @@ type Fixture = {
   mark(): number;
   findSince(mark: number, cohort: string, index: number, result: string): unknown;
   activeCount(): number;
-  snapshot(): { requests: number; unexpectedCount: number; overflow: boolean;
-    servedBytes: number; events: Array<{ cohort: string; index: number; result: string }> };
+  snapshot(): {
+    requests: number;
+    unexpectedCount: number;
+    overflow: boolean;
+    servedBytes: number;
+    events: Array<{ cohort: string; index: number; result: string }>;
+  };
   destroyActive(): void;
 };
 
-const loopback = (await import(pathToFileURL(resolve(import.meta.dirname,
-  '../../../validation/windows/userscript-loopback.mjs')).href)) as {
+const loopback = (await import(
+  pathToFileURL(resolve(import.meta.dirname, '../../../validation/windows/userscript-loopback.mjs'))
+    .href
+)) as {
   createUserscriptFixtureHandler(cohorts: Record<string, string[]>, avatarPath: string): Fixture;
   validateFixtureCertificate(value: unknown): unknown;
-  generateFixtureCertificate(path: string, run: (...args: unknown[]) => Promise<unknown>): Promise<unknown>;
+  generateFixtureCertificate(
+    path: string,
+    run: (...args: unknown[]) => Promise<unknown>
+  ): Promise<unknown>;
 };
 
 const cohorts = {
@@ -44,27 +54,40 @@ async function withServer(action: (fixture: Fixture, port: number) => Promise<vo
   await new Promise<void>((resolveListen) => server.listen(0, '127.0.0.1', resolveListen));
   const address = server.address();
   if (!address || typeof address === 'string') throw new Error('Invalid test listener');
-  try { await action(fixture, address.port); }
-  finally {
+  try {
+    await action(fixture, address.port);
+  } finally {
     fixture.destroyActive();
     server.closeAllConnections();
     await new Promise<void>((resolveClose) => server.close(() => resolveClose()));
   }
 }
 
-function get(port: number, path: string, options: { host?: string; method?: string;
-  destination?: string } = {}) {
+function get(
+  port: number,
+  path: string,
+  options: { host?: string; method?: string; destination?: string } = {}
+) {
   return new Promise<{ status: number; body: Buffer }>((resolveResponse, rejectResponse) => {
-    const request = httpRequest({ hostname: '127.0.0.1', port, path,
-      method: options.method ?? 'GET', headers: {
-        Host: options.host ?? 'pbs.twimg.com',
-        ...(options.destination && { 'Sec-Fetch-Dest': options.destination }),
-      } }, (response) => {
-      const chunks: Buffer[] = [];
-      response.on('data', (chunk: Buffer) => chunks.push(chunk));
-      response.on('end', () => resolveResponse({ status: response.statusCode ?? 0,
-        body: Buffer.concat(chunks) }));
-    });
+    const request = httpRequest(
+      {
+        hostname: '127.0.0.1',
+        port,
+        path,
+        method: options.method ?? 'GET',
+        headers: {
+          Host: options.host ?? 'pbs.twimg.com',
+          ...(options.destination && { 'Sec-Fetch-Dest': options.destination }),
+        },
+      },
+      (response) => {
+        const chunks: Buffer[] = [];
+        response.on('data', (chunk: Buffer) => chunks.push(chunk));
+        response.on('end', () =>
+          resolveResponse({ status: response.statusCode ?? 0, body: Buffer.concat(chunks) })
+        );
+      }
+    );
     request.once('error', rejectResponse);
     request.end();
   });
@@ -87,8 +110,9 @@ describe('userscript HTTPS loopback protocol', () => {
       expect(normal).toEqual({ status: 200, body: Buffer.from('first') });
       expect((await get(port, mediaPath('normal', 0, 'large'))).status).toBe(404);
       expect((await get(port, mediaPath('normal', 0), { destination: 'image' })).status).toBe(404);
-      expect((await get(port, mediaPath('normal', 0, 'large'),
-        { destination: 'image' })).status).toBe(200);
+      expect(
+        (await get(port, mediaPath('normal', 0, 'large'), { destination: 'image' })).status
+      ).toBe(200);
       expect((await get(port, `${mediaPath('normal', 0)}&unexpected=1`)).status).toBe(404);
       expect((await get(port, mediaPath('normal', 0), { host: 'other.example' })).status).toBe(404);
       expect((await get(port, mediaPath('normal', 0), { method: 'POST' })).status).toBe(404);
@@ -96,9 +120,18 @@ describe('userscript HTTPS loopback protocol', () => {
       const before = fixture.mark();
       expect((await get(port, mediaPath('failure', 0))).status).toBe(503);
       expect(fixture.findSince(before, 'failure', 0, 'http-503')).toMatchObject({
-        phase: 'failure', cohort: 'failure', index: 0, bytes: 0 });
-      expect(fixture.snapshot()).toMatchObject({ requests: 8, unexpectedCount: 5,
-        overflow: false, servedBytes: 10, activeCount: 0 });
+        phase: 'failure',
+        cohort: 'failure',
+        index: 0,
+        bytes: 0,
+      });
+      expect(fixture.snapshot()).toMatchObject({
+        requests: 8,
+        unexpectedCount: 5,
+        overflow: false,
+        servedBytes: 10,
+        activeCount: 0,
+      });
     });
   });
 
@@ -107,13 +140,18 @@ describe('userscript HTTPS loopback protocol', () => {
       fixture.setImages([Buffer.from('first'), Buffer.from('second'), Buffer.from('third')]);
       fixture.setPhase('held');
       const previewStart = fixture.mark();
-      expect((await get(port, mediaPath('held', 0, 'large'),
-        { destination: 'image' })).status).toBe(200);
+      expect(
+        (await get(port, mediaPath('held', 0, 'large'), { destination: 'image' })).status
+      ).toBe(200);
       expect(fixture.findSince(previewStart, 'held', 0, 'served')).toBeUndefined();
       fixture.armHeld();
       const before = fixture.mark();
-      const request = httpRequest({ hostname: '127.0.0.1', port, path: mediaPath('held', 0),
-        headers: { Host: 'pbs.twimg.com', 'Sec-Fetch-Dest': 'empty' } });
+      const request = httpRequest({
+        hostname: '127.0.0.1',
+        port,
+        path: mediaPath('held', 0),
+        headers: { Host: 'pbs.twimg.com', 'Sec-Fetch-Dest': 'empty' },
+      });
       request.on('error', () => {});
       request.end();
       await waitFor(() => fixture.findSince(before, 'held', 0, 'started'));
@@ -135,10 +173,13 @@ describe('userscript HTTPS loopback protocol', () => {
       await expect(get(port, mediaPath('normal', 0))).rejects.toThrow();
       expect(fixture.snapshot()).toMatchObject({ overflow: true, servedBytes: 2 * 1024 * 1024 });
     });
-    expect(() => loopback.validateFixtureCertificate({ private: 'secret' }))
-      .toThrow('fixture-certificate-invalid');
-    await expect(loopback.generateFixtureCertificate('/trusted/helper.ps1',
-      async () => { throw new Error('secret child output'); }))
-      .rejects.toThrow(/^fixture-certificate-unavailable$/u);
+    expect(() => loopback.validateFixtureCertificate({ private: 'secret' })).toThrow(
+      'fixture-certificate-invalid'
+    );
+    await expect(
+      loopback.generateFixtureCertificate('/trusted/helper.ps1', async () => {
+        throw new Error('secret child output');
+      })
+    ).rejects.toThrow(/^fixture-certificate-unavailable$/u);
   });
 });

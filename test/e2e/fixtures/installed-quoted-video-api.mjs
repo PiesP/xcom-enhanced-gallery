@@ -9,63 +9,119 @@ export const PREPLAYER_OUTER = '8555555555555555555';
 export const PREPLAYER_QUOTE = '9555555555555555555';
 export const PREPLAYER_CREDIT = '7555555555555555555';
 export const PUBLIC_PREPLAYER_CASE = {
-  name: 'public-preplayer', route: 'public-preplayer', handle: 'outer_preplayer',
-  outer: PREPLAYER_OUTER, owner: PREPLAYER_QUOTE, username: 'quote_preplayer',
-  credit: PREPLAYER_CREDIT, media: 'quote-two', poster: 'quote-two',
-  expectedPosition: 2, expectedTotal: 2, close: 'escape',
-  away: { type: 'image', path: '/media/QPreplayerPhoto.jpg',
-    origin: `https://x.com/quote_preplayer/status/${PREPLAYER_QUOTE}` },
+  name: 'public-preplayer',
+  route: 'public-preplayer',
+  handle: 'outer_preplayer',
+  outer: PREPLAYER_OUTER,
+  owner: PREPLAYER_QUOTE,
+  username: 'quote_preplayer',
+  credit: PREPLAYER_CREDIT,
+  media: 'quote-two',
+  poster: 'quote-two',
+  expectedPosition: 2,
+  expectedTotal: 2,
+  close: 'escape',
+  away: {
+    type: 'image',
+    path: '/media/QPreplayerPhoto.jpg',
+    origin: `https://x.com/quote_preplayer/status/${PREPLAYER_QUOTE}`,
+  },
 };
 export const UNAVAILABLE_SEQUENCE = {
-  route: 'unavailable-sequence', handle: 'unavail_seq',
+  route: 'unavailable-sequence',
+  handle: 'unavail_seq',
   failures: [
     { name: 'unavailable', outer: '8666666666666666661', typename: 'TweetUnavailable' },
     { name: 'tombstone', outer: '8666666666666666662', typename: 'TweetTombstone' },
-    { name: 'visibility', outer: '8666666666666666663',
-      typename: 'TweetWithVisibilityResults' },
+    { name: 'visibility', outer: '8666666666666666663', typename: 'TweetWithVisibilityResults' },
   ],
   control: PUBLIC_PREPLAYER_CASE,
 };
 export const QUOTED_CASES = [
   {
-    name: 'recognized', route: 'recognized', handle: 'outer_one', outer: '8111111111111111111',
-    owner: '9111111111111111111', username: 'quote_one',
-    media: 'quote-one', expectedPosition: 2, close: 'escape',
+    name: 'recognized',
+    route: 'recognized',
+    handle: 'outer_one',
+    outer: '8111111111111111111',
+    owner: '9111111111111111111',
+    username: 'quote_one',
+    media: 'quote-one',
+    expectedPosition: 2,
+    close: 'escape',
     poster: 'quote-one',
-    away: { type: 'image', path: '/media/QQuoteOnePhoto.jpg',
-      origin: 'https://x.com/quote_one/status/9111111111111111111' },
+    away: {
+      type: 'image',
+      path: '/media/QQuoteOnePhoto.jpg',
+      origin: 'https://x.com/quote_one/status/9111111111111111111',
+    },
   },
   {
-    name: 'unmarked', route: 'unmarked', handle: 'outer_two', outer: '8222222222222222222',
-    owner: '9222222222222222222', username: 'quote_two',
-    media: 'quote-two', expectedPosition: 2, close: 'button',
+    name: 'unmarked',
+    route: 'unmarked',
+    handle: 'outer_two',
+    outer: '8222222222222222222',
+    owner: '9222222222222222222',
+    username: 'quote_two',
+    media: 'quote-two',
+    expectedPosition: 2,
+    close: 'button',
     poster: 'quote-two',
-    away: { type: 'image', path: '/media/QQuoteTwoPhoto.jpg',
-      origin: 'https://x.com/quote_two/status/9222222222222222222' },
+    away: {
+      type: 'image',
+      path: '/media/QQuoteTwoPhoto.jpg',
+      origin: 'https://x.com/quote_two/status/9222222222222222222',
+    },
   },
   {
-    name: 'linked', route: 'linked', handle: 'outer_four', outer: '8444444444444444444',
-    owner: '9444444444444444444', username: 'quote_four',
-    media: 'linked-four', expectedPosition: 2, close: 'escape',
+    name: 'linked',
+    route: 'linked',
+    handle: 'outer_four',
+    outer: '8444444444444444444',
+    owner: '9444444444444444444',
+    username: 'quote_four',
+    media: 'linked-four',
+    expectedPosition: 2,
+    close: 'escape',
     poster: 'linked-four',
-    away: { type: 'image', path: '/media/QQuoteFourPhoto.jpg',
-      origin: 'https://x.com/quote_four/status/9444444444444444444' },
+    away: {
+      type: 'image',
+      path: '/media/QQuoteFourPhoto.jpg',
+      origin: 'https://x.com/quote_four/status/9444444444444444444',
+    },
   },
   {
-    name: 'nested-from-outer', route: 'nested', handle: 'outer_three', outer: '8333333333333333333',
-    owner: '9333333333333333333', username: 'quote_three',
-    media: 'quote-three', expectedPosition: 1, close: 'escape',
+    name: 'nested-from-outer',
+    route: 'nested',
+    handle: 'outer_three',
+    outer: '8333333333333333333',
+    owner: '9333333333333333333',
+    username: 'quote_three',
+    media: 'quote-three',
+    expectedPosition: 1,
+    close: 'escape',
     poster: 'quote-three',
-    away: { type: 'image', path: '/media/QOuterThreePhoto.jpg',
-      origin: 'https://x.com/outer_three/status/8333333333333333333' },
+    away: {
+      type: 'image',
+      path: '/media/QOuterThreePhoto.jpg',
+      origin: 'https://x.com/outer_three/status/8333333333333333333',
+    },
   },
   {
-    name: 'nested-direct-quote', route: 'nested-direct', handle: 'quote_three', outer: '9333333333333333333',
-    owner: '9333333333333333333', username: 'quote_three',
-    media: 'quote-three', expectedPosition: 2, close: 'button',
+    name: 'nested-direct-quote',
+    route: 'nested-direct',
+    handle: 'quote_three',
+    outer: '9333333333333333333',
+    owner: '9333333333333333333',
+    username: 'quote_three',
+    media: 'quote-three',
+    expectedPosition: 2,
+    close: 'button',
     poster: 'quote-three',
-    away: { type: 'video', path: `/ext_tw_video/${NESTED_OWNER}/pu/vid/320x180/nested-c.mp4`,
-      origin: `https://x.com/nested_c/status/${NESTED_OWNER}` },
+    away: {
+      type: 'video',
+      path: `/ext_tw_video/${NESTED_OWNER}/pu/vid/320x180/nested-c.mp4`,
+      origin: `https://x.com/nested_c/status/${NESTED_OWNER}`,
+    },
   },
   PUBLIC_PREPLAYER_CASE,
 ];
@@ -79,21 +135,30 @@ const outerNames = {
 
 function video(id, marker, index) {
   return {
-    type: 'video', id_str: `${id}${index}`, media_key: `7_${id}${index}`,
+    type: 'video',
+    id_str: `${id}${index}`,
+    media_key: `7_${id}${index}`,
     media_url_https: `https://pbs.twimg.com/ext_tw_video_thumb/${id}/pu/img/${marker}.jpg`,
     expanded_url: `https://x.com/${marker}/status/${id}/video/${index + 1}`,
     original_info: { width: 320, height: 180 },
     video_info: {
       aspect_ratio: [16, 9],
-      variants: [{ content_type: 'video/mp4', bitrate: 832000,
-        url: `https://video.twimg.com/ext_tw_video/${id}/pu/vid/320x180/${marker}.mp4` }],
+      variants: [
+        {
+          content_type: 'video/mp4',
+          bitrate: 832000,
+          url: `https://video.twimg.com/ext_tw_video/${id}/pu/vid/320x180/${marker}.mp4`,
+        },
+      ],
     },
   };
 }
 
 function photo(id, marker, index) {
   return {
-    type: 'photo', id_str: `${id}${index}`, media_key: `3_${id}${index}`,
+    type: 'photo',
+    id_str: `${id}${index}`,
+    media_key: `3_${id}${index}`,
     media_url_https: `https://pbs.twimg.com/media/${marker}.jpg`,
     original_info: { width: 320, height: 180 },
   };
@@ -101,11 +166,16 @@ function photo(id, marker, index) {
 
 function tweet(id, username, media, quoted) {
   return {
-    __typename: 'Tweet', rest_id: id,
-    core: { user_results: { result: { rest_id: id, legacy: { screen_name: username,
-      name: username } } } },
-    legacy: { id_str: id, full_text: `${username} deterministic installed media`,
-      extended_entities: { media } },
+    __typename: 'Tweet',
+    rest_id: id,
+    core: {
+      user_results: { result: { rest_id: id, legacy: { screen_name: username, name: username } } },
+    },
+    legacy: {
+      id_str: id,
+      full_text: `${username} deterministic installed media`,
+      extended_entities: { media },
+    },
     ...(quoted ? { quoted_status_result: { result: quoted } } : {}),
   };
 }
@@ -113,36 +183,51 @@ function tweet(id, username, media, quoted) {
 export function quotedVideoApiResponse(tweetId) {
   if (tweetId === RAPID_CLICK_A || tweetId === RAPID_CLICK_B) {
     const marker = tweetId === RAPID_CLICK_A ? 'quote-one' : 'quote-two';
-    return { data: { tweetResult: { result: tweet(tweetId,
-      tweetId === RAPID_CLICK_A ? 'rapid_a' : 'rapid_b', [
-        photo(tweetId, tweetId === RAPID_CLICK_A ? 'QQuoteOnePhoto' : 'QQuoteTwoPhoto', 0),
-        video(tweetId, marker, 1),
-      ]) } } };
+    return {
+      data: {
+        tweetResult: {
+          result: tweet(tweetId, tweetId === RAPID_CLICK_A ? 'rapid_a' : 'rapid_b', [
+            photo(tweetId, tweetId === RAPID_CLICK_A ? 'QQuoteOnePhoto' : 'QQuoteTwoPhoto', 0),
+            video(tweetId, marker, 1),
+          ]),
+        },
+      },
+    };
   }
   const unavailable = UNAVAILABLE_SEQUENCE.failures.find(({ outer }) => outer === tweetId);
   if (unavailable) {
-    const result = unavailable.name === 'visibility'
-      ? { __typename: 'TweetWithVisibilityResults', tweet: {
-        __typename: 'TweetWithVisibilityResults', tweet: { __typename: 'TweetUnavailable' },
-      } }
-      : { __typename: unavailable.typename };
+    const result =
+      unavailable.name === 'visibility'
+        ? {
+            __typename: 'TweetWithVisibilityResults',
+            tweet: {
+              __typename: 'TweetWithVisibilityResults',
+              tweet: { __typename: 'TweetUnavailable' },
+            },
+          }
+        : { __typename: unavailable.typename };
     return { data: { tweetResult: { result } } };
   }
   if (tweetId === PUBLIC_PREPLAYER_CASE.outer) {
     const credit = tweet(PREPLAYER_CREDIT, 'credit_preplay', [
       video(PREPLAYER_CREDIT, 'nested-c', 0),
     ]);
-    const quote = tweet(PREPLAYER_QUOTE, 'quote_preplayer', [
-      photo(PREPLAYER_QUOTE, 'QPreplayerPhoto', 0),
-      video(PREPLAYER_QUOTE, PUBLIC_PREPLAYER_CASE.media, 1),
-    ], credit);
-    return { data: { tweetResult: { result: tweet(
-      PREPLAYER_OUTER, 'outer_preplayer', [], quote
-    ) } } };
+    const quote = tweet(
+      PREPLAYER_QUOTE,
+      'quote_preplayer',
+      [
+        photo(PREPLAYER_QUOTE, 'QPreplayerPhoto', 0),
+        video(PREPLAYER_QUOTE, PUBLIC_PREPLAYER_CASE.media, 1),
+      ],
+      credit
+    );
+    return {
+      data: { tweetResult: { result: tweet(PREPLAYER_OUTER, 'outer_preplayer', [], quote) } },
+    };
   }
   const selected = QUOTED_CASES.find(({ outer }) => outer === tweetId);
-  if (!selected && tweetId !== QUOTED_CASES[0].owner &&
-      tweetId !== QUOTED_CASES[2].owner) return null;
+  if (!selected && tweetId !== QUOTED_CASES[0].owner && tweetId !== QUOTED_CASES[2].owner)
+    return null;
   const quoteOne = tweet(QUOTED_CASES[0].owner, 'quote_one', [
     photo(QUOTED_CASES[0].owner, 'QQuoteOnePhoto', 0),
     video(QUOTED_CASES[0].owner, 'quote-one', 1),
@@ -156,9 +241,12 @@ export function quotedVideoApiResponse(tweetId) {
     video(QUOTED_CASES[2].owner, 'linked-four', 1),
   ]);
   const nested = tweet(NESTED_OWNER, 'nested_c', [video(NESTED_OWNER, 'nested-c', 0)]);
-  const quoteThree = tweet(QUOTED_CASES[3].owner, 'quote_three', [
-    video(QUOTED_CASES[3].owner, 'quote-three', 0),
-  ], nested);
+  const quoteThree = tweet(
+    QUOTED_CASES[3].owner,
+    'quote_three',
+    [video(QUOTED_CASES[3].owner, 'quote-three', 0)],
+    nested
+  );
   if (tweetId === quoteOne.rest_id) {
     return { data: { tweetResult: { result: quoteOne } } };
   }
@@ -168,14 +256,21 @@ export function quotedVideoApiResponse(tweetId) {
   if (tweetId === quoteFour.rest_id) {
     return { data: { tweetResult: { result: quoteFour } } };
   }
-  const quoted = selected.name === 'recognized' ? quoteOne
-    : selected.name === 'unmarked' ? quoteTwo
-    : selected.name === 'linked' ? quoteFour : quoteThree;
-  const outerMedia = selected.name === 'recognized' || selected.name === 'linked' ? []
-    : selected.name === 'nested-from-outer'
-      ? [photo(tweetId, 'QOuterThreePhoto', 0)]
-      : [video(tweetId, `outer-${selected.name}`, 0)];
-  return { data: { tweetResult: { result: tweet(
-    tweetId, outerNames[tweetId], outerMedia, quoted
-  ) } } };
+  const quoted =
+    selected.name === 'recognized'
+      ? quoteOne
+      : selected.name === 'unmarked'
+        ? quoteTwo
+        : selected.name === 'linked'
+          ? quoteFour
+          : quoteThree;
+  const outerMedia =
+    selected.name === 'recognized' || selected.name === 'linked'
+      ? []
+      : selected.name === 'nested-from-outer'
+        ? [photo(tweetId, 'QOuterThreePhoto', 0)]
+        : [video(tweetId, `outer-${selected.name}`, 0)];
+  return {
+    data: { tweetResult: { result: tweet(tweetId, outerNames[tweetId], outerMedia, quoted) } },
+  };
 }

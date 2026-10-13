@@ -1,12 +1,18 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DownloadResourceLimitError, LiveByteBudget, downloadLiveByteBudget, type OwnedBlob } from '@shared/services/download/live-byte-budget';
-import { downloadAsZip as assembleZip } from '@shared/services/download/zip-download';
+import {
+  DownloadResourceLimitError,
+  downloadLiveByteBudget,
+  LiveByteBudget,
+  type OwnedBlob,
+} from '@shared/services/download/live-byte-budget';
 import type { DownloadOptions, OrchestratorItem, ZipResult } from '@shared/services/download/types';
+import { downloadAsZip as assembleZip } from '@shared/services/download/zip-download';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
 interface FixtureRequest {
-  onload?: (response: {status: number; response: ArrayBuffer}) => void;
-  onerror?: (response: {status: number}) => void;
+  onload?: (response: { status: number; response: ArrayBuffer }) => void;
+  onerror?: (response: { status: number }) => void;
 }
-let httpFixture: ((details: FixtureRequest) => {abort: () => void}) | undefined;
+let httpFixture: ((details: FixtureRequest) => { abort: () => void }) | undefined;
 const dispatchFixture = (details: FixtureRequest) => {
   if (!httpFixture) throw new Error('No ZIP HTTP fixture installed');
   return httpFixture(details);
@@ -18,12 +24,17 @@ function setHttpFixture(implementation: NonNullable<typeof httpFixture>): void {
   vi.stubGlobal('GM_xmlhttpRequest', dispatchFixture);
 }
 const results: ZipResult[] = [];
-async function downloadAsZip(items: readonly OrchestratorItem[], options: DownloadOptions = {}): Promise<ZipResult> {
- const result = await assembleZip(items,options);
- results.push(result);
- return result;
+async function downloadAsZip(
+  items: readonly OrchestratorItem[],
+  options: DownloadOptions = {}
+): Promise<ZipResult> {
+  const result = await assembleZip(items, options);
+  results.push(result);
+  return result;
 }
-afterEach(() => {for(const result of results.splice(0)) result.dispose();});
+afterEach(() => {
+  for (const result of results.splice(0)) result.dispose();
+});
 
 interface DeferredBlob {
   readonly promise: Promise<Blob>;
@@ -43,11 +54,13 @@ function deferredBlob(): DeferredBlob {
 
 const inputOwners: OwnedBlob[] = [];
 function ownedBlob(value: Blob): OwnedBlob {
-  const owner = {value, lease: downloadLiveByteBudget.reserve(value.size)};
+  const owner = { value, lease: downloadLiveByteBudget.reserve(value.size) };
   inputOwners.push(owner);
   return owner;
 }
-afterEach(() => { for (const owner of inputOwners.splice(0)) owner.lease.release(); });
+afterEach(() => {
+  for (const owner of inputOwners.splice(0)) owner.lease.release();
+});
 
 describe('user-facing bulk ZIP download', () => {
   afterEach(() => {
@@ -55,7 +68,8 @@ describe('user-facing bulk ZIP download', () => {
   });
 
   it('archives all selected media, keeps duplicate names unique, and reports completion', async () => {
-    const progress: Array<{ phase: string; current: number; total: number; percentage: number }> = [];
+    const progress: Array<{ phase: string; current: number; total: number; percentage: number }> =
+      [];
     const result = await downloadAsZip(
       [
         {
@@ -74,7 +88,12 @@ describe('user-facing bulk ZIP download', () => {
 
     expect(result.filesSuccessful).toBe(2);
     expect(result.failures).toEqual([]);
-    expect(progress.at(-1)).toMatchObject({ phase: 'complete', current: 2, total: 2, percentage: 100 });
+    expect(progress.at(-1)).toMatchObject({
+      phase: 'complete',
+      current: 2,
+      total: 2,
+      percentage: 100,
+    });
 
     const archiveText = new TextDecoder().decode(
       await new Blob(result.zipData, { type: 'application/zip' }).arrayBuffer()
@@ -86,24 +105,44 @@ describe('user-facing bulk ZIP download', () => {
   it('admits a known direct response under a tiny live budget while an unused provider needs more copy capacity', async () => {
     const directUsage: number[] = [];
     const directBudget = new LiveByteBudget(1100, (bytes) => directUsage.push(bytes));
-    const requests = vi.fn((details: { onload?: (response: { status: number; response: ArrayBuffer }) => void }) => {
-      details.onload?.({ status: 200, response: new ArrayBuffer(160) });
-      return { abort: vi.fn() };
-    });
+    const requests = vi.fn(
+      (details: { onload?: (response: { status: number; response: ArrayBuffer }) => void }) => {
+        details.onload?.({ status: 200, response: new ArrayBuffer(160) });
+        return { abort: vi.fn() };
+      }
+    );
     setHttpFixture(requests);
-    const directAdmissions: Array<{ inputKind: string; maxResponseBytes: number; knownSize?: number }> = [];
+    const directAdmissions: Array<{
+      inputKind: string;
+      maxResponseBytes: number;
+      knownSize?: number;
+    }> = [];
     const direct = await downloadAsZip(
-      [{ url: 'https://pbs.twimg.com/media/direct.jpg', desiredName: 'a', inputKind: 'blob-provider', expectedSizeBytes: 160 }],
-      { retries: 0, liveBudget: directBudget, maxBufferedBytes: 200, onEntryAdmission: (entry) => directAdmissions.push(entry) }
+      [
+        {
+          url: 'https://pbs.twimg.com/media/direct.jpg',
+          desiredName: 'a',
+          inputKind: 'blob-provider',
+          expectedSizeBytes: 160,
+        },
+      ],
+      {
+        retries: 0,
+        liveBudget: directBudget,
+        maxBufferedBytes: 200,
+        onEntryAdmission: (entry) => directAdmissions.push(entry),
+      }
     );
 
     expect(direct).toMatchObject({ filesSuccessful: 1, failures: [] });
-    expect(directAdmissions).toEqual([{
-      index: 0,
-      inputKind: 'direct-url',
-      maxResponseBytes: 176,
-      knownSize: 160,
-    }]);
+    expect(directAdmissions).toEqual([
+      {
+        index: 0,
+        inputKind: 'direct-url',
+        maxResponseBytes: 176,
+        knownSize: 160,
+      },
+    ]);
     expect(requests).toHaveBeenCalledTimes(1);
     expect(Math.max(...directUsage)).toBeLessThanOrEqual(1100);
     direct.dispose();
@@ -114,8 +153,21 @@ describe('user-facing bulk ZIP download', () => {
     const provider = vi.fn(async () => null);
     const providerAdmissions: unknown[] = [];
     const deferred = await downloadAsZip(
-      [{ url: 'https://pbs.twimg.com/media/provider.jpg', desiredName: 'a', inputKind: 'direct-url', expectedSizeBytes: 160, getBlob: provider }],
-      { retries: 0, liveBudget: providerBudget, maxBufferedBytes: 200, onEntryAdmission: (entry) => providerAdmissions.push(entry) }
+      [
+        {
+          url: 'https://pbs.twimg.com/media/provider.jpg',
+          desiredName: 'a',
+          inputKind: 'direct-url',
+          expectedSizeBytes: 160,
+          getBlob: provider,
+        },
+      ],
+      {
+        retries: 0,
+        liveBudget: providerBudget,
+        maxBufferedBytes: 200,
+        onEntryAdmission: (entry) => providerAdmissions.push(entry),
+      }
     );
 
     expect(deferred).toMatchObject({ filesSuccessful: 0, resourceLimitExceeded: true });
@@ -129,10 +181,12 @@ describe('user-facing bulk ZIP download', () => {
   });
 
   it('uses URL fallback only after a resolved provider miss', async () => {
-    const request = vi.fn((details: { onload?: (response: { status: number; response: ArrayBuffer }) => void }) => {
-      details.onload?.({ status: 200, response: new Uint8Array([1, 2, 3]).buffer });
-      return { abort: vi.fn() };
-    });
+    const request = vi.fn(
+      (details: { onload?: (response: { status: number; response: ArrayBuffer }) => void }) => {
+        details.onload?.({ status: 200, response: new Uint8Array([1, 2, 3]).buffer });
+        return { abort: vi.fn() };
+      }
+    );
     setHttpFixture(request);
     const getBlob = vi.fn(async () => null);
 
@@ -154,7 +208,9 @@ describe('user-facing bulk ZIP download', () => {
   ])('does not refetch the URL when a provider rejects: %s', async (_label, error) => {
     const request = vi.fn();
     setHttpFixture(request);
-    const getBlob = vi.fn(async () => { throw error; });
+    const getBlob = vi.fn(async () => {
+      throw error;
+    });
     const result = await downloadAsZip(
       [{ url: 'https://pbs.twimg.com/media/rejected.jpg', desiredName: 'rejected.jpg', getBlob }],
       { retries: 0 }
@@ -173,7 +229,14 @@ describe('user-facing bulk ZIP download', () => {
     setHttpFixture(request);
 
     const result = await downloadAsZip(
-      [{ url: 'https://pbs.twimg.com/media/pending.jpg', desiredName: 'pending.jpg', blob: Promise.resolve(owner), getBlob }],
+      [
+        {
+          url: 'https://pbs.twimg.com/media/pending.jpg',
+          desiredName: 'pending.jpg',
+          blob: Promise.resolve(owner),
+          getBlob,
+        },
+      ],
       { retries: 0 }
     );
 
@@ -247,7 +310,7 @@ describe('user-facing bulk ZIP download', () => {
         maxActive = Math.max(maxActive, active);
         try {
           const value = await entry.promise;
-          return {value, lease: downloadLiveByteBudget.reserve(value.size)};
+          return { value, lease: downloadLiveByteBudget.reserve(value.size) };
         } finally {
           active--;
         }

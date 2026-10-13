@@ -17,7 +17,10 @@ vi.mock('@platform/index', () => ({
   notifySafely: state.notifySafely,
 }));
 vi.mock('@shared/services/download/download-orchestrator', () => ({
-  getDownloadOrchestrator: () => ({ downloadBulk: state.downloadBulk, downloadSingle: state.downloadSingle }),
+  getDownloadOrchestrator: () => ({
+    downloadBulk: state.downloadBulk,
+    downloadSingle: state.downloadSingle,
+  }),
 }));
 vi.mock('@shared/services/language-service', () => ({
   getLanguageService: () => ({ translate: state.translate }),
@@ -89,29 +92,55 @@ describe('createDownloadHandler bulk resource limits', () => {
     expect(state.setDownloadStatus).toHaveBeenLastCalledWith('handedOff');
   });
 
-  it.each([false, true])('discloses both unavailable originals and resource rejection, partial=%s', async (partial) => {
-    state.downloadBulk.mockResolvedValue({ success: partial, status: partial ? 'partial' : 'error', filesProcessed: 3,
-      filesSuccessful: partial ? 1 : 0, code: 'RESOURCE_LIMIT', sourceUnavailable: true });
-    await createDownloadHandler().handleDownload('all');
-    expect(state.setDownloadStatus).toHaveBeenLastCalledWith(partial ? 'handedOff' : 'error');
-    expect(state.setError).toHaveBeenLastCalledWith(`${partial ? 'msg.dl.part.resourceLimit' : 'msg.dl.resourceLimit'} msg.dl.sourceUnavailable`);
-    expect(state.notifySafely).toHaveBeenCalledWith(state.notify, partial ? 'msg.dl.part.t' : 'msg.dl.one.err.t',
-      `${partial ? 'msg.dl.part.resourceLimit' : 'msg.dl.resourceLimit'} msg.dl.sourceUnavailable`);
-  });
+  it.each([false, true])(
+    'discloses both unavailable originals and resource rejection, partial=%s',
+    async (partial) => {
+      state.downloadBulk.mockResolvedValue({
+        success: partial,
+        status: partial ? 'partial' : 'error',
+        filesProcessed: 3,
+        filesSuccessful: partial ? 1 : 0,
+        code: 'RESOURCE_LIMIT',
+        sourceUnavailable: true,
+      });
+      await createDownloadHandler().handleDownload('all');
+      expect(state.setDownloadStatus).toHaveBeenLastCalledWith(partial ? 'handedOff' : 'error');
+      expect(state.setError).toHaveBeenLastCalledWith(
+        `${partial ? 'msg.dl.part.resourceLimit' : 'msg.dl.resourceLimit'} msg.dl.sourceUnavailable`
+      );
+      expect(state.notifySafely).toHaveBeenCalledWith(
+        state.notify,
+        partial ? 'msg.dl.part.t' : 'msg.dl.one.err.t',
+        `${partial ? 'msg.dl.part.resourceLimit' : 'msg.dl.resourceLimit'} msg.dl.sourceUnavailable`
+      );
+    }
+  );
 
   it('discloses the original-source failure for a single photo', async () => {
-    state.downloadSingle.mockResolvedValue({ success: false, code: 'SOURCE_UNAVAILABLE', error: 'Original source is unverified' });
+    state.downloadSingle.mockResolvedValue({
+      success: false,
+      code: 'SOURCE_UNAVAILABLE',
+      error: 'Original source is unverified',
+    });
     await createDownloadHandler().handleDownload('current');
     expect(state.setError).toHaveBeenLastCalledWith('msg.dl.sourceUnavailable');
     expect(state.setDownloadStatus).toHaveBeenLastCalledWith('error');
   });
 
   it('shows localized recovery guidance for an over-budget single download', async () => {
-    state.downloadSingle.mockResolvedValue({ success: false, code: 'RESOURCE_LIMIT', error: 'Response requires 100 bytes (limit 10)' });
+    state.downloadSingle.mockResolvedValue({
+      success: false,
+      code: 'RESOURCE_LIMIT',
+      error: 'Response requires 100 bytes (limit 10)',
+    });
     await createDownloadHandler().handleDownload('current');
     expect(state.setDownloadStatus).toHaveBeenLastCalledWith('error');
     expect(state.setError).toHaveBeenLastCalledWith('msg.dl.resourceLimit');
-    expect(state.notifySafely).toHaveBeenCalledWith(state.notify, 'msg.dl.one.err.t', 'msg.dl.resourceLimit');
+    expect(state.notifySafely).toHaveBeenCalledWith(
+      state.notify,
+      'msg.dl.one.err.t',
+      'msg.dl.resourceLimit'
+    );
     expect(state.translate).not.toHaveBeenCalledWith('msg.dl.one.err.b', expect.anything());
   });
 
@@ -127,10 +156,7 @@ describe('createDownloadHandler bulk resource limits', () => {
     await createDownloadHandler().handleDownload('all');
 
     expect(state.downloadBulk).toHaveBeenCalledWith(
-      [
-        expect.objectContaining({ id: 'first' }),
-        expect.objectContaining({ id: 'shown' }),
-      ],
+      [expect.objectContaining({ id: 'first' }), expect.objectContaining({ id: 'shown' })],
       expect.objectContaining({ signal: expect.any(AbortSignal) })
     );
   });
@@ -200,15 +226,13 @@ describe('createDownloadHandler bulk resource limits', () => {
     const previousResult = new Promise((resolve) => {
       resolvePrevious = resolve;
     });
-    state.downloadBulk
-      .mockReturnValueOnce(previousResult)
-      .mockResolvedValueOnce({
-        success: true,
-        status: 'success',
-        filesProcessed: 1,
-        filesSuccessful: 1,
-        code: 'NONE',
-      });
+    state.downloadBulk.mockReturnValueOnce(previousResult).mockResolvedValueOnce({
+      success: true,
+      status: 'success',
+      filesProcessed: 1,
+      filesSuccessful: 1,
+      code: 'NONE',
+    });
 
     const handler = createDownloadHandler();
     const previousDownload = handler.handleDownload('all');

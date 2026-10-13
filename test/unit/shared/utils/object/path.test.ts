@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { describe, it, expect } from 'vitest';
 import { resolveNestedPath } from '@shared/utils/object/path';
+import { describe, expect, it } from 'vitest';
 
 describe('object/path', () => {
   describe('resolveNestedPath', () => {

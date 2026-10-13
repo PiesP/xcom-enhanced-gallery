@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 PiesP
 
-import { MAX_RETRY_AFTER_MS, parseRetryAfter, retryAfterFromRawHeaders } from '@platform/http-response-metadata';
+import {
+  MAX_RETRY_AFTER_MS,
+  parseRetryAfter,
+  retryAfterFromRawHeaders,
+} from '@platform/http-response-metadata';
 import { describe, expect, it } from 'vitest';
 
 describe('safe Retry-After metadata', () => {
@@ -21,7 +25,9 @@ describe('safe Retry-After metadata', () => {
 
   it('uses the RFC 850 50-year rule before validating the weekday', () => {
     const future = new Date(Date.UTC(2075, 9, 12));
-    const weekday = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][future.getUTCDay()];
+    const weekday = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][
+      future.getUTCDay()
+    ];
     expect(parseRetryAfter(`${weekday}, 12-Oct-75 00:00:00 GMT`, now)).toBe(MAX_RETRY_AFTER_MS);
     // The same two-digit year must resolve to 1994 rather than 2094.
     expect(parseRetryAfter('Sunday, 06-Nov-94 08:49:37 GMT', now)).toBe(0);
@@ -38,14 +44,22 @@ describe('safe Retry-After metadata', () => {
     expect(parseRetryAfter('999999999999999999999999999999', now)).toBe(MAX_RETRY_AFTER_MS);
     expect(parseRetryAfter('5, 9', now)).toBe(MAX_RETRY_AFTER_MS);
     expect(parseRetryAfter('5, 5', now)).toBe(5_000);
-    expect(parseRetryAfter(new Date(now + 10 * 365 * 24 * 60 * 60 * 1000).toUTCString(), now)).toBe(MAX_RETRY_AFTER_MS);
+    expect(parseRetryAfter(new Date(now + 10 * 365 * 24 * 60 * 60 * 1000).toUTCString(), now)).toBe(
+      MAX_RETRY_AFTER_MS
+    );
   });
 
   it('reads only an exact Retry-After header line', () => {
-    expect(retryAfterFromRawHeaders('X-Retry-After: 8\r\nRetry-After: 3\r\nSecret: value', now)).toBe(3_000);
+    expect(
+      retryAfterFromRawHeaders('X-Retry-After: 8\r\nRetry-After: 3\r\nSecret: value', now)
+    ).toBe(3_000);
     expect(retryAfterFromRawHeaders('Retry-After: -3', now)).toBeUndefined();
-    expect(retryAfterFromRawHeaders('Retry-After: 2\r\nRetry-After: 7', now)).toBe(MAX_RETRY_AFTER_MS);
+    expect(retryAfterFromRawHeaders('Retry-After: 2\r\nRetry-After: 7', now)).toBe(
+      MAX_RETRY_AFTER_MS
+    );
     expect(retryAfterFromRawHeaders('Retry-After: 2\r\nRetry-After: 2', now)).toBe(2_000);
-    expect(retryAfterFromRawHeaders(`Retry-After: 2\r\nX-Filler: ${'x'.repeat(8192)}`, now)).toBeUndefined();
+    expect(
+      retryAfterFromRawHeaders(`Retry-After: 2\r\nX-Filler: ${'x'.repeat(8192)}`, now)
+    ).toBeUndefined();
   });
 });

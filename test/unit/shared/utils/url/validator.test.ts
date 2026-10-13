@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { describe, it, expect } from 'vitest';
-import {
-  isValidMediaUrl,
-} from '@shared/utils/url/validator';
+import { isValidMediaUrl } from '@shared/utils/url/validator';
+import { describe, expect, it } from 'vitest';
 
 describe('url/validator', () => {
   // ── isValidMediaUrl ───────────────────────────────────────────────
@@ -21,20 +19,30 @@ describe('url/validator', () => {
     });
 
     it('should accept valid video.twimg.com URLs', () => {
-      expect(isValidMediaUrl('https://video.twimg.com/ext_tw_video/1234567890/pu/vid/720x1280/abc.mp4')).toBe(true);
+      expect(
+        isValidMediaUrl('https://video.twimg.com/ext_tw_video/1234567890/pu/vid/720x1280/abc.mp4')
+      ).toBe(true);
       expect(isValidMediaUrl('https://video.twimg.com/tweet_video/ABC123.mp4')).toBe(true);
-      expect(isValidMediaUrl('https://video.twimg.com/amplify_video/1234567890/vid/1280x720/abc.mp4')).toBe(true);
+      expect(
+        isValidMediaUrl('https://video.twimg.com/amplify_video/1234567890/vid/1280x720/abc.mp4')
+      ).toBe(true);
     });
 
     it('should accept thumbnail paths', () => {
-      expect(isValidMediaUrl('https://pbs.twimg.com/ext_tw_video_thumb/123/pu/img/abc.jpg')).toBe(true);
+      expect(isValidMediaUrl('https://pbs.twimg.com/ext_tw_video_thumb/123/pu/img/abc.jpg')).toBe(
+        true
+      );
       expect(isValidMediaUrl('https://pbs.twimg.com/tweet_video_thumb/ABC123.jpg')).toBe(true);
       expect(isValidMediaUrl('https://pbs.twimg.com/video_thumb/123/img/abc.jpg')).toBe(true);
-      expect(isValidMediaUrl('https://pbs.twimg.com/amplify_video_thumb/123/img/abc.jpg')).toBe(true);
+      expect(isValidMediaUrl('https://pbs.twimg.com/amplify_video_thumb/123/img/abc.jpg')).toBe(
+        true
+      );
     });
 
     it('should accept card image paths', () => {
-      expect(isValidMediaUrl('https://pbs.twimg.com/card_img/1234567890/abc?format=jpg')).toBe(true);
+      expect(isValidMediaUrl('https://pbs.twimg.com/card_img/1234567890/abc?format=jpg')).toBe(
+        true
+      );
     });
 
     it('should accept DM video paths', () => {

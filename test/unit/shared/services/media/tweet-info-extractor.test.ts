@@ -19,8 +19,7 @@ describe('TweetInfoExtractor hostile DOM boundaries', () => {
   it.each([
     {
       label: 'direct attacker-owned status link',
-      markup:
-        '<a id="target" href="https://attacker.example/alice/status/123">spoofed status</a>',
+      markup: '<a id="target" href="https://attacker.example/alice/status/123">spoofed status</a>',
       selector: '#target',
     },
     {

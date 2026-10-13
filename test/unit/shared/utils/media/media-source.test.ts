@@ -26,7 +26,10 @@ describe('ordinary CDN photo originals', () => {
     ['EXAMPLE?format=png&name=small', 'EXAMPLE?format=png&name=orig'],
     ['EX%41MPLE.webp?name=900x900', 'EX%41MPLE.webp?format=webp&name=orig'],
     ['EXAMPLE?FORMAT=JPG&format=jpg&NAME=SMALL&name=small', 'EXAMPLE?format=jpg&name=orig'],
-    ['EXAMPLE.jpg?format=png&name=orig&token=a%2Fb', 'EXAMPLE.jpg?token=a%2Fb&format=png&name=orig'],
+    [
+      'EXAMPLE.jpg?format=png&name=orig&token=a%2Fb',
+      'EXAMPLE.jpg?token=a%2Fb&format=png&name=orig',
+    ],
   ])('preserves identity and format for %s', (input, expected) => {
     const result = normalizeOriginalImageUrl(`https://pbs.twimg.com/media/${input}`);
     expect(result).toBe(`https://pbs.twimg.com/media/${expected}`);

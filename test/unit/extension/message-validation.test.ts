@@ -5,26 +5,36 @@ import { isValidIncomingMessage } from '../../../src/extension/message-validatio
 describe('extension message validation', () => {
   it('validates direct request, status and cancellation URLs', () => {
     const url = 'https://pbs.twimg.com/media/example.jpg';
-    expect(isValidIncomingMessage({
-      type: 'DOWNLOAD_REQUEST',
-      payload: { url, filename: 'example.jpg', requestId: 'direct-1', mode: 'direct' },
-    })).toBe(true);
-    expect(isValidIncomingMessage({
-      type: 'DOWNLOAD_DIRECT_STATUS_REQUEST',
-      payload: { requestId: 'direct-1', url, cancelRequested: true },
-    })).toBe(true);
-    expect(isValidIncomingMessage({
-      type: 'DOWNLOAD_CANCEL_REQUEST',
-      payload: { requestId: 'direct-1', url },
-    })).toBe(true);
-    expect(isValidIncomingMessage({
-      type: 'DOWNLOAD_DIRECT_STATUS_REQUEST',
-      payload: { requestId: 'direct-1', url: 'https://attacker.example/file' },
-    })).toBe(false);
-    expect(isValidIncomingMessage({
-      type: 'DOWNLOAD_CANCEL_REQUEST',
-      payload: { requestId: 'direct-1', url: 'https://attacker.example/file' },
-    })).toBe(false);
+    expect(
+      isValidIncomingMessage({
+        type: 'DOWNLOAD_REQUEST',
+        payload: { url, filename: 'example.jpg', requestId: 'direct-1', mode: 'direct' },
+      })
+    ).toBe(true);
+    expect(
+      isValidIncomingMessage({
+        type: 'DOWNLOAD_DIRECT_STATUS_REQUEST',
+        payload: { requestId: 'direct-1', url, cancelRequested: true },
+      })
+    ).toBe(true);
+    expect(
+      isValidIncomingMessage({
+        type: 'DOWNLOAD_CANCEL_REQUEST',
+        payload: { requestId: 'direct-1', url },
+      })
+    ).toBe(true);
+    expect(
+      isValidIncomingMessage({
+        type: 'DOWNLOAD_DIRECT_STATUS_REQUEST',
+        payload: { requestId: 'direct-1', url: 'https://attacker.example/file' },
+      })
+    ).toBe(false);
+    expect(
+      isValidIncomingMessage({
+        type: 'DOWNLOAD_CANCEL_REQUEST',
+        payload: { requestId: 'direct-1', url: 'https://attacker.example/file' },
+      })
+    ).toBe(false);
   });
 
   it('accepts a whitelisted URL download message', () => {
@@ -108,15 +118,19 @@ describe('extension message validation', () => {
     });
     expect(isValidIncomingMessage(query('request-1', 'blob:https://x.com/resource'))).toBe(true);
     expect(isValidIncomingMessage(query('', 'blob:https://x.com/resource'))).toBe(false);
-    expect(isValidIncomingMessage(query('request-1', 'blob:https://attacker.example/resource'))).toBe(false);
+    expect(
+      isValidIncomingMessage(query('request-1', 'blob:https://attacker.example/resource'))
+    ).toBe(false);
     expect(isValidIncomingMessage(query('request-1', 'https://x.com/resource'))).toBe(false);
-    expect(isValidIncomingMessage({
-      type: 'DOWNLOAD_BLOB_STATUS_REQUEST',
-      payload: {
-        requestId: 'request-1',
-        objectUrl: 'blob:https://x.com/resource',
-        cancelRequested: 'yes',
-      },
-    })).toBe(false);
+    expect(
+      isValidIncomingMessage({
+        type: 'DOWNLOAD_BLOB_STATUS_REQUEST',
+        payload: {
+          requestId: 'request-1',
+          objectUrl: 'blob:https://x.com/resource',
+          cancelRequested: 'yes',
+        },
+      })
+    ).toBe(false);
   });
 });

@@ -14,10 +14,7 @@ const { logger } = vi.hoisted(() => ({
 
 vi.mock('@shared/logging/logger', () => ({ logger }));
 
-import {
-  galleryErrorReporter,
-  normalizeErrorMessage,
-} from '@shared/error/app-error-reporter';
+import { galleryErrorReporter, normalizeErrorMessage } from '@shared/error/app-error-reporter';
 
 describe('app error reporter', () => {
   afterEach(() => {

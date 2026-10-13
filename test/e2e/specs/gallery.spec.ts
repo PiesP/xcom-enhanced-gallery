@@ -14,16 +14,16 @@
  * Userscript injection: page.evaluate() with bundle content
  */
 
-import { test, expect, type Page } from '@playwright/test';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { expect, type Page, test } from '@playwright/test';
+import { INTERLEAVED_DOM, STATUS_TILE_DOM } from '../../fixtures/issue-217-dom';
+import { createMixedOwnerVideoResponse } from '../../fixtures/mixed-owner-video-response';
+import { createQuotedVideoTweetResponse } from '../../fixtures/quoted-video-tweet-response';
+import { unanchoredVideoPreview } from '../../fixtures/unanchored-video-preview';
 import { DEV_USERSCRIPT_PATH, MOCK_GALLERY_HTML, MOCK_IMAGE } from '../fixtures/artifacts';
 import { installGMMock } from '../fixtures/gm-mock';
 import { injectDevUserscript, waitForGalleryApp } from '../fixtures/userscript-harness';
-import { INTERLEAVED_DOM, STATUS_TILE_DOM } from '../../fixtures/issue-217-dom';
-import { createQuotedVideoTweetResponse } from '../../fixtures/quoted-video-tweet-response';
-import { unanchoredVideoPreview } from '../../fixtures/unanchored-video-preview';
-import { createMixedOwnerVideoResponse } from '../../fixtures/mixed-owner-video-response';
 
 /**
  * Setup: Install GM_* mocks + navigate to x.com + inject userscript.
@@ -74,7 +74,8 @@ async function setupGalleryPage(
           const variables = JSON.parse(url.searchParams.get('variables') ?? '{}') as {
             tweetId?: string;
           };
-          if (!variables.tweetId) return fixtureMediaRequest?.(details) ?? { abort: () => undefined };
+          if (!variables.tweetId)
+            return fixtureMediaRequest?.(details) ?? { abort: () => undefined };
           w.__xegRequestedTweetIds?.push(variables.tweetId);
 
           const respond = (): void => {
@@ -111,7 +112,9 @@ test.describe('X.com Enhanced Gallery E2E', () => {
     }
   });
 
-  test('keeps distant video bodies deferred at preloadCount 20 and plays the selected item', async ({ page }) => {
+  test('keeps distant video bodies deferred at preloadCount 20 and plays the selected item', async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 800, height: 600 });
     const body = readFileSync(resolve(import.meta.dirname, '../fixtures/installed-quote-one.mp4'));
     const mediaRequests = new Map<string, number>();
@@ -124,19 +127,30 @@ test.describe('X.com Enhanced Gallery E2E', () => {
       return route.fulfill({ status: 200, contentType: 'video/mp4', body });
     });
     await setupGalleryPage(page, 'https://x.com/author/status/222', undefined, 200, false, 20);
-    const urls = Array.from({ length: 6 }, (_, index) =>
-      `https://video.twimg.com/ext_tw_video/222/pu/vid/gallery-${index}.mp4`
+    const urls = Array.from(
+      { length: 6 },
+      (_, index) => `https://video.twimg.com/ext_tw_video/222/pu/vid/gallery-${index}.mp4`
     );
     await page.evaluate((sources) => {
-      const app = (globalThis as unknown as {
-        __XEG__: { main: { galleryApp: { openGallery: (items: unknown[], index: number) => void } } };
-      }).__XEG__.main.galleryApp;
-      app.openGallery(sources.map((url, index) => ({
-        id: `222_api_${index}`, type: 'video', url,
-        downloadSource: { url, quality: 'best-mp4', provenance: 'api' },
-        width: 640, height: 360,
-        thumbnailUrl: `https://pbs.twimg.com/ext_tw_video_thumb/222/pu/img/poster-${index}.jpg`,
-      })), 0);
+      const app = (
+        globalThis as unknown as {
+          __XEG__: {
+            main: { galleryApp: { openGallery: (items: unknown[], index: number) => void } };
+          };
+        }
+      ).__XEG__.main.galleryApp;
+      app.openGallery(
+        sources.map((url, index) => ({
+          id: `222_api_${index}`,
+          type: 'video',
+          url,
+          downloadSource: { url, quality: 'best-mp4', provenance: 'api' },
+          width: 640,
+          height: 360,
+          thumbnailUrl: `https://pbs.twimg.com/ext_tw_video_thumb/222/pu/img/poster-${index}.jpg`,
+        })),
+        0
+      );
     }, urls);
     const gallery = page.locator('[data-xeg-gallery-container]');
     const rows = gallery.locator('[data-gallery-element="item"]');
@@ -163,25 +177,41 @@ test.describe('X.com Enhanced Gallery E2E', () => {
       video.muted = true;
       await video.play();
     });
-    await expect.poll(() => playback.evaluate((element) => {
-      const video = element as HTMLVideoElement;
-      return {
-        progressed: video.currentTime > 0,
-        width: video.videoWidth,
-        height: video.videoHeight,
-        error: video.error?.code ?? null,
-      };
-    })).toMatchObject({ progressed: true, width: expect.any(Number), height: expect.any(Number), error: null });
-    expect(await playback.evaluate((element) => (element as HTMLVideoElement).videoWidth)).toBeGreaterThan(0);
-    expect(await playback.evaluate((element) => (element as HTMLVideoElement).videoHeight)).toBeGreaterThan(0);
+    await expect
+      .poll(() =>
+        playback.evaluate((element) => {
+          const video = element as HTMLVideoElement;
+          return {
+            progressed: video.currentTime > 0,
+            width: video.videoWidth,
+            height: video.videoHeight,
+            error: video.error?.code ?? null,
+          };
+        })
+      )
+      .toMatchObject({
+        progressed: true,
+        width: expect.any(Number),
+        height: expect.any(Number),
+        error: null,
+      });
+    expect(
+      await playback.evaluate((element) => (element as HTMLVideoElement).videoWidth)
+    ).toBeGreaterThan(0);
+    expect(
+      await playback.evaluate((element) => (element as HTMLVideoElement).videoHeight)
+    ).toBeGreaterThan(0);
 
     // Focus is a direct navigation path. It attaches the source synchronously,
     // before the shared observer can deliver a new intersection entry.
-    const focusResult = await rows.nth(5).locator('video').evaluate((element) => {
-      const video = element as HTMLVideoElement;
-      video.focus({ preventScroll: true });
-      return video.getAttribute('src');
-    });
+    const focusResult = await rows
+      .nth(5)
+      .locator('video')
+      .evaluate((element) => {
+        const video = element as HTMLVideoElement;
+        video.focus({ preventScroll: true });
+        return video.getAttribute('src');
+      });
     expect(focusResult).toBe(urls[5]);
     await expect.poll(() => mediaRequests.get(urls[5]!) ?? 0).toBeGreaterThan(0);
     await expect(rows.nth(5)).toHaveAttribute('data-media-display-url', urls[5]!);
@@ -191,10 +221,14 @@ test.describe('X.com Enhanced Gallery E2E', () => {
   });
 
   for (const replaceSource of [false, true]) {
-    test(`delayed HTTP failure preserves image identity with a retained background: replaced=${replaceSource}`, async ({ page }) => {
+    test(`delayed HTTP failure preserves image identity with a retained background: replaced=${replaceSource}`, async ({
+      page,
+    }) => {
       const errors: string[] = [];
       page.on('pageerror', (error) => errors.push(error.message));
-      await page.route('https://pbs.twimg.com/**', (route) => route.fulfill({ status: 200, contentType: 'image/png', body: MOCK_IMAGE }));
+      await page.route('https://pbs.twimg.com/**', (route) =>
+        route.fulfill({ status: 200, contentType: 'image/png', body: MOCK_IMAGE })
+      );
       await setupGalleryPage(page, 'https://x.com/author/status/222', {}, 503, true);
       await page.evaluate(() => {
         document.querySelector('main')!.innerHTML = `<article data-testid="tweet">
@@ -204,12 +238,22 @@ test.describe('X.com Enhanced Gallery E2E', () => {
           </div>
         </article>`;
         // Control source selection explicitly instead of relying on image loading races.
-        Object.defineProperty(document.querySelector('#identity-target'), 'currentSrc', { get: () => '' });
+        Object.defineProperty(document.querySelector('#identity-target'), 'currentSrc', {
+          get: () => '',
+        });
       });
       await page.locator('#identity-target').click();
-      await expect.poll(() => page.evaluate(() => (window as unknown as { __xegRequestedTweetIds: string[] }).__xegRequestedTweetIds)).toEqual(['222']);
+      await expect
+        .poll(() =>
+          page.evaluate(
+            () => (window as unknown as { __xegRequestedTweetIds: string[] }).__xegRequestedTweetIds
+          )
+        )
+        .toEqual(['222']);
       await page.evaluate((replace) => {
-        if (replace) document.querySelector<HTMLImageElement>('#identity-target')!.src = 'https://pbs.twimg.com/media/identity-B.jpg';
+        if (replace)
+          document.querySelector<HTMLImageElement>('#identity-target')!.src =
+            'https://pbs.twimg.com/media/identity-B.jpg';
         const host = window as unknown as { __xegReleaseApi?: () => void };
         if (!host.__xegReleaseApi) throw new Error('Deferred HTTP request was not observed');
         host.__xegReleaseApi();
@@ -217,7 +261,9 @@ test.describe('X.com Enhanced Gallery E2E', () => {
       const gallery = page.locator('[data-xeg-gallery-container]');
       if (replaceSource) {
         await expect(gallery).toHaveCount(0);
-        await expect(page.locator('[data-gm-notification]').last()).toContainText('Failed to load media');
+        await expect(page.locator('[data-gm-notification]').last()).toContainText(
+          'Failed to load media'
+        );
         await expect(page.locator('[data-gm-download], [data-gm-xhr-download]')).toHaveCount(0);
       } else {
         await expect(gallery).toBeVisible();
@@ -229,14 +275,22 @@ test.describe('X.com Enhanced Gallery E2E', () => {
     });
   }
 
-  test('API-off mixed DOM retains document order and clicked item through repeated opens', async ({ page }) => {
+  test('API-off mixed DOM retains document order and clicked item through repeated opens', async ({
+    page,
+  }) => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
-    await page.route('https://pbs.twimg.com/**', (route) => route.fulfill({ status: 200, contentType: 'image/png', body: MOCK_IMAGE }));
+    await page.route('https://pbs.twimg.com/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'image/png', body: MOCK_IMAGE })
+    );
     // Empty MP4 fixtures exercise extraction/routing, not video decoding.
-    await page.route('https://video.twimg.com/**', (route) => route.fulfill({ status: 200, contentType: 'video/mp4', body: '' }));
+    await page.route('https://video.twimg.com/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'video/mp4', body: '' })
+    );
     await setupGalleryPage(page, 'https://x.com/author/status/222', {}, 503);
-    await page.evaluate((markup) => { document.querySelector('main')!.innerHTML = markup; }, INTERLEAVED_DOM);
+    await page.evaluate((markup) => {
+      document.querySelector('main')!.innerHTML = markup;
+    }, INTERLEAVED_DOM);
     for (let cycle = 0; cycle < 4; cycle++) {
       await page.locator('#ordered-target').click();
       const gallery = page.locator('[data-xeg-gallery-container]');
@@ -255,16 +309,26 @@ test.describe('X.com Enhanced Gallery E2E', () => {
       await page.keyboard.press('Escape');
       await expect(gallery).toHaveCount(0);
     }
-    expect(await page.evaluate(() => (window as unknown as { __xegRequestedTweetIds: string[] }).__xegRequestedTweetIds)).toEqual(['222', '222', '222']);
+    expect(
+      await page.evaluate(
+        () => (window as unknown as { __xegRequestedTweetIds: string[] }).__xegRequestedTweetIds
+      )
+    ).toEqual(['222', '222', '222']);
     expect(errors).toEqual([]);
   });
 
-  test('article-less tile is scoped and disclosed under API failure and circuit-open', async ({ page }) => {
+  test('article-less tile is scoped and disclosed under API failure and circuit-open', async ({
+    page,
+  }) => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
-    await page.route('https://pbs.twimg.com/**', (route) => route.fulfill({ status: 200, contentType: 'image/png', body: MOCK_IMAGE }));
+    await page.route('https://pbs.twimg.com/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'image/png', body: MOCK_IMAGE })
+    );
     await setupGalleryPage(page, 'https://x.com/author/status/222', {}, 503);
-    await page.evaluate((markup) => { document.querySelector('main')!.innerHTML = markup; }, STATUS_TILE_DOM);
+    await page.evaluate((markup) => {
+      document.querySelector('main')!.innerHTML = markup;
+    }, STATUS_TILE_DOM);
     for (let cycle = 0; cycle < 4; cycle++) {
       await page.locator('#tile-target').click();
       const gallery = page.locator('[data-xeg-gallery-container]');
@@ -274,8 +338,12 @@ test.describe('X.com Enhanced Gallery E2E', () => {
       await expect(gallery.locator('#xeg-toolbar-counter')).toHaveAttribute('data-position', '1');
       await expect(gallery.locator('#xeg-toolbar-counter')).toHaveAttribute('data-total', '1');
       await expect(gallery.getByRole('button', { name: /ZIP/ })).toHaveCount(0);
-      await expect(page.locator('[data-gm-notification]').last()).toContainText('Visible media only');
-      await expect(page.locator('[data-gm-notification]').last()).toContainText('Bulk download includes only the items shown.');
+      await expect(page.locator('[data-gm-notification]').last()).toContainText(
+        'Visible media only'
+      );
+      await expect(page.locator('[data-gm-notification]').last()).toContainText(
+        'Bulk download includes only the items shown.'
+      );
       await gallery.getByRole('button', { name: 'Download', exact: true }).click();
       await expect(page.locator('[data-gm-xhr-download="true"]')).toHaveCount(cycle + 1);
       await expect(page.locator('[data-gm-xhr-download="true"]').last()).toHaveAttribute(
@@ -285,7 +353,11 @@ test.describe('X.com Enhanced Gallery E2E', () => {
       await page.keyboard.press('Escape');
       await expect(gallery).toHaveCount(0);
     }
-    expect(await page.evaluate(() => (window as unknown as { __xegRequestedTweetIds: string[] }).__xegRequestedTweetIds)).toEqual(['222', '222', '222']);
+    expect(
+      await page.evaluate(
+        () => (window as unknown as { __xegRequestedTweetIds: string[] }).__xegRequestedTweetIds
+      )
+    ).toEqual(['222', '222', '222']);
     expect(errors).toEqual([]);
   });
 
@@ -308,7 +380,9 @@ test.describe('X.com Enhanced Gallery E2E', () => {
         apiSuccess ? 200 : 403
       );
       await page.evaluate((markup) => {
-        document.querySelectorAll('article').forEach((article) => article.remove());
+        document.querySelectorAll('article').forEach((article) => {
+          article.remove();
+        });
         document.body.insertAdjacentHTML('beforeend', markup);
         const poster = document.querySelector<HTMLImageElement>('#main-poster')!;
         poster.style.cssText = 'display:block;width:320px;height:180px';
@@ -370,7 +444,9 @@ test.describe('X.com Enhanced Gallery E2E', () => {
         createMixedOwnerVideoResponse(mainPlayable)
       );
       await page.evaluate((markup) => {
-        document.querySelectorAll('article').forEach((article) => article.remove());
+        document.querySelectorAll('article').forEach((article) => {
+          article.remove();
+        });
         document.body.insertAdjacentHTML('beforeend', markup);
         const poster = document.querySelector<HTMLImageElement>('#main-poster')!;
         poster.removeAttribute('src');

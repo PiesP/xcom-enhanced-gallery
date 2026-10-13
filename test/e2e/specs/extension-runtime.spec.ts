@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { STATUS_TILE_DOM } from '../../fixtures/issue-217-dom';
-import { chromium, expect, test } from '@playwright/test';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { chromium, expect, test } from '@playwright/test';
+import { STATUS_TILE_DOM } from '../../fixtures/issue-217-dom';
 import {
   CHROME_EXTENSION_DIR,
   FIREFOX_EXTENSION_DIR,
@@ -25,8 +25,10 @@ const PUBLIC_FIXTURE_URL = 'https://x.com/public_user/status/9876543210987654321
 
 function isExpectedFixtureApiConsoleError(record: { location: string; text: string }): boolean {
   try {
-    return new URL(record.location).pathname.endsWith('/TweetResultByRestId') &&
-      /\b403\b/u.test(record.text);
+    return (
+      new URL(record.location).pathname.endsWith('/TweetResultByRestId') &&
+      /\b403\b/u.test(record.text)
+    );
   } catch {
     return false;
   }
@@ -233,18 +235,16 @@ test('loads the Chrome extension, completes a privileged download, and restores 
     });
     await page.keyboard.press('Escape');
     await expect(page.locator('[data-xeg-gallery-container]')).toHaveCount(0);
-    await expect
-      .poll(() => page.evaluate(() => window.scrollY))
-      .toBe(openingBoundary.scrollY);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(openingBoundary.scrollY);
     await expect
       .poll(() => firstPhoto.evaluate((element) => document.activeElement === element))
       .toBe(true);
 
     await page.goto(PUBLIC_FIXTURE_URL);
     await expect(page.locator('html')).toHaveAttribute('data-xeg-gallery-ready', 'true');
-    const publicTrigger = page.locator(
-      'article:not([data-testid]) .public-media a[aria-label="View media"]'
-    ).nth(1);
+    const publicTrigger = page
+      .locator('article:not([data-testid]) .public-media a[aria-label="View media"]')
+      .nth(1);
     await publicTrigger.scrollIntoViewIfNeeded();
     await page.evaluate(() => window.scrollBy(0, -120));
     await publicTrigger.focus();
@@ -282,14 +282,11 @@ test('loads the Chrome extension, completes a privileged download, and restores 
     await expect
       .poll(() =>
         selectedPublicImage.evaluate(
-          (image) =>
-            image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0
+          (image) => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0
         )
       )
       .toBe(true);
-    await expect
-      .poll(() => apiResponses.length)
-      .toBeGreaterThan(publicApiResponsesBefore);
+    await expect.poll(() => apiResponses.length).toBeGreaterThan(publicApiResponsesBefore);
     expect(apiResponses.slice(publicApiResponsesBefore)).toEqual([
       expect.objectContaining({ status: 403 }),
     ]);
@@ -417,9 +414,7 @@ test('executes the Firefox background module and registers its runtime listeners
               if (keys === null) return Object.fromEntries(storage.entries());
               const requested = Array.isArray(keys) ? keys : [keys];
               return Object.fromEntries(
-                requested
-                  .filter((key) => storage.has(key))
-                  .map((key) => [key, storage.get(key)])
+                requested.filter((key) => storage.has(key)).map((key) => [key, storage.get(key)])
               );
             },
             set: async (items: Record<string, unknown>) => {
@@ -437,14 +432,19 @@ test('executes the Firefox background module and registers its runtime listeners
     });
   });
 
-  await page.addScriptTag({ path: resolve(FIREFOX_EXTENSION_DIR, 'background.js'), type: 'module' });
+  await page.addScriptTag({
+    path: resolve(FIREFOX_EXTENSION_DIR, 'background.js'),
+    type: 'module',
+  });
 
   await expect
     .poll(() =>
       page.evaluate(() => {
-        return (globalThis as typeof globalThis & {
-          __xegFirefoxRegistrations?: Record<string, number>;
-        }).__xegFirefoxRegistrations;
+        return (
+          globalThis as typeof globalThis & {
+            __xegFirefoxRegistrations?: Record<string, number>;
+          }
+        ).__xegFirefoxRegistrations;
       })
     )
     .toEqual({ installed: 1, message: 1, startup: 1, suspend: 1 });
@@ -475,11 +475,12 @@ test('executes the Firefox background module and registers its runtime listeners
             },
           },
           { id: 'xcom-enhanced-gallery@piesp.dev' },
-          (response) => resolve({
-            downloads: globals.__xegFirefoxDownloads,
-            keepsChannelOpen,
-            response,
-          })
+          (response) =>
+            resolve({
+              downloads: globals.__xegFirefoxDownloads,
+              keepsChannelOpen,
+              response,
+            })
         );
       })
   );
@@ -496,13 +497,18 @@ test('executes the Firefox background module and registers its runtime listeners
   });
 });
 
-
-test('loads the Chrome extension and scopes article-less tile recovery with teardown', async ({ browserName }) => {
+test('loads the Chrome extension and scopes article-less tile recovery with teardown', async ({
+  browserName,
+}) => {
   test.skip(browserName !== 'chromium', 'Chrome extension loading requires Chromium');
   const userDataDir = mkdtempSync(join(tmpdir(), 'xeg-tile-extension-'));
   const context = await chromium.launchPersistentContext(userDataDir, {
-    channel: 'chromium', headless: true,
-    args: [`--disable-extensions-except=${CHROME_EXTENSION_DIR}`, `--load-extension=${CHROME_EXTENSION_DIR}`],
+    channel: 'chromium',
+    headless: true,
+    args: [
+      `--disable-extensions-except=${CHROME_EXTENSION_DIR}`,
+      `--load-extension=${CHROME_EXTENSION_DIR}`,
+    ],
   });
   try {
     const owners: string[] = [];
@@ -511,15 +517,20 @@ test('loads the Chrome extension and scopes article-less tile recovery with tear
       if (url.pathname.endsWith('/TweetResultByRestId')) {
         owners.push(JSON.parse(url.searchParams.get('variables') ?? '{}').tweetId);
         await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
-      } else await route.fulfill({ status: 200, contentType: 'text/html', body: MOCK_GALLERY_HTML });
+      } else
+        await route.fulfill({ status: 200, contentType: 'text/html', body: MOCK_GALLERY_HTML });
     });
-    await context.route('https://pbs.twimg.com/**', (route) => route.fulfill({ status: 200, contentType: 'image/png', body: MOCK_IMAGE }));
+    await context.route('https://pbs.twimg.com/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'image/png', body: MOCK_IMAGE })
+    );
     const page = await context.newPage();
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     await page.goto('https://x.com/author/status/222');
     await expect(page.locator('html')).toHaveAttribute('data-xeg-gallery-ready', 'true');
-    await page.evaluate((markup) => { document.querySelector('main')!.innerHTML = markup; }, STATUS_TILE_DOM);
+    await page.evaluate((markup) => {
+      document.querySelector('main')!.innerHTML = markup;
+    }, STATUS_TILE_DOM);
     for (let cycle = 0; cycle < 4; cycle++) {
       await page.locator('#tile-target').click();
       const gallery = page.locator('[data-xeg-gallery-container]');
@@ -539,15 +550,23 @@ test('loads the Chrome extension and scopes article-less tile recovery with tear
 });
 
 for (const replaceSource of [false, true]) {
-  test(`loads the Chrome extension and preserves image identity after delayed HTTP failure: replaced=${replaceSource}`, async ({ browserName }) => {
+  test(`loads the Chrome extension and preserves image identity after delayed HTTP failure: replaced=${replaceSource}`, async ({
+    browserName,
+  }) => {
     test.skip(browserName !== 'chromium', 'Chrome extension loading requires Chromium');
     const userDataDir = mkdtempSync(join(tmpdir(), 'xeg-identity-extension-'));
     const context = await chromium.launchPersistentContext(userDataDir, {
-      channel: 'chromium', headless: true,
-      args: [`--disable-extensions-except=${CHROME_EXTENSION_DIR}`, `--load-extension=${CHROME_EXTENSION_DIR}`],
+      channel: 'chromium',
+      headless: true,
+      args: [
+        `--disable-extensions-except=${CHROME_EXTENSION_DIR}`,
+        `--load-extension=${CHROME_EXTENSION_DIR}`,
+      ],
     });
     let releaseApi: (() => void) | undefined;
-    const apiGate = new Promise<void>((resolve) => { releaseApi = resolve; });
+    const apiGate = new Promise<void>((resolve) => {
+      releaseApi = resolve;
+    });
     try {
       const owners: string[] = [];
       await context.route('https://x.com/**', async (route) => {
@@ -556,13 +575,17 @@ for (const replaceSource of [false, true]) {
           owners.push(JSON.parse(url.searchParams.get('variables') ?? '{}').tweetId);
           await apiGate;
           await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
-        } else await route.fulfill({ status: 200, contentType: 'text/html', body: MOCK_GALLERY_HTML });
+        } else
+          await route.fulfill({ status: 200, contentType: 'text/html', body: MOCK_GALLERY_HTML });
       });
-      await context.route('https://pbs.twimg.com/**', (route) => route.fulfill({ status: 200, contentType: 'image/png', body: MOCK_IMAGE }));
+      await context.route('https://pbs.twimg.com/**', (route) =>
+        route.fulfill({ status: 200, contentType: 'image/png', body: MOCK_IMAGE })
+      );
       const page = await context.newPage();
       const errors: string[] = [];
       page.on('pageerror', (error) => errors.push(error.message));
-      const background = context.serviceWorkers()[0] ?? await context.waitForEvent('serviceworker');
+      const background =
+        context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
       await page.goto('https://x.com/author/status/222');
       await expect(page.locator('html')).toHaveAttribute('data-xeg-gallery-ready', 'true');
       await page.evaluate(() => {
@@ -572,16 +595,25 @@ for (const replaceSource of [false, true]) {
             <img id="identity-target" src="https://pbs.twimg.com/media/identity-A.jpg" width="320" height="200">
           </div>
         </article>`;
-        Object.defineProperty(document.querySelector('#identity-target'), 'currentSrc', { get: () => '' });
+        Object.defineProperty(document.querySelector('#identity-target'), 'currentSrc', {
+          get: () => '',
+        });
       });
       await page.locator('#identity-target').click();
       await expect.poll(() => owners).toEqual(['222']);
-      if (replaceSource) await page.locator('#identity-target').evaluate((element) => { element.setAttribute('src', 'https://pbs.twimg.com/media/identity-B.jpg'); });
+      if (replaceSource)
+        await page.locator('#identity-target').evaluate((element) => {
+          element.setAttribute('src', 'https://pbs.twimg.com/media/identity-B.jpg');
+        });
       releaseApi?.();
       const gallery = page.locator('[data-xeg-gallery-container]');
       if (replaceSource) {
         // The real notification transport provides a completion signal for failed extraction.
-        await expect.poll(() => background.evaluate(async () => Object.keys(await chrome.notifications.getAll()).length)).toBe(1);
+        await expect
+          .poll(() =>
+            background.evaluate(async () => Object.keys(await chrome.notifications.getAll()).length)
+          )
+          .toBe(1);
         await expect(gallery).toHaveCount(0);
         expect(await background.evaluate(() => chrome.downloads.search({}))).toEqual([]);
       } else {

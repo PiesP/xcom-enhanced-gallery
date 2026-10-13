@@ -52,7 +52,10 @@ function sanitizedText(value, maximum = 600) {
   return String(value)
     .replace(/https?:\/\/[^\s<>"']+/giu, (match) => sanitizedUrl(match.replace(/[),.;]+$/u, '')))
     .replace(/\bBearer\s+[^\s,;]+/giu, 'Bearer [redacted]')
-    .replace(/\b(token|authorization|auth|api[_-]?key|code|state|session|cookie)\s*([=:])\s*[^\s,;]+/giu, '$1$2[redacted]')
+    .replace(
+      /\b(token|authorization|auth|api[_-]?key|code|state|session|cookie)\s*([=:])\s*[^\s,;]+/giu,
+      '$1$2[redacted]'
+    )
     .replace(/[A-Za-z]:\\[^\r\n\t]*/gu, '[path]')
     .replace(/\s+/gu, ' ')
     .trim()
@@ -71,10 +74,13 @@ function addBounded(list, value, observation, overflowKey) {
 function mediaSource(value, kind) {
   try {
     const url = new URL(value);
-    const allowed = kind === 'video'
-      ? url.protocol === 'https:' && url.hostname === 'video.twimg.com'
-      : url.protocol === 'https:' && url.hostname === 'pbs.twimg.com' &&
-        (/^\/media\//u.test(url.pathname) || /^\/(?:ext_tw_video_thumb|amplify_video_thumb)\//u.test(url.pathname));
+    const allowed =
+      kind === 'video'
+        ? url.protocol === 'https:' && url.hostname === 'video.twimg.com'
+        : url.protocol === 'https:' &&
+          url.hostname === 'pbs.twimg.com' &&
+          (/^\/media\//u.test(url.pathname) ||
+            /^\/(?:ext_tw_video_thumb|amplify_video_thumb)\//u.test(url.pathname));
     return allowed ? { host: url.hostname, path: url.pathname } : null;
   } catch {
     return null;
@@ -93,17 +99,23 @@ function summarizeTweet(value) {
   const media = tweet.legacy?.extended_entities?.media ?? tweet.extended_entities?.media ?? [];
   return {
     id: typeof id === 'string' && /^\d+$/u.test(id) ? id : null,
-    media: Array.isArray(media) ? media.slice(0, 12).map((item) => ({
-      id: typeof item.id_str === 'string' && /^\d{1,40}$/u.test(item.id_str)
-        ? item.id_str : null,
-      type: ['photo', 'video', 'animated_gif'].includes(item.type) ? item.type : 'unknown',
-      poster: mediaSource(item.media_url_https, 'image'),
-      playableVariants: Array.isArray(item.video_info?.variants)
-        ? item.video_info.variants.slice(0, 12).filter((variant) =>
-          variant.content_type === 'video/mp4' && mediaSource(variant.url, 'video'))
-          .map((variant) => mediaSource(variant.url, 'video'))
-        : [],
-    })) : [],
+    media: Array.isArray(media)
+      ? media.slice(0, 12).map((item) => ({
+          id:
+            typeof item.id_str === 'string' && /^\d{1,40}$/u.test(item.id_str) ? item.id_str : null,
+          type: ['photo', 'video', 'animated_gif'].includes(item.type) ? item.type : 'unknown',
+          poster: mediaSource(item.media_url_https, 'image'),
+          playableVariants: Array.isArray(item.video_info?.variants)
+            ? item.video_info.variants
+                .slice(0, 12)
+                .filter(
+                  (variant) =>
+                    variant.content_type === 'video/mp4' && mediaSource(variant.url, 'video')
+                )
+                .map((variant) => mediaSource(variant.url, 'video'))
+            : [],
+        }))
+      : [],
   };
 }
 
@@ -134,9 +146,12 @@ export function summarizeTweetResultResponse(urlValue, status, body) {
 
 export function summarizeQuoteProviderRejection(api) {
   const observations = Array.isArray(api?.observations) ? api.observations : [];
-  const rejected = observations.find((item) => item?.operation === 'TweetResultByRestId' &&
-    ((Number.isInteger(item.httpStatus) && item.httpStatus >= 400 && item.httpStatus <= 599) ||
-      item.providerErrors === true));
+  const rejected = observations.find(
+    (item) =>
+      item?.operation === 'TweetResultByRestId' &&
+      ((Number.isInteger(item.httpStatus) && item.httpStatus >= 400 && item.httpStatus <= 599) ||
+        item.providerErrors === true)
+  );
   const statuses = api?.tweetResultByRestId?.responses;
   const fallbackStatus = Array.isArray(statuses)
     ? statuses.find((status) => Number.isInteger(status) && status >= 400 && status <= 599)
@@ -145,11 +160,15 @@ export function summarizeQuoteProviderRejection(api) {
   const status = rejected?.httpStatus ?? fallbackStatus;
   return {
     operation: 'TweetResultByRestId',
-    kind: Number.isInteger(status) && status >= 400 && status <= 599
-      ? 'http-rejection' : 'graphql-errors',
+    kind:
+      Number.isInteger(status) && status >= 400 && status <= 599
+        ? 'http-rejection'
+        : 'graphql-errors',
     httpStatus: Number.isInteger(status) && status >= 100 && status <= 599 ? status : null,
-    requestedTweetId: typeof rejected?.requestedTweetId === 'string' &&
-      /^\d+$/u.test(rejected.requestedTweetId) ? rejected.requestedTweetId : null,
+    requestedTweetId:
+      typeof rejected?.requestedTweetId === 'string' && /^\d+$/u.test(rejected.requestedTweetId)
+        ? rejected.requestedTweetId
+        : null,
   };
 }
 
@@ -160,7 +179,8 @@ export function classifyLiveFailure(classification, galleryStatus, providerRejec
   if (classification) return classification;
   if (providerRejection) return 'provider-failure-with-unverified-product-flow';
   return galleryStatus === 'attempting' || galleryStatus === 'observed'
-    ? 'product-flow-unverified' : 'target-or-product-unverified';
+    ? 'product-flow-unverified'
+    : 'target-or-product-unverified';
 }
 
 function ownedVideoPath(source, mediaId) {
@@ -175,53 +195,77 @@ function hasExplicitUrlPort(value) {
 
 export function classifyLiveHostDiagnostics(observation) {
   const required = observation.requiredAssertions;
-  const allRequired = required && Object.keys(required).length >= 13 &&
+  const allRequired =
+    required &&
+    Object.keys(required).length >= 13 &&
     Object.values(required).every((passed) => passed === true) &&
-    observation.productErrors?.length === 0 && observation.productErrorOverflow === 0 &&
-    observation.pageErrors?.length === 0 && observation.pageErrorOverflow === 0;
+    observation.productErrors?.length === 0 &&
+    observation.productErrorOverflow === 0 &&
+    observation.pageErrors?.length === 0 &&
+    observation.pageErrorOverflow === 0;
   const owner = observation.gallery?.owner;
   const source = observation.gallery?.opened?.selectedVideo?.source;
-  const family = owner?.status === 'matched-direct-quote-variant' &&
-    /^\d{1,40}$/u.test(owner.mediaId ?? '')
-    ? ownedVideoPath(source, owner.mediaId) : null;
-  const expectedLifecycleCancellationCount = allRequired && family
-    ? observation.hostDiagnostics.filter((record) => {
-      if (record.kind !== 'request-failed' || record.error !== 'net::ERR_ABORTED' ||
-          record.hadQuery === true || record.hadCredentials === true ||
-          record.hadPort === true) return false;
-      try {
-        const url = new URL(record.url);
-        return url.protocol === 'https:' && !url.username && !url.password &&
-          !hasExplicitUrlPort(record.url) && !url.search && !url.hash &&
-          ownedVideoPath({ host: url.hostname, path: url.pathname }, owner.mediaId) === family;
-      } catch {
-        return false;
-      }
-    }).length : 0;
+  const family =
+    owner?.status === 'matched-direct-quote-variant' && /^\d{1,40}$/u.test(owner.mediaId ?? '')
+      ? ownedVideoPath(source, owner.mediaId)
+      : null;
+  const expectedLifecycleCancellationCount =
+    allRequired && family
+      ? observation.hostDiagnostics.filter((record) => {
+          if (
+            record.kind !== 'request-failed' ||
+            record.error !== 'net::ERR_ABORTED' ||
+            record.hadQuery === true ||
+            record.hadCredentials === true ||
+            record.hadPort === true
+          )
+            return false;
+          try {
+            const url = new URL(record.url);
+            return (
+              url.protocol === 'https:' &&
+              !url.username &&
+              !url.password &&
+              !hasExplicitUrlPort(record.url) &&
+              !url.search &&
+              !url.hash &&
+              ownedVideoPath({ host: url.hostname, path: url.pathname }, owner.mediaId) === family
+            );
+          } catch {
+            return false;
+          }
+        }).length
+      : 0;
   return {
     expectedLifecycleCancellationCount,
-    evidenceStatus: allRequired && observation.hostDiagnosticOverflow === 0 &&
+    evidenceStatus:
+      allRequired &&
+      observation.hostDiagnosticOverflow === 0 &&
       expectedLifecycleCancellationCount === observation.hostDiagnostics.length
-      ? 'observed' : 'unverified',
+        ? 'observed'
+        : 'unverified',
   };
 }
 
 export function refreshQuotedVideoErrorAssertions(observation) {
   const required = observation.requiredAssertions;
-  required.noProductErrors = observation.productErrors.length === 0 &&
-    observation.productErrorOverflow === 0;
-  required.noPageErrors = observation.pageErrors.length === 0 &&
-    observation.pageErrorOverflow === 0;
-  observation.missingAssertions = Object.entries(required).filter(([, passed]) => !passed)
+  required.noProductErrors =
+    observation.productErrors.length === 0 && observation.productErrorOverflow === 0;
+  required.noPageErrors =
+    observation.pageErrors.length === 0 && observation.pageErrorOverflow === 0;
+  observation.missingAssertions = Object.entries(required)
+    .filter(([, passed]) => !passed)
     .map(([name]) => name);
   return observation.missingAssertions;
 }
 
 function isProductConsoleError(record) {
-  return record.location.startsWith('chrome-extension:') ||
+  return (
+    record.location.startsWith('chrome-extension:') ||
     /\bXEG\b|X\.com Enhanced Gallery|\[(?:MediaExtractor|DOMFallbackExtractor|Gallery)\]/iu.test(
       record.text
-    );
+    )
+  );
 }
 
 function attachDiagnostics(page, observation) {
@@ -244,7 +288,11 @@ function attachDiagnostics(page, observation) {
   page.on('pageerror', (error) => {
     addBounded(
       observation.pageErrors,
-      { kind: 'page-error', name: sanitizedText(error.name, 100), message: sanitizedText(error.message) },
+      {
+        kind: 'page-error',
+        name: sanitizedText(error.name, 100),
+        message: sanitizedText(error.message),
+      },
       observation,
       'pageErrorOverflow'
     );
@@ -311,7 +359,9 @@ function attachDiagnostics(page, observation) {
       product ? 'productErrorOverflow' : 'hostDiagnosticOverflow'
     );
   });
-  return async () => { await Promise.allSettled([...pendingResponses]); };
+  return async () => {
+    await Promise.allSettled([...pendingResponses]);
+  };
 }
 
 async function hostSnapshot(page) {
@@ -336,9 +386,9 @@ async function waitForRestoredHostState(page, actionHandle, before) {
   let state;
   do {
     const after = await hostSnapshot(page);
-    const focusRestored = await actionHandle.evaluate(
-      (element) => document.activeElement === element
-    ).catch(() => false);
+    const focusRestored = await actionHandle
+      .evaluate((element) => document.activeElement === element)
+      .catch(() => false);
     state = {
       after,
       focusRestored,
@@ -346,8 +396,13 @@ async function waitForRestoredHostState(page, actionHandle, before) {
       scrollRestorationRestored: after.scrollRestoration === before.scrollRestoration,
       scrollRestored: after.scrollY === before.scrollY,
     };
-    if (state.focusRestored && state.bodyStylesRestored &&
-        state.scrollRestorationRestored && state.scrollRestored) return state;
+    if (
+      state.focusRestored &&
+      state.bodyStylesRestored &&
+      state.scrollRestorationRestored &&
+      state.scrollRestored
+    )
+      return state;
     await page.waitForTimeout(50);
   } while (Date.now() < deadline);
   return state;
@@ -364,7 +419,8 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
     try {
       const url = new URL(value);
       return url.protocol === 'https:' && url.hostname === 'video.twimg.com'
-        ? { host: url.hostname, path: url.pathname } : null;
+        ? { host: url.hostname, path: url.pathname }
+        : null;
     } catch {
       return null;
     }
@@ -372,8 +428,13 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
   const isVisible = (element) => {
     const style = getComputedStyle(element);
     const rectangle = element.getBoundingClientRect();
-    return style.display !== 'none' && style.visibility !== 'hidden' &&
-      Number(style.opacity) !== 0 && rectangle.width > 0 && rectangle.height > 0;
+    return (
+      style.display !== 'none' &&
+      style.visibility !== 'hidden' &&
+      Number(style.opacity) !== 0 &&
+      rectangle.width > 0 &&
+      rectangle.height > 0
+    );
   };
   const parseLink = (anchor) => {
     try {
@@ -388,8 +449,11 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
     for (const value of [image.currentSrc, image.src, image.getAttribute('src')]) {
       try {
         const url = new URL(value, location.href);
-        if (url.protocol === 'https:' && url.hostname.toLowerCase() === 'pbs.twimg.com' &&
-            url.pathname.startsWith('/media/')) {
+        if (
+          url.protocol === 'https:' &&
+          url.hostname.toLowerCase() === 'pbs.twimg.com' &&
+          url.pathname.startsWith('/media/')
+        ) {
           return { host: url.hostname.toLowerCase(), path: url.pathname };
         }
       } catch {
@@ -401,9 +465,13 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
   const parsePoster = (value) => {
     try {
       const url = new URL(value, location.href);
-      return url.protocol === 'https:' && url.hostname.toLowerCase() === 'pbs.twimg.com' &&
-        /^\/(?:amplify_video_thumb|ext_tw_video_thumb|tweet_video_thumb|video_thumb)\//u.test(url.pathname)
-        ? { host: url.hostname.toLowerCase(), path: url.pathname } : null;
+      return url.protocol === 'https:' &&
+        url.hostname.toLowerCase() === 'pbs.twimg.com' &&
+        /^\/(?:amplify_video_thumb|ext_tw_video_thumb|tweet_video_thumb|video_thumb)\//u.test(
+          url.pathname
+        )
+        ? { host: url.hostname.toLowerCase(), path: url.pathname }
+        : null;
     } catch {
       return null;
     }
@@ -418,42 +486,62 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
     });
     if (!ownsStatus) continue;
 
-    const directNestedArticles = [...article.querySelectorAll('article')]
-      .filter((nested) => nested.parentElement?.closest('article') === article);
-    const quoteCards = [...article.querySelectorAll('[data-testid="quoteTweet"]')]
-      .filter((card) => card.closest('article') === article);
-    const scopes = directNestedArticles.length ? directNestedArticles
-      : quoteCards.length ? quoteCards : [article];
+    const directNestedArticles = [...article.querySelectorAll('article')].filter(
+      (nested) => nested.parentElement?.closest('article') === article
+    );
+    const quoteCards = [...article.querySelectorAll('[data-testid="quoteTweet"]')].filter(
+      (card) => card.closest('article') === article
+    );
+    const scopes = directNestedArticles.length
+      ? directNestedArticles
+      : quoteCards.length
+        ? quoteCards
+        : [article];
     const videoTargets = [];
     for (let scopeIndex = 0; scopeIndex < scopes.length; scopeIndex += 1) {
       const quote = scopes[scopeIndex];
-      const players = [...quote.querySelectorAll(
-        '[data-testid="videoPlayer"], video, [data-testid="previewInterstitial"]')]
-        .filter((candidate) => candidate.closest('article') ===
-          (directNestedArticles.length ? quote : article) &&
+      const players = [
+        ...quote.querySelectorAll(
+          '[data-testid="videoPlayer"], video, [data-testid="previewInterstitial"]'
+        ),
+      ].filter(
+        (candidate) =>
+          candidate.closest('article') === (directNestedArticles.length ? quote : article) &&
           (candidate.matches('[data-testid="videoPlayer"]') ||
-           !candidate.closest('[data-testid="videoPlayer"]')) &&
+            !candidate.closest('[data-testid="videoPlayer"]')) &&
           (!candidate.matches('[data-testid="previewInterstitial"]') ||
             (candidate.closest('[data-testid="tweetPhoto"]') &&
               candidate.querySelector('[data-testid="playButton"]') &&
-              !candidate.closest('[data-testid="videoPlayer"]'))));
+              !candidate.closest('[data-testid="videoPlayer"]')))
+      );
       for (const player of players) {
         const video = player.matches('video') ? player : player.querySelector('video');
         const preview = player.matches('video') ? null : player.querySelector('img');
         const playButton = player.matches('[data-testid="previewInterstitial"]')
-          ? player.querySelector('[data-testid="playButton"]') : null;
+          ? player.querySelector('[data-testid="playButton"]')
+          : null;
         const poster = parsePoster(video?.poster);
-        const matchingPosters = poster ? [...quote.querySelectorAll('img')].filter((image) => {
-          const source = parsePoster(image.currentSrc || image.src);
-          return image.closest('article') === (directNestedArticles.length ? quote : article) &&
-            source?.path === poster.path && isVisible(image) && image.complete &&
-            image.naturalWidth > 0;
-        }) : [];
+        const matchingPosters = poster
+          ? [...quote.querySelectorAll('img')].filter((image) => {
+              const source = parsePoster(image.currentSrc || image.src);
+              return (
+                image.closest('article') === (directNestedArticles.length ? quote : article) &&
+                source?.path === poster.path &&
+                isVisible(image) &&
+                image.complete &&
+                image.naturalWidth > 0
+              );
+            })
+          : [];
         const matchingPoster = matchingPosters.length === 1 ? matchingPosters[0] : null;
-        const hitTarget = playButton && isVisible(playButton) ? playButton
-          : video && isVisible(video) ? video
-          : preview && isVisible(preview) && preview.complete && preview.naturalWidth > 0
-            ? preview : matchingPoster ?? (isVisible(player) ? player : null);
+        const hitTarget =
+          playButton && isVisible(playButton)
+            ? playButton
+            : video && isVisible(video)
+              ? video
+              : preview && isVisible(preview) && preview.complete && preview.naturalWidth > 0
+                ? preview
+                : (matchingPoster ?? (isVisible(player) ? player : null));
         if (!hitTarget) continue;
         const quoteLinks = [...quote.querySelectorAll('a[href]')].flatMap((anchor) => {
           if (directNestedArticles.length && anchor.closest('article') !== quote) return [];
@@ -463,32 +551,53 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
         });
         const quoteStatusIds = [...new Set(quoteLinks)].slice(0, 8);
         const path = [];
-        for (let node = hitTarget; node && node !== article && path.length < 10; node = node.parentElement) {
+        for (
+          let node = hitTarget;
+          node && node !== article && path.length < 10;
+          node = node.parentElement
+        ) {
           path.push({
             tag: node.tagName.toLowerCase(),
-            testId: ['quoteTweet', 'videoPlayer', 'tweetPhoto', 'videoComponent',
-              'videoPlayerOverlay', 'videoPlayerControls'].includes(node.getAttribute('data-testid'))
-              ? node.getAttribute('data-testid') : null,
+            testId: [
+              'quoteTweet',
+              'videoPlayer',
+              'tweetPhoto',
+              'videoComponent',
+              'videoPlayerOverlay',
+              'videoPlayerControls',
+            ].includes(node.getAttribute('data-testid'))
+              ? node.getAttribute('data-testid')
+              : null,
           });
         }
         videoTargets.push({
           state: 'ready',
           target: {
-            kind: 'quoted-video', articleIndex,
-            quoteBoundary: directNestedArticles.length ? 'nested-article'
-              : quoteCards.length ? 'quoteTweet' : 'unmarked-candidate',
+            kind: 'quoted-video',
+            articleIndex,
+            quoteBoundary: directNestedArticles.length
+              ? 'nested-article'
+              : quoteCards.length
+                ? 'quoteTweet'
+                : 'unmarked-candidate',
             quoteIndex: quoteCards.length && !directNestedArticles.length ? scopeIndex : -1,
-            nestedArticleIndex: directNestedArticles.length ?
-              [...article.querySelectorAll('article')].indexOf(quote) : -1,
-            quoteStatusIds, ownershipPath: path,
+            nestedArticleIndex: directNestedArticles.length
+              ? [...article.querySelectorAll('article')].indexOf(quote)
+              : -1,
+            quoteStatusIds,
+            ownershipPath: path,
             videoIndex: [...article.querySelectorAll('video')].indexOf(video),
-            playerIndex: [...article.querySelectorAll('[data-testid="videoPlayer"]')].indexOf(player),
-            previewIndex: [...article.querySelectorAll('[data-testid="previewInterstitial"]')]
-              .indexOf(player),
+            playerIndex: [...article.querySelectorAll('[data-testid="videoPlayer"]')].indexOf(
+              player
+            ),
+            previewIndex: [
+              ...article.querySelectorAll('[data-testid="previewInterstitial"]'),
+            ].indexOf(player),
             posterIndex: matchingPoster
               ? [...article.querySelectorAll('img')].indexOf(matchingPoster)
               : hitTarget instanceof HTMLImageElement
-                ? [...article.querySelectorAll('img')].indexOf(hitTarget) : -1,
+                ? [...article.querySelectorAll('img')].indexOf(hitTarget)
+                : -1,
             hitKind: hitTarget.tagName.toLowerCase(),
             posterSource: poster ?? parsePoster(preview?.currentSrc || preview?.src),
             hostVideoSource: video ? parseVideo(video.currentSrc || video.src) : null,
@@ -497,12 +606,20 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
       }
     }
     if (videoTargets.length > 1) {
-      return { state: 'ambiguous', reason: 'multiple-visible-video-candidates',
-        candidateCount: Math.min(videoTargets.length, 20) };
+      return {
+        state: 'ambiguous',
+        reason: 'multiple-visible-video-candidates',
+        candidateCount: Math.min(videoTargets.length, 20),
+      };
     }
     if (videoTargets.length === 1) return videoTargets[0];
-    if (scopes.some((quote) => quote.querySelector(
-      '[data-testid="videoPlayer"], video, [data-testid="previewInterstitial"]'))) {
+    if (
+      scopes.some((quote) =>
+        quote.querySelector(
+          '[data-testid="videoPlayer"], video, [data-testid="previewInterstitial"]'
+        )
+      )
+    ) {
       return false;
     }
 
@@ -510,10 +627,15 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
     for (let imageIndex = 0; imageIndex < images.length; imageIndex += 1) {
       const image = images[imageIndex];
       const source = parseMedia(image);
-      if (image.closest('article') !== article ||
-          image.closest('[data-testid="videoPlayer"], [data-testid="previewInterstitial"]') ||
-          !source || !isVisible(image) ||
-          !image.complete || image.naturalWidth <= 0) continue;
+      if (
+        image.closest('article') !== article ||
+        image.closest('[data-testid="videoPlayer"], [data-testid="previewInterstitial"]') ||
+        !source ||
+        !isVisible(image) ||
+        !image.complete ||
+        image.naturalWidth <= 0
+      )
+        continue;
       return {
         state: 'ready',
         target: {
@@ -528,7 +650,11 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
     }
   }
   const text = document.body?.innerText ?? document.body?.textContent ?? '';
-  if (/verify you are human|unusual activity|captcha|this post is unavailable|page doesn.?t exist/iu.test(text)) {
+  if (
+    /verify you are human|unusual activity|captcha|this post is unavailable|page doesn.?t exist/iu.test(
+      text
+    )
+  ) {
     return { state: 'terminal', reason: 'host-challenge-or-unavailable' };
   }
   return false;
@@ -540,9 +666,11 @@ export function inspectLiveCandidateDocument({ handle, statusId }) {
   const statusPath = (value) => {
     try {
       const url = new URL(value, location.href);
-      return url.protocol === 'https:' && ['x.com', 'twitter.com'].includes(url.hostname.toLowerCase()) &&
+      return url.protocol === 'https:' &&
+        ['x.com', 'twitter.com'].includes(url.hostname.toLowerCase()) &&
         /^\/[A-Za-z0-9_]{1,15}\/status\/\d+(?:\/|$)/u.test(url.pathname)
-        ? url.pathname : null;
+        ? url.pathname
+        : null;
     } catch {
       return null;
     }
@@ -550,101 +678,166 @@ export function inspectLiveCandidateDocument({ handle, statusId }) {
   const mediaPath = (value) => {
     try {
       const url = new URL(value, location.href);
-      return url.protocol === 'https:' && url.hostname === 'pbs.twimg.com' &&
-        /^\/(?:amplify_video_thumb|ext_tw_video_thumb|tweet_video_thumb|video_thumb)\//u.test(url.pathname)
-        ? { host: url.hostname, path: url.pathname } : null;
+      return url.protocol === 'https:' &&
+        url.hostname === 'pbs.twimg.com' &&
+        /^\/(?:amplify_video_thumb|ext_tw_video_thumb|tweet_video_thumb|video_thumb)\//u.test(
+          url.pathname
+        )
+        ? { host: url.hostname, path: url.pathname }
+        : null;
     } catch {
       return null;
     }
   };
   const nodePath = (element, article) => {
     const nodes = [];
-    for (let node = element; node && node !== article && nodes.length < 12; node = node.parentElement) {
+    for (
+      let node = element;
+      node && node !== article && nodes.length < 12;
+      node = node.parentElement
+    ) {
       const rect = node.getBoundingClientRect();
       const style = getComputedStyle(node);
       const testId = node.getAttribute('data-testid');
       const role = node.getAttribute('role');
       nodes.push({
         tag: node.tagName.toLowerCase(),
-        testId: ['quoteTweet', 'tweetPhoto', 'videoPlayer', 'videoComponent',
-          'previewInterstitial', 'playButton', 'card.wrapper'].includes(testId) ? testId : null,
+        testId: [
+          'quoteTweet',
+          'tweetPhoto',
+          'videoPlayer',
+          'videoComponent',
+          'previewInterstitial',
+          'playButton',
+          'card.wrapper',
+        ].includes(testId)
+          ? testId
+          : null,
         role: ['link', 'button', 'presentation', 'application'].includes(role) ? role : null,
         statusPath: node instanceof HTMLAnchorElement ? statusPath(node.href) : null,
-        visibleBox: rect.width > 0 && rect.height > 0 && style.display !== 'none' &&
-          style.visibility !== 'hidden' && Number(style.opacity) !== 0,
-        bounds: { x: Math.round(rect.x), y: Math.round(rect.y),
-          width: Math.round(rect.width), height: Math.round(rect.height) },
+        visibleBox:
+          rect.width > 0 &&
+          rect.height > 0 &&
+          style.display !== 'none' &&
+          style.visibility !== 'hidden' &&
+          Number(style.opacity) !== 0,
+        bounds: {
+          x: Math.round(rect.x),
+          y: Math.round(rect.y),
+          width: Math.round(rect.width),
+          height: Math.round(rect.height),
+        },
       });
     }
     return nodes;
   };
   const articleOwnership = (element, outerArticle) => {
     const ancestorArticleIndexes = [];
-    for (let node = element.closest('article'); node && outerArticle.contains(node);
-      node = node.parentElement?.closest('article')) {
+    for (
+      let node = element.closest('article');
+      node && outerArticle.contains(node);
+      node = node.parentElement?.closest('article')
+    ) {
       ancestorArticleIndexes.push(articles.indexOf(node));
       if (node === outerArticle || ancestorArticleIndexes.length >= 6) break;
     }
     const nearest = element.closest('article');
-    const ownStatusAnchors = nearest ? [...nearest.querySelectorAll('a[href]')]
-      .filter((anchor) => anchor.closest('article') === nearest)
-      .flatMap((anchor) => {
-        const path = statusPath(anchor.href);
-        if (!path) return [];
-        const structure = [];
-        for (let node = anchor; node && node !== nearest && structure.length < 6;
-          node = node.parentElement) {
-          const role = node.getAttribute('role');
-          const testId = node.getAttribute('data-testid');
-          structure.push({
-            tag: ['a', 'div', 'span', 'time', 'article'].includes(node.tagName.toLowerCase())
-              ? node.tagName.toLowerCase() : 'other',
-            role: ['link', 'button', 'presentation'].includes(role) ? role : null,
-            testId: ['User-Name', 'tweet', 'quoteTweet', 'videoPlayer'].includes(testId)
-              ? testId : null,
-          });
-        }
-        return [{ path, containsTime: Boolean(anchor.querySelector('time')),
-          nearestArticleIndex: articles.indexOf(nearest), structure }];
-      }).slice(0, 8) : [];
+    const ownStatusAnchors = nearest
+      ? [...nearest.querySelectorAll('a[href]')]
+          .filter((anchor) => anchor.closest('article') === nearest)
+          .flatMap((anchor) => {
+            const path = statusPath(anchor.href);
+            if (!path) return [];
+            const structure = [];
+            for (
+              let node = anchor;
+              node && node !== nearest && structure.length < 6;
+              node = node.parentElement
+            ) {
+              const role = node.getAttribute('role');
+              const testId = node.getAttribute('data-testid');
+              structure.push({
+                tag: ['a', 'div', 'span', 'time', 'article'].includes(node.tagName.toLowerCase())
+                  ? node.tagName.toLowerCase()
+                  : 'other',
+                role: ['link', 'button', 'presentation'].includes(role) ? role : null,
+                testId: ['User-Name', 'tweet', 'quoteTweet', 'videoPlayer'].includes(testId)
+                  ? testId
+                  : null,
+              });
+            }
+            return [
+              {
+                path,
+                containsTime: Boolean(anchor.querySelector('time')),
+                nearestArticleIndex: articles.indexOf(nearest),
+                structure,
+              },
+            ];
+          })
+          .slice(0, 8)
+      : [];
     const ownStatusPaths = ownStatusAnchors.map((anchor) => anchor.path);
-    return { nearestArticleIndex: articles.indexOf(nearest),
-      ancestorArticleIndexes, ownStatusPaths, ownStatusAnchors };
+    return {
+      nearestArticleIndex: articles.indexOf(nearest),
+      ancestorArticleIndexes,
+      ownStatusPaths,
+      ownStatusAnchors,
+    };
   };
-  const article = articles.find((candidate) => [...candidate.querySelectorAll('a[href]')]
-    .some((anchor) => {
+  const article = articles.find((candidate) =>
+    [...candidate.querySelectorAll('a[href]')].some((anchor) => {
       try {
         const url = new URL(anchor.href, location.href);
-        return ['x.com', 'twitter.com'].includes(url.hostname.toLowerCase()) &&
-          url.pathname.toLowerCase() === path && anchor.closest('article') === candidate;
+        return (
+          ['x.com', 'twitter.com'].includes(url.hostname.toLowerCase()) &&
+          url.pathname.toLowerCase() === path &&
+          anchor.closest('article') === candidate
+        );
       } catch {
         return false;
       }
-    }));
+    })
+  );
   if (!article) return { exactArticleFound: false, articleCount: Math.min(articles.length, 50) };
   const videoDetails = [...article.querySelectorAll('video')].slice(0, 6).map((video) => {
-      const rect = video.getBoundingClientRect();
-      const x = Math.min(innerWidth - 1, Math.max(0, rect.x + rect.width / 2));
-      const y = Math.min(innerHeight - 1, Math.max(0, rect.y + rect.height / 2));
-      return {
-        sourceKind: video.currentSrc?.startsWith('blob:') || video.src.startsWith('blob:')
-          ? 'blob' : video.currentSrc || video.src ? 'other' : 'none',
-        poster: mediaPath(video.poster),
-        ...articleOwnership(video, article),
-        nodePath: nodePath(video, article),
-        hitPath: rect.width > 0 && rect.height > 0 && typeof document.elementsFromPoint === 'function'
-          ? document.elementsFromPoint(x, y).slice(0, 4).map((node) => ({
-            tag: node.tagName.toLowerCase(),
-            testId: ['videoPlayer', 'videoComponent', 'playButton', 'previewInterstitial']
-              .includes(node.getAttribute('data-testid')) ? node.getAttribute('data-testid') : null,
-          })) : [],
-      };
-    });
+    const rect = video.getBoundingClientRect();
+    const x = Math.min(innerWidth - 1, Math.max(0, rect.x + rect.width / 2));
+    const y = Math.min(innerHeight - 1, Math.max(0, rect.y + rect.height / 2));
+    return {
+      sourceKind:
+        video.currentSrc?.startsWith('blob:') || video.src.startsWith('blob:')
+          ? 'blob'
+          : video.currentSrc || video.src
+            ? 'other'
+            : 'none',
+      poster: mediaPath(video.poster),
+      ...articleOwnership(video, article),
+      nodePath: nodePath(video, article),
+      hitPath:
+        rect.width > 0 && rect.height > 0 && typeof document.elementsFromPoint === 'function'
+          ? document
+              .elementsFromPoint(x, y)
+              .slice(0, 4)
+              .map((node) => ({
+                tag: node.tagName.toLowerCase(),
+                testId: [
+                  'videoPlayer',
+                  'videoComponent',
+                  'playButton',
+                  'previewInterstitial',
+                ].includes(node.getAttribute('data-testid'))
+                  ? node.getAttribute('data-testid')
+                  : null,
+              }))
+          : [],
+    };
+  });
   const thumbnailDetails = [];
   for (const element of [...article.querySelectorAll('*')].slice(0, 800)) {
     if (thumbnailDetails.length >= 8) break;
-    const image = element instanceof HTMLImageElement
-      ? mediaPath(element.currentSrc || element.src) : null;
+    const image =
+      element instanceof HTMLImageElement ? mediaPath(element.currentSrc || element.src) : null;
     const background = getComputedStyle(element).backgroundImage;
     const backgroundUrl = background.match(/^url\(["']?(.*?)["']?\)$/u)?.[1];
     const backgroundSource = backgroundUrl ? mediaPath(backgroundUrl) : null;
@@ -656,23 +849,31 @@ export function inspectLiveCandidateDocument({ handle, statusId }) {
       nodePath: nodePath(element, article),
     });
   }
-  const statusIds = [...new Set([...article.querySelectorAll('a[href]')].flatMap((anchor) => {
-    try {
-      const url = new URL(anchor.href, location.href);
-      const match = ['x.com', 'twitter.com'].includes(url.hostname.toLowerCase())
-        ? url.pathname.match(/^\/[A-Za-z0-9_]{1,15}\/status\/(\d+)(?:\/|$)/u) : null;
-      return match ? [match[1]] : [];
-    } catch {
-      return [];
-    }
-  }))].slice(0, 12);
+  const statusIds = [
+    ...new Set(
+      [...article.querySelectorAll('a[href]')].flatMap((anchor) => {
+        try {
+          const url = new URL(anchor.href, location.href);
+          const match = ['x.com', 'twitter.com'].includes(url.hostname.toLowerCase())
+            ? url.pathname.match(/^\/[A-Za-z0-9_]{1,15}\/status\/(\d+)(?:\/|$)/u)
+            : null;
+          return match ? [match[1]] : [];
+        } catch {
+          return [];
+        }
+      })
+    ),
+  ].slice(0, 12);
   return {
     exactArticleFound: true,
     articleIndex: articles.indexOf(article),
     outerArticleOwnStatusAnchors: articleOwnership(article, article).ownStatusAnchors,
     quoteCardCount: Math.min(article.querySelectorAll('[data-testid="quoteTweet"]').length, 20),
     videoPlayerCount: Math.min(article.querySelectorAll('[data-testid="videoPlayer"]').length, 20),
-    previewInterstitialCount: Math.min(article.querySelectorAll('[data-testid="previewInterstitial"]').length, 20),
+    previewInterstitialCount: Math.min(
+      article.querySelectorAll('[data-testid="previewInterstitial"]').length,
+      20
+    ),
     playButtonCount: Math.min(article.querySelectorAll('[data-testid="playButton"]').length, 20),
     videoCount: Math.min(article.querySelectorAll('video').length, 20),
     statusIds,
@@ -708,12 +909,23 @@ async function inspectHitTestedAction(image, identity) {
       }
     };
     const rectangle = element.getBoundingClientRect();
-    if (rectangle.bottom <= 0 || rectangle.top >= innerHeight ||
-        rectangle.right <= 0 || rectangle.left >= innerWidth) return null;
+    if (
+      rectangle.bottom <= 0 ||
+      rectangle.top >= innerHeight ||
+      rectangle.right <= 0 ||
+      rectangle.left >= innerWidth
+    )
+      return null;
     const x = Math.max(0, Math.min(innerWidth - 1, rectangle.left + rectangle.width / 2));
     const y = Math.max(0, Math.min(innerHeight - 1, rectangle.top + rectangle.height / 2));
-    const hitAnchors = [...new Set(document.elementsFromPoint(x, y)
-      .map((candidate) => candidate.closest('a[href]')).filter(Boolean))];
+    const hitAnchors = [
+      ...new Set(
+        document
+          .elementsFromPoint(x, y)
+          .map((candidate) => candidate.closest('a[href]'))
+          .filter(Boolean)
+      ),
+    ];
     const action = hitAnchors.find((anchor) => {
       const url = parseLink(anchor);
       return anchor.closest('article') === article && url && mediaPath.test(url.pathname);
@@ -739,41 +951,70 @@ export function inspectSelectedGalleryDocument({ expectedIndex, expectedPath }) 
   const toolbar = gallery?.querySelector('[data-gallery-element="toolbar"]');
   const position = toolbar?.querySelector('#xeg-toolbar-counter[data-gallery-element="position"]');
   const items = [...(gallery?.querySelectorAll('[data-gallery-element="item"]') ?? [])];
-  const selectedItems = items.filter((candidate) =>
-    candidate.getAttribute('data-index') === String(expectedIndex - 1));
+  const selectedItems = items.filter(
+    (candidate) => candidate.getAttribute('data-index') === String(expectedIndex - 1)
+  );
   const item = selectedItems.length === 1 ? selectedItems[0] : null;
-  if (!(gallery instanceof HTMLElement) || !(toolbar instanceof HTMLElement) ||
-      !(position instanceof HTMLElement) || !(item instanceof HTMLElement)) return false;
+  if (
+    !(gallery instanceof HTMLElement) ||
+    !(toolbar instanceof HTMLElement) ||
+    !(position instanceof HTMLElement) ||
+    !(item instanceof HTMLElement)
+  )
+    return false;
 
   const total = Number(position.getAttribute('data-total'));
-  if (!Number.isSafeInteger(expectedIndex) || expectedIndex < 1 ||
-      !Number.isSafeInteger(total) || total !== items.length || expectedIndex > total ||
-      position.getAttribute('data-position') !== String(expectedIndex) ||
-      position.getAttribute('data-current-index') !== String(expectedIndex - 1) ||
-      position.getAttribute('data-focused-index') !== String(expectedIndex - 1) ||
-      toolbar.getAttribute('data-current-index') !== String(expectedIndex - 1) ||
-      toolbar.getAttribute('data-focused-index') !== String(expectedIndex - 1)) return false;
+  if (
+    !Number.isSafeInteger(expectedIndex) ||
+    expectedIndex < 1 ||
+    !Number.isSafeInteger(total) ||
+    total !== items.length ||
+    expectedIndex > total ||
+    position.getAttribute('data-position') !== String(expectedIndex) ||
+    position.getAttribute('data-current-index') !== String(expectedIndex - 1) ||
+    position.getAttribute('data-focused-index') !== String(expectedIndex - 1) ||
+    toolbar.getAttribute('data-current-index') !== String(expectedIndex - 1) ||
+    toolbar.getAttribute('data-focused-index') !== String(expectedIndex - 1)
+  )
+    return false;
 
   const isVisible = (element) => {
     const style = getComputedStyle(element);
     const rectangle = element.getBoundingClientRect();
-    return style.display !== 'none' && style.visibility !== 'hidden' &&
-      Number(style.opacity) !== 0 && rectangle.bottom > 0 && rectangle.top < innerHeight &&
-      rectangle.right > 0 && rectangle.left < innerWidth;
+    return (
+      style.display !== 'none' &&
+      style.visibility !== 'hidden' &&
+      Number(style.opacity) !== 0 &&
+      rectangle.bottom > 0 &&
+      rectangle.top < innerHeight &&
+      rectangle.right > 0 &&
+      rectangle.left < innerWidth
+    );
   };
-  const matchingImages = [...gallery.querySelectorAll('[data-gallery-element="item"] img')].filter((candidate) => {
-    if (!(candidate instanceof HTMLImageElement) || !candidate.complete ||
-        candidate.naturalWidth <= 0 || !isVisible(candidate)) return false;
-    try {
-      const url = new URL(candidate.currentSrc || candidate.src);
-      return url.hostname === 'pbs.twimg.com' && url.pathname === expectedPath;
-    } catch {
-      return false;
+  const matchingImages = [...gallery.querySelectorAll('[data-gallery-element="item"] img')].filter(
+    (candidate) => {
+      if (
+        !(candidate instanceof HTMLImageElement) ||
+        !candidate.complete ||
+        candidate.naturalWidth <= 0 ||
+        !isVisible(candidate)
+      )
+        return false;
+      try {
+        const url = new URL(candidate.currentSrc || candidate.src);
+        return url.hostname === 'pbs.twimg.com' && url.pathname === expectedPath;
+      } catch {
+        return false;
+      }
     }
-  });
+  );
   const selectedImage = matchingImages.length === 1 ? matchingImages[0] : null;
-  if (item.getAttribute('data-media-loaded') !== 'true' || !isVisible(item) ||
-      !(selectedImage instanceof HTMLImageElement) || !item.contains(selectedImage)) {
+  if (
+    item.getAttribute('data-media-loaded') !== 'true' ||
+    !isVisible(item) ||
+    !(selectedImage instanceof HTMLImageElement) ||
+    !item.contains(selectedImage)
+  ) {
     return false;
   }
   const source = new URL(selectedImage.currentSrc || selectedImage.src);
@@ -795,19 +1036,33 @@ export function inspectSelectedGalleryVideoDocument() {
   const total = Number(position?.getAttribute('data-total'));
   const item = Number.isSafeInteger(current) && current >= 0 ? items[current] : null;
   const video = item?.querySelector('video');
-  if (!(gallery instanceof HTMLElement) || !(toolbar instanceof HTMLElement) ||
-      !(position instanceof HTMLElement) || !(item instanceof HTMLElement) ||
-      !(video instanceof HTMLVideoElement) || !Number.isSafeInteger(total) ||
-      total !== items.length || current >= total ||
-      position.getAttribute('data-position') !== String(current + 1) ||
-      position.getAttribute('data-focused-index') !== String(current) ||
-      toolbar.getAttribute('data-current-index') !== String(current) ||
-      toolbar.getAttribute('data-focused-index') !== String(current)) return false;
+  if (
+    !(gallery instanceof HTMLElement) ||
+    !(toolbar instanceof HTMLElement) ||
+    !(position instanceof HTMLElement) ||
+    !(item instanceof HTMLElement) ||
+    !(video instanceof HTMLVideoElement) ||
+    !Number.isSafeInteger(total) ||
+    total !== items.length ||
+    current >= total ||
+    position.getAttribute('data-position') !== String(current + 1) ||
+    position.getAttribute('data-focused-index') !== String(current) ||
+    toolbar.getAttribute('data-current-index') !== String(current) ||
+    toolbar.getAttribute('data-focused-index') !== String(current)
+  )
+    return false;
   const style = getComputedStyle(video);
   const rect = video.getBoundingClientRect();
-  const visible = style.display !== 'none' && style.visibility !== 'hidden' &&
-    Number(style.opacity) !== 0 && rect.width > 0 && rect.height > 0 &&
-    rect.bottom > 0 && rect.top < innerHeight && rect.right > 0 && rect.left < innerWidth;
+  const visible =
+    style.display !== 'none' &&
+    style.visibility !== 'hidden' &&
+    Number(style.opacity) !== 0 &&
+    rect.width > 0 &&
+    rect.height > 0 &&
+    rect.bottom > 0 &&
+    rect.top < innerHeight &&
+    rect.right > 0 &&
+    rect.left < innerWidth;
   let source = null;
   try {
     const url = new URL(video.currentSrc || video.src);
@@ -842,14 +1097,20 @@ function quotedOwnerForSource(apiObservations, outerId, source) {
   for (const entry of apiObservations) {
     for (const tweet of [entry.result, entry.directQuote]) {
       if (!tweet?.id) continue;
-      const directlyQuoted = quotedIds.has(tweet.id) ||
-        entry.requestedTweetId === outerId && entry.directQuote === tweet;
+      const directlyQuoted =
+        quotedIds.has(tweet.id) ||
+        (entry.requestedTweetId === outerId && entry.directQuote === tweet);
       if (!directlyQuoted) continue;
       tweet.media.forEach((media, mediaIndex) => {
-        if (media.playableVariants.some((variant) =>
-          variant.host === source.host && variant.path === source.path)) {
+        if (
+          media.playableVariants.some(
+            (variant) => variant.host === source.host && variant.path === source.path
+          )
+        ) {
           matches.set(`${tweet.id}:${mediaIndex}`, {
-            ownerId: tweet.id, mediaId: media.id, mediaIndex,
+            ownerId: tweet.id,
+            mediaId: media.id,
+            mediaIndex,
           });
         }
       });
@@ -857,18 +1118,27 @@ function quotedOwnerForSource(apiObservations, outerId, source) {
   }
   return matches.size === 1
     ? { status: 'matched-direct-quote-variant', ...[...matches.values()][0] }
-    : { status: matches.size > 1 ? 'ambiguous-media' : 'no-direct-quote-variant',
-      ownerId: null, mediaId: null };
+    : {
+        status: matches.size > 1 ? 'ambiguous-media' : 'no-direct-quote-variant',
+        ownerId: null,
+        mediaId: null,
+      };
 }
 
 export function inspectHitTestedVideoActionDocument(element, { posterPath }) {
-  if (!(element instanceof HTMLElement) || typeof document.elementsFromPoint !== 'function') return null;
+  if (!(element instanceof HTMLElement) || typeof document.elementsFromPoint !== 'function')
+    return null;
   const quoteArticle = element.closest('article');
   if (!quoteArticle) return null;
   const scopeCounts = (scope, depth) => {
     if (depth > 3) return null;
-    const counts = { scopeDepth: depth, videoCount: 0, totalImageCount: 0,
-      trustedVideoThumbnailCount: 0, ordinaryImageCount: 0 };
+    const counts = {
+      scopeDepth: depth,
+      videoCount: 0,
+      totalImageCount: 0,
+      trustedVideoThumbnailCount: 0,
+      ordinaryImageCount: 0,
+    };
     const media = [scope, ...scope.querySelectorAll('video, img')];
     for (const node of media) {
       if (node.closest('article') !== quoteArticle) continue;
@@ -881,8 +1151,12 @@ export function inspectHitTestedVideoActionDocument(element, { posterPath }) {
       let trusted = false;
       try {
         const url = new URL(node.currentSrc || node.src, location.href);
-        trusted = url.protocol === 'https:' && url.hostname === 'pbs.twimg.com' &&
-          /^\/(?:amplify_video_thumb|ext_tw_video_thumb|tweet_video_thumb|video_thumb)\//u.test(url.pathname);
+        trusted =
+          url.protocol === 'https:' &&
+          url.hostname === 'pbs.twimg.com' &&
+          /^\/(?:amplify_video_thumb|ext_tw_video_thumb|tweet_video_thumb|video_thumb)\//u.test(
+            url.pathname
+          );
       } catch {
         // Count unknown images without retaining their source.
       }
@@ -892,21 +1166,38 @@ export function inspectHitTestedVideoActionDocument(element, { posterPath }) {
     return counts;
   };
   if (posterPath) {
-    const value = element instanceof HTMLImageElement ? element.currentSrc || element.src
-      : element instanceof HTMLVideoElement ? element.poster
-      : element.querySelector('video')?.poster || element.querySelector('img')?.currentSrc ||
-        element.querySelector('img')?.src;
+    const value =
+      element instanceof HTMLImageElement
+        ? element.currentSrc || element.src
+        : element instanceof HTMLVideoElement
+          ? element.poster
+          : element.querySelector('video')?.poster ||
+            element.querySelector('img')?.currentSrc ||
+            element.querySelector('img')?.src;
     try {
       const url = new URL(value, location.href);
-      if (url.protocol !== 'https:' || url.hostname !== 'pbs.twimg.com' ||
-          url.pathname !== posterPath) return null;
+      if (
+        url.protocol !== 'https:' ||
+        url.hostname !== 'pbs.twimg.com' ||
+        url.pathname !== posterPath
+      )
+        return null;
     } catch {
       return null;
     }
   }
   const rect = element.getBoundingClientRect();
-  const samples = [[0.2, 0.2], [0.8, 0.2], [0.2, 0.4], [0.8, 0.4],
-    [0.5, 0.25], [0.5, 0.45], [0.2, 0.6], [0.8, 0.6], [0.5, 0.7]];
+  const samples = [
+    [0.2, 0.2],
+    [0.8, 0.2],
+    [0.2, 0.4],
+    [0.8, 0.4],
+    [0.5, 0.25],
+    [0.5, 0.45],
+    [0.2, 0.6],
+    [0.8, 0.6],
+    [0.5, 0.7],
+  ];
   let rejectedControls = 0;
   let nativePlay = null;
   for (const [fx, fy] of samples) {
@@ -915,16 +1206,26 @@ export function inspectHitTestedVideoActionDocument(element, { posterPath }) {
     if (x < 0 || y < 0 || x >= innerWidth || y >= innerHeight) continue;
     const top = document.elementsFromPoint(x, y)[0];
     if (!top || top.closest('article') !== quoteArticle) continue;
-    const control = top.closest('button, [role="button"], input, select, textarea, [data-testid="videoPlayerControls"]');
+    const control = top.closest(
+      'button, [role="button"], input, select, textarea, [data-testid="videoPlayerControls"]'
+    );
     if (control) {
       rejectedControls += 1;
       if (!nativePlay && control.matches('button, [role="button"]')) {
         let mediaScope = element;
-        for (let depth = 0; mediaScope && depth <= 5 && mediaScope !== quoteArticle;
-          depth += 1, mediaScope = mediaScope.parentElement) {
+        for (
+          let depth = 0;
+          mediaScope && depth <= 5 && mediaScope !== quoteArticle;
+          depth += 1, mediaScope = mediaScope.parentElement
+        ) {
           if (mediaScope.contains(control)) {
-            nativePlay = { x, y, topTag: top.tagName.toLowerCase(), mediaScopeDepth: depth,
-              scopeCounts: scopeCounts(mediaScope, depth) };
+            nativePlay = {
+              x,
+              y,
+              topTag: top.tagName.toLowerCase(),
+              mediaScopeDepth: depth,
+              scopeCounts: scopeCounts(mediaScope, depth),
+            };
             break;
           }
         }
@@ -932,13 +1233,25 @@ export function inspectHitTestedVideoActionDocument(element, { posterPath }) {
       continue;
     }
     let mediaScope = element;
-    for (let depth = 0; mediaScope && depth <= 3 && mediaScope !== quoteArticle;
-      depth += 1, mediaScope = mediaScope.parentElement) {
+    for (
+      let depth = 0;
+      mediaScope && depth <= 3 && mediaScope !== quoteArticle;
+      depth += 1, mediaScope = mediaScope.parentElement
+    ) {
       if (mediaScope.contains(top)) {
         return {
-          inQuote: true, x, y, topTag: top.tagName.toLowerCase(),
-          topTestId: ['videoPlayer', 'videoComponent', 'previewInterstitial', 'tweetPhoto']
-            .includes(top.getAttribute('data-testid')) ? top.getAttribute('data-testid') : null,
+          inQuote: true,
+          x,
+          y,
+          topTag: top.tagName.toLowerCase(),
+          topTestId: [
+            'videoPlayer',
+            'videoComponent',
+            'previewInterstitial',
+            'tweetPhoto',
+          ].includes(top.getAttribute('data-testid'))
+            ? top.getAttribute('data-testid')
+            : null,
           mediaScopeDepth: depth,
           rejectedControls,
           nativePlay,
@@ -946,24 +1259,49 @@ export function inspectHitTestedVideoActionDocument(element, { posterPath }) {
       }
     }
   }
-  return { inQuote: false, x: null, y: null, topTag: null,
-    topTestId: null, mediaScopeDepth: null, rejectedControls, nativePlay };
+  return {
+    inQuote: false,
+    x: null,
+    y: null,
+    topTag: null,
+    topTestId: null,
+    mediaScopeDepth: null,
+    rejectedControls,
+    nativePlay,
+  };
 }
 
 export function findHitTestedVideoControlDocument(element, { x, y, posterPath }) {
-  if (!(element instanceof HTMLElement) || typeof document.elementsFromPoint !== 'function') return null;
+  if (!(element instanceof HTMLElement) || typeof document.elementsFromPoint !== 'function')
+    return null;
   const quoteArticle = element.closest('article');
-  if (!quoteArticle || !Number.isFinite(x) || !Number.isFinite(y) ||
-      x < 0 || y < 0 || x >= innerWidth || y >= innerHeight) return null;
+  if (
+    !quoteArticle ||
+    !Number.isFinite(x) ||
+    !Number.isFinite(y) ||
+    x < 0 ||
+    y < 0 ||
+    x >= innerWidth ||
+    y >= innerHeight
+  )
+    return null;
   if (posterPath) {
-    const value = element instanceof HTMLImageElement ? element.currentSrc || element.src
-      : element instanceof HTMLVideoElement ? element.poster
-      : element.querySelector('video')?.poster || element.querySelector('img')?.currentSrc ||
-        element.querySelector('img')?.src;
+    const value =
+      element instanceof HTMLImageElement
+        ? element.currentSrc || element.src
+        : element instanceof HTMLVideoElement
+          ? element.poster
+          : element.querySelector('video')?.poster ||
+            element.querySelector('img')?.currentSrc ||
+            element.querySelector('img')?.src;
     try {
       const url = new URL(value, location.href);
-      if (url.protocol !== 'https:' || url.hostname !== 'pbs.twimg.com' ||
-          url.pathname !== posterPath) return null;
+      if (
+        url.protocol !== 'https:' ||
+        url.hostname !== 'pbs.twimg.com' ||
+        url.pathname !== posterPath
+      )
+        return null;
     } catch {
       return null;
     }
@@ -972,8 +1310,11 @@ export function findHitTestedVideoControlDocument(element, { x, y, posterPath })
   if (!top || top.closest('article') !== quoteArticle) return null;
   const control = top.closest('button, [role="button"]');
   if (!(control instanceof HTMLElement)) return null;
-  for (let scope = element, depth = 0; scope && scope !== quoteArticle && depth <= 5;
-    scope = scope.parentElement, depth += 1) {
+  for (
+    let scope = element, depth = 0;
+    scope && scope !== quoteArticle && depth <= 5;
+    scope = scope.parentElement, depth += 1
+  ) {
     if (scope.contains(control)) return control;
   }
   return null;
@@ -984,24 +1325,37 @@ export function inspectHostVideoDocument(video, { posterPath }) {
   const parsePoster = (value) => {
     try {
       const url = new URL(value, location.href);
-      return url.protocol === 'https:' && url.hostname === 'pbs.twimg.com' &&
-        /^\/(?:amplify_video_thumb|ext_tw_video_thumb|tweet_video_thumb|video_thumb)\//u.test(url.pathname)
-        ? { host: url.hostname, path: url.pathname } : null;
+      return url.protocol === 'https:' &&
+        url.hostname === 'pbs.twimg.com' &&
+        /^\/(?:amplify_video_thumb|ext_tw_video_thumb|tweet_video_thumb|video_thumb)\//u.test(
+          url.pathname
+        )
+        ? { host: url.hostname, path: url.pathname }
+        : null;
     } catch {
       return null;
     }
   };
   const ownArticle = video.closest('article');
   const attributePoster = video.poster ? parsePoster(video.poster) : null;
-  const matchingSiblings = [...ownArticle.querySelectorAll('img')].filter((image) =>
-    image.closest('article') === ownArticle &&
-    parsePoster(image.currentSrc || image.src)?.path === posterPath);
-  const posterEvidence = video.poster && attributePoster?.path !== posterPath
-    ? 'conflict' : attributePoster?.path === posterPath ? 'video-attribute'
-      : matchingSiblings.length === 1 ? 'unique-sibling-image'
-        : matchingSiblings.length > 1 ? 'ambiguous-sibling-images' : 'missing';
+  const matchingSiblings = [...ownArticle.querySelectorAll('img')].filter(
+    (image) =>
+      image.closest('article') === ownArticle &&
+      parsePoster(image.currentSrc || image.src)?.path === posterPath
+  );
+  const posterEvidence =
+    video.poster && attributePoster?.path !== posterPath
+      ? 'conflict'
+      : attributePoster?.path === posterPath
+        ? 'video-attribute'
+        : matchingSiblings.length === 1
+          ? 'unique-sibling-image'
+          : matchingSiblings.length > 1
+            ? 'ambiguous-sibling-images'
+            : 'missing';
   const poster = ['video-attribute', 'unique-sibling-image'].includes(posterEvidence)
-    ? { host: 'pbs.twimg.com', path: posterPath } : null;
+    ? { host: 'pbs.twimg.com', path: posterPath }
+    : null;
   const sourceValue = video.currentSrc || video.src;
   let sourceKind = 'none';
   let source = null;
@@ -1032,90 +1386,154 @@ export function inspectHostVideoDocument(video, { posterPath }) {
   };
 }
 
-export function quotedVideoHitTestPassed({ controlledVideoClickMode, galleryActionKind,
-  initialHit, finalHit, identityBeforeClick, focusPrepared, meaningfulFocusTarget,
-  focusedControlStillOwnsClick }) {
+export function quotedVideoHitTestPassed({
+  controlledVideoClickMode,
+  galleryActionKind,
+  initialHit,
+  finalHit,
+  identityBeforeClick,
+  focusPrepared,
+  meaningfulFocusTarget,
+  focusedControlStillOwnsClick,
+}) {
   if (!identityBeforeClick) return false;
   if (galleryActionKind === 'non-control-media-surface') {
     return initialHit?.inQuote === true && finalHit?.inQuote === true;
   }
-  if (galleryActionKind !== 'media-scoped-control-under-allow-all' ||
-      controlledVideoClickMode !== 'allow-all' || initialHit?.inQuote !== false ||
-      finalHit?.inQuote !== false || !focusPrepared || !meaningfulFocusTarget ||
-      focusedControlStillOwnsClick !== true) return false;
-  return [initialHit.nativePlay, finalHit.nativePlay].every((control) =>
-    control && Number.isFinite(control.x) && Number.isFinite(control.y) &&
-    Number.isInteger(control.mediaScopeDepth) &&
-    control.mediaScopeDepth >= 0 && control.mediaScopeDepth <= 5);
+  if (
+    galleryActionKind !== 'media-scoped-control-under-allow-all' ||
+    controlledVideoClickMode !== 'allow-all' ||
+    initialHit?.inQuote !== false ||
+    finalHit?.inQuote !== false ||
+    !focusPrepared ||
+    !meaningfulFocusTarget ||
+    focusedControlStillOwnsClick !== true
+  )
+    return false;
+  return [initialHit.nativePlay, finalHit.nativePlay].every(
+    (control) =>
+      control &&
+      Number.isFinite(control.x) &&
+      Number.isFinite(control.y) &&
+      Number.isInteger(control.mediaScopeDepth) &&
+      control.mediaScopeDepth >= 0 &&
+      control.mediaScopeDepth <= 5
+  );
 }
 
 export function captureActivationFocusDocument(surface, { articleIndex, point }) {
   const article = document.querySelectorAll('article')[articleIndex];
   const state = { focus: null, captured: false };
   const onClick = (event) => {
-    if (state.captured || !event.isTrusted || event.button !== 0 ||
-        Math.abs(event.clientX - point.x) > 1 || Math.abs(event.clientY - point.y) > 1 ||
-        !(event.target instanceof Element) || !article?.contains(surface) ||
-        !surface.contains(event.target) || !article.contains(event.target)) return;
+    if (
+      state.captured ||
+      !event.isTrusted ||
+      event.button !== 0 ||
+      Math.abs(event.clientX - point.x) > 1 ||
+      Math.abs(event.clientY - point.y) > 1 ||
+      !(event.target instanceof Element) ||
+      !article?.contains(surface) ||
+      !surface.contains(event.target) ||
+      !article.contains(event.target)
+    )
+      return;
     const focused = document.activeElement;
-    if (!(focused instanceof HTMLElement) || !focused.isConnected ||
-        !article.contains(focused) || ['BODY', 'HTML'].includes(focused.tagName)) return;
+    if (
+      !(focused instanceof HTMLElement) ||
+      !focused.isConnected ||
+      !article.contains(focused) ||
+      ['BODY', 'HTML'].includes(focused.tagName)
+    )
+      return;
     state.focus = focused;
     state.captured = true;
   };
   window.addEventListener('click', onClick, true);
   return {
-    get focus() { return state.focus; },
-    get captured() { return state.captured; },
-    dispose() { window.removeEventListener('click', onClick, true); },
+    get focus() {
+      return state.focus;
+    },
+    get captured() {
+      return state.captured;
+    },
+    dispose() {
+      window.removeEventListener('click', onClick, true);
+    },
   };
 }
 
 export function findActivationHitDocument(surface, { articleIndex, point }) {
   const article = document.querySelectorAll('article')[articleIndex];
   const top = document.elementsFromPoint(point.x, point.y)[0];
-  if (!(top instanceof Element) || !article?.contains(surface) ||
-      !article.contains(top) || surface.closest('article') !== top.closest('article')) return null;
+  if (
+    !(top instanceof Element) ||
+    !article?.contains(surface) ||
+    !article.contains(top) ||
+    surface.closest('article') !== top.closest('article')
+  )
+    return null;
   if (surface === top || surface.contains(top)) return top;
   if (surface.matches('button, [role="button"]')) return null;
-  const mediaShell = surface.closest('[data-testid="videoPlayer"], [data-testid="previewInterstitial"]');
+  const mediaShell = surface.closest(
+    '[data-testid="videoPlayer"], [data-testid="previewInterstitial"]'
+  );
   return mediaShell?.contains(top) ? top : null;
 }
 
-async function observeQuotedVideo(page, observation, identity, output, index, settleApi,
-  controlledVideoClickMode) {
+async function observeQuotedVideo(
+  page,
+  observation,
+  identity,
+  output,
+  index,
+  settleApi,
+  controlledVideoClickMode
+) {
   const target = observation.target;
   const article = page.locator('article').nth(target.articleIndex);
-  let clickSurface = target.playerIndex >= 0
-    ? article.locator('[data-testid="videoPlayer"]').nth(target.playerIndex)
-    : target.previewIndex >= 0
-      ? article.locator('[data-testid="previewInterstitial"]').nth(target.previewIndex)
-    : target.posterIndex >= 0
-      ? article.locator('img').nth(target.posterIndex)
-    : article.locator('video').nth(target.videoIndex);
+  let clickSurface =
+    target.playerIndex >= 0
+      ? article.locator('[data-testid="videoPlayer"]').nth(target.playerIndex)
+      : target.previewIndex >= 0
+        ? article.locator('[data-testid="previewInterstitial"]').nth(target.previewIndex)
+        : target.posterIndex >= 0
+          ? article.locator('img').nth(target.posterIndex)
+          : article.locator('video').nth(target.videoIndex);
   await clickSurface.scrollIntoViewIfNeeded({ timeout: ACTION_TIMEOUT_MS });
   if ((await hostSnapshot(page)).scrollY === 0) await page.mouse.wheel(0, 160);
-  let hit = await clickSurface.evaluate(inspectHitTestedVideoActionDocument,
-    { posterPath: target.posterSource?.path ?? null });
+  let hit = await clickSurface.evaluate(inspectHitTestedVideoActionDocument, {
+    posterPath: target.posterSource?.path ?? null,
+  });
   observation.target.initialHitTest = hit;
-  if (!hit?.inQuote && hit?.nativePlay && target.videoIndex >= 0 &&
-      controlledVideoClickMode !== 'allow-all') {
+  if (
+    !hit?.inQuote &&
+    hit?.nativePlay &&
+    target.videoIndex >= 0 &&
+    controlledVideoClickMode !== 'allow-all'
+  ) {
     const hostVideo = article.locator('video').nth(target.videoIndex);
-    const beforeNative = await hostVideo.evaluate(inspectHostVideoDocument,
-      { posterPath: target.posterSource?.path ?? null });
-    const confirmation = await clickSurface.evaluate(inspectHitTestedVideoActionDocument,
-      { posterPath: target.posterSource?.path ?? null });
+    const beforeNative = await hostVideo.evaluate(inspectHostVideoDocument, {
+      posterPath: target.posterSource?.path ?? null,
+    });
+    const confirmation = await clickSurface.evaluate(inspectHitTestedVideoActionDocument, {
+      posterPath: target.posterSource?.path ?? null,
+    });
     observation.target.nativePlayback = {
       status: 'preflight',
       before: beforeNative,
-      confirmation: confirmation ? {
-        inQuote: confirmation.inQuote,
-        nativePlay: confirmation.nativePlay,
-        rejectedControls: confirmation.rejectedControls,
-      } : null,
+      confirmation: confirmation
+        ? {
+            inQuote: confirmation.inQuote,
+            nativePlay: confirmation.nativePlay,
+            rejectedControls: confirmation.rejectedControls,
+          }
+        : null,
     };
-    if (!beforeNative?.poster || !confirmation?.nativePlay ||
-        confirmation.nativePlay.mediaScopeDepth > 5) {
+    if (
+      !beforeNative?.poster ||
+      !confirmation?.nativePlay ||
+      confirmation.nativePlay.mediaScopeDepth > 5
+    ) {
       throw new Error('Native quote play action changed before click');
     }
     observation.target.nativePlayback.status = 'attempting';
@@ -1126,26 +1544,46 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
     };
     await page.mouse.click(confirmation.nativePlay.x, confirmation.nativePlay.y);
     observation.target.nativePlayback.galleryOpenedOnControlClick =
-      await page.locator('[data-xeg-gallery-container]').count() > 0;
+      (await page.locator('[data-xeg-gallery-container]').count()) > 0;
     if (observation.target.nativePlayback.galleryOpenedOnControlClick) {
       throw new Error('Native play control unexpectedly opened the gallery');
     }
-    await page.waitForFunction(({ articleIndex, videoIndex, startTime }) => {
-      const article = document.querySelectorAll('article')[articleIndex];
-      const video = article?.querySelectorAll('video')[videoIndex];
-      return video && !video.error && video.readyState >= 2 &&
-        video.videoWidth > 0 && video.videoHeight > 0 &&
-        video.currentTime >= startTime + 0.15;
-    }, { articleIndex: target.articleIndex, videoIndex: target.videoIndex,
-      startTime: beforeNative.currentTime }, { timeout: 8_000, polling: 100 }).catch(() => {});
-    const afterNative = await hostVideo.evaluate(inspectHostVideoDocument,
-      { posterPath: target.posterSource?.path ?? null }).catch(() => null);
+    await page
+      .waitForFunction(
+        ({ articleIndex, videoIndex, startTime }) => {
+          const article = document.querySelectorAll('article')[articleIndex];
+          const video = article?.querySelectorAll('video')[videoIndex];
+          return (
+            video &&
+            !video.error &&
+            video.readyState >= 2 &&
+            video.videoWidth > 0 &&
+            video.videoHeight > 0 &&
+            video.currentTime >= startTime + 0.15
+          );
+        },
+        {
+          articleIndex: target.articleIndex,
+          videoIndex: target.videoIndex,
+          startTime: beforeNative.currentTime,
+        },
+        { timeout: 8_000, polling: 100 }
+      )
+      .catch(() => {});
+    const afterNative = await hostVideo
+      .evaluate(inspectHostVideoDocument, { posterPath: target.posterSource?.path ?? null })
+      .catch(() => null);
     observation.target.nativePlayback = {
       ...observation.target.nativePlayback,
-      status: afterNative && afterNative.readyState >= 2 &&
-        afterNative.width > 0 && afterNative.height > 0 &&
+      status:
+        afterNative &&
+        afterNative.readyState >= 2 &&
+        afterNative.width > 0 &&
+        afterNative.height > 0 &&
         afterNative.mediaErrorCode === null &&
-        afterNative.currentTime >= beforeNative.currentTime + 0.15 ? 'playing' : 'unverified',
+        afterNative.currentTime >= beforeNative.currentTime + 0.15
+          ? 'playing'
+          : 'unverified',
       after: afterNative,
     };
     if (observation.target.nativePlayback.status !== 'playing') {
@@ -1153,12 +1591,13 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
       throw new Error('Native quote video did not play after ordinary control click');
     }
     clickSurface = hostVideo;
-    hit = await clickSurface.evaluate(inspectHitTestedVideoActionDocument,
-      { posterPath: target.posterSource?.path ?? null });
+    hit = await clickSurface.evaluate(inspectHitTestedVideoActionDocument, {
+      posterPath: target.posterSource?.path ?? null,
+    });
     observation.target.hitTestAfterNativePlayback = hit;
   }
-  const controlledAction = controlledVideoClickMode === 'allow-all' &&
-    !hit?.inQuote && hit?.nativePlay;
+  const controlledAction =
+    controlledVideoClickMode === 'allow-all' && !hit?.inQuote && hit?.nativePlay;
   if (!hit?.inQuote && !controlledAction) {
     if (observation.target.nativePlayback?.status === 'playing') {
       observation.classification = 'native-play-observed-gallery-action-unavailable';
@@ -1166,7 +1605,8 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
     throw new Error('No non-control quoted video gallery action was hit-tested');
   }
   observation.target.galleryActionKind = controlledAction
-    ? 'media-scoped-control-under-allow-all' : 'non-control-media-surface';
+    ? 'media-scoped-control-under-allow-all'
+    : 'non-control-media-surface';
   const actionHandle = await clickSurface.elementHandle();
   if (!actionHandle) throw new Error('Quoted video detached before interaction');
   let focusHandle;
@@ -1175,11 +1615,13 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
   let activationHitHandle;
   try {
     if (controlledAction) {
-      const focusHit = await clickSurface.evaluate(inspectHitTestedVideoActionDocument,
-        { posterPath: target.posterSource?.path ?? null });
+      const focusHit = await clickSurface.evaluate(inspectHitTestedVideoActionDocument, {
+        posterPath: target.posterSource?.path ?? null,
+      });
       if (!focusHit?.nativePlay) throw new Error('Controlled quote control changed before focus');
       focusHandle = await actionHandle.evaluateHandle(findHitTestedVideoControlDocument, {
-        x: focusHit.nativePlay.x, y: focusHit.nativePlay.y,
+        x: focusHit.nativePlay.x,
+        y: focusHit.nativePlay.y,
         posterPath: target.posterSource?.path ?? null,
       });
       if (!focusHandle.asElement()) {
@@ -1188,32 +1630,51 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
       await focusHandle.evaluate((element) => element.focus());
     } else {
       focusHandle = await actionHandle.evaluateHandle((element) => {
-        const focusable = element instanceof HTMLVideoElement && element.controls
-          ? element : element.closest('a[href], button, [tabindex]');
+        const focusable =
+          element instanceof HTMLVideoElement && element.controls
+            ? element
+            : element.closest('a[href], button, [tabindex]');
         if (focusable instanceof HTMLElement) focusable.focus();
         return document.activeElement;
       });
     }
     const before = await hostSnapshot(page);
-    const focusPrepared = await focusHandle.evaluate((element) => document.activeElement === element);
-    const meaningfulFocusTarget = await focusHandle.evaluate((element) =>
-      element instanceof HTMLElement && !['BODY', 'HTML'].includes(element.tagName));
+    const focusPrepared = await focusHandle.evaluate(
+      (element) => document.activeElement === element
+    );
+    const meaningfulFocusTarget = await focusHandle.evaluate(
+      (element) => element instanceof HTMLElement && !['BODY', 'HTML'].includes(element.tagName)
+    );
     observation.gallery = {
-      status: 'attempting', before, focusPrepared,
+      status: 'attempting',
+      before,
+      focusPrepared,
       activationFocusCaptured: false,
       activationFocusChanged: false,
-      focusTarget: controlledAction ? 'bounded-native-video-control'
-        : meaningfulFocusTarget ? 'native-media-focus' : 'body-only',
+      focusTarget: controlledAction
+        ? 'bounded-native-video-control'
+        : meaningfulFocusTarget
+          ? 'native-media-focus'
+          : 'body-only',
     };
     if (controlledAction && (!focusPrepared || !meaningfulFocusTarget)) {
       throw new Error('Controlled quote button could not be focused before gallery click');
     }
-    observation.screenshots.before = await captureScreenshot(page, output, `live-page-${index}-before.png`);
-    const finalHit = await clickSurface.evaluate(inspectHitTestedVideoActionDocument,
-      { posterPath: target.posterSource?.path ?? null });
+    observation.screenshots.before = await captureScreenshot(
+      page,
+      output,
+      `live-page-${index}-before.png`
+    );
+    const finalHit = await clickSurface.evaluate(inspectHitTestedVideoActionDocument, {
+      posterPath: target.posterSource?.path ?? null,
+    });
     const clickPoint = controlledAction
-      ? !finalHit?.inQuote ? finalHit?.nativePlay : null
-      : finalHit?.inQuote ? finalHit : null;
+      ? !finalHit?.inQuote
+        ? finalHit?.nativePlay
+        : null
+      : finalHit?.inQuote
+        ? finalHit
+        : null;
     observation.gallery.identityBeforeClick = Boolean(clickPoint);
     observation.gallery.hitTestBeforeClick = finalHit;
     if (!observation.gallery.identityBeforeClick) {
@@ -1222,46 +1683,69 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
     if (controlledAction) {
       const sameControl = await focusHandle.evaluate((element, point) => {
         const top = document.elementsFromPoint(point.x, point.y)[0];
-        return top?.closest('button, [role="button"]') === element &&
-          document.activeElement === element;
+        return (
+          top?.closest('button, [role="button"]') === element && document.activeElement === element
+        );
       }, clickPoint);
       observation.gallery.focusedControlStillOwnsClick = sameControl;
       if (!sameControl) throw new Error('Focused quote button changed before click');
     }
     const activationSurfaceHandle = controlledAction ? focusHandle : actionHandle;
     activationHitHandle = await activationSurfaceHandle.evaluateHandle(findActivationHitDocument, {
-      articleIndex: target.articleIndex, point: clickPoint,
+      articleIndex: target.articleIndex,
+      point: clickPoint,
     });
     if (!activationHitHandle.asElement()) {
       throw new Error('Quoted-video activation hit changed outside the bounded media surface');
     }
-    activationCaptureHandle = await activationHitHandle.evaluateHandle(captureActivationFocusDocument, {
-      articleIndex: target.articleIndex, point: clickPoint,
-    });
+    activationCaptureHandle = await activationHitHandle.evaluateHandle(
+      captureActivationFocusDocument,
+      {
+        articleIndex: target.articleIndex,
+        point: clickPoint,
+      }
+    );
     await page.mouse.click(clickPoint.x, clickPoint.y);
     observation.gallery.activationFocusCaptured = await activationCaptureHandle.evaluate(
-      (capture) => capture.captured);
+      (capture) => capture.captured
+    );
     if (!observation.gallery.activationFocusCaptured) {
       observation.missingAssertions.push('exactFocusRestored');
       throw new Error('Trusted quoted-video activation focus was not captured');
     }
-    activationFocusHandle = await activationCaptureHandle.evaluateHandle((capture) => capture.focus);
+    activationFocusHandle = await activationCaptureHandle.evaluateHandle(
+      (capture) => capture.focus
+    );
     observation.gallery.activationFocusChanged = await focusHandle.evaluate(
-      (prepared, actual) => prepared !== actual, activationFocusHandle);
+      (prepared, actual) => prepared !== actual,
+      activationFocusHandle
+    );
     await activationCaptureHandle.evaluate((capture) => capture.dispose());
     const gallery = page.locator('[data-xeg-gallery-container]');
-    const openedGallery = await gallery.waitFor({ state: 'visible', timeout: ACTION_TIMEOUT_MS })
-      .then(() => true, () => false);
+    const openedGallery = await gallery
+      .waitFor({ state: 'visible', timeout: ACTION_TIMEOUT_MS })
+      .then(
+        () => true,
+        () => false
+      );
     if (!openedGallery) {
       if (controlledVideoClickMode === 'allow-all') {
         observation.classification = 'controlled-media-click-did-not-open-gallery';
       }
       throw new Error('Quoted video media click did not open the gallery');
     }
-    const selectedHandle = await page.waitForFunction(() => {
-      const item = document.querySelector('[data-xeg-gallery-container] [data-gallery-element="item"] video');
-      return item?.readyState >= 2 && item.videoWidth > 0 && item.videoHeight > 0;
-    }, null, { timeout: ACTION_TIMEOUT_MS, polling: 100 }).catch(() => null);
+    const selectedHandle = await page
+      .waitForFunction(
+        () => {
+          const item = document.querySelector(
+            '[data-xeg-gallery-container] [data-gallery-element="item"] video'
+          );
+          return item?.readyState >= 2 && item.videoWidth > 0 && item.videoHeight > 0;
+        },
+        null,
+        { timeout: ACTION_TIMEOUT_MS, polling: 100 }
+      )
+      .catch(() => null);
     await selectedHandle?.dispose();
     const opened = await page.evaluate(inspectSelectedGalleryVideoDocument);
     observation.gallery.opened = {
@@ -1269,9 +1753,15 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
       role: await gallery.getAttribute('role'),
       selectedVideo: opened || null,
     };
-    observation.screenshots.open = await captureScreenshot(page, output, `live-page-${index}-gallery.png`);
-    const selectedVideo = gallery.locator('[data-gallery-element="item"]')
-      .nth(opened?.index ?? 0).locator('video');
+    observation.screenshots.open = await captureScreenshot(
+      page,
+      output,
+      `live-page-${index}-gallery.png`
+    );
+    const selectedVideo = gallery
+      .locator('[data-gallery-element="item"]')
+      .nth(opened?.index ?? 0)
+      .locator('video');
     const startTime = opened?.currentTime ?? 0;
     if (opened && opened.readyState >= 2) {
       await page.waitForTimeout(400);
@@ -1279,11 +1769,19 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
       if (!inProgress || inProgress.currentTime < startTime + 0.15) {
         await selectedVideo.click({ timeout: ACTION_TIMEOUT_MS }).catch(() => {});
       }
-      await page.waitForFunction(({ index, start }) => {
-        const item = document.querySelectorAll('[data-xeg-gallery-container] [data-gallery-element="item"]')[index];
-        const video = item?.querySelector('video');
-        return video && !video.error && video.currentTime >= start + 0.15;
-      }, { index: opened.index, start: startTime }, { timeout: 5_000, polling: 100 }).catch(() => {});
+      await page
+        .waitForFunction(
+          ({ index, start }) => {
+            const item = document.querySelectorAll(
+              '[data-xeg-gallery-container] [data-gallery-element="item"]'
+            )[index];
+            const video = item?.querySelector('video');
+            return video && !video.error && video.currentTime >= start + 0.15;
+          },
+          { index: opened.index, start: startTime },
+          { timeout: 5_000, polling: 100 }
+        )
+        .catch(() => {});
     }
     const afterPlayback = await page.evaluate(inspectSelectedGalleryVideoDocument);
     observation.gallery.playback = {
@@ -1293,14 +1791,23 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
     };
     await settleApi();
     observation.gallery.owner = quotedOwnerForSource(
-      observation.api.observations, identity.statusId, afterPlayback?.source);
+      observation.api.observations,
+      identity.statusId,
+      afterPlayback?.source
+    );
     await page.keyboard.press('Escape');
-    const detached = await gallery.waitFor({ state: 'detached', timeout: ACTION_TIMEOUT_MS })
-      .then(() => true, () => false);
+    const detached = await gallery.waitFor({ state: 'detached', timeout: ACTION_TIMEOUT_MS }).then(
+      () => true,
+      () => false
+    );
     const restored = await waitForRestoredHostState(page, activationFocusHandle, before);
     observation.gallery = {
-      ...observation.gallery, status: 'observed', closeMethod: 'Escape', detached,
-      focusRestored: restored.focusRestored, after: restored.after,
+      ...observation.gallery,
+      status: 'observed',
+      closeMethod: 'Escape',
+      detached,
+      focusRestored: restored.focusRestored,
+      after: restored.after,
       bodyStylesRestored: restored.bodyStylesRestored,
       scrollRestorationRestored: restored.scrollRestorationRestored,
       scrollRestored: restored.scrollRestored,
@@ -1308,8 +1815,10 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
     const video = observation.gallery.opened.selectedVideo;
     const finalUrl = new URL(page.url());
     const required = {
-      exactFinalStatus: ['x.com', 'twitter.com'].includes(finalUrl.hostname.toLowerCase()) &&
-        finalUrl.pathname.toLowerCase() === `/${identity.handle}/status/${identity.statusId}`.toLowerCase(),
+      exactFinalStatus:
+        ['x.com', 'twitter.com'].includes(finalUrl.hostname.toLowerCase()) &&
+        finalUrl.pathname.toLowerCase() ===
+          `/${identity.handle}/status/${identity.statusId}`.toLowerCase(),
       quotedVideoHitTest: quotedVideoHitTestPassed({
         controlledVideoClickMode,
         galleryActionKind: observation.target.galleryActionKind,
@@ -1320,28 +1829,48 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
         meaningfulFocusTarget,
         focusedControlStillOwnsClick: observation.gallery.focusedControlStillOwnsClick,
       }),
-      galleryDialog: observation.gallery.opened.role === 'dialog' &&
+      galleryDialog:
+        observation.gallery.opened.role === 'dialog' &&
         observation.gallery.opened.ariaModal === 'true',
-      selectedPlayableVideo: Boolean(video?.visible && video.itemLoaded && video.readyState >= 2 &&
-        video.width > 0 && video.height > 0 && video.mediaErrorCode === null),
-      directQuotedOwner: observation.gallery.owner.status === 'matched-direct-quote-variant' &&
-        (target.quoteStatusIds.length === 0 || target.quoteStatusIds.includes(observation.gallery.owner.ownerId)),
+      selectedPlayableVideo: Boolean(
+        video?.visible &&
+          video.itemLoaded &&
+          video.readyState >= 2 &&
+          video.width > 0 &&
+          video.height > 0 &&
+          video.mediaErrorCode === null
+      ),
+      directQuotedOwner:
+        observation.gallery.owner.status === 'matched-direct-quote-variant' &&
+        (target.quoteStatusIds.length === 0 ||
+          target.quoteStatusIds.includes(observation.gallery.owner.ownerId)),
       playbackProgress: observation.gallery.playback.progressed,
       escapeClosed: detached,
-      exactFocusRestored: meaningfulFocusTarget && focusPrepared &&
-        observation.gallery.activationFocusCaptured && restored.focusRestored,
+      exactFocusRestored:
+        meaningfulFocusTarget &&
+        focusPrepared &&
+        observation.gallery.activationFocusCaptured &&
+        restored.focusRestored,
       scrollRestored: restored.scrollRestored,
       scrollRestorationRestored: restored.scrollRestorationRestored,
       bodyStylesRestored: restored.bodyStylesRestored,
-      noProductErrors: observation.productErrors.length === 0 && observation.productErrorOverflow === 0,
+      noProductErrors:
+        observation.productErrors.length === 0 && observation.productErrorOverflow === 0,
       noPageErrors: observation.pageErrors.length === 0 && observation.pageErrorOverflow === 0,
     };
     observation.requiredAssertions = required;
-    observation.missingAssertions = Object.entries(required).filter(([, passed]) => !passed)
+    observation.missingAssertions = Object.entries(required)
+      .filter(([, passed]) => !passed)
       .map(([name]) => name);
-    observation.screenshots.after = await captureScreenshot(page, output, `live-page-${index}-after.png`);
+    observation.screenshots.after = await captureScreenshot(
+      page,
+      output,
+      `live-page-${index}-after.png`
+    );
     if (refreshQuotedVideoErrorAssertions(observation).length) {
-      throw new Error(`Missing live quoted-video assertions: ${observation.missingAssertions.join(', ')}`);
+      throw new Error(
+        `Missing live quoted-video assertions: ${observation.missingAssertions.join(', ')}`
+      );
     }
   } finally {
     await activationCaptureHandle?.evaluate((capture) => capture.dispose()).catch(() => {});
@@ -1356,12 +1885,20 @@ async function observeQuotedVideo(page, observation, identity, output, index, se
 function photoIndexFromActionPath(path) {
   const match = path.match(/\/photo\/([1-9]\d*)$/u);
   const value = Number(match?.[1]);
-  if (!Number.isSafeInteger(value)) throw new Error('Selected media action has no safe photo index');
+  if (!Number.isSafeInteger(value))
+    throw new Error('Selected media action has no safe photo index');
   return value;
 }
 
-async function observeOne(context, extensionId, targetUrl, output, index,
-  controlledVideoClickMode = null, verifyControlledMode = null) {
+async function observeOne(
+  context,
+  extensionId,
+  targetUrl,
+  output,
+  index,
+  controlledVideoClickMode = null,
+  verifyControlledMode = null
+) {
   const identity = targetIdentity(targetUrl);
   const page = await context.newPage();
   const observation = {
@@ -1395,10 +1932,10 @@ async function observeOne(context, extensionId, targetUrl, output, index,
     });
     observation.responseStatus = response?.status() ?? null;
     observation.finalUrl = sanitizedUrl(page.url());
-    observation.extension.readinessMarkerAtNavigation = await page.locator(
-      'html[data-xeg-gallery-ready="true"]'
-    ).count() === 1;
-    observation.targetCandidatesBefore = await page.evaluate(inspectLiveCandidateDocument, identity)
+    observation.extension.readinessMarkerAtNavigation =
+      (await page.locator('html[data-xeg-gallery-ready="true"]').count()) === 1;
+    observation.targetCandidatesBefore = await page
+      .evaluate(inspectLiveCandidateDocument, identity)
       .catch(() => null);
     let readiness;
     try {
@@ -1406,10 +1943,10 @@ async function observeOne(context, extensionId, targetUrl, output, index,
     } catch (error) {
       observation.missingAssertions.push('targetMediaReady');
       observation.classification = 'quote-unavailable-or-page-blocked';
-      observation.extension.readinessMarker = await page.locator(
-        'html[data-xeg-gallery-ready="true"]'
-      ).count() === 1;
-      observation.targetCandidates = await page.evaluate(inspectLiveCandidateDocument, identity)
+      observation.extension.readinessMarker =
+        (await page.locator('html[data-xeg-gallery-ready="true"]').count()) === 1;
+      observation.targetCandidates = await page
+        .evaluate(inspectLiveCandidateDocument, identity)
         .catch(() => null);
       throw error;
     }
@@ -1419,15 +1956,18 @@ async function observeOne(context, extensionId, targetUrl, output, index,
       throw new Error(`Live target stopped before media readiness: ${readiness.reason}`);
     }
     observation.target = readiness.target;
-    observation.targetCandidates = await page.evaluate(inspectLiveCandidateDocument, identity)
+    observation.targetCandidates = await page
+      .evaluate(inspectLiveCandidateDocument, identity)
       .catch(() => null);
-    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({
-      state: 'attached',
-      timeout: ACTION_TIMEOUT_MS,
-    }).catch(() => {});
-    observation.extension.readinessMarker = await page.locator(
-      'html[data-xeg-gallery-ready="true"]'
-    ).count() === 1;
+    await page
+      .locator('html[data-xeg-gallery-ready="true"]')
+      .waitFor({
+        state: 'attached',
+        timeout: ACTION_TIMEOUT_MS,
+      })
+      .catch(() => {});
+    observation.extension.readinessMarker =
+      (await page.locator('html[data-xeg-gallery-ready="true"]').count()) === 1;
     if (!observation.extension.readinessMarker) {
       observation.missingAssertions.push('extensionInjected');
       throw new Error('Installed extension readiness marker was not observed');
@@ -1440,11 +1980,20 @@ async function observeOne(context, extensionId, targetUrl, output, index,
     }
 
     if (observation.target.kind === 'quoted-video') {
-      await observeQuotedVideo(page, observation, identity, output, index, settleApi,
-        controlledVideoClickMode);
+      await observeQuotedVideo(
+        page,
+        observation,
+        identity,
+        output,
+        index,
+        settleApi,
+        controlledVideoClickMode
+      );
       await settleApi();
       if (refreshQuotedVideoErrorAssertions(observation).length) {
-        throw new Error(`Missing live quoted-video assertions: ${observation.missingAssertions.join(', ')}`);
+        throw new Error(
+          `Missing live quoted-video assertions: ${observation.missingAssertions.join(', ')}`
+        );
       }
       observation.status = 'core-flow-observed';
       return observation;
@@ -1464,7 +2013,9 @@ async function observeOne(context, extensionId, targetUrl, output, index,
     if ((await hostSnapshot(page)).scrollY === 0) await page.mouse.wheel(0, 160);
     await action.focus({ timeout: ACTION_TIMEOUT_MS });
     const before = await hostSnapshot(page);
-    const focusPrepared = await actionHandle.evaluate((element) => document.activeElement === element);
+    const focusPrepared = await actionHandle.evaluate(
+      (element) => document.activeElement === element
+    );
     observation.gallery = { status: 'attempting', before, focusPrepared };
     observation.screenshots.before = await captureScreenshot(
       page,
@@ -1472,33 +2023,45 @@ async function observeOne(context, extensionId, targetUrl, output, index,
       `live-page-${index}-before.png`
     );
 
-    const identityBeforeClick = await actionHandle.evaluate((element, expected) => {
-      const article = element.closest('article');
-      if (!(element instanceof HTMLAnchorElement) || !article) return false;
-      const rectangle = element.getBoundingClientRect();
-      const x = Math.max(0, Math.min(innerWidth - 1, rectangle.left + rectangle.width / 2));
-      const y = Math.max(0, Math.min(innerHeight - 1, rectangle.top + rectangle.height / 2));
-      const topAction = document.elementsFromPoint(x, y)
-        .map((candidate) => candidate.closest('a[href]')).find(Boolean);
-      return topAction === element && element.closest('article') === article &&
-        new URL(element.href, location.href).pathname === expected.actionPath;
-    }, { actionPath: observation.target.actionPath });
+    const identityBeforeClick = await actionHandle.evaluate(
+      (element, expected) => {
+        const article = element.closest('article');
+        if (!(element instanceof HTMLAnchorElement) || !article) return false;
+        const rectangle = element.getBoundingClientRect();
+        const x = Math.max(0, Math.min(innerWidth - 1, rectangle.left + rectangle.width / 2));
+        const y = Math.max(0, Math.min(innerHeight - 1, rectangle.top + rectangle.height / 2));
+        const topAction = document
+          .elementsFromPoint(x, y)
+          .map((candidate) => candidate.closest('a[href]'))
+          .find(Boolean);
+        return (
+          topAction === element &&
+          element.closest('article') === article &&
+          new URL(element.href, location.href).pathname === expected.actionPath
+        );
+      },
+      { actionPath: observation.target.actionPath }
+    );
     observation.gallery.identityBeforeClick = identityBeforeClick;
     if (!identityBeforeClick) throw new Error('Top media action identity changed before click');
 
     await actionHandle.click({ timeout: ACTION_TIMEOUT_MS });
     const gallery = page.locator('[data-xeg-gallery-container]');
     await gallery.waitFor({ state: 'visible', timeout: ACTION_TIMEOUT_MS });
-    const selectedGalleryHandle = await page.waitForFunction(inspectSelectedGalleryDocument, {
-      expectedIndex: selectedPhotoIndex,
-      expectedPath: observation.target.imageSource.path,
-    }, {
-      timeout: ACTION_TIMEOUT_MS,
-      polling: 100,
-    }).catch(() => null);
-    const selectedGallery = selectedGalleryHandle
-      ? await selectedGalleryHandle.jsonValue()
-      : null;
+    const selectedGalleryHandle = await page
+      .waitForFunction(
+        inspectSelectedGalleryDocument,
+        {
+          expectedIndex: selectedPhotoIndex,
+          expectedPath: observation.target.imageSource.path,
+        },
+        {
+          timeout: ACTION_TIMEOUT_MS,
+          polling: 100,
+        }
+      )
+      .catch(() => null);
+    const selectedGallery = selectedGalleryHandle ? await selectedGalleryHandle.jsonValue() : null;
     await selectedGalleryHandle?.dispose();
     observation.gallery.opened = {
       ariaModal: await gallery.getAttribute('aria-modal'),
@@ -1512,8 +2075,10 @@ async function observeOne(context, extensionId, targetUrl, output, index,
     );
 
     await page.keyboard.press('Escape');
-    const detached = await gallery.waitFor({ state: 'detached', timeout: ACTION_TIMEOUT_MS })
-      .then(() => true, () => false);
+    const detached = await gallery.waitFor({ state: 'detached', timeout: ACTION_TIMEOUT_MS }).then(
+      () => true,
+      () => false
+    );
     const restored = await waitForRestoredHostState(page, actionHandle, before);
     const { after, focusRestored } = restored;
     observation.gallery = {
@@ -1538,12 +2103,14 @@ async function observeOne(context, extensionId, targetUrl, output, index,
     const finalPath = finalUrl.pathname.toLowerCase();
     const expectedPath = `/${identity.handle}/status/${identity.statusId}`.toLowerCase();
     const required = {
-      exactFinalStatus: ['x.com', 'twitter.com'].includes(finalUrl.hostname.toLowerCase()) &&
+      exactFinalStatus:
+        ['x.com', 'twitter.com'].includes(finalUrl.hostname.toLowerCase()) &&
         finalPath === expectedPath,
       extensionInjected: observation.extension.readinessMarker,
       loadedTargetImage: observation.target.imageLoaded && observation.target.imageVisible,
       topActionIdentity: identityBeforeClick,
-      galleryDialog: observation.gallery.opened.role === 'dialog' &&
+      galleryDialog:
+        observation.gallery.opened.role === 'dialog' &&
         observation.gallery.opened.ariaModal === 'true',
       galleryHostImage: observation.gallery.opened.selectedGallery !== null,
       escapeClosed: detached,
@@ -1552,21 +2119,22 @@ async function observeOne(context, extensionId, targetUrl, output, index,
       scrollRestored: after.scrollY === before.scrollY,
       scrollRestorationRestored: after.scrollRestoration === before.scrollRestoration,
       bodyStylesRestored: JSON.stringify(after.bodyStyle) === JSON.stringify(before.bodyStyle),
-      noProductErrors: observation.productErrors.length === 0 &&
-        observation.productErrorOverflow === 0,
+      noProductErrors:
+        observation.productErrors.length === 0 && observation.productErrorOverflow === 0,
       noPageErrors: observation.pageErrors.length === 0 && observation.pageErrorOverflow === 0,
     };
     observation.requiredAssertions = required;
     observation.missingAssertions = Object.entries(required)
-      .filter(([, passed]) => !passed).map(([name]) => name);
+      .filter(([, passed]) => !passed)
+      .map(([name]) => name);
     if (observation.missingAssertions.length) {
       throw new Error(`Missing live assertions: ${observation.missingAssertions.join(', ')}`);
     }
     observation.status = 'core-flow-observed';
-    observation.evidenceStatus = observation.hostDiagnostics.length ||
-      observation.hostDiagnosticOverflow > 0
-      ? 'unverified'
-      : 'observed';
+    observation.evidenceStatus =
+      observation.hostDiagnostics.length || observation.hostDiagnosticOverflow > 0
+        ? 'unverified'
+        : 'observed';
   } catch (error) {
     observation.status = 'failed';
     observation.evidenceStatus = 'unverified';
@@ -1575,31 +2143,39 @@ async function observeOne(context, extensionId, targetUrl, output, index,
     const providerRejection = summarizeQuoteProviderRejection(observation.api);
     if (providerRejection) observation.providerRejection = providerRejection;
     observation.classification = classifyLiveFailure(
-      observation.classification, observation.gallery.status, providerRejection);
+      observation.classification,
+      observation.gallery.status,
+      providerRejection
+    );
     const errorScreenshot = `live-page-${index}-error.png`;
-    if (await page.screenshot({ path: join(output, errorScreenshot) })
-      .then(() => true, () => false)) {
+    if (
+      await page.screenshot({ path: join(output, errorScreenshot) }).then(
+        () => true,
+        () => false
+      )
+    ) {
       observation.screenshots.error = errorScreenshot;
     }
   } finally {
     await settleApi();
-    if (observation.target?.kind === 'quoted-video' &&
-        observation.status === 'core-flow-observed') {
+    if (
+      observation.target?.kind === 'quoted-video' &&
+      observation.status === 'core-flow-observed'
+    ) {
       if (refreshQuotedVideoErrorAssertions(observation).length) {
         observation.status = 'failed';
         observation.evidenceStatus = 'unverified';
         observation.error = `Missing live quoted-video assertions: ${observation.missingAssertions.join(', ')}`;
         observation.classification = classifyLiveFailure(
-          observation.classification, observation.gallery.status,
-          summarizeQuoteProviderRejection(observation.api));
+          observation.classification,
+          observation.gallery.status,
+          summarizeQuoteProviderRejection(observation.api)
+        );
       } else Object.assign(observation, classifyLiveHostDiagnostics(observation));
     }
     if (actionHandle) await actionHandle.dispose().catch(() => {});
     observation.finalUrl = sanitizedUrl(page.url());
-    await writeFile(
-      join(output, `live-page-${index}.json`),
-      JSON.stringify(observation, null, 2)
-    );
+    await writeFile(join(output, `live-page-${index}.json`), JSON.stringify(observation, null, 2));
     await page.close().catch(() => {});
   }
   return observation;
@@ -1608,12 +2184,21 @@ async function observeOne(context, extensionId, targetUrl, output, index,
 export function decodeStoredVideoSettings(raw) {
   let parsed = raw;
   if (typeof raw === 'string') {
-    try { parsed = JSON.parse(raw); }
-    catch { return null; }
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      return null;
+    }
   }
-  if (parsed && typeof parsed === 'object' && !Array.isArray(parsed) &&
-    parsed.__xegStorageEnvelope === 1 && typeof parsed.updatedAt === 'number' &&
-    Object.hasOwn(parsed, 'value')) return parsed.value;
+  if (
+    parsed &&
+    typeof parsed === 'object' &&
+    !Array.isArray(parsed) &&
+    parsed.__xegStorageEnvelope === 1 &&
+    typeof parsed.updatedAt === 'number' &&
+    Object.hasOwn(parsed, 'value')
+  )
+    return parsed.value;
   return parsed;
 }
 
@@ -1628,12 +2213,18 @@ export async function readStoredVideoSettings(extensionPage) {
 
 export function createControlledVideoSettings(priorValue, timestamp) {
   const decoded = decodeStoredVideoSettings(priorValue);
-  const base = decoded && typeof decoded === 'object' && !Array.isArray(decoded)
-    ? decoded : { version: '1', lastModified: timestamp, gallery: {} };
+  const base =
+    decoded && typeof decoded === 'object' && !Array.isArray(decoded)
+      ? decoded
+      : { version: '1', lastModified: timestamp, gallery: {} };
   return {
     ...base,
-    gallery: { ...(base.gallery && typeof base.gallery === 'object' &&
-      !Array.isArray(base.gallery) ? base.gallery : {}), videoClickMode: 'allow-all' },
+    gallery: {
+      ...(base.gallery && typeof base.gallery === 'object' && !Array.isArray(base.gallery)
+        ? base.gallery
+        : {}),
+      videoClickMode: 'allow-all',
+    },
     __schemaHash: '1',
   };
 }
@@ -1655,24 +2246,36 @@ async function observeControlledVideoMode(context, extensionId, targetUrl, outpu
   try {
     await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
     prior = await readStoredVideoSettings(extensionPage);
-    result.priorStoredMode = ['allow-all', 'block-all', 'block-controls-only']
-      .includes(prior.settings?.gallery?.videoClickMode)
-      ? prior.settings.gallery.videoClickMode : null;
+    result.priorStoredMode = ['allow-all', 'block-all', 'block-controls-only'].includes(
+      prior.settings?.gallery?.videoClickMode
+    )
+      ? prior.settings.gallery.videoClickMode
+      : null;
     const next = createControlledVideoSettings(prior.value, Date.now());
     mutated = true;
-    await extensionPage.evaluate(async ({ storageKey, value }) => {
-      await chrome.storage.local.set({ [storageKey]: value });
-    }, { storageKey: key, value: next });
-    result.appliedMode = (await readStoredVideoSettings(extensionPage))
-      .settings?.gallery?.videoClickMode ?? null;
+    await extensionPage.evaluate(
+      async ({ storageKey, value }) => {
+        await chrome.storage.local.set({ [storageKey]: value });
+      },
+      { storageKey: key, value: next }
+    );
+    result.appliedMode =
+      (await readStoredVideoSettings(extensionPage)).settings?.gallery?.videoClickMode ?? null;
     if (result.appliedMode !== 'allow-all') {
       throw new Error('Controlled video click mode was not stored');
     }
-    result.observation = await observeOne(context, extensionId, targetUrl, output,
-      `${index}-allow-all`, 'allow-all', async () =>
-        (await readStoredVideoSettings(extensionPage)).settings?.gallery?.videoClickMode ?? null);
-    result.modeAfterObservation = (await readStoredVideoSettings(extensionPage))
-      .settings?.gallery?.videoClickMode ?? null;
+    result.observation = await observeOne(
+      context,
+      extensionId,
+      targetUrl,
+      output,
+      `${index}-allow-all`,
+      'allow-all',
+      async () =>
+        (await readStoredVideoSettings(extensionPage)).settings?.gallery?.videoClickMode ?? null
+    );
+    result.modeAfterObservation =
+      (await readStoredVideoSettings(extensionPage)).settings?.gallery?.videoClickMode ?? null;
     if (result.modeAfterObservation !== 'allow-all') {
       throw new Error('Controlled video click mode changed during observation');
     }
@@ -1684,21 +2287,36 @@ async function observeControlledVideoMode(context, extensionId, targetUrl, outpu
     if (!mutated) result.cleanup.restored = true;
     if (mutated) {
       try {
-        await extensionPage.evaluate(async ({ storageKey, previous }) => {
-          if (previous.exists) await chrome.storage.local.set({ [storageKey]: previous.value });
-          else await chrome.storage.local.remove(storageKey);
-        }, { storageKey: key, previous: prior });
-        result.cleanup.restored = await extensionPage.evaluate(async ({ storageKey, previous }) => {
-          const values = await chrome.storage.local.get(storageKey);
-          return Object.hasOwn(values, storageKey) === previous.exists &&
-            (!previous.exists || JSON.stringify(values[storageKey]) === JSON.stringify(previous.value));
-        }, { storageKey: key, previous: prior });
+        await extensionPage.evaluate(
+          async ({ storageKey, previous }) => {
+            if (previous.exists) await chrome.storage.local.set({ [storageKey]: previous.value });
+            else await chrome.storage.local.remove(storageKey);
+          },
+          { storageKey: key, previous: prior }
+        );
+        result.cleanup.restored = await extensionPage.evaluate(
+          async ({ storageKey, previous }) => {
+            const values = await chrome.storage.local.get(storageKey);
+            return (
+              Object.hasOwn(values, storageKey) === previous.exists &&
+              (!previous.exists ||
+                JSON.stringify(values[storageKey]) === JSON.stringify(previous.value))
+            );
+          },
+          { storageKey: key, previous: prior }
+        );
       } catch (error) {
         result.cleanup.restoreError = safeError(error);
       }
     }
-    await extensionPage.close().then(() => { result.cleanup.extensionPageClosed = true; },
-      (error) => { result.cleanup.extensionPageError = safeError(error); });
+    await extensionPage.close().then(
+      () => {
+        result.cleanup.extensionPageClosed = true;
+      },
+      (error) => {
+        result.cleanup.extensionPageError = safeError(error);
+      }
+    );
     if (!result.cleanup.restored || !result.cleanup.extensionPageClosed) {
       result.status = 'failed';
       result.error ??= 'Task-owned extension settings or page cleanup was incomplete';
@@ -1717,23 +2335,40 @@ export async function observeLiveUrls({ context, extensionId, liveUrls, output }
     const page = await observeOne(context, extensionId, urls[index], output, index + 1);
     if (page.classification === 'native-play-observed-gallery-action-unavailable') {
       page.controlledProbe = await observeControlledVideoMode(
-        context, extensionId, urls[index], output, index + 1)
-        .catch((error) => ({ status: 'failed', error: safeError(error),
-          cleanup: { restored: false, extensionPageClosed: false } }));
+        context,
+        extensionId,
+        urls[index],
+        output,
+        index + 1
+      ).catch((error) => ({
+        status: 'failed',
+        error: safeError(error),
+        cleanup: { restored: false, extensionPageClosed: false },
+      }));
     }
     pages.push(page);
   }
-  const passedPage = (page) => page.status === 'core-flow-observed' ||
-    page.controlledProbe?.observation?.status === 'core-flow-observed' &&
-      page.controlledProbe?.cleanup?.restored === true;
+  const passedPage = (page) =>
+    page.status === 'core-flow-observed' ||
+    (page.controlledProbe?.observation?.status === 'core-flow-observed' &&
+      page.controlledProbe?.cleanup?.restored === true);
   const failed = pages.filter((page) => !passedPage(page));
-  const controlled = pages.some((page) => page.controlledProbe?.observation?.status ===
-    'core-flow-observed');
+  const controlled = pages.some(
+    (page) => page.controlledProbe?.observation?.status === 'core-flow-observed'
+  );
   const summary = {
-    status: failed.length ? 'failed' : controlled ? 'controlled-flow-observed' : 'core-flow-observed',
-    evidenceStatus: pages.every((page) => passedPage(page) &&
-      (page.status === 'core-flow-observed' ? page.evidenceStatus :
-        page.controlledProbe?.observation?.evidenceStatus) === 'observed')
+    status: failed.length
+      ? 'failed'
+      : controlled
+        ? 'controlled-flow-observed'
+        : 'core-flow-observed',
+    evidenceStatus: pages.every(
+      (page) =>
+        passedPage(page) &&
+        (page.status === 'core-flow-observed'
+          ? page.evidenceStatus
+          : page.controlledProbe?.observation?.evidenceStatus) === 'observed'
+    )
       ? 'observed'
       : 'unverified',
     pages,
@@ -1741,8 +2376,12 @@ export async function observeLiveUrls({ context, extensionId, liveUrls, output }
   await writeFile(join(output, 'live-observations.json'), JSON.stringify(summary, null, 2));
   if (failed.length) {
     const error = new AggregateError(
-      failed.map((page) => new Error(page.controlledProbe?.error ??
-        page.controlledProbe?.observation?.error ?? page.error)),
+      failed.map(
+        (page) =>
+          new Error(
+            page.controlledProbe?.error ?? page.controlledProbe?.observation?.error ?? page.error
+          )
+      ),
       `${failed.length} live X observation(s) missed required assertions`
     );
     error.summary = summary;

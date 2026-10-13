@@ -1,5 +1,13 @@
 import { execFileSync, spawnSync } from 'node:child_process';
-import { chmodSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -12,7 +20,12 @@ const security = readFileSync(resolve(root, '.github/workflows/security.yaml'), 
 const deep = readFileSync(resolve(root, '.github/workflows/deep-checks.yaml'), 'utf8');
 const release = readFileSync(resolve(root, '.github/workflows/release.yaml'), 'utf8');
 const publishedSha = 'a1fd01821cab105c6a6430ee81e18030532843e8';
-const pinnedFiles = ['pinned-tools.json', 'pinned-tools.ts', 'check-pinned-tools.ts', 'install-nose.ts'];
+const pinnedFiles = [
+  'pinned-tools.json',
+  'pinned-tools.ts',
+  'check-pinned-tools.ts',
+  'install-nose.ts',
+];
 
 function stepScript(workflow: string, name: string): string {
   const section = workflow.split(`      - name: ${name}\n`)[1]?.split('\n      - name: ')[0] ?? '';
@@ -58,7 +71,8 @@ describe('Nose and scanner pin workflow contracts', () => {
       expect(workflow).toContain('git show "$trusted_sha:scripts/ci/$name"');
       expect(workflow).toContain('"$pinned_dir/install-nose.ts"');
       expect(workflow).not.toContain('install-nose.sh');
-      const installStep = workflow.match(/      - name: 🔧 Install nose\n[\s\S]*?(?=\n      - name:|$)/u)?.[0] ?? '';
+      const installStep =
+        workflow.match(/      - name: 🔧 Install nose\n[\s\S]*?(?=\n      - name:|$)/u)?.[0] ?? '';
       expect(installStep).not.toContain('GH_TOKEN:');
     }
     expect(security).not.toContain('check-pinned-tools.sh');
@@ -68,19 +82,28 @@ describe('Nose and scanner pin workflow contracts', () => {
     const temp = mkdtempSync(join(tmpdir(), 'pin workflow '));
     try {
       const output = join(temp, 'output');
-      const result = spawnSync('bash', ['-e', '-o', 'pipefail', '-c', stepScript(security, '🔐 Export validated scanner images')], {
-        cwd: root,
-        env: { ...process.env, RUNNER_TEMP: temp, GITHUB_OUTPUT: output },
-        encoding: 'utf8',
-      });
+      const result = spawnSync(
+        'bash',
+        ['-e', '-o', 'pipefail', '-c', stepScript(security, '🔐 Export validated scanner images')],
+        {
+          cwd: root,
+          env: { ...process.env, RUNNER_TEMP: temp, GITHUB_OUTPUT: output },
+          encoding: 'utf8',
+        }
+      );
       expect(result.status, result.stderr).toBe(0);
       const pins = JSON.parse(metadata) as { osv: { image: string }; semgrep: { image: string } };
       expect(readFileSync(output, 'utf8')).toBe(
         `OSV_SCANNER_IMAGE=${pins.osv.image}\nSEMGREP_IMAGE=${pins.semgrep.image}\n`
       );
-      const copy = join(temp, readdirSync(temp).find((entry) => entry.startsWith('pinned-tools.')) ?? '');
+      const copy = join(
+        temp,
+        readdirSync(temp).find((entry) => entry.startsWith('pinned-tools.')) ?? ''
+      );
       for (const name of pinnedFiles)
-        expect(readFileSync(join(copy, name))).toEqual(readFileSync(resolve(root, 'scripts/ci', name)));
+        expect(readFileSync(join(copy, name))).toEqual(
+          readFileSync(resolve(root, 'scripts/ci', name))
+        );
     } finally {
       rmSync(temp, { recursive: true, force: true });
     }
@@ -96,22 +119,28 @@ describe('Nose and scanner pin workflow contracts', () => {
       chmodSync(node, 0o755);
       for (const workflow of [deep, release]) {
         const output = join(temp, `node-${workflow === deep ? 'deep' : 'release'}.log`);
-        const result = spawnSync('bash', ['-e', '-o', 'pipefail', '-c', stepScript(workflow, '🔧 Install nose')], {
-          cwd: root,
-          env: {
-            ...process.env,
-            PATH: `${bin}:${process.env.PATH ?? ''}`,
-            RUNNER_TEMP: temp,
-            TEST_NODE_LOG: output,
-          },
-          encoding: 'utf8',
-        });
+        const result = spawnSync(
+          'bash',
+          ['-e', '-o', 'pipefail', '-c', stepScript(workflow, '🔧 Install nose')],
+          {
+            cwd: root,
+            env: {
+              ...process.env,
+              PATH: `${bin}:${process.env.PATH ?? ''}`,
+              RUNNER_TEMP: temp,
+              TEST_NODE_LOG: output,
+            },
+            encoding: 'utf8',
+          }
+        );
         expect(result.status, result.stderr).toBe(0);
         const invocation = readFileSync(output, 'utf8');
         expect(invocation).toMatch(/--experimental-strip-types\n.*\/install-nose\.ts\n/u);
         const copy = dirname(invocation.trim().split('\n').at(-1) ?? '');
         for (const name of pinnedFiles) {
-          const published = execFileSync('git', ['show', `${publishedSha}:scripts/ci/${name}`], { cwd: root });
+          const published = execFileSync('git', ['show', `${publishedSha}:scripts/ci/${name}`], {
+            cwd: root,
+          });
           expect(readFileSync(join(copy, name))).toEqual(published);
         }
       }

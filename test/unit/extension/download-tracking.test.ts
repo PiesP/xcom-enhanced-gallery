@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { describe, expect, it } from 'vitest';
 import { DOWNLOAD_PRE_ID_CANCELLATION_TTL_MS } from '@constants/performance';
 import { DownloadTrackingStore } from '@extension/download-tracking';
 import type { StorageAdapter } from '@platform/types';
+import { describe, expect, it } from 'vitest';
 
 function createStorage(): {
   storage: StorageAdapter;
@@ -91,13 +91,19 @@ describe('DownloadTrackingStore', () => {
     const restarted = new DownloadTrackingStore(worker.storage);
     await restarted.ready();
     expect(restarted.get('direct-1')).toMatchObject({
-      route: 'direct', ownerTabId: 7, urlHash, downloadId: 42,
-      terminalState: 'complete', cancellationRequested: false,
+      route: 'direct',
+      ownerTabId: 7,
+      urlHash,
+      downloadId: 42,
+      terminalState: 'complete',
+      cancellationRequested: false,
     });
     expect(JSON.stringify(worker.values)).not.toContain('pbs.twimg.com');
     expect(await restarted.registerDirectRequest('direct-1', 7, urlHash)).toBe('existing');
     expect(await restarted.registerDirectRequest('direct-1', 8, urlHash)).toBe('wrong-owner');
-    expect(await restarted.registerDirectRequest('direct-1', 7, 'b'.repeat(64))).toBe('wrong-owner');
+    expect(await restarted.registerDirectRequest('direct-1', 7, 'b'.repeat(64))).toBe(
+      'wrong-owner'
+    );
   });
 
   it('honors same-owner cancellation before an ID without allowing a second dispatch', async () => {
@@ -139,7 +145,11 @@ describe('DownloadTrackingStore', () => {
     expect(await store.bindDirectDownload('slow', 77, 9, urlHash)).toBe(true);
     store.finishDirectAllocation('slow');
     expect(store.get('slow')).toMatchObject({
-      route: 'direct', ownerTabId: 9, urlHash, downloadId: 77, cancellationRequested: true,
+      route: 'direct',
+      ownerTabId: 9,
+      urlHash,
+      downloadId: 77,
+      cancellationRequested: true,
     });
     expect(await store.bindDirectDownload('missing', 78, 9, urlHash)).toBeUndefined();
     expect(store.get('missing')).toBeUndefined();

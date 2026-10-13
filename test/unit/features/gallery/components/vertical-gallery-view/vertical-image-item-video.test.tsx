@@ -11,39 +11,70 @@ const observerOptions = new Map<string, IntersectionObserverInit>();
 
 vi.mock('@shared/utils/performance/observer-pool', () => ({
   SharedObserver: {
-    observe: (_element: Element, callback: (entry: IntersectionObserverEntry) => void, options: IntersectionObserverInit) => {
+    observe: (
+      _element: Element,
+      callback: (entry: IntersectionObserverEntry) => void,
+      options: IntersectionObserverInit
+    ) => {
       observers.set(options.rootMargin ?? '', callback);
       observerOptions.set(options.rootMargin ?? '', options);
-      return () => { observers.delete(options.rootMargin ?? ''); observerOptions.delete(options.rootMargin ?? ''); };
+      return () => {
+        observers.delete(options.rootMargin ?? '');
+        observerOptions.delete(options.rootMargin ?? '');
+      };
     },
   },
 }));
-vi.mock('@features/gallery/components/vertical-gallery-view/hooks/use-video-volume-persistence', () => ({
-  useVideoVolumePersistence: (options: { onUserVolumeChange?: (video: HTMLVideoElement) => void }) => ({
-    applyMutedProgrammatically: (video: HTMLVideoElement, muted: boolean) => { video.muted = muted; },
-    applyVolumeProgrammatically: (video: HTMLVideoElement, volume: number) => { video.volume = volume; },
-    handleVolumeChange: (event: Event & { currentTarget: HTMLVideoElement }) =>
-      options.onUserVolumeChange?.(event.currentTarget),
-  }),
-}));
+vi.mock(
+  '@features/gallery/components/vertical-gallery-view/hooks/use-video-volume-persistence',
+  () => ({
+    useVideoVolumePersistence: (options: {
+      onUserVolumeChange?: (video: HTMLVideoElement) => void;
+    }) => ({
+      applyMutedProgrammatically: (video: HTMLVideoElement, muted: boolean) => {
+        video.muted = muted;
+      },
+      applyVolumeProgrammatically: (video: HTMLVideoElement, volume: number) => {
+        video.volume = volume;
+      },
+      handleVolumeChange: (event: Event & { currentTarget: HTMLVideoElement }) =>
+        options.onUserVolumeChange?.(event.currentTarget),
+    }),
+  })
+);
 vi.mock('@shared/hooks/use-translation', () => ({
   useTranslation: () => (key: string) => key,
 }));
 
+import {
+  MAX_VIDEO_PLAYBACK_ATTEMPTS,
+  nextVideoPlaybackSource,
+} from '@features/gallery/components/vertical-gallery-view/utils/video-playback-recovery';
 import { VerticalImageItem } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem';
-import { MAX_VIDEO_PLAYBACK_ATTEMPTS, nextVideoPlaybackSource } from '@features/gallery/components/vertical-gallery-view/utils/video-playback-recovery';
-import { handleKeyboardEvent, resetKeyboardDebounceState } from '@shared/utils/events/handlers/keyboard';
-import { executeVideoControl } from '@shared/utils/events/handlers/video-control-helper';
 import { closeGallery, openGallery } from '@shared/state/signals/gallery.signals';
+import {
+  handleKeyboardEvent,
+  resetKeyboardDebounceState,
+} from '@shared/utils/events/handlers/keyboard';
+import { executeVideoControl } from '@shared/utils/events/handlers/video-control-helper';
 
-const source = (name: string): string => `https://video.twimg.com/ext_tw_video/222/pu/vid/${name}.mp4`;
+const source = (name: string): string =>
+  `https://video.twimg.com/ext_tw_video/222/pu/vid/${name}.mp4`;
 const poster = 'https://pbs.twimg.com/ext_tw_video_thumb/222/pu/img/poster.jpg';
-const variants = ['best', 'middle', 'low', 'fourth'].map((name) => ({ url: source(name), contentType: 'video/mp4' as const }));
+const variants = ['best', 'middle', 'low', 'fourth'].map((name) => ({
+  url: source(name),
+  contentType: 'video/mp4' as const,
+}));
 
 function media(id = '222_api_0'): MediaInfo {
   return {
-    id, type: 'video', url: source('best'), thumbnailUrl: poster,
-    width: 640, height: 360, videoVariants: variants,
+    id,
+    type: 'video',
+    url: source('best'),
+    thumbnailUrl: poster,
+    width: 640,
+    height: 360,
+    videoVariants: variants,
     downloadSource: { url: source('best'), quality: 'best-mp4', provenance: 'api' },
   };
 }
@@ -53,7 +84,10 @@ function mediaEvent(video: HTMLVideoElement, type: string): void {
 }
 
 function setMediaError(video: HTMLVideoElement, code: number | null): void {
-  Object.defineProperty(video, 'error', { configurable: true, get: () => code === null ? null : { code } });
+  Object.defineProperty(video, 'error', {
+    configurable: true,
+    get: () => (code === null ? null : { code }),
+  });
 }
 
 describe('VerticalImageItem video admission and playback', () => {
@@ -77,29 +111,44 @@ describe('VerticalImageItem video admission and playback', () => {
     observerOptions.clear();
   });
 
-  function mount(initial: { media?: MediaInfo; active?: boolean; focused?: boolean; forceVisible?: boolean; index?: number; root?: HTMLElement; rootHeight?: number } = {}) {
+  function mount(
+    initial: {
+      media?: MediaInfo;
+      active?: boolean;
+      focused?: boolean;
+      forceVisible?: boolean;
+      index?: number;
+      root?: HTMLElement;
+      rootHeight?: number;
+    } = {}
+  ) {
     const item = initial.media ?? media();
     const [state, setState] = createSignal({
-      media: item, active: initial.active ?? false, focused: initial.focused ?? false,
+      media: item,
+      active: initial.active ?? false,
+      focused: initial.focused ?? false,
       forceVisible: initial.forceVisible ?? false,
       index: initial.index ?? 3,
       root: initial.root ?? host,
       rootHeight: initial.rootHeight ?? 480,
     });
     const onMediaLoad = vi.fn();
-    dispose = render(() => (
-      <VerticalImageItem
-        media={state().media}
-        index={state().index}
-        isActive={state().active}
-        isFocused={state().focused}
-        forceVisible={state().forceVisible}
-        onClick={vi.fn()}
-        onMediaLoad={onMediaLoad}
-        scrollRoot={() => state().root}
-        scrollRootHeight={() => state().rootHeight}
-      />
-    ), host);
+    dispose = render(
+      () => (
+        <VerticalImageItem
+          media={state().media}
+          index={state().index}
+          isActive={state().active}
+          isFocused={state().focused}
+          forceVisible={state().forceVisible}
+          onClick={vi.fn()}
+          onMediaLoad={onMediaLoad}
+          scrollRoot={() => state().root}
+          scrollRootHeight={() => state().rootHeight}
+        />
+      ),
+      host
+    );
     const video = host.querySelector('video')!;
     const row = host.querySelector<HTMLElement>('[data-gallery-element="item"]')!;
     observers.get('0px')?.({ isIntersecting: true } as IntersectionObserverEntry);
@@ -242,7 +291,9 @@ describe('VerticalImageItem video admission and playback', () => {
     let paused = false;
     Object.defineProperty(video, 'paused', { configurable: true, get: () => paused });
     const play = vi.spyOn(video, 'play').mockResolvedValue(undefined);
-    vi.spyOn(video, 'pause').mockImplementation(() => { paused = true; });
+    vi.spyOn(video, 'pause').mockImplementation(() => {
+      paused = true;
+    });
     mediaEvent(video, 'loadstart');
     mediaEvent(video, 'play');
     setMediaError(video, 3);
@@ -263,65 +314,79 @@ describe('VerticalImageItem video admission and playback', () => {
     { laterPlay: true, caseName: 'pause then blocked play', rejectedName: 'NotAllowedError' },
     { laterPlay: true, caseName: 'pause then unsupported play', rejectedName: 'NotSupportedError' },
     { laterPlay: true, caseName: 'pause then source-aborted play', rejectedName: 'AbortError' },
-  ])('keeps a body-captured Space $caseName as latest intent during pending fallback', async ({ laterPlay, rejectedName }) => {
-    const item = media();
-    openGallery([item]);
-    resetKeyboardDebounceState();
-    const { video } = mount({ media: item, active: true });
-    Object.defineProperty(video, 'readyState', { configurable: true, get: () => 1 });
-    let paused = false;
-    Object.defineProperty(video, 'paused', { configurable: true, get: () => paused });
-    const play = vi.spyOn(video, 'play').mockResolvedValue(undefined);
-    const pause = vi.spyOn(video, 'pause').mockImplementation(() => {
-      paused = true;
-      mediaEvent(video, 'pause');
-    });
-    mediaEvent(video, 'loadstart');
-    mediaEvent(video, 'play');
-    setMediaError(video, 3);
-    mediaEvent(video, 'error');
-    expect(video.getAttribute('src')).toBe(source('middle'));
-    setMediaError(video, null);
-    play.mockClear();
-    const clock = vi.spyOn(performance, 'now').mockReturnValue(1000);
+  ])(
+    'keeps a body-captured Space $caseName as latest intent during pending fallback',
+    async ({ laterPlay, rejectedName }) => {
+      const item = media();
+      openGallery([item]);
+      resetKeyboardDebounceState();
+      const { video } = mount({ media: item, active: true });
+      Object.defineProperty(video, 'readyState', { configurable: true, get: () => 1 });
+      let paused = false;
+      Object.defineProperty(video, 'paused', { configurable: true, get: () => paused });
+      const play = vi.spyOn(video, 'play').mockResolvedValue(undefined);
+      const pause = vi.spyOn(video, 'pause').mockImplementation(() => {
+        paused = true;
+        mediaEvent(video, 'pause');
+      });
+      mediaEvent(video, 'loadstart');
+      mediaEvent(video, 'play');
+      setMediaError(video, 3);
+      mediaEvent(video, 'error');
+      expect(video.getAttribute('src')).toBe(source('middle'));
+      setMediaError(video, null);
+      play.mockClear();
+      const clock = vi.spyOn(performance, 'now').mockReturnValue(1000);
 
-    const capture = (event: KeyboardEvent) =>
-      handleKeyboardEvent(
-        event,
-        { onGalleryClose: vi.fn(), onMediaClick: vi.fn(async () => undefined) },
-        { enableKeyboard: true, enableMediaDetection: true, debugMode: false, preventBubbling: true, context: 'test' }
-      );
-    document.body.addEventListener('keydown', capture, { capture: true });
-    try {
-      const keydownAtVideo = vi.fn();
-      video.addEventListener('keydown', keydownAtVideo);
-      const event = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true });
-      video.dispatchEvent(event);
-      expect(event.defaultPrevented).toBe(true);
-      expect(keydownAtVideo).not.toHaveBeenCalled();
-      expect(video.paused).toBe(true);
-      video.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }));
-      expect(pause).toHaveBeenCalledOnce();
-      expect(play).not.toHaveBeenCalled();
-      if (laterPlay) {
-        if (rejectedName) play.mockRejectedValueOnce(new DOMException('Playback rejected', rejectedName));
-        clock.mockReturnValue(1200);
-        video.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }));
-        expect(play).toHaveBeenCalledOnce();
+      const capture = (event: KeyboardEvent) =>
+        handleKeyboardEvent(
+          event,
+          { onGalleryClose: vi.fn(), onMediaClick: vi.fn(async () => undefined) },
+          {
+            enableKeyboard: true,
+            enableMediaDetection: true,
+            debugMode: false,
+            preventBubbling: true,
+            context: 'test',
+          }
+        );
+      document.body.addEventListener('keydown', capture, { capture: true });
+      try {
+        const keydownAtVideo = vi.fn();
+        video.addEventListener('keydown', keydownAtVideo);
+        const event = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true });
+        video.dispatchEvent(event);
+        expect(event.defaultPrevented).toBe(true);
+        expect(keydownAtVideo).not.toHaveBeenCalled();
+        expect(video.paused).toBe(true);
+        video.dispatchEvent(
+          new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true })
+        );
+        expect(pause).toHaveBeenCalledOnce();
+        expect(play).not.toHaveBeenCalled();
+        if (laterPlay) {
+          if (rejectedName)
+            play.mockRejectedValueOnce(new DOMException('Playback rejected', rejectedName));
+          clock.mockReturnValue(1200);
+          video.dispatchEvent(
+            new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true })
+          );
+          expect(play).toHaveBeenCalledOnce();
+        }
+      } finally {
+        document.body.removeEventListener('keydown', capture, { capture: true });
       }
-    } finally {
-      document.body.removeEventListener('keydown', capture, { capture: true });
+      await Promise.resolve();
+      mediaEvent(video, 'loadstart');
+      mediaEvent(video, 'loadedmetadata');
+      const shouldResume = laterPlay && (rejectedName === null || rejectedName === 'AbortError');
+      const beforeVisibility = shouldResume ? 2 : laterPlay ? 1 : 0;
+      expect(play).toHaveBeenCalledTimes(beforeVisibility);
+      observers.get('0px')?.({ isIntersecting: false } as IntersectionObserverEntry);
+      observers.get('0px')?.({ isIntersecting: true } as IntersectionObserverEntry);
+      expect(play).toHaveBeenCalledTimes(shouldResume ? 3 : beforeVisibility);
     }
-    await Promise.resolve();
-    mediaEvent(video, 'loadstart');
-    mediaEvent(video, 'loadedmetadata');
-    const shouldResume = laterPlay && (rejectedName === null || rejectedName === 'AbortError');
-    const beforeVisibility = shouldResume ? 2 : laterPlay ? 1 : 0;
-    expect(play).toHaveBeenCalledTimes(beforeVisibility);
-    observers.get('0px')?.({ isIntersecting: false } as IntersectionObserverEntry);
-    observers.get('0px')?.({ isIntersecting: true } as IntersectionObserverEntry);
-    expect(play).toHaveBeenCalledTimes(shouldResume ? 3 : beforeVisibility);
-  });
+  );
 
   it.each(['newer command', 'source replacement', 'media replacement'] as const)(
     'ignores an older rejected play after %s during fallback',
@@ -331,10 +396,18 @@ describe('VerticalImageItem video admission and playback', () => {
       let paused = false;
       Object.defineProperty(video, 'paused', { configurable: true, get: () => paused });
       let rejectOld!: (error: Error) => void;
-      const play = vi.spyOn(video, 'play').mockImplementationOnce(
-        () => new Promise<void>((_resolve, reject) => { rejectOld = reject; })
-      ).mockResolvedValue(undefined);
-      vi.spyOn(video, 'pause').mockImplementation(() => { paused = true; });
+      const play = vi
+        .spyOn(video, 'play')
+        .mockImplementationOnce(
+          () =>
+            new Promise<void>((_resolve, reject) => {
+              rejectOld = reject;
+            })
+        )
+        .mockResolvedValue(undefined);
+      vi.spyOn(video, 'pause').mockImplementation(() => {
+        paused = true;
+      });
       mediaEvent(video, 'loadstart');
       mediaEvent(video, 'play');
       setMediaError(video, 3);
@@ -400,7 +473,9 @@ describe('VerticalImageItem video admission and playback', () => {
     const { video } = mount({ active: true });
     let paused = false;
     Object.defineProperty(video, 'paused', { configurable: true, get: () => paused });
-    vi.spyOn(video, 'pause').mockImplementation(() => { paused = true; });
+    vi.spyOn(video, 'pause').mockImplementation(() => {
+      paused = true;
+    });
     video.muted = false;
     observers.get('0px')?.({ isIntersecting: false } as IntersectionObserverEntry);
     expect(video.muted).toBe(true);
@@ -415,7 +490,9 @@ describe('VerticalImageItem video admission and playback', () => {
     const { video, setState } = mount({ active: true });
     let paused = false;
     Object.defineProperty(video, 'paused', { configurable: true, get: () => paused });
-    vi.spyOn(video, 'pause').mockImplementation(() => { paused = true; });
+    vi.spyOn(video, 'pause').mockImplementation(() => {
+      paused = true;
+    });
     video.muted = false;
     observers.get('0px')?.({ isIntersecting: false } as IntersectionObserverEntry);
     expect(video.muted).toBe(true);
@@ -457,10 +534,18 @@ describe('VerticalImageItem video admission and playback', () => {
     Object.defineProperty(video, 'readyState', { configurable: true, get: () => 1 });
     let paused = false;
     Object.defineProperty(video, 'paused', { configurable: true, get: () => paused });
-    vi.spyOn(video, 'pause').mockImplementation(() => { paused = true; });
+    vi.spyOn(video, 'pause').mockImplementation(() => {
+      paused = true;
+    });
     let rejectFirst: ((error: Error) => void) | undefined;
-    const play = vi.spyOn(video, 'play')
-      .mockImplementationOnce(() => new Promise<void>((_resolve, reject) => { rejectFirst = reject; }))
+    const play = vi
+      .spyOn(video, 'play')
+      .mockImplementationOnce(
+        () =>
+          new Promise<void>((_resolve, reject) => {
+            rejectFirst = reject;
+          })
+      )
       .mockResolvedValue(undefined);
     mediaEvent(video, 'loadstart');
     mediaEvent(video, 'play');
@@ -548,7 +633,9 @@ describe('VerticalImageItem video admission and playback', () => {
   it('does not force play after a user pause or a blocked play promise', async () => {
     const { video } = mount({ active: true });
     Object.defineProperty(video, 'readyState', { configurable: true, get: () => 1 });
-    const play = vi.spyOn(video, 'play').mockRejectedValue(new DOMException('Blocked', 'NotAllowedError'));
+    const play = vi
+      .spyOn(video, 'play')
+      .mockRejectedValue(new DOMException('Blocked', 'NotAllowedError'));
     mediaEvent(video, 'loadstart');
     mediaEvent(video, 'play');
     mediaEvent(video, 'pause');
@@ -589,9 +676,12 @@ describe('VerticalImageItem video admission and playback', () => {
   it('keeps an exposed 403 on the current attempt from selecting another rendition', () => {
     const { video, row } = mount({ active: true });
     mediaEvent(video, 'loadstart');
-    vi.spyOn(performance, 'getEntriesByName').mockReturnValue([{
-      startTime: performance.now(), responseStatus: 403,
-    } as unknown as PerformanceResourceTiming]);
+    vi.spyOn(performance, 'getEntriesByName').mockReturnValue([
+      {
+        startTime: performance.now(),
+        responseStatus: 403,
+      } as unknown as PerformanceResourceTiming,
+    ]);
     setMediaError(video, 4);
     mediaEvent(video, 'error');
     expect(video.getAttribute('src')).toBe(source('best'));
@@ -616,14 +706,22 @@ describe('VerticalImageItem video admission and playback', () => {
 
 describe('video recovery candidate contract', () => {
   it('caps attempts and rejects untrusted, repeated, and manifest candidates', () => {
-    const item = { ...media(), videoVariants: [
-      { url: source('best'), contentType: 'video/mp4' as const },
-      { url: 'https://video.twimg.com/ext_tw_video/222/pu/vid/stream.m3u8', contentType: 'video/mp4' as const },
-      { url: 'https://evil.example/clip.mp4', contentType: 'video/mp4' as const },
-      { url: source('middle'), contentType: 'video/mp4' as const },
-    ] };
+    const item = {
+      ...media(),
+      videoVariants: [
+        { url: source('best'), contentType: 'video/mp4' as const },
+        {
+          url: 'https://video.twimg.com/ext_tw_video/222/pu/vid/stream.m3u8',
+          contentType: 'video/mp4' as const,
+        },
+        { url: 'https://evil.example/clip.mp4', contentType: 'video/mp4' as const },
+        { url: source('middle'), contentType: 'video/mp4' as const },
+      ],
+    };
     expect(nextVideoPlaybackSource(item, new Set([source('best')]))).toBe(source('middle'));
-    expect(nextVideoPlaybackSource(item, new Set([source('best'), source('middle'), source('low')]))).toBeNull();
+    expect(
+      nextVideoPlaybackSource(item, new Set([source('best'), source('middle'), source('low')]))
+    ).toBeNull();
     expect(MAX_VIDEO_PLAYBACK_ATTEMPTS).toBe(3);
   });
 });

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ── PersistentStorage mock (must be before LanguageService import) ─────
 
@@ -157,7 +157,7 @@ describe('LanguageService', () => {
 
     it('should fall back to default language for unsupported values', () => {
       service = new LanguageService();
-      service.setLanguage('fr' as any);
+      service.setLanguage('fr' as Parameters<typeof service.setLanguage>[0]);
       expect(service.getCurrentLanguage()).toBe('en');
     });
 
@@ -333,7 +333,9 @@ describe('LanguageService', () => {
       service = new LanguageService();
       service.setLanguage('en');
       // Use a non-existent key
-      const result = service.translate('nonexistent.key' as any);
+      const result = service.translate(
+        'nonexistent.key' as Parameters<typeof service.translate>[0]
+      );
       expect(result).toBe('nonexistent.key');
     });
 

@@ -10,11 +10,16 @@ import { pathToFileURL } from 'node:url';
 function parseComputedRgb(value) {
   const match = /^rgba?\((.*)\)$/i.exec(value.trim());
   assert(match, `Expected computed rgb color, received ${value}`);
-  const parts = match[1].replace('/', ' ').split(/[,\s]+/).filter(Boolean);
+  const parts = match[1]
+    .replace('/', ' ')
+    .split(/[,\s]+/)
+    .filter(Boolean);
   assert(parts.length >= 3, `Expected three RGB channels, received ${value}`);
-  const channels = parts.slice(0, 3).map((part) =>
-    part.endsWith('%') ? (Number.parseFloat(part) / 100) * 255 : Number.parseFloat(part)
-  );
+  const channels = parts
+    .slice(0, 3)
+    .map((part) =>
+      part.endsWith('%') ? (Number.parseFloat(part) / 100) * 255 : Number.parseFloat(part)
+    );
   assert(channels.every((channel) => Number.isFinite(channel) && channel >= 0 && channel <= 255));
   if (parts[3] !== undefined) {
     const alpha = parts[3].endsWith('%')
@@ -28,9 +33,7 @@ function parseComputedRgb(value) {
 function relativeLuminance(value) {
   const [red, green, blue] = parseComputedRgb(value).map((channel) => {
     const normalized = channel / 255;
-    return normalized <= 0.04045
-      ? normalized / 12.92
-      : ((normalized + 0.055) / 1.055) ** 2.4;
+    return normalized <= 0.04045 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
   });
   return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
 }
@@ -218,9 +221,13 @@ export async function run({ browser, root, output }) {
         // Pointer input can scroll the fixture before the app handles its click.
         // Bind the expectation to the actual interaction, not test setup time.
         window.__xegAcceptanceOpeningHostState = null;
-        trigger.addEventListener('pointerdown', () => {
-          window.__xegAcceptanceOpeningHostState = snapshot();
-        }, { once: true });
+        trigger.addEventListener(
+          'pointerdown',
+          () => {
+            window.__xegAcceptanceOpeningHostState = snapshot();
+          },
+          { once: true }
+        );
       });
 
     const assertHostRestored = async (expected) => {
@@ -317,7 +324,9 @@ export async function run({ browser, root, output }) {
           rect: element.getBoundingClientRect().toJSON(),
         }))
       );
-      assert.fail(`Keyboard cannot reach recovery ${action}: ${JSON.stringify({ visited, targets })}`);
+      assert.fail(
+        `Keyboard cannot reach recovery ${action}: ${JSON.stringify({ visited, targets })}`
+      );
     };
 
     await page.emulateMedia({ colorScheme: 'dark' });
@@ -376,12 +385,18 @@ export async function run({ browser, root, output }) {
         viewportWidth: innerWidth,
       };
     });
-    assert(narrowRecovery.panelLeft >= 0 && narrowRecovery.panelRight <= narrowRecovery.viewportWidth,
-      'Recovery panel must fit a 320px viewport');
-    assert(narrowRecovery.bodyRight <= narrowRecovery.viewportWidth,
-      'Long recovery text must remain inside the viewport');
-    assert(narrowRecovery.bodyScrollWidth <= narrowRecovery.bodyWidth,
-      'Long recovery text must wrap without horizontal overflow');
+    assert(
+      narrowRecovery.panelLeft >= 0 && narrowRecovery.panelRight <= narrowRecovery.viewportWidth,
+      'Recovery panel must fit a 320px viewport'
+    );
+    assert(
+      narrowRecovery.bodyRight <= narrowRecovery.viewportWidth,
+      'Long recovery text must remain inside the viewport'
+    );
+    assert(
+      narrowRecovery.bodyScrollWidth <= narrowRecovery.bodyWidth,
+      'Long recovery text must wrap without horizontal overflow'
+    );
     await page.screenshot({ path: path.join(output, 'gallery-recovery-narrow-dark.png') });
 
     const localizedExpansionLabel = '더 이상 재시도할 수 없음';
@@ -414,15 +429,26 @@ export async function run({ browser, root, output }) {
     assert.equal(largeTextRecovery.whiteSpace, 'normal');
     assert.equal(largeTextRecovery.overflowWrap, 'anywhere');
     assert(Number.parseFloat(largeTextRecovery.fontSize) >= 30, 'Recovery must honor 200% text');
-    assert(largeTextRecovery.right <= largeTextRecovery.viewportWidth,
-      'Large localized recovery action must remain inside the viewport');
-    assert(largeTextRecovery.scrollWidth <= largeTextRecovery.clientWidth,
-      'Large localized recovery action must not overflow horizontally');
-    assert(largeTextRecovery.scrollHeight <= largeTextRecovery.clientHeight,
-      'Large localized recovery action must grow to contain wrapped text');
-    assert(largeTextRecovery.blockSize >= 44, 'Wrapped recovery action must retain its target size');
-    assert(largeTextRecovery.bottom <= largeTextRecovery.viewportHeight,
-      'Long error details must not push the recovery action below the viewport');
+    assert(
+      largeTextRecovery.right <= largeTextRecovery.viewportWidth,
+      'Large localized recovery action must remain inside the viewport'
+    );
+    assert(
+      largeTextRecovery.scrollWidth <= largeTextRecovery.clientWidth,
+      'Large localized recovery action must not overflow horizontally'
+    );
+    assert(
+      largeTextRecovery.scrollHeight <= largeTextRecovery.clientHeight,
+      'Large localized recovery action must grow to contain wrapped text'
+    );
+    assert(
+      largeTextRecovery.blockSize >= 44,
+      'Wrapped recovery action must retain its target size'
+    );
+    assert(
+      largeTextRecovery.bottom <= largeTextRecovery.viewportHeight,
+      'Long error details must not push the recovery action below the viewport'
+    );
     await retryRecovery.locator('[data-xeg-error-action="retry"]').scrollIntoViewIfNeeded();
     await page.screenshot({
       path: path.join(output, 'gallery-recovery-narrow-large-text-dark.png'),
@@ -452,13 +478,17 @@ export async function run({ browser, root, output }) {
     await page.keyboard.press('ArrowRight');
     await page.keyboard.press('Escape');
     const hostInput = await page.evaluate(() => window.__xegAcceptanceHostInput);
-    assert.deepEqual(hostInput, {
-      clicks: 1,
-      keys: [
-        { key: 'ArrowRight', prevented: false },
-        { key: 'Escape', prevented: false },
-      ],
-    }, 'Recovery must not swallow host clicks or keyboard navigation');
+    assert.deepEqual(
+      hostInput,
+      {
+        clicks: 1,
+        keys: [
+          { key: 'ArrowRight', prevented: false },
+          { key: 'Escape', prevented: false },
+        ],
+      },
+      'Recovery must not swallow host clicks or keyboard navigation'
+    );
     assert.equal(await retryRecovery.count(), 1, 'Host Escape must not close modeless recovery');
     const retryKeyboardPath = await keyboardReachRecoveryAction('retry');
     await page.keyboard.press('Enter');
@@ -590,7 +620,11 @@ export async function run({ browser, root, output }) {
       'rgba(0, 0, 0, 0)',
       'Selected fit mode must retain a visible background'
     );
-    assert.notEqual(selectedResting.boxShadow, 'none', 'Selected fit mode must retain an inset ring');
+    assert.notEqual(
+      selectedResting.boxShadow,
+      'none',
+      'Selected fit mode must retain an inset ring'
+    );
     await selectedFit.hover();
     const selectedHovered = await selectedStyle();
     assert.equal(
@@ -650,7 +684,11 @@ export async function run({ browser, root, output }) {
       true,
       'Forced-colors focus must use keyboard modality'
     );
-    assert.equal(selectedForced.borderStyle, 'solid', 'Forced colors must expose a selected border');
+    assert.equal(
+      selectedForced.borderStyle,
+      'solid',
+      'Forced colors must expose a selected border'
+    );
     assert(
       Number.parseFloat(selectedForced.borderWidth) >= 2,
       'Forced-colors selected border must be at least 2px'
@@ -662,7 +700,11 @@ export async function run({ browser, root, output }) {
     );
     await page.emulateMedia({ forcedColors: 'none' });
     await toolbar.evaluate((element) => element.setAttribute('disabled', ''));
-    assert.equal(await selectedFit.isDisabled(), true, 'Disabled toolbar must disable selected fit mode');
+    assert.equal(
+      await selectedFit.isDisabled(),
+      true,
+      'Disabled toolbar must disable selected fit mode'
+    );
     const selectedDisabled = await selectedStyle();
     assert.equal(
       selectedDisabled.backgroundColor,
@@ -700,18 +742,32 @@ export async function run({ browser, root, output }) {
     assert.equal(focusedToolbar.opacity, '1');
     for (let step = 0; step < 30; step += 1) {
       await page.keyboard.press('Tab');
-      if (await page.evaluate(() => Boolean(document.activeElement?.closest('[data-gallery-element="item"]')))) break;
+      if (
+        await page.evaluate(() =>
+          Boolean(document.activeElement?.closest('[data-gallery-element="item"]'))
+        )
+      )
+        break;
     }
     assert.equal(
-      await page.evaluate(() => Boolean(document.activeElement?.closest('[data-gallery-element="item"]'))),
+      await page.evaluate(() =>
+        Boolean(document.activeElement?.closest('[data-gallery-element="item"]'))
+      ),
       true,
       'Keyboard users must be able to return focus to gallery content'
     );
-    await page.waitForFunction(() => {
-      const toolbar = document.querySelector('[data-gallery-element="toolbar"]');
-      return toolbar && getComputedStyle(toolbar.parentElement).visibility === 'hidden'
-        && getComputedStyle(toolbar.parentElement).opacity === '0';
-    }, undefined, { timeout: 6000 });
+    await page.waitForFunction(
+      () => {
+        const toolbar = document.querySelector('[data-gallery-element="toolbar"]');
+        return (
+          toolbar &&
+          getComputedStyle(toolbar.parentElement).visibility === 'hidden' &&
+          getComputedStyle(toolbar.parentElement).opacity === '0'
+        );
+      },
+      undefined,
+      { timeout: 6000 }
+    );
     await page.screenshot({ path: path.join(output, 'gallery-content-uncovered.png') });
 
     await page.keyboard.press('ArrowRight');
@@ -735,8 +791,10 @@ export async function run({ browser, root, output }) {
       }
       const selectedTop = selected.getBoundingClientRect().top;
       const itemsTop = items.getBoundingClientRect().top;
-      return gallery.style.getPropertyValue('--xeg-viewport-w') === '401px'
-        && Math.abs(selectedTop - itemsTop) <= 1;
+      return (
+        gallery.style.getPropertyValue('--xeg-viewport-w') === '401px' &&
+        Math.abs(selectedTop - itemsTop) <= 1
+      );
     });
     assert.equal(
       await progress.getAttribute('data-position'),
@@ -763,26 +821,48 @@ export async function run({ browser, root, output }) {
     await page.screenshot({ path: path.join(output, 'gallery-narrow-dark.png') });
     const narrowGeometry = await toolbar.evaluate((element) => {
       const rect = element.getBoundingClientRect();
-      const labelRect = element.querySelector('[data-gallery-element="fit-mode-label"]')?.getBoundingClientRect();
-      return { left: rect.left, right: rect.right, viewport: innerWidth,
-        labelLeft: labelRect?.left, labelRight: labelRect?.right };
+      const labelRect = element
+        .querySelector('[data-gallery-element="fit-mode-label"]')
+        ?.getBoundingClientRect();
+      return {
+        left: rect.left,
+        right: rect.right,
+        viewport: innerWidth,
+        labelLeft: labelRect?.left,
+        labelRight: labelRect?.right,
+      };
     });
-    assert(narrowGeometry.left >= 0 && narrowGeometry.right <= narrowGeometry.viewport,
-      'Toolbar must fit the narrow viewport');
-    assert(narrowGeometry.labelLeft >= 0 && narrowGeometry.labelRight <= narrowGeometry.viewport,
-      'Visible fit label must fit the narrow viewport');
+    assert(
+      narrowGeometry.left >= 0 && narrowGeometry.right <= narrowGeometry.viewport,
+      'Toolbar must fit the narrow viewport'
+    );
+    assert(
+      narrowGeometry.labelLeft >= 0 && narrowGeometry.labelRight <= narrowGeometry.viewport,
+      'Visible fit label must fit the narrow viewport'
+    );
     await page.mouse.move(200, 500);
-    await page.waitForFunction(() => {
-      const toolbar = document.querySelector('[data-gallery-element="toolbar"]');
-      return toolbar && getComputedStyle(toolbar.parentElement).visibility === 'hidden'
-        && getComputedStyle(toolbar.parentElement).opacity === '0';
-    }, undefined, { timeout: 6000 });
-    const narrowContent = await gallery.locator('[data-gallery-element="item"][data-index="1"] img').evaluate((image) => {
-      const rect = image.getBoundingClientRect();
-      return { top: rect.top, bottom: rect.bottom, naturalWidth: image.naturalWidth };
-    });
-    assert(narrowContent.top >= -1 && narrowContent.bottom <= 592,
-      'The selected panorama must be visible after the narrow toolbar hides');
+    await page.waitForFunction(
+      () => {
+        const toolbar = document.querySelector('[data-gallery-element="toolbar"]');
+        return (
+          toolbar &&
+          getComputedStyle(toolbar.parentElement).visibility === 'hidden' &&
+          getComputedStyle(toolbar.parentElement).opacity === '0'
+        );
+      },
+      undefined,
+      { timeout: 6000 }
+    );
+    const narrowContent = await gallery
+      .locator('[data-gallery-element="item"][data-index="1"] img')
+      .evaluate((image) => {
+        const rect = image.getBoundingClientRect();
+        return { top: rect.top, bottom: rect.bottom, naturalWidth: image.naturalWidth };
+      });
+    assert(
+      narrowContent.top >= -1 && narrowContent.bottom <= 592,
+      'The selected panorama must be visible after the narrow toolbar hides'
+    );
     assert.equal(narrowContent.naturalWidth, 1200);
     await page.screenshot({ path: path.join(output, 'gallery-narrow-content-uncovered.png') });
 
@@ -813,7 +893,8 @@ export async function run({ browser, root, output }) {
       faultMessages.some((fault) => message === fault || message === `Error: ${fault}`)
     );
     const unexpectedRuntimeErrors = runtimeErrors.filter(
-      ({ message }) => !faultMessages.some((fault) => message === fault || message === `Error: ${fault}`)
+      ({ message }) =>
+        !faultMessages.some((fault) => message === fault || message === `Error: ${fault}`)
     );
     assert.deepEqual(unexpectedRuntimeErrors, []);
     return {
@@ -854,7 +935,10 @@ export async function run({ browser, root, output }) {
       },
       scope:
         'fixture userscript rendering and mocked-GM browser download; no extension installation or live X.com',
-      browserZoom: { status: 'not-run', reason: 'Artifact-only context has no installed extension tab-zoom API' },
+      browserZoom: {
+        status: 'not-run',
+        reason: 'Artifact-only context has no installed extension tab-zoom API',
+      },
       visualReview: 'pending',
     };
   } finally {

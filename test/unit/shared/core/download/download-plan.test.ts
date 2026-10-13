@@ -1,18 +1,16 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { describe, expect, it, vi } from 'vitest';
-import { LiveByteBudget } from '@shared/services/download/live-byte-budget';
 import { planBulkDownload } from '@shared/core/download/download-plan';
 import { generateMediaFilename } from '@shared/core/filename/filename-utils';
+import { LiveByteBudget } from '@shared/services/download/live-byte-budget';
 import type { MediaBlobProvider } from '@shared/services/download/types';
+import { describe, expect, it, vi } from 'vitest';
 
 describe('download-plan', () => {
   it('plans a single download item', () => {
     const plan = planBulkDownload({
-      mediaItems: [
-        { id: 'video', url: 'https://example.com/video.mp4', type: 'video' },
-      ],
+      mediaItems: [{ id: 'video', url: 'https://example.com/video.mp4', type: 'video' }],
     });
     expect(plan.items).toHaveLength(1);
     expect(plan.items[0]?.url).toBe('https://example.com/video.mp4');
@@ -28,7 +26,7 @@ describe('download-plan', () => {
   it('defers Blob loading until a ZIP worker requests the planned item', async () => {
     const media = { id: 'lazy', type: 'image' as const, url: 'https://example.com/lazy.jpg' };
     const budget = new LiveByteBudget(32);
-    const provider = vi.fn(async () => ({value: new Blob(['lazy']), lease: budget.reserve(4)}));
+    const provider = vi.fn(async () => ({ value: new Blob(['lazy']), lease: budget.reserve(4) }));
     const plan = planBulkDownload({ mediaItems: [media], mediaBlobProvider: provider });
 
     expect(provider).not.toHaveBeenCalled();
@@ -40,10 +38,30 @@ describe('download-plan', () => {
 
   it('keeps owned Blob precedence and gates only supported media without changing order or names', () => {
     const mediaItems = [
-      { id: 'photo', type: 'image' as const, url: 'https://example.com/photo.jpg', filename: 'photo.jpg' },
-      { id: 'clip', type: 'video' as const, url: 'https://example.com/clip.mp4', filename: 'clip.mp4' },
-      { id: 'animation', type: 'gif' as const, url: 'https://example.com/animation.gif', filename: 'animation.gif' },
-      { id: 'cached', type: 'image' as const, url: 'https://example.com/cached.jpg', filename: 'cached.jpg' },
+      {
+        id: 'photo',
+        type: 'image' as const,
+        url: 'https://example.com/photo.jpg',
+        filename: 'photo.jpg',
+      },
+      {
+        id: 'clip',
+        type: 'video' as const,
+        url: 'https://example.com/clip.mp4',
+        filename: 'clip.mp4',
+      },
+      {
+        id: 'animation',
+        type: 'gif' as const,
+        url: 'https://example.com/animation.gif',
+        filename: 'animation.gif',
+      },
+      {
+        id: 'cached',
+        type: 'image' as const,
+        url: 'https://example.com/cached.jpg',
+        filename: 'cached.jpg',
+      },
     ];
     const owner = { value: new Blob(['cached']), lease: new LiveByteBudget(6).reserve(6) };
     const provider = vi.fn(async () => owner) as MediaBlobProvider;
@@ -56,7 +74,9 @@ describe('download-plan', () => {
       nowMs: 1,
     });
 
-    expect(plan.items.map(({ url, desiredName, inputKind }) => ({ url, desiredName, inputKind }))).toEqual(
+    expect(
+      plan.items.map(({ url, desiredName, inputKind }) => ({ url, desiredName, inputKind }))
+    ).toEqual(
       mediaItems.map((media, index) => ({
         url: media.url,
         desiredName: generateMediaFilename(media, { nowMs: 1 }),

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ── Hoisted mocks (must be before any vi.mock for correct hoisting) ────
 
@@ -47,7 +47,9 @@ function createMockSettingsBinding() {
       store[key] = value;
     }),
     _reset() {
-      Object.keys(store).forEach((k) => delete store[k]);
+      Object.keys(store).forEach((k) => {
+        delete store[k];
+      });
     },
   };
 }
@@ -82,10 +84,14 @@ describe('ThemeService', () => {
     });
 
     it('should handle absent matchMedia gracefully', () => {
-      (window as any).matchMedia = undefined;
+      Object.defineProperty(window, 'matchMedia', {
+        configurable: true,
+        writable: true,
+        value: undefined,
+      });
       service = new ThemeService();
       expect(service.getEffectiveTheme()).toBe('light');
-      (window as any).matchMedia = originalMatchMedia;
+      window.matchMedia = originalMatchMedia;
     });
   });
 
@@ -363,7 +369,9 @@ describe('ThemeService', () => {
 
     it('should ignore null settings binding', () => {
       service = new ThemeService();
-      service.bindSettingsService(null as any);
+      service.bindSettingsService(
+        null as unknown as Parameters<typeof service.bindSettingsService>[0]
+      );
       // Should not throw
       expect(service.getCurrentTheme()).toBe('auto');
     });

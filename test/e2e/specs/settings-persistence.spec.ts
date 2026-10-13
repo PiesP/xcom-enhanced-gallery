@@ -15,8 +15,8 @@
  * Gallery trigger: Direct API call via dev build's __XEG__ namespace
  */
 
-import { test, expect, type Page } from '@playwright/test';
 import { existsSync } from 'node:fs';
+import { expect, type Page, test } from '@playwright/test';
 import { DEV_USERSCRIPT_PATH, MOCK_GALLERY_HTML, MOCK_IMAGE } from '../fixtures/artifacts';
 import { installGMMock } from '../fixtures/gm-mock';
 import { injectDevUserscript, waitForGalleryApp } from '../fixtures/userscript-harness';
@@ -37,7 +37,15 @@ async function setupGalleryPage(page: Page, usePersistence = false): Promise<voi
 
   await page.route('**/*.x.com/**', async (route) => {
     const url = route.request().url();
-    if (url.includes('.css') || url.includes('.js') || url.includes('.jpg') || url.includes('.png') || url.includes('.svg') || url.includes('.webp') || url.includes('.gif')) {
+    if (
+      url.includes('.css') ||
+      url.includes('.js') ||
+      url.includes('.jpg') ||
+      url.includes('.png') ||
+      url.includes('.svg') ||
+      url.includes('.webp') ||
+      url.includes('.gif')
+    ) {
       await route.abort();
     } else {
       await route.fulfill({ status: 200, contentType: 'text/html', body: MOCK_GALLERY_HTML });
@@ -63,8 +71,14 @@ async function setupGalleryPage(page: Page, usePersistence = false): Promise<voi
  */
 async function openGallery(page: Page): Promise<void> {
   await page.evaluate(() => {
-    const g = globalThis as any;
-    const galleryApp = g.__XEG__.main.galleryApp as { openGallery: (items: unknown[], startIndex?: number) => void };
+    const g = globalThis as typeof globalThis & {
+      __XEG__: {
+        main: { galleryApp: { openGallery(items: unknown[], startIndex?: number): void } };
+      };
+    };
+    const galleryApp = g.__XEG__.main.galleryApp as {
+      openGallery: (items: unknown[], startIndex?: number) => void;
+    };
 
     const mockItems = [
       {
@@ -107,7 +121,9 @@ test.describe('X.com Enhanced Gallery Settings & Theme', () => {
     await openGallery(page);
 
     // Find the settings button
-    const settingsButton = page.locator('[data-gallery-element="toolbar"] button[aria-label*="Settings" i]');
+    const settingsButton = page.locator(
+      '[data-gallery-element="toolbar"] button[aria-label*="Settings" i]'
+    );
     await expect(settingsButton).toBeVisible();
 
     // Click settings button to open panel
@@ -126,7 +142,9 @@ test.describe('X.com Enhanced Gallery Settings & Theme', () => {
     await setupGalleryPage(page);
     await openGallery(page);
 
-    const settingsButton = page.locator('[data-gallery-element="toolbar"] button[aria-label*="Settings" i]');
+    const settingsButton = page.locator(
+      '[data-gallery-element="toolbar"] button[aria-label*="Settings" i]'
+    );
     await settingsButton.click();
 
     const settingsPanel = page.locator('[data-gallery-element="settings-panel"]');
@@ -187,10 +205,11 @@ test.describe('X.com Enhanced Gallery Settings & Theme', () => {
     expect(contract.sharedAccent).not.toBe('');
     expect(contract.xegAccent).toBe(contract.sharedAccent);
 
+    await page.locator('[data-gallery-element="toolbar"] button[aria-label*="Settings" i]').click();
     await page
-      .locator('[data-gallery-element="toolbar"] button[aria-label*="Settings" i]')
-      .click();
-    await page.locator('[data-gallery-element="settings-panel"] select').first().selectOption('dark');
+      .locator('[data-gallery-element="settings-panel"] select')
+      .first()
+      .selectOption('dark');
     await expect(container).toHaveAttribute('data-theme', 'dark');
     await expect(container).toHaveAttribute('data-pp-theme', 'dark');
 
@@ -236,9 +255,7 @@ test.describe('X.com Enhanced Gallery Settings & Theme', () => {
       '[data-gallery-element="toolbar"] button[aria-label*="Settings" i]'
     );
     await settingsButton.click();
-    const themeSelect = page
-      .locator('[data-gallery-element="settings-panel"] select')
-      .first();
+    const themeSelect = page.locator('[data-gallery-element="settings-panel"] select').first();
     await themeSelect.selectOption('dark');
 
     const container = page.locator('[data-xeg-gallery-container]');

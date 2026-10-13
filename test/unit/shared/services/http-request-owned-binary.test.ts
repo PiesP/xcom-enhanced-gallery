@@ -47,11 +47,14 @@ describe('owned binary HTTP response', () => {
       usedAtRequest = budget.usedBytes;
       return { abort: vi.fn() };
     };
-    const pending = new HttpRequestService().getOwnedBinary<ArrayBuffer>(response(new ArrayBuffer(0)).finalUrl, {
-      responseType: 'arraybuffer',
-      maxResponseBytes: 6,
-      budget,
-    });
+    const pending = new HttpRequestService().getOwnedBinary<ArrayBuffer>(
+      response(new ArrayBuffer(0)).finalUrl,
+      {
+        responseType: 'arraybuffer',
+        maxResponseBytes: 6,
+        budget,
+      }
+    );
     expect(usedAtRequest).toBe(12);
     expect(usage).toEqual([12]);
     expect(details?.maxResponseBytes).toBe(6);
@@ -74,12 +77,15 @@ describe('owned binary HTTP response', () => {
       details = value;
       return { abort };
     };
-    const pending = new HttpRequestService().getOwnedBinary<ArrayBuffer>('https://pbs.twimg.com/media/test', {
-      responseType: 'arraybuffer',
-      maxResponseBytes: 6,
-      budget,
-      signal: controller.signal,
-    });
+    const pending = new HttpRequestService().getOwnedBinary<ArrayBuffer>(
+      'https://pbs.twimg.com/media/test',
+      {
+        responseType: 'arraybuffer',
+        maxResponseBytes: 6,
+        budget,
+        signal: controller.signal,
+      }
+    );
     controller.abort(new DOMException('cancelled', 'AbortError'));
     await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
     expect(abort).toHaveBeenCalledOnce();
@@ -98,11 +104,14 @@ describe('owned binary HTTP response', () => {
       details = value;
       return { abort: vi.fn() };
     };
-    const pending = new HttpRequestService().getOwnedBinary<ArrayBuffer>('https://pbs.twimg.com/media/test', {
-      responseType: 'arraybuffer',
-      maxResponseBytes: 6,
-      budget,
-    });
+    const pending = new HttpRequestService().getOwnedBinary<ArrayBuffer>(
+      'https://pbs.twimg.com/media/test',
+      {
+        responseType: 'arraybuffer',
+        maxResponseBytes: 6,
+        budget,
+      }
+    );
     details?.onerror?.({
       ...response(new ArrayBuffer(0), 0),
       response: new HttpResponseSizeLimitError(6, 7),
@@ -113,29 +122,42 @@ describe('owned binary HTTP response', () => {
     expect(budget.usedBytes).toBe(0);
   });
 
-  it.each([false, true])('retains transport capacity if cancel throws (abort during start: %s)', async (duringStart) => {
-    const budget = new LiveByteBudget(12);
-    const controller = new AbortController();
-    let details: HttpRequestDetails | undefined;
-    requestState.impl = (value) => {
-      details = value;
-      if (duringStart) controller.abort();
-      return { abort: () => { throw new Error('manager cancel failed'); } };
-    };
-    const pending = new HttpRequestService().getOwnedBinary<ArrayBuffer>('https://pbs.twimg.com/media/test', {
-      responseType: 'arraybuffer', maxResponseBytes: 6, budget, signal: controller.signal,
-    });
-    if (!duringStart) controller.abort();
-    await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
-    expect(budget.usedBytes).toBe(12);
-    expect(() => budget.reserve(1)).toThrow();
-    details?.onload?.(response(new ArrayBuffer(6)));
-    expect(budget.usedBytes).toBe(12);
-    details?.onsettled?.();
-    expect(budget.usedBytes).toBe(0);
-    const next = budget.reserve(12);
-    next.release();
-  });
+  it.each([false, true])(
+    'retains transport capacity if cancel throws (abort during start: %s)',
+    async (duringStart) => {
+      const budget = new LiveByteBudget(12);
+      const controller = new AbortController();
+      let details: HttpRequestDetails | undefined;
+      requestState.impl = (value) => {
+        details = value;
+        if (duringStart) controller.abort();
+        return {
+          abort: () => {
+            throw new Error('manager cancel failed');
+          },
+        };
+      };
+      const pending = new HttpRequestService().getOwnedBinary<ArrayBuffer>(
+        'https://pbs.twimg.com/media/test',
+        {
+          responseType: 'arraybuffer',
+          maxResponseBytes: 6,
+          budget,
+          signal: controller.signal,
+        }
+      );
+      if (!duringStart) controller.abort();
+      await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+      expect(budget.usedBytes).toBe(12);
+      expect(() => budget.reserve(1)).toThrow();
+      details?.onload?.(response(new ArrayBuffer(6)));
+      expect(budget.usedBytes).toBe(12);
+      details?.onsettled?.();
+      expect(budget.usedBytes).toBe(0);
+      const next = budget.reserve(12);
+      next.release();
+    }
+  );
 
   it('releases a synchronous adapter failure and does not send it to the network again', async () => {
     const budget = new LiveByteBudget(12);
@@ -168,11 +190,14 @@ describe('owned binary HTTP response', () => {
       details = value;
       return { abort: vi.fn() };
     };
-    const pending = new HttpRequestService().getOwnedBinary<Blob>('https://pbs.twimg.com/media/test', {
-      responseType: 'blob',
-      maxResponseBytes: 6,
-      budget,
-    });
+    const pending = new HttpRequestService().getOwnedBinary<Blob>(
+      'https://pbs.twimg.com/media/test',
+      {
+        responseType: 'blob',
+        maxResponseBytes: 6,
+        budget,
+      }
+    );
     expect(details?.maxResponseBytes).toBe(2);
     details?.onload?.({ ...response(new ArrayBuffer(0)), response: new Blob(['abc']) });
     details?.onsettled?.();

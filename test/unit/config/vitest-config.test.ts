@@ -70,7 +70,9 @@ describe('Vitest coverage gate', () => {
   it('measures all runtime source files instead of only imported modules', () => {
     expect(coverage).toBeDefined();
     expect(coversCompleteRuntimeSet(coverage ?? {})).toBe(true);
-    expect(measuredSourceFiles(coverage ?? {})).toEqual(expect.arrayContaining(criticalRuntimeSources));
+    expect(measuredSourceFiles(coverage ?? {})).toEqual(
+      expect.arrayContaining(criticalRuntimeSources)
+    );
   });
 
   it.each(criticalRuntimeSources)('rejects excluding critical runtime source %s', (source) => {

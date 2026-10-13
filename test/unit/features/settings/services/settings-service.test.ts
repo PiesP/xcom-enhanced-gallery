@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { Mocked } from 'vitest';
-import { SettingsService } from '@features/settings/services/settings-service';
-import type { SettingsRepository } from '@features/settings/services/settings-repository';
-import type { AppSettings, SettingChangeEvent } from '@shared/types/settings.types';
 import { createDefaultSettings } from '@constants/settings';
+import type { SettingsRepository } from '@features/settings/services/settings-repository';
+import { SettingsService } from '@features/settings/services/settings-service';
+import type { AppSettings, SettingChangeEvent } from '@shared/types/settings.types';
+import type { Mocked } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ── Helpers ─────────────────────────────────────────────────────────────
 
@@ -186,7 +186,7 @@ describe('SettingsService', () => {
     it('should return default value for undefined paths', () => {
       // After set to a value, get returns it
       // Unknown paths fall back to undefined
-      expect(service.get('nonexistent.key' as any)).toBeUndefined();
+      expect(service.get('nonexistent.key' as Parameters<typeof service.get>[0])).toBeUndefined();
     });
 
     it('should handle top-level keys like version', () => {
@@ -290,14 +290,14 @@ describe('SettingsService', () => {
 
     it('should reject boolean when number is expected', async () => {
       await expect(
-        service.set('toolbar.autoHideDelay', false as any)
+        service.set('toolbar.autoHideDelay', false as unknown as number)
       ).rejects.toThrow('Invalid setting value for toolbar.autoHideDelay');
     });
 
     it('should reject string when boolean is expected', async () => {
-      await expect(
-        service.set('gallery.videoMuted', 'yes' as any)
-      ).rejects.toThrow('Invalid setting value for gallery.videoMuted');
+      await expect(service.set('gallery.videoMuted', 'yes' as unknown as boolean)).rejects.toThrow(
+        'Invalid setting value for gallery.videoMuted'
+      );
     });
 
     it('should accept boolean for a boolean setting', async () => {
@@ -312,7 +312,10 @@ describe('SettingsService', () => {
 
     it('should accept nested object value when default is an object', async () => {
       // gallery is an object, so we should be able to set it
-      const newGallery = { ...(service.get('gallery') as any), theme: 'dark' };
+      const newGallery = {
+        ...(service.get('gallery') as Record<string, unknown>),
+        theme: 'dark' as const,
+      };
       await service.set('gallery', newGallery);
       expect(service.get('gallery.theme')).toBe('dark');
     });
@@ -380,14 +383,16 @@ describe('SettingsService', () => {
       service = new SettingsService(mockRepo);
       await service.initialize();
       // Setting with invalid path should fail via assignNestedPath
-      await expect(service.set('' as any, 'value')).rejects.toThrow();
+      await expect(service.set('' as Parameters<typeof service.set>[0], 'value')).rejects.toThrow();
     });
 
     it('should handle default value fallback for undefined keys', async () => {
       service = new SettingsService(mockRepo);
       await service.initialize();
       // Unknown deep path returns undefined
-      expect(service.get('gallery.nonexistent' as any)).toBeUndefined();
+      expect(
+        service.get('gallery.nonexistent' as Parameters<typeof service.get>[0])
+      ).toBeUndefined();
     });
 
     it('should handle array type defaults', async () => {

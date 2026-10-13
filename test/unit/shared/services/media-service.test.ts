@@ -57,7 +57,11 @@ describe('MediaService', () => {
       return { ok: true, status: 200, data, lease: downloadLiveByteBudget.reserve(data.size) };
     });
     const service = new MediaService();
-    const item = { id: 'cached', type: 'image' as const, url: 'https://pbs.twimg.com/media/cached.jpg' };
+    const item = {
+      id: 'cached',
+      type: 'image' as const,
+      url: 'https://pbs.twimg.com/media/cached.jpg',
+    };
     const beforeBytes = downloadLiveByteBudget.usedBytes;
 
     await service.initialize();

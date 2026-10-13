@@ -53,13 +53,15 @@ describe('GMHttpRequestAdapter response bounds', () => {
       responseText: 'private body',
       context: undefined,
     });
-    expect(onerror).toHaveBeenCalledWith(expect.objectContaining({
-      status: 429,
-      readable: false,
-      retryAfterMs: 4_000,
-      errorCategory: 'unreadable',
-      responseHeaders: '',
-    }));
+    expect(onerror).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 429,
+        readable: false,
+        retryAfterMs: 4_000,
+        errorCategory: 'unreadable',
+        responseHeaders: '',
+      })
+    );
   });
 
   it('does not report malformed JSON as a readable success', () => {
@@ -87,12 +89,14 @@ describe('GMHttpRequestAdapter response bounds', () => {
       context: undefined,
     });
     expect(onload).not.toHaveBeenCalled();
-    expect(onerror).toHaveBeenCalledWith(expect.objectContaining({
-      status: 429,
-      readable: false,
-      retryAfterMs: 2_000,
-      errorCategory: 'unreadable',
-    }));
+    expect(onerror).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 429,
+        readable: false,
+        retryAfterMs: 2_000,
+        errorCategory: 'unreadable',
+      })
+    );
   });
 
   it('keeps an ambiguous synchronous throw unsettled until a late real terminal callback', () => {
@@ -136,7 +140,9 @@ describe('GMHttpRequestAdapter response bounds', () => {
 
   it('does not keep a page lifetime observer for a request without an owner callback', () => {
     const addEventListener = vi.spyOn(window, 'addEventListener');
-    xmlHttpRequest.mockImplementation(() => { throw new Error('GM manager unavailable'); });
+    xmlHttpRequest.mockImplementation(() => {
+      throw new Error('GM manager unavailable');
+    });
     new GMHttpRequestAdapter().request({
       url: 'https://pbs.twimg.com/media/example.jpg',
       onerror: vi.fn(),
@@ -199,11 +205,13 @@ describe('GMHttpRequestAdapter response bounds', () => {
       total: 0,
     };
     gmDetails?.onprogress?.(event);
-    expect(onerror).toHaveBeenCalledWith(expect.objectContaining({
-      status: 200,
-      statusText: 'RESOURCE_LIMIT',
-      errorCategory: 'resource_limit',
-    }));
+    expect(onerror).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 200,
+        statusText: 'RESOURCE_LIMIT',
+        errorCategory: 'resource_limit',
+      })
+    );
     expect(abort).toHaveBeenCalledOnce();
     expect(onsettled).not.toHaveBeenCalled();
     gmDetails?.onabort?.(event);
@@ -244,9 +252,7 @@ describe('GMHttpRequestAdapter response bounds', () => {
     });
 
     expect(abort).toHaveBeenCalledOnce();
-    expect(onerror).toHaveBeenCalledWith(
-      expect.objectContaining({ statusText: 'RESOURCE_LIMIT' })
-    );
+    expect(onerror).toHaveBeenCalledWith(expect.objectContaining({ statusText: 'RESOURCE_LIMIT' }));
     expect(onload).not.toHaveBeenCalled();
   });
 
@@ -289,14 +295,16 @@ describe('GMHttpRequestAdapter response bounds', () => {
       response: new ArrayBuffer(4),
     });
 
-    expect(onprogress).toHaveBeenCalledWith(expect.objectContaining({
-      status: 200,
-      loaded: 4,
-      total: 4,
-      responseHeaders: '',
-      responseText: '',
-      finalUrl: '',
-    }));
+    expect(onprogress).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 200,
+        loaded: 4,
+        total: 4,
+        responseHeaders: '',
+        responseText: '',
+        finalUrl: '',
+      })
+    );
     expect(onload).toHaveBeenCalledOnce();
     expect(onerror).not.toHaveBeenCalled();
     expect(abort).not.toHaveBeenCalled();

@@ -1,7 +1,4 @@
-import type {
-  GMDownloadDetails,
-  GMXMLHttpRequestDetails,
-} from '@shared/types/core/userscript';
+import type { GMDownloadDetails, GMXMLHttpRequestDetails } from '@shared/types/core/userscript';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const TEST_MAX_RESPONSE_BYTES = 8;
@@ -109,8 +106,9 @@ describe('userscript download adapter failure handling', () => {
     userscriptGlobals.GM_xmlhttpRequest = vi.fn(() => ({ abort: vi.fn() }));
     const api = await loadUserscriptAdapter();
 
-    await expect(api.download('https://pbs.twimg.com/media/image.jpg', 'image.jpg'))
-      .resolves.toBeUndefined();
+    await expect(
+      api.download('https://pbs.twimg.com/media/image.jpg', 'image.jpg')
+    ).resolves.toBeUndefined();
     expect(modernDownload).toHaveBeenCalledOnce();
   });
 
@@ -118,6 +116,7 @@ describe('userscript download adapter failure handling', () => {
     const error = new Error('download permission denied');
     const handle = {
       abort: vi.fn(),
+      // biome-ignore lint/suspicious/noThenProperty: Exercise rejection from an intentionally hostile thenable.
       then: vi.fn(
         (
           _resolve: ((value: unknown) => unknown) | undefined,
@@ -131,9 +130,7 @@ describe('userscript download adapter failure handling', () => {
 
     await expect(
       api.download('https://video.twimg.com/ext_tw_video/123/video.mp4', 'video.mp4')
-    ).rejects.toThrow(
-      'download permission denied'
-    );
+    ).rejects.toThrow('download permission denied');
   });
 
   it('uses the cancellable fallback instead of legacy GM_download when a signal is supplied', async () => {
@@ -179,7 +176,9 @@ describe('userscript download adapter failure handling', () => {
   });
 
   it('uses the Blob fallback when GM.download APIs are unavailable', async () => {
-    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => undefined);
     const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test-download');
     const revokeObjectURL = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
     userscriptGlobals.GM_xmlhttpRequest = vi.fn((details) => {
@@ -217,8 +216,12 @@ describe('userscript download adapter failure handling', () => {
   });
 
   it('holds a GM response reservation until a late load callback after caller abort', async () => {
-    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
-    const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:late-after-abort');
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => undefined);
+    const createObjectURL = vi
+      .spyOn(URL, 'createObjectURL')
+      .mockReturnValue('blob:late-after-abort');
     let request: GMXMLHttpRequestDetails | undefined;
     userscriptGlobals.GM_xmlhttpRequest = vi.fn((details) => {
       request = details;
@@ -228,7 +231,11 @@ describe('userscript download adapter failure handling', () => {
     const api = await loadUserscriptAdapter();
     const { downloadLiveByteBudget } = await import('@shared/services/download/live-byte-budget');
 
-    const pending = api.download('https://pbs.twimg.com/media/image.jpg', 'image.jpg', controller.signal);
+    const pending = api.download(
+      'https://pbs.twimg.com/media/image.jpg',
+      'image.jpg',
+      controller.signal
+    );
     expect(downloadLiveByteBudget.usedBytes).toBe(2 * TEST_MAX_RESPONSE_BYTES);
     controller.abort();
     await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
@@ -249,8 +256,11 @@ describe('userscript download adapter failure handling', () => {
     const { downloadLiveByteBudget } = await import('@shared/services/download/live-byte-budget');
 
     const pending = api.download('https://pbs.twimg.com/media/image.jpg', 'image.jpg');
-    request?.onprogress?.({ loaded: TEST_MAX_RESPONSE_BYTES + 1, total: 0,
-      lengthComputable: false } as never);
+    request?.onprogress?.({
+      loaded: TEST_MAX_RESPONSE_BYTES + 1,
+      total: 0,
+      lengthComputable: false,
+    } as never);
     await expect(pending).rejects.toMatchObject({ name: 'HttpResponseSizeLimitError' });
     expect(downloadLiveByteBudget.usedBytes).toBe(2 * TEST_MAX_RESPONSE_BYTES);
     request?.onabort?.({} as never);
@@ -285,14 +295,18 @@ describe('userscript download adapter failure handling', () => {
     const controller = new AbortController();
     controller.abort();
     const preAbortedRelease = vi.fn();
-    await expect(api.downloadBlob(new Blob(['owned']), 'name.jpg', controller.signal,
-      preAbortedRelease)).rejects.toMatchObject({ name: 'AbortError' });
+    await expect(
+      api.downloadBlob(new Blob(['owned']), 'name.jpg', controller.signal, preAbortedRelease)
+    ).rejects.toMatchObject({ name: 'AbortError' });
     expect(preAbortedRelease).toHaveBeenCalledOnce();
 
-    vi.spyOn(URL, 'createObjectURL').mockImplementation(() => { throw new Error('URL unavailable'); });
+    vi.spyOn(URL, 'createObjectURL').mockImplementation(() => {
+      throw new Error('URL unavailable');
+    });
     const failedRelease = vi.fn();
-    await expect(api.downloadBlob(new Blob(['owned']), 'name.jpg', undefined,
-      failedRelease)).rejects.toThrow('URL unavailable');
+    await expect(
+      api.downloadBlob(new Blob(['owned']), 'name.jpg', undefined, failedRelease)
+    ).rejects.toThrow('URL unavailable');
     expect(failedRelease).toHaveBeenCalledOnce();
   });
 
@@ -301,11 +315,11 @@ describe('userscript download adapter failure handling', () => {
     galleryContainer.className = 'xeg-gallery-root';
     document.body.append(galleryContainer);
     let clickParent: Element | null = null;
-    const click = vi
-      .spyOn(HTMLAnchorElement.prototype, 'click')
-      .mockImplementation(function (this: HTMLAnchorElement) {
-        clickParent = this.parentElement;
-      });
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
+      this: HTMLAnchorElement
+    ) {
+      clickParent = this.parentElement;
+    });
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test-gallery-download');
     vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
     userscriptGlobals.GM_xmlhttpRequest = vi.fn((details) => {
@@ -414,7 +428,9 @@ describe('userscript download adapter failure handling', () => {
   });
 
   it('rejects an HTTP error instead of saving its response body as media', async () => {
-    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => undefined);
     const createObjectURL = vi.spyOn(URL, 'createObjectURL');
     userscriptGlobals.GM_xmlhttpRequest = vi.fn((details) => {
       queueMicrotask(() =>
@@ -430,9 +446,7 @@ describe('userscript download adapter failure handling', () => {
 
     await expect(
       api.download('https://pbs.twimg.com/media/image.jpg', 'image.jpg')
-    ).rejects.toThrow(
-      'HTTP 403: Forbidden'
-    );
+    ).rejects.toThrow('HTTP 403: Forbidden');
     expect(createObjectURL).not.toHaveBeenCalled();
     expect(click).not.toHaveBeenCalled();
   });
@@ -463,9 +477,9 @@ describe('userscript download adapter failure handling', () => {
     userscriptGlobals.GM_xmlhttpRequest = vi.fn(() => ({ abort: vi.fn() }));
     const api = await loadUserscriptAdapter();
 
-    await expect(
-      api.download('http://pbs.twimg.com/media/image.jpg', 'image.jpg')
-    ).rejects.toThrow('Blocked unsafe media download URL');
+    await expect(api.download('http://pbs.twimg.com/media/image.jpg', 'image.jpg')).rejects.toThrow(
+      'Blocked unsafe media download URL'
+    );
     expect(gmDownload).not.toHaveBeenCalled();
   });
 });

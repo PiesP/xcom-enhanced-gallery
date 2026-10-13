@@ -27,15 +27,16 @@ const extensionPlaywrightConfig = readFileSync(
 
 function jobBlock(workflow: string, job: string): string {
   return (
-    workflow.match(new RegExp(`^  ${job}:\\n(?:(?!^  [A-Za-z0-9_-]+:\\n)[\\s\\S])*`, 'm'))?.[0] ?? ''
+    workflow.match(new RegExp(`^  ${job}:\\n(?:(?!^  [A-Za-z0-9_-]+:\\n)[\\s\\S])*`, 'm'))?.[0] ??
+    ''
   );
 }
 
 describe('tooling configuration', () => {
   it('keeps the full mutation profile on the real shared source paths', () => {
-    const config = JSON.parse(
-      readFileSync(resolve(root, 'stryker.conf.json'), 'utf8')
-    ) as { mutate: string[] };
+    const config = JSON.parse(readFileSync(resolve(root, 'stryker.conf.json'), 'utf8')) as {
+      mutate: string[];
+    };
 
     expect(config.mutate).toContain('src/shared/utils/**/*.ts');
     expect(config.mutate).toContain('src/shared/services/download/**/*.ts');
@@ -70,9 +71,7 @@ describe('tooling configuration', () => {
   });
 
   it('fails quality checks for unused dependencies, files, and exports across source and tests', () => {
-    expect(packageJson.scripts.knip).toBe(
-      'pnpm -s knip:full && pnpm -s knip:production'
-    );
+    expect(packageJson.scripts.knip).toBe('pnpm -s knip:full && pnpm -s knip:production');
     expect(packageJson.scripts['knip:full']).toBe(
       'knip --files --exports --dependencies --treat-config-hints-as-errors'
     );
@@ -92,9 +91,7 @@ describe('tooling configuration', () => {
   });
 
   it('enforces and preserves actionable reports for the fast mutation gate', () => {
-    const config = JSON.parse(
-      readFileSync(resolve(root, 'stryker.conf.fast.json'), 'utf8')
-    ) as {
+    const config = JSON.parse(readFileSync(resolve(root, 'stryker.conf.fast.json'), 'utf8')) as {
       mutate: string[];
       coverageAnalysis: string;
       concurrency: number;
@@ -147,7 +144,9 @@ describe('tooling configuration', () => {
     expect(osvJob).toContain("github.event_name == 'push'");
     expect(semgrepJob).toContain("github.event_name == 'push'");
     expect(semgrepJob).toContain("needs['pin-metadata'].outputs.SEMGREP_IMAGE");
-    expect(securityWorkflow).toContain('GITHUB_ENV="$GITHUB_OUTPUT" node --experimental-strip-types');
+    expect(securityWorkflow).toContain(
+      'GITHUB_ENV="$GITHUB_OUTPUT" node --experimental-strip-types'
+    );
   });
 
   it('does not publish duplicate manual status contexts', () => {
@@ -190,28 +189,28 @@ describe('tooling configuration', () => {
     expect(packageJson.scripts['test:e2e:all']).toContain('pnpm -s test:e2e:extension');
     expect(ciWorkflow).toContain('pnpm build:e2e');
     expect(ciWorkflow).toContain('pnpm test:e2e:all');
-    expect(ciWorkflow).toMatch(/playwright install --with-deps (?:chromium firefox|firefox chromium)/);
+    expect(ciWorkflow).toMatch(
+      /playwright install --with-deps (?:chromium firefox|firefox chromium)/
+    );
   });
 
   it('binds manual releases to a tag contained in protected master', () => {
     expect(releaseWorkflow).toContain("github.ref == 'refs/heads/master'");
-    expect(releaseWorkflow).toContain('run: node --experimental-strip-types scripts/release/verify-source.ts');
+    expect(releaseWorkflow).toContain(
+      'run: node --experimental-strip-types scripts/release/verify-source.ts'
+    );
     expect(releaseWorkflow).toContain('ref: ${{ github.sha }}');
     expect(releaseWorkflow).toContain(
       'git -c advice.detachedHead=false checkout --detach "$RELEASE_SHA"'
     );
-    expect(releaseWorkflow).not.toContain(
-      'ref: ${{ needs.provenance.outputs.release-sha }}'
-    );
+    expect(releaseWorkflow).not.toContain('ref: ${{ needs.provenance.outputs.release-sha }}');
     expect(releaseWorkflow).toContain(
       'name: release-bundle-${{ needs.provenance.outputs.release-sha }}'
     );
     expect(releaseWorkflow).not.toContain('push:\n    tags:');
     expect(releaseWorkflow).not.toContain('publish_branch: release');
     expect(releaseWorkflow).not.toContain('purge.jsdelivr.net');
-    expect(releaseWorkflow).toContain(
-      'RELEASE_SHA: ${{ needs.provenance.outputs.release-sha }}'
-    );
+    expect(releaseWorkflow).toContain('RELEASE_SHA: ${{ needs.provenance.outputs.release-sha }}');
     expect(releasePrepare).toContain("execFileSync('git', ['rev-parse', 'HEAD']");
     expect(releasePrepare).toContain('expectedCommit !== checkedOutCommit');
     expect(releasePrepare).toContain('const commit = releaseCommit;');
@@ -252,7 +251,9 @@ describe('tooling configuration', () => {
     const duplicationJob = deepWorkflow.match(/\n  duplication:[\s\S]*?\n  mutation:/)?.[0] ?? '';
 
     expect(deepWorkflow).not.toContain('\n  push:\n');
-    expect(duplicationJob).toContain('run: nose query src --baseline .nose-baseline.json --fail-on new');
+    expect(duplicationJob).toContain(
+      'run: nose query src --baseline .nose-baseline.json --fail-on new'
+    );
     expect(ciWorkflow).not.toContain('name: pr-gate/duplication');
   });
 
@@ -271,12 +272,11 @@ describe('tooling configuration', () => {
     expect(userscriptPlaywrightConfig).toContain("testIgnore: 'extension-runtime.spec.ts'");
     expect(userscriptPlaywrightConfig).toContain("name: 'firefox-smoke'");
     expect(userscriptPlaywrightConfig).toContain("name: 'webkit-smoke'");
-    expect(userscriptPlaywrightConfig).toContain("grep: /cross-browser smoke/");
+    expect(userscriptPlaywrightConfig).toContain('grep: /cross-browser smoke/');
     expect(userscriptPlaywrightConfig).toContain('slowMo: process.env.CI ? 0 : 200');
     expect(ciWorkflow).toContain('playwright install --with-deps chromium firefox webkit');
     expect(ciWorkflow).toContain('Upload Playwright diagnostics');
     expect(ciWorkflow).toContain('playwright-report/');
     expect(ciWorkflow).toContain('test-results/');
   });
-
 });

@@ -91,6 +91,51 @@ live-site, hosted-CI, or public-release evidence.
 
 ## Project constraints
 
+### Managed-file checks
+
+Biome uses default inclusion for maintained JavaScript (including `.mjs`),
+TypeScript/TSX, CSS, JSON and HTML. HTML formatting is explicitly enabled;
+embedded JavaScript is also checked. The root configuration keeps two-space
+indentation, a 100-column target, LF, single JavaScript quotes, semicolons,
+ES5 trailing commas and parenthesized arrow parameters. Its 1 MiB file limit
+is checked against every tracked supported file by the executable coverage suite.
+New files in these families select CI quality, including dot-directory helpers
+and new root configurations. Unknown changed paths still select every gate.
+
+| Maintained family | Formatting/lint owner | Types or other validation | Changed-path CI owner |
+| --- | --- | --- | --- |
+| `src` TS/TSX/CSS | Root Biome | `check:src`; behavior suites | Quality, unit, E2E, build; existing security gates |
+| Tests, fixtures and visual JS/TS/TSX/HTML | Root Biome | Test/Playwright/Node projects; unit and applicable browser suites | Quality plus existing unit/E2E selections |
+| `scripts`, `tooling`, root TS/JSON configs | Root Biome | Script/source projects, command/config regression suites | Quality plus existing unit/build/browser/security selections |
+| Windows validation `.mjs` and profile JSON | Root Biome | `node --check` through the Node-boundary suite; Windows profile tests | Quality, unit, E2E; existing JavaScript security gate |
+| Executable `.github/actions` helpers | Root Biome | Runtime-resolution and workflow trust/order tests | Quality, unit; existing Actions security gate |
+| Extension manifests | Root Biome | Version and built-package checks | Quality, unit, E2E, build |
+| YAML/workflow embedded shell, Markdown, TOML, PowerShell and Git hooks | Not Biome languages in this gate | Existing configuration/command tests, Bash hook execution, GitHub workflow validation and Windows runner where applicable; no general prose/TOML/PowerShell linter is claimed | Existing workflow, documentation and conservative unknown-path routing |
+
+VCS ignores keep dependencies and generated outputs outside the managed scope.
+The reviewed `packages/core` provider gitlink, generated `pnpm-lock.yaml` and
+Nose baseline are explicitly excluded. Captured host markup in
+`test/fixtures/authenticated-x-layouts/*.html` preserves its original bytes and
+structure; the routing suites consume these fragments unchanged. Other files in
+that directory are not excluded.
+
+Installed-page HTML fixtures deliberately reproduce X's native markup. Only
+their host-only `noNoninteractiveTabindex`, `useSemanticElements`,
+`useFocusableInteractive`, `noRedundantAlt` and `useAnchorContent` diagnostics
+are exempted; changing native markup would change the extraction scenarios.
+Product accessibility and the remaining fixture checks stay enforced. Local
+acceptance cleanup exceptions retain the primary error with cleanup errors;
+the hostile thenable and deadline-controlled polling fixtures state their reasons
+beside the exceptional statements.
+
+`test/unit/tooling/biome-coverage.test.ts` executes the installed tool with the
+root configuration. It checks valid and violating examples in every maintained
+family, embedded HTML JavaScript, excluded generated/captured inputs, VCS ignore
+behavior and the actual processed-file inventory. Classifier tests exercise both
+direct paths and real Git-event diffs, including additions, deletions, renames
+and invalid/missing history. Passing TypeScript alone is not formatting or lint
+coverage; syntax/fixture success is not Windows runtime acceptance.
+
 - Keep the userscript as a single-file IIFE without runtime code splitting.
 - Preserve behavior across the userscript and extension platform adapters.
 - Access browser and userscript capabilities through established adapters; do

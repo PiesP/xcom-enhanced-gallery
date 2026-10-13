@@ -1,17 +1,13 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 PiesP
 
-import { describe, expect, it } from 'vitest';
 import { raceWithAbort } from '@shared/services/download/single-download';
+import { describe, expect, it } from 'vitest';
 
 describe('raceWithAbort', () => {
   it('returns work result when work finishes first', async () => {
     const controller = new AbortController();
-    const result = await raceWithAbort(
-      Promise.resolve('done'),
-      controller.signal,
-      () => 'aborted'
-    );
+    const result = await raceWithAbort(Promise.resolve('done'), controller.signal, () => 'aborted');
     expect(result).toBe('done');
   });
 
@@ -29,22 +25,14 @@ describe('raceWithAbort', () => {
   it('returns abort result immediately when signal is already aborted', async () => {
     const controller = new AbortController();
     controller.abort();
-    const result = await raceWithAbort(
-      Promise.resolve('work'),
-      controller.signal,
-      () => 'aborted'
-    );
+    const result = await raceWithAbort(Promise.resolve('work'), controller.signal, () => 'aborted');
     expect(result).toBe('aborted');
   });
 
   it('does not leave listeners on the signal after work resolves', async () => {
     const controller = new AbortController();
 
-    await raceWithAbort(
-      Promise.resolve('done'),
-      controller.signal,
-      () => 'aborted'
-    );
+    await raceWithAbort(Promise.resolve('done'), controller.signal, () => 'aborted');
 
     // After resolution, aborting the signal should not trigger any side effects.
     // If a listener was left behind, the onAborted callback would be called.
@@ -56,11 +44,7 @@ describe('raceWithAbort', () => {
     const controller = new AbortController();
 
     await expect(
-      raceWithAbort(
-        Promise.reject(new Error('fail')),
-        controller.signal,
-        () => 'aborted'
-      )
+      raceWithAbort(Promise.reject(new Error('fail')), controller.signal, () => 'aborted')
     ).rejects.toThrow('fail');
 
     // Aborting after cleanup should not trigger onAborted

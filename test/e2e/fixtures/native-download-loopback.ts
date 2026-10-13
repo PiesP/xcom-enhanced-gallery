@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 PiesP
 
-import { createHash, createPrivateKey, X509Certificate } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
+import { createHash, createPrivateKey, X509Certificate } from 'node:crypto';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
-import { createServer } from 'node:https';
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { createServer } from 'node:https';
 import type { AddressInfo, Socket } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -44,21 +44,41 @@ export async function startNativeDownloadLoopback(image: Buffer): Promise<{
   const certPath = join(certificateDir, 'cert.pem');
   let server: ReturnType<typeof createServer> | undefined;
   try {
-    execFileSync('/usr/bin/openssl', [
-      'req', '-x509', '-newkey', 'rsa:2048', '-sha256', '-nodes', '-days', '1',
-      '-subj', `/CN=${HOST}`,
-      '-addext', `subjectAltName=DNS:${HOST}`,
-      '-addext', 'basicConstraints=critical,CA:FALSE',
-      '-keyout', keyPath, '-out', certPath,
-    ], { timeout: 10_000, maxBuffer: 16_384, stdio: 'pipe' });
+    execFileSync(
+      '/usr/bin/openssl',
+      [
+        'req',
+        '-x509',
+        '-newkey',
+        'rsa:2048',
+        '-sha256',
+        '-nodes',
+        '-days',
+        '1',
+        '-subj',
+        `/CN=${HOST}`,
+        '-addext',
+        `subjectAltName=DNS:${HOST}`,
+        '-addext',
+        'basicConstraints=critical,CA:FALSE',
+        '-keyout',
+        keyPath,
+        '-out',
+        certPath,
+      ],
+      { timeout: 10_000, maxBuffer: 16_384, stdio: 'pipe' }
+    );
     if (!existsSync(keyPath) || !existsSync(certPath)) {
       throw new Error('Native fixture certificate was not created');
     }
     const key = readFileSync(keyPath);
     const cert = readFileSync(certPath);
     const x509 = new X509Certificate(cert);
-    if (x509.checkHost(HOST, { subject: 'never' }) !== HOST ||
-        x509.ca || !x509.checkPrivateKey(createPrivateKey(key))) {
+    if (
+      x509.checkHost(HOST, { subject: 'never' }) !== HOST ||
+      x509.ca ||
+      !x509.checkPrivateKey(createPrivateKey(key))
+    ) {
       throw new Error('Native fixture certificate is invalid');
     }
     const spkiSha256 = createHash('sha256')
@@ -83,10 +103,12 @@ export async function startNativeDownloadLoopback(image: Buffer): Promise<{
         response.destroy();
         return;
       }
-      if (request.method !== 'GET' && request.method !== 'HEAD' ||
-          request.headers.host !== HOST ||
-          (request.socket as TLSSocket).servername !== HOST ||
-          request.url !== ORIGINAL_PATH) {
+      if (
+        (request.method !== 'GET' && request.method !== 'HEAD') ||
+        request.headers.host !== HOST ||
+        (request.socket as TLSSocket).servername !== HOST ||
+        request.url !== ORIGINAL_PATH
+      ) {
         unexpected += 1;
         response.writeHead(404, { 'Content-Length': '0', 'Cache-Control': 'no-store' });
         response.end();
@@ -94,17 +116,20 @@ export async function startNativeDownloadLoopback(image: Buffer): Promise<{
       }
       const range = request.headers.range;
       const match = typeof range === 'string' ? /^bytes=(\d+)-(\d*)$/u.exec(range) : null;
-      if (range !== undefined && (!match || Number(match[1]) >= image.length ||
-          (match[2] !== '' && Number(match[2]) < Number(match[1])))) {
+      if (
+        range !== undefined &&
+        (!match ||
+          Number(match[1]) >= image.length ||
+          (match[2] !== '' && Number(match[2]) < Number(match[1])))
+      ) {
         unexpected += 1;
         response.writeHead(416, { 'Content-Length': '0', 'Cache-Control': 'no-store' });
         response.end();
         return;
       }
       const start = match ? Number(match[1]) : 0;
-      const end = match && match[2] !== ''
-        ? Math.min(Number(match[2]), image.length - 1)
-        : image.length - 1;
+      const end =
+        match && match[2] !== '' ? Math.min(Number(match[2]), image.length - 1) : image.length - 1;
       const body = image.subarray(start, end + 1);
       if (reservedBytes + body.length > MAX_SERVED_BYTES) {
         overflow = true;
@@ -136,7 +161,9 @@ export async function startNativeDownloadLoopback(image: Buffer): Promise<{
     server.requestTimeout = 5_000;
     server.keepAliveTimeout = 1_000;
     server.timeout = 20_000;
-    server.on('error', () => { serverError = true; });
+    server.on('error', () => {
+      serverError = true;
+    });
     server.on('connection', (socket) => {
       connections += 1;
       if (connections > MAX_CONNECTIONS) {
@@ -163,15 +190,23 @@ export async function startNativeDownloadLoopback(image: Buffer): Promise<{
     return {
       port: address.port,
       spkiSha256,
-      snapshot: () => ({ requests, unexpected, servedBytes, servedGets,
-        previewRequests, overflow, serverError }),
+      snapshot: () => ({
+        requests,
+        unexpected,
+        servedBytes,
+        servedGets,
+        previewRequests,
+        overflow,
+        serverError,
+      }),
       async close() {
         for (const response of responses) response.destroy();
         ownedServer.closeAllConnections();
         for (const socket of sockets) socket.destroy();
         try {
           await new Promise<void>((resolveClose, rejectClose) =>
-            ownedServer.close((error) => error ? rejectClose(error) : resolveClose()));
+            ownedServer.close((error) => (error ? rejectClose(error) : resolveClose()))
+          );
         } finally {
           rmSync(certificateDir, { recursive: true, force: true });
         }
@@ -179,7 +214,11 @@ export async function startNativeDownloadLoopback(image: Buffer): Promise<{
     };
   } catch (error) {
     server?.closeAllConnections();
-    try { server?.close(); } catch { /* The listener may not have started. */ }
+    try {
+      server?.close();
+    } catch {
+      /* The listener may not have started. */
+    }
     rmSync(certificateDir, { recursive: true, force: true });
     throw error;
   }

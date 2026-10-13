@@ -112,7 +112,9 @@ describe('unmarked native video controls in quoted posts', () => {
     'routes a same-scope quote video control only in explicit allow-all mode (%s)',
     (mode) => {
       setVideoMode(mode);
-      const target = renderUnmarkedQuote(`<video src="blob:https://x.com/started" poster="${thumb}"></video>`);
+      const target = renderUnmarkedQuote(
+        `<video src="blob:https://x.com/started" poster="${thumb}"></video>`
+      );
       expect(target.closest('article')?.id).toBe('quoted');
       expect(isProcessableMedia(target)).toBe(mode === 'allow-all');
     }

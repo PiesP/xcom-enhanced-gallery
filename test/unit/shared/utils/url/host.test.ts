@@ -1,12 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { describe, it, expect } from 'vitest';
-import {
-  tryParseUrl,
-  isHostMatching,
-  extractUsernameFromUrl,
-} from '@shared/utils/url/host';
+import { extractUsernameFromUrl, isHostMatching, tryParseUrl } from '@shared/utils/url/host';
+import { describe, expect, it } from 'vitest';
 
 describe('url/host', () => {
   // ── tryParseUrl ───────────────────────────────────────────────────
@@ -57,11 +53,19 @@ describe('url/host', () => {
     });
 
     it('should match subdomains when allowSubdomains is true', () => {
-      expect(isHostMatching('https://cdn.pbs.twimg.com/media/ABC', ['pbs.twimg.com'], { allowSubdomains: true })).toBe(true);
+      expect(
+        isHostMatching('https://cdn.pbs.twimg.com/media/ABC', ['pbs.twimg.com'], {
+          allowSubdomains: true,
+        })
+      ).toBe(true);
     });
 
     it('should reject subdomains when allowSubdomains is false', () => {
-      expect(isHostMatching('https://cdn.pbs.twimg.com/media/ABC', ['pbs.twimg.com'], { allowSubdomains: false })).toBe(false);
+      expect(
+        isHostMatching('https://cdn.pbs.twimg.com/media/ABC', ['pbs.twimg.com'], {
+          allowSubdomains: false,
+        })
+      ).toBe(false);
     });
 
     it('should be case-insensitive', () => {
@@ -119,9 +123,15 @@ describe('url/host', () => {
     });
 
     it('should enforce strict host validation', () => {
-      expect(extractUsernameFromUrl('https://evil.com/john/status/123', { strictHost: true })).toBeNull();
-      expect(extractUsernameFromUrl('https://twitter.com/john/status/123', { strictHost: true })).toBe('john');
-      expect(extractUsernameFromUrl('https://x.com/john/status/123', { strictHost: true })).toBe('john');
+      expect(
+        extractUsernameFromUrl('https://evil.com/john/status/123', { strictHost: true })
+      ).toBeNull();
+      expect(
+        extractUsernameFromUrl('https://twitter.com/john/status/123', { strictHost: true })
+      ).toBe('john');
+      expect(extractUsernameFromUrl('https://x.com/john/status/123', { strictHost: true })).toBe(
+        'john'
+      );
     });
 
     it('should reject usernames longer than 15 characters', () => {

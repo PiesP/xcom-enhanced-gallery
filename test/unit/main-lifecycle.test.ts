@@ -16,8 +16,10 @@ const state = vi.hoisted(() => ({
 vi.mock('@bootstrap/gallery-init', () => ({
   initializeCoreBaseServices: state.initializeCoreBaseServices,
   initializeGalleryApp: vi.fn(async () => ({
-    initialize: vi.fn(async () => undefined), cleanup: vi.fn(async () => undefined),
-    resumeEarlyMediaClick: vi.fn(async () => undefined), close: state.galleryClose,
+    initialize: vi.fn(async () => undefined),
+    cleanup: vi.fn(async () => undefined),
+    resumeEarlyMediaClick: vi.fn(async () => undefined),
+    close: state.galleryClose,
   })),
   initializeGalleryServices: vi.fn(),
 }));

@@ -91,9 +91,7 @@ describe('authenticated X layout click routing', () => {
     (mode: VideoClickMode) => {
       registerSettings({ get: () => mode, set: async () => undefined });
       loadCapturedShape('timeline-image');
-      const target = requireTarget(
-        '[data-testid="tweetPhoto"] img[src*="pbs.twimg.com/media/"]'
-      );
+      const target = requireTarget('[data-testid="tweetPhoto"] img[src*="pbs.twimg.com/media/"]');
       expect(target.closest('a[href$="/photo/2"]')).not.toBeNull();
       expect(isProcessableMedia(target)).toBe(true);
 

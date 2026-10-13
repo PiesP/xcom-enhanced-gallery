@@ -14,7 +14,8 @@ const releaseWorkflowJobs = ['quality', 'unit', 'e2e', 'mutation', 'build'] as c
 
 function jobBlock(workflow: string, job: string): string {
   return (
-    workflow.match(new RegExp(`^  ${job}:\\n(?:(?!^  [A-Za-z0-9_-]+:\\n)[\\s\\S])*`, 'm'))?.[0] ?? ''
+    workflow.match(new RegExp(`^  ${job}:\\n(?:(?!^  [A-Za-z0-9_-]+:\\n)[\\s\\S])*`, 'm'))?.[0] ??
+    ''
   );
 }
 
@@ -35,10 +36,7 @@ describe('central setup-project action', () => {
 
   it('uses the immutable central action in every project setup job', () => {
     for (const [filename, jobs] of Object.entries(centralWorkflowJobs)) {
-      const workflow = readFileSync(
-        resolve(root, '.github/workflows', filename),
-        'utf8'
-      );
+      const workflow = readFileSync(resolve(root, '.github/workflows', filename), 'utf8');
 
       expect(workflow).not.toContain('./.github/actions/setup-toolchain');
       expect(workflow).not.toContain(releaseSetupAction);
@@ -83,12 +81,12 @@ describe('central setup-project action', () => {
     const duplication = jobBlock(workflow, 'duplication');
     expect(duplication).toContain(`uses: ${centralSetupAction}`);
     expect(duplication).toContain("install-dependencies: 'false'");
-    expect(duplication.indexOf(centralSetupAction)).toBeLessThan(duplication.indexOf('Checkout verified release commit'));
+    expect(duplication.indexOf(centralSetupAction)).toBeLessThan(
+      duplication.indexOf('Checkout verified release commit')
+    );
 
     expect(workflow.split(releaseSetupAction)).toHaveLength(releaseWorkflowJobs.length + 1);
-    expect(action).toContain(
-      'uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0'
-    );
+    expect(action).toContain('uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0');
     expect(action).toContain('package-json-file: package.json');
     expect(action).toContain('runtime: "node@${{ steps.runtime.outputs.version }}"');
     expect(action).toContain('cache: false');

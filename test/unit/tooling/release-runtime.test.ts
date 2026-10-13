@@ -4,7 +4,10 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const script = resolve(import.meta.dirname, '../../../.github/actions/setup-release/resolve-runtime.mjs');
+const script = resolve(
+  import.meta.dirname,
+  '../../../.github/actions/setup-release/resolve-runtime.mjs'
+);
 
 function resolveRuntime(pin: unknown, requested = ''): string {
   const fixture = mkdtempSync(join(tmpdir(), 'release-runtime-'));
@@ -17,9 +20,9 @@ function resolveRuntime(pin: unknown, requested = ''): string {
         ...process.env,
         GITHUB_OUTPUT: output,
         NODE_VERSION_OVERRIDE: '22',
-        REQUESTED_NODE_VERSION: requested
+        REQUESTED_NODE_VERSION: requested,
       },
-      stdio: 'pipe'
+      stdio: 'pipe',
     });
     return readFileSync(output, 'utf8');
   } finally {
@@ -40,16 +43,23 @@ describe('release runtime selection', () => {
   });
 
   it('runs the trusted provenance helper before tagged release setup', () => {
-    const workflow = readFileSync(resolve(import.meta.dirname, '../../../.github/workflows/release.yaml'), 'utf8');
+    const workflow = readFileSync(
+      resolve(import.meta.dirname, '../../../.github/workflows/release.yaml'),
+      'utf8'
+    );
     const provenance = workflow.split('  provenance:\n')[1]?.split('\n  quality:')[0] ?? '';
     const checkout = provenance.indexOf('name: 📥 Checkout protected workflow source');
     const runtime = provenance.indexOf('name: 📦 Setup trusted provenance runtime');
-    const verify = provenance.indexOf('run: node --experimental-strip-types scripts/release/verify-source.ts');
+    const verify = provenance.indexOf(
+      'run: node --experimental-strip-types scripts/release/verify-source.ts'
+    );
     expect(checkout).toBeGreaterThan(-1);
     expect(runtime).toBeGreaterThan(checkout);
     expect(verify).toBeGreaterThan(runtime);
     expect(provenance).toContain("install-dependencies: 'false'");
-    expect(workflow.match(/node-version: \$\{\{ needs.provenance.outputs.node-version \}\}/g)).toHaveLength(5);
+    expect(
+      workflow.match(/node-version: \$\{\{ needs.provenance.outputs.node-version \}\}/g)
+    ).toHaveLength(5);
   });
 
   it.each([undefined, 26, '26', 'latest', '26.9.0\nextra=value'])(

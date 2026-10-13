@@ -27,44 +27,66 @@ async function readyPage(page, url) {
   await page.locator(READY).waitFor({ state: 'attached', timeout: 15_000 });
 }
 
-async function openAndClose(page, index, imagePaths, expectedUrl, original,
-  verifyOrigin = true) {
-  const trigger = page.locator(
-    '[data-route="classic"][data-phase="normal"] [data-testid="tweetPhoto"] img'
-  ).nth(index);
+async function openAndClose(page, index, imagePaths, expectedUrl, original, verifyOrigin = true) {
+  const trigger = page
+    .locator('[data-route="classic"][data-phase="normal"] [data-testid="tweetPhoto"] img')
+    .nth(index);
   assert.equal(await trigger.count(), 1, 'Expected quality fixture photo is missing');
   const clickedAtMonotonicMs = performance.now();
   await trigger.click();
   const gallery = page.locator(GALLERY);
   await gallery.waitFor({ state: 'visible', timeout: 15_000 });
-  const selection = await page.waitForFunction(({ index: selectedIndex }) => {
-    const root = document.querySelector('[data-xeg-gallery-container]');
-    const toolbar = root?.querySelector('[data-gallery-element="toolbar"]');
-    const counter = toolbar?.querySelector('#xeg-toolbar-counter');
-    const item = root?.querySelector(
-      `[data-gallery-element="item"][data-index="${selectedIndex}"]`
-    );
-    const image = item?.querySelector('img');
-    if (counter?.getAttribute('data-position') !== String(selectedIndex + 1) ||
-        counter?.getAttribute('data-total') !== '3' ||
-        counter?.getAttribute('data-focused-index') !== String(selectedIndex) ||
-        toolbar?.getAttribute('data-current-index') !== String(selectedIndex) ||
-        toolbar?.getAttribute('data-focused-index') !== String(selectedIndex) ||
-        !(image instanceof HTMLImageElement) || !image.complete || image.naturalWidth === 0 ||
-        item?.getAttribute('data-media-loaded') !== 'true') return false;
-    return { source: image.currentSrc || image.src,
-      width: image.naturalWidth, height: image.naturalHeight };
-  }, { index }, { timeout: 15_000 }).then((handle) => handle.jsonValue());
+  const selection = await page
+    .waitForFunction(
+      ({ index: selectedIndex }) => {
+        const root = document.querySelector('[data-xeg-gallery-container]');
+        const toolbar = root?.querySelector('[data-gallery-element="toolbar"]');
+        const counter = toolbar?.querySelector('#xeg-toolbar-counter');
+        const item = root?.querySelector(
+          `[data-gallery-element="item"][data-index="${selectedIndex}"]`
+        );
+        const image = item?.querySelector('img');
+        if (
+          counter?.getAttribute('data-position') !== String(selectedIndex + 1) ||
+          counter?.getAttribute('data-total') !== '3' ||
+          counter?.getAttribute('data-focused-index') !== String(selectedIndex) ||
+          toolbar?.getAttribute('data-current-index') !== String(selectedIndex) ||
+          toolbar?.getAttribute('data-focused-index') !== String(selectedIndex) ||
+          !(image instanceof HTMLImageElement) ||
+          !image.complete ||
+          image.naturalWidth === 0 ||
+          item?.getAttribute('data-media-loaded') !== 'true'
+        )
+          return false;
+        return {
+          source: image.currentSrc || image.src,
+          width: image.naturalWidth,
+          height: image.naturalHeight,
+        };
+      },
+      { index },
+      { timeout: 15_000 }
+    )
+    .then((handle) => handle.jsonValue());
   assert(selection, 'Selected quality photo did not become ready');
   const source = new URL(selection.source);
   assert.equal(source.hostname, 'pbs.twimg.com');
-  assert.equal(source.pathname, `/media/${imagePaths[index]}`,
-    'Selected photo belongs to another attachment');
-  assert.equal(source.searchParams.get('format'), 'jpg',
-    'Selected fixture photo has an unexpected file format');
+  assert.equal(
+    source.pathname,
+    `/media/${imagePaths[index]}`,
+    'Selected photo belongs to another attachment'
+  );
+  assert.equal(
+    source.searchParams.get('format'),
+    'jpg',
+    'Selected fixture photo has an unexpected file format'
+  );
   if (original) {
-    assert.equal(source.searchParams.get('name'), 'orig',
-      'Healthy API selection must use its original photo');
+    assert.equal(
+      source.searchParams.get('name'),
+      'orig',
+      'Healthy API selection must use its original photo'
+    );
     assert.equal(selection.width, 480 + index * 80);
     assert.equal(selection.height, 320 + index * 40);
   }
@@ -74,15 +96,23 @@ async function openAndClose(page, index, imagePaths, expectedUrl, original,
     await sourceButton.click();
     const origin = gallery.locator('#toolbar-tweet-panel a[href^="https://x.com/"]');
     await origin.waitFor({ state: 'visible' });
-    assert.equal(await origin.getAttribute('href'), expectedUrl,
-      'Selected attachment has the wrong originating post');
+    assert.equal(
+      await origin.getAttribute('href'),
+      expectedUrl,
+      'Selected attachment has the wrong originating post'
+    );
     await sourceButton.click();
   }
   await page.keyboard.press('Escape');
   await gallery.waitFor({ state: 'detached', timeout: 15_000 });
-  return { index, clickedAtMonotonicMs, path: source.pathname,
+  return {
+    index,
+    clickedAtMonotonicMs,
+    path: source.pathname,
     original: source.searchParams.get('name') === 'orig',
-    width: selection.width, height: selection.height };
+    width: selection.width,
+    height: selection.height,
+  };
 }
 
 /**
@@ -91,12 +121,21 @@ async function openAndClose(page, index, imagePaths, expectedUrl, original,
  * This helper intercepts only the fixture's API requests and owns its new pages.
  */
 export async function runInstalledMediaApiReuseProfile({
-  context, page, qualityFixtureUrl, qualityTweetId, qualityImagePaths, output, videoPayloads,
+  context,
+  page,
+  qualityFixtureUrl,
+  qualityTweetId,
+  qualityImagePaths,
+  output,
+  videoPayloads,
 }) {
   assert(context && page, 'Installed browser context and page are required');
   assert.equal(qualityImagePaths?.length, 3, 'Three quality fixture paths are required');
-  assert.equal(new URL(qualityFixtureUrl).pathname,
-    `/qualityuser/status/${qualityTweetId}`, 'Expected installed quality fixture route');
+  assert.equal(
+    new URL(qualityFixtureUrl).pathname,
+    `/qualityuser/status/${qualityTweetId}`,
+    'Expected installed quality fixture route'
+  );
 
   const requests = [];
   const ownedPages = [];
@@ -110,34 +149,68 @@ export async function runInstalledMediaApiReuseProfile({
   const routeHandler = async (route) => {
     if (!targetRequest(route, qualityTweetId)) return route.fallback();
     assert(requests.length < MAX_OBSERVATIONS, 'API reuse observation overflow');
-    const record = { variant, method: route.request().method(),
-      status: { healthy: 200, denied: 403, 'rate-limited': 429,
-        'unreadable-retry': 503, 'provider-error': 200, malformed: 200,
-        'malformed-wrapper': 200 }[variant],
-      requestedAtMonotonicMs: performance.now() };
+    const record = {
+      variant,
+      method: route.request().method(),
+      status: {
+        healthy: 200,
+        denied: 403,
+        'rate-limited': 429,
+        'unreadable-retry': 503,
+        'provider-error': 200,
+        malformed: 200,
+        'malformed-wrapper': 200,
+      }[variant],
+      requestedAtMonotonicMs: performance.now(),
+    };
     requests.push(record);
     assert.equal(record.method, 'GET');
     if (variant === 'healthy') return route.fallback();
     if (variant === 'denied') {
-      await route.fulfill({ status: 403, contentType: 'application/json',
-        headers: { 'Retry-After': String(RETRY_AFTER_SECONDS) }, body: '{}' });
+      await route.fulfill({
+        status: 403,
+        contentType: 'application/json',
+        headers: { 'Retry-After': String(RETRY_AFTER_SECONDS) },
+        body: '{}',
+      });
     } else if (variant === 'rate-limited') {
-      await route.fulfill({ status: 429, contentType: 'application/json',
-        headers: { 'Retry-After': String(RETRY_AFTER_SECONDS) }, body: '{}' });
+      await route.fulfill({
+        status: 429,
+        contentType: 'application/json',
+        headers: { 'Retry-After': String(RETRY_AFTER_SECONDS) },
+        body: '{}',
+      });
     } else if (variant === 'unreadable-retry') {
       // The installed MV3 adapter retains 503 and Retry-After on JSON body-read failure.
-      await route.fulfill({ status: 503, contentType: 'application/json',
-        headers: { 'Retry-After': String(RETRY_AFTER_SECONDS) }, body: '{' });
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        headers: { 'Retry-After': String(RETRY_AFTER_SECONDS) },
+        body: '{',
+      });
     } else if (variant === 'provider-error') {
-      await route.fulfill({ status: 200, contentType: 'application/json',
-        body: JSON.stringify({ errors: [{ code: 88, message: 'fixture provider error' }] }) });
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ errors: [{ code: 88, message: 'fixture provider error' }] }),
+      });
     } else if (variant === 'malformed') {
       await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
     } else if (variant === 'malformed-wrapper') {
-      await route.fulfill({ status: 200, contentType: 'application/json',
-        body: JSON.stringify({ data: { tweetResult: { result: {
-          __typename: 'UnexpectedFixtureWrapper', tweet: { __typename: 'Tweet' },
-        } } } }) });
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: {
+            tweetResult: {
+              result: {
+                __typename: 'UnexpectedFixtureWrapper',
+                tweet: { __typename: 'Tweet' },
+              },
+            },
+          },
+        }),
+      });
     } else {
       throw new Error('Unknown API reuse fixture variant');
     }
@@ -154,15 +227,24 @@ export async function runInstalledMediaApiReuseProfile({
       let apiLocation = false;
       try {
         const url = new URL(message.location().url);
-        apiLocation = url.hostname === 'x.com' &&
+        apiLocation =
+          url.hostname === 'x.com' &&
           url.pathname.endsWith('/TweetResultByRestId') &&
           JSON.parse(url.searchParams.get('variables') ?? '{}').tweetId === qualityTweetId;
-      } catch { /* A missing location cannot identify an expected transport error. */ }
+      } catch {
+        /* A missing location cannot identify an expected transport error. */
+      }
       const text = message.text().slice(0, 500);
-      const status = /Failed to load resource: the server responded with a status of (403|429|503)(?:\D|$)/u
-        .exec(text)?.[1];
-      const expected = apiLocation && status !== undefined &&
-        requests.some((request) => request.variant === observedVariant && request.status === Number(status));
+      const status =
+        /Failed to load resource: the server responded with a status of (403|429|503)(?:\D|$)/u.exec(
+          text
+        )?.[1];
+      const expected =
+        apiLocation &&
+        status !== undefined &&
+        requests.some(
+          (request) => request.variant === observedVariant && request.status === Number(status)
+        );
       if (consoleErrors.length < MAX_OBSERVATIONS) {
         consoleErrors.push({ variant: observedVariant, text, expected });
       } else errorOverflow = true;
@@ -181,8 +263,14 @@ export async function runInstalledMediaApiReuseProfile({
     return owned;
   };
   const cases = [];
-  const evidence = { status: 'running', cases, requests, pageErrors, consoleErrors,
-    cleanup: { routesRemoved: false, pagesClosed: false, pageRestored: false } };
+  const evidence = {
+    status: 'running',
+    cases,
+    requests,
+    pageErrors,
+    consoleErrors,
+    cleanup: { routesRemoved: false, pagesClosed: false, pageRestored: false },
+  };
   let primaryError;
 
   observePage(page);
@@ -191,10 +279,12 @@ export async function runInstalledMediaApiReuseProfile({
     await readyPage(page, qualityFixtureUrl);
     const reuseStarted = performance.now();
     for (const index of [1, 2]) {
-      const selection = await openAndClose(page, index, qualityImagePaths,
-        qualityFixtureUrl, true);
-      assert.equal(count('healthy'), 1,
-        'Different attachments reopened within the reuse window must share one API request');
+      const selection = await openAndClose(page, index, qualityImagePaths, qualityFixtureUrl, true);
+      assert.equal(
+        count('healthy'),
+        1,
+        'Different attachments reopened within the reuse window must share one API request'
+      );
       cases.push({ case: `reuse-${index}`, ...selection, apiRequests: count('healthy') });
     }
     const reuseElapsedMs = performance.now() - reuseStarted;
@@ -219,54 +309,88 @@ export async function runInstalledMediaApiReuseProfile({
     cases.push({ case: 'new-page', apiRequests: count('healthy') });
 
     for (const [name, expectedRequests] of [
-      ['denied', 2], ['rate-limited', 1], ['unreadable-retry', 1],
-      ['provider-error', 2], ['malformed', 2], ['malformed-wrapper', 2],
+      ['denied', 2],
+      ['rate-limited', 1],
+      ['unreadable-retry', 1],
+      ['provider-error', 2],
+      ['malformed', 2],
+      ['malformed-wrapper', 2],
     ]) {
       variant = name;
       const failurePage = await newFixturePage();
       const started = performance.now();
       await openAndClose(failurePage, 1, qualityImagePaths, qualityFixtureUrl, false, false);
       assert.equal(count(name), 1, `${name} must first make one API request`);
-      const second = await openAndClose(failurePage, 2, qualityImagePaths,
-        qualityFixtureUrl, false, false);
+      const second = await openAndClose(
+        failurePage,
+        2,
+        qualityImagePaths,
+        qualityFixtureUrl,
+        false,
+        false
+      );
       const elapsedMs = performance.now() - started;
       if (expectedRequests === 1) {
-        const firstFulfilled = requests.find((request) => request.variant === name)
-          ?.fulfilledAtMonotonicMs;
-        assert(firstFulfilled !== undefined &&
-          second.clickedAtMonotonicMs - firstFulfilled < RETRY_AFTER_SECONDS * 1_000,
-        `${name} second click missed the bounded Retry-After window`);
+        const firstFulfilled = requests.find(
+          (request) => request.variant === name
+        )?.fulfilledAtMonotonicMs;
+        assert(
+          firstFulfilled !== undefined &&
+            second.clickedAtMonotonicMs - firstFulfilled < RETRY_AFTER_SECONDS * 1_000,
+          `${name} second click missed the bounded Retry-After window`
+        );
       }
-      assert.equal(count(name), expectedRequests,
-        `${name} made an unexpected number of physical API requests`);
+      assert.equal(
+        count(name),
+        expectedRequests,
+        `${name} made an unexpected number of physical API requests`
+      );
       const immediateApiRequests = count(name);
       if (expectedRequests === 1) {
-        const firstFulfilled = requests.find((request) => request.variant === name)
-          .fulfilledAtMonotonicMs;
-        const remainingMs = Math.max(0,
-          firstFulfilled + RETRY_AFTER_SECONDS * 1_000 + 100 - performance.now());
+        const firstFulfilled = requests.find(
+          (request) => request.variant === name
+        ).fulfilledAtMonotonicMs;
+        const remainingMs = Math.max(
+          0,
+          firstFulfilled + RETRY_AFTER_SECONDS * 1_000 + 100 - performance.now()
+        );
         if (remainingMs > 0) await new Promise((resolve) => setTimeout(resolve, remainingMs));
         await openAndClose(failurePage, 0, qualityImagePaths, qualityFixtureUrl, false, false);
         assert.equal(count(name), 2, `${name} must retry after the server wait`);
       }
-      cases.push({ case: name, immediateApiRequests,
-        afterWaitApiRequests: count(name), elapsedMs });
+      cases.push({
+        case: name,
+        immediateApiRequests,
+        afterWaitApiRequests: count(name),
+        elapsedMs,
+      });
     }
     assert.equal(errorOverflow, false, 'API reuse error observations overflowed');
     assert.deepEqual(pageErrors, [], 'API reuse pages raised unexpected script errors');
-    assert.deepEqual(consoleErrors.filter((record) => !record.expected), [],
-      'API reuse pages logged errors beyond their exact controlled HTTP failures');
-    evidence.responseAccounting = await runResponseAccountingCases({ context, output, videoPayloads });
-    Object.assign(evidence, { status: 'passed', reuseElapsedMs,
+    assert.deepEqual(
+      consoleErrors.filter((record) => !record.expected),
+      [],
+      'API reuse pages logged errors beyond their exact controlled HTTP failures'
+    );
+    evidence.responseAccounting = await runResponseAccountingCases({
+      context,
+      output,
+      videoPayloads,
+    });
+    Object.assign(evidence, {
+      status: 'passed',
+      reuseElapsedMs,
       retryAfterSeconds: RETRY_AFTER_SECONDS,
-      untested: ['HLS-only media requires a video fixture'] });
+      untested: ['HLS-only media requires a video fixture'],
+    });
     return evidence;
   } catch (error) {
     primaryError = error;
     evidence.status = 'failed';
     evidence.error = error instanceof Error ? error.message : String(error);
     if (output && !activePage.isClosed()) {
-      await activePage.screenshot({ path: join(output, 'api-reuse-failure.png'), fullPage: true })
+      await activePage
+        .screenshot({ path: join(output, 'api-reuse-failure.png'), fullPage: true })
         .catch(() => {});
     }
     throw error;
@@ -288,7 +412,7 @@ export async function runInstalledMediaApiReuseProfile({
       if (result.status === 'rejected') cleanupErrors.push(result.reason);
     }
     try {
-      if (!page.isClosed() && await page.locator(GALLERY).count()) {
+      if (!page.isClosed() && (await page.locator(GALLERY).count())) {
         await page.keyboard.press('Escape');
       }
       if (!page.isClosed() && originalPageUrl !== page.url()) {
@@ -300,12 +424,19 @@ export async function runInstalledMediaApiReuseProfile({
     }
     if (cleanupErrors.length > 0) evidence.status = 'failed';
     evidence.cleanup.errors = cleanupErrors.map((error) =>
-      error instanceof Error ? error.message : String(error));
-    if (output) await writeFile(join(output, 'api-reuse-observations.json'),
-      JSON.stringify(evidence, null, 2));
+      error instanceof Error ? error.message : String(error)
+    );
+    if (output)
+      await writeFile(
+        join(output, 'api-reuse-observations.json'),
+        JSON.stringify(evidence, null, 2)
+      );
     if (cleanupErrors.length > 0) {
-      throw new AggregateError(primaryError ? [primaryError, ...cleanupErrors] : cleanupErrors,
-        'Installed API reuse cleanup failed');
+      // biome-ignore lint/correctness/noUnsafeFinally: Retain the primary failure together with cleanup failures in the acceptance receipt.
+      throw new AggregateError(
+        primaryError ? [primaryError, ...cleanupErrors] : cleanupErrors,
+        'Installed API reuse cleanup failed'
+      );
     }
   }
 }
@@ -313,7 +444,8 @@ export async function runInstalledMediaApiReuseProfile({
 const ACCOUNTING_SETTLE_MS = 500;
 const SUPPRESSED_OBSERVATION_MS = 750;
 const ACCOUNTING_POSTER = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl4bRkAAAAASUVORK5CYII=', 'base64'
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl4bRkAAAAASUVORK5CYII=',
+  'base64'
 );
 
 function accountingPoster(id) {
@@ -325,17 +457,45 @@ function accountingVideo(id) {
 }
 
 function accountingResponse(id, mediaId = id) {
-  return { data: { tweetResult: { result: {
-    __typename: 'Tweet', rest_id: id,
-    core: { user_results: { result: { rest_id: id,
-      legacy: { screen_name: 'contractseq', name: 'Contract sequence' } } } },
-    legacy: { id_str: id, full_text: 'Bounded response accounting control',
-      extended_entities: { media: [{ type: 'video', id_str: mediaId,
-        media_key: `7_${mediaId}`, media_url_https: accountingPoster(mediaId),
-        original_info: { width: 320, height: 180 },
-        video_info: { aspect_ratio: [16, 9], variants: [{ content_type: 'video/mp4',
-          bitrate: 256000, url: accountingVideo(mediaId) }] } }] } },
-  } } } };
+  return {
+    data: {
+      tweetResult: {
+        result: {
+          __typename: 'Tweet',
+          rest_id: id,
+          core: {
+            user_results: {
+              result: {
+                rest_id: id,
+                legacy: { screen_name: 'contractseq', name: 'Contract sequence' },
+              },
+            },
+          },
+          legacy: {
+            id_str: id,
+            full_text: 'Bounded response accounting control',
+            extended_entities: {
+              media: [
+                {
+                  type: 'video',
+                  id_str: mediaId,
+                  media_key: `7_${mediaId}`,
+                  media_url_https: accountingPoster(mediaId),
+                  original_info: { width: 320, height: 180 },
+                  video_info: {
+                    aspect_ratio: [16, 9],
+                    variants: [
+                      { content_type: 'video/mp4', bitrate: 256000, url: accountingVideo(mediaId) },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        },
+      },
+    },
+  };
 }
 
 function accountingHtml(ids) {
@@ -345,22 +505,28 @@ function accountingHtml(ids) {
     body{margin:0;padding:20px;background:#000;color:#fff;font:16px Segoe UI,sans-serif}
     article{width:320px;margin:24px}.player{width:320px;height:180px}
     img{width:320px;height:180px}video{display:none}</style><body>
-    ${ids.map((id, index) => `<article data-testid="tweet" data-contract-step="${index}">
+    ${ids
+      .map(
+        (id, index) => `<article data-testid="tweet" data-contract-step="${index}">
       <a href="/contractseq/status/${id}"><time>Contract step ${index + 1}</time></a>
       <div data-testid="tweetText">Bounded contract fixture</div>
       <div data-testid="videoPlayer" class="player">
         <div data-testid="previewInterstitial"><img tabindex="0" data-contract-trigger="${index}"
           src="${accountingPoster(id)}" alt="Controlled video preview ${index + 1}"></div>
         <video controls poster="${accountingPoster(id)}"></video>
-      </div></article>`).join('')}
+      </div></article>`
+      )
+      .join('')}
     </body></html>`;
 }
 
 /** Real installed extension requests in one document per sequence; no app state injection. */
 async function runResponseAccountingCases({ context, output, videoPayloads }) {
   const valid = videoPayloads?.['quote-one'];
-  assert(Buffer.isBuffer(valid) && valid.length > 0 && valid.length <= 256 * 1024,
-    'A bounded declared MP4 control is required for API accounting');
+  assert(
+    Buffer.isBuffer(valid) && valid.length > 0 && valid.length <= 256 * 1024,
+    'A bounded declared MP4 control is required for API accounting'
+  );
   const descriptions = [
     { name: 'foreign-root', expectedRequests: 3 },
     { name: '503-503-foreign', expectedRequests: 3 },
@@ -370,10 +536,18 @@ async function runResponseAccountingCases({ context, output, videoPayloads }) {
   ];
   const records = [];
   const cases = [];
-  const evidence = { status: 'running', cases, requests: records,
-    threshold: 3, cooldownMs: 60_000, settleMs: ACCOUNTING_SETTLE_MS,
+  const evidence = {
+    status: 'running',
+    cases,
+    requests: records,
+    threshold: 3,
+    cooldownMs: 60_000,
+    settleMs: ACCOUNTING_SETTLE_MS,
     suppressedObservationMs: SUPPRESSED_OBSERVATION_MS,
-    cleanup: { routeRemoved: false, pagesClosed: false }, pageErrors: [], consoleErrors: [] };
+    cleanup: { routeRemoved: false, pagesClosed: false },
+    pageErrors: [],
+    consoleErrors: [],
+  };
   const ownedPages = [];
   let active;
   let primaryError;
@@ -381,12 +555,22 @@ async function runResponseAccountingCases({ context, output, videoPayloads }) {
     if (!active) return route.fallback();
     const target = new URL(route.request().url());
     if (route.request().isNavigationRequest() && target.href === active.url) {
-      return route.fulfill({ status: 200, contentType: 'text/html', body: accountingHtml(active.ids) });
+      return route.fulfill({
+        status: 200,
+        contentType: 'text/html',
+        body: accountingHtml(active.ids),
+      });
     }
-    if (target.hostname === 'pbs.twimg.com' && active.ids.some((id) => target.href === accountingPoster(id))) {
+    if (
+      target.hostname === 'pbs.twimg.com' &&
+      active.ids.some((id) => target.href === accountingPoster(id))
+    ) {
       return route.fulfill({ status: 200, contentType: 'image/png', body: ACCOUNTING_POSTER });
     }
-    if (target.hostname === 'video.twimg.com' && active.ids.some((id) => target.href === accountingVideo(id))) {
+    if (
+      target.hostname === 'video.twimg.com' &&
+      active.ids.some((id) => target.href === accountingVideo(id))
+    ) {
       active.videoRequests.push({ url: target.href, atMonotonicMs: performance.now() });
       return route.fulfill({ status: 200, contentType: 'video/mp4', body: valid });
     }
@@ -394,8 +578,11 @@ async function runResponseAccountingCases({ context, output, videoPayloads }) {
       return route.fallback();
     }
     let id;
-    try { id = JSON.parse(target.searchParams.get('variables') ?? '{}').tweetId; }
-    catch { return route.fallback(); }
+    try {
+      id = JSON.parse(target.searchParams.get('variables') ?? '{}').tweetId;
+    } catch {
+      return route.fallback();
+    }
     const step = active.ids.indexOf(id);
     if (step < 0) return route.fallback();
     assert(records.length < MAX_OBSERVATIONS, 'API accounting record cap exceeded');
@@ -406,15 +593,24 @@ async function runResponseAccountingCases({ context, output, videoPayloads }) {
       response = accountingResponse(id);
       classification = 'valid-owner-control';
     } else if (active.name === 'healthy-unavailable') {
-      response = { data: { tweetResult: { result: {
-        __typename: step === 1 ? 'TweetTombstone' : 'TweetUnavailable', rest_id: id,
-      } } } };
+      response = {
+        data: {
+          tweetResult: {
+            result: {
+              __typename: step === 1 ? 'TweetTombstone' : 'TweetUnavailable',
+              rest_id: id,
+            },
+          },
+        },
+      };
       classification = 'supported-unavailable';
     } else if (active.name === 'missing-envelope') {
       response = {};
       classification = 'missing-response-envelope';
-    } else if ((active.name === '503-503-foreign' ||
-        active.name === 'healthy-local-mismatch-after-503') && step < 2) {
+    } else if (
+      (active.name === '503-503-foreign' || active.name === 'healthy-local-mismatch-after-503') &&
+      step < 2
+    ) {
       status = 503;
       response = {};
       classification = 'controlled-http-503';
@@ -422,24 +618,45 @@ async function runResponseAccountingCases({ context, output, videoPayloads }) {
       response = accountingResponse(id, '4999000111222333444');
       classification = 'valid-owner-local-source-mismatch';
     } else {
-      response = { data: { tweetResult: { result: { __typename: 'Tweet', rest_id: '4999999999999999999' } } } };
+      response = {
+        data: { tweetResult: { result: { __typename: 'Tweet', rest_id: '4999999999999999999' } } },
+      };
       classification = 'foreign-root';
     }
-    const record = { sequence: active.name, ordinal: records.length + 1, requestedId: id,
-      step, status, fixtureResponseKind: classification, method: route.request().method(),
-      requestedAtMonotonicMs: performance.now(), fulfilledAtMonotonicMs: null };
+    const record = {
+      sequence: active.name,
+      ordinal: records.length + 1,
+      requestedId: id,
+      step,
+      status,
+      fixtureResponseKind: classification,
+      method: route.request().method(),
+      requestedAtMonotonicMs: performance.now(),
+      fulfilledAtMonotonicMs: null,
+    };
     assert.equal(record.method, 'GET');
     records.push(record);
-    await route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(response) });
+    await route.fulfill({
+      status,
+      contentType: 'application/json',
+      body: JSON.stringify(response),
+    });
     record.fulfilledAtMonotonicMs = performance.now();
   };
   await context.route('**/*', routeHandler);
   try {
     for (const [sequenceIndex, descriptor] of descriptions.entries()) {
-      const ids = Array.from({ length: 4 }, (_, index) =>
-        `47770001112223${String(sequenceIndex).padStart(2, '0')}${String(index + 1).padStart(3, '0')}`);
-      const state = { ...descriptor, ids,
-        url: `https://x.com/contractseq/status/${ids[0]}`, videoRequests: [] };
+      const ids = Array.from(
+        { length: 4 },
+        (_, index) =>
+          `47770001112223${String(sequenceIndex).padStart(2, '0')}${String(index + 1).padStart(3, '0')}`
+      );
+      const state = {
+        ...descriptor,
+        ids,
+        url: `https://x.com/contractseq/status/${ids[0]}`,
+        videoRequests: [],
+      };
       active = state;
       const owned = await context.newPage();
       ownedPages.push(owned);
@@ -457,77 +674,145 @@ async function runResponseAccountingCases({ context, output, videoPayloads }) {
           if (location.hostname === 'x.com' && location.pathname.endsWith('/TweetResultByRestId')) {
             id = JSON.parse(location.searchParams.get('variables') ?? '{}').tweetId;
           }
-        } catch { /* Unknown locations cannot establish an expected error. */ }
-        evidence.consoleErrors.push({ sequence: state.name, text,
-          expected: state.ids.includes(id) && /status of 503(?:\D|$)/u.test(text) &&
-            records.some((record) => record.requestedId === id && record.status === 503) });
+        } catch {
+          /* Unknown locations cannot establish an expected error. */
+        }
+        evidence.consoleErrors.push({
+          sequence: state.name,
+          text,
+          expected:
+            state.ids.includes(id) &&
+            /status of 503(?:\D|$)/u.test(text) &&
+            records.some((record) => record.requestedId === id && record.status === 503),
+        });
       };
       owned.on('pageerror', pageError);
       owned.on('console', consoleError);
-      const observed = { name: state.name, expectedRequests: state.expectedRequests,
-        requestedIds: ids, status: 'running', actions: [], videoRequests: state.videoRequests };
+      const observed = {
+        name: state.name,
+        expectedRequests: state.expectedRequests,
+        requestedIds: ids,
+        status: 'running',
+        actions: [],
+        videoRequests: state.videoRequests,
+      };
       cases.push(observed);
       try {
         await readyPage(owned, state.url);
-        observed.documentBefore = await owned.evaluate(() => ({ href: location.href, timeOrigin: performance.timeOrigin }));
+        observed.documentBefore = await owned.evaluate(() => ({
+          href: location.href,
+          timeOrigin: performance.timeOrigin,
+        }));
         for (let index = 0; index < 4; index++) {
           const clickedAtMonotonicMs = performance.now();
           await owned.locator(`[data-contract-trigger="${index}"]`).click();
           if (index < 3) {
             const deadline = performance.now() + 5_000;
-            while (!records.some((record) => record.sequence === state.name && record.requestedId === ids[index] &&
-                record.fulfilledAtMonotonicMs !== null)) {
-              assert(performance.now() < deadline, 'A required physical API response did not complete');
+            while (
+              !records.some(
+                (record) =>
+                  record.sequence === state.name &&
+                  record.requestedId === ids[index] &&
+                  record.fulfilledAtMonotonicMs !== null
+              )
+            ) {
+              assert(
+                performance.now() < deadline,
+                'A required physical API response did not complete'
+              );
               await new Promise((resolve) => setTimeout(resolve, 50));
             }
             await owned.waitForTimeout(ACCOUNTING_SETTLE_MS);
-            assert.equal(await owned.locator(GALLERY).count(), 0,
-              'Rejected or unavailable response must not open unrelated media');
+            assert.equal(
+              await owned.locator(GALLERY).count(),
+              0,
+              'Rejected or unavailable response must not open unrelated media'
+            );
           } else if (state.expectedRequests === 4) {
             await owned.locator(GALLERY).waitFor({ state: 'visible', timeout: 15_000 });
-            await owned.waitForFunction((expected) => {
-              const item = document.querySelector('[data-xeg-gallery-container] [data-gallery-element="item"][data-index="0"]');
-              const video = item?.querySelector('video');
-              return video instanceof HTMLVideoElement && video.readyState >= 1 &&
-                video.videoWidth === 320 && video.videoHeight === 180 && !video.error &&
-                video.currentSrc === expected;
-            }, accountingVideo(ids[3]), { timeout: 15_000 });
+            await owned.waitForFunction(
+              (expected) => {
+                const item = document.querySelector(
+                  '[data-xeg-gallery-container] [data-gallery-element="item"][data-index="0"]'
+                );
+                const video = item?.querySelector('video');
+                return (
+                  video instanceof HTMLVideoElement &&
+                  video.readyState >= 1 &&
+                  video.videoWidth === 320 &&
+                  video.videoHeight === 180 &&
+                  !video.error &&
+                  video.currentSrc === expected
+                );
+              },
+              accountingVideo(ids[3]),
+              { timeout: 15_000 }
+            );
             const gallery = owned.locator(GALLERY);
             observed.control = await owned.evaluate(() => {
               const root = document.querySelector('[data-xeg-gallery-container]');
               const counter = root?.querySelector('#xeg-toolbar-counter');
               const item = root?.querySelector('[data-gallery-element="item"][data-index="0"]');
               const video = item?.querySelector('video');
-              return { position: counter?.getAttribute('data-position'), total: counter?.getAttribute('data-total'),
+              return {
+                position: counter?.getAttribute('data-position'),
+                total: counter?.getAttribute('data-total'),
                 canonical: item?.getAttribute('data-media-display-url'),
-                source: video?.currentSrc, error: video?.error?.code ?? null };
+                source: video?.currentSrc,
+                error: video?.error?.code ?? null,
+              };
             });
             assert.equal(observed.control.position, '1');
             assert.equal(observed.control.total, '1');
             assert.equal(observed.control.canonical, accountingVideo(ids[3]));
             await gallery.locator('#tweet-text-button').click();
-            assert.equal(await gallery.locator('#toolbar-tweet-panel a[href^="https://x.com/"]').getAttribute('href'),
-              `https://x.com/contractseq/status/${ids[3]}`);
+            assert.equal(
+              await gallery
+                .locator('#toolbar-tweet-panel a[href^="https://x.com/"]')
+                .getAttribute('href'),
+              `https://x.com/contractseq/status/${ids[3]}`
+            );
             await gallery.locator('#tweet-text-button').click();
           } else {
             await owned.waitForTimeout(SUPPRESSED_OBSERVATION_MS);
-            assert.equal(await owned.locator(GALLERY).count(), 0,
-              'Open circuit must not produce a gallery from the queued fourth response');
+            assert.equal(
+              await owned.locator(GALLERY).count(),
+              0,
+              'Open circuit must not produce a gallery from the queued fourth response'
+            );
           }
-          observed.actions.push({ index, requestedId: ids[index], clickedAtMonotonicMs,
-            observedAtMonotonicMs: performance.now() });
+          observed.actions.push({
+            index,
+            requestedId: ids[index],
+            clickedAtMonotonicMs,
+            observedAtMonotonicMs: performance.now(),
+          });
         }
-        observed.documentAfter = await owned.evaluate(() => ({ href: location.href, timeOrigin: performance.timeOrigin }));
-        assert.deepEqual(observed.documentAfter, observed.documentBefore,
-          'API accounting sequence must retain one document and service lifetime');
+        observed.documentAfter = await owned.evaluate(() => ({
+          href: location.href,
+          timeOrigin: performance.timeOrigin,
+        }));
+        assert.deepEqual(
+          observed.documentAfter,
+          observed.documentBefore,
+          'API accounting sequence must retain one document and service lifetime'
+        );
         const actual = records.filter((record) => record.sequence === state.name);
         observed.actualRequests = actual.length;
-        assert.equal(actual.length, state.expectedRequests,
-          `${state.name} has incorrect failed-versus-healthy physical accounting`);
-        assert.deepEqual(actual.map((record) => record.requestedId), ids.slice(0, state.expectedRequests));
+        assert.equal(
+          actual.length,
+          state.expectedRequests,
+          `${state.name} has incorrect failed-versus-healthy physical accounting`
+        );
+        assert.deepEqual(
+          actual.map((record) => record.requestedId),
+          ids.slice(0, state.expectedRequests)
+        );
         const third = actual.find((record) => record.step === 2);
-        assert(observed.actions[3].clickedAtMonotonicMs - third.fulfilledAtMonotonicMs < 60_000,
-          'Fourth action must precede the unchanged cooldown');
+        assert(
+          observed.actions[3].clickedAtMonotonicMs - third.fulfilledAtMonotonicMs < 60_000,
+          'Fourth action must precede the unchanged cooldown'
+        );
         observed.status = 'passed';
       } catch (error) {
         observed.status = 'failed';
@@ -537,18 +822,25 @@ async function runResponseAccountingCases({ context, output, videoPayloads }) {
         if (output && !owned.isClosed()) {
           await owned.screenshot({ path: join(output, `api-contract-${state.name}.png`) });
         }
-        if (!owned.isClosed() && await owned.locator(GALLERY).count()) await owned.keyboard.press('Escape');
+        if (!owned.isClosed() && (await owned.locator(GALLERY).count()))
+          await owned.keyboard.press('Escape');
         owned.off('pageerror', pageError);
         owned.off('console', consoleError);
         await owned.close();
       }
     }
     assert.deepEqual(evidence.pageErrors, [], 'API accounting fixtures raised page errors');
-    assert.deepEqual(evidence.consoleErrors.filter((record) => !record.expected), [],
-      'API accounting fixture logged an unexpected error');
+    assert.deepEqual(
+      evidence.consoleErrors.filter((record) => !record.expected),
+      [],
+      'API accounting fixture logged an unexpected error'
+    );
     const failed = cases.filter((item) => item.status !== 'passed');
-    assert.deepEqual(failed.map((item) => ({ name: item.name, error: item.error })), [],
-      'Required installed API response-accounting cases failed');
+    assert.deepEqual(
+      failed.map((item) => ({ name: item.name, error: item.error })),
+      [],
+      'Required installed API response-accounting cases failed'
+    );
     evidence.status = 'passed';
     return evidence;
   } catch (error) {
@@ -558,15 +850,33 @@ async function runResponseAccountingCases({ context, output, videoPayloads }) {
     throw error;
   } finally {
     const errors = [];
-    await context.unroute('**/*', routeHandler).then(() => { evidence.cleanup.routeRemoved = true; })
+    await context
+      .unroute('**/*', routeHandler)
+      .then(() => {
+        evidence.cleanup.routeRemoved = true;
+      })
       .catch((error) => errors.push(error));
-    const closing = await Promise.allSettled(ownedPages.filter((owned) => !owned.isClosed()).map((owned) => owned.close()));
+    const closing = await Promise.allSettled(
+      ownedPages.filter((owned) => !owned.isClosed()).map((owned) => owned.close())
+    );
     evidence.cleanup.pagesClosed = ownedPages.every((owned) => owned.isClosed());
-    errors.push(...closing.filter((result) => result.status === 'rejected').map((result) => result.reason));
-    evidence.cleanup.errors = errors.map((error) => error instanceof Error ? error.message : String(error));
+    errors.push(
+      ...closing.filter((result) => result.status === 'rejected').map((result) => result.reason)
+    );
+    evidence.cleanup.errors = errors.map((error) =>
+      error instanceof Error ? error.message : String(error)
+    );
     if (errors.length) evidence.status = 'failed';
-    if (output) await writeFile(join(output, 'api-contract-accounting-observations.json'), JSON.stringify(evidence, null, 2));
-    if (errors.length) throw new AggregateError(primaryError ? [primaryError, ...errors] : errors,
-      'API accounting fixture cleanup failed');
+    if (output)
+      await writeFile(
+        join(output, 'api-contract-accounting-observations.json'),
+        JSON.stringify(evidence, null, 2)
+      );
+    if (errors.length)
+      // biome-ignore lint/correctness/noUnsafeFinally: Retain the primary failure together with cleanup failures in the acceptance receipt.
+      throw new AggregateError(
+        primaryError ? [primaryError, ...errors] : errors,
+        'API accounting fixture cleanup failed'
+      );
   }
 }

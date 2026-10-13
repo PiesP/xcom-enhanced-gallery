@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { describe, it, expect } from 'vitest';
 import { TWITTER_API_CONFIG } from '@shared/core/twitter-api/endpoint';
 import { resolveBearerToken } from '@shared/services/media/twitter-auth/twitter-auth';
+import { describe, expect, it } from 'vitest';
 
 // The GUEST_AUTHORIZATION is the fallback token from TWITTER_API_CONFIG
 // We check that resolveBearerToken returns the expected fallback when no

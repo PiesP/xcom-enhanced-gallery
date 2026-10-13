@@ -115,7 +115,9 @@ describe('video click setting control', () => {
     try {
       ui.select.value = 'allow-all';
       ui.select.dispatchEvent(new Event('change', { bubbles: true }));
-      await vi.waitFor(() => expect(ui.set).toHaveBeenCalledWith('gallery.videoClickMode', 'allow-all'));
+      await vi.waitFor(() =>
+        expect(ui.set).toHaveBeenCalledWith('gallery.videoClickMode', 'allow-all')
+      );
       expect(ui.select.value).toBe('allow-all');
 
       ui.set.mockRejectedValueOnce(new Error('Storage unavailable'));

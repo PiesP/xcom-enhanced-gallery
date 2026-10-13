@@ -36,7 +36,15 @@ export function classifyChanges(
     // Semgrep's secrets ruleset covers every tracked text change. Binary icons
     // are the sole exception because it cannot meaningfully inspect them.
     if (!(path.startsWith('assets/icons/') && path.endsWith('.png'))) select('semgrep');
-    if ((path.startsWith('test/') && /\.tsx?$/.test(path)) || path === 'tsconfig.test.json') {
+    // Match the root Biome default-inclusion policy, including executable
+    // dot-directory helpers and newly added configs. Captured host fragments,
+    // generated lock/baseline data and provider source retain their owners.
+    if (
+      /\.(?:[cm]?[jt]sx?|jsonc?|css|html)$/.test(path) &&
+      !path.startsWith('packages/core/') &&
+      !/^test\/fixtures\/authenticated-x-layouts\/[^/]+\.html$/.test(path) &&
+      !['pnpm-lock.yaml', '.nose-baseline.json'].includes(path)
+    ) {
       select('quality');
     }
 

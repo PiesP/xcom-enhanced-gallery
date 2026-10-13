@@ -66,10 +66,18 @@ describe('protected branch Git hooks', () => {
     const merge = git(path, 'rev-parse', 'HEAD');
     const zero = '0'.repeat(40);
 
-    expect(hook(path, 'pre-push', `refs/heads/topic ${topic} refs/heads/topic ${zero}\n`).status).toBe(0);
-    expect(hook(path, 'pre-push', `refs/heads/master ${merge} refs/heads/master ${base}\n`).status).not.toBe(0);
-    expect(hook(path, 'pre-push', `refs/heads/main ${merge} refs/heads/main ${base}\n`).status).not.toBe(0);
-    expect(hook(path, 'pre-push', `refs/heads/master ${zero} refs/heads/master ${merge}\n`).status).not.toBe(0);
+    expect(
+      hook(path, 'pre-push', `refs/heads/topic ${topic} refs/heads/topic ${zero}\n`).status
+    ).toBe(0);
+    expect(
+      hook(path, 'pre-push', `refs/heads/master ${merge} refs/heads/master ${base}\n`).status
+    ).not.toBe(0);
+    expect(
+      hook(path, 'pre-push', `refs/heads/main ${merge} refs/heads/main ${base}\n`).status
+    ).not.toBe(0);
+    expect(
+      hook(path, 'pre-push', `refs/heads/master ${zero} refs/heads/master ${merge}\n`).status
+    ).not.toBe(0);
     expect(
       hook(
         path,

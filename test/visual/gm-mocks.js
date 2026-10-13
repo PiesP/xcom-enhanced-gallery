@@ -26,8 +26,10 @@
   window.GM_download = (options) => {
     console.log('[GM] download:', options.name || options.url);
     if (options.onload) setTimeout(options.onload, 0);
-    if (options.onerror) {};
-    if (options.ontimeout) {};
+    if (options.onerror) {
+    }
+    if (options.ontimeout) {
+    }
   };
 
   window.GM_notification = (text, title, image, onclick) => {

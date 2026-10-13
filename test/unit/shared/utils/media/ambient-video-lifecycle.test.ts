@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { activateGalleryHostState, restoreActiveGalleryHostState } from '@shared/components/isolation/gallery-host-state';
+import {
+  activateGalleryHostState,
+  restoreActiveGalleryHostState,
+} from '@shared/components/isolation/gallery-host-state';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 // Native media is a boundary in jsdom; real progression is checked in installed Edge.
@@ -9,8 +12,13 @@ function hostVideo(parent: HTMLElement = document.body) {
   const video = document.createElement('video');
   let paused = false;
   Object.defineProperty(video, 'paused', { get: () => paused });
-  const pause = vi.spyOn(video, 'pause').mockImplementation(() => { paused = true; });
-  const play = () => { paused = false; video.dispatchEvent(new Event('play')); };
+  const pause = vi.spyOn(video, 'pause').mockImplementation(() => {
+    paused = true;
+  });
+  const play = () => {
+    paused = false;
+    video.dispatchEvent(new Event('play'));
+  };
   parent.append(video);
   return { video, pause, play };
 }

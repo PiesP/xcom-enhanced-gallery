@@ -19,7 +19,8 @@ afterEach(() => {
 
 it('starts a separate player at zero with saved XEG preferences and never resumes the host on disposal', () => {
   registerSettings({
-    get: (key) => key === 'gallery.videoVolume' ? 0.42 : key === 'gallery.videoMuted' ? false : undefined,
+    get: (key) =>
+      key === 'gallery.videoVolume' ? 0.42 : key === 'gallery.videoMuted' ? false : undefined,
     set: async () => undefined,
   });
   const play = vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined);
@@ -31,13 +32,24 @@ it('starts a separate player at zero with saved XEG preferences and never resume
   document.body.append(native);
   const host = document.createElement('div');
   document.body.append(host);
-  const dispose = render(() => (
-    <VerticalImageItem
-      media={{ id: '222_api_0', type: 'video', url: 'https://video.twimg.com/ext_tw_video/222/pu/vid/one.mp4' }}
-      index={0} isActive={true} isFocused={true} onClick={() => undefined}
-      scrollRoot={() => host} scrollRootHeight={() => 480}
-    />
-  ), host);
+  const dispose = render(
+    () => (
+      <VerticalImageItem
+        media={{
+          id: '222_api_0',
+          type: 'video',
+          url: 'https://video.twimg.com/ext_tw_video/222/pu/vid/one.mp4',
+        }}
+        index={0}
+        isActive={true}
+        isFocused={true}
+        onClick={() => undefined}
+        scrollRoot={() => host}
+        scrollRootHeight={() => 480}
+      />
+    ),
+    host
+  );
   try {
     const galleryVideo = host.querySelector('video');
     expect(galleryVideo).not.toBe(native);

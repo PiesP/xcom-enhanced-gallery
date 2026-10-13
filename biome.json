@@ -7,21 +7,17 @@
   },
   "files": {
     "includes": [
-      "src/**",
-      "scripts/**",
-      "vite.config.ts",
-      "vite.extension.config.ts",
-      "vite.extension.cs.config.ts",
-      "vite.extension.firefox.config.ts",
-      "vite.extension.firefox.cs.config.ts",
-      "package.json",
-      "tsconfig.json",
-      "knip.json",
-      "biome.json",
+      "**",
+      "!!**/node_modules",
+      "!!packages/core",
+      "!!pnpm-lock.yaml",
+      "!!.nose-baseline.json",
+      "!!test/fixtures/authenticated-x-layouts/*.html",
       "!!**/.stryker-tmp/",
       "!!**/.stryker-tmp-debug/"
     ],
-    "ignoreUnknown": true
+    "ignoreUnknown": true,
+    "maxSize": 1048576
   },
   "formatter": {
     "enabled": true,
@@ -102,5 +98,27 @@
         "organizeImports": "on"
       }
     }
-  }
+  },
+  "html": {
+    "experimentalFullSupportEnabled": true,
+    "formatter": {
+      "enabled": true
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["test/e2e/fixtures/installed*-page.html"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "noNoninteractiveTabindex": "off",
+            "useSemanticElements": "off",
+            "useFocusableInteractive": "off",
+            "noRedundantAlt": "off",
+            "useAnchorContent": "off"
+          }
+        }
+      }
+    }
+  ]
 }

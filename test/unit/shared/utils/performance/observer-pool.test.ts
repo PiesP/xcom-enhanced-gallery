@@ -129,13 +129,19 @@ describe('SharedObserver', () => {
     const second = vi.fn();
     const sameRoot = vi.fn();
     const disposeFirst = SharedObserver.observe(target, first, {
-      root: firstRoot, rootMargin: '400px 0px', threshold: 0,
+      root: firstRoot,
+      rootMargin: '400px 0px',
+      threshold: 0,
     });
     const disposeSameRoot = SharedObserver.observe(target, sameRoot, {
-      threshold: [0], rootMargin: '400px 0px', root: firstRoot,
+      threshold: [0],
+      rootMargin: '400px 0px',
+      root: firstRoot,
     });
     const disposeSecond = SharedObserver.observe(target, second, {
-      root: secondRoot, rootMargin: '400px 0px', threshold: 0,
+      root: secondRoot,
+      rootMargin: '400px 0px',
+      threshold: 0,
     });
 
     expect(MockIntersectionObserver.instances).toHaveLength(2);
@@ -165,16 +171,22 @@ describe('SharedObserver', () => {
     document.body.append(root, target);
     const disposeImplicit = SharedObserver.observe(target, vi.fn(), { rootMargin: '20px' });
     const disposeExplicit = SharedObserver.observe(target, vi.fn(), {
-      root, rootMargin: '20px',
+      root,
+      rootMargin: '20px',
     });
     const disposeScrollMargin = SharedObserver.observe(target, vi.fn(), {
-      root, rootMargin: '20px', scrollMargin: '10px',
+      root,
+      rootMargin: '20px',
+      scrollMargin: '10px',
     });
     expect(MockIntersectionObserver.instances).toHaveLength(3);
     disposeImplicit();
     disposeExplicit();
     disposeScrollMargin();
-    expect(MockIntersectionObserver.instances.every((observer) =>
-      observer.disconnect.mock.calls.length === 1)).toBe(true);
+    expect(
+      MockIntersectionObserver.instances.every(
+        (observer) => observer.disconnect.mock.calls.length === 1
+      )
+    ).toBe(true);
   });
 });

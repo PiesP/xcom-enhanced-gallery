@@ -31,15 +31,23 @@ function classify(
   const outputPath = join(tempDirectory, 'outputs.txt');
 
   try {
-    execFileSync(process.execPath, ['--experimental-strip-types', classifier, ...(files.length > 0 ? ['--files', ...files] : [])], {
-      cwd: root,
-      env: {
-        ...process.env,
-        GITHUB_OUTPUT: outputPath,
-        ...environment,
-      },
-      stdio: 'pipe',
-    });
+    execFileSync(
+      process.execPath,
+      [
+        '--experimental-strip-types',
+        classifier,
+        ...(files.length > 0 ? ['--files', ...files] : []),
+      ],
+      {
+        cwd: root,
+        env: {
+          ...process.env,
+          GITHUB_OUTPUT: outputPath,
+          ...environment,
+        },
+        stdio: 'pipe',
+      }
+    );
 
     return Object.fromEntries(
       readFileSync(outputPath, 'utf8')
@@ -61,11 +69,36 @@ function expectAll(outputs: Record<string, string>, names: readonly string[]): v
 
 function jobBlock(workflow: string, job: string): string {
   return (
-    workflow.match(new RegExp(`^  ${job}:\\n(?:(?!^  [A-Za-z0-9_-]+:\\n)[\\s\\S])*`, 'm'))?.[0] ?? ''
+    workflow.match(new RegExp(`^  ${job}:\\n(?:(?!^  [A-Za-z0-9_-]+:\\n)[\\s\\S])*`, 'm'))?.[0] ??
+    ''
   );
 }
 
 describe('workflow change policy', () => {
+  it.each([
+    'validation/windows/profile.mjs',
+    'validation/windows/install-profile.mjs',
+    'validation/windows/profile.json',
+    '.github/actions/setup-release/resolve-runtime.mjs',
+    'extension/manifest.json',
+    'extension/manifest.firefox.json',
+    'tooling/vite/plugins/css-inline.ts',
+    'test/e2e/fixtures/installed-gallery-page.html',
+    'test/visual/gm-mocks.js',
+    'vitest.config.ts',
+    'tsconfig.node-tests.json',
+    'tsconfig.new-runtime.json',
+    'stryker.conf.json',
+  ])('selects quality for managed supported input %s', (path) => {
+    expect(classifyChanges(['--files', path]).selected.has('quality')).toBe(true);
+  });
+
+  it('preserves exact-byte host captures under the fixture test owner', () => {
+    const capture = classify(['test/fixtures/authenticated-x-layouts/card.html']);
+    expect(capture.quality).toBe('false');
+    expectAll(capture, ['unit', 'e2e', 'semgrep', 'codeql_javascript']);
+  });
+
   it('runs every gate for manual, unknown, and failed diff classification', () => {
     const manual = classify([], { GITHUB_EVENT_NAME: 'workflow_dispatch' });
     const unknown = classify([], { GITHUB_EVENT_NAME: 'issues' });
@@ -108,10 +141,13 @@ describe('workflow change policy', () => {
   it('type-checks every test source and selects quality for test-only changes', () => {
     const checkedFiles = new Set<string>();
     for (const project of ['tsconfig.test.json', 'tsconfig.e2e.json', 'tsconfig.node-tests.json']) {
-      const config = JSON.parse(execFileSync(process.execPath, [
-        resolve(root, 'node_modules/typescript/bin/tsc'),
-        '--project', project, '--showConfig',
-      ], { cwd: root, encoding: 'utf8' })) as {
+      const config = JSON.parse(
+        execFileSync(
+          process.execPath,
+          [resolve(root, 'node_modules/typescript/bin/tsc'), '--project', project, '--showConfig'],
+          { cwd: root, encoding: 'utf8' }
+        )
+      ) as {
         files: string[];
         compilerOptions: { noUnusedLocals?: boolean; noUnusedParameters?: boolean };
       };
@@ -120,13 +156,17 @@ describe('workflow change policy', () => {
       for (const file of config.files) checkedFiles.add(resolve(root, file));
     }
     const testFiles = globSync('test/**/*.{ts,tsx}', {
-      cwd: root, exclude: ['test/node_modules/**'],
+      cwd: root,
+      exclude: ['test/node_modules/**'],
     });
     expect(testFiles.length).toBeGreaterThan(0);
     expect(classify(['test/unit/tooling/workflow-change-policy.test.ts']).quality).toBe('true');
     for (const file of testFiles) {
       expect(checkedFiles.has(resolve(root, file)), file).toBe(true);
-      expect(classifyChanges(['--files', file.replaceAll('\\', '/')]).selected.has('quality'), file).toBe(true);
+      expect(
+        classifyChanges(['--files', file.replaceAll('\\', '/')]).selected.has('quality'),
+        file
+      ).toBe(true);
     }
   });
 
@@ -232,11 +272,15 @@ describe('workflow change policy', () => {
       expect(changes).toContain('git show "$BASE_SHA:scripts/ci/classify-changes.ts"');
       expect(changes).toContain('node --experimental-strip-types "$classifier"');
       expect(changes).toContain('reason=trusted-classifier-unavailable-full');
-      expect(changes).toContain('uses: PiesP/browser-core/automation/actions/setup-project@279124fa998847bd0184d2de12bdaadcd6d2f969');
+      expect(changes).toContain(
+        'uses: PiesP/browser-core/automation/actions/setup-project@279124fa998847bd0184d2de12bdaadcd6d2f969'
+      );
       expect(changes).toContain("install-dependencies: 'false'");
       expect(changes).not.toContain('runtime: node@');
       expect(changes).toContain('submodules: false');
-      expect(changes).toContain('for output in quality unit e2e build duplication osv semgrep codeql_actions codeql_javascript');
+      expect(changes).toContain(
+        'for output in quality unit e2e build duplication osv semgrep codeql_actions codeql_javascript'
+      );
       expect(changes).not.toContain('classify-changes.sh');
     }
   });

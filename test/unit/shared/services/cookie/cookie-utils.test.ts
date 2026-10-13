@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { describe, it, expect } from 'vitest';
 import { getCookieValueSync } from '@shared/services/cookie/cookie-utils';
+import { describe, expect, it } from 'vitest';
 
 describe('cookie-utils (pure functions)', () => {
   // ── getCookieValueSync ──────────────────────────────────────────
