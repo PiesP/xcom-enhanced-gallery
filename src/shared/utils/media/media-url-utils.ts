@@ -2,13 +2,13 @@
 // Copyright (c) 2024-2026 PiesP
 
 /**
- * @fileoverview Media URL utilities: filename extraction, dedup key generation, URL normalization.
+ * @fileoverview Media URL utilities: filename and stem extraction, dedup key generation.
  */
 
 import type { MediaInfo } from '@shared/types/media.types';
 import { tryParseUrl } from '@shared/utils/url/host';
 
-const dedupKeyCache = new WeakMap<object, string | null>();
+const dedupKeyCache = new WeakMap<MediaInfo, string | null>();
 
 function hasValidUrlPrefix(str: string): boolean {
   return /^(?:https?:\/\/|\/\/|\/)/u.test(str);
@@ -31,7 +31,7 @@ export function extractFilenameFromUrl(url: string): string | null {
 }
 
 export function getMediaDedupKey(media: MediaInfo): string | null {
-  const cached = dedupKeyCache.get(media as unknown as object);
+  const cached = dedupKeyCache.get(media);
   if (cached !== undefined) {
     return cached;
   }
@@ -44,7 +44,7 @@ export function getMediaDedupKey(media: MediaInfo): string | null {
         : null;
 
   if (!urlCandidate) {
-    dedupKeyCache.set(media as unknown as object, null);
+    dedupKeyCache.set(media, null);
     return null;
   }
 
@@ -60,14 +60,14 @@ export function getMediaDedupKey(media: MediaInfo): string | null {
     const format = parsed.searchParams.get('format');
     if (host && path) {
       const key = `${typePrefix}${host}${path}${format ? `?format=${format}` : ''}`;
-      dedupKeyCache.set(media as unknown as object, key);
+      dedupKeyCache.set(media, key);
       return key;
     }
   }
 
   const filename = extractFilenameFromUrl(urlCandidate);
   const key = filename ? `${typePrefix}${filename}` : `${typePrefix}${urlCandidate}`;
-  dedupKeyCache.set(media as unknown as object, key);
+  dedupKeyCache.set(media, key);
   return key;
 }
 
@@ -80,7 +80,7 @@ export function extractVisualIndexFromUrl(url: string): number {
   return Number.isFinite(visualNumber) && visualNumber > 0 ? visualNumber - 1 : 0;
 }
 
-export function normalizeMediaUrl(url: string): string | null {
+export function extractFilenameStemFromUrl(url: string): string | null {
   if (!url) {
     return null;
   }

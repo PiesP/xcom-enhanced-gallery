@@ -78,8 +78,6 @@ if (isDirectInvocation()) {
   if (typeof result === 'number') {
     exit(result);
   } else {
-    // The browser type environment narrows the global process shape.
-    const nodeProcess = process as NodeJS.Process;
-    nodeProcess.kill(nodeProcess.pid, result);
+    process.kill(process.pid, result);
   }
 }

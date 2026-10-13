@@ -4,9 +4,9 @@
 import type { MediaInfo } from '@shared/types/media.types';
 import {
   extractFilenameFromUrl,
+  extractFilenameStemFromUrl,
   extractVisualIndexFromUrl,
   getMediaDedupKey,
-  normalizeMediaUrl,
 } from '@shared/utils/media/media-url-utils';
 import { describe, expect, it } from 'vitest';
 
@@ -79,28 +79,28 @@ describe('media-url-utils (pure functions)', () => {
     });
   });
 
-  // ── normalizeMediaUrl ─────────────────────────────────────────────
-  describe('normalizeMediaUrl', () => {
+  // ── extractFilenameStemFromUrl ─────────────────────────────────────────────
+  describe('extractFilenameStemFromUrl', () => {
     it('should extract filename without extension', () => {
-      expect(normalizeMediaUrl('https://pbs.twimg.com/media/ABC123.jpg')).toBe('ABC123');
-      expect(normalizeMediaUrl('https://video.twimg.com/vid/abc.mp4')).toBe('abc');
+      expect(extractFilenameStemFromUrl('https://pbs.twimg.com/media/ABC123.jpg')).toBe('ABC123');
+      expect(extractFilenameStemFromUrl('https://video.twimg.com/vid/abc.mp4')).toBe('abc');
     });
 
     it('should return null for empty or invalid input', () => {
-      expect(normalizeMediaUrl('')).toBeNull();
-      expect(normalizeMediaUrl('not-a-url')).toBeNull();
+      expect(extractFilenameStemFromUrl('')).toBeNull();
+      expect(extractFilenameStemFromUrl('not-a-url')).toBeNull();
     });
 
     it('should return null for URLs without valid prefix', () => {
-      expect(normalizeMediaUrl('ftp://example.com/image.jpg')).toBeNull();
+      expect(extractFilenameStemFromUrl('ftp://example.com/image.jpg')).toBeNull();
     });
 
     it('should handle URLs without extension', () => {
-      expect(normalizeMediaUrl('https://pbs.twimg.com/media/ABC123')).toBe('ABC123');
+      expect(extractFilenameStemFromUrl('https://pbs.twimg.com/media/ABC123')).toBe('ABC123');
     });
 
     it('should return null for empty filename', () => {
-      expect(normalizeMediaUrl('https://pbs.twimg.com/')).toBeNull();
+      expect(extractFilenameStemFromUrl('https://pbs.twimg.com/')).toBeNull();
     });
   });
 

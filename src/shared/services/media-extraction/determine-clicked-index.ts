@@ -9,7 +9,7 @@ import {
   findMediaElementInDOM,
   selectMediaSourceUrl,
 } from '@shared/utils/media/media-element-utils';
-import { normalizeMediaUrl } from '@shared/utils/media/media-url-utils';
+import { extractFilenameStemFromUrl } from '@shared/utils/media/media-url-utils';
 import { findNativeVideoControlMedia } from '@shared/utils/media/native-video-control';
 import { isVideoPreview } from '@shared/utils/media/video-preview';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
@@ -33,7 +33,7 @@ export function captureClickedMediaEvidence(clickedElement: HTMLElement): Clicke
     ...resolveClickedElementUrls(clickedElement, mediaElement),
     ...(nativeControl?.thumbnailUrl ? [nativeControl.thumbnailUrl] : []),
   ]
-    .map((url) => normalizeMediaUrl(url))
+    .map((url) => extractFilenameStemFromUrl(url))
     .filter((url): url is string => !!url);
   const selectedSource = mediaElement ? selectMediaSourceUrl(mediaElement) : null;
   const sourceKey =
@@ -114,7 +114,7 @@ export function getMediaSourceKey(url: string | null): string | null {
   if (parsed.hostname === 'video.twimg.com') {
     return `${parsed.hostname}${parsed.pathname}`;
   }
-  const name = normalizeMediaUrl(url);
+  const name = extractFilenameStemFromUrl(url);
   if (!name) {
     return null;
   }
@@ -253,7 +253,7 @@ export function matchClickedMedia(
                   candidates.some((candidate) => getMediaSourceKey(candidate) === key)
                 ))
           : candidates.some((candidate) => {
-              const normalized = normalizeMediaUrl(candidate);
+              const normalized = extractFilenameStemFromUrl(candidate);
               return !!normalized && clickedCandidates.has(normalized);
             });
       })();

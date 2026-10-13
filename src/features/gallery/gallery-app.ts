@@ -101,10 +101,8 @@ export class GalleryApp {
 
   private async setupEventHandlers(): Promise<void> {
     const settings = tryGetSettings();
-    const enableKeyboard =
-      typeof settings?.get('gallery.enableKeyboardNav') === 'boolean'
-        ? (settings.get('gallery.enableKeyboardNav') as boolean)
-        : true;
+    const keyboardSetting = settings?.get('gallery.enableKeyboardNav');
+    const enableKeyboard = typeof keyboardSetting === 'boolean' ? keyboardSetting : true;
 
     this.lifecycle.initialize(
       {
@@ -196,7 +194,7 @@ export class GalleryApp {
         });
         const lang = getLanguageService();
         const recovery = videoClick
-          ? this.videoRecoveryMessage(opId, epoch, element, clickUrl)
+          ? this.armVideoRecoveryAndGetMessage(opId, epoch, element, clickUrl)
           : '';
         notifySafely(
           getNotificationAdapter(),
@@ -214,7 +212,7 @@ export class GalleryApp {
         getNotificationAdapter(),
         lang.translate('msg.err.generic'),
         normalizeErrorMessage(error).slice(0, 240) +
-          (videoClick ? this.videoRecoveryMessage(opId, epoch, element, clickUrl) : '')
+          (videoClick ? this.armVideoRecoveryAndGetMessage(opId, epoch, element, clickUrl) : '')
       );
     } finally {
       window.removeEventListener('beforeunload', cancelOnNavigation);
@@ -241,7 +239,7 @@ export class GalleryApp {
     );
   }
 
-  private videoRecoveryMessage(
+  private armVideoRecoveryAndGetMessage(
     opId: number,
     epoch: number,
     element: HTMLElement,

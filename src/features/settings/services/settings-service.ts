@@ -143,8 +143,7 @@ export class SettingsService {
     return true;
   }
 
-  /** Validate a setting value against its default type */
-
+  /** Notify subscribers independently so one listener failure does not block the rest. */
   private notifyListeners(event: SettingChangeEvent): void {
     for (const listener of this.listeners) {
       try {

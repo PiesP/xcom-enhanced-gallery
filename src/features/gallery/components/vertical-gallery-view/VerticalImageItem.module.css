@@ -243,9 +243,7 @@
   pointer-events: none;
 }
 
-/* Container adjustments per fit mode (intrinsic sizing integration) */
-/* Phase 326: fitOriginal now follows the same container constraints as other modes */
-/* Remove overflow/scrollbar styling (consistency) */
+/* Original-size media follows the shared container constraints without nested scrollbars. */
 
 /* Cursor is defined on the container and inherited by media elements. */
 
