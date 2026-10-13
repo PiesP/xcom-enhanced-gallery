@@ -54,7 +54,9 @@ function inspectThumbnail(image: HTMLImageElement): ThumbnailCheck {
   if (!currentKey && !attributeKey) return { kind: 'ordinary' };
   if ((current && !currentKey) || (attribute && !attributeKey)) return { kind: 'invalid' };
   if (currentKey && attributeKey && currentKey !== attributeKey) return { kind: 'invalid' };
-  return { kind: 'trusted', url: current || attribute! };
+  const url = current || attribute;
+  if (!url) return { kind: 'ordinary' };
+  return { kind: 'trusted', url };
 }
 
 function isTrustedVideoSource(url: string): boolean {

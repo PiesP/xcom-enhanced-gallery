@@ -623,7 +623,9 @@ export class TweetMetadataReuse {
       expiresAt: performance.now() + TweetMetadataReuse.TTL_MS,
     });
     while (this.cache.size > TweetMetadataReuse.MAX_CACHE_ENTRIES) {
-      this.cache.delete(this.cache.keys().next().value!);
+      const oldest = this.cache.keys().next();
+      if (oldest.done) throw new Error('Nonempty tweet cache has no oldest entry');
+      this.cache.delete(oldest.value);
     }
   }
 

@@ -79,7 +79,11 @@ function getVideoVariants(media: TwitterMedia): readonly VideoSourceVariant[] {
       continue;
     seen.add(variant.url);
     const bitrate =
-      Number.isSafeInteger(variant.bitrate) && variant.bitrate! >= 0 ? variant.bitrate : undefined;
+      typeof variant.bitrate === 'number' &&
+      Number.isSafeInteger(variant.bitrate) &&
+      variant.bitrate >= 0
+        ? variant.bitrate
+        : undefined;
     const dimensions = extractDimensionsFromUrl(variant.url);
     accepted.push(
       Object.freeze({

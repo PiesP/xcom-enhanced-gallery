@@ -121,10 +121,12 @@ export async function installGMMock(page: Page, options: GMMockOptions = {}): Pr
         return cookies;
       },
       set: (cookie, callback) => {
+        // biome-ignore lint/suspicious/noDocumentCookie: Controlled fixture cookie setup or reset stays isolated from live authentication.
         document.cookie = `${cookie.name ?? ''}=${cookie.value}`;
         callback?.();
       },
       delete: ({ name }, callback) => {
+        // biome-ignore lint/suspicious/noDocumentCookie: Controlled fixture cookie setup or reset stays isolated from live authentication.
         document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
         callback?.();
       },

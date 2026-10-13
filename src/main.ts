@@ -81,7 +81,8 @@ function setupDevNamespace(
   }
 ): void {
   mutateDevNamespace((namespace) => {
-    const mainNamespace = (namespace.main ??= { ...actions }) as typeof namespace.main;
+    namespace.main ??= { ...actions };
+    const mainNamespace = namespace.main;
     mainNamespace.start = actions.start;
     mainNamespace.createConfig = actions.createConfig;
     mainNamespace.cleanup = actions.cleanup;

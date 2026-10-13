@@ -56,7 +56,7 @@ The table gives each command family, execution stage, side effects, and checks.
 | `pnpm check:versions`, `sync:versions` | `scripts/release/version.ts` checks or synchronizes package/extension versions. | `check` reads and fails on mismatch; `sync` writes manifests. `test/unit/tooling/release-runtime.test.ts` plus version check. |
 | `pnpm package:extension`, `package:all`, `release:prepare` | `scripts/release/package-extension.ts` archives built Chrome/Firefox extensions; `package:all` builds first. `scripts/release/prepare.ts` prepares a version- and commit-bound release bundle after builds. | Reads `RELEASE_VERSION` and optional commit identity, `dist*`, package metadata; writes ZIPs, release bundle and metadata, with external `zip` required. `test/unit/tooling/release-runtime.test.ts`, release/publication tests and actual artifact inspection. These commands prepare files; they do not publish a release. |
 | `pnpm check:src`, `check:test`, `check:scripts`, `check:e2e`, `check`, `typecheck` | TypeScript checks in browser, Vitest, NodeNext/erasable (`tsconfig.scripts.json` uses ECMAScript-only libraries; `tsconfig.node-tests.json` inherits them for the direct Firefox `node:test`), and Playwright projects respectively. `check` chains source/test/scripts. | Read-only; `tsconfig.e2e.json` excludes the direct Firefox test so it is checked in the Node project instead. `pnpm quality` includes all four boundaries. |
-| `pnpm fmt`, `fmt:check`, `lint`, `knip`, `knip:full`, `knip:production`, `circular` | Biome formatting/lint, dependency/entry analysis, and source graph checks. | Read-only; Knip's `scripts/**/*.ts` entry/project patterns cover CLI modules, and `ignoreBinaries` includes external Nose/OpenSSL. `fmt:fix`, `lint:fix`, `quality:fix` write formatting fixes and must be reviewed separately. |
+| `pnpm fmt`, `fmt:check`, `lint`, `knip`, `knip:full`, `knip:production`, `circular` | Biome formatting/lint, dependency/entry analysis, and source graph checks. | Read-only; current Knip entry/project patterns cover CLI modules, and `ignoreBinaries` includes external Nose/OpenSSL. `fmt:fix`, `lint:fix`, `quality:fix` write formatting fixes and must be reviewed separately. |
 | `pnpm quality`, `verify`, `verify:full` | `quality` chains format, lint, type/E2E type, Node CI tests, circular, Knip and optional local Nose. `verify` adds production targets; `verify:full` adds coverage, development build, and all E2E browser lanes. | Build/test outputs and browser profiles are generated; `verify` alone does not prove E2E. Read exact command outcomes and artifacts; no VM/publication inference. |
 | `pnpm test`, `test:watch`, `test:cov`, `test:ci` | Vitest suites and direct Node CI policy tests in `scripts/ci/{deep-check-reuse,repository-authority}.test.ts` and `scripts/release/verify-source.test.ts`. | Watch persists; coverage writes reports. `test:ci` also compiles a negative browser-global probe through the real script project; run it alone with `pnpm test test/unit/tooling/node-ambient-types.test.ts`. It checks cache, repository authority, tagged source and tooling types, not browser behavior. |
 | `pnpm test:e2e`, `test:e2e:headed`, `test:e2e:extension`, `test:e2e:extension:firefox`, `test:e2e:all` | Playwright configs under `test/e2e/`; direct Firefox lane executes `test/e2e/firefox-extension-runtime.test.ts` with Node/Selenium. | Requires built artifacts, browser binaries and loopback fixtures; may create browser profiles/downloads. `test:e2e:all` chains the lanes; distinguish fixture browser evidence from authenticated Windows/live-site evidence. |
@@ -142,12 +142,64 @@ coverage; syntax/fixture success is not Windows runtime acceptance.
   not call `GM_*` directly from feature code.
 - Use strict TypeScript, type-only imports, and alias-based leaf imports across
   folders. Same-folder relative imports are allowed.
-- Avoid barrels, runtime dynamic imports, `eval`, unsafe `innerHTML`, string
-  timers, and silently swallowed errors.
+- Use the existing `@platform/index` public adapter boundary and the shared
+  provider's public entries. Use leaf imports elsewhere; do not add convenience
+  barrels that hide ownership or cycles. Keep browser bundles free of runtime
+  dynamic imports, `eval`, unsafe `innerHTML`, string timers and silently
+  swallowed errors. Direct Node runtime/test imports remain separate contracts.
 - Use CSS Modules and the existing `--xeg-*` tokens for themed or repeated
   values. Avoid unnecessary `!important` rules.
 - Keep settings migrations, platform cleanup, and download cancellation
   behavior explicit.
+
+### Rule policy and source conventions
+
+The installed Biome schema and `biome explain <rule>` establish supported keys,
+defaults, domains and fix safety. Start from its recommended preset; explicit
+error levels below remain necessary where that preset is only warning/info.
+`test/unit/tooling/biome-policy.test.ts` exercises the selected scopes with real
+positive, negative and restored controls. Warnings are visible advice and are
+not promoted indirectly with an error-on-warnings flag.
+
+| Rule or family | Selected disposition and evidence |
+| --- | --- |
+| `noUnusedImports`, `useConst`, `noUnusedTemplateLiteral`, `useExponentiationOperator` | Retain errors; supported-file coverage probes reject explicit violations. |
+| `noExplicitAny`, `noImplicitAnyLet`, `useIterableCallbackReturn` | Retain errors. Typed sparse/invalid test fixtures preserve their original values; callback side effects do not return ignored values. |
+| `noUselessTernary`, `noUselessSwitchCase`, `noUselessEmptyExport`, `noUselessLoneBlockStatements`, `noAccumulatingSpread` | Retain errors. The module-only global augmentation has its existing local empty-export exception. |
+| `noStaticElementInteractions`, `useKeyWithClickEvents`, `noSvgWithoutTitle`, `useAriaPropsSupportedByRole`, `useSemanticElements` | Retain errors. Existing backdrop/native-control delegation exceptions keep native keyboard behavior; semantic-control and SVG probes reject violations. Host-markup fixture exceptions remain limited to the documented rules. |
+| `useExhaustiveDependencies` | Off. React dependency arrays do not validate Solid's tracked property reads. |
+| `noSolidDestructuredProps` | Explicit error. A reactive-props negative probe fails; direct access, accessors and `splitProps` controls pass. Intentional non-reactive snapshots belong outside component prop destructuring. |
+| `noUnusedVariables` | Error in TS and unchecked JS/MJS. Retain compiler unused checks as complementary evidence: the Biome trial detected an unused catch binding and an unchecked Vitest config variable. No equivalence-based removal is claimed. |
+| `noNonNullAssertion` | Error for product `src`; typed nonproduct fixtures are outside that scope. Product code narrows captured values and reports broken internal ownership rather than silently skipping work. The bounded CRC byte kernel has one reviewed local exception: adding a branch to every byte only to repeat the proven loop bound would change its cost. Solid refs use typed callbacks. |
+| `noParameterAssign`, `noSelfCompare`, `noAssignInExpressions` | Errors. Rebinding parameters fails; property mutation passes. Namespace initialization uses statements, preserving ownership and avoiding an assignment inside another expression. |
+| `noControlCharactersInRegex` | Error with local exceptions only for explicit URL/message sanitizers and validation of external manager labels. The rule probe rejects unrelated control-character regexes. |
+| `noDocumentCookie` | Error. Product reads remain valid; controlled test/VM cookie setup/reset carries local reasons. Direct product assignment is rejected. |
+| `noUnknownMediaFeatureName`, `noUnknownPseudoElement` | Errors; installed-version checks accept the project's required modern/vendor CSS without a global exception. Negative unknown-feature/pseudo-element probes fail. |
+| `useMediaCaption` | Error. Only externally sourced X video and native-host fixture videos without supplied tracks have local exceptions; ordinary missing-caption probes fail. Do not fabricate tracks. |
+| `noForEach`, `noStaticOnlyClass`, `noArrayIndexKey` | Keep off. Choose constructs by responsibility; Solid list identity is a behavior contract, and asynchronous callbacks still need a failure owner. |
+| `noFocusedTests` | Explicit error. A real-tool `.only` probe is rejected without running that fixture. A fit-mode accessor is named `fitMode` to avoid the tool's Jasmine `fit()` detection. |
+| `useBlockStatements` | Target error after the separately reviewed braces conversion in the next stage-2 PR. It remains explicitly off in this prerequisite PR; its unsafe autofix is not part of normal checks. The complete installed-tool trial records the current conversion scope. |
+| `useSolidForComponent` | Adopt warning. The trial finds five JSX list sites; retain current identity/disposal behavior until a conversion has observable keyed/index/reuse tests. Ordinary data transformations are outside the rule's purpose. |
+| `noConfusingVoidType` | Adopt warning. The trial accepts the current callback/cleanup contracts; do not replace valid `void` contracts with `undefined` automatically. |
+| `noFloatingPromises`, `noMisusedPromises` | Leave these experimental typed nursery rules off after trial. The former accepts `void task()` and found no current violations; the latter reported eleven sites including valid Promise/function existence checks. Same-scope warm medians were about 297/302 ms versus 90 ms for unused-variable analysis. This partial inference does not replace a Promise's actual result/failure owner. |
+
+Name functions for their returned result and important side effects. Give public
+contracts clear types without annotating every small internal callback. Choose
+interfaces/types, functions/classes/factories and local mutation for their
+responsibility; prefer readonly shared inputs without forced deep cloning.
+Omit redundant `public` in new/touched code and keep explicit `private` or
+`protected`. New lifecycle fields use descriptive camelCase resource names with
+`Controller`, `Id` or `Promise` where applicable; preserve existing names unless
+the touched lifecycle needs clarification.
+
+A Promise has a result/failure owner: await it, return it to a responsible caller,
+or handle rejection intentionally. `void task()` alone does not handle errors.
+Keep cancellation, user-visible failure, queue continuity and best-effort cleanup
+distinct. Comments explain current invariants and reasons; retain safety/license
+notices and remove obsolete suppressions or historical phase descriptions when
+touching their contracts. Keep native semantics, CSS Modules, scoped tokens and
+reduced motion; no arbitrary CSS property ordering or all-values-must-be-tokens
+rule is imposed.
 
 ## Browser validation
 

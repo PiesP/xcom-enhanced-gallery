@@ -7,7 +7,6 @@ import solid from 'vite-plugin-solid';
 import { defineConfig } from 'vitest/config';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
-const testDir = resolve(__dirname, '.');
 const srcDir = resolve(__dirname, 'src');
 
 export default defineConfig({

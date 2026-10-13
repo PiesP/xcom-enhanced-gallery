@@ -90,7 +90,8 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
   // Uses a single keydown listener on the container root that wraps focus
   // from last → first and first → last focusable element.
   createEffect(() => {
-    if (!containerEl) return;
+    const container = containerEl;
+    if (!container) return;
 
     const focusableSelectors = [
       'a[href]',
@@ -106,7 +107,7 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
       if (event.key !== 'Tab') return;
 
       const focusableElements = Array.from(
-        containerEl!.querySelectorAll<HTMLElement>(focusableSelectors)
+        container.querySelectorAll<HTMLElement>(focusableSelectors)
       ).filter((el) => {
         const style = getComputedStyle(el);
         return (
@@ -138,9 +139,9 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
       }
     };
 
-    containerEl.addEventListener('keydown', handleKeyDown);
+    container.addEventListener('keydown', handleKeyDown);
     onCleanup(() => {
-      containerEl?.removeEventListener('keydown', handleKeyDown);
+      container.removeEventListener('keydown', handleKeyDown);
     });
   });
 
