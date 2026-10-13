@@ -114,6 +114,8 @@ describe('url/host', () => {
     it('should reject non-status paths', () => {
       expect(extractUsernameFromUrl('https://x.com/john')).toBeNull();
       expect(extractUsernameFromUrl('https://x.com/john/likes')).toBeNull();
+      expect(extractUsernameFromUrl('https://x.com/john/likes/123')).toBeNull();
+      expect(extractUsernameFromUrl('https://x.com/john/status')).toBeNull();
     });
 
     it('should reject null/undefined/empty', () => {
@@ -130,6 +132,12 @@ describe('url/host', () => {
         extractUsernameFromUrl('https://twitter.com/john/status/123', { strictHost: true })
       ).toBe('john');
       expect(extractUsernameFromUrl('https://x.com/john/status/123', { strictHost: true })).toBe(
+        'john'
+      );
+      expect(
+        extractUsernameFromUrl('https://x.com.evil.example/john/status/123', { strictHost: true })
+      ).toBeNull();
+      expect(extractUsernameFromUrl('//mobile.x.com/john/status/123', { strictHost: true })).toBe(
         'john'
       );
     });
