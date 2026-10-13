@@ -125,25 +125,61 @@ export async function run({ browser, root, output }) {
       // GM_cookie fallback and make the unavailable fixture API fail into DOM extraction.
       // biome-ignore lint/suspicious/noDocumentCookie: Controlled fixture cookie setup or reset stays isolated from live authentication.
       document.cookie = 'ct0=windows-acceptance-fixture; path=/; SameSite=Lax';
-      window.GM_xmlhttpRequest = (details) => {
-        queueMicrotask(() =>
-          details.onerror?.({ status: 503, statusText: 'Fixture API disabled' })
-        );
-        return { abort: () => undefined };
+      const fixtureBlob = (url) => {
+        const index = url.includes('5678') ? 1 : url.includes('9012') ? 2 : 0;
+        const binary = atob(encodedFixtures[index]);
+        const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+        return new Blob([bytes], { type: 'image/png' });
       };
-      // Exercise an actual browser download through an explicitly mocked GM host.
+      window.GM_xmlhttpRequest = (details) => {
+        let pending = true;
+        queueMicrotask(() => {
+          if (!pending) {
+            return;
+          }
+          pending = false;
+          if (details.responseType !== 'blob') {
+            details.onerror?.({ status: 503, statusText: 'Fixture API disabled' });
+            return;
+          }
+          const dataset = document.documentElement.dataset;
+          dataset.xegAcceptanceDownload = details.url;
+          dataset.xegAcceptanceDownloadMethod = details.method ?? '';
+          dataset.xegAcceptanceDownloadResponseType = details.responseType;
+          details.onload?.({
+            finalUrl: details.url,
+            readyState: 4,
+            status: 200,
+            statusText: 'OK',
+            responseHeaders: 'content-type: image/png',
+            response: fixtureBlob(details.url),
+            responseText: '',
+            context: details.context,
+          });
+        });
+        return {
+          abort: () => {
+            if (!pending) {
+              return;
+            }
+            pending = false;
+            queueMicrotask(() => details.onabort?.({ status: 0, statusText: 'Aborted' }));
+          },
+        };
+      };
+      // Retain the legacy host fallback; the download assertion requires the blob request path.
       window.GM_download = (details, name) => {
         const options = typeof details === 'string' ? { url: details, name } : details;
         if (!options.name) {
           options.onerror?.(new Error('GM_download requires name'));
           return;
         }
-        document.documentElement.dataset.xegAcceptanceDownload = options.url;
-        const index = options.url.includes('5678') ? 1 : options.url.includes('9012') ? 2 : 0;
-        const binary = atob(encodedFixtures[index]);
-        const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+        const dataset = document.documentElement.dataset;
+        dataset.xegAcceptanceDownload = options.url;
+        dataset.xegAcceptanceDownloadMethod = 'GM_download';
+        dataset.xegAcceptanceDownloadResponseType = '';
         try {
-          const blob = new Blob([bytes], { type: 'image/png' });
+          const blob = fixtureBlob(options.url);
           const url = URL.createObjectURL(blob);
           const anchor = document.createElement('a');
           anchor.href = url;
@@ -891,8 +927,17 @@ export async function run({ browser, root, output }) {
         );
       })(),
     ]);
-    const requestedUrl = await page.locator('html').getAttribute('data-xeg-acceptance-download');
-    assert(requestedUrl?.includes('5678'), 'Download must request the selected second fixture');
+    const request = await page.evaluate(() => ({
+      sourceUrl: document.documentElement.dataset.xegAcceptanceDownload ?? null,
+      method: document.documentElement.dataset.xegAcceptanceDownloadMethod ?? null,
+      responseType: document.documentElement.dataset.xegAcceptanceDownloadResponseType ?? null,
+    }));
+    assert(
+      request.sourceUrl?.includes('5678'),
+      'Download must request the selected second fixture'
+    );
+    assert.equal(request.method, 'GET', 'Download must use the observed GM request');
+    assert.equal(request.responseType, 'blob', 'Download must request a Blob response');
     assert.equal(await download.failure(), null);
     const filename = 'downloaded-fixture.png';
     await download.saveAs(path.join(output, filename));
@@ -931,6 +976,7 @@ export async function run({ browser, root, output }) {
       ],
       browserVersion: browser.version(),
       download: {
+        request,
         file: filename,
         suggestedFilename: download.suggestedFilename(),
         bytes: bytes.length,
