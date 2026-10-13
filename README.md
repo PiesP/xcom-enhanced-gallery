@@ -119,13 +119,13 @@ See [Contributing](./CONTRIBUTING.md) for setup, commands, project constraints,
 and pull request expectations.
 
 The weekly [Deep Verification](./.github/workflows/deep-checks.yaml) workflow
-may reuse a prior successful duplication or mutation result when all tracked
+may reuse a prior successful mutation result when all tracked
 inputs, pinned Node/pnpm versions, and runner platform and label match. Manual
 runs perform fresh checks by default; `reuse_success` opts into reuse. The
 runner `ImageVersion` is recorded in the success marker for provenance but is
 deliberately excluded from the fingerprint, so an image refresh alone does not
-force these source-based gates to rerun. A missing or invalid marker runs the
-gate fresh. Reuse applies only to these two deep checks; CI, security, and
+force the source-based gate to rerun. A missing or invalid marker runs the
+gate fresh. Reuse applies only to mutation; CI, security, and
 browser checks run under their own workflows.
 
 ## Support

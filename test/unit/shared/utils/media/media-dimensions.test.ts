@@ -55,6 +55,8 @@ describe('media-dimensions (pure functions)', () => {
     it('should reject invalid dimensions', () => {
       expect(extractDimensionsFromUrl('https://example.com/0x1080/image.jpg')).toBeNull();
       expect(extractDimensionsFromUrl('https://example.com/1920x0/image.jpg')).toBeNull();
+      expect(extractDimensionsFromUrl('https://example.com/00x180/image.jpg')).toBeNull();
+      expect(extractDimensionsFromUrl('https://example.com/320x00/image.jpg')).toBeNull();
       expect(extractDimensionsFromUrl('')).toBeNull();
     });
 
@@ -91,6 +93,9 @@ describe('media-dimensions (pure functions)', () => {
       expect(normalizeDimension(Infinity)).toBeNull();
       expect(normalizeDimension('abc')).toBeNull();
       expect(normalizeDimension('')).toBeNull();
+      expect(normalizeDimension('0')).toBeNull();
+      expect(normalizeDimension('-1')).toBeNull();
+      expect(normalizeDimension('Infinity')).toBeNull();
       expect(normalizeDimension(null)).toBeNull();
       expect(normalizeDimension(undefined)).toBeNull();
     });

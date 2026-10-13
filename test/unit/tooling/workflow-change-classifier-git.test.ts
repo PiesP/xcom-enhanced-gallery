@@ -17,7 +17,7 @@ import { describe, expect, it } from 'vitest';
 import { classifyChanges } from '../../../scripts/ci/classify-changes.ts';
 
 const classifier = resolve(import.meta.dirname, '../../../scripts/ci/classify-changes.ts');
-const ciOutputs = ['quality', 'unit', 'e2e', 'build', 'duplication'] as const;
+const ciOutputs = ['quality', 'unit', 'e2e', 'build'] as const;
 const allOutputs = [...ciOutputs, 'osv', 'semgrep', 'codeql_actions', 'codeql_javascript'] as const;
 
 function git(cwd: string, ...args: string[]): string {

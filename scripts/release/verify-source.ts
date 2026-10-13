@@ -29,6 +29,18 @@ function taggedNodeVersion(sha: string, releaseVersion: string): string {
   if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest)) {
     throw new Error('Invalid release source manifest');
   }
+  const scripts = (manifest as { scripts?: unknown }).scripts;
+  if (
+    !scripts ||
+    typeof scripts !== 'object' ||
+    Array.isArray(scripts) ||
+    Object.values(scripts).some((value) => typeof value !== 'string')
+  ) {
+    throw new Error('Invalid release source scripts');
+  }
+  if (Object.hasOwn(scripts, 'quality:nose')) {
+    throw new Error('Release source still declares retired quality:nose script');
+  }
   const volta = (manifest as { volta?: unknown }).volta;
   const version =
     volta && typeof volta === 'object' && !Array.isArray(volta)

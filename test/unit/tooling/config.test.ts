@@ -250,7 +250,6 @@ describe('tooling configuration', () => {
       quality: 'uses: ./.github/actions/setup-release',
       unit: 'uses: ./.github/actions/setup-release',
       e2e: 'uses: ./.github/actions/setup-release',
-      duplication: 'node --experimental-strip-types "$pinned_dir/install-nose.ts"',
       mutation: 'uses: ./.github/actions/setup-release',
       build: 'uses: ./.github/actions/setup-release',
     } as const;
@@ -277,14 +276,11 @@ describe('tooling configuration', () => {
     expect(releaseWorkflow).not.toContain('path: ~/.cache/selenium');
   });
 
-  it('keeps the strict duplication scan in the weekly or manual Deep Verification gate', () => {
-    const duplicationJob = deepWorkflow.match(/\n  duplication:[\s\S]*?\n  mutation:/)?.[0] ?? '';
-
+  it('keeps mutation as the weekly and manual Deep Verification gate', () => {
     expect(deepWorkflow).not.toContain('\n  push:\n');
-    expect(duplicationJob).toContain(
-      'run: nose query src --baseline .nose-baseline.json --fail-on new'
-    );
-    expect(ciWorkflow).not.toContain('name: pr-gate/duplication');
+    expect(jobBlock(deepWorkflow, 'mutation')).toContain('run: pnpm mut:fast');
+    expect(deepWorkflow).toContain("inputs.scope == 'mutation'");
+    expect(deepWorkflow).toContain('REUSE_SUCCESS: ${{ inputs.reuse_success }}');
   });
 
   it('retains actionable browser diagnostics and labels Firefox coverage honestly', () => {

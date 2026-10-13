@@ -80,13 +80,6 @@ describe('central setup-project action', () => {
       expect(block).toContain('node-version: ${{ needs.provenance.outputs.node-version }}');
     }
 
-    const duplication = jobBlock(workflow, 'duplication');
-    expect(duplication).toContain(`uses: ${centralSetupAction}`);
-    expect(duplication).toContain("install-dependencies: 'false'");
-    expect(duplication.indexOf(centralSetupAction)).toBeLessThan(
-      duplication.indexOf('Checkout verified release commit')
-    );
-
     expect(workflow.split(releaseSetupAction)).toHaveLength(releaseWorkflowJobs.length + 1);
     expect(action).toContain('uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0');
     expect(action).toContain('package-json-file: package.json');

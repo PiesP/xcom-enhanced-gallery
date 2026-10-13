@@ -44,7 +44,7 @@ jobs:
       - name: 📥 Checkout reviewed pin source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: a1fd01821cab105c6a6430ee81e18030532843e8
+          ref: d5fdf58387e43dec380331a1ab6577c0a2cb8f6a
           persist-credentials: false
           submodules: false
 
@@ -99,7 +99,7 @@ jobs:
               classifier="$RUNNER_TEMP/trusted-classify-changes.ts"
               if [[ ! "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]] ||
                  ! git show "$BASE_SHA:scripts/ci/classify-changes.ts" > "$classifier"; then
-                for output in quality unit e2e build duplication osv semgrep codeql_actions codeql_javascript; do
+                for output in quality unit e2e build osv semgrep codeql_actions codeql_javascript; do
                   echo "$output=true" >> "$GITHUB_OUTPUT"
                 done
                 echo 'reason=trusted-classifier-unavailable-full' >> "$GITHUB_OUTPUT"
@@ -120,7 +120,7 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: a1fd01821cab105c6a6430ee81e18030532843e8
+          ref: d5fdf58387e43dec380331a1ab6577c0a2cb8f6a
           persist-credentials: false
           submodules: false
 

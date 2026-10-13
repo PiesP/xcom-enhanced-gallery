@@ -28,20 +28,18 @@ missing/malformed metadata, API failure, or digest drift fails.
 when imported.
 
 The security workflow resolves both scanner images in a separate job from the
-reviewed `a1fd01821cab105c6a6430ee81e18030532843e8` revision, then passes
+reviewed `d5fdf58387e43dec380331a1ab6577c0a2cb8f6a` revision, then passes
 the validated values to the OSV and Semgrep jobs. Its scheduled freshness job
-uses the same revision. Deep verification and release duplication still read
-the historical installer and metadata from that revision with `git show`, even when the
-checkout changes to a release commit. Each job sets up Node before running a
-private copy of the dependency-free helpers. PR candidate code cannot replace
-these pinned tools for its own privileged check. Update the immutable revision
-only after the replacement helper closure lands and passes review. Run the focused CLI fixture test with
+uses the same revision. Each job sets up Node before running a private copy of
+the dependency-free helpers. PR candidate code cannot replace these pinned
+tools for its own privileged check. Update the immutable revision only after
+the replacement helper closure lands and passes review. Run the focused CLI fixture test with
 `pnpm test test/unit/config/pinned-tools-cli.test.ts`.
 
 ## Deep check reuse
 
-`deep-check-reuse.ts` fingerprints tracked input bytes, pinned tool versions, the
-selected gate, and the runner platform. A valid marker records a successful run
+`deep-check-reuse.ts` fingerprints tracked input bytes, pinned tool versions,
+the mutation gate, and the runner platform. A valid marker records a successful run
 of that fingerprint. The weekly Deep Verification workflow may reuse it; a
 manual run needs the `reuse_success` option. Changes to `ImageVersion` alone do
 not invalidate a marker, but the version is recorded for provenance.
@@ -75,7 +73,7 @@ The workflow records decision reasons and estimates avoided analysis seconds
 from the original successful analysis step. Missing or invalid timing leaves
 the estimate unavailable; it excludes restore/API overhead and net billing.
 
-Reruns (`GITHUB_RUN_ATTEMPT > 1`) always analyze selected gates afresh, including
+Reruns (`GITHUB_RUN_ATTEMPT > 1`) always analyze mutation afresh, including
 scheduled runs and manual reuse opt-ins. Actions run listings expose only the
 latest attempt, so excluding the current attempt can hide its prior failures.
 A successful fresh rerun may still publish its own marker for a later run's

@@ -11,7 +11,6 @@
       "!!**/node_modules",
       "!!packages/core",
       "!!pnpm-lock.yaml",
-      "!!.nose-baseline.json",
       "!!test/fixtures/authenticated-x-layouts/*.html",
       "!!**/.stryker-tmp/",
       "!!**/.stryker-tmp-debug/"
