@@ -18,7 +18,9 @@ const capturedVideoPlayer = readFileSync(
 
 function requireTarget(selector: string): HTMLElement {
   const target = document.querySelector(selector);
-  if (!(target instanceof HTMLElement)) throw new Error(`Missing captured target: ${selector}`);
+  if (!(target instanceof HTMLElement)) {
+    throw new Error(`Missing captured target: ${selector}`);
+  }
   return target;
 }
 

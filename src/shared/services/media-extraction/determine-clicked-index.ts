@@ -75,16 +75,24 @@ export function captureClickedMediaEvidence(clickedElement: HTMLElement): Clicke
 }
 
 function isBoundedClickedMedia(element: HTMLElement, media: HTMLElement | null): boolean {
-  if (!media) return false;
-  if (element === media) return true;
+  if (!media) {
+    return false;
+  }
+  if (element === media) {
+    return true;
+  }
   const article = element.closest('article');
   for (
     let node: HTMLElement | null = element, hops = 0;
     node && node !== article && hops < 5;
     node = node.parentElement, hops++
   ) {
-    if (node.matches('[data-testid="card.wrapper"]')) return false;
-    if (!node.contains(media)) continue;
+    if (node.matches('[data-testid="card.wrapper"]')) {
+      return false;
+    }
+    if (!node.contains(media)) {
+      continue;
+    }
     const candidates = Array.from(node.querySelectorAll('video, img')).filter(
       (candidate) =>
         candidate.closest('article') === article &&
@@ -99,22 +107,32 @@ function isBoundedClickedMedia(element: HTMLElement, media: HTMLElement | null):
 
 /** Preserve host and parent path while allowing supported size/format URL variants. */
 export function getMediaSourceKey(url: string | null): string | null {
-  if (!url || !isValidMediaUrl(url)) return null;
+  if (!url || !isValidMediaUrl(url)) {
+    return null;
+  }
   const parsed = new URL(url, 'https://x.com');
-  if (parsed.hostname === 'video.twimg.com') return `${parsed.hostname}${parsed.pathname}`;
+  if (parsed.hostname === 'video.twimg.com') {
+    return `${parsed.hostname}${parsed.pathname}`;
+  }
   const name = normalizeMediaUrl(url);
-  if (!name) return null;
+  if (!name) {
+    return null;
+  }
   return `${parsed.hostname}${parsed.pathname.slice(0, parsed.pathname.lastIndexOf('/') + 1)}${name}`;
 }
 
 /** Exact thumbnail paths, allowing the explicit extensionless format spelling. */
 function getMediaIdentityKey(url: string | null): string | null {
-  if (!url || !isValidMediaUrl(url)) return null;
+  if (!url || !isValidMediaUrl(url)) {
+    return null;
+  }
   const parsed = new URL(url, 'https://x.com');
   let path = parsed.pathname;
   if (parsed.hostname === 'pbs.twimg.com' && !/\.[A-Za-z0-9]+$/u.test(path)) {
     const format = parsed.searchParams.get('format');
-    if (format && /^(?:jpg|jpeg|png|webp|gif)$/u.test(format)) path += `.${format}`;
+    if (format && /^(?:jpg|jpeg|png|webp|gif)$/u.test(format)) {
+      path += `.${format}`;
+    }
   }
   return `${parsed.hostname}${path}`;
 }
@@ -132,23 +150,32 @@ export function matchClickedMedia(
         : clickedElement;
     const expectsVideo = evidence.mediaType === 'video';
     const normalizedElementUrls = evidence.urls;
-    if (evidence.invalidSource) return { status: 'contradictory', index: 0 };
+    if (evidence.invalidSource) {
+      return { status: 'contradictory', index: 0 };
+    }
     if (evidence.ownership?.ownerTweetId === null) {
       // Neither a clickable wrapper nor a single combined video establishes
       // ownership. Require exact direct hints and count every compatible owner.
       const keys = evidence.identityKeys ?? [];
-      if (!evidence.mediaType || keys.length === 0) return { status: 'unknown', index: null };
+      if (!evidence.mediaType || keys.length === 0) {
+        return { status: 'unknown', index: null };
+      }
       const matches = mediaItems.flatMap((item, index) => {
-        if (expectsVideo ? item.type !== 'video' && item.type !== 'gif' : item.type !== 'image')
+        if (expectsVideo ? item.type !== 'video' && item.type !== 'gif' : item.type !== 'image') {
           return [];
+        }
         const candidates = new Set(
           getMediaCandidates(item).map(getMediaIdentityKey).filter(Boolean)
         );
         return keys.every((key) => candidates.has(key)) ? [index] : [];
       });
-      if (matches.length > 1) return { status: 'unknown', index: null };
+      if (matches.length > 1) {
+        return { status: 'unknown', index: null };
+      }
       const index = matches[0];
-      if (index === undefined) return { status: 'contradictory', index: 0 };
+      if (index === undefined) {
+        return { status: 'contradictory', index: 0 };
+      }
       const api = mediaItems[index]?.metadata?.apiData as Record<string, unknown> | undefined;
       const ownership = evidence.ownership;
       const ownRequest =
@@ -166,16 +193,22 @@ export function matchClickedMedia(
     }
     if (normalizedElementUrls.length === 0) {
       // Missing image evidence cannot establish attachment identity or order.
-      if (!expectsVideo) return { status: 'unknown', index: null };
+      if (!expectsVideo) {
+        return { status: 'unknown', index: null };
+      }
       const videos = mediaItems.flatMap((item, index) =>
         item.type === 'video' || item.type === 'gif' ? [index] : []
       );
-      if (!videos.length) return { status: 'contradictory', index: 0 };
+      if (!videos.length) {
+        return { status: 'contradictory', index: 0 };
+      }
       // The combined API list includes quote media. Only originating API IDs
       // establish ownership independently of the request/gallery context.
       const compatible = videos.filter((index) => {
         const apiData = mediaItems[index]?.metadata?.apiData;
-        if (!apiData || typeof apiData !== 'object' || !('tweet_id' in apiData)) return false;
+        if (!apiData || typeof apiData !== 'object' || !('tweet_id' in apiData)) {
+          return false;
+        }
         return (
           typeof apiData.tweet_id === 'string' &&
           /^\d+$/u.test(apiData.tweet_id) &&
@@ -189,16 +222,23 @@ export function matchClickedMedia(
 
     const matches = mediaItems.flatMap((item, index) => {
       const matched = (() => {
-        if (!item) return false;
+        if (!item) {
+          return false;
+        }
         const apiData = item.metadata?.apiData;
         if (
           apiData &&
           typeof apiData === 'object' &&
           (!('tweet_id' in apiData) || apiData.tweet_id !== clickedTweetId)
-        )
+        ) {
           return false;
-        if (expectsVideo && item.type !== 'video' && item.type !== 'gif') return false;
-        if (evidence.mediaType === 'image' && item.type !== 'image') return false;
+        }
+        if (expectsVideo && item.type !== 'video' && item.type !== 'gif') {
+          return false;
+        }
+        if (evidence.mediaType === 'image' && item.type !== 'image') {
+          return false;
+        }
         const candidates = getMediaCandidates(item);
         if (expectsVideo && evidence.identityKeys?.length) {
           return evidence.identityKeys.every((key) =>
@@ -220,7 +260,9 @@ export function matchClickedMedia(
       return matched ? [index] : [];
     });
 
-    if (matches.length > 1) return { status: 'unknown', index: null };
+    if (matches.length > 1) {
+      return { status: 'unknown', index: null };
+    }
     const index = matches[0];
     return index !== undefined
       ? { status: 'matched', index }
@@ -248,14 +290,18 @@ function extractBackgroundImageUrl(
   element: HTMLElement | null,
   maxAncestorHops: number
 ): string | null {
-  if (!element) return null;
+  if (!element) {
+    return null;
+  }
 
   let current: HTMLElement | null = element;
   for (let hops = 0; hops <= maxAncestorHops && current; hops++) {
     const style = globalThis.getComputedStyle?.(current);
     const backgroundImage = style?.backgroundImage ?? '';
     const url = extractUrlFromCssValue(backgroundImage);
-    if (url) return url;
+    if (url) {
+      return url;
+    }
     current = current.parentElement;
   }
 
@@ -263,7 +309,9 @@ function extractBackgroundImageUrl(
 }
 
 function extractUrlFromCssValue(value: string): string | null {
-  if (!value || value === 'none') return null;
+  if (!value || value === 'none') {
+    return null;
+  }
   const match = value.match(/url\((?:'|")?(.*?)(?:'|")?\)/i);
   return match?.[1]?.trim() || null;
 }
@@ -284,7 +332,9 @@ function getMediaCandidates(item: MediaSelectionItem): string[] {
     ) {
       candidates.push(
         ...apiData.unsupportedVariantUrls.slice(0, 32).filter((url): url is string => {
-          if (typeof url !== 'string' || !isValidMediaUrl(url)) return false;
+          if (typeof url !== 'string' || !isValidMediaUrl(url)) {
+            return false;
+          }
           const parsed = new URL(url);
           return (
             parsed.hostname === 'video.twimg.com' && parsed.pathname.toLowerCase().endsWith('.m3u8')

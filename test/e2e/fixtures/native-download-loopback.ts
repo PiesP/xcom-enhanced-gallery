@@ -137,7 +137,9 @@ export async function startNativeDownloadLoopback(image: Buffer): Promise<{
         return;
       }
       reservedBytes += body.length;
-      if (request.headers['sec-fetch-dest'] === 'image') previewRequests += 1;
+      if (request.headers['sec-fetch-dest'] === 'image') {
+        previewRequests += 1;
+      }
       responses.add(response);
       response.once('close', () => responses.delete(response));
       response.once('finish', () => {
@@ -200,9 +202,13 @@ export async function startNativeDownloadLoopback(image: Buffer): Promise<{
         serverError,
       }),
       async close() {
-        for (const response of responses) response.destroy();
+        for (const response of responses) {
+          response.destroy();
+        }
         ownedServer.closeAllConnections();
-        for (const socket of sockets) socket.destroy();
+        for (const socket of sockets) {
+          socket.destroy();
+        }
         try {
           await new Promise<void>((resolveClose, rejectClose) =>
             ownedServer.close((error) => (error ? rejectClose(error) : resolveClose()))

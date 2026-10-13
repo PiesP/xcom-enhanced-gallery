@@ -97,7 +97,9 @@ async function waitForValue(readValue, description, timeoutMs = 15_000) {
   let value;
   do {
     value = await readValue();
-    if (value !== undefined) return value;
+    if (value !== undefined) {
+      return value;
+    }
     await new Promise((resolve) => setTimeout(resolve, 50));
   } while (Date.now() < deadline);
   throw new Error(`Timed out waiting for ${description}: ${JSON.stringify(value)}`);
@@ -113,8 +115,9 @@ async function itemState(page, index) {
       !(root instanceof HTMLElement) ||
       !(item instanceof HTMLElement) ||
       !(video instanceof HTMLVideoElement)
-    )
+    ) {
       return null;
+    }
     const rect = item.getBoundingClientRect();
     const rootRect = root.getBoundingClientRect();
     return {
@@ -256,9 +259,11 @@ export async function runVideoLoadingProfile({
         requestedId = undefined;
       }
       if (requestedId === tweetId) {
-        if (records.api.length < MAX_REQUESTS)
+        if (records.api.length < MAX_REQUESTS) {
           records.api.push({ requestedId, method: request.method() });
-        else records.overflow++;
+        } else {
+          records.overflow++;
+        }
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -280,9 +285,11 @@ export async function runVideoLoadingProfile({
         'u'
       ).exec(target.pathname);
       if (!matched || (matched[2] === 'lower' && matched[1] !== '0')) {
-        if (records.unexpectedVideo.length < MAX_REQUESTS)
+        if (records.unexpectedVideo.length < MAX_REQUESTS) {
           records.unexpectedVideo.push(target.pathname);
-        else records.overflow++;
+        } else {
+          records.overflow++;
+        }
         await route.fulfill({ status: 403, body: '' });
         return;
       }
@@ -296,10 +303,17 @@ export async function runVideoLoadingProfile({
         range: request.headers().range ?? null,
         status: null,
       };
-      if (records.video.length < MAX_REQUESTS) records.video.push(record);
-      else records.overflow++;
-      if (index === 0 && quality === 'best') await bestGate;
-      if (quality === 'lower') await lowerGate;
+      if (records.video.length < MAX_REQUESTS) {
+        records.video.push(record);
+      } else {
+        records.overflow++;
+      }
+      if (index === 0 && quality === 'best') {
+        await bestGate;
+      }
+      if (quality === 'lower') {
+        await lowerGate;
+      }
       const payload = index === 0 && quality === 'best' ? BAD_MP4 : validMp4;
       const range = /^bytes=(\d+)-(\d*)$/u.exec(request.headers().range ?? '');
       const start = range ? Number(range[1]) : 0;
@@ -737,11 +751,12 @@ export async function runVideoLoadingProfile({
     } catch (error) {
       followupErrors.push(error);
     }
-    if (followupErrors.length)
+    if (followupErrors.length) {
       throw new AggregateError(
         followupErrors,
         'Required video admission and recovery intent cases failed'
       );
+    }
     return observation;
   } catch (error) {
     primaryError = error;
@@ -767,8 +782,11 @@ export async function runVideoLoadingProfile({
       try {
         await extensionPage.evaluate(
           async ({ key, previous }) => {
-            if (previous.exists) await chrome.storage.local.set({ [key]: previous.value });
-            else await chrome.storage.local.remove(key);
+            if (previous.exists) {
+              await chrome.storage.local.set({ [key]: previous.value });
+            } else {
+              await chrome.storage.local.remove(key);
+            }
           },
           { key: SETTINGS_KEY, previous: settingsBefore }
         );
@@ -788,7 +806,9 @@ export async function runVideoLoadingProfile({
         cleanupFailures.push(error);
         observation.cleanup.settingsError = String(error);
       }
-    } else observation.cleanup.settingsRestored = true;
+    } else {
+      observation.cleanup.settingsRestored = true;
+    }
     try {
       await page.setViewportSize(viewportBefore);
       observation.cleanup.viewportRestored = true;
@@ -866,7 +886,9 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
   let permissionBefore;
   let permissionPage;
   const handler = async (route) => {
-    if (!active) return route.fallback();
+    if (!active) {
+      return route.fallback();
+    }
     const target = new URL(route.request().url());
     if (route.request().isNavigationRequest() && target.href === active.url) {
       // Keep the requesting document's address space observable to the browser.
@@ -879,12 +901,13 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
       } catch {
         return route.fallback();
       }
-      if (id === active.id)
+      if (id === active.id) {
         return route.fulfill({
           status: 200,
           contentType: 'application/json',
           body: JSON.stringify(apiResponse(id, 'intentrecovery')),
         });
+      }
     }
     if (
       target.hostname === 'pbs.twimg.com' &&
@@ -897,7 +920,9 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
         `^/ext_tw_video/${active.id}/pu/vid/320x180/video-([0-7])-(best|lower)\\.mp4$`,
         'u'
       ).exec(target.pathname);
-      if (!match || (match[2] === 'lower' && match[1] !== '0')) return route.fallback();
+      if (!match || (match[2] === 'lower' && match[1] !== '0')) {
+        return route.fallback();
+      }
       assert(requests.length < MAX_REQUESTS, 'Recovery-intent request observations overflowed');
       const record = {
         case: active.name,
@@ -911,7 +936,9 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
         // Only this exact declared source reaches the bounded mapped HTTPS server.
         return route.continue();
       }
-      if (match[2] === 'lower') await active.lowerGate;
+      if (match[2] === 'lower') {
+        await active.lowerGate;
+      }
       const payload = match[1] === '0' ? validMp4 : auxiliaryMp4;
       const range = /^bytes=(\d+)-(\d*)$/u.exec(route.request().headers().range ?? '');
       const start = range ? Number(range[1]) : 0;
@@ -1062,7 +1089,9 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
         records.push(record);
       };
       protocol.on('Network.requestWillBeSent', (event) => {
-        if (event.request.url !== observed.best) return;
+        if (event.request.url !== observed.best) {
+          return;
+        }
         if (nativeRequestIds.size >= MAX_REQUESTS && !nativeRequestIds.has(event.requestId)) {
           observed.networkProtocol.overflow = true;
           return;
@@ -1076,7 +1105,9 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
         });
       });
       protocol.on('Network.loadingFailed', (event) => {
-        if (!nativeRequestIds.has(event.requestId)) return;
+        if (!nativeRequestIds.has(event.requestId)) {
+          return;
+        }
         boundedProtocolRecord(observed.networkProtocol.failures, {
           requestId: event.requestId,
           errorText: event.errorText,
@@ -1085,14 +1116,18 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
         });
       });
       protocol.on('Network.requestWillBeSentExtraInfo', (event) => {
-        if (!nativeRequestIds.has(event.requestId) || !event.clientSecurityState) return;
+        if (!nativeRequestIds.has(event.requestId) || !event.clientSecurityState) {
+          return;
+        }
         boundedProtocolRecord(observed.networkProtocol.clientSecurity, {
           requestId: event.requestId,
           clientSecurityState: event.clientSecurityState,
         });
       });
       protocol.on('Network.responseReceived', (event) => {
-        if (event.response.url !== active.url) return;
+        if (event.response.url !== active.url) {
+          return;
+        }
         observed.requestingDocumentTransport = {
           remoteAddress: event.response.remoteIPAddress,
           remotePort: event.response.remotePort,
@@ -1102,7 +1137,9 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
       });
       protocol.on('Audits.issueAdded', ({ issue }) => {
         const details = issue.details.corsIssueDetails;
-        if (details?.request?.url !== observed.best) return;
+        if (details?.request?.url !== observed.best) {
+          return;
+        }
         boundedProtocolRecord(observed.networkProtocol.issues, {
           code: issue.code,
           corsErrorStatus: details.corsErrorStatus,
@@ -1129,7 +1166,9 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
         observed.requestFailures.push({ url: request.url(), reason: request.failure()?.errorText });
       };
       const onConsole = (message) => {
-        if (message.type() !== 'error') return;
+        if (message.type() !== 'error') {
+          return;
+        }
         if (observed.consoleErrors.length >= MAX_REQUESTS) {
           observed.eventOverflow = true;
           return;
@@ -1166,8 +1205,9 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
         const originalControl = page
           .locator('[data-xeg-gallery-container]')
           .getByRole('button', { name: 'Original', exact: true });
-        if ((await originalControl.getAttribute('aria-pressed')) !== 'true')
+        if ((await originalControl.getAttribute('aria-pressed')) !== 'true') {
           await originalControl.click();
+        }
         const video = page.locator('[data-gallery-element="item"][data-index="0"] video');
         await video.evaluate((element) => {
           const state = { records: [], overflow: false, listeners: [] };
@@ -1216,7 +1256,9 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
           'initial metadata before the trusted playback control'
         );
         await video.focus();
-        if ((await itemState(page, 0)).muted) await page.keyboard.press('m');
+        if ((await itemState(page, 0)).muted) {
+          await page.keyboard.press('m');
+        }
         observed.beforePlay = await itemState(page, 0);
         assert.equal(
           observed.beforePlay.src,
@@ -1325,7 +1367,9 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
             (value) => value.volume < volumeBefore,
             'later volume change through the supported keyboard control'
           );
-          if (!(await itemState(page, 0)).muted) await page.keyboard.press('m');
+          if (!(await itemState(page, 0)).muted) {
+            await page.keyboard.press('m');
+          }
           observed.userControls = await stateWhen(
             page,
             (value) => value.muted,
@@ -1340,8 +1384,9 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
           observed.pausedAfterReentry = await stablePaused(page, observed.lower);
         } else {
           observed.outsideBeforeMetadata = await scrollOut(page);
-          if (name === 'reenter-before-metadata')
+          if (name === 'reenter-before-metadata') {
             observed.reenteredBeforeMetadata = await scrollBack(page);
+          }
           releaseLower();
           if (name === 'metadata-while-outside') {
             observed.pausedOutside = await stablePaused(page, observed.lower);
@@ -1444,13 +1489,17 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
         if (!page.isClosed()) {
           observed.mediaEvents = await page.evaluate(() => {
             const state = window.__xegRecoveryEventObservation;
-            if (!state) return { records: [], overflow: false };
+            if (!state) {
+              return { records: [], overflow: false };
+            }
             const video = document.querySelector(
               '[data-gallery-element="item"][data-index="0"] video'
             );
-            if (video)
-              for (const [type, listener] of state.listeners)
+            if (video) {
+              for (const [type, listener] of state.listeners) {
                 video.removeEventListener(type, listener, true);
+              }
+            }
             delete window.__xegRecoveryEventObservation;
             return { records: state.records, overflow: state.overflow };
           });
@@ -1464,8 +1513,9 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
             'Native media event observation overflowed'
           );
           await page.screenshot({ path: join(output, `video-recovery-intent-${name}.png`) });
-          if (await page.locator('[data-xeg-gallery-container]').count())
+          if (await page.locator('[data-xeg-gallery-container]').count()) {
             await page.keyboard.press('Escape');
+          }
         }
         page.off('pageerror', onPageError);
         page.off('requestfailed', onRequestFailed);
@@ -1509,7 +1559,9 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
       } catch (error) {
         errors.push(error);
       }
-    } else evidence.cleanup.fixturePermissionRestored = true;
+    } else {
+      evidence.cleanup.fixturePermissionRestored = true;
+    }
     if (permissionSession) {
       await permissionSession
         .detach()
@@ -1517,7 +1569,9 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
           evidence.cleanup.permissionSessionDetached = true;
         })
         .catch((error) => errors.push(error));
-    } else evidence.cleanup.permissionSessionDetached = true;
+    } else {
+      evidence.cleanup.permissionSessionDetached = true;
+    }
     const closing = await Promise.allSettled(
       pages.filter((page) => !page.isClosed()).map((page) => page.close())
     );
@@ -1528,17 +1582,20 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
     evidence.cleanup.errors = errors.map((error) =>
       error instanceof Error ? error.message : String(error)
     );
-    if (errors.length) evidence.status = 'failed';
+    if (errors.length) {
+      evidence.status = 'failed';
+    }
     await writeFile(
       join(output, 'video-recovery-intent-observations.json'),
       JSON.stringify(evidence, null, 2)
     );
-    if (errors.length)
+    if (errors.length) {
       // biome-ignore lint/correctness/noUnsafeFinally: Retain the primary failure together with cleanup failures in the acceptance receipt.
       throw new AggregateError(
         primaryError ? [primaryError, ...errors] : errors,
         'Recovery intent fixture cleanup failed'
       );
+    }
   }
 }
 
@@ -1559,7 +1616,9 @@ async function runAdmissionGeometryCases({ context, validMp4, output }) {
   let active;
   let primaryError;
   const handler = async (route) => {
-    if (!active) return route.fallback();
+    if (!active) {
+      return route.fallback();
+    }
     const target = new URL(route.request().url());
     if (route.request().isNavigationRequest() && target.href === active.url) {
       return route.fulfill({
@@ -1609,7 +1668,9 @@ async function runAdmissionGeometryCases({ context, validMp4, output }) {
   };
   const readAll = async (page) => {
     const states = [];
-    for (let index = 0; index < count; index++) states.push(await itemState(page, index));
+    for (let index = 0; index < count; index++) {
+      states.push(await itemState(page, index));
+    }
     assert(states.every(Boolean), 'The real gallery geometry inventory is incomplete');
     return states;
   };
@@ -1743,8 +1804,9 @@ async function runAdmissionGeometryCases({ context, validMp4, output }) {
         observed.error = error instanceof Error ? error.message : String(error);
       } finally {
         await page.screenshot({ path: join(output, `video-admission-${descriptor.name}.png`) });
-        if (await page.locator('[data-xeg-gallery-container]').count())
+        if (await page.locator('[data-xeg-gallery-container]').count()) {
           await page.keyboard.press('Escape');
+        }
         await page.close();
       }
     }
@@ -1780,16 +1842,19 @@ async function runAdmissionGeometryCases({ context, validMp4, output }) {
     evidence.cleanup.errors = errors.map((error) =>
       error instanceof Error ? error.message : String(error)
     );
-    if (errors.length) evidence.status = 'failed';
+    if (errors.length) {
+      evidence.status = 'failed';
+    }
     await writeFile(
       join(output, 'video-admission-geometry-observations.json'),
       JSON.stringify(evidence, null, 2)
     );
-    if (errors.length)
+    if (errors.length) {
       // biome-ignore lint/correctness/noUnsafeFinally: Retain the primary failure together with cleanup failures in the acceptance receipt.
       throw new AggregateError(
         primaryError ? [primaryError, ...errors] : errors,
         'Geometry fixture cleanup failed'
       );
+    }
   }
 }

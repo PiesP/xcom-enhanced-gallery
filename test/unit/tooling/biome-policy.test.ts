@@ -68,7 +68,9 @@ function withProbe(
   try {
     test(path, replace);
   } finally {
-    if (created) unlinkSync(absolutePath);
+    if (created) {
+      unlinkSync(absolutePath);
+    }
   }
 }
 

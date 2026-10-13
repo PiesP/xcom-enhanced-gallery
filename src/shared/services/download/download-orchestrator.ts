@@ -243,7 +243,9 @@ export class DownloadOrchestrator {
     signal: AbortSignal;
     cleanup: () => void;
   } {
-    if (!callerSignal) return { signal: this.abortController.signal, cleanup: () => {} };
+    if (!callerSignal) {
+      return { signal: this.abortController.signal, cleanup: () => {} };
+    }
     return mergeAbortSignalsWithCleanup([this.abortController.signal, callerSignal]);
   }
 

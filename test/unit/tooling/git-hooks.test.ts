@@ -30,7 +30,9 @@ function hook(repositoryPath: string, name: string, input = '') {
 }
 
 afterEach(() => {
-  for (const path of repositories.splice(0)) rmSync(path, { recursive: true, force: true });
+  for (const path of repositories.splice(0)) {
+    rmSync(path, { recursive: true, force: true });
+  }
 });
 
 describe('protected branch Git hooks', () => {

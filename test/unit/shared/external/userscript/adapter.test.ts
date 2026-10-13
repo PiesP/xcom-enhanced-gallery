@@ -22,10 +22,16 @@ const originalGlobals = {
 };
 
 function restoreUserscriptGlobals(): void {
-  if (originalGlobals.GM) userscriptGlobals.GM = originalGlobals.GM;
-  else delete userscriptGlobals.GM;
-  if (originalGlobals.GM_download) userscriptGlobals.GM_download = originalGlobals.GM_download;
-  else delete userscriptGlobals.GM_download;
+  if (originalGlobals.GM) {
+    userscriptGlobals.GM = originalGlobals.GM;
+  } else {
+    delete userscriptGlobals.GM;
+  }
+  if (originalGlobals.GM_download) {
+    userscriptGlobals.GM_download = originalGlobals.GM_download;
+  } else {
+    delete userscriptGlobals.GM_download;
+  }
   if (originalGlobals.GM_xmlhttpRequest) {
     userscriptGlobals.GM_xmlhttpRequest = originalGlobals.GM_xmlhttpRequest;
   } else {

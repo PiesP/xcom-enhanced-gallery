@@ -14,7 +14,9 @@ export function hasInitializedCore(root: string): boolean {
 }
 
 function isDirectInvocation(): boolean {
-  if (!argv[1]) return false;
+  if (!argv[1]) {
+    return false;
+  }
   try {
     return realpathSync(argv[1]) === realpathSync(fileURLToPath(import.meta.url));
   } catch {

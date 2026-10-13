@@ -8,19 +8,29 @@
  */
 export function getMediaClickTarget(event: MouseEvent): HTMLElement | null {
   const original = event.target;
-  if (original instanceof HTMLElement) return original.isConnected ? original : null;
-  if (!(original instanceof SVGElement) || !original.isConnected) return null;
+  if (original instanceof HTMLElement) {
+    return original.isConnected ? original : null;
+  }
+  if (!(original instanceof SVGElement) || !original.isConnected) {
+    return null;
+  }
 
   let ancestor: Element | null = original.parentElement;
-  while (ancestor instanceof SVGElement) ancestor = ancestor.parentElement;
-  if (!(ancestor instanceof HTMLElement) || !ancestor.isConnected) return null;
+  while (ancestor instanceof SVGElement) {
+    ancestor = ancestor.parentElement;
+  }
+  if (!(ancestor instanceof HTMLElement) || !ancestor.isConnected) {
+    return null;
+  }
 
   try {
     // During dispatch, reject a path that does not agree with the DOM owner.
     // Browser composedPath() becomes empty after dispatch; early replay then
     // revalidates the still-connected DOM ancestor instead.
     const path = event.composedPath();
-    if (path.length && (path[0] !== original || !path.includes(ancestor))) return null;
+    if (path.length && (path[0] !== original || !path.includes(ancestor))) {
+      return null;
+    }
   } catch {
     // A path that cannot be inspected cannot establish a safe HTML owner.
     return null;

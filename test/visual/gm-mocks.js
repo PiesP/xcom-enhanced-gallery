@@ -25,7 +25,9 @@
 
   window.GM_download = (options) => {
     console.log('[GM] download:', options.name || options.url);
-    if (options.onload) setTimeout(options.onload, 0);
+    if (options.onload) {
+      setTimeout(options.onload, 0);
+    }
     if (options.onerror) {
     }
     if (options.ontimeout) {
@@ -43,7 +45,9 @@
 
   GM_cookie = (details, callback) => {
     console.log('[GM] cookie:', details.action, details.name);
-    if (callback) callback({ name: details.name, value: 'mock' }, null);
+    if (callback) {
+      callback({ name: details.name, value: 'mock' }, null);
+    }
   };
 
   console.log('[XEG GM mocks] Installed. GM_setValue/GM_getValue backed by Map.');

@@ -63,14 +63,18 @@ export function useGalleryItemScroll(
 
   onCleanup(() => {
     itemsCache.clear();
-    for (const id of pendingRafIds) cancelAnimationFrame(id);
+    for (const id of pendingRafIds) {
+      cancelAnimationFrame(id);
+    }
     pendingRafIds.clear();
   });
 
   const getCachedItem = (index: number, itemsRoot: Element): HTMLElement | null => {
     // 1. Check cache
     const cached = itemsCache.get(index)?.deref();
-    if (cached?.isConnected) return cached;
+    if (cached?.isConnected) {
+      return cached;
+    }
 
     // 2. Cache miss: query DOM
     const items = itemsRoot.querySelectorAll('[data-gallery-element="item"]');
@@ -86,10 +90,14 @@ export function useGalleryItemScroll(
 
   const alignItem = (index: number): void => {
     const container = containerAccessor();
-    if (!container || index < 0 || index >= totalItemsAccessor()) return;
+    if (!container || index < 0 || index >= totalItemsAccessor()) {
+      return;
+    }
 
     const itemsRoot = container.querySelector('[data-gallery-element="items"]');
-    if (!itemsRoot) return;
+    if (!itemsRoot) {
+      return;
+    }
 
     const target = getCachedItem(index, itemsRoot);
 
@@ -104,7 +112,9 @@ export function useGalleryItemScroll(
       // Retry once if not found (e.g. virtual scrolling or render delay)
       const rafId = requestAnimationFrame(() => {
         pendingRafIds.delete(rafId);
-        if (!itemsRoot.isConnected) return;
+        if (!itemsRoot.isConnected) {
+          return;
+        }
         const retryTarget = getCachedItem(index, itemsRoot);
         if (retryTarget) {
           options.onScrollStart?.();
@@ -120,14 +130,18 @@ export function useGalleryItemScroll(
   };
 
   const scrollToItem = (index: number): void => {
-    if (!enabled()) return;
+    if (!enabled()) {
+      return;
+    }
     alignItem(index);
   };
 
   // Layout changes need to preserve the viewed item even when the last
   // navigation source was scroll. Active user scrolling still owns position.
   const realignToItem = (index: number): void => {
-    if (isScrolling()) return;
+    if (isScrolling()) {
+      return;
+    }
     alignItem(index);
   };
 

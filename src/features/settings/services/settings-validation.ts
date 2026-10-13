@@ -78,7 +78,9 @@ function makeDefaults(nowMs: number): AppSettings {
 
 function normalizeGallery(raw: Record<string, unknown> | undefined): GallerySettings {
   const d = DEFAULT_SETTINGS.gallery;
-  if (!isRecord(raw)) return { ...d };
+  if (!isRecord(raw)) {
+    return { ...d };
+  }
 
   return {
     preloadCount: isFiniteNonNegativeNumber(raw.preloadCount)
@@ -98,7 +100,9 @@ function normalizeGallery(raw: Record<string, unknown> | undefined): GallerySett
 
 function normalizeToolbar(raw: Record<string, unknown> | undefined) {
   const d = DEFAULT_SETTINGS.toolbar;
-  if (!isRecord(raw)) return { ...d };
+  if (!isRecord(raw)) {
+    return { ...d };
+  }
 
   return {
     autoHideDelay: isFiniteNonNegativeNumber(raw.autoHideDelay)
@@ -109,7 +113,9 @@ function normalizeToolbar(raw: Record<string, unknown> | undefined) {
 
 function normalizeFeatures(raw: Record<string, unknown> | undefined) {
   const d = DEFAULT_SETTINGS.features;
-  if (!isRecord(raw)) return { ...d };
+  if (!isRecord(raw)) {
+    return { ...d };
+  }
 
   return {
     gallery: isBoolean(raw.gallery) ? raw.gallery : d.gallery,
@@ -129,7 +135,9 @@ function normalizeFeatures(raw: Record<string, unknown> | undefined) {
  */
 export function validateSettingValue(key: string, value: unknown): boolean {
   // Reject forbidden keys immediately
-  if (FORBIDDEN_KEYS.has(key)) return false;
+  if (FORBIDDEN_KEYS.has(key)) {
+    return false;
+  }
 
   switch (key) {
     // Top-level object keys — accept only non-null objects

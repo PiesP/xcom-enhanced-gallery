@@ -65,7 +65,9 @@ export const SharedObserver = {
       const observer = new IntersectionObserver((entries) => {
         // A queued delivery from a disconnected observer cannot reach a later
         // subscription that happens to reuse the same target and options.
-        if (observerPool.get(key)?.observer !== observer) return;
+        if (observerPool.get(key)?.observer !== observer) {
+          return;
+        }
         for (const e of entries) {
           // MED-3: Auto-cleanup disconnected elements in observer callback.
           // If element was removed from DOM without dispose(), remove it here.
@@ -76,14 +78,20 @@ export const SharedObserver = {
             if (callbacks.size === 0) {
               observer.disconnect();
               const currentEntry = observerPool.get(key);
-              if (currentEntry?.observer === observer) observerPool.delete(key);
+              if (currentEntry?.observer === observer) {
+                observerPool.delete(key);
+              }
             }
             continue;
           }
           const targetCallbacks = callbacks.get(e.target);
-          if (!targetCallbacks) continue;
+          if (!targetCallbacks) {
+            continue;
+          }
           for (const [subscriptionId, cb] of [...targetCallbacks]) {
-            if (targetCallbacks.get(subscriptionId) !== cb) continue;
+            if (targetCallbacks.get(subscriptionId) !== cb) {
+              continue;
+            }
             try {
               cb(e);
             } catch (error) {
@@ -110,14 +118,20 @@ export const SharedObserver = {
     let disposed = false;
 
     return (): void => {
-      if (disposed) return;
+      if (disposed) {
+        return;
+      }
       disposed = true;
 
       const poolEntry = observerPool.get(key);
-      if (poolEntry !== observedEntry) return;
+      if (poolEntry !== observedEntry) {
+        return;
+      }
 
       const currentCallbacks = poolEntry.callbacks.get(element);
-      if (!currentCallbacks) return;
+      if (!currentCallbacks) {
+        return;
+      }
       currentCallbacks.delete(subscriptionId);
       if (currentCallbacks.size === 0) {
         // Last disposer for this element — actually unobserve

@@ -141,7 +141,9 @@
     window.addEventListener(
       'click',
       (event) => {
-        if (!event.isTrusted || window.__preplayerFixtureClicks.length >= 32) return;
+        if (!event.isTrusted || window.__preplayerFixtureClicks.length >= 32) {
+          return;
+        }
         const record = {
           tag: event.target instanceof Element ? event.target.tagName.toLowerCase() : null,
           prevented: false,

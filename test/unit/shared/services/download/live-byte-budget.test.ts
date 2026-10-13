@@ -17,7 +17,9 @@ function ownedBlob(value: Blob, budget: LiveByteBudget): OwnedBlob {
   return owner;
 }
 afterEach(() => {
-  for (const owner of inputOwners.splice(0)) owner.lease.release();
+  for (const owner of inputOwners.splice(0)) {
+    owner.lease.release();
+  }
 });
 
 describe('shared download binary ownership', () => {
@@ -76,7 +78,9 @@ describe('shared download binary ownership', () => {
       { liveBudget: budget }
     );
     expect(result.filesSuccessful).toBe(2);
-    for (const owner of inputOwners.splice(0)) owner.lease.release();
+    for (const owner of inputOwners.splice(0)) {
+      owner.lease.release();
+    }
     const retained = budget.usedBytes;
     expect(retained).toBeGreaterThan(11);
     const owned = result.createBlob();
@@ -112,7 +116,9 @@ describe('shared download binary ownership', () => {
     );
     expect(result).toMatchObject({ filesSuccessful: 1, resourceLimitExceeded: true });
     expect(result.failures).toHaveLength(1);
-    for (const owner of inputOwners.splice(0)) owner.lease.release();
+    for (const owner of inputOwners.splice(0)) {
+      owner.lease.release();
+    }
     const owned = result.createBlob();
     expect(new TextDecoder().decode(await owned.value.arrayBuffer())).toContain('ok');
     owned.lease.release();
@@ -129,7 +135,9 @@ describe('shared download binary ownership', () => {
       { liveBudget: budget }
     );
     expect(next.filesSuccessful).toBe(1);
-    for (const owner of inputOwners.splice(0)) owner.lease.release();
+    for (const owner of inputOwners.splice(0)) {
+      owner.lease.release();
+    }
     next.dispose();
     expect(budget.usedBytes).toBe(0);
   });
@@ -172,7 +180,9 @@ describe('shared download binary ownership', () => {
     expect(budget.usedBytes).toBeGreaterThan(0);
     finishCopy?.(new ArrayBuffer(1));
     expect(await observed).toMatchObject({ name: 'AbortError' });
-    for (const owner of inputOwners.splice(0)) owner.lease.release();
+    for (const owner of inputOwners.splice(0)) {
+      owner.lease.release();
+    }
     expect(budget.usedBytes).toBe(0);
   });
 });

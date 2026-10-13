@@ -86,19 +86,27 @@ export class FocusCoordinator {
    * NOT idempotent across frames (by design).
    */
   updateFocus(force: boolean = false): void {
-    if (!force && !this.options.isEnabled()) return;
-    if (this._rafId !== null) return; // already throttled
+    if (!force && !this.options.isEnabled()) {
+      return;
+    }
+    if (this._rafId !== null) {
+      return;
+    } // already throttled
     this._rafId = requestAnimationFrame(() => {
       this._rafId = null;
       const container = this.options.container();
-      if (!container) return;
+      if (!container) {
+        return;
+      }
       const containerRect = container.getBoundingClientRect();
       const selection = selectBestFocusCandidate(
         { top: containerRect.top, height: containerRect.height },
         this.collectVisibleItemRects(),
         this.options.activeIndex()
       );
-      if (!selection) return;
+      if (!selection) {
+        return;
+      }
       // currentIndex and focusedIndex intentionally diverge after user scroll.
       // Always publish the measured choice: comparing only with currentIndex
       // leaves a stale focusedIndex unchanged when navigation returns to it.
@@ -111,7 +119,9 @@ export class FocusCoordinator {
       cancelAnimationFrame(this._rafId);
       this._rafId = null;
     }
-    for (const item of this.items.values()) item.unsubscribe?.();
+    for (const item of this.items.values()) {
+      item.unsubscribe?.();
+    }
     this.items.clear();
   }
 
@@ -121,8 +131,9 @@ export class FocusCoordinator {
     for (const [index, item] of this.items) {
       // Observer entries can lag a late media load or a programmatic scroll.
       // Measure the active item directly so full visibility remains provable.
-      if ((!item.isVisible && index !== this.options.activeIndex()) || !item.element.isConnected)
+      if ((!item.isVisible && index !== this.options.activeIndex()) || !item.element.isConnected) {
         continue;
+      }
       const rect = item.element.getBoundingClientRect();
       itemRects.push({ index, top: rect.top, height: rect.height });
     }

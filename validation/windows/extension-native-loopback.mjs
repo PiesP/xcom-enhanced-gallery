@@ -22,7 +22,9 @@ function allowedVideos(payloads) {
     const bytes = payloads[payloadName];
     assert(Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= MAX_BODY_BYTES);
     const path = `/ext_tw_video/${id}/pu/vid/320x180/${name}.mp4`;
-    if (videos.has(path)) assert(videos.get(path).equals(bytes));
+    if (videos.has(path)) {
+      assert(videos.get(path).equals(bytes));
+    }
     videos.set(path, bytes);
   };
   for (const item of QUOTED_CASES) {
@@ -160,7 +162,9 @@ export function createExtensionNativeFixtureHandler() {
         return;
       }
       videoHold.responses.set(response, body.subarray(prefixBytes));
-      if (prefixBytes > 0) response.write(body.subarray(0, prefixBytes));
+      if (prefixBytes > 0) {
+        response.write(body.subarray(0, prefixBytes));
+      }
       event.prefixBytesQueued = prefixBytes;
       event.firstByteQueuedAtMs = prefixBytes > 0 ? performance.now() : null;
       event.result = 'video-held';
@@ -253,15 +257,21 @@ export function createExtensionNativeFixtureHandler() {
       const pending = videoHold;
       videoHold = null;
       for (const [response, tail] of pending.responses) {
-        if (!response.destroyed) response.end(tail);
+        if (!response.destroyed) {
+          response.end(tail);
+        }
       }
       pending.responses.clear();
     },
     abortVideoHold() {
-      if (!videoHold) return;
+      if (!videoHold) {
+        return;
+      }
       const pending = videoHold;
       videoHold = null;
-      for (const response of pending.responses.keys()) response.destroy();
+      for (const response of pending.responses.keys()) {
+        response.destroy();
+      }
       pending.responses.clear();
     },
     mark: () => events.length,
@@ -283,7 +293,9 @@ export function createExtensionNativeFixtureHandler() {
     },
     releaseHold() {
       holdPath = null;
-      if (heldResponse && !heldResponse.destroyed) heldResponse.destroy();
+      if (heldResponse && !heldResponse.destroyed) {
+        heldResponse.destroy();
+      }
       heldResponse = null;
       heldTail = null;
     },
@@ -302,7 +314,9 @@ export function createExtensionNativeFixtureHandler() {
     }),
     activeCount: () => active.size,
     destroyActive() {
-      for (const response of active) response.destroy();
+      for (const response of active) {
+        response.destroy();
+      }
     },
   };
 }

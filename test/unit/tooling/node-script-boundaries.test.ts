@@ -47,7 +47,9 @@ function fixture() {
 }
 
 afterEach(() => {
-  for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
+  for (const root of roots.splice(0)) {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 describe('Node script import boundary', () => {
@@ -114,8 +116,9 @@ describe('Node script import boundary', () => {
     }
     const result = command('scripts/build/clean.ts');
     expect(result.status, result.stderr).toBe(0);
-    for (const dir of ['dist', 'dist-extension', 'dist-extension-firefox'])
+    for (const dir of ['dist', 'dist-extension', 'dist-extension-firefox']) {
       expect(existsSync(join(root, dir))).toBe(false);
+    }
   });
 
   it('accepts a symlinked direct CLI entry', () => {
@@ -130,8 +133,9 @@ describe('Node script import boundary', () => {
   it('checks, rejects unknown commands, and syncs versions through the real CLI', () => {
     const { root, command } = fixture();
     mkdirSync(join(root, 'extension'));
-    for (const name of ['manifest.json', 'manifest.firefox.json'])
+    for (const name of ['manifest.json', 'manifest.firefox.json']) {
       writeFileSync(join(root, 'extension', name), '{"version":"2.3.3"}\n');
+    }
     expect(command('scripts/release/version.ts', ['check']).status).toBe(0);
     expect(command('scripts/release/version.ts', ['unknown']).status).not.toBe(0);
     writeFileSync(join(root, 'extension/manifest.firefox.json'), '{"version":"2.3.2"}\n');
@@ -182,8 +186,9 @@ describe('Node script import boundary', () => {
 
   it('prepares release artifacts with the checked-out source and runtime provenance', () => {
     const { root, command } = fixture();
-    for (const dir of ['dist', 'dist-extension', 'dist-extension-firefox', 'release-bundle'])
+    for (const dir of ['dist', 'dist-extension', 'dist-extension-firefox', 'release-bundle']) {
       mkdirSync(join(root, dir));
+    }
     writeFileSync(join(root, 'dist/xcom-enhanced-gallery.user.js'), 'userscript');
     writeFileSync(join(root, 'dist/xcom-enhanced-gallery.meta.js'), 'metadata');
     writeFileSync(join(root, 'dist-extension/manifest.json'), 'chrome');

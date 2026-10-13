@@ -73,8 +73,9 @@ describe('integrated scoped recovery and delayed identity', () => {
       expect(dom.metadata?.recoveryScope).toBe('visible-tile');
     }
     expect(httpGet).toHaveBeenCalledTimes(4);
-    for (const [url] of httpGet.mock.calls)
+    for (const [url] of httpGet.mock.calls) {
       expect(JSON.parse(new URL(url).searchParams.get('variables')!).tweetId).toBe('222');
+    }
   });
 
   it.each(['removed', 'replaced', 'reused'] as const)(
@@ -93,10 +94,15 @@ describe('integrated scoped recovery and delayed identity', () => {
       const target = tile();
       const pending = new MediaExtractionService().extractFromClickedElement(target);
       await vi.waitFor(() => expect(httpGet).toHaveBeenCalledTimes(1));
-      if (kind === 'removed') target.remove();
-      if (kind === 'replaced')
+      if (kind === 'removed') {
+        target.remove();
+      }
+      if (kind === 'replaced') {
         target.outerHTML = '<img src="https://pbs.twimg.com/media/first.jpg">';
-      if (kind === 'reused') target.setAttribute('src', 'https://pbs.twimg.com/media/first.jpg');
+      }
+      if (kind === 'reused') {
+        target.setAttribute('src', 'https://pbs.twimg.com/media/first.jpg');
+      }
       finish({ ok: true, status: 200, data: response() });
       const result = await pending;
       expect(result.success).toBe(true);

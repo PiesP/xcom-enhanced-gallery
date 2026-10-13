@@ -44,7 +44,7 @@
         "noParameterAssign": "error",
         "noUnusedTemplateLiteral": "error",
         "useExponentiationOperator": "error",
-        "useBlockStatements": "off"
+        "useBlockStatements": "error"
       },
       "suspicious": {
         "noExplicitAny": "error",

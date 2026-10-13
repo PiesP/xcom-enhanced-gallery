@@ -35,7 +35,9 @@ const DEFAULT_TRAVERSAL_OPTIONS: Required<MediaTraversalOptions> = {
 };
 
 export function isMediaElement(element: HTMLElement | null): element is MediaElement {
-  if (!element) return false;
+  if (!element) {
+    return false;
+  }
   return element.tagName === 'IMG' || element.tagName === 'VIDEO';
 }
 
@@ -48,7 +50,9 @@ export function findMediaElementInDOM(
     ...options,
   };
 
-  if (isMediaElement(target)) return target;
+  if (isMediaElement(target)) {
+    return target;
+  }
 
   // X can place a click overlay deeper than the generic ancestor limit. A
   // videoPlayer is an explicit boundary: select only its one owned video, never
@@ -58,23 +62,31 @@ export function findMediaElementInDOM(
       ? MAX_VIDEO_PLAYER_ANCESTOR_HOPS
       : Math.max(0, Math.min(maxAncestorHops, MAX_VIDEO_PLAYER_ANCESTOR_HOPS));
   const player = findNearestVideoPlayer(target, playerHopLimit);
-  if (player) return findUniqueVideoInPlayer(player, maxDescendantDepth);
+  if (player) {
+    return findUniqueVideoInPlayer(player, maxDescendantDepth);
+  }
 
   const descendant = findMediaDescendant(target, {
     includeRoot: false,
     maxDepth: maxDescendantDepth,
   });
-  if (descendant) return descendant;
+  if (descendant) {
+    return descendant;
+  }
 
   let branch: HTMLElement | null = target;
   for (let hops = 0; hops < maxAncestorHops && branch; hops++) {
     branch = branch.parentElement;
-    if (!branch) break;
+    if (!branch) {
+      break;
+    }
     const ancestorMedia = findMediaDescendant(branch, {
       includeRoot: true,
       maxDepth: maxDescendantDepth,
     });
-    if (ancestorMedia) return ancestorMedia;
+    if (ancestorMedia) {
+      return ancestorMedia;
+    }
   }
 
   return null;
@@ -83,7 +95,9 @@ export function findMediaElementInDOM(
 function findNearestVideoPlayer(target: HTMLElement, maxHops: number): HTMLElement | null {
   let branch: HTMLElement | null = target;
   for (let hops = 0; hops <= maxHops && branch; hops++) {
-    if (branch.matches(VIDEO_PLAYER_SELECTOR)) return branch;
+    if (branch.matches(VIDEO_PLAYER_SELECTOR)) {
+      return branch;
+    }
     branch = branch.parentElement;
   }
   return null;
@@ -96,16 +110,26 @@ function findUniqueVideoInPlayer(player: HTMLElement, maxDepth: number): HTMLVid
 
   while (head < queue.length) {
     const current = queue[head++];
-    if (!current) break;
+    if (!current) {
+      break;
+    }
     const { node, depth } = current;
-    if (node !== player && node.matches(VIDEO_PLAYER_SELECTOR)) continue;
+    if (node !== player && node.matches(VIDEO_PLAYER_SELECTOR)) {
+      continue;
+    }
     if (node instanceof HTMLVideoElement) {
-      if (found) return null;
+      if (found) {
+        return null;
+      }
       found = node;
     }
-    if (depth >= maxDepth) continue;
+    if (depth >= maxDepth) {
+      continue;
+    }
     for (const child of Array.from(node.children)) {
-      if (child instanceof HTMLElement) queue.push({ node: child, depth: depth + 1 });
+      if (child instanceof HTMLElement) {
+        queue.push({ node: child, depth: depth + 1 });
+      }
     }
   }
 
@@ -118,11 +142,16 @@ export function extractMediaUrlFromElement(element: MediaElement): string | null
 
 /** The source used for DOM output; posters and backgrounds cannot supply it. */
 export function selectMediaSourceUrl(element: MediaElement): string | null {
-  if (element instanceof HTMLImageElement)
+  if (element instanceof HTMLImageElement) {
     return element.currentSrc || (element.getAttribute('src') ? element.src : null);
+  }
 
-  if (element.currentSrc) return element.currentSrc;
-  if (element.getAttribute('src')) return element.src;
+  if (element.currentSrc) {
+    return element.currentSrc;
+  }
+  if (element.getAttribute('src')) {
+    return element.src;
+  }
 
   const sources = Array.from(element.querySelectorAll<HTMLSourceElement>(':scope > source'))
     .map((source) => (source.getAttribute('src') ? source.src : null))
@@ -158,7 +187,9 @@ function findMediaDescendant(
 
   while (head < queue.length) {
     const current = queue[head++];
-    if (!current) break;
+    if (!current) {
+      break;
+    }
 
     const { node, depth } = current;
 
@@ -166,7 +197,9 @@ function findMediaDescendant(
       return node;
     }
 
-    if (depth >= maxDepth) continue;
+    if (depth >= maxDepth) {
+      continue;
+    }
 
     for (const child of Array.from(node.children)) {
       if (child instanceof HTMLElement) {
@@ -181,7 +214,9 @@ function findMediaDescendant(
 function collectUniqueTruthy(values: Array<string | null | undefined>): string[] {
   const result: string[] = [];
   for (const value of values) {
-    if (value && !result.includes(value)) result.push(value);
+    if (value && !result.includes(value)) {
+      result.push(value);
+    }
   }
   return result;
 }

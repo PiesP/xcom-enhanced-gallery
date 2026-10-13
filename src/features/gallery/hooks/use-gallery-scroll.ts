@@ -99,7 +99,9 @@ export function useGalleryScroll({
    */
   const isToolbarScroll = (event: WheelEvent): boolean => {
     const target = event.target;
-    if (!(target instanceof HTMLElement)) return false;
+    if (!(target instanceof HTMLElement)) {
+      return false;
+    }
 
     // Check for toolbar-related data attributes
     return !!(
@@ -111,7 +113,9 @@ export function useGalleryScroll({
   };
 
   const handleWheel = (event: WheelEvent): void => {
-    if (!isGalleryOpen()) return;
+    if (!isGalleryOpen()) {
+      return;
+    }
 
     // Check if the event originated from a gallery-internal element.
     // Uses composedPath() for robustness with Shadow DOM and nested components.
@@ -119,17 +123,23 @@ export function useGalleryScroll({
     const isInternal =
       Array.isArray(path) &&
       path.some((el) => el instanceof HTMLElement && isGalleryInternalElement(el));
-    if (!isInternal) return;
+    if (!isInternal) {
+      return;
+    }
 
     // Ignore wheel events from toolbar and its panels
-    if (isToolbarScroll(event)) return;
+    if (isToolbarScroll(event)) {
+      return;
+    }
 
     markScrolling();
     scheduleScrollEnd();
   };
 
   const handleScroll = (): void => {
-    if (!isGalleryOpen() || shouldIgnoreScroll()) return;
+    if (!isGalleryOpen() || shouldIgnoreScroll()) {
+      return;
+    }
     markScrolling();
     scheduleScrollEnd();
   };

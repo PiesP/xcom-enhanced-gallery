@@ -51,13 +51,16 @@ type Manifest = {
 };
 
 function assertGate(gate: string | undefined): asserts gate is Gate {
-  if (gate !== 'duplication' && gate !== 'mutation') throw new Error(`Unknown deep gate: ${gate}`);
+  if (gate !== 'duplication' && gate !== 'mutation') {
+    throw new Error(`Unknown deep gate: ${gate}`);
+  }
 }
 
 export function runnerIdentity(env: RunnerEnv = process.env) {
   const { RUNNER_OS, RUNNER_ARCH, ImageOS, ImageVersion, DEEP_RUNNER_LABEL } = env;
-  if (![RUNNER_OS, RUNNER_ARCH, ImageOS, ImageVersion, DEEP_RUNNER_LABEL].every(Boolean))
+  if (![RUNNER_OS, RUNNER_ARCH, ImageOS, ImageVersion, DEEP_RUNNER_LABEL].every(Boolean)) {
     return null;
+  }
   // Record ImageVersion in the marker while allowing pinned source-based checks
   // to reuse success across weekly runner image refreshes.
   return { os: RUNNER_OS!, arch: RUNNER_ARCH!, image: ImageOS!, label: DEEP_RUNNER_LABEL! };
@@ -66,10 +69,14 @@ export function runnerIdentity(env: RunnerEnv = process.env) {
 export function fingerprint(gate: string, cwd = process.cwd(), env: RunnerEnv = process.env) {
   assertGate(gate);
   const runner = runnerIdentity(env);
-  if (!runner) return null; // Unknown runner image must run the gate.
+  if (!runner) {
+    return null;
+  } // Unknown runner image must run the gate.
 
   const manifest = JSON.parse(readFileSync(`${cwd}/package.json`, 'utf8')) as Manifest;
-  if (!manifest.volta?.node || !manifest.volta?.pnpm || !manifest.packageManager) return null;
+  if (!manifest.volta?.node || !manifest.volta?.pnpm || !manifest.packageManager) {
+    return null;
+  }
 
   const hash = createHash('sha256');
   hash.update(
@@ -91,9 +98,13 @@ export function fingerprint(gate: string, cwd = process.cwd(), env: RunnerEnv = 
     .toString('utf8')
     .split('\0');
   for (const entry of entries) {
-    if (!entry) continue;
+    if (!entry) {
+      continue;
+    }
     const match = /^(\d{6}) ([0-9a-f]{40,64}) 0\t(.+)$/.exec(entry);
-    if (!match) throw new Error(`Invalid or unmerged Git index entry: ${entry}`);
+    if (!match) {
+      throw new Error(`Invalid or unmerged Git index entry: ${entry}`);
+    }
     const mode = match[1]!;
     const object = match[2]!;
     const path = match[3]!;
@@ -120,7 +131,9 @@ function readMarker(
   expectedFingerprint: string | null | undefined
 ): Marker | null {
   assertGate(gate);
-  if (!expectedFingerprint || !/^[0-9a-f]{64}$/.test(expectedFingerprint)) return null;
+  if (!expectedFingerprint || !/^[0-9a-f]{64}$/.test(expectedFingerprint)) {
+    return null;
+  }
   try {
     const marker = JSON.parse(readFileSync(markerPath, 'utf8')) as Record<string, unknown>;
     return marker.schema === SCHEMA &&
@@ -175,14 +188,23 @@ export function writeMarker(
   env: RunnerEnv = process.env
 ) {
   assertGate(gate);
-  if (!expectedFingerprint || !/^[0-9a-f]{64}$/.test(expectedFingerprint))
+  if (!expectedFingerprint || !/^[0-9a-f]{64}$/.test(expectedFingerprint)) {
     throw new Error('Invalid fingerprint');
-  if (!env.ImageVersion) throw new Error('Runner image version is required');
+  }
+  if (!env.ImageVersion) {
+    throw new Error('Runner image version is required');
+  }
   const runId = Number(env.GITHUB_RUN_ID);
   const runAttempt = Number(env.GITHUB_RUN_ATTEMPT);
-  if (!Number.isSafeInteger(runId) || runId <= 0) throw new Error('Invalid run ID');
-  if (!Number.isSafeInteger(runAttempt) || runAttempt <= 0) throw new Error('Invalid run attempt');
-  if (!env.GITHUB_SHA || !/^[0-9a-f]{40}$/.test(env.GITHUB_SHA)) throw new Error('Invalid run SHA');
+  if (!Number.isSafeInteger(runId) || runId <= 0) {
+    throw new Error('Invalid run ID');
+  }
+  if (!Number.isSafeInteger(runAttempt) || runAttempt <= 0) {
+    throw new Error('Invalid run attempt');
+  }
+  if (!env.GITHUB_SHA || !/^[0-9a-f]{40}$/.test(env.GITHUB_SHA)) {
+    throw new Error('Invalid run SHA');
+  }
   mkdirSync(dirname(markerPath), { recursive: true });
   writeFileSync(
     markerPath,
@@ -213,13 +235,20 @@ const ANALYSIS_STEP_NAMES: Record<Gate, string> = {
 };
 
 function analysisSeconds(job: ApiJob, gate: Gate): number | undefined {
-  if (!Array.isArray(job.steps)) return undefined;
-  if (job.steps.some((step) => !step || typeof step !== 'object' || Array.isArray(step)))
+  if (!Array.isArray(job.steps)) {
     return undefined;
+  }
+  if (job.steps.some((step) => !step || typeof step !== 'object' || Array.isArray(step))) {
+    return undefined;
+  }
   const selected = job.steps.filter((step) => step?.name === ANALYSIS_STEP_NAMES[gate]);
-  if (selected.length !== 1) return undefined;
+  if (selected.length !== 1) {
+    return undefined;
+  }
   const step = selected[0];
-  if (!step) return undefined;
+  if (!step) {
+    return undefined;
+  }
   if (
     step.status !== 'completed' ||
     step.conclusion !== 'success' ||
@@ -227,8 +256,9 @@ function analysisSeconds(job: ApiJob, gate: Gate): number | undefined {
     typeof step.completed_at !== 'string' ||
     typeof job.started_at !== 'string' ||
     typeof job.completed_at !== 'string'
-  )
+  ) {
     return undefined;
+  }
   const start = Date.parse(step.started_at);
   const end = Date.parse(step.completed_at);
   const jobStart = Date.parse(job.started_at);
@@ -239,14 +269,17 @@ function analysisSeconds(job: ApiJob, gate: Gate): number | undefined {
     end > jobEnd ||
     end < start ||
     end - start >= 24 * 60 * 60_000
-  )
+  ) {
     return undefined;
+  }
   return Math.floor((end - start) / 1000);
 }
 
 function date(value: string): number {
   const timestamp = Date.parse(value);
-  if (!Number.isFinite(timestamp)) throw new Error('Invalid API timestamp');
+  if (!Number.isFinite(timestamp)) {
+    throw new Error('Invalid API timestamp');
+  }
   return timestamp;
 }
 
@@ -292,16 +325,21 @@ export async function evaluateReuse(
     env.GITHUB_REF !== `refs/heads/${defaultBranch}` ||
     !env.GH_TOKEN ||
     runId === marker.runId
-  )
+  ) {
     return { reuse: false, reason: 'provenance-unavailable' };
+  }
   // The runs API exposes the latest attempt, hiding this run's earlier failures.
-  if (runAttempt > 1) return { reuse: false, reason: 'rerun-fresh' };
+  if (runAttempt > 1) {
+    return { reuse: false, reason: 'rerun-fresh' };
+  }
 
   const deadline = Date.now() + API_BUDGET_MS;
   const base = `${env.GITHUB_API_URL || 'https://api.github.com'}/repos/${repository}`;
   async function get<T>(path: string): Promise<T> {
     const remaining = deadline - Date.now();
-    if (remaining <= 0) throw new Error('API deadline exceeded');
+    if (remaining <= 0) {
+      throw new Error('API deadline exceeded');
+    }
     const response = await apiFetch(`${base}${path}`, {
       headers: {
         Accept: 'application/vnd.github+json',
@@ -310,7 +348,9 @@ export async function evaluateReuse(
       },
       signal: AbortSignal.timeout(remaining),
     });
-    if (!response.ok) throw new Error('API request failed');
+    if (!response.ok) {
+      throw new Error('API request failed');
+    }
     return (await response.json()) as T;
   }
   async function allPages<T>(path: string, key: string): Promise<T[]> {
@@ -325,17 +365,26 @@ export async function evaluateReuse(
         !Number.isSafeInteger(body.total_count) ||
         (body.total_count as number) < 0 ||
         !Array.isArray(body[key])
-      )
+      ) {
         throw new Error('Incomplete API page');
-      if (total === undefined) total = body.total_count as number;
-      if (body.total_count !== total || total > MAX_PAGES * PAGE_SIZE)
+      }
+      if (total === undefined) {
+        total = body.total_count as number;
+      }
+      if (body.total_count !== total || total > MAX_PAGES * PAGE_SIZE) {
         throw new Error('History exceeds bound or changed during pagination');
+      }
       const items = body[key] as T[];
-      if (items.length > PAGE_SIZE || (items.length === 0 && values.length < total))
+      if (items.length > PAGE_SIZE || (items.length === 0 && values.length < total)) {
         throw new Error('Incomplete API page');
+      }
       values.push(...items);
-      if (values.length === total) return values;
-      if (items.length !== PAGE_SIZE) throw new Error('Incomplete API page');
+      if (values.length === total) {
+        return values;
+      }
+      if (items.length !== PAGE_SIZE) {
+        throw new Error('Incomplete API page');
+      }
     }
     throw new Error('History pagination limit');
   }
@@ -345,23 +394,30 @@ export async function evaluateReuse(
       `/actions/workflows/deep-checks.yaml/runs?branch=${encodeURIComponent(defaultBranch)}`,
       'workflow_runs'
     );
-    if (new Set(runs.map((run) => run.id)).size !== runs.length)
+    if (new Set(runs.map((run) => run.id)).size !== runs.length) {
       throw new Error('Duplicate workflow run');
+    }
     const origin = runs.find((run) => run.id === marker.runId);
     if (
       !origin ||
       origin.run_attempt !== marker.runAttempt ||
       origin.head_sha !== marker.sha ||
       origin.status !== 'completed'
-    )
+    ) {
       return { reuse: false, reason: 'origin-invalid' };
+    }
     const analyzedAt = date(marker.analyzedAt);
     const originCreatedAt = date(origin.created_at);
-    if (originCreatedAt > analyzedAt + 120_000 || date(origin.updated_at) < analyzedAt - 120_000)
+    if (originCreatedAt > analyzedAt + 120_000 || date(origin.updated_at) < analyzedAt - 120_000) {
       return { reuse: false, reason: 'origin-invalid' };
+    }
     const candidates = runs.filter((run) => {
-      if (run.id === runId && run.run_attempt === runAttempt) return false;
-      if (run.id === marker.runId && run.run_attempt === marker.runAttempt) return true;
+      if (run.id === runId && run.run_attempt === runAttempt) {
+        return false;
+      }
+      if (run.id === marker.runId && run.run_attempt === marker.runAttempt) {
+        return true;
+      }
       return date(run.created_at) >= originCreatedAt || date(run.updated_at) >= originCreatedAt;
     });
     let savedSeconds: number | undefined;
@@ -372,30 +428,36 @@ export async function evaluateReuse(
         run.run_attempt <= 0 ||
         !run.head_sha ||
         run.status !== 'completed'
-      )
+      ) {
         return { reuse: false, reason: 'newer-gate-incomplete' };
+      }
       const jobs = await allPages<ApiJob>(
         `/actions/runs/${run.id}/attempts/${run.run_attempt}/jobs`,
         'jobs'
       );
       const selected = jobs.filter((job) => job.name === JOB_NAMES[gate]);
-      if (selected.length !== 1) return { reuse: false, reason: 'gate-history-incomplete' };
+      if (selected.length !== 1) {
+        return { reuse: false, reason: 'gate-history-incomplete' };
+      }
       const job = selected[0]!;
-      if (run.id !== marker.runId && job.status === 'completed' && job.conclusion === 'skipped')
+      if (run.id !== marker.runId && job.status === 'completed' && job.conclusion === 'skipped') {
         continue;
-      if (job.status !== 'completed' || job.conclusion !== 'success')
+      }
+      if (job.status !== 'completed' || job.conclusion !== 'success') {
         return {
           reuse: false,
           reason: run.id === marker.runId ? 'origin-invalid' : 'newer-gate-invalid',
         };
+      }
       if (run.id === marker.runId) {
         if (
           !job.started_at ||
           !job.completed_at ||
           date(job.started_at) > analyzedAt + 120_000 ||
           date(job.completed_at) > analyzedAt + 120_000
-        )
+        ) {
           return { reuse: false, reason: 'origin-invalid' };
+        }
         savedSeconds = analysisSeconds(job, gate);
       }
     }
@@ -408,7 +470,9 @@ export async function evaluateReuse(
 }
 
 function output(line: string) {
-  if (!process.env.GITHUB_OUTPUT) throw new Error('GITHUB_OUTPUT is required');
+  if (!process.env.GITHUB_OUTPUT) {
+    throw new Error('GITHUB_OUTPUT is required');
+  }
   appendFileSync(process.env.GITHUB_OUTPUT, `${line}\n`);
 }
 
@@ -423,7 +487,9 @@ if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).
     const decision = await evaluateReuse(markerPath!, gate, value);
     output(`reuse=${decision.reuse}`);
     output(`reason=${decision.reason}`);
-    if (decision.savedSeconds !== undefined) output(`saved_seconds=${decision.savedSeconds}`);
+    if (decision.savedSeconds !== undefined) {
+      output(`saved_seconds=${decision.savedSeconds}`);
+    }
     const marker = readMarker(markerPath!, gate, value);
     if (marker) {
       output(`origin_run_id=${marker.runId}`);

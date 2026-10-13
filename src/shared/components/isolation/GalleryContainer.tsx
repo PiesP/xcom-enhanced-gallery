@@ -60,7 +60,9 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
   // Safari does not inherit color-scheme from CSS inside iframes.
   // Read from data-theme attribute and apply via style.setProperty.
   createEffect(() => {
-    if (!containerEl) return;
+    if (!containerEl) {
+      return;
+    }
 
     const applyColorScheme = (el: HTMLDivElement) => {
       const theme = el.getAttribute('data-theme');
@@ -77,7 +79,9 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
     applyColorScheme(containerEl);
 
     const observer = new MutationObserver(() => {
-      if (containerEl) applyColorScheme(containerEl);
+      if (containerEl) {
+        applyColorScheme(containerEl);
+      }
     });
     observer.observe(containerEl, { attributes: true, attributeFilter: ['data-theme'] });
 
@@ -91,7 +95,9 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
   // from last → first and first → last focusable element.
   createEffect(() => {
     const container = containerEl;
-    if (!container) return;
+    if (!container) {
+      return;
+    }
 
     const focusableSelectors = [
       'a[href]',
@@ -104,7 +110,9 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
     ].join(', ');
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Tab') return;
+      if (event.key !== 'Tab') {
+        return;
+      }
 
       const focusableElements = Array.from(
         container.querySelectorAll<HTMLElement>(focusableSelectors)
@@ -119,12 +127,16 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
         );
       });
 
-      if (focusableElements.length === 0) return;
+      if (focusableElements.length === 0) {
+        return;
+      }
 
       const firstElement = focusableElements[0];
       const lastElement = focusableElements[focusableElements.length - 1];
 
-      if (!firstElement || !lastElement) return;
+      if (!firstElement || !lastElement) {
+        return;
+      }
 
       if (event.shiftKey) {
         if (document.activeElement === containerEl || document.activeElement === firstElement) {
@@ -148,7 +160,9 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
   let hostState: GalleryHostStateHandle | null = null;
 
   createEffect(() => {
-    if (!containerEl || hostState) return;
+    if (!containerEl || hostState) {
+      return;
+    }
     hostState = activateGalleryHostState(containerEl);
   });
 

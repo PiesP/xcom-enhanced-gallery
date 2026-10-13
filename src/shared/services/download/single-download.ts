@@ -45,7 +45,9 @@ export async function raceWithAbort<T>(
   signal: AbortSignal,
   onAborted: () => T
 ): Promise<T> {
-  if (signal.aborted) return onAborted();
+  if (signal.aborted) {
+    return onAborted();
+  }
 
   let abortHandler: (() => void) | null = null;
 
@@ -68,7 +70,9 @@ export async function downloadSingleFile(
   options: DownloadOptions = {}
 ): Promise<SingleDownloadResult> {
   const abortSignal = options.signal;
-  if (abortSignal?.aborted) return createAbortResult();
+  if (abortSignal?.aborted) {
+    return createAbortResult();
+  }
 
   const filename = generateMediaFilename(media, { nowMs: Date.now() });
 
@@ -148,7 +152,9 @@ async function downloadBlobWithAdapter(
 ): Promise<SingleDownloadResult> {
   const adapter = getDownloadAdapter();
 
-  if (abortSignal?.aborted) return createAbortResult();
+  if (abortSignal?.aborted) {
+    return createAbortResult();
+  }
 
   try {
     const owner = (options.liveBudget ?? downloadLiveByteBudget).reserve(blob.size);
@@ -158,7 +164,9 @@ async function downloadBlobWithAdapter(
         () => ({ success: true, filename }) satisfies SingleDownloadResult,
         (error: unknown) => createErrorDownloadResult(error)
       );
-    if (!abortSignal) return await download;
+    if (!abortSignal) {
+      return await download;
+    }
     return await raceWithAbort(download, abortSignal, createAbortResult);
   } catch (error) {
     return createErrorDownloadResult(error);

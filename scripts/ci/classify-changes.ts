@@ -24,7 +24,9 @@ export function classifyChanges(
 ): Decision {
   const selected = new Set<Output>();
   function select(...names: Output[]): void {
-    for (const name of names) selected.add(name);
+    for (const name of names) {
+      selected.add(name);
+    }
   }
   const selectAll = () => select(...outputs);
   const selectCiAll = () => select('quality', 'unit', 'e2e', 'build', 'duplication');
@@ -35,7 +37,9 @@ export function classifyChanges(
 
     // Semgrep's secrets ruleset covers every tracked text change. Binary icons
     // are the sole exception because it cannot meaningfully inspect them.
-    if (!(path.startsWith('assets/icons/') && path.endsWith('.png'))) select('semgrep');
+    if (!(path.startsWith('assets/icons/') && path.endsWith('.png'))) {
+      select('semgrep');
+    }
     // Match the root Biome default-inclusion policy, including executable
     // dot-directory helpers and newly added configs. Captured host fragments,
     // generated lock/baseline data and provider source retain their owners.
@@ -227,7 +231,9 @@ export function classifyChanges(
     try {
       const decode = new TextDecoder('utf-8', { fatal: true });
       const paths = decode.decode(bytes).slice(0, -1).split('\0');
-      for (const path of paths) classifyPath(path);
+      for (const path of paths) {
+        classifyPath(path);
+      }
       return decision(`classified-${paths.length}-files`);
     } catch {
       selectAll();
@@ -236,7 +242,9 @@ export function classifyChanges(
   }
 
   if (args[0] === '--files') {
-    for (const path of args.slice(1)) classifyPath(path);
+    for (const path of args.slice(1)) {
+      classifyPath(path);
+    }
     return decision('explicit-file-list');
   } else {
     const event = env.GITHUB_EVENT_NAME ?? 'unknown';
@@ -254,8 +262,11 @@ export function classifyChanges(
 
 function emit({ selected, reason }: Decision, env: NodeJS.ProcessEnv): void {
   const body = `${outputs.map((name) => `${name}=${selected.has(name)}`).join('\n')}\nreason=${reason}\n`;
-  if (env.GITHUB_OUTPUT) appendFileSync(env.GITHUB_OUTPUT, body);
-  else writeSync(1, body);
+  if (env.GITHUB_OUTPUT) {
+    appendFileSync(env.GITHUB_OUTPUT, body);
+  } else {
+    writeSync(1, body);
+  }
 }
 
 // Compare resolved paths so invoking a symlink to this CLI still runs it.

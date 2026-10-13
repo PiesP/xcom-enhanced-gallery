@@ -13,7 +13,9 @@ const other = 'b'.repeat(40);
 const repository = 'PiesP/xcom-enhanced-gallery';
 const temporaryFixtures: string[] = [];
 after(() => {
-  for (const path of temporaryFixtures) rmSync(path, { recursive: true, force: true });
+  for (const path of temporaryFixtures) {
+    rmSync(path, { recursive: true, force: true });
+  }
 });
 
 type Rule = {
@@ -33,7 +35,9 @@ function fixture(rules: Rule[]) {
   const summary = join(root, 'summary');
   const envFile = join(root, 'env');
   writeFileSync(plan, JSON.stringify(rules));
-  for (const path of [log, output, summary, envFile]) writeFileSync(path, '');
+  for (const path of [log, output, summary, envFile]) {
+    writeFileSync(path, '');
+  }
   const fake = `#!${process.execPath}
 const fs = require('node:fs');
 const args = process.argv.slice(2);

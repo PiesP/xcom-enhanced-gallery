@@ -24,24 +24,34 @@ export function computePreloadIndices(
   count: number
 ): number[] {
   const safeTotal = Number.isFinite(total) && total > 0 ? Math.floor(total) : 0;
-  if (safeTotal === 0) return [];
+  if (safeTotal === 0) {
+    return [];
+  }
 
   const safeIndex = clampIndex(Math.floor(currentIndex), safeTotal);
   const safeCount = clamp(Math.floor(count), 0, MAX_PRELOAD_PER_DIRECTION);
-  if (safeCount === 0) return [];
+  if (safeCount === 0) {
+    return [];
+  }
 
   const indices: number[] = [];
 
   for (let i = 1; i <= safeCount; i += 1) {
     const idx = safeIndex - i;
-    if (idx >= 0) indices.push(idx);
-    else break;
+    if (idx >= 0) {
+      indices.push(idx);
+    } else {
+      break;
+    }
   }
 
   for (let i = 1; i <= safeCount; i += 1) {
     const idx = safeIndex + i;
-    if (idx < safeTotal) indices.push(idx);
-    else break;
+    if (idx < safeTotal) {
+      indices.push(idx);
+    } else {
+      break;
+    }
   }
 
   return indices;

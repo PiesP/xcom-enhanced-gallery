@@ -119,9 +119,13 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   // Defense-in-depth: validate the rendered URL
   const isDisplaySrcValid = createMemo(() => isUrlAllowed(displaySrc(), MEDIA_URL_POLICY));
   const posterSrc = createMemo(() => {
-    if (!isVideo()) return undefined;
+    if (!isVideo()) {
+      return undefined;
+    }
     const candidate = local.media.thumbnailUrl;
-    if (!candidate || !isUrlAllowed(candidate, MEDIA_URL_POLICY)) return undefined;
+    if (!candidate || !isUrlAllowed(candidate, MEDIA_URL_POLICY)) {
+      return undefined;
+    }
     try {
       const parsed = new URL(candidate);
       return parsed.protocol === 'https:' &&
@@ -146,7 +150,9 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       (media) => {
         // The parent accessor can update for index/focus changes while returning
         // the same object; `on` observes that update even when its value is equal.
-        if (media === resetMedia) return;
+        if (media === resetMedia) {
+          return;
+        }
         resetMedia = media;
         setIsLoaded(false);
         setIsError(false);
@@ -171,11 +177,15 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   );
 
   const admitVideo = (): void => {
-    if (isVideo() && !disposed) setIsVideoAdmitted(true);
+    if (isVideo() && !disposed) {
+      setIsVideoAdmitted(true);
+    }
   };
 
   createEffect(() => {
-    if (isVideo() && shouldAdmitVideoImmediately()) admitVideo();
+    if (isVideo() && shouldAdmitVideoImmediately()) {
+      admitVideo();
+    }
   });
 
   onCleanup(() => {
@@ -199,7 +209,9 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       videoRef,
       isVideo,
       onUserVolumeChange: (video) => {
-        if (videoRef() !== video || disposed) return;
+        if (videoRef() !== video || disposed) {
+          return;
+        }
         controlGeneration++;
         visibility.noteUserVolumeChange(video);
       },
@@ -215,26 +227,35 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     admit: admitVideo,
     setMuted: applyMutedProgrammatically,
     onVisibilityChange: (visible) => {
-      if (!visible && wantsPlayback) needsResume = true;
-      if (visible) resumeWhenReady();
+      if (!visible && wantsPlayback) {
+        needsResume = true;
+      }
+      if (visible) {
+        resumeWhenReady();
+      }
     },
   });
 
   createEffect(() => {
     const video = videoRef();
     const media = local.media;
-    if (!video || !isVideo()) return;
+    if (!video || !isVideo()) {
+      return;
+    }
     let latestPlay: { token: object; source: string; generation: number } | null = null;
     onCleanup(
       subscribeVideoPlaybackIntent(video, (event) => {
-        if (disposed || videoRef() !== video || local.media !== media) return;
+        if (disposed || videoRef() !== video || local.media !== media) {
+          return;
+        }
         if (event.type === 'play-rejected') {
           if (
             latestPlay?.token !== event.token ||
             latestPlay.source !== playbackSrc() ||
             latestPlay.generation !== intentGeneration
-          )
+          ) {
             return;
+          }
           latestPlay = null;
           wantsPlayback = false;
           needsResume = false;
@@ -245,10 +266,11 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
         recoveringSource = null;
         controlInteractionAfterError = false;
         intentGeneration++;
-        if (event.type === 'command')
+        if (event.type === 'command') {
           latestPlay = event.playing
             ? { token: event.token, source: playbackSrc(), generation: intentGeneration }
             : null;
+        }
       })
     );
   });
@@ -257,11 +279,15 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     const video = videoRef();
     if (local.isActive && video) {
       const alreadySignaled = untrack(() => gallerySignals.currentVideoElement === video);
-      if (!alreadySignaled) setCurrentVideoElement(video);
+      if (!alreadySignaled) {
+        setCurrentVideoElement(video);
+      }
       return;
     }
     const shouldClear = untrack(() => gallerySignals.currentVideoElement === video);
-    if (shouldClear) setCurrentVideoElement(null);
+    if (shouldClear) {
+      setCurrentVideoElement(null);
+    }
   });
 
   // Apply fetchpriority hint to media elements after mount
@@ -323,8 +349,9 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       !visibility.isVisible() ||
       !isCurrentVideoEvent(video) ||
       video.readyState < 1
-    )
+    ) {
       return;
+    }
     needsResume = false;
     const media = local.media;
     const source = playbackSrc();
@@ -337,8 +364,9 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
           playbackSrc() === source &&
           intentGeneration === generation &&
           visibility.isVisible()
-        )
+        ) {
           wantsPlayback = false;
+        }
       });
     } catch {
       if (
@@ -346,8 +374,9 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
         playbackSrc() === source &&
         intentGeneration === generation &&
         visibility.isVisible()
-      )
+      ) {
         wantsPlayback = false;
+      }
     }
   };
 
@@ -360,21 +389,30 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       videoRef() === video &&
       video.getAttribute('src') === source &&
       (!video.currentSrc || video.currentSrc === video.src)
-    )
+    ) {
       armedSource = source;
+    }
   };
 
   const handleVideoMetadata: JSX.EventHandlerUnion<HTMLVideoElement, Event> = (event) => {
     const video = event.currentTarget;
-    if (!isCurrentVideoEvent(video) || video.readyState < 1) return;
+    if (!isCurrentVideoEvent(video) || video.readyState < 1) {
+      return;
+    }
     handleMediaLoad();
-    if (video.readyState >= 2) setVideoHasFirstFrame(true);
+    if (video.readyState >= 2) {
+      setVideoHasFirstFrame(true);
+    }
     const resume = pendingResume;
-    if (!resume || resume.media !== local.media || resume.source !== playbackSrc()) return;
+    if (!resume || resume.media !== local.media || resume.source !== playbackSrc()) {
+      return;
+    }
     pendingResume = null;
     try {
       if (controlGeneration === resume.controlGeneration) {
-        if (visibility.isVisible()) applyMutedProgrammatically(video, resume.muted);
+        if (visibility.isVisible()) {
+          applyMutedProgrammatically(video, resume.muted);
+        }
         applyVolumeProgrammatically(video, resume.volume);
       }
       if (resume.time > 0) {
@@ -385,7 +423,9 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     } catch {
       // A source can reject a seek; the controls remain usable at the start.
     }
-    if (resume.playing && wantsPlayback) needsResume = true;
+    if (resume.playing && wantsPlayback) {
+      needsResume = true;
+    }
     resumeWhenReady();
   };
 
@@ -398,7 +438,9 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
 
   const handleVideoError: JSX.EventHandlerUnion<HTMLVideoElement, Event> = (event) => {
     const video = event.currentTarget;
-    if (!isCurrentVideoEvent(video) || !isVideoAdmitted()) return;
+    if (!isCurrentVideoEvent(video) || !isVideoAdmitted()) {
+      return;
+    }
     const source = playbackSrc();
     const code = video.error?.code;
     const next =
@@ -442,20 +484,27 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       const video = videoRef();
       if (video && isCurrentVideoEvent(video) && video.readyState >= 1 && !isLoaded()) {
         handleMediaLoad();
-        if (video.readyState >= 2) setVideoHasFirstFrame(true);
+        if (video.readyState >= 2) {
+          setVideoHasFirstFrame(true);
+        }
       }
     } else {
       const image = imageRef();
       if (image?.complete && !isLoaded()) {
-        if (image.naturalWidth > 0) handleMediaLoad();
-        else handleMediaError();
+        if (image.naturalWidth > 0) {
+          handleMediaLoad();
+        } else {
+          handleMediaError();
+        }
       }
     }
   });
 
   const resolvedFitMode = createMemo<ImageFitMode>(() => {
     const value = local.fitMode;
-    if (typeof value === 'function') return value();
+    if (typeof value === 'function') {
+      return value();
+    }
     return value ?? 'fitWidth';
   });
 
@@ -473,7 +522,9 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       hasIntrinsicSize: hasIntrinsicSize(),
       fitMode: resolvedFitMode(),
     });
-    if (!value) return {};
+    if (!value) {
+      return {};
+    }
     return { '--xeg-cis-override': value };
   });
 
@@ -564,16 +615,22 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
             }}
             onPointerDown={() => {
               admitVideo();
-              if (recoveringSource) controlInteractionAfterError = true;
+              if (recoveringSource) {
+                controlInteractionAfterError = true;
+              }
             }}
             onKeyDown={() => {
-              if (recoveringSource) controlInteractionAfterError = true;
+              if (recoveringSource) {
+                controlInteractionAfterError = true;
+              }
             }}
             onLoadStart={handleVideoLoadStart}
             onLoadedMetadata={handleVideoMetadata}
             onLoadedData={handleVideoData}
             onPlay={(event) => {
-              if (!isCurrentVideoEvent(event.currentTarget)) return;
+              if (!isCurrentVideoEvent(event.currentTarget)) {
+                return;
+              }
               wantsPlayback = true;
               intentGeneration++;
               recoveringSource = null;
@@ -590,9 +647,15 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
                 videoRef() === video &&
                 video.isConnected &&
                 video.getAttribute('src') === recoveringSource;
-              if ((!isCurrentVideoEvent(video) && !controlledRecovery) || video.error) return;
-              if (!visibility.isVisible() || visibility.isAutoPaused()) return;
-              if (recoveringSource && !controlInteractionAfterError) return;
+              if ((!isCurrentVideoEvent(video) && !controlledRecovery) || video.error) {
+                return;
+              }
+              if (!visibility.isVisible() || visibility.isAutoPaused()) {
+                return;
+              }
+              if (recoveringSource && !controlInteractionAfterError) {
+                return;
+              }
               wantsPlayback = false;
               needsResume = false;
               recoveringSource = null;

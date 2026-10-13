@@ -26,15 +26,21 @@ function resolveDimensions(media: TwitterMedia, mediaUrl: string): MediaDimensio
   const w = normalizeDimension(media.original_info?.width) ?? fromUrl?.width;
   const h = normalizeDimension(media.original_info?.height) ?? fromUrl?.height;
   const result: { width?: number; height?: number } = {};
-  if (w) result.width = w;
-  if (h) result.height = h;
+  if (w) {
+    result.width = w;
+  }
+  if (h) {
+    result.height = h;
+  }
   return result;
 }
 
 function removeUrlTokensFromText(text: string, urls: readonly string[]): string {
   let result = text;
   for (const url of urls) {
-    if (!url) continue;
+    if (!url) {
+      continue;
+    }
     const token = escapeRegExp(url);
     result = result.replace(new RegExp(`(^|\\s+)${token}(?=\\s+|$)`, 'g'), (_, ws: string) => ws);
   }
@@ -54,8 +60,12 @@ function resolveAspectRatio(
     : undefined;
   const rw = normalizeDimension(ratio?.[0]);
   const rh = normalizeDimension(ratio?.[1]);
-  if (rw && rh) return [rw, rh];
-  if (dims.width && dims.height) return [dims.width, dims.height];
+  if (rw && rh) {
+    return [rw, rh];
+  }
+  if (dims.width && dims.height) {
+    return [dims.width, dims.height];
+  }
   return undefined;
 }
 
@@ -68,15 +78,17 @@ function getVideoVariants(media: TwitterMedia): readonly VideoSourceVariant[] {
       variant?.content_type !== 'video/mp4' ||
       typeof variant.url !== 'string' ||
       !isValidMediaUrl(variant.url)
-    )
+    ) {
       continue;
+    }
     const parsed = new URL(variant.url);
     if (
       parsed.hostname !== 'video.twimg.com' ||
       !parsed.pathname.toLowerCase().endsWith('.mp4') ||
       seen.has(variant.url)
-    )
+    ) {
       continue;
+    }
     seen.add(variant.url);
     const bitrate =
       typeof variant.bitrate === 'number' &&
@@ -113,23 +125,33 @@ function getUnsupportedHlsUrls(media: TwitterMedia): readonly string[] {
         ) ||
         typeof variant.url !== 'string' ||
         !isValidMediaUrl(variant.url)
-      )
+      ) {
         continue;
+      }
       const parsed = new URL(variant.url);
-      if (parsed.hostname === 'video.twimg.com' && parsed.pathname.toLowerCase().endsWith('.m3u8'))
+      if (
+        parsed.hostname === 'video.twimg.com' &&
+        parsed.pathname.toLowerCase().endsWith('.m3u8')
+      ) {
         accepted.add(variant.url);
-      if (accepted.size === MAX_VIDEO_VARIANT_URLS) break;
+      }
+      if (accepted.size === MAX_VIDEO_VARIANT_URLS) {
+        break;
+      }
     }
   }
   return Object.freeze([...accepted]);
 }
 
 export function getHighQualityMediaUrl(media: TwitterMedia): string | null {
-  if (media.type === 'photo')
+  if (media.type === 'photo') {
     return media.media_url_https
       ? (normalizeOriginalImageUrl(media.media_url_https) ?? media.media_url_https)
       : (media.media_url_https ?? null);
-  if (media.type === 'video' || media.type === 'animated_gif') return getVideoHighQualityUrl(media);
+  }
+  if (media.type === 'video' || media.type === 'animated_gif') {
+    return getVideoHighQualityUrl(media);
+  }
   return null;
 }
 
@@ -185,16 +207,24 @@ function sortByInlineOrder(
       }
     }
   }
-  if (orderMap.size === 0) return mediaList;
+  if (orderMap.size === 0) {
+    return mediaList;
+  }
 
   return mediaList
     .map((media, i) => ({ media, originalIndex: i }))
     .sort((a, b) => {
       const li = orderMap.get(a.media.id_str);
       const ri = orderMap.get(b.media.id_str);
-      if (li !== undefined && ri !== undefined) return li - ri;
-      if (li !== undefined) return -1;
-      if (ri !== undefined) return 1;
+      if (li !== undefined && ri !== undefined) {
+        return li - ri;
+      }
+      if (li !== undefined) {
+        return -1;
+      }
+      if (ri !== undefined) {
+        return 1;
+      }
       return a.originalIndex - b.originalIndex;
     })
     .map((e) => e.media);
@@ -209,7 +239,9 @@ export function extractMediaFromTweet(
   // Provenance labels never authorize traversing another quote descendant.
   const target = tweetResult;
 
-  if (!target.extended_entities?.media) return [];
+  if (!target.extended_entities?.media) {
+    return [];
+  }
 
   const screenName = tweetUser.screen_name ?? '';
   const tweetId = target.rest_id ?? target.id_str ?? '';
@@ -231,8 +263,9 @@ export function extractMediaFromTweet(
       !media.id_str ||
       !media.media_url_https ||
       !isValidMediaUrl(media.media_url_https)
-    )
+    ) {
       continue;
+    }
 
     try {
       const mediaUrl = getHighQualityMediaUrl(media);
@@ -306,7 +339,9 @@ export function normalizeLegacyTweet(tweet: TwitterTweet): TwitterTweet {
 }
 
 export function normalizeLegacyUser(user: TwitterUser): TwitterUser {
-  if (!user.legacy) return user;
+  if (!user.legacy) {
+    return user;
+  }
 
   const result = { ...(user as unknown as Record<string, unknown>) };
   if (!result.screen_name && user.legacy.screen_name) {

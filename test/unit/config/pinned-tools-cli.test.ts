@@ -33,8 +33,9 @@ function fixture() {
   mkdirSync(scripts, { recursive: true });
   mkdirSync(bin);
   writeFileSync(join(root, 'package.json'), '{"type":"module"}\n');
-  for (const name of ['pinned-tools.ts', 'check-pinned-tools.ts', 'install-nose.ts'])
+  for (const name of ['pinned-tools.ts', 'check-pinned-tools.ts', 'install-nose.ts']) {
     copyFileSync(join(source, name), join(scripts, name));
+  }
   const pins = JSON.parse(readFileSync(join(source, 'pinned-tools.json'), 'utf8')) as Pins;
   pins.nose.installerSha256 = createHash('sha256').update(installerBody).digest('hex');
   writeFileSync(join(scripts, 'pinned-tools.json'), JSON.stringify(pins));
@@ -86,7 +87,9 @@ if (command === 'gh') {
 `
   );
   chmodSync(stub, 0o755);
-  for (const name of ['gh', 'curl', 'sh']) copyFileSync(stub, join(bin, name));
+  for (const name of ['gh', 'curl', 'sh']) {
+    copyFileSync(stub, join(bin, name));
+  }
   const env = {
     ...process.env,
     PATH: `${bin}:${process.env.PATH ?? ''}`,
@@ -124,7 +127,9 @@ if (command === 'gh') {
 }
 
 afterEach(() => {
-  for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
+  for (const root of roots.splice(0)) {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 describe('pinned tool checker CLI', () => {

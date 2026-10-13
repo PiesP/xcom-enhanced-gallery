@@ -44,7 +44,9 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
 
   const setLoading = (loading: boolean): void => {
     setIsLoading(loading);
-    if (loading) setHasError(false);
+    if (loading) {
+      setHasError(false);
+    }
   };
 
   const setError = (errorState: boolean): void => {

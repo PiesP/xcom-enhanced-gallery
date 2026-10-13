@@ -10,13 +10,16 @@ export type PinnedTools = {
 const digest = '[0-9a-f]{64}';
 
 function record(value: unknown): Record<string, unknown> {
-  if (value === null || typeof value !== 'object' || Array.isArray(value))
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
     throw new Error('Pinned tool metadata must contain objects');
+  }
   return value as Record<string, unknown>;
 }
 
 function string(value: unknown, label: string, pattern: RegExp): string {
-  if (typeof value !== 'string' || !pattern.test(value)) throw new Error(`Invalid pinned ${label}`);
+  if (typeof value !== 'string' || !pattern.test(value)) {
+    throw new Error(`Invalid pinned ${label}`);
+  }
   return value;
 }
 
@@ -63,7 +66,9 @@ export function readPins(
 }
 
 export function isCliEntry(metaUrl: string): boolean {
-  if (!process.argv[1]) return false;
+  if (!process.argv[1]) {
+    return false;
+  }
   try {
     return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(metaUrl));
   } catch {
@@ -73,8 +78,12 @@ export function isCliEntry(metaUrl: string): boolean {
 
 export function main(args: readonly string[]): number {
   try {
-    if (args.length !== 1 || args[0] !== 'env') throw new Error('Usage: pinned-tools.ts env');
-    if (!process.env.GITHUB_ENV) throw new Error('GITHUB_ENV is required');
+    if (args.length !== 1 || args[0] !== 'env') {
+      throw new Error('Usage: pinned-tools.ts env');
+    }
+    if (!process.env.GITHUB_ENV) {
+      throw new Error('GITHUB_ENV is required');
+    }
     const pins = readPins();
     appendFileSync(
       process.env.GITHUB_ENV,
@@ -87,4 +96,6 @@ export function main(args: readonly string[]): number {
   }
 }
 
-if (isCliEntry(import.meta.url)) process.exitCode = main(process.argv.slice(2));
+if (isCliEntry(import.meta.url)) {
+  process.exitCode = main(process.argv.slice(2));
+}

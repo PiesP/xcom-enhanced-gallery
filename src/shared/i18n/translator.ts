@@ -46,7 +46,9 @@ export function createTranslator(options: TranslatorBundleOptions = {}): Transla
   for (const [lang, strings] of Object.entries(bundles) as Array<
     [BaseLanguageCode, LanguageStrings | undefined]
   >) {
-    if (strings) bundleMap[lang] = strings;
+    if (strings) {
+      bundleMap[lang] = strings;
+    }
   }
 
   const fallbackBundle = bundleMap[fallbackLanguage];
@@ -62,8 +64,12 @@ export function createTranslator(options: TranslatorBundleOptions = {}): Transla
     translate(language: BaseLanguageCode, key: TranslationKey, params?: TranslationParams): string {
       const strings = bundleMap[language] ?? fallbackBundle;
       const template = resolveNestedPath<string>(strings, key);
-      if (!template) return key;
-      if (!params) return template;
+      if (!template) {
+        return key;
+      }
+      if (!params) {
+        return template;
+      }
       return template.replace(/\{(\w+)\}/g, (match, placeholder) =>
         Object.hasOwn(params, placeholder) ? String(params[placeholder]) : match
       );

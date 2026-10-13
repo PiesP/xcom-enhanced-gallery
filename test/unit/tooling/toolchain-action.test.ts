@@ -22,7 +22,9 @@ function jobBlock(workflow: string, job: string): string {
 function topLevelBlock(workflow: string, key: string): string {
   const marker = `${key}:\n`;
   const start = workflow.indexOf(marker);
-  if (start === -1) throw new Error(`Workflow key not found: ${key}`);
+  if (start === -1) {
+    throw new Error(`Workflow key not found: ${key}`);
+  }
 
   const afterMarker = start + marker.length;
   const nextKey = workflow.slice(afterMarker).search(/\n[A-Za-z][A-Za-z0-9_-]*:\n/);

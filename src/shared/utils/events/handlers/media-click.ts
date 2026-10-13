@@ -23,7 +23,9 @@ import { getMediaClickTarget } from '@shared/utils/media/media-click-target';
 /** Resolve video click mode safely, falling back when settings unavailable */
 function resolveVideoClickMode(): VideoClickMode {
   const settings = tryGetSettings();
-  if (!settings) return 'block-controls-only';
+  if (!settings) {
+    return 'block-controls-only';
+  }
   return getTypedSettingOr('gallery.videoClickMode', 'block-controls-only');
 }
 
@@ -32,20 +34,28 @@ export async function handleMediaClick(
   handlers: EventHandlers,
   options: GalleryEventOptions
 ): Promise<void> {
-  if (!options.enableMediaDetection) return;
+  if (!options.enableMediaDetection) {
+    return;
+  }
 
   const target = event.target;
-  if (!(target instanceof Element)) return;
+  if (!(target instanceof Element)) {
+    return;
+  }
 
   // Recovery is modeless: host and recovery controls retain their native click routing.
-  if (isGalleryRecoveryActive()) return;
+  if (isGalleryRecoveryActive()) {
+    return;
+  }
 
   // Gallery is open — close on outside click (defensive: the fixed overlay covers
   // the viewport, so this fires only if an element behind the overlay receives a
   // click via higher z-index or click-through. The primary close mechanism for
   // gallery background clicks is handleBackgroundClick in the bubble phase.)
   if (gallerySignals.isOpen) {
-    if (isGalleryInternalElement(target)) return;
+    if (isGalleryInternalElement(target)) {
+      return;
+    }
     handlers.onGalleryClose();
     event.stopImmediatePropagation();
     event.preventDefault();
@@ -55,14 +65,20 @@ export async function handleMediaClick(
   // Gallery is closed — locate the nearest HTML owner of an SVG hit while
   // retaining the original event and its control ancestry.
   const mediaTarget = getMediaClickTarget(event);
-  if (!mediaTarget) return;
+  if (!mediaTarget) {
+    return;
+  }
 
   // Check video click mode from user settings — single decision point
   // for all video-click behavior (block-all / block-controls-only / allow-all).
   const videoMode = resolveVideoClickMode();
-  if (!isVideoClickAllowed(mediaTarget, () => event.composedPath(), videoMode)) return;
+  if (!isVideoClickAllowed(mediaTarget, () => event.composedPath(), videoMode)) {
+    return;
+  }
 
-  if (!isProcessableMedia(mediaTarget, event)) return;
+  if (!isProcessableMedia(mediaTarget, event)) {
+    return;
+  }
 
   event.stopImmediatePropagation();
   event.preventDefault();

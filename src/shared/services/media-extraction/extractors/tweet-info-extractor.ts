@@ -36,7 +36,9 @@ const parseTrustedStatusLink = (inputUrl: string): TrustedStatusLink | null => {
 
     const match = url.pathname.match(STATUS_PATH_PATTERN);
     const tweetId = match?.[1];
-    if (!tweetId) return null;
+    if (!tweetId) {
+      return null;
+    }
 
     // Normalize all trusted Twitter/X links to a credential-free x.com URL.
     url.protocol = 'https:';
@@ -95,26 +97,34 @@ function getOwnStatusLinks(
   element: HTMLElement
 ): Array<{ anchor: Element; link: TrustedStatusLink }> {
   return Array.from(container.querySelectorAll(STATUS_LINK_SELECTOR)).flatMap((anchor) => {
-    if (anchor.closest('article') !== container.closest('article')) return [];
-    if (anchor.closest('[data-testid="tweetText"]')) return [];
+    if (anchor.closest('article') !== container.closest('article')) {
+      return [];
+    }
+    if (anchor.closest('[data-testid="tweetText"]')) {
+      return [];
+    }
     const link = parseTrustedStatusLink(anchor.getAttribute('href') ?? '');
-    if (!link) return [];
+    if (!link) {
+      return [];
+    }
     let branch: Element | null = anchor;
     while (branch && branch !== container && !branch.contains(element)) {
       // A native permalink's own link role is not a surrounding quote boundary.
       if (
         (branch !== anchor && branch.matches('[role="link"]')) ||
         branch.matches('[data-testid="quoteTweet"], [data-testid="card.wrapper"]')
-      )
+      ) {
         return [];
+      }
       if (
         Array.from(branch.querySelectorAll('img, video')).some((media) =>
           [media.getAttribute('src'), media.getAttribute('poster')].some(
             (url) => url && isValidMediaUrl(url)
           )
         )
-      )
+      ) {
         return [];
+      }
       branch = branch.parentElement;
     }
     return [{ anchor, link }];
@@ -124,12 +134,16 @@ function getOwnStatusLinks(
 /** Strategy 3: Tweet container fallback */
 const extractFromDOM: ExtractionStrategy = (element) => {
   const article = closestWithFallback<HTMLElement>(element, TWEET_CONTAINER_SELECTORS);
-  if (!article) return null;
+  if (!article) {
+    return null;
+  }
   let container = article;
   // Resolve the nearest branch's own permalink before the surrounding article.
   // Nested quote timestamps have already been excluded by getOwnStatusLinks.
   for (let scope = element.parentElement; scope && scope !== article; scope = scope.parentElement) {
-    if (!article.contains(scope)) break;
+    if (!article.contains(scope)) {
+      break;
+    }
     const scopeLinks = getOwnStatusLinks(scope, element);
     if (scope.matches('[data-testid="quoteTweet"]') || scopeLinks.length > 0) {
       container = scope;
@@ -140,9 +154,13 @@ const extractFromDOM: ExtractionStrategy = (element) => {
   const timestamps = ownLinks.filter(({ anchor }) => anchor.querySelector('time'));
   const owners = timestamps.length ? timestamps : ownLinks;
   const ownerIds = new Set(owners.map(({ link }) => link?.tweetId));
-  if (ownerIds.size !== 1) return null;
+  if (ownerIds.size !== 1) {
+    return null;
+  }
   const link = owners[0]?.link;
-  if (!link) return null;
+  if (!link) {
+    return null;
+  }
 
   return {
     ...link,
@@ -159,13 +177,19 @@ const extractFromDOM: ExtractionStrategy = (element) => {
 const extractFromMediaGridItem: ExtractionStrategy = (element) => {
   // Media links use paths such as /User/status/ID/photo/1 or /video/1.
   const link = element.closest(STATUS_LINK_SELECTOR);
-  if (!link) return null;
+  if (!link) {
+    return null;
+  }
 
   const href = link.getAttribute('href');
-  if (!href) return null;
+  if (!href) {
+    return null;
+  }
 
   const trustedLink = parseTrustedStatusLink(href);
-  if (!trustedLink) return null;
+  if (!trustedLink) {
+    return null;
+  }
 
   return {
     ...trustedLink,
@@ -221,8 +245,9 @@ function strictStatusLink(anchor: Element): TrustedStatusLink | null {
       url.username ||
       url.password ||
       !/^\/[A-Za-z0-9_]{1,15}\/status\/[1-9]\d*(?:\/(?:photo|video)\/\d+)?\/?$/u.test(url.pathname)
-    )
+    ) {
       return null;
+    }
     return parseTrustedStatusLink(url.toString());
   } catch {
     return null;
@@ -249,12 +274,16 @@ function requestInfo(
     const link = strictStatusLink(anchor);
     return link ? [{ anchor, link }] : [];
   });
-  if (allowUntimed && links.length !== anchors.length) return null;
+  if (allowUntimed && links.length !== anchors.length) {
+    return null;
+  }
   const timestamps = links.filter(({ anchor }) => anchor.querySelector('time'));
   // An immediate parent of a bounded nested quote may expose only untimed
   // permalinks. They establish a unique request, never a confirmed owner.
   const owners = allowUntimed ? links : timestamps;
-  if (new Set(owners.map(({ link }) => link.tweetId)).size !== 1) return null;
+  if (new Set(owners.map(({ link }) => link.tweetId)).size !== 1) {
+    return null;
+  }
   const link = owners[0]?.link;
   return link ? { ...link, extractionMethod: 'request-context', confidence: 0.85 } : null;
 }
@@ -265,9 +294,13 @@ function extractClickContext(element: HTMLElement): TweetClickContext | null {
   const enclosing = element.closest(STATUS_LINK_SELECTOR);
   const enclosingOwner = enclosing ? strictStatusLink(enclosing) : null;
   const attributeId = element.dataset.tweetId;
-  if (attributeId && enclosingOwner && attributeId !== enclosingOwner.tweetId) return null;
+  if (attributeId && enclosingOwner && attributeId !== enclosingOwner.tweetId) {
+    return null;
+  }
   const domOwner = extractFromDOM(element);
-  if (attributeId && domOwner && attributeId !== domOwner.tweetId) return null;
+  if (attributeId && domOwner && attributeId !== domOwner.tweetId) {
+    return null;
+  }
 
   const owned = (info: TweetInfo): TweetClickContext => ({
     tweetInfo: info,
@@ -277,13 +310,19 @@ function extractClickContext(element: HTMLElement): TweetClickContext | null {
       scope: 'owned',
     }),
   });
-  if (enclosingOwner || attributeId) return owner ? owned(owner) : null;
+  if (enclosingOwner || attributeId) {
+    return owner ? owned(owner) : null;
+  }
 
   // Selector preference must not jump over an unmarked nested article to a
   // farther article carrying X's tweet marker.
   const article = element.closest<HTMLElement>('article');
-  if (!article) return owner ? owned(owner) : null;
-  if (element.closest('[data-testid="card.wrapper"], [data-testid="reply"]')) return null;
+  if (!article) {
+    return owner ? owned(owner) : null;
+  }
+  if (element.closest('[data-testid="card.wrapper"], [data-testid="reply"]')) {
+    return null;
+  }
 
   let boundary: HTMLElement | null = null;
   for (
@@ -295,8 +334,9 @@ function extractClickContext(element: HTMLElement): TweetClickContext | null {
       boundary = node;
       break;
     }
-    if (!boundary && node.matches('[role="link"]') && !(node instanceof HTMLAnchorElement))
+    if (!boundary && node.matches('[role="link"]') && !(node instanceof HTMLAnchorElement)) {
       boundary = node;
+    }
   }
   let requestArticle = article;
   const parentArticle = article.parentElement?.closest<HTMLElement>('article');
@@ -308,7 +348,9 @@ function extractClickContext(element: HTMLElement): TweetClickContext | null {
     const ownIds = new Set<string>();
     for (const anchor of articleAnchors) {
       const link = strictStatusLink(anchor);
-      if (!link) return null;
+      if (!link) {
+        return null;
+      }
       ownIds.add(link.tweetId);
     }
     // A narrower media branch can contain a credit permalink while the nested
@@ -319,11 +361,15 @@ function extractClickContext(element: HTMLElement): TweetClickContext | null {
         const markedIds = new Set<string>();
         for (const anchor of articleAnchors.filter((anchor) => boundary?.contains(anchor))) {
           const link = strictStatusLink(anchor);
-          if (link) markedIds.add(link.tweetId);
+          if (link) {
+            markedIds.add(link.tweetId);
+          }
         }
         // A marked inner quote with its own sole permalink is an explicit
         // ownership region. A generic clickable player/credit wrapper is not.
-        if (markedIds.size !== 1 || !owner || !markedIds.has(owner.tweetId)) return null;
+        if (markedIds.size !== 1 || !owner || !markedIds.has(owner.tweetId)) {
+          return null;
+        }
       } else {
         owner = null;
         boundary = null;
@@ -334,8 +380,9 @@ function extractClickContext(element: HTMLElement): TweetClickContext | null {
     !boundary &&
     owner?.metadata?.isTweetContainer === true &&
     new Set(getOwnStatusLinks(article, element).map(({ link }) => link.tweetId)).size > 1
-  )
+  ) {
     owner = null;
+  }
   if (!boundary && !owner) {
     // A nested article can be a quote candidate only inside its immediate
     // parent's clickable boundary. Never borrow a neighboring reply or page URL.
@@ -345,7 +392,9 @@ function extractClickContext(element: HTMLElement): TweetClickContext | null {
         node && node !== parentArticle && hops < 16;
         node = node.parentElement, hops++
       ) {
-        if (node.matches('[data-testid="card.wrapper"], [data-testid="reply"]')) return null;
+        if (node.matches('[data-testid="card.wrapper"], [data-testid="reply"]')) {
+          return null;
+        }
         if (
           node.matches('[data-testid="quoteTweet"], [role="link"]') &&
           !(node instanceof HTMLAnchorElement)
@@ -354,18 +403,23 @@ function extractClickContext(element: HTMLElement): TweetClickContext | null {
           break;
         }
       }
-      if (boundary) requestArticle = parentArticle;
+      if (boundary) {
+        requestArticle = parentArticle;
+      }
     }
   }
-  if (!boundary) return owner ? owned(owner) : null;
+  if (!boundary) {
+    return owner ? owned(owner) : null;
+  }
 
   const boundaryLinks = getOwnStatusLinks(boundary, element);
   if (
     owner &&
     new Set(boundaryLinks.map(({ link }) => link.tweetId)).size === 1 &&
     boundaryLinks.some(({ link }) => link.tweetId === owner.tweetId)
-  )
+  ) {
     return owned(owner);
+  }
   // An explicit foreign or conflicting permalink is not missing evidence.
   if (
     Array.from(boundary.querySelectorAll(STATUS_LINK_SELECTOR)).some(
@@ -374,11 +428,16 @@ function extractClickContext(element: HTMLElement): TweetClickContext | null {
         !anchor.closest('[data-testid="tweetText"]') &&
         !strictStatusLink(anchor)
     )
-  )
+  ) {
     return null;
-  if (boundaryLinks.length > 0 && requestArticle === article) return null;
+  }
+  if (boundaryLinks.length > 0 && requestArticle === article) {
+    return null;
+  }
   const context = requestInfo(requestArticle, element, boundary, requestArticle !== article);
-  if (!context) return null;
+  if (!context) {
+    return null;
+  }
   const quoteMarked = element.closest('[data-testid="quoteTweet"]');
   return {
     tweetInfo: context,

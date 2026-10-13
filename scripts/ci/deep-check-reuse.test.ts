@@ -66,7 +66,9 @@ const runner = {
   GITHUB_SHA: 'a'.repeat(40),
 };
 const baseline = fingerprint('duplication', fixture, runner);
-if (!baseline) throw new Error('Fixture runner identity must be complete');
+if (!baseline) {
+  throw new Error('Fixture runner identity must be complete');
+}
 
 test('each tracked source, test, configuration, lock, and tool input invalidates success', () => {
   assert.match(baseline, /^[0-9a-f]{64}$/);
@@ -321,13 +323,16 @@ function historyApi(
     requests.push(url.pathname + url.search);
     const custom = override?.(url);
     let body: unknown;
-    if (custom !== undefined) body = custom;
-    else if (url.pathname.endsWith('/runs')) {
+    if (custom !== undefined) {
+      body = custom;
+    } else if (url.pathname.endsWith('/runs')) {
       const page = Number(url.searchParams.get('page'));
       body = { total_count: runs.length, workflow_runs: runs.slice((page - 1) * 100, page * 100) };
     } else {
       const match = /\/actions\/runs\/(\d+)\/attempts\/(\d+)\/jobs$/.exec(url.pathname);
-      if (!match) throw new Error(`Unexpected API path: ${url.pathname}`);
+      if (!match) {
+        throw new Error(`Unexpected API path: ${url.pathname}`);
+      }
       const list = jobs[Number(match[1])] ?? [];
       const page = Number(url.searchParams.get('page'));
       body = { total_count: list.length, jobs: list.slice((page - 1) * 100, page * 100) };
@@ -386,7 +391,9 @@ test('zero-second analysis and mutation gate use their exact step durations', as
   });
 
   const mutationFingerprint = fingerprint('mutation', fixture, runner);
-  if (!mutationFingerprint) throw new Error('Mutation fixture must be fingerprintable');
+  if (!mutationFingerprint) {
+    throw new Error('Mutation fixture must be fingerprintable');
+  }
   writeMarker(marker, 'mutation', mutationFingerprint, runner);
   const mutationMarker = JSON.parse(readFileSync(marker, 'utf8')) as Record<string, unknown>;
   mutationMarker.analyzedAt = analyzedAt;

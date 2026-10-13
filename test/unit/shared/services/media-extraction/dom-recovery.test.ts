@@ -221,9 +221,10 @@ describe('scoped DOM recovery', () => {
       expect((target as HTMLVideoElement).currentSrc).toBe('');
       const owner = new TweetInfoExtractor().extract(target)!;
       const clickedMediaEvidence = captureClickedMediaEvidence(target);
-      if (mutated)
+      if (mutated) {
         target.querySelector('source')!.src =
           'https://video.twimg.com/ext_tw_video/222/pu/vid/review-B.mp4';
+      }
       const result = await new DOMFallbackExtractor().extract(
         owner,
         target,
@@ -231,7 +232,9 @@ describe('scoped DOM recovery', () => {
         'child-source'
       );
       expect(result.success).toBe(!mutated);
-      if (!mutated) expect(result.mediaItems[result.clickedIndex!]?.url).toContain('review-A.mp4');
+      if (!mutated) {
+        expect(result.mediaItems[result.clickedIndex!]?.url).toContain('review-A.mp4');
+      }
     }
   );
 

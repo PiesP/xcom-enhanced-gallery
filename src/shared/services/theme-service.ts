@@ -39,7 +39,9 @@ export class ThemeService {
   }
 
   async initialize(): Promise<void> {
-    if (this._initialized) return;
+    if (this._initialized) {
+      return;
+    }
 
     const svc = tryGetSettings();
     if (svc) {
@@ -81,7 +83,9 @@ export class ThemeService {
   }
 
   bindSettingsService(svc: SettingsBinding): void {
-    if (!svc || this.settings === svc) return;
+    if (!svc || this.settings === svc) {
+      return;
+    }
     this.settings = svc;
 
     const settingsTheme = svc.get('gallery.theme');
@@ -142,7 +146,9 @@ export class ThemeService {
   }
 
   private initializeThemeScopeObservation(): void {
-    if (typeof document === 'undefined' || typeof MutationObserver === 'undefined') return;
+    if (typeof document === 'undefined' || typeof MutationObserver === 'undefined') {
+      return;
+    }
 
     this.applyThemeToScopes(Array.from(document.querySelectorAll('.xeg-theme-scope')));
 
@@ -150,10 +156,14 @@ export class ThemeService {
     this.observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         // Pre-filter: skip mutations with no added nodes
-        if (mutation.addedNodes.length === 0) continue;
+        if (mutation.addedNodes.length === 0) {
+          continue;
+        }
 
         mutation.addedNodes.forEach((node) => {
-          if (!(node instanceof Element)) return;
+          if (!(node instanceof Element)) {
+            return;
+          }
           // Fast path: check if the node itself is a theme scope
           if (node.classList.contains('xeg-theme-scope')) {
             this.applyThemeToScopes([node]);
@@ -162,7 +172,9 @@ export class ThemeService {
           // Only querySelectorAll if the node could contain theme scopes
           if (node.querySelectorAll) {
             const scopes = node.querySelectorAll('.xeg-theme-scope');
-            if (scopes.length > 0) this.applyThemeToScopes(Array.from(scopes));
+            if (scopes.length > 0) {
+              this.applyThemeToScopes(Array.from(scopes));
+            }
           }
         });
       }
@@ -188,16 +200,22 @@ export class ThemeService {
   }
 
   private initializeSystemDetection(): void {
-    if (!this.mediaQueryList) return;
+    if (!this.mediaQueryList) {
+      return;
+    }
 
-    if (this.mediaQueryListener) return;
+    if (this.mediaQueryListener) {
+      return;
+    }
 
     if (!this.domEventsController || this.domEventsController.signal.aborted) {
       this.domEventsController = new AbortController();
     }
 
     this.mediaQueryListener = () => {
-      if (this.themeSetting === 'auto') this.applyCurrentTheme(true);
+      if (this.themeSetting === 'auto') {
+        this.applyCurrentTheme(true);
+      }
     };
 
     getEventManager().addEventListener(
@@ -205,7 +223,9 @@ export class ThemeService {
       'change',
       (event) => {
         const listener = this.mediaQueryListener;
-        if (!listener) throw new Error('Theme listener invoked after cleanup');
+        if (!listener) {
+          throw new Error('Theme listener invoked after cleanup');
+        }
         listener(event as MediaQueryListEvent);
       },
       { signal: this.domEventsController.signal, context: 'theme-service' }

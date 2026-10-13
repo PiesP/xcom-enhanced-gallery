@@ -53,8 +53,12 @@ function createErrorResult(
 }
 
 function mergeTweetInfo(base?: TweetInfo | null, override?: TweetInfo | null): TweetInfo | null {
-  if (!base) return override ?? null;
-  if (!override) return base;
+  if (!base) {
+    return override ?? null;
+  }
+  if (!override) {
+    return base;
+  }
   return {
     ...base,
     ...override,
@@ -63,7 +67,9 @@ function mergeTweetInfo(base?: TweetInfo | null, override?: TweetInfo | null): T
 }
 
 function finalizeResult(result: MediaExtractionResult): MediaExtractionResult {
-  if (!result.success) return result;
+  if (!result.success) {
+    return result;
+  }
   const uniqueItems = removeDuplicateMediaItems(result.mediaItems);
   if (uniqueItems.length === 0) {
     return { ...result, mediaItems: [], clickedIndex: 0 };
@@ -109,10 +115,14 @@ export class MediaExtractionService implements MediaExtractor {
   }
 
   private isApiCircuitOpen(): boolean {
-    if (performance.now() < this.apiDeferredUntil) return true;
+    if (performance.now() < this.apiDeferredUntil) {
+      return true;
+    }
     this.apiDeferredUntil = 0;
     this.apiDeferredKind = null;
-    if (!this.apiCircuitOpen) return false;
+    if (!this.apiCircuitOpen) {
+      return false;
+    }
     if (Date.now() - this.lastApiFailureTime >= MediaExtractionService.CIRCUIT_RESET_MS) {
       this.apiCircuitOpen = false;
       this.apiFailureCount = 0;
@@ -179,7 +189,9 @@ export class MediaExtractionService implements MediaExtractor {
 
       const physicalRequest = apiResult.apiRequestToken;
       const shouldAccount = physicalRequest && !this.accountedRequests.has(physicalRequest);
-      if (shouldAccount) this.accountedRequests.add(physicalRequest);
+      if (shouldAccount) {
+        this.accountedRequests.add(physicalRequest);
+      }
       if (shouldAccount && apiResult.apiRequestOutcome === 'healthy') {
         // A successful provider response is healthy even when media is absent
         // or cannot be matched to the clicked element.
@@ -202,7 +214,9 @@ export class MediaExtractionService implements MediaExtractor {
         }
       }
 
-      if (apiResult.failureKind === 'unsupported-source') return { ...apiResult, tweetInfo };
+      if (apiResult.failureKind === 'unsupported-source') {
+        return { ...apiResult, tweetInfo };
+      }
 
       if (apiResult.success && apiResult.mediaItems.length > 0) {
         return finalizeResult({
@@ -226,7 +240,9 @@ export class MediaExtractionService implements MediaExtractor {
 
       // Yield before CPU-intensive DOM fallback extraction
       await schedulerYield();
-      if (options.signal?.aborted) return createErrorResult('Extraction cancelled');
+      if (options.signal?.aborted) {
+        return createErrorResult('Extraction cancelled');
+      }
 
       const domResult = await this.domFallbackExtractor.extract(
         tweetInfo,

@@ -19,12 +19,18 @@ interface StoredSettings {
 }
 
 function settingsMatch(left: unknown, right: unknown): boolean {
-  if (Object.is(left, right)) return true;
-  if (!isRecord(left) || !isRecord(right)) return false;
+  if (Object.is(left, right)) {
+    return true;
+  }
+  if (!isRecord(left) || !isRecord(right)) {
+    return false;
+  }
 
   const leftKeys = Object.keys(left);
   const rightKeys = Object.keys(right);
-  if (leftKeys.length !== rightKeys.length) return false;
+  if (leftKeys.length !== rightKeys.length) {
+    return false;
+  }
 
   return leftKeys.every((key) => Object.hasOwn(right, key) && settingsMatch(left[key], right[key]));
 }

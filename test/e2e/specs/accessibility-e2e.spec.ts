@@ -154,7 +154,9 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     const items = page.locator('[data-gallery-element="items"]');
     const backgroundPoint = await items.evaluate((element) => {
       const item = element.querySelector<HTMLElement>('[data-gallery-element="item"]');
-      if (!item) throw new Error('Gallery item missing');
+      if (!item) {
+        throw new Error('Gallery item missing');
+      }
 
       const listRect = element.getBoundingClientRect();
       const itemRect = item.getBoundingClientRect();
@@ -360,7 +362,9 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
 
     const result = await page.evaluate(() => {
       const container = document.querySelector<HTMLElement>('[data-xeg-gallery-container]');
-      if (!container) throw new Error('Gallery container missing');
+      if (!container) {
+        throw new Error('Gallery container missing');
+      }
 
       const visibleButton = document.createElement('button');
       visibleButton.textContent = 'Visible last button';

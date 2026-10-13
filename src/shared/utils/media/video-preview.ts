@@ -5,7 +5,9 @@ import { isValidMediaUrl } from '@shared/utils/url/validator';
 
 /** Poster URLs are evidence of video media, never playable video variants. */
 export function isVideoThumbnailUrl(url: string): boolean {
-  if (!isValidMediaUrl(url)) return false;
+  if (!isValidMediaUrl(url)) {
+    return false;
+  }
   const path = new URL(url, 'https://x.com').pathname;
   return /^\/(?:amplify_video_thumb|ext_tw_video_thumb|tweet_video_thumb|video_thumb)\//u.test(
     path

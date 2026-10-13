@@ -22,7 +22,9 @@ async function downloadAsZip(
   return result;
 }
 afterEach(() => {
-  for (const result of results.splice(0)) result.dispose();
+  for (const result of results.splice(0)) {
+    result.dispose();
+  }
 });
 
 describe('downloadAsZip response bounds', () => {

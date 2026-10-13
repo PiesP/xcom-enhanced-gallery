@@ -284,7 +284,9 @@ describe('production quoted-video pipeline', () => {
         url: source('700'),
         metadata: { apiData: { tweet_id: '111' } },
       });
-    } else expect(httpGet).not.toHaveBeenCalled();
+    } else {
+      expect(httpGet).not.toHaveBeenCalled();
+    }
   });
 
   it('keeps video selection when the sibling thumbnail precedes the VIDEO in DOM order', async () => {
@@ -413,8 +415,11 @@ describe('production quoted-video pipeline', () => {
       image.src = 'https://pbs.twimg.com/media/outer-photo.jpg';
       image.parentElement!.insertBefore(image, document.querySelector('video')!);
       const player = document.querySelector('video')!;
-      if (kind === 'poster') player.poster = poster('700');
-      else player.src = source('700');
+      if (kind === 'poster') {
+        player.poster = poster('700');
+      } else {
+        player.src = source('700');
+      }
       respond(
         tweet(
           '222',
@@ -433,10 +438,12 @@ describe('production quoted-video pipeline', () => {
     async (kind) => {
       const button = thumbnailButton('quote', 'empty');
       const thumbnail = document.querySelector<HTMLImageElement>('#thumbnail')!;
-      if (kind === 'foreign')
+      if (kind === 'foreign') {
         thumbnail.src = 'https://evil.example/amplify_video_thumb/700/img/poster.jpg';
-      if (kind === 'ambiguous')
+      }
+      if (kind === 'ambiguous') {
         thumbnail.insertAdjacentHTML('afterend', `<img src="${poster('800')}">`);
+      }
       if (kind === 'nested-article') {
         const nested = document.createElement('article');
         thumbnail.parentElement!.insertBefore(nested, thumbnail);
@@ -453,12 +460,15 @@ describe('production quoted-video pipeline', () => {
     async (kind) => {
       const button = preplayButton('quote');
       const thumbnail = document.querySelector<HTMLImageElement>('#thumbnail')!;
-      if (kind === 'duplicate-thumb')
+      if (kind === 'duplicate-thumb') {
         thumbnail.insertAdjacentHTML('afterend', `<img src="${poster('700')}">`);
-      if (kind === 'split-thumb')
+      }
+      if (kind === 'split-thumb') {
         Object.defineProperty(thumbnail, 'currentSrc', { get: () => poster('800') });
-      if (kind === 'two-videos')
+      }
+      if (kind === 'two-videos') {
         thumbnail.insertAdjacentHTML('beforebegin', '<video></video><video></video>');
+      }
       const { event } = await clickThroughProduction(button);
       expect(event.defaultPrevented).toBe(false);
       expect(httpGet).not.toHaveBeenCalled();
@@ -621,14 +631,22 @@ describe('production quoted-video pipeline', () => {
     'deeper-quote',
   ])('fails closed for %s recovery evidence', async (kind) => {
     const clicked = target();
-    if (kind === 'missing') clicked.removeAttribute('poster');
-    if (kind === 'foreign')
+    if (kind === 'missing') {
+      clicked.removeAttribute('poster');
+    }
+    if (kind === 'foreign') {
       clicked.setAttribute('poster', 'https://evil.example/amplify_video_thumb/700/img/poster.jpg');
-    if (kind === 'same-filename') clicked.setAttribute('poster', poster('777'));
-    if (kind === 'different-extension')
+    }
+    if (kind === 'same-filename') {
+      clicked.setAttribute('poster', poster('777'));
+    }
+    if (kind === 'different-extension') {
       clicked.setAttribute('poster', poster('700').replace('.jpg', '.png'));
-    if (kind === 'conflicting-source') clicked.setAttribute('src', source('999'));
-    if (kind === 'ambiguous')
+    }
+    if (kind === 'conflicting-source') {
+      clicked.setAttribute('src', source('999'));
+    }
+    if (kind === 'ambiguous') {
       respond(
         tweet(
           '222',
@@ -636,7 +654,8 @@ describe('production quoted-video pipeline', () => {
           tweet('111', [video('700'), { ...video('701'), media_url_https: poster('700') }])
         )
       );
-    if (kind === 'shared-owner-source')
+    }
+    if (kind === 'shared-owner-source') {
       respond(
         tweet(
           '222',
@@ -644,18 +663,24 @@ describe('production quoted-video pipeline', () => {
           tweet('111', [video('700')])
         )
       );
-    if (kind === 'unrelated-root') respond(tweet('444', [], tweet('111', [video('700')])));
-    if (kind === 'root-legacy-conflict')
+    }
+    if (kind === 'unrelated-root') {
+      respond(tweet('444', [], tweet('111', [video('700')])));
+    }
+    if (kind === 'root-legacy-conflict') {
       respond({ ...tweet('222', [], tweet('111', [video('700')])), legacy: { id_str: '333' } });
-    if (kind === 'quote-legacy-conflict')
+    }
+    if (kind === 'quote-legacy-conflict') {
       respond(
         tweet('222', [], {
           ...tweet('111', [video('700')]),
           legacy: { id_str: '333', extended_entities: { media: [video('700')] } },
         })
       );
-    if (kind === 'deeper-quote')
+    }
+    if (kind === 'deeper-quote') {
       respond(tweet('222', [], tweet('111', [], tweet('333', [video('700')]))));
+    }
     const result = await new MediaExtractionService().extractFromClickedElement(clicked);
     expect(result.success).toBe(false);
     expect(result.mediaItems).toEqual([]);
@@ -741,18 +766,23 @@ describe('production quoted-video pipeline', () => {
     'does not borrow a quote owner across %s boundaries',
     async (kind) => {
       const clicked = target('unmarked');
-      if (kind === 'foreign-link')
+      if (kind === 'foreign-link') {
         clicked.parentElement!.insertAdjacentHTML(
           'beforebegin',
           '<a href="https://evil.example/author/status/111">Foreign</a>'
         );
-      if (kind === 'card') clicked.parentElement!.setAttribute('data-testid', 'card.wrapper');
-      if (kind === 'reply')
+      }
+      if (kind === 'card') {
+        clicked.parentElement!.setAttribute('data-testid', 'card.wrapper');
+      }
+      if (kind === 'reply') {
         clicked.closest('article')!.outerHTML =
           `<article><a href="/author_222/status/222"><time>A</time></a></article><article><video id="target" poster="${poster('700')}"></video></article>`;
-      if (kind === 'adjacent')
+      }
+      if (kind === 'adjacent') {
         clicked.closest('article')!.outerHTML =
           `<article><a href="/author_222/status/222"><time>A</time></a></article><video id="target" poster="${poster('700')}"></video>`;
+      }
       const result = await new MediaExtractionService().extractFromClickedElement(
         document.getElementById('target')!
       );
@@ -820,7 +850,9 @@ describe('production quoted-video pipeline', () => {
           tweetId: '111',
           url: source('700'),
         });
-      } else expect(httpGet).not.toHaveBeenCalled();
+      } else {
+        expect(httpGet).not.toHaveBeenCalled();
+      }
     }
   );
 
@@ -891,7 +923,9 @@ describe('production quoted-video pipeline', () => {
     vi.spyOn(Date, 'now').mockImplementation(() => now);
     const service = new MediaExtractionService();
     httpGet.mockResolvedValue({ ok: false, status: 503, data: {} });
-    for (let attempt = 0; attempt < 3; attempt++) await service.extractFromClickedElement(target());
+    for (let attempt = 0; attempt < 3; attempt++) {
+      await service.extractFromClickedElement(target());
+    }
     expect(httpGet).toHaveBeenCalledTimes(3);
     respond(tweet('222', [], tweet('111', [video('700')])));
     expect((await service.extractFromClickedElement(target())).success).toBe(false);

@@ -57,7 +57,9 @@ export function getGitCommitShort(): string | null {
  */
 export function resolveVersion(isDev: boolean): string {
   const envVersion = process.env.BUILD_VERSION;
-  if (envVersion) return envVersion;
+  if (envVersion) {
+    return envVersion;
+  }
 
   const pkgVersion = getVersionFromPackageJson();
   const baseVersion = pkgVersion ?? (isDev ? '0.0.0' : '1.0.0');

@@ -365,8 +365,9 @@ describe('VerticalImageItem video admission and playback', () => {
         expect(pause).toHaveBeenCalledOnce();
         expect(play).not.toHaveBeenCalled();
         if (laterPlay) {
-          if (rejectedName)
+          if (rejectedName) {
             play.mockRejectedValueOnce(new DOMException('Playback rejected', rejectedName));
+          }
           clock.mockReturnValue(1200);
           video.dispatchEvent(
             new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true })

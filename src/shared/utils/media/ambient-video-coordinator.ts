@@ -39,7 +39,9 @@ interface PauseResponse extends PauseAmbientVideosResult {
 }
 
 function findTweetContainer(element?: HTMLElement | null): HTMLElement | null {
-  if (!element) return null;
+  if (!element) {
+    return null;
+  }
   return closestWithFallback<HTMLElement>(element, TWEET_CONTAINER_SELECTORS);
 }
 
@@ -47,29 +49,45 @@ function resolveContext(request: AmbientVideoPauseRequest): {
   root: QueryableRoot | null;
   scope: PauseScope;
 } {
-  if (request.root !== undefined) return { root: request.root ?? null, scope: 'custom' };
+  if (request.root !== undefined) {
+    return { root: request.root ?? null, scope: 'custom' };
+  }
 
   const tweet = findTweetContainer(request.sourceElement);
-  if (tweet) return { root: tweet, scope: 'tweet' };
+  if (tweet) {
+    return { root: tweet, scope: 'tweet' };
+  }
 
   return { root: null, scope: 'document' };
 }
 
 function isVideoTrigger(el?: HTMLElement | null): boolean {
-  if (!el) return false;
-  if (el.tagName === 'VIDEO') return true;
+  if (!el) {
+    return false;
+  }
+  if (el.tagName === 'VIDEO') {
+    return true;
+  }
   return closestWithFallback(el, VIDEO_CONTAINER_SELECTORS) !== null;
 }
 
 function isImageTrigger(el?: HTMLElement | null): boolean {
-  if (!el) return false;
-  if (el.tagName === 'IMG') return true;
+  if (!el) {
+    return false;
+  }
+  if (el.tagName === 'IMG') {
+    return true;
+  }
   return closestWithFallback(el, IMAGE_CONTAINER_SELECTORS) !== null;
 }
 
 function inferTrigger(el?: HTMLElement | null): Trigger {
-  if (isVideoTrigger(el)) return 'video-click';
-  if (isImageTrigger(el)) return 'image-click';
+  if (isVideoTrigger(el)) {
+    return 'video-click';
+  }
+  if (isImageTrigger(el)) {
+    return 'image-click';
+  }
   return 'unknown';
 }
 
@@ -119,17 +137,25 @@ export function pauseAmbientVideosForGallery(
 export function startAmbientVideoGuard(): () => void {
   let active = true;
   const pause = (root: Document | HTMLElement): void => {
-    if (!active) return;
+    if (!active) {
+      return;
+    }
     pauseAmbientVideosForGallery({ root, force: false, trigger: 'guard', reason: 'modal' });
   };
   const onPlay = (event: Event): void => {
-    if (event.target instanceof HTMLVideoElement) pause(event.target);
+    if (event.target instanceof HTMLVideoElement) {
+      pause(event.target);
+    }
   };
   const observer = new MutationObserver((records) => {
-    if (!active) return;
+    if (!active) {
+      return;
+    }
     for (const record of records) {
       for (const node of record.addedNodes) {
-        if (node instanceof HTMLElement && !isGalleryInternalElement(node)) pause(node);
+        if (node instanceof HTMLElement && !isGalleryInternalElement(node)) {
+          pause(node);
+        }
       }
     }
   });
@@ -139,7 +165,9 @@ export function startAmbientVideoGuard(): () => void {
   pause(document);
 
   return () => {
-    if (!active) return;
+    if (!active) {
+      return;
+    }
     active = false;
     document.removeEventListener('play', onPlay, true);
     observer.disconnect();

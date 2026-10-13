@@ -75,7 +75,9 @@ function getCookieAPI(): CookieAPI | null {
  */
 function parseDocumentCookies(filterName?: string, cookieString?: string): CookieRecord[] {
   const raw = cookieString ?? (typeof document !== 'undefined' ? document.cookie : '');
-  if (!raw) return [];
+  if (!raw) {
+    return [];
+  }
 
   return raw
     .split(';')
@@ -97,7 +99,9 @@ export async function listCookies(
   try {
     const gm = getCookieAPI();
     const list = gm?.list;
-    if (!list) return parseDocumentCookies(options?.name);
+    if (!list) {
+      return parseDocumentCookies(options?.name);
+    }
 
     // Scope cookie queries to the current domain to prevent cross-domain access
     const scopedOptions: CookieListOptions = {
@@ -108,7 +112,9 @@ export async function listCookies(
     return promisifyCallback<CookieRecord[]>(
       (cb) =>
         list.call(gm, scopedOptions, (cookies, error) => {
-          if (error) return cb(undefined, error);
+          if (error) {
+            return cb(undefined, error);
+          }
           cb(
             (cookies ?? []).map((c) => ({ ...c })),
             undefined
@@ -122,23 +128,31 @@ export async function listCookies(
 }
 
 export async function getCookieValue(name: string): Promise<string | undefined> {
-  if (!name) return undefined;
+  if (!name) {
+    return undefined;
+  }
 
   const gm = getCookieAPI();
   if (gm?.list) {
     const cookies = await listCookies({ name });
     const value = cookies[0]?.value;
-    if (value !== undefined) return value;
+    if (value !== undefined) {
+      return value;
+    }
   }
 
   return getCookieValueSync(name);
 }
 
 export function getCookieValueSync(name: string, cookieString?: string): string | undefined {
-  if (!name) return undefined;
+  if (!name) {
+    return undefined;
+  }
   const raw = cookieString ?? (typeof document !== 'undefined' ? document.cookie : '');
   const match = raw.match(new RegExp(`(?:^|;\\s*)${escapeRegExp(name)}=([^;]*)`));
-  if (!match?.[1]) return undefined;
+  if (!match?.[1]) {
+    return undefined;
+  }
   try {
     return decodeURIComponent(match[1]);
   } catch {

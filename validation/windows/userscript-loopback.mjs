@@ -67,8 +67,9 @@ export function validateFixtureCertificate(
         'video.twimg.com'
       );
     }
-    if (includeFixturePage)
+    if (includeFixturePage) {
       assert.equal(certificate.checkHost('x.com', { subject: 'never' }), 'x.com');
+    }
     assert.equal(certificate.ca, false);
     assert(certificate.checkPrivateKey(privateKey));
     assert(certificate.verify(certificate.publicKey));
@@ -202,7 +203,9 @@ export function createUserscriptFixtureHandler(cohorts, avatarPath) {
     events.push(event);
     active.add(response);
     response.once('close', () => {
-      if (!response.writableFinished) event.result = 'aborted';
+      if (!response.writableFinished) {
+        event.result = 'aborted';
+      }
       active.delete(response);
     });
     if (
@@ -211,8 +214,9 @@ export function createUserscriptFixtureHandler(cohorts, avatarPath) {
       media.cohort === 'held' &&
       media.index === 0 &&
       purpose === 'transfer'
-    )
+    ) {
       return;
+    }
     const unavailable =
       (phase === 'failure' && media.cohort === 'failure') ||
       (phase === 'partial' && media.cohort === 'partial' && media.index === 1);
@@ -284,7 +288,9 @@ export function createUserscriptFixtureHandler(cohorts, avatarPath) {
       events: events.map((event) => ({ ...event })),
     }),
     destroyActive() {
-      for (const response of active) response.destroy();
+      for (const response of active) {
+        response.destroy();
+      }
     },
   };
 }

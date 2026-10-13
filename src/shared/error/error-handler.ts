@@ -19,8 +19,12 @@ const formatErrorLocation = (
 
 const formatRejectionMessage = (reason: unknown): string => {
   const message = normalizeErrorMessage(reason);
-  if (reason instanceof Error) return message;
-  if (typeof reason === 'string') return message;
+  if (reason instanceof Error) {
+    return message;
+  }
+  if (typeof reason === 'string') {
+    return message;
+  }
   return `Unhandled rejection: ${message}`;
 };
 

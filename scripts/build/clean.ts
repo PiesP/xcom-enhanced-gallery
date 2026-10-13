@@ -8,7 +8,9 @@ export function clean(): void {
 }
 
 function isDirectInvocation(): boolean {
-  if (!process.argv[1]) return false;
+  if (!process.argv[1]) {
+    return false;
+  }
   try {
     return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
   } catch {
@@ -16,4 +18,6 @@ function isDirectInvocation(): boolean {
   }
 }
 
-if (isDirectInvocation()) clean();
+if (isDirectInvocation()) {
+  clean();
+}

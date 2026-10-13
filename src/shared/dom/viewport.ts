@@ -72,7 +72,9 @@ export function observeViewportCssVars(
   let disposed = false;
 
   const calcAndApply = (): void => {
-    if (disposed) return;
+    if (disposed) {
+      return;
+    }
     const rect = el.getBoundingClientRect();
     const v = computeViewportConstraints({ width: rect.width, height: rect.height }, getChrome());
     applyViewportCssVars(el, v);
@@ -84,7 +86,9 @@ export function observeViewportCssVars(
   let rafId: number | null = null;
   let timerId: ReturnType<typeof setTimeout> | null = null;
   const schedule = (): void => {
-    if (pending) return;
+    if (pending) {
+      return;
+    }
     pending = true;
     if (typeof requestAnimationFrame === 'function') {
       rafId = requestAnimationFrame(() => {

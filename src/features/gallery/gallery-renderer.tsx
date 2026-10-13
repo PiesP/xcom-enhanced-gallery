@@ -120,7 +120,9 @@ export class GalleryRenderer {
 
   private setupStateSubscription(): void {
     this.stateUnsubscribe = createEffectRoot(() => {
-      if (this.destroyed) return;
+      if (this.destroyed) {
+        return;
+      }
       if (gallerySignals.isOpen && !this.container) {
         this.renderGallery();
       } else if (!gallerySignals.isOpen && this.container) {
@@ -130,9 +132,13 @@ export class GalleryRenderer {
   }
 
   private renderGallery(): void {
-    if (this.isMounting || this.container) return;
+    if (this.isMounting || this.container) {
+      return;
+    }
 
-    if (!gallerySignals.isOpen || gallerySignals.mediaItems.length === 0) return;
+    if (!gallerySignals.isOpen || gallerySignals.mediaItems.length === 0) {
+      return;
+    }
 
     this.isMounting = true;
     __DEV__ && logger.info('[GalleryRenderer] Rendering started');
@@ -165,7 +171,9 @@ export class GalleryRenderer {
   }
 
   private renderComponent(): void {
-    if (!this.container) return;
+    if (!this.container) {
+      return;
+    }
 
     const handleClose = () => {
       closeGallery();

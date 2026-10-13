@@ -54,7 +54,9 @@
     window.addEventListener(
       'click',
       (event) => {
-        if (!event.isTrusted || event.target !== video) return;
+        if (!event.isTrusted || event.target !== video) {
+          return;
+        }
         const record = {
           tag: event.target.tagName.toLowerCase(),
           prevented: false,

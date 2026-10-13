@@ -40,7 +40,9 @@ function loadCapturedShape(name: CapturedShape): void {
 
 function requireTarget(selector: string): HTMLElement {
   const target = document.querySelector(selector);
-  if (!(target instanceof HTMLElement)) throw new Error(`Missing captured target: ${selector}`);
+  if (!(target instanceof HTMLElement)) {
+    throw new Error(`Missing captured target: ${selector}`);
+  }
   return target;
 }
 
@@ -279,7 +281,9 @@ describe('authenticated X layout click routing', () => {
       const link = image.closest('a[href]');
       expect(link?.getAttribute('href')).toBe('https://example.invalid/other-link');
       expectClickRouting(image, false);
-      if (!(link instanceof HTMLElement)) throw new Error('Missing captured Article link');
+      if (!(link instanceof HTMLElement)) {
+        throw new Error('Missing captured Article link');
+      }
       expectClickRouting(link, false);
     }
   );
@@ -321,7 +325,9 @@ describe('authenticated X layout click routing', () => {
       );
       expect(controls.length).toBeGreaterThanOrEqual(3);
       expect(document.querySelector('button[aria-label="전체 화면"]')).not.toBeNull();
-      for (const control of controls) expectClickRouting(control, false);
+      for (const control of controls) {
+        expectClickRouting(control, false);
+      }
     }
   );
 });

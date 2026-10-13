@@ -39,7 +39,9 @@ vi.mock('@platform/chrome-runtime', () => ({
             },
             resolve
           );
-          if (keepChannelOpen !== true) resolve(undefined);
+          if (keepChannelOpen !== true) {
+            resolve(undefined);
+          }
         });
       },
       onMessage: {
@@ -55,7 +57,9 @@ vi.mock('@platform/chrome-runtime', () => ({
     storage: {
       local: {
         get: vi.fn(async (keys: string | string[] | null) => {
-          if (keys === null) return { ...state.storageValues };
+          if (keys === null) {
+            return { ...state.storageValues };
+          }
           const requested = Array.isArray(keys) ? keys : [keys];
           return Object.fromEntries(
             requested
@@ -67,7 +71,9 @@ vi.mock('@platform/chrome-runtime', () => ({
           Object.assign(state.storageValues, items);
         }),
         remove: vi.fn(async (keys: string | string[]) => {
-          for (const key of Array.isArray(keys) ? keys : [keys]) delete state.storageValues[key];
+          for (const key of Array.isArray(keys) ? keys : [keys]) {
+            delete state.storageValues[key];
+          }
         }),
         getKeys: vi.fn(async () => Object.keys(state.storageValues)),
       },

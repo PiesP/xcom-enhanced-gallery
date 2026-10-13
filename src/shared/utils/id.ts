@@ -19,7 +19,9 @@
  * @returns Compact unique identifier without dashes.
  */
 export function generateUniqueId(seed?: string): string {
-  if (seed) return seed;
+  if (seed) {
+    return seed;
+  }
   try {
     return crypto.randomUUID().replaceAll('-', '');
   } catch {

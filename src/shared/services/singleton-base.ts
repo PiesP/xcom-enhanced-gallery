@@ -36,7 +36,9 @@ export function createSingleton<T extends { destroy(): void }>(
   return {
     getInstance() {
       const inst = instance;
-      if (inst) return inst;
+      if (inst) {
+        return inst;
+      }
       const newInst = factory();
       instance = newInst;
       return newInst;

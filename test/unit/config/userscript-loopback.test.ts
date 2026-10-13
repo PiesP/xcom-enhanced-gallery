@@ -53,7 +53,9 @@ async function withServer(action: (fixture: Fixture, port: number) => Promise<vo
   const server = createServer(fixture.handle);
   await new Promise<void>((resolveListen) => server.listen(0, '127.0.0.1', resolveListen));
   const address = server.address();
-  if (!address || typeof address === 'string') throw new Error('Invalid test listener');
+  if (!address || typeof address === 'string') {
+    throw new Error('Invalid test listener');
+  }
   try {
     await action(fixture, address.port);
   } finally {
@@ -96,7 +98,9 @@ function get(
 async function waitFor(read: () => unknown) {
   for (let i = 0; i < 100; i++) {
     const value = read();
-    if (value) return value;
+    if (value) {
+      return value;
+    }
     await new Promise((resolveWait) => setTimeout(resolveWait, 10));
   }
   throw new Error('Timed out waiting for fixture event');

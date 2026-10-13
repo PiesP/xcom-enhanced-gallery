@@ -79,12 +79,16 @@ export function useVideoVisibility(options: UseVideoVisibilityOptions): VideoVis
     mediaIdentity() === identity;
 
   createEffect(() => {
-    if (!isVideo()) return;
+    if (!isVideo()) {
+      return;
+    }
     const root = scrollRoot();
     const containerEl = container();
     const videoEl = video();
     const identity = mediaIdentity();
-    if (!root || !containerEl || !videoEl) return;
+    if (!root || !containerEl || !videoEl) {
+      return;
+    }
     let active = true;
     visible = false;
     observed = false;
@@ -94,13 +98,19 @@ export function useVideoVisibility(options: UseVideoVisibilityOptions): VideoVis
     const unsubscribe = SharedObserver.observe(
       containerEl,
       (entry) => {
-        if (!active || !isCurrent(root, containerEl, videoEl, identity)) return;
+        if (!active || !isCurrent(root, containerEl, videoEl, identity)) {
+          return;
+        }
         const nextVisible = entry.isIntersecting;
         observed = true;
         if (nextVisible === visible) {
-          if (nextVisible) return;
+          if (nextVisible) {
+            return;
+          }
           // Initial delivery may follow a user play before observation begins.
-          if (autoMuted || autoPaused || videoEl.paused) return;
+          if (autoMuted || autoPaused || videoEl.paused) {
+            return;
+          }
         }
         if (!nextVisible) {
           visible = false;
@@ -108,14 +118,18 @@ export function useVideoVisibility(options: UseVideoVisibilityOptions): VideoVis
         } else {
           visible = true;
           try {
-            if (autoMuted && videoEl.muted) setMuted(videoEl, mutedBeforeHidden);
+            if (autoMuted && videoEl.muted) {
+              setMuted(videoEl, mutedBeforeHidden);
+            }
           } catch (error) {
             __DEV__ && logger.warn('Failed to restore video mute on scroll in', { error });
           }
           autoMuted = false;
         }
         onVisibilityChange(nextVisible);
-        if (nextVisible) autoPaused = false;
+        if (nextVisible) {
+          autoPaused = false;
+        }
       },
       { root, rootMargin: '0px', threshold: 0 }
     );
@@ -138,21 +152,26 @@ export function useVideoVisibility(options: UseVideoVisibilityOptions): VideoVis
   });
 
   createEffect(() => {
-    if (!isVideo()) return;
+    if (!isVideo()) {
+      return;
+    }
     const root = scrollRoot();
     const height = scrollRootHeight();
     const containerEl = container();
     const videoEl = video();
     const identity = mediaIdentity();
-    if (!root || !containerEl || !videoEl || height <= 0) return;
+    if (!root || !containerEl || !videoEl || height <= 0) {
+      return;
+    }
     let active = true;
     // IO percentage margins resolve against root width even on vertical sides.
     const margin = `${Math.round(height)}px 0px`;
     const unsubscribe = SharedObserver.observe(
       containerEl,
       (entry) => {
-        if (active && entry.isIntersecting && isCurrent(root, containerEl, videoEl, identity))
+        if (active && entry.isIntersecting && isCurrent(root, containerEl, videoEl, identity)) {
           admit();
+        }
       },
       { root, rootMargin: margin, threshold: 0 }
     );
@@ -169,12 +188,16 @@ export function useVideoVisibility(options: UseVideoVisibilityOptions): VideoVis
     recoveryMuted: (videoEl) => (autoMuted && videoEl.muted ? mutedBeforeHidden : videoEl.muted),
     noteUserVolumeChange: (videoEl) => {
       // A volume-only change does not alter the pre-scroll mute preference.
-      if (autoMuted && !videoEl.muted) autoMuted = false;
+      if (autoMuted && !videoEl.muted) {
+        autoMuted = false;
+      }
     },
     pauseIfHidden: () => {
       if (observed && !visible) {
         const currentVideo = video();
-        if (currentVideo) pauseOutside(currentVideo);
+        if (currentVideo) {
+          pauseOutside(currentVideo);
+        }
       }
     },
   };

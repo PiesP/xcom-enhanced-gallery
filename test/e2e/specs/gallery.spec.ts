@@ -75,8 +75,9 @@ async function setupGalleryPage(
           const variables = JSON.parse(url.searchParams.get('variables') ?? '{}') as {
             tweetId?: string;
           };
-          if (!variables.tweetId)
+          if (!variables.tweetId) {
             return fixtureMediaRequest?.(details) ?? { abort: () => undefined };
+          }
           w.__xegRequestedTweetIds?.push(variables.tweetId);
 
           const respond = (): void => {
@@ -91,8 +92,11 @@ async function setupGalleryPage(
               context: null,
             });
           };
-          if (deferApi) w.__xegReleaseApi = respond;
-          else queueMicrotask(respond);
+          if (deferApi) {
+            w.__xegReleaseApi = respond;
+          } else {
+            queueMicrotask(respond);
+          }
           return { abort: () => undefined };
         };
       },
@@ -252,11 +256,14 @@ test.describe('X.com Enhanced Gallery E2E', () => {
         )
         .toEqual(['222']);
       await page.evaluate((replace) => {
-        if (replace)
+        if (replace) {
           document.querySelector<HTMLImageElement>('#identity-target')!.src =
             'https://pbs.twimg.com/media/identity-B.jpg';
+        }
         const host = window as unknown as { __xegReleaseApi?: () => void };
-        if (!host.__xegReleaseApi) throw new Error('Deferred HTTP request was not observed');
+        if (!host.__xegReleaseApi) {
+          throw new Error('Deferred HTTP request was not observed');
+        }
         host.__xegReleaseApi();
       }, replaceSource);
       const gallery = page.locator('[data-xeg-gallery-container]');
@@ -482,7 +489,9 @@ test.describe('X.com Enhanced Gallery E2E', () => {
     const errors: string[] = [];
     page.on('pageerror', (err) => errors.push(err.message));
     page.on('console', (msg) => {
-      if (msg.type() === 'error') errors.push(msg.text());
+      if (msg.type() === 'error') {
+        errors.push(msg.text());
+      }
     });
 
     await setupGalleryPage(page, 'https://x.com');
@@ -511,7 +520,9 @@ test.describe('X.com Enhanced Gallery E2E', () => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     page.on('console', (message) => {
-      if (message.type() === 'error') errors.push(message.text());
+      if (message.type() === 'error') {
+        errors.push(message.text());
+      }
     });
 
     await page.route('https://pbs.twimg.com/**', async (route) => {

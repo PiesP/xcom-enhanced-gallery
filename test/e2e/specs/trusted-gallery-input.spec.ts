@@ -40,11 +40,17 @@ test.beforeAll(async () => {
   });
   const outputs = Array.isArray(result) ? result : [result];
   for (const output of outputs) {
-    if (!('output' in output)) continue;
+    if (!('output' in output)) {
+      continue;
+    }
     const chunk = output.output.find((item) => item.type === 'chunk');
-    if (chunk?.type === 'chunk') earlyInputBundle = chunk.code;
+    if (chunk?.type === 'chunk') {
+      earlyInputBundle = chunk.code;
+    }
   }
-  if (!earlyInputBundle) throw new Error('Readiness browser fixture build produced no code');
+  if (!earlyInputBundle) {
+    throw new Error('Readiness browser fixture build produced no code');
+  }
 });
 
 test('retains the latest genuine early media click and rejects stale targets', async ({ page }) => {
@@ -94,7 +100,9 @@ test('retains the latest genuine early media click and rejects stale targets', a
     const parent = image?.parentElement;
     image?.remove();
     await window.__xegEarlyInputObserver?.complete();
-    if (image && parent) parent.append(image);
+    if (image && parent) {
+      parent.append(image);
+    }
   });
   expect(await page.evaluate(() => window.__xegEarlyInputObserver?.observations())).toEqual([]);
 
@@ -262,7 +270,9 @@ async function setup(page: Page): Promise<void> {
   await page.evaluate(() => {
     const downloadRequest = window.GM_xmlhttpRequest;
     window.GM_xmlhttpRequest = (details) => {
-      if (details.responseType === 'blob') return downloadRequest(details);
+      if (details.responseType === 'blob') {
+        return downloadRequest(details);
+      }
       queueMicrotask(() =>
         details.onload?.({
           finalUrl: details.url,
@@ -289,7 +299,9 @@ async function installRenderFault(page: Page, failures: number): Promise<void> {
       CSSStyleDeclaration.prototype,
       'setProperty'
     );
-    if (!descriptor || typeof descriptor.value !== 'function') throw new Error('Missing CSS API');
+    if (!descriptor || typeof descriptor.value !== 'function') {
+      throw new Error('Missing CSS API');
+    }
     const original = descriptor.value;
     const state: RenderFault = { remaining, throws: 0, autoResetTimers: 0 };
     window.__xegTrustedInputFault = state;
@@ -306,7 +318,9 @@ async function installRenderFault(page: Page, failures: number): Promise<void> {
     });
     const originalTimeout = window.setTimeout;
     window.setTimeout = ((handler: TimerHandler, delay?: number, ...args: unknown[]) => {
-      if (delay === 30_000) state.autoResetTimers += 1;
+      if (delay === 30_000) {
+        state.autoResetTimers += 1;
+      }
       return originalTimeout(handler, delay, ...args);
     }) as typeof window.setTimeout;
   }, failures);

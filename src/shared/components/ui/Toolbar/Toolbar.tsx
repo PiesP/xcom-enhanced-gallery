@@ -32,9 +32,15 @@ const FIT_MODE_ORDER: ReadonlyArray<{ mode: ImageFitMode; iconName: LucideIconNa
 type InternalFitModeHandlers = Record<ImageFitMode, FitModeHandlers['onFitOriginal'] | undefined>;
 
 function getToolbarDataState(state: ToolbarState): ToolbarDataState {
-  if (state.hasError()) return 'error';
-  if (state.isDownloading()) return 'downloading';
-  if (state.isLoading()) return 'loading';
+  if (state.hasError()) {
+    return 'error';
+  }
+  if (state.isDownloading()) {
+    return 'downloading';
+  }
+  if (state.isLoading()) {
+    return 'loading';
+  }
   return 'idle';
 }
 
@@ -121,14 +127,18 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
 
   const setSettingsExpanded = (expanded: boolean) => {
     setSettingsExpandedSignal(expanded);
-    if (expanded) setTweetExpanded(false);
+    if (expanded) {
+      setTweetExpanded(false);
+    }
   };
 
   const toggleSettings = () => setSettingsExpanded(!settingsExpandedSignal());
 
   const toggleTweet = () => {
     setTweetExpanded((prev) => {
-      if (!prev) setSettingsExpanded(false);
+      if (!prev) {
+        setSettingsExpanded(false);
+      }
       return !prev;
     });
   };
@@ -136,19 +146,25 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
   const isToolbarDisabled = () => !!(local.disabled?.() ?? false);
 
   const isFitDisabled = (mode: ImageFitMode): boolean => {
-    if (isToolbarDisabled()) return true;
+    if (isToolbarDisabled()) {
+      return true;
+    }
     const handler = fitModeHandlers()[mode];
     return !handler;
   };
 
   const handleFitModeClick = (mode: ImageFitMode) => (event: MouseEvent) => {
     stopEvent(event);
-    if (!isToolbarDisabled()) fitModeHandlers()[mode]?.(event);
+    if (!isToolbarDisabled()) {
+      fitModeHandlers()[mode]?.(event);
+    }
   };
 
   const guardedClick = (disabled: () => boolean, action?: () => void) => (event: MouseEvent) => {
     stopEvent(event);
-    if (!disabled()) action?.();
+    if (!disabled()) {
+      action?.();
+    }
   };
 
   const handleClose = (event: MouseEvent) => {

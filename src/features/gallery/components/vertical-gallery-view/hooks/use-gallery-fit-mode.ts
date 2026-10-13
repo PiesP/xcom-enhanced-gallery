@@ -60,7 +60,9 @@ export function useGalleryFitMode(options: UseGalleryFitModeOptions): UseGallery
   // when modified from outside this hook (e.g., settings panel, other tabs).
   createEffect(() => {
     const settings = tryGetSettings();
-    if (!settings?.subscribe) return;
+    if (!settings?.subscribe) {
+      return;
+    }
     const unsubscribe = settings.subscribe((event: { key: string; newValue?: unknown }) => {
       if (event.key === 'gallery.imageFitMode' && typeof event.newValue === 'string') {
         setImageFitMode(event.newValue as ImageFitMode);

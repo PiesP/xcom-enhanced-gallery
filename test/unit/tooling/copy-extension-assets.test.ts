@@ -80,7 +80,9 @@ describe('copyExtensionAssetsPlugin', () => {
         path,
         bytes: Buffer.from(`Canonical notice ${index} — ${path}\n`),
       }));
-      for (const notice of notices) write(root, notice.path, notice.bytes);
+      for (const notice of notices) {
+        write(root, notice.path, notice.bytes);
+      }
       write(chromeOut, 'background.js', 'preserve background');
       write(chromeOut, 'content.js', 'preserve content');
       write(chromeOut, 'icons/unused.png', 'stale output');

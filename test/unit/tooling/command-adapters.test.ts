@@ -24,7 +24,9 @@ const manifest = JSON.parse(readFileSync(join(projectRoot, 'package.json'), 'utf
 const fixtures: string[] = [];
 
 afterEach(() => {
-  for (const root of fixtures.splice(0)) rmSync(root, { recursive: true, force: true });
+  for (const root of fixtures.splice(0)) {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 function fixtureRoot(): string {

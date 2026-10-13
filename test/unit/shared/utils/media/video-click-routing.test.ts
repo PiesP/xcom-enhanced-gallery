@@ -51,7 +51,9 @@ function click(target: Element): {
 
 function requireElement(selector: string): Element {
   const result = document.querySelector(selector);
-  if (!result) throw new Error(`Missing element: ${selector}`);
+  if (!result) {
+    throw new Error(`Missing element: ${selector}`);
+  }
   return result;
 }
 
@@ -157,7 +159,9 @@ describe('unmarked video and icon click routing', () => {
       document.body.innerHTML = `<article><a href="/author/status/333"><time>Post</time></a>
         <video id="video" src="blob:https://x.com/playing"></video></article>`;
       const video = requireElement('#video');
-      if (!(video instanceof HTMLVideoElement)) throw new Error('Missing video fixture');
+      if (!(video instanceof HTMLVideoElement)) {
+        throw new Error('Missing video fixture');
+      }
       expect(isProcessableMedia(video)).toBe(true);
       const routed = click(video);
       expect(routed.event.defaultPrevented).toBe(true);

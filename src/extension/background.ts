@@ -56,7 +56,9 @@ type MessageSender = { id?: string; tab?: { id?: number }; url?: string };
 
 function getContentTabId(sender: MessageSender): number | undefined {
   const tabId = sender.tab?.id;
-  if (typeof tabId !== 'number' || !Number.isSafeInteger(tabId) || tabId < 0) return undefined;
+  if (typeof tabId !== 'number' || !Number.isSafeInteger(tabId) || tabId < 0) {
+    return undefined;
+  }
   try {
     const origin = new URL(sender.url ?? '').origin;
     return origin === 'https://x.com' || origin === 'https://twitter.com' ? tabId : undefined;
@@ -118,10 +120,14 @@ function isTerminalDownloadState(state: string | undefined): boolean {
  */
 function handleTrackedDownloadChange(delta: ChromeDownloadDelta): void {
   const state = readDownloadState(delta.state);
-  if (!isTerminalDownloadState(state)) return;
+  if (!isTerminalDownloadState(state)) {
+    return;
+  }
 
   for (const [requestId, tracked] of activeDownloadIds) {
-    if (tracked.downloadId !== delta.id) continue;
+    if (tracked.downloadId !== delta.id) {
+      continue;
+    }
     tracked.terminalObserved = true;
     if (tracked.direct) {
       void downloadTracking
@@ -155,7 +161,9 @@ async function restoreTrackedDownloadsFromStorage(): Promise<void> {
   activeDownloadIds.clear();
 
   for (const [requestId, record] of records) {
-    if (record.downloadId === undefined) continue;
+    if (record.downloadId === undefined) {
+      continue;
+    }
 
     if (record.route === 'direct') {
       const tracked: TrackedDownload = {
@@ -165,7 +173,9 @@ async function restoreTrackedDownloadsFromStorage(): Promise<void> {
         terminalObserved: record.terminalState !== undefined,
         direct: true,
       };
-      if (record.terminalState === undefined) activeDownloadIds.set(requestId, tracked);
+      if (record.terminalState === undefined) {
+        activeDownloadIds.set(requestId, tracked);
+      }
       try {
         const [item] = await browserApi.downloads.search({ id: record.downloadId });
         if (
@@ -208,9 +218,13 @@ async function restoreTrackedDownloadsFromStorage(): Promise<void> {
   }
 
   for (const [requestId, record] of records) {
-    if (record.downloadId === undefined || record.route === 'direct') continue;
+    if (record.downloadId === undefined || record.route === 'direct') {
+      continue;
+    }
     const tracked = restored.get(requestId);
-    if (tracked === undefined) continue;
+    if (tracked === undefined) {
+      continue;
+    }
 
     if (tracked.terminalObserved) {
       await downloadTracking.remove(requestId);
@@ -274,8 +288,12 @@ let downloadStateRestorePromise: Promise<void> | undefined;
  * known snapshot with an assumed-empty one.
  */
 function restoreTrackedDownloads(): Promise<void> {
-  if (downloadStateRestored) return Promise.resolve();
-  if (downloadStateRestorePromise !== undefined) return downloadStateRestorePromise;
+  if (downloadStateRestored) {
+    return Promise.resolve();
+  }
+  if (downloadStateRestorePromise !== undefined) {
+    return downloadStateRestorePromise;
+  }
 
   const restorePromise = restoreTrackedDownloadsFromStorage().then(() => {
     downloadStateRestored = true;
@@ -283,10 +301,14 @@ function restoreTrackedDownloads(): Promise<void> {
   downloadStateRestorePromise = restorePromise;
   void restorePromise.then(
     () => {
-      if (downloadStateRestorePromise === restorePromise) downloadStateRestorePromise = undefined;
+      if (downloadStateRestorePromise === restorePromise) {
+        downloadStateRestorePromise = undefined;
+      }
     },
     () => {
-      if (downloadStateRestorePromise === restorePromise) downloadStateRestorePromise = undefined;
+      if (downloadStateRestorePromise === restorePromise) {
+        downloadStateRestorePromise = undefined;
+      }
     }
   );
   return restorePromise;
@@ -438,9 +460,13 @@ async function handleDownloadRequest(
   }
 
   if (mode === 'direct') {
-    if (requestId === undefined) throw new Error('Missing direct download request ID');
+    if (requestId === undefined) {
+      throw new Error('Missing direct download request ID');
+    }
     const ownerTabId = getContentTabId(sender);
-    if (ownerTabId === undefined) throw new Error('Unauthorized download owner');
+    if (ownerTabId === undefined) {
+      throw new Error('Unauthorized download owner');
+    }
     return runDirectDownload(downloadOptions, requestId, ownerTabId);
   }
   await runTrackedDownload(downloadOptions, requestId);
@@ -501,7 +527,9 @@ async function handleDownloadBlobStatusRequest(
     if (downloadId !== undefined) {
       const [item] = await browserApi.downloads.search({ id: downloadId });
       if (item !== undefined) {
-        if (item.id !== downloadId || item.url !== objectUrl) return result('unknown');
+        if (item.id !== downloadId || item.url !== objectUrl) {
+          return result('unknown');
+        }
         if (item.state === 'in_progress' && cancelRequested) {
           try {
             await downloadTracking.requestCancellation(requestId);
@@ -621,7 +649,9 @@ async function inspectDirectDownload(
       record.cancellationRequested ? 'user-cancelled' : 'browser-rejected'
     );
   }
-  if (record.terminalState === 'complete') return directStatus(requestId, 'complete');
+  if (record.terminalState === 'complete') {
+    return directStatus(requestId, 'complete');
+  }
   if (record.terminalState === 'interrupted') {
     return directStatus(
       requestId,
@@ -629,11 +659,14 @@ async function inspectDirectDownload(
       record.cancellationRequested ? 'user-cancelled' : 'browser-interrupted'
     );
   }
-  if (!isValidDownloadId(record.downloadId)) return directStatus(requestId, 'unknown');
+  if (!isValidDownloadId(record.downloadId)) {
+    return directStatus(requestId, 'unknown');
+  }
   try {
     const [item] = await browserApi.downloads.search({ id: record.downloadId });
-    if (item?.id !== record.downloadId || item.url !== url)
+    if (item?.id !== record.downloadId || item.url !== url) {
       return directStatus(requestId, 'unknown');
+    }
     if (item.state === 'complete' || item.state === 'interrupted') {
       await downloadTracking.markDirectTerminal(requestId, item.state);
       activeDownloadIds.delete(requestId);
@@ -663,7 +696,9 @@ async function handleDownloadDirectStatusRequest(
 ): Promise<DownloadDirectStatusResponse> {
   const { requestId, url, cancelRequested } = message.payload;
   const ownerTabId = getContentTabId(sender);
-  if (ownerTabId === undefined) return directStatus(requestId, 'unknown');
+  if (ownerTabId === undefined) {
+    return directStatus(requestId, 'unknown');
+  }
   try {
     await restoreTrackedDownloads();
     const urlHash = await hashDownloadUrl(url);
@@ -805,7 +840,9 @@ async function runDirectDownload(
         ? await inspectDirectDownload(requestId, updated, options.url)
         : directStatus(requestId, 'unknown');
     }
-    if (status.status === 'complete') return { success: true, data: status };
+    if (status.status === 'complete') {
+      return { success: true, data: status };
+    }
     return {
       success: false,
       error:
@@ -873,7 +910,9 @@ async function runTrackedDownload(
       if (terminalObserved) {
         terminal = true;
       } else {
-        if (tracked?.downloadId === downloadId) tracked.retainUntilTerminal = true;
+        if (tracked?.downloadId === downloadId) {
+          tracked.retainUntilTerminal = true;
+        }
         const reason =
           error instanceof Error && error.name === 'DownloadTimeoutError' ? 'timeout' : 'failure';
         const cancellationStatus = await cancelDownloadWithRetry(
@@ -922,7 +961,9 @@ async function runTrackedDownload(
       }
     }
   }
-  if (cleanupFailure !== undefined && operationFailure === undefined) throw cleanupFailure;
+  if (cleanupFailure !== undefined && operationFailure === undefined) {
+    throw cleanupFailure;
+  }
 }
 
 async function cancelAndInspectDownload(
@@ -945,7 +986,9 @@ async function cancelAndInspectDownload(
 
   try {
     const [item] = await browserApi.downloads.search({ id: downloadId });
-    if (isTerminalDownloadState(item?.state)) return 'terminal';
+    if (isTerminalDownloadState(item?.state)) {
+      return 'terminal';
+    }
     if (item?.state === 'in_progress') {
       log.warn(`download.${reason}-cancellation-unconfirmed`, { downloadId });
       return 'pending';
@@ -966,7 +1009,9 @@ async function cancelDownloadWithRetry(
   reason: 'failure' | 'request' | 'timeout',
   terminalObserved: () => boolean = () => false
 ): Promise<DownloadCancellationStatus> {
-  if (terminalObserved()) return 'terminal';
+  if (terminalObserved()) {
+    return 'terminal';
+  }
 
   let status: DownloadCancellationStatus = 'unknown';
   for (let attempt = 0; attempt < DOWNLOAD_CANCEL_MAX_ATTEMPTS; attempt += 1) {
@@ -974,10 +1019,14 @@ async function cancelDownloadWithRetry(
       await new Promise<void>((resolve) => {
         setTimeout(resolve, DOWNLOAD_CANCEL_RETRY_DELAY_MS);
       });
-      if (terminalObserved()) return 'terminal';
+      if (terminalObserved()) {
+        return 'terminal';
+      }
     }
     status = await cancelAndInspectDownload(downloadId, reason);
-    if (status === 'terminal' || terminalObserved()) return 'terminal';
+    if (status === 'terminal' || terminalObserved()) {
+      return 'terminal';
+    }
   }
   return status;
 }
@@ -991,7 +1040,9 @@ async function handleDownloadCancelRequest(
   await restoreTrackedDownloads();
   if (url !== undefined) {
     const ownerTabId = getContentTabId(sender);
-    if (ownerTabId === undefined) throw new Error('Unauthorized download owner');
+    if (ownerTabId === undefined) {
+      throw new Error('Unauthorized download owner');
+    }
     const urlHash = await hashDownloadUrl(url);
     if (!(await downloadTracking.requestDirectCancellation(requestId, ownerTabId, urlHash))) {
       throw new Error('Download request ownership mismatch');

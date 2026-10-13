@@ -14,7 +14,9 @@ function matchesExactly(pattern: RegExp, value: string): boolean {
 
 function required(name: string): string {
   const value = process.env[name];
-  if (!value) throw new Error(`Missing ${name}`);
+  if (!value) {
+    throw new Error(`Missing ${name}`);
+  }
   return value;
 }
 
@@ -24,34 +26,42 @@ function git(args: string[]): string {
 
 function taggedNodeVersion(sha: string, releaseVersion: string): string {
   const manifest = JSON.parse(git(['show', `${sha}:package.json`])) as unknown;
-  if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest))
+  if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest)) {
     throw new Error('Invalid release source manifest');
+  }
   const volta = (manifest as { volta?: unknown }).volta;
   const version =
     volta && typeof volta === 'object' && !Array.isArray(volta)
       ? (volta as { node?: unknown }).node
       : undefined;
-  if (typeof version !== 'string' || !matchesExactly(exactNodeVersion, version))
+  if (typeof version !== 'string' || !matchesExactly(exactNodeVersion, version)) {
     throw new Error('Release source must declare an exact volta.node pin');
+  }
   const sourceVersion = (manifest as { version?: unknown }).version;
-  if (sourceVersion !== releaseVersion)
+  if (sourceVersion !== releaseVersion) {
     throw new Error(
       `Tag version ${releaseVersion} does not match package.json ${String(sourceVersion)}`
     );
+  }
   return version;
 }
 
 export function verifySource(): void {
   const tag = required('RELEASE_TAG');
-  if (!matchesExactly(stableTag, tag))
+  if (!matchesExactly(stableTag, tag)) {
     throw new Error(`Invalid release tag: ${tag} (expected vX.Y.Z)`);
+  }
   const protectedSha = required('GITHUB_SHA');
-  if (!matchesExactly(commitSha, protectedSha)) throw new Error('Invalid protected workflow SHA');
+  if (!matchesExactly(commitSha, protectedSha)) {
+    throw new Error('Invalid protected workflow SHA');
+  }
   const output = required('GITHUB_OUTPUT');
 
   git(['fetch', '--force', 'origin', `refs/tags/${tag}:refs/tags/${tag}`]);
   const releaseSha = git(['rev-parse', '--verify', `${tag}^{commit}`]);
-  if (!matchesExactly(commitSha, releaseSha)) throw new Error('Invalid resolved release commit');
+  if (!matchesExactly(commitSha, releaseSha)) {
+    throw new Error('Invalid resolved release commit');
+  }
   try {
     git(['merge-base', '--is-ancestor', releaseSha, protectedSha]);
   } catch {
@@ -66,7 +76,9 @@ export function verifySource(): void {
 }
 
 function isCliEntry(): boolean {
-  if (!process.argv[1]) return false;
+  if (!process.argv[1]) {
+    return false;
+  }
   try {
     return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
   } catch {

@@ -176,7 +176,9 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
   createEffect(() => {
     const toolbar = toolbarElement();
     const counter = counterElement();
-    if (!toolbar && !counter) return;
+    if (!toolbar && !counter) {
+      return;
+    }
 
     const current = String(currentIndex());
     const focused = String(local.displayedIndex() ?? -1);
@@ -237,7 +239,9 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
    * - Otherwise: let event propagate to gallery (which may hide toolbar on scroll)
    */
   const handlePanelWheel = (event: WheelEvent) => {
-    if (!shouldAllowWheelDefault(event)) return;
+    if (!shouldAllowWheelDefault(event)) {
+      return;
+    }
     event.stopPropagation();
   };
 
@@ -265,7 +269,9 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
   ) => {
     createEffect(() => {
       const element = getElement();
-      if (!element) return;
+      if (!element) {
+        return;
+      }
 
       const controller = new AbortController();
       const eventManager = getEventManager();

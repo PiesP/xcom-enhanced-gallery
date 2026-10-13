@@ -112,7 +112,9 @@ export function reportProgress(
   onProgress: DownloadOptions['onProgress'] | undefined,
   payload: Omit<DownloadProgress, 'percentage'> & { percentage?: number }
 ): void {
-  if (!onProgress) return;
+  if (!onProgress) {
+    return;
+  }
   const percentage = payload.percentage ?? computePercentage(payload.current, payload.total);
   onProgress({ ...payload, percentage });
 }

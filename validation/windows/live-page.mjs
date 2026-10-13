@@ -13,8 +13,12 @@ const MAX_API_BODY_BYTES = 2_000_000;
 const LIVE_URL_PATTERN = /^https:\/\/(x\.com|twitter\.com)\/([A-Za-z0-9_]{1,15})\/status\/(\d+)$/u;
 
 export function validateLiveUrls(values) {
-  if (!Array.isArray(values)) throw new Error('X live URLs must be an array');
-  if (values.length > 3) throw new Error('At most three X live URLs are supported');
+  if (!Array.isArray(values)) {
+    throw new Error('X live URLs must be an array');
+  }
+  if (values.length > 3) {
+    throw new Error('At most three X live URLs are supported');
+  }
   return values.map((value) => {
     if (typeof value !== 'string' || /[\s\\]/u.test(value) || !LIVE_URL_PATTERN.test(value)) {
       throw new Error('Live URL must be an exact public X or Twitter status HTTPS URL');
@@ -28,20 +32,28 @@ export function validateLiveUrls(values) {
 }
 
 export function validateLiveObservation(value) {
-  if (value !== null) throw new Error('X live status validation does not support duration mode');
+  if (value !== null) {
+    throw new Error('X live status validation does not support duration mode');
+  }
 }
 
 function targetIdentity(value) {
   const match = LIVE_URL_PATTERN.exec(value);
-  if (!match) throw new Error('Validated live URL lost its status identity');
+  if (!match) {
+    throw new Error('Validated live URL lost its status identity');
+  }
   return { handle: match[2], statusId: match[3] };
 }
 
 function sanitizedUrl(value) {
   try {
     const url = new URL(value);
-    if (!['https:', 'chrome-extension:', 'about:'].includes(url.protocol)) return url.protocol;
-    if (url.protocol === 'about:') return 'about:blank';
+    if (!['https:', 'chrome-extension:', 'about:'].includes(url.protocol)) {
+      return url.protocol;
+    }
+    if (url.protocol === 'about:') {
+      return 'about:blank';
+    }
     return `${url.protocol}//${url.host}${url.pathname}`;
   } catch {
     return '[invalid-url]';
@@ -67,8 +79,11 @@ function safeError(error) {
 }
 
 function addBounded(list, value, observation, overflowKey) {
-  if (list.length < MAX_DIAGNOSTICS) list.push(value);
-  else observation[overflowKey] += 1;
+  if (list.length < MAX_DIAGNOSTICS) {
+    list.push(value);
+  } else {
+    observation[overflowKey] += 1;
+  }
 }
 
 function mediaSource(value, kind) {
@@ -94,7 +109,9 @@ function unwrapTweet(value) {
 
 function summarizeTweet(value) {
   const tweet = unwrapTweet(value);
-  if (!tweet || typeof tweet !== 'object') return null;
+  if (!tweet || typeof tweet !== 'object') {
+    return null;
+  }
   const id = tweet.rest_id ?? tweet.legacy?.id_str ?? tweet.id_str;
   const media = tweet.legacy?.extended_entities?.media ?? tweet.extended_entities?.media ?? [];
   return {
@@ -121,7 +138,9 @@ function summarizeTweet(value) {
 
 export function summarizeTweetResultResponse(urlValue, status, body) {
   const url = new URL(urlValue);
-  if (!url.pathname.endsWith('/TweetResultByRestId')) return null;
+  if (!url.pathname.endsWith('/TweetResultByRestId')) {
+    return null;
+  }
   let requestedTweetId = null;
   try {
     const variables = JSON.parse(url.searchParams.get('variables') ?? '{}');
@@ -156,7 +175,9 @@ export function summarizeQuoteProviderRejection(api) {
   const fallbackStatus = Array.isArray(statuses)
     ? statuses.find((status) => Number.isInteger(status) && status >= 400 && status <= 599)
     : null;
-  if (!rejected && fallbackStatus == null) return null;
+  if (!rejected && fallbackStatus == null) {
+    return null;
+  }
   const status = rejected?.httpStatus ?? fallbackStatus;
   return {
     operation: 'TweetResultByRestId',
@@ -176,8 +197,12 @@ export function classifyLiveFailure(classification, galleryStatus, providerRejec
   if (classification === 'controlled-media-click-did-not-open-gallery' && providerRejection) {
     return 'provider-rejection-observed-gallery-unverified';
   }
-  if (classification) return classification;
-  if (providerRejection) return 'provider-failure-with-unverified-product-flow';
+  if (classification) {
+    return classification;
+  }
+  if (providerRejection) {
+    return 'provider-failure-with-unverified-product-flow';
+  }
   return galleryStatus === 'attempting' || galleryStatus === 'observed'
     ? 'product-flow-unverified'
     : 'target-or-product-unverified';
@@ -218,8 +243,9 @@ export function classifyLiveHostDiagnostics(observation) {
             record.hadQuery === true ||
             record.hadCredentials === true ||
             record.hadPort === true
-          )
+          ) {
             return false;
+          }
           try {
             const url = new URL(record.url);
             return (
@@ -271,7 +297,9 @@ function isProductConsoleError(record) {
 function attachDiagnostics(page, observation) {
   const pendingResponses = new Set();
   page.on('console', (message) => {
-    if (message.type() !== 'error') return;
+    if (message.type() !== 'error') {
+      return;
+    }
     const record = {
       kind: 'console',
       location: sanitizedUrl(message.location().url || 'about:blank'),
@@ -318,11 +346,15 @@ function attachDiagnostics(page, observation) {
               if (bytes.length <= MAX_API_BODY_BYTES) {
                 body = JSON.parse(bytes.toString('utf8'));
                 bodyOutcome = 'parsed';
-              } else bodyOutcome = 'too-large';
+              } else {
+                bodyOutcome = 'too-large';
+              }
             } catch {
               bodyOutcome = 'not-readable';
             }
-          } else bodyOutcome = 'too-large';
+          } else {
+            bodyOutcome = 'too-large';
+          }
           observation.api.observations.push({
             ...summarizeTweetResultResponse(url, response.status(), body),
             bodyOutcome,
@@ -330,7 +362,9 @@ function attachDiagnostics(page, observation) {
         })();
         pendingResponses.add(capture);
         capture.finally(() => pendingResponses.delete(capture));
-      } else observation.api.overflow += 1;
+      } else {
+        observation.api.overflow += 1;
+      }
     }
     if (response.status() >= 400) {
       addBounded(
@@ -401,8 +435,9 @@ async function waitForRestoredHostState(page, actionHandle, before) {
       state.bodyStylesRestored &&
       state.scrollRestorationRestored &&
       state.scrollRestored
-    )
+    ) {
       return state;
+    }
     await page.waitForTimeout(50);
   } while (Date.now() < deadline);
   return state;
@@ -439,7 +474,9 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
   const parseLink = (anchor) => {
     try {
       const url = new URL(anchor.href, location.href);
-      if (!['x.com', 'twitter.com'].includes(url.hostname.toLowerCase())) return null;
+      if (!['x.com', 'twitter.com'].includes(url.hostname.toLowerCase())) {
+        return null;
+      }
       return { host: url.hostname.toLowerCase(), path: url.pathname };
     } catch {
       return null;
@@ -484,7 +521,9 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
       const link = parseLink(anchor);
       return anchor.closest('article') === article && link?.path.toLowerCase() === statusPath;
     });
-    if (!ownsStatus) continue;
+    if (!ownsStatus) {
+      continue;
+    }
 
     const directNestedArticles = [...article.querySelectorAll('article')].filter(
       (nested) => nested.parentElement?.closest('article') === article
@@ -542,9 +581,13 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
               : preview && isVisible(preview) && preview.complete && preview.naturalWidth > 0
                 ? preview
                 : (matchingPoster ?? (isVisible(player) ? player : null));
-        if (!hitTarget) continue;
+        if (!hitTarget) {
+          continue;
+        }
         const quoteLinks = [...quote.querySelectorAll('a[href]')].flatMap((anchor) => {
-          if (directNestedArticles.length && anchor.closest('article') !== quote) return [];
+          if (directNestedArticles.length && anchor.closest('article') !== quote) {
+            return [];
+          }
           const link = parseLink(anchor);
           const match = link?.path.match(/^\/[A-Za-z0-9_]{1,15}\/status\/(\d+)(?:\/|$)/u);
           return match && match[1] !== statusId ? [match[1]] : [];
@@ -612,7 +655,9 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
         candidateCount: Math.min(videoTargets.length, 20),
       };
     }
-    if (videoTargets.length === 1) return videoTargets[0];
+    if (videoTargets.length === 1) {
+      return videoTargets[0];
+    }
     if (
       scopes.some((quote) =>
         quote.querySelector(
@@ -634,8 +679,9 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
         !isVisible(image) ||
         !image.complete ||
         image.naturalWidth <= 0
-      )
+      ) {
         continue;
+      }
       return {
         state: 'ready',
         target: {
@@ -739,7 +785,9 @@ export function inspectLiveCandidateDocument({ handle, statusId }) {
       node = node.parentElement?.closest('article')
     ) {
       ancestorArticleIndexes.push(articles.indexOf(node));
-      if (node === outerArticle || ancestorArticleIndexes.length >= 6) break;
+      if (node === outerArticle || ancestorArticleIndexes.length >= 6) {
+        break;
+      }
     }
     const nearest = element.closest('article');
     const ownStatusAnchors = nearest
@@ -747,7 +795,9 @@ export function inspectLiveCandidateDocument({ handle, statusId }) {
           .filter((anchor) => anchor.closest('article') === nearest)
           .flatMap((anchor) => {
             const path = statusPath(anchor.href);
-            if (!path) return [];
+            if (!path) {
+              return [];
+            }
             const structure = [];
             for (
               let node = anchor;
@@ -799,7 +849,9 @@ export function inspectLiveCandidateDocument({ handle, statusId }) {
       }
     })
   );
-  if (!article) return { exactArticleFound: false, articleCount: Math.min(articles.length, 50) };
+  if (!article) {
+    return { exactArticleFound: false, articleCount: Math.min(articles.length, 50) };
+  }
   const videoDetails = [...article.querySelectorAll('video')].slice(0, 6).map((video) => {
     const rect = video.getBoundingClientRect();
     const x = Math.min(innerWidth - 1, Math.max(0, rect.x + rect.width / 2));
@@ -835,13 +887,17 @@ export function inspectLiveCandidateDocument({ handle, statusId }) {
   });
   const thumbnailDetails = [];
   for (const element of [...article.querySelectorAll('*')].slice(0, 800)) {
-    if (thumbnailDetails.length >= 8) break;
+    if (thumbnailDetails.length >= 8) {
+      break;
+    }
     const image =
       element instanceof HTMLImageElement ? mediaPath(element.currentSrc || element.src) : null;
     const background = getComputedStyle(element).backgroundImage;
     const backgroundUrl = background.match(/^url\(["']?(.*?)["']?\)$/u)?.[1];
     const backgroundSource = backgroundUrl ? mediaPath(backgroundUrl) : null;
-    if (!image && !backgroundSource) continue;
+    if (!image && !backgroundSource) {
+      continue;
+    }
     thumbnailDetails.push({
       source: image ?? backgroundSource,
       sourceKind: image ? 'image' : 'background',
@@ -897,7 +953,9 @@ async function waitForTarget(page, identity) {
 async function inspectHitTestedAction(image, identity) {
   return image.evaluate((element, { handle, statusId }) => {
     const article = element.closest('article');
-    if (!(element instanceof HTMLImageElement) || !article) return null;
+    if (!(element instanceof HTMLImageElement) || !article) {
+      return null;
+    }
     const mediaPath = new RegExp(`^/${handle}/status/${statusId}/photo/\\d+$`, 'iu');
     const anchors = [...article.querySelectorAll('a[href]')];
     const parseLink = (anchor) => {
@@ -914,8 +972,9 @@ async function inspectHitTestedAction(image, identity) {
       rectangle.top >= innerHeight ||
       rectangle.right <= 0 ||
       rectangle.left >= innerWidth
-    )
+    ) {
       return null;
+    }
     const x = Math.max(0, Math.min(innerWidth - 1, rectangle.left + rectangle.width / 2));
     const y = Math.max(0, Math.min(innerHeight - 1, rectangle.top + rectangle.height / 2));
     const hitAnchors = [
@@ -930,7 +989,9 @@ async function inspectHitTestedAction(image, identity) {
       const url = parseLink(anchor);
       return anchor.closest('article') === article && url && mediaPath.test(url.pathname);
     });
-    if (!action) return null;
+    if (!action) {
+      return null;
+    }
     const actionUrl = parseLink(action);
     const duplicateActionCount = anchors.filter((anchor) => {
       const url = parseLink(anchor);
@@ -960,8 +1021,9 @@ export function inspectSelectedGalleryDocument({ expectedIndex, expectedPath }) 
     !(toolbar instanceof HTMLElement) ||
     !(position instanceof HTMLElement) ||
     !(item instanceof HTMLElement)
-  )
+  ) {
     return false;
+  }
 
   const total = Number(position.getAttribute('data-total'));
   if (
@@ -975,8 +1037,9 @@ export function inspectSelectedGalleryDocument({ expectedIndex, expectedPath }) 
     position.getAttribute('data-focused-index') !== String(expectedIndex - 1) ||
     toolbar.getAttribute('data-current-index') !== String(expectedIndex - 1) ||
     toolbar.getAttribute('data-focused-index') !== String(expectedIndex - 1)
-  )
+  ) {
     return false;
+  }
 
   const isVisible = (element) => {
     const style = getComputedStyle(element);
@@ -998,8 +1061,9 @@ export function inspectSelectedGalleryDocument({ expectedIndex, expectedPath }) 
         !candidate.complete ||
         candidate.naturalWidth <= 0 ||
         !isVisible(candidate)
-      )
+      ) {
         return false;
+      }
       try {
         const url = new URL(candidate.currentSrc || candidate.src);
         return url.hostname === 'pbs.twimg.com' && url.pathname === expectedPath;
@@ -1049,8 +1113,9 @@ export function inspectSelectedGalleryVideoDocument() {
     position.getAttribute('data-focused-index') !== String(current) ||
     toolbar.getAttribute('data-current-index') !== String(current) ||
     toolbar.getAttribute('data-focused-index') !== String(current)
-  )
+  ) {
     return false;
+  }
   const style = getComputedStyle(video);
   const rect = video.getBoundingClientRect();
   const visible =
@@ -1088,19 +1153,27 @@ export function inspectSelectedGalleryVideoDocument() {
 }
 
 function quotedOwnerForSource(apiObservations, outerId, source) {
-  if (!source) return { status: 'missing-video-source', ownerId: null, mediaId: null };
+  if (!source) {
+    return { status: 'missing-video-source', ownerId: null, mediaId: null };
+  }
   const matches = new Map();
   const quotedIds = new Set();
   for (const entry of apiObservations) {
-    if (entry.result?.id === outerId && entry.directQuote?.id) quotedIds.add(entry.directQuote.id);
+    if (entry.result?.id === outerId && entry.directQuote?.id) {
+      quotedIds.add(entry.directQuote.id);
+    }
   }
   for (const entry of apiObservations) {
     for (const tweet of [entry.result, entry.directQuote]) {
-      if (!tweet?.id) continue;
+      if (!tweet?.id) {
+        continue;
+      }
       const directlyQuoted =
         quotedIds.has(tweet.id) ||
         (entry.requestedTweetId === outerId && entry.directQuote === tweet);
-      if (!directlyQuoted) continue;
+      if (!directlyQuoted) {
+        continue;
+      }
       tweet.media.forEach((media, mediaIndex) => {
         if (
           media.playableVariants.some(
@@ -1126,12 +1199,17 @@ function quotedOwnerForSource(apiObservations, outerId, source) {
 }
 
 export function inspectHitTestedVideoActionDocument(element, { posterPath }) {
-  if (!(element instanceof HTMLElement) || typeof document.elementsFromPoint !== 'function')
+  if (!(element instanceof HTMLElement) || typeof document.elementsFromPoint !== 'function') {
     return null;
+  }
   const quoteArticle = element.closest('article');
-  if (!quoteArticle) return null;
+  if (!quoteArticle) {
+    return null;
+  }
   const scopeCounts = (scope, depth) => {
-    if (depth > 3) return null;
+    if (depth > 3) {
+      return null;
+    }
     const counts = {
       scopeDepth: depth,
       videoCount: 0,
@@ -1141,12 +1219,16 @@ export function inspectHitTestedVideoActionDocument(element, { posterPath }) {
     };
     const media = [scope, ...scope.querySelectorAll('video, img')];
     for (const node of media) {
-      if (node.closest('article') !== quoteArticle) continue;
+      if (node.closest('article') !== quoteArticle) {
+        continue;
+      }
       if (node instanceof HTMLVideoElement) {
         counts.videoCount = Math.min(counts.videoCount + 1, 20);
         continue;
       }
-      if (!(node instanceof HTMLImageElement)) continue;
+      if (!(node instanceof HTMLImageElement)) {
+        continue;
+      }
       counts.totalImageCount = Math.min(counts.totalImageCount + 1, 20);
       let trusted = false;
       try {
@@ -1180,8 +1262,9 @@ export function inspectHitTestedVideoActionDocument(element, { posterPath }) {
         url.protocol !== 'https:' ||
         url.hostname !== 'pbs.twimg.com' ||
         url.pathname !== posterPath
-      )
+      ) {
         return null;
+      }
     } catch {
       return null;
     }
@@ -1203,9 +1286,13 @@ export function inspectHitTestedVideoActionDocument(element, { posterPath }) {
   for (const [fx, fy] of samples) {
     const x = Math.round(rect.left + rect.width * fx);
     const y = Math.round(rect.top + rect.height * fy);
-    if (x < 0 || y < 0 || x >= innerWidth || y >= innerHeight) continue;
+    if (x < 0 || y < 0 || x >= innerWidth || y >= innerHeight) {
+      continue;
+    }
     const top = document.elementsFromPoint(x, y)[0];
-    if (!top || top.closest('article') !== quoteArticle) continue;
+    if (!top || top.closest('article') !== quoteArticle) {
+      continue;
+    }
     const control = top.closest(
       'button, [role="button"], input, select, textarea, [data-testid="videoPlayerControls"]'
     );
@@ -1272,8 +1359,9 @@ export function inspectHitTestedVideoActionDocument(element, { posterPath }) {
 }
 
 export function findHitTestedVideoControlDocument(element, { x, y, posterPath }) {
-  if (!(element instanceof HTMLElement) || typeof document.elementsFromPoint !== 'function')
+  if (!(element instanceof HTMLElement) || typeof document.elementsFromPoint !== 'function') {
     return null;
+  }
   const quoteArticle = element.closest('article');
   if (
     !quoteArticle ||
@@ -1283,8 +1371,9 @@ export function findHitTestedVideoControlDocument(element, { x, y, posterPath })
     y < 0 ||
     x >= innerWidth ||
     y >= innerHeight
-  )
+  ) {
     return null;
+  }
   if (posterPath) {
     const value =
       element instanceof HTMLImageElement
@@ -1300,28 +1389,37 @@ export function findHitTestedVideoControlDocument(element, { x, y, posterPath })
         url.protocol !== 'https:' ||
         url.hostname !== 'pbs.twimg.com' ||
         url.pathname !== posterPath
-      )
+      ) {
         return null;
+      }
     } catch {
       return null;
     }
   }
   const top = document.elementsFromPoint(x, y)[0];
-  if (!top || top.closest('article') !== quoteArticle) return null;
+  if (!top || top.closest('article') !== quoteArticle) {
+    return null;
+  }
   const control = top.closest('button, [role="button"]');
-  if (!(control instanceof HTMLElement)) return null;
+  if (!(control instanceof HTMLElement)) {
+    return null;
+  }
   for (
     let scope = element, depth = 0;
     scope && scope !== quoteArticle && depth <= 5;
     scope = scope.parentElement, depth += 1
   ) {
-    if (scope.contains(control)) return control;
+    if (scope.contains(control)) {
+      return control;
+    }
   }
   return null;
 }
 
 export function inspectHostVideoDocument(video, { posterPath }) {
-  if (!(video instanceof HTMLVideoElement) || !video.closest('article')) return null;
+  if (!(video instanceof HTMLVideoElement) || !video.closest('article')) {
+    return null;
+  }
   const parsePoster = (value) => {
     try {
       const url = new URL(value, location.href);
@@ -1359,14 +1457,17 @@ export function inspectHostVideoDocument(video, { posterPath }) {
   const sourceValue = video.currentSrc || video.src;
   let sourceKind = 'none';
   let source = null;
-  if (sourceValue.startsWith('blob:')) sourceKind = 'blob';
-  else if (sourceValue) {
+  if (sourceValue.startsWith('blob:')) {
+    sourceKind = 'blob';
+  } else if (sourceValue) {
     try {
       const url = new URL(sourceValue);
       if (url.protocol === 'https:' && url.hostname === 'video.twimg.com') {
         sourceKind = 'trusted-video-cdn';
         source = { host: url.hostname, path: url.pathname };
-      } else sourceKind = 'other';
+      } else {
+        sourceKind = 'other';
+      }
     } catch {
       sourceKind = 'other';
     }
@@ -1396,7 +1497,9 @@ export function quotedVideoHitTestPassed({
   meaningfulFocusTarget,
   focusedControlStillOwnsClick,
 }) {
-  if (!identityBeforeClick) return false;
+  if (!identityBeforeClick) {
+    return false;
+  }
   if (galleryActionKind === 'non-control-media-surface') {
     return initialHit?.inQuote === true && finalHit?.inQuote === true;
   }
@@ -1408,8 +1511,9 @@ export function quotedVideoHitTestPassed({
     !focusPrepared ||
     !meaningfulFocusTarget ||
     focusedControlStillOwnsClick !== true
-  )
+  ) {
     return false;
+  }
   return [initialHit.nativePlay, finalHit.nativePlay].every(
     (control) =>
       control &&
@@ -1435,16 +1539,18 @@ export function captureActivationFocusDocument(surface, { articleIndex, point })
       !article?.contains(surface) ||
       !surface.contains(event.target) ||
       !article.contains(event.target)
-    )
+    ) {
       return;
+    }
     const focused = document.activeElement;
     if (
       !(focused instanceof HTMLElement) ||
       !focused.isConnected ||
       !article.contains(focused) ||
       ['BODY', 'HTML'].includes(focused.tagName)
-    )
+    ) {
       return;
+    }
     state.focus = focused;
     state.captured = true;
   };
@@ -1470,10 +1576,15 @@ export function findActivationHitDocument(surface, { articleIndex, point }) {
     !article?.contains(surface) ||
     !article.contains(top) ||
     surface.closest('article') !== top.closest('article')
-  )
+  ) {
     return null;
-  if (surface === top || surface.contains(top)) return top;
-  if (surface.matches('button, [role="button"]')) return null;
+  }
+  if (surface === top || surface.contains(top)) {
+    return top;
+  }
+  if (surface.matches('button, [role="button"]')) {
+    return null;
+  }
   const mediaShell = surface.closest(
     '[data-testid="videoPlayer"], [data-testid="previewInterstitial"]'
   );
@@ -1500,7 +1611,9 @@ async function observeQuotedVideo(
           ? article.locator('img').nth(target.posterIndex)
           : article.locator('video').nth(target.videoIndex);
   await clickSurface.scrollIntoViewIfNeeded({ timeout: ACTION_TIMEOUT_MS });
-  if ((await hostSnapshot(page)).scrollY === 0) await page.mouse.wheel(0, 160);
+  if ((await hostSnapshot(page)).scrollY === 0) {
+    await page.mouse.wheel(0, 160);
+  }
   let hit = await clickSurface.evaluate(inspectHitTestedVideoActionDocument, {
     posterPath: target.posterSource?.path ?? null,
   });
@@ -1608,7 +1721,9 @@ async function observeQuotedVideo(
     ? 'media-scoped-control-under-allow-all'
     : 'non-control-media-surface';
   const actionHandle = await clickSurface.elementHandle();
-  if (!actionHandle) throw new Error('Quoted video detached before interaction');
+  if (!actionHandle) {
+    throw new Error('Quoted video detached before interaction');
+  }
   let focusHandle;
   let activationCaptureHandle;
   let activationFocusHandle;
@@ -1618,7 +1733,9 @@ async function observeQuotedVideo(
       const focusHit = await clickSurface.evaluate(inspectHitTestedVideoActionDocument, {
         posterPath: target.posterSource?.path ?? null,
       });
-      if (!focusHit?.nativePlay) throw new Error('Controlled quote control changed before focus');
+      if (!focusHit?.nativePlay) {
+        throw new Error('Controlled quote control changed before focus');
+      }
       focusHandle = await actionHandle.evaluateHandle(findHitTestedVideoControlDocument, {
         x: focusHit.nativePlay.x,
         y: focusHit.nativePlay.y,
@@ -1634,7 +1751,9 @@ async function observeQuotedVideo(
           element instanceof HTMLVideoElement && element.controls
             ? element
             : element.closest('a[href], button, [tabindex]');
-        if (focusable instanceof HTMLElement) focusable.focus();
+        if (focusable instanceof HTMLElement) {
+          focusable.focus();
+        }
         return document.activeElement;
       });
     }
@@ -1688,7 +1807,9 @@ async function observeQuotedVideo(
         );
       }, clickPoint);
       observation.gallery.focusedControlStillOwnsClick = sameControl;
-      if (!sameControl) throw new Error('Focused quote button changed before click');
+      if (!sameControl) {
+        throw new Error('Focused quote button changed before click');
+      }
     }
     const activationSurfaceHandle = controlledAction ? focusHandle : actionHandle;
     activationHitHandle = await activationSurfaceHandle.evaluateHandle(findActivationHitDocument, {
@@ -1885,8 +2006,9 @@ async function observeQuotedVideo(
 function photoIndexFromActionPath(path) {
   const match = path.match(/\/photo\/([1-9]\d*)$/u);
   const value = Number(match?.[1]);
-  if (!Number.isSafeInteger(value))
+  if (!Number.isSafeInteger(value)) {
     throw new Error('Selected media action has no safe photo index');
+  }
   return value;
 }
 
@@ -2003,14 +2125,20 @@ async function observeOne(
     const image = article.locator('img').nth(observation.target.imageIndex);
     await image.scrollIntoViewIfNeeded({ timeout: ACTION_TIMEOUT_MS });
     const actionIdentity = await inspectHitTestedAction(image, identity);
-    if (!actionIdentity) throw new Error('No owned top media action was found by hit test');
+    if (!actionIdentity) {
+      throw new Error('No owned top media action was found by hit test');
+    }
     const selectedPhotoIndex = photoIndexFromActionPath(actionIdentity.actionPath);
     observation.target = { ...observation.target, ...actionIdentity, selectedPhotoIndex };
     const action = article.locator('a[href]').nth(actionIdentity.actionIndex);
     actionHandle = await action.elementHandle();
-    if (!actionHandle) throw new Error('Selected target action detached before interaction');
+    if (!actionHandle) {
+      throw new Error('Selected target action detached before interaction');
+    }
     await action.focus({ timeout: ACTION_TIMEOUT_MS });
-    if ((await hostSnapshot(page)).scrollY === 0) await page.mouse.wheel(0, 160);
+    if ((await hostSnapshot(page)).scrollY === 0) {
+      await page.mouse.wheel(0, 160);
+    }
     await action.focus({ timeout: ACTION_TIMEOUT_MS });
     const before = await hostSnapshot(page);
     const focusPrepared = await actionHandle.evaluate(
@@ -2026,7 +2154,9 @@ async function observeOne(
     const identityBeforeClick = await actionHandle.evaluate(
       (element, expected) => {
         const article = element.closest('article');
-        if (!(element instanceof HTMLAnchorElement) || !article) return false;
+        if (!(element instanceof HTMLAnchorElement) || !article) {
+          return false;
+        }
         const rectangle = element.getBoundingClientRect();
         const x = Math.max(0, Math.min(innerWidth - 1, rectangle.left + rectangle.width / 2));
         const y = Math.max(0, Math.min(innerHeight - 1, rectangle.top + rectangle.height / 2));
@@ -2043,7 +2173,9 @@ async function observeOne(
       { actionPath: observation.target.actionPath }
     );
     observation.gallery.identityBeforeClick = identityBeforeClick;
-    if (!identityBeforeClick) throw new Error('Top media action identity changed before click');
+    if (!identityBeforeClick) {
+      throw new Error('Top media action identity changed before click');
+    }
 
     await actionHandle.click({ timeout: ACTION_TIMEOUT_MS });
     const gallery = page.locator('[data-xeg-gallery-container]');
@@ -2141,7 +2273,9 @@ async function observeOne(
     observation.error = safeError(error);
     await settleApi();
     const providerRejection = summarizeQuoteProviderRejection(observation.api);
-    if (providerRejection) observation.providerRejection = providerRejection;
+    if (providerRejection) {
+      observation.providerRejection = providerRejection;
+    }
     observation.classification = classifyLiveFailure(
       observation.classification,
       observation.gallery.status,
@@ -2171,9 +2305,13 @@ async function observeOne(
           observation.gallery.status,
           summarizeQuoteProviderRejection(observation.api)
         );
-      } else Object.assign(observation, classifyLiveHostDiagnostics(observation));
+      } else {
+        Object.assign(observation, classifyLiveHostDiagnostics(observation));
+      }
     }
-    if (actionHandle) await actionHandle.dispose().catch(() => {});
+    if (actionHandle) {
+      await actionHandle.dispose().catch(() => {});
+    }
     observation.finalUrl = sanitizedUrl(page.url());
     await writeFile(join(output, `live-page-${index}.json`), JSON.stringify(observation, null, 2));
     await page.close().catch(() => {});
@@ -2197,8 +2335,9 @@ export function decodeStoredVideoSettings(raw) {
     parsed.__xegStorageEnvelope === 1 &&
     typeof parsed.updatedAt === 'number' &&
     Object.hasOwn(parsed, 'value')
-  )
+  ) {
     return parsed.value;
+  }
   return parsed;
 }
 
@@ -2284,13 +2423,18 @@ async function observeControlledVideoMode(context, extensionId, targetUrl, outpu
     result.status = 'failed';
     result.error = safeError(error);
   } finally {
-    if (!mutated) result.cleanup.restored = true;
+    if (!mutated) {
+      result.cleanup.restored = true;
+    }
     if (mutated) {
       try {
         await extensionPage.evaluate(
           async ({ storageKey, previous }) => {
-            if (previous.exists) await chrome.storage.local.set({ [storageKey]: previous.value });
-            else await chrome.storage.local.remove(storageKey);
+            if (previous.exists) {
+              await chrome.storage.local.set({ [storageKey]: previous.value });
+            } else {
+              await chrome.storage.local.remove(storageKey);
+            }
           },
           { storageKey: key, previous: prior }
         );

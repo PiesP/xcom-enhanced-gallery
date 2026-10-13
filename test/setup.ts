@@ -21,7 +21,9 @@ const gmStorage = new Map<string, unknown>();
 
 // @ts-expect-error - Attach global GM_* mocks for the userscript adapter
 globalThis.GM_getValue = (key: string, defaultValue?: unknown): unknown => {
-  if (gmStorage.has(key)) return gmStorage.get(key);
+  if (gmStorage.has(key)) {
+    return gmStorage.get(key);
+  }
   return defaultValue;
 };
 

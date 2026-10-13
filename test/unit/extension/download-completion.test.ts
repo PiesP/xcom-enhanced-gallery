@@ -10,7 +10,9 @@ function createDownloads() {
         listener = next;
       }),
       removeListener: vi.fn((next) => {
-        if (listener === next) listener = null;
+        if (listener === next) {
+          listener = null;
+        }
       }),
     },
     search: vi.fn(async () => [{ id: 7, state: 'in_progress' }]),

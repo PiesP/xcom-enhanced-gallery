@@ -32,7 +32,9 @@ function httpDateMs(value: string, nowMs: number): number | undefined {
     /^(Sun|Mon|Tue|Wed|Thu|Fri|Sat) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) ( [1-9]|[12]\d|3[01]) (\d{2}):(\d{2}):(\d{2}) (\d{4})$/.exec(
       value
     );
-  if (!imf && !rfc850 && !asctime) return undefined;
+  if (!imf && !rfc850 && !asctime) {
+    return undefined;
+  }
 
   const month = MONTHS.indexOf((asctime ? asctime[2] : (imf?.[3] ?? rfc850?.[3])) ?? '');
   const day = Number(asctime ? asctime[3] : (imf?.[2] ?? rfc850?.[2]));
@@ -47,21 +49,26 @@ function httpDateMs(value: string, nowMs: number): number | undefined {
     minute > 59 ||
     second > 60 ||
     (second === 60 && (hour !== 23 || minute !== 59))
-  )
+  ) {
     return undefined;
+  }
   const representableSecond = Math.min(second, 59);
 
   let year = Number(asctime ? asctime[7] : (imf?.[4] ?? rfc850?.[4]));
   if (rfc850) {
     const currentYear = new Date(nowMs).getUTCFullYear();
     year += Math.floor(currentYear / 100) * 100;
-    if (year < currentYear - 50) year += 100;
+    if (year < currentYear - 50) {
+      year += 100;
+    }
     const futureLimit = new Date(nowMs);
     futureLimit.setUTCFullYear(currentYear + 50);
     const candidate = new Date(0);
     candidate.setUTCFullYear(year, month, day);
     candidate.setUTCHours(hour, minute, representableSecond, 0);
-    if (candidate.getTime() > futureLimit.getTime()) year -= 100;
+    if (candidate.getTime() > futureLimit.getTime()) {
+      year -= 100;
+    }
   }
 
   const parsed = new Date(0);
@@ -79,8 +86,9 @@ function httpDateMs(value: string, nowMs: number): number | undefined {
     parsed.getUTCMinutes() !== minute ||
     parsed.getUTCSeconds() !== representableSecond ||
     actualWeekday !== weekday
-  )
+  ) {
     return undefined;
+  }
   // JavaScript Date uses POSIX seconds; represent a valid :60 at the following
   // instant after validating the date and weekday of its original minute.
   return parsed.getTime() + (second === 60 ? 1000 : 0);
@@ -97,10 +105,14 @@ export function parseRetryAfter(
   value: string | null | undefined,
   nowMs = Date.now()
 ): number | undefined {
-  if (value === null || value === undefined || !Number.isFinite(nowMs)) return undefined;
+  if (value === null || value === undefined || !Number.isFinite(nowMs)) {
+    return undefined;
+  }
   // A present but oversized field is ambiguous; saturation cannot schedule a
   // retry before guidance that may be hidden beyond the scan limit.
-  if (value.length > MAX_RETRY_AFTER_CHARS) return MAX_RETRY_AFTER_MS;
+  if (value.length > MAX_RETRY_AFTER_CHARS) {
+    return MAX_RETRY_AFTER_MS;
+  }
   const trimmed = value.trim();
   if (/^\d+$/.test(trimmed)) {
     const seconds = Number(trimmed);
@@ -116,7 +128,9 @@ export function parseRetryAfter(
       const delays = trimmed.split(',').map((part) => parseRetryAfter(part.trim(), nowMs));
       return delays.every((delay) => delay === delays[0]) ? delays[0] : MAX_RETRY_AFTER_MS;
     }
-    if (/^\d+\s*,|GMT\s*,/.test(trimmed)) return MAX_RETRY_AFTER_MS;
+    if (/^\d+\s*,|GMT\s*,/.test(trimmed)) {
+      return MAX_RETRY_AFTER_MS;
+    }
     return undefined;
   }
   return Math.min(Math.max(0, dateMs - nowMs), MAX_RETRY_AFTER_MS);
@@ -126,7 +140,9 @@ export function retryAfterFromRawHeaders(
   headers: string | undefined,
   nowMs = Date.now()
 ): number | undefined {
-  if (!headers || headers.length > MAX_RAW_HEADERS_CHARS) return undefined;
+  if (!headers || headers.length > MAX_RAW_HEADERS_CHARS) {
+    return undefined;
+  }
   let found = false;
   let delayMs: number | undefined;
   let offset = 0;

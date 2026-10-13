@@ -48,17 +48,25 @@ const isAllowAllNativeVideoControl = (target: HTMLElement, mode: string): boolea
   mode === 'allow-all' && findNativeVideoControlMedia(target) !== null;
 
 function isNativeStatusMediaLink(href: string | null | undefined): boolean {
-  if (!href) return false;
+  if (!href) {
+    return false;
+  }
   const parsed = tryParseUrl(href);
-  if (!parsed || !isHostMatching(parsed, TWITTER_HOSTS)) return false;
+  if (!parsed || !isHostMatching(parsed, TWITTER_HOSTS)) {
+    return false;
+  }
   return STATUS_MEDIA_RE.test(parsed.pathname);
 }
 
 function isMediaCard(cardWrapper: HTMLElement): boolean {
   for (const link of cardWrapper.querySelectorAll('a[href]')) {
-    if (!isNativeStatusMediaLink((link as HTMLAnchorElement).getAttribute('href'))) return false;
+    if (!isNativeStatusMediaLink((link as HTMLAnchorElement).getAttribute('href'))) {
+      return false;
+    }
   }
-  if (cardWrapper.querySelector('img[src*="pbs.twimg.com/card_img"]')) return true;
+  if (cardWrapper.querySelector('img[src*="pbs.twimg.com/card_img"]')) {
+    return true;
+  }
   return cardWrapper.querySelector('img, video') !== null;
 }
 
@@ -71,7 +79,9 @@ function closestSafe(element: HTMLElement | null, selector: string): Element | n
 }
 
 function shouldBlockMediaTrigger(target: HTMLElement | null, event?: MouseEvent): boolean {
-  if (!target) return false;
+  if (!target) {
+    return false;
+  }
 
   // Use isVideoClickAllowed with user-configured video click mode.
   // This is the secondary defense; the primary defense in handleMediaClick
@@ -81,11 +91,14 @@ function shouldBlockMediaTrigger(target: HTMLElement | null, event?: MouseEvent)
     ? getTypedSettingOr('gallery.videoClickMode', DEFAULT_SETTINGS.gallery.videoClickMode)
     : DEFAULT_SETTINGS.gallery.videoClickMode;
   const getPath = event ? () => event.composedPath() : undefined;
-  if (!isVideoClickAllowed(target, getPath, videoMode)) return true;
+  if (!isVideoClickAllowed(target, getPath, videoMode)) {
+    return true;
+  }
   // M10: Wrap closest() in try/catch via closestSafe to prevent invalid
   // selectors from breaking media click detection.
-  if (closestSafe(target, CSS.SELECTORS.ROOT) || closestSafe(target, CSS.SELECTORS.OVERLAY))
+  if (closestSafe(target, CSS.SELECTORS.ROOT) || closestSafe(target, CSS.SELECTORS.OVERLAY)) {
     return true;
+  }
 
   const cardWrapper = target.closest('[data-testid="card.wrapper"]');
   if (cardWrapper instanceof HTMLElement) {
@@ -102,7 +115,9 @@ function shouldBlockMediaTrigger(target: HTMLElement | null, event?: MouseEvent)
     '[data-testid="mask"]',
   ].join(', ');
 
-  if (target.closest(blockedContext)) return true;
+  if (target.closest(blockedContext)) {
+    return true;
+  }
 
   const interactive = target.closest(INTERACTIVE_SELECTOR);
   if (interactive) {
@@ -130,20 +145,27 @@ export function isProcessableMedia(target: Element | null, event?: MouseEvent): 
     : target instanceof HTMLElement
       ? target
       : null;
-  if (event && target !== htmlTarget && target !== event.target) return false;
-  if (!htmlTarget || gallerySignals.isOpen || shouldBlockMediaTrigger(htmlTarget, event))
+  if (event && target !== htmlTarget && target !== event.target) {
     return false;
+  }
+  if (!htmlTarget || gallerySignals.isOpen || shouldBlockMediaTrigger(htmlTarget, event)) {
+    return false;
+  }
 
   const settings = tryGetSettings();
   const videoMode = settings
     ? getTypedSettingOr('gallery.videoClickMode', DEFAULT_SETTINGS.gallery.videoClickMode)
     : DEFAULT_SETTINGS.gallery.videoClickMode;
-  if (isAllowAllNativeVideoControl(htmlTarget, videoMode)) return true;
+  if (isAllowAllNativeVideoControl(htmlTarget, videoMode)) {
+    return true;
+  }
 
   const mediaElement = findMediaElementInDOM(htmlTarget);
   if (mediaElement) {
     const url = extractMediaUrlFromElement(mediaElement);
-    if (url && (url.startsWith('blob:') || isValidMediaUrl(url))) return true;
+    if (url && (url.startsWith('blob:') || isValidMediaUrl(url))) {
+      return true;
+    }
   }
 
   return !!htmlTarget.closest(MEDIA_CONTAINER_SELECTOR);
