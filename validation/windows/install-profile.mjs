@@ -7984,13 +7984,60 @@ async function runExtensionUpgrade({ context, extensionId, extensionPath, input,
           await gallery.locator('#settings-video-click-select').inputValue(),
           'block-controls-only'
         );
-        await gallery.locator('#settings-video-click-select').selectOption('allow-all');
+        const clickModeSelect = gallery.locator('#settings-video-click-select');
+        await clickModeSelect.focus();
+        await exercisePage.keyboard.press('End');
         await waitForValue(async () => {
           const current = await readStoredVideoSettings(candidatePage);
-          return current.settings?.gallery?.videoClickMode === 'allow-all' ? true : undefined;
+          const mode = current.settings?.gallery?.videoClickMode ?? null;
+          receipt.candidateClickModeStorageObservation = {
+            exists: current.exists,
+            valueType: typeof current.value,
+            mode,
+          };
+          return mode === 'allow-all' ? true : undefined;
         }, 'candidate-only video-click setting saved through application control');
+        assert.equal(await clickModeSelect.inputValue(), 'allow-all');
+        const readbackPage = await context.newPage();
+        try {
+          await readbackPage.goto(FIXTURE_URL);
+          await readbackPage
+            .locator('html[data-xeg-gallery-ready="true"]')
+            .waitFor({ state: 'attached' });
+          await readbackPage.locator('[data-testid="tweetPhoto"] img').first().click();
+          const readbackGallery = readbackPage.locator('[data-xeg-gallery-container]');
+          await readbackGallery.waitFor({ state: 'visible' });
+          await readbackGallery.locator('#settings-button').click();
+          const readbackMode = readbackGallery.locator('#settings-video-click-select');
+          await readbackMode.waitFor({ state: 'visible' });
+          assert.equal(await readbackMode.inputValue(), 'allow-all');
+          receipt.candidateClickModeReloaded = 'allow-all';
+        } catch (error) {
+          receipt.candidateClickModeReadbackFailure = await captureUpgradeSettingsFailure(
+            readbackPage,
+            output,
+            'extension',
+            'candidate-reloaded'
+          );
+          throw error;
+        } finally {
+          await readbackPage.close();
+        }
+        await exercisePage.bringToFront();
         await gallery.locator('#settings-language-select').selectOption('en');
-        await gallery.locator('#settings-video-click-select').selectOption('block-controls-only');
+        await clickModeSelect.focus();
+        await exercisePage.keyboard.press('ArrowUp');
+        await waitForValue(async () => {
+          const current = await readStoredVideoSettings(candidatePage);
+          const mode = current.settings?.gallery?.videoClickMode ?? null;
+          receipt.candidateClickModeRestoreStorageObservation = {
+            exists: current.exists,
+            valueType: typeof current.value,
+            mode,
+          };
+          return mode === 'block-controls-only' ? true : undefined;
+        }, 'candidate video-click setting restored through trusted keyboard input');
+        assert.equal(await clickModeSelect.inputValue(), 'block-controls-only');
         await gallery.locator('#settings-button').click();
         await gallery.getByRole('button', { name: 'Fit Width', exact: true }).click();
         const restored = await waitForValue(async () => {
