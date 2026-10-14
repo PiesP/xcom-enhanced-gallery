@@ -2341,8 +2341,6 @@ export function decodeStoredValue(raw) {
   return parsed;
 }
 
-export { decodeStoredValue as decodeStoredVideoSettings };
-
 export async function readStoredLanguage(extensionPage) {
   const raw = await extensionPage.evaluate(
     async () => (await chrome.storage.local.get('xeg-language'))['xeg-language'] ?? null
