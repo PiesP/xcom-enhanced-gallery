@@ -6,10 +6,51 @@ import { mkdtemp, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { chromium } from '@playwright/test';
-import { captureUpgradeSettingsFailure } from './gallery-volume.mjs';
+import { captureUpgradeSettingsFailure, observeGalleryVolume } from './gallery-volume.mjs';
+
+test('volume persistence completes while the gallery page is still open', async () => {
+  let volume = 1;
+  const calls = [];
+  const video = {
+    waitFor: async () => {},
+    evaluate: async () => volume,
+    focus: async () => {},
+  };
+  const locator = {
+    waitFor: async () => {},
+    click: async () => {},
+    getAttribute: async () => '2',
+    locator: (selector) => (selector.endsWith(' video') ? video : locator),
+  };
+  const page = {
+    goto: async () => {},
+    locator: () => locator,
+    waitForFunction: async () => {},
+    keyboard: {
+      press: async (key) => {
+        assert.equal(key, 'ArrowDown');
+        volume = 0.9;
+      },
+    },
+    close: async () => calls.push('close'),
+  };
+  const context = { newPage: async () => page };
+
+  const result = await observeGalleryVolume(context, {
+    before: 1,
+    after: 0.9,
+    waitForPersistedVolume: async (expected) => {
+      assert.equal(expected, 0.9);
+      calls.push('persisted');
+    },
+  });
+
+  assert.equal(result.after, 0.9);
+  assert.deepEqual(calls, ['persisted', 'close']);
+});
 
 test('upgrade settings diagnostic scopes public and candidate controls to the gallery panel', async () => {
+  const { chromium } = await import('@playwright/test');
   const browser = await chromium.launch();
   const output = await mkdtemp(join(tmpdir(), 'xeg-upgrade-settings-'));
   const page = await browser.newPage();

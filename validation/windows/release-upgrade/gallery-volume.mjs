@@ -61,7 +61,10 @@ export async function observeDefaultVideoClick(context) {
 }
 
 /** Change volume through the product's trusted keyboard shortcut on a loaded gallery video. */
-export async function observeGalleryVolume(context, { before, after = null }) {
+export async function observeGalleryVolume(
+  context,
+  { before, after = null, waitForPersistedVolume = null, waitForInitialVolume = false }
+) {
   const page = await context.newPage();
   try {
     await page.goto(VIDEO_URL);
@@ -80,6 +83,25 @@ export async function observeGalleryVolume(context, { before, after = null }) {
       );
       return video instanceof HTMLVideoElement && video.readyState >= 1 && video.error === null;
     });
+    if (waitForInitialVolume) {
+      try {
+        await page.waitForFunction(
+          (expected) => {
+            const video = document.querySelector(
+              '[data-xeg-gallery-container] [data-gallery-element="item"][data-index="1"] video'
+            );
+            return video instanceof HTMLVideoElement && Math.abs(video.volume - expected) < 0.011;
+          },
+          before,
+          { timeout: 5_000 }
+        );
+      } catch (error) {
+        const observed = await video.evaluate((element) => element.volume);
+        throw new Error(`Reopened gallery volume was ${observed}; expected ${before}`, {
+          cause: error,
+        });
+      }
+    }
     const initial = await video.evaluate((element) => element.volume);
     assert(Math.abs(initial - before) < 0.011, `Gallery volume before shortcut: ${initial}`);
     if (after !== null) {
@@ -96,6 +118,11 @@ export async function observeGalleryVolume(context, { before, after = null }) {
         { timeout: 5_000 }
       );
       assert.equal(await video.evaluate((element) => element.volume), after);
+      // The application debounces volume persistence. Keep the gallery alive until
+      // storage confirms the change so closing this page cannot cancel the write.
+      if (waitForPersistedVolume) {
+        await waitForPersistedVolume(after);
+      }
     }
     return { source: 'trusted-gallery-keyboard-volume-control', before: initial, after };
   } finally {
