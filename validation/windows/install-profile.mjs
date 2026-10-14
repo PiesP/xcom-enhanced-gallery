@@ -713,7 +713,7 @@ export async function installFixtureRoutes(context, root, images, displayImages)
         await route.abort('blockedbyclient');
         return;
       }
-      const range = route.request().headers()['range'];
+      const range = route.request().headers().range;
       const match = range?.match(/^bytes=(\d+)-(\d*)$/u);
       const start = match ? Number(match[1]) : 0;
       const requestedEnd = match?.[2] ? Number(match[2]) : payload.length - 1;
@@ -3365,7 +3365,7 @@ async function runDownloadMemoryCycle({
           const removal = await extensionPage.evaluate(
             async ({ id, filename, removeFile }) => {
               let [download] = await chrome.downloads.search({ id });
-              if (!download || download.filename !== filename) {
+              if (download?.filename !== filename) {
                 throw new Error(`Memory download ${id} changed before cleanup`);
               }
               if (download?.state === 'in_progress') {
@@ -3373,7 +3373,7 @@ async function runDownloadMemoryCycle({
                 const deadline = Date.now() + 10_000;
                 while (Date.now() < deadline) {
                   [download] = await chrome.downloads.search({ id });
-                  if (!download || download.state !== 'in_progress') {
+                  if (download?.state !== 'in_progress') {
                     break;
                   }
                   await new Promise((resolveDelay) => setTimeout(resolveDelay, 50));
@@ -4942,7 +4942,7 @@ export function assertNoRetiredExtractionNotifications(cursor, observed) {
   assert.equal(
     creates.length,
     0,
-    'Retired extraction must make zero notification-creation calls: ' + JSON.stringify(creates)
+    `Retired extraction must make zero notification-creation calls: ${JSON.stringify(creates)}`
   );
   return creates;
 }

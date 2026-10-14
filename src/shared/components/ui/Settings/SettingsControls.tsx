@@ -235,6 +235,7 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
               __DEV__ && local['data-testid'] ? `${local['data-testid']}-theme` : undefined
             }
           >
+            {/* biome-ignore lint/performance/useSolidForComponent: The theme options are a fixed list; translated text remains reactive inside each option. */}
             {THEME_OPTIONS.map((option) => (
               <option value={option}>{strings().theme.labels[option]}</option>
             ))}
@@ -280,6 +281,7 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
               __DEV__ && local['data-testid'] ? `${local['data-testid']}-language` : undefined
             }
           >
+            {/* biome-ignore lint/performance/useSolidForComponent: The language options are a fixed list with stable native labels. */}
             {LANGUAGE_OPTIONS.map((option) => (
               <option value={option}>{LANGUAGE_NATIVE_LABELS[option] ?? option}</option>
             ))}
@@ -342,6 +344,7 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
             __DEV__ && local['data-testid'] ? `${local['data-testid']}-video-click` : undefined
           }
         >
+          {/* biome-ignore lint/performance/useSolidForComponent: Video click modes are fixed; translated labels remain reactive inside each option. */}
           {VIDEO_CLICK_MODES.map((mode) => (
             <option value={mode}>{strings().video.labels[mode]}</option>
           ))}

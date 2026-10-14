@@ -185,7 +185,7 @@ export async function startNativeDownloadLoopback(image: Buffer): Promise<{
       });
     });
     const address = server.address() as AddressInfo | null;
-    if (!address || address.address !== '127.0.0.1' || address.port <= 0) {
+    if (address?.address !== '127.0.0.1' || address.port <= 0) {
       throw new Error('Native fixture did not bind to loopback');
     }
     const ownedServer = server;

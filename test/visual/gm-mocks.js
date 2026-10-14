@@ -34,7 +34,7 @@
     }
   };
 
-  window.GM_notification = (text, title, image, onclick) => {
+  window.GM_notification = (text, title) => {
     console.log('[GM] notification:', title, text);
   };
 

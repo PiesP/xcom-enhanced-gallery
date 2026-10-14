@@ -54,7 +54,7 @@ describe('isRecord', () => {
 
   it('returns false for functions', () => {
     expect(isRecord(() => {})).toBe(false);
-    expect(isRecord(function () {})).toBe(false);
+    expect(isRecord(() => {})).toBe(false);
   });
 });
 

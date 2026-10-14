@@ -62,9 +62,7 @@ describe('Dependabot auto-merge security', () => {
   ])(
     'requires review for actual gate metadata %s / %s / %s / %s',
     (ecosystem, update, dependencies, alert) => {
-      const script = gateWorkflow.match(
-        /id: decide[\s\S]*?run: \|\n([\s\S]*?)\n      - name:/
-      )?.[1];
+      const script = gateWorkflow.match(/id: decide[\s\S]*?run: \|\n([\s\S]*?)\n {6}- name:/)?.[1];
       expect(script).toBeDefined();
       const root = mkdtempSync(join(tmpdir(), 'dependabot-policy-'));
       try {

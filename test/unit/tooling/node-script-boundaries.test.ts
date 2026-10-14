@@ -63,7 +63,7 @@ describe('Node script import boundary', () => {
     for (const module of modules) {
       const path = join(moduleRoot, module);
       const result = spawnSync(process.execPath, ['--check', path], { encoding: 'utf8' });
-      expect(result.status, path + ': ' + result.stderr).toBe(0);
+      expect(result.status, `${path}: ${result.stderr}`).toBe(0);
     }
   });
 

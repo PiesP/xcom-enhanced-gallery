@@ -191,6 +191,24 @@
       }
     },
     {
+      "includes": [
+        "test/unit/config/browser-core-automation.test.ts",
+        "test/unit/config/dependabot-auto-merge.test.ts",
+        "test/unit/config/osv-workflow-composition.test.ts",
+        "test/unit/tooling/config.test.ts",
+        "test/unit/tooling/release-publication.test.ts",
+        "test/unit/tooling/toolchain-action.test.ts",
+        "test/unit/tooling/workflow-change-policy.test.ts"
+      ],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noTemplateCurlyInString": "off"
+          }
+        }
+      }
+    },
+    {
       "includes": ["test/e2e/fixtures/installed*-page.html"],
       "linter": {
         "rules": {
