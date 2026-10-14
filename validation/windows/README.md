@@ -8,9 +8,11 @@ for another, and none is a required CI lane.
    download behavior.
 2. **Installed Chrome/Edge profile:** loads the production unpacked extension
    in a fresh task-owned browser profile and checks the real privileged download
-   and extension lifecycle paths against a deterministic fixture.
-3. **Installed Chrome/Edge Tampermonkey profile:** installs the exact production
-   `.user.js` through the reviewed manager UI in a fresh owned profile. It checks
+   and extension lifecycle paths against a deterministic fixture. A declared
+   public-release input first exercises a same-profile unpacked update.
+3. **Installed Chrome Tampermonkey profile:** installs the exact production
+   `.user.js` through the reviewed manager UI in a fresh owned profile. A declared
+   public-release input first exercises the manager's update confirmation. It checks
    repeated native singles and ZIPs, a partial ZIP, routed transport failure,
    cancellation before dispatch, gallery close/reopen, and reload recovery with
    independently read saved files. It configures Browser API mode in the
@@ -395,12 +397,40 @@ The entry uninstalls the extension and removes its profile after the owned
 browser closes. If browser cleanup fails, it preserves that profile for bounded
 diagnosis rather than terminating unrelated processes.
 
+### Optional public-to-candidate upgrade input
+
+For release qualification, copy the checksum-verified public v2.3.5 userscript to
+`validation/windows/release-upgrade/v2.3.5.user.js` and extract the verified public
+Chrome ZIP to `validation/windows/release-upgrade/v2.3.5-extension/`. Compute the
+unpacked file inventory with `extensionInventorySha256(path)` from
+`validation/windows/release-upgrade/source.mjs`. Add the ignored
+`validation/windows/release-upgrade/input.json` with the exact paths, release URLs,
+public SHA-256 and inventory SHA-256 shown in `source.test.mjs`. The input parser
+requires a production v2.3.6 userscript and extension manifest. Keep the public
+assets and input outside Git; the installation asset declaration bundles them
+only for the selected Windows run. Without `input.json`, the original fresh
+installation runs unchanged.
+
+The extension control loads v2.3.5 from an owned profile path, changes fit,
+video-click mode and language through the gallery controls and video volume
+through the gallery's trusted Arrow Down shortcut, copies the candidate
+over that same path, invokes the browser's extension Reload control, and checks
+the same extension ID, v2.3.6 manifest, exact candidate file inventory and saved
+settings. The Tampermonkey control imports v2.3.5 through its UI, changes the
+same gallery controls, imports the candidate through the manager's Update
+confirmation, and checks one script row with the new version plus saved settings
+in newly opened galleries. Both restore fixture defaults through the app UI
+before the existing download and lifecycle suite. Receipts are
+`extension-upgrade.json` or `userscript-upgrade.json`; a missing or unfamiliar UI
+fails the control. These controls do not establish that a browser or userscript
+manager will download and apply updates automatically.
+
 ## Installed Tampermonkey userscript flow
 
 Prepare a reviewed unpacked Tampermonkey package outside the checkout, then
 pass that directory as `--manager-directory` to the shared controller. The
 maintained YT `validation/windows/prepare-userscript-manager.py` helper pins
-5.5.0 and must not be used for a different Store version. The controller
+5.5.1 and must not be used for a different Store version. The controller
 validates the manager identity and bundles its exact file hashes. Record the
 original package digest and installation source separately. Use a clean
 committed checkout and run:

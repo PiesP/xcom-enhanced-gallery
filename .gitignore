@@ -73,3 +73,8 @@ TESTING.md
 # Local agent workspace
 .hermes/
 memory/
+
+# Source-bound public release inputs for optional Windows upgrade acceptance
+/validation/windows/release-upgrade/input.json
+/validation/windows/release-upgrade/v2.3.5.user.js
+/validation/windows/release-upgrade/v2.3.5-extension/

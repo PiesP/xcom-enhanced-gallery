@@ -15,8 +15,11 @@ import {
 import {
   createImageFixtures,
   enableDeveloperMode,
+  installFixtureRoutes,
   verifyDownloadDirectory,
 } from './install-profile.mjs';
+import { observeGalleryVolume } from './release-upgrade/gallery-volume.mjs';
+import { readUpgradeInput } from './release-upgrade/source.mjs';
 import { startUserscriptFixtureLoopback } from './userscript-loopback.mjs';
 
 const SCRIPT_NAME = 'X.com Enhanced Gallery';
@@ -1304,7 +1307,9 @@ async function installUserscript(
   browserName,
   sourceSha256,
   profile,
-  captureNativePermission
+  captureNativePermission,
+  sourcePath = 'dist/xcom-enhanced-gallery.user.js',
+  sourceVersion = null
 ) {
   const manifest = JSON.parse(
     await readFile(join(root, 'test-tools/userscript-manager/manifest.json'), 'utf8')
@@ -1455,9 +1460,7 @@ async function installUserscript(
     );
     await page.getByText(labels.utilities, { exact: true }).click();
     const confirmationPromise = context.waitForEvent('page');
-    await page
-      .locator('input[type=file]')
-      .setInputFiles(join(root, 'dist/xcom-enhanced-gallery.user.js'));
+    await page.locator('input[type=file]').setInputFiles(join(root, sourcePath));
     const confirmation = await confirmationPromise;
     await confirmation.waitForURL(`chrome-extension://${id}/ask.html*`);
     const confirmationUrl = new URL(confirmation.url());
@@ -1477,6 +1480,20 @@ async function installUserscript(
     );
     await page.getByText(labels.installedUserscripts, { exact: true }).first().click();
     await page.getByText(SCRIPT_NAME, { exact: true }).first().waitFor({ state: 'visible' });
+    if (sourceVersion) {
+      const rows = page
+        .getByRole('row')
+        .filter({ has: page.getByText(SCRIPT_NAME, { exact: true }) });
+      assert.equal(
+        await rows.count(),
+        1,
+        'Manager must show exactly one installed script identity'
+      );
+      assert.match(
+        await rows.first().innerText(),
+        new RegExp(`\\b${sourceVersion.replaceAll('.', '\\.')}\\b`, 'u')
+      );
+    }
     await page.screenshot({ path: join(output, 'userscript-installed.png') });
     return {
       id,
@@ -2463,8 +2480,178 @@ async function runFixture(
   }
 }
 
+async function runUserscriptUpgrade({ context, managerId, root, output, input }) {
+  const receipt = {
+    status: 'failed',
+    previousVersion: input.previousVersion,
+    candidateVersion: input.candidateVersion,
+    previousSourceSha256: input.previousUserscript.sha256,
+    candidateSourceSha256: input.candidateUserSha256,
+    managerId,
+  };
+  const images = await createImageFixtures(context);
+  const displayImages = await createImageFixtures(context, 0.25);
+  const routes = await installFixtureRoutes(context, root, images, displayImages);
+  const options = await context.newPage();
+  let primaryError;
+  let cleanupFailure;
+  try {
+    const inspectGallery = async (expected, restore = false, afterUpdate = false) => {
+      const page = await context.newPage();
+      try {
+        await page.goto(FIXTURE_URL, { waitUntil: 'domcontentloaded' });
+        await page.locator('[data-phase="normal"] [data-testid="tweetPhoto"] img').first().click();
+        const gallery = page.locator('[data-xeg-gallery-container]');
+        await gallery.waitFor({ state: 'visible' });
+        const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
+        if (!expected) {
+          await toolbar.getByRole('button', { name: 'Fit Height', exact: true }).click();
+          await toolbar.locator('#settings-button').click();
+          await gallery.locator('#settings-video-click-select').selectOption('allow-all');
+          await gallery.locator('#settings-language-select').selectOption('ko');
+        } else {
+          await toolbar.locator('#settings-button').click();
+          assert.equal(
+            await gallery.locator('#settings-video-click-select').inputValue(),
+            'allow-all'
+          );
+          assert.equal(await gallery.locator('#settings-language-select').inputValue(), 'ko');
+          assert.equal(
+            await toolbar
+              .getByRole('button', { name: '높이 맞춤', exact: true })
+              .getAttribute('aria-pressed'),
+            'true'
+          );
+        }
+        await page.screenshot({
+          path: join(
+            output,
+            afterUpdate ? 'userscript-after-upgrade.png' : 'userscript-before-upgrade.png'
+          ),
+        });
+        if (restore) {
+          await gallery.locator('#settings-language-select').selectOption('en');
+          await gallery.locator('#settings-video-click-select').selectOption('block-controls-only');
+          await toolbar.locator('#settings-button').click();
+          await toolbar.getByRole('button', { name: 'Fit Width', exact: true }).click();
+        }
+      } finally {
+        await page.close();
+      }
+    };
+    await inspectGallery(false);
+    await inspectGallery(true); // Verify saved settings before changing the installed script.
+    receipt.volumeBefore = await observeGalleryVolume(context, { before: 1, after: 0.9 });
+    await observeGalleryVolume(context, { before: 0.9 }); // Verify manager storage in a new page.
+    await options.goto(`chrome-extension://${managerId}/options.html`);
+    const labels = await readManagerUiLabels(options, managerId);
+    const updateLabel = await options.evaluate(() => chrome.i18n.getMessage('Update'));
+    const updateTitle = await options.evaluate(() =>
+      chrome.i18n.getMessage('You_are_about_to_update_a_UserScript_')
+    );
+    assert(updateLabel && updateTitle, 'Manager update labels are unavailable');
+    await options.getByText(labels.installedUserscripts, { exact: true }).first().click();
+    const row = options
+      .getByRole('row')
+      .filter({ has: options.getByText(SCRIPT_NAME, { exact: true }) });
+    assert.equal(await row.count(), 1, 'Public userscript identity is not unique');
+    const beforeRow = await row.innerText();
+    assert.match(beforeRow, /\b2\.3\.5\b/u);
+    await options.getByText(labels.utilities, { exact: true }).click();
+    const confirmationPromise = context.waitForEvent('page');
+    await options
+      .locator('input[type=file]')
+      .setInputFiles(join(root, 'dist/xcom-enhanced-gallery.user.js'));
+    const confirmation = await confirmationPromise;
+    try {
+      await confirmation.waitForURL(`chrome-extension://${managerId}/ask.html*`);
+      assert(
+        (await confirmation.locator('body').innerText()).includes(updateTitle),
+        'Manager did not recognize a userscript update'
+      );
+      await confirmation.screenshot({ path: join(output, 'userscript-update-confirmation.png') });
+      const closed = confirmation.waitForEvent('close');
+      await confirmation.getByRole('button', { name: updateLabel, exact: true }).click();
+      await closed;
+    } finally {
+      await confirmation.close().catch(() => {});
+    }
+    await options.reload();
+    await options.getByText(labels.installedUserscripts, { exact: true }).first().click();
+    assert.equal(await row.count(), 1, 'Userscript update changed installation count');
+    const afterRow = await row.innerText();
+    assert.match(afterRow, /\b2\.3\.6\b/u);
+    receipt.identity = { before: beforeRow, after: afterRow, count: 1 };
+    await inspectGallery(true, true, true);
+    receipt.volumeAfter = await observeGalleryVolume(context, { before: 0.9, after: 1 });
+    await observeGalleryVolume(context, { before: 1 });
+    const restored = await context.newPage();
+    try {
+      await restored.goto(FIXTURE_URL, { waitUntil: 'domcontentloaded' });
+      await restored
+        .locator('[data-phase="normal"] [data-testid="tweetPhoto"] img')
+        .first()
+        .click();
+      const gallery = restored.locator('[data-xeg-gallery-container]');
+      await gallery.waitFor({ state: 'visible' });
+      await gallery.locator('#settings-button').click();
+      assert.equal(
+        await gallery.locator('#settings-video-click-select').inputValue(),
+        'block-controls-only'
+      );
+      assert.equal(await gallery.locator('#settings-language-select').inputValue(), 'en');
+      assert.equal(
+        await gallery
+          .getByRole('button', { name: 'Fit Width', exact: true })
+          .getAttribute('aria-pressed'),
+        'true'
+      );
+    } finally {
+      await restored.close();
+    }
+    receipt.fixtureDefaultsRestoredThroughUi = true;
+    receipt.settings = {
+      fit: 'fitHeight',
+      videoClickMode: 'allow-all',
+      language: 'ko',
+      videoVolume: 0.9,
+      keyboardShortcutUsedForVolume: true,
+      verifiedBeforeAndAfterByApplicationUi: true,
+    };
+    receipt.method = 'same-manager-profile-utilities-import-update-confirmation';
+    receipt.status = 'passed';
+  } catch (error) {
+    receipt.error = safeRouteError(error);
+    primaryError = error;
+  } finally {
+    await options.close();
+    try {
+      await routes.remove();
+    } catch (error) {
+      receipt.status = 'failed';
+      receipt.cleanupError = safeRouteError(error);
+      cleanupFailure = error;
+    }
+    await writeFile(join(output, 'userscript-upgrade.json'), JSON.stringify(receipt, null, 2));
+  }
+  if (primaryError && cleanupFailure) {
+    throw new AggregateError(
+      [primaryError, cleanupFailure],
+      'Userscript upgrade and cleanup failed'
+    );
+  }
+  if (primaryError) {
+    throw primaryError;
+  }
+  if (cleanupFailure) {
+    throw cleanupFailure;
+  }
+  return receipt;
+}
+
 export async function runUserscriptInstallation({ chromium, root, output, browserName, headless }) {
   assert.equal(browserName, 'chrome', 'HTTPS userscript fixture currently supports Chrome only');
+  const upgradeInput = await readUpgradeInput(root);
   await mkdir(output, { recursive: true });
   const source = await readFile(join(root, 'dist/xcom-enhanced-gallery.user.js'));
   const profile = await mkdtemp(join(root, PROFILE_PREFIX));
@@ -2543,7 +2730,7 @@ export async function runUserscriptInstallation({ chromium, root, output, browse
       root,
       output,
       browserName,
-      result.sourceSha256,
+      upgradeInput ? upgradeInput.previousUserscript.sha256 : result.sourceSha256,
       profile,
       (ask, id, context) =>
         inspectAndAllowNativeManagerPermission(
@@ -2555,8 +2742,19 @@ export async function runUserscriptInstallation({ chromium, root, output, browse
           ask,
           id,
           context
-        )
+        ),
+      upgradeInput ? upgradeInput.previousUserscript.path : undefined,
+      upgradeInput ? upgradeInput.previousVersion : null
     );
+    if (upgradeInput) {
+      result.upgrade = await runUserscriptUpgrade({
+        context,
+        managerId,
+        root,
+        output,
+        input: upgradeInput,
+      });
+    }
     const images = await createImageFixtures(context);
     loopback.setImages(images);
     result.fixtureLimits = {
