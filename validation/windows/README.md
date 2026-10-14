@@ -414,7 +414,8 @@ installation runs unchanged.
 The extension control loads v2.3.5 from an owned profile path, changes fit and
 language through the gallery controls and video volume through the gallery's
 trusted Arrow Down shortcut, copies the candidate
-over that same path, invokes the browser's extension Reload control, and checks
+over that same path, invokes the extension's documented `chrome.runtime.reload()`
+API, and checks
 the same extension ID, v2.3.6 manifest, exact candidate file inventory and saved
 settings. The public v2.3.5 gallery has no video-click selector: both controls
 check its default click policy and enabled keyboard navigation before and after

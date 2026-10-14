@@ -7816,15 +7816,7 @@ async function exerciseInstalledExtension(
   return flowResult;
 }
 
-async function runExtensionUpgrade({
-  browserName,
-  context,
-  extensionId,
-  extensionPath,
-  input,
-  output,
-  root,
-}) {
+async function runExtensionUpgrade({ context, extensionId, extensionPath, input, output, root }) {
   const receipt = {
     status: 'failed',
     previousVersion: input.previousVersion,
@@ -7924,14 +7916,13 @@ async function runExtensionUpgrade({
     );
     const details = await context.newPage();
     try {
-      const url =
-        browserName === 'msedge'
-          ? `edge://extensions/?id=${extensionId}`
-          : `chrome://extensions/?id=${extensionId}`;
-      await details.goto(url);
-      const reload = details.locator('extensions-detail-view #dev-reload-button');
-      await reload.waitFor({ state: 'visible' });
-      await reload.click();
+      await details.goto(`chrome-extension://${extensionId}/manifest.json`);
+      await details.evaluate((expectedId) => {
+        if (chrome.runtime.id !== expectedId) {
+          throw new Error('Upgrade extension identity changed');
+        }
+        chrome.runtime.reload();
+      }, extensionId);
     } finally {
       await details.close();
     }
@@ -8029,7 +8020,7 @@ async function runExtensionUpgrade({
     } finally {
       await candidatePage.close();
     }
-    receipt.method = 'same-path-unpacked-extension-detail-reload';
+    receipt.method = 'same-path-unpacked-extension-runtime-reload';
     receipt.status = 'passed';
   } catch (error) {
     if (!extensionPage.isClosed()) {
@@ -8200,7 +8191,6 @@ export async function run({
     assert.equal(typeof extensionId, 'string');
     if (upgradeInput) {
       result.upgrade = await runExtensionUpgrade({
-        browserName,
         context,
         extensionId,
         extensionPath: installedExtensionPath,
