@@ -13,6 +13,7 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Fixed
 
 - **Video clicks** — Respect the native-only mode for unmarked video elements and route eligible SVG icons consistently with their button's text and padding.
+- **Video click settings** — Expose the saved click policy in the gallery settings while preserving its existing default.
 - **Playback lifecycle** — Suppress late host playback only while the gallery modal owns the page, release it on recovery or close, and keep the separate fresh-start player policy explicit.
 - **Media recovery** — Add localized native-player guidance after failed video extraction and discard extraction results after close or navigation.
 

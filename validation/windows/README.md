@@ -411,13 +411,17 @@ assets and input outside Git; the installation asset declaration bundles them
 only for the selected Windows run. Without `input.json`, the original fresh
 installation runs unchanged.
 
-The extension control loads v2.3.5 from an owned profile path, changes fit,
-video-click mode and language through the gallery controls and video volume
-through the gallery's trusted Arrow Down shortcut, copies the candidate
+The extension control loads v2.3.5 from an owned profile path, changes fit and
+language through the gallery controls and video volume through the gallery's
+trusted Arrow Down shortcut, copies the candidate
 over that same path, invokes the browser's extension Reload control, and checks
 the same extension ID, v2.3.6 manifest, exact candidate file inventory and saved
-settings. The Tampermonkey control imports v2.3.5 through its UI, changes the
-same gallery controls, imports the candidate through the manager's Update
+settings. The public v2.3.5 gallery has no video-click selector: both controls
+check its default click policy and enabled keyboard navigation before and after
+the update. They exercise the candidate's nondefault click setting separately,
+then restore it; they do not establish nondefault click-mode preservation across
+this update. The Tampermonkey control imports v2.3.5 through its UI, changes the
+same available gallery controls, imports the candidate through the manager's Update
 confirmation, and checks one script row with the new version plus saved settings
 in newly opened galleries. It reads the manager's visible CodeMirror editor
 before and after the update and matches the full installed source hashes and
