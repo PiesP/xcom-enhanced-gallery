@@ -58,12 +58,19 @@ export function useVideoVolumePersistence(
 
   const volumeChangeGuard = createVideoVolumeChangeGuard();
 
+  // A no-op assignment emits no event, but its guard mark could hide a prompt user change.
   const applyMutedProgrammatically = (videoEl: HTMLVideoElement, muted: boolean) => {
+    if (videoEl.muted === muted) {
+      return;
+    }
     volumeChangeGuard.markProgrammaticChange({ volume: videoEl.volume, muted });
     videoEl.muted = muted;
   };
 
   const applyVolumeProgrammatically = (videoEl: HTMLVideoElement, volume: number) => {
+    if (videoEl.volume === volume) {
+      return;
+    }
     volumeChangeGuard.markProgrammaticChange({ volume, muted: videoEl.muted });
     videoEl.volume = volume;
   };
