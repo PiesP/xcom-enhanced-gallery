@@ -23,10 +23,70 @@ const scripts = [
   'scripts/check/extension-build.ts',
   'scripts/release/package-extension.ts',
   'scripts/release/prepare.ts',
+  'scripts/release/artifact-preflight.ts',
   'scripts/release/version.ts',
   'tooling/vite/utils/distribution-licenses.ts',
   'tooling/vite/utils/extension-icons.ts',
+  'tooling/vite/utils/userscript.ts',
+  'tooling/vite/browser-support.ts',
 ] as const;
+
+function releaseHeader(version = '2.3.3', development = false): string {
+  const name = `X.com Enhanced Gallery${development ? ' (Dev)' : ''}`;
+  const file = development ? 'xcom-enhanced-gallery.dev.user.js' : 'xcom-enhanced-gallery.user.js';
+  return [
+    '// ==UserScript==',
+    `// @name ${name}`,
+    '// @namespace https://github.com/PiesP/xcom-enhanced-gallery',
+    `// @version ${version}`,
+    `// @downloadURL https://github.com/PiesP/xcom-enhanced-gallery/releases/download/v${version}/${file}`,
+    '// @updateURL https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.meta.js',
+    '// ==/UserScript==',
+  ].join('\n');
+}
+
+function releaseFixture(root: string): { bin: string; calls: string } {
+  for (const dir of ['dist', 'dist-extension', 'dist-extension-firefox', 'release-bundle']) {
+    mkdirSync(join(root, dir));
+  }
+  writeFileSync(join(root, 'dist/xcom-enhanced-gallery.user.js'), `${releaseHeader()}\nscript`);
+  writeFileSync(join(root, 'dist/xcom-enhanced-gallery.meta.js'), `${releaseHeader()}\n`);
+  for (const dir of ['dist-extension', 'dist-extension-firefox']) {
+    writeFileSync(
+      join(root, dir, 'manifest.json'),
+      '{"version":"2.3.3","icons":{"128":"icons/icon-128x128.png"}}\n'
+    );
+  }
+  writeFileSync(join(root, 'release-bundle/sentinel'), 'old bundle');
+  writeFileSync(join(root, 'CHANGELOG.md'), '## [2.3.3]\n\nRelease fixture notes.\n\n## [2.3.2]\n');
+  const bin = join(root, 'bin');
+  mkdirSync(bin);
+  const git = join(bin, 'git');
+  writeFileSync(
+    git,
+    `#!/bin/sh\nprintf '%s\\n' "$*" >> "$FAKE_CALLS"\ncase "$1" in\n  rev-parse) printf '%s\\n' '${'a'.repeat(40)}' ;;\n  tag) printf '%s\\n' 'v2.3.2' ;;\nesac\n`
+  );
+  chmodSync(git, 0o755);
+  const zip = join(bin, 'zip');
+  writeFileSync(zip, '#!/bin/sh\nprintf archive > "$3"\nprintf zip >> "$FAKE_ZIP_CALLS"\n');
+  chmodSync(zip, 0o755);
+  return { bin, calls: join(root, 'calls') };
+}
+
+function releaseEnv(root: string, bin: string, calls: string): NodeJS.ProcessEnv {
+  return {
+    ...process.env,
+    PATH: `${bin}:${process.env.PATH ?? ''}`,
+    FAKE_CALLS: calls,
+    FAKE_ZIP_CALLS: join(root, 'zip-calls'),
+    RELEASE_VERSION: '2.3.3',
+    RELEASE_SHA: 'a'.repeat(40),
+    RUNNER_OS: 'Linux',
+    RUNNER_ARCH: 'X64',
+    ImageOS: 'ubuntu24',
+    ImageVersion: 'fixture',
+  };
+}
 
 function fixture() {
   const root = mkdtempSync(join(tmpdir(), 'node script boundary '));
@@ -186,47 +246,16 @@ describe('Node script import boundary', () => {
 
   it('prepares release artifacts with the checked-out source and runtime provenance', () => {
     const { root, command } = fixture();
-    for (const dir of ['dist', 'dist-extension', 'dist-extension-firefox', 'release-bundle']) {
-      mkdirSync(join(root, dir));
-    }
-    writeFileSync(join(root, 'dist/xcom-enhanced-gallery.user.js'), 'userscript');
-    writeFileSync(join(root, 'dist/xcom-enhanced-gallery.meta.js'), 'metadata');
-    writeFileSync(join(root, 'dist-extension/manifest.json'), 'chrome');
-    writeFileSync(join(root, 'dist-extension-firefox/manifest.json'), 'firefox');
-    writeFileSync(join(root, 'release-bundle/sentinel'), 'old bundle');
-    writeFileSync(
-      join(root, 'CHANGELOG.md'),
-      '## [2.3.3]\n\nRelease fixture notes.\n\n## [2.3.2]\n'
-    );
-    const bin = join(root, 'bin');
-    mkdirSync(bin);
-    const git = join(bin, 'git');
-    writeFileSync(
-      git,
-      `#!/bin/sh\nprintf '%s\\n' "$*" >> "$FAKE_CALLS"\ncase "$1" in\n  rev-parse) printf '%s\\n' '${'a'.repeat(40)}' ;;\n  tag) printf '%s\\n' 'v2.3.2' ;;\nesac\n`
-    );
-    chmodSync(git, 0o755);
-    const zip = join(bin, 'zip');
-    writeFileSync(zip, '#!/bin/sh\nprintf archive > "$3"\n');
-    chmodSync(zip, 0o755);
-    const result = command('scripts/release/prepare.ts', [], {
-      ...process.env,
-      PATH: `${bin}:${process.env.PATH ?? ''}`,
-      FAKE_CALLS: join(root, 'calls'),
-      RELEASE_VERSION: '2.3.3',
-      RELEASE_SHA: 'a'.repeat(40),
-      RUNNER_OS: 'Linux',
-      RUNNER_ARCH: 'X64',
-      ImageOS: 'ubuntu24',
-      ImageVersion: 'fixture',
-    });
+    const { bin, calls } = releaseFixture(root);
+    const result = command('scripts/release/prepare.ts', [], releaseEnv(root, bin, calls));
     expect(result.status, result.stderr).toBe(0);
     expect(result.stdout).toContain('Prepared release-bundle/ for v2.3.3 (4 assets)');
-    expect(readFileSync(join(root, 'calls'), 'utf8')).toBe('rev-parse HEAD\ntag --list v*\n');
+    expect(readFileSync(calls, 'utf8')).toBe('rev-parse HEAD\ntag --list v*\n');
     expect(existsSync(join(root, 'release-bundle/sentinel'))).toBe(false);
     expect(
       readFileSync(join(root, 'release-bundle/deploy/dist/xcom-enhanced-gallery.user.js'), 'utf8')
-    ).toBe('userscript');
+    ).toBe(`${releaseHeader()}\nscript`);
+    expect(readFileSync(join(root, 'zip-calls'), 'utf8')).toBe('zipzip');
     const release = join(root, 'release-bundle/release');
     expect(readFileSync(join(release, 'checksums.txt'), 'utf8').trim().split('\n')).toHaveLength(4);
     expect(existsSync(join(release, 'xcom-enhanced-gallery-chrome.zip'))).toBe(true);
@@ -243,6 +272,144 @@ describe('Node script import boundary', () => {
     expect(readFileSync(join(root, 'release-bundle/RELEASE_NOTES.md'), 'utf8')).toContain(
       '/compare/v2.3.2...v2.3.3'
     );
+  });
+
+  it.each([
+    [
+      'production userscript version',
+      'dist/xcom-enhanced-gallery.user.js',
+      '2.3.3',
+      '2.3.2',
+      '@version',
+    ],
+    [
+      'production metadata version',
+      'dist/xcom-enhanced-gallery.meta.js',
+      '2.3.3',
+      '2.3.2',
+      '@version',
+    ],
+    [
+      'Chrome extension version',
+      'dist-extension/manifest.json',
+      '"version":"2.3.3"',
+      '"version":"2.3.2"',
+      'version',
+    ],
+    [
+      'Firefox extension version',
+      'dist-extension-firefox/manifest.json',
+      '"version":"2.3.3"',
+      '"version":"2.3.2"',
+      'version',
+    ],
+    [
+      'development script identity',
+      'dist/xcom-enhanced-gallery.user.js',
+      'X.com Enhanced Gallery',
+      'X.com Enhanced Gallery (Dev)',
+      '@name',
+    ],
+    [
+      'development download target',
+      'dist/xcom-enhanced-gallery.user.js',
+      '/xcom-enhanced-gallery.user.js',
+      '/xcom-enhanced-gallery.dev.user.js',
+      '@downloadURL',
+    ],
+    [
+      'development update target',
+      'dist/xcom-enhanced-gallery.meta.js',
+      '/xcom-enhanced-gallery.meta.js',
+      '/xcom-enhanced-gallery.dev.meta.js',
+      '@updateURL',
+    ],
+    [
+      'duplicate version',
+      'dist/xcom-enhanced-gallery.meta.js',
+      '// @version 2.3.3',
+      '// @version 2.3.3\n// @version 2.3.3',
+      '@version',
+    ],
+    [
+      'missing version',
+      'dist/xcom-enhanced-gallery.meta.js',
+      '// @version 2.3.3\n',
+      '',
+      '@version',
+    ],
+    [
+      'duplicate block',
+      'dist/xcom-enhanced-gallery.meta.js',
+      '// ==/UserScript==',
+      '// ==/UserScript==\n// ==UserScript==\n// ==/UserScript==',
+      'metadata block',
+    ],
+    [
+      'missing block',
+      'dist/xcom-enhanced-gallery.meta.js',
+      '// ==UserScript==',
+      '// ==OtherScript==',
+      'metadata block',
+    ],
+    [
+      'invalid version',
+      'dist/xcom-enhanced-gallery.meta.js',
+      '// @version 2.3.3',
+      '// @version 2.3.3-dev.test',
+      'invalid @version',
+    ],
+    [
+      'invalid Chrome manifest',
+      'dist-extension/manifest.json',
+      '{"version":"2.3.3","icons":{"128":"icons/icon-128x128.png"}}',
+      '{',
+      'Could not read extension manifest',
+    ],
+  ])(
+    'rejects %s before replacing a bundle or invoking ZIP',
+    (_name, artifact, before, after, diagnostic) => {
+      const { root, command } = fixture();
+      const { bin, calls } = releaseFixture(root);
+      const path = join(root, artifact);
+      const original = readFileSync(path, 'utf8');
+      const altered = original.replace(before, after);
+      expect(altered).not.toBe(original);
+      writeFileSync(path, altered);
+      const result = command('scripts/release/prepare.ts', [], releaseEnv(root, bin, calls));
+      expect(result.status).not.toBe(0);
+      expect(result.stderr).toContain(artifact);
+      expect(result.stderr).toContain(diagnostic);
+      expect(readFileSync(path, 'utf8')).toBe(altered);
+      expect(readFileSync(join(root, 'release-bundle/sentinel'), 'utf8')).toBe('old bundle');
+      expect(existsSync(join(root, 'zip-calls'))).toBe(false);
+    }
+  );
+
+  it('checks the changelog before replacing an existing bundle', () => {
+    const { root, command } = fixture();
+    const { bin, calls } = releaseFixture(root);
+    writeFileSync(join(root, 'CHANGELOG.md'), '## [2.3.2]\n\nOlder release.\n');
+    const result = command('scripts/release/prepare.ts', [], releaseEnv(root, bin, calls));
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain('CHANGELOG.md has no entry for version 2.3.3');
+    expect(readFileSync(join(root, 'release-bundle/sentinel'), 'utf8')).toBe('old bundle');
+    expect(existsSync(join(root, 'zip-calls'))).toBe(false);
+  });
+
+  it('rejects a development-only dist with no production metadata', () => {
+    const { root, command } = fixture();
+    const { bin, calls } = releaseFixture(root);
+    rmSync(join(root, 'dist/xcom-enhanced-gallery.meta.js'));
+    writeFileSync(
+      join(root, 'dist/xcom-enhanced-gallery.dev.user.js'),
+      releaseHeader('2.3.3', true)
+    );
+    const result = command('scripts/release/prepare.ts', [], releaseEnv(root, bin, calls));
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain('dist/xcom-enhanced-gallery.meta.js');
+    expect(readFileSync(join(root, 'release-bundle/sentinel'), 'utf8')).toBe('old bundle');
+    expect(existsSync(join(root, 'zip-calls'))).toBe(false);
   });
 
   it('preserves the package CLI missing-build diagnostic', () => {

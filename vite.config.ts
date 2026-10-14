@@ -93,10 +93,14 @@ export default defineConfig(({ mode }): UserConfig => {
 
       plugins: [
         cssInlinePlugin(),
-        metaOnlyPlugin(version, {
-          name: USERSCRIPT_CONFIG.name,
-          namespace: USERSCRIPT_CONFIG.namespace,
-        }),
+        ...(isDev
+          ? []
+          : [
+              metaOnlyPlugin(version, {
+                name: USERSCRIPT_CONFIG.name,
+                namespace: USERSCRIPT_CONFIG.namespace,
+              }),
+            ]),
         buildSummaryPlugin({
           isDev,
           version,

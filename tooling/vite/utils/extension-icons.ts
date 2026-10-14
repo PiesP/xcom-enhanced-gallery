@@ -14,9 +14,7 @@ function invalidManifest(manifestPath: string, detail: string): Error {
   return new Error(`Extension manifest ${manifestPath} has invalid icons: ${detail}`);
 }
 
-export function readExtensionIconDeclarations(
-  manifestPath: string
-): readonly ExtensionIconDeclaration[] {
+function readManifest(manifestPath: string): Record<string, unknown> {
   let manifest: unknown;
   try {
     manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as unknown;
@@ -26,6 +24,25 @@ export function readExtensionIconDeclarations(
       cause: error,
     });
   }
+  if (!isRecord(manifest)) {
+    throw new Error(`Extension manifest ${manifestPath} must be a JSON object.`);
+  }
+  return manifest;
+}
+
+/** Read the built manifest version through the same parser used by the build validator. */
+export function readExtensionManifestVersion(manifestPath: string): string {
+  const version = readManifest(manifestPath).version;
+  if (typeof version !== 'string' || !/^\d+\.\d+\.\d+$/.test(version)) {
+    throw new Error(`Extension manifest ${manifestPath} has missing or invalid version.`);
+  }
+  return version;
+}
+
+export function readExtensionIconDeclarations(
+  manifestPath: string
+): readonly ExtensionIconDeclaration[] {
+  const manifest = readManifest(manifestPath);
 
   if (!isRecord(manifest) || !isRecord(manifest.icons)) {
     throw invalidManifest(manifestPath, 'icons must be a non-empty object.');
