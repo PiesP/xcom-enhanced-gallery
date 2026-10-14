@@ -23,6 +23,7 @@ import { readUpgradeInput, requireManagerEditorSource } from './release-upgrade/
 import { startUserscriptFixtureLoopback } from './userscript-loopback.mjs';
 
 const SCRIPT_NAME = 'X.com Enhanced Gallery';
+const MANAGER_SCRIPT_NAME_SELECTOR = 'span.nameNname16';
 const PROFILE_PREFIX = 'xeg-userscript-install-';
 const TWEET_ID = '1234567890123456789';
 const FIXTURE_URL = `https://x.com/testuser/status/${TWEET_ID}`;
@@ -1479,18 +1480,10 @@ async function installUserscript(
       'Manager options page is not owned after reload'
     );
     await page.getByText(labels.installedUserscripts, { exact: true }).first().click();
-    await page.getByText(SCRIPT_NAME, { exact: true }).first().waitFor({ state: 'visible' });
+    const installedRow = await requireInstalledManagerRow(page, output, 'installed');
     if (sourceVersion) {
-      const rows = page
-        .getByRole('row')
-        .filter({ has: page.getByText(SCRIPT_NAME, { exact: true }) });
-      assert.equal(
-        await rows.count(),
-        1,
-        'Manager must show exactly one installed script identity'
-      );
       assert.match(
-        await rows.first().innerText(),
+        await installedRow.innerText(),
         new RegExp(`\\b${sourceVersion.replaceAll('.', '\\.')}\\b`, 'u')
       );
     }
@@ -2480,20 +2473,49 @@ async function runFixture(
   }
 }
 
-async function observeInstalledManagerSource(page, managerId, labels, version, expectedSha256) {
+export async function requireInstalledManagerRow(page, output, phase) {
+  const rows = page.locator('tr.scripttr:visible').filter({
+    has: page.locator(MANAGER_SCRIPT_NAME_SELECTOR).getByText(SCRIPT_NAME, { exact: true }),
+  });
+  await page.getByText(SCRIPT_NAME, { exact: true }).first().waitFor({ state: 'visible' });
+  const count = await rows.count();
+  if (count !== 1) {
+    const visibleEntries = await page.locator('tr.scripttr:visible').evaluateAll((elements) =>
+      elements.slice(0, 8).map((element) => ({
+        name: element.querySelector('span.nameNname16')?.textContent?.trim().slice(0, 100),
+        version: element.querySelector('.script_version')?.textContent?.trim().slice(0, 40),
+      }))
+    );
+    await page
+      .screenshot({ path: join(output, `userscript-${phase}-identity.png`) })
+      .catch(() => {});
+    assert.equal(
+      count,
+      1,
+      `Manager must show exactly one installed script identity; visible entries: ${JSON.stringify(visibleEntries)}`
+    );
+  }
+  return rows.first();
+}
+
+async function observeInstalledManagerSource(
+  page,
+  managerId,
+  labels,
+  version,
+  expectedSha256,
+  output,
+  phase
+) {
   const optionsUrl = `chrome-extension://${managerId}/options.html`;
   await page.goto(optionsUrl);
   assert.equal(page.url(), optionsUrl, 'Manager options page navigated away');
   await page.getByText(labels.installedUserscripts, { exact: true }).first().click();
-  const row = page.locator('tr:visible').filter({
-    has: page.getByText(SCRIPT_NAME, { exact: true }),
-  });
-  await row.first().waitFor({ state: 'visible' });
-  assert.equal(await row.count(), 1, 'Manager must show one installation for script identity');
+  const row = await requireInstalledManagerRow(page, output, phase);
   const rowText = (await row.innerText()).replace(/\s+/gu, ' ').trim();
   const versionPattern = new RegExp(`(?:^|\\s)${version.replace(/\./gu, '\\.')}(?=\\s|$)`, 'u');
   assert(versionPattern.test(rowText), `Manager did not show installed version ${version}`);
-  await row.getByText(SCRIPT_NAME, { exact: true }).click();
+  await row.locator(MANAGER_SCRIPT_NAME_SELECTOR).click();
   const editor = page.locator('.CodeMirror:visible').first();
   await editor.waitFor({ state: 'visible' });
   const source = await editor.evaluate((element) => element.CodeMirror?.getValue());
@@ -2577,7 +2599,9 @@ async function runUserscriptUpgrade({ context, managerId, root, output, input })
       managerId,
       labels,
       input.previousVersion,
-      input.previousUserscript.sha256
+      input.previousUserscript.sha256,
+      output,
+      'before-upgrade'
     );
     await options.getByText(labels.utilities, { exact: true }).click();
     const confirmationPromise = context.waitForEvent('page');
@@ -2612,7 +2636,9 @@ async function runUserscriptUpgrade({ context, managerId, root, output, input })
       managerId,
       labels,
       input.candidateVersion,
-      input.candidateUserSha256
+      input.candidateUserSha256,
+      output,
+      'after-upgrade'
     );
     await inspectGallery(true, true, true);
     receipt.volumeAfter = await observeGalleryVolume(context, { before: 0.9, after: 1 });
