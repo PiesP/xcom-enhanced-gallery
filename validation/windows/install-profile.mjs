@@ -40,7 +40,12 @@ import {
   validateLiveUrls,
 } from './live-page.mjs';
 import { runInstalledMediaApiReuseProfile } from './media-api-reuse-profile.mjs';
-import { observeGalleryVolume } from './release-upgrade/gallery-volume.mjs';
+import {
+  captureUpgradeSettingsFailure,
+  observeDefaultVideoClick,
+  observeGalleryKeyboardNavigation,
+  observeGalleryVolume,
+} from './release-upgrade/gallery-volume.mjs';
 import { extensionInventorySha256, readUpgradeInput } from './release-upgrade/source.mjs';
 import { runVideoLoadingProfile } from './video-loading-profile.mjs';
 
@@ -7848,8 +7853,13 @@ async function runExtensionUpgrade({
     const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
     await toolbar.getByRole('button', { name: 'Fit Height', exact: true }).click();
     await toolbar.locator('#settings-button').click();
-    await gallery.locator('#settings-video-click-select').selectOption('allow-all');
+    assert.equal(
+      await gallery.locator('#settings-video-click-select').count(),
+      0,
+      'Public 2.3.5 must not expose the candidate video-click control'
+    );
     await gallery.locator('#settings-language-select').selectOption('ko');
+    receipt.baselineClickModeUi = 'unavailable-in-public-2.3.5';
     await page.screenshot({ path: join(output, 'extension-before-upgrade.png') });
     await waitForValue(async () => {
       const stored = await readStoredVideoSettings(extensionPage);
@@ -7857,7 +7867,7 @@ async function runExtensionUpgrade({
         async () => (await chrome.storage.local.get('xeg-language'))['xeg-language'] ?? null
       );
       return stored.settings?.gallery?.imageFitMode === 'fitHeight' &&
-        stored.settings?.gallery?.videoClickMode === 'allow-all' &&
+        stored.settings?.gallery?.videoClickMode === 'block-controls-only' &&
         language === 'ko'
         ? true
         : undefined;
@@ -7867,10 +7877,14 @@ async function runExtensionUpgrade({
       async () => (await chrome.storage.local.get('xeg-language'))['xeg-language'] ?? null
     );
     assert.equal(before.settings?.gallery?.imageFitMode, 'fitHeight');
-    assert.equal(before.settings?.gallery?.videoClickMode, 'allow-all');
+    assert.equal(before.settings?.gallery?.videoClickMode, 'block-controls-only');
+    assert.equal(before.settings?.gallery?.enableKeyboardNav, true);
     assert.equal(languageBefore, 'ko');
+    await toolbar.locator('#settings-button').click();
+    receipt.keyboardBefore = await observeGalleryKeyboardNavigation(page, gallery);
     await page.close();
     await extensionPage.close();
+    receipt.videoClickBefore = await observeDefaultVideoClick(context);
     receipt.volumeBefore = await observeGalleryVolume(context, { before: 1, after: 0.9 });
     const volumePage = await context.newPage();
     try {
@@ -7884,7 +7898,7 @@ async function runExtensionUpgrade({
     }
     receipt.settingsBefore = {
       fit: 'fitHeight',
-      videoClickMode: 'allow-all',
+      videoClickMode: 'block-controls-only',
       language: 'ko',
       videoVolume: 0.9,
       keyboardShortcutUsedForVolume: true,
@@ -7930,6 +7944,8 @@ async function runExtensionUpgrade({
       assert.equal(after.settings?.gallery?.videoVolume, 0.9);
       assert.equal(languageAfter, languageBefore, 'Extension update changed locale');
       receipt.settingsAfter = receipt.settingsBefore;
+      receipt.videoClickAfter = await observeDefaultVideoClick(context);
+      receipt.nondefaultClickCrossUpdate = 'not-exercised';
       receipt.volumeAfter = await observeGalleryVolume(context, { before: 0.9, after: 1 });
       const exercisePage = await context.newPage();
       try {
@@ -7940,7 +7956,17 @@ async function runExtensionUpgrade({
         await exercisePage.locator('[data-testid="tweetPhoto"] img').first().click();
         const gallery = exercisePage.locator('[data-xeg-gallery-container]');
         await gallery.waitFor({ state: 'visible' });
+        receipt.keyboardAfter = await observeGalleryKeyboardNavigation(exercisePage, gallery);
         await gallery.locator('#settings-button').click();
+        assert.equal(
+          await gallery.locator('#settings-video-click-select').inputValue(),
+          'block-controls-only'
+        );
+        await gallery.locator('#settings-video-click-select').selectOption('allow-all');
+        await waitForValue(async () => {
+          const current = await readStoredVideoSettings(candidatePage);
+          return current.settings?.gallery?.videoClickMode === 'allow-all' ? true : undefined;
+        }, 'candidate-only video-click setting saved through application control');
         await gallery.locator('#settings-language-select').selectOption('en');
         await gallery.locator('#settings-video-click-select').selectOption('block-controls-only');
         await gallery.locator('#settings-button').click();
@@ -7958,7 +7984,16 @@ async function runExtensionUpgrade({
             : undefined;
         }, 'candidate settings restored through application controls');
         assert.equal(restored, true);
+        receipt.candidateClickModeUi = { selected: 'allow-all', restored: 'block-controls-only' };
         receipt.fixtureDefaultsRestoredThroughUi = true;
+      } catch (error) {
+        receipt.settingsFailure = await captureUpgradeSettingsFailure(
+          exercisePage,
+          output,
+          'extension',
+          'candidate'
+        );
+        throw error;
       } finally {
         await exercisePage.close();
       }
@@ -7968,6 +8003,14 @@ async function runExtensionUpgrade({
     receipt.method = 'same-path-unpacked-extension-detail-reload';
     receipt.status = 'passed';
   } catch (error) {
+    if (!page.isClosed()) {
+      receipt.settingsFailure = await captureUpgradeSettingsFailure(
+        page,
+        output,
+        'extension',
+        'public'
+      );
+    }
     receipt.error = safeError(error);
     primaryError = error;
   } finally {
