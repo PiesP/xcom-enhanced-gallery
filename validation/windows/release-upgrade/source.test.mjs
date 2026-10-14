@@ -2,7 +2,7 @@
 // Copyright (c) 2026 PiesP
 
 import assert from 'node:assert/strict';
-import { lstat, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, open, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -24,7 +24,13 @@ test('inventory reads the inspected file handle and rejects a replacement', asyn
   try {
     const original = Buffer.from('original content');
     await writeFile(file, original);
-    const inspected = await lstat(file, { bigint: true });
+    const originalHandle = await open(file, 'r');
+    let inspected;
+    try {
+      inspected = await originalHandle.stat({ bigint: true });
+    } finally {
+      await originalHandle.close();
+    }
     assert.equal(await hashInventoryFile(file, inspected), sha256(original));
     await rm(file);
     await writeFile(file, 'replacement content is different');
