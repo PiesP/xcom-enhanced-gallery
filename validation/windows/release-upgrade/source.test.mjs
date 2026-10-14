@@ -9,6 +9,7 @@ import { test } from 'node:test';
 import {
   extensionInventorySha256,
   readUpgradeInput,
+  requireManagerEditorSource,
   sha256,
   userscriptVersion,
 } from './source.mjs';
@@ -95,5 +96,37 @@ test('userscript version parser fails on ambiguous metadata', () => {
         )
       ),
     /exactly one/u
+  );
+});
+
+test('manager editor readback requires exact bytes and stable script identity', () => {
+  const source = [
+    '// ==UserScript==',
+    '// @name X.com Enhanced Gallery',
+    '// @namespace https://github.com/PiesP/xcom-enhanced-gallery',
+    '// @version 2.3.6',
+    '// @updateURL https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.meta.js',
+    '// @downloadURL https://github.com/PiesP/xcom-enhanced-gallery/releases/download/v2.3.6/xcom-enhanced-gallery.user.js',
+    '// ==/UserScript==',
+    'const observable = true;',
+    '',
+  ].join('\n');
+  const expectedSha256 = sha256(Buffer.from(source));
+  assert.equal(
+    requireManagerEditorSource(source, expectedSha256, '2.3.6').editorSha256,
+    expectedSha256
+  );
+  assert.throws(
+    () => requireManagerEditorSource(undefined, expectedSha256, '2.3.6'),
+    /source is unavailable/u
+  );
+  assert.throws(
+    () => requireManagerEditorSource(`${source}// extra`, expectedSha256, '2.3.6'),
+    /bytes differ/u
+  );
+  const wrongUpdate = source.replace('/releases/latest/download/', '/releases/other/download/');
+  assert.throws(
+    () => requireManagerEditorSource(wrongUpdate, sha256(Buffer.from(wrongUpdate)), '2.3.6'),
+    /update URL changed/u
   );
 });
