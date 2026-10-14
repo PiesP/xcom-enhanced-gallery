@@ -8,11 +8,13 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.3.6] - 2026-10-14 (prepared; unpublished)
+
+### Fixed
+
 - **Video clicks** — Respect the native-only mode for unmarked video elements and route eligible SVG icons consistently with their button's text and padding.
 - **Playback lifecycle** — Suppress late host playback only while the gallery modal owns the page, release it on recovery or close, and keep the separate fresh-start player policy explicit.
 - **Media recovery** — Add localized native-player guidance after failed video extraction and discard extraction results after close or navigation.
-
-### Fixed
 
 - **Video admission** — Measure advance loading from the gallery scrollport height, isolate pooled observers by their actual root, and retire callbacks when roots or media change.
 - **Playback recovery** — Keep delayed same-item recovery aligned with current visibility and native control intent, preserving later pause, mute and volume choices while allowing a legitimate return-to-view resume.
