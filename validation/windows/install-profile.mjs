@@ -4,7 +4,17 @@
 import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';
 import { createHash, randomUUID } from 'node:crypto';
-import { copyFile, mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import {
+  copyFile,
+  cp,
+  mkdir,
+  mkdtemp,
+  readdir,
+  readFile,
+  rm,
+  stat,
+  writeFile,
+} from 'node:fs/promises';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import {
   PUBLIC_PREPLAYER_CASE,
@@ -25,11 +35,19 @@ import { startExtensionNativeFixtureLoopback } from './extension-native-loopback
 import {
   createControlledVideoSettings,
   observeLiveUrls,
+  readStoredLanguage,
   readStoredVideoSettings,
   validateLiveObservation,
   validateLiveUrls,
 } from './live-page.mjs';
 import { runInstalledMediaApiReuseProfile } from './media-api-reuse-profile.mjs';
+import {
+  captureUpgradeSettingsFailure,
+  observeDefaultVideoClick,
+  observeGalleryKeyboardNavigation,
+  observeGalleryVolume,
+} from './release-upgrade/gallery-volume.mjs';
+import { extensionInventorySha256, readUpgradeInput } from './release-upgrade/source.mjs';
 import { runVideoLoadingProfile } from './video-loading-profile.mjs';
 
 const PROFILE_PREFIX = 'xeg-chrome-install-';
@@ -453,7 +471,7 @@ function imageIndex(url) {
   return index < 0 ? 0 : index;
 }
 
-async function installFixtureRoutes(context, root, images, displayImages) {
+export async function installFixtureRoutes(context, root, images, displayImages) {
   const html = await readFile(join(root, 'test/e2e/fixtures/installed-gallery-page.html'), 'utf8');
   const extensionHtml = QUALITY_IMAGE_PATHS.reduce((page, path) => {
     const sharedPath = path.endsWith('.jpg') ? path : `${path}.jpg`;
@@ -7798,6 +7816,311 @@ async function exerciseInstalledExtension(
   return flowResult;
 }
 
+async function runExtensionUpgrade({ context, extensionId, extensionPath, input, output, root }) {
+  const receipt = {
+    status: 'failed',
+    previousVersion: input.previousVersion,
+    candidateVersion: input.candidateVersion,
+    previousExtensionInventorySha256: input.previousExtensionInventorySha256,
+    candidateExtensionInventorySha256: input.candidateExtensionInventorySha256,
+    extensionId,
+  };
+  const images = await createImageFixtures(context);
+  const displayImages = await createImageFixtures(context, 0.25);
+  const routes = await installFixtureRoutes(context, root, images, displayImages);
+  const page = await context.newPage();
+  const extensionPage = await context.newPage();
+  let primaryError;
+  let cleanupFailure;
+  try {
+    await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
+    assert.equal(
+      await extensionPage.evaluate(() => chrome.runtime.getManifest().version),
+      input.previousVersion
+    );
+    await page.goto(FIXTURE_URL);
+    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+    await page.locator('[data-testid="tweetPhoto"] img').first().click();
+    const gallery = page.locator('[data-xeg-gallery-container]');
+    await gallery.waitFor({ state: 'visible' });
+    const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
+    await toolbar.getByRole('button', { name: 'Fit Height', exact: true }).click();
+    await toolbar.locator('#settings-button').click();
+    assert.equal(
+      await gallery.locator('#settings-video-click-select').count(),
+      0,
+      'Public 2.3.5 must not expose the candidate video-click control'
+    );
+    await gallery.locator('#settings-language-select').selectOption('ko');
+    receipt.baselineClickModeUi = 'unavailable-in-public-2.3.5';
+    await page.screenshot({ path: join(output, 'extension-before-upgrade.png') });
+    await waitForValue(async () => {
+      const stored = await readStoredVideoSettings(extensionPage);
+      const { language } = await readStoredLanguage(extensionPage);
+      return stored.settings?.gallery?.imageFitMode === 'fitHeight' &&
+        stored.settings?.gallery?.videoClickMode === 'block-controls-only' &&
+        language === 'ko'
+        ? true
+        : undefined;
+    }, 'public extension settings saved through application controls');
+    const before = await readStoredVideoSettings(extensionPage);
+    const { language: languageBefore } = await readStoredLanguage(extensionPage);
+    assert.equal(before.settings?.gallery?.imageFitMode, 'fitHeight');
+    assert.equal(before.settings?.gallery?.videoClickMode, 'block-controls-only');
+    assert.equal(before.settings?.gallery?.enableKeyboardNav, true);
+    assert.equal(languageBefore, 'ko');
+    await toolbar.locator('#settings-button').click();
+    receipt.keyboardBefore = await observeGalleryKeyboardNavigation(page, gallery);
+    await page.close();
+    await extensionPage.close();
+    receipt.videoClickBefore = await observeDefaultVideoClick(context);
+    const volumePage = await context.newPage();
+    try {
+      await volumePage.goto(`chrome-extension://${extensionId}/manifest.json`);
+      receipt.volumeBefore = await observeGalleryVolume(context, {
+        before: 1,
+        after: 0.9,
+        waitForPersistedVolume: async (expected) => {
+          await waitForValue(async () => {
+            const stored = await readStoredVideoSettings(volumePage);
+            const actual = stored.settings?.gallery?.videoVolume;
+            receipt.volumeBeforeStorageObservation = {
+              exists: stored.exists,
+              valueType: typeof stored.value,
+              videoVolume: typeof actual === 'number' ? actual : null,
+              videoMuted: stored.settings?.gallery?.videoMuted ?? null,
+            };
+            return actual === expected ? true : undefined;
+          }, 'public extension volume persisted by trusted shortcut');
+        },
+      });
+    } finally {
+      await volumePage.close();
+    }
+    receipt.volumeBeforeReloaded = await observeGalleryVolume(context, {
+      before: 0.9,
+      waitForInitialVolume: true,
+    });
+    receipt.settingsBefore = {
+      fit: 'fitHeight',
+      videoClickMode: 'block-controls-only',
+      language: 'ko',
+      videoVolume: 0.9,
+      keyboardShortcutUsedForVolume: true,
+    };
+    await rm(extensionPath, { recursive: true });
+    await cp(join(root, 'dist-extension'), extensionPath, { recursive: true });
+    assert.equal(
+      await extensionInventorySha256(extensionPath),
+      input.candidateExtensionInventorySha256
+    );
+    const details = await context.newPage();
+    try {
+      await details.goto(`chrome-extension://${extensionId}/manifest.json`);
+      await details.evaluate((expectedId) => {
+        if (chrome.runtime.id !== expectedId) {
+          throw new Error('Upgrade extension identity changed');
+        }
+        chrome.runtime.reload();
+      }, extensionId);
+    } finally {
+      await details.close();
+    }
+    const candidatePage = await context.newPage();
+    try {
+      await candidatePage.goto(`chrome-extension://${extensionId}/manifest.json`);
+      assert.equal(await candidatePage.evaluate(() => chrome.runtime.id), extensionId);
+      assert.equal(
+        await candidatePage.evaluate(() => chrome.runtime.getManifest().version),
+        input.candidateVersion
+      );
+      const after = await readStoredVideoSettings(candidatePage);
+      const { language: languageAfter } = await readStoredLanguage(candidatePage);
+      for (const key of ['imageFitMode', 'videoClickMode', 'enableKeyboardNav']) {
+        assert.equal(
+          after.settings?.gallery?.[key],
+          before.settings?.gallery?.[key],
+          `Extension update changed ${key}`
+        );
+      }
+      assert.equal(after.settings?.gallery?.videoVolume, 0.9);
+      assert.equal(languageAfter, languageBefore, 'Extension update changed locale');
+      receipt.settingsAfter = receipt.settingsBefore;
+      receipt.videoClickAfter = await observeDefaultVideoClick(context);
+      receipt.nondefaultClickCrossUpdate = 'not-exercised';
+      receipt.volumeAfter = await observeGalleryVolume(context, {
+        before: 0.9,
+        after: 1,
+        waitForPersistedVolume: async (expected) => {
+          await waitForValue(async () => {
+            const stored = await readStoredVideoSettings(candidatePage);
+            const actual = stored.settings?.gallery?.videoVolume;
+            receipt.volumeAfterStorageObservation = {
+              exists: stored.exists,
+              valueType: typeof stored.value,
+              videoVolume: typeof actual === 'number' ? actual : null,
+              videoMuted: stored.settings?.gallery?.videoMuted ?? null,
+            };
+            return actual === expected ? true : undefined;
+          }, 'candidate extension volume persisted by trusted shortcut');
+        },
+      });
+      receipt.volumeAfterReloaded = await observeGalleryVolume(context, {
+        before: 1,
+        waitForInitialVolume: true,
+      });
+      const exercisePage = await context.newPage();
+      try {
+        await exercisePage.goto(FIXTURE_URL);
+        await exercisePage
+          .locator('html[data-xeg-gallery-ready="true"]')
+          .waitFor({ state: 'attached' });
+        await exercisePage.locator('[data-testid="tweetPhoto"] img').first().click();
+        const gallery = exercisePage.locator('[data-xeg-gallery-container]');
+        await gallery.waitFor({ state: 'visible' });
+        receipt.keyboardAfter = await observeGalleryKeyboardNavigation(exercisePage, gallery);
+        await gallery.locator('#settings-button').click();
+        assert.equal(
+          await gallery.locator('#settings-video-click-select').inputValue(),
+          'block-controls-only'
+        );
+        const clickModeSelect = gallery.locator('#settings-video-click-select');
+        await clickModeSelect.focus();
+        await exercisePage.keyboard.press('End');
+        await waitForValue(async () => {
+          const current = await readStoredVideoSettings(candidatePage);
+          const mode = current.settings?.gallery?.videoClickMode ?? null;
+          receipt.candidateClickModeStorageObservation = {
+            exists: current.exists,
+            valueType: typeof current.value,
+            mode,
+          };
+          return mode === 'allow-all' ? true : undefined;
+        }, 'candidate-only video-click setting saved through application control');
+        assert.equal(await clickModeSelect.inputValue(), 'allow-all');
+        const readbackPage = await context.newPage();
+        try {
+          await readbackPage.goto(FIXTURE_URL);
+          await readbackPage
+            .locator('html[data-xeg-gallery-ready="true"]')
+            .waitFor({ state: 'attached' });
+          await readbackPage.locator('[data-testid="tweetPhoto"] img').first().click();
+          const readbackGallery = readbackPage.locator('[data-xeg-gallery-container]');
+          await readbackGallery.waitFor({ state: 'visible' });
+          await readbackGallery.locator('#settings-button').click();
+          const readbackMode = readbackGallery.locator('#settings-video-click-select');
+          await readbackMode.waitFor({ state: 'visible' });
+          assert.equal(await readbackMode.inputValue(), 'allow-all');
+          receipt.candidateClickModeReloaded = 'allow-all';
+        } catch (error) {
+          receipt.candidateClickModeReadbackFailure = await captureUpgradeSettingsFailure(
+            readbackPage,
+            output,
+            'extension',
+            'candidate-reloaded'
+          );
+          throw error;
+        } finally {
+          await readbackPage.close();
+        }
+        await exercisePage.bringToFront();
+        await gallery.locator('#settings-language-select').selectOption('en');
+        await clickModeSelect.focus();
+        await exercisePage.keyboard.press('ArrowUp');
+        await waitForValue(async () => {
+          const current = await readStoredVideoSettings(candidatePage);
+          const mode = current.settings?.gallery?.videoClickMode ?? null;
+          receipt.candidateClickModeRestoreStorageObservation = {
+            exists: current.exists,
+            valueType: typeof current.value,
+            mode,
+          };
+          return mode === 'block-controls-only' ? true : undefined;
+        }, 'candidate video-click setting restored through trusted keyboard input');
+        assert.equal(await clickModeSelect.inputValue(), 'block-controls-only');
+        await gallery.locator('#settings-button').click();
+        await gallery.getByRole('button', { name: 'Fit Width', exact: true }).click();
+        const restored = await waitForValue(async () => {
+          const current = await readStoredVideoSettings(candidatePage);
+          const { language: currentLanguage } = await readStoredLanguage(candidatePage);
+          return current.settings?.gallery?.imageFitMode === 'fitWidth' &&
+            current.settings?.gallery?.videoClickMode === 'block-controls-only' &&
+            current.settings?.gallery?.videoVolume === 1 &&
+            currentLanguage === 'en'
+            ? true
+            : undefined;
+        }, 'candidate settings restored through application controls');
+        assert.equal(restored, true);
+        receipt.candidateClickModeUi = { selected: 'allow-all', restored: 'block-controls-only' };
+        receipt.fixtureDefaultsRestoredThroughUi = true;
+      } catch (error) {
+        receipt.settingsFailure = await captureUpgradeSettingsFailure(
+          exercisePage,
+          output,
+          'extension',
+          'candidate'
+        );
+        throw error;
+      } finally {
+        await exercisePage.close();
+      }
+    } finally {
+      await candidatePage.close();
+    }
+    receipt.method = 'same-path-unpacked-extension-runtime-reload';
+    receipt.status = 'passed';
+  } catch (error) {
+    if (!extensionPage.isClosed()) {
+      try {
+        const stored = await readStoredVideoSettings(extensionPage);
+        const language = await readStoredLanguage(extensionPage);
+        receipt.storedPreferencesAtFailure = {
+          settingsPresent: stored.exists,
+          fit: stored.settings?.gallery?.imageFitMode ?? null,
+          clickMode: stored.settings?.gallery?.videoClickMode ?? null,
+          keyboardEnabled: stored.settings?.gallery?.enableKeyboardNav ?? null,
+          language,
+        };
+      } catch (diagnosticError) {
+        receipt.storedPreferencesDiagnosticError = safeError(diagnosticError);
+      }
+    }
+    if (!page.isClosed()) {
+      receipt.settingsFailure = await captureUpgradeSettingsFailure(
+        page,
+        output,
+        'extension',
+        'public'
+      );
+    }
+    receipt.error = safeError(error);
+    primaryError = error;
+  } finally {
+    await Promise.allSettled([page.close(), extensionPage.close()]);
+    try {
+      await routes.remove();
+    } catch (error) {
+      receipt.status = 'failed';
+      receipt.cleanupError = safeError(error);
+      cleanupFailure = error;
+    }
+    await writeFile(join(output, 'extension-upgrade.json'), JSON.stringify(receipt, null, 2));
+  }
+  if (primaryError && cleanupFailure) {
+    throw new AggregateError(
+      [primaryError, cleanupFailure],
+      'Extension upgrade and cleanup failed'
+    );
+  }
+  if (primaryError) {
+    throw primaryError;
+  }
+  if (cleanupFailure) {
+    throw cleanupFailure;
+  }
+  return receipt;
+}
+
 export async function run({
   chromium,
   root,
@@ -7823,10 +8146,21 @@ export async function run({
     const { runUserscriptInstallation } = await import('./userscript-install.mjs');
     return runUserscriptInstallation({ chromium, root, output, browserName, headless });
   }
+  const upgradeInput = await readUpgradeInput(root);
   const validatedLiveUrls = validateLiveUrls(liveUrls);
   validateLiveObservation(liveObservation);
   await mkdir(output, { recursive: true });
   const profile = await mkdtemp(join(root, PROFILE_PREFIX));
+  const installedExtensionPath = upgradeInput
+    ? join(profile, 'owned-extension')
+    : join(root, 'dist-extension');
+  if (upgradeInput) {
+    await cp(upgradeInput.previousExtensionPath, installedExtensionPath, { recursive: true });
+    assert.equal(
+      await extensionInventorySha256(installedExtensionPath),
+      upgradeInput.previousExtensionInventorySha256
+    );
+  }
   const downloads = join(profile, 'downloads');
   await mkdir(downloads);
   assertOwnedProfile(root, profile);
@@ -7899,9 +8233,19 @@ export async function run({
       eventsEnabled: true,
     });
     ({ id: extensionId } = await browserCdp.send('Extensions.loadUnpacked', {
-      path: join(root, 'dist-extension'),
+      path: installedExtensionPath,
     }));
     assert.equal(typeof extensionId, 'string');
+    if (upgradeInput) {
+      result.upgrade = await runExtensionUpgrade({
+        context,
+        extensionId,
+        extensionPath: installedExtensionPath,
+        input: upgradeInput,
+        output,
+        root,
+      });
+    }
     const images = await createImageFixtures(context);
     const displayImages = await createImageFixtures(context, 0.25);
     result.fixture = await exerciseInstalledExtension(
@@ -7942,7 +8286,7 @@ export async function run({
       await verifyDownloadDirectory(context, downloads);
       browserCdp = await context.browser().newBrowserCDPSession();
       ({ id: extensionId } = await browserCdp.send('Extensions.loadUnpacked', {
-        path: join(root, 'dist-extension'),
+        path: installedExtensionPath,
       }));
       assert.equal(typeof extensionId, 'string');
       result.liveBrowserScope =

@@ -3,13 +3,14 @@
 [English](./README.md) | [한국어](./README.ko.md) | [日本語](./README.ja.md)
 
 Browse images and videos from an X.com post in a focused, keyboard-friendly
-gallery and download the original media. The project is available as a
-userscript and as unpacked Chrome and temporary Firefox extension builds.
+gallery and download supported media at its verified available quality. The
+project is available as a userscript and as unpacked Chrome and temporary
+Firefox extension builds.
 
 ## Features
 
 - Vertical gallery for images, videos, GIFs, and supported card media
-- Original-quality single downloads and bulk ZIP downloads
+- Verified CDN-original photo saves and supported single or ZIP downloads
 - Keyboard, pointer, and wheel navigation for desktop browsers
 - Original, width, height, and container image-fit modes
 - Persistent theme, language, playback, and gallery settings
@@ -24,8 +25,8 @@ Install a userscript manager such as
 [Violentmonkey](https://violentmonkey.github.io/), then install the
 [latest userscript](https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js).
 
-The userscript checks for updates through the metadata URLs embedded in its
-header.
+The userscript manager can check for updates through the metadata URLs embedded
+in the script header. Review and approve an offered update in the manager.
 
 ### Chrome, Edge, or Brave extension
 
@@ -37,6 +38,9 @@ browser store and does not update automatically.
 2. Extract the archive to a permanent directory.
 3. Open `chrome://extensions` and enable **Developer mode**.
 4. Select **Load unpacked** and choose the extracted directory.
+
+For a later release, replace the files in that same directory and reload the
+extension from `chrome://extensions`; check the saved settings after updating.
 
 ### Firefox extension
 
@@ -65,9 +69,12 @@ its visible, accessible media. A notification identifies this partial recovery;
 bulk ZIP downloads include only the items shown in the gallery. A tile does not
 establish all attachments of the post.
 
-Ordinary CDN photos keep a separate original-quality save source. If that
-source cannot be verified, saving reports a failure instead of silently saving
-a smaller image. Recovered DOM videos disclose their source-quality limit.
+Ordinary CDN photos keep a separate original-size save source. This is the CDN's
+original-size representation, not a promise of bytes identical to the uploader's
+file. If that source cannot be verified, saving reports a failure instead of
+silently saving a smaller image. Recovered DOM videos disclose their observed
+source-quality limit. The displayed or recovered playback source can differ
+from the selected save source and quality.
 HLS-only attachments require a supported MP4 source in this flow. See the
 [media source policy](./docs/media-sources.md) for selection and quality details.
 

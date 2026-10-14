@@ -15,11 +15,21 @@ import {
 import {
   createImageFixtures,
   enableDeveloperMode,
+  installFixtureRoutes,
   verifyDownloadDirectory,
 } from './install-profile.mjs';
+import {
+  captureGalleryVolumeFailure,
+  captureUpgradeSettingsFailure,
+  observeDefaultVideoClick,
+  observeGalleryKeyboardNavigation,
+  observeGalleryVolume,
+} from './release-upgrade/gallery-volume.mjs';
+import { readUpgradeInput, requireManagerEditorSource } from './release-upgrade/source.mjs';
 import { startUserscriptFixtureLoopback } from './userscript-loopback.mjs';
 
 const SCRIPT_NAME = 'X.com Enhanced Gallery';
+const MANAGER_SCRIPT_NAME_SELECTOR = 'span.nameNname16';
 const PROFILE_PREFIX = 'xeg-userscript-install-';
 const TWEET_ID = '1234567890123456789';
 const FIXTURE_URL = `https://x.com/testuser/status/${TWEET_ID}`;
@@ -1304,7 +1314,9 @@ async function installUserscript(
   browserName,
   sourceSha256,
   profile,
-  captureNativePermission
+  captureNativePermission,
+  sourcePath = 'dist/xcom-enhanced-gallery.user.js',
+  sourceVersion = null
 ) {
   const manifest = JSON.parse(
     await readFile(join(root, 'test-tools/userscript-manager/manifest.json'), 'utf8')
@@ -1455,9 +1467,7 @@ async function installUserscript(
     );
     await page.getByText(labels.utilities, { exact: true }).click();
     const confirmationPromise = context.waitForEvent('page');
-    await page
-      .locator('input[type=file]')
-      .setInputFiles(join(root, 'dist/xcom-enhanced-gallery.user.js'));
+    await page.locator('input[type=file]').setInputFiles(join(root, sourcePath));
     const confirmation = await confirmationPromise;
     await confirmation.waitForURL(`chrome-extension://${id}/ask.html*`);
     const confirmationUrl = new URL(confirmation.url());
@@ -1476,7 +1486,13 @@ async function installUserscript(
       'Manager options page is not owned after reload'
     );
     await page.getByText(labels.installedUserscripts, { exact: true }).first().click();
-    await page.getByText(SCRIPT_NAME, { exact: true }).first().waitFor({ state: 'visible' });
+    const installedRow = await requireInstalledManagerRow(page, output, 'installed');
+    if (sourceVersion) {
+      assert.match(
+        await installedRow.innerText(),
+        new RegExp(`\\b${sourceVersion.replaceAll('.', '\\.')}\\b`, 'u')
+      );
+    }
     await page.screenshot({ path: join(output, 'userscript-installed.png') });
     return {
       id,
@@ -2463,8 +2479,454 @@ async function runFixture(
   }
 }
 
+export async function requireInstalledManagerRow(page, output, phase) {
+  const rows = page.locator('tr.scripttr:visible').filter({
+    has: page.locator(MANAGER_SCRIPT_NAME_SELECTOR).getByText(SCRIPT_NAME, { exact: true }),
+  });
+  await page.getByText(SCRIPT_NAME, { exact: true }).first().waitFor({ state: 'visible' });
+  const count = await rows.count();
+  if (count !== 1) {
+    const visibleEntries = await page.locator('tr.scripttr:visible').evaluateAll((elements) =>
+      elements.slice(0, 8).map((element) => ({
+        name: element.querySelector('span.nameNname16')?.textContent?.trim().slice(0, 100),
+        version: element.querySelector('.script_version')?.textContent?.trim().slice(0, 40),
+      }))
+    );
+    await page
+      .screenshot({ path: join(output, `userscript-${phase}-identity.png`) })
+      .catch(() => {});
+    assert.equal(
+      count,
+      1,
+      `Manager must show exactly one installed script identity; visible entries: ${JSON.stringify(visibleEntries)}`
+    );
+  }
+  return rows.first();
+}
+
+export function managerRowShowsVersion(rowText, version) {
+  return rowText.split(/\s+/u).includes(version);
+}
+
+async function observeInstalledManagerSource(
+  page,
+  managerId,
+  labels,
+  version,
+  expectedSha256,
+  output,
+  phase
+) {
+  const optionsUrl = `chrome-extension://${managerId}/options.html`;
+  await page.goto(optionsUrl);
+  assert.equal(page.url(), optionsUrl, 'Manager options page navigated away');
+  await page.getByText(labels.installedUserscripts, { exact: true }).first().click();
+  const row = await requireInstalledManagerRow(page, output, phase);
+  const rowText = (await row.innerText()).replace(/\s+/gu, ' ').trim();
+  assert(
+    managerRowShowsVersion(rowText, version),
+    `Manager did not show installed version ${version}`
+  );
+  await row.locator(MANAGER_SCRIPT_NAME_SELECTOR).click();
+  const editor = page.locator('.CodeMirror:visible').first();
+  await editor.waitFor({ state: 'visible' });
+  const source = await editor.evaluate((element) => element.CodeMirror?.getValue());
+  const readback = requireManagerEditorSource(source, expectedSha256, version);
+  assert(isOwnedManagerOptionsUrl(page.url(), managerId), 'Manager editor navigated away');
+  return { ...readback, rowText: rowText.slice(0, 200) };
+}
+
+async function runUserscriptUpgrade({ context, managerId, root, output, input }) {
+  const receipt = {
+    status: 'failed',
+    previousVersion: input.previousVersion,
+    candidateVersion: input.candidateVersion,
+    previousSourceSha256: input.previousUserscript.sha256,
+    candidateSourceSha256: input.candidateUserSha256,
+    managerId,
+  };
+  const observeUpgradeVolume = (phase, options) =>
+    observeGalleryVolume(context, {
+      ...options,
+      galleryFixture: 'direct',
+      waitForPersistedVolume:
+        options.after === undefined
+          ? null
+          : async (expected) => {
+              const deadline = Date.now() + 15_000;
+              let observed = null;
+              let attempts = 0;
+              do {
+                const readback = await observeGalleryVolume(context, {
+                  before: null,
+                  galleryFixture: 'direct',
+                  onFailure: async (page, consoleEvents) => {
+                    receipt.volumeFailure ??= await captureGalleryVolumeFailure(
+                      page,
+                      output,
+                      'userscript',
+                      `${phase}-readback`,
+                      consoleEvents
+                    );
+                  },
+                });
+                observed = readback.before;
+                attempts++;
+                receipt.volumePersistenceReadbacks ??= {};
+                receipt.volumePersistenceReadbacks[phase] = { expected, observed, attempts };
+                if (Math.abs(observed - expected) < 0.011) {
+                  return;
+                }
+              } while (Date.now() < deadline);
+              throw new Error(
+                `Userscript gallery volume was ${observed} after ${attempts} fresh-page readbacks; expected ${expected}`
+              );
+            },
+      onFailure: async (page, consoleEvents) => {
+        receipt.volumeFailure ??= await captureGalleryVolumeFailure(
+          page,
+          output,
+          'userscript',
+          phase,
+          consoleEvents
+        );
+      },
+    });
+  const images = await createImageFixtures(context);
+  const displayImages = await createImageFixtures(context, 0.25);
+  const routes = await installFixtureRoutes(context, root, images, displayImages);
+  const options = await context.newPage();
+  let primaryError;
+  let cleanupFailure;
+  try {
+    const inspectGallery = async (
+      expected,
+      restore = false,
+      afterUpdate = false,
+      screenshotPhase = null
+    ) => {
+      const page = await context.newPage();
+      try {
+        await page.goto(FIXTURE_URL, { waitUntil: 'domcontentloaded' });
+        await page.locator('[data-phase="normal"] [data-testid="tweetPhoto"] img').first().click();
+        const gallery = page.locator('[data-xeg-gallery-container]');
+        await gallery.waitFor({ state: 'visible' });
+        const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
+        let publicPreferences = null;
+        if (!expected) {
+          await toolbar.getByRole('button', { name: 'Fit Height', exact: true }).click();
+          await toolbar.locator('#settings-button').click();
+          assert.equal(
+            await gallery.locator('#settings-video-click-select').count(),
+            0,
+            'Public 2.3.5 must not expose the candidate video-click control'
+          );
+          await gallery.locator('#settings-language-select').selectOption('ko');
+          receipt.baselineClickModeUi = 'unavailable-in-public-2.3.5';
+        } else {
+          await toolbar.locator('#settings-button').click();
+          if (afterUpdate) {
+            assert.equal(
+              await gallery.locator('#settings-video-click-select').inputValue(),
+              'block-controls-only'
+            );
+          } else {
+            publicPreferences = {
+              candidateClickControlCount: await gallery
+                .locator('#settings-video-click-select')
+                .count(),
+              language: await gallery.locator('#settings-language-select').inputValue(),
+              fitHeightPressed: await toolbar
+                .getByRole('button', { name: '높이 맞춤', exact: true })
+                .getAttribute('aria-pressed'),
+            };
+            assert.equal(publicPreferences.candidateClickControlCount, 0);
+          }
+          assert.equal(
+            publicPreferences?.language ??
+              (await gallery.locator('#settings-language-select').inputValue()),
+            'ko'
+          );
+          assert.equal(
+            publicPreferences?.fitHeightPressed ??
+              (await toolbar
+                .getByRole('button', { name: '높이 맞춤', exact: true })
+                .getAttribute('aria-pressed')),
+            'true'
+          );
+        }
+        await page.screenshot({
+          path: join(
+            output,
+            screenshotPhase
+              ? `userscript-${screenshotPhase}.png`
+              : afterUpdate
+                ? 'userscript-after-upgrade.png'
+                : 'userscript-before-upgrade.png'
+          ),
+        });
+        if (expected) {
+          await toolbar.locator('#settings-button').click();
+          const keyboard = await observeGalleryKeyboardNavigation(page, gallery);
+          if (afterUpdate) {
+            receipt.keyboardAfter = keyboard;
+          } else {
+            receipt.keyboardBefore = keyboard;
+          }
+          if (restore) {
+            await toolbar.locator('#settings-button').click();
+          }
+        }
+        if (restore) {
+          const clickModeSelect = gallery.locator('#settings-video-click-select');
+          await clickModeSelect.focus();
+          await page.keyboard.press('End');
+          await page.waitForFunction((expected) => {
+            const select = document.querySelector(
+              '[data-xeg-gallery-container] #settings-video-click-select'
+            );
+            return (
+              select instanceof HTMLSelectElement && !select.disabled && select.value === expected
+            );
+          }, 'allow-all');
+          const deadline = Date.now() + 15_000;
+          let observedMode = null;
+          let attempts = 0;
+          do {
+            const modePage = await context.newPage();
+            try {
+              await modePage.goto(FIXTURE_URL, { waitUntil: 'domcontentloaded' });
+              await modePage
+                .locator('[data-phase="normal"] [data-testid="tweetPhoto"] img')
+                .first()
+                .click();
+              const modeGallery = modePage.locator('[data-xeg-gallery-container]');
+              await modeGallery.waitFor({ state: 'visible' });
+              await modeGallery.locator('#settings-button').click();
+              const modeSelect = modeGallery.locator('#settings-video-click-select');
+              await modeSelect.waitFor({ state: 'visible' });
+              observedMode = await modeSelect.inputValue();
+            } finally {
+              await modePage.close();
+            }
+            attempts++;
+            receipt.candidateClickModeReadback = { observedMode, attempts };
+          } while (observedMode !== 'allow-all' && Date.now() < deadline);
+          assert.equal(
+            observedMode,
+            'allow-all',
+            'Candidate click mode did not persist in fresh UI'
+          );
+          receipt.candidateClickModeUi = { selected: 'allow-all', persistedInNewPage: true };
+          await page.bringToFront();
+          await gallery.locator('#settings-language-select').selectOption('en');
+          await clickModeSelect.focus();
+          await page.keyboard.press('ArrowUp');
+          await page.waitForFunction((expected) => {
+            const select = document.querySelector(
+              '[data-xeg-gallery-container] #settings-video-click-select'
+            );
+            return (
+              select instanceof HTMLSelectElement && !select.disabled && select.value === expected
+            );
+          }, 'block-controls-only');
+          await toolbar.locator('#settings-button').click();
+          await toolbar.getByRole('button', { name: 'Fit Width', exact: true }).click();
+        }
+        return publicPreferences;
+      } catch (error) {
+        receipt.settingsFailure = await captureUpgradeSettingsFailure(
+          page,
+          output,
+          'userscript',
+          afterUpdate ? 'candidate' : 'public'
+        );
+        throw error;
+      } finally {
+        await page.close();
+      }
+    };
+    await inspectGallery(false);
+    await inspectGallery(true); // Verify saved settings before changing the installed script.
+    receipt.videoClickBefore = await observeDefaultVideoClick(context);
+    receipt.volumeBefore = await observeUpgradeVolume('public-changed', { before: 1, after: 0.9 });
+    receipt.volumeBeforeReloaded = await observeUpgradeVolume('public-reloaded', {
+      before: 0.9,
+      waitForInitialVolume: true,
+    });
+    await options.goto(`chrome-extension://${managerId}/options.html`);
+    const labels = await readManagerUiLabels(options, managerId);
+    const updateLabel = await options.evaluate(() => chrome.i18n.getMessage('Update'));
+    const updateTitle = await options.evaluate(() =>
+      chrome.i18n.getMessage('You_are_about_to_update_a_UserScript_')
+    );
+    assert(updateLabel && updateTitle, 'Manager update labels are unavailable');
+    receipt.beforeReadback = await observeInstalledManagerSource(
+      options,
+      managerId,
+      labels,
+      input.previousVersion,
+      input.previousUserscript.sha256,
+      output,
+      'before-upgrade'
+    );
+    receipt.updateConfirmationEvents = [];
+    const openUpdateConfirmation = async (phase) => {
+      await options.goto(`chrome-extension://${managerId}/options.html`);
+      await options.getByText(labels.utilities, { exact: true }).click();
+      const confirmationPromise = context.waitForEvent('page');
+      await options
+        .locator('input[type=file]')
+        .setInputFiles(join(root, 'dist/xcom-enhanced-gallery.user.js'));
+      const confirmation = await confirmationPromise;
+      try {
+        await confirmation.waitForURL(`chrome-extension://${managerId}/ask.html*`);
+        const title = await confirmation.title();
+        if (title !== updateTitle) {
+          await confirmation
+            .getByText(updateTitle, { exact: true })
+            .first()
+            .waitFor({ state: 'visible', timeout: 10_000 });
+        }
+        const updateAction = confirmation.getByRole('button', { name: updateLabel, exact: true });
+        await updateAction.waitFor({ state: 'visible' });
+        assert.equal(await updateAction.count(), 1, 'Manager Update action is ambiguous');
+        assert.equal(
+          await confirmation.getByRole('button', { name: labels.install, exact: true }).isVisible(),
+          false,
+          'Manager offered Install instead of Update'
+        );
+        await confirmation.screenshot({
+          path: join(output, `userscript-update-confirmation-${phase}.png`),
+        });
+        receipt.updateConfirmationEvents.push({
+          phase,
+          event: 'observed',
+          url: confirmation.url(),
+          title,
+          translatedTitle: updateTitle,
+          updateLabel,
+        });
+        return { confirmation, updateAction };
+      } catch (error) {
+        await confirmation.close().catch(() => {});
+        throw error;
+      }
+    };
+    const deferred = await openUpdateConfirmation('deferred');
+    await deferred.confirmation.close();
+    assert(deferred.confirmation.isClosed(), 'Manager update confirmation did not close');
+    receipt.updateConfirmationEvents.push({ phase: 'deferred', event: 'deferred' });
+    receipt.afterDeferralReadback = await observeInstalledManagerSource(
+      options,
+      managerId,
+      labels,
+      input.previousVersion,
+      input.previousUserscript.sha256,
+      output,
+      'after-deferral'
+    );
+    receipt.afterDeferralPreferences = await inspectGallery(true, false, false, 'after-deferral');
+    receipt.afterDeferralVolume = await observeUpgradeVolume('public-deferred', {
+      before: 0.9,
+      waitForInitialVolume: true,
+    });
+    const approved = await openUpdateConfirmation('approved');
+    try {
+      const closed = approved.confirmation.waitForEvent('close');
+      await approved.updateAction.click();
+      await closed;
+      receipt.updateConfirmationEvents.push({ phase: 'approved', event: 'approved' });
+    } finally {
+      await approved.confirmation.close().catch(() => {});
+    }
+    receipt.afterReadback = await observeInstalledManagerSource(
+      options,
+      managerId,
+      labels,
+      input.candidateVersion,
+      input.candidateUserSha256,
+      output,
+      'after-upgrade'
+    );
+    await inspectGallery(true, true, true);
+    receipt.videoClickAfter = await observeDefaultVideoClick(context);
+    receipt.nondefaultClickCrossUpdate = 'not-exercised';
+    receipt.volumeAfter = await observeUpgradeVolume('candidate-changed', {
+      before: 0.9,
+      after: 1,
+    });
+    receipt.volumeAfterReloaded = await observeUpgradeVolume('candidate-reloaded', {
+      before: 1,
+      waitForInitialVolume: true,
+    });
+    const restored = await context.newPage();
+    try {
+      await restored.goto(FIXTURE_URL, { waitUntil: 'domcontentloaded' });
+      await restored
+        .locator('[data-phase="normal"] [data-testid="tweetPhoto"] img')
+        .first()
+        .click();
+      const gallery = restored.locator('[data-xeg-gallery-container]');
+      await gallery.waitFor({ state: 'visible' });
+      await gallery.locator('#settings-button').click();
+      assert.equal(
+        await gallery.locator('#settings-video-click-select').inputValue(),
+        'block-controls-only'
+      );
+      assert.equal(await gallery.locator('#settings-language-select').inputValue(), 'en');
+      assert.equal(
+        await gallery
+          .getByRole('button', { name: 'Fit Width', exact: true })
+          .getAttribute('aria-pressed'),
+        'true'
+      );
+    } finally {
+      await restored.close();
+    }
+    receipt.fixtureDefaultsRestoredThroughUi = true;
+    receipt.settings = {
+      fit: 'fitHeight',
+      videoClickMode: 'block-controls-only',
+      language: 'ko',
+      videoVolume: 0.9,
+      keyboardShortcutUsedForVolume: true,
+      crossUpdateUiVerified: ['fit', 'language', 'videoVolume'],
+    };
+    receipt.method = 'same-manager-profile-utilities-import-defer-then-update';
+    receipt.status = 'passed';
+  } catch (error) {
+    receipt.error = safeRouteError(error);
+    primaryError = error;
+  } finally {
+    await options.close();
+    try {
+      await routes.remove();
+    } catch (error) {
+      receipt.status = 'failed';
+      receipt.cleanupError = safeRouteError(error);
+      cleanupFailure = error;
+    }
+    await writeFile(join(output, 'userscript-upgrade.json'), JSON.stringify(receipt, null, 2));
+  }
+  if (primaryError && cleanupFailure) {
+    throw new AggregateError(
+      [primaryError, cleanupFailure],
+      'Userscript upgrade and cleanup failed'
+    );
+  }
+  if (primaryError) {
+    throw primaryError;
+  }
+  if (cleanupFailure) {
+    throw cleanupFailure;
+  }
+  return receipt;
+}
+
 export async function runUserscriptInstallation({ chromium, root, output, browserName, headless }) {
   assert.equal(browserName, 'chrome', 'HTTPS userscript fixture currently supports Chrome only');
+  const upgradeInput = await readUpgradeInput(root);
   await mkdir(output, { recursive: true });
   const source = await readFile(join(root, 'dist/xcom-enhanced-gallery.user.js'));
   const profile = await mkdtemp(join(root, PROFILE_PREFIX));
@@ -2543,7 +3005,7 @@ export async function runUserscriptInstallation({ chromium, root, output, browse
       root,
       output,
       browserName,
-      result.sourceSha256,
+      upgradeInput ? upgradeInput.previousUserscript.sha256 : result.sourceSha256,
       profile,
       (ask, id, context) =>
         inspectAndAllowNativeManagerPermission(
@@ -2555,8 +3017,19 @@ export async function runUserscriptInstallation({ chromium, root, output, browse
           ask,
           id,
           context
-        )
+        ),
+      upgradeInput ? upgradeInput.previousUserscript.path : undefined,
+      upgradeInput ? upgradeInput.previousVersion : null
     );
+    if (upgradeInput) {
+      result.upgrade = await runUserscriptUpgrade({
+        context,
+        managerId,
+        root,
+        output,
+        input: upgradeInput,
+      });
+    }
     const images = await createImageFixtures(context);
     loopback.setImages(images);
     result.fixtureLimits = {
