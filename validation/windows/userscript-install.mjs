@@ -18,11 +18,17 @@ import {
   installFixtureRoutes,
   verifyDownloadDirectory,
 } from './install-profile.mjs';
-import { observeGalleryVolume } from './release-upgrade/gallery-volume.mjs';
+import {
+  captureUpgradeSettingsFailure,
+  observeDefaultVideoClick,
+  observeGalleryKeyboardNavigation,
+  observeGalleryVolume,
+} from './release-upgrade/gallery-volume.mjs';
 import { readUpgradeInput, requireManagerEditorSource } from './release-upgrade/source.mjs';
 import { startUserscriptFixtureLoopback } from './userscript-loopback.mjs';
 
 const SCRIPT_NAME = 'X.com Enhanced Gallery';
+const MANAGER_SCRIPT_NAME_SELECTOR = 'span.nameNname16';
 const PROFILE_PREFIX = 'xeg-userscript-install-';
 const TWEET_ID = '1234567890123456789';
 const FIXTURE_URL = `https://x.com/testuser/status/${TWEET_ID}`;
@@ -1479,18 +1485,10 @@ async function installUserscript(
       'Manager options page is not owned after reload'
     );
     await page.getByText(labels.installedUserscripts, { exact: true }).first().click();
-    await page.getByText(SCRIPT_NAME, { exact: true }).first().waitFor({ state: 'visible' });
+    const installedRow = await requireInstalledManagerRow(page, output, 'installed');
     if (sourceVersion) {
-      const rows = page
-        .getByRole('row')
-        .filter({ has: page.getByText(SCRIPT_NAME, { exact: true }) });
-      assert.equal(
-        await rows.count(),
-        1,
-        'Manager must show exactly one installed script identity'
-      );
       assert.match(
-        await rows.first().innerText(),
+        await installedRow.innerText(),
         new RegExp(`\\b${sourceVersion.replaceAll('.', '\\.')}\\b`, 'u')
       );
     }
@@ -2480,20 +2478,49 @@ async function runFixture(
   }
 }
 
-async function observeInstalledManagerSource(page, managerId, labels, version, expectedSha256) {
+export async function requireInstalledManagerRow(page, output, phase) {
+  const rows = page.locator('tr.scripttr:visible').filter({
+    has: page.locator(MANAGER_SCRIPT_NAME_SELECTOR).getByText(SCRIPT_NAME, { exact: true }),
+  });
+  await page.getByText(SCRIPT_NAME, { exact: true }).first().waitFor({ state: 'visible' });
+  const count = await rows.count();
+  if (count !== 1) {
+    const visibleEntries = await page.locator('tr.scripttr:visible').evaluateAll((elements) =>
+      elements.slice(0, 8).map((element) => ({
+        name: element.querySelector('span.nameNname16')?.textContent?.trim().slice(0, 100),
+        version: element.querySelector('.script_version')?.textContent?.trim().slice(0, 40),
+      }))
+    );
+    await page
+      .screenshot({ path: join(output, `userscript-${phase}-identity.png`) })
+      .catch(() => {});
+    assert.equal(
+      count,
+      1,
+      `Manager must show exactly one installed script identity; visible entries: ${JSON.stringify(visibleEntries)}`
+    );
+  }
+  return rows.first();
+}
+
+async function observeInstalledManagerSource(
+  page,
+  managerId,
+  labels,
+  version,
+  expectedSha256,
+  output,
+  phase
+) {
   const optionsUrl = `chrome-extension://${managerId}/options.html`;
   await page.goto(optionsUrl);
   assert.equal(page.url(), optionsUrl, 'Manager options page navigated away');
   await page.getByText(labels.installedUserscripts, { exact: true }).first().click();
-  const row = page.locator('tr:visible').filter({
-    has: page.getByText(SCRIPT_NAME, { exact: true }),
-  });
-  await row.first().waitFor({ state: 'visible' });
-  assert.equal(await row.count(), 1, 'Manager must show one installation for script identity');
+  const row = await requireInstalledManagerRow(page, output, phase);
   const rowText = (await row.innerText()).replace(/\s+/gu, ' ').trim();
   const versionPattern = new RegExp(`(?:^|\\s)${version.replace(/\./gu, '\\.')}(?=\\s|$)`, 'u');
   assert(versionPattern.test(rowText), `Manager did not show installed version ${version}`);
-  await row.getByText(SCRIPT_NAME, { exact: true }).click();
+  await row.locator(MANAGER_SCRIPT_NAME_SELECTOR).click();
   const editor = page.locator('.CodeMirror:visible').first();
   await editor.waitFor({ state: 'visible' });
   const source = await editor.evaluate((element) => element.CodeMirror?.getValue());
@@ -2529,14 +2556,23 @@ async function runUserscriptUpgrade({ context, managerId, root, output, input })
         if (!expected) {
           await toolbar.getByRole('button', { name: 'Fit Height', exact: true }).click();
           await toolbar.locator('#settings-button').click();
-          await gallery.locator('#settings-video-click-select').selectOption('allow-all');
+          assert.equal(
+            await gallery.locator('#settings-video-click-select').count(),
+            0,
+            'Public 2.3.5 must not expose the candidate video-click control'
+          );
           await gallery.locator('#settings-language-select').selectOption('ko');
+          receipt.baselineClickModeUi = 'unavailable-in-public-2.3.5';
         } else {
           await toolbar.locator('#settings-button').click();
-          assert.equal(
-            await gallery.locator('#settings-video-click-select').inputValue(),
-            'allow-all'
-          );
+          if (afterUpdate) {
+            assert.equal(
+              await gallery.locator('#settings-video-click-select').inputValue(),
+              'block-controls-only'
+            );
+          } else {
+            assert.equal(await gallery.locator('#settings-video-click-select').count(), 0);
+          }
           assert.equal(await gallery.locator('#settings-language-select').inputValue(), 'ko');
           assert.equal(
             await toolbar
@@ -2551,18 +2587,75 @@ async function runUserscriptUpgrade({ context, managerId, root, output, input })
             afterUpdate ? 'userscript-after-upgrade.png' : 'userscript-before-upgrade.png'
           ),
         });
+        if (expected) {
+          await toolbar.locator('#settings-button').click();
+          const keyboard = await observeGalleryKeyboardNavigation(page, gallery);
+          if (afterUpdate) {
+            receipt.keyboardAfter = keyboard;
+          } else {
+            receipt.keyboardBefore = keyboard;
+          }
+          if (restore) {
+            await toolbar.locator('#settings-button').click();
+          }
+        }
         if (restore) {
+          await gallery.locator('#settings-video-click-select').selectOption('allow-all');
+          await page.waitForFunction((expected) => {
+            const select = document.querySelector(
+              '[data-xeg-gallery-container] #settings-video-click-select'
+            );
+            return (
+              select instanceof HTMLSelectElement && !select.disabled && select.value === expected
+            );
+          }, 'allow-all');
+          const modePage = await context.newPage();
+          try {
+            await modePage.goto(FIXTURE_URL, { waitUntil: 'domcontentloaded' });
+            await modePage
+              .locator('[data-phase="normal"] [data-testid="tweetPhoto"] img')
+              .first()
+              .click();
+            const modeGallery = modePage.locator('[data-xeg-gallery-container]');
+            await modeGallery.waitFor({ state: 'visible' });
+            await modeGallery.locator('#settings-button').click();
+            await modeGallery.locator('#settings-video-click-select').waitFor({ state: 'visible' });
+            assert.equal(
+              await modeGallery.locator('#settings-video-click-select').inputValue(),
+              'allow-all'
+            );
+            receipt.candidateClickModeUi = { selected: 'allow-all', persistedInNewPage: true };
+          } finally {
+            await modePage.close();
+          }
           await gallery.locator('#settings-language-select').selectOption('en');
           await gallery.locator('#settings-video-click-select').selectOption('block-controls-only');
+          await page.waitForFunction((expected) => {
+            const select = document.querySelector(
+              '[data-xeg-gallery-container] #settings-video-click-select'
+            );
+            return (
+              select instanceof HTMLSelectElement && !select.disabled && select.value === expected
+            );
+          }, 'block-controls-only');
           await toolbar.locator('#settings-button').click();
           await toolbar.getByRole('button', { name: 'Fit Width', exact: true }).click();
         }
+      } catch (error) {
+        receipt.settingsFailure = await captureUpgradeSettingsFailure(
+          page,
+          output,
+          'userscript',
+          afterUpdate ? 'candidate' : 'public'
+        );
+        throw error;
       } finally {
         await page.close();
       }
     };
     await inspectGallery(false);
     await inspectGallery(true); // Verify saved settings before changing the installed script.
+    receipt.videoClickBefore = await observeDefaultVideoClick(context);
     receipt.volumeBefore = await observeGalleryVolume(context, { before: 1, after: 0.9 });
     await observeGalleryVolume(context, { before: 0.9 }); // Verify manager storage in a new page.
     await options.goto(`chrome-extension://${managerId}/options.html`);
@@ -2577,7 +2670,9 @@ async function runUserscriptUpgrade({ context, managerId, root, output, input })
       managerId,
       labels,
       input.previousVersion,
-      input.previousUserscript.sha256
+      input.previousUserscript.sha256,
+      output,
+      'before-upgrade'
     );
     await options.getByText(labels.utilities, { exact: true }).click();
     const confirmationPromise = context.waitForEvent('page');
@@ -2612,9 +2707,13 @@ async function runUserscriptUpgrade({ context, managerId, root, output, input })
       managerId,
       labels,
       input.candidateVersion,
-      input.candidateUserSha256
+      input.candidateUserSha256,
+      output,
+      'after-upgrade'
     );
     await inspectGallery(true, true, true);
+    receipt.videoClickAfter = await observeDefaultVideoClick(context);
+    receipt.nondefaultClickCrossUpdate = 'not-exercised';
     receipt.volumeAfter = await observeGalleryVolume(context, { before: 0.9, after: 1 });
     await observeGalleryVolume(context, { before: 1 });
     const restored = await context.newPage();
@@ -2644,11 +2743,11 @@ async function runUserscriptUpgrade({ context, managerId, root, output, input })
     receipt.fixtureDefaultsRestoredThroughUi = true;
     receipt.settings = {
       fit: 'fitHeight',
-      videoClickMode: 'allow-all',
+      videoClickMode: 'block-controls-only',
       language: 'ko',
       videoVolume: 0.9,
       keyboardShortcutUsedForVolume: true,
-      verifiedBeforeAndAfterByApplicationUi: true,
+      crossUpdateUiVerified: ['fit', 'language', 'videoVolume'],
     };
     receipt.method = 'same-manager-profile-utilities-import-update-confirmation';
     receipt.status = 'passed';
