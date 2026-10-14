@@ -10,6 +10,7 @@
     "assets": [
       "dist/xcom-enhanced-gallery.user.js",
       "validation/windows/userscript-install.mjs",
+      "validation/windows/release-upgrade",
       "validation/windows/userscript-loopback.mjs",
       "validation/windows/extension-native-loopback.mjs",
       "validation/windows/media-api-reuse-profile.mjs",
