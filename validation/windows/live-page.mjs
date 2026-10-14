@@ -2319,7 +2319,7 @@ async function observeOne(
   return observation;
 }
 
-export function decodeStoredVideoSettings(raw) {
+export function decodeStoredValue(raw) {
   let parsed = raw;
   if (typeof raw === 'string') {
     try {
@@ -2341,17 +2341,31 @@ export function decodeStoredVideoSettings(raw) {
   return parsed;
 }
 
+export { decodeStoredValue as decodeStoredVideoSettings };
+
+export async function readStoredLanguage(extensionPage) {
+  const raw = await extensionPage.evaluate(
+    async () => (await chrome.storage.local.get('xeg-language'))['xeg-language'] ?? null
+  );
+  const decoded = decodeStoredValue(raw);
+  return {
+    exists: raw !== null,
+    rawType: typeof raw,
+    language: typeof decoded === 'string' ? decoded : null,
+  };
+}
+
 export async function readStoredVideoSettings(extensionPage) {
   const key = 'xeg-app-settings';
   const prior = await extensionPage.evaluate(async (storageKey) => {
     const values = await chrome.storage.local.get(storageKey);
     return { exists: Object.hasOwn(values, storageKey), value: values[storageKey] ?? null };
   }, key);
-  return { ...prior, settings: decodeStoredVideoSettings(prior.value) };
+  return { ...prior, settings: decodeStoredValue(prior.value) };
 }
 
 export function createControlledVideoSettings(priorValue, timestamp) {
-  const decoded = decodeStoredVideoSettings(priorValue);
+  const decoded = decodeStoredValue(priorValue);
   const base =
     decoded && typeof decoded === 'object' && !Array.isArray(decoded)
       ? decoded

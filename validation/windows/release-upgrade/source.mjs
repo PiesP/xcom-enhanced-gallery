@@ -3,7 +3,8 @@
 
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { lstat, readdir, readFile } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { lstat, open, readdir, readFile } from 'node:fs/promises';
 import { join, relative, resolve } from 'node:path';
 
 const DIRECTORY = 'validation/windows/release-upgrade';
@@ -68,19 +69,40 @@ export function requireManagerEditorSource(source, expectedSha256, version) {
   };
 }
 
+export async function hashInventoryFile(path, inspected) {
+  const flags =
+    process.platform === 'win32' ? constants.O_RDONLY : constants.O_RDONLY | constants.O_NOFOLLOW;
+  const handle = await open(path, flags);
+  try {
+    const opened = await handle.stat({ bigint: true });
+    assert(
+      opened.isFile() &&
+        inspected.ino > 0n &&
+        opened.dev === inspected.dev &&
+        opened.ino === inspected.ino &&
+        opened.size === inspected.size &&
+        opened.mtimeNs === inspected.mtimeNs,
+      'Upgrade extension file changed since inspection'
+    );
+    return sha256(await handle.readFile());
+  } finally {
+    await handle.close();
+  }
+}
+
 async function inventory(root) {
   const entries = [];
   async function visit(directory) {
     for (const child of (await readdir(directory)).sort()) {
       const path = join(directory, child);
-      const info = await lstat(path);
+      const info = await lstat(path, { bigint: true });
       assert(!info.isSymbolicLink(), 'Upgrade extension contains a symlink');
       if (info.isDirectory()) {
         await visit(path);
       } else {
         assert(info.isFile(), 'Upgrade extension contains a special file');
         entries.push(
-          `${relative(root, path).replaceAll('\\', '/')} ${sha256(await readFile(path))}`
+          `${relative(root, path).replaceAll('\\', '/')} ${await hashInventoryFile(path, info)}`
         );
       }
     }

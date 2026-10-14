@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, before, test } from 'node:test';
 import { chromium } from '@playwright/test';
-import { requireInstalledManagerRow } from '../userscript-install.mjs';
+import { managerRowShowsVersion, requireInstalledManagerRow } from '../userscript-install.mjs';
 
 let browser;
 before(async () => {
@@ -23,6 +23,12 @@ const entry = (version) => `
     <span class="script_version">${version}</span>
     <table><tr><td>X.com Enhanced Gallery</td></tr></table>
   </td></tr>`;
+
+test('manager row version is an exact token, not a regular expression', () => {
+  assert.equal(managerRowShowsVersion('X.com Enhanced Gallery 2.3.6', '2.3.6'), true);
+  assert.equal(managerRowShowsVersion('X.com Enhanced Gallery 2x3x6', '2.3.6'), false);
+  assert.equal(managerRowShowsVersion('X.com Enhanced Gallery 2.3.6', '2.3.6|2.3.5'), false);
+});
 
 test('manager identity selects its installed entry despite a nested matching row', async () => {
   const page = await browser.newPage();

@@ -2,12 +2,13 @@
 // Copyright (c) 2026 PiesP
 
 import assert from 'node:assert/strict';
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { lstat, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import {
   extensionInventorySha256,
+  hashInventoryFile,
   readUpgradeInput,
   requireManagerEditorSource,
   sha256,
@@ -16,6 +17,22 @@ import {
 
 const prefix = '// ==UserScript==\n// @name X.com Enhanced Gallery\n// @version ';
 const script = (version) => `${prefix}${version}\n// ==/UserScript==\n`;
+
+test('inventory reads the inspected file handle and rejects a replacement', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'xeg-upgrade-inventory-'));
+  const file = join(root, 'content.js');
+  try {
+    const original = Buffer.from('original content');
+    await writeFile(file, original);
+    const inspected = await lstat(file, { bigint: true });
+    assert.equal(await hashInventoryFile(file, inspected), sha256(original));
+    await rm(file);
+    await writeFile(file, 'replacement content is different');
+    await assert.rejects(hashInventoryFile(file, inspected), /changed since inspection/u);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
 
 test('upgrade inputs require the public asset hash, fixed paths and candidate versions', async () => {
   const root = await mkdtemp(join(tmpdir(), 'xeg-upgrade-input-'));
