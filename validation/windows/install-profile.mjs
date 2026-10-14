@@ -35,6 +35,7 @@ import { startExtensionNativeFixtureLoopback } from './extension-native-loopback
 import {
   createControlledVideoSettings,
   observeLiveUrls,
+  readStoredLanguage,
   readStoredVideoSettings,
   validateLiveObservation,
   validateLiveUrls,
@@ -7863,9 +7864,7 @@ async function runExtensionUpgrade({
     await page.screenshot({ path: join(output, 'extension-before-upgrade.png') });
     await waitForValue(async () => {
       const stored = await readStoredVideoSettings(extensionPage);
-      const language = await extensionPage.evaluate(
-        async () => (await chrome.storage.local.get('xeg-language'))['xeg-language'] ?? null
-      );
+      const { language } = await readStoredLanguage(extensionPage);
       return stored.settings?.gallery?.imageFitMode === 'fitHeight' &&
         stored.settings?.gallery?.videoClickMode === 'block-controls-only' &&
         language === 'ko'
@@ -7873,9 +7872,7 @@ async function runExtensionUpgrade({
         : undefined;
     }, 'public extension settings saved through application controls');
     const before = await readStoredVideoSettings(extensionPage);
-    const languageBefore = await extensionPage.evaluate(
-      async () => (await chrome.storage.local.get('xeg-language'))['xeg-language'] ?? null
-    );
+    const { language: languageBefore } = await readStoredLanguage(extensionPage);
     assert.equal(before.settings?.gallery?.imageFitMode, 'fitHeight');
     assert.equal(before.settings?.gallery?.videoClickMode, 'block-controls-only');
     assert.equal(before.settings?.gallery?.enableKeyboardNav, true);
@@ -7931,9 +7928,7 @@ async function runExtensionUpgrade({
         input.candidateVersion
       );
       const after = await readStoredVideoSettings(candidatePage);
-      const languageAfter = await candidatePage.evaluate(
-        async () => (await chrome.storage.local.get('xeg-language'))['xeg-language'] ?? null
-      );
+      const { language: languageAfter } = await readStoredLanguage(candidatePage);
       for (const key of ['imageFitMode', 'videoClickMode', 'enableKeyboardNav']) {
         assert.equal(
           after.settings?.gallery?.[key],
@@ -7973,9 +7968,7 @@ async function runExtensionUpgrade({
         await gallery.getByRole('button', { name: 'Fit Width', exact: true }).click();
         const restored = await waitForValue(async () => {
           const current = await readStoredVideoSettings(candidatePage);
-          const currentLanguage = await candidatePage.evaluate(
-            async () => (await chrome.storage.local.get('xeg-language'))['xeg-language'] ?? null
-          );
+          const { language: currentLanguage } = await readStoredLanguage(candidatePage);
           return current.settings?.gallery?.imageFitMode === 'fitWidth' &&
             current.settings?.gallery?.videoClickMode === 'block-controls-only' &&
             current.settings?.gallery?.videoVolume === 1 &&
@@ -8003,6 +7996,21 @@ async function runExtensionUpgrade({
     receipt.method = 'same-path-unpacked-extension-detail-reload';
     receipt.status = 'passed';
   } catch (error) {
+    if (!extensionPage.isClosed()) {
+      try {
+        const stored = await readStoredVideoSettings(extensionPage);
+        const language = await readStoredLanguage(extensionPage);
+        receipt.storedPreferencesAtFailure = {
+          settingsPresent: stored.exists,
+          fit: stored.settings?.gallery?.imageFitMode ?? null,
+          clickMode: stored.settings?.gallery?.videoClickMode ?? null,
+          keyboardEnabled: stored.settings?.gallery?.enableKeyboardNav ?? null,
+          language,
+        };
+      } catch (diagnosticError) {
+        receipt.storedPreferencesDiagnosticError = safeError(diagnosticError);
+      }
+    }
     if (!page.isClosed()) {
       receipt.settingsFailure = await captureUpgradeSettingsFailure(
         page,

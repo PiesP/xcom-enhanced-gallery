@@ -2503,6 +2503,10 @@ export async function requireInstalledManagerRow(page, output, phase) {
   return rows.first();
 }
 
+export function managerRowShowsVersion(rowText, version) {
+  return rowText.split(/\s+/u).includes(version);
+}
+
 async function observeInstalledManagerSource(
   page,
   managerId,
@@ -2518,8 +2522,10 @@ async function observeInstalledManagerSource(
   await page.getByText(labels.installedUserscripts, { exact: true }).first().click();
   const row = await requireInstalledManagerRow(page, output, phase);
   const rowText = (await row.innerText()).replace(/\s+/gu, ' ').trim();
-  const versionPattern = new RegExp(`(?:^|\\s)${version.replace(/\./gu, '\\.')}(?=\\s|$)`, 'u');
-  assert(versionPattern.test(rowText), `Manager did not show installed version ${version}`);
+  assert(
+    managerRowShowsVersion(rowText, version),
+    `Manager did not show installed version ${version}`
+  );
   await row.locator(MANAGER_SCRIPT_NAME_SELECTOR).click();
   const editor = page.locator('.CodeMirror:visible').first();
   await editor.waitFor({ state: 'visible' });
