@@ -10,6 +10,10 @@ const DIRECTORY = 'validation/windows/release-upgrade';
 const USER_PATH = `${DIRECTORY}/v2.3.5.user.js`;
 const EXTENSION_PATH = `${DIRECTORY}/v2.3.5-extension`;
 const CANDIDATE_USER_PATH = 'dist/xcom-enhanced-gallery.user.js';
+const SCRIPT_NAME = 'X.com Enhanced Gallery';
+const SCRIPT_NAMESPACE = 'https://github.com/PiesP/xcom-enhanced-gallery';
+const SCRIPT_UPDATE_URL = `${SCRIPT_NAMESPACE}/releases/latest/download/xcom-enhanced-gallery.meta.js`;
+const MAX_MANAGER_EDITOR_BYTES = 4 * 1024 * 1024;
 
 export function sha256(bytes) {
   return createHash('sha256').update(bytes).digest('hex');
@@ -20,6 +24,48 @@ export function userscriptVersion(bytes) {
   const matches = [...header.matchAll(/^\/\/ @version ([0-9]+\.[0-9]+\.[0-9]+)$/gmu)];
   assert.equal(matches.length, 1, 'Expected exactly one userscript metadata version');
   return matches[0][1];
+}
+
+/** Inspect bytes returned by the manager's visible script editor, not its storage API. */
+export function requireManagerEditorSource(source, expectedSha256, version) {
+  assert(typeof source === 'string' && source.length > 0, 'Manager editor source is unavailable');
+  const bytes = Buffer.from(source, 'utf8');
+  assert(bytes.length <= MAX_MANAGER_EDITOR_BYTES, 'Manager editor source exceeds bounded size');
+  const observedSha256 = sha256(bytes);
+  assert.equal(observedSha256, expectedSha256, 'Manager editor bytes differ from imported file');
+  const header = /^\/\/ ==UserScript==\r?\n([\s\S]*?)^\/\/ ==\/UserScript==/mu.exec(source);
+  assert(header, 'Manager editor metadata header is missing');
+  const fields = new Map();
+  for (const line of header[1].split(/\r?\n/u)) {
+    const match = /^\/\/\s+@([A-Za-z-]+)\s+(.+)$/u.exec(line);
+    if (!match) {
+      continue;
+    }
+    const values = fields.get(match[1]) ?? [];
+    values.push(match[2].trim());
+    fields.set(match[1], values);
+  }
+  const exactlyOne = (key) => {
+    const values = fields.get(key) ?? [];
+    assert.equal(values.length, 1, `Manager editor requires one @${key}`);
+    return values[0];
+  };
+  assert.equal(exactlyOne('name'), SCRIPT_NAME, 'Manager editor script name changed');
+  assert.equal(exactlyOne('namespace'), SCRIPT_NAMESPACE, 'Manager editor namespace changed');
+  assert.equal(exactlyOne('version'), version, 'Manager editor version changed');
+  assert.equal(exactlyOne('updateURL'), SCRIPT_UPDATE_URL, 'Manager editor update URL changed');
+  assert.equal(
+    exactlyOne('downloadURL'),
+    `${SCRIPT_NAMESPACE}/releases/download/v${version}/xcom-enhanced-gallery.user.js`,
+    'Manager editor download URL changed'
+  );
+  return {
+    editorSha256: observedSha256,
+    version,
+    scriptName: SCRIPT_NAME,
+    namespace: SCRIPT_NAMESPACE,
+    updateUrl: SCRIPT_UPDATE_URL,
+  };
 }
 
 async function inventory(root) {

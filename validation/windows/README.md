@@ -419,7 +419,10 @@ the same extension ID, v2.3.6 manifest, exact candidate file inventory and saved
 settings. The Tampermonkey control imports v2.3.5 through its UI, changes the
 same gallery controls, imports the candidate through the manager's Update
 confirmation, and checks one script row with the new version plus saved settings
-in newly opened galleries. Both restore fixture defaults through the app UI
+in newly opened galleries. It reads the manager's visible CodeMirror editor
+before and after the update and matches the full installed source hashes and
+script identity against the bundled public and candidate files. Both restore
+fixture defaults through the app UI
 before the existing download and lifecycle suite. Receipts are
 `extension-upgrade.json` or `userscript-upgrade.json`; a missing or unfamiliar UI
 fails the control. These controls do not establish that a browser or userscript

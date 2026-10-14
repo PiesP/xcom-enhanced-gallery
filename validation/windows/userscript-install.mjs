@@ -19,7 +19,7 @@ import {
   verifyDownloadDirectory,
 } from './install-profile.mjs';
 import { observeGalleryVolume } from './release-upgrade/gallery-volume.mjs';
-import { readUpgradeInput } from './release-upgrade/source.mjs';
+import { readUpgradeInput, requireManagerEditorSource } from './release-upgrade/source.mjs';
 import { startUserscriptFixtureLoopback } from './userscript-loopback.mjs';
 
 const SCRIPT_NAME = 'X.com Enhanced Gallery';
@@ -2480,6 +2480,28 @@ async function runFixture(
   }
 }
 
+async function observeInstalledManagerSource(page, managerId, labels, version, expectedSha256) {
+  const optionsUrl = `chrome-extension://${managerId}/options.html`;
+  await page.goto(optionsUrl);
+  assert.equal(page.url(), optionsUrl, 'Manager options page navigated away');
+  await page.getByText(labels.installedUserscripts, { exact: true }).first().click();
+  const row = page.locator('tr:visible').filter({
+    has: page.getByText(SCRIPT_NAME, { exact: true }),
+  });
+  await row.first().waitFor({ state: 'visible' });
+  assert.equal(await row.count(), 1, 'Manager must show one installation for script identity');
+  const rowText = (await row.innerText()).replace(/\s+/gu, ' ').trim();
+  const versionPattern = new RegExp(`(?:^|\\s)${version.replace(/\./gu, '\\.')}(?=\\s|$)`, 'u');
+  assert(versionPattern.test(rowText), `Manager did not show installed version ${version}`);
+  await row.getByText(SCRIPT_NAME, { exact: true }).click();
+  const editor = page.locator('.CodeMirror:visible').first();
+  await editor.waitFor({ state: 'visible' });
+  const source = await editor.evaluate((element) => element.CodeMirror?.getValue());
+  const readback = requireManagerEditorSource(source, expectedSha256, version);
+  assert(isOwnedManagerOptionsUrl(page.url(), managerId), 'Manager editor navigated away');
+  return { ...readback, rowText: rowText.slice(0, 200) };
+}
+
 async function runUserscriptUpgrade({ context, managerId, root, output, input }) {
   const receipt = {
     status: 'failed',
@@ -2550,13 +2572,13 @@ async function runUserscriptUpgrade({ context, managerId, root, output, input })
       chrome.i18n.getMessage('You_are_about_to_update_a_UserScript_')
     );
     assert(updateLabel && updateTitle, 'Manager update labels are unavailable');
-    await options.getByText(labels.installedUserscripts, { exact: true }).first().click();
-    const row = options
-      .getByRole('row')
-      .filter({ has: options.getByText(SCRIPT_NAME, { exact: true }) });
-    assert.equal(await row.count(), 1, 'Public userscript identity is not unique');
-    const beforeRow = await row.innerText();
-    assert.match(beforeRow, /\b2\.3\.5\b/u);
+    receipt.beforeReadback = await observeInstalledManagerSource(
+      options,
+      managerId,
+      labels,
+      input.previousVersion,
+      input.previousUserscript.sha256
+    );
     await options.getByText(labels.utilities, { exact: true }).click();
     const confirmationPromise = context.waitForEvent('page');
     await options
@@ -2565,23 +2587,33 @@ async function runUserscriptUpgrade({ context, managerId, root, output, input })
     const confirmation = await confirmationPromise;
     try {
       await confirmation.waitForURL(`chrome-extension://${managerId}/ask.html*`);
-      assert(
-        (await confirmation.locator('body').innerText()).includes(updateTitle),
-        'Manager did not recognize a userscript update'
+      if ((await confirmation.title()) !== updateTitle) {
+        await confirmation
+          .getByText(updateTitle, { exact: true })
+          .first()
+          .waitFor({ state: 'visible', timeout: 10_000 });
+      }
+      const updateAction = confirmation.getByRole('button', { name: updateLabel, exact: true });
+      await updateAction.waitFor({ state: 'visible' });
+      assert.equal(
+        await confirmation.getByRole('button', { name: labels.install, exact: true }).isVisible(),
+        false,
+        'Manager offered Install instead of Update'
       );
       await confirmation.screenshot({ path: join(output, 'userscript-update-confirmation.png') });
       const closed = confirmation.waitForEvent('close');
-      await confirmation.getByRole('button', { name: updateLabel, exact: true }).click();
+      await updateAction.click();
       await closed;
     } finally {
       await confirmation.close().catch(() => {});
     }
-    await options.reload();
-    await options.getByText(labels.installedUserscripts, { exact: true }).first().click();
-    assert.equal(await row.count(), 1, 'Userscript update changed installation count');
-    const afterRow = await row.innerText();
-    assert.match(afterRow, /\b2\.3\.6\b/u);
-    receipt.identity = { before: beforeRow, after: afterRow, count: 1 };
+    receipt.afterReadback = await observeInstalledManagerSource(
+      options,
+      managerId,
+      labels,
+      input.candidateVersion,
+      input.candidateUserSha256
+    );
     await inspectGallery(true, true, true);
     receipt.volumeAfter = await observeGalleryVolume(context, { before: 0.9, after: 1 });
     await observeGalleryVolume(context, { before: 1 });
