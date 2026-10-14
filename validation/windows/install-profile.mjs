@@ -7882,17 +7882,33 @@ async function runExtensionUpgrade({
     await page.close();
     await extensionPage.close();
     receipt.videoClickBefore = await observeDefaultVideoClick(context);
-    receipt.volumeBefore = await observeGalleryVolume(context, { before: 1, after: 0.9 });
     const volumePage = await context.newPage();
     try {
       await volumePage.goto(`chrome-extension://${extensionId}/manifest.json`);
-      await waitForValue(async () => {
-        const stored = await readStoredVideoSettings(volumePage);
-        return stored.settings?.gallery?.videoVolume === 0.9 ? true : undefined;
-      }, 'public extension volume persisted by trusted shortcut');
+      receipt.volumeBefore = await observeGalleryVolume(context, {
+        before: 1,
+        after: 0.9,
+        waitForPersistedVolume: async (expected) => {
+          await waitForValue(async () => {
+            const stored = await readStoredVideoSettings(volumePage);
+            const actual = stored.settings?.gallery?.videoVolume;
+            receipt.volumeBeforeStorageObservation = {
+              exists: stored.exists,
+              valueType: typeof stored.value,
+              videoVolume: typeof actual === 'number' ? actual : null,
+              videoMuted: stored.settings?.gallery?.videoMuted ?? null,
+            };
+            return actual === expected ? true : undefined;
+          }, 'public extension volume persisted by trusted shortcut');
+        },
+      });
     } finally {
       await volumePage.close();
     }
+    receipt.volumeBeforeReloaded = await observeGalleryVolume(context, {
+      before: 0.9,
+      waitForInitialVolume: true,
+    });
     receipt.settingsBefore = {
       fit: 'fitHeight',
       videoClickMode: 'block-controls-only',
@@ -7941,7 +7957,27 @@ async function runExtensionUpgrade({
       receipt.settingsAfter = receipt.settingsBefore;
       receipt.videoClickAfter = await observeDefaultVideoClick(context);
       receipt.nondefaultClickCrossUpdate = 'not-exercised';
-      receipt.volumeAfter = await observeGalleryVolume(context, { before: 0.9, after: 1 });
+      receipt.volumeAfter = await observeGalleryVolume(context, {
+        before: 0.9,
+        after: 1,
+        waitForPersistedVolume: async (expected) => {
+          await waitForValue(async () => {
+            const stored = await readStoredVideoSettings(candidatePage);
+            const actual = stored.settings?.gallery?.videoVolume;
+            receipt.volumeAfterStorageObservation = {
+              exists: stored.exists,
+              valueType: typeof stored.value,
+              videoVolume: typeof actual === 'number' ? actual : null,
+              videoMuted: stored.settings?.gallery?.videoMuted ?? null,
+            };
+            return actual === expected ? true : undefined;
+          }, 'candidate extension volume persisted by trusted shortcut');
+        },
+      });
+      receipt.volumeAfterReloaded = await observeGalleryVolume(context, {
+        before: 1,
+        waitForInitialVolume: true,
+      });
       const exercisePage = await context.newPage();
       try {
         await exercisePage.goto(FIXTURE_URL);
