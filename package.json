@@ -38,8 +38,8 @@
     "knip": "pnpm -s knip:full && pnpm -s knip:production",
     "knip:full": "knip --files --exports --dependencies --treat-config-hints-as-errors",
     "knip:production": "knip --production --files --exports --dependencies --tags=-testOnly --treat-config-hints-as-errors",
-    "lint": "biome lint .",
-    "lint:fix": "biome lint --write .",
+    "lint": "biome lint --error-on-warnings .",
+    "lint:fix": "biome lint --write --error-on-warnings .",
     "fmt": "biome check --linter-enabled=false .",
     "fmt:fix": "biome check --write --linter-enabled=false .",
     "fmt:check": "pnpm -s fmt",
@@ -59,7 +59,7 @@
     "check:e2e": "tsc -p tsconfig.e2e.json --noEmit",
     "test:e2e:headed": "playwright test --config test/e2e/playwright.config.ts --headed",
     "check:tooling": "tsc -p tsconfig.tooling.json --noEmit",
-    "check:biome": "biome ci ."
+    "check:biome": "biome ci --error-on-warnings ."
   },
   "keywords": [
     "userscript",

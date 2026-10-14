@@ -385,6 +385,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
 
           <fieldset class={cx(styles.toolbarGroup, styles.fitGroup)}>
             <legend class="xeg-sr-only">{translate('tb.fitGroup')}</legend>
+            {/* biome-ignore lint/performance/useSolidForComponent: The parent passes the fixed fit-mode order; button state and labels update through Solid accessors. */}
             {local.fitModeOrder.map(({ mode, iconName }) => {
               const label = fitModeLabels()[mode];
               return (

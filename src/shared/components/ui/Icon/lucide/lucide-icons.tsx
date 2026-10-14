@@ -51,6 +51,7 @@ export function LucideIcon(props: LucideIconProps): JSXElement {
 
   return (
     <Icon size={local.size} class={local.class} aria-label={local['aria-label']}>
+      {/* biome-ignore lint/performance/useSolidForComponent: Icon node definitions are immutable; the name selects one fixed node list per icon instance. */}
       {nodes.map(renderNode)}
     </Icon>
   );

@@ -3,7 +3,8 @@
 
 import { MAX_RETRY_AFTER_MS, parseRetryAfter } from '@platform/http-response-metadata';
 import { HttpResponseSizeLimitError } from '@shared/error/http-response-size-limit-error';
-import { fetchOwnedArrayBufferWithRetry, RetryDeferredError } from '@shared/network/retry-fetch';
+import type { RetryDeferredError } from '@shared/network/retry-fetch';
+import { fetchOwnedArrayBufferWithRetry } from '@shared/network/retry-fetch';
 import {
   DownloadResourceLimitError,
   LiveByteBudget,

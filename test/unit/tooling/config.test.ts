@@ -1,5 +1,6 @@
-import { globSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { globSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const root = resolve(import.meta.dirname, '../../..');
@@ -10,6 +11,12 @@ const packageJson = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8
 const knipConfig = JSON.parse(readFileSync(resolve(root, 'knip.json'), 'utf8')) as {
   entry: string[];
   project: string[];
+};
+const biomeConfig = JSON.parse(readFileSync(resolve(root, 'biome.json'), 'utf8')) as {
+  overrides: Array<{
+    includes: string[];
+    linter?: { rules?: { suspicious?: { noTemplateCurlyInString?: string } } };
+  }>;
 };
 const ciWorkflow = readFileSync(resolve(root, '.github/workflows/ci.yaml'), 'utf8');
 const deepWorkflow = readFileSync(resolve(root, '.github/workflows/deep-checks.yaml'), 'utf8');
@@ -169,16 +176,16 @@ describe('tooling configuration', () => {
 
   it('uses one read-only Biome pass while retaining the existing quality and fix contracts', () => {
     const scripts = packageJson.scripts;
-    expect(scripts['check:biome']).toBe('biome ci .');
+    expect(scripts['check:biome']).toBe('biome ci --error-on-warnings .');
     expect(scripts.quality).toBe(
       'pnpm -s check:biome && pnpm -s check && pnpm -s check:e2e && pnpm -s test:ci && pnpm -s circular && pnpm -s knip'
     );
     expect(scripts['quality:nose']).toBeUndefined();
-    expect(scripts.lint).toBe('biome lint .');
+    expect(scripts.lint).toBe('biome lint --error-on-warnings .');
     expect(scripts.fmt).toBe('biome check --linter-enabled=false .');
     expect(scripts['fmt:check']).toBe('pnpm -s fmt');
     expect(scripts['fmt:fix']).toBe('biome check --write --linter-enabled=false .');
-    expect(scripts['lint:fix']).toBe('biome lint --write .');
+    expect(scripts['lint:fix']).toBe('biome lint --write --error-on-warnings .');
     expect(scripts['quality:fix']).toBe('pnpm -s fmt:fix && pnpm -s lint:fix && pnpm -s quality');
     expect(scripts['check:prebuild']).toBe('pnpm -s check:versions && pnpm -s quality');
     expect(scripts.prebuild).toBe('pnpm -s check:prebuild');
@@ -195,6 +202,49 @@ describe('tooling configuration', () => {
     expect(scripts['test:cov']).toBe('vitest run --coverage');
     expect(jobBlock(ciWorkflow, 'quality')).toContain('run: pnpm quality');
     expect(jobBlock(ciWorkflow, 'unit')).toContain('run: pnpm test:cov');
+  });
+
+  it('limits literal GitHub expression exemptions to workflow assertion tests', () => {
+    const overrides = biomeConfig.overrides.filter(
+      (override) => override.linter?.rules?.suspicious?.noTemplateCurlyInString === 'off'
+    );
+    expect(overrides).toHaveLength(1);
+    expect(overrides[0]?.includes).toEqual([
+      'test/unit/config/browser-core-automation.test.ts',
+      'test/unit/config/dependabot-auto-merge.test.ts',
+      'test/unit/config/osv-workflow-composition.test.ts',
+      'test/unit/tooling/config.test.ts',
+      'test/unit/tooling/release-publication.test.ts',
+      'test/unit/tooling/toolchain-action.test.ts',
+      'test/unit/tooling/workflow-change-policy.test.ts',
+    ]);
+    expect(overrides[0]?.includes.every((path) => path.startsWith('test/unit/'))).toBe(true);
+  });
+
+  it('fails lint and CI for a production warning without changing its rule severity', () => {
+    const fixtureDir = mkdtempSync(join(root, 'src/biome-policy-'));
+    const fixturePath = join(fixtureDir, 'warning.ts');
+    writeFileSync(fixturePath, "const expression = '${{ github.sha }}';\nvoid expression;\n");
+    const biome = resolve(root, 'node_modules/.bin/biome');
+    const run = (args: string[]) =>
+      spawnSync(biome, args, { cwd: root, encoding: 'utf8', timeout: 10_000 });
+
+    try {
+      const ordinary = run(['lint', fixturePath]);
+      expect(ordinary.status, ordinary.stderr).toBe(0);
+      expect(ordinary.stderr).toContain('noTemplateCurlyInString');
+
+      for (const script of ['lint', 'check:biome'] as const) {
+        const [command, ...args] = (packageJson.scripts[script] ?? '').split(' ');
+        expect(command).toBe('biome');
+        expect(args.at(-1)).toBe('.');
+        const strict = run([...args.slice(0, -1), fixturePath]);
+        expect(strict.status, `${script}: ${strict.stderr}`).toBe(1);
+        expect(strict.stderr).toContain('noTemplateCurlyInString');
+      }
+    } finally {
+      rmSync(fixtureDir, { recursive: true, force: true });
+    }
   });
 
   it('centralizes the browser E2E build and test command contracts', () => {

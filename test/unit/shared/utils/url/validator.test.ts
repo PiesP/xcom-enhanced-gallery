@@ -69,7 +69,7 @@ describe('url/validator', () => {
     });
 
     it('should reject URLs exceeding max length', () => {
-      const longUrl = 'https://pbs.twimg.com/media/' + 'A'.repeat(2040);
+      const longUrl = `https://pbs.twimg.com/media/${'A'.repeat(2040)}`;
       expect(isValidMediaUrl(longUrl)).toBe(false);
     });
 
