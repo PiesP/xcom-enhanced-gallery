@@ -2599,7 +2599,12 @@ async function runUserscriptUpgrade({ context, managerId, root, output, input })
   let primaryError;
   let cleanupFailure;
   try {
-    const inspectGallery = async (expected, restore = false, afterUpdate = false) => {
+    const inspectGallery = async (
+      expected,
+      restore = false,
+      afterUpdate = false,
+      screenshotPhase = null
+    ) => {
       const page = await context.newPage();
       try {
         await page.goto(FIXTURE_URL, { waitUntil: 'domcontentloaded' });
@@ -2607,6 +2612,7 @@ async function runUserscriptUpgrade({ context, managerId, root, output, input })
         const gallery = page.locator('[data-xeg-gallery-container]');
         await gallery.waitFor({ state: 'visible' });
         const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
+        let publicPreferences = null;
         if (!expected) {
           await toolbar.getByRole('button', { name: 'Fit Height', exact: true }).click();
           await toolbar.locator('#settings-button').click();
@@ -2625,20 +2631,38 @@ async function runUserscriptUpgrade({ context, managerId, root, output, input })
               'block-controls-only'
             );
           } else {
-            assert.equal(await gallery.locator('#settings-video-click-select').count(), 0);
+            publicPreferences = {
+              candidateClickControlCount: await gallery
+                .locator('#settings-video-click-select')
+                .count(),
+              language: await gallery.locator('#settings-language-select').inputValue(),
+              fitHeightPressed: await toolbar
+                .getByRole('button', { name: '높이 맞춤', exact: true })
+                .getAttribute('aria-pressed'),
+            };
+            assert.equal(publicPreferences.candidateClickControlCount, 0);
           }
-          assert.equal(await gallery.locator('#settings-language-select').inputValue(), 'ko');
           assert.equal(
-            await toolbar
-              .getByRole('button', { name: '높이 맞춤', exact: true })
-              .getAttribute('aria-pressed'),
+            publicPreferences?.language ??
+              (await gallery.locator('#settings-language-select').inputValue()),
+            'ko'
+          );
+          assert.equal(
+            publicPreferences?.fitHeightPressed ??
+              (await toolbar
+                .getByRole('button', { name: '높이 맞춤', exact: true })
+                .getAttribute('aria-pressed')),
             'true'
           );
         }
         await page.screenshot({
           path: join(
             output,
-            afterUpdate ? 'userscript-after-upgrade.png' : 'userscript-before-upgrade.png'
+            screenshotPhase
+              ? `userscript-${screenshotPhase}.png`
+              : afterUpdate
+                ? 'userscript-after-upgrade.png'
+                : 'userscript-before-upgrade.png'
           ),
         });
         if (expected) {
@@ -2709,6 +2733,7 @@ async function runUserscriptUpgrade({ context, managerId, root, output, input })
           await toolbar.locator('#settings-button').click();
           await toolbar.getByRole('button', { name: 'Fit Width', exact: true }).click();
         }
+        return publicPreferences;
       } catch (error) {
         receipt.settingsFailure = await captureUpgradeSettingsFailure(
           page,
@@ -2745,33 +2770,75 @@ async function runUserscriptUpgrade({ context, managerId, root, output, input })
       output,
       'before-upgrade'
     );
-    await options.getByText(labels.utilities, { exact: true }).click();
-    const confirmationPromise = context.waitForEvent('page');
-    await options
-      .locator('input[type=file]')
-      .setInputFiles(join(root, 'dist/xcom-enhanced-gallery.user.js'));
-    const confirmation = await confirmationPromise;
-    try {
-      await confirmation.waitForURL(`chrome-extension://${managerId}/ask.html*`);
-      if ((await confirmation.title()) !== updateTitle) {
-        await confirmation
-          .getByText(updateTitle, { exact: true })
-          .first()
-          .waitFor({ state: 'visible', timeout: 10_000 });
+    receipt.updateConfirmationEvents = [];
+    const openUpdateConfirmation = async (phase) => {
+      await options.goto(`chrome-extension://${managerId}/options.html`);
+      await options.getByText(labels.utilities, { exact: true }).click();
+      const confirmationPromise = context.waitForEvent('page');
+      await options
+        .locator('input[type=file]')
+        .setInputFiles(join(root, 'dist/xcom-enhanced-gallery.user.js'));
+      const confirmation = await confirmationPromise;
+      try {
+        await confirmation.waitForURL(`chrome-extension://${managerId}/ask.html*`);
+        const title = await confirmation.title();
+        if (title !== updateTitle) {
+          await confirmation
+            .getByText(updateTitle, { exact: true })
+            .first()
+            .waitFor({ state: 'visible', timeout: 10_000 });
+        }
+        const updateAction = confirmation.getByRole('button', { name: updateLabel, exact: true });
+        await updateAction.waitFor({ state: 'visible' });
+        assert.equal(await updateAction.count(), 1, 'Manager Update action is ambiguous');
+        assert.equal(
+          await confirmation.getByRole('button', { name: labels.install, exact: true }).isVisible(),
+          false,
+          'Manager offered Install instead of Update'
+        );
+        await confirmation.screenshot({
+          path: join(output, `userscript-update-confirmation-${phase}.png`),
+        });
+        receipt.updateConfirmationEvents.push({
+          phase,
+          event: 'observed',
+          url: confirmation.url(),
+          title,
+          translatedTitle: updateTitle,
+          updateLabel,
+        });
+        return { confirmation, updateAction };
+      } catch (error) {
+        await confirmation.close().catch(() => {});
+        throw error;
       }
-      const updateAction = confirmation.getByRole('button', { name: updateLabel, exact: true });
-      await updateAction.waitFor({ state: 'visible' });
-      assert.equal(
-        await confirmation.getByRole('button', { name: labels.install, exact: true }).isVisible(),
-        false,
-        'Manager offered Install instead of Update'
-      );
-      await confirmation.screenshot({ path: join(output, 'userscript-update-confirmation.png') });
-      const closed = confirmation.waitForEvent('close');
-      await updateAction.click();
+    };
+    const deferred = await openUpdateConfirmation('deferred');
+    await deferred.confirmation.close();
+    assert(deferred.confirmation.isClosed(), 'Manager update confirmation did not close');
+    receipt.updateConfirmationEvents.push({ phase: 'deferred', event: 'deferred' });
+    receipt.afterDeferralReadback = await observeInstalledManagerSource(
+      options,
+      managerId,
+      labels,
+      input.previousVersion,
+      input.previousUserscript.sha256,
+      output,
+      'after-deferral'
+    );
+    receipt.afterDeferralPreferences = await inspectGallery(true, false, false, 'after-deferral');
+    receipt.afterDeferralVolume = await observeUpgradeVolume('public-deferred', {
+      before: 0.9,
+      waitForInitialVolume: true,
+    });
+    const approved = await openUpdateConfirmation('approved');
+    try {
+      const closed = approved.confirmation.waitForEvent('close');
+      await approved.updateAction.click();
       await closed;
+      receipt.updateConfirmationEvents.push({ phase: 'approved', event: 'approved' });
     } finally {
-      await confirmation.close().catch(() => {});
+      await approved.confirmation.close().catch(() => {});
     }
     receipt.afterReadback = await observeInstalledManagerSource(
       options,
@@ -2826,7 +2893,7 @@ async function runUserscriptUpgrade({ context, managerId, root, output, input })
       keyboardShortcutUsedForVolume: true,
       crossUpdateUiVerified: ['fit', 'language', 'videoVolume'],
     };
-    receipt.method = 'same-manager-profile-utilities-import-update-confirmation';
+    receipt.method = 'same-manager-profile-utilities-import-defer-then-update';
     receipt.status = 'passed';
   } catch (error) {
     receipt.error = safeRouteError(error);
