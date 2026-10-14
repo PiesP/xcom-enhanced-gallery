@@ -18,6 +18,7 @@ import {
   generateUserscriptHeader,
   USERSCRIPT_CONFIG,
 } from '../../../tooling/vite/utils/userscript.ts';
+import viteConfig from '../../../vite.config.ts';
 
 const projectRoot = resolve(import.meta.dirname, '../../..');
 
@@ -39,6 +40,38 @@ function userscriptBundle(root: string, isDev: boolean): { code: string } {
 }
 
 describe('userscript release metadata provenance', () => {
+  it.each([undefined, '2.3.0-custom'])(
+    'keeps production metadata owned by production mode with BUILD_VERSION=%s',
+    (override) => {
+      const previous = process.env.BUILD_VERSION;
+      try {
+        if (override === undefined) {
+          delete process.env.BUILD_VERSION;
+        } else {
+          process.env.BUILD_VERSION = override;
+        }
+        const plugins = (mode: string) => {
+          if (typeof viteConfig !== 'function') {
+            throw new Error('Expected a Vite config factory');
+          }
+          const config = Reflect.apply(viteConfig, undefined, [{ mode }]) as {
+            plugins?: { name: string }[];
+          };
+          return config.plugins?.map((plugin) => plugin.name) ?? [];
+        };
+        expect(plugins('development')).not.toContain('meta-only-file');
+        expect(plugins('production')).toContain('meta-only-file');
+        expect(plugins('development')).not.toContain('meta-only-file');
+      } finally {
+        if (previous === undefined) {
+          delete process.env.BUILD_VERSION;
+        } else {
+          process.env.BUILD_VERSION = previous;
+        }
+      }
+    }
+  );
+
   it('reads canonical notice bytes from a held regular-file descriptor', () => {
     const root = mkdtempSync(join(tmpdir(), 'xeg-notice-descriptor-'));
     try {

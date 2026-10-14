@@ -3,7 +3,6 @@ import { createHash } from 'node:crypto';
 import {
   copyFileSync,
   cpSync,
-  existsSync,
   mkdirSync,
   readFileSync,
   realpathSync,
@@ -13,6 +12,7 @@ import {
 import { arch, platform } from 'node:os';
 import { basename, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { preflightReleaseArtifacts } from './artifact-preflight.ts';
 import { packageExtensions } from './package-extension.ts';
 
 const root = resolve(import.meta.dirname, '..', '..');
@@ -52,11 +52,7 @@ export function prepareRelease(): void {
 
   const userscriptFile = 'xcom-enhanced-gallery.user.js';
   const metadataFile = 'xcom-enhanced-gallery.meta.js';
-  for (const file of [userscriptFile, metadataFile]) {
-    if (!existsSync(join(distDir, file))) {
-      throw new Error(`dist/${file} does not exist. Run the production build first.`);
-    }
-  }
+  preflightReleaseArtifacts(root, version);
 
   function changelogEntry(markdown: string, releaseVersion: string): string {
     const lines = markdown.split(/\r?\n/);
@@ -100,6 +96,8 @@ export function prepareRelease(): void {
       return undefined;
     }
   }
+
+  const changes = changelogEntry(readFileSync(join(root, 'CHANGELOG.md'), 'utf8'), version);
 
   rmSync(bundleDir, { force: true, recursive: true });
   mkdirSync(releaseDir, { recursive: true });
@@ -152,7 +150,6 @@ export function prepareRelease(): void {
   const compareUrl = previous
     ? `https://github.com/${repository}/compare/v${previous}...v${version}`
     : `https://github.com/${repository}/releases/tag/v${version}`;
-  const changes = changelogEntry(readFileSync(join(root, 'CHANGELOG.md'), 'utf8'), version);
   const releaseNotes = `# Release v${version}
 
 ## Installation
