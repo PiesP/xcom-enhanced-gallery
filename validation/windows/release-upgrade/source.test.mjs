@@ -2,7 +2,7 @@
 // Copyright (c) 2026 PiesP
 
 import assert from 'node:assert/strict';
-import { mkdir, mkdtemp, open, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, open, rename, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -21,9 +21,11 @@ const script = (version) => `${prefix}${version}\n// ==/UserScript==\n`;
 test('inventory reads the inspected file handle and rejects a replacement', async () => {
   const root = await mkdtemp(join(tmpdir(), 'xeg-upgrade-inventory-'));
   const file = join(root, 'content.js');
+  const replacementPath = join(root, 'replacement.js');
   try {
     const original = Buffer.from('original content');
     await writeFile(file, original);
+    await writeFile(replacementPath, 'replacement content is different');
     const originalHandle = await open(file, 'r');
     let inspected;
     try {
@@ -33,7 +35,7 @@ test('inventory reads the inspected file handle and rejects a replacement', asyn
     }
     assert.equal(await hashInventoryFile(file, inspected), sha256(original));
     await rm(file);
-    await writeFile(file, 'replacement content is different');
+    await rename(replacementPath, file);
     await assert.rejects(hashInventoryFile(file, inspected), /changed since inspection/u);
   } finally {
     await rm(root, { recursive: true, force: true });
