@@ -49,6 +49,45 @@ test('volume persistence completes while the gallery page is still open', async 
   assert.deepEqual(calls, ['persisted', 'close']);
 });
 
+test('direct video fixture reads the single gallery item without changing volume', async () => {
+  const calls = [];
+  const video = {
+    waitFor: async () => {},
+    evaluate: async () => 0.9,
+  };
+  const locator = {
+    waitFor: async () => {},
+    click: async () => calls.push('clicked'),
+    getAttribute: async () => '1',
+    locator: (selector) => {
+      calls.push(selector);
+      return selector.endsWith(' video') ? video : locator;
+    },
+  };
+  const page = {
+    goto: async (url) => calls.push(url),
+    locator: (selector) => {
+      calls.push(selector);
+      return locator;
+    },
+    waitForFunction: async () => {},
+    close: async () => calls.push('closed'),
+  };
+  const result = await observeGalleryVolume(
+    { newPage: async () => page },
+    {
+      before: null,
+      galleryFixture: 'direct',
+    }
+  );
+
+  assert.equal(result.before, 0.9);
+  assert.equal(result.fixture, 'direct');
+  assert(calls.includes('[data-unmarked-direct]'));
+  assert(calls.includes('[data-gallery-element="item"][data-index="0"] video'));
+  assert(calls.includes('closed'));
+});
+
 test('upgrade settings diagnostic scopes public and candidate controls to the gallery panel', async () => {
   const { chromium } = await import('@playwright/test');
   const browser = await chromium.launch();

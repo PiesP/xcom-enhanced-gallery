@@ -19,6 +19,7 @@ import {
   verifyDownloadDirectory,
 } from './install-profile.mjs';
 import {
+  captureGalleryVolumeFailure,
   captureUpgradeSettingsFailure,
   observeDefaultVideoClick,
   observeGalleryKeyboardNavigation,
@@ -2544,6 +2545,53 @@ async function runUserscriptUpgrade({ context, managerId, root, output, input })
     candidateSourceSha256: input.candidateUserSha256,
     managerId,
   };
+  const observeUpgradeVolume = (phase, options) =>
+    observeGalleryVolume(context, {
+      ...options,
+      galleryFixture: 'direct',
+      waitForPersistedVolume:
+        options.after === undefined
+          ? null
+          : async (expected) => {
+              const deadline = Date.now() + 15_000;
+              let observed = null;
+              let attempts = 0;
+              do {
+                const readback = await observeGalleryVolume(context, {
+                  before: null,
+                  galleryFixture: 'direct',
+                  onFailure: async (page, consoleEvents) => {
+                    receipt.volumeFailure ??= await captureGalleryVolumeFailure(
+                      page,
+                      output,
+                      'userscript',
+                      `${phase}-readback`,
+                      consoleEvents
+                    );
+                  },
+                });
+                observed = readback.before;
+                attempts++;
+                receipt.volumePersistenceReadbacks ??= {};
+                receipt.volumePersistenceReadbacks[phase] = { expected, observed, attempts };
+                if (Math.abs(observed - expected) < 0.011) {
+                  return;
+                }
+              } while (Date.now() < deadline);
+              throw new Error(
+                `Userscript gallery volume was ${observed} after ${attempts} fresh-page readbacks; expected ${expected}`
+              );
+            },
+      onFailure: async (page, consoleEvents) => {
+        receipt.volumeFailure ??= await captureGalleryVolumeFailure(
+          page,
+          output,
+          'userscript',
+          phase,
+          consoleEvents
+        );
+      },
+    });
   const images = await createImageFixtures(context);
   const displayImages = await createImageFixtures(context, 0.25);
   const routes = await installFixtureRoutes(context, root, images, displayImages);
@@ -2606,7 +2654,9 @@ async function runUserscriptUpgrade({ context, managerId, root, output, input })
           }
         }
         if (restore) {
-          await gallery.locator('#settings-video-click-select').selectOption('allow-all');
+          const clickModeSelect = gallery.locator('#settings-video-click-select');
+          await clickModeSelect.focus();
+          await page.keyboard.press('End');
           await page.waitForFunction((expected) => {
             const select = document.querySelector(
               '[data-xeg-gallery-container] #settings-video-click-select'
@@ -2615,27 +2665,39 @@ async function runUserscriptUpgrade({ context, managerId, root, output, input })
               select instanceof HTMLSelectElement && !select.disabled && select.value === expected
             );
           }, 'allow-all');
-          const modePage = await context.newPage();
-          try {
-            await modePage.goto(FIXTURE_URL, { waitUntil: 'domcontentloaded' });
-            await modePage
-              .locator('[data-phase="normal"] [data-testid="tweetPhoto"] img')
-              .first()
-              .click();
-            const modeGallery = modePage.locator('[data-xeg-gallery-container]');
-            await modeGallery.waitFor({ state: 'visible' });
-            await modeGallery.locator('#settings-button').click();
-            await modeGallery.locator('#settings-video-click-select').waitFor({ state: 'visible' });
-            assert.equal(
-              await modeGallery.locator('#settings-video-click-select').inputValue(),
-              'allow-all'
-            );
-            receipt.candidateClickModeUi = { selected: 'allow-all', persistedInNewPage: true };
-          } finally {
-            await modePage.close();
-          }
+          const deadline = Date.now() + 15_000;
+          let observedMode = null;
+          let attempts = 0;
+          do {
+            const modePage = await context.newPage();
+            try {
+              await modePage.goto(FIXTURE_URL, { waitUntil: 'domcontentloaded' });
+              await modePage
+                .locator('[data-phase="normal"] [data-testid="tweetPhoto"] img')
+                .first()
+                .click();
+              const modeGallery = modePage.locator('[data-xeg-gallery-container]');
+              await modeGallery.waitFor({ state: 'visible' });
+              await modeGallery.locator('#settings-button').click();
+              const modeSelect = modeGallery.locator('#settings-video-click-select');
+              await modeSelect.waitFor({ state: 'visible' });
+              observedMode = await modeSelect.inputValue();
+            } finally {
+              await modePage.close();
+            }
+            attempts++;
+            receipt.candidateClickModeReadback = { observedMode, attempts };
+          } while (observedMode !== 'allow-all' && Date.now() < deadline);
+          assert.equal(
+            observedMode,
+            'allow-all',
+            'Candidate click mode did not persist in fresh UI'
+          );
+          receipt.candidateClickModeUi = { selected: 'allow-all', persistedInNewPage: true };
+          await page.bringToFront();
           await gallery.locator('#settings-language-select').selectOption('en');
-          await gallery.locator('#settings-video-click-select').selectOption('block-controls-only');
+          await clickModeSelect.focus();
+          await page.keyboard.press('ArrowUp');
           await page.waitForFunction((expected) => {
             const select = document.querySelector(
               '[data-xeg-gallery-container] #settings-video-click-select'
@@ -2662,8 +2724,11 @@ async function runUserscriptUpgrade({ context, managerId, root, output, input })
     await inspectGallery(false);
     await inspectGallery(true); // Verify saved settings before changing the installed script.
     receipt.videoClickBefore = await observeDefaultVideoClick(context);
-    receipt.volumeBefore = await observeGalleryVolume(context, { before: 1, after: 0.9 });
-    await observeGalleryVolume(context, { before: 0.9 }); // Verify manager storage in a new page.
+    receipt.volumeBefore = await observeUpgradeVolume('public-changed', { before: 1, after: 0.9 });
+    receipt.volumeBeforeReloaded = await observeUpgradeVolume('public-reloaded', {
+      before: 0.9,
+      waitForInitialVolume: true,
+    });
     await options.goto(`chrome-extension://${managerId}/options.html`);
     const labels = await readManagerUiLabels(options, managerId);
     const updateLabel = await options.evaluate(() => chrome.i18n.getMessage('Update'));
@@ -2720,8 +2785,14 @@ async function runUserscriptUpgrade({ context, managerId, root, output, input })
     await inspectGallery(true, true, true);
     receipt.videoClickAfter = await observeDefaultVideoClick(context);
     receipt.nondefaultClickCrossUpdate = 'not-exercised';
-    receipt.volumeAfter = await observeGalleryVolume(context, { before: 0.9, after: 1 });
-    await observeGalleryVolume(context, { before: 1 });
+    receipt.volumeAfter = await observeUpgradeVolume('candidate-changed', {
+      before: 0.9,
+      after: 1,
+    });
+    receipt.volumeAfterReloaded = await observeUpgradeVolume('candidate-reloaded', {
+      before: 1,
+      waitForInitialVolume: true,
+    });
     const restored = await context.newPage();
     try {
       await restored.goto(FIXTURE_URL, { waitUntil: 'domcontentloaded' });
