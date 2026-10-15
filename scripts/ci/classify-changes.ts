@@ -133,13 +133,7 @@ export function classifyChanges(
     ) {
       known = true;
       select('unit');
-    } else if (
-      [
-        '.github/workflows/dependabot-auto-merge.yaml',
-        '.github/workflows/dependabot-auto-merge-apply.yaml',
-      ].includes(path) ||
-      path.startsWith('.github/actions/')
-    ) {
+    } else if (path.startsWith('.github/actions/')) {
       known = true;
       select('unit');
     }

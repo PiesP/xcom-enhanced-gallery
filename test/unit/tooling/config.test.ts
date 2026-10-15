@@ -211,7 +211,6 @@ describe('tooling configuration', () => {
     expect(overrides).toHaveLength(1);
     expect(overrides[0]?.includes).toEqual([
       'test/unit/config/browser-core-automation.test.ts',
-      'test/unit/config/dependabot-auto-merge.test.ts',
       'test/unit/config/osv-workflow-composition.test.ts',
       'test/unit/tooling/config.test.ts',
       'test/unit/tooling/release-publication.test.ts',
