@@ -1,8 +1,8 @@
 import { spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
 import { builtinModules } from 'node:module';
-import { join, resolve } from 'node:path';
+import { isAbsolute, join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 const root = resolve(import.meta.dirname, '../../..');
@@ -37,6 +37,23 @@ function runCompiler(config: string, args: string[]) {
   return result;
 }
 
+function combinedOutput(stdout: string, source: string) {
+  const files: string[] = [];
+  const diagnostics: string[] = [];
+  for (const line of stdout.replace(/\r?\n$/, '').split(/\r?\n/)) {
+    // Diagnostics may themselves start with an absolute source path.
+    if (/^.+\(\d+,\d+\): error TS\d+: .+$/.test(line)) {
+      diagnostics.push(line);
+    } else if (isAbsolute(line) && existsSync(line)) {
+      files.push(line);
+    } else {
+      throw new Error(`Unrecognized compiler output: ${line}`);
+    }
+  }
+  expect(files).toContain(source);
+  return { diagnostics, files };
+}
+
 function listFiles(config: string): string[] {
   const listed = runCompiler(config, ['--listFilesOnly']);
   expect(listed.status, listed.stdout + listed.stderr).toBe(0);
@@ -58,10 +75,17 @@ function compileProbe(config: string, code: string, options: Record<string, unkn
       compilerOptions: { incremental: false, ...options },
     })
   );
-  const result = runCompiler(probeConfig, ['--noEmit']);
-  const files = listFiles(probeConfig);
-  expect(files).toContain(source);
-  return { ...result, files, source };
+  const result = runCompiler(probeConfig, ['--noEmit', '--listFiles']);
+  expect(result.signal).toBeNull();
+  expect([0, 1]).toContain(result.status);
+  expect(result.stderr).toBe('');
+  const { diagnostics, files } = combinedOutput(result.stdout, source);
+  if (result.status === 0) {
+    expect(diagnostics).toEqual([]);
+  } else {
+    expect(diagnostics.length).toBeGreaterThan(0);
+  }
+  return { ...result, stdout: diagnostics.join('\n'), files, source };
 }
 
 function expectOnlyProbeErrors(result: ReturnType<typeof compileProbe>, names: string[]): void {
