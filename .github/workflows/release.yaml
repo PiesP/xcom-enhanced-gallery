@@ -80,7 +80,7 @@ jobs:
           node-version: ${{ needs.provenance.outputs.node-version }}
 
       - name: ✅ Run quality gate
-        run: pnpm quality
+        run: pnpm quality:coverage-owned
 
   unit:
     name: 🧪 Release unit + coverage

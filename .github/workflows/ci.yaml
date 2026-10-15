@@ -101,7 +101,14 @@ jobs:
 
       - name: ✅ Run quality gate
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.quality != 'false' }}
-        run: pnpm quality
+        env:
+          COVERAGE_OWNS_BOUNDARY: ${{ needs.changes.result != 'success' || needs.changes.outputs.unit != 'false' }}
+        run: |
+          if [[ "$COVERAGE_OWNS_BOUNDARY" == 'true' ]]; then
+            pnpm quality:coverage-owned
+          else
+            pnpm quality
+          fi
 
   unit:
     name: pr-gate/unit
@@ -127,7 +134,7 @@ jobs:
       # Quality owns policy tests when selected; unit-only changes need them here.
       - name: 🧪 Run focused policy suite for unit-only changes
         if: ${{ needs.changes.result == 'success' && needs.changes.outputs.unit != 'false' && needs.changes.outputs.quality == 'false' }}
-        run: pnpm test:ci
+        run: pnpm test:policy
 
       - name: 🧪 Run unit tests and coverage thresholds
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.unit != 'false' }}

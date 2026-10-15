@@ -56,7 +56,7 @@ The table gives each command family, execution stage, side effects, and checks.
 | `pnpm package:extension`, `package:all`, `release:prepare` | `scripts/release/package-extension.ts` archives built Chrome/Firefox extensions; `package:all` builds first. `scripts/release/prepare.ts` checks production artifact metadata, built extension versions and the changelog before preparing a release bundle. | `release:prepare` reads `RELEASE_VERSION`, optional `RELEASE_SHA`, package metadata and existing `dist*`; it replaces `release-bundle/`, creates ZIPs/checksums/source-runtime metadata, and requires external `zip`. The public asset allowlist is the production userscript, production metadata, two extension ZIPs, `checksums.txt` and `metadata.json`; retained development files are internal deploy/build outputs. Run `build:all:ci` first from eligible clean source. Version agreement does not prove that existing dist bytes came from the recorded commit. These commands do not publish a release. |
 | `pnpm check:src`, `check:tooling`, `check:test`, `check:scripts`, `check:e2e`, `check`, `typecheck` | Separate browser, build/config, Vitest, NodeNext/erasable script/direct Firefox, and Playwright TypeScript projects. `check` chains source/tooling/test/scripts; `check:e2e` checks Playwright separately. | Read-only; `tsconfig.e2e.json` excludes the direct Firefox test so it is checked in the Node project instead. `pnpm quality` includes every project boundary. |
 | `pnpm check:biome`, `fmt`, `fmt:check`, `lint`, `knip`, `knip:full`, `knip:production`, `circular` | Canonical Biome format/lint/assist inspection, convenient format-only/lint-only commands, dependency/entry analysis, and source graph checks. | Read-only; Knip uses real CLI/workflow/test/runtime entries and reports orphan helpers, and `ignoreBinaries` includes external OpenSSL. `fmt:fix`, `lint:fix`, `quality:fix` write formatting fixes and must be reviewed separately. |
-| `pnpm quality`, `verify`, `verify:full` | `quality` chains one read-only `biome ci` pass, all runtime type checks, the focused policy suite, circular, and Knip. `verify` adds production userscript/metadata and both extension targets; `verify:full` adds coverage, a retained development userscript build, and all E2E browser lanes. | Build/test outputs and browser profiles are generated; `verify:full` leaves production and development userscripts together with production metadata. `verify` alone does not prove E2E. Read exact command outcomes and artifacts; no VM/publication inference. |
+| `pnpm quality`, `verify`, `verify:full` | `quality` chains one read-only `biome ci` pass, all runtime type checks, the focused policy suite, circular, and Knip. `verify` adds production userscript/metadata and both extension targets; `verify:full` adds coverage, a retained development userscript build, and all E2E browser lanes. Its internal coverage command omits only the boundary suite already run by `quality`. | Build/test outputs and browser profiles are generated; `verify:full` leaves production and development userscripts together with production metadata. `verify` alone does not prove E2E. Read exact command outcomes and artifacts; no VM/publication inference. |
 | `pnpm test`, `test:watch`, `test:cov`, `test:ci` | Vitest suites and direct Node CI policy tests in `scripts/ci/{deep-check-reuse,repository-authority}.test.ts` and `scripts/release/verify-source.test.ts`. | Watch persists; coverage writes reports. `test:ci` also runs real compiler/import boundary probes; run that part alone with `pnpm test test/unit/tooling/node-ambient-types.test.ts`. This focused suite checks cache, repository authority, tagged source and runtime types; it is not the complete unit suite. |
 | `pnpm test:e2e`, `test:e2e:headed`, `test:e2e:extension`, `test:e2e:extension:firefox`, `test:e2e:all` | Playwright configs under `test/e2e/`; direct Firefox lane executes `test/e2e/firefox-extension-runtime.test.ts` with Node/Selenium. | Requires built artifacts, browser binaries and loopback fixtures; may create browser profiles/downloads. `test:e2e:all` chains the lanes; distinguish fixture browser evidence from authenticated Windows/live-site evidence. |
 | `pnpm mut`, `mut:fast` | Stryker full/fast mutation profiles. | Writes reports/temp work; use mutation/deep-check workflow receipts, not a passing unit suite as substitute. |
@@ -71,20 +71,26 @@ errors. `fmt`/`lint` remain read-only conveniences; their `:fix` variants and
 | Check | Local owner | Hosted owner |
 | --- | --- | --- |
 | Canonical Biome, every runtime type project, dpdm and full/production Knip | `quality` (also ordinary prebuild and `verify`) | CI/release quality |
-| Focused direct Node policy tests and runtime/import boundary probes | `test:ci`; retained within `quality` | CI quality when selected, otherwise CI unit for an explicitly unit-only decision; release quality |
-| Complete unit suite and unchanged coverage thresholds | `test` / `test:cov`; `verify:full` uses coverage | CI/release unit |
+| Focused direct Node policy tests | `test:ci`; retained within `quality` | CI quality when selected, otherwise CI unit for an explicitly unit-only decision; release quality |
+| Runtime/import boundary probes | `test:ci`; retained within `quality` and `verify` | CI/release unit coverage when selected; CI quality when unit is explicitly unselected |
+| Complete unit suite and unchanged coverage thresholds | `test` / `test:cov`; `verify:full` uses internal `test:cov:after-policy` after `quality` | CI/release unit |
 | Production distributions / browser fixtures | `build:all:ci` / browser lane commands | CI/release build and E2E |
 | Mutation thresholds and security scans | Separate commands/workflows | Existing deep/release and security owners |
 
-CI unit runs its explicit `test:ci` step only when classification succeeded,
-unit is selected and quality is explicitly false. Source/unknown/fail-closed
-changes retain policy execution in quality; README, workflow or captured-host
-HTML changes that select only unit execute it there. Documentation-only changes
-that select neither job do not run a policy command without checkout/setup.
-Unit coverage remains independent of quality selection. It includes the Vitest
-ambient suite again because it must remain the complete unit suite; only the
-extra explicit policy invocation is removed. Standalone `test:ci`, local quality,
-ordinary prebuild and release/deep/security contracts remain intact.
+CI quality uses the internal `quality:coverage-owned` command when unit is
+selected or classification fails; this runs the direct Node policy tests and
+leaves the boundary suite to unit coverage. If unit is explicitly unselected,
+CI quality runs standalone `quality`, which includes the boundary suite. CI
+unit runs its explicit `test:policy` step only when classification succeeded,
+unit is selected and quality is explicitly false. README, workflow or
+captured-host HTML changes can take this route. Documentation-only changes
+that select neither job retain the explicit no-op checks. A failed owner keeps
+its required check unsuccessful. Release quality uses `quality:coverage-owned`
+because release unit runs full coverage. Standalone `test:ci`, `test`,
+`test:cov`, `quality`, and `verify` retain their full boundary protection;
+`verify:full` runs it once in `verify` and excludes only that suite from its
+internal coverage invocation. Ordinary prebuild and deep/security contracts
+remain intact.
 
 Distinguish scheduled reuse, explicit no-op routing and actual executed checks in receipts.
 
