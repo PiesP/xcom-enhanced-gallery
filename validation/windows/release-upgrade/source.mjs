@@ -8,12 +8,13 @@ import { lstat, open, readdir, readFile } from 'node:fs/promises';
 import { join, relative, resolve } from 'node:path';
 
 const DIRECTORY = 'validation/windows/release-upgrade';
-const USER_PATH = `${DIRECTORY}/v2.3.5.user.js`;
-const EXTENSION_PATH = `${DIRECTORY}/v2.3.5-extension`;
+const USER_PATH = `${DIRECTORY}/v2.3.6.user.js`;
+const EXTENSION_PATH = `${DIRECTORY}/v2.3.6-extension`;
 const CANDIDATE_USER_PATH = 'dist/xcom-enhanced-gallery.user.js';
 const SCRIPT_NAME = 'X.com Enhanced Gallery';
 const SCRIPT_NAMESPACE = 'https://github.com/PiesP/xcom-enhanced-gallery';
 const SCRIPT_UPDATE_URL = `${SCRIPT_NAMESPACE}/releases/latest/download/xcom-enhanced-gallery.meta.js`;
+const SCRIPT_LATEST_DOWNLOAD_URL = `${SCRIPT_NAMESPACE}/releases/latest/download/xcom-enhanced-gallery.user.js`;
 const MAX_MANAGER_EDITOR_BYTES = 4 * 1024 * 1024;
 
 export function sha256(bytes) {
@@ -57,7 +58,9 @@ export function requireManagerEditorSource(source, expectedSha256, version) {
   assert.equal(exactlyOne('updateURL'), SCRIPT_UPDATE_URL, 'Manager editor update URL changed');
   assert.equal(
     exactlyOne('downloadURL'),
-    `${SCRIPT_NAMESPACE}/releases/download/v${version}/xcom-enhanced-gallery.user.js`,
+    version === '2.3.6'
+      ? `${SCRIPT_NAMESPACE}/releases/download/v2.3.6/xcom-enhanced-gallery.user.js`
+      : SCRIPT_LATEST_DOWNLOAD_URL,
     'Manager editor download URL changed'
   );
   return {
@@ -139,17 +142,17 @@ export async function readUpgradeInput(root) {
     'schema',
   ]);
   assert.equal(value.schema, 1);
-  assert.equal(value.previousVersion, '2.3.5');
-  assert.equal(value.candidateVersion, '2.3.6');
+  assert.equal(value.previousVersion, '2.3.6');
+  assert.equal(value.candidateVersion, '2.3.7');
   assert.deepEqual(Object.keys(value.previousUserscript).sort(), ['path', 'sha256', 'url']);
   assert.deepEqual(Object.keys(value.previousExtension).sort(), ['inventorySha256', 'path', 'url']);
   assert.equal(
     value.previousUserscript.url,
-    'https://github.com/PiesP/xcom-enhanced-gallery/releases/download/v2.3.5/xcom-enhanced-gallery.user.js'
+    'https://github.com/PiesP/xcom-enhanced-gallery/releases/download/v2.3.6/xcom-enhanced-gallery.user.js'
   );
   assert.equal(
     value.previousExtension.url,
-    'https://github.com/PiesP/xcom-enhanced-gallery/releases/download/v2.3.5/xcom-enhanced-gallery-chrome.zip'
+    'https://github.com/PiesP/xcom-enhanced-gallery/releases/download/v2.3.6/xcom-enhanced-gallery-chrome.zip'
   );
   const userPath = fixedPath(root, value.previousUserscript.path, USER_PATH);
   const extensionPath = fixedPath(root, value.previousExtension.path, EXTENSION_PATH);
@@ -162,6 +165,11 @@ export async function readUpgradeInput(root) {
     'Public userscript hash mismatch'
   );
   assert.equal(userscriptVersion(previous), value.previousVersion);
+  requireManagerEditorSource(
+    previous.toString('utf8'),
+    value.previousUserscript.sha256,
+    value.previousVersion
+  );
   assert.equal(
     await inventory(extensionPath),
     value.previousExtension.inventorySha256,
@@ -171,6 +179,7 @@ export async function readUpgradeInput(root) {
   assert.equal(publicManifest.version, value.previousVersion);
   const candidate = await readFile(join(root, CANDIDATE_USER_PATH));
   assert.equal(userscriptVersion(candidate), value.candidateVersion);
+  requireManagerEditorSource(candidate.toString('utf8'), sha256(candidate), value.candidateVersion);
   const candidateManifest = JSON.parse(
     await readFile(join(root, 'dist-extension/manifest.json'), 'utf8')
   );

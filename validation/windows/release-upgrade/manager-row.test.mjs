@@ -25,21 +25,21 @@ const entry = (version) => `
   </td></tr>`;
 
 test('manager row version is an exact token, not a regular expression', () => {
-  assert.equal(managerRowShowsVersion('X.com Enhanced Gallery 2.3.6', '2.3.6'), true);
-  assert.equal(managerRowShowsVersion('X.com Enhanced Gallery 2x3x6', '2.3.6'), false);
-  assert.equal(managerRowShowsVersion('X.com Enhanced Gallery 2.3.6', '2.3.6|2.3.5'), false);
+  assert.equal(managerRowShowsVersion('X.com Enhanced Gallery 2.3.7', '2.3.7'), true);
+  assert.equal(managerRowShowsVersion('X.com Enhanced Gallery 2x3x7', '2.3.7'), false);
+  assert.equal(managerRowShowsVersion('X.com Enhanced Gallery 2.3.7', '2.3.7|2.3.6'), false);
 });
 
 test('manager identity selects its installed entry despite a nested matching row', async () => {
   const page = await browser.newPage();
   try {
-    await page.setContent(`<table>${entry('2.3.5')}</table>`);
+    await page.setContent(`<table>${entry('2.3.6')}</table>`);
     assert.equal(
       await page.locator('tr:visible').filter({ hasText: 'X.com Enhanced Gallery' }).count(),
       2
     );
     const row = await requireInstalledManagerRow(page, tmpdir(), 'single');
-    assert.match(await row.innerText(), /2\.3\.5/u);
+    assert.match(await row.innerText(), /2\.3\.6/u);
   } finally {
     await page.close();
   }
@@ -49,10 +49,10 @@ test('manager identity rejects two real installed entries and preserves a screen
   const page = await browser.newPage();
   const output = await mkdtemp(join(tmpdir(), 'xeg-manager-identity-'));
   try {
-    await page.setContent(`<table>${entry('2.3.5')}${entry('2.3.6')}</table>`);
+    await page.setContent(`<table>${entry('2.3.6')}${entry('2.3.7')}</table>`);
     await assert.rejects(
       requireInstalledManagerRow(page, output, 'duplicate'),
-      /exactly one installed script identity.*2\.3\.5.*2\.3\.6/u
+      /exactly one installed script identity.*2\.3\.6.*2\.3\.7/u
     );
     assert((await stat(join(output, 'userscript-duplicate-identity.png'))).size > 0);
   } finally {

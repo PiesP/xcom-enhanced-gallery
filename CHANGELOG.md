@@ -8,7 +8,13 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-## [2.3.6] - 2026-10-14 (prepared; unpublished)
+## [2.3.7] - 2026-10-15 (prepared; unpublished)
+
+### Fixed
+
+- **Userscript updates** — Use the Latest userscript asset in both production `@downloadURL` headers so later metadata checks can fetch the current release. Existing installations with a version-pinned download URL need one manual update from the public Latest asset or a reviewed manager URL migration; Check for Updates alone cannot replace their pinned source.
+
+## [2.3.6] - 2026-10-15
 
 ### Fixed
 
