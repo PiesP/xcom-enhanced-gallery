@@ -19,7 +19,7 @@
   "testRunner": "vitest",
   "vitest": {
     "configFile": "vitest.config.ts",
-    "related": false
+    "related": true
   },
   "reporters": ["progress", "clear-text", "json", "html"],
   "coverageAnalysis": "perTest",
