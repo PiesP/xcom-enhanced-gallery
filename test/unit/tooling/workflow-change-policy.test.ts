@@ -1,5 +1,5 @@
-import { execFileSync } from 'node:child_process';
-import { globSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { chmodSync, globSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -14,6 +14,12 @@ const updateCoreWorkflow = readFileSync(
   resolve(root, '.github/workflows/update-browser-core.yaml'),
   'utf8'
 );
+const releaseWorkflow = readFileSync(resolve(root, '.github/workflows/release.yaml'), 'utf8');
+const scripts = (
+  JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8')) as {
+    scripts: Record<string, string>;
+  }
+).scripts;
 const settings = readFileSync(resolve(root, '.github/settings.yml'), 'utf8');
 
 const ciOutputs = ['quality', 'unit', 'e2e', 'build'] as const;
@@ -72,13 +78,88 @@ function jobBlock(workflow: string, job: string): string {
   );
 }
 
+function stepBlock(workflow: string, job: string, name: string): string {
+  const block = jobBlock(workflow, job);
+  const start = block.indexOf(`- name: ${name}\n`);
+  expect(start, `${job}: ${name}`).toBeGreaterThanOrEqual(0);
+  return block.slice(start).split('\n      - name:')[0] ?? '';
+}
+
+function routeExpression(
+  step: string,
+  route: { result: string; quality?: string | undefined; unit?: string | undefined }
+): boolean {
+  const expression = step.match(/\$\{\{\s*(.*?)\s*\}\}/)?.[1];
+  expect(expression).toBeDefined();
+  return (expression ?? '').split(' || ').some((alternative) =>
+    alternative.split(' && ').every((term) => {
+      const match = term.match(
+        /^needs\.changes\.(result|outputs\.quality|outputs\.unit) (==|!=) '(success|false)'$/
+      );
+      expect(match, term).not.toBeNull();
+      const [, key, operator, literal] = match ?? [];
+      const actual =
+        key === 'result' ? route.result : key === 'outputs.quality' ? route.quality : route.unit;
+      return operator === '==' ? actual === literal : actual !== literal;
+    })
+  );
+}
+
+function commandBoundaryCount(command: string): number {
+  return command.split(' && ').reduce((count, part) => {
+    const nested = part.match(/^pnpm (?:-s )?([\w:-]+)$/)?.[1];
+    if (nested) {
+      expect(scripts[nested], nested).toBeDefined();
+      return count + commandBoundaryCount(scripts[nested] ?? '');
+    }
+    if (part.startsWith('vitest run')) {
+      return count + (part.includes('--config tooling/vitest.after-policy.config.ts') ? 0 : 1);
+    }
+    return count;
+  }, 0);
+}
+
+function runSelectedQuality(route: {
+  result: string;
+  quality?: string | undefined;
+  unit?: string | undefined;
+}): string {
+  const step = stepBlock(ciWorkflow, 'quality', '✅ Run quality gate');
+  const ownerExpression = step.match(/COVERAGE_OWNS_BOUNDARY: (\$\{\{.*\}\})/)?.[1];
+  expect(ownerExpression).toBeDefined();
+  const ownsBoundary = routeExpression(ownerExpression ?? '', route);
+  const script = step.match(/run: \|\n([\s\S]*)/)?.[1];
+  expect(script).toBeDefined();
+  const directory = mkdtempSync(join(tmpdir(), 'xeg-boundary-route-'));
+  const commandLog = join(directory, 'commands');
+  const fakePnpm = join(directory, 'pnpm');
+  writeFileSync(fakePnpm, '#!/usr/bin/env bash\nprintf "%s\\n" "$*" >> "$COMMAND_LOG"\n');
+  chmodSync(fakePnpm, 0o755);
+  try {
+    const result = spawnSync('bash', ['-e', '-c', script ?? ''], {
+      cwd: root,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        PATH: `${directory}:${process.env.PATH ?? ''}`,
+        COMMAND_LOG: commandLog,
+        COVERAGE_OWNS_BOUNDARY: String(ownsBoundary),
+      },
+    });
+    expect(result.status, result.stderr).toBe(0);
+    return readFileSync(commandLog, 'utf8').trim();
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+}
+
 function focusedPolicyCondition(): string {
   const unitJob = jobBlock(ciWorkflow, 'unit');
   const marker = '- name: 🧪 Run focused policy suite for unit-only changes\n';
   const start = unitJob.indexOf(marker);
   expect(start).toBeGreaterThanOrEqual(0);
   const step = unitJob.slice(start).split('\n      - name:')[0] ?? '';
-  expect(step).toContain('run: pnpm test:ci');
+  expect(step).toContain('run: pnpm test:policy');
   const expression = step.match(/^\s*if:\s*\$\{\{\s*(.*?)\s*\}\}\s*$/m)?.[1];
   expect(expression).toBeDefined();
   return expression ?? '';
@@ -107,6 +188,66 @@ function focusedPolicyRuns(
 }
 
 describe('workflow change policy', () => {
+  it.each([
+    { result: 'success', quality: 'true', unit: 'true', owner: 'unit', policy: 1 },
+    { result: 'success', quality: 'true', unit: 'false', owner: 'quality', policy: 1 },
+    { result: 'success', quality: 'false', unit: 'true', owner: 'unit', policy: 1 },
+    { result: 'failure', quality: undefined, unit: undefined, owner: 'unit', policy: 1 },
+    { result: 'success', quality: undefined, unit: undefined, owner: 'unit', policy: 1 },
+    { result: 'success', quality: 'false', unit: 'false', owner: 'none', policy: 0 },
+  ])('assigns one boundary owner for $result/$quality/$unit', (route) => {
+    const qualityRuns = routeExpression(
+      stepBlock(ciWorkflow, 'quality', '✅ Run quality gate'),
+      route
+    );
+    const unitRuns = routeExpression(
+      stepBlock(ciWorkflow, 'unit', '🧪 Run unit tests and coverage thresholds'),
+      route
+    );
+    const policyRuns = routeExpression(
+      stepBlock(ciWorkflow, 'unit', '🧪 Run focused policy suite for unit-only changes'),
+      route
+    );
+    const qualityCommand = qualityRuns ? runSelectedQuality(route) : '';
+    const qualityBoundary = qualityCommand
+      ? commandBoundaryCount(scripts[qualityCommand] ?? '')
+      : 0;
+    const unitBoundary = unitRuns ? commandBoundaryCount(scripts['test:cov'] ?? '') : 0;
+    const policyCount = (qualityRuns ? 1 : 0) + (policyRuns ? 1 : 0);
+    expect(qualityBoundary + unitBoundary).toBe(route.owner === 'none' ? 0 : 1);
+    expect(policyCount).toBe(route.policy);
+    expect(qualityBoundary ? 'quality' : unitBoundary ? 'unit' : 'none').toBe(route.owner);
+    if (qualityRuns) {
+      expect(qualityCommand).toBe(route.owner === 'quality' ? 'quality' : 'quality:coverage-owned');
+    }
+    expect(stepBlock(ciWorkflow, 'quality', '⏭️ No quality-relevant changes')).toContain(
+      'required check satisfied'
+    );
+    expect(stepBlock(ciWorkflow, 'unit', '⏭️ No unit-relevant changes')).toContain(
+      'required check satisfied'
+    );
+  });
+
+  it('keeps standalone and release command ownership explicit', () => {
+    for (const name of ['quality', 'test:ci', 'test', 'test:cov', 'verify', 'verify:full']) {
+      expect(commandBoundaryCount(scripts[name] ?? ''), name).toBe(1);
+    }
+    expect(commandBoundaryCount(scripts['quality:coverage-owned'] ?? '')).toBe(0);
+    expect(commandBoundaryCount(scripts['test:cov:after-policy'] ?? '')).toBe(0);
+    expect(stepBlock(releaseWorkflow, 'quality', '✅ Run quality gate')).toContain(
+      'run: pnpm quality:coverage-owned'
+    );
+    expect(
+      stepBlock(releaseWorkflow, 'unit', '🧪 Run unit tests and coverage thresholds')
+    ).toContain('run: pnpm test:cov');
+    expect(jobBlock(releaseWorkflow, 'publish')).toContain(
+      'needs: [provenance, quality, unit, e2e, mutation, build]'
+    );
+    expect(jobBlock(ciWorkflow, 'quality')).toContain('name: pr-gate/quality');
+    expect(jobBlock(ciWorkflow, 'unit')).toContain('name: pr-gate/unit');
+    expect(jobBlock(ciWorkflow, 'quality')).toContain('if: ${{ !cancelled() }}');
+    expect(jobBlock(ciWorkflow, 'unit')).toContain('if: ${{ !cancelled() }}');
+  });
   it.each([
     { path: 'README.md', focused: true, unit: 'true', quality: 'false' },
     { path: '.github/workflows/security.yaml', focused: true, unit: 'true', quality: 'false' },

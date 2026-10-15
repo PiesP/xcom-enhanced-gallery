@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { globSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { createVitestConfig } from '../../../vitest.config.ts';
 
 const root = resolve(import.meta.dirname, '../../..');
 const packageJson = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8')) as {
@@ -40,6 +41,33 @@ function jobBlock(workflow: string, job: string): string {
 }
 
 describe('tooling configuration', () => {
+  it('removes only the already-owned boundary suite from composed coverage', () => {
+    const full = createVitestConfig();
+    const afterPolicy = createVitestConfig(true);
+    type Project = { test: { name: string; include: string[]; fileParallelism?: boolean } };
+    const fullProjects = full.test?.projects as Project[];
+    const afterProjects = afterPolicy.test?.projects as Project[];
+    const fullProbes = fullProjects.find((project) => project.test.name === 'repository-probes');
+    const afterProbes = afterProjects.find((project) => project.test.name === 'repository-probes');
+    expect(fullProbes?.test.include).toEqual([
+      'test/unit/tooling/biome-coverage.test.ts',
+      'test/unit/tooling/biome-policy.test.ts',
+      'test/unit/tooling/biome-braces.test.ts',
+      'test/unit/tooling/node-ambient-types.test.ts',
+      'test/unit/tooling/knip-boundaries.test.ts',
+    ]);
+    expect(afterProbes?.test.include).toEqual(
+      fullProbes?.test.include.filter(
+        (file) => file !== 'test/unit/tooling/node-ambient-types.test.ts'
+      )
+    );
+    expect(fullProbes?.test.fileParallelism).toBe(false);
+    expect(afterProbes?.test.fileParallelism).toBe(false);
+    expect(afterProjects.find((project) => project.test.name === 'unit')).toEqual(
+      fullProjects.find((project) => project.test.name === 'unit')
+    );
+    expect(afterPolicy.test?.coverage).toEqual(full.test?.coverage);
+  });
   it('keeps the full mutation profile on the real shared source paths', () => {
     const config = JSON.parse(readFileSync(resolve(root, 'stryker.conf.json'), 'utf8')) as {
       mutate: string[];
@@ -194,13 +222,22 @@ describe('tooling configuration', () => {
     expect(scripts['prebuild:all']).toBe('pnpm -s check:prebuild');
     expect(scripts.verify).toBe('pnpm -s quality && pnpm -s build:all:ci');
     expect(scripts['verify:full']).toBe(
-      'pnpm verify && pnpm test:cov && pnpm build:dev && pnpm -s test:e2e:all'
+      'pnpm verify && pnpm test:cov:after-policy && pnpm build:dev && pnpm -s test:e2e:all'
     );
     expect(scripts['test:ci']).toBe(
-      'node --experimental-strip-types --test scripts/ci/deep-check-reuse.test.ts scripts/release/verify-source.test.ts scripts/ci/repository-authority.test.ts && vitest run test/unit/tooling/node-ambient-types.test.ts'
+      'pnpm -s test:policy && vitest run test/unit/tooling/node-ambient-types.test.ts'
+    );
+    expect(scripts['test:policy']).toBe(
+      'node --experimental-strip-types --test scripts/ci/deep-check-reuse.test.ts scripts/release/verify-source.test.ts scripts/ci/repository-authority.test.ts'
     );
     expect(scripts['test:cov']).toBe('vitest run --coverage');
-    expect(jobBlock(ciWorkflow, 'quality')).toContain('run: pnpm quality');
+    expect(scripts['quality:coverage-owned']).toBe(
+      (scripts.quality ?? '').replace('pnpm -s test:ci', 'pnpm -s test:policy')
+    );
+    expect(scripts['test:cov:after-policy']).toBe(
+      'vitest run --coverage --config tooling/vitest.after-policy.config.ts'
+    );
+    expect(jobBlock(ciWorkflow, 'quality')).toContain('pnpm quality:coverage-owned');
     expect(jobBlock(ciWorkflow, 'unit')).toContain('run: pnpm test:cov');
   });
 

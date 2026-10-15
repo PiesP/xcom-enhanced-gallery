@@ -51,12 +51,13 @@ pnpm test:ci
 pnpm check:scripts
 ```
 
-`test:ci` is the focused policy suite (direct Node reuse/source/authority tests
-and real runtime/import boundary probes), not the complete unit suite. Run
-`pnpm test:cov` for all unit tests and coverage. Local `quality` retains policy
-execution; hosted CI quality owns it when selected, and CI unit runs its explicit
-policy step only for a successful unit-only classification. Full unit coverage
-still includes its Vitest boundary tests.
+`test:ci` runs the direct Node reuse/source/authority policy tests and real
+runtime/import boundary probes. Run `pnpm test:cov` for all unit tests and
+coverage. Local `quality` retains both checks. Hosted CI quality runs only the
+direct policy tests when unit coverage owns the boundary suite; it runs full
+`quality` when unit is explicitly unselected. CI unit runs `test:policy` for a
+successful unit-only classification, then full unit coverage. Release quality
+uses the same policy-only variant because release unit runs full coverage.
 
 The workflow invokes the TypeScript CLI using `node --experimental-strip-types`
 and provides its required runner metadata and `GITHUB_OUTPUT` path. It installs
