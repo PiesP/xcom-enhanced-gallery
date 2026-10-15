@@ -356,7 +356,8 @@ describe('tooling configuration', () => {
   it('keys the Playwright cache to the installed version and preserves browser provisioning', () => {
     const e2e = jobBlock(ciWorkflow, 'e2e');
     const playwrightCache =
-      e2e.split('      - name: 🎭 Cache Playwright browsers\n')[1]?.split('      - name: ')[0] ?? '';
+      e2e.split('      - name: 🎭 Cache Playwright browsers\n')[1]?.split('      - name: ')[0] ??
+      '';
     expect(ciWorkflow).not.toContain('cache_trial');
     expect(e2e).toContain('path: ~/.cache/selenium');
     expect(e2e).toContain(
