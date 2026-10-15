@@ -150,15 +150,6 @@ jobs:
         with:
           submodules: true
 
-      - name: 🎭 Cache Playwright browsers
-        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.e2e != 'false' }}
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            playwright-${{ runner.os }}-
-
       - name: 🦊 Cache Selenium Firefox and GeckoDriver
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.e2e != 'false' }}
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -171,6 +162,18 @@ jobs:
       - name: 📦 Setup project
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.e2e != 'false' }}
         uses: PiesP/browser-core/automation/actions/setup-project@279124fa998847bd0184d2de12bdaadcd6d2f969
+
+      - name: 🎭 Read installed Playwright version
+        id: playwright
+        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.e2e != 'false' }}
+        run: node -p "'version=' + require('@playwright/test/package.json').version" >> "$GITHUB_OUTPUT"
+
+      - name: 🎭 Cache Playwright browsers
+        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.e2e != 'false' }}
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ runner.arch }}-ubuntu-24.04-chromium-firefox-webkit-${{ steps.playwright.outputs.version }}
 
       - name: 🏗️ Build browser bundles
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.e2e != 'false' }}
