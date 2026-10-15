@@ -268,8 +268,7 @@ describe('tooling configuration', () => {
     expect(packageJson.scripts['test:e2e:all']).toContain('pnpm -s test:e2e:extension');
     expect(ciWorkflow).toContain('pnpm build:e2e');
     expect(ciWorkflow).toContain('pnpm test:e2e:all');
-    expect(ciWorkflow).toContain('playwright install-deps chromium firefox webkit');
-    expect(ciWorkflow).toContain('playwright install chromium firefox webkit');
+    expect(ciWorkflow).toContain('playwright install --with-deps chromium firefox webkit');
   });
 
   it('binds manual releases to a tag contained in protected master', () => {
@@ -348,28 +347,33 @@ describe('tooling configuration', () => {
     expect(userscriptPlaywrightConfig).toContain("name: 'webkit-smoke'");
     expect(userscriptPlaywrightConfig).toContain('grep: /cross-browser smoke/');
     expect(userscriptPlaywrightConfig).toContain('slowMo: process.env.CI ? 0 : 200');
-    expect(ciWorkflow).toContain('playwright install-deps chromium firefox webkit');
-    expect(ciWorkflow).toContain('playwright install chromium firefox webkit');
+    expect(ciWorkflow).toContain('playwright install --with-deps chromium firefox webkit');
     expect(ciWorkflow).toContain('Upload Playwright diagnostics');
     expect(ciWorkflow).toContain('playwright-report/');
     expect(ciWorkflow).toContain('test-results/');
   });
 
-  it('keeps the temporary browser cache comparison isolated to Playwright', () => {
+  it('keys the Playwright cache to the installed version and preserves browser provisioning', () => {
     const e2e = jobBlock(ciWorkflow, 'e2e');
-    expect(ciWorkflow).toContain('options: [normal, cache, no-cache]');
-    expect(ciWorkflow).toContain('default: normal');
-    expect(e2e).toContain("inputs.cache_trial != 'no-cache'");
-    expect(e2e).toContain("inputs.cache_trial == 'cache'");
-    expect(e2e).toContain('playwright-issue-304-20261015-{0}-{1}-{2}');
-    expect(e2e).toContain("restore-keys: ${{ inputs.cache_trial != 'cache'");
+    const playwrightCache =
+      e2e.split('      - name: 🎭 Cache Playwright browsers\n')[1]?.split('      - name: ')[0] ?? '';
+    expect(ciWorkflow).not.toContain('cache_trial');
     expect(e2e).toContain('path: ~/.cache/selenium');
-    expect(e2e.match(/inputs.cache_trial != 'no-cache'/g)).toHaveLength(1);
+    expect(e2e).toContain(
+      `run: node -p "'version=' + require('@playwright/test/package.json').version" >> "$GITHUB_OUTPUT"`
+    );
+    expect(playwrightCache).toContain('path: ~/.cache/ms-playwright');
+    expect(playwrightCache).toContain(
+      'key: playwright-${{ runner.os }}-${{ runner.arch }}-ubuntu-24.04-chromium-firefox-webkit-${{ steps.playwright.outputs.version }}'
+    );
+    expect(playwrightCache).not.toContain('restore-keys:');
     const commands = [
+      'name: 📦 Setup project',
+      'name: 🎭 Read installed Playwright version',
+      'name: 🎭 Cache Playwright browsers',
       'run: pnpm build:e2e',
-      'run: pnpm exec playwright install-deps chromium firefox webkit',
-      'run: pnpm exec playwright install chromium firefox webkit',
-      'run: pnpm test:e2e:all',
+      'pnpm exec playwright install --with-deps chromium firefox webkit',
+      'pnpm test:e2e:all',
     ];
     const positions = commands.map((command) => e2e.indexOf(command));
     expect(positions.every((position) => position >= 0)).toBe(true);

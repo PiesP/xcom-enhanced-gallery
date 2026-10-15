@@ -88,6 +88,15 @@ ordinary prebuild and release/deep/security contracts remain intact.
 
 Distinguish scheduled reuse, explicit no-op routing and actual executed checks in receipts.
 
+The CI E2E job keys its Playwright browser cache to the installed `@playwright/test`
+version, Ubuntu 24.04 runner architecture, and Chromium/Firefox/WebKit set. It
+always runs `playwright install --with-deps chromium firefox webkit` after cache
+restoration and then `test:e2e:all`. The separate Selenium cache supports the
+Firefox extension runtime lane. [Issue #304](https://github.com/PiesP/xcom-enhanced-gallery/issues/304)
+records the comparison behind retaining this cache. Re-evaluate if the runner
+image or Playwright provisioning changes, or if exact-hit restoration and save
+time reaches the uncached browser download time.
+
 Before adding an implementation, inspect related existing responsibilities.
 Consolidate duplication when behavior, ownership, lifecycle, and reasons to
 change align; tests establish that preserved behavior still works.
