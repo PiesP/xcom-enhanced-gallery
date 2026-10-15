@@ -5,7 +5,6 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test, { after } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { parseGate } from './dependabot-apply.ts';
 
 const dir = fileURLToPath(new URL('.', import.meta.url));
 const head = 'a'.repeat(40);
@@ -89,140 +88,27 @@ function cli(file: string, mode: string, env: NodeJS.ProcessEnv) {
 }
 
 test('CLIs preserve child failures and stay inert on unrelated missing argv paths', () => {
-  for (const [file, mode] of [
-    ['dependabot-apply.ts', 'validate'],
-    ['update-browser-core.ts', 'prepare'],
-  ]) {
-    const f = fixture([
-      { match: file === 'dependabot-apply.ts' ? 'gh api' : 'git ls-remote', code: 7 },
-    ]);
-    const result = cli(file ?? '', mode ?? '', {
-      ...f.env,
-      PR_NUMBER: '12',
-      HEAD_SHA: head,
-      BASE_REF: 'master',
-      CORE_REPOSITORY: 'PiesP/browser-core',
-    });
-    assert.equal(result.status, 7, result.stderr);
-    const imported = spawnSync(
-      process.execPath,
-      [
-        '--experimental-strip-types',
-        '--input-type=module',
-        '-e',
-        `process.argv[1] = ${JSON.stringify(join(f.root, 'absent.ts'))}; await import(${JSON.stringify(new URL(file ?? '', import.meta.url).href)});`,
-      ],
-      { env: f.env, encoding: 'utf8' }
-    );
-    assert.equal(imported.status, 0, imported.stderr);
-  }
-});
-
-const pull = (sha = head) =>
-  JSON.stringify({
-    user: { login: 'dependabot[bot]' },
-    head: { repo: { full_name: repository }, sha },
-    base: { ref: 'master' },
-    draft: false,
-    state: 'open',
-  });
-
-test('gate accepts the expected artifact and rejects altered identity or decisions', () => {
-  const gate = {
-    schema_version: 2,
-    policy_id: 'maintainer-review-v1',
-    repository,
-    pull_request_number: 12,
-    head_sha: head,
-    base_ref: 'master',
-    eligible: false,
-    reason: 'maintainer review required for all dependency updates',
-  };
-  assert.deepEqual(parseGate(gate, repository), {
-    eligible: false,
-    number: '12',
-    head,
-    base: 'master',
-    reason: gate.reason,
-  });
-  assert.throws(() => parseGate({ ...gate, repository: 'attacker/repo' }, repository));
-  assert.throws(() => parseGate({ ...gate, head_sha: 'bad' }, repository));
-  assert.throws(() => parseGate({ ...gate, base_ref: 'master\neligible=true' }, repository));
-  assert.throws(() => parseGate({ ...gate, eligible: 'true' }, repository));
-  assert.throws(() => parseGate({ ...gate, reason: 'approve anything' }, repository));
-});
-
-test('validation checks paginated commit provenance and the live head twice', () => {
-  const f = fixture([
-    {
-      match: `gh api --paginate --slurp repos/${repository}/pulls/12/commits`,
-      result: JSON.stringify([
-        [
-          {
-            sha: head,
-            author: { login: 'dependabot[bot]' },
-            committer: { login: 'web-flow' },
-            commit: { verification: { verified: true } },
-          },
-        ],
-      ]),
-    },
-    { match: `gh api repos/${repository}/pulls/12`, results: [pull(), pull()] },
-    { match: `gh api repos/${repository}`, result: JSON.stringify({ default_branch: 'master' }) },
-  ]);
-  const env = { ...f.env, PR_NUMBER: '12', HEAD_SHA: head, BASE_REF: 'master' };
-  const result = cli('dependabot-apply.ts', 'validate', env);
-  assert.equal(result.status, 0, result.stderr);
-  assert.equal(
-    f.calls().filter((call) => call.includes('/pulls/12') && !call.includes('/commits')).length,
-    2
-  );
-});
-
-test('validation fails closed when the head moves during provenance checks', () => {
-  const f = fixture([
-    {
-      match: `gh api --paginate --slurp repos/${repository}/pulls/12/commits`,
-      result: JSON.stringify([
-        [
-          {
-            sha: head,
-            author: { login: 'dependabot[bot]' },
-            committer: { login: 'web-flow' },
-            commit: { verification: { verified: true } },
-          },
-        ],
-      ]),
-    },
-    { match: `gh api repos/${repository}/pulls/12`, results: [pull(), pull(other)] },
-    { match: `gh api repos/${repository}`, result: JSON.stringify({ default_branch: 'master' }) },
-  ]);
-  const result = cli('dependabot-apply.ts', 'validate', {
+  const file = 'update-browser-core.ts';
+  const f = fixture([{ match: 'git ls-remote', code: 7 }]);
+  const result = cli(file, 'prepare', {
     ...f.env,
     PR_NUMBER: '12',
     HEAD_SHA: head,
     BASE_REF: 'master',
+    CORE_REPOSITORY: 'PiesP/browser-core',
   });
-  assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /Head changed/);
-});
-
-test('automatic approval and merge are inert even with a valid exact identity', () => {
-  for (const mode of ['approve', 'merge']) {
-    const f = fixture([]);
-    const result = cli('dependabot-apply.ts', mode, {
-      ...f.env,
-      PR_NUMBER: '12',
-      HEAD_SHA: head,
-      BASE_REF: 'master',
-      REASON_BASE64: Buffer.from('security update requires prioritized maintainer review').toString(
-        'base64'
-      ),
-    });
-    assert.notEqual(result.status, 0);
-    assert.match(result.stderr, /Automatic dependency admission is disabled/);
-    assert.deepEqual(f.calls(), []);
-  }
+  assert.equal(result.status, 7, result.stderr);
+  const imported = spawnSync(
+    process.execPath,
+    [
+      '--experimental-strip-types',
+      '--input-type=module',
+      '-e',
+      `process.argv[1] = ${JSON.stringify(join(f.root, 'absent.ts'))}; await import(${JSON.stringify(new URL(file, import.meta.url).href)});`,
+    ],
+    { env: f.env, encoding: 'utf8' }
+  );
+  assert.equal(imported.status, 0, imported.stderr);
 });
 
 test('prepare skips classification on a master push without a same-repository PR', () => {
@@ -323,38 +209,6 @@ test('publish stops before push when the generated commit changes another file',
         )
       ),
     false
-  );
-});
-
-test('validation rejects a commit without Dependabot provenance', () => {
-  const f = fixture([
-    {
-      match: `gh api --paginate --slurp repos/${repository}/pulls/12/commits`,
-      result: JSON.stringify([
-        [
-          {
-            sha: head,
-            author: { login: 'dependabot[bot]' },
-            committer: { login: 'attacker' },
-            commit: { verification: { verified: true } },
-          },
-        ],
-      ]),
-    },
-    { match: `gh api repos/${repository}/pulls/12`, result: pull() },
-    { match: `gh api repos/${repository}`, result: JSON.stringify({ default_branch: 'master' }) },
-  ]);
-  const result = cli('dependabot-apply.ts', 'validate', {
-    ...f.env,
-    PR_NUMBER: '12',
-    HEAD_SHA: head,
-    BASE_REF: 'master',
-  });
-  assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /Unverified Dependabot commit/);
-  assert.equal(
-    f.calls().filter((call) => call.includes('/pulls/12') && !call.includes('/commits')).length,
-    1
   );
 });
 
@@ -478,34 +332,6 @@ test('prepare stops on a signaled Git operation without publishing a ready resul
   );
 });
 
-test('current apply rejects old and positive decisions before any output or API call', () => {
-  for (const decision of [
-    { schema_version: 1, eligible: true, reason: 'safe npm patch/minor set' },
-    { schema_version: 1, eligible: true, reason: 'security advisory update (open alert)' },
-    { schema_version: 1, eligible: false, reason: 'manual review required' },
-    { schema_version: 2, policy_id: 'obsolete-policy', eligible: false },
-    { schema_version: 2, policy_id: 'maintainer-review-v1', eligible: true },
-  ]) {
-    const f = fixture([]);
-    const path = join(f.root, 'gate.json');
-    writeFileSync(
-      path,
-      JSON.stringify({
-        repository,
-        pull_request_number: 12,
-        head_sha: head,
-        base_ref: 'master',
-        reason: 'maintainer review required for all dependency updates',
-        ...decision,
-      })
-    );
-    const result = cli('dependabot-apply.ts', 'gate', { ...f.env, GATE_PATH: path });
-    assert.notEqual(result.status, 0);
-    assert.equal(readFileSync(f.output, 'utf8'), '');
-    assert.deepEqual(f.calls(), []);
-  }
-});
-
 test('publication rejects classification drift before running any command', () => {
   for (const classified of [
     { CLASSIFIED_BASE_SHA: head, CLASSIFIED_CORE_SHA: head },
@@ -523,45 +349,5 @@ test('publication rejects classification drift before running any command', () =
     });
     assert.notEqual(result.status, 0);
     assert.deepEqual(f.calls(), []);
-  }
-});
-
-test('current provenance validation rejects foreign identity, base and unsigned commits', () => {
-  const validPull = JSON.parse(pull());
-  const validCommit = {
-    sha: head,
-    author: { login: 'dependabot[bot]' },
-    committer: { login: 'web-flow' },
-    commit: { verification: { verified: true } },
-  };
-  for (const [pr, commit] of [
-    [{ ...validPull, user: { login: 'other-bot' } }, validCommit],
-    [
-      { ...validPull, head: { ...validPull.head, repo: { full_name: 'foreign/repo' } } },
-      validCommit,
-    ],
-    [{ ...validPull, base: { ref: 'other-base' } }, validCommit],
-    [validPull, { ...validCommit, commit: { verification: { verified: false } } }],
-    [validPull, { ...validCommit, committer: { login: 'attacker' } }],
-  ]) {
-    const f = fixture([
-      {
-        match: `gh api --paginate --slurp repos/${repository}/pulls/12/commits`,
-        result: JSON.stringify([[commit]]),
-      },
-      { match: `gh api repos/${repository}/pulls/12`, result: JSON.stringify(pr) },
-      { match: `gh api repos/${repository}`, result: JSON.stringify({ default_branch: 'master' }) },
-    ]);
-    const result = cli('dependabot-apply.ts', 'validate', {
-      ...f.env,
-      PR_NUMBER: '12',
-      HEAD_SHA: head,
-      BASE_REF: 'master',
-    });
-    assert.notEqual(result.status, 0);
-    assert.equal(
-      f.calls().some((call) => call.includes('--method POST') || call.includes('pr merge')),
-      false
-    );
   }
 });

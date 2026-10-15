@@ -10,10 +10,6 @@ const classifier = resolve(root, 'scripts/ci/classify-changes.ts');
 const ciWorkflow = readFileSync(resolve(root, '.github/workflows/ci.yaml'), 'utf8');
 const securityWorkflow = readFileSync(resolve(root, '.github/workflows/security.yaml'), 'utf8');
 const deepWorkflow = readFileSync(resolve(root, '.github/workflows/deep-checks.yaml'), 'utf8');
-const dependabotWorkflow = readFileSync(
-  resolve(root, '.github/workflows/dependabot-auto-merge.yaml'),
-  'utf8'
-);
 const updateCoreWorkflow = readFileSync(
   resolve(root, '.github/workflows/update-browser-core.yaml'),
   'utf8'
@@ -303,6 +299,8 @@ describe('workflow change policy', () => {
     expectAll(security, securityOutputs);
 
     expect(classify(['.github/workflows/update-browser-core.yaml']).unit).toBe('true');
+    const otherWorkflow = classify(['.github/workflows/new-policy.yaml']);
+    expectAll(otherWorkflow, ['unit', 'semgrep', 'codeql_actions']);
     expect(classify(['.github/settings.yml']).unit).toBe('true');
 
     const sharedFixture = classify(['test/fixtures/quoted-video-tweet-response.ts']);
@@ -403,9 +401,6 @@ describe('workflow change policy', () => {
 
     expect(deepWorkflow.slice(0, deepWorkflow.indexOf('\nenv:'))).toContain('schedule:');
     expect(deepWorkflow.slice(0, deepWorkflow.indexOf('\nenv:'))).not.toContain('paths:');
-    expect(dependabotWorkflow.slice(0, dependabotWorkflow.indexOf('\npermissions:'))).toContain(
-      'paths:'
-    );
     expect(updateCoreWorkflow.slice(0, updateCoreWorkflow.indexOf('\npermissions:'))).toContain(
       'paths-ignore:'
     );
