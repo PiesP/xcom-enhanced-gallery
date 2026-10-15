@@ -4,6 +4,7 @@
     "src/main.ts!",
     "src/extension/background.ts!",
     "src/extension/content.ts!",
+    "tooling/vitest.mutation.config.ts",
     "scripts/check/{bootstrap,extension-build}.ts",
     "scripts/ci/{check-pinned-tools,classify-changes,deep-check-reuse,pinned-tools,update-browser-core}.ts",
     "scripts/ci/*.test.ts",
