@@ -28,6 +28,14 @@ Install a userscript manager such as
 The userscript manager can check for updates through the metadata URLs embedded
 in the script header. Review and approve an offered update in the manager.
 
+If an installed copy has a versioned `@downloadURL`, an update check may find a
+new version but still fetch the old script. After the corrected release is
+public, update the existing script once from the
+[latest userscript](https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js)
+in your manager, or change its download URL through a reviewed manager workflow.
+**Check for updates** alone cannot repair the pinned URL. Verify the installed
+header and saved settings after the one-time update.
+
 ### Chrome, Edge, or Brave extension
 
 The release archive is an unpacked developer build; it is not installed from a

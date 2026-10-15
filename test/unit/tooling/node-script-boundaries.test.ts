@@ -39,7 +39,7 @@ function releaseHeader(version = '2.3.3', development = false): string {
     `// @name ${name}`,
     '// @namespace https://github.com/PiesP/xcom-enhanced-gallery',
     `// @version ${version}`,
-    `// @downloadURL https://github.com/PiesP/xcom-enhanced-gallery/releases/download/v${version}/${file}`,
+    `// @downloadURL https://github.com/PiesP/xcom-enhanced-gallery/releases/${development ? `download/v${version}` : 'latest/download'}/${file}`,
     '// @updateURL https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.meta.js',
     '// ==/UserScript==',
   ].join('\n');
@@ -269,9 +269,12 @@ describe('Node script import boundary', () => {
       runner_image: 'ubuntu24',
       runner_image_version: 'fixture',
     });
-    expect(readFileSync(join(root, 'release-bundle/RELEASE_NOTES.md'), 'utf8')).toContain(
-      '/compare/v2.3.2...v2.3.3'
-    );
+    const releaseNotes = readFileSync(join(root, 'release-bundle/RELEASE_NOTES.md'), 'utf8');
+    expect(releaseNotes).toContain('/compare/v2.3.2...v2.3.3');
+    expect(releaseNotes).toContain('/releases/download/v2.3.3/xcom-enhanced-gallery.user.js');
+    expect(releaseNotes).toContain('version-pinned `@downloadURL`');
+    expect(releaseNotes).toContain('/releases/latest/download/xcom-enhanced-gallery.user.js');
+    expect(releaseNotes).toContain('Confirm there is one X.com Enhanced Gallery entry');
   });
 
   it.each([
@@ -315,6 +318,20 @@ describe('Node script import boundary', () => {
       'dist/xcom-enhanced-gallery.user.js',
       '/xcom-enhanced-gallery.user.js',
       '/xcom-enhanced-gallery.dev.user.js',
+      '@downloadURL',
+    ],
+    [
+      'pinned production download target',
+      'dist/xcom-enhanced-gallery.user.js',
+      '/releases/latest/download/xcom-enhanced-gallery.user.js',
+      '/releases/download/v2.3.3/xcom-enhanced-gallery.user.js',
+      '@downloadURL',
+    ],
+    [
+      'pinned metadata download target',
+      'dist/xcom-enhanced-gallery.meta.js',
+      '/releases/latest/download/xcom-enhanced-gallery.user.js',
+      '/releases/download/v2.3.3/xcom-enhanced-gallery.user.js',
       '@downloadURL',
     ],
     [

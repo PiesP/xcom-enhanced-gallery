@@ -160,6 +160,13 @@ export function prepareRelease(): void {
 
 Requires [Tampermonkey](https://www.tampermonkey.net/) or [Violentmonkey](https://violentmonkey.github.io/).
 
+If an installed script has a version-pinned \`@downloadURL\`, **Check for updates**
+alone can still fetch the old release. After this release is public, update the
+existing script once from the [public Latest userscript](https://github.com/${repository}/releases/latest/download/${userscriptFile})
+through your manager. Confirm there is one X.com Enhanced Gallery entry, its
+header uses the Latest download URL, and saved settings remain. The corrected
+header uses the stable Latest channel for later releases.
+
 ### Chrome / Edge / Brave Extension
 
 1. Download \`xcom-enhanced-gallery-chrome.zip\`.

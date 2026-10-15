@@ -7847,12 +7847,12 @@ async function runExtensionUpgrade({ context, extensionId, extensionPath, input,
     await toolbar.getByRole('button', { name: 'Fit Height', exact: true }).click();
     await toolbar.locator('#settings-button').click();
     assert.equal(
-      await gallery.locator('#settings-video-click-select').count(),
-      0,
-      'Public 2.3.5 must not expose the candidate video-click control'
+      await gallery.locator('#settings-video-click-select').inputValue(),
+      'block-controls-only',
+      'Public 2.3.6 video-click control must show the default mode'
     );
     await gallery.locator('#settings-language-select').selectOption('ko');
-    receipt.baselineClickModeUi = 'unavailable-in-public-2.3.5';
+    receipt.baselineClickModeUi = 'block-controls-only';
     await page.screenshot({ path: join(output, 'extension-before-upgrade.png') });
     await waitForValue(async () => {
       const stored = await readStoredVideoSettings(extensionPage);

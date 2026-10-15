@@ -2617,12 +2617,12 @@ async function runUserscriptUpgrade({ context, managerId, root, output, input })
           await toolbar.getByRole('button', { name: 'Fit Height', exact: true }).click();
           await toolbar.locator('#settings-button').click();
           assert.equal(
-            await gallery.locator('#settings-video-click-select').count(),
-            0,
-            'Public 2.3.5 must not expose the candidate video-click control'
+            await gallery.locator('#settings-video-click-select').inputValue(),
+            'block-controls-only',
+            'Public 2.3.6 video-click control must show the default mode'
           );
           await gallery.locator('#settings-language-select').selectOption('ko');
-          receipt.baselineClickModeUi = 'unavailable-in-public-2.3.5';
+          receipt.baselineClickModeUi = 'block-controls-only';
         } else {
           await toolbar.locator('#settings-button').click();
           if (afterUpdate) {
@@ -2632,15 +2632,13 @@ async function runUserscriptUpgrade({ context, managerId, root, output, input })
             );
           } else {
             publicPreferences = {
-              candidateClickControlCount: await gallery
-                .locator('#settings-video-click-select')
-                .count(),
+              videoClickMode: await gallery.locator('#settings-video-click-select').inputValue(),
               language: await gallery.locator('#settings-language-select').inputValue(),
               fitHeightPressed: await toolbar
                 .getByRole('button', { name: '높이 맞춤', exact: true })
                 .getAttribute('aria-pressed'),
             };
-            assert.equal(publicPreferences.candidateClickControlCount, 0);
+            assert.equal(publicPreferences.videoClickMode, 'block-controls-only');
           }
           assert.equal(
             publicPreferences?.language ??

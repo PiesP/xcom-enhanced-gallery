@@ -167,7 +167,7 @@ describe('userscript release metadata provenance', () => {
     expect(connectLines).not.toContain('// @connect api.twitter.com');
   });
 
-  it('uses an immutable versioned release asset for script downloads', () => {
+  it('uses the latest release asset for production script downloads', () => {
     const header = generateUserscriptHeader({
       baseConfig: USERSCRIPT_CONFIG,
       isDev: false,
@@ -175,20 +175,37 @@ describe('userscript release metadata provenance', () => {
     });
 
     expect(header).toContain(
-      '// @downloadURL https://github.com/PiesP/xcom-enhanced-gallery/releases/download/v2.3.0/xcom-enhanced-gallery.user.js'
+      '// @downloadURL https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js'
     );
+    expect(header).not.toContain('/releases/download/v2.3.0/');
     expect(header).not.toContain('@release/dist');
   });
 
-  it('checks updates through the latest provenance-gated metadata asset', () => {
+  it('keeps development downloads separate from the production release asset', () => {
+    const header = generateUserscriptHeader({
+      baseConfig: USERSCRIPT_CONFIG,
+      isDev: true,
+      version: '2.3.0',
+    });
+
+    expect(header).toContain(
+      '// @downloadURL https://github.com/PiesP/xcom-enhanced-gallery/releases/download/v2.3.0/xcom-enhanced-gallery.dev.user.js'
+    );
+    expect(header).not.toContain(
+      '// @downloadURL https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js'
+    );
+  });
+
+  it('checks updates and downloads through the latest provenance-gated release assets', () => {
     const header = generateMetaOnlyHeader('2.3.0', USERSCRIPT_CONFIG);
 
     expect(header).toContain(
       '// @updateURL https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.meta.js'
     );
     expect(header).toContain(
-      '// @downloadURL https://github.com/PiesP/xcom-enhanced-gallery/releases/download/v2.3.0/xcom-enhanced-gallery.user.js'
+      '// @downloadURL https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js'
     );
+    expect(header).not.toContain('/releases/download/v2.3.0/');
     expect(header).not.toContain('jsdelivr');
   });
 });

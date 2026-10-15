@@ -48,7 +48,7 @@ export const OUTPUT_FILE_NAMES = {
   meta: 'xcom-enhanced-gallery.meta.js',
 } as const;
 
-/** Immutable versioned artifacts and the latest metadata live on GitHub Releases. */
+/** Production updates use Latest; development builds retain versioned URLs. */
 const RELEASE_DOWNLOAD_BASE_URL =
   'https://github.com/PiesP/xcom-enhanced-gallery/releases/download' as const;
 const LATEST_RELEASE_DOWNLOAD_BASE_URL =
@@ -153,7 +153,9 @@ export function generateUserscriptHeader(args: {
     ...baseConfig,
     name: `${baseConfig.name}${nameSuffix}`,
     version,
-    downloadURL: `${RELEASE_DOWNLOAD_BASE_URL}/v${version}/${fileName}`,
+    downloadURL: isDev
+      ? `${RELEASE_DOWNLOAD_BASE_URL}/v${version}/${fileName}`
+      : `${LATEST_RELEASE_DOWNLOAD_BASE_URL}/${OUTPUT_FILE_NAMES.prod}`,
     updateURL: `${LATEST_RELEASE_DOWNLOAD_BASE_URL}/${metaFileName}`,
   };
 
@@ -178,7 +180,7 @@ export function generateMetaOnlyHeader(
     formatMetaLine('name', baseConfig.name),
     formatMetaLine('namespace', baseConfig.namespace),
     formatMetaLine('version', version),
-    formatMetaLine('downloadURL', `${RELEASE_DOWNLOAD_BASE_URL}/v${version}/${fileName}`),
+    formatMetaLine('downloadURL', `${LATEST_RELEASE_DOWNLOAD_BASE_URL}/${fileName}`),
     formatMetaLine('updateURL', `${LATEST_RELEASE_DOWNLOAD_BASE_URL}/${metaFileName}`),
     '// ==/UserScript==',
   ];
