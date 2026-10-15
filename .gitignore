@@ -78,3 +78,5 @@ memory/
 /validation/windows/release-upgrade/input.json
 /validation/windows/release-upgrade/v2.3.5.user.js
 /validation/windows/release-upgrade/v2.3.5-extension/
+/validation/windows/release-upgrade/v2.3.6.user.js
+/validation/windows/release-upgrade/v2.3.6-extension/
