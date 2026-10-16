@@ -108,9 +108,19 @@ jobs:
         if: ${{ steps.marker.outputs.reuse != 'true' }}
         uses: PiesP/browser-core/automation/actions/setup-project@279124fa998847bd0184d2de12bdaadcd6d2f969
 
+      - name: 🔒 Prepare job-owned mutation checkout
+        if: ${{ steps.marker.outputs.reuse != 'true' }}
+        env:
+          MUTATION_WORKSPACE_CONTRACT: github-job-v1
+          MUTATION_SOURCE_SHA: ${{ github.sha }}
+        run: node --experimental-strip-types scripts/ci/mutation-workspace.ts prepare-hosted
+
       - name: 🧬 Run mutation gate
         id: check
         if: ${{ steps.marker.outputs.reuse != 'true' }}
+        env:
+          MUTATION_WORKSPACE_CONTRACT: github-job-v1
+          MUTATION_SOURCE_SHA: ${{ github.sha }}
         run: pnpm mut:fast
 
       - name: 📊 Upload mutation reports

@@ -5,7 +5,7 @@
     "src/extension/background.ts!",
     "src/extension/content.ts!",
     "scripts/check/{bootstrap,extension-build}.ts",
-    "scripts/ci/{check-pinned-tools,classify-changes,deep-check-reuse,pinned-tools,update-browser-core}.ts",
+    "scripts/ci/{check-pinned-tools,classify-changes,deep-check-reuse,mutation-workspace,pinned-tools,update-browser-core}.ts",
     "scripts/ci/*.test.ts",
     "scripts/release/{package-extension,prepare,verify-publication,verify-source,version}.ts",
     "scripts/release/*.test.ts",
