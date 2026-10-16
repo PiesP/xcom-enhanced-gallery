@@ -270,6 +270,37 @@ test('core common object storage outside the clone is refused before preparation
   maintainerUnchanged();
 });
 
+test('Git worktree routing outside either execution root is refused before preparation', () => {
+  for (const scope of ['root', 'core'] as const) {
+    const execution = clone();
+    const external = clone();
+    const location = scope === 'root' ? execution : join(execution, 'packages/core');
+    const target = scope === 'root' ? external : join(external, 'packages/core');
+    git(location, 'config', 'core.worktree', target);
+    assert.equal(realpathSync(git(location, 'rev-parse', '--show-toplevel')), target);
+
+    const result = invoke(execution, ['prepare', maintainer, selected]);
+    assert.notEqual(result.status, 0, `${scope}: ${result.stderr}`);
+    assert.match(result.stderr, /Git worktree|execution checkout|top-level/i);
+    assert.equal(existsSync(join(execution, '.git/xeg-mutation')), false);
+    assert.equal(existsSync(join(execution, 'fake-argv.json')), false);
+    maintainerUnchanged();
+  }
+});
+
+test('a nonregular installed core file is refused without an empty-content fallback', () => {
+  const execution = clone();
+  const installedFile = join(execution, 'node_modules/@piesp/browser-core/src/index.js');
+  rmSync(installedFile);
+  mkdirSync(installedFile);
+  const result = invoke(execution, ['prepare', maintainer, selected]);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Installed file:packages\/core differs|regular file/i);
+  assert.equal(existsSync(join(execution, '.git/xeg-mutation')), false);
+  assert.equal(existsSync(join(execution, 'fake-argv.json')), false);
+  maintainerUnchanged();
+});
+
 test('fresh checkout rejects untracked or ignored inputs outside installed dependencies', () => {
   for (const name of [
     'src/untracked.ts',

@@ -2,7 +2,9 @@ import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
   closeSync,
+  constants,
   existsSync,
+  fstatSync,
   lstatSync,
   mkdirSync,
   openSync,
@@ -78,6 +80,15 @@ function hash(value: string | Buffer): string {
   return createHash('sha256').update(value).digest('hex');
 }
 
+function regularFile(path: string): Buffer | undefined {
+  const fd = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW);
+  try {
+    return fstatSync(fd).isFile() ? readFileSync(fd) : undefined;
+  } finally {
+    closeSync(fd);
+  }
+}
+
 function snapshot(cwd: string): string {
   const digest = createHash('sha256');
   digest.update(git(cwd, 'ls-files', '--stage', '-z'));
@@ -85,8 +96,9 @@ function snapshot(cwd: string): string {
   digest.update(git(cwd, 'for-each-ref', '--format=%(refname) %(objectname)'));
   for (const name of git(cwd, 'ls-files', '-z').split('\0').filter(Boolean)) {
     const path = join(cwd, name);
-    if (lstatSync(path).isFile()) {
-      digest.update(name).update(readFileSync(path));
+    const bytes = regularFile(path);
+    if (bytes !== undefined) {
+      digest.update(name).update(bytes);
     }
   }
   return digest.digest('hex');
@@ -147,6 +159,9 @@ function checkout(hosted: boolean): {
     fail('Shared Git metadata is not supported.');
   }
   for (const cwd of [root, join(root, 'packages/core')]) {
+    if (realpathSync(git(cwd, 'rev-parse', '--show-toplevel')) !== cwd) {
+      fail(`Git worktree must belong to the execution checkout: ${cwd}`);
+    }
     if (git(cwd, 'status', '--porcelain', '--untracked-files=no') !== '') {
       fail(`Committed, clean tracked content required: ${cwd}`);
     }
@@ -204,12 +219,12 @@ function checkout(hosted: boolean): {
     .split('\0')
     .filter((name) => name.startsWith('src/') || name === 'package.json' || name === 'LICENSE')) {
     const original = join(root, 'packages/core', name);
-    if (
-      lstatSync(original).isFile() &&
-      (!existsSync(join(installedCore, name)) ||
-        hash(readFileSync(original)) !== hash(readFileSync(join(installedCore, name))))
-    ) {
-      fail(`Installed file:packages/core differs from the recorded core: ${name}`);
+    const bytes = regularFile(original);
+    if (bytes !== undefined) {
+      const installed = regularFile(join(installedCore, name));
+      if (installed === undefined || hash(bytes) !== hash(installed)) {
+        fail(`Installed file:packages/core differs from the recorded core: ${name}`);
+      }
     }
   }
   return {
@@ -557,8 +572,8 @@ async function run(profile: Profile, args: string[]): Promise<number> {
     /* Preserve uncertain restoration. */
   }
   const dryRun = args.includes('--dryRunOnly');
-  let reportsComplete = profile !== 'fast' || dryRun;
-  if (!reportsComplete && outcome.code === 0) {
+  let reportsComplete: boolean | null = profile === 'fast' && !dryRun ? false : null;
+  if (reportsComplete === false && outcome.code === 0) {
     try {
       const report = json(join(root, 'reports/mutation/mutation.json'));
       const mutants = Object.values(object(report.files)).flatMap((value) => {
@@ -579,7 +594,7 @@ async function run(profile: Profile, args: string[]): Promise<number> {
       : 143
     : spawnError
       ? 2
-      : outcome.code === 0 && (!restored || !reportsComplete)
+      : outcome.code === 0 && (!restored || reportsComplete === false)
         ? 1
         : (outcome.code ?? 1);
   const status =
@@ -591,7 +606,7 @@ async function run(profile: Profile, args: string[]): Promise<number> {
           ? 'child-failed'
           : !restored
             ? 'restoration-unverified'
-            : !reportsComplete
+            : reportsComplete === false
               ? 'reports-incomplete'
               : dryRun
                 ? 'dry-run-only'
