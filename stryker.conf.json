@@ -17,6 +17,9 @@
     "related": false
   },
   "reporters": ["progress", "clear-text", "html"],
+  "jsonReporter": {
+    "fileName": "reports/mutation/mutation.json"
+  },
   "coverageAnalysis": "all",
   "thresholds": {
     "high": 80,

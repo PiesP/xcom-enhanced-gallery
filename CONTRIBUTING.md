@@ -101,8 +101,14 @@ same canonical `pnpm mut:fast` report location and threshold.
 Local diagnostic arguments are `--dryRunOnly`, `--concurrency`/`-c` (1–32),
 `--logLevel`, `--mutate`/`-m`, and `--testFiles`/`-t`. Pass paths as relative
 comma-separated globs within the clone. Other configuration and output path
-overrides are refused; hosted gates accept no overrides. The full command keeps
-its progress reporter and the fast command keeps its configured reporters.
+overrides are refused; hosted gates accept no overrides. The full command selects
+progress and JSON reporters and writes `reports/mutation/mutation.json`; the fast
+command keeps its configured reporters and also requires a nonempty HTML report.
+Completion requires restored source and a nonempty JSON mutant inventory with
+supported terminal statuses, in addition to Stryker's successful exit and score
+policy. Missing or incomplete reports retain diagnostics and fail the launcher.
+`--dryRunOnly` records `dry-run-only`, without requiring complete mutation reports;
+it does not provide complete analysis or reusable mutation success evidence.
 
 If a run fails or is interrupted, inspect `.git/xeg-mutation/`, reports, Stryker
 backups, and the checkout's remaining processes before taking action. Preserve
