@@ -41,7 +41,21 @@ describe('central setup-project action', () => {
       const workflow = readFileSync(resolve(root, '.github/workflows', filename), 'utf8');
 
       expect(workflow).not.toContain('./.github/actions/setup-toolchain');
-      expect(workflow).not.toContain(releaseSetupAction);
+      if (filename === 'ci.yaml') {
+        const unit = jobBlock(workflow, 'unit');
+        expect(workflow.split(releaseSetupAction)).toHaveLength(2);
+        expect(unit).toContain(`uses: ${releaseSetupAction}`);
+        expect(unit.indexOf(centralSetupAction)).toBeLessThan(unit.indexOf(releaseSetupAction));
+        expect(unit.indexOf('Record release setup inputs')).toBeLessThan(
+          unit.indexOf(releaseSetupAction)
+        );
+        expect(unit.indexOf(releaseSetupAction)).toBeLessThan(unit.indexOf('Verify release setup'));
+        expect(unit).toContain('sha256sum --check "$RUNNER_TEMP/release-setup-inputs.sha256"');
+        expect(unit).toContain('test "$(node --version)" = "v$expected_node"');
+        expect(unit).toContain('test "$(pnpm --version)" = "$expected_pnpm"');
+      } else {
+        expect(workflow).not.toContain(releaseSetupAction);
+      }
       expect(workflow).not.toContain('pnpm install --frozen-lockfile');
       expect(workflow).not.toContain('uses: pnpm/setup@');
       expect(workflow).not.toContain('uses: actions/setup-node@');
@@ -81,7 +95,7 @@ describe('central setup-project action', () => {
     }
 
     expect(workflow.split(releaseSetupAction)).toHaveLength(releaseWorkflowJobs.length + 1);
-    expect(action).toContain('uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0');
+    expect(action).toContain('uses: pnpm/setup@a0881977cd8ea73b1ed212236c99ca10dcc80cf4 # v3.1.1');
     expect(action).toContain('package-json-file: package.json');
     expect(action).toContain('runtime: "node@${{ steps.runtime.outputs.version }}"');
     expect(action).toContain('cache: false');
