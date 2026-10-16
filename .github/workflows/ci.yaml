@@ -131,6 +131,24 @@ jobs:
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.unit != 'false' }}
         uses: PiesP/browser-core/automation/actions/setup-project@279124fa998847bd0184d2de12bdaadcd6d2f969
 
+      - name: Record release setup inputs
+        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.unit != 'false' }}
+        run: sha256sum package.json pnpm-lock.yaml pnpm-workspace.yaml > "$RUNNER_TEMP/release-setup-inputs.sha256"
+
+      - name: Exercise local release setup
+        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.unit != 'false' }}
+        uses: ./.github/actions/setup-release
+
+      - name: Verify release setup
+        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.unit != 'false' }}
+        run: |
+          set -euo pipefail
+          sha256sum --check "$RUNNER_TEMP/release-setup-inputs.sha256"
+          expected_node=$(node -p "require('./package.json').volta.node")
+          expected_pnpm=$(node -p "require('./package.json').packageManager.split('@')[1]")
+          test "$(node --version)" = "v$expected_node"
+          test "$(pnpm --version)" = "$expected_pnpm"
+
       # Quality owns policy tests when selected; unit-only changes need them here.
       - name: 🧪 Run focused policy suite for unit-only changes
         if: ${{ needs.changes.result == 'success' && needs.changes.outputs.unit != 'false' && needs.changes.outputs.quality == 'false' }}
