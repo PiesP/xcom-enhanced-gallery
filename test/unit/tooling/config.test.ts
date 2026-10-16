@@ -228,7 +228,7 @@ describe('tooling configuration', () => {
       'pnpm -s test:policy && vitest run test/unit/tooling/node-ambient-types.test.ts'
     );
     expect(scripts['test:policy']).toBe(
-      'node --experimental-strip-types --test scripts/ci/deep-check-reuse.test.ts scripts/release/verify-source.test.ts scripts/ci/repository-authority.test.ts'
+      'node --experimental-strip-types --test scripts/ci/deep-check-reuse.test.ts scripts/release/verify-source.test.ts scripts/ci/repository-authority.test.ts scripts/ci/mutation-workspace.test.ts'
     );
     expect(scripts['test:cov']).toBe('vitest run --coverage');
     expect(scripts['quality:coverage-owned']).toBe(

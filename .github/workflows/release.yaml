@@ -177,7 +177,16 @@ jobs:
         with:
           node-version: ${{ needs.provenance.outputs.node-version }}
 
+      - name: 🔒 Prepare job-owned mutation checkout
+        env:
+          MUTATION_WORKSPACE_CONTRACT: github-job-v1
+          MUTATION_SOURCE_SHA: ${{ needs.provenance.outputs.release-sha }}
+        run: node --experimental-strip-types scripts/ci/mutation-workspace.ts prepare-hosted
+
       - name: 🧬 Run mutation gate
+        env:
+          MUTATION_WORKSPACE_CONTRACT: github-job-v1
+          MUTATION_SOURCE_SHA: ${{ needs.provenance.outputs.release-sha }}
         run: pnpm mut:fast
 
   build:

@@ -40,6 +40,7 @@ for (const path of [
   'test/app.test.ts',
   'stryker.conf.fast.json',
   'pnpm-lock.yaml',
+  'scripts/ci/mutation-workspace.ts',
   'scripts/ci/pinned-tools.ts',
   'scripts/ci/pinned-tools.json',
   '.github/workflows/deep-checks.yaml',
@@ -76,6 +77,7 @@ test('each tracked source, test, configuration, lock, and tool input invalidates
     'test/app.test.ts',
     'stryker.conf.fast.json',
     'pnpm-lock.yaml',
+    'scripts/ci/mutation-workspace.ts',
     'scripts/ci/pinned-tools.ts',
     'scripts/ci/pinned-tools.json',
     '.github/workflows/deep-checks.yaml',
@@ -119,6 +121,16 @@ test('each tracked source, test, configuration, lock, and tool input invalidates
       volta: { node: '26.9.0', pnpm: '11.26.0' },
     })
   );
+});
+
+test('a launcher change invalidates a marker from the previous mutation inputs', () => {
+  const marker = join(fixture, 'launcher-marker.json');
+  writeMarker(marker, 'mutation', baseline, runner);
+  assert.equal(validMarker(marker, 'mutation', baseline), true);
+  write('scripts/ci/mutation-workspace.ts', 'changed\n');
+  assert.equal(validMarker(marker, 'mutation', fingerprint('mutation', fixture, runner)), false);
+  write('scripts/ci/mutation-workspace.ts', 'original\n');
+  assert.equal(fingerprint('mutation', fixture, runner), baseline);
 });
 
 test('fingerprint uses the length of the bytes read when a tracked file changes', (t) => {
