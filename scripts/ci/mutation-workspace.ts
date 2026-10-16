@@ -20,6 +20,7 @@ import { fileURLToPath } from 'node:url';
 const root = realpathSync(fileURLToPath(new URL('../..', import.meta.url)));
 const metadata = join(root, '.git/xeg-mutation');
 const contract = 'github-job-v1';
+const jsonReport = 'reports/mutation/mutation.json';
 type Profile = 'full' | 'fast';
 type Prepared = {
   version: 1;
@@ -371,7 +372,7 @@ function argumentsFor(profile: Profile, args: string[], hosted: boolean): string
   return [
     'run',
     profile === 'fast' ? 'stryker.conf.fast.json' : 'stryker.conf.json',
-    ...(profile === 'full' ? ['--reporters=progress'] : []),
+    ...(profile === 'full' ? ['--reporters=progress,json'] : []),
     ...forwarded,
   ];
 }
@@ -423,6 +424,36 @@ function profileConfig(profile: Profile): void {
         safeRelative(String(path));
       }
     }
+  }
+}
+
+function validateMutationReport(): void {
+  const report = json(join(root, jsonReport));
+  const terminal = new Set([
+    'Killed',
+    'Survived',
+    'NoCoverage',
+    'Timeout',
+    'Ignored',
+    'CompileError',
+    'RuntimeError',
+  ]);
+  let count = 0;
+  for (const [name, value] of Object.entries(object(report.files))) {
+    const mutants = object(value).mutants;
+    if (!Array.isArray(mutants)) {
+      fail(`Invalid mutants array in ${name}`);
+    }
+    for (const mutant of mutants) {
+      const status = object(mutant).status;
+      if (typeof status !== 'string' || !terminal.has(status)) {
+        fail(`Incomplete or unsupported mutant status in ${name}: ${String(status)}`);
+      }
+      count++;
+    }
+  }
+  if (count === 0) {
+    fail('Mutation report contains no mutants');
   }
 }
 
@@ -572,20 +603,21 @@ async function run(profile: Profile, args: string[]): Promise<number> {
     /* Preserve uncertain restoration. */
   }
   const dryRun = args.includes('--dryRunOnly');
-  let reportsComplete: boolean | null = profile === 'fast' && !dryRun ? false : null;
+  let reportsComplete: boolean | null = dryRun ? null : false;
+  let reportError = '';
   if (reportsComplete === false && outcome.code === 0) {
     try {
-      const report = json(join(root, 'reports/mutation/mutation.json'));
-      const mutants = Object.values(object(report.files)).flatMap((value) => {
-        const items = object(value).mutants;
-        return Array.isArray(items) ? items : [];
-      });
-      reportsComplete =
-        mutants.length > 0 &&
-        mutants.every((value) => object(value).status !== 'Pending') &&
-        readFileSync(join(root, 'reports/mutation/mutation.html')).length > 0;
-    } catch {
-      /* A zero exit without complete reports must not pass the hosted gate. */
+      validateMutationReport();
+      if (
+        profile === 'fast' &&
+        readFileSync(join(root, 'reports/mutation/mutation.html')).length === 0
+      ) {
+        fail('Fast mutation HTML report is empty');
+      }
+      reportsComplete = true;
+    } catch (error: unknown) {
+      reportError = error instanceof Error ? error.message : String(error);
+      console.error(`Mutation report validation failed (${jsonReport}): ${reportError}`);
     }
   }
   const code = interrupted
@@ -625,6 +657,7 @@ async function run(profile: Profile, args: string[]): Promise<number> {
           escalated,
           restored,
           reportsComplete,
+          reportError,
           finishedAt: new Date().toISOString(),
           retained: root,
         },

@@ -66,7 +66,10 @@ write(
   join(maintainer, 'package.json'),
   '{"name":"xcom-enhanced-gallery","private":true,"type":"module"}\n'
 );
-write(join(maintainer, 'stryker.conf.json'), '{"inPlace":true}\n');
+copyFileSync(
+  fileURLToPath(new URL('../../stryker.conf.json', import.meta.url)),
+  join(maintainer, 'stryker.conf.json')
+);
 write(join(maintainer, 'stryker.conf.fast.json'), '{"inPlace":true}\n');
 write(join(maintainer, 'src/committed.txt'), 'committed source\n');
 mkdirSync(join(maintainer, 'scripts/ci'), { recursive: true });
@@ -127,13 +130,33 @@ if (process.env.FAKE_MUTATION_MODE === 'hold') {
   while (!existsSync('fake-release') && Date.now() < deadline) await new Promise((done) => setTimeout(done, 20));
   if (!existsSync('fake-release')) process.exit(8);
 }
-if (args[1] === 'stryker.conf.fast.json' && !args.includes('--dryRunOnly')) {
+if (!args.includes('--dryRunOnly') && process.env.FAKE_MUTATION_MODE !== 'missing') {
   mkdirSync(join('reports', 'mutation'), { recursive: true });
   const mode = process.env.FAKE_MUTATION_MODE;
-  writeFileSync(join('reports', 'mutation', 'mutation.json'), mode === 'malformed'
-    ? '{bad'
-    : JSON.stringify({ files: { 'src/committed.txt': { mutants: mode === 'empty' ? [] : [{ status: 'Killed' }] } } }));
-  writeFileSync(join('reports', 'mutation', 'mutation.html'), '<html>fixture</html>');
+  const file = { mutants: [{ status: 'Killed' }] };
+  let report = { files: { 'src/committed.txt': file } };
+  if (mode === 'empty') file.mutants = [];
+  if (mode === 'pending') file.mutants[0].status = 'Pending';
+  if (mode === 'unknown') file.mutants[0].status = 'FutureStatus';
+  if (mode === 'missing-status') file.mutants[0] = {};
+  if (mode === 'bad-mutant') file.mutants.push(null);
+  if (mode === 'bad-file') report.files.bad = null;
+  if (mode === 'bad-array') report.files.bad = { mutants: {} };
+  if (mode === 'bad-files') report.files = [];
+  if (mode === 'terminal') file.mutants = ['Killed', 'Survived', 'NoCoverage', 'Timeout', 'Ignored', 'CompileError', 'RuntimeError'].map(status => ({ status }));
+  if (mode === 'unreadable') mkdirSync(join('reports', 'mutation', 'mutation.json'));
+  else writeFileSync(join('reports', 'mutation', 'mutation.json'), mode === 'malformed' ? '{bad' : JSON.stringify(report));
+  if (args[1] === 'stryker.conf.fast.json' && mode !== 'missing-html') {
+    writeFileSync(join('reports', 'mutation', 'mutation.html'), mode === 'empty-html' ? '' : '<html>fixture</html>');
+  }
+  if (mode === 'restoration') writeFileSync('src/committed.txt', 'unrestored mutation');
+  if (mode === 'fail-report') process.exit(7);
+  if (mode === 'signal-report') process.kill(process.pid, 'SIGTERM');
+  if (mode === 'cancel-report') {
+    process.on('SIGINT', () => process.exit(130));
+    writeFileSync('.git/xeg-mutation/run/fake-started', 'report ready');
+    setInterval(() => {}, 1000);
+  }
 }
 `;
 
@@ -369,7 +392,7 @@ test('full and fast profiles forward supported arguments and retain one analysis
   assert.deepEqual(JSON.parse(readFileSync(join(full, 'fake-argv.json'), 'utf8')), [
     'run',
     'stryker.conf.json',
-    '--reporters=progress',
+    '--reporters=progress,json',
     '--dryRunOnly',
     '-c',
     '2',
@@ -381,6 +404,11 @@ test('full and fast profiles forward supported arguments and retain one analysis
     'test/**/*.test.ts',
   ]);
   assert.equal(runRecord(full).status, 'dry-run-only');
+  assert.equal(runRecord(full).reportsComplete, null);
+  const fullConfig = JSON.parse(readFileSync(join(full, 'stryker.conf.json'), 'utf8')) as {
+    jsonReporter: { fileName: string };
+  };
+  assert.equal(fullConfig.jsonReporter.fileName, 'reports/mutation/mutation.json');
   assert.notEqual(invoke(full, ['run', 'fast']).status, 0);
 
   const fast = prepared();
@@ -399,6 +427,7 @@ test('unsafe output and path arguments refuse before a run claim or fake child',
   for (const args of [
     ['--tempDirName', '../../maintainer'],
     ['--reporters', 'html'],
+    ['--jsonReporter.fileName', 'reports/other.json'],
     ['--mutate', '../maintainer/src/*.ts'],
     ['--mutate', join(maintainer, 'src/committed.txt')],
     ['--mutate', 'src/{private,public}.ts'],
@@ -413,16 +442,129 @@ test('unsafe output and path arguments refuse before a run claim or fake child',
   maintainerUnchanged();
 });
 
-test('child failure and malformed or empty reports never create successful receipts', () => {
-  for (const mode of ['fail', 'malformed', 'empty']) {
+test('both profiles reject missing, malformed, partial and nonterminal report evidence', () => {
+  for (const profile of ['full', 'fast']) {
+    for (const mode of [
+      'missing',
+      'unreadable',
+      'malformed',
+      'empty',
+      'pending',
+      'unknown',
+      'missing-status',
+      'bad-mutant',
+      'bad-file',
+      'bad-array',
+      'bad-files',
+      ...(profile === 'fast' ? ['missing-html', 'empty-html'] : []),
+    ]) {
+      const execution = prepared();
+      const result = invoke(execution, ['run', profile], { FAKE_MUTATION_MODE: mode });
+      assert.equal(result.status, 1, `${profile}/${mode}: ${result.stdout}${result.stderr}`);
+      const receipt = runRecord(execution);
+      assert.equal(receipt.status, 'reports-incomplete', `${profile}/${mode}`);
+      assert.equal(receipt.exitCode, 1);
+      assert.equal(receipt.reportsComplete, false);
+      assert.equal(receipt.restored, true);
+      assert.match(String(receipt.reportError), /.+/);
+      assert.match(result.stderr, /Mutation report validation failed/);
+      assert.equal(existsSync(join(execution, '.git/xeg-mutation/run/start.json')), true);
+      assert.equal(existsSync(join(execution, '.git/xeg-mutation/run/child.log')), true);
+      if (mode !== 'missing') {
+        assert.equal(existsSync(join(execution, 'reports/mutation/mutation.json')), true);
+      }
+      maintainerUnchanged();
+    }
+  }
+});
+
+test('both profiles accept supported terminal statuses without replacing Stryker scoring', () => {
+  for (const profile of ['full', 'fast']) {
     const execution = prepared();
-    const result = invoke(execution, ['run', 'fast'], { FAKE_MUTATION_MODE: mode });
-    assert.notEqual(result.status, 0, mode);
+    const result = invoke(execution, ['run', profile], { FAKE_MUTATION_MODE: 'terminal' });
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(runRecord(execution).status, 'completed');
+    assert.equal(runRecord(execution).reportsComplete, true);
+    assert.equal(runRecord(execution).reportError, '');
+    assert.deepEqual(
+      JSON.parse(readFileSync(join(execution, 'fake-argv.json'), 'utf8')),
+      profile === 'full'
+        ? ['run', 'stryker.conf.json', '--reporters=progress,json']
+        : ['run', 'stryker.conf.fast.json']
+    );
+    assert.equal(existsSync(join(execution, 'reports/mutation/mutation.html')), profile === 'fast');
+    maintainerUnchanged();
+  }
+});
+
+test('reports cannot repair child failure, signals or unverified source restoration', () => {
+  for (const profile of ['full', 'fast']) {
+    for (const [mode, status, code] of [
+      ['fail', 'child-failed', 7],
+      ['fail-report', 'child-failed', 7],
+      ['signal-report', 'interrupted', 1],
+      ['restoration', 'restoration-unverified', 1],
+    ] as const) {
+      const execution = prepared();
+      const result = invoke(execution, ['run', profile], { FAKE_MUTATION_MODE: mode });
+      assert.equal(result.status, code, `${profile}/${mode}: ${result.stderr}`);
+      const receipt = runRecord(execution);
+      assert.equal(receipt.status, status);
+      assert.equal(receipt.reportError, '');
+      assert.equal(existsSync(join(execution, '.git/xeg-mutation/run/child.log')), true);
+      if (mode !== 'fail') {
+        assert.equal(existsSync(join(execution, 'reports/mutation/mutation.json')), true);
+      }
+      maintainerUnchanged();
+    }
+  }
+});
+
+test('full missing report refuses completion after a zero child exit', () => {
+  const execution = prepared();
+  const result = invoke(execution, ['run', 'full'], { FAKE_MUTATION_MODE: 'missing' });
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+  const receipt = runRecord(execution);
+  assert.equal(receipt.status, 'reports-incomplete');
+  assert.equal(receipt.reportsComplete, false);
+  assert.equal(receipt.restored, true);
+  assert.equal(existsSync(join(execution, '.git/xeg-mutation/run/start.json')), true);
+  assert.equal(existsSync(join(execution, '.git/xeg-mutation/run/child.log')), true);
+  maintainerUnchanged();
+});
+
+test('launcher cancellation preserves reports without promoting them to completion', async () => {
+  for (const profile of ['full', 'fast']) {
+    const execution = prepared();
+    const child = spawn(
+      process.execPath,
+      ['--experimental-strip-types', 'scripts/ci/mutation-workspace.ts', 'run', profile],
+      {
+        cwd: execution,
+        env: { ...process.env, FAKE_MUTATION_MODE: 'cancel-report' },
+        stdio: 'ignore',
+      }
+    );
+    const completion = new Promise<number | null>((done) => child.once('close', done));
+    try {
+      const deadline = Date.now() + 5000;
+      while (
+        !existsSync(join(execution, '.git/xeg-mutation/run/fake-started')) &&
+        Date.now() < deadline
+      ) {
+        await new Promise((done) => setTimeout(done, 20));
+      }
+      assert.equal(existsSync(join(execution, '.git/xeg-mutation/run/fake-started')), true);
+    } finally {
+      child.kill('SIGINT');
+      assert.equal(await completion, 130);
+    }
     const receipt = runRecord(execution);
-    assert.notEqual(receipt.status, 'completed', mode);
-    assert.equal(receipt.exitCode, mode === 'fail' ? 7 : 1);
-    assert.equal(existsSync(join(execution, '.git/xeg-mutation/run/start.json')), true);
-    assert.equal(existsSync(join(execution, '.git/xeg-mutation/run/child.log')), true);
+    assert.equal(receipt.status, 'interrupted');
+    assert.equal(receipt.interrupted, 'SIGINT');
+    assert.equal(receipt.restored, true);
+    assert.equal(receipt.reportError, '');
+    assert.equal(existsSync(join(execution, 'reports/mutation/mutation.json')), true);
     maintainerUnchanged();
   }
 });
