@@ -46,6 +46,7 @@ import {
   observeLiveUrls,
   readStoredLanguage,
   readStoredVideoSettings,
+  restoreStoredVideoSettings,
   validateLiveObservation,
   validateLiveUrls,
 } from './live-page.ts';
@@ -4730,7 +4731,16 @@ async function assertQuotedSelection(
   return state;
 }
 
-async function assertQuotedOriginLink(
+type QuotedOriginLinkState = {
+  href: string | null;
+  currentIndex: string | null;
+  focusedIndex: string | null;
+  position: string | null;
+  total: string | null;
+  counterFocusedIndex: string | null;
+};
+
+export async function assertQuotedOriginLink(
   gallery: Locator,
   expectedUrl: string,
   allowMediaPath = false
@@ -4739,14 +4749,62 @@ async function assertQuotedOriginLink(
   assert.equal(await button.count(), 1, 'Selected media must expose originating post metadata');
   await button.click();
   const link = gallery.locator('#toolbar-tweet-panel a[href^="https://x.com/"]');
-  await link.waitFor({ state: 'visible' });
-  const observed = await link.getAttribute('href');
-  assert(
-    observed === expectedUrl || (allowMediaPath && observed === `${expectedUrl}/video/2`),
-    'Toolbar source link must identify the selected post'
-  );
-  await button.click();
-  return observed;
+  let latest: QuotedOriginLinkState | null = null;
+  let observed: QuotedOriginLinkState | null = null;
+  let failure: unknown;
+  try {
+    await link.waitFor({ state: 'visible' });
+    observed = await waitForValue(async () => {
+      latest = await gallery.evaluate((element) => {
+        const toolbar = element.querySelector('[data-gallery-element="toolbar"]');
+        const counter = toolbar?.querySelector('#xeg-toolbar-counter');
+        return {
+          href:
+            element
+              .querySelector('#toolbar-tweet-panel a[href^="https://x.com/"]')
+              ?.getAttribute('href') ?? null,
+          currentIndex: toolbar?.getAttribute('data-current-index') ?? null,
+          focusedIndex: toolbar?.getAttribute('data-focused-index') ?? null,
+          position: counter?.getAttribute('data-position') ?? null,
+          total: counter?.getAttribute('data-total') ?? null,
+          counterFocusedIndex: counter?.getAttribute('data-focused-index') ?? null,
+        };
+      });
+      return latest.href === expectedUrl ||
+        (allowMediaPath && latest.href === `${expectedUrl}/video/2`)
+        ? latest
+        : undefined;
+    }, 'selected post source link');
+    assert(
+      observed.href === expectedUrl ||
+        (allowMediaPath && observed.href === `${expectedUrl}/video/2`),
+      'Toolbar source link must identify the selected post'
+    );
+  } catch (error) {
+    failure =
+      error instanceof Error && error.message.startsWith('Timed out waiting for ')
+        ? new Error(
+            `Toolbar source link must identify the selected post: ${JSON.stringify({ expectedUrl, allowMediaPath, observed: latest })}`,
+            { cause: error }
+          )
+        : error;
+  }
+  try {
+    await button.click();
+  } catch (error) {
+    if (failure) {
+      throw new AggregateError(
+        [failure, error],
+        'Toolbar source link assertion and panel cleanup failed'
+      );
+    }
+    throw error;
+  }
+  if (failure) {
+    throw failure;
+  }
+  assert(observed);
+  return observed.href;
 }
 
 async function navigateQuotedAwayAndBack(
@@ -5136,27 +5194,7 @@ async function withControlledFixtureVideoMode<T extends object>(
     try {
       if (mutated) {
         assert(prior, 'Controlled fixture settings snapshot is missing');
-        await extensionPage.evaluate(
-          async ({ storageKey, previous }) => {
-            if (previous.exists) {
-              await chrome.storage.local.set({ [storageKey]: previous.value });
-            } else {
-              await chrome.storage.local.remove(storageKey);
-            }
-          },
-          { storageKey: key, previous: prior }
-        );
-        restored = await extensionPage.evaluate(
-          async ({ storageKey, previous }) => {
-            const values = await chrome.storage.local.get(storageKey);
-            return (
-              Object.hasOwn(values, storageKey) === previous.exists &&
-              (!previous.exists ||
-                JSON.stringify(values[storageKey]) === JSON.stringify(previous.value))
-            );
-          },
-          { storageKey: key, previous: prior }
-        );
+        restored = await restoreStoredVideoSettings(extensionPage, prior);
       } else {
         restored = true;
       }
@@ -5195,7 +5233,6 @@ async function runVideoClickSettingsCycle({
   output: string;
   page: Page;
 }) {
-  const key = 'xeg-app-settings';
   const prior = await readStoredVideoSettings(extensionPage);
   const initialMode = storedVideoClickMode(prior.settings) ?? 'block-controls-only';
   const settingsButton = gallery.locator('[data-gallery-element="toolbar"] #settings-button');
@@ -5278,27 +5315,7 @@ async function runVideoClickSettingsCycle({
     validationError = error;
   } finally {
     try {
-      await extensionPage.evaluate(
-        async ({ storageKey, previous }) => {
-          if (previous.exists) {
-            await chrome.storage.local.set({ [storageKey]: previous.value });
-          } else {
-            await chrome.storage.local.remove(storageKey);
-          }
-        },
-        { storageKey: key, previous: prior }
-      );
-      const restored = await extensionPage.evaluate(
-        async ({ storageKey, previous }) => {
-          const values = await chrome.storage.local.get(storageKey);
-          return (
-            Object.hasOwn(values, storageKey) === previous.exists &&
-            (!previous.exists ||
-              JSON.stringify(values[storageKey]) === JSON.stringify(previous.value))
-          );
-        },
-        { storageKey: key, previous: prior }
-      );
+      const restored = await restoreStoredVideoSettings(extensionPage, prior);
       assert.equal(restored, true, 'Settings UI cycle must restore the full prior setting');
       if (receipt) {
         receipt.fullSettingRestored = true;
@@ -6557,20 +6574,7 @@ async function runDelayedVideoFailures({
       if (shortcutIssued) {
         try {
           assert(priorSetting, 'Recovery shortcut prior setting is missing');
-          await extensionPage.evaluate(async ({ exists, value }) => {
-            if (exists) {
-              await chrome.storage.local.set({ 'xeg-app-settings': value });
-            } else {
-              await chrome.storage.local.remove('xeg-app-settings');
-            }
-          }, priorSetting);
-          const restored = await extensionPage.evaluate(async ({ exists, value }) => {
-            const values = await chrome.storage.local.get('xeg-app-settings');
-            return (
-              Object.hasOwn(values, 'xeg-app-settings') === exists &&
-              (!exists || JSON.stringify(values['xeg-app-settings']) === JSON.stringify(value))
-            );
-          }, priorSetting);
+          const restored = await restoreStoredVideoSettings(extensionPage, priorSetting);
           assert.equal(restored, true, 'Recovery shortcut must restore full prior task setting');
           if (observation) {
             observation.settingRestored = true;

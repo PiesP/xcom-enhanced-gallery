@@ -20,6 +20,7 @@ import {
   readExactDownloadFile,
   verifyStoredZip,
 } from './download-memory.ts';
+import { restoreStoredVideoSettings } from './live-page.ts';
 
 type NativeLoopback = Awaited<ReturnType<typeof startExtensionNativeFixtureLoopback>>;
 type ItemState = NonNullable<Awaited<ReturnType<typeof itemState>>>;
@@ -1041,26 +1042,7 @@ export async function runVideoLoadingProfile({
     if (settingsChanged) {
       try {
         assert(settingsBefore);
-        await extensionPage.evaluate(
-          async ({ key, previous }) => {
-            if (previous.exists) {
-              await chrome.storage.local.set({ [key]: previous.value });
-            } else {
-              await chrome.storage.local.remove(key);
-            }
-          },
-          { key: SETTINGS_KEY, previous: settingsBefore }
-        );
-        const restored = await extensionPage.evaluate(
-          async ({ key, previous }) => {
-            const values = await chrome.storage.local.get(key);
-            return (
-              Object.hasOwn(values, key) === previous.exists &&
-              (!previous.exists || JSON.stringify(values[key]) === JSON.stringify(previous.value))
-            );
-          },
-          { key: SETTINGS_KEY, previous: settingsBefore }
-        );
+        const restored = await restoreStoredVideoSettings(extensionPage, settingsBefore);
         assert(restored, 'Task-owned gallery settings were not restored');
         observation.cleanup.settingsRestored = true;
       } catch (error) {

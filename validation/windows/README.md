@@ -37,7 +37,7 @@ for another, and none is a required CI lane.
 
 The six native regression files under `validation/windows/` run with
 `pnpm test:e2e:native` after the project dependencies and Playwright Chromium
-are installed. This command executes 14 Node test cases, including Chromium
+are installed. This command executes Node test cases, including Chromium
 tests, and is included in `test:e2e:all`, CI E2E, and `verify:full`. It checks
 fixture and cleanup contracts; the installed Windows tiers below still require
 their separate prepared-VM evidence.
@@ -60,6 +60,25 @@ Check scenario completion, collection, guest cleanup and host desktop teardown
 separately. An outer wrapper failure does not establish a product failure or
 prove cleanup; preserve an unknown termination cause and its required next
 observation rather than relabeling it as expected.
+
+[#332](https://github.com/PiesP/xcom-enhanced-gallery/issues/332) has four
+separate installed-extension and installed-userscript attempts, including the
+final attempts. An additive local reconciliation records their identities,
+hashes and selected visual review. Authorized reviewers can request this
+#332 evidence through the PiesP custodian route above; its placement in the
+private index remains to be confirmed. The final extension and userscript
+bundle manifests have SHA-256 digests
+`56a9f0ed538b6628971c584d0d35799ff6b2c40a0accd06c5512ae2f8cbf13dd`
+and `f60d09cb4edf3572b79e2c1a1253bce8b74fff532028e9a5e4d2064967afefce`.
+The final attempts tested candidate `6940d537821642e97a4d87744e96bf8e2e740785`
+and core `77d30da018089be7e2a5e3b2197a200890547aee`; the candidate and
+landed `ff6496104b45def12bba5f604cba1add07155f01` have the same source
+tree `6939f37cb9fbfe018b7f7d3225f75cbdd0c46450`. Earlier attempts retain their
+individual source attribution in the additive reconciliation. Original visual review
+fields remain pending; additive review covers selected screenshots only. The
+restoration consolidation in [#335](https://github.com/PiesP/xcom-enhanced-gallery/issues/335)
+requires its own installed-extension acceptance because those older attempts
+ran different source bytes.
 
 ## Artifact-only smoke
 
