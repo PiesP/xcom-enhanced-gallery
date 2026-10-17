@@ -18,20 +18,20 @@ for its own pull request check.
 
 ## Pinned security tools
 
-`pinned-tools.json` records the OSV scanner image version and digest, and
-Semgrep version and image digest. The dependency-free `check-pinned-tools.ts`
-reads that file, checks the newest stable GitHub releases older than 24 hours,
-and compares the OSV tag's GHCR manifest digest. Version drift is a warning;
-missing/malformed metadata, API failure, or digest drift fails.
-`pinned-tools.ts env` appends validated OSV and Semgrep image references to
-`GITHUB_ENV`; it accepts no arbitrary metadata path. Both CLIs are inert
-when imported.
+`pinned-tools.json` records the OSV scanner and Semgrep image versions and digests.
+The reviewed `browser-core/automation/actions/prepare-scanner-pins` Action
+copies its dependency-free CLI into private runner storage. The security
+workflow separately copies this repository's reviewed JSON to a private file
+and passes its absolute path to both `env` and `check`. `env` writes validated
+image references to `GITHUB_ENV`; `check` checks stable GitHub releases older
+than 24 hours and the OSV tag's GHCR manifest digest. Version drift warns;
+invalid metadata, API failure, or digest drift fails.
 
-The security workflow resolves both scanner images in a separate job from the
-reviewed `d5fdf58387e43dec380331a1ab6577c0a2cb8f6a` revision, then passes
-the validated values to the OSV and Semgrep jobs. Its scheduled freshness job
-uses the same revision. Each job sets up Node before running a private copy of
-the dependency-free helpers. PR candidate code cannot replace these pinned
-tools for its own privileged check. Update the immutable revision only after
-the replacement helper closure lands and passes review. Run the focused CLI fixture test with
-`pnpm test test/unit/config/pinned-tools-cli.test.ts`.
+The workflow pins provider code and consumer data independently by full SHA.
+Both paths run after the selected Node setup, and no scanner code or pin data
+comes from a candidate PR checkout. The provider snapshots in
+`test/fixtures/scanner-provider/` are test-only copies from the reviewed Action
+revision. `test/unit/config/pinned-tools-cli.test.ts` checks their byte hashes
+and tests the Action closure with this repository's metadata. Its workflow
+contract test verifies the trusted checkout and caller paths. Keep the JSON
+revision fixed until a replacement lands and passes review.

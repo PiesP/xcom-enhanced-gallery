@@ -109,7 +109,7 @@ export function classifyChanges(
     ) {
       known = true;
       select('quality', 'unit', 'e2e', 'build', 'codeql_javascript');
-    } else if (['scripts/ci/pinned-tools.ts', 'scripts/ci/pinned-tools.json'].includes(path)) {
+    } else if (path === 'scripts/ci/pinned-tools.json') {
       known = true;
       select('quality', 'osv', 'semgrep');
     } else if (path === 'README.md') {
