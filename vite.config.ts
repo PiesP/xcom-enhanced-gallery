@@ -11,7 +11,8 @@
 
 // External dependencies
 import { resolve } from 'node:path';
-import { defineConfig, mergeConfig, type UserConfig } from 'vite';
+import { builtinModules } from 'node:module';
+import { defineConfig, mergeConfig, type UserConfig } from 'vite-plus';
 import { buildSummaryPlugin } from './tooling/vite/plugins/build-summary.ts';
 import { cssInlinePlugin } from './tooling/vite/plugins/css-inline.ts';
 import { metaOnlyPlugin } from './tooling/vite/plugins/meta-only.ts';
@@ -87,6 +88,119 @@ export default defineConfig(({ mode }): UserConfig => {
       })
     ),
     {
+      fmt: {
+        useTabs: false,
+        tabWidth: 2,
+        printWidth: 100,
+        singleQuote: true,
+        jsxSingleQuote: false,
+        quoteProps: 'as-needed',
+        trailingComma: 'es5',
+        semi: true,
+        arrowParens: 'always',
+        ignorePatterns: [
+          'packages/core/**',
+          'pnpm-lock.yaml',
+          'test/fixtures/authenticated-x-layouts/*.html',
+          '**/*.md',
+          '**/*.yaml',
+          '**/*.yml',
+        ],
+      },
+      lint: {
+        plugins: ['vitest', 'import', 'typescript', 'unicorn'],
+        rules: {
+          'typescript/no-explicit-any': 'error',
+          'typescript/no-non-null-assertion': 'off',
+          'vitest/no-focused-tests': 'error',
+          'vitest/require-mock-type-parameters': 'off',
+          'vitest/valid-expect': 'off',
+          'vitest/no-conditional-expect': 'off',
+          'vitest/require-to-throw-message': 'off',
+          'vitest/expect-expect': 'off',
+          'typescript/no-floating-promises': 'off',
+          'typescript/unbound-method': 'off',
+          'typescript/no-base-to-string': 'off',
+          'typescript/no-redundant-type-constituents': 'off',
+          'typescript/require-array-sort-compare': 'off',
+          'typescript/no-duplicate-type-constituents': 'off',
+          'typescript/no-implied-eval': 'off',
+          'typescript/restrict-template-expressions': 'off',
+          'unicorn/no-useless-fallback-in-spread': 'off',
+          'unicorn/no-useless-spread': 'off',
+          'unicorn/prefer-string-starts-ends-with': 'off',
+          'unicorn/no-thenable': 'off',
+          'unicorn/no-document-cookie': 'error',
+          'no-unused-expressions': ['error', { allowShortCircuit: true }],
+          'no-unused-vars': [
+            'error',
+            {
+              varsIgnorePattern: '^(?:_|browser$)',
+              argsIgnorePattern: '^_',
+              caughtErrorsIgnorePattern: '^_',
+            },
+          ],
+          'no-param-reassign': 'error',
+          'no-self-compare': 'error',
+          'no-control-regex': 'error',
+          curly: 'error',
+          'prefer-const': 'error',
+          'prefer-exponentiation-operator': 'error',
+          'array-callback-return': 'error',
+          'no-unneeded-ternary': 'error',
+          'no-lone-blocks': 'error',
+          'typescript/no-useless-empty-export': 'error',
+        },
+        overrides: [
+          {
+            files: ['src/**/*.{ts,tsx}'],
+            rules: {
+              'typescript/no-non-null-assertion': 'error',
+              'no-restricted-imports': [
+                'error',
+                {
+                  patterns: [
+                    {
+                      group: ['node:*'],
+                      message:
+                        'Browser product code must use browser APIs or the platform adapter.',
+                    },
+                  ],
+                  paths: builtinModules
+                    .filter((name) => !name.startsWith('_') && !name.startsWith('node:'))
+                    .map((name) => ({
+                      name,
+                      message:
+                        'Browser product code must use browser APIs or the platform adapter.',
+                    })),
+                },
+              ],
+            },
+          },
+          {
+            files: ['test/**/*.{ts,tsx,mjs}', 'validation/windows/**/*.mjs'],
+            rules: { 'unicorn/no-document-cookie': 'off' },
+          },
+          {
+            files: ['validation/windows/**/*.mjs'],
+            rules: {
+              // Receipt cleanup and bounded polling deliberately use these forms.
+              'no-unsafe-finally': 'off',
+              'no-control-regex': 'off',
+              'no-constant-condition': 'off',
+            },
+          },
+        ],
+        ignorePatterns: [
+          'packages/core/**',
+          'dist/**',
+          'dist-extension/**',
+          'dist-extension-firefox/**',
+          'coverage/**',
+          'test/fixtures/authenticated-x-layouts/*.html',
+        ],
+        options: { typeAware: true, typeCheck: false, maxWarnings: 0 },
+      },
       resolve: {
         alias: [],
       },

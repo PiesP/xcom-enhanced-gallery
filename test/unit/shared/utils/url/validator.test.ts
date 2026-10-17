@@ -2,7 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { isValidMediaUrl } from '@shared/utils/url/validator';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 describe('url/validator', () => {
   // ── isValidMediaUrl ───────────────────────────────────────────────

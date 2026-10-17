@@ -273,6 +273,7 @@ export function cleanup(): Promise<void> {
     return lifecycleState.cleanupPromise;
   }
 
+  // oxlint-disable-next-line prefer-const -- The callbacks capture the promise assigned below.
   let cleanupRun: Promise<void>;
   cleanupRun = performCleanup().then(
     () => {

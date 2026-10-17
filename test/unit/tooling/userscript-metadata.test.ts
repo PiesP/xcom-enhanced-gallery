@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { Script } from 'node:vm';
 import { TWITTER_API_CONFIG } from '@shared/core/twitter-api/endpoint';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { buildSummaryPlugin } from '../../../tooling/vite/plugins/build-summary.ts';
 import {
   DISTRIBUTION_NOTICE_PATHS,

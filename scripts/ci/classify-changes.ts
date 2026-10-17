@@ -39,7 +39,7 @@ export function classifyChanges(
     if (!(path.startsWith('assets/icons/') && path.endsWith('.png'))) {
       select('semgrep');
     }
-    // Match the root Biome default-inclusion policy, including executable
+    // Match the maintained formatter/linter file families, including executable
     // dot-directory helpers and newly added configs. Captured host fragments,
     // generated lock/baseline data and provider source retain their owners.
     if (
@@ -116,7 +116,7 @@ export function classifyChanges(
     } else if (['scripts/ci/pinned-tools.ts', 'scripts/ci/pinned-tools.json'].includes(path)) {
       known = true;
       select('quality', 'osv', 'semgrep');
-    } else if (['stryker.conf.json', 'stryker.conf.fast.json', 'README.md'].includes(path)) {
+    } else if (path === 'README.md') {
       known = true;
       select('unit');
     }
@@ -128,9 +128,7 @@ export function classifyChanges(
       known = true;
       select('unit');
       selectSecurityAll();
-    } else if (
-      ['.github/workflows/deep-checks.yaml', '.github/workflows/release.yaml'].includes(path)
-    ) {
+    } else if (path === '.github/workflows/release.yaml') {
       known = true;
       select('unit');
     } else if (path.startsWith('.github/actions/')) {

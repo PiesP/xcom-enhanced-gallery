@@ -4,7 +4,7 @@
 import type { MediaInfo } from '@shared/types/media.types';
 import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 const observers = new Map<string, (entry: IntersectionObserverEntry) => void>();
 const observerOptions = new Map<string, IntersectionObserverInit>();

@@ -5,7 +5,7 @@ import { ToolbarView } from '@shared/components/ui/Toolbar/ToolbarView';
 import type { ImageFitMode } from '@shared/types/settings.types';
 import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 vi.mock('@shared/hooks/use-translation', () => ({
   useTranslation: () => (key: string, params?: Record<string, string | number>) => {

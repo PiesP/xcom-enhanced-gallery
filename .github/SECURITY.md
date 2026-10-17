@@ -42,10 +42,11 @@ See [PRIVACY.md](../PRIVACY.md) for data, storage, and network details.
 
 ## Development security
 
-CI combines strict TypeScript, Biome, dependency and circular-import checks,
-unit coverage, userscript and extension Playwright tests, production builds,
-mutation testing, CodeQL, OSV Scanner, and Semgrep. The
-workflow files and package scripts are authoritative for the exact checks.
+CI combines strict TypeScript, Vite+ formatting and linting, scoped Biome residual
+lint, dependency and circular-import checks, unit coverage, userscript and Chrome
+extension Playwright tests, Firefox extension runtime tests, production builds,
+CodeQL, OSV Scanner, and Semgrep. The workflow files and package scripts are
+authoritative for the exact checks.
 
 Dependencies retain the repository's cooling window, trust policy, approved
 build-script list, and registry-source restrictions. Do not weaken those

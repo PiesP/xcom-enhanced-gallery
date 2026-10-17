@@ -1,59 +1,59 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Installed X.com Enhanced Gallery fixture</title>
     <style>
-    body {
-      margin: 0;
-      padding: 20px;
-      background: #000;
-      color: #e7e9ea;
-      font-family: "Segoe UI", sans-serif;
-    }
-    #host-layout-spacer {
-      height: 1200px;
-    }
-    .tweet-container {
-      max-width: 500px;
-      margin: 0 auto;
-    }
-    .tweet-photo {
-      margin: 4px 0;
-    }
-    [data-fixture-route="public"] [data-route="classic"],
-    [data-fixture-route="classic"] [data-route="public"] {
-      display: none;
-    }
-    [data-fixture-phase="normal"] [data-phase]:not([data-phase="normal"]),
-    [data-fixture-phase="failure"] [data-phase]:not([data-phase="failure"]),
-    [data-fixture-phase="partial"] [data-phase]:not([data-phase="partial"]),
-    [data-fixture-phase="held"] [data-phase]:not([data-phase="held"]) {
-      display: none;
-    }
-    .public-avatar {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-    }
-    .public-media {
-      position: relative;
-      margin: 4px 0;
-    }
-    .public-media > a {
-      display: block;
-    }
-    .public-media > a[aria-label="View media"] {
-      position: absolute;
-      inset: 0;
-      z-index: 1;
-    }
-    img {
-      display: block;
-      max-width: 100%;
-      height: auto;
-    }
+      body {
+        margin: 0;
+        padding: 20px;
+        background: #000;
+        color: #e7e9ea;
+        font-family: 'Segoe UI', sans-serif;
+      }
+      #host-layout-spacer {
+        height: 1200px;
+      }
+      .tweet-container {
+        max-width: 500px;
+        margin: 0 auto;
+      }
+      .tweet-photo {
+        margin: 4px 0;
+      }
+      [data-fixture-route='public'] [data-route='classic'],
+      [data-fixture-route='classic'] [data-route='public'] {
+        display: none;
+      }
+      [data-fixture-phase='normal'] [data-phase]:not([data-phase='normal']),
+      [data-fixture-phase='failure'] [data-phase]:not([data-phase='failure']),
+      [data-fixture-phase='partial'] [data-phase]:not([data-phase='partial']),
+      [data-fixture-phase='held'] [data-phase]:not([data-phase='held']) {
+        display: none;
+      }
+      .public-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+      }
+      .public-media {
+        position: relative;
+        margin: 4px 0;
+      }
+      .public-media > a {
+        display: block;
+      }
+      .public-media > a[aria-label='View media'] {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+      }
+      img {
+        display: block;
+        max-width: 100%;
+        height: auto;
+      }
     </style>
   </head>
   <body data-fixture-route="classic">
@@ -74,7 +74,7 @@
               width="320"
               height="180"
               tabindex="0"
-            >
+            />
           </div>
           <div data-testid="tweetPhoto" class="tweet-photo">
             <img
@@ -83,7 +83,7 @@
               width="320"
               height="180"
               tabindex="0"
-            >
+            />
           </div>
           <div data-testid="tweetPhoto" class="tweet-photo">
             <img
@@ -92,7 +92,7 @@
               width="320"
               height="180"
               tabindex="0"
-            >
+            />
           </div>
         </article>
         <article data-route="classic" data-phase="failure" data-testid="tweet">
@@ -108,7 +108,7 @@
               width="320"
               height="180"
               tabindex="0"
-            >
+            />
           </div>
           <div data-testid="tweetPhoto" class="tweet-photo">
             <img
@@ -117,7 +117,7 @@
               width="320"
               height="180"
               tabindex="0"
-            >
+            />
           </div>
           <div data-testid="tweetPhoto" class="tweet-photo">
             <img
@@ -126,7 +126,7 @@
               width="320"
               height="180"
               tabindex="0"
-            >
+            />
           </div>
         </article>
         <article data-route="classic" data-phase="partial" data-testid="tweet">
@@ -142,7 +142,7 @@
               width="320"
               height="180"
               tabindex="0"
-            >
+            />
           </div>
           <div data-testid="tweetPhoto" class="tweet-photo">
             <img
@@ -151,7 +151,7 @@
               width="320"
               height="180"
               tabindex="0"
-            >
+            />
           </div>
           <div data-testid="tweetPhoto" class="tweet-photo">
             <img
@@ -160,7 +160,7 @@
               width="320"
               height="180"
               tabindex="0"
-            >
+            />
           </div>
         </article>
         <article data-route="classic" data-phase="held" data-testid="tweet">
@@ -176,7 +176,7 @@
               width="320"
               height="180"
               tabindex="0"
-            >
+            />
           </div>
           <div data-testid="tweetPhoto" class="tweet-photo">
             <img
@@ -185,7 +185,7 @@
               width="320"
               height="180"
               tabindex="0"
-            >
+            />
           </div>
           <div data-testid="tweetPhoto" class="tweet-photo">
             <img
@@ -194,7 +194,7 @@
               width="320"
               height="180"
               tabindex="0"
-            >
+            />
           </div>
         </article>
         <article data-route="public">
@@ -202,7 +202,7 @@
             class="public-avatar"
             src="https://pbs.twimg.com/profile_images/123456789/public-avatar.jpg"
             alt="Public User"
-          >
+          />
           <span>Public User</span>
           <span>@public_user</span>
           <a href="/public_user/status/9876543210987654321">
@@ -216,7 +216,7 @@
                 alt="Public mountain landscape"
                 width="320"
                 height="180"
-              >
+              />
             </a>
             <a
               href="/public_user/status/9876543210987654321/photo/1"
@@ -231,7 +231,7 @@
                 alt="Public ocean sunset"
                 width="320"
                 height="180"
-              >
+              />
             </a>
             <a
               href="/public_user/status/9876543210987654321/photo/2"

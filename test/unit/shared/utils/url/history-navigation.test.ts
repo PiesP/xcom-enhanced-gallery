@@ -2,7 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { installHistoryNavigationFallback } from '@shared/utils/url/history-navigation';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 describe('installHistoryNavigationFallback', () => {
   let uninstall: (() => void) | undefined;

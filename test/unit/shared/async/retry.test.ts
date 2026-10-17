@@ -2,7 +2,7 @@
 // Copyright (c) 2026 PiesP
 
 import { withRetry } from '@shared/async/retry';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 afterEach(() => {
   vi.useRealTimers();
@@ -46,7 +46,7 @@ describe('bounded guided retry', () => {
   });
 
   it('does not extend the elapsed budget when wall time moves backward', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
+    vi.useFakeTimers({ toNotFake: ['Temporal'] });
     let monotonicMs = 0;
     vi.spyOn(performance, 'now').mockImplementation(() => monotonicMs);
     vi.setSystemTime(1_000_000);

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 
 const { getTypedSettingOr, setTimer } = vi.hoisted(() => ({
   getTypedSettingOr: vi.fn(() => 0),

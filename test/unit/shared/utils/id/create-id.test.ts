@@ -2,7 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { createPrefixedId, generateUniqueId } from '@shared/utils/id';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 describe('generateUniqueId', () => {
   it('returns a non-empty string', () => {

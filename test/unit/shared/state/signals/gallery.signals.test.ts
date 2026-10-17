@@ -18,7 +18,7 @@ import {
   resolveDisplayedIndex,
 } from '@shared/state/signals/gallery-navigation';
 import type { MediaInfo } from '@shared/types/media.types';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 function media(id: string): MediaInfo {
   return { id, url: `https://example.com/${id}.jpg`, type: 'image' };

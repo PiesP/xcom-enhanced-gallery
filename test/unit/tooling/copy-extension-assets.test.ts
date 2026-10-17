@@ -12,7 +12,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import type { Plugin } from 'vite';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { copyExtensionAssetsPlugin } from '../../../tooling/vite/plugins/copy-extension-assets.ts';
 import { DISTRIBUTION_NOTICE_PATHS } from '../../../tooling/vite/utils/distribution-licenses.ts';
 

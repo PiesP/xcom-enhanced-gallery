@@ -13,7 +13,7 @@ import {
   resetLanguageServiceForTests,
 } from '@shared/services/language-service';
 import { createEffect, createSignal, type JSXElement } from 'solid-js';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 const languageState = vi.hoisted(() => ({ current: 'en' }));
 
@@ -196,7 +196,7 @@ describe('gallery host-state recovery', () => {
   });
 
   it('does not schedule an automatic reset from synthetic retries', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    vi.useFakeTimers({ toNotFake: ['Temporal'] });
     const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
     const outside = document.createElement('button');
     document.body.append(outside);
@@ -247,8 +247,8 @@ describe('gallery host-state recovery', () => {
       resolve(process.cwd(), 'src/shared/components/ui/ErrorBoundary/ErrorBoundary.module.css'),
       'utf8'
     );
-    expect(css).toMatch(/\.recoveryRoot\[data-theme="light"\]\s*{\s*color-scheme: light;/);
-    expect(css).toMatch(/\.recoveryRoot\[data-theme="dark"\]\s*{\s*color-scheme: dark;/);
+    expect(css).toMatch(/\.recoveryRoot\[data-theme=(['"])light\1\]\s*\{\s*color-scheme: light;/u);
+    expect(css).toMatch(/\.recoveryRoot\[data-theme=(['"])dark\1\]\s*\{\s*color-scheme: dark;/u);
     expect(css).toMatch(
       /\.recoveryAction\s*{[^}]*overflow-wrap: anywhere;[^}]*white-space: normal;/s
     );

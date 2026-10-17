@@ -2,7 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vite-plus/test';
 import { unanchoredVideoPreview } from '../../../../fixtures/unanchored-video-preview';
 
 describe('unanchored preview ownership', () => {

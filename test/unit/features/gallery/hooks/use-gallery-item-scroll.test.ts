@@ -3,7 +3,7 @@
 
 import { useGalleryItemScroll } from '@features/gallery/hooks/use-gallery-item-scroll';
 import { createRoot, createSignal } from 'solid-js';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 
 vi.mock('solid-js', async () => vi.importActual('solid-js/dist/solid.js'));
 

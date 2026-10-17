@@ -47,7 +47,7 @@
 
     /* Typography - font family and size scale (12-24px, rem-based) */
     --font-family-primary:
-      "TwitterChirp", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      'TwitterChirp', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --font-size-xs: 0.75rem;
     --font-size-sm: 0.875rem;
     --font-size-base: 0.9375rem;

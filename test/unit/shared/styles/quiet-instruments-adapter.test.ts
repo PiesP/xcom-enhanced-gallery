@@ -3,7 +3,7 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 const root = resolve(import.meta.dirname, '../../../..');
 const mainSource = readFileSync(resolve(root, 'src/main.ts'), 'utf8');
@@ -46,7 +46,7 @@ describe('Quiet Instruments design adapter', () => {
     expect(coreCss).toContain('.pp-design');
     expect(coreCss).not.toContain(':root');
     expect(coreCss).not.toMatch(/^\s*(?:html|body)(?=[\s,{.#:[>+~])/m);
-    expect(adapterCss).toContain('.xeg-theme-scope.pp-design[data-pp-product="xeg"]');
+    expect(adapterCss).toMatch(/\.xeg-theme-scope\.pp-design\[data-pp-product=(['"])xeg\1\]/u);
     expect(adapterCss).not.toContain(':root');
     expect(adapterCss).not.toMatch(/^\s*(?:html|body)(?=[\s,{.#:[>+~])/m);
   });

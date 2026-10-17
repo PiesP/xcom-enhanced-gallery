@@ -9,7 +9,7 @@
  */
 
 @layer xeg.tokens {
-  .xeg-theme-scope.pp-design[data-pp-product="xeg"] {
+  .xeg-theme-scope.pp-design[data-pp-product='xeg'] {
     /* Surfaces */
     --xeg-color-bg-primary: var(--pp-color-canvas);
     --xeg-color-bg-secondary: var(--pp-color-raised);

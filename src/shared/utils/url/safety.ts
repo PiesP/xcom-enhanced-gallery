@@ -7,9 +7,9 @@
 
 // S6: Extended to include zero-width characters (U+200B-U+200F, U+2060, U+FEFF)
 // that can be used for injection or visual spoofing attacks.
-// biome-ignore lint/suspicious/noControlCharactersInRegex: Strip control characters before URL safety checks.
+// oxlint-disable-next-line no-control-regex -- Deliberate URL sanitization range.
 const CONTROL_CHARS_REGEX = /[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2060\ufeff]/g;
-// biome-ignore lint/suspicious/noControlCharactersInRegex: Normalize control characters and whitespace before probing the scheme.
+// oxlint-disable-next-line no-control-regex -- Deliberate URL sanitization range.
 const SCHEME_WHITESPACE_REGEX = /[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2060\ufeff\s]+/g;
 const EXPLICIT_SCHEME_REGEX = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
 const MAX_DECODE_ITERATIONS = 3;

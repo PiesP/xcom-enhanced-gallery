@@ -3,7 +3,7 @@
 
 import type { TweetMediaEntry } from '@shared/services/media/types';
 import type { TweetInfo } from '@shared/types/media.types';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 const getTweetMedias = vi.hoisted(() => vi.fn());
 vi.mock('@shared/services/media/twitter-api-client', () => {

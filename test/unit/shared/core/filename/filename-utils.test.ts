@@ -2,7 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { generateMediaFilename, getIndexFromMediaId } from '@shared/core/filename/filename-utils';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 describe('filename-utils', () => {
   describe('getIndexFromMediaId', () => {

@@ -5,7 +5,7 @@ import { planBulkDownload } from '@shared/core/download/download-plan';
 import { generateMediaFilename } from '@shared/core/filename/filename-utils';
 import { LiveByteBudget } from '@shared/services/download/live-byte-budget';
 import type { MediaBlobProvider } from '@shared/services/download/types';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 
 describe('download-plan', () => {
   it('plans a single download item', () => {

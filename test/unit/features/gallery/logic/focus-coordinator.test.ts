@@ -3,7 +3,7 @@
 
 import { FocusCoordinator } from '@features/gallery/logic/focus-coordinator';
 import { SharedObserver } from '@shared/utils/performance/observer-pool';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 describe('FocusCoordinator for mixed-size media', () => {
   afterEach(() => {

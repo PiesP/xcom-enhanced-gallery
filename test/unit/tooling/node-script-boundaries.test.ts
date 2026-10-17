@@ -13,7 +13,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vite-plus/test';
 import { DISTRIBUTION_NOTICE_PATHS } from '../../../tooling/vite/utils/distribution-licenses.ts';
 
 const sourceRoot = resolve(import.meta.dirname, '../../..');
@@ -21,7 +21,6 @@ const roots: string[] = [];
 const scripts = [
   'scripts/build/clean.ts',
   'scripts/check/extension-build.ts',
-  'scripts/ci/mutation-workspace.ts',
   'scripts/release/package-extension.ts',
   'scripts/release/prepare.ts',
   'scripts/release/artifact-preflight.ts',

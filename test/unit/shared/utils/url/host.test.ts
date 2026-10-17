@@ -2,7 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { extractUsernameFromUrl, isHostMatching, tryParseUrl } from '@shared/utils/url/host';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 describe('url/host', () => {
   // ── tryParseUrl ───────────────────────────────────────────────────

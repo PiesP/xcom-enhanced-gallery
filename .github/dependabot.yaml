@@ -33,17 +33,9 @@ updates:
 
     # Group updates by category to reduce PR noise
     groups:
-      vitest:
+      vite-plus:
         patterns:
-          - "vitest"
-          - "@vitest/*"
-        update-types:
-          - "minor"
-          - "patch"
-
-      stryker:
-        patterns:
-          - "@stryker-mutator/*"
+          - "vite-plus"
         update-types:
           - "minor"
           - "patch"
@@ -56,10 +48,9 @@ updates:
           - "minor"
           - "patch"
 
-      # Build tooling (Vite + plugins)
+      # Build plugins; the Vite/Vitest/coverage toolchain follows vite-plus.
       build:
         patterns:
-          - "vite"
           - "vite-plugin-*"
         update-types:
           - "minor"
@@ -74,7 +65,7 @@ updates:
           - "minor"
           - "patch"
 
-      # Linting and formatting (Biome + Knip)
+      # Residual CSS/HTML/Solid lint and dead-code analysis.
       quality:
         patterns:
           - "@biomejs/*"
@@ -82,6 +73,29 @@ updates:
         update-types:
           - "minor"
           - "patch"
+
+    # Vite+ owns these component versions; keep its own update PR visible.
+    ignore:
+      - dependency-name: "vite"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+      - dependency-name: "vitest"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+      - dependency-name: "@vitest/*"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+      - dependency-name: "@voidzero-dev/vite-plus-core"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
 
   # GitHub Actions updates
   - package-ecosystem: "github-actions"

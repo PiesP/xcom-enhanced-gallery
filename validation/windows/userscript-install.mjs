@@ -613,7 +613,6 @@ export function requireManagerUiLabels(labels) {
         value.length > 0 &&
         value.length <= 80 &&
         value.trim() === value &&
-        // biome-ignore lint/suspicious/noControlCharactersInRegex: This validation path deliberately rejects control characters in external metadata.
         !/[\r\n\u0000-\u001f]/u.test(value),
       'Manager returned an invalid UI label'
     );
@@ -842,7 +841,6 @@ export async function configureManagerInfoLogging(page, managerId) {
         label.length > 0 &&
         label.length <= 120 &&
         label.trim() === label &&
-        // biome-ignore lint/suspicious/noControlCharactersInRegex: This validation path deliberately rejects control characters in external metadata.
         !/[\r\n\u0000-\u001f]/u.test(label),
       'Manager returned an invalid logging label'
     );
@@ -1714,7 +1712,6 @@ export async function observeNoNativeDownload(
       break;
     }
     await delay(Math.min(50, remaining));
-    // biome-ignore lint/correctness/noConstantCondition: The manager polling loop exits through its explicit deadline and terminal-state checks.
   } while (true);
   return {
     observedMs: Date.now() - started,
@@ -3118,14 +3115,12 @@ export async function runUserscriptInstallation({ chromium, root, output, browse
     }
     await writeFile(join(output, 'installation-result.json'), JSON.stringify(result, null, 2));
     if (primaryError && errors.length) {
-      // biome-ignore lint/correctness/noUnsafeFinally: Retain the primary failure together with cleanup failures in the acceptance receipt.
       throw new AggregateError(
         [primaryError, ...errors],
         'Userscript installation and cleanup failed'
       );
     }
     if (errors.length) {
-      // biome-ignore lint/correctness/noUnsafeFinally: Retain the primary failure together with cleanup failures in the acceptance receipt.
       throw new AggregateError(errors, 'Userscript installation cleanup failed');
     }
   }

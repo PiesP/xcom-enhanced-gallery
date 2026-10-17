@@ -6,7 +6,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 
 type LivePageModule = {
   inspectLiveTargetDocument(identity: { handle: string; statusId: string }):
@@ -1549,8 +1549,11 @@ describe('Windows X live page validation', () => {
     );
     const allMarkers: string[] = [];
     for (const [phase, markers] of Object.entries(userscriptInstall.MEDIA_COHORTS)) {
-      expect(html).toContain(
-        `[data-fixture-phase="${phase}"] [data-phase]:not([data-phase="${phase}"])`
+      expect(html).toMatch(
+        new RegExp(
+          String.raw`\[data-fixture-phase=(['"])${phase}\1\] \[data-phase\]:not\(\[data-phase=(['"])${phase}\2\]\)`,
+          'u'
+        )
       );
       const article = html.match(
         new RegExp(`<article data-route="classic" data-phase="${phase}"[\\s\\S]*?</article>`, 'u')

@@ -55,85 +55,28 @@ The table gives each command family, execution stage, side effects, and checks.
 | `pnpm check:versions`, `sync:versions` | `scripts/release/version.ts` checks or synchronizes package/extension versions. | `check` reads and fails on mismatch; `sync` writes manifests. `test/unit/tooling/release-runtime.test.ts` plus version check. |
 | `pnpm package:extension`, `package:all`, `release:prepare` | `scripts/release/package-extension.ts` archives built Chrome/Firefox extensions; `package:all` builds first. `scripts/release/prepare.ts` checks production artifact metadata, built extension versions and the changelog before preparing a release bundle. | `release:prepare` reads `RELEASE_VERSION`, optional `RELEASE_SHA`, package metadata and existing `dist*`; it replaces `release-bundle/`, creates ZIPs/checksums/source-runtime metadata, and requires external `zip`. The public asset allowlist is the production userscript, production metadata, two extension ZIPs, `checksums.txt` and `metadata.json`; retained development files are internal deploy/build outputs. Run `build:all:ci` first from eligible clean source. Version agreement does not prove that existing dist bytes came from the recorded commit. These commands do not publish a release. |
 | `pnpm check:src`, `check:tooling`, `check:test`, `check:scripts`, `check:e2e`, `check`, `typecheck` | Separate browser, build/config, Vitest, NodeNext/erasable script/direct Firefox, and Playwright TypeScript projects. `check` chains source/tooling/test/scripts; `check:e2e` checks Playwright separately. | Read-only; `tsconfig.e2e.json` excludes the direct Firefox test so it is checked in the Node project instead. `pnpm quality` includes every project boundary. |
-| `pnpm check:biome`, `fmt`, `fmt:check`, `lint`, `knip`, `knip:full`, `knip:production`, `circular` | Canonical Biome format/lint/assist inspection, convenient format-only/lint-only commands, dependency/entry analysis, and source graph checks. | Read-only; Knip uses real CLI/workflow/test/runtime entries and reports orphan helpers, and `ignoreBinaries` includes external OpenSSL. `fmt:fix`, `lint:fix`, `quality:fix` write formatting fixes and must be reviewed separately. |
-| `pnpm quality`, `verify`, `verify:full` | `quality` chains one read-only `biome ci` pass, all runtime type checks, the focused policy suite, circular, and Knip. `verify` adds production userscript/metadata and both extension targets; `verify:full` adds coverage, a retained development userscript build, and all E2E browser lanes. Its internal coverage command omits only the boundary suite already run by `quality`. | Build/test outputs and browser profiles are generated; `verify:full` leaves production and development userscripts together with production metadata. `verify` alone does not prove E2E. Read exact command outcomes and artifacts; no VM/publication inference. |
-| `pnpm test`, `test:watch`, `test:cov`, `test:ci` | Vitest suites and direct Node CI policy tests in `scripts/ci/{deep-check-reuse,repository-authority}.test.ts` and `scripts/release/verify-source.test.ts`. | Watch persists; coverage writes reports. `test:ci` also runs real compiler/import boundary probes; run that part alone with `pnpm test test/unit/tooling/node-ambient-types.test.ts`. This focused suite checks cache, repository authority, tagged source and runtime types; it is not the complete unit suite. |
+| `pnpm fmt`, `fmt:check`, `lint`, `knip`, `knip:full`, `knip:production`, `circular` | Vite+ Oxfmt and Oxlint with scoped Biome residual lint, dependency/entry analysis, and source graph checks. | Read-only; `lint` denies warnings in both lint owners. `fmt:fix`, `lint:fix`, `quality:fix` write fixes for review. Knip and dpdm retain separate responsibilities. |
+| `pnpm quality`, `verify`, `verify:full` | `quality` chains Vite+ formatting, Vite+ lint with scoped Biome residual rules, all runtime type checks, the focused policy suite, circular, and Knip. `verify` adds production userscript/metadata and both extension targets; `verify:full` adds coverage, a retained development userscript build, and all E2E browser lanes. Its internal coverage command omits only the boundary suite already run by `quality`. | Build/test outputs and browser profiles are generated; `verify:full` leaves production and development userscripts together with production metadata. `verify` alone does not prove E2E. Read exact command outcomes and artifacts; no VM/publication inference. |
+| `pnpm test`, `test:watch`, `test:cov`, `test:ci` | Vite+ Vitest suites and direct Node CI policy tests in `scripts/ci/repository-authority.test.ts` and `scripts/release/verify-source.test.ts`. | Watch persists; coverage writes reports. `test:ci` also runs real compiler/import boundary probes; run that part alone with `pnpm test test/unit/tooling/node-ambient-types.test.ts`. This focused suite checks repository authority, tagged source and runtime types; it is not the complete unit suite. |
 | `pnpm test:e2e`, `test:e2e:headed`, `test:e2e:extension`, `test:e2e:extension:firefox`, `test:e2e:all` | Playwright configs under `test/e2e/`; direct Firefox lane executes `test/e2e/firefox-extension-runtime.test.ts` with Node/Selenium. | Requires built artifacts, browser binaries and loopback fixtures; may create browser profiles/downloads. `test:e2e:all` chains the lanes; distinguish fixture browser evidence from authenticated Windows/live-site evidence. |
-| `pnpm mut:prepare`, `mut`, `mut:fast` | Prepare a disposable checkout, then run the full or fast Stryker profile through `scripts/ci/mutation-workspace.ts`. | Preparation records the selected commit, core, and installed dependencies. Each analysis writes only in that checkout, including `reports/mutation/`, Stryker temporary files, and `.git/xeg-mutation/` records and logs. Use one fresh checkout per analysis; see the preparation steps below and the deep-check workflow receipts. |
-
-### Mutation workspace
-
-### Mutation runs
-
-Mutation testing uses Stryker's `inPlace` mode. Even `dryRunOnly` can write source
-and temporary files during instrumentation. Run either profile in a separate,
-independent full clone on Linux or WSL; native Windows invocation is refused.
-Directly invoking the Stryker binary in a maintainer checkout bypasses this
-protection and is unsafe. A run record helps prevent accidental use of the wrong
-checkout; it is not an OS sandbox for hostile code.
-
-Select a committed revision explicitly. The example creates a new directory
-outside the source checkout; replace both absolute paths before running it.
-
-```bash
-MUTATION_SOURCE=/absolute/path/to/xcom-enhanced-gallery
-MUTATION_COMMIT=$(git -C "$MUTATION_SOURCE" rev-parse HEAD)
-MUTATION_CLONE=/absolute/path/outside/source/xeg-mutation-1
-git clone --no-local --no-hardlinks --no-checkout "$MUTATION_SOURCE" "$MUTATION_CLONE"
-git -C "$MUTATION_CLONE" -c advice.detachedHead=false checkout --detach "$MUTATION_COMMIT"
-git -C "$MUTATION_CLONE" submodule sync --recursive
-git -C "$MUTATION_CLONE" submodule update --init --recursive
-(
-  cd "$MUTATION_CLONE"
-  pnpm install --frozen-lockfile --package-import-method=copy
-  pnpm mut:prepare "$MUTATION_SOURCE" "$MUTATION_COMMIT"
-  pnpm mut:fast # or pnpm mut, using a new clone for the other profile
-)
-```
-
-Uncommitted source or core edits are not included in the selected commit and
-must not be described as tested. `pnpm mut` and `pnpm mut:fast` refuse an ordinary
-maintainer checkout before instrumentation. Do not build, probe, or run another
-agent in the disposable checkout during mutation. Deep and Release jobs use
-their own job checkout directly, bound to the selected commit; they keep the
-same canonical `pnpm mut:fast` report location and threshold.
-
-Local diagnostic arguments are `--dryRunOnly`, `--concurrency`/`-c` (1–32),
-`--logLevel`, `--mutate`/`-m`, and `--testFiles`/`-t`. Pass paths as relative
-comma-separated globs within the clone. Other configuration and output path
-overrides are refused; hosted gates accept no overrides. The full command selects
-progress and JSON reporters and writes `reports/mutation/mutation.json`; the fast
-command keeps its configured reporters and also requires a nonempty HTML report.
-Completion requires restored source and a nonempty JSON mutant inventory with
-supported terminal statuses, in addition to Stryker's successful exit and score
-policy. Missing or incomplete reports retain diagnostics and fail the launcher.
-`--dryRunOnly` records `dry-run-only`, without requiring complete mutation reports;
-it does not provide complete analysis or reusable mutation success evidence.
-
-If a run fails or is interrupted, inspect `.git/xeg-mutation/`, reports, Stryker
-backups, and the checkout's remaining processes before taking action. Preserve
-logs and backups while deciding whether restoration completed. Compare any
-modified content with its **before-run** state; `HEAD` cannot reconstruct dirty
-before-run edits. A forced shutdown can prevent cleanup or final status writes.
-Use a new disposable checkout for the next run, and discard the old one manually
-only after confirming its ownership, process state, and retained evidence. Do
-not reset or clean the maintainer checkout as a recovery step.
 
 ### Quality ownership
 
-`check:biome` runs `biome ci .`: one read-only pass for formatting, lint and
-assist/import checks. It neither writes fixes nor promotes trial warnings to
-errors. `fmt`/`lint` remain read-only conveniences; their `:fix` variants and
-`quality:fix` write reviewed safe fixes. No gate runs repository-wide unsafe fixes.
+`fmt` runs read-only `vp fmt --check` and `lint` runs `vp lint . --deny-warnings`
+followed by `biome lint --error-on-warnings .`. The latter is restricted to CSS,
+HTML/accessibility, accumulating-spread and Solid-component rules listed below;
+it does not format or run its former general JavaScript/TypeScript preset.
+`quality:fix` runs reviewed formatter/linter fixes. CI and ordinary prebuild
+invoke `quality` without task-result caching.
 
 | Check | Local owner | Hosted owner |
 | --- | --- | --- |
-| Canonical Biome, every runtime type project, dpdm and full/production Knip | `quality` (also ordinary prebuild and `verify`) | CI/release quality |
+| Vite+ format/lint, scoped Biome residual lint, every runtime type project, dpdm and full/production Knip | `quality` (also ordinary prebuild and `verify`) | CI/release quality |
 | Focused direct Node policy tests | `test:ci`; retained within `quality` | CI quality when selected, otherwise CI unit for an explicitly unit-only decision; release quality |
 | Runtime/import boundary probes | `test:ci`; retained within `quality` and `verify` | CI/release unit coverage when selected; CI quality when unit is explicitly unselected |
 | Complete unit suite and unchanged coverage thresholds | `test` / `test:cov`; `verify:full` uses internal `test:cov:after-policy` after `quality` | CI/release unit |
 | Production distributions / browser fixtures | `build:all:ci` / browser lane commands | CI/release build and E2E |
-| Mutation thresholds and security scans | Separate commands/workflows | Existing deep/release and security owners |
+| Security scans | Separate workflows | Existing security owners |
 
 CI quality uses the internal `quality:coverage-owned` command when unit is
 selected or classification fails; this runs the direct Node policy tests and
@@ -170,7 +113,6 @@ change align; tests establish that preserved behavior still works.
 | Surface | Contract; stage and side effects | Verification / status |
 | --- | --- | --- |
 | `.github/workflows/ci.yaml`, `security.yaml` changed-path jobs | Node is set up without dependencies; `scripts/ci/classify-changes.ts` is selected from the trusted base for PR/merge-group or checked-out protected revision for push. It reads the Git event and NUL-safe Git diff, conservatively emits fixed `GITHUB_OUTPUT` gates. | `test/unit/tooling/workflow-change-classifier-git.test.ts`, `workflow-change-policy.test.ts`; verify exact-SHA hosted gates execute real work, not only no-change routes. |
-| `.github/workflows/deep-checks.yaml` | `scripts/ci/deep-check-reuse.ts` owns bounded mutation reuse. A fresh run installs project dependencies, admits its job-owned checkout with `scripts/ci/mutation-workspace.ts`, and uploads mutation reports before recording success. | `scripts/ci/deep-check-reuse.test.ts`; invalid markers or unavailable history run fresh. |
 | `.github/workflows/security.yaml` pinned tools and OSV | `scripts/ci/pinned-tools.json` owns tool versions and digests; trusted private copies of `pinned-tools.ts` and `check-pinned-tools.ts` supply image environment and freshness checks. The independently pinned browser-core `automation/actions/prepare-osv` supplies the private `consumer` OSV helper; `packages/core` remains the runtime gitlink. | `test/unit/config/pinned-tools-cli.test.ts`, `test/unit/config/osv-workflow-composition.test.ts`, and provider OSV fixtures; `docs/osv-workflow.md` records trust order and live-container limits. |
 | `.github/workflows/release.yaml` | `scripts/release/verify-source.ts` checks protected tagged source before fan-out; `prepare.ts` creates local release files and `verify-publication.ts` checks the public write decision in the locked publish job. Runner `run:` blocks still select checkout, append short outputs, and launch artifacts/actions. | `scripts/release/verify-source.test.ts`, `test/unit/tooling/{release-runtime,release-publication}.test.ts`, and exact-source artifact inspection. Preparation does not publish. |
 | `.github/dependabot.yaml`, `update-browser-core.yaml` | Dependabot opens npm and GitHub Actions update PRs for maintainer review; repository workflows do not approve or merge dependency updates. `scripts/ci/update-browser-core.ts` verifies remote SHA/impact and owns gitlink PR preparation/publication. Workflow shell supplies event inputs and bounded output/checkout glue. | `test/unit/config/dependency-review-policy.test.ts`, `test/unit/tooling/browser-core-automation.test.ts`, `scripts/ci/repository-authority.test.ts`; privileged results require exact-SHA hosted evidence. |
@@ -196,48 +138,30 @@ live-site, hosted-CI, or public-release evidence.
 
 ### Managed-file checks
 
-Biome uses default inclusion for maintained JavaScript (including `.mjs`),
-TypeScript/TSX, CSS, JSON and HTML. HTML formatting is explicitly enabled;
-embedded JavaScript is also checked. The root configuration keeps two-space
-indentation, a 100-column target, LF, single JavaScript quotes, semicolons,
-ES5 trailing commas and parenthesized arrow parameters. Its 1 MiB file limit
-is checked against every tracked supported file by the executable coverage suite.
-New files in these families select CI quality, including dot-directory helpers
-and new root configurations. Unknown changed paths still select every gate.
+Oxfmt owns maintained TS/TSX, JS/MJS, CSS, JSON and HTML formatting using
+two-space indentation, 100-column width, LF, single JavaScript quotes,
+semicolons, ES5 trailing commas and parenthesized arrow parameters. Oxlint
+owns supported JS/TS lint. Biome's `biome.json` has its
+formatter and assist disabled and its linter preset set to `none`; it retains
+only the residual rules below. `test/unit/tooling/toolchain-policy.test.ts`
+checks representative real-tool failures. The quality classifier includes
+these maintained file families and executable dot-directory helpers.
 
-| Maintained family | Formatting/lint owner | Types or other validation | Changed-path CI owner |
-| --- | --- | --- | --- |
-| `src` TS/TSX/CSS | Root Biome | `check:src`; behavior suites | Quality, unit, E2E, build; existing security gates |
-| Tests, fixtures and visual JS/TS/TSX/HTML | Root Biome | Test/Playwright/Node projects; unit and applicable browser suites | Quality plus existing unit/E2E selections |
-| `scripts`, `tooling`, root TS/JSON configs | Root Biome | Runtime-specific projects, command/config regression suites | Quality plus existing unit/build/browser/security selections |
-| Windows validation `.mjs` and profile JSON | Root Biome | `node --check` through the Node-boundary suite; Windows profile tests | Quality, unit, E2E; existing JavaScript security gate |
-| Executable `.github/actions` helpers | Root Biome | Runtime-resolution and workflow trust/order tests | Quality, unit; existing Actions security gate |
-| Extension manifests | Root Biome | Version and built-package checks | Quality, unit, E2E, build |
-| YAML/workflow embedded shell, Markdown, TOML, PowerShell and Git hooks | Not Biome languages in this gate | Existing configuration/command tests, Bash hook execution, GitHub workflow validation and Windows runner where applicable; no general prose/TOML/PowerShell linter is claimed | Existing workflow, documentation and conservative unknown-path routing |
+| Maintained family | Format and lint owner | Type or runtime validation |
+| --- | --- | --- |
+| `src` TS/TSX/CSS | Oxfmt; Oxlint for TS/TSX; Biome for residual CSS, accessibility and performance rules | `check:src`; unit and browser suites |
+| Tests, fixtures and visual JS/TS/TSX/HTML | Oxfmt; Oxlint for JS/TS/TSX; Biome for residual HTML/accessibility | Test, Playwright and Node projects |
+| `scripts`, `tooling`, root TS/JSON configs | Oxfmt; Oxlint for JS/TS | Node-specific TypeScript projects and command tests |
+| Windows validation `.mjs` and profile JSON, executable `.github/actions` helpers, extension manifests | Oxfmt; Oxlint for JS/MJS; Biome residual rules where applicable | `node --check`, Windows profile, version and built-package checks |
+| YAML/workflow shell, Markdown, TOML, PowerShell and Git hooks | Existing workflow/command checks; no general prose/TOML/PowerShell linter is claimed | Relevant CI and Windows runtime lanes |
 
-VCS ignores keep dependencies and generated outputs outside the managed scope.
-The reviewed `packages/core` provider gitlink and generated `pnpm-lock.yaml`
-are explicitly excluded. Captured host markup in
-`test/fixtures/authenticated-x-layouts/*.html` preserves its original bytes and
-structure; the routing suites consume these fragments unchanged. Other files in
-that directory are not excluded.
-
-Installed-page HTML fixtures deliberately reproduce X's native markup. Only
-their host-only `noNoninteractiveTabindex`, `useSemanticElements`,
-`useFocusableInteractive`, `noRedundantAlt` and `useAnchorContent` diagnostics
-are exempted; changing native markup would change the extraction scenarios.
-Product accessibility and the remaining fixture checks stay enforced. Local
-acceptance cleanup exceptions retain the primary error with cleanup errors;
-the hostile thenable and deadline-controlled polling fixtures state their reasons
-beside the exceptional statements.
-
-`test/unit/tooling/biome-coverage.test.ts` executes the installed tool with the
-root configuration. It checks valid and violating examples in every maintained
-family, embedded HTML JavaScript, excluded generated/captured inputs, VCS ignore
-behavior and the actual processed-file inventory. Classifier tests exercise both
-direct paths and real Git-event diffs, including additions, deletions, renames
-and invalid/missing history. Passing TypeScript alone is not formatting or lint
-coverage; syntax/fixture success is not Windows runtime acceptance.
+VCS ignores exclude dependencies and generated outputs. Both formatter and
+linters exclude the detached `packages/core` gitlink and exact-byte captured
+HTML in `test/fixtures/authenticated-x-layouts/*.html`; the formatter also
+excludes `pnpm-lock.yaml` and Markdown/YAML. Installed-page HTML fixtures
+reproduce X markup; their specific native-host accessibility exceptions stay
+local. TypeScript alone is not formatting or lint coverage, and fixture checks
+are not Windows runtime acceptance.
 
 - Keep the userscript as a single-file IIFE without runtime code splitting.
 - Preserve behavior across the userscript and extension platform adapters.
@@ -315,34 +239,42 @@ second permanent cycle gate is added.
 
 ### Rule policy and source conventions
 
-The installed Biome schema and `biome explain <rule>` establish supported keys,
-defaults, domains and fix safety. Start from its recommended preset; explicit
-error levels below remain necessary where that preset is only warning/info.
-`test/unit/tooling/biome-policy.test.ts` exercises the selected scopes with real
-positive, negative and restored controls. Warnings are visible advice and are
-not promoted indirectly with an error-on-warnings flag.
+`vite.config.ts` owns Oxlint rules. `biome.json`
+owns only residual rules that the selected Vite+ 1.2.0/Oxlint 1.88.0 toolchain
+does not cover at equivalent scope. The two lint commands both fail on warnings.
+Review this split when Vite+/Oxlint adds native CSS or equivalent accessibility,
+Solid-component and accumulating-spread rules; move a rule only with a passing
+negative probe and a clean repository-wide check.
 
-| Rule or family | Selected disposition and evidence |
+| Existing rule or responsibility | Current owner, files and rationale |
 | --- | --- |
-| `noUnusedImports`, `useConst`, `noUnusedTemplateLiteral`, `useExponentiationOperator` | Retain errors; supported-file coverage probes reject explicit violations. |
-| `noExplicitAny`, `noImplicitAnyLet`, `useIterableCallbackReturn` | Retain errors. Typed sparse/invalid test fixtures preserve their original values; callback side effects do not return ignored values. |
-| `noUselessTernary`, `noUselessSwitchCase`, `noUselessEmptyExport`, `noUselessLoneBlockStatements`, `noAccumulatingSpread` | Retain errors. The module-only global augmentation has its existing local empty-export exception. |
-| `noStaticElementInteractions`, `useKeyWithClickEvents`, `noSvgWithoutTitle`, `useAriaPropsSupportedByRole`, `useSemanticElements` | Retain errors. Existing backdrop/native-control delegation exceptions keep native keyboard behavior; semantic-control and SVG probes reject violations. Host-markup fixture exceptions remain limited to the documented rules. |
-| `useExhaustiveDependencies` | Off. React dependency arrays do not validate Solid's tracked property reads. |
-| `noSolidDestructuredProps` | Explicit error. A reactive-props negative probe fails; direct access, accessors and `splitProps` controls pass. Intentional non-reactive snapshots belong outside component prop destructuring. |
-| `noUnusedVariables` | Error in TS and unchecked JS/MJS. Retain compiler unused checks as complementary evidence: the Biome trial detected an unused catch binding and an unchecked Vitest config variable. No equivalence-based removal is claimed. |
-| `noNonNullAssertion` | Error for product `src`; typed nonproduct fixtures are outside that scope. Product code narrows captured values and reports broken internal ownership rather than silently skipping work. The bounded CRC byte kernel has one reviewed local exception: adding a branch to every byte only to repeat the proven loop bound would change its cost. Solid refs use typed callbacks. |
-| `noParameterAssign`, `noSelfCompare`, `noAssignInExpressions` | Errors. Rebinding parameters fails; property mutation passes. Namespace initialization uses statements, preserving ownership and avoiding an assignment inside another expression. |
-| `noControlCharactersInRegex` | Error with local exceptions only for explicit URL/message sanitizers and validation of external manager labels. The rule probe rejects unrelated control-character regexes. |
-| `noDocumentCookie` | Error. Product reads remain valid; controlled test/VM cookie setup/reset carries local reasons. Direct product assignment is rejected. |
-| `noUnknownMediaFeatureName`, `noUnknownPseudoElement` | Errors; installed-version checks accept the project's required modern/vendor CSS without a global exception. Negative unknown-feature/pseudo-element probes fail. |
-| `useMediaCaption` | Error. Only externally sourced X video and native-host fixture videos without supplied tracks have local exceptions; ordinary missing-caption probes fail. Do not fabricate tracks. |
-| `noForEach`, `noStaticOnlyClass`, `noArrayIndexKey` | Keep off. Choose constructs by responsibility; Solid list identity is a behavior contract, and asynchronous callbacks still need a failure owner. |
-| `noFocusedTests` | Explicit error. A real-tool `.only` probe is rejected without running that fixture. A fit-mode accessor is named `fitMode` to avoid the tool's Jasmine `fit()` detection. |
-| `useBlockStatements` | Error after the separately reviewed braces conversion. The transformation only wrapped statement bodies and preserved their syntax/ownership; normal checks never run its unsafe autofix. The installed-tool probe rejects missing braces and accepts the restored control. |
-| `useSolidForComponent` | Adopt warning. The trial finds five JSX list sites; retain current identity/disposal behavior until a conversion has observable keyed/index/reuse tests. Ordinary data transformations are outside the rule's purpose. |
-| `noConfusingVoidType` | Adopt warning. The trial accepts the current callback/cleanup contracts; do not replace valid `void` contracts with `undefined` automatically. |
-| `noFloatingPromises`, `noMisusedPromises` | Leave these experimental typed nursery rules off after trial. The former accepts `void task()` and found no current violations; the latter reported eleven sites including valid Promise/function existence checks. Same-scope warm medians were about 297/302 ms versus 90 ms for unused-variable analysis. This partial inference does not replace a Promise's actual result/failure owner. |
+| Solid destructured props | Biome `noSolidDestructuredProps` error on maintained TSX; a real component probe fails. `solid/no-destructure` was evaluated but its plugin has an unsupported TypeScript 7 peer dependency, and `solid/reactivity` is not an exact substitute. |
+| Solid list rendering | `solid/prefer-for` was evaluated but fixed option arrays intentionally use maps; Biome `useSolidForComponent` remains a warning for JSX component list sites. Revisit with keyed identity/disposal tests and a peer-compatible plugin. |
+| CSS unknown media features and pseudo-elements | Biome `noUnknownMediaFeatureName` and `noUnknownPseudoElement` errors in maintained CSS. |
+| Accessibility | Biome's explicit `noStaticElementInteractions`, `useKeyWithClickEvents`, `useMediaCaption`, `noSvgWithoutTitle`, `useAriaPropsSupportedByRole` and `useSemanticElements` errors for maintained TSX/HTML. Native host/video exceptions remain adjacent to fixtures. |
+| Browser Node imports, ambient types, non-null assertions | Oxlint `no-restricted-imports` bans `node:*` and public bare Node builtins in `src/**`; `typescript/no-non-null-assertion` errors only in `src/**`. Separate `tsc -p` projects preserve browser and Node ambient scopes. A bounded CRC byte loop has an inline exception. |
+| Cookie writes, accumulating spread | Oxlint `unicorn/no-document-cookie` errors in product code; controlled test/VM writes are exempt. Biome `noAccumulatingSpread` remains an error. |
+| Explicit `any`, focused tests, braces | Oxlint `typescript/no-explicit-any`, `vitest/no-focused-tests` and `curly` errors; real-tool probes reject each. |
+| Unused template literals and SVG titles | Biome `noUnusedTemplateLiteral` and `noSvgWithoutTitle` errors remain because the selected Oxlint release does not provide equivalent enforced rules; negative probes reject both. |
+| Other supported JS/TS rules | Oxlint errors cover unused variables/imports, `prefer-const`, exponentiation, callback returns, ternaries, lone blocks, empty exports, parameter reassignment, self-comparison and control-character regexes. Existing delayed-assignment and host-mock blocks have local reasons. |
+| Unsupported explicit JS/TS rules | Biome retains `noAssignInExpressions`, `noImplicitAnyLet`, `noUselessSwitchCase` errors and `noConfusingVoidType` warning for maintained JS/TS. These have no exact enforced equivalents in Oxlint 1.88.0; review with the same trigger as CSS/Solid residual rules. |
+| Semantic and graph checks | Explicit TypeScript projects remain for semantic boundaries; Knip checks unused files/dependencies and dpdm checks import cycles. |
+
+The residual command is exactly `biome lint --error-on-warnings .` after
+`vp lint . --deny-warnings`; its file scope is declared in `biome.json`.
+No general Biome formatting or import-assist pass remains. Oxfmt's ignore
+patterns are in `vite.config.ts`. The root `tsc` commands remain explicit
+because one Vite+ type-check invocation does not cover the browser, tooling,
+unit, E2E and direct-Node projects together. The supply-chain and prebuild
+scripts retain their existing lifecycle order.
+
+The Vite alias reports Vite+ `1.2.0` and bundles Vite `8.3.4`. Strict peer
+validation stays enabled. `pnpm-workspace.yaml` permits only that exact alias
+for the reviewed Vitest, mocker, Solid plugin and vitefu versions, whose declared
+Vite ranges include 8.3.4. Recheck callers, their original ranges and both
+versions together on updates; never widen this to `allowAny`. Validate a fresh
+dependency resolution as well as the frozen install, since a migration lockfile
+can otherwise hide peer metadata conflicts.
 
 Name functions for their returned result and important side effects. Give public
 contracts clear types without annotating every small internal callback. Choose
@@ -382,6 +314,19 @@ The repository intentionally follows current stable tools after a 24-hour
 cooling window. Keep pnpm trust, build-script, and transitive-source controls
 enabled. `package.json`, `pnpm-workspace.yaml`, the lockfile, and pinned workflow
 references are authoritative.
+
+Vite+ owns the Vite, Vitest, coverage, and core-tool versions. Dependabot keeps
+`vite-plus` update PRs visible while omitting ordinary component-version PRs for
+`vite`, `vitest`, `@vitest/*`, and `@voidzero-dev/vite-plus-core`. Security updates
+and alerts remain visible. For a Vite+ update, select an exact stable release
+published at least 24 hours earlier and set `VERSION` to that release. Follow the
+[project upgrade guide](https://viteplus.dev/guide/upgrade-project): run
+`pnpm dlx --package="vite-plus@$VERSION" vp help migrate`, then
+`pnpm dlx --package="vite-plus@$VERSION" vp migrate --no-interactive --no-agent --no-editor --no-hooks`.
+Review the managed Vite alias, Vitest and coverage catalog entries, and exact
+peer-compatibility selectors against the bundled versions. Confirm fresh
+dependency resolution, a frozen install, and `pnpm verify:full` before merging.
+Upgrading a global `vp` installation does not update this project's package graph.
 
 Every dependency update requires explicit maintainer review, including Action,
 executable npm, patch/minor, major and security updates. No auto-eligible
@@ -428,6 +373,12 @@ tags share a publication lock. After acquiring it, the workflow rechecks the tag
 source manifest, bundle metadata, public release history and Latest selection
 before writing. Historical targets and unavailable or conflicting state stop
 publication; this workflow has no archive or rollback mode.
+
+Provenance first verifies that the tagged source declares every command the
+current release jobs invoke (`quality:coverage-owned`, `test:cov`, `build:e2e`,
+`test:e2e:all`, `build:all:ci` and `release:prepare`). Older tags without one
+of these public entrypoints fail before checkout jobs, with the missing names
+reported. Compatible tags retain their own pinned Node runtime and scripts.
 
 New releases explicitly become Latest. A complete same-version retry verifies
 the published source metadata and skips publication, preserving existing assets

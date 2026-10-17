@@ -5,8 +5,8 @@ import { createDefaultSettings } from '@constants/settings';
 import type { SettingsRepository } from '@features/settings/services/settings-repository';
 import { SettingsService } from '@features/settings/services/settings-service';
 import type { AppSettings, SettingChangeEvent } from '@shared/types/settings.types';
-import type { Mocked } from 'vitest';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Mocked } from 'vite-plus/test';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 // ── Helpers ─────────────────────────────────────────────────────────────
 

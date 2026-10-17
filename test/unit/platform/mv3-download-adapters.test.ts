@@ -1,5 +1,5 @@
 import { DOWNLOAD_TIMEOUT_MS } from '@constants/performance';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 const { sendMessage } = vi.hoisted(() => ({
   sendMessage: vi.fn(),

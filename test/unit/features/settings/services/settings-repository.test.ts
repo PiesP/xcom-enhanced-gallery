@@ -3,7 +3,7 @@
 
 import { DEFAULT_SETTINGS } from '@constants/settings';
 import { PersistentSettingsRepository } from '@features/settings/services/settings-repository';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 const mockStorageGet = vi.fn();
 const mockStorageSet = vi.fn();

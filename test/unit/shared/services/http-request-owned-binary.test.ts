@@ -5,7 +5,7 @@ import type { HttpRequestControl, HttpRequestDetails, HttpRequestResponse } from
 import { HttpResponseSizeLimitError } from '@shared/error/http-response-size-limit-error';
 import { LiveByteBudget } from '@shared/services/download/live-byte-budget';
 import { HttpRequestService } from '@shared/services/http-request-service';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 const requestState = vi.hoisted(() => ({
   calls: 0,

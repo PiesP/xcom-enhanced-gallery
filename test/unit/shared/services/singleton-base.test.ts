@@ -2,7 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { createSingleton } from '@shared/services/singleton-base';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 
 // ── Test helpers ──────────────────────────────────────────────────────
 

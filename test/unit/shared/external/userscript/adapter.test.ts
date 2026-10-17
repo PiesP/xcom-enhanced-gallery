@@ -1,5 +1,5 @@
 import type { GMDownloadDetails, GMXMLHttpRequestDetails } from '@shared/types/core/userscript';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 const TEST_MAX_RESPONSE_BYTES = 8;
 
@@ -122,7 +122,6 @@ describe('userscript download adapter failure handling', () => {
     const error = new Error('download permission denied');
     const handle = {
       abort: vi.fn(),
-      // biome-ignore lint/suspicious/noThenProperty: Exercise rejection from an intentionally hostile thenable.
       then: vi.fn(
         (
           _resolve: ((value: unknown) => unknown) | undefined,

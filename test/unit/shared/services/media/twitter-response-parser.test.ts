@@ -8,7 +8,7 @@ import {
   normalizeLegacyUser,
 } from '@shared/services/media/twitter-parser/twitter-response-parser';
 import type { TwitterMedia, TwitterTweet, TwitterUser } from '@shared/services/media/types';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 describe('twitter-response-parser (pure functions)', () => {
   describe('getHighQualityMediaUrl', () => {

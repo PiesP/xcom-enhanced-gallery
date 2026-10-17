@@ -6,7 +6,7 @@ import { buildTweetResultByRestIdUrl } from '@shared/core/twitter-api/endpoint';
 import type { TwitterTweet } from '@shared/services/media/types';
 import { captureClickedMediaEvidence } from '@shared/services/media-extraction/determine-clicked-index';
 import { TwitterAPIExtractor } from '@shared/services/media-extraction/extractors/twitter-api-extractor';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 function createQuotedVideoTweetResponse() {
   const user = (screenName: string) => ({

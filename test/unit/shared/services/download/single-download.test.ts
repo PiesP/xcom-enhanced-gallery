@@ -4,7 +4,7 @@
 import type { DownloadAdapter } from '@platform/types';
 import { USER_CANCELLED_MESSAGE } from '@shared/error/cancellation';
 import { LiveByteBudget } from '@shared/services/download/live-byte-budget';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 const { adapter, getDownloadAdapter } = vi.hoisted(() => ({
   adapter: {

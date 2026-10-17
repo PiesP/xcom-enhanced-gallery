@@ -61,7 +61,6 @@ async function setupGalleryPage(
           url: string;
           onload?: (result: Record<string, unknown>) => void;
         };
-        // biome-ignore lint/suspicious/noDocumentCookie: Controlled fixture cookie setup or reset stays isolated from live authentication.
         document.cookie = 'ct0=e2e-csrf-token; path=/';
         const w = window as unknown as {
           GM_xmlhttpRequest?: (details: RequestDetails) => { abort: () => void };

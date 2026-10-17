@@ -15,6 +15,7 @@ const ANIMATION_CLASSES = {
 function runCssAnimation(element: Element, className: string): Promise<void> {
   return new Promise<void>((resolve) => {
     let settled = false;
+    // oxlint-disable-next-line prefer-const -- The timeout is assigned after settle captures it.
     let timer: ReturnType<typeof setTimeout> | undefined;
     let observer: MutationObserver | undefined;
 

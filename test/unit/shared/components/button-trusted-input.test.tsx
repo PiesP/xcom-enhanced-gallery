@@ -3,7 +3,7 @@
 
 import { IconButton } from '@shared/components/ui/Button/IconButton';
 import { render } from 'solid-js/web';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 
 describe('icon-button DOM input', () => {
   it('rejects synthetic delegated clicks even after a page reparents the button', () => {

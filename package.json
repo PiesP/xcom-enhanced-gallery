@@ -1,9 +1,27 @@
 {
   "name": "xcom-enhanced-gallery",
   "version": "2.3.7",
-  "description": "Desktop media gallery and original-quality downloader for X.com.",
-  "type": "module",
   "private": true,
+  "description": "Desktop media gallery and original-quality downloader for X.com.",
+  "keywords": [
+    "browser-extension",
+    "gallery",
+    "media",
+    "twitter",
+    "userscript",
+    "x.com"
+  ],
+  "homepage": "https://github.com/PiesP/xcom-enhanced-gallery#readme",
+  "bugs": {
+    "url": "https://github.com/PiesP/xcom-enhanced-gallery/issues"
+  },
+  "license": "MIT",
+  "author": "PiesP",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PiesP/xcom-enhanced-gallery"
+  },
+  "type": "module",
   "scripts": {
     "preinstall": "node --experimental-strip-types scripts/check/bootstrap.ts",
     "check:prebuild": "pnpm -s check:versions && pnpm -s quality",
@@ -11,24 +29,21 @@
     "prebuild:extension": "pnpm -s check:prebuild",
     "prebuild:extension:firefox": "pnpm -s check:prebuild",
     "prebuild:all": "pnpm -s check:prebuild",
-    "build": "vite build",
-    "build:extension": "vite build --config vite.extension.config.ts && vite build --config vite.extension.cs.config.ts && node --experimental-strip-types scripts/check/extension-build.ts dist-extension",
-    "build:extension:firefox": "vite build --config vite.extension.firefox.config.ts && vite build --config vite.extension.firefox.cs.config.ts && node --experimental-strip-types scripts/check/extension-build.ts dist-extension-firefox",
+    "build": "vp build",
+    "build:extension": "vp build --config vite.extension.config.ts && vp build --config vite.extension.cs.config.ts && node --experimental-strip-types scripts/check/extension-build.ts dist-extension",
+    "build:extension:firefox": "vp build --config vite.extension.firefox.config.ts && vp build --config vite.extension.firefox.cs.config.ts && node --experimental-strip-types scripts/check/extension-build.ts dist-extension-firefox",
     "build:all": "pnpm -s build:ci && pnpm -s build:extension:ci && pnpm -s build:extension:firefox:ci",
-    "build:dev": "vite build --mode development",
-    "build:fast": "vite build",
+    "build:dev": "vp build --mode development",
+    "build:fast": "vp build",
     "package:extension": "node --experimental-strip-types scripts/release/package-extension.ts",
     "package:all": "pnpm build:all && pnpm package:extension",
     "release:prepare": "node --experimental-strip-types scripts/release/prepare.ts",
-    "build:ci": "vite build",
-    "build:extension:ci": "vite build --config vite.extension.config.ts && vite build --config vite.extension.cs.config.ts && node --experimental-strip-types scripts/check/extension-build.ts dist-extension",
-    "build:extension:firefox:ci": "vite build --config vite.extension.firefox.config.ts && vite build --config vite.extension.firefox.cs.config.ts && node --experimental-strip-types scripts/check/extension-build.ts dist-extension-firefox",
+    "build:ci": "vp build",
+    "build:extension:ci": "vp build --config vite.extension.config.ts && vp build --config vite.extension.cs.config.ts && node --experimental-strip-types scripts/check/extension-build.ts dist-extension",
+    "build:extension:firefox:ci": "vp build --config vite.extension.firefox.config.ts && vp build --config vite.extension.firefox.cs.config.ts && node --experimental-strip-types scripts/check/extension-build.ts dist-extension-firefox",
     "build:all:ci": "pnpm -s check:versions && pnpm -s build:ci && pnpm -s build:extension:ci && pnpm -s build:extension:firefox:ci",
     "build:e2e": "pnpm clean && pnpm build:ci && pnpm build:dev && pnpm build:extension:ci && pnpm build:extension:firefox:ci",
     "clean": "node --experimental-strip-types scripts/build/clean.ts",
-    "mut:prepare": "node --experimental-strip-types scripts/ci/mutation-workspace.ts prepare",
-    "mut": "node --experimental-strip-types scripts/ci/mutation-workspace.ts run full",
-    "mut:fast": "node --experimental-strip-types scripts/ci/mutation-workspace.ts run fast",
     "check:src": "tsc --noEmit",
     "check:test": "tsc -p tsconfig.test.json --noEmit",
     "check:scripts": "tsc -p tsconfig.scripts.json --noEmit && tsc -p tsconfig.node-tests.json --noEmit",
@@ -39,59 +54,31 @@
     "knip": "pnpm -s knip:full && pnpm -s knip:production",
     "knip:full": "knip --files --exports --dependencies --treat-config-hints-as-errors",
     "knip:production": "knip --production --files --exports --dependencies --tags=-testOnly --treat-config-hints-as-errors",
-    "lint": "biome lint --error-on-warnings .",
-    "lint:fix": "biome lint --write --error-on-warnings .",
-    "fmt": "biome check --linter-enabled=false .",
-    "fmt:fix": "biome check --write --linter-enabled=false .",
+    "lint": "vp lint . --deny-warnings && biome lint --error-on-warnings .",
+    "lint:fix": "vp lint . --fix --deny-warnings && biome lint --write --error-on-warnings .",
+    "fmt": "vp fmt --check",
+    "fmt:fix": "vp fmt --write",
     "fmt:check": "pnpm -s fmt",
     "circular": "dpdm --tsconfig tsconfig.json --circular --no-tree --no-warning --exit-code circular:1 src/**/*.ts src/**/*.tsx",
-    "quality": "pnpm -s check:biome && pnpm -s check && pnpm -s check:e2e && pnpm -s test:ci && pnpm -s circular && pnpm -s knip",
-    "quality:coverage-owned": "pnpm -s check:biome && pnpm -s check && pnpm -s check:e2e && pnpm -s test:policy && pnpm -s circular && pnpm -s knip",
+    "quality": "pnpm -s fmt && pnpm -s lint && pnpm -s check && pnpm -s check:e2e && pnpm -s test:ci && pnpm -s circular && pnpm -s knip",
+    "quality:coverage-owned": "pnpm -s fmt && pnpm -s lint && pnpm -s check && pnpm -s check:e2e && pnpm -s test:policy && pnpm -s circular && pnpm -s knip",
     "quality:fix": "pnpm -s fmt:fix && pnpm -s lint:fix && pnpm -s quality",
     "verify": "pnpm -s quality && pnpm -s build:all:ci",
     "verify:full": "pnpm verify && pnpm test:cov:after-policy && pnpm build:dev && pnpm -s test:e2e:all",
-    "test": "vitest run",
-    "test:policy": "node --experimental-strip-types --test scripts/ci/deep-check-reuse.test.ts scripts/release/verify-source.test.ts scripts/ci/repository-authority.test.ts scripts/ci/mutation-workspace.test.ts",
-    "test:ci": "pnpm -s test:policy && vitest run test/unit/tooling/node-ambient-types.test.ts",
-    "test:watch": "vitest",
-    "test:cov": "vitest run --coverage",
-    "test:cov:after-policy": "vitest run --coverage --config tooling/vitest.after-policy.config.ts",
+    "test": "vp test run",
+    "test:policy": "node --experimental-strip-types --test scripts/release/verify-source.test.ts scripts/ci/repository-authority.test.ts",
+    "test:ci": "pnpm -s test:policy && vp test run test/unit/tooling/node-ambient-types.test.ts",
+    "test:watch": "vp test",
+    "test:cov": "vp test run --coverage",
+    "test:cov:after-policy": "vp test run --coverage --config tooling/vitest.after-policy.config.ts",
     "test:e2e": "playwright test --config test/e2e/playwright.config.ts",
     "test:e2e:extension": "playwright test --config test/e2e/playwright.extension.config.ts",
     "test:e2e:extension:firefox": "node --experimental-strip-types --test test/e2e/firefox-extension-runtime.test.ts",
     "test:e2e:all": "pnpm -s test:e2e && pnpm -s test:e2e:extension && pnpm -s test:e2e:extension:firefox",
     "check:e2e": "tsc -p tsconfig.e2e.json --noEmit",
     "test:e2e:headed": "playwright test --config test/e2e/playwright.config.ts --headed",
-    "check:tooling": "tsc -p tsconfig.tooling.json --noEmit",
-    "check:biome": "biome ci --error-on-warnings ."
+    "check:tooling": "tsc -p tsconfig.tooling.json --noEmit"
   },
-  "keywords": [
-    "userscript",
-    "x.com",
-    "twitter",
-    "gallery",
-    "media",
-    "browser-extension"
-  ],
-  "author": "PiesP",
-  "license": "MIT",
-  "engines": {
-    "node": "^22.22.2 || ^24.15.0 || >=26.0.0",
-    "pnpm": ">=11.26.0"
-  },
-  "packageManager": "pnpm@11.26.0",
-  "volta": {
-    "node": "26.9.0",
-    "pnpm": "11.26.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/PiesP/xcom-enhanced-gallery"
-  },
-  "bugs": {
-    "url": "https://github.com/PiesP/xcom-enhanced-gallery/issues"
-  },
-  "homepage": "https://github.com/PiesP/xcom-enhanced-gallery#readme",
   "dependencies": {
     "@piesp/browser-core": "file:packages/core",
     "solid-js": "^1.9.17"
@@ -100,18 +87,26 @@
     "@axe-core/playwright": "^4.13.0",
     "@biomejs/biome": "^2.5.15",
     "@playwright/test": "^1.64.1",
-    "@stryker-mutator/core": "^10.0.0",
-    "@stryker-mutator/vitest-runner": "^10.0.0",
     "@types/node": "^26.6.2",
     "@types/selenium-webdriver": "4.35.7",
-    "@vitest/coverage-v8": "^4.1.11",
+    "@vitest/coverage-v8": "catalog:",
     "dpdm": "4.3.0",
     "jsdom": "30.1.1",
     "knip": "^6.41.0",
     "selenium-webdriver": "4.51.0",
     "typescript": "7.0.2",
-    "vite": "^8.3.4",
+    "vite": "catalog:",
     "vite-plugin-solid": "^2.11.14",
-    "vitest": "^4.1.11"
-  }
+    "vite-plus": "catalog:",
+    "vitest": "catalog:"
+  },
+  "engines": {
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0",
+    "pnpm": ">=11.26.0"
+  },
+  "volta": {
+    "node": "26.9.0",
+    "pnpm": "11.26.0"
+  },
+  "packageManager": "pnpm@11.26.0"
 }

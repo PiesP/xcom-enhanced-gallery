@@ -4,7 +4,7 @@
 import { DOWNLOAD_PRE_ID_CANCELLATION_TTL_MS } from '@constants/performance';
 import { DownloadTrackingStore } from '@extension/download-tracking';
 import type { StorageAdapter } from '@platform/types';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 function createStorage(): {
   storage: StorageAdapter;

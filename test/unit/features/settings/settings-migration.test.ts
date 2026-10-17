@@ -4,7 +4,7 @@
 import { DEFAULT_SETTINGS } from '@constants/settings';
 import { migrateSettings } from '@features/settings/services/settings-migration';
 import type { AppSettings } from '@shared/types/settings.types';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 describe('settings-migration', () => {
   // ── migrateSettings ───────────────────────────────────────────────

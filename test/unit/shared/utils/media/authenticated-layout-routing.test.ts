@@ -9,7 +9,7 @@ import { closeGallery } from '@shared/state/signals/gallery.signals';
 import type { VideoClickMode } from '@shared/types/settings.types';
 import { handleMediaClick } from '@shared/utils/events/handlers/media-click';
 import { isProcessableMedia } from '@shared/utils/media/media-click-detector';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 type CapturedShape =
   | 'timeline-image'

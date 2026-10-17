@@ -2,14 +2,13 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { chmodSync, globSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { classifyChanges } from '../../../scripts/ci/classify-changes.ts';
 
 const root = resolve(import.meta.dirname, '../../..');
 const classifier = resolve(root, 'scripts/ci/classify-changes.ts');
 const ciWorkflow = readFileSync(resolve(root, '.github/workflows/ci.yaml'), 'utf8');
 const securityWorkflow = readFileSync(resolve(root, '.github/workflows/security.yaml'), 'utf8');
-const deepWorkflow = readFileSync(resolve(root, '.github/workflows/deep-checks.yaml'), 'utf8');
 const updateCoreWorkflow = readFileSync(
   resolve(root, '.github/workflows/update-browser-core.yaml'),
   'utf8'
@@ -112,7 +111,7 @@ function commandBoundaryCount(command: string): number {
       expect(scripts[nested], nested).toBeDefined();
       return count + commandBoundaryCount(scripts[nested] ?? '');
     }
-    if (part.startsWith('vitest run')) {
+    if (part.startsWith('vp test run')) {
       return count + (part.includes('--config tooling/vitest.after-policy.config.ts') ? 0 : 1);
     }
     return count;
@@ -241,7 +240,7 @@ describe('workflow change policy', () => {
       stepBlock(releaseWorkflow, 'unit', '🧪 Run unit tests and coverage thresholds')
     ).toContain('run: pnpm test:cov');
     expect(jobBlock(releaseWorkflow, 'publish')).toContain(
-      'needs: [provenance, quality, unit, e2e, mutation, build]'
+      'needs: [provenance, quality, unit, e2e, build]'
     );
     expect(jobBlock(ciWorkflow, 'quality')).toContain('name: pr-gate/quality');
     expect(jobBlock(ciWorkflow, 'unit')).toContain('name: pr-gate/unit');
@@ -251,7 +250,6 @@ describe('workflow change policy', () => {
   it.each([
     { path: 'README.md', focused: true, unit: 'true', quality: 'false' },
     { path: '.github/workflows/security.yaml', focused: true, unit: 'true', quality: 'false' },
-    { path: '.github/workflows/deep-checks.yaml', focused: true, unit: 'true', quality: 'false' },
     {
       path: '.github/actions/setup-release/action.yaml',
       focused: true,
@@ -330,7 +328,6 @@ describe('workflow change policy', () => {
     'vitest.config.ts',
     'tsconfig.node-tests.json',
     'tsconfig.new-runtime.json',
-    'stryker.conf.json',
   ])('selects quality for managed supported input %s', (path) => {
     expect(classifyChanges(['--files', path]).selected.has('quality')).toBe(true);
   });
@@ -474,7 +471,6 @@ describe('workflow change policy', () => {
     expect(ciWorkflow).toContain('No browser-relevant changes');
     expect(ciWorkflow).toContain('No build-relevant changes');
     expect(ciWorkflow).not.toContain('name: pr-gate/duplication');
-    expect(deepWorkflow).toContain('name: 🧬 Mutation');
     expect(securityWorkflow).toContain('No dependency-relevant changes');
     expect(securityWorkflow).toContain('No Semgrep-relevant changes');
   });
@@ -540,8 +536,6 @@ describe('workflow change policy', () => {
       expect(trigger).not.toContain('paths-ignore:');
     }
 
-    expect(deepWorkflow.slice(0, deepWorkflow.indexOf('\nenv:'))).toContain('schedule:');
-    expect(deepWorkflow.slice(0, deepWorkflow.indexOf('\nenv:'))).not.toContain('paths:');
     expect(updateCoreWorkflow.slice(0, updateCoreWorkflow.indexOf('\npermissions:'))).toContain(
       'paths-ignore:'
     );

@@ -2,7 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { createEventListener, isHTMLElement, isRecord } from '@shared/utils/types/guards';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 describe('isHTMLElement', () => {
   it('returns true for HTMLElement instances', () => {

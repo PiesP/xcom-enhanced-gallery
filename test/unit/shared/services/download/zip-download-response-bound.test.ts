@@ -3,7 +3,7 @@
 
 import { HttpResponseSizeLimitError } from '@shared/error/http-response-size-limit-error';
 import { downloadLiveByteBudget } from '@shared/services/download/live-byte-budget';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 const fetchOwnedArrayBufferWithRetry = vi.hoisted(() => vi.fn());
 

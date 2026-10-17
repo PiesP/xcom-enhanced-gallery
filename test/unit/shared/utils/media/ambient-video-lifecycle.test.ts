@@ -5,7 +5,7 @@ import {
   activateGalleryHostState,
   restoreActiveGalleryHostState,
 } from '@shared/components/isolation/gallery-host-state';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 // Native media is a boundary in jsdom; real progression is checked in installed Edge.
 function hostVideo(parent: HTMLElement = document.body) {

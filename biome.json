@@ -7,63 +7,41 @@
   },
   "files": {
     "includes": [
-      "**",
+      "**/*.css",
+      "**/*.html",
+      "**/*.ts",
+      "**/*.tsx",
+      "**/*.js",
+      "**/*.mjs",
       "!!**/node_modules",
       "!!packages/core",
-      "!!pnpm-lock.yaml",
-      "!!test/fixtures/authenticated-x-layouts/*.html",
-      "!!**/.stryker-tmp/",
-      "!!**/.stryker-tmp-debug/"
-    ],
-    "ignoreUnknown": true,
-    "maxSize": 1048576
+      "!!test/fixtures/authenticated-x-layouts/*.html"
+    ]
   },
   "formatter": {
-    "enabled": true,
-    "indentStyle": "space",
-    "indentWidth": 2,
-    "lineWidth": 100,
-    "lineEnding": "lf"
+    "enabled": false
+  },
+  "assist": {
+    "enabled": false
   },
   "linter": {
-    "enabled": true,
     "rules": {
-      "preset": "recommended",
+      "preset": "none",
       "correctness": {
-        "noUnusedImports": "error",
-        "noUnusedVariables": "error",
-        "useExhaustiveDependencies": "off",
         "noUnknownMediaFeatureName": "error",
         "noUnknownPseudoElement": "error",
         "noSolidDestructuredProps": "error"
       },
       "style": {
-        "noNonNullAssertion": "off",
-        "useConst": "error",
-        "noParameterAssign": "error",
-        "noUnusedTemplateLiteral": "error",
-        "useExponentiationOperator": "error",
-        "useBlockStatements": "error"
+        "noUnusedTemplateLiteral": "error"
       },
       "suspicious": {
-        "noExplicitAny": "error",
-        "noConfusingVoidType": "warn",
-        "noControlCharactersInRegex": "error",
         "noAssignInExpressions": "error",
-        "noDocumentCookie": "error",
-        "noSelfCompare": "error",
-        "noArrayIndexKey": "off",
         "noImplicitAnyLet": "error",
-        "useIterableCallbackReturn": "error",
-        "noFocusedTests": "error"
+        "noConfusingVoidType": "warn"
       },
       "complexity": {
-        "noForEach": "off",
-        "noStaticOnlyClass": "off",
-        "noUselessTernary": "error",
-        "noUselessSwitchCase": "error",
-        "noUselessEmptyExport": "error",
-        "noUselessLoneBlockStatements": "error"
+        "noUselessSwitchCase": "error"
       },
       "performance": {
         "noAccumulatingSpread": "error",
@@ -76,137 +54,10 @@
         "noSvgWithoutTitle": "error",
         "useAriaPropsSupportedByRole": "error",
         "useSemanticElements": "error"
-      },
-      "nursery": {
-        "noFloatingPromises": "off",
-        "noMisusedPromises": "off"
       }
-    }
-  },
-  "javascript": {
-    "formatter": {
-      "quoteStyle": "single",
-      "semicolons": "always",
-      "trailingCommas": "es5",
-      "arrowParentheses": "always",
-      "lineEnding": "lf"
-    }
-  },
-  "json": {
-    "formatter": {
-      "indentStyle": "space",
-      "indentWidth": 2
-    }
-  },
-  "assist": {
-    "enabled": true,
-    "actions": {
-      "source": {
-        "organizeImports": "on"
-      }
-    }
-  },
-  "html": {
-    "experimentalFullSupportEnabled": true,
-    "formatter": {
-      "enabled": true
     }
   },
   "overrides": [
-    {
-      "includes": ["src/**"],
-      "linter": {
-        "rules": {
-          "style": {
-            "noNonNullAssertion": "error",
-            "noRestrictedImports": {
-              "level": "error",
-              "options": {
-                "patterns": [
-                  {
-                    "group": [
-                      "node:*",
-                      "assert",
-                      "assert/strict",
-                      "async_hooks",
-                      "buffer",
-                      "child_process",
-                      "cluster",
-                      "console",
-                      "constants",
-                      "crypto",
-                      "dgram",
-                      "diagnostics_channel",
-                      "dns",
-                      "dns/promises",
-                      "domain",
-                      "events",
-                      "fs",
-                      "fs/promises",
-                      "http",
-                      "http2",
-                      "https",
-                      "inspector",
-                      "inspector/promises",
-                      "module",
-                      "net",
-                      "os",
-                      "path",
-                      "path/posix",
-                      "path/win32",
-                      "perf_hooks",
-                      "process",
-                      "punycode",
-                      "querystring",
-                      "readline",
-                      "readline/promises",
-                      "repl",
-                      "stream",
-                      "stream/consumers",
-                      "stream/promises",
-                      "stream/web",
-                      "string_decoder",
-                      "sys",
-                      "timers",
-                      "timers/promises",
-                      "tls",
-                      "trace_events",
-                      "tty",
-                      "url",
-                      "util",
-                      "util/types",
-                      "v8",
-                      "vm",
-                      "wasi",
-                      "worker_threads",
-                      "zlib"
-                    ],
-                    "message": "Browser product code must use browser APIs or the platform adapter; Node builtins also import Node ambient types."
-                  }
-                ]
-              }
-            }
-          }
-        }
-      }
-    },
-    {
-      "includes": [
-        "test/unit/config/browser-core-automation.test.ts",
-        "test/unit/config/osv-workflow-composition.test.ts",
-        "test/unit/tooling/config.test.ts",
-        "test/unit/tooling/release-publication.test.ts",
-        "test/unit/tooling/toolchain-action.test.ts",
-        "test/unit/tooling/workflow-change-policy.test.ts"
-      ],
-      "linter": {
-        "rules": {
-          "suspicious": {
-            "noTemplateCurlyInString": "off"
-          }
-        }
-      }
-    },
     {
       "includes": ["test/e2e/fixtures/installed*-page.html"],
       "linter": {

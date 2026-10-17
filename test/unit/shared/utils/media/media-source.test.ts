@@ -2,7 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { normalizeOriginalImageUrl } from '@shared/utils/media/media-source';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 
 describe('ordinary CDN photo originals', () => {
   it('normalizes supported photos without URLSearchParams iterators', () => {

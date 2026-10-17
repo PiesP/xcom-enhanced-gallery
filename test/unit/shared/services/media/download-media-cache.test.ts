@@ -2,7 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import type { MediaInfo } from '@shared/types/media.types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 const http = vi.hoisted(() => ({
   getOwnedBinary: vi.fn(),

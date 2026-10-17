@@ -8,7 +8,7 @@ import {
   reserveBinaryResponse,
 } from '@shared/services/download/live-byte-budget';
 import { downloadAsZip } from '@shared/services/download/zip-download';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 const inputOwners: OwnedBlob[] = [];
 function ownedBlob(value: Blob, budget: LiveByteBudget): OwnedBlob {

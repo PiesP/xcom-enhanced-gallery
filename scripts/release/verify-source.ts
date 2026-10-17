@@ -41,6 +41,21 @@ function taggedNodeVersion(sha: string, releaseVersion: string): string {
   if (Object.hasOwn(scripts, 'quality:nose')) {
     throw new Error('Release source still declares retired quality:nose script');
   }
+  const scriptMap = scripts as Record<string, string>;
+  const requiredReleaseScripts = [
+    'quality:coverage-owned',
+    'test:cov',
+    'build:e2e',
+    'test:e2e:all',
+    'build:all:ci',
+    'release:prepare',
+  ];
+  const missingScripts = requiredReleaseScripts.filter((name) => !scriptMap[name]?.trim());
+  if (missingScripts.length > 0) {
+    throw new Error(
+      `Release source lacks current workflow entrypoints: ${missingScripts.join(', ')}`
+    );
+  }
   const volta = (manifest as { volta?: unknown }).volta;
   const version =
     volta && typeof volta === 'object' && !Array.isArray(volta)

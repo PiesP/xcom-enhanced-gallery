@@ -6,7 +6,7 @@ import {
 } from '@shared/services/download/live-byte-budget';
 import type { DownloadOptions, OrchestratorItem, ZipResult } from '@shared/services/download/types';
 import { downloadAsZip as assembleZip } from '@shared/services/download/zip-download';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 interface FixtureRequest {
   onload?: (response: { status: number; response: ArrayBuffer }) => void;

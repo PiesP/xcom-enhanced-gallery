@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { verifyPublication } from '../../../scripts/release/verify-publication.ts';
 
 const sha = 'a'.repeat(40);
@@ -199,17 +199,18 @@ describe('serialized release publication policy', () => {
     expect(publish).toContain("if: steps.publication.outputs.publish == 'true'");
     expect(publish).toContain('make_latest: ${{ steps.publication.outputs.make-latest }}');
     expect(publish).toContain('overwrite_files: false');
-    expect(publish).toContain('needs: [provenance, quality, unit, e2e, mutation, build]');
+    expect(publish).toContain('needs: [provenance, quality, unit, e2e, build]');
   });
 
-  it('blocks publication on every retained gate and ignores the retired gate', () => {
+  it('blocks publication on every retained gate', () => {
     const workflow = readFileSync(
       resolve(import.meta.dirname, '../../../.github/workflows/release.yaml'),
       'utf8'
     );
     const publish = workflow.slice(workflow.indexOf('\n  publish:'));
     const needs = publish.match(/\n {4}needs: \[([^\]]+)\]/u)?.[1]?.split(', ');
-    expect(needs).toEqual(['provenance', 'quality', 'unit', 'e2e', 'mutation', 'build']);
+    expect(needs).toEqual(['provenance', 'quality', 'unit', 'e2e', 'build']);
+    expect(workflow).not.toMatch(/^ {2}mutation:$/m);
     const eligible = (results: Record<string, string>) =>
       needs?.every((job) => results[job] === 'success');
     const passing = Object.fromEntries((needs ?? []).map((job) => [job, 'success']));

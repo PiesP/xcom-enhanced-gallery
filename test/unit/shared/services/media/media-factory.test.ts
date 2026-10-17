@@ -4,7 +4,7 @@
 import { convertAPIMediaToMediaInfo } from '@shared/services/media/media-factory';
 import type { TweetMediaEntry } from '@shared/services/media/types';
 import type { TweetInfo } from '@shared/types/media.types';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 const request: TweetInfo = {
   tweetId: '222',

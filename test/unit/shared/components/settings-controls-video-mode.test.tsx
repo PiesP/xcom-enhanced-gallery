@@ -5,7 +5,7 @@ import { SettingsControls } from '@shared/components/ui/Settings/SettingsControl
 import { clearSettings, registerSettings } from '@shared/container/settings-registry';
 import type { SettingChangeEvent, VideoClickMode } from '@shared/types/settings.types';
 import { render } from 'solid-js/web';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 const notification = vi.hoisted(() => ({ send: vi.fn() }));
 vi.mock('@platform/index', () => ({

@@ -123,7 +123,6 @@ export async function run({ browser, root, output }) {
     await page.evaluate((encodedFixtures) => {
       // Keep production media extraction deterministic: bypass the callback-only
       // GM_cookie fallback and make the unavailable fixture API fail into DOM extraction.
-      // biome-ignore lint/suspicious/noDocumentCookie: Controlled fixture cookie setup or reset stays isolated from live authentication.
       document.cookie = 'ct0=windows-acceptance-fixture; path=/; SameSite=Lax';
       const fixtureBlob = (url) => {
         const index = url.includes('5678') ? 1 : url.includes('9012') ? 2 : 0;

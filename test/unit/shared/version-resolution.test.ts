@@ -4,7 +4,7 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 const REPO_ROOT = resolve(__dirname, '../../..');
 const PKG_PATH = resolve(REPO_ROOT, 'package.json');
