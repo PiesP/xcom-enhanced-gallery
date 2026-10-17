@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { chromium } from '@playwright/test';
+import { assertQuotedOriginLink } from './install-profile.ts';
 import { restoreStoredVideoSettings } from './live-page.ts';
 import {
   readAppliedVideoGallerySettings,
@@ -176,5 +177,61 @@ test('video loading retains primary and restoration failures in its receipt and 
   } finally {
     await browser.close();
     rmSync(output, { recursive: true, force: true });
+  }
+});
+
+test('quoted source link waits for selected owner and reports persistent mismatch', async () => {
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage();
+    const installPanel = async () => {
+      await page.setContent(`
+        <div data-xeg-gallery-container>
+          <div data-gallery-element="toolbar" data-current-index="0" data-focused-index="1">
+            <span id="xeg-toolbar-counter" data-position="2" data-total="2" data-focused-index="1"></span>
+            <button id="tweet-text-button">Post source</button>
+            <div id="toolbar-tweet-panel" hidden>
+              <a href="https://x.com/stale/status/1">Stale source</a>
+            </div>
+          </div>
+        </div>
+      `);
+      await page.evaluate(() => {
+        const button = document.querySelector('#tweet-text-button');
+        const panel = document.querySelector('#toolbar-tweet-panel');
+        if (!(button instanceof HTMLButtonElement) || !(panel instanceof HTMLElement)) {
+          throw new Error('Quoted source fixture is incomplete');
+        }
+        button.addEventListener('click', () => {
+          panel.hidden = !panel.hidden;
+        });
+      });
+    };
+    const gallery = page.locator('[data-xeg-gallery-container]');
+    const expected = 'https://x.com/quote_owner/status/9333333333333333333';
+    await installPanel();
+    await page.evaluate((url) => {
+      setTimeout(() => {
+        document.querySelector('#toolbar-tweet-panel a')?.setAttribute('href', url);
+      }, 150);
+    }, expected);
+    assert.equal(await assertQuotedOriginLink(gallery, expected), expected);
+    assert.equal(await page.locator('#toolbar-tweet-panel').isHidden(), true);
+
+    await installPanel();
+    await assert.rejects(assertQuotedOriginLink(gallery, expected), (error: unknown) => {
+      assert(error instanceof Error);
+      assert.match(error.message, /Toolbar source link must identify the selected post/);
+      assert.match(error.message, /https:\/\/x\.com\/stale\/status\/1/);
+      assert.match(
+        error.message,
+        /"currentIndex":"0","focusedIndex":"1","position":"2","total":"2"/
+      );
+      assert.match(error.message, /https:\/\/x\.com\/quote_owner\/status\/9333333333333333333/);
+      return true;
+    });
+    assert.equal(await page.locator('#toolbar-tweet-panel').isHidden(), true);
+  } finally {
+    await browser.close();
   }
 });

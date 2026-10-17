@@ -4731,7 +4731,16 @@ async function assertQuotedSelection(
   return state;
 }
 
-async function assertQuotedOriginLink(
+type QuotedOriginLinkState = {
+  href: string | null;
+  currentIndex: string | null;
+  focusedIndex: string | null;
+  position: string | null;
+  total: string | null;
+  counterFocusedIndex: string | null;
+};
+
+export async function assertQuotedOriginLink(
   gallery: Locator,
   expectedUrl: string,
   allowMediaPath = false
@@ -4740,14 +4749,62 @@ async function assertQuotedOriginLink(
   assert.equal(await button.count(), 1, 'Selected media must expose originating post metadata');
   await button.click();
   const link = gallery.locator('#toolbar-tweet-panel a[href^="https://x.com/"]');
-  await link.waitFor({ state: 'visible' });
-  const observed = await link.getAttribute('href');
-  assert(
-    observed === expectedUrl || (allowMediaPath && observed === `${expectedUrl}/video/2`),
-    'Toolbar source link must identify the selected post'
-  );
-  await button.click();
-  return observed;
+  let latest: QuotedOriginLinkState | null = null;
+  let observed: QuotedOriginLinkState | null = null;
+  let failure: unknown;
+  try {
+    await link.waitFor({ state: 'visible' });
+    observed = await waitForValue(async () => {
+      latest = await gallery.evaluate((element) => {
+        const toolbar = element.querySelector('[data-gallery-element="toolbar"]');
+        const counter = toolbar?.querySelector('#xeg-toolbar-counter');
+        return {
+          href:
+            element
+              .querySelector('#toolbar-tweet-panel a[href^="https://x.com/"]')
+              ?.getAttribute('href') ?? null,
+          currentIndex: toolbar?.getAttribute('data-current-index') ?? null,
+          focusedIndex: toolbar?.getAttribute('data-focused-index') ?? null,
+          position: counter?.getAttribute('data-position') ?? null,
+          total: counter?.getAttribute('data-total') ?? null,
+          counterFocusedIndex: counter?.getAttribute('data-focused-index') ?? null,
+        };
+      });
+      return latest.href === expectedUrl ||
+        (allowMediaPath && latest.href === `${expectedUrl}/video/2`)
+        ? latest
+        : undefined;
+    }, 'selected post source link');
+    assert(
+      observed.href === expectedUrl ||
+        (allowMediaPath && observed.href === `${expectedUrl}/video/2`),
+      'Toolbar source link must identify the selected post'
+    );
+  } catch (error) {
+    failure =
+      error instanceof Error && error.message.startsWith('Timed out waiting for ')
+        ? new Error(
+            `Toolbar source link must identify the selected post: ${JSON.stringify({ expectedUrl, allowMediaPath, observed: latest })}`,
+            { cause: error }
+          )
+        : error;
+  }
+  try {
+    await button.click();
+  } catch (error) {
+    if (failure) {
+      throw new AggregateError(
+        [failure, error],
+        'Toolbar source link assertion and panel cleanup failed'
+      );
+    }
+    throw error;
+  }
+  if (failure) {
+    throw failure;
+  }
+  assert(observed);
+  return observed.href;
 }
 
 async function navigateQuotedAwayAndBack(
