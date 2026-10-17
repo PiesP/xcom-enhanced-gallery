@@ -5221,14 +5221,18 @@ async function runVideoClickSettingsCycle({
     const helpText = await help.textContent();
     assert(helpText, 'Video-click settings help text is missing');
     assert.match(helpText, /video surfaces open the gallery/i);
-    await select.focus();
-    const modes: Array<{ keyPress: string; selected: string; stored: string }> = [];
-    const keyboardModes: Array<[string, string]> = [
-      ['Home', 'block-all'],
-      ['ArrowDown', 'block-controls-only'],
-      ['End', 'allow-all'],
-    ];
-    for (const [keyPress, expectedMode] of keyboardModes) {
+    const pressAndConfirmMode = async (keyPress: string, expectedMode: string) => {
+      await waitForValue(
+        async () => ((await select.isEnabled()) ? true : undefined),
+        `enabled video-click select before ${keyPress}`,
+        5_000
+      );
+      await select.focus();
+      assert.equal(
+        await select.evaluate((element) => document.activeElement === element),
+        true,
+        `Video-click select must be focused before ${keyPress}`
+      );
       await page.keyboard.press(keyPress);
       await waitForValue(
         async () => {
@@ -5241,29 +5245,26 @@ async function runVideoClickSettingsCycle({
         5_000
       );
       assert.equal(await select.inputValue(), expectedMode);
+    };
+    const modes: Array<{ keyPress: string; selected: string; stored: string }> = [];
+    const keyboardModes: Array<[string, string]> = [
+      ['Home', 'block-all'],
+      ['ArrowDown', 'block-controls-only'],
+      ['End', 'allow-all'],
+    ];
+    for (const [keyPress, expectedMode] of keyboardModes) {
+      await pressAndConfirmMode(keyPress, expectedMode);
       modes.push({ keyPress, selected: expectedMode, stored: expectedMode });
     }
     await page.screenshot({ path: join(output, 'quoted-video-click-settings.png') });
-    await select.focus();
     if (initialMode === 'block-all') {
-      await page.keyboard.press('Home');
+      await pressAndConfirmMode('Home', initialMode);
     } else if (initialMode === 'block-controls-only') {
-      await page.keyboard.press('Home');
-      await page.keyboard.press('ArrowDown');
+      await pressAndConfirmMode('Home', 'block-all');
+      await pressAndConfirmMode('ArrowDown', initialMode);
     } else {
-      await page.keyboard.press('End');
+      await pressAndConfirmMode('End', initialMode);
     }
-    await waitForValue(
-      async () => {
-        const stored = storedVideoClickMode(
-          (await readStoredVideoSettings(extensionPage)).settings
-        );
-        return stored === initialMode ? stored : undefined;
-      },
-      'video-click setting restored through keyboard',
-      5_000
-    );
-    assert.equal(await select.inputValue(), initialMode);
     await settingsButton.click();
     receipt = {
       initialMode,
