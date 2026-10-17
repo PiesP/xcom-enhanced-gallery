@@ -22,6 +22,9 @@ async function galleryContext(
   await context.route('https://x.com/**', async (route) => {
     const url = route.request().url();
     calls.push(url);
+    const quoteOne = url.includes('/quote_one/');
+    const position = quoteOne ? 1 : 2;
+    const index = quoteOne ? 0 : 1;
     await route.fulfill({
       contentType: 'text/html',
       body: `<!doctype html>
@@ -29,8 +32,8 @@ async function galleryContext(
           <div data-case="recognized"><button data-quote-target>Open</button></div>
           <button data-unmarked-direct>Open direct</button>
           <div data-xeg-gallery-container>
-            <span id="xeg-toolbar-counter" data-position="${url.includes('/quote_one/') ? 1 : 2}"></span>
-            <div data-gallery-element="item" data-index="${url.includes('/quote_one/') ? 0 : 1}">
+            <span id="xeg-toolbar-counter" data-position="${position}"></span>
+            <div data-gallery-element="item" data-index="${index}">
               <video controls tabindex="0" src="data:video/mp4;base64,${media.toString('base64')}"></video>
             </div>
           </div>
