@@ -3,7 +3,7 @@
 
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { readStoredLanguage } from '../live-page.mjs';
+import { readStoredLanguage } from '../live-page.ts';
 
 test('upgrade language readback decodes the persisted storage envelope', async () => {
   const raw = JSON.stringify({ __xegStorageEnvelope: 1, updatedAt: 42, value: 'ko' });

@@ -181,7 +181,7 @@ type InstallProfileModule = {
 };
 
 const livePage = (await import(
-  pathToFileURL(resolve(import.meta.dirname, '../../../validation/windows/live-page.mjs')).href
+  pathToFileURL(resolve(import.meta.dirname, '../../../validation/windows/live-page.ts')).href
 )) as LivePageModule;
 const installProfile = (await import(
   pathToFileURL(resolve(import.meta.dirname, '../../../validation/windows/install-profile.mjs'))
@@ -2134,7 +2134,7 @@ describe('Windows X live page validation', () => {
     const profile = JSON.parse(
       readFileSync(resolve(import.meta.dirname, '../../../validation/windows/profile.json'), 'utf8')
     ) as { installation?: { assets?: string[] } };
-    expect(profile.installation?.assets).toContain('validation/windows/live-page.mjs');
+    expect(profile.installation?.assets).toContain('validation/windows/live-page.ts');
     expect(profile.installation?.assets).toContain('validation/windows/userscript-install.mjs');
     expect(profile.installation?.assets).toContain('dist/xcom-enhanced-gallery.user.js');
   });

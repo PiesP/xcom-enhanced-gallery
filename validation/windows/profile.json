@@ -34,7 +34,7 @@
       "test/e2e/fixtures/installed-nested-c.mp4",
       "src/shared/services/download/live-byte-budget.ts",
       "validation/windows/download-memory.ts",
-      "validation/windows/live-page.mjs"
+      "validation/windows/live-page.ts"
     ],
     "build_commands": [
       ["pnpm", "build:ci"],

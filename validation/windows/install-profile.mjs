@@ -39,7 +39,7 @@ import {
   readStoredVideoSettings,
   validateLiveObservation,
   validateLiveUrls,
-} from './live-page.mjs';
+} from './live-page.ts';
 import { runInstalledMediaApiReuseProfile } from './media-api-reuse-profile.ts';
 import {
   captureUpgradeSettingsFailure,

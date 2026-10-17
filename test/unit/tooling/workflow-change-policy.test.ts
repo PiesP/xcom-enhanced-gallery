@@ -444,7 +444,7 @@ describe('workflow change policy', () => {
     const sharedFixture = classify(['test/fixtures/quoted-video-tweet-response.ts']);
     expectAll(sharedFixture, ['unit', 'e2e', 'semgrep', 'codeql_javascript']);
 
-    const windowsValidation = classify(['validation/windows/live-page.mjs']);
+    const windowsValidation = classify(['validation/windows/live-page.ts']);
     expectAll(windowsValidation, ['unit', 'e2e', 'semgrep', 'codeql_javascript']);
     expect(windowsValidation.build).toBe('false');
     const pins = classify(['scripts/ci/pinned-tools.json']);
