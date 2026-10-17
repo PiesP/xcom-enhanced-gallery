@@ -7,6 +7,14 @@ import test, { after } from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const script = fileURLToPath(new URL('./verify-source.ts', import.meta.url));
+const releaseScripts = {
+  'quality:coverage-owned': 'pnpm quality',
+  'test:cov': 'pnpm test',
+  'build:e2e': 'pnpm build',
+  'test:e2e:all': 'pnpm test:e2e',
+  'build:all:ci': 'pnpm build',
+  'release:prepare': 'node scripts/release/prepare.ts',
+};
 const roots: string[] = [];
 after(() => {
   for (const root of roots) {
@@ -37,7 +45,7 @@ function fixture() {
     source,
     checkout,
     output,
-    commit(pin: unknown, version: unknown = '1.2.3', scripts: unknown = {}): string {
+    commit(pin: unknown, version: unknown = '1.2.3', scripts: unknown = releaseScripts): string {
       writeFileSync(
         join(source, 'package.json'),
         JSON.stringify({ version, volta: { node: pin }, scripts })
@@ -105,13 +113,28 @@ test('protected workflow source rejects an older tag with a retired Nose script'
 
 test('compatible older tag retains its tagged runtime and version', () => {
   const f = fixture();
-  const releaseSha = f.commit('24.15.0', '1.2.3', { quality: 'pnpm check' });
+  const releaseSha = f.commit('24.15.0', '1.2.3', {
+    ...releaseScripts,
+    quality: 'pnpm check',
+  });
   f.tag('v1.2.3');
   const protectedSha = f.commit('26.9.0', '1.2.4');
   f.clone();
   const result = f.run('v1.2.3', protectedSha);
   assert.equal(result.status, 0, result.stderr);
   assert.equal(f.values(), `node-version=24.15.0\nrelease-sha=${releaseSha}\nversion=1.2.3\n`);
+});
+
+test('historical sources missing a current release entrypoint fail before checkout jobs', () => {
+  const f = fixture();
+  const { 'build:e2e': _omitted, ...historicalScripts } = releaseScripts;
+  const head = f.commit('24.15.0', '1.2.3', historicalScripts);
+  f.tag('v1.2.3');
+  f.clone();
+  const result = f.run('v1.2.3', head);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Release source lacks current workflow entrypoints: build:e2e/);
+  assert.equal(f.values(), '');
 });
 
 test('malformed tagged script maps fail before publishing outputs', () => {
