@@ -1,6 +1,4 @@
-# Upgrade only affected qs requirements within the patched 6.x line.
 overrides:
-  qs@>=6.11.1 <6.15.2: "^6.16.0"
   vite@*: "catalog:"
   vitest@*: "catalog:"
 
@@ -16,6 +14,15 @@ engineStrict: true
 
 # Keep paired tooling and plugin peer requirements compatible during installs.
 strictPeerDependencies: true
+
+# The exact managed alias bundles Vite 8.3.4, within these callers' peer ranges.
+# Recheck callers, alias and bundled Vite together on each toolchain update.
+peerDependencyRules:
+  allowedVersions:
+    "@vitest/mocker@5.0.4>vite": 1.2.0
+    "vitest@5.0.4>vite": 1.2.0
+    "vite-plugin-solid@2.11.14>vite": 1.2.0
+    "vitefu@1.1.3>vite": 1.2.0
 
 # Prefer current releases while retaining a short supply-chain observation window.
 minimumReleaseAge: 1440
