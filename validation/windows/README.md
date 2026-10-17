@@ -134,7 +134,7 @@ physical API requests across successive clicks, navigation, reload and a fresh
 page. It checks independent selected-photo identity, uncached provider failures,
 and the exact controlled 403/429/unreadable-503 retry guidance. Owned pages have
 bounded script and console observations, and the helper retains its JSON receipt
-and a screenshot on failure. `video-loading-profile.mjs` opens eight synthetic
+and a screenshot on failure. `video-loading-profile.ts` opens eight synthetic
 videos with a high image-preload setting, checks geometry-based admission and
 far entries without attached sources, and verifies metadata, first frame,
 playback progress and same-attachment decode recovery. The separate HTTPS

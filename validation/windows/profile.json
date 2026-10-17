@@ -15,7 +15,7 @@
       "validation/windows/userscript-loopback.ts",
       "validation/windows/extension-native-loopback.ts",
       "validation/windows/media-api-reuse-profile.ts",
-      "validation/windows/video-loading-profile.mjs",
+      "validation/windows/video-loading-profile.ts",
       "validation/windows/userscript-fixture-certificate.ps1",
       "validation/windows/manager-permission-window.ps1",
       "dist-extension",

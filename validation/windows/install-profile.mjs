@@ -48,7 +48,7 @@ import {
   observeGalleryVolume,
 } from './release-upgrade/gallery-volume.ts';
 import { extensionInventorySha256, readUpgradeInput } from './release-upgrade/source.ts';
-import { runVideoLoadingProfile } from './video-loading-profile.mjs';
+import { runVideoLoadingProfile } from './video-loading-profile.ts';
 
 const PROFILE_PREFIX = 'xeg-chrome-install-';
 const DEFAULT_NOTIFICATION_ICON = 'icons/icon-128x128.png';
