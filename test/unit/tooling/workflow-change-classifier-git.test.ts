@@ -13,7 +13,7 @@ import {
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { classifyChanges } from '../../../scripts/ci/classify-changes.ts';
 
 const classifier = resolve(import.meta.dirname, '../../../scripts/ci/classify-changes.ts');

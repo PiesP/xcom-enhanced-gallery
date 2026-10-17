@@ -1,6 +1,6 @@
 import { resolve } from 'node:path';
 import { resolveConfig } from 'vite';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import vitestConfig from '../../../vitest.config.ts';
 
 const root = resolve(import.meta.dirname, '../../..');

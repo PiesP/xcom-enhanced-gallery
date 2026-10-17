@@ -823,7 +823,6 @@ export async function runVideoLoadingProfile({
       ).catch(() => {});
     }
     if (cleanupFailures.length) {
-      // biome-ignore lint/correctness/noUnsafeFinally: Retain the primary failure together with cleanup failures in the acceptance receipt.
       throw new AggregateError(
         primaryError ? [primaryError, ...cleanupFailures] : cleanupFailures,
         'Video loading assertion and/or task-owned cleanup failed'
@@ -1590,7 +1589,6 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
       JSON.stringify(evidence, null, 2)
     );
     if (errors.length) {
-      // biome-ignore lint/correctness/noUnsafeFinally: Retain the primary failure together with cleanup failures in the acceptance receipt.
       throw new AggregateError(
         primaryError ? [primaryError, ...errors] : errors,
         'Recovery intent fixture cleanup failed'
@@ -1850,7 +1848,6 @@ async function runAdmissionGeometryCases({ context, validMp4, output }) {
       JSON.stringify(evidence, null, 2)
     );
     if (errors.length) {
-      // biome-ignore lint/correctness/noUnsafeFinally: Retain the primary failure together with cleanup failures in the acceptance receipt.
       throw new AggregateError(
         primaryError ? [primaryError, ...errors] : errors,
         'Geometry fixture cleanup failed'

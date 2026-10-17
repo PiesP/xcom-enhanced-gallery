@@ -10,6 +10,8 @@
     "scripts/release/{package-extension,prepare,verify-publication,verify-source,version}.ts",
     "scripts/release/*.test.ts",
     "test/e2e/specs/*.spec.ts",
+    "vite*.ts",
+    "tooling/vitest.after-policy.config.ts",
     "validation/windows/{install-profile,profile}.mjs"
   ],
   "project": [

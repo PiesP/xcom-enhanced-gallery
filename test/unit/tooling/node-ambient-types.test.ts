@@ -1,13 +1,12 @@
 import { spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { existsSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
-import { builtinModules } from 'node:module';
+import { existsSync, mkdtempSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
 import { isAbsolute, join, resolve } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vite-plus/test';
 
 const root = resolve(import.meta.dirname, '../../..');
 const tsc = resolve(root, 'node_modules/typescript/bin/tsc');
-const biome = resolve(root, 'node_modules/.bin/biome');
+const vp = resolve(root, 'node_modules/.bin/vp');
 const temporaryRoots: string[] = [];
 const nodeProjects = [
   {
@@ -107,26 +106,24 @@ function hasNode(files: string[]): boolean {
   return files.some((file) => file.includes('/@types/node/'));
 }
 
-interface BiomeReport {
-  summary: { changed: number; unchanged: number; skipped: number };
-  diagnostics: { category: string; severity: string }[];
+interface LintReport {
+  diagnostics: { code: string; severity: string }[];
+  number_of_files: number;
 }
 
 function lint(relativePath: string) {
-  const result = spawnSync(biome, ['lint', '--reporter=json', relativePath], {
+  const result = spawnSync(vp, ['lint', relativePath, '--format=json'], {
     cwd: root,
     encoding: 'utf8',
     env: { ...process.env, NO_COLOR: '1' },
   });
-  expect(result.error, result.error?.message).toBeUndefined();
-  const report = JSON.parse(result.stdout) as BiomeReport;
-  expect(report.summary.changed + report.summary.unchanged, result.stderr).toBe(1);
-  expect(report.summary.skipped).toBe(0);
-  expect(report.diagnostics.some((diagnostic) => diagnostic.category === 'parse')).toBe(false);
+  expect(result.error).toBeUndefined();
+  const report = JSON.parse(result.stdout) as LintReport;
+  expect(report.number_of_files).toBe(1);
   return { status: result.status, report };
 }
 
-function withBiomeProbe(run: (replace: (code: string) => ReturnType<typeof lint>) => void): void {
+function withLintProbe(run: (replace: (code: string) => ReturnType<typeof lint>) => void): void {
   const relativePath = `src/shared/utils/xeg-node-boundary-${process.pid}-${randomUUID()}.ts`;
   const absolutePath = resolve(root, relativePath);
   let created = false;
@@ -245,34 +242,7 @@ describe('TypeScript runtime boundaries', () => {
   });
 });
 
-describe('Biome browser Node-import boundary', () => {
-  it('covers every public bare builtin exposed by the pinned Node runtime', () => {
-    const config = JSON.parse(readFileSync(resolve(root, 'biome.json'), 'utf8')) as {
-      overrides: {
-        includes: string[];
-        linter: {
-          rules: {
-            style: {
-              noRestrictedImports: { options: { patterns: { group: string[] }[] } };
-            };
-          };
-        };
-      }[];
-    };
-    const sourceOverride = config.overrides.find((override) =>
-      override.includes.includes('src/**')
-    );
-    expect(sourceOverride).toBeDefined();
-    const group = sourceOverride?.linter.rules.style.noRestrictedImports.options.patterns.flatMap(
-      (pattern) => pattern.group
-    );
-    expect(group).toContain('node:*');
-    const publicBare = builtinModules.filter(
-      (name) => !name.startsWith('_') && !name.startsWith('node:')
-    );
-    expect(publicBare.filter((name) => !group?.includes(name))).toEqual([]);
-  });
-
+describe('Oxlint browser Node-import boundary', () => {
   const cases = [
     [
       "import { readFileSync } from 'node:fs';\nexport const read = readFileSync;\n",
@@ -303,13 +273,13 @@ describe('Biome browser Node-import boundary', () => {
   ] as const;
   for (const [index, [invalid, valid]] of cases.entries()) {
     it(`rejects Node import form ${index + 1} and restores a valid import`, () => {
-      withBiomeProbe((replace) => {
+      withLintProbe((replace) => {
         const cleanBefore = replace(valid);
         expect(cleanBefore.status, JSON.stringify(cleanBefore.report.diagnostics)).toBe(0);
         const blocked = replace(invalid);
         expect(blocked.status, JSON.stringify(blocked.report.diagnostics)).toBe(1);
         expect(blocked.report.diagnostics.filter((item) => item.severity === 'error')).toEqual([
-          expect.objectContaining({ category: 'lint/style/noRestrictedImports' }),
+          expect.objectContaining({ code: 'eslint(no-restricted-imports)' }),
         ]);
         const cleanAfter = replace(valid);
         expect(cleanAfter.status, JSON.stringify(cleanAfter.report.diagnostics)).toBe(0);

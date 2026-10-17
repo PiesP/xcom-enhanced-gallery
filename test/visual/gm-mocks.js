@@ -28,8 +28,10 @@
     if (options.onload) {
       setTimeout(options.onload, 0);
     }
+    // oxlint-disable-next-line no-lone-blocks -- Match the host API's optional callback shape.
     if (options.onerror) {
     }
+    // oxlint-disable-next-line no-lone-blocks -- Match the host API's optional callback shape.
     if (options.ontimeout) {
     }
   };

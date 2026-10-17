@@ -33,8 +33,10 @@ updates:
 
     # Group updates by category to reduce PR noise
     groups:
-      vitest:
+      vite-plus:
         patterns:
+          - "vite-plus"
+          - "vite"
           - "vitest"
           - "@vitest/*"
         update-types:
@@ -49,10 +51,9 @@ updates:
           - "minor"
           - "patch"
 
-      # Build tooling (Vite + plugins)
+      # Build plugins; the Vite/Vitest/coverage toolchain follows vite-plus.
       build:
         patterns:
-          - "vite"
           - "vite-plugin-*"
         update-types:
           - "minor"
@@ -67,7 +68,7 @@ updates:
           - "minor"
           - "patch"
 
-      # Linting and formatting (Biome + Knip)
+      # Residual CSS/HTML/Solid lint and dead-code analysis.
       quality:
         patterns:
           - "@biomejs/*"

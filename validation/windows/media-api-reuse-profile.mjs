@@ -453,7 +453,6 @@ export async function runInstalledMediaApiReuseProfile({
       );
     }
     if (cleanupErrors.length > 0) {
-      // biome-ignore lint/correctness/noUnsafeFinally: Retain the primary failure together with cleanup failures in the acceptance receipt.
       throw new AggregateError(
         primaryError ? [primaryError, ...cleanupErrors] : cleanupErrors,
         'Installed API reuse cleanup failed'
@@ -904,7 +903,6 @@ async function runResponseAccountingCases({ context, output, videoPayloads }) {
       );
     }
     if (errors.length) {
-      // biome-ignore lint/correctness/noUnsafeFinally: Retain the primary failure together with cleanup failures in the acceptance receipt.
       throw new AggregateError(
         primaryError ? [primaryError, ...errors] : errors,
         'API accounting fixture cleanup failed'

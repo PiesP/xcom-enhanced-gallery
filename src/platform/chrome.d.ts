@@ -7,7 +7,6 @@
  * Provides type safety for chrome.* APIs used in MV3 extension mode.
  */
 
-// biome-ignore lint/complexity/noUselessEmptyExport: needed to make this a module for global augmentation
 export {};
 
 declare global {

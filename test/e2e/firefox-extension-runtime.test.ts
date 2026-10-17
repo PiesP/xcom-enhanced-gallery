@@ -564,6 +564,7 @@ test('generated Firefox background restores cancellation ownership and ignores l
     },
   });
 
+  // oxlint-disable-next-line prefer-const -- The harness callbacks capture this later assignment.
   let emitRestoredTerminal: GeneratedBackgroundHarness['emitDownloadChanged'] | undefined;
   let firstRestoredSearch = true;
   const restartedWorker = createGeneratedBackgroundHarness({
@@ -622,71 +623,75 @@ test('generated Firefox background restores cancellation ownership and ignores l
   ]);
 });
 
-test('installs the Firefox extension and exercises content and background runtimes', {
-  timeout: TEST_TIMEOUT_MS,
-}, async () => {
-  const port = await startFixtureServer();
-  const options = new firefox.Options()
-    .addArguments('-headless')
-    .setPreference('network.dns.localDomains', 'x.com');
-  options.setAcceptInsecureCerts(true);
+test(
+  'installs the Firefox extension and exercises content and background runtimes',
+  {
+    timeout: TEST_TIMEOUT_MS,
+  },
+  async () => {
+    const port = await startFixtureServer();
+    const options = new firefox.Options()
+      .addArguments('-headless')
+      .setPreference('network.dns.localDomains', 'x.com');
+    options.setAcceptInsecureCerts(true);
 
-  const firefoxDriver = firefox.Driver.createSession(options);
-  driver = firefoxDriver;
-  const addonId = await firefoxDriver.installAddon(createRuntimeTestExtension(), true);
-  assert.equal(addonId, 'xcom-enhanced-gallery@piesp.dev');
+    const firefoxDriver = firefox.Driver.createSession(options);
+    driver = firefoxDriver;
+    const addonId = await firefoxDriver.installAddon(createRuntimeTestExtension(), true);
+    assert.equal(addonId, 'xcom-enhanced-gallery@piesp.dev');
 
-  await firefoxDriver.get(`https://x.com:${port}/testuser/status/1234567890123456789`);
-  await firefoxDriver.wait(
-    async () =>
-      (await firefoxDriver.executeScript(
-        "return document.documentElement.getAttribute('data-xeg-gallery-ready')"
-      )) === 'true',
-    WAIT_TIMEOUT_MS,
-    'Firefox content script did not initialize the gallery'
-  );
+    await firefoxDriver.get(`https://x.com:${port}/testuser/status/1234567890123456789`);
+    await firefoxDriver.wait(
+      async () =>
+        (await firefoxDriver.executeScript(
+          "return document.documentElement.getAttribute('data-xeg-gallery-ready')"
+        )) === 'true',
+      WAIT_TIMEOUT_MS,
+      'Firefox content script did not initialize the gallery'
+    );
 
-  const firstPhoto = await firefoxDriver.findElement(By.css('[data-testid="tweetPhoto"] img'));
-  await firstPhoto.click();
-  const gallery = await firefoxDriver.wait(
-    until.elementLocated(By.css('[data-xeg-gallery-container]')),
-    WAIT_TIMEOUT_MS
-  );
-  assert.equal(await gallery.isDisplayed(), true);
+    const firstPhoto = await firefoxDriver.findElement(By.css('[data-testid="tweetPhoto"] img'));
+    await firstPhoto.click();
+    const gallery = await firefoxDriver.wait(
+      until.elementLocated(By.css('[data-xeg-gallery-container]')),
+      WAIT_TIMEOUT_MS
+    );
+    assert.equal(await gallery.isDisplayed(), true);
 
-  await firefoxDriver.actions().sendKeys(Key.ESCAPE).perform();
-  await firefoxDriver.wait(
-    async () =>
-      (await firefoxDriver.findElements(By.css('[data-xeg-gallery-container]'))).length === 0,
-    WAIT_TIMEOUT_MS,
-    'Firefox gallery did not close before tile recovery'
-  );
-  await firefoxDriver.executeScript(
-    "document.querySelector('main').innerHTML = arguments[0]",
-    STATUS_TILE_DOM
-  );
-  await (await firefoxDriver.findElement(By.id('tile-target'))).click();
-  const tileGallery = await firefoxDriver.wait(
-    until.elementLocated(By.css('[data-xeg-gallery-container]')),
-    WAIT_TIMEOUT_MS
-  );
-  assert.equal(await tileGallery.isDisplayed(), true);
-  const tileItems = await tileGallery.findElements(By.css('[data-gallery-element="item"]'));
-  assert.equal(tileItems.length, 1);
-  assert.match(
-    (await tileItems[0]!.findElement(By.css('img')).getAttribute('src')) ?? '',
-    /tile-photo/
-  );
+    await firefoxDriver.actions().sendKeys(Key.ESCAPE).perform();
+    await firefoxDriver.wait(
+      async () =>
+        (await firefoxDriver.findElements(By.css('[data-xeg-gallery-container]'))).length === 0,
+      WAIT_TIMEOUT_MS,
+      'Firefox gallery did not close before tile recovery'
+    );
+    await firefoxDriver.executeScript(
+      "document.querySelector('main').innerHTML = arguments[0]",
+      STATUS_TILE_DOM
+    );
+    await (await firefoxDriver.findElement(By.id('tile-target'))).click();
+    const tileGallery = await firefoxDriver.wait(
+      until.elementLocated(By.css('[data-xeg-gallery-container]')),
+      WAIT_TIMEOUT_MS
+    );
+    assert.equal(await tileGallery.isDisplayed(), true);
+    const tileItems = await tileGallery.findElements(By.css('[data-gallery-element="item"]'));
+    assert.equal(tileItems.length, 1);
+    assert.match(
+      (await tileItems[0]!.findElement(By.css('img')).getAttribute('src')) ?? '',
+      /tile-photo/
+    );
 
-  const backgroundResponse = await firefoxDriver.wait(
-    async () => {
-      const value = await firefoxDriver.executeScript<string | null>(
-        "return document.documentElement.getAttribute('data-xeg-firefox-background')"
-      );
-      return value ? (JSON.parse(value) as { error?: string; success?: boolean }) : false;
-    },
-    WAIT_TIMEOUT_MS,
-    'Firefox background runtime did not answer the content-script probe'
-  );
-  assert.deepEqual(backgroundResponse, { success: false, error: 'Unknown message type' });
-});
+    const backgroundResponse = await firefoxDriver.wait(
+      async () => {
+        const value = await firefoxDriver.executeScript<string | null>(
+          "return document.documentElement.getAttribute('data-xeg-firefox-background')"
+        );
+        return value ? (JSON.parse(value) as { error?: string; success?: boolean }) : false;
+      },
+      WAIT_TIMEOUT_MS,
+      'Firefox background runtime did not answer the content-script probe'
+    );
+    assert.deepEqual(backgroundResponse, { success: false, error: 'Unknown message type' });
+  }
+);

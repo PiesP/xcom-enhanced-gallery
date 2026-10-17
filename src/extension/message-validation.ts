@@ -15,11 +15,11 @@ function isSafeText(
   maxLength = MAX_TEXT_LENGTH,
   allowNewlines = false
 ): value is string {
-  // biome-ignore-start lint/suspicious/noControlCharactersInRegex: Reject control characters at the extension message boundary.
+  /* oxlint-disable no-control-regex -- Deliberate message-boundary sanitization ranges. */
   const controlCharacters = allowNewlines
     ? /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/
     : /[\u0000-\u001f\u007f]/;
-  // biome-ignore-end lint/suspicious/noControlCharactersInRegex: End the deliberate sanitization patterns.
+  /* oxlint-enable no-control-regex */
   return (
     typeof value === 'string' &&
     value.length > 0 &&

@@ -1,6 +1,8 @@
 # Upgrade only affected qs requirements within the patched 6.x line.
 overrides:
   qs@>=6.11.1 <6.15.2: "^6.16.0"
+  vite@*: "catalog:"
+  vitest@*: "catalog:"
 
 allowBuilds:
   esbuild: true
@@ -22,3 +24,8 @@ minimumReleaseAgeIgnoreMissingTime: false
 trustPolicy: no-downgrade
 # Old transitive releases predate widespread provenance; scrutinize recent ones.
 trustPolicyIgnoreAfter: 525600
+catalog:
+  vite: npm:@voidzero-dev/vite-plus-core@1.2.0
+  vitest: 5.0.4
+  vite-plus: 1.2.0
+  "@vitest/coverage-v8": 5.0.4

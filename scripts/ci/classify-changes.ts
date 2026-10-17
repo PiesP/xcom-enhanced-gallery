@@ -39,7 +39,7 @@ export function classifyChanges(
     if (!(path.startsWith('assets/icons/') && path.endsWith('.png'))) {
       select('semgrep');
     }
-    // Match the root Biome default-inclusion policy, including executable
+    // Match the maintained formatter/linter file families, including executable
     // dot-directory helpers and newly added configs. Captured host fragments,
     // generated lock/baseline data and provider source retain their owners.
     if (

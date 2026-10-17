@@ -2,13 +2,11 @@
 // Copyright (c) 2024-2026 PiesP
 
 import solid from 'vite-plugin-solid';
-import { defineConfig } from 'vitest/config';
+import { defineConfig } from 'vite-plus';
 
 // These suites temporarily mutate files observed by repository-wide tools.
 const repositoryProbeFiles = [
-  'test/unit/tooling/biome-coverage.test.ts',
-  'test/unit/tooling/biome-policy.test.ts',
-  'test/unit/tooling/biome-braces.test.ts',
+  'test/unit/tooling/toolchain-policy.test.ts',
   'test/unit/tooling/node-ambient-types.test.ts',
   'test/unit/tooling/knip-boundaries.test.ts',
 ];
@@ -18,6 +16,10 @@ export function createVitestConfig(excludeBoundaryProbe = false) {
     define: { __DEV__: true },
     plugins: [solid()],
     test: {
+      // Preserve Vitest 4 mock history and per-project plugin lifecycles during migration.
+      clearMocks: false,
+      sharedViteServer: false,
+      fakeTimers: { toNotFake: ['Temporal'] },
       globals: true,
       environment: 'jsdom',
       setupFiles: ['./test/setup.ts'],

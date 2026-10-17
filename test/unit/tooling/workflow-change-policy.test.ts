@@ -2,7 +2,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { chmodSync, globSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { classifyChanges } from '../../../scripts/ci/classify-changes.ts';
 
 const root = resolve(import.meta.dirname, '../../..');
@@ -111,7 +111,7 @@ function commandBoundaryCount(command: string): number {
       expect(scripts[nested], nested).toBeDefined();
       return count + commandBoundaryCount(scripts[nested] ?? '');
     }
-    if (part.startsWith('vitest run')) {
+    if (part.startsWith('vp test run')) {
       return count + (part.includes('--config tooling/vitest.after-policy.config.ts') ? 0 : 1);
     }
     return count;
