@@ -222,12 +222,12 @@ test('quoted source link waits for selected owner and reports persistent mismatc
     await assert.rejects(assertQuotedOriginLink(gallery, expected), (error: unknown) => {
       assert(error instanceof Error);
       assert.match(error.message, /Toolbar source link must identify the selected post/);
-      assert.match(error.message, /https:\/\/x\.com\/stale\/status\/1/);
+      assert(error.message.includes('https://x.com/stale/status/1'));
       assert.match(
         error.message,
         /"currentIndex":"0","focusedIndex":"1","position":"2","total":"2"/
       );
-      assert.match(error.message, /https:\/\/x\.com\/quote_owner\/status\/9333333333333333333/);
+      assert(error.message.includes(expected));
       return true;
     });
     assert.equal(await page.locator('#toolbar-tweet-panel').isHidden(), true);
