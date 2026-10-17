@@ -4,7 +4,6 @@
 import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';
 import { execFile } from 'node:child_process';
-import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { basename, dirname, join, resolve } from 'node:path';
 import { promisify } from 'node:util';
@@ -38,7 +37,7 @@ import {
   observeGalleryKeyboardNavigation,
   observeGalleryVolume,
 } from './release-upgrade/gallery-volume.ts';
-import { readUpgradeInput, requireManagerEditorSource } from './release-upgrade/source.ts';
+import { readUpgradeInput, requireManagerEditorSource, sha256 } from './release-upgrade/source.ts';
 import { startUserscriptFixtureLoopback } from './userscript-loopback.ts';
 
 const SCRIPT_NAME = 'X.com Enhanced Gallery';
@@ -602,9 +601,6 @@ export async function inspectAndAllowNativeManagerPermission(
   }
 }
 
-function sha256(bytes: Uint8Array) {
-  return createHash('sha256').update(bytes).digest('hex');
-}
 function filename(index: number) {
   return `testuser_${TWEET_ID}_${index}.jpg`;
 }

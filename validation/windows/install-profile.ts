@@ -5108,10 +5108,11 @@ async function withControlledFixtureVideoMode<T extends object>(
     prior = await readStoredVideoSettings(extensionPage);
     evidence.priorStoredMode = storedVideoClickMode(prior.settings);
     const next = createControlledVideoSettings(prior.value, Date.now());
+    const gallery: Record<string, unknown> = next.gallery;
     if (mode === 'default') {
-      delete next.gallery.videoClickMode;
+      delete gallery.videoClickMode;
     } else {
-      next.gallery.videoClickMode = mode;
+      gallery.videoClickMode = mode;
     }
     mutated = true;
     await extensionPage.evaluate(

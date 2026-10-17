@@ -7,6 +7,7 @@ import { createHash, createPrivateKey, X509Certificate } from 'node:crypto';
 import { createServer } from 'node:https';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { promisify } from 'node:util';
+import { startHttpsLoopback } from './https-loopback-lifecycle.ts';
 
 const execFileAsync = promisify(execFile);
 const HOST = 'pbs.twimg.com';
@@ -345,52 +346,12 @@ export async function startUserscriptFixtureLoopback(
   } catch {
     throw new Error('fixture-loopback-unavailable');
   }
-  server.maxConnections = 8;
-  server.headersTimeout = 5_000;
-  server.requestTimeout = 5_000;
-  server.keepAliveTimeout = 1_000;
-  server.timeout = 20_000;
-  let serverError = false;
-  server.on('error', () => {
-    serverError = true;
-  });
-  server.on('connection', (socket) => socket.setTimeout(20_000, () => socket.destroy()));
-  try {
-    await new Promise<void>((resolveListen, rejectListen) => {
-      server.once('error', rejectListen);
-      server.listen(0, '127.0.0.1', () => {
-        server.off('error', rejectListen);
-        resolveListen();
-      });
-    });
-    const address = server.address();
-    assert(
-      address &&
-        typeof address !== 'string' &&
-        address.address === '127.0.0.1' &&
-        Number.isSafeInteger(address.port) &&
-        address.port > 0
-    );
-    return {
-      ...fixture,
-      port: address.port,
-      spkiSha256: certificate.spkiSha256,
-      snapshot: () => ({ ...fixture.snapshot(), serverError }),
-      async close() {
-        fixture.destroyActive();
-        server.closeAllConnections();
-        await new Promise<void>((resolveClose, rejectClose) =>
-          server.close((error) => (error ? rejectClose(error) : resolveClose()))
-        );
-      },
-    };
-  } catch {
-    server.closeAllConnections();
-    try {
-      server.close();
-    } catch {
-      /* The listener never started. */
-    }
-    throw new Error('fixture-loopback-unavailable');
-  }
+  const lifecycle = await startHttpsLoopback(server, 'fixture-loopback-unavailable');
+  return {
+    ...fixture,
+    port: lifecycle.port,
+    spkiSha256: certificate.spkiSha256,
+    snapshot: () => ({ ...fixture.snapshot(), serverError: lifecycle.serverError() }),
+    close: () => lifecycle.close(fixture.destroyActive),
+  };
 }

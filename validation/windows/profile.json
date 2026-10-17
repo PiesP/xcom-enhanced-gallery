@@ -14,6 +14,7 @@
       "validation/windows/release-upgrade",
       "validation/windows/userscript-loopback.ts",
       "validation/windows/extension-native-loopback.ts",
+      "validation/windows/https-loopback-lifecycle.ts",
       "validation/windows/media-api-reuse-profile.ts",
       "validation/windows/video-loading-profile.ts",
       "validation/windows/userscript-fixture-certificate.ps1",
