@@ -129,7 +129,7 @@ and CRC. Screenshots, source URLs, request observations, timings and hashes rema
 in normal and partial failure receipts. Shared HTML and userscript routes retain
 their existing allowlisted paths. This is fixture evidence, not live-CDN proof.
 
-The same installed profile invokes `media-api-reuse-profile.mjs` to compare
+The same installed profile invokes `media-api-reuse-profile.ts` to compare
 physical API requests across successive clicks, navigation, reload and a fresh
 page. It checks independent selected-photo identity, uncached provider failures,
 and the exact controlled 403/429/unreadable-503 retry guidance. Owned pages have

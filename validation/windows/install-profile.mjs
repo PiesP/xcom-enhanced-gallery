@@ -40,7 +40,7 @@ import {
   validateLiveObservation,
   validateLiveUrls,
 } from './live-page.mjs';
-import { runInstalledMediaApiReuseProfile } from './media-api-reuse-profile.mjs';
+import { runInstalledMediaApiReuseProfile } from './media-api-reuse-profile.ts';
 import {
   captureUpgradeSettingsFailure,
   observeDefaultVideoClick,

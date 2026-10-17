@@ -5,6 +5,110 @@ import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import type { BrowserContext, ConsoleMessage, Page, Route } from '@playwright/test';
+
+type Variant =
+  | 'healthy'
+  | 'denied'
+  | 'rate-limited'
+  | 'unreadable-retry'
+  | 'provider-error'
+  | 'malformed'
+  | 'malformed-wrapper';
+type Cleanup = {
+  routesRemoved: boolean;
+  pagesClosed: boolean;
+  pageRestored: boolean;
+  errors?: string[];
+};
+type ApiRequest = {
+  variant: Variant;
+  method: string;
+  status: number;
+  requestedAtMonotonicMs: number;
+  fulfilledAtMonotonicMs?: number;
+};
+type ApiCase = {
+  case: string;
+  apiRequests?: number;
+  immediateApiRequests?: number;
+  afterWaitApiRequests?: number;
+  elapsedMs?: number;
+  index?: number;
+  clickedAtMonotonicMs?: number;
+  path?: string;
+  original?: boolean;
+  width?: number;
+  height?: number;
+};
+type MediaEvidence = {
+  status: string;
+  cases: ApiCase[];
+  requests: ApiRequest[];
+  pageErrors: string[];
+  consoleErrors: { variant: Variant; text: string; expected: boolean }[];
+  cleanup: Cleanup;
+  responseAccounting?: AccountingEvidence;
+  reuseElapsedMs?: number;
+  retryAfterSeconds?: number;
+  untested?: string[];
+  error?: string;
+};
+type AccountingRecord = {
+  sequence: string;
+  ordinal: number;
+  requestedId: string;
+  step: number;
+  status: number;
+  fixtureResponseKind: string;
+  method: string;
+  requestedAtMonotonicMs: number;
+  fulfilledAtMonotonicMs: number | null;
+};
+type AccountingCase = {
+  name: string;
+  expectedRequests: number;
+  requestedIds: string[];
+  status: string;
+  actions: {
+    index: number;
+    requestedId: string;
+    clickedAtMonotonicMs: number;
+    observedAtMonotonicMs: number;
+  }[];
+  videoRequests: { url: string; atMonotonicMs: number }[];
+  documentBefore?: { href: string; timeOrigin: number };
+  documentAfter?: { href: string; timeOrigin: number };
+  control?: {
+    position: string | null | undefined;
+    total: string | null | undefined;
+    canonical: string | null | undefined;
+    source: string | undefined;
+    error: number | null;
+  };
+  actualRequests?: number;
+  error?: string;
+};
+type AccountingEvidence = {
+  status: string;
+  cases: AccountingCase[];
+  requests: AccountingRecord[];
+  threshold: number;
+  cooldownMs: number;
+  settleMs: number;
+  suppressedObservationMs: number;
+  cleanup: { routeRemoved: boolean; pagesClosed: boolean; errors?: string[] };
+  pageErrors: { sequence: string; error: string }[];
+  consoleErrors: { sequence: string; text: string; expected: boolean }[];
+  error?: string;
+};
+type AccountingState = {
+  name: string;
+  expectedRequests: number;
+  ids: string[];
+  url: string;
+  videoRequests: { url: string; atMonotonicMs: number }[];
+};
 
 const API_ROUTE = '**/TweetResultByRestId*';
 const GALLERY = '[data-xeg-gallery-container]';
@@ -12,24 +116,37 @@ const READY = 'html[data-xeg-gallery-ready="true"]';
 const MAX_OBSERVATIONS = 32;
 const RETRY_AFTER_SECONDS = 3;
 
-function targetRequest(route, tweetId) {
+function targetRequest(route: Route, tweetId: string) {
   const url = new URL(route.request().url());
   if (url.hostname !== 'x.com' || !url.pathname.endsWith('/TweetResultByRestId')) {
     return false;
   }
   try {
-    return JSON.parse(url.searchParams.get('variables') ?? '{}').tweetId === tweetId;
+    const variables: unknown = JSON.parse(url.searchParams.get('variables') ?? '{}');
+    return (
+      typeof variables === 'object' &&
+      variables !== null &&
+      'tweetId' in variables &&
+      variables.tweetId === tweetId
+    );
   } catch {
     return false;
   }
 }
 
-async function readyPage(page, url) {
+async function readyPage(page: Page, url: string) {
   await page.goto(url);
   await page.locator(READY).waitFor({ state: 'attached', timeout: 15_000 });
 }
 
-async function openAndClose(page, index, imagePaths, expectedUrl, original, verifyOrigin = true) {
+async function openAndClose(
+  page: Page,
+  index: number,
+  imagePaths: string[],
+  expectedUrl: string,
+  original: boolean,
+  verifyOrigin = true
+) {
   const trigger = page
     .locator('[data-route="classic"][data-phase="normal"] [data-testid="tweetPhoto"] img')
     .nth(index);
@@ -71,7 +188,7 @@ async function openAndClose(page, index, imagePaths, expectedUrl, original, veri
       { timeout: 15_000 }
     )
     .then((handle) => handle.jsonValue());
-  assert(selection, 'Selected quality photo did not become ready');
+  assert(selection && typeof selection === 'object', 'Selected quality photo did not become ready');
   const source = new URL(selection.source);
   assert.equal(source.hostname, 'pbs.twimg.com');
   assert.equal(
@@ -131,6 +248,14 @@ export async function runInstalledMediaApiReuseProfile({
   qualityImagePaths,
   output,
   videoPayloads,
+}: {
+  context: BrowserContext;
+  page: Page;
+  qualityFixtureUrl: string;
+  qualityTweetId: string;
+  qualityImagePaths: string[];
+  output: string;
+  videoPayloads: Record<string, Buffer>;
 }) {
   assert(context && page, 'Installed browser context and page are required');
   assert.equal(qualityImagePaths?.length, 3, 'Three quality fixture paths are required');
@@ -140,32 +265,37 @@ export async function runInstalledMediaApiReuseProfile({
     'Expected installed quality fixture route'
   );
 
-  const requests = [];
-  const ownedPages = [];
-  const observedPages = [];
-  const pageErrors = [];
-  const consoleErrors = [];
+  const requests: ApiRequest[] = [];
+  const ownedPages: Page[] = [];
+  const observedPages: {
+    page: Page;
+    onPageError: (error: Error) => void;
+    onConsole: (message: ConsoleMessage) => void;
+  }[] = [];
+  const pageErrors: string[] = [];
+  const consoleErrors: MediaEvidence['consoleErrors'] = [];
   let errorOverflow = false;
   let activePage = page;
   const originalPageUrl = page.url();
-  let variant = 'healthy';
-  const routeHandler = async (route) => {
+  let variant: Variant = 'healthy';
+  const routeHandler = async (route: Route) => {
     if (!targetRequest(route, qualityTweetId)) {
       return route.fallback();
     }
     assert(requests.length < MAX_OBSERVATIONS, 'API reuse observation overflow');
-    const record = {
+    const statuses: Record<Variant, number> = {
+      healthy: 200,
+      denied: 403,
+      'rate-limited': 429,
+      'unreadable-retry': 503,
+      'provider-error': 200,
+      malformed: 200,
+      'malformed-wrapper': 200,
+    };
+    const record: ApiRequest = {
       variant,
       method: route.request().method(),
-      status: {
-        healthy: 200,
-        denied: 403,
-        'rate-limited': 429,
-        'unreadable-retry': 503,
-        'provider-error': 200,
-        malformed: 200,
-        'malformed-wrapper': 200,
-      }[variant],
+      status: statuses[variant],
       requestedAtMonotonicMs: performance.now(),
     };
     requests.push(record);
@@ -223,16 +353,16 @@ export async function runInstalledMediaApiReuseProfile({
     }
     record.fulfilledAtMonotonicMs = performance.now();
   };
-  const observePage = (observed) => {
+  const observePage = (observed: Page) => {
     const observedVariant = variant;
-    const onPageError = (error) => {
+    const onPageError = (error: Error) => {
       if (pageErrors.length < MAX_OBSERVATIONS) {
         pageErrors.push(error.message.slice(0, 500));
       } else {
         errorOverflow = true;
       }
     };
-    const onConsole = (message) => {
+    const onConsole = (message: ConsoleMessage) => {
       if (message.type() !== 'error') {
         return;
       }
@@ -267,7 +397,7 @@ export async function runInstalledMediaApiReuseProfile({
     observed.on('console', onConsole);
     observedPages.push({ page: observed, onPageError, onConsole });
   };
-  const count = (name) => requests.filter((request) => request.variant === name).length;
+  const count = (name: Variant) => requests.filter((request) => request.variant === name).length;
   const newFixturePage = async (url = qualityFixtureUrl) => {
     const owned = await context.newPage();
     ownedPages.push(owned);
@@ -276,8 +406,8 @@ export async function runInstalledMediaApiReuseProfile({
     await readyPage(owned, url);
     return owned;
   };
-  const cases = [];
-  const evidence = {
+  const cases: ApiCase[] = [];
+  const evidence: MediaEvidence = {
     status: 'running',
     cases,
     requests,
@@ -285,7 +415,8 @@ export async function runInstalledMediaApiReuseProfile({
     consoleErrors,
     cleanup: { routesRemoved: false, pagesClosed: false, pageRestored: false },
   };
-  let primaryError;
+  let primaryError: unknown;
+  const cleanupErrors: unknown[] = [];
 
   observePage(page);
   await context.route(API_ROUTE, routeHandler);
@@ -329,7 +460,7 @@ export async function runInstalledMediaApiReuseProfile({
       ['provider-error', 2],
       ['malformed', 2],
       ['malformed-wrapper', 2],
-    ]) {
+    ] satisfies [Variant, number][]) {
       variant = name;
       const failurePage = await newFixturePage();
       const started = performance.now();
@@ -361,9 +492,10 @@ export async function runInstalledMediaApiReuseProfile({
       );
       const immediateApiRequests = count(name);
       if (expectedRequests === 1) {
-        const firstFulfilled = requests.find(
-          (request) => request.variant === name
-        ).fulfilledAtMonotonicMs;
+        const firstRequest = requests.find((request) => request.variant === name);
+        assert(firstRequest);
+        const firstFulfilled = firstRequest.fulfilledAtMonotonicMs;
+        assert(firstFulfilled !== undefined);
         const remainingMs = Math.max(
           0,
           firstFulfilled + RETRY_AFTER_SECONDS * 1_000 + 100 - performance.now()
@@ -399,7 +531,6 @@ export async function runInstalledMediaApiReuseProfile({
       retryAfterSeconds: RETRY_AFTER_SECONDS,
       untested: ['HLS-only media requires a video fixture'],
     });
-    return evidence;
   } catch (error) {
     primaryError = error;
     evidence.status = 'failed';
@@ -409,9 +540,7 @@ export async function runInstalledMediaApiReuseProfile({
         .screenshot({ path: join(output, 'api-reuse-failure.png'), fullPage: true })
         .catch(() => {});
     }
-    throw error;
   } finally {
-    const cleanupErrors = [];
     try {
       await context.unroute(API_ROUTE, routeHandler);
       evidence.cleanup.routesRemoved = true;
@@ -452,13 +581,17 @@ export async function runInstalledMediaApiReuseProfile({
         JSON.stringify(evidence, null, 2)
       );
     }
-    if (cleanupErrors.length > 0) {
-      throw new AggregateError(
-        primaryError ? [primaryError, ...cleanupErrors] : cleanupErrors,
-        'Installed API reuse cleanup failed'
-      );
-    }
   }
+  if (cleanupErrors.length > 0) {
+    throw new AggregateError(
+      primaryError ? [primaryError, ...cleanupErrors] : cleanupErrors,
+      'Installed API reuse cleanup failed'
+    );
+  }
+  if (primaryError) {
+    throw primaryError;
+  }
+  return evidence;
 }
 
 const ACCOUNTING_SETTLE_MS = 500;
@@ -468,15 +601,15 @@ const ACCOUNTING_POSTER = Buffer.from(
   'base64'
 );
 
-function accountingPoster(id) {
+function accountingPoster(id: string) {
   return `https://pbs.twimg.com/ext_tw_video_thumb/${id}/pu/img/contract.png`;
 }
 
-function accountingVideo(id) {
+function accountingVideo(id: string) {
   return `https://video.twimg.com/ext_tw_video/${id}/pu/vid/320x180/contract.mp4`;
 }
 
-function accountingResponse(id, mediaId = id) {
+function accountingResponse(id: string, mediaId = id) {
   return {
     data: {
       tweetResult: {
@@ -518,7 +651,7 @@ function accountingResponse(id, mediaId = id) {
   };
 }
 
-function accountingHtml(ids) {
+function accountingHtml(ids: string[]) {
   return `<!doctype html><html lang="en"><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>API response accounting fixture</title><style>
@@ -541,7 +674,15 @@ function accountingHtml(ids) {
 }
 
 /** Real installed extension requests in one document per sequence; no app state injection. */
-async function runResponseAccountingCases({ context, output, videoPayloads }) {
+async function runResponseAccountingCases({
+  context,
+  output,
+  videoPayloads,
+}: {
+  context: BrowserContext;
+  output: string;
+  videoPayloads: Record<string, Buffer>;
+}) {
   const valid = videoPayloads?.['quote-one'];
   assert(
     Buffer.isBuffer(valid) && valid.length > 0 && valid.length <= 256 * 1024,
@@ -554,9 +695,9 @@ async function runResponseAccountingCases({ context, output, videoPayloads }) {
     { name: 'healthy-unavailable', expectedRequests: 4 },
     { name: 'healthy-local-mismatch-after-503', expectedRequests: 4 },
   ];
-  const records = [];
-  const cases = [];
-  const evidence = {
+  const records: AccountingRecord[] = [];
+  const cases: AccountingCase[] = [];
+  const evidence: AccountingEvidence = {
     status: 'running',
     cases,
     requests: records,
@@ -568,10 +709,11 @@ async function runResponseAccountingCases({ context, output, videoPayloads }) {
     pageErrors: [],
     consoleErrors: [],
   };
-  const ownedPages = [];
-  let active;
-  let primaryError;
-  const routeHandler = async (route) => {
+  const ownedPages: Page[] = [];
+  let active: AccountingState | undefined;
+  let primaryError: unknown;
+  const errors: unknown[] = [];
+  const routeHandler = async (route: Route) => {
     if (!active) {
       return route.fallback();
     }
@@ -599,10 +741,21 @@ async function runResponseAccountingCases({ context, output, videoPayloads }) {
     if (target.hostname !== 'x.com' || !target.pathname.endsWith('/TweetResultByRestId')) {
       return route.fallback();
     }
-    let id;
+    let id: string | undefined;
     try {
-      id = JSON.parse(target.searchParams.get('variables') ?? '{}').tweetId;
+      const variables: unknown = JSON.parse(target.searchParams.get('variables') ?? '{}');
+      if (
+        typeof variables === 'object' &&
+        variables !== null &&
+        'tweetId' in variables &&
+        typeof variables.tweetId === 'string'
+      ) {
+        id = variables.tweetId;
+      }
     } catch {
+      return route.fallback();
+    }
+    if (!id) {
       return route.fallback();
     }
     const step = active.ids.indexOf(id);
@@ -611,8 +764,8 @@ async function runResponseAccountingCases({ context, output, videoPayloads }) {
     }
     assert(records.length < MAX_OBSERVATIONS, 'API accounting record cap exceeded');
     let status = 200;
-    let response;
-    let classification;
+    let response: unknown;
+    let classification: string;
     if (step === 3) {
       response = accountingResponse(id);
       classification = 'valid-owner-control';
@@ -647,7 +800,7 @@ async function runResponseAccountingCases({ context, output, videoPayloads }) {
       };
       classification = 'foreign-root';
     }
-    const record = {
+    const record: AccountingRecord = {
       sequence: active.name,
       ordinal: records.length + 1,
       requestedId: id,
@@ -675,7 +828,7 @@ async function runResponseAccountingCases({ context, output, videoPayloads }) {
         (_, index) =>
           `47770001112223${String(sequenceIndex).padStart(2, '0')}${String(index + 1).padStart(3, '0')}`
       );
-      const state = {
+      const state: AccountingState = {
         ...descriptor,
         ids,
         url: `https://x.com/contractseq/status/${ids[0]}`,
@@ -684,21 +837,29 @@ async function runResponseAccountingCases({ context, output, videoPayloads }) {
       active = state;
       const owned = await context.newPage();
       ownedPages.push(owned);
-      const pageError = (error) => {
+      const pageError = (error: Error) => {
         assert(evidence.pageErrors.length < MAX_OBSERVATIONS);
         evidence.pageErrors.push({ sequence: state.name, error: error.message.slice(0, 500) });
       };
-      const consoleError = (message) => {
+      const consoleError = (message: ConsoleMessage) => {
         if (message.type() !== 'error') {
           return;
         }
         assert(evidence.consoleErrors.length < MAX_OBSERVATIONS);
         const text = message.text().slice(0, 500);
-        let id;
+        let id: string | undefined;
         try {
           const location = new URL(message.location().url);
           if (location.hostname === 'x.com' && location.pathname.endsWith('/TweetResultByRestId')) {
-            id = JSON.parse(location.searchParams.get('variables') ?? '{}').tweetId;
+            const variables: unknown = JSON.parse(location.searchParams.get('variables') ?? '{}');
+            if (
+              typeof variables === 'object' &&
+              variables !== null &&
+              'tweetId' in variables &&
+              typeof variables.tweetId === 'string'
+            ) {
+              id = variables.tweetId;
+            }
           }
         } catch {
           /* Unknown locations cannot establish an expected error. */
@@ -707,6 +868,7 @@ async function runResponseAccountingCases({ context, output, videoPayloads }) {
           sequence: state.name,
           text,
           expected:
+            id !== undefined &&
             state.ids.includes(id) &&
             /status of 503(?:\D|$)/u.test(text) &&
             records.some((record) => record.requestedId === id && record.status === 503),
@@ -714,7 +876,7 @@ async function runResponseAccountingCases({ context, output, videoPayloads }) {
       };
       owned.on('pageerror', pageError);
       owned.on('console', consoleError);
-      const observed = {
+      const observed: AccountingCase = {
         name: state.name,
         expectedRequests: state.expectedRequests,
         requestedIds: ids,
@@ -725,6 +887,8 @@ async function runResponseAccountingCases({ context, output, videoPayloads }) {
       cases.push(observed);
       try {
         await readyPage(owned, state.url);
+        const controlId = ids[3];
+        assert(controlId);
         observed.documentBefore = await owned.evaluate(() => ({
           href: location.href,
           timeOrigin: performance.timeOrigin,
@@ -771,7 +935,7 @@ async function runResponseAccountingCases({ context, output, videoPayloads }) {
                   video.currentSrc === expected
                 );
               },
-              accountingVideo(ids[3]),
+              accountingVideo(controlId),
               { timeout: 15_000 }
             );
             const gallery = owned.locator(GALLERY);
@@ -790,13 +954,13 @@ async function runResponseAccountingCases({ context, output, videoPayloads }) {
             });
             assert.equal(observed.control.position, '1');
             assert.equal(observed.control.total, '1');
-            assert.equal(observed.control.canonical, accountingVideo(ids[3]));
+            assert.equal(observed.control.canonical, accountingVideo(controlId));
             await gallery.locator('#tweet-text-button').click();
             assert.equal(
               await gallery
                 .locator('#toolbar-tweet-panel a[href^="https://x.com/"]')
                 .getAttribute('href'),
-              `https://x.com/contractseq/status/${ids[3]}`
+              `https://x.com/contractseq/status/${controlId}`
             );
             await gallery.locator('#tweet-text-button').click();
           } else {
@@ -807,9 +971,11 @@ async function runResponseAccountingCases({ context, output, videoPayloads }) {
               'Open circuit must not produce a gallery from the queued fourth response'
             );
           }
+          const requestedId: string | undefined = ids[index];
+          assert(requestedId);
           observed.actions.push({
             index,
-            requestedId: ids[index],
+            requestedId,
             clickedAtMonotonicMs,
             observedAtMonotonicMs: performance.now(),
           });
@@ -835,8 +1001,14 @@ async function runResponseAccountingCases({ context, output, videoPayloads }) {
           ids.slice(0, state.expectedRequests)
         );
         const third = actual.find((record) => record.step === 2);
+        const fourthAction = observed.actions[3];
         assert(
-          observed.actions[3].clickedAtMonotonicMs - third.fulfilledAtMonotonicMs < 60_000,
+          third?.fulfilledAtMonotonicMs !== null &&
+            third?.fulfilledAtMonotonicMs !== undefined &&
+            fourthAction
+        );
+        assert(
+          fourthAction.clickedAtMonotonicMs - third.fulfilledAtMonotonicMs < 60_000,
           'Fourth action must precede the unchanged cooldown'
         );
         observed.status = 'passed';
@@ -869,14 +1041,11 @@ async function runResponseAccountingCases({ context, output, videoPayloads }) {
       'Required installed API response-accounting cases failed'
     );
     evidence.status = 'passed';
-    return evidence;
   } catch (error) {
     primaryError = error;
     evidence.status = 'failed';
     evidence.error = error instanceof Error ? error.message : String(error);
-    throw error;
   } finally {
-    const errors = [];
     await context
       .unroute('**/*', routeHandler)
       .then(() => {
@@ -902,11 +1071,15 @@ async function runResponseAccountingCases({ context, output, videoPayloads }) {
         JSON.stringify(evidence, null, 2)
       );
     }
-    if (errors.length) {
-      throw new AggregateError(
-        primaryError ? [primaryError, ...errors] : errors,
-        'API accounting fixture cleanup failed'
-      );
-    }
   }
+  if (errors.length) {
+    throw new AggregateError(
+      primaryError ? [primaryError, ...errors] : errors,
+      'API accounting fixture cleanup failed'
+    );
+  }
+  if (primaryError) {
+    throw primaryError;
+  }
+  return evidence;
 }
