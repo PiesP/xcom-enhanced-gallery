@@ -3,9 +3,8 @@
 // Copyright (c) 2024-2026 PiesP
 
 /** Verify that an extension build contains classic IIFE content code and required assets. */
-import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import {
   readDistributionNotices,
   readRegularNoticeFile,
@@ -126,17 +125,6 @@ export function verifyExtensionBuild(): void {
   console.log('\n✅ Extension build verification passed\n');
 }
 
-function isDirectInvocation(): boolean {
-  if (!process.argv[1]) {
-    return false;
-  }
-  try {
-    return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
-  } catch {
-    return false;
-  }
-}
-
-if (isDirectInvocation()) {
+if (import.meta.main) {
   verifyExtensionBuild();
 }

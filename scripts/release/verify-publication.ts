@@ -1,6 +1,5 @@
 import { execFileSync } from 'node:child_process';
 import { appendFileSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 
 type ReadApi = (path: string, asset?: boolean) => Promise<unknown>;
 type Git = (args: string[]) => string;
@@ -161,7 +160,7 @@ export async function verifyPublication(
   return { publish: false, makeLatest: false };
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === import.meta.filename) {
+if (import.meta.main) {
   const repository = process.env.GITHUB_REPOSITORY ?? '';
   const token = process.env.GH_TOKEN;
   const output = process.env.GITHUB_OUTPUT;

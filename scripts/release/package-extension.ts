@@ -2,9 +2,8 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, realpathSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 const root = resolve(import.meta.dirname, '..', '..');
 function packageVersion(): string {
@@ -48,17 +47,6 @@ export function packageExtensions(options?: {
   return archives;
 }
 
-function isDirectInvocation(): boolean {
-  if (!process.argv[1]) {
-    return false;
-  }
-  try {
-    return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
-  } catch {
-    return false;
-  }
-}
-
-if (isDirectInvocation()) {
+if (import.meta.main) {
   packageExtensions();
 }

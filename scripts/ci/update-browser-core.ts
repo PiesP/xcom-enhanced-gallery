@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 
 import { execFileSync } from 'node:child_process';
-import { appendFileSync, realpathSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { appendFileSync } from 'node:fs';
 
 const shaPattern = /^[0-9a-f]{40}$/;
 const branch = 'automation/update-browser-core';
@@ -335,18 +334,7 @@ function main(): void {
   }
 }
 
-function isCliEntry(): boolean {
-  if (!process.argv[1]) {
-    return false;
-  }
-  try {
-    return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
-  } catch {
-    return false;
-  }
-}
-
-if (isCliEntry()) {
+if (import.meta.main) {
   try {
     main();
   } catch (error) {
