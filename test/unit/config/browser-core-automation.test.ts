@@ -28,7 +28,7 @@ describe('browser-core workflow composition', () => {
 
   it('classifies before publication and passes the exact prepared revisions', () => {
     const impact = workflow.indexOf(
-      'automation/actions/consumer-impact@f9a7feec01970394bc6291b63abdd792b6d050e1'
+      'automation/actions/consumer-impact@bfb692953b18d99203591cb0671978d5ff6115b8'
     );
     expect(impact).toBeGreaterThan(workflow.indexOf('scripts/ci/update-browser-core.ts prepare'));
     expect(workflow.indexOf('scripts/ci/update-browser-core.ts publish')).toBeGreaterThan(impact);
