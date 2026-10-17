@@ -315,6 +315,19 @@ cooling window. Keep pnpm trust, build-script, and transitive-source controls
 enabled. `package.json`, `pnpm-workspace.yaml`, the lockfile, and pinned workflow
 references are authoritative.
 
+Vite+ owns the Vite, Vitest, coverage, and core-tool versions. Dependabot keeps
+`vite-plus` update PRs visible while omitting ordinary component-version PRs for
+`vite`, `vitest`, `@vitest/*`, and `@voidzero-dev/vite-plus-core`. Security updates
+and alerts remain visible. For a Vite+ update, select an exact stable release
+published at least 24 hours earlier and set `VERSION` to that release. Follow the
+[project upgrade guide](https://viteplus.dev/guide/upgrade-project): run
+`pnpm dlx --package="vite-plus@$VERSION" vp help migrate`, then
+`pnpm dlx --package="vite-plus@$VERSION" vp migrate --no-interactive --no-agent --no-editor --no-hooks`.
+Review the managed Vite alias, Vitest and coverage catalog entries, and exact
+peer-compatibility selectors against the bundled versions. Confirm fresh
+dependency resolution, a frozen install, and `pnpm verify:full` before merging.
+Upgrading a global `vp` installation does not update this project's package graph.
+
 Every dependency update requires explicit maintainer review, including Action,
 executable npm, patch/minor, major and security updates. No auto-eligible
 category remains; missing, mixed or unsupported metadata cannot grant admission.
