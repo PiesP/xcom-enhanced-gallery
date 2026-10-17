@@ -2726,6 +2726,33 @@ export async function readStoredVideoSettings(extensionPage: Page): Promise<Stor
   return { ...prior, settings: decodeStoredValue(prior.value) };
 }
 
+export async function restoreStoredVideoSettings(
+  extensionPage: Page,
+  previous: Pick<StorageRecord, 'exists' | 'value'>
+): Promise<boolean> {
+  const storageKey = 'xeg-app-settings';
+  await extensionPage.evaluate(
+    async ({ storageKey, previous }) => {
+      if (previous.exists) {
+        await chrome.storage.local.set({ [storageKey]: previous.value });
+      } else {
+        await chrome.storage.local.remove(storageKey);
+      }
+    },
+    { storageKey, previous }
+  );
+  return extensionPage.evaluate(
+    async ({ storageKey, previous }) => {
+      const values = await chrome.storage.local.get(storageKey);
+      return (
+        Object.hasOwn(values, storageKey) === previous.exists &&
+        (!previous.exists || JSON.stringify(values[storageKey]) === JSON.stringify(previous.value))
+      );
+    },
+    { storageKey, previous }
+  );
+}
+
 export function createControlledVideoSettings(
   priorValue: unknown,
   timestamp: number
@@ -2815,27 +2842,7 @@ async function observeControlledVideoMode(
     }
     if (mutated && prior) {
       try {
-        await extensionPage.evaluate(
-          async ({ storageKey, previous }) => {
-            if (previous.exists) {
-              await chrome.storage.local.set({ [storageKey]: previous.value });
-            } else {
-              await chrome.storage.local.remove(storageKey);
-            }
-          },
-          { storageKey: key, previous: prior }
-        );
-        result.cleanup.restored = await extensionPage.evaluate(
-          async ({ storageKey, previous }) => {
-            const values = await chrome.storage.local.get(storageKey);
-            return (
-              Object.hasOwn(values, storageKey) === previous.exists &&
-              (!previous.exists ||
-                JSON.stringify(values[storageKey]) === JSON.stringify(previous.value))
-            );
-          },
-          { storageKey: key, previous: prior }
-        );
+        result.cleanup.restored = await restoreStoredVideoSettings(extensionPage, prior);
       } catch (error) {
         result.cleanup.restoreError = safeError(error);
       }

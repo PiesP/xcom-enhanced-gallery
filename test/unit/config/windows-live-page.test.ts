@@ -6,11 +6,13 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { runInNewContext } from 'node:vm';
+import type { Page } from '@playwright/test';
 import { describe, expect, it, vi } from 'vite-plus/test';
 
 type LivePageModule = Pick<
   typeof import('../../../validation/windows/live-page.ts'),
-  'createControlledVideoSettings' | 'validateLiveUrls'
+  'createControlledVideoSettings' | 'restoreStoredVideoSettings' | 'validateLiveUrls'
 > & {
   inspectLiveTargetDocument(identity: { handle: string; statusId: string }):
     | false
@@ -2155,6 +2157,105 @@ describe('Windows X live page validation', () => {
       __schemaHash: '1',
       gallery: { videoClickMode: 'allow-all' },
     });
+  });
+
+  it('restores raw settings through separate browser evaluations without touching other keys', async () => {
+    const snapshots = [
+      { exists: false, value: null },
+      { exists: true, value: null },
+      { exists: true, value: { gallery: { videoClickMode: 'allow-all' } } },
+      { exists: true, value: '{"gallery":{"videoClickMode":"allow-all"}}' },
+      { exists: true, value: { __xegStorageEnvelope: 1, updatedAt: 42, value: 'raw' } },
+      { exists: true, value: ['raw', null] },
+    ];
+    for (const previous of snapshots) {
+      const storage = new Map<string, unknown>([
+        ['xeg-app-settings', 'changed'],
+        ['unrelated', { retained: true }],
+      ]);
+      const operations: string[] = [];
+      const local = {
+        set: async (values: Record<string, unknown>) => {
+          operations.push('set');
+          for (const [key, value] of Object.entries(values)) {
+            storage.set(key, value);
+          }
+        },
+        remove: async (key: string) => {
+          operations.push('remove');
+          storage.delete(key);
+        },
+        get: async (key: string) => {
+          operations.push('get');
+          return storage.has(key) ? { [key]: storage.get(key) } : {};
+        },
+      };
+      const page = {
+        evaluate: async (callback: (...args: unknown[]) => unknown, argument: unknown) => {
+          operations.push('evaluate');
+          return runInNewContext(`(${callback.toString()})(argument)`, {
+            argument: structuredClone(argument),
+            chrome: { storage: { local } },
+          }) as Promise<unknown>;
+        },
+      } as unknown as Page;
+      expect(await livePage.restoreStoredVideoSettings(page, previous)).toBe(true);
+      expect(operations).toEqual([
+        'evaluate',
+        previous.exists ? 'set' : 'remove',
+        'evaluate',
+        'get',
+      ]);
+      expect(storage.has('xeg-app-settings')).toBe(previous.exists);
+      if (previous.exists) {
+        expect(storage.get('xeg-app-settings')).toEqual(previous.value);
+      }
+      expect(storage.get('unrelated')).toEqual({ retained: true });
+    }
+  });
+
+  it('returns false on readback mismatch and propagates write and read failures', async () => {
+    const previous = { exists: true, value: { gallery: { videoClickMode: 'allow-all' } } };
+    const run = async (stage: 'mismatch' | 'write' | 'read') => {
+      const operations: string[] = [];
+      const page = {
+        evaluate: async (callback: (...args: unknown[]) => unknown, argument: unknown) => {
+          operations.push('evaluate');
+          const local = {
+            set: async () => {
+              operations.push('set');
+              if (stage === 'write') {
+                throw new Error('write failed');
+              }
+            },
+            remove: async () => {
+              throw new Error('unexpected remove');
+            },
+            get: async () => {
+              operations.push('get');
+              if (stage === 'read') {
+                throw new Error('read failed');
+              }
+              return { 'xeg-app-settings': { different: true } };
+            },
+          };
+          return runInNewContext(`(${callback.toString()})(argument)`, {
+            argument: structuredClone(argument),
+            chrome: { storage: { local } },
+          }) as Promise<unknown>;
+        },
+      } as unknown as Page;
+      return { result: livePage.restoreStoredVideoSettings(page, previous), operations };
+    };
+    const mismatch = await run('mismatch');
+    await expect(mismatch.result).resolves.toBe(false);
+    expect(mismatch.operations).toEqual(['evaluate', 'set', 'evaluate', 'get']);
+    const write = await run('write');
+    await expect(write.result).rejects.toThrow('write failed');
+    expect(write.operations).toEqual(['evaluate', 'set']);
+    const read = await run('read');
+    await expect(read.result).rejects.toThrow('read failed');
+    expect(read.operations).toEqual(['evaluate', 'set', 'evaluate', 'get']);
   });
 
   it('waits when the exact article precedes its image and terminates on a challenge', () => {

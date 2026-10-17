@@ -46,6 +46,7 @@ import {
   observeLiveUrls,
   readStoredLanguage,
   readStoredVideoSettings,
+  restoreStoredVideoSettings,
   validateLiveObservation,
   validateLiveUrls,
 } from './live-page.ts';
@@ -5136,27 +5137,7 @@ async function withControlledFixtureVideoMode<T extends object>(
     try {
       if (mutated) {
         assert(prior, 'Controlled fixture settings snapshot is missing');
-        await extensionPage.evaluate(
-          async ({ storageKey, previous }) => {
-            if (previous.exists) {
-              await chrome.storage.local.set({ [storageKey]: previous.value });
-            } else {
-              await chrome.storage.local.remove(storageKey);
-            }
-          },
-          { storageKey: key, previous: prior }
-        );
-        restored = await extensionPage.evaluate(
-          async ({ storageKey, previous }) => {
-            const values = await chrome.storage.local.get(storageKey);
-            return (
-              Object.hasOwn(values, storageKey) === previous.exists &&
-              (!previous.exists ||
-                JSON.stringify(values[storageKey]) === JSON.stringify(previous.value))
-            );
-          },
-          { storageKey: key, previous: prior }
-        );
+        restored = await restoreStoredVideoSettings(extensionPage, prior);
       } else {
         restored = true;
       }
@@ -5195,7 +5176,6 @@ async function runVideoClickSettingsCycle({
   output: string;
   page: Page;
 }) {
-  const key = 'xeg-app-settings';
   const prior = await readStoredVideoSettings(extensionPage);
   const initialMode = storedVideoClickMode(prior.settings) ?? 'block-controls-only';
   const settingsButton = gallery.locator('[data-gallery-element="toolbar"] #settings-button');
@@ -5278,27 +5258,7 @@ async function runVideoClickSettingsCycle({
     validationError = error;
   } finally {
     try {
-      await extensionPage.evaluate(
-        async ({ storageKey, previous }) => {
-          if (previous.exists) {
-            await chrome.storage.local.set({ [storageKey]: previous.value });
-          } else {
-            await chrome.storage.local.remove(storageKey);
-          }
-        },
-        { storageKey: key, previous: prior }
-      );
-      const restored = await extensionPage.evaluate(
-        async ({ storageKey, previous }) => {
-          const values = await chrome.storage.local.get(storageKey);
-          return (
-            Object.hasOwn(values, storageKey) === previous.exists &&
-            (!previous.exists ||
-              JSON.stringify(values[storageKey]) === JSON.stringify(previous.value))
-          );
-        },
-        { storageKey: key, previous: prior }
-      );
+      const restored = await restoreStoredVideoSettings(extensionPage, prior);
       assert.equal(restored, true, 'Settings UI cycle must restore the full prior setting');
       if (receipt) {
         receipt.fullSettingRestored = true;
@@ -6557,20 +6517,7 @@ async function runDelayedVideoFailures({
       if (shortcutIssued) {
         try {
           assert(priorSetting, 'Recovery shortcut prior setting is missing');
-          await extensionPage.evaluate(async ({ exists, value }) => {
-            if (exists) {
-              await chrome.storage.local.set({ 'xeg-app-settings': value });
-            } else {
-              await chrome.storage.local.remove('xeg-app-settings');
-            }
-          }, priorSetting);
-          const restored = await extensionPage.evaluate(async ({ exists, value }) => {
-            const values = await chrome.storage.local.get('xeg-app-settings');
-            return (
-              Object.hasOwn(values, 'xeg-app-settings') === exists &&
-              (!exists || JSON.stringify(values['xeg-app-settings']) === JSON.stringify(value))
-            );
-          }, priorSetting);
+          const restored = await restoreStoredVideoSettings(extensionPage, priorSetting);
           assert.equal(restored, true, 'Recovery shortcut must restore full prior task setting');
           if (observation) {
             observation.settingRestored = true;
