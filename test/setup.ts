@@ -125,7 +125,7 @@ if (typeof globalThis.matchMedia === 'undefined') {
 /*  Section 3: Logger mock (suppress log noise during tests)          */
 /* ------------------------------------------------------------------ */
 
-import { vi } from 'vitest';
+import { vi } from 'vite-plus/test';
 
 // Mock @shared/logging to suppress log output
 vi.mock('@shared/logging', () => {

@@ -6,7 +6,7 @@ import {
   MEDIA_URL_POLICY,
   startsWithBlockedProtocolHint,
 } from '@shared/utils/url/safety';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 describe('url/safety', () => {
   // ── isUrlAllowed ──────────────────────────────────────────────────

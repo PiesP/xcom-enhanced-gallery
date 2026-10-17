@@ -41,8 +41,10 @@ export interface HttpResponse<T = unknown> {
   readonly errorCategory?: HttpErrorCategory;
 }
 
-interface OwnedBinaryRequestOptions
-  extends Omit<HttpRequestOptions, 'responseType' | 'maxResponseBytes'> {
+interface OwnedBinaryRequestOptions extends Omit<
+  HttpRequestOptions,
+  'responseType' | 'maxResponseBytes'
+> {
   readonly responseType: 'blob' | 'arraybuffer';
   readonly maxResponseBytes: number;
   readonly budget?: LiveByteBudget;

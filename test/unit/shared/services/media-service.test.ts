@@ -2,7 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import type { MediaExtractionResult } from '@shared/types/media.types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 const mocks = vi.hoisted(() => ({
   extract: vi.fn(),

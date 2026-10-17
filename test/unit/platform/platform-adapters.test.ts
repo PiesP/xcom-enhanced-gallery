@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 
 const { userscriptDownload } = vi.hoisted(() => ({
   userscriptDownload: vi.fn(async () => undefined),

@@ -3,7 +3,7 @@
 
 import { matchClickedMedia } from '@shared/services/media-extraction/determine-clicked-index';
 import type { MediaInfo } from '@shared/types/media.types';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 const quotedImage: MediaInfo = {
   id: 'quoted-image',

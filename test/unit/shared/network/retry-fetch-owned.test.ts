@@ -9,7 +9,7 @@ import {
   DownloadResourceLimitError,
   LiveByteBudget,
 } from '@shared/services/download/live-byte-budget';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 const client = vi.hoisted(() => ({
   calls: 0,

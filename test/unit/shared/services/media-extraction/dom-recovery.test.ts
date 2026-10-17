@@ -10,7 +10,7 @@ import {
   findMediaElementInDOM,
   selectMediaSourceUrl,
 } from '@shared/utils/media/media-element-utils';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vite-plus/test';
 
 // Source-derived synthetic markup; not an authenticated X DOM capture.
 const photo = (id: string): string =>

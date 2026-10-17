@@ -35,6 +35,9 @@
       "validation/windows/download-memory.mjs",
       "validation/windows/live-page.mjs"
     ],
-    "build_commands": [["pnpm", "build:ci"], ["pnpm", "build:extension:ci"]]
+    "build_commands": [
+      ["pnpm", "build:ci"],
+      ["pnpm", "build:extension:ci"]
+    ]
   }
 }

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 const { executeVideoControl, navigateNext, navigatePrevious, navigateToItem } = vi.hoisted(() => ({
   executeVideoControl: vi.fn(),

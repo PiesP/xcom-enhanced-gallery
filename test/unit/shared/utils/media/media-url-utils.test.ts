@@ -8,7 +8,7 @@ import {
   extractVisualIndexFromUrl,
   getMediaDedupKey,
 } from '@shared/utils/media/media-url-utils';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 function makeMedia(overrides: Partial<MediaInfo> = {}): MediaInfo {
   return {

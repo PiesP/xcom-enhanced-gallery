@@ -2,7 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 function renderTarget(markup: string, selector: string): HTMLElement {
   document.body.innerHTML = markup;

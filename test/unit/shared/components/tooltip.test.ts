@@ -4,7 +4,7 @@
 import { Tooltip } from '@shared/components/ui/Tooltip/Tooltip';
 import { createComponent } from 'solid-js';
 import { render } from 'solid-js/web';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 describe('Tooltip accessibility', () => {
   afterEach(() => {

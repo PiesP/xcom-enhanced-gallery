@@ -30,11 +30,11 @@
   box-sizing: border-box;
 }
 
-.recoveryRoot[data-theme="light"] {
+.recoveryRoot[data-theme='light'] {
   color-scheme: light;
 }
 
-.recoveryRoot[data-theme="dark"] {
+.recoveryRoot[data-theme='dark'] {
   color-scheme: dark;
 }
 

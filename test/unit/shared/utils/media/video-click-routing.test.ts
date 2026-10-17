@@ -9,7 +9,7 @@ import type { VideoClickMode } from '@shared/types/settings.types';
 import { handleMediaClick } from '@shared/utils/events/handlers/media-click';
 import { isProcessableMedia } from '@shared/utils/media/media-click-detector';
 import { getMediaClickTarget } from '@shared/utils/media/media-click-target';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 const options: GalleryEventOptions = {
   enableKeyboard: true,

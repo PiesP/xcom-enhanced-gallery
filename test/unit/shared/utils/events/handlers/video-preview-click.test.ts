@@ -3,7 +3,7 @@
 
 import type { VideoClickMode } from '@shared/types/settings.types';
 import { handleMediaClick } from '@shared/utils/events/handlers/media-click';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 import { unanchoredVideoPreview } from '../../../../../fixtures/unanchored-video-preview';
 
 const settings = vi.hoisted(() => ({ mode: 'block-controls-only' as VideoClickMode }));

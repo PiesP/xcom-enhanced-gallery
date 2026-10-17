@@ -7,7 +7,7 @@ import type { TwitterMedia, TwitterTweet } from '@shared/services/media/types';
 import { captureClickedMediaEvidence } from '@shared/services/media-extraction/determine-clicked-index';
 import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
 import { MediaExtractionService } from '@shared/services/media-extraction/media-extraction-service';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 const httpGet = vi.hoisted(() => vi.fn());
 vi.mock('@shared/services/http-request-service', () => ({

@@ -9,7 +9,7 @@ import {
   THEME_OPTIONS,
   VIDEO_CLICK_MODES,
 } from '@constants/setting-options';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 describe('setting-options', () => {
   it('keeps the canonical option order used by settings controls', () => {

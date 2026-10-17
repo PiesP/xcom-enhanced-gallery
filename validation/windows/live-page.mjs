@@ -1955,11 +1955,11 @@ async function observeQuotedVideo(
         observation.gallery.opened.ariaModal === 'true',
       selectedPlayableVideo: Boolean(
         video?.visible &&
-          video.itemLoaded &&
-          video.readyState >= 2 &&
-          video.width > 0 &&
-          video.height > 0 &&
-          video.mediaErrorCode === null
+        video.itemLoaded &&
+        video.readyState >= 2 &&
+        video.width > 0 &&
+        video.height > 0 &&
+        video.mediaErrorCode === null
       ),
       directQuotedOwner:
         observation.gallery.owner.status === 'matched-direct-quote-variant' &&

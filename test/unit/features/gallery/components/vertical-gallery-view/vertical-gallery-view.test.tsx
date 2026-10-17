@@ -5,7 +5,7 @@ import type { ToolbarProps } from '@shared/components/ui/Toolbar/Toolbar.types';
 import type { MediaInfo } from '@shared/types/media.types';
 import { createComponent } from 'solid-js';
 import { render } from 'solid-js/web';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 const preloadSetting = vi.hoisted(() => ({ count: 1 }));
 

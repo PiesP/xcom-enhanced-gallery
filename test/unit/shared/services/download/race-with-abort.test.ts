@@ -2,7 +2,7 @@
 // Copyright (c) 2026 PiesP
 
 import { raceWithAbort } from '@shared/services/download/single-download';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 describe('raceWithAbort', () => {
   it('returns work result when work finishes first', async () => {

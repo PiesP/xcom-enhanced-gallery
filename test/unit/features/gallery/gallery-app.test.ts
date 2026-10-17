@@ -3,7 +3,7 @@
 
 import { clearSettings, registerSettings } from '@shared/container/settings-registry';
 import type { MediaExtractionResult } from '@shared/types/media.types';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 type MediaClickHandler = (element: HTMLElement, event: MouseEvent) => Promise<void>;
 

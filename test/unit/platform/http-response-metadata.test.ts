@@ -6,7 +6,7 @@ import {
   parseRetryAfter,
   retryAfterFromRawHeaders,
 } from '@platform/http-response-metadata';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 describe('safe Retry-After metadata', () => {
   const now = Date.UTC(2026, 9, 12, 0, 0, 0);

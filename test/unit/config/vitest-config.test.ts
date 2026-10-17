@@ -1,7 +1,7 @@
 import { globSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { loadConfigFromFile } from 'vite';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vite-plus/test';
 
 interface CoveragePolicy {
   readonly include?: string[];

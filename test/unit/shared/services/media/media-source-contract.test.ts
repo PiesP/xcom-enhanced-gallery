@@ -9,7 +9,7 @@ import { extractMediaFromTweet } from '@shared/services/media/twitter-parser/twi
 import type { TwitterMedia } from '@shared/services/media/types';
 import { DOMFallbackExtractor } from '@shared/services/media-extraction/extractors/dom-fallback-extractor';
 import type { TweetInfo } from '@shared/types/media.types';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 const owner: TweetInfo = {
   tweetId: '222',

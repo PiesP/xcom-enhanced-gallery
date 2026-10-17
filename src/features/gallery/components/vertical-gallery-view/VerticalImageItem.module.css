@@ -36,7 +36,7 @@
 }
 
 /* Original fit mode: Remove max-width constraint to allow full size */
-.container[data-fit-mode="original"] {
+.container[data-fit-mode='original'] {
   max-width: none;
   /* Force full content width */
   width: max-content;
@@ -106,13 +106,13 @@
 }
 
 /* fitOriginal mode: Expand container to fit original media size without constraints */
-.container[data-fit-mode="original"] .imageWrapper {
+.container[data-fit-mode='original'] .imageWrapper {
   width: auto;
   /* No max-width constraint - allow full original size with horizontal scroll */
   max-width: none;
 }
 
-.container[data-media-loaded="false"] .imageWrapper {
+.container[data-media-loaded='false'] .imageWrapper {
   min-height: var(--xeg-spacing-3xl);
   /* CLS: Reserve default aspect ratio for initial layout stability */
   aspect-ratio: var(--xeg-gallery-item-intrinsic-ratio, var(--xeg-aspect-default));
@@ -248,7 +248,7 @@
 /* Cursor is defined on the container and inherited by media elements. */
 
 /* Loading state - higher specificity */
-.container[data-media-loaded="false"][data-fit-mode="original"] {
+.container[data-media-loaded='false'][data-fit-mode='original'] {
   inline-size: min(var(--xeg-gallery-item-intrinsic-width, 100%), 100%);
   max-inline-size: min(var(--xeg-gallery-item-intrinsic-width, 100%), 100%);
   max-block-size: min(
@@ -257,8 +257,8 @@
   );
 }
 
-.container[data-media-loaded="false"][data-fit-mode="original"] .image,
-.container[data-media-loaded="false"][data-fit-mode="original"] .video {
+.container[data-media-loaded='false'][data-fit-mode='original'] .image,
+.container[data-media-loaded='false'][data-fit-mode='original'] .video {
   inline-size: min(var(--xeg-gallery-item-intrinsic-width, 100%), 100%);
   max-inline-size: min(var(--xeg-gallery-item-intrinsic-width, 100%), 100%);
   max-block-size: min(
@@ -267,8 +267,8 @@
   );
 }
 
-.container[data-media-loaded="false"][data-has-intrinsic-size="true"][data-fit-mode="fitHeight"],
-.container[data-media-loaded="false"][data-has-intrinsic-size="true"][data-fit-mode="fitContainer"] {
+.container[data-media-loaded='false'][data-has-intrinsic-size='true'][data-fit-mode='fitHeight'],
+.container[data-media-loaded='false'][data-has-intrinsic-size='true'][data-fit-mode='fitContainer'] {
   --xeg-gallery-fit-height-target: min(
     var(--xeg-gallery-item-intrinsic-height, var(--xeg-spacing-5xl)),
     var(--xeg-viewport-height-constrained)
@@ -285,9 +285,9 @@
   );
 }
 
-.container[data-media-loaded="false"][data-has-intrinsic-size="true"]:is(
-    [data-fit-mode="fitHeight"],
-    [data-fit-mode="fitContainer"]
+.container[data-media-loaded='false'][data-has-intrinsic-size='true']:is(
+    [data-fit-mode='fitHeight'],
+    [data-fit-mode='fitContainer']
   )
   :is(.image, .video) {
   max-block-size: var(--xeg-gallery-fit-height-target);
@@ -300,12 +300,12 @@
 /* Loading state — fitWidth: force full width so container fills
    available space. The intrinsic ratio on .imageWrapper ensures
    correct height. */
-.container[data-media-loaded="false"][data-has-intrinsic-size="true"][data-fit-mode="fitWidth"] {
+.container[data-media-loaded='false'][data-has-intrinsic-size='true'][data-fit-mode='fitWidth'] {
   inline-size: 100%;
   max-inline-size: 100%;
 }
 
-.container[data-media-loaded="false"][data-has-intrinsic-size="true"][data-fit-mode="fitWidth"]
+.container[data-media-loaded='false'][data-has-intrinsic-size='true'][data-fit-mode='fitWidth']
   :is(.image, .video) {
   inline-size: 100%;
   max-inline-size: 100%;
@@ -315,47 +315,44 @@
    Without a source, the browser can use the poster's tiny intrinsic size; once
    metadata arrives, that size can change again. The existing video-admitted
    attribute identifies video rows without changing image fit behavior. */
-.container[data-video-admitted][data-fit-mode="original"] {
+.container[data-video-admitted][data-fit-mode='original'] {
   inline-size: max-content;
   max-inline-size: none;
   max-block-size: none;
 }
 
-.container[data-video-admitted][data-fit-mode="original"] .video.fitOriginal {
+.container[data-video-admitted][data-fit-mode='original'] .video.fitOriginal {
   inline-size: var(--xeg-gallery-item-intrinsic-width);
   block-size: auto;
   max-inline-size: none;
   max-block-size: none;
 }
 
-.container[data-video-admitted][data-fit-mode="fitWidth"] {
+.container[data-video-admitted][data-fit-mode='fitWidth'] {
   inline-size: 100%;
   max-inline-size: 100%;
 }
 
-.container[data-video-admitted][data-fit-mode="fitWidth"] .imageWrapper,
-.container[data-video-admitted][data-fit-mode="fitWidth"] .video.fitWidth {
+.container[data-video-admitted][data-fit-mode='fitWidth'] .imageWrapper,
+.container[data-video-admitted][data-fit-mode='fitWidth'] .video.fitWidth {
   inline-size: 100%;
 }
 
-.container[data-media-loaded="false"][data-has-intrinsic-size="true"][data-fit-mode="fitWidth"]
+.container[data-media-loaded='false'][data-has-intrinsic-size='true'][data-fit-mode='fitWidth']
   .imageWrapper {
   inline-size: 100%;
 }
 
 .container[data-video-admitted][data-media-loaded]:is(
-  [data-fit-mode="fitHeight"],
-  [data-fit-mode="fitContainer"]
-) {
+    [data-fit-mode='fitHeight'],
+    [data-fit-mode='fitContainer']
+  ) {
   --xeg-gallery-fit-height-target: min(
     var(--xeg-gallery-item-intrinsic-height),
     var(--xeg-viewport-height-constrained)
   );
   max-block-size: calc(
-    var(--xeg-gallery-fit-height-target) +
-    var(--xeg-spacing-sm) +
-    var(--xeg-spacing-sm) +
-    0.125rem
+    var(--xeg-gallery-fit-height-target) + var(--xeg-spacing-sm) + var(--xeg-spacing-sm) + 0.125rem
   );
   inline-size: min(
     100%,
@@ -367,7 +364,7 @@
   );
 }
 
-.container[data-video-admitted]:is([data-fit-mode="fitHeight"], [data-fit-mode="fitContainer"])
+.container[data-video-admitted]:is([data-fit-mode='fitHeight'], [data-fit-mode='fitContainer'])
   :is(.imageWrapper, .video) {
   inline-size: 100%;
 }

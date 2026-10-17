@@ -3,7 +3,7 @@
 
 import { useToolbarSettingsController } from '@shared/hooks/toolbar/use-toolbar-settings-controller';
 import { createRoot, createSignal } from 'solid-js';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 vi.mock('@shared/services/theme-service', () => ({
   getThemeService: () => ({

@@ -13,7 +13,7 @@ import {
   resetLanguageServiceForTests,
 } from '@shared/services/language-service';
 import { createEffect, createSignal, type JSXElement } from 'solid-js';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 const languageState = vi.hoisted(() => ({ current: 'en' }));
 

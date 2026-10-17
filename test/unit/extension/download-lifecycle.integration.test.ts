@@ -1,6 +1,6 @@
 import { webcrypto } from 'node:crypto';
 import { MV3DownloadAdapter } from '@platform/mv3-download-adapters';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 type MessageListener = (
   message: unknown,

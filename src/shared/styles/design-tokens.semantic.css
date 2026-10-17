@@ -134,7 +134,7 @@
     --xeg-font-size-xl: var(--font-size-xl);
     --xeg-font-size-2xl: var(--font-size-2xl);
 
-    --xeg-font-family-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --xeg-font-family-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
     --xeg-font-weight-normal: var(--font-weight-normal);
     --xeg-font-weight-medium: var(--font-weight-medium);
@@ -214,7 +214,7 @@
 
   /* Dark mode — explicit attribute: override color-scheme so light-dark() picks the dark value.
      Also overrides toolbar element color-mix tokens that differ by mode composition. */
-  :where(:root, .xeg-theme-scope)[data-theme="dark"] {
+  :where(:root, .xeg-theme-scope)[data-theme='dark'] {
     color-scheme: dark;
 
     --xeg-gallery-bg: var(--xeg-gallery-bg-dark);
@@ -252,7 +252,7 @@
   }
 
   /* Light mode — explicit attribute override */
-  :where(:root, .xeg-theme-scope)[data-theme="light"] {
+  :where(:root, .xeg-theme-scope)[data-theme='light'] {
     color-scheme: light;
 
     --xeg-gallery-bg: var(--xeg-gallery-bg-light);

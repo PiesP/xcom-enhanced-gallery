@@ -13,7 +13,7 @@ import {
   resolveMediaDimensionsWithIntrinsicFlag,
   sortMediaByVisualOrder,
 } from '@shared/utils/media/media-dimensions';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 function makeMedia(id: string, url: string, overrides: Partial<MediaInfo> = {}): MediaInfo {
   return { id, url, type: 'image', ...overrides };

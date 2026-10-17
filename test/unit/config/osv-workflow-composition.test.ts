@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 // Parser, scanner, reporter, and private-copy behavior is exercised by the
 // pinned browser-core provider. This consumer test protects its workflow wiring.

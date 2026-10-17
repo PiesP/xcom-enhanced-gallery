@@ -6,7 +6,7 @@ import { VerticalImageItem } from '@features/gallery/components/vertical-gallery
 import { clearSettings, registerSettings } from '@shared/container/settings-registry';
 import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, expect, it, vi } from 'vite-plus/test';
 
 vi.mock('@shared/utils/performance/observer-pool', () => ({
   SharedObserver: { observe: () => () => undefined },

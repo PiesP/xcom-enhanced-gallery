@@ -3,7 +3,7 @@
 
 import { MV3HttpRequestAdapter } from '@platform/mv3-http-request-adapters';
 import type { HttpRequestResponse } from '@platform/types';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 const ALLOWED_URL = 'https://pbs.twimg.com/media/example.jpg';
 

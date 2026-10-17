@@ -2,7 +2,7 @@
 // Copyright (c) 2026 PiesP
 
 import type { GMXMLHttpRequestDetails } from '@shared/types/core/userscript';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 const xmlHttpRequest = vi.hoisted(() => vi.fn());
 

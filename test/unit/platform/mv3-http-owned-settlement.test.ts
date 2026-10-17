@@ -2,7 +2,7 @@
 // Copyright (c) 2026 PiesP
 
 import { MV3HttpRequestAdapter } from '@platform/mv3-http-request-adapters';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 afterEach(() => vi.unstubAllGlobals());
 

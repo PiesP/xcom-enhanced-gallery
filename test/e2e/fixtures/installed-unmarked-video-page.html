@@ -1,31 +1,31 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Installed direct unmarked video fixture</title>
     <style>
-    body {
-      margin: 0;
-      padding: 20px;
-      background: #000;
-      color: #e7e9ea;
-      font:
-        16px "Segoe UI",
-        sans-serif;
-    }
-    #host-layout-spacer {
-      height: 900px;
-    }
-    article {
-      max-width: 640px;
-      margin: 0 auto;
-    }
-    video {
-      display: block;
-      width: 320px;
-      height: 180px;
-    }
+      body {
+        margin: 0;
+        padding: 20px;
+        background: #000;
+        color: #e7e9ea;
+        font:
+          16px 'Segoe UI',
+          sans-serif;
+      }
+      #host-layout-spacer {
+        height: 900px;
+      }
+      article {
+        max-width: 640px;
+        margin: 0 auto;
+      }
+      video {
+        display: block;
+        width: 320px;
+        height: 180px;
+      }
     </style>
   </head>
   <body>
@@ -44,35 +44,35 @@
       </article>
     </main>
     <script>
-    const video = document.querySelector('[data-unmarked-direct]');
-    document.querySelector('[data-native-play]').addEventListener('click', () => {
-      video.play().catch((error) => {
-        document.body.dataset.videoError = error.message;
+      const video = document.querySelector('[data-unmarked-direct]');
+      document.querySelector('[data-native-play]').addEventListener('click', () => {
+        video.play().catch((error) => {
+          document.body.dataset.videoError = error.message;
+        });
       });
-    });
-    window.__directVideoClicks = [];
-    window.addEventListener(
-      'click',
-      (event) => {
-        if (!event.isTrusted || event.target !== video) {
-          return;
-        }
-        const record = {
-          tag: event.target.tagName.toLowerCase(),
-          prevented: false,
-          path: event
-            .composedPath()
-            .filter((part) => part instanceof Element)
-            .slice(0, 4)
-            .map((part) => part.tagName.toLowerCase()),
-        };
-        window.__directVideoClicks.push(record);
-        setTimeout(() => {
-          record.prevented = event.defaultPrevented;
-        }, 0);
-      },
-      { capture: true }
-    );
+      window.__directVideoClicks = [];
+      window.addEventListener(
+        'click',
+        (event) => {
+          if (!event.isTrusted || event.target !== video) {
+            return;
+          }
+          const record = {
+            tag: event.target.tagName.toLowerCase(),
+            prevented: false,
+            path: event
+              .composedPath()
+              .filter((part) => part instanceof Element)
+              .slice(0, 4)
+              .map((part) => part.tagName.toLowerCase()),
+          };
+          window.__directVideoClicks.push(record);
+          setTimeout(() => {
+            record.prevented = event.defaultPrevented;
+          }, 0);
+        },
+        { capture: true }
+      );
     </script>
   </body>
 </html>

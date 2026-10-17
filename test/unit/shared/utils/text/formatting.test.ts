@@ -2,7 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { cx, escapeRegExp } from '@shared/utils/text/formatting';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 describe('escapeRegExp', () => {
   it('escapes regex special characters', () => {

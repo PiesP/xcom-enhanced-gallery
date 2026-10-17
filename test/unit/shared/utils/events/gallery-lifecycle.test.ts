@@ -8,7 +8,7 @@ import { getEventManager } from '@shared/services/event-manager';
 import { closeGallery } from '@shared/state/signals/gallery.signals';
 import type { VideoClickMode } from '@shared/types/settings.types';
 import { createGalleryLifecycle } from '@shared/utils/events/lifecycle/gallery-lifecycle';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 // Exact sanitized videoPlayer subtree from the authenticated Edge click record.
 const capturedVideoPlayer = readFileSync(

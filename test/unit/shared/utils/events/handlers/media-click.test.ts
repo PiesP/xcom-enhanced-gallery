@@ -3,7 +3,7 @@
 
 import type { EventHandlers, GalleryEventOptions } from '@shared/services/event-manager';
 import { handleMediaClick } from '@shared/utils/events/handlers/media-click';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 vi.mock('@shared/state/signals/gallery.signals', () => ({
   gallerySignals: {
