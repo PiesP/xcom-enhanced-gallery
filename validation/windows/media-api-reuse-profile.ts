@@ -416,6 +416,7 @@ export async function runInstalledMediaApiReuseProfile({
     cleanup: { routesRemoved: false, pagesClosed: false, pageRestored: false },
   };
   let primaryError: unknown;
+  let caughtPrimaryError = false;
   const cleanupErrors: unknown[] = [];
 
   observePage(page);
@@ -532,6 +533,7 @@ export async function runInstalledMediaApiReuseProfile({
       untested: ['HLS-only media requires a video fixture'],
     });
   } catch (error) {
+    caughtPrimaryError = true;
     primaryError = error;
     evidence.status = 'failed';
     evidence.error = error instanceof Error ? error.message : String(error);
@@ -584,11 +586,11 @@ export async function runInstalledMediaApiReuseProfile({
   }
   if (cleanupErrors.length > 0) {
     throw new AggregateError(
-      primaryError ? [primaryError, ...cleanupErrors] : cleanupErrors,
+      caughtPrimaryError ? [primaryError, ...cleanupErrors] : cleanupErrors,
       'Installed API reuse cleanup failed'
     );
   }
-  if (primaryError) {
+  if (caughtPrimaryError) {
     throw primaryError;
   }
   return evidence;
@@ -712,6 +714,7 @@ async function runResponseAccountingCases({
   const ownedPages: Page[] = [];
   let active: AccountingState | undefined;
   let primaryError: unknown;
+  let caughtPrimaryError = false;
   const errors: unknown[] = [];
   const routeHandler = async (route: Route) => {
     if (!active) {
@@ -1042,6 +1045,7 @@ async function runResponseAccountingCases({
     );
     evidence.status = 'passed';
   } catch (error) {
+    caughtPrimaryError = true;
     primaryError = error;
     evidence.status = 'failed';
     evidence.error = error instanceof Error ? error.message : String(error);
@@ -1074,11 +1078,11 @@ async function runResponseAccountingCases({
   }
   if (errors.length) {
     throw new AggregateError(
-      primaryError ? [primaryError, ...errors] : errors,
+      caughtPrimaryError ? [primaryError, ...errors] : errors,
       'API accounting fixture cleanup failed'
     );
   }
-  if (primaryError) {
+  if (caughtPrimaryError) {
     throw primaryError;
   }
   return evidence;
