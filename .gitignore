@@ -1,6 +1,6 @@
 # ============================================================================
 # X.com Enhanced Gallery - .gitignore
-# Stack: Solid.js | TypeScript | Vite | Biome | Vitest | Playwright | Stryker
+# Stack: Solid.js | TypeScript | Vite | Biome | Vitest | Playwright
 # ============================================================================
 
 # Dependencies
@@ -20,7 +20,6 @@ coverage/
 test-results/
 playwright-report/
 reports/
-.stryker-tmp*/
 .cache/
 
 # IDE

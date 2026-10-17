@@ -11,9 +11,7 @@
       "!!**/node_modules",
       "!!packages/core",
       "!!pnpm-lock.yaml",
-      "!!test/fixtures/authenticated-x-layouts/*.html",
-      "!!**/.stryker-tmp/",
-      "!!**/.stryker-tmp-debug/"
+      "!!test/fixtures/authenticated-x-layouts/*.html"
     ],
     "ignoreUnknown": true,
     "maxSize": 1048576

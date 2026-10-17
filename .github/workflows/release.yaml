@@ -149,46 +149,6 @@ jobs:
           pnpm exec playwright install --with-deps chromium firefox webkit
           pnpm test:e2e:all
 
-  mutation:
-    name: 🧬 Release mutation
-    needs: provenance
-    runs-on: ubuntu-24.04
-    timeout-minutes: 25
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.sha }}
-          fetch-depth: 0
-          submodules: true
-          persist-credentials: false
-
-      - name: Checkout verified release commit
-        shell: bash
-        env:
-          RELEASE_SHA: ${{ needs.provenance.outputs.release-sha }}
-        run: |
-          git -c advice.detachedHead=false checkout --detach "$RELEASE_SHA"
-          git submodule sync --recursive
-          git submodule update --init --recursive
-
-      - name: 📦 Setup project
-        uses: ./.github/actions/setup-release
-        with:
-          node-version: ${{ needs.provenance.outputs.node-version }}
-
-      - name: 🔒 Prepare job-owned mutation checkout
-        env:
-          MUTATION_WORKSPACE_CONTRACT: github-job-v1
-          MUTATION_SOURCE_SHA: ${{ needs.provenance.outputs.release-sha }}
-        run: node --experimental-strip-types scripts/ci/mutation-workspace.ts prepare-hosted
-
-      - name: 🧬 Run mutation gate
-        env:
-          MUTATION_WORKSPACE_CONTRACT: github-job-v1
-          MUTATION_SOURCE_SHA: ${{ needs.provenance.outputs.release-sha }}
-        run: pnpm mut:fast
-
   build:
     name: 🏗️ Build release package
     needs: [provenance, quality]
@@ -240,7 +200,7 @@ jobs:
 
   publish:
     name: 🏷️ Publish GitHub Release
-    needs: [provenance, quality, unit, e2e, mutation, build]
+    needs: [provenance, quality, unit, e2e, build]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     concurrency:

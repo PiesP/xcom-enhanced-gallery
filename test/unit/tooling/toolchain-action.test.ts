@@ -8,9 +8,8 @@ const centralSetupAction =
 const releaseSetupAction = './.github/actions/setup-release';
 const centralWorkflowJobs = {
   'ci.yaml': ['quality', 'unit', 'e2e', 'build'],
-  'deep-checks.yaml': ['mutation'],
 } as const;
-const releaseWorkflowJobs = ['quality', 'unit', 'e2e', 'mutation', 'build'] as const;
+const releaseWorkflowJobs = ['quality', 'unit', 'e2e', 'build'] as const;
 
 function jobBlock(workflow: string, job: string): string {
   return (

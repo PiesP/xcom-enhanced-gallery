@@ -6,9 +6,6 @@ name: 🏗️ CI
 # - Run browser E2E tests
 # - Build all distribution targets
 #
-# Expensive mutation testing lives in deep-checks.yaml so PR feedback is not
-# blocked by a long-running, resource-heavy analysis.
-#
 # Triggered on: Push/PR to master + merge queue
 
 # Security: All third-party actions pinned to full commit SHAs.

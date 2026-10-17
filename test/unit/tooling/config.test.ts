@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { globSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { createVitestConfig } from '../../../vitest.config.ts';
@@ -20,7 +20,6 @@ const biomeConfig = JSON.parse(readFileSync(resolve(root, 'biome.json'), 'utf8')
   }>;
 };
 const ciWorkflow = readFileSync(resolve(root, '.github/workflows/ci.yaml'), 'utf8');
-const deepWorkflow = readFileSync(resolve(root, '.github/workflows/deep-checks.yaml'), 'utf8');
 const releaseWorkflow = readFileSync(resolve(root, '.github/workflows/release.yaml'), 'utf8');
 const releasePrepare = readFileSync(resolve(root, 'scripts/release/prepare.ts'), 'utf8');
 const securityWorkflow = readFileSync(resolve(root, '.github/workflows/security.yaml'), 'utf8');
@@ -68,33 +67,6 @@ describe('tooling configuration', () => {
     );
     expect(afterPolicy.test?.coverage).toEqual(full.test?.coverage);
   });
-  it('keeps the full mutation profile on the real shared source paths', () => {
-    const config = JSON.parse(readFileSync(resolve(root, 'stryker.conf.json'), 'utf8')) as {
-      mutate: string[];
-    };
-
-    expect(config.mutate).toContain('src/shared/utils/**/*.ts');
-    expect(config.mutate).toContain('src/shared/services/download/**/*.ts');
-    expect(config.mutate).not.toContain('src/utils/**/*.ts');
-    expect(config.mutate).not.toContain('src/services/download/**/*.ts');
-  });
-
-  it.each(['stryker.conf.json', 'stryker.conf.fast.json'])(
-    '%s include patterns each match at least one source file',
-    (filename) => {
-      const config = JSON.parse(readFileSync(resolve(root, filename), 'utf8')) as {
-        mutate: string[];
-      };
-      const includePatterns = config.mutate.filter((pattern) => !pattern.startsWith('!'));
-
-      for (const pattern of includePatterns) {
-        expect(globSync(pattern, { cwd: root }), `No source files matched ${pattern}`).not.toEqual(
-          []
-        );
-      }
-    }
-  );
-
   it('uses native TypeScript execution without redundant runner dependencies', () => {
     expect(packageJson.devDependencies.tsx).toBeUndefined();
     expect(packageJson.devDependencies.rimraf).toBeUndefined();
@@ -123,53 +95,6 @@ describe('tooling configuration', () => {
     expect(knipConfig.project).toEqual(
       expect.arrayContaining(['src/**/*.ts!', 'src/**/*.tsx!', 'test/**/*.ts', 'test/**/*.tsx'])
     );
-  });
-
-  it('enforces and preserves actionable reports for the fast mutation gate', () => {
-    const config = JSON.parse(readFileSync(resolve(root, 'stryker.conf.fast.json'), 'utf8')) as {
-      mutate: string[];
-      coverageAnalysis: string;
-      concurrency: number;
-      ignoreStatic: boolean;
-      reporters: string[];
-      thresholds: { high: number; low: number; break: number | null };
-      mutator: { excludedMutations: string[] };
-    };
-
-    expect([...config.mutate].sort()).toEqual(
-      [
-        'src/shared/services/download/single-download.ts',
-        'src/shared/services/download/zip-download.ts',
-        'src/shared/services/media/twitter-api-client.ts',
-        'src/shared/utils/media/media-dimensions.ts',
-        'src/shared/utils/media/media-url-utils.ts',
-        'src/shared/utils/object/path.ts',
-        'src/shared/utils/performance/observer-pool.ts',
-        'src/shared/utils/performance/preload.ts',
-        'src/shared/utils/text/formatting.ts',
-        'src/shared/utils/url/history-navigation.ts',
-        'src/shared/utils/url/host.ts',
-        'src/shared/utils/url/safety.ts',
-        'src/shared/utils/url/url-safety.ts',
-        'src/shared/utils/url/validator.ts',
-      ].sort()
-    );
-    expect(config.mutate.some((pattern) => pattern.includes('**'))).toBe(false);
-    expect(config.coverageAnalysis).toBe('perTest');
-    expect(config.concurrency).toBe(4);
-    expect(config.ignoreStatic).toBe(true);
-    expect(config.reporters).toEqual(
-      expect.arrayContaining(['progress', 'clear-text', 'json', 'html'])
-    );
-    expect(config.thresholds.break).toBe(70);
-    expect(config.thresholds.low).toBeGreaterThan(config.thresholds.break ?? 0);
-    expect(config.thresholds.high).toBeGreaterThan(config.thresholds.low);
-    expect(config.mutator.excludedMutations).not.toEqual(
-      expect.arrayContaining(['ConditionalExpression', 'EqualityOperator', 'BooleanLiteral'])
-    );
-    expect(packageJson.scripts['mut:fast']).not.toContain('--reporters');
-    expect(deepWorkflow).toContain('path: reports/mutation/');
-    expect(deepWorkflow).toContain('if-no-files-found: error');
   });
 
   it('scans the exact default-branch push with OSV and Semgrep', () => {
@@ -228,7 +153,7 @@ describe('tooling configuration', () => {
       'pnpm -s test:policy && vitest run test/unit/tooling/node-ambient-types.test.ts'
     );
     expect(scripts['test:policy']).toBe(
-      'node --experimental-strip-types --test scripts/ci/deep-check-reuse.test.ts scripts/release/verify-source.test.ts scripts/ci/repository-authority.test.ts scripts/ci/mutation-workspace.test.ts'
+      'node --experimental-strip-types --test scripts/release/verify-source.test.ts scripts/ci/repository-authority.test.ts'
     );
     expect(scripts['test:cov']).toBe('vitest run --coverage');
     expect(scripts['quality:coverage-owned']).toBe(
@@ -334,7 +259,6 @@ describe('tooling configuration', () => {
       quality: 'uses: ./.github/actions/setup-release',
       unit: 'uses: ./.github/actions/setup-release',
       e2e: 'uses: ./.github/actions/setup-release',
-      mutation: 'uses: ./.github/actions/setup-release',
       build: 'uses: ./.github/actions/setup-release',
     } as const;
     for (const [job, marker] of Object.entries(localExecutionMarkers)) {
@@ -358,13 +282,6 @@ describe('tooling configuration', () => {
     expect(releaseWorkflow).toContain('pnpm test:e2e:all');
     expect(packageJson.scripts['test:e2e:all']).toContain('pnpm -s test:e2e:extension:firefox');
     expect(releaseWorkflow).not.toContain('path: ~/.cache/selenium');
-  });
-
-  it('keeps mutation as the weekly and manual Deep Verification gate', () => {
-    expect(deepWorkflow).not.toContain('\n  push:\n');
-    expect(jobBlock(deepWorkflow, 'mutation')).toContain('run: pnpm mut:fast');
-    expect(deepWorkflow).toContain("inputs.scope == 'mutation'");
-    expect(deepWorkflow).toContain('REUSE_SUCCESS: ${{ inputs.reuse_success }}');
   });
 
   it('retains actionable browser diagnostics and labels Firefox coverage honestly', () => {

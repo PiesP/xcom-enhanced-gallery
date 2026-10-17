@@ -21,7 +21,6 @@ const roots: string[] = [];
 const scripts = [
   'scripts/build/clean.ts',
   'scripts/check/extension-build.ts',
-  'scripts/ci/mutation-workspace.ts',
   'scripts/release/package-extension.ts',
   'scripts/release/prepare.ts',
   'scripts/release/artifact-preflight.ts',

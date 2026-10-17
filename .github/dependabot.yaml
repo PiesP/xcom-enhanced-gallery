@@ -41,13 +41,6 @@ updates:
           - "minor"
           - "patch"
 
-      stryker:
-        patterns:
-          - "@stryker-mutator/*"
-        update-types:
-          - "minor"
-          - "patch"
-
       # Production dependency (only solid-js)
       solid:
         patterns:

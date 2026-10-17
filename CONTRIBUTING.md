@@ -57,67 +57,8 @@ The table gives each command family, execution stage, side effects, and checks.
 | `pnpm check:src`, `check:tooling`, `check:test`, `check:scripts`, `check:e2e`, `check`, `typecheck` | Separate browser, build/config, Vitest, NodeNext/erasable script/direct Firefox, and Playwright TypeScript projects. `check` chains source/tooling/test/scripts; `check:e2e` checks Playwright separately. | Read-only; `tsconfig.e2e.json` excludes the direct Firefox test so it is checked in the Node project instead. `pnpm quality` includes every project boundary. |
 | `pnpm check:biome`, `fmt`, `fmt:check`, `lint`, `knip`, `knip:full`, `knip:production`, `circular` | Canonical Biome format/lint/assist inspection, convenient format-only/lint-only commands, dependency/entry analysis, and source graph checks. | Read-only; Knip uses real CLI/workflow/test/runtime entries and reports orphan helpers, and `ignoreBinaries` includes external OpenSSL. `fmt:fix`, `lint:fix`, `quality:fix` write formatting fixes and must be reviewed separately. |
 | `pnpm quality`, `verify`, `verify:full` | `quality` chains one read-only `biome ci` pass, all runtime type checks, the focused policy suite, circular, and Knip. `verify` adds production userscript/metadata and both extension targets; `verify:full` adds coverage, a retained development userscript build, and all E2E browser lanes. Its internal coverage command omits only the boundary suite already run by `quality`. | Build/test outputs and browser profiles are generated; `verify:full` leaves production and development userscripts together with production metadata. `verify` alone does not prove E2E. Read exact command outcomes and artifacts; no VM/publication inference. |
-| `pnpm test`, `test:watch`, `test:cov`, `test:ci` | Vitest suites and direct Node CI policy tests in `scripts/ci/{deep-check-reuse,repository-authority}.test.ts` and `scripts/release/verify-source.test.ts`. | Watch persists; coverage writes reports. `test:ci` also runs real compiler/import boundary probes; run that part alone with `pnpm test test/unit/tooling/node-ambient-types.test.ts`. This focused suite checks cache, repository authority, tagged source and runtime types; it is not the complete unit suite. |
+| `pnpm test`, `test:watch`, `test:cov`, `test:ci` | Vitest suites and direct Node CI policy tests in `scripts/ci/repository-authority.test.ts` and `scripts/release/verify-source.test.ts`. | Watch persists; coverage writes reports. `test:ci` also runs real compiler/import boundary probes; run that part alone with `pnpm test test/unit/tooling/node-ambient-types.test.ts`. This focused suite checks repository authority, tagged source and runtime types; it is not the complete unit suite. |
 | `pnpm test:e2e`, `test:e2e:headed`, `test:e2e:extension`, `test:e2e:extension:firefox`, `test:e2e:all` | Playwright configs under `test/e2e/`; direct Firefox lane executes `test/e2e/firefox-extension-runtime.test.ts` with Node/Selenium. | Requires built artifacts, browser binaries and loopback fixtures; may create browser profiles/downloads. `test:e2e:all` chains the lanes; distinguish fixture browser evidence from authenticated Windows/live-site evidence. |
-| `pnpm mut:prepare`, `mut`, `mut:fast` | Prepare a disposable checkout, then run the full or fast Stryker profile through `scripts/ci/mutation-workspace.ts`. | Preparation records the selected commit, core, and installed dependencies. Each analysis writes only in that checkout, including `reports/mutation/`, Stryker temporary files, and `.git/xeg-mutation/` records and logs. Use one fresh checkout per analysis; see the preparation steps below and the deep-check workflow receipts. |
-
-### Mutation workspace
-
-### Mutation runs
-
-Mutation testing uses Stryker's `inPlace` mode. Even `dryRunOnly` can write source
-and temporary files during instrumentation. Run either profile in a separate,
-independent full clone on Linux or WSL; native Windows invocation is refused.
-Directly invoking the Stryker binary in a maintainer checkout bypasses this
-protection and is unsafe. A run record helps prevent accidental use of the wrong
-checkout; it is not an OS sandbox for hostile code.
-
-Select a committed revision explicitly. The example creates a new directory
-outside the source checkout; replace both absolute paths before running it.
-
-```bash
-MUTATION_SOURCE=/absolute/path/to/xcom-enhanced-gallery
-MUTATION_COMMIT=$(git -C "$MUTATION_SOURCE" rev-parse HEAD)
-MUTATION_CLONE=/absolute/path/outside/source/xeg-mutation-1
-git clone --no-local --no-hardlinks --no-checkout "$MUTATION_SOURCE" "$MUTATION_CLONE"
-git -C "$MUTATION_CLONE" -c advice.detachedHead=false checkout --detach "$MUTATION_COMMIT"
-git -C "$MUTATION_CLONE" submodule sync --recursive
-git -C "$MUTATION_CLONE" submodule update --init --recursive
-(
-  cd "$MUTATION_CLONE"
-  pnpm install --frozen-lockfile --package-import-method=copy
-  pnpm mut:prepare "$MUTATION_SOURCE" "$MUTATION_COMMIT"
-  pnpm mut:fast # or pnpm mut, using a new clone for the other profile
-)
-```
-
-Uncommitted source or core edits are not included in the selected commit and
-must not be described as tested. `pnpm mut` and `pnpm mut:fast` refuse an ordinary
-maintainer checkout before instrumentation. Do not build, probe, or run another
-agent in the disposable checkout during mutation. Deep and Release jobs use
-their own job checkout directly, bound to the selected commit; they keep the
-same canonical `pnpm mut:fast` report location and threshold.
-
-Local diagnostic arguments are `--dryRunOnly`, `--concurrency`/`-c` (1–32),
-`--logLevel`, `--mutate`/`-m`, and `--testFiles`/`-t`. Pass paths as relative
-comma-separated globs within the clone. Other configuration and output path
-overrides are refused; hosted gates accept no overrides. The full command selects
-progress and JSON reporters and writes `reports/mutation/mutation.json`; the fast
-command keeps its configured reporters and also requires a nonempty HTML report.
-Completion requires restored source and a nonempty JSON mutant inventory with
-supported terminal statuses, in addition to Stryker's successful exit and score
-policy. Missing or incomplete reports retain diagnostics and fail the launcher.
-`--dryRunOnly` records `dry-run-only`, without requiring complete mutation reports;
-it does not provide complete analysis or reusable mutation success evidence.
-
-If a run fails or is interrupted, inspect `.git/xeg-mutation/`, reports, Stryker
-backups, and the checkout's remaining processes before taking action. Preserve
-logs and backups while deciding whether restoration completed. Compare any
-modified content with its **before-run** state; `HEAD` cannot reconstruct dirty
-before-run edits. A forced shutdown can prevent cleanup or final status writes.
-Use a new disposable checkout for the next run, and discard the old one manually
-only after confirming its ownership, process state, and retained evidence. Do
-not reset or clean the maintainer checkout as a recovery step.
 
 ### Quality ownership
 
@@ -133,7 +74,7 @@ errors. `fmt`/`lint` remain read-only conveniences; their `:fix` variants and
 | Runtime/import boundary probes | `test:ci`; retained within `quality` and `verify` | CI/release unit coverage when selected; CI quality when unit is explicitly unselected |
 | Complete unit suite and unchanged coverage thresholds | `test` / `test:cov`; `verify:full` uses internal `test:cov:after-policy` after `quality` | CI/release unit |
 | Production distributions / browser fixtures | `build:all:ci` / browser lane commands | CI/release build and E2E |
-| Mutation thresholds and security scans | Separate commands/workflows | Existing deep/release and security owners |
+| Security scans | Separate workflows | Existing security owners |
 
 CI quality uses the internal `quality:coverage-owned` command when unit is
 selected or classification fails; this runs the direct Node policy tests and
@@ -170,7 +111,6 @@ change align; tests establish that preserved behavior still works.
 | Surface | Contract; stage and side effects | Verification / status |
 | --- | --- | --- |
 | `.github/workflows/ci.yaml`, `security.yaml` changed-path jobs | Node is set up without dependencies; `scripts/ci/classify-changes.ts` is selected from the trusted base for PR/merge-group or checked-out protected revision for push. It reads the Git event and NUL-safe Git diff, conservatively emits fixed `GITHUB_OUTPUT` gates. | `test/unit/tooling/workflow-change-classifier-git.test.ts`, `workflow-change-policy.test.ts`; verify exact-SHA hosted gates execute real work, not only no-change routes. |
-| `.github/workflows/deep-checks.yaml` | `scripts/ci/deep-check-reuse.ts` owns bounded mutation reuse. A fresh run installs project dependencies, admits its job-owned checkout with `scripts/ci/mutation-workspace.ts`, and uploads mutation reports before recording success. | `scripts/ci/deep-check-reuse.test.ts`; invalid markers or unavailable history run fresh. |
 | `.github/workflows/security.yaml` pinned tools and OSV | `scripts/ci/pinned-tools.json` owns tool versions and digests; trusted private copies of `pinned-tools.ts` and `check-pinned-tools.ts` supply image environment and freshness checks. The independently pinned browser-core `automation/actions/prepare-osv` supplies the private `consumer` OSV helper; `packages/core` remains the runtime gitlink. | `test/unit/config/pinned-tools-cli.test.ts`, `test/unit/config/osv-workflow-composition.test.ts`, and provider OSV fixtures; `docs/osv-workflow.md` records trust order and live-container limits. |
 | `.github/workflows/release.yaml` | `scripts/release/verify-source.ts` checks protected tagged source before fan-out; `prepare.ts` creates local release files and `verify-publication.ts` checks the public write decision in the locked publish job. Runner `run:` blocks still select checkout, append short outputs, and launch artifacts/actions. | `scripts/release/verify-source.test.ts`, `test/unit/tooling/{release-runtime,release-publication}.test.ts`, and exact-source artifact inspection. Preparation does not publish. |
 | `.github/dependabot.yaml`, `update-browser-core.yaml` | Dependabot opens npm and GitHub Actions update PRs for maintainer review; repository workflows do not approve or merge dependency updates. `scripts/ci/update-browser-core.ts` verifies remote SHA/impact and owns gitlink PR preparation/publication. Workflow shell supplies event inputs and bounded output/checkout glue. | `test/unit/config/dependency-review-policy.test.ts`, `test/unit/tooling/browser-core-automation.test.ts`, `scripts/ci/repository-authority.test.ts`; privileged results require exact-SHA hosted evidence. |

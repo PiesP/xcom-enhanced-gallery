@@ -44,7 +44,7 @@ See [PRIVACY.md](../PRIVACY.md) for data, storage, and network details.
 
 CI combines strict TypeScript, Biome, dependency and circular-import checks,
 unit coverage, userscript and extension Playwright tests, production builds,
-mutation testing, CodeQL, OSV Scanner, and Semgrep. The
+CodeQL, OSV Scanner, and Semgrep. The
 workflow files and package scripts are authoritative for the exact checks.
 
 Dependencies retain the repository's cooling window, trust policy, approved
