@@ -1,153 +1,142 @@
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import {
   chmodSync,
   copyFileSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
-  readdirSync,
   readFileSync,
+  readdirSync,
   rmSync,
+  statSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vite-plus/test';
 
-const source = resolve(import.meta.dirname, '../../../scripts/ci');
 const root = resolve(import.meta.dirname, '../../..');
-const reviewedScannerHelper = 'd5fdf58387e43dec380331a1ab6577c0a2cb8f6a';
-const roots: string[] = [];
-
-type Pins = {
+const providerFixtures = join(root, 'test/fixtures/scanner-provider');
+const security = readFileSync(join(root, '.github/workflows/security.yaml'), 'utf8');
+const metadata = readFileSync(join(root, 'scripts/ci/pinned-tools.json'));
+const pins = JSON.parse(metadata.toString('utf8')) as {
   osv: { version: string; image: string };
   semgrep: { version: string; image: string };
 };
+const consumerSha = 'd5fdf58387e43dec380331a1ab6577c0a2cb8f6a';
+const providerSha = '4ab0442d8d2e3cf640767b499b6444c92f6479b5';
+const action = 'uses: PiesP/browser-core/automation/actions/prepare-scanner-pins@' + providerSha;
+const files = [
+  [
+    'automation/actions/prepare-scanner-pins/action.yaml',
+    'action.yaml.txt',
+    'f37c9657f724fcc4b39cc28294618ac0ef09d949d94aa2e757507e1f830d2adf',
+  ],
+  [
+    'automation/actions/prepare-scanner-pins/prepare.ts',
+    'prepare.ts.txt',
+    '0bb6ec52113c17e4cebe86e3da792a8b59c6125cc85cfda4d037741ce7dc812b',
+  ],
+  [
+    'automation/security/scanner-pins.ts',
+    'scanner-pins.ts.txt',
+    '4975feec038d3969dc38fcd1de73afba04cb84e8cd8e176de9ed8a4a81f7b7a9',
+  ],
+] as const;
+const roots: string[] = [];
 
-it('keeps scanner pins in a reviewed private three-file closure', () => {
-  const workflow = readFileSync(join(root, '.github/workflows/security.yaml'), 'utf8');
-  const pins = JSON.parse(readFileSync(join(source, 'pinned-tools.json'), 'utf8')) as Record<
-    string,
-    unknown
-  >;
-  expect(Object.keys(pins).sort()).toEqual(['osv', 'semgrep']);
-  expect(workflow.match(new RegExp(`ref: ${reviewedScannerHelper}`, 'gu'))).toHaveLength(2);
-  expect(
-    workflow.match(/for name in pinned-tools\.json pinned-tools\.ts check-pinned-tools\.ts; do/gu)
-  ).toHaveLength(2);
-  expect(workflow).toContain('"$pinned_dir/check-pinned-tools.ts"');
-
-  const block = workflow
-    .split('      - name: 🔐 Export validated scanner images\n')[1]
-    ?.split('\n      - name: ')[0];
-  const script = block?.match(/ {8}run: \|\n((?: {10}.*\n)*)/u)?.[1]?.replace(/^ {10}/gmu, '');
-  expect(script).toBeDefined();
-  const temporary = mkdtempSync(join(tmpdir(), 'scanner pins workflow '));
-  try {
-    const output = join(temporary, 'output');
-    const result = spawnSync('bash', ['-e', '-o', 'pipefail', '-c', script ?? ''], {
-      cwd: root,
-      env: { ...process.env, RUNNER_TEMP: temporary, GITHUB_OUTPUT: output },
-      encoding: 'utf8',
-    });
-    expect(result.status, result.stderr).toBe(0);
-    const copy = join(
-      temporary,
-      readdirSync(temporary).find((entry) => entry.startsWith('pinned-tools.')) ?? ''
-    );
-    expect(readdirSync(copy).sort()).toEqual([
-      'check-pinned-tools.ts',
-      'pinned-tools.json',
-      'pinned-tools.ts',
-    ]);
-    for (const name of readdirSync(copy)) {
-      expect(readFileSync(join(copy, name))).toEqual(readFileSync(join(source, name)));
-    }
-  } finally {
-    rmSync(temporary, { recursive: true, force: true });
-  }
-});
+function job(name: string): string {
+  return security.split('\n  ' + name + ':\n')[1]?.split(/\n  [a-z][a-z-]*:\n/u)[0] ?? '';
+}
 
 function fixture() {
-  const root = mkdtempSync(join(tmpdir(), 'pinned tools cli '));
-  roots.push(root);
-  const scripts = join(root, 'scripts/ci');
-  const bin = join(root, 'bin');
-  mkdirSync(scripts, { recursive: true });
-  mkdirSync(bin);
-  writeFileSync(join(root, 'package.json'), '{"type":"module"}\n');
-  for (const name of ['pinned-tools.ts', 'check-pinned-tools.ts']) {
-    copyFileSync(join(source, name), join(scripts, name));
+  const directory = mkdtempSync(join(tmpdir(), 'xeg scanner consumer '));
+  roots.push(directory);
+  const provider = join(directory, 'reviewed provider');
+  const candidate = join(directory, 'candidate checkout');
+  const trusted = join(directory, 'reviewed consumer');
+  const runner = join(directory, 'runner temp');
+  const bin = join(directory, 'bin');
+  for (const path of [candidate, trusted, runner, bin]) {
+    mkdirSync(path);
   }
-  const pins = JSON.parse(readFileSync(join(source, 'pinned-tools.json'), 'utf8')) as Pins;
-  writeFileSync(join(scripts, 'pinned-tools.json'), JSON.stringify(pins));
-  const stub = join(bin, 'mock');
+  for (const [source, snapshot] of files) {
+    const target = join(provider, source);
+    mkdirSync(dirname(target), { recursive: true });
+    copyFileSync(join(providerFixtures, snapshot), target);
+  }
+  const trustedJson = join(trusted, 'pinned-tools.json');
+  writeFileSync(trustedJson, metadata);
+  writeFileSync(join(candidate, 'pinned-tools.json'), '{}');
+  writeFileSync(join(candidate, 'scanner-pins.ts'), 'untrusted code\n');
+  const mock = join(bin, 'mock');
   writeFileSync(
-    stub,
-    `#!${process.execPath}
-import fs from 'node:fs';
-import path from 'node:path';
-const command = path.basename(process.argv[1]);
-const args = process.argv.slice(2);
-const root = process.env.FAKE_ROOT;
-const scenario = process.env.MOCK_SCENARIO || '';
-const pins = JSON.parse(fs.readFileSync(path.join(root, 'scripts/ci/pinned-tools.json'), 'utf8'));
-fs.appendFileSync(path.join(root, 'calls.jsonl'), JSON.stringify({ command, args }) + '\\n');
-if (command === 'gh') {
-  if (scenario === 'api-fail') process.exit(7);
-  const target = args[1];
-  if (target.endsWith('/releases?per_page=100')) {
-    const version = target.includes('google/osv-scanner') ? pins.osv.version : pins.semgrep.version;
-    const old = new Date(Date.now() - 48 * 3600000).toISOString();
-    const young = new Date(Date.now() - 3600000).toISOString();
-    const list = scenario === 'no-mature' ? [{ tag_name: 'v' + version, published_at: young, draft: false, prerelease: false }] :
-      scenario === 'young-first' ? [
-        { tag_name: 'v9.9.9', published_at: young, draft: false, prerelease: false },
-        { tag_name: 'v' + version, published_at: old, draft: false, prerelease: false },
-      ] : [{ tag_name: 'v' + (scenario === 'update' ? '9.9.9' : version), published_at: old, draft: false, prerelease: false }];
-    process.stdout.write(JSON.stringify(scenario === 'malformed-api' ? { error: 'bad' } : list));
-  }
-} else if (command === 'curl') {
-  if (scenario === 'manifest-fail' && args.includes('--dump-header')) process.exit(7);
-  if (args.some((arg) => arg.includes('ghcr.io/token')))
-    process.stdout.write(JSON.stringify(scenario === 'no-token' ? {} : { token: 'fixture-token' }));
-  else if (scenario !== 'no-image-digest')
-    process.stdout.write('Docker-Content-Digest: ' + (scenario === 'image-mismatch' ? 'sha256:' + '0'.repeat(64) : pins.osv.image.split('@')[1]) + '\\r\\n');
-}
-`
+    mock,
+    [
+      '#!/bin/sh',
+      'printf "%s %s\\n" "$0" "$*" >> "$CALLS"',
+      'if [ "$(basename "$0")" = gh ]; then',
+      '  case "$*" in *google/osv-scanner*) version="$OSV_VERSION";; *) version="$SEMGREP_VERSION";; esac',
+      '  printf \'[{"draft":false,"prerelease":false,"tag_name":"v%s","published_at":"2020-01-01T00:00:00Z"}]\' "$version"',
+      'else',
+      '  case "$*" in',
+      '    *ghcr.io/token*) printf \'{"token":"fixture-token"}\';;',
+      '    *) printf "Docker-Content-Digest: %s\\r\\n" "$EXPECTED_DIGEST";;',
+      '  esac',
+      'fi',
+      '',
+    ].join('\n')
   );
-  chmodSync(stub, 0o755);
+  chmodSync(mock, 0o755);
   for (const name of ['gh', 'curl']) {
-    copyFileSync(stub, join(bin, name));
+    copyFileSync(mock, join(bin, name));
   }
+  const actionOutput = join(directory, 'action output');
+  const envOutput = join(directory, 'environment output');
+  const calls = join(directory, 'calls');
   const env = {
     ...process.env,
-    PATH: `${bin}:${process.env.PATH ?? ''}`,
-    FAKE_ROOT: root,
-    RUNNER_TEMP: root,
-    GITHUB_ENV: join(root, 'github env'),
-    GH_TOKEN: 'secret-gh',
-    GITHUB_TOKEN: 'secret-github',
+    RUNNER_TEMP: runner,
+    GITHUB_OUTPUT: actionOutput,
+    GITHUB_ENV: envOutput,
+    GH_TOKEN: 'fixture-gh-token',
+    PATH: bin + ':' + (process.env.PATH ?? ''),
+    OSV_VERSION: pins.osv.version,
+    SEMGREP_VERSION: pins.semgrep.version,
+    EXPECTED_DIGEST: pins.osv.image.split('@')[1] ?? '',
+    CALLS: calls,
   };
-  const run = (name: string, scenario = '', args: string[] = []) => {
-    const result = spawnSync(
+  const prepare = () =>
+    spawnSync(
       process.execPath,
-      ['--experimental-strip-types', join(scripts, name), ...args],
-      {
-        cwd: root,
-        env: { ...env, MOCK_SCENARIO: scenario },
-        encoding: 'utf8',
-      }
+      [
+        '--experimental-strip-types',
+        join(provider, 'automation/actions/prepare-scanner-pins/prepare.ts'),
+      ],
+      { cwd: candidate, env, encoding: 'utf8' }
     );
-    const calls = existsSync(join(root, 'calls.jsonl'))
-      ? readFileSync(join(root, 'calls.jsonl'), 'utf8')
-          .trim()
-          .split('\n')
-          .map((line) => JSON.parse(line) as { command: string; args: string[] })
-      : [];
-    return { result, calls };
+  const helper = () => {
+    const output = readFileSync(actionOutput, 'utf8');
+    expect(output.match(/^helper-path=/gmu)).toHaveLength(1);
+    return output.slice('helper-path='.length).trimEnd();
   };
-  return { root, scripts, pins, env, run };
+  const privateJson = () => {
+    const directory = join(runner, 'reviewed metadata');
+    mkdirSync(directory, { mode: 0o700 });
+    chmodSync(directory, 0o700);
+    const path = join(directory, 'pinned-tools.json');
+    copyFileSync(trustedJson, path);
+    chmodSync(path, 0o600);
+    return path;
+  };
+  const run = (helperPath: string, mode: string, json: string) =>
+    spawnSync(process.execPath, ['--experimental-strip-types', helperPath, mode, json], {
+      cwd: candidate,
+      env,
+      encoding: 'utf8',
+    });
+  return { candidate, runner, envOutput, calls, prepare, helper, privateJson, run };
 }
 
 afterEach(() => {
@@ -156,142 +145,88 @@ afterEach(() => {
   }
 });
 
-describe('pinned tool checker CLI', () => {
-  it('checks exact scanner release and image endpoints in API order', () => {
-    const { run, pins } = fixture();
-    const { result, calls } = run('check-pinned-tools.ts', 'young-first');
-    expect(result.status).toBe(0);
-    expect(calls.map((call) => [call.command, ...call.args])).toEqual([
-      ['gh', 'api', 'repos/google/osv-scanner/releases?per_page=100'],
-      [
-        'curl',
-        '--fail',
-        '--silent',
-        '--show-error',
-        'https://ghcr.io/token?scope=repository:google/osv-scanner-action:pull',
-      ],
-      [
-        'curl',
-        '--fail',
-        '--silent',
-        '--show-error',
-        '--dump-header',
-        '-',
-        '--output',
-        '/dev/null',
-        '--header',
-        'Authorization: Bearer fixture-token',
-        '--header',
-        'Accept: application/vnd.docker.distribution.manifest.v2+json',
-        `https://ghcr.io/v2/google/osv-scanner-action/manifests/v${pins.osv.version}`,
-      ],
-      ['gh', 'api', 'repos/semgrep/semgrep/releases?per_page=100'],
-    ]);
-  });
-
-  it('warns on a mature update without failing the pin integrity checks', () => {
-    const { run } = fixture();
-    const { result } = run('check-pinned-tools.ts', 'update');
-    expect(result.status).toBe(0);
-    expect(result.stdout).toContain('::warning title=osv-scanner update available::');
-  });
-
-  for (const [scenario, message] of [
-    ['no-mature', 'No stable'],
-    ['api-fail', 'check-pinned-tools:'],
-    ['malformed-api', 'Invalid'],
-    ['no-token', 'Invalid GHCR token'],
-    ['no-image-digest', 'digest mismatch'],
-    ['image-mismatch', 'digest mismatch'],
-    ['manifest-fail', 'curl request failed (exit 7)'],
-  ]) {
-    it(`fails closed on ${scenario}`, () => {
-      const { run } = fixture();
-      const { result } = run('check-pinned-tools.ts', scenario);
-      expect(result.status).not.toBe(0);
-      expect(result.stderr).toContain(message);
-    });
-  }
-
-  it('does not disclose the GHCR bearer token on a manifest failure', () => {
-    const { run } = fixture();
-    const { result } = run('check-pinned-tools.ts', 'manifest-fail');
-    expect(result.status).not.toBe(0);
-    expect(result.stderr).not.toContain('fixture-token');
-  });
-
-  it('continues checking every pin after an API failure', () => {
-    const { run } = fixture();
-    const { result, calls } = run('check-pinned-tools.ts', 'api-fail');
-    expect(result.status).toBe(1);
-    expect(calls.filter((call) => call.command === 'gh').map((call) => call.args[1])).toEqual([
-      'repos/google/osv-scanner/releases?per_page=100',
-      'repos/semgrep/semgrep/releases?per_page=100',
-    ]);
-    expect(result.stdout).toContain('runtime digest matches GHCR');
-  });
-});
-
-describe('pinned image environment CLI', () => {
-  it('appends only validated pinned images without external commands', () => {
-    const { run, pins, root } = fixture();
-    writeFileSync(join(root, 'github env'), 'EXISTING=value\n');
-    const { result, calls } = run('pinned-tools.ts', '', ['env']);
-    expect(result.status).toBe(0);
-    expect(calls).toEqual([]);
-    expect(readFileSync(join(root, 'github env'), 'utf8')).toBe(
-      `EXISTING=value\nOSV_SCANNER_IMAGE=${pins.osv.image}\nSEMGREP_IMAGE=${pins.semgrep.image}\n`
+describe('scanner pin consumer contract', () => {
+  it('binds test snapshots and consumer metadata to the reviewed bytes', () => {
+    expect(createHash('sha256').update(metadata).digest('hex')).toBe(
+      '6272b8eb6806d92fcae67f4f1bba238b0955a08e7b5d544276b9fdb1006588b9'
     );
+    for (const [, snapshot, hash] of files) {
+      expect(
+        createHash('sha256')
+          .update(readFileSync(join(providerFixtures, snapshot)))
+          .digest('hex')
+      ).toBe(hash);
+    }
   });
 
-  it('rejects other modes and malformed images before writing', () => {
-    const { run, pins, scripts, root } = fixture();
-    expect(run('pinned-tools.ts', '', ['other']).result.status).toBe(1);
-    pins.osv.image += '\nINJECTED=value';
-    writeFileSync(join(scripts, 'pinned-tools.json'), JSON.stringify(pins));
-    expect(run('pinned-tools.ts', '', ['env']).result.status).toBe(1);
-    expect(existsSync(join(root, 'github env'))).toBe(false);
-  });
-
-  it('requires the workflow environment output path', () => {
-    const { env, scripts } = fixture();
-    const result = spawnSync(
-      process.execPath,
-      ['--experimental-strip-types', join(scripts, 'pinned-tools.ts'), 'env'],
-      {
-        env: { ...env, GITHUB_ENV: '' },
-        encoding: 'utf8',
-      }
+  it('loads provider code after the trusted checkout in both scanner jobs', () => {
+    for (const [name, mode] of [
+      ['pin-metadata', 'env'],
+      ['pinned-tools', 'check'],
+    ] as const) {
+      const body = job(name);
+      const checkout = body.indexOf('ref: ' + consumerSha);
+      const runtime = body.indexOf("install-dependencies: 'false'");
+      const helper = body.indexOf(action);
+      const call = body.indexOf(' ' + mode + ' "$pin_metadata"');
+      expect(checkout).toBeGreaterThan(0);
+      expect(runtime).toBeGreaterThan(checkout);
+      expect(helper).toBeGreaterThan(runtime);
+      expect(call).toBeGreaterThan(helper);
+      expect(body).toContain('id: scanner_helper');
+      expect(body).toContain('chmod 0700 "$pinned_dir"');
+      expect(body).toContain('pin_metadata="$pinned_dir/pinned-tools.json"');
+      expect(body).toContain('install -m 0600 scripts/ci/pinned-tools.json "$pin_metadata"');
+      expect(body).toContain('"$' + '{{ steps.scanner_helper.outputs.helper-path }}"');
+      expect(body).not.toContain('check-pinned-tools.ts');
+      expect(body).not.toContain('scripts/ci/pinned-tools.ts');
+      expect(body).not.toContain('continue-on-error:');
+      expect(body).toContain('contents: read');
+    }
+    expect(job('pin-metadata')).toContain('GITHUB_ENV="$GITHUB_OUTPUT"');
+    expect(job('pin-metadata')).toContain(
+      'OSV_SCANNER_IMAGE: $' + '{{ steps.pins.outputs.OSV_SCANNER_IMAGE }}'
     );
-    expect(result.status).toBe(1);
-    expect(result.stderr).toContain('GITHUB_ENV is required');
-  });
-});
-
-it('rejects missing or malformed metadata before external calls', () => {
-  for (const value of ['{}', '{', '{"osv":{"version":"bad"}}']) {
-    const { run, scripts } = fixture();
-    writeFileSync(join(scripts, 'pinned-tools.json'), value);
-    const { result, calls } = run('check-pinned-tools.ts');
-    expect(result.status).not.toBe(0);
-    expect(calls).toEqual([]);
-  }
-});
-
-it('does no reads, writes, or subprocess calls on module import', () => {
-  const { scripts, root, env } = fixture();
-  for (const name of ['pinned-tools.ts', 'check-pinned-tools.ts']) {
-    const result = spawnSync(
-      process.execPath,
-      [
-        '--experimental-strip-types',
-        '--input-type=module',
-        '-e',
-        `await import(${JSON.stringify(join(scripts, name))})`,
-      ],
-      { env, encoding: 'utf8' }
+    expect(job('pin-metadata')).toContain(
+      'SEMGREP_IMAGE: $' + '{{ steps.pins.outputs.SEMGREP_IMAGE }}'
     );
-    expect(result.status).toBe(0);
-    expect(existsSync(join(root, 'calls.jsonl'))).toBe(false);
-  }
+    expect(job('pinned-tools')).toContain('GH_TOKEN: $' + '{{ github.token }}');
+    expect(security).toContain("needs['pin-metadata'].outputs.OSV_SCANNER_IMAGE");
+    expect(security).toContain("needs['pin-metadata'].outputs.SEMGREP_IMAGE");
+  });
+
+  it('executes both prepared provider modes from an unrelated candidate checkout', () => {
+    const f = fixture();
+    const prepared = f.prepare();
+    expect(prepared.status, prepared.stderr).toBe(0);
+    const helper = f.helper();
+    expect(readdirSync(dirname(helper))).toEqual(['scanner-pins.ts']);
+    expect(statSync(dirname(helper)).mode & 0o777).toBe(0o700);
+    expect(statSync(helper).mode & 0o777).toBe(0o600);
+    const json = f.privateJson();
+    expect(statSync(dirname(json)).mode & 0o777).toBe(0o700);
+    expect(statSync(json).mode & 0o777).toBe(0o600);
+    const exported = f.run(helper, 'env', json);
+    expect(exported.status, exported.stderr).toBe(0);
+    expect(readFileSync(f.envOutput, 'utf8')).toBe(
+      'OSV_SCANNER_IMAGE=' + pins.osv.image + '\nSEMGREP_IMAGE=' + pins.semgrep.image + '\n'
+    );
+    const checked = f.run(helper, 'check', json);
+    expect(checked.status, checked.stderr).toBe(0);
+    expect(readFileSync(f.calls, 'utf8')).toContain('google/osv-scanner/releases?per_page=100');
+    expect(readFileSync(join(f.candidate, 'scanner-pins.ts'), 'utf8')).toBe('untrusted code\n');
+  });
+
+  it('fails with a missing helper or invalid explicit metadata', () => {
+    const f = fixture();
+    expect(f.prepare().status).toBe(0);
+    const helper = f.helper();
+    const json = f.privateJson();
+    expect(f.run(join(f.runner, 'missing.ts'), 'env', json).status).not.toBe(0);
+    writeFileSync(json, '{}');
+    expect(f.run(helper, 'env', json).status).not.toBe(0);
+    expect(f.run(helper, 'check', json).status).not.toBe(0);
+    expect(existsSync(f.envOutput)).toBe(false);
+    expect(existsSync(f.calls)).toBe(false);
+  });
 });

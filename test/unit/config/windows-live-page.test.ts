@@ -8,7 +8,10 @@ import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { describe, expect, it, vi } from 'vite-plus/test';
 
-type LivePageModule = {
+type LivePageModule = Pick<
+  typeof import('../../../validation/windows/live-page.ts'),
+  'createControlledVideoSettings' | 'validateLiveUrls'
+> & {
   inspectLiveTargetDocument(identity: { handle: string; statusId: string }):
     | false
     | {
@@ -138,14 +141,6 @@ type LivePageModule = {
       point: { x: number; y: number };
     }
   ): Element | null;
-  createControlledVideoSettings(
-    prior: unknown,
-    timestamp: number
-  ): {
-    gallery: { videoClickMode: string; [key: string]: unknown };
-    __schemaHash: string;
-    [key: string]: unknown;
-  };
   inspectSelectedGalleryDocument(expected: { expectedIndex: number; expectedPath: string }):
     | false
     | {
@@ -161,7 +156,6 @@ type LivePageModule = {
     output: string;
   }): Promise<unknown>;
   validateLiveObservation(value: unknown): void;
-  validateLiveUrls(values: unknown): string[];
 };
 
 type InstallProfileModule = {
@@ -189,13 +183,15 @@ const installProfile = (await import(
 const userscriptInstall = (await import(
   pathToFileURL(resolve(import.meta.dirname, '../../../validation/windows/userscript-install.ts'))
     .href
-)) as {
+)) as Pick<
+  typeof import('../../../validation/windows/userscript-install.ts'),
+  'managerDetailsUrl'
+> & {
   MEDIA_COHORTS: Record<'normal' | 'failure' | 'partial' | 'held', string[]>;
   PUBLIC_AVATAR_PATH: string;
   isPublicAvatarFixtureUrl(value: string): boolean;
   FIXTURE_ZIP_NAME: string;
   fixtureZipEntries(images: Uint8Array[]): Array<{ filename: string; bytes: Uint8Array }>;
-  managerDetailsUrl(browserName: string, id: string): string;
   probeManagerUserScripts(page: {
     evaluate(callback: () => Promise<unknown>): Promise<unknown>;
   }): Promise<{ available: boolean; registeredScriptCount?: number; errorType?: string }>;

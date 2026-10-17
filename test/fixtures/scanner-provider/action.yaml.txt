@@ -1,0 +1,15 @@
+name: Prepare scanner pin helper
+description: Copy the reviewed provider's scanner pin CLI into private runner storage
+
+outputs:
+  helper-path:
+    description: Absolute path to the prepared scanner pin CLI
+    value: ${{ steps.prepare.outputs.helper-path }}
+
+runs:
+  using: composite
+  steps:
+    - name: Prepare the provider-owned helper
+      id: prepare
+      shell: bash
+      run: node "$GITHUB_ACTION_PATH/prepare.ts"

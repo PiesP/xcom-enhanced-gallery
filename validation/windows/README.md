@@ -35,6 +35,13 @@ for another, and none is a required CI lane.
    X/Twitter status URLs after the installed deterministic fixture. It remains
    observational and can finish as `unverified`.
 
+The six native regression files under `validation/windows/` run with
+`pnpm test:e2e:native` after the project dependencies and Playwright Chromium
+are installed. This command executes 14 Node test cases, including Chromium
+tests, and is included in `test:e2e:all`, CI E2E, and `verify:full`. It checks
+fixture and cleanup contracts; the installed Windows tiers below still require
+their separate prepared-VM evidence.
+
 ## Retained acceptance evidence
 
 The historical migration review is recorded in

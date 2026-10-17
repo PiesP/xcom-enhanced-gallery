@@ -2730,7 +2730,7 @@ export function createControlledVideoSettings(
   priorValue: unknown,
   timestamp: number
 ): Record<string, unknown> & {
-  gallery: Record<string, unknown> & { videoClickMode?: string };
+  gallery: Record<string, unknown> & { videoClickMode: string };
   __schemaHash: string;
 } {
   const decoded = decodeStoredValue(priorValue);

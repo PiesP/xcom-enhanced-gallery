@@ -1,17 +1,8 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import {
-  copyFileSync,
-  cpSync,
-  mkdirSync,
-  readFileSync,
-  realpathSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs';
+import { copyFileSync, cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { arch, platform } from 'node:os';
 import { basename, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { preflightReleaseArtifacts } from './artifact-preflight.ts';
 import { packageExtensions } from './package-extension.ts';
 
@@ -202,17 +193,6 @@ ${changes}
   console.log(`Prepared release-bundle/ for v${version} (${releaseFiles.length} assets).`);
 }
 
-function isDirectInvocation(): boolean {
-  if (!process.argv[1]) {
-    return false;
-  }
-  try {
-    return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
-  } catch {
-    return false;
-  }
-}
-
-if (isDirectInvocation()) {
+if (import.meta.main) {
   prepareRelease();
 }

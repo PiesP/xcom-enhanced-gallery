@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 
 import { spawnSync } from 'node:child_process';
-import { appendFileSync, existsSync, realpathSync, writeSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { appendFileSync, writeSync } from 'node:fs';
 
 const outputs = [
   'quality',
@@ -110,7 +109,7 @@ export function classifyChanges(
     ) {
       known = true;
       select('quality', 'unit', 'e2e', 'build', 'codeql_javascript');
-    } else if (['scripts/ci/pinned-tools.ts', 'scripts/ci/pinned-tools.json'].includes(path)) {
+    } else if (path === 'scripts/ci/pinned-tools.json') {
       known = true;
       select('quality', 'osv', 'semgrep');
     } else if (path === 'README.md') {
@@ -245,11 +244,6 @@ function emit({ selected, reason }: Decision, env: NodeJS.ProcessEnv): void {
   }
 }
 
-// Compare resolved paths so invoking a symlink to this CLI still runs it.
-if (
-  process.argv[1] &&
-  existsSync(process.argv[1]) &&
-  realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))
-) {
+if (import.meta.main) {
   emit(classifyChanges(process.argv.slice(2)), process.env);
 }

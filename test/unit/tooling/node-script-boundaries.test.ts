@@ -113,6 +113,23 @@ afterEach(() => {
 });
 
 describe('Node script import boundary', () => {
+  it('runs every native Windows regression file through the full E2E command', () => {
+    const packageJson = JSON.parse(readFileSync(join(sourceRoot, 'package.json'), 'utf8')) as {
+      scripts: Record<string, string>;
+    };
+    const nativeCommand = packageJson.scripts['test:e2e:native'] ?? '';
+    const argumentsList = nativeCommand.split(' ');
+    expect(argumentsList.slice(0, 3)).toEqual(['node', '--experimental-strip-types', '--test']);
+    const nativeFiles = readdirSync(join(sourceRoot, 'validation/windows'), { recursive: true })
+      .map((path) => `validation/windows/${path.toString()}`)
+      .filter((path) => path.endsWith('.test.ts'))
+      .sort();
+    expect(nativeFiles).toHaveLength(6);
+    expect(argumentsList.slice(3).sort()).toEqual(nativeFiles);
+    expect(packageJson.scripts['test:e2e:all']).toContain('pnpm -s test:e2e:native');
+    expect(packageJson.scripts['verify:full']).toContain('test:e2e:all');
+  });
+
   it('checks syntax of every bundled Windows module', () => {
     const moduleRoot = join(sourceRoot, 'validation/windows');
     const modules = readdirSync(moduleRoot, { recursive: true })

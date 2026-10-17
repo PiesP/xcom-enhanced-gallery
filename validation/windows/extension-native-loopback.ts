@@ -12,6 +12,7 @@ import {
   RAPID_CLICK_B,
 } from '../../test/e2e/fixtures/installed-quoted-video-api.ts';
 import { generateFixtureCertificate } from './userscript-loopback.ts';
+import { startHttpsLoopback } from './https-loopback-lifecycle.ts';
 
 const MAX_REQUESTS = 128;
 const MAX_BODY_BYTES = 256 * 1024;
@@ -367,52 +368,12 @@ export async function startExtensionNativeFixtureLoopback(helperPath: string) {
     { key: certificate.keyPem, cert: certificate.certPem, maxHeaderSize: 4_096 },
     fixture.handle
   );
-  server.maxConnections = 8;
-  server.headersTimeout = 5_000;
-  server.requestTimeout = 5_000;
-  server.keepAliveTimeout = 1_000;
-  server.timeout = 20_000;
-  let serverError = false;
-  server.on('error', () => {
-    serverError = true;
-  });
-  server.on('connection', (socket) => socket.setTimeout(20_000, () => socket.destroy()));
-  try {
-    await new Promise<void>((resolveListen, rejectListen) => {
-      server.once('error', rejectListen);
-      server.listen(0, '127.0.0.1', () => {
-        server.off('error', rejectListen);
-        resolveListen();
-      });
-    });
-    const address = server.address();
-    assert(
-      address &&
-        typeof address !== 'string' &&
-        address.address === '127.0.0.1' &&
-        Number.isSafeInteger(address.port) &&
-        address.port > 0
-    );
-    return {
-      ...fixture,
-      port: address.port,
-      spkiSha256: certificate.spkiSha256,
-      snapshot: () => ({ ...fixture.snapshot(), serverError }),
-      async close() {
-        fixture.destroyActive();
-        server.closeAllConnections();
-        await new Promise<void>((resolveClose, rejectClose) =>
-          server.close((error) => (error ? rejectClose(error) : resolveClose()))
-        );
-      },
-    };
-  } catch {
-    server.closeAllConnections();
-    try {
-      server.close();
-    } catch {
-      /* The listener never started. */
-    }
-    throw new Error('extension-native-loopback-unavailable');
-  }
+  const lifecycle = await startHttpsLoopback(server, 'extension-native-loopback-unavailable');
+  return {
+    ...fixture,
+    port: lifecycle.port,
+    spkiSha256: certificate.spkiSha256,
+    snapshot: () => ({ ...fixture.snapshot(), serverError: lifecycle.serverError() }),
+    close: () => lifecycle.close(fixture.destroyActive),
+  };
 }

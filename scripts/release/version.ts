@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 export function main(): void {
   const root = resolve(import.meta.dirname, '..', '..');
@@ -68,17 +67,6 @@ export function main(): void {
   }
 }
 
-function isDirectInvocation(): boolean {
-  if (!process.argv[1]) {
-    return false;
-  }
-  try {
-    return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
-  } catch {
-    return false;
-  }
-}
-
-if (isDirectInvocation()) {
+if (import.meta.main) {
   main();
 }
