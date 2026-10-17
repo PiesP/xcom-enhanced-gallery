@@ -243,6 +243,16 @@ const VIDEO_COUNT = 8;
 const MAX_REQUESTS = 64;
 const MAX_MP4_BYTES = 256 * 1024;
 const SETTINGS_KEY = 'xeg-app-settings';
+
+/** Exposed for browser-serialization regression coverage. */
+export async function readAppliedVideoGallerySettings(extensionPage: Page): Promise<unknown> {
+  const stored = await extensionPage.evaluate(async (key) => {
+    const values = await chrome.storage.local.get(key);
+    return values[key];
+  }, SETTINGS_KEY);
+  return field(stored, 'gallery');
+}
+
 const BAD_MP4 = Buffer.from('controlled invalid MP4 bytes for decode recovery');
 const POSTER_PNG = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl4bRkAAAAASUVORK5CYII=',
@@ -616,10 +626,7 @@ export async function runVideoLoadingProfile({
       { key: SETTINGS_KEY, value }
     );
     settingsChanged = true;
-    const applied = await extensionPage.evaluate(
-      async (key) => field((await chrome.storage.local.get(key))[key], 'gallery'),
-      SETTINGS_KEY
-    );
+    const applied = await readAppliedVideoGallerySettings(extensionPage);
     assert.equal(field(applied, 'videoClickMode'), 'allow-all');
     assert.equal(field(applied, 'preloadCount'), 20);
 
