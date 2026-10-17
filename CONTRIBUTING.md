@@ -209,8 +209,9 @@ loaded roots/declarations, valid inputs, intended errors and restored controls;
 `import-aliases.test.ts` resolves all seven alias families with Vite and executes
 a public-platform import under Vitest.
 
-The five repository-wide compiler/Biome/Knip probe suites run in a serial
-Vitest project after the ordinary parallel unit project. They temporarily create
+The repository-wide toolchain-policy, node-ambient-types and knip-boundaries
+probe suites listed in `vitest.config.ts` run in a serial Vitest project after
+the ordinary parallel unit project. They temporarily create
 source files that another repository-wide tool could otherwise observe; both
 project ordering and one-file-at-a-time execution are required. Setup, aliases
 and coverage remain inherited, with all coverage thresholds unchanged.
