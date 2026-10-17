@@ -83,7 +83,7 @@ privileged extension downloads, live authenticated X.com, Windows native Save As
 Explorer, OS compositor, actual DPI changes, or physical GPU performance. A headless
 run is functional diagnostics only, not desktop visual acceptance.
 
-Run `node --check validation/windows/profile.mjs` for the profile syntax check.
+Run `node --check validation/windows/profile.ts` for the profile syntax check.
 
 ## Installed Chrome/Edge extension flow
 

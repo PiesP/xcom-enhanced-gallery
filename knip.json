@@ -12,7 +12,8 @@
     "test/e2e/specs/*.spec.ts",
     "vite*.ts",
     "tooling/vitest.after-policy.config.ts",
-    "validation/windows/{install-profile,profile}.mjs"
+    "validation/windows/install-profile.mjs",
+    "validation/windows/profile.ts"
   ],
   "project": [
     "src/**/*.ts!",

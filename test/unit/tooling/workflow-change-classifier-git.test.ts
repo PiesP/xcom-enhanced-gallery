@@ -96,7 +96,7 @@ function expectOnly(outputs: Record<string, string>, names: readonly string[]): 
 
 describe('classifier Git event path extraction', () => {
   it.each([
-    'validation/windows/profile.mjs',
+    'validation/windows/profile.ts',
     '.github/actions/setup-release/resolve-runtime.mjs',
     'extension/manifest.json',
     'tooling/vite/plugins/css-inline.ts',

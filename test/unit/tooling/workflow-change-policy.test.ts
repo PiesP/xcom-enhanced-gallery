@@ -316,7 +316,7 @@ describe('workflow change policy', () => {
   });
 
   it.each([
-    'validation/windows/profile.mjs',
+    'validation/windows/profile.ts',
     'validation/windows/install-profile.mjs',
     'validation/windows/profile.json',
     '.github/actions/setup-release/resolve-runtime.mjs',

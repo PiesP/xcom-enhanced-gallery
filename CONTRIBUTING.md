@@ -121,7 +121,7 @@ change align; tests establish that preserved behavior still works.
 
 ### Windows bundle and retained languages
 
-The Windows profile uses `profile.mjs`; `validation/windows/profile.json` declares installation `install-profile.mjs`, `live-page.mjs`, and built extension/userscript assets. The controller ships portable Windows Node and `playwright-core`, then imports the declared `.mjs` entries with `run({ browser, root, output })`. The pinned Node runtime directly strips erasable TypeScript in imported helpers and fixtures; no project transpilation/loader or duplicate generated source is declared.
+The Windows profile uses `profile.ts`; `validation/windows/profile.json` declares installation `install-profile.mjs`, `live-page.mjs`, and built extension/userscript assets. The controller ships portable Windows Node and `playwright-core`, then imports the declared entries with `run({ browser, root, output })`. The pinned Node runtime directly strips erasable TypeScript in imported helpers and fixtures; no project transpilation/loader or duplicate generated source is declared.
 
 The remaining `.mjs` profile entries and scenario modules are scheduled for direct TypeScript migration under [issue #329](https://github.com/PiesP/xcom-enhanced-gallery/issues/329). `validation/windows/README.md` describes bundle inputs and targeted `node --check` commands; the Node boundary suite checks every maintained `.mjs` and `.ts` Windows module, followed by the existing Windows-focused unit tests. A syntax check is not VM acceptance.
 

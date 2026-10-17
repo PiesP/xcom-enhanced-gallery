@@ -6,11 +6,63 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import type { Browser, Locator } from '@playwright/test';
 
-function parseComputedRgb(value) {
+type MockXhrResponse = {
+  status: number;
+  statusText: string;
+  finalUrl?: string;
+  readyState?: number;
+  responseHeaders?: string;
+  response?: Blob;
+  responseText?: string;
+  context?: unknown;
+};
+type MockXhrDetails = {
+  url: string;
+  method?: string;
+  responseType?: string;
+  context?: unknown;
+  onload?: (response: MockXhrResponse) => void;
+  onerror?: (response: MockXhrResponse) => void;
+  onabort?: (response: MockXhrResponse) => void;
+};
+type MockDownloadDetails = {
+  url: string;
+  name?: string;
+  onload?: () => void;
+  onerror?: (error: Error) => void;
+};
+
+type HostSnapshot = {
+  activeId: string | null;
+  bodyStyle: { left: string; overflow: string; position: string; right: string; top: string };
+  mainAriaHidden: string | null;
+  mainInert: boolean;
+  scrollY: number;
+};
+
+declare global {
+  interface Window {
+    GM_xmlhttpRequest: (details: MockXhrDetails) => { abort(): void };
+    GM_download: (details: string | MockDownloadDetails, name?: string) => void;
+    __xegAcceptanceRenderFaults?: Array<{
+      message: string;
+      property: string;
+      restoredBeforeThrow: boolean;
+      throwCount: number;
+    }>;
+    __xegAcceptanceOpeningHostState?: HostSnapshot | null;
+    __xegAcceptanceHostInput?: { clicks: number; keys: Array<{ key: string; prevented: boolean }> };
+  }
+}
+
+function parseComputedRgb(value: string): number[] {
   const match = /^rgba?\((.*)\)$/i.exec(value.trim());
   assert(match, `Expected computed rgb color, received ${value}`);
-  const parts = match[1]
+  const components = match[1];
+  assert(components, 'Computed color channels are unavailable');
+  const parts = components
     .replace('/', ' ')
     .split(/[,\s]+/)
     .filter(Boolean);
@@ -30,15 +82,16 @@ function parseComputedRgb(value) {
   return channels;
 }
 
-function relativeLuminance(value) {
+function relativeLuminance(value: string): number {
   const [red, green, blue] = parseComputedRgb(value).map((channel) => {
     const normalized = channel / 255;
     return normalized <= 0.04045 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
   });
+  assert(red !== undefined && green !== undefined && blue !== undefined);
   return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
 }
 
-function assertTextContrast(label, foreground, background) {
+function assertTextContrast(label: string, foreground: string, background: string): number {
   const foregroundLuminance = relativeLuminance(foreground);
   const backgroundLuminance = relativeLuminance(background);
   const ratio =
@@ -49,17 +102,27 @@ function assertTextContrast(label, foreground, background) {
 }
 
 /** Artifact injection validates rendering, not userscript-manager installation. */
-export async function run({ browser, root, output }) {
+export async function run({
+  browser,
+  root,
+  output,
+}: {
+  browser: Browser;
+  root: string;
+  output: string;
+}) {
   const faultMessages = [
     `XEG_WINDOWS_ACCEPTANCE_RENDER_FAULT_RETRY: ${'bounded-long-recovery-message-'.repeat(18)}`,
     'XEG_WINDOWS_ACCEPTANCE_RENDER_FAULT_CLOSE',
   ];
+  const [retryFault, closeFault] = faultMessages;
+  assert(retryFault && closeFault, 'Recovery fault fixtures are unavailable');
   const context = await browser.newContext({
     viewport: { width: 1280, height: 800 },
     locale: 'en-US',
     acceptDownloads: true,
   });
-  const runtimeErrors = [];
+  const runtimeErrors: Array<{ source: string; message: string }> = [];
   try {
     await mkdir(output, { recursive: true });
     const page = await context.newPage();
@@ -78,17 +141,25 @@ export async function run({ browser, root, output }) {
     const script = await readFile(path.join(root, 'dist/xcom-enhanced-gallery.user.js'), 'utf8');
     // Generate visible, nontrivial PNG fixtures with the browser's own Canvas encoder.
     await page.goto('about:blank');
-    const images = await page.evaluate(() =>
-      [
+    const images = await page.evaluate(() => {
+      const dimensions: Array<[number, number]> = [
         [480, 720],
         [1200, 360],
         [640, 480],
-      ].map(([width, height], index) => {
+      ];
+      return dimensions.map(([width, height], index) => {
         const canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext('2d');
-        ctx.fillStyle = ['#154c72', '#73501b', '#254b39'][index];
+        if (!ctx) {
+          throw new Error('Canvas 2D context unavailable');
+        }
+        const color = ['#154c72', '#73501b', '#254b39'][index];
+        if (!color) {
+          throw new Error('Fixture color unavailable');
+        }
+        ctx.fillStyle = color;
         ctx.fillRect(0, 0, width, height);
         ctx.strokeStyle = '#e5ecf2';
         ctx.lineWidth = 8;
@@ -96,9 +167,13 @@ export async function run({ browser, root, output }) {
         ctx.fillStyle = '#ffffff';
         ctx.font = '28px Segoe UI';
         ctx.fillText(`Windows fixture ${index + 1}`, 30, 60);
-        return canvas.toDataURL('image/png').split(',')[1];
-      })
-    );
+        const data = canvas.toDataURL('image/png').split(',')[1];
+        if (!data) {
+          throw new Error('Fixture PNG unavailable');
+        }
+        return data;
+      });
+    });
     const pngs = images.map((value) => Buffer.from(value, 'base64'));
     await context.route('**/*', async (route) => {
       const url = new URL(route.request().url());
@@ -107,26 +182,40 @@ export async function run({ browser, root, output }) {
       }
       if (url.hostname === 'pbs.twimg.com') {
         const index = url.pathname.includes('5678') ? 1 : url.pathname.includes('9012') ? 2 : 0;
+        const body = pngs[index];
+        assert(body, 'Fixture PNG unavailable');
         return route.fulfill({
           contentType: 'image/png',
-          body: pngs[index],
+          body,
           headers: { 'Access-Control-Allow-Origin': '*' },
         });
       }
       return route.abort('blockedbyclient');
     });
     await page.goto('https://x.com/testuser/status/1234567890123456789');
-    const { installGMMock } = await import(
+    const gmModule: unknown = await import(
       pathToFileURL(path.join(root, 'test/e2e/fixtures/gm-mock.ts')).href
     );
-    await installGMMock(page);
+    assert(
+      typeof gmModule === 'object' &&
+        gmModule !== null &&
+        'installGMMock' in gmModule &&
+        typeof gmModule.installGMMock === 'function',
+      'GM fixture module is unavailable'
+    );
+    await gmModule.installGMMock(page);
     await page.evaluate((encodedFixtures) => {
       // Keep production media extraction deterministic: bypass the callback-only
       // GM_cookie fallback and make the unavailable fixture API fail into DOM extraction.
+      // oxlint-disable-next-line unicorn/no-document-cookie -- The fixture exercises the userscript's existing cookie-backed path.
       document.cookie = 'ct0=windows-acceptance-fixture; path=/; SameSite=Lax';
-      const fixtureBlob = (url) => {
+      const fixtureBlob = (url: string) => {
         const index = url.includes('5678') ? 1 : url.includes('9012') ? 2 : 0;
-        const binary = atob(encodedFixtures[index]);
+        const encoded = encodedFixtures[index];
+        if (!encoded) {
+          throw new Error('Fixture image unavailable');
+        }
+        const binary = atob(encoded);
         const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
         return new Blob([bytes], { type: 'image/png' });
       };
@@ -167,10 +256,12 @@ export async function run({ browser, root, output }) {
         };
       };
       // Retain the legacy host fallback; the download assertion requires the blob request path.
-      window.GM_download = (details, name) => {
+      window.GM_download = (details: string | MockDownloadDetails, name?: string) => {
         const options = typeof details === 'string' ? { url: details, name } : details;
         if (!options.name) {
-          options.onerror?.(new Error('GM_download requires name'));
+          if ('onerror' in options) {
+            options.onerror?.(new Error('GM_download requires name'));
+          }
           return;
         }
         const dataset = document.documentElement.dataset;
@@ -187,9 +278,13 @@ export async function run({ browser, root, output }) {
           anchor.click();
           anchor.remove();
           setTimeout(() => URL.revokeObjectURL(url), 1000);
-          options.onload?.();
+          if ('onload' in options) {
+            options.onload?.();
+          }
         } catch (error) {
-          options.onerror?.(error);
+          if ('onerror' in options) {
+            options.onerror?.(error instanceof Error ? error : new Error(String(error)));
+          }
         }
       };
     }, images);
@@ -201,7 +296,7 @@ export async function run({ browser, root, output }) {
       { timeout: 15_000 }
     );
 
-    const installGalleryRenderFault = async (message) => {
+    const installGalleryRenderFault = async (message: string) => {
       await page.evaluate((faultMessage) => {
         const prototype = CSSStyleDeclaration.prototype;
         const descriptor = Object.getOwnPropertyDescriptor(prototype, 'setProperty');
@@ -220,7 +315,7 @@ export async function run({ browser, root, output }) {
         records.push(evidence);
         Object.defineProperty(prototype, 'setProperty', {
           ...descriptor,
-          value(property, value, priority) {
+          value(property: string, value: string | null | undefined, priority?: string) {
             if (property === evidence.property && evidence.throwCount === 0) {
               evidence.throwCount += 1;
               Object.defineProperty(prototype, 'setProperty', descriptor);
@@ -269,7 +364,7 @@ export async function run({ browser, root, output }) {
         );
       });
 
-    const assertHostRestored = async (expected) => {
+    const assertHostRestored = async (expected: HostSnapshot) => {
       const actual = await page.evaluate(() => {
         const main = document.querySelector('main');
         return {
@@ -289,7 +384,7 @@ export async function run({ browser, root, output }) {
       assert.deepEqual(actual, expected, 'Recovery must restore the exact host state and focus');
     };
 
-    const openFaultedGallery = async (faultMessage) => {
+    const openFaultedGallery = async (faultMessage: string) => {
       await prepareHostSnapshot();
       await installGalleryRenderFault(faultMessage);
       await page.locator('[data-testid="tweetPhoto"] img').first().click();
@@ -301,7 +396,7 @@ export async function run({ browser, root, output }) {
       return recovery;
     };
 
-    const inspectRecoveryAppearance = (recovery) =>
+    const inspectRecoveryAppearance = (recovery: Locator) =>
       recovery.evaluate((element) => {
         const panel = element.firstElementChild;
         const title = element.querySelector('h2');
@@ -340,7 +435,7 @@ export async function run({ browser, root, output }) {
         };
       });
 
-    const keyboardReachRecoveryAction = async (action) => {
+    const keyboardReachRecoveryAction = async (action: 'retry' | 'close') => {
       const visited = [];
       for (let step = 0; step < 8; step += 1) {
         await page.keyboard.press('Tab');
@@ -355,15 +450,20 @@ export async function run({ browser, root, output }) {
         }
       }
       const targets = await page.evaluate(() =>
-        [...document.querySelectorAll('[data-xeg-error-action]')].map((element) => ({
-          action: element.getAttribute('data-xeg-error-action'),
-          disabled: element.disabled,
-          tabIndex: element.tabIndex,
-          display: getComputedStyle(element).display,
-          visibility: getComputedStyle(element).visibility,
-          inertAncestor: element.closest('[inert]')?.outerHTML.slice(0, 300),
-          rect: element.getBoundingClientRect().toJSON(),
-        }))
+        [...document.querySelectorAll('[data-xeg-error-action]')].map((element) => {
+          if (!(element instanceof HTMLButtonElement)) {
+            throw new Error('Expected recovery action button');
+          }
+          return {
+            action: element.getAttribute('data-xeg-error-action'),
+            disabled: element.disabled,
+            tabIndex: element.tabIndex,
+            display: getComputedStyle(element).display,
+            visibility: getComputedStyle(element).visibility,
+            inertAncestor: element.closest('[inert]')?.outerHTML.slice(0, 300),
+            rect: element.getBoundingClientRect().toJSON(),
+          };
+        })
       );
       assert.fail(
         `Keyboard cannot reach recovery ${action}: ${JSON.stringify({ visited, targets })}`
@@ -371,7 +471,7 @@ export async function run({ browser, root, output }) {
     };
 
     await page.emulateMedia({ colorScheme: 'dark' });
-    const retryRecovery = await openFaultedGallery(faultMessages[0]);
+    const retryRecovery = await openFaultedGallery(retryFault);
     const darkRecovery = await inspectRecoveryAppearance(retryRecovery);
     assert.equal(darkRecovery.semanticSection, true);
     assert.equal(darkRecovery.ariaModal, null, 'Recovery surface must remain modeless');
@@ -381,7 +481,7 @@ export async function run({ browser, root, output }) {
     assert.equal(darkRecovery.rootPointerEvents, 'none');
     assert.equal(darkRecovery.panelPointerEvents, 'auto');
     assert(
-      darkRecovery.bodyText.includes(faultMessages[0]),
+      darkRecovery.bodyText.includes(retryFault),
       'Normalized recovery body must include the complete injected fault message'
     );
     const darkContrast = {
@@ -507,10 +607,17 @@ export async function run({ browser, root, output }) {
 
     const outside = page.locator('#outside-button');
     await outside.evaluate((element) => {
-      window.__xegAcceptanceHostInput = { clicks: 0, keys: [] };
-      element.addEventListener('click', () => window.__xegAcceptanceHostInput.clicks++);
+      const input: { clicks: number; keys: Array<{ key: string; prevented: boolean }> } = {
+        clicks: 0,
+        keys: [],
+      };
+      window.__xegAcceptanceHostInput = input;
+      element.addEventListener('click', () => input.clicks++);
       element.addEventListener('keydown', (event) => {
-        window.__xegAcceptanceHostInput.keys.push({
+        if (!(event instanceof KeyboardEvent)) {
+          throw new Error('Expected host keyboard event');
+        }
+        input.keys.push({
           key: event.key,
           prevented: event.defaultPrevented,
         });
@@ -550,12 +657,12 @@ export async function run({ browser, root, output }) {
 
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.emulateMedia({ colorScheme: 'light' });
-    const closeRecovery = await openFaultedGallery(faultMessages[1]);
+    const closeRecovery = await openFaultedGallery(closeFault);
     const lightRecovery = await inspectRecoveryAppearance(closeRecovery);
     assert.equal(lightRecovery.dataTheme, 'light');
     assert.equal(lightRecovery.colorScheme, 'light');
     assert(
-      lightRecovery.bodyText.includes(faultMessages[1]),
+      lightRecovery.bodyText.includes(closeFault),
       'Light recovery body must include the injected fault message'
     );
     const lightContrast = {
@@ -589,7 +696,9 @@ export async function run({ browser, root, output }) {
     assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0);
     assert.equal(await page.evaluate(() => document.activeElement?.id), 'recovery-trigger');
     await page.keyboard.press('Enter');
-    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => resolve())));
+    await page.evaluate(
+      () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+    );
     assert.equal(
       await page.locator('[data-renderer="gallery"]').count(),
       0,
@@ -611,7 +720,7 @@ export async function run({ browser, root, output }) {
     await page.locator('[data-testid="tweetPhoto"] img').first().click();
     await gallery.waitFor({ state: 'visible', timeout: 15000 });
     await page.waitForFunction(() =>
-      [...document.querySelectorAll('[data-xeg-gallery-container] img')].some(
+      [...document.querySelectorAll<HTMLImageElement>('[data-xeg-gallery-container] img')].some(
         (image) => image.complete && image.naturalWidth > 1
       )
     );
@@ -775,7 +884,10 @@ export async function run({ browser, root, output }) {
       return items && items.scrollTop > previous;
     }, scrollBeforeWheel);
     const focusedToolbar = await selectedFit.evaluate((element) => {
-      const wrapper = element.closest('[data-gallery-element="toolbar"]').parentElement;
+      const wrapper = element.closest('[data-gallery-element="toolbar"]')?.parentElement;
+      if (!wrapper) {
+        throw new Error('Focused toolbar wrapper unavailable');
+      }
       return {
         focused: document.activeElement === element,
         visibility: getComputedStyle(wrapper).visibility,
@@ -805,10 +917,11 @@ export async function run({ browser, root, output }) {
     await page.waitForFunction(
       () => {
         const toolbar = document.querySelector('[data-gallery-element="toolbar"]');
+        const wrapper = toolbar?.parentElement;
         return (
-          toolbar &&
-          getComputedStyle(toolbar.parentElement).visibility === 'hidden' &&
-          getComputedStyle(toolbar.parentElement).opacity === '0'
+          wrapper &&
+          getComputedStyle(wrapper).visibility === 'hidden' &&
+          getComputedStyle(wrapper).opacity === '0'
         );
       },
       undefined,
@@ -862,7 +975,8 @@ export async function run({ browser, root, output }) {
     await toolbar.waitFor({ state: 'visible' });
     await page.waitForFunction(() => {
       const toolbar = document.querySelector('[data-gallery-element="toolbar"]');
-      return toolbar && getComputedStyle(toolbar.parentElement).opacity === '1';
+      const wrapper = toolbar?.parentElement;
+      return wrapper && getComputedStyle(wrapper).opacity === '1';
     });
     await page.screenshot({ path: path.join(output, 'gallery-narrow-dark.png') });
     const narrowGeometry = await toolbar.evaluate((element) => {
@@ -870,6 +984,9 @@ export async function run({ browser, root, output }) {
       const labelRect = element
         .querySelector('[data-gallery-element="fit-mode-label"]')
         ?.getBoundingClientRect();
+      if (!labelRect) {
+        throw new Error('Visible fit label unavailable');
+      }
       return {
         left: rect.left,
         right: rect.right,
@@ -890,10 +1007,11 @@ export async function run({ browser, root, output }) {
     await page.waitForFunction(
       () => {
         const toolbar = document.querySelector('[data-gallery-element="toolbar"]');
+        const wrapper = toolbar?.parentElement;
         return (
-          toolbar &&
-          getComputedStyle(toolbar.parentElement).visibility === 'hidden' &&
-          getComputedStyle(toolbar.parentElement).opacity === '0'
+          wrapper &&
+          getComputedStyle(wrapper).visibility === 'hidden' &&
+          getComputedStyle(wrapper).opacity === '0'
         );
       },
       undefined,
@@ -902,6 +1020,9 @@ export async function run({ browser, root, output }) {
     const narrowContent = await gallery
       .locator('[data-gallery-element="item"][data-index="1"] img')
       .evaluate((image) => {
+        if (!(image instanceof HTMLImageElement)) {
+          throw new Error('Expected gallery image');
+        }
         const rect = image.getBoundingClientRect();
         return { top: rect.top, bottom: rect.bottom, naturalWidth: image.naturalWidth };
       });
@@ -941,7 +1062,11 @@ export async function run({ browser, root, output }) {
     const filename = 'downloaded-fixture.png';
     await download.saveAs(path.join(output, filename));
     const bytes = await readFile(path.join(output, filename));
-    assert(pngs[1].equals(bytes), 'Downloaded bytes must match the selected second fixture');
+    const expectedPng = pngs[1];
+    assert(
+      expectedPng && expectedPng.equals(bytes),
+      'Downloaded bytes must match the selected second fixture'
+    );
     await page.keyboard.press('Escape');
     await gallery.waitFor({ state: 'detached' });
     const expectedRuntimeErrors = runtimeErrors.filter(({ message }) =>
