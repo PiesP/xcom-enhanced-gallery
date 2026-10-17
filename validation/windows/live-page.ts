@@ -2703,7 +2703,9 @@ export function decodeStoredValue(raw: unknown): unknown {
   return parsed;
 }
 
-export async function readStoredLanguage(extensionPage: Page) {
+export async function readStoredLanguage(extensionPage: {
+  evaluate(callback: () => Promise<unknown>): Promise<unknown>;
+}) {
   const raw = await extensionPage.evaluate(
     async () => (await chrome.storage.local.get('xeg-language'))['xeg-language'] ?? null
   );
@@ -2724,7 +2726,13 @@ export async function readStoredVideoSettings(extensionPage: Page): Promise<Stor
   return { ...prior, settings: decodeStoredValue(prior.value) };
 }
 
-export function createControlledVideoSettings(priorValue: unknown, timestamp: number) {
+export function createControlledVideoSettings(
+  priorValue: unknown,
+  timestamp: number
+): Record<string, unknown> & {
+  gallery: Record<string, unknown> & { videoClickMode?: string };
+  __schemaHash: string;
+} {
   const decoded = decodeStoredValue(priorValue);
   const base = isRecord(decoded) ? decoded : { version: '1', lastModified: timestamp, gallery: {} };
   return {

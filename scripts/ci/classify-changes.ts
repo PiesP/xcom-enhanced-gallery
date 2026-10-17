@@ -87,9 +87,6 @@ export function classifyChanges(
     } else if (path.startsWith('test/fixtures/')) {
       known = true;
       select('unit', 'e2e', 'codeql_javascript');
-    } else if (path.startsWith('test/visual/')) {
-      known = true;
-      select('codeql_javascript');
     } else if (path.startsWith('validation/windows/')) {
       known = true;
       select('unit', 'e2e', 'codeql_javascript');

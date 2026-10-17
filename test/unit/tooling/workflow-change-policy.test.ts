@@ -317,14 +317,14 @@ describe('workflow change policy', () => {
 
   it.each([
     'validation/windows/profile.ts',
-    'validation/windows/install-profile.mjs',
+    'validation/windows/install-profile.ts',
     'validation/windows/profile.json',
     '.github/actions/setup-release/resolve-runtime.mjs',
     'extension/manifest.json',
     'extension/manifest.firefox.json',
     'tooling/vite/plugins/css-inline.ts',
     'test/e2e/fixtures/installed-gallery-page.html',
-    'test/visual/gallery.html',
+    'test/e2e/fixtures/mock-gallery-page.html',
     'vitest.config.ts',
     'tsconfig.node-tests.json',
     'tsconfig.new-runtime.json',

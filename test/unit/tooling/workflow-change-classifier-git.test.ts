@@ -101,7 +101,7 @@ describe('classifier Git event path extraction', () => {
     'extension/manifest.json',
     'tooling/vite/plugins/css-inline.ts',
     'test/e2e/fixtures/installed-gallery-page.html',
-    'test/visual/gallery.html',
+    'test/e2e/fixtures/mock-gallery-page.html',
     'tsconfig.future.json',
   ])('routes additions, deletions and renames of %s through quality', (path) => {
     fixture((cwd) => {

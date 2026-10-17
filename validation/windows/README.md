@@ -83,7 +83,7 @@ privileged extension downloads, live authenticated X.com, Windows native Save As
 Explorer, OS compositor, actual DPI changes, or physical GPU performance. A headless
 run is functional diagnostics only, not desktop visual acceptance.
 
-Run `node --check validation/windows/profile.ts` for the profile syntax check.
+Run `node --experimental-strip-types --check validation/windows/profile.ts` for the profile syntax check.
 
 ## Installed Chrome/Edge extension flow
 
@@ -567,5 +567,5 @@ media family and media ID as the selected source. Other host diagnostics,
 diagnostic overflow, or any failed assertion keep the evidence unverified.
 Review the retained screenshots separately before making a live-page claim.
 
-Run `node --check validation/windows/install-profile.mjs` for the installed
+Run `node --experimental-strip-types --check validation/windows/install-profile.ts` for the installed
 profile syntax check.

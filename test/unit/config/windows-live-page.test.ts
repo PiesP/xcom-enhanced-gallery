@@ -184,11 +184,10 @@ const livePage = (await import(
   pathToFileURL(resolve(import.meta.dirname, '../../../validation/windows/live-page.ts')).href
 )) as LivePageModule;
 const installProfile = (await import(
-  pathToFileURL(resolve(import.meta.dirname, '../../../validation/windows/install-profile.mjs'))
-    .href
+  pathToFileURL(resolve(import.meta.dirname, '../../../validation/windows/install-profile.ts')).href
 )) as InstallProfileModule;
 const userscriptInstall = (await import(
-  pathToFileURL(resolve(import.meta.dirname, '../../../validation/windows/userscript-install.mjs'))
+  pathToFileURL(resolve(import.meta.dirname, '../../../validation/windows/userscript-install.ts'))
     .href
 )) as {
   MEDIA_COHORTS: Record<'normal' | 'failure' | 'partial' | 'held', string[]>;
@@ -2135,7 +2134,7 @@ describe('Windows X live page validation', () => {
       readFileSync(resolve(import.meta.dirname, '../../../validation/windows/profile.json'), 'utf8')
     ) as { installation?: { assets?: string[] } };
     expect(profile.installation?.assets).toContain('validation/windows/live-page.ts');
-    expect(profile.installation?.assets).toContain('validation/windows/userscript-install.mjs');
+    expect(profile.installation?.assets).toContain('validation/windows/userscript-install.ts');
     expect(profile.installation?.assets).toContain('dist/xcom-enhanced-gallery.user.js');
   });
 
