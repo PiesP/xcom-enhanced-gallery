@@ -46,7 +46,7 @@ describe('Quiet Instruments design adapter', () => {
     expect(coreCss).toContain('.pp-design');
     expect(coreCss).not.toContain(':root');
     expect(coreCss).not.toMatch(/^\s*(?:html|body)(?=[\s,{.#:[>+~])/m);
-    expect(adapterCss).toContain('.xeg-theme-scope.pp-design[data-pp-product="xeg"]');
+    expect(adapterCss).toMatch(/\.xeg-theme-scope\.pp-design\[data-pp-product=(['"])xeg\1\]/u);
     expect(adapterCss).not.toContain(':root');
     expect(adapterCss).not.toMatch(/^\s*(?:html|body)(?=[\s,{.#:[>+~])/m);
   });

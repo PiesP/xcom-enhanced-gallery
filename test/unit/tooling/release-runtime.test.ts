@@ -57,9 +57,12 @@ describe('release runtime selection', () => {
     expect(runtime).toBeGreaterThan(checkout);
     expect(verify).toBeGreaterThan(runtime);
     expect(provenance).toContain("install-dependencies: 'false'");
-    expect(
-      workflow.match(/node-version: \$\{\{ needs.provenance.outputs.node-version \}\}/g)
-    ).toHaveLength(5);
+    const trustedRuntime = 'node-version: ${{ needs.provenance.outputs.node-version }}';
+    for (const job of ['quality', 'unit', 'e2e', 'build']) {
+      const jobDefinition = workflow.split(`\n  ${job}:\n`)[1]?.split(/\n  [a-z-]+:\n/u)[0];
+      expect(jobDefinition, `Missing trusted runtime in ${job}`).toContain(trustedRuntime);
+    }
+    expect(workflow.split(trustedRuntime)).toHaveLength(5);
   });
 
   it.each([undefined, 26, '26', 'latest', '26.9.0\nextra=value'])(

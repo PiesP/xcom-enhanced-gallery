@@ -46,7 +46,7 @@ describe('bounded guided retry', () => {
   });
 
   it('does not extend the elapsed budget when wall time moves backward', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
+    vi.useFakeTimers({ toNotFake: ['Temporal'] });
     let monotonicMs = 0;
     vi.spyOn(performance, 'now').mockImplementation(() => monotonicMs);
     vi.setSystemTime(1_000_000);
