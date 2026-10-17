@@ -149,7 +149,7 @@ describe('tooling configuration', () => {
       'pnpm clean && pnpm build:ci && pnpm build:dev && pnpm build:extension:ci && pnpm build:extension:firefox:ci'
     );
     expect(packageJson.scripts['test:e2e:all']).toBe(
-      'pnpm -s test:e2e && pnpm -s test:e2e:extension && pnpm -s test:e2e:extension:firefox'
+      'pnpm -s test:e2e && pnpm -s test:e2e:extension && pnpm -s test:e2e:extension:firefox && pnpm -s test:e2e:native'
     );
     expect(packageJson.scripts['verify:full']).toContain('pnpm -s test:e2e:all');
 
