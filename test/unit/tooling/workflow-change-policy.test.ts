@@ -316,15 +316,15 @@ describe('workflow change policy', () => {
   });
 
   it.each([
-    'validation/windows/profile.mjs',
-    'validation/windows/install-profile.mjs',
+    'validation/windows/profile.ts',
+    'validation/windows/install-profile.ts',
     'validation/windows/profile.json',
     '.github/actions/setup-release/resolve-runtime.mjs',
     'extension/manifest.json',
     'extension/manifest.firefox.json',
     'tooling/vite/plugins/css-inline.ts',
     'test/e2e/fixtures/installed-gallery-page.html',
-    'test/visual/gm-mocks.js',
+    'test/e2e/fixtures/mock-gallery-page.html',
     'vitest.config.ts',
     'tsconfig.node-tests.json',
     'tsconfig.new-runtime.json',
@@ -444,7 +444,7 @@ describe('workflow change policy', () => {
     const sharedFixture = classify(['test/fixtures/quoted-video-tweet-response.ts']);
     expectAll(sharedFixture, ['unit', 'e2e', 'semgrep', 'codeql_javascript']);
 
-    const windowsValidation = classify(['validation/windows/live-page.mjs']);
+    const windowsValidation = classify(['validation/windows/live-page.ts']);
     expectAll(windowsValidation, ['unit', 'e2e', 'semgrep', 'codeql_javascript']);
     expect(windowsValidation.build).toBe('false');
     const pins = classify(['scripts/ci/pinned-tools.json']);

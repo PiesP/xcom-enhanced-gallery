@@ -35,7 +35,7 @@ describe('toolchain policy boundaries', () => {
   it.each([
     { directory: 'src/shared/utils', extension: 'ts', source: 'export const value=1;\n' },
     {
-      directory: 'test/visual',
+      directory: 'test/e2e/fixtures',
       extension: 'html',
       source:
         '<!doctype html><html lang="en"><head><title>Probe</title></head><body><div>value</div></body></html>\n',
@@ -157,7 +157,7 @@ describe('toolchain policy boundaries', () => {
       code: 'lint/performance/noAccumulatingSpread',
     },
     {
-      directory: 'test/visual',
+      directory: 'test/e2e/fixtures',
       extension: 'html',
       source:
         '<!doctype html><html lang="en"><head><title>Probe</title></head><body><video src="x"></video></body></html>\n',

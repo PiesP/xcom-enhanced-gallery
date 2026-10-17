@@ -3,6 +3,214 @@
 
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import type { BrowserContext, ElementHandle, JSHandle, Page } from '@playwright/test';
+
+type Source = { host: string; path: string };
+type Identity = { handle: string; statusId: string };
+type TweetMedia = {
+  id: string | null;
+  type: string;
+  poster: Source | null;
+  playableVariants: (Source | null)[];
+};
+type TweetSummary = { id: string | null; media: TweetMedia[] };
+type ApiObservation = {
+  operation: string;
+  requestedTweetId: string | null;
+  httpStatus: number;
+  providerErrors: boolean;
+  result: TweetSummary | null;
+  directQuote: TweetSummary | null;
+  nestedQuoteId: string | null;
+  bodyOutcome?: string;
+};
+type ApiEvidence = {
+  tweetResultByRestId: { requests: number; responses: number[] };
+  observations: ApiObservation[];
+  overflow: number;
+};
+type Diagnostic = {
+  kind: string;
+  location?: string;
+  text?: string;
+  name?: string;
+  message?: string;
+  status?: number;
+  url?: string;
+  error?: string;
+  hadQuery?: boolean;
+  hadCredentials?: boolean;
+  hadPort?: boolean;
+};
+type ProductDiagnostic = Diagnostic & { location: string; text: string };
+type HostSnapshot = {
+  bodyStyle: { left: string; overflow: string; position: string; right: string; top: string };
+  scrollRestoration: ScrollRestoration;
+  scrollY: number;
+};
+type RestoredHostState = {
+  after: HostSnapshot;
+  focusRestored: boolean;
+  bodyStylesRestored: boolean;
+  scrollRestorationRestored: boolean;
+  scrollRestored: boolean;
+};
+type QuoteTarget = {
+  kind: 'quoted-video';
+  articleIndex: number;
+  quoteBoundary: string;
+  quoteIndex: number;
+  nestedArticleIndex: number;
+  quoteStatusIds: string[];
+  ownershipPath: { tag: string; testId: string | null }[];
+  videoIndex: number;
+  playerIndex: number;
+  previewIndex: number;
+  posterIndex: number;
+  hitKind: string;
+  posterSource: Source | null;
+  hostVideoSource: Source | null;
+  initialHitTest?: ReturnType<typeof inspectHitTestedVideoActionDocument>;
+  hitTestAfterNativePlayback?: ReturnType<typeof inspectHitTestedVideoActionDocument>;
+  nativePlayback?: {
+    status: string;
+    before?: ReturnType<typeof inspectHostVideoDocument>;
+    confirmation?: {
+      inQuote: boolean;
+      nativePlay: NonNullable<ReturnType<typeof inspectHitTestedVideoActionDocument>>['nativePlay'];
+      rejectedControls: number;
+    } | null;
+    action?: NonNullable<ReturnType<typeof inspectHitTestedVideoActionDocument>>['nativePlay'];
+    pointShift?: { x: number; y: number };
+    galleryOpenedOnControlClick?: boolean;
+    after?: ReturnType<typeof inspectHostVideoDocument> | null;
+  };
+  galleryActionKind?: string;
+};
+type ImageTarget = {
+  kind: 'image';
+  articleIndex: number;
+  imageIndex: number;
+  imageLoaded: boolean;
+  imageSource: Source;
+  imageVisible: boolean;
+  selectedPhotoIndex?: number;
+  actionAriaLabel?: string | null;
+  actionIndex?: number;
+  actionPath?: string;
+  duplicateActionCount?: number;
+};
+type LiveTarget = QuoteTarget | ImageTarget;
+type LiveReadiness =
+  | { state: 'ready'; target: LiveTarget }
+  | { state: 'ambiguous' | 'terminal'; reason: string; candidateCount?: number }
+  | false;
+type LiveCandidate = ReturnType<typeof inspectLiveCandidateDocument>;
+type GalleryObservation = {
+  status: string;
+  before?: HostSnapshot;
+  after?: HostSnapshot;
+  focusPrepared?: boolean;
+  identityBeforeClick?: boolean;
+  hitTestBeforeClick?: ReturnType<typeof inspectHitTestedVideoActionDocument>;
+  focusedControlStillOwnsClick?: boolean;
+  activationFocusCaptured?: boolean;
+  activationFocusChanged?: boolean;
+  focusTarget?: string;
+  opened?: {
+    ariaModal: string | null;
+    role: string | null;
+    selectedGallery?: ReturnType<typeof inspectSelectedGalleryDocument> | null;
+    selectedVideo?: ReturnType<typeof inspectSelectedGalleryVideoDocument> | null;
+  };
+  playback?: { startTime: number; endTime: number | null; progressed: boolean };
+  owner?: ReturnType<typeof quotedOwnerForSource>;
+  closeMethod?: string;
+  detached?: boolean;
+  focusRestored?: boolean;
+  bodyStylesRestored?: boolean;
+  scrollRestorationRestored?: boolean;
+  scrollRestored?: boolean;
+};
+type LiveObservation = {
+  schemaVersion: number;
+  kind: string;
+  requestedUrl: string;
+  finalUrl: string | null;
+  responseStatus: number | null;
+  extension: {
+    id: string;
+    readinessMarker: boolean | null;
+    readinessMarkerAtNavigation?: boolean;
+    storedModeAfterReadiness?: string | null;
+  };
+  videoClickMode: string;
+  target: LiveTarget | null;
+  targetCandidatesBefore?: LiveCandidate | null;
+  targetCandidates?: LiveCandidate | null;
+  gallery: GalleryObservation;
+  api: ApiEvidence;
+  productErrors: Diagnostic[];
+  productErrorOverflow: number;
+  pageErrors: Diagnostic[];
+  pageErrorOverflow: number;
+  hostDiagnostics: Diagnostic[];
+  hostDiagnosticOverflow: number;
+  screenshots: { before?: string; open?: string; after?: string; error?: string };
+  missingAssertions: string[];
+  requiredAssertions?: Record<string, boolean>;
+  evidenceStatus: string;
+  status: string;
+  classification?: string;
+  providerRejection?: ReturnType<typeof summarizeQuoteProviderRejection>;
+  error?: string;
+  expectedLifecycleCancellationCount?: number;
+  controlledProbe?: ControlledProbe;
+};
+type ControlledProbe = {
+  kind?: string;
+  requestedMode?: string;
+  priorStoredMode?: string | null;
+  appliedMode?: string | null;
+  observation?: LiveObservation | null;
+  modeAfterObservation?: string | null;
+  cleanup: {
+    restored: boolean;
+    extensionPageClosed: boolean;
+    restoreError?: string;
+    extensionPageError?: string;
+  };
+  status: string;
+  error?: string;
+};
+type StorageRecord = { exists: boolean; value: unknown; settings: unknown };
+
+function storedVideoClickMode(settings: unknown): string | null {
+  const mode = field(field(settings, 'gallery'), 'videoClickMode');
+  return typeof mode === 'string' ? mode : null;
+}
+
+declare const chrome: {
+  storage: {
+    local: {
+      get(key: string): Promise<Record<string, unknown>>;
+      set(value: Record<string, unknown>): Promise<void>;
+      remove(key: string): Promise<void>;
+    };
+  };
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function record(value: unknown): Record<string, unknown> | null {
+  return isRecord(value) ? value : null;
+}
+
+function field(value: unknown, key: string): unknown {
+  return record(value)?.[key];
+}
 
 const ACTION_TIMEOUT_MS = 15_000;
 const NAVIGATION_TIMEOUT_MS = 45_000;
@@ -12,7 +220,7 @@ const MAX_API_OBSERVATIONS = 12;
 const MAX_API_BODY_BYTES = 2_000_000;
 const LIVE_URL_PATTERN = /^https:\/\/(x\.com|twitter\.com)\/([A-Za-z0-9_]{1,15})\/status\/(\d+)$/u;
 
-export function validateLiveUrls(values) {
+export function validateLiveUrls(values: unknown): string[] {
   if (!Array.isArray(values)) {
     throw new Error('X live URLs must be an array');
   }
@@ -31,21 +239,26 @@ export function validateLiveUrls(values) {
   });
 }
 
-export function validateLiveObservation(value) {
+export function validateLiveObservation(value: unknown) {
   if (value !== null) {
     throw new Error('X live status validation does not support duration mode');
   }
 }
 
-function targetIdentity(value) {
+function targetIdentity(value: string): Identity {
   const match = LIVE_URL_PATTERN.exec(value);
   if (!match) {
     throw new Error('Validated live URL lost its status identity');
   }
-  return { handle: match[2], statusId: match[3] };
+  const handle = match[2];
+  const statusId = match[3];
+  if (!handle || !statusId) {
+    throw new Error('Validated live URL lost its status identity');
+  }
+  return { handle, statusId };
 }
 
-function sanitizedUrl(value) {
+function sanitizedUrl(value: string) {
   try {
     const url = new URL(value);
     if (!['https:', 'chrome-extension:', 'about:'].includes(url.protocol)) {
@@ -60,7 +273,7 @@ function sanitizedUrl(value) {
   }
 }
 
-function sanitizedText(value, maximum = 600) {
+function sanitizedText(value: unknown, maximum = 600) {
   return String(value)
     .replace(/https?:\/\/[^\s<>"']+/giu, (match) => sanitizedUrl(match.replace(/[),.;]+$/u, '')))
     .replace(/\bBearer\s+[^\s,;]+/giu, 'Bearer [redacted]')
@@ -74,11 +287,16 @@ function sanitizedText(value, maximum = 600) {
     .slice(0, maximum);
 }
 
-function safeError(error) {
+function safeError(error: unknown) {
   return sanitizedText(error instanceof Error ? `${error.name}: ${error.message}` : error, 2_000);
 }
 
-function addBounded(list, value, observation, overflowKey) {
+function addBounded<T>(
+  list: T[],
+  value: T,
+  observation: LiveObservation,
+  overflowKey: 'productErrorOverflow' | 'hostDiagnosticOverflow' | 'pageErrorOverflow'
+) {
   if (list.length < MAX_DIAGNOSTICS) {
     list.push(value);
   } else {
@@ -86,7 +304,10 @@ function addBounded(list, value, observation, overflowKey) {
   }
 }
 
-function mediaSource(value, kind) {
+function mediaSource(value: unknown, kind: 'video' | 'image'): Source | null {
+  if (typeof value !== 'string') {
+    return null;
+  }
   try {
     const url = new URL(value);
     const allowed =
@@ -102,68 +323,86 @@ function mediaSource(value, kind) {
   }
 }
 
-function unwrapTweet(value) {
-  const result = value?.result ?? value;
-  return result?.tweet ?? result;
+function unwrapTweet(value: unknown): Record<string, unknown> | null {
+  const result = field(value, 'result') ?? value;
+  return record(field(result, 'tweet') ?? result);
 }
 
-function summarizeTweet(value) {
+function summarizeTweet(value: unknown): TweetSummary | null {
   const tweet = unwrapTweet(value);
   if (!tweet || typeof tweet !== 'object') {
     return null;
   }
-  const id = tweet.rest_id ?? tweet.legacy?.id_str ?? tweet.id_str;
-  const media = tweet.legacy?.extended_entities?.media ?? tweet.extended_entities?.media ?? [];
+  const id = tweet.rest_id ?? field(tweet.legacy, 'id_str') ?? tweet.id_str;
+  const media =
+    field(field(tweet.legacy, 'extended_entities'), 'media') ??
+    field(tweet.extended_entities, 'media') ??
+    [];
   return {
     id: typeof id === 'string' && /^\d+$/u.test(id) ? id : null,
     media: Array.isArray(media)
-      ? media.slice(0, 12).map((item) => ({
-          id:
-            typeof item.id_str === 'string' && /^\d{1,40}$/u.test(item.id_str) ? item.id_str : null,
-          type: ['photo', 'video', 'animated_gif'].includes(item.type) ? item.type : 'unknown',
-          poster: mediaSource(item.media_url_https, 'image'),
-          playableVariants: Array.isArray(item.video_info?.variants)
-            ? item.video_info.variants
-                .slice(0, 12)
-                .filter(
-                  (variant) =>
-                    variant.content_type === 'video/mp4' && mediaSource(variant.url, 'video')
-                )
-                .map((variant) => mediaSource(variant.url, 'video'))
-            : [],
-        }))
+      ? media.slice(0, 12).map((item): TweetMedia => {
+          const mediaId = field(item, 'id_str');
+          const mediaType = field(item, 'type');
+          const variants = field(field(item, 'video_info'), 'variants');
+          return {
+            id: typeof mediaId === 'string' && /^\d{1,40}$/u.test(mediaId) ? mediaId : null,
+            type:
+              typeof mediaType === 'string' &&
+              ['photo', 'video', 'animated_gif'].includes(mediaType)
+                ? mediaType
+                : 'unknown',
+            poster: mediaSource(field(item, 'media_url_https'), 'image'),
+            playableVariants: Array.isArray(variants)
+              ? variants
+                  .slice(0, 12)
+                  .filter(
+                    (variant) =>
+                      field(variant, 'content_type') === 'video/mp4' &&
+                      mediaSource(field(variant, 'url'), 'video')
+                  )
+                  .map((variant) => mediaSource(field(variant, 'url'), 'video'))
+              : [],
+          };
+        })
       : [],
   };
 }
 
-export function summarizeTweetResultResponse(urlValue, status, body) {
+export function summarizeTweetResultResponse(
+  urlValue: string,
+  status: number,
+  body: unknown
+): ApiObservation | null {
   const url = new URL(urlValue);
   if (!url.pathname.endsWith('/TweetResultByRestId')) {
     return null;
   }
   let requestedTweetId = null;
   try {
-    const variables = JSON.parse(url.searchParams.get('variables') ?? '{}');
-    if (typeof variables.tweetId === 'string' && /^\d+$/u.test(variables.tweetId)) {
-      requestedTweetId = variables.tweetId;
+    const variables: unknown = JSON.parse(url.searchParams.get('variables') ?? '{}');
+    const tweetId = field(variables, 'tweetId');
+    if (typeof tweetId === 'string' && /^\d+$/u.test(tweetId)) {
+      requestedTweetId = tweetId;
     }
   } catch {
     // Record a missing ID without retaining the request query.
   }
-  const result = unwrapTweet(body?.data?.tweetResult?.result);
+  const result = unwrapTweet(field(field(field(body, 'data'), 'tweetResult'), 'result'));
   const directQuote = unwrapTweet(result?.quoted_status_result);
+  const providerErrors = field(body, 'errors');
   return {
     operation: 'TweetResultByRestId',
     requestedTweetId,
     httpStatus: status,
-    providerErrors: Array.isArray(body?.errors) && body.errors.length > 0,
+    providerErrors: Array.isArray(providerErrors) && providerErrors.length > 0,
     result: summarizeTweet(result),
     directQuote: summarizeTweet(directQuote),
     nestedQuoteId: summarizeTweet(unwrapTweet(directQuote?.quoted_status_result))?.id ?? null,
   };
 }
 
-export function summarizeQuoteProviderRejection(api) {
+export function summarizeQuoteProviderRejection(api: ApiEvidence | null | undefined) {
   const observations = Array.isArray(api?.observations) ? api.observations : [];
   const rejected = observations.find(
     (item) =>
@@ -179,13 +418,14 @@ export function summarizeQuoteProviderRejection(api) {
     return null;
   }
   const status = rejected?.httpStatus ?? fallbackStatus;
+  const httpError =
+    typeof status === 'number' && Number.isInteger(status) && status >= 400 && status <= 599;
+  const validStatus =
+    typeof status === 'number' && Number.isInteger(status) && status >= 100 && status <= 599;
   return {
     operation: 'TweetResultByRestId',
-    kind:
-      Number.isInteger(status) && status >= 400 && status <= 599
-        ? 'http-rejection'
-        : 'graphql-errors',
-    httpStatus: Number.isInteger(status) && status >= 100 && status <= 599 ? status : null,
+    kind: httpError ? 'http-rejection' : 'graphql-errors',
+    httpStatus: validStatus ? status : null,
     requestedTweetId:
       typeof rejected?.requestedTweetId === 'string' && /^\d+$/u.test(rejected.requestedTweetId)
         ? rejected.requestedTweetId
@@ -193,7 +433,11 @@ export function summarizeQuoteProviderRejection(api) {
   };
 }
 
-export function classifyLiveFailure(classification, galleryStatus, providerRejection) {
+export function classifyLiveFailure(
+  classification: string | undefined,
+  galleryStatus: string,
+  providerRejection: ReturnType<typeof summarizeQuoteProviderRejection>
+) {
   if (classification === 'controlled-media-click-did-not-open-gallery' && providerRejection) {
     return 'provider-rejection-observed-gallery-unverified';
   }
@@ -208,17 +452,17 @@ export function classifyLiveFailure(classification, galleryStatus, providerRejec
     : 'target-or-product-unverified';
 }
 
-function ownedVideoPath(source, mediaId) {
+function ownedVideoPath(source: Source | null | undefined, mediaId: string) {
   const match = /^\/(amplify_video|ext_tw_video)\/(\d{1,40})\//u.exec(source?.path ?? '');
-  return source?.host === 'video.twimg.com' && match?.[2] === mediaId ? match[1] : null;
+  return source?.host === 'video.twimg.com' && match?.[2] === mediaId ? (match?.[1] ?? null) : null;
 }
 
-function hasExplicitUrlPort(value) {
+function hasExplicitUrlPort(value: string) {
   const authority = /^https:\/\/([^/?#]+)/iu.exec(value)?.[1];
   return /:\d+$/u.test(authority ?? '');
 }
 
-export function classifyLiveHostDiagnostics(observation) {
+export function classifyLiveHostDiagnostics(observation: LiveObservation) {
   const required = observation.requiredAssertions;
   const allRequired =
     required &&
@@ -229,10 +473,12 @@ export function classifyLiveHostDiagnostics(observation) {
     observation.pageErrors?.length === 0 &&
     observation.pageErrorOverflow === 0;
   const owner = observation.gallery?.owner;
-  const source = observation.gallery?.opened?.selectedVideo?.source;
+  const selectedVideo = observation.gallery?.opened?.selectedVideo;
+  const source = selectedVideo ? selectedVideo.source : null;
+  const mediaId = owner?.mediaId;
   const family =
-    owner?.status === 'matched-direct-quote-variant' && /^\d{1,40}$/u.test(owner.mediaId ?? '')
-      ? ownedVideoPath(source, owner.mediaId)
+    owner?.status === 'matched-direct-quote-variant' && mediaId && /^\d{1,40}$/u.test(mediaId)
+      ? ownedVideoPath(source, mediaId)
       : null;
   const expectedLifecycleCancellationCount =
     allRequired && family
@@ -242,7 +488,8 @@ export function classifyLiveHostDiagnostics(observation) {
             record.error !== 'net::ERR_ABORTED' ||
             record.hadQuery === true ||
             record.hadCredentials === true ||
-            record.hadPort === true
+            record.hadPort === true ||
+            !record.url
           ) {
             return false;
           }
@@ -255,7 +502,7 @@ export function classifyLiveHostDiagnostics(observation) {
               !hasExplicitUrlPort(record.url) &&
               !url.search &&
               !url.hash &&
-              ownedVideoPath({ host: url.hostname, path: url.pathname }, owner.mediaId) === family
+              ownedVideoPath({ host: url.hostname, path: url.pathname }, mediaId ?? '') === family
             );
           } catch {
             return false;
@@ -273,8 +520,11 @@ export function classifyLiveHostDiagnostics(observation) {
   };
 }
 
-export function refreshQuotedVideoErrorAssertions(observation) {
+export function refreshQuotedVideoErrorAssertions(observation: LiveObservation) {
   const required = observation.requiredAssertions;
+  if (!required) {
+    throw new Error('Quoted video assertions were not recorded');
+  }
   required.noProductErrors =
     observation.productErrors.length === 0 && observation.productErrorOverflow === 0;
   required.noPageErrors =
@@ -285,7 +535,7 @@ export function refreshQuotedVideoErrorAssertions(observation) {
   return observation.missingAssertions;
 }
 
-function isProductConsoleError(record) {
+function isProductConsoleError(record: ProductDiagnostic) {
   return (
     record.location.startsWith('chrome-extension:') ||
     /\bXEG\b|X\.com Enhanced Gallery|\[(?:MediaExtractor|DOMFallbackExtractor|Gallery)\]/iu.test(
@@ -294,8 +544,8 @@ function isProductConsoleError(record) {
   );
 }
 
-function attachDiagnostics(page, observation) {
-  const pendingResponses = new Set();
+function attachDiagnostics(page: Page, observation: LiveObservation) {
+  const pendingResponses = new Set<Promise<void>>();
   page.on('console', (message) => {
     if (message.type() !== 'error') {
       return;
@@ -355,10 +605,10 @@ function attachDiagnostics(page, observation) {
           } else {
             bodyOutcome = 'too-large';
           }
-          observation.api.observations.push({
-            ...summarizeTweetResultResponse(url, response.status(), body),
-            bodyOutcome,
-          });
+          const summary = summarizeTweetResultResponse(url, response.status(), body);
+          if (summary) {
+            observation.api.observations.push({ ...summary, bodyOutcome });
+          }
         })();
         pendingResponses.add(capture);
         capture.finally(() => pendingResponses.delete(capture));
@@ -398,7 +648,7 @@ function attachDiagnostics(page, observation) {
   };
 }
 
-async function hostSnapshot(page) {
+async function hostSnapshot(page: Page): Promise<HostSnapshot> {
   return page.evaluate(() => {
     const style = document.body.style;
     return {
@@ -415,9 +665,13 @@ async function hostSnapshot(page) {
   });
 }
 
-async function waitForRestoredHostState(page, actionHandle, before) {
+async function waitForRestoredHostState(
+  page: Page,
+  actionHandle: JSHandle<Node | null>,
+  before: HostSnapshot
+) {
   const deadline = Date.now() + 3_000;
-  let state;
+  let state: RestoredHostState;
   do {
     const after = await hostSnapshot(page);
     const focusRestored = await actionHandle
@@ -443,14 +697,17 @@ async function waitForRestoredHostState(page, actionHandle, before) {
   return state;
 }
 
-async function captureScreenshot(page, output, filename) {
+async function captureScreenshot(page: Page, output: string, filename: string) {
   await page.screenshot({ path: join(output, filename) });
   return filename;
 }
 
-export function inspectLiveTargetDocument({ handle, statusId }) {
+export function inspectLiveTargetDocument({ handle, statusId }: Identity): LiveReadiness {
   const statusPath = `/${handle}/status/${statusId}`.toLowerCase();
-  const parseVideo = (value) => {
+  const parseVideo = (value: string | null | undefined) => {
+    if (!value) {
+      return null;
+    }
     try {
       const url = new URL(value);
       return url.protocol === 'https:' && url.hostname === 'video.twimg.com'
@@ -460,7 +717,7 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
       return null;
     }
   };
-  const isVisible = (element) => {
+  const isVisible = (element: Element) => {
     const style = getComputedStyle(element);
     const rectangle = element.getBoundingClientRect();
     return (
@@ -471,7 +728,7 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
       rectangle.height > 0
     );
   };
-  const parseLink = (anchor) => {
+  const parseLink = (anchor: HTMLAnchorElement) => {
     try {
       const url = new URL(anchor.href, location.href);
       if (!['x.com', 'twitter.com'].includes(url.hostname.toLowerCase())) {
@@ -482,10 +739,10 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
       return null;
     }
   };
-  const parseMedia = (image) => {
+  const parseMedia = (image: HTMLImageElement) => {
     for (const value of [image.currentSrc, image.src, image.getAttribute('src')]) {
       try {
-        const url = new URL(value, location.href);
+        const url = new URL(value ?? '', location.href);
         if (
           url.protocol === 'https:' &&
           url.hostname.toLowerCase() === 'pbs.twimg.com' &&
@@ -499,7 +756,10 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
     }
     return null;
   };
-  const parsePoster = (value) => {
+  const parsePoster = (value: string | null | undefined) => {
+    if (!value) {
+      return null;
+    }
     try {
       const url = new URL(value, location.href);
       return url.protocol === 'https:' &&
@@ -514,13 +774,18 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
     }
   };
 
-  const articles = [...document.querySelectorAll('article')];
+  const articles = [...document.querySelectorAll<HTMLElement>('article')];
   for (let articleIndex = 0; articleIndex < articles.length; articleIndex += 1) {
     const article = articles[articleIndex];
-    const ownsStatus = [...article.querySelectorAll('a[href]')].some((anchor) => {
-      const link = parseLink(anchor);
-      return anchor.closest('article') === article && link?.path.toLowerCase() === statusPath;
-    });
+    if (!article) {
+      continue;
+    }
+    const ownsStatus = [...article.querySelectorAll<HTMLAnchorElement>('a[href]')].some(
+      (anchor) => {
+        const link = parseLink(anchor);
+        return anchor.closest('article') === article && link?.path.toLowerCase() === statusPath;
+      }
+    );
     if (!ownsStatus) {
       continue;
     }
@@ -536,10 +801,13 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
       : quoteCards.length
         ? quoteCards
         : [article];
-    const videoTargets = [];
+    const videoTargets: { state: 'ready'; target: QuoteTarget }[] = [];
     for (let scopeIndex = 0; scopeIndex < scopes.length; scopeIndex += 1) {
       const quote = scopes[scopeIndex];
-      const players = [
+      if (!quote) {
+        continue;
+      }
+      const players: Element[] = [
         ...quote.querySelectorAll(
           '[data-testid="videoPlayer"], video, [data-testid="previewInterstitial"]'
         ),
@@ -554,14 +822,14 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
               !candidate.closest('[data-testid="videoPlayer"]')))
       );
       for (const player of players) {
-        const video = player.matches('video') ? player : player.querySelector('video');
-        const preview = player.matches('video') ? null : player.querySelector('img');
+        const video = player instanceof HTMLVideoElement ? player : player.querySelector('video');
+        const preview = player instanceof HTMLVideoElement ? null : player.querySelector('img');
         const playButton = player.matches('[data-testid="previewInterstitial"]')
           ? player.querySelector('[data-testid="playButton"]')
           : null;
         const poster = parsePoster(video?.poster);
-        const matchingPosters = poster
-          ? [...quote.querySelectorAll('img')].filter((image) => {
+        const matchingPosters: HTMLImageElement[] = poster
+          ? [...quote.querySelectorAll<HTMLImageElement>('img')].filter((image) => {
               const source = parsePoster(image.currentSrc || image.src);
               return (
                 image.closest('article') === (directNestedArticles.length ? quote : article) &&
@@ -573,7 +841,7 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
             })
           : [];
         const matchingPoster = matchingPosters.length === 1 ? matchingPosters[0] : null;
-        const hitTarget =
+        const hitTarget: Element | null =
           playButton && isVisible(playButton)
             ? playButton
             : video && isVisible(video)
@@ -584,18 +852,20 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
         if (!hitTarget) {
           continue;
         }
-        const quoteLinks = [...quote.querySelectorAll('a[href]')].flatMap((anchor) => {
-          if (directNestedArticles.length && anchor.closest('article') !== quote) {
-            return [];
+        const quoteLinks = [...quote.querySelectorAll<HTMLAnchorElement>('a[href]')].flatMap(
+          (anchor) => {
+            if (directNestedArticles.length && anchor.closest('article') !== quote) {
+              return [];
+            }
+            const link = parseLink(anchor);
+            const match = link?.path.match(/^\/[A-Za-z0-9_]{1,15}\/status\/(\d+)(?:\/|$)/u);
+            return match?.[1] && match[1] !== statusId ? [match[1]] : [];
           }
-          const link = parseLink(anchor);
-          const match = link?.path.match(/^\/[A-Za-z0-9_]{1,15}\/status\/(\d+)(?:\/|$)/u);
-          return match && match[1] !== statusId ? [match[1]] : [];
-        });
+        );
         const quoteStatusIds = [...new Set(quoteLinks)].slice(0, 8);
-        const path = [];
+        const path: { tag: string; testId: string | null }[] = [];
         for (
-          let node = hitTarget;
+          let node: Element | null = hitTarget;
           node && node !== article && path.length < 10;
           node = node.parentElement
         ) {
@@ -608,7 +878,7 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
               'videoComponent',
               'videoPlayerOverlay',
               'videoPlayerControls',
-            ].includes(node.getAttribute('data-testid'))
+            ].includes(node.getAttribute('data-testid') ?? '')
               ? node.getAttribute('data-testid')
               : null,
           });
@@ -625,11 +895,11 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
                 : 'unmarked-candidate',
             quoteIndex: quoteCards.length && !directNestedArticles.length ? scopeIndex : -1,
             nestedArticleIndex: directNestedArticles.length
-              ? [...article.querySelectorAll('article')].indexOf(quote)
+              ? [...article.querySelectorAll<Element>('article')].indexOf(quote)
               : -1,
             quoteStatusIds,
             ownershipPath: path,
-            videoIndex: [...article.querySelectorAll('video')].indexOf(video),
+            videoIndex: video ? [...article.querySelectorAll('video')].indexOf(video) : -1,
             playerIndex: [...article.querySelectorAll('[data-testid="videoPlayer"]')].indexOf(
               player
             ),
@@ -655,7 +925,7 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
         candidateCount: Math.min(videoTargets.length, 20),
       };
     }
-    if (videoTargets.length === 1) {
+    if (videoTargets.length === 1 && videoTargets[0]) {
       return videoTargets[0];
     }
     if (
@@ -668,9 +938,12 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
       return false;
     }
 
-    const images = [...article.querySelectorAll('img')];
+    const images = [...article.querySelectorAll<HTMLImageElement>('img')];
     for (let imageIndex = 0; imageIndex < images.length; imageIndex += 1) {
       const image = images[imageIndex];
+      if (!image) {
+        continue;
+      }
       const source = parseMedia(image);
       if (
         image.closest('article') !== article ||
@@ -706,10 +979,10 @@ export function inspectLiveTargetDocument({ handle, statusId }) {
   return false;
 }
 
-export function inspectLiveCandidateDocument({ handle, statusId }) {
+export function inspectLiveCandidateDocument({ handle, statusId }: Identity) {
   const path = `/${handle}/status/${statusId}`.toLowerCase();
-  const articles = [...document.querySelectorAll('article')];
-  const statusPath = (value) => {
+  const articles = [...document.querySelectorAll<HTMLElement>('article')];
+  const statusPath = (value: string) => {
     try {
       const url = new URL(value, location.href);
       return url.protocol === 'https:' &&
@@ -721,7 +994,7 @@ export function inspectLiveCandidateDocument({ handle, statusId }) {
       return null;
     }
   };
-  const mediaPath = (value) => {
+  const mediaPath = (value: string) => {
     try {
       const url = new URL(value, location.href);
       return url.protocol === 'https:' &&
@@ -735,10 +1008,17 @@ export function inspectLiveCandidateDocument({ handle, statusId }) {
       return null;
     }
   };
-  const nodePath = (element, article) => {
-    const nodes = [];
+  const nodePath = (element: Element, article: Element) => {
+    const nodes: {
+      tag: string;
+      testId: string | null;
+      role: string | null;
+      statusPath: string | null;
+      visibleBox: boolean;
+      bounds: { x: number; y: number; width: number; height: number };
+    }[] = [];
     for (
-      let node = element;
+      let node: Element | null = element;
       node && node !== article && nodes.length < 12;
       node = node.parentElement
     ) {
@@ -756,10 +1036,10 @@ export function inspectLiveCandidateDocument({ handle, statusId }) {
           'previewInterstitial',
           'playButton',
           'card.wrapper',
-        ].includes(testId)
+        ].includes(testId ?? '')
           ? testId
           : null,
-        role: ['link', 'button', 'presentation', 'application'].includes(role) ? role : null,
+        role: ['link', 'button', 'presentation', 'application'].includes(role ?? '') ? role : null,
         statusPath: node instanceof HTMLAnchorElement ? statusPath(node.href) : null,
         visibleBox:
           rect.width > 0 &&
@@ -777,12 +1057,12 @@ export function inspectLiveCandidateDocument({ handle, statusId }) {
     }
     return nodes;
   };
-  const articleOwnership = (element, outerArticle) => {
+  const articleOwnership = (element: Element, outerArticle: HTMLElement) => {
     const ancestorArticleIndexes = [];
     for (
       let node = element.closest('article');
       node && outerArticle.contains(node);
-      node = node.parentElement?.closest('article')
+      node = node.parentElement?.closest('article') ?? null
     ) {
       ancestorArticleIndexes.push(articles.indexOf(node));
       if (node === outerArticle || ancestorArticleIndexes.length >= 6) {
@@ -791,7 +1071,7 @@ export function inspectLiveCandidateDocument({ handle, statusId }) {
     }
     const nearest = element.closest('article');
     const ownStatusAnchors = nearest
-      ? [...nearest.querySelectorAll('a[href]')]
+      ? [...nearest.querySelectorAll<HTMLAnchorElement>('a[href]')]
           .filter((anchor) => anchor.closest('article') === nearest)
           .flatMap((anchor) => {
             const path = statusPath(anchor.href);
@@ -800,7 +1080,7 @@ export function inspectLiveCandidateDocument({ handle, statusId }) {
             }
             const structure = [];
             for (
-              let node = anchor;
+              let node: Element | null = anchor;
               node && node !== nearest && structure.length < 6;
               node = node.parentElement
             ) {
@@ -810,8 +1090,8 @@ export function inspectLiveCandidateDocument({ handle, statusId }) {
                 tag: ['a', 'div', 'span', 'time', 'article'].includes(node.tagName.toLowerCase())
                   ? node.tagName.toLowerCase()
                   : 'other',
-                role: ['link', 'button', 'presentation'].includes(role) ? role : null,
-                testId: ['User-Name', 'tweet', 'quoteTweet', 'videoPlayer'].includes(testId)
+                role: ['link', 'button', 'presentation'].includes(role ?? '') ? role : null,
+                testId: ['User-Name', 'tweet', 'quoteTweet', 'videoPlayer'].includes(testId ?? '')
                   ? testId
                   : null,
               });
@@ -829,14 +1109,14 @@ export function inspectLiveCandidateDocument({ handle, statusId }) {
       : [];
     const ownStatusPaths = ownStatusAnchors.map((anchor) => anchor.path);
     return {
-      nearestArticleIndex: articles.indexOf(nearest),
+      nearestArticleIndex: nearest ? articles.indexOf(nearest) : -1,
       ancestorArticleIndexes,
       ownStatusPaths,
       ownStatusAnchors,
     };
   };
   const article = articles.find((candidate) =>
-    [...candidate.querySelectorAll('a[href]')].some((anchor) => {
+    [...candidate.querySelectorAll<HTMLAnchorElement>('a[href]')].some((anchor) => {
       try {
         const url = new URL(anchor.href, location.href);
         return (
@@ -852,39 +1132,41 @@ export function inspectLiveCandidateDocument({ handle, statusId }) {
   if (!article) {
     return { exactArticleFound: false, articleCount: Math.min(articles.length, 50) };
   }
-  const videoDetails = [...article.querySelectorAll('video')].slice(0, 6).map((video) => {
-    const rect = video.getBoundingClientRect();
-    const x = Math.min(innerWidth - 1, Math.max(0, rect.x + rect.width / 2));
-    const y = Math.min(innerHeight - 1, Math.max(0, rect.y + rect.height / 2));
-    return {
-      sourceKind:
-        video.currentSrc?.startsWith('blob:') || video.src.startsWith('blob:')
-          ? 'blob'
-          : video.currentSrc || video.src
-            ? 'other'
-            : 'none',
-      poster: mediaPath(video.poster),
-      ...articleOwnership(video, article),
-      nodePath: nodePath(video, article),
-      hitPath:
-        rect.width > 0 && rect.height > 0 && typeof document.elementsFromPoint === 'function'
-          ? document
-              .elementsFromPoint(x, y)
-              .slice(0, 4)
-              .map((node) => ({
-                tag: node.tagName.toLowerCase(),
-                testId: [
-                  'videoPlayer',
-                  'videoComponent',
-                  'playButton',
-                  'previewInterstitial',
-                ].includes(node.getAttribute('data-testid'))
-                  ? node.getAttribute('data-testid')
-                  : null,
-              }))
-          : [],
-    };
-  });
+  const videoDetails = [...article.querySelectorAll<HTMLVideoElement>('video')]
+    .slice(0, 6)
+    .map((video) => {
+      const rect = video.getBoundingClientRect();
+      const x = Math.min(innerWidth - 1, Math.max(0, rect.x + rect.width / 2));
+      const y = Math.min(innerHeight - 1, Math.max(0, rect.y + rect.height / 2));
+      return {
+        sourceKind:
+          video.currentSrc?.startsWith('blob:') || video.src.startsWith('blob:')
+            ? 'blob'
+            : video.currentSrc || video.src
+              ? 'other'
+              : 'none',
+        poster: mediaPath(video.poster),
+        ...articleOwnership(video, article),
+        nodePath: nodePath(video, article),
+        hitPath:
+          rect.width > 0 && rect.height > 0 && typeof document.elementsFromPoint === 'function'
+            ? document
+                .elementsFromPoint(x, y)
+                .slice(0, 4)
+                .map((node) => ({
+                  tag: node.tagName.toLowerCase(),
+                  testId: [
+                    'videoPlayer',
+                    'videoComponent',
+                    'playButton',
+                    'previewInterstitial',
+                  ].includes(node.getAttribute('data-testid') ?? '')
+                    ? node.getAttribute('data-testid')
+                    : null,
+                }))
+            : [],
+      };
+    });
   const thumbnailDetails = [];
   for (const element of [...article.querySelectorAll('*')].slice(0, 800)) {
     if (thumbnailDetails.length >= 8) {
@@ -907,7 +1189,7 @@ export function inspectLiveCandidateDocument({ handle, statusId }) {
   }
   const statusIds = [
     ...new Set(
-      [...article.querySelectorAll('a[href]')].flatMap((anchor) => {
+      [...article.querySelectorAll<HTMLAnchorElement>('a[href]')].flatMap((anchor) => {
         try {
           const url = new URL(anchor.href, location.href);
           const match = ['x.com', 'twitter.com'].includes(url.hostname.toLowerCase())
@@ -938,7 +1220,7 @@ export function inspectLiveCandidateDocument({ handle, statusId }) {
   };
 }
 
-async function waitForTarget(page, identity) {
+async function waitForTarget(page: Page, identity: Identity) {
   const handle = await page.waitForFunction(inspectLiveTargetDocument, identity, {
     timeout: READINESS_TIMEOUT_MS,
     polling: 100,
@@ -950,15 +1232,18 @@ async function waitForTarget(page, identity) {
   }
 }
 
-async function inspectHitTestedAction(image, identity) {
+async function inspectHitTestedAction(
+  image: import('@playwright/test').Locator,
+  identity: Identity
+) {
   return image.evaluate((element, { handle, statusId }) => {
     const article = element.closest('article');
     if (!(element instanceof HTMLImageElement) || !article) {
       return null;
     }
     const mediaPath = new RegExp(`^/${handle}/status/${statusId}/photo/\\d+$`, 'iu');
-    const anchors = [...article.querySelectorAll('a[href]')];
-    const parseLink = (anchor) => {
+    const anchors = [...article.querySelectorAll<HTMLAnchorElement>('a[href]')];
+    const parseLink = (anchor: HTMLAnchorElement) => {
       try {
         const url = new URL(anchor.href, location.href);
         return ['x.com', 'twitter.com'].includes(url.hostname.toLowerCase()) ? url : null;
@@ -981,8 +1266,8 @@ async function inspectHitTestedAction(image, identity) {
       ...new Set(
         document
           .elementsFromPoint(x, y)
-          .map((candidate) => candidate.closest('a[href]'))
-          .filter(Boolean)
+          .map((candidate) => candidate.closest<HTMLAnchorElement>('a[href]'))
+          .filter((candidate): candidate is HTMLAnchorElement => candidate !== null)
       ),
     ];
     const action = hitAnchors.find((anchor) => {
@@ -993,6 +1278,9 @@ async function inspectHitTestedAction(image, identity) {
       return null;
     }
     const actionUrl = parseLink(action);
+    if (!actionUrl) {
+      return null;
+    }
     const duplicateActionCount = anchors.filter((anchor) => {
       const url = parseLink(anchor);
       return anchor.closest('article') === article && url?.pathname === actionUrl.pathname;
@@ -1006,7 +1294,13 @@ async function inspectHitTestedAction(image, identity) {
   }, identity);
 }
 
-export function inspectSelectedGalleryDocument({ expectedIndex, expectedPath }) {
+export function inspectSelectedGalleryDocument({
+  expectedIndex,
+  expectedPath,
+}: {
+  expectedIndex: number;
+  expectedPath: string;
+}) {
   const galleries = document.querySelectorAll('[data-xeg-gallery-container]');
   const gallery = galleries.length === 1 ? galleries[0] : null;
   const toolbar = gallery?.querySelector('[data-gallery-element="toolbar"]');
@@ -1041,7 +1335,7 @@ export function inspectSelectedGalleryDocument({ expectedIndex, expectedPath }) 
     return false;
   }
 
-  const isVisible = (element) => {
+  const isVisible = (element: Element) => {
     const style = getComputedStyle(element);
     const rectangle = element.getBoundingClientRect();
     return (
@@ -1152,12 +1446,19 @@ export function inspectSelectedGalleryVideoDocument() {
   };
 }
 
-function quotedOwnerForSource(apiObservations, outerId, source) {
+function quotedOwnerForSource(
+  apiObservations: ApiObservation[],
+  outerId: string,
+  source: Source | null | undefined
+) {
   if (!source) {
     return { status: 'missing-video-source', ownerId: null, mediaId: null };
   }
-  const matches = new Map();
-  const quotedIds = new Set();
+  const matches = new Map<
+    string,
+    { ownerId: string; mediaId: string | null; mediaIndex: number }
+  >();
+  const quotedIds = new Set<string>();
   for (const entry of apiObservations) {
     if (entry.result?.id === outerId && entry.directQuote?.id) {
       quotedIds.add(entry.directQuote.id);
@@ -1174,14 +1475,15 @@ function quotedOwnerForSource(apiObservations, outerId, source) {
       if (!directlyQuoted) {
         continue;
       }
+      const ownerId = tweet.id;
       tweet.media.forEach((media, mediaIndex) => {
         if (
           media.playableVariants.some(
-            (variant) => variant.host === source.host && variant.path === source.path
+            (variant) => variant?.host === source.host && variant.path === source.path
           )
         ) {
-          matches.set(`${tweet.id}:${mediaIndex}`, {
-            ownerId: tweet.id,
+          matches.set(`${ownerId}:${mediaIndex}`, {
+            ownerId,
             mediaId: media.id,
             mediaIndex,
           });
@@ -1198,7 +1500,10 @@ function quotedOwnerForSource(apiObservations, outerId, source) {
       };
 }
 
-export function inspectHitTestedVideoActionDocument(element, { posterPath }) {
+export function inspectHitTestedVideoActionDocument(
+  element: Element,
+  { posterPath }: { posterPath: string | null }
+) {
   if (!(element instanceof HTMLElement) || typeof document.elementsFromPoint !== 'function') {
     return null;
   }
@@ -1206,7 +1511,7 @@ export function inspectHitTestedVideoActionDocument(element, { posterPath }) {
   if (!quoteArticle) {
     return null;
   }
-  const scopeCounts = (scope, depth) => {
+  const scopeCounts = (scope: Element, depth: number) => {
     if (depth > 3) {
       return null;
     }
@@ -1257,7 +1562,7 @@ export function inspectHitTestedVideoActionDocument(element, { posterPath }) {
             element.querySelector('img')?.currentSrc ||
             element.querySelector('img')?.src;
     try {
-      const url = new URL(value, location.href);
+      const url = new URL(value ?? '', location.href);
       if (
         url.protocol !== 'https:' ||
         url.hostname !== 'pbs.twimg.com' ||
@@ -1270,7 +1575,7 @@ export function inspectHitTestedVideoActionDocument(element, { posterPath }) {
     }
   }
   const rect = element.getBoundingClientRect();
-  const samples = [
+  const samples: [number, number][] = [
     [0.2, 0.2],
     [0.8, 0.2],
     [0.2, 0.4],
@@ -1282,7 +1587,13 @@ export function inspectHitTestedVideoActionDocument(element, { posterPath }) {
     [0.5, 0.7],
   ];
   let rejectedControls = 0;
-  let nativePlay = null;
+  let nativePlay: {
+    x: number;
+    y: number;
+    topTag: string;
+    mediaScopeDepth: number;
+    scopeCounts: ReturnType<typeof scopeCounts>;
+  } | null = null;
   for (const [fx, fy] of samples) {
     const x = Math.round(rect.left + rect.width * fx);
     const y = Math.round(rect.top + rect.height * fy);
@@ -1299,7 +1610,7 @@ export function inspectHitTestedVideoActionDocument(element, { posterPath }) {
     if (control) {
       rejectedControls += 1;
       if (!nativePlay && control.matches('button, [role="button"]')) {
-        let mediaScope = element;
+        let mediaScope: HTMLElement | null = element;
         for (
           let depth = 0;
           mediaScope && depth <= 5 && mediaScope !== quoteArticle;
@@ -1319,7 +1630,7 @@ export function inspectHitTestedVideoActionDocument(element, { posterPath }) {
       }
       continue;
     }
-    let mediaScope = element;
+    let mediaScope: HTMLElement | null = element;
     for (
       let depth = 0;
       mediaScope && depth <= 3 && mediaScope !== quoteArticle;
@@ -1336,7 +1647,7 @@ export function inspectHitTestedVideoActionDocument(element, { posterPath }) {
             'videoComponent',
             'previewInterstitial',
             'tweetPhoto',
-          ].includes(top.getAttribute('data-testid'))
+          ].includes(top.getAttribute('data-testid') ?? '')
             ? top.getAttribute('data-testid')
             : null,
           mediaScopeDepth: depth,
@@ -1358,7 +1669,10 @@ export function inspectHitTestedVideoActionDocument(element, { posterPath }) {
   };
 }
 
-export function findHitTestedVideoControlDocument(element, { x, y, posterPath }) {
+export function findHitTestedVideoControlDocument(
+  element: Element,
+  { x, y, posterPath }: { x: number; y: number; posterPath: string | null }
+) {
   if (!(element instanceof HTMLElement) || typeof document.elementsFromPoint !== 'function') {
     return null;
   }
@@ -1384,7 +1698,7 @@ export function findHitTestedVideoControlDocument(element, { x, y, posterPath })
             element.querySelector('img')?.currentSrc ||
             element.querySelector('img')?.src;
     try {
-      const url = new URL(value, location.href);
+      const url = new URL(value ?? '', location.href);
       if (
         url.protocol !== 'https:' ||
         url.hostname !== 'pbs.twimg.com' ||
@@ -1405,7 +1719,7 @@ export function findHitTestedVideoControlDocument(element, { x, y, posterPath })
     return null;
   }
   for (
-    let scope = element, depth = 0;
+    let scope: HTMLElement | null = element, depth = 0;
     scope && scope !== quoteArticle && depth <= 5;
     scope = scope.parentElement, depth += 1
   ) {
@@ -1416,11 +1730,14 @@ export function findHitTestedVideoControlDocument(element, { x, y, posterPath })
   return null;
 }
 
-export function inspectHostVideoDocument(video, { posterPath }) {
+export function inspectHostVideoDocument(
+  video: Element,
+  { posterPath }: { posterPath: string | null }
+) {
   if (!(video instanceof HTMLVideoElement) || !video.closest('article')) {
     return null;
   }
-  const parsePoster = (value) => {
+  const parsePoster = (value: string) => {
     try {
       const url = new URL(value, location.href);
       return url.protocol === 'https:' &&
@@ -1435,6 +1752,9 @@ export function inspectHostVideoDocument(video, { posterPath }) {
     }
   };
   const ownArticle = video.closest('article');
+  if (!ownArticle) {
+    return null;
+  }
   const attributePoster = video.poster ? parsePoster(video.poster) : null;
   const matchingSiblings = [...ownArticle.querySelectorAll('img')].filter(
     (image) =>
@@ -1451,9 +1771,10 @@ export function inspectHostVideoDocument(video, { posterPath }) {
           : matchingSiblings.length > 1
             ? 'ambiguous-sibling-images'
             : 'missing';
-  const poster = ['video-attribute', 'unique-sibling-image'].includes(posterEvidence)
-    ? { host: 'pbs.twimg.com', path: posterPath }
-    : null;
+  const poster =
+    ['video-attribute', 'unique-sibling-image'].includes(posterEvidence) && posterPath
+      ? { host: 'pbs.twimg.com', path: posterPath }
+      : null;
   const sourceValue = video.currentSrc || video.src;
   let sourceKind = 'none';
   let source = null;
@@ -1496,6 +1817,15 @@ export function quotedVideoHitTestPassed({
   focusPrepared,
   meaningfulFocusTarget,
   focusedControlStillOwnsClick,
+}: {
+  controlledVideoClickMode: string | null;
+  galleryActionKind: string | undefined;
+  initialHit: ReturnType<typeof inspectHitTestedVideoActionDocument>;
+  finalHit: ReturnType<typeof inspectHitTestedVideoActionDocument>;
+  identityBeforeClick: boolean;
+  focusPrepared: boolean;
+  meaningfulFocusTarget: boolean;
+  focusedControlStillOwnsClick: boolean | undefined;
 }) {
   if (!identityBeforeClick) {
     return false;
@@ -1525,10 +1855,13 @@ export function quotedVideoHitTestPassed({
   );
 }
 
-export function captureActivationFocusDocument(surface, { articleIndex, point }) {
+export function captureActivationFocusDocument(
+  surface: Element,
+  { articleIndex, point }: { articleIndex: number; point: { x: number; y: number } }
+) {
   const article = document.querySelectorAll('article')[articleIndex];
-  const state = { focus: null, captured: false };
-  const onClick = (event) => {
+  const state: { focus: HTMLElement | null; captured: boolean } = { focus: null, captured: false };
+  const onClick = (event: MouseEvent) => {
     if (
       state.captured ||
       !event.isTrusted ||
@@ -1568,7 +1901,10 @@ export function captureActivationFocusDocument(surface, { articleIndex, point })
   };
 }
 
-export function findActivationHitDocument(surface, { articleIndex, point }) {
+export function findActivationHitDocument(
+  surface: Element,
+  { articleIndex, point }: { articleIndex: number; point: { x: number; y: number } }
+) {
   const article = document.querySelectorAll('article')[articleIndex];
   const top = document.elementsFromPoint(point.x, point.y)[0];
   if (
@@ -1592,15 +1928,18 @@ export function findActivationHitDocument(surface, { articleIndex, point }) {
 }
 
 async function observeQuotedVideo(
-  page,
-  observation,
-  identity,
-  output,
-  index,
-  settleApi,
-  controlledVideoClickMode
+  page: Page,
+  observation: LiveObservation,
+  identity: Identity,
+  output: string,
+  index: string | number,
+  settleApi: () => Promise<void>,
+  controlledVideoClickMode: string | null
 ) {
   const target = observation.target;
+  if (!target || target.kind !== 'quoted-video') {
+    throw new Error('Quoted video target is unavailable');
+  }
   const article = page.locator('article').nth(target.articleIndex);
   let clickSurface =
     target.playerIndex >= 0
@@ -1617,7 +1956,7 @@ async function observeQuotedVideo(
   let hit = await clickSurface.evaluate(inspectHitTestedVideoActionDocument, {
     posterPath: target.posterSource?.path ?? null,
   });
-  observation.target.initialHitTest = hit;
+  target.initialHitTest = hit;
   if (
     !hit?.inQuote &&
     hit?.nativePlay &&
@@ -1631,7 +1970,7 @@ async function observeQuotedVideo(
     const confirmation = await clickSurface.evaluate(inspectHitTestedVideoActionDocument, {
       posterPath: target.posterSource?.path ?? null,
     });
-    observation.target.nativePlayback = {
+    target.nativePlayback = {
       status: 'preflight',
       before: beforeNative,
       confirmation: confirmation
@@ -1649,16 +1988,16 @@ async function observeQuotedVideo(
     ) {
       throw new Error('Native quote play action changed before click');
     }
-    observation.target.nativePlayback.status = 'attempting';
-    observation.target.nativePlayback.action = confirmation.nativePlay;
-    observation.target.nativePlayback.pointShift = {
+    target.nativePlayback.status = 'attempting';
+    target.nativePlayback.action = confirmation.nativePlay;
+    target.nativePlayback.pointShift = {
       x: confirmation.nativePlay.x - hit.nativePlay.x,
       y: confirmation.nativePlay.y - hit.nativePlay.y,
     };
     await page.mouse.click(confirmation.nativePlay.x, confirmation.nativePlay.y);
-    observation.target.nativePlayback.galleryOpenedOnControlClick =
+    target.nativePlayback.galleryOpenedOnControlClick =
       (await page.locator('[data-xeg-gallery-container]').count()) > 0;
-    if (observation.target.nativePlayback.galleryOpenedOnControlClick) {
+    if (target.nativePlayback.galleryOpenedOnControlClick) {
       throw new Error('Native play control unexpectedly opened the gallery');
     }
     await page
@@ -1686,8 +2025,8 @@ async function observeQuotedVideo(
     const afterNative = await hostVideo
       .evaluate(inspectHostVideoDocument, { posterPath: target.posterSource?.path ?? null })
       .catch(() => null);
-    observation.target.nativePlayback = {
-      ...observation.target.nativePlayback,
+    target.nativePlayback = {
+      ...target.nativePlayback,
       status:
         afterNative &&
         afterNative.readyState >= 2 &&
@@ -1699,7 +2038,7 @@ async function observeQuotedVideo(
           : 'unverified',
       after: afterNative,
     };
-    if (observation.target.nativePlayback.status !== 'playing') {
+    if (target.nativePlayback.status !== 'playing') {
       observation.classification = 'host-video-provider-unavailable';
       throw new Error('Native quote video did not play after ordinary control click');
     }
@@ -1707,27 +2046,29 @@ async function observeQuotedVideo(
     hit = await clickSurface.evaluate(inspectHitTestedVideoActionDocument, {
       posterPath: target.posterSource?.path ?? null,
     });
-    observation.target.hitTestAfterNativePlayback = hit;
+    target.hitTestAfterNativePlayback = hit;
   }
   const controlledAction =
     controlledVideoClickMode === 'allow-all' && !hit?.inQuote && hit?.nativePlay;
   if (!hit?.inQuote && !controlledAction) {
-    if (observation.target.nativePlayback?.status === 'playing') {
+    if (target.nativePlayback?.status === 'playing') {
       observation.classification = 'native-play-observed-gallery-action-unavailable';
     }
     throw new Error('No non-control quoted video gallery action was hit-tested');
   }
-  observation.target.galleryActionKind = controlledAction
+  target.galleryActionKind = controlledAction
     ? 'media-scoped-control-under-allow-all'
     : 'non-control-media-surface';
   const actionHandle = await clickSurface.elementHandle();
   if (!actionHandle) {
     throw new Error('Quoted video detached before interaction');
   }
-  let focusHandle;
-  let activationCaptureHandle;
-  let activationFocusHandle;
-  let activationHitHandle;
+  let focusHandle: JSHandle<Element | null> | undefined;
+  let activationCaptureHandle:
+    | JSHandle<ReturnType<typeof captureActivationFocusDocument>>
+    | undefined;
+  let activationFocusHandle: JSHandle<HTMLElement | null> | undefined;
+  let activationHitHandle: JSHandle<Element | null> | undefined;
   try {
     if (controlledAction) {
       const focusHit = await clickSurface.evaluate(inspectHitTestedVideoActionDocument, {
@@ -1744,7 +2085,11 @@ async function observeQuotedVideo(
       if (!focusHandle.asElement()) {
         throw new Error('Controlled quote focus target was not a bounded media button');
       }
-      await focusHandle.evaluate((element) => element.focus());
+      await focusHandle.evaluate((element) => {
+        if (element instanceof HTMLElement) {
+          element.focus();
+        }
+      });
     } else {
       focusHandle = await actionHandle.evaluateHandle((element) => {
         const focusable =
@@ -1799,22 +2144,31 @@ async function observeQuotedVideo(
     if (!observation.gallery.identityBeforeClick) {
       throw new Error('Quoted video hit target changed before click');
     }
+    if (!clickPoint || clickPoint.x === null || clickPoint.y === null) {
+      throw new Error('Quoted video click coordinates are unavailable');
+    }
+    const point = { x: clickPoint.x, y: clickPoint.y };
     if (controlledAction) {
       const sameControl = await focusHandle.evaluate((element, point) => {
         const top = document.elementsFromPoint(point.x, point.y)[0];
         return (
           top?.closest('button, [role="button"]') === element && document.activeElement === element
         );
-      }, clickPoint);
+      }, point);
       observation.gallery.focusedControlStillOwnsClick = sameControl;
       if (!sameControl) {
         throw new Error('Focused quote button changed before click');
       }
     }
-    const activationSurfaceHandle = controlledAction ? focusHandle : actionHandle;
+    const activationSurfaceHandle: ElementHandle<Element> | null = controlledAction
+      ? focusHandle.asElement()
+      : actionHandle.asElement();
+    if (!activationSurfaceHandle) {
+      throw new Error('Quoted video activation surface is unavailable');
+    }
     activationHitHandle = await activationSurfaceHandle.evaluateHandle(findActivationHitDocument, {
       articleIndex: target.articleIndex,
-      point: clickPoint,
+      point,
     });
     if (!activationHitHandle.asElement()) {
       throw new Error('Quoted-video activation hit changed outside the bounded media surface');
@@ -1823,10 +2177,10 @@ async function observeQuotedVideo(
       captureActivationFocusDocument,
       {
         articleIndex: target.articleIndex,
-        point: clickPoint,
+        point,
       }
     );
-    await page.mouse.click(clickPoint.x, clickPoint.y);
+    await page.mouse.click(point.x, point.y);
     observation.gallery.activationFocusCaptured = await activationCaptureHandle.evaluate(
       (capture) => capture.captured
     );
@@ -1858,22 +2212,28 @@ async function observeQuotedVideo(
     const selectedHandle = await page
       .waitForFunction(
         () => {
-          const item = document.querySelector(
+          const item = document.querySelector<HTMLVideoElement>(
             '[data-xeg-gallery-container] [data-gallery-element="item"] video'
           );
-          return item?.readyState >= 2 && item.videoWidth > 0 && item.videoHeight > 0;
+          return (
+            item instanceof HTMLVideoElement &&
+            item.readyState >= 2 &&
+            item.videoWidth > 0 &&
+            item.videoHeight > 0
+          );
         },
         null,
         { timeout: ACTION_TIMEOUT_MS, polling: 100 }
       )
       .catch(() => null);
     await selectedHandle?.dispose();
-    const opened = await page.evaluate(inspectSelectedGalleryVideoDocument);
-    observation.gallery.opened = {
+    const opened = (await page.evaluate(inspectSelectedGalleryVideoDocument)) || null;
+    const galleryOpenedState = {
       ariaModal: await gallery.getAttribute('aria-modal'),
       role: await gallery.getAttribute('role'),
-      selectedVideo: opened || null,
+      selectedVideo: opened,
     };
+    observation.gallery.opened = galleryOpenedState;
     observation.screenshots.open = await captureScreenshot(
       page,
       output,
@@ -1904,18 +2264,20 @@ async function observeQuotedVideo(
         )
         .catch(() => {});
     }
-    const afterPlayback = await page.evaluate(inspectSelectedGalleryVideoDocument);
-    observation.gallery.playback = {
+    const afterPlayback = (await page.evaluate(inspectSelectedGalleryVideoDocument)) || null;
+    const playback = {
       startTime,
       endTime: afterPlayback?.currentTime ?? null,
       progressed: Boolean(afterPlayback && afterPlayback.currentTime >= startTime + 0.15),
     };
+    observation.gallery.playback = playback;
     await settleApi();
-    observation.gallery.owner = quotedOwnerForSource(
+    const owner = quotedOwnerForSource(
       observation.api.observations,
       identity.statusId,
       afterPlayback?.source
     );
+    observation.gallery.owner = owner;
     await page.keyboard.press('Escape');
     const detached = await gallery.waitFor({ state: 'detached', timeout: ACTION_TIMEOUT_MS }).then(
       () => true,
@@ -1933,7 +2295,7 @@ async function observeQuotedVideo(
       scrollRestorationRestored: restored.scrollRestorationRestored,
       scrollRestored: restored.scrollRestored,
     };
-    const video = observation.gallery.opened.selectedVideo;
+    const video = galleryOpenedState.selectedVideo;
     const finalUrl = new URL(page.url());
     const required = {
       exactFinalStatus:
@@ -1942,17 +2304,16 @@ async function observeQuotedVideo(
           `/${identity.handle}/status/${identity.statusId}`.toLowerCase(),
       quotedVideoHitTest: quotedVideoHitTestPassed({
         controlledVideoClickMode,
-        galleryActionKind: observation.target.galleryActionKind,
+        galleryActionKind: target.galleryActionKind,
         initialHit: hit,
-        finalHit: observation.gallery.hitTestBeforeClick,
-        identityBeforeClick: observation.gallery.identityBeforeClick,
+        finalHit,
+        identityBeforeClick: Boolean(clickPoint),
         focusPrepared,
         meaningfulFocusTarget,
         focusedControlStillOwnsClick: observation.gallery.focusedControlStillOwnsClick,
       }),
       galleryDialog:
-        observation.gallery.opened.role === 'dialog' &&
-        observation.gallery.opened.ariaModal === 'true',
+        galleryOpenedState.role === 'dialog' && galleryOpenedState.ariaModal === 'true',
       selectedPlayableVideo: Boolean(
         video?.visible &&
         video.itemLoaded &&
@@ -1962,15 +2323,15 @@ async function observeQuotedVideo(
         video.mediaErrorCode === null
       ),
       directQuotedOwner:
-        observation.gallery.owner.status === 'matched-direct-quote-variant' &&
+        owner.status === 'matched-direct-quote-variant' &&
         (target.quoteStatusIds.length === 0 ||
-          target.quoteStatusIds.includes(observation.gallery.owner.ownerId)),
-      playbackProgress: observation.gallery.playback.progressed,
+          (typeof owner.ownerId === 'string' && target.quoteStatusIds.includes(owner.ownerId))),
+      playbackProgress: playback.progressed,
       escapeClosed: detached,
       exactFocusRestored:
         meaningfulFocusTarget &&
         focusPrepared &&
-        observation.gallery.activationFocusCaptured &&
+        observation.gallery.activationFocusCaptured === true &&
         restored.focusRestored,
       scrollRestored: restored.scrollRestored,
       scrollRestorationRestored: restored.scrollRestorationRestored,
@@ -2003,7 +2364,7 @@ async function observeQuotedVideo(
   }
 }
 
-function photoIndexFromActionPath(path) {
+function photoIndexFromActionPath(path: string) {
   const match = path.match(/\/photo\/([1-9]\d*)$/u);
   const value = Number(match?.[1]);
   if (!Number.isSafeInteger(value)) {
@@ -2013,17 +2374,17 @@ function photoIndexFromActionPath(path) {
 }
 
 async function observeOne(
-  context,
-  extensionId,
-  targetUrl,
-  output,
-  index,
-  controlledVideoClickMode = null,
-  verifyControlledMode = null
+  context: BrowserContext,
+  extensionId: string,
+  targetUrl: string,
+  output: string,
+  index: string | number,
+  controlledVideoClickMode: string | null = null,
+  verifyControlledMode: (() => Promise<string | null>) | null = null
 ) {
   const identity = targetIdentity(targetUrl);
   const page = await context.newPage();
-  const observation = {
+  const observation: LiveObservation = {
     schemaVersion: 2,
     kind: 'public-x-status-observation',
     requestedUrl: targetUrl,
@@ -2046,7 +2407,7 @@ async function observeOne(
     status: 'pending',
   };
   const settleApi = attachDiagnostics(page, observation);
-  let actionHandle;
+  let actionHandle: ElementHandle<SVGElement | HTMLElement> | null | undefined;
   try {
     const response = await page.goto(targetUrl, {
       waitUntil: 'domcontentloaded',
@@ -2059,7 +2420,7 @@ async function observeOne(
     observation.targetCandidatesBefore = await page
       .evaluate(inspectLiveCandidateDocument, identity)
       .catch(() => null);
-    let readiness;
+    let readiness: LiveReadiness;
     try {
       readiness = await waitForTarget(page, identity);
     } catch (error) {
@@ -2071,6 +2432,9 @@ async function observeOne(
         .evaluate(inspectLiveCandidateDocument, identity)
         .catch(() => null);
       throw error;
+    }
+    if (!readiness) {
+      throw new Error('Live target did not become ready');
     }
     if (readiness.state !== 'ready') {
       observation.missingAssertions.push('targetMediaReady');
@@ -2095,7 +2459,7 @@ async function observeOne(
       throw new Error('Installed extension readiness marker was not observed');
     }
     if (controlledVideoClickMode === 'allow-all') {
-      observation.extension.storedModeAfterReadiness = await verifyControlledMode?.();
+      observation.extension.storedModeAfterReadiness = (await verifyControlledMode?.()) ?? null;
       if (observation.extension.storedModeAfterReadiness !== 'allow-all') {
         throw new Error('Controlled video click mode was not observed after live-page readiness');
       }
@@ -2238,13 +2602,13 @@ async function observeOne(
       exactFinalStatus:
         ['x.com', 'twitter.com'].includes(finalUrl.hostname.toLowerCase()) &&
         finalPath === expectedPath,
-      extensionInjected: observation.extension.readinessMarker,
+      extensionInjected: observation.extension.readinessMarker === true,
       loadedTargetImage: observation.target.imageLoaded && observation.target.imageVisible,
       topActionIdentity: identityBeforeClick,
       galleryDialog:
-        observation.gallery.opened.role === 'dialog' &&
+        observation.gallery.opened?.role === 'dialog' &&
         observation.gallery.opened.ariaModal === 'true',
-      galleryHostImage: observation.gallery.opened.selectedGallery !== null,
+      galleryHostImage: observation.gallery.opened?.selectedGallery != null,
       escapeClosed: detached,
       exactFocusRestored: focusRestored,
       nonzeroScrollPrepared: before.scrollY > 0,
@@ -2319,7 +2683,7 @@ async function observeOne(
   return observation;
 }
 
-export function decodeStoredValue(raw) {
+export function decodeStoredValue(raw: unknown): unknown {
   let parsed = raw;
   if (typeof raw === 'string') {
     try {
@@ -2329,9 +2693,7 @@ export function decodeStoredValue(raw) {
     }
   }
   if (
-    parsed &&
-    typeof parsed === 'object' &&
-    !Array.isArray(parsed) &&
+    isRecord(parsed) &&
     parsed.__xegStorageEnvelope === 1 &&
     typeof parsed.updatedAt === 'number' &&
     Object.hasOwn(parsed, 'value')
@@ -2341,7 +2703,9 @@ export function decodeStoredValue(raw) {
   return parsed;
 }
 
-export async function readStoredLanguage(extensionPage) {
+export async function readStoredLanguage(extensionPage: {
+  evaluate(callback: () => Promise<unknown>): Promise<unknown>;
+}) {
   const raw = await extensionPage.evaluate(
     async () => (await chrome.storage.local.get('xeg-language'))['xeg-language'] ?? null
   );
@@ -2353,7 +2717,7 @@ export async function readStoredLanguage(extensionPage) {
   };
 }
 
-export async function readStoredVideoSettings(extensionPage) {
+export async function readStoredVideoSettings(extensionPage: Page): Promise<StorageRecord> {
   const key = 'xeg-app-settings';
   const prior = await extensionPage.evaluate(async (storageKey) => {
     const values = await chrome.storage.local.get(storageKey);
@@ -2362,28 +2726,35 @@ export async function readStoredVideoSettings(extensionPage) {
   return { ...prior, settings: decodeStoredValue(prior.value) };
 }
 
-export function createControlledVideoSettings(priorValue, timestamp) {
+export function createControlledVideoSettings(
+  priorValue: unknown,
+  timestamp: number
+): Record<string, unknown> & {
+  gallery: Record<string, unknown> & { videoClickMode?: string };
+  __schemaHash: string;
+} {
   const decoded = decodeStoredValue(priorValue);
-  const base =
-    decoded && typeof decoded === 'object' && !Array.isArray(decoded)
-      ? decoded
-      : { version: '1', lastModified: timestamp, gallery: {} };
+  const base = isRecord(decoded) ? decoded : { version: '1', lastModified: timestamp, gallery: {} };
   return {
     ...base,
     gallery: {
-      ...(base.gallery && typeof base.gallery === 'object' && !Array.isArray(base.gallery)
-        ? base.gallery
-        : {}),
+      ...(record(base.gallery) ?? {}),
       videoClickMode: 'allow-all',
     },
     __schemaHash: '1',
   };
 }
 
-async function observeControlledVideoMode(context, extensionId, targetUrl, output, index) {
+async function observeControlledVideoMode(
+  context: BrowserContext,
+  extensionId: string,
+  targetUrl: string,
+  output: string,
+  index: number
+): Promise<ControlledProbe> {
   const key = 'xeg-app-settings';
   const extensionPage = await context.newPage();
-  const result = {
+  const result: ControlledProbe = {
     kind: 'task-owned-extension-setting-probe',
     requestedMode: 'allow-all',
     priorStoredMode: null,
@@ -2392,16 +2763,16 @@ async function observeControlledVideoMode(context, extensionId, targetUrl, outpu
     cleanup: { restored: false, extensionPageClosed: false },
     status: 'pending',
   };
-  let prior;
+  let prior: StorageRecord | undefined;
   let mutated = false;
   try {
     await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
     prior = await readStoredVideoSettings(extensionPage);
-    result.priorStoredMode = ['allow-all', 'block-all', 'block-controls-only'].includes(
-      prior.settings?.gallery?.videoClickMode
-    )
-      ? prior.settings.gallery.videoClickMode
-      : null;
+    const priorMode = storedVideoClickMode(prior.settings);
+    result.priorStoredMode =
+      priorMode && ['allow-all', 'block-all', 'block-controls-only'].includes(priorMode)
+        ? priorMode
+        : null;
     const next = createControlledVideoSettings(prior.value, Date.now());
     mutated = true;
     await extensionPage.evaluate(
@@ -2410,8 +2781,9 @@ async function observeControlledVideoMode(context, extensionId, targetUrl, outpu
       },
       { storageKey: key, value: next }
     );
-    result.appliedMode =
-      (await readStoredVideoSettings(extensionPage)).settings?.gallery?.videoClickMode ?? null;
+    result.appliedMode = storedVideoClickMode(
+      (await readStoredVideoSettings(extensionPage)).settings
+    );
     if (result.appliedMode !== 'allow-all') {
       throw new Error('Controlled video click mode was not stored');
     }
@@ -2422,11 +2794,11 @@ async function observeControlledVideoMode(context, extensionId, targetUrl, outpu
       output,
       `${index}-allow-all`,
       'allow-all',
-      async () =>
-        (await readStoredVideoSettings(extensionPage)).settings?.gallery?.videoClickMode ?? null
+      async () => storedVideoClickMode((await readStoredVideoSettings(extensionPage)).settings)
     );
-    result.modeAfterObservation =
-      (await readStoredVideoSettings(extensionPage)).settings?.gallery?.videoClickMode ?? null;
+    result.modeAfterObservation = storedVideoClickMode(
+      (await readStoredVideoSettings(extensionPage)).settings
+    );
     if (result.modeAfterObservation !== 'allow-all') {
       throw new Error('Controlled video click mode changed during observation');
     }
@@ -2438,7 +2810,10 @@ async function observeControlledVideoMode(context, extensionId, targetUrl, outpu
     if (!mutated) {
       result.cleanup.restored = true;
     }
-    if (mutated) {
+    if (mutated && !prior) {
+      result.cleanup.restoreError = 'Stored settings were unavailable for restoration';
+    }
+    if (mutated && prior) {
       try {
         await extensionPage.evaluate(
           async ({ storageKey, previous }) => {
@@ -2481,19 +2856,33 @@ async function observeControlledVideoMode(context, extensionId, targetUrl, outpu
   return result;
 }
 
-export async function observeLiveUrls({ context, extensionId, liveUrls, output }) {
+export async function observeLiveUrls({
+  context,
+  extensionId,
+  liveUrls,
+  output,
+}: {
+  context: BrowserContext;
+  extensionId: string;
+  liveUrls: unknown;
+  output: string;
+}) {
   const urls = validateLiveUrls(liveUrls);
   if (!urls.length) {
     return { status: 'not-requested', evidenceStatus: 'not-applicable', pages: [] };
   }
-  const pages = [];
+  const pages: LiveObservation[] = [];
   for (let index = 0; index < urls.length; index += 1) {
-    const page = await observeOne(context, extensionId, urls[index], output, index + 1);
+    const url = urls[index];
+    if (!url) {
+      continue;
+    }
+    const page = await observeOne(context, extensionId, url, output, index + 1);
     if (page.classification === 'native-play-observed-gallery-action-unavailable') {
       page.controlledProbe = await observeControlledVideoMode(
         context,
         extensionId,
-        urls[index],
+        url,
         output,
         index + 1
       ).catch((error) => ({
@@ -2504,7 +2893,7 @@ export async function observeLiveUrls({ context, extensionId, liveUrls, output }
     }
     pages.push(page);
   }
-  const passedPage = (page) =>
+  const passedPage = (page: LiveObservation) =>
     page.status === 'core-flow-observed' ||
     (page.controlledProbe?.observation?.status === 'core-flow-observed' &&
       page.controlledProbe?.cleanup?.restored === true);
@@ -2540,8 +2929,7 @@ export async function observeLiveUrls({ context, extensionId, liveUrls, output }
       ),
       `${failed.length} live X observation(s) missed required assertions`
     );
-    error.summary = summary;
-    throw error;
+    throw Object.assign(error, { summary });
   }
   return summary;
 }

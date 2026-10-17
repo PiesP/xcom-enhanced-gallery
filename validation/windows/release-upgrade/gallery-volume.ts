@@ -3,19 +3,41 @@
 
 import assert from 'node:assert/strict';
 import { join } from 'node:path';
+import type { BrowserContext, Locator, Page } from '@playwright/test';
+
+declare global {
+  interface Window {
+    __directVideoClicks?: Array<{ tag: string; prevented: boolean }>;
+  }
+}
+
+type GalleryVolumeOptions = {
+  before: number | null;
+  after?: number | null;
+  galleryFixture?: 'quoted' | 'direct';
+  waitForPersistedVolume?: ((volume: number) => Promise<unknown>) | null;
+  waitForInitialVolume?: boolean;
+  onFailure?: ((page: Page, consoleEvents: string[]) => Promise<unknown>) | null;
+};
 
 const VIDEO_URL = 'https://x.com/outer_one/status/8111111111111111111';
 const DIRECT_VIDEO_URL = 'https://x.com/quote_one/status/9111111111111111111';
 
 /** Capture bounded fixture and gallery state before a failed volume page closes. */
 export async function captureGalleryVolumeFailure(
-  page,
-  output,
-  installation,
-  phase,
-  consoleEvents
+  page: Page,
+  output: string,
+  installation: string,
+  phase: string,
+  consoleEvents: string[]
 ) {
-  const diagnostic = { phase, consoleEvents };
+  const diagnostic: {
+    phase: string;
+    consoleEvents: string[];
+    pageState?: unknown;
+    screenshot?: string;
+    captureError?: string;
+  } = { phase, consoleEvents };
   try {
     diagnostic.pageState = await page.evaluate(() => {
       const source = document.querySelector('[data-unmarked-direct], [data-quote-target]');
@@ -29,7 +51,11 @@ export async function captureGalleryVolumeFailure(
           ? {
               tag: source.tagName.toLowerCase(),
               mediaReadyState: source instanceof HTMLVideoElement ? source.readyState : null,
-              src: (source.currentSrc || source.getAttribute('src') || '').slice(0, 200),
+              src: (
+                (source instanceof HTMLMediaElement ? source.currentSrc : '') ||
+                source.getAttribute('src') ||
+                ''
+              ).slice(0, 200),
             }
           : null,
         directClicks: Array.isArray(directClicks) ? directClicks.slice(-4) : null,
@@ -46,7 +72,12 @@ export async function captureGalleryVolumeFailure(
 }
 
 /** Keep a bounded view of the owned settings panel when an upgrade UI check fails. */
-export async function captureUpgradeSettingsFailure(page, output, installation, phase) {
+export async function captureUpgradeSettingsFailure(
+  page: Page,
+  output: string,
+  installation: string,
+  phase: string
+) {
   if (page.isClosed()) {
     return { phase, diagnosticError: 'page already closed' };
   }
@@ -54,7 +85,12 @@ export async function captureUpgradeSettingsFailure(page, output, installation, 
     const controls = await page
       .locator('[data-xeg-gallery-container] #toolbar-settings-panel select')
       .evaluateAll((elements) =>
-        elements.slice(0, 8).map((element) => ({ id: element.id, value: element.value }))
+        elements.slice(0, 8).map((element) => {
+          if (!(element instanceof HTMLSelectElement)) {
+            throw new Error('Expected gallery settings select');
+          }
+          return { id: element.id, value: element.value };
+        })
       );
     const screenshot = `${installation}-${phase}-settings-failure.png`;
     await page.screenshot({ path: join(output, screenshot) });
@@ -65,7 +101,7 @@ export async function captureUpgradeSettingsFailure(page, output, installation, 
 }
 
 /** Verify the default enabled keyboard navigation using the visible gallery counter. */
-export async function observeGalleryKeyboardNavigation(page, gallery) {
+export async function observeGalleryKeyboardNavigation(page: Page, gallery: Locator) {
   const counter = gallery.locator('#xeg-toolbar-counter');
   assert.equal(await counter.getAttribute('data-position'), '1');
   await gallery.locator('[data-gallery-element="item"][data-index="0"] button').focus();
@@ -81,7 +117,7 @@ export async function observeGalleryKeyboardNavigation(page, gallery) {
 }
 
 /** Observe the public default mode through a trusted click on an unmarked video. */
-export async function observeDefaultVideoClick(context) {
+export async function observeDefaultVideoClick(context: BrowserContext) {
   const page = await context.newPage();
   try {
     await page.goto(DIRECT_VIDEO_URL);
@@ -89,9 +125,12 @@ export async function observeDefaultVideoClick(context) {
     await page.locator('[data-unmarked-direct]').click();
     await page.locator('[data-xeg-gallery-container]').waitFor({ state: 'visible' });
     const clicks = await page.evaluate(() => window.__directVideoClicks);
+    assert(clicks, 'Direct video click receipt is unavailable');
     assert.equal(clicks.length, 1, 'Default mode must capture one direct video click');
-    assert.equal(clicks[0].tag, 'video');
-    assert.equal(clicks[0].prevented, true);
+    const click = clicks[0];
+    assert(click, 'Direct video click is unavailable');
+    assert.equal(click.tag, 'video');
+    assert.equal(click.prevented, true);
     return { mode: 'block-controls-only', clickCaptured: true, galleryOpened: true };
   } finally {
     await page.close();
@@ -100,7 +139,7 @@ export async function observeDefaultVideoClick(context) {
 
 /** Change volume through the product's trusted keyboard shortcut on a loaded gallery video. */
 export async function observeGalleryVolume(
-  context,
+  context: BrowserContext,
   {
     before,
     after = null,
@@ -108,7 +147,7 @@ export async function observeGalleryVolume(
     waitForPersistedVolume = null,
     waitForInitialVolume = false,
     onFailure = null,
-  }
+  }: GalleryVolumeOptions
 ) {
   assert(['quoted', 'direct'].includes(galleryFixture), 'Unsupported gallery volume fixture');
   assert(before !== null || after === null, 'A volume change requires a known initial volume');
@@ -116,7 +155,7 @@ export async function observeGalleryVolume(
   const videoIndex = direct ? 0 : 1;
   const videoSelector = `[data-xeg-gallery-container] [data-gallery-element="item"][data-index="${videoIndex}"] video`;
   const page = await context.newPage();
-  const consoleEvents = [];
+  const consoleEvents: string[] = [];
   if (onFailure) {
     page.on('console', (message) => {
       if (['warning', 'error'].includes(message.type()) && consoleEvents.length < 8) {
@@ -151,6 +190,7 @@ export async function observeGalleryVolume(
       return video instanceof HTMLVideoElement && video.readyState >= 1 && video.error === null;
     }, videoSelector);
     if (waitForInitialVolume) {
+      assert(before !== null, 'Initial volume must be known before waiting');
       try {
         await page.waitForFunction(
           ({ selector, expected }) => {
@@ -161,17 +201,28 @@ export async function observeGalleryVolume(
           { timeout: 5_000 }
         );
       } catch (error) {
-        const observed = await video.evaluate((element) => element.volume);
+        const observed = await video.evaluate((element) => {
+          if (!(element instanceof HTMLVideoElement)) {
+            throw new Error('Expected gallery video');
+          }
+          return element.volume;
+        });
         throw new Error(`Reopened gallery volume was ${observed}; expected ${before}`, {
           cause: error,
         });
       }
     }
-    const initial = await video.evaluate((element) => element.volume);
+    const initial = await video.evaluate((element) => {
+      if (!(element instanceof HTMLVideoElement)) {
+        throw new Error('Expected gallery video');
+      }
+      return element.volume;
+    });
     if (before !== null) {
       assert(Math.abs(initial - before) < 0.011, `Gallery volume before shortcut: ${initial}`);
     }
     if (after !== null) {
+      assert(before !== null, 'A volume change requires a known initial volume');
       await video.focus();
       await page.keyboard.press(after < before ? 'ArrowDown' : 'ArrowUp');
       await page.waitForFunction(
@@ -182,7 +233,15 @@ export async function observeGalleryVolume(
         { selector: videoSelector, expected: after },
         { timeout: 5_000 }
       );
-      assert.equal(await video.evaluate((element) => element.volume), after);
+      assert.equal(
+        await video.evaluate((element) => {
+          if (!(element instanceof HTMLVideoElement)) {
+            throw new Error('Expected gallery video');
+          }
+          return element.volume;
+        }),
+        after
+      );
       // The application debounces volume persistence. Keep the gallery alive until
       // storage confirms the change so closing this page cannot cancel the write.
       if (waitForPersistedVolume) {

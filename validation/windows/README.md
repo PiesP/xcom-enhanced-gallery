@@ -83,7 +83,7 @@ privileged extension downloads, live authenticated X.com, Windows native Save As
 Explorer, OS compositor, actual DPI changes, or physical GPU performance. A headless
 run is functional diagnostics only, not desktop visual acceptance.
 
-Run `node --check validation/windows/profile.mjs` for the profile syntax check.
+Run `node --experimental-strip-types --check validation/windows/profile.ts` for the profile syntax check.
 
 ## Installed Chrome/Edge extension flow
 
@@ -129,12 +129,12 @@ and CRC. Screenshots, source URLs, request observations, timings and hashes rema
 in normal and partial failure receipts. Shared HTML and userscript routes retain
 their existing allowlisted paths. This is fixture evidence, not live-CDN proof.
 
-The same installed profile invokes `media-api-reuse-profile.mjs` to compare
+The same installed profile invokes `media-api-reuse-profile.ts` to compare
 physical API requests across successive clicks, navigation, reload and a fresh
 page. It checks independent selected-photo identity, uncached provider failures,
 and the exact controlled 403/429/unreadable-503 retry guidance. Owned pages have
 bounded script and console observations, and the helper retains its JSON receipt
-and a screenshot on failure. `video-loading-profile.mjs` opens eight synthetic
+and a screenshot on failure. `video-loading-profile.ts` opens eight synthetic
 videos with a high image-preload setting, checks geometry-based admission and
 far entries without attached sources, and verifies metadata, first frame,
 playback progress and same-attachment decode recovery. The separate HTTPS
@@ -188,7 +188,7 @@ outside the fixture evidence.
 
 The installed profile also serves the declared small MP4 assets and
 `installed-quoted-video-page.html` with deterministic `TweetResultByRestId`
-responses from `installed-quoted-video-api.mjs`. Its quote cases cover a marked
+responses from `installed-quoted-video-api.ts`. Its quote cases cover a marked
 branch without a permalink, an unmarked clickable branch with an outer video,
 an explicit quoted permalink, and nested quotes opened from the outer post or
 the directly quoted post. Each case opens the preview before native playback,
@@ -422,9 +422,9 @@ For release qualification, copy the checksum-verified public v2.3.6 userscript t
 `validation/windows/release-upgrade/v2.3.6.user.js` and extract the verified public
 Chrome ZIP to `validation/windows/release-upgrade/v2.3.6-extension/`. Compute the
 unpacked file inventory with `extensionInventorySha256(path)` from
-`validation/windows/release-upgrade/source.mjs`. Add the ignored
+`validation/windows/release-upgrade/source.ts`. Add the ignored
 `validation/windows/release-upgrade/input.json` with the exact paths, release URLs,
-public SHA-256 and inventory SHA-256 shown in `source.test.mjs`. The input parser
+public SHA-256 and inventory SHA-256 shown in `source.test.ts`. The input parser
 requires a production v2.3.7 userscript and extension manifest. Keep the public
 assets and input outside Git; the installation asset declaration bundles them
 only for the selected Windows run. Without `input.json`, the original fresh
@@ -567,5 +567,5 @@ media family and media ID as the selected source. Other host diagnostics,
 diagnostic overflow, or any failed assertion keep the evidence unverified.
 Review the retained screenshots separately before making a live-page claim.
 
-Run `node --check validation/windows/install-profile.mjs` for the installed
+Run `node --experimental-strip-types --check validation/windows/install-profile.ts` for the installed
 profile syntax check.

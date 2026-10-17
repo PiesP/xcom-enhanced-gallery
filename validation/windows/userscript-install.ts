@@ -2,31 +2,44 @@
 // Copyright (c) 2026 PiesP
 
 import assert from 'node:assert/strict';
+import { Buffer } from 'node:buffer';
 import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { basename, dirname, join, resolve } from 'node:path';
 import { promisify } from 'node:util';
+import type {
+  BrowserContext,
+  BrowserType,
+  CDPSession,
+  ConsoleMessage,
+  Locator,
+  Page,
+  Request,
+  Response,
+  Route,
+  Worker,
+} from '@playwright/test';
 import {
   expectedStoredZipBytes,
   readExactDownloadFile,
   verifyStoredZip,
-} from './download-memory.mjs';
+} from './download-memory.ts';
 import {
   createImageFixtures,
   enableDeveloperMode,
   installFixtureRoutes,
   verifyDownloadDirectory,
-} from './install-profile.mjs';
+} from './install-profile.ts';
 import {
   captureGalleryVolumeFailure,
   captureUpgradeSettingsFailure,
   observeDefaultVideoClick,
   observeGalleryKeyboardNavigation,
   observeGalleryVolume,
-} from './release-upgrade/gallery-volume.mjs';
-import { readUpgradeInput, requireManagerEditorSource } from './release-upgrade/source.mjs';
-import { startUserscriptFixtureLoopback } from './userscript-loopback.mjs';
+} from './release-upgrade/gallery-volume.ts';
+import { readUpgradeInput, requireManagerEditorSource } from './release-upgrade/source.ts';
+import { startUserscriptFixtureLoopback } from './userscript-loopback.ts';
 
 const SCRIPT_NAME = 'X.com Enhanced Gallery';
 const MANAGER_SCRIPT_NAME_SELECTOR = 'span.nameNname16';
@@ -40,7 +53,7 @@ export const MEDIA_COHORTS = {
   held: ['GkH1234ABCDEF', 'GkH5678GHIJKL', 'GkH9012MNOPQR'],
 };
 export const PUBLIC_AVATAR_PATH = '/profile_images/123456789/public-avatar.jpg';
-export function isPublicAvatarFixtureUrl(value) {
+export function isPublicAvatarFixtureUrl(value: string) {
   try {
     const url = new URL(value);
     return (
@@ -74,24 +87,293 @@ const PROMPT_SCOPE_REASONS = new Set([
   'node-cap',
 ]);
 
-export function browserProcessId(processInfo) {
+type ProcessInfo = { processInfo?: { type: string; id: number }[] };
+type NativeControl = {
+  controlType?: string;
+  name?: string;
+  isEnabled?: boolean;
+  isOffscreen?: boolean;
+};
+type NativePromptReceipt = {
+  status?: string;
+  capture?: string;
+  screenshot?: string;
+  permissionGrantAttempted?: boolean;
+  foregroundOwnedAndVisible?: boolean;
+  browserPid?: number;
+  uiaRootProcessId?: number;
+  browserSessionId?: number;
+  observerSessionId?: number;
+  creationUtcTicks?: string;
+  foregroundHandle?: string;
+  controls?: NativeControl[];
+  promptScope?: {
+    complete?: boolean;
+    nameTruncated?: boolean;
+    windowCount?: number;
+    reason?: string | null;
+    rootProcessId?: number;
+    visitedControls?: number;
+    attemptedNodes?: number;
+    controls?: NativeControl[];
+  };
+  reason?: string;
+};
+type FixtureMediaEvent = {
+  kind: string;
+  cohort: string;
+  index: number;
+  method: string;
+  resourceType: string;
+  status: number | null;
+};
+type ManagerUiLabels = { utilities: string; install: string; installedUserscripts: string };
+type ManagerHistoryItem = {
+  id: number;
+  state: string;
+  interruptReason: string | null;
+  requestedNameMatch: boolean;
+  ownedPathMatch: boolean;
+  expectedSizeMatch: boolean;
+  fixtureUrlMatch: boolean;
+};
+type ManagerHistory = { status: string; items: ManagerHistoryItem[]; errorType?: string };
+type BrowserDownloadBegin = { guid: string; suggestedFilename: string; url: string };
+type BrowserDownloadProgress = {
+  guid: string;
+  state: string;
+  receivedBytes: number;
+  totalBytes: number;
+  filePath?: string;
+};
+type BrowserDownloadStatus = {
+  state: string;
+  receivedBytes: number;
+  totalBytes: number;
+  filePath: string | null;
+};
+type ManagerFrameSummary = {
+  index: number;
+  url: string | null;
+  skipped?: string;
+  document?: unknown;
+  errorType?: string;
+};
+type ManagerPermissionDiagnostics = {
+  api: Awaited<ReturnType<typeof probeManagerUserScripts>>;
+  requestedUrl: string | null;
+  finalUrl?: string | null;
+  title?: string;
+  allowUserScriptsVisible?: boolean;
+  toggleControls?: { id: string; ariaLabel: string | null; checked: boolean }[];
+  captureErrorType?: string;
+  frameCount?: number;
+  frames?: ManagerFrameSummary[];
+  frameErrorType?: string;
+  ariaSnapshot?: { labelContext: string | null };
+  ariaSnapshotErrorType?: string;
+};
+type UserscriptLoopback = Awaited<ReturnType<typeof startUserscriptFixtureLoopback>>;
+type UserscriptLoopbackEvent = NonNullable<ReturnType<UserscriptLoopback['findSince']>>;
+type FixtureRouteRecord = {
+  phase: string;
+  mediaPhase: string;
+  index: number;
+  resourceType: string;
+  method: string;
+  result?: string;
+};
+type FixtureRouteFailure = {
+  phase: string;
+  error: ReturnType<typeof safeRouteError>;
+  request: { host: string; pathKind: string; resourceType: string };
+};
+type FixtureDownload = {
+  kind: string;
+  guid: string | null;
+  requestedName: string;
+  filename: string;
+  source: { scheme: string; origin: string };
+  bytes: number;
+  sha256: string;
+  nativeState: string;
+  browserBytesReceived: number | null;
+  repetition?: number;
+  nativeId?: number;
+  completionSource?: string;
+  cdpObservation?: string;
+  entryOrder?: string[];
+  included?: number;
+  omitted?: number;
+  countSource?: string;
+};
+type FixtureResult = {
+  status: string;
+  downloads: FixtureDownload[];
+  routes: FixtureRouteRecord[];
+  routeFailures: FixtureRouteFailure[];
+  routeFailureOverflow: number;
+  transportReceipts: {
+    normalZip?: {
+      firstResponses: UserscriptLoopbackEvent[];
+      repeated?: { source: string; additionalTransferResponses: number };
+    };
+    networkFailure?: UserscriptLoopbackEvent;
+    partialZip?: UserscriptLoopbackEvent;
+  };
+  cases: Record<string, unknown>;
+  cleanup: {
+    managerConsoleListenersRemoved?: boolean;
+    pageError?: string;
+    routeRemoved?: boolean;
+    routeError?: string;
+  };
+  firstCurrentDownload?: unknown;
+  browserDownloadEvents?: ReturnType<ReturnType<typeof createBrowserDownloadObserver>['events']>;
+  fixtureMediaNetwork?: { events: FixtureMediaEvent[]; overflow: number };
+  loopbackTransport?: ReturnType<UserscriptLoopback['snapshot']>;
+  error?: ReturnType<typeof safeRouteError>;
+};
+type UpgradeConfirmationEvent = {
+  phase: string;
+  event: string;
+  url?: string;
+  title?: string;
+  translatedTitle?: string;
+  updateLabel?: string;
+};
+type UserscriptUpgradeReceipt = {
+  status: string;
+  previousVersion: string;
+  candidateVersion: string;
+  previousSourceSha256: string;
+  candidateSourceSha256: string;
+  managerId: string;
+  volumeFailure?: unknown;
+  volumePersistenceReadbacks?: Record<
+    string,
+    { expected: number; observed: number | null; attempts: number }
+  >;
+  baselineClickModeUi?: string;
+  keyboardAfter?: unknown;
+  keyboardBefore?: unknown;
+  candidateClickModeReadback?: { observedMode: string | null; attempts: number };
+  candidateClickModeUi?: { selected: string; persistedInNewPage: boolean };
+  settingsFailure?: unknown;
+  videoClickBefore?: unknown;
+  volumeBefore?: unknown;
+  volumeBeforeReloaded?: unknown;
+  beforeReadback?: unknown;
+  updateConfirmationEvents?: UpgradeConfirmationEvent[];
+  afterDeferralReadback?: unknown;
+  afterDeferralPreferences?: unknown;
+  afterDeferralVolume?: unknown;
+  afterReadback?: unknown;
+  videoClickAfter?: unknown;
+  nondefaultClickCrossUpdate?: string;
+  volumeAfter?: unknown;
+  volumeAfterReloaded?: unknown;
+  fixtureDefaultsRestoredThroughUi?: boolean;
+  settings?: {
+    fit: string;
+    videoClickMode: string;
+    language: string;
+    videoVolume: number;
+    keyboardShortcutUsedForVolume: boolean;
+    crossUpdateUiVerified: string[];
+  };
+  method?: string;
+  error?: ReturnType<typeof safeRouteError>;
+  cleanupError?: ReturnType<typeof safeRouteError>;
+};
+type UserscriptInstallationResult = {
+  status: string;
+  browserName: string;
+  installation: string;
+  installationMethod: string;
+  sourceSha256: string;
+  profileId: string;
+  profilePrefix: string;
+  scope: string;
+  cleanup: {
+    browserDownloadObserverRemoved?: boolean;
+    activeLoopbackResponsesDestroyed?: boolean;
+    managerUninstalled?: boolean;
+    browserClosed?: boolean;
+    loopbackClosed?: boolean;
+    profileRemoved?: boolean;
+    profilePreserved?: boolean;
+    errorCount?: number;
+    errors?: string[];
+  };
+  fixtureTransport?: {
+    kind: string;
+    bind: string;
+    port: number;
+    host: string;
+    certificateScope: string;
+  };
+  browserVersion?: string;
+  downloadDirectoryVerified?: boolean;
+  manager?: Awaited<ReturnType<typeof installUserscript>>;
+  upgrade?: UserscriptUpgradeReceipt;
+  fixtureLimits?: {
+    imageBytes: number[];
+    imageSha256: string[];
+    maxDownloads: number;
+    maxRoutedImageRequests: number;
+    maxLoopbackRequests: number;
+    maxLoopbackImageBytes: number;
+    maxLoopbackServedBytes: number;
+    productionBudget: string;
+  };
+  fixture?: FixtureResult;
+  error?: string;
+};
+
+declare global {
+  interface Element {
+    CodeMirror?: { getValue(): string };
+  }
+}
+
+declare const chrome: {
+  userScripts: { getScripts(): Promise<unknown[]> };
+  i18n: { getMessage(key: string): string };
+  permissions: { contains(query: { permissions: string[] }): Promise<boolean> };
+  downloads: {
+    search(query: { url?: string; limit?: number }): Promise<
+      Array<{
+        id: number;
+        url: string;
+        filename: string;
+        state: string;
+        error?: string;
+        fileSize?: number;
+      }>
+    >;
+  };
+};
+
+export function browserProcessId(processInfo: ProcessInfo) {
   const browsers = processInfo?.processInfo?.filter((process) => process.type === 'browser') ?? [];
-  return browsers.length === 1 && Number.isSafeInteger(browsers[0].id) && browsers[0].id > 0
-    ? browsers[0].id
+  const browser = browsers[0];
+  return browsers.length === 1 && browser && Number.isSafeInteger(browser.id) && browser.id > 0
+    ? browser.id
     : null;
 }
 
 /** Read-only native UIA evidence only: no screen capture, click, or permission grant. */
 export async function captureNativeManagerPermission(
-  cdp,
-  root,
-  output,
-  profile,
-  browserName,
+  cdp: CDPSession,
+  root: string,
+  output: string,
+  profile: string,
+  browserName: string,
   run = execFileAsync
 ) {
   const receiptPath = join(output, NATIVE_PERMISSION_RECEIPT);
-  let receipt;
+  let receipt: NativePromptReceipt;
   try {
     assertOwned(root, profile);
     assert(['chrome', 'msedge'].includes(browserName), 'Unsupported native browser');
@@ -116,7 +398,10 @@ export async function captureNativeManagerPermission(
       { timeout: 12_000, windowsHide: true, maxBuffer: 4_096 }
     );
     receipt = JSON.parse(await readFile(receiptPath, 'utf8'));
-    assert(['captured', 'skipped'].includes(receipt.status), 'Invalid native diagnostic receipt');
+    assert(
+      ['captured', 'skipped'].includes(receipt.status ?? ''),
+      'Invalid native diagnostic receipt'
+    );
     assert.equal(receipt.capture, 'uia-only', 'Native diagnostic must be UIA-only');
     assert.equal(receipt.screenshot, 'not-captured', 'Native diagnostic cannot capture the screen');
     assert.equal(
@@ -138,7 +423,7 @@ export async function captureNativeManagerPermission(
 }
 
 /** Only the observed Korean Chrome downloads-only prompt is eligible for native Invoke. */
-export function isObservedChromeNativeDownloadPrompt(receipt) {
+export function isObservedChromeNativeDownloadPrompt(receipt: NativePromptReceipt | null) {
   const scope = receipt?.promptScope;
   if (
     receipt?.status !== 'captured' ||
@@ -146,9 +431,11 @@ export function isObservedChromeNativeDownloadPrompt(receipt) {
     receipt.screenshot !== 'not-captured' ||
     receipt.permissionGrantAttempted !== false ||
     receipt.foregroundOwnedAndVisible !== true ||
+    typeof receipt.browserPid !== 'number' ||
     !Number.isSafeInteger(receipt.browserPid) ||
     receipt.browserPid <= 0 ||
     receipt.uiaRootProcessId !== receipt.browserPid ||
+    typeof receipt.browserSessionId !== 'number' ||
     !Number.isSafeInteger(receipt.browserSessionId) ||
     receipt.browserSessionId <= 0 ||
     receipt.observerSessionId !== receipt.browserSessionId ||
@@ -163,6 +450,7 @@ export function isObservedChromeNativeDownloadPrompt(receipt) {
     scope.windowCount !== 1 ||
     scope.reason !== null ||
     scope.rootProcessId !== receipt.browserPid ||
+    typeof scope.visitedControls !== 'number' ||
     !Number.isSafeInteger(scope.visitedControls) ||
     scope.visitedControls <= 0 ||
     scope.visitedControls > 128 ||
@@ -173,7 +461,7 @@ export function isObservedChromeNativeDownloadPrompt(receipt) {
     return false;
   }
   const controls = scope.controls;
-  const count = (type, name) =>
+  const count = (type: string, name: string) =>
     controls.filter((control) => control.controlType === type && control.name === name).length;
   return (
     receipt.controls.filter(
@@ -195,12 +483,13 @@ export function isObservedChromeNativeDownloadPrompt(receipt) {
           '다운로드 관리',
           '허용',
           '거부',
-        ].includes(control.name)
+        ].includes(control.name ?? '')
     ).length === 0 &&
     controls
       .filter(
         (control) =>
-          control.controlType === 'ControlType.Button' && ['허용', '거부'].includes(control.name)
+          control.controlType === 'ControlType.Button' &&
+          ['허용', '거부'].includes(control.name ?? '')
       )
       .every((control) => control.isEnabled === true && control.isOffscreen === false)
   );
@@ -208,14 +497,14 @@ export function isObservedChromeNativeDownloadPrompt(receipt) {
 
 /** Recheck the owned manager ask before a second, OS-bound UIA-only Invoke pass. */
 export async function inspectAndAllowNativeManagerPermission(
-  cdp,
-  root,
-  output,
-  profile,
-  browserName,
-  ask,
-  managerId,
-  context,
+  cdp: CDPSession,
+  root: string,
+  output: string,
+  profile: string,
+  browserName: string,
+  ask: Page,
+  managerId: string,
+  context: BrowserContext,
   run = execFileAsync
 ) {
   const diagnostic = await captureNativeManagerPermission(
@@ -226,7 +515,7 @@ export async function inspectAndAllowNativeManagerPermission(
     browserName,
     run
   );
-  const skipped = (reason) => ({ ...diagnostic, action: { status: 'skipped', reason } });
+  const skipped = (reason: string) => ({ ...diagnostic, action: { status: 'skipped', reason } });
   if (browserName !== 'chrome') {
     return skipped('browser-not-observed');
   }
@@ -313,25 +602,25 @@ export async function inspectAndAllowNativeManagerPermission(
   }
 }
 
-function sha256(bytes) {
+function sha256(bytes: Uint8Array) {
   return createHash('sha256').update(bytes).digest('hex');
 }
-function filename(index) {
+function filename(index: number) {
   return `testuser_${TWEET_ID}_${index}.jpg`;
 }
-export function fixtureZipEntries(images) {
+export function fixtureZipEntries<T extends Uint8Array>(images: T[]) {
   return images.map((bytes, index) => ({ filename: filename(index), bytes }));
 }
-function delay(ms) {
+function delay(ms: number) {
   return new Promise((resolveDelay) => setTimeout(resolveDelay, ms));
 }
 
-export function summarizeDownloadUrl(value) {
+export function summarizeDownloadUrl(value: string) {
   const url = new URL(value);
   return { scheme: url.protocol, origin: url.origin };
 }
 
-export function requirePageBlobZipSource(value) {
+export function requirePageBlobZipSource(value: string) {
   const source = summarizeDownloadUrl(value);
   assert.deepEqual(
     source,
@@ -341,7 +630,11 @@ export function requirePageBlobZipSource(value) {
   return source;
 }
 
-async function waitFor(read, label, timeoutMs = 15_000) {
+async function waitFor<T>(
+  read: () => T | undefined | Promise<T | undefined>,
+  label: string,
+  timeoutMs = 15_000
+): Promise<T> {
   const until = Date.now() + timeoutMs;
   while (Date.now() < until) {
     const value = await read();
@@ -353,12 +646,12 @@ async function waitFor(read, label, timeoutMs = 15_000) {
   throw new Error(`Timed out waiting for ${label}`);
 }
 
-function assertOwned(root, profile) {
+function assertOwned(root: string, profile: string) {
   assert.equal(dirname(resolve(profile)), resolve(root), 'Profile is outside the task root');
   assert(basename(profile).startsWith(PROFILE_PREFIX), 'Profile prefix differs');
 }
 
-function safeRouteError(error) {
+function safeRouteError(error: unknown) {
   const name = error instanceof Error ? error.name : typeof error;
   const message = (error instanceof Error ? error.message : String(error))
     .replace(/https?:\/\/[^\s)]+/gu, '[url]')
@@ -367,10 +660,10 @@ function safeRouteError(error) {
 }
 
 /** Report only the twelve fixture media identities, without URLs or response bodies. */
-export function watchFixtureMediaNetwork(context) {
-  const events = [];
+export function watchFixtureMediaNetwork(context: BrowserContext) {
+  const events: FixtureMediaEvent[] = [];
   let overflow = 0;
-  const identify = (request) => {
+  const identify = (request: Request) => {
     try {
       const url = new URL(request.url());
       if (url.protocol !== 'https:' || url.hostname !== 'pbs.twimg.com') {
@@ -387,7 +680,7 @@ export function watchFixtureMediaNetwork(context) {
     }
     return null;
   };
-  const append = (kind, request, status = null) => {
+  const append = (kind: string, request: Request, status: number | null = null) => {
     const media = identify(request);
     if (!media) {
       return;
@@ -404,9 +697,10 @@ export function watchFixtureMediaNetwork(context) {
       status,
     });
   };
-  const onRequest = (request) => append('request', request);
-  const onResponse = (response) => append('response', response.request(), response.status());
-  const onFailed = (request) => append('requestfailed', request);
+  const onRequest = (request: Request) => append('request', request);
+  const onResponse = (response: Response) =>
+    append('response', response.request(), response.status());
+  const onFailed = (request: Request) => append('requestfailed', request);
   context.on('request', onRequest);
   context.on('response', onResponse);
   context.on('requestfailed', onFailed);
@@ -421,12 +715,12 @@ export function watchFixtureMediaNetwork(context) {
   };
 }
 
-export function managerDetailsUrl(browserName, id) {
+export function managerDetailsUrl(browserName: string, id: string) {
   assert(['chrome', 'msedge'].includes(browserName), 'Unsupported manager browser');
   return `${browserName === 'msedge' ? 'edge' : 'chrome'}://extensions/?id=${encodeURIComponent(id)}`;
 }
 
-export async function probeManagerUserScripts(page) {
+export async function probeManagerUserScripts(page: Page) {
   try {
     return await page.evaluate(async () => {
       try {
@@ -435,7 +729,13 @@ export async function probeManagerUserScripts(page) {
       } catch (error) {
         return {
           available: false,
-          errorType: error && typeof error.name === 'string' ? error.name : typeof error,
+          errorType:
+            error !== null &&
+            (typeof error === 'object' || typeof error === 'function') &&
+            'name' in error &&
+            typeof error.name === 'string'
+              ? error.name
+              : typeof error,
         };
       }
     });
@@ -444,7 +744,7 @@ export async function probeManagerUserScripts(page) {
   }
 }
 
-export async function findEdgeUserScriptsControl(page, managerId) {
+export async function findEdgeUserScriptsControl(page: Page, managerId: string) {
   assert(/^[a-p]{32}$/u.test(managerId), 'Invalid manager extension ID');
   assert(
     isOwnedManagerDetailsUrl(page.url(), managerDetailsUrl('msedge', managerId)),
@@ -470,13 +770,13 @@ export async function findEdgeUserScriptsControl(page, managerId) {
   return control;
 }
 
-export function hasKnownChromeUserScriptsLabel(text) {
+export function hasKnownChromeUserScriptsLabel(text: string) {
   return text
     .split(/\r?\n/u)
     .some((line) => /^(?:사용자 스크립트 허용|Allow user scripts)$/iu.test(line.trim()));
 }
 
-export function summarizeManagerFrameUrl(value, managerId) {
+export function summarizeManagerFrameUrl(value: string, managerId: string) {
   try {
     const url = new URL(value);
     if (['edge:', 'chrome:'].includes(url.protocol) && url.hostname === 'extensions') {
@@ -491,7 +791,7 @@ export function summarizeManagerFrameUrl(value, managerId) {
   return null;
 }
 
-export function isOwnedManagerDetailsUrl(value, detailsUrl) {
+export function isOwnedManagerDetailsUrl(value: string, detailsUrl: string) {
   try {
     const actual = new URL(value);
     const expected = new URL(detailsUrl);
@@ -508,7 +808,7 @@ export function isOwnedManagerDetailsUrl(value, detailsUrl) {
   }
 }
 
-export function isOwnedManagerInspectionUrl(value, detailsUrl, managerId) {
+export function isOwnedManagerInspectionUrl(value: string, detailsUrl: string, managerId: string) {
   if (
     !isOwnedManagerDetailsUrl(detailsUrl, detailsUrl) ||
     new URL(detailsUrl).searchParams.get('id') !== managerId
@@ -528,7 +828,7 @@ export function isOwnedManagerInspectionUrl(value, detailsUrl, managerId) {
   }
 }
 
-export function isOwnedManagerOptionsUrl(value, managerId) {
+export function isOwnedManagerOptionsUrl(value: string, managerId: string) {
   try {
     const url = new URL(value);
     return (
@@ -542,7 +842,7 @@ export function isOwnedManagerOptionsUrl(value, managerId) {
   }
 }
 
-export function isOwnedManagerPermissionAskUrl(value, managerId) {
+export function isOwnedManagerPermissionAskUrl(value: string, managerId: string) {
   try {
     const url = new URL(value);
     return (
@@ -558,7 +858,7 @@ export function isOwnedManagerPermissionAskUrl(value, managerId) {
   }
 }
 
-export function requireManagerDownloadsHeading(actual, localizedDownloads) {
+export function requireManagerDownloadsHeading(actual: string, localizedDownloads: string) {
   assert.equal(
     actual.trim(),
     `${localizedDownloads} BETA`,
@@ -566,18 +866,23 @@ export function requireManagerDownloadsHeading(actual, localizedDownloads) {
   );
 }
 
-export function managerSettingRowLabel(localizedName) {
+export function managerSettingRowLabel(localizedName: string) {
   return `${localizedName}:`;
 }
 
-export function managerSettingRow(scope, localizedName) {
+export function managerSettingRow(scope: Page | Locator, localizedName: string) {
   const settingRowClass = 'contains(concat(" ", normalize-space(@class), " "), " settingstr ")';
   return scope
     .getByText(managerSettingRowLabel(localizedName), { exact: true })
     .locator(`xpath=ancestor::tr[${settingRowClass}][not(descendant::tr[${settingRowClass}])]`);
 }
 
-export async function captureAndConfirmManagerPermissionAsk(ask, managerId, output, okLabel) {
+export async function captureAndConfirmManagerPermissionAsk(
+  ask: Page,
+  managerId: string,
+  output: string | null,
+  okLabel: string
+) {
   assert(
     isOwnedManagerPermissionAskUrl(ask.url(), managerId),
     'Manager permission confirmation navigated away'
@@ -597,7 +902,7 @@ export async function captureAndConfirmManagerPermissionAsk(ask, managerId, outp
   await ask.getByRole('button', { name: okLabel, exact: true }).click();
 }
 
-export function requireManagerUiLabels(labels) {
+export function requireManagerUiLabels(labels: ManagerUiLabels) {
   assert(
     labels && typeof labels === 'object' && !Array.isArray(labels),
     'Manager returned invalid UI labels'
@@ -613,14 +918,14 @@ export function requireManagerUiLabels(labels) {
         value.length > 0 &&
         value.length <= 80 &&
         value.trim() === value &&
-        !/[\r\n\u0000-\u001f]/u.test(value),
+        !Array.from(value).some((character) => character.charCodeAt(0) < 32),
       'Manager returned an invalid UI label'
     );
   }
   return labels;
 }
 
-export async function readManagerUiLabels(page, managerId) {
+export async function readManagerUiLabels(page: Page, managerId: string) {
   assert(
     isOwnedManagerOptionsUrl(page.url(), managerId),
     'Manager labels require its owned options page'
@@ -648,7 +953,7 @@ export async function readManagerUiLabels(page, managerId) {
   return requireManagerUiLabels(labels);
 }
 
-export async function probeManagerDownloadsPermission(page, managerId) {
+export async function probeManagerDownloadsPermission(page: Page, managerId: string) {
   assert(
     isOwnedManagerOptionsUrl(page.url(), managerId),
     'Manager downloads permission requires its owned options page'
@@ -675,10 +980,14 @@ export async function probeManagerDownloadsPermission(page, managerId) {
 
 /** Select Tampermonkey's own Browser API option through its ordinary options UI. */
 export async function configureManagerBrowserDownloads(
-  page,
-  managerId,
-  output,
-  captureNativePermission = async () => null
+  page: Page,
+  managerId: string,
+  output: string,
+  captureNativePermission: (
+    ask: Page,
+    managerId: string,
+    context: BrowserContext
+  ) => Promise<unknown> = async () => null
 ) {
   assert(
     isOwnedManagerOptionsUrl(page.url(), managerId),
@@ -694,21 +1003,21 @@ export async function configureManagerBrowserDownloads(
     ) {
       throw new Error('Manager options page navigated away');
     }
-    return Object.fromEntries(
-      [
-        'Settings',
-        'Config_Mode',
-        'Beginner',
-        'Downloads',
-        'Download_Mode',
-        'Browser_API',
-        'Whitelisted_File_Extensions',
-        'Save',
-        'Browser_API_Downloads',
-        'Click_here_to_allow_TM_to_start_downloads',
-        'Ok',
-      ].map((key) => [key, chrome.i18n.getMessage(key)])
-    );
+    return {
+      Settings: chrome.i18n.getMessage('Settings'),
+      Config_Mode: chrome.i18n.getMessage('Config_Mode'),
+      Beginner: chrome.i18n.getMessage('Beginner'),
+      Downloads: chrome.i18n.getMessage('Downloads'),
+      Download_Mode: chrome.i18n.getMessage('Download_Mode'),
+      Browser_API: chrome.i18n.getMessage('Browser_API'),
+      Whitelisted_File_Extensions: chrome.i18n.getMessage('Whitelisted_File_Extensions'),
+      Save: chrome.i18n.getMessage('Save'),
+      Browser_API_Downloads: chrome.i18n.getMessage('Browser_API_Downloads'),
+      Click_here_to_allow_TM_to_start_downloads: chrome.i18n.getMessage(
+        'Click_here_to_allow_TM_to_start_downloads'
+      ),
+      Ok: chrome.i18n.getMessage('Ok'),
+    };
   }, managerId);
   for (const label of Object.values(labels)) {
     assert(
@@ -737,7 +1046,11 @@ export async function configureManagerBrowserDownloads(
   const whitelist = await whitelistRow.locator('input, textarea').evaluateAll((elements) =>
     elements
       .slice(0, 64)
-      .map((element) => element.value)
+      .map((element) =>
+        element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement
+          ? element.value
+          : null
+      )
       .filter((value) => typeof value === 'string')
   );
   assert(
@@ -787,9 +1100,8 @@ export async function configureManagerBrowserDownloads(
     await captureAndConfirmManagerPermissionAsk(ask, managerId, output, labels.Ok);
     permissionOkClicked = true;
   }
-  const nativeDiagnostic = permissionOkClicked
-    ? await captureNativePermission(ask, managerId, context)
-    : null;
+  const nativeDiagnostic =
+    permissionOkClicked && ask ? await captureNativePermission(ask, managerId, context) : null;
   await page.reload({ waitUntil: 'domcontentloaded' });
   assert(isOwnedManagerOptionsUrl(page.url(), managerId), 'Manager options page navigated away');
   await page.getByText(labels.Settings, { exact: true }).first().click();
@@ -816,7 +1128,7 @@ export async function configureManagerBrowserDownloads(
 }
 
 /** Enable only the ordinary Info setting in this owned manager profile. */
-export async function configureManagerInfoLogging(page, managerId) {
+export async function configureManagerInfoLogging(page: Page, managerId: string) {
   assert(
     isOwnedManagerOptionsUrl(page.url(), managerId),
     'Manager logging requires its owned options page'
@@ -831,9 +1143,12 @@ export async function configureManagerInfoLogging(page, managerId) {
     ) {
       throw new Error('Manager options page navigated away');
     }
-    return Object.fromEntries(
-      ['Settings', 'General', 'LogLevel', 'Info'].map((key) => [key, chrome.i18n.getMessage(key)])
-    );
+    return {
+      Settings: chrome.i18n.getMessage('Settings'),
+      General: chrome.i18n.getMessage('General'),
+      LogLevel: chrome.i18n.getMessage('LogLevel'),
+      Info: chrome.i18n.getMessage('Info'),
+    };
   }, managerId);
   for (const label of Object.values(labels)) {
     assert(
@@ -841,7 +1156,7 @@ export async function configureManagerInfoLogging(page, managerId) {
         label.length > 0 &&
         label.length <= 120 &&
         label.trim() === label &&
-        !/[\r\n\u0000-\u001f]/u.test(label),
+        !Array.from(label).some((character) => character.charCodeAt(0) < 32),
       'Manager returned an invalid logging label'
     );
   }
@@ -886,8 +1201,8 @@ export async function configureManagerInfoLogging(page, managerId) {
   return { original, requested: '60', observed, scope: 'fresh-owned-profile' };
 }
 
-async function captureManagerDownloadsPermission(context, managerId) {
-  let page;
+async function captureManagerDownloadsPermission(context: BrowserContext, managerId: string) {
+  let page: Page | undefined;
   try {
     page = await context.newPage();
     await page.goto(`chrome-extension://${managerId}/options.html`, {
@@ -909,7 +1224,13 @@ export async function inspectManagerDownloadHistoryDocument({
   expectedName,
   expectedPath,
   expectedBytes,
-}) {
+}: {
+  managerId: string;
+  fixtureUrl: string;
+  expectedName: string;
+  expectedPath: string;
+  expectedBytes: number;
+}): Promise<ManagerHistory> {
   const current = new URL(location.href);
   if (
     current.protocol !== 'chrome-extension:' ||
@@ -923,7 +1244,7 @@ export async function inspectManagerDownloadHistoryDocument({
   if (!chrome.downloads?.search) {
     return { status: 'api-unavailable', items: [] };
   }
-  let found;
+  let found: Awaited<ReturnType<typeof chrome.downloads.search>>;
   try {
     found = await chrome.downloads.search({ url: fixtureUrl, limit: 9 });
   } catch {
@@ -966,7 +1287,7 @@ export async function inspectManagerDownloadHistoryDocument({
     'USER_SHUTDOWN',
     'CRASH',
   ]);
-  const items = [];
+  const items: ManagerHistoryItem[] = [];
   for (const item of found) {
     if (item?.url !== fixtureUrl) {
       continue;
@@ -1002,13 +1323,13 @@ export async function inspectManagerDownloadHistoryDocument({
 }
 
 async function captureManagerDownloadHistory(
-  context,
-  managerId,
-  downloads,
-  savedName,
-  expectedBytes
-) {
-  let page;
+  context: BrowserContext,
+  managerId: string,
+  downloads: string,
+  savedName: string,
+  expectedBytes: number
+): Promise<ManagerHistory> {
+  let page: Page | undefined;
   try {
     page = await context.newPage();
     await page.goto(`chrome-extension://${managerId}/options.html`, {
@@ -1040,7 +1361,7 @@ async function captureManagerDownloadHistory(
   }
 }
 
-export function firstCurrentManagerDownloadHistory(before, after) {
+export function firstCurrentManagerDownloadHistory(before: ManagerHistory, after: ManagerHistory) {
   if (before.status !== 'observed' || after.status !== 'observed') {
     return {
       status: 'unknown',
@@ -1059,7 +1380,7 @@ export function firstCurrentManagerDownloadHistory(before, after) {
 }
 
 /** Each action must produce one new, complete native item with the exact saved file. */
-export function selectCompletedManagerDownload(before, after) {
+export function selectCompletedManagerDownload(before: ManagerHistory, after: ManagerHistory) {
   assert.equal(before.status, 'observed', 'Native download baseline is unavailable');
   assert.equal(after.status, 'observed', 'Native download history is unavailable');
   const seen = new Set(before.items.map(({ id }) => id));
@@ -1069,6 +1390,7 @@ export function selectCompletedManagerDownload(before, after) {
     return undefined;
   }
   const item = created[0];
+  assert(item);
   if (item.state === 'in_progress') {
     return undefined;
   }
@@ -1085,9 +1407,17 @@ export function selectCompletedManagerDownload(before, after) {
   };
 }
 
-async function captureManagerPermissionDiagnostics(page, detailsUrl, output, probe) {
-  const managerId = new URL(detailsUrl).searchParams.get('id');
-  const diagnostics = { api: probe, requestedUrl: summarizeManagerFrameUrl(detailsUrl, managerId) };
+async function captureManagerPermissionDiagnostics(
+  page: Page,
+  detailsUrl: string,
+  output: string,
+  probe: Awaited<ReturnType<typeof probeManagerUserScripts>>
+) {
+  const managerId = new URL(detailsUrl).searchParams.get('id') ?? '';
+  const diagnostics: ManagerPermissionDiagnostics = {
+    api: probe,
+    requestedUrl: summarizeManagerFrameUrl(detailsUrl, managerId),
+  };
   let ownedDetailsPage = false;
   try {
     await page.goto(detailsUrl, { waitUntil: 'domcontentloaded', timeout: 10_000 });
@@ -1111,7 +1441,7 @@ async function captureManagerPermissionDiagnostics(page, detailsUrl, output, pro
       elements.slice(0, 32).map((element) => ({
         id: element.id.slice(0, 80),
         ariaLabel: element.getAttribute('aria-label')?.slice(0, 80) ?? null,
-        checked: Boolean(element.checked),
+        checked: Boolean('checked' in element && element.checked),
       }))
     );
     assert(
@@ -1145,7 +1475,10 @@ async function captureManagerPermissionDiagnostics(page, detailsUrl, output, pro
     const frames = page.frames();
     diagnostics.frames = await Promise.all(
       frames.slice(0, 12).map(async (frame, index) => {
-        const summary = { index, url: summarizeManagerFrameUrl(frame.url(), managerId) };
+        const summary: ManagerFrameSummary = {
+          index,
+          url: summarizeManagerFrameUrl(frame.url(), managerId),
+        };
         if (
           !isOwnedManagerDetailsUrl(page.url(), detailsUrl) ||
           !isOwnedManagerInspectionUrl(frame.url(), detailsUrl, managerId)
@@ -1167,38 +1500,51 @@ async function captureManagerPermissionDiagnostics(page, detailsUrl, output, pro
                 return { skipped: 'frame-navigated-away' };
               }
               const knownLabels = new Set(['사용자 스크립트 허용', 'Allow user scripts']);
-              const describe = (element) => ({
+              const describe = (element: Element) => ({
                 tag: element.tagName.toLowerCase().slice(0, 40),
                 id: element.id?.slice(0, 80) ?? null,
                 role: element.getAttribute('role')?.slice(0, 40) ?? null,
                 type: element.getAttribute('type')?.slice(0, 40) ?? null,
                 label:
                   (
-                    element.getAttribute('label') ?? element.labels?.[0]?.textContent?.trim()
+                    element.getAttribute('label') ??
+                    ('labels' in element && element.labels instanceof NodeList
+                      ? element.labels[0]?.textContent?.trim()
+                      : null)
                   )?.slice(0, 80) ?? null,
                 ariaLabel: element.getAttribute('aria-label')?.slice(0, 80) ?? null,
                 ariaChecked: element.getAttribute('aria-checked')?.slice(0, 12) ?? null,
-                checked: typeof element.checked === 'boolean' ? element.checked : null,
+                checked:
+                  'checked' in element && typeof element.checked === 'boolean'
+                    ? element.checked
+                    : null,
               });
-              const labels = [];
-              const controls = [];
-              const embedded = [];
+              const labels: {
+                ancestry: ReturnType<typeof describe>[];
+                nearbyControls: ReturnType<typeof describe>[];
+              }[] = [];
+              const controls: ReturnType<typeof describe>[] = [];
+              const embedded: ReturnType<typeof describe>[] = [];
               let visited = 0;
-              const visit = (node) => {
+              const parentElementOrHost = (element: Element): Element | null => {
+                const root = element.getRootNode();
+                return element.parentElement ?? (root instanceof ShadowRoot ? root.host : null);
+              };
+              const visit = (node: Node) => {
                 if (++visited > 4_000) {
                   return;
                 }
                 if (
                   node.nodeType === Node.TEXT_NODE &&
                   labels.length < 4 &&
-                  knownLabels.has(node.textContent?.trim())
+                  knownLabels.has(node.textContent?.trim() ?? '')
                 ) {
-                  const ancestry = [];
-                  const nearbyControls = [];
+                  const ancestry: ReturnType<typeof describe>[] = [];
+                  const nearbyControls: ReturnType<typeof describe>[] = [];
                   for (
-                    let element = node.parentElement;
+                    let element: Element | null = node.parentElement;
                     element && ancestry.length < 5;
-                    element = element.parentElement ?? element.getRootNode().host ?? null
+                    element = parentElementOrHost(element)
                   ) {
                     ancestry.push(describe(element));
                     if (ancestry.length <= 3) {
@@ -1220,7 +1566,7 @@ async function captureManagerPermissionDiagnostics(page, detailsUrl, output, pro
                     controls.length < 64 &&
                     (/switch|toggle|checkbox/u.test(tag) ||
                       ['input', 'button'].includes(tag) ||
-                      ['switch', 'checkbox'].includes(node.getAttribute('role')))
+                      ['switch', 'checkbox'].includes(node.getAttribute('role') ?? ''))
                   ) {
                     controls.push(describe(node));
                   }
@@ -1305,16 +1651,20 @@ async function captureManagerPermissionDiagnostics(page, detailsUrl, output, pro
 }
 
 async function installUserscript(
-  context,
-  id,
-  root,
-  output,
-  browserName,
-  sourceSha256,
-  profile,
-  captureNativePermission,
+  context: BrowserContext,
+  id: string,
+  root: string,
+  output: string,
+  browserName: string,
+  sourceSha256: string,
+  profile: string,
+  captureNativePermission: (
+    ask: Page,
+    managerId: string,
+    context: BrowserContext
+  ) => Promise<unknown>,
   sourcePath = 'dist/xcom-enhanced-gallery.user.js',
-  sourceVersion = null
+  sourceVersion: string | null = null
 ) {
   const manifest = JSON.parse(
     await readFile(join(root, 'test-tools/userscript-manager/manifest.json'), 'utf8')
@@ -1333,11 +1683,14 @@ async function installUserscript(
         await page.goto(detailsUrl, { waitUntil: 'domcontentloaded', timeout: 10_000 });
         if (browserName === 'msedge') {
           const control = await findEdgeUserScriptsControl(page, id);
-          if (!(await control.evaluate((element) => element.checked))) {
+          if (!(await control.evaluate((element) => 'checked' in element && element.checked))) {
             await control.click();
           }
           await waitFor(
-            async () => ((await control.evaluate((element) => element.checked)) ? true : undefined),
+            async () =>
+              (await control.evaluate((element) => 'checked' in element && element.checked))
+                ? true
+                : undefined,
             'Edge user-scripts permission enabled',
             5_000
           );
@@ -1360,11 +1713,11 @@ async function installUserscript(
               'Manager userScripts API unavailable and no verified UI permission control'
             );
           }
-          if (!(await toggle.evaluate((element) => element.checked))) {
+          if (!(await toggle.evaluate((element) => 'checked' in element && element.checked))) {
             await toggle.click();
           }
           assert(
-            await toggle.evaluate((element) => element.checked),
+            await toggle.evaluate((element) => 'checked' in element && element.checked),
             'Manager user-scripts control stayed disabled'
           );
           const keep = page.getByRole('button', { name: 'Keep', exact: true });
@@ -1414,7 +1767,7 @@ async function installUserscript(
     await writeFile(join(output, 'userscript-manager-options.png'), optionsScreenshot);
     const labels = await readManagerUiLabels(page, id);
     await writeFile(admissionPath, JSON.stringify({ ...admission, labels }, null, 2));
-    let downloadMode;
+    let downloadMode: Awaited<ReturnType<typeof configureManagerBrowserDownloads>>;
     try {
       downloadMode = await configureManagerBrowserDownloads(
         page,
@@ -1424,7 +1777,12 @@ async function installUserscript(
       );
     } catch (error) {
       const ownedOptions = isOwnedManagerOptionsUrl(page.url(), id);
-      const diagnostic = {
+      const diagnostic: {
+        errorType: string;
+        ownedOptions: boolean;
+        downloadsSections: number | null;
+        captureErrorType: string | null;
+      } = {
         errorType: error instanceof Error ? error.name : typeof error,
         ownedOptions,
         downloadsSections: null,
@@ -1512,14 +1870,14 @@ async function installUserscript(
 }
 
 /** Browser-level events require no optional permissions from Tampermonkey. */
-export function createBrowserDownloadObserver(cdp) {
-  const begun = [];
-  const progress = new Map();
-  const onBegin = (event) => {
+export function createBrowserDownloadObserver(cdp: CDPSession) {
+  const begun: BrowserDownloadBegin[] = [];
+  const progress = new Map<string, BrowserDownloadStatus>();
+  const onBegin = (event: BrowserDownloadBegin) => {
     assert(begun.length < MAX_DOWNLOADS + 4, 'Too many task-profile downloads');
     begun.push({ guid: event.guid, suggestedFilename: event.suggestedFilename, url: event.url });
   };
-  const onProgress = (event) => {
+  const onProgress = (event: BrowserDownloadProgress) => {
     progress.set(event.guid, {
       state: event.state,
       receivedBytes: event.receivedBytes,
@@ -1540,7 +1898,7 @@ export function createBrowserDownloadObserver(cdp) {
     async flush() {
       await cdp.send('Browser.getVersion');
     },
-    async waitForCompletion(since, ...expectedNames) {
+    async waitForCompletion(since: number, ...expectedNames: string[]) {
       const item = await waitFor(
         () => {
           const created = begun.slice(since);
@@ -1549,6 +1907,7 @@ export function createBrowserDownloadObserver(cdp) {
             return undefined;
           }
           const candidate = created[0];
+          assert(candidate);
           assert(
             expectedNames.includes(candidate.suggestedFilename),
             'Browser download request used an unexpected filename'
@@ -1564,7 +1923,7 @@ export function createBrowserDownloadObserver(cdp) {
       );
       return item;
     },
-    async assertNoneSince(since, label) {
+    async assertNoneSince(since: number, label: string) {
       await cdp.send('Browser.getVersion');
       assert.deepEqual(begun.slice(since), [], `${label} created a native download`);
     },
@@ -1576,13 +1935,13 @@ export function createBrowserDownloadObserver(cdp) {
 }
 
 async function waitForDownload(
-  observer,
-  since,
-  beforeFiles,
-  requestedName,
-  savedName,
-  downloads,
-  expectedBytes
+  observer: ReturnType<typeof createBrowserDownloadObserver>,
+  since: number,
+  beforeFiles: Set<string>,
+  requestedName: string,
+  savedName: string,
+  downloads: string,
+  expectedBytes: number
 ) {
   const item = await observer.waitForCompletion(since, requestedName, savedName);
   const source = requestedName.endsWith('.zip')
@@ -1607,7 +1966,12 @@ async function waitForDownload(
   };
 }
 
-async function readOwnedDownload(beforeFiles, savedName, downloads, expectedBytes) {
+async function readOwnedDownload(
+  beforeFiles: Set<string>,
+  savedName: string,
+  downloads: string,
+  expectedBytes: number
+) {
   const added = await waitFor(async () => {
     const names = await readdir(downloads);
     const newNames = names.filter(
@@ -1627,16 +1991,16 @@ async function readOwnedDownload(beforeFiles, savedName, downloads, expectedByte
 }
 
 async function waitForManagerDownload(
-  context,
-  managerId,
-  observer,
-  since,
-  beforeFiles,
-  historyBefore,
-  requestedName,
-  savedName,
-  downloads,
-  expectedBytes
+  context: BrowserContext,
+  managerId: string,
+  observer: ReturnType<typeof createBrowserDownloadObserver>,
+  since: number,
+  beforeFiles: Set<string>,
+  historyBefore: ManagerHistory,
+  requestedName: string,
+  savedName: string,
+  downloads: string,
+  expectedBytes: number
 ) {
   const native = await waitFor(
     async () =>
@@ -1677,7 +2041,7 @@ async function waitForManagerDownload(
   };
 }
 
-function browserFilename(name, duplicate) {
+function browserFilename(name: string, duplicate: number) {
   if (duplicate === 0) {
     return name;
   }
@@ -1686,11 +2050,11 @@ function browserFilename(name, duplicate) {
 }
 
 export async function observeNoNativeDownload(
-  observer,
-  since,
-  beforeFiles,
-  downloads,
-  label,
+  observer: ReturnType<typeof createBrowserDownloadObserver>,
+  since: number,
+  beforeFiles: Set<string>,
+  downloads: string,
+  label: string,
   durationMs = 0
 ) {
   assert(
@@ -1699,7 +2063,7 @@ export async function observeNoNativeDownload(
   );
   const started = Date.now();
   let samples = 0;
-  do {
+  for (;;) {
     await observer.assertNoneSince(since, label);
     assert.deepEqual(
       (await readdir(downloads)).sort(),
@@ -1712,7 +2076,7 @@ export async function observeNoNativeDownload(
       break;
     }
     await delay(Math.min(50, remaining));
-  } while (true);
+  }
   return {
     observedMs: Date.now() - started,
     samples,
@@ -1721,7 +2085,7 @@ export async function observeNoNativeDownload(
   };
 }
 
-export async function inspectFirstCurrentDownload(page) {
+export async function inspectFirstCurrentDownload(page: Page) {
   if (page.url() !== FIXTURE_URL) {
     return { scope: 'unowned-page' };
   }
@@ -1733,7 +2097,10 @@ export async function inspectFirstCurrentDownload(page) {
     if (galleries.length !== 1) {
       return { scope: 'unowned-gallery' };
     }
-    const gallery = galleries[0];
+    const gallery = galleries.item(0);
+    if (!gallery) {
+      return { scope: 'unowned-gallery' };
+    }
     const toolbar = gallery.querySelector('[data-gallery-element="toolbar"]');
     const current = toolbar?.querySelector('button[aria-label="Download"]');
     const selected = gallery.querySelector('[data-gallery-element="item"][data-index="0"] img');
@@ -1748,7 +2115,7 @@ export async function inspectFirstCurrentDownload(page) {
     );
     const errorText =
       selectedFirstFixtureMedia && status === 'error' && liveRegions.length === 1
-        ? liveRegions[0].textContent?.slice(0, 2_048)
+        ? liveRegions.item(0)?.textContent?.slice(0, 2_048)
         : null;
     const normalizedError =
       errorText
@@ -1779,7 +2146,7 @@ export async function inspectFirstCurrentDownload(page) {
       currentControlDisabled: current instanceof HTMLButtonElement ? current.disabled : null,
       currentControlBusy: current?.getAttribute('aria-busy') === 'true',
       selectedFirstFixtureMedia,
-      downloadStatus: ['working', 'handedOff', 'error'].includes(status) ? status : null,
+      downloadStatus: ['working', 'handedOff', 'error'].includes(status ?? '') ? status : null,
       errorLiveRegionPresent: liveRegions.length === 1,
       errorLiveRegionText: normalizedError,
     };
@@ -1803,7 +2170,7 @@ const MANAGER_BACKGROUND_SHA256 =
   '7377109daee3340f6f1f89d06f8099e92583229231b25d0f950653a63fb7dd32';
 
 /** Match only known Tampermonkey 5.5.1 background.js download log shapes. */
-export function classifyManagerDownloadConsole(value) {
+export function classifyManagerDownloadConsole(value: unknown) {
   if (typeof value !== 'string' || value.length > 4_096) {
     return null;
   }
@@ -1850,11 +2217,16 @@ export function classifyManagerDownloadConsole(value) {
 }
 
 /** Passive, bounded observation of the one admitted manager's service worker. */
-export function watchManagerDownloadConsole(context, managerId) {
+export function watchManagerDownloadConsole(context: BrowserContext, managerId: string) {
   assert(/^[a-p]{32}$/u.test(managerId), 'Invalid manager extension ID');
   const expectedUrl = `chrome-extension://${managerId}/background.js`;
-  const listeners = new Map();
-  const counts = Object.fromEntries(MANAGER_CONSOLE_BRANCHES.map((branch) => [branch, 0]));
+  const listeners = new Map<
+    Worker,
+    { onConsole: (message: ConsoleMessage) => void; onClose: () => void }
+  >();
+  const counts: Record<string, number> = Object.fromEntries(
+    MANAGER_CONSOLE_BRANCHES.map((branch) => [branch, 0])
+  );
   let attachments = 0;
   let attachmentOverflow = false;
   let inspectedMessages = 0;
@@ -1863,7 +2235,7 @@ export function watchManagerDownloadConsole(context, managerId) {
   let eventOverflow = false;
   let consoleUnavailable = false;
   let disposed = false;
-  const attach = (worker) => {
+  const attach = (worker: Worker) => {
     if (disposed || listeners.has(worker)) {
       return;
     }
@@ -1879,7 +2251,7 @@ export function watchManagerDownloadConsole(context, managerId) {
       attachmentOverflow = true;
       return;
     }
-    const onConsole = (message) => {
+    const onConsole = (message: ConsoleMessage) => {
       if (disposed) {
         return;
       }
@@ -1888,7 +2260,7 @@ export function watchManagerDownloadConsole(context, managerId) {
         return;
       }
       inspectedMessages++;
-      let value;
+      let value: string;
       try {
         value = message.text();
       } catch {
@@ -1903,7 +2275,7 @@ export function watchManagerDownloadConsole(context, managerId) {
         eventOverflow = true;
         return;
       }
-      counts[branch]++;
+      counts[branch] = (counts[branch] ?? 0) + 1;
       recognizedEvents++;
     };
     const onClose = () => {
@@ -1934,9 +2306,12 @@ export function watchManagerDownloadConsole(context, managerId) {
   const mark = () => ({ counts: { ...counts }, attachments, recognizedEvents });
   return {
     mark,
-    snapshotSince(before) {
+    snapshotSince(before: ReturnType<typeof mark>) {
       const branches = Object.fromEntries(
-        MANAGER_CONSOLE_BRANCHES.map((branch) => [branch, counts[branch] - before.counts[branch]])
+        MANAGER_CONSOLE_BRANCHES.map((branch) => [
+          branch,
+          (counts[branch] ?? 0) - (before.counts[branch] ?? 0),
+        ])
       );
       const matched = recognizedEvents - before.recognizedEvents;
       return {
@@ -1971,21 +2346,26 @@ export function watchManagerDownloadConsole(context, managerId) {
 }
 
 async function runFixture(
-  context,
-  observer,
-  root,
-  output,
-  downloads,
-  images,
-  loopback,
-  managerId,
-  managerVersion,
-  profile,
-  sourceSha256
+  context: BrowserContext,
+  observer: ReturnType<typeof createBrowserDownloadObserver>,
+  root: string,
+  output: string,
+  downloads: string,
+  images: Buffer[],
+  loopback: UserscriptLoopback,
+  managerId: string,
+  managerVersion: string,
+  profile: string,
+  sourceSha256: string
 ) {
+  const imageAt = (index: number): Buffer => {
+    const bytes = images[index];
+    assert(bytes, `Missing fixture image ${index}`);
+    return bytes;
+  };
   const html = await readFile(join(root, 'test/e2e/fixtures/installed-gallery-page.html'), 'utf8');
-  const routeRecords = [];
-  const result = {
+  const routeRecords: FixtureRouteRecord[] = [];
+  const result: FixtureResult = {
     status: 'failed',
     downloads: [],
     routes: routeRecords,
@@ -1996,9 +2376,9 @@ async function runFixture(
     cleanup: {},
   };
   let phase = 'normal';
-  let managerConsole;
+  let managerConsole: ReturnType<typeof watchManagerDownloadConsole> | undefined;
   const mediaNetwork = watchFixtureMediaNetwork(context);
-  const routeFixture = async (route) => {
+  const routeFixture = async (route: Route) => {
     const url = new URL(route.request().url());
     if (url.protocol === 'chrome-extension:') {
       await route.continue();
@@ -2014,7 +2394,7 @@ async function runFixture(
     }
     if (url.hostname === 'pbs.twimg.com') {
       if (isPublicAvatarFixtureUrl(url.href)) {
-        await route.fulfill({ status: 200, contentType: 'image/jpeg', body: images[0] });
+        await route.fulfill({ status: 200, contentType: 'image/jpeg', body: imageAt(0) });
         return;
       }
       const cohort = Object.entries(MEDIA_COHORTS).find(([, markers]) =>
@@ -2023,11 +2403,13 @@ async function runFixture(
       assert(cohort, 'Unknown media fixture request');
       const [mediaPhase, markers] = cohort;
       const index = markers.findIndex((marker) => url.pathname.includes(marker));
+      const marker = markers[index];
+      assert(marker, 'Missing media marker');
       const isPreview = route.request().resourceType() === 'image';
-      const expectedUrl = `https://pbs.twimg.com/media/${markers[index]}.jpg?format=jpg&name=${isPreview ? 'large' : 'orig'}`;
+      const expectedUrl = `https://pbs.twimg.com/media/${marker}.jpg?format=jpg&name=${isPreview ? 'large' : 'orig'}`;
       assert.equal(url.href, expectedUrl, 'Fixture media URL differs from its declared purpose');
       assert(routeRecords.length < 64, 'Fixture exceeded its routed request limit');
-      const record = {
+      const record: FixtureRouteRecord = {
         phase,
         mediaPhase,
         index,
@@ -2051,7 +2433,7 @@ async function runFixture(
         return;
       }
       record.result ??= 'image';
-      await route.fulfill({ status: 200, contentType: 'image/jpeg', body: images[index] });
+      await route.fulfill({ status: 200, contentType: 'image/jpeg', body: imageAt(index) });
       return;
     }
     if (url.hostname === 'x.com' && url.pathname.endsWith('/TweetResultByRestId')) {
@@ -2060,7 +2442,7 @@ async function runFixture(
     }
     await route.abort('blockedbyclient');
   };
-  const handler = async (route) => {
+  const handler = async (route: Route) => {
     try {
       await routeFixture(route);
     } catch (error) {
@@ -2101,7 +2483,7 @@ async function runFixture(
       '[data-gallery-element="toolbar"] button[aria-label="Download 3 shown files as ZIP"]'
     );
     const expectedEntries = fixtureZipEntries(images);
-    const showPhase = async (nextPhase) => {
+    const showPhase = async (nextPhase: string) => {
       await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]').click();
       await gallery.waitFor({ state: 'detached' });
       loopback.setPhase(nextPhase);
@@ -2140,12 +2522,12 @@ async function runFixture(
         managerId,
         downloads,
         savedSingleName,
-        images[0].length
+        imageAt(0).length
       );
       assert.equal(historyBefore.status, 'observed', 'Native download baseline is unavailable');
       const consoleBefore = repetition === 0 ? managerConsole.mark() : null;
       const singleTransportStart = loopback.mark();
-      let single;
+      let single: Awaited<ReturnType<typeof waitForManagerDownload>>;
       try {
         await current.click();
         single = await waitForManagerDownload(
@@ -2158,10 +2540,11 @@ async function runFixture(
           filename(0),
           savedSingleName,
           downloads,
-          images[0].length
+          imageAt(0).length
         );
       } catch (error) {
         if (repetition === 0) {
+          assert(consoleBefore);
           const managerConsoleClick = managerConsole.snapshotSince(consoleBefore);
           result.firstCurrentDownload = {
             fixture: await inspectFirstCurrentDownload(page).catch((captureError) => ({
@@ -2176,7 +2559,7 @@ async function runFixture(
                 managerId,
                 downloads,
                 savedSingleName,
-                images[0].length
+                imageAt(0).length
               )
             ),
           };
@@ -2187,8 +2570,8 @@ async function runFixture(
         () => loopback.findSince(singleTransportStart, 'normal', 0, 'served'),
         'first media HTTPS loopback response'
       );
-      assert.equal(singleTransport.sha256, sha256(images[0]));
-      assert(single.bytes.equals(images[0]), 'Single saved bytes differ');
+      assert.equal(singleTransport.sha256, sha256(imageAt(0)));
+      assert(single.bytes.equals(imageAt(0)), 'Single saved bytes differ');
       result.downloads.push({ kind: 'single', repetition, ...single, bytes: single.bytes.length });
       await waitFor(
         async () => ((await current.isEnabled()) ? true : undefined),
@@ -2216,17 +2599,19 @@ async function runFixture(
             () => loopback.findSince(zipTransportStart, 'normal', index, 'served'),
             `first ZIP media ${index} HTTPS loopback response`
           );
-          assert.equal(transport.sha256, sha256(images[index]));
+          assert.equal(transport.sha256, sha256(imageAt(index)));
           firstResponses.push({ ...transport });
         }
         result.transportReceipts.normalZip = { firstResponses };
       } else {
+        const normalZip = result.transportReceipts.normalZip;
+        assert(normalZip);
         assert.equal(
-          result.transportReceipts.normalZip.firstResponses.length,
+          normalZip.firstResponses.length,
           3,
           'Repeated ZIP has no verified first ZIP transport provenance'
         );
-        result.transportReceipts.normalZip.repeated = {
+        normalZip.repeated = {
           source: 'same-page-first-zip-verified-media-cache-or-refetch',
           additionalTransferResponses: loopback
             .snapshot()
@@ -2314,7 +2699,7 @@ async function runFixture(
         () => loopback.findSince(partialTransportStart, 'partial', index, 'served'),
         `partial ZIP media ${index} HTTPS loopback response`
       );
-      assert.equal(transport.sha256, sha256(images[index]));
+      assert.equal(transport.sha256, sha256(imageAt(index)));
     }
     result.transportReceipts.partialZip = { ...partialFailedTransport };
     result.cases.partialZip = 'passed';
@@ -2379,7 +2764,7 @@ async function runFixture(
       managerId,
       downloads,
       recoveryName,
-      images[0].length
+      imageAt(0).length
     );
     assert.equal(
       recoveryHistoryBefore.status,
@@ -2398,14 +2783,14 @@ async function runFixture(
       filename(0),
       recoveryName,
       downloads,
-      images[0].length
+      imageAt(0).length
     );
-    assert(recovered.bytes.equals(images[0]), 'Reload recovery saved bytes differ');
+    assert(recovered.bytes.equals(imageAt(0)), 'Reload recovery saved bytes differ');
     const recoveredTransport = await waitFor(
       () => loopback.findSince(recoveryTransportStart, 'normal', 0, 'served'),
       'reload recovery HTTPS loopback response'
     );
-    assert.equal(recoveredTransport.sha256, sha256(images[0]));
+    assert.equal(recoveredTransport.sha256, sha256(imageAt(0)));
     result.downloads.push({
       kind: 'single-after-reload',
       ...recovered,
@@ -2476,7 +2861,7 @@ async function runFixture(
   }
 }
 
-export async function requireInstalledManagerRow(page, output, phase) {
+export async function requireInstalledManagerRow(page: Page, output: string, phase: string) {
   const rows = page.locator('tr.scripttr:visible').filter({
     has: page.locator(MANAGER_SCRIPT_NAME_SELECTOR).getByText(SCRIPT_NAME, { exact: true }),
   });
@@ -2501,18 +2886,18 @@ export async function requireInstalledManagerRow(page, output, phase) {
   return rows.first();
 }
 
-export function managerRowShowsVersion(rowText, version) {
+export function managerRowShowsVersion(rowText: string, version: string) {
   return rowText.split(/\s+/u).includes(version);
 }
 
 async function observeInstalledManagerSource(
-  page,
-  managerId,
-  labels,
-  version,
-  expectedSha256,
-  output,
-  phase
+  page: Page,
+  managerId: string,
+  labels: ManagerUiLabels,
+  version: string,
+  expectedSha256: string,
+  output: string,
+  phase: string
 ) {
   const optionsUrl = `chrome-extension://${managerId}/options.html`;
   await page.goto(optionsUrl);
@@ -2533,8 +2918,20 @@ async function observeInstalledManagerSource(
   return { ...readback, rowText: rowText.slice(0, 200) };
 }
 
-async function runUserscriptUpgrade({ context, managerId, root, output, input }) {
-  const receipt = {
+async function runUserscriptUpgrade({
+  context,
+  managerId,
+  root,
+  output,
+  input,
+}: {
+  context: BrowserContext;
+  managerId: string;
+  root: string;
+  output: string;
+  input: NonNullable<Awaited<ReturnType<typeof readUpgradeInput>>>;
+}) {
+  const receipt: UserscriptUpgradeReceipt = {
     status: 'failed',
     previousVersion: input.previousVersion,
     candidateVersion: input.candidateVersion,
@@ -2542,7 +2939,10 @@ async function runUserscriptUpgrade({ context, managerId, root, output, input })
     candidateSourceSha256: input.candidateUserSha256,
     managerId,
   };
-  const observeUpgradeVolume = (phase, options) =>
+  const observeUpgradeVolume = (
+    phase: string,
+    options: Parameters<typeof observeGalleryVolume>[1]
+  ) =>
     observeGalleryVolume(context, {
       ...options,
       galleryFixture: 'direct',
@@ -2571,7 +2971,7 @@ async function runUserscriptUpgrade({ context, managerId, root, output, input })
                 attempts++;
                 receipt.volumePersistenceReadbacks ??= {};
                 receipt.volumePersistenceReadbacks[phase] = { expected, observed, attempts };
-                if (Math.abs(observed - expected) < 0.011) {
+                if (observed !== null && Math.abs(observed - expected) < 0.011) {
                   return;
                 }
               } while (Date.now() < deadline);
@@ -2593,14 +2993,16 @@ async function runUserscriptUpgrade({ context, managerId, root, output, input })
   const displayImages = await createImageFixtures(context, 0.25);
   const routes = await installFixtureRoutes(context, root, images, displayImages);
   const options = await context.newPage();
-  let primaryError;
-  let cleanupFailure;
+  let primaryError: unknown;
+  let caughtPrimaryError = false;
+  let cleanupFailure: unknown;
+  let caughtCleanupFailure = false;
   try {
     const inspectGallery = async (
-      expected,
+      expected: boolean,
       restore = false,
       afterUpdate = false,
-      screenshotPhase = null
+      screenshotPhase: string | null = null
     ) => {
       const page = await context.newPage();
       try {
@@ -2765,8 +3167,9 @@ async function runUserscriptUpgrade({ context, managerId, root, output, input })
       output,
       'before-upgrade'
     );
-    receipt.updateConfirmationEvents = [];
-    const openUpdateConfirmation = async (phase) => {
+    const updateConfirmationEvents: UpgradeConfirmationEvent[] = [];
+    receipt.updateConfirmationEvents = updateConfirmationEvents;
+    const openUpdateConfirmation = async (phase: string) => {
       await options.goto(`chrome-extension://${managerId}/options.html`);
       await options.getByText(labels.utilities, { exact: true }).click();
       const confirmationPromise = context.waitForEvent('page');
@@ -2794,7 +3197,7 @@ async function runUserscriptUpgrade({ context, managerId, root, output, input })
         await confirmation.screenshot({
           path: join(output, `userscript-update-confirmation-${phase}.png`),
         });
-        receipt.updateConfirmationEvents.push({
+        updateConfirmationEvents.push({
           phase,
           event: 'observed',
           url: confirmation.url(),
@@ -2811,7 +3214,7 @@ async function runUserscriptUpgrade({ context, managerId, root, output, input })
     const deferred = await openUpdateConfirmation('deferred');
     await deferred.confirmation.close();
     assert(deferred.confirmation.isClosed(), 'Manager update confirmation did not close');
-    receipt.updateConfirmationEvents.push({ phase: 'deferred', event: 'deferred' });
+    updateConfirmationEvents.push({ phase: 'deferred', event: 'deferred' });
     receipt.afterDeferralReadback = await observeInstalledManagerSource(
       options,
       managerId,
@@ -2831,7 +3234,7 @@ async function runUserscriptUpgrade({ context, managerId, root, output, input })
       const closed = approved.confirmation.waitForEvent('close');
       await approved.updateAction.click();
       await closed;
-      receipt.updateConfirmationEvents.push({ phase: 'approved', event: 'approved' });
+      updateConfirmationEvents.push({ phase: 'approved', event: 'approved' });
     } finally {
       await approved.confirmation.close().catch(() => {});
     }
@@ -2892,6 +3295,7 @@ async function runUserscriptUpgrade({ context, managerId, root, output, input })
     receipt.status = 'passed';
   } catch (error) {
     receipt.error = safeRouteError(error);
+    caughtPrimaryError = true;
     primaryError = error;
   } finally {
     await options.close();
@@ -2900,26 +3304,39 @@ async function runUserscriptUpgrade({ context, managerId, root, output, input })
     } catch (error) {
       receipt.status = 'failed';
       receipt.cleanupError = safeRouteError(error);
+      caughtCleanupFailure = true;
       cleanupFailure = error;
     }
     await writeFile(join(output, 'userscript-upgrade.json'), JSON.stringify(receipt, null, 2));
   }
-  if (primaryError && cleanupFailure) {
+  if (caughtPrimaryError && caughtCleanupFailure) {
     throw new AggregateError(
       [primaryError, cleanupFailure],
       'Userscript upgrade and cleanup failed'
     );
   }
-  if (primaryError) {
+  if (caughtPrimaryError) {
     throw primaryError;
   }
-  if (cleanupFailure) {
+  if (caughtCleanupFailure) {
     throw cleanupFailure;
   }
   return receipt;
 }
 
-export async function runUserscriptInstallation({ chromium, root, output, browserName, headless }) {
+export async function runUserscriptInstallation({
+  chromium,
+  root,
+  output,
+  browserName,
+  headless,
+}: {
+  chromium: BrowserType;
+  root: string;
+  output: string;
+  browserName: string;
+  headless: boolean;
+}) {
   assert.equal(browserName, 'chrome', 'HTTPS userscript fixture currently supports Chrome only');
   const upgradeInput = await readUpgradeInput(root);
   await mkdir(output, { recursive: true });
@@ -2939,7 +3356,7 @@ export async function runUserscriptInstallation({ chromium, root, output, browse
       },
     })
   );
-  const result = {
+  const result: UserscriptInstallationResult = {
     status: 'failed',
     browserName,
     installation: 'userscript',
@@ -2951,12 +3368,14 @@ export async function runUserscriptInstallation({ chromium, root, output, browse
       'small HTTPS loopback fixture; singles require native downloads.search completion and owned saved bytes; ZIPs require CDP completion and owned saved bytes; no heap/RSS or native Save As claim',
     cleanup: {},
   };
-  let context;
-  let cdp;
-  let managerId;
-  let observer;
-  let loopback;
-  let primaryError;
+  let context: BrowserContext | undefined;
+  let cdp: CDPSession | undefined;
+  let managerId: string | undefined;
+  let observer: ReturnType<typeof createBrowserDownloadObserver> | undefined;
+  let loopback: UserscriptLoopback | undefined;
+  let primaryError: unknown;
+  let caughtPrimaryError = false;
+  let cleanupError: AggregateError | undefined;
   try {
     loopback = await startUserscriptFixtureLoopback(
       join(root, 'validation/windows/userscript-fixture-certificate.ps1'),
@@ -2984,17 +3403,20 @@ export async function runUserscriptInstallation({ chromium, root, output, browse
         `--ignore-certificate-errors-spki-list=${loopback.spkiSha256}`,
       ],
     });
-    result.browserVersion = context.browser().version();
+    const browser = context.browser();
+    assert(browser);
+    result.browserVersion = browser.version();
     await enableDeveloperMode(context, browserName);
     await verifyDownloadDirectory(context, downloads);
     result.downloadDirectoryVerified = true;
-    cdp = await context.browser().newBrowserCDPSession();
+    cdp = await browser.newBrowserCDPSession();
     await cdp.send('Browser.setDownloadBehavior', { behavior: 'default', eventsEnabled: true });
     ({ id: managerId } = await cdp.send('Extensions.loadUnpacked', {
       path: join(root, 'test-tools/userscript-manager'),
     }));
-    assert.equal(typeof managerId, 'string');
-    result.manager = await installUserscript(
+    assert(typeof managerId === 'string');
+    const browserCdp = cdp;
+    const manager = await installUserscript(
       context,
       managerId,
       root,
@@ -3004,7 +3426,7 @@ export async function runUserscriptInstallation({ chromium, root, output, browse
       profile,
       (ask, id, context) =>
         inspectAndAllowNativeManagerPermission(
-          cdp,
+          browserCdp,
           root,
           output,
           profile,
@@ -3016,6 +3438,7 @@ export async function runUserscriptInstallation({ chromium, root, output, browse
       upgradeInput ? upgradeInput.previousUserscript.path : undefined,
       upgradeInput ? upgradeInput.previousVersion : null
     );
+    result.manager = manager;
     if (upgradeInput) {
       result.upgrade = await runUserscriptUpgrade({
         context,
@@ -3025,7 +3448,7 @@ export async function runUserscriptInstallation({ chromium, root, output, browse
         input: upgradeInput,
       });
     }
-    const images = await createImageFixtures(context);
+    const images: Buffer[] = await createImageFixtures(context);
     loopback.setImages(images);
     result.fixtureLimits = {
       imageBytes: images.map((image) => image.length),
@@ -3047,12 +3470,13 @@ export async function runUserscriptInstallation({ chromium, root, output, browse
       images,
       loopback,
       managerId,
-      result.manager.managerVersion,
+      manager.managerVersion,
       profile,
       result.sourceSha256
     );
     result.status = 'passed';
   } catch (error) {
+    caughtPrimaryError = true;
     primaryError = error;
     result.error = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
   } finally {
@@ -3114,17 +3538,19 @@ export async function runUserscriptInstallation({ chromium, root, output, browse
       result.cleanup.errors = errors.map(String);
     }
     await writeFile(join(output, 'installation-result.json'), JSON.stringify(result, null, 2));
-    if (primaryError && errors.length) {
-      throw new AggregateError(
+    if (caughtPrimaryError && errors.length) {
+      cleanupError = new AggregateError(
         [primaryError, ...errors],
         'Userscript installation and cleanup failed'
       );
-    }
-    if (errors.length) {
-      throw new AggregateError(errors, 'Userscript installation cleanup failed');
+    } else if (errors.length) {
+      cleanupError = new AggregateError(errors, 'Userscript installation cleanup failed');
     }
   }
-  if (primaryError) {
+  if (cleanupError) {
+    throw cleanupError;
+  }
+  if (caughtPrimaryError) {
     throw primaryError;
   }
   return result;

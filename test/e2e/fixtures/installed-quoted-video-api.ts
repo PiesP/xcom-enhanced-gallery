@@ -2,6 +2,8 @@
 // Copyright (c) 2026 PiesP
 
 // These are routed X responses, not substitutes for extension code or its API client.
+import assert from 'node:assert/strict';
+
 export const NESTED_OWNER = '7333333333333333333';
 export const RAPID_CLICK_A = '8888888888888888881';
 export const RAPID_CLICK_B = '8888888888888888882';
@@ -126,14 +128,14 @@ export const QUOTED_CASES = [
   PUBLIC_PREPLAYER_CASE,
 ];
 
-const outerNames = {
+const outerNames: Record<string, string> = {
   '8111111111111111111': 'outer_one',
   '8222222222222222222': 'outer_two',
   '8333333333333333333': 'outer_three',
   '8444444444444444444': 'outer_four',
 };
 
-function video(id, marker, index) {
+function video(id: string, marker: string, index: number) {
   return {
     type: 'video',
     id_str: `${id}${index}`,
@@ -154,7 +156,7 @@ function video(id, marker, index) {
   };
 }
 
-function photo(id, marker, index) {
+function photo(id: string, marker: string, index: number) {
   return {
     type: 'photo',
     id_str: `${id}${index}`,
@@ -164,7 +166,23 @@ function photo(id, marker, index) {
   };
 }
 
-function tweet(id, username, media, quoted) {
+type FixtureMedia = ReturnType<typeof video> | ReturnType<typeof photo>;
+type FixtureTweet = {
+  __typename: string;
+  rest_id: string;
+  core: {
+    user_results: { result: { rest_id: string; legacy: { screen_name: string; name: string } } };
+  };
+  legacy: { id_str: string; full_text: string; extended_entities: { media: FixtureMedia[] } };
+  quoted_status_result?: { result: FixtureTweet };
+};
+
+function tweet(
+  id: string,
+  username: string,
+  media: FixtureMedia[],
+  quoted?: FixtureTweet
+): FixtureTweet {
   return {
     __typename: 'Tweet',
     rest_id: id,
@@ -180,7 +198,7 @@ function tweet(id, username, media, quoted) {
   };
 }
 
-export function quotedVideoApiResponse(tweetId) {
+export function quotedVideoApiResponse(tweetId: string) {
   if (tweetId === RAPID_CLICK_A || tweetId === RAPID_CLICK_B) {
     const marker = tweetId === RAPID_CLICK_A ? 'quote-one' : 'quote-two';
     return {
@@ -225,27 +243,32 @@ export function quotedVideoApiResponse(tweetId) {
       data: { tweetResult: { result: tweet(PREPLAYER_OUTER, 'outer_preplayer', [], quote) } },
     };
   }
+  const [recognized, unmarked, linked, nestedFromOuter] = QUOTED_CASES;
+  assert(
+    recognized && unmarked && linked && nestedFromOuter,
+    'Quoted fixture cases are incomplete'
+  );
   const selected = QUOTED_CASES.find(({ outer }) => outer === tweetId);
-  if (!selected && tweetId !== QUOTED_CASES[0].owner && tweetId !== QUOTED_CASES[2].owner) {
+  if (!selected && tweetId !== recognized.owner && tweetId !== linked.owner) {
     return null;
   }
-  const quoteOne = tweet(QUOTED_CASES[0].owner, 'quote_one', [
-    photo(QUOTED_CASES[0].owner, 'QQuoteOnePhoto', 0),
-    video(QUOTED_CASES[0].owner, 'quote-one', 1),
+  const quoteOne = tweet(recognized.owner, 'quote_one', [
+    photo(recognized.owner, 'QQuoteOnePhoto', 0),
+    video(recognized.owner, 'quote-one', 1),
   ]);
-  const quoteTwo = tweet(QUOTED_CASES[1].owner, 'quote_two', [
-    photo(QUOTED_CASES[1].owner, 'QQuoteTwoPhoto', 0),
-    video(QUOTED_CASES[1].owner, 'quote-two', 1),
+  const quoteTwo = tweet(unmarked.owner, 'quote_two', [
+    photo(unmarked.owner, 'QQuoteTwoPhoto', 0),
+    video(unmarked.owner, 'quote-two', 1),
   ]);
-  const quoteFour = tweet(QUOTED_CASES[2].owner, 'quote_four', [
-    photo(QUOTED_CASES[2].owner, 'QQuoteFourPhoto', 0),
-    video(QUOTED_CASES[2].owner, 'linked-four', 1),
+  const quoteFour = tweet(linked.owner, 'quote_four', [
+    photo(linked.owner, 'QQuoteFourPhoto', 0),
+    video(linked.owner, 'linked-four', 1),
   ]);
   const nested = tweet(NESTED_OWNER, 'nested_c', [video(NESTED_OWNER, 'nested-c', 0)]);
   const quoteThree = tweet(
-    QUOTED_CASES[3].owner,
+    nestedFromOuter.owner,
     'quote_three',
-    [video(QUOTED_CASES[3].owner, 'quote-three', 0)],
+    [video(nestedFromOuter.owner, 'quote-three', 0)],
     nested
   );
   if (tweetId === quoteOne.rest_id) {
@@ -257,6 +280,7 @@ export function quotedVideoApiResponse(tweetId) {
   if (tweetId === quoteFour.rest_id) {
     return { data: { tweetResult: { result: quoteFour } } };
   }
+  assert(selected, 'Quoted fixture case is unavailable');
   const quoted =
     selected.name === 'recognized'
       ? quoteOne
@@ -271,7 +295,9 @@ export function quotedVideoApiResponse(tweetId) {
       : selected.name === 'nested-from-outer'
         ? [photo(tweetId, 'QOuterThreePhoto', 0)]
         : [video(tweetId, `outer-${selected.name}`, 0)];
+  const outerName = outerNames[tweetId];
+  assert(outerName, 'Quoted fixture outer name is unavailable');
   return {
-    data: { tweetResult: { result: tweet(tweetId, outerNames[tweetId], outerMedia, quoted) } },
+    data: { tweetResult: { result: tweet(tweetId, outerName, outerMedia, quoted) } },
   };
 }

@@ -6,31 +6,268 @@ import { Buffer } from 'node:buffer';
 import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 import { basename, isAbsolute, join, relative, resolve } from 'node:path';
+import type {
+  BrowserContext,
+  CDPSession,
+  ConsoleMessage,
+  Page,
+  Request,
+  Route,
+} from '@playwright/test';
+import type { startExtensionNativeFixtureLoopback } from './extension-native-loopback.ts';
 import {
   expectedStoredZipBytes,
   readExactDownloadFile,
   verifyStoredZip,
-} from './download-memory.mjs';
+} from './download-memory.ts';
+
+type NativeLoopback = Awaited<ReturnType<typeof startExtensionNativeFixtureLoopback>>;
+type ItemState = NonNullable<Awaited<ReturnType<typeof itemState>>>;
+type VideoRequest = {
+  index: number;
+  quality: string | undefined;
+  resourceType: string;
+  atMs: number;
+  range: string | null;
+  status: number | null;
+};
+type VideoRecords = {
+  api: { requestedId: string; method: string }[];
+  video: VideoRequest[];
+  unexpectedVideo: string[];
+  overflow: number;
+};
+type VideoObservation = {
+  fixtureUrl: string;
+  tweetId: string;
+  expectedVideoCount: number;
+  canonicalBest: string;
+  playableFallback: string;
+  requests: VideoRecords;
+  checks: string[];
+  timingsMs: Record<string, number>;
+  cleanup: {
+    routeRemoved: boolean;
+    settingsRestored: boolean;
+    viewportRestored: boolean;
+    routeError?: string;
+    settingsError?: string;
+    viewportError?: string;
+  };
+  viewport?: { width: number; height: number };
+  initial?: ItemState | null;
+  metadata?: ItemState | null;
+  beforeRecovery?: ItemState | null;
+  distantBeforeActivation?: number[];
+  recovered?: ItemState & { playbackEnd: number; hint: string };
+  keyboard?: ItemState | null;
+  download?: unknown;
+  zip?: unknown;
+  hostRestoration?: {
+    before: { scrollY: number; bodyStyle: string | null };
+    after: { scrollY: number; bodyStyle: string | null };
+  };
+  geometry?: unknown;
+  recoveryIntent?: unknown;
+  error?: string;
+};
+type StorageBefore = { exists: boolean; value: unknown };
+type NativeDownload = {
+  id: number;
+  state: string;
+  filename: string;
+  url: string;
+  finalUrl: string;
+  error?: string;
+};
+type RecoveryRequest = {
+  case: string;
+  index: number;
+  quality: string | undefined;
+  atMonotonicMs: number;
+  range: string | null;
+  fulfilledAtMonotonicMs?: number;
+};
+type RecoveryEvent = {
+  type: string;
+  trusted: boolean;
+  atPageMonotonicMs: number;
+  source: string;
+  attribute: string | null;
+  error: number | null;
+  time: number;
+  paused: boolean;
+  muted: boolean;
+  volume: number;
+  key: string | null;
+};
+type RecoveryEventState = {
+  records: RecoveryEvent[];
+  overflow: boolean;
+  listeners: [string, EventListener][];
+};
+type RecoveryProtocol = {
+  requests: Record<string, unknown>[];
+  clientSecurity: Record<string, unknown>[];
+  failures: Record<string, unknown>[];
+  issues: Record<string, unknown>[];
+  overflow: boolean;
+};
+type RecoveryCase = {
+  name: string;
+  id: string;
+  status: string;
+  best: string;
+  lower: string;
+  pageErrors: string[];
+  requestFailures: { url: string; reason: string | undefined }[];
+  consoleErrors: { text: string; location: string }[];
+  networkProtocol: RecoveryProtocol;
+  requestingDocumentTransport?: unknown;
+  permission?: PermissionState;
+  requestingFrame?: unknown;
+  documentSecurity?: unknown;
+  eventOverflow?: boolean;
+  initialMetadata?: ItemState;
+  beforePlay?: ItemState;
+  playingOriginal?: ItemState;
+  lowerRequestsBeforeTailRelease?: number;
+  corruptTailReleaseStartedAtPageMonotonicMs?: number;
+  corruptTailReleaseStartedAtMonotonicMs?: number;
+  corruptTailReleasedAtMonotonicMs?: number;
+  decodeError?: RecoveryEvent;
+  pending?: ItemState | null;
+  userPaused?: ItemState;
+  userControls?: ItemState;
+  pausedAfterMetadata?: { before: ItemState; after: ItemState; progress: number };
+  pausedAfterReentry?: { before: ItemState; after: ItemState; progress: number };
+  outsideBeforeMetadata?: ItemState;
+  reenteredBeforeMetadata?: ItemState;
+  pausedOutside?: { before: ItemState; after: ItemState; progress: number };
+  reentered?: ItemState;
+  resumed?: ItemState;
+  nativeRequests?: ReturnType<NativeLoopback['since']>;
+  expectedLifecycleAborts?: { url: string; reason: string | undefined }[];
+  replacementPlayCount?: number;
+  error?: string;
+  failureState?: ItemState | null;
+  mediaEvents?: { records: RecoveryEvent[]; overflow: boolean };
+};
+type RecoveryEvidence = {
+  status: string;
+  cases: RecoveryCase[];
+  requests: RecoveryRequest[];
+  prefixEnd: number;
+  bestPayloadSha256: string;
+  pausedObservationMs: number;
+  maxMediaEvents: number;
+  cleanup: {
+    routesRemoved: boolean;
+    pagesClosed: boolean;
+    videoHoldReleased: boolean;
+    fixturePermissionRestored: boolean;
+    permissionSessionDetached: boolean;
+    errors?: string[];
+  };
+  fixturePermission?: {
+    name: string;
+    origin: string;
+    context: string;
+    before: PermissionState;
+    modified: boolean;
+    after?: PermissionState;
+  };
+  browserVersion?: unknown;
+  error?: string;
+};
+type RecoveryActive = { id: string; name: string; url: string; lowerGate: Promise<void> };
+type GeometryDescriptor = {
+  name: string;
+  id: string;
+  selected: number;
+  direction: 'above' | 'below';
+  viewport: { width: number; height: number };
+  resize: { width: number; height: number };
+};
+type GeometryRequest = { case: string; index: number; atMonotonicMs: number; range: string | null };
+type GeometryCase = GeometryDescriptor & {
+  status: string;
+  initial?: ItemState[];
+  nearBefore?: ItemState;
+  nearAfter?: ItemState;
+  distant?: ItemState[];
+  resized?: ItemState[];
+  admittedAfterResize?: ItemState;
+  reopenedNear?: ItemState;
+  retiredRootDisconnected?: boolean;
+  error?: string;
+};
+type GeometryEvidence = {
+  status: string;
+  cases: GeometryCase[];
+  requests: GeometryRequest[];
+  admissionDeadlineMs: number;
+  distantObservationMs: number;
+  cleanup: { routesRemoved: boolean; pagesClosed: boolean; errors?: string[] };
+  error?: string;
+};
+
+declare global {
+  interface Window {
+    __xegRecoveryEventObservation?: RecoveryEventState;
+  }
+  interface Permissions {
+    query(permissionDesc: { name: 'loopback-network' }): Promise<PermissionStatus>;
+  }
+}
+declare const chrome: {
+  storage: {
+    local: {
+      get(key: string): Promise<Record<string, unknown>>;
+      set(values: Record<string, unknown>): Promise<void>;
+      remove(key: string): Promise<void>;
+    };
+  };
+  downloads: { search(query: Record<string, unknown>): Promise<NativeDownload[]> };
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function field(value: unknown, key: string): unknown {
+  return isRecord(value) ? value[key] : undefined;
+}
 
 const VIDEO_COUNT = 8;
 const MAX_REQUESTS = 64;
 const MAX_MP4_BYTES = 256 * 1024;
 const SETTINGS_KEY = 'xeg-app-settings';
+
+/** Exposed for browser-serialization regression coverage. */
+export async function readAppliedVideoGallerySettings(extensionPage: Page): Promise<unknown> {
+  const stored = await extensionPage.evaluate(async (key) => {
+    const values = await chrome.storage.local.get(key);
+    return values[key];
+  }, SETTINGS_KEY);
+  return field(stored, 'gallery');
+}
+
 const BAD_MP4 = Buffer.from('controlled invalid MP4 bytes for decode recovery');
 const POSTER_PNG = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl4bRkAAAAASUVORK5CYII=',
   'base64'
 );
 
-function videoUrl(tweetId, index, quality = 'best') {
+function videoUrl(tweetId: string, index: number, quality = 'best') {
   return `https://video.twimg.com/ext_tw_video/${tweetId}/pu/vid/320x180/video-${index}-${quality}.mp4`;
 }
 
-function posterUrl(tweetId, index) {
+function posterUrl(tweetId: string, index: number) {
   return `https://pbs.twimg.com/ext_tw_video_thumb/${tweetId}/pu/img/video-${index}.png`;
 }
 
-function fixtureHtml(tweetId, handle, count = VIDEO_COUNT) {
+function fixtureHtml(tweetId: string, handle: string, count = VIDEO_COUNT) {
   const players = Array.from(
     { length: count },
     (_, index) => `
@@ -52,7 +289,7 @@ function fixtureHtml(tweetId, handle, count = VIDEO_COUNT) {
     </article></main></body></html>`;
 }
 
-function apiResponse(tweetId, handle, count = VIDEO_COUNT) {
+function apiResponse(tweetId: string, handle: string, count = VIDEO_COUNT) {
   const media = Array.from({ length: count }, (_, index) => ({
     type: 'video',
     id_str: `${tweetId}${index}`,
@@ -92,9 +329,13 @@ function apiResponse(tweetId, handle, count = VIDEO_COUNT) {
   };
 }
 
-async function waitForValue(readValue, description, timeoutMs = 15_000) {
+async function waitForValue<T>(
+  readValue: () => Promise<T | undefined>,
+  description: string,
+  timeoutMs = 15_000
+): Promise<T> {
   const deadline = Date.now() + timeoutMs;
-  let value;
+  let value: T | undefined;
   do {
     value = await readValue();
     if (value !== undefined) {
@@ -105,7 +346,7 @@ async function waitForValue(readValue, description, timeoutMs = 15_000) {
   throw new Error(`Timed out waiting for ${description}: ${JSON.stringify(value)}`);
 }
 
-async function itemState(page, index) {
+async function itemState(page: Page, index: number) {
   return page.evaluate((itemIndex) => {
     const gallery = document.querySelector('[data-xeg-gallery-container]');
     const root = gallery?.querySelector('[data-gallery-element="items"]');
@@ -161,7 +402,7 @@ async function itemState(page, index) {
   }, index);
 }
 
-function assertBestSource(value, bestUrl) {
+function assertBestSource(value: ItemState | null | undefined, bestUrl: string) {
   assert.equal(value?.displayUrl, bestUrl, 'The canonical display source changed');
 }
 
@@ -184,6 +425,17 @@ export async function runVideoLoadingProfile({
   output,
   nativeLoopback,
   root,
+}: {
+  context: BrowserContext;
+  page: Page;
+  extensionPage: Page;
+  fixtureUrl: string;
+  tweetId: string;
+  videoPayloads: Record<string, Buffer>;
+  downloads: string;
+  output: string;
+  nativeLoopback: NativeLoopback;
+  root: string;
 }) {
   const url = new URL(fixtureUrl);
   const match = /^\/([A-Za-z0-9_]{1,15})\/status\/([1-9]\d{0,19})$/u.exec(url.pathname);
@@ -193,6 +445,7 @@ export async function runVideoLoadingProfile({
     'Fixture URL must bind the synthetic tweet ID'
   );
   const handle = match[1];
+  assert(handle);
   const validMp4 = videoPayloads['quote-one'] ?? videoPayloads.valid;
   assert(
     Buffer.isBuffer(validMp4) && validMp4.length > 0 && validMp4.length <= MAX_MP4_BYTES,
@@ -215,8 +468,8 @@ export async function runVideoLoadingProfile({
   const badSha256 = createHash('sha256').update(BAD_MP4).digest('hex');
   const bestUrl = videoUrl(tweetId, 0);
   const lowerUrl = videoUrl(tweetId, 0, 'lower');
-  const records = { api: [], video: [], unexpectedVideo: [], overflow: 0 };
-  const observation = {
+  const records: VideoRecords = { api: [], video: [], unexpectedVideo: [], overflow: 0 };
+  const observation: VideoObservation = {
     fixtureUrl,
     tweetId,
     expectedVideoCount: VIDEO_COUNT,
@@ -229,18 +482,20 @@ export async function runVideoLoadingProfile({
   };
   const viewportBefore = page.viewportSize();
   assert(viewportBefore, 'The owned page must have an explicit viewport');
-  let releaseBest;
-  const bestGate = new Promise((resolve) => {
+  let releaseBest: () => void = () => {};
+  const bestGate = new Promise<void>((resolve) => {
     releaseBest = resolve;
   });
-  let releaseLower;
-  const lowerGate = new Promise((resolve) => {
+  let releaseLower: () => void = () => {};
+  const lowerGate = new Promise<void>((resolve) => {
     releaseLower = resolve;
   });
-  let settingsBefore;
+  let settingsBefore: StorageBefore | undefined;
   let settingsChanged = false;
-  let primaryError;
-  const routeHandler = async (route) => {
+  let primaryError: unknown;
+  let caughtPrimaryError = false;
+  let cleanupError: AggregateError | undefined;
+  const routeHandler = async (route: Route) => {
     const request = route.request();
     const target = new URL(request.url());
     if (request.isNavigationRequest() && request.url() === fixtureUrl) {
@@ -252,9 +507,9 @@ export async function runVideoLoadingProfile({
       return;
     }
     if (target.hostname === 'x.com' && target.pathname.endsWith('/TweetResultByRestId')) {
-      let requestedId;
+      let requestedId: unknown;
       try {
-        requestedId = JSON.parse(target.searchParams.get('variables') ?? '{}').tweetId;
+        requestedId = field(JSON.parse(target.searchParams.get('variables') ?? '{}'), 'tweetId');
       } catch {
         requestedId = undefined;
       }
@@ -295,7 +550,7 @@ export async function runVideoLoadingProfile({
       }
       const index = Number(matched[1]);
       const quality = matched[2];
-      const record = {
+      const record: VideoRequest = {
         index,
         quality,
         resourceType: request.resourceType(),
@@ -353,11 +608,14 @@ export async function runVideoLoadingProfile({
       return { exists: Object.hasOwn(values, key), value: values[key] ?? null };
     }, SETTINGS_KEY);
     const previous = settingsBefore.value;
+    const previousSettings = isRecord(previous) ? previous : null;
     const value = {
-      ...(previous && typeof previous === 'object' && !Array.isArray(previous)
-        ? previous
-        : { version: '1' }),
-      gallery: { ...(previous?.gallery ?? {}), videoClickMode: 'allow-all', preloadCount: 20 },
+      ...(previousSettings ?? { version: '1' }),
+      gallery: {
+        ...(isRecord(previousSettings?.gallery) ? previousSettings.gallery : {}),
+        videoClickMode: 'allow-all',
+        preloadCount: 20,
+      },
       lastModified: Date.now(),
       __schemaHash: '1',
     };
@@ -368,12 +626,9 @@ export async function runVideoLoadingProfile({
       { key: SETTINGS_KEY, value }
     );
     settingsChanged = true;
-    const applied = await extensionPage.evaluate(
-      async (key) => (await chrome.storage.local.get(key))[key]?.gallery,
-      SETTINGS_KEY
-    );
-    assert.equal(applied.videoClickMode, 'allow-all');
-    assert.equal(applied.preloadCount, 20);
+    const applied = await readAppliedVideoGallerySettings(extensionPage);
+    assert.equal(field(applied, 'videoClickMode'), 'allow-all');
+    assert.equal(field(applied, 'preloadCount'), 20);
 
     await page.goto(fixtureUrl);
     const trigger = page.locator('[data-video-target="0"]');
@@ -404,6 +659,7 @@ export async function runVideoLoadingProfile({
       'active video source to attach before transport settlement'
     );
     observation.initial = await itemState(page, 0);
+    assert(observation.initial);
     observation.timingsMs.activeSourceAttached = performance.now() - openStartedAtMs;
     assert.equal(observation.initial.admitted, 'true');
     assert.equal(observation.initial.preload, 'metadata');
@@ -418,6 +674,7 @@ export async function runVideoLoadingProfile({
       'unsupported best MP4 to request the same-item lower variant'
     );
     const beforeRecovery = await itemState(page, 0);
+    assert(beforeRecovery);
     assertBestSource(beforeRecovery, bestUrl);
     assert.equal(beforeRecovery.controls, true);
     const distant = [];
@@ -465,6 +722,7 @@ export async function runVideoLoadingProfile({
       { timeout: 20_000 }
     );
     observation.metadata = await itemState(page, 0);
+    assert(observation.metadata);
     observation.timingsMs.metadataAfterLowerRelease = performance.now() - lowerReleasedAtMs;
     assert.equal(observation.metadata.controls, true);
     observation.checks.push('metadata-ready-with-native-controls');
@@ -488,6 +746,7 @@ export async function runVideoLoadingProfile({
       { timeout: 20_000 }
     );
     const recovered = await itemState(page, 0);
+    assert(recovered);
     observation.timingsMs.firstFrameAfterLowerRelease = performance.now() - lowerReleasedAtMs;
     assertBestSource(recovered, bestUrl);
     assert.equal(recovered.currentSrc, lowerUrl);
@@ -525,7 +784,7 @@ export async function runVideoLoadingProfile({
     );
     observation.recovered = {
       ...recovered,
-      playbackEnd: (await itemState(page, 0)).currentTime,
+      playbackEnd: (await itemState(page, 0))?.currentTime ?? recovered.currentTime,
       hint,
     };
     await page.screenshot({ path: join(output, 'video-recovery-gallery.png') });
@@ -545,6 +804,7 @@ export async function runVideoLoadingProfile({
       'keyboard-selected video source'
     );
     observation.keyboard = await itemState(page, 1);
+    assert(observation.keyboard);
     assert.equal(observation.keyboard.admitted, 'true');
     assert.equal(observation.keyboard.src, videoUrl(tweetId, 1));
     observation.checks.push('keyboard-selection-attaches-source');
@@ -558,6 +818,7 @@ export async function runVideoLoadingProfile({
       'returned best-source selection'
     );
     const canonical = await itemState(page, 0);
+    assert(canonical);
     assertBestSource(canonical, bestUrl);
     assert.equal(canonical.currentSrc, lowerUrl);
     assert.equal(records.overflow, 0);
@@ -731,7 +992,7 @@ export async function runVideoLoadingProfile({
       'Gallery close did not restore host scroll and inline style'
     );
     observation.checks.push('host-scroll-and-style-restored');
-    const followupErrors = [];
+    const followupErrors: unknown[] = [];
     try {
       observation.geometry = await runAdmissionGeometryCases({ context, validMp4, output });
     } catch (error) {
@@ -757,8 +1018,8 @@ export async function runVideoLoadingProfile({
         'Required video admission and recovery intent cases failed'
       );
     }
-    return observation;
   } catch (error) {
+    caughtPrimaryError = true;
     primaryError = error;
     observation.error = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
     await page.screenshot({ path: join(output, 'video-loading-failure.png') }).catch(() => {});
@@ -766,11 +1027,10 @@ export async function runVideoLoadingProfile({
       join(output, 'video-loading-failure.json'),
       JSON.stringify(observation, null, 2)
     ).catch(() => {});
-    throw error;
   } finally {
     releaseBest();
     releaseLower();
-    const cleanupFailures = [];
+    const cleanupFailures: unknown[] = [];
     try {
       await context.unroute('**/*', routeHandler);
       observation.cleanup.routeRemoved = true;
@@ -780,6 +1040,7 @@ export async function runVideoLoadingProfile({
     }
     if (settingsChanged) {
       try {
+        assert(settingsBefore);
         await extensionPage.evaluate(
           async ({ key, previous }) => {
             if (previous.exists) {
@@ -816,23 +1077,30 @@ export async function runVideoLoadingProfile({
       cleanupFailures.push(error);
       observation.cleanup.viewportError = String(error);
     }
-    if (primaryError || cleanupFailures.length) {
+    if (caughtPrimaryError || cleanupFailures.length) {
       await writeFile(
         join(output, 'video-loading-failure.json'),
         JSON.stringify(observation, null, 2)
       ).catch(() => {});
     }
     if (cleanupFailures.length) {
-      throw new AggregateError(
-        primaryError ? [primaryError, ...cleanupFailures] : cleanupFailures,
+      cleanupError = new AggregateError(
+        caughtPrimaryError ? [primaryError, ...cleanupFailures] : cleanupFailures,
         'Video loading assertion and/or task-owned cleanup failed'
       );
     }
   }
+  if (cleanupError) {
+    throw cleanupError;
+  }
+  if (caughtPrimaryError) {
+    throw primaryError;
+  }
+  return observation;
 }
 
 /** A bounded real decode failure after playback; MP4 metadata and early samples stay valid. */
-function delayedDecodeFailure(validMp4) {
+function delayedDecodeFailure(validMp4: Buffer) {
   assert.equal(
     createHash('sha256').update(validMp4).digest('hex'),
     '3b05e69ea7e64237743b75168c7c3b605ed6ffb0b8da74554ed97189a5b83916',
@@ -847,23 +1115,39 @@ function delayedDecodeFailure(validMp4) {
     183141, 185385, 187421, 189541, 191734, 193740, 195964, 197934, 200092, 202226, 204109, 206090,
   ];
   for (const offset of lateVclLengths) {
-    assert([1, 5].includes(bytes[offset + 4] & 31), 'Expected a declared VCL sample');
+    const sampleType = bytes[offset + 4];
+    assert(
+      sampleType !== undefined && [1, 5].includes(sampleType & 31),
+      'Expected a declared VCL sample'
+    );
     bytes.writeUInt32BE(0xffffffff, offset);
   }
   return { bytes, prefixEnd: 153895 };
 }
 
-async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output, nativeLoopback }) {
+async function runRecoveryIntentCases({
+  context,
+  validMp4,
+  auxiliaryMp4,
+  output,
+  nativeLoopback,
+}: {
+  context: BrowserContext;
+  validMp4: Buffer;
+  auxiliaryMp4: Buffer;
+  output: string;
+  nativeLoopback: NativeLoopback;
+}) {
   assert(
     typeof nativeLoopback.armVideoHold === 'function' &&
       typeof nativeLoopback.completeVideoHold === 'function' &&
       typeof nativeLoopback.abortVideoHold === 'function'
   );
   const damaged = delayedDecodeFailure(validMp4);
-  const cases = [];
-  const requests = [];
-  const pages = [];
-  const evidence = {
+  const cases: RecoveryCase[] = [];
+  const requests: RecoveryRequest[] = [];
+  const pages: Page[] = [];
+  const evidence: RecoveryEvidence = {
     status: 'running',
     cases,
     requests,
@@ -879,12 +1163,14 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
       permissionSessionDetached: false,
     },
   };
-  let active;
-  let primaryError;
-  let permissionSession;
-  let permissionBefore;
-  let permissionPage;
-  const handler = async (route) => {
+  let active: RecoveryActive | undefined;
+  let primaryError: unknown;
+  let caughtPrimaryError = false;
+  let cleanupError: AggregateError | undefined;
+  let permissionSession: CDPSession | undefined;
+  let permissionBefore: PermissionState | undefined;
+  let permissionPage: Page | undefined;
+  const handler = async (route: Route) => {
     if (!active) {
       return route.fallback();
     }
@@ -894,9 +1180,9 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
       return route.continue();
     }
     if (target.hostname === 'x.com' && target.pathname.endsWith('/TweetResultByRestId')) {
-      let id;
+      let id: unknown;
       try {
-        id = JSON.parse(target.searchParams.get('variables') ?? '{}').tweetId;
+        id = field(JSON.parse(target.searchParams.get('variables') ?? '{}'), 'tweetId');
       } catch {
         return route.fallback();
       }
@@ -923,7 +1209,7 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
         return route.fallback();
       }
       assert(requests.length < MAX_REQUESTS, 'Recovery-intent request observations overflowed');
-      const record = {
+      const record: RecoveryRequest = {
         case: active.name,
         index: Number(match[1]),
         quality: match[2],
@@ -961,16 +1247,21 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
     }
     return route.fallback();
   };
-  const stateWhen = (page, predicate, description, timeout = 15_000) =>
+  const stateWhen = (
+    page: Page,
+    predicate: (value: ItemState) => boolean,
+    description: string,
+    timeout = 15_000
+  ) =>
     waitForValue(
       async () => {
         const value = await itemState(page, 0);
-        return value && predicate(value) ? value : undefined;
+        return value !== null && predicate(value) ? value : undefined;
       },
       description,
       timeout
     );
-  const scrollOut = async (page) => {
+  const scrollOut = async (page: Page) => {
     await page.locator('[data-xeg-gallery-container] [data-gallery-element="items"]').hover();
     await page.mouse.wheel(0, 1500);
     return stateWhen(
@@ -979,7 +1270,7 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
       'recovering video to become outside, paused and visibility-muted'
     );
   };
-  const scrollBack = async (page) => {
+  const scrollBack = async (page: Page) => {
     await page.locator('[data-xeg-gallery-container] [data-gallery-element="items"]').hover();
     await page.mouse.wheel(0, -1500);
     return stateWhen(
@@ -989,7 +1280,7 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
       'recovering video to return inside the scrollport'
     );
   };
-  const stablePaused = async (page, expectedSource) => {
+  const stablePaused = async (page: Page, expectedSource: string) => {
     const first = await stateWhen(
       page,
       (value) => value.metadata === 'true' && value.readyState >= 1 && !value.seeking,
@@ -997,6 +1288,7 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
     );
     await page.waitForTimeout(evidence.pausedObservationMs);
     const after = await itemState(page, 0);
+    assert(after);
     for (const state of [first, after]) {
       assert.equal(
         state.src,
@@ -1049,8 +1341,8 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
       'later-user-pause-mute-volume',
     ].entries()) {
       const id = `466600011122233377${index + 1}`;
-      let releaseLower;
-      const lowerGate = new Promise((resolve) => {
+      let releaseLower: () => void = () => {};
+      const lowerGate = new Promise<void>((resolve) => {
         releaseLower = resolve;
       });
       active = { id, name, url: `https://x.com/intentrecovery/status/${id}`, lowerGate };
@@ -1060,7 +1352,7 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
       nativeLoopback.armVideoHold(new URL(videoUrl(id, 0)).pathname, damaged.prefixEnd);
       const page = await context.newPage();
       pages.push(page);
-      const observed = {
+      const observed: RecoveryCase = {
         name,
         id,
         status: 'running',
@@ -1069,18 +1361,21 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
         pageErrors: [],
         requestFailures: [],
         consoleErrors: [],
+        networkProtocol: {
+          requests: [],
+          clientSecurity: [],
+          failures: [],
+          issues: [],
+          overflow: false,
+        },
       };
       cases.push(observed);
       const protocol = await context.newCDPSession(page);
-      observed.networkProtocol = {
-        requests: [],
-        clientSecurity: [],
-        failures: [],
-        issues: [],
-        overflow: false,
-      };
-      const nativeRequestIds = new Set();
-      const boundedProtocolRecord = (records, record) => {
+      const nativeRequestIds = new Set<string>();
+      const boundedProtocolRecord = (
+        records: Record<string, unknown>[],
+        record: Record<string, unknown>
+      ) => {
         if (records.length >= MAX_REQUESTS) {
           observed.networkProtocol.overflow = true;
           return;
@@ -1123,8 +1418,9 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
           clientSecurityState: event.clientSecurityState,
         });
       });
+      const requestingDocumentUrl = active.url;
       protocol.on('Network.responseReceived', (event) => {
-        if (event.response.url !== active.url) {
+        if (event.response.url !== requestingDocumentUrl) {
           return;
         }
         observed.requestingDocumentTransport = {
@@ -1150,21 +1446,21 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
       });
       await protocol.send('Network.enable');
       await protocol.send('Audits.enable');
-      const onPageError = (error) => {
+      const onPageError = (error: Error) => {
         if (observed.pageErrors.length >= MAX_REQUESTS) {
           observed.eventOverflow = true;
           return;
         }
         observed.pageErrors.push(error.message.slice(0, 500));
       };
-      const onRequestFailed = (request) => {
+      const onRequestFailed = (request: Request) => {
         if (observed.requestFailures.length >= MAX_REQUESTS) {
           observed.eventOverflow = true;
           return;
         }
         observed.requestFailures.push({ url: request.url(), reason: request.failure()?.errorText });
       };
-      const onConsole = (message) => {
+      const onConsole = (message: ConsoleMessage) => {
         if (message.type() !== 'error') {
           return;
         }
@@ -1209,7 +1505,10 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
         }
         const video = page.locator('[data-gallery-element="item"][data-index="0"] video');
         await video.evaluate((element) => {
-          const state = { records: [], overflow: false, listeners: [] };
+          if (!(element instanceof HTMLVideoElement)) {
+            throw new Error('The recovery item is not a video');
+          }
+          const state: RecoveryEventState = { records: [], overflow: false, listeners: [] };
           for (const type of [
             'loadstart',
             'loadedmetadata',
@@ -1221,7 +1520,7 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
             'volumechange',
             'keydown',
           ]) {
-            const listener = (event) => {
+            const listener = (event: Event) => {
               if (state.records.length >= 64) {
                 state.overflow = true;
                 return;
@@ -1255,17 +1554,21 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
           'initial metadata before the trusted playback control'
         );
         await video.focus();
-        if ((await itemState(page, 0)).muted) {
+        const beforeMute = await itemState(page, 0);
+        assert(beforeMute);
+        if (beforeMute.muted) {
           await page.keyboard.press('m');
         }
-        observed.beforePlay = await itemState(page, 0);
+        const beforePlay = await itemState(page, 0);
+        assert(beforePlay);
+        observed.beforePlay = beforePlay;
         assert.equal(
-          observed.beforePlay.src,
+          beforePlay.src,
           observed.best,
           'The trusted initial play action must target the preferred source'
         );
         assert.equal(
-          observed.beforePlay.muted,
+          beforePlay.muted,
           false,
           'Ordinary mute control did not unmute the visible video'
         );
@@ -1278,7 +1581,7 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
             value.videoWidth === 320 &&
             value.videoHeight === 180 &&
             !value.paused &&
-            value.currentTime > observed.beforePlay.currentTime + 0.15,
+            value.currentTime > beforePlay.currentTime + 0.15,
           'actual trusted playback progression before corruption'
         );
         assert.equal(
@@ -1299,19 +1602,25 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
           0,
           'Recovery must not begin before the corrupt tail is released'
         );
-        const beforeTailRelease = await page.evaluate(() => ({
-          atPageMonotonicMs: performance.now(),
-          errors: window.__xegRecoveryEventObservation.records.filter(
-            (event) => event.type === 'error'
-          ),
-        }));
+        const beforeTailRelease = await page.evaluate(() => {
+          const state = window.__xegRecoveryEventObservation;
+          if (!state) {
+            throw new Error('Missing recovery event observation');
+          }
+          return {
+            atPageMonotonicMs: performance.now(),
+            errors: state.records.filter((event) => event.type === 'error'),
+          };
+        });
         assert.deepEqual(
           beforeTailRelease.errors,
           [],
           'Initial playback must not have a native error before the corrupt tail release'
         );
-        observed.corruptTailReleaseStartedAtPageMonotonicMs = beforeTailRelease.atPageMonotonicMs;
-        observed.corruptTailReleaseStartedAtMonotonicMs = performance.now();
+        const pageReleaseStartedAt = beforeTailRelease.atPageMonotonicMs;
+        observed.corruptTailReleaseStartedAtPageMonotonicMs = pageReleaseStartedAt;
+        const releaseStartedAt = performance.now();
+        observed.corruptTailReleaseStartedAtMonotonicMs = releaseStartedAt;
         nativeLoopback.completeVideoHold();
         observed.corruptTailReleasedAtMonotonicMs = performance.now();
         await waitForValue(
@@ -1321,26 +1630,32 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
                 record.case === name &&
                 record.index === 0 &&
                 record.quality === 'lower' &&
-                record.atMonotonicMs >= observed.corruptTailReleaseStartedAtMonotonicMs
+                record.atMonotonicMs >= releaseStartedAt
             )
               ? true
               : undefined,
           'native decoder error to select and request the same-item replacement'
         );
-        const eventRecords = await page.evaluate(
-          () => window.__xegRecoveryEventObservation.records
-        );
+        const eventRecords = await page.evaluate(() => {
+          const state = window.__xegRecoveryEventObservation;
+          if (!state) {
+            throw new Error('Missing recovery event observation');
+          }
+          return state.records;
+        });
         // Match outside the page: the observer records native events without injecting them.
-        observed.decodeError = eventRecords.find(
+        const decodeError = eventRecords.find(
           (event) =>
             event.type === 'error' &&
             event.error === 3 &&
             event.source === observed.best &&
             event.trusted &&
-            event.atPageMonotonicMs >= observed.corruptTailReleaseStartedAtPageMonotonicMs
+            event.atPageMonotonicMs >= pageReleaseStartedAt
         );
-        assert(observed.decodeError, 'A real native code-3 error after playback is required');
+        assert(decodeError, 'A real native code-3 error after playback is required');
+        observed.decodeError = decodeError;
         observed.pending = await itemState(page, 0);
+        assert(observed.pending);
         assert.equal(observed.pending.src, observed.lower);
 
         if (name === 'later-user-pause-mute-volume') {
@@ -1366,7 +1681,9 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
             (value) => value.volume < volumeBefore,
             'later volume change through the supported keyboard control'
           );
-          if (!(await itemState(page, 0)).muted) {
+          const beforeUserMute = await itemState(page, 0);
+          assert(beforeUserMute);
+          if (!beforeUserMute.muted) {
             await page.keyboard.press('m');
           }
           observed.userControls = await stateWhen(
@@ -1421,11 +1738,12 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
         );
         assert.equal(observed.eventOverflow ?? false, false, 'Native page observations overflowed');
         observed.nativeRequests = nativeLoopback.since(nativeMark);
+        const activeUrl = active.url;
         assert(
           observed.nativeRequests.some(
             (record) =>
               record.host === 'x.com' &&
-              record.path === new URL(active.url).pathname &&
+              record.path === new URL(activeUrl).pathname &&
               record.result === 'served'
           ),
           'The requesting document must come from the bounded real HTTPS fixture'
@@ -1438,7 +1756,7 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
           'The bounded real HTTPS source was not served'
         );
         assert.deepEqual(observed.pageErrors, []);
-        observed.expectedLifecycleAborts = observed.requestFailures.filter(
+        const expectedLifecycleAborts = observed.requestFailures.filter(
           (record) =>
             record.reason === 'net::ERR_ABORTED' &&
             [observed.best, observed.lower].includes(record.url) &&
@@ -1449,25 +1767,28 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
                 request.quality === (record.url === observed.best ? 'best' : 'lower')
             )
         );
+        observed.expectedLifecycleAborts = expectedLifecycleAborts;
         assert.deepEqual(
-          observed.requestFailures.filter(
-            (record) => !observed.expectedLifecycleAborts.includes(record)
-          ),
+          observed.requestFailures.filter((record) => !expectedLifecycleAborts.includes(record)),
           [],
           'Recovery fixture has failures beyond the current source range and seek lifecycle'
         );
         assert.deepEqual(
           observed.consoleErrors.filter(
             (record) =>
-              !observed.expectedLifecycleAborts.some((abort) => abort.url === record.location) ||
+              !expectedLifecycleAborts.some((abort) => abort.url === record.location) ||
               !record.text.includes('net::ERR_ABORTED')
           ),
           [],
           'Recovery fixture logged an unexpected console error'
         );
-        const replacementPlays = await page.evaluate(() =>
-          window.__xegRecoveryEventObservation.records.filter((event) => event.type === 'play')
-        );
+        const replacementPlays = await page.evaluate(() => {
+          const state = window.__xegRecoveryEventObservation;
+          if (!state) {
+            throw new Error('Missing recovery event observation');
+          }
+          return state.records.filter((event) => event.type === 'play');
+        });
         observed.replacementPlayCount = replacementPlays.filter(
           (event) => event.source === observed.lower
         ).length;
@@ -1531,12 +1852,11 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
       'Required native recovery intent cases failed'
     );
     evidence.status = 'passed';
-    return evidence;
   } catch (error) {
+    caughtPrimaryError = true;
     primaryError = error;
     evidence.status = 'failed';
     evidence.error = error instanceof Error ? error.message : String(error);
-    throw error;
   } finally {
     const errors = [];
     nativeLoopback.abortVideoHold();
@@ -1547,7 +1867,7 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
         evidence.cleanup.routesRemoved = true;
       })
       .catch((error) => errors.push(error));
-    if (permissionSession && permissionBefore) {
+    if (permissionSession && permissionBefore && permissionPage && evidence.fixturePermission) {
       try {
         const after = await permissionPage.evaluate(
           async () => (await navigator.permissions.query({ name: 'loopback-network' })).state
@@ -1589,21 +1909,36 @@ async function runRecoveryIntentCases({ context, validMp4, auxiliaryMp4, output,
       JSON.stringify(evidence, null, 2)
     );
     if (errors.length) {
-      throw new AggregateError(
-        primaryError ? [primaryError, ...errors] : errors,
+      cleanupError = new AggregateError(
+        caughtPrimaryError ? [primaryError, ...errors] : errors,
         'Recovery intent fixture cleanup failed'
       );
     }
   }
+  if (cleanupError) {
+    throw cleanupError;
+  }
+  if (caughtPrimaryError) {
+    throw primaryError;
+  }
+  return evidence;
 }
 
 /** Real layout/IntersectionObserver observations; no observer or application replacement. */
-async function runAdmissionGeometryCases({ context, validMp4, output }) {
+async function runAdmissionGeometryCases({
+  context,
+  validMp4,
+  output,
+}: {
+  context: BrowserContext;
+  validMp4: Buffer;
+  output: string;
+}) {
   const count = 12;
-  const cases = [];
-  const requests = [];
-  const pages = [];
-  const evidence = {
+  const cases: GeometryCase[] = [];
+  const requests: GeometryRequest[] = [];
+  const pages: Page[] = [];
+  const evidence: GeometryEvidence = {
     status: 'running',
     cases,
     requests,
@@ -1611,9 +1946,11 @@ async function runAdmissionGeometryCases({ context, validMp4, output }) {
     distantObservationMs: 800,
     cleanup: { routesRemoved: false, pagesClosed: false },
   };
-  let active;
-  let primaryError;
-  const handler = async (route) => {
+  let active: (GeometryDescriptor & { url: string }) | undefined;
+  let primaryError: unknown;
+  let caughtPrimaryError = false;
+  let cleanupError: AggregateError | undefined;
+  const handler = async (route: Route) => {
     if (!active) {
       return route.fallback();
     }
@@ -1626,9 +1963,9 @@ async function runAdmissionGeometryCases({ context, validMp4, output }) {
       });
     }
     if (target.hostname === 'x.com' && target.pathname.endsWith('/TweetResultByRestId')) {
-      let id;
+      let id: unknown;
       try {
-        id = JSON.parse(target.searchParams.get('variables') ?? '{}').tweetId;
+        id = field(JSON.parse(target.searchParams.get('variables') ?? '{}'), 'tweetId');
       } catch {
         return route.fallback();
       }
@@ -1664,15 +2001,17 @@ async function runAdmissionGeometryCases({ context, validMp4, output }) {
     }
     return route.fallback();
   };
-  const readAll = async (page) => {
-    const states = [];
+  const readAll = async (page: Page): Promise<ItemState[]> => {
+    const states: ItemState[] = [];
     for (let index = 0; index < count; index++) {
-      states.push(await itemState(page, index));
+      const state = await itemState(page, index);
+      assert(state, 'The real gallery geometry inventory is incomplete');
+      states.push(state);
     }
     assert(states.every(Boolean), 'The real gallery geometry inventory is incomplete');
     return states;
   };
-  const isNear = (state, direction) =>
+  const isNear = (state: ItemState, direction: GeometryDescriptor['direction']) =>
     state.index !== state.currentIndex &&
     state.index !== state.focusedIndex &&
     (direction === 'below'
@@ -1680,10 +2019,10 @@ async function runAdmissionGeometryCases({ context, validMp4, output }) {
         state.box.top < state.viewport.bottom + state.viewport.clientHeight - 8
       : state.box.bottom < state.viewport.top - 8 &&
         state.box.bottom > state.viewport.top - state.viewport.clientHeight + 8);
-  const isFar = (state) =>
+  const isFar = (state: ItemState) =>
     state.box.top > state.viewport.bottom + state.viewport.clientHeight + 8 ||
     state.box.bottom < state.viewport.top - state.viewport.clientHeight - 8;
-  const checkNear = async (page, target, descriptor) => {
+  const checkNear = async (page: Page, target: ItemState, descriptor: GeometryDescriptor) => {
     await waitForValue(
       async () => {
         const now = await itemState(page, target.index);
@@ -1699,6 +2038,7 @@ async function runAdmissionGeometryCases({ context, validMp4, output }) {
       evidence.admissionDeadlineMs
     );
     const now = await itemState(page, target.index);
+    assert(now);
     assert(
       isNear(now, descriptor.direction),
       'Admission must precede selection/focus/visible entry'
@@ -1708,7 +2048,7 @@ async function runAdmissionGeometryCases({ context, validMp4, output }) {
   };
   await context.route('**/*', handler);
   try {
-    for (const descriptor of [
+    const descriptors: GeometryDescriptor[] = [
       {
         name: 'below-normal-resize',
         id: '4666000111222333661',
@@ -1725,11 +2065,12 @@ async function runAdmissionGeometryCases({ context, validMp4, output }) {
         viewport: { width: 700, height: 800 },
         resize: { width: 700, height: 1000 },
       },
-    ]) {
+    ];
+    for (const descriptor of descriptors) {
       active = { ...descriptor, url: `https://x.com/admissioncheck/status/${descriptor.id}` };
       const page = await context.newPage();
       pages.push(page);
-      const observed = { ...descriptor, status: 'running' };
+      const observed: GeometryCase = { ...descriptor, status: 'running' };
       cases.push(observed);
       try {
         await page.setViewportSize(descriptor.viewport);
@@ -1771,7 +2112,9 @@ async function runAdmissionGeometryCases({ context, validMp4, output }) {
         const resized = await readAll(page);
         observed.resized = resized;
         assert(
-          resized[0].viewport.clientHeight > states[0].viewport.clientHeight,
+          resized[0] &&
+            states[0] &&
+            resized[0].viewport.clientHeight > states[0].viewport.clientHeight,
           'The actual gallery scrollport did not grow with the viewport'
         );
         const entering = resized.find(
@@ -1783,6 +2126,7 @@ async function runAdmissionGeometryCases({ context, validMp4, output }) {
         const oldRoot = await page
           .locator('[data-xeg-gallery-container] [data-gallery-element="items"]')
           .elementHandle();
+        assert(oldRoot);
         await page.keyboard.press('Escape');
         await page.locator('[data-xeg-gallery-container]').waitFor({ state: 'detached' });
         assert.equal(await oldRoot.evaluate((root) => root.isConnected), false);
@@ -1816,12 +2160,11 @@ async function runAdmissionGeometryCases({ context, validMp4, output }) {
       'Required actual-scroll-root geometry cases failed'
     );
     evidence.status = 'passed';
-    return evidence;
   } catch (error) {
+    caughtPrimaryError = true;
     primaryError = error;
     evidence.status = 'failed';
     evidence.error = error instanceof Error ? error.message : String(error);
-    throw error;
   } finally {
     const errors = [];
     await context
@@ -1848,10 +2191,17 @@ async function runAdmissionGeometryCases({ context, validMp4, output }) {
       JSON.stringify(evidence, null, 2)
     );
     if (errors.length) {
-      throw new AggregateError(
-        primaryError ? [primaryError, ...errors] : errors,
+      cleanupError = new AggregateError(
+        caughtPrimaryError ? [primaryError, ...errors] : errors,
         'Geometry fixture cleanup failed'
       );
     }
   }
+  if (cleanupError) {
+    throw cleanupError;
+  }
+  if (caughtPrimaryError) {
+    throw primaryError;
+  }
+  return evidence;
 }

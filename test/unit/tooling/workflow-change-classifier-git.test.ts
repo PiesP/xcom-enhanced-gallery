@@ -96,12 +96,12 @@ function expectOnly(outputs: Record<string, string>, names: readonly string[]): 
 
 describe('classifier Git event path extraction', () => {
   it.each([
-    'validation/windows/profile.mjs',
+    'validation/windows/profile.ts',
     '.github/actions/setup-release/resolve-runtime.mjs',
     'extension/manifest.json',
     'tooling/vite/plugins/css-inline.ts',
     'test/e2e/fixtures/installed-gallery-page.html',
-    'test/visual/gm-mocks.js',
+    'test/e2e/fixtures/mock-gallery-page.html',
     'tsconfig.future.json',
   ])('routes additions, deletions and renames of %s through quality', (path) => {
     fixture((cwd) => {

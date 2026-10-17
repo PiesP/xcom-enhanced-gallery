@@ -6,10 +6,10 @@ import { mkdtemp, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, before, test } from 'node:test';
-import { chromium } from '@playwright/test';
-import { managerRowShowsVersion, requireInstalledManagerRow } from '../userscript-install.mjs';
+import { chromium, type Browser } from '@playwright/test';
+import { managerRowShowsVersion, requireInstalledManagerRow } from '../userscript-install.ts';
 
-let browser;
+let browser: Browser | undefined;
 before(async () => {
   browser = await chromium.launch();
 });
@@ -17,7 +17,7 @@ after(async () => {
   await browser?.close();
 });
 
-const entry = (version) => `
+const entry = (version: string) => `
   <tr class="scripttr"><td>
     <span class="nameNname16">X.com Enhanced Gallery</span>
     <span class="script_version">${version}</span>
@@ -31,6 +31,7 @@ test('manager row version is an exact token, not a regular expression', () => {
 });
 
 test('manager identity selects its installed entry despite a nested matching row', async () => {
+  assert(browser, 'Browser fixture must be started');
   const page = await browser.newPage();
   try {
     await page.setContent(`<table>${entry('2.3.6')}</table>`);
@@ -46,6 +47,7 @@ test('manager identity selects its installed entry despite a nested matching row
 });
 
 test('manager identity rejects two real installed entries and preserves a screenshot', async () => {
+  assert(browser, 'Browser fixture must be started');
   const page = await browser.newPage();
   const output = await mkdtemp(join(tmpdir(), 'xeg-manager-identity-'));
   try {

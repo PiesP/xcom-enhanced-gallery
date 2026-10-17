@@ -1,20 +1,21 @@
 {
   "id": "xeg-gallery",
+  "entry": "validation/windows/profile.ts",
   "assets": [
     "dist/xcom-enhanced-gallery.user.js",
     "test/e2e/fixtures/mock-gallery-page.html",
     "test/e2e/fixtures/gm-mock.ts"
   ],
   "installation": {
-    "entry": "validation/windows/install-profile.mjs",
+    "entry": "validation/windows/install-profile.ts",
     "assets": [
       "dist/xcom-enhanced-gallery.user.js",
-      "validation/windows/userscript-install.mjs",
+      "validation/windows/userscript-install.ts",
       "validation/windows/release-upgrade",
-      "validation/windows/userscript-loopback.mjs",
-      "validation/windows/extension-native-loopback.mjs",
-      "validation/windows/media-api-reuse-profile.mjs",
-      "validation/windows/video-loading-profile.mjs",
+      "validation/windows/userscript-loopback.ts",
+      "validation/windows/extension-native-loopback.ts",
+      "validation/windows/media-api-reuse-profile.ts",
+      "validation/windows/video-loading-profile.ts",
       "validation/windows/userscript-fixture-certificate.ps1",
       "validation/windows/manager-permission-window.ps1",
       "dist-extension",
@@ -24,7 +25,7 @@
       "test/e2e/fixtures/installed-public-preplayer-page.html",
       "test/e2e/fixtures/installed-unmarked-video-page.html",
       "test/e2e/fixtures/installed-rapid-video-page.html",
-      "test/e2e/fixtures/installed-quoted-video-api.mjs",
+      "test/e2e/fixtures/installed-quoted-video-api.ts",
       "test/e2e/fixtures/installed-quote-one.mp4",
       "test/e2e/fixtures/installed-recovery-intent.mp4",
       "test/e2e/fixtures/installed-quote-two.mp4",
@@ -32,8 +33,8 @@
       "test/e2e/fixtures/installed-quote-three.mp4",
       "test/e2e/fixtures/installed-nested-c.mp4",
       "src/shared/services/download/live-byte-budget.ts",
-      "validation/windows/download-memory.mjs",
-      "validation/windows/live-page.mjs"
+      "validation/windows/download-memory.ts",
+      "validation/windows/live-page.ts"
     ],
     "build_commands": [
       ["pnpm", "build:ci"],
