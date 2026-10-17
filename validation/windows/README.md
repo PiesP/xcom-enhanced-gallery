@@ -35,6 +35,25 @@ for another, and none is a required CI lane.
    X/Twitter status URLs after the installed deterministic fixture. It remains
    observational and can finish as `unverified`.
 
+## Retained acceptance evidence
+
+The historical migration review is recorded in
+[#327](https://github.com/PiesP/xcom-enhanced-gallery/issues/327). Its private
+evidence reference is
+`piesp-windows-acceptance/20261017-migration-review/xcom-enhanced-gallery-327`.
+PiesP is the custodian; authorized reviewers obtain the index through the
+maintainer's configured local Windows-controller workspace and owner-account
+storage. Original and failed receipts remain private and are retained until
+the maintainer explicitly authorizes cleanup, without automatic expiry.
+
+The index binds source/core and controller/profile identities, artifact sizes
+and newly recomputed SHA-256 digests to the original attempts. An additive
+review records the inspected results, screenshots, comparison method and limits.
+Check scenario completion, collection, guest cleanup and host desktop teardown
+separately. An outer wrapper failure does not establish a product failure or
+prove cleanup; preserve an unknown termination cause and its required next
+observation rather than relabeling it as expected.
+
 ## Artifact-only smoke
 
 From a clean checkout, initialize the recorded submodule, install with
