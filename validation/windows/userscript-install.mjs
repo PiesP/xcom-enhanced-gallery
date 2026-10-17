@@ -11,7 +11,7 @@ import {
   expectedStoredZipBytes,
   readExactDownloadFile,
   verifyStoredZip,
-} from './download-memory.mjs';
+} from './download-memory.ts';
 import {
   createImageFixtures,
   enableDeveloperMode,
@@ -24,9 +24,9 @@ import {
   observeDefaultVideoClick,
   observeGalleryKeyboardNavigation,
   observeGalleryVolume,
-} from './release-upgrade/gallery-volume.mjs';
-import { readUpgradeInput, requireManagerEditorSource } from './release-upgrade/source.mjs';
-import { startUserscriptFixtureLoopback } from './userscript-loopback.mjs';
+} from './release-upgrade/gallery-volume.ts';
+import { readUpgradeInput, requireManagerEditorSource } from './release-upgrade/source.ts';
+import { startUserscriptFixtureLoopback } from './userscript-loopback.ts';
 
 const SCRIPT_NAME = 'X.com Enhanced Gallery';
 const MANAGER_SCRIPT_NAME_SELECTOR = 'span.nameNname16';

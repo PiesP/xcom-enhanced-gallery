@@ -2,6 +2,7 @@
 // Copyright (c) 2026 PiesP
 
 import assert from 'node:assert/strict';
+import type { BigIntStats } from 'node:fs';
 import { mkdir, mkdtemp, open, rename, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -13,9 +14,9 @@ import {
   requireManagerEditorSource,
   sha256,
   userscriptVersion,
-} from './source.mjs';
+} from './source.ts';
 
-const script = (version) =>
+const script = (version: string) =>
   [
     '// ==UserScript==',
     '// @name X.com Enhanced Gallery',
@@ -36,7 +37,7 @@ test('inventory reads the inspected file handle and rejects a replacement', asyn
     await writeFile(file, original);
     await writeFile(replacementPath, 'replacement content is different');
     const originalHandle = await open(file, 'r');
-    let inspected;
+    let inspected: BigIntStats;
     try {
       inspected = await originalHandle.stat({ bigint: true });
     } finally {
@@ -86,6 +87,7 @@ test('upgrade inputs require the public asset hash, fixed paths and candidate ve
     const inputPath = join(assets, 'input.json');
     await writeFile(inputPath, JSON.stringify(input));
     const accepted = await readUpgradeInput(root);
+    assert(accepted, 'Upgrade input must be available');
     assert.equal(accepted.candidateUserSha256, sha256(Buffer.from(script('2.3.7'))));
     const pinnedCandidate = script('2.3.7').replace(
       '/releases/latest/download/xcom-enhanced-gallery.user.js',

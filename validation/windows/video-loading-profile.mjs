@@ -10,7 +10,7 @@ import {
   expectedStoredZipBytes,
   readExactDownloadFile,
   verifyStoredZip,
-} from './download-memory.mjs';
+} from './download-memory.ts';
 
 const VIDEO_COUNT = 8;
 const MAX_REQUESTS = 64;

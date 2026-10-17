@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { createHash, createPrivateKey, X509Certificate } from 'node:crypto';
 import { createServer } from 'node:https';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import { promisify } from 'node:util';
 
 const execFileAsync = promisify(execFile);
@@ -13,15 +14,44 @@ const MAX_REQUESTS = 64;
 const MAX_IMAGE_BYTES = 64 * 1024;
 const MAX_SERVED_BYTES = 2 * 1024 * 1024;
 
+type FixtureEvent = {
+  phase: string;
+  cohort: string;
+  index: number;
+  purpose: string;
+  method: string;
+  result: string;
+  bytes: number;
+  sha256: string | null;
+};
+
+type CertificateRunner = (
+  file: string,
+  args: readonly string[],
+  options: { timeout: number; windowsHide: boolean; maxBuffer: number; encoding: 'utf8' }
+) => Promise<{ stdout: string }>;
+
+function isStringRecord(value: unknown): value is Record<string, string> {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.values(value).every((entry) => typeof entry === 'string')
+  );
+}
+
 /** Validate the public certificate and private key without exposing child output on failure. */
 export function validateFixtureCertificate(
-  value,
+  value: unknown,
   includeVideo = false,
   includeFixturePage = false
 ) {
   try {
     assert(!includeFixturePage || includeVideo, 'Fixture page certificate requires video scope');
+    assert(typeof value === 'object' && value !== null && !Array.isArray(value));
     assert.deepEqual(Object.keys(value).sort(), ['certDerBase64', 'jwk']);
+    assert('certDerBase64' in value && typeof value.certDerBase64 === 'string');
+    assert('jwk' in value && isStringRecord(value.jwk));
     assert(
       typeof value.certDerBase64 === 'string' &&
         /^[A-Za-z0-9+/]+={0,2}$/u.test(value.certDerBase64) &&
@@ -95,12 +125,12 @@ export function validateFixtureCertificate(
 }
 
 export async function generateFixtureCertificate(
-  helperPath,
-  run = execFileAsync,
+  helperPath: string,
+  run: CertificateRunner = execFileAsync,
   includeVideo = false,
   includeFixturePage = false
 ) {
-  let stdout;
+  let stdout: string;
   try {
     ({ stdout } = await run(
       'powershell.exe',
@@ -125,8 +155,11 @@ export async function generateFixtureCertificate(
 }
 
 /** The same handler can be protocol-tested with a local HTTP server; production uses HTTPS. */
-export function createUserscriptFixtureHandler(cohorts, avatarPath) {
-  const allowed = new Map();
+export function createUserscriptFixtureHandler(
+  cohorts: Record<string, string[]>,
+  avatarPath: string
+) {
+  const allowed = new Map<string, { cohort: string; index: number; purpose?: string }>();
   for (const [cohort, markers] of Object.entries(cohorts)) {
     assert(
       ['normal', 'failure', 'partial', 'held'].includes(cohort) &&
@@ -138,7 +171,7 @@ export function createUserscriptFixtureHandler(cohorts, avatarPath) {
       for (const [name, purpose] of [
         ['large', 'preview'],
         ['orig', 'transfer'],
-      ]) {
+      ] as const) {
         const path = `/media/${marker}.jpg?format=jpg&name=${name}`;
         assert(!allowed.has(path));
         allowed.set(path, { cohort, index, purpose });
@@ -148,31 +181,31 @@ export function createUserscriptFixtureHandler(cohorts, avatarPath) {
   assert.equal(allowed.size, 24);
   assert.equal(avatarPath, '/profile_images/123456789/public-avatar.jpg');
   allowed.set(avatarPath, { cohort: 'avatar', index: 0 });
-  let images;
+  let images: Buffer[] | undefined;
   let phase = 'normal';
   let heldArmed = false;
   let requestCount = 0;
   let unexpectedCount = 0;
   let overflow = false;
   let servedBytes = 0;
-  const events = [];
-  const active = new Set();
-  const reject = (response) => {
+  const events: FixtureEvent[] = [];
+  const active = new Set<ServerResponse>();
+  const reject = (response: ServerResponse) => {
     unexpectedCount += 1;
     response.writeHead(404, { 'Content-Length': '0', 'Cache-Control': 'no-store' });
     response.end();
   };
-  const handle = (request, response) => {
+  const handle = (request: IncomingMessage, response: ServerResponse) => {
     requestCount += 1;
     if (requestCount > MAX_REQUESTS) {
       overflow = true;
       response.destroy();
       return;
     }
-    const media = allowed.get(request.url);
+    const media = allowed.get(request.url ?? '');
     if (
       request.method !== 'GET' ||
-      ![HOST, `${HOST}:443`].includes(request.headers.host) ||
+      ![HOST, `${HOST}:443`].includes(request.headers.host ?? '') ||
       !media ||
       !images ||
       (media.cohort !== 'avatar' && media.cohort !== phase)
@@ -190,7 +223,7 @@ export function createUserscriptFixtureHandler(cohorts, avatarPath) {
       reject(response);
       return;
     }
-    const event = {
+    const event: FixtureEvent = {
       phase,
       cohort: media.cohort,
       index: media.index,
@@ -242,7 +275,7 @@ export function createUserscriptFixtureHandler(cohorts, avatarPath) {
   };
   return {
     handle,
-    setImages(next) {
+    setImages(next: Buffer[]) {
       assert(
         !images &&
           Array.isArray(next) &&
@@ -254,7 +287,7 @@ export function createUserscriptFixtureHandler(cohorts, avatarPath) {
       );
       images = next;
     },
-    setPhase(next) {
+    setPhase(next: string) {
       assert(['normal', 'failure', 'partial', 'held'].includes(next));
       assert.equal(active.size, 0, 'Fixture has an active transport before phase change');
       phase = next;
@@ -266,7 +299,7 @@ export function createUserscriptFixtureHandler(cohorts, avatarPath) {
       heldArmed = true;
     },
     mark: () => events.length,
-    findSince(mark, cohort, index, result) {
+    findSince(mark: number, cohort: string, index: number, result: string) {
       assert(Number.isSafeInteger(mark) && mark >= 0 && mark <= events.length);
       return events
         .slice(mark)
@@ -296,14 +329,14 @@ export function createUserscriptFixtureHandler(cohorts, avatarPath) {
 }
 
 export async function startUserscriptFixtureLoopback(
-  helperPath,
-  cohorts,
-  avatarPath,
-  run = execFileAsync
+  helperPath: string,
+  cohorts: Record<string, string[]>,
+  avatarPath: string,
+  run: CertificateRunner = execFileAsync
 ) {
   const certificate = await generateFixtureCertificate(helperPath, run);
   const fixture = createUserscriptFixtureHandler(cohorts, avatarPath);
-  let server;
+  let server: ReturnType<typeof createServer>;
   try {
     server = createServer(
       { key: certificate.keyPem, cert: certificate.certPem, maxHeaderSize: 4_096 },
@@ -323,7 +356,7 @@ export async function startUserscriptFixtureLoopback(
   });
   server.on('connection', (socket) => socket.setTimeout(20_000, () => socket.destroy()));
   try {
-    await new Promise((resolveListen, rejectListen) => {
+    await new Promise<void>((resolveListen, rejectListen) => {
       server.once('error', rejectListen);
       server.listen(0, '127.0.0.1', () => {
         server.off('error', rejectListen);
@@ -346,7 +379,7 @@ export async function startUserscriptFixtureLoopback(
       async close() {
         fixture.destroyActive();
         server.closeAllConnections();
-        await new Promise((resolveClose, rejectClose) =>
+        await new Promise<void>((resolveClose, rejectClose) =>
           server.close((error) => (error ? rejectClose(error) : resolveClose()))
         );
       },

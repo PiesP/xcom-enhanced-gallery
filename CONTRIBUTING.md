@@ -121,9 +121,9 @@ change align; tests establish that preserved behavior still works.
 
 ### Windows bundle and retained languages
 
-The Windows profile uses `profile.mjs`; `validation/windows/profile.json` declares installation `install-profile.mjs`, `live-page.mjs`, and built extension/userscript assets. The controller ships portable Windows Node and `playwright-core`, then imports raw `.mjs` with `run({ browser, root, output })`; no TypeScript transpilation/loader or duplicate generated source is declared.
+The Windows profile uses `profile.mjs`; `validation/windows/profile.json` declares installation `install-profile.mjs`, `live-page.mjs`, and built extension/userscript assets. The controller ships portable Windows Node and `playwright-core`, then imports the declared `.mjs` entries with `run({ browser, root, output })`. The pinned Node runtime directly strips erasable TypeScript in imported helpers and fixtures; no project transpilation/loader or duplicate generated source is declared.
 
-Retain these handwritten JavaScript modules with a concrete review trigger: revisit when the controller supports a source-bound TS build plus stale-output check, updates every profile asset/import, and completes focused prepared-VM smoke. `validation/windows/README.md` describes bundle inputs and targeted `node --check` commands; the Node boundary suite runs `node --check` over every `validation/windows/**/*.mjs` file, followed by the existing Windows-focused unit tests. A syntax check is not VM acceptance.
+The remaining `.mjs` profile entries and scenario modules are scheduled for direct TypeScript migration under [issue #329](https://github.com/PiesP/xcom-enhanced-gallery/issues/329). `validation/windows/README.md` describes bundle inputs and targeted `node --check` commands; the Node boundary suite checks every maintained `.mjs` and `.ts` Windows module, followed by the existing Windows-focused unit tests. A syntax check is not VM acceptance.
 
 Small workflow shell blocks remain runner bootstrap, checkout, output, and action-launch adapters; revisit them when tested Node entrypoints can preserve trusted-source and write ordering. The Git hooks remain Bash because Git invokes them before pinned Node setup.
 The external `zip`, Git, browser, and vendor installer are tools, not handwritten project languages.

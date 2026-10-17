@@ -4,26 +4,53 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { createServer } from 'node:https';
+import type { IncomingMessage, ServerResponse } from 'node:http';
+import { TLSSocket } from 'node:tls';
 import {
   NESTED_OWNER,
   QUOTED_CASES,
   RAPID_CLICK_B,
-} from '../../test/e2e/fixtures/installed-quoted-video-api.mjs';
-import { generateFixtureCertificate } from './userscript-loopback.mjs';
+} from '../../test/e2e/fixtures/installed-quoted-video-api.ts';
+import { generateFixtureCertificate } from './userscript-loopback.ts';
 
 const MAX_REQUESTS = 128;
 const MAX_BODY_BYTES = 256 * 1024;
 const MAX_SERVED_BYTES = 16 * 1024 * 1024;
 const IMAGE_PATHS = ['GkE1234ABCDEF', 'GkE5678GHIJKL.jpg', 'GkE9012MNOPQR.jpg'];
 
-function allowedVideos(payloads) {
-  const videos = new Map();
-  const add = (id, name, payloadName = name) => {
+type NativeRoute = { bytes: Buffer; host: string; path: string; contentType?: string };
+type NativeEvent = {
+  host: string;
+  path: string;
+  method: string;
+  purpose: string;
+  status: number;
+  range: { start: number; end: number } | null;
+  bytes: number;
+  sha256: string | null;
+  result: string;
+  atMs: number;
+  closedAtMs?: number;
+  finishedAtMs?: number;
+  headersQueuedAtMs?: number;
+  bodyQueuedAtMs?: number;
+  prefixBytesQueued?: number;
+  firstByteQueuedAtMs?: number | null;
+};
+type VideoHold = {
+  path: string;
+  prefixEnd: number;
+  responses: Map<ServerResponse, Buffer>;
+};
+
+function allowedVideos(payloads: Record<string, Buffer>) {
+  const videos = new Map<string, Buffer>();
+  const add = (id: string, name: string, payloadName = name) => {
     const bytes = payloads[payloadName];
     assert(Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= MAX_BODY_BYTES);
     const path = `/ext_tw_video/${id}/pu/vid/320x180/${name}.mp4`;
     if (videos.has(path)) {
-      assert(videos.get(path).equals(bytes));
+      assert(videos.get(path)?.equals(bytes));
     }
     videos.set(path, bytes);
   };
@@ -40,24 +67,24 @@ function allowedVideos(payloads) {
 
 /** Only synthetic fixture paths are served. The handler also works under HTTP unit tests. */
 export function createExtensionNativeFixtureHandler() {
-  const allowed = new Map();
+  const allowed = new Map<string, NativeRoute>();
   let requestCount = 0;
   let unexpectedCount = 0;
   let servedBytes = 0;
   let reservedBytes = 0;
   let overflow = false;
-  const events = [];
-  const active = new Set();
-  let holdPath = null;
-  let heldResponse = null;
-  let heldTail = null;
-  let videoHold = null;
-  const reject = (response, status = 404) => {
+  const events: NativeEvent[] = [];
+  const active = new Set<ServerResponse>();
+  let holdPath: string | null = null;
+  let heldResponse: ServerResponse | null = null;
+  let heldTail: Buffer | null = null;
+  let videoHold: VideoHold | null = null;
+  const reject = (response: ServerResponse, status = 404) => {
     unexpectedCount += 1;
     response.writeHead(status, { 'Content-Length': '0', 'Cache-Control': 'no-store' });
     response.end();
   };
-  const handle = (request, response) => {
+  const handle = (request: IncomingMessage, response: ServerResponse) => {
     requestCount += 1;
     if (requestCount > MAX_REQUESTS || events.length >= MAX_REQUESTS) {
       overflow = true;
@@ -65,9 +92,9 @@ export function createExtensionNativeFixtureHandler() {
       return;
     }
     const host = request.headers.host;
-    const sni = request.socket.servername;
-    const route = allowed.get(`${host?.replace(/:443$/u, '')}${request.url}`);
-    if (!['GET', 'HEAD'].includes(request.method) || !route || (sni && sni !== route.host)) {
+    const sni = request.socket instanceof TLSSocket ? request.socket.servername : undefined;
+    const route = allowed.get(`${host?.replace(/:443$/u, '')}${request.url ?? ''}`);
+    if (!['GET', 'HEAD'].includes(request.method ?? '') || !route || (sni && sni !== route.host)) {
       reject(response);
       return;
     }
@@ -101,10 +128,10 @@ export function createExtensionNativeFixtureHandler() {
     }
     reservedBytes += body.length;
     const status = range === undefined ? 200 : 206;
-    const event = {
+    const event: NativeEvent = {
       host: route.host,
       path: route.path,
-      method: request.method,
+      method: request.method ?? '',
       purpose:
         request.headers['sec-fetch-dest'] === 'document'
           ? 'document'
@@ -192,7 +219,7 @@ export function createExtensionNativeFixtureHandler() {
   };
   return {
     handle,
-    setPayloads(images, videoPayloads) {
+    setPayloads(images: Buffer[], videoPayloads: Record<string, Buffer>) {
       assert.equal(allowed.size, 0, 'Native fixture payloads already installed');
       assert(Array.isArray(images) && images.length === IMAGE_PATHS.length);
       for (const [index, path] of IMAGE_PATHS.entries()) {
@@ -208,14 +235,22 @@ export function createExtensionNativeFixtureHandler() {
         allowed.set(`video.twimg.com${path}`, { bytes, host: 'video.twimg.com', path });
       }
     },
-    setRecoveryPayloads({ tweetId, validMp4, badMp4 }) {
+    setRecoveryPayloads({
+      tweetId,
+      validMp4,
+      badMp4,
+    }: {
+      tweetId: string;
+      validMp4: Buffer;
+      badMp4: Buffer;
+    }) {
       assert(allowed.size > 0, 'Install native fixture payloads first');
       assert(typeof tweetId === 'string' && /^[1-9][0-9]{0,19}$/u.test(tweetId));
       for (const bytes of [validMp4, badMp4]) {
         assert(Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= MAX_BODY_BYTES);
       }
       const prefix = `/ext_tw_video/${tweetId}/pu/vid/320x180/`;
-      const routes = Array.from({ length: 8 }, (_, index) => [
+      const routes: Array<[string, Buffer]> = Array.from({ length: 8 }, (_, index) => [
         `${prefix}video-${index}-best.mp4`,
         index === 0 ? badMp4 : validMp4,
       ]);
@@ -227,7 +262,7 @@ export function createExtensionNativeFixtureHandler() {
         allowed.set(`video.twimg.com${path}`, { bytes, host: 'video.twimg.com', path });
       }
     },
-    setRecoveryDocument({ tweetId, html }) {
+    setRecoveryDocument({ tweetId, html }: { tweetId: string; html: string }) {
       assert(typeof tweetId === 'string' && /^[1-9][0-9]{0,19}$/u.test(tweetId));
       assert(typeof html === 'string');
       const bytes = Buffer.from(html);
@@ -241,7 +276,7 @@ export function createExtensionNativeFixtureHandler() {
         contentType: 'text/html; charset=utf-8',
       });
     },
-    armVideoHold(path, prefixEnd) {
+    armVideoHold(path: string, prefixEnd: number) {
       assert.equal(videoHold, null, 'Only one bounded video source may be held');
       const route = allowed.get(`video.twimg.com${path}`);
       assert(route && route.host === 'video.twimg.com', 'Only a declared video may be held');
@@ -249,7 +284,11 @@ export function createExtensionNativeFixtureHandler() {
         Number.isSafeInteger(prefixEnd) && prefixEnd > 0 && prefixEnd < route.bytes.length,
         'The video prefix must leave declared samples outstanding'
       );
-      videoHold = { path: `video.twimg.com${path}`, prefixEnd, responses: new Map() };
+      videoHold = {
+        path: `video.twimg.com${path}`,
+        prefixEnd,
+        responses: new Map<ServerResponse, Buffer>(),
+      };
     },
     videoHeld: () => videoHold !== null && videoHold.responses.size > 0,
     completeVideoHold() {
@@ -275,7 +314,7 @@ export function createExtensionNativeFixtureHandler() {
       pending.responses.clear();
     },
     mark: () => events.length,
-    armHold(host, path) {
+    armHold(host: string, path: string) {
       assert.equal(holdPath, null);
       assert.equal(heldResponse, null);
       assert(allowed.has(`${host}${path}?format=jpg&name=orig`));
@@ -299,7 +338,7 @@ export function createExtensionNativeFixtureHandler() {
       heldResponse = null;
       heldTail = null;
     },
-    since(mark) {
+    since(mark: number) {
       assert(Number.isSafeInteger(mark) && mark >= 0 && mark <= events.length);
       return events.slice(mark).map((event) => ({ ...event }));
     },
@@ -321,7 +360,7 @@ export function createExtensionNativeFixtureHandler() {
   };
 }
 
-export async function startExtensionNativeFixtureLoopback(helperPath) {
+export async function startExtensionNativeFixtureLoopback(helperPath: string) {
   const certificate = await generateFixtureCertificate(helperPath, undefined, true, true);
   const fixture = createExtensionNativeFixtureHandler();
   const server = createServer(
@@ -339,7 +378,7 @@ export async function startExtensionNativeFixtureLoopback(helperPath) {
   });
   server.on('connection', (socket) => socket.setTimeout(20_000, () => socket.destroy()));
   try {
-    await new Promise((resolveListen, rejectListen) => {
+    await new Promise<void>((resolveListen, rejectListen) => {
       server.once('error', rejectListen);
       server.listen(0, '127.0.0.1', () => {
         server.off('error', rejectListen);
@@ -362,7 +401,7 @@ export async function startExtensionNativeFixtureLoopback(helperPath) {
       async close() {
         fixture.destroyActive();
         server.closeAllConnections();
-        await new Promise((resolveClose, rejectClose) =>
+        await new Promise<void>((resolveClose, rejectClose) =>
           server.close((error) => (error ? rejectClose(error) : resolveClose()))
         );
       },

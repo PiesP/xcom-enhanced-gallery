@@ -4,9 +4,20 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { constants } from 'node:fs';
+import type { Stats } from 'node:fs';
 import { lstat, open, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { crc32 } from 'node:zlib';
+
+export type DownloadFileIdentity = {
+  dev: number;
+  ino: number;
+  size: number;
+  mtimeMs: number;
+  ctimeMs: number;
+};
+
+export type StoredZipEntry = { filename: string; bytes: Buffer };
 
 const LIVE_BUDGET_SOURCE = 'src/shared/services/download/live-byte-budget.ts';
 const LOCAL_SIGNATURE = 0x04034b50;
@@ -18,7 +29,7 @@ const EOCD_BYTES = 22;
 const MAX_FIXTURE_FILE_BYTES = 4 * 1024 * 1024;
 
 /** Read exactly one small owned download through a single regular-file handle. */
-export async function readExactDownloadFile(path, expectedBytes) {
+export async function readExactDownloadFile(path: string, expectedBytes: number) {
   assert(
     Number.isSafeInteger(expectedBytes) &&
       expectedBytes > 0 &&
@@ -66,15 +77,19 @@ export async function readExactDownloadFile(path, expectedBytes) {
 }
 
 /** Observe deletion of the exact verified path without deleting it by pathname. */
-export async function waitForRemovedDownloadFile(path, identity, timeoutMs = 5_000) {
+export async function waitForRemovedDownloadFile(
+  path: string,
+  identity: DownloadFileIdentity,
+  timeoutMs = 5_000
+) {
   const started = Date.now();
   const deadline = started + timeoutMs;
   do {
-    let current;
+    let current: Stats;
     try {
       current = await lstat(path);
     } catch (error) {
-      if (error?.code === 'ENOENT') {
+      if (isMissingFile(error)) {
         return { absent: true, waitMs: Date.now() - started };
       }
       throw error;
@@ -93,7 +108,11 @@ export async function waitForRemovedDownloadFile(path, identity, timeoutMs = 5_0
   throw new Error('Verified memory download file remained after native removal');
 }
 
-export async function readDownloadLiveLimit(root) {
+function isMissingFile(error: unknown): boolean {
+  return error instanceof Error && 'code' in error && error.code === 'ENOENT';
+}
+
+export async function readDownloadLiveLimit(root: string) {
   const source = await readFile(join(root, LIVE_BUDGET_SOURCE), 'utf8');
   const definition = source.match(
     /^export const DOWNLOAD_LIVE_BYTE_LIMIT = (\d+) \* (\d+) \* (\d+);$/mu
@@ -112,7 +131,7 @@ export async function readDownloadLiveLimit(root) {
   };
 }
 
-export function expectedStoredZipBytes(entries) {
+export function expectedStoredZipBytes(entries: readonly StoredZipEntry[]): number {
   assert(entries.length > 0, 'ZIP fixture requires at least one expected file');
   return (
     EOCD_BYTES +
@@ -128,7 +147,7 @@ export function expectedStoredZipBytes(entries) {
   );
 }
 
-function within(bytes, offset, size, boundary, label) {
+function within(bytes: Buffer, offset: number, size: number, boundary: number, label: string) {
   assert(
     Number.isSafeInteger(offset) &&
       Number.isSafeInteger(size) &&
@@ -141,7 +160,7 @@ function within(bytes, offset, size, boundary, label) {
 }
 
 /** Verify the stored-entry ZIP emitted by the production writer, without expanding data. */
-export function verifyStoredZip(bytes, expectedEntries) {
+export function verifyStoredZip(bytes: Buffer, expectedEntries: readonly StoredZipEntry[]) {
   assert(Buffer.isBuffer(bytes), 'ZIP input must be a Buffer');
   assert.equal(
     bytes.length,
@@ -162,7 +181,13 @@ export function verifyStoredZip(bytes, expectedEntries) {
 
   const expected = new Map(expectedEntries.map((entry) => [entry.filename, entry.bytes]));
   assert.equal(expected.size, expectedEntries.length, 'Fixture ZIP names must be unique');
-  const actual = [];
+  const actual: Array<{
+    filename: string;
+    offset: number;
+    crc32: number;
+    bytes: number;
+    sha256: string;
+  }> = [];
   let localOffset = 0;
   while (localOffset < centralOffset) {
     within(bytes, localOffset, LOCAL_HEADER_BYTES, centralOffset, 'Local header');
@@ -184,7 +209,9 @@ export function verifyStoredZip(bytes, expectedEntries) {
     assert(expected.has(filename), `Unexpected ZIP entry ${filename}`);
     assert(!actual.some((entry) => entry.filename === filename), `Duplicate ZIP entry ${filename}`);
     const data = bytes.subarray(nameOffset + nameBytes, nameOffset + nameBytes + storedBytes);
-    assert(data.equals(expected.get(filename)), `ZIP contents differ for ${filename}`);
+    const expectedBytes = expected.get(filename);
+    assert(expectedBytes, `Unexpected ZIP entry ${filename}`);
+    assert(data.equals(expectedBytes), `ZIP contents differ for ${filename}`);
     assert.equal(crc32(data) >>> 0, crc, `ZIP CRC differs for ${filename}`);
     actual.push({
       filename,

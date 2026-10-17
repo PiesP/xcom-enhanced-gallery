@@ -23,15 +23,15 @@ import {
   RAPID_CLICK_A,
   RAPID_CLICK_B,
   UNAVAILABLE_SEQUENCE,
-} from '../../test/e2e/fixtures/installed-quoted-video-api.mjs';
+} from '../../test/e2e/fixtures/installed-quoted-video-api.ts';
 import {
   expectedStoredZipBytes,
   readDownloadLiveLimit,
   readExactDownloadFile,
   verifyStoredZip,
   waitForRemovedDownloadFile,
-} from './download-memory.mjs';
-import { startExtensionNativeFixtureLoopback } from './extension-native-loopback.mjs';
+} from './download-memory.ts';
+import { startExtensionNativeFixtureLoopback } from './extension-native-loopback.ts';
 import {
   createControlledVideoSettings,
   observeLiveUrls,
@@ -46,8 +46,8 @@ import {
   observeDefaultVideoClick,
   observeGalleryKeyboardNavigation,
   observeGalleryVolume,
-} from './release-upgrade/gallery-volume.mjs';
-import { extensionInventorySha256, readUpgradeInput } from './release-upgrade/source.mjs';
+} from './release-upgrade/gallery-volume.ts';
+import { extensionInventorySha256, readUpgradeInput } from './release-upgrade/source.ts';
 import { runVideoLoadingProfile } from './video-loading-profile.mjs';
 
 const PROFILE_PREFIX = 'xeg-chrome-install-';

@@ -2,41 +2,11 @@
 // Copyright (c) 2026 PiesP
 // @vitest-environment node
 
-import type { IncomingMessage, ServerResponse } from 'node:http';
 import { createServer, request as httpRequest } from 'node:http';
-import { resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vite-plus/test';
 
-type Fixture = {
-  handle(request: IncomingMessage, response: ServerResponse): void;
-  setImages(images: Buffer[]): void;
-  setPhase(phase: string): void;
-  armHeld(): void;
-  mark(): number;
-  findSince(mark: number, cohort: string, index: number, result: string): unknown;
-  activeCount(): number;
-  snapshot(): {
-    requests: number;
-    unexpectedCount: number;
-    overflow: boolean;
-    servedBytes: number;
-    events: Array<{ cohort: string; index: number; result: string }>;
-  };
-  destroyActive(): void;
-};
-
-const loopback = (await import(
-  pathToFileURL(resolve(import.meta.dirname, '../../../validation/windows/userscript-loopback.mjs'))
-    .href
-)) as {
-  createUserscriptFixtureHandler(cohorts: Record<string, string[]>, avatarPath: string): Fixture;
-  validateFixtureCertificate(value: unknown): unknown;
-  generateFixtureCertificate(
-    path: string,
-    run: (...args: unknown[]) => Promise<unknown>
-  ): Promise<unknown>;
-};
+const loopback = await import('../../../validation/windows/userscript-loopback.ts');
+type Fixture = ReturnType<typeof loopback.createUserscriptFixtureHandler>;
 
 const cohorts = {
   normal: ['GkE1234ABCDEF', 'GkE5678GHIJKL', 'GkE9012MNOPQR'],

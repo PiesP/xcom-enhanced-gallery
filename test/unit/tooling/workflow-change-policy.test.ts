@@ -324,7 +324,7 @@ describe('workflow change policy', () => {
     'extension/manifest.firefox.json',
     'tooling/vite/plugins/css-inline.ts',
     'test/e2e/fixtures/installed-gallery-page.html',
-    'test/visual/gm-mocks.js',
+    'test/visual/gallery.html',
     'vitest.config.ts',
     'tsconfig.node-tests.json',
     'tsconfig.new-runtime.json',

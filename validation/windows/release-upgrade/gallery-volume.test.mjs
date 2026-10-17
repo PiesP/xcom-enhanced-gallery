@@ -6,7 +6,7 @@ import { mkdtemp, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { captureUpgradeSettingsFailure, observeGalleryVolume } from './gallery-volume.mjs';
+import { captureUpgradeSettingsFailure, observeGalleryVolume } from './gallery-volume.ts';
 
 test('volume persistence completes while the gallery page is still open', async () => {
   let volume = 1;

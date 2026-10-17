@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.scripts.json",
+  "compilerOptions": {
+    "lib": ["ESNext", "DOM", "DOM.Iterable"]
+  },
+  "include": ["validation/windows/**/*.ts", "test/e2e/fixtures/installed-quoted-video-api.ts"]
+}

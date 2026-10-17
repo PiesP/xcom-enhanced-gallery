@@ -188,7 +188,7 @@ outside the fixture evidence.
 
 The installed profile also serves the declared small MP4 assets and
 `installed-quoted-video-page.html` with deterministic `TweetResultByRestId`
-responses from `installed-quoted-video-api.mjs`. Its quote cases cover a marked
+responses from `installed-quoted-video-api.ts`. Its quote cases cover a marked
 branch without a permalink, an unmarked clickable branch with an outer video,
 an explicit quoted permalink, and nested quotes opened from the outer post or
 the directly quoted post. Each case opens the preview before native playback,
@@ -422,9 +422,9 @@ For release qualification, copy the checksum-verified public v2.3.6 userscript t
 `validation/windows/release-upgrade/v2.3.6.user.js` and extract the verified public
 Chrome ZIP to `validation/windows/release-upgrade/v2.3.6-extension/`. Compute the
 unpacked file inventory with `extensionInventorySha256(path)` from
-`validation/windows/release-upgrade/source.mjs`. Add the ignored
+`validation/windows/release-upgrade/source.ts`. Add the ignored
 `validation/windows/release-upgrade/input.json` with the exact paths, release URLs,
-public SHA-256 and inventory SHA-256 shown in `source.test.mjs`. The input parser
+public SHA-256 and inventory SHA-256 shown in `source.test.ts`. The input parser
 requires a production v2.3.7 userscript and extension manifest. Keep the public
 assets and input outside Git; the installation asset declaration bundles them
 only for the selected Windows run. Without `input.json`, the original fresh
