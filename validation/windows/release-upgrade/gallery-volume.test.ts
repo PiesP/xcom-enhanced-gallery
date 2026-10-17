@@ -76,8 +76,7 @@ test('direct video fixture reads the single gallery item without changing volume
     });
     assert.equal(result.before, 0.9);
     assert.equal(result.fixture, 'direct');
-    assert(calls.includes('https://x.com/quote_one/status/9111111111111111111'));
-    assert(calls.includes('close'));
+    assert.deepEqual(calls, ['https://x.com/quote_one/status/9111111111111111111', 'close']);
   } finally {
     await fixture.close();
   }
