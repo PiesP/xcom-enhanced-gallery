@@ -221,13 +221,21 @@ test('quoted source link waits for selected owner and reports persistent mismatc
     await installPanel();
     await assert.rejects(assertQuotedOriginLink(gallery, expected), (error: unknown) => {
       assert(error instanceof Error);
-      assert.match(error.message, /Toolbar source link must identify the selected post/);
-      assert(error.message.includes('https://x.com/stale/status/1'));
-      assert.match(
+      assert.equal(
         error.message,
-        /"currentIndex":"0","focusedIndex":"1","position":"2","total":"2"/
+        `Toolbar source link must identify the selected post: ${JSON.stringify({
+          expectedUrl: expected,
+          allowMediaPath: false,
+          observed: {
+            href: 'https://x.com/stale/status/1',
+            currentIndex: '0',
+            focusedIndex: '1',
+            position: '2',
+            total: '2',
+            counterFocusedIndex: '1',
+          },
+        })}`
       );
-      assert(error.message.includes(expected));
       return true;
     });
     assert.equal(await page.locator('#toolbar-tweet-panel').isHidden(), true);
