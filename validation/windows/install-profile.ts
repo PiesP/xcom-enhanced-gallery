@@ -4752,6 +4752,7 @@ export async function assertQuotedOriginLink(
   let latest: QuotedOriginLinkState | null = null;
   let observed: QuotedOriginLinkState | null = null;
   let failure: unknown;
+  let failureSeen = false;
   try {
     await link.waitFor({ state: 'visible' });
     observed = await waitForValue(async () => {
@@ -4781,6 +4782,7 @@ export async function assertQuotedOriginLink(
       'Toolbar source link must identify the selected post'
     );
   } catch (error) {
+    failureSeen = true;
     failure =
       error instanceof Error && error.message.startsWith('Timed out waiting for ')
         ? new Error(
@@ -4792,7 +4794,7 @@ export async function assertQuotedOriginLink(
   try {
     await button.click();
   } catch (error) {
-    if (failure) {
+    if (failureSeen) {
       throw new AggregateError(
         [failure, error],
         'Toolbar source link assertion and panel cleanup failed'
@@ -4800,7 +4802,7 @@ export async function assertQuotedOriginLink(
     }
     throw error;
   }
-  if (failure) {
+  if (failureSeen) {
     throw failure;
   }
   assert(observed);
