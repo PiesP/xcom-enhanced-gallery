@@ -63,10 +63,16 @@ observation rather than relabeling it as expected.
 
 [#332](https://github.com/PiesP/xcom-enhanced-gallery/issues/332) has four
 separate installed-extension and installed-userscript attempts, including the
-final attempts. An additive local reconciliation records their identities,
-hashes and selected visual review. Authorized reviewers can request this
-#332 evidence through the PiesP custodian route above; its placement in the
-private index remains to be confirmed. The final extension and userscript
+final attempts. A dated addendum in the existing private index records their
+identities, hashes and selected visual review, together with the three #335
+attempts. Authorized reviewers obtain it through the PiesP custodian route above
+using reference
+`piesp-windows-acceptance/20261017-migration-review/xcom-enhanced-gallery-327/addenda/20261018-332-335`.
+Its SHA-256 is
+`41e1a82155cde4e867f346dee500bba1f35487d3c13dd963e6a5f3c833015d92`,
+and its verified predecessor index remains unchanged at
+`2c934d554d3611af1a8c01e83e0928ca4b36655ec1e148eaaf67a43aed3a5d99`.
+The final extension and userscript
 bundle manifests have SHA-256 digests
 `56a9f0ed538b6628971c584d0d35799ff6b2c40a0accd06c5512ae2f8cbf13dd`
 and `f60d09cb4edf3572b79e2c1a1253bce8b74fff532028e9a5e4d2064967afefce`.
@@ -77,8 +83,14 @@ tree `6939f37cb9fbfe018b7f7d3225f75cbdd0c46450`. Earlier attempts retain their
 individual source attribution in the additive reconciliation. Original visual review
 fields remain pending; additive review covers selected screenshots only. The
 restoration consolidation in [#335](https://github.com/PiesP/xcom-enhanced-gallery/issues/335)
-requires its own installed-extension acceptance because those older attempts
-ran different source bytes.
+has separate installed Edge acceptance at runtime candidate
+`f7b23dc6e2bddeae7e7d61191d2fca395b79cf61`, with bundle SHA-256
+`38943ef59677939d967f297ddb62c125ed6b8e1a2c8435e13aae1ac58a94be6d`.
+The subsequent README-only candidate `8bc244de4afa924743420e46d4cfeec5cbfec062`
+and landed `7d253da05590ff7fef046e5e7a51f50c85713802` share a source tree;
+the runtime receipt retains its original tested-source attribution. The addendum
+keeps scenario, collection, guest cleanup and host teardown separate, including
+the earlier failed attempt and its unchanged raw transport fields.
 
 ## Artifact-only smoke
 
