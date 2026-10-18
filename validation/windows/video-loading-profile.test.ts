@@ -6,7 +6,7 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { chromium } from '@playwright/test';
+import { chromium, type Locator } from '@playwright/test';
 import { assertQuotedOriginLink } from './install-profile.ts';
 import { restoreStoredVideoSettings } from './live-page.ts';
 import {
@@ -219,6 +219,13 @@ test('quoted source link waits for selected owner and reports persistent mismatc
     assert.equal(await page.locator('#toolbar-tweet-panel').isHidden(), true);
 
     await installPanel();
+    await page.evaluate((url) => {
+      document.querySelector('#toolbar-tweet-panel a')?.setAttribute('href', url);
+    }, `${expected}/video/2`);
+    assert.equal(await assertQuotedOriginLink(gallery, expected, true), `${expected}/video/2`);
+    assert.equal(await page.locator('#toolbar-tweet-panel').isHidden(), true);
+
+    await installPanel();
     await assert.rejects(assertQuotedOriginLink(gallery, expected), (error: unknown) => {
       assert(error instanceof Error);
       assert.equal(
@@ -243,3 +250,53 @@ test('quoted source link waits for selected owner and reports persistent mismatc
     await browser.close();
   }
 });
+
+for (const [label, primary] of Object.entries({
+  undefined,
+  null: null,
+  false: false,
+  zero: 0,
+  empty: '',
+  error: new Error('primary observation failed'),
+})) {
+  for (const cleanupFails of [false, true]) {
+    test(`quoted source preserves ${label} failure with ${cleanupFails ? 'failed' : 'successful'} cleanup`, async () => {
+      const cleanupError = new Error('panel cleanup failed');
+      let clicks = 0;
+      const button = {
+        count: async () => 1,
+        click: async () => {
+          clicks++;
+          if (cleanupFails && clicks === 2) {
+            throw cleanupError;
+          }
+        },
+      };
+      const link = { waitFor: async () => {} };
+      const gallery = {
+        locator: (selector: string) => (selector === '#tweet-text-button' ? button : link),
+        evaluate: async () => {
+          throw primary;
+        },
+      } as unknown as Locator;
+      let rejectionSeen = false;
+      let rejection: unknown;
+      try {
+        await assertQuotedOriginLink(gallery, 'https://x.com/quote_owner/status/1');
+      } catch (error) {
+        rejectionSeen = true;
+        rejection = error;
+      }
+      assert.equal(clicks, 2, 'panel cleanup must be attempted after the primary failure');
+      assert.equal(rejectionSeen, true, 'the primary failure must reject');
+      if (cleanupFails) {
+        assert(rejection instanceof AggregateError);
+        assert.equal(rejection.errors.length, 2);
+        assert.strictEqual(rejection.errors[0], primary);
+        assert.strictEqual(rejection.errors[1], cleanupError);
+      } else {
+        assert.strictEqual(rejection, primary);
+      }
+    });
+  }
+}
