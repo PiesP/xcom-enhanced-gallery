@@ -281,7 +281,7 @@ type UnavailableStep = {
   preview?: unknown;
   clickedAt?: string;
   completedAt?: string;
-  notification?: { id: string };
+  notification?: { id: string; message: string };
   api?: ApiRecord[];
   recoveryClosedThroughUi?: boolean;
   selected?: unknown;
@@ -623,6 +623,9 @@ const MAX_AGGREGATE_DEPTH = 2;
 const MAX_AGGREGATE_ERRORS = 4;
 const MAX_ERROR_SUMMARY_LENGTH = 2000;
 const MAX_UNAVAILABLE_API_RECORDS = 8;
+const CAPACITY_TWEET_ID = '8666666666666666664';
+const CAPACITY_MESSAGE =
+  'This post exceeds the metadata size limit. Open it on X to view its media.';
 const CYCLES = [
   { close: 'escape', direction: 'ArrowLeft', expectedIndex: 0, triggerIndex: 1 },
   { close: 'button', direction: 'ArrowRight', expectedIndex: 1, triggerIndex: 0 },
@@ -5794,12 +5797,21 @@ async function runUnavailableSequence({
             const entry = Object.entries(active).find(
               ([id]) => id.startsWith('xeg-') && !known.includes(id)
             );
-            return entry ? { id: entry[0] } : undefined;
+            const details: unknown = entry?.[1];
+            const message =
+              typeof details === 'object' &&
+              details !== null &&
+              'message' in details &&
+              typeof details.message === 'string'
+                ? details.message
+                : '';
+            return entry ? { id: entry[0], message } : undefined;
           }, knownNotifications),
         `${failure.name} extraction completion`
       );
       step.completedAt = new Date().toISOString();
       step.notification = notification;
+      assert.equal(typeof notification.message, 'string');
       step.api = sequenceApiResponses.slice(requestIndex);
       assert.deepEqual(
         step.api.map(({ tweetId, status }) => [tweetId, status]),
@@ -5960,6 +5972,128 @@ async function runUnavailableSequence({
     evidence.status = 'passed';
     await page.screenshot({ path: join(output, 'quoted-unavailable-sequence-after.png') });
     return evidence;
+  });
+}
+
+async function runCapacityNotificationCase({
+  extensionPage,
+  page,
+  genericMessage,
+  settingEvidence,
+}: {
+  extensionPage: Page;
+  page: Page;
+  genericMessage: string;
+  settingEvidence: ControlledSettingEvidence;
+}) {
+  return withControlledFixtureVideoMode(extensionPage, settingEvidence, async () => {
+    assert(genericMessage.length > 0 && !genericMessage.startsWith(CAPACITY_MESSAGE));
+    const pageUrl = page.url();
+    const documentStartedAt = await page.evaluate(() => performance.timeOrigin);
+    const body = JSON.stringify({ padding: 'x'.repeat(2 * 1024 * 1024) });
+    const encodedBytes = Buffer.byteLength(body);
+    assert(encodedBytes > 2 * 1024 * 1024);
+    const requests: { method: string; encodedBytes: number; fulfilled: boolean }[] = [];
+    const routeHandler = async (route: Route) => {
+      const url = new URL(route.request().url());
+      if (url.hostname !== 'x.com' || !url.pathname.endsWith('/TweetResultByRestId')) {
+        await route.fallback();
+        return;
+      }
+      let variables: { tweetId?: string };
+      try {
+        variables = JSON.parse(url.searchParams.get('variables') ?? '{}');
+      } catch {
+        await route.fallback();
+        return;
+      }
+      if (variables?.tweetId !== CAPACITY_TWEET_ID) {
+        await route.fallback();
+        return;
+      }
+      assert(requests.length < 2, 'Capacity fixture made more than one API request');
+      const record = { method: route.request().method(), encodedBytes, fulfilled: false };
+      requests.push(record);
+      await route.fulfill({ status: 200, contentType: 'application/json', body });
+      record.fulfilled = true;
+    };
+    await page.context().route('**/TweetResultByRestId*', routeHandler);
+    try {
+      const article = page.locator('[data-sequence-step="capacity"]');
+      const trigger = article.locator('.media-shell button');
+      await trigger.scrollIntoViewIfNeeded();
+      await page.evaluate(() => window.scrollBy(0, -100));
+      await trigger.focus();
+      const preview = await article.evaluate((element) => {
+        const video = element.querySelector('video');
+        const button = element.querySelector('button');
+        const rect = button?.getBoundingClientRect();
+        const x = rect ? Math.round(rect.left + rect.width * 0.2) : -1;
+        const y = rect ? Math.round(rect.top + rect.height * 0.2) : -1;
+        return {
+          poster: video?.poster ?? null,
+          src: video?.getAttribute('src') ?? null,
+          sourceCount: video?.querySelectorAll('source').length ?? -1,
+          imageCount: element.querySelectorAll('img').length,
+          hit: document.elementFromPoint(x, y) === button,
+          x,
+          y,
+        };
+      });
+      assert.equal(
+        preview.poster,
+        `https://pbs.twimg.com/ext_tw_video_thumb/${CAPACITY_TWEET_ID}/pu/img/unavailable.jpg`
+      );
+      assert.equal(preview.src, null);
+      assert.equal(preview.sourceCount, 0);
+      assert.equal(preview.imageCount, 0);
+      assert.equal(preview.hit, true);
+      const knownNotifications = await extensionPage.evaluate(async () =>
+        Object.keys(await chrome.notifications.getAll())
+      );
+      await page.mouse.click(preview.x, preview.y);
+      const notification = await waitForValue(
+        () =>
+          extensionPage.evaluate(async (known) => {
+            const active = await chrome.notifications.getAll();
+            const entry = Object.entries(active).find(
+              ([id]) => id.startsWith('xeg-') && !known.includes(id)
+            );
+            const details: unknown = entry?.[1];
+            const message =
+              typeof details === 'object' &&
+              details !== null &&
+              'message' in details &&
+              typeof details.message === 'string'
+                ? details.message
+                : '';
+            return entry ? { id: entry[0], message } : undefined;
+          }, knownNotifications),
+        'installed capacity notification'
+      );
+      assert(
+        notification.message.startsWith(CAPACITY_MESSAGE),
+        'Installed extension did not report the metadata capacity category'
+      );
+      assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0);
+      assert.equal(page.url(), pageUrl);
+      assert.equal(await page.evaluate(() => performance.timeOrigin), documentStartedAt);
+      assert.deepEqual(requests, [{ method: 'GET', encodedBytes, fulfilled: true }]);
+      const recovery = page.locator('[data-xeg-error-boundary]');
+      if (await recovery.count()) {
+        await recovery.locator('[data-xeg-error-action="close"]').click();
+        await recovery.waitFor({ state: 'detached' });
+      }
+      return {
+        status: 'passed',
+        tweetId: CAPACITY_TWEET_ID,
+        requests,
+        notification,
+        genericMessage,
+      };
+    } finally {
+      await page.context().unroute('**/TweetResultByRestId*', routeHandler);
+    }
   });
 }
 
@@ -8585,6 +8719,7 @@ async function exerciseInstalledExtension(
   };
   const sourceQuality: SourceQualityEvidence = { status: 'pending', sources: [], requests: [] };
   let apiReuse: unknown = { status: 'pending' };
+  let capacityNotification: unknown = { status: 'pending' };
   let videoLoading: unknown = { status: 'pending' };
   let nativeRedirect: unknown = { status: 'pending' };
   const flowCleanup: FlowCleanup = {};
@@ -9057,6 +9192,20 @@ async function exerciseInstalledExtension(
     }
     const followupFailures = [];
     try {
+      const genericMessage = unavailableSequence.steps[0]?.notification?.message;
+      assert(genericMessage, 'Unavailable sequence generic notification is missing');
+      const capacitySetting = {};
+      capacityNotification = await runCapacityNotificationCase({
+        extensionPage,
+        page,
+        genericMessage,
+        settingEvidence: capacitySetting,
+      });
+    } catch (error) {
+      capacityNotification = { status: 'failed', error: safeError(error) };
+      followupFailures.push(error);
+    }
+    try {
       apiReuse = await runInstalledMediaApiReuseProfile({
         context,
         page,
@@ -9133,6 +9282,7 @@ async function exerciseInstalledExtension(
       fixtureApiResponses: fixtureRoutes.apiResponses,
       sourceQuality,
       apiReuse,
+      capacityNotification,
       videoLoading,
       sourceQualityApiResponses: fixtureRoutes.qualityApiResponses,
       sourceQualityRequests: fixtureRoutes.qualityRequests,
@@ -9215,6 +9365,7 @@ async function exerciseInstalledExtension(
             fixtureApiResponses: fixtureRoutes?.apiResponses ?? [],
             sourceQuality,
             apiReuse,
+            capacityNotification,
             videoLoading,
             sourceQualityApiResponses: fixtureRoutes?.qualityApiResponses ?? [],
             sourceQualityRequests: fixtureRoutes?.qualityRequests ?? [],

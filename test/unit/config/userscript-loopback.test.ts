@@ -40,29 +40,35 @@ function get(
   path: string,
   options: { host?: string; method?: string; destination?: string } = {}
 ) {
-  return new Promise<{ status: number; body: Buffer }>((resolveResponse, rejectResponse) => {
-    const request = httpRequest(
-      {
-        hostname: '127.0.0.1',
-        port,
-        path,
-        method: options.method ?? 'GET',
-        headers: {
-          Host: options.host ?? 'pbs.twimg.com',
-          ...(options.destination && { 'Sec-Fetch-Dest': options.destination }),
+  return new Promise<{ status: number; body: Buffer; location: string | undefined }>(
+    (resolveResponse, rejectResponse) => {
+      const request = httpRequest(
+        {
+          hostname: '127.0.0.1',
+          port,
+          path,
+          method: options.method ?? 'GET',
+          headers: {
+            Host: options.host ?? 'pbs.twimg.com',
+            ...(options.destination && { 'Sec-Fetch-Dest': options.destination }),
+          },
         },
-      },
-      (response) => {
-        const chunks: Buffer[] = [];
-        response.on('data', (chunk: Buffer) => chunks.push(chunk));
-        response.on('end', () =>
-          resolveResponse({ status: response.statusCode ?? 0, body: Buffer.concat(chunks) })
-        );
-      }
-    );
-    request.once('error', rejectResponse);
-    request.end();
-  });
+        (response) => {
+          const chunks: Buffer[] = [];
+          response.on('data', (chunk: Buffer) => chunks.push(chunk));
+          response.on('end', () =>
+            resolveResponse({
+              status: response.statusCode ?? 0,
+              body: Buffer.concat(chunks),
+              location: response.headers.location,
+            })
+          );
+        }
+      );
+      request.once('error', rejectResponse);
+      request.end();
+    }
+  );
 }
 
 async function waitFor(read: () => unknown) {
@@ -93,6 +99,25 @@ describe('userscript HTTPS loopback protocol', () => {
       const capacity = await get(port, path, { host: 'x.com' });
       expect(capacity.status).toBe(200);
       expect(capacity.body.length).toBeGreaterThan(2 * 1024 * 1024);
+      fixture.setApiMode('redirect-allowed');
+      const allowedHop = await get(port, path, { host: 'x.com' });
+      expect(allowedHop).toMatchObject({
+        status: 302,
+        location: 'https://pbs.twimg.com/xeg-metadata-allowed.json',
+      });
+      const allowedFinal = await get(port, '/xeg-metadata-allowed.json');
+      expect(allowedFinal.status).toBe(200);
+      expect(JSON.parse(allowedFinal.body.toString()).data.tweetResult.result.rest_id).toBe(
+        '1234567890123456789'
+      );
+      fixture.setApiMode('redirect-blocked');
+      const blockedHop = await get(port, path, { host: 'x.com' });
+      expect(blockedHop).toMatchObject({
+        status: 302,
+        location: 'https://x.com/xeg-metadata-blocked.json',
+      });
+      expect((await get(port, '/xeg-metadata-blocked.json', { host: 'x.com' })).status).toBe(200);
+      expect((await get(port, '/xeg-metadata-allowed.json')).status).toBe(404);
       expect(fixture.snapshot()).toMatchObject({ overflow: false, activeCount: 0 });
       fixture.setApiMode(null);
     });
@@ -102,7 +127,7 @@ describe('userscript HTTPS loopback protocol', () => {
     await withServer(async (fixture, port) => {
       fixture.setImages([Buffer.from('first'), Buffer.from('second'), Buffer.from('third')]);
       const normal = await get(port, mediaPath('normal', 0));
-      expect(normal).toEqual({ status: 200, body: Buffer.from('first') });
+      expect(normal).toEqual({ status: 200, body: Buffer.from('first'), location: undefined });
       expect((await get(port, mediaPath('normal', 0, 'large'))).status).toBe(404);
       expect((await get(port, mediaPath('normal', 0), { destination: 'image' })).status).toBe(404);
       expect(
@@ -125,6 +150,26 @@ describe('userscript HTTPS loopback protocol', () => {
         unexpectedCount: 5,
         overflow: false,
         servedBytes: 10,
+        activeCount: 0,
+      });
+    });
+  });
+
+  it('follows only the armed native media redirect to its declared final bytes', async () => {
+    await withServer(async (fixture, port) => {
+      fixture.setImages([Buffer.from('first'), Buffer.from('second'), Buffer.from('third')]);
+      fixture.armMediaRedirect();
+      const hop = await get(port, mediaPath('normal', 0));
+      expect(hop).toMatchObject({
+        status: 302,
+        location: 'https://pbs.twimg.com/media/xeg-owned-redirect-final.jpg',
+      });
+      const final = await get(port, '/media/xeg-owned-redirect-final.jpg');
+      expect(final).toEqual({ status: 200, body: Buffer.from('first'), location: undefined });
+      expect((await get(port, '/media/xeg-owned-redirect-final.jpg')).status).toBe(404);
+      expect(fixture.snapshot()).toMatchObject({
+        mediaRedirectArmed: false,
+        mediaRedirectPending: false,
         activeCount: 0,
       });
     });

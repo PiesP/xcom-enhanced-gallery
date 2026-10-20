@@ -1695,6 +1695,44 @@ describe('Windows X live page validation', () => {
     }
   });
 
+  it('records only an exact owned native redirect destination match', async () => {
+    const fixtureUrl = 'https://pbs.twimg.com/media/GkE1234ABCDEF.jpg?format=jpg&name=orig';
+    vi.stubGlobal('location', { href: 'chrome-extension://manager/options.html' });
+    vi.stubGlobal('chrome', {
+      downloads: {
+        search: vi.fn(async () => [
+          {
+            id: 17,
+            url: fixtureUrl,
+            finalUrl: 'https://pbs.twimg.com/media/xeg-owned-redirect-final.jpg',
+            filename: 'C:\\owned\\first.jpg',
+            fileSize: 5,
+            state: 'complete',
+          },
+        ]),
+      },
+    });
+    try {
+      const observation = await userscriptInstall.inspectManagerDownloadHistoryDocument({
+        managerId: 'manager',
+        fixtureUrl,
+        expectedName: 'first.jpg',
+        expectedPath: 'C:\\owned\\first.jpg',
+        expectedBytes: 5,
+      });
+      expect(observation.items).toMatchObject([{ declaredRedirectFinalUrlMatch: true }]);
+      expect(JSON.stringify(observation)).not.toContain('pbs.twimg.com');
+      expect(
+        userscriptInstall.selectCompletedManagerDownload(
+          { status: 'observed', items: [] },
+          observation
+        )
+      ).toMatchObject({ declaredRedirectFinalUrlMatch: true });
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('marks incomplete or ambiguous manager history unknown without leaking items', async () => {
     const args = {
       managerId: 'manager',

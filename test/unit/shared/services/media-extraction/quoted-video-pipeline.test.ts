@@ -145,7 +145,7 @@ describe('production quoted-video pipeline', () => {
     );
     const service = new MediaExtractionService();
     const buttons = document.querySelectorAll<HTMLButtonElement>(
-      '[data-unavailable-poster] + div button'
+      '[data-sequence-step="unavailable"] button, [data-sequence-step="tombstone"] button, [data-sequence-step="visibility"] button'
     );
     expect(buttons).toHaveLength(3);
     for (const [index, button] of Array.from(buttons).entries()) {

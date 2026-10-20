@@ -341,6 +341,11 @@ records bounded request IDs, HTTP and provider outcomes, timestamps, each step,
 settings restoration, and partial failure evidence. This is a deterministic
 routed fixture, not an observation of live X availability.
 
+A separate no-DOM-fallback preview on that document receives an HTTP 200 JSON
+body above 2 MiB. The installed extension must show its metadata resource-limit
+notification, distinct from the ordinary unavailable-post notification, without
+opening a gallery or retrying the request.
+
 After those cycles, the installed profile uses the exact installed extension
 worker and exact owned fixture tab to set real `chrome.tabs` zoom to 200%, then
 restores the prior factor and tab zoom settings in `finally`. At that zoom it
@@ -525,11 +530,23 @@ task-owned HTTPS listener on ephemeral `127.0.0.1` before launching the fresh
 profile. A one-run SPKI exception and exact `pbs.twimg.com:443` and `x.com:443`
 host mappings let the real manager and browser use only declared JPEG and
 `TweetResultByRestId` routes. The default API smoke still receives a routed 403.
-After download recovery, an explicit API mode serves one small valid JSON body
-and one response above 2 MiB through the HTTPS listener. The receipt records
-physical GM requests and selected original or fallback image quality; the
-oversized body is bounded by a separate 3 MiB fixture budget. This tests the
-installed Tampermonkey path without claiming a bound on manager-owned buffers.
+After download recovery, explicit API modes serve one small valid JSON body,
+one response above 2 MiB, and two single-hop redirects through the HTTPS
+listener. The redirect receivers return the same small healthy JSON: one ends
+on allowed `pbs.twimg.com`, the other on a disallowed non-API `x.com` path.
+The receipt records both physical GM hops and selected original or fallback
+image quality, establishing response-use admission after the manager follows
+the redirect. A separate no-DOM video preview checks the actual manager
+notification for the localized metadata resource-limit category after the
+oversized response. The oversized body is bounded by a separate 3 MiB fixture
+budget. This tests the installed Tampermonkey path without claiming a bound on
+manager-owned buffers or pre-hop credential exposure.
+One further owned single-image action arms an exact same-host media 302. The
+manager's native download history must retain the original URL and report the
+declared final URL; the existing filename, completed state, owned saved path and
+byte-equality checks still apply. The HTTPS listener records the one redirect
+and one final JPEG response. This is browser-controlled redirect observation,
+not pre-follow destination enforcement.
 The generated private key stays in process memory; no OS trust or hosts setting
 is changed. For each single image, a read-only query from the exact manager
 options page requires one new native download ID for the fixture URL, a complete
