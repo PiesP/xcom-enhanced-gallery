@@ -3319,6 +3319,7 @@ async function runFixture(
     );
     const loopbackResult = loopback.snapshot();
     assert.equal(loopbackResult.unexpectedCount, 0, 'Unexpected loopback request');
+    assert.equal(loopbackResult.upgradeDenialEnabled, false, 'Upgrade API denial remained enabled');
     assert.equal(loopbackResult.overflow, false, 'Loopback fixture exceeded bounds');
     assert.equal(loopbackResult.serverError, false, 'Loopback server reported an error');
     assert.equal(loopbackResult.activeCount, 0, 'Loopback response remains active');
@@ -3949,13 +3950,18 @@ export async function runUserscriptInstallation({
     );
     result.manager = manager;
     if (upgradeInput) {
-      result.upgrade = await runUserscriptUpgrade({
-        context,
-        managerId,
-        root,
-        output,
-        input: upgradeInput,
-      });
+      loopback.setUpgradeDenial(true);
+      try {
+        result.upgrade = await runUserscriptUpgrade({
+          context,
+          managerId,
+          root,
+          output,
+          input: upgradeInput,
+        });
+      } finally {
+        loopback.setUpgradeDenial(false);
+      }
     }
     const images: Buffer[] = await createImageFixtures(context);
     loopback.setImages(images);

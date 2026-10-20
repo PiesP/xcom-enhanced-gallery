@@ -104,6 +104,19 @@ describe('userscript HTTPS loopback protocol', () => {
     expect([...new Set(declared)].sort()).toEqual([...fixtureIds].sort());
   });
 
+  it('binds the temporary upgrade denial to its declared direct-video fixture', () => {
+    const helper = readFileSync(
+      resolve(import.meta.dirname, '../../../validation/windows/release-upgrade/gallery-volume.ts'),
+      'utf8'
+    );
+    const html = readFileSync(
+      resolve(import.meta.dirname, '../../e2e/fixtures/installed-unmarked-video-page.html'),
+      'utf8'
+    );
+    expect(helper).toContain(`/status/${loopback.UPGRADE_DIRECT_TWEET_ID}`);
+    expect(html).toContain(`/status/${loopback.UPGRADE_DIRECT_TWEET_ID}`);
+  });
+
   it('serves only the declared metadata request in an explicit bounded mode', async () => {
     await withServer(async (fixture, port) => {
       const path = `/i/api/graphql/fixture/TweetResultByRestId?variables=${encodeURIComponent(JSON.stringify({ tweetId: '1234567890123456789' }))}`;
@@ -117,6 +130,7 @@ describe('userscript HTTPS loopback protocol', () => {
         events: [{ phase: 'default', cohort: 'api', result: 'http-403', bytes: 2 }],
       });
       const publicPath = path.replace('1234567890123456789', '9876543210987654321');
+      const upgradePath = path.replace('1234567890123456789', loopback.UPGRADE_DIRECT_TWEET_ID);
       expect((await get(port, publicPath, { host: 'x.com' })).status).toBe(403);
       expect(fixture.snapshot().defaultApiCompletedByKind).toMatchObject({ primary: 1, public: 1 });
       expect(
@@ -132,9 +146,20 @@ describe('userscript HTTPS loopback protocol', () => {
       ]);
       expect(fixture.snapshot().rejectedIdShapes[0]?.sha256Prefix).toMatch(/^[a-f0-9]{12}$/u);
       expect(fixture.snapshot().rejectedIdShapeOverflow).toBe(0);
+      expect((await get(port, upgradePath, { host: 'x.com' })).status).toBe(404);
+      fixture.setUpgradeDenial(true);
+      expect((await get(port, upgradePath, { host: 'x.com' })).status).toBe(403);
+      expect(fixture.snapshot().defaultApiCompletedByKind).toMatchObject({ 'upgrade-direct': 1 });
+      fixture.setUpgradeDenial(false);
+      expect((await get(port, upgradePath, { host: 'x.com' })).status).toBe(404);
       fixture.setApiMode('healthy');
+      expect(() => fixture.setUpgradeDenial(true)).toThrow('overlaps explicit API mode');
       expect((await get(port, publicPath, { host: 'x.com' })).status).toBe(404);
-      expect(fixture.snapshot().rejectedReasons).toMatchObject({ 'graphql-active-mode-id': 1 });
+      expect((await get(port, upgradePath, { host: 'x.com' })).status).toBe(404);
+      expect(fixture.snapshot().rejectedReasons).toMatchObject({
+        'graphql-active-mode-id': 1,
+        'graphql-undeclared-id': 4,
+      });
       const healthy = await get(port, path, { host: 'x.com' });
       expect(healthy.status).toBe(200);
       expect(JSON.parse(healthy.body.toString()).data.tweetResult.result.rest_id).toBe(

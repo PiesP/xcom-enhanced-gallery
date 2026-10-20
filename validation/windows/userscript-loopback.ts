@@ -16,6 +16,7 @@ const MAX_IMAGE_BYTES = 64 * 1024;
 const MAX_SERVED_BYTES = 2 * 1024 * 1024;
 const MAX_API_SERVED_BYTES = 3 * 1024 * 1024;
 const API_TWEET_ID = '1234567890123456789';
+export const UPGRADE_DIRECT_TWEET_ID = '9111111111111111111';
 export const DECLARED_DEFAULT_TWEET_IDS = [
   { id: API_TWEET_ID, kind: 'primary' },
   { id: '7555555555555555555', kind: 'control' },
@@ -220,6 +221,7 @@ export function createUserscriptFixtureHandler(
   let servedBytes = 0;
   let apiServedBytes = 0;
   let apiMode: ApiMode | null = null;
+  let upgradeDenialEnabled = false;
   let mediaRedirectArmed = false;
   let mediaRedirectPending = false;
   const rejectedReasons: Record<string, number> = {};
@@ -337,7 +339,12 @@ export function createUserscriptFixtureHandler(
         return;
       }
       const defaultKind =
-        typeof tweetId === 'string' ? DEFAULT_TWEET_ID_KINDS.get(tweetId) : undefined;
+        typeof tweetId === 'string'
+          ? (DEFAULT_TWEET_ID_KINDS.get(tweetId) ??
+            (upgradeDenialEnabled && tweetId === UPGRADE_DIRECT_TWEET_ID
+              ? 'upgrade-direct'
+              : undefined))
+          : undefined;
       if (
         request.method !== 'GET' ||
         !defaultKind ||
@@ -592,7 +599,15 @@ export function createUserscriptFixtureHandler(
     },
     setApiMode(next: ApiMode | null) {
       assert.equal(active.size, 0, 'Fixture has an active transport before API mode change');
+      assert(!upgradeDenialEnabled, 'Upgrade API denial overlaps explicit API mode');
       apiMode = next;
+    },
+    setUpgradeDenial(next: boolean) {
+      if (next) {
+        assert.equal(apiMode, null, 'Upgrade API denial overlaps explicit API mode');
+        assert.equal(active.size, 0, 'Fixture has an active transport before upgrade mode');
+      }
+      upgradeDenialEnabled = next;
     },
     armHeld() {
       assert.equal(phase, 'held');
@@ -620,6 +635,7 @@ export function createUserscriptFixtureHandler(
       defaultApiCompletedByKind: { ...defaultApiCompletedByKind },
       rejectedIdShapes: rejectedIdShapes.map((shape) => ({ ...shape })),
       rejectedIdShapeOverflow,
+      upgradeDenialEnabled,
       overflow,
       servedBytes,
       apiServedBytes,
