@@ -52,6 +52,30 @@ export const MEDIA_COHORTS = {
   held: ['GkH1234ABCDEF', 'GkH5678GHIJKL', 'GkH9012MNOPQR'],
 };
 export const PUBLIC_AVATAR_PATH = '/profile_images/123456789/public-avatar.jpg';
+const UNAVAILABLE_PREVIEW_PATHS = new Set([
+  ...[
+    '8666666666666666661',
+    '8666666666666666662',
+    '8666666666666666663',
+    '8666666666666666664',
+    TWEET_ID,
+  ].map((id) => `/ext_tw_video_thumb/${id}/pu/img/unavailable.jpg`),
+  '/ext_tw_video_thumb/9555555555555555555/pu/img/quote-two.jpg',
+]);
+export function isUnavailablePreviewFixtureUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return (
+      url.protocol === 'https:' &&
+      url.hostname === 'pbs.twimg.com' &&
+      UNAVAILABLE_PREVIEW_PATHS.has(url.pathname) &&
+      !url.search &&
+      !url.hash
+    );
+  } catch {
+    return false;
+  }
+}
 export function isPublicAvatarFixtureUrl(value: string) {
   try {
     const url = new URL(value);
@@ -2564,10 +2588,17 @@ async function runFixture(
       await route.continue();
       return;
     }
-    if (
-      url.hostname === 'pbs.twimg.com' &&
-      url.pathname === `/ext_tw_video_thumb/${TWEET_ID}/pu/img/unavailable.jpg`
-    ) {
+    if (apiMode === 'capacity' && isUnavailablePreviewFixtureUrl(url.href)) {
+      assert.equal(
+        route.request().method(),
+        'GET',
+        'Unavailable preview used an unexpected method'
+      );
+      assert.equal(
+        route.request().resourceType(),
+        'image',
+        'Unavailable preview used an unexpected resource type'
+      );
       await route.fulfill({ status: 200, contentType: 'image/jpeg', body: imageAt(0) });
       return;
     }

@@ -192,6 +192,7 @@ const userscriptInstall = (await import(
   MEDIA_COHORTS: Record<'normal' | 'failure' | 'partial' | 'held', string[]>;
   PUBLIC_AVATAR_PATH: string;
   isPublicAvatarFixtureUrl(value: string): boolean;
+  isUnavailablePreviewFixtureUrl(value: string): boolean;
   FIXTURE_ZIP_NAME: string;
   fixtureZipEntries(images: Uint8Array[]): Array<{ filename: string; bytes: Uint8Array }>;
   probeManagerUserScripts(page: {
@@ -1625,6 +1626,41 @@ describe('Windows X live page validation', () => {
       userscriptInstall.isPublicAvatarFixtureUrl(url.replace('public-avatar', 'other-avatar'))
     ).toBe(false);
     expect(userscriptInstall.isPublicAvatarFixtureUrl(url.replace('https:', 'http:'))).toBe(false);
+  });
+
+  it('admits only the declared unavailable-page preview URLs', () => {
+    const html = readFileSync(
+      resolve(import.meta.dirname, '../../e2e/fixtures/installed-unavailable-sequence-page.html'),
+      'utf8'
+    );
+    const document = new DOMParser().parseFromString(html, 'text/html');
+    const urls = [
+      ...document.querySelectorAll<HTMLImageElement | HTMLVideoElement>('img[src], video[poster]'),
+    ].map((element) => element.getAttribute(element.tagName === 'VIDEO' ? 'poster' : 'src'));
+    expect(urls).toHaveLength(6);
+    expect(urls.every((url) => url && userscriptInstall.isUnavailablePreviewFixtureUrl(url))).toBe(
+      true
+    );
+    const first = urls[0];
+    expect(first).not.toBeNull();
+    if (!first) {
+      throw new Error('Missing unavailable preview fixture');
+    }
+    expect(userscriptInstall.isUnavailablePreviewFixtureUrl(`${first}?name=large`)).toBe(false);
+    expect(userscriptInstall.isUnavailablePreviewFixtureUrl(`${first}#fragment`)).toBe(false);
+    expect(
+      userscriptInstall.isUnavailablePreviewFixtureUrl(
+        first.replace('pbs.twimg.com', 'other.example')
+      )
+    ).toBe(false);
+    expect(userscriptInstall.isUnavailablePreviewFixtureUrl(first.replace('https:', 'http:'))).toBe(
+      false
+    );
+    expect(
+      userscriptInstall.isUnavailablePreviewFixtureUrl(
+        first.replace('unavailable.jpg', 'other.jpg')
+      )
+    ).toBe(false);
   });
 
   it('limits manager history to the exact first fixture request and redacts native fields', async () => {
