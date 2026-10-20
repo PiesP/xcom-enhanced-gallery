@@ -11,6 +11,74 @@ import type { TwitterMedia, TwitterTweet, TwitterUser } from '@shared/services/m
 import { describe, expect, it } from 'vite-plus/test';
 
 describe('twitter-response-parser (pure functions)', () => {
+  describe('media URL text normalization', () => {
+    function normalizeText(
+      text: string,
+      urls: string[],
+      source: 'original' | 'quoted' = 'original'
+    ) {
+      const tweet = normalizeLegacyTweet({
+        rest_id: '123',
+        legacy: { full_text: 'Legacy fallback' },
+        note_tweet: { note_tweet_results: { result: { text } } },
+        extended_entities: {
+          media: urls.map((url, index) => ({
+            id_str: String(index + 1),
+            type: 'photo',
+            media_url_https: `https://pbs.twimg.com/media/fixture${index}.jpg`,
+            url,
+          })),
+        },
+      } as TwitterTweet);
+      return extractMediaFromTweet(tweet, { screen_name: 'fixture' }, source);
+    }
+
+    it('removes repeated literal tokens while preserving punctuation and Unicode whitespace', () => {
+      const url = 'https://t.co/a.b?x=[1]+$';
+      const entries = normalizeText(
+        `${url}\t한글 😀\u00a0${url}\n\n\nline\t${url}\n(${url}) ${url}, prefix${url}`,
+        [url, url]
+      );
+      expect(entries).toHaveLength(2);
+      expect(entries[0]?.tweet_text).toBe(`한글 😀\u00a0\n\nline\t\n(${url}) ${url}, prefix${url}`);
+      expect(entries[1]?.tweet_text).toBe(entries[0]?.tweet_text);
+    });
+
+    it('preserves an ordinary long note and direct-quote ownership without truncation', () => {
+      const text = 'Long note 한글 😀\n'.repeat(1200);
+      const entries = normalizeText(text, ['https://t.co/absent'], 'quoted');
+      expect(entries[0]).toMatchObject({
+        tweet_text: text.trim(),
+        tweet_id: '123',
+        sourceLocation: 'quoted',
+        media_id: '1',
+      });
+    });
+
+    it('keeps legacy text and absent URL tokens unchanged apart from existing spacing rules', () => {
+      const entries = extractMediaFromTweet(
+        normalizeLegacyTweet({
+          rest_id: '123',
+          legacy: {
+            full_text: '  Legacy\t\ttext\n\n\n続き  ',
+            extended_entities: {
+              media: [
+                {
+                  id_str: '1',
+                  type: 'photo',
+                  media_url_https: 'https://pbs.twimg.com/media/fixture.jpg',
+                  url: '',
+                },
+              ],
+            },
+          },
+        } as TwitterTweet),
+        { screen_name: 'fixture' }
+      );
+      expect(entries[0]?.tweet_text).toBe('Legacy text\n\n続き');
+    });
+  });
+
   describe('getHighQualityMediaUrl', () => {
     it('should return photo URL with format param', () => {
       const media = {
