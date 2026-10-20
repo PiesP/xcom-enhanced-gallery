@@ -644,6 +644,104 @@ async function waitFor<T>(
   throw new Error(`Timed out waiting for ${label}`);
 }
 
+async function observeManagerNotificationCreates(context: BrowserContext, managerId: string) {
+  const worker = await waitFor(
+    () =>
+      context
+        .serviceWorkers()
+        .find((item) => item.url() === `chrome-extension://${managerId}/background.js`),
+    'installed Tampermonkey background worker'
+  );
+  const marker = '__xegManagerNativeNotificationObserver';
+  await worker.evaluate((key) => {
+    if (Reflect.has(globalThis, key)) {
+      throw new Error('Manager notification observer is already installed');
+    }
+    const notifications: unknown = Reflect.get(chrome, 'notifications');
+    if (typeof notifications !== 'object' || notifications === null) {
+      throw new Error('Manager native notifications are unavailable');
+    }
+    const original: unknown = Reflect.get(notifications, 'create');
+    if (typeof original !== 'function') {
+      throw new Error('Manager native notification creation is unavailable');
+    }
+    const state = {
+      original,
+      wrapper: null as ((...args: unknown[]) => unknown) | null,
+      calls: [] as Array<{ id: string | null; message: string | null }>,
+      overflow: false,
+    };
+    state.wrapper = function (this: unknown, ...args: unknown[]) {
+      const [id, options] = args;
+      const message: unknown =
+        typeof options === 'object' && options !== null
+          ? Reflect.get(options, 'message')
+          : undefined;
+      if (state.calls.length < 8) {
+        state.calls.push({
+          id: typeof id === 'string' ? id.slice(0, 128) : null,
+          message: typeof message === 'string' ? message.slice(0, 512) : null,
+        });
+      } else {
+        state.overflow = true;
+      }
+      return Reflect.apply(original, this, args);
+    };
+    if (
+      !Reflect.set(globalThis, key, state) ||
+      !Reflect.set(notifications, 'create', state.wrapper)
+    ) {
+      Reflect.deleteProperty(globalThis, key);
+      throw new Error('Manager native notification observer could not be installed');
+    }
+  }, marker);
+  return {
+    async snapshot() {
+      const state = await worker.evaluate((key) => {
+        const value: unknown = Reflect.get(globalThis, key);
+        if (typeof value !== 'object' || value === null) {
+          return null;
+        }
+        const notifications: unknown = Reflect.get(chrome, 'notifications');
+        return {
+          calls: Reflect.get(value, 'calls') as Array<{
+            id: string | null;
+            message: string | null;
+          }>,
+          overflow: Reflect.get(value, 'overflow') as boolean,
+          intact:
+            typeof notifications === 'object' &&
+            notifications !== null &&
+            Reflect.get(notifications, 'create') === Reflect.get(value, 'wrapper'),
+        };
+      }, marker);
+      assert(state?.intact, 'Manager native notification observer was replaced');
+      assert.equal(state.overflow, false, 'Manager notification observation exceeded eight calls');
+      return state.calls;
+    },
+    async dispose() {
+      const restored = await worker.evaluate((key) => {
+        const state: unknown = Reflect.get(globalThis, key);
+        const notifications: unknown = Reflect.get(chrome, 'notifications');
+        if (
+          typeof state !== 'object' ||
+          state === null ||
+          typeof notifications !== 'object' ||
+          notifications === null
+        ) {
+          return false;
+        }
+        const original: unknown = Reflect.get(state, 'original');
+        const reset = Reflect.set(notifications, 'create', original);
+        const exact = Reflect.get(notifications, 'create') === original;
+        const removed = Reflect.deleteProperty(globalThis, key);
+        return reset && exact && removed && !Reflect.has(globalThis, key);
+      }, marker);
+      assert.equal(restored, true, 'Manager native notification observer was not restored');
+    },
+  };
+}
+
 function assertOwned(root: string, profile: string) {
   assert.equal(dirname(resolve(profile)), resolve(root), 'Profile is outside the task root');
   assert(basename(profile).startsWith(PROFILE_PREFIX), 'Profile prefix differs');
@@ -2987,6 +3085,9 @@ async function runFixture(
     apiMode = null;
     loopback.setApiMode(null);
     const notificationPage = await context.newPage();
+    let notificationObserver:
+      | Awaited<ReturnType<typeof observeManagerNotificationCreates>>
+      | undefined;
     let originalClickMode: string | undefined;
     let capacityFailure: unknown;
     let capacityFailed = false;
@@ -3040,6 +3141,7 @@ async function runFixture(
         };
         return Object.keys(await extension.notifications.getAll());
       });
+      notificationObserver = await observeManagerNotificationCreates(context, managerId);
       await article.locator('.media-shell button').click();
       const notification = await waitFor(
         () =>
@@ -3049,20 +3151,16 @@ async function runFixture(
             };
             const active = await extension.notifications.getAll();
             const entry = Object.entries(active).find(([id]) => !known.includes(id));
-            const details: unknown = entry?.[1];
-            const message =
-              typeof details === 'object' &&
-              details !== null &&
-              'message' in details &&
-              typeof details.message === 'string'
-                ? details.message
-                : '';
-            return entry ? { id: entry[0], message } : undefined;
+            return entry ? { id: entry[0] } : undefined;
           }, knownNotifications),
         'real-manager metadata capacity notification'
       );
+      const created = await waitFor(async () => {
+        const calls = await notificationObserver?.snapshot();
+        return calls?.find((call) => call.id === notification.id);
+      }, 'real-manager native notification creation');
       assert(
-        notification.message.startsWith(
+        created.message?.startsWith(
           'This post exceeds the metadata size limit. Open it on X to view its media.'
         ),
         'Installed Tampermonkey did not report the metadata capacity category'
@@ -3075,12 +3173,19 @@ async function runFixture(
       assert.equal(apiEvents.length, 1);
       assert.equal(apiEvents[0]?.result, 'served');
       assert((apiEvents[0]?.bytes ?? 0) > 2 * 1024 * 1024);
-      result.cases.metadataCapacity = { status: 'passed', notification, transport: apiEvents };
+      result.cases.metadataCapacity = {
+        status: 'passed',
+        notification: { id: notification.id, message: created.message },
+        transport: apiEvents,
+      };
     } catch (error) {
       capacityFailed = true;
       capacityFailure = error;
       result.cases.metadataCapacity = { status: 'failed', error: safeRouteError(error) };
     } finally {
+      if (notificationObserver) {
+        await notificationObserver.dispose().catch((error) => capacityCleanupErrors.push(error));
+      }
       if (loopback.activeCount() === 0) {
         apiMode = null;
         loopback.setApiMode(null);

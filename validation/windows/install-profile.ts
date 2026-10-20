@@ -5691,8 +5691,23 @@ async function runPublicPreplayerCycle({
   });
 }
 
+function withNativeNotificationObserver(context: BrowserContext, extensionId: string) {
+  return <T extends object>(
+    action: (observer: Awaited<ReturnType<typeof observeNativeNotificationCreates>>) => Promise<T>
+  ) =>
+    async (): Promise<T> => {
+      const observer = await observeNativeNotificationCreates(context, extensionId);
+      try {
+        return await action(observer);
+      } finally {
+        await observer.dispose();
+      }
+    };
+}
+
 async function runUnavailableSequence({
   apiResponses,
+  extensionId,
   extensionPage,
   output,
   page,
@@ -5702,6 +5717,7 @@ async function runUnavailableSequence({
   evidence,
 }: {
   apiResponses: ApiRecord[];
+  extensionId: string;
   extensionPage: Page;
   output: string;
   page: Page;
@@ -5710,7 +5726,8 @@ async function runUnavailableSequence({
   settingEvidence: ControlledSettingEvidence;
   evidence: UnavailableEvidence;
 }) {
-  return withControlledFixtureVideoMode(extensionPage, settingEvidence, async () => {
+  const withObserver = withNativeNotificationObserver(page.context(), extensionId);
+  const action = withObserver(async (notificationObserver) => {
     const sequence = UNAVAILABLE_SEQUENCE;
     const firstFailure = sequence.failures[0];
     assert(firstFailure, 'Unavailable sequence has no first failure');
@@ -5797,21 +5814,17 @@ async function runUnavailableSequence({
             const entry = Object.entries(active).find(
               ([id]) => id.startsWith('xeg-') && !known.includes(id)
             );
-            const details: unknown = entry?.[1];
-            const message =
-              typeof details === 'object' &&
-              details !== null &&
-              'message' in details &&
-              typeof details.message === 'string'
-                ? details.message
-                : '';
-            return entry ? { id: entry[0], message } : undefined;
+            return entry ? { id: entry[0] } : undefined;
           }, knownNotifications),
         `${failure.name} extraction completion`
       );
       step.completedAt = new Date().toISOString();
-      step.notification = notification;
-      assert.equal(typeof notification.message, 'string');
+      const created = await waitForValue(async () => {
+        const snapshot = await notificationObserver.snapshot();
+        return snapshot.calls.find((call) => call.id === notification.id);
+      }, `${failure.name} native notification creation`);
+      assert(typeof created.message === 'string');
+      step.notification = { id: notification.id, message: created.message };
       step.api = sequenceApiResponses.slice(requestIndex);
       assert.deepEqual(
         step.api.map(({ tweetId, status }) => [tweetId, status]),
@@ -5973,20 +5986,24 @@ async function runUnavailableSequence({
     await page.screenshot({ path: join(output, 'quoted-unavailable-sequence-after.png') });
     return evidence;
   });
+  return withControlledFixtureVideoMode(extensionPage, settingEvidence, action);
 }
 
 async function runCapacityNotificationCase({
+  extensionId,
   extensionPage,
   page,
   genericMessage,
   settingEvidence,
 }: {
+  extensionId: string;
   extensionPage: Page;
   page: Page;
   genericMessage: string;
   settingEvidence: ControlledSettingEvidence;
 }) {
-  return withControlledFixtureVideoMode(extensionPage, settingEvidence, async () => {
+  const withObserver = withNativeNotificationObserver(page.context(), extensionId);
+  const action = withObserver(async (notificationObserver) => {
     assert(genericMessage.length > 0 && !genericMessage.startsWith(CAPACITY_MESSAGE));
     const pageUrl = page.url();
     const documentStartedAt = await page.evaluate(() => performance.timeOrigin);
@@ -6059,20 +6076,16 @@ async function runCapacityNotificationCase({
             const entry = Object.entries(active).find(
               ([id]) => id.startsWith('xeg-') && !known.includes(id)
             );
-            const details: unknown = entry?.[1];
-            const message =
-              typeof details === 'object' &&
-              details !== null &&
-              'message' in details &&
-              typeof details.message === 'string'
-                ? details.message
-                : '';
-            return entry ? { id: entry[0], message } : undefined;
+            return entry ? { id: entry[0] } : undefined;
           }, knownNotifications),
         'installed capacity notification'
       );
+      const created = await waitForValue(async () => {
+        const snapshot = await notificationObserver.snapshot();
+        return snapshot.calls.find((call) => call.id === notification.id);
+      }, 'installed capacity notification creation');
       assert(
-        notification.message.startsWith(CAPACITY_MESSAGE),
+        created.message?.startsWith(CAPACITY_MESSAGE),
         'Installed extension did not report the metadata capacity category'
       );
       assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0);
@@ -6088,13 +6101,14 @@ async function runCapacityNotificationCase({
         status: 'passed',
         tweetId: CAPACITY_TWEET_ID,
         requests,
-        notification,
+        notification: { id: notification.id, message: created.message },
         genericMessage,
       };
     } finally {
       await page.context().unroute('**/TweetResultByRestId*', routeHandler);
     }
   });
+  return withControlledFixtureVideoMode(extensionPage, settingEvidence, action);
 }
 
 async function runSvgTargetMatrix({
@@ -9165,6 +9179,7 @@ async function exerciseInstalledExtension(
     try {
       await runUnavailableSequence({
         apiResponses: fixtureRoutes.apiResponses,
+        extensionId,
         extensionPage,
         output,
         page,
@@ -9196,6 +9211,7 @@ async function exerciseInstalledExtension(
       assert(genericMessage, 'Unavailable sequence generic notification is missing');
       const capacitySetting = {};
       capacityNotification = await runCapacityNotificationCase({
+        extensionId,
         extensionPage,
         page,
         genericMessage,
