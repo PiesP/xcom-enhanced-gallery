@@ -23,7 +23,7 @@ const script = (version: string) =>
     '// @namespace https://github.com/PiesP/xcom-enhanced-gallery',
     `// @version ${version}`,
     '// @updateURL https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.meta.js',
-    `// @downloadURL https://github.com/PiesP/xcom-enhanced-gallery/releases/${version === '2.3.6' ? 'download/v2.3.6' : 'latest/download'}/xcom-enhanced-gallery.user.js`,
+    '// @downloadURL https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js',
     '// ==/UserScript==',
     '',
   ].join('\n');
@@ -57,45 +57,91 @@ test('upgrade inputs require the public asset hash, fixed paths and candidate ve
   try {
     assert.equal(await readUpgradeInput(root), null);
     const assets = join(root, 'validation/windows/release-upgrade');
-    const extension = join(assets, 'v2.3.6-extension');
+    const extension = join(assets, 'v2.3.7-extension');
     await mkdir(extension, { recursive: true });
     await mkdir(join(root, 'dist'), { recursive: true });
     await mkdir(join(root, 'dist-extension'), { recursive: true });
-    const publicUser = script('2.3.6');
-    await writeFile(join(assets, 'v2.3.6.user.js'), publicUser);
-    await writeFile(join(extension, 'manifest.json'), JSON.stringify({ version: '2.3.6' }));
-    await writeFile(join(root, 'dist/xcom-enhanced-gallery.user.js'), script('2.3.7'));
+    const publicUser = script('2.3.7');
+    await writeFile(join(assets, 'v2.3.7.user.js'), publicUser);
+    await writeFile(join(extension, 'manifest.json'), JSON.stringify({ version: '2.3.7' }));
+    await writeFile(join(root, 'dist/xcom-enhanced-gallery.user.js'), script('2.3.8'));
     await writeFile(
       join(root, 'dist-extension/manifest.json'),
-      JSON.stringify({ version: '2.3.7' })
+      JSON.stringify({ version: '2.3.8' })
     );
     const input = {
       schema: 1,
-      previousVersion: '2.3.6',
-      candidateVersion: '2.3.7',
+      previousVersion: '2.3.7',
+      candidateVersion: '2.3.8',
       previousUserscript: {
-        path: 'validation/windows/release-upgrade/v2.3.6.user.js',
+        path: 'validation/windows/release-upgrade/v2.3.7.user.js',
         sha256: sha256(Buffer.from(publicUser)),
-        url: 'https://github.com/PiesP/xcom-enhanced-gallery/releases/download/v2.3.6/xcom-enhanced-gallery.user.js',
+        url: 'https://github.com/PiesP/xcom-enhanced-gallery/releases/download/v2.3.7/xcom-enhanced-gallery.user.js',
       },
       previousExtension: {
-        path: 'validation/windows/release-upgrade/v2.3.6-extension',
+        path: 'validation/windows/release-upgrade/v2.3.7-extension',
         inventorySha256: await extensionInventorySha256(extension),
-        url: 'https://github.com/PiesP/xcom-enhanced-gallery/releases/download/v2.3.6/xcom-enhanced-gallery-chrome.zip',
+        url: 'https://github.com/PiesP/xcom-enhanced-gallery/releases/download/v2.3.7/xcom-enhanced-gallery-chrome.zip',
       },
     };
     const inputPath = join(assets, 'input.json');
     await writeFile(inputPath, JSON.stringify(input));
     const accepted = await readUpgradeInput(root);
     assert(accepted, 'Upgrade input must be available');
-    assert.equal(accepted.candidateUserSha256, sha256(Buffer.from(script('2.3.7'))));
-    const pinnedCandidate = script('2.3.7').replace(
+    assert.equal(accepted.candidateUserSha256, sha256(Buffer.from(script('2.3.8'))));
+    for (const [changed, error] of [
+      [{ ...input, previousVersion: '2.3.6' }, /2\.3\.6/u],
+      [{ ...input, candidateVersion: '2.3.7' }, /2\.3\.7/u],
+      [
+        {
+          ...input,
+          previousUserscript: {
+            ...input.previousUserscript,
+            url: 'https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js',
+          },
+        },
+        /releases\/latest\/download/u,
+      ],
+      [
+        {
+          ...input,
+          previousExtension: {
+            ...input.previousExtension,
+            url: 'https://github.com/PiesP/xcom-enhanced-gallery/releases/download/v2.3.6/xcom-enhanced-gallery-chrome.zip',
+          },
+        },
+        /releases\/download\/v2\.3\.6/u,
+      ],
+    ] as const) {
+      await writeFile(inputPath, JSON.stringify(changed));
+      await assert.rejects(readUpgradeInput(root), error);
+    }
+    await writeFile(inputPath, JSON.stringify(input));
+    const pinnedPublic = publicUser.replace(
       '/releases/latest/download/xcom-enhanced-gallery.user.js',
       '/releases/download/v2.3.7/xcom-enhanced-gallery.user.js'
     );
+    await writeFile(join(assets, 'v2.3.7.user.js'), pinnedPublic);
+    await writeFile(
+      inputPath,
+      JSON.stringify({
+        ...input,
+        previousUserscript: {
+          ...input.previousUserscript,
+          sha256: sha256(Buffer.from(pinnedPublic)),
+        },
+      })
+    );
+    await assert.rejects(readUpgradeInput(root), /Manager editor download URL changed/u);
+    await writeFile(join(assets, 'v2.3.7.user.js'), publicUser);
+    await writeFile(inputPath, JSON.stringify(input));
+    const pinnedCandidate = script('2.3.8').replace(
+      '/releases/latest/download/xcom-enhanced-gallery.user.js',
+      '/releases/download/v2.3.8/xcom-enhanced-gallery.user.js'
+    );
     await writeFile(join(root, 'dist/xcom-enhanced-gallery.user.js'), pinnedCandidate);
     await assert.rejects(readUpgradeInput(root), /Manager editor download URL changed/u);
-    await writeFile(join(root, 'dist/xcom-enhanced-gallery.user.js'), script('2.3.7'));
+    await writeFile(join(root, 'dist/xcom-enhanced-gallery.user.js'), script('2.3.8'));
     await writeFile(
       inputPath,
       JSON.stringify({
@@ -111,6 +157,17 @@ test('upgrade inputs require the public asset hash, fixed paths and candidate ve
       inputPath,
       JSON.stringify({
         ...input,
+        previousExtension: {
+          ...input.previousExtension,
+          inventorySha256: '0'.repeat(64),
+        },
+      })
+    );
+    await assert.rejects(readUpgradeInput(root), /Public extension inventory mismatch/u);
+    await writeFile(
+      inputPath,
+      JSON.stringify({
+        ...input,
         previousUserscript: {
           ...input.previousUserscript,
           path: '../other.user.js',
@@ -121,21 +178,21 @@ test('upgrade inputs require the public asset hash, fixed paths and candidate ve
     await writeFile(inputPath, JSON.stringify(input));
     await writeFile(
       join(root, 'dist-extension/manifest.json'),
-      JSON.stringify({ version: '2.3.8' })
+      JSON.stringify({ version: '2.3.9' })
     );
-    await assert.rejects(readUpgradeInput(root), /2\.3\.8.*2\.3\.7/u);
+    await assert.rejects(readUpgradeInput(root), /2\.3\.9/u);
   } finally {
     await rm(root, { recursive: true, force: true });
   }
 });
 
 test('userscript version parser fails on ambiguous metadata', () => {
-  assert.equal(userscriptVersion(Buffer.from(script('2.3.6'))), '2.3.6');
+  assert.equal(userscriptVersion(Buffer.from(script('2.3.7'))), '2.3.7');
   assert.throws(
     () =>
       userscriptVersion(
         Buffer.from(
-          script('2.3.6').replace('// ==/UserScript==', '// @version 2.3.4\n// ==/UserScript==')
+          script('2.3.7').replace('// ==/UserScript==', '// @version 2.3.4\n// ==/UserScript==')
         )
       ),
     /exactly one/u
@@ -147,7 +204,7 @@ test('manager editor readback requires exact bytes and stable script identity', 
     '// ==UserScript==',
     '// @name X.com Enhanced Gallery',
     '// @namespace https://github.com/PiesP/xcom-enhanced-gallery',
-    '// @version 2.3.7',
+    '// @version 2.3.8',
     '// @updateURL https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.meta.js',
     '// @downloadURL https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js',
     '// ==/UserScript==',
@@ -156,33 +213,33 @@ test('manager editor readback requires exact bytes and stable script identity', 
   ].join('\n');
   const expectedSha256 = sha256(Buffer.from(source));
   assert.equal(
-    requireManagerEditorSource(source, expectedSha256, '2.3.7').editorSha256,
+    requireManagerEditorSource(source, expectedSha256, '2.3.8').editorSha256,
     expectedSha256
   );
   assert.throws(
-    () => requireManagerEditorSource(undefined, expectedSha256, '2.3.7'),
+    () => requireManagerEditorSource(undefined, expectedSha256, '2.3.8'),
     /source is unavailable/u
   );
   assert.throws(
-    () => requireManagerEditorSource(`${source}// extra`, expectedSha256, '2.3.7'),
+    () => requireManagerEditorSource(`${source}// extra`, expectedSha256, '2.3.8'),
     /bytes differ/u
   );
   const wrongUpdate = source.replace('/releases/latest/download/', '/releases/other/download/');
   assert.throws(
-    () => requireManagerEditorSource(wrongUpdate, sha256(Buffer.from(wrongUpdate)), '2.3.7'),
+    () => requireManagerEditorSource(wrongUpdate, sha256(Buffer.from(wrongUpdate)), '2.3.8'),
     /update URL changed/u
   );
   const pinnedDownload = source.replace(
     '/releases/latest/download/xcom-enhanced-gallery.user.js',
-    '/releases/download/v2.3.7/xcom-enhanced-gallery.user.js'
+    '/releases/download/v2.3.8/xcom-enhanced-gallery.user.js'
   );
   assert.throws(
-    () => requireManagerEditorSource(pinnedDownload, sha256(Buffer.from(pinnedDownload)), '2.3.7'),
+    () => requireManagerEditorSource(pinnedDownload, sha256(Buffer.from(pinnedDownload)), '2.3.8'),
     /download URL changed/u
   );
   assert.equal(
-    requireManagerEditorSource(script('2.3.6'), sha256(Buffer.from(script('2.3.6'))), '2.3.6')
+    requireManagerEditorSource(script('2.3.7'), sha256(Buffer.from(script('2.3.7'))), '2.3.7')
       .version,
-    '2.3.6'
+    '2.3.7'
   );
 });

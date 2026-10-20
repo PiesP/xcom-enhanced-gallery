@@ -25,22 +25,22 @@ const entry = (version: string) => `
   </td></tr>`;
 
 test('manager row version is an exact token, not a regular expression', () => {
-  assert.equal(managerRowShowsVersion('X.com Enhanced Gallery 2.3.7', '2.3.7'), true);
-  assert.equal(managerRowShowsVersion('X.com Enhanced Gallery 2x3x7', '2.3.7'), false);
-  assert.equal(managerRowShowsVersion('X.com Enhanced Gallery 2.3.7', '2.3.7|2.3.6'), false);
+  assert.equal(managerRowShowsVersion('X.com Enhanced Gallery 2.3.8', '2.3.8'), true);
+  assert.equal(managerRowShowsVersion('X.com Enhanced Gallery 2x3x8', '2.3.8'), false);
+  assert.equal(managerRowShowsVersion('X.com Enhanced Gallery 2.3.8', '2.3.8|2.3.7'), false);
 });
 
 test('manager identity selects its installed entry despite a nested matching row', async () => {
   assert(browser, 'Browser fixture must be started');
   const page = await browser.newPage();
   try {
-    await page.setContent(`<table>${entry('2.3.6')}</table>`);
+    await page.setContent(`<table>${entry('2.3.7')}</table>`);
     assert.equal(
       await page.locator('tr:visible').filter({ hasText: 'X.com Enhanced Gallery' }).count(),
       2
     );
     const row = await requireInstalledManagerRow(page, tmpdir(), 'single');
-    assert.match(await row.innerText(), /2\.3\.6/u);
+    assert.match(await row.innerText(), /2\.3\.7/u);
   } finally {
     await page.close();
   }
@@ -51,10 +51,10 @@ test('manager identity rejects two real installed entries and preserves a screen
   const page = await browser.newPage();
   const output = await mkdtemp(join(tmpdir(), 'xeg-manager-identity-'));
   try {
-    await page.setContent(`<table>${entry('2.3.6')}${entry('2.3.7')}</table>`);
+    await page.setContent(`<table>${entry('2.3.7')}${entry('2.3.8')}</table>`);
     await assert.rejects(
       requireInstalledManagerRow(page, output, 'duplicate'),
-      /exactly one installed script identity.*2\.3\.6.*2\.3\.7/u
+      /exactly one installed script identity.*2\.3\.7.*2\.3\.8/u
     );
     assert((await stat(join(output, 'userscript-duplicate-identity.png'))).size > 0);
   } finally {

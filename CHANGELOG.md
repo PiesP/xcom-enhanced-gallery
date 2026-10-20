@@ -8,7 +8,19 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-## [2.3.7] - 2026-10-15 (prepared; unpublished)
+## [2.3.8] - 2026-10-20 (prepared; unpublished)
+
+### Fixed
+
+- **Long-post media extraction** — Remove media links with a single token scan so long posts and quoted text no longer trigger repeated full-text rescans.
+- **API metadata admission** — Limit metadata responses to 2 MiB before application JSON parsing and report an over-limit response without consuming provider outage or retry budgets. This is an application response limit, not a browser-process memory ceiling.
+- **Redirect handling** — Reject redirects in the extension Fetch metadata path and check the observed final URL before using userscript-manager metadata or Blob fallback responses. Native downloads retain browser or manager redirect ownership; earlier manager redirect hops remain outside the application's visibility.
+
+### Changed
+
+- **Release tooling** — Refresh the optional public-to-candidate Windows upgrade input for the published v2.3.7 baseline and the v2.3.8 candidate.
+
+## [2.3.7] - 2026-10-15
 
 ### Fixed
 

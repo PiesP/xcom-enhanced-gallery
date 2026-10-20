@@ -468,36 +468,36 @@ diagnosis rather than terminating unrelated processes.
 
 ### Optional public-to-candidate upgrade input
 
-For release qualification, copy the checksum-verified public v2.3.6 userscript to
-`validation/windows/release-upgrade/v2.3.6.user.js` and extract the verified public
-Chrome ZIP to `validation/windows/release-upgrade/v2.3.6-extension/`. Compute the
+For release qualification, copy the checksum-verified public v2.3.7 userscript to
+`validation/windows/release-upgrade/v2.3.7.user.js` and extract the verified public
+Chrome ZIP to `validation/windows/release-upgrade/v2.3.7-extension/`. Compute the
 unpacked file inventory with `extensionInventorySha256(path)` from
 `validation/windows/release-upgrade/source.ts`. Add the ignored
 `validation/windows/release-upgrade/input.json` with the exact paths, release URLs,
-public SHA-256 and inventory SHA-256 shown in `source.test.ts`. The input parser
-requires a production v2.3.7 userscript and extension manifest. Keep the public
-assets and input outside Git; the installation asset declaration bundles them
+provider-verified public userscript SHA-256 and the extracted Chrome ZIP inventory
+SHA-256. The input parser requires a production v2.3.8 userscript and extension
+manifest. Keep the public assets and input outside Git; the installation asset
+declaration bundles them
 only for the selected Windows run. Without `input.json`, the original fresh
 installation runs unchanged.
 
-The extension control loads v2.3.6 from an owned profile path, changes fit and
+The extension control loads v2.3.7 from an owned profile path, changes fit and
 language through the gallery controls and video volume through the gallery's
 trusted Arrow Down shortcut, copies the candidate over that same path, invokes
 the extension's documented `chrome.runtime.reload()` API, and checks the same
-extension ID, v2.3.7 manifest, exact candidate file inventory and saved settings.
-Both controls check the public v2.3.6 gallery's default video-click setting and
+extension ID, v2.3.8 manifest, exact candidate file inventory and saved settings.
+Both controls check the public v2.3.7 gallery's default video-click setting and
 enabled keyboard navigation before and after the update. They exercise the
 candidate's nondefault click setting separately, then restore it; they do not
 establish nondefault click-mode preservation across this update. The Tampermonkey
-control imports v2.3.6 through its UI, changes the same available gallery
+control imports v2.3.7 through its UI, changes the same available gallery
 controls, imports the candidate through the manager's Update confirmation, and
 checks one script row with the new version plus saved settings in newly opened
 galleries. It reads the manager's visible CodeMirror editor before and after the
 update and matches the full installed source hashes and script identity against
-the bundled public and candidate files. The public header must retain its
-version-pinned download URL; the candidate must use the Latest download URL.
-This flow exercises a manual manager update and does not prove that the pinned
-public header can discover or download v2.3.7 automatically. Both restore
+the bundled public and candidate files. The public and candidate headers must
+both use the Latest download URL. This flow exercises a manual manager update
+and does not prove automatic discovery or installation of v2.3.8. Both restore
 fixture defaults through the app UI before the existing download and lifecycle
 suite. Receipts are
 `extension-upgrade.json` or `userscript-upgrade.json`; a missing or unfamiliar UI
