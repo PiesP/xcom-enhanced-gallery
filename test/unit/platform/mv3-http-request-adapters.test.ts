@@ -37,6 +37,28 @@ afterEach(() => {
 });
 
 describe('MV3HttpRequestAdapter', () => {
+  it('rejects redirects through fetch policy while preserving caller headers and browser credential defaults', async () => {
+    const fetchSpy = vi.fn((_url: string, init: RequestInit) => {
+      expect(init.redirect).toBe('error');
+      expect(init.headers).toEqual({ 'x-fixture-marker': 'harmless' });
+      expect(init.credentials).toBeUndefined();
+      return Promise.reject(new TypeError('Redirect rejected'));
+    });
+    vi.stubGlobal('fetch', fetchSpy);
+    const onload = vi.fn();
+    const response = await new Promise<HttpRequestResponse>((resolve) => {
+      new MV3HttpRequestAdapter().request({
+        url: ALLOWED_URL,
+        headers: { 'x-fixture-marker': 'harmless' },
+        onload,
+        onerror: resolve,
+      });
+    });
+    expect(response.errorCategory).toBe('network');
+    expect(onload).not.toHaveBeenCalled();
+    expect(fetchSpy).toHaveBeenCalledOnce();
+  });
+
   it.each([
     ['below', '1', 2, undefined, true],
     ['at', '12', 2, '1', true],

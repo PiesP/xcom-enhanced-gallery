@@ -190,6 +190,14 @@ export class GMHttpRequestAdapter implements HttpRequestAdapter {
           if (resourceLimitExceeded) {
             return;
           }
+          // Managers own redirect dispatch. This gates response use only; it
+          // cannot prevent credentials or headers reaching an earlier hop.
+          if (!isAllowedUrl(response.finalUrl)) {
+            details.onerror?.(
+              safeFailureResponse(details.url, response, 'unreadable', 'UNREADABLE')
+            );
+            return;
+          }
           const responseSize = getResponseSize(response.response);
           if (
             maxResponseBytes !== undefined &&

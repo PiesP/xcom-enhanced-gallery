@@ -54,6 +54,29 @@ function invokeTrustedPageHide(persisted: boolean): void {
 }
 
 describe('userscript download adapter failure handling', () => {
+  it.each(['', 'https://example.com/image.jpg'])(
+    'rejects unavailable or off-policy Blob destinations before URL handoff: %s',
+    async (finalUrl) => {
+      const create = vi.spyOn(URL, 'createObjectURL');
+      userscriptGlobals.GM_xmlhttpRequest = vi.fn((details) => {
+        queueMicrotask(() =>
+          details.onload?.({
+            finalUrl,
+            status: 200,
+            statusText: 'OK',
+            response: new Blob(['image']),
+          } as never)
+        );
+        return { abort: vi.fn() };
+      });
+      const api = await loadUserscriptAdapter();
+      await expect(
+        api.download('https://pbs.twimg.com/media/image.jpg', 'image.jpg')
+      ).rejects.toThrow('destination');
+      expect(create).not.toHaveBeenCalled();
+    }
+  );
+
   beforeEach(() => {
     vi.spyOn(window, 'addEventListener');
     delete userscriptGlobals.GM;
@@ -189,6 +212,7 @@ describe('userscript download adapter failure handling', () => {
     userscriptGlobals.GM_xmlhttpRequest = vi.fn((details) => {
       queueMicrotask(() =>
         details.onload?.({
+          finalUrl: 'https://pbs.twimg.com/media/image.jpg',
           status: 200,
           statusText: 'OK',
           response: new Blob(['image']),
@@ -330,6 +354,7 @@ describe('userscript download adapter failure handling', () => {
     userscriptGlobals.GM_xmlhttpRequest = vi.fn((details) => {
       queueMicrotask(() =>
         details.onload?.({
+          finalUrl: 'https://pbs.twimg.com/media/image.jpg',
           status: 200,
           statusText: 'OK',
           response: new Blob(['image']),
@@ -412,6 +437,7 @@ describe('userscript download adapter failure handling', () => {
     userscriptGlobals.GM_xmlhttpRequest = vi.fn((details) => {
       queueMicrotask(() =>
         details.onload?.({
+          finalUrl: 'https://pbs.twimg.com/media/image.jpg',
           status: 200,
           statusText: 'OK',
           response: new Blob(['123456789']),
@@ -440,6 +466,7 @@ describe('userscript download adapter failure handling', () => {
     userscriptGlobals.GM_xmlhttpRequest = vi.fn((details) => {
       queueMicrotask(() =>
         details.onload?.({
+          finalUrl: 'https://pbs.twimg.com/media/image.jpg',
           status: 403,
           statusText: 'Forbidden',
           response: new Blob(['access denied'], { type: 'text/html' }),

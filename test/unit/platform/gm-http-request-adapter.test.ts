@@ -33,6 +33,56 @@ afterEach(() => {
 
 describe('GMHttpRequestAdapter response bounds', () => {
   it.each([
+    ['https://x.com/i/api/graphql/fixture/TweetResultByRestId', true],
+    ['https://pbs.twimg.com/media/redirected.jpg', true],
+    ['https://example.com/redirected', false],
+    ['https://x.com/settings', false],
+    ['', false],
+  ] as const)(
+    'admits response use only with an allowed observed final URL: %s',
+    (finalUrl, accepted) => {
+      let gmDetails: GMXMLHttpRequestDetails | undefined;
+      xmlHttpRequest.mockImplementation((details: GMXMLHttpRequestDetails) => {
+        gmDetails = details;
+        return { abort: vi.fn() };
+      });
+      const onload = vi.fn();
+      const onerror = vi.fn();
+      const headers = { 'x-fixture-marker': 'harmless' };
+      new GMHttpRequestAdapter().request({
+        url: 'https://x.com/i/api/graphql/fixture/TweetResultByRestId',
+        headers,
+        responseType: 'json',
+        maxResponseBytes: 32,
+        onload,
+        onerror,
+      });
+      expect(gmDetails?.headers).toEqual(headers);
+      const parse = vi.spyOn(JSON, 'parse');
+      gmDetails?.onload?.({
+        finalUrl,
+        readyState: 4,
+        status: 200,
+        statusText: 'OK',
+        responseHeaders: '',
+        response: new TextEncoder().encode('1').buffer,
+        responseText: '',
+        context: undefined,
+      });
+      if (accepted) {
+        expect(onload).toHaveBeenCalledWith(expect.objectContaining({ response: 1 }));
+        expect(onerror).not.toHaveBeenCalled();
+      } else {
+        expect(parse).not.toHaveBeenCalled();
+        expect(onload).not.toHaveBeenCalled();
+        expect(onerror).toHaveBeenCalledWith(
+          expect.objectContaining({ errorCategory: 'unreadable' })
+        );
+      }
+    }
+  );
+
+  it.each([
     ['below', '1', 2, true],
     ['at', '12', 2, true],
     ['above', '123', 2, false],
