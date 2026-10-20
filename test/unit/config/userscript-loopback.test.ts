@@ -86,7 +86,22 @@ describe('userscript HTTPS loopback protocol', () => {
   it('serves only the declared metadata request in an explicit bounded mode', async () => {
     await withServer(async (fixture, port) => {
       const path = `/i/api/graphql/fixture/TweetResultByRestId?variables=${encodeURIComponent(JSON.stringify({ tweetId: '1234567890123456789' }))}`;
-      expect((await get(port, path, { host: 'x.com' })).status).toBe(404);
+      const defaultResponse = await get(port, path, { host: 'x.com' });
+      expect(defaultResponse.status).toBe(403);
+      expect(defaultResponse.body.toString()).toBe('{}');
+      expect(fixture.snapshot()).toMatchObject({
+        unexpectedCount: 0,
+        apiServedBytes: 2,
+        events: [{ phase: 'default', cohort: 'api', result: 'http-403', bytes: 2 }],
+      });
+      expect(
+        (
+          await get(port, path.replace('1234567890123456789', '9876543210987654321'), {
+            host: 'x.com',
+          })
+        ).status
+      ).toBe(404);
+      expect(fixture.snapshot().rejectedReasons).toMatchObject({ 'graphql-tweet-id': 1 });
       fixture.setApiMode('healthy');
       const healthy = await get(port, path, { host: 'x.com' });
       expect(healthy.status).toBe(200);

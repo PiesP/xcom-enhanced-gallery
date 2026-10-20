@@ -201,10 +201,12 @@ export function createUserscriptFixtureHandler(
   let apiMode: ApiMode | null = null;
   let mediaRedirectArmed = false;
   let mediaRedirectPending = false;
+  const rejectedReasons: Record<string, number> = {};
   const events: FixtureEvent[] = [];
   const active = new Set<ServerResponse>();
-  const reject = (response: ServerResponse) => {
+  const reject = (response: ServerResponse, reason: string) => {
     unexpectedCount += 1;
+    rejectedReasons[reason] = (rejectedReasons[reason] ?? 0) + 1;
     response.writeHead(404, { 'Content-Length': '0', 'Cache-Control': 'no-store' });
     response.end();
   };
@@ -254,7 +256,7 @@ export function createUserscriptFixtureHandler(
         (isAllowedReceiver && mode !== 'redirect-allowed') ||
         (isBlockedReceiver && mode !== 'redirect-blocked')
       ) {
-        reject(response);
+        reject(response, 'receiver-mode-or-method');
         return;
       }
       const body = apiBody(mode);
@@ -303,20 +305,20 @@ export function createUserscriptFixtureHandler(
         const url = new URL(path, 'https://x.com');
         tweetId = JSON.parse(url.searchParams.get('variables') ?? '{}').tweetId;
         if (!url.pathname.endsWith('/TweetResultByRestId')) {
-          reject(response);
+          reject(response, 'graphql-path');
           return;
         }
       } catch {
-        reject(response);
+        reject(response, 'graphql-variables');
         return;
       }
-      if (request.method !== 'GET' || tweetId !== API_TWEET_ID || !apiMode) {
-        reject(response);
+      if (request.method !== 'GET' || tweetId !== API_TWEET_ID) {
+        reject(response, request.method !== 'GET' ? 'graphql-method' : 'graphql-tweet-id');
         return;
       }
       const mode = apiMode;
       const redirect = mode === 'redirect-allowed' || mode === 'redirect-blocked';
-      const body = redirect ? Buffer.alloc(0) : apiBody(mode);
+      const body = mode === null ? Buffer.from('{}') : redirect ? Buffer.alloc(0) : apiBody(mode);
       if (apiServedBytes + body.length > MAX_API_SERVED_BYTES) {
         overflow = true;
         response.destroy();
@@ -324,7 +326,7 @@ export function createUserscriptFixtureHandler(
       }
       apiServedBytes += body.length;
       const event: FixtureEvent = {
-        phase: mode,
+        phase: mode ?? 'default',
         cohort: 'api',
         index: 0,
         purpose: 'metadata',
@@ -342,11 +344,12 @@ export function createUserscriptFixtureHandler(
         active.delete(response);
       });
       response.once('finish', () => {
-        event.result = redirect ? 'redirect' : 'served';
+        event.result = mode === null ? 'http-403' : redirect ? 'redirect' : 'served';
         event.bytes = body.length;
-        event.sha256 = redirect ? null : createHash('sha256').update(body).digest('hex');
+        event.sha256 =
+          mode === null || redirect ? null : createHash('sha256').update(body).digest('hex');
       });
-      response.writeHead(redirect ? 302 : 200, {
+      response.writeHead(mode === null ? 403 : redirect ? 302 : 200, {
         'Content-Type': 'application/json',
         'Content-Length': String(body.length),
         'Cache-Control': 'no-store',
@@ -361,7 +364,7 @@ export function createUserscriptFixtureHandler(
     }
     if (host === HOST && path === MEDIA_REDIRECT_RECEIVER) {
       if (request.method !== 'GET' || !mediaRedirectPending || !images) {
-        reject(response);
+        reject(response, 'media-redirect-unarmed');
         return;
       }
       mediaRedirectPending = false;
@@ -412,17 +415,17 @@ export function createUserscriptFixtureHandler(
       !images ||
       (media.cohort !== 'avatar' && media.cohort !== phase)
     ) {
-      reject(response);
+      reject(response, 'media-route-or-phase');
       return;
     }
     const bytes = images[media.index];
     if (!Buffer.isBuffer(bytes) || bytes.length === 0 || bytes.length > MAX_IMAGE_BYTES) {
-      reject(response);
+      reject(response, 'media-bytes');
       return;
     }
     const purpose = request.headers['sec-fetch-dest'] === 'image' ? 'preview' : 'transfer';
     if (media.cohort !== 'avatar' && media.purpose !== purpose) {
-      reject(response);
+      reject(response, 'media-purpose');
       return;
     }
     const event: FixtureEvent = {
@@ -549,6 +552,7 @@ export function createUserscriptFixtureHandler(
     snapshot: () => ({
       requests: requestCount,
       unexpectedCount,
+      rejectedReasons: { ...rejectedReasons },
       overflow,
       servedBytes,
       apiServedBytes,
