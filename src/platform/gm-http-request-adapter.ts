@@ -51,6 +51,15 @@ function safeFailureResponse(
 
 const pendingAmbiguousSettlements = new Set<() => void>();
 
+function arrayBufferByteLength(value: unknown): number | undefined {
+  try {
+    // The native getter checks the backing-store brand across manager realms.
+    return Reflect.get(ArrayBuffer.prototype, 'byteLength', value) as number;
+  } catch {
+    return undefined;
+  }
+}
+
 function onPageHide(event: PageTransitionEvent): void {
   if (!event.isTrusted || event.persisted) {
     return;
@@ -85,6 +94,7 @@ export class GMHttpRequestAdapter implements HttpRequestAdapter {
 
     const gm = getUserscript();
     const maxResponseBytes = details.maxResponseBytes;
+    const boundedJson = details.responseType === 'json' && maxResponseBytes !== undefined;
     if (
       maxResponseBytes !== undefined &&
       (!Number.isSafeInteger(maxResponseBytes) || maxResponseBytes < 0)
@@ -139,8 +149,9 @@ export class GMHttpRequestAdapter implements HttpRequestAdapter {
       if (response instanceof Blob) {
         return response.size;
       }
-      if (response instanceof ArrayBuffer) {
-        return response.byteLength;
+      const bufferBytes = arrayBufferByteLength(response);
+      if (bufferBytes !== undefined) {
+        return bufferBytes;
       }
       if (ArrayBuffer.isView(response)) {
         return response.byteLength;
@@ -166,7 +177,9 @@ export class GMHttpRequestAdapter implements HttpRequestAdapter {
       gmDetails.data = details.data;
     }
     if (details.responseType !== undefined) {
-      gmDetails.responseType = details.responseType;
+      // Managers may parse responseType=json before exposing a callback. Own
+      // JSON parsing only after measuring the encoded body, even without progress.
+      gmDetails.responseType = boundedJson ? 'arraybuffer' : details.responseType;
     }
     if (details.timeout !== undefined) {
       gmDetails.timeout = details.timeout;
@@ -186,7 +199,25 @@ export class GMHttpRequestAdapter implements HttpRequestAdapter {
             reportResourceLimit(responseSize, response);
             return;
           }
+          let responseBody = response.response;
+          if (boundedJson) {
+            if (arrayBufferByteLength(responseBody) === undefined) {
+              details.onerror?.(
+                safeFailureResponse(details.url, response, 'unreadable', 'UNREADABLE')
+              );
+              return;
+            }
+            try {
+              responseBody = JSON.parse(new TextDecoder().decode(responseBody as ArrayBuffer));
+            } catch {
+              details.onerror?.(
+                safeFailureResponse(details.url, response, 'unreadable', 'UNREADABLE')
+              );
+              return;
+            }
+          }
           if (
+            !boundedJson &&
             details.responseType === 'json' &&
             response.response == null &&
             (typeof response.responseText !== 'string' || response.responseText.trim() !== 'null')
@@ -200,7 +231,7 @@ export class GMHttpRequestAdapter implements HttpRequestAdapter {
             finalUrl: '',
             readyState: 4,
             statusText: '',
-            response: response.response,
+            response: responseBody,
             responseText: '',
             ...safeResponseMetadata(response, true),
           });

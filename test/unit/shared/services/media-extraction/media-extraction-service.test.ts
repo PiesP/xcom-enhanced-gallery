@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
+import { HttpResponseSizeLimitError } from '@shared/error/http-response-size-limit-error';
 import { createMixedOwnerVideoResponse } from '../../../../fixtures/mixed-owner-video-response';
 import { createQuotedVideoTweetResponse } from '../../../../fixtures/quoted-video-tweet-response';
 import { unanchoredVideoPreview } from '../../../../fixtures/unanchored-video-preview';
@@ -391,6 +392,21 @@ describe('MediaExtractionService API circuit', () => {
     httpGet.mock.calls.map(
       ([url]) => JSON.parse(new URL(url as string).searchParams.get('variables') ?? '{}').tweetId
     );
+
+  it('does not retry, cache, or open the provider circuit after local metadata capacity failures', async () => {
+    httpGet.mockRejectedValue(new HttpResponseSizeLimitError(32, 33));
+    const service = new MediaExtractionService();
+    try {
+      for (const id of ['901', '902', '903', '904']) {
+        const result = await clickTweet(service, id);
+        expect(result).toMatchObject({ failureKind: 'resource-limit' });
+      }
+      expect(requestedTweetIds()).toEqual(['901', '902', '903', '904']);
+      expect(httpGet).toHaveBeenCalledTimes(4);
+    } finally {
+      service.dispose();
+    }
+  });
 
   it('keeps the circuit closed across three explicit unavailable tweets and selects the next video', async () => {
     const service = new MediaExtractionService();

@@ -32,6 +32,100 @@ afterEach(() => {
 });
 
 describe('GMHttpRequestAdapter response bounds', () => {
+  it.each([
+    ['below', '1', 2, true],
+    ['at', '12', 2, true],
+    ['above', '123', 2, false],
+    ['multibyte at', '"é"', 4, true],
+    ['multibyte above', '"é"', 3, false],
+  ] as const)(
+    'admits bounded JSON %s the encoded limit without manager JSON parsing',
+    (_label, text, limit, accepted) => {
+      let gmDetails: GMXMLHttpRequestDetails | undefined;
+      const abort = vi.fn();
+      xmlHttpRequest.mockImplementation((details: GMXMLHttpRequestDetails) => {
+        gmDetails = details;
+        return { abort };
+      });
+      const onload = vi.fn();
+      const onerror = vi.fn();
+      const onsettled = vi.fn();
+      new GMHttpRequestAdapter().request({
+        url: 'https://x.com/i/api/graphql/fixture/TweetResultByRestId',
+        responseType: 'json',
+        maxResponseBytes: limit,
+        onload,
+        onerror,
+        onsettled,
+      });
+      expect(gmDetails?.responseType).toBe('arraybuffer');
+      const parse = vi.spyOn(JSON, 'parse');
+      gmDetails?.onload?.({
+        finalUrl: 'https://x.com/i/api/graphql/fixture/TweetResultByRestId',
+        readyState: 4,
+        status: 200,
+        statusText: 'OK',
+        responseHeaders: 'Content-Length: 1',
+        response: new TextEncoder().encode(text).buffer,
+        responseText: '',
+        context: undefined,
+      });
+      if (accepted) {
+        expect(onload).toHaveBeenCalledWith(
+          expect.objectContaining({ response: JSON.parse(text) })
+        );
+        expect(onerror).not.toHaveBeenCalled();
+        expect(abort).not.toHaveBeenCalled();
+      } else {
+        expect(parse).not.toHaveBeenCalled();
+        expect(onload).not.toHaveBeenCalled();
+        expect(onerror).toHaveBeenCalledWith(
+          expect.objectContaining({ errorCategory: 'resource_limit' })
+        );
+        expect(abort).toHaveBeenCalledOnce();
+      }
+      expect(onsettled).toHaveBeenCalledOnce();
+    }
+  );
+
+  it.each(['{invalid', { unexpected: 'already parsed by manager' }])(
+    'rejects unreadable bounded JSON with absent progress: %s',
+    (body) => {
+      let gmDetails: GMXMLHttpRequestDetails | undefined;
+      xmlHttpRequest.mockImplementation((details: GMXMLHttpRequestDetails) => {
+        gmDetails = details;
+        return { abort: vi.fn() };
+      });
+      const onload = vi.fn();
+      const onerror = vi.fn();
+      new GMHttpRequestAdapter().request({
+        url: 'https://x.com/i/api/graphql/fixture/TweetResultByRestId',
+        responseType: 'json',
+        maxResponseBytes: 32,
+        onload,
+        onerror,
+      });
+      gmDetails?.onload?.({
+        finalUrl: 'https://x.com/i/api/graphql/fixture/TweetResultByRestId',
+        readyState: 4,
+        status: 429,
+        statusText: 'Too Many Requests',
+        responseHeaders: 'Retry-After: 2',
+        response: typeof body === 'string' ? new TextEncoder().encode(body).buffer : body,
+        responseText: '',
+        context: undefined,
+      });
+      expect(onload).not.toHaveBeenCalled();
+      expect(onerror).toHaveBeenCalledWith(
+        expect.objectContaining({
+          errorCategory: 'unreadable',
+          status: 429,
+          retryAfterMs: 2000,
+        })
+      );
+    }
+  );
+
   it('allowlists status, readability, and Retry-After on an unreadable error', () => {
     let gmDetails: GMXMLHttpRequestDetails | undefined;
     xmlHttpRequest.mockImplementation((details: GMXMLHttpRequestDetails) => {

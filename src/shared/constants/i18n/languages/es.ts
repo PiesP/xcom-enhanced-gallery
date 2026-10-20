@@ -63,6 +63,8 @@ export const es: LanguageStrings = {
         noMedia: 'No se devolvió contenido multimedia para esta publicación.',
         denied: 'El servicio multimedia rechazó la solicitud. Inténtalo más tarde.',
         unreadable: 'No se pudo leer la respuesta multimedia. Inténtalo más tarde.',
+        resourceLimit:
+          'Este post supera el límite de datos. Ábrelo en X para ver su contenido multimedia.',
         rateLimited: 'El servicio multimedia está limitando las solicitudes. Inténtalo más tarde.',
         deferred: 'El servicio multimedia pidió esperar. Inténtalo más tarde.',
         providerError:

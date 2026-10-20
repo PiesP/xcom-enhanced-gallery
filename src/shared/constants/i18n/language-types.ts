@@ -136,6 +136,7 @@ export interface LanguageStrings {
         readonly rateLimited: string;
         readonly deferred: string;
         readonly providerError: string;
+        readonly resourceLimit: string;
         readonly transport: string;
         readonly ownerUnconfirmed: string;
         readonly mismatch: string;

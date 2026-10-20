@@ -8,6 +8,7 @@
 
 import { buildTweetResultByRestIdUrl, TWITTER_API_CONFIG } from '@shared/core/twitter-api/endpoint';
 import { logger } from '@shared/logging/logger';
+import { isHttpResponseSizeLimitError } from '@shared/error/http-response-size-limit-error';
 import { getHttpRequestService } from '@shared/services/http-request-service';
 import {
   getCsrfTokenAsync,
@@ -25,6 +26,9 @@ import type {
 } from '@shared/services/media/types';
 import { sortMediaByVisualOrder } from '@shared/utils/media/media-dimensions';
 
+/** Capacity for one root/direct-quote metadata envelope, before JSON parsing. */
+const MAX_METADATA_RESPONSE_BYTES = 2 * 1024 * 1024;
+
 /** An attempted transport or provider failure, distinct from local extraction. */
 export class TwitterAPIRequestError extends Error {
   constructor(
@@ -36,6 +40,7 @@ export class TwitterAPIRequestError extends Error {
       | 'rate-limited'
       | 'deferred'
       | 'provider-error'
+      | 'resource-limit'
       | 'transport' = 'transport',
     readonly retryAfterMs?: number,
     readonly status?: number,
@@ -257,6 +262,9 @@ function classifyHttpFailure(
   category: unknown,
   retryAfterMs?: number
 ): TwitterAPIRequestError['category'] {
+  if (category === 'resource_limit') {
+    return 'resource-limit';
+  }
   if (status === 429) {
     return 'rate-limited';
   }
@@ -276,6 +284,13 @@ function classifyHttpFailure(
 }
 
 function transportError(error: unknown): TwitterAPIRequestError {
+  if (isHttpResponseSizeLimitError(error)) {
+    return new TwitterAPIRequestError(
+      'Metadata response capacity exceeded',
+      undefined,
+      'resource-limit'
+    );
+  }
   const candidate =
     error instanceof Error
       ? (error as Error & {
@@ -334,6 +349,7 @@ async function apiRequest(
     .get<TwitterAPIResponse>(url, {
       headers: Object.fromEntries(headers.entries()),
       responseType: 'json',
+      maxResponseBytes: MAX_METADATA_RESPONSE_BYTES,
       ...(signal ? { signal } : {}),
     })
     .catch((error: unknown) => {

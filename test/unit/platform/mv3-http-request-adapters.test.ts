@@ -37,6 +37,53 @@ afterEach(() => {
 });
 
 describe('MV3HttpRequestAdapter', () => {
+  it.each([
+    ['below', '1', 2, undefined, true],
+    ['at', '12', 2, '1', true],
+    ['above', '123', 2, '1', false],
+    ['multibyte at', '"é"', 4, undefined, true],
+    ['multibyte above', '"é"', 3, undefined, false],
+  ] as const)(
+    'admits JSON %s the byte limit before parsing',
+    async (_label, text, limit, declared, accepted) => {
+      const body = new ReadableStream<Uint8Array<ArrayBuffer>>({
+        start(controller) {
+          const bytes = new TextEncoder().encode(text);
+          controller.enqueue(bytes.slice(0, 1));
+          controller.enqueue(bytes.slice(1));
+          controller.close();
+        },
+      });
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(
+          new Response(body, {
+            status: 200,
+            headers: declared === undefined ? {} : { 'content-length': declared },
+          })
+        )
+      );
+      const parse = vi.spyOn(JSON, 'parse');
+      const response = await new Promise<HttpRequestResponse>((resolve) => {
+        new MV3HttpRequestAdapter().request({
+          url: ALLOWED_URL,
+          responseType: 'json',
+          maxResponseBytes: limit,
+          onload: resolve,
+          onerror: resolve,
+        });
+      });
+      if (accepted) {
+        expect(response.response).toEqual(JSON.parse(text));
+        expect(response.readable).toBe(true);
+      } else {
+        expect(parse).not.toHaveBeenCalled();
+        expect(response.errorCategory).toBe('resource_limit');
+        expect(response.readable).toBe(false);
+      }
+    }
+  );
+
   it.each([403, 429])(
     'keeps known HTTP %i metadata when body reading times out',
     async (status) => {

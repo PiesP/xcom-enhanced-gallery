@@ -65,6 +65,8 @@ export const ko: LanguageStrings = {
         noMedia: '이 게시물의 미디어가 반환되지 않았습니다.',
         denied: '미디어 서비스가 요청을 거부했습니다. 나중에 다시 시도해 주세요.',
         unreadable: '미디어 응답을 읽을 수 없습니다. 나중에 다시 시도해 주세요.',
+        resourceLimit:
+          '이 게시물의 정보가 크기 제한을 초과했습니다. X에서 게시물을 열어 미디어를 확인해 주세요.',
         rateLimited: '미디어 서비스의 요청 제한에 걸렸습니다. 나중에 다시 시도해 주세요.',
         deferred: '미디어 서비스가 대기를 요청했습니다. 나중에 다시 시도해 주세요.',
         providerError:

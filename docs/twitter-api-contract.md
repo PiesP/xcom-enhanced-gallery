@@ -23,7 +23,9 @@ including when several clicks share that request, and never enters the
 metadata cache. A valid requested root may still yield a healthy request with
 no media, HLS-only media, or media that does not match the clicked source; those
 outcomes fail local selection without counting as provider outages. Three
-consecutive failed physical requests open the existing 60-second API circuit.
+consecutive failed physical provider requests open the existing 60-second API circuit.
+Local response-capacity rejections do not count as provider failures or apply
+server retry guidance. They are not retried or cached.
 Cancelled or stale requests and cache hits do not change that failure history.
 
 The sanitized response fixtures in `test/fixtures/quoted-video-tweet-response.ts`
@@ -48,3 +50,34 @@ request is deferred until capacity is available. The cache holds neither raw Gra
 binary media. Context changes and explicit refresh invalidate it. Failures,
 empty or HLS-only responses, and cancelled requests are never cached. Cache reuse does not
 establish live provider access; that requires a separate observed request.
+
+## Text and response admission
+
+`twitter-response-parser.ts` removes only complete whitespace-delimited media
+URL tokens, using a single token scan and a deduplicated URL set. Adjacent
+punctuation, literal URL characters, Unicode and the existing whitespace
+normalization are preserved. Legacy, note and direct-quote text use the same
+normalizer without truncation. X's [English post documentation](https://help.x.com/en/using-x/types-of-posts)
+describes longer posts with up to 25,000 characters; this is a content constraint,
+not a GraphQL response-byte guarantee.
+
+`MAX_METADATA_RESPONSE_BYTES` in `twitter-api-client.ts` defines the finite
+capacity for one root/direct-quote response. Its 2 MiB allowance accommodates two
+full notes (approximately 300,000 bytes even if every UTF-16 unit is JSON-escaped)
+plus user records, entities, media variants and envelopes. Ordinary, mixed-owner
+and full multilingual note/quote fixtures exercise compatibility. Unexpected
+provider expansions can still exceed this product policy and fail with a
+localized capacity message; text is never silently truncated.
+
+The MV3 adapter counts actual streamed bytes before decoding and JSON parsing.
+`Content-Length` can reject early but cannot authorize an oversized actual body.
+The GM adapter requests `arraybuffer` for bounded JSON, measures the native
+buffer before decoding/parsing, and rejects a manager returning another type.
+Progress can stop a transfer early; missing or late progress still leaves the
+callback byte gate in place. There is no fallback to manager-parsed JSON.
+
+[Tampermonkey](https://www.tampermonkey.net/documentation.php?ext=d2&q=GM_xmlhttpRequest)
+and [Violentmonkey](https://violentmonkey.github.io/api/gm/) document binary
+response types, but control their own network buffering. The application gate
+does not bound those manager allocations, decompression buffers, parsed-object
+expansion or total browser memory. Cache admission remains a separate bound.

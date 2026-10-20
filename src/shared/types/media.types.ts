@@ -142,6 +142,7 @@ export interface MediaExtractionResult {
     | 'rate-limited'
     | 'deferred'
     | 'provider-error'
+    | 'resource-limit'
     | 'transport'
     | 'owner-unconfirmed'
     | 'mismatch'
