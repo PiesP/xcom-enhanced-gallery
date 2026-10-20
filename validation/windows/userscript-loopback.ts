@@ -45,6 +45,13 @@ type FixtureEvent = {
   bytes: number;
   sha256: string | null;
 };
+type RejectedIdShape = {
+  type: string;
+  length: number | null;
+  digitsOnly: boolean;
+  sha256Prefix: string | null;
+  count: number;
+};
 
 type CertificateRunner = (
   file: string,
@@ -217,6 +224,8 @@ export function createUserscriptFixtureHandler(
   let mediaRedirectPending = false;
   const rejectedReasons: Record<string, number> = {};
   const defaultApiCompletedByKind: Record<string, number> = {};
+  const rejectedIdShapes: RejectedIdShape[] = [];
+  let rejectedIdShapeOverflow = 0;
   const events: FixtureEvent[] = [];
   const active = new Set<ServerResponse>();
   const reject = (response: ServerResponse, reason: string) => {
@@ -334,6 +343,29 @@ export function createUserscriptFixtureHandler(
         !defaultKind ||
         (apiMode !== null && tweetId !== API_TWEET_ID)
       ) {
+        if (request.method === 'GET' && !defaultKind) {
+          const printable =
+            typeof tweetId === 'string' || typeof tweetId === 'number' ? String(tweetId) : null;
+          const sha256Prefix = printable
+            ? createHash('sha256').update(printable).digest('hex').slice(0, 12)
+            : null;
+          const existing = rejectedIdShapes.find(
+            (shape) => shape.type === typeof tweetId && shape.sha256Prefix === sha256Prefix
+          );
+          if (existing) {
+            existing.count += 1;
+          } else if (rejectedIdShapes.length < 8) {
+            rejectedIdShapes.push({
+              type: typeof tweetId,
+              length: printable?.length ?? null,
+              digitsOnly: printable !== null && /^\d+$/u.test(printable),
+              sha256Prefix,
+              count: 1,
+            });
+          } else {
+            rejectedIdShapeOverflow += 1;
+          }
+        }
         reject(
           response,
           request.method !== 'GET'
@@ -586,6 +618,8 @@ export function createUserscriptFixtureHandler(
       unexpectedCount,
       rejectedReasons: { ...rejectedReasons },
       defaultApiCompletedByKind: { ...defaultApiCompletedByKind },
+      rejectedIdShapes: rejectedIdShapes.map((shape) => ({ ...shape })),
+      rejectedIdShapeOverflow,
       overflow,
       servedBytes,
       apiServedBytes,

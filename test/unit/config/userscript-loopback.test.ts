@@ -127,6 +127,11 @@ describe('userscript HTTPS loopback protocol', () => {
         ).status
       ).toBe(404);
       expect(fixture.snapshot().rejectedReasons).toMatchObject({ 'graphql-undeclared-id': 1 });
+      expect(fixture.snapshot().rejectedIdShapes).toMatchObject([
+        { type: 'string', length: 19, digitsOnly: true, count: 1 },
+      ]);
+      expect(fixture.snapshot().rejectedIdShapes[0]?.sha256Prefix).toMatch(/^[a-f0-9]{12}$/u);
+      expect(fixture.snapshot().rejectedIdShapeOverflow).toBe(0);
       fixture.setApiMode('healthy');
       expect((await get(port, publicPath, { host: 'x.com' })).status).toBe(404);
       expect(fixture.snapshot().rejectedReasons).toMatchObject({ 'graphql-active-mode-id': 1 });
