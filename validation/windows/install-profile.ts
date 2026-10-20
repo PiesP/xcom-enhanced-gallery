@@ -560,6 +560,12 @@ declare const chrome: {
     };
   };
   downloads: {
+    download(options: {
+      url: string;
+      filename: string;
+      saveAs: boolean;
+      conflictAction: 'uniquify';
+    }): Promise<number>;
     search(query: {
       id?: number;
       orderBy?: string[];
@@ -3229,6 +3235,65 @@ async function waitForDownload(extensionPage: Page, knownIds: Set<number>, filen
       }))
     )}`
   );
+}
+
+async function runNativeRedirectDiagnostic(
+  extensionPage: Page,
+  nativeLoopback: NativeLoopback,
+  images: ImageFixtures
+) {
+  const initialUrl = 'https://pbs.twimg.com/media/GkE1234ABCDEF?format=jpg&name=orig';
+  const destinationUrl = 'https://pbs.twimg.com/media/GkE5678GHIJKL.jpg?format=jpg&name=orig';
+  const filename = 'xeg-native-redirect-diagnostic.jpg';
+  const knownIds = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+  const mark = nativeLoopback.mark();
+  nativeLoopback.armRedirect(initialUrl, destinationUrl);
+  try {
+    const id = await extensionPage.evaluate(
+      ({ url, name }) =>
+        chrome.downloads.download({
+          url,
+          filename: name,
+          saveAs: false,
+          conflictAction: 'uniquify',
+        }),
+      { url: initialUrl, name: filename }
+    );
+    const item = await waitForDownload(extensionPage, knownIds, filename);
+    assert.equal(item.id, id);
+    assert.equal(item.url, initialUrl);
+    if (item.finalUrl) {
+      assert.equal(item.finalUrl, destinationUrl);
+    }
+    const bytes = await readFile(item.filename);
+    assert(bytes.equals(images[1]), 'Native redirect destination bytes differ');
+    const events = nativeLoopback.since(mark);
+    assert(
+      events.some(({ status, redirectTo }) => status === 302 && redirectTo === destinationUrl)
+    );
+    assert(
+      events.some(
+        ({ host, path, status, result }) =>
+          host === 'pbs.twimg.com' &&
+          path === '/media/GkE5678GHIJKL.jpg' &&
+          status === 200 &&
+          result === 'served'
+      ),
+      'Browser native downloader did not follow the declared redirect'
+    );
+    return {
+      scope:
+        'direct chrome.downloads API diagnostic; production sender validation and gallery ownership covered separately',
+      browserId: id,
+      initialUrl: item.url,
+      finalUrl: item.finalUrl || null,
+      bytes: bytes.length,
+      sha256: createHash('sha256').update(bytes).digest('hex'),
+      events,
+    };
+  } finally {
+    nativeLoopback.clearRedirect();
+  }
 }
 
 async function assertNativeSingle({
@@ -8521,6 +8586,7 @@ async function exerciseInstalledExtension(
   const sourceQuality: SourceQualityEvidence = { status: 'pending', sources: [], requests: [] };
   let apiReuse: unknown = { status: 'pending' };
   let videoLoading: unknown = { status: 'pending' };
+  let nativeRedirect: unknown = { status: 'pending' };
   const flowCleanup: FlowCleanup = {};
   const cleanupErrors: unknown[] = [];
   let fixtureRoutes: Awaited<ReturnType<typeof installFixtureRoutes>> | undefined;
@@ -9027,6 +9093,7 @@ async function exerciseInstalledExtension(
         'Required installed media follow-up profiles failed'
       );
     }
+    nativeRedirect = await runNativeRedirectDiagnostic(extensionPage, nativeLoopback, images);
     const expectedMemoryErrors = new Set(downloadMemory.expectedConsoleErrors ?? []);
     const expectedRenderFaultErrors = new Set(modelessRenderRecovery.expectedConsoleErrors ?? []);
     const unexpectedConsoleErrors = consoleErrors.filter(
@@ -9075,6 +9142,7 @@ async function exerciseInstalledExtension(
       downloadMemory,
       notification,
       nativeTransport,
+      nativeRedirect,
       packagingAssets,
       publicDom,
       quotedVideoCycles,

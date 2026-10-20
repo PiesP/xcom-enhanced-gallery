@@ -63,7 +63,7 @@ not a GraphQL response-byte guarantee.
 
 `MAX_METADATA_RESPONSE_BYTES` in `twitter-api-client.ts` defines the finite
 capacity for one root/direct-quote response. Its 2 MiB allowance accommodates two
-full notes (approximately 300,000 bytes even if every UTF-16 unit is JSON-escaped)
+full notes (up to approximately 600,000 escaped bytes for 25,000 Unicode code points each)
 plus user records, entities, media variants and envelopes. Ordinary, mixed-owner
 and full multilingual note/quote fixtures exercise compatibility. Unexpected
 provider expansions can still exceed this product policy and fail with a

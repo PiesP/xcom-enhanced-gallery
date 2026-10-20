@@ -77,6 +77,27 @@ async function waitFor(read: () => unknown) {
 }
 
 describe('userscript HTTPS loopback protocol', () => {
+  it('serves only the declared metadata request in an explicit bounded mode', async () => {
+    await withServer(async (fixture, port) => {
+      const path = `/i/api/graphql/fixture/TweetResultByRestId?variables=${encodeURIComponent(JSON.stringify({ tweetId: '1234567890123456789' }))}`;
+      expect((await get(port, path, { host: 'x.com' })).status).toBe(404);
+      fixture.setApiMode('healthy');
+      const healthy = await get(port, path, { host: 'x.com' });
+      expect(healthy.status).toBe(200);
+      expect(JSON.parse(healthy.body.toString()).data.tweetResult.result.rest_id).toBe(
+        '1234567890123456789'
+      );
+      expect((await get(port, path, { host: 'pbs.twimg.com' })).status).toBe(404);
+      expect((await get(port, path, { host: 'x.com', method: 'POST' })).status).toBe(404);
+      fixture.setApiMode('capacity');
+      const capacity = await get(port, path, { host: 'x.com' });
+      expect(capacity.status).toBe(200);
+      expect(capacity.body.length).toBeGreaterThan(2 * 1024 * 1024);
+      expect(fixture.snapshot()).toMatchObject({ overflow: false, activeCount: 0 });
+      fixture.setApiMode(null);
+    });
+  });
+
   it('serves only declared GETs and records a real post-click 503', async () => {
     await withServer(async (fixture, port) => {
       fixture.setImages([Buffer.from('first'), Buffer.from('second'), Buffer.from('third')]);

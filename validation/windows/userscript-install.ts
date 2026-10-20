@@ -309,7 +309,7 @@ type UserscriptInstallationResult = {
     kind: string;
     bind: string;
     port: number;
-    host: string;
+    hosts: string[];
     certificateScope: string;
   };
   browserVersion?: string;
@@ -324,6 +324,7 @@ type UserscriptInstallationResult = {
     maxLoopbackRequests: number;
     maxLoopbackImageBytes: number;
     maxLoopbackServedBytes: number;
+    maxLoopbackApiServedBytes: number;
     productionBudget: string;
   };
   fixture?: FixtureResult;
@@ -2372,6 +2373,7 @@ async function runFixture(
     cleanup: {},
   };
   let phase = 'normal';
+  let apiMode: 'healthy' | 'capacity' | null = null;
   let managerConsole: ReturnType<typeof watchManagerDownloadConsole> | undefined;
   const mediaNetwork = watchFixtureMediaNetwork(context);
   const routeFixture = async (route: Route) => {
@@ -2402,8 +2404,14 @@ async function runFixture(
       const marker = markers[index];
       assert(marker, 'Missing media marker');
       const isPreview = route.request().resourceType() === 'image';
-      const expectedUrl = `https://pbs.twimg.com/media/${marker}.jpg?format=jpg&name=${isPreview ? 'large' : 'orig'}`;
-      assert.equal(url.href, expectedUrl, 'Fixture media URL differs from its declared purpose');
+      const allowedNames =
+        isPreview && apiMode === 'healthy' ? ['large', 'orig'] : [isPreview ? 'large' : 'orig'];
+      assert(
+        allowedNames.some(
+          (name) => url.href === `https://pbs.twimg.com/media/${marker}.jpg?format=jpg&name=${name}`
+        ),
+        'Fixture media URL differs from its declared purpose'
+      );
       assert(routeRecords.length < 64, 'Fixture exceeded its routed request limit');
       const record: FixtureRouteRecord = {
         phase,
@@ -2433,6 +2441,10 @@ async function runFixture(
       return;
     }
     if (url.hostname === 'x.com' && url.pathname.endsWith('/TweetResultByRestId')) {
+      if (apiMode) {
+        await route.continue();
+        return;
+      }
       await route.fulfill({ status: 403, contentType: 'application/json', body: '{}' });
       return;
     }
@@ -2793,6 +2805,62 @@ async function runFixture(
       bytes: recovered.bytes.length,
     });
     result.cases.reloadRecovery = 'passed';
+    await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]').click();
+    await gallery.waitFor({ state: 'detached' });
+    const apiCases: Record<string, unknown> = {};
+    for (const mode of ['healthy', 'capacity'] as const) {
+      apiMode = mode;
+      loopback.setApiMode(mode);
+      const before = loopback.mark();
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await page.locator('[data-phase="normal"] [data-testid="tweetPhoto"] img').nth(1).click();
+      await gallery.waitFor({ state: 'visible' });
+      const selected = gallery.locator('[data-gallery-element="item"][data-index="1"] img');
+      await selected.waitFor({ state: 'visible' });
+      const expectedName = mode === 'healthy' ? 'orig' : 'large';
+      const selectedUrl = await waitFor(async () => {
+        const source = await selected.getAttribute('src');
+        if (!source) {
+          return undefined;
+        }
+        const url = new URL(source);
+        return url.searchParams.get('name') === expectedName ? url : undefined;
+      }, `${mode} selected metadata image quality`);
+      assert.equal(selectedUrl.pathname, `/media/${MEDIA_COHORTS.normal[1]}.jpg`);
+      assert.equal(
+        selectedUrl.searchParams.get('name'),
+        expectedName,
+        `${mode} metadata response selected an unexpected image quality`
+      );
+      const apiEvents = await waitFor(() => {
+        const events = loopback
+          .snapshot()
+          .events.slice(before)
+          .filter((event) => event.cohort === 'api');
+        return events.length === 1 && events[0]?.result !== 'started' ? events : undefined;
+      }, `${mode} installed GM metadata request`);
+      assert.equal(
+        apiEvents.length,
+        1,
+        `${mode} made an unexpected number of GM metadata requests`
+      );
+      if (mode === 'healthy') {
+        assert.equal(apiEvents[0]?.result, 'served');
+        assert((apiEvents[0]?.bytes ?? 0) > 0 && (apiEvents[0]?.bytes ?? 0) < 2 * 1024 * 1024);
+      } else {
+        assert(loopback.snapshot().apiServedBytes > 2 * 1024 * 1024);
+      }
+      apiCases[mode] = {
+        requests: apiEvents.length,
+        transport: apiEvents,
+        selectedName: selectedUrl.searchParams.get('name'),
+      };
+      await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]').click();
+      await gallery.waitFor({ state: 'detached' });
+    }
+    result.cases.metadataAdmission = apiCases;
+    apiMode = null;
+    loopback.setApiMode(null);
     await observer.flush();
     assert.equal(
       result.routeFailures.length + result.routeFailureOverflow,
@@ -3382,7 +3450,7 @@ export async function runUserscriptInstallation({
       kind: 'task-owned-https-loopback',
       bind: '127.0.0.1',
       port: loopback.port,
-      host: 'pbs.twimg.com',
+      hosts: ['pbs.twimg.com', 'x.com'],
       certificateScope: 'one-run-spki',
     };
     context = await chromium.launchPersistentContext(profile, {
@@ -3395,7 +3463,7 @@ export async function runUserscriptInstallation({
       ignoreDefaultArgs: ['--disable-extensions'],
       args: [
         '--enable-unsafe-extension-debugging',
-        `--host-resolver-rules=MAP pbs.twimg.com:443 127.0.0.1:${loopback.port}`,
+        `--host-resolver-rules=MAP pbs.twimg.com:443 127.0.0.1:${loopback.port},MAP x.com:443 127.0.0.1:${loopback.port}`,
         `--ignore-certificate-errors-spki-list=${loopback.spkiSha256}`,
       ],
     });
@@ -3454,6 +3522,7 @@ export async function runUserscriptInstallation({
       maxLoopbackRequests: 64,
       maxLoopbackImageBytes: 64 * 1024,
       maxLoopbackServedBytes: 2 * 1024 * 1024,
+      maxLoopbackApiServedBytes: 3 * 1024 * 1024,
       productionBudget: 'unchanged',
     };
     observer = createBrowserDownloadObserver(cdp);

@@ -14,6 +14,8 @@ type Variant =
   | 'unreadable-retry'
   | 'provider-error'
   | 'malformed'
+  | 'capacity'
+  | 'redirect'
   | 'malformed-wrapper';
 type Cleanup = {
   routesRemoved: boolean;
@@ -27,6 +29,7 @@ type ApiRequest = {
   status: number;
   requestedAtMonotonicMs: number;
   fulfilledAtMonotonicMs?: number;
+  encodedBytes?: number;
 };
 type ApiCase = {
   case: string;
@@ -49,6 +52,7 @@ type MediaEvidence = {
   consoleErrors: { variant: Variant; text: string; expected: boolean }[];
   cleanup: Cleanup;
   responseAccounting?: AccountingEvidence;
+  redirectReceiverRequests?: number;
   reuseElapsedMs?: number;
   retryAfterSeconds?: number;
   untested?: string[];
@@ -111,6 +115,7 @@ type AccountingState = {
 };
 
 const API_ROUTE = '**/TweetResultByRestId*';
+const REDIRECT_RECEIVER = 'https://pbs.twimg.com/media/xeg-metadata-redirect.json';
 const GALLERY = '[data-xeg-gallery-container]';
 const READY = 'html[data-xeg-gallery-ready="true"]';
 const MAX_OBSERVATIONS = 32;
@@ -278,6 +283,11 @@ export async function runInstalledMediaApiReuseProfile({
   let activePage = page;
   const originalPageUrl = page.url();
   let variant: Variant = 'healthy';
+  let redirectReceiverRequests = 0;
+  const redirectReceiver = async (route: Route) => {
+    redirectReceiverRequests += 1;
+    await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+  };
   const routeHandler = async (route: Route) => {
     if (!targetRequest(route, qualityTweetId)) {
       return route.fallback();
@@ -290,6 +300,8 @@ export async function runInstalledMediaApiReuseProfile({
       'unreadable-retry': 503,
       'provider-error': 200,
       malformed: 200,
+      capacity: 200,
+      redirect: 302,
       'malformed-wrapper': 200,
     };
     const record: ApiRequest = {
@@ -331,6 +343,13 @@ export async function runInstalledMediaApiReuseProfile({
         contentType: 'application/json',
         body: JSON.stringify({ errors: [{ code: 88, message: 'fixture provider error' }] }),
       });
+    } else if (variant === 'capacity') {
+      // A small, finite boundary fixture; no exhaustion or native-memory claim.
+      const body = JSON.stringify({ padding: 'x'.repeat(2 * 1024 * 1024) });
+      record.encodedBytes = Buffer.byteLength(body);
+      await route.fulfill({ status: 200, contentType: 'application/json', body });
+    } else if (variant === 'redirect') {
+      await route.fulfill({ status: 302, headers: { location: REDIRECT_RECEIVER }, body: '' });
     } else if (variant === 'malformed') {
       await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
     } else if (variant === 'malformed-wrapper') {
@@ -382,11 +401,14 @@ export async function runInstalledMediaApiReuseProfile({
           text
         )?.[1];
       const expected =
-        apiLocation &&
-        status !== undefined &&
-        requests.some(
-          (request) => request.variant === observedVariant && request.status === Number(status)
-        );
+        (apiLocation &&
+          observedVariant === 'redirect' &&
+          /^Failed to load resource: net::ERR_(?:FAILED|UNSAFE_REDIRECT)$/u.test(text)) ||
+        (apiLocation &&
+          status !== undefined &&
+          requests.some(
+            (request) => request.variant === observedVariant && request.status === Number(status)
+          ));
       if (consoleErrors.length < MAX_OBSERVATIONS) {
         consoleErrors.push({ variant: observedVariant, text, expected });
       } else {
@@ -421,6 +443,7 @@ export async function runInstalledMediaApiReuseProfile({
 
   observePage(page);
   await context.route(API_ROUTE, routeHandler);
+  await context.route(REDIRECT_RECEIVER, redirectReceiver);
   try {
     await readyPage(page, qualityFixtureUrl);
     const reuseStarted = performance.now();
@@ -461,6 +484,8 @@ export async function runInstalledMediaApiReuseProfile({
       ['provider-error', 2],
       ['malformed', 2],
       ['malformed-wrapper', 2],
+      ['capacity', 2],
+      ['redirect', 2],
     ] satisfies [Variant, number][]) {
       variant = name;
       const failurePage = await newFixturePage();
@@ -515,6 +540,12 @@ export async function runInstalledMediaApiReuseProfile({
       });
     }
     assert.equal(errorOverflow, false, 'API reuse error observations overflowed');
+    assert.equal(
+      redirectReceiverRequests,
+      0,
+      'Installed fetch must not follow the controlled redirect'
+    );
+    evidence.redirectReceiverRequests = redirectReceiverRequests;
     assert.deepEqual(pageErrors, [], 'API reuse pages raised unexpected script errors');
     assert.deepEqual(
       consoleErrors.filter((record) => !record.expected),
@@ -545,6 +576,7 @@ export async function runInstalledMediaApiReuseProfile({
   } finally {
     try {
       await context.unroute(API_ROUTE, routeHandler);
+      await context.unroute(REDIRECT_RECEIVER, redirectReceiver);
       evidence.cleanup.routesRemoved = true;
     } catch (error) {
       cleanupErrors.push(error);

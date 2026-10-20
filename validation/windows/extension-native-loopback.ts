@@ -37,6 +37,7 @@ type NativeEvent = {
   bodyQueuedAtMs?: number;
   prefixBytesQueued?: number;
   firstByteQueuedAtMs?: number | null;
+  redirectTo?: string;
 };
 type VideoHold = {
   path: string;
@@ -80,6 +81,7 @@ export function createExtensionNativeFixtureHandler() {
   let heldResponse: ServerResponse | null = null;
   let heldTail: Buffer | null = null;
   let videoHold: VideoHold | null = null;
+  let redirectOnce: { source: string; destination: string } | null = null;
   const reject = (response: ServerResponse, status = 404) => {
     unexpectedCount += 1;
     response.writeHead(status, { 'Content-Length': '0', 'Cache-Control': 'no-store' });
@@ -97,6 +99,43 @@ export function createExtensionNativeFixtureHandler() {
     const route = allowed.get(`${host?.replace(/:443$/u, '')}${request.url ?? ''}`);
     if (!['GET', 'HEAD'].includes(request.method ?? '') || !route || (sni && sni !== route.host)) {
       reject(response);
+      return;
+    }
+    if (request.method === 'GET' && redirectOnce?.source === `${route.host}${request.url ?? ''}`) {
+      const destination = redirectOnce.destination;
+      redirectOnce = null;
+      const event: NativeEvent = {
+        host: route.host,
+        path: route.path,
+        method: request.method ?? '',
+        purpose: 'transfer',
+        status: 302,
+        range: null,
+        bytes: 0,
+        sha256: null,
+        result: 'started',
+        atMs: performance.now(),
+        redirectTo: destination,
+      };
+      events.push(event);
+      active.add(response);
+      response.once('close', () => {
+        if (!response.writableFinished) {
+          event.result = 'aborted';
+          event.closedAtMs = performance.now();
+        }
+        active.delete(response);
+      });
+      response.once('finish', () => {
+        event.result = 'redirected';
+        event.finishedAtMs = performance.now();
+      });
+      response.writeHead(302, {
+        Location: destination,
+        'Content-Length': '0',
+        'Cache-Control': 'no-store',
+      });
+      response.end();
       return;
     }
     const { bytes } = route;
@@ -315,6 +354,19 @@ export function createExtensionNativeFixtureHandler() {
       pending.responses.clear();
     },
     mark: () => events.length,
+    armRedirect(source: string, destination: string) {
+      assert.equal(redirectOnce, null, 'Only one native redirect may be armed');
+      const from = new URL(source);
+      const to = new URL(destination);
+      assert.equal(from.protocol, 'https:');
+      assert.equal(to.protocol, 'https:');
+      assert(allowed.has(`${from.hostname}${from.pathname}${from.search}`));
+      assert(allowed.has(`${to.hostname}${to.pathname}${to.search}`));
+      redirectOnce = { source: `${from.hostname}${from.pathname}${from.search}`, destination };
+    },
+    clearRedirect() {
+      redirectOnce = null;
+    },
     armHold(host: string, path: string) {
       assert.equal(holdPath, null);
       assert.equal(heldResponse, null);

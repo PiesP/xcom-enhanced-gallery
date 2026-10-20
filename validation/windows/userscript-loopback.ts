@@ -14,6 +14,8 @@ const HOST = 'pbs.twimg.com';
 const MAX_REQUESTS = 64;
 const MAX_IMAGE_BYTES = 64 * 1024;
 const MAX_SERVED_BYTES = 2 * 1024 * 1024;
+const MAX_API_SERVED_BYTES = 3 * 1024 * 1024;
+const API_TWEET_ID = '1234567890123456789';
 
 type FixtureEvent = {
   phase: string;
@@ -160,6 +162,8 @@ export function createUserscriptFixtureHandler(
   cohorts: Record<string, string[]>,
   avatarPath: string
 ) {
+  const normalMarkers = cohorts.normal;
+  assert(normalMarkers?.length === 3, 'Three normal media markers are required');
   const allowed = new Map<string, { cohort: string; index: number; purpose?: string }>();
   for (const [cohort, markers] of Object.entries(cohorts)) {
     assert(
@@ -189,6 +193,8 @@ export function createUserscriptFixtureHandler(
   let unexpectedCount = 0;
   let overflow = false;
   let servedBytes = 0;
+  let apiServedBytes = 0;
+  let apiMode: 'healthy' | 'capacity' | null = null;
   const events: FixtureEvent[] = [];
   const active = new Set<ServerResponse>();
   const reject = (response: ServerResponse) => {
@@ -201,6 +207,90 @@ export function createUserscriptFixtureHandler(
     if (requestCount > MAX_REQUESTS) {
       overflow = true;
       response.destroy();
+      return;
+    }
+    const host = request.headers.host?.replace(/:443$/u, '');
+    const path = request.url ?? '';
+    if (host === 'x.com' && path.startsWith('/i/api/graphql/')) {
+      let tweetId: unknown;
+      try {
+        const url = new URL(path, 'https://x.com');
+        tweetId = JSON.parse(url.searchParams.get('variables') ?? '{}').tweetId;
+        if (!url.pathname.endsWith('/TweetResultByRestId')) {
+          reject(response);
+          return;
+        }
+      } catch {
+        reject(response);
+        return;
+      }
+      if (request.method !== 'GET' || tweetId !== API_TWEET_ID || !apiMode) {
+        reject(response);
+        return;
+      }
+      const mode = apiMode;
+      const result = {
+        __typename: 'Tweet',
+        rest_id: API_TWEET_ID,
+        core: {
+          user_results: { result: { legacy: { screen_name: 'testuser', name: 'Test User' } } },
+        },
+        legacy: {
+          id_str: API_TWEET_ID,
+          full_text: 'Three installed userscript fixtures.',
+          extended_entities: {
+            media: normalMarkers.map((marker, index) => ({
+              type: 'photo',
+              id_str: `46660${index}`,
+              media_url_https: `https://pbs.twimg.com/media/${marker}.jpg?format=jpg&name=small`,
+              original_info: { width: 320, height: 180 },
+            })),
+          },
+        },
+      };
+      const body = Buffer.from(
+        JSON.stringify({
+          data: { tweetResult: { result } },
+          ...(mode === 'capacity' ? { padding: 'x'.repeat(2 * 1024 * 1024) } : {}),
+        })
+      );
+      if (apiServedBytes + body.length > MAX_API_SERVED_BYTES) {
+        overflow = true;
+        response.destroy();
+        return;
+      }
+      apiServedBytes += body.length;
+      const event: FixtureEvent = {
+        phase: mode,
+        cohort: 'api',
+        index: 0,
+        purpose: 'metadata',
+        method: 'GET',
+        result: 'started',
+        bytes: 0,
+        sha256: null,
+      };
+      events.push(event);
+      active.add(response);
+      response.once('close', () => {
+        if (!response.writableFinished) {
+          event.result = 'aborted';
+        }
+        active.delete(response);
+      });
+      response.once('finish', () => {
+        event.result = 'served';
+        event.bytes = body.length;
+        event.sha256 = createHash('sha256').update(body).digest('hex');
+      });
+      response.writeHead(200, {
+        'Content-Type': 'application/json',
+        'Content-Length': String(body.length),
+        'Cache-Control': 'no-store',
+        'Access-Control-Allow-Origin': 'https://x.com',
+        'Access-Control-Allow-Credentials': 'true',
+      });
+      response.end(body);
       return;
     }
     const media = allowed.get(request.url ?? '');
@@ -294,6 +384,10 @@ export function createUserscriptFixtureHandler(
       phase = next;
       heldArmed = false;
     },
+    setApiMode(next: 'healthy' | 'capacity' | null) {
+      assert.equal(active.size, 0, 'Fixture has an active transport before API mode change');
+      apiMode = next;
+    },
     armHeld() {
       assert.equal(phase, 'held');
       assert.equal(active.size, 0, 'Cannot arm a held response with active transport');
@@ -318,6 +412,7 @@ export function createUserscriptFixtureHandler(
       unexpectedCount,
       overflow,
       servedBytes,
+      apiServedBytes,
       activeCount: active.size,
       events: events.map((event) => ({ ...event })),
     }),
@@ -335,7 +430,7 @@ export async function startUserscriptFixtureLoopback(
   avatarPath: string,
   run: CertificateRunner = execFileAsync
 ) {
-  const certificate = await generateFixtureCertificate(helperPath, run);
+  const certificate = await generateFixtureCertificate(helperPath, run, true, true);
   const fixture = createUserscriptFixtureHandler(cohorts, avatarPath);
   let server: ReturnType<typeof createServer>;
   try {

@@ -181,6 +181,13 @@ native eight-video ZIP is independently read for entry order, names, bytes and
 CRC after playback fallback; its first entry must retain the preferred source.
 The helper records active-source, metadata, first-frame and completion timings
 as fixture observations, including the deliberately gated response boundary.
+The API helper also rejects a controlled response above 2 MiB without caching it
+and checks that a 302 response is not followed by the installed MV3 Fetch path.
+After the production gallery cases, a separate direct `chrome.downloads` diagnostic
+records whether the native browser downloader follows one declared JPEG-to-JPEG
+302 and whether the saved bytes and final URL match the destination. It does not
+exercise the production message sender boundary; the gallery download cycles
+above retain that coverage.
 The API helper also runs three response-contract failures before a fourth action
 in the same document: foreign owner responses, two server failures followed by a
 foreign owner, and missing result envelopes. It independently counts physical
@@ -515,8 +522,14 @@ acceptance remains unverified. The manager is imported as an unpacked
 extension, the production userscript is installed through its confirmation UI,
 and native downloads use the owned browser directory. The fixture starts a
 task-owned HTTPS listener on ephemeral `127.0.0.1` before launching the fresh
-profile. A one-run SPKI exception and exact `pbs.twimg.com:443` host mapping let
-the real manager and browser download API fetch only the declared fixture JPEGs.
+profile. A one-run SPKI exception and exact `pbs.twimg.com:443` and `x.com:443`
+host mappings let the real manager and browser use only declared JPEG and
+`TweetResultByRestId` routes. The default API smoke still receives a routed 403.
+After download recovery, an explicit API mode serves one small valid JSON body
+and one response above 2 MiB through the HTTPS listener. The receipt records
+physical GM requests and selected original or fallback image quality; the
+oversized body is bounded by a separate 3 MiB fixture budget. This tests the
+installed Tampermonkey path without claiming a bound on manager-owned buffers.
 The generated private key stays in process memory; no OS trust or hosts setting
 is changed. For each single image, a read-only query from the exact manager
 options page requires one new native download ID for the fixture URL, a complete

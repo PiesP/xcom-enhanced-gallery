@@ -9,7 +9,7 @@ import { downloadAsZip as assembleZip } from '@shared/services/download/zip-down
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 interface FixtureRequest {
-  onload?: (response: { status: number; response: ArrayBuffer }) => void;
+  onload?: (response: { status: number; response: ArrayBuffer; finalUrl: string }) => void;
   onerror?: (response: { status: number }) => void;
 }
 let httpFixture: ((details: FixtureRequest) => { abort: () => void }) | undefined;
@@ -111,12 +111,14 @@ describe('user-facing bulk ZIP download', () => {
   it('admits a known direct response under a tiny live budget while an unused provider needs more copy capacity', async () => {
     const directUsage: number[] = [];
     const directBudget = new LiveByteBudget(1100, (bytes) => directUsage.push(bytes));
-    const requests = vi.fn(
-      (details: { onload?: (response: { status: number; response: ArrayBuffer }) => void }) => {
-        details.onload?.({ status: 200, response: new ArrayBuffer(160) });
-        return { abort: vi.fn() };
-      }
-    );
+    const requests = vi.fn((details: FixtureRequest) => {
+      details.onload?.({
+        status: 200,
+        response: new ArrayBuffer(160),
+        finalUrl: 'https://pbs.twimg.com/media/direct.jpg',
+      });
+      return { abort: vi.fn() };
+    });
     setHttpFixture(requests);
     const directAdmissions: Array<{
       inputKind: string;
@@ -187,12 +189,14 @@ describe('user-facing bulk ZIP download', () => {
   });
 
   it('uses URL fallback only after a resolved provider miss', async () => {
-    const request = vi.fn(
-      (details: { onload?: (response: { status: number; response: ArrayBuffer }) => void }) => {
-        details.onload?.({ status: 200, response: new Uint8Array([1, 2, 3]).buffer });
-        return { abort: vi.fn() };
-      }
-    );
+    const request = vi.fn((details: FixtureRequest) => {
+      details.onload?.({
+        status: 200,
+        response: new Uint8Array([1, 2, 3]).buffer,
+        finalUrl: 'https://pbs.twimg.com/media/miss.jpg',
+      });
+      return { abort: vi.fn() };
+    });
     setHttpFixture(request);
     const getBlob = vi.fn(async () => null);
 
