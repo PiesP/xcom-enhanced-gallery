@@ -9,8 +9,8 @@ import type { BigIntStats } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 
 const DIRECTORY = 'validation/windows/release-upgrade';
-const USER_PATH = `${DIRECTORY}/v2.3.6.user.js`;
-const EXTENSION_PATH = `${DIRECTORY}/v2.3.6-extension`;
+const USER_PATH = `${DIRECTORY}/v2.3.7.user.js`;
+const EXTENSION_PATH = `${DIRECTORY}/v2.3.7-extension`;
 const CANDIDATE_USER_PATH = 'dist/xcom-enhanced-gallery.user.js';
 const SCRIPT_NAME = 'X.com Enhanced Gallery';
 const SCRIPT_NAMESPACE = 'https://github.com/PiesP/xcom-enhanced-gallery';
@@ -105,9 +105,7 @@ export function requireManagerEditorSource(
   assert.equal(exactlyOne('updateURL'), SCRIPT_UPDATE_URL, 'Manager editor update URL changed');
   assert.equal(
     exactlyOne('downloadURL'),
-    version === '2.3.6'
-      ? `${SCRIPT_NAMESPACE}/releases/download/v2.3.6/xcom-enhanced-gallery.user.js`
-      : SCRIPT_LATEST_DOWNLOAD_URL,
+    SCRIPT_LATEST_DOWNLOAD_URL,
     'Manager editor download URL changed'
   );
   return {
@@ -190,17 +188,17 @@ export async function readUpgradeInput(root: string) {
     'schema',
   ]);
   assert.equal(value.schema, 1);
-  assert.equal(value.previousVersion, '2.3.6');
-  assert.equal(value.candidateVersion, '2.3.7');
+  assert.equal(value.previousVersion, '2.3.7');
+  assert.equal(value.candidateVersion, '2.3.8');
   assert.deepEqual(Object.keys(value.previousUserscript).sort(), ['path', 'sha256', 'url']);
   assert.deepEqual(Object.keys(value.previousExtension).sort(), ['inventorySha256', 'path', 'url']);
   assert.equal(
     value.previousUserscript.url,
-    'https://github.com/PiesP/xcom-enhanced-gallery/releases/download/v2.3.6/xcom-enhanced-gallery.user.js'
+    'https://github.com/PiesP/xcom-enhanced-gallery/releases/download/v2.3.7/xcom-enhanced-gallery.user.js'
   );
   assert.equal(
     value.previousExtension.url,
-    'https://github.com/PiesP/xcom-enhanced-gallery/releases/download/v2.3.6/xcom-enhanced-gallery-chrome.zip'
+    'https://github.com/PiesP/xcom-enhanced-gallery/releases/download/v2.3.7/xcom-enhanced-gallery-chrome.zip'
   );
   const userPath = fixedPath(root, value.previousUserscript.path, USER_PATH);
   const extensionPath = fixedPath(root, value.previousExtension.path, EXTENSION_PATH);
