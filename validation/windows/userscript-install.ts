@@ -2496,6 +2496,24 @@ async function runFixture(
     join(root, 'test/e2e/fixtures/installed-unavailable-sequence-page.html'),
     'utf8'
   );
+  const settingsPageUrl = `${FIXTURE_URL}?xeg-settings-readback=1`;
+  const apiPageUrl = `${FIXTURE_URL}?xeg-api-admission=1`;
+  const compactHtml = (
+    imageCount: 1 | 3
+  ) => `<!doctype html><html lang="en"><head><meta charset="UTF-8"></head><body>
+    <article data-phase="normal" data-testid="tweet">
+      <span>Test User</span><span>@testuser</span>
+      <a href="/testuser/status/${TWEET_ID}"><time datetime="2026-06-25T10:00:00.000Z">Jun 25, 2026</time></a>
+      ${MEDIA_COHORTS.normal
+        .slice(0, imageCount)
+        .map(
+          (marker, index) =>
+            `<div data-testid="tweetPhoto"><img src="https://pbs.twimg.com/media/${marker}.jpg?format=jpg&amp;name=large" alt="Fixture image ${index + 1}" width="320" height="180" tabindex="0"></div>`
+        )
+        .join('')}
+    </article></body></html>`;
+  const settingsHtml = compactHtml(1);
+  const apiHtml = compactHtml(3);
   const routeRecords: FixtureRouteRecord[] = [];
   const result: FixtureResult = {
     status: 'failed',
@@ -2519,10 +2537,12 @@ async function runFixture(
     }
     if (url.hostname === 'x.com' && route.request().isNavigationRequest()) {
       const noDom = url.href === `${FIXTURE_URL}?xeg-no-dom=1`;
+      const settingsReadback = url.href === settingsPageUrl;
+      const apiAdmission = url.href === apiPageUrl;
       await route.fulfill({
         status: 200,
         contentType: 'text/html',
-        body: noDom ? noDomHtml : html,
+        body: noDom ? noDomHtml : settingsReadback ? settingsHtml : apiAdmission ? apiHtml : html,
       });
       return;
     }
@@ -2644,7 +2664,7 @@ async function runFixture(
   const readFreshVideoClickMode = async () => {
     const readbackPage = await context.newPage();
     try {
-      await readbackPage.goto(FIXTURE_URL, { waitUntil: 'domcontentloaded' });
+      await readbackPage.goto(settingsPageUrl, { waitUntil: 'domcontentloaded' });
       await readbackPage.locator('html[data-xeg-gallery-ready="true"]').waitFor({
         state: 'attached',
         timeout: 15_000,
@@ -3051,7 +3071,11 @@ async function runFixture(
       apiMode = mode;
       loopback.setApiMode(mode);
       const before = loopback.mark();
-      await page.reload({ waitUntil: 'domcontentloaded' });
+      await page.goto(apiPageUrl, { waitUntil: 'domcontentloaded' });
+      await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({
+        state: 'attached',
+        timeout: 15_000,
+      });
       await page.locator('[data-phase="normal"] [data-testid="tweetPhoto"] img').nth(1).click();
       await gallery.waitFor({ state: 'visible' });
       const selected = gallery.locator('[data-gallery-element="item"][data-index="1"] img');
@@ -3124,7 +3148,6 @@ async function runFixture(
         waitUntil: 'domcontentloaded',
       });
       assert(isOwnedManagerOptionsUrl(notificationPage.url(), managerId));
-      await page.reload({ waitUntil: 'domcontentloaded' });
       await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
       await page.locator('[data-phase="normal"] [data-testid="tweetPhoto"] img').first().click();
       await gallery.waitFor({ state: 'visible' });
@@ -3219,7 +3242,7 @@ async function runFixture(
       }
       if (originalClickMode !== undefined) {
         try {
-          await page.goto(FIXTURE_URL, { waitUntil: 'domcontentloaded' });
+          await page.goto(settingsPageUrl, { waitUntil: 'domcontentloaded' });
           await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
           await page
             .locator('[data-phase="normal"] [data-testid="tweetPhoto"] img')
