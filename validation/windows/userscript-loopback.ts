@@ -16,6 +16,20 @@ const MAX_IMAGE_BYTES = 64 * 1024;
 const MAX_SERVED_BYTES = 2 * 1024 * 1024;
 const MAX_API_SERVED_BYTES = 3 * 1024 * 1024;
 const API_TWEET_ID = '1234567890123456789';
+export const DECLARED_DEFAULT_TWEET_IDS = [
+  { id: API_TWEET_ID, kind: 'primary' },
+  { id: '7555555555555555555', kind: 'control' },
+  { id: '8555555555555555555', kind: 'control' },
+  { id: '8666666666666666661', kind: 'unavailable' },
+  { id: '8666666666666666662', kind: 'unavailable' },
+  { id: '8666666666666666663', kind: 'unavailable' },
+  { id: '8666666666666666664', kind: 'unavailable' },
+  { id: '9555555555555555555', kind: 'control' },
+  { id: '9876543210987654321', kind: 'public' },
+] as const;
+const DEFAULT_TWEET_ID_KINDS = new Map<string, string>(
+  DECLARED_DEFAULT_TWEET_IDS.map(({ id, kind }) => [id, kind])
+);
 const API_ALLOWED_RECEIVER = 'https://pbs.twimg.com/xeg-metadata-allowed.json';
 const API_BLOCKED_RECEIVER = 'https://x.com/xeg-metadata-blocked.json';
 const MEDIA_REDIRECT_RECEIVER = '/media/xeg-owned-redirect-final.jpg';
@@ -202,6 +216,7 @@ export function createUserscriptFixtureHandler(
   let mediaRedirectArmed = false;
   let mediaRedirectPending = false;
   const rejectedReasons: Record<string, number> = {};
+  const defaultApiCompletedByKind: Record<string, number> = {};
   const events: FixtureEvent[] = [];
   const active = new Set<ServerResponse>();
   const reject = (response: ServerResponse, reason: string) => {
@@ -312,8 +327,21 @@ export function createUserscriptFixtureHandler(
         reject(response, 'graphql-variables');
         return;
       }
-      if (request.method !== 'GET' || tweetId !== API_TWEET_ID) {
-        reject(response, request.method !== 'GET' ? 'graphql-method' : 'graphql-tweet-id');
+      const defaultKind =
+        typeof tweetId === 'string' ? DEFAULT_TWEET_ID_KINDS.get(tweetId) : undefined;
+      if (
+        request.method !== 'GET' ||
+        !defaultKind ||
+        (apiMode !== null && tweetId !== API_TWEET_ID)
+      ) {
+        reject(
+          response,
+          request.method !== 'GET'
+            ? 'graphql-method'
+            : !defaultKind
+              ? 'graphql-undeclared-id'
+              : 'graphql-active-mode-id'
+        );
         return;
       }
       const mode = apiMode;
@@ -348,6 +376,10 @@ export function createUserscriptFixtureHandler(
         event.bytes = body.length;
         event.sha256 =
           mode === null || redirect ? null : createHash('sha256').update(body).digest('hex');
+        if (mode === null) {
+          defaultApiCompletedByKind[defaultKind] =
+            (defaultApiCompletedByKind[defaultKind] ?? 0) + 1;
+        }
       });
       response.writeHead(mode === null ? 403 : redirect ? 302 : 200, {
         'Content-Type': 'application/json',
@@ -553,6 +585,7 @@ export function createUserscriptFixtureHandler(
       requests: requestCount,
       unexpectedCount,
       rejectedReasons: { ...rejectedReasons },
+      defaultApiCompletedByKind: { ...defaultApiCompletedByKind },
       overflow,
       servedBytes,
       apiServedBytes,

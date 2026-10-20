@@ -3,6 +3,8 @@
 // @vitest-environment node
 
 import { createServer, request as httpRequest } from 'node:http';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vite-plus/test';
 
 const loopback = await import('../../../validation/windows/userscript-loopback.ts');
@@ -83,6 +85,25 @@ async function waitFor(read: () => unknown) {
 }
 
 describe('userscript HTTPS loopback protocol', () => {
+  it('declares every installed-page status ID for default API denial', () => {
+    const fixtureIds = new Set<string>();
+    for (const name of [
+      'installed-gallery-page.html',
+      'installed-unavailable-sequence-page.html',
+    ]) {
+      const html = readFileSync(resolve(import.meta.dirname, '../../e2e/fixtures', name), 'utf8');
+      for (const match of html.matchAll(/\/status\/(\d+)/gu)) {
+        const id = match[1];
+        if (id) {
+          fixtureIds.add(id);
+        }
+      }
+    }
+    const declared = loopback.DECLARED_DEFAULT_TWEET_IDS.map(({ id }) => id);
+    expect(declared).toHaveLength(9);
+    expect([...new Set(declared)].sort()).toEqual([...fixtureIds].sort());
+  });
+
   it('serves only the declared metadata request in an explicit bounded mode', async () => {
     await withServer(async (fixture, port) => {
       const path = `/i/api/graphql/fixture/TweetResultByRestId?variables=${encodeURIComponent(JSON.stringify({ tweetId: '1234567890123456789' }))}`;
@@ -92,17 +113,23 @@ describe('userscript HTTPS loopback protocol', () => {
       expect(fixture.snapshot()).toMatchObject({
         unexpectedCount: 0,
         apiServedBytes: 2,
+        defaultApiCompletedByKind: { primary: 1 },
         events: [{ phase: 'default', cohort: 'api', result: 'http-403', bytes: 2 }],
       });
+      const publicPath = path.replace('1234567890123456789', '9876543210987654321');
+      expect((await get(port, publicPath, { host: 'x.com' })).status).toBe(403);
+      expect(fixture.snapshot().defaultApiCompletedByKind).toMatchObject({ primary: 1, public: 1 });
       expect(
         (
-          await get(port, path.replace('1234567890123456789', '9876543210987654321'), {
+          await get(port, path.replace('1234567890123456789', '9999999999999999999'), {
             host: 'x.com',
           })
         ).status
       ).toBe(404);
-      expect(fixture.snapshot().rejectedReasons).toMatchObject({ 'graphql-tweet-id': 1 });
+      expect(fixture.snapshot().rejectedReasons).toMatchObject({ 'graphql-undeclared-id': 1 });
       fixture.setApiMode('healthy');
+      expect((await get(port, publicPath, { host: 'x.com' })).status).toBe(404);
+      expect(fixture.snapshot().rejectedReasons).toMatchObject({ 'graphql-active-mode-id': 1 });
       const healthy = await get(port, path, { host: 'x.com' });
       expect(healthy.status).toBe(200);
       expect(JSON.parse(healthy.body.toString()).data.tweetResult.result.rest_id).toBe(
