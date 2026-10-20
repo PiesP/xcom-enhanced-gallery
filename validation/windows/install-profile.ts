@@ -281,7 +281,7 @@ type UnavailableStep = {
   preview?: unknown;
   clickedAt?: string;
   completedAt?: string;
-  notification?: { id: string };
+  notification?: { id: string; message: string };
   api?: ApiRecord[];
   recoveryClosedThroughUi?: boolean;
   selected?: unknown;
@@ -560,6 +560,12 @@ declare const chrome: {
     };
   };
   downloads: {
+    download(options: {
+      url: string;
+      filename: string;
+      saveAs: boolean;
+      conflictAction: 'uniquify';
+    }): Promise<number>;
     search(query: {
       id?: number;
       orderBy?: string[];
@@ -617,6 +623,9 @@ const MAX_AGGREGATE_DEPTH = 2;
 const MAX_AGGREGATE_ERRORS = 4;
 const MAX_ERROR_SUMMARY_LENGTH = 2000;
 const MAX_UNAVAILABLE_API_RECORDS = 8;
+const CAPACITY_TWEET_ID = '8666666666666666664';
+const CAPACITY_MESSAGE =
+  'This post exceeds the metadata size limit. Open it on X to view its media.';
 const CYCLES = [
   { close: 'escape', direction: 'ArrowLeft', expectedIndex: 0, triggerIndex: 1 },
   { close: 'button', direction: 'ArrowRight', expectedIndex: 1, triggerIndex: 0 },
@@ -3231,6 +3240,65 @@ async function waitForDownload(extensionPage: Page, knownIds: Set<number>, filen
   );
 }
 
+async function runNativeRedirectDiagnostic(
+  extensionPage: Page,
+  nativeLoopback: NativeLoopback,
+  images: ImageFixtures
+) {
+  const initialUrl = 'https://pbs.twimg.com/media/GkE1234ABCDEF?format=jpg&name=orig';
+  const destinationUrl = 'https://pbs.twimg.com/media/GkE5678GHIJKL.jpg?format=jpg&name=orig';
+  const filename = 'xeg-native-redirect-diagnostic.jpg';
+  const knownIds = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+  const mark = nativeLoopback.mark();
+  nativeLoopback.armRedirect(initialUrl, destinationUrl);
+  try {
+    const id = await extensionPage.evaluate(
+      ({ url, name }) =>
+        chrome.downloads.download({
+          url,
+          filename: name,
+          saveAs: false,
+          conflictAction: 'uniquify',
+        }),
+      { url: initialUrl, name: filename }
+    );
+    const item = await waitForDownload(extensionPage, knownIds, filename);
+    assert.equal(item.id, id);
+    assert.equal(item.url, initialUrl);
+    if (item.finalUrl) {
+      assert.equal(item.finalUrl, destinationUrl);
+    }
+    const bytes = await readFile(item.filename);
+    assert(bytes.equals(images[1]), 'Native redirect destination bytes differ');
+    const events = nativeLoopback.since(mark);
+    assert(
+      events.some(({ status, redirectTo }) => status === 302 && redirectTo === destinationUrl)
+    );
+    assert(
+      events.some(
+        ({ host, path, status, result }) =>
+          host === 'pbs.twimg.com' &&
+          path === '/media/GkE5678GHIJKL.jpg' &&
+          status === 200 &&
+          result === 'served'
+      ),
+      'Browser native downloader did not follow the declared redirect'
+    );
+    return {
+      scope:
+        'direct chrome.downloads API diagnostic; production sender validation and gallery ownership covered separately',
+      browserId: id,
+      initialUrl: item.url,
+      finalUrl: item.finalUrl || null,
+      bytes: bytes.length,
+      sha256: createHash('sha256').update(bytes).digest('hex'),
+      events,
+    };
+  } finally {
+    nativeLoopback.clearRedirect();
+  }
+}
+
 async function assertNativeSingle({
   extensionPage,
   knownIds,
@@ -5623,8 +5691,23 @@ async function runPublicPreplayerCycle({
   });
 }
 
+function withNativeNotificationObserver(context: BrowserContext, extensionId: string) {
+  return <T extends object>(
+    action: (observer: Awaited<ReturnType<typeof observeNativeNotificationCreates>>) => Promise<T>
+  ) =>
+    async (): Promise<T> => {
+      const observer = await observeNativeNotificationCreates(context, extensionId);
+      try {
+        return await action(observer);
+      } finally {
+        await observer.dispose();
+      }
+    };
+}
+
 async function runUnavailableSequence({
   apiResponses,
+  extensionId,
   extensionPage,
   output,
   page,
@@ -5634,6 +5717,7 @@ async function runUnavailableSequence({
   evidence,
 }: {
   apiResponses: ApiRecord[];
+  extensionId: string;
   extensionPage: Page;
   output: string;
   page: Page;
@@ -5642,7 +5726,8 @@ async function runUnavailableSequence({
   settingEvidence: ControlledSettingEvidence;
   evidence: UnavailableEvidence;
 }) {
-  return withControlledFixtureVideoMode(extensionPage, settingEvidence, async () => {
+  const withObserver = withNativeNotificationObserver(page.context(), extensionId);
+  const action = withObserver(async (notificationObserver) => {
     const sequence = UNAVAILABLE_SEQUENCE;
     const firstFailure = sequence.failures[0];
     assert(firstFailure, 'Unavailable sequence has no first failure');
@@ -5734,7 +5819,12 @@ async function runUnavailableSequence({
         `${failure.name} extraction completion`
       );
       step.completedAt = new Date().toISOString();
-      step.notification = notification;
+      const created = await waitForValue(async () => {
+        const snapshot = await notificationObserver.snapshot();
+        return snapshot.calls.find((call) => call.id === notification.id);
+      }, `${failure.name} native notification creation`);
+      assert(typeof created.message === 'string');
+      step.notification = { id: notification.id, message: created.message };
       step.api = sequenceApiResponses.slice(requestIndex);
       assert.deepEqual(
         step.api.map(({ tweetId, status }) => [tweetId, status]),
@@ -5896,6 +5986,129 @@ async function runUnavailableSequence({
     await page.screenshot({ path: join(output, 'quoted-unavailable-sequence-after.png') });
     return evidence;
   });
+  return withControlledFixtureVideoMode(extensionPage, settingEvidence, action);
+}
+
+async function runCapacityNotificationCase({
+  extensionId,
+  extensionPage,
+  page,
+  genericMessage,
+  settingEvidence,
+}: {
+  extensionId: string;
+  extensionPage: Page;
+  page: Page;
+  genericMessage: string;
+  settingEvidence: ControlledSettingEvidence;
+}) {
+  const withObserver = withNativeNotificationObserver(page.context(), extensionId);
+  const action = withObserver(async (notificationObserver) => {
+    assert(genericMessage.length > 0 && !genericMessage.startsWith(CAPACITY_MESSAGE));
+    const pageUrl = page.url();
+    const documentStartedAt = await page.evaluate(() => performance.timeOrigin);
+    const body = JSON.stringify({ padding: 'x'.repeat(2 * 1024 * 1024) });
+    const encodedBytes = Buffer.byteLength(body);
+    assert(encodedBytes > 2 * 1024 * 1024);
+    const requests: { method: string; encodedBytes: number; fulfilled: boolean }[] = [];
+    const routeHandler = async (route: Route) => {
+      const url = new URL(route.request().url());
+      if (url.hostname !== 'x.com' || !url.pathname.endsWith('/TweetResultByRestId')) {
+        await route.fallback();
+        return;
+      }
+      let variables: { tweetId?: string };
+      try {
+        variables = JSON.parse(url.searchParams.get('variables') ?? '{}');
+      } catch {
+        await route.fallback();
+        return;
+      }
+      if (variables?.tweetId !== CAPACITY_TWEET_ID) {
+        await route.fallback();
+        return;
+      }
+      assert(requests.length < 2, 'Capacity fixture made more than one API request');
+      const record = { method: route.request().method(), encodedBytes, fulfilled: false };
+      requests.push(record);
+      await route.fulfill({ status: 200, contentType: 'application/json', body });
+      record.fulfilled = true;
+    };
+    await page.context().route('**/TweetResultByRestId*', routeHandler);
+    try {
+      const article = page.locator('[data-sequence-step="capacity"]');
+      const trigger = article.locator('.media-shell button');
+      await trigger.scrollIntoViewIfNeeded();
+      await page.evaluate(() => window.scrollBy(0, -100));
+      await trigger.focus();
+      const preview = await article.evaluate((element) => {
+        const video = element.querySelector('video');
+        const button = element.querySelector('button');
+        const rect = button?.getBoundingClientRect();
+        const x = rect ? Math.round(rect.left + rect.width * 0.2) : -1;
+        const y = rect ? Math.round(rect.top + rect.height * 0.2) : -1;
+        return {
+          poster: video?.poster ?? null,
+          src: video?.getAttribute('src') ?? null,
+          sourceCount: video?.querySelectorAll('source').length ?? -1,
+          imageCount: element.querySelectorAll('img').length,
+          hit: document.elementFromPoint(x, y) === button,
+          x,
+          y,
+        };
+      });
+      assert.equal(
+        preview.poster,
+        `https://pbs.twimg.com/ext_tw_video_thumb/${CAPACITY_TWEET_ID}/pu/img/unavailable.jpg`
+      );
+      assert.equal(preview.src, null);
+      assert.equal(preview.sourceCount, 0);
+      assert.equal(preview.imageCount, 0);
+      assert.equal(preview.hit, true);
+      const knownNotifications = await extensionPage.evaluate(async () =>
+        Object.keys(await chrome.notifications.getAll())
+      );
+      await page.mouse.click(preview.x, preview.y);
+      const notification = await waitForValue(
+        () =>
+          extensionPage.evaluate(async (known) => {
+            const active = await chrome.notifications.getAll();
+            const entry = Object.entries(active).find(
+              ([id]) => id.startsWith('xeg-') && !known.includes(id)
+            );
+            return entry ? { id: entry[0] } : undefined;
+          }, knownNotifications),
+        'installed capacity notification'
+      );
+      const created = await waitForValue(async () => {
+        const snapshot = await notificationObserver.snapshot();
+        return snapshot.calls.find((call) => call.id === notification.id);
+      }, 'installed capacity notification creation');
+      assert(
+        created.message?.startsWith(CAPACITY_MESSAGE),
+        'Installed extension did not report the metadata capacity category'
+      );
+      assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0);
+      assert.equal(page.url(), pageUrl);
+      assert.equal(await page.evaluate(() => performance.timeOrigin), documentStartedAt);
+      assert.deepEqual(requests, [{ method: 'GET', encodedBytes, fulfilled: true }]);
+      const recovery = page.locator('[data-xeg-error-boundary]');
+      if (await recovery.count()) {
+        await recovery.locator('[data-xeg-error-action="close"]').click();
+        await recovery.waitFor({ state: 'detached' });
+      }
+      return {
+        status: 'passed',
+        tweetId: CAPACITY_TWEET_ID,
+        requests,
+        notification: { id: notification.id, message: created.message },
+        genericMessage,
+      };
+    } finally {
+      await page.context().unroute('**/TweetResultByRestId*', routeHandler);
+    }
+  });
+  return withControlledFixtureVideoMode(extensionPage, settingEvidence, action);
 }
 
 async function runSvgTargetMatrix({
@@ -8520,7 +8733,9 @@ async function exerciseInstalledExtension(
   };
   const sourceQuality: SourceQualityEvidence = { status: 'pending', sources: [], requests: [] };
   let apiReuse: unknown = { status: 'pending' };
+  let capacityNotification: unknown = { status: 'pending' };
   let videoLoading: unknown = { status: 'pending' };
+  let nativeRedirect: unknown = { status: 'pending' };
   const flowCleanup: FlowCleanup = {};
   const cleanupErrors: unknown[] = [];
   let fixtureRoutes: Awaited<ReturnType<typeof installFixtureRoutes>> | undefined;
@@ -8964,6 +9179,7 @@ async function exerciseInstalledExtension(
     try {
       await runUnavailableSequence({
         apiResponses: fixtureRoutes.apiResponses,
+        extensionId,
         extensionPage,
         output,
         page,
@@ -8990,6 +9206,21 @@ async function exerciseInstalledExtension(
       throw error;
     }
     const followupFailures = [];
+    try {
+      const genericMessage = unavailableSequence.steps[0]?.notification?.message;
+      assert(genericMessage, 'Unavailable sequence generic notification is missing');
+      const capacitySetting = {};
+      capacityNotification = await runCapacityNotificationCase({
+        extensionId,
+        extensionPage,
+        page,
+        genericMessage,
+        settingEvidence: capacitySetting,
+      });
+    } catch (error) {
+      capacityNotification = { status: 'failed', error: safeError(error) };
+      followupFailures.push(error);
+    }
     try {
       apiReuse = await runInstalledMediaApiReuseProfile({
         context,
@@ -9027,6 +9258,7 @@ async function exerciseInstalledExtension(
         'Required installed media follow-up profiles failed'
       );
     }
+    nativeRedirect = await runNativeRedirectDiagnostic(extensionPage, nativeLoopback, images);
     const expectedMemoryErrors = new Set(downloadMemory.expectedConsoleErrors ?? []);
     const expectedRenderFaultErrors = new Set(modelessRenderRecovery.expectedConsoleErrors ?? []);
     const unexpectedConsoleErrors = consoleErrors.filter(
@@ -9066,6 +9298,7 @@ async function exerciseInstalledExtension(
       fixtureApiResponses: fixtureRoutes.apiResponses,
       sourceQuality,
       apiReuse,
+      capacityNotification,
       videoLoading,
       sourceQualityApiResponses: fixtureRoutes.qualityApiResponses,
       sourceQualityRequests: fixtureRoutes.qualityRequests,
@@ -9075,6 +9308,7 @@ async function exerciseInstalledExtension(
       downloadMemory,
       notification,
       nativeTransport,
+      nativeRedirect,
       packagingAssets,
       publicDom,
       quotedVideoCycles,
@@ -9147,6 +9381,7 @@ async function exerciseInstalledExtension(
             fixtureApiResponses: fixtureRoutes?.apiResponses ?? [],
             sourceQuality,
             apiReuse,
+            capacityNotification,
             videoLoading,
             sourceQualityApiResponses: fixtureRoutes?.qualityApiResponses ?? [],
             sourceQualityRequests: fixtureRoutes?.qualityRequests ?? [],

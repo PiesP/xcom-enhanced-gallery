@@ -59,6 +59,7 @@ async function setupGalleryPage(
       ({ response, apiStatus, deferApi }) => {
         type RequestDetails = {
           url: string;
+          responseType?: string;
           onload?: (result: Record<string, unknown>) => void;
         };
         document.cookie = 'ct0=e2e-csrf-token; path=/';
@@ -86,7 +87,10 @@ async function setupGalleryPage(
               status: apiStatus,
               statusText: 'OK',
               responseHeaders: 'content-type: application/json',
-              response,
+              response:
+                details.responseType === 'arraybuffer'
+                  ? new TextEncoder().encode(JSON.stringify(response)).buffer
+                  : response,
               responseText: JSON.stringify(response),
               context: null,
             });

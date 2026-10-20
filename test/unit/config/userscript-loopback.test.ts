@@ -3,6 +3,8 @@
 // @vitest-environment node
 
 import { createServer, request as httpRequest } from 'node:http';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vite-plus/test';
 
 const loopback = await import('../../../validation/windows/userscript-loopback.ts');
@@ -40,29 +42,35 @@ function get(
   path: string,
   options: { host?: string; method?: string; destination?: string } = {}
 ) {
-  return new Promise<{ status: number; body: Buffer }>((resolveResponse, rejectResponse) => {
-    const request = httpRequest(
-      {
-        hostname: '127.0.0.1',
-        port,
-        path,
-        method: options.method ?? 'GET',
-        headers: {
-          Host: options.host ?? 'pbs.twimg.com',
-          ...(options.destination && { 'Sec-Fetch-Dest': options.destination }),
+  return new Promise<{ status: number; body: Buffer; location: string | undefined }>(
+    (resolveResponse, rejectResponse) => {
+      const request = httpRequest(
+        {
+          hostname: '127.0.0.1',
+          port,
+          path,
+          method: options.method ?? 'GET',
+          headers: {
+            Host: options.host ?? 'pbs.twimg.com',
+            ...(options.destination && { 'Sec-Fetch-Dest': options.destination }),
+          },
         },
-      },
-      (response) => {
-        const chunks: Buffer[] = [];
-        response.on('data', (chunk: Buffer) => chunks.push(chunk));
-        response.on('end', () =>
-          resolveResponse({ status: response.statusCode ?? 0, body: Buffer.concat(chunks) })
-        );
-      }
-    );
-    request.once('error', rejectResponse);
-    request.end();
-  });
+        (response) => {
+          const chunks: Buffer[] = [];
+          response.on('data', (chunk: Buffer) => chunks.push(chunk));
+          response.on('end', () =>
+            resolveResponse({
+              status: response.statusCode ?? 0,
+              body: Buffer.concat(chunks),
+              location: response.headers.location,
+            })
+          );
+        }
+      );
+      request.once('error', rejectResponse);
+      request.end();
+    }
+  );
 }
 
 async function waitFor(read: () => unknown) {
@@ -77,11 +85,121 @@ async function waitFor(read: () => unknown) {
 }
 
 describe('userscript HTTPS loopback protocol', () => {
+  it('declares every installed-page status ID for default API denial', () => {
+    const fixtureIds = new Set<string>();
+    for (const name of [
+      'installed-gallery-page.html',
+      'installed-unavailable-sequence-page.html',
+    ]) {
+      const html = readFileSync(resolve(import.meta.dirname, '../../e2e/fixtures', name), 'utf8');
+      for (const match of html.matchAll(/\/status\/(\d+)/gu)) {
+        const id = match[1];
+        if (id) {
+          fixtureIds.add(id);
+        }
+      }
+    }
+    const declared = loopback.DECLARED_DEFAULT_TWEET_IDS.map(({ id }) => id);
+    expect(declared).toHaveLength(9);
+    expect([...new Set(declared)].sort()).toEqual([...fixtureIds].sort());
+  });
+
+  it('binds the temporary upgrade denial to its declared direct-video fixture', () => {
+    const helper = readFileSync(
+      resolve(import.meta.dirname, '../../../validation/windows/release-upgrade/gallery-volume.ts'),
+      'utf8'
+    );
+    const html = readFileSync(
+      resolve(import.meta.dirname, '../../e2e/fixtures/installed-unmarked-video-page.html'),
+      'utf8'
+    );
+    expect(helper).toContain(`/status/${loopback.UPGRADE_DIRECT_TWEET_ID}`);
+    expect(html).toContain(`/status/${loopback.UPGRADE_DIRECT_TWEET_ID}`);
+  });
+
+  it('serves only the declared metadata request in an explicit bounded mode', async () => {
+    await withServer(async (fixture, port) => {
+      const path = `/i/api/graphql/fixture/TweetResultByRestId?variables=${encodeURIComponent(JSON.stringify({ tweetId: '1234567890123456789' }))}`;
+      const defaultResponse = await get(port, path, { host: 'x.com' });
+      expect(defaultResponse.status).toBe(403);
+      expect(defaultResponse.body.toString()).toBe('{}');
+      expect(fixture.snapshot()).toMatchObject({
+        unexpectedCount: 0,
+        apiServedBytes: 2,
+        defaultApiCompletedByKind: { primary: 1 },
+        events: [{ phase: 'default', cohort: 'api', result: 'http-403', bytes: 2 }],
+      });
+      const publicPath = path.replace('1234567890123456789', '9876543210987654321');
+      const upgradePath = path.replace('1234567890123456789', loopback.UPGRADE_DIRECT_TWEET_ID);
+      expect((await get(port, publicPath, { host: 'x.com' })).status).toBe(403);
+      expect(fixture.snapshot().defaultApiCompletedByKind).toMatchObject({ primary: 1, public: 1 });
+      expect(
+        (
+          await get(port, path.replace('1234567890123456789', '9999999999999999999'), {
+            host: 'x.com',
+          })
+        ).status
+      ).toBe(404);
+      expect(fixture.snapshot().rejectedReasons).toMatchObject({ 'graphql-undeclared-id': 1 });
+      expect(fixture.snapshot().rejectedIdShapes).toMatchObject([
+        { type: 'string', length: 19, digitsOnly: true, count: 1 },
+      ]);
+      expect(fixture.snapshot().rejectedIdShapes[0]?.sha256Prefix).toMatch(/^[a-f0-9]{12}$/u);
+      expect(fixture.snapshot().rejectedIdShapeOverflow).toBe(0);
+      expect((await get(port, upgradePath, { host: 'x.com' })).status).toBe(404);
+      fixture.setUpgradeDenial(true);
+      expect((await get(port, upgradePath, { host: 'x.com' })).status).toBe(403);
+      expect(fixture.snapshot().defaultApiCompletedByKind).toMatchObject({ 'upgrade-direct': 1 });
+      fixture.setUpgradeDenial(false);
+      expect((await get(port, upgradePath, { host: 'x.com' })).status).toBe(404);
+      fixture.setApiMode('healthy');
+      expect(() => fixture.setUpgradeDenial(true)).toThrow('overlaps explicit API mode');
+      expect((await get(port, publicPath, { host: 'x.com' })).status).toBe(404);
+      expect((await get(port, upgradePath, { host: 'x.com' })).status).toBe(404);
+      expect(fixture.snapshot().rejectedReasons).toMatchObject({
+        'graphql-active-mode-id': 1,
+        'graphql-undeclared-id': 4,
+      });
+      const healthy = await get(port, path, { host: 'x.com' });
+      expect(healthy.status).toBe(200);
+      expect(JSON.parse(healthy.body.toString()).data.tweetResult.result.rest_id).toBe(
+        '1234567890123456789'
+      );
+      expect((await get(port, path, { host: 'pbs.twimg.com' })).status).toBe(404);
+      expect((await get(port, path, { host: 'x.com', method: 'POST' })).status).toBe(404);
+      fixture.setApiMode('capacity');
+      const capacity = await get(port, path, { host: 'x.com' });
+      expect(capacity.status).toBe(200);
+      expect(capacity.body.length).toBeGreaterThan(2 * 1024 * 1024);
+      fixture.setApiMode('redirect-allowed');
+      const allowedHop = await get(port, path, { host: 'x.com' });
+      expect(allowedHop).toMatchObject({
+        status: 302,
+        location: 'https://pbs.twimg.com/xeg-metadata-allowed.json',
+      });
+      const allowedFinal = await get(port, '/xeg-metadata-allowed.json');
+      expect(allowedFinal.status).toBe(200);
+      expect(JSON.parse(allowedFinal.body.toString()).data.tweetResult.result.rest_id).toBe(
+        '1234567890123456789'
+      );
+      fixture.setApiMode('redirect-blocked');
+      const blockedHop = await get(port, path, { host: 'x.com' });
+      expect(blockedHop).toMatchObject({
+        status: 302,
+        location: 'https://x.com/xeg-metadata-blocked.json',
+      });
+      expect((await get(port, '/xeg-metadata-blocked.json', { host: 'x.com' })).status).toBe(200);
+      expect((await get(port, '/xeg-metadata-allowed.json')).status).toBe(404);
+      expect(fixture.snapshot()).toMatchObject({ overflow: false, activeCount: 0 });
+      fixture.setApiMode(null);
+    });
+  });
+
   it('serves only declared GETs and records a real post-click 503', async () => {
     await withServer(async (fixture, port) => {
       fixture.setImages([Buffer.from('first'), Buffer.from('second'), Buffer.from('third')]);
       const normal = await get(port, mediaPath('normal', 0));
-      expect(normal).toEqual({ status: 200, body: Buffer.from('first') });
+      expect(normal).toEqual({ status: 200, body: Buffer.from('first'), location: undefined });
       expect((await get(port, mediaPath('normal', 0, 'large'))).status).toBe(404);
       expect((await get(port, mediaPath('normal', 0), { destination: 'image' })).status).toBe(404);
       expect(
@@ -104,6 +222,26 @@ describe('userscript HTTPS loopback protocol', () => {
         unexpectedCount: 5,
         overflow: false,
         servedBytes: 10,
+        activeCount: 0,
+      });
+    });
+  });
+
+  it('follows only the armed native media redirect to its declared final bytes', async () => {
+    await withServer(async (fixture, port) => {
+      fixture.setImages([Buffer.from('first'), Buffer.from('second'), Buffer.from('third')]);
+      fixture.armMediaRedirect();
+      const hop = await get(port, mediaPath('normal', 0));
+      expect(hop).toMatchObject({
+        status: 302,
+        location: 'https://pbs.twimg.com/media/xeg-owned-redirect-final.jpg',
+      });
+      const final = await get(port, '/media/xeg-owned-redirect-final.jpg');
+      expect(final).toEqual({ status: 200, body: Buffer.from('first'), location: undefined });
+      expect((await get(port, '/media/xeg-owned-redirect-final.jpg')).status).toBe(404);
+      expect(fixture.snapshot()).toMatchObject({
+        mediaRedirectArmed: false,
+        mediaRedirectPending: false,
         activeCount: 0,
       });
     });

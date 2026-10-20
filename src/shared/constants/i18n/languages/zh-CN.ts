@@ -61,6 +61,7 @@ export const zhCn: LanguageStrings = {
         noMedia: '此帖子未返回媒体内容。',
         denied: '媒体服务拒绝了请求。请稍后重试。',
         unreadable: '无法读取媒体响应。请稍后重试。',
+        resourceLimit: '此帖子的元数据超出大小限制。请在 X 上打开帖子查看媒体。',
         rateLimited: '媒体服务限制了请求频率。请稍后重试。',
         deferred: '媒体服务要求等待。请稍后重试。',
         providerError: '媒体服务无法提供此帖子。请稍后重试。',

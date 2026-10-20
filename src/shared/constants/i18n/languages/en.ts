@@ -65,6 +65,7 @@ export const en: LanguageStrings = {
         noMedia: 'No media was returned for this post.',
         denied: 'The media service denied this request. Try again later.',
         unreadable: 'The media response could not be read. Try again later.',
+        resourceLimit: 'This post exceeds the metadata size limit. Open it on X to view its media.',
         rateLimited: 'The media service is rate limiting requests. Try again later.',
         deferred: 'The media service asked us to wait. Try again later.',
         providerError: 'The media service could not provide this post. Try again later.',

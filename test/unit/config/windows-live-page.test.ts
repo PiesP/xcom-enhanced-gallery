@@ -192,6 +192,7 @@ const userscriptInstall = (await import(
   MEDIA_COHORTS: Record<'normal' | 'failure' | 'partial' | 'held', string[]>;
   PUBLIC_AVATAR_PATH: string;
   isPublicAvatarFixtureUrl(value: string): boolean;
+  isUnavailablePreviewFixtureUrl(value: string): boolean;
   FIXTURE_ZIP_NAME: string;
   fixtureZipEntries(images: Uint8Array[]): Array<{ filename: string; bytes: Uint8Array }>;
   probeManagerUserScripts(page: {
@@ -1627,6 +1628,41 @@ describe('Windows X live page validation', () => {
     expect(userscriptInstall.isPublicAvatarFixtureUrl(url.replace('https:', 'http:'))).toBe(false);
   });
 
+  it('admits only the declared unavailable-page preview URLs', () => {
+    const html = readFileSync(
+      resolve(import.meta.dirname, '../../e2e/fixtures/installed-unavailable-sequence-page.html'),
+      'utf8'
+    );
+    const document = new DOMParser().parseFromString(html, 'text/html');
+    const urls = [
+      ...document.querySelectorAll<HTMLImageElement | HTMLVideoElement>('img[src], video[poster]'),
+    ].map((element) => element.getAttribute(element.tagName === 'VIDEO' ? 'poster' : 'src'));
+    expect(urls).toHaveLength(6);
+    expect(urls.every((url) => url && userscriptInstall.isUnavailablePreviewFixtureUrl(url))).toBe(
+      true
+    );
+    const first = urls[0];
+    expect(first).not.toBeNull();
+    if (!first) {
+      throw new Error('Missing unavailable preview fixture');
+    }
+    expect(userscriptInstall.isUnavailablePreviewFixtureUrl(`${first}?name=large`)).toBe(false);
+    expect(userscriptInstall.isUnavailablePreviewFixtureUrl(`${first}#fragment`)).toBe(false);
+    expect(
+      userscriptInstall.isUnavailablePreviewFixtureUrl(
+        first.replace('pbs.twimg.com', 'other.example')
+      )
+    ).toBe(false);
+    expect(userscriptInstall.isUnavailablePreviewFixtureUrl(first.replace('https:', 'http:'))).toBe(
+      false
+    );
+    expect(
+      userscriptInstall.isUnavailablePreviewFixtureUrl(
+        first.replace('unavailable.jpg', 'other.jpg')
+      )
+    ).toBe(false);
+  });
+
   it('limits manager history to the exact first fixture request and redacts native fields', async () => {
     const fixtureUrl = 'https://pbs.twimg.com/media/GkE1234ABCDEF.jpg?format=jpg&name=orig';
     const expectedName = 'testuser_1234567890123456789_0.jpg';
@@ -1690,6 +1726,44 @@ describe('Windows X live page validation', () => {
       expect(
         userscriptInstall.firstCurrentManagerDownloadHistory(observation, observation)
       ).toMatchObject({ status: 'observed', items: [] });
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('records only an exact owned native redirect destination match', async () => {
+    const fixtureUrl = 'https://pbs.twimg.com/media/GkE1234ABCDEF.jpg?format=jpg&name=orig';
+    vi.stubGlobal('location', { href: 'chrome-extension://manager/options.html' });
+    vi.stubGlobal('chrome', {
+      downloads: {
+        search: vi.fn(async () => [
+          {
+            id: 17,
+            url: fixtureUrl,
+            finalUrl: 'https://pbs.twimg.com/media/xeg-owned-redirect-final.jpg',
+            filename: 'C:\\owned\\first.jpg',
+            fileSize: 5,
+            state: 'complete',
+          },
+        ]),
+      },
+    });
+    try {
+      const observation = await userscriptInstall.inspectManagerDownloadHistoryDocument({
+        managerId: 'manager',
+        fixtureUrl,
+        expectedName: 'first.jpg',
+        expectedPath: 'C:\\owned\\first.jpg',
+        expectedBytes: 5,
+      });
+      expect(observation.items).toMatchObject([{ declaredRedirectFinalUrlMatch: true }]);
+      expect(JSON.stringify(observation)).not.toContain('pbs.twimg.com');
+      expect(
+        userscriptInstall.selectCompletedManagerDownload(
+          { status: 'observed', items: [] },
+          observation
+        )
+      ).toMatchObject({ declaredRedirectFinalUrlMatch: true });
     } finally {
       vi.unstubAllGlobals();
     }

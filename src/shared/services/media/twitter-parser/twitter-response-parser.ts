@@ -11,7 +11,6 @@ import type {
 import type { VideoSourceVariant } from '@shared/types/media.types';
 import { extractDimensionsFromUrl, normalizeDimension } from '@shared/utils/media/media-dimensions';
 import { normalizeOriginalImageUrl } from '@shared/utils/media/media-source';
-import { escapeRegExp } from '@shared/utils/text/formatting';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
 
 const MAX_VIDEO_VARIANT_URLS = 32;
@@ -36,15 +35,11 @@ function resolveDimensions(media: TwitterMedia, mediaUrl: string): MediaDimensio
 }
 
 function removeUrlTokensFromText(text: string, urls: readonly string[]): string {
-  let result = text;
-  for (const url of urls) {
-    if (!url) {
-      continue;
-    }
-    const token = escapeRegExp(url);
-    result = result.replace(new RegExp(`(^|\\s+)${token}(?=\\s+|$)`, 'g'), (_, ws: string) => ws);
-  }
-  return result
+  const tokens = new Set(urls);
+  // Match each non-whitespace token once. Repeated media URLs share one lookup,
+  // and absent URLs never restart a whitespace search at every character.
+  return text
+    .replace(/\S+/g, (token) => (tokens.has(token) ? '' : token))
     .replace(/[ \t\f\v\u00A0]{2,}/g, ' ')
     .replace(/ ?\n ?/g, '\n')
     .replace(/\n{3,}/g, '\n\n')

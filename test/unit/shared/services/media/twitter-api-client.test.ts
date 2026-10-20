@@ -4,6 +4,7 @@
 import type { BuildTweetResultByRestIdUrlArgs } from '@shared/core/twitter-api/endpoint';
 import { buildTweetResultByRestIdUrl } from '@shared/core/twitter-api/endpoint';
 import type { TwitterTweet } from '@shared/services/media/types';
+import { HttpResponseSizeLimitError } from '@shared/error/http-response-size-limit-error';
 import { captureClickedMediaEvidence } from '@shared/services/media-extraction/determine-clicked-index';
 import { TwitterAPIExtractor } from '@shared/services/media-extraction/extractors/twitter-api-extractor';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
@@ -391,6 +392,56 @@ describe('TweetMetadataReuse', () => {
 });
 
 describe('twitter-api-client request boundary', () => {
+  it('preserves full-length multilingual root and direct-quote notes within metadata capacity', async () => {
+    const payload = createQuotedVideoTweetResponse();
+    const root = payload.data.tweetResult.result;
+    const text = '한글😀A'.repeat(5000);
+    const data = {
+      data: {
+        tweetResult: {
+          result: {
+            ...root,
+            note_tweet: { note_tweet_results: { result: { text } } },
+            quoted_status_result: {
+              result: {
+                ...root.quoted_status_result.result,
+                note_tweet: { note_tweet_results: { result: { text } } },
+              },
+            },
+          },
+        },
+      },
+    };
+    expect(Array.from(text)).toHaveLength(20_000);
+    expect(new TextEncoder().encode(JSON.stringify(data)).byteLength).toBeLessThan(2 * 1024 * 1024);
+    httpGet.mockResolvedValue({ ok: true, status: 200, data });
+    const entries = await getTweetMedias('222');
+    expect(entries).toHaveLength(2);
+    expect(entries.map(({ tweet_text }) => tweet_text)).toEqual([text, text]);
+    expect(entries.map(({ sourceLocation }) => sourceLocation)).toEqual(['quoted', 'original']);
+  });
+
+  it('requests finite metadata admission before parsing and reports local capacity without reuse', async () => {
+    httpGet.mockReset();
+    httpGet.mockRejectedValue(new HttpResponseSizeLimitError(32, 33));
+    const reuse = new TweetMetadataReuse();
+    try {
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        await expect(reuse.get('123')).rejects.toMatchObject({ category: 'resource-limit' });
+      }
+      expect(httpGet).toHaveBeenCalledTimes(2);
+      expect(httpGet).toHaveBeenLastCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          responseType: 'json',
+          maxResponseBytes: 2 * 1024 * 1024,
+        })
+      );
+    } finally {
+      reuse.dispose();
+    }
+  });
+
   beforeEach(() => {
     httpGet.mockReset();
     httpGet.mockResolvedValue({

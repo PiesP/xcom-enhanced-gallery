@@ -161,6 +161,7 @@ export class MV3HttpRequestAdapter implements HttpRequestAdapter {
     const fetchInit: RequestInit = {
       method,
       signal: controller.signal,
+      redirect: 'error',
     };
 
     if (details.headers !== undefined) {

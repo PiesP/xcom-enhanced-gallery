@@ -52,6 +52,30 @@ export const MEDIA_COHORTS = {
   held: ['GkH1234ABCDEF', 'GkH5678GHIJKL', 'GkH9012MNOPQR'],
 };
 export const PUBLIC_AVATAR_PATH = '/profile_images/123456789/public-avatar.jpg';
+const UNAVAILABLE_PREVIEW_PATHS = new Set([
+  ...[
+    '8666666666666666661',
+    '8666666666666666662',
+    '8666666666666666663',
+    '8666666666666666664',
+    TWEET_ID,
+  ].map((id) => `/ext_tw_video_thumb/${id}/pu/img/unavailable.jpg`),
+  '/ext_tw_video_thumb/9555555555555555555/pu/img/quote-two.jpg',
+]);
+export function isUnavailablePreviewFixtureUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return (
+      url.protocol === 'https:' &&
+      url.hostname === 'pbs.twimg.com' &&
+      UNAVAILABLE_PREVIEW_PATHS.has(url.pathname) &&
+      !url.search &&
+      !url.hash
+    );
+  } catch {
+    return false;
+  }
+}
 export function isPublicAvatarFixtureUrl(value: string) {
   try {
     const url = new URL(value);
@@ -130,6 +154,7 @@ type ManagerUiLabels = { utilities: string; install: string; installedUserscript
 type ManagerHistoryItem = {
   id: number;
   state: string;
+  declaredRedirectFinalUrlMatch?: true;
   interruptReason: string | null;
   requestedNameMatch: boolean;
   ownedPathMatch: boolean;
@@ -309,7 +334,7 @@ type UserscriptInstallationResult = {
     kind: string;
     bind: string;
     port: number;
-    host: string;
+    hosts: string[];
     certificateScope: string;
   };
   browserVersion?: string;
@@ -324,6 +349,7 @@ type UserscriptInstallationResult = {
     maxLoopbackRequests: number;
     maxLoopbackImageBytes: number;
     maxLoopbackServedBytes: number;
+    maxLoopbackApiServedBytes: number;
     productionBudget: string;
   };
   fixture?: FixtureResult;
@@ -640,6 +666,131 @@ async function waitFor<T>(
     await delay(50);
   }
   throw new Error(`Timed out waiting for ${label}`);
+}
+
+async function observeManagerNotificationCreates(context: BrowserContext, managerId: string) {
+  const worker = await waitFor(
+    () =>
+      context
+        .serviceWorkers()
+        .find((item) => item.url() === `chrome-extension://${managerId}/background.js`),
+    'installed Tampermonkey background worker'
+  );
+  const marker = '__xegManagerNativeNotificationObserver';
+  await worker.evaluate((key) => {
+    if (Reflect.has(globalThis, key)) {
+      throw new Error('Manager notification observer is already installed');
+    }
+    const notifications: unknown = Reflect.get(chrome, 'notifications');
+    if (typeof notifications !== 'object' || notifications === null) {
+      throw new Error('Manager native notifications are unavailable');
+    }
+    const original: unknown = Reflect.get(notifications, 'create');
+    if (typeof original !== 'function') {
+      throw new Error('Manager native notification creation is unavailable');
+    }
+    const state = {
+      original,
+      wrapper: null as ((...args: unknown[]) => unknown) | null,
+      calls: [] as Array<{ id: string | null; message: string | null }>,
+      overflow: false,
+    };
+    state.wrapper = function (this: unknown, ...args: unknown[]) {
+      const [id, options] = args;
+      const message: unknown =
+        typeof options === 'object' && options !== null
+          ? Reflect.get(options, 'message')
+          : undefined;
+      if (state.calls.length < 8) {
+        state.calls.push({
+          id: typeof id === 'string' ? id.slice(0, 128) : null,
+          message: typeof message === 'string' ? message.slice(0, 512) : null,
+        });
+      } else {
+        state.overflow = true;
+      }
+      return Reflect.apply(original, this, args);
+    };
+    if (
+      !Reflect.set(globalThis, key, state) ||
+      !Reflect.set(notifications, 'create', state.wrapper)
+    ) {
+      Reflect.deleteProperty(globalThis, key);
+      throw new Error('Manager native notification observer could not be installed');
+    }
+  }, marker);
+  return {
+    async snapshot() {
+      const state = await worker.evaluate((key) => {
+        const value: unknown = Reflect.get(globalThis, key);
+        if (typeof value !== 'object' || value === null) {
+          return null;
+        }
+        const notifications: unknown = Reflect.get(chrome, 'notifications');
+        return {
+          calls: Reflect.get(value, 'calls') as Array<{
+            id: string | null;
+            message: string | null;
+          }>,
+          overflow: Reflect.get(value, 'overflow') as boolean,
+          intact:
+            typeof notifications === 'object' &&
+            notifications !== null &&
+            Reflect.get(notifications, 'create') === Reflect.get(value, 'wrapper'),
+        };
+      }, marker);
+      assert(state?.intact, 'Manager native notification observer was replaced');
+      assert.equal(state.overflow, false, 'Manager notification observation exceeded eight calls');
+      return state.calls;
+    },
+    async dispose() {
+      const restored = await worker.evaluate((key) => {
+        const state: unknown = Reflect.get(globalThis, key);
+        const notifications: unknown = Reflect.get(chrome, 'notifications');
+        if (
+          typeof state !== 'object' ||
+          state === null ||
+          typeof notifications !== 'object' ||
+          notifications === null
+        ) {
+          return false;
+        }
+        const original: unknown = Reflect.get(state, 'original');
+        const reset = Reflect.set(notifications, 'create', original);
+        const exact = Reflect.get(notifications, 'create') === original;
+        const removed = Reflect.deleteProperty(globalThis, key);
+        return reset && exact && removed && !Reflect.has(globalThis, key);
+      }, marker);
+      assert.equal(restored, true, 'Manager native notification observer was not restored');
+    },
+  };
+}
+
+async function chooseTrustedVideoClickMode(page: Page, select: Locator, target: string) {
+  assert(
+    target === 'block-all' || target === 'block-controls-only' || target === 'allow-all',
+    'Video click mode must be a declared option'
+  );
+  const current = await select.inputValue();
+  if (current === target) {
+    return;
+  }
+  await select.focus();
+  const key =
+    target === 'allow-all'
+      ? 'End'
+      : target === 'block-all'
+        ? 'Home'
+        : current === 'allow-all'
+          ? 'ArrowUp'
+          : 'ArrowDown';
+  await page.keyboard.press(key);
+  await page.waitForFunction((expected) => {
+    const control = document.querySelector(
+      '[data-xeg-gallery-container] #settings-video-click-select'
+    );
+    return control instanceof HTMLSelectElement && !control.disabled && control.value === expected;
+  }, target);
 }
 
 function assertOwned(root: string, profile: string) {
@@ -1301,9 +1452,13 @@ export async function inspectManagerDownloadHistoryDocument({
       typeof item.filename === 'string' &&
       item.filename.replaceAll('/', '\\').toLowerCase() ===
         expectedPath.replaceAll('/', '\\').toLowerCase();
+    const finalUrl: unknown = Reflect.get(item, 'finalUrl');
     items.push({
       id: item.id,
       state: item.state,
+      ...(finalUrl === 'https://pbs.twimg.com/media/xeg-owned-redirect-final.jpg'
+        ? { declaredRedirectFinalUrlMatch: true as const }
+        : {}),
       interruptReason:
         item.error === undefined ? null : reasons.has(item.error) ? item.error : 'unknown',
       requestedNameMatch: nameMatch,
@@ -1399,6 +1554,7 @@ export function selectCompletedManagerDownload(before: ManagerHistory, after: Ma
   return {
     nativeId: item.id,
     nativeState: 'complete',
+    ...(item.declaredRedirectFinalUrlMatch && { declaredRedirectFinalUrlMatch: true }),
     completionSource: 'chrome.downloads.search',
   };
 }
@@ -2360,6 +2516,28 @@ async function runFixture(
     return bytes;
   };
   const html = await readFile(join(root, 'test/e2e/fixtures/installed-gallery-page.html'), 'utf8');
+  const noDomHtml = await readFile(
+    join(root, 'test/e2e/fixtures/installed-unavailable-sequence-page.html'),
+    'utf8'
+  );
+  const settingsPageUrl = `${FIXTURE_URL}?xeg-settings-readback=1`;
+  const apiPageUrl = `${FIXTURE_URL}?xeg-api-admission=1`;
+  const compactHtml = (
+    imageCount: 1 | 3
+  ) => `<!doctype html><html lang="en"><head><meta charset="UTF-8"></head><body>
+    <article data-phase="normal" data-testid="tweet">
+      <span>Test User</span><span>@testuser</span>
+      <a href="/testuser/status/${TWEET_ID}"><time datetime="2026-06-25T10:00:00.000Z">Jun 25, 2026</time></a>
+      ${MEDIA_COHORTS.normal
+        .slice(0, imageCount)
+        .map(
+          (marker, index) =>
+            `<div data-testid="tweetPhoto"><img src="https://pbs.twimg.com/media/${marker}.jpg?format=jpg&amp;name=large" alt="Fixture image ${index + 1}" width="320" height="180" tabindex="0"></div>`
+        )
+        .join('')}
+    </article></body></html>`;
+  const settingsHtml = compactHtml(1);
+  const apiHtml = compactHtml(3);
   const routeRecords: FixtureRouteRecord[] = [];
   const result: FixtureResult = {
     status: 'failed',
@@ -2372,6 +2550,7 @@ async function runFixture(
     cleanup: {},
   };
   let phase = 'normal';
+  let apiMode: 'healthy' | 'capacity' | 'redirect-allowed' | 'redirect-blocked' | null = null;
   let managerConsole: ReturnType<typeof watchManagerDownloadConsole> | undefined;
   const mediaNetwork = watchFixtureMediaNetwork(context);
   const routeFixture = async (route: Route) => {
@@ -2381,11 +2560,46 @@ async function runFixture(
       return;
     }
     if (url.hostname === 'x.com' && route.request().isNavigationRequest()) {
-      await route.fulfill({ status: 200, contentType: 'text/html', body: html });
+      const noDom = url.href === `${FIXTURE_URL}?xeg-no-dom=1`;
+      const settingsReadback = url.href === settingsPageUrl;
+      const apiAdmission = url.href === apiPageUrl;
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/html',
+        body: noDom ? noDomHtml : settingsReadback ? settingsHtml : apiAdmission ? apiHtml : html,
+      });
       return;
     }
     if (url.hostname === 'x.com' && url.pathname === '/favicon.ico') {
       await route.fulfill({ status: 204, body: '' });
+      return;
+    }
+    if (
+      (url.hostname === 'pbs.twimg.com' && url.pathname === '/xeg-metadata-allowed.json') ||
+      (url.hostname === 'x.com' && url.pathname === '/xeg-metadata-blocked.json')
+    ) {
+      await route.continue();
+      return;
+    }
+    if (
+      url.hostname === 'pbs.twimg.com' &&
+      url.pathname === '/media/xeg-owned-redirect-final.jpg'
+    ) {
+      await route.continue();
+      return;
+    }
+    if (apiMode === 'capacity' && isUnavailablePreviewFixtureUrl(url.href)) {
+      assert.equal(
+        route.request().method(),
+        'GET',
+        'Unavailable preview used an unexpected method'
+      );
+      assert.equal(
+        route.request().resourceType(),
+        'image',
+        'Unavailable preview used an unexpected resource type'
+      );
+      await route.fulfill({ status: 200, contentType: 'image/jpeg', body: imageAt(0) });
       return;
     }
     if (url.hostname === 'pbs.twimg.com') {
@@ -2402,8 +2616,16 @@ async function runFixture(
       const marker = markers[index];
       assert(marker, 'Missing media marker');
       const isPreview = route.request().resourceType() === 'image';
-      const expectedUrl = `https://pbs.twimg.com/media/${marker}.jpg?format=jpg&name=${isPreview ? 'large' : 'orig'}`;
-      assert.equal(url.href, expectedUrl, 'Fixture media URL differs from its declared purpose');
+      const allowedNames =
+        isPreview && (apiMode === 'healthy' || apiMode === 'redirect-allowed')
+          ? ['large', 'orig']
+          : [isPreview ? 'large' : 'orig'];
+      assert(
+        allowedNames.some(
+          (name) => url.href === `https://pbs.twimg.com/media/${marker}.jpg?format=jpg&name=${name}`
+        ),
+        'Fixture media URL differs from its declared purpose'
+      );
       assert(routeRecords.length < 64, 'Fixture exceeded its routed request limit');
       const record: FixtureRouteRecord = {
         phase,
@@ -2433,6 +2655,10 @@ async function runFixture(
       return;
     }
     if (url.hostname === 'x.com' && url.pathname.endsWith('/TweetResultByRestId')) {
+      if (apiMode) {
+        await route.continue();
+        return;
+      }
       await route.fulfill({ status: 403, contentType: 'application/json', body: '{}' });
       return;
     }
@@ -2466,6 +2692,28 @@ async function runFixture(
   };
   await context.route('**/*', handler);
   const page = await context.newPage();
+  const readFreshVideoClickMode = async () => {
+    const readbackPage = await context.newPage();
+    try {
+      await readbackPage.goto(settingsPageUrl, { waitUntil: 'domcontentloaded' });
+      await readbackPage.locator('html[data-xeg-gallery-ready="true"]').waitFor({
+        state: 'attached',
+        timeout: 15_000,
+      });
+      await readbackPage
+        .locator('[data-phase="normal"] [data-testid="tweetPhoto"] img')
+        .first()
+        .click();
+      const readbackGallery = readbackPage.locator('[data-xeg-gallery-container]');
+      await readbackGallery.waitFor({ state: 'visible' });
+      await readbackGallery.locator('#settings-button').click();
+      const select = readbackGallery.locator('#settings-video-click-select');
+      await select.waitFor({ state: 'visible' });
+      return select.inputValue();
+    } finally {
+      await readbackPage.close();
+    }
+  };
   try {
     await page.goto(FIXTURE_URL, { waitUntil: 'domcontentloaded' });
     const trigger = page.locator('[data-phase="normal"] [data-testid="tweetPhoto"] img').first();
@@ -2793,6 +3041,271 @@ async function runFixture(
       bytes: recovered.bytes.length,
     });
     result.cases.reloadRecovery = 'passed';
+    await waitFor(
+      async () => ((await current.isEnabled()) ? true : undefined),
+      'redirected single control ready'
+    );
+    loopback.armMediaRedirect();
+    const redirectSince = observer.snapshot();
+    const redirectBefore = new Set(await readdir(downloads));
+    const redirectName = browserFilename(filename(0), 3);
+    const redirectHistoryBefore = await captureManagerDownloadHistory(
+      context,
+      managerId,
+      downloads,
+      redirectName,
+      imageAt(0).length
+    );
+    assert.equal(redirectHistoryBefore.status, 'observed');
+    const redirectTransportStart = loopback.mark();
+    await current.click();
+    const redirected = await waitForManagerDownload(
+      context,
+      managerId,
+      observer,
+      redirectSince,
+      redirectBefore,
+      redirectHistoryBefore,
+      filename(0),
+      redirectName,
+      downloads,
+      imageAt(0).length
+    );
+    assert.equal(
+      redirected.declaredRedirectFinalUrlMatch,
+      true,
+      'Manager native download did not report the exact allowed redirect destination'
+    );
+    assert(redirected.bytes.equals(imageAt(0)), 'Redirected native bytes differ');
+    const redirectedTransport = loopback.snapshot().events.slice(redirectTransportStart);
+    assert.deepEqual(
+      redirectedTransport
+        .filter((event) => event.result === 'redirect' || event.cohort === 'native-redirect-final')
+        .map(({ cohort, result }) => [cohort, result]),
+      [
+        ['normal', 'redirect'],
+        ['native-redirect-final', 'served'],
+      ]
+    );
+    assert.equal(loopback.snapshot().mediaRedirectArmed, false);
+    assert.equal(loopback.snapshot().mediaRedirectPending, false);
+    result.downloads.push({
+      kind: 'single-redirect',
+      ...redirected,
+      bytes: redirected.bytes.length,
+    });
+    result.cases.nativeMediaRedirect = { status: 'passed', transport: redirectedTransport };
+    await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]').click();
+    await gallery.waitFor({ state: 'detached' });
+    const apiCases: Record<string, unknown> = {};
+    for (const mode of ['healthy', 'redirect-allowed', 'redirect-blocked'] as const) {
+      apiMode = mode;
+      loopback.setApiMode(mode);
+      const before = loopback.mark();
+      await page.goto(apiPageUrl, { waitUntil: 'domcontentloaded' });
+      await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({
+        state: 'attached',
+        timeout: 15_000,
+      });
+      await page.locator('[data-phase="normal"] [data-testid="tweetPhoto"] img').nth(1).click();
+      await gallery.waitFor({ state: 'visible' });
+      const selected = gallery.locator('[data-gallery-element="item"][data-index="1"] img');
+      await selected.waitFor({ state: 'visible' });
+      const expectedName = mode === 'redirect-blocked' ? 'large' : 'orig';
+      const selectedUrl = await waitFor(async () => {
+        const source = await selected.getAttribute('src');
+        if (!source) {
+          return undefined;
+        }
+        const url = new URL(source);
+        return url.searchParams.get('name') === expectedName ? url : undefined;
+      }, `${mode} selected metadata image quality`);
+      assert.equal(selectedUrl.pathname, `/media/${MEDIA_COHORTS.normal[1]}.jpg`);
+      assert.equal(
+        selectedUrl.searchParams.get('name'),
+        expectedName,
+        `${mode} metadata response selected an unexpected image quality`
+      );
+      const apiEvents = await waitFor(() => {
+        const events = loopback
+          .snapshot()
+          .events.slice(before)
+          .filter((event) => event.cohort === 'api');
+        const expectedCount = mode.startsWith('redirect-') ? 2 : 1;
+        return events.length === expectedCount &&
+          events.every((event) => event.result !== 'started')
+          ? events
+          : undefined;
+      }, `${mode} installed GM metadata request`);
+      assert.equal(
+        apiEvents.length,
+        mode.startsWith('redirect-') ? 2 : 1,
+        `${mode} made an unexpected number of GM metadata requests`
+      );
+      if (mode === 'healthy') {
+        assert.equal(apiEvents[0]?.result, 'served');
+        assert((apiEvents[0]?.bytes ?? 0) > 0 && (apiEvents[0]?.bytes ?? 0) < 2 * 1024 * 1024);
+      } else {
+        assert.equal(apiEvents[0]?.result, 'redirect');
+        assert.equal(apiEvents[0]?.bytes, 0);
+        assert.equal(apiEvents[1]?.result, 'served');
+        assert.equal(
+          apiEvents[1]?.purpose,
+          mode === 'redirect-allowed' ? 'allowed-final' : 'blocked-final'
+        );
+        assert((apiEvents[1]?.bytes ?? 0) > 0 && (apiEvents[1]?.bytes ?? 0) < 2 * 1024 * 1024);
+      }
+      apiCases[mode] = {
+        requests: apiEvents.length,
+        transport: apiEvents,
+        selectedName: selectedUrl.searchParams.get('name'),
+      };
+      await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]').click();
+      await gallery.waitFor({ state: 'detached' });
+    }
+    result.cases.metadataAdmission = apiCases;
+    apiMode = null;
+    loopback.setApiMode(null);
+    const notificationPage = await context.newPage();
+    let notificationObserver:
+      | Awaited<ReturnType<typeof observeManagerNotificationCreates>>
+      | undefined;
+    let originalClickMode: string | undefined;
+    let capacityFailure: unknown;
+    let capacityFailed = false;
+    const capacityCleanupErrors: unknown[] = [];
+    try {
+      await notificationPage.goto(`chrome-extension://${managerId}/options.html`, {
+        waitUntil: 'domcontentloaded',
+      });
+      assert(isOwnedManagerOptionsUrl(notificationPage.url(), managerId));
+      await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+      await page.locator('[data-phase="normal"] [data-testid="tweetPhoto"] img').first().click();
+      await gallery.waitFor({ state: 'visible' });
+      await gallery.locator('#settings-button').click();
+      const clickMode = gallery.locator('#settings-video-click-select');
+      originalClickMode = await clickMode.inputValue();
+      await chooseTrustedVideoClickMode(page, clickMode, 'allow-all');
+      await waitFor(
+        async () => ((await readFreshVideoClickMode()) === 'allow-all' ? true : undefined),
+        'userscript video click setting to persist'
+      );
+      await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]').click();
+      await gallery.waitFor({ state: 'detached' });
+      apiMode = 'capacity';
+      loopback.setApiMode('capacity');
+      const capacityStart = loopback.mark();
+      await page.goto(`${FIXTURE_URL}?xeg-no-dom=1`, { waitUntil: 'domcontentloaded' });
+      await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({
+        state: 'attached',
+        timeout: 15_000,
+      });
+      const article = page.locator('[data-sequence-step="userscript-capacity"]');
+      const preview = await article.evaluate((element) => {
+        const video = element.querySelector('video');
+        return {
+          poster: video?.poster ?? null,
+          src: video?.getAttribute('src') ?? null,
+          sourceCount: video?.querySelectorAll('source').length ?? -1,
+          imageCount: element.querySelectorAll('img').length,
+        };
+      });
+      assert.deepEqual(preview, {
+        poster: `https://pbs.twimg.com/ext_tw_video_thumb/${TWEET_ID}/pu/img/unavailable.jpg`,
+        src: null,
+        sourceCount: 0,
+        imageCount: 0,
+      });
+      const knownNotifications = await notificationPage.evaluate(async () => {
+        const extension = chrome as typeof chrome & {
+          notifications: { getAll(): Promise<Record<string, unknown>> };
+        };
+        return Object.keys(await extension.notifications.getAll());
+      });
+      notificationObserver = await observeManagerNotificationCreates(context, managerId);
+      await article.locator('.media-shell button').click();
+      const notification = await waitFor(
+        () =>
+          notificationPage.evaluate(async (known) => {
+            const extension = chrome as typeof chrome & {
+              notifications: { getAll(): Promise<Record<string, unknown>> };
+            };
+            const active = await extension.notifications.getAll();
+            const entry = Object.entries(active).find(([id]) => !known.includes(id));
+            return entry ? { id: entry[0] } : undefined;
+          }, knownNotifications),
+        'real-manager metadata capacity notification'
+      );
+      const created = await waitFor(async () => {
+        const calls = await notificationObserver?.snapshot();
+        return calls?.find((call) => call.id === notification.id);
+      }, 'real-manager native notification creation');
+      assert(
+        created.message?.startsWith(
+          'This post exceeds the metadata size limit. Open it on X to view its media.'
+        ),
+        'Installed Tampermonkey did not report the metadata capacity category'
+      );
+      assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0);
+      const apiEvents = loopback
+        .snapshot()
+        .events.slice(capacityStart)
+        .filter((event) => event.cohort === 'api');
+      assert.equal(apiEvents.length, 1);
+      assert.equal(apiEvents[0]?.result, 'served');
+      assert((apiEvents[0]?.bytes ?? 0) > 2 * 1024 * 1024);
+      result.cases.metadataCapacity = {
+        status: 'passed',
+        notification: { id: notification.id, message: created.message },
+        transport: apiEvents,
+      };
+    } catch (error) {
+      capacityFailed = true;
+      capacityFailure = error;
+      result.cases.metadataCapacity = { status: 'failed', error: safeRouteError(error) };
+    } finally {
+      if (notificationObserver) {
+        await notificationObserver.dispose().catch((error) => capacityCleanupErrors.push(error));
+      }
+      if (loopback.activeCount() === 0) {
+        apiMode = null;
+        loopback.setApiMode(null);
+      }
+      if (originalClickMode !== undefined) {
+        try {
+          await page.goto(settingsPageUrl, { waitUntil: 'domcontentloaded' });
+          await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+          await page
+            .locator('[data-phase="normal"] [data-testid="tweetPhoto"] img')
+            .first()
+            .click();
+          await gallery.waitFor({ state: 'visible' });
+          await gallery.locator('#settings-button').click();
+          const clickMode = gallery.locator('#settings-video-click-select');
+          await chooseTrustedVideoClickMode(page, clickMode, originalClickMode);
+          await waitFor(
+            async () =>
+              (await readFreshVideoClickMode()) === originalClickMode ? true : undefined,
+            'userscript video click setting to restore'
+          );
+          await gallery
+            .locator('[data-gallery-element="toolbar"] button[aria-label="Close"]')
+            .click();
+          await gallery.waitFor({ state: 'detached' });
+        } catch (error) {
+          capacityCleanupErrors.push(error);
+        }
+      }
+      await notificationPage.close().catch((error) => capacityCleanupErrors.push(error));
+    }
+    if (capacityFailed || capacityCleanupErrors.length) {
+      throw new AggregateError(
+        [...(capacityFailed ? [capacityFailure] : []), ...capacityCleanupErrors],
+        'Installed userscript capacity observation or restoration failed'
+      );
+    }
+    apiMode = null;
+    loopback.setApiMode(null);
     await observer.flush();
     assert.equal(
       result.routeFailures.length + result.routeFailureOverflow,
@@ -2806,6 +3319,7 @@ async function runFixture(
     );
     const loopbackResult = loopback.snapshot();
     assert.equal(loopbackResult.unexpectedCount, 0, 'Unexpected loopback request');
+    assert.equal(loopbackResult.upgradeDenialEnabled, false, 'Upgrade API denial remained enabled');
     assert.equal(loopbackResult.overflow, false, 'Loopback fixture exceeded bounds');
     assert.equal(loopbackResult.serverError, false, 'Loopback server reported an error');
     assert.equal(loopbackResult.activeCount, 0, 'Loopback response remains active');
@@ -3382,7 +3896,7 @@ export async function runUserscriptInstallation({
       kind: 'task-owned-https-loopback',
       bind: '127.0.0.1',
       port: loopback.port,
-      host: 'pbs.twimg.com',
+      hosts: ['pbs.twimg.com', 'x.com'],
       certificateScope: 'one-run-spki',
     };
     context = await chromium.launchPersistentContext(profile, {
@@ -3395,7 +3909,7 @@ export async function runUserscriptInstallation({
       ignoreDefaultArgs: ['--disable-extensions'],
       args: [
         '--enable-unsafe-extension-debugging',
-        `--host-resolver-rules=MAP pbs.twimg.com:443 127.0.0.1:${loopback.port}`,
+        `--host-resolver-rules=MAP pbs.twimg.com:443 127.0.0.1:${loopback.port},MAP x.com:443 127.0.0.1:${loopback.port}`,
         `--ignore-certificate-errors-spki-list=${loopback.spkiSha256}`,
       ],
     });
@@ -3436,13 +3950,18 @@ export async function runUserscriptInstallation({
     );
     result.manager = manager;
     if (upgradeInput) {
-      result.upgrade = await runUserscriptUpgrade({
-        context,
-        managerId,
-        root,
-        output,
-        input: upgradeInput,
-      });
+      loopback.setUpgradeDenial(true);
+      try {
+        result.upgrade = await runUserscriptUpgrade({
+          context,
+          managerId,
+          root,
+          output,
+          input: upgradeInput,
+        });
+      } finally {
+        loopback.setUpgradeDenial(false);
+      }
     }
     const images: Buffer[] = await createImageFixtures(context);
     loopback.setImages(images);
@@ -3454,6 +3973,7 @@ export async function runUserscriptInstallation({
       maxLoopbackRequests: 64,
       maxLoopbackImageBytes: 64 * 1024,
       maxLoopbackServedBytes: 2 * 1024 * 1024,
+      maxLoopbackApiServedBytes: 3 * 1024 * 1024,
       productionBudget: 'unchanged',
     };
     observer = createBrowserDownloadObserver(cdp);

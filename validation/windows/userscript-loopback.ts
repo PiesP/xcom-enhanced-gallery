@@ -14,6 +14,27 @@ const HOST = 'pbs.twimg.com';
 const MAX_REQUESTS = 64;
 const MAX_IMAGE_BYTES = 64 * 1024;
 const MAX_SERVED_BYTES = 2 * 1024 * 1024;
+const MAX_API_SERVED_BYTES = 3 * 1024 * 1024;
+const API_TWEET_ID = '1234567890123456789';
+export const UPGRADE_DIRECT_TWEET_ID = '9111111111111111111';
+export const DECLARED_DEFAULT_TWEET_IDS = [
+  { id: API_TWEET_ID, kind: 'primary' },
+  { id: '7555555555555555555', kind: 'control' },
+  { id: '8555555555555555555', kind: 'control' },
+  { id: '8666666666666666661', kind: 'unavailable' },
+  { id: '8666666666666666662', kind: 'unavailable' },
+  { id: '8666666666666666663', kind: 'unavailable' },
+  { id: '8666666666666666664', kind: 'unavailable' },
+  { id: '9555555555555555555', kind: 'control' },
+  { id: '9876543210987654321', kind: 'public' },
+] as const;
+const DEFAULT_TWEET_ID_KINDS = new Map<string, string>(
+  DECLARED_DEFAULT_TWEET_IDS.map(({ id, kind }) => [id, kind])
+);
+const API_ALLOWED_RECEIVER = 'https://pbs.twimg.com/xeg-metadata-allowed.json';
+const API_BLOCKED_RECEIVER = 'https://x.com/xeg-metadata-blocked.json';
+const MEDIA_REDIRECT_RECEIVER = '/media/xeg-owned-redirect-final.jpg';
+type ApiMode = 'healthy' | 'capacity' | 'redirect-allowed' | 'redirect-blocked';
 
 type FixtureEvent = {
   phase: string;
@@ -24,6 +45,13 @@ type FixtureEvent = {
   result: string;
   bytes: number;
   sha256: string | null;
+};
+type RejectedIdShape = {
+  type: string;
+  length: number | null;
+  digitsOnly: boolean;
+  sha256Prefix: string | null;
+  count: number;
 };
 
 type CertificateRunner = (
@@ -160,6 +188,8 @@ export function createUserscriptFixtureHandler(
   cohorts: Record<string, string[]>,
   avatarPath: string
 ) {
+  const normalMarkers = cohorts.normal;
+  assert(normalMarkers?.length === 3, 'Three normal media markers are required');
   const allowed = new Map<string, { cohort: string; index: number; purpose?: string }>();
   for (const [cohort, markers] of Object.entries(cohorts)) {
     assert(
@@ -189,18 +219,263 @@ export function createUserscriptFixtureHandler(
   let unexpectedCount = 0;
   let overflow = false;
   let servedBytes = 0;
+  let apiServedBytes = 0;
+  let apiMode: ApiMode | null = null;
+  let upgradeDenialEnabled = false;
+  let mediaRedirectArmed = false;
+  let mediaRedirectPending = false;
+  const rejectedReasons: Record<string, number> = {};
+  const defaultApiCompletedByKind: Record<string, number> = {};
+  const rejectedIdShapes: RejectedIdShape[] = [];
+  let rejectedIdShapeOverflow = 0;
   const events: FixtureEvent[] = [];
   const active = new Set<ServerResponse>();
-  const reject = (response: ServerResponse) => {
+  const reject = (response: ServerResponse, reason: string) => {
     unexpectedCount += 1;
+    rejectedReasons[reason] = (rejectedReasons[reason] ?? 0) + 1;
     response.writeHead(404, { 'Content-Length': '0', 'Cache-Control': 'no-store' });
     response.end();
+  };
+  const apiBody = (mode: ApiMode) => {
+    const result = {
+      __typename: 'Tweet',
+      rest_id: API_TWEET_ID,
+      core: {
+        user_results: { result: { legacy: { screen_name: 'testuser', name: 'Test User' } } },
+      },
+      legacy: {
+        id_str: API_TWEET_ID,
+        full_text: 'Three installed userscript fixtures.',
+        extended_entities: {
+          media: normalMarkers.map((marker, index) => ({
+            type: 'photo',
+            id_str: `46660${index}`,
+            media_url_https: `https://pbs.twimg.com/media/${marker}.jpg?format=jpg&name=small`,
+            original_info: { width: 320, height: 180 },
+          })),
+        },
+      },
+    };
+    return Buffer.from(
+      JSON.stringify({
+        data: { tweetResult: { result } },
+        ...(mode === 'capacity' ? { padding: 'x'.repeat(2 * 1024 * 1024) } : {}),
+      })
+    );
   };
   const handle = (request: IncomingMessage, response: ServerResponse) => {
     requestCount += 1;
     if (requestCount > MAX_REQUESTS) {
       overflow = true;
       response.destroy();
+      return;
+    }
+    const host = request.headers.host?.replace(/:443$/u, '');
+    const path = request.url ?? '';
+    const isAllowedReceiver = host === HOST && path === '/xeg-metadata-allowed.json';
+    const isBlockedReceiver = host === 'x.com' && path === '/xeg-metadata-blocked.json';
+    if (isAllowedReceiver || isBlockedReceiver) {
+      const mode = apiMode;
+      if (
+        request.method !== 'GET' ||
+        mode === null ||
+        (isAllowedReceiver && mode !== 'redirect-allowed') ||
+        (isBlockedReceiver && mode !== 'redirect-blocked')
+      ) {
+        reject(response, 'receiver-mode-or-method');
+        return;
+      }
+      const body = apiBody(mode);
+      if (apiServedBytes + body.length > MAX_API_SERVED_BYTES) {
+        overflow = true;
+        response.destroy();
+        return;
+      }
+      apiServedBytes += body.length;
+      const event: FixtureEvent = {
+        phase: mode,
+        cohort: 'api',
+        index: 1,
+        purpose: isAllowedReceiver ? 'allowed-final' : 'blocked-final',
+        method: 'GET',
+        result: 'started',
+        bytes: 0,
+        sha256: null,
+      };
+      events.push(event);
+      active.add(response);
+      response.once('close', () => {
+        if (!response.writableFinished) {
+          event.result = 'aborted';
+        }
+        active.delete(response);
+      });
+      response.once('finish', () => {
+        event.result = 'served';
+        event.bytes = body.length;
+        event.sha256 = createHash('sha256').update(body).digest('hex');
+      });
+      response.writeHead(200, {
+        'Content-Type': 'application/json',
+        'Content-Length': String(body.length),
+        'Cache-Control': 'no-store',
+        'Access-Control-Allow-Origin': 'https://x.com',
+        'Access-Control-Allow-Credentials': 'true',
+      });
+      response.end(body);
+      return;
+    }
+    if (host === 'x.com' && path.startsWith('/i/api/graphql/')) {
+      let tweetId: unknown;
+      try {
+        const url = new URL(path, 'https://x.com');
+        tweetId = JSON.parse(url.searchParams.get('variables') ?? '{}').tweetId;
+        if (!url.pathname.endsWith('/TweetResultByRestId')) {
+          reject(response, 'graphql-path');
+          return;
+        }
+      } catch {
+        reject(response, 'graphql-variables');
+        return;
+      }
+      const defaultKind =
+        typeof tweetId === 'string'
+          ? (DEFAULT_TWEET_ID_KINDS.get(tweetId) ??
+            (upgradeDenialEnabled && tweetId === UPGRADE_DIRECT_TWEET_ID
+              ? 'upgrade-direct'
+              : undefined))
+          : undefined;
+      if (
+        request.method !== 'GET' ||
+        !defaultKind ||
+        (apiMode !== null && tweetId !== API_TWEET_ID)
+      ) {
+        if (request.method === 'GET' && !defaultKind) {
+          const printable =
+            typeof tweetId === 'string' || typeof tweetId === 'number' ? String(tweetId) : null;
+          const sha256Prefix = printable
+            ? createHash('sha256').update(printable).digest('hex').slice(0, 12)
+            : null;
+          const existing = rejectedIdShapes.find(
+            (shape) => shape.type === typeof tweetId && shape.sha256Prefix === sha256Prefix
+          );
+          if (existing) {
+            existing.count += 1;
+          } else if (rejectedIdShapes.length < 8) {
+            rejectedIdShapes.push({
+              type: typeof tweetId,
+              length: printable?.length ?? null,
+              digitsOnly: printable !== null && /^\d+$/u.test(printable),
+              sha256Prefix,
+              count: 1,
+            });
+          } else {
+            rejectedIdShapeOverflow += 1;
+          }
+        }
+        reject(
+          response,
+          request.method !== 'GET'
+            ? 'graphql-method'
+            : !defaultKind
+              ? 'graphql-undeclared-id'
+              : 'graphql-active-mode-id'
+        );
+        return;
+      }
+      const mode = apiMode;
+      const redirect = mode === 'redirect-allowed' || mode === 'redirect-blocked';
+      const body = mode === null ? Buffer.from('{}') : redirect ? Buffer.alloc(0) : apiBody(mode);
+      if (apiServedBytes + body.length > MAX_API_SERVED_BYTES) {
+        overflow = true;
+        response.destroy();
+        return;
+      }
+      apiServedBytes += body.length;
+      const event: FixtureEvent = {
+        phase: mode ?? 'default',
+        cohort: 'api',
+        index: 0,
+        purpose: 'metadata',
+        method: 'GET',
+        result: 'started',
+        bytes: 0,
+        sha256: null,
+      };
+      events.push(event);
+      active.add(response);
+      response.once('close', () => {
+        if (!response.writableFinished) {
+          event.result = 'aborted';
+        }
+        active.delete(response);
+      });
+      response.once('finish', () => {
+        event.result = mode === null ? 'http-403' : redirect ? 'redirect' : 'served';
+        event.bytes = body.length;
+        event.sha256 =
+          mode === null || redirect ? null : createHash('sha256').update(body).digest('hex');
+        if (mode === null) {
+          defaultApiCompletedByKind[defaultKind] =
+            (defaultApiCompletedByKind[defaultKind] ?? 0) + 1;
+        }
+      });
+      response.writeHead(mode === null ? 403 : redirect ? 302 : 200, {
+        'Content-Type': 'application/json',
+        'Content-Length': String(body.length),
+        'Cache-Control': 'no-store',
+        'Access-Control-Allow-Origin': 'https://x.com',
+        'Access-Control-Allow-Credentials': 'true',
+        ...(redirect && {
+          Location: mode === 'redirect-allowed' ? API_ALLOWED_RECEIVER : API_BLOCKED_RECEIVER,
+        }),
+      });
+      response.end(body);
+      return;
+    }
+    if (host === HOST && path === MEDIA_REDIRECT_RECEIVER) {
+      if (request.method !== 'GET' || !mediaRedirectPending || !images) {
+        reject(response, 'media-redirect-unarmed');
+        return;
+      }
+      mediaRedirectPending = false;
+      const body = images[0];
+      assert(body);
+      if (servedBytes + body.length > MAX_SERVED_BYTES) {
+        overflow = true;
+        response.destroy();
+        return;
+      }
+      servedBytes += body.length;
+      const event: FixtureEvent = {
+        phase,
+        cohort: 'native-redirect-final',
+        index: 0,
+        purpose: 'transfer',
+        method: 'GET',
+        result: 'started',
+        bytes: 0,
+        sha256: null,
+      };
+      events.push(event);
+      active.add(response);
+      response.once('close', () => {
+        if (!response.writableFinished) {
+          event.result = 'aborted';
+        }
+        active.delete(response);
+      });
+      response.once('finish', () => {
+        event.result = 'served';
+        event.bytes = body.length;
+        event.sha256 = createHash('sha256').update(body).digest('hex');
+      });
+      response.writeHead(200, {
+        'Content-Type': 'image/jpeg',
+        'Content-Length': String(body.length),
+        'Cache-Control': 'no-store',
+      });
+      response.end(body);
       return;
     }
     const media = allowed.get(request.url ?? '');
@@ -211,17 +486,17 @@ export function createUserscriptFixtureHandler(
       !images ||
       (media.cohort !== 'avatar' && media.cohort !== phase)
     ) {
-      reject(response);
+      reject(response, 'media-route-or-phase');
       return;
     }
     const bytes = images[media.index];
     if (!Buffer.isBuffer(bytes) || bytes.length === 0 || bytes.length > MAX_IMAGE_BYTES) {
-      reject(response);
+      reject(response, 'media-bytes');
       return;
     }
     const purpose = request.headers['sec-fetch-dest'] === 'image' ? 'preview' : 'transfer';
     if (media.cohort !== 'avatar' && media.purpose !== purpose) {
-      reject(response);
+      reject(response, 'media-purpose');
       return;
     }
     const event: FixtureEvent = {
@@ -242,6 +517,26 @@ export function createUserscriptFixtureHandler(
       }
       active.delete(response);
     });
+    if (
+      mediaRedirectArmed &&
+      phase === 'normal' &&
+      media.cohort === 'normal' &&
+      media.index === 0 &&
+      purpose === 'transfer'
+    ) {
+      mediaRedirectArmed = false;
+      mediaRedirectPending = true;
+      response.once('finish', () => {
+        event.result = 'redirect';
+      });
+      response.writeHead(302, {
+        Location: `https://${HOST}${MEDIA_REDIRECT_RECEIVER}`,
+        'Content-Length': '0',
+        'Cache-Control': 'no-store',
+      });
+      response.end();
+      return;
+    }
     if (
       heldArmed &&
       phase === 'held' &&
@@ -291,8 +586,28 @@ export function createUserscriptFixtureHandler(
     setPhase(next: string) {
       assert(['normal', 'failure', 'partial', 'held'].includes(next));
       assert.equal(active.size, 0, 'Fixture has an active transport before phase change');
+      assert.equal(mediaRedirectPending, false, 'Fixture retains a pending native redirect');
       phase = next;
       heldArmed = false;
+    },
+    armMediaRedirect() {
+      assert.equal(phase, 'normal');
+      assert.equal(active.size, 0);
+      assert.equal(mediaRedirectArmed, false);
+      assert.equal(mediaRedirectPending, false);
+      mediaRedirectArmed = true;
+    },
+    setApiMode(next: ApiMode | null) {
+      assert.equal(active.size, 0, 'Fixture has an active transport before API mode change');
+      assert(!upgradeDenialEnabled, 'Upgrade API denial overlaps explicit API mode');
+      apiMode = next;
+    },
+    setUpgradeDenial(next: boolean) {
+      if (next) {
+        assert.equal(apiMode, null, 'Upgrade API denial overlaps explicit API mode');
+        assert.equal(active.size, 0, 'Fixture has an active transport before upgrade mode');
+      }
+      upgradeDenialEnabled = next;
     },
     armHeld() {
       assert.equal(phase, 'held');
@@ -316,9 +631,17 @@ export function createUserscriptFixtureHandler(
     snapshot: () => ({
       requests: requestCount,
       unexpectedCount,
+      rejectedReasons: { ...rejectedReasons },
+      defaultApiCompletedByKind: { ...defaultApiCompletedByKind },
+      rejectedIdShapes: rejectedIdShapes.map((shape) => ({ ...shape })),
+      rejectedIdShapeOverflow,
+      upgradeDenialEnabled,
       overflow,
       servedBytes,
+      apiServedBytes,
       activeCount: active.size,
+      mediaRedirectArmed,
+      mediaRedirectPending,
       events: events.map((event) => ({ ...event })),
     }),
     destroyActive() {
@@ -335,7 +658,7 @@ export async function startUserscriptFixtureLoopback(
   avatarPath: string,
   run: CertificateRunner = execFileAsync
 ) {
-  const certificate = await generateFixtureCertificate(helperPath, run);
+  const certificate = await generateFixtureCertificate(helperPath, run, true, true);
   const fixture = createUserscriptFixtureHandler(cohorts, avatarPath);
   let server: ReturnType<typeof createServer>;
   try {

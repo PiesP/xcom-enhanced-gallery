@@ -197,7 +197,11 @@ export class MediaExtractionService implements MediaExtractor {
         // or cannot be matched to the clicked element.
         this.apiFailureCount = 0;
         this.apiCircuitOpen = false;
-      } else if (shouldAccount && apiResult.apiRequestOutcome === 'failed') {
+      } else if (
+        shouldAccount &&
+        apiResult.apiRequestOutcome === 'failed' &&
+        apiResult.failureKind !== 'resource-limit'
+      ) {
         this.recordApiFailure();
         if (
           apiResult.retryAfterMs !== undefined &&

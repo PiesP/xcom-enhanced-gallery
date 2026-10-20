@@ -54,6 +54,8 @@ function mediaFailureMessage(kind: MediaExtractionResult['failureKind']): Transl
       return 'msg.err.loadMedia.deferred';
     case 'provider-error':
       return 'msg.err.loadMedia.providerError';
+    case 'resource-limit':
+      return 'msg.err.loadMedia.resourceLimit';
     case 'transport':
       return 'msg.err.loadMedia.transport';
     case 'owner-unconfirmed':

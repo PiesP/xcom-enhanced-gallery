@@ -181,6 +181,13 @@ native eight-video ZIP is independently read for entry order, names, bytes and
 CRC after playback fallback; its first entry must retain the preferred source.
 The helper records active-source, metadata, first-frame and completion timings
 as fixture observations, including the deliberately gated response boundary.
+The API helper also rejects a controlled response above 2 MiB without caching it
+and checks that a 302 response is not followed by the installed MV3 Fetch path.
+After the production gallery cases, a separate direct `chrome.downloads` diagnostic
+records whether the native browser downloader follows one declared JPEG-to-JPEG
+302 and whether the saved bytes and final URL match the destination. It does not
+exercise the production message sender boundary; the gallery download cycles
+above retain that coverage.
 The API helper also runs three response-contract failures before a fourth action
 in the same document: foreign owner responses, two server failures followed by a
 foreign owner, and missing result envelopes. It independently counts physical
@@ -333,6 +340,11 @@ dimensions, error-free playback progress, and normal close restoration. It
 records bounded request IDs, HTTP and provider outcomes, timestamps, each step,
 settings restoration, and partial failure evidence. This is a deterministic
 routed fixture, not an observation of live X availability.
+
+A separate no-DOM-fallback preview on that document receives an HTTP 200 JSON
+body above 2 MiB. The installed extension must show its metadata resource-limit
+notification, distinct from the ordinary unavailable-post notification, without
+opening a gallery or retrying the request.
 
 After those cycles, the installed profile uses the exact installed extension
 worker and exact owned fixture tab to set real `chrome.tabs` zoom to 200%, then
@@ -515,8 +527,26 @@ acceptance remains unverified. The manager is imported as an unpacked
 extension, the production userscript is installed through its confirmation UI,
 and native downloads use the owned browser directory. The fixture starts a
 task-owned HTTPS listener on ephemeral `127.0.0.1` before launching the fresh
-profile. A one-run SPKI exception and exact `pbs.twimg.com:443` host mapping let
-the real manager and browser download API fetch only the declared fixture JPEGs.
+profile. A one-run SPKI exception and exact `pbs.twimg.com:443` and `x.com:443`
+host mappings let the real manager and browser use only declared JPEG and
+`TweetResultByRestId` routes. The default API smoke still receives a routed 403.
+After download recovery, explicit API modes serve one small valid JSON body,
+one response above 2 MiB, and two single-hop redirects through the HTTPS
+listener. The redirect receivers return the same small healthy JSON: one ends
+on allowed `pbs.twimg.com`, the other on a disallowed non-API `x.com` path.
+The receipt records both physical GM hops and selected original or fallback
+image quality, establishing response-use admission after the manager follows
+the redirect. A separate no-DOM video preview checks the actual manager
+notification for the localized metadata resource-limit category after the
+oversized response. The oversized body is bounded by a separate 3 MiB fixture
+budget. This tests the installed Tampermonkey path without claiming a bound on
+manager-owned buffers or pre-hop credential exposure.
+One further owned single-image action arms an exact same-host media 302. The
+manager's native download history must retain the original URL and report the
+declared final URL; the existing filename, completed state, owned saved path and
+byte-equality checks still apply. The HTTPS listener records the one redirect
+and one final JPEG response. This is browser-controlled redirect observation,
+not pre-follow destination enforcement.
 The generated private key stays in process memory; no OS trust or hosts setting
 is changed. For each single image, a read-only query from the exact manager
 options page requires one new native download ID for the fixture URL, a complete

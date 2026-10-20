@@ -298,6 +298,11 @@ async function downloadViaBlob(
         releaseLease();
         return;
       }
+      if (!isValidMediaUrl(response.finalUrl)) {
+        fail(new Error('Download response destination is unavailable or not allowed'));
+        releaseLease();
+        return;
+      }
       if (!(response.response instanceof Blob)) {
         fail(new Error('GM_xmlhttpRequest returned an invalid Blob response'));
         releaseLease();
