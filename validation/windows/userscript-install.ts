@@ -742,6 +742,33 @@ async function observeManagerNotificationCreates(context: BrowserContext, manage
   };
 }
 
+async function chooseTrustedVideoClickMode(page: Page, select: Locator, target: string) {
+  assert(
+    target === 'block-all' || target === 'block-controls-only' || target === 'allow-all',
+    'Video click mode must be a declared option'
+  );
+  const current = await select.inputValue();
+  if (current === target) {
+    return;
+  }
+  await select.focus();
+  const key =
+    target === 'allow-all'
+      ? 'End'
+      : target === 'block-all'
+        ? 'Home'
+        : current === 'allow-all'
+          ? 'ArrowUp'
+          : 'ArrowDown';
+  await page.keyboard.press(key);
+  await page.waitForFunction((expected) => {
+    const control = document.querySelector(
+      '[data-xeg-gallery-container] #settings-video-click-select'
+    );
+    return control instanceof HTMLSelectElement && !control.disabled && control.value === expected;
+  }, target);
+}
+
 function assertOwned(root: string, profile: string) {
   assert.equal(dirname(resolve(profile)), resolve(root), 'Profile is outside the task root');
   assert(basename(profile).startsWith(PROFILE_PREFIX), 'Profile prefix differs');
@@ -3104,7 +3131,7 @@ async function runFixture(
       await gallery.locator('#settings-button').click();
       const clickMode = gallery.locator('#settings-video-click-select');
       originalClickMode = await clickMode.inputValue();
-      await clickMode.selectOption('allow-all');
+      await chooseTrustedVideoClickMode(page, clickMode, 'allow-all');
       await waitFor(
         async () => ((await readFreshVideoClickMode()) === 'allow-all' ? true : undefined),
         'userscript video click setting to persist'
@@ -3201,7 +3228,7 @@ async function runFixture(
           await gallery.waitFor({ state: 'visible' });
           await gallery.locator('#settings-button').click();
           const clickMode = gallery.locator('#settings-video-click-select');
-          await clickMode.selectOption(originalClickMode);
+          await chooseTrustedVideoClickMode(page, clickMode, originalClickMode);
           await waitFor(
             async () =>
               (await readFreshVideoClickMode()) === originalClickMode ? true : undefined,
