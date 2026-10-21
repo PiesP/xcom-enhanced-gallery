@@ -12,7 +12,11 @@ import { describe, expect, it, vi } from 'vite-plus/test';
 
 type LivePageModule = Pick<
   typeof import('../../../validation/windows/live-page.ts'),
-  'createControlledVideoSettings' | 'restoreStoredVideoSettings' | 'validateLiveUrls'
+  | 'createControlledVideoSettings'
+  | 'restoreStoredVideoSettings'
+  | 'validateLiveUrls'
+  | 'inspectHitTestedAction'
+  | 'summarizeCompactImageEvidence'
 > & {
   inspectLiveTargetDocument(identity: { handle: string; statusId: string }):
     | false
@@ -22,6 +26,9 @@ type LivePageModule = Pick<
         target?: {
           kind: string;
           imageSource?: { path: string };
+          ownerStatusId?: string;
+          ownerHandle?: string;
+          directQuoteId?: string;
           quoteBoundary?: string;
           quoteStatusIds?: string[];
           ownershipPath?: unknown[];
@@ -143,7 +150,11 @@ type LivePageModule = Pick<
       point: { x: number; y: number };
     }
   ): Element | null;
-  inspectSelectedGalleryDocument(expected: { expectedIndex: number; expectedPath: string }):
+  inspectSelectedGalleryDocument(expected: {
+    expectedIndex: number | null;
+    expectedPath: string;
+    allowPhotoFormatVariant?: boolean;
+  }):
     | false
     | {
         imageSource: { host: string; path: string };
@@ -2380,6 +2391,109 @@ describe('Windows X live page validation', () => {
     });
   });
 
+  it('recognizes only the bounded A > B > C compact photo with its same-owner overlay', async () => {
+    document.body.innerHTML = readFileSync(
+      resolve(process.cwd(), 'test/e2e/fixtures/installed-compact-quote-photo-page.html'),
+      'utf8'
+    );
+    for (const anchor of document.querySelectorAll<HTMLAnchorElement>('a[href^="/"]')) {
+      anchor.href = `https://x.com${anchor.getAttribute('href')}`;
+    }
+    const image = document.querySelector<HTMLImageElement>('#c-photo');
+    const overlay = document.querySelector<HTMLAnchorElement>('#c-overlay');
+    if (!image || !overlay) {
+      throw new Error('Compact fixture is incomplete');
+    }
+    image.style.display = 'block';
+    image.getBoundingClientRect = () => ({
+      x: 20,
+      y: 20,
+      left: 20,
+      top: 20,
+      right: 82,
+      bottom: 82,
+      width: 62,
+      height: 62,
+      toJSON: () => ({}),
+    });
+    Object.defineProperties(image, {
+      complete: { configurable: true, value: true },
+      naturalWidth: { configurable: true, value: 62 },
+    });
+    const previousHitTest = Object.getOwnPropertyDescriptor(document, 'elementFromPoint');
+    Object.defineProperty(document, 'elementFromPoint', {
+      configurable: true,
+      value: () => overlay,
+    });
+    try {
+      const identity = { handle: 'outer_fixture', statusId: '8555555555555555555' };
+      const ready = livePage.inspectLiveTargetDocument(identity);
+      expect(ready).toMatchObject({
+        state: 'ready',
+        target: {
+          kind: 'image',
+          quoteBoundary: 'compact-two-level',
+          directQuoteId: '9555555555555555555',
+          ownerStatusId: '7555555555555555555',
+          ownerHandle: 'inner_fixture',
+          imageSource: { path: '/media/CompactQuoteSelected' },
+        },
+      });
+      if (!ready || ready.state !== 'ready' || !ready.target || ready.target.kind !== 'image') {
+        throw new Error('Compact image readiness was not established');
+      }
+      const locator = {
+        evaluate: async (
+          callback: (image: HTMLImageElement, value: unknown) => unknown,
+          value: unknown
+        ) => callback(image, value),
+      };
+      expect(
+        await livePage.inspectHitTestedAction(
+          locator as unknown as Parameters<LivePageModule['inspectHitTestedAction']>[0],
+          identity,
+          ready.target as Parameters<LivePageModule['inspectHitTestedAction']>[2]
+        )
+      ).toMatchObject({ actionPath: '/inner_fixture/status/7555555555555555555' });
+
+      const bSlot = document.querySelector('#b-media-slot');
+      if (!bSlot) {
+        throw new Error('B media slot missing');
+      }
+      const bImage = document.createElement('img');
+      bImage.src = 'https://pbs.twimg.com/media/CompactQuoteMiddle.jpg';
+      bSlot.append(bImage);
+      expect(livePage.inspectLiveTargetDocument(identity)).toMatchObject({
+        state: 'ready',
+        target: { ownerStatusId: '7555555555555555555' },
+      });
+      bImage.remove();
+
+      overlay.href = 'https://x.com/other_fixture/status/6555555555555555555';
+      expect(livePage.inspectLiveTargetDocument(identity)).toBe(false);
+      overlay.href = 'https://x.com/inner_fixture/status/7555555555555555555';
+      const title = document.querySelector('#c-header');
+      Object.defineProperty(document, 'elementFromPoint', {
+        configurable: true,
+        value: () => title,
+      });
+      expect(livePage.inspectLiveTargetDocument(identity)).toBe(false);
+      Object.defineProperty(document, 'elementFromPoint', {
+        configurable: true,
+        value: () => overlay,
+      });
+      const duplicate = image.cloneNode() as HTMLImageElement;
+      image.parentElement?.append(duplicate);
+      expect(livePage.inspectLiveTargetDocument(identity)).toBe(false);
+    } finally {
+      if (previousHitTest) {
+        Object.defineProperty(document, 'elementFromPoint', previousHitTest);
+      } else {
+        Reflect.deleteProperty(document, 'elementFromPoint');
+      }
+    }
+  });
+
   it('prefers the exact article quoted video and retains only bounded ownership evidence', () => {
     document.body.innerHTML = `
       <article>
@@ -3494,6 +3608,84 @@ describe('Windows X live page validation', () => {
     ).toBeNull();
   });
 
+  it('keeps a C gallery fallback unverified after C API rejection', () => {
+    const owner = '7555555555555555555';
+    const source = '/media/CompactQuoteSelected';
+    const rejected = livePage.summarizeCompactImageEvidence(
+      {
+        tweetResultByRestId: { requests: 1, responses: [403] },
+        overflow: 0,
+        observations: [
+          {
+            operation: 'TweetResultByRestId',
+            requestedTweetId: owner,
+            httpStatus: 403,
+            providerErrors: false,
+            result: null,
+            directQuote: null,
+            nestedQuoteId: null,
+          },
+        ],
+      },
+      owner,
+      source,
+      0
+    );
+    expect(rejected).toMatchObject({
+      providerConfirmed: false,
+      providerRejection: { kind: 'http-rejection', requestedTweetId: owner, httpStatus: 403 },
+    });
+    const healthyApi = {
+      tweetResultByRestId: { requests: 1, responses: [200] },
+      overflow: 0,
+      observations: [
+        {
+          operation: 'TweetResultByRestId',
+          requestedTweetId: owner,
+          httpStatus: 200,
+          providerErrors: false,
+          directQuote: null,
+          nestedQuoteId: null,
+          result: {
+            id: owner,
+            media: [
+              {
+                id: '101',
+                type: 'photo',
+                poster: { host: 'pbs.twimg.com', path: '/media/CompactQuoteFirst.jpg' },
+                playableVariants: [],
+              },
+              {
+                id: '102',
+                type: 'photo',
+                poster: { host: 'pbs.twimg.com', path: '/media/CompactQuoteSelected.jpg' },
+                playableVariants: [],
+              },
+            ],
+          },
+        },
+      ],
+    };
+    const healthy = livePage.summarizeCompactImageEvidence(healthyApi, owner, source, 1);
+    expect(healthy).toEqual({ providerConfirmed: true, providerRejection: null, apiMediaIndex: 1 });
+    expect(
+      livePage.summarizeCompactImageEvidence({ ...healthyApi, overflow: 1 }, owner, source, 1)
+        .providerConfirmed
+    ).toBe(false);
+    expect(
+      livePage.summarizeCompactImageEvidence(
+        {
+          tweetResultByRestId: { requests: 0, responses: [] },
+          observations: [],
+          overflow: 0,
+        },
+        owner,
+        source,
+        0
+      ).providerConfirmed
+    ).toBe(false);
+  });
+
   it('rejects a matching image outside the selected gallery index', () => {
     document.body.innerHTML = `
       <div data-xeg-gallery-container>
@@ -3559,6 +3751,13 @@ describe('Windows X live page validation', () => {
       itemVisible: true,
       positionValue: 2,
     });
+    expect(
+      livePage.inspectSelectedGalleryDocument({
+        expectedIndex: null,
+        expectedPath: '/media/target',
+        allowPhotoFormatVariant: true,
+      })
+    ).toMatchObject({ itemIndex: 1, positionValue: 2 });
 
     const position = document.querySelector<HTMLElement>('#xeg-toolbar-counter');
     const toolbar = document.querySelector<HTMLElement>('[data-gallery-element="toolbar"]');
