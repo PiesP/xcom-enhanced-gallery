@@ -17,6 +17,8 @@ type ExtractionStrategy = (element: HTMLElement) => TweetInfo | null;
 
 const DEFAULT_TWEET_ORIGIN = 'https://x.com';
 const STATUS_PATH_PATTERN = /\/status\/(\d+)(?:\/|$)/u;
+// The observed playing overlay has a role-link ancestor 18 hops away; stop at the article.
+const MAX_CLICKABLE_BOUNDARY_HOPS = 24;
 
 interface TrustedStatusLink {
   readonly tweetId: string;
@@ -327,7 +329,7 @@ function extractClickContext(element: HTMLElement): TweetClickContext | null {
   let boundary: HTMLElement | null = null;
   for (
     let node = element.parentElement, hops = 0;
-    node && node !== article && hops < 16;
+    node && node !== article && hops < MAX_CLICKABLE_BOUNDARY_HOPS;
     node = node.parentElement, hops++
   ) {
     if (node.matches('[data-testid="quoteTweet"]')) {

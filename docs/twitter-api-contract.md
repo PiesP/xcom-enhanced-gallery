@@ -61,6 +61,12 @@ selects the clicked source within C's normalized media. C is never relabeled as
 A's direct quote. Missing or contradictory ownership continues to fail local
 selection; a nearby credit link alone does not authorize another quote level.
 
+Video click context checks up to 24 ancestors for an enclosing quote or clickable
+boundary and stops at the nearest article. A boundary without an owner permalink
+remains unconfirmed until a unique exact media identity matches the requested
+post or its verified direct quote. Missing or shared identity cannot select an
+attachment. Native controls follow the saved video-click policy.
+
 Finding a photo inside a quote does not make its surrounding text, post links
 or padding a media action. Those clicks retain the host's native navigation.
 The photo and its overlapping media link remain gallery targets, including
