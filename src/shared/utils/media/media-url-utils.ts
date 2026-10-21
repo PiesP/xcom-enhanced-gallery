@@ -52,6 +52,10 @@ export function getMediaDedupKey(media: MediaInfo): string | null {
     media.type === 'image' || media.type === 'video' || media.type === 'gif'
       ? `${media.type}:`
       : '';
+  // Different quote owners can reuse a source; collapsing them changes the
+  // clicked post's attribution and download filename.
+  const ownerPrefix = media.tweetId ? `tweet:${media.tweetId}:` : '';
+  const prefix = `${typePrefix}${ownerPrefix}`;
 
   const parsed = tryParseUrl(urlCandidate, 'https://example.invalid');
   if (parsed) {
@@ -59,14 +63,14 @@ export function getMediaDedupKey(media: MediaInfo): string | null {
     const path = parsed.pathname;
     const format = parsed.searchParams.get('format');
     if (host && path) {
-      const key = `${typePrefix}${host}${path}${format ? `?format=${format}` : ''}`;
+      const key = `${prefix}${host}${path}${format ? `?format=${format}` : ''}`;
       dedupKeyCache.set(media, key);
       return key;
     }
   }
 
   const filename = extractFilenameFromUrl(urlCandidate);
-  const key = filename ? `${typePrefix}${filename}` : `${typePrefix}${urlCandidate}`;
+  const key = filename ? `${prefix}${filename}` : `${prefix}${urlCandidate}`;
   dedupKeyCache.set(media, key);
   return key;
 }

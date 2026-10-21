@@ -169,6 +169,26 @@ describe('compact inner quote photo, preserving observed overlay ownership', () 
     expect(result.mediaItems.some((item) => item.tweetId === A || item.tweetId === B)).toBe(false);
   });
 
+  it('preserves B attribution when B and C reuse the same photo source', async () => {
+    const overlay = installMiddlePhoto();
+    element<HTMLImageElement>('#b-media-slot img').src = selectedPreview;
+    httpGet.mockResolvedValue(
+      response(tweet(B, [photo('201', selectedPreview)], tweet(C, [photo('102', selectedPreview)])))
+    );
+
+    const result = await new MediaExtractionService().extractFromClickedElement(overlay);
+    expect(result.success).toBe(true);
+    expect(requestedId()).toBe(B);
+    expect(result.mediaItems.map((item) => item.tweetId)).toEqual([C, B]);
+    expect(result.clickedIndex).toBe(1);
+    expect(result.mediaItems[1]).toMatchObject({
+      tweetId: B,
+      tweetUsername: 'middle_fixture',
+      tweetText: `Fixture ${B}`,
+    });
+    expect(new Set(result.mediaItems.map((item) => generateMediaFilename(item))).size).toBe(2);
+  });
+
   it('rejects conflicting overlay ownership and leaves a separate external link native', async () => {
     const overlay = element<HTMLAnchorElement>('#c-overlay');
     overlay.href = `/other_fixture/status/6555555555555555555`;
