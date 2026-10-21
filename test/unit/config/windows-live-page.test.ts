@@ -13,6 +13,7 @@ import { describe, expect, it, vi } from 'vite-plus/test';
 type LivePageModule = Pick<
   typeof import('../../../validation/windows/live-page.ts'),
   | 'createControlledVideoSettings'
+  | 'quotedVideoSurface'
   | 'restoreStoredVideoSettings'
   | 'validateLiveUrls'
   | 'inspectHitTestedAction'
@@ -3243,6 +3244,64 @@ describe('Windows X live page validation', () => {
           posterPath: '/amplify_video_thumb/456/img/b.jpg',
         })
       ).toMatchObject({ inQuote: false, rejectedControls: 9 });
+    } finally {
+      Reflect.deleteProperty(document, 'elementsFromPoint');
+    }
+  });
+
+  it('retains the identified video when native playback removes its sibling poster', () => {
+    document.body.innerHTML = `<article><div>
+      <img src="https://pbs.twimg.com/amplify_video_thumb/456/img/b.jpg">
+      <button>Native play</button>
+      <video src="blob:https://x.com/playing" poster="https://pbs.twimg.com/amplify_video_thumb/456/img/b.jpg"></video>
+    </div></article>`;
+    const target = {
+      playerIndex: -1,
+      previewIndex: -1,
+      posterIndex: 0,
+      videoIndex: 0,
+      hitKind: 'video',
+    };
+    const article = document.querySelector('article')!;
+    const video = article.querySelector('video')!;
+    const button = article.querySelector('button')!;
+    const selected = () => {
+      const surface = livePage.quotedVideoSurface(target);
+      return article.querySelectorAll<HTMLElement>(surface.selector)[surface.index]!;
+    };
+    video.getBoundingClientRect = () => ({
+      bottom: 200,
+      height: 100,
+      left: 0,
+      right: 200,
+      toJSON: () => ({}),
+      top: 100,
+      width: 200,
+      x: 0,
+      y: 100,
+    });
+    Object.defineProperty(document, 'elementsFromPoint', {
+      configurable: true,
+      value: () => [button],
+    });
+    try {
+      expect(selected()).toBe(video);
+      article.querySelector('img')!.remove();
+      expect(selected()).toBe(video);
+      const expected = { posterPath: '/amplify_video_thumb/456/img/b.jpg' };
+      const hit = livePage.inspectHitTestedVideoActionDocument(selected(), expected);
+      expect(hit?.nativePlay).toBeTruthy();
+      expect(
+        livePage.findHitTestedVideoControlDocument(selected(), {
+          x: hit!.nativePlay!.x,
+          y: hit!.nativePlay!.y,
+          posterPath: expected.posterPath,
+        })
+      ).toBe(button);
+      video.poster = 'https://pbs.twimg.com/amplify_video_thumb/999/img/other.jpg';
+      expect(
+        livePage.inspectHitTestedVideoActionDocument(selected(), expected)?.nativePlay
+      ).toBeFalsy();
     } finally {
       Reflect.deleteProperty(document, 'elementsFromPoint');
     }

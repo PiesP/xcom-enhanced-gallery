@@ -7,6 +7,7 @@ import type { ClickedMediaEvidence, MediaSelectionItem } from '@shared/types/med
 import {
   extractMediaUrlCandidatesFromElement,
   findMediaElementInDOM,
+  findOwnedVideoInNearestPlayer,
   selectMediaSourceUrl,
 } from '@shared/utils/media/media-element-utils';
 import { extractFilenameStemFromUrl } from '@shared/utils/media/media-url-utils';
@@ -82,6 +83,26 @@ function isBoundedClickedMedia(element: HTMLElement, media: HTMLElement | null):
     return true;
   }
   const article = element.closest('article');
+  if (media instanceof HTMLVideoElement) {
+    const owned = findOwnedVideoInNearestPlayer(element);
+    if (
+      article !== null &&
+      owned?.video === media &&
+      owned.player.closest('article') === article &&
+      media.closest('article') === article
+    ) {
+      for (
+        let node: HTMLElement | null = element;
+        node && node !== owned.player;
+        node = node.parentElement
+      ) {
+        if (node.matches('[data-testid="card.wrapper"]')) {
+          return false;
+        }
+      }
+      return true;
+    }
+  }
   for (
     let node: HTMLElement | null = element, hops = 0;
     node && node !== article && hops < 5;
