@@ -6,6 +6,7 @@ import { generateMediaFilename } from '@shared/core/filename/filename-utils';
 import { getTweetMedias } from '@shared/services/media/twitter-api-client';
 import type { TwitterMedia, TwitterTweet } from '@shared/services/media/types';
 import { captureClickedMediaEvidence } from '@shared/services/media-extraction/determine-clicked-index';
+import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
 import { MediaExtractionService } from '@shared/services/media-extraction/media-extraction-service';
 import { handleMediaClick } from '@shared/utils/events/handlers/media-click';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
@@ -78,6 +79,49 @@ function deepOverlayTarget(commonAncestorHops: number, knownOwner = false): HTML
       </div>
     </div></article>`;
   return document.getElementById('target')!;
+}
+function observedUnmarkedOverlay(
+  posterUrl: string,
+  roleLinkAncestor: number,
+  articleAncestor: number
+): HTMLElement {
+  let branch = document.createElement('div');
+  branch.id = 'observed-target';
+  for (let ancestor = 1; ancestor < articleAncestor; ancestor++) {
+    const wrapper = document.createElement('div');
+    if (ancestor === 4) {
+      wrapper.dataset.testid = 'videoComponent';
+      const video = document.createElement('video');
+      video.src = 'blob:https://x.com/observed';
+      video.poster = posterUrl;
+      const videoWrapper = document.createElement('div');
+      const videoInner = document.createElement('div');
+      videoInner.append(video);
+      videoWrapper.append(videoInner);
+      wrapper.append(videoWrapper);
+    }
+    if (ancestor === 7) {
+      wrapper.dataset.testid = 'videoPlayer';
+    }
+    if (ancestor === 8) {
+      wrapper.dataset.testid = 'placementTracking';
+    }
+    if (ancestor === 12) {
+      wrapper.dataset.testid = 'tweetPhoto';
+    }
+    if (ancestor === roleLinkAncestor) {
+      wrapper.setAttribute('role', 'link');
+    }
+    wrapper.append(branch);
+    branch = wrapper;
+  }
+  const article = document.createElement('article');
+  article.dataset.testid = 'tweet';
+  article.innerHTML = `<a href="/dinko78169564/status/2112758636313534536"><time>Outer post</time></a>
+    <a href="/dinko78169564/status/2112758636313534536/analytics">Analytics</a>`;
+  article.append(branch);
+  document.body.replaceChildren(article);
+  return document.getElementById('observed-target')!;
 }
 function requestedId(): string {
   return JSON.parse(
@@ -1020,6 +1064,117 @@ describe('production quoted-video pipeline', () => {
 
   it('does not recover B through an ordinary non-clickable A wrapper', async () => {
     const result = await new MediaExtractionService().extractFromClickedElement(target('ordinary'));
+    expect(result.success).toBe(false);
+    expect(result.mediaItems).toEqual([]);
+  });
+
+  it('recovers the exact direct-quote video behind the observed depth-18 role link', async () => {
+    const outerId = '2112758636313534536';
+    const quoteId = '2112518095336321079';
+    const mediaId = '2112518058816552960';
+    const livePoster = `https://pbs.twimg.com/amplify_video_thumb/${mediaId}/img/s1WeGFt7GoIVbDHP.jpg`;
+    const liveMp4 = `https://video.twimg.com/amplify_video/${mediaId}/vid/avc1/804x720/p5etOR4LqmkyEEXT.mp4`;
+    const quoted = tweet(quoteId, [
+      {
+        ...video(mediaId),
+        media_url_https: livePoster,
+        video_info: { variants: [{ content_type: 'video/mp4', bitrate: 100, url: liveMp4 }] },
+      },
+    ]);
+    quoted.core.user_results.result.legacy.screen_name = 'quote_owner';
+    respond(tweet(outerId, [], quoted));
+    const clicked = observedUnmarkedOverlay(livePoster, 18, 24);
+    expect(document.querySelector('[data-testid="quoteTweet"]')).toBeNull();
+    expect(clicked.closest('[role="link"]')).toBeTruthy();
+    expect(document.querySelector(`a[href*="/status/${quoteId}"]`)).toBeNull();
+
+    const context = new TweetInfoExtractor().extractContext(clicked);
+    const evidence = captureClickedMediaEvidence(clicked);
+    const result = await new MediaExtractionService().extractFromClickedElement(clicked);
+    expect(context?.tweetInfo.tweetId).toBe(outerId);
+    expect(context?.ownership).toMatchObject({
+      requestTweetId: outerId,
+      ownerTweetId: null,
+      scope: 'clickable',
+    });
+    expect(evidence).toMatchObject({
+      mediaType: 'video',
+      sourceKey: null,
+      identityKeys: [`pbs.twimg.com/amplify_video_thumb/${mediaId}/img/s1WeGFt7GoIVbDHP.jpg`],
+      invalidSource: false,
+    });
+    expect(requestedId()).toBe(outerId);
+    expect(result.success).toBe(true);
+    expect(result.mediaItems[result.clickedIndex!]).toMatchObject({
+      tweetId: quoteId,
+      tweetUsername: 'quote_owner',
+      tweetText: `Post ${quoteId}`,
+      tweetUrl: `https://x.com/quote_owner/status/${quoteId}`,
+      url: liveMp4,
+      sourceLocation: 'quoted',
+      quotedTweetId: quoteId,
+      quotedTweetUrl: `https://x.com/quote_owner/status/${quoteId}`,
+      metadata: { apiData: { tweet_id: quoteId, quoteParentTweetId: outerId } },
+    });
+    expect(generateMediaFilename(result.mediaItems[result.clickedIndex!]!)).toMatch(
+      /^quote_owner_2112518095336321079_\d+\.mp4$/u
+    );
+  });
+
+  it.each([
+    [16, true],
+    [17, true],
+    [18, true],
+    [24, true],
+    [25, false],
+  ] as const)('bounds unmarked role-link ownership at ancestor %i', (depth, withinLimit) => {
+    const clicked = observedUnmarkedOverlay(poster('700'), depth, 27);
+    const context = new TweetInfoExtractor().extractContext(clicked);
+    expect(context?.ownership.requestTweetId).toBe('2112758636313534536');
+    expect(context?.ownership.ownerTweetId === null).toBe(withinLimit);
+  });
+
+  it('keeps an exact outer attachment inside a depth-18 generic role link', async () => {
+    const outerId = '2112758636313534536';
+    respond(tweet(outerId, [video('700')], tweet('111', [video('800')])));
+    const clicked = observedUnmarkedOverlay(poster('700'), 18, 24);
+    const result = await new MediaExtractionService().extractFromClickedElement(clicked);
+    expect(requestedId()).toBe(outerId);
+    expect(result.success).toBe(true);
+    expect(result.mediaItems[result.clickedIndex!]).toMatchObject({
+      tweetId: outerId,
+      url: source('700'),
+    });
+  });
+
+  it('keeps an explicit quote permalink with a direct source and no poster', async () => {
+    respond(tweet('111', [video('700')]));
+    const clicked = observedUnmarkedOverlay(poster('700'), 18, 24);
+    const player = clicked.closest<HTMLElement>('[data-testid="videoPlayer"]')!;
+    const videoElement = player.querySelector('video')!;
+    videoElement.removeAttribute('poster');
+    videoElement.src = source('700');
+    clicked
+      .closest<HTMLElement>('[role="link"]')!
+      .insertAdjacentHTML('afterbegin', '<a href="/author_111/status/111"><time>Quote</time></a>');
+    const result = await new MediaExtractionService().extractFromClickedElement(clicked);
+    expect(requestedId()).toBe('111');
+    expect(result.success).toBe(true);
+    expect(result.mediaItems[result.clickedIndex!]).toMatchObject({
+      tweetId: '111',
+      url: source('700'),
+    });
+  });
+
+  it('does not promote a generic deep role link without a direct media identity', async () => {
+    const clicked = observedUnmarkedOverlay(poster('700'), 18, 24);
+    clicked
+      .closest('[data-testid="videoPlayer"]')!
+      .querySelector('video')!
+      .removeAttribute('poster');
+    const evidence = captureClickedMediaEvidence(clicked);
+    const result = await new MediaExtractionService().extractFromClickedElement(clicked);
+    expect(evidence.identityKeys).toEqual([]);
     expect(result.success).toBe(false);
     expect(result.mediaItems).toEqual([]);
   });
