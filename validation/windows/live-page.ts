@@ -804,6 +804,10 @@ export function inspectLiveTargetDocument({ handle, statusId }: Identity): LiveR
     }
     return null;
   };
+  const compactOwnerPath = (anchor: HTMLAnchorElement) =>
+    /^(\/[A-Za-z0-9_]{1,15}\/status\/[1-9]\d*)(?:\/photo\/[1-9]\d*)?$/u.exec(
+      parseLink(anchor)?.path ?? ''
+    )?.[1] ?? null;
   const parsePoster = (value: string | null | undefined) => {
     if (!value) {
       return null;
@@ -1025,7 +1029,7 @@ export function inspectLiveTargetDocument({ handle, statusId }: Identity): LiveR
           continue;
         }
         const ownLinks = [...compact.querySelectorAll<HTMLAnchorElement>('a[href]')];
-        const compactPaths = ownLinks.map((anchor) => parseLink(anchor)?.path ?? null);
+        const compactPaths = ownLinks.map(compactOwnerPath);
         const ownerPath = compactPaths[0];
         const ownerMatch = /^\/([A-Za-z0-9_]{1,15})\/status\/([1-9]\d*)$/u.exec(ownerPath ?? '');
         if (!ownerMatch || compactPaths.some((path) => path !== ownerPath)) {
@@ -1065,7 +1069,8 @@ export function inspectLiveTargetDocument({ handle, statusId }: Identity): LiveR
             continue;
           }
           const imageLink = image.closest<HTMLAnchorElement>('a[href]');
-          if (!imageLink || parseLink(imageLink)?.path !== ownerPath) {
+          const imagePath = imageLink ? parseLink(imageLink)?.path : null;
+          if (!imageLink || compactOwnerPath(imageLink) !== ownerPath) {
             continue;
           }
           const rectangle = image.getBoundingClientRect();
@@ -1076,7 +1081,7 @@ export function inspectLiveTargetDocument({ handle, statusId }: Identity): LiveR
           }
           const hit = document.elementFromPoint(x, y);
           const hitLink = hit?.closest<HTMLAnchorElement>('a[href]');
-          if (!hitLink || hitLink === imageLink || parseLink(hitLink)?.path !== ownerPath) {
+          if (!hitLink || hitLink === imageLink || parseLink(hitLink)?.path !== imagePath) {
             continue;
           }
           let region = image.parentElement;
@@ -1094,7 +1099,7 @@ export function inspectLiveTargetDocument({ handle, statusId }: Identity): LiveR
             regionImages.length !== 1 ||
             regionImages[0] !== image ||
             regionLinks.length !== 2 ||
-            regionLinks.some((anchor) => parseLink(anchor)?.path !== ownerPath)
+            regionLinks.some((anchor) => parseLink(anchor)?.path !== imagePath)
           ) {
             continue;
           }
@@ -1449,9 +1454,15 @@ export async function inspectHitTestedAction(
         const outerArticle = document.querySelectorAll('article')[target.articleIndex];
         const compact = element.closest('[role="link"]');
         const ownerPath = `/${target.ownerHandle}/status/${target.ownerStatusId}`;
+        const compactOwnerPath = (anchor: HTMLAnchorElement) =>
+          /^(\/[A-Za-z0-9_]{1,15}\/status\/[1-9]\d*)(?:\/photo\/[1-9]\d*)?$/u.exec(
+            parseLink(anchor)?.pathname ?? ''
+          )?.[1] ?? null;
         const imageLink = element.closest<HTMLAnchorElement>('a[href]');
         const hit = document.elementFromPoint(x, y);
         const hitLink = hit?.closest<HTMLAnchorElement>('a[href]');
+        const imagePath = imageLink ? parseLink(imageLink)?.pathname : null;
+        const actionPath = hitLink ? parseLink(hitLink)?.pathname : null;
         if (
           !outerArticle?.contains(article) ||
           !compact ||
@@ -1459,8 +1470,12 @@ export async function inspectHitTestedAction(
           !imageLink ||
           !hitLink ||
           imageLink === hitLink ||
-          parseLink(imageLink)?.pathname !== ownerPath ||
-          parseLink(hitLink)?.pathname !== ownerPath
+          compactOwnerPath(imageLink) !== ownerPath ||
+          actionPath !== imagePath ||
+          !actionPath ||
+          [...compact.querySelectorAll<HTMLAnchorElement>('a[href]')].some(
+            (anchor) => compactOwnerPath(anchor) !== ownerPath
+          )
         ) {
           return null;
         }
@@ -1504,7 +1519,7 @@ export async function inspectHitTestedAction(
           mediaImages.length !== 1 ||
           mediaImages[0] !== element ||
           regionLinks.length !== 2 ||
-          regionLinks.some((anchor) => parseLink(anchor)?.pathname !== ownerPath)
+          regionLinks.some((anchor) => parseLink(anchor)?.pathname !== actionPath)
         ) {
           return null;
         }
@@ -1516,7 +1531,7 @@ export async function inspectHitTestedAction(
         return {
           actionAriaLabel: hitLink.getAttribute('aria-label'),
           actionIndex,
-          actionPath: ownerPath,
+          actionPath,
           duplicateActionCount: regionLinks.length,
         };
       }

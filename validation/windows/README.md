@@ -626,6 +626,9 @@ selected source and index with C's observed successful API response. An API 403
 keeps the observation unverified even if the visible photo opens through DOM
 recovery. This path does not authorize recursive quote traversal or turn a
 neighboring news card into an owned attachment.
+The compact region may mix C's base status permalink with `/photo/N` links.
+Both photo links must retain the exact same action path, and the observer uses
+that actual path again when checking the click target immediately before input.
 
 When a native player covers every point with controls, the observer first
 makes a bounded ordinary Play click and records host-video readiness and
