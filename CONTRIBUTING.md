@@ -388,6 +388,9 @@ current release jobs invoke (`quality:coverage-owned`, `test:cov`, `build:e2e`,
 `test:e2e:all`, `build:all:ci` and `release:prepare`). Older tags without one
 of these public entrypoints fail before checkout jobs, with the missing names
 reported. Compatible tags retain their own pinned Node runtime and scripts.
+Defer replaying an immutable historical tag that selects an unremediated runtime
+until that runtime's trust behavior or an environment-specific mitigation is qualified. The current manifest pin
+does not change existing tags.
 
 New releases explicitly become Latest. A complete same-version retry verifies
 the published source metadata and skips publication, preserving existing assets
