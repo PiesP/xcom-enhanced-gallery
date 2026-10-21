@@ -104,7 +104,17 @@ type ImageTarget = {
   actionPath?: string;
   duplicateActionCount?: number;
 };
-type LiveTarget = QuoteTarget | ImageTarget;
+type NativePreviewTarget = {
+  kind: 'native-preview-photo';
+  articleIndex: number;
+  actionIndex: number;
+  actionPath: string;
+  ownerHandle: string;
+  ownerStatusId: string;
+  photoNumber: number;
+  quoteBoundary: 'flat-nested-preview';
+};
+type LiveTarget = QuoteTarget | ImageTarget | NativePreviewTarget;
 type LiveReadiness =
   | { state: 'ready'; target: LiveTarget }
   | { state: 'ambiguous' | 'terminal'; reason: string; candidateCount?: number }
@@ -129,6 +139,7 @@ type GalleryObservation = {
   };
   playback?: { startTime: number; endTime: number | null; progressed: boolean };
   owner?: ReturnType<typeof quotedOwnerForSource>;
+  ownerPath?: string | null;
   closeMethod?: string;
   detached?: boolean;
   focusRestored?: boolean;
@@ -478,6 +489,53 @@ export function summarizeCompactImageEvidence(
       matchingIndexes.length === 1 &&
       matchingIndexes[0] === selectedItemIndex,
     apiMediaIndex: matchingIndexes.length === 1 ? (matchingIndexes[0] ?? null) : null,
+  };
+}
+
+export function summarizeNativePreviewEvidence(
+  api: ApiEvidence,
+  ownerStatusId: string,
+  photoNumber: number,
+  selected: ReturnType<typeof inspectSelectedGalleryDocument> | null,
+  ownerPath: string | null,
+  expectedOwnerPath: string
+) {
+  const relevant = api.observations.filter(
+    (item) => item.operation === 'TweetResultByRestId' && item.requestedTweetId === ownerStatusId
+  );
+  const providerRejection = summarizeQuoteProviderRejection({
+    tweetResultByRestId: { requests: relevant.length, responses: [] },
+    observations: relevant,
+    overflow: 0,
+  });
+  const healthy = relevant.filter(
+    (item) => item.httpStatus === 200 && !item.providerErrors && item.result?.id === ownerStatusId
+  );
+  const media = healthy.length === 1 ? healthy[0]?.result?.media[photoNumber - 1] : null;
+  const source =
+    media?.type === 'photo' &&
+    media.poster?.host === 'pbs.twimg.com' &&
+    media.poster.path.startsWith('/media/')
+      ? media.poster
+      : null;
+  return {
+    providerRejection,
+    source,
+    apiMediaIndex: source ? photoNumber - 1 : null,
+    providerConfirmed:
+      api.overflow === 0 && !providerRejection && relevant.length === 1 && source !== null,
+    selectedConfirmed:
+      source !== null &&
+      selected !== null &&
+      selected !== false &&
+      selected.itemVisible === true &&
+      selected.itemIndex === photoNumber - 1 &&
+      selected.positionValue === photoNumber &&
+      selected.imageSource.host === source.host &&
+      selected.imageSource.path === source.path,
+    ownerConfirmed:
+      /^\/[A-Za-z0-9_]{1,15}\/status\/[1-9]\d*$/u.test(expectedOwnerPath) &&
+      ownerPath === expectedOwnerPath,
   };
 }
 
@@ -1128,6 +1186,102 @@ export function inspectLiveTargetDocument({ handle, statusId }: Identity): LiveR
     if (compactTargets[0]) {
       return { state: 'ready', target: compactTargets[0] };
     }
+
+    // The authenticated flat layout exposes C's native photo action without an
+    // image. Its unmarked B wrapper does not establish a B-to-C post identity.
+    const previewActions = [
+      ...article.querySelectorAll<HTMLAnchorElement>('a[data-testid="nestedQuotePreviewMedia"]'),
+    ];
+    if (previewActions.length > 1) {
+      return {
+        state: 'ambiguous',
+        reason: 'multiple-native-preview-actions',
+        candidateCount: Math.min(previewActions.length, 20),
+      };
+    }
+    const action = previewActions[0];
+    if (action) {
+      const preview = action.closest('div[role="link"][data-testid="nestedQuotePreview"]');
+      const wrapper = preview?.parentElement?.closest('div[role="link"]');
+      const rectangle = action.getBoundingClientRect();
+      const x = rectangle.left + rectangle.width / 2;
+      const y = rectangle.top + rectangle.height / 2;
+      const hit =
+        x >= 0 && y >= 0 && x < innerWidth && y < innerHeight
+          ? document.elementFromPoint(x, y)
+          : null;
+      let owner: RegExpExecArray | null = null;
+      let actionPath: string | null = null;
+      try {
+        const url = new URL(action.href, location.href);
+        if (
+          url.protocol === 'https:' &&
+          ['x.com', 'twitter.com'].includes(url.hostname.toLowerCase()) &&
+          !url.username &&
+          !url.password &&
+          !url.port &&
+          !url.search &&
+          !url.hash
+        ) {
+          owner = /^\/([A-Za-z0-9_]{1,15})\/status\/([1-9]\d*)\/photo\/([1-9]\d*)$/u.exec(
+            url.pathname
+          );
+          actionPath = url.pathname;
+        }
+      } catch {
+        // An unrecognized native action cannot establish C's identity.
+      }
+      const photoNumber = Number(owner?.[3]);
+      const exactArticleCount = articles.filter((candidate) =>
+        [...candidate.querySelectorAll<HTMLAnchorElement>('a[href]')].some((anchor) => {
+          try {
+            const url = new URL(anchor.href, location.href);
+            return (
+              anchor.closest('article') === candidate &&
+              url.protocol === 'https:' &&
+              ['x.com', 'twitter.com'].includes(url.hostname.toLowerCase()) &&
+              url.pathname.toLowerCase() === statusPath
+            );
+          } catch {
+            return false;
+          }
+        })
+      ).length;
+      if (
+        action.getAttribute('role') === 'link' &&
+        preview?.closest('article') === article &&
+        wrapper?.closest('article') === article &&
+        article.querySelectorAll('div[role="link"][data-testid="nestedQuotePreview"]').length ===
+          1 &&
+        exactArticleCount === 1 &&
+        owner?.[1] &&
+        owner[2] &&
+        owner[2] !== statusId &&
+        Number.isSafeInteger(photoNumber) &&
+        photoNumber > 0 &&
+        isVisible(action) &&
+        hit &&
+        action.contains(hit) &&
+        hit.closest('a[href]') === action &&
+        actionPath
+      ) {
+        return {
+          state: 'ready',
+          target: {
+            kind: 'native-preview-photo',
+            articleIndex,
+            actionIndex: [...article.querySelectorAll<HTMLAnchorElement>('a[href]')].indexOf(
+              action
+            ),
+            actionPath,
+            ownerHandle: owner[1],
+            ownerStatusId: owner[2],
+            photoNumber,
+            quoteBoundary: 'flat-nested-preview',
+          },
+        };
+      }
+    }
   }
   const text = document.body?.innerText ?? document.body?.textContent ?? '';
   if (
@@ -1567,6 +1721,111 @@ export async function inspectHitTestedAction(
     },
     { identity, target }
   );
+}
+
+export async function inspectHitTestedNativePreviewAction(
+  action: import('@playwright/test').Locator,
+  identity: Identity,
+  target: NativePreviewTarget
+): Promise<boolean> {
+  return action.evaluate(
+    (element, { identity: { handle, statusId }, target }) => {
+      const article = document.querySelectorAll('article')[target.articleIndex];
+      const preview = element.closest('div[role="link"][data-testid="nestedQuotePreview"]');
+      const wrapper = preview?.parentElement?.closest('div[role="link"]');
+      if (
+        !(element instanceof HTMLAnchorElement) ||
+        !article ||
+        element.closest('article') !== article ||
+        element.getAttribute('role') !== 'link' ||
+        element.getAttribute('data-testid') !== 'nestedQuotePreviewMedia' ||
+        preview?.closest('article') !== article ||
+        wrapper?.closest('article') !== article ||
+        article.querySelectorAll('a[data-testid="nestedQuotePreviewMedia"]').length !== 1 ||
+        [...article.querySelectorAll<HTMLAnchorElement>('a[href]')].indexOf(element) !==
+          target.actionIndex
+      ) {
+        return false;
+      }
+      const articleOwnsStatus = [...article.querySelectorAll<HTMLAnchorElement>('a[href]')].some(
+        (anchor) => {
+          try {
+            const url = new URL(anchor.href, location.href);
+            return (
+              anchor.closest('article') === article &&
+              url.protocol === 'https:' &&
+              ['x.com', 'twitter.com'].includes(url.hostname.toLowerCase()) &&
+              url.pathname.toLowerCase() === `/${handle}/status/${statusId}`.toLowerCase()
+            );
+          } catch {
+            return false;
+          }
+        }
+      );
+      const rectangle = element.getBoundingClientRect();
+      const x = rectangle.left + rectangle.width / 2;
+      const y = rectangle.top + rectangle.height / 2;
+      const hit =
+        x >= 0 && y >= 0 && x < innerWidth && y < innerHeight
+          ? document.elementFromPoint(x, y)
+          : null;
+      try {
+        const url = new URL(element.href, location.href);
+        return (
+          articleOwnsStatus &&
+          url.protocol === 'https:' &&
+          ['x.com', 'twitter.com'].includes(url.hostname.toLowerCase()) &&
+          !url.username &&
+          !url.password &&
+          !url.port &&
+          !url.search &&
+          !url.hash &&
+          url.pathname === target.actionPath &&
+          url.pathname ===
+            `/${target.ownerHandle}/status/${target.ownerStatusId}/photo/${target.photoNumber}` &&
+          rectangle.width > 0 &&
+          rectangle.height > 0 &&
+          getComputedStyle(element).display !== 'none' &&
+          getComputedStyle(element).visibility !== 'hidden' &&
+          Number(getComputedStyle(element).opacity) !== 0 &&
+          hit !== null &&
+          element.contains(hit) &&
+          hit.closest('a[href]') === element
+        );
+      } catch {
+        return false;
+      }
+    },
+    { identity, target }
+  );
+}
+
+export function inspectNativePreviewOwnerDocument(): string | null {
+  const galleries = document.querySelectorAll('[data-xeg-gallery-container]');
+  const panel =
+    galleries.length === 1
+      ? galleries[0]?.querySelector('[data-gallery-element="tweet-panel"]')
+      : null;
+  const paths = [...(panel?.querySelectorAll<HTMLAnchorElement>('a[href]') ?? [])].flatMap(
+    (anchor) => {
+      try {
+        const url = new URL(anchor.href, location.href);
+        return url.protocol === 'https:' &&
+          ['x.com', 'twitter.com'].includes(url.hostname.toLowerCase()) &&
+          !url.username &&
+          !url.password &&
+          !url.port &&
+          !url.search &&
+          !url.hash &&
+          /^\/[A-Za-z0-9_]{1,15}\/status\/[1-9]\d*$/u.test(url.pathname)
+          ? [url.pathname]
+          : [];
+      } catch {
+        return [];
+      }
+    }
+  );
+  return paths.length === 1 ? (paths[0] ?? null) : null;
 }
 
 export function inspectSelectedGalleryDocument({
@@ -2665,6 +2924,183 @@ function photoIndexFromActionPath(path: string) {
   return value;
 }
 
+async function observeNativePreviewPhoto(
+  page: Page,
+  observation: LiveObservation,
+  identity: Identity,
+  target: NativePreviewTarget,
+  output: string,
+  index: string | number,
+  settleApi: () => Promise<void>
+) {
+  const article = page.locator('article').nth(target.articleIndex);
+  const action = article.locator('a[href]').nth(target.actionIndex);
+  await action.scrollIntoViewIfNeeded({ timeout: ACTION_TIMEOUT_MS });
+  if (!(await inspectHitTestedNativePreviewAction(action, identity, target))) {
+    throw new Error('Native preview action was not the owned top hit');
+  }
+  const actionHandle = await action.elementHandle();
+  if (!actionHandle) {
+    throw new Error('Native preview action detached before interaction');
+  }
+  try {
+    await action.focus({ timeout: ACTION_TIMEOUT_MS });
+    if ((await hostSnapshot(page)).scrollY === 0) {
+      await page.mouse.wheel(0, 160);
+      await page.waitForFunction(() => window.scrollY > 0, null, {
+        timeout: ACTION_TIMEOUT_MS,
+      });
+    }
+    await action.focus({ timeout: ACTION_TIMEOUT_MS });
+    const before = await hostSnapshot(page);
+    const focusPrepared = await actionHandle.evaluate(
+      (element) => document.activeElement === element
+    );
+    observation.gallery = { status: 'attempting', before, focusPrepared };
+    observation.screenshots.before = await captureScreenshot(
+      page,
+      output,
+      `live-page-${index}-before.png`
+    );
+    const identityBeforeClick = await inspectHitTestedNativePreviewAction(action, identity, target);
+    observation.gallery.identityBeforeClick = identityBeforeClick;
+    if (!identityBeforeClick) {
+      throw new Error('Native preview action identity changed before click');
+    }
+    await actionHandle.click({ timeout: ACTION_TIMEOUT_MS });
+    const gallery = page.locator('[data-xeg-gallery-container]');
+    await gallery.waitFor({ state: 'visible', timeout: ACTION_TIMEOUT_MS });
+
+    const expectedOwnerPath = `/${target.ownerHandle}/status/${target.ownerStatusId}`;
+    const deadline = Date.now() + ACTION_TIMEOUT_MS;
+    do {
+      await settleApi();
+      if (
+        observation.api.observations.some(
+          (item) =>
+            item.operation === 'TweetResultByRestId' &&
+            item.requestedTweetId === target.ownerStatusId
+        )
+      ) {
+        break;
+      }
+      await page.waitForTimeout(100);
+    } while (Date.now() < deadline);
+    let evidence = summarizeNativePreviewEvidence(
+      observation.api,
+      target.ownerStatusId,
+      target.photoNumber,
+      null,
+      null,
+      expectedOwnerPath
+    );
+    const selectedGalleryHandle =
+      evidence.providerConfirmed && evidence.source
+        ? await page
+            .waitForFunction(
+              inspectSelectedGalleryDocument,
+              { expectedIndex: target.photoNumber, expectedPath: evidence.source.path },
+              { timeout: ACTION_TIMEOUT_MS, polling: 100 }
+            )
+            .catch(() => null)
+        : null;
+    const selectedGallery = selectedGalleryHandle ? await selectedGalleryHandle.jsonValue() : null;
+    await selectedGalleryHandle?.dispose();
+
+    const ownerButton = gallery.locator('#tweet-text-button');
+    if ((await ownerButton.count()) === 1) {
+      await ownerButton.click({ timeout: ACTION_TIMEOUT_MS });
+    }
+    const ownerPath = await page.evaluate(inspectNativePreviewOwnerDocument);
+    observation.gallery.opened = {
+      ariaModal: await gallery.getAttribute('aria-modal'),
+      selectedGallery,
+      role: await gallery.getAttribute('role'),
+    };
+    observation.gallery.ownerPath = ownerPath;
+    observation.screenshots.open = await captureScreenshot(
+      page,
+      output,
+      `live-page-${index}-gallery.png`
+    );
+    await page.keyboard.press('Escape');
+    const detached = await gallery.waitFor({ state: 'detached', timeout: ACTION_TIMEOUT_MS }).then(
+      () => true,
+      () => false
+    );
+    const restored = await waitForRestoredHostState(page, actionHandle, before);
+    observation.gallery = {
+      ...observation.gallery,
+      status: 'observed',
+      closeMethod: 'Escape',
+      detached,
+      focusRestored: restored.focusRestored,
+      after: restored.after,
+      bodyStylesRestored: restored.bodyStylesRestored,
+      scrollRestorationRestored: restored.scrollRestorationRestored,
+      scrollRestored: restored.scrollRestored,
+    };
+    observation.screenshots.after = await captureScreenshot(
+      page,
+      output,
+      `live-page-${index}-after.png`
+    );
+    await page.waitForTimeout(100);
+    await settleApi();
+    evidence = summarizeNativePreviewEvidence(
+      observation.api,
+      target.ownerStatusId,
+      target.photoNumber,
+      selectedGallery,
+      ownerPath,
+      expectedOwnerPath
+    );
+    if (evidence.providerRejection) {
+      observation.providerRejection = evidence.providerRejection;
+      observation.classification = 'provider-rejection-observed-gallery-unverified';
+    }
+    const finalUrl = new URL(page.url());
+    const required = {
+      exactFinalStatus:
+        ['x.com', 'twitter.com'].includes(finalUrl.hostname.toLowerCase()) &&
+        finalUrl.pathname.toLowerCase() ===
+          `/${identity.handle}/status/${identity.statusId}`.toLowerCase(),
+      extensionInjected: observation.extension.readinessMarker === true,
+      nativePreviewAction: identityBeforeClick,
+      galleryDialog:
+        observation.gallery.opened?.role === 'dialog' &&
+        observation.gallery.opened.ariaModal === 'true',
+      exactCProviderPhoto: evidence.providerConfirmed,
+      selectedCPhoto: evidence.selectedConfirmed,
+      canonicalCOwner: evidence.ownerConfirmed,
+      escapeClosed: detached,
+      exactFocusRestored: restored.focusRestored,
+      nonzeroScrollPrepared: before.scrollY > 0,
+      scrollRestored: restored.scrollRestored,
+      scrollRestorationRestored: restored.scrollRestorationRestored,
+      bodyStylesRestored: restored.bodyStylesRestored,
+      noProductErrors:
+        observation.productErrors.length === 0 && observation.productErrorOverflow === 0,
+      noPageErrors: observation.pageErrors.length === 0 && observation.pageErrorOverflow === 0,
+    };
+    observation.requiredAssertions = required;
+    observation.missingAssertions = Object.entries(required)
+      .filter(([, passed]) => !passed)
+      .map(([name]) => name);
+    if (observation.missingAssertions.length) {
+      throw new Error(
+        `Missing native-preview assertions: ${observation.missingAssertions.join(', ')}`
+      );
+    }
+    observation.evidenceStatus =
+      observation.hostDiagnostics.length || observation.hostDiagnosticOverflow > 0
+        ? 'unverified'
+        : 'observed';
+  } finally {
+    await actionHandle.dispose().catch(() => {});
+  }
+}
+
 async function observeOne(
   context: BrowserContext,
   extensionId: string,
@@ -2773,6 +3209,20 @@ async function observeOne(
           `Missing live quoted-video assertions: ${observation.missingAssertions.join(', ')}`
         );
       }
+      observation.status = 'core-flow-observed';
+      return observation;
+    }
+
+    if (observation.target.kind === 'native-preview-photo') {
+      await observeNativePreviewPhoto(
+        page,
+        observation,
+        identity,
+        observation.target,
+        output,
+        index,
+        settleApi
+      );
       observation.status = 'core-flow-observed';
       return observation;
     }
