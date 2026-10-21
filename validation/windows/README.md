@@ -175,8 +175,10 @@ Another controlled branch gives B and C the same photo source: B must remain the
 second item with B's caption and origin. Native single downloads and both ZIPs
 are read independently for exact bytes, owner filenames and entry order. A fresh
 document forces C's API request to return 403 and checks recovery of only the
-visible C photo without B's caption. The cycle also checks native B/C header
-navigation, gallery navigation, close/reopen and host-state restoration. Its
+visible C photo without B's caption. Synthetic text, a post link and padding
+beside the photo must navigate natively without requesting media. The cycle
+also checks keyboard activation of the media link, native B/C header navigation,
+gallery navigation, close/reopen and host-state restoration. Its
 bounded requests and partial failure observations remain separate from live X.
 
 The same installed profile invokes `media-api-reuse-profile.ts` to compare

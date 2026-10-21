@@ -32,6 +32,19 @@
         position: relative;
         width: 62px;
         height: 62px;
+        flex: none;
+      }
+      .compact-story {
+        display: flex;
+        gap: 12px;
+        min-height: 96px;
+        padding: 8px;
+      }
+      .story-copy {
+        max-width: 240px;
+      }
+      .story-copy span {
+        display: block;
       }
       .compact-preview img {
         display: block;
@@ -75,7 +88,7 @@
               <a id="b-header" href="/middle_fixture/status/9555555555555555555">Middle quote</a>
             </header>
             <div id="b-media-slot"></div>
-            <div class="quote" role="link" id="compact-c">
+            <div class="quote" role="link" tabindex="0" id="compact-c">
               <a href="/inner_fixture/status/7555555555555555555">Inner quote context</a>
               <span aria-hidden="true"></span>
               <div>
@@ -97,7 +110,7 @@
                     </div>
                   </div>
                 </div>
-                <div>
+                <div class="compact-story" id="c-story">
                   <div class="compact-preview" id="c-preview">
                     <div>
                       <a href="/inner_fixture/status/7555555555555555555">
@@ -115,6 +128,12 @@
                       aria-label="Open inner quote photo"
                     ></a>
                   </div>
+                  <div class="story-copy">
+                    <span id="c-story-text">Synthetic news summary beside the compact photo.</span>
+                    <a id="c-story-link" href="/inner_fixture/status/7555555555555555555"
+                      >Read the inner post</a
+                    >
+                  </div>
                 </div>
               </div>
             </div>
@@ -127,5 +146,25 @@
         </header>
       </article>
     </main>
+    <script>
+      // Model the host's quote navigation independently of media interception.
+      for (const card of document.querySelectorAll('.quote[role="link"]')) {
+        card.addEventListener('click', (event) => {
+          const target = event.target;
+          if (
+            event.defaultPrevented ||
+            !(target instanceof Element) ||
+            target.closest('a, button') ||
+            target.closest('[role="link"]') !== card
+          ) {
+            return;
+          }
+          const link = card.querySelector('a[href]');
+          if (link instanceof HTMLAnchorElement) {
+            location.assign(link.href);
+          }
+        });
+      }
+    </script>
   </body>
 </html>

@@ -61,6 +61,11 @@ selects the clicked source within C's normalized media. C is never relabeled as
 A's direct quote. Missing or contradictory ownership continues to fail local
 selection; a nearby credit link alone does not authorize another quote level.
 
+Finding a photo inside a quote does not make its surrounding text, post links
+or padding a media action. Those clicks retain the host's native navigation.
+The photo and its overlapping media link remain gallery targets, including
+keyboard activation of the media link.
+
 Media deduplication includes the actual owning tweet ID as well as media type
 and normalized source. Repeated copies within one owner still collapse, while
 B and C retain separate entries when they reuse a source. Their selected index,

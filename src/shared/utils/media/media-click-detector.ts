@@ -44,6 +44,7 @@ const INTERACTIVE_SELECTOR = [
 ].join(', ');
 
 const STATUS_MEDIA_RE = /\/status\/\d+|\/photo\/\d+|\/video\/\d+/iu;
+const STATUS_PHOTO_RE = /^\/[^/]+\/status\/\d+\/photo\/\d+\/?$/iu;
 const isAllowAllNativeVideoControl = (target: HTMLElement, mode: string): boolean =>
   mode === 'allow-all' && findNativeVideoControlMedia(target) !== null;
 
@@ -76,6 +77,73 @@ function closestSafe(element: HTMLElement | null, selector: string): Element | n
   } catch {
     return null;
   }
+}
+
+function isPhotoHit(target: HTMLElement, image: HTMLImageElement, event?: MouseEvent): boolean {
+  const photoLink = target.closest('a[href]');
+  if (
+    photoLink instanceof HTMLAnchorElement &&
+    photoLink.contains(image) &&
+    !photoLink.textContent?.trim()
+  ) {
+    const href = tryParseUrl(photoLink.getAttribute('href') ?? '');
+    if (href && isHostMatching(href, TWITTER_HOSTS) && STATUS_PHOTO_RE.test(href.pathname)) {
+      return true;
+    }
+  }
+
+  if (event && event.detail > 0) {
+    const bounds = image.getBoundingClientRect();
+    if (bounds.width > 0 && bounds.height > 0) {
+      return (
+        event.clientX >= bounds.left &&
+        event.clientX < bounds.right &&
+        event.clientY >= bounds.top &&
+        event.clientY < bounds.bottom
+      );
+    }
+  }
+
+  if (target === image || target.closest('[data-testid="tweetPhoto"]')?.contains(image)) {
+    return true;
+  }
+  const link = target.closest('a[href]');
+  if (!(link instanceof HTMLAnchorElement)) {
+    return false;
+  }
+  if (link.contains(image)) {
+    return !link.textContent?.trim();
+  }
+  const parent = link.parentElement;
+  const imageLink = image.closest('a[href]');
+  const matchesImageLink =
+    imageLink instanceof HTMLAnchorElement &&
+    imageLink.getAttribute('href') === link.getAttribute('href');
+  if (
+    (!link.getAttribute('aria-label')?.trim() && !matchesImageLink) ||
+    link.textContent?.trim() ||
+    link.childElementCount > 0 ||
+    parent?.children.length !== 2 ||
+    !Array.from(parent.children).some((sibling) => sibling !== link && sibling.contains(image))
+  ) {
+    return false;
+  }
+  const linkBounds = link.getBoundingClientRect();
+  const imageBounds = image.getBoundingClientRect();
+  if (
+    linkBounds.width > 0 &&
+    linkBounds.height > 0 &&
+    imageBounds.width > 0 &&
+    imageBounds.height > 0
+  ) {
+    return (
+      Math.abs(linkBounds.left - imageBounds.left) <= 1 &&
+      Math.abs(linkBounds.right - imageBounds.right) <= 1 &&
+      Math.abs(linkBounds.top - imageBounds.top) <= 1 &&
+      Math.abs(linkBounds.bottom - imageBounds.bottom) <= 1
+    );
+  }
+  return true;
 }
 
 function shouldBlockMediaTrigger(target: HTMLElement | null, event?: MouseEvent): boolean {
@@ -164,7 +232,9 @@ export function isProcessableMedia(target: Element | null, event?: MouseEvent): 
   if (mediaElement) {
     const url = extractMediaUrlFromElement(mediaElement);
     if (url && (url.startsWith('blob:') || isValidMediaUrl(url))) {
-      return true;
+      return (
+        !(mediaElement instanceof HTMLImageElement) || isPhotoHit(htmlTarget, mediaElement, event)
+      );
     }
   }
 
