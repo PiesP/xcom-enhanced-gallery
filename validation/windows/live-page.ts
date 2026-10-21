@@ -2801,6 +2801,9 @@ async function observeOne(
     await action.focus({ timeout: ACTION_TIMEOUT_MS });
     if ((await hostSnapshot(page)).scrollY === 0) {
       await page.mouse.wheel(0, 160);
+      await page.waitForFunction(() => window.scrollY > 0, null, {
+        timeout: ACTION_TIMEOUT_MS,
+      });
     }
     await action.focus({ timeout: ACTION_TIMEOUT_MS });
     const before = await hostSnapshot(page);
