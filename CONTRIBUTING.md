@@ -368,6 +368,14 @@ that an upstream compiler, Action or resulting build is free of malicious code.
 
 ## Release publication
 
+Chrome Web Store preparation has a separate
+[submission reference](./docs/chrome-web-store.md) with reusable English listing,
+permission and reviewer text. Keep its declarations aligned with
+[the privacy policy](./PRIVACY.md) and the actual submitted ZIP. GitHub releases
+do not submit to the store or prove approval/public availability. Verify a
+public store listing before documenting store installation or updates; do not
+assume settings migrate from an unpacked copy to a store-installed copy.
+
 The ordinary release workflow publishes existing protected-source stable tags
 in increasing semantic-version order. Validation can run in parallel, but all
 tags share a publication lock. After acquiring it, the workflow rechecks the tag,
