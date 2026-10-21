@@ -121,10 +121,13 @@ Firefox extension minimum comes from
 
 ## Privacy and security
 
-The project processes page content and downloads in the browser. Runtime
-requests are limited to the X/Twitter pages, APIs, and media hosts required for
-gallery extraction and downloads. See [Privacy](./PRIVACY.md) for platform and
-storage details and [Security](./.github/SECURITY.md) for vulnerability reports.
+The project processes post content, author identifiers, page/media URLs and X
+session authentication context for the gallery and saves. It keeps local
+preferences and extension download recovery records, with no developer-operated
+backend or analytics. Functional requests go to X/Twitter and its media
+providers; redirects depend on the browser/manager transport. See
+[Privacy](./PRIVACY.md) for recipients, storage and deletion details and
+[Security](./.github/SECURITY.md) for vulnerability reports.
 
 ## Development
 
