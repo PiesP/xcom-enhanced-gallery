@@ -512,7 +512,7 @@ describe('workflow change policy', () => {
       expect(changes).toContain('node --experimental-strip-types "$classifier"');
       expect(changes).toContain('reason=trusted-classifier-unavailable-full');
       expect(changes).toContain(
-        'uses: PiesP/browser-core/automation/actions/setup-project@279124fa998847bd0184d2de12bdaadcd6d2f969'
+        'uses: PiesP/browser-core/automation/actions/setup-project@af19a6597c351f03a65e49532bdec6276e4b5ae9'
       );
       expect(changes).toContain("install-dependencies: 'false'");
       expect(changes).not.toContain('runtime: node@');
