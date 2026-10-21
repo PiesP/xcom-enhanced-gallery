@@ -13,7 +13,7 @@ const runtimePin = 'af19a6597c351f03a65e49532bdec6276e4b5ae9';
 const active = "${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}";
 const inactive = "${{ needs.changes.result == 'success' && needs.changes.outputs.osv == 'false' }}";
 const upload =
-  "${{ !cancelled() && steps.osv-report.outputs.sarif-upload == 'true' && (needs.changes.result != 'success' || needs.changes.outputs.osv != 'false') }}";
+  "${{ steps.node_trust.outcome == 'success' && (!cancelled() && steps.osv-report.outputs.sarif-upload == 'true' && (needs.changes.result != 'success' || needs.changes.outputs.osv != 'false')) }}";
 
 function job(name: string): string {
   const start = workflow.search(new RegExp(`^  ${name}:$`, 'm'));
@@ -69,7 +69,8 @@ describe('shared consumer OSV workflow composition', () => {
         "OSV_SCANNER_IMAGE: ${{ needs['pin-metadata'].outputs.OSV_SCANNER_IMAGE }}"
       );
       const names = [...body.matchAll(/^ {6}- name: (.+)$/gm)].map((match) => match[1]);
-      for (const name of names.slice(2, -1)) {
+      const scannerNames = names.filter((name) => name !== '🔐 Prepare Node trust');
+      for (const name of scannerNames.slice(2, -1)) {
         expect(step(body, name ?? '')).toContain(`if: ${active}`);
       }
     }
