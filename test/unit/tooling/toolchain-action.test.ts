@@ -94,11 +94,24 @@ describe('central setup-project action', () => {
     }
 
     expect(workflow.split(releaseSetupAction)).toHaveLength(releaseWorkflowJobs.length + 1);
-    expect(action).toContain('uses: pnpm/setup@a0881977cd8ea73b1ed212236c99ca10dcc80cf4 # v3.1.1');
-    expect(action).toContain('package-json-file: package.json');
-    expect(action).toContain('runtime: "node@${{ steps.runtime.outputs.version }}"');
-    expect(action).toContain('cache: false');
-    expect(action).toContain('install: false');
-    expect(action).toContain('run: pnpm install --frozen-lockfile --no-runtime');
+    const resolveStep = action.indexOf('run: node "$GITHUB_ACTION_PATH/resolve-runtime.mjs"');
+    const node = action.indexOf(
+      'uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0'
+    );
+    const pnpm = action.indexOf(
+      'uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0'
+    );
+    const install = action.indexOf('run: pnpm install --frozen-lockfile --no-runtime');
+    expect(resolveStep).toBeGreaterThan(-1);
+    expect(node).toBeGreaterThan(resolveStep);
+    expect(pnpm).toBeGreaterThan(node);
+    expect(install).toBeGreaterThan(pnpm);
+    expect(action).toContain('node-version: ${{ steps.runtime.outputs.version }}');
+    expect(action).toContain('package-manager-cache: false');
+    expect(action).toContain('package_json_file: package.json');
+    expect(action).toContain('\n        cache: false\n');
+    expect(action).toContain('run_install: false');
+    expect(action).toContain('standalone: false');
+    expect(action).not.toContain('uses: pnpm/setup@');
   });
 });

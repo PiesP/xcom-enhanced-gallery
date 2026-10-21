@@ -343,14 +343,15 @@ Dependabot opens the update PR and requests PiesP's review; the ordinary CI and
 security checks run on that PR before its protected merge.
 
 The GitHub Actions updater also watches `.github/actions/setup-release/action.yaml`;
-CodeQL, `pnpm/setup`, and other Actions have independent groups. For each Action
+CodeQL, Node/pnpm setup, and other Actions have independent groups. For each Action
 SHA update, verify the full commit against the official upstream release and
 wait at least 24 hours from that release. Review the changed executable behavior,
 then update independent allowed-SHA assertions in
 `test/unit/tooling/toolchain-action.test.ts` and affected workflow tests in the
 same PR. Never derive a trusted expected SHA from the workflow or action under
-test. Preserve the release action's manifest runtime, v2-compatible inputs,
-disabled cache, `install: false`, frozen install and no-publish boundary; a
+test. Preserve the release action's manifest runtime, selected Node before
+JavaScript pnpm, disabled cache, `run_install: false`, `standalone: false`,
+frozen install and no-publish boundary; a
 major action upgrade needs an explicit compatibility review. Run the focused
 toolchain and dependency-policy tests, `pnpm verify`, and exact-head CI before
 merging. Resolve a stale fixture for its specific update without closing all
