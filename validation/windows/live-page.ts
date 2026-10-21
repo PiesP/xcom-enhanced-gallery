@@ -2527,6 +2527,28 @@ export function findActivationHitDocument(
   return mediaShell?.contains(top) ? top : null;
 }
 
+export function quotedVideoSurface(
+  target: Pick<
+    QuoteTarget,
+    'playerIndex' | 'previewIndex' | 'posterIndex' | 'videoIndex' | 'hitKind'
+  >
+) {
+  if (target.playerIndex >= 0) {
+    return { selector: '[data-testid="videoPlayer"]', index: target.playerIndex };
+  }
+  if (target.previewIndex >= 0) {
+    return { selector: '[data-testid="previewInterstitial"]', index: target.previewIndex };
+  }
+  // Playback can remove the sibling poster while retaining the identified video.
+  if (target.hitKind === 'video' && target.videoIndex >= 0) {
+    return { selector: 'video', index: target.videoIndex };
+  }
+  if (target.posterIndex >= 0) {
+    return { selector: 'img', index: target.posterIndex };
+  }
+  return { selector: 'video', index: target.videoIndex };
+}
+
 async function observeQuotedVideo(
   page: Page,
   observation: LiveObservation,
@@ -2541,14 +2563,8 @@ async function observeQuotedVideo(
     throw new Error('Quoted video target is unavailable');
   }
   const article = page.locator('article').nth(target.articleIndex);
-  let clickSurface =
-    target.playerIndex >= 0
-      ? article.locator('[data-testid="videoPlayer"]').nth(target.playerIndex)
-      : target.previewIndex >= 0
-        ? article.locator('[data-testid="previewInterstitial"]').nth(target.previewIndex)
-        : target.posterIndex >= 0
-          ? article.locator('img').nth(target.posterIndex)
-          : article.locator('video').nth(target.videoIndex);
+  const surface = quotedVideoSurface(target);
+  let clickSurface = article.locator(surface.selector).nth(surface.index);
   await clickSurface.scrollIntoViewIfNeeded({ timeout: ACTION_TIMEOUT_MS });
   if ((await hostSnapshot(page)).scrollY === 0) {
     await page.mouse.wheel(0, 160);
