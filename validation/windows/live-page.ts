@@ -492,6 +492,49 @@ export function summarizeCompactImageEvidence(
   };
 }
 
+export function refreshNativePreviewObservation(observation: LiveObservation) {
+  const target = observation.target;
+  const required = observation.requiredAssertions;
+  if (target?.kind !== 'native-preview-photo' || !required) {
+    throw new Error('Native preview assertions were not recorded');
+  }
+  const expectedOwnerPath = `/${target.ownerHandle}/status/${target.ownerStatusId}`;
+  const evidence = summarizeNativePreviewEvidence(
+    observation.api,
+    target.ownerStatusId,
+    target.photoNumber,
+    observation.gallery.opened?.selectedGallery ?? null,
+    observation.gallery.ownerPath ?? null,
+    expectedOwnerPath
+  );
+  required.exactCProviderPhoto = evidence.providerConfirmed;
+  required.selectedCPhoto = evidence.selectedConfirmed;
+  required.canonicalCOwner = evidence.ownerConfirmed;
+  required.noProductErrors =
+    observation.productErrors.length === 0 && observation.productErrorOverflow === 0;
+  required.noPageErrors =
+    observation.pageErrors.length === 0 && observation.pageErrorOverflow === 0;
+  observation.missingAssertions = Object.entries(required)
+    .filter(([, passed]) => !passed)
+    .map(([name]) => name);
+  if (evidence.providerRejection) {
+    observation.providerRejection = evidence.providerRejection;
+    observation.classification = 'provider-rejection-observed-gallery-unverified';
+  }
+  if (observation.missingAssertions.length) {
+    observation.status = 'failed';
+    observation.error = `Missing native-preview assertions: ${observation.missingAssertions.join(', ')}`;
+    observation.classification ??= 'native-preview-evidence-unverified';
+  }
+  observation.evidenceStatus =
+    observation.missingAssertions.length ||
+    observation.hostDiagnostics.length ||
+    observation.hostDiagnosticOverflow > 0
+      ? 'unverified'
+      : 'observed';
+  return observation.missingAssertions;
+}
+
 export function summarizeNativePreviewEvidence(
   api: ApiEvidence,
   ownerStatusId: string,
@@ -523,7 +566,11 @@ export function summarizeNativePreviewEvidence(
     source,
     apiMediaIndex: source ? photoNumber - 1 : null,
     providerConfirmed:
-      api.overflow === 0 && !providerRejection && relevant.length === 1 && source !== null,
+      api.overflow === 0 &&
+      api.tweetResultByRestId.requests === api.tweetResultByRestId.responses.length &&
+      !providerRejection &&
+      relevant.length === 1 &&
+      source !== null,
     selectedConfirmed:
       source !== null &&
       selected !== null &&
@@ -1742,17 +1789,19 @@ export async function inspectHitTestedNativePreviewAction(
         preview?.closest('article') !== article ||
         wrapper?.closest('article') !== article ||
         article.querySelectorAll('a[data-testid="nestedQuotePreviewMedia"]').length !== 1 ||
+        article.querySelectorAll('div[role="link"][data-testid="nestedQuotePreview"]').length !==
+          1 ||
         [...article.querySelectorAll<HTMLAnchorElement>('a[href]')].indexOf(element) !==
           target.actionIndex
       ) {
         return false;
       }
-      const articleOwnsStatus = [...article.querySelectorAll<HTMLAnchorElement>('a[href]')].some(
-        (anchor) => {
+      const exactArticleCount = [...document.querySelectorAll('article')].filter((candidate) =>
+        [...candidate.querySelectorAll<HTMLAnchorElement>('a[href]')].some((anchor) => {
           try {
             const url = new URL(anchor.href, location.href);
             return (
-              anchor.closest('article') === article &&
+              anchor.closest('article') === candidate &&
               url.protocol === 'https:' &&
               ['x.com', 'twitter.com'].includes(url.hostname.toLowerCase()) &&
               url.pathname.toLowerCase() === `/${handle}/status/${statusId}`.toLowerCase()
@@ -1760,8 +1809,8 @@ export async function inspectHitTestedNativePreviewAction(
           } catch {
             return false;
           }
-        }
-      );
+        })
+      ).length;
       const rectangle = element.getBoundingClientRect();
       const x = rectangle.left + rectangle.width / 2;
       const y = rectangle.top + rectangle.height / 2;
@@ -1772,7 +1821,7 @@ export async function inspectHitTestedNativePreviewAction(
       try {
         const url = new URL(element.href, location.href);
         return (
-          articleOwnsStatus &&
+          exactArticleCount === 1 &&
           url.protocol === 'https:' &&
           ['x.com', 'twitter.com'].includes(url.hostname.toLowerCase()) &&
           !url.username &&
@@ -3462,6 +3511,12 @@ async function observeOne(
       } else {
         Object.assign(observation, classifyLiveHostDiagnostics(observation));
       }
+    }
+    if (
+      observation.target?.kind === 'native-preview-photo' &&
+      observation.status === 'core-flow-observed'
+    ) {
+      refreshNativePreviewObservation(observation);
     }
     if (actionHandle) {
       await actionHandle.dispose().catch(() => {});

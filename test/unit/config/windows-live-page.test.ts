@@ -18,6 +18,7 @@ type LivePageModule = Pick<
   | 'inspectHitTestedAction'
   | 'inspectHitTestedNativePreviewAction'
   | 'inspectNativePreviewOwnerDocument'
+  | 'refreshNativePreviewObservation'
   | 'summarizeCompactImageEvidence'
   | 'summarizeNativePreviewEvidence'
 > & {
@@ -2614,7 +2615,7 @@ describe('Windows X live page validation', () => {
     }
   });
 
-  it('rejects duplicate native C actions and duplicate exact A articles', () => {
+  it('rejects duplicate native C actions and duplicate exact A articles', async () => {
     document.body.innerHTML = `
       <article><a href="https://x.com/outer/status/123">A</a>
         <div role="link"><div role="link" data-testid="nestedQuotePreview">
@@ -2646,10 +2647,14 @@ describe('Windows X live page validation', () => {
     });
     try {
       const identity = { handle: 'outer', statusId: '123' };
-      expect(livePage.inspectLiveTargetDocument(identity)).toMatchObject({
+      const ready = livePage.inspectLiveTargetDocument(identity);
+      expect(ready).toMatchObject({
         state: 'ready',
         target: { kind: 'native-preview-photo' },
       });
+      if (!ready || ready.state !== 'ready' || !ready.target) {
+        throw new Error('Native preview was not ready');
+      }
       const duplicate = action.cloneNode(true);
       action.after(duplicate);
       expect(livePage.inspectLiveTargetDocument(identity)).toEqual({
@@ -2661,6 +2666,21 @@ describe('Windows X live page validation', () => {
       const outer = document.querySelector('article');
       outer?.after(outer.cloneNode(true));
       expect(livePage.inspectLiveTargetDocument(identity)).toBe(false);
+      const locator = {
+        evaluate: async (
+          callback: (element: HTMLAnchorElement, value: unknown) => unknown,
+          value: unknown
+        ) => callback(action, value),
+      };
+      expect(
+        await livePage.inspectHitTestedNativePreviewAction(
+          locator as unknown as Parameters<
+            LivePageModule['inspectHitTestedNativePreviewAction']
+          >[0],
+          identity,
+          ready.target as Parameters<LivePageModule['inspectHitTestedNativePreviewAction']>[2]
+        )
+      ).toBe(false);
     } finally {
       if (originalHitTest) {
         Object.defineProperty(document, 'elementFromPoint', originalHitTest);
@@ -2748,6 +2768,115 @@ describe('Windows X live page validation', () => {
         ],
       })
     ).toMatchObject({ providerConfirmed: false });
+  });
+
+  it('downgrades native preview success when final API or diagnostics arrive late', () => {
+    const cResponse = {
+      operation: 'TweetResultByRestId',
+      requestedTweetId: '456',
+      httpStatus: 200,
+      providerErrors: false,
+      result: {
+        id: '456',
+        media: [
+          {
+            id: '789',
+            type: 'photo',
+            poster: { host: 'pbs.twimg.com', path: '/media/c.png' },
+            playableVariants: [],
+          },
+        ],
+      },
+      directQuote: null,
+      nestedQuoteId: null,
+    };
+    const makeObservation = () =>
+      ({
+        target: {
+          kind: 'native-preview-photo',
+          ownerHandle: 'inner',
+          ownerStatusId: '456',
+          photoNumber: 1,
+        },
+        gallery: {
+          opened: {
+            selectedGallery: {
+              imageSource: { host: 'pbs.twimg.com', path: '/media/c.png' },
+              itemIndex: 0,
+              itemVisible: true,
+              positionValue: 1,
+            },
+          },
+          ownerPath: '/inner/status/456',
+        },
+        api: {
+          tweetResultByRestId: { requests: 1, responses: [200] },
+          observations: [cResponse],
+          overflow: 0,
+        },
+        requiredAssertions: {
+          exactCProviderPhoto: true,
+          selectedCPhoto: true,
+          canonicalCOwner: true,
+          noProductErrors: true,
+          noPageErrors: true,
+        },
+        missingAssertions: [] as string[],
+        productErrors: [] as unknown[],
+        productErrorOverflow: 0,
+        pageErrors: [] as unknown[],
+        pageErrorOverflow: 0,
+        hostDiagnostics: [] as unknown[],
+        hostDiagnosticOverflow: 0,
+        status: 'core-flow-observed',
+        evidenceStatus: 'observed',
+      }) as unknown as Parameters<LivePageModule['refreshNativePreviewObservation']>[0];
+
+    const lateRejection = makeObservation();
+    expect(livePage.refreshNativePreviewObservation(lateRejection)).toEqual([]);
+    lateRejection.api.tweetResultByRestId.requests += 1;
+    lateRejection.api.tweetResultByRestId.responses.push(403);
+    lateRejection.api.observations.push({ ...cResponse, httpStatus: 403, result: null });
+    expect(livePage.refreshNativePreviewObservation(lateRejection)).toContain(
+      'exactCProviderPhoto'
+    );
+    expect(lateRejection).toMatchObject({
+      status: 'failed',
+      evidenceStatus: 'unverified',
+      classification: 'provider-rejection-observed-gallery-unverified',
+      providerRejection: { httpStatus: 403, requestedTweetId: '456' },
+    });
+
+    const duplicate = makeObservation();
+    duplicate.api.tweetResultByRestId.requests += 1;
+    duplicate.api.tweetResultByRestId.responses.push(200);
+    duplicate.api.observations.push(cResponse);
+    expect(livePage.refreshNativePreviewObservation(duplicate)).toContain('exactCProviderPhoto');
+    expect(duplicate).toMatchObject({ status: 'failed', evidenceStatus: 'unverified' });
+
+    const lateError = makeObservation();
+    lateError.productErrors.push({ kind: 'console' });
+    lateError.pageErrors.push({ kind: 'page-error' });
+    expect(livePage.refreshNativePreviewObservation(lateError)).toEqual([
+      'noProductErrors',
+      'noPageErrors',
+    ]);
+    expect(lateError).toMatchObject({ status: 'failed', evidenceStatus: 'unverified' });
+
+    const lateHostDiagnostic = makeObservation();
+    lateHostDiagnostic.hostDiagnostics.push({ kind: 'http-response', status: 500 });
+    expect(livePage.refreshNativePreviewObservation(lateHostDiagnostic)).toEqual([]);
+    expect(lateHostDiagnostic).toMatchObject({
+      status: 'core-flow-observed',
+      evidenceStatus: 'unverified',
+    });
+
+    const pendingResponse = makeObservation();
+    pendingResponse.api.tweetResultByRestId.requests += 1;
+    expect(livePage.refreshNativePreviewObservation(pendingResponse)).toContain(
+      'exactCProviderPhoto'
+    );
+    expect(pendingResponse).toMatchObject({ status: 'failed', evidenceStatus: 'unverified' });
   });
 
   it('reads only a unique canonical gallery owner link from the opened panel', () => {
