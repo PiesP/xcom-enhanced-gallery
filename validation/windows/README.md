@@ -248,7 +248,8 @@ outside the fixture evidence.
 The installed profile also serves the declared small MP4 assets and
 `installed-quoted-video-page.html` with deterministic `TweetResultByRestId`
 responses from `installed-quoted-video-api.ts`. Its quote cases cover a marked
-branch without a permalink, an unmarked clickable branch with an outer video,
+branch without a permalink, an unmarked clickable branch with an outer video
+(playing video to role link: 18 hops; article: 24 hops),
 an explicit quoted permalink, and nested quotes opened from the outer post or
 the directly quoted post. Each case opens the preview before native playback,
 then uses the blob-backed host player. It checks the selected API video path,

@@ -8256,6 +8256,31 @@ async function runQuotedVideoCycle({
     'Fixture native play handler must receive and cancel its own trusted button click'
   );
   const hostVideo = shell.locator('video:not([data-host-action])');
+  const unmarkedDepth =
+    quotedCase.route === 'unmarked'
+      ? await hostVideo.evaluate((video) => {
+          const roleLink = video.closest('[role="link"]');
+          const article = video.closest('article');
+          const hopsTo = (boundary: Element | null) => {
+            let hops = 0;
+            for (let current = video.parentElement; current; current = current.parentElement) {
+              hops++;
+              if (current === boundary) {
+                return hops;
+              }
+            }
+            return null;
+          };
+          return { roleLink: hopsTo(roleLink), article: hopsTo(article) };
+        })
+      : null;
+  if (unmarkedDepth) {
+    assert.deepEqual(
+      unmarkedDepth,
+      { roleLink: 18, article: 24 },
+      'Unmarked playing video must exercise the observed clickable and article depths'
+    );
+  }
   await page.waitForFunction(
     (name) => {
       const shell = document.querySelector(`[data-case="${name}"] [data-video-key]`);
@@ -8635,6 +8660,7 @@ async function runQuotedVideoCycle({
       close: previewClose,
     },
     hostPlaying: {
+      unmarkedDepth,
       blobBacked: hostPlaying.source.startsWith('blob:'),
       currentTime: hostPlaying.time,
       progressEnd: hostProgressEnd,
