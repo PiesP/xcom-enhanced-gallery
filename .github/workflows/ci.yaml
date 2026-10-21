@@ -45,7 +45,7 @@ jobs:
           submodules: false
 
       - name: 📦 Setup classifier runtime
-        uses: PiesP/browser-core/automation/actions/setup-project@279124fa998847bd0184d2de12bdaadcd6d2f969
+        uses: PiesP/browser-core/automation/actions/setup-project@af19a6597c351f03a65e49532bdec6276e4b5ae9
         with:
           install-dependencies: 'false'
 
@@ -94,7 +94,7 @@ jobs:
 
       - name: 📦 Setup project
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.quality != 'false' }}
-        uses: PiesP/browser-core/automation/actions/setup-project@279124fa998847bd0184d2de12bdaadcd6d2f969
+        uses: PiesP/browser-core/automation/actions/setup-project@af19a6597c351f03a65e49532bdec6276e4b5ae9
 
       - name: ✅ Run quality gate
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.quality != 'false' }}
@@ -126,7 +126,7 @@ jobs:
 
       - name: 📦 Setup project
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.unit != 'false' }}
-        uses: PiesP/browser-core/automation/actions/setup-project@279124fa998847bd0184d2de12bdaadcd6d2f969
+        uses: PiesP/browser-core/automation/actions/setup-project@af19a6597c351f03a65e49532bdec6276e4b5ae9
 
       - name: Record release setup inputs
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.unit != 'false' }}
@@ -183,7 +183,7 @@ jobs:
 
       - name: 📦 Setup project
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.e2e != 'false' }}
-        uses: PiesP/browser-core/automation/actions/setup-project@279124fa998847bd0184d2de12bdaadcd6d2f969
+        uses: PiesP/browser-core/automation/actions/setup-project@af19a6597c351f03a65e49532bdec6276e4b5ae9
 
       - name: 🎭 Read installed Playwright version
         id: playwright
@@ -241,7 +241,7 @@ jobs:
 
       - name: 📦 Setup project
         if: ${{ (needs.changes.result != 'success' || needs.changes.outputs.build != 'false') && needs.quality.result == 'success' }}
-        uses: PiesP/browser-core/automation/actions/setup-project@279124fa998847bd0184d2de12bdaadcd6d2f969
+        uses: PiesP/browser-core/automation/actions/setup-project@af19a6597c351f03a65e49532bdec6276e4b5ae9
 
       - name: 🏗️ Build all targets
         if: ${{ (needs.changes.result != 'success' || needs.changes.outputs.build != 'false') && needs.quality.result == 'success' }}
