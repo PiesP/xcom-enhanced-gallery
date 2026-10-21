@@ -632,6 +632,15 @@ The compact region may mix C's base status permalink with `/photo/N` links.
 Both photo links must retain the exact same action path, and the observer uses
 that actual path again when checking the click target immediately before input.
 
+The authenticated flat layout can expose a nested C photo as a native
+`nestedQuotePreviewMedia` anchor without an image in A's article. The separate
+observer path requires one visible, top-hit `/photo/N` action inside the marked
+nested preview, then checks C's own successful API photo at index `N - 1`, the
+selected gallery source and index, and the canonical C status link in the
+opened tweet panel. It does not infer B-to-C ownership from the unmarked
+wrapper. Missing, conflicting, or rejected C API evidence cannot establish
+this path; a provider rejection remains unverified rather than a product defect.
+
 When a native player covers every point with controls, the observer first
 makes a bounded ordinary Play click and records host-video readiness and
 playback separately. If it plays but no non-control gallery point remains,
