@@ -10,6 +10,7 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **Quoted video selection** — Keep exact click-time video identity through deeper overlays within a uniquely owned player, while rejecting ambiguous players and preserving the media owner's attribution.
 - **Quote navigation** — Keep clicks on text, links and padding beside a compact photo in X's native navigation instead of intercepting them as media clicks.
 - **Quoted photo ownership** — Keep separate owners and the clicked position when quoted posts reuse the same photo source. Preserve each owner's attribution and download filename.
 - **Quoted photo recovery** — Use only verified owner text when recovering a compact quote photo from the page after an API failure, so the enclosing post's caption is not borrowed.

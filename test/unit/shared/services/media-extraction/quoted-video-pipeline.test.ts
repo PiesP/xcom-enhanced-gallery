@@ -65,6 +65,20 @@ function target(scope = 'quote', link = false, kind = 'blob'): HTMLElement {
   document.body.innerHTML = `<article><a href="/author_222/status/222"><time>Now</time></a><div ${attributes}>${link ? '<a href="/author_111/status/111"><time>Quote</time></a>' : ''}${media}</div></article>`;
   return document.getElementById('target')!;
 }
+
+function deepOverlayTarget(commonAncestorHops: number, knownOwner = false): HTMLElement {
+  const wrappers = '<div>'.repeat(commonAncestorHops - 1);
+  const wrapperEnds = '</div>'.repeat(commonAncestorHops - 1);
+  document.body.innerHTML = `<article><a href="/author_222/status/222"><time>Now</time></a>
+    <div data-testid="quoteTweet" role="link">
+      ${knownOwner ? '<a href="/author_111/status/111"><time>Quote</time></a>' : ''}
+      <div data-testid="videoPlayer">
+        <video id="video" src="blob:https://x.com/playing" poster="${poster('700')}"></video>
+        ${wrappers}<div id="target"></div>${wrapperEnds}
+      </div>
+    </div></article>`;
+  return document.getElementById('target')!;
+}
 function requestedId(): string {
   return JSON.parse(
     new URL(httpGet.mock.calls.at(-1)?.[0] as string).searchParams.get('variables')!
@@ -517,6 +531,184 @@ describe('production quoted-video pipeline', () => {
       expect(generateMediaFilename(result.mediaItems[0]!)).toMatch(/^author_111_111_\d+\.mp4$/u);
     }
   );
+
+  it.each([4, 5, 6])(
+    'selects the exact linkless quoted video with a common ancestor %i hops above its overlay',
+    async (hops) => {
+      respond(tweet('222', [video('800')], tweet('111', [video('700')])));
+      const overlay = deepOverlayTarget(hops);
+      const evidence = captureClickedMediaEvidence(overlay);
+      const result = await new MediaExtractionService().extractFromClickedElement(overlay);
+      expect({
+        mediaType: evidence.mediaType,
+        sourceKey: evidence.sourceKey,
+        identityKeys: evidence.identityKeys,
+        invalidSource: evidence.invalidSource,
+        success: result.success,
+        strategy: result.metadata?.strategy,
+        failureKind: result.failureKind,
+      }).toEqual({
+        mediaType: 'video',
+        sourceKey: null,
+        identityKeys: ['pbs.twimg.com/amplify_video_thumb/700/img/poster.jpg'],
+        invalidSource: false,
+        success: true,
+        strategy: 'api-extraction',
+        failureKind: undefined,
+      });
+      expect(requestedId()).toBe('222');
+      expect(result.success).toBe(true);
+      expect(result.clickedIndex).toBe(0);
+      expect(result.mediaItems[result.clickedIndex!]).toMatchObject({
+        tweetId: '111',
+        tweetUsername: 'author_111',
+        tweetText: 'Post 111',
+        url: source('700'),
+        sourceLocation: 'quoted',
+        metadata: {
+          apiData: { tweet_id: '111', quoteParentTweetId: '222', quotedTweetId: '111' },
+        },
+      });
+      expect(generateMediaFilename(result.mediaItems[result.clickedIndex!]!)).toMatch(
+        /^author_111_111_\d+\.mp4$/u
+      );
+    }
+  );
+
+  it.each([4, 5, 6])('keeps explicit quote ownership at overlay depth %i', async (hops) => {
+    respond(tweet('111', [video('700')]));
+    const overlay = deepOverlayTarget(hops, true);
+    const result = await new MediaExtractionService().extractFromClickedElement(overlay);
+    expect(requestedId()).toBe('111');
+    expect(result.success).toBe(true);
+    expect(result.clickedIndex).toBe(0);
+    expect(result.mediaItems[0]).toMatchObject({
+      tweetId: '111',
+      tweetUsername: 'author_111',
+      url: source('700'),
+      metadata: { apiData: { tweet_id: '111' } },
+    });
+  });
+
+  it('keeps a direct VIDEO click matched in the depth-six linkless quote', async () => {
+    respond(tweet('222', [video('800')], tweet('111', [video('700')])));
+    deepOverlayTarget(6);
+    const clicked = document.querySelector<HTMLVideoElement>('#video')!;
+    const result = await new MediaExtractionService().extractFromClickedElement(clicked);
+    expect(requestedId()).toBe('222');
+    expect(result.success).toBe(true);
+    expect(result.clickedIndex).toBe(0);
+    expect(result.mediaItems[0]).toMatchObject({
+      tweetId: '111',
+      tweetUsername: 'author_111',
+      url: source('700'),
+      metadata: { apiData: { tweet_id: '111', sourceLocation: 'quoted' } },
+    });
+  });
+
+  it.each([
+    ['before playback', 0, true],
+    ['during playback', 10, false],
+    ['paused after playback', 10, true],
+  ] as const)('keeps a depth-six overlay matched %s', async (_phase, currentTime, paused) => {
+    respond(tweet('222', [video('800')], tweet('111', [video('700')])));
+    const overlay = deepOverlayTarget(6);
+    const player = document.querySelector<HTMLVideoElement>('#video')!;
+    player.currentTime = currentTime;
+    Object.defineProperty(player, 'paused', { value: paused });
+    const result = await new MediaExtractionService().extractFromClickedElement(overlay);
+    expect(requestedId()).toBe('222');
+    expect(result.success).toBe(true);
+    expect(result.clickedIndex).toBe(0);
+    expect(result.mediaItems[0]).toMatchObject({
+      tweetId: '111',
+      tweetUsername: 'author_111',
+      url: source('700'),
+      metadata: { apiData: { tweet_id: '111', sourceLocation: 'quoted' } },
+    });
+  });
+
+  it.each(['adjacent', 'nested'] as const)(
+    'keeps a depth-six overlay with a %s player on its own video',
+    async (placement) => {
+      respond(tweet('222', [video('800')], tweet('111', [video('700')])));
+      const overlay = deepOverlayTarget(6);
+      const player = overlay.closest('[data-testid="videoPlayer"]')!;
+      const other = document.createElement('div');
+      other.dataset.testid = 'videoPlayer';
+      other.innerHTML = `<video src="blob:https://x.com/other" poster="${poster('800')}"></video>`;
+      if (placement === 'adjacent') {
+        player.after(other);
+      } else {
+        player.append(other);
+      }
+      const result = await new MediaExtractionService().extractFromClickedElement(overlay);
+      expect(requestedId()).toBe('222');
+      expect(result.success).toBe(true);
+      expect(result.clickedIndex).toBe(0);
+      expect(result.mediaItems[0]).toMatchObject({
+        tweetId: '111',
+        tweetUsername: 'author_111',
+        url: source('700'),
+        metadata: { apiData: { tweet_id: '111', sourceLocation: 'quoted' } },
+      });
+    }
+  );
+
+  it.each(['two-videos', 'nested-empty', 'card', 'conflicting-source', 'shared-poster'] as const)(
+    'refuses %s evidence around a depth-six linkless quote',
+    async (kind) => {
+      respond(
+        tweet(
+          '222',
+          [
+            kind === 'shared-poster'
+              ? { ...video('800'), media_url_https: poster('700') }
+              : video('800'),
+          ],
+          tweet('111', [video('700')])
+        )
+      );
+      const overlay = deepOverlayTarget(6);
+      const player = overlay.closest('[data-testid="videoPlayer"]')!;
+      if (kind === 'two-videos') {
+        player.insertAdjacentHTML(
+          'beforeend',
+          `<video src="blob:https://x.com/other" poster="${poster('800')}"></video>`
+        );
+      }
+      if (kind === 'nested-empty' || kind === 'card') {
+        const boundary = document.createElement('div');
+        boundary.dataset.testid = kind === 'card' ? 'card.wrapper' : 'videoPlayer';
+        overlay.replaceWith(boundary);
+        boundary.append(overlay);
+      }
+      if (kind === 'conflicting-source') {
+        document.querySelector<HTMLVideoElement>('#video')!.src = source('800');
+      }
+      const result = await new MediaExtractionService().extractFromClickedElement(overlay);
+      if (kind === 'card') {
+        expect(httpGet).not.toHaveBeenCalled();
+        expect(result.success).toBe(false);
+        expect(result.mediaItems).toEqual([]);
+        return;
+      }
+      expect(requestedId()).toBe('222');
+      expect(result.success).toBe(false);
+      expect(result.mediaItems).toEqual([]);
+      expect(result.apiRequestOutcome).toBe('healthy');
+      expect(result.failureKind).toBe(
+        kind === 'conflicting-source' ? 'mismatch' : 'owner-unconfirmed'
+      );
+    }
+  );
+
+  it('does not grant deep player identity outside a post article', () => {
+    const overlay = deepOverlayTarget(6);
+    const quote = document.querySelector<HTMLElement>('[data-testid="quoteTweet"]')!;
+    document.querySelector('article')!.replaceWith(quote);
+    expect(captureClickedMediaEvidence(overlay).identityKeys).toEqual([]);
+  });
 
   it('retains explicit B lookup and its own metadata', async () => {
     respond(tweet('111', [video('700')]));

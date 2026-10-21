@@ -103,6 +103,18 @@ function findNearestVideoPlayer(target: HTMLElement, maxHops: number): HTMLEleme
   return null;
 }
 
+/** Share the bounded nearest-player and unique-video decision with click evidence. */
+export function findOwnedVideoInNearestPlayer(
+  target: HTMLElement
+): { player: HTMLElement; video: HTMLVideoElement } | null {
+  const player = findNearestVideoPlayer(target, MAX_VIDEO_PLAYER_ANCESTOR_HOPS);
+  if (!player) {
+    return null;
+  }
+  const video = findUniqueVideoInPlayer(player, MAX_DESCENDANT_DEPTH);
+  return video ? { player, video } : null;
+}
+
 function findUniqueVideoInPlayer(player: HTMLElement, maxDepth: number): HTMLVideoElement | null {
   const queue: QueueNode[] = [{ node: player, depth: 0 }];
   let head = 0;
