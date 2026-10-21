@@ -151,6 +151,10 @@ describe('compact inner quote photo, preserving observed overlay ownership', () 
   });
 
   it('retains C ownership and observed source on a 403 DOM fallback', async () => {
+    const parentText = document.createElement('div');
+    parentText.dataset.testid = 'tweetText';
+    parentText.textContent = 'Middle post text belongs to B';
+    element<HTMLElement>('#compact-b article').prepend(parentText);
     httpGet.mockResolvedValue({ ok: false, status: 403, data: {} });
     const result = await new MediaExtractionService().extractFromClickedElement(
       element<HTMLAnchorElement>('#c-overlay')
@@ -163,6 +167,7 @@ describe('compact inner quote photo, preserving observed overlay ownership', () 
     expect(result.mediaItems[0]).toMatchObject({
       tweetId: C,
       tweetUsername: 'inner_fixture',
+      tweetTextContent: undefined,
       url: selectedPreview,
       downloadSource: { url: selectedOriginal, provenance: 'dom' },
     });
@@ -187,6 +192,29 @@ describe('compact inner quote photo, preserving observed overlay ownership', () 
       tweetText: `Fixture ${B}`,
     });
     expect(new Set(result.mediaItems.map((item) => generateMediaFilename(item))).size).toBe(2);
+  });
+
+  it('uses C text from a verified quote region when the enclosing B article also has text', async () => {
+    const parentText = document.createElement('div');
+    parentText.dataset.testid = 'tweetText';
+    parentText.textContent = 'Middle post text belongs to B';
+    element<HTMLElement>('#compact-b article').prepend(parentText);
+    const innerText = document.createElement('div');
+    innerText.dataset.testid = 'tweetText';
+    innerText.textContent = ' Inner post text belongs to C ';
+    const innerQuote = element<HTMLElement>('#compact-c');
+    innerQuote.dataset.testid = 'quoteTweet';
+    innerQuote.append(innerText);
+    httpGet.mockResolvedValue({ ok: false, status: 403, data: {} });
+
+    const result = await new MediaExtractionService().extractFromClickedElement(
+      element<HTMLAnchorElement>('#c-overlay')
+    );
+    expect(result.success).toBe(true);
+    expect(result.mediaItems[0]).toMatchObject({
+      tweetId: C,
+      tweetTextContent: 'Inner post text belongs to C',
+    });
   });
 
   it('rejects conflicting overlay ownership and leaves a separate external link native', async () => {
