@@ -313,6 +313,18 @@ describe('media-dimensions (pure functions)', () => {
       expect(adjustClickedIndexAfterDeduplication(original, unique, 2)).toBe(1);
       expect(adjustClickedIndexAfterDeduplication(original, [], 2)).toBe(0);
     });
+
+    it('deduplicates a shared source within each owner and retains the clicked owner', () => {
+      const source = 'https://pbs.twimg.com/media/shared.jpg';
+      const quote = makeMedia('quote', source, { tweetId: '333' });
+      const origin = makeMedia('origin', source, { tweetId: '222' });
+      const duplicate = makeMedia('duplicate', source, { tweetId: '222' });
+      const original = [quote, origin, duplicate];
+      const unique = removeDuplicateMediaItems(original);
+
+      expect(unique).toEqual([quote, origin]);
+      expect(adjustClickedIndexAfterDeduplication(original, unique, 2)).toBe(1);
+    });
   });
 
   describe('computeContainIntrinsicSizeOverride', () => {

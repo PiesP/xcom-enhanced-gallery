@@ -8,7 +8,11 @@
  */
 
 import { MEDIA } from '@constants/media';
-import { STATUS_LINK_SELECTOR, TWEET_CONTAINER_SELECTORS } from '@constants/selectors';
+import {
+  STATUS_LINK_SELECTOR,
+  TWEET_CONTAINER_SELECTORS,
+  TWEET_TEXT_SELECTOR,
+} from '@constants/selectors';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
 import {
@@ -25,7 +29,6 @@ import type {
 } from '@shared/types/media.types';
 import { createFailureResult } from '@shared/types/media.types';
 import { closestWithFallback } from '@shared/utils/dom/query-helpers';
-import { extractTweetTextHTMLFromClickedElement } from '@shared/utils/dom/tweet-extractor';
 import {
   extractMediaUrlFromElement,
   findMediaElementInDOM,
@@ -169,8 +172,15 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
         );
       }
 
-      // Step 2: Extract tweet text content
-      const tweetTextContent = extractTweetTextHTMLFromClickedElement(clickedElement);
+      // A compact quote may omit its text while the enclosing article belongs to another post.
+      const ownedText = Array.from(
+        tweetContainer.querySelectorAll<HTMLElement>(TWEET_TEXT_SELECTOR)
+      ).filter(
+        (element) =>
+          ownerExtractor.extractContext(element)?.ownership.ownerTweetId === tweetInfo.tweetId
+      );
+      const tweetTextContent =
+        ownedText.length === 1 ? ownedText[0]?.textContent?.trim() || undefined : undefined;
 
       // Step 3: Find all media elements in the container
       const mediaElements = findAllMediaInContainer(tweetContainer);

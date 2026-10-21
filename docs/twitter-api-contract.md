@@ -51,6 +51,36 @@ binary media. Context changes and explicit refresh invalidate it. Failures,
 empty or HLS-only responses, and cancelled requests are never cached. Cache reuse does not
 establish live provider access; that requires a separate observed request.
 
+## Displayed quote levels and media ownership
+
+A displayed chain A → B → C does not expand a request into a recursive quote
+walk. An A request includes direct B before A and excludes C. A B request includes
+direct C before B. When the clicked thumbnail or its overlapping status link
+explicitly establishes C as the owner, the gallery requests C directly and
+selects the clicked source within C's normalized media. C is never relabeled as
+A's direct quote. Missing or contradictory ownership continues to fail local
+selection; a nearby credit link alone does not authorize another quote level.
+
+Media deduplication includes the actual owning tweet ID as well as media type
+and normalized source. Repeated copies within one owner still collapse, while
+B and C retain separate entries when they reuse a source. Their selected index,
+author, caption, permalink and download filename remain tied to their own post.
+This changes neither API traversal nor metadata-cache admission limits.
+
+DOM recovery collects only media with the requested owner. Its caption is used
+only when one tweet-text node has that same verified owner. An absent,
+ambiguous or conflicting caption is omitted rather than borrowed from the
+enclosing article. A compact C thumbnail can therefore recover its observed
+source without claiming B's text or a complete API attachment list. A visible
+gallery after an API denial is partial recovery, not successful provider
+verification.
+
+The compact quote fixture is synthetic markup derived from the observed nested
+article, inner quote region and same-status overlay layout. Production-pipeline
+tests retain controls for independent B selection, same-source owners, non-first
+C photos, native status headers and unavailable API recovery. Installed-fixture
+and unchanged live-page observations remain separate evidence.
+
 ## Text and response admission
 
 `twitter-response-parser.ts` removes only complete whitespace-delimited media

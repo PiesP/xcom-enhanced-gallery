@@ -104,6 +104,7 @@ type QualityRequest = {
 };
 type DelayedFailureGate = { tweetId: string; promise: Promise<void>; release: () => void };
 type ImageFixtures = [Buffer, Buffer, Buffer];
+type CompactImages = { display: Buffer; original: Buffer };
 type PageFetch = { host: string; path: string; resourceType: string };
 type QuotedCase = (typeof QUOTED_CASES)[number];
 type ConsoleErrorRecord = { location: string; text: string };
@@ -616,6 +617,15 @@ const QUALITY_FIXTURE_URL = `https://x.com/qualityuser/status/${QUALITY_TWEET_ID
 const QUALITY_IMAGE_PATHS = ['GkE1234ABCDEF', 'GkE5678GHIJKL.jpg', 'GkE9012MNOPQR.jpg'];
 const PUBLIC_TWEET_ID = '9876543210987654321';
 const PUBLIC_FIXTURE_URL = `https://x.com/public_user/status/${PUBLIC_TWEET_ID}`;
+const COMPACT_OUTER_ID = '8555555555555555555';
+const COMPACT_MIDDLE_ID = '9555555555555555555';
+const COMPACT_INNER_ID = '7555555555555555555';
+const COMPACT_FIXTURE_URL = `https://x.com/outer_fixture/status/${COMPACT_OUTER_ID}`;
+const COMPACT_DISPLAY_URL =
+  'https://pbs.twimg.com/media/CompactQuoteSelected?format=webp&name=medium';
+const COMPACT_ORIGINAL_URL =
+  'https://pbs.twimg.com/media/CompactQuoteSelected?format=webp&name=orig';
+const COMPACT_FIRST_URL = 'https://pbs.twimg.com/media/GkE1234ABCDEF?format=jpg&name=medium';
 const DOWNLOAD_TRACKING_STORAGE_KEY = 'xeg.download-tracking.v1';
 const MV3_RESTART_BLOB_BYTES = 256 * 1024 * 1024;
 const IMAGE_URL_MARKERS = ['GkE1234', 'GkE5678', 'GkE9012'];
@@ -1116,6 +1126,80 @@ export async function createImageFixtures(
   }
 }
 
+async function createCompactImages(context: BrowserContext): Promise<CompactImages> {
+  const page = await context.newPage();
+  try {
+    await page.goto('about:blank');
+    const encoded = await page.evaluate(() =>
+      [120, 480].map((width) => {
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = (width * 2) / 3;
+        const drawing = canvas.getContext('2d');
+        if (!drawing) {
+          throw new Error('Compact WebP canvas unavailable');
+        }
+        drawing.fillStyle = '#346e9b';
+        drawing.fillRect(0, 0, canvas.width, canvas.height);
+        drawing.fillStyle = '#fff';
+        drawing.font = `bold ${width / 10}px Segoe UI`;
+        drawing.fillText('C fixture', 12, width / 5);
+        const data = canvas.toDataURL('image/webp', 0.9);
+        if (!data.startsWith('data:image/webp;base64,')) {
+          throw new Error('Installed browser did not encode WebP');
+        }
+        return data.split(',')[1];
+      })
+    );
+    const [display, original] = encoded.map((value) => Buffer.from(value ?? '', 'base64'));
+    assert(display && original && display.length > 0 && original.length > display.length);
+    assert.equal(display.toString('ascii', 8, 12), 'WEBP');
+    assert.equal(original.toString('ascii', 8, 12), 'WEBP');
+    return { display, original };
+  } finally {
+    await page.close();
+  }
+}
+
+function compactPhotoApiResponse(tweetId: string) {
+  const photo = (id: string, url: string) => ({
+    type: 'photo',
+    id_str: id,
+    media_url_https: url,
+    original_info: { width: 480, height: 320 },
+  });
+  const tweet = (
+    id: string,
+    handle: string,
+    text: string,
+    media: ReturnType<typeof photo>[],
+    quoted?: object
+  ) => ({
+    __typename: 'Tweet',
+    rest_id: id,
+    core: { user_results: { result: { legacy: { screen_name: handle, name: handle } } } },
+    legacy: { id_str: id, full_text: text, extended_entities: { media } },
+    ...(quoted ? { quoted_status_result: { result: quoted } } : {}),
+  });
+  const inner = tweet(COMPACT_INNER_ID, 'inner_fixture', 'C verified API caption', [
+    photo('compact-c-shared', COMPACT_DISPLAY_URL),
+  ]);
+  const result =
+    tweetId === COMPACT_INNER_ID
+      ? tweet(COMPACT_INNER_ID, 'inner_fixture', 'C verified API caption', [
+          photo('compact-c-first', COMPACT_FIRST_URL),
+          photo('compact-c-selected', COMPACT_DISPLAY_URL),
+        ])
+      : tweet(
+          COMPACT_MIDDLE_ID,
+          'middle_fixture',
+          'B verified API caption',
+          [photo('compact-b-shared', COMPACT_DISPLAY_URL)],
+          inner
+        );
+  return { data: { tweetResult: { result } } };
+}
+
 function imageIndex(url: string) {
   const index = IMAGE_URL_MARKERS.findIndex((marker) => url.includes(marker));
   return index < 0 ? 0 : index;
@@ -1125,7 +1209,8 @@ export async function installFixtureRoutes(
   context: BrowserContext,
   root: string,
   images: ImageFixtures,
-  displayImages: ImageFixtures
+  displayImages: ImageFixtures,
+  compactImages?: CompactImages
 ) {
   const html = await readFile(join(root, 'test/e2e/fixtures/installed-gallery-page.html'), 'utf8');
   const extensionHtml = QUALITY_IMAGE_PATHS.reduce((page, path) => {
@@ -1141,6 +1226,12 @@ export async function installFixtureRoutes(
     join(root, 'test/e2e/fixtures/installed-quoted-video-page.html'),
     'utf8'
   );
+  const compactHtml = compactImages
+    ? await readFile(
+        join(root, 'test/e2e/fixtures/installed-compact-quote-photo-page.html'),
+        'utf8'
+      )
+    : '';
   const preplayerHtml = await readFile(
     join(root, 'test/e2e/fixtures/installed-public-preplayer-page.html'),
     'utf8'
@@ -1170,6 +1261,9 @@ export async function installFixtureRoutes(
   const unavailableApiResponses: ApiRecord[] = [];
   const qualityApiResponses: ApiRecord[] = [];
   const qualityRequests: QualityRequest[] = [];
+  const compactApiResponses: ApiRecord[] = [];
+  const compactImageRequests: QualityRequest[] = [];
+  let compactMode: 'healthy' | 'middle' | 'denied' | null = null;
   let unavailableApiOverflow = 0;
   let sequenceRouteActive = false;
   let delayedFailureGate: DelayedFailureGate | null = null;
@@ -1208,6 +1302,28 @@ export async function installFixtureRoutes(
             : undefined;
       } catch {
         tweetId = undefined;
+      }
+      if (
+        compactImages &&
+        compactMode &&
+        (tweetId === COMPACT_INNER_ID || tweetId === COMPACT_MIDDLE_ID)
+      ) {
+        assert(compactApiResponses.length < 12, 'Compact API observation overflow');
+        const denied = compactMode === 'denied';
+        const record: ApiRecord = {
+          tweetId,
+          method: route.request().method(),
+          status: denied ? 403 : 200,
+          requestedAtMonotonicMs: performance.now(),
+        };
+        compactApiResponses.push(record);
+        await route.fulfill({
+          status: record.status,
+          contentType: 'application/json',
+          body: JSON.stringify(denied ? {} : compactPhotoApiResponse(tweetId)),
+        });
+        record.fulfilledAtMonotonicMs = performance.now();
+        return;
       }
       if (
         tweetId === DELAYED_FAILURE_ID ||
@@ -1325,6 +1441,14 @@ export async function installFixtureRoutes(
       return;
     }
     if (url.hostname === 'x.com' && route.request().isNavigationRequest()) {
+      compactMode =
+        compactImages && url.pathname === new URL(COMPACT_FIXTURE_URL).pathname
+          ? url.searchParams.get('compact') === 'denied'
+            ? 'denied'
+            : url.searchParams.get('compact') === 'middle'
+              ? 'middle'
+              : 'healthy'
+          : null;
       const quotedCase = QUOTED_CASES.find(
         ({ handle, outer }) => url.pathname === `/${handle}/status/${outer}`
       );
@@ -1334,36 +1458,41 @@ export async function installFixtureRoutes(
       sequenceRouteActive = unavailableRoute;
       await route.fulfill({
         contentType: 'text/html',
-        body: unavailableRoute
-          ? unavailableHtml
-          : [DELAYED_FAILURE_ID, DELAYED_NAVIGATION_ID].some(
-                (id) => url.pathname === `/delayed_host/status/${id}`
-              )
-            ? quotedHtml
-                .replaceAll('8111111111111111111', url.pathname.split('/').at(-1) ?? '')
-                .replaceAll('9111111111111111111', '9777777777777777777')
-                .replaceAll('/outer_one/status/', '/delayed_host/status/')
-            : url.pathname === '/quote_one/status/9111111111111111111'
-              ? unmarkedVideoHtml
-              : url.pathname === `/rapid_a/status/${RAPID_CLICK_A}`
-                ? rapidVideoHtml
-                : quotedCase
-                  ? quotedCase.name === 'public-preplayer'
-                    ? preplayerHtml
-                    : quotedHtml.replace(
-                        '<body data-quote-case="recognized">',
-                        `<body data-quote-case="${quotedCase.route}">`
-                      )
-                  : url.pathname === new URL(QUALITY_FIXTURE_URL).pathname
-                    ? extensionHtml
-                        .replaceAll(TWEET_ID, QUALITY_TWEET_ID)
-                        .replaceAll('testuser', 'qualityuser')
-                    : url.pathname === new URL(PUBLIC_FIXTURE_URL).pathname
-                      ? html.replace(
-                          '<body data-fixture-route="classic">',
-                          '<body data-fixture-route="public">'
+        body: compactMode
+          ? compactHtml.replace(
+              '<div id="b-media-slot"></div>',
+              `${compactMode === 'middle' ? `<div id="b-media-slot"><a href="/middle_fixture/status/${COMPACT_MIDDLE_ID}"><img src="${COMPACT_DISPLAY_URL.replaceAll('&', '&amp;')}" alt="Middle photo"></a><a id="b-overlay" href="/middle_fixture/status/${COMPACT_MIDDLE_ID}" aria-label="Open middle quote photo"></a></div>` : '<div id="b-media-slot"></div>'}<div data-testid="tweetText">B parent caption must not leak to C</div>`
+            )
+          : unavailableRoute
+            ? unavailableHtml
+            : [DELAYED_FAILURE_ID, DELAYED_NAVIGATION_ID].some(
+                  (id) => url.pathname === `/delayed_host/status/${id}`
+                )
+              ? quotedHtml
+                  .replaceAll('8111111111111111111', url.pathname.split('/').at(-1) ?? '')
+                  .replaceAll('9111111111111111111', '9777777777777777777')
+                  .replaceAll('/outer_one/status/', '/delayed_host/status/')
+              : url.pathname === '/quote_one/status/9111111111111111111'
+                ? unmarkedVideoHtml
+                : url.pathname === `/rapid_a/status/${RAPID_CLICK_A}`
+                  ? rapidVideoHtml
+                  : quotedCase
+                    ? quotedCase.name === 'public-preplayer'
+                      ? preplayerHtml
+                      : quotedHtml.replace(
+                          '<body data-quote-case="recognized">',
+                          `<body data-quote-case="${quotedCase.route}">`
                         )
-                      : extensionHtml,
+                    : url.pathname === new URL(QUALITY_FIXTURE_URL).pathname
+                      ? extensionHtml
+                          .replaceAll(TWEET_ID, QUALITY_TWEET_ID)
+                          .replaceAll('testuser', 'qualityuser')
+                      : url.pathname === new URL(PUBLIC_FIXTURE_URL).pathname
+                        ? html.replace(
+                            '<body data-fixture-route="classic">',
+                            '<body data-fixture-route="public">'
+                          )
+                        : extensionHtml,
       });
       return;
     }
@@ -1409,6 +1538,26 @@ export async function installFixtureRoutes(
       return;
     }
     if (url.hostname === 'pbs.twimg.com') {
+      if (compactImages && url.pathname === '/media/CompactQuoteSelected') {
+        const body =
+          url.searchParams.get('name') === 'orig' ? compactImages.original : compactImages.display;
+        assert(compactImageRequests.length < 40, 'Compact WebP observation overflow');
+        compactImageRequests.push({
+          path: url.pathname,
+          name: url.searchParams.get('name'),
+          resourceType: route.request().resourceType(),
+          ...imageReceipt(body),
+        });
+        await route.fulfill({
+          contentType: 'image/webp',
+          body,
+          headers: {
+            'Access-Control-Allow-Origin': 'https://x.com',
+            'Access-Control-Allow-Credentials': 'true',
+          },
+        });
+        return;
+      }
       const index = imageIndex(url.href);
       const original = url.searchParams.get('name') === 'orig';
       const body = original ? images[index] : displayImages[index];
@@ -1444,6 +1593,8 @@ export async function installFixtureRoutes(
     quotedApiResponses,
     unavailableApiResponses,
     qualityRequests,
+    compactApiResponses,
+    compactImageRequests,
     getUnavailableApiOverflow: () => unavailableApiOverflow,
     videoPayloads,
     armDelayedFailure(tweetId: string) {
@@ -4548,6 +4699,405 @@ async function runPublicFixtureCycle({
     },
     topActionHitTested: before.topAction,
   };
+}
+
+type CompactEvidence = {
+  status: string;
+  api: ApiRecord[];
+  images: QualityRequest[];
+  steps: Record<string, unknown>[];
+  error?: string;
+  failureScreenshot?: string;
+  screenshotError?: string;
+};
+
+async function compactHostSnapshot(page: Page, selector: string) {
+  return page.evaluate((target) => {
+    const style = document.body.style;
+    return {
+      active: document.activeElement === document.querySelector(target),
+      bodyStyle: {
+        left: style.left,
+        overflow: style.overflow,
+        position: style.position,
+        right: style.right,
+        top: style.top,
+      },
+      background: ['#host-layout-spacer', 'main'].map((name) => {
+        const element = document.querySelector(name);
+        return {
+          ariaHidden: element?.getAttribute('aria-hidden') ?? null,
+          hiddenMarker: element?.hasAttribute('data-xeg-gallery-hidden') ?? false,
+          inert: element?.hasAttribute('inert') ?? false,
+        };
+      }),
+      scrollRestoration: history.scrollRestoration,
+      scrollY: window.scrollY,
+    };
+  }, selector);
+}
+
+async function compactPanelText(gallery: Locator, url: string) {
+  const origin = await assertQuotedOriginLink(gallery, url);
+  await gallery.locator('#tweet-text-button').click();
+  const text = await gallery.locator('#toolbar-tweet-panel').textContent();
+  await gallery.locator('#tweet-text-button').click();
+  return { origin, text };
+}
+
+async function compactClose(
+  page: Page,
+  selector: string,
+  before: Awaited<ReturnType<typeof compactHostSnapshot>>,
+  method: 'escape' | 'button'
+) {
+  const gallery = page.locator('[data-xeg-gallery-container]');
+  if (method === 'escape') {
+    await page.keyboard.press('Escape');
+  } else {
+    await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]').click();
+  }
+  await gallery.waitFor({ state: 'detached', timeout: 15_000 });
+  const after = await compactHostSnapshot(page, selector);
+  assert.deepEqual(
+    after,
+    before,
+    'Compact close must restore focus, scroll, body and host isolation'
+  );
+  return after;
+}
+
+async function runCompactQuotePhotoCycle({
+  page,
+  extensionPage,
+  downloads,
+  images,
+  compactImages,
+  nativeLoopback,
+  pageFetches,
+  compactApiResponses,
+  compactImageRequests,
+  evidence,
+}: {
+  page: Page;
+  extensionPage: Page;
+  downloads: string;
+  images: ImageFixtures;
+  compactImages: CompactImages;
+  nativeLoopback: NativeLoopback;
+  pageFetches: PageFetch[];
+  compactApiResponses: ApiRecord[];
+  compactImageRequests: QualityRequest[];
+  evidence: CompactEvidence;
+}) {
+  const apiStart = compactApiResponses.length;
+  const imageStart = compactImageRequests.length;
+  const navigate = async (suffix: string) => {
+    await page.goto(`${COMPACT_FIXTURE_URL}${suffix}`);
+    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+  };
+  const prepare = async (selector: string) => {
+    const trigger = page.locator(selector);
+    await trigger.scrollIntoViewIfNeeded();
+    await trigger.focus();
+    const before = await compactHostSnapshot(page, selector);
+    assert(before.active && before.scrollY > 0, 'Compact trigger must hold focus below the fold');
+    const hit = await trigger.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      return {
+        top: document.elementFromPoint(x, y) === element,
+        tag: element.tagName,
+        href: element instanceof HTMLAnchorElement ? element.href : null,
+      };
+    });
+    assert.equal(hit.top, true, 'Ordinary compact pointer must hit the overlay');
+    assert.equal(hit.tag, 'A');
+    return { trigger, before, hit };
+  };
+  await navigate('');
+  const c = await prepare('#c-overlay');
+  assert.equal(c.hit.href, `https://x.com/inner_fixture/status/${COMPACT_INNER_ID}`);
+  await c.trigger.click();
+  const gallery = page.locator('[data-xeg-gallery-container]');
+  await gallery.waitFor({ state: 'visible', timeout: 15_000 });
+  const cSelected = await assertQuotedSelection(page, {
+    position: 2,
+    total: 2,
+    type: 'image',
+    path: '/media/CompactQuoteSelected',
+  });
+  assert.equal(cSelected.source, COMPACT_ORIGINAL_URL);
+  assert.equal(await gallery.locator('[data-gallery-element="item"]').count(), 2);
+  const cPanel = await compactPanelText(
+    gallery,
+    `https://x.com/inner_fixture/status/${COMPACT_INNER_ID}`
+  );
+  assert(cPanel.text?.includes('C verified API caption'));
+  assert(!cPanel.text?.includes('B parent caption'));
+  await page.keyboard.press('ArrowLeft');
+  const cFirst = await assertQuotedSelection(page, {
+    position: 1,
+    total: 2,
+    type: 'image',
+    path: '/media/GkE1234ABCDEF',
+  });
+  assert.equal(
+    await assertQuotedOriginLink(gallery, `https://x.com/inner_fixture/status/${COMPACT_INNER_ID}`),
+    cPanel.origin
+  );
+  await page.keyboard.press('ArrowRight');
+  await assertQuotedSelection(page, {
+    position: 2,
+    total: 2,
+    type: 'image',
+    path: '/media/CompactQuoteSelected',
+  });
+  const cApi = compactApiResponses.slice(apiStart);
+  assert.deepEqual(
+    cApi.map(({ tweetId, status }) => ({ tweetId, status })),
+    [{ tweetId: COMPACT_INNER_ID, status: 200 }]
+  );
+  evidence.steps.push({
+    name: 'c-api',
+    selection: cSelected,
+    first: cFirst,
+    panel: cPanel,
+    api: cApi,
+  });
+
+  const knownSingle = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+  const nativeMark = nativeLoopback.mark();
+  const fetchMark = pageFetches.length;
+  await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download"]').click();
+  const singleName = `inner_fixture_${COMPACT_INNER_ID}_1.webp`;
+  const single = await waitForDownload(extensionPage, knownSingle, singleName);
+  const singlePath = relative(downloads, single.filename);
+  assert(singlePath && !singlePath.startsWith('..') && !isAbsolute(singlePath));
+  const { bytes: singleBytes } = await readExactDownloadFile(
+    single.filename,
+    compactImages.original.length
+  );
+  assert(singleBytes.equals(compactImages.original));
+  const native = await assertNativeSingle({
+    extensionPage,
+    knownIds: knownSingle,
+    download: single,
+    expectedUrl: COMPACT_ORIGINAL_URL,
+    expectedBytes: compactImages.original,
+    nativeLoopback,
+    nativeMark,
+    pageFetches: pageFetches.slice(fetchMark),
+  });
+  evidence.steps.push({
+    name: 'c-single',
+    filename: basename(single.filename),
+    ...imageReceipt(singleBytes),
+    native,
+  });
+
+  const knownZip = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+  await gallery
+    .locator('[data-gallery-element="toolbar"] button[aria-label="Download 2 shown files as ZIP"]')
+    .click();
+  const zip = await waitForDownload(
+    extensionPage,
+    knownZip,
+    `inner_fixture_${COMPACT_INNER_ID}.zip`
+  );
+  const zipPath = relative(downloads, zip.filename);
+  assert(zipPath && !zipPath.startsWith('..') && !isAbsolute(zipPath));
+  assert.deepEqual(
+    (await queryDownloads(extensionPage)).filter(({ id }) => !knownZip.has(id)).map(({ id }) => id),
+    [zip.id]
+  );
+  const expectedEntries = [
+    { filename: `inner_fixture_${COMPACT_INNER_ID}_0.jpg`, bytes: images[0] },
+    { filename: singleName, bytes: compactImages.original },
+  ];
+  const { bytes: zipBytes } = await readExactDownloadFile(
+    zip.filename,
+    expectedStoredZipBytes(expectedEntries)
+  );
+  const verified = verifyStoredZip(zipBytes, expectedEntries);
+  evidence.steps.push({
+    name: 'c-zip',
+    filename: basename(zip.filename),
+    ...imageReceipt(zipBytes),
+    verified,
+  });
+  evidence.steps.push({
+    name: 'c-close',
+    after: await compactClose(page, '#c-overlay', c.before, 'escape'),
+  });
+
+  const reopened = await prepare('#c-overlay');
+  await reopened.trigger.click();
+  const reopenedSelection = await assertQuotedSelection(page, {
+    position: 2,
+    total: 2,
+    type: 'image',
+    path: '/media/CompactQuoteSelected',
+  });
+  evidence.steps.push({
+    name: 'c-reopen',
+    selection: reopenedSelection,
+    after: await compactClose(page, '#c-overlay', reopened.before, 'button'),
+  });
+  await page.locator('#c-header').click();
+  await page.waitForURL(`https://x.com/inner_fixture/status/${COMPACT_INNER_ID}`);
+  evidence.steps.push({ name: 'c-native-header', url: page.url() });
+
+  await navigate('?compact=middle');
+  const bApiStart = compactApiResponses.length;
+  const b = await prepare('#b-overlay');
+  assert.equal(b.hit.href, `https://x.com/middle_fixture/status/${COMPACT_MIDDLE_ID}`);
+  await b.trigger.click();
+  const bSelected = await assertQuotedSelection(page, {
+    position: 2,
+    total: 2,
+    type: 'image',
+    path: '/media/CompactQuoteSelected',
+  });
+  assert.equal(bSelected.source, COMPACT_ORIGINAL_URL);
+  const bPanel = await compactPanelText(
+    gallery,
+    `https://x.com/middle_fixture/status/${COMPACT_MIDDLE_ID}`
+  );
+  assert(bPanel.text?.includes('B verified API caption'));
+  assert(!bPanel.text?.includes('C verified API caption'));
+  await page.keyboard.press('ArrowLeft');
+  const bQuote = await assertQuotedSelection(page, {
+    position: 1,
+    total: 2,
+    type: 'image',
+    path: '/media/CompactQuoteSelected',
+  });
+  const bQuoteOrigin = await assertQuotedOriginLink(
+    gallery,
+    `https://x.com/inner_fixture/status/${COMPACT_INNER_ID}`
+  );
+  await page.keyboard.press('ArrowRight');
+  await assertQuotedSelection(page, {
+    position: 2,
+    total: 2,
+    type: 'image',
+    path: '/media/CompactQuoteSelected',
+  });
+  assert.deepEqual(
+    compactApiResponses.slice(bApiStart).map(({ tweetId, status }) => ({ tweetId, status })),
+    [{ tweetId: COMPACT_MIDDLE_ID, status: 200 }]
+  );
+  const knownBSingle = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+  const bNativeMark = nativeLoopback.mark();
+  const bFetchMark = pageFetches.length;
+  await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download"]').click();
+  const bSingleName = `middle_fixture_${COMPACT_MIDDLE_ID}_1.webp`;
+  const bSingle = await waitForDownload(extensionPage, knownBSingle, bSingleName);
+  const bSinglePath = relative(downloads, bSingle.filename);
+  assert(bSinglePath && !bSinglePath.startsWith('..') && !isAbsolute(bSinglePath));
+  const { bytes: bSingleBytes } = await readExactDownloadFile(
+    bSingle.filename,
+    compactImages.original.length
+  );
+  assert(bSingleBytes.equals(compactImages.original));
+  const bNative = await assertNativeSingle({
+    extensionPage,
+    knownIds: knownBSingle,
+    download: bSingle,
+    expectedUrl: COMPACT_ORIGINAL_URL,
+    expectedBytes: compactImages.original,
+    nativeLoopback,
+    nativeMark: bNativeMark,
+    pageFetches: pageFetches.slice(bFetchMark),
+  });
+  const knownBZip = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+  await gallery
+    .locator('[data-gallery-element="toolbar"] button[aria-label="Download 2 shown files as ZIP"]')
+    .click();
+  const bZip = await waitForDownload(
+    extensionPage,
+    knownBZip,
+    `inner_fixture_${COMPACT_INNER_ID} (1).zip`
+  );
+  const bZipPath = relative(downloads, bZip.filename);
+  assert(bZipPath && !bZipPath.startsWith('..') && !isAbsolute(bZipPath));
+  assert.deepEqual(
+    (await queryDownloads(extensionPage))
+      .filter(({ id }) => !knownBZip.has(id))
+      .map(({ id }) => id),
+    [bZip.id]
+  );
+  const bExpectedEntries = [
+    { filename: `inner_fixture_${COMPACT_INNER_ID}_0.webp`, bytes: compactImages.original },
+    { filename: bSingleName, bytes: compactImages.original },
+  ];
+  const { bytes: bZipBytes } = await readExactDownloadFile(
+    bZip.filename,
+    expectedStoredZipBytes(bExpectedEntries)
+  );
+  const bZipVerified = verifyStoredZip(bZipBytes, bExpectedEntries);
+  evidence.steps.push({
+    name: 'b-same-source',
+    selection: bSelected,
+    quote: bQuote,
+    quoteOrigin: bQuoteOrigin,
+    panel: bPanel,
+    single: {
+      filename: basename(bSingle.filename),
+      ...imageReceipt(bSingleBytes),
+      native: bNative,
+    },
+    zip: { filename: basename(bZip.filename), ...imageReceipt(bZipBytes), verified: bZipVerified },
+  });
+  evidence.steps.push({
+    name: 'b-close',
+    after: await compactClose(page, '#b-overlay', b.before, 'button'),
+  });
+  await page.locator('#b-header').click();
+  await page.waitForURL(`https://x.com/middle_fixture/status/${COMPACT_MIDDLE_ID}`);
+  evidence.steps.push({ name: 'b-native-header', url: page.url() });
+
+  await navigate('?compact=denied');
+  const deniedApiStart = compactApiResponses.length;
+  const denied = await prepare('#c-overlay');
+  await denied.trigger.click();
+  const fallback = await assertQuotedSelection(page, {
+    position: 1,
+    total: 1,
+    type: 'image',
+    path: '/media/CompactQuoteSelected',
+  });
+  assert.equal(fallback.source, COMPACT_DISPLAY_URL);
+  assert.equal(await gallery.locator('[data-gallery-element="item"]').count(), 1);
+  const deniedRequests = compactApiResponses.slice(deniedApiStart);
+  assert.deepEqual(
+    deniedRequests.map(({ tweetId, status }) => ({ tweetId, status })),
+    [{ tweetId: COMPACT_INNER_ID, status: 403 }]
+  );
+  const fallbackPanel = await compactPanelText(
+    gallery,
+    `https://x.com/inner_fixture/status/${COMPACT_INNER_ID}`
+  );
+  assert(!fallbackPanel.text?.includes('B parent caption'));
+  assert(!fallbackPanel.text?.includes('B verified API caption'));
+  assert(!fallbackPanel.text?.includes('Outer post'));
+  evidence.steps.push({
+    name: 'c-403',
+    selection: fallback,
+    panel: fallbackPanel,
+    api: deniedRequests,
+    after: await compactClose(page, '#c-overlay', denied.before, 'escape'),
+  });
+  evidence.api = compactApiResponses.slice(apiStart);
+  evidence.images = compactImageRequests.slice(imageStart);
+  assert(
+    evidence.images.some(
+      ({ path, name }) => path === '/media/CompactQuoteSelected' && name === 'orig'
+    )
+  );
+  evidence.status = 'passed';
 }
 
 async function quotedHostSnapshot(page: Page, caseName: string, triggerSelector: string) {
@@ -8732,6 +9282,7 @@ async function exerciseInstalledExtension(
     downloads: [],
   };
   const sourceQuality: SourceQualityEvidence = { status: 'pending', sources: [], requests: [] };
+  const compactQuotePhoto: CompactEvidence = { status: 'pending', api: [], images: [], steps: [] };
   let apiReuse: unknown = { status: 'pending' };
   let capacityNotification: unknown = { status: 'pending' };
   let videoLoading: unknown = { status: 'pending' };
@@ -8755,7 +9306,8 @@ async function exerciseInstalledExtension(
   let observationError: unknown;
   let observationErrorSeen = false;
   try {
-    fixtureRoutes = await installFixtureRoutes(context, root, images, displayImages);
+    const compactImages = await createCompactImages(context);
+    fixtureRoutes = await installFixtureRoutes(context, root, images, displayImages, compactImages);
     fixtureVideoAssets = Object.fromEntries(
       Object.entries(fixtureRoutes.videoPayloads).map(([name, bytes]) => [
         name,
@@ -8763,6 +9315,7 @@ async function exerciseInstalledExtension(
       ])
     );
     nativeLoopback.setPayloads(images, fixtureRoutes.videoPayloads);
+    nativeLoopback.setCompactImage(compactImages.original);
     extensionPage = await context.newPage();
     page = await context.newPage();
     page.on('pageerror', (error) => pageErrors.push(error.message));
@@ -8931,6 +9484,34 @@ async function exerciseInstalledExtension(
       output,
       page,
     });
+    try {
+      await runCompactQuotePhotoCycle({
+        page,
+        extensionPage,
+        downloads,
+        images,
+        compactImages,
+        nativeLoopback,
+        pageFetches,
+        compactApiResponses: fixtureRoutes.compactApiResponses,
+        compactImageRequests: fixtureRoutes.compactImageRequests,
+        evidence: compactQuotePhoto,
+      });
+    } catch (error) {
+      compactQuotePhoto.status = 'failed';
+      compactQuotePhoto.error = safeError(error);
+      compactQuotePhoto.api = fixtureRoutes.compactApiResponses;
+      compactQuotePhoto.images = fixtureRoutes.compactImageRequests;
+      await page
+        .screenshot({ path: join(output, 'compact-quote-photo-failure.png') })
+        .then(() => {
+          compactQuotePhoto.failureScreenshot = 'compact-quote-photo-failure.png';
+        })
+        .catch((screenshotError) => {
+          compactQuotePhoto.screenshotError = safeError(screenshotError);
+        });
+      throw error;
+    }
     for (const quotedCase of QUOTED_CASES) {
       const settingEvidence: ControlledSettingEvidence = {};
       try {
@@ -9297,6 +9878,7 @@ async function exerciseInstalledExtension(
       consoleErrors,
       fixtureApiResponses: fixtureRoutes.apiResponses,
       sourceQuality,
+      compactQuotePhoto,
       apiReuse,
       capacityNotification,
       videoLoading,
@@ -9380,6 +9962,7 @@ async function exerciseInstalledExtension(
             failedRequests,
             fixtureApiResponses: fixtureRoutes?.apiResponses ?? [],
             sourceQuality,
+            compactQuotePhoto,
             apiReuse,
             capacityNotification,
             videoLoading,

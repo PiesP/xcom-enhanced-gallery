@@ -94,6 +94,10 @@ type ImageTarget = {
   imageLoaded: boolean;
   imageSource: Source;
   imageVisible: boolean;
+  quoteBoundary?: 'compact-two-level';
+  directQuoteId?: string;
+  ownerStatusId?: string;
+  ownerHandle?: string;
   selectedPhotoIndex?: number;
   actionAriaLabel?: string | null;
   actionIndex?: number;
@@ -433,6 +437,50 @@ export function summarizeQuoteProviderRejection(api: ApiEvidence | null | undefi
   };
 }
 
+export function summarizeCompactImageEvidence(
+  api: ApiEvidence,
+  ownerStatusId: string,
+  sourcePath: string,
+  selectedItemIndex: number | null
+): {
+  providerRejection: ReturnType<typeof summarizeQuoteProviderRejection>;
+  providerConfirmed: boolean;
+  apiMediaIndex: number | null;
+} {
+  const relevant = api.observations.filter(
+    (item) => item.operation === 'TweetResultByRestId' && item.requestedTweetId === ownerStatusId
+  );
+  const providerRejection = summarizeQuoteProviderRejection({
+    tweetResultByRestId: { requests: relevant.length, responses: [] },
+    observations: relevant,
+    overflow: 0,
+  });
+  const stem = (path: string) => path.replace(/\.(?:jpe?g|png|webp|gif)$/iu, '');
+  const healthy = relevant.filter(
+    (item) => item.httpStatus === 200 && !item.providerErrors && item.result?.id === ownerStatusId
+  );
+  const matchingIndexes = healthy.flatMap((item) =>
+    (item.result?.media ?? []).flatMap((media, index) =>
+      media.type === 'photo' &&
+      media.poster?.host === 'pbs.twimg.com' &&
+      media.poster.path.startsWith('/media/') &&
+      stem(media.poster.path) === stem(sourcePath)
+        ? [index]
+        : []
+    )
+  );
+  return {
+    providerRejection,
+    providerConfirmed:
+      api.overflow === 0 &&
+      !providerRejection &&
+      healthy.length === 1 &&
+      matchingIndexes.length === 1 &&
+      matchingIndexes[0] === selectedItemIndex,
+    apiMediaIndex: matchingIndexes.length === 1 ? (matchingIndexes[0] ?? null) : null,
+  };
+}
+
 export function classifyLiveFailure(
   classification: string | undefined,
   galleryStatus: string,
@@ -756,6 +804,10 @@ export function inspectLiveTargetDocument({ handle, statusId }: Identity): LiveR
     }
     return null;
   };
+  const compactOwnerPath = (anchor: HTMLAnchorElement) =>
+    /^(\/[A-Za-z0-9_]{1,15}\/status\/[1-9]\d*)(?:\/photo\/[1-9]\d*)?$/u.exec(
+      parseLink(anchor)?.path ?? ''
+    )?.[1] ?? null;
   const parsePoster = (value: string | null | undefined) => {
     if (!value) {
       return null;
@@ -966,6 +1018,115 @@ export function inspectLiveTargetDocument({ handle, statusId }: Identity): LiveR
           imageVisible: true,
         },
       };
+    }
+    // The public compact layout places C's photo in an unmarked role-link inside
+    // B's nested article. Admit only the observed A > B > C ownership chain and
+    // a unique image covered by a second link to that same C status.
+    const compactTargets: ImageTarget[] = [];
+    for (const quoteArticle of directNestedArticles) {
+      for (const compact of quoteArticle.querySelectorAll<HTMLElement>('[role="link"]')) {
+        if (compact.closest('article') !== quoteArticle) {
+          continue;
+        }
+        const ownLinks = [...compact.querySelectorAll<HTMLAnchorElement>('a[href]')];
+        const compactPaths = ownLinks.map(compactOwnerPath);
+        const ownerPath = compactPaths[0];
+        const ownerMatch = /^\/([A-Za-z0-9_]{1,15})\/status\/([1-9]\d*)$/u.exec(ownerPath ?? '');
+        if (!ownerMatch || compactPaths.some((path) => path !== ownerPath)) {
+          continue;
+        }
+        const [, ownerHandle, ownerStatusId] = ownerMatch;
+        if (!ownerHandle || !ownerStatusId || ownerStatusId === statusId) {
+          continue;
+        }
+        const directQuoteIds = new Set(
+          [...quoteArticle.querySelectorAll<HTMLAnchorElement>('a[href]')]
+            .filter(
+              (anchor) => anchor.closest('article') === quoteArticle && !compact.contains(anchor)
+            )
+            .map(
+              (anchor) =>
+                /^\/[A-Za-z0-9_]{1,15}\/status\/([1-9]\d*)$/u.exec(
+                  parseLink(anchor)?.path ?? ''
+                )?.[1]
+            )
+            .filter((id): id is string => !!id)
+        );
+        if (directQuoteIds.size !== 1) {
+          continue;
+        }
+        const directQuoteId = [...directQuoteIds][0];
+        if (!directQuoteId || directQuoteId === statusId || directQuoteId === ownerStatusId) {
+          continue;
+        }
+        for (let imageIndex = 0; imageIndex < images.length; imageIndex += 1) {
+          const image = images[imageIndex];
+          if (!image || !compact.contains(image) || image.closest('article') !== quoteArticle) {
+            continue;
+          }
+          const source = parseMedia(image);
+          if (!source || !isVisible(image) || !image.complete || image.naturalWidth <= 0) {
+            continue;
+          }
+          const imageLink = image.closest<HTMLAnchorElement>('a[href]');
+          const imagePath = imageLink ? parseLink(imageLink)?.path : null;
+          if (!imageLink || compactOwnerPath(imageLink) !== ownerPath) {
+            continue;
+          }
+          const rectangle = image.getBoundingClientRect();
+          const x = rectangle.left + rectangle.width / 2;
+          const y = rectangle.top + rectangle.height / 2;
+          if (x < 0 || y < 0 || x >= innerWidth || y >= innerHeight) {
+            continue;
+          }
+          const hit = document.elementFromPoint(x, y);
+          const hitLink = hit?.closest<HTMLAnchorElement>('a[href]');
+          if (!hitLink || hitLink === imageLink || parseLink(hitLink)?.path !== imagePath) {
+            continue;
+          }
+          let region = image.parentElement;
+          for (let hops = 0; region && !region.contains(hit) && hops < 4; hops += 1) {
+            region = region.parentElement;
+          }
+          if (!region || !region.contains(hit) || !compact.contains(region) || region === compact) {
+            continue;
+          }
+          const regionImages = [...region.querySelectorAll<HTMLImageElement>('img')].filter(
+            parseMedia
+          );
+          const regionLinks = [...region.querySelectorAll<HTMLAnchorElement>('a[href]')];
+          if (
+            regionImages.length !== 1 ||
+            regionImages[0] !== image ||
+            regionLinks.length !== 2 ||
+            regionLinks.some((anchor) => parseLink(anchor)?.path !== imagePath)
+          ) {
+            continue;
+          }
+          compactTargets.push({
+            kind: 'image',
+            articleIndex,
+            imageIndex,
+            imageLoaded: true,
+            imageSource: source,
+            imageVisible: true,
+            quoteBoundary: 'compact-two-level',
+            directQuoteId,
+            ownerStatusId,
+            ownerHandle,
+          });
+        }
+      }
+    }
+    if (compactTargets.length > 1) {
+      return {
+        state: 'ambiguous',
+        reason: 'multiple-compact-quote-images',
+        candidateCount: compactTargets.length,
+      };
+    }
+    if (compactTargets[0]) {
+      return { state: 'ready', target: compactTargets[0] };
     }
   }
   const text = document.body?.innerText ?? document.body?.textContent ?? '';
@@ -1232,82 +1393,199 @@ async function waitForTarget(page: Page, identity: Identity) {
   }
 }
 
-async function inspectHitTestedAction(
+export async function inspectHitTestedAction(
   image: import('@playwright/test').Locator,
-  identity: Identity
-) {
-  return image.evaluate((element, { handle, statusId }) => {
-    const article = element.closest('article');
-    if (!(element instanceof HTMLImageElement) || !article) {
-      return null;
-    }
-    const mediaPath = new RegExp(`^/${handle}/status/${statusId}/photo/\\d+$`, 'iu');
-    const anchors = [...article.querySelectorAll<HTMLAnchorElement>('a[href]')];
-    const parseLink = (anchor: HTMLAnchorElement) => {
-      try {
-        const url = new URL(anchor.href, location.href);
-        return ['x.com', 'twitter.com'].includes(url.hostname.toLowerCase()) ? url : null;
-      } catch {
+  identity: Identity,
+  target?: ImageTarget
+): Promise<{
+  actionAriaLabel: string | null;
+  actionIndex: number;
+  actionPath: string;
+  duplicateActionCount: number;
+} | null> {
+  return image.evaluate(
+    (element, { identity: { handle, statusId }, target }) => {
+      const article = element.closest('article');
+      if (!(element instanceof HTMLImageElement) || !article) {
         return null;
       }
-    };
-    const rectangle = element.getBoundingClientRect();
-    if (
-      rectangle.bottom <= 0 ||
-      rectangle.top >= innerHeight ||
-      rectangle.right <= 0 ||
-      rectangle.left >= innerWidth
-    ) {
-      return null;
-    }
-    const x = Math.max(0, Math.min(innerWidth - 1, rectangle.left + rectangle.width / 2));
-    const y = Math.max(0, Math.min(innerHeight - 1, rectangle.top + rectangle.height / 2));
-    const hitAnchors = [
-      ...new Set(
-        document
-          .elementsFromPoint(x, y)
-          .map((candidate) => candidate.closest<HTMLAnchorElement>('a[href]'))
-          .filter((candidate): candidate is HTMLAnchorElement => candidate !== null)
-      ),
-    ];
-    const action = hitAnchors.find((anchor) => {
-      const url = parseLink(anchor);
-      return anchor.closest('article') === article && url && mediaPath.test(url.pathname);
-    });
-    if (!action) {
-      return null;
-    }
-    const actionUrl = parseLink(action);
-    if (!actionUrl) {
-      return null;
-    }
-    const duplicateActionCount = anchors.filter((anchor) => {
-      const url = parseLink(anchor);
-      return anchor.closest('article') === article && url?.pathname === actionUrl.pathname;
-    }).length;
-    return {
-      actionAriaLabel: action.getAttribute('aria-label'),
-      actionIndex: anchors.indexOf(action),
-      actionPath: actionUrl.pathname,
-      duplicateActionCount,
-    };
-  }, identity);
+      const mediaPath = new RegExp(`^/${handle}/status/${statusId}/photo/\\d+$`, 'iu');
+      const anchors = [...article.querySelectorAll<HTMLAnchorElement>('a[href]')];
+      const parseLink = (anchor: HTMLAnchorElement) => {
+        try {
+          const url = new URL(anchor.href, location.href);
+          return ['x.com', 'twitter.com'].includes(url.hostname.toLowerCase()) ? url : null;
+        } catch {
+          return null;
+        }
+      };
+      const rectangle = element.getBoundingClientRect();
+      if (
+        rectangle.bottom <= 0 ||
+        rectangle.top >= innerHeight ||
+        rectangle.right <= 0 ||
+        rectangle.left >= innerWidth
+      ) {
+        return null;
+      }
+      const x = Math.max(0, Math.min(innerWidth - 1, rectangle.left + rectangle.width / 2));
+      const y = Math.max(0, Math.min(innerHeight - 1, rectangle.top + rectangle.height / 2));
+      if (target?.quoteBoundary === 'compact-two-level') {
+        if (
+          !target.ownerHandle ||
+          !target.ownerStatusId ||
+          !target.directQuoteId ||
+          !element.complete ||
+          element.naturalWidth <= 0
+        ) {
+          return null;
+        }
+        try {
+          const source = new URL(element.currentSrc || element.src);
+          if (
+            source.hostname !== target.imageSource.host ||
+            source.pathname !== target.imageSource.path
+          ) {
+            return null;
+          }
+        } catch {
+          return null;
+        }
+        const outerArticle = document.querySelectorAll('article')[target.articleIndex];
+        const compact = element.closest('[role="link"]');
+        const ownerPath = `/${target.ownerHandle}/status/${target.ownerStatusId}`;
+        const compactOwnerPath = (anchor: HTMLAnchorElement) =>
+          /^(\/[A-Za-z0-9_]{1,15}\/status\/[1-9]\d*)(?:\/photo\/[1-9]\d*)?$/u.exec(
+            parseLink(anchor)?.pathname ?? ''
+          )?.[1] ?? null;
+        const imageLink = element.closest<HTMLAnchorElement>('a[href]');
+        const hit = document.elementFromPoint(x, y);
+        const hitLink = hit?.closest<HTMLAnchorElement>('a[href]');
+        const imagePath = imageLink ? parseLink(imageLink)?.pathname : null;
+        const actionPath = hitLink ? parseLink(hitLink)?.pathname : null;
+        if (
+          !outerArticle?.contains(article) ||
+          !compact ||
+          compact.closest('article') !== article ||
+          !imageLink ||
+          !hitLink ||
+          imageLink === hitLink ||
+          compactOwnerPath(imageLink) !== ownerPath ||
+          actionPath !== imagePath ||
+          !actionPath ||
+          [...compact.querySelectorAll<HTMLAnchorElement>('a[href]')].some(
+            (anchor) => compactOwnerPath(anchor) !== ownerPath
+          )
+        ) {
+          return null;
+        }
+        const directQuoteIds = new Set(
+          [...article.querySelectorAll<HTMLAnchorElement>('a[href]')]
+            .filter((anchor) => anchor.closest('article') === article && !compact.contains(anchor))
+            .map(
+              (anchor) =>
+                /^\/[A-Za-z0-9_]{1,15}\/status\/([1-9]\d*)$/u.exec(
+                  parseLink(anchor)?.pathname ?? ''
+                )?.[1]
+            )
+            .filter((id): id is string => !!id)
+        );
+        if (directQuoteIds.size !== 1 || !directQuoteIds.has(target.directQuoteId)) {
+          return null;
+        }
+        let region = element.parentElement;
+        for (let hops = 0; region && !region.contains(hit) && hops < 4; hops += 1) {
+          region = region.parentElement;
+        }
+        if (!region || !region.contains(hit) || !compact.contains(region) || region === compact) {
+          return null;
+        }
+        const mediaImages = [...region.querySelectorAll<HTMLImageElement>('img')].filter(
+          (candidate) => {
+            try {
+              const url = new URL(candidate.currentSrc || candidate.src);
+              return (
+                url.protocol === 'https:' &&
+                url.hostname === 'pbs.twimg.com' &&
+                url.pathname.startsWith('/media/')
+              );
+            } catch {
+              return false;
+            }
+          }
+        );
+        const regionLinks = [...region.querySelectorAll<HTMLAnchorElement>('a[href]')];
+        if (
+          mediaImages.length !== 1 ||
+          mediaImages[0] !== element ||
+          regionLinks.length !== 2 ||
+          regionLinks.some((anchor) => parseLink(anchor)?.pathname !== actionPath)
+        ) {
+          return null;
+        }
+        const outerAnchors = [...outerArticle.querySelectorAll<HTMLAnchorElement>('a[href]')];
+        const actionIndex = outerAnchors.indexOf(hitLink);
+        if (actionIndex < 0) {
+          return null;
+        }
+        return {
+          actionAriaLabel: hitLink.getAttribute('aria-label'),
+          actionIndex,
+          actionPath,
+          duplicateActionCount: regionLinks.length,
+        };
+      }
+      const hitAnchors = [
+        ...new Set(
+          document
+            .elementsFromPoint(x, y)
+            .map((candidate) => candidate.closest<HTMLAnchorElement>('a[href]'))
+            .filter((candidate): candidate is HTMLAnchorElement => candidate !== null)
+        ),
+      ];
+      const action = hitAnchors.find((anchor) => {
+        const url = parseLink(anchor);
+        return anchor.closest('article') === article && url && mediaPath.test(url.pathname);
+      });
+      if (!action) {
+        return null;
+      }
+      const actionUrl = parseLink(action);
+      if (!actionUrl) {
+        return null;
+      }
+      const duplicateActionCount = anchors.filter((anchor) => {
+        const url = parseLink(anchor);
+        return anchor.closest('article') === article && url?.pathname === actionUrl.pathname;
+      }).length;
+      return {
+        actionAriaLabel: action.getAttribute('aria-label'),
+        actionIndex: anchors.indexOf(action),
+        actionPath: actionUrl.pathname,
+        duplicateActionCount,
+      };
+    },
+    { identity, target }
+  );
 }
 
 export function inspectSelectedGalleryDocument({
   expectedIndex,
   expectedPath,
+  allowPhotoFormatVariant = false,
 }: {
-  expectedIndex: number;
+  expectedIndex: number | null;
   expectedPath: string;
+  allowPhotoFormatVariant?: boolean;
 }) {
   const galleries = document.querySelectorAll('[data-xeg-gallery-container]');
   const gallery = galleries.length === 1 ? galleries[0] : null;
   const toolbar = gallery?.querySelector('[data-gallery-element="toolbar"]');
   const position = toolbar?.querySelector('#xeg-toolbar-counter[data-gallery-element="position"]');
   const items = [...(gallery?.querySelectorAll('[data-gallery-element="item"]') ?? [])];
+  const resolvedIndex = expectedIndex ?? Number(position?.getAttribute('data-position'));
   const selectedItems = items.filter(
-    (candidate) => candidate.getAttribute('data-index') === String(expectedIndex - 1)
+    (candidate) => candidate.getAttribute('data-index') === String(resolvedIndex - 1)
   );
   const item = selectedItems.length === 1 ? selectedItems[0] : null;
   if (
@@ -1321,16 +1599,16 @@ export function inspectSelectedGalleryDocument({
 
   const total = Number(position.getAttribute('data-total'));
   if (
-    !Number.isSafeInteger(expectedIndex) ||
-    expectedIndex < 1 ||
+    !Number.isSafeInteger(resolvedIndex) ||
+    resolvedIndex < 1 ||
     !Number.isSafeInteger(total) ||
     total !== items.length ||
-    expectedIndex > total ||
-    position.getAttribute('data-position') !== String(expectedIndex) ||
-    position.getAttribute('data-current-index') !== String(expectedIndex - 1) ||
-    position.getAttribute('data-focused-index') !== String(expectedIndex - 1) ||
-    toolbar.getAttribute('data-current-index') !== String(expectedIndex - 1) ||
-    toolbar.getAttribute('data-focused-index') !== String(expectedIndex - 1)
+    resolvedIndex > total ||
+    position.getAttribute('data-position') !== String(resolvedIndex) ||
+    position.getAttribute('data-current-index') !== String(resolvedIndex - 1) ||
+    position.getAttribute('data-focused-index') !== String(resolvedIndex - 1) ||
+    toolbar.getAttribute('data-current-index') !== String(resolvedIndex - 1) ||
+    toolbar.getAttribute('data-focused-index') !== String(resolvedIndex - 1)
   ) {
     return false;
   }
@@ -1360,7 +1638,21 @@ export function inspectSelectedGalleryDocument({
       }
       try {
         const url = new URL(candidate.currentSrc || candidate.src);
-        return url.hostname === 'pbs.twimg.com' && url.pathname === expectedPath;
+        if (url.hostname !== 'pbs.twimg.com') {
+          return false;
+        }
+        if (url.pathname === expectedPath) {
+          return true;
+        }
+        if (!allowPhotoFormatVariant) {
+          return false;
+        }
+        const stem = (path: string) => path.replace(/\.(?:jpe?g|png|webp|gif)$/iu, '');
+        return (
+          expectedPath.startsWith('/media/') &&
+          url.pathname.startsWith('/media/') &&
+          stem(url.pathname) === stem(expectedPath)
+        );
       } catch {
         return false;
       }
@@ -2488,12 +2780,19 @@ async function observeOne(
     const article = page.locator('article').nth(observation.target.articleIndex);
     const image = article.locator('img').nth(observation.target.imageIndex);
     await image.scrollIntoViewIfNeeded({ timeout: ACTION_TIMEOUT_MS });
-    const actionIdentity = await inspectHitTestedAction(image, identity);
+    const actionIdentity = await inspectHitTestedAction(image, identity, observation.target);
     if (!actionIdentity) {
       throw new Error('No owned top media action was found by hit test');
     }
-    const selectedPhotoIndex = photoIndexFromActionPath(actionIdentity.actionPath);
-    observation.target = { ...observation.target, ...actionIdentity, selectedPhotoIndex };
+    const compactQuote = observation.target.quoteBoundary === 'compact-two-level';
+    const selectedPhotoIndex = compactQuote
+      ? null
+      : photoIndexFromActionPath(actionIdentity.actionPath);
+    observation.target = {
+      ...observation.target,
+      ...actionIdentity,
+      ...(selectedPhotoIndex === null ? {} : { selectedPhotoIndex }),
+    };
     const action = article.locator('a[href]').nth(actionIdentity.actionIndex);
     actionHandle = await action.elementHandle();
     if (!actionHandle) {
@@ -2502,6 +2801,9 @@ async function observeOne(
     await action.focus({ timeout: ACTION_TIMEOUT_MS });
     if ((await hostSnapshot(page)).scrollY === 0) {
       await page.mouse.wheel(0, 160);
+      await page.waitForFunction(() => window.scrollY > 0, null, {
+        timeout: ACTION_TIMEOUT_MS,
+      });
     }
     await action.focus({ timeout: ACTION_TIMEOUT_MS });
     const before = await hostSnapshot(page);
@@ -2514,6 +2816,17 @@ async function observeOne(
       output,
       `live-page-${index}-before.png`
     );
+
+    if (compactQuote) {
+      const refreshedAction = await inspectHitTestedAction(image, identity, observation.target);
+      if (
+        !refreshedAction ||
+        refreshedAction.actionIndex !== actionIdentity.actionIndex ||
+        refreshedAction.actionPath !== actionIdentity.actionPath
+      ) {
+        throw new Error('Compact quote owner or image changed before click');
+      }
+    }
 
     const identityBeforeClick = await actionHandle.evaluate(
       (element, expected) => {
@@ -2550,6 +2863,7 @@ async function observeOne(
         {
           expectedIndex: selectedPhotoIndex,
           expectedPath: observation.target.imageSource.path,
+          allowPhotoFormatVariant: compactQuote,
         },
         {
           timeout: ACTION_TIMEOUT_MS,
@@ -2594,6 +2908,19 @@ async function observeOne(
       `live-page-${index}-after.png`
     );
     await page.waitForTimeout(100);
+    await settleApi();
+    const compactEvidence =
+      compactQuote && observation.target.ownerStatusId
+        ? summarizeCompactImageEvidence(
+            observation.api,
+            observation.target.ownerStatusId,
+            observation.target.imageSource.path,
+            selectedGallery ? selectedGallery.itemIndex : null
+          )
+        : null;
+    if (compactEvidence?.providerRejection) {
+      observation.providerRejection = compactEvidence.providerRejection;
+    }
 
     const finalUrl = new URL(page.url());
     const finalPath = finalUrl.pathname.toLowerCase();
@@ -2609,6 +2936,9 @@ async function observeOne(
         observation.gallery.opened?.role === 'dialog' &&
         observation.gallery.opened.ariaModal === 'true',
       galleryHostImage: observation.gallery.opened?.selectedGallery != null,
+      ...(compactQuote
+        ? { compactProviderOwnership: compactEvidence?.providerConfirmed === true }
+        : {}),
       escapeClosed: detached,
       exactFocusRestored: focusRestored,
       nonzeroScrollPrepared: before.scrollY > 0,
@@ -2623,14 +2953,24 @@ async function observeOne(
     observation.missingAssertions = Object.entries(required)
       .filter(([, passed]) => !passed)
       .map(([name]) => name);
-    if (observation.missingAssertions.length) {
+    const requiredProductAssertions = observation.missingAssertions.filter(
+      (name) => name !== 'compactProviderOwnership'
+    );
+    if (requiredProductAssertions.length) {
       throw new Error(`Missing live assertions: ${observation.missingAssertions.join(', ')}`);
     }
     observation.status = 'core-flow-observed';
     observation.evidenceStatus =
-      observation.hostDiagnostics.length || observation.hostDiagnosticOverflow > 0
+      observation.hostDiagnostics.length ||
+      observation.hostDiagnosticOverflow > 0 ||
+      (compactQuote && !compactEvidence?.providerConfirmed)
         ? 'unverified'
         : 'observed';
+    if (compactQuote && !compactEvidence?.providerConfirmed) {
+      observation.classification = compactEvidence?.providerRejection
+        ? 'provider-rejection-observed-gallery-unverified'
+        : 'compact-quote-provider-ownership-unverified';
+    }
   } catch (error) {
     observation.status = 'failed';
     observation.evidenceStatus = 'unverified';
