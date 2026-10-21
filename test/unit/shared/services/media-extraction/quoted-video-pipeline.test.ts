@@ -1074,14 +1074,16 @@ describe('production quoted-video pipeline', () => {
     const mediaId = '2112518058816552960';
     const livePoster = `https://pbs.twimg.com/amplify_video_thumb/${mediaId}/img/s1WeGFt7GoIVbDHP.jpg`;
     const liveMp4 = `https://video.twimg.com/amplify_video/${mediaId}/vid/avc1/804x720/p5etOR4LqmkyEEXT.mp4`;
-    const quoted = tweet(quoteId, [
-      {
-        ...video(mediaId),
-        media_url_https: livePoster,
-        video_info: { variants: [{ content_type: 'video/mp4', bitrate: 100, url: liveMp4 }] },
-      },
-    ]);
-    quoted.core.user_results.result.legacy.screen_name = 'quote_owner';
+    const quoted: TwitterTweet = {
+      ...tweet(quoteId, [
+        {
+          ...video(mediaId),
+          media_url_https: livePoster,
+          video_info: { variants: [{ content_type: 'video/mp4', bitrate: 100, url: liveMp4 }] },
+        },
+      ]),
+      core: { user_results: { result: { legacy: { screen_name: 'quote_owner' } } } },
+    };
     respond(tweet(outerId, [], quoted));
     const clicked = observedUnmarkedOverlay(livePoster, 18, 24);
     expect(document.querySelector('[data-testid="quoteTweet"]')).toBeNull();
