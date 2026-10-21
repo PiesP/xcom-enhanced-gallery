@@ -4816,6 +4816,55 @@ async function runCompactQuotePhotoCycle({
     assert.equal(hit.tag, 'A');
     return { trigger, before, hit };
   };
+  for (const { selector, method } of [
+    { selector: '#c-story-text', method: 'pointer' },
+    { selector: '#c-story-link', method: 'pointer' },
+    { selector: '#c-story', method: 'padding' },
+    { selector: '#c-story-link', method: 'keyboard' },
+  ]) {
+    await navigate('');
+    const target = page.locator(selector);
+    await target.scrollIntoViewIfNeeded();
+    const point = await target.evaluate((element, kind) => {
+      const photo = document.querySelector('#c-photo');
+      if (!photo) {
+        throw new Error('Compact photo missing');
+      }
+      const rect = element.getBoundingClientRect();
+      const image = photo.getBoundingClientRect();
+      const x = kind === 'padding' ? rect.width - 4 : rect.width / 2;
+      const y = kind === 'padding' ? rect.height - 4 : rect.height / 2;
+      const clientX = rect.left + x;
+      const clientY = rect.top + y;
+      const hit = document.elementFromPoint(clientX, clientY);
+      return {
+        x,
+        y,
+        outsidePhoto:
+          clientX < image.left ||
+          clientX >= image.right ||
+          clientY < image.top ||
+          clientY >= image.bottom,
+        targetHit: hit === element || element.contains(hit),
+      };
+    }, method);
+    assert(point.outsidePhoto && point.targetHit, 'Native compact click must be outside the photo');
+    const nativeApiStart = compactApiResponses.length;
+    if (method === 'keyboard') {
+      await target.focus();
+      await target.press('Enter');
+    } else {
+      await target.click({ position: { x: point.x, y: point.y } });
+    }
+    await page.waitForURL(`https://x.com/inner_fixture/status/${COMPACT_INNER_ID}`);
+    assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0);
+    assert.equal(
+      compactApiResponses.length,
+      nativeApiStart,
+      'Native quote click must not request media'
+    );
+    evidence.steps.push({ name: 'c-native-surrounding', selector, method, url: page.url() });
+  }
   await navigate('');
   const c = await prepare('#c-overlay');
   assert.equal(c.hit.href, `https://x.com/inner_fixture/status/${COMPACT_INNER_ID}`);
@@ -4933,7 +4982,7 @@ async function runCompactQuotePhotoCycle({
   });
 
   const reopened = await prepare('#c-overlay');
-  await reopened.trigger.click();
+  await reopened.trigger.press('Enter');
   const reopenedSelection = await assertQuotedSelection(page, {
     position: 2,
     total: 2,
@@ -4942,6 +4991,7 @@ async function runCompactQuotePhotoCycle({
   });
   evidence.steps.push({
     name: 'c-reopen',
+    method: 'keyboard',
     selection: reopenedSelection,
     after: await compactClose(page, '#c-overlay', reopened.before, 'button'),
   });

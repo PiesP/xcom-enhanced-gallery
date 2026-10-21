@@ -80,6 +80,237 @@ describe('media click detector plain article boundaries', () => {
   });
 });
 
+describe('compact quote photo hit boundary', () => {
+  const compactQuote = `<article><div role="link" id="quote">
+    <div id="photo-row"><div class="preview">
+      <a href="/inner/status/333"><img id="photo" src="https://pbs.twimg.com/media/inner.jpg"></a>
+      <a id="overlay" href="/inner/status/333" aria-label="Open photo"></a>
+    </div></div>
+  </div></article>`;
+
+  beforeEach(() => closeGallery());
+
+  afterEach(() => {
+    clearSettings();
+    document.body.replaceChildren();
+    vi.restoreAllMocks();
+  });
+
+  it('leaves photo-row padding to the native quote click outside its image', () => {
+    const row = renderTarget(compactQuote, '#photo-row');
+    const photo = document.getElementById('photo');
+    expect(photo).toBeInstanceOf(HTMLImageElement);
+    if (!(photo instanceof HTMLImageElement)) {
+      throw new Error('Missing photo');
+    }
+    vi.spyOn(photo, 'getBoundingClientRect').mockReturnValue(new DOMRect(316, 427, 62, 62));
+
+    const onMediaClick = vi.fn(async () => undefined);
+    const nativeClick = vi.fn();
+    const handlers: EventHandlers = { onMediaClick, onGalleryClose: vi.fn() };
+    const options: GalleryEventOptions = {
+      enableKeyboard: true,
+      enableMediaDetection: true,
+      debugMode: false,
+      preventBubbling: true,
+      context: 'compact-quote-photo-row',
+    };
+    const capture = (event: MouseEvent): void => {
+      void handleMediaClick(event, handlers, options);
+    };
+    row.addEventListener('click', nativeClick);
+    document.body.addEventListener('click', capture, true);
+    try {
+      const event = new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        clientX: 440,
+        clientY: 450,
+        detail: 1,
+      });
+      expect(row.dispatchEvent(event)).toBe(true);
+      expect(event.defaultPrevented).toBe(false);
+      expect(onMediaClick).not.toHaveBeenCalled();
+      expect(nativeClick).toHaveBeenCalledOnce();
+    } finally {
+      document.body.removeEventListener('click', capture, true);
+      row.removeEventListener('click', nativeClick);
+    }
+  });
+
+  it('opens the photo and same-bounds overlay, including keyboard activation', () => {
+    const photo = renderTarget(compactQuote, '#photo');
+    const overlay = document.getElementById('overlay');
+    const quote = document.getElementById('quote');
+    expect(photo).toBeInstanceOf(HTMLImageElement);
+    expect(overlay).toBeInstanceOf(HTMLAnchorElement);
+    expect(quote).toBeInstanceOf(HTMLElement);
+    if (!(photo instanceof HTMLImageElement) || !overlay || !quote) {
+      throw new Error('Missing compact quote target');
+    }
+    let bounds = new DOMRect(316, 427, 62, 62);
+    vi.spyOn(photo, 'getBoundingClientRect').mockImplementation(() => bounds);
+    vi.spyOn(overlay, 'getBoundingClientRect').mockReturnValue(new DOMRect(316, 427, 62, 62));
+
+    const onMediaClick = vi.fn(async () => undefined);
+    const handlers: EventHandlers = { onMediaClick, onGalleryClose: vi.fn() };
+    const options: GalleryEventOptions = {
+      enableKeyboard: true,
+      enableMediaDetection: true,
+      debugMode: false,
+      preventBubbling: true,
+      context: 'compact-quote-photo-hit',
+    };
+    const capture = (event: MouseEvent): void => {
+      void handleMediaClick(event, handlers, options);
+    };
+    document.body.addEventListener('click', capture, true);
+    try {
+      let overlayPointer: MouseEvent | null = null;
+      for (const target of [photo, overlay]) {
+        const event = new MouseEvent('click', {
+          bubbles: true,
+          cancelable: true,
+          clientX: 320,
+          clientY: 450,
+          detail: 1,
+        });
+        expect(target.dispatchEvent(event)).toBe(false);
+        expect(onMediaClick).toHaveBeenCalledWith(target, event);
+        if (target === overlay) {
+          overlayPointer = event;
+        }
+      }
+      const keyboardPhoto = new MouseEvent('click', { bubbles: true, cancelable: true });
+      expect(overlay.dispatchEvent(keyboardPhoto)).toBe(false);
+      expect(onMediaClick).toHaveBeenCalledWith(overlay, keyboardPhoto);
+
+      const keyboardQuote = new MouseEvent('click', { bubbles: true, cancelable: true });
+      expect(quote.dispatchEvent(keyboardQuote)).toBe(true);
+      expect(keyboardQuote.defaultPrevented).toBe(false);
+      expect(onMediaClick).toHaveBeenCalledTimes(3);
+
+      bounds = new DOMRect(600, 427, 62, 62);
+      expect(isProcessableMedia(overlay, keyboardPhoto)).toBe(false);
+      if (!overlayPointer) {
+        throw new Error('Missing retained pointer event');
+      }
+      expect(isProcessableMedia(overlay, overlayPointer)).toBe(false);
+    } finally {
+      document.body.removeEventListener('click', capture, true);
+    }
+  });
+
+  it('keeps a textual status link beside a photo native on keyboard activation', () => {
+    const link = renderTarget(
+      `<article><div>
+         <img src="https://pbs.twimg.com/media/inner.jpg" alt="Photo">
+         <a id="story-link" href="/inner/status/333" aria-label="Read inner post">Read the inner post</a>
+       </div></article>`,
+      '#story-link'
+    );
+    const onMediaClick = vi.fn(async () => undefined);
+    const handlers: EventHandlers = { onMediaClick, onGalleryClose: vi.fn() };
+    const options: GalleryEventOptions = {
+      enableKeyboard: true,
+      enableMediaDetection: true,
+      debugMode: false,
+      preventBubbling: true,
+      context: 'compact-quote-story-link',
+    };
+    const capture = (event: MouseEvent): void => {
+      void handleMediaClick(event, handlers, options);
+    };
+    document.body.addEventListener('click', capture, true);
+    try {
+      const event = new MouseEvent('click', { bubbles: true, cancelable: true });
+      expect(link.dispatchEvent(event)).toBe(true);
+      expect(event.defaultPrevented).toBe(false);
+      expect(onMediaClick).not.toHaveBeenCalled();
+    } finally {
+      document.body.removeEventListener('click', capture, true);
+    }
+  });
+
+  it('keeps a wider quote overlay native when it does not match the photo bounds', () => {
+    const overlay = renderTarget(compactQuote, '#overlay');
+    const photo = document.getElementById('photo');
+    if (!(photo instanceof HTMLImageElement)) {
+      throw new Error('Missing photo');
+    }
+    vi.spyOn(photo, 'getBoundingClientRect').mockReturnValue(new DOMRect(316, 427, 62, 62));
+    vi.spyOn(overlay, 'getBoundingClientRect').mockReturnValue(new DOMRect(300, 420, 320, 80));
+    expect(isProcessableMedia(overlay)).toBe(false);
+  });
+
+  it('keeps story text inside a mixed image link native on keyboard activation', () => {
+    const text = renderTarget(
+      `<article><a href="/inner/status/333">
+         <img src="https://pbs.twimg.com/media/inner.jpg" alt="Photo">
+         <span id="story-text">Read the inner post</span>
+       </a></article>`,
+      '#story-text'
+    );
+    expect(isProcessableMedia(text)).toBe(false);
+  });
+
+  it('routes an SVG control inside an explicit photo link beyond its image bounds', () => {
+    const link = renderTarget(
+      `<article><div data-testid="tweetPhoto">
+         <a id="photo-link" href="/inner/status/333/photo/1">
+           <img id="photo" src="https://pbs.twimg.com/media/inner.jpg" alt="Photo">
+           <svg width="24" height="24"><path id="photo-path" d="M0 0h24v24H0z"></path></svg>
+         </a>
+       </div></article>`,
+      '#photo-link'
+    );
+    const photo = document.getElementById('photo');
+    const path = document.getElementById('photo-path');
+    if (!(photo instanceof HTMLImageElement) || !(path instanceof SVGElement)) {
+      throw new Error('Missing photo action');
+    }
+    vi.spyOn(photo, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 24, 24));
+
+    const onMediaClick = vi.fn(async () => undefined);
+    const handlers: EventHandlers = { onMediaClick, onGalleryClose: vi.fn() };
+    const options: GalleryEventOptions = {
+      enableKeyboard: true,
+      enableMediaDetection: true,
+      debugMode: false,
+      preventBubbling: true,
+      context: 'explicit-photo-svg-control',
+    };
+    const capture = (event: MouseEvent): void => {
+      void handleMediaClick(event, handlers, options);
+    };
+    document.body.addEventListener('click', capture, true);
+    try {
+      const photoClick = new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        clientX: 36,
+        clientY: 12,
+        detail: 1,
+      });
+      expect(path.dispatchEvent(photoClick)).toBe(false);
+      expect(onMediaClick).toHaveBeenCalledExactlyOnceWith(link, photoClick);
+
+      link.setAttribute('href', '/inner/status/333');
+      const statusClick = new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        clientX: 36,
+        clientY: 12,
+        detail: 1,
+      });
+      expect(path.dispatchEvent(statusClick)).toBe(true);
+      expect(onMediaClick).toHaveBeenCalledTimes(1);
+    } finally {
+      document.body.removeEventListener('click', capture, true);
+    }
+  });
+});
+
 const thumb = 'https://pbs.twimg.com/amplify_video_thumb/2105931566874804224/img/2YzarPB8wETCDgJo';
 
 function setVideoMode(mode: VideoClickMode): void {
