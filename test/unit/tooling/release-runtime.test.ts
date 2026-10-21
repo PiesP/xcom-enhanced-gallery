@@ -65,6 +65,28 @@ describe('release runtime selection', () => {
     expect(workflow.split(trustedRuntime)).toHaveLength(5);
   });
 
+  it('selects the protected manifest runtime before publication HTTPS requests', () => {
+    const workflow = readFileSync(
+      resolve(import.meta.dirname, '../../../.github/workflows/release.yaml'),
+      'utf8'
+    );
+    const publish = workflow.slice(workflow.indexOf('\n  publish:'));
+    const checkout = publish.indexOf('ref: ${{ github.sha }}');
+    const runtime = publish.indexOf('name: 📦 Setup trusted publication runtime');
+    const verify = publish.indexOf('run: node scripts/release/verify-publication.ts');
+    expect(checkout).toBeGreaterThan(-1);
+    expect(runtime).toBeGreaterThan(checkout);
+    expect(verify).toBeGreaterThan(runtime);
+    const setup = publish.slice(runtime, publish.indexOf('\n      - name:', runtime + 1));
+    expect(setup).toMatch(
+      /uses: PiesP\/browser-core\/automation\/actions\/setup-project@[a-f0-9]{40}/u
+    );
+    expect(setup).toContain("install-dependencies: 'false'");
+    expect(setup).not.toContain('node-version:');
+    expect(publish).toContain('contents: write');
+    expect(publish).not.toContain('checkout --detach');
+  });
+
   it.each([undefined, 26, '26', 'latest', '26.9.0\nextra=value'])(
     'rejects missing, moving or malformed release pins: %s',
     (pin) => expect(() => resolveRuntime(pin)).toThrow()
