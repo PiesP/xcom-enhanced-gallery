@@ -11,6 +11,9 @@
         color: #eee;
         font: 16px sans-serif;
       }
+      #host-layout-spacer {
+        height: 1200px;
+      }
       article {
         box-sizing: border-box;
         max-width: 640px;
@@ -40,9 +43,24 @@
         inset: 0;
         z-index: 1;
       }
+      #b-media-slot {
+        position: relative;
+        width: 62px;
+        height: 62px;
+      }
+      #b-media-slot img {
+        width: 62px;
+        height: 62px;
+      }
+      #b-overlay {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+      }
     </style>
   </head>
   <body>
+    <div id="host-layout-spacer" aria-hidden="true"></div>
     <main>
       <article id="compact-a" data-testid="tweet">
         <div class="quote" role="link" id="compact-b">

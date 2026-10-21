@@ -275,6 +275,18 @@ export function createExtensionNativeFixtureHandler() {
         allowed.set(`video.twimg.com${path}`, { bytes, host: 'video.twimg.com', path });
       }
     },
+    setCompactImage(bytes: Buffer) {
+      assert(allowed.size > 0, 'Install native fixture payloads first');
+      assert(Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= MAX_BODY_BYTES);
+      const key = 'pbs.twimg.com/media/CompactQuoteSelected?format=webp&name=orig';
+      assert(!allowed.has(key), 'Compact original already installed');
+      allowed.set(key, {
+        bytes,
+        host: 'pbs.twimg.com',
+        path: '/media/CompactQuoteSelected',
+        contentType: 'image/webp',
+      });
+    },
     setRecoveryPayloads({
       tweetId,
       validMp4,

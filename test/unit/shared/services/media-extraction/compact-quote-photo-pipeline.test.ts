@@ -50,7 +50,9 @@ function response(value: TwitterTweet) {
 }
 function requestedId(): string {
   const request = httpGet.mock.calls[0]?.[0];
-  if (typeof request !== 'string') throw new Error('Expected an API request');
+  if (typeof request !== 'string') {
+    throw new Error('Expected an API request');
+  }
   const url = new URL(request);
   return (JSON.parse(url.searchParams.get('variables') ?? '{}') as { tweetId: string }).tweetId;
 }
@@ -219,7 +221,7 @@ describe('compact inner quote photo, preserving observed overlay ownership', () 
 
   it('rejects conflicting overlay ownership and leaves a separate external link native', async () => {
     const overlay = element<HTMLAnchorElement>('#c-overlay');
-    overlay.href = `/other_fixture/status/6555555555555555555`;
+    overlay.href = '/other_fixture/status/6555555555555555555';
     httpGet.mockResolvedValue(response(tweet(C, [photo('102', selectedPreview)])));
     const result = await new MediaExtractionService().extractFromClickedElement(overlay);
     expect(result.success).toBe(false);

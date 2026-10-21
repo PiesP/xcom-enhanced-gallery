@@ -8,6 +8,15 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Quoted photo ownership** — Keep separate owners and the clicked position when quoted posts reuse the same photo source. Preserve each owner's attribution and download filename.
+- **Quoted photo recovery** — Use only verified owner text when recovering a compact quote photo from the page after an API failure, so the enclosing post's caption is not borrowed.
+
+### Changed
+
+- **Installed acceptance** — Exercise compact nested quote photos, same-source owners, exact single and ZIP bytes, native post links, and close/reopen restoration. Observe the actual inner compact photo on public pages and keep API-denied recovery unverified.
+
 ## [2.3.8] - 2026-10-21
 
 ### Fixed

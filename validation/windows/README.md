@@ -167,6 +167,18 @@ and CRC. Screenshots, source URLs, request observations, timings and hashes rema
 in normal and partial failure receipts. Shared HTML and userscript routes retain
 their existing allowlisted paths. This is fixture evidence, not live-CDN proof.
 
+`installed-compact-quote-photo-page.html` preserves the observed nested B article,
+inner C quote region, avatar/header branches and small photo with a same-C status
+link over it. Its IDs, captions and media bytes are synthetic. A normal hit-tested
+click requests C, selects its second API photo and checks its caption and origin.
+Another controlled branch gives B and C the same photo source: B must remain the
+second item with B's caption and origin. Native single downloads and both ZIPs
+are read independently for exact bytes, owner filenames and entry order. A fresh
+document forces C's API request to return 403 and checks recovery of only the
+visible C photo without B's caption. The cycle also checks native B/C header
+navigation, gallery navigation, close/reopen and host-state restoration. Its
+bounded requests and partial failure observations remain separate from live X.
+
 The same installed profile invokes `media-api-reuse-profile.ts` to compare
 physical API requests across successive clicks, navigation, reload and a fresh
 page. It checks independent selected-photo identity, uncached provider failures,
@@ -606,6 +618,14 @@ Escape close, focus, scroll, and body-style restoration. The video observer
 records the focused host element at the trusted gallery activation click,
 after native pointer focus changes, and checks that exact element after Escape.
 It also requires a meaningful prepared focus target before the click.
+
+The image observer also recognizes a bounded compact C quote inside the direct
+B article. It requires a unique trusted photo and overlapping same-C status
+action, rechecks the B/C boundaries before an ordinary click, and compares the
+selected source and index with C's observed successful API response. An API 403
+keeps the observation unverified even if the visible photo opens through DOM
+recovery. This path does not authorize recursive quote traversal or turn a
+neighboring news card into an owned attachment.
 
 When a native player covers every point with controls, the observer first
 makes a bounded ordinary Play click and records host-video readiness and
