@@ -43,6 +43,12 @@ pnpm after restoring the recorded `packages/core` gitlink. The dependency-free
 product runtime code; automation helpers are consumer-owned or separately pinned.
 The table gives each command family, execution stage, side effects, and checks.
 
+Workflows run the [pinned browser-core Node trust bootstrap](https://github.com/PiesP/browser-core/blob/381b4ca733494cf069212cd0d16458389a83c623/automation/README.md#consumer-contract)
+as their first step before checkout or other JavaScript Actions. It qualifies the
+Ubuntu 24.04 runner and pinned Semgrep Alpine 3.23 container OS CA stores for
+runner-owned Node; unsupported OS versions fail before later steps. Runner setup
+before job steps and tools with separate TLS stores have separate trust boundaries.
+
 ### Package commands
 
 | Public command or family | Purpose; owner and execution stage | Inputs, outputs, side effects; verification |

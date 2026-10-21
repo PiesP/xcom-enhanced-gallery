@@ -32,6 +32,9 @@ permissions:
   pull-requests: read
 
 env:
+  NODE_OPTIONS: --use-openssl-ca
+  SSL_CERT_FILE: /etc/ssl/certs/ca-certificates.crt
+  SSL_CERT_DIR: /etc/ssl/certs
   CORE_REPOSITORY: PiesP/browser-core
 
 concurrency:
@@ -49,6 +52,10 @@ jobs:
       head: ${{ steps.prepare.outputs.head }}
       impact: ${{ steps.impact.outputs.impact }}
     steps:
+      - name: 🔐 Prepare Node trust
+        uses: PiesP/browser-core/automation/actions/prepare-node-trust@381b4ca733494cf069212cd0d16458389a83c623
+        id: node_trust
+
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -103,6 +110,10 @@ jobs:
       contents: write
       pull-requests: write
     steps:
+      - name: 🔐 Prepare Node trust
+        uses: PiesP/browser-core/automation/actions/prepare-node-trust@381b4ca733494cf069212cd0d16458389a83c623
+        id: node_trust
+
       - name: Checkout trusted current source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
