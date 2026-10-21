@@ -9,7 +9,7 @@ const workflow = readFileSync(
   'utf8'
 );
 const providerPin = '9a9471ad301e439bcd1ebc52334cf6b4399510e7';
-const runtimePin = '279124fa998847bd0184d2de12bdaadcd6d2f969';
+const runtimePin = 'af19a6597c351f03a65e49532bdec6276e4b5ae9';
 const active = "${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}";
 const inactive = "${{ needs.changes.result == 'success' && needs.changes.outputs.osv == 'false' }}";
 const upload =
