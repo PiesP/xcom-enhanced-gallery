@@ -5,7 +5,14 @@ import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { BrowserContext, ConsoleMessage, Page, Request, Route } from '@playwright/test';
+import type {
+  BrowserContext,
+  CDPSession,
+  ConsoleMessage,
+  Page,
+  Request,
+  Route,
+} from '@playwright/test';
 
 type Variant =
   | 'healthy'
@@ -56,6 +63,8 @@ type MediaEvidence = {
     expected: boolean;
     pageIndex: number;
     apiLocation: boolean;
+    location: ReturnType<ConsoleMessage['location']>;
+    observedAtMonotonicMs: number;
   }[];
   cleanup: Cleanup;
   responseAccounting?: AccountingEvidence;
@@ -67,7 +76,13 @@ type MediaEvidence = {
     destination: string;
     requests: number;
   }[];
-  redirectFailedRequests?: { pageIndex: number; error: string; failedAtMonotonicMs: number }[];
+  redirectFailedRequests?: {
+    pageIndex: number;
+    url: string;
+    error: string;
+    failedAtMonotonicMs: number;
+  }[];
+  redirectProtocol?: RedirectProtocolEvidence[];
   reuseElapsedMs?: number;
   retryAfterSeconds?: number;
   untested?: string[];
@@ -129,6 +144,23 @@ type AccountingState = {
   videoRequests: { url: string; atMonotonicMs: number }[];
 };
 
+type RedirectProtocolEvidence = {
+  pageIndex: number;
+  variant: RedirectVariant;
+  requests: { requestId: string; url: string; requestedAtMonotonicMs: number }[];
+  hops: { requestId: string; url: string }[];
+  failures: { requestId: string; error: string; failedAtMonotonicMs: number }[];
+  logs: {
+    requestId: string | undefined;
+    source: string;
+    level: string;
+    text: string;
+    url: string | undefined;
+    observedAtMonotonicMs: number;
+  }[];
+  overflow: boolean;
+};
+
 const API_ROUTE = '**/TweetResultByRestId*';
 const REDIRECT_RECEIVER = 'https://pbs.twimg.com/media/xeg-metadata-redirect.json';
 const REDIRECT_CASES = {
@@ -179,6 +211,81 @@ function targetRequestUrl(value: string, tweetId: string) {
   } catch {
     return false;
   }
+}
+
+/** @testOnly Validate transport-error attribution without trusting a same-page console string. */
+export function assertRedirectProtocolAttribution({
+  protocol,
+  consoleErrors,
+  failedRequests,
+  tweetId,
+}: {
+  protocol: RedirectProtocolEvidence;
+  consoleErrors: MediaEvidence['consoleErrors'];
+  failedRequests: NonNullable<MediaEvidence['redirectFailedRequests']>;
+  tweetId: string;
+}) {
+  assert.equal(protocol.overflow, false, 'Redirect protocol observations overflowed');
+  assert.equal(protocol.requests.length, 2, 'Redirect page must make two owned API requests');
+  assert.deepEqual(protocol.hops, [], 'Redirected API request made an unexpected network hop');
+  const ids = protocol.requests.map(({ requestId, url }) => {
+    assert.equal(targetRequestUrl(url, tweetId), true, 'CDP request must be the owned API URL');
+    return requestId;
+  });
+  assert.equal(new Set(ids).size, 2, 'Redirect CDP request IDs must be distinct');
+  assert.equal(protocol.failures.length, 2, 'Both owned CDP requests must fail');
+  assert.deepEqual(
+    protocol.failures.map(({ requestId }) => requestId).sort(),
+    [...ids].sort(),
+    'CDP failures must match the exact owned API request IDs'
+  );
+  for (const failure of protocol.failures) {
+    const request = protocol.requests.find(({ requestId }) => requestId === failure.requestId);
+    assert(request);
+    assert.match(failure.error, /^net::ERR_(?:FAILED|UNSAFE_REDIRECT)$/u);
+    assert(
+      failure.failedAtMonotonicMs >= request.requestedAtMonotonicMs &&
+        failure.failedAtMonotonicMs - request.requestedAtMonotonicMs < 15_000,
+      'CDP request failure fell outside its bounded request window'
+    );
+  }
+  assert.equal(protocol.logs.length, 2, 'Both owned CDP failures must have network logs');
+  assert.deepEqual(
+    protocol.logs.map(({ requestId }) => requestId).sort(),
+    [...ids].sort(),
+    'Network logs must identify the exact failed API request IDs'
+  );
+  for (const log of protocol.logs) {
+    assert.equal(log.source, 'network');
+    assert.equal(log.level, 'error');
+    assert.match(log.text, /^Failed to load resource: net::ERR_(?:FAILED|UNSAFE_REDIRECT)$/u);
+    const failure = protocol.failures.find(({ requestId }) => requestId === log.requestId);
+    assert(failure);
+    assert.equal(log.text.slice('Failed to load resource: '.length), failure.error);
+  }
+  const pageFailures = failedRequests.filter(({ pageIndex }) => pageIndex === protocol.pageIndex);
+  assert.equal(pageFailures.length, 2, 'Both owned Playwright requests must fail');
+  assert(pageFailures.every(({ url }) => targetRequestUrl(url, tweetId)));
+  assert.deepEqual(
+    pageFailures.map(({ error }) => error).sort(),
+    protocol.failures.map(({ error }) => error).sort(),
+    'Playwright and CDP failures must agree on this page'
+  );
+  const pageConsole = consoleErrors.filter(({ pageIndex }) => pageIndex === protocol.pageIndex);
+  assert.equal(pageConsole.length, 2, 'Both owned failures must have public console records');
+  assert(pageConsole.every(({ variant }) => variant === protocol.variant));
+  const unmatchedLogs = [...protocol.logs];
+  for (const observed of pageConsole) {
+    const index = unmatchedLogs.findIndex(
+      (log) =>
+        log.text === observed.text &&
+        Math.abs(log.observedAtMonotonicMs - observed.observedAtMonotonicMs) < 5_000
+    );
+    assert(index >= 0, 'Public console error must match one owned CDP network log');
+    unmatchedLogs.splice(index, 1);
+  }
+  assert.equal(unmatchedLogs.length, 0);
+  return pageConsole;
 }
 
 function targetRequest(route: Route, tweetId: string) {
@@ -323,6 +430,8 @@ export async function runInstalledMediaApiReuseProfile({
     onPageError: (error: Error) => void;
     onConsole: (message: ConsoleMessage) => void;
     onRequestFailed: (request: Request) => void;
+    protocol?: CDPSession;
+    removeProtocolHandlers?: () => void;
   }[] = [];
   const pageErrors: string[] = [];
   const consoleErrors: MediaEvidence['consoleErrors'] = [];
@@ -335,6 +444,7 @@ export async function runInstalledMediaApiReuseProfile({
     REDIRECT_RECEIVERS.map((url) => [url, 0])
   );
   const redirectFailedRequests: NonNullable<MediaEvidence['redirectFailedRequests']> = [];
+  const redirectProtocol: RedirectProtocolEvidence[] = [];
   const redirectReceiver = async (route: Route) => {
     redirectReceiverRequests += 1;
     const destination = route.request().url();
@@ -433,7 +543,7 @@ export async function runInstalledMediaApiReuseProfile({
     }
     record.fulfilledAtMonotonicMs = performance.now();
   };
-  const observePage = (observed: Page) => {
+  const observePage = async (observed: Page) => {
     const observedVariant = variant;
     const pageIndex = observedPages.length;
     const onPageError = (error: Error) => {
@@ -469,7 +579,15 @@ export async function runInstalledMediaApiReuseProfile({
           (request) => request.variant === observedVariant && request.status === Number(status)
         );
       if (consoleErrors.length < MAX_OBSERVATIONS) {
-        consoleErrors.push({ variant: observedVariant, text, expected, pageIndex, apiLocation });
+        consoleErrors.push({
+          variant: observedVariant,
+          text,
+          expected,
+          pageIndex,
+          apiLocation,
+          location: message.location(),
+          observedAtMonotonicMs: performance.now(),
+        });
       } else {
         errorOverflow = true;
       }
@@ -484,6 +602,7 @@ export async function runInstalledMediaApiReuseProfile({
       if (redirectFailedRequests.length < MAX_REDIRECT_REQUESTS) {
         redirectFailedRequests.push({
           pageIndex,
+          url: request.url(),
           error: request.failure()?.errorText ?? 'missing-failure',
           failedAtMonotonicMs: performance.now(),
         });
@@ -494,13 +613,116 @@ export async function runInstalledMediaApiReuseProfile({
     observed.on('pageerror', onPageError);
     observed.on('console', onConsole);
     observed.on('requestfailed', onRequestFailed);
-    observedPages.push({ page: observed, onPageError, onConsole, onRequestFailed });
+    const observer: (typeof observedPages)[number] = {
+      page: observed,
+      onPageError,
+      onConsole,
+      onRequestFailed,
+    };
+    observedPages.push(observer);
+    if (!isRedirectVariant(observedVariant)) {
+      return;
+    }
+    const protocol = await context.newCDPSession(observed);
+    observer.protocol = protocol;
+    const record: RedirectProtocolEvidence = {
+      pageIndex,
+      variant: observedVariant,
+      requests: [],
+      hops: [],
+      failures: [],
+      logs: [],
+      overflow: false,
+    };
+    redirectProtocol.push(record);
+    const knownIds = new Set<string>();
+    const onRequestWillBeSent = (event: {
+      requestId: string;
+      request: { url: string };
+      redirectResponse?: object;
+    }) => {
+      if (
+        knownIds.has(event.requestId) ||
+        REDIRECT_RECEIVERS.some((receiver) => receiver === event.request.url)
+      ) {
+        if (record.hops.length < MAX_OBSERVATIONS) {
+          record.hops.push({ requestId: event.requestId, url: event.request.url });
+        } else {
+          record.overflow = true;
+        }
+      } else if (targetRequestUrl(event.request.url, qualityTweetId)) {
+        if (record.requests.length < MAX_OBSERVATIONS) {
+          knownIds.add(event.requestId);
+          record.requests.push({
+            requestId: event.requestId,
+            url: event.request.url,
+            requestedAtMonotonicMs: performance.now(),
+          });
+          if (event.redirectResponse) {
+            record.hops.push({ requestId: event.requestId, url: event.request.url });
+          }
+        } else {
+          record.overflow = true;
+        }
+      }
+    };
+    const onLoadingFailed = (event: { requestId: string; errorText: string }) => {
+      if (!knownIds.has(event.requestId)) {
+        return;
+      }
+      if (record.failures.length < MAX_OBSERVATIONS) {
+        record.failures.push({
+          requestId: event.requestId,
+          error: event.errorText,
+          failedAtMonotonicMs: performance.now(),
+        });
+      } else {
+        record.overflow = true;
+      }
+    };
+    const onLogEntryAdded = (event: {
+      entry: {
+        networkRequestId?: string;
+        source: string;
+        level: string;
+        text: string;
+        url?: string;
+      };
+    }) => {
+      const { entry } = event;
+      if (entry.source !== 'network' || entry.level !== 'error') {
+        return;
+      }
+      if (record.logs.length < MAX_OBSERVATIONS) {
+        record.logs.push({
+          requestId: entry.networkRequestId,
+          source: entry.source,
+          level: entry.level,
+          text: entry.text.slice(0, 500),
+          url: entry.url,
+          observedAtMonotonicMs: performance.now(),
+        });
+      } else {
+        record.overflow = true;
+      }
+    };
+    protocol.on('Network.requestWillBeSent', onRequestWillBeSent);
+    protocol.on('Network.loadingFailed', onLoadingFailed);
+    protocol.on('Log.entryAdded', onLogEntryAdded);
+    observer.removeProtocolHandlers = () => {
+      protocol.off('Network.requestWillBeSent', onRequestWillBeSent);
+      protocol.off('Network.loadingFailed', onLoadingFailed);
+      protocol.off('Log.entryAdded', onLogEntryAdded);
+    };
+    await protocol.send('Network.enable');
+    await protocol.send('Log.clear');
+    await protocol.send('Log.enable');
   };
   const count = (name: Variant) => requests.filter((request) => request.variant === name).length;
   const newFixturePage = async (url = qualityFixtureUrl) => {
     const owned = await context.newPage();
     ownedPages.push(owned);
-    observePage(owned);
+    await observePage(owned);
     activePage = owned;
     await readyPage(owned, url);
     return owned;
@@ -512,18 +734,21 @@ export async function runInstalledMediaApiReuseProfile({
     requests,
     pageErrors,
     consoleErrors,
+    redirectFailedRequests,
+    redirectProtocol,
+    redirectReceiverRequestsByDestination,
     cleanup: { routesRemoved: false, pagesClosed: false, pageRestored: false },
   };
   let primaryError: unknown;
   let caughtPrimaryError = false;
   const cleanupErrors: unknown[] = [];
 
-  observePage(page);
-  await context.route(API_ROUTE, routeHandler);
-  for (const receiver of REDIRECT_RECEIVERS) {
-    await context.route(receiver, redirectReceiver);
-  }
   try {
+    await observePage(page);
+    await context.route(API_ROUTE, routeHandler);
+    for (const receiver of REDIRECT_RECEIVERS) {
+      await context.route(receiver, redirectReceiver);
+    }
     await readyPage(page, qualityFixtureUrl);
     const reuseStarted = performance.now();
     for (const index of [1, 2]) {
@@ -678,19 +903,27 @@ export async function runInstalledMediaApiReuseProfile({
       MAX_REDIRECT_REQUESTS,
       'Every redirect failure must have a console record'
     );
-    assert(
-      redirectConsoleErrors.every(
-        ({ pageIndex, text, apiLocation }) =>
-          apiLocation &&
-          /^Failed to load resource: net::ERR_(?:FAILED|UNSAFE_REDIRECT)$/u.test(text) &&
-          redirectFailedRequests.some((failure) => failure.pageIndex === pageIndex)
-      ),
-      'Redirect console errors do not match the owned failed API requests'
+    assert.equal(
+      redirectProtocol.length,
+      Object.keys(REDIRECT_CASES).length,
+      'Every redirect page must have its own CDP observer'
     );
-    for (const record of redirectConsoleErrors) {
+    const attributed = redirectProtocol.flatMap((protocol) =>
+      assertRedirectProtocolAttribution({
+        protocol,
+        consoleErrors: redirectConsoleErrors,
+        failedRequests: redirectFailedRequests,
+        tweetId: qualityTweetId,
+      })
+    );
+    assert.equal(
+      attributed.length,
+      MAX_REDIRECT_REQUESTS,
+      'Every redirect console error must belong to one owned CDP request'
+    );
+    for (const record of attributed) {
       record.expected = true;
     }
-    evidence.redirectFailedRequests = redirectFailedRequests;
     assert.deepEqual(pageErrors, [], 'API reuse pages raised unexpected script errors');
     assert.deepEqual(
       consoleErrors.filter((record) => !record.expected),
@@ -732,6 +965,27 @@ export async function runInstalledMediaApiReuseProfile({
       observed.page.off('pageerror', observed.onPageError);
       observed.page.off('console', observed.onConsole);
       observed.page.off('requestfailed', observed.onRequestFailed);
+      try {
+        observed.removeProtocolHandlers?.();
+      } catch (error) {
+        cleanupErrors.push(error);
+      }
+      if (observed.protocol) {
+        const disabled = await Promise.allSettled([
+          observed.protocol.send('Log.disable'),
+          observed.protocol.send('Network.disable'),
+        ]);
+        for (const result of disabled) {
+          if (result.status === 'rejected') {
+            cleanupErrors.push(result.reason);
+          }
+        }
+        try {
+          await observed.protocol.detach();
+        } catch (error) {
+          cleanupErrors.push(error);
+        }
+      }
     }
     const pageCleanup = await Promise.allSettled(ownedPages.map((owned) => owned.close()));
     evidence.cleanup.pagesClosed = pageCleanup.every((result) => result.status === 'fulfilled');
