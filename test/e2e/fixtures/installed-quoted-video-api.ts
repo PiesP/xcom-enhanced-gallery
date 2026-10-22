@@ -5,6 +5,20 @@
 import assert from 'node:assert/strict';
 
 export const NESTED_OWNER = '7333333333333333333';
+export const CREDIT_CONTROLS_CASE = {
+  name: 'credit-controls',
+  route: 'credit-controls',
+  handle: 'outer_credit',
+  outer: '8777777777777777779',
+  owner: '9777777777777777778',
+  username: 'quote_credit',
+  media: 'quote-two',
+  expectedPosition: 2,
+  expectedTotal: 2,
+  credit: '7777777777777777777',
+  creditHandle: 'source_credit',
+  creditPhoto: 'QQuoteFourPhoto',
+};
 export const RAPID_CLICK_A = '8888888888888888881';
 export const RAPID_CLICK_B = '8888888888888888882';
 export const PREPLAYER_OUTER = '8555555555555555555';
@@ -218,6 +232,33 @@ function tweet(
 }
 
 export function quotedVideoApiResponse(tweetId: string) {
+  if (tweetId === CREDIT_CONTROLS_CASE.outer || tweetId === CREDIT_CONTROLS_CASE.owner) {
+    const quote = tweet(CREDIT_CONTROLS_CASE.owner, CREDIT_CONTROLS_CASE.username, [
+      photo(CREDIT_CONTROLS_CASE.owner, 'QQuoteTwoPhoto', 0),
+      video(CREDIT_CONTROLS_CASE.owner, CREDIT_CONTROLS_CASE.media, 1),
+    ]);
+    return {
+      data: {
+        tweetResult: {
+          result:
+            tweetId === CREDIT_CONTROLS_CASE.outer
+              ? tweet(CREDIT_CONTROLS_CASE.outer, CREDIT_CONTROLS_CASE.handle, [], quote)
+              : quote,
+        },
+      },
+    };
+  }
+  if (tweetId === CREDIT_CONTROLS_CASE.credit) {
+    return {
+      data: {
+        tweetResult: {
+          result: tweet(CREDIT_CONTROLS_CASE.credit, CREDIT_CONTROLS_CASE.creditHandle, [
+            photo(CREDIT_CONTROLS_CASE.credit, CREDIT_CONTROLS_CASE.creditPhoto, 0),
+          ]),
+        },
+      },
+    };
+  }
   if (tweetId === RAPID_CLICK_A || tweetId === RAPID_CLICK_B) {
     const marker = tweetId === RAPID_CLICK_A ? 'quote-one' : 'quote-two';
     return {

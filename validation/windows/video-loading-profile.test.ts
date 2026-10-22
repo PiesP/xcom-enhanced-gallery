@@ -10,9 +10,201 @@ import { chromium, type Locator } from '@playwright/test';
 import { assertQuotedOriginLink } from './install-profile.ts';
 import { restoreStoredVideoSettings } from './live-page.ts';
 import {
+  assertMetadataSourceRequestSettlement,
   readAppliedVideoGallerySettings,
   runVideoLoadingProfile,
 } from './video-loading-profile.ts';
+
+const observedRangeHandoff = {
+  protocol: [
+    { requestId: '4736.11', phase: 'request', atMs: 585, range: 'bytes=0-' },
+    { requestId: '4736.11', phase: 'response', atMs: 600, status: 206 },
+    {
+      requestId: '4736.11',
+      phase: 'failed',
+      atMs: 1517,
+      errorText: 'net::ERR_ABORTED',
+    },
+    { requestId: '4736.17', phase: 'request', atMs: 1522, range: 'bytes=98304-' },
+    { requestId: '4736.17', phase: 'response', atMs: 1533, status: 206 },
+    { requestId: '4736.17', phase: 'finished', atMs: 1534 },
+  ],
+  transfer: [
+    {
+      requestId: '4736.11',
+      chunks: 2,
+      dataBytes: 98304,
+      encodedBytes: 32768,
+      firstAtMs: 600,
+      lastAtMs: 1514,
+    },
+    {
+      requestId: '4736.17',
+      chunks: 2,
+      dataBytes: 18985,
+      encodedBytes: 18985,
+      firstAtMs: 1533,
+      lastAtMs: 1533,
+    },
+  ],
+};
+
+test('a post-release abort followed by an exact byte-complete Range is settled truthfully', () => {
+  const settled = assertMetadataSourceRequestSettlement(
+    observedRangeHandoff.protocol,
+    observedRangeHandoff.transfer,
+    117289,
+    1512
+  );
+  assert.deepEqual(settled, {
+    outcome: 'aborted-continued',
+    requests: [
+      { requestId: '4736.11', rangeStart: 0, receivedBytes: 98304, terminal: 'aborted' },
+      { requestId: '4736.17', rangeStart: 98304, receivedBytes: 18985, terminal: 'finished' },
+    ],
+  });
+});
+
+test('a single full finished source request remains valid', () => {
+  const settled = assertMetadataSourceRequestSettlement(
+    [
+      { requestId: 'one', phase: 'request', atMs: 1, range: 'bytes=0-' },
+      { requestId: 'one', phase: 'response', atMs: 2, status: 206 },
+      { requestId: 'one', phase: 'finished', atMs: 4 },
+    ],
+    [
+      {
+        requestId: 'one',
+        chunks: 1,
+        dataBytes: 117289,
+        encodedBytes: 117289,
+        firstAtMs: 3,
+        lastAtMs: 3,
+      },
+    ],
+    117289,
+    2
+  );
+  assert.equal(settled.outcome, 'finished');
+  assert.equal(settled.requests[0]?.terminal, 'finished');
+});
+
+test('a single no-Range 200 response must finish the complete asset', () => {
+  const protocol: Parameters<typeof assertMetadataSourceRequestSettlement>[0] = [
+    { requestId: 'full', phase: 'request', atMs: 1, range: null },
+    { requestId: 'full', phase: 'response', atMs: 2, status: 200 },
+    { requestId: 'full', phase: 'finished', atMs: 4 },
+  ];
+  const transfer = [
+    {
+      requestId: 'full',
+      chunks: 1,
+      dataBytes: 117289,
+      encodedBytes: 117289,
+      firstAtMs: 3,
+      lastAtMs: 3,
+    },
+  ];
+  assert.deepEqual(assertMetadataSourceRequestSettlement(protocol, transfer, 117289, 2), {
+    outcome: 'finished',
+    requests: [{ requestId: 'full', rangeStart: 0, receivedBytes: 117289, terminal: 'finished' }],
+  });
+  transfer[0]!.dataBytes--;
+  assert.throws(
+    () => assertMetadataSourceRequestSettlement(protocol, transfer, 117289, 2),
+    { name: 'AssertionError' },
+    'partial full-body transfer'
+  );
+  transfer[0]!.dataBytes++;
+  protocol[2] = {
+    requestId: 'full',
+    phase: 'failed',
+    atMs: 4,
+    errorText: 'net::ERR_ABORTED',
+  };
+  assert.throws(
+    () => assertMetadataSourceRequestSettlement(protocol, transfer, 117289, 2),
+    { name: 'AssertionError' },
+    'aborted full-body transfer'
+  );
+});
+
+test('source request settlement rejects holes, errors, pending, duplicates, and overflows', () => {
+  const invalid: Array<{
+    name: string;
+    change: (sample: typeof observedRangeHandoff) => void;
+  }> = [
+    {
+      name: 'partial coverage',
+      change: (sample) => {
+        sample.transfer[1]!.dataBytes--;
+      },
+    },
+    {
+      name: 'pre-tail abort',
+      change: (sample) => {
+        sample.protocol[2]!.atMs = 1500;
+      },
+    },
+    {
+      name: 'wrong continuation',
+      change: (sample) => {
+        sample.protocol[3]!.range = 'bytes=98305-';
+      },
+    },
+    {
+      name: 'continuation before abort',
+      change: (sample) => {
+        sample.protocol[3]!.atMs = 1516;
+      },
+    },
+    {
+      name: 'wrong response status',
+      change: (sample) => {
+        sample.protocol[4]!.status = 200;
+      },
+    },
+    {
+      name: 'aborted 200 response with continuation',
+      change: (sample) => {
+        sample.protocol[1]!.status = 200;
+      },
+    },
+    {
+      name: 'unknown failure',
+      change: (sample) => {
+        sample.protocol[2]!.errorText = 'net::ERR_FAILED';
+      },
+    },
+    {
+      name: 'pending request',
+      change: (sample) => {
+        sample.protocol.pop();
+      },
+    },
+    {
+      name: 'duplicate terminal',
+      change: (sample) => {
+        sample.protocol.push({ requestId: '4736.17', phase: 'finished', atMs: 1535 });
+      },
+    },
+    {
+      name: 'overflow',
+      change: (sample) => {
+        sample.transfer[1]!.dataBytes = 117290;
+      },
+    },
+  ];
+  for (const { name, change } of invalid) {
+    const sample = structuredClone(observedRangeHandoff);
+    change(sample);
+    assert.throws(
+      () => assertMetadataSourceRequestSettlement(sample.protocol, sample.transfer, 117289, 1512),
+      { name: 'AssertionError' },
+      name
+    );
+  }
+});
 
 test('installed video settings readback runs its callback in the browser realm', async () => {
   const browser = await chromium.launch();

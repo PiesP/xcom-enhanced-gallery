@@ -406,4 +406,37 @@ describe('GalleryApp media-click currentness', () => {
     expect(remove).toHaveBeenCalledWith('keydown', expect.any(Function), true);
     video.remove();
   });
+
+  it('retires a failed video recovery listener when a fresh photo action opens', async () => {
+    state.extract
+      .mockResolvedValueOnce({ success: false, mediaItems: [], failureKind: 'denied' })
+      .mockResolvedValueOnce(success('fresh-photo'));
+    const add = vi.spyOn(document, 'addEventListener');
+    const remove = vi.spyOn(document, 'removeEventListener');
+    const app = new GalleryApp({ destroy: vi.fn() } as never);
+    const video = document.createElement('video');
+    const photo = document.createElement('img');
+    document.body.append(video, photo);
+    try {
+      await app.initialize();
+      await state.handlers?.onMediaClick(video, new MouseEvent('click'));
+      const recoveryListener = add.mock.calls.find(([type]) => type === 'keydown')?.[1];
+      expect(recoveryListener).toBeTypeOf('function');
+      expect(state.notify.mock.calls[0]?.[2]).toContain('msg.err.loadMedia.nativeVideoRecovery');
+
+      await state.handlers?.onMediaClick(photo, new MouseEvent('click'));
+      expect(remove).toHaveBeenCalledWith('keydown', recoveryListener, true);
+      expect(state.openGallery).toHaveBeenCalledExactlyOnceWith(
+        expect.arrayContaining([expect.objectContaining({ id: 'fresh-photo' })]),
+        0
+      );
+      expect(state.setSetting).not.toHaveBeenCalled();
+    } finally {
+      video.remove();
+      photo.remove();
+      await app.cleanup();
+      add.mockRestore();
+      remove.mockRestore();
+    }
+  });
 });

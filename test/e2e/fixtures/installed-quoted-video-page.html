@@ -25,6 +25,7 @@
       body[data-quote-case='recognized'] [data-case='recognized'],
       body[data-quote-case='unmarked'] [data-case='unmarked'],
       body[data-quote-case='linked'] [data-case='linked'],
+      body[data-quote-case='credit-controls'] [data-case='credit-controls'],
       body[data-quote-case='nested'] [data-case='nested'],
       body[data-quote-case='nested-direct'] [data-case='nested-direct'] {
         display: block;
@@ -33,6 +34,14 @@
         margin: 20px;
         padding: 12px;
         border: 1px solid #555;
+      }
+      [data-credit-media] {
+        display: inline-block;
+      }
+      .credit-owned-photo {
+        display: block;
+        width: 320px;
+        height: 180px;
       }
       .video-shell {
         width: 320px;
@@ -233,6 +242,58 @@
             </div>
           </a>
         </div>
+      </article>
+
+      <article class="quote-case" data-case="credit-controls" data-testid="tweet">
+        <a href="/outer_credit/status/8777777777777777779"><time>Outer A permalink</time></a>
+        <div data-testid="quoteTweet" class="quote-branch">
+          <a href="/quote_credit/status/9777777777777777778"><time>Quoted B header</time></a>
+          <div data-testid="tweetPhoto">
+            <img
+              src="https://pbs.twimg.com/media/QQuoteTwoPhoto.jpg"
+              alt="Quoted B photo"
+              width="320"
+              height="180"
+            />
+          </div>
+          <div data-testid="videoPlayer" class="video-shell" data-video-key="quote-two">
+            <div data-testid="previewInterstitial">
+              <a href="/quote_credit/status/9777777777777777778/video/2">
+                <img
+                  data-quote-target
+                  tabindex="0"
+                  src="https://pbs.twimg.com/ext_tw_video_thumb/9777777777777777778/pu/img/quote-two.jpg"
+                  alt="Quoted B video preview"
+                />
+              </a>
+            </div>
+            <button data-testid="playButton" type="button" aria-label="Play quoted B video">
+              Play
+            </button>
+            <!-- biome-ignore lint/a11y/useMediaCaption: Host fixture media models X without a caption track. -->
+            <video
+              controls
+              poster="https://pbs.twimg.com/ext_tw_video_thumb/9777777777777777778/pu/img/quote-two.jpg"
+            ></video>
+          </div>
+          <a data-source-credit href="/source_credit/status/7777777777777777777">
+            Credit C for this video
+          </a>
+        </div>
+        <article data-credit-owned data-testid="tweet" class="quote-branch">
+          <a href="/source_credit/status/7777777777777777777">
+            <time>Independent C post</time>
+          </a>
+          <div data-testid="tweetPhoto">
+            <a data-credit-media href="/source_credit/status/7777777777777777777/photo/1">
+              <img
+                class="credit-owned-photo"
+                src="https://pbs.twimg.com/media/QQuoteFourPhoto.jpg"
+                alt="C owned photo"
+              />
+            </a>
+          </div>
+        </article>
       </article>
 
       <article class="quote-case" data-case="nested" data-testid="tweet">

@@ -85,3 +85,125 @@ test('original availability faults retain the allowlist and restore the exact he
     );
   }
 });
+
+test('a held video range overlaps a second owned video and later resumes', async () => {
+  const fixture = createExtensionNativeFixtureHandler();
+  const video = Buffer.alloc(200, 7);
+  const adjacent = Buffer.alloc(80, 8);
+  fixture.setPayloads(
+    [Buffer.from('image'), Buffer.from('image'), Buffer.from('image')],
+    Object.fromEntries(
+      ['quote-one', 'quote-two', 'linked-four', 'quote-three', 'nested-c'].map((name) => [
+        name,
+        video,
+      ])
+    )
+  );
+  const tweetId = '4666000111222333888';
+  fixture.setRecoveryPayloads({ tweetId, validMp4: video, badMp4: video, adjacentMp4: adjacent });
+  const firstPath = `/ext_tw_video/${tweetId}/pu/vid/320x180/video-0-best.mp4`;
+  const secondPath = `/ext_tw_video/${tweetId}/pu/vid/320x180/video-1-best.mp4`;
+  fixture.armFirstVideoHold(firstPath, 100);
+  const server = createServer(fixture.handle);
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const address = server.address();
+  assert(address && typeof address !== 'string');
+  const options = {
+    hostname: '127.0.0.1',
+    port: address.port,
+    headers: { Host: 'video.twimg.com' },
+  };
+  const readRange = (path: string, range: string) =>
+    new Promise<{ status: number | undefined; bytes: Buffer; range: string; length: string }>(
+      (resolve, reject) => {
+        const outgoing = request(
+          { ...options, path, headers: { ...options.headers, Range: range } },
+          (incoming) => {
+            const parts: Buffer[] = [];
+            incoming.on('data', (part: Buffer) => parts.push(part));
+            incoming.once('end', () =>
+              resolve({
+                status: incoming.statusCode,
+                bytes: Buffer.concat(parts),
+                range: String(incoming.headers['content-range']),
+                length: String(incoming.headers['content-length']),
+              })
+            );
+            incoming.once('error', reject);
+          }
+        );
+        outgoing.once('error', reject);
+        outgoing.end();
+      }
+    );
+  const first = request({
+    ...options,
+    path: firstPath,
+    headers: { ...options.headers, Range: 'bytes=0-199' },
+  });
+  first.on('error', () => undefined);
+  const firstPrefix = new Promise<{ bytes: Buffer; range: string; length: string }>(
+    (resolve, reject) => {
+      first.once('response', (response) => {
+        assert.equal(response.statusCode, 206);
+        response.once('data', (part: Buffer) =>
+          resolve({
+            bytes: part,
+            range: String(response.headers['content-range']),
+            length: String(response.headers['content-length']),
+          })
+        );
+        response.once('error', reject);
+      });
+      first.once('error', reject);
+    }
+  );
+  try {
+    first.end();
+    assert.deepEqual(await firstPrefix, {
+      bytes: video.subarray(0, 100),
+      range: 'bytes 0-199/200',
+      length: '200',
+    });
+    assert.equal(fixture.videoHeld(), true);
+    assert.deepEqual(await readRange(secondPath, 'bytes=0-79'), {
+      status: 206,
+      bytes: adjacent,
+      range: 'bytes 0-79/80',
+      length: '80',
+    });
+    assert.equal(fixture.videoHeld(), true);
+    first.destroy();
+    const deadline = Date.now() + 2_000;
+    while (fixture.videoHeld() && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    assert.equal(fixture.videoHeld(), false);
+    assert.deepEqual(await readRange(firstPath, 'bytes=100-199'), {
+      status: 206,
+      bytes: video.subarray(100),
+      range: 'bytes 100-199/200',
+      length: '100',
+    });
+    const ranges = fixture
+      .snapshot()
+      .events.filter((event) => [firstPath, secondPath].includes(event.path));
+    assert.deepEqual(
+      ranges.map(({ path, range, status, result }) => ({ path, range, status, result })),
+      [
+        { path: firstPath, range: { start: 0, end: 199 }, status: 206, result: 'aborted' },
+        { path: secondPath, range: { start: 0, end: 79 }, status: 206, result: 'served' },
+        { path: firstPath, range: { start: 100, end: 199 }, status: 206, result: 'served' },
+      ]
+    );
+    assert(ranges[0]!.atMs < ranges[1]!.finishedAtMs!);
+    assert(ranges[1]!.atMs < ranges[0]!.closedAtMs!);
+  } finally {
+    first.destroy();
+    fixture.abortVideoHold();
+    fixture.destroyActive();
+    await new Promise<void>((resolve, reject) =>
+      server.close((error) => (error ? reject(error) : resolve()))
+    );
+  }
+});

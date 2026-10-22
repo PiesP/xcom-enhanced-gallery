@@ -27,6 +27,7 @@ import type {
   Route,
 } from '@playwright/test';
 import {
+  CREDIT_CONTROLS_CASE,
   PUBLIC_PREPLAYER_CASE,
   QUOTED_CASES,
   quotedVideoApiResponse,
@@ -58,7 +59,12 @@ import {
   observeGalleryKeyboardNavigation,
   observeGalleryVolume,
 } from './release-upgrade/gallery-volume.ts';
-import { extensionInventorySha256, readUpgradeInput } from './release-upgrade/source.ts';
+import {
+  extensionInventorySha256,
+  readSameVersionInput,
+  readUpgradeInput,
+  sha256,
+} from './release-upgrade/source.ts';
 import { runVideoLoadingProfile } from './video-loading-profile.ts';
 
 type TargetInfo = { type: string; targetId: string; url: string };
@@ -329,8 +335,12 @@ type DelayedVideoCase = {
   pendingStart: Awaited<ReturnType<typeof hostVideoState>>;
   pendingEnd: Awaited<ReturnType<typeof hostVideoState>>;
   navigation?: unknown;
+  expiry?: unknown;
+  negativeInputs?: unknown;
   failureObservation?: unknown;
   failure?: unknown;
+  photo?: unknown;
+  healthyVideo?: unknown;
   notificationObserverRestored?: unknown;
   settingRestored?: boolean;
 };
@@ -431,15 +441,12 @@ type NativeControlProbe = {
   hitBackendNodeId?: number;
   hostBackendNodeId?: number;
 };
-type Own12NativeControlsEvidence = AcceptanceReceipt & {
+type Own12Mode = 'block-controls-only' | 'allow-all' | 'block-all';
+type Own12ModeEvidence = AcceptanceReceipt & {
+  mode: Own12Mode;
+  settingsRestorationFailed?: boolean;
   native?: unknown;
   adjacentPhoto?: unknown;
-  transport?: {
-    path: string;
-    original: { bytes: number; sha256: string };
-    audioVideo: { bytes: number; sha256: string };
-    restored: boolean;
-  };
   geometry: Array<Record<string, unknown>>;
   discovery: Array<{
     kind: NativeControlPoint['kind'];
@@ -470,6 +477,16 @@ type Own12NativeControlsEvidence = AcceptanceReceipt & {
     pageClosed: boolean;
     errors: string[];
   };
+};
+type Own12NativeControlsEvidence = AcceptanceReceipt & {
+  modes: Own12ModeEvidence[];
+  transport?: {
+    path: string;
+    original: { bytes: number; sha256: string };
+    audioVideo: { bytes: number; sha256: string };
+    restored: boolean;
+  };
+  cleanup: { errors: string[] };
 };
 type OriginalAvailabilityEvidence = {
   status: string;
@@ -548,6 +565,7 @@ type InstallResult = {
   };
   browserVersion?: string;
   upgrade?: UpgradeReceipt;
+  sameVersion?: Awaited<ReturnType<typeof runSameVersionAttribution>>;
   fixture?: Awaited<ReturnType<typeof exerciseInstalledExtension>>;
   liveBrowserScope?: string;
   live?: unknown;
@@ -1619,6 +1637,8 @@ export async function installFixtureRoutes(
       const quotedCase = QUOTED_CASES.find(
         ({ handle, outer }) => url.pathname === `/${handle}/status/${outer}`
       );
+      const creditControlsRoute =
+        url.pathname === `/${CREDIT_CONTROLS_CASE.handle}/status/${CREDIT_CONTROLS_CASE.outer}`;
       const unavailableRoute =
         url.pathname ===
         `/${UNAVAILABLE_SEQUENCE.handle}/status/${UNAVAILABLE_SEQUENCE.failures[0]?.outer}`;
@@ -1643,26 +1663,31 @@ export async function installFixtureRoutes(
                 ? unmarkedVideoHtml
                 : url.pathname === `/rapid_a/status/${RAPID_CLICK_A}`
                   ? rapidVideoHtml
-                  : quotedCase
-                    ? quotedCase.name === 'public-preplayer'
-                      ? preplayerHtml
-                      : (quotedCase.name === 'unmarked-no-outer'
-                          ? noOuterHtml
-                          : quotedHtml
-                        ).replace(
-                          '<body data-quote-case="recognized">',
-                          `<body data-quote-case="${quotedCase.route}">`
-                        )
-                    : url.pathname === new URL(QUALITY_FIXTURE_URL).pathname
-                      ? extensionHtml
-                          .replaceAll(TWEET_ID, QUALITY_TWEET_ID)
-                          .replaceAll('testuser', 'qualityuser')
-                      : url.pathname === new URL(PUBLIC_FIXTURE_URL).pathname
-                        ? html.replace(
-                            '<body data-fixture-route="classic">',
-                            '<body data-fixture-route="public">'
+                  : creditControlsRoute
+                    ? quotedHtml.replace(
+                        '<body data-quote-case="recognized">',
+                        `<body data-quote-case="${CREDIT_CONTROLS_CASE.route}">`
+                      )
+                    : quotedCase
+                      ? quotedCase.name === 'public-preplayer'
+                        ? preplayerHtml
+                        : (quotedCase.name === 'unmarked-no-outer'
+                            ? noOuterHtml
+                            : quotedHtml
+                          ).replace(
+                            '<body data-quote-case="recognized">',
+                            `<body data-quote-case="${quotedCase.route}">`
                           )
-                        : extensionHtml,
+                      : url.pathname === new URL(QUALITY_FIXTURE_URL).pathname
+                        ? extensionHtml
+                            .replaceAll(TWEET_ID, QUALITY_TWEET_ID)
+                            .replaceAll('testuser', 'qualityuser')
+                        : url.pathname === new URL(PUBLIC_FIXTURE_URL).pathname
+                          ? html.replace(
+                              '<body data-fixture-route="classic">',
+                              '<body data-fixture-route="public">'
+                            )
+                          : extensionHtml,
       });
       return;
     }
@@ -6479,6 +6504,306 @@ async function runPublicPreplayerCycle({
   });
 }
 
+async function runCreditControlsCycle({
+  page,
+  extensionPage,
+  quotedApiResponses,
+  apiResponses,
+  compactApiResponses,
+  qualityApiResponses,
+  evidence,
+}: {
+  page: Page;
+  extensionPage: Page;
+  quotedApiResponses: ApiRecord[];
+  apiResponses: ApiRecord[];
+  compactApiResponses: ApiRecord[];
+  qualityApiResponses: ApiRecord[];
+  evidence: {
+    status: string;
+    steps: Record<string, unknown>[];
+    controlledSetting: ControlledSettingEvidence;
+  };
+}) {
+  const otherMetadataCounts = () => ({
+    generic: apiResponses.length,
+    compact: compactApiResponses.length,
+    quality: qualityApiResponses.length,
+  });
+  const fixture = CREDIT_CONTROLS_CASE;
+  const pageUrl = `https://x.com/${fixture.handle}/status/${fixture.outer}`;
+  const creditUrl = `https://x.com/${fixture.creditHandle}/status/${fixture.credit}`;
+  const navigate = async () => {
+    await page.goto(pageUrl);
+    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+    const structure = await page.locator(`[data-case="${fixture.route}"]`).evaluate((article) => {
+      const quote = article.querySelector('[data-testid="quoteTweet"]');
+      const video = quote?.querySelector('[data-video-key="quote-two"]');
+      const credit = quote?.querySelector('[data-source-credit]');
+      const c = article.querySelector('[data-credit-owned]');
+      const media = c?.querySelector('[data-credit-media]');
+      return {
+        videoCount: quote?.querySelectorAll('[data-video-key]').length ?? 0,
+        creditAdjacent: !!video && credit?.previousElementSibling === video,
+        creditOutsideVideo: !!credit && !video?.contains(credit),
+        cOwnArticle: c?.tagName === 'ARTICLE' && c?.getAttribute('data-testid') === 'tweet',
+        cMediaInsideOwner: !!media && c?.contains(media),
+        cMediaOutsideB: !!media && !quote?.contains(media),
+      };
+    });
+    assert.deepEqual(structure, {
+      videoCount: 1,
+      creditAdjacent: true,
+      creditOutsideVideo: true,
+      cOwnArticle: true,
+      cMediaInsideOwner: true,
+      cMediaOutsideB: true,
+    });
+    return structure;
+  };
+  await withControlledFixtureVideoMode(extensionPage, evidence.controlledSetting, async () => {
+    const structure = await navigate();
+    const preview = page.locator(`[data-case="${fixture.route}"] [data-quote-target]`);
+    await preview.scrollIntoViewIfNeeded();
+    await preview.focus();
+    const before = await quotedHostSnapshot(page, fixture.route, '[data-quote-target]');
+    assert(before.active && before.scrollY > 0, 'B preview must hold focus below the fold');
+    const hit = await preview.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return (
+        document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2) ===
+        element
+      );
+    });
+    assert.equal(hit, true, 'Ordinary B preview input must hit the preview');
+    const bApiStart = quotedApiResponses.length;
+    const rejectedStart = otherMetadataCounts();
+    const input: Record<string, unknown> = {
+      name: 'b-preview-input',
+      pageUrl,
+      structure,
+      hit,
+      before,
+      depth: await quotedTargetDepth(preview),
+      apiStartIndex: bApiStart,
+      metadataBefore: rejectedStart,
+    };
+    evidence.steps.push(input);
+    const clickCount = await page.evaluate(() => window.__quoteFixtureClicks.length);
+    await preview.click();
+    input.click = await quotedClickRecord(page, clickCount, 'img');
+    let opened: Awaited<ReturnType<typeof assertQuotedGallery>>;
+    try {
+      opened = await assertQuotedGallery(page, fixture);
+    } catch (error) {
+      input.apiAfterFailure = quotedApiResponses.slice(bApiStart);
+      input.metadataAfterFailure = otherMetadataCounts();
+      input.galleryCountAfterFailure = await page.locator('[data-xeg-gallery-container]').count();
+      throw error;
+    }
+    assert.equal(
+      await assertQuotedOriginLink(
+        opened.gallery,
+        `https://x.com/${fixture.username}/status/${fixture.owner}`
+      ),
+      `https://x.com/${fixture.username}/status/${fixture.owner}`
+    );
+    await opened.gallery.locator('#tweet-text-button').click();
+    const bText = await opened.gallery.locator('#toolbar-tweet-panel').textContent();
+    await opened.gallery.locator('#tweet-text-button').click();
+    assert(bText);
+    assert(bText.includes(`${fixture.username} deterministic installed media`));
+    assert(!bText.includes(`${fixture.creditHandle} deterministic installed media`));
+    const initialVideo = await opened.video.evaluate((video) => {
+      if (!(video instanceof HTMLVideoElement)) {
+        throw new Error('Credit B video is missing');
+      }
+      return { paused: video.paused, time: video.currentTime };
+    });
+    assert(initialVideo.paused && initialVideo.time <= 0.05, 'B gallery must begin paused');
+    await opened.video.click();
+    await page.waitForFunction(
+      ({ start, index }) => {
+        const video = document.querySelector(
+          `[data-xeg-gallery-container] [data-gallery-element="item"][data-index="${index}"] video`
+        );
+        return (
+          video instanceof HTMLVideoElement &&
+          !video.paused &&
+          video.error === null &&
+          video.currentTime >= start + 0.15
+        );
+      },
+      { start: initialVideo.time, index: fixture.expectedPosition - 1 },
+      { timeout: 15_000 }
+    );
+    const playbackEnd = await opened.video.evaluate((video) => {
+      if (!(video instanceof HTMLVideoElement)) {
+        throw new Error('Credit B video is missing');
+      }
+      return video.currentTime;
+    });
+    const bClose = await closeQuotedGallery({
+      gallery: opened.gallery,
+      page,
+      method: 'escape',
+      before,
+      caseName: fixture.route,
+      selector: '[data-quote-target]',
+    });
+    const bApi = quotedApiResponses.slice(bApiStart);
+    assert.equal(bApi.length, 1, 'B media action must make one owning quote request');
+    assert.deepEqual(
+      bApi.map(({ tweetId, status }) => ({ tweetId, status })),
+      [{ tweetId: fixture.owner, status: 200 }],
+      'The enclosing B media permalink must request B directly'
+    );
+    assert.deepEqual(otherMetadataCounts(), rejectedStart);
+    evidence.steps.push({
+      name: 'b-video',
+      structure,
+      hit,
+      selected: opened.selection,
+      source: opened.selectedMedia,
+      api: bApi,
+      playbackStart: initialVideo.time,
+      playbackEnd,
+      close: bClose,
+    });
+
+    for (const method of ['pointer', 'keyboard'] as const) {
+      await navigate();
+      const credit = page.locator(`[data-case="${fixture.route}"] [data-source-credit]`);
+      await credit.scrollIntoViewIfNeeded();
+      await credit.focus();
+      const target = await credit.evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        const hit = document.elementFromPoint(
+          rect.left + rect.width / 2,
+          rect.top + rect.height / 2
+        );
+        return { href: (element as HTMLAnchorElement).href, hit: hit === element };
+      });
+      assert.equal(target.href, creditUrl);
+      assert(target.hit, 'C credit must be the actual pointer target');
+      assert.equal(await credit.evaluate((element) => document.activeElement === element), true);
+      const apiMark = quotedApiResponses.length;
+      const rejectedMark = otherMetadataCounts();
+      if (method === 'pointer') {
+        await credit.click();
+      } else {
+        await credit.press('Enter');
+      }
+      await page.waitForURL(creditUrl);
+      await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+      await page.waitForTimeout(200);
+      assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0);
+      assert.deepEqual(
+        quotedApiResponses.slice(apiMark),
+        [],
+        'Credit navigation must not extract media'
+      );
+      assert.deepEqual(
+        otherMetadataCounts(),
+        rejectedMark,
+        'Credit navigation must not extract through another metadata route'
+      );
+      evidence.steps.push({ name: 'c-credit-native', method, target, url: page.url(), api: [] });
+    }
+
+    for (const method of ['pointer', 'keyboard'] as const) {
+      await navigate();
+      const media = page.locator(`[data-case="${fixture.route}"] [data-credit-media]`);
+      await media.scrollIntoViewIfNeeded();
+      await media.focus();
+      const beforeC = await quotedHostSnapshot(page, fixture.route, '[data-credit-media]');
+      assert(
+        beforeC.active && beforeC.scrollY > 0,
+        'C media action must hold focus below the fold'
+      );
+      const target = await media.evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        const hit = document.elementFromPoint(
+          rect.left + rect.width / 2,
+          rect.top + rect.height / 2
+        );
+        const image = element.querySelector('img');
+        return {
+          href: (element as HTMLAnchorElement).href,
+          hitInside: hit === image,
+          decoded: image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0,
+        };
+      });
+      assert.equal(target.href, `${creditUrl}/photo/1`);
+      assert(target.hitInside && target.decoded, 'C media must be decoded and hit at its image');
+      const apiMark = quotedApiResponses.length;
+      const rejectedMark = otherMetadataCounts();
+      if (method === 'pointer') {
+        await media.click();
+      } else {
+        await media.press('Enter');
+      }
+      const gallery = page.locator('[data-xeg-gallery-container]');
+      await gallery.waitFor({ state: 'visible', timeout: 15_000 });
+      const selected = await assertQuotedSelection(page, {
+        position: 1,
+        total: 1,
+        type: 'image',
+        path: `/media/${fixture.creditPhoto}.jpg`,
+      });
+      const decoded = await waitForValue(async () => {
+        const state = await gallery
+          .locator('[data-gallery-element="item"][data-index="0"] img')
+          .evaluate((image) => ({
+            complete: image instanceof HTMLImageElement && image.complete,
+            width: image instanceof HTMLImageElement ? image.naturalWidth : 0,
+            height: image instanceof HTMLImageElement ? image.naturalHeight : 0,
+            source: image instanceof HTMLImageElement ? image.currentSrc || image.src : '',
+          }));
+        return state.complete &&
+          state.width > 0 &&
+          state.height > 0 &&
+          state.source === selected.source
+          ? state
+          : undefined;
+      }, 'genuinely owned C decoded gallery image');
+      const source = await assertQuotedOriginLink(gallery, creditUrl);
+      await gallery.locator('#tweet-text-button').click();
+      const cText = await gallery.locator('#toolbar-tweet-panel').textContent();
+      await gallery.locator('#tweet-text-button').click();
+      assert(cText);
+      assert(cText.includes(`${fixture.creditHandle} deterministic installed media`));
+      assert(!cText.includes(`${fixture.username} deterministic installed media`));
+      const cClose = await closeQuotedGallery({
+        gallery,
+        page,
+        method: 'escape',
+        before: beforeC,
+        caseName: fixture.route,
+        selector: '[data-credit-media]',
+      });
+      const cApi = quotedApiResponses.slice(apiMark);
+      assert.deepEqual(
+        cApi.map(({ tweetId, status }) => ({ tweetId, status })),
+        [{ tweetId: fixture.credit, status: 200 }]
+      );
+      assert.deepEqual(otherMetadataCounts(), rejectedMark);
+      evidence.steps.push({
+        name: 'c-owned-media',
+        method,
+        target,
+        selected,
+        decoded,
+        source,
+        api: cApi,
+        close: cClose,
+      });
+    }
+    evidence.status = 'passed';
+    return evidence;
+  });
+}
+
 function withNativeNotificationObserver(context: BrowserContext, extensionId: string) {
   return <T extends object>(
     action: (observer: Awaited<ReturnType<typeof observeNativeNotificationCreates>>) => Promise<T>
@@ -7804,6 +8129,7 @@ async function runDelayedVideoFailures({
   const delayedCases: Array<[string, string]> = [
     ['failure', DELAYED_FAILURE_ID],
     ['navigation', DELAYED_NAVIGATION_ID],
+    ['expiry-navigation', DELAYED_FAILURE_ID],
   ];
   for (const [name, tweetId] of delayedCases) {
     const pageUrl = `https://x.com/delayed_host/status/${tweetId}`;
@@ -7840,7 +8166,8 @@ async function runDelayedVideoFailures({
     const knownNotifications = await extensionPage.evaluate(async () =>
       Object.keys(await chrome.notifications.getAll())
     );
-    const priorSetting = name === 'failure' ? await readStoredVideoSettings(extensionPage) : null;
+    const priorSetting =
+      name === 'navigation' ? null : await readStoredVideoSettings(extensionPage);
     const notificationObserver = await observeNativeNotificationCreates(context, extensionId);
     const navigationEvents: Array<{ type: string; trusted: boolean }> = [];
     const recordNavigation = (message: ConsoleMessage) => {
@@ -7859,7 +8186,6 @@ async function runDelayedVideoFailures({
         }
       }
     };
-    let shortcutIssued = false;
     let observation: DelayedVideoCase | undefined;
     let validationError: unknown;
     let validationSeen = false;
@@ -8046,56 +8372,354 @@ async function runDelayedVideoFailures({
           observationEndedAt: observed.sampledAt,
           observerId: observed.observerId,
         };
-        shortcutIssued = true;
-        await page.keyboard.press('Alt+Shift+V');
-        const switchedMode = await waitForValue(async () => {
-          const mode = storedVideoClickMode(
-            (await readStoredVideoSettings(extensionPage)).settings
+        assert(priorSetting, 'Failed-video prior setting is missing');
+        if (name === 'expiry-navigation') {
+          await page.goto(FIXTURE_URL);
+          await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+          const nextDocumentStartedAt = await page.evaluate(() => performance.timeOrigin);
+          assert.notEqual(nextDocumentStartedAt, documentStartedAt);
+          const apiCount = fixtureRoutes.quotedApiResponses.length;
+          const notificationMark = await notificationObserver.snapshot();
+          await page.keyboard.press('Alt+Shift+V');
+          await page.waitForTimeout(150);
+          const afterShortcut = await readStoredVideoSettings(extensionPage);
+          const afterNotifications = await notificationObserver.snapshot();
+          assert.deepEqual(
+            afterShortcut.settings,
+            priorSetting.settings,
+            'A recovery shortcut from a retired document must not save settings'
           );
-          return mode === 'block-all' ? mode : undefined;
-        }, 'trusted native-video mode shortcut');
-        assert.equal(
-          switchedMode,
-          'block-all',
-          'Trusted recovery shortcut must persist the native video-click mode'
-        );
-        await shell.locator('[data-testid="playButton"]').click();
-        await page.waitForFunction(
-          () => {
-            const element = document.querySelector(
-              '[data-case="recognized"] [data-video-key] video'
+          assert.equal(fixtureRoutes.quotedApiResponses.length, apiCount);
+          assert.equal(notificationCallsSince(notificationMark, afterNotifications).length, 0);
+          assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0);
+          observation.expiry = {
+            documentStartedAt,
+            nextDocumentStartedAt,
+            url: page.url(),
+            mode: storedVideoClickMode(afterShortcut.settings),
+            apiCount,
+            notificationCalls: notificationCallsSince(notificationMark, afterNotifications),
+            galleryCount: 0,
+          };
+        } else {
+          const inputBaseline = await notificationObserver.snapshot();
+          const synthetic = await page.evaluate(() => {
+            const event = new KeyboardEvent('keydown', {
+              bubbles: true,
+              cancelable: true,
+              code: 'KeyV',
+              altKey: true,
+              shiftKey: true,
+            });
+            document.dispatchEvent(event);
+            return { trusted: event.isTrusted, defaultPrevented: event.defaultPrevented };
+          });
+          assert.deepEqual(synthetic, { trusted: false, defaultPrevented: false });
+          assert.deepEqual(
+            (await readStoredVideoSettings(extensionPage)).settings,
+            priorSetting.settings,
+            'Synthetic recovery input must not save settings'
+          );
+          const editable = page.locator('input[data-recovery-editable]');
+          let editableEvent: unknown;
+          try {
+            await page.locator('main').evaluate((main) => {
+              const input = document.createElement('input');
+              input.dataset.recoveryEditable = 'true';
+              input.addEventListener('keydown', (event) => {
+                if (event.code !== 'KeyV') {
+                  return;
+                }
+                input.dataset.recoveryKeydown = JSON.stringify({
+                  trusted: event.isTrusted,
+                  code: event.code,
+                  alt: event.altKey,
+                  shift: event.shiftKey,
+                  target: event.target === input,
+                });
+              });
+              main.append(input);
+            });
+            await editable.focus();
+            await page.keyboard.press('Alt+Shift+V');
+            const eventRecord = await editable.getAttribute('data-recovery-keydown');
+            assert(eventRecord, 'Editable field must receive the shortcut keydown');
+            editableEvent = JSON.parse(eventRecord);
+            assert.deepEqual(editableEvent, {
+              trusted: true,
+              code: 'KeyV',
+              alt: true,
+              shift: true,
+              target: true,
+            });
+            assert.deepEqual(
+              (await readStoredVideoSettings(extensionPage)).settings,
+              priorSetting.settings,
+              'Trusted recovery input from an editable field must not save settings'
             );
-            return (
-              element instanceof HTMLVideoElement &&
-              !element.paused &&
-              element.currentTime > 0.15 &&
-              element.error === null
+          } finally {
+            if (await editable.count()) {
+              await editable.evaluate((input) => input.remove());
+            }
+          }
+          const afterNegatives = await notificationObserver.snapshot();
+          assert.equal(notificationCallsSince(inputBaseline, afterNegatives).length, 0);
+          const nextApiStart = fixtureRoutes.quotedApiResponses.length;
+          fixtureRoutes.armDelayedFailure(tweetId);
+          await video.click();
+          const nextRequest = await waitForValue(
+            () =>
+              fixtureRoutes.quotedApiResponses
+                .slice(nextApiStart)
+                .find((item) => item.tweetId === tweetId),
+            'new video action held request'
+          );
+          assert.equal(nextRequest.fulfilledAtMonotonicMs, null);
+          await page.keyboard.press('Alt+Shift+V');
+          await page.waitForTimeout(150);
+          assert.deepEqual(
+            (await readStoredVideoSettings(extensionPage)).settings,
+            priorSetting.settings,
+            'The old recovery shortcut must expire as soon as a new click starts'
+          );
+          fixtureRoutes.releaseDelayedFailure();
+          await waitForValue(
+            () =>
+              nextRequest.routeSettledAtMonotonicMs !== null &&
+              nextRequest.transportSettledAtMonotonicMs !== null
+                ? nextRequest
+                : undefined,
+            'new video action exact request settlement',
+            5_000
+          );
+          await waitForValue(
+            async () =>
+              notificationCallsSince(inputBaseline, await notificationObserver.snapshot()).filter(
+                ({ message }) => /Alt\+Shift\+V/u.test(message ?? '')
+              ).length === 1,
+            'new video action failure notification'
+          );
+          assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0);
+          observation.negativeInputs = {
+            synthetic,
+            editable: editableEvent,
+            unchangedMode: storedVideoClickMode(priorSetting.settings),
+            newClickRequest: nextRequest,
+            galleryCount: 0,
+          };
+          await page.keyboard.press('Alt+Shift+V');
+          const switchedMode = await waitForValue(async () => {
+            const mode = storedVideoClickMode(
+              (await readStoredVideoSettings(extensionPage)).settings
             );
-          },
-          null,
-          { timeout: 5_000 }
-        );
-        const clickCount = await page.evaluate(() => window.__quoteFixtureClicks?.length ?? 0);
-        await video.click();
-        const nativeClick = await quotedClickRecord(page, clickCount, 'video');
-        assert.equal(
-          nativeClick.defaultPrevented,
-          false,
-          'After mode switch the direct video click must reach X natively'
-        );
-        assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0);
-        assert.equal(
-          fixtureRoutes.quotedApiResponses.length,
-          apiStart + 1,
-          'Native recovery must not start another extraction request'
-        );
-        observation.failure = {
-          notification,
-          failedHost,
-          switchedMode,
-          nativeClick,
-          nativeRecovery: await hostVideoState(video),
-        };
+            return mode === 'block-all' ? mode : undefined;
+          }, 'trusted native-video mode shortcut');
+          assert.equal(
+            switchedMode,
+            'block-all',
+            'Trusted recovery shortcut must persist the native video-click mode'
+          );
+          await shell.locator('[data-testid="playButton"]').click();
+          await page.waitForFunction(
+            () => {
+              const element = document.querySelector(
+                '[data-case="recognized"] [data-video-key] video'
+              );
+              return (
+                element instanceof HTMLVideoElement &&
+                !element.paused &&
+                element.currentTime > 0.15 &&
+                element.error === null
+              );
+            },
+            null,
+            { timeout: 5_000 }
+          );
+          const clickCount = await page.evaluate(() => window.__quoteFixtureClicks?.length ?? 0);
+          await video.click();
+          const nativeClick = await quotedClickRecord(page, clickCount, 'video');
+          assert.equal(
+            nativeClick.defaultPrevented,
+            false,
+            'After mode switch the direct video click must reach X natively'
+          );
+          assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0);
+          assert.equal(
+            fixtureRoutes.quotedApiResponses.length,
+            apiStart + 2,
+            'Native recovery must not start another extraction request'
+          );
+          observation.failure = {
+            notification,
+            failedHost,
+            switchedMode,
+            nativeClick,
+            nativeRecovery: await hostVideoState(video),
+          };
+          await page.goto(`https://x.com/rapid_a/status/${RAPID_CLICK_A}`);
+          await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+          const snapshot = (selector: string) =>
+            page.evaluate(
+              (targetSelector) => ({
+                focused: document.activeElement === document.querySelector(targetSelector),
+                scrollY,
+                bodyStyle: document.body.style.cssText,
+                background: ['#host-layout-spacer', 'main'].map((item) => {
+                  const node = document.querySelector(item);
+                  return {
+                    hidden: node?.hasAttribute('data-xeg-gallery-hidden') ?? false,
+                    inert: node?.hasAttribute('inert') ?? false,
+                    ariaHidden: node?.getAttribute('aria-hidden') ?? null,
+                  };
+                }),
+              }),
+              selector
+            );
+          const photoSelector = '[data-rapid="b"] [data-testid="tweetPhoto"] img';
+          const photo = page.locator(photoSelector);
+          await photo.scrollIntoViewIfNeeded();
+          await page.evaluate(() => window.scrollBy(0, -100));
+          await photo.focus();
+          const photoBefore = await snapshot(photoSelector);
+          assert(photoBefore.focused && photoBefore.scrollY > 0);
+          const photoApiStart = fixtureRoutes.quotedApiResponses.length;
+          const photoHit = await photo.evaluate((element) => {
+            const rect = element.getBoundingClientRect();
+            const x = rect.left + rect.width / 2;
+            const y = rect.top + rect.height / 2;
+            return { x, y, hit: document.elementFromPoint(x, y) === element };
+          });
+          assert.equal(photoHit.hit, true, 'The photo must be the ordinary hit-tested target');
+          await page.mouse.click(photoHit.x, photoHit.y);
+          const photoGallery = page.locator('[data-xeg-gallery-container]');
+          await photoGallery.waitFor({ state: 'visible' });
+          const photoSelected = await assertQuotedSelection(page, {
+            position: 1,
+            total: 2,
+            type: 'image',
+            path: '/media/QQuoteTwoPhoto.jpg',
+          });
+          const photoOrigin = await assertQuotedOriginLink(
+            photoGallery,
+            `https://x.com/rapid_b/status/${RAPID_CLICK_B}`
+          );
+          const photoRequests = fixtureRoutes.quotedApiResponses.slice(photoApiStart);
+          assert.deepEqual(
+            photoRequests.map(({ tweetId, status }) => ({ tweetId, status })),
+            [{ tweetId: RAPID_CLICK_B, status: 200 }]
+          );
+          await page.keyboard.press('Escape');
+          await photoGallery.waitFor({ state: 'detached' });
+          const photoAfter = await snapshot(photoSelector);
+          assert.deepEqual(photoAfter, photoBefore, 'Photo close must restore host state');
+          assert.equal(
+            storedVideoClickMode((await readStoredVideoSettings(extensionPage)).settings),
+            'block-all',
+            'Photo gallery must not change the native video mode'
+          );
+          observation.photo = {
+            hit: photoHit,
+            selected: photoSelected,
+            origin: photoOrigin,
+            requests: photoRequests,
+            before: photoBefore,
+            after: photoAfter,
+          };
+
+          const restored = await restoreStoredVideoSettings(extensionPage, priorSetting);
+          assert.equal(restored, true);
+          assert.deepEqual(
+            (await readStoredVideoSettings(extensionPage)).settings,
+            priorSetting.settings
+          );
+          observation.settingRestored = true;
+          const closedNotificationMark = await notificationObserver.snapshot();
+          await page.keyboard.press('Alt+Shift+V');
+          await page.waitForTimeout(150);
+          assert.deepEqual(
+            (await readStoredVideoSettings(extensionPage)).settings,
+            priorSetting.settings,
+            'The old recovery shortcut must stay retired after the photo gallery closes'
+          );
+          assert.equal(
+            notificationCallsSince(closedNotificationMark, await notificationObserver.snapshot())
+              .length,
+            0
+          );
+          await page.reload();
+          await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+          const healthyTriggerSelector = '[data-rapid="b"] video';
+          const healthyTrigger = page.locator(healthyTriggerSelector);
+          await healthyTrigger.scrollIntoViewIfNeeded();
+          await healthyTrigger.focus();
+          const healthyBefore = await snapshot(healthyTriggerSelector);
+          assert(healthyBefore.focused);
+          const healthyApiStart = fixtureRoutes.quotedApiResponses.length;
+          await healthyTrigger.click();
+          const healthy = await assertQuotedGallery(page, {
+            name: 'rapid-b',
+            expectedPosition: 2,
+            expectedTotal: 2,
+            owner: RAPID_CLICK_B,
+            media: 'quote-two',
+          });
+          const healthyRequests = fixtureRoutes.quotedApiResponses.slice(healthyApiStart);
+          assert.deepEqual(
+            healthyRequests.map(({ tweetId, status }) => ({ tweetId, status })),
+            [{ tweetId: RAPID_CLICK_B, status: 200 }]
+          );
+          const playbackState = () =>
+            healthy.video.evaluate((element) => {
+              if (!(element instanceof HTMLVideoElement)) {
+                throw new Error('Selected healthy video is missing');
+              }
+              return {
+                paused: element.paused,
+                time: element.currentTime,
+                width: element.videoWidth,
+                height: element.videoHeight,
+                error: element.error?.code ?? null,
+              };
+            });
+          const initialPlayback = await playbackState();
+          assert.equal(initialPlayback.paused, true, 'Fresh video must begin paused');
+          assert(initialPlayback.time < 0.15, 'Fresh video must begin at the first frame');
+          await healthy.video.click();
+          await page.waitForFunction(
+            () => {
+              const element = document.querySelector(
+                '[data-xeg-gallery-container] [data-gallery-element="item"][data-index="1"] video'
+              );
+              return (
+                element instanceof HTMLVideoElement &&
+                !element.paused &&
+                element.currentTime > 0.15 &&
+                element.videoWidth > 0 &&
+                element.videoHeight > 0 &&
+                element.error === null
+              );
+            },
+            null,
+            { timeout: 15_000 }
+          );
+          const playing = await playbackState();
+          await page.keyboard.press('Escape');
+          await healthy.gallery.waitFor({ state: 'detached' });
+          const healthyAfter = await snapshot(healthyTriggerSelector);
+          assert.deepEqual(
+            healthyAfter,
+            healthyBefore,
+            'Healthy video close must restore host state'
+          );
+          observation.healthyVideo = {
+            selection: healthy.selection,
+            requests: healthyRequests,
+            initialPlayback,
+            playing,
+            before: healthyBefore,
+            after: healthyAfter,
+          };
+        }
       }
       cases.push(observation);
       await page.screenshot({ path: join(output, `quoted-delayed-${name}.png`) });
@@ -8119,9 +8743,8 @@ async function runDelayedVideoFailures({
           cleanupErrors.push(error);
         }
       }
-      if (shortcutIssued) {
+      if (priorSetting) {
         try {
-          assert(priorSetting, 'Recovery shortcut prior setting is missing');
           const restored = await restoreStoredVideoSettings(extensionPage, priorSetting);
           assert.equal(restored, true, 'Recovery shortcut must restore full prior task setting');
           if (observation) {
@@ -8130,6 +8753,26 @@ async function runDelayedVideoFailures({
         } catch (error) {
           cleanupErrors.push(error);
         }
+      }
+    }
+    if (validationSeen || cleanupErrors.length) {
+      try {
+        await writeFile(
+          join(output, `quoted-delayed-${name}-failure.json`),
+          JSON.stringify(
+            {
+              name,
+              observation,
+              error: validationSeen ? safeError(validationError) : null,
+              cleanupErrors: cleanupErrors.map((error) => safeError(error)),
+              api: fixtureRoutes.quotedApiResponses.slice(apiStart),
+            },
+            null,
+            2
+          )
+        );
+      } catch (error) {
+        cleanupErrors.push(error);
       }
     }
     if (validationSeen && cleanupErrors.length) {
@@ -9016,7 +9659,7 @@ async function locateOwn12NativeControl({
   hoveredVolume = false,
 }: {
   cdp: CDPSession;
-  evidence: Own12NativeControlsEvidence;
+  evidence: Own12ModeEvidence;
   kind: NativeControlPoint['kind'];
   page: Page;
   video: Locator;
@@ -9091,7 +9734,7 @@ async function locateOwn12NativeControl({
   assert.equal(described.node.nodeName, 'VIDEO', 'Native control host must be a video');
 
   const entries: Array<{ node: NativeControlNode; label: string; pseudo: string | null }> = [];
-  const uaInputs: Own12NativeControlsEvidence['discovery'][number]['uaInputs'] = [];
+  const uaInputs: Own12ModeEvidence['discovery'][number]['uaInputs'] = [];
   let uaInputCount = 0;
   let visited = 0;
   const visit = (node: NativeControlNode, inUserAgentShadow: boolean, depth: number) => {
@@ -9147,7 +9790,7 @@ async function locateOwn12NativeControl({
     }
   };
   const candidates = entries.filter(matches);
-  const discovery: Own12NativeControlsEvidence['discovery'][number] = {
+  const discovery: Own12ModeEvidence['discovery'][number] = {
     kind,
     candidates: candidates.slice(0, 12).map(({ label }) => label),
     uaInputs,
@@ -9307,6 +9950,487 @@ async function locateOwn12NativeControl({
   throw new Error(`${kind}: installed Edge native control was not identified and hit-tested`);
 }
 
+async function runOwn12NativeControlsMode({
+  apiResponses,
+  compactApiResponses,
+  context,
+  extensionPage,
+  mode,
+  qualityApiResponses,
+  quotedApiResponses,
+}: {
+  apiResponses: ApiRecord[];
+  compactApiResponses: ApiRecord[];
+  context: BrowserContext;
+  extensionPage: Page;
+  mode: Own12Mode;
+  qualityApiResponses: ApiRecord[];
+  quotedApiResponses: ApiRecord[];
+}): Promise<{ evidence: Own12ModeEvidence; errors: unknown[] }> {
+  const metadataCounts = () => ({
+    generic: apiResponses.length,
+    quoted: quotedApiResponses.length,
+    quality: qualityApiResponses.length,
+    compact: compactApiResponses.length,
+  });
+  const evidence: Own12ModeEvidence = {
+    status: 'pending',
+    mode,
+    geometry: [],
+    discovery: [],
+    events: [],
+    cleanup: {
+      observerRemoved: false,
+      cdpDetached: false,
+      listenersRemoved: false,
+      pageClosed: false,
+      errors: [],
+    },
+  };
+  let page: Page;
+  try {
+    page = await context.newPage();
+  } catch (error) {
+    evidence.status = 'failed';
+    evidence.error = safeError(error);
+    return { evidence, errors: [error] };
+  }
+  const pageErrors: string[] = [];
+  const onPageError = (error: Error) => {
+    if (pageErrors.length < 8) {
+      pageErrors.push(error.message.slice(0, 500));
+    }
+  };
+  page.on('pageerror', onPageError);
+  let cdp: CDPSession | undefined;
+  let observerInstalled = false;
+  const errors: unknown[] = [];
+  const releaseNative = async () => {
+    if (observerInstalled && !page.isClosed()) {
+      try {
+        evidence.events = await page.evaluate(() => {
+          const state = (
+            window as Window & {
+              __xegOwn12NativeEvents?: {
+                records: Own12ModeEvidence['events'];
+                dispose: () => void;
+              };
+            }
+          ).__xegOwn12NativeEvents;
+          const records = state?.records ?? [];
+          state?.dispose();
+          delete (window as Window & { __xegOwn12NativeEvents?: unknown }).__xegOwn12NativeEvents;
+          return records;
+        });
+        observerInstalled = false;
+        evidence.cleanup.observerRemoved = true;
+      } catch (error) {
+        errors.push(error);
+        evidence.cleanup.errors.push(safeError(error));
+      }
+    } else if (!observerInstalled) {
+      evidence.cleanup.observerRemoved = true;
+    }
+    if (cdp) {
+      try {
+        await cdp.send('DOM.disable');
+      } catch (error) {
+        errors.push(error);
+        evidence.cleanup.errors.push(safeError(error));
+      }
+      try {
+        await cdp.detach();
+        cdp = undefined;
+        evidence.cleanup.cdpDetached = true;
+      } catch (error) {
+        errors.push(error);
+        evidence.cleanup.errors.push(safeError(error));
+      }
+    } else {
+      evidence.cleanup.cdpDetached = true;
+    }
+  };
+  try {
+    const pageUrl = `https://x.com/rapid_a/status/${RAPID_CLICK_A}`;
+    const nativeSetting: ControlledSettingEvidence = {};
+    evidence.native = { status: 'pending', controlledSetting: nativeSetting };
+    try {
+      evidence.native = {
+        status: 'passed',
+        ...(await withControlledFixtureVideoMode(
+          extensionPage,
+          nativeSetting,
+          async () => {
+            await page.goto(pageUrl);
+            await page
+              .locator('html[data-xeg-gallery-ready="true"]')
+              .waitFor({ state: 'attached' });
+            const video = page.locator('[data-rapid="b"] video');
+            await video.scrollIntoViewIfNeeded();
+            await page.waitForFunction(() => {
+              const host = document.querySelector('[data-rapid="b"] video');
+              return (
+                host instanceof HTMLVideoElement && host.readyState >= 2 && host.error === null
+              );
+            });
+            const storedMode = storedVideoClickMode(
+              (await readStoredVideoSettings(extensionPage)).settings
+            );
+            assert.equal(storedMode, mode);
+            const apiStart = quotedApiResponses.length;
+            const metadataStart = metadataCounts();
+            const initial = await hostVideoState(video);
+            assert(initial.paused && initial.readyState >= 2 && initial.error === null);
+            assert.equal(initial.width, 320);
+            assert.equal(initial.height, 180);
+            await page.evaluate(() => {
+              const host = document.querySelector('[data-rapid="b"] video');
+              if (!(host instanceof HTMLVideoElement)) {
+                throw new Error('OWN-12 host video missing');
+              }
+              const records: Array<{
+                type: string;
+                trusted: boolean;
+                time: number;
+                volume: number;
+                paused: boolean;
+              }> = [];
+              const onMediaEvent = (event: Event) => {
+                if (event.target !== host) {
+                  return;
+                }
+                if (records.length >= 24) {
+                  throw new Error('OWN-12 native event budget exceeded');
+                }
+                records.push({
+                  type: event.type,
+                  trusted: event.isTrusted,
+                  time: host.currentTime,
+                  volume: host.volume,
+                  paused: host.paused,
+                });
+              };
+              for (const type of ['play', 'pause', 'seeking', 'seeked', 'volumechange']) {
+                host.addEventListener(type, onMediaEvent, true);
+              }
+              (
+                window as Window & {
+                  __xegOwn12NativeEvents?: {
+                    records: typeof records;
+                    dispose: () => void;
+                  };
+                }
+              ).__xegOwn12NativeEvents = {
+                records,
+                dispose: () => {
+                  for (const type of ['play', 'pause', 'seeking', 'seeked', 'volumechange']) {
+                    host.removeEventListener(type, onMediaEvent, true);
+                  }
+                },
+              };
+            });
+            observerInstalled = true;
+            cdp = await context.newCDPSession(page);
+            await cdp.send('DOM.enable');
+            const assertNativeOnly = async (label: string) => {
+              assert.equal(
+                await page.locator('[data-xeg-gallery-container]').count(),
+                0,
+                `${label}: native control opened a gallery`
+              );
+              assert.deepEqual(
+                metadataCounts(),
+                metadataStart,
+                `${label}: metadata request dispatched`
+              );
+            };
+            const play = await locateOwn12NativeControl({
+              cdp,
+              evidence,
+              kind: 'play',
+              page,
+              video,
+            });
+            await page.mouse.click(play.x, play.y);
+            await page.waitForFunction(() => {
+              const host = document.querySelector('[data-rapid="b"] video');
+              return (
+                host instanceof HTMLVideoElement &&
+                !host.paused &&
+                host.currentTime > 0.15 &&
+                host.videoWidth === 320 &&
+                host.videoHeight === 180 &&
+                host.error === null
+              );
+            });
+            const playing = await hostVideoState(video);
+            assert.equal(playing.ended, false);
+            await assertNativeOnly('Play');
+            const pause = await locateOwn12NativeControl({
+              cdp,
+              evidence,
+              kind: 'play',
+              page,
+              video,
+            });
+            await page.mouse.click(pause.x, pause.y);
+            await page.waitForFunction(() => {
+              const host = document.querySelector('[data-rapid="b"] video');
+              return host instanceof HTMLVideoElement && host.paused && !host.ended;
+            });
+            const paused = await hostVideoState(video);
+            await page.waitForTimeout(350);
+            const pausedStable = await hostVideoState(video);
+            assert(pausedStable.currentTime - paused.currentTime < 0.05);
+            await assertNativeOnly('Pause');
+            const timeline = await locateOwn12NativeControl({
+              cdp,
+              evidence,
+              kind: 'timeline',
+              page,
+              video,
+            });
+            await page.mouse.click(timeline.x, timeline.y);
+            await page.waitForFunction((start) => {
+              const host = document.querySelector('[data-rapid="b"] video');
+              return host instanceof HTMLVideoElement && host.currentTime > start + 0.25;
+            }, pausedStable.currentTime);
+            const seeked = await hostVideoState(video);
+            assert.equal(seeked.paused, true);
+            await assertNativeOnly('Seek');
+            const volume = await locateOwn12NativeControl({
+              cdp,
+              evidence,
+              kind: 'volume',
+              page,
+              video,
+            });
+            await page.mouse.click(volume.x, volume.y);
+            await page.waitForFunction((prior) => {
+              const host = document.querySelector('[data-rapid="b"] video');
+              return host instanceof HTMLVideoElement && Math.abs(host.volume - prior) > 0.1;
+            }, seeked.volume);
+            const volumeAfter = await hostVideoState(video);
+            assert.equal(volumeAfter.paused, true);
+            await assertNativeOnly('Volume');
+            // Native events are queued after control values change; wait for the observed events.
+            await page.waitForFunction(
+              () => {
+                const records = (
+                  window as Window & {
+                    __xegOwn12NativeEvents?: { records: Own12ModeEvidence['events'] };
+                  }
+                ).__xegOwn12NativeEvents?.records;
+                return ['play', 'pause', 'seeked', 'volumechange'].every((type) =>
+                  records?.some((event) => event.type === type && event.trusted)
+                );
+              },
+              undefined,
+              { timeout: 2_000 }
+            );
+            evidence.events = await page.evaluate(
+              () =>
+                (
+                  window as Window & {
+                    __xegOwn12NativeEvents?: { records: Own12ModeEvidence['events'] };
+                  }
+                ).__xegOwn12NativeEvents?.records ?? []
+            );
+            for (const type of ['play', 'pause', 'seeked', 'volumechange']) {
+              assert(
+                evidence.events.some((event) => event.type === type && event.trusted),
+                `${type}: trusted native media event missing`
+              );
+            }
+            assert.deepEqual(pageErrors, []);
+            return {
+              pageUrl,
+              storedMode,
+              controlledSetting: nativeSetting,
+              initial,
+              controls: { play, pause, timeline, volume },
+              playing,
+              paused,
+              pausedStable,
+              seeked,
+              volumeAfter,
+              metadata: { before: metadataStart, after: metadataCounts() },
+              api: quotedApiResponses.slice(apiStart),
+            };
+          },
+          mode
+        )),
+      };
+    } catch (error) {
+      errors.push(error);
+      evidence.native = {
+        status: 'failed',
+        controlledSetting: nativeSetting,
+        pageErrors: [...pageErrors],
+        error: safeError(error),
+      };
+    } finally {
+      await releaseNative();
+    }
+    if (nativeSetting.restored === false) {
+      evidence.settingsRestorationFailed = true;
+      evidence.adjacentPhoto = {
+        status: 'not-run',
+        error: 'Native mode settings were not restored',
+      };
+    } else {
+      pageErrors.length = 0;
+      const photoSetting: ControlledSettingEvidence = {};
+      evidence.adjacentPhoto = { status: 'pending', controlledSetting: photoSetting };
+      try {
+        evidence.adjacentPhoto = {
+          status: 'passed',
+          ...(await withControlledFixtureVideoMode(
+            extensionPage,
+            photoSetting,
+            async () => {
+              await page.goto(pageUrl);
+              await page
+                .locator('html[data-xeg-gallery-ready="true"]')
+                .waitFor({ state: 'attached' });
+              const storedMode = storedVideoClickMode(
+                (await readStoredVideoSettings(extensionPage)).settings
+              );
+              assert.equal(storedMode, mode);
+              const videoApiStart = quotedApiResponses.length;
+              const videoMetadataStart = metadataCounts();
+              let videoHit: { x: number; y: number; hit: boolean } | undefined;
+              if (mode === 'block-all') {
+                const video = page.locator('[data-rapid="b"] video');
+                await video.scrollIntoViewIfNeeded();
+                videoHit = await video.evaluate((element) => {
+                  const rect = element.getBoundingClientRect();
+                  const x = rect.left + rect.width / 2;
+                  const y = rect.top + rect.height / 2;
+                  return { x, y, hit: document.elementFromPoint(x, y) === element };
+                });
+                assert.equal(videoHit.hit, true, 'block-all B video surface is not hit-tested');
+                await page.mouse.click(videoHit.x, videoHit.y);
+                await page.waitForTimeout(150);
+                assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0);
+                assert.deepEqual(
+                  metadataCounts(),
+                  videoMetadataStart,
+                  'block-all B video dispatched gallery metadata'
+                );
+              }
+              const photo = page.locator('[data-rapid="b"] [data-testid="tweetPhoto"] img');
+              await photo.scrollIntoViewIfNeeded();
+              await page.evaluate(() => window.scrollBy(0, -100));
+              await photo.focus();
+              const snapshot = () =>
+                page.evaluate(() => {
+                  const target = document.querySelector(
+                    '[data-rapid="b"] [data-testid="tweetPhoto"] img'
+                  );
+                  return {
+                    focused: document.activeElement === target,
+                    scrollY,
+                    bodyStyle: document.body.style.cssText,
+                    background: ['#host-layout-spacer', 'main'].map((selector) => {
+                      const node = document.querySelector(selector);
+                      return {
+                        hidden: node?.hasAttribute('data-xeg-gallery-hidden') ?? false,
+                        inert: node?.hasAttribute('inert') ?? false,
+                        ariaHidden: node?.getAttribute('aria-hidden') ?? null,
+                      };
+                    }),
+                  };
+                });
+              const before = await snapshot();
+              assert(before.focused && before.scrollY > 0);
+              const photoHit = await photo.evaluate((element) => {
+                const rect = element.getBoundingClientRect();
+                const x = rect.left + rect.width / 2;
+                const y = rect.top + rect.height / 2;
+                return { x, y, hit: document.elementFromPoint(x, y) === element };
+              });
+              assert.equal(photoHit.hit, true, 'B photo must be the ordinary hit-tested target');
+              await page.mouse.click(photoHit.x, photoHit.y);
+              const gallery = page.locator('[data-xeg-gallery-container]');
+              await gallery.waitFor({ state: 'visible' });
+              const selected = await assertQuotedSelection(page, {
+                position: 1,
+                total: 2,
+                type: 'image',
+                path: '/media/QQuoteTwoPhoto.jpg',
+              });
+              const originUrl = await assertQuotedOriginLink(
+                gallery,
+                `https://x.com/rapid_b/status/${RAPID_CLICK_B}`
+              );
+              const api = quotedApiResponses.slice(videoApiStart);
+              assert.deepEqual(
+                api.map(({ tweetId }) => tweetId),
+                [RAPID_CLICK_B]
+              );
+              assert.deepEqual(metadataCounts(), {
+                ...videoMetadataStart,
+                quoted: videoMetadataStart.quoted + 1,
+              });
+              await page.keyboard.press('Escape');
+              await gallery.waitFor({ state: 'detached' });
+              const after = await snapshot();
+              assert.deepEqual(
+                after,
+                before,
+                'B photo close must restore host focus and isolation'
+              );
+              assert.deepEqual(pageErrors, []);
+              return {
+                pageUrl,
+                storedMode,
+                controlledSetting: photoSetting,
+                videoHit,
+                photoHit,
+                selected,
+                originUrl,
+                api,
+                metadata: { before: videoMetadataStart, after: metadataCounts() },
+                before,
+                after,
+              };
+            },
+            mode
+          )),
+        };
+      } catch (error) {
+        errors.push(error);
+        evidence.adjacentPhoto = {
+          status: 'failed',
+          controlledSetting: photoSetting,
+          pageErrors: [...pageErrors],
+          error: safeError(error),
+        };
+      }
+      if (photoSetting.restored === false) {
+        evidence.settingsRestorationFailed = true;
+      }
+    }
+  } catch (error) {
+    errors.push(error);
+    evidence.error = safeError(error);
+  } finally {
+    await releaseNative();
+    page.off('pageerror', onPageError);
+    evidence.cleanup.listenersRemoved = true;
+    try {
+      await page.close();
+      evidence.cleanup.pageClosed = true;
+    } catch (error) {
+      errors.push(error);
+      evidence.cleanup.errors.push(safeError(error));
+    }
+    evidence.status = errors.length ? 'failed' : 'passed';
+  }
+  return { evidence, errors };
+}
+
 async function runOwn12NativeControls({
   apiResponses,
   compactApiResponses,
@@ -9326,14 +10450,16 @@ async function runOwn12NativeControls({
   qualityApiResponses: ApiRecord[];
   quotedApiResponses: ApiRecord[];
 }): Promise<Own12NativeControlsEvidence> {
-  const metadataCounts = () => ({
-    generic: apiResponses.length,
-    quoted: quotedApiResponses.length,
-    quality: qualityApiResponses.length,
-    compact: compactApiResponses.length,
-  });
   const evidence: Own12NativeControlsEvidence = {
     status: 'pending',
+    modes: [],
+    cleanup: { errors: [] },
+  };
+  const modes = ['block-controls-only', 'allow-all', 'block-all'] as const;
+  const notRunMode = (mode: Own12Mode, error: string): Own12ModeEvidence => ({
+    status: 'not-run',
+    mode,
+    error,
     geometry: [],
     discovery: [],
     events: [],
@@ -9344,417 +10470,51 @@ async function runOwn12NativeControls({
       pageClosed: false,
       errors: [],
     },
-  };
-  let page: Page;
-  try {
-    page = await context.newPage();
-  } catch (error) {
-    evidence.status = 'failed';
-    evidence.error = safeError(error);
-    await writeFile(
-      join(output, 'own12-native-controls-observations.json'),
-      JSON.stringify(evidence, null, 2)
-    );
-    throw error;
-  }
-  const pageErrors: string[] = [];
-  const onPageError = (error: Error) => {
-    if (pageErrors.length < 8) {
-      pageErrors.push(error.message.slice(0, 500));
-    }
-  };
-  page.on('pageerror', onPageError);
-  let cdp: CDPSession | undefined;
-  let observerInstalled = false;
-  let primaryError: unknown;
+  });
+  const errors: unknown[] = [];
+  let armed = false;
   let receiptError: unknown;
-  let rapidBAvArmed = false;
+  let blockedReason: string | undefined;
   try {
     evidence.transport = fixtureRoutes.armOwn12RapidBAudioVideo();
-    rapidBAvArmed = true;
-    const pageUrl = `https://x.com/rapid_a/status/${RAPID_CLICK_A}`;
-    const nativeSetting: ControlledSettingEvidence = {};
-    evidence.native = { status: 'pending', controlledSetting: nativeSetting };
-    evidence.native = await withControlledFixtureVideoMode(
-      extensionPage,
-      nativeSetting,
-      async () => {
-        await page.goto(pageUrl);
-        await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
-        const video = page.locator('[data-rapid="b"] video');
-        await video.scrollIntoViewIfNeeded();
-        await page.waitForFunction(() => {
-          const host = document.querySelector('[data-rapid="b"] video');
-          return host instanceof HTMLVideoElement && host.readyState >= 2 && host.error === null;
-        });
-        const storedMode = storedVideoClickMode(
-          (await readStoredVideoSettings(extensionPage)).settings
-        );
-        assert.equal(storedMode, 'block-controls-only');
-        const apiStart = quotedApiResponses.length;
-        const metadataStart = metadataCounts();
-        const initial = await hostVideoState(video);
-        assert(initial.paused && initial.readyState >= 2 && initial.error === null);
-        assert.equal(initial.width, 320);
-        assert.equal(initial.height, 180);
-        await page.evaluate(() => {
-          const host = document.querySelector('[data-rapid="b"] video');
-          if (!(host instanceof HTMLVideoElement)) {
-            throw new Error('OWN-12 host video missing');
-          }
-          const records: Array<{
-            type: string;
-            trusted: boolean;
-            time: number;
-            volume: number;
-            paused: boolean;
-          }> = [];
-          const onMediaEvent = (event: Event) => {
-            if (event.target !== host) {
-              return;
-            }
-            if (records.length >= 24) {
-              throw new Error('OWN-12 native event budget exceeded');
-            }
-            records.push({
-              type: event.type,
-              trusted: event.isTrusted,
-              time: host.currentTime,
-              volume: host.volume,
-              paused: host.paused,
-            });
-          };
-          for (const type of ['play', 'pause', 'seeking', 'seeked', 'volumechange']) {
-            host.addEventListener(type, onMediaEvent, true);
-          }
-          (
-            window as Window & {
-              __xegOwn12NativeEvents?: {
-                records: typeof records;
-                dispose: () => void;
-              };
-            }
-          ).__xegOwn12NativeEvents = {
-            records,
-            dispose: () => {
-              for (const type of ['play', 'pause', 'seeking', 'seeked', 'volumechange']) {
-                host.removeEventListener(type, onMediaEvent, true);
-              }
-            },
-          };
-        });
-        observerInstalled = true;
-        cdp = await context.newCDPSession(page);
-        await cdp.send('DOM.enable');
-        const assertNativeOnly = async (label: string) => {
-          assert.equal(
-            await page.locator('[data-xeg-gallery-container]').count(),
-            0,
-            `${label}: native control opened a gallery`
-          );
-          assert.deepEqual(
-            metadataCounts(),
-            metadataStart,
-            `${label}: metadata request dispatched`
-          );
-        };
-        const play = await locateOwn12NativeControl({
-          cdp,
-          evidence,
-          kind: 'play',
-          page,
-          video,
-        });
-        await page.mouse.click(play.x, play.y);
-        await page.waitForFunction(() => {
-          const host = document.querySelector('[data-rapid="b"] video');
-          return (
-            host instanceof HTMLVideoElement &&
-            !host.paused &&
-            host.currentTime > 0.15 &&
-            host.videoWidth === 320 &&
-            host.videoHeight === 180 &&
-            host.error === null
-          );
-        });
-        const playing = await hostVideoState(video);
-        assert.equal(playing.ended, false);
-        await assertNativeOnly('Play');
-        const pause = await locateOwn12NativeControl({
-          cdp,
-          evidence,
-          kind: 'play',
-          page,
-          video,
-        });
-        await page.mouse.click(pause.x, pause.y);
-        await page.waitForFunction(() => {
-          const host = document.querySelector('[data-rapid="b"] video');
-          return host instanceof HTMLVideoElement && host.paused && !host.ended;
-        });
-        const paused = await hostVideoState(video);
-        await page.waitForTimeout(350);
-        const pausedStable = await hostVideoState(video);
-        assert(pausedStable.currentTime - paused.currentTime < 0.05);
-        await assertNativeOnly('Pause');
-        const timeline = await locateOwn12NativeControl({
-          cdp,
-          evidence,
-          kind: 'timeline',
-          page,
-          video,
-        });
-        await page.mouse.click(timeline.x, timeline.y);
-        await page.waitForFunction((start) => {
-          const host = document.querySelector('[data-rapid="b"] video');
-          return host instanceof HTMLVideoElement && host.currentTime > start + 0.25;
-        }, pausedStable.currentTime);
-        const seeked = await hostVideoState(video);
-        assert.equal(seeked.paused, true);
-        await assertNativeOnly('Seek');
-        const volume = await locateOwn12NativeControl({
-          cdp,
-          evidence,
-          kind: 'volume',
-          page,
-          video,
-        });
-        await page.mouse.click(volume.x, volume.y);
-        await page.waitForFunction((prior) => {
-          const host = document.querySelector('[data-rapid="b"] video');
-          return host instanceof HTMLVideoElement && Math.abs(host.volume - prior) > 0.1;
-        }, seeked.volume);
-        const volumeAfter = await hostVideoState(video);
-        assert.equal(volumeAfter.paused, true);
-        await assertNativeOnly('Volume');
-        // Native events are queued after control values change; wait for the observed events.
-        await page.waitForFunction(
-          () => {
-            const records = (
-              window as Window & {
-                __xegOwn12NativeEvents?: { records: Own12NativeControlsEvidence['events'] };
-              }
-            ).__xegOwn12NativeEvents?.records;
-            return ['play', 'pause', 'seeked', 'volumechange'].every((type) =>
-              records?.some((event) => event.type === type && event.trusted)
-            );
-          },
-          undefined,
-          { timeout: 2_000 }
-        );
-        evidence.events = await page.evaluate(
-          () =>
-            (
-              window as Window & {
-                __xegOwn12NativeEvents?: { records: Own12NativeControlsEvidence['events'] };
-              }
-            ).__xegOwn12NativeEvents?.records ?? []
-        );
-        for (const type of ['play', 'pause', 'seeked', 'volumechange']) {
-          assert(
-            evidence.events.some((event) => event.type === type && event.trusted),
-            `${type}: trusted native media event missing`
-          );
-        }
-        assert.deepEqual(pageErrors, []);
-        return {
-          pageUrl,
-          storedMode,
-          controlledSetting: nativeSetting,
-          initial,
-          controls: { play, pause, timeline, volume },
-          playing,
-          paused,
-          pausedStable,
-          seeked,
-          volumeAfter,
-          metadata: { before: metadataStart, after: metadataCounts() },
-          api: quotedApiResponses.slice(apiStart),
-        };
-      },
-      'block-controls-only'
-    );
-    await page.evaluate(() => {
-      const state = (window as Window & { __xegOwn12NativeEvents?: { dispose: () => void } })
-        .__xegOwn12NativeEvents;
-      state?.dispose();
-      delete (window as Window & { __xegOwn12NativeEvents?: unknown }).__xegOwn12NativeEvents;
-    });
-    observerInstalled = false;
-    evidence.cleanup.observerRemoved = true;
-    const nativeCdp = cdp;
-    assert(nativeCdp, 'OWN-12 native control CDP session is missing');
-    await nativeCdp.send('DOM.disable');
-    await nativeCdp.detach();
-    cdp = undefined;
-    evidence.cleanup.cdpDetached = true;
-    const photoSetting: ControlledSettingEvidence = {};
-    evidence.adjacentPhoto = { status: 'pending', controlledSetting: photoSetting };
-    evidence.adjacentPhoto = await withControlledFixtureVideoMode(
-      extensionPage,
-      photoSetting,
-      async () => {
-        await page.goto(pageUrl);
-        await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
-        const storedMode = storedVideoClickMode(
-          (await readStoredVideoSettings(extensionPage)).settings
-        );
-        assert.equal(storedMode, 'block-all');
-        const video = page.locator('[data-rapid="b"] video');
-        await video.scrollIntoViewIfNeeded();
-        const videoHit = await video.evaluate((element) => {
-          const rect = element.getBoundingClientRect();
-          const x = rect.left + rect.width / 2;
-          const y = rect.top + rect.height / 2;
-          return { x, y, hit: document.elementFromPoint(x, y) === element };
-        });
-        assert.equal(videoHit.hit, true, 'block-all B video surface is not hit-tested');
-        const videoApiStart = quotedApiResponses.length;
-        const videoMetadataStart = metadataCounts();
-        await page.mouse.click(videoHit.x, videoHit.y);
-        await page.waitForTimeout(150);
-        assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0);
-        assert.deepEqual(
-          metadataCounts(),
-          videoMetadataStart,
-          'block-all B video dispatched gallery metadata'
-        );
-        const photo = page.locator('[data-rapid="b"] [data-testid="tweetPhoto"] img');
-        await photo.scrollIntoViewIfNeeded();
-        await page.evaluate(() => window.scrollBy(0, -100));
-        await photo.focus();
-        const snapshot = () =>
-          page.evaluate(() => {
-            const target = document.querySelector(
-              '[data-rapid="b"] [data-testid="tweetPhoto"] img'
-            );
-            return {
-              focused: document.activeElement === target,
-              scrollY,
-              bodyStyle: document.body.style.cssText,
-              background: ['#host-layout-spacer', 'main'].map((selector) => {
-                const node = document.querySelector(selector);
-                return {
-                  hidden: node?.hasAttribute('data-xeg-gallery-hidden') ?? false,
-                  inert: node?.hasAttribute('inert') ?? false,
-                  ariaHidden: node?.getAttribute('aria-hidden') ?? null,
-                };
-              }),
-            };
-          });
-        const before = await snapshot();
-        assert(before.focused && before.scrollY > 0);
-        const photoHit = await photo.evaluate((element) => {
-          const rect = element.getBoundingClientRect();
-          const x = rect.left + rect.width / 2;
-          const y = rect.top + rect.height / 2;
-          return { x, y, hit: document.elementFromPoint(x, y) === element };
-        });
-        assert.equal(photoHit.hit, true, 'B photo must be the ordinary hit-tested target');
-        await page.mouse.click(photoHit.x, photoHit.y);
-        const gallery = page.locator('[data-xeg-gallery-container]');
-        await gallery.waitFor({ state: 'visible' });
-        const selected = await assertQuotedSelection(page, {
-          position: 1,
-          total: 2,
-          type: 'image',
-          path: '/media/QQuoteTwoPhoto.jpg',
-        });
-        const originUrl = await assertQuotedOriginLink(
-          gallery,
-          `https://x.com/rapid_b/status/${RAPID_CLICK_B}`
-        );
-        const api = quotedApiResponses.slice(videoApiStart);
-        assert.deepEqual(
-          api.map(({ tweetId }) => tweetId),
-          [RAPID_CLICK_B]
-        );
-        assert.deepEqual(metadataCounts(), {
-          ...videoMetadataStart,
-          quoted: videoMetadataStart.quoted + 1,
-        });
-        await page.keyboard.press('Escape');
-        await gallery.waitFor({ state: 'detached' });
-        const after = await snapshot();
-        assert.deepEqual(after, before, 'B photo close must restore host focus and isolation');
-        assert.deepEqual(pageErrors, []);
-        return {
-          pageUrl,
-          storedMode,
-          controlledSetting: photoSetting,
-          videoHit,
-          photoHit,
-          selected,
-          originUrl,
-          api,
-          metadata: { before: videoMetadataStart, after: metadataCounts() },
-          before,
-          after,
-        };
-      },
-      'block-all'
-    );
+    armed = true;
+    for (const mode of modes) {
+      if (blockedReason) {
+        evidence.modes.push(notRunMode(mode, blockedReason));
+        continue;
+      }
+      const result = await runOwn12NativeControlsMode({
+        apiResponses,
+        compactApiResponses,
+        context,
+        extensionPage,
+        mode,
+        qualityApiResponses,
+        quotedApiResponses,
+      });
+      evidence.modes.push(result.evidence);
+      errors.push(...result.errors);
+      if (result.evidence.settingsRestorationFailed) {
+        blockedReason = `Prior ${mode} settings could not be restored`;
+      }
+    }
   } catch (error) {
-    primaryError = error;
-    evidence.status = 'failed';
+    errors.push(error);
     evidence.error = safeError(error);
   } finally {
-    if (rapidBAvArmed) {
-      fixtureRoutes.clearOwn12RapidBAudioVideo();
-      evidence.transport!.restored = true;
+    for (const mode of modes.slice(evidence.modes.length)) {
+      evidence.modes.push(notRunMode(mode, evidence.error ?? 'OWN-12 setup failed'));
     }
-    if (observerInstalled && !page.isClosed()) {
+    if (armed) {
       try {
-        evidence.events = await page.evaluate(() => {
-          const state = (
-            window as Window & {
-              __xegOwn12NativeEvents?: {
-                records: Own12NativeControlsEvidence['events'];
-                dispose: () => void;
-              };
-            }
-          ).__xegOwn12NativeEvents;
-          const records = state?.records ?? [];
-          state?.dispose();
-          delete (window as Window & { __xegOwn12NativeEvents?: unknown }).__xegOwn12NativeEvents;
-          return records;
-        });
-        evidence.cleanup.observerRemoved = true;
+        fixtureRoutes.clearOwn12RapidBAudioVideo();
+        evidence.transport!.restored = true;
       } catch (error) {
+        errors.push(error);
         evidence.cleanup.errors.push(safeError(error));
       }
-    } else if (!observerInstalled) {
-      evidence.cleanup.observerRemoved = true;
     }
-    if (cdp) {
-      try {
-        await cdp.send('DOM.disable');
-      } catch (error) {
-        evidence.cleanup.errors.push(safeError(error));
-      }
-      try {
-        await cdp.detach();
-        evidence.cleanup.cdpDetached = true;
-      } catch (error) {
-        evidence.cleanup.errors.push(safeError(error));
-      }
-    } else {
-      evidence.cleanup.cdpDetached = true;
-    }
-    page.off('pageerror', onPageError);
-    evidence.cleanup.listenersRemoved = true;
-    try {
-      await page.close();
-      evidence.cleanup.pageClosed = true;
-    } catch (error) {
-      evidence.cleanup.errors.push(safeError(error));
-    }
-    if (!primaryError && evidence.cleanup.errors.length === 0) {
-      evidence.status = 'passed';
-    }
-    if (evidence.cleanup.errors.length) {
-      evidence.status = 'failed';
-    }
+    evidence.status = errors.length ? 'failed' : 'passed';
     try {
       await writeFile(
         join(output, 'own12-native-controls-observations.json'),
@@ -9764,16 +10524,12 @@ async function runOwn12NativeControls({
       receiptError = error;
     }
   }
-  const errors = [
-    ...(primaryError ? [primaryError] : []),
-    ...evidence.cleanup.errors.map((message) => new Error(message)),
-    ...(receiptError ? [receiptError] : []),
-  ];
-  if (errors.length > 1) {
-    throw new AggregateError(errors, 'OWN-12 validation and cleanup failed');
+  const failures = [...errors, ...(receiptError ? [receiptError] : [])];
+  if (failures.length > 1) {
+    throw new AggregateError(failures, 'OWN-12 mode validation and cleanup failed');
   }
-  if (errors.length === 1) {
-    throw errors[0];
+  if (failures.length === 1) {
+    throw failures[0];
   }
   return evidence;
 }
@@ -12318,6 +13074,13 @@ async function exerciseInstalledExtension(
   let own12NativeControls: Own12NativeControlsEvidence | AcceptanceReceipt = { status: 'pending' };
   let delayedVideoFailures: AcceptanceReceipt = { status: 'pending' };
   let rapidVideoClicks: AcceptanceReceipt = { status: 'pending' };
+  const creditControls = {
+    status: 'pending',
+    steps: [] as Record<string, unknown>[],
+    controlledSetting: {} as ControlledSettingEvidence,
+    cleanup: { galleryClosed: false },
+    error: undefined as string | undefined,
+  };
   let modelessRenderRecovery: AcceptanceReceipt = { status: 'pending' };
   const acceptanceFailures: unknown[] = [];
   const unavailableSequence: UnavailableEvidence & {
@@ -12722,6 +13485,39 @@ async function exerciseInstalledExtension(
       }
     }
     try {
+      await runCreditControlsCycle({
+        page,
+        extensionPage,
+        quotedApiResponses: fixtureRoutes.quotedApiResponses,
+        apiResponses: fixtureRoutes.apiResponses,
+        compactApiResponses: fixtureRoutes.compactApiResponses,
+        qualityApiResponses: fixtureRoutes.qualityApiResponses,
+        evidence: creditControls,
+      });
+    } catch (error) {
+      creditControls.status = 'failed';
+      creditControls.error = safeError(error);
+      acceptanceFailures.push(error);
+    } finally {
+      try {
+        const gallery = page.locator('[data-xeg-gallery-container]');
+        if (await gallery.isVisible()) {
+          await gallery
+            .locator('[data-gallery-element="toolbar"] button[aria-label="Close"]')
+            .click();
+          await gallery.waitFor({ state: 'detached' });
+        }
+        creditControls.cleanup.galleryClosed = true;
+      } catch (error) {
+        creditControls.status = 'failed';
+        acceptanceFailures.push(error);
+      }
+      await writeFile(
+        join(output, 'own14-credit-controls-observations.json'),
+        JSON.stringify(creditControls, null, 2)
+      );
+    }
+    try {
       svgTargetMatrix = await runSvgTargetMatrix({
         extensionPage,
         output,
@@ -13034,6 +13830,7 @@ async function exerciseInstalledExtension(
       packagingAssets,
       publicDom,
       quotedVideoCycles,
+      creditControls,
       svgTargetMatrix,
       blockAllDirectVideo,
       directVideoAllowedModes,
@@ -13123,6 +13920,7 @@ async function exerciseInstalledExtension(
             packagingAssets,
             publicDom,
             quotedVideoCycles,
+            creditControls,
             svgTargetMatrix,
             blockAllDirectVideo,
             directVideoAllowedModes,
@@ -13496,6 +14294,293 @@ async function runExtensionUpgrade({
   return receipt;
 }
 
+async function runSameVersionAttribution({
+  context,
+  extensionId,
+  extensionPath,
+  input,
+  output,
+  root,
+  downloads,
+  nativeLoopback,
+}: {
+  context: BrowserContext;
+  extensionId: string;
+  extensionPath: string;
+  input: NonNullable<Awaited<ReturnType<typeof readSameVersionInput>>>;
+  output: string;
+  root: string;
+  downloads: string;
+  nativeLoopback: NativeLoopback;
+}) {
+  const receipt: {
+    status: string;
+    role: string;
+    version: string;
+    sourceSha: string;
+    coreSha: string;
+    harnessSourceSha: string;
+    harnessCoreSha: string;
+    extensionId: string;
+    expectedInventorySha256: string;
+    installedInventorySha256?: string;
+    expectedContentSha256: string;
+    installedContentSha256?: string;
+    manifestVersion?: string;
+    defaultClickMode?: string;
+    cases: Array<Record<string, unknown>>;
+    api?: ApiRecord[];
+    rejectedApi?: ApiRecord[];
+    nativeTransport?: ReturnType<NativeLoopback['snapshot']>;
+    cleanup: { routesRemoved?: boolean; extensionPageClosed?: boolean; errors: string[] };
+    error?: string;
+  } = {
+    status: 'pending',
+    role: input.role,
+    version: input.version,
+    sourceSha: input.sourceSha,
+    coreSha: input.coreSha,
+    harnessSourceSha: input.harnessSourceSha,
+    harnessCoreSha: input.harnessCoreSha,
+    extensionId,
+    expectedInventorySha256: input.extension.inventorySha256,
+    expectedContentSha256: input.extension.contentSha256,
+    cases: [],
+    cleanup: { errors: [] },
+  };
+  const images = await createImageFixtures(context);
+  const displayImages = await createImageFixtures(context, 0.25);
+  const routes = await installFixtureRoutes(context, root, images, displayImages);
+  const extensionPage = await context.newPage();
+  let primaryError: unknown;
+  try {
+    nativeLoopback.setPayloads(images, routes.videoPayloads);
+    receipt.installedInventorySha256 = await extensionInventorySha256(extensionPath);
+    assert.equal(receipt.installedInventorySha256, input.extension.inventorySha256);
+    receipt.installedContentSha256 = sha256(await readFile(join(extensionPath, 'content.js')));
+    assert.equal(receipt.installedContentSha256, input.extension.contentSha256);
+    await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
+    assert.equal(await extensionPage.evaluate(() => chrome.runtime.id), extensionId);
+    receipt.manifestVersion = await extensionPage.evaluate(
+      () => chrome.runtime.getManifest().version
+    );
+    assert.equal(receipt.manifestVersion, input.version);
+    receipt.defaultClickMode =
+      storedVideoClickMode((await readStoredVideoSettings(extensionPage)).settings) ??
+      'block-controls-only';
+    assert.equal(receipt.defaultClickMode, 'block-controls-only');
+
+    for (const name of ['recognized', 'unmarked', 'unmarked-no-outer'] as const) {
+      const quotedCase = QUOTED_CASES.find((item) => item.name === name);
+      assert(quotedCase, `Same-version ${name} fixture is missing`);
+      const observed: Record<string, unknown> = {
+        name,
+        status: 'pending',
+        parsedContent: [],
+        pageErrors: [],
+        consoleErrors: [],
+        cleanup: { pageClosed: false, cdpDetached: false, listenersRemoved: false },
+      };
+      receipt.cases.push(observed);
+      const page = await context.newPage();
+      let cdp: CDPSession | undefined;
+      const parsed: Array<{ scriptId: string; url: string }> = [];
+      let parsedOverflow = false;
+      const pageFetches: PageFetch[] = [];
+      let fetchOverflow = false;
+      const onPageError = (error: Error) => {
+        const list = observed.pageErrors as string[];
+        if (list.length < 8) {
+          list.push(error.message.slice(0, 500));
+        } else {
+          fetchOverflow = true;
+        }
+      };
+      const onConsole = (message: ConsoleMessage) => {
+        if (message.type() !== 'error') {
+          return;
+        }
+        const list = observed.consoleErrors as string[];
+        if (list.length < 8) {
+          list.push(message.text().slice(0, 500));
+        } else {
+          fetchOverflow = true;
+        }
+      };
+      const onRequest = (request: Request) => {
+        if (!['fetch', 'xhr'].includes(request.resourceType())) {
+          return;
+        }
+        const url = new URL(request.url());
+        if (!['pbs.twimg.com', 'video.twimg.com'].includes(url.hostname)) {
+          return;
+        }
+        if (pageFetches.length < 32) {
+          pageFetches.push({
+            host: url.hostname,
+            path: url.pathname,
+            resourceType: request.resourceType(),
+          });
+        } else {
+          fetchOverflow = true;
+        }
+      };
+      page.on('pageerror', onPageError);
+      page.on('console', onConsole);
+      page.on('request', onRequest);
+      const apiMark = routes.quotedApiResponses.length;
+      try {
+        cdp = await context.newCDPSession(page);
+        cdp.on('Debugger.scriptParsed', ({ scriptId, url }) => {
+          if (url !== `chrome-extension://${extensionId}/content.js`) {
+            return;
+          }
+          if (parsed.length < 2) {
+            parsed.push({ scriptId, url });
+          } else {
+            parsedOverflow = true;
+          }
+        });
+        await cdp.send('Debugger.enable');
+        observed.cycle = await runQuotedVideoCycle({
+          quotedCase,
+          quotedApiResponses: routes.quotedApiResponses,
+          downloads,
+          extensionPage,
+          output,
+          page,
+          videoPayloads: routes.videoPayloads,
+          nativeLoopback,
+          pageFetches,
+        });
+        observed.api = routes.quotedApiResponses.slice(apiMark);
+        assert.equal(fetchOverflow, false, 'Same-version page observation exceeded its bound');
+        assert.deepEqual(observed.pageErrors, [], 'Same-version page raised an error');
+        assert.deepEqual(observed.consoleErrors, [], 'Same-version page logged an error');
+        observed.status = 'passed';
+      } catch (error) {
+        observed.status = 'failed';
+        observed.error = safeError(error);
+        observed.api = routes.quotedApiResponses.slice(apiMark);
+        observed.parsedScriptsSeen = parsed.length;
+        observed.parsedOverflow = parsedOverflow;
+        observed.fetchOverflow = fetchOverflow;
+        const screenshot = `same-version-${name}-failure.png`;
+        await page.screenshot({ path: join(output, screenshot) }).then(
+          () => {
+            observed.screenshot = screenshot;
+          },
+          (captureError) => {
+            observed.screenshotError = safeError(captureError);
+          }
+        );
+      } finally {
+        try {
+          assert(cdp, 'Same-version debugger session was not created');
+          assert(
+            !parsedOverflow && parsed.length > 0,
+            'Installed content script parse record is missing or overflowed'
+          );
+          for (const record of parsed) {
+            const source = await cdp.send('Debugger.getScriptSource', {
+              scriptId: record.scriptId,
+            });
+            const actualSha256 = sha256(Buffer.from(source.scriptSource, 'utf8'));
+            (observed.parsedContent as Array<Record<string, unknown>>).push({
+              url: record.url,
+              sha256: actualSha256,
+            });
+            assert.equal(
+              actualSha256,
+              input.extension.contentSha256,
+              'Executed content script bytes differ'
+            );
+          }
+        } catch (error) {
+          observed.status = 'failed';
+          observed.scriptError = safeError(error);
+        }
+        observed.parsedScriptsSeen = parsed.length;
+        observed.parsedOverflow = parsedOverflow;
+        observed.fetchOverflow = fetchOverflow;
+        if (observed.status === 'failed' && !observed.screenshot) {
+          const screenshot = `same-version-${name}-failure.png`;
+          await page.screenshot({ path: join(output, screenshot) }).then(
+            () => {
+              observed.screenshot = screenshot;
+            },
+            (captureError) => {
+              observed.screenshotError = safeError(captureError);
+            }
+          );
+        }
+        page.off('pageerror', onPageError);
+        page.off('console', onConsole);
+        page.off('request', onRequest);
+        (observed.cleanup as Record<string, unknown>).listenersRemoved = true;
+        try {
+          await cdp?.detach();
+          (observed.cleanup as Record<string, unknown>).cdpDetached = true;
+        } catch (error) {
+          receipt.cleanup.errors.push(safeError(error));
+        }
+        try {
+          await page.close();
+          (observed.cleanup as Record<string, unknown>).pageClosed = true;
+        } catch (error) {
+          receipt.cleanup.errors.push(safeError(error));
+        }
+      }
+    }
+    receipt.nativeTransport = nativeLoopback.snapshot();
+    assert.deepEqual(
+      routes.apiResponses,
+      [],
+      'Same-version fixture made an unsupported API request'
+    );
+    assert.equal(receipt.nativeTransport.unexpectedCount, 0);
+    assert.equal(receipt.nativeTransport.overflow, false);
+    assert.equal(receipt.nativeTransport.activeCount, 0);
+    assert.equal(receipt.nativeTransport.serverError, false);
+    assert(
+      receipt.cases.every((item) => item.status === 'passed'),
+      'Same-version case failed'
+    );
+    receipt.status = 'passed';
+  } catch (error) {
+    primaryError = error;
+    receipt.status = 'failed';
+    receipt.error = safeError(error);
+  } finally {
+    receipt.api = routes.quotedApiResponses;
+    receipt.rejectedApi = routes.apiResponses;
+    receipt.nativeTransport = nativeLoopback.snapshot();
+    try {
+      await extensionPage.close();
+      receipt.cleanup.extensionPageClosed = true;
+    } catch (error) {
+      receipt.cleanup.errors.push(safeError(error));
+    }
+    try {
+      await routes.remove();
+      receipt.cleanup.routesRemoved = true;
+    } catch (error) {
+      receipt.cleanup.errors.push(safeError(error));
+    }
+    if (receipt.cleanup.errors.length) {
+      receipt.status = 'failed';
+    }
+    await writeFile(
+      join(output, 'same-version-attribution.json'),
+      JSON.stringify(receipt, null, 2)
+    );
+  }
+  if (primaryError && !receipt.error) {
+    receipt.error = safeError(primaryError);
+  }
+  return receipt;
+}
+
 export async function run({
   chromium,
   root,
@@ -13531,35 +14616,21 @@ export async function run({
     return runUserscriptInstallation({ chromium, root, output, browserName, headless });
   }
   const upgradeInput = await readUpgradeInput(root);
+  const sameVersionInput = await readSameVersionInput(root);
+  assert(!(upgradeInput && sameVersionInput), 'Upgrade and same-version inputs cannot coexist');
+  if (sameVersionInput) {
+    assert.equal(liveUrls.length, 0, 'Same-version attribution does not observe live URLs');
+    assert.equal(liveObservation, null);
+  }
   const validatedLiveUrls = validateLiveUrls(liveUrls);
   validateLiveObservation(liveObservation);
   await mkdir(output, { recursive: true });
   const profile = await mkdtemp(join(root, PROFILE_PREFIX));
-  const installedExtensionPath = upgradeInput
-    ? join(profile, 'owned-extension')
-    : join(root, 'dist-extension');
-  if (upgradeInput) {
-    await cp(upgradeInput.previousExtensionPath, installedExtensionPath, { recursive: true });
-    assert.equal(
-      await extensionInventorySha256(installedExtensionPath),
-      upgradeInput.previousExtensionInventorySha256
-    );
-  }
+  const installedExtensionPath =
+    upgradeInput || sameVersionInput
+      ? join(profile, 'owned-extension')
+      : join(root, 'dist-extension');
   const downloads = join(profile, 'downloads');
-  await mkdir(downloads);
-  assertOwnedProfile(root, profile);
-  await mkdir(join(profile, 'Default'));
-  await writeFile(
-    join(profile, 'Default', 'Preferences'),
-    JSON.stringify({
-      download: {
-        default_directory: downloads,
-        prompt_for_download: false,
-        directory_upgrade: true,
-      },
-    })
-  );
-
   let context: BrowserContext | undefined;
   let browserCdp: CDPSession | undefined;
   let nativeLoopback: NativeLoopback | undefined;
@@ -13578,10 +14649,39 @@ export async function run({
     liveObservation,
     scope: validatedLiveUrls.length
       ? 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
-      : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
+      : sameVersionInput
+        ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
+        : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
     status: 'failed',
   };
   try {
+    if (upgradeInput) {
+      await cp(upgradeInput.previousExtensionPath, installedExtensionPath, { recursive: true });
+      assert.equal(
+        await extensionInventorySha256(installedExtensionPath),
+        upgradeInput.previousExtensionInventorySha256
+      );
+    }
+    if (sameVersionInput) {
+      await cp(sameVersionInput.extensionPath, installedExtensionPath, { recursive: true });
+      assert.equal(
+        await extensionInventorySha256(installedExtensionPath),
+        sameVersionInput.extension.inventorySha256
+      );
+    }
+    await mkdir(downloads);
+    assertOwnedProfile(root, profile);
+    await mkdir(join(profile, 'Default'));
+    await writeFile(
+      join(profile, 'Default', 'Preferences'),
+      JSON.stringify({
+        download: {
+          default_directory: downloads,
+          prompt_for_download: false,
+          directory_upgrade: true,
+        },
+      })
+    );
     nativeLoopback = await startExtensionNativeFixtureLoopback(
       join(root, 'validation/windows/userscript-fixture-certificate.ps1')
     );
@@ -13622,7 +14722,23 @@ export async function run({
       path: installedExtensionPath,
     }));
     assert.equal(typeof extensionId, 'string');
-    if (upgradeInput) {
+    if (sameVersionInput) {
+      result.sameVersion = await runSameVersionAttribution({
+        context,
+        extensionId,
+        extensionPath: installedExtensionPath,
+        input: sameVersionInput,
+        output,
+        root,
+        downloads,
+        nativeLoopback,
+      });
+      assert.equal(
+        result.sameVersion.status,
+        'passed',
+        `Same-version attribution failed: ${result.sameVersion.error ?? 'case or cleanup failure'}`
+      );
+    } else if (upgradeInput) {
       result.upgrade = await runExtensionUpgrade({
         context,
         extensionId,
@@ -13632,19 +14748,21 @@ export async function run({
         root,
       });
     }
-    const images = await createImageFixtures(context);
-    const displayImages = await createImageFixtures(context, 0.25);
-    result.fixture = await exerciseInstalledExtension(
-      context,
-      extensionId,
-      root,
-      output,
-      downloads,
-      images,
-      displayImages,
-      browserCdp,
-      nativeLoopback
-    );
+    if (!sameVersionInput) {
+      const images = await createImageFixtures(context);
+      const displayImages = await createImageFixtures(context, 0.25);
+      result.fixture = await exerciseInstalledExtension(
+        context,
+        extensionId,
+        root,
+        output,
+        downloads,
+        images,
+        displayImages,
+        browserCdp,
+        nativeLoopback
+      );
+    }
     await context.unrouteAll({ behavior: 'wait' });
     if (validatedLiveUrls.length) {
       await browserCdp.send('Extensions.uninstall', { id: extensionId });
@@ -13681,14 +14799,18 @@ export async function run({
       result.liveBrowserScope =
         'fresh browser process without fixture host mapping or SPKI exception';
     }
-    const live = await observeLiveUrls({
-      context,
-      extensionId,
-      liveUrls: validatedLiveUrls,
-      output,
-    });
-    result.live = live;
-    result.evidenceStatus = validatedLiveUrls.length ? live.evidenceStatus : 'fixture-observed';
+    if (!sameVersionInput) {
+      const live = await observeLiveUrls({
+        context,
+        extensionId,
+        liveUrls: validatedLiveUrls,
+        output,
+      });
+      result.live = live;
+      result.evidenceStatus = validatedLiveUrls.length ? live.evidenceStatus : 'fixture-observed';
+    } else {
+      result.evidenceStatus = 'same-version-fixture-observed';
+    }
     result.status = 'passed';
   } catch (error) {
     primarySeen = true;

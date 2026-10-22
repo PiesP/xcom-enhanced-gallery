@@ -223,6 +223,16 @@ document and its held media use real HTTPS responses from the same loopback
 listener, so the browser can classify the document's network address space.
 No permission is overridden; TLS, CORS and OS protections stay enabled. These
 cases do not validate public-to-loopback permission behavior.
+The native range overlap case uses two distinct videos from one owned post.
+It holds late bytes in A's first 206 while adjacent B must be naturally
+admitted and complete its own 206. A must then resume ordinary Play and a
+settled native seek with decoded progress. Exact A-abort/B-completion server
+and CDP intervals must intersect; this proves cross-attachment overlap only.
+Earlier single-player open-ended and finite held-range attempts produced a
+sequential replacement or a seek waiting on the same pending read. Their failed
+receipts remain separate and do not establish same-player overlap. The distinct
+stalled-transfer case holds samples from the 3.5-second packet until controlled
+disconnect.
 
 The streaming asset is `test/e2e/fixtures/installed-recovery-intent.mp4`: a
 four-second, 24 fps, 320×180 H.264 test pattern below the 256 KiB fixture cap.
@@ -260,10 +270,69 @@ ffmpeg -hide_banner -loglevel error -threads 1 \
   test/e2e/fixtures/installed-native-controls-av.mp4
 ```
 
+The single `own12-native-controls-observations.json` receipt has fixed
+`block-controls-only`, `allow-all`, and `block-all` mode records. Each mode uses
+a fresh page and checks trusted, hit-tested native Play, Pause, seek and volume
+actions without a gallery or metadata request, then reloads the fixture for an
+ordinary click on B's adjacent photo. That photo must select B's exact image and
+restore the host state in every mode. The `block-all` record also checks that a
+video-surface click stays native. Each controlled setting is read back and the
+prior full settings value is restored, including when a case fails; the scoped
+A/V route and its original bytes are restored after the mode records.
+
 These helpers restore owned routes, pages, response gates and settings, and
 verify that permission state stays unchanged. Their bounded event and request
 receipts retain failures as well as successes. Provider access, live-CDN compatibility and audible output remain
 outside the fixture evidence.
+
+The separate `installed-metadata-readiness.mp4` is a 117,289-byte, two-second
+VP9 Profile 0 MP4 with 48 real coded samples at 24 fps. Its dimensions are
+320×192; this case's API declares the same size and 5:3 aspect ratio. The
+synthetic `320x180` route name does not describe decoded dimensions. SHA-256:
+`d4ac575d4f6ce11458e61f948fab6becd37ae5530afc66db7141dcdde012e8a2`.
+
+The producer accepts only the immutable 92,715-byte base MP4 (SHA-256
+`5c2d73ce56a49e7ce51ce9edbbc780e3fe35daa3e00bbe5d5adeac871cc4b018`)
+and its exact layout. The [VP9 uncompressed header syntax, section 6.2](https://storage.googleapis.com/downloads.webmproject.org/docs/vp9/vp9-bitstream-specification-v0.6-20160331-draft.pdf)
+includes `show_frame` for key frames. The producer clears that bit in the first
+real coded key picture, leaving the reference picture coded but hidden. It
+enlarges the existing `free` box and adjusts the single `stco` offset to place
+that 7,172-byte key sample at bytes 25,596–32,767. The held native response
+ends at exclusive byte 32,768; all later samples remain behind it. The complete
+`moov` and VP9 sample description are available before the hold.
+
+The installed profile holds the response at that prefix and requires at least
+700 ms of selected, paused `readyState === 1`, nonzero dimensions, metadata
+readiness, no first-frame readiness, no presented callback, and zero decoded
+frames. After releasing the tail, it requires a native first-frame callback and
+at least 700 ms of first-frame readiness while still paused at the beginning.
+Ordinary Play must then advance time without an error. A separate playing
+capture supports scoped pixel review; paused poster captures alone do not prove
+that encoded pixels are visible.
+
+Each selected source request must settle. One complete no-Range `200`, or
+byte-complete `206` ranges, is valid. A post-release `net::ERR_ABORTED` is accepted
+only with an exact subsequent Range completing all remaining bytes; the receipt
+still labels the first request aborted. Missing bytes, early or unknown aborts,
+pending or duplicate terminals, and out-of-range transfers fail. Native served
+range lengths and hashes are checked separately from CDP received-byte totals.
+The profile preserves host focus/scroll/styles and permission state, and disposes
+owned routes, response gates, frame callbacks, observers, sessions, and pages.
+
+The checked candidate was generated from FFmpeg 7.1.5 and libvpx-vp9:
+
+```bash
+ffmpeg -hide_banner -loglevel warning -threads 1 -f lavfi \
+  -i 'testsrc2=size=320x192:rate=24:duration=2' -frames:v 48 -an \
+  -c:v libvpx-vp9 -threads 1 -deadline realtime -cpu-used 8 \
+  -lag-in-frames 0 -auto-alt-ref 0 -g 48 -b:v 0 -crf 32 -pix_fmt yuv420p \
+  -movflags +faststart -map_metadata -1 -metadata creation_time=1970-01-01T00:00:00Z \
+  -f mp4 /tmp/xeg-metadata-base.mp4
+python3 validation/windows/create-metadata-hidden-vp9-fixture.py \
+  /tmp/xeg-metadata-base.mp4 test/e2e/fixtures/installed-metadata-readiness.mp4 \
+  /tmp/xeg-metadata-hidden-vp9.json
+sha256sum test/e2e/fixtures/installed-metadata-readiness.mp4
+```
 
 The installed profile also serves the declared small MP4 assets and
 `installed-quoted-video-page.html` with deterministic `TweetResultByRestId`
@@ -278,6 +347,14 @@ readiness, media errors, and playback after a gesture. Navigation away and back,
 privileged MP4 filename and exact byte/hash checks, Escape/button close,
 focus/scroll/body/isolation restoration, and teardown are recorded per case.
 The outer-video control proves that selecting A and B remains independent.
+
+The source-credit control gives the clicked B preview its own enclosing B
+`/video/2` permalink, while C's credit stays outside that media action. It checks
+the direct B request and selection, native pointer/keyboard C credit navigation,
+and a separate C-owned media action. The enclosing link proves only the B preview
+action; it does not establish ownership for sibling native controls. A B header
+and C credit that both sit outside the clicked media remain ambiguous and are
+covered by the maintained refusal tests.
 An additional installed pre-player case mirrors the bounded public-page shape:
 two same-ID A header links without `<time>`, an unmarked role-link quote with a
 nested B article, and a narrow wrapper containing a non-enclosing C credit
@@ -538,6 +615,41 @@ suite. Receipts are
 `extension-upgrade.json` or `userscript-upgrade.json`; a missing or unfamiliar UI
 fails the control. These controls do not establish that a browser or userscript
 manager will download and apply updates automatically.
+
+### Optional same-version artifact attribution
+
+To compare the public, older source, and current candidate Chrome extensions at
+version 2.3.8, run the installed extension profile three times, each with a fresh
+owned browser profile and a separate evidence output directory. For one run,
+place `validation/windows/release-upgrade/same-version-input.json` beside exactly
+one declared extension directory. The `role` is `public`, `stale`, or `candidate`;
+their paths are fixed in `release-upgrade/source.ts`. The two copied historical
+directories and input are ignored by Git. The current build supplies
+`dist-extension` for `candidate`.
+
+The input has schema 1, `role`, `version: "2.3.8"`, exact `sourceSha` and
+`coreSha`, and `extension: { path, inventorySha256, contentSha256 }`. Set the
+candidate `sourceSha` to the current clean checkout commit recorded in the
+Windows bundle. Use `extensionInventorySha256(path)` for its inventory. The
+parser fixes the public and stale source, core, content and inventory hashes,
+and pins the candidate's complete inventory and content hash to the maintained
+clean-source build. It also verifies the selected directory, manifest and bundle
+identity. The public directory must contain the independently
+verified public v2.3.8 Chrome ZIP contents. A missing input leaves the normal
+installed suite unchanged; malformed input or coexistence with `input.json`
+stops the run.
+
+Each attribution run loads only its declared bytes, then exercises `recognized`
+as the healthy quoted-video control, `unmarked` as the normal `quote_two` download
+case, and `unmarked-no-outer` as the target preview, playing and paused case.
+Each case uses a fresh page in the same profile. A successful `unmarked` download
+retains the filename that Chrome uniquifies for `unmarked-no-outer`. The receipt
+keeps the installed manifest, file inventory, content digest, script bytes
+observed through the page debugger, case outcomes and owned cleanup under
+`same-version-attribution.json`. A failed case does not skip later cases; the
+failure remains in the aggregate result. The three receipts compare
+artifact identity and observed behavior; equal version labels do not imply an
+upgrade or identify a product regression without the case evidence.
 
 ## Installed Tampermonkey userscript flow
 

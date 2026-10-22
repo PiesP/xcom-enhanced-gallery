@@ -17,6 +17,40 @@ const SCRIPT_NAMESPACE = 'https://github.com/PiesP/xcom-enhanced-gallery';
 const SCRIPT_UPDATE_URL = `${SCRIPT_NAMESPACE}/releases/latest/download/xcom-enhanced-gallery.meta.js`;
 const SCRIPT_LATEST_DOWNLOAD_URL = `${SCRIPT_NAMESPACE}/releases/latest/download/xcom-enhanced-gallery.user.js`;
 const MAX_MANAGER_EDITOR_BYTES = 4 * 1024 * 1024;
+const SAME_VERSION_INPUT_PATH = `${DIRECTORY}/same-version-input.json`;
+const SAME_VERSION = '2.3.8';
+const SAME_VERSION_ASSETS = {
+  public: {
+    path: `${DIRECTORY}/same-version-public-extension`,
+    sourceSha: '8a410efb02837933f8e4798ddcc2501b502c4005',
+    coreSha: '77d30da018089be7e2a5e3b2197a200890547aee',
+    inventorySha256: '7aeb360ea63d1604e1ad236553245645fb20d171ca5e81fb83e58e16ca05553d',
+    contentSha256: 'ccf18442db7bcac5276346a5537fcfb36d6ad78b57cb23a500035586b5aceb04',
+  },
+  stale: {
+    path: `${DIRECTORY}/same-version-stale-extension`,
+    sourceSha: 'c803a04013468734885df0ecaaad90ae239de07c',
+    coreSha: '588dce5dce2a79c2ed926626b5c97824d63a5203',
+    inventorySha256: '15b1eb4a5facd817759440ddf09dcf6b9b5e42e9475bf16eddeba3ca65e8c748',
+    contentSha256: 'f82fa21a57cb6dd19de8273c0cc874ec27c41331b7caa5d39e5372bab7fe08da',
+  },
+  candidate: {
+    path: 'dist-extension',
+    coreSha: '588dce5dce2a79c2ed926626b5c97824d63a5203',
+    inventorySha256: '99dd9b7abed6c9690f262edafbb6116cca746ed036ac707b799161b837dd0a82',
+    contentSha256: '0a433fdd5d0a536912dfe5709c596c8c24c26f117bc26431d9b511a5e9d1132c',
+  },
+} as const;
+type SameVersionRole = keyof typeof SAME_VERSION_ASSETS;
+
+type SameVersionInput = {
+  schema: 1;
+  role: SameVersionRole;
+  version: string;
+  sourceSha: string;
+  coreSha: string;
+  extension: { path: string; inventorySha256: string; contentSha256: string };
+};
 
 type UpgradeInput = {
   schema: number;
@@ -237,6 +271,115 @@ export async function readUpgradeInput(root: string) {
     previousExtensionInventorySha256: value.previousExtension.inventorySha256,
     candidateUserSha256: sha256(candidate),
     candidateExtensionInventorySha256: await inventory(join(root, 'dist-extension')),
+  };
+}
+
+export async function readSameVersionInput(root: string) {
+  let raw: string;
+  try {
+    raw = await readFile(join(root, SAME_VERSION_INPUT_PATH), 'utf8');
+  } catch (error) {
+    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+      return null;
+    }
+    throw error;
+  }
+  const value: unknown = JSON.parse(raw);
+  assert(isRecord(value), 'Same-version input must be an object');
+  assert.deepEqual(Object.keys(value).sort(), [
+    'coreSha',
+    'extension',
+    'role',
+    'schema',
+    'sourceSha',
+    'version',
+  ]);
+  assert(value.role === 'public' || value.role === 'stale' || value.role === 'candidate');
+  assert(isRecord(value.extension), 'Same-version extension declaration is invalid');
+  assert.deepEqual(Object.keys(value.extension).sort(), [
+    'contentSha256',
+    'inventorySha256',
+    'path',
+  ]);
+  assert.equal(value.schema, 1);
+  assert.equal(value.version, SAME_VERSION);
+  const input = value as SameVersionInput;
+  const expected = SAME_VERSION_ASSETS[input.role];
+  assert.equal(input.extension.path, expected.path, 'Same-version asset path must be fixed');
+  assert.equal(input.coreSha, expected.coreSha, 'Same-version core source is mismatched');
+  assert.match(input.sourceSha, /^[0-9a-f]{40}$/u);
+  assert.match(input.extension.inventorySha256, /^[0-9a-f]{64}$/u);
+  assert.equal(
+    input.extension.inventorySha256,
+    expected.inventorySha256,
+    'Same-version extension inventory is mismatched'
+  );
+  assert.equal(
+    input.extension.contentSha256,
+    expected.contentSha256,
+    'Same-version content source is mismatched'
+  );
+  if (input.role !== 'candidate') {
+    const historical = SAME_VERSION_ASSETS[input.role];
+    assert.equal(
+      input.sourceSha,
+      historical.sourceSha,
+      'Same-version historical source is mismatched'
+    );
+  }
+  const bundle: unknown = JSON.parse(await readFile(join(root, 'bundle.json'), 'utf8'));
+  assert(isRecord(bundle), 'Same-version bundle identity is invalid');
+  assert.equal(bundle.project, 'xcom-enhanced-gallery');
+  assert.equal(bundle.profile, 'xeg-gallery');
+  assert.equal(bundle.installation, 'extension');
+  assert.match(String(bundle.source_sha), /^[0-9a-f]{40}$/u);
+  assert.equal(
+    bundle.core_sha,
+    SAME_VERSION_ASSETS.candidate.coreSha,
+    'Same-version harness core is mismatched'
+  );
+  if (input.role === 'candidate') {
+    assert.equal(
+      input.sourceSha,
+      bundle.source_sha,
+      'Candidate source must match the current bundle'
+    );
+    assert.equal(input.coreSha, bundle.core_sha, 'Candidate core must match the current bundle');
+  }
+  const path = fixedPath(root, input.extension.path, expected.path);
+  const directory = await lstat(path, { bigint: true });
+  assert(
+    directory.isDirectory() && !directory.isSymbolicLink(),
+    'Same-version extension root must be a real directory'
+  );
+  assert.equal(
+    await inventory(path),
+    input.extension.inventorySha256,
+    'Same-version extension inventory mismatch'
+  );
+  for (const [name, expectedSha] of [
+    ['content.js', input.extension.contentSha256],
+    ['manifest.json', '5d6b6e1488ad5396c4430e9785b340a7c024fe72828f70a0de1fea743e55f6f2'],
+  ] as const) {
+    const file = join(path, name);
+    const inspected = await lstat(file, { bigint: true });
+    assert(
+      inspected.isFile() && !inspected.isSymbolicLink(),
+      `Same-version ${name} must be a regular file`
+    );
+    assert.equal(
+      await hashInventoryFile(file, inspected),
+      expectedSha,
+      `Same-version ${name} hash mismatch`
+    );
+  }
+  const manifest = JSON.parse(await readFile(join(path, 'manifest.json'), 'utf8'));
+  assert.equal(manifest.version, SAME_VERSION, 'Same-version manifest version mismatch');
+  return {
+    ...input,
+    extensionPath: path,
+    harnessSourceSha: bundle.source_sha as string,
+    harnessCoreSha: bundle.core_sha as string,
   };
 }
 
