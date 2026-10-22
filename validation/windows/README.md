@@ -240,6 +240,26 @@ ffmpeg -f lavfi -i 'testsrc2=size=320x180:rate=24:duration=4' -frames:v 96 -an \
   -f mp4 test/e2e/fixtures/installed-recovery-intent.mp4
 ```
 
+OWN-12 uses `test/e2e/fixtures/installed-native-controls-av.mp4` only for the
+rapid B host video's exact `quote-two.mp4` transport path while its native
+controls run. The ordinary quote-two fixture and gallery download bytes stay
+unchanged; the route is restored in `finally`, and the OWN-12 receipt records
+both hashes and restoration. The A/V asset copies the original four-second
+H.264 stream and adds a four-second silent mono AAC stream so the installed
+browser exposes its native volume control. Its SHA-256 is
+`b05db1a1cf0f7c112d66069938285c1a91e3c29d758b8e40b6176a3cd46c8cea`.
+Regenerate it with:
+
+```bash
+ffmpeg -hide_banner -loglevel error -threads 1 \
+  -i test/e2e/fixtures/installed-quote-two.mp4 \
+  -f lavfi -i 'anullsrc=channel_layout=mono:sample_rate=48000' \
+  -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -b:a 32k -t 4 \
+  -movflags +faststart -map_metadata -1 \
+  -metadata creation_time=1970-01-01T00:00:00Z -threads 1 -y \
+  test/e2e/fixtures/installed-native-controls-av.mp4
+```
+
 These helpers restore owned routes, pages, response gates and settings, and
 verify that permission state stays unchanged. Their bounded event and request
 receipts retain failures as well as successes. Provider access, live-CDN compatibility and audible output remain

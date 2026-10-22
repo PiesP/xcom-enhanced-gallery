@@ -434,6 +434,12 @@ type NativeControlProbe = {
 type Own12NativeControlsEvidence = AcceptanceReceipt & {
   native?: unknown;
   adjacentPhoto?: unknown;
+  transport?: {
+    path: string;
+    original: { bytes: number; sha256: string };
+    audioVideo: { bytes: number; sha256: string };
+    restored: boolean;
+  };
   geometry: Array<Record<string, unknown>>;
   discovery: Array<{
     kind: NativeControlPoint['kind'];
@@ -454,6 +460,7 @@ type Own12NativeControlsEvidence = AcceptanceReceipt & {
       error: number | null;
     };
     probes: NativeControlProbe[];
+    hoverWait?: { attempts: number; elapsedMs: number; boxAvailable: boolean };
   }>;
   events: Array<{ type: string; trusted: boolean; time: number; volume: number; paused: boolean }>;
   cleanup: {
@@ -1403,6 +1410,11 @@ export async function installFixtureRoutes(
       ])
     )
   );
+  const own12RapidBPath = '/ext_tw_video/8888888888888888882/pu/vid/320x180/quote-two.mp4';
+  const own12RapidBAvPayload = await readFile(
+    join(root, 'test/e2e/fixtures/installed-native-controls-av.mp4')
+  );
+  let own12RapidBPayload: Buffer | null = null;
   const apiResponses: ApiRecord[] = [];
   const quotedApiResponses: ApiRecord[] = [];
   const unavailableApiResponses: ApiRecord[] = [];
@@ -1660,6 +1672,7 @@ export async function installFixtureRoutes(
         .at(-1)
         ?.replace(/\.mp4$/u, '');
       const payload =
+        (url.pathname === own12RapidBPath ? own12RapidBPayload : null) ??
         (name === undefined ? undefined : videoPayloads[name]) ??
         (name?.startsWith('outer-') ? videoPayloads['nested-c'] : undefined);
       if (!payload) {
@@ -1758,6 +1771,19 @@ export async function installFixtureRoutes(
     compactImageRequests,
     getUnavailableApiOverflow: () => unavailableApiOverflow,
     videoPayloads,
+    armOwn12RapidBAudioVideo() {
+      assert.equal(own12RapidBPayload, null, 'OWN-12 A/V transport is already armed');
+      own12RapidBPayload = own12RapidBAvPayload;
+      return {
+        path: own12RapidBPath,
+        original: imageReceipt(videoPayloads['quote-two']!),
+        audioVideo: imageReceipt(own12RapidBAvPayload),
+        restored: false,
+      };
+    },
+    clearOwn12RapidBAudioVideo() {
+      own12RapidBPayload = null;
+    },
     armDelayedFailure(tweetId: string) {
       assert.equal(delayedFailureGate, null, 'Only one delayed extraction may own the gate');
       assert([DELAYED_FAILURE_ID, DELAYED_NAVIGATION_ID, RAPID_CLICK_A].includes(tweetId));
@@ -1772,6 +1798,7 @@ export async function installFixtureRoutes(
       delayedFailureGate = null;
     },
     async remove() {
+      own12RapidBPayload = null;
       delayedFailureGate?.release();
       delayedFailureGate = null;
       context.off('requestfinished', delayedRequestFinished);
@@ -9246,6 +9273,24 @@ async function locateOwn12NativeControl({
         const x = Math.round((quad[0]! + quad[2]! + quad[4]! + quad[6]!) / 4);
         const y = Math.round((quad[1]! + quad[3]! + quad[5]! + quad[7]!) / 4);
         await page.mouse.move(x, y);
+        const slider = candidates[0];
+        const started = Date.now();
+        let attempts = 0;
+        let boxAvailable = false;
+        if (slider) {
+          do {
+            attempts++;
+            boxAvailable = Boolean(
+              await cdp
+                .send('DOM.getBoxModel', { backendNodeId: slider.node.backendNodeId })
+                .catch(() => null)
+            );
+            if (!boxAvailable && Date.now() - started < 2000) {
+              await page.waitForTimeout(50);
+            }
+          } while (!boxAvailable && Date.now() - started < 2000);
+        }
+        discovery.hoverWait = { attempts, elapsedMs: Date.now() - started, boxAvailable };
         return locateOwn12NativeControl({
           cdp,
           evidence,
@@ -9265,6 +9310,7 @@ async function runOwn12NativeControls({
   compactApiResponses,
   context,
   extensionPage,
+  fixtureRoutes,
   output,
   qualityApiResponses,
   quotedApiResponses,
@@ -9273,6 +9319,7 @@ async function runOwn12NativeControls({
   compactApiResponses: ApiRecord[];
   context: BrowserContext;
   extensionPage: Page;
+  fixtureRoutes: Awaited<ReturnType<typeof installFixtureRoutes>>;
   output: string;
   qualityApiResponses: ApiRecord[];
   quotedApiResponses: ApiRecord[];
@@ -9319,7 +9366,10 @@ async function runOwn12NativeControls({
   let observerInstalled = false;
   let primaryError: unknown;
   let receiptError: unknown;
+  let rapidBAvArmed = false;
   try {
+    evidence.transport = fixtureRoutes.armOwn12RapidBAudioVideo();
+    rapidBAvArmed = true;
     const pageUrl = `https://x.com/rapid_a/status/${RAPID_CLICK_A}`;
     const nativeSetting: ControlledSettingEvidence = {};
     evidence.native = { status: 'pending', controlledSetting: nativeSetting };
@@ -9631,6 +9681,10 @@ async function runOwn12NativeControls({
     evidence.status = 'failed';
     evidence.error = safeError(error);
   } finally {
+    if (rapidBAvArmed) {
+      fixtureRoutes.clearOwn12RapidBAudioVideo();
+      evidence.transport!.restored = true;
+    }
     if (observerInstalled && !page.isClosed()) {
       try {
         evidence.events = await page.evaluate(() => {
@@ -12715,6 +12769,7 @@ async function exerciseInstalledExtension(
         compactApiResponses: fixtureRoutes.compactApiResponses,
         context,
         extensionPage,
+        fixtureRoutes,
         output,
         qualityApiResponses: fixtureRoutes.qualityApiResponses,
         quotedApiResponses: fixtureRoutes.quotedApiResponses,
