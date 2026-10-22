@@ -417,6 +417,7 @@ type NativeControlPoint = {
 type Own12NativeControlsEvidence = AcceptanceReceipt & {
   native?: unknown;
   adjacentPhoto?: unknown;
+  geometry: Array<Record<string, unknown>>;
   discovery: Array<{ kind: string; candidates: string[] }>;
   events: Array<{ type: string; trusted: boolean; time: number; volume: number; paused: boolean }>;
   cleanup: {
@@ -8958,22 +8959,64 @@ async function locateOwn12NativeControl({
   video: Locator;
   hoveredVolume?: boolean;
 }): Promise<NativeControlPoint> {
+  await page.bringToFront();
+  await page.waitForFunction(() => document.visibilityState === 'visible');
+  await video.scrollIntoViewIfNeeded();
   const videoBox = await video.boundingBox();
   assert(videoBox && videoBox.width > 0 && videoBox.height > 0, 'Native host video has no box');
   if (!hoveredVolume) {
     await page.mouse.move(videoBox.x + videoBox.width / 2, videoBox.y + videoBox.height - 12);
   }
-  const center = await cdp.send('DOM.getNodeForLocation', {
-    x: Math.round(videoBox.x + videoBox.width / 2),
-    y: Math.round(videoBox.y + videoBox.height / 2),
-    includeUserAgentShadowDOM: false,
+  const geometry = await video.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const x = Math.round(rect.left + rect.width / 2);
+    const y = Math.round(rect.top + rect.height / 2);
+    return {
+      x,
+      y,
+      width: innerWidth,
+      height: innerHeight,
+      scrollX,
+      scrollY,
+      devicePixelRatio,
+      visibility: document.visibilityState,
+      connected: element.isConnected,
+      centerHitsHost: document.elementFromPoint(x, y) === element,
+      visualViewport: visualViewport
+        ? {
+            width: visualViewport.width,
+            height: visualViewport.height,
+            scale: visualViewport.scale,
+            offsetLeft: visualViewport.offsetLeft,
+            offsetTop: visualViewport.offsetTop,
+          }
+        : null,
+    };
   });
+  assert(evidence.geometry.length < 8, 'Native control geometry observation budget exceeded');
+  evidence.geometry.push({ kind, videoBox, ...geometry });
+  assert(
+    geometry.connected && geometry.centerHitsHost,
+    'Native host video center must be visible and hit-testable'
+  );
+  assert(
+    geometry.x > 0 && geometry.x < geometry.width && geometry.y > 0 && geometry.y < geometry.height,
+    'Native host center must be inside the viewport'
+  );
+  // Identify the exact B element directly; controls still require a real pointer hit below.
+  const documentNode = await cdp.send('DOM.getDocument', { depth: 0 });
+  const hosts = await cdp.send('DOM.querySelectorAll', {
+    nodeId: documentNode.root.nodeId,
+    selector: '[data-rapid="b"] video',
+  });
+  assert.equal(hosts.nodeIds.length, 1, 'Expected one exact rapid B host video');
   const described = await cdp.send('DOM.describeNode', {
-    backendNodeId: center.backendNodeId,
+    nodeId: hosts.nodeIds[0]!,
     depth: 10,
     pierce: true,
   });
-  assert.equal(described.node.nodeName, 'VIDEO', 'Native control owner must be the host VIDEO');
+  assert.equal(described.node.nodeName, 'VIDEO', 'Native control host must be a video');
+
   const entries: Array<{ node: NativeControlNode; label: string }> = [];
   let visited = 0;
   const visit = (node: NativeControlNode, inUserAgentShadow: boolean, depth: number) => {
@@ -9066,7 +9109,7 @@ async function locateOwn12NativeControl({
       cdp.send('DOM.getNodeForLocation', { x, y, includeUserAgentShadowDOM: true }),
       cdp.send('DOM.getNodeForLocation', { x, y, includeUserAgentShadowDOM: false }),
     ]);
-    if (hostHit.backendNodeId !== center.backendNodeId) {
+    if (hostHit.backendNodeId !== described.node.backendNodeId) {
       continue;
     }
     if (!descendantIds(node).has(hit.backendNodeId)) {
@@ -9124,6 +9167,7 @@ async function runOwn12NativeControls({
   });
   const evidence: Own12NativeControlsEvidence = {
     status: 'pending',
+    geometry: [],
     discovery: [],
     events: [],
     cleanup: {
