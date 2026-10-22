@@ -8149,6 +8149,34 @@ async function runDirectVideoAllowedModes({
   return { status: 'passed', cases };
 }
 
+async function quotedTargetDepth(target: Locator) {
+  return target.evaluate((element) => {
+    const hopsTo = (boundary: Element | null) => {
+      let hops = 0;
+      for (let current = element.parentElement; current; current = current.parentElement) {
+        hops++;
+        if (current === boundary) {
+          return hops;
+        }
+      }
+      return null;
+    };
+    return {
+      videoComponent: hopsTo(element.closest('[data-testid="videoComponent"]')),
+      videoPlayer: hopsTo(element.closest('[data-testid="videoPlayer"]')),
+      roleLink: hopsTo(element.closest('[role="link"]')),
+      article: hopsTo(element.closest('article')),
+    };
+  });
+}
+
+const UNMARKED_VIDEO_DEPTH = {
+  videoComponent: 4,
+  videoPlayer: 7,
+  roleLink: 18,
+  article: 24,
+} as const;
+
 async function runQuotedVideoCycle({
   quotedCase,
   quotedApiResponses,
@@ -8183,6 +8211,7 @@ async function runQuotedVideoCycle({
   const article = page.locator(`[data-case="${quotedCase.route}"]`);
   const shell = article.locator('[data-video-key]');
   const preview = shell.locator('[data-quote-target]');
+  const hostVideo = shell.locator('video:not([data-host-action])');
   await preview.scrollIntoViewIfNeeded();
   await page.evaluate(() => window.scrollBy(0, -120));
   await preview.focus();
@@ -8202,6 +8231,25 @@ async function runQuotedVideoCycle({
   assert.equal(previewState.hit, true, 'Preview must be the ordinary hit-tested click target');
   assert.equal(previewState.videoSource, null, 'Preview check must precede native playback');
   assert(previewState.poster?.endsWith(`/${quotedCase.poster}.jpg`));
+  const unmarkedPreviewDepth =
+    quotedCase.route === 'unmarked'
+      ? {
+          target: await quotedTargetDepth(preview),
+          video: await quotedTargetDepth(hostVideo),
+        }
+      : null;
+  if (unmarkedPreviewDepth) {
+    assert.deepEqual(
+      unmarkedPreviewDepth.video,
+      UNMARKED_VIDEO_DEPTH,
+      'Unmarked preview must contain the exact 4/7/18/24 video geometry'
+    );
+    assert.deepEqual(
+      unmarkedPreviewDepth.target,
+      { videoComponent: 5, videoPlayer: 8, roleLink: 19, article: 25 },
+      'Preview IMG has one additional interstitial ancestor'
+    );
+  }
   await page.screenshot({ path: join(output, `quoted-${quotedCase.name}-before.png`) });
 
   const apiStart = quotedApiResponses.length;
@@ -8261,30 +8309,12 @@ async function runQuotedVideoCycle({
     true,
     'Fixture native play handler must receive and cancel its own trusted button click'
   );
-  const hostVideo = shell.locator('video:not([data-host-action])');
-  const unmarkedDepth =
-    quotedCase.route === 'unmarked'
-      ? await hostVideo.evaluate((video) => {
-          const roleLink = video.closest('[role="link"]');
-          const article = video.closest('article');
-          const hopsTo = (boundary: Element | null) => {
-            let hops = 0;
-            for (let current = video.parentElement; current; current = current.parentElement) {
-              hops++;
-              if (current === boundary) {
-                return hops;
-              }
-            }
-            return null;
-          };
-          return { roleLink: hopsTo(roleLink), article: hopsTo(article) };
-        })
-      : null;
+  const unmarkedDepth = quotedCase.route === 'unmarked' ? await quotedTargetDepth(hostVideo) : null;
   if (unmarkedDepth) {
     assert.deepEqual(
       unmarkedDepth,
-      { roleLink: 18, article: 24 },
-      'Unmarked playing video must exercise the observed clickable and article depths'
+      UNMARKED_VIDEO_DEPTH,
+      'Unmarked playing video must exercise the observed component, player, link and article depths'
     );
   }
   await page.waitForFunction(
@@ -8634,6 +8664,73 @@ async function runQuotedVideoCycle({
   }));
   assert.deepEqual(restoredPanel, { ariaHidden: 'false', hiddenMarker: false, inert: false });
   await page.locator(`#${latePanel}`).evaluate((element) => element.remove());
+  const pausedControl =
+    quotedCase.route === 'unmarked'
+      ? await (async () => {
+          await hostVideo.scrollIntoViewIfNeeded();
+          await page.evaluate(() => window.scrollBy(0, -120));
+          await hostVideo.focus();
+          const before = await quotedHostSnapshot(page, quotedCase.route, '[data-video-key] video');
+          const hostState = await hostVideoState(hostVideo);
+          assert.equal(hostState.paused, true, 'Unmarked host video must be paused before click');
+          assert(hostState.readyState >= 2 && hostState.width > 0 && hostState.height > 0);
+          assert.equal(hostState.error, null);
+          const depth = await quotedTargetDepth(hostVideo);
+          assert.deepEqual(depth, UNMARKED_VIDEO_DEPTH, 'Paused video geometry must stay exact');
+          const hit = await hostVideo.evaluate((element) => {
+            const rect = element.getBoundingClientRect();
+            return (
+              document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2) ===
+              element
+            );
+          });
+          assert.equal(hit, true, 'Paused video must be the ordinary hit-tested target');
+          const apiStartPaused = quotedApiResponses.length;
+          const clickCount = await page.evaluate(() => window.__quoteFixtureClicks.length);
+          await captureQuotedOpeningScroll(hostVideo);
+          await hostVideo.click();
+          const pending = await writeVideoBoundaryCheckpoint({
+            output,
+            name: `${quotedCase.name}-paused`,
+            page,
+            api: quotedApiResponses.slice(apiStartPaused),
+          });
+          const click = await quotedClickRecord(page, clickCount, 'video');
+          before.scrollY = Number(await hostVideo.getAttribute('data-opening-scroll-y'));
+          assert(Number.isFinite(before.scrollY) && before.scrollY > 0);
+          const selected = await assertQuotedGallery(page, quotedCase);
+          const freshStart = await hostVideoState(selected.video);
+          assert.equal(freshStart.paused, true, 'Paused host opens a separate paused player');
+          assert(freshStart.currentTime < 0.05);
+          const originUrl = await assertQuotedOriginLink(
+            selected.gallery,
+            `https://x.com/${quotedCase.username}/status/${quotedCase.owner}`,
+            false
+          );
+          const api = quotedApiResponses.slice(apiStartPaused);
+          assert(api.every(({ tweetId }) => tweetId === expectedRequest));
+          const close = await closeQuotedGallery({
+            gallery: selected.gallery,
+            page,
+            method: quotedCase.close,
+            before,
+            caseName: quotedCase.route,
+            selector: '[data-video-key] video',
+          });
+          return {
+            depth,
+            hostState,
+            hit,
+            click,
+            pending,
+            selected: selected.selectedMedia,
+            freshStart,
+            originUrl,
+            api,
+            close,
+          };
+        })()
+      : null;
   await page.screenshot({ path: join(output, `quoted-${quotedCase.name}-after.png`) });
   const outerControl =
     quotedCase.name === 'unmarked'
@@ -8658,6 +8755,7 @@ async function runQuotedVideoCycle({
     videoClickSettings,
     preview: {
       source: previewState.poster,
+      unmarkedDepth: unmarkedPreviewDepth,
       click: previewClick,
       pending: previewPending,
       selected: initial.selectedMedia,
@@ -8705,6 +8803,7 @@ async function runQuotedVideoCycle({
       closeMethod: quotedCase.close,
       close: playingClose,
     },
+    paused: pausedControl,
     download: {
       filename,
       bytes: bytes.length,
