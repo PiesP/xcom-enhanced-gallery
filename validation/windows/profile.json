@@ -30,6 +30,7 @@
       "test/e2e/fixtures/installed-quoted-video-api.ts",
       "test/e2e/fixtures/installed-quote-one.mp4",
       "test/e2e/fixtures/installed-recovery-intent.mp4",
+      "test/e2e/fixtures/installed-metadata-readiness.mp4",
       "test/e2e/fixtures/installed-quote-two.mp4",
       "test/e2e/fixtures/installed-linked-four.mp4",
       "test/e2e/fixtures/installed-quote-three.mp4",
