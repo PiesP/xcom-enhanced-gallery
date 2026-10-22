@@ -223,15 +223,16 @@ document and its held media use real HTTPS responses from the same loopback
 listener, so the browser can classify the document's network address space.
 No permission is overridden; TLS, CORS and OS protections stay enabled. These
 cases do not validate public-to-loopback permission behavior.
-The native range diagnostics allow an initial metadata range to cancel, then
-hold the resumed range through the 2.75-second packet. The first two held 206
-responses advertise a finite range ending just before the 3-second IDR; a
-later seek can request bytes beyond that range. Their `Content-Range`, length
-and body match the served subrange, as permitted by
-[RFC 9110 §14.2](https://www.rfc-editor.org/rfc/rfc9110.html#section-14.2).
-This fixture does not force browser concurrency: only overlapping server
-lifetimes and matching CDP terminals qualify. The separate stalled-transfer
-case still holds samples from the 3.5-second packet until controlled disconnect.
+The native range overlap case uses two distinct videos from one owned post.
+It holds late bytes in A's first 206 while adjacent B must be naturally
+admitted and complete its own 206. A must then resume ordinary Play and a
+settled native seek with decoded progress. Exact A-abort/B-completion server
+and CDP intervals must intersect; this proves cross-attachment overlap only.
+Earlier single-player open-ended and finite held-range attempts produced a
+sequential replacement or a seek waiting on the same pending read. Their failed
+receipts remain separate and do not establish same-player overlap. The distinct
+stalled-transfer case holds samples from the 3.5-second packet until controlled
+disconnect.
 
 The streaming asset is `test/e2e/fixtures/installed-recovery-intent.mp4`: a
 four-second, 24 fps, 320×180 H.264 test pattern below the 256 KiB fixture cap.

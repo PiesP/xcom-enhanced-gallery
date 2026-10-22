@@ -43,7 +43,6 @@ type VideoHold = {
   path: string;
   prefixEnd: number;
   remaining: number;
-  finiteRangeEnd?: number;
   responses: Map<ServerResponse, Buffer>;
 };
 
@@ -198,16 +197,6 @@ export function createExtensionNativeFixtureHandler() {
       }
       end = Math.min(end, bytes.length - 1);
     }
-    if (
-      request.method === 'GET' &&
-      range !== undefined &&
-      videoHold?.path === `${route.host}${route.path}` &&
-      videoHold.remaining > 0 &&
-      videoHold.finiteRangeEnd !== undefined &&
-      start <= videoHold.finiteRangeEnd
-    ) {
-      end = Math.min(end, videoHold.finiteRangeEnd);
-    }
     const body = request.method === 'HEAD' ? Buffer.alloc(0) : bytes.subarray(start, end + 1);
     if (reservedBytes + body.length > MAX_SERVED_BYTES) {
       overflow = true;
@@ -268,9 +257,7 @@ export function createExtensionNativeFixtureHandler() {
     if (
       request.method === 'GET' &&
       videoHold?.path === `${route.host}${route.path}` &&
-      videoHold.remaining > 0 &&
-      (videoHold.finiteRangeEnd === undefined ||
-        (range !== undefined && start <= videoHold.finiteRangeEnd))
+      videoHold.remaining > 0
     ) {
       const prefixBytes = Math.max(0, Math.min(body.length, videoHold.prefixEnd - start));
       assert(
@@ -346,20 +333,22 @@ export function createExtensionNativeFixtureHandler() {
       tweetId,
       validMp4,
       badMp4,
+      adjacentMp4,
     }: {
       tweetId: string;
       validMp4: Buffer;
       badMp4: Buffer;
+      adjacentMp4?: Buffer;
     }) {
       assert(allowed.size > 0, 'Install native fixture payloads first');
       assert(typeof tweetId === 'string' && /^[1-9][0-9]{0,19}$/u.test(tweetId));
-      for (const bytes of [validMp4, badMp4]) {
+      for (const bytes of [validMp4, badMp4, adjacentMp4].filter((value) => value !== undefined)) {
         assert(Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= MAX_BODY_BYTES);
       }
       const prefix = `/ext_tw_video/${tweetId}/pu/vid/320x180/`;
       const routes: Array<[string, Buffer]> = Array.from({ length: 8 }, (_, index) => [
         `${prefix}video-${index}-best.mp4`,
-        index === 0 ? badMp4 : validMp4,
+        index === 0 ? badMp4 : index === 1 ? (adjacentMp4 ?? validMp4) : validMp4,
       ]);
       routes.push([`${prefix}video-0-lower.mp4`, validMp4]);
       for (const [path] of routes) {
@@ -398,25 +387,18 @@ export function createExtensionNativeFixtureHandler() {
         responses: new Map<ServerResponse, Buffer>(),
       };
     },
-    armFirstTwoVideoHolds(path: string, prefixEnd: number, finiteRangeEnd: number) {
+    armFirstVideoHold(path: string, prefixEnd: number) {
       assert.equal(videoHold, null, 'Only one bounded video source may be held');
       const route = allowed.get(`video.twimg.com${path}`);
       assert(route && route.host === 'video.twimg.com', 'Only a declared video may be held');
       assert(
         Number.isSafeInteger(prefixEnd) && prefixEnd > 0 && prefixEnd < route.bytes.length,
-        'The initial video holds must leave declared samples outstanding'
-      );
-      assert(
-        Number.isSafeInteger(finiteRangeEnd) &&
-          finiteRangeEnd >= prefixEnd &&
-          finiteRangeEnd < route.bytes.length - 1,
-        'The held 206 subrange must include delayed bytes and leave later bytes requestable'
+        'The first video hold must leave declared samples outstanding'
       );
       videoHold = {
         path: `video.twimg.com${path}`,
         prefixEnd,
-        remaining: 2,
-        finiteRangeEnd,
+        remaining: 1,
         responses: new Map<ServerResponse, Buffer>(),
       };
     },

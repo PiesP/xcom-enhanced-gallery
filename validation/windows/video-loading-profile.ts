@@ -507,7 +507,11 @@ function posterUrl(tweetId: string, index: number) {
 
 function fixtureHtml(tweetId: string, handle: string, count = VIDEO_COUNT, height = 180) {
   const description =
-    count === 1 ? 'One deterministic video variant' : 'Eight deterministic video variants';
+    count === 1
+      ? 'One deterministic video variant'
+      : count === 2
+        ? 'Two deterministic video variants'
+        : 'Eight deterministic video variants';
   const players = Array.from(
     { length: count },
     (_, index) => `
@@ -531,7 +535,11 @@ function fixtureHtml(tweetId: string, handle: string, count = VIDEO_COUNT, heigh
 
 function apiResponse(tweetId: string, handle: string, count = VIDEO_COUNT, height = 180) {
   const description =
-    count === 1 ? 'One deterministic video variant' : 'Eight deterministic video variants';
+    count === 1
+      ? 'One deterministic video variant'
+      : count === 2
+        ? 'Two deterministic video variants'
+        : 'Eight deterministic video variants';
   const media = Array.from({ length: count }, (_, index) => ({
     type: 'video',
     id_str: `${tweetId}${index}`,
@@ -1261,9 +1269,12 @@ export async function runVideoLoadingProfile({
     let recoveryMp4: Buffer | undefined;
     try {
       recoveryMp4 = await readFile(join(root, 'test/e2e/fixtures/installed-recovery-intent.mp4'));
+      const adjacentMp4 = videoPayloads['quote-two'];
+      assert(Buffer.isBuffer(adjacentMp4) && adjacentMp4.length === 3086);
       observation.rangeDiagnostics = await runRangeAbortDiagnostics({
         context,
         validMp4: recoveryMp4,
+        adjacentMp4,
         nativeLoopback,
         output,
       });
@@ -1567,20 +1578,21 @@ async function nativeSeekPoint(
 async function runRangeAbortDiagnostics({
   context,
   validMp4,
+  adjacentMp4,
   nativeLoopback,
   output,
 }: {
   context: BrowserContext;
   validMp4: Buffer;
+  adjacentMp4: Buffer;
   nativeLoopback: NativeLoopback;
   output: string;
 }) {
   assert.equal(validMp4.length, 207662, 'The declared four-second range fixture changed');
-  // ffprobe places the 2.75 s packet at 142130 and the 3 s IDR at 153895.
-  // The separate stall case withholds the 3.5 s packet at 183130.
-  const overlapPrefixEnd = 142130;
-  const overlapRangeEnd = 153894;
-  const stallPrefixEnd = 183130;
+  assert.equal(adjacentMp4.length, 3086, 'The declared adjacent video fixture changed');
+  // ffprobe places the 3.5 s packet at byte 183130. The held first A response
+  // has valid metadata/early frames; B is a separate small, owned attachment.
+  const prefixEnd = 183130;
   const evidence: {
     status: 'running' | 'passed' | 'failed';
     cases: Record<string, unknown>[];
@@ -1592,14 +1604,19 @@ async function runRangeAbortDiagnostics({
     ['stalled-disconnect', '4666000111222333882'],
   ] as const) {
     const best = videoUrl(id, 0);
+    const adjacent = videoUrl(id, 1);
+    const acceptedVideoUrls = new Set(name === 'overlap' ? [best, adjacent] : [best]);
     const url = `https://x.com/intentrecovery/status/${id}`;
     const records: RangeProtocolRecord[] = [];
+    const apiRequests: Array<{ tweetId: string; method: string }> = [];
     const observed: Record<string, unknown> = {
       name,
       id,
       best,
+      ...(name === 'overlap' ? { adjacent } : {}),
       status: 'running',
       protocol: records,
+      apiRequests,
       cleanup: {
         holdReleased: false,
         routeRemoved: false,
@@ -1623,10 +1640,12 @@ async function runRangeAbortDiagnostics({
           return route.fallback();
         }
         if (requestedId === id) {
+          assert(apiRequests.length < 4, 'Range fixture API request overflow');
+          apiRequests.push({ tweetId: id, method: route.request().method() });
           return route.fulfill({
             status: 200,
             contentType: 'application/json',
-            body: JSON.stringify(apiResponse(id, 'intentrecovery', 1)),
+            body: JSON.stringify(apiResponse(id, 'intentrecovery', name === 'overlap' ? 2 : 1)),
           });
         }
       }
@@ -1637,7 +1656,7 @@ async function runRangeAbortDiagnostics({
         return route.fulfill({ status: 200, contentType: 'image/png', body: POSTER_PNG });
       }
       if (target.hostname === 'video.twimg.com') {
-        if (target.href === best) {
+        if (acceptedVideoUrls.has(target.href)) {
           return route.continue();
         }
         observed.unexpectedVideo = target.href;
@@ -1650,26 +1669,27 @@ async function runRangeAbortDiagnostics({
     let overflow = false;
     const extraRanges = new Map<string, string>();
     try {
-      nativeLoopback.setRecoveryPayloads({ tweetId: id, validMp4, badMp4: validMp4 });
+      nativeLoopback.setRecoveryPayloads({
+        tweetId: id,
+        validMp4,
+        badMp4: validMp4,
+        ...(name === 'overlap' ? { adjacentMp4 } : {}),
+      });
       nativeLoopback.setRecoveryDocument({
         tweetId: id,
-        html: fixtureHtml(id, 'intentrecovery', 1),
+        html: fixtureHtml(id, 'intentrecovery', name === 'overlap' ? 2 : 1),
       });
       if (name === 'overlap') {
-        nativeLoopback.armFirstTwoVideoHolds(
-          new URL(best).pathname,
-          overlapPrefixEnd,
-          overlapRangeEnd
-        );
+        nativeLoopback.armFirstVideoHold(new URL(best).pathname, prefixEnd);
       } else {
-        nativeLoopback.armVideoHold(new URL(best).pathname, stallPrefixEnd);
+        nativeLoopback.armVideoHold(new URL(best).pathname, prefixEnd);
       }
       await context.route('**/*', handler);
       routeInstalled = true;
       page = await context.newPage();
       protocol = await context.newCDPSession(page);
       protocol.on('Network.requestWillBeSent', (event) => {
-        if (event.request.url !== best) {
+        if (!acceptedVideoUrls.has(event.request.url)) {
           return;
         }
         if (records.length >= 16) {
@@ -1731,6 +1751,16 @@ async function runRangeAbortDiagnostics({
       if ((await original.getAttribute('aria-pressed')) !== 'true') {
         await original.click();
       }
+      const expectedCount = name === 'overlap' ? 2 : 1;
+      assert.equal(
+        Number(await gallery.locator('#xeg-toolbar-counter').getAttribute('data-total')),
+        expectedCount
+      );
+      assert.equal(await gallery.locator('[data-gallery-element="item"]').count(), expectedCount);
+      assert(
+        apiRequests.length > 0 &&
+          apiRequests.every((item) => item.tweetId === id && item.method === 'GET')
+      );
       const video = gallery.locator('[data-gallery-element="item"][data-index="0"] video');
       const beforePlay = await waitForValue(async () => {
         const state = await itemState(page!, 0);
@@ -1742,7 +1772,34 @@ async function runRangeAbortDiagnostics({
           : undefined;
       }, 'native range fixture metadata');
       assert.equal(beforePlay.currentSrc, best);
+      assert.equal(beforePlay.src, best);
       assert.equal(beforePlay.paused, true);
+      assert.equal(beforePlay.currentIndex, 0);
+      assert.equal(beforePlay.focusedIndex, 0);
+      if (name === 'overlap') {
+        const adjacentState = await waitForValue(async () => {
+          const state = await itemState(page!, 1);
+          return state &&
+            state.admitted === 'true' &&
+            state.src === adjacent &&
+            state.currentSrc === adjacent &&
+            state.readyState >= 1
+            ? state
+            : undefined;
+        }, 'naturally admitted adjacent owned video');
+        assert(
+          adjacentState.box.top < adjacentState.viewport.bottom &&
+            adjacentState.box.bottom > adjacentState.viewport.top,
+          'Adjacent video must intersect the actual gallery viewport'
+        );
+        assert.equal(adjacentState.currentIndex, 0);
+        assert.equal(adjacentState.focusedIndex, 0);
+        observed.attachments = {
+          ownerId: id,
+          selected: { index: 0, url: best, state: beforePlay },
+          adjacent: { index: 1, url: adjacent, state: adjacentState },
+        };
+      }
       await video.evaluate((element) => {
         if (!(element instanceof HTMLVideoElement)) {
           throw new Error('Selected native video disappeared before media observation');
@@ -1784,10 +1841,15 @@ async function runRangeAbortDiagnostics({
           : undefined;
       }, 'ordinary Play and decoded progress');
       observed.playing = playing;
-      await waitForValue(
-        async () => (nativeLoopback.videoHeld() ? true : undefined),
-        'real held 206 response after metadata bootstrap'
-      );
+      assert.equal(playing.currentIndex, 0);
+      assert.equal(playing.focusedIndex, 0);
+      assert.equal(playing.currentSrc, best);
+      if (name === 'stalled-disconnect') {
+        await waitForValue(
+          async () => (nativeLoopback.videoHeld() ? true : undefined),
+          'real held 206 response after metadata bootstrap'
+        );
+      }
       const matchesStart = (record: RangeProtocolRecord, start: number) =>
         /^bytes=(\d+)-/u.exec(record.range ?? '')?.[1] === String(start);
       if (name === 'overlap') {
@@ -1807,6 +1869,9 @@ async function runRangeAbortDiagnostics({
             : undefined;
         }, 'ordinary native timeline seek');
         observed.seeked = seeked;
+        assert.equal(seeked.currentIndex, 0);
+        assert.equal(seeked.focusedIndex, 0);
+        assert.equal(seeked.currentSrc, best);
         const progressed = await waitForValue(async () => {
           const state = await itemState(page!, 0);
           return state &&
@@ -1818,6 +1883,8 @@ async function runRangeAbortDiagnostics({
             : undefined;
         }, 'decoded progress after ordinary native seek');
         observed.progressed = progressed;
+        assert.equal(progressed.currentIndex, 0);
+        assert.equal(progressed.focusedIndex, 0);
         const mediaEvents = await page.evaluate(() => {
           const observer = window.__xegRangeMediaObservation;
           return observer && { records: observer.records, overflow: observer.overflow };
@@ -1839,43 +1906,48 @@ async function runRangeAbortDiagnostics({
         const overlap = await waitForValue(async () => {
           const entries = nativeLoopback
             .since(nativeMark)
-            .filter((item) => item.path === new URL(best).pathname);
-          for (const aborted of entries) {
-            if (
-              aborted.status !== 206 ||
-              aborted.result !== 'aborted' ||
-              !aborted.range ||
-              typeof aborted.prefixBytesQueued !== 'number' ||
-              typeof aborted.closedAtMs !== 'number'
-            ) {
-              continue;
-            }
-            const completed = entries.find(
-              (item) =>
-                item.status === 206 &&
-                item.result === 'served' &&
-                item.range?.start !== aborted.range?.start &&
-                item.atMs > aborted.atMs &&
-                item.atMs < aborted.closedAtMs!
+            .filter((item) =>
+              [new URL(best).pathname, new URL(adjacent).pathname].includes(item.path)
             );
-            if (completed) {
-              return { entries, aborted, completed };
-            }
+          const completed = entries.find(
+            (item) =>
+              item.path === new URL(adjacent).pathname &&
+              item.status === 206 &&
+              item.result === 'served' &&
+              item.range &&
+              typeof item.finishedAtMs === 'number'
+          );
+          if (!completed) {
+            return undefined;
           }
-          return undefined;
-        }, 'overlapping aborted and completed native 206 requests');
+          const aborted = entries.find(
+            (item) =>
+              item.path === new URL(best).pathname &&
+              item.status === 206 &&
+              item.result === 'aborted' &&
+              item.range &&
+              item.range.start === 0 &&
+              typeof item.prefixBytesQueued === 'number' &&
+              item.prefixBytesQueued === prefixEnd &&
+              typeof item.closedAtMs === 'number' &&
+              item.atMs < completed.finishedAtMs! &&
+              completed.atMs < item.closedAtMs
+          );
+          return aborted ? { entries, aborted, completed } : undefined;
+        }, 'overlapping A abort and adjacent B completion');
         const { entries: native, aborted, completed } = overlap;
         observed.native = native;
         assert.equal(overflow, false);
         assert.equal(observed.unexpectedVideo, undefined);
         assert(aborted.range && typeof aborted.closedAtMs === 'number');
-        assert(completed?.range, 'A distinct 206 must begin before the held request aborts');
+        assert(completed.range && typeof completed.finishedAtMs === 'number');
         assert(
           typeof aborted.closedAtMs === 'number' && typeof completed.finishedAtMs === 'number'
         );
         const terminals = await waitForValue(async () => {
           const failed = records.find(
             (item) =>
+              item.url === best &&
               item.terminal === 'failed' &&
               item.errorText === 'net::ERR_ABORTED' &&
               item.status === 206 &&
@@ -1883,22 +1955,23 @@ async function runRangeAbortDiagnostics({
           );
           const finished = records.find(
             (item) =>
+              item.url === adjacent &&
               item.terminal === 'finished' &&
               item.status === 206 &&
               matchesStart(item, completed.range!.start)
           );
           return failed && finished ? { failed, finished } : undefined;
-        }, 'exact native media abort and completed range CDP terminals');
+        }, 'exact A abort and adjacent B completion CDP terminals');
         const { failed, finished } = terminals;
         assert(failed && finished && failed.requestId !== finished.requestId);
-        assert(finished.startedAt > failed.startedAt);
         assert(
-          finished.startedAt < failed.terminalAt!,
-          'The two native media requests did not overlap'
+          failed.startedAt < finished.terminalAt! && finished.startedAt < failed.terminalAt!,
+          'The cross-attachment CDP request intervals did not overlap'
         );
         assert.equal(progressed.currentSrc, best);
         assert.equal(progressed.error, null);
-        observed.classification = 'isolated-browser-abort-with-completed-range-and-playback';
+        observed.overlap = { aborted, completed, failed, finished };
+        observed.classification = 'cross-attachment-abort-and-completion-with-selected-playback';
       } else {
         const stalledStart = await waitForValue(async () => {
           const state = await itemState(page!, 0);
@@ -1999,7 +2072,12 @@ async function runRangeAbortDiagnostics({
       }
       observed.native = nativeLoopback
         .since(nativeMark)
-        .filter((item) => item.path === new URL(best).pathname);
+        .filter((item) =>
+          [
+            new URL(best).pathname,
+            ...(name === 'overlap' ? [new URL(adjacent).pathname] : []),
+          ].includes(item.path)
+        );
       observed.overflow = overflow;
       errors.push(error);
     } finally {
