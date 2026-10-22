@@ -8057,7 +8057,9 @@ async function runDelayedVideoFailures({
 }
 
 async function runRapidVideoClicks({
+  context,
   downloads,
+  extensionId,
   extensionPage,
   fixtureRoutes,
   nativeLoopback,
@@ -8065,7 +8067,9 @@ async function runRapidVideoClicks({
   page,
   pageFetches,
 }: {
+  context: BrowserContext;
   downloads: string;
+  extensionId: string;
   extensionPage: Page;
   fixtureRoutes: Awaited<ReturnType<typeof installFixtureRoutes>>;
   nativeLoopback: NativeLoopback;
@@ -8081,8 +8085,38 @@ async function runRapidVideoClicks({
   await first.scrollIntoViewIfNeeded();
   await first.focus();
   const apiStart = fixtureRoutes.quotedApiResponses.length;
-  fixtureRoutes.armDelayedFailure(RAPID_CLICK_A);
+  let originalLoop: boolean | undefined;
+  let notificationObserver:
+    | Awaited<ReturnType<typeof observeNativeNotificationCreates>>
+    | undefined;
+  let result: (AcceptanceReceipt & Record<string, unknown>) | undefined;
+  let validationError: unknown;
+  let validationFailed = false;
+  const cleanupErrors: unknown[] = [];
+  const cleanup = { notificationObserverRestored: false, hostVideoControlRestored: false };
   try {
+    const initialHost = await hostVideoState(first);
+    assert.equal(initialHost.paused, true, 'Rapid A host video must start paused');
+    originalLoop = await first.evaluate((element) => {
+      if (!(element instanceof HTMLVideoElement)) {
+        throw new Error('Rapid A host video is missing');
+      }
+      const previous = element.loop;
+      element.loop = true;
+      return previous;
+    });
+    notificationObserver = await observeNativeNotificationCreates(context, extensionId);
+    await page.keyboard.press('Space');
+    const begin = await waitForValue(async () => {
+      const state = await hostVideoState(first);
+      return !state.paused && state.currentTime > 0.15 ? state : undefined;
+    }, 'rapid A playback from focused native Space control');
+    assert(
+      begin.readyState >= 2 && begin.width > 0 && begin.height > 0 && begin.error === null,
+      'Rapid A must have playable native media before the first gallery click'
+    );
+    const notificationBaseline = await notificationObserver.snapshot();
+    fixtureRoutes.armDelayedFailure(RAPID_CLICK_A);
     await first.click();
     const heldA = await waitForValue(
       async () =>
@@ -8096,7 +8130,25 @@ async function runRapidVideoClicks({
       null,
       'A response must remain pending at the B click'
     );
+    const pendingStart = await hostVideoState(first);
+    await page.waitForTimeout(350);
+    const pendingEnd = await hostVideoState(first);
+    assert.equal(pendingEnd.paused, false, 'Pending rapid A must not pause host playback');
+    assert(
+      pendingEnd.currentTime > pendingStart.currentTime + 0.15,
+      'Rapid A host video must progress while its provider response is held'
+    );
+    assert.equal(heldA.fulfilledAtMonotonicMs, null, 'Rapid A must remain held during playback');
+    assert.equal(
+      await page.locator('[data-xeg-gallery-container]').count(),
+      0,
+      'Pending rapid A must not open a gallery'
+    );
+    const notificationsDuringA = await notificationObserver.snapshot();
+    assertNoRetiredExtractionNotifications(notificationBaseline, notificationsDuringA);
     await second.scrollIntoViewIfNeeded();
+    const beforeB = await hostVideoState(first);
+    assert.equal(beforeB.paused, false, 'Rapid A host must still play before the B click');
     const before = await page.evaluate(() => ({
       scrollY: window.scrollY,
       body: document.body.style.cssText,
@@ -8125,14 +8177,32 @@ async function runRapidVideoClicks({
       .filter(({ tweetId }) => tweetId === RAPID_CLICK_B);
     assert.equal(bRequests.length, 1, 'B must make one independent owner request');
     assert.equal(bRequests[0]?.status, 200);
+    const afterB = await assertHostStopped(page, first, 'Rapid B gallery opening');
+    const notificationsAfterB = await notificationObserver.snapshot();
+    assertNoRetiredExtractionNotifications(notificationBaseline, notificationsAfterB);
     fixtureRoutes.releaseDelayedFailure();
+    await waitForValue(
+      () =>
+        heldA.routeSettledAtMonotonicMs !== null && heldA.transportSettledAtMonotonicMs !== null
+          ? heldA
+          : undefined,
+      'rapid A exact route and transport settlement',
+      5_000
+    );
+    assert(
+      heldA.transportState === 'failed' || heldA.transportState === 'finished',
+      'Rapid A must record its real transport outcome'
+    );
     await page.waitForTimeout(350);
+    const afterA = await assertHostStopped(page, first, 'Late rapid A settlement');
     const retained = await assertQuotedSelection(page, {
       position: 2,
       total: 2,
       type: 'video',
       path: `/ext_tw_video/${RAPID_CLICK_B}/pu/vid/320x180/quote-two.mp4`,
     });
+    const notificationsAfterA = await notificationObserver.snapshot();
+    assertNoRetiredExtractionNotifications(notificationBaseline, notificationsAfterA);
     const knownIds = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
     const nativeMark = nativeLoopback.mark();
     const fetchMark = pageFetches.length;
@@ -8158,6 +8228,8 @@ async function runRapidVideoClicks({
       nativeMark,
       pageFetches: pageFetches.slice(fetchMark),
     });
+    const notificationsAfterSave = await notificationObserver.snapshot();
+    assertNoRetiredExtractionNotifications(notificationBaseline, notificationsAfterSave);
     await opened.gallery
       .locator('[data-gallery-element="toolbar"] button[aria-label="Close"]')
       .click();
@@ -8168,12 +8240,20 @@ async function runRapidVideoClicks({
     }));
     assert.deepEqual(after, before, 'Rapid B close must restore host scroll and body styles');
     await page.screenshot({ path: join(output, 'quoted-rapid-a-b-after.png') });
-    return {
+    result = {
       status: 'passed',
       pageUrl,
       heldA,
       pendingB,
       bRequests,
+      hostPlayback: { initialHost, begin, pendingStart, pendingEnd, beforeB, afterB, afterA },
+      nativeNotificationCreates: {
+        baseline: notificationBaseline.calls.length,
+        duringA: notificationsDuringA.calls.length,
+        afterB: notificationsAfterB.calls.length,
+        afterA: notificationsAfterA.calls.length,
+        afterSave: notificationsAfterSave.calls.length,
+      },
       selected: opened.selectedMedia,
       retained,
       originUrl,
@@ -8184,10 +8264,60 @@ async function runRapidVideoClicks({
         sha256: createHash('sha256').update(bytes).digest('hex'),
       },
       restoration: after,
+      cleanup,
     };
+  } catch (error) {
+    validationFailed = true;
+    validationError = error;
   } finally {
-    fixtureRoutes.releaseDelayedFailure();
+    try {
+      fixtureRoutes.releaseDelayedFailure();
+    } catch (error) {
+      cleanupErrors.push(error);
+    }
+    if (notificationObserver) {
+      try {
+        await notificationObserver.dispose();
+        cleanup.notificationObserverRestored = true;
+      } catch (error) {
+        cleanupErrors.push(error);
+      }
+    }
+    if (originalLoop !== undefined) {
+      try {
+        const restored = await first.evaluate((element, loop) => {
+          if (!(element instanceof HTMLVideoElement)) {
+            throw new Error('Rapid A host video disappeared before cleanup');
+          }
+          element.pause();
+          element.loop = loop;
+          return { paused: element.paused, loop: element.loop };
+        }, originalLoop);
+        assert.deepEqual(
+          restored,
+          { paused: true, loop: originalLoop },
+          'Rapid A host playback and loop must be restored'
+        );
+        cleanup.hostVideoControlRestored = true;
+      } catch (error) {
+        cleanupErrors.push(error);
+      }
+    }
   }
+  if (validationFailed && cleanupErrors.length) {
+    throw new AggregateError(
+      [validationError, ...cleanupErrors],
+      'Rapid click validation and cleanup both failed'
+    );
+  }
+  if (validationFailed) {
+    throw validationError;
+  }
+  if (cleanupErrors.length) {
+    throw new AggregateError(cleanupErrors, 'Rapid click cleanup failed');
+  }
+  assert(result, 'Rapid click validation produced no result');
+  return result;
 }
 
 async function installBoundedExtensionRenderFault(
@@ -11815,7 +11945,9 @@ async function exerciseInstalledExtension(
     }
     try {
       rapidVideoClicks = await runRapidVideoClicks({
+        context,
         downloads,
+        extensionId,
         extensionPage,
         fixtureRoutes,
         nativeLoopback,
