@@ -415,11 +415,46 @@ type NativeControlPoint = {
   hitBackendNodeId: number;
   documentPoint: { x: number; y: number };
 };
+type NativeControlProbe = {
+  backendNodeId: number;
+  rejection:
+    | 'box-unavailable'
+    | 'invalid-box'
+    | 'too-small'
+    | 'outside-video'
+    | 'hit-query-error'
+    | 'wrong-host'
+    | 'wrong-descendant'
+    | 'accepted';
+  viewport?: { x: number; y: number };
+  document?: { x: number; y: number };
+  hitBackendNodeId?: number;
+  hostBackendNodeId?: number;
+};
 type Own12NativeControlsEvidence = AcceptanceReceipt & {
   native?: unknown;
   adjacentPhoto?: unknown;
   geometry: Array<Record<string, unknown>>;
-  discovery: Array<{ kind: string; candidates: string[] }>;
+  discovery: Array<{
+    kind: NativeControlPoint['kind'];
+    candidates: string[];
+    uaInputs: Array<{
+      backendNodeId: number;
+      pseudo: string | null;
+      className: string | null;
+      ariaLabel: string | null;
+      type: string | null;
+    }>;
+    uaInputCount: number;
+    hostState: {
+      paused: boolean;
+      currentTime: number;
+      ended: boolean;
+      readyState: number;
+      error: number | null;
+    };
+    probes: NativeControlProbe[];
+  }>;
   events: Array<{ type: string; trusted: boolean; time: number; volume: number; paused: boolean }>;
   cleanup: {
     observerRemoved: boolean;
@@ -9028,7 +9063,9 @@ async function locateOwn12NativeControl({
   });
   assert.equal(described.node.nodeName, 'VIDEO', 'Native control host must be a video');
 
-  const entries: Array<{ node: NativeControlNode; label: string }> = [];
+  const entries: Array<{ node: NativeControlNode; label: string; pseudo: string | null }> = [];
+  const uaInputs: Own12NativeControlsEvidence['discovery'][number]['uaInputs'] = [];
+  let uaInputCount = 0;
   let visited = 0;
   const visit = (node: NativeControlNode, inUserAgentShadow: boolean, depth: number) => {
     visited++;
@@ -9037,13 +9074,32 @@ async function locateOwn12NativeControl({
     if (owned) {
       const attributes = node.attributes ?? [];
       const labels = [];
+      const selected: Record<string, string> = {};
       for (let index = 0; index + 1 < attributes.length; index += 2) {
         const key = attributes[index];
-        if (key && ['class', 'id', 'aria-label', 'title', 'role', 'type'].includes(key)) {
-          labels.push(`${key}=${attributes[index + 1]}`);
+        if (key && ['pseudo', 'class', 'id', 'aria-label', 'title', 'role', 'type'].includes(key)) {
+          const value = attributes[index + 1] ?? '';
+          selected[key] = value;
+          labels.push(`${key}=${value}`);
         }
       }
-      entries.push({ node, label: `${node.nodeName} ${labels.join(' ')}`.slice(0, 220) });
+      entries.push({
+        node,
+        label: `${node.nodeName} ${labels.join(' ')}`.slice(0, 220),
+        pseudo: selected.pseudo ?? null,
+      });
+      if (node.nodeName === 'INPUT') {
+        uaInputCount++;
+        if (uaInputs.length < 24) {
+          uaInputs.push({
+            backendNodeId: node.backendNodeId,
+            pseudo: selected.pseudo ?? null,
+            className: selected.class ?? null,
+            ariaLabel: selected['aria-label']?.slice(0, 100) ?? null,
+            type: selected.type ?? null,
+          });
+        }
+      }
     }
     for (const child of node.children ?? []) {
       visit(child, owned, depth + 1);
@@ -9053,19 +9109,38 @@ async function locateOwn12NativeControl({
     }
   };
   visit(described.node, false, 0);
-  const matches = (label: string) => {
-    const normalized = label.toLowerCase();
+  const matches = ({ node, pseudo }: (typeof entries)[number]) => {
     switch (kind) {
       case 'play':
-        return /(?:^|[-=\s])(?:play|pause)(?:[-\s]|$)/u.test(normalized);
+        return node.nodeName === 'INPUT' && pseudo === '-webkit-media-controls-play-button';
       case 'timeline':
-        return /timeline|seek|scrub/u.test(normalized);
+        return pseudo === '-webkit-media-controls-timeline';
       case 'volume':
-        return /volume/u.test(normalized) && /slider|role=slider|type=range/u.test(normalized);
+        return pseudo === '-webkit-media-controls-volume-slider';
     }
   };
-  const candidates = entries.filter(({ label }) => matches(label));
-  evidence.discovery.push({ kind, candidates: candidates.slice(0, 12).map(({ label }) => label) });
+  const candidates = entries.filter(matches);
+  const discovery: Own12NativeControlsEvidence['discovery'][number] = {
+    kind,
+    candidates: candidates.slice(0, 12).map(({ label }) => label),
+    uaInputs,
+    uaInputCount,
+    hostState: await video.evaluate((element) => {
+      if (!(element instanceof HTMLVideoElement)) {
+        throw new Error('OWN-12 host video missing during native control discovery');
+      }
+      return {
+        paused: element.paused,
+        currentTime: element.currentTime,
+        ended: element.ended,
+        readyState: element.readyState,
+        error: element.error?.code ?? null,
+      };
+    }),
+    probes: [],
+  };
+  evidence.discovery.push(discovery);
+  assert(uaInputCount <= 24, `${kind}: too many native input controls`);
   assert(candidates.length <= 12, `${kind}: too many native control candidates`);
   const descendantIds = (node: NativeControlNode): Set<number> => {
     const ids = new Set<number>([node.backendNodeId]);
@@ -9087,6 +9162,11 @@ async function locateOwn12NativeControl({
     return ids;
   };
   for (const { node, label } of candidates) {
+    const probe: NativeControlProbe = {
+      backendNodeId: node.backendNodeId,
+      rejection: 'box-unavailable',
+    };
+    discovery.probes.push(probe);
     const box = await cdp
       .send('DOM.getBoxModel', { backendNodeId: node.backendNodeId })
       .catch(() => null);
@@ -9097,6 +9177,7 @@ async function locateOwn12NativeControl({
     const xs = [quad[0], quad[2], quad[4], quad[6]];
     const ys = [quad[1], quad[3], quad[5], quad[7]];
     if (xs.some((value) => value === undefined) || ys.some((value) => value === undefined)) {
+      probe.rejection = 'invalid-box';
       continue;
     }
     const left = Math.min(...(xs as number[]));
@@ -9104,6 +9185,7 @@ async function locateOwn12NativeControl({
     const top = Math.min(...(ys as number[]));
     const bottom = Math.max(...(ys as number[]));
     if (right - left < 4 || bottom - top < 4) {
+      probe.rejection = 'too-small';
       continue;
     }
     const x = Math.round(left + (right - left) * (kind === 'timeline' ? 0.65 : 0.5));
@@ -9114,8 +9196,10 @@ async function locateOwn12NativeControl({
       y < videoBox.y ||
       y > videoBox.y + videoBox.height
     ) {
+      probe.rejection = 'outside-video';
       continue;
     }
+    probe.viewport = { x, y };
     // getBoxModel and mouse input use viewport points; CDP hit testing uses document points.
     const documentPoint = await page.evaluate(
       ({ viewportX, viewportY }) => ({
@@ -9125,20 +9209,34 @@ async function locateOwn12NativeControl({
       { viewportX: x, viewportY: y }
     );
     coordinateProbes.push({ viewport: { x, y }, document: documentPoint });
-    const [hit, hostHit] = await Promise.all([
+    probe.document = documentPoint;
+    const hits = await Promise.all([
       cdp.send('DOM.getNodeForLocation', { ...documentPoint, includeUserAgentShadowDOM: true }),
       cdp.send('DOM.getNodeForLocation', { ...documentPoint, includeUserAgentShadowDOM: false }),
-    ]);
+    ]).catch(() => null);
+    if (!hits) {
+      probe.rejection = 'hit-query-error';
+      continue;
+    }
+    const [hit, hostHit] = hits;
+    probe.hitBackendNodeId = hit.backendNodeId;
+    probe.hostBackendNodeId = hostHit.backendNodeId;
     if (hostHit.backendNodeId !== described.node.backendNodeId) {
+      probe.rejection = 'wrong-host';
       continue;
     }
     if (!descendantIds(node).has(hit.backendNodeId)) {
+      probe.rejection = 'wrong-descendant';
       continue;
     }
+    probe.rejection = 'accepted';
     return { kind, x, y, node: label, hitBackendNodeId: hit.backendNodeId, documentPoint };
   }
   if (kind === 'volume' && !hoveredVolume) {
-    const button = entries.find(({ label }) => /volume|mute/u.test(label.toLowerCase()));
+    const button = entries.find(
+      ({ node, pseudo }) =>
+        node.nodeName === 'INPUT' && pseudo === '-webkit-media-controls-mute-button'
+    );
     if (button) {
       const box = await cdp
         .send('DOM.getBoxModel', { backendNodeId: button.node.backendNodeId })
@@ -9535,11 +9633,19 @@ async function runOwn12NativeControls({
   } finally {
     if (observerInstalled && !page.isClosed()) {
       try {
-        await page.evaluate(() => {
-          const state = (window as Window & { __xegOwn12NativeEvents?: { dispose: () => void } })
-            .__xegOwn12NativeEvents;
+        evidence.events = await page.evaluate(() => {
+          const state = (
+            window as Window & {
+              __xegOwn12NativeEvents?: {
+                records: Own12NativeControlsEvidence['events'];
+                dispose: () => void;
+              };
+            }
+          ).__xegOwn12NativeEvents;
+          const records = state?.records ?? [];
           state?.dispose();
           delete (window as Window & { __xegOwn12NativeEvents?: unknown }).__xegOwn12NativeEvents;
+          return records;
         });
         evidence.cleanup.observerRemoved = true;
       } catch (error) {
