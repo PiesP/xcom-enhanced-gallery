@@ -470,7 +470,6 @@ export async function runVideoLoadingProfile({
       typeof nativeLoopback.snapshot === 'function',
     'The HTTPS native download loopback is required'
   );
-  nativeLoopback.setRecoveryPayloads({ tweetId, validMp4, badMp4: BAD_MP4 });
   const badSha256 = createHash('sha256').update(BAD_MP4).digest('hex');
   const bestUrl = videoUrl(tweetId, 0);
   const lowerUrl = videoUrl(tweetId, 0, 'lower');
@@ -651,6 +650,13 @@ export async function runVideoLoadingProfile({
     assert.equal(field(applied, 'videoClickMode'), 'allow-all');
     assert.equal(field(applied, 'preloadCount'), 20);
 
+    const lowerMp4 = await readFile(join(root, 'test/e2e/fixtures/installed-metadata-header.mp4'));
+    assert.equal(
+      createHash('sha256').update(lowerMp4).digest('hex'),
+      'f32e86678878b658531f0e7e46a66c5f13d7856312e852cd376eae17bbf0b63a',
+      'The declared bounded metadata-header fixture changed'
+    );
+    nativeLoopback.setRecoveryPayloads({ tweetId, validMp4, badMp4: BAD_MP4, lowerMp4 });
     nativeLoopback.setRecoveryDocument({ tweetId, handle, html: fixtureHtml(tweetId, handle) });
     const documentResponse = await page.goto(fixtureUrl);
     assert(documentResponse, 'Native fixture document response is missing');
@@ -734,10 +740,10 @@ export async function runVideoLoadingProfile({
 
     let sawMoov = false;
     let metadataPrefixEnd = 0;
-    for (let offset = 0; offset + 8 <= validMp4.length;) {
-      const size: number = validMp4.readUInt32BE(offset);
-      assert(size >= 8 && offset + size <= validMp4.length, 'Invalid bounded fixture atom');
-      const kind = validMp4.toString('ascii', offset + 4, offset + 8);
+    for (let offset = 0; offset + 8 <= lowerMp4.length;) {
+      const size: number = lowerMp4.readUInt32BE(offset);
+      assert(size >= 8 && offset + size <= lowerMp4.length, 'Invalid bounded fixture atom');
+      const kind = lowerMp4.toString('ascii', offset + 4, offset + 8);
       if (kind === 'moov') {
         sawMoov = true;
       }
@@ -748,7 +754,7 @@ export async function runVideoLoadingProfile({
       }
       offset += size;
     }
-    assert(metadataPrefixEnd > 0 && metadataPrefixEnd < validMp4.length);
+    assert(metadataPrefixEnd > 65_536 && metadataPrefixEnd < lowerMp4.length);
     const lowerTransportMark = nativeLoopback.mark();
     nativeLoopback.armVideoHold(new URL(lowerUrl).pathname, metadataPrefixEnd);
     lowerHoldArmed = true;
@@ -770,7 +776,7 @@ export async function runVideoLoadingProfile({
         );
       },
       null,
-      { timeout: 20_000 }
+      { timeout: 5_000 }
     );
     observation.metadata = await itemState(page, 0);
     assert(observation.metadata);

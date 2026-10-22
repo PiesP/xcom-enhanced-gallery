@@ -327,14 +327,16 @@ export function createExtensionNativeFixtureHandler() {
       tweetId,
       validMp4,
       badMp4,
+      lowerMp4 = validMp4,
     }: {
       tweetId: string;
       validMp4: Buffer;
       badMp4: Buffer;
+      lowerMp4?: Buffer;
     }) {
       assert(allowed.size > 0, 'Install native fixture payloads first');
       assert(typeof tweetId === 'string' && /^[1-9][0-9]{0,19}$/u.test(tweetId));
-      for (const bytes of [validMp4, badMp4]) {
+      for (const bytes of [validMp4, badMp4, lowerMp4]) {
         assert(Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= MAX_BODY_BYTES);
       }
       const prefix = `/ext_tw_video/${tweetId}/pu/vid/320x180/`;
@@ -342,7 +344,7 @@ export function createExtensionNativeFixtureHandler() {
         `${prefix}video-${index}-best.mp4`,
         index === 0 ? badMp4 : validMp4,
       ]);
-      routes.push([`${prefix}video-0-lower.mp4`, validMp4]);
+      routes.push([`${prefix}video-0-lower.mp4`, lowerMp4]);
       for (const [path] of routes) {
         assert(!allowed.has(`video.twimg.com${path}`), 'Recovery payloads already installed');
       }

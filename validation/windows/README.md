@@ -224,6 +224,19 @@ listener, so the browser can classify the document's network address space.
 No permission is overridden; TLS, CORS and OS protections stay enabled. These
 cases do not validate public-to-loopback permission behavior.
 
+The metadata-only fixture `installed-metadata-header.mp4` remuxes
+`installed-quote-one.mp4` with a 64 KiB front-header reservation and unchanged
+decoded frames. `runVideoLoadingProfile()` pins its digest, holds the response
+after the `mdat` header before any sample, and bounds the probe below the
+listener's idle timeout. Native readiness and frame observations qualify each
+stage separately. Regenerate the asset with:
+
+```bash
+ffmpeg -bitexact -i test/e2e/fixtures/installed-quote-one.mp4 -map 0:v:0 \
+  -c copy -map_metadata -1 -metadata encoder= -moov_size 65536 -fflags +bitexact \
+  test/e2e/fixtures/installed-metadata-header.mp4
+```
+
 The streaming asset is `test/e2e/fixtures/installed-recovery-intent.mp4`: a
 four-second, 24 fps, 320×180 H.264 test pattern below the 256 KiB fixture cap.
 It keeps metadata at the front and enough complete initial samples for native
