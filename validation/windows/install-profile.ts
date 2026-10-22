@@ -303,6 +303,22 @@ type UnavailableEvidence = {
   mode?: string;
   durationToFourthRequestMs?: number;
 };
+type ContextLossEvidence = {
+  status: 'pending' | 'passed' | 'failed';
+  setting: ControlledSettingEvidence;
+  oldPage?: unknown;
+  heldExchange?: unknown;
+  closedContext?: unknown;
+  freshPage?: unknown;
+  error?: string;
+  cleanup: {
+    oldPageClosed: boolean;
+    freshPageClosed: boolean;
+    hookReleasedOrContextClosed: boolean;
+    observerRestored: boolean;
+    errors: string[];
+  };
+};
 type DelayedVideoCase = {
   name: string;
   pageUrl: string;
@@ -6385,6 +6401,551 @@ function withNativeNotificationObserver(context: BrowserContext, extensionId: st
     };
 }
 
+async function installedContentRealm(context: BrowserContext, page: Page, extensionId: string) {
+  const cdp = await context.newCDPSession(page);
+  try {
+    const contexts: Array<{
+      id: number;
+      name: string;
+      origin: string;
+      auxData?: { frameId?: string; isDefault?: boolean };
+    }> = [];
+    cdp.on('Runtime.executionContextCreated', ({ context: observed }) => {
+      if (contexts.length < 32) {
+        contexts.push(observed);
+      }
+    });
+    const { frameTree } = await cdp.send('Page.getFrameTree');
+    await cdp.send('Runtime.enable');
+    const realm = await waitForValue(
+      () => {
+        const matching = contexts.filter(
+          ({ origin, auxData }) =>
+            (origin === `chrome-extension://${extensionId}` ||
+              origin === `chrome-extension://${extensionId}/`) &&
+            auxData?.frameId === frameTree.frame.id &&
+            auxData.isDefault === false
+        );
+        assert(matching.length <= 1, 'Installed content realm is ambiguous');
+        return matching[0];
+      },
+      'installed content realm for context-loss validation',
+      5_000
+    );
+    return { cdp, realm: { id: realm.id, name: realm.name, origin: realm.origin } };
+  } catch (error) {
+    await cdp.detach().catch(() => undefined);
+    throw error;
+  }
+}
+
+async function installHeldNotificationReply(
+  context: BrowserContext,
+  page: Page,
+  extensionId: string
+) {
+  const { cdp, realm } = await installedContentRealm(context, page, extensionId);
+  const marker = randomUUID();
+  let contextDestroyed = false;
+  cdp.on('Runtime.executionContextDestroyed', ({ executionContextId }) => {
+    if (executionContextId === realm.id) {
+      contextDestroyed = true;
+    }
+  });
+  cdp.on('Runtime.executionContextsCleared', () => {
+    contextDestroyed = true;
+  });
+  try {
+    const installed = await cdp.send('Runtime.evaluate', {
+      contextId: realm.id,
+      expression: `(() => {
+        if (globalThis.__xegPlt05HeldReply) throw new Error('PLT-05 reply gate already installed');
+        const original = chrome.runtime.sendMessage;
+        const state = {
+          marker: ${JSON.stringify(marker)}, original, wrapper: null, calls: [],
+          overflow: false, replyReceived: false, replySuccess: null, released: false,
+          release: null
+        };
+        state.wrapper = function(...args) {
+          const message = args[0];
+          if (!message || message.type !== 'SHOW_NOTIFICATION') {
+            return Reflect.apply(original, this, args);
+          }
+          if (state.calls.length >= 4) state.overflow = true;
+          else state.calls.push({ id: message.payload?.id ?? null, dispatchedAt: Date.now() });
+          const dispatched = Reflect.apply(original, this, args);
+          if (state.calls.length !== 1) return dispatched;
+          const outcome = Promise.resolve(dispatched).then(
+            value => {
+              state.replyReceived = true;
+              state.replySuccess = value?.success === true;
+              return { ok: true, value };
+            },
+            error => {
+              state.replyReceived = true;
+              state.replySuccess = false;
+              return { ok: false, error };
+            }
+          );
+          return new Promise((resolve, reject) => {
+            state.release = () => {
+              if (state.released) return;
+              state.released = true;
+              void outcome.then(result => result.ok ? resolve(result.value) : reject(result.error));
+            };
+          });
+        };
+        chrome.runtime.sendMessage = state.wrapper;
+        globalThis.__xegPlt05HeldReply = state;
+        return { installed: chrome.runtime.sendMessage === state.wrapper, marker: state.marker };
+      })()`,
+      returnByValue: true,
+    });
+    assert.equal(installed.exceptionDetails, undefined, 'PLT-05 reply gate installation threw');
+    assert.deepEqual(installed.result.value, { installed: true, marker });
+    return {
+      realm: { origin: realm.origin, name: realm.name },
+      contextDestroyed: () => contextDestroyed,
+      async snapshot() {
+        const response = await cdp.send('Runtime.evaluate', {
+          contextId: realm.id,
+          expression: `(() => {
+            const state = globalThis.__xegPlt05HeldReply;
+            return state ? {
+              marker: state.marker, calls: state.calls, overflow: state.overflow,
+              replyReceived: state.replyReceived, replySuccess: state.replySuccess,
+              released: state.released,
+              wrapperIntact: chrome.runtime.sendMessage === state.wrapper
+            } : null;
+          })()`,
+          returnByValue: true,
+        });
+        assert.equal(response.exceptionDetails, undefined, 'PLT-05 reply snapshot threw');
+        const snapshot = response.result.value as {
+          marker: string;
+          calls: Array<{ id: string | null; dispatchedAt: number }>;
+          overflow: boolean;
+          replyReceived: boolean;
+          replySuccess: boolean | null;
+          released: boolean;
+          wrapperIntact: boolean;
+        } | null;
+        assert(snapshot && snapshot.marker === marker, 'PLT-05 reply gate marker changed');
+        assert.equal(snapshot.wrapperIntact, true, 'PLT-05 reply wrapper was replaced');
+        assert.equal(snapshot.overflow, false, 'PLT-05 notification count overflowed');
+        return snapshot;
+      },
+      async dispose() {
+        let restored = false;
+        try {
+          if (!page.isClosed()) {
+            const response = await cdp.send('Runtime.evaluate', {
+              contextId: realm.id,
+              expression: `(() => {
+                const state = globalThis.__xegPlt05HeldReply;
+                if (!state || state.marker !== ${JSON.stringify(marker)}) return false;
+                state.release?.();
+                chrome.runtime.sendMessage = state.original;
+                const restored = chrome.runtime.sendMessage === state.original;
+                delete globalThis.__xegPlt05HeldReply;
+                return restored && !Object.hasOwn(globalThis, '__xegPlt05HeldReply');
+              })()`,
+              returnByValue: true,
+            });
+            assert.equal(
+              response.exceptionDetails,
+              undefined,
+              'PLT-05 reply gate restoration threw'
+            );
+            restored = response.result.value === true;
+            assert.equal(restored, true, 'PLT-05 reply gate did not restore runtime messaging');
+          }
+        } finally {
+          await cdp.detach().catch((error: unknown) => {
+            if (!page.isClosed()) {
+              throw error;
+            }
+          });
+        }
+        return { restored, oldPageClosed: page.isClosed(), contextDestroyed };
+      },
+    };
+  } catch (error) {
+    if (!page.isClosed()) {
+      await cdp
+        .send('Runtime.evaluate', {
+          contextId: realm.id,
+          expression: `(() => {
+          const state = globalThis.__xegPlt05HeldReply;
+          if (!state || state.marker !== ${JSON.stringify(marker)}) return false;
+          state.release?.();
+          chrome.runtime.sendMessage = state.original;
+          delete globalThis.__xegPlt05HeldReply;
+          return chrome.runtime.sendMessage === state.original;
+        })()`,
+          returnByValue: true,
+        })
+        .catch(() => undefined);
+    }
+    await cdp.detach().catch(() => undefined);
+    throw error;
+  }
+}
+
+async function runInstalledContextLoss({
+  context,
+  extensionId,
+  extensionPage,
+  output,
+  sequenceApiResponses,
+  evidence,
+}: {
+  context: BrowserContext;
+  extensionId: string;
+  extensionPage: Page;
+  output: string;
+  sequenceApiResponses: ApiRecord[];
+  evidence: ContextLossEvidence;
+}) {
+  let validationError: unknown;
+  let receiptError: unknown;
+  try {
+    await withControlledFixtureVideoMode(extensionPage, evidence.setting, async () => {
+      let oldPage: Page | undefined;
+      let freshPage: Page | undefined;
+      let held: Awaited<ReturnType<typeof installHeldNotificationReply>> | undefined;
+      let observer: Awaited<ReturnType<typeof observeNativeNotificationCreates>> | undefined;
+      let actionError: unknown;
+      const cleanupErrors: unknown[] = [];
+      try {
+        const sequence = UNAVAILABLE_SEQUENCE;
+        const failure = sequence.failures[0];
+        assert(failure, 'PLT-05 unavailable fixture is missing');
+        const url = `https://x.com/${sequence.handle}/status/${failure.outer}`;
+        const priorDownloads = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+        oldPage = await context.newPage();
+        await oldPage.goto(url);
+        await oldPage.locator('html[data-xeg-gallery-ready="true"]').waitFor({
+          state: 'attached',
+          timeout: 15_000,
+        });
+        assert.equal(
+          storedVideoClickMode((await readStoredVideoSettings(extensionPage)).settings),
+          'allow-all',
+          'PLT-05 preview must use its supported video-click mode'
+        );
+        observer = await observeNativeNotificationCreates(context, extensionId);
+        const before = await observer.snapshot();
+        held = await installHeldNotificationReply(context, oldPage, extensionId);
+        const trigger = oldPage.locator(
+          `[data-sequence-step="${failure.name}"] .media-shell button`
+        );
+        await trigger.scrollIntoViewIfNeeded();
+        await oldPage.evaluate(() => window.scrollBy(0, -100));
+        await trigger.focus();
+        const hit = await trigger.evaluate((button) => {
+          const rect = button.getBoundingClientRect();
+          const x = Math.round(rect.left + rect.width * 0.2);
+          const y = Math.round(rect.top + rect.height * 0.2);
+          const article = button.closest('[data-sequence-step]');
+          return {
+            x,
+            y,
+            hit: document.elementFromPoint(x, y) === button,
+            focused: document.activeElement === button,
+            poster: article?.querySelector('video')?.poster ?? null,
+            sourceCount: article?.querySelectorAll('video source').length ?? -1,
+            imageCount: article?.querySelectorAll('img').length ?? -1,
+          };
+        });
+        assert.equal(hit.hit, true, 'PLT-05 first click must hit the actual preview button');
+        assert.equal(hit.focused, true, 'PLT-05 first preview must have ordinary focus');
+        assert.equal(
+          hit.poster,
+          `https://pbs.twimg.com/ext_tw_video_thumb/${failure.outer}/pu/img/unavailable.jpg`
+        );
+        assert.equal(hit.sourceCount, 0);
+        assert.equal(hit.imageCount, 0);
+        evidence.oldPage = { url, tweetId: failure.outer, hit, realm: held.realm };
+
+        const apiMark = sequenceApiResponses.length;
+        await oldPage.mouse.click(hit.x, hit.y);
+        const pending = await waitForValue(
+          async () => {
+            const snapshot = await held?.snapshot();
+            return snapshot?.calls.length === 1 && snapshot.replyReceived ? snapshot : undefined;
+          },
+          'one installed SHOW_NOTIFICATION exchange with held content reply',
+          15_000
+        );
+        assert.equal(pending.replySuccess, true, 'Real background notification reply must succeed');
+        assert.equal(pending.released, false, 'Content reply must remain held before tab closure');
+        const calls = notificationCallsSince(before, await observer.snapshot());
+        assert.equal(calls.length, 1, 'First click must dispatch one real background notification');
+        assert.equal(pending.calls[0]?.id, calls[0]?.id);
+        const api = sequenceApiResponses.slice(apiMark);
+        assert.deepEqual(
+          api.map(({ tweetId, status, resultTypename }) => [tweetId, status, resultTypename]),
+          [[failure.outer, 200, failure.typename]],
+          'First click must make one owned HTTP 200 unavailable response'
+        );
+        assert.equal(await oldPage.locator('[data-xeg-gallery-container]').count(), 0);
+        assert.deepEqual(
+          (await queryDownloads(extensionPage)).filter(({ id }) => !priorDownloads.has(id)),
+          [],
+          'Unavailable preview must not start a privileged download'
+        );
+        evidence.heldExchange = {
+          status: 'background-replied-content-held',
+          calls: pending.calls,
+          replyReceived: pending.replyReceived,
+          replySuccess: pending.replySuccess,
+          released: pending.released,
+          nativeCreate: calls.map(({ id, createdAt }) => ({ id, createdAt })),
+          api,
+          galleryOpen: false,
+          nativeDownloadsCreated: 0,
+        };
+
+        await oldPage.close();
+        evidence.cleanup.oldPageClosed = oldPage.isClosed();
+        assert.equal(evidence.cleanup.oldPageClosed, true, 'PLT-05 owned tab must close');
+        const afterClose = notificationCallsSince(before, await observer.snapshot());
+        assert.equal(afterClose.length, 1, 'Closed tab must not dispatch another notification');
+        const releasedRealm = await held.dispose();
+        held = undefined;
+        evidence.cleanup.hookReleasedOrContextClosed = releasedRealm.oldPageClosed;
+        evidence.closedContext = {
+          tabClosed: releasedRealm.oldPageClosed,
+          destroyedEventObserved: releasedRealm.contextDestroyed,
+          nativeCreateCountAfterClose: afterClose.length,
+        };
+
+        freshPage = await context.newPage();
+        await freshPage.goto(url);
+        await freshPage.locator('html[data-xeg-gallery-ready="true"]').waitFor({
+          state: 'attached',
+          timeout: 15_000,
+        });
+        const freshRealm = await installedContentRealm(context, freshPage, extensionId);
+        let markerAbsent = false;
+        try {
+          const marker = await freshRealm.cdp.send('Runtime.evaluate', {
+            contextId: freshRealm.realm.id,
+            expression: `!Object.hasOwn(globalThis, '__xegPlt05HeldReply')`,
+            returnByValue: true,
+          });
+          assert.equal(
+            marker.exceptionDetails,
+            undefined,
+            'Fresh content realm marker query threw'
+          );
+          markerAbsent = marker.result.value === true;
+          assert.equal(markerAbsent, true, 'Fresh content realm retained the retired reply gate');
+        } finally {
+          await freshRealm.cdp.detach();
+        }
+        const control = sequence.control;
+        const freshTrigger = freshPage.locator(
+          '[data-sequence-step="control"] [data-preplayer-media] button'
+        );
+        await freshTrigger.scrollIntoViewIfNeeded();
+        await freshPage.evaluate(() => window.scrollBy(0, -100));
+        await freshTrigger.focus();
+        const hostBefore = await quotedHostSnapshot(
+          freshPage,
+          'control',
+          '[data-preplayer-media] button'
+        );
+        assert.equal(hostBefore.active, true);
+        assert(hostBefore.scrollY > 0, 'Fresh page host scroll must be observable');
+        const freshHit = await freshTrigger.evaluate((button) => {
+          const rect = button.getBoundingClientRect();
+          const x = Math.round(rect.left + rect.width * 0.2);
+          const y = Math.round(rect.top + rect.height * 0.2);
+          return { x, y, hit: document.elementFromPoint(x, y) === button };
+        });
+        assert.equal(freshHit.hit, true, 'Fresh ordinary click must hit the healthy preview');
+        const freshApiMark = sequenceApiResponses.length;
+        await freshPage.mouse.click(freshHit.x, freshHit.y);
+        const opened = await assertQuotedGallery(freshPage, control);
+        const freshApi = sequenceApiResponses.slice(freshApiMark);
+        assert.deepEqual(
+          freshApi.map(({ tweetId, status, resultTypename }) => [tweetId, status, resultTypename]),
+          [[control.outer, 200, 'Tweet']],
+          'Fresh tab must make one healthy owner-specific HTTP request'
+        );
+        const origin = await assertQuotedOriginLink(
+          opened.gallery,
+          `https://x.com/${control.username}/status/${control.owner}`
+        );
+        const readiness = await opened.video.evaluate((video) => {
+          if (!(video instanceof HTMLVideoElement)) {
+            throw new Error('Fresh gallery video is missing');
+          }
+          return {
+            paused: video.paused,
+            time: video.currentTime,
+            width: video.videoWidth,
+            height: video.videoHeight,
+            error: video.error?.code ?? null,
+          };
+        });
+        assert.equal(readiness.paused, true, 'Fresh gallery video must start paused');
+        assert(readiness.time <= 0.1, 'Fresh gallery video must start at the beginning');
+        assert.equal(readiness.error, null);
+        await opened.video.click();
+        await freshPage.waitForFunction(
+          ({ index, start }) => {
+            const video = document.querySelector(
+              `[data-xeg-gallery-container] [data-gallery-element="item"][data-index="${index}"] video`
+            );
+            return (
+              video instanceof HTMLVideoElement &&
+              !video.paused &&
+              video.error === null &&
+              video.videoWidth > 0 &&
+              video.videoHeight > 0 &&
+              video.currentTime > start + 0.15
+            );
+          },
+          { index: control.expectedPosition - 1, start: readiness.time },
+          { timeout: 15_000 }
+        );
+        const progress = await opened.video.evaluate((video) => {
+          if (!(video instanceof HTMLVideoElement)) {
+            throw new Error('Fresh gallery video is missing after ordinary Play');
+          }
+          return {
+            paused: video.paused,
+            time: video.currentTime,
+            width: video.videoWidth,
+            height: video.videoHeight,
+            error: video.error?.code ?? null,
+          };
+        });
+        assert.equal(progress.paused, false, 'Fresh gallery video must keep playing');
+        assert(progress.time > readiness.time + 0.15, 'Fresh gallery playback must progress');
+        assert(progress.width > 0 && progress.height > 0, 'Fresh gallery video must decode');
+        assert.equal(progress.error, null);
+        const close = await closeQuotedGallery({
+          gallery: opened.gallery,
+          page: freshPage,
+          method: 'escape',
+          before: hostBefore,
+          caseName: 'control',
+          selector: '[data-preplayer-media] button',
+        });
+        const afterFresh = notificationCallsSince(before, await observer.snapshot());
+        assert.equal(
+          afterFresh.filter(({ id }) => id === calls[0]?.id).length,
+          1,
+          'Fresh tab must not replay the retired notification ID'
+        );
+        assert.equal(
+          afterFresh.length,
+          1,
+          'Fresh tab must not create any additional native notification'
+        );
+        evidence.freshPage = {
+          url,
+          realm: { name: freshRealm.realm.name, origin: freshRealm.realm.origin, markerAbsent },
+          hit: freshHit,
+          api: freshApi,
+          selected: opened.selectedMedia,
+          selection: opened.selection,
+          origin,
+          readiness,
+          progress,
+          close,
+          nativeCreateCountAfterFresh: afterFresh.length,
+          retiredNotificationIdRepeats: 0,
+        };
+      } catch (error) {
+        actionError = error;
+      } finally {
+        if (held) {
+          try {
+            const result = await held.dispose();
+            evidence.cleanup.hookReleasedOrContextClosed = result.restored || result.oldPageClosed;
+          } catch (error) {
+            cleanupErrors.push(error);
+          }
+        }
+        for (const [name, page] of [
+          ['oldPage', oldPage],
+          ['freshPage', freshPage],
+        ] as const) {
+          if (!page) {
+            continue;
+          }
+          try {
+            if (!page.isClosed()) {
+              await page.close();
+            }
+            if (name === 'oldPage') {
+              evidence.cleanup.oldPageClosed = page.isClosed();
+            } else {
+              evidence.cleanup.freshPageClosed = page.isClosed();
+            }
+          } catch (error) {
+            cleanupErrors.push(error);
+          }
+        }
+        if (observer) {
+          try {
+            await observer.dispose();
+            evidence.cleanup.observerRestored = true;
+          } catch (error) {
+            cleanupErrors.push(error);
+          }
+        }
+        evidence.cleanup.errors = cleanupErrors.map(safeError);
+      }
+      if (actionError && cleanupErrors.length) {
+        throw new AggregateError(
+          [actionError, ...cleanupErrors],
+          'PLT-05 validation and cleanup failed'
+        );
+      }
+      if (actionError) {
+        throw actionError;
+      }
+      if (cleanupErrors.length) {
+        throw new AggregateError(cleanupErrors, 'PLT-05 cleanup failed');
+      }
+      return evidence;
+    });
+    evidence.status = 'passed';
+  } catch (error) {
+    evidence.status = 'failed';
+    evidence.error = safeError(error);
+    validationError = error;
+  } finally {
+    try {
+      await writeFile(
+        join(output, 'plt05-context-loss-observations.json'),
+        JSON.stringify(evidence, null, 2)
+      );
+    } catch (error) {
+      receiptError = error;
+    }
+  }
+  if (validationError && receiptError) {
+    throw new AggregateError(
+      [validationError, receiptError],
+      'PLT-05 validation and receipt failed'
+    );
+  }
+  if (validationError) {
+    throw validationError;
+  }
+  if (receiptError) {
+    throw receiptError;
+  }
+  return evidence;
+}
+
 async function runUnavailableSequence({
   apiResponses,
   extensionId,
@@ -8630,6 +9191,14 @@ async function runQuotedVideoCycle({
   });
 
   const hostPlay = shell.locator('[data-testid="playButton"]');
+  const postPlayOverlay = quotedCase.name === 'nested-from-outer';
+  const surfaceSelector = postPlayOverlay
+    ? '[data-video-key] [data-host-play-overlay]'
+    : '[data-video-key] video';
+  const surface = postPlayOverlay ? shell.locator('[data-host-play-overlay]') : hostVideo;
+  if (postPlayOverlay) {
+    assert.equal(await surface.count(), 0, 'The post-Play overlay must not exist before Play');
+  }
   const galleryCountBeforePlay = await page.locator('[data-xeg-gallery-container]').count();
   assert.equal(galleryCountBeforePlay, 0);
   const nativePlayClickCount = await page.evaluate(() => window.__quoteFixtureClicks.length);
@@ -8716,27 +9285,36 @@ async function runQuotedVideoCycle({
   const galleryPreferences = storedGalleryMediaPreferences(
     (await readStoredVideoSettings(extensionPage)).settings
   );
-  await hostVideo.focus();
-  const playingBefore = await quotedHostSnapshot(page, quotedCase.route, '[data-video-key] video');
+  if (postPlayOverlay) {
+    assert.equal(await surface.count(), 1, 'Ordinary Play must insert exactly one fresh overlay');
+    assert.equal(await preview.isVisible(), false, 'The retired preview must be hidden');
+    assert.equal(await hostVideo.isVisible(), true);
+  }
+  await surface.focus();
+  const playingBefore = await quotedHostSnapshot(page, quotedCase.route, surfaceSelector);
   assert.equal(playingBefore.active, true, 'Blob-backed host player must hold focus');
-  const hostHit = await hostVideo.evaluate((element) => {
+  const hostHit = await surface.evaluate((element) => {
     const rect = element.getBoundingClientRect();
     return (
       document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2) === element
     );
   });
   assert.equal(hostHit, true, 'Blob-backed player must be the ordinary hit-tested click target');
-  await captureQuotedOpeningScroll(hostVideo);
+  await captureQuotedOpeningScroll(surface);
   const playingClickCount = await page.evaluate(() => window.__quoteFixtureClicks.length);
-  await hostVideo.click();
+  await surface.click();
   const playingPending = await writeVideoBoundaryCheckpoint({
     output,
     name: `${checkpointName}-playing`,
     page,
     api: quotedApiResponses.slice(apiStart),
   });
-  const playingClick = await quotedClickRecord(page, playingClickCount, 'video');
-  playingBefore.scrollY = Number(await hostVideo.getAttribute('data-opening-scroll-y'));
+  const playingClick = await quotedClickRecord(
+    page,
+    playingClickCount,
+    postPlayOverlay ? 'div' : 'video'
+  );
+  playingBefore.scrollY = Number(await surface.getAttribute('data-opening-scroll-y'));
   assert(
     Number.isFinite(playingBefore.scrollY) && playingBefore.scrollY > 0,
     'Blob-backed opening scroll must be observed'
@@ -8941,7 +9519,7 @@ async function runQuotedVideoCycle({
     method: quotedCase.close,
     before: playingBefore,
     caseName: quotedCase.route,
-    selector: '[data-video-key] video',
+    selector: surfaceSelector,
   });
   await page.evaluate(() => window.__quoteFixtureHostAction('replay'));
   await page.waitForFunction(
@@ -8996,19 +9574,21 @@ async function runQuotedVideoCycle({
   assert.deepEqual(restoredPanel, { ariaHidden: 'false', hiddenMarker: false, inert: false });
   await page.locator(`#${latePanel}`).evaluate((element) => element.remove());
   const pausedControl =
-    quotedCase.route === 'unmarked'
+    quotedCase.route === 'unmarked' || postPlayOverlay
       ? await (async () => {
-          await hostVideo.scrollIntoViewIfNeeded();
-          await hostVideo.evaluate((element) => element.scrollIntoView({ block: 'center' }));
-          await hostVideo.focus();
-          const before = await quotedHostSnapshot(page, quotedCase.route, '[data-video-key] video');
+          await surface.scrollIntoViewIfNeeded();
+          await surface.evaluate((element) => element.scrollIntoView({ block: 'center' }));
+          await surface.focus();
+          const before = await quotedHostSnapshot(page, quotedCase.route, surfaceSelector);
           const hostState = await hostVideoState(hostVideo);
           assert.equal(hostState.paused, true, 'Unmarked host video must be paused before click');
           assert(hostState.readyState >= 2 && hostState.width > 0 && hostState.height > 0);
           assert.equal(hostState.error, null);
           const depth = await quotedTargetDepth(hostVideo);
-          assert.deepEqual(depth, UNMARKED_VIDEO_DEPTH, 'Paused video geometry must stay exact');
-          const hit = await hostVideo.evaluate((element) => {
+          if (quotedCase.route === 'unmarked') {
+            assert.deepEqual(depth, UNMARKED_VIDEO_DEPTH, 'Paused video geometry must stay exact');
+          }
+          const hit = await surface.evaluate((element) => {
             const rect = element.getBoundingClientRect();
             const x = rect.left + rect.width / 2;
             const y = rect.top + rect.height / 2;
@@ -9025,16 +9605,20 @@ async function runQuotedVideoCycle({
           );
           const apiStartPaused = quotedApiResponses.length;
           const clickCount = await page.evaluate(() => window.__quoteFixtureClicks.length);
-          await captureQuotedOpeningScroll(hostVideo);
-          await hostVideo.click();
+          await captureQuotedOpeningScroll(surface);
+          await surface.click();
           const pending = await writeVideoBoundaryCheckpoint({
             output,
             name: `${checkpointName}-paused`,
             page,
             api: quotedApiResponses.slice(apiStartPaused),
           });
-          const click = await quotedClickRecord(page, clickCount, 'video');
-          before.scrollY = Number(await hostVideo.getAttribute('data-opening-scroll-y'));
+          const click = await quotedClickRecord(
+            page,
+            clickCount,
+            postPlayOverlay ? 'div' : 'video'
+          );
+          before.scrollY = Number(await surface.getAttribute('data-opening-scroll-y'));
           assert(Number.isFinite(before.scrollY) && before.scrollY > 0);
           const selected = await assertQuotedGallery(page, quotedCase);
           const freshStart = await hostVideoState(selected.video);
@@ -9067,8 +9651,41 @@ async function runQuotedVideoCycle({
                 method: quotedCase.close,
                 before,
                 caseName: quotedCase.route,
-                selector: '[data-video-key] video',
+                selector: surfaceSelector,
               });
+          let nativeRecovery = null;
+          if (postPlayOverlay) {
+            const apiBeforeReplay = quotedApiResponses.length;
+            const replayClickCount = await page.evaluate(() => window.__quoteFixtureClicks.length);
+            await hostPlay.click();
+            const click = await quotedClickRecord(page, replayClickCount, 'button');
+            await page.waitForFunction(
+              (name) => {
+                const video = document.querySelector(
+                  `[data-case="${name}"] [data-video-key] video`
+                );
+                return (
+                  video instanceof HTMLVideoElement &&
+                  !video.paused &&
+                  video.currentTime > 0.15 &&
+                  video.videoWidth > 0 &&
+                  video.error === null
+                );
+              },
+              quotedCase.route,
+              { timeout: 5_000 }
+            );
+            const state = await hostVideoState(hostVideo);
+            assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0);
+            assert.equal(quotedApiResponses.length, apiBeforeReplay);
+            assert.equal(await surface.count(), 1, 'Replay must retain one current overlay');
+            nativeRecovery = { click, state };
+            await hostVideo.evaluate((element) => {
+              if (element instanceof HTMLVideoElement) {
+                element.pause();
+              }
+            });
+          }
           return {
             depth,
             hostState,
@@ -9081,6 +9698,7 @@ async function runQuotedVideoCycle({
             api,
             close,
             retiredVolume,
+            nativeRecovery,
           };
         })()
       : null;
@@ -9125,6 +9743,8 @@ async function runQuotedVideoCycle({
       close: previewClose,
     },
     hostPlaying: {
+      postPlayOverlay,
+      surfaceSelector,
       unmarkedDepth,
       blobBacked: hostPlaying.source.startsWith('blob:'),
       currentTime: hostPlaying.time,
@@ -10711,6 +11331,17 @@ async function exerciseInstalledExtension(
     api?: ApiRecord[];
     screenshotError?: string;
   } = { status: 'pending', steps: [] };
+  const contextLoss: ContextLossEvidence = {
+    status: 'pending',
+    setting: {},
+    cleanup: {
+      oldPageClosed: false,
+      freshPageClosed: false,
+      hookReleasedOrContextClosed: false,
+      observerRestored: false,
+      errors: [],
+    },
+  };
   let fixtureVideoAssets: Record<string, { bytes: number; sha256: string }> | undefined;
   const mv3RestartCancellation: Mv3RestartEvidence = {
     source: {
@@ -11269,6 +11900,18 @@ async function exerciseInstalledExtension(
     }
     const followupFailures = [];
     try {
+      await runInstalledContextLoss({
+        context,
+        extensionId,
+        extensionPage,
+        output,
+        sequenceApiResponses: fixtureRoutes.unavailableApiResponses,
+        evidence: contextLoss,
+      });
+    } catch (error) {
+      followupFailures.push(error);
+    }
+    try {
       const genericMessage = unavailableSequence.steps[0]?.notification?.message;
       assert(genericMessage, 'Unavailable sequence generic notification is missing');
       const capacitySetting = {};
@@ -11386,6 +12029,7 @@ async function exerciseInstalledExtension(
       rapidVideoClicks,
       modelessRenderRecovery,
       unavailableSequence,
+      contextLoss,
       fixtureVideoAssets,
       videoClickConfiguration,
       zoomSpanish,
@@ -11473,6 +12117,7 @@ async function exerciseInstalledExtension(
             rapidVideoClicks,
             modelessRenderRecovery,
             unavailableSequence,
+            contextLoss,
             fixtureVideoAssets,
             videoClickConfiguration,
             zoomSpanish,

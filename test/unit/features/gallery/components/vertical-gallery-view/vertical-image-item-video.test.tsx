@@ -861,18 +861,99 @@ describe('VerticalImageItem video admission and playback', () => {
   );
 
   it.each([1, 2])('does not switch a media error code %i', (code) => {
-    const { video } = mount({ active: true });
+    const { video, row, onMediaLoad } = mount({ active: true });
+    const play = vi.spyOn(video, 'play').mockResolvedValue(undefined);
+    Object.defineProperty(video, 'readyState', { configurable: true, get: () => 2 });
     mediaEvent(video, 'loadstart');
+    mediaEvent(video, 'loadeddata');
+    expect(onMediaLoad).toHaveBeenCalledOnce();
     setMediaError(video, code);
     mediaEvent(video, 'error');
     expect(video.getAttribute('src')).toBe(source('best'));
+    expect(play).not.toHaveBeenCalled();
+    expect(row.dataset.mediaLoaded).toBe('false');
+    expect(row.querySelector('[role="alert"]')?.textContent).toContain('msg.gal.loadFail');
+    expect(row.textContent).not.toContain('msg.gal.video.playbackFallback');
   });
 
   it('does not switch an ordinary stalled source', () => {
-    const { video } = mount({ active: true });
+    const { video, row, onMediaLoad } = mount({ active: true });
+    const play = vi.spyOn(video, 'play').mockResolvedValue(undefined);
+    Object.defineProperty(video, 'readyState', { configurable: true, get: () => 2 });
     mediaEvent(video, 'loadstart');
+    mediaEvent(video, 'loadeddata');
     mediaEvent(video, 'stalled');
     expect(video.getAttribute('src')).toBe(source('best'));
+    expect(play).not.toHaveBeenCalled();
+    expect(onMediaLoad).toHaveBeenCalledOnce();
+    expect(row.dataset.mediaLoaded).toBe('true');
+    expect(row.querySelector('[role="alert"]')).toBeNull();
+    expect(row.textContent).not.toContain('msg.gal.video.playbackFallback');
+  });
+
+  it('keeps an independently rejected ordinary Play on the original source until a fresh user Play', async () => {
+    const item = media();
+    openGallery([item]);
+    resetKeyboardDebounceState();
+    const { video, row, onMediaLoad } = mount({ media: item, active: true, focused: true });
+    Object.defineProperty(video, 'readyState', { configurable: true, get: () => 2 });
+    let paused = true;
+    Object.defineProperty(video, 'paused', { configurable: true, get: () => paused });
+    const play = vi
+      .spyOn(video, 'play')
+      .mockRejectedValueOnce(new DOMException('Playback blocked', 'NotAllowedError'))
+      .mockImplementation(() => {
+        paused = false;
+        mediaEvent(video, 'play');
+        return Promise.resolve();
+      });
+    mediaEvent(video, 'loadstart');
+    mediaEvent(video, 'loadeddata');
+    expect(onMediaLoad).toHaveBeenCalledOnce();
+    expect(gallerySignals.currentVideoElement).toBe(video);
+    const clock = vi.spyOn(performance, 'now').mockReturnValue(1000);
+    const capture = (event: KeyboardEvent) =>
+      handleKeyboardEvent(
+        event,
+        { onGalleryClose: vi.fn(), onMediaClick: vi.fn(async () => undefined) },
+        {
+          enableKeyboard: true,
+          enableMediaDetection: true,
+          debugMode: false,
+          preventBubbling: true,
+          context: 'test',
+        }
+      );
+    document.body.addEventListener('keydown', capture, { capture: true });
+    try {
+      const first = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true });
+      video.dispatchEvent(first);
+      expect(first.defaultPrevented).toBe(true);
+      expect(play).toHaveBeenCalledOnce();
+      await Promise.resolve();
+      mediaEvent(video, 'loadedmetadata');
+      observers.get('0px')?.({ isIntersecting: false } as IntersectionObserverEntry);
+      observers.get('0px')?.({ isIntersecting: true } as IntersectionObserverEntry);
+      expect(play).toHaveBeenCalledOnce();
+      expect(video.paused).toBe(true);
+      expect(video.getAttribute('src')).toBe(source('best'));
+      expect(row.dataset.mediaLoaded).toBe('true');
+      expect(row.querySelector('[role="alert"]')).toBeNull();
+      expect(row.textContent).not.toContain('msg.gal.video.playbackFallback');
+
+      clock.mockReturnValue(1200);
+      video.dispatchEvent(
+        new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true })
+      );
+      expect(play).toHaveBeenCalledTimes(2);
+      expect(video.paused).toBe(false);
+      expect(video.getAttribute('src')).toBe(source('best'));
+      expect(row.querySelector('[role="alert"]')).toBeNull();
+      expect(gallerySignals.currentVideoElement).toBe(video);
+      expect(onMediaLoad).toHaveBeenCalledOnce();
+    } finally {
+      document.body.removeEventListener('keydown', capture, { capture: true });
+    }
   });
 });
 
