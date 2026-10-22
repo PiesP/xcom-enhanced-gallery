@@ -27,6 +27,7 @@ import type {
   Route,
 } from '@playwright/test';
 import {
+  CREDIT_CONTROLS_CASE,
   PUBLIC_PREPLAYER_CASE,
   QUOTED_CASES,
   quotedVideoApiResponse,
@@ -1619,6 +1620,8 @@ export async function installFixtureRoutes(
       const quotedCase = QUOTED_CASES.find(
         ({ handle, outer }) => url.pathname === `/${handle}/status/${outer}`
       );
+      const creditControlsRoute =
+        url.pathname === `/${CREDIT_CONTROLS_CASE.handle}/status/${CREDIT_CONTROLS_CASE.outer}`;
       const unavailableRoute =
         url.pathname ===
         `/${UNAVAILABLE_SEQUENCE.handle}/status/${UNAVAILABLE_SEQUENCE.failures[0]?.outer}`;
@@ -1643,26 +1646,31 @@ export async function installFixtureRoutes(
                 ? unmarkedVideoHtml
                 : url.pathname === `/rapid_a/status/${RAPID_CLICK_A}`
                   ? rapidVideoHtml
-                  : quotedCase
-                    ? quotedCase.name === 'public-preplayer'
-                      ? preplayerHtml
-                      : (quotedCase.name === 'unmarked-no-outer'
-                          ? noOuterHtml
-                          : quotedHtml
-                        ).replace(
-                          '<body data-quote-case="recognized">',
-                          `<body data-quote-case="${quotedCase.route}">`
-                        )
-                    : url.pathname === new URL(QUALITY_FIXTURE_URL).pathname
-                      ? extensionHtml
-                          .replaceAll(TWEET_ID, QUALITY_TWEET_ID)
-                          .replaceAll('testuser', 'qualityuser')
-                      : url.pathname === new URL(PUBLIC_FIXTURE_URL).pathname
-                        ? html.replace(
-                            '<body data-fixture-route="classic">',
-                            '<body data-fixture-route="public">'
+                  : creditControlsRoute
+                    ? quotedHtml.replace(
+                        '<body data-quote-case="recognized">',
+                        `<body data-quote-case="${CREDIT_CONTROLS_CASE.route}">`
+                      )
+                    : quotedCase
+                      ? quotedCase.name === 'public-preplayer'
+                        ? preplayerHtml
+                        : (quotedCase.name === 'unmarked-no-outer'
+                            ? noOuterHtml
+                            : quotedHtml
+                          ).replace(
+                            '<body data-quote-case="recognized">',
+                            `<body data-quote-case="${quotedCase.route}">`
                           )
-                        : extensionHtml,
+                      : url.pathname === new URL(QUALITY_FIXTURE_URL).pathname
+                        ? extensionHtml
+                            .replaceAll(TWEET_ID, QUALITY_TWEET_ID)
+                            .replaceAll('testuser', 'qualityuser')
+                        : url.pathname === new URL(PUBLIC_FIXTURE_URL).pathname
+                          ? html.replace(
+                              '<body data-fixture-route="classic">',
+                              '<body data-fixture-route="public">'
+                            )
+                          : extensionHtml,
       });
       return;
     }
@@ -6476,6 +6484,287 @@ async function runPublicPreplayerCycle({
       },
       close,
     };
+  });
+}
+
+async function runCreditControlsCycle({
+  page,
+  extensionPage,
+  quotedApiResponses,
+  apiResponses,
+  compactApiResponses,
+  qualityApiResponses,
+  evidence,
+}: {
+  page: Page;
+  extensionPage: Page;
+  quotedApiResponses: ApiRecord[];
+  apiResponses: ApiRecord[];
+  compactApiResponses: ApiRecord[];
+  qualityApiResponses: ApiRecord[];
+  evidence: {
+    status: string;
+    steps: Record<string, unknown>[];
+    controlledSetting: ControlledSettingEvidence;
+  };
+}) {
+  const otherMetadataCounts = () => ({
+    generic: apiResponses.length,
+    compact: compactApiResponses.length,
+    quality: qualityApiResponses.length,
+  });
+  const fixture = CREDIT_CONTROLS_CASE;
+  const pageUrl = `https://x.com/${fixture.handle}/status/${fixture.outer}`;
+  const creditUrl = `https://x.com/${fixture.creditHandle}/status/${fixture.credit}`;
+  const navigate = async () => {
+    await page.goto(pageUrl);
+    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+    const structure = await page.locator(`[data-case="${fixture.route}"]`).evaluate((article) => {
+      const quote = article.querySelector('[data-testid="quoteTweet"]');
+      const video = quote?.querySelector('[data-video-key="quote-two"]');
+      const credit = quote?.querySelector('[data-source-credit]');
+      const c = article.querySelector('[data-credit-owned]');
+      const media = c?.querySelector('[data-credit-media]');
+      return {
+        videoCount: quote?.querySelectorAll('[data-video-key]').length ?? 0,
+        creditAdjacent: !!video && credit?.previousElementSibling === video,
+        creditOutsideVideo: !!credit && !video?.contains(credit),
+        cOwnArticle: c?.tagName === 'ARTICLE' && c?.getAttribute('data-testid') === 'tweet',
+        cMediaInsideOwner: !!media && c?.contains(media),
+        cMediaOutsideB: !!media && !quote?.contains(media),
+      };
+    });
+    assert.deepEqual(structure, {
+      videoCount: 1,
+      creditAdjacent: true,
+      creditOutsideVideo: true,
+      cOwnArticle: true,
+      cMediaInsideOwner: true,
+      cMediaOutsideB: true,
+    });
+    return structure;
+  };
+  await withControlledFixtureVideoMode(extensionPage, evidence.controlledSetting, async () => {
+    const structure = await navigate();
+    const preview = page.locator(`[data-case="${fixture.route}"] [data-quote-target]`);
+    await preview.scrollIntoViewIfNeeded();
+    await preview.focus();
+    const before = await quotedHostSnapshot(page, fixture.route, '[data-quote-target]');
+    assert(before.active && before.scrollY > 0, 'B preview must hold focus below the fold');
+    const hit = await preview.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return (
+        document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2) ===
+        element
+      );
+    });
+    assert.equal(hit, true, 'Ordinary B preview input must hit the preview');
+    const bApiStart = quotedApiResponses.length;
+    const rejectedStart = otherMetadataCounts();
+    await preview.click();
+    const opened = await assertQuotedGallery(page, fixture);
+    assert.equal(
+      await assertQuotedOriginLink(
+        opened.gallery,
+        `https://x.com/${fixture.username}/status/${fixture.owner}`
+      ),
+      `https://x.com/${fixture.username}/status/${fixture.owner}`
+    );
+    await opened.gallery.locator('#tweet-text-button').click();
+    const bText = await opened.gallery.locator('#toolbar-tweet-panel').textContent();
+    await opened.gallery.locator('#tweet-text-button').click();
+    assert(bText);
+    assert(bText.includes(`${fixture.username} deterministic installed media`));
+    assert(!bText.includes(`${fixture.creditHandle} deterministic installed media`));
+    const initialVideo = await opened.video.evaluate((video) => {
+      if (!(video instanceof HTMLVideoElement)) {
+        throw new Error('Credit B video is missing');
+      }
+      return { paused: video.paused, time: video.currentTime };
+    });
+    assert(initialVideo.paused && initialVideo.time <= 0.05, 'B gallery must begin paused');
+    await opened.video.click();
+    await page.waitForFunction(
+      ({ start, index }) => {
+        const video = document.querySelector(
+          `[data-xeg-gallery-container] [data-gallery-element="item"][data-index="${index}"] video`
+        );
+        return (
+          video instanceof HTMLVideoElement &&
+          !video.paused &&
+          video.error === null &&
+          video.currentTime >= start + 0.15
+        );
+      },
+      { start: initialVideo.time, index: fixture.expectedPosition - 1 },
+      { timeout: 15_000 }
+    );
+    const playbackEnd = await opened.video.evaluate((video) => {
+      if (!(video instanceof HTMLVideoElement)) {
+        throw new Error('Credit B video is missing');
+      }
+      return video.currentTime;
+    });
+    const bClose = await closeQuotedGallery({
+      gallery: opened.gallery,
+      page,
+      method: 'escape',
+      before,
+      caseName: fixture.route,
+      selector: '[data-quote-target]',
+    });
+    const bApi = quotedApiResponses.slice(bApiStart);
+    assert.equal(bApi.length, 1, 'B media action must make one owning quote request');
+    assert(
+      bApi.every(
+        ({ tweetId, status }) =>
+          (tweetId === fixture.outer || tweetId === fixture.owner) && status === 200
+      ),
+      'B action must not request C as its media owner'
+    );
+    assert.deepEqual(otherMetadataCounts(), rejectedStart);
+    evidence.steps.push({
+      name: 'b-video',
+      structure,
+      hit,
+      selected: opened.selection,
+      source: opened.selectedMedia,
+      api: bApi,
+      playbackStart: initialVideo.time,
+      playbackEnd,
+      close: bClose,
+    });
+
+    for (const method of ['pointer', 'keyboard'] as const) {
+      await navigate();
+      const credit = page.locator(`[data-case="${fixture.route}"] [data-source-credit]`);
+      await credit.scrollIntoViewIfNeeded();
+      await credit.focus();
+      const target = await credit.evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        const hit = document.elementFromPoint(
+          rect.left + rect.width / 2,
+          rect.top + rect.height / 2
+        );
+        return { href: (element as HTMLAnchorElement).href, hit: hit === element };
+      });
+      assert.equal(target.href, creditUrl);
+      assert(target.hit, 'C credit must be the actual pointer target');
+      assert.equal(await credit.evaluate((element) => document.activeElement === element), true);
+      const apiMark = quotedApiResponses.length;
+      const rejectedMark = otherMetadataCounts();
+      if (method === 'pointer') {
+        await credit.click();
+      } else {
+        await credit.press('Enter');
+      }
+      await page.waitForURL(creditUrl);
+      await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+      await page.waitForTimeout(200);
+      assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0);
+      assert.deepEqual(
+        quotedApiResponses.slice(apiMark),
+        [],
+        'Credit navigation must not extract media'
+      );
+      assert.deepEqual(
+        otherMetadataCounts(),
+        rejectedMark,
+        'Credit navigation must not extract through another metadata route'
+      );
+      evidence.steps.push({ name: 'c-credit-native', method, target, url: page.url(), api: [] });
+    }
+
+    for (const method of ['pointer', 'keyboard'] as const) {
+      await navigate();
+      const media = page.locator(`[data-case="${fixture.route}"] [data-credit-media]`);
+      await media.scrollIntoViewIfNeeded();
+      await media.focus();
+      const beforeC = await quotedHostSnapshot(page, fixture.route, '[data-credit-media]');
+      assert(
+        beforeC.active && beforeC.scrollY > 0,
+        'C media action must hold focus below the fold'
+      );
+      const target = await media.evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        const hit = document.elementFromPoint(
+          rect.left + rect.width / 2,
+          rect.top + rect.height / 2
+        );
+        const image = element.querySelector('img');
+        return {
+          href: (element as HTMLAnchorElement).href,
+          hitInside: hit === image,
+          decoded: image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0,
+        };
+      });
+      assert.equal(target.href, `${creditUrl}/photo/1`);
+      assert(target.hitInside && target.decoded, 'C media must be decoded and hit at its image');
+      const apiMark = quotedApiResponses.length;
+      const rejectedMark = otherMetadataCounts();
+      if (method === 'pointer') {
+        await media.click();
+      } else {
+        await media.press('Enter');
+      }
+      const gallery = page.locator('[data-xeg-gallery-container]');
+      await gallery.waitFor({ state: 'visible', timeout: 15_000 });
+      const selected = await assertQuotedSelection(page, {
+        position: 1,
+        total: 1,
+        type: 'image',
+        path: `/media/${fixture.creditPhoto}.jpg`,
+      });
+      const decoded = await waitForValue(async () => {
+        const state = await gallery
+          .locator('[data-gallery-element="item"][data-index="0"] img')
+          .evaluate((image) => ({
+            complete: image instanceof HTMLImageElement && image.complete,
+            width: image instanceof HTMLImageElement ? image.naturalWidth : 0,
+            height: image instanceof HTMLImageElement ? image.naturalHeight : 0,
+            source: image instanceof HTMLImageElement ? image.currentSrc || image.src : '',
+          }));
+        return state.complete &&
+          state.width > 0 &&
+          state.height > 0 &&
+          state.source === selected.source
+          ? state
+          : undefined;
+      }, 'genuinely owned C decoded gallery image');
+      const source = await assertQuotedOriginLink(gallery, creditUrl);
+      await gallery.locator('#tweet-text-button').click();
+      const cText = await gallery.locator('#toolbar-tweet-panel').textContent();
+      await gallery.locator('#tweet-text-button').click();
+      assert(cText);
+      assert(cText.includes(`${fixture.creditHandle} deterministic installed media`));
+      assert(!cText.includes(`${fixture.username} deterministic installed media`));
+      const cClose = await closeQuotedGallery({
+        gallery,
+        page,
+        method: 'escape',
+        before: beforeC,
+        caseName: fixture.route,
+        selector: '[data-credit-media]',
+      });
+      const cApi = quotedApiResponses.slice(apiMark);
+      assert.deepEqual(
+        cApi.map(({ tweetId, status }) => ({ tweetId, status })),
+        [{ tweetId: fixture.credit, status: 200 }]
+      );
+      assert.deepEqual(otherMetadataCounts(), rejectedMark);
+      evidence.steps.push({
+        name: 'c-owned-media',
+        method,
+        target,
+        selected,
+        decoded,
+        source,
+        api: cApi,
+        close: cClose,
+      });
+    }
+    evidence.status = 'passed';
+    return evidence;
   });
 }
 
@@ -12318,6 +12607,13 @@ async function exerciseInstalledExtension(
   let own12NativeControls: Own12NativeControlsEvidence | AcceptanceReceipt = { status: 'pending' };
   let delayedVideoFailures: AcceptanceReceipt = { status: 'pending' };
   let rapidVideoClicks: AcceptanceReceipt = { status: 'pending' };
+  const creditControls = {
+    status: 'pending',
+    steps: [] as Record<string, unknown>[],
+    controlledSetting: {} as ControlledSettingEvidence,
+    cleanup: { galleryClosed: false },
+    error: undefined as string | undefined,
+  };
   let modelessRenderRecovery: AcceptanceReceipt = { status: 'pending' };
   const acceptanceFailures: unknown[] = [];
   const unavailableSequence: UnavailableEvidence & {
@@ -12722,6 +13018,39 @@ async function exerciseInstalledExtension(
       }
     }
     try {
+      await runCreditControlsCycle({
+        page,
+        extensionPage,
+        quotedApiResponses: fixtureRoutes.quotedApiResponses,
+        apiResponses: fixtureRoutes.apiResponses,
+        compactApiResponses: fixtureRoutes.compactApiResponses,
+        qualityApiResponses: fixtureRoutes.qualityApiResponses,
+        evidence: creditControls,
+      });
+    } catch (error) {
+      creditControls.status = 'failed';
+      creditControls.error = safeError(error);
+      acceptanceFailures.push(error);
+    } finally {
+      try {
+        const gallery = page.locator('[data-xeg-gallery-container]');
+        if (await gallery.isVisible()) {
+          await gallery
+            .locator('[data-gallery-element="toolbar"] button[aria-label="Close"]')
+            .click();
+          await gallery.waitFor({ state: 'detached' });
+        }
+        creditControls.cleanup.galleryClosed = true;
+      } catch (error) {
+        creditControls.status = 'failed';
+        acceptanceFailures.push(error);
+      }
+      await writeFile(
+        join(output, 'own14-credit-controls-observations.json'),
+        JSON.stringify(creditControls, null, 2)
+      );
+    }
+    try {
       svgTargetMatrix = await runSvgTargetMatrix({
         extensionPage,
         output,
@@ -13034,6 +13363,7 @@ async function exerciseInstalledExtension(
       packagingAssets,
       publicDom,
       quotedVideoCycles,
+      creditControls,
       svgTargetMatrix,
       blockAllDirectVideo,
       directVideoAllowedModes,
@@ -13123,6 +13453,7 @@ async function exerciseInstalledExtension(
             packagingAssets,
             publicDom,
             quotedVideoCycles,
+            creditControls,
             svgTargetMatrix,
             blockAllDirectVideo,
             directVideoAllowedModes,
