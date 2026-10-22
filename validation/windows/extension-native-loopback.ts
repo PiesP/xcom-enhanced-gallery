@@ -385,18 +385,18 @@ export function createExtensionNativeFixtureHandler() {
         responses: new Map<ServerResponse, Buffer>(),
       };
     },
-    armFirstVideoHold(path: string, prefixEnd: number) {
+    armFirstTwoVideoHolds(path: string, prefixEnd: number) {
       assert.equal(videoHold, null, 'Only one bounded video source may be held');
       const route = allowed.get(`video.twimg.com${path}`);
       assert(route && route.host === 'video.twimg.com', 'Only a declared video may be held');
       assert(
         Number.isSafeInteger(prefixEnd) && prefixEnd > 0 && prefixEnd < route.bytes.length,
-        'The first video hold must leave declared samples outstanding'
+        'The initial video holds must leave declared samples outstanding'
       );
       videoHold = {
         path: `video.twimg.com${path}`,
         prefixEnd,
-        remaining: 1,
+        remaining: 2,
         responses: new Map<ServerResponse, Buffer>(),
       };
     },

@@ -1375,7 +1375,9 @@ async function runRangeAbortDiagnostics({
   output: string;
 }) {
   assert.equal(validMp4.length, 207662, 'The declared four-second range fixture changed');
-  const prefixEnd = 153895;
+  // ffprobe places the 3.5 s packet at byte 183130. Keep it withheld so
+  // playback can pass 2.8 s while the response remains incomplete.
+  const prefixEnd = 183130;
   const evidence: {
     status: 'running' | 'passed' | 'failed';
     cases: Record<string, unknown>[];
@@ -1451,7 +1453,7 @@ async function runRangeAbortDiagnostics({
         html: fixtureHtml(id, 'intentrecovery', 1),
       });
       if (name === 'overlap') {
-        nativeLoopback.armFirstVideoHold(new URL(best).pathname, prefixEnd);
+        nativeLoopback.armFirstTwoVideoHolds(new URL(best).pathname, prefixEnd);
       } else {
         nativeLoopback.armVideoHold(new URL(best).pathname, prefixEnd);
       }
@@ -1577,7 +1579,7 @@ async function runRangeAbortDiagnostics({
       observed.playing = playing;
       await waitForValue(
         async () => (nativeLoopback.videoHeld() ? true : undefined),
-        'real first held 206 response'
+        'real held 206 response after metadata bootstrap'
       );
       const matchesStart = (record: RangeProtocolRecord, start: number) =>
         /^bytes=(\d+)-/u.exec(record.range ?? '')?.[1] === String(start);
@@ -1619,47 +1621,39 @@ async function runRangeAbortDiagnostics({
           ),
           'Native timeline click must complete a trusted seek'
         );
-        const native = await waitForValue(async () => {
+        const overlap = await waitForValue(async () => {
           const entries = nativeLoopback
             .since(nativeMark)
             .filter((item) => item.path === new URL(best).pathname);
-          const heldAbort = entries.find(
-            (item) =>
-              item.status === 206 &&
-              item.result === 'aborted' &&
-              typeof item.prefixBytesQueued === 'number' &&
-              typeof item.closedAtMs === 'number'
-          );
-          return heldAbort &&
-            entries.some(
+          for (const aborted of entries) {
+            if (
+              aborted.status !== 206 ||
+              aborted.result !== 'aborted' ||
+              !aborted.range ||
+              typeof aborted.prefixBytesQueued !== 'number' ||
+              typeof aborted.closedAtMs !== 'number'
+            ) {
+              continue;
+            }
+            const completed = entries.find(
               (item) =>
                 item.status === 206 &&
                 item.result === 'served' &&
-                item.range?.start !== heldAbort.range?.start &&
-                item.atMs > heldAbort.atMs &&
-                item.atMs < heldAbort.closedAtMs!
-            )
-            ? entries
-            : undefined;
+                item.range?.start !== aborted.range?.start &&
+                item.atMs > aborted.atMs &&
+                item.atMs < aborted.closedAtMs!
+            );
+            if (completed) {
+              return { entries, aborted, completed };
+            }
+          }
+          return undefined;
         }, 'overlapping aborted and completed native 206 requests');
+        const { entries: native, aborted, completed } = overlap;
         observed.native = native;
         assert.equal(overflow, false);
         assert.equal(observed.unexpectedVideo, undefined);
-        const aborted = native.find(
-          (item) =>
-            item.status === 206 &&
-            item.result === 'aborted' &&
-            typeof item.prefixBytesQueued === 'number'
-        );
-        assert(aborted?.range && typeof aborted.closedAtMs === 'number');
-        const completed = native.find(
-          (item) =>
-            item.status === 206 &&
-            item.result === 'served' &&
-            item.range?.start !== aborted.range?.start &&
-            item.atMs > aborted.atMs &&
-            item.atMs < aborted.closedAtMs!
-        );
+        assert(aborted.range && typeof aborted.closedAtMs === 'number');
         assert(completed?.range, 'A distinct 206 must begin before the held request aborts');
         assert(
           typeof aborted.closedAtMs === 'number' && typeof completed.finishedAtMs === 'number'

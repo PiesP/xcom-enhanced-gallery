@@ -223,6 +223,11 @@ document and its held media use real HTTPS responses from the same loopback
 listener, so the browser can classify the document's network address space.
 No permission is overridden; TLS, CORS and OS protections stay enabled. These
 cases do not validate public-to-loopback permission behavior.
+The native range diagnostics allow an initial metadata range to cancel, then
+hold the resumed range while an ordinary timeline seek may start a distinct
+request. They require overlapping server lifetimes and matching CDP terminals;
+the stalled-transfer case holds samples from the 3.5-second packet onward until
+a controlled disconnect. A sequential replacement does not satisfy overlap.
 
 The streaming asset is `test/e2e/fixtures/installed-recovery-intent.mp4`: a
 four-second, 24 fps, 320×180 H.264 test pattern below the 256 KiB fixture cap.

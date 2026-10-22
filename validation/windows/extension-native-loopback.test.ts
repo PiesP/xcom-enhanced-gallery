@@ -86,7 +86,7 @@ test('original availability faults retain the allowlist and restore the exact he
   }
 });
 
-test('a first held 206 range leaves a later range independently completable', async () => {
+test('a canceled bootstrap range leaves a resumed held 206 overlapping an independent range', async () => {
   const fixture = createExtensionNativeFixtureHandler();
   const video = Buffer.alloc(200, 7);
   fixture.setPayloads(
@@ -101,7 +101,7 @@ test('a first held 206 range leaves a later range independently completable', as
   const tweetId = '4666000111222333888';
   fixture.setRecoveryPayloads({ tweetId, validMp4: video, badMp4: video });
   const path = `/ext_tw_video/${tweetId}/pu/vid/320x180/video-0-best.mp4`;
-  fixture.armFirstVideoHold(path, 100);
+  fixture.armFirstTwoVideoHolds(path, 150);
   const server = createServer(fixture.handle);
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   const address = server.address();
@@ -122,14 +122,33 @@ test('a first held 206 range leaves a later range independently completable', as
     });
     first.once('error', reject);
   });
+  const second = request({ ...options, headers: { ...options.headers, Range: 'bytes=100-199' } });
+  second.on('error', () => undefined);
+  const secondPrefix = new Promise<Buffer>((resolve, reject) => {
+    second.once('response', (response) => {
+      assert.equal(response.statusCode, 206);
+      response.once('data', (part: Buffer) => resolve(part));
+      response.once('error', reject);
+    });
+    second.once('error', reject);
+  });
   try {
     first.end();
-    assert.deepEqual(await firstPrefix, video.subarray(0, 100));
+    assert.deepEqual(await firstPrefix, video.subarray(0, 150));
     assert.equal(fixture.videoHeld(), true);
-    const second = await new Promise<{ status: number | undefined; bytes: Buffer }>(
+    first.destroy();
+    const firstDeadline = Date.now() + 2_000;
+    while (fixture.snapshot().events[0]?.result !== 'aborted' && Date.now() < firstDeadline) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    assert.equal(fixture.snapshot().events[0]?.result, 'aborted');
+    second.end();
+    assert.deepEqual(await secondPrefix, video.subarray(100, 150));
+    assert.equal(fixture.videoHeld(), true);
+    const third = await new Promise<{ status: number | undefined; bytes: Buffer }>(
       (resolve, reject) => {
         const outgoing = request(
-          { ...options, headers: { ...options.headers, Range: 'bytes=100-199' } },
+          { ...options, headers: { ...options.headers, Range: 'bytes=150-199' } },
           (incoming) => {
             const parts: Buffer[] = [];
             incoming.on('data', (part: Buffer) => parts.push(part));
@@ -143,8 +162,8 @@ test('a first held 206 range leaves a later range independently completable', as
         outgoing.end();
       }
     );
-    assert.deepEqual(second, { status: 206, bytes: video.subarray(100) });
-    first.destroy();
+    assert.deepEqual(third, { status: 206, bytes: video.subarray(150) });
+    second.destroy();
     const deadline = Date.now() + 2_000;
     while (fixture.videoHeld() && Date.now() < deadline) {
       await new Promise((resolve) => setTimeout(resolve, 10));
@@ -154,11 +173,15 @@ test('a first held 206 range leaves a later range independently completable', as
       ranges.map(({ range, status, result }) => ({ range, status, result })),
       [
         { range: { start: 0, end: 199 }, status: 206, result: 'aborted' },
-        { range: { start: 100, end: 199 }, status: 206, result: 'served' },
+        { range: { start: 100, end: 199 }, status: 206, result: 'aborted' },
+        { range: { start: 150, end: 199 }, status: 206, result: 'served' },
       ]
     );
+    assert(ranges[1]!.atMs < ranges[2]!.atMs);
+    assert(ranges[2]!.atMs < ranges[1]!.closedAtMs!);
   } finally {
     first.destroy();
+    second.destroy();
     fixture.abortVideoHold();
     fixture.destroyActive();
     await new Promise<void>((resolve, reject) =>
