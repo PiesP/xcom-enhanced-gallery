@@ -3352,7 +3352,10 @@ async function runFixture(
       securityPage = await context.newPage();
       const initial = await openManagerDomainBlacklist(securityPage, managerId, output);
       originalBlacklist = await managerDomainBlacklistValues(initial.blacklist);
-      assert(!originalBlacklist.includes('x.com'), 'Task profile already blacklists x.com');
+      assert(
+        !originalBlacklist.some((rule) => rule === 'x.com'),
+        'Task profile already blacklists x.com'
+      );
       managerDenialReceipt.beforeRules = originalBlacklist;
       apiMode = 'healthy';
       loopback.setApiMode('healthy');
@@ -3539,7 +3542,7 @@ async function runFixture(
         try {
           const current = await openManagerDomainBlacklist(securityPage, managerId, output);
           const values = await managerDomainBlacklistValues(current.blacklist);
-          if (values.includes('x.com')) {
+          if (values.some((rule) => rule === 'x.com')) {
             await current.blacklist.locator('select').selectOption('x.com');
             await current.blacklist
               .getByRole('button', { name: current.labels.remove, exact: true })
