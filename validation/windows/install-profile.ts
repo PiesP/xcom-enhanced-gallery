@@ -9597,6 +9597,10 @@ async function runOriginalAvailabilityCycles({
       assert.equal(after.scrollRestoration, before.scrollRestoration);
     }
     evidence.status = 'passed';
+    await writeFile(
+      join(output, 'original-availability-observations.json'),
+      JSON.stringify(evidence, null, 2)
+    );
   } catch (error) {
     evidence.status = 'failed';
     evidence.error = safeError(error);

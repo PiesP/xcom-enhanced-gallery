@@ -12,6 +12,7 @@ import type {
   ConsoleMessage,
   Page,
   Request,
+  Response,
   Route,
 } from '@playwright/test';
 import type { startExtensionNativeFixtureLoopback } from './extension-native-loopback.ts';
@@ -59,6 +60,9 @@ type VideoObservation = {
   initial?: ItemState | null;
   metadata?: ItemState | null;
   metadataHold?: unknown;
+  requestingDocumentTransport?: unknown;
+  failureState?: ItemState | null;
+  nativeTransport?: unknown;
   beforeRecovery?: ItemState | null;
   distantBeforeActivation?: number[];
   recovered?: ItemState & { playbackEnd: number; hint: string };
@@ -493,6 +497,13 @@ export async function runVideoLoadingProfile({
     releaseLower = resolve;
   });
   let lowerHoldArmed = false;
+  const lowerRequests = new Map<Request, VideoRequest>();
+  const observeLowerResponse = (response: Response) => {
+    const record = lowerRequests.get(response.request());
+    if (record) {
+      record.status = response.status();
+    }
+  };
   let settingsBefore: StorageBefore | undefined;
   let settingsChanged = false;
   let primaryError: unknown;
@@ -502,12 +513,9 @@ export async function runVideoLoadingProfile({
     const request = route.request();
     const target = new URL(request.url());
     if (request.isNavigationRequest() && request.url() === fixtureUrl) {
-      await route.fulfill({
-        status: 200,
-        contentType: 'text/html',
-        body: fixtureHtml(tweetId, handle),
-      });
-      return;
+      // Match the maintained recovery-intent fixture: the real HTTPS document
+      // and media share the loopback address space, without overriding permissions.
+      return route.continue();
     }
     if (target.hostname === 'x.com' && target.pathname.endsWith('/TweetResultByRestId')) {
       let requestedId: unknown;
@@ -570,11 +578,15 @@ export async function runVideoLoadingProfile({
         await bestGate;
       }
       if (quality === 'lower') {
+        if (lowerRequests.size < MAX_REQUESTS) {
+          lowerRequests.set(request, record);
+        } else {
+          records.overflow++;
+        }
         await lowerGate;
         // Only this declared synthetic source uses the HTTPS streaming fixture. Page
         // fulfillment cannot expose metadata while withholding the first media sample.
         await route.continue();
-        record.status = (await request.response())?.status() ?? null;
         return;
       }
       const payload = index === 0 && quality === 'best' ? BAD_MP4 : validMp4;
@@ -608,6 +620,7 @@ export async function runVideoLoadingProfile({
     await route.fallback();
   };
   await context.route('**/*', routeHandler);
+  context.on('response', observeLowerResponse);
   try {
     await page.setViewportSize({ width: 1280, height: 500 });
     observation.viewport = { width: 1280, height: 500 };
@@ -638,7 +651,17 @@ export async function runVideoLoadingProfile({
     assert.equal(field(applied, 'videoClickMode'), 'allow-all');
     assert.equal(field(applied, 'preloadCount'), 20);
 
-    await page.goto(fixtureUrl);
+    nativeLoopback.setRecoveryDocument({ tweetId, handle, html: fixtureHtml(tweetId, handle) });
+    const documentResponse = await page.goto(fixtureUrl);
+    assert(documentResponse, 'Native fixture document response is missing');
+    const server = await documentResponse.serverAddr();
+    observation.requestingDocumentTransport = { status: documentResponse.status(), server };
+    assert.equal(documentResponse.status(), 200);
+    assert.equal(
+      server?.ipAddress,
+      '127.0.0.1',
+      'Fixture document must use its native HTTPS loopback'
+    );
     const trigger = page.locator('[data-video-target="0"]');
     await trigger.scrollIntoViewIfNeeded();
     const beforeHost = await page.evaluate(() => ({
@@ -1071,6 +1094,8 @@ export async function runVideoLoadingProfile({
     caughtPrimaryError = true;
     primaryError = error;
     observation.error = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+    observation.failureState = await itemState(page, 0).catch(() => null);
+    observation.nativeTransport = nativeLoopback.snapshot();
     await page.screenshot({ path: join(output, 'video-loading-failure.png') }).catch(() => {});
     await writeFile(
       join(output, 'video-loading-failure.json'),
@@ -1082,6 +1107,7 @@ export async function runVideoLoadingProfile({
     if (lowerHoldArmed) {
       nativeLoopback.abortVideoHold();
     }
+    context.off('response', observeLowerResponse);
     const cleanupFailures: unknown[] = [];
     try {
       await context.unroute('**/*', routeHandler);

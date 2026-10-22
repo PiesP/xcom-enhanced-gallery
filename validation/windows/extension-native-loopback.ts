@@ -350,12 +350,21 @@ export function createExtensionNativeFixtureHandler() {
         allowed.set(`video.twimg.com${path}`, { bytes, host: 'video.twimg.com', path });
       }
     },
-    setRecoveryDocument({ tweetId, html }: { tweetId: string; html: string }) {
+    setRecoveryDocument({
+      tweetId,
+      html,
+      handle = 'intentrecovery',
+    }: {
+      tweetId: string;
+      html: string;
+      handle?: string;
+    }) {
       assert(typeof tweetId === 'string' && /^[1-9][0-9]{0,19}$/u.test(tweetId));
+      assert(/^[A-Za-z0-9_]{1,15}$/u.test(handle), 'Invalid synthetic document handle');
       assert(typeof html === 'string');
       const bytes = Buffer.from(html);
       assert(bytes.length > 0 && bytes.length <= MAX_BODY_BYTES);
-      const path = `/intentrecovery/status/${tweetId}`;
+      const path = `/${handle}/status/${tweetId}`;
       assert(!allowed.has(`x.com${path}`), 'Recovery document already installed');
       allowed.set(`x.com${path}`, {
         bytes,
