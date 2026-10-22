@@ -4,6 +4,7 @@
 import { useVideoVolumePersistence } from '@features/gallery/components/vertical-gallery-view/hooks/use-video-volume-persistence';
 import { VerticalImageItem } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem';
 import { clearSettings, registerSettings } from '@shared/container/settings-registry';
+import { closeGallery, openGallery } from '@shared/state/signals/gallery.signals';
 import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
 import { afterEach, expect, it, vi } from 'vite-plus/test';
@@ -171,4 +172,100 @@ it('starts a separate player at zero with saved XEG preferences and never resume
   expect(native.volume).toBe(0.91);
   expect(native.muted).toBe(true);
   expect(play).not.toHaveBeenCalled();
+});
+
+it('flushes the last live volume choice but ignores retired video events after reopening', async () => {
+  vi.useFakeTimers();
+  const stored = new Map<string, unknown>([
+    ['gallery.videoVolume', 0.9],
+    ['gallery.videoMuted', false],
+  ]);
+  const set = vi.fn(async (key: string, value: unknown) => {
+    stored.set(key, value);
+  });
+  registerSettings({ get: (key) => stored.get(key), set });
+  vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined);
+  vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => undefined);
+  const host = document.createElement('div');
+  document.body.append(host);
+  const mountPlayer = (post: string) => {
+    const item = {
+      id: `${post}_api_0`,
+      type: 'video' as const,
+      url: `https://video.twimg.com/ext_tw_video/${post}/pu/vid/one.mp4`,
+    };
+    openGallery([item]);
+    const dispose = render(
+      () => (
+        <VerticalImageItem
+          media={item}
+          index={0}
+          isActive={true}
+          isFocused={true}
+          onClick={() => undefined}
+          scrollRoot={() => host}
+          scrollRootHeight={() => 480}
+        />
+      ),
+      host
+    );
+    const video = host.querySelector('video');
+    if (!video) {
+      throw new Error('Gallery video was not rendered');
+    }
+    return { video, dispose };
+  };
+  let disposeOld: (() => void) | undefined;
+  let disposeCurrent: (() => void) | undefined;
+  try {
+    const old = mountPlayer('222');
+    disposeOld = old.dispose;
+    old.video.volume = 0.6;
+    old.video.muted = true;
+    old.video.dispatchEvent(new Event('volumechange'));
+    expect(set).not.toHaveBeenCalled();
+    closeGallery();
+    disposeOld();
+    disposeOld = undefined;
+    expect(old.video.isConnected).toBe(false);
+    expect(set.mock.calls).toEqual([
+      ['gallery.videoVolume', 0.6],
+      ['gallery.videoMuted', true],
+    ]);
+
+    const current = mountPlayer('333');
+    disposeCurrent = current.dispose;
+    expect(current.video.volume).toBe(0.6);
+    expect(current.video.muted).toBe(true);
+    current.video.volume = 0.25;
+    current.video.muted = false;
+    current.video.dispatchEvent(new Event('volumechange'));
+    await vi.advanceTimersByTimeAsync(300);
+    expect(stored.get('gallery.videoVolume')).toBe(0.25);
+    set.mockClear();
+
+    old.video.volume = 0.8;
+    old.video.muted = false;
+    old.video.dispatchEvent(new Event('volumechange'));
+    await vi.advanceTimersByTimeAsync(300);
+    expect(set).not.toHaveBeenCalled();
+    expect(stored.get('gallery.videoVolume')).toBe(0.25);
+    expect(stored.get('gallery.videoMuted')).toBe(false);
+    expect(current.video.volume).toBe(0.25);
+    expect(current.video.muted).toBe(false);
+
+    current.video.volume = 0.4;
+    current.video.muted = true;
+    current.video.dispatchEvent(new Event('volumechange'));
+    await vi.advanceTimersByTimeAsync(300);
+    expect(set.mock.calls).toEqual([
+      ['gallery.videoVolume', 0.4],
+      ['gallery.videoMuted', true],
+    ]);
+  } finally {
+    closeGallery();
+    disposeOld?.();
+    disposeCurrent?.();
+    host.remove();
+  }
 });

@@ -93,6 +93,7 @@ type ApiRecord = {
   transportSettledAtMonotonicMs?: number | null;
   abortedAfterNavigation?: boolean;
   resultTypename?: string | null;
+  rootMediaCount?: number | null;
   providerErrors?: number;
 };
 type QualityRequest = {
@@ -332,6 +333,7 @@ type SourceQualityEvidence = {
   selection?: unknown;
   current?: unknown;
   zip?: unknown;
+  reopen?: unknown;
   restoration?: unknown;
   api?: ApiRecord[];
   screenshots?: string[];
@@ -1232,6 +1234,27 @@ export async function installFixtureRoutes(
     join(root, 'test/e2e/fixtures/installed-quoted-video-page.html'),
     'utf8'
   );
+  const noOuterCase = QUOTED_CASES.find(({ name }) => name === 'unmarked-no-outer');
+  assert(noOuterCase, 'Unmarked no-outer fixture case is missing');
+  const outerStartMarker = '<!-- unmarked outer media start -->';
+  const outerEndMarker = '<!-- unmarked outer media end -->';
+  const outerStart = quotedHtml.indexOf(outerStartMarker);
+  const outerEnd = quotedHtml.indexOf(outerEndMarker);
+  assert(
+    outerStart >= 0 &&
+      outerEnd > outerStart &&
+      outerStart === quotedHtml.lastIndexOf(outerStartMarker) &&
+      outerEnd === quotedHtml.lastIndexOf(outerEndMarker),
+    'Unmarked outer media markers must enclose exactly one fixture section'
+  );
+  const outerLink = '<a href="/outer_two/status/8222222222222222222"><time>Outer two</time></a>';
+  assert.equal(quotedHtml.split(outerLink).length, 2, 'Unmarked A permalink must occur once');
+  const noOuterHtml = (
+    quotedHtml.slice(0, outerStart) + quotedHtml.slice(outerEnd + outerEndMarker.length)
+  ).replace(
+    outerLink,
+    `<a href="/${noOuterCase.handle}/status/${noOuterCase.outer}"><time>Outer without media</time></a>`
+  );
   const compactHtml = compactImages
     ? await readFile(
         join(root, 'test/e2e/fixtures/installed-compact-quote-photo-page.html'),
@@ -1413,6 +1436,7 @@ export async function installFixtureRoutes(
       }
       const quotedResponse = tweetId === undefined ? undefined : quotedVideoApiResponse(tweetId);
       if (tweetId !== undefined && quotedResponse) {
+        const quotedResult = quotedResponse.data?.tweetResult?.result;
         const record: ApiRecord = {
           method: route.request().method(),
           status: 200,
@@ -1420,7 +1444,11 @@ export async function installFixtureRoutes(
           url: url.pathname,
           requestedAt: new Date().toISOString(),
           requestedAtMonotonicMs: performance.now(),
-          resultTypename: quotedResponse.data?.tweetResult?.result?.__typename ?? null,
+          resultTypename: quotedResult?.__typename ?? null,
+          rootMediaCount:
+            quotedResult && 'legacy' in quotedResult
+              ? quotedResult.legacy.extended_entities.media.length
+              : null,
           providerErrors:
             'errors' in quotedResponse && Array.isArray(quotedResponse.errors)
               ? quotedResponse.errors.length
@@ -1485,7 +1513,10 @@ export async function installFixtureRoutes(
                   : quotedCase
                     ? quotedCase.name === 'public-preplayer'
                       ? preplayerHtml
-                      : quotedHtml.replace(
+                      : (quotedCase.name === 'unmarked-no-outer'
+                          ? noOuterHtml
+                          : quotedHtml
+                        ).replace(
                           '<body data-quote-case="recognized">',
                           `<body data-quote-case="${quotedCase.route}">`
                         )
@@ -5276,7 +5307,7 @@ async function writeVideoBoundaryCheckpoint({
     };
   });
   const receipt = { name, capturedAt: new Date().toISOString(), ...snapshot, api };
-  const file = `quoted-${name}-checkpoint.json`;
+  const file = `${name.startsWith('own01-no-outer-') ? '' : 'quoted-'}${name}-checkpoint.json`;
   await writeFile(join(output, file), JSON.stringify(receipt, null, 2));
   return { file, ...receipt };
 }
@@ -8149,6 +8180,258 @@ async function runDirectVideoAllowedModes({
   return { status: 'passed', cases };
 }
 
+async function quotedTargetDepth(target: Locator) {
+  return target.evaluate((element) => {
+    const hopsTo = (boundary: Element | null) => {
+      let hops = 0;
+      for (let current = element.parentElement; current; current = current.parentElement) {
+        hops++;
+        if (current === boundary) {
+          return hops;
+        }
+      }
+      return null;
+    };
+    return {
+      videoComponent: hopsTo(element.closest('[data-testid="videoComponent"]')),
+      videoPlayer: hopsTo(element.closest('[data-testid="videoPlayer"]')),
+      roleLink: hopsTo(element.closest('[role="link"]')),
+      article: hopsTo(element.closest('article')),
+    };
+  });
+}
+
+const UNMARKED_VIDEO_DEPTH = {
+  videoComponent: 4,
+  videoPlayer: 7,
+  roleLink: 18,
+  article: 24,
+} as const;
+
+async function observeRetiredNativeVolume({
+  before,
+  extensionPage,
+  hostVideo,
+  output,
+  page,
+  quotedCase,
+  selected,
+}: {
+  before: Awaited<ReturnType<typeof quotedHostSnapshot>>;
+  extensionPage: Page;
+  hostVideo: Locator;
+  output: string;
+  page: Page;
+  quotedCase: QuotedCase;
+  selected: Awaited<ReturnType<typeof assertQuotedGallery>>;
+}) {
+  let prior: Awaited<ReturnType<typeof readStoredVideoSettings>> | undefined;
+  let retired: Awaited<ReturnType<typeof selected.video.elementHandle>> | undefined;
+  const evidence: Record<string, unknown> = { status: 'pending', firstVolume: 0.27 };
+  const samples: unknown[] = [];
+  evidence.samples = samples;
+  let reopenedBefore: Awaited<ReturnType<typeof quotedHostSnapshot>> | undefined;
+  let validationError: unknown;
+  const cleanupErrors: unknown[] = [];
+  try {
+    prior = await readStoredVideoSettings(extensionPage);
+    const firstMuted = !storedGalleryMediaPreferences(prior.settings).muted;
+    evidence.firstMuted = firstMuted;
+    retired = await selected.video.elementHandle();
+    assert(retired, 'Selected B video must remain available for detached observation');
+    await selected.video.evaluate((element, muted) => {
+      if (!(element instanceof HTMLVideoElement)) {
+        throw new Error('Selected B video is missing');
+      }
+      element.volume = 0.27;
+      element.muted = muted;
+    }, firstMuted);
+    evidence.firstStored = await waitForValue(
+      async () => {
+        const prefs = storedGalleryMediaPreferences(
+          (await readStoredVideoSettings(extensionPage)).settings
+        );
+        return Math.abs(prefs.volume - 0.27) < 0.01 && prefs.muted === firstMuted
+          ? prefs
+          : undefined;
+      },
+      'first native B volume persisted',
+      5_000
+    );
+    evidence.firstClose = await closeQuotedGallery({
+      gallery: selected.gallery,
+      page,
+      method: quotedCase.close,
+      before,
+      caseName: quotedCase.route,
+      selector: '[data-video-key] video',
+    });
+    const detached = await retired.evaluate((element) => element.isConnected);
+    assert.equal(detached, false, 'Retired B video must be detached after ordinary close');
+    await hostVideo.focus();
+    reopenedBefore = await quotedHostSnapshot(page, quotedCase.route, '[data-video-key] video');
+    await captureQuotedOpeningScroll(hostVideo);
+    const clickCount = await page.evaluate(() => window.__quoteFixtureClicks.length);
+    await hostVideo.click();
+    evidence.reopenClick = await quotedClickRecord(page, clickCount, 'video');
+    reopenedBefore.scrollY = Number(await hostVideo.getAttribute('data-opening-scroll-y'));
+    assert(Number.isFinite(reopenedBefore.scrollY) && reopenedBefore.scrollY > 0);
+    const current = await assertQuotedGallery(page, quotedCase);
+    assert.equal(current.selectedMedia.src, selected.selectedMedia.src);
+    evidence.reopenOrigin = await assertQuotedOriginLink(
+      current.gallery,
+      `https://x.com/${quotedCase.username}/status/${quotedCase.owner}`
+    );
+    const readCurrent = () =>
+      current.video.evaluate((element) => {
+        if (!(element instanceof HTMLVideoElement)) {
+          throw new Error('Current B video is missing');
+        }
+        return {
+          connected: element.isConnected,
+          source: element.currentSrc,
+          volume: element.volume,
+          muted: element.muted,
+          paused: element.paused,
+          error: element.error?.code ?? null,
+        };
+      });
+    const initialCurrent = await readCurrent();
+    assert(initialCurrent.connected && initialCurrent.paused && initialCurrent.error === null);
+    assert.equal(initialCurrent.source, selected.selectedMedia.src);
+    assert(Math.abs(initialCurrent.volume - 0.27) < 0.01 && initialCurrent.muted === firstMuted);
+    evidence.initialCurrent = initialCurrent;
+    const retiredEvent = await retired.evaluate((element) => {
+      if (!(element instanceof HTMLVideoElement)) {
+        throw new Error('Retired B video is missing');
+      }
+      return new Promise<{ trusted: boolean; connected: boolean; volume: number; muted: boolean }>(
+        (resolveEvent, rejectEvent) => {
+          const onVolumeChange = (event: Event) => {
+            clearTimeout(timeout);
+            element.removeEventListener('volumechange', onVolumeChange);
+            resolveEvent({
+              trusted: event.isTrusted,
+              connected: element.isConnected,
+              volume: element.volume,
+              muted: element.muted,
+            });
+          };
+          const timeout = setTimeout(() => {
+            element.removeEventListener('volumechange', onVolumeChange);
+            rejectEvent(
+              new Error('Detached native volumechange was not observed within 2 seconds')
+            );
+          }, 2_000);
+          element.addEventListener('volumechange', onVolumeChange, { once: true });
+          try {
+            element.volume = 0.83;
+          } catch (error) {
+            clearTimeout(timeout);
+            element.removeEventListener('volumechange', onVolumeChange);
+            rejectEvent(error);
+          }
+        }
+      );
+    });
+    evidence.retiredEvent = retiredEvent;
+    assert(
+      retiredEvent.trusted && !retiredEvent.connected,
+      'Detached native event must be trusted'
+    );
+    assert(Math.abs(retiredEvent.volume - 0.83) < 0.01);
+    for (let index = 0; index < 5; index++) {
+      await delay(250);
+      const stored = storedGalleryMediaPreferences(
+        (await readStoredVideoSettings(extensionPage)).settings
+      );
+      const observed = await readCurrent();
+      samples.push({ atMs: performance.now(), stored, current: observed });
+      assert(Math.abs(stored.volume - 0.27) < 0.01 && stored.muted === firstMuted);
+      assert(observed.connected && observed.paused && observed.error === null);
+      assert.equal(observed.source, selected.selectedMedia.src);
+      assert(Math.abs(observed.volume - 0.27) < 0.01 && observed.muted === firstMuted);
+    }
+    await current.video.evaluate((element, muted) => {
+      if (!(element instanceof HTMLVideoElement)) {
+        throw new Error('Current B video is missing');
+      }
+      element.volume = 0.41;
+      element.muted = muted;
+    }, !firstMuted);
+    evidence.activeStored = await waitForValue(
+      async () => {
+        const prefs = storedGalleryMediaPreferences(
+          (await readStoredVideoSettings(extensionPage)).settings
+        );
+        return Math.abs(prefs.volume - 0.41) < 0.01 && prefs.muted === !firstMuted
+          ? prefs
+          : undefined;
+      },
+      'active B native volume persisted',
+      5_000
+    );
+    const activeCurrent = await readCurrent();
+    assert(activeCurrent.connected && activeCurrent.paused && activeCurrent.error === null);
+    assert.equal(activeCurrent.source, selected.selectedMedia.src);
+    assert(Math.abs(activeCurrent.volume - 0.41) < 0.01 && activeCurrent.muted === !firstMuted);
+    evidence.activeCurrent = activeCurrent;
+  } catch (error) {
+    validationError = error;
+    evidence.error = safeError(error);
+  } finally {
+    try {
+      const gallery = page.locator('[data-xeg-gallery-container]');
+      if (await gallery.count()) {
+        evidence.finalClose = await closeQuotedGallery({
+          gallery,
+          page,
+          method: quotedCase.close,
+          before: reopenedBefore ?? before,
+          caseName: quotedCase.route,
+          selector: '[data-video-key] video',
+        });
+      }
+    } catch (error) {
+      cleanupErrors.push(error);
+    }
+    try {
+      if (prior) {
+        await delay(350);
+        evidence.settingsRestored = await restoreStoredVideoSettings(extensionPage, prior);
+        assert.equal(
+          evidence.settingsRestored,
+          true,
+          'Retired volume cycle must restore exact settings'
+        );
+      } else {
+        evidence.settingsRestored = false;
+        evidence.settingsRestoreSkipped = 'Initial settings snapshot unavailable before mutation';
+      }
+    } catch (error) {
+      cleanupErrors.push(error);
+    }
+    await retired?.dispose().catch((error: unknown) => cleanupErrors.push(error));
+    evidence.cleanupErrors = cleanupErrors.map((error) => safeError(error));
+    evidence.status = validationError || cleanupErrors.length ? 'failed' : 'passed';
+    try {
+      await writeFile(
+        join(output, 'native-retired-volume-observations.json'),
+        JSON.stringify(evidence, null, 2)
+      );
+    } catch (error) {
+      cleanupErrors.push(error);
+    }
+  }
+  if (validationError || cleanupErrors.length) {
+    throw new AggregateError(
+      [...(validationError ? [validationError] : []), ...cleanupErrors],
+      'Retired native volume validation or cleanup failed'
+    );
+  }
+  return evidence;
+}
+
 async function runQuotedVideoCycle({
   quotedCase,
   quotedApiResponses,
@@ -8181,8 +8464,22 @@ async function runQuotedVideoCycle({
     timeout: 15_000,
   });
   const article = page.locator(`[data-case="${quotedCase.route}"]`);
+  const noOuterDomMediaCount =
+    quotedCase.name === 'unmarked-no-outer'
+      ? await article
+          .locator(':scope > [data-testid="videoPlayer"], :scope > [data-testid="tweetPhoto"]')
+          .count()
+      : null;
+  if (noOuterDomMediaCount !== null) {
+    assert.equal(noOuterDomMediaCount, 0, 'A must have no own DOM media in the no-outer case');
+  }
+  const artifactName =
+    quotedCase.name === 'unmarked-no-outer' ? 'own01-no-outer' : `quoted-${quotedCase.name}`;
+  const checkpointName =
+    quotedCase.name === 'unmarked-no-outer' ? 'own01-no-outer' : quotedCase.name;
   const shell = article.locator('[data-video-key]');
   const preview = shell.locator('[data-quote-target]');
+  const hostVideo = shell.locator('video:not([data-host-action])');
   await preview.scrollIntoViewIfNeeded();
   await page.evaluate(() => window.scrollBy(0, -120));
   await preview.focus();
@@ -8202,7 +8499,26 @@ async function runQuotedVideoCycle({
   assert.equal(previewState.hit, true, 'Preview must be the ordinary hit-tested click target');
   assert.equal(previewState.videoSource, null, 'Preview check must precede native playback');
   assert(previewState.poster?.endsWith(`/${quotedCase.poster}.jpg`));
-  await page.screenshot({ path: join(output, `quoted-${quotedCase.name}-before.png`) });
+  const unmarkedPreviewDepth =
+    quotedCase.route === 'unmarked'
+      ? {
+          target: await quotedTargetDepth(preview),
+          video: await quotedTargetDepth(hostVideo),
+        }
+      : null;
+  if (unmarkedPreviewDepth) {
+    assert.deepEqual(
+      unmarkedPreviewDepth.video,
+      UNMARKED_VIDEO_DEPTH,
+      'Unmarked preview must contain the exact 4/7/18/24 video geometry'
+    );
+    assert.deepEqual(
+      unmarkedPreviewDepth.target,
+      { videoComponent: 5, videoPlayer: 8, roleLink: 19, article: 25 },
+      'Preview IMG has one additional interstitial ancestor'
+    );
+  }
+  await page.screenshot({ path: join(output, `${artifactName}-before.png`) });
 
   const apiStart = quotedApiResponses.length;
   const previewClickCount = await page.evaluate(() => window.__quoteFixtureClicks.length);
@@ -8210,7 +8526,7 @@ async function runQuotedVideoCycle({
   await preview.click();
   const previewPending = await writeVideoBoundaryCheckpoint({
     output,
-    name: `${quotedCase.name}-preview`,
+    name: `${checkpointName}-preview`,
     page,
     api: quotedApiResponses.slice(apiStart),
   });
@@ -8234,13 +8550,33 @@ async function runQuotedVideoCycle({
     [expectedRequest],
     'Preview must use the exact owning tweet API request'
   );
+  const noOuterProviderMediaCount =
+    noOuterDomMediaCount === null ? null : quotedApiResponses[apiStart]?.rootMediaCount;
+  if (noOuterDomMediaCount !== null) {
+    assert.equal(noOuterProviderMediaCount, 0, 'A provider response must have no own media');
+  }
   const previewOriginUrl = await assertQuotedOriginLink(
     initial.gallery,
     `https://x.com/${quotedCase.username}/status/${quotedCase.owner}`,
     quotedCase.name === 'linked'
   );
+  let noOuterPanelText: string | null = null;
+  if (noOuterDomMediaCount !== null) {
+    await initial.gallery.locator('#tweet-text-button').click();
+    noOuterPanelText = await initial.gallery.locator('#toolbar-tweet-panel').textContent();
+    assert(noOuterPanelText, 'Selected no-outer video text panel is missing');
+    assert(
+      noOuterPanelText.includes(`${quotedCase.username} deterministic installed media`),
+      'Selected no-outer video text must identify B'
+    );
+    assert(
+      !noOuterPanelText.includes(`${quotedCase.handle} deterministic installed media`),
+      'A text must not replace B attribution'
+    );
+    await initial.gallery.locator('#tweet-text-button').click();
+  }
   const previewNavigation = await navigateQuotedAwayAndBack(page, quotedCase, initial.total);
-  await page.screenshot({ path: join(output, `quoted-${quotedCase.name}-preview-gallery.png`) });
+  await page.screenshot({ path: join(output, `${artifactName}-preview-gallery.png`) });
   const previewClose = await closeQuotedGallery({
     gallery: initial.gallery,
     page,
@@ -8261,30 +8597,12 @@ async function runQuotedVideoCycle({
     true,
     'Fixture native play handler must receive and cancel its own trusted button click'
   );
-  const hostVideo = shell.locator('video:not([data-host-action])');
-  const unmarkedDepth =
-    quotedCase.route === 'unmarked'
-      ? await hostVideo.evaluate((video) => {
-          const roleLink = video.closest('[role="link"]');
-          const article = video.closest('article');
-          const hopsTo = (boundary: Element | null) => {
-            let hops = 0;
-            for (let current = video.parentElement; current; current = current.parentElement) {
-              hops++;
-              if (current === boundary) {
-                return hops;
-              }
-            }
-            return null;
-          };
-          return { roleLink: hopsTo(roleLink), article: hopsTo(article) };
-        })
-      : null;
+  const unmarkedDepth = quotedCase.route === 'unmarked' ? await quotedTargetDepth(hostVideo) : null;
   if (unmarkedDepth) {
     assert.deepEqual(
       unmarkedDepth,
-      { roleLink: 18, article: 24 },
-      'Unmarked playing video must exercise the observed clickable and article depths'
+      UNMARKED_VIDEO_DEPTH,
+      'Unmarked playing video must exercise the observed component, player, link and article depths'
     );
   }
   await page.waitForFunction(
@@ -8370,7 +8688,7 @@ async function runQuotedVideoCycle({
   await hostVideo.click();
   const playingPending = await writeVideoBoundaryCheckpoint({
     output,
-    name: `${quotedCase.name}-playing`,
+    name: `${checkpointName}-playing`,
     page,
     api: quotedApiResponses.slice(apiStart),
   });
@@ -8534,12 +8852,12 @@ async function runQuotedVideoCycle({
     return panel.id;
   });
   await page.locator(`#${latePanel}[data-xeg-gallery-hidden]`).waitFor({ state: 'attached' });
-  await page.screenshot({ path: join(output, `quoted-${quotedCase.name}-playing-gallery.png`) });
+  await page.screenshot({ path: join(output, `${artifactName}-playing-gallery.png`) });
 
   const knownIds = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
   const nativeMark = nativeLoopback.mark();
   const fetchMark = pageFetches.length;
-  const filename = `${quotedCase.username}_${quotedCase.owner}_${quotedCase.expectedPosition - 1}.mp4`;
+  const filename = `${quotedCase.username}_${quotedCase.owner}_${quotedCase.expectedPosition - 1}${quotedCase.name === 'unmarked-no-outer' ? ' (1)' : ''}.mp4`;
   await playing.gallery
     .locator('[data-gallery-element="toolbar"] button[aria-label="Download"]')
     .click();
@@ -8563,7 +8881,7 @@ async function runQuotedVideoCycle({
     nativeMark,
     pageFetches: pageFetches.slice(fetchMark),
   });
-  const copiedName = `quoted-${quotedCase.name}-download.mp4`;
+  const copiedName = `${artifactName}-download.mp4`;
   await copyFile(download.filename, join(output, copiedName));
   const lateState = await page.locator(`#${latePanel}`).evaluate((element) => ({
     hiddenMarker: element.hasAttribute('data-xeg-gallery-hidden'),
@@ -8634,7 +8952,96 @@ async function runQuotedVideoCycle({
   }));
   assert.deepEqual(restoredPanel, { ariaHidden: 'false', hiddenMarker: false, inert: false });
   await page.locator(`#${latePanel}`).evaluate((element) => element.remove());
-  await page.screenshot({ path: join(output, `quoted-${quotedCase.name}-after.png`) });
+  const pausedControl =
+    quotedCase.route === 'unmarked'
+      ? await (async () => {
+          await hostVideo.scrollIntoViewIfNeeded();
+          await hostVideo.evaluate((element) => element.scrollIntoView({ block: 'center' }));
+          await hostVideo.focus();
+          const before = await quotedHostSnapshot(page, quotedCase.route, '[data-video-key] video');
+          const hostState = await hostVideoState(hostVideo);
+          assert.equal(hostState.paused, true, 'Unmarked host video must be paused before click');
+          assert(hostState.readyState >= 2 && hostState.width > 0 && hostState.height > 0);
+          assert.equal(hostState.error, null);
+          const depth = await quotedTargetDepth(hostVideo);
+          assert.deepEqual(depth, UNMARKED_VIDEO_DEPTH, 'Paused video geometry must stay exact');
+          const hit = await hostVideo.evaluate((element) => {
+            const rect = element.getBoundingClientRect();
+            const x = rect.left + rect.width / 2;
+            const y = rect.top + rect.height / 2;
+            return {
+              target: document.elementFromPoint(x, y) === element,
+              point: { x, y },
+              viewport: { width: innerWidth, height: innerHeight },
+            };
+          });
+          assert.equal(
+            hit.target,
+            true,
+            `Paused video must be the ordinary hit-tested target: ${JSON.stringify(hit)}`
+          );
+          const apiStartPaused = quotedApiResponses.length;
+          const clickCount = await page.evaluate(() => window.__quoteFixtureClicks.length);
+          await captureQuotedOpeningScroll(hostVideo);
+          await hostVideo.click();
+          const pending = await writeVideoBoundaryCheckpoint({
+            output,
+            name: `${checkpointName}-paused`,
+            page,
+            api: quotedApiResponses.slice(apiStartPaused),
+          });
+          const click = await quotedClickRecord(page, clickCount, 'video');
+          before.scrollY = Number(await hostVideo.getAttribute('data-opening-scroll-y'));
+          assert(Number.isFinite(before.scrollY) && before.scrollY > 0);
+          const selected = await assertQuotedGallery(page, quotedCase);
+          const freshStart = await hostVideoState(selected.video);
+          assert.equal(freshStart.paused, true, 'Paused host opens a separate paused player');
+          assert(freshStart.currentTime < 0.05);
+          const originUrl = await assertQuotedOriginLink(
+            selected.gallery,
+            `https://x.com/${quotedCase.username}/status/${quotedCase.owner}`,
+            false
+          );
+          const api = quotedApiResponses.slice(apiStartPaused);
+          assert(api.every(({ tweetId }) => tweetId === expectedRequest));
+          const retiredVolume =
+            quotedCase.name === 'unmarked-no-outer'
+              ? await observeRetiredNativeVolume({
+                  before,
+                  extensionPage,
+                  hostVideo,
+                  output,
+                  page,
+                  quotedCase,
+                  selected,
+                })
+              : null;
+          const close = retiredVolume
+            ? retiredVolume.finalClose
+            : await closeQuotedGallery({
+                gallery: selected.gallery,
+                page,
+                method: quotedCase.close,
+                before,
+                caseName: quotedCase.route,
+                selector: '[data-video-key] video',
+              });
+          return {
+            depth,
+            hostState,
+            hit,
+            click,
+            pending,
+            selected: selected.selectedMedia,
+            freshStart,
+            originUrl,
+            api,
+            close,
+            retiredVolume,
+          };
+        })()
+      : null;
+  await page.screenshot({ path: join(output, `${artifactName}-after.png`) });
   const outerControl =
     quotedCase.name === 'unmarked'
       ? await runOuterVideoControl({
@@ -8655,9 +9062,18 @@ async function runQuotedVideoCycle({
     requestedTweetId: expectedRequest,
     api: quotedApiResponses.slice(apiStart),
     selectedPosition: quotedCase.expectedPosition,
+    noOuterMedia:
+      noOuterDomMediaCount === null
+        ? null
+        : {
+            domOwnMediaCount: noOuterDomMediaCount,
+            providerRootMediaCount: noOuterProviderMediaCount,
+            selectedText: noOuterPanelText,
+          },
     videoClickSettings,
     preview: {
       source: previewState.poster,
+      unmarkedDepth: unmarkedPreviewDepth,
       click: previewClick,
       pending: previewPending,
       selected: initial.selectedMedia,
@@ -8705,6 +9121,7 @@ async function runQuotedVideoCycle({
       closeMethod: quotedCase.close,
       close: playingClose,
     },
+    paused: pausedControl,
     download: {
       filename,
       bytes: bytes.length,
@@ -9293,20 +9710,200 @@ async function runSourceQualityCycle({
     body: true,
     isolation: true,
   };
-  evidence.api = qualityApiResponses.slice(apiStart);
-  evidence.requests = qualityRequests.slice(requestStart);
+  const firstRequests = qualityRequests.slice(requestStart);
   assert(
     QUALITY_IMAGE_PATHS.every((path) =>
-      evidence.requests.some(
-        (request) => request.path === `/media/${path}` && request.name === 'orig'
-      )
+      firstRequests.some((request) => request.path === `/media/${path}` && request.name === 'orig')
     ),
     'Source-quality ZIP must request the original form of all three images'
   );
+  const originalFetchCount = () =>
+    qualityRequests
+      .slice(requestStart)
+      .filter(
+        (request) =>
+          request.path === `/media/${QUALITY_IMAGE_PATHS[1]}` &&
+          request.name === 'orig' &&
+          request.resourceType === 'fetch'
+      ).length;
+  const firstOriginalFetchCount = originalFetchCount();
+  assert(
+    firstOriginalFetchCount > 0,
+    'First ZIP must fetch the selected original into media cache'
+  );
+
+  const documentBeforeReopen = await page.evaluate(() => ({
+    url: location.href,
+    timeOrigin: performance.timeOrigin,
+  }));
+  assert.equal(documentBeforeReopen.url, QUALITY_FIXTURE_URL);
+  assert.equal(await trigger.getAttribute('src'), selectedSource.observedUrl);
+  const reopenHostImage = await waitForValue(async () => {
+    const state = await trigger.evaluate((element) => {
+      if (!(element instanceof HTMLImageElement)) {
+        throw new Error('Reopened source-quality host image is missing');
+      }
+      return {
+        complete: element.complete,
+        width: element.naturalWidth,
+        height: element.naturalHeight,
+      };
+    });
+    return state.complete && state.width > 0 ? state : undefined;
+  }, 'decoded small source-quality host image before reopen');
+  assert.equal(reopenHostImage.width, selectedSource.display.width);
+  assert.equal(reopenHostImage.height, selectedSource.display.height);
+  await page.screenshot({ path: join(output, 'source-quality-reopen-before.png') });
+
+  const reopenStartedAtMs = performance.now();
+  await trigger.click();
+  await gallery.waitFor({ state: 'visible', timeout: 15_000 });
+  const reopenSelection = await assertQuotedSelection(page, {
+    position: 2,
+    total: 3,
+    type: 'image',
+    path: `/media/${QUALITY_IMAGE_PATHS[1]}`,
+  });
+  assert.equal(reopenSelection.source, selectedSource.originalUrl);
+  const reopenImage = await gallery
+    .locator('[data-gallery-element="item"][data-index="1"] img')
+    .evaluate((element) => {
+      if (!(element instanceof HTMLImageElement)) {
+        throw new Error('Reopened source-quality selected image is missing');
+      }
+      return { width: element.naturalWidth, height: element.naturalHeight };
+    });
+  assert.equal(reopenImage.width, selectedSource.original.width);
+  assert.equal(reopenImage.height, selectedSource.original.height);
+  const reopenOrigin = await assertQuotedOriginLink(gallery, QUALITY_FIXTURE_URL);
+  assert.deepEqual(
+    await page.evaluate(() => ({ url: location.href, timeOrigin: performance.timeOrigin })),
+    documentBeforeReopen
+  );
+  await page.screenshot({ path: join(output, 'source-quality-reopen-gallery.png') });
+
+  const knownBeforeReopenCurrent = new Set(
+    (await queryDownloads(extensionPage)).map(({ id }) => id)
+  );
+  const reopenNativeMark = nativeLoopback.mark();
+  const reopenFetchMark = pageFetches.length;
+  const reopenCurrentStartedAtMs = performance.now();
+  await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download"]').click();
+  const reopenCurrent = await waitForDownload(
+    extensionPage,
+    knownBeforeReopenCurrent,
+    `qualityuser_${QUALITY_TWEET_ID}_1 (1).jpg`
+  );
+  assert.notEqual(reopenCurrent.id, current.id);
+  const reopenCurrentPath = relative(downloads, reopenCurrent.filename);
+  assert(
+    reopenCurrentPath && !reopenCurrentPath.startsWith('..') && !isAbsolute(reopenCurrentPath),
+    'Reopened source-quality single escaped the owned directory'
+  );
+  const { bytes: reopenCurrentBytes } = await readExactDownloadFile(
+    reopenCurrent.filename,
+    images[1].length
+  );
+  assert(reopenCurrentBytes.equals(images[1]), 'Reopened single must save selected original bytes');
+  const reopenNative = await assertNativeSingle({
+    extensionPage,
+    knownIds: knownBeforeReopenCurrent,
+    download: reopenCurrent,
+    expectedUrl: selectedSource.originalUrl,
+    expectedBytes: images[1],
+    nativeLoopback,
+    nativeMark: reopenNativeMark,
+    pageFetches: pageFetches.slice(reopenFetchMark),
+  });
+  await copyFile(reopenCurrent.filename, join(output, 'source-quality-reopen-current.jpg'));
+
+  const knownBeforeReopenZip = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+  const reopenZipStartedAtMs = performance.now();
+  await gallery
+    .locator('[data-gallery-element="toolbar"] button[aria-label="Download 3 shown files as ZIP"]')
+    .click();
+  const reopenZip = await waitForDownload(
+    extensionPage,
+    knownBeforeReopenZip,
+    `qualityuser_${QUALITY_TWEET_ID} (1).zip`
+  );
+  assert.notEqual(reopenZip.id, zip.id);
+  const reopenZipPath = relative(downloads, reopenZip.filename);
+  assert(
+    reopenZipPath && !reopenZipPath.startsWith('..') && !isAbsolute(reopenZipPath),
+    'Reopened source-quality ZIP escaped the owned directory'
+  );
+  const { bytes: reopenZipBytes } = await readExactDownloadFile(
+    reopenZip.filename,
+    expectedStoredZipBytes(expectedEntries)
+  );
+  const reopenVerified = verifyStoredZip(reopenZipBytes, expectedEntries);
+  assert.deepEqual(
+    (await queryDownloads(extensionPage))
+      .filter(({ id }) => !knownBeforeReopenZip.has(id))
+      .map(({ id }) => id),
+    [reopenZip.id],
+    'Reopened source-quality ZIP must create exactly one native download'
+  );
+  await copyFile(reopenZip.filename, join(output, 'source-quality-reopen.zip'));
+  const secondOriginalFetchCount = originalFetchCount();
+  assert.equal(
+    secondOriginalFetchCount,
+    firstOriginalFetchCount,
+    'Reopened ZIP must reuse the selected original from media cache'
+  );
+
+  await page.keyboard.press('Escape');
+  await gallery.waitFor({ state: 'detached' });
+  const reopenAfter = await hostSnapshot(page, 1);
+  assert.deepEqual(reopenAfter.background, before.background);
+  assert.deepEqual(reopenAfter.bodyStyle, before.bodyStyle);
+  assert.equal(reopenAfter.activeElementAlt, before.triggerAlt);
+  assert.equal(reopenAfter.scrollRestoration, before.scrollRestoration);
+  assert.equal(reopenAfter.scrollY, before.scrollY);
+  assert.deepEqual(
+    await page.evaluate(() => ({ url: location.href, timeOrigin: performance.timeOrigin })),
+    documentBeforeReopen
+  );
+  await page.screenshot({ path: join(output, 'source-quality-reopen-after.png') });
+  evidence.reopen = {
+    document: documentBeforeReopen,
+    hostImage: { url: selectedSource.observedUrl, ...reopenHostImage },
+    selection: { ...reopenSelection, ...reopenImage, origin: reopenOrigin },
+    current: {
+      id: reopenCurrent.id,
+      filename: basename(reopenCurrent.filename),
+      file: 'source-quality-reopen-current.jpg',
+      ...imageReceipt(reopenCurrentBytes),
+      elapsedMs: performance.now() - reopenCurrentStartedAtMs,
+      native: reopenNative,
+    },
+    zip: {
+      id: reopenZip.id,
+      filename: basename(reopenZip.filename),
+      file: 'source-quality-reopen.zip',
+      ...imageReceipt(reopenZipBytes),
+      elapsedMs: performance.now() - reopenZipStartedAtMs,
+      verified: reopenVerified,
+    },
+    originalFetchCount: { first: firstOriginalFetchCount, second: secondOriginalFetchCount },
+    restoration: {
+      focus: reopenAfter.activeElementAlt === before.triggerAlt,
+      scroll: reopenAfter.scrollY === before.scrollY,
+      body: true,
+      isolation: true,
+    },
+    elapsedMs: performance.now() - reopenStartedAtMs,
+  };
+  evidence.api = qualityApiResponses.slice(apiStart);
+  evidence.requests = qualityRequests.slice(requestStart);
   evidence.screenshots = [
     'source-quality-before.png',
     'source-quality-gallery.png',
     'source-quality-after.png',
+    'source-quality-reopen-before.png',
+    'source-quality-reopen-gallery.png',
+    'source-quality-reopen-after.png',
   ];
   evidence.elapsedMs = performance.now() - startedAtMs;
   evidence.status = 'passed';
@@ -9908,6 +10505,10 @@ async function exerciseInstalledExtension(
     }
     for (const quotedCase of QUOTED_CASES) {
       const settingEvidence: ControlledSettingEvidence = {};
+      const artifactName =
+        quotedCase.name === 'unmarked-no-outer' ? 'own01-no-outer' : `quoted-${quotedCase.name}`;
+      const checkpointName =
+        quotedCase.name === 'unmarked-no-outer' ? 'own01-no-outer' : quotedCase.name;
       try {
         quotedVideoCycles.push(
           quotedCase.name === 'public-preplayer'
@@ -9952,11 +10553,11 @@ async function exerciseInstalledExtension(
           api: fixtureRoutes.quotedApiResponses.filter(
             ({ tweetId }) => tweetId === quotedCase.outer || tweetId === quotedCase.owner
           ),
-          screenshot: `quoted-${quotedCase.name}-failure.png`,
+          screenshot: `${artifactName}-failure.png`,
         };
         await attachVideoBoundaryFailure(diagnostic, {
           output,
-          name: `${quotedCase.name}-failure`,
+          name: `${checkpointName}-failure`,
           page,
           api: diagnostic.api,
         });
@@ -10002,7 +10603,7 @@ async function exerciseInstalledExtension(
         }
         quotedVideoCycles.push(diagnostic);
         await writeFile(
-          join(output, `quoted-${quotedCase.name}-failure.json`),
+          join(output, `${artifactName}-failure.json`),
           JSON.stringify(diagnostic, null, 2)
         ).catch(() => {});
         acceptanceFailures.push(error);

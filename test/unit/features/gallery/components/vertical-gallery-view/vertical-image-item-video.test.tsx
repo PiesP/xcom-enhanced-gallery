@@ -51,7 +51,7 @@ import {
   nextVideoPlaybackSource,
 } from '@features/gallery/components/vertical-gallery-view/utils/video-playback-recovery';
 import { VerticalImageItem } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem';
-import { closeGallery, openGallery } from '@shared/state/signals/gallery.signals';
+import { closeGallery, gallerySignals, openGallery } from '@shared/state/signals/gallery.signals';
 import {
   handleKeyboardEvent,
   resetKeyboardDebounceState,
@@ -732,10 +732,13 @@ describe('VerticalImageItem video admission and playback', () => {
     expect(video.getAttribute('src')).toBe(source('low'));
   });
 
-  it('discards late play rejection, media events, and visibility after disposal during fallback', async () => {
-    const { video, row, onMediaLoad } = mount({ active: true });
+  it('discards retired fallback callbacks after close and a new gallery session mounts', async () => {
+    const previous = media();
+    openGallery([previous]);
+    const { video, row, onMediaLoad } = mount({ media: previous, active: true, index: 0 });
     Object.defineProperty(video, 'readyState', { configurable: true, get: () => 2 });
     const oldVisibility = observers.get('0px')!;
+    const oldAdmission = observers.get('480px 0px')!;
     let rejectPlay: ((error: Error) => void) | undefined;
     const play = vi.spyOn(video, 'play').mockImplementation(
       () =>
@@ -755,17 +758,53 @@ describe('VerticalImageItem video admission and playback', () => {
     expect(play).toHaveBeenCalledOnce();
     expect(rejectPlay).toBeDefined();
 
+    closeGallery();
     dispose?.();
     dispose = undefined;
     const pauseCalls = pause.mock.calls.length;
     const muted = video.muted;
     expect(row.isConnected).toBe(false);
+    const newSource = 'https://video.twimg.com/ext_tw_video/333/pu/vid/new-session.mp4';
+    const replacement: MediaInfo = {
+      ...media('333_api_1'),
+      url: newSource,
+      videoVariants: [{ url: newSource, contentType: 'video/mp4' }],
+      downloadSource: { url: newSource, quality: 'best-mp4', provenance: 'api' },
+    };
+    const neighborSource = 'https://video.twimg.com/ext_tw_video/333/pu/vid/new-neighbor.mp4';
+    const neighbor: MediaInfo = {
+      ...replacement,
+      id: '333_api_0',
+      url: neighborSource,
+      videoVariants: [{ url: neighborSource, contentType: 'video/mp4' }],
+      downloadSource: { url: neighborSource, quality: 'best-mp4', provenance: 'api' },
+    };
+    const newItems = [neighbor, replacement];
+    openGallery(newItems, 1);
+    const current = mount({ media: replacement, active: true, index: 1 });
+    const currentPlay = vi.spyOn(current.video, 'play').mockResolvedValue(undefined);
+    const currentPause = vi.spyOn(current.video, 'pause').mockImplementation(() => {});
+    current.video.volume = 0.35;
+    current.video.muted = true;
+    expect(current.video).not.toBe(video);
+    expect(host.querySelectorAll('video')).toHaveLength(1);
+    expect(current.row.dataset.mediaLoaded).toBe('false');
+    expect(current.row.dataset.videoFirstFrame).toBe('false');
     rejectPlay?.(new DOMException('Late rejection', 'NotAllowedError'));
     await Promise.resolve();
     await Promise.resolve();
     oldVisibility({ isIntersecting: false } as IntersectionObserverEntry);
     oldVisibility({ isIntersecting: true } as IntersectionObserverEntry);
-    for (const type of ['loadstart', 'loadedmetadata', 'loadeddata', 'error', 'play', 'pause']) {
+    oldAdmission({ isIntersecting: true } as IntersectionObserverEntry);
+    for (const type of [
+      'loadstart',
+      'loadedmetadata',
+      'loadeddata',
+      'error',
+      'play',
+      'pause',
+      'volumechange',
+    ]) {
       mediaEvent(video, type);
     }
     expect(play).toHaveBeenCalledOnce();
@@ -776,6 +815,31 @@ describe('VerticalImageItem video admission and playback', () => {
     expect(row.dataset.mediaLoaded).toBe('false');
     expect(row.dataset.videoFirstFrame).toBe('false');
     expect(onMediaLoad).not.toHaveBeenCalled();
+    expect(gallerySignals.isOpen).toBe(true);
+    expect(gallerySignals.mediaItems).toEqual(newItems);
+    expect(gallerySignals.currentIndex).toBe(1);
+    expect(gallerySignals.currentVideoElement).toBe(current.video);
+    expect(current.row.isConnected).toBe(true);
+    expect(current.row.dataset.index).toBe('1');
+    expect(current.row.dataset.mediaLoaded).toBe('false');
+    expect(current.row.dataset.videoFirstFrame).toBe('false');
+    expect(current.row.querySelector('[role="alert"]')).toBeNull();
+    expect(current.video.getAttribute('src')).toBe(newSource);
+    expect(current.video.volume).toBe(0.35);
+    expect(current.video.muted).toBe(true);
+    expect(current.video.currentTime).toBe(0);
+    expect(currentPlay).not.toHaveBeenCalled();
+    expect(currentPause).not.toHaveBeenCalled();
+    expect(current.onMediaLoad).not.toHaveBeenCalled();
+
+    Object.defineProperty(current.video, 'readyState', { configurable: true, get: () => 2 });
+    for (const type of ['loadstart', 'loadedmetadata', 'loadeddata']) {
+      mediaEvent(current.video, type);
+    }
+    expect(current.row.dataset.mediaLoaded).toBe('true');
+    expect(current.row.dataset.videoFirstFrame).toBe('true');
+    expect(current.onMediaLoad).toHaveBeenCalledExactlyOnceWith(replacement.id, 1);
+    expect(gallerySignals.currentVideoElement).toBe(current.video);
   });
 
   it('keeps an exposed 403 on the current attempt from selecting another rendition', () => {

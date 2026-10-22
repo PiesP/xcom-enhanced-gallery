@@ -10,4 +10,6 @@ Playback begins with the preferred display URL. On a native decode or unsupporte
 
 The source, media object, mounted element, and scroll root are checked before delayed load/error or observer events can publish state. A new media object resets attempts and readiness; a reorder of the same object retains its source and admission. On close, observer subscriptions and pending resume intent are disposed with the gallery element. Retired observer callbacks cannot admit media into a later session.
 
+Volume persistence retires with the player. Closing flushes its last pending live preference; later volume events from a disposed hook or a replaced video cannot enqueue another settings save.
+
 The event distinction and advisory preload behavior follow the [MDN video element reference](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/video). The first-frame test follows [MDN's `loadeddata` definition](https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/loadeddata_event); readiness additionally checks `readyState` for cached frames.

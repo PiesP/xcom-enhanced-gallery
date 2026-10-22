@@ -125,12 +125,31 @@ export const QUOTED_CASES = [
       origin: `https://x.com/nested_c/status/${NESTED_OWNER}`,
     },
   },
+  {
+    name: 'unmarked-no-outer',
+    route: 'unmarked',
+    handle: 'outer_none',
+    outer: '8222222222222222223',
+    owner: '9222222222222222222',
+    username: 'quote_two',
+    media: 'quote-two',
+    expectedPosition: 2,
+    expectedTotal: 2,
+    close: 'button',
+    poster: 'quote-two',
+    away: {
+      type: 'image',
+      path: '/media/QQuoteTwoPhoto.jpg',
+      origin: 'https://x.com/quote_two/status/9222222222222222222',
+    },
+  },
   PUBLIC_PREPLAYER_CASE,
 ];
 
 const outerNames: Record<string, string> = {
   '8111111111111111111': 'outer_one',
   '8222222222222222222': 'outer_two',
+  '8222222222222222223': 'outer_none',
   '8333333333333333333': 'outer_three',
   '8444444444444444444': 'outer_four',
 };
@@ -284,13 +303,15 @@ export function quotedVideoApiResponse(tweetId: string) {
   const quoted =
     selected.name === 'recognized'
       ? quoteOne
-      : selected.name === 'unmarked'
+      : selected.name === 'unmarked' || selected.name === 'unmarked-no-outer'
         ? quoteTwo
         : selected.name === 'linked'
           ? quoteFour
           : quoteThree;
   const outerMedia =
-    selected.name === 'recognized' || selected.name === 'linked'
+    selected.name === 'recognized' ||
+    selected.name === 'linked' ||
+    selected.name === 'unmarked-no-outer'
       ? []
       : selected.name === 'nested-from-outer'
         ? [photo(tweetId, 'QOuterThreePhoto', 0)]
