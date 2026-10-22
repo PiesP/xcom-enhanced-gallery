@@ -2,8 +2,16 @@
 // Copyright (c) 2024-2026 PiesP
 
 import type { HttpRequestControl, HttpRequestDetails } from '@platform/types';
+import { GMHttpRequestAdapter } from '@platform/gm-http-request-adapter';
 import { MV3HttpRequestAdapter } from '@platform/mv3-http-request-adapters';
 import { HttpRequestService } from '@shared/services/http-request-service';
+import type { GMXMLHttpRequestDetails } from '@shared/types/core/userscript';
+
+const gmTransport = vi.hoisted(() => vi.fn());
+
+vi.mock('@shared/external/userscript/adapter', () => ({
+  getUserscript: () => ({ xmlHttpRequest: gmTransport }),
+}));
 
 const mocks = vi.hoisted(() => ({
   request: vi.fn<(details: HttpRequestDetails) => HttpRequestControl>(),
@@ -16,7 +24,213 @@ vi.mock('@platform/index', () => ({
 describe('HttpRequestService', () => {
   beforeEach(() => {
     mocks.request.mockReset();
+    gmTransport.mockReset();
   });
+
+  it.each(['close', 'error'] as const)(
+    'keeps an MV3 body cancellation stable after a late %s and admits a fresh request',
+    async (terminal) => {
+      const url = 'https://x.com/i/api/graphql/fixture/TweetResultByRestId';
+      let bodyController: ReadableStreamDefaultController<Uint8Array<ArrayBuffer>> | undefined;
+      let finishPull: (() => void) | undefined;
+      let observeSecondRead: (() => void) | undefined;
+      const secondRead = new Promise<void>((resolve) => {
+        observeSecondRead = resolve;
+      });
+      const body = new ReadableStream<Uint8Array<ArrayBuffer>>(
+        {
+          start(controller) {
+            bodyController = controller;
+            controller.enqueue(new Uint8Array([1]));
+          },
+          pull() {
+            observeSecondRead?.();
+            return new Promise<void>((resolve) => {
+              finishPull = resolve;
+            });
+          },
+        },
+        { highWaterMark: 0 }
+      );
+      const fetchRequest = vi
+        .fn<typeof fetch>()
+        .mockResolvedValueOnce(new Response(body, { status: 429, headers: { 'retry-after': '6' } }))
+        .mockResolvedValueOnce(new Response(new Uint8Array([2]), { status: 200 }));
+      vi.stubGlobal('fetch', fetchRequest);
+      const onsettled = vi.fn();
+      const adapter = new MV3HttpRequestAdapter();
+      mocks.request.mockImplementation((details) =>
+        adapter.request({
+          ...details,
+          onsettled: () => {
+            onsettled();
+            details.onsettled?.();
+          },
+        })
+      );
+      const service = new HttpRequestService();
+      const controller = new AbortController();
+      const removeEventListener = vi.spyOn(controller.signal, 'removeEventListener');
+      const reason = new DOMException('cancelled while reading', 'AbortError');
+      try {
+        const pending = service.get(url, {
+          responseType: 'arraybuffer',
+          maxResponseBytes: 16,
+          signal: controller.signal,
+        });
+        await secondRead;
+        expect(fetchRequest).toHaveBeenCalledOnce();
+        expect(onsettled).not.toHaveBeenCalled();
+
+        const rejected = expect(pending).rejects.toBe(reason);
+        controller.abort(reason);
+        await rejected;
+        expect(removeEventListener).toHaveBeenCalledWith('abort', expect.any(Function));
+        expect(onsettled).not.toHaveBeenCalled();
+        finishPull?.();
+        if (terminal === 'close') {
+          bodyController?.close();
+        } else {
+          bodyController?.error(new Error('late body failure'));
+        }
+        await vi.waitFor(() => expect(onsettled).toHaveBeenCalledOnce());
+        expect(body.locked).toBe(false);
+        expect(fetchRequest).toHaveBeenCalledOnce();
+
+        await expect(
+          service.get<ArrayBuffer>(url, { responseType: 'arraybuffer', maxResponseBytes: 16 })
+        ).resolves.toMatchObject({ ok: true, status: 200 });
+        expect(fetchRequest).toHaveBeenCalledTimes(2);
+        expect(onsettled).toHaveBeenCalledTimes(2);
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    }
+  );
+
+  it.each(['caller abort', 'manager timeout'] as const)(
+    'keeps a GM 429 %s settled through late terminal callbacks and a fresh request',
+    async (cause) => {
+      const url = 'https://x.com/i/api/graphql/fixture/TweetResultByRestId';
+      const requests: GMXMLHttpRequestDetails[] = [];
+      const nativeAbort = vi.fn();
+      gmTransport.mockImplementation((details: GMXMLHttpRequestDetails) => {
+        requests.push(details);
+        return { abort: nativeAbort };
+      });
+      const adapter = new GMHttpRequestAdapter();
+      const onsettled = vi.fn();
+      const onabort = vi.fn();
+      const onprogress = vi.fn();
+      mocks.request.mockImplementation((details) =>
+        adapter.request({
+          ...details,
+          onprogress,
+          onabort: (response) => {
+            onabort(response);
+            details.onabort?.(response);
+          },
+          onsettled: () => {
+            onsettled();
+            details.onsettled?.();
+          },
+        })
+      );
+      const service = new HttpRequestService();
+      const controller = new AbortController();
+      const reason = new DOMException('caller cancelled', 'AbortError');
+      const pending = service.get(url, {
+        responseType: 'json',
+        maxResponseBytes: 64,
+        signal: controller.signal,
+      });
+      const progress = {
+        finalUrl: url,
+        readyState: 3,
+        status: 429,
+        statusText: 'Too Many Requests',
+        responseHeaders: 'Retry-After: 6',
+        response: null,
+        responseText: '',
+        context: undefined,
+        lengthComputable: false,
+        loaded: 1,
+        total: 0,
+      };
+      const first = requests[0];
+      expect(first).toBeDefined();
+      first?.onprogress?.(progress);
+      expect(gmTransport).toHaveBeenCalledOnce();
+      expect(onprogress).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 429, retryAfterMs: 6_000, loaded: 1 })
+      );
+      expect(onsettled).not.toHaveBeenCalled();
+
+      if (cause === 'caller abort') {
+        const rejected = expect(pending).rejects.toBe(reason);
+        controller.abort(reason);
+        await rejected;
+        expect(nativeAbort).toHaveBeenCalledOnce();
+        expect(onsettled).not.toHaveBeenCalled();
+        first?.onabort?.(progress);
+        expect(onabort).toHaveBeenCalledWith(
+          expect.objectContaining({
+            status: 429,
+            retryAfterMs: 6_000,
+            readable: false,
+            errorCategory: 'abort',
+          })
+        );
+      } else {
+        first?.ontimeout?.(progress);
+        await expect(pending).rejects.toMatchObject({
+          name: 'HttpRequestError',
+          status: 429,
+          retryAfterMs: 6_000,
+          readable: false,
+          category: 'timeout',
+        });
+        expect(nativeAbort).not.toHaveBeenCalled();
+      }
+      expect(onsettled).toHaveBeenCalledOnce();
+
+      first?.onload?.({
+        ...progress,
+        readyState: 4,
+        status: 200,
+        responseHeaders: '',
+        response: new TextEncoder().encode('{"late":true}').buffer,
+      });
+      first?.onerror?.({ ...progress, readyState: 4 });
+      expect(onsettled).toHaveBeenCalledOnce();
+      expect(gmTransport).toHaveBeenCalledOnce();
+      if (cause === 'caller abort') {
+        await expect(pending).rejects.toBe(reason);
+      } else {
+        await expect(pending).rejects.toMatchObject({
+          status: 429,
+          retryAfterMs: 6_000,
+          category: 'timeout',
+        });
+      }
+
+      const fresh = service.get(url, { responseType: 'json', maxResponseBytes: 64 });
+      expect(gmTransport).toHaveBeenCalledTimes(2);
+      requests[1]?.onload?.({
+        ...progress,
+        readyState: 4,
+        status: 200,
+        responseHeaders: '',
+        response: new TextEncoder().encode('{"healthy":true}').buffer,
+      });
+      await expect(fresh).resolves.toMatchObject({
+        ok: true,
+        status: 200,
+        data: { healthy: true },
+      });
+      expect(onsettled).toHaveBeenCalledTimes(2);
+    }
+  );
 
   it.each(['timeout', 'network'] as const)(
     'settles an actual MV3 metadata %s and allows the next healthy request',
