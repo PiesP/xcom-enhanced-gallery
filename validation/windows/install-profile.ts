@@ -6794,6 +6794,40 @@ async function runInstalledContextLoss({
         assert.equal(readiness.paused, true, 'Fresh gallery video must start paused');
         assert(readiness.time <= 0.1, 'Fresh gallery video must start at the beginning');
         assert.equal(readiness.error, null);
+        await opened.video.click();
+        await freshPage.waitForFunction(
+          ({ index, start }) => {
+            const video = document.querySelector(
+              `[data-xeg-gallery-container] [data-gallery-element="item"][data-index="${index}"] video`
+            );
+            return (
+              video instanceof HTMLVideoElement &&
+              !video.paused &&
+              video.error === null &&
+              video.videoWidth > 0 &&
+              video.videoHeight > 0 &&
+              video.currentTime > start + 0.15
+            );
+          },
+          { index: control.expectedPosition - 1, start: readiness.time },
+          { timeout: 15_000 }
+        );
+        const progress = await opened.video.evaluate((video) => {
+          if (!(video instanceof HTMLVideoElement)) {
+            throw new Error('Fresh gallery video is missing after ordinary Play');
+          }
+          return {
+            paused: video.paused,
+            time: video.currentTime,
+            width: video.videoWidth,
+            height: video.videoHeight,
+            error: video.error?.code ?? null,
+          };
+        });
+        assert.equal(progress.paused, false, 'Fresh gallery video must keep playing');
+        assert(progress.time > readiness.time + 0.15, 'Fresh gallery playback must progress');
+        assert(progress.width > 0 && progress.height > 0, 'Fresh gallery video must decode');
+        assert.equal(progress.error, null);
         const close = await closeQuotedGallery({
           gallery: opened.gallery,
           page: freshPage,
@@ -6808,6 +6842,11 @@ async function runInstalledContextLoss({
           1,
           'Fresh tab must not replay the retired notification ID'
         );
+        assert.equal(
+          afterFresh.length,
+          1,
+          'Fresh tab must not create any additional native notification'
+        );
         evidence.freshPage = {
           url,
           realm: { name: freshRealm.realm.name, origin: freshRealm.realm.origin, markerAbsent },
@@ -6817,7 +6856,9 @@ async function runInstalledContextLoss({
           selection: opened.selection,
           origin,
           readiness,
+          progress,
           close,
+          nativeCreateCountAfterFresh: afterFresh.length,
           retiredNotificationIdRepeats: 0,
         };
       } catch (error) {
