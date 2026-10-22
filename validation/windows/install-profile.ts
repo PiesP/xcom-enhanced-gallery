@@ -59,7 +59,12 @@ import {
   observeGalleryKeyboardNavigation,
   observeGalleryVolume,
 } from './release-upgrade/gallery-volume.ts';
-import { extensionInventorySha256, readUpgradeInput } from './release-upgrade/source.ts';
+import {
+  extensionInventorySha256,
+  readSameVersionInput,
+  readUpgradeInput,
+  sha256,
+} from './release-upgrade/source.ts';
 import { runVideoLoadingProfile } from './video-loading-profile.ts';
 
 type TargetInfo = { type: string; targetId: string; url: string };
@@ -553,6 +558,7 @@ type InstallResult = {
   };
   browserVersion?: string;
   upgrade?: UpgradeReceipt;
+  sameVersion?: Awaited<ReturnType<typeof runSameVersionAttribution>>;
   fixture?: Awaited<ReturnType<typeof exerciseInstalledExtension>>;
   liveBrowserScope?: string;
   live?: unknown;
@@ -14149,6 +14155,293 @@ async function runExtensionUpgrade({
   return receipt;
 }
 
+async function runSameVersionAttribution({
+  context,
+  extensionId,
+  extensionPath,
+  input,
+  output,
+  root,
+  downloads,
+  nativeLoopback,
+}: {
+  context: BrowserContext;
+  extensionId: string;
+  extensionPath: string;
+  input: NonNullable<Awaited<ReturnType<typeof readSameVersionInput>>>;
+  output: string;
+  root: string;
+  downloads: string;
+  nativeLoopback: NativeLoopback;
+}) {
+  const receipt: {
+    status: string;
+    role: string;
+    version: string;
+    sourceSha: string;
+    coreSha: string;
+    harnessSourceSha: string;
+    harnessCoreSha: string;
+    extensionId: string;
+    expectedInventorySha256: string;
+    installedInventorySha256?: string;
+    expectedContentSha256: string;
+    installedContentSha256?: string;
+    manifestVersion?: string;
+    defaultClickMode?: string;
+    cases: Array<Record<string, unknown>>;
+    api?: ApiRecord[];
+    rejectedApi?: ApiRecord[];
+    nativeTransport?: ReturnType<NativeLoopback['snapshot']>;
+    cleanup: { routesRemoved?: boolean; extensionPageClosed?: boolean; errors: string[] };
+    error?: string;
+  } = {
+    status: 'pending',
+    role: input.role,
+    version: input.version,
+    sourceSha: input.sourceSha,
+    coreSha: input.coreSha,
+    harnessSourceSha: input.harnessSourceSha,
+    harnessCoreSha: input.harnessCoreSha,
+    extensionId,
+    expectedInventorySha256: input.extension.inventorySha256,
+    expectedContentSha256: input.extension.contentSha256,
+    cases: [],
+    cleanup: { errors: [] },
+  };
+  const images = await createImageFixtures(context);
+  const displayImages = await createImageFixtures(context, 0.25);
+  const routes = await installFixtureRoutes(context, root, images, displayImages);
+  const extensionPage = await context.newPage();
+  let primaryError: unknown;
+  try {
+    nativeLoopback.setPayloads(images, routes.videoPayloads);
+    receipt.installedInventorySha256 = await extensionInventorySha256(extensionPath);
+    assert.equal(receipt.installedInventorySha256, input.extension.inventorySha256);
+    receipt.installedContentSha256 = sha256(await readFile(join(extensionPath, 'content.js')));
+    assert.equal(receipt.installedContentSha256, input.extension.contentSha256);
+    await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
+    assert.equal(await extensionPage.evaluate(() => chrome.runtime.id), extensionId);
+    receipt.manifestVersion = await extensionPage.evaluate(
+      () => chrome.runtime.getManifest().version
+    );
+    assert.equal(receipt.manifestVersion, input.version);
+    receipt.defaultClickMode =
+      storedVideoClickMode((await readStoredVideoSettings(extensionPage)).settings) ??
+      'block-controls-only';
+    assert.equal(receipt.defaultClickMode, 'block-controls-only');
+
+    for (const name of ['unmarked-no-outer', 'recognized'] as const) {
+      const quotedCase = QUOTED_CASES.find((item) => item.name === name);
+      assert(quotedCase, `Same-version ${name} fixture is missing`);
+      const observed: Record<string, unknown> = {
+        name,
+        status: 'pending',
+        parsedContent: [],
+        pageErrors: [],
+        consoleErrors: [],
+        cleanup: { pageClosed: false, cdpDetached: false, listenersRemoved: false },
+      };
+      receipt.cases.push(observed);
+      const page = await context.newPage();
+      let cdp: CDPSession | undefined;
+      const parsed: Array<{ scriptId: string; url: string }> = [];
+      let parsedOverflow = false;
+      const pageFetches: PageFetch[] = [];
+      let fetchOverflow = false;
+      const onPageError = (error: Error) => {
+        const list = observed.pageErrors as string[];
+        if (list.length < 8) {
+          list.push(error.message.slice(0, 500));
+        } else {
+          fetchOverflow = true;
+        }
+      };
+      const onConsole = (message: ConsoleMessage) => {
+        if (message.type() !== 'error') {
+          return;
+        }
+        const list = observed.consoleErrors as string[];
+        if (list.length < 8) {
+          list.push(message.text().slice(0, 500));
+        } else {
+          fetchOverflow = true;
+        }
+      };
+      const onRequest = (request: Request) => {
+        if (!['fetch', 'xhr'].includes(request.resourceType())) {
+          return;
+        }
+        const url = new URL(request.url());
+        if (!['pbs.twimg.com', 'video.twimg.com'].includes(url.hostname)) {
+          return;
+        }
+        if (pageFetches.length < 32) {
+          pageFetches.push({
+            host: url.hostname,
+            path: url.pathname,
+            resourceType: request.resourceType(),
+          });
+        } else {
+          fetchOverflow = true;
+        }
+      };
+      page.on('pageerror', onPageError);
+      page.on('console', onConsole);
+      page.on('request', onRequest);
+      const apiMark = routes.quotedApiResponses.length;
+      try {
+        cdp = await context.newCDPSession(page);
+        cdp.on('Debugger.scriptParsed', ({ scriptId, url }) => {
+          if (url !== `chrome-extension://${extensionId}/content.js`) {
+            return;
+          }
+          if (parsed.length < 2) {
+            parsed.push({ scriptId, url });
+          } else {
+            parsedOverflow = true;
+          }
+        });
+        await cdp.send('Debugger.enable');
+        observed.cycle = await runQuotedVideoCycle({
+          quotedCase,
+          quotedApiResponses: routes.quotedApiResponses,
+          downloads,
+          extensionPage,
+          output,
+          page,
+          videoPayloads: routes.videoPayloads,
+          nativeLoopback,
+          pageFetches,
+        });
+        observed.api = routes.quotedApiResponses.slice(apiMark);
+        assert.equal(fetchOverflow, false, 'Same-version page observation exceeded its bound');
+        assert.deepEqual(observed.pageErrors, [], 'Same-version page raised an error');
+        assert.deepEqual(observed.consoleErrors, [], 'Same-version page logged an error');
+        observed.status = 'passed';
+      } catch (error) {
+        observed.status = 'failed';
+        observed.error = safeError(error);
+        observed.api = routes.quotedApiResponses.slice(apiMark);
+        observed.parsedScriptsSeen = parsed.length;
+        observed.parsedOverflow = parsedOverflow;
+        observed.fetchOverflow = fetchOverflow;
+        const screenshot = `same-version-${name}-failure.png`;
+        await page.screenshot({ path: join(output, screenshot) }).then(
+          () => {
+            observed.screenshot = screenshot;
+          },
+          (captureError) => {
+            observed.screenshotError = safeError(captureError);
+          }
+        );
+      } finally {
+        try {
+          assert(cdp, 'Same-version debugger session was not created');
+          assert(
+            !parsedOverflow && parsed.length > 0,
+            'Installed content script parse record is missing or overflowed'
+          );
+          for (const record of parsed) {
+            const source = await cdp.send('Debugger.getScriptSource', {
+              scriptId: record.scriptId,
+            });
+            const actualSha256 = sha256(Buffer.from(source.scriptSource, 'utf8'));
+            (observed.parsedContent as Array<Record<string, unknown>>).push({
+              url: record.url,
+              sha256: actualSha256,
+            });
+            assert.equal(
+              actualSha256,
+              input.extension.contentSha256,
+              'Executed content script bytes differ'
+            );
+          }
+        } catch (error) {
+          observed.status = 'failed';
+          observed.scriptError = safeError(error);
+        }
+        observed.parsedScriptsSeen = parsed.length;
+        observed.parsedOverflow = parsedOverflow;
+        observed.fetchOverflow = fetchOverflow;
+        if (observed.status === 'failed' && !observed.screenshot) {
+          const screenshot = `same-version-${name}-failure.png`;
+          await page.screenshot({ path: join(output, screenshot) }).then(
+            () => {
+              observed.screenshot = screenshot;
+            },
+            (captureError) => {
+              observed.screenshotError = safeError(captureError);
+            }
+          );
+        }
+        page.off('pageerror', onPageError);
+        page.off('console', onConsole);
+        page.off('request', onRequest);
+        (observed.cleanup as Record<string, unknown>).listenersRemoved = true;
+        try {
+          await cdp?.detach();
+          (observed.cleanup as Record<string, unknown>).cdpDetached = true;
+        } catch (error) {
+          receipt.cleanup.errors.push(safeError(error));
+        }
+        try {
+          await page.close();
+          (observed.cleanup as Record<string, unknown>).pageClosed = true;
+        } catch (error) {
+          receipt.cleanup.errors.push(safeError(error));
+        }
+      }
+    }
+    receipt.nativeTransport = nativeLoopback.snapshot();
+    assert.deepEqual(
+      routes.apiResponses,
+      [],
+      'Same-version fixture made an unsupported API request'
+    );
+    assert.equal(receipt.nativeTransport.unexpectedCount, 0);
+    assert.equal(receipt.nativeTransport.overflow, false);
+    assert.equal(receipt.nativeTransport.activeCount, 0);
+    assert.equal(receipt.nativeTransport.serverError, false);
+    assert(
+      receipt.cases.every((item) => item.status === 'passed'),
+      'Same-version case failed'
+    );
+    receipt.status = 'passed';
+  } catch (error) {
+    primaryError = error;
+    receipt.status = 'failed';
+    receipt.error = safeError(error);
+  } finally {
+    receipt.api = routes.quotedApiResponses;
+    receipt.rejectedApi = routes.apiResponses;
+    receipt.nativeTransport = nativeLoopback.snapshot();
+    try {
+      await extensionPage.close();
+      receipt.cleanup.extensionPageClosed = true;
+    } catch (error) {
+      receipt.cleanup.errors.push(safeError(error));
+    }
+    try {
+      await routes.remove();
+      receipt.cleanup.routesRemoved = true;
+    } catch (error) {
+      receipt.cleanup.errors.push(safeError(error));
+    }
+    if (receipt.cleanup.errors.length) {
+      receipt.status = 'failed';
+    }
+    await writeFile(
+      join(output, 'same-version-attribution.json'),
+      JSON.stringify(receipt, null, 2)
+    );
+  }
+  if (primaryError && !receipt.error) {
+    receipt.error = safeError(primaryError);
+  }
+  return receipt;
+}
+
 export async function run({
   chromium,
   root,
@@ -14184,18 +14477,32 @@ export async function run({
     return runUserscriptInstallation({ chromium, root, output, browserName, headless });
   }
   const upgradeInput = await readUpgradeInput(root);
+  const sameVersionInput = await readSameVersionInput(root);
+  assert(!(upgradeInput && sameVersionInput), 'Upgrade and same-version inputs cannot coexist');
+  if (sameVersionInput) {
+    assert.equal(liveUrls.length, 0, 'Same-version attribution does not observe live URLs');
+    assert.equal(liveObservation, null);
+  }
   const validatedLiveUrls = validateLiveUrls(liveUrls);
   validateLiveObservation(liveObservation);
   await mkdir(output, { recursive: true });
   const profile = await mkdtemp(join(root, PROFILE_PREFIX));
-  const installedExtensionPath = upgradeInput
-    ? join(profile, 'owned-extension')
-    : join(root, 'dist-extension');
+  const installedExtensionPath =
+    upgradeInput || sameVersionInput
+      ? join(profile, 'owned-extension')
+      : join(root, 'dist-extension');
   if (upgradeInput) {
     await cp(upgradeInput.previousExtensionPath, installedExtensionPath, { recursive: true });
     assert.equal(
       await extensionInventorySha256(installedExtensionPath),
       upgradeInput.previousExtensionInventorySha256
+    );
+  }
+  if (sameVersionInput) {
+    await cp(sameVersionInput.extensionPath, installedExtensionPath, { recursive: true });
+    assert.equal(
+      await extensionInventorySha256(installedExtensionPath),
+      sameVersionInput.extension.inventorySha256
     );
   }
   const downloads = join(profile, 'downloads');
@@ -14231,7 +14538,9 @@ export async function run({
     liveObservation,
     scope: validatedLiveUrls.length
       ? 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
-      : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
+      : sameVersionInput
+        ? 'one declared v2.3.8 artifact in a fresh installed extension profile; two deterministic quoted-video controls'
+        : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
     status: 'failed',
   };
   try {
@@ -14275,7 +14584,23 @@ export async function run({
       path: installedExtensionPath,
     }));
     assert.equal(typeof extensionId, 'string');
-    if (upgradeInput) {
+    if (sameVersionInput) {
+      result.sameVersion = await runSameVersionAttribution({
+        context,
+        extensionId,
+        extensionPath: installedExtensionPath,
+        input: sameVersionInput,
+        output,
+        root,
+        downloads,
+        nativeLoopback,
+      });
+      assert.equal(
+        result.sameVersion.status,
+        'passed',
+        `Same-version attribution failed: ${result.sameVersion.error ?? 'case or cleanup failure'}`
+      );
+    } else if (upgradeInput) {
       result.upgrade = await runExtensionUpgrade({
         context,
         extensionId,
@@ -14285,19 +14610,21 @@ export async function run({
         root,
       });
     }
-    const images = await createImageFixtures(context);
-    const displayImages = await createImageFixtures(context, 0.25);
-    result.fixture = await exerciseInstalledExtension(
-      context,
-      extensionId,
-      root,
-      output,
-      downloads,
-      images,
-      displayImages,
-      browserCdp,
-      nativeLoopback
-    );
+    if (!sameVersionInput) {
+      const images = await createImageFixtures(context);
+      const displayImages = await createImageFixtures(context, 0.25);
+      result.fixture = await exerciseInstalledExtension(
+        context,
+        extensionId,
+        root,
+        output,
+        downloads,
+        images,
+        displayImages,
+        browserCdp,
+        nativeLoopback
+      );
+    }
     await context.unrouteAll({ behavior: 'wait' });
     if (validatedLiveUrls.length) {
       await browserCdp.send('Extensions.uninstall', { id: extensionId });
@@ -14334,14 +14661,18 @@ export async function run({
       result.liveBrowserScope =
         'fresh browser process without fixture host mapping or SPKI exception';
     }
-    const live = await observeLiveUrls({
-      context,
-      extensionId,
-      liveUrls: validatedLiveUrls,
-      output,
-    });
-    result.live = live;
-    result.evidenceStatus = validatedLiveUrls.length ? live.evidenceStatus : 'fixture-observed';
+    if (!sameVersionInput) {
+      const live = await observeLiveUrls({
+        context,
+        extensionId,
+        liveUrls: validatedLiveUrls,
+        output,
+      });
+      result.live = live;
+      result.evidenceStatus = validatedLiveUrls.length ? live.evidenceStatus : 'fixture-observed';
+    } else {
+      result.evidenceStatus = 'same-version-fixture-observed';
+    }
     result.status = 'passed';
   } catch (error) {
     primarySeen = true;

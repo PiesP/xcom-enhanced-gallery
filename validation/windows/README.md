@@ -539,6 +539,37 @@ suite. Receipts are
 fails the control. These controls do not establish that a browser or userscript
 manager will download and apply updates automatically.
 
+### Optional same-version artifact attribution
+
+To compare the public, older source, and current candidate Chrome extensions at
+version 2.3.8, run the installed extension profile three times, each with a fresh
+owned browser profile and a separate evidence output directory. For one run,
+place `validation/windows/release-upgrade/same-version-input.json` beside exactly
+one declared extension directory. The `role` is `public`, `stale`, or `candidate`;
+their paths are fixed in `release-upgrade/source.ts`. The two copied historical
+directories and input are ignored by Git. The current build supplies
+`dist-extension` for `candidate`.
+
+The input has schema 1, `role`, `version: "2.3.8"`, exact `sourceSha` and
+`coreSha`, and `extension: { path, inventorySha256, contentSha256 }`. Set the
+candidate `sourceSha` to the current clean checkout commit recorded in the
+Windows bundle. Use `extensionInventorySha256(path)` for its inventory. The
+parser fixes the public and stale source, core, content and inventory hashes,
+checks the candidate content hash, and verifies the selected directory, manifest
+and bundle identity. The public directory must contain the independently
+verified public v2.3.8 Chrome ZIP contents. A missing input leaves the normal
+installed suite unchanged; malformed input or coexistence with `input.json`
+stops the run.
+
+Each attribution run loads only its declared bytes, then exercises the existing
+`unmarked-no-outer` quoted-video preview, playing and paused controls and the
+recognized healthy control. The receipt keeps the installed manifest, file
+inventory, content digest, script bytes observed through the page debugger,
+case outcomes and owned cleanup under `same-version-attribution.json`. A failed
+first case still permits the healthy control to run. The three receipts compare
+artifact identity and observed behavior; equal version labels do not imply an
+upgrade or identify a product regression without the case evidence.
+
 ## Installed Tampermonkey userscript flow
 
 Prepare a reviewed unpacked Tampermonkey package outside the checkout, then
