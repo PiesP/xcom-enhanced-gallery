@@ -93,6 +93,7 @@ type ApiRecord = {
   transportSettledAtMonotonicMs?: number | null;
   abortedAfterNavigation?: boolean;
   resultTypename?: string | null;
+  rootMediaCount?: number | null;
   providerErrors?: number;
 };
 type QualityRequest = {
@@ -1233,6 +1234,27 @@ export async function installFixtureRoutes(
     join(root, 'test/e2e/fixtures/installed-quoted-video-page.html'),
     'utf8'
   );
+  const noOuterCase = QUOTED_CASES.find(({ name }) => name === 'unmarked-no-outer');
+  assert(noOuterCase, 'Unmarked no-outer fixture case is missing');
+  const outerStartMarker = '<!-- unmarked outer media start -->';
+  const outerEndMarker = '<!-- unmarked outer media end -->';
+  const outerStart = quotedHtml.indexOf(outerStartMarker);
+  const outerEnd = quotedHtml.indexOf(outerEndMarker);
+  assert(
+    outerStart >= 0 &&
+      outerEnd > outerStart &&
+      outerStart === quotedHtml.lastIndexOf(outerStartMarker) &&
+      outerEnd === quotedHtml.lastIndexOf(outerEndMarker),
+    'Unmarked outer media markers must enclose exactly one fixture section'
+  );
+  const outerLink = '<a href="/outer_two/status/8222222222222222222"><time>Outer two</time></a>';
+  assert.equal(quotedHtml.split(outerLink).length, 2, 'Unmarked A permalink must occur once');
+  const noOuterHtml = (
+    quotedHtml.slice(0, outerStart) + quotedHtml.slice(outerEnd + outerEndMarker.length)
+  ).replace(
+    outerLink,
+    `<a href="/${noOuterCase.handle}/status/${noOuterCase.outer}"><time>Outer without media</time></a>`
+  );
   const compactHtml = compactImages
     ? await readFile(
         join(root, 'test/e2e/fixtures/installed-compact-quote-photo-page.html'),
@@ -1414,6 +1436,7 @@ export async function installFixtureRoutes(
       }
       const quotedResponse = tweetId === undefined ? undefined : quotedVideoApiResponse(tweetId);
       if (tweetId !== undefined && quotedResponse) {
+        const quotedResult = quotedResponse.data?.tweetResult?.result;
         const record: ApiRecord = {
           method: route.request().method(),
           status: 200,
@@ -1421,7 +1444,11 @@ export async function installFixtureRoutes(
           url: url.pathname,
           requestedAt: new Date().toISOString(),
           requestedAtMonotonicMs: performance.now(),
-          resultTypename: quotedResponse.data?.tweetResult?.result?.__typename ?? null,
+          resultTypename: quotedResult?.__typename ?? null,
+          rootMediaCount:
+            quotedResult && 'legacy' in quotedResult
+              ? quotedResult.legacy.extended_entities.media.length
+              : null,
           providerErrors:
             'errors' in quotedResponse && Array.isArray(quotedResponse.errors)
               ? quotedResponse.errors.length
@@ -1486,7 +1513,10 @@ export async function installFixtureRoutes(
                   : quotedCase
                     ? quotedCase.name === 'public-preplayer'
                       ? preplayerHtml
-                      : quotedHtml.replace(
+                      : (quotedCase.name === 'unmarked-no-outer'
+                          ? noOuterHtml
+                          : quotedHtml
+                        ).replace(
                           '<body data-quote-case="recognized">',
                           `<body data-quote-case="${quotedCase.route}">`
                         )
@@ -5277,7 +5307,7 @@ async function writeVideoBoundaryCheckpoint({
     };
   });
   const receipt = { name, capturedAt: new Date().toISOString(), ...snapshot, api };
-  const file = `quoted-${name}-checkpoint.json`;
+  const file = `${name.startsWith('own01-no-outer-') ? '' : 'quoted-'}${name}-checkpoint.json`;
   await writeFile(join(output, file), JSON.stringify(receipt, null, 2));
   return { file, ...receipt };
 }
@@ -8210,6 +8240,19 @@ async function runQuotedVideoCycle({
     timeout: 15_000,
   });
   const article = page.locator(`[data-case="${quotedCase.route}"]`);
+  const noOuterDomMediaCount =
+    quotedCase.name === 'unmarked-no-outer'
+      ? await article
+          .locator(':scope > [data-testid="videoPlayer"], :scope > [data-testid="tweetPhoto"]')
+          .count()
+      : null;
+  if (noOuterDomMediaCount !== null) {
+    assert.equal(noOuterDomMediaCount, 0, 'A must have no own DOM media in the no-outer case');
+  }
+  const artifactName =
+    quotedCase.name === 'unmarked-no-outer' ? 'own01-no-outer' : `quoted-${quotedCase.name}`;
+  const checkpointName =
+    quotedCase.name === 'unmarked-no-outer' ? 'own01-no-outer' : quotedCase.name;
   const shell = article.locator('[data-video-key]');
   const preview = shell.locator('[data-quote-target]');
   const hostVideo = shell.locator('video:not([data-host-action])');
@@ -8251,7 +8294,7 @@ async function runQuotedVideoCycle({
       'Preview IMG has one additional interstitial ancestor'
     );
   }
-  await page.screenshot({ path: join(output, `quoted-${quotedCase.name}-before.png`) });
+  await page.screenshot({ path: join(output, `${artifactName}-before.png`) });
 
   const apiStart = quotedApiResponses.length;
   const previewClickCount = await page.evaluate(() => window.__quoteFixtureClicks.length);
@@ -8259,7 +8302,7 @@ async function runQuotedVideoCycle({
   await preview.click();
   const previewPending = await writeVideoBoundaryCheckpoint({
     output,
-    name: `${quotedCase.name}-preview`,
+    name: `${checkpointName}-preview`,
     page,
     api: quotedApiResponses.slice(apiStart),
   });
@@ -8283,13 +8326,33 @@ async function runQuotedVideoCycle({
     [expectedRequest],
     'Preview must use the exact owning tweet API request'
   );
+  const noOuterProviderMediaCount =
+    noOuterDomMediaCount === null ? null : quotedApiResponses[apiStart]?.rootMediaCount;
+  if (noOuterDomMediaCount !== null) {
+    assert.equal(noOuterProviderMediaCount, 0, 'A provider response must have no own media');
+  }
   const previewOriginUrl = await assertQuotedOriginLink(
     initial.gallery,
     `https://x.com/${quotedCase.username}/status/${quotedCase.owner}`,
     quotedCase.name === 'linked'
   );
+  let noOuterPanelText: string | null = null;
+  if (noOuterDomMediaCount !== null) {
+    await initial.gallery.locator('#tweet-text-button').click();
+    noOuterPanelText = await initial.gallery.locator('#toolbar-tweet-panel').textContent();
+    assert(noOuterPanelText, 'Selected no-outer video text panel is missing');
+    assert(
+      noOuterPanelText.includes(`${quotedCase.username} deterministic installed media`),
+      'Selected no-outer video text must identify B'
+    );
+    assert(
+      !noOuterPanelText.includes(`${quotedCase.handle} deterministic installed media`),
+      'A text must not replace B attribution'
+    );
+    await initial.gallery.locator('#tweet-text-button').click();
+  }
   const previewNavigation = await navigateQuotedAwayAndBack(page, quotedCase, initial.total);
-  await page.screenshot({ path: join(output, `quoted-${quotedCase.name}-preview-gallery.png`) });
+  await page.screenshot({ path: join(output, `${artifactName}-preview-gallery.png`) });
   const previewClose = await closeQuotedGallery({
     gallery: initial.gallery,
     page,
@@ -8401,7 +8464,7 @@ async function runQuotedVideoCycle({
   await hostVideo.click();
   const playingPending = await writeVideoBoundaryCheckpoint({
     output,
-    name: `${quotedCase.name}-playing`,
+    name: `${checkpointName}-playing`,
     page,
     api: quotedApiResponses.slice(apiStart),
   });
@@ -8565,7 +8628,7 @@ async function runQuotedVideoCycle({
     return panel.id;
   });
   await page.locator(`#${latePanel}[data-xeg-gallery-hidden]`).waitFor({ state: 'attached' });
-  await page.screenshot({ path: join(output, `quoted-${quotedCase.name}-playing-gallery.png`) });
+  await page.screenshot({ path: join(output, `${artifactName}-playing-gallery.png`) });
 
   const knownIds = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
   const nativeMark = nativeLoopback.mark();
@@ -8594,7 +8657,7 @@ async function runQuotedVideoCycle({
     nativeMark,
     pageFetches: pageFetches.slice(fetchMark),
   });
-  const copiedName = `quoted-${quotedCase.name}-download.mp4`;
+  const copiedName = `${artifactName}-download.mp4`;
   await copyFile(download.filename, join(output, copiedName));
   const lateState = await page.locator(`#${latePanel}`).evaluate((element) => ({
     hiddenMarker: element.hasAttribute('data-xeg-gallery-hidden'),
@@ -8692,7 +8755,7 @@ async function runQuotedVideoCycle({
           await hostVideo.click();
           const pending = await writeVideoBoundaryCheckpoint({
             output,
-            name: `${quotedCase.name}-paused`,
+            name: `${checkpointName}-paused`,
             page,
             api: quotedApiResponses.slice(apiStartPaused),
           });
@@ -8732,7 +8795,7 @@ async function runQuotedVideoCycle({
           };
         })()
       : null;
-  await page.screenshot({ path: join(output, `quoted-${quotedCase.name}-after.png`) });
+  await page.screenshot({ path: join(output, `${artifactName}-after.png`) });
   const outerControl =
     quotedCase.name === 'unmarked'
       ? await runOuterVideoControl({
@@ -8753,6 +8816,14 @@ async function runQuotedVideoCycle({
     requestedTweetId: expectedRequest,
     api: quotedApiResponses.slice(apiStart),
     selectedPosition: quotedCase.expectedPosition,
+    noOuterMedia:
+      noOuterDomMediaCount === null
+        ? null
+        : {
+            domOwnMediaCount: noOuterDomMediaCount,
+            providerRootMediaCount: noOuterProviderMediaCount,
+            selectedText: noOuterPanelText,
+          },
     videoClickSettings,
     preview: {
       source: previewState.poster,
@@ -10188,6 +10259,10 @@ async function exerciseInstalledExtension(
     }
     for (const quotedCase of QUOTED_CASES) {
       const settingEvidence: ControlledSettingEvidence = {};
+      const artifactName =
+        quotedCase.name === 'unmarked-no-outer' ? 'own01-no-outer' : `quoted-${quotedCase.name}`;
+      const checkpointName =
+        quotedCase.name === 'unmarked-no-outer' ? 'own01-no-outer' : quotedCase.name;
       try {
         quotedVideoCycles.push(
           quotedCase.name === 'public-preplayer'
@@ -10232,11 +10307,11 @@ async function exerciseInstalledExtension(
           api: fixtureRoutes.quotedApiResponses.filter(
             ({ tweetId }) => tweetId === quotedCase.outer || tweetId === quotedCase.owner
           ),
-          screenshot: `quoted-${quotedCase.name}-failure.png`,
+          screenshot: `${artifactName}-failure.png`,
         };
         await attachVideoBoundaryFailure(diagnostic, {
           output,
-          name: `${quotedCase.name}-failure`,
+          name: `${checkpointName}-failure`,
           page,
           api: diagnostic.api,
         });
@@ -10282,7 +10357,7 @@ async function exerciseInstalledExtension(
         }
         quotedVideoCycles.push(diagnostic);
         await writeFile(
-          join(output, `quoted-${quotedCase.name}-failure.json`),
+          join(output, `${artifactName}-failure.json`),
           JSON.stringify(diagnostic, null, 2)
         ).catch(() => {});
         acceptanceFailures.push(error);
