@@ -555,8 +555,9 @@ The input has schema 1, `role`, `version: "2.3.8"`, exact `sourceSha` and
 candidate `sourceSha` to the current clean checkout commit recorded in the
 Windows bundle. Use `extensionInventorySha256(path)` for its inventory. The
 parser fixes the public and stale source, core, content and inventory hashes,
-checks the candidate content hash, and verifies the selected directory, manifest
-and bundle identity. The public directory must contain the independently
+and pins the candidate's complete inventory and content hash to the maintained
+clean-source build. It also verifies the selected directory, manifest and bundle
+identity. The public directory must contain the independently
 verified public v2.3.8 Chrome ZIP contents. A missing input leaves the normal
 installed suite unchanged; malformed input or coexistence with `input.json`
 stops the run.

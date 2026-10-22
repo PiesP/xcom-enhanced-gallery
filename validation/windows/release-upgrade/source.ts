@@ -37,6 +37,7 @@ const SAME_VERSION_ASSETS = {
   candidate: {
     path: 'dist-extension',
     coreSha: '588dce5dce2a79c2ed926626b5c97824d63a5203',
+    inventorySha256: '99dd9b7abed6c9690f262edafbb6116cca746ed036ac707b799161b837dd0a82',
     contentSha256: '0a433fdd5d0a536912dfe5709c596c8c24c26f117bc26431d9b511a5e9d1132c',
   },
 } as const;
@@ -309,6 +310,11 @@ export async function readSameVersionInput(root: string) {
   assert.match(input.sourceSha, /^[0-9a-f]{40}$/u);
   assert.match(input.extension.inventorySha256, /^[0-9a-f]{64}$/u);
   assert.equal(
+    input.extension.inventorySha256,
+    expected.inventorySha256,
+    'Same-version extension inventory is mismatched'
+  );
+  assert.equal(
     input.extension.contentSha256,
     expected.contentSha256,
     'Same-version content source is mismatched'
@@ -319,11 +325,6 @@ export async function readSameVersionInput(root: string) {
       input.sourceSha,
       historical.sourceSha,
       'Same-version historical source is mismatched'
-    );
-    assert.equal(
-      input.extension.inventorySha256,
-      historical.inventorySha256,
-      'Same-version historical inventory is mismatched'
     );
   }
   const bundle: unknown = JSON.parse(await readFile(join(root, 'bundle.json'), 'utf8'));

@@ -3,9 +3,9 @@
 
 import assert from 'node:assert/strict';
 import type { BigIntStats } from 'node:fs';
-import { mkdir, mkdtemp, open, rename, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, open, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { test } from 'node:test';
 import {
   extensionInventorySha256,
@@ -234,7 +234,7 @@ test('same-version attribution is absent by default and rejects changed identiti
           coreSha: '588dce5dce2a79c2ed926626b5c97824d63a5203',
           extension: {
             path: 'dist-extension',
-            inventorySha256: '0'.repeat(64),
+            inventorySha256: '99dd9b7abed6c9690f262edafbb6116cca746ed036ac707b799161b837dd0a82',
             contentSha256: '0a433fdd5d0a536912dfe5709c596c8c24c26f117bc26431d9b511a5e9d1132c',
           },
         },
@@ -244,6 +244,57 @@ test('same-version attribution is absent by default and rejects changed identiti
       await writeFile(path, JSON.stringify(changed));
       await assert.rejects(readSameVersionInput(root), error);
     }
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('same-version candidate requires the complete maintained extension inventory', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'xeg-same-version-candidate-'));
+  const extension = join(root, 'dist-extension');
+  const inputPath = join(root, 'validation/windows/release-upgrade/same-version-input.json');
+  try {
+    await cp(resolve(import.meta.dirname, '../../../dist-extension'), extension, {
+      recursive: true,
+    });
+    await mkdir(join(root, 'validation/windows/release-upgrade'), { recursive: true });
+    await writeFile(
+      join(root, 'bundle.json'),
+      JSON.stringify({
+        project: 'xcom-enhanced-gallery',
+        profile: 'xeg-gallery',
+        installation: 'extension',
+        source_sha: 'a'.repeat(40),
+        core_sha: '588dce5dce2a79c2ed926626b5c97824d63a5203',
+      })
+    );
+    const input = {
+      schema: 1,
+      role: 'candidate',
+      version: '2.3.8',
+      sourceSha: 'a'.repeat(40),
+      coreSha: '588dce5dce2a79c2ed926626b5c97824d63a5203',
+      extension: {
+        path: 'dist-extension',
+        inventorySha256: await extensionInventorySha256(extension),
+        contentSha256: sha256(await readFile(join(extension, 'content.js'))),
+      },
+    };
+    await writeFile(inputPath, JSON.stringify(input));
+    const accepted = await readSameVersionInput(root);
+    assert.equal(accepted?.extensionPath, extension);
+    await writeFile(join(extension, 'background.js'), 'modified background');
+    await writeFile(
+      inputPath,
+      JSON.stringify({
+        ...input,
+        extension: {
+          ...input.extension,
+          inventorySha256: await extensionInventorySha256(extension),
+        },
+      })
+    );
+    await assert.rejects(readSameVersionInput(root), /extension inventory is mismatched/u);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

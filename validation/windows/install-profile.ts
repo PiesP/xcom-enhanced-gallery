@@ -14491,35 +14491,7 @@ export async function run({
     upgradeInput || sameVersionInput
       ? join(profile, 'owned-extension')
       : join(root, 'dist-extension');
-  if (upgradeInput) {
-    await cp(upgradeInput.previousExtensionPath, installedExtensionPath, { recursive: true });
-    assert.equal(
-      await extensionInventorySha256(installedExtensionPath),
-      upgradeInput.previousExtensionInventorySha256
-    );
-  }
-  if (sameVersionInput) {
-    await cp(sameVersionInput.extensionPath, installedExtensionPath, { recursive: true });
-    assert.equal(
-      await extensionInventorySha256(installedExtensionPath),
-      sameVersionInput.extension.inventorySha256
-    );
-  }
   const downloads = join(profile, 'downloads');
-  await mkdir(downloads);
-  assertOwnedProfile(root, profile);
-  await mkdir(join(profile, 'Default'));
-  await writeFile(
-    join(profile, 'Default', 'Preferences'),
-    JSON.stringify({
-      download: {
-        default_directory: downloads,
-        prompt_for_download: false,
-        directory_upgrade: true,
-      },
-    })
-  );
-
   let context: BrowserContext | undefined;
   let browserCdp: CDPSession | undefined;
   let nativeLoopback: NativeLoopback | undefined;
@@ -14544,6 +14516,33 @@ export async function run({
     status: 'failed',
   };
   try {
+    if (upgradeInput) {
+      await cp(upgradeInput.previousExtensionPath, installedExtensionPath, { recursive: true });
+      assert.equal(
+        await extensionInventorySha256(installedExtensionPath),
+        upgradeInput.previousExtensionInventorySha256
+      );
+    }
+    if (sameVersionInput) {
+      await cp(sameVersionInput.extensionPath, installedExtensionPath, { recursive: true });
+      assert.equal(
+        await extensionInventorySha256(installedExtensionPath),
+        sameVersionInput.extension.inventorySha256
+      );
+    }
+    await mkdir(downloads);
+    assertOwnedProfile(root, profile);
+    await mkdir(join(profile, 'Default'));
+    await writeFile(
+      join(profile, 'Default', 'Preferences'),
+      JSON.stringify({
+        download: {
+          default_directory: downloads,
+          prompt_for_download: false,
+          directory_upgrade: true,
+        },
+      })
+    );
     nativeLoopback = await startExtensionNativeFixtureLoopback(
       join(root, 'validation/windows/userscript-fixture-certificate.ps1')
     );
