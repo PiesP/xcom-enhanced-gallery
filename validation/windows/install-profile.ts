@@ -399,6 +399,78 @@ type AcceptanceReceipt = {
   boundary?: unknown;
   boundaryError?: string;
 };
+type NativeControlNode = {
+  backendNodeId: number;
+  nodeName: string;
+  attributes?: string[];
+  children?: NativeControlNode[];
+  shadowRoots?: NativeControlNode[];
+  shadowRootType?: string;
+};
+type NativeControlPoint = {
+  kind: 'play' | 'timeline' | 'volume';
+  x: number;
+  y: number;
+  node: string;
+  hitBackendNodeId: number;
+  documentPoint: { x: number; y: number };
+};
+type NativeControlProbe = {
+  backendNodeId: number;
+  rejection:
+    | 'box-unavailable'
+    | 'invalid-box'
+    | 'too-small'
+    | 'outside-video'
+    | 'hit-query-error'
+    | 'wrong-host'
+    | 'wrong-descendant'
+    | 'accepted';
+  viewport?: { x: number; y: number };
+  document?: { x: number; y: number };
+  hitBackendNodeId?: number;
+  hostBackendNodeId?: number;
+};
+type Own12NativeControlsEvidence = AcceptanceReceipt & {
+  native?: unknown;
+  adjacentPhoto?: unknown;
+  transport?: {
+    path: string;
+    original: { bytes: number; sha256: string };
+    audioVideo: { bytes: number; sha256: string };
+    restored: boolean;
+  };
+  geometry: Array<Record<string, unknown>>;
+  discovery: Array<{
+    kind: NativeControlPoint['kind'];
+    candidates: string[];
+    uaInputs: Array<{
+      backendNodeId: number;
+      pseudo: string | null;
+      className: string | null;
+      ariaLabel: string | null;
+      type: string | null;
+    }>;
+    uaInputCount: number;
+    hostState: {
+      paused: boolean;
+      currentTime: number;
+      ended: boolean;
+      readyState: number;
+      error: number | null;
+    };
+    probes: NativeControlProbe[];
+    hoverWait?: { attempts: number; elapsedMs: number; boxAvailable: boolean };
+  }>;
+  events: Array<{ type: string; trusted: boolean; time: number; volume: number; paused: boolean }>;
+  cleanup: {
+    observerRemoved: boolean;
+    cdpDetached: boolean;
+    listenersRemoved: boolean;
+    pageClosed: boolean;
+    errors: string[];
+  };
+};
 type OriginalAvailabilityEvidence = {
   status: string;
   cases: unknown[];
@@ -1338,6 +1410,11 @@ export async function installFixtureRoutes(
       ])
     )
   );
+  const own12RapidBPath = '/ext_tw_video/8888888888888888882/pu/vid/320x180/quote-two.mp4';
+  const own12RapidBAvPayload = await readFile(
+    join(root, 'test/e2e/fixtures/installed-native-controls-av.mp4')
+  );
+  let own12RapidBPayload: Buffer | null = null;
   const apiResponses: ApiRecord[] = [];
   const quotedApiResponses: ApiRecord[] = [];
   const unavailableApiResponses: ApiRecord[] = [];
@@ -1595,6 +1672,7 @@ export async function installFixtureRoutes(
         .at(-1)
         ?.replace(/\.mp4$/u, '');
       const payload =
+        (url.pathname === own12RapidBPath ? own12RapidBPayload : null) ??
         (name === undefined ? undefined : videoPayloads[name]) ??
         (name?.startsWith('outer-') ? videoPayloads['nested-c'] : undefined);
       if (!payload) {
@@ -1693,6 +1771,19 @@ export async function installFixtureRoutes(
     compactImageRequests,
     getUnavailableApiOverflow: () => unavailableApiOverflow,
     videoPayloads,
+    armOwn12RapidBAudioVideo() {
+      assert.equal(own12RapidBPayload, null, 'OWN-12 A/V transport is already armed');
+      own12RapidBPayload = own12RapidBAvPayload;
+      return {
+        path: own12RapidBPath,
+        original: imageReceipt(videoPayloads['quote-two']!),
+        audioVideo: imageReceipt(own12RapidBAvPayload),
+        restored: false,
+      };
+    },
+    clearOwn12RapidBAudioVideo() {
+      own12RapidBPayload = null;
+    },
     armDelayedFailure(tweetId: string) {
       assert.equal(delayedFailureGate, null, 'Only one delayed extraction may own the gate');
       assert([DELAYED_FAILURE_ID, DELAYED_NAVIGATION_ID, RAPID_CLICK_A].includes(tweetId));
@@ -1707,6 +1798,7 @@ export async function installFixtureRoutes(
       delayedFailureGate = null;
     },
     async remove() {
+      own12RapidBPayload = null;
       delayedFailureGate?.release();
       delayedFailureGate = null;
       context.off('requestfinished', delayedRequestFinished);
@@ -8057,7 +8149,9 @@ async function runDelayedVideoFailures({
 }
 
 async function runRapidVideoClicks({
+  context,
   downloads,
+  extensionId,
   extensionPage,
   fixtureRoutes,
   nativeLoopback,
@@ -8065,7 +8159,9 @@ async function runRapidVideoClicks({
   page,
   pageFetches,
 }: {
+  context: BrowserContext;
   downloads: string;
+  extensionId: string;
   extensionPage: Page;
   fixtureRoutes: Awaited<ReturnType<typeof installFixtureRoutes>>;
   nativeLoopback: NativeLoopback;
@@ -8081,8 +8177,38 @@ async function runRapidVideoClicks({
   await first.scrollIntoViewIfNeeded();
   await first.focus();
   const apiStart = fixtureRoutes.quotedApiResponses.length;
-  fixtureRoutes.armDelayedFailure(RAPID_CLICK_A);
+  let originalLoop: boolean | undefined;
+  let notificationObserver:
+    | Awaited<ReturnType<typeof observeNativeNotificationCreates>>
+    | undefined;
+  let result: (AcceptanceReceipt & Record<string, unknown>) | undefined;
+  let validationError: unknown;
+  let validationFailed = false;
+  const cleanupErrors: unknown[] = [];
+  const cleanup = { notificationObserverRestored: false, hostVideoControlRestored: false };
   try {
+    const initialHost = await hostVideoState(first);
+    assert.equal(initialHost.paused, true, 'Rapid A host video must start paused');
+    originalLoop = await first.evaluate((element) => {
+      if (!(element instanceof HTMLVideoElement)) {
+        throw new Error('Rapid A host video is missing');
+      }
+      const previous = element.loop;
+      element.loop = true;
+      return previous;
+    });
+    notificationObserver = await observeNativeNotificationCreates(context, extensionId);
+    await page.keyboard.press('Space');
+    const begin = await waitForValue(async () => {
+      const state = await hostVideoState(first);
+      return !state.paused && state.currentTime > 0.15 ? state : undefined;
+    }, 'rapid A playback from focused native Space control');
+    assert(
+      begin.readyState >= 2 && begin.width > 0 && begin.height > 0 && begin.error === null,
+      'Rapid A must have playable native media before the first gallery click'
+    );
+    const notificationBaseline = await notificationObserver.snapshot();
+    fixtureRoutes.armDelayedFailure(RAPID_CLICK_A);
     await first.click();
     const heldA = await waitForValue(
       async () =>
@@ -8096,7 +8222,25 @@ async function runRapidVideoClicks({
       null,
       'A response must remain pending at the B click'
     );
+    const pendingStart = await hostVideoState(first);
+    await page.waitForTimeout(350);
+    const pendingEnd = await hostVideoState(first);
+    assert.equal(pendingEnd.paused, false, 'Pending rapid A must not pause host playback');
+    assert(
+      pendingEnd.currentTime > pendingStart.currentTime + 0.15,
+      'Rapid A host video must progress while its provider response is held'
+    );
+    assert.equal(heldA.fulfilledAtMonotonicMs, null, 'Rapid A must remain held during playback');
+    assert.equal(
+      await page.locator('[data-xeg-gallery-container]').count(),
+      0,
+      'Pending rapid A must not open a gallery'
+    );
+    const notificationsDuringA = await notificationObserver.snapshot();
+    assertNoRetiredExtractionNotifications(notificationBaseline, notificationsDuringA);
     await second.scrollIntoViewIfNeeded();
+    const beforeB = await hostVideoState(first);
+    assert.equal(beforeB.paused, false, 'Rapid A host must still play before the B click');
     const before = await page.evaluate(() => ({
       scrollY: window.scrollY,
       body: document.body.style.cssText,
@@ -8125,14 +8269,32 @@ async function runRapidVideoClicks({
       .filter(({ tweetId }) => tweetId === RAPID_CLICK_B);
     assert.equal(bRequests.length, 1, 'B must make one independent owner request');
     assert.equal(bRequests[0]?.status, 200);
+    const afterB = await assertHostStopped(page, first, 'Rapid B gallery opening');
+    const notificationsAfterB = await notificationObserver.snapshot();
+    assertNoRetiredExtractionNotifications(notificationBaseline, notificationsAfterB);
     fixtureRoutes.releaseDelayedFailure();
+    await waitForValue(
+      () =>
+        heldA.routeSettledAtMonotonicMs !== null && heldA.transportSettledAtMonotonicMs !== null
+          ? heldA
+          : undefined,
+      'rapid A exact route and transport settlement',
+      5_000
+    );
+    assert(
+      heldA.transportState === 'failed' || heldA.transportState === 'finished',
+      'Rapid A must record its real transport outcome'
+    );
     await page.waitForTimeout(350);
+    const afterA = await assertHostStopped(page, first, 'Late rapid A settlement');
     const retained = await assertQuotedSelection(page, {
       position: 2,
       total: 2,
       type: 'video',
       path: `/ext_tw_video/${RAPID_CLICK_B}/pu/vid/320x180/quote-two.mp4`,
     });
+    const notificationsAfterA = await notificationObserver.snapshot();
+    assertNoRetiredExtractionNotifications(notificationBaseline, notificationsAfterA);
     const knownIds = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
     const nativeMark = nativeLoopback.mark();
     const fetchMark = pageFetches.length;
@@ -8158,6 +8320,8 @@ async function runRapidVideoClicks({
       nativeMark,
       pageFetches: pageFetches.slice(fetchMark),
     });
+    const notificationsAfterSave = await notificationObserver.snapshot();
+    assertNoRetiredExtractionNotifications(notificationBaseline, notificationsAfterSave);
     await opened.gallery
       .locator('[data-gallery-element="toolbar"] button[aria-label="Close"]')
       .click();
@@ -8168,12 +8332,20 @@ async function runRapidVideoClicks({
     }));
     assert.deepEqual(after, before, 'Rapid B close must restore host scroll and body styles');
     await page.screenshot({ path: join(output, 'quoted-rapid-a-b-after.png') });
-    return {
+    result = {
       status: 'passed',
       pageUrl,
       heldA,
       pendingB,
       bRequests,
+      hostPlayback: { initialHost, begin, pendingStart, pendingEnd, beforeB, afterB, afterA },
+      nativeNotificationCreates: {
+        baseline: notificationBaseline.calls.length,
+        duringA: notificationsDuringA.calls.length,
+        afterB: notificationsAfterB.calls.length,
+        afterA: notificationsAfterA.calls.length,
+        afterSave: notificationsAfterSave.calls.length,
+      },
       selected: opened.selectedMedia,
       retained,
       originUrl,
@@ -8184,10 +8356,60 @@ async function runRapidVideoClicks({
         sha256: createHash('sha256').update(bytes).digest('hex'),
       },
       restoration: after,
+      cleanup,
     };
+  } catch (error) {
+    validationFailed = true;
+    validationError = error;
   } finally {
-    fixtureRoutes.releaseDelayedFailure();
+    try {
+      fixtureRoutes.releaseDelayedFailure();
+    } catch (error) {
+      cleanupErrors.push(error);
+    }
+    if (notificationObserver) {
+      try {
+        await notificationObserver.dispose();
+        cleanup.notificationObserverRestored = true;
+      } catch (error) {
+        cleanupErrors.push(error);
+      }
+    }
+    if (originalLoop !== undefined) {
+      try {
+        const restored = await first.evaluate((element, loop) => {
+          if (!(element instanceof HTMLVideoElement)) {
+            throw new Error('Rapid A host video disappeared before cleanup');
+          }
+          element.pause();
+          element.loop = loop;
+          return { paused: element.paused, loop: element.loop };
+        }, originalLoop);
+        assert.deepEqual(
+          restored,
+          { paused: true, loop: originalLoop },
+          'Rapid A host playback and loop must be restored'
+        );
+        cleanup.hostVideoControlRestored = true;
+      } catch (error) {
+        cleanupErrors.push(error);
+      }
+    }
   }
+  if (validationFailed && cleanupErrors.length) {
+    throw new AggregateError(
+      [validationError, ...cleanupErrors],
+      'Rapid click validation and cleanup both failed'
+    );
+  }
+  if (validationFailed) {
+    throw validationError;
+  }
+  if (cleanupErrors.length) {
+    throw new AggregateError(cleanupErrors, 'Rapid click cleanup failed');
+  }
+  assert(result, 'Rapid click validation produced no result');
+  return result;
 }
 
 async function installBoundedExtensionRenderFault(
@@ -8782,6 +9004,778 @@ async function runDirectVideoAllowedModes({
   }
   await page.screenshot({ path: join(output, 'quoted-unmarked-modes-after.png') });
   return { status: 'passed', cases };
+}
+
+/** Inspect the installed browser's native media controls without changing their handlers. */
+async function locateOwn12NativeControl({
+  cdp,
+  evidence,
+  kind,
+  page,
+  video,
+  hoveredVolume = false,
+}: {
+  cdp: CDPSession;
+  evidence: Own12NativeControlsEvidence;
+  kind: NativeControlPoint['kind'];
+  page: Page;
+  video: Locator;
+  hoveredVolume?: boolean;
+}): Promise<NativeControlPoint> {
+  await page.bringToFront();
+  await page.waitForFunction(() => document.visibilityState === 'visible');
+  await video.scrollIntoViewIfNeeded();
+  const videoBox = await video.boundingBox();
+  assert(videoBox && videoBox.width > 0 && videoBox.height > 0, 'Native host video has no box');
+  if (!hoveredVolume) {
+    await page.mouse.move(videoBox.x + videoBox.width / 2, videoBox.y + videoBox.height - 12);
+  }
+  const geometry = await video.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const x = Math.round(rect.left + rect.width / 2);
+    const y = Math.round(rect.top + rect.height / 2);
+    return {
+      x,
+      y,
+      width: innerWidth,
+      height: innerHeight,
+      scrollX,
+      scrollY,
+      devicePixelRatio,
+      visibility: document.visibilityState,
+      connected: element.isConnected,
+      centerHitsHost: document.elementFromPoint(x, y) === element,
+      visualViewport: visualViewport
+        ? {
+            width: visualViewport.width,
+            height: visualViewport.height,
+            scale: visualViewport.scale,
+            offsetLeft: visualViewport.offsetLeft,
+            offsetTop: visualViewport.offsetTop,
+          }
+        : null,
+    };
+  });
+  assert(evidence.geometry.length < 8, 'Native control geometry observation budget exceeded');
+  const coordinateProbes: Array<{
+    viewport: { x: number; y: number };
+    document: { x: number; y: number };
+  }> = [];
+  evidence.geometry.push({ kind, videoBox, ...geometry, coordinateProbes });
+  assert(
+    geometry.visualViewport?.scale === 1 &&
+      geometry.visualViewport.offsetLeft === 0 &&
+      geometry.visualViewport.offsetTop === 0,
+    'Native control probe requires an unpinched desktop viewport'
+  );
+  assert(
+    geometry.connected && geometry.centerHitsHost,
+    'Native host video center must be visible and hit-testable'
+  );
+  assert(
+    geometry.x > 0 && geometry.x < geometry.width && geometry.y > 0 && geometry.y < geometry.height,
+    'Native host center must be inside the viewport'
+  );
+  // Identify the exact B element directly; controls still require a real pointer hit below.
+  const documentNode = await cdp.send('DOM.getDocument', { depth: 0 });
+  const hosts = await cdp.send('DOM.querySelectorAll', {
+    nodeId: documentNode.root.nodeId,
+    selector: '[data-rapid="b"] video',
+  });
+  assert.equal(hosts.nodeIds.length, 1, 'Expected one exact rapid B host video');
+  const described = await cdp.send('DOM.describeNode', {
+    nodeId: hosts.nodeIds[0]!,
+    depth: 10,
+    pierce: true,
+  });
+  assert.equal(described.node.nodeName, 'VIDEO', 'Native control host must be a video');
+
+  const entries: Array<{ node: NativeControlNode; label: string; pseudo: string | null }> = [];
+  const uaInputs: Own12NativeControlsEvidence['discovery'][number]['uaInputs'] = [];
+  let uaInputCount = 0;
+  let visited = 0;
+  const visit = (node: NativeControlNode, inUserAgentShadow: boolean, depth: number) => {
+    visited++;
+    assert(visited <= 160 && depth <= 12, 'Native controls exceeded the bounded DOM inspection');
+    const owned = inUserAgentShadow || node.shadowRootType === 'user-agent';
+    if (owned) {
+      const attributes = node.attributes ?? [];
+      const labels = [];
+      const selected: Record<string, string> = {};
+      for (let index = 0; index + 1 < attributes.length; index += 2) {
+        const key = attributes[index];
+        if (key && ['pseudo', 'class', 'id', 'aria-label', 'title', 'role', 'type'].includes(key)) {
+          const value = attributes[index + 1] ?? '';
+          selected[key] = value;
+          labels.push(`${key}=${value}`);
+        }
+      }
+      entries.push({
+        node,
+        label: `${node.nodeName} ${labels.join(' ')}`.slice(0, 220),
+        pseudo: selected.pseudo ?? null,
+      });
+      if (node.nodeName === 'INPUT') {
+        uaInputCount++;
+        if (uaInputs.length < 24) {
+          uaInputs.push({
+            backendNodeId: node.backendNodeId,
+            pseudo: selected.pseudo ?? null,
+            className: selected.class ?? null,
+            ariaLabel: selected['aria-label']?.slice(0, 100) ?? null,
+            type: selected.type ?? null,
+          });
+        }
+      }
+    }
+    for (const child of node.children ?? []) {
+      visit(child, owned, depth + 1);
+    }
+    for (const shadow of node.shadowRoots ?? []) {
+      visit(shadow, owned, depth + 1);
+    }
+  };
+  visit(described.node, false, 0);
+  const matches = ({ node, pseudo }: (typeof entries)[number]) => {
+    switch (kind) {
+      case 'play':
+        return node.nodeName === 'INPUT' && pseudo === '-webkit-media-controls-play-button';
+      case 'timeline':
+        return pseudo === '-webkit-media-controls-timeline';
+      case 'volume':
+        return pseudo === '-webkit-media-controls-volume-slider';
+    }
+  };
+  const candidates = entries.filter(matches);
+  const discovery: Own12NativeControlsEvidence['discovery'][number] = {
+    kind,
+    candidates: candidates.slice(0, 12).map(({ label }) => label),
+    uaInputs,
+    uaInputCount,
+    hostState: await video.evaluate((element) => {
+      if (!(element instanceof HTMLVideoElement)) {
+        throw new Error('OWN-12 host video missing during native control discovery');
+      }
+      return {
+        paused: element.paused,
+        currentTime: element.currentTime,
+        ended: element.ended,
+        readyState: element.readyState,
+        error: element.error?.code ?? null,
+      };
+    }),
+    probes: [],
+  };
+  evidence.discovery.push(discovery);
+  assert(uaInputCount <= 24, `${kind}: too many native input controls`);
+  assert(candidates.length <= 12, `${kind}: too many native control candidates`);
+  const descendantIds = (node: NativeControlNode): Set<number> => {
+    const ids = new Set<number>([node.backendNodeId]);
+    const append = (child: NativeControlNode) => {
+      ids.add(child.backendNodeId);
+      for (const next of child.children ?? []) {
+        append(next);
+      }
+      for (const next of child.shadowRoots ?? []) {
+        append(next);
+      }
+    };
+    for (const child of node.children ?? []) {
+      append(child);
+    }
+    for (const child of node.shadowRoots ?? []) {
+      append(child);
+    }
+    return ids;
+  };
+  for (const { node, label } of candidates) {
+    const probe: NativeControlProbe = {
+      backendNodeId: node.backendNodeId,
+      rejection: 'box-unavailable',
+    };
+    discovery.probes.push(probe);
+    const box = await cdp
+      .send('DOM.getBoxModel', { backendNodeId: node.backendNodeId })
+      .catch(() => null);
+    if (!box) {
+      continue;
+    }
+    const quad = box.model.border;
+    const xs = [quad[0], quad[2], quad[4], quad[6]];
+    const ys = [quad[1], quad[3], quad[5], quad[7]];
+    if (xs.some((value) => value === undefined) || ys.some((value) => value === undefined)) {
+      probe.rejection = 'invalid-box';
+      continue;
+    }
+    const left = Math.min(...(xs as number[]));
+    const right = Math.max(...(xs as number[]));
+    const top = Math.min(...(ys as number[]));
+    const bottom = Math.max(...(ys as number[]));
+    if (right - left < 4 || bottom - top < 4) {
+      probe.rejection = 'too-small';
+      continue;
+    }
+    const x = Math.round(left + (right - left) * (kind === 'timeline' ? 0.65 : 0.5));
+    const y = Math.round((top + bottom) / 2);
+    if (
+      x < videoBox.x ||
+      x > videoBox.x + videoBox.width ||
+      y < videoBox.y ||
+      y > videoBox.y + videoBox.height
+    ) {
+      probe.rejection = 'outside-video';
+      continue;
+    }
+    probe.viewport = { x, y };
+    // getBoxModel and mouse input use viewport points; CDP hit testing uses document points.
+    const documentPoint = await page.evaluate(
+      ({ viewportX, viewportY }) => ({
+        x: Math.round(viewportX + scrollX),
+        y: Math.round(viewportY + scrollY),
+      }),
+      { viewportX: x, viewportY: y }
+    );
+    coordinateProbes.push({ viewport: { x, y }, document: documentPoint });
+    probe.document = documentPoint;
+    const hits = await Promise.all([
+      cdp.send('DOM.getNodeForLocation', { ...documentPoint, includeUserAgentShadowDOM: true }),
+      cdp.send('DOM.getNodeForLocation', { ...documentPoint, includeUserAgentShadowDOM: false }),
+    ]).catch(() => null);
+    if (!hits) {
+      probe.rejection = 'hit-query-error';
+      continue;
+    }
+    const [hit, hostHit] = hits;
+    probe.hitBackendNodeId = hit.backendNodeId;
+    probe.hostBackendNodeId = hostHit.backendNodeId;
+    if (hostHit.backendNodeId !== described.node.backendNodeId) {
+      probe.rejection = 'wrong-host';
+      continue;
+    }
+    if (!descendantIds(node).has(hit.backendNodeId)) {
+      probe.rejection = 'wrong-descendant';
+      continue;
+    }
+    probe.rejection = 'accepted';
+    return { kind, x, y, node: label, hitBackendNodeId: hit.backendNodeId, documentPoint };
+  }
+  if (kind === 'volume' && !hoveredVolume) {
+    const button = entries.find(
+      ({ node, pseudo }) =>
+        node.nodeName === 'INPUT' && pseudo === '-webkit-media-controls-mute-button'
+    );
+    if (button) {
+      const box = await cdp
+        .send('DOM.getBoxModel', { backendNodeId: button.node.backendNodeId })
+        .catch(() => null);
+      if (box) {
+        const quad = box.model.border;
+        const x = Math.round((quad[0]! + quad[2]! + quad[4]! + quad[6]!) / 4);
+        const y = Math.round((quad[1]! + quad[3]! + quad[5]! + quad[7]!) / 4);
+        await page.mouse.move(x, y);
+        const slider = candidates[0];
+        const started = Date.now();
+        let attempts = 0;
+        let boxAvailable = false;
+        if (slider) {
+          do {
+            attempts++;
+            const sliderBox = await cdp
+              .send('DOM.getBoxModel', { backendNodeId: slider.node.backendNodeId })
+              .catch(() => null);
+            // Closed controls can expose a zero-width box before the native hover delay ends.
+            boxAvailable = Boolean(
+              sliderBox && sliderBox.model.width >= 4 && sliderBox.model.height >= 4
+            );
+            if (!boxAvailable && Date.now() - started < 2000) {
+              await page.waitForTimeout(50);
+            }
+          } while (!boxAvailable && Date.now() - started < 2000);
+        }
+        discovery.hoverWait = { attempts, elapsedMs: Date.now() - started, boxAvailable };
+        return locateOwn12NativeControl({
+          cdp,
+          evidence,
+          kind,
+          page,
+          video,
+          hoveredVolume: true,
+        });
+      }
+    }
+  }
+  throw new Error(`${kind}: installed Edge native control was not identified and hit-tested`);
+}
+
+async function runOwn12NativeControls({
+  apiResponses,
+  compactApiResponses,
+  context,
+  extensionPage,
+  fixtureRoutes,
+  output,
+  qualityApiResponses,
+  quotedApiResponses,
+}: {
+  apiResponses: ApiRecord[];
+  compactApiResponses: ApiRecord[];
+  context: BrowserContext;
+  extensionPage: Page;
+  fixtureRoutes: Awaited<ReturnType<typeof installFixtureRoutes>>;
+  output: string;
+  qualityApiResponses: ApiRecord[];
+  quotedApiResponses: ApiRecord[];
+}): Promise<Own12NativeControlsEvidence> {
+  const metadataCounts = () => ({
+    generic: apiResponses.length,
+    quoted: quotedApiResponses.length,
+    quality: qualityApiResponses.length,
+    compact: compactApiResponses.length,
+  });
+  const evidence: Own12NativeControlsEvidence = {
+    status: 'pending',
+    geometry: [],
+    discovery: [],
+    events: [],
+    cleanup: {
+      observerRemoved: false,
+      cdpDetached: false,
+      listenersRemoved: false,
+      pageClosed: false,
+      errors: [],
+    },
+  };
+  let page: Page;
+  try {
+    page = await context.newPage();
+  } catch (error) {
+    evidence.status = 'failed';
+    evidence.error = safeError(error);
+    await writeFile(
+      join(output, 'own12-native-controls-observations.json'),
+      JSON.stringify(evidence, null, 2)
+    );
+    throw error;
+  }
+  const pageErrors: string[] = [];
+  const onPageError = (error: Error) => {
+    if (pageErrors.length < 8) {
+      pageErrors.push(error.message.slice(0, 500));
+    }
+  };
+  page.on('pageerror', onPageError);
+  let cdp: CDPSession | undefined;
+  let observerInstalled = false;
+  let primaryError: unknown;
+  let receiptError: unknown;
+  let rapidBAvArmed = false;
+  try {
+    evidence.transport = fixtureRoutes.armOwn12RapidBAudioVideo();
+    rapidBAvArmed = true;
+    const pageUrl = `https://x.com/rapid_a/status/${RAPID_CLICK_A}`;
+    const nativeSetting: ControlledSettingEvidence = {};
+    evidence.native = { status: 'pending', controlledSetting: nativeSetting };
+    evidence.native = await withControlledFixtureVideoMode(
+      extensionPage,
+      nativeSetting,
+      async () => {
+        await page.goto(pageUrl);
+        await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+        const video = page.locator('[data-rapid="b"] video');
+        await video.scrollIntoViewIfNeeded();
+        await page.waitForFunction(() => {
+          const host = document.querySelector('[data-rapid="b"] video');
+          return host instanceof HTMLVideoElement && host.readyState >= 2 && host.error === null;
+        });
+        const storedMode = storedVideoClickMode(
+          (await readStoredVideoSettings(extensionPage)).settings
+        );
+        assert.equal(storedMode, 'block-controls-only');
+        const apiStart = quotedApiResponses.length;
+        const metadataStart = metadataCounts();
+        const initial = await hostVideoState(video);
+        assert(initial.paused && initial.readyState >= 2 && initial.error === null);
+        assert.equal(initial.width, 320);
+        assert.equal(initial.height, 180);
+        await page.evaluate(() => {
+          const host = document.querySelector('[data-rapid="b"] video');
+          if (!(host instanceof HTMLVideoElement)) {
+            throw new Error('OWN-12 host video missing');
+          }
+          const records: Array<{
+            type: string;
+            trusted: boolean;
+            time: number;
+            volume: number;
+            paused: boolean;
+          }> = [];
+          const onMediaEvent = (event: Event) => {
+            if (event.target !== host) {
+              return;
+            }
+            if (records.length >= 24) {
+              throw new Error('OWN-12 native event budget exceeded');
+            }
+            records.push({
+              type: event.type,
+              trusted: event.isTrusted,
+              time: host.currentTime,
+              volume: host.volume,
+              paused: host.paused,
+            });
+          };
+          for (const type of ['play', 'pause', 'seeking', 'seeked', 'volumechange']) {
+            host.addEventListener(type, onMediaEvent, true);
+          }
+          (
+            window as Window & {
+              __xegOwn12NativeEvents?: {
+                records: typeof records;
+                dispose: () => void;
+              };
+            }
+          ).__xegOwn12NativeEvents = {
+            records,
+            dispose: () => {
+              for (const type of ['play', 'pause', 'seeking', 'seeked', 'volumechange']) {
+                host.removeEventListener(type, onMediaEvent, true);
+              }
+            },
+          };
+        });
+        observerInstalled = true;
+        cdp = await context.newCDPSession(page);
+        await cdp.send('DOM.enable');
+        const assertNativeOnly = async (label: string) => {
+          assert.equal(
+            await page.locator('[data-xeg-gallery-container]').count(),
+            0,
+            `${label}: native control opened a gallery`
+          );
+          assert.deepEqual(
+            metadataCounts(),
+            metadataStart,
+            `${label}: metadata request dispatched`
+          );
+        };
+        const play = await locateOwn12NativeControl({
+          cdp,
+          evidence,
+          kind: 'play',
+          page,
+          video,
+        });
+        await page.mouse.click(play.x, play.y);
+        await page.waitForFunction(() => {
+          const host = document.querySelector('[data-rapid="b"] video');
+          return (
+            host instanceof HTMLVideoElement &&
+            !host.paused &&
+            host.currentTime > 0.15 &&
+            host.videoWidth === 320 &&
+            host.videoHeight === 180 &&
+            host.error === null
+          );
+        });
+        const playing = await hostVideoState(video);
+        assert.equal(playing.ended, false);
+        await assertNativeOnly('Play');
+        const pause = await locateOwn12NativeControl({
+          cdp,
+          evidence,
+          kind: 'play',
+          page,
+          video,
+        });
+        await page.mouse.click(pause.x, pause.y);
+        await page.waitForFunction(() => {
+          const host = document.querySelector('[data-rapid="b"] video');
+          return host instanceof HTMLVideoElement && host.paused && !host.ended;
+        });
+        const paused = await hostVideoState(video);
+        await page.waitForTimeout(350);
+        const pausedStable = await hostVideoState(video);
+        assert(pausedStable.currentTime - paused.currentTime < 0.05);
+        await assertNativeOnly('Pause');
+        const timeline = await locateOwn12NativeControl({
+          cdp,
+          evidence,
+          kind: 'timeline',
+          page,
+          video,
+        });
+        await page.mouse.click(timeline.x, timeline.y);
+        await page.waitForFunction((start) => {
+          const host = document.querySelector('[data-rapid="b"] video');
+          return host instanceof HTMLVideoElement && host.currentTime > start + 0.25;
+        }, pausedStable.currentTime);
+        const seeked = await hostVideoState(video);
+        assert.equal(seeked.paused, true);
+        await assertNativeOnly('Seek');
+        const volume = await locateOwn12NativeControl({
+          cdp,
+          evidence,
+          kind: 'volume',
+          page,
+          video,
+        });
+        await page.mouse.click(volume.x, volume.y);
+        await page.waitForFunction((prior) => {
+          const host = document.querySelector('[data-rapid="b"] video');
+          return host instanceof HTMLVideoElement && Math.abs(host.volume - prior) > 0.1;
+        }, seeked.volume);
+        const volumeAfter = await hostVideoState(video);
+        assert.equal(volumeAfter.paused, true);
+        await assertNativeOnly('Volume');
+        // Native events are queued after control values change; wait for the observed events.
+        await page.waitForFunction(
+          () => {
+            const records = (
+              window as Window & {
+                __xegOwn12NativeEvents?: { records: Own12NativeControlsEvidence['events'] };
+              }
+            ).__xegOwn12NativeEvents?.records;
+            return ['play', 'pause', 'seeked', 'volumechange'].every((type) =>
+              records?.some((event) => event.type === type && event.trusted)
+            );
+          },
+          undefined,
+          { timeout: 2_000 }
+        );
+        evidence.events = await page.evaluate(
+          () =>
+            (
+              window as Window & {
+                __xegOwn12NativeEvents?: { records: Own12NativeControlsEvidence['events'] };
+              }
+            ).__xegOwn12NativeEvents?.records ?? []
+        );
+        for (const type of ['play', 'pause', 'seeked', 'volumechange']) {
+          assert(
+            evidence.events.some((event) => event.type === type && event.trusted),
+            `${type}: trusted native media event missing`
+          );
+        }
+        assert.deepEqual(pageErrors, []);
+        return {
+          pageUrl,
+          storedMode,
+          controlledSetting: nativeSetting,
+          initial,
+          controls: { play, pause, timeline, volume },
+          playing,
+          paused,
+          pausedStable,
+          seeked,
+          volumeAfter,
+          metadata: { before: metadataStart, after: metadataCounts() },
+          api: quotedApiResponses.slice(apiStart),
+        };
+      },
+      'block-controls-only'
+    );
+    await page.evaluate(() => {
+      const state = (window as Window & { __xegOwn12NativeEvents?: { dispose: () => void } })
+        .__xegOwn12NativeEvents;
+      state?.dispose();
+      delete (window as Window & { __xegOwn12NativeEvents?: unknown }).__xegOwn12NativeEvents;
+    });
+    observerInstalled = false;
+    evidence.cleanup.observerRemoved = true;
+    const nativeCdp = cdp;
+    assert(nativeCdp, 'OWN-12 native control CDP session is missing');
+    await nativeCdp.send('DOM.disable');
+    await nativeCdp.detach();
+    cdp = undefined;
+    evidence.cleanup.cdpDetached = true;
+    const photoSetting: ControlledSettingEvidence = {};
+    evidence.adjacentPhoto = { status: 'pending', controlledSetting: photoSetting };
+    evidence.adjacentPhoto = await withControlledFixtureVideoMode(
+      extensionPage,
+      photoSetting,
+      async () => {
+        await page.goto(pageUrl);
+        await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+        const storedMode = storedVideoClickMode(
+          (await readStoredVideoSettings(extensionPage)).settings
+        );
+        assert.equal(storedMode, 'block-all');
+        const video = page.locator('[data-rapid="b"] video');
+        await video.scrollIntoViewIfNeeded();
+        const videoHit = await video.evaluate((element) => {
+          const rect = element.getBoundingClientRect();
+          const x = rect.left + rect.width / 2;
+          const y = rect.top + rect.height / 2;
+          return { x, y, hit: document.elementFromPoint(x, y) === element };
+        });
+        assert.equal(videoHit.hit, true, 'block-all B video surface is not hit-tested');
+        const videoApiStart = quotedApiResponses.length;
+        const videoMetadataStart = metadataCounts();
+        await page.mouse.click(videoHit.x, videoHit.y);
+        await page.waitForTimeout(150);
+        assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0);
+        assert.deepEqual(
+          metadataCounts(),
+          videoMetadataStart,
+          'block-all B video dispatched gallery metadata'
+        );
+        const photo = page.locator('[data-rapid="b"] [data-testid="tweetPhoto"] img');
+        await photo.scrollIntoViewIfNeeded();
+        await page.evaluate(() => window.scrollBy(0, -100));
+        await photo.focus();
+        const snapshot = () =>
+          page.evaluate(() => {
+            const target = document.querySelector(
+              '[data-rapid="b"] [data-testid="tweetPhoto"] img'
+            );
+            return {
+              focused: document.activeElement === target,
+              scrollY,
+              bodyStyle: document.body.style.cssText,
+              background: ['#host-layout-spacer', 'main'].map((selector) => {
+                const node = document.querySelector(selector);
+                return {
+                  hidden: node?.hasAttribute('data-xeg-gallery-hidden') ?? false,
+                  inert: node?.hasAttribute('inert') ?? false,
+                  ariaHidden: node?.getAttribute('aria-hidden') ?? null,
+                };
+              }),
+            };
+          });
+        const before = await snapshot();
+        assert(before.focused && before.scrollY > 0);
+        const photoHit = await photo.evaluate((element) => {
+          const rect = element.getBoundingClientRect();
+          const x = rect.left + rect.width / 2;
+          const y = rect.top + rect.height / 2;
+          return { x, y, hit: document.elementFromPoint(x, y) === element };
+        });
+        assert.equal(photoHit.hit, true, 'B photo must be the ordinary hit-tested target');
+        await page.mouse.click(photoHit.x, photoHit.y);
+        const gallery = page.locator('[data-xeg-gallery-container]');
+        await gallery.waitFor({ state: 'visible' });
+        const selected = await assertQuotedSelection(page, {
+          position: 1,
+          total: 2,
+          type: 'image',
+          path: '/media/QQuoteTwoPhoto.jpg',
+        });
+        const originUrl = await assertQuotedOriginLink(
+          gallery,
+          `https://x.com/rapid_b/status/${RAPID_CLICK_B}`
+        );
+        const api = quotedApiResponses.slice(videoApiStart);
+        assert.deepEqual(
+          api.map(({ tweetId }) => tweetId),
+          [RAPID_CLICK_B]
+        );
+        assert.deepEqual(metadataCounts(), {
+          ...videoMetadataStart,
+          quoted: videoMetadataStart.quoted + 1,
+        });
+        await page.keyboard.press('Escape');
+        await gallery.waitFor({ state: 'detached' });
+        const after = await snapshot();
+        assert.deepEqual(after, before, 'B photo close must restore host focus and isolation');
+        assert.deepEqual(pageErrors, []);
+        return {
+          pageUrl,
+          storedMode,
+          controlledSetting: photoSetting,
+          videoHit,
+          photoHit,
+          selected,
+          originUrl,
+          api,
+          metadata: { before: videoMetadataStart, after: metadataCounts() },
+          before,
+          after,
+        };
+      },
+      'block-all'
+    );
+  } catch (error) {
+    primaryError = error;
+    evidence.status = 'failed';
+    evidence.error = safeError(error);
+  } finally {
+    if (rapidBAvArmed) {
+      fixtureRoutes.clearOwn12RapidBAudioVideo();
+      evidence.transport!.restored = true;
+    }
+    if (observerInstalled && !page.isClosed()) {
+      try {
+        evidence.events = await page.evaluate(() => {
+          const state = (
+            window as Window & {
+              __xegOwn12NativeEvents?: {
+                records: Own12NativeControlsEvidence['events'];
+                dispose: () => void;
+              };
+            }
+          ).__xegOwn12NativeEvents;
+          const records = state?.records ?? [];
+          state?.dispose();
+          delete (window as Window & { __xegOwn12NativeEvents?: unknown }).__xegOwn12NativeEvents;
+          return records;
+        });
+        evidence.cleanup.observerRemoved = true;
+      } catch (error) {
+        evidence.cleanup.errors.push(safeError(error));
+      }
+    } else if (!observerInstalled) {
+      evidence.cleanup.observerRemoved = true;
+    }
+    if (cdp) {
+      try {
+        await cdp.send('DOM.disable');
+      } catch (error) {
+        evidence.cleanup.errors.push(safeError(error));
+      }
+      try {
+        await cdp.detach();
+        evidence.cleanup.cdpDetached = true;
+      } catch (error) {
+        evidence.cleanup.errors.push(safeError(error));
+      }
+    } else {
+      evidence.cleanup.cdpDetached = true;
+    }
+    page.off('pageerror', onPageError);
+    evidence.cleanup.listenersRemoved = true;
+    try {
+      await page.close();
+      evidence.cleanup.pageClosed = true;
+    } catch (error) {
+      evidence.cleanup.errors.push(safeError(error));
+    }
+    if (!primaryError && evidence.cleanup.errors.length === 0) {
+      evidence.status = 'passed';
+    }
+    if (evidence.cleanup.errors.length) {
+      evidence.status = 'failed';
+    }
+    try {
+      await writeFile(
+        join(output, 'own12-native-controls-observations.json'),
+        JSON.stringify(evidence, null, 2)
+      );
+    } catch (error) {
+      receiptError = error;
+    }
+  }
+  const errors = [
+    ...(primaryError ? [primaryError] : []),
+    ...evidence.cleanup.errors.map((message) => new Error(message)),
+    ...(receiptError ? [receiptError] : []),
+  ];
+  if (errors.length > 1) {
+    throw new AggregateError(errors, 'OWN-12 validation and cleanup failed');
+  }
+  if (errors.length === 1) {
+    throw errors[0];
+  }
+  return evidence;
 }
 
 async function quotedTargetDepth(target: Locator) {
@@ -11321,6 +12315,7 @@ async function exerciseInstalledExtension(
   let svgTargetMatrix: AcceptanceReceipt = { status: 'pending' };
   let blockAllDirectVideo: AcceptanceReceipt = { status: 'pending' };
   let directVideoAllowedModes: AcceptanceReceipt = { status: 'pending' };
+  let own12NativeControls: Own12NativeControlsEvidence | AcceptanceReceipt = { status: 'pending' };
   let delayedVideoFailures: AcceptanceReceipt = { status: 'pending' };
   let rapidVideoClicks: AcceptanceReceipt = { status: 'pending' };
   let modelessRenderRecovery: AcceptanceReceipt = { status: 'pending' };
@@ -11787,6 +12782,21 @@ async function exerciseInstalledExtension(
       acceptanceFailures.push(error);
     }
     try {
+      own12NativeControls = await runOwn12NativeControls({
+        apiResponses: fixtureRoutes.apiResponses,
+        compactApiResponses: fixtureRoutes.compactApiResponses,
+        context,
+        extensionPage,
+        fixtureRoutes,
+        output,
+        qualityApiResponses: fixtureRoutes.qualityApiResponses,
+        quotedApiResponses: fixtureRoutes.quotedApiResponses,
+      });
+    } catch (error) {
+      own12NativeControls = { status: 'failed', error: safeError(error) };
+      acceptanceFailures.push(error);
+    }
+    try {
       delayedVideoFailures = await runDelayedVideoFailures({
         context,
         extensionId,
@@ -11815,7 +12825,9 @@ async function exerciseInstalledExtension(
     }
     try {
       rapidVideoClicks = await runRapidVideoClicks({
+        context,
         downloads,
+        extensionId,
         extensionPage,
         fixtureRoutes,
         nativeLoopback,
@@ -12025,6 +13037,7 @@ async function exerciseInstalledExtension(
       svgTargetMatrix,
       blockAllDirectVideo,
       directVideoAllowedModes,
+      own12NativeControls,
       delayedVideoFailures,
       rapidVideoClicks,
       modelessRenderRecovery,
@@ -12113,6 +13126,7 @@ async function exerciseInstalledExtension(
             svgTargetMatrix,
             blockAllDirectVideo,
             directVideoAllowedModes,
+            own12NativeControls,
             delayedVideoFailures,
             rapidVideoClicks,
             modelessRenderRecovery,
