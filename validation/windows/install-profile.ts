@@ -332,6 +332,7 @@ type SourceQualityEvidence = {
   selection?: unknown;
   current?: unknown;
   zip?: unknown;
+  reopen?: unknown;
   restoration?: unknown;
   api?: ApiRecord[];
   screenshots?: string[];
@@ -9392,20 +9393,200 @@ async function runSourceQualityCycle({
     body: true,
     isolation: true,
   };
-  evidence.api = qualityApiResponses.slice(apiStart);
-  evidence.requests = qualityRequests.slice(requestStart);
+  const firstRequests = qualityRequests.slice(requestStart);
   assert(
     QUALITY_IMAGE_PATHS.every((path) =>
-      evidence.requests.some(
-        (request) => request.path === `/media/${path}` && request.name === 'orig'
-      )
+      firstRequests.some((request) => request.path === `/media/${path}` && request.name === 'orig')
     ),
     'Source-quality ZIP must request the original form of all three images'
   );
+  const originalFetchCount = () =>
+    qualityRequests
+      .slice(requestStart)
+      .filter(
+        (request) =>
+          request.path === `/media/${QUALITY_IMAGE_PATHS[1]}` &&
+          request.name === 'orig' &&
+          request.resourceType === 'fetch'
+      ).length;
+  const firstOriginalFetchCount = originalFetchCount();
+  assert(
+    firstOriginalFetchCount > 0,
+    'First ZIP must fetch the selected original into media cache'
+  );
+
+  const documentBeforeReopen = await page.evaluate(() => ({
+    url: location.href,
+    timeOrigin: performance.timeOrigin,
+  }));
+  assert.equal(documentBeforeReopen.url, QUALITY_FIXTURE_URL);
+  assert.equal(await trigger.getAttribute('src'), selectedSource.observedUrl);
+  const reopenHostImage = await waitForValue(async () => {
+    const state = await trigger.evaluate((element) => {
+      if (!(element instanceof HTMLImageElement)) {
+        throw new Error('Reopened source-quality host image is missing');
+      }
+      return {
+        complete: element.complete,
+        width: element.naturalWidth,
+        height: element.naturalHeight,
+      };
+    });
+    return state.complete && state.width > 0 ? state : undefined;
+  }, 'decoded small source-quality host image before reopen');
+  assert.equal(reopenHostImage.width, selectedSource.display.width);
+  assert.equal(reopenHostImage.height, selectedSource.display.height);
+  await page.screenshot({ path: join(output, 'source-quality-reopen-before.png') });
+
+  const reopenStartedAtMs = performance.now();
+  await trigger.click();
+  await gallery.waitFor({ state: 'visible', timeout: 15_000 });
+  const reopenSelection = await assertQuotedSelection(page, {
+    position: 2,
+    total: 3,
+    type: 'image',
+    path: `/media/${QUALITY_IMAGE_PATHS[1]}`,
+  });
+  assert.equal(reopenSelection.source, selectedSource.originalUrl);
+  const reopenImage = await gallery
+    .locator('[data-gallery-element="item"][data-index="1"] img')
+    .evaluate((element) => {
+      if (!(element instanceof HTMLImageElement)) {
+        throw new Error('Reopened source-quality selected image is missing');
+      }
+      return { width: element.naturalWidth, height: element.naturalHeight };
+    });
+  assert.equal(reopenImage.width, selectedSource.original.width);
+  assert.equal(reopenImage.height, selectedSource.original.height);
+  const reopenOrigin = await assertQuotedOriginLink(gallery, QUALITY_FIXTURE_URL);
+  assert.deepEqual(
+    await page.evaluate(() => ({ url: location.href, timeOrigin: performance.timeOrigin })),
+    documentBeforeReopen
+  );
+  await page.screenshot({ path: join(output, 'source-quality-reopen-gallery.png') });
+
+  const knownBeforeReopenCurrent = new Set(
+    (await queryDownloads(extensionPage)).map(({ id }) => id)
+  );
+  const reopenNativeMark = nativeLoopback.mark();
+  const reopenFetchMark = pageFetches.length;
+  const reopenCurrentStartedAtMs = performance.now();
+  await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download"]').click();
+  const reopenCurrent = await waitForDownload(
+    extensionPage,
+    knownBeforeReopenCurrent,
+    `qualityuser_${QUALITY_TWEET_ID}_1 (1).jpg`
+  );
+  assert.notEqual(reopenCurrent.id, current.id);
+  const reopenCurrentPath = relative(downloads, reopenCurrent.filename);
+  assert(
+    reopenCurrentPath && !reopenCurrentPath.startsWith('..') && !isAbsolute(reopenCurrentPath),
+    'Reopened source-quality single escaped the owned directory'
+  );
+  const { bytes: reopenCurrentBytes } = await readExactDownloadFile(
+    reopenCurrent.filename,
+    images[1].length
+  );
+  assert(reopenCurrentBytes.equals(images[1]), 'Reopened single must save selected original bytes');
+  const reopenNative = await assertNativeSingle({
+    extensionPage,
+    knownIds: knownBeforeReopenCurrent,
+    download: reopenCurrent,
+    expectedUrl: selectedSource.originalUrl,
+    expectedBytes: images[1],
+    nativeLoopback,
+    nativeMark: reopenNativeMark,
+    pageFetches: pageFetches.slice(reopenFetchMark),
+  });
+  await copyFile(reopenCurrent.filename, join(output, 'source-quality-reopen-current.jpg'));
+
+  const knownBeforeReopenZip = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+  const reopenZipStartedAtMs = performance.now();
+  await gallery
+    .locator('[data-gallery-element="toolbar"] button[aria-label="Download 3 shown files as ZIP"]')
+    .click();
+  const reopenZip = await waitForDownload(
+    extensionPage,
+    knownBeforeReopenZip,
+    `qualityuser_${QUALITY_TWEET_ID} (1).zip`
+  );
+  assert.notEqual(reopenZip.id, zip.id);
+  const reopenZipPath = relative(downloads, reopenZip.filename);
+  assert(
+    reopenZipPath && !reopenZipPath.startsWith('..') && !isAbsolute(reopenZipPath),
+    'Reopened source-quality ZIP escaped the owned directory'
+  );
+  const { bytes: reopenZipBytes } = await readExactDownloadFile(
+    reopenZip.filename,
+    expectedStoredZipBytes(expectedEntries)
+  );
+  const reopenVerified = verifyStoredZip(reopenZipBytes, expectedEntries);
+  assert.deepEqual(
+    (await queryDownloads(extensionPage))
+      .filter(({ id }) => !knownBeforeReopenZip.has(id))
+      .map(({ id }) => id),
+    [reopenZip.id],
+    'Reopened source-quality ZIP must create exactly one native download'
+  );
+  await copyFile(reopenZip.filename, join(output, 'source-quality-reopen.zip'));
+  const secondOriginalFetchCount = originalFetchCount();
+  assert.equal(
+    secondOriginalFetchCount,
+    firstOriginalFetchCount,
+    'Reopened ZIP must reuse the selected original from media cache'
+  );
+
+  await page.keyboard.press('Escape');
+  await gallery.waitFor({ state: 'detached' });
+  const reopenAfter = await hostSnapshot(page, 1);
+  assert.deepEqual(reopenAfter.background, before.background);
+  assert.deepEqual(reopenAfter.bodyStyle, before.bodyStyle);
+  assert.equal(reopenAfter.activeElementAlt, before.triggerAlt);
+  assert.equal(reopenAfter.scrollRestoration, before.scrollRestoration);
+  assert.equal(reopenAfter.scrollY, before.scrollY);
+  assert.deepEqual(
+    await page.evaluate(() => ({ url: location.href, timeOrigin: performance.timeOrigin })),
+    documentBeforeReopen
+  );
+  await page.screenshot({ path: join(output, 'source-quality-reopen-after.png') });
+  evidence.reopen = {
+    document: documentBeforeReopen,
+    hostImage: { url: selectedSource.observedUrl, ...reopenHostImage },
+    selection: { ...reopenSelection, ...reopenImage, origin: reopenOrigin },
+    current: {
+      id: reopenCurrent.id,
+      filename: basename(reopenCurrent.filename),
+      file: 'source-quality-reopen-current.jpg',
+      ...imageReceipt(reopenCurrentBytes),
+      elapsedMs: performance.now() - reopenCurrentStartedAtMs,
+      native: reopenNative,
+    },
+    zip: {
+      id: reopenZip.id,
+      filename: basename(reopenZip.filename),
+      file: 'source-quality-reopen.zip',
+      ...imageReceipt(reopenZipBytes),
+      elapsedMs: performance.now() - reopenZipStartedAtMs,
+      verified: reopenVerified,
+    },
+    originalFetchCount: { first: firstOriginalFetchCount, second: secondOriginalFetchCount },
+    restoration: {
+      focus: reopenAfter.activeElementAlt === before.triggerAlt,
+      scroll: reopenAfter.scrollY === before.scrollY,
+      body: true,
+      isolation: true,
+    },
+    elapsedMs: performance.now() - reopenStartedAtMs,
+  };
+  evidence.api = qualityApiResponses.slice(apiStart);
+  evidence.requests = qualityRequests.slice(requestStart);
   evidence.screenshots = [
     'source-quality-before.png',
     'source-quality-gallery.png',
     'source-quality-after.png',
+    'source-quality-reopen-before.png',
+    'source-quality-reopen-gallery.png',
+    'source-quality-reopen-after.png',
   ];
   evidence.elapsedMs = performance.now() - startedAtMs;
   evidence.status = 'passed';
