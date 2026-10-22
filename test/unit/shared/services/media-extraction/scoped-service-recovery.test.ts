@@ -350,11 +350,10 @@ describe('integrated scoped recovery and delayed identity', () => {
       httpGet.mockResolvedValue({ ok: true, status: 200, data: api });
       document.body.innerHTML = `<article><a href="/author/status/222"><time>Now</time></a>
         <a href="/author/status/222/photo/1"><img id="target" src="${clickedUrl}"></a>
-        <a href="/author/status/222/photo/2"><img src="https://pbs.twimg.com/media/second.jpg"></a></article>`;
+        <a href="/author/status/222/photo/2"><img id="healthy-neighbor" src="https://pbs.twimg.com/media/second.jpg"></a></article>`;
 
-      const result = await new MediaExtractionService().extractFromClickedElement(
-        document.getElementById('target')!
-      );
+      const service = new MediaExtractionService();
+      const result = await service.extractFromClickedElement(document.getElementById('target')!);
 
       expect(httpGet).toHaveBeenCalledOnce();
       expect(result.success).toBe(recoverable);
@@ -371,6 +370,15 @@ describe('integrated scoped recovery and delayed identity', () => {
       } else {
         expect(result.mediaItems).toEqual([]);
       }
+      const healthy = await service.extractFromClickedElement(
+        document.getElementById('healthy-neighbor')!
+      );
+      expect(healthy.success).toBe(true);
+      expect(healthy.mediaItems[healthy.clickedIndex!]).toMatchObject({
+        tweetId: '222',
+        url: 'https://pbs.twimg.com/media/second.jpg?format=jpg&name=orig',
+      });
+      service.dispose();
     }
   );
 });

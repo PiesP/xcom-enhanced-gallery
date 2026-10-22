@@ -857,7 +857,7 @@ describe('production quoted-video pipeline', () => {
     respond(
       tweet(
         '222',
-        [video('800')],
+        [video('799'), video('800')],
         tweet('111', [
           {
             type: 'photo',
@@ -880,6 +880,7 @@ describe('production quoted-video pipeline', () => {
       ['111', 'https://pbs.twimg.com/media/quote-photo.jpg?format=jpg&name=orig'],
       ['111', source('701')],
       ['111', source('700')],
+      ['222', source('799')],
       ['222', source('800')],
     ]);
     expect(gif.mediaItems[1]).toMatchObject({
@@ -894,8 +895,11 @@ describe('production quoted-video pipeline', () => {
     rootTarget.setAttribute('poster', poster('800'));
     const root = await service.extractFromClickedElement(rootTarget);
     expect(root.success).toBe(true);
-    expect(root.clickedIndex).toBe(3);
-    expect(root.mediaItems[3]).toMatchObject({
+    expect(root.clickedIndex).toBe(4);
+    expect(root.mediaItems.map((item) => [item.tweetId, item.url])).toEqual(
+      gif.mediaItems.map((item) => [item.tweetId, item.url])
+    );
+    expect(root.mediaItems[4]).toMatchObject({
       tweetId: '222',
       tweetUsername: 'author_222',
       tweetText: 'Post 222',
