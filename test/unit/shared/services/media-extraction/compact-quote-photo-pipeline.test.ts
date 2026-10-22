@@ -152,29 +152,42 @@ describe('compact inner quote photo, preserving observed overlay ownership', () 
     expect(result.mediaItems.some((item) => item.tweetId === A)).toBe(false);
   });
 
-  it('retains C ownership and observed source on a 403 DOM fallback', async () => {
-    const parentText = document.createElement('div');
-    parentText.dataset.testid = 'tweetText';
-    parentText.textContent = 'Middle post text belongs to B';
-    element<HTMLElement>('#compact-b article').prepend(parentText);
-    httpGet.mockResolvedValue({ ok: false, status: 403, data: {} });
-    const result = await new MediaExtractionService().extractFromClickedElement(
-      element<HTMLAnchorElement>('#c-overlay')
-    );
-    expect(requestedId()).toBe(C);
-    expect(result.success).toBe(true);
-    expect(result.metadata?.sourceType).toBe('dom-fallback');
-    expect(result.clickedIndex).toBe(0);
-    expect(result.mediaItems).toHaveLength(1);
-    expect(result.mediaItems[0]).toMatchObject({
-      tweetId: C,
-      tweetUsername: 'inner_fixture',
-      tweetTextContent: undefined,
-      url: selectedPreview,
-      downloadSource: { url: selectedOriginal, provenance: 'dom' },
-    });
-    expect(result.mediaItems.some((item) => item.tweetId === A || item.tweetId === B)).toBe(false);
-  });
+  it.each([0, 2])(
+    'retains C ownership without borrowing a caption when C has %i text nodes',
+    async (textCount) => {
+      const parentText = document.createElement('div');
+      parentText.dataset.testid = 'tweetText';
+      parentText.textContent = 'Middle post text belongs to B';
+      element<HTMLElement>('#compact-b article').prepend(parentText);
+      const innerQuote = element<HTMLElement>('#compact-c');
+      innerQuote.dataset.testid = 'quoteTweet';
+      for (let index = 0; index < textCount; index++) {
+        const innerText = document.createElement('div');
+        innerText.dataset.testid = 'tweetText';
+        innerText.textContent = `Candidate C caption ${index + 1}`;
+        innerQuote.append(innerText);
+      }
+      httpGet.mockResolvedValue({ ok: false, status: 403, data: {} });
+      const result = await new MediaExtractionService().extractFromClickedElement(
+        element<HTMLAnchorElement>('#c-overlay')
+      );
+      expect(requestedId()).toBe(C);
+      expect(result.success).toBe(true);
+      expect(result.metadata?.sourceType).toBe('dom-fallback');
+      expect(result.clickedIndex).toBe(0);
+      expect(result.mediaItems).toHaveLength(1);
+      expect(result.mediaItems[0]).toMatchObject({
+        tweetId: C,
+        tweetUsername: 'inner_fixture',
+        tweetTextContent: undefined,
+        url: selectedPreview,
+        downloadSource: { url: selectedOriginal, provenance: 'dom' },
+      });
+      expect(result.mediaItems.some((item) => item.tweetId === A || item.tweetId === B)).toBe(
+        false
+      );
+    }
+  );
 
   it('preserves B attribution when B and C reuse the same photo source', async () => {
     const overlay = installMiddlePhoto();

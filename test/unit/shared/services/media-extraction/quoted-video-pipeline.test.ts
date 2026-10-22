@@ -853,6 +853,98 @@ describe('production quoted-video pipeline', () => {
     expect(a.mediaItems[2]?.url).toBe(source('800'));
   });
 
+  it('keeps an animated GIF in direct B ahead of A while selecting each non-first owner exactly', async () => {
+    respond(
+      tweet(
+        '222',
+        [video('800')],
+        tweet('111', [
+          {
+            type: 'photo',
+            id_str: '600',
+            media_url_https: 'https://pbs.twimg.com/media/quote-photo.jpg',
+          },
+          { ...video('701'), type: 'animated_gif' },
+          video('700'),
+        ])
+      )
+    );
+    const service = new MediaExtractionService();
+    const gifTarget = target('unmarked');
+    gifTarget.setAttribute('poster', poster('701'));
+    const gif = await service.extractFromClickedElement(gifTarget);
+    expect(requestedId()).toBe('222');
+    expect(gif.success).toBe(true);
+    expect(gif.clickedIndex).toBe(1);
+    expect(gif.mediaItems.map((item) => [item.tweetId, item.url])).toEqual([
+      ['111', 'https://pbs.twimg.com/media/quote-photo.jpg?format=jpg&name=orig'],
+      ['111', source('701')],
+      ['111', source('700')],
+      ['222', source('800')],
+    ]);
+    expect(gif.mediaItems[1]).toMatchObject({
+      tweetId: '111',
+      tweetUsername: 'author_111',
+      tweetText: 'Post 111',
+      tweetUrl: 'https://x.com/author_111/status/111',
+      metadata: { apiData: { typeOriginal: 'animated_gif', tweet_id: '111' } },
+    });
+
+    const rootTarget = target('ordinary');
+    rootTarget.setAttribute('poster', poster('800'));
+    const root = await service.extractFromClickedElement(rootTarget);
+    expect(root.success).toBe(true);
+    expect(root.clickedIndex).toBe(3);
+    expect(root.mediaItems[3]).toMatchObject({
+      tweetId: '222',
+      tweetUsername: 'author_222',
+      tweetText: 'Post 222',
+      tweetUrl: 'https://x.com/author_222/status/222',
+      url: source('800'),
+    });
+  });
+
+  it('remaps an exact root photo past an unsafe entry, duplicate sizes and an inserted quote', async () => {
+    const photo = (id: string, url: string): TwitterMedia => ({
+      type: 'photo',
+      id_str: id,
+      media_url_https: url,
+    });
+    respond(
+      tweet(
+        '222',
+        [
+          photo('500', 'https://evil.invalid/media/unsafe.jpg'),
+          photo('600', 'https://pbs.twimg.com/media/duplicate.jpg?name=small'),
+          photo('601', 'https://pbs.twimg.com/media/duplicate.jpg?name=large'),
+          photo('700', 'https://pbs.twimg.com/media/selected.jpg?name=large'),
+        ],
+        tweet('111', [photo('900', 'https://pbs.twimg.com/media/quoted.jpg')])
+      )
+    );
+    document.body.innerHTML = `<article><a href="/author_222/status/222"><time>A</time></a>
+      <a href="/author_222/status/222/photo/4"><img id="target" src="https://pbs.twimg.com/media/selected.jpg?name=large"></a></article>`;
+
+    const result = await new MediaExtractionService().extractFromClickedElement(
+      document.getElementById('target')!
+    );
+
+    expect(requestedId()).toBe('222');
+    expect(result.success).toBe(true);
+    expect(result.clickedIndex).toBe(2);
+    expect(result.mediaItems.map((item) => [item.tweetId, item.url])).toEqual([
+      ['111', 'https://pbs.twimg.com/media/quoted.jpg?format=jpg&name=orig'],
+      ['222', 'https://pbs.twimg.com/media/duplicate.jpg?format=jpg&name=orig'],
+      ['222', 'https://pbs.twimg.com/media/selected.jpg?format=jpg&name=orig'],
+    ]);
+    expect(result.mediaItems[result.clickedIndex!]).toMatchObject({
+      tweetId: '222',
+      tweetUsername: 'author_222',
+      tweetText: 'Post 222',
+      tweetUrl: 'https://x.com/author_222/status/222',
+    });
+  });
+
   it.each([
     'missing',
     'foreign',
