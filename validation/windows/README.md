@@ -240,41 +240,6 @@ ffmpeg -f lavfi -i 'testsrc2=size=320x180:rate=24:duration=4' -frames:v 96 -an \
   -f mp4 test/e2e/fixtures/installed-recovery-intent.mp4
 ```
 
-The separate `installed-metadata-readiness.mp4` is a 73,454-byte, two-second,
-48-frame Constrained Baseline H.264 MP4. Its displayed dimensions are 320×192;
-the bounded API response for this one case declares the same size and a 5:3
-aspect ratio. The synthetic source URL retains the existing `320x180` route
-name, which is not a claim about the decoded dimensions. Its SHA-256 is
-`b327ea909dbdba820a1ede7e7a5dc83055e7f3f2b66d82e50ff7b03a14702943`.
-The fixture keeps the original 48 real samples and their timestamps. Only the
-SPS VUI reorder and decoded-buffer upper bounds change to 16; the strict
-regeneration script checks the known Baseline syntax, rewrites emulation
-prevention and `avcC`, and adjusts the MP4 chunk offset. These bounds were
-checked against ITU-T H.264 V15 (08/2024); V16 and formal conformance were
-not independently certified. With the first 16 complete samples served and
-the rest held at byte 27,901, local FFprobe returned metadata without EOF and
-local FFmpeg emitted no decoded frame. The seventeenth complete sample caused
-one frame to be emitted before EOF. Installed Edge must qualify the actual
-metadata-only, paused first-frame and ordinary Play stages separately; a
-decoder that ignores the loose reorder hint makes this fixture unqualified,
-not a product failure.
-
-The checked candidate was generated with FFmpeg 7.1.5 and Python 3.13.5:
-
-```bash
-ffmpeg -hide_banner -loglevel warning -threads 1 -f lavfi \
-  -i 'testsrc2=size=320x192:rate=24:duration=2' -frames:v 48 -an \
-  -c:v libx264 -threads 1 -preset veryfast -profile:v baseline -level:v 3.0 \
-  -pix_fmt yuv420p \
-  -x264-params 'ref=1:bframes=0:scenecut=0:keyint=48:min-keyint=48:force-cfr=1:threads=1' \
-  -movflags +faststart -map_metadata -1 -metadata creation_time=1970-01-01T00:00:00Z \
-  -f mp4 /tmp/xeg-metadata-base.mp4
-python3 validation/windows/create-metadata-readiness-fixture.py \
-  /tmp/xeg-metadata-base.mp4 test/e2e/fixtures/installed-metadata-readiness.mp4 \
-  /tmp/xeg-metadata-sps.json
-sha256sum test/e2e/fixtures/installed-metadata-readiness.mp4
-```
-
 These helpers restore owned routes, pages, response gates and settings, and
 verify that permission state stays unchanged. Their bounded event and request
 receipts retain failures as well as successes. Provider access, live-CDN compatibility and audible output remain
