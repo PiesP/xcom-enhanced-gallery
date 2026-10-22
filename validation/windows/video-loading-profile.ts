@@ -1424,8 +1424,10 @@ type RangeMediaEvent = {
 async function nativeSeekPoint(
   protocol: CDPSession,
   page: Page,
-  video: ReturnType<Page['locator']>
+  video: ReturnType<Page['locator']>,
+  fraction: number
 ) {
+  assert(fraction > 0 && fraction < 1, 'Native seek fraction must be inside the timeline');
   await page.bringToFront();
   await video.scrollIntoViewIfNeeded();
   const videoBox = await video.boundingBox();
@@ -1503,7 +1505,7 @@ async function nativeSeekPoint(
     if (right - left < 20 || bottom - top < 4) {
       continue;
     }
-    const x = Math.round(left + (right - left) * 0.9);
+    const x = Math.round(left + (right - left) * fraction);
     const y = Math.round((top + bottom) / 2);
     if (
       x < videoBox.x ||
@@ -1547,6 +1549,7 @@ async function nativeSeekPoint(
       return {
         x,
         y,
+        fraction,
         documentX,
         documentY,
         viewport,
@@ -1573,9 +1576,11 @@ async function runRangeAbortDiagnostics({
   output: string;
 }) {
   assert.equal(validMp4.length, 207662, 'The declared four-second range fixture changed');
-  // ffprobe places the 3.5 s packet at byte 183130. Keep it withheld so
-  // playback can pass 2.8 s while the response remains incomplete.
-  const prefixEnd = 183130;
+  // ffprobe places the 2.75 s packet at 142130 and the 3 s IDR at 153895.
+  // The separate stall case withholds the 3.5 s packet at 183130.
+  const overlapPrefixEnd = 142130;
+  const overlapRangeEnd = 153894;
+  const stallPrefixEnd = 183130;
   const evidence: {
     status: 'running' | 'passed' | 'failed';
     cases: Record<string, unknown>[];
@@ -1651,9 +1656,13 @@ async function runRangeAbortDiagnostics({
         html: fixtureHtml(id, 'intentrecovery', 1),
       });
       if (name === 'overlap') {
-        nativeLoopback.armFirstTwoVideoHolds(new URL(best).pathname, prefixEnd);
+        nativeLoopback.armFirstTwoVideoHolds(
+          new URL(best).pathname,
+          overlapPrefixEnd,
+          overlapRangeEnd
+        );
       } else {
-        nativeLoopback.armVideoHold(new URL(best).pathname, prefixEnd);
+        nativeLoopback.armVideoHold(new URL(best).pathname, stallPrefixEnd);
       }
       await context.route('**/*', handler);
       routeInstalled = true;
@@ -1782,19 +1791,27 @@ async function runRangeAbortDiagnostics({
       const matchesStart = (record: RangeProtocolRecord, start: number) =>
         /^bytes=(\d+)-/u.exec(record.range ?? '')?.[1] === String(start);
       if (name === 'overlap') {
-        const point = await nativeSeekPoint(protocol, page, video);
+        const point = await nativeSeekPoint(protocol, page, video, 0.8);
         observed.seekPoint = point;
         const seekIssuedAt = await page.evaluate(() => performance.now());
         await page.mouse.click(point.x, point.y);
         const seeked = await waitForValue(async () => {
           const state = await itemState(page!, 0);
-          return state && state.currentTime > 3.2 && state.error === null ? state : undefined;
+          return state &&
+            !state.seeking &&
+            state.currentTime > 3.2 &&
+            Number.isFinite(state.duration) &&
+            state.currentTime <= state.duration - 0.3 &&
+            state.error === null
+            ? state
+            : undefined;
         }, 'ordinary native timeline seek');
         observed.seeked = seeked;
         const progressed = await waitForValue(async () => {
           const state = await itemState(page!, 0);
           return state &&
             !state.paused &&
+            !state.seeking &&
             state.currentTime > seeked.currentTime + 0.15 &&
             state.error === null
             ? state

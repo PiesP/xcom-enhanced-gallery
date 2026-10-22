@@ -43,6 +43,7 @@ type VideoHold = {
   path: string;
   prefixEnd: number;
   remaining: number;
+  finiteRangeEnd?: number;
   responses: Map<ServerResponse, Buffer>;
 };
 
@@ -197,6 +198,16 @@ export function createExtensionNativeFixtureHandler() {
       }
       end = Math.min(end, bytes.length - 1);
     }
+    if (
+      request.method === 'GET' &&
+      range !== undefined &&
+      videoHold?.path === `${route.host}${route.path}` &&
+      videoHold.remaining > 0 &&
+      videoHold.finiteRangeEnd !== undefined &&
+      start <= videoHold.finiteRangeEnd
+    ) {
+      end = Math.min(end, videoHold.finiteRangeEnd);
+    }
     const body = request.method === 'HEAD' ? Buffer.alloc(0) : bytes.subarray(start, end + 1);
     if (reservedBytes + body.length > MAX_SERVED_BYTES) {
       overflow = true;
@@ -257,7 +268,9 @@ export function createExtensionNativeFixtureHandler() {
     if (
       request.method === 'GET' &&
       videoHold?.path === `${route.host}${route.path}` &&
-      videoHold.remaining > 0
+      videoHold.remaining > 0 &&
+      (videoHold.finiteRangeEnd === undefined ||
+        (range !== undefined && start <= videoHold.finiteRangeEnd))
     ) {
       const prefixBytes = Math.max(0, Math.min(body.length, videoHold.prefixEnd - start));
       assert(
@@ -385,7 +398,7 @@ export function createExtensionNativeFixtureHandler() {
         responses: new Map<ServerResponse, Buffer>(),
       };
     },
-    armFirstTwoVideoHolds(path: string, prefixEnd: number) {
+    armFirstTwoVideoHolds(path: string, prefixEnd: number, finiteRangeEnd: number) {
       assert.equal(videoHold, null, 'Only one bounded video source may be held');
       const route = allowed.get(`video.twimg.com${path}`);
       assert(route && route.host === 'video.twimg.com', 'Only a declared video may be held');
@@ -393,10 +406,17 @@ export function createExtensionNativeFixtureHandler() {
         Number.isSafeInteger(prefixEnd) && prefixEnd > 0 && prefixEnd < route.bytes.length,
         'The initial video holds must leave declared samples outstanding'
       );
+      assert(
+        Number.isSafeInteger(finiteRangeEnd) &&
+          finiteRangeEnd >= prefixEnd &&
+          finiteRangeEnd < route.bytes.length - 1,
+        'The held 206 subrange must include delayed bytes and leave later bytes requestable'
+      );
       videoHold = {
         path: `video.twimg.com${path}`,
         prefixEnd,
         remaining: 2,
+        finiteRangeEnd,
         responses: new Map<ServerResponse, Buffer>(),
       };
     },
