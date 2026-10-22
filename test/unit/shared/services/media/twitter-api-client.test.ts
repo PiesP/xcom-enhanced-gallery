@@ -85,6 +85,30 @@ function createQuotedVideoTweetResponse() {
   };
 }
 
+function createPhotoTweetResponse(tweetId = '222', count = 1, text = 'Cache fixture') {
+  return {
+    data: {
+      tweetResult: {
+        result: {
+          rest_id: tweetId,
+          core: { user_results: { result: { legacy: { screen_name: 'cache_author' } } } },
+          legacy: {
+            id_str: tweetId,
+            full_text: text,
+            extended_entities: {
+              media: Array.from({ length: count }, (_, index) => ({
+                type: 'photo',
+                id_str: String(8000 + index),
+                media_url_https: `https://pbs.twimg.com/media/cache-${index}.jpg`,
+              })),
+            },
+          },
+        },
+      },
+    },
+  };
+}
+
 const { getCsrfTokenAsync, httpGet, resolveBearerToken } = vi.hoisted(() => ({
   getCsrfTokenAsync: vi.fn(async (): Promise<string | undefined> => 'csrf-token'),
   httpGet: vi.fn(),
@@ -388,6 +412,121 @@ describe('TweetMetadataReuse', () => {
     expect((await reuse.get('222')).entries).toHaveLength(2);
     expect(httpGet).toHaveBeenCalledTimes(3);
     reuse.dispose();
+  });
+
+  it('reuses metadata at 4,999 ms and requests it again at exactly 5,000 ms', async () => {
+    let now = 0;
+    vi.spyOn(performance, 'now').mockImplementation(() => now);
+    const reuse = new TweetMetadataReuse();
+    try {
+      await reuse.get('222');
+      now = 4_999;
+      expect((await reuse.get('222')).physicalRequestToken).toBeUndefined();
+      expect(httpGet).toHaveBeenCalledTimes(1);
+      now = 5_000;
+      expect((await reuse.get('222')).physicalRequestToken).toBeDefined();
+      expect(httpGet).toHaveBeenCalledTimes(2);
+    } finally {
+      reuse.dispose();
+    }
+  });
+
+  it('keeps four cache entries and evicts the oldest when admitting the fifth', async () => {
+    vi.spyOn(performance, 'now').mockReturnValue(0);
+    httpGet.mockImplementation(async (url: string) => {
+      const { tweetId } = JSON.parse(new URL(url).searchParams.get('variables')!);
+      return { ok: true, status: 200, data: createPhotoTweetResponse(tweetId) };
+    });
+    const reuse = new TweetMetadataReuse();
+    try {
+      for (const id of ['101', '102', '103', '104']) {
+        await reuse.get(id);
+      }
+      await reuse.get('101');
+      expect(httpGet).toHaveBeenCalledTimes(4);
+      await reuse.get('105');
+      await reuse.get('102');
+      expect(httpGet).toHaveBeenCalledTimes(5);
+      await reuse.get('101');
+      expect(httpGet).toHaveBeenCalledTimes(6);
+    } finally {
+      reuse.dispose();
+    }
+  });
+
+  it.each([32, 33])('serves %i normalized media but caches at most 32', async (count) => {
+    httpGet.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: createPhotoTweetResponse('222', count),
+    });
+    const reuse = new TweetMetadataReuse();
+    try {
+      expect((await reuse.get('222')).entries).toHaveLength(count);
+      expect((await reuse.get('222')).entries).toHaveLength(count);
+      expect(httpGet).toHaveBeenCalledTimes(count === 32 ? 1 : 2);
+    } finally {
+      reuse.dispose();
+    }
+  });
+
+  it.each([64_000, 64_001])(
+    'serves %i normalized serialized characters but caches at most 64,000',
+    async (characters) => {
+      const data = createPhotoTweetResponse('222', 1, '');
+      httpGet.mockResolvedValue({ ok: true, status: 200, data });
+      const normalized = await getTweetMedias('222');
+      data.data.tweetResult.result.legacy.full_text = 'a'.repeat(
+        characters - JSON.stringify(normalized).length
+      );
+      httpGet.mockClear();
+      const reuse = new TweetMetadataReuse();
+      try {
+        const first = await reuse.get('222');
+        expect(JSON.stringify(first.entries)).toHaveLength(characters);
+        expect((await reuse.get('222')).entries).toEqual(first.entries);
+        expect(httpGet).toHaveBeenCalledTimes(characters === 64_000 ? 1 : 2);
+      } finally {
+        reuse.dispose();
+      }
+    }
+  );
+
+  it('defers the ninth distinct flight without queuing it and admits an explicit later retry', async () => {
+    const completions = new Map<string, () => void>();
+    httpGet.mockImplementation(
+      (url: string) =>
+        new Promise((resolve) => {
+          const { tweetId } = JSON.parse(new URL(url).searchParams.get('variables')!);
+          completions.set(tweetId, () =>
+            resolve({ ok: true, status: 200, data: createPhotoTweetResponse(tweetId) })
+          );
+        })
+    );
+    const reuse = new TweetMetadataReuse();
+    const requests = Array.from({ length: 8 }, (_, index) => reuse.get(String(100 + index)));
+    try {
+      await vi.waitFor(() => expect(httpGet).toHaveBeenCalledTimes(8));
+      await expect(reuse.get('999')).rejects.toMatchObject({ category: 'deferred' });
+      expect(httpGet).toHaveBeenCalledTimes(8);
+      expect(completions.has('999')).toBe(false);
+      completions.get('100')!();
+      await requests[0];
+      await Promise.resolve();
+      expect(httpGet).toHaveBeenCalledTimes(8);
+
+      const retry = reuse.get('999');
+      requests.push(retry);
+      await vi.waitFor(() => expect(httpGet).toHaveBeenCalledTimes(9));
+      completions.get('999')!();
+      expect((await retry).entries[0]?.tweet_id).toBe('999');
+    } finally {
+      reuse.dispose();
+      for (const complete of completions.values()) {
+        complete();
+      }
+      await Promise.allSettled(requests);
+    }
   });
 });
 

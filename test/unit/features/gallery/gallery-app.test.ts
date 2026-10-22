@@ -164,6 +164,57 @@ describe('GalleryApp media-click currentness', () => {
     expect(state.notify).not.toHaveBeenCalled();
     await app.cleanup();
   });
+
+  it.each(['success', 'failure'] as const)(
+    'keeps the latest click current when reusing its first target after a late %s',
+    async (lateOutcome) => {
+      const firstA = deferredResult();
+      const middleB = deferredResult();
+      const finalA = deferredResult();
+      const signals: AbortSignal[] = [];
+      const pending = [firstA, middleB, finalA];
+      state.extract.mockImplementation(
+        (_element: HTMLElement, options: { signal: AbortSignal }) => {
+          signals.push(options.signal);
+          return pending[signals.length - 1]!.promise;
+        }
+      );
+      const app = new GalleryApp({ destroy: vi.fn() } as never);
+      await app.initialize();
+      const target = document.createElement('img');
+
+      try {
+        const firstClick = state.handlers?.onMediaClick(target, new MouseEvent('click'));
+        const middleClick = state.handlers?.onMediaClick(
+          document.createElement('img'),
+          new MouseEvent('click')
+        );
+        const finalClick = state.handlers?.onMediaClick(target, new MouseEvent('click'));
+        expect(signals.map((signal) => signal.aborted)).toEqual([true, true, false]);
+
+        finalA.resolve(success('final-A'));
+        await finalClick;
+        middleB.resolve(success('stale-B'));
+        if (lateOutcome === 'success') {
+          firstA.resolve(success('stale-A'));
+        } else {
+          firstA.reject(new Error('stale first-A failure'));
+        }
+        await Promise.all([firstClick, middleClick]);
+
+        expect(state.openGallery).toHaveBeenCalledExactlyOnceWith(
+          expect.arrayContaining([expect.objectContaining({ id: 'final-A' })]),
+          0
+        );
+        expect(state.error).not.toHaveBeenCalled();
+        expect(state.warn).not.toHaveBeenCalled();
+        expect(state.notify).not.toHaveBeenCalled();
+      } finally {
+        await app.cleanup();
+      }
+    }
+  );
+
   it('discloses visible-tile recovery and still opens only the recovered items', async () => {
     const result = { ...success('tile'), metadata: { recoveryScope: 'visible-tile' } };
     state.extract.mockResolvedValue(result);
