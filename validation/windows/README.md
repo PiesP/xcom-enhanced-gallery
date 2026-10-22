@@ -260,6 +260,16 @@ ffmpeg -hide_banner -loglevel error -threads 1 \
   test/e2e/fixtures/installed-native-controls-av.mp4
 ```
 
+The single `own12-native-controls-observations.json` receipt has fixed
+`block-controls-only`, `allow-all`, and `block-all` mode records. Each mode uses
+a fresh page and checks trusted, hit-tested native Play, Pause, seek and volume
+actions without a gallery or metadata request, then reloads the fixture for an
+ordinary click on B's adjacent photo. That photo must select B's exact image and
+restore the host state in every mode. The `block-all` record also checks that a
+video-surface click stays native. Each controlled setting is read back and the
+prior full settings value is restored, including when a case fails; the scoped
+A/V route and its original bytes are restored after the mode records.
+
 These helpers restore owned routes, pages, response gates and settings, and
 verify that permission state stays unchanged. Their bounded event and request
 receipts retain failures as well as successes. Provider access, live-CDN compatibility and audible output remain
