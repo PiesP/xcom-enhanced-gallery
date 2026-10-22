@@ -8857,7 +8857,7 @@ async function runQuotedVideoCycle({
   const knownIds = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
   const nativeMark = nativeLoopback.mark();
   const fetchMark = pageFetches.length;
-  const filename = `${quotedCase.username}_${quotedCase.owner}_${quotedCase.expectedPosition - 1}.mp4`;
+  const filename = `${quotedCase.username}_${quotedCase.owner}_${quotedCase.expectedPosition - 1}${quotedCase.name === 'unmarked-no-outer' ? ' (1)' : ''}.mp4`;
   await playing.gallery
     .locator('[data-gallery-element="toolbar"] button[aria-label="Download"]')
     .click();
@@ -8956,7 +8956,7 @@ async function runQuotedVideoCycle({
     quotedCase.route === 'unmarked'
       ? await (async () => {
           await hostVideo.scrollIntoViewIfNeeded();
-          await page.evaluate(() => window.scrollBy(0, -120));
+          await hostVideo.evaluate((element) => element.scrollIntoView({ block: 'center' }));
           await hostVideo.focus();
           const before = await quotedHostSnapshot(page, quotedCase.route, '[data-video-key] video');
           const hostState = await hostVideoState(hostVideo);
@@ -8967,12 +8967,19 @@ async function runQuotedVideoCycle({
           assert.deepEqual(depth, UNMARKED_VIDEO_DEPTH, 'Paused video geometry must stay exact');
           const hit = await hostVideo.evaluate((element) => {
             const rect = element.getBoundingClientRect();
-            return (
-              document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2) ===
-              element
-            );
+            const x = rect.left + rect.width / 2;
+            const y = rect.top + rect.height / 2;
+            return {
+              target: document.elementFromPoint(x, y) === element,
+              point: { x, y },
+              viewport: { width: innerWidth, height: innerHeight },
+            };
           });
-          assert.equal(hit, true, 'Paused video must be the ordinary hit-tested target');
+          assert.equal(
+            hit.target,
+            true,
+            `Paused video must be the ordinary hit-tested target: ${JSON.stringify(hit)}`
+          );
           const apiStartPaused = quotedApiResponses.length;
           const clickCount = await page.evaluate(() => window.__quoteFixtureClicks.length);
           await captureQuotedOpeningScroll(hostVideo);
