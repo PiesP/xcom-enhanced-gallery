@@ -6578,8 +6578,29 @@ async function runCreditControlsCycle({
     assert.equal(hit, true, 'Ordinary B preview input must hit the preview');
     const bApiStart = quotedApiResponses.length;
     const rejectedStart = otherMetadataCounts();
+    const input: Record<string, unknown> = {
+      name: 'b-preview-input',
+      pageUrl,
+      structure,
+      hit,
+      before,
+      depth: await quotedTargetDepth(preview),
+      apiStartIndex: bApiStart,
+      metadataBefore: rejectedStart,
+    };
+    evidence.steps.push(input);
+    const clickCount = await page.evaluate(() => window.__quoteFixtureClicks.length);
     await preview.click();
-    const opened = await assertQuotedGallery(page, fixture);
+    input.click = await quotedClickRecord(page, clickCount, 'img');
+    let opened: Awaited<ReturnType<typeof assertQuotedGallery>>;
+    try {
+      opened = await assertQuotedGallery(page, fixture);
+    } catch (error) {
+      input.apiAfterFailure = quotedApiResponses.slice(bApiStart);
+      input.metadataAfterFailure = otherMetadataCounts();
+      input.galleryCountAfterFailure = await page.locator('[data-xeg-gallery-container]').count();
+      throw error;
+    }
     assert.equal(
       await assertQuotedOriginLink(
         opened.gallery,
