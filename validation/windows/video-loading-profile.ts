@@ -97,11 +97,32 @@ type MetadataReadinessEvidence = {
   protocol: Array<{
     requestId: string;
     phase: string;
+    atMs: number;
     status?: number;
     range?: string | null;
     errorText?: string;
     blockedReason?: string;
   }>;
+  transfer: Array<{
+    requestId: string;
+    chunks: number;
+    dataBytes: number;
+    encodedBytes: number;
+    firstAtMs: number;
+    lastAtMs: number;
+  }>;
+  timing: { failureAtMs?: number; tailReleasedAtMs?: number; abortAtMs?: number };
+  stateSamples: Array<{
+    phase: 'first-poll' | 'last-poll' | 'on-failure' | 'after-tail';
+    atMs: number;
+    state: ItemState | null;
+  }>;
+  failureProbe?: {
+    heldBeforeRelease: boolean;
+    outcome: 'not-held' | 'metadata' | 'no-metadata' | 'unavailable' | 'error';
+    terminalObserved: boolean;
+    error?: string;
+  };
   nativeBeforeRelease?: ReturnType<NativeLoopback['since']>;
   nativeAfterRelease?: ReturnType<NativeLoopback['since']>;
   events: MetadataReadinessEvent[];
@@ -524,6 +545,7 @@ async function itemState(page: Page, index: number) {
       controls: video.controls,
       error: video.error?.code ?? null,
       readyState: video.readyState,
+      networkState: video.networkState,
       videoWidth: video.videoWidth,
       videoHeight: video.videoHeight,
       currentTime: video.currentTime,
@@ -1186,6 +1208,9 @@ export async function runVideoLoadingProfile({
       prefixEnd: 27901,
       api: [],
       protocol: [],
+      transfer: [],
+      timing: {},
+      stateSamples: [],
       events: [],
       screenshots: [],
       pageErrors: [],
@@ -2162,12 +2187,15 @@ async function runMetadataReadinessCase({
 }) {
   const id = '4666000111222333881';
   const bestPath = new URL(evidence.bestUrl).pathname;
+  const startedAtMs = performance.now();
+  const elapsedMs = () => performance.now() - startedAtMs;
   let page: Page | undefined;
   let protocol: CDPSession | undefined;
   let routeArmed = false;
   let nativeMark: number | undefined;
   let primaryError: unknown;
   let caughtPrimaryError = false;
+  let lastMetadataPoll: ItemState | null | undefined;
   const boundedProtocol = (record: MetadataReadinessEvidence['protocol'][number]) => {
     if (evidence.protocol.length >= 32) {
       evidence.overflow = true;
@@ -2266,6 +2294,7 @@ async function runMetadataReadinessCase({
       boundedProtocol({
         requestId: event.requestId,
         phase: 'request',
+        atMs: elapsedMs(),
         range: event.request.headers.Range ?? event.request.headers.range ?? null,
       });
     });
@@ -2274,13 +2303,40 @@ async function runMetadataReadinessCase({
         boundedProtocol({
           requestId: event.requestId,
           phase: 'response',
+          atMs: elapsedMs(),
           status: event.response.status,
         });
       }
     });
+    protocol.on('Network.dataReceived', (event) => {
+      if (!sourceRequestIds.has(event.requestId)) {
+        return;
+      }
+      const atMs = elapsedMs();
+      let transfer = evidence.transfer.find((record) => record.requestId === event.requestId);
+      if (!transfer) {
+        if (evidence.transfer.length >= 8) {
+          evidence.overflow = true;
+          return;
+        }
+        transfer = {
+          requestId: event.requestId,
+          chunks: 0,
+          dataBytes: 0,
+          encodedBytes: 0,
+          firstAtMs: atMs,
+          lastAtMs: atMs,
+        };
+        evidence.transfer.push(transfer);
+      }
+      transfer.chunks++;
+      transfer.dataBytes += event.dataLength;
+      transfer.encodedBytes += event.encodedDataLength;
+      transfer.lastAtMs = atMs;
+    });
     protocol.on('Network.loadingFinished', (event) => {
       if (sourceRequestIds.has(event.requestId)) {
-        boundedProtocol({ requestId: event.requestId, phase: 'finished' });
+        boundedProtocol({ requestId: event.requestId, phase: 'finished', atMs: elapsedMs() });
       }
     });
     protocol.on('Network.loadingFailed', (event) => {
@@ -2288,6 +2344,7 @@ async function runMetadataReadinessCase({
         boundedProtocol({
           requestId: event.requestId,
           phase: 'failed',
+          atMs: elapsedMs(),
           errorText: event.errorText.slice(0, 200),
           ...(event.blockedReason ? { blockedReason: event.blockedReason } : {}),
         });
@@ -2352,10 +2409,20 @@ async function runMetadataReadinessCase({
     await trigger.click();
     const gallery = page.locator('[data-xeg-gallery-container]');
     await gallery.waitFor({ state: 'visible' });
-    const stateWhen = (predicate: (state: ItemState) => boolean, description: string) =>
+    const stateWhen = (
+      predicate: (state: ItemState) => boolean,
+      description: string,
+      sampleMetadata = false
+    ) =>
       waitForValue(
         async () => {
           const state = await itemState(page!, 0);
+          if (sampleMetadata) {
+            lastMetadataPoll = state;
+            if (evidence.stateSamples.length === 0) {
+              evidence.stateSamples.push({ phase: 'first-poll', atMs: elapsedMs(), state });
+            }
+          }
           return state && predicate(state) ? state : undefined;
         },
         description,
@@ -2376,7 +2443,8 @@ async function runMetadataReadinessCase({
         state.error === null &&
         state.paused &&
         state.currentTime <= 0.05,
-      'selected metadata without a decoded frame'
+      'selected metadata without a decoded frame',
+      true
     );
     const metadataStartedAt = performance.now();
     await page.waitForTimeout(700);
@@ -2434,6 +2502,7 @@ async function runMetadataReadinessCase({
     await page.screenshot({ path: join(output, metadataScreenshot) });
     evidence.screenshots.push(metadataScreenshot);
     nativeLoopback.completeVideoHold();
+    evidence.timing.tailReleasedAtMs = elapsedMs();
     const frameBefore = await stateWhen(
       (state) =>
         state.src === evidence.bestUrl &&
@@ -2553,6 +2622,34 @@ async function runMetadataReadinessCase({
     primaryError = error;
     evidence.status = 'failed';
     evidence.error = String(error).slice(0, 1000);
+    evidence.timing.failureAtMs = elapsedMs();
+    if (lastMetadataPoll !== undefined && evidence.stateSamples.length < 4) {
+      evidence.stateSamples.push({
+        phase: 'last-poll',
+        atMs: elapsedMs(),
+        state: lastMetadataPoll,
+      });
+    }
+    if (nativeMark !== undefined && evidence.nativeBeforeRelease === undefined) {
+      evidence.nativeBeforeRelease = nativeLoopback.since(nativeMark);
+    }
+    const heldBeforeRelease = nativeLoopback.videoHeld();
+    const probe: NonNullable<MetadataReadinessEvidence['failureProbe']> = {
+      heldBeforeRelease,
+      outcome: heldBeforeRelease ? 'unavailable' : 'not-held',
+      terminalObserved: false,
+    };
+    evidence.failureProbe = probe;
+    if (page && !page.isClosed()) {
+      try {
+        const state = await itemState(page, 0);
+        if (evidence.stateSamples.length < 4) {
+          evidence.stateSamples.push({ phase: 'on-failure', atMs: elapsedMs(), state });
+        }
+      } catch (sampleError) {
+        probe.error = `Failure state read: ${String(sampleError).slice(0, 500)}`;
+      }
+    }
     if (page && !page.isClosed() && evidence.screenshots.length < 2) {
       const screenshot = 'src03-failure.png';
       await page
@@ -2564,9 +2661,56 @@ async function runMetadataReadinessCase({
           evidence.screenshotError = String(screenshotError).slice(0, 500);
         });
     }
+    if (heldBeforeRelease) {
+      try {
+        nativeLoopback.completeVideoHold();
+        evidence.timing.tailReleasedAtMs = elapsedMs();
+        if (page && !page.isClosed()) {
+          probe.outcome = 'no-metadata';
+          const deadline = Date.now() + 4_000;
+          let latestState: ItemState | null = null;
+          do {
+            latestState = await itemState(page, 0);
+            if (latestState?.currentSrc === evidence.bestUrl && latestState.readyState >= 1) {
+              probe.outcome = 'metadata';
+            }
+            probe.terminalObserved =
+              nativeMark !== undefined &&
+              nativeLoopback
+                .since(nativeMark)
+                .some(
+                  (event) =>
+                    event.host === 'video.twimg.com' &&
+                    event.path === bestPath &&
+                    ['served', 'aborted'].includes(event.result)
+                );
+            if (probe.outcome === 'metadata' && probe.terminalObserved) {
+              break;
+            }
+            await new Promise((resolve) => setTimeout(resolve, 50));
+          } while (Date.now() < deadline);
+          if (evidence.stateSamples.length < 4) {
+            evidence.stateSamples.push({
+              phase: 'after-tail',
+              atMs: elapsedMs(),
+              state: latestState,
+            });
+          }
+        }
+        if (nativeMark !== undefined) {
+          evidence.nativeAfterRelease = nativeLoopback.since(nativeMark);
+        }
+      } catch (probeError) {
+        probe.outcome = 'error';
+        probe.error = String(probeError).slice(0, 500);
+      }
+    }
   } finally {
     if (nativeMark !== undefined && evidence.nativeBeforeRelease === undefined) {
       evidence.nativeBeforeRelease = nativeLoopback.since(nativeMark);
+    }
+    if (nativeLoopback.videoHeld()) {
+      evidence.timing.abortAtMs = elapsedMs();
     }
     nativeLoopback.abortVideoHold();
     evidence.cleanup.videoHoldReleased = !nativeLoopback.videoHeld();
