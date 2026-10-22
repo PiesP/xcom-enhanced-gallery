@@ -14631,7 +14631,7 @@ export async function run({
     scope: validatedLiveUrls.length
       ? 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
       : sameVersionInput
-        ? 'one declared v2.3.8 artifact in a fresh installed extension profile; two deterministic quoted-video controls'
+        ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
         : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
     status: 'failed',
   };
