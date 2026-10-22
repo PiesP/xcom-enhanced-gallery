@@ -8630,6 +8630,14 @@ async function runQuotedVideoCycle({
   });
 
   const hostPlay = shell.locator('[data-testid="playButton"]');
+  const postPlayOverlay = quotedCase.name === 'nested-from-outer';
+  const surfaceSelector = postPlayOverlay
+    ? '[data-video-key] [data-host-play-overlay]'
+    : '[data-video-key] video';
+  const surface = postPlayOverlay ? shell.locator('[data-host-play-overlay]') : hostVideo;
+  if (postPlayOverlay) {
+    assert.equal(await surface.count(), 0, 'The post-Play overlay must not exist before Play');
+  }
   const galleryCountBeforePlay = await page.locator('[data-xeg-gallery-container]').count();
   assert.equal(galleryCountBeforePlay, 0);
   const nativePlayClickCount = await page.evaluate(() => window.__quoteFixtureClicks.length);
@@ -8716,27 +8724,36 @@ async function runQuotedVideoCycle({
   const galleryPreferences = storedGalleryMediaPreferences(
     (await readStoredVideoSettings(extensionPage)).settings
   );
-  await hostVideo.focus();
-  const playingBefore = await quotedHostSnapshot(page, quotedCase.route, '[data-video-key] video');
+  if (postPlayOverlay) {
+    assert.equal(await surface.count(), 1, 'Ordinary Play must insert exactly one fresh overlay');
+    assert.equal(await preview.isVisible(), false, 'The retired preview must be hidden');
+    assert.equal(await hostVideo.isVisible(), true);
+  }
+  await surface.focus();
+  const playingBefore = await quotedHostSnapshot(page, quotedCase.route, surfaceSelector);
   assert.equal(playingBefore.active, true, 'Blob-backed host player must hold focus');
-  const hostHit = await hostVideo.evaluate((element) => {
+  const hostHit = await surface.evaluate((element) => {
     const rect = element.getBoundingClientRect();
     return (
       document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2) === element
     );
   });
   assert.equal(hostHit, true, 'Blob-backed player must be the ordinary hit-tested click target');
-  await captureQuotedOpeningScroll(hostVideo);
+  await captureQuotedOpeningScroll(surface);
   const playingClickCount = await page.evaluate(() => window.__quoteFixtureClicks.length);
-  await hostVideo.click();
+  await surface.click();
   const playingPending = await writeVideoBoundaryCheckpoint({
     output,
     name: `${checkpointName}-playing`,
     page,
     api: quotedApiResponses.slice(apiStart),
   });
-  const playingClick = await quotedClickRecord(page, playingClickCount, 'video');
-  playingBefore.scrollY = Number(await hostVideo.getAttribute('data-opening-scroll-y'));
+  const playingClick = await quotedClickRecord(
+    page,
+    playingClickCount,
+    postPlayOverlay ? 'div' : 'video'
+  );
+  playingBefore.scrollY = Number(await surface.getAttribute('data-opening-scroll-y'));
   assert(
     Number.isFinite(playingBefore.scrollY) && playingBefore.scrollY > 0,
     'Blob-backed opening scroll must be observed'
@@ -8941,7 +8958,7 @@ async function runQuotedVideoCycle({
     method: quotedCase.close,
     before: playingBefore,
     caseName: quotedCase.route,
-    selector: '[data-video-key] video',
+    selector: surfaceSelector,
   });
   await page.evaluate(() => window.__quoteFixtureHostAction('replay'));
   await page.waitForFunction(
@@ -8996,19 +9013,21 @@ async function runQuotedVideoCycle({
   assert.deepEqual(restoredPanel, { ariaHidden: 'false', hiddenMarker: false, inert: false });
   await page.locator(`#${latePanel}`).evaluate((element) => element.remove());
   const pausedControl =
-    quotedCase.route === 'unmarked'
+    quotedCase.route === 'unmarked' || postPlayOverlay
       ? await (async () => {
-          await hostVideo.scrollIntoViewIfNeeded();
-          await hostVideo.evaluate((element) => element.scrollIntoView({ block: 'center' }));
-          await hostVideo.focus();
-          const before = await quotedHostSnapshot(page, quotedCase.route, '[data-video-key] video');
+          await surface.scrollIntoViewIfNeeded();
+          await surface.evaluate((element) => element.scrollIntoView({ block: 'center' }));
+          await surface.focus();
+          const before = await quotedHostSnapshot(page, quotedCase.route, surfaceSelector);
           const hostState = await hostVideoState(hostVideo);
           assert.equal(hostState.paused, true, 'Unmarked host video must be paused before click');
           assert(hostState.readyState >= 2 && hostState.width > 0 && hostState.height > 0);
           assert.equal(hostState.error, null);
           const depth = await quotedTargetDepth(hostVideo);
-          assert.deepEqual(depth, UNMARKED_VIDEO_DEPTH, 'Paused video geometry must stay exact');
-          const hit = await hostVideo.evaluate((element) => {
+          if (quotedCase.route === 'unmarked') {
+            assert.deepEqual(depth, UNMARKED_VIDEO_DEPTH, 'Paused video geometry must stay exact');
+          }
+          const hit = await surface.evaluate((element) => {
             const rect = element.getBoundingClientRect();
             const x = rect.left + rect.width / 2;
             const y = rect.top + rect.height / 2;
@@ -9025,16 +9044,20 @@ async function runQuotedVideoCycle({
           );
           const apiStartPaused = quotedApiResponses.length;
           const clickCount = await page.evaluate(() => window.__quoteFixtureClicks.length);
-          await captureQuotedOpeningScroll(hostVideo);
-          await hostVideo.click();
+          await captureQuotedOpeningScroll(surface);
+          await surface.click();
           const pending = await writeVideoBoundaryCheckpoint({
             output,
             name: `${checkpointName}-paused`,
             page,
             api: quotedApiResponses.slice(apiStartPaused),
           });
-          const click = await quotedClickRecord(page, clickCount, 'video');
-          before.scrollY = Number(await hostVideo.getAttribute('data-opening-scroll-y'));
+          const click = await quotedClickRecord(
+            page,
+            clickCount,
+            postPlayOverlay ? 'div' : 'video'
+          );
+          before.scrollY = Number(await surface.getAttribute('data-opening-scroll-y'));
           assert(Number.isFinite(before.scrollY) && before.scrollY > 0);
           const selected = await assertQuotedGallery(page, quotedCase);
           const freshStart = await hostVideoState(selected.video);
@@ -9067,8 +9090,41 @@ async function runQuotedVideoCycle({
                 method: quotedCase.close,
                 before,
                 caseName: quotedCase.route,
-                selector: '[data-video-key] video',
+                selector: surfaceSelector,
               });
+          let nativeRecovery = null;
+          if (postPlayOverlay) {
+            const apiBeforeReplay = quotedApiResponses.length;
+            const replayClickCount = await page.evaluate(() => window.__quoteFixtureClicks.length);
+            await hostPlay.click();
+            const click = await quotedClickRecord(page, replayClickCount, 'button');
+            await page.waitForFunction(
+              (name) => {
+                const video = document.querySelector(
+                  `[data-case="${name}"] [data-video-key] video`
+                );
+                return (
+                  video instanceof HTMLVideoElement &&
+                  !video.paused &&
+                  video.currentTime > 0.15 &&
+                  video.videoWidth > 0 &&
+                  video.error === null
+                );
+              },
+              quotedCase.route,
+              { timeout: 5_000 }
+            );
+            const state = await hostVideoState(hostVideo);
+            assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0);
+            assert.equal(quotedApiResponses.length, apiBeforeReplay);
+            assert.equal(await surface.count(), 1, 'Replay must retain one current overlay');
+            nativeRecovery = { click, state };
+            await hostVideo.evaluate((element) => {
+              if (element instanceof HTMLVideoElement) {
+                element.pause();
+              }
+            });
+          }
           return {
             depth,
             hostState,
@@ -9081,6 +9137,7 @@ async function runQuotedVideoCycle({
             api,
             close,
             retiredVolume,
+            nativeRecovery,
           };
         })()
       : null;
@@ -9125,6 +9182,8 @@ async function runQuotedVideoCycle({
       close: previewClose,
     },
     hostPlaying: {
+      postPlayOverlay,
+      surfaceSelector,
       unmarkedDepth,
       blobBacked: hostPlaying.source.startsWith('blob:'),
       currentTime: hostPlaying.time,

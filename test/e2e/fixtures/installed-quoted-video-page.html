@@ -52,6 +52,11 @@
         position: absolute;
         right: 8px;
         bottom: 8px;
+        z-index: 2;
+      }
+      .video-shell [data-host-play-overlay] {
+        position: absolute;
+        inset: 0;
         z-index: 1;
       }
       .video-shell[data-playing='true'] [data-testid='previewInterstitial'] {
@@ -362,9 +367,22 @@
           throw new Error('Host playable bytes unavailable');
         }
         const objectUrl = makeHostUrl();
+        const previousUrl = document.body.dataset.hostBlobUrl;
         hostVideo.src = objectUrl;
+        if (previousUrl) {
+          URL.revokeObjectURL(previousUrl);
+        }
         shell.dataset.playing = 'true';
         document.body.dataset.hostBlobUrl = objectUrl;
+        if (
+          document.body.dataset.quoteCase === 'nested' &&
+          !shell.querySelector('[data-host-play-overlay]')
+        ) {
+          const overlay = document.createElement('div');
+          overlay.dataset.hostPlayOverlay = 'inserted-after-play';
+          overlay.tabIndex = 0;
+          shell.append(overlay);
+        }
         hostVideo.play().catch((error) => {
           document.body.dataset.videoError = error.message;
         });
