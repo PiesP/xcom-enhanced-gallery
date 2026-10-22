@@ -15,7 +15,7 @@ type Variant =
   | 'provider-error'
   | 'malformed'
   | 'capacity'
-  | 'redirect'
+  | RedirectVariant
   | 'malformed-wrapper';
 type Cleanup = {
   routesRemoved: boolean;
@@ -30,6 +30,7 @@ type ApiRequest = {
   requestedAtMonotonicMs: number;
   fulfilledAtMonotonicMs?: number;
   encodedBytes?: number;
+  redirectDestination?: string;
 };
 type ApiCase = {
   case: string;
@@ -53,6 +54,13 @@ type MediaEvidence = {
   cleanup: Cleanup;
   responseAccounting?: AccountingEvidence;
   redirectReceiverRequests?: number;
+  redirectReceiverRequestsByDestination?: Record<string, number>;
+  redirectCases?: {
+    variant: RedirectVariant;
+    status: number;
+    destination: string;
+    requests: number;
+  }[];
   redirectFailedRequests?: { pageIndex: number; error: string; failedAtMonotonicMs: number }[];
   reuseElapsedMs?: number;
   retryAfterSeconds?: number;
@@ -117,6 +125,33 @@ type AccountingState = {
 
 const API_ROUTE = '**/TweetResultByRestId*';
 const REDIRECT_RECEIVER = 'https://pbs.twimg.com/media/xeg-metadata-redirect.json';
+const REDIRECT_CASES = {
+  redirect: { status: 302, url: REDIRECT_RECEIVER },
+  'redirect-302-api': {
+    status: 302,
+    url: 'https://x.com/i/api/graphql/xeg-redirect/TweetResultByRestId',
+  },
+  'redirect-307-api': {
+    status: 307,
+    url: 'https://x.com/i/api/graphql/xeg-redirect/TweetResultByRestId',
+  },
+  'redirect-302-non-api': { status: 302, url: 'https://x.com/xeg-metadata-redirect.json' },
+  'redirect-307-non-api': { status: 307, url: 'https://x.com/xeg-metadata-redirect.json' },
+  'redirect-302-foreign': {
+    status: 302,
+    url: 'https://xeg-metadata-redirect.invalid/metadata.json',
+  },
+  'redirect-307-foreign': {
+    status: 307,
+    url: 'https://xeg-metadata-redirect.invalid/metadata.json',
+  },
+} as const;
+type RedirectVariant = keyof typeof REDIRECT_CASES;
+const REDIRECT_RECEIVERS = [...new Set(Object.values(REDIRECT_CASES).map(({ url }) => url))];
+const MAX_REDIRECT_REQUESTS = Object.keys(REDIRECT_CASES).length * 2;
+function isRedirectVariant(value: Variant): value is RedirectVariant {
+  return Object.hasOwn(REDIRECT_CASES, value);
+}
 const GALLERY = '[data-xeg-gallery-container]';
 const READY = 'html[data-xeg-gallery-ready="true"]';
 const MAX_OBSERVATIONS = 32;
@@ -290,9 +325,17 @@ export async function runInstalledMediaApiReuseProfile({
   const originalPageUrl = page.url();
   let variant: Variant = 'healthy';
   let redirectReceiverRequests = 0;
+  const redirectReceiverRequestsByDestination = Object.fromEntries(
+    REDIRECT_RECEIVERS.map((url) => [url, 0])
+  );
   const redirectFailedRequests: NonNullable<MediaEvidence['redirectFailedRequests']> = [];
   const redirectReceiver = async (route: Route) => {
     redirectReceiverRequests += 1;
+    const destination = route.request().url();
+    assert(Object.hasOwn(redirectReceiverRequestsByDestination, destination));
+    const previous = redirectReceiverRequestsByDestination[destination];
+    assert(previous !== undefined);
+    redirectReceiverRequestsByDestination[destination] = previous + 1;
     await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
   };
   const routeHandler = async (route: Route) => {
@@ -300,7 +343,7 @@ export async function runInstalledMediaApiReuseProfile({
       return route.fallback();
     }
     assert(requests.length < MAX_OBSERVATIONS, 'API reuse observation overflow');
-    const statuses: Record<Variant, number> = {
+    const statuses: Record<Exclude<Variant, RedirectVariant>, number> = {
       healthy: 200,
       denied: 403,
       'rate-limited': 429,
@@ -308,13 +351,12 @@ export async function runInstalledMediaApiReuseProfile({
       'provider-error': 200,
       malformed: 200,
       capacity: 200,
-      redirect: 302,
       'malformed-wrapper': 200,
     };
     const record: ApiRequest = {
       variant,
       method: route.request().method(),
-      status: statuses[variant],
+      status: isRedirectVariant(variant) ? REDIRECT_CASES[variant].status : statuses[variant],
       requestedAtMonotonicMs: performance.now(),
     };
     requests.push(record);
@@ -355,8 +397,14 @@ export async function runInstalledMediaApiReuseProfile({
       const body = JSON.stringify({ padding: 'x'.repeat(2 * 1024 * 1024) });
       record.encodedBytes = Buffer.byteLength(body);
       await route.fulfill({ status: 200, contentType: 'application/json', body });
-    } else if (variant === 'redirect') {
-      await route.fulfill({ status: 302, headers: { location: REDIRECT_RECEIVER }, body: '' });
+    } else if (isRedirectVariant(variant)) {
+      const controlled = REDIRECT_CASES[variant];
+      record.redirectDestination = controlled.url;
+      await route.fulfill({
+        status: controlled.status,
+        headers: { location: controlled.url },
+        body: '',
+      });
     } else if (variant === 'malformed') {
       await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
     } else if (variant === 'malformed-wrapper') {
@@ -421,13 +469,13 @@ export async function runInstalledMediaApiReuseProfile({
       }
     };
     const onRequestFailed = (request: Request) => {
-      if (observedVariant !== 'redirect') {
+      if (!isRedirectVariant(observedVariant)) {
         return;
       }
       if (!targetRequestUrl(request.url(), qualityTweetId)) {
         return;
       }
-      if (redirectFailedRequests.length < 4) {
+      if (redirectFailedRequests.length < MAX_REDIRECT_REQUESTS) {
         redirectFailedRequests.push({
           pageIndex,
           error: request.failure()?.errorText ?? 'missing-failure',
@@ -466,7 +514,9 @@ export async function runInstalledMediaApiReuseProfile({
 
   observePage(page);
   await context.route(API_ROUTE, routeHandler);
-  await context.route(REDIRECT_RECEIVER, redirectReceiver);
+  for (const receiver of REDIRECT_RECEIVERS) {
+    await context.route(receiver, redirectReceiver);
+  }
   try {
     await readyPage(page, qualityFixtureUrl);
     const reuseStarted = performance.now();
@@ -509,6 +559,12 @@ export async function runInstalledMediaApiReuseProfile({
       ['malformed-wrapper', 2],
       ['capacity', 2],
       ['redirect', 2],
+      ['redirect-302-api', 2],
+      ['redirect-307-api', 2],
+      ['redirect-302-non-api', 2],
+      ['redirect-307-non-api', 2],
+      ['redirect-302-foreign', 2],
+      ['redirect-307-foreign', 2],
     ] satisfies [Variant, number][]) {
       variant = name;
       const failurePage = await newFixturePage();
@@ -569,9 +625,38 @@ export async function runInstalledMediaApiReuseProfile({
       'Installed fetch must not follow the controlled redirect'
     );
     evidence.redirectReceiverRequests = redirectReceiverRequests;
-    assert.equal(redirectFailedRequests.length, 2, 'Both redirected API fetches must fail');
-    const redirectRequests = requests.filter((request) => request.variant === 'redirect');
-    assert.equal(redirectRequests.length, 2);
+    assert.deepEqual(
+      redirectReceiverRequestsByDestination,
+      Object.fromEntries(REDIRECT_RECEIVERS.map((url) => [url, 0])),
+      'No allowed, non-API or foreign destination may receive a redirected request'
+    );
+    evidence.redirectReceiverRequestsByDestination = redirectReceiverRequestsByDestination;
+    evidence.redirectCases = [];
+    for (const request of requests) {
+      if (!isRedirectVariant(request.variant)) {
+        continue;
+      }
+      const controlled = REDIRECT_CASES[request.variant];
+      assert.equal(request.status, controlled.status);
+      assert.equal(request.redirectDestination, controlled.url);
+      if (!evidence.redirectCases.some(({ variant }) => variant === request.variant)) {
+        assert.equal(count(request.variant), 2);
+        evidence.redirectCases.push({
+          variant: request.variant,
+          status: controlled.status,
+          destination: controlled.url,
+          requests: count(request.variant),
+        });
+      }
+    }
+    assert.equal(evidence.redirectCases.length, Object.keys(REDIRECT_CASES).length);
+    assert.equal(
+      redirectFailedRequests.length,
+      MAX_REDIRECT_REQUESTS,
+      'Every redirected API fetch must fail'
+    );
+    const redirectRequests = requests.filter((request) => isRedirectVariant(request.variant));
+    assert.equal(redirectRequests.length, MAX_REDIRECT_REQUESTS);
     assert(
       redirectFailedRequests.every(
         ({ error, failedAtMonotonicMs }, index) =>
@@ -581,11 +666,11 @@ export async function runInstalledMediaApiReuseProfile({
       ),
       'Redirected API fetches failed for another reason or outside the bounded request window'
     );
-    const redirectConsoleErrors = consoleErrors.filter(({ variant }) => variant === 'redirect');
+    const redirectConsoleErrors = consoleErrors.filter(({ variant }) => isRedirectVariant(variant));
     assert.equal(
       redirectConsoleErrors.length,
-      2,
-      'Both redirect failures must have console records'
+      MAX_REDIRECT_REQUESTS,
+      'Every redirect failure must have a console record'
     );
     assert(
       redirectConsoleErrors.every(
@@ -629,7 +714,9 @@ export async function runInstalledMediaApiReuseProfile({
   } finally {
     try {
       await context.unroute(API_ROUTE, routeHandler);
-      await context.unroute(REDIRECT_RECEIVER, redirectReceiver);
+      for (const receiver of REDIRECT_RECEIVERS) {
+        await context.unroute(receiver, redirectReceiver);
+      }
       evidence.cleanup.routesRemoved = true;
     } catch (error) {
       cleanupErrors.push(error);
