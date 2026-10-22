@@ -8970,16 +8970,28 @@ async function locateOwn12NativeControl({
 }
 
 async function runOwn12NativeControls({
+  apiResponses,
+  compactApiResponses,
   context,
   extensionPage,
   output,
+  qualityApiResponses,
   quotedApiResponses,
 }: {
+  apiResponses: ApiRecord[];
+  compactApiResponses: ApiRecord[];
   context: BrowserContext;
   extensionPage: Page;
   output: string;
+  qualityApiResponses: ApiRecord[];
   quotedApiResponses: ApiRecord[];
 }): Promise<Own12NativeControlsEvidence> {
+  const metadataCounts = () => ({
+    generic: apiResponses.length,
+    quoted: quotedApiResponses.length,
+    quality: qualityApiResponses.length,
+    compact: compactApiResponses.length,
+  });
   const evidence: Own12NativeControlsEvidence = {
     status: 'pending',
     discovery: [],
@@ -9035,6 +9047,7 @@ async function runOwn12NativeControls({
         );
         assert.equal(storedMode, 'block-controls-only');
         const apiStart = quotedApiResponses.length;
+        const metadataStart = metadataCounts();
         const initial = await hostVideoState(video);
         assert(initial.paused && initial.readyState >= 2 && initial.error === null);
         assert.equal(initial.width, 320);
@@ -9095,9 +9108,9 @@ async function runOwn12NativeControls({
             `${label}: native control opened a gallery`
           );
           assert.deepEqual(
-            quotedApiResponses.slice(apiStart),
-            [],
-            `${label}: native control dispatched gallery metadata`
+            metadataCounts(),
+            metadataStart,
+            `${label}: metadata request dispatched`
           );
         };
         const play = await locateOwn12NativeControl({
@@ -9195,6 +9208,7 @@ async function runOwn12NativeControls({
           pausedStable,
           seeked,
           volumeAfter,
+          metadata: { before: metadataStart, after: metadataCounts() },
           api: quotedApiResponses.slice(apiStart),
         };
       },
@@ -9235,19 +9249,23 @@ async function runOwn12NativeControls({
         });
         assert.equal(videoHit.hit, true, 'block-all B video surface is not hit-tested');
         const videoApiStart = quotedApiResponses.length;
+        const videoMetadataStart = metadataCounts();
         await page.mouse.click(videoHit.x, videoHit.y);
         await page.waitForTimeout(150);
         assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0);
-        assert.deepEqual(quotedApiResponses.slice(videoApiStart), []);
+        assert.deepEqual(
+          metadataCounts(),
+          videoMetadataStart,
+          'block-all B video dispatched gallery metadata'
+        );
         const photo = page.locator('[data-rapid="b"] [data-testid="tweetPhoto"] img');
         await photo.scrollIntoViewIfNeeded();
         await page.evaluate(() => window.scrollBy(0, -100));
-        await photo.focus();
+        const permalink = page.locator('[data-rapid="b"] > a[href*="/rapid_b/status/"]');
+        await permalink.focus();
         const snapshot = () =>
           page.evaluate(() => {
-            const target = document.querySelector(
-              '[data-rapid="b"] [data-testid="tweetPhoto"] img'
-            );
+            const target = document.querySelector('[data-rapid="b"] > a[href*="/rapid_b/status/"]');
             return {
               focused: document.activeElement === target,
               scrollY,
@@ -9289,6 +9307,10 @@ async function runOwn12NativeControls({
           api.map(({ tweetId }) => tweetId),
           [RAPID_CLICK_B]
         );
+        assert.deepEqual(metadataCounts(), {
+          ...videoMetadataStart,
+          quoted: videoMetadataStart.quoted + 1,
+        });
         await page.keyboard.press('Escape');
         await gallery.waitFor({ state: 'detached' });
         const after = await snapshot();
@@ -9303,6 +9325,7 @@ async function runOwn12NativeControls({
           selected,
           originUrl,
           api,
+          metadata: { before: videoMetadataStart, after: metadataCounts() },
           before,
           after,
         };
@@ -12386,9 +12409,12 @@ async function exerciseInstalledExtension(
     }
     try {
       own12NativeControls = await runOwn12NativeControls({
+        apiResponses: fixtureRoutes.apiResponses,
+        compactApiResponses: fixtureRoutes.compactApiResponses,
         context,
         extensionPage,
         output,
+        qualityApiResponses: fixtureRoutes.qualityApiResponses,
         quotedApiResponses: fixtureRoutes.quotedApiResponses,
       });
     } catch (error) {
