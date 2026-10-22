@@ -40,37 +40,44 @@ async function withServer(action: (fixture: Fixture, port: number) => Promise<vo
 function get(
   port: number,
   path: string,
-  options: { host?: string; method?: string; destination?: string } = {}
+  options: { host?: string; method?: string; destination?: string; origin?: string } = {}
 ) {
-  return new Promise<{ status: number; body: Buffer; location: string | undefined }>(
-    (resolveResponse, rejectResponse) => {
-      const request = httpRequest(
-        {
-          hostname: '127.0.0.1',
-          port,
-          path,
-          method: options.method ?? 'GET',
-          headers: {
-            Host: options.host ?? 'pbs.twimg.com',
-            ...(options.destination && { 'Sec-Fetch-Dest': options.destination }),
-          },
+  return new Promise<{
+    status: number;
+    body: Buffer;
+    location: string | undefined;
+    allowedOrigin?: string | undefined;
+  }>((resolveResponse, rejectResponse) => {
+    const request = httpRequest(
+      {
+        hostname: '127.0.0.1',
+        port,
+        path,
+        method: options.method ?? 'GET',
+        headers: {
+          Host: options.host ?? 'pbs.twimg.com',
+          ...(options.destination && { 'Sec-Fetch-Dest': options.destination }),
+          ...(options.origin && { Origin: options.origin }),
         },
-        (response) => {
-          const chunks: Buffer[] = [];
-          response.on('data', (chunk: Buffer) => chunks.push(chunk));
-          response.on('end', () =>
-            resolveResponse({
-              status: response.statusCode ?? 0,
-              body: Buffer.concat(chunks),
-              location: response.headers.location,
-            })
-          );
-        }
-      );
-      request.once('error', rejectResponse);
-      request.end();
-    }
-  );
+      },
+      (response) => {
+        const chunks: Buffer[] = [];
+        response.on('data', (chunk: Buffer) => chunks.push(chunk));
+        response.on('end', () =>
+          resolveResponse({
+            status: response.statusCode ?? 0,
+            body: Buffer.concat(chunks),
+            location: response.headers.location,
+            ...(options.origin && {
+              allowedOrigin: response.headers['access-control-allow-origin'],
+            }),
+          })
+        );
+      }
+    );
+    request.once('error', rejectResponse);
+    request.end();
+  });
 }
 
 async function waitFor(read: () => unknown) {
@@ -162,6 +169,16 @@ describe('userscript HTTPS loopback protocol', () => {
       });
       const healthy = await get(port, path, { host: 'x.com' });
       expect(healthy.status).toBe(200);
+      const mobileOrigin = await get(port, path, {
+        host: 'x.com',
+        origin: 'https://mobile.x.com',
+      });
+      expect(mobileOrigin).toMatchObject({ status: 200, allowedOrigin: 'https://mobile.x.com' });
+      const unrelatedOrigin = await get(port, path, {
+        host: 'x.com',
+        origin: 'https://unrelated.example',
+      });
+      expect(unrelatedOrigin.allowedOrigin).toBe('https://x.com');
       expect(JSON.parse(healthy.body.toString()).data.tweetResult.result.rest_id).toBe(
         '1234567890123456789'
       );

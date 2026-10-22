@@ -37,7 +37,10 @@ try {
     $san = [System.Security.Cryptography.X509Certificates.SubjectAlternativeNameBuilder]::new()
     $san.AddDnsName('pbs.twimg.com')
     if ($IncludeVideo) { $san.AddDnsName('video.twimg.com') }
-    if ($IncludeFixturePage) { $san.AddDnsName('x.com') }
+    if ($IncludeFixturePage) {
+        $san.AddDnsName('x.com')
+        $san.AddDnsName('mobile.x.com')
+    }
     $request.CertificateExtensions.Add($san.Build())
     $request.CertificateExtensions.Add(
         [System.Security.Cryptography.X509Certificates.X509BasicConstraintsExtension]::new(
