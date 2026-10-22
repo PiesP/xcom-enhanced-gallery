@@ -413,6 +413,7 @@ type NativeControlPoint = {
   y: number;
   node: string;
   hitBackendNodeId: number;
+  documentPoint: { x: number; y: number };
 };
 type Own12NativeControlsEvidence = AcceptanceReceipt & {
   native?: unknown;
@@ -8994,7 +8995,17 @@ async function locateOwn12NativeControl({
     };
   });
   assert(evidence.geometry.length < 8, 'Native control geometry observation budget exceeded');
-  evidence.geometry.push({ kind, videoBox, ...geometry });
+  const coordinateProbes: Array<{
+    viewport: { x: number; y: number };
+    document: { x: number; y: number };
+  }> = [];
+  evidence.geometry.push({ kind, videoBox, ...geometry, coordinateProbes });
+  assert(
+    geometry.visualViewport?.scale === 1 &&
+      geometry.visualViewport.offsetLeft === 0 &&
+      geometry.visualViewport.offsetTop === 0,
+    'Native control probe requires an unpinched desktop viewport'
+  );
   assert(
     geometry.connected && geometry.centerHitsHost,
     'Native host video center must be visible and hit-testable'
@@ -9105,9 +9116,18 @@ async function locateOwn12NativeControl({
     ) {
       continue;
     }
+    // getBoxModel and mouse input use viewport points; CDP hit testing uses document points.
+    const documentPoint = await page.evaluate(
+      ({ viewportX, viewportY }) => ({
+        x: Math.round(viewportX + scrollX),
+        y: Math.round(viewportY + scrollY),
+      }),
+      { viewportX: x, viewportY: y }
+    );
+    coordinateProbes.push({ viewport: { x, y }, document: documentPoint });
     const [hit, hostHit] = await Promise.all([
-      cdp.send('DOM.getNodeForLocation', { x, y, includeUserAgentShadowDOM: true }),
-      cdp.send('DOM.getNodeForLocation', { x, y, includeUserAgentShadowDOM: false }),
+      cdp.send('DOM.getNodeForLocation', { ...documentPoint, includeUserAgentShadowDOM: true }),
+      cdp.send('DOM.getNodeForLocation', { ...documentPoint, includeUserAgentShadowDOM: false }),
     ]);
     if (hostHit.backendNodeId !== described.node.backendNodeId) {
       continue;
@@ -9115,7 +9135,7 @@ async function locateOwn12NativeControl({
     if (!descendantIds(node).has(hit.backendNodeId)) {
       continue;
     }
-    return { kind, x, y, node: label, hitBackendNodeId: hit.backendNodeId };
+    return { kind, x, y, node: label, hitBackendNodeId: hit.backendNodeId, documentPoint };
   }
   if (kind === 'volume' && !hoveredVolume) {
     const button = entries.find(({ label }) => /volume|mute/u.test(label.toLowerCase()));
@@ -9204,6 +9224,7 @@ async function runOwn12NativeControls({
   try {
     const pageUrl = `https://x.com/rapid_a/status/${RAPID_CLICK_A}`;
     const nativeSetting: ControlledSettingEvidence = {};
+    evidence.native = { status: 'pending', controlledSetting: nativeSetting };
     evidence.native = await withControlledFixtureVideoMode(
       extensionPage,
       nativeSetting,
@@ -9403,6 +9424,7 @@ async function runOwn12NativeControls({
     cdp = undefined;
     evidence.cleanup.cdpDetached = true;
     const photoSetting: ControlledSettingEvidence = {};
+    evidence.adjacentPhoto = { status: 'pending', controlledSetting: photoSetting };
     evidence.adjacentPhoto = await withControlledFixtureVideoMode(
       extensionPage,
       photoSetting,
