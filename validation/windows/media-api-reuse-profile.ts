@@ -278,6 +278,9 @@ export function assertRedirectProtocolAttribution({
   for (const observed of pageConsole) {
     const index = unmatchedLogs.findIndex(
       (log) =>
+        typeof log.url === 'string' &&
+        log.url.length > 0 &&
+        log.url === observed.location.url &&
         log.text === observed.text &&
         Math.abs(log.observedAtMonotonicMs - observed.observedAtMonotonicMs) < 5_000
     );

@@ -16,6 +16,7 @@ const REDIRECT_TWEET_ID = '8111111111111111111';
 const REDIRECT_API_URL =
   'https://x.com/i/api/graphql/contract/TweetResultByRestId?variables=' +
   encodeURIComponent(JSON.stringify({ tweetId: REDIRECT_TWEET_ID }));
+const REDIRECT_RECEIVER = 'https://pbs.twimg.com/media/xeg-metadata-redirect.json';
 
 function ownedRedirectObservations(): Parameters<typeof assertRedirectProtocolAttribution>[0] {
   const ids = ['owned-a', 'owned-b'];
@@ -41,7 +42,7 @@ function ownedRedirectObservations(): Parameters<typeof assertRedirectProtocolAt
         source: 'network',
         level: 'error',
         text,
-        url: REDIRECT_API_URL,
+        url: REDIRECT_RECEIVER,
         observedAtMonotonicMs: 102 + index * 100,
       })),
       overflow: false,
@@ -58,13 +59,19 @@ function ownedRedirectObservations(): Parameters<typeof assertRedirectProtocolAt
       expected: false,
       pageIndex: 1,
       apiLocation: false,
-      location: { url: '', line: 0, column: 0, lineNumber: 0, columnNumber: 0 },
+      location: {
+        url: REDIRECT_RECEIVER,
+        line: 0,
+        column: 0,
+        lineNumber: 0,
+        columnNumber: 0,
+      },
       observedAtMonotonicMs: 103 + index * 100,
     })),
   };
 }
 
-test('redirect console attribution requires each exact failed API request ID', () => {
+test('redirect console attribution requires exact failed API IDs and destination', () => {
   assert.equal(assertRedirectProtocolAttribution(ownedRedirectObservations()).length, 2);
   for (const [name, mutate] of [
     [
@@ -83,6 +90,18 @@ test('redirect console attribution requires each exact failed API request ID', (
       'duplicate ID',
       (input: ReturnType<typeof ownedRedirectObservations>) => {
         input.protocol.logs[1]!.requestId = 'owned-a';
+      },
+    ],
+    [
+      'unrelated console location',
+      (input: ReturnType<typeof ownedRedirectObservations>) => {
+        input.consoleErrors[1]!.location.url = 'https://x.com/unrelated-resource';
+      },
+    ],
+    [
+      'missing CDP log URL',
+      (input: ReturnType<typeof ownedRedirectObservations>) => {
+        input.protocol.logs[1]!.url = undefined;
       },
     ],
   ] satisfies [string, (input: ReturnType<typeof ownedRedirectObservations>) => void][]) {
