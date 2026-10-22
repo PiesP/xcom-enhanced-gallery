@@ -2056,7 +2056,7 @@ async function runRangeAbortDiagnostics({
         );
       assert(documentRequest, 'Range fixture document must come from the native HTTPS server');
       observed.document = documentRequest;
-      await page.keyboard.press('Escape');
+      await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]').click();
       await gallery.waitFor({ state: 'detached' });
       observed.status = 'passed';
     } catch (error) {
