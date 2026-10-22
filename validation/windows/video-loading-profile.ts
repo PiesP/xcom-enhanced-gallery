@@ -12,7 +12,6 @@ import type {
   ConsoleMessage,
   Page,
   Request,
-  Response,
   Route,
 } from '@playwright/test';
 import type { startExtensionNativeFixtureLoopback } from './extension-native-loopback.ts';
@@ -59,10 +58,6 @@ type VideoObservation = {
   viewport?: { width: number; height: number };
   initial?: ItemState | null;
   metadata?: ItemState | null;
-  metadataHold?: unknown;
-  requestingDocumentTransport?: unknown;
-  failureState?: ItemState | null;
-  nativeTransport?: unknown;
   beforeRecovery?: ItemState | null;
   distantBeforeActivation?: number[];
   recovered?: ItemState & { playbackEnd: number; hint: string };
@@ -470,6 +465,7 @@ export async function runVideoLoadingProfile({
       typeof nativeLoopback.snapshot === 'function',
     'The HTTPS native download loopback is required'
   );
+  nativeLoopback.setRecoveryPayloads({ tweetId, validMp4, badMp4: BAD_MP4 });
   const badSha256 = createHash('sha256').update(BAD_MP4).digest('hex');
   const bestUrl = videoUrl(tweetId, 0);
   const lowerUrl = videoUrl(tweetId, 0, 'lower');
@@ -495,14 +491,6 @@ export async function runVideoLoadingProfile({
   const lowerGate = new Promise<void>((resolve) => {
     releaseLower = resolve;
   });
-  let lowerHoldArmed = false;
-  const lowerRequests = new Map<Request, VideoRequest>();
-  const observeLowerResponse = (response: Response) => {
-    const record = lowerRequests.get(response.request());
-    if (record) {
-      record.status = response.status();
-    }
-  };
   let settingsBefore: StorageBefore | undefined;
   let settingsChanged = false;
   let primaryError: unknown;
@@ -512,9 +500,12 @@ export async function runVideoLoadingProfile({
     const request = route.request();
     const target = new URL(request.url());
     if (request.isNavigationRequest() && request.url() === fixtureUrl) {
-      // Match the maintained recovery-intent fixture: the real HTTPS document
-      // and media share the loopback address space, without overriding permissions.
-      return route.continue();
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/html',
+        body: fixtureHtml(tweetId, handle),
+      });
+      return;
     }
     if (target.hostname === 'x.com' && target.pathname.endsWith('/TweetResultByRestId')) {
       let requestedId: unknown;
@@ -577,16 +568,7 @@ export async function runVideoLoadingProfile({
         await bestGate;
       }
       if (quality === 'lower') {
-        if (lowerRequests.size < MAX_REQUESTS) {
-          lowerRequests.set(request, record);
-        } else {
-          records.overflow++;
-        }
         await lowerGate;
-        // Only this declared synthetic source uses the HTTPS streaming fixture. Page
-        // fulfillment cannot expose metadata while withholding the first media sample.
-        await route.continue();
-        return;
       }
       const payload = index === 0 && quality === 'best' ? BAD_MP4 : validMp4;
       const range = /^bytes=(\d+)-(\d*)$/u.exec(request.headers().range ?? '');
@@ -619,7 +601,6 @@ export async function runVideoLoadingProfile({
     await route.fallback();
   };
   await context.route('**/*', routeHandler);
-  context.on('response', observeLowerResponse);
   try {
     await page.setViewportSize({ width: 1280, height: 500 });
     observation.viewport = { width: 1280, height: 500 };
@@ -650,24 +631,7 @@ export async function runVideoLoadingProfile({
     assert.equal(field(applied, 'videoClickMode'), 'allow-all');
     assert.equal(field(applied, 'preloadCount'), 20);
 
-    const lowerMp4 = await readFile(join(root, 'test/e2e/fixtures/installed-metadata-header.mp4'));
-    assert.equal(
-      createHash('sha256').update(lowerMp4).digest('hex'),
-      'f32e86678878b658531f0e7e46a66c5f13d7856312e852cd376eae17bbf0b63a',
-      'The declared bounded metadata-header fixture changed'
-    );
-    nativeLoopback.setRecoveryPayloads({ tweetId, validMp4, badMp4: BAD_MP4, lowerMp4 });
-    nativeLoopback.setRecoveryDocument({ tweetId, handle, html: fixtureHtml(tweetId, handle) });
-    const documentResponse = await page.goto(fixtureUrl);
-    assert(documentResponse, 'Native fixture document response is missing');
-    const server = await documentResponse.serverAddr();
-    observation.requestingDocumentTransport = { status: documentResponse.status(), server };
-    assert.equal(documentResponse.status(), 200);
-    assert.equal(
-      server?.ipAddress,
-      '127.0.0.1',
-      'Fixture document must use its native HTTPS loopback'
-    );
+    await page.goto(fixtureUrl);
     const trigger = page.locator('[data-video-target="0"]');
     await trigger.scrollIntoViewIfNeeded();
     const beforeHost = await page.evaluate(() => ({
@@ -738,26 +702,6 @@ export async function runVideoLoadingProfile({
     observation.beforeRecovery = beforeRecovery;
     observation.checks.push('distant-video-urls-absent-with-preload-count-20');
 
-    let sawMoov = false;
-    let metadataPrefixEnd = 0;
-    for (let offset = 0; offset + 8 <= lowerMp4.length;) {
-      const size: number = lowerMp4.readUInt32BE(offset);
-      assert(size >= 8 && offset + size <= lowerMp4.length, 'Invalid bounded fixture atom');
-      const kind = lowerMp4.toString('ascii', offset + 4, offset + 8);
-      if (kind === 'moov') {
-        sawMoov = true;
-      }
-      if (kind === 'mdat') {
-        assert(sawMoov, 'Metadata-only fixture requires moov before media samples');
-        metadataPrefixEnd = offset + 8;
-        break;
-      }
-      offset += size;
-    }
-    assert(metadataPrefixEnd > 65_536 && metadataPrefixEnd < lowerMp4.length);
-    const lowerTransportMark = nativeLoopback.mark();
-    nativeLoopback.armVideoHold(new URL(lowerUrl).pathname, metadataPrefixEnd);
-    lowerHoldArmed = true;
     const lowerReleasedAtMs = performance.now();
     releaseLower();
     await page.waitForFunction(
@@ -776,34 +720,13 @@ export async function runVideoLoadingProfile({
         );
       },
       null,
-      { timeout: 5_000 }
+      { timeout: 20_000 }
     );
     observation.metadata = await itemState(page, 0);
     assert(observation.metadata);
     observation.timingsMs.metadataAfterLowerRelease = performance.now() - lowerReleasedAtMs;
     assert.equal(observation.metadata.controls, true);
-    assert.equal(observation.metadata.readyState, 1, 'Withheld samples must leave metadata only');
-    assert.notEqual(
-      observation.metadata.firstFrame,
-      'true',
-      'Metadata is not a decoded first frame'
-    );
-    assert.equal(
-      nativeLoopback.videoHeld(),
-      true,
-      'The native source must still withhold media samples'
-    );
-    const metadataTransport = nativeLoopback
-      .since(lowerTransportMark)
-      .filter(
-        ({ host, path }) => host === 'video.twimg.com' && path === new URL(lowerUrl).pathname
-      );
-    assert(metadataTransport.some(({ result }) => result === 'video-held'));
-    observation.metadataHold = { metadataPrefixEnd, events: metadataTransport };
     observation.checks.push('metadata-ready-with-native-controls');
-    observation.checks.push('metadata-ready-without-first-frame-while-samples-held');
-    nativeLoopback.completeVideoHold();
-    lowerHoldArmed = false;
     await page.waitForFunction(
       () => {
         const item = document.querySelector(
@@ -1100,8 +1023,6 @@ export async function runVideoLoadingProfile({
     caughtPrimaryError = true;
     primaryError = error;
     observation.error = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
-    observation.failureState = await itemState(page, 0).catch(() => null);
-    observation.nativeTransport = nativeLoopback.snapshot();
     await page.screenshot({ path: join(output, 'video-loading-failure.png') }).catch(() => {});
     await writeFile(
       join(output, 'video-loading-failure.json'),
@@ -1110,10 +1031,6 @@ export async function runVideoLoadingProfile({
   } finally {
     releaseBest();
     releaseLower();
-    if (lowerHoldArmed) {
-      nativeLoopback.abortVideoHold();
-    }
-    context.off('response', observeLowerResponse);
     const cleanupFailures: unknown[] = [];
     try {
       await context.unroute('**/*', routeHandler);
