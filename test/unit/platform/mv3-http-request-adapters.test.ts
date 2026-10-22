@@ -106,6 +106,32 @@ describe('MV3HttpRequestAdapter', () => {
     }
   );
 
+  it.each(['<html>consent</html>', '{"data":', '"login"', '[]'])(
+    'preserves the actual JSON-read boundary for a malformed or non-provider 200 body: %s',
+    async (text) => {
+      const fetchSpy = vi.fn().mockResolvedValue(new Response(text, { status: 200 }));
+      vi.stubGlobal('fetch', fetchSpy);
+      const response = await new Promise<HttpRequestResponse>((resolve) => {
+        new MV3HttpRequestAdapter().request({
+          url: 'https://x.com/i/api/graphql/fixture/TweetResultByRestId',
+          responseType: 'json',
+          maxResponseBytes: 128,
+          onload: resolve,
+          onerror: resolve,
+        });
+      });
+      expect(response.status).toBe(200);
+      if (text === '"login"' || text === '[]') {
+        expect(response.response).toEqual(JSON.parse(text));
+        expect(response.readable).toBe(true);
+      } else {
+        expect(response.readable).toBe(false);
+        expect(response.errorCategory).toBe('unreadable');
+      }
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+    }
+  );
+
   it.each([403, 429])(
     'keeps known HTTP %i metadata when body reading times out',
     async (status) => {

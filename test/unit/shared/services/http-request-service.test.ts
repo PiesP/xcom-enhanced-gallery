@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import type { HttpRequestControl, HttpRequestDetails } from '@platform/types';
+import { MV3HttpRequestAdapter } from '@platform/mv3-http-request-adapters';
 import { HttpRequestService } from '@shared/services/http-request-service';
 
 const mocks = vi.hoisted(() => ({
@@ -16,6 +17,63 @@ describe('HttpRequestService', () => {
   beforeEach(() => {
     mocks.request.mockReset();
   });
+
+  it.each(['timeout', 'network'] as const)(
+    'settles an actual MV3 metadata %s and allows the next healthy request',
+    async (fault) => {
+      vi.useFakeTimers();
+      const adapter = new MV3HttpRequestAdapter();
+      mocks.request.mockImplementation((details) => adapter.request(details));
+      let activeSignal: AbortSignal | null | undefined;
+      const fetchRequest = vi.fn<typeof fetch>().mockImplementationOnce((_input, init) => {
+        activeSignal = init?.signal;
+        if (fault === 'network') {
+          return Promise.reject(new TypeError('Controlled connection failure'));
+        }
+        return new Promise((_resolve, reject) => {
+          activeSignal?.addEventListener(
+            'abort',
+            () => reject(new DOMException('Aborted', 'AbortError')),
+            { once: true }
+          );
+        });
+      });
+      vi.stubGlobal('fetch', fetchRequest);
+      const service = new HttpRequestService();
+      const url = 'https://x.com/i/api/graphql/fixture/TweetResultByRestId';
+      try {
+        const failed = expect(
+          service.get(url, { responseType: 'json', maxResponseBytes: 128 })
+        ).rejects.toMatchObject({
+          name: 'HttpRequestError',
+          status: 0,
+          category: fault,
+        });
+        if (fault === 'timeout') {
+          await vi.advanceTimersByTimeAsync(9_999);
+          expect(activeSignal?.aborted).toBe(false);
+          await vi.advanceTimersByTimeAsync(1);
+          expect(activeSignal?.aborted).toBe(true);
+        }
+        await failed;
+        expect(fetchRequest).toHaveBeenCalledTimes(1);
+        expect(mocks.request).toHaveBeenCalledWith(expect.objectContaining({ timeout: 10_000 }));
+
+        fetchRequest.mockResolvedValueOnce(new Response('{"healthy":true}', { status: 200 }));
+        await expect(
+          service.get(url, { responseType: 'json', maxResponseBytes: 128 })
+        ).resolves.toMatchObject({
+          ok: true,
+          status: 200,
+          data: { healthy: true },
+        });
+        expect(fetchRequest).toHaveBeenCalledTimes(2);
+      } finally {
+        vi.useRealTimers();
+        vi.unstubAllGlobals();
+      }
+    }
+  );
 
   it('removes the abort listener after a successful response', async () => {
     const controller = new AbortController();

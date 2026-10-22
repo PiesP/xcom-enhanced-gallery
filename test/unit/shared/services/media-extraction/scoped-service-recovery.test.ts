@@ -78,7 +78,49 @@ describe('integrated scoped recovery and delayed identity', () => {
     }
   });
 
-  it.each(['removed', 'replaced', 'reused'] as const)(
+  it.each([401, 403].flatMap((status) => [true, false].map((visible) => ({ status, visible }))))(
+    'keeps denied $status separate from visible-DOM recovery ($visible)',
+    async ({ status, visible }) => {
+      httpGet.mockResolvedValue({
+        ok: false,
+        status,
+        readable: true,
+        retryAfterMs: 120_000,
+        data: {},
+      });
+      const target = visible
+        ? tile()
+        : (() => {
+            document.body.innerHTML =
+              '<a href="/author/status/222/video/1"><video id="target" src="blob:https://x.com/fixture" poster="https://pbs.twimg.com/ext_tw_video_thumb/900/pu/img/poster.jpg"></video></a>';
+            return document.getElementById('target')!;
+          })();
+      const service = new MediaExtractionService();
+      try {
+        for (let click = 0; click < 2; click += 1) {
+          const result = await service.extractFromClickedElement(target);
+          expect(result.success).toBe(visible);
+          if (visible) {
+            expect(result.metadata).toMatchObject({
+              sourceType: 'dom-fallback',
+              recoveryScope: 'visible-tile',
+            });
+            expect(result.mediaItems.map((item) => item.url)).toEqual([
+              'https://pbs.twimg.com/media/second.jpg',
+            ]);
+          } else {
+            expect(result.failureKind).toBe('denied');
+            expect(result.mediaItems).toEqual([]);
+          }
+        }
+        expect(httpGet).toHaveBeenCalledTimes(2);
+      } finally {
+        service.dispose();
+      }
+    }
+  );
+
+  it.each(['removed', 'replaced', 'reused', 'owner-changed'] as const)(
     'preserves API click identity when target is %s',
     async (kind) => {
       let finish!: (value: {
@@ -103,6 +145,9 @@ describe('integrated scoped recovery and delayed identity', () => {
       if (kind === 'reused') {
         target.setAttribute('src', 'https://pbs.twimg.com/media/first.jpg');
       }
+      if (kind === 'owner-changed') {
+        target.closest('a')!.href = '/other/status/333/photo/2';
+      }
       finish({ ok: true, status: 200, data: response() });
       const result = await pending;
       expect(result.success).toBe(true);
@@ -111,20 +156,131 @@ describe('integrated scoped recovery and delayed identity', () => {
     }
   );
 
-  it('safely fails DOM recovery if a pending failed request reuses a target', async () => {
-    let finish!: (value: { ok: boolean; status: number; data: object }) => void;
-    httpGet.mockReturnValue(
-      new Promise((resolve) => {
-        finish = resolve;
-      })
-    );
-    const target = tile();
-    const pending = new MediaExtractionService().extractFromClickedElement(target);
-    await vi.waitFor(() => expect(httpGet).toHaveBeenCalledTimes(1));
-    target.setAttribute('src', 'https://pbs.twimg.com/media/first.jpg');
-    finish({ ok: false, status: 503, data: {} });
-    expect((await pending).success).toBe(false);
+  it.each(['removed', 'replaced', 'reused', 'owner-changed'] as const)(
+    'refuses current-DOM recovery when a failed request target is %s',
+    async (kind) => {
+      let finish!: (value: { ok: boolean; status: number; data: object }) => void;
+      httpGet.mockReturnValue(
+        new Promise((resolve) => {
+          finish = resolve;
+        })
+      );
+      const target = tile();
+      const service = new MediaExtractionService();
+      try {
+        const pending = service.extractFromClickedElement(target);
+        await vi.waitFor(() => expect(httpGet).toHaveBeenCalledTimes(1));
+        if (kind === 'removed') {
+          target.remove();
+        } else if (kind === 'replaced') {
+          target.outerHTML = '<img src="https://pbs.twimg.com/media/first.jpg">';
+        } else if (kind === 'reused') {
+          target.setAttribute('src', 'https://pbs.twimg.com/media/first.jpg');
+        } else {
+          target.closest('a')!.href = '/other/status/333/photo/2';
+        }
+        finish({ ok: false, status: 503, data: {} });
+        const result = await pending;
+        expect(result.success).toBe(false);
+        expect(result.mediaItems).toEqual([]);
+        expect(httpGet).toHaveBeenCalledTimes(1);
+      } finally {
+        service.dispose();
+      }
+    }
+  );
+
+  it('coalesces concurrent metadata while selecting each actual clicked attachment independently', async () => {
+    let finish!: (value: unknown) => void;
+    httpGet.mockReturnValue(new Promise((resolve) => (finish = resolve)));
+    document.body.innerHTML =
+      '<a href="/author/status/222/photo/1"><img id="first" src="https://pbs.twimg.com/media/first.jpg"></a><a href="/author/status/222/photo/2"><img id="second" src="https://pbs.twimg.com/media/second.jpg"></a>';
+    const service = new MediaExtractionService();
+    try {
+      const first = service.extractFromClickedElement(document.getElementById('first')!);
+      const second = service.extractFromClickedElement(document.getElementById('second')!);
+      await vi.waitFor(() => expect(httpGet).toHaveBeenCalledTimes(1));
+      finish({ ok: true, status: 200, data: response() });
+      const results = await Promise.all([first, second]);
+      expect(results.map((result) => result.success)).toEqual([true, true]);
+      expect(results.map((result) => result.clickedIndex)).toEqual([0, 1]);
+      expect(results.map((result) => result.mediaItems[result.clickedIndex ?? -1]?.url)).toEqual([
+        'https://pbs.twimg.com/media/first.jpg?format=jpg&name=orig',
+        'https://pbs.twimg.com/media/second.jpg?format=jpg&name=orig',
+      ]);
+      expect(results[0]?.apiRequestToken).toBe(results[1]?.apiRequestToken);
+      expect(httpGet).toHaveBeenCalledTimes(1);
+    } finally {
+      service.dispose();
+    }
   });
+
+  it.each(['success', 'failure'] as const)(
+    'selects the final A attachment through real metadata reuse after late first-A %s',
+    async (lateOutcome) => {
+      const requests: {
+        tweetId: string;
+        resolve: (value: unknown) => void;
+        reject: (reason: unknown) => void;
+      }[] = [];
+      httpGet.mockImplementation(
+        (url: string) =>
+          new Promise((resolve, reject) => {
+            const { tweetId } = JSON.parse(new URL(url).searchParams.get('variables')!);
+            requests.push({ tweetId, resolve, reject });
+          })
+      );
+      document.body.innerHTML =
+        '<a href="/author/status/222/photo/1"><img id="first-a" src="https://pbs.twimg.com/media/first.jpg"></a><a href="/other/status/333/photo/1"><img id="b" src="https://pbs.twimg.com/media/other.jpg"></a><a href="/author/status/222/photo/2"><img id="final-a" src="https://pbs.twimg.com/media/second.jpg"></a>';
+      const service = new MediaExtractionService();
+      const firstController = new AbortController();
+      const middleController = new AbortController();
+      try {
+        const first = service.extractFromClickedElement(document.getElementById('first-a')!, {
+          signal: firstController.signal,
+        });
+        await vi.waitFor(() => expect(requests).toHaveLength(1));
+        firstController.abort();
+        const middle = service.extractFromClickedElement(document.getElementById('b')!, {
+          signal: middleController.signal,
+        });
+        await vi.waitFor(() => expect(requests).toHaveLength(2));
+        middleController.abort();
+        const final = service.extractFromClickedElement(document.getElementById('final-a')!);
+        await vi.waitFor(() => expect(requests).toHaveLength(3));
+        expect(requests.map((request) => request.tweetId)).toEqual(['222', '333', '222']);
+
+        requests[2]!.resolve({ ok: true, status: 200, data: response() });
+        const selected = await final;
+        expect(selected.success).toBe(true);
+        expect(selected.clickedIndex).toBe(1);
+        expect(selected.mediaItems[1]).toMatchObject({
+          url: 'https://pbs.twimg.com/media/second.jpg?format=jpg&name=orig',
+          tweetId: '222',
+        });
+
+        if (lateOutcome === 'success') {
+          const stale = response();
+          stale.data.tweetResult.result.legacy.extended_entities.media.reverse();
+          requests[0]!.resolve({ ok: true, status: 200, data: stale });
+        } else {
+          requests[0]!.reject(new Error('late retired first-A transport failure'));
+        }
+        requests[1]!.reject(new Error('late retired B transport failure'));
+        expect((await first).success).toBe(false);
+        expect((await middle).success).toBe(false);
+        const reused = await service.extractFromClickedElement(document.getElementById('final-a')!);
+        expect(reused.success).toBe(true);
+        expect(reused.clickedIndex).toBe(1);
+        expect(reused.mediaItems[1]?.url).toBe(
+          'https://pbs.twimg.com/media/second.jpg?format=jpg&name=orig'
+        );
+        expect(httpGet).toHaveBeenCalledTimes(3);
+      } finally {
+        service.dispose();
+      }
+    }
+  );
 
   it('does not substitute a replaced image after a delayed HTTP failure when the old background remains', async () => {
     let finish!: (value: { ok: boolean; status: number; data: object }) => void;

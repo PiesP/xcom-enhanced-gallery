@@ -403,6 +403,13 @@ describe('MediaExtractionService API circuit', () => {
       }
       expect(requestedTweetIds()).toEqual(['901', '902', '903', '904']);
       expect(httpGet).toHaveBeenCalledTimes(4);
+      httpGet.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        data: JSON.parse(JSON.stringify(createQuotedVideoTweetResponse()).replaceAll('222', '905')),
+      });
+      expect((await clickTweet(service, '905')).success).toBe(true);
+      expect(requestedTweetIds()).toEqual(['901', '902', '903', '904', '905']);
     } finally {
       service.dispose();
     }
@@ -774,35 +781,38 @@ describe('MediaExtractionService API circuit', () => {
     service.dispose();
   });
 
-  it('keeps an unreadable 503 diagnosis while honoring its known server wait', async () => {
-    const service = new MediaExtractionService();
-    let monotonicNow = 10_000;
-    vi.spyOn(performance, 'now').mockImplementation(() => monotonicNow);
-    httpGet.mockResolvedValueOnce({
-      ok: false,
-      status: 503,
-      readable: false,
-      errorCategory: 'unreadable',
-      retryAfterMs: 120_000,
-      data: {},
-    });
-    const unreadable = await click(service);
-    expect(unreadable).toMatchObject({
-      failureKind: 'unreadable',
-      apiHttpStatus: 503,
-      apiResponseReadable: false,
-      retryAfterMs: 120_000,
-    });
-    expect(httpGet).toHaveBeenCalledTimes(1);
-    monotonicNow += 119_999;
-    expect((await click(service)).failureKind).toBe('unreadable');
-    expect(httpGet).toHaveBeenCalledTimes(1);
-    monotonicNow += 1;
-    httpGet.mockResolvedValue({ ok: true, status: 200, data: createQuotedVideoTweetResponse() });
-    expect((await click(service)).success).toBe(true);
-    expect(httpGet).toHaveBeenCalledTimes(2);
-    service.dispose();
-  });
+  it.each([408, 425, 500, 502, 503])(
+    'keeps an unreadable %i diagnosis while honoring its known server wait',
+    async (status) => {
+      const service = new MediaExtractionService();
+      let monotonicNow = 10_000;
+      vi.spyOn(performance, 'now').mockImplementation(() => monotonicNow);
+      httpGet.mockResolvedValueOnce({
+        ok: false,
+        status,
+        readable: false,
+        errorCategory: 'unreadable',
+        retryAfterMs: 120_000,
+        data: {},
+      });
+      const unreadable = await click(service);
+      expect(unreadable).toMatchObject({
+        failureKind: 'unreadable',
+        apiHttpStatus: status,
+        apiResponseReadable: false,
+        retryAfterMs: 120_000,
+      });
+      expect(httpGet).toHaveBeenCalledTimes(1);
+      monotonicNow += 119_999;
+      expect((await click(service)).failureKind).toBe('unreadable');
+      expect(httpGet).toHaveBeenCalledTimes(1);
+      monotonicNow += 1;
+      httpGet.mockResolvedValue({ ok: true, status: 200, data: createQuotedVideoTweetResponse() });
+      expect((await click(service)).success).toBe(true);
+      expect(httpGet).toHaveBeenCalledTimes(2);
+      service.dispose();
+    }
+  );
 
   it('does not defer a denied 403 even when the response carries Retry-After', async () => {
     const service = new MediaExtractionService();
