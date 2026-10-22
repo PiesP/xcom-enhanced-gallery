@@ -70,7 +70,87 @@ type VideoObservation = {
   };
   geometry?: unknown;
   recoveryIntent?: unknown;
+  selectedFailures?: SelectedVideoFailureEvidence;
   error?: string;
+};
+type SelectedVideoFault = 'http-401' | 'http-403' | 'http-404' | 'html-200' | 'invalid-mp4-200';
+type SelectedVideoRouteRecord = {
+  url: string;
+  index: number;
+  quality: string;
+  range: string | null;
+  status: number;
+  bytes: number;
+  sha256: string | null;
+  fulfilledAtMonotonicMs?: number;
+};
+type SelectedVideoEventRecord = {
+  type: 'error' | 'src';
+  atPageMonotonicMs: number;
+  source: string | null;
+  currentSource: string;
+  errorCode: number | null;
+  trusted: boolean | null;
+  responseStatus: number | null;
+};
+type SelectedVideoPageObserver = {
+  records: SelectedVideoEventRecord[];
+  overflow: boolean;
+  dispose: () => void;
+};
+type SelectedVideoFailureCase = {
+  kind: SelectedVideoFault;
+  status: 'pending' | 'passed' | 'failed';
+  fixtureUrl: string;
+  bestUrl: string;
+  lowerUrl: string;
+  faultStatus: number;
+  api: Array<{ url: string; status: number }>;
+  requests: SelectedVideoRouteRecord[];
+  responses: Array<{ url: string; status: number }>;
+  unexpectedVideo: string[];
+  events: SelectedVideoEventRecord[];
+  consoleErrors: Array<{ text: string; location: string }>;
+  pageErrors: string[];
+  overflow: boolean;
+  faultPhysicalRangeRequests?: number;
+  faultSelectedSourceAttempts?: string[];
+  totalPhysicalRangeRequests?: number;
+  initial?: ItemState;
+  nativeError?: SelectedVideoEventRecord;
+  faultOutcome?: ItemState;
+  neighbor?: ItemState;
+  returned?: ItemState;
+  recovered?: ItemState;
+  recoveredNeighbor?: ItemState;
+  playback?: { before: number; after: number };
+  attribution?: { failed: string; recovered: string };
+  host?: {
+    before: { scrollY: number; bodyStyle: string | null; activeTarget: string | null };
+    firstClose: { scrollY: number; bodyStyle: string | null; activeTarget: string | null };
+    after: { scrollY: number; bodyStyle: string | null; activeTarget: string | null };
+  };
+  document?: {
+    before: { url: string; timeOrigin: number };
+    after: { url: string; timeOrigin: number };
+  };
+  screenshot?: string;
+  screenshotError?: string;
+  error?: string;
+  cleanup: {
+    gateReleased: boolean;
+    observerRemoved: boolean;
+    routeRemoved: boolean;
+    listenersRemoved: boolean;
+    pageClosed: boolean;
+    errors: string[];
+  };
+};
+type SelectedVideoFailureEvidence = {
+  status: 'pending' | 'passed' | 'failed';
+  cases: SelectedVideoFailureCase[];
+  requestCapPerCase: number;
+  errors?: string[];
 };
 type StorageBefore = { exists: boolean; value: unknown };
 type NativeDownload = {
@@ -216,6 +296,7 @@ type GeometryEvidence = {
 declare global {
   interface Window {
     __xegRecoveryEventObservation?: RecoveryEventState;
+    __xegSelectedVideoFailureObservation?: SelectedVideoPageObserver;
   }
   interface Permissions {
     query(permissionDesc: { name: 'loopback-network' }): Promise<PermissionStatus>;
@@ -994,6 +1075,21 @@ export async function runVideoLoadingProfile({
     );
     observation.checks.push('host-scroll-and-style-restored');
     const followupErrors: unknown[] = [];
+    observation.selectedFailures = {
+      status: 'pending',
+      cases: [],
+      requestCapPerCase: 16,
+    };
+    try {
+      await runSelectedVideoFailureCases({
+        context,
+        validMp4,
+        output,
+        evidence: observation.selectedFailures,
+      });
+    } catch (error) {
+      followupErrors.push(error);
+    }
     try {
       observation.geometry = await runAdmissionGeometryCases({ context, validMp4, output });
     } catch (error) {
@@ -1016,7 +1112,7 @@ export async function runVideoLoadingProfile({
     if (followupErrors.length) {
       throw new AggregateError(
         followupErrors,
-        'Required video admission and recovery intent cases failed'
+        'Required video failure, admission, or recovery intent cases failed'
       );
     }
   } catch (error) {
@@ -1079,6 +1175,803 @@ export async function runVideoLoadingProfile({
     throw primaryError;
   }
   return observation;
+}
+
+async function runSelectedVideoFailureCases({
+  context,
+  validMp4,
+  output,
+  evidence,
+}: {
+  context: BrowserContext;
+  validMp4: Buffer;
+  output: string;
+  evidence: SelectedVideoFailureEvidence;
+}) {
+  const faults: Array<{
+    kind: SelectedVideoFault;
+    status: number;
+    contentType: string;
+    body: Buffer;
+  }> = [
+    { kind: 'http-401', status: 401, contentType: 'video/mp4', body: Buffer.alloc(0) },
+    { kind: 'http-403', status: 403, contentType: 'video/mp4', body: Buffer.alloc(0) },
+    { kind: 'http-404', status: 404, contentType: 'video/mp4', body: Buffer.alloc(0) },
+    {
+      kind: 'html-200',
+      status: 200,
+      contentType: 'text/html',
+      body: Buffer.from('<!doctype html><title>not media</title>'),
+    },
+    { kind: 'invalid-mp4-200', status: 200, contentType: 'video/mp4', body: BAD_MP4 },
+  ];
+  const failures: unknown[] = [];
+  const handle = 'selectedfault';
+  evidence.status = 'pending';
+  for (const [caseIndex, fault] of faults.entries()) {
+    const id = String(4666000111222334771n + BigInt(caseIndex));
+    const fixtureUrl = 'https://x.com/' + handle + '/status/' + id;
+    const bestUrl = videoUrl(id, 0);
+    const lowerUrl = videoUrl(id, 0, 'lower');
+    const neighborUrl = videoUrl(id, 1);
+    const receipt: SelectedVideoFailureCase = {
+      kind: fault.kind,
+      status: 'pending',
+      fixtureUrl,
+      bestUrl,
+      lowerUrl,
+      faultStatus: fault.status,
+      api: [],
+      requests: [],
+      responses: [],
+      unexpectedVideo: [],
+      events: [],
+      consoleErrors: [],
+      pageErrors: [],
+      overflow: false,
+      cleanup: {
+        gateReleased: false,
+        observerRemoved: false,
+        routeRemoved: false,
+        listenersRemoved: false,
+        pageClosed: false,
+        errors: [],
+      },
+    };
+    evidence.cases.push(receipt);
+    let page: Page | undefined;
+    let routeArmed = false;
+    let faultActive = true;
+    let releaseBest: () => void = () => {};
+    const bestGate = new Promise<void>((resolve) => {
+      releaseBest = resolve;
+    });
+    const release = () => {
+      releaseBest();
+      receipt.cleanup.gateReleased = true;
+    };
+    const onConsole = (message: ConsoleMessage) => {
+      if (message.type() !== 'error') {
+        return;
+      }
+      if (receipt.consoleErrors.length >= 8) {
+        receipt.overflow = true;
+        return;
+      }
+      receipt.consoleErrors.push({
+        text: message.text().slice(0, 500),
+        location: message.location().url.slice(0, 500),
+      });
+    };
+    const onPageError = (error: Error) => {
+      if (receipt.pageErrors.length >= 4) {
+        receipt.overflow = true;
+        return;
+      }
+      receipt.pageErrors.push(String(error).slice(0, 500));
+    };
+    const onResponse = (response: { url(): string; status(): number }) => {
+      const url = response.url();
+      if (url !== bestUrl && !url.includes('/TweetResultByRestId')) {
+        return;
+      }
+      if (receipt.responses.length >= evidence.requestCapPerCase) {
+        receipt.overflow = true;
+        return;
+      }
+      receipt.responses.push({ url, status: response.status() });
+    };
+    const routeHandler = async (route: Route) => {
+      const request = route.request();
+      const target = new URL(request.url());
+      if (request.isNavigationRequest() && request.url() === fixtureUrl) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'text/html',
+          body: fixtureHtml(id, handle),
+        });
+        return;
+      }
+      if (target.hostname === 'x.com' && target.pathname.endsWith('/TweetResultByRestId')) {
+        let requestedId: unknown;
+        try {
+          requestedId = field(JSON.parse(target.searchParams.get('variables') ?? '{}'), 'tweetId');
+        } catch {
+          requestedId = undefined;
+        }
+        if (requestedId === id) {
+          if (receipt.api.length >= 2) {
+            receipt.overflow = true;
+            await route.fulfill({ status: 503, body: '' });
+            return;
+          }
+          receipt.api.push({ url: request.url(), status: 200 });
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify(apiResponse(id, handle)),
+          });
+          return;
+        }
+        receipt.overflow = true;
+        await route.fulfill({ status: 503, body: '' });
+        return;
+      }
+      if (
+        target.hostname === 'pbs.twimg.com' &&
+        target.pathname.startsWith('/ext_tw_video_thumb/' + id + '/pu/img/video-')
+      ) {
+        await route.fulfill({ status: 200, contentType: 'image/png', body: POSTER_PNG });
+        return;
+      }
+      if (
+        target.hostname === 'video.twimg.com' &&
+        target.pathname.startsWith('/ext_tw_video/' + id + '/pu/vid/')
+      ) {
+        const matched =
+          /^\/ext_tw_video\/\d+\/pu\/vid\/320x180\/video-([0-7])-(best|lower)\.mp4$/u.exec(
+            target.pathname
+          );
+        if (
+          !matched ||
+          (matched[2] === 'lower' && matched[1] !== '0') ||
+          receipt.requests.length >= evidence.requestCapPerCase
+        ) {
+          receipt.overflow = true;
+          await route.fulfill({ status: 503, body: '' });
+          return;
+        }
+        const index = Number(matched[1]);
+        const quality = matched[2]!;
+        const faulted = index === 0 && quality === 'best' && faultActive;
+        const payload = faulted ? fault.body : validMp4;
+        const contentType = faulted ? fault.contentType : 'video/mp4';
+        const range = request.headers().range ?? null;
+        const rangeMatch = /^bytes=(\d+)-(\d*)$/u.exec(range ?? '');
+        const start = !faulted && rangeMatch ? Number(rangeMatch[1]) : 0;
+        const end =
+          !faulted && rangeMatch
+            ? Math.min(
+                rangeMatch[2] ? Number(rangeMatch[2]) : payload.length - 1,
+                payload.length - 1
+              )
+            : payload.length - 1;
+        const invalidRange = !faulted && (start >= payload.length || end < start);
+        const bytes = invalidRange ? Buffer.alloc(0) : payload.subarray(start, end + 1);
+        const status = faulted ? fault.status : invalidRange ? 416 : rangeMatch ? 206 : 200;
+        const record: SelectedVideoRouteRecord = {
+          url: request.url(),
+          index,
+          quality,
+          range,
+          status,
+          bytes: bytes.length,
+          sha256: bytes.length ? createHash('sha256').update(bytes).digest('hex') : null,
+        };
+        receipt.requests.push(record);
+        if (faulted) {
+          await bestGate;
+        }
+        await route.fulfill({
+          status,
+          contentType,
+          body: bytes,
+          headers: faulted
+            ? { 'Cache-Control': 'no-store' }
+            : invalidRange
+              ? { 'Content-Range': 'bytes */' + payload.length }
+              : {
+                  'Accept-Ranges': 'bytes',
+                  'Content-Length': String(bytes.length),
+                  ...(rangeMatch
+                    ? { 'Content-Range': 'bytes ' + start + '-' + end + '/' + payload.length }
+                    : {}),
+                },
+        });
+        record.fulfilledAtMonotonicMs = performance.now();
+        return;
+      }
+      if (target.hostname === 'video.twimg.com') {
+        if (receipt.unexpectedVideo.length < 4) {
+          receipt.unexpectedVideo.push(target.pathname.slice(0, 500));
+        } else {
+          receipt.overflow = true;
+        }
+        await route.fulfill({ status: 503, body: '' });
+        return;
+      }
+      await route.fallback();
+    };
+    const readObserver = async () =>
+      page!.evaluate(() => {
+        const observer = window.__xegSelectedVideoFailureObservation;
+        return {
+          installed: Boolean(observer),
+          records: observer?.records ?? [],
+          overflow: observer?.overflow ?? false,
+        };
+      });
+    const captureObserver = async () => {
+      const observed = await readObserver();
+      assert(observed.installed, 'Selected video event observer was not installed');
+      receipt.events = observed.records;
+      assert.equal(observed.overflow, false, 'Selected video event observations overflowed');
+      assert(
+        receipt.events.every(
+          ({ source, currentSource }) =>
+            (source === null || source === bestUrl || source === lowerUrl) &&
+            (currentSource === '' || currentSource === bestUrl || currentSource === lowerUrl)
+        ),
+        'Selected video events escaped the two owned variants'
+      );
+    };
+    const assertConsoleDiagnostics = () => {
+      const expectedHttp = new RegExp(
+        '^Failed to load resource: the server responded with a status of ' +
+          fault.status +
+          '(?: \\([^)]{1,80}\\))?$',
+        'u'
+      );
+      const diagnostics = receipt.consoleErrors.map((record) => ({
+        ...record,
+        http: fault.status >= 400 && record.location === bestUrl && expectedHttp.test(record.text),
+        abort:
+          [bestUrl, lowerUrl, neighborUrl].includes(record.location) &&
+          (record.text === 'Failed to load resource: net::ERR_ABORTED' ||
+            record.text === 'net::ERR_ABORTED'),
+      }));
+      assert(
+        diagnostics.every(({ http, abort }) => http || abort),
+        'Only selected HTTP faults and exact owned native aborts may log console errors'
+      );
+      assert(
+        diagnostics.filter(({ http }) => http).length <=
+          receipt.requests.filter(
+            (request) => request.url === bestUrl && request.status === fault.status
+          ).length,
+        'Selected HTTP console diagnostics exceeded physical fault responses'
+      );
+      assert(
+        diagnostics.filter(({ abort }) => abort).length <= receipt.requests.length,
+        'Owned native abort diagnostics exceeded physical media requests'
+      );
+    };
+    const stateWhen = (index: number, predicate: (state: ItemState) => boolean, label: string) =>
+      waitForValue(
+        async () => {
+          const state = await itemState(page!, index);
+          return state && predicate(state) ? state : undefined;
+        },
+        label,
+        20_000
+      );
+    const readAttribution = async () => {
+      const gallery = page!.locator('[data-xeg-gallery-container]');
+      const button = gallery.locator('#tweet-text-button');
+      await button.click();
+      const link = gallery.locator('#toolbar-tweet-panel a[href^="https://x.com/"]');
+      await link.waitFor({ state: 'visible' });
+      const href = await link.getAttribute('href');
+      await button.click();
+      assert(
+        href === fixtureUrl || href === fixtureUrl + '/video/1',
+        'Selected video attribution must identify the same owned post'
+      );
+      return href;
+    };
+    try {
+      page = await context.newPage();
+      page.on('console', onConsole);
+      page.on('pageerror', onPageError);
+      page.on('response', onResponse);
+      await page.route('**/*', routeHandler);
+      routeArmed = true;
+      await page.goto(fixtureUrl);
+      await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+      const trigger = page.locator('[data-video-target="0"]');
+      await trigger.scrollIntoViewIfNeeded();
+      await trigger.focus();
+      const before = await page.evaluate(() => ({
+        scrollY,
+        bodyStyle: document.body.getAttribute('style'),
+        activeTarget: document.activeElement?.getAttribute('data-video-target') ?? null,
+      }));
+      const documentBefore = await page.evaluate(() => ({
+        url: location.href,
+        timeOrigin: performance.timeOrigin,
+      }));
+      assert.equal(before.activeTarget, '0');
+      await trigger.click();
+      const gallery = page.locator('[data-xeg-gallery-container]');
+      await gallery.waitFor({ state: 'visible' });
+      receipt.initial = await stateWhen(
+        0,
+        (state) =>
+          state.src === bestUrl &&
+          state.currentIndex === 0 &&
+          state.focusedIndex === 0 &&
+          state.displayUrl === bestUrl,
+        'selected fault best source attachment'
+      );
+      await page.evaluate((expectedBest) => {
+        const gallery = document.querySelector('[data-xeg-gallery-container]');
+        if (!(gallery instanceof HTMLElement)) {
+          throw new Error('Selected video failure gallery is missing');
+        }
+        const records: SelectedVideoEventRecord[] = [];
+        let overflow = false;
+        const record = (value: SelectedVideoEventRecord) => {
+          if (records.length < 32) {
+            records.push(value);
+          } else {
+            overflow = true;
+          }
+        };
+        const onError = (event: Event) => {
+          const video = event.target;
+          if (
+            !(video instanceof HTMLVideoElement) ||
+            !video.closest('[data-gallery-element="item"][data-index="0"]')
+          ) {
+            return;
+          }
+          const timing = performance.getEntriesByName(expectedBest, 'resource').at(-1) as
+            | (PerformanceResourceTiming & { responseStatus?: number })
+            | undefined;
+          record({
+            type: 'error',
+            atPageMonotonicMs: performance.now(),
+            source: video.getAttribute('src'),
+            currentSource: video.currentSrc,
+            errorCode: video.error?.code ?? null,
+            trusted: event.isTrusted,
+            responseStatus: timing?.responseStatus ?? null,
+          });
+        };
+        const onMutation = (mutations: MutationRecord[]) => {
+          for (const mutation of mutations) {
+            const video = mutation.target;
+            if (
+              !(video instanceof HTMLVideoElement) ||
+              !video.closest('[data-gallery-element="item"][data-index="0"]')
+            ) {
+              continue;
+            }
+            record({
+              type: 'src',
+              atPageMonotonicMs: performance.now(),
+              source: video.getAttribute('src'),
+              currentSource: video.currentSrc,
+              errorCode: video.error?.code ?? null,
+              trusted: null,
+              responseStatus: null,
+            });
+          }
+        };
+        const observer = new MutationObserver(onMutation);
+        observer.observe(gallery, { subtree: true, attributes: true, attributeFilter: ['src'] });
+        document.addEventListener('error', onError, true);
+        window.__xegSelectedVideoFailureObservation = {
+          records,
+          get overflow() {
+            return overflow;
+          },
+          dispose: () => {
+            document.removeEventListener('error', onError, true);
+            observer.disconnect();
+          },
+        };
+      }, bestUrl);
+      release();
+      receipt.nativeError = await waitForValue(
+        async () => {
+          const observed = await readObserver();
+          return observed.records.find(
+            (event) => event.type === 'error' && event.source === bestUrl
+          );
+        },
+        'selected native media error',
+        20_000
+      );
+      assert.equal(receipt.nativeError.trusted, true, 'Native media error must be trusted');
+      assert(
+        [1, 2, 3, 4].includes(receipt.nativeError.errorCode ?? -1),
+        'Native media error code is unavailable'
+      );
+      const exposedDenial =
+        (fault.status === 401 || fault.status === 403) &&
+        (receipt.nativeError.responseStatus === 401 || receipt.nativeError.responseStatus === 403);
+      const shouldFallback = [3, 4].includes(receipt.nativeError.errorCode ?? -1) && !exposedDenial;
+      if (shouldFallback) {
+        receipt.faultOutcome = await stateWhen(
+          0,
+          (state) =>
+            state.src === lowerUrl &&
+            state.currentSrc === lowerUrl &&
+            state.metadata === 'true' &&
+            state.readyState >= 2 &&
+            state.videoWidth === 320 &&
+            state.videoHeight === 180 &&
+            state.error === null &&
+            state.currentIndex === 0 &&
+            state.focusedIndex === 0,
+          'native error same-item lower-source recovery'
+        );
+        assert(
+          receipt.requests.some(
+            (record) =>
+              record.index === 0 &&
+              record.quality === 'lower' &&
+              (record.status === 200 || record.status === 206) &&
+              typeof record.fulfilledAtMonotonicMs === 'number'
+          ),
+          'Recoverable error did not request the selected lower source'
+        );
+        assert.equal(
+          await gallery
+            .locator('[data-gallery-element="item"][data-index="0"] [role="alert"]')
+            .count(),
+          0,
+          'Recovered selected video must not retain a terminal error alert'
+        );
+      } else {
+        await gallery
+          .locator('[data-gallery-element="item"][data-index="0"] [role="alert"]')
+          .waitFor({ state: 'visible' });
+        await page.waitForTimeout(500);
+        const terminal = await itemState(page, 0);
+        assert(terminal);
+        receipt.faultOutcome = terminal;
+        assert(
+          receipt.requests.every((record) => record.index !== 0 || record.quality !== 'lower'),
+          'Terminal native error attempted a lower source'
+        );
+      }
+      assert(receipt.faultOutcome);
+      assertBestSource(receipt.faultOutcome, bestUrl);
+      assert(
+        [bestUrl, lowerUrl].includes(receipt.faultOutcome.src ?? ''),
+        'Selected video source escaped the two owned variants'
+      );
+      assert(
+        [bestUrl, lowerUrl, ''].includes(receipt.faultOutcome.currentSrc),
+        'Selected native source escaped the two owned variants'
+      );
+      receipt.attribution = { failed: await readAttribution(), recovered: '' };
+      await gallery
+        .locator('[data-gallery-element="toolbar"] button[aria-label="Download"]')
+        .focus();
+      await page.keyboard.press('ArrowRight');
+      receipt.neighbor = await stateWhen(
+        1,
+        (state) =>
+          state.src === neighborUrl &&
+          state.currentSrc === neighborUrl &&
+          state.metadata === 'true' &&
+          state.readyState >= 2 &&
+          state.videoWidth === 320 &&
+          state.videoHeight === 180 &&
+          state.error === null &&
+          state.currentIndex === 1 &&
+          state.focusedIndex === 1,
+        'healthy neighboring video after selected failure'
+      );
+      assertBestSource(receipt.neighbor, neighborUrl);
+      await page.keyboard.press('ArrowLeft');
+      receipt.returned = await stateWhen(
+        0,
+        (state) =>
+          state.currentIndex === 0 && state.focusedIndex === 0 && state.displayUrl === bestUrl,
+        'return to selected failed video'
+      );
+      assert(
+        [bestUrl, lowerUrl].includes(receipt.returned.src ?? '') &&
+          [bestUrl, lowerUrl, ''].includes(receipt.returned.currentSrc),
+        'Returned selected source escaped the two owned variants'
+      );
+      if (fault.kind === 'invalid-mp4-200') {
+        const screenshot = 'src02-invalid-mp4-error.png';
+        await page.screenshot({ path: join(output, screenshot) });
+        receipt.screenshot = screenshot;
+      }
+      await captureObserver();
+      assert.equal(receipt.overflow, false, 'Selected video request observations overflowed');
+      assert.deepEqual(receipt.unexpectedVideo, []);
+      assert.deepEqual(receipt.pageErrors, []);
+      assert.equal(receipt.api.length, 1, 'Fault open needs one physical metadata request');
+      assert.equal(receipt.api[0]?.status, 200);
+      assert(
+        receipt.responses.some(
+          (response) => response.url === receipt.api[0]?.url && response.status === 200
+        ),
+        'Fault metadata response was not observed by the owned page'
+      );
+      const faultRequests = receipt.requests.filter(
+        (request) => request.index === 0 && request.quality === 'best'
+      );
+      assert(
+        faultRequests.some((request) => typeof request.fulfilledAtMonotonicMs === 'number'),
+        'Selected best fault route did not serve a physical response'
+      );
+      assert(
+        faultRequests.every(
+          (request) =>
+            request.url === bestUrl &&
+            request.status === fault.status &&
+            request.bytes === fault.body.length
+        ),
+        'Selected best fault response changed status or bytes'
+      );
+      assert(
+        receipt.responses.some(
+          (response) => response.url === bestUrl && response.status === fault.status
+        ),
+        'Owned page did not observe the selected best response'
+      );
+      assert(
+        new Set(
+          receipt.requests.filter((request) => request.index === 0).map((request) => request.url)
+        ).size <= 2,
+        'Selected video attempted more than two owned sources'
+      );
+      receipt.faultPhysicalRangeRequests = receipt.requests.filter(
+        (request) => request.range !== null
+      ).length;
+      receipt.faultSelectedSourceAttempts = [
+        ...new Set(
+          receipt.requests.filter((request) => request.index === 0).map((request) => request.url)
+        ),
+      ];
+      await page.keyboard.press('Escape');
+      await gallery.waitFor({ state: 'detached' });
+      const firstClose = await page.evaluate(() => ({
+        scrollY,
+        bodyStyle: document.body.getAttribute('style'),
+        activeTarget: document.activeElement?.getAttribute('data-video-target') ?? null,
+      }));
+      assert.deepEqual(firstClose, before, 'Fault close did not restore host state');
+      faultActive = false;
+      const healthyMark = receipt.requests.length;
+      await trigger.click();
+      await gallery.waitFor({ state: 'visible' });
+      receipt.recovered = await stateWhen(
+        0,
+        (state) =>
+          state.src === bestUrl &&
+          state.currentSrc === bestUrl &&
+          state.metadata === 'true' &&
+          state.readyState >= 2 &&
+          state.videoWidth === 320 &&
+          state.videoHeight === 180 &&
+          state.error === null &&
+          state.paused &&
+          state.currentIndex === 0 &&
+          state.focusedIndex === 0,
+        'same-document healthy best video recovery'
+      );
+      assertBestSource(receipt.recovered, bestUrl);
+      assert(
+        receipt.requests
+          .slice(healthyMark)
+          .some(
+            (request) =>
+              request.url === bestUrl &&
+              (request.status === 200 || request.status === 206) &&
+              request.sha256 !== null &&
+              typeof request.fulfilledAtMonotonicMs === 'number'
+          ),
+        'Healthy reopen did not physically fetch the selected best source'
+      );
+      assert(
+        receipt.requests
+          .slice(healthyMark)
+          .every((request) => request.index !== 0 || request.url === bestUrl),
+        'Healthy selected recovery unexpectedly substituted a lower source'
+      );
+      receipt.attribution.recovered = await readAttribution();
+      assert.equal(
+        receipt.attribution.recovered,
+        receipt.attribution.failed,
+        'Selected video attribution changed after recovery'
+      );
+      await gallery
+        .locator('[data-gallery-element="toolbar"] button[aria-label="Download"]')
+        .focus();
+      await page.keyboard.press('ArrowRight');
+      receipt.recoveredNeighbor = await stateWhen(
+        1,
+        (state) =>
+          state.src === neighborUrl &&
+          state.currentSrc === neighborUrl &&
+          state.metadata === 'true' &&
+          state.readyState >= 2 &&
+          state.videoWidth === 320 &&
+          state.videoHeight === 180 &&
+          state.error === null &&
+          state.paused &&
+          state.currentIndex === 1 &&
+          state.focusedIndex === 1,
+        'same-document healthy neighbor after recovery'
+      );
+      assertBestSource(receipt.recoveredNeighbor, neighborUrl);
+      await page.keyboard.press('ArrowLeft');
+      const ready = await stateWhen(
+        0,
+        (state) =>
+          state.currentIndex === 0 &&
+          state.focusedIndex === 0 &&
+          state.src === bestUrl &&
+          state.currentSrc === bestUrl &&
+          state.paused,
+        'fresh selected video before ordinary play'
+      );
+      const beforePlay = ready.currentTime;
+      await gallery.locator('[data-gallery-element="item"][data-index="0"] video').click();
+      const playing = await stateWhen(
+        0,
+        (state) => !state.paused && state.currentTime > beforePlay + 0.15,
+        'fresh selected video ordinary playback progress'
+      );
+      receipt.playback = { before: beforePlay, after: playing.currentTime };
+      await page.keyboard.press('Escape');
+      await gallery.waitFor({ state: 'detached' });
+      const after = await page.evaluate(() => ({
+        scrollY,
+        bodyStyle: document.body.getAttribute('style'),
+        activeTarget: document.activeElement?.getAttribute('data-video-target') ?? null,
+      }));
+      receipt.host = { before, firstClose, after };
+      assert.deepEqual(after, before, 'Selected video close did not restore host state');
+      const documentAfter = await page.evaluate(() => ({
+        url: location.href,
+        timeOrigin: performance.timeOrigin,
+      }));
+      receipt.document = { before: documentBefore, after: documentAfter };
+      assert.deepEqual(
+        documentAfter,
+        documentBefore,
+        'Selected video failure and recovery left the original document'
+      );
+      await captureObserver();
+      assertConsoleDiagnostics();
+      assert.equal(receipt.overflow, false);
+      assert.deepEqual(receipt.unexpectedVideo, []);
+      assert.deepEqual(receipt.pageErrors, []);
+      receipt.totalPhysicalRangeRequests = receipt.requests.filter(
+        (request) => request.range !== null
+      ).length;
+      receipt.status = 'passed';
+    } catch (error) {
+      failures.push(error);
+      receipt.status = 'failed';
+      receipt.error = String(error).slice(0, 1000);
+      if (page && !page.isClosed() && !receipt.screenshot) {
+        const screenshot = 'src02-' + fault.kind + '-error.png';
+        await page
+          .screenshot({ path: join(output, screenshot) })
+          .then(() => {
+            receipt.screenshot = screenshot;
+          })
+          .catch((screenshotError) => {
+            receipt.screenshotError = String(screenshotError).slice(0, 500);
+          });
+      }
+    } finally {
+      release();
+      if (page) {
+        if (!page.isClosed()) {
+          try {
+            const observed = await page.evaluate(() => {
+              const observer = window.__xegSelectedVideoFailureObservation;
+              const result = {
+                installed: Boolean(observer),
+                records: observer?.records ?? [],
+                overflow: observer?.overflow ?? false,
+              };
+              observer?.dispose();
+              delete window.__xegSelectedVideoFailureObservation;
+              return result;
+            });
+            if (observed.installed) {
+              receipt.events = observed.records;
+              if (observed.overflow) {
+                receipt.overflow = true;
+              }
+            }
+            receipt.cleanup.observerRemoved = true;
+          } catch (error) {
+            receipt.cleanup.errors.push(String(error).slice(0, 500));
+            failures.push(error);
+          }
+        }
+        if (routeArmed) {
+          try {
+            await page.unroute('**/*', routeHandler);
+            receipt.cleanup.routeRemoved = true;
+          } catch (error) {
+            receipt.cleanup.errors.push(String(error).slice(0, 500));
+            failures.push(error);
+          }
+        } else {
+          receipt.cleanup.routeRemoved = true;
+        }
+        try {
+          page.off('console', onConsole);
+          page.off('pageerror', onPageError);
+          page.off('response', onResponse);
+          receipt.cleanup.listenersRemoved = true;
+        } catch (error) {
+          receipt.cleanup.errors.push(String(error).slice(0, 500));
+          failures.push(error);
+        }
+        if (receipt.status === 'passed') {
+          try {
+            assert.equal(receipt.overflow, false, 'Selected video late observations overflowed');
+            assert(
+              receipt.events.every(
+                ({ source, currentSource }) =>
+                  (source === null || source === bestUrl || source === lowerUrl) &&
+                  (currentSource === '' || currentSource === bestUrl || currentSource === lowerUrl)
+              ),
+              'Selected video late events escaped the two owned variants'
+            );
+            assertConsoleDiagnostics();
+            assert.deepEqual(receipt.pageErrors, []);
+          } catch (error) {
+            failures.push(error);
+            receipt.status = 'failed';
+            receipt.error = String(error).slice(0, 1000);
+          }
+        }
+        try {
+          await page.close();
+          receipt.cleanup.pageClosed = true;
+        } catch (error) {
+          receipt.cleanup.errors.push(String(error).slice(0, 500));
+          failures.push(error);
+        }
+      } else {
+        receipt.cleanup.observerRemoved = true;
+        receipt.cleanup.routeRemoved = true;
+        receipt.cleanup.listenersRemoved = true;
+        receipt.cleanup.pageClosed = true;
+      }
+      receipt.totalPhysicalRangeRequests = receipt.requests.filter(
+        (request) => request.range !== null
+      ).length;
+      if (receipt.cleanup.errors.length) {
+        receipt.status = 'failed';
+      }
+    }
+    if (receipt.cleanup.errors.length) {
+      break;
+    }
+  }
+  evidence.status = failures.length ? 'failed' : 'passed';
+  if (failures.length) {
+    evidence.errors = failures.map((error) => String(error).slice(0, 1000));
+    throw new AggregateError(failures, 'Selected video failure validation or cleanup failed');
+  }
 }
 
 /** A bounded real decode failure after playback; MP4 metadata and early samples stay valid. */
