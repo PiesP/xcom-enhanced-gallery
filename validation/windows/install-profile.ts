@@ -9527,6 +9527,21 @@ async function runOwn12NativeControls({
         const volumeAfter = await hostVideoState(video);
         assert.equal(volumeAfter.paused, true);
         await assertNativeOnly('Volume');
+        // Native events are queued after control values change; wait for the observed events.
+        await page.waitForFunction(
+          () => {
+            const records = (
+              window as Window & {
+                __xegOwn12NativeEvents?: { records: Own12NativeControlsEvidence['events'] };
+              }
+            ).__xegOwn12NativeEvents?.records;
+            return ['play', 'pause', 'seeked', 'volumechange'].every((type) =>
+              records?.some((event) => event.type === type && event.trusted)
+            );
+          },
+          undefined,
+          { timeout: 2_000 }
+        );
         evidence.events = await page.evaluate(
           () =>
             (
