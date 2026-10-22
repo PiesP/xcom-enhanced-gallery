@@ -14231,7 +14231,7 @@ async function runSameVersionAttribution({
       'block-controls-only';
     assert.equal(receipt.defaultClickMode, 'block-controls-only');
 
-    for (const name of ['unmarked-no-outer', 'recognized'] as const) {
+    for (const name of ['unmarked', 'unmarked-no-outer'] as const) {
       const quotedCase = QUOTED_CASES.find((item) => item.name === name);
       assert(quotedCase, `Same-version ${name} fixture is missing`);
       const observed: Record<string, unknown> = {

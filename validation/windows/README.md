@@ -562,12 +562,14 @@ verified public v2.3.8 Chrome ZIP contents. A missing input leaves the normal
 installed suite unchanged; malformed input or coexistence with `input.json`
 stops the run.
 
-Each attribution run loads only its declared bytes, then exercises the existing
-`unmarked-no-outer` quoted-video preview, playing and paused controls and the
-recognized healthy control. The receipt keeps the installed manifest, file
+Each attribution run loads only its declared bytes, then exercises the healthy
+`unmarked` quoted-video control before `unmarked-no-outer` preview, playing and
+paused controls. The cases use fresh pages in the same profile: the healthy
+control's retained `quote_two` download establishes the filename that Chrome
+uniquifies for `unmarked-no-outer`. The receipt keeps the installed manifest, file
 inventory, content digest, script bytes observed through the page debugger,
 case outcomes and owned cleanup under `same-version-attribution.json`. A failed
-first case still permits the healthy control to run. The three receipts compare
+first case still permits the no-outer control to run. The three receipts compare
 artifact identity and observed behavior; equal version labels do not imply an
 upgrade or identify a product regression without the case evidence.
 
