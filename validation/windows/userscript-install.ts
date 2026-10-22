@@ -45,6 +45,7 @@ const MANAGER_SCRIPT_NAME_SELECTOR = 'span.nameNname16';
 const PROFILE_PREFIX = 'xeg-userscript-install-';
 const TWEET_ID = '1234567890123456789';
 const FIXTURE_URL = `https://x.com/testuser/status/${TWEET_ID}`;
+const MOBILE_MANAGER_DENIAL_URL = `https://mobile.x.com/testuser/status/${TWEET_ID}?xeg-manager-denial=1`;
 export const MEDIA_COHORTS = {
   normal: ['GkE1234ABCDEF', 'GkE5678GHIJKL', 'GkE9012MNOPQR'],
   failure: ['GkF1234ABCDEF', 'GkF5678GHIJKL', 'GkF9012MNOPQR'],
@@ -1098,6 +1099,96 @@ export async function readManagerUiLabels(page: Page, managerId: string) {
     'Manager options page navigated away after label lookup'
   );
   return requireManagerUiLabels(labels);
+}
+
+async function openManagerDomainBlacklist(page: Page, managerId: string, output: string) {
+  const optionsUrl = `chrome-extension://${managerId}/options.html`;
+  await page.goto(optionsUrl, { waitUntil: 'domcontentloaded' });
+  const labels = await readManagerUiLabels(page, managerId);
+  const securityLabels = await page.evaluate((expectedId) => {
+    const url = new URL(location.href);
+    if (
+      url.protocol !== 'chrome-extension:' ||
+      url.hostname !== expectedId ||
+      url.pathname !== '/options.html' ||
+      url.search
+    ) {
+      throw new Error('Manager security settings navigated away');
+    }
+    return {
+      settings: chrome.i18n.getMessage('Settings'),
+      security: chrome.i18n.getMessage('XHR_Security'),
+      blacklist: chrome.i18n.getMessage('User_domain_blacklist'),
+      add: chrome.i18n.getMessage('Add'),
+      remove: chrome.i18n.getMessage('Remove'),
+      prompt: chrome.i18n.getMessage('Enter_the_new_rule'),
+    };
+  }, managerId);
+  assert(
+    Object.values(securityLabels).every(
+      (label) =>
+        typeof label === 'string' &&
+        label.length > 0 &&
+        label.length <= 120 &&
+        label.trim() === label
+    ),
+    'Manager returned invalid security setting labels'
+  );
+  await page.getByText(labels.installedUserscripts, { exact: true }).first().click();
+  const row = await requireInstalledManagerRow(page, output, 'security');
+  await row.locator(MANAGER_SCRIPT_NAME_SELECTOR).click();
+  const settingsTab = page.locator('div[tvid="settings"]:visible').filter({
+    hasText: securityLabels.settings,
+  });
+  await settingsTab.waitFor({ state: 'visible' });
+  assert.equal(await settingsTab.count(), 1, 'Expected one script-specific Settings tab');
+  await settingsTab.click();
+  const section = page.locator('div.section.ta_security:visible');
+  await section.waitFor({ state: 'visible' });
+  assert.equal(await section.count(), 1, 'Expected one script-specific XHR Security section');
+  assert.equal(
+    (await section.locator('.section_head').innerText()).trim(),
+    securityLabels.security,
+    'Manager XHR Security heading differs'
+  );
+  const blacklist = section
+    .getByText(securityLabels.blacklist, { exact: true })
+    .locator(
+      'xpath=ancestor::div[contains(concat(" ", normalize-space(@class), " "), " cludes ")][1]'
+    );
+  assert.equal(await blacklist.count(), 1, 'Expected one script-specific domain blacklist');
+  assert.equal(
+    await blacklist.locator('select').count(),
+    1,
+    'Expected one domain blacklist selector'
+  );
+  assert(
+    isOwnedManagerOptionsUrl(page.url(), managerId),
+    'Manager security settings navigated away'
+  );
+  return { blacklist, labels: securityLabels };
+}
+
+async function managerDomainBlacklistValues(blacklist: Locator) {
+  return blacklist.locator('select').evaluate((element) => {
+    if (!(element instanceof HTMLSelectElement)) {
+      throw new Error('Manager domain blacklist is not a selector');
+    }
+    return Array.from(element.options, (option) => option.value);
+  });
+}
+
+async function waitForManagerDomainBlacklist(
+  page: Page,
+  managerId: string,
+  output: string,
+  expected: string[]
+) {
+  return waitFor(async () => {
+    const view = await openManagerDomainBlacklist(page, managerId, output);
+    const values = await managerDomainBlacklistValues(view.blacklist);
+    return JSON.stringify(values) === JSON.stringify(expected) ? view : undefined;
+  }, 'persisted script-specific manager domain blacklist');
 }
 
 export async function probeManagerDownloadsPermission(page: Page, managerId: string) {
@@ -2538,6 +2629,10 @@ async function runFixture(
     </article></body></html>`;
   const settingsHtml = compactHtml(1);
   const apiHtml = compactHtml(3);
+  const managerDenialHtml = apiHtml.replace(
+    '</article>',
+    '<button type="button" data-testid="native-action" onclick="this.dataset.clicks=String(Number(this.dataset.clicks||0)+1)">Host action</button></article>'
+  );
   const routeRecords: FixtureRouteRecord[] = [];
   const result: FixtureResult = {
     status: 'failed',
@@ -2559,6 +2654,14 @@ async function runFixture(
       await route.continue();
       return;
     }
+    if (
+      url.hostname === 'mobile.x.com' &&
+      route.request().isNavigationRequest() &&
+      url.href === MOBILE_MANAGER_DENIAL_URL
+    ) {
+      await route.fulfill({ status: 200, contentType: 'text/html', body: managerDenialHtml });
+      return;
+    }
     if (url.hostname === 'x.com' && route.request().isNavigationRequest()) {
       const noDom = url.href === `${FIXTURE_URL}?xeg-no-dom=1`;
       const settingsReadback = url.href === settingsPageUrl;
@@ -2570,7 +2673,7 @@ async function runFixture(
       });
       return;
     }
-    if (url.hostname === 'x.com' && url.pathname === '/favicon.ico') {
+    if (['x.com', 'mobile.x.com'].includes(url.hostname) && url.pathname === '/favicon.ico') {
       await route.fulfill({ status: 204, body: '' });
       return;
     }
@@ -2626,7 +2729,9 @@ async function runFixture(
         ),
         'Fixture media URL differs from its declared purpose'
       );
-      assert(routeRecords.length < 64, 'Fixture exceeded its routed request limit');
+      // The 56-route baseline plus three mobile previews and up to two three-item renders
+      // can exceed 64; keep this cap aligned with fixtureLimits.maxRoutedImageRequests.
+      assert(routeRecords.length < 80, 'Fixture exceeded its routed request limit');
       const record: FixtureRouteRecord = {
         phase,
         mediaPhase,
@@ -2674,7 +2779,9 @@ async function runFixture(
           phase,
           error: safeRouteError(error),
           request: {
-            host: ['x.com', 'pbs.twimg.com'].includes(url.hostname) ? url.hostname : 'other',
+            host: ['x.com', 'mobile.x.com', 'pbs.twimg.com'].includes(url.hostname)
+              ? url.hostname
+              : 'other',
             pathKind:
               url.pathname === PUBLIC_AVATAR_PATH
                 ? 'fixture-avatar'
@@ -3166,6 +3273,221 @@ async function runFixture(
     result.cases.metadataAdmission = apiCases;
     apiMode = null;
     loopback.setApiMode(null);
+    const managerDenialReceipt: Record<string, unknown> = {
+      status: 'failed',
+      managerVersion,
+      sourceSha256,
+      pageOrigin: 'https://mobile.x.com',
+      blockedApiOrigin: 'https://x.com',
+      rule: 'x.com',
+      cleanup: {},
+    };
+    result.cases.managerDenial = managerDenialReceipt;
+    const managerDenialCleanup: Record<string, unknown> = {};
+    managerDenialReceipt.cleanup = managerDenialCleanup;
+    let securityPage: Page | undefined;
+    let originalBlacklist: string[] | undefined;
+    let ruleMayHaveBeenAdded = false;
+    let managerDenialError: unknown;
+    let managerDenialFailed = false;
+    const managerDenialCleanupErrors: unknown[] = [];
+    try {
+      securityPage = await context.newPage();
+      const initial = await openManagerDomainBlacklist(securityPage, managerId, output);
+      originalBlacklist = await managerDomainBlacklistValues(initial.blacklist);
+      assert(!originalBlacklist.includes('x.com'), 'Task profile already blacklists x.com');
+      managerDenialReceipt.beforeRules = originalBlacklist;
+      apiMode = 'healthy';
+      loopback.setApiMode('healthy');
+      const deniedStart = loopback.mark();
+      const add = initial.blacklist.getByRole('button', {
+        name: `${initial.labels.add}...`,
+        exact: true,
+      });
+      assert.equal(await add.count(), 1, 'Expected one manager blacklist Add button');
+      ruleMayHaveBeenAdded = true;
+      const promptPromise = securityPage.waitForEvent('dialog', { timeout: 10_000 });
+      const addClick = add.click();
+      const prompt = await promptPromise;
+      assert.equal(prompt.type(), 'prompt', 'Manager blacklist did not ask for a rule');
+      assert.equal(prompt.message(), initial.labels.prompt, 'Manager blacklist prompt differs');
+      await prompt.accept('x.com');
+      await addClick;
+      const addedRules = [...originalBlacklist, 'x.com'];
+      const added = await waitForManagerDomainBlacklist(
+        securityPage,
+        managerId,
+        output,
+        addedRules
+      );
+      managerDenialReceipt.addedRules = addedRules;
+
+      await page.goto(MOBILE_MANAGER_DENIAL_URL, { waitUntil: 'domcontentloaded' });
+      assert.equal(new URL(page.url()).hostname, 'mobile.x.com');
+      await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({
+        state: 'attached',
+        timeout: 15_000,
+      });
+      const middle = page.locator('[data-phase="normal"] [data-testid="tweetPhoto"] img').nth(1);
+      await middle.click();
+      await gallery.waitFor({ state: 'visible' });
+      const deniedImage = gallery.locator('[data-gallery-element="item"][data-index="1"] img');
+      await deniedImage.waitFor({ state: 'visible' });
+      const deniedSource = await waitFor(async () => {
+        const source = await deniedImage.getAttribute('src');
+        if (!source) {
+          return undefined;
+        }
+        const url = new URL(source);
+        return url.searchParams.get('name') === 'large' ? url : undefined;
+      }, 'manager-denied DOM image');
+      assert.equal(deniedSource.pathname, `/media/${MEDIA_COHORTS.normal[1]}.jpg`);
+      assert.equal(
+        await gallery.locator('[data-gallery-element="item"]').count(),
+        3,
+        'Manager-denied DOM extraction did not retain the three visible photos'
+      );
+      await delay(1_000);
+      const deniedApiEvents = loopback
+        .snapshot()
+        .events.slice(deniedStart)
+        .filter((event) => event.cohort === 'api');
+      assert.deepEqual(deniedApiEvents, [], 'Denied manager request reached the physical API');
+      await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]').click();
+      await gallery.waitFor({ state: 'detached' });
+      const nativeAction = page.getByRole('button', { name: 'Host action', exact: true });
+      await nativeAction.click();
+      assert.equal(await nativeAction.getAttribute('data-clicks'), '1');
+      assert.deepEqual(
+        loopback
+          .snapshot()
+          .events.slice(deniedStart)
+          .filter((event) => event.cohort === 'api'),
+        [],
+        'Denied manager request reached the physical API after gallery close'
+      );
+      managerDenialReceipt.denied = {
+        physicalApiRequests: deniedApiEvents.length,
+        selectedName: deniedSource.searchParams.get('name'),
+        visiblePhotoCount: 3,
+        nativeHostClicks: 1,
+      };
+      const selectedRule = added.blacklist.locator('select');
+      await selectedRule.selectOption('x.com');
+      const remove = added.blacklist.getByRole('button', {
+        name: added.labels.remove,
+        exact: true,
+      });
+      assert.equal(await remove.count(), 1, 'Expected one manager blacklist Remove button');
+      await remove.click();
+      await waitForManagerDomainBlacklist(securityPage, managerId, output, originalBlacklist);
+      ruleMayHaveBeenAdded = false;
+      managerDenialReceipt.restoredRules = originalBlacklist;
+
+      assert.equal(page.url(), MOBILE_MANAGER_DENIAL_URL, 'Recovery left the owned mobile page');
+      const healthyStart = loopback.mark();
+      await middle.click();
+      await gallery.waitFor({ state: 'visible' });
+      const healthyImage = gallery.locator('[data-gallery-element="item"][data-index="1"] img');
+      const healthySource = await waitFor(async () => {
+        const source = await healthyImage.getAttribute('src');
+        if (!source) {
+          return undefined;
+        }
+        const url = new URL(source);
+        return url.searchParams.get('name') === 'orig' ? url : undefined;
+      }, 'manager-restored original image');
+      assert.equal(healthySource.pathname, `/media/${MEDIA_COHORTS.normal[1]}.jpg`);
+      const healthyApiEvents = await waitFor(() => {
+        const events = loopback
+          .snapshot()
+          .events.slice(healthyStart)
+          .filter((event) => event.cohort === 'api');
+        return events.length === 1 && events[0]?.result === 'served' ? events : undefined;
+      }, 'restored manager physical API response');
+      assert.equal(healthyApiEvents[0]?.purpose, 'metadata');
+      assert((healthyApiEvents[0]?.bytes ?? 0) > 0);
+      await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]').click();
+      await gallery.waitFor({ state: 'detached' });
+      await nativeAction.click();
+      assert.equal(await nativeAction.getAttribute('data-clicks'), '2');
+      await middle.click();
+      await gallery.waitFor({ state: 'visible' });
+      await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]').click();
+      await gallery.waitFor({ state: 'detached' });
+      assert.equal(page.url(), MOBILE_MANAGER_DENIAL_URL, 'Healthy control left the mobile page');
+      managerDenialReceipt.healthy = {
+        firstClickPhysicalApiRequests: healthyApiEvents.length,
+        responseStatus: 200,
+        selectedName: healthySource.searchParams.get('name'),
+        nativeHostClicks: 2,
+        freshReopenAndClose: true,
+      };
+      managerDenialReceipt.status = 'passed';
+    } catch (error) {
+      managerDenialFailed = true;
+      managerDenialError = error;
+      managerDenialReceipt.error = safeRouteError(error);
+    } finally {
+      if (await gallery.isVisible().catch(() => false)) {
+        await gallery
+          .locator('[data-gallery-element="toolbar"] button[aria-label="Close"]')
+          .click()
+          .catch((error) => managerDenialCleanupErrors.push(error));
+      }
+      if (ruleMayHaveBeenAdded && securityPage && originalBlacklist) {
+        try {
+          const current = await openManagerDomainBlacklist(securityPage, managerId, output);
+          const values = await managerDomainBlacklistValues(current.blacklist);
+          if (values.includes('x.com')) {
+            await current.blacklist.locator('select').selectOption('x.com');
+            await current.blacklist
+              .getByRole('button', { name: current.labels.remove, exact: true })
+              .click();
+          }
+          await waitForManagerDomainBlacklist(securityPage, managerId, output, originalBlacklist);
+          managerDenialCleanup.settingsRestored = true;
+        } catch (error) {
+          managerDenialCleanupErrors.push(error);
+          managerDenialCleanup.settingsRestored = false;
+        }
+      } else if (originalBlacklist) {
+        managerDenialCleanup.settingsRestored = true;
+      }
+      if (securityPage) {
+        await securityPage.close().then(
+          () => {
+            managerDenialCleanup.managerPageClosed = true;
+          },
+          (error) => {
+            managerDenialCleanupErrors.push(error);
+          }
+        );
+      }
+      if (loopback.activeCount() === 0) {
+        apiMode = null;
+        loopback.setApiMode(null);
+        managerDenialCleanup.apiModeReset = true;
+      } else {
+        managerDenialCleanupErrors.push(
+          new Error('Manager denial left an active loopback response')
+        );
+      }
+      managerDenialReceipt.cleanupErrors = managerDenialCleanupErrors.map(safeRouteError);
+      if (managerDenialCleanupErrors.length) {
+        managerDenialReceipt.status = 'failed';
+      }
+      await writeFile(
+        join(output, 'userscript-manager-denial-result.json'),
+        JSON.stringify(managerDenialReceipt, null, 2)
+      );
+    }
+    if (managerDenialFailed || managerDenialCleanupErrors.length) {
+      throw new AggregateError(
+        [...(managerDenialFailed ? [managerDenialError] : []), ...managerDenialCleanupErrors],
+        'Installed Tampermonkey domain denial or restoration failed'
+      );
+    }
     const notificationPage = await context.newPage();
     let notificationObserver:
       | Awaited<ReturnType<typeof observeManagerNotificationCreates>>
@@ -3896,7 +4218,7 @@ export async function runUserscriptInstallation({
       kind: 'task-owned-https-loopback',
       bind: '127.0.0.1',
       port: loopback.port,
-      hosts: ['pbs.twimg.com', 'x.com'],
+      hosts: ['pbs.twimg.com', 'x.com', 'mobile.x.com'],
       certificateScope: 'one-run-spki',
     };
     context = await chromium.launchPersistentContext(profile, {
@@ -3909,7 +4231,7 @@ export async function runUserscriptInstallation({
       ignoreDefaultArgs: ['--disable-extensions'],
       args: [
         '--enable-unsafe-extension-debugging',
-        `--host-resolver-rules=MAP pbs.twimg.com:443 127.0.0.1:${loopback.port},MAP x.com:443 127.0.0.1:${loopback.port}`,
+        `--host-resolver-rules=MAP pbs.twimg.com:443 127.0.0.1:${loopback.port},MAP x.com:443 127.0.0.1:${loopback.port},MAP mobile.x.com:443 127.0.0.1:${loopback.port}`,
         `--ignore-certificate-errors-spki-list=${loopback.spkiSha256}`,
       ],
     });
@@ -3969,7 +4291,7 @@ export async function runUserscriptInstallation({
       imageBytes: images.map((image) => image.length),
       imageSha256: images.map(sha256),
       maxDownloads: MAX_DOWNLOADS,
-      maxRoutedImageRequests: 64,
+      maxRoutedImageRequests: 80,
       maxLoopbackRequests: 64,
       maxLoopbackImageBytes: 64 * 1024,
       maxLoopbackServedBytes: 2 * 1024 * 1024,

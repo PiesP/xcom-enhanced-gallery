@@ -116,7 +116,7 @@ export function validateFixtureCertificate(
     const names = [
       HOST,
       ...(includeVideo ? ['video.twimg.com'] : []),
-      ...(includeFixturePage ? ['x.com'] : []),
+      ...(includeFixturePage ? ['x.com', 'mobile.x.com'] : []),
     ];
     assert.equal(certificate.subjectAltName, names.map((name) => `DNS:${name}`).join(', '));
     assert.equal(certificate.checkHost(HOST, { subject: 'never' }), HOST);
@@ -128,6 +128,7 @@ export function validateFixtureCertificate(
     }
     if (includeFixturePage) {
       assert.equal(certificate.checkHost('x.com', { subject: 'never' }), 'x.com');
+      assert.equal(certificate.checkHost('mobile.x.com', { subject: 'never' }), 'mobile.x.com');
     }
     assert.equal(certificate.ca, false);
     assert(certificate.checkPrivateKey(privateKey));
@@ -272,6 +273,8 @@ export function createUserscriptFixtureHandler(
     }
     const host = request.headers.host?.replace(/:443$/u, '');
     const path = request.url ?? '';
+    const apiAllowedOrigin =
+      request.headers.origin === 'https://mobile.x.com' ? 'https://mobile.x.com' : 'https://x.com';
     const isAllowedReceiver = host === HOST && path === '/xeg-metadata-allowed.json';
     const isBlockedReceiver = host === 'x.com' && path === '/xeg-metadata-blocked.json';
     if (isAllowedReceiver || isBlockedReceiver) {
@@ -319,7 +322,7 @@ export function createUserscriptFixtureHandler(
         'Content-Type': 'application/json',
         'Content-Length': String(body.length),
         'Cache-Control': 'no-store',
-        'Access-Control-Allow-Origin': 'https://x.com',
+        'Access-Control-Allow-Origin': apiAllowedOrigin,
         'Access-Control-Allow-Credentials': 'true',
       });
       response.end(body);
@@ -424,7 +427,7 @@ export function createUserscriptFixtureHandler(
         'Content-Type': 'application/json',
         'Content-Length': String(body.length),
         'Cache-Control': 'no-store',
-        'Access-Control-Allow-Origin': 'https://x.com',
+        'Access-Control-Allow-Origin': apiAllowedOrigin,
         'Access-Control-Allow-Credentials': 'true',
         ...(redirect && {
           Location: mode === 'redirect-allowed' ? API_ALLOWED_RECEIVER : API_BLOCKED_RECEIVER,
