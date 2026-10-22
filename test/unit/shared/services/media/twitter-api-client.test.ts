@@ -28,7 +28,7 @@ function createQuotedVideoTweetResponse() {
             extended_entities: {
               media: [
                 {
-                  type: 'video',
+                  type: 'video' as const,
                   id_str: 'outer-video',
                   media_url_https: 'https://pbs.twimg.com/ext_tw_video_thumb/222/outer.jpg',
                   video_info: {
@@ -53,7 +53,7 @@ function createQuotedVideoTweetResponse() {
                 extended_entities: {
                   media: [
                     {
-                      type: 'photo',
+                      type: 'photo' as const,
                       id_str: 'quote-photo',
                       media_url_https: 'https://pbs.twimg.com/media/quote-photo.jpg',
                     },
@@ -68,7 +68,7 @@ function createQuotedVideoTweetResponse() {
                     extended_entities: {
                       media: [
                         {
-                          type: 'photo',
+                          type: 'photo' as const,
                           id_str: 'nested-photo',
                           media_url_https: 'https://pbs.twimg.com/media/nested-photo.jpg',
                         },
@@ -107,6 +107,14 @@ function createPhotoTweetResponse(tweetId = '222', count = 1, text = 'Cache fixt
       },
     },
   };
+}
+
+function wrapQuotedVideoRoot(depth: number): TwitterTweet {
+  let result: TwitterTweet = createQuotedVideoTweetResponse().data.tweetResult.result;
+  for (let index = 0; index < depth; index += 1) {
+    result = { __typename: 'TweetWithVisibilityResults', tweet: result };
+  }
+  return result;
 }
 
 const { getCsrfTokenAsync, httpGet, resolveBearerToken } = vi.hoisted(() => ({
@@ -333,26 +341,42 @@ describe('TweetMetadataReuse', () => {
     reuse.dispose();
   });
 
-  it('aborts the last waiter and never publishes a late, ignored transport result', async () => {
-    let complete!: (value: unknown) => void;
-    httpGet.mockImplementationOnce(
-      () =>
-        new Promise<unknown>((resolve) => {
-          complete = resolve;
-        })
-    );
-    const reuse = new TweetMetadataReuse();
-    const controller = new AbortController();
-    const pending = reuse.get('222', undefined, controller.signal);
-    await vi.waitFor(() => expect(httpGet).toHaveBeenCalledTimes(1));
-    controller.abort();
-    await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
-    complete({ ok: true, status: 200, data: createQuotedVideoTweetResponse() });
-    await Promise.resolve();
-    expect((await reuse.get('222')).entries).toHaveLength(2);
-    expect(httpGet).toHaveBeenCalledTimes(2);
-    reuse.dispose();
-  });
+  it.each(['resolve', 'reject'])(
+    'aborts only after all waiters leave and ignores a late transport %s',
+    async (lateOutcome) => {
+      let complete!: (value: unknown) => void;
+      let fail!: (error: Error) => void;
+      httpGet.mockImplementationOnce(
+        () =>
+          new Promise<unknown>((resolve, reject) => {
+            complete = resolve;
+            fail = reject;
+          })
+      );
+      const reuse = new TweetMetadataReuse();
+      const firstController = new AbortController();
+      const lastController = new AbortController();
+      const first = reuse.get('222', undefined, firstController.signal);
+      const last = reuse.get('222', undefined, lastController.signal);
+      await vi.waitFor(() => expect(httpGet).toHaveBeenCalledTimes(1));
+      const transportSignal = httpGet.mock.calls[0]?.[1]?.signal as AbortSignal;
+      firstController.abort();
+      await expect(first).rejects.toMatchObject({ name: 'AbortError' });
+      expect(transportSignal.aborted).toBe(false);
+      lastController.abort();
+      await expect(last).rejects.toMatchObject({ name: 'AbortError' });
+      expect(transportSignal.aborted).toBe(true);
+      if (lateOutcome === 'resolve') {
+        complete({ ok: true, status: 200, data: createPhotoTweetResponse('222', 1, 'retired') });
+      } else {
+        fail(new Error('late transport failure'));
+      }
+      await Promise.resolve();
+      expect((await reuse.get('222')).entries).toHaveLength(2);
+      expect(httpGet).toHaveBeenCalledTimes(2);
+      reuse.dispose();
+    }
+  );
 
   it('rejects an in-flight request immediately on explicit refresh', async () => {
     let complete!: (value: unknown) => void;
@@ -398,6 +422,59 @@ describe('TweetMetadataReuse', () => {
     expect(httpGet).toHaveBeenCalledTimes(5);
     reuse.dispose();
   });
+
+  it.each(['bearer', 'csrf', 'origin', 'href', 'refresh'])(
+    'rejects a retired %s flight and keeps its late result out of the new context',
+    async (boundary) => {
+      let completeOld!: (value: unknown) => void;
+      httpGet.mockImplementationOnce(
+        () =>
+          new Promise<unknown>((resolve) => {
+            completeOld = resolve;
+          })
+      );
+      httpGet.mockResolvedValue({
+        ok: true,
+        status: 200,
+        data: createPhotoTweetResponse('222', 1, 'current context'),
+      });
+      const reuse = new TweetMetadataReuse();
+      const location = {
+        hostname: 'x.com',
+        origin: 'https://x.com',
+        href: 'https://x.com/outer/status/222',
+      };
+      const old = reuse.get('222', location);
+      await vi.waitFor(() => expect(httpGet).toHaveBeenCalledTimes(1));
+      if (boundary === 'bearer') {
+        resolveBearerToken.mockReturnValue('Bearer changed-token');
+      } else if (boundary === 'csrf') {
+        getCsrfTokenAsync.mockResolvedValue('changed-csrf');
+      } else if (boundary === 'refresh') {
+        reuse.invalidate();
+      }
+      const nextLocation = {
+        ...location,
+        ...(boundary === 'origin' ? { origin: 'https://twitter.com' } : {}),
+        ...(boundary === 'href' ? { href: 'https://x.com/other/status/222' } : {}),
+      };
+      const current = await reuse.get('222', nextLocation);
+      await expect(old).rejects.toMatchObject({ name: 'AbortError' });
+      expect(current.entries[0]?.tweet_text).toBe('current context');
+      expect(current.physicalRequestToken).toBeDefined();
+      completeOld({
+        ok: true,
+        status: 200,
+        data: createPhotoTweetResponse('222', 1, 'retired context'),
+      });
+      await Promise.resolve();
+      const cached = await reuse.get('222', nextLocation);
+      expect(cached.entries[0]?.tweet_text).toBe('current context');
+      expect(cached.physicalRequestToken).toBeUndefined();
+      expect(httpGet).toHaveBeenCalledTimes(2);
+      reuse.dispose();
+    }
+  );
 
   it('never caches an explicit empty or failed provider response', async () => {
     const reuse = new TweetMetadataReuse();
@@ -1050,6 +1127,13 @@ describe('twitter-api-client request boundary', () => {
     { rest_id: '222', id_str: '111' },
     { rest_id: '222', legacy: { id_str: '111' } },
     { id_str: '222', legacy: { id_str: '111' } },
+    { rest_id: '0222' },
+    { rest_id: '2.22e2' },
+    { rest_id: '222.0' },
+    { rest_id: ' 222' },
+    { rest_id: '222\n' },
+    { rest_id: 222 },
+    { rest_id: '222', id_str: '0' },
     { __typename: 'TweetUnavailable', rest_id: '999' },
     { __typename: 'TweetTombstone', rest_id: '222', id_str: '111' },
     { __typename: 'TweetWithVisibilityResults' },
@@ -1061,10 +1145,11 @@ describe('twitter-api-client request boundary', () => {
         __typename: 'TweetWithVisibilityResults',
         tweet: {
           __typename: 'TweetWithVisibilityResults',
-          tweet: { __typename: 'TweetUnavailable' },
+          tweet: wrapQuotedVideoRoot(0),
         },
       },
     },
+    { __typename: 'UnknownWrapper', tweet: wrapQuotedVideoRoot(0) },
     { __typename: 'TweetUnavailable', tweet: { __typename: 'TweetUnavailable' } },
   ])('rejects unsupported, malformed or conflicting roots: %j', async (result) => {
     httpGet.mockResolvedValue({
@@ -1077,6 +1162,82 @@ describe('twitter-api-client request boundary', () => {
       category: 'provider-error',
     });
   });
+
+  it('rejects a malformed owned root before matching an otherwise exact quoted photo', async () => {
+    const root = createQuotedVideoTweetResponse().data.tweetResult.result;
+    httpGet.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { data: { tweetResult: { result: { ...root, id_str: '0222' } } } },
+    });
+    document.body.innerHTML = '<img id="quote" src="https://pbs.twimg.com/media/quote-photo.jpg">';
+    const extractor = new TwitterAPIExtractor();
+    try {
+      const extracted = await extractor.extract(
+        {
+          tweetId: '222',
+          username: 'outer',
+          tweetUrl: 'https://x.com/outer/status/222',
+          extractionMethod: 'fixture',
+          confidence: 1,
+        },
+        document.querySelector<HTMLElement>('#quote')!,
+        {},
+        'malformed-root'
+      );
+      expect(extracted).toMatchObject({
+        success: false,
+        mediaItems: [],
+        apiRequestOutcome: 'failed',
+        failureKind: 'provider-error',
+      });
+    } finally {
+      extractor.dispose();
+      document.body.replaceChildren();
+    }
+  });
+
+  it.each([0, 1, 2])(
+    'preserves direct and quoted owners through %i supported visibility wrappers',
+    async (depth) => {
+      httpGet.mockResolvedValue({
+        ok: true,
+        status: 200,
+        data: { data: { tweetResult: { result: wrapQuotedVideoRoot(depth) } } },
+      });
+      document.body.innerHTML =
+        '<img id="quote" src="https://pbs.twimg.com/media/quote-photo.jpg">';
+      const extractor = new TwitterAPIExtractor();
+      try {
+        const clickedQuote = document.querySelector<HTMLElement>('#quote')!;
+        const extracted = await extractor.extract(
+          {
+            tweetId: '222',
+            username: 'outer',
+            tweetUrl: 'https://x.com/outer/status/222',
+            extractionMethod: 'fixture',
+            confidence: 1,
+          },
+          clickedQuote,
+          {
+            clickedMediaEvidence: {
+              ...captureClickedMediaEvidence(clickedQuote),
+              ownership: { requestTweetId: '222', ownerTweetId: null, scope: 'quoted' },
+            },
+          },
+          `visibility-${depth}`
+        );
+        expect(extracted).toMatchObject({ success: true, clickedIndex: 0 });
+        expect(extracted.mediaItems.map((item) => item.tweetId)).toEqual(['111', '222']);
+        expect(extracted.mediaItems[0]?.url).toBe(
+          'https://pbs.twimg.com/media/quote-photo.jpg?format=jpg&name=orig'
+        );
+      } finally {
+        extractor.dispose();
+        document.body.replaceChildren();
+      }
+    }
+  );
 
   it.each(['TweetUnavailable', 'TweetTombstone'])(
     'supports the legacy untagged visibility envelope for %s',
@@ -1150,6 +1311,103 @@ describe('twitter-api-client request boundary', () => {
     });
     await expect(getTweetMedias('222')).rejects.toThrow('provider error');
   });
+
+  it('selects only the exact owned photo from useful GraphQL partial data', async () => {
+    httpGet.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        ...createQuotedVideoTweetResponse(),
+        errors: [{ code: 88, message: 'Partial provider error' }],
+      },
+    });
+    document.body.innerHTML = '<img id="quote" src="https://pbs.twimg.com/media/quote-photo.jpg">';
+    const extractor = new TwitterAPIExtractor();
+    const info = {
+      tweetId: '222',
+      username: 'outer',
+      tweetUrl: 'https://x.com/outer/status/222',
+      extractionMethod: 'fixture',
+      confidence: 1,
+    };
+    try {
+      const clickedQuote = document.querySelector<HTMLElement>('#quote')!;
+      const selected = await extractor.extract(
+        info,
+        clickedQuote,
+        {
+          clickedMediaEvidence: {
+            ...captureClickedMediaEvidence(clickedQuote),
+            ownership: { requestTweetId: '222', ownerTweetId: null, scope: 'quoted' },
+          },
+        },
+        'partial-quote'
+      );
+      expect(selected).toMatchObject({ success: true, clickedIndex: 0 });
+      expect(selected.mediaItems[0]).toMatchObject({
+        tweetId: '111',
+        url: 'https://pbs.twimg.com/media/quote-photo.jpg?format=jpg&name=orig',
+      });
+
+      const unrelated = document.createElement('img');
+      unrelated.src = 'https://pbs.twimg.com/media/unrelated.jpg';
+      const mismatch = await extractor.extract(info, unrelated, {}, 'partial-mismatch');
+      expect(mismatch).toMatchObject({
+        success: false,
+        mediaItems: [],
+        apiRequestOutcome: 'healthy',
+        failureKind: 'mismatch',
+      });
+      expect(httpGet).toHaveBeenCalledTimes(1);
+    } finally {
+      extractor.dispose();
+      document.body.replaceChildren();
+    }
+  });
+
+  it.each([
+    ['null', null],
+    ['tombstone', { __typename: 'TweetTombstone', rest_id: '222' }],
+    ['without media', { __typename: 'Tweet', rest_id: '222' }],
+  ])(
+    'rejects GraphQL errors with %s partial data before exact click selection',
+    async (_, result) => {
+      httpGet.mockResolvedValue({
+        ok: true,
+        status: 200,
+        data: {
+          data: { tweetResult: { result } },
+          errors: [{ code: 88, message: 'Partial provider error' }],
+        },
+      });
+      document.body.innerHTML =
+        '<img id="quote" src="https://pbs.twimg.com/media/quote-photo.jpg">';
+      const extractor = new TwitterAPIExtractor();
+      try {
+        const extracted = await extractor.extract(
+          {
+            tweetId: '222',
+            username: 'outer',
+            tweetUrl: 'https://x.com/outer/status/222',
+            extractionMethod: 'fixture',
+            confidence: 1,
+          },
+          document.querySelector<HTMLElement>('#quote')!,
+          {},
+          'unusable-partial'
+        );
+        expect(extracted).toMatchObject({
+          success: false,
+          mediaItems: [],
+          apiRequestOutcome: 'failed',
+          failureKind: 'provider-error',
+        });
+      } finally {
+        extractor.dispose();
+        document.body.replaceChildren();
+      }
+    }
+  );
 
   it.each(['TweetUnavailable', 'TweetTombstone'])(
     'retains valid root media when its direct quote is %s with an available deeper quote',
