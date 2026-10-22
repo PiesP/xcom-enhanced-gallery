@@ -288,6 +288,14 @@ readiness, media errors, and playback after a gesture. Navigation away and back,
 privileged MP4 filename and exact byte/hash checks, Escape/button close,
 focus/scroll/body/isolation restoration, and teardown are recorded per case.
 The outer-video control proves that selecting A and B remains independent.
+
+The source-credit control gives the clicked B preview its own enclosing B
+`/video/2` permalink, while C's credit stays outside that media action. It checks
+the direct B request and selection, native pointer/keyboard C credit navigation,
+and a separate C-owned media action. The enclosing link proves only the B preview
+action; it does not establish ownership for sibling native controls. A B header
+and C credit that both sit outside the clicked media remain ambiguous and are
+covered by the maintained refusal tests.
 An additional installed pre-player case mirrors the bounded public-page shape:
 two same-ID A header links without `<time>`, an unmarked role-link quote with a
 nested B article, and a narrow wrapper containing a non-enclosing C credit

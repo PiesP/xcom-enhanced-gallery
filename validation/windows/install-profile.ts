@@ -6653,12 +6653,10 @@ async function runCreditControlsCycle({
     });
     const bApi = quotedApiResponses.slice(bApiStart);
     assert.equal(bApi.length, 1, 'B media action must make one owning quote request');
-    assert(
-      bApi.every(
-        ({ tweetId, status }) =>
-          (tweetId === fixture.outer || tweetId === fixture.owner) && status === 200
-      ),
-      'B action must not request C as its media owner'
+    assert.deepEqual(
+      bApi.map(({ tweetId, status }) => ({ tweetId, status })),
+      [{ tweetId: fixture.owner, status: 200 }],
+      'The enclosing B media permalink must request B directly'
     );
     assert.deepEqual(otherMetadataCounts(), rejectedStart);
     evidence.steps.push({
