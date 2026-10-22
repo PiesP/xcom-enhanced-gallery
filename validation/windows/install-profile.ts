@@ -9280,10 +9280,12 @@ async function locateOwn12NativeControl({
         if (slider) {
           do {
             attempts++;
+            const sliderBox = await cdp
+              .send('DOM.getBoxModel', { backendNodeId: slider.node.backendNodeId })
+              .catch(() => null);
+            // Closed controls can expose a zero-width box before the native hover delay ends.
             boxAvailable = Boolean(
-              await cdp
-                .send('DOM.getBoxModel', { backendNodeId: slider.node.backendNodeId })
-                .catch(() => null)
+              sliderBox && sliderBox.model.width >= 4 && sliderBox.model.height >= 4
             );
             if (!boxAvailable && Date.now() - started < 2000) {
               await page.waitForTimeout(50);
