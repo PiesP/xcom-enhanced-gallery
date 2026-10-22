@@ -8208,6 +8208,222 @@ const UNMARKED_VIDEO_DEPTH = {
   article: 24,
 } as const;
 
+async function observeRetiredNativeVolume({
+  before,
+  extensionPage,
+  hostVideo,
+  output,
+  page,
+  quotedCase,
+  selected,
+}: {
+  before: Awaited<ReturnType<typeof quotedHostSnapshot>>;
+  extensionPage: Page;
+  hostVideo: Locator;
+  output: string;
+  page: Page;
+  quotedCase: QuotedCase;
+  selected: Awaited<ReturnType<typeof assertQuotedGallery>>;
+}) {
+  const prior = await readStoredVideoSettings(extensionPage);
+  const firstMuted = !storedGalleryMediaPreferences(prior.settings).muted;
+  const retired = await selected.video.elementHandle();
+  assert(retired, 'Selected B video must remain available for detached observation');
+  const evidence: Record<string, unknown> = { status: 'pending', firstVolume: 0.27, firstMuted };
+  const samples: unknown[] = [];
+  evidence.samples = samples;
+  let reopenedBefore: Awaited<ReturnType<typeof quotedHostSnapshot>> | undefined;
+  let validationError: unknown;
+  const cleanupErrors: unknown[] = [];
+  try {
+    await selected.video.evaluate((element, muted) => {
+      if (!(element instanceof HTMLVideoElement)) {
+        throw new Error('Selected B video is missing');
+      }
+      element.volume = 0.27;
+      element.muted = muted;
+    }, firstMuted);
+    evidence.firstStored = await waitForValue(
+      async () => {
+        const prefs = storedGalleryMediaPreferences(
+          (await readStoredVideoSettings(extensionPage)).settings
+        );
+        return Math.abs(prefs.volume - 0.27) < 0.01 && prefs.muted === firstMuted
+          ? prefs
+          : undefined;
+      },
+      'first native B volume persisted',
+      5_000
+    );
+    evidence.firstClose = await closeQuotedGallery({
+      gallery: selected.gallery,
+      page,
+      method: quotedCase.close,
+      before,
+      caseName: quotedCase.route,
+      selector: '[data-video-key] video',
+    });
+    const detached = await retired.evaluate((element) => element.isConnected);
+    assert.equal(detached, false, 'Retired B video must be detached after ordinary close');
+    await hostVideo.focus();
+    reopenedBefore = await quotedHostSnapshot(page, quotedCase.route, '[data-video-key] video');
+    await captureQuotedOpeningScroll(hostVideo);
+    const clickCount = await page.evaluate(() => window.__quoteFixtureClicks.length);
+    await hostVideo.click();
+    evidence.reopenClick = await quotedClickRecord(page, clickCount, 'video');
+    reopenedBefore.scrollY = Number(await hostVideo.getAttribute('data-opening-scroll-y'));
+    assert(Number.isFinite(reopenedBefore.scrollY) && reopenedBefore.scrollY > 0);
+    const current = await assertQuotedGallery(page, quotedCase);
+    assert.equal(current.selectedMedia.src, selected.selectedMedia.src);
+    evidence.reopenOrigin = await assertQuotedOriginLink(
+      current.gallery,
+      `https://x.com/${quotedCase.username}/status/${quotedCase.owner}`
+    );
+    const readCurrent = () =>
+      current.video.evaluate((element) => {
+        if (!(element instanceof HTMLVideoElement)) {
+          throw new Error('Current B video is missing');
+        }
+        return {
+          connected: element.isConnected,
+          source: element.currentSrc,
+          volume: element.volume,
+          muted: element.muted,
+          paused: element.paused,
+          error: element.error?.code ?? null,
+        };
+      });
+    const initialCurrent = await readCurrent();
+    assert(initialCurrent.connected && initialCurrent.paused && initialCurrent.error === null);
+    assert.equal(initialCurrent.source, selected.selectedMedia.src);
+    assert(Math.abs(initialCurrent.volume - 0.27) < 0.01 && initialCurrent.muted === firstMuted);
+    evidence.initialCurrent = initialCurrent;
+    const retiredEvent = await retired.evaluate((element) => {
+      if (!(element instanceof HTMLVideoElement)) {
+        throw new Error('Retired B video is missing');
+      }
+      return new Promise<{ trusted: boolean; connected: boolean; volume: number; muted: boolean }>(
+        (resolveEvent, rejectEvent) => {
+          const onVolumeChange = (event: Event) => {
+            clearTimeout(timeout);
+            element.removeEventListener('volumechange', onVolumeChange);
+            resolveEvent({
+              trusted: event.isTrusted,
+              connected: element.isConnected,
+              volume: element.volume,
+              muted: element.muted,
+            });
+          };
+          const timeout = setTimeout(() => {
+            element.removeEventListener('volumechange', onVolumeChange);
+            rejectEvent(
+              new Error('Detached native volumechange was not observed within 2 seconds')
+            );
+          }, 2_000);
+          element.addEventListener('volumechange', onVolumeChange, { once: true });
+          try {
+            element.volume = 0.83;
+          } catch (error) {
+            clearTimeout(timeout);
+            element.removeEventListener('volumechange', onVolumeChange);
+            rejectEvent(error);
+          }
+        }
+      );
+    });
+    evidence.retiredEvent = retiredEvent;
+    assert(
+      retiredEvent.trusted && !retiredEvent.connected,
+      'Detached native event must be trusted'
+    );
+    assert(Math.abs(retiredEvent.volume - 0.83) < 0.01);
+    for (let index = 0; index < 5; index++) {
+      await delay(250);
+      const stored = storedGalleryMediaPreferences(
+        (await readStoredVideoSettings(extensionPage)).settings
+      );
+      const observed = await readCurrent();
+      samples.push({ atMs: performance.now(), stored, current: observed });
+      assert(Math.abs(stored.volume - 0.27) < 0.01 && stored.muted === firstMuted);
+      assert(observed.connected && observed.paused && observed.error === null);
+      assert.equal(observed.source, selected.selectedMedia.src);
+      assert(Math.abs(observed.volume - 0.27) < 0.01 && observed.muted === firstMuted);
+    }
+    await current.video.evaluate((element, muted) => {
+      if (!(element instanceof HTMLVideoElement)) {
+        throw new Error('Current B video is missing');
+      }
+      element.volume = 0.41;
+      element.muted = muted;
+    }, !firstMuted);
+    evidence.activeStored = await waitForValue(
+      async () => {
+        const prefs = storedGalleryMediaPreferences(
+          (await readStoredVideoSettings(extensionPage)).settings
+        );
+        return Math.abs(prefs.volume - 0.41) < 0.01 && prefs.muted === !firstMuted
+          ? prefs
+          : undefined;
+      },
+      'active B native volume persisted',
+      5_000
+    );
+    const activeCurrent = await readCurrent();
+    assert(activeCurrent.connected && activeCurrent.paused && activeCurrent.error === null);
+    assert.equal(activeCurrent.source, selected.selectedMedia.src);
+    assert(Math.abs(activeCurrent.volume - 0.41) < 0.01 && activeCurrent.muted === !firstMuted);
+    evidence.activeCurrent = activeCurrent;
+  } catch (error) {
+    validationError = error;
+    evidence.error = safeError(error);
+  } finally {
+    try {
+      const gallery = page.locator('[data-xeg-gallery-container]');
+      if (await gallery.count()) {
+        evidence.finalClose = await closeQuotedGallery({
+          gallery,
+          page,
+          method: quotedCase.close,
+          before: reopenedBefore ?? before,
+          caseName: quotedCase.route,
+          selector: '[data-video-key] video',
+        });
+      }
+    } catch (error) {
+      cleanupErrors.push(error);
+    }
+    try {
+      await delay(350);
+      evidence.settingsRestored = await restoreStoredVideoSettings(extensionPage, prior);
+      assert.equal(
+        evidence.settingsRestored,
+        true,
+        'Retired volume cycle must restore exact settings'
+      );
+    } catch (error) {
+      cleanupErrors.push(error);
+    }
+    await retired.dispose().catch((error: unknown) => cleanupErrors.push(error));
+    evidence.cleanupErrors = cleanupErrors.map((error) => safeError(error));
+    evidence.status = validationError || cleanupErrors.length ? 'failed' : 'passed';
+    try {
+      await writeFile(
+        join(output, 'native-retired-volume-observations.json'),
+        JSON.stringify(evidence, null, 2)
+      );
+    } catch (error) {
+      cleanupErrors.push(error);
+    }
+  }
+  if (validationError || cleanupErrors.length) {
+    throw new AggregateError(
+      [...(validationError ? [validationError] : []), ...cleanupErrors],
+      'Retired native volume validation or cleanup failed'
+    );
+  }
+  return evidence;
+}
+
 async function runQuotedVideoCycle({
   quotedCase,
   quotedApiResponses,
@@ -8773,14 +8989,28 @@ async function runQuotedVideoCycle({
           );
           const api = quotedApiResponses.slice(apiStartPaused);
           assert(api.every(({ tweetId }) => tweetId === expectedRequest));
-          const close = await closeQuotedGallery({
-            gallery: selected.gallery,
-            page,
-            method: quotedCase.close,
-            before,
-            caseName: quotedCase.route,
-            selector: '[data-video-key] video',
-          });
+          const retiredVolume =
+            quotedCase.name === 'unmarked-no-outer'
+              ? await observeRetiredNativeVolume({
+                  before,
+                  extensionPage,
+                  hostVideo,
+                  output,
+                  page,
+                  quotedCase,
+                  selected,
+                })
+              : null;
+          const close = retiredVolume
+            ? retiredVolume.finalClose
+            : await closeQuotedGallery({
+                gallery: selected.gallery,
+                page,
+                method: quotedCase.close,
+                before,
+                caseName: quotedCase.route,
+                selector: '[data-video-key] video',
+              });
           return {
             depth,
             hostState,
@@ -8792,6 +9022,7 @@ async function runQuotedVideoCycle({
             originUrl,
             api,
             close,
+            retiredVolume,
           };
         })()
       : null;
