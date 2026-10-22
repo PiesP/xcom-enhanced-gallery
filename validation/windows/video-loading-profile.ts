@@ -85,7 +85,7 @@ type SelectedVideoRouteRecord = {
   fulfilledAtMonotonicMs?: number;
 };
 type SelectedVideoEventRecord = {
-  type: 'error' | 'src';
+  type: 'error' | 'play' | 'src';
   atPageMonotonicMs: number;
   source: string | null;
   currentSource: string;
@@ -117,6 +117,13 @@ type SelectedVideoFailureCase = {
   faultSelectedSourceAttempts?: string[];
   totalPhysicalRangeRequests?: number;
   initial?: ItemState;
+  faultPlayAttempt?: {
+    input: 'native-video-click';
+    before: { paused: boolean; currentTime: number };
+    after: { paused: boolean; currentTime: number } | null;
+    trustedPlayEvent: boolean;
+    observationMs: number;
+  };
   nativeError?: SelectedVideoEventRecord;
   faultOutcome?: ItemState;
   neighbor?: ItemState;
@@ -1548,6 +1555,24 @@ async function runSelectedVideoFailureCases({
             responseStatus: timing?.responseStatus ?? null,
           });
         };
+        const onPlay = (event: Event) => {
+          const video = event.target;
+          if (
+            !(video instanceof HTMLVideoElement) ||
+            !video.closest('[data-gallery-element="item"][data-index="0"]')
+          ) {
+            return;
+          }
+          record({
+            type: 'play',
+            atPageMonotonicMs: performance.now(),
+            source: video.getAttribute('src'),
+            currentSource: video.currentSrc,
+            errorCode: video.error?.code ?? null,
+            trusted: event.isTrusted,
+            responseStatus: null,
+          });
+        };
         const onMutation = (mutations: MutationRecord[]) => {
           for (const mutation of mutations) {
             const video = mutation.target;
@@ -1571,6 +1596,7 @@ async function runSelectedVideoFailureCases({
         const observer = new MutationObserver(onMutation);
         observer.observe(gallery, { subtree: true, attributes: true, attributeFilter: ['src'] });
         document.addEventListener('error', onError, true);
+        document.addEventListener('play', onPlay, true);
         window.__xegSelectedVideoFailureObservation = {
           records,
           get overflow() {
@@ -1578,10 +1604,43 @@ async function runSelectedVideoFailureCases({
           },
           dispose: () => {
             document.removeEventListener('error', onError, true);
+            document.removeEventListener('play', onPlay, true);
             observer.disconnect();
           },
         };
       }, bestUrl);
+      const pendingBeforePlay = await itemState(page, 0);
+      assert(pendingBeforePlay);
+      assert.equal(pendingBeforePlay.src, bestUrl);
+      assert.equal(pendingBeforePlay.paused, true);
+      assert(pendingBeforePlay.currentTime <= 0.05);
+      const playObservationStartedAt = performance.now();
+      await gallery.locator('[data-gallery-element="item"][data-index="0"] video').click();
+      const trustedPlay = await waitForValue(
+        async () => {
+          const observed = await readObserver();
+          return observed.records.some(
+            (event) => event.type === 'play' && event.source === bestUrl && event.trusted
+          )
+            ? true
+            : undefined;
+        },
+        'trusted selected play event before the held fault response',
+        1_500
+      ).catch(() => false);
+      const pendingAfterPlay = await itemState(page, 0);
+      receipt.faultPlayAttempt = {
+        input: 'native-video-click',
+        before: { paused: pendingBeforePlay.paused, currentTime: pendingBeforePlay.currentTime },
+        after: pendingAfterPlay
+          ? { paused: pendingAfterPlay.paused, currentTime: pendingAfterPlay.currentTime }
+          : null,
+        trustedPlayEvent: trustedPlay,
+        observationMs: performance.now() - playObservationStartedAt,
+      };
+      if (trustedPlay) {
+        assert.equal(pendingAfterPlay?.paused, false, 'Trusted pending play did not start intent');
+      }
       release();
       receipt.nativeError = await waitForValue(
         async () => {
@@ -1826,6 +1885,7 @@ async function runSelectedVideoFailureCases({
         'fresh selected video before ordinary play'
       );
       const beforePlay = ready.currentTime;
+      assert(beforePlay <= 0.05, 'Healthy reopen was not a fresh paused video');
       await gallery.locator('[data-gallery-element="item"][data-index="0"] video').click();
       const playing = await stateWhen(
         0,
