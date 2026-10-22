@@ -42,6 +42,7 @@ type NativeEvent = {
 type VideoHold = {
   path: string;
   prefixEnd: number;
+  remaining: number;
   responses: Map<ServerResponse, Buffer>;
 };
 
@@ -253,7 +254,11 @@ export function createExtensionNativeFixtureHandler() {
       ...(range === undefined ? {} : { 'Content-Range': `bytes ${start}-${end}/${bytes.length}` }),
     });
     event.headersQueuedAtMs = performance.now();
-    if (request.method === 'GET' && videoHold?.path === `${route.host}${route.path}`) {
+    if (
+      request.method === 'GET' &&
+      videoHold?.path === `${route.host}${route.path}` &&
+      videoHold.remaining > 0
+    ) {
       const prefixBytes = Math.max(0, Math.min(body.length, videoHold.prefixEnd - start));
       assert(
         prefixBytes < body.length || end < videoHold.prefixEnd,
@@ -265,6 +270,7 @@ export function createExtensionNativeFixtureHandler() {
         return;
       }
       videoHold.responses.set(response, body.subarray(prefixBytes));
+      videoHold.remaining--;
       if (prefixBytes > 0) {
         response.write(body.subarray(0, prefixBytes));
       }
@@ -375,6 +381,22 @@ export function createExtensionNativeFixtureHandler() {
       videoHold = {
         path: `video.twimg.com${path}`,
         prefixEnd,
+        remaining: Number.POSITIVE_INFINITY,
+        responses: new Map<ServerResponse, Buffer>(),
+      };
+    },
+    armFirstVideoHold(path: string, prefixEnd: number) {
+      assert.equal(videoHold, null, 'Only one bounded video source may be held');
+      const route = allowed.get(`video.twimg.com${path}`);
+      assert(route && route.host === 'video.twimg.com', 'Only a declared video may be held');
+      assert(
+        Number.isSafeInteger(prefixEnd) && prefixEnd > 0 && prefixEnd < route.bytes.length,
+        'The first video hold must leave declared samples outstanding'
+      );
+      videoHold = {
+        path: `video.twimg.com${path}`,
+        prefixEnd,
+        remaining: 1,
         responses: new Map<ServerResponse, Buffer>(),
       };
     },

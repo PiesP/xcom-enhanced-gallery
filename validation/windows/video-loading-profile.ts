@@ -70,6 +70,7 @@ type VideoObservation = {
   };
   geometry?: unknown;
   recoveryIntent?: unknown;
+  rangeDiagnostics?: unknown;
   selectedFailures?: SelectedVideoFailureEvidence;
   error?: string;
 };
@@ -305,6 +306,11 @@ declare global {
   interface Window {
     __xegRecoveryEventObservation?: RecoveryEventState;
     __xegSelectedVideoFailureObservation?: SelectedVideoPageObserver;
+    __xegRangeMediaObservation?: {
+      records: RangeMediaEvent[];
+      overflow: boolean;
+      dispose: () => void;
+    };
   }
   interface Permissions {
     query(permissionDesc: { name: 'loopback-network' }): Promise<PermissionStatus>;
@@ -467,6 +473,8 @@ async function itemState(page: Page, index: number) {
       videoWidth: video.videoWidth,
       videoHeight: video.videoHeight,
       currentTime: video.currentTime,
+      duration: video.duration,
+      ended: video.ended,
       paused: video.paused,
       muted: video.muted,
       volume: video.volume,
@@ -1104,10 +1112,20 @@ export async function runVideoLoadingProfile({
     } catch (error) {
       followupErrors.push(error);
     }
+    let recoveryMp4: Buffer | undefined;
     try {
-      const recoveryMp4 = await readFile(
-        join(root, 'test/e2e/fixtures/installed-recovery-intent.mp4')
-      );
+      recoveryMp4 = await readFile(join(root, 'test/e2e/fixtures/installed-recovery-intent.mp4'));
+      observation.rangeDiagnostics = await runRangeAbortDiagnostics({
+        context,
+        validMp4: recoveryMp4,
+        nativeLoopback,
+        output,
+      });
+    } catch (error) {
+      followupErrors.push(error);
+    }
+    try {
+      assert(recoveryMp4, 'The declared recovery media fixture is missing');
       observation.recoveryIntent = await runRecoveryIntentCases({
         context,
         validMp4: recoveryMp4,
@@ -1184,6 +1202,663 @@ export async function runVideoLoadingProfile({
     throw primaryError;
   }
   return observation;
+}
+
+type RangeProtocolRecord = {
+  requestId: string;
+  url: string;
+  range: string | null;
+  status: number | null;
+  startedAt: number;
+  responseAt?: number;
+  terminal?: 'finished' | 'failed';
+  terminalAt?: number;
+  errorText?: string;
+  canceled?: boolean;
+};
+type RangeMediaEvent = {
+  type: string;
+  trusted: boolean;
+  currentTime: number;
+  atMs: number;
+};
+
+async function nativeSeekPoint(
+  protocol: CDPSession,
+  page: Page,
+  video: ReturnType<Page['locator']>
+) {
+  await page.bringToFront();
+  await video.scrollIntoViewIfNeeded();
+  const videoBox = await video.boundingBox();
+  assert(videoBox && videoBox.width > 0 && videoBox.height > 0);
+  await page.mouse.move(videoBox.x + videoBox.width / 2, videoBox.y + videoBox.height - 12);
+  const host = await video.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    return {
+      visible: document.visibilityState === 'visible',
+      hit: document.elementFromPoint(x, y) === element,
+      width: rect.width,
+      height: rect.height,
+    };
+  });
+  assert(host.visible && host.hit && host.width > 0 && host.height > 0);
+  await protocol.send('DOM.enable');
+  const documentNode = await protocol.send('DOM.getDocument', { depth: 0 });
+  const found = await protocol.send('DOM.querySelectorAll', {
+    nodeId: documentNode.root.nodeId,
+    selector: '[data-xeg-gallery-container] [data-gallery-element="item"][data-index="0"] video',
+  });
+  assert.equal(found.nodeIds.length, 1, 'Expected one selected native video');
+  const described = await protocol.send('DOM.describeNode', {
+    nodeId: found.nodeIds[0]!,
+    depth: 10,
+    pierce: true,
+  });
+  assert.equal(described.node.nodeName, 'VIDEO');
+  type CdpNode = typeof described.node;
+  const candidates: Array<{ node: CdpNode; label: string }> = [];
+  const visit = (node: CdpNode, native: boolean, depth: number) => {
+    assert(depth <= 12 && candidates.length <= 16, 'Native seek discovery exceeded its bound');
+    const owned = native || node.shadowRootType === 'user-agent';
+    const attributes = node.attributes ?? [];
+    const label = [node.nodeName, ...attributes].join(' ').toLowerCase();
+    if (owned && /timeline|seek|scrub/u.test(label)) {
+      candidates.push({ node, label: label.slice(0, 180) });
+    }
+    for (const child of node.children ?? []) {
+      visit(child, owned, depth + 1);
+    }
+    for (const shadow of node.shadowRoots ?? []) {
+      visit(shadow, owned, depth + 1);
+    }
+  };
+  visit(described.node, false, 0);
+  const descendantIds = (node: CdpNode): Set<number> => {
+    const ids = new Set<number>();
+    const append = (current: CdpNode) => {
+      ids.add(current.backendNodeId);
+      for (const child of current.children ?? []) {
+        append(child);
+      }
+      for (const shadow of current.shadowRoots ?? []) {
+        append(shadow);
+      }
+    };
+    append(node);
+    return ids;
+  };
+  for (const candidate of candidates) {
+    const box = await protocol
+      .send('DOM.getBoxModel', { backendNodeId: candidate.node.backendNodeId })
+      .catch(() => null);
+    if (!box) {
+      continue;
+    }
+    const border = box.model.border;
+    const left = Math.min(border[0]!, border[2]!, border[4]!, border[6]!);
+    const right = Math.max(border[0]!, border[2]!, border[4]!, border[6]!);
+    const top = Math.min(border[1]!, border[3]!, border[5]!, border[7]!);
+    const bottom = Math.max(border[1]!, border[3]!, border[5]!, border[7]!);
+    if (right - left < 20 || bottom - top < 4) {
+      continue;
+    }
+    const x = Math.round(left + (right - left) * 0.9);
+    const y = Math.round((top + bottom) / 2);
+    if (
+      x < videoBox.x ||
+      x > videoBox.x + videoBox.width ||
+      y < videoBox.y ||
+      y > videoBox.y + videoBox.height
+    ) {
+      continue;
+    }
+    const viewport = await page.evaluate(() => ({
+      scrollX,
+      scrollY,
+      width: innerWidth,
+      height: innerHeight,
+      scale: visualViewport?.scale ?? 1,
+      offsetLeft: visualViewport?.offsetLeft ?? 0,
+      offsetTop: visualViewport?.offsetTop ?? 0,
+    }));
+    assert.equal(viewport.scale, 1, 'Native control hit-test assumes unzoomed desktop viewport');
+    assert.equal(viewport.offsetLeft, 0);
+    assert.equal(viewport.offsetTop, 0);
+    assert(x >= 0 && x < viewport.width && y >= 0 && y < viewport.height);
+    const documentX = Math.round(x + viewport.scrollX);
+    const documentY = Math.round(y + viewport.scrollY);
+    const [hit, hostHit] = await Promise.all([
+      protocol.send('DOM.getNodeForLocation', {
+        x: documentX,
+        y: documentY,
+        includeUserAgentShadowDOM: true,
+      }),
+      protocol.send('DOM.getNodeForLocation', {
+        x: documentX,
+        y: documentY,
+        includeUserAgentShadowDOM: false,
+      }),
+    ]);
+    if (
+      hostHit.backendNodeId === described.node.backendNodeId &&
+      descendantIds(candidate.node).has(hit.backendNodeId)
+    ) {
+      return {
+        x,
+        y,
+        documentX,
+        documentY,
+        viewport,
+        label: candidate.label,
+        backendNodeId: hit.backendNodeId,
+        host,
+      };
+    }
+  }
+  throw new Error(
+    `Native seek control was not hit-tested: ${JSON.stringify(candidates.map(({ label }) => label))}`
+  );
+}
+
+async function runRangeAbortDiagnostics({
+  context,
+  validMp4,
+  nativeLoopback,
+  output,
+}: {
+  context: BrowserContext;
+  validMp4: Buffer;
+  nativeLoopback: NativeLoopback;
+  output: string;
+}) {
+  assert.equal(validMp4.length, 207662, 'The declared four-second range fixture changed');
+  const prefixEnd = 153895;
+  const evidence: {
+    status: 'running' | 'passed' | 'failed';
+    cases: Record<string, unknown>[];
+    error?: string;
+  } = { status: 'running', cases: [] };
+  const errors: unknown[] = [];
+  for (const [name, id] of [
+    ['overlap', '4666000111222333881'],
+    ['stalled-disconnect', '4666000111222333882'],
+  ] as const) {
+    const best = videoUrl(id, 0);
+    const url = `https://x.com/intentrecovery/status/${id}`;
+    const records: RangeProtocolRecord[] = [];
+    const observed: Record<string, unknown> = {
+      name,
+      id,
+      best,
+      status: 'running',
+      protocol: records,
+      cleanup: {
+        holdReleased: false,
+        routeRemoved: false,
+        mediaObserverRemoved: false,
+        protocolDetached: false,
+        pageClosed: false,
+      },
+    };
+    evidence.cases.push(observed);
+    const nativeMark = nativeLoopback.mark();
+    const handler = async (route: Route) => {
+      const target = new URL(route.request().url());
+      if (route.request().isNavigationRequest() && target.href === url) {
+        return route.continue();
+      }
+      if (target.hostname === 'x.com' && target.pathname.endsWith('/TweetResultByRestId')) {
+        let requestedId: unknown;
+        try {
+          requestedId = field(JSON.parse(target.searchParams.get('variables') ?? '{}'), 'tweetId');
+        } catch {
+          return route.fallback();
+        }
+        if (requestedId === id) {
+          return route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify(apiResponse(id, 'intentrecovery', 1)),
+          });
+        }
+      }
+      if (
+        target.hostname === 'pbs.twimg.com' &&
+        target.pathname.startsWith(`/ext_tw_video_thumb/${id}/pu/img/video-`)
+      ) {
+        return route.fulfill({ status: 200, contentType: 'image/png', body: POSTER_PNG });
+      }
+      if (target.hostname === 'video.twimg.com') {
+        if (target.href === best) {
+          return route.continue();
+        }
+        observed.unexpectedVideo = target.href;
+      }
+      return route.fallback();
+    };
+    let page: Page | undefined;
+    let protocol: CDPSession | undefined;
+    let routeInstalled = false;
+    let overflow = false;
+    const extraRanges = new Map<string, string>();
+    try {
+      nativeLoopback.setRecoveryPayloads({ tweetId: id, validMp4, badMp4: validMp4 });
+      nativeLoopback.setRecoveryDocument({
+        tweetId: id,
+        html: fixtureHtml(id, 'intentrecovery', 1),
+      });
+      if (name === 'overlap') {
+        nativeLoopback.armFirstVideoHold(new URL(best).pathname, prefixEnd);
+      } else {
+        nativeLoopback.armVideoHold(new URL(best).pathname, prefixEnd);
+      }
+      await context.route('**/*', handler);
+      routeInstalled = true;
+      page = await context.newPage();
+      protocol = await context.newCDPSession(page);
+      protocol.on('Network.requestWillBeSent', (event) => {
+        if (event.request.url !== best) {
+          return;
+        }
+        if (records.length >= 16) {
+          overflow = true;
+          return;
+        }
+        records.push({
+          requestId: event.requestId,
+          url: event.request.url,
+          range:
+            extraRanges.get(event.requestId) ||
+            String(event.request.headers.Range ?? event.request.headers.range ?? '') ||
+            null,
+          status: null,
+          startedAt: event.timestamp,
+        });
+      });
+      protocol.on('Network.requestWillBeSentExtraInfo', (event) => {
+        const range = String(event.headers.Range ?? event.headers.range ?? '');
+        const record = records.find((item) => item.requestId === event.requestId);
+        if (record) {
+          record.range = range || record.range;
+        } else if (range && extraRanges.size < 16) {
+          extraRanges.set(event.requestId, range);
+        }
+      });
+      protocol.on('Network.responseReceived', (event) => {
+        const record = records.find((item) => item.requestId === event.requestId);
+        if (record) {
+          record.status = event.response.status;
+          record.responseAt = event.timestamp;
+        }
+      });
+      protocol.on('Network.loadingFinished', (event) => {
+        const record = records.find((item) => item.requestId === event.requestId);
+        if (record) {
+          record.terminal = 'finished';
+          record.terminalAt = event.timestamp;
+        }
+      });
+      protocol.on('Network.loadingFailed', (event) => {
+        const record = records.find((item) => item.requestId === event.requestId);
+        if (record) {
+          record.terminal = 'failed';
+          record.terminalAt = event.timestamp;
+          record.errorText = event.errorText;
+          if (typeof event.canceled === 'boolean') {
+            record.canceled = event.canceled;
+          }
+        }
+      });
+      await protocol.send('Network.enable');
+      await page.goto(url);
+      await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+      await page.locator('[data-video-target="0"]').click();
+      const gallery = page.locator('[data-xeg-gallery-container]');
+      await gallery.waitFor({ state: 'visible' });
+      const original = gallery.getByRole('button', { name: 'Original', exact: true });
+      if ((await original.getAttribute('aria-pressed')) !== 'true') {
+        await original.click();
+      }
+      const video = gallery.locator('[data-gallery-element="item"][data-index="0"] video');
+      const beforePlay = await waitForValue(async () => {
+        const state = await itemState(page!, 0);
+        return state &&
+          state.readyState >= 1 &&
+          state.videoWidth === 320 &&
+          state.videoHeight === 180
+          ? state
+          : undefined;
+      }, 'native range fixture metadata');
+      assert.equal(beforePlay.currentSrc, best);
+      assert.equal(beforePlay.paused, true);
+      await video.evaluate((element) => {
+        if (!(element instanceof HTMLVideoElement)) {
+          throw new Error('Selected native video disappeared before media observation');
+        }
+        const records: RangeMediaEvent[] = [];
+        const listeners: Array<{ type: string; listener: EventListener }> = [];
+        const observer = {
+          records,
+          overflow: false,
+          dispose: () => {
+            for (const { type, listener } of listeners) {
+              element.removeEventListener(type, listener, true);
+            }
+          },
+        };
+        for (const type of ['play', 'seeking', 'seeked', 'waiting', 'stalled', 'error']) {
+          const listener: EventListener = (event) => {
+            if (records.length >= 32) {
+              observer.overflow = true;
+              return;
+            }
+            records.push({
+              type,
+              trusted: event.isTrusted,
+              currentTime: element.currentTime,
+              atMs: performance.now(),
+            });
+          };
+          element.addEventListener(type, listener, true);
+          listeners.push({ type, listener });
+        }
+        window.__xegRangeMediaObservation = observer;
+      });
+      await video.click();
+      const playing = await waitForValue(async () => {
+        const state = await itemState(page!, 0);
+        return state && !state.paused && state.currentTime > 0.15 && state.error === null
+          ? state
+          : undefined;
+      }, 'ordinary Play and decoded progress');
+      observed.playing = playing;
+      await waitForValue(
+        async () => (nativeLoopback.videoHeld() ? true : undefined),
+        'real first held 206 response'
+      );
+      const matchesStart = (record: RangeProtocolRecord, start: number) =>
+        /^bytes=(\d+)-/u.exec(record.range ?? '')?.[1] === String(start);
+      if (name === 'overlap') {
+        const point = await nativeSeekPoint(protocol, page, video);
+        observed.seekPoint = point;
+        const seekIssuedAt = await page.evaluate(() => performance.now());
+        await page.mouse.click(point.x, point.y);
+        const seeked = await waitForValue(async () => {
+          const state = await itemState(page!, 0);
+          return state && state.currentTime > 3.2 && state.error === null ? state : undefined;
+        }, 'ordinary native timeline seek');
+        observed.seeked = seeked;
+        const progressed = await waitForValue(async () => {
+          const state = await itemState(page!, 0);
+          return state &&
+            !state.paused &&
+            state.currentTime > seeked.currentTime + 0.15 &&
+            state.error === null
+            ? state
+            : undefined;
+        }, 'decoded progress after ordinary native seek');
+        observed.progressed = progressed;
+        const mediaEvents = await page.evaluate(() => {
+          const observer = window.__xegRangeMediaObservation;
+          return observer && { records: observer.records, overflow: observer.overflow };
+        });
+        assert(mediaEvents && !mediaEvents.overflow);
+        observed.mediaEvents = mediaEvents.records;
+        assert(
+          mediaEvents.records.some(
+            (event) => event.type === 'seeking' && event.trusted && event.atMs >= seekIssuedAt
+          ),
+          'Native timeline click must start a trusted seek'
+        );
+        assert(
+          mediaEvents.records.some(
+            (event) => event.type === 'seeked' && event.trusted && event.atMs >= seekIssuedAt
+          ),
+          'Native timeline click must complete a trusted seek'
+        );
+        const native = await waitForValue(async () => {
+          const entries = nativeLoopback
+            .since(nativeMark)
+            .filter((item) => item.path === new URL(best).pathname);
+          const heldAbort = entries.find(
+            (item) =>
+              item.status === 206 &&
+              item.result === 'aborted' &&
+              typeof item.prefixBytesQueued === 'number' &&
+              typeof item.closedAtMs === 'number'
+          );
+          return heldAbort &&
+            entries.some(
+              (item) =>
+                item.status === 206 &&
+                item.result === 'served' &&
+                item.range?.start !== heldAbort.range?.start &&
+                item.atMs > heldAbort.atMs &&
+                item.atMs < heldAbort.closedAtMs!
+            )
+            ? entries
+            : undefined;
+        }, 'overlapping aborted and completed native 206 requests');
+        observed.native = native;
+        assert.equal(overflow, false);
+        assert.equal(observed.unexpectedVideo, undefined);
+        const aborted = native.find(
+          (item) =>
+            item.status === 206 &&
+            item.result === 'aborted' &&
+            typeof item.prefixBytesQueued === 'number'
+        );
+        assert(aborted?.range && typeof aborted.closedAtMs === 'number');
+        const completed = native.find(
+          (item) =>
+            item.status === 206 &&
+            item.result === 'served' &&
+            item.range?.start !== aborted.range?.start &&
+            item.atMs > aborted.atMs &&
+            item.atMs < aborted.closedAtMs!
+        );
+        assert(completed?.range, 'A distinct 206 must begin before the held request aborts');
+        assert(
+          typeof aborted.closedAtMs === 'number' && typeof completed.finishedAtMs === 'number'
+        );
+        const terminals = await waitForValue(async () => {
+          const failed = records.find(
+            (item) =>
+              item.terminal === 'failed' &&
+              item.errorText === 'net::ERR_ABORTED' &&
+              item.status === 206 &&
+              matchesStart(item, aborted.range!.start)
+          );
+          const finished = records.find(
+            (item) =>
+              item.terminal === 'finished' &&
+              item.status === 206 &&
+              matchesStart(item, completed.range!.start)
+          );
+          return failed && finished ? { failed, finished } : undefined;
+        }, 'exact native media abort and completed range CDP terminals');
+        const { failed, finished } = terminals;
+        assert(failed && finished && failed.requestId !== finished.requestId);
+        assert(finished.startedAt > failed.startedAt);
+        assert(
+          finished.startedAt < failed.terminalAt!,
+          'The two native media requests did not overlap'
+        );
+        assert.equal(progressed.currentSrc, best);
+        assert.equal(progressed.error, null);
+        observed.classification = 'isolated-browser-abort-with-completed-range-and-playback';
+      } else {
+        const stalledStart = await waitForValue(async () => {
+          const state = await itemState(page!, 0);
+          return state &&
+            state.currentTime > 2.8 &&
+            !state.ended &&
+            Number.isFinite(state.duration) &&
+            state.currentTime < state.duration - 0.4
+            ? state
+            : undefined;
+        }, 'playback approaching held sample boundary');
+        const plateauStartedAt = performance.now();
+        await page.waitForTimeout(1_500);
+        const stalledEnd = await itemState(page, 0);
+        assert(stalledEnd);
+        const plateauWallMs = performance.now() - plateauStartedAt;
+        observed.stall = { before: stalledStart, after: stalledEnd, wallMs: plateauWallMs };
+        assert(plateauWallMs >= 1_200, 'Stall sample must span a sustained wall-clock interval');
+        assert(stalledEnd.currentTime <= stalledStart.currentTime + 0.2);
+        assert.equal(stalledEnd.paused, false);
+        assert.equal(stalledEnd.ended, false);
+        assert.equal(stalledEnd.seeking, false);
+        assert(stalledEnd.currentTime < stalledEnd.duration - 0.4);
+        assert.equal(stalledEnd.currentSrc, best);
+        assert.equal(stalledEnd.error, null);
+        assert.equal(nativeLoopback.videoHeld(), true);
+        const heldNative = nativeLoopback
+          .since(nativeMark)
+          .filter((item) => item.path === new URL(best).pathname);
+        observed.heldNative = heldNative;
+        const heldRange = heldNative.find(
+          (item) => item.status === 206 && item.result === 'video-held' && item.range
+        );
+        assert(heldRange?.range, 'The stalled playback must have a still-held native 206 range');
+        const pendingIds = records
+          .filter(
+            (item) =>
+              item.status === 206 &&
+              item.terminal === undefined &&
+              matchesStart(item, heldRange.range!.start)
+          )
+          .map((item) => item.requestId);
+        assert(pendingIds.length > 0, 'Stalled transfer must still have a pending native request');
+        observed.disconnectIssuedAtMs = performance.now();
+        nativeLoopback.abortVideoHold();
+        const disconnectedNative = await waitForValue(async () => {
+          const native = nativeLoopback
+            .since(nativeMark)
+            .find(
+              (item) =>
+                item.path === new URL(best).pathname &&
+                item.result === 'aborted' &&
+                item.range?.start === heldRange.range!.start
+            );
+          return native && typeof native.closedAtMs === 'number' ? native : undefined;
+        }, 'controlled server disconnect terminal');
+        observed.disconnectedNative = disconnectedNative;
+        observed.allNative = nativeLoopback
+          .since(nativeMark)
+          .filter((item) => item.path === new URL(best).pathname);
+        observed.afterDisconnect = await itemState(page, 0);
+        observed.disconnectProtocol = await waitForValue(
+          async () =>
+            records.find(
+              (item) =>
+                pendingIds.includes(item.requestId) &&
+                item.status === 206 &&
+                item.terminal === 'failed' &&
+                matchesStart(item, heldRange.range!.start)
+            ),
+          'controlled native transfer failure terminal'
+        );
+        assert.equal(overflow, false);
+        assert.equal(observed.unexpectedVideo, undefined);
+        observed.classification = 'held-transfer-then-controlled-server-disconnect';
+      }
+      const documentRequest = nativeLoopback
+        .since(nativeMark)
+        .find(
+          (item) =>
+            item.host === 'x.com' && item.path === new URL(url).pathname && item.result === 'served'
+        );
+      assert(documentRequest, 'Range fixture document must come from the native HTTPS server');
+      observed.document = documentRequest;
+      await page.keyboard.press('Escape');
+      await gallery.waitFor({ state: 'detached' });
+      observed.status = 'passed';
+    } catch (error) {
+      observed.status = 'failed';
+      observed.error = error instanceof Error ? error.message : String(error);
+      if (page && !page.isClosed()) {
+        observed.mediaEvents = await page
+          .evaluate(() => {
+            const observer = window.__xegRangeMediaObservation;
+            return observer && { records: observer.records, overflow: observer.overflow };
+          })
+          .catch(() => null);
+      }
+      observed.native = nativeLoopback
+        .since(nativeMark)
+        .filter((item) => item.path === new URL(best).pathname);
+      observed.overflow = overflow;
+      errors.push(error);
+    } finally {
+      nativeLoopback.abortVideoHold();
+      const cleanup = observed.cleanup as Record<string, boolean>;
+      cleanup.holdReleased = !nativeLoopback.videoHeld();
+      if (routeInstalled) {
+        await context
+          .unroute('**/*', handler)
+          .then(() => {
+            cleanup.routeRemoved = true;
+          })
+          .catch((error) => errors.push(error));
+      } else {
+        cleanup.routeRemoved = true;
+      }
+      if (page && !page.isClosed()) {
+        await page
+          .evaluate(() => {
+            window.__xegRangeMediaObservation?.dispose();
+            delete window.__xegRangeMediaObservation;
+          })
+          .then(() => {
+            cleanup.mediaObserverRemoved = true;
+          })
+          .catch((error) => errors.push(error));
+      } else {
+        cleanup.mediaObserverRemoved = true;
+      }
+      if (protocol) {
+        await protocol
+          .detach()
+          .then(() => {
+            cleanup.protocolDetached = true;
+          })
+          .catch((error) => errors.push(error));
+      } else {
+        cleanup.protocolDetached = true;
+      }
+      if (page) {
+        await page
+          .close()
+          .then(() => {
+            cleanup.pageClosed = true;
+          })
+          .catch((error) => errors.push(error));
+      } else {
+        cleanup.pageClosed = true;
+      }
+      if (!Object.values(cleanup).every(Boolean)) {
+        observed.status = 'failed';
+      }
+    }
+  }
+  evidence.status = errors.length ? 'failed' : 'passed';
+  if (errors.length) {
+    evidence.error = errors
+      .map((error) => (error instanceof Error ? error.message : String(error)))
+      .join('; ');
+  }
+  await writeFile(
+    join(output, 'video-range-abort-observations.json'),
+    JSON.stringify(evidence, null, 2)
+  );
+  if (errors.length) {
+    throw new AggregateError(errors, 'Native range abort and stall diagnostics failed');
+  }
+  return evidence;
 }
 
 async function runSelectedVideoFailureCases({
