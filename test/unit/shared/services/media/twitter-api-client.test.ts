@@ -528,6 +528,97 @@ describe('TweetMetadataReuse', () => {
       await Promise.allSettled(requests);
     }
   });
+
+  it.each([false, true])(
+    'caches mixed HLS metadata but excludes entirely HLS lists: %s',
+    async (allHls) => {
+      const photo = createPhotoTweetResponse();
+      const hls = {
+        type: 'video',
+        id_str: '8001',
+        media_url_https: 'https://pbs.twimg.com/ext_tw_video_thumb/8001/pu/img/hls.jpg',
+        video_info: {
+          variants: [
+            {
+              content_type: 'application/x-mpegURL',
+              url: 'https://video.twimg.com/ext_tw_video/8001/pu/pl/list.m3u8',
+            },
+          ],
+        },
+      };
+      const data = {
+        data: {
+          tweetResult: {
+            result: {
+              ...photo.data.tweetResult.result,
+              legacy: {
+                ...photo.data.tweetResult.result.legacy,
+                extended_entities: {
+                  media: allHls
+                    ? [hls]
+                    : [hls, ...photo.data.tweetResult.result.legacy.extended_entities.media],
+                },
+              },
+            },
+          },
+        },
+      };
+      httpGet.mockResolvedValue({ ok: true, status: 200, data });
+      const extractor = new TwitterAPIExtractor();
+      const info = {
+        tweetId: '222',
+        username: 'cache_author',
+        tweetUrl: 'https://x.com/cache_author/status/222',
+        extractionMethod: 'fixture',
+        confidence: 1,
+      };
+      document.body.innerHTML =
+        '<a href="/cache_author/status/222/video/1"><video id="hls" poster="https://pbs.twimg.com/ext_tw_video_thumb/8001/pu/img/hls.jpg"></video></a><a href="/cache_author/status/222/photo/2"><img id="photo" src="https://pbs.twimg.com/media/cache-0.jpg"></a>';
+      try {
+        for (let click = 0; click < 2; click += 1) {
+          const unsupported = await extractor.extract(
+            info,
+            document.getElementById('hls')!,
+            {},
+            'hls'
+          );
+          expect(unsupported).toMatchObject({
+            success: false,
+            failureKind: 'unsupported-source',
+            apiRequestOutcome: 'healthy',
+          });
+          expect(unsupported.mediaItems).toEqual([]);
+        }
+        expect(httpGet).toHaveBeenCalledTimes(allHls ? 2 : 1);
+        if (!allHls) {
+          const selected = await extractor.extract(
+            info,
+            document.getElementById('photo')!,
+            {},
+            'photo'
+          );
+          expect(selected).toMatchObject({ success: true, clickedIndex: 0 });
+          expect(selected.mediaItems[0]).toMatchObject({
+            tweetId: '222',
+            type: 'image',
+            url: 'https://pbs.twimg.com/media/cache-0.jpg?format=jpg&name=orig',
+          });
+          expect(selected.apiRequestToken).toBeUndefined();
+          const mismatch = document.createElement('img');
+          mismatch.src = 'https://pbs.twimg.com/media/unknown.jpg';
+          expect((await extractor.extract(info, mismatch, {}, 'mismatch')).success).toBe(false);
+          expect(
+            (await extractor.extract(info, document.getElementById('photo')!, {}, 'after-mismatch'))
+              .success
+          ).toBe(true);
+          expect(httpGet).toHaveBeenCalledTimes(1);
+        }
+      } finally {
+        extractor.dispose();
+        document.body.replaceChildren();
+      }
+    }
+  );
 });
 
 describe('twitter-api-client request boundary', () => {
@@ -710,6 +801,7 @@ describe('twitter-api-client request boundary', () => {
   });
 
   it.each([
+    [{ ok: false, status: 401, readable: true, data: {} }, 'denied'],
     [{ ok: false, status: 403, readable: true, retryAfterMs: 30_000, data: {} }, 'denied'],
     [
       { ok: false, status: 0, readable: false, errorCategory: 'unreadable', data: {} },
@@ -717,6 +809,12 @@ describe('twitter-api-client request boundary', () => {
     ],
     [{ ok: false, status: 429, readable: true, retryAfterMs: 120_000, data: {} }, 'rate-limited'],
     [{ ok: false, status: 503, readable: true, retryAfterMs: 120_000, data: {} }, 'deferred'],
+    [{ ok: false, status: 408, readable: true, retryAfterMs: 120_000, data: {} }, 'deferred'],
+    [{ ok: false, status: 425, readable: true, retryAfterMs: 120_000, data: {} }, 'deferred'],
+    [{ ok: false, status: 500, readable: true, retryAfterMs: 120_000, data: {} }, 'deferred'],
+    [{ ok: false, status: 502, readable: false, retryAfterMs: 120_000, data: {} }, 'unreadable'],
+    [{ ok: false, status: 404, readable: true, data: {} }, 'transport'],
+    [{ ok: false, status: 404, readable: false, data: {} }, 'unreadable'],
     [
       {
         ok: false,
@@ -738,6 +836,26 @@ describe('twitter-api-client request boundary', () => {
           ? { retryAfterMs: response.retryAfterMs }
           : {}),
       });
+    }
+  );
+
+  it.each([undefined, -1, Number.NaN, Number.POSITIVE_INFINITY, 86_400_001])(
+    'discards invalid Retry-After guidance instead of retaining a defer: %s',
+    async (retryAfterMs) => {
+      httpGet.mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+        readable: true,
+        retryAfterMs,
+        data: {},
+      });
+      await expect(getTweetMedias('222')).rejects.toMatchObject({
+        category: 'transport',
+        retryAfterMs: undefined,
+      });
+      httpGet.mockResolvedValueOnce({ ok: true, status: 200, data: createPhotoTweetResponse() });
+      expect(await getTweetMedias('222')).toHaveLength(1);
+      expect(httpGet).toHaveBeenCalledTimes(2);
     }
   );
 
@@ -812,6 +930,14 @@ describe('twitter-api-client request boundary', () => {
       category: 'provider-error',
     });
   });
+
+  it.each([{ data: 'login' }, { data: [] }])(
+    'rejects readable JSON that is not a provider object: %j',
+    async ({ data }) => {
+      httpGet.mockResolvedValueOnce({ ok: true, status: 200, data });
+      await expect(getTweetMedias('222')).rejects.toMatchObject({ category: 'unreadable' });
+    }
+  );
 
   it('rejects a mismatched numeric root before using its direct quote', async () => {
     httpGet.mockResolvedValueOnce({

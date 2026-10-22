@@ -78,6 +78,48 @@ describe('integrated scoped recovery and delayed identity', () => {
     }
   });
 
+  it.each([401, 403].flatMap((status) => [true, false].map((visible) => ({ status, visible }))))(
+    'keeps denied $status separate from visible-DOM recovery ($visible)',
+    async ({ status, visible }) => {
+      httpGet.mockResolvedValue({
+        ok: false,
+        status,
+        readable: true,
+        retryAfterMs: 120_000,
+        data: {},
+      });
+      const target = visible
+        ? tile()
+        : (() => {
+            document.body.innerHTML =
+              '<a href="/author/status/222/video/1"><video id="target" src="blob:https://x.com/fixture" poster="https://pbs.twimg.com/ext_tw_video_thumb/900/pu/img/poster.jpg"></video></a>';
+            return document.getElementById('target')!;
+          })();
+      const service = new MediaExtractionService();
+      try {
+        for (let click = 0; click < 2; click += 1) {
+          const result = await service.extractFromClickedElement(target);
+          expect(result.success).toBe(visible);
+          if (visible) {
+            expect(result.metadata).toMatchObject({
+              sourceType: 'dom-fallback',
+              recoveryScope: 'visible-tile',
+            });
+            expect(result.mediaItems.map((item) => item.url)).toEqual([
+              'https://pbs.twimg.com/media/second.jpg',
+            ]);
+          } else {
+            expect(result.failureKind).toBe('denied');
+            expect(result.mediaItems).toEqual([]);
+          }
+        }
+        expect(httpGet).toHaveBeenCalledTimes(2);
+      } finally {
+        service.dispose();
+      }
+    }
+  );
+
   it.each(['removed', 'replaced', 'reused', 'owner-changed'] as const)(
     'preserves API click identity when target is %s',
     async (kind) => {
