@@ -842,20 +842,23 @@ describe('VerticalImageItem video admission and playback', () => {
     expect(gallerySignals.currentVideoElement).toBe(current.video);
   });
 
-  it('keeps an exposed 403 on the current attempt from selecting another rendition', () => {
-    const { video, row } = mount({ active: true });
-    mediaEvent(video, 'loadstart');
-    vi.spyOn(performance, 'getEntriesByName').mockReturnValue([
-      {
-        startTime: performance.now(),
-        responseStatus: 403,
-      } as unknown as PerformanceResourceTiming,
-    ]);
-    setMediaError(video, 4);
-    mediaEvent(video, 'error');
-    expect(video.getAttribute('src')).toBe(source('best'));
-    expect(row.querySelector('[role="alert"]')).not.toBeNull();
-  });
+  it.each([401, 403])(
+    'keeps an exposed %i on the current attempt from selecting another rendition',
+    (status) => {
+      const { video, row } = mount({ active: true });
+      mediaEvent(video, 'loadstart');
+      vi.spyOn(performance, 'getEntriesByName').mockReturnValue([
+        {
+          startTime: performance.now(),
+          responseStatus: status,
+        } as unknown as PerformanceResourceTiming,
+      ]);
+      setMediaError(video, 4);
+      mediaEvent(video, 'error');
+      expect(video.getAttribute('src')).toBe(source('best'));
+      expect(row.querySelector('[role="alert"]')).not.toBeNull();
+    }
+  );
 
   it.each([1, 2])('does not switch a media error code %i', (code) => {
     const { video } = mount({ active: true });
