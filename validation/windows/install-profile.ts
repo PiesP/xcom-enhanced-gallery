@@ -8225,17 +8225,20 @@ async function observeRetiredNativeVolume({
   quotedCase: QuotedCase;
   selected: Awaited<ReturnType<typeof assertQuotedGallery>>;
 }) {
-  const prior = await readStoredVideoSettings(extensionPage);
-  const firstMuted = !storedGalleryMediaPreferences(prior.settings).muted;
-  const retired = await selected.video.elementHandle();
-  assert(retired, 'Selected B video must remain available for detached observation');
-  const evidence: Record<string, unknown> = { status: 'pending', firstVolume: 0.27, firstMuted };
+  let prior: Awaited<ReturnType<typeof readStoredVideoSettings>> | undefined;
+  let retired: Awaited<ReturnType<typeof selected.video.elementHandle>> | undefined;
+  const evidence: Record<string, unknown> = { status: 'pending', firstVolume: 0.27 };
   const samples: unknown[] = [];
   evidence.samples = samples;
   let reopenedBefore: Awaited<ReturnType<typeof quotedHostSnapshot>> | undefined;
   let validationError: unknown;
   const cleanupErrors: unknown[] = [];
   try {
+    prior = await readStoredVideoSettings(extensionPage);
+    const firstMuted = !storedGalleryMediaPreferences(prior.settings).muted;
+    evidence.firstMuted = firstMuted;
+    retired = await selected.video.elementHandle();
+    assert(retired, 'Selected B video must remain available for detached observation');
     await selected.video.evaluate((element, muted) => {
       if (!(element instanceof HTMLVideoElement)) {
         throw new Error('Selected B video is missing');
@@ -8393,17 +8396,22 @@ async function observeRetiredNativeVolume({
       cleanupErrors.push(error);
     }
     try {
-      await delay(350);
-      evidence.settingsRestored = await restoreStoredVideoSettings(extensionPage, prior);
-      assert.equal(
-        evidence.settingsRestored,
-        true,
-        'Retired volume cycle must restore exact settings'
-      );
+      if (prior) {
+        await delay(350);
+        evidence.settingsRestored = await restoreStoredVideoSettings(extensionPage, prior);
+        assert.equal(
+          evidence.settingsRestored,
+          true,
+          'Retired volume cycle must restore exact settings'
+        );
+      } else {
+        evidence.settingsRestored = false;
+        evidence.settingsRestoreSkipped = 'Initial settings snapshot unavailable before mutation';
+      }
     } catch (error) {
       cleanupErrors.push(error);
     }
-    await retired.dispose().catch((error: unknown) => cleanupErrors.push(error));
+    await retired?.dispose().catch((error: unknown) => cleanupErrors.push(error));
     evidence.cleanupErrors = cleanupErrors.map((error) => safeError(error));
     evidence.status = validationError || cleanupErrors.length ? 'failed' : 'passed';
     try {
