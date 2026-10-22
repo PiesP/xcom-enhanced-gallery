@@ -348,6 +348,12 @@ type AcceptanceReceipt = {
   boundary?: unknown;
   boundaryError?: string;
 };
+type OriginalAvailabilityEvidence = {
+  status: string;
+  cases: unknown[];
+  expectedConsoleErrors: ConsoleErrorRecord[];
+  error?: string;
+};
 type FlowCleanup = {
   workerObserverDisposed?: boolean;
   fixturePageClosed?: boolean;
@@ -9306,6 +9312,298 @@ async function runSourceQualityCycle({
   evidence.status = 'passed';
 }
 
+async function runOriginalAvailabilityCycles({
+  consoleErrors,
+  downloads,
+  evidence,
+  extensionPage,
+  images,
+  nativeLoopback,
+  output,
+  page,
+  pageFetches,
+}: {
+  consoleErrors: ConsoleErrorRecord[];
+  downloads: string;
+  evidence: OriginalAvailabilityEvidence;
+  extensionPage: Page;
+  images: ImageFixtures;
+  nativeLoopback: NativeLoopback;
+  output: string;
+  page: Page;
+  pageFetches: PageFetch[];
+}) {
+  const original = `https://pbs.twimg.com/media/${QUALITY_IMAGE_PATHS[1]}?format=jpg&name=orig`;
+  const matchesOriginal = (url: URL) => url.href === original;
+  const nextDownload = async (known: Set<number>, terminal: 'complete' | 'interrupted') =>
+    waitForValue(
+      async () => {
+        const created = (await queryDownloads(extensionPage)).filter(({ id }) => !known.has(id));
+        assert(created.length <= 1, 'One ordinary action must not create replacement downloads');
+        const item = created[0];
+        if (!item || !['complete', 'interrupted'].includes(item.state)) {
+          return undefined;
+        }
+        assert.equal(item.state, terminal, 'Native completion must match the armed availability');
+        return item;
+      },
+      `original availability native ${terminal}`,
+      20_000
+    );
+  evidence.status = 'pending';
+  try {
+    for (const status of [403, 404] as const) {
+      // A fresh document discards prior ZIP bytes; the healthy render is established before
+      // denying only the original transport. The visible image remains decoded throughout.
+      await page.goto(QUALITY_FIXTURE_URL);
+      await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+      const trigger = page
+        .locator('[data-route="classic"][data-phase="normal"] [data-testid="tweetPhoto"] img')
+        .nth(1);
+      await trigger.scrollIntoViewIfNeeded();
+      await trigger.focus();
+      const before = await hostSnapshot(page, 1);
+      await trigger.click();
+      const gallery = page.locator('[data-xeg-gallery-container]');
+      await gallery.waitFor({ state: 'visible' });
+      const selection = await assertQuotedSelection(page, {
+        position: 2,
+        total: 3,
+        type: 'image',
+        path: `/media/${QUALITY_IMAGE_PATHS[1]}`,
+      });
+      assert.equal(selection.source, original);
+      await assertQuotedOriginLink(gallery, QUALITY_FIXTURE_URL);
+      const selectedImage = gallery.locator('[data-gallery-element="item"][data-index="1"] img');
+      const decodedImage = () =>
+        selectedImage.evaluate((element) => {
+          if (!(element instanceof HTMLImageElement)) {
+            throw new Error('Selected original-availability image is missing');
+          }
+          return {
+            complete: element.complete,
+            width: element.naturalWidth,
+            height: element.naturalHeight,
+          };
+        });
+      const healthy = await decodedImage();
+      assert.deepEqual(healthy, { complete: true, width: 560, height: 360 });
+      const receipt = {
+        status,
+        selection,
+        healthy,
+        documentTimeOrigin: await page.evaluate(() => performance.timeOrigin),
+        faultRequests: [] as Array<{ status: number; resourceType: string; atMs: number }>,
+        single: undefined as unknown,
+        zip: undefined as unknown,
+        restored: undefined as unknown,
+        cleanup: { pageRouteRemoved: false, nativeFaultRemoved: false },
+      };
+      evidence.cases.push(receipt);
+      const faultRoute = async (route: Route) => {
+        assert(receipt.faultRequests.length < 8, 'Original failure request budget exceeded');
+        receipt.faultRequests.push({
+          status,
+          resourceType: route.request().resourceType(),
+          atMs: performance.now(),
+        });
+        await route.fulfill({
+          status,
+          body: '',
+          headers: {
+            'Cache-Control': 'no-store',
+            'Access-Control-Allow-Origin': 'https://x.com',
+            'Access-Control-Allow-Credentials': 'true',
+          },
+        });
+      };
+      const currentButton = gallery.locator(
+        '[data-gallery-element="toolbar"] button[aria-label="Download"]'
+      );
+      const zipButton = gallery.locator(
+        '[data-gallery-element="toolbar"] button[aria-label="Download 3 shown files as ZIP"]'
+      );
+      await page.route(matchesOriginal, faultRoute);
+      nativeLoopback.armHttpFailure(original, status);
+      try {
+        const knownSingle = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+        const nativeMark = nativeLoopback.mark();
+        const fetchMark = pageFetches.length;
+        const singleConsoleMark = consoleErrors.length;
+        const filesBeforeSingle = new Set(await readdir(downloads));
+        await currentButton.click();
+        const failed = await nextDownload(knownSingle, 'interrupted');
+        await waitForValue(
+          async () => ((await currentButton.isEnabled()) ? true : undefined),
+          'failed original single settled'
+        );
+        assert.equal(failed.url, original);
+        assert.equal(failed.bytesReceived, 0);
+        const filesAdded = await waitForValue(async () => {
+          const added = (await readdir(downloads)).filter((name) => !filesBeforeSingle.has(name));
+          return added.length === 0 ? added : undefined;
+        }, 'rejected original left no completed or partial file');
+        const expectedNativeError = status === 403 ? 'SERVER_FORBIDDEN' : 'SERVER_BAD_CONTENT';
+        assert.equal(
+          failed.error,
+          expectedNativeError,
+          'Native terminal reason must match the server rejection'
+        );
+        const nativeEvents = nativeLoopback.since(nativeMark);
+        assert.equal(nativeEvents.filter(({ method }) => method === 'GET').length, 1);
+        assert(
+          nativeEvents.every(
+            (event) =>
+              event.status === status &&
+              event.result === 'http-failure' &&
+              typeof event.finishedAtMs === 'number'
+          )
+        );
+        assert.deepEqual(
+          pageFetches.slice(fetchMark),
+          [],
+          'Failed native original must not fall back to page bytes'
+        );
+        receipt.single = {
+          id: failed.id,
+          state: failed.state,
+          error: failed.error,
+          nativeExists: failed.exists,
+          filesAdded,
+          nativeEvents,
+        };
+        const nativeErrors = consoleErrors
+          .slice(singleConsoleMark)
+          .filter(
+            (record) =>
+              record.text.startsWith('[XEG] Download failed ') &&
+              record.text.includes(expectedNativeError)
+          );
+        assert(
+          nativeErrors.length <= 1,
+          'One rejected native download may report at most one failure'
+        );
+        evidence.expectedConsoleErrors.push(...nativeErrors);
+        assert.deepEqual(
+          await decodedImage(),
+          healthy,
+          'A save failure must preserve the decoded gallery image'
+        );
+
+        const knownZip = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+        const zipConsoleMark = consoleErrors.length;
+        await zipButton.click();
+        const zip = await nextDownload(knownZip, 'complete');
+        const entries = [0, 2].map((index) => ({
+          filename: qualityFilename(index),
+          bytes: images[index]!,
+        }));
+        const { bytes } = await readExactDownloadFile(
+          zip.filename,
+          expectedStoredZipBytes(entries)
+        );
+        const verified = verifyStoredZip(bytes, entries);
+        const file = `original-${status}-partial.zip`;
+        await copyFile(zip.filename, join(output, file));
+        receipt.zip = {
+          id: zip.id,
+          filename: basename(zip.filename),
+          file,
+          ...imageReceipt(bytes),
+          verified,
+          omitted: [qualityFilename(1)],
+        };
+        assert.equal(
+          receipt.faultRequests.length,
+          1,
+          'A denied original must not be fetched again or replaced by display bytes'
+        );
+        assert(['fetch', 'xhr'].includes(receipt.faultRequests[0]!.resourceType));
+        await waitForValue(
+          async () => ((await zipButton.isEnabled()) ? true : undefined),
+          'partial ZIP settled'
+        );
+        const resourceErrors = consoleErrors
+          .slice(zipConsoleMark)
+          .filter(
+            (record) =>
+              record.location === original &&
+              record.text.includes(`the server responded with a status of ${status}`)
+          );
+        assert(
+          resourceErrors.length <= 1,
+          'One rejected ZIP source may report at most one resource failure'
+        );
+        evidence.expectedConsoleErrors.push(...resourceErrors);
+      } finally {
+        nativeLoopback.clearHttpFailure();
+        receipt.cleanup.nativeFaultRemoved = true;
+        await page.unroute(matchesOriginal, faultRoute);
+        receipt.cleanup.pageRouteRemoved = true;
+      }
+      // Restore transport in the same gallery. The previously failed source must now be
+      // acquired afresh, while successful cached siblings may be reused by the ZIP.
+      const knownHealthy = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+      const nativeMark = nativeLoopback.mark();
+      const fetchMark = pageFetches.length;
+      await currentButton.click();
+      const healthySingle = await nextDownload(knownHealthy, 'complete');
+      const native = await assertNativeSingle({
+        extensionPage,
+        knownIds: knownHealthy,
+        download: healthySingle,
+        expectedUrl: original,
+        expectedBytes: images[1],
+        nativeLoopback,
+        nativeMark,
+        pageFetches: pageFetches.slice(fetchMark),
+      });
+      const { bytes: singleBytes } = await readExactDownloadFile(
+        healthySingle.filename,
+        images[1].length
+      );
+      assert(singleBytes.equals(images[1]));
+      const singleFile = `original-${status}-restored.jpg`;
+      await copyFile(healthySingle.filename, join(output, singleFile));
+      await waitForValue(
+        async () => ((await zipButton.isEnabled()) ? true : undefined),
+        'restored single settled'
+      );
+      const knownHealthyZip = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+      await zipButton.click();
+      const healthyZip = await nextDownload(knownHealthyZip, 'complete');
+      const allEntries = images.map((bytes, index) => ({
+        filename: qualityFilename(index),
+        bytes,
+      }));
+      const { bytes: zipBytes } = await readExactDownloadFile(
+        healthyZip.filename,
+        expectedStoredZipBytes(allEntries)
+      );
+      const verified = verifyStoredZip(zipBytes, allEntries);
+      const zipFile = `original-${status}-restored.zip`;
+      await copyFile(healthyZip.filename, join(output, zipFile));
+      receipt.restored = {
+        single: { id: healthySingle.id, file: singleFile, ...imageReceipt(singleBytes), native },
+        zip: { id: healthyZip.id, file: zipFile, ...imageReceipt(zipBytes), verified },
+      };
+      await page.keyboard.press('Escape');
+      await gallery.waitFor({ state: 'detached' });
+      const after = await hostSnapshot(page, 1);
+      assert.equal(after.activeElementAlt, before.triggerAlt);
+      assert.equal(after.scrollY, before.scrollY);
+      assert.deepEqual(after.bodyStyle, before.bodyStyle);
+      assert.deepEqual(after.background, before.background);
+      assert.equal(after.scrollRestoration, before.scrollRestoration);
+    }
+    evidence.status = 'passed';
+  } catch (error) {
+    evidence.status = 'failed';
+    evidence.error = safeError(error);
+    throw error;
+  }
+}
+
 async function exerciseInstalledExtension(
   context: BrowserContext,
   extensionId: string,
@@ -9358,6 +9656,11 @@ async function exerciseInstalledExtension(
     downloads: [],
   };
   const sourceQuality: SourceQualityEvidence = { status: 'pending', sources: [], requests: [] };
+  const originalAvailability: OriginalAvailabilityEvidence = {
+    status: 'pending',
+    cases: [],
+    expectedConsoleErrors: [],
+  };
   const compactQuotePhoto: CompactEvidence = { status: 'pending', api: [], images: [], steps: [] };
   let apiReuse: unknown = { status: 'pending' };
   let capacityNotification: unknown = { status: 'pending' };
@@ -9537,6 +9840,17 @@ async function exerciseInstalledExtension(
         });
       throw error;
     }
+    await runOriginalAvailabilityCycles({
+      consoleErrors,
+      downloads,
+      evidence: originalAvailability,
+      extensionPage,
+      images,
+      nativeLoopback,
+      output,
+      page,
+      pageFetches,
+    });
     await page.goto(FIXTURE_URL);
     await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
     try {
@@ -9918,10 +10232,12 @@ async function exerciseInstalledExtension(
     nativeRedirect = await runNativeRedirectDiagnostic(extensionPage, nativeLoopback, images);
     const expectedMemoryErrors = new Set(downloadMemory.expectedConsoleErrors ?? []);
     const expectedRenderFaultErrors = new Set(modelessRenderRecovery.expectedConsoleErrors ?? []);
+    const expectedOriginalErrors = new Set(originalAvailability.expectedConsoleErrors);
     const unexpectedConsoleErrors = consoleErrors.filter(
       (record) =>
         !isExpectedFixtureApiConsoleError(record) &&
         !expectedMemoryErrors.has(record) &&
+        !expectedOriginalErrors.has(record) &&
         !expectedRenderFaultErrors.has(record)
     );
     assert.deepEqual(pageErrors, [], 'Installed content script must not raise page errors');
@@ -9954,6 +10270,7 @@ async function exerciseInstalledExtension(
       consoleErrors,
       fixtureApiResponses: fixtureRoutes.apiResponses,
       sourceQuality,
+      originalAvailability,
       compactQuotePhoto,
       apiReuse,
       capacityNotification,
@@ -10038,6 +10355,7 @@ async function exerciseInstalledExtension(
             failedRequests,
             fixtureApiResponses: fixtureRoutes?.apiResponses ?? [],
             sourceQuality,
+            originalAvailability,
             compactQuotePhoto,
             apiReuse,
             capacityNotification,

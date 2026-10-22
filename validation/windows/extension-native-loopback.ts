@@ -82,6 +82,7 @@ export function createExtensionNativeFixtureHandler() {
   let heldTail: Buffer | null = null;
   let videoHold: VideoHold | null = null;
   let redirectOnce: { source: string; destination: string } | null = null;
+  let httpFailure: { key: string; status: 403 | 404 } | null = null;
   const reject = (response: ServerResponse, status = 404) => {
     unexpectedCount += 1;
     response.writeHead(status, { 'Content-Length': '0', 'Cache-Control': 'no-store' });
@@ -99,6 +100,41 @@ export function createExtensionNativeFixtureHandler() {
     const route = allowed.get(`${host?.replace(/:443$/u, '')}${request.url ?? ''}`);
     if (!['GET', 'HEAD'].includes(request.method ?? '') || !route || (sni && sni !== route.host)) {
       reject(response);
+      return;
+    }
+    if (httpFailure?.key === `${route.host}${request.url ?? ''}`) {
+      const event: NativeEvent = {
+        host: route.host,
+        path: route.path,
+        method: request.method ?? '',
+        purpose: 'transfer',
+        status: httpFailure.status,
+        range: null,
+        bytes: 0,
+        sha256: null,
+        result: 'started',
+        atMs: performance.now(),
+      };
+      events.push(event);
+      active.add(response);
+      response.once('close', () => {
+        if (!response.writableFinished) {
+          event.result = 'aborted';
+          event.closedAtMs = performance.now();
+        }
+        active.delete(response);
+      });
+      response.once('finish', () => {
+        event.result = 'http-failure';
+        event.finishedAtMs = performance.now();
+      });
+      response.writeHead(httpFailure.status, {
+        'Content-Length': '0',
+        'Cache-Control': 'no-store',
+        'Access-Control-Allow-Origin': 'https://x.com',
+        'Access-Control-Allow-Credentials': 'true',
+      });
+      response.end();
       return;
     }
     if (request.method === 'GET' && redirectOnce?.source === `${route.host}${request.url ?? ''}`) {
@@ -366,6 +402,20 @@ export function createExtensionNativeFixtureHandler() {
       pending.responses.clear();
     },
     mark: () => events.length,
+    armHttpFailure(source: string, status: 403 | 404) {
+      assert.equal(httpFailure, null, 'Only one original-availability fault may be armed');
+      const url = new URL(source);
+      const key = `${url.hostname}${url.pathname}${url.search}`;
+      assert.equal(url.protocol, 'https:');
+      assert.equal(url.host, url.hostname);
+      assert.equal(url.username + url.password + url.hash, '');
+      assert(allowed.has(key), 'Only an existing synthetic original may fail');
+      assert([403, 404].includes(status));
+      httpFailure = { key, status };
+    },
+    clearHttpFailure() {
+      httpFailure = null;
+    },
     armRedirect(source: string, destination: string) {
       assert.equal(redirectOnce, null, 'Only one native redirect may be armed');
       const from = new URL(source);
