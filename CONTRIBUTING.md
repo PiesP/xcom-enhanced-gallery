@@ -27,8 +27,15 @@ git clone --recurse-submodules https://github.com/PiesP/xcom-enhanced-gallery.gi
 cd xcom-enhanced-gallery
 git submodule sync --recursive
 git submodule update --init --recursive
-pnpm install
+npm install --global "$(node -p "require('./package.json').packageManager")" --allow-scripts=pnpm
+pnpm install --frozen-lockfile
 ```
+
+Volta selects Node.js; `packageManager` selects the native pnpm release. Put
+npm's global binary directory before Volta's experimental pnpm shim in `PATH`;
+that shim expects the older JavaScript entrypoint.
+For existing Volta pnpm selections, follow the [shared native pnpm bootstrap](https://github.com/PiesP/browser-core#native-pnpm-bootstrap)
+including the Node-spawned version check.
 
 `packages/core` is a pinned Git submodule. Restore the recorded revision with
 `git submodule update --init --recursive`; do not pull inside the detached
@@ -247,7 +254,7 @@ second permanent cycle gate is added.
 ### Rule policy and source conventions
 
 `vite.config.ts` owns Oxlint rules. `biome.json`
-owns only residual rules that the selected Vite+ 1.2.0/Oxlint 1.88.0 toolchain
+owns only residual rules that the selected Vite+/Oxlint toolchain
 does not cover at equivalent scope. The two lint commands both fail on warnings.
 Review this split when Vite+/Oxlint adds native CSS or equivalent accessibility,
 Solid-component and accumulating-spread rules; move a rule only with a passing
@@ -275,10 +282,11 @@ because one Vite+ type-check invocation does not cover the browser, tooling,
 unit, E2E and direct-Node projects together. The supply-chain and prebuild
 scripts retain their existing lifecycle order.
 
-The Vite alias reports Vite+ `1.2.0` and bundles Vite `8.3.4`. Strict peer
-validation stays enabled. `pnpm-workspace.yaml` permits only that exact alias
+The Vite alias reports the selected Vite+ version and records the bundled Vite
+version in its package metadata. Strict peer validation stays enabled.
+`pnpm-workspace.yaml` permits only that exact alias
 for the reviewed Vitest, mocker, Solid plugin and vitefu versions, whose declared
-Vite ranges include 8.3.4. Recheck callers, their original ranges and both
+Vite ranges include the bundled implementation. Recheck callers, their original ranges and both
 versions together on updates; never widen this to `allowAny`. Validate a fresh
 dependency resolution as well as the frozen install, since a migration lockfile
 can otherwise hide peer metadata conflicts.
