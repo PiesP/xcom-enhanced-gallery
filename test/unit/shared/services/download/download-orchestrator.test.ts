@@ -19,6 +19,7 @@ import {
   type OwnedBlob,
 } from '@shared/services/download/live-byte-budget';
 import type { MediaInfo } from '@shared/types/media.types';
+import { verifyStoredZip } from '../../../../../validation/windows/download-memory.ts';
 
 const inputOwners: OwnedBlob[] = [];
 function ownedBlob(value: Blob, budget = downloadLiveByteBudget): OwnedBlob {
@@ -138,7 +139,12 @@ describe('DownloadOrchestrator bulk resource limits', () => {
         }),
         { supports: (media: MediaInfo) => media.id === denied.id }
       );
-      const accepted = { id: '222_dom_2', type: 'image' as const, url: safeUrl };
+      const accepted = {
+        id: '222_dom_2',
+        type: 'image' as const,
+        url: safeUrl,
+        filename: 'verified.jpg',
+      };
       const result = await orchestrator.downloadBulk(
         [unverified, oversized, denied, ...(includeSuccess ? [accepted] : [])],
         {
@@ -158,13 +164,25 @@ describe('DownloadOrchestrator bulk resource limits', () => {
       expect(result.failures).toHaveLength(3);
       expect(result.failures).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ error: expect.stringContaining('original image') }),
-          expect.objectContaining({ error: expect.stringContaining('limit') }),
-          expect.objectContaining({ error: expect.stringContaining('HTTP 403') }),
+          { url: '', error: expect.stringContaining('original image') },
+          { url: oversized.url, error: expect.stringContaining('limit') },
+          { url: denied.url, error: expect.stringContaining('HTTP 403') },
         ])
       );
       expect(deniedProvider).toHaveBeenCalledOnce();
-      expect(state.downloadBlob).toHaveBeenCalledTimes(includeSuccess ? 1 : 0);
+      if (includeSuccess) {
+        expect(state.downloadBlob).toHaveBeenCalledOnce();
+        const saved = state.downloadBlob.mock.calls[0]?.[0];
+        if (!(saved instanceof Blob)) {
+          throw new Error('Partial ZIP was not passed to the native adapter');
+        }
+        const archive = verifyStoredZip(Buffer.from(await saved.arrayBuffer()), [
+          { filename: accepted.filename, bytes: Buffer.from('safe') },
+        ]);
+        expect(archive.entryOrder).toEqual([accepted.filename]);
+      } else {
+        expect(state.downloadBlob).not.toHaveBeenCalled();
+      }
       orchestrator.destroy();
     }
   );
@@ -310,6 +328,7 @@ describe('DownloadOrchestrator bulk resource limits', () => {
     const progress: string[] = [];
     const orchestrator = new DownloadOrchestrator();
     orchestrator.initialize();
+    let settled = false;
     const pending = orchestrator.downloadBulk([first, queued], {
       liveBudget: budget,
       cachedBlobs: new Map([
@@ -320,15 +339,21 @@ describe('DownloadOrchestrator bulk resource limits', () => {
       onEntryAdmission: ({ index }) => admitted.push(index),
       onProgress: ({ phase }) => progress.push(phase),
     });
+    const observed = pending.finally(() => {
+      settled = true;
+    });
     await vi.waitFor(() => expect(finishCopy).toBeTypeOf('function'));
     orchestrator.destroy();
     await Promise.resolve();
+    await Promise.resolve();
+    expect(settled).toBe(false);
     expect(budget.usedBytes).toBeGreaterThan(firstInput.lease.bytes + queuedInput.lease.bytes);
     expect(admitted).toEqual([0]);
     expect(state.downloadBlob).not.toHaveBeenCalled();
 
     finishCopy?.(new Uint8Array([1, 2, 3, 4]).buffer);
-    expect(await pending).toMatchObject({ success: false, code: 'CANCELLED' });
+    expect(await observed).toMatchObject({ success: false, code: 'CANCELLED' });
+    expect(settled).toBe(true);
     firstInput.lease.release();
     queuedInput.lease.release();
     expect(admitted).toEqual([0]);
