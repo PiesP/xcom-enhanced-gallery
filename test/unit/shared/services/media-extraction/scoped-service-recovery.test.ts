@@ -312,4 +312,73 @@ describe('integrated scoped recovery and delayed identity', () => {
     expect(result.mediaItems).toHaveLength(1);
     expect(result.clickedIndex).toBe(0);
   });
+
+  it('keeps a later clicked photo after filtering and deduplicating earlier size variants', async () => {
+    httpGet.mockResolvedValue({ ok: false, status: 503, data: {} });
+    document.body.innerHTML =
+      '<article><a href="/author/status/222"><time>Now</time></a><div><img src="https://pbs.twimg.com/media/same.jpg?name=small"><img src="https://pbs.twimg.com/media/same.jpg?name=large"><img src="https://pbs.twimg.com/profile_images/900/avatar.jpg"><img id="target" src="https://pbs.twimg.com/media/later.jpg?name=large"></div></article>';
+    const result = await new MediaExtractionService().extractFromClickedElement(
+      document.getElementById('target')!
+    );
+    expect(result.success).toBe(true);
+    expect(result.metadata?.sourceType).toBe('dom-fallback');
+    expect(result.mediaItems.map((item) => item.url)).toEqual([
+      'https://pbs.twimg.com/media/same.jpg?name=small',
+      'https://pbs.twimg.com/media/later.jpg?name=large',
+    ]);
+    expect(result.clickedIndex).toBe(1);
+    expect(result.mediaItems[1]).toMatchObject({
+      tweetId: '222',
+      url: 'https://pbs.twimg.com/media/later.jpg?name=large',
+      downloadSource: { url: 'https://pbs.twimg.com/media/later.jpg?format=jpg&name=orig' },
+    });
+  });
+
+  it.each([
+    ['verified current DOM original', 'https://pbs.twimg.com/media/malformed.jpg?name=small', true],
+    [
+      'untrusted current DOM source',
+      'https://pbs.twimg.com.evil.invalid/media/malformed.jpg',
+      false,
+    ],
+  ] as const)(
+    'never substitutes a healthy API neighbor for a malformed clicked photo with %s',
+    async (_label, clickedUrl, recoverable) => {
+      const api = response();
+      api.data.tweetResult.result.legacy.extended_entities.media[0]!.media_url_https =
+        'https://evil.invalid/media/malformed.jpg';
+      httpGet.mockResolvedValue({ ok: true, status: 200, data: api });
+      document.body.innerHTML = `<article><a href="/author/status/222"><time>Now</time></a>
+        <a href="/author/status/222/photo/1"><img id="target" src="${clickedUrl}"></a>
+        <a href="/author/status/222/photo/2"><img id="healthy-neighbor" src="https://pbs.twimg.com/media/second.jpg"></a></article>`;
+
+      const service = new MediaExtractionService();
+      const result = await service.extractFromClickedElement(document.getElementById('target')!);
+
+      expect(httpGet).toHaveBeenCalledOnce();
+      expect(result.success).toBe(recoverable);
+      if (recoverable) {
+        expect(result.metadata?.sourceType).toBe('dom-fallback');
+        expect(result.clickedIndex).toBe(0);
+        expect(result.mediaItems[result.clickedIndex!]).toMatchObject({
+          tweetId: '222',
+          url: clickedUrl,
+          downloadSource: {
+            url: 'https://pbs.twimg.com/media/malformed.jpg?format=jpg&name=orig',
+          },
+        });
+      } else {
+        expect(result.mediaItems).toEqual([]);
+      }
+      const healthy = await service.extractFromClickedElement(
+        document.getElementById('healthy-neighbor')!
+      );
+      expect(healthy.success).toBe(true);
+      expect(healthy.mediaItems[healthy.clickedIndex!]).toMatchObject({
+        tweetId: '222',
+        url: 'https://pbs.twimg.com/media/second.jpg?format=jpg&name=orig',
+      });
+      service.dispose();
+    }
+  );
 });

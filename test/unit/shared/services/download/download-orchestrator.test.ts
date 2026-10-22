@@ -13,11 +13,17 @@ vi.mock('@platform/index', () => ({
 }));
 
 import { DownloadOrchestrator } from '@shared/services/download/download-orchestrator';
-import { downloadLiveByteBudget, type OwnedBlob } from '@shared/services/download/live-byte-budget';
+import {
+  downloadLiveByteBudget,
+  LiveByteBudget,
+  type OwnedBlob,
+} from '@shared/services/download/live-byte-budget';
+import type { MediaInfo } from '@shared/types/media.types';
+import { verifyStoredZip } from '../../../../../validation/windows/download-memory.ts';
 
 const inputOwners: OwnedBlob[] = [];
-function ownedBlob(value: Blob): OwnedBlob {
-  const owner = { value, lease: downloadLiveByteBudget.reserve(value.size) };
+function ownedBlob(value: Blob, budget = downloadLiveByteBudget): OwnedBlob {
+  const owner = { value, lease: budget.reserve(value.size) };
   inputOwners.push(owner);
   return owner;
 }
@@ -121,10 +127,31 @@ describe('DownloadOrchestrator bulk resource limits', () => {
         url: 'https://pbs.twimg.com/media/oversized.jpg?name=orig',
         fileSize: 6,
       };
-      const accepted = { id: '222_dom_2', type: 'image' as const, url: safeUrl };
+      const denied = {
+        id: 'denied',
+        type: 'image' as const,
+        url: 'https://pbs.twimg.com/media/denied.jpg?name=orig',
+        fileSize: 4,
+      };
+      const deniedProvider = Object.assign(
+        vi.fn(async () => {
+          throw new Error('HTTP 403');
+        }),
+        { supports: (media: MediaInfo) => media.id === denied.id }
+      );
+      const accepted = {
+        id: '222_dom_2',
+        type: 'image' as const,
+        url: safeUrl,
+        filename: 'verified.jpg',
+      };
       const result = await orchestrator.downloadBulk(
-        [unverified, oversized, ...(includeSuccess ? [accepted] : [])],
-        { maxEntryBytes: 5, cachedBlobs: new Map([[safeUrl, ownedBlob(new Blob(['safe']))]]) }
+        [unverified, oversized, denied, ...(includeSuccess ? [accepted] : [])],
+        {
+          maxEntryBytes: 5,
+          cachedBlobs: new Map([[safeUrl, ownedBlob(new Blob(['safe']))]]),
+          mediaBlobProvider: deniedProvider,
+        }
       );
       expect(result).toMatchObject({
         success: includeSuccess,
@@ -132,16 +159,30 @@ describe('DownloadOrchestrator bulk resource limits', () => {
         code: 'RESOURCE_LIMIT',
         sourceUnavailable: true,
         filesSuccessful: includeSuccess ? 1 : 0,
-        filesProcessed: includeSuccess ? 3 : 2,
+        filesProcessed: includeSuccess ? 4 : 3,
       });
-      expect(result.failures).toHaveLength(2);
+      expect(result.failures).toHaveLength(3);
       expect(result.failures).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ error: expect.stringContaining('original image') }),
-          expect.objectContaining({ error: expect.stringContaining('limit') }),
+          { url: '', error: expect.stringContaining('original image') },
+          { url: oversized.url, error: expect.stringContaining('limit') },
+          { url: denied.url, error: expect.stringContaining('HTTP 403') },
         ])
       );
-      expect(state.downloadBlob).toHaveBeenCalledTimes(includeSuccess ? 1 : 0);
+      expect(deniedProvider).toHaveBeenCalledOnce();
+      if (includeSuccess) {
+        expect(state.downloadBlob).toHaveBeenCalledOnce();
+        const saved = state.downloadBlob.mock.calls[0]?.[0];
+        if (!(saved instanceof Blob)) {
+          throw new Error('Partial ZIP was not passed to the native adapter');
+        }
+        const archive = verifyStoredZip(Buffer.from(await saved.arrayBuffer()), [
+          { filename: accepted.filename, bytes: Buffer.from('safe') },
+        ]);
+        expect(archive.entryOrder).toEqual([accepted.filename]);
+      } else {
+        expect(state.downloadBlob).not.toHaveBeenCalled();
+      }
       orchestrator.destroy();
     }
   );
@@ -201,5 +242,135 @@ describe('DownloadOrchestrator bulk resource limits', () => {
       filesSuccessful: 1,
     });
     expect(state.downloadBlob).toHaveBeenCalledOnce();
+  });
+
+  it('keeps a handed-off ZIP charged across orchestrators until its native owner releases it', async () => {
+    const budget = new LiveByteBudget(700);
+    const url = 'https://pbs.twimg.com/media/a.jpg';
+    const media: MediaInfo = { id: '1', type: 'image', url, filename: 'a.jpg' };
+    const first = new DownloadOrchestrator();
+    first.initialize();
+    const firstInput = ownedBlob(new Blob(['a']), budget);
+    let releaseNative: (() => void) | undefined;
+    let heldZipSize = 0;
+    state.downloadBlob.mockImplementationOnce((blob, _filename, signal, released) => {
+      heldZipSize = blob.size;
+      releaseNative = released;
+      return new Promise<void>((_resolve, reject) => {
+        signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')), {
+          once: true,
+        });
+      });
+    });
+
+    const pending = first.downloadBulk([media], {
+      liveBudget: budget,
+      cachedBlobs: new Map([[url, firstInput]]),
+      maxBufferedBytes: 16,
+      maxEntryBytes: 16,
+    });
+    await vi.waitFor(() => expect(releaseNative).toBeTypeOf('function'));
+    firstInput.lease.release();
+    first.destroy();
+    expect(await pending).toMatchObject({ success: false, code: 'CANCELLED' });
+    expect(budget.usedBytes).toBe(heldZipSize);
+
+    const second = new DownloadOrchestrator();
+    second.initialize();
+    const blockedInput = ownedBlob(new Blob(['b']), budget);
+    const blockedAdmissions: number[] = [];
+    const blocked = await second.downloadBulk([media], {
+      liveBudget: budget,
+      cachedBlobs: new Map([[url, blockedInput]]),
+      maxBufferedBytes: 16,
+      maxEntryBytes: 16,
+      onEntryAdmission: ({ index }) => blockedAdmissions.push(index),
+    });
+    blockedInput.lease.release();
+    expect(blocked).toMatchObject({ success: false, code: 'RESOURCE_LIMIT' });
+    expect(blockedAdmissions).toEqual([]);
+    expect(state.downloadBlob).toHaveBeenCalledOnce();
+    expect(budget.usedBytes).toBe(heldZipSize);
+
+    releaseNative?.();
+    expect(budget.usedBytes).toBe(0);
+    const freshInput = ownedBlob(new Blob(['c']), budget);
+    const fresh = await second.downloadBulk([media], {
+      liveBudget: budget,
+      cachedBlobs: new Map([[url, freshInput]]),
+      maxBufferedBytes: 16,
+      maxEntryBytes: 16,
+    });
+    freshInput.lease.release();
+    expect(fresh).toMatchObject({ success: true, filesSuccessful: 1 });
+    expect(state.downloadBlob).toHaveBeenCalledTimes(2);
+    expect(budget.usedBytes).toBe(0);
+    second.destroy();
+  });
+
+  it('waits for a cancelled ZIP Blob copy to settle before draining and admitting fresh work', async () => {
+    const budget = new LiveByteBudget(8192);
+    const firstUrl = 'https://pbs.twimg.com/media/first.jpg';
+    const queuedUrl = 'https://pbs.twimg.com/media/queued.jpg';
+    const first: MediaInfo = { id: 'first', type: 'image', url: firstUrl, filename: 'a.jpg' };
+    const queued: MediaInfo = { id: 'queued', type: 'image', url: queuedUrl, filename: 'b.jpg' };
+    let finishCopy: ((bytes: ArrayBuffer) => void) | undefined;
+    class PendingBlob extends Blob {
+      override arrayBuffer(): Promise<ArrayBuffer> {
+        return new Promise((resolve) => {
+          finishCopy = resolve;
+        });
+      }
+    }
+    const firstInput = ownedBlob(new PendingBlob(['held']), budget);
+    const queuedInput = ownedBlob(new Blob(['queued']), budget);
+    const admitted: number[] = [];
+    const progress: string[] = [];
+    const orchestrator = new DownloadOrchestrator();
+    orchestrator.initialize();
+    let settled = false;
+    const pending = orchestrator.downloadBulk([first, queued], {
+      liveBudget: budget,
+      cachedBlobs: new Map([
+        [firstUrl, firstInput],
+        [queuedUrl, queuedInput],
+      ]),
+      concurrency: 1,
+      onEntryAdmission: ({ index }) => admitted.push(index),
+      onProgress: ({ phase }) => progress.push(phase),
+    });
+    const observed = pending.finally(() => {
+      settled = true;
+    });
+    await vi.waitFor(() => expect(finishCopy).toBeTypeOf('function'));
+    orchestrator.destroy();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(settled).toBe(false);
+    expect(budget.usedBytes).toBeGreaterThan(firstInput.lease.bytes + queuedInput.lease.bytes);
+    expect(admitted).toEqual([0]);
+    expect(state.downloadBlob).not.toHaveBeenCalled();
+
+    finishCopy?.(new Uint8Array([1, 2, 3, 4]).buffer);
+    expect(await observed).toMatchObject({ success: false, code: 'CANCELLED' });
+    expect(settled).toBe(true);
+    firstInput.lease.release();
+    queuedInput.lease.release();
+    expect(admitted).toEqual([0]);
+    expect(progress).not.toContain('complete');
+    expect(state.downloadBlob).not.toHaveBeenCalled();
+    expect(budget.usedBytes).toBe(0);
+
+    orchestrator.initialize();
+    const freshInput = ownedBlob(new Blob(['fresh']), budget);
+    const fresh = await orchestrator.downloadBulk([first], {
+      liveBudget: budget,
+      cachedBlobs: new Map([[firstUrl, freshInput]]),
+    });
+    freshInput.lease.release();
+    expect(fresh).toMatchObject({ success: true, filesSuccessful: 1 });
+    expect(state.downloadBlob).toHaveBeenCalledOnce();
+    expect(budget.usedBytes).toBe(0);
+    orchestrator.destroy();
   });
 });

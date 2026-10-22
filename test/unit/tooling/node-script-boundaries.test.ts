@@ -124,7 +124,7 @@ describe('Node script import boundary', () => {
       .map((path) => `validation/windows/${path.toString()}`)
       .filter((path) => path.endsWith('.test.ts'))
       .sort();
-    expect(nativeFiles).toHaveLength(6);
+    expect(nativeFiles).toHaveLength(7);
     expect(argumentsList.slice(3).sort()).toEqual(nativeFiles);
     expect(packageJson.scripts['test:e2e:all']).toContain('pnpm -s test:e2e:native');
     expect(packageJson.scripts['verify:full']).toContain('test:e2e:all');

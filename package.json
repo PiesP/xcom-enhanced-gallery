@@ -74,7 +74,7 @@
     "test:e2e": "playwright test --config test/e2e/playwright.config.ts",
     "test:e2e:extension": "playwright test --config test/e2e/playwright.extension.config.ts",
     "test:e2e:extension:firefox": "node --experimental-strip-types --test test/e2e/firefox-extension-runtime.test.ts",
-    "test:e2e:native": "node --experimental-strip-types --test validation/windows/video-loading-profile.test.ts validation/windows/media-api-reuse-profile.test.ts validation/windows/release-upgrade/gallery-volume.test.ts validation/windows/release-upgrade/manager-row.test.ts validation/windows/release-upgrade/source.test.ts validation/windows/release-upgrade/storage-readback.test.ts",
+    "test:e2e:native": "node --experimental-strip-types --test validation/windows/extension-native-loopback.test.ts validation/windows/video-loading-profile.test.ts validation/windows/media-api-reuse-profile.test.ts validation/windows/release-upgrade/gallery-volume.test.ts validation/windows/release-upgrade/manager-row.test.ts validation/windows/release-upgrade/source.test.ts validation/windows/release-upgrade/storage-readback.test.ts",
     "test:e2e:all": "pnpm -s test:e2e && pnpm -s test:e2e:extension && pnpm -s test:e2e:extension:firefox && pnpm -s test:e2e:native",
     "check:e2e": "tsc -p tsconfig.e2e.json --noEmit",
     "test:e2e:headed": "playwright test --config test/e2e/playwright.config.ts --headed",

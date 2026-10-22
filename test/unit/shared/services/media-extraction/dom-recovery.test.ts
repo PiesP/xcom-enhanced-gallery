@@ -6,11 +6,21 @@ import { resolve } from 'node:path';
 import { captureClickedMediaEvidence } from '@shared/services/media-extraction/determine-clicked-index';
 import { DOMFallbackExtractor } from '@shared/services/media-extraction/extractors/dom-fallback-extractor';
 import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
+import { MediaExtractionService } from '@shared/services/media-extraction/media-extraction-service';
 import {
   findMediaElementInDOM,
   selectMediaSourceUrl,
 } from '@shared/utils/media/media-element-utils';
-import { afterEach, describe, expect, it } from 'vite-plus/test';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
+
+const httpGet = vi.hoisted(() => vi.fn());
+vi.mock('@shared/services/http-request-service', () => ({
+  getHttpRequestService: () => ({ get: httpGet }),
+}));
+vi.mock('@shared/services/media/twitter-auth/twitter-auth', () => ({
+  getCsrfTokenAsync: vi.fn(async () => 'fixture'),
+  resolveBearerToken: vi.fn(() => 'Bearer fixture'),
+}));
 
 // Source-derived synthetic markup; not an authenticated X DOM capture.
 const photo = (id: string): string =>
@@ -26,6 +36,7 @@ async function recover(id: string) {
 }
 
 describe('scoped DOM recovery', () => {
+  beforeEach(() => httpGet.mockReset());
   afterEach(() => document.body.replaceChildren());
 
   it('preserves interleaved document order and the clicked item', async () => {
@@ -343,5 +354,29 @@ describe('scoped DOM recovery', () => {
       'untrusted-source'
     );
     expect(result.success).toBe(false);
+  });
+
+  it.each([
+    ['foreign host', '<img id="target" src="https://evil.invalid/media/bad.jpg">'],
+    ['lookalike host', '<img id="target" src="https://pbs.twimg.com.evil.invalid/media/bad.jpg">'],
+    ['unsupported path', '<img id="target" src="https://pbs.twimg.com/profile_images/bad.jpg">'],
+    ['credentials', '<img id="target" src="https://user@pbs.twimg.com/media/bad.jpg">'],
+    ['unsafe scheme', '<img id="target" src="javascript:https://pbs.twimg.com/media/bad.jpg">'],
+    [
+      'poster-only video',
+      '<video id="target" src="blob:https://x.com/bad" poster="https://pbs.twimg.com/ext_tw_video_thumb/222/pu/img/poster.jpg"></video>',
+    ],
+  ])('refuses %s after API denial without selecting a healthy neighbor', async (_label, target) => {
+    httpGet.mockResolvedValue({ ok: false, status: 403, data: {} });
+    document.body.innerHTML = `<article><a href="/author/status/222"><time>Now</time></a>
+      ${target}<img src="https://pbs.twimg.com/media/neighbor.jpg"></article>`;
+
+    const result = await new MediaExtractionService().extractFromClickedElement(
+      document.getElementById('target')!
+    );
+
+    expect(httpGet).toHaveBeenCalledOnce();
+    expect(result.success).toBe(false);
+    expect(result.mediaItems).toEqual([]);
   });
 });
