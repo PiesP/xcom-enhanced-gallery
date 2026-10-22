@@ -23,6 +23,7 @@ import type {
   Locator,
   Page,
   Request,
+  Response,
   Route,
 } from '@playwright/test';
 import {
@@ -342,6 +343,38 @@ type SourceQualityEvidence = {
   failureScreenshot?: string;
   screenshotError?: string;
 };
+type SourceImageFailureEvidence = {
+  status: 'pending' | 'passed' | 'failed';
+  cases: Array<{
+    kind: (typeof SOURCE_IMAGE_FAULTS)[number];
+    status: 'pending' | 'passed' | 'failed';
+    originalUrl: string;
+    expectedStatus: number;
+    faultRequests: Array<{ url: string; status: number; bytes: number; resourceType: string }>;
+    responses: Array<{ url: string; status: number; resourceType: string }>;
+    consoleErrors: ConsoleErrorRecord[];
+    pageErrors: string[];
+    api: ApiRecord[];
+    host?: unknown;
+    failed?: unknown;
+    neighbor?: unknown;
+    returned?: unknown;
+    firstClose?: unknown;
+    healthy?: unknown;
+    finalClose?: unknown;
+    healthyRequests?: QualityRequest[];
+    screenshot?: string;
+    screenshotError?: string;
+    error?: string;
+    cleanup: {
+      routeRemoved: boolean;
+      listenersRemoved: boolean;
+      pageClosed: boolean;
+      errors: string[];
+    };
+  }>;
+  errors?: string[];
+};
 type AcceptanceReceipt = {
   status: string;
   error?: string;
@@ -623,6 +656,10 @@ const FIXTURE_URL = `https://x.com/testuser/status/${TWEET_ID}`;
 const QUALITY_TWEET_ID = '4666000000000000001';
 const QUALITY_FIXTURE_URL = `https://x.com/qualityuser/status/${QUALITY_TWEET_ID}`;
 const QUALITY_IMAGE_PATHS = ['GkE1234ABCDEF', 'GkE5678GHIJKL.jpg', 'GkE9012MNOPQR.jpg'];
+const SOURCE_IMAGE_FAULTS = ['404', 'empty', 'corrupt'] as const;
+// Three independent faults may each perform a failing and a healthy same-page open.
+const MAX_QUALITY_API_RESPONSES = 8 + SOURCE_IMAGE_FAULTS.length * 2;
+const MAX_QUALITY_IMAGE_REQUESTS = 200 + SOURCE_IMAGE_FAULTS.length * 16;
 const PUBLIC_TWEET_ID = '9876543210987654321';
 const PUBLIC_FIXTURE_URL = `https://x.com/public_user/status/${PUBLIC_TWEET_ID}`;
 const COMPACT_OUTER_ID = '8555555555555555555';
@@ -1398,7 +1435,10 @@ export async function installFixtureRoutes(
         return;
       }
       if (tweetId === QUALITY_TWEET_ID) {
-        assert(qualityApiResponses.length < 8, 'Source-quality API observation overflow');
+        assert(
+          qualityApiResponses.length < MAX_QUALITY_API_RESPONSES,
+          'Source-quality API observation overflow'
+        );
         const record: ApiRecord = {
           tweetId,
           method: route.request().method(),
@@ -1603,7 +1643,10 @@ export async function installFixtureRoutes(
         url.pathname.startsWith('/media/') &&
         IMAGE_URL_MARKERS.some((marker) => url.pathname.includes(marker))
       ) {
-        assert(qualityRequests.length < 200, 'Source-quality request observation overflow');
+        assert(
+          qualityRequests.length < MAX_QUALITY_IMAGE_REQUESTS,
+          'Source-quality request observation overflow'
+        );
         qualityRequests.push({
           path: url.pathname,
           name: url.searchParams.get('name'),
@@ -9909,6 +9952,439 @@ async function runSourceQualityCycle({
   evidence.status = 'passed';
 }
 
+async function runSourceImageFailureCases({
+  context,
+  evidence,
+  extensionPage,
+  images,
+  output,
+  qualityApiResponses,
+  qualityRequests,
+}: {
+  context: BrowserContext;
+  evidence: SourceImageFailureEvidence;
+  extensionPage: Page;
+  images: ImageFixtures;
+  output: string;
+  qualityApiResponses: ApiRecord[];
+  qualityRequests: QualityRequest[];
+}) {
+  const originalUrl = `https://pbs.twimg.com/media/${QUALITY_IMAGE_PATHS[1]}?format=jpg&name=orig`;
+  const displayUrl = `https://pbs.twimg.com/media/${QUALITY_IMAGE_PATHS[1]}?format=jpg&name=small`;
+  const neighborUrl = `https://pbs.twimg.com/media/${QUALITY_IMAGE_PATHS[2]}?format=jpg&name=orig`;
+  const failures: unknown[] = [];
+  evidence.status = 'pending';
+  for (const kind of SOURCE_IMAGE_FAULTS) {
+    const expectedStatus = kind === '404' ? 404 : 200;
+    const body = kind === 'corrupt' ? Buffer.from('invalid JPEG fixture bytes') : Buffer.alloc(0);
+    const receipt: SourceImageFailureEvidence['cases'][number] = {
+      kind,
+      status: 'pending',
+      originalUrl,
+      expectedStatus,
+      faultRequests: [],
+      responses: [],
+      consoleErrors: [],
+      pageErrors: [],
+      api: [],
+      cleanup: { routeRemoved: false, listenersRemoved: false, pageClosed: false, errors: [] },
+    };
+    evidence.cases.push(receipt);
+    let owned: Page | undefined;
+    let observationOverflow = false;
+    let faultActive = false;
+    const apiMark = qualityApiResponses.length;
+    const onConsole = (message: ConsoleMessage) => {
+      if (message.type() !== 'error') {
+        return;
+      }
+      if (receipt.consoleErrors.length < 8) {
+        receipt.consoleErrors.push({
+          location: message.location().url.slice(0, 500),
+          text: message.text().slice(0, 500),
+        });
+      } else {
+        observationOverflow = true;
+      }
+    };
+    const onPageError = (error: Error) => {
+      if (receipt.pageErrors.length < 4) {
+        receipt.pageErrors.push(safeError(error));
+      } else {
+        observationOverflow = true;
+      }
+    };
+    const onResponse = (response: Response) => {
+      if (!faultActive || response.url() !== originalUrl) {
+        return;
+      }
+      if (receipt.responses.length < 4) {
+        receipt.responses.push({
+          url: response.url(),
+          status: response.status(),
+          resourceType: response.request().resourceType(),
+        });
+      } else {
+        observationOverflow = true;
+      }
+    };
+    const faultRoute = async (route: Route) => {
+      assert.equal(route.request().url(), originalUrl);
+      assert(receipt.faultRequests.length < 4, 'Selected image fault request budget exceeded');
+      receipt.faultRequests.push({
+        url: route.request().url(),
+        status: expectedStatus,
+        bytes: body.length,
+        resourceType: route.request().resourceType(),
+      });
+      await route.fulfill({
+        status: expectedStatus,
+        contentType: 'image/jpeg',
+        body,
+        headers: {
+          'Cache-Control': 'no-store',
+          'Access-Control-Allow-Origin': 'https://x.com',
+          'Access-Control-Allow-Credentials': 'true',
+        },
+      });
+    };
+    const failedSelection = async () =>
+      waitForValue(async () => {
+        const state = await owned!.evaluate(() => {
+          const gallery = document.querySelector('[data-xeg-gallery-container]');
+          const toolbar = gallery?.querySelector('[data-gallery-element="toolbar"]');
+          const counter = toolbar?.querySelector('#xeg-toolbar-counter');
+          const item = gallery?.querySelector('[data-gallery-element="item"][data-index="1"]');
+          const image = item?.querySelector('img');
+          const alert = item?.querySelector('[role="alert"]');
+          return {
+            position: counter?.getAttribute('data-position') ?? null,
+            total: counter?.getAttribute('data-total') ?? null,
+            currentIndex: toolbar?.getAttribute('data-current-index') ?? null,
+            focusedIndex: toolbar?.getAttribute('data-focused-index') ?? null,
+            counterFocusedIndex: counter?.getAttribute('data-focused-index') ?? null,
+            source: image instanceof HTMLImageElement ? image.src : null,
+            currentSrc: image instanceof HTMLImageElement ? image.currentSrc : null,
+            complete: image instanceof HTMLImageElement ? image.complete : false,
+            width: image instanceof HTMLImageElement ? image.naturalWidth : null,
+            height: image instanceof HTMLImageElement ? image.naturalHeight : null,
+            loaded: item?.getAttribute('data-media-loaded') ?? null,
+            alert: alert?.textContent?.trim() ?? null,
+          };
+        });
+        return state.position === '2' &&
+          state.total === '3' &&
+          state.currentIndex === '1' &&
+          state.focusedIndex === '1' &&
+          state.counterFocusedIndex === '1' &&
+          state.source === originalUrl &&
+          state.complete &&
+          state.width === 0 &&
+          state.height === 0 &&
+          state.loaded === 'false' &&
+          state.alert
+          ? state
+          : undefined;
+      }, `selected ${kind} image native failure`);
+    try {
+      owned = await context.newPage();
+      owned.on('console', onConsole);
+      owned.on('pageerror', onPageError);
+      owned.on('response', onResponse);
+      await owned.goto(QUALITY_FIXTURE_URL);
+      await owned.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+      const trigger = owned
+        .locator('[data-route="classic"][data-phase="normal"] [data-testid="tweetPhoto"] img')
+        .nth(1);
+      await trigger.scrollIntoViewIfNeeded();
+      await trigger.focus();
+      const before = await hostSnapshot(owned, 1);
+      assert.equal(before.activeElementAlt, before.triggerAlt);
+      const host = await waitForValue(async () => {
+        const image = await trigger.evaluate((element) => {
+          if (!(element instanceof HTMLImageElement)) {
+            throw new Error('Selected source-quality host image is missing');
+          }
+          return { src: element.src, complete: element.complete, width: element.naturalWidth };
+        });
+        return image.complete && image.width > 0 ? image : undefined;
+      }, `decoded small host image before ${kind}`);
+      assert.equal(host.src, displayUrl);
+      assert.equal(host.width, 140);
+      receipt.host = host;
+      const documentBefore = await owned.evaluate(() => ({
+        url: location.href,
+        timeOrigin: performance.timeOrigin,
+      }));
+      const knownDownloads = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+      await owned.route(originalUrl, faultRoute);
+      faultActive = true;
+      await trigger.click();
+      const gallery = owned.locator('[data-xeg-gallery-container]');
+      await gallery.waitFor({ state: 'visible' });
+      const failed = await failedSelection();
+      receipt.failed = failed;
+      assert(
+        failed.currentSrc === '' || failed.currentSrc === originalUrl,
+        'Failed image currentSrc must not point at another attachment'
+      );
+      assert.equal(
+        await gallery
+          .locator('[data-gallery-element="item"][data-index="1"] [role="alert"]')
+          .isVisible(),
+        true
+      );
+      if (kind === 'corrupt') {
+        const screenshot = `src01-${kind}-error.png`;
+        await owned.screenshot({ path: join(output, screenshot) });
+        receipt.screenshot = screenshot;
+      }
+      assert.equal(
+        await gallery
+          .locator('[data-gallery-element="item"][data-index="2"] [role="alert"]')
+          .count(),
+        0
+      );
+      await assertQuotedOriginLink(gallery, QUALITY_FIXTURE_URL);
+      const firstApi = qualityApiResponses.slice(apiMark);
+      assert.equal(
+        firstApi.length,
+        1,
+        'Fault open must have one physical healthy metadata response'
+      );
+      assert(
+        firstApi.every(
+          ({ tweetId, status, fulfilledAtMonotonicMs }) =>
+            tweetId === QUALITY_TWEET_ID &&
+            status === 200 &&
+            typeof fulfilledAtMonotonicMs === 'number'
+        )
+      );
+      await owned.keyboard.press('ArrowRight');
+      const neighbor = await assertQuotedSelection(owned, {
+        position: 3,
+        total: 3,
+        type: 'image',
+        path: `/media/${QUALITY_IMAGE_PATHS[2]}`,
+      });
+      assert.equal(neighbor.source, neighborUrl);
+      const neighborImage = await gallery
+        .locator('[data-gallery-element="item"][data-index="2"] img')
+        .evaluate((element) => {
+          if (!(element instanceof HTMLImageElement)) {
+            throw new Error('Healthy neighbor image is missing');
+          }
+          return { width: element.naturalWidth, height: element.naturalHeight };
+        });
+      assert.deepEqual(neighborImage, { width: 640, height: 400 });
+      assert.equal(
+        await gallery
+          .locator('[data-gallery-element="item"][data-index="2"] [role="alert"]')
+          .count(),
+        0
+      );
+      receipt.neighbor = { ...neighbor, ...neighborImage };
+      await owned.keyboard.press('ArrowLeft');
+      const returned = await failedSelection();
+      receipt.returned = returned;
+      assert(
+        returned.currentSrc === '' || returned.currentSrc === originalUrl,
+        'Returned failed image currentSrc must not point at another attachment'
+      );
+      assert.equal(
+        await gallery
+          .locator('[data-gallery-element="item"][data-index="1"] [role="alert"]')
+          .isVisible(),
+        true
+      );
+      await owned.keyboard.press('Escape');
+      await gallery.waitFor({ state: 'detached' });
+      const firstClose = await hostSnapshot(owned, 1);
+      assert.deepEqual(
+        firstClose,
+        before,
+        'Fault close must restore host focus, scroll and isolation'
+      );
+      receipt.firstClose = firstClose;
+      await owned.unroute(originalUrl, faultRoute);
+      faultActive = false;
+      receipt.cleanup.routeRemoved = true;
+      const healthyMark = qualityRequests.length;
+      await trigger.click();
+      await gallery.waitFor({ state: 'visible' });
+      const healthy = await assertQuotedSelection(owned, {
+        position: 2,
+        total: 3,
+        type: 'image',
+        path: `/media/${QUALITY_IMAGE_PATHS[1]}`,
+      });
+      assert.equal(healthy.source, originalUrl);
+      const healthyImage = await gallery
+        .locator('[data-gallery-element="item"][data-index="1"] img')
+        .evaluate((element) => {
+          if (!(element instanceof HTMLImageElement)) {
+            throw new Error('Recovered selected image is missing');
+          }
+          return {
+            complete: element.complete,
+            width: element.naturalWidth,
+            height: element.naturalHeight,
+          };
+        });
+      assert.deepEqual(healthyImage, { complete: true, width: 560, height: 360 });
+      assert.equal(
+        await gallery
+          .locator('[data-gallery-element="item"][data-index="1"] [role="alert"]')
+          .count(),
+        0
+      );
+      receipt.healthy = { ...healthy, ...healthyImage };
+      receipt.healthyRequests = qualityRequests
+        .slice(healthyMark)
+        .filter(({ path, name }) => path === `/media/${QUALITY_IMAGE_PATHS[1]}` && name === 'orig');
+      assert(
+        receipt.healthyRequests.some(
+          ({ resourceType, bytes, sha256 }) =>
+            resourceType === 'image' &&
+            bytes === images[1].length &&
+            sha256 === imageReceipt(images[1]).sha256
+        ),
+        'Same-document recovery must fetch the exact healthy original bytes'
+      );
+      receipt.api = qualityApiResponses.slice(apiMark);
+      assert(
+        receipt.api.every(
+          ({ tweetId, status, fulfilledAtMonotonicMs }) =>
+            tweetId === QUALITY_TWEET_ID &&
+            status === 200 &&
+            typeof fulfilledAtMonotonicMs === 'number'
+        )
+      );
+      assert(
+        receipt.api.length <= 2,
+        'Fault and recovery must use at most two healthy API requests'
+      );
+      assert.deepEqual(
+        await owned.evaluate(() => ({ url: location.href, timeOrigin: performance.timeOrigin })),
+        documentBefore,
+        'Fault recovery must stay in the same document'
+      );
+      await owned.keyboard.press('Escape');
+      await gallery.waitFor({ state: 'detached' });
+      const finalClose = await hostSnapshot(owned, 1);
+      assert.deepEqual(
+        finalClose,
+        before,
+        'Healthy close must restore host focus, scroll and isolation'
+      );
+      receipt.finalClose = finalClose;
+      assert(receipt.faultRequests.length > 0, 'Selected original fault route was not reached');
+      assert(
+        receipt.faultRequests.every(
+          ({ url, status, resourceType, bytes }) =>
+            url === originalUrl &&
+            status === expectedStatus &&
+            resourceType === 'image' &&
+            bytes === body.length
+        )
+      );
+      assert.equal(receipt.responses.length, receipt.faultRequests.length);
+      assert(
+        receipt.responses.every(
+          ({ url, status, resourceType }) =>
+            url === originalUrl && status === expectedStatus && resourceType === 'image'
+        )
+      );
+      assert.equal(observationOverflow, false, 'Source image fault observations overflowed');
+      assert.deepEqual(receipt.pageErrors, []);
+      const expected404 = receipt.consoleErrors.filter(
+        ({ location, text }) =>
+          kind === '404' &&
+          location === originalUrl &&
+          /Failed to load resource: the server responded with a status of 404(?:\D|$)/u.test(text)
+      );
+      assert(
+        expected404.length <= receipt.faultRequests.length,
+        'Selected 404 console errors must stay within the owned request count'
+      );
+      assert.deepEqual(
+        receipt.consoleErrors.filter((record) => !expected404.includes(record)),
+        [],
+        'Only the selected original 404 may emit an expected console error'
+      );
+      assert.deepEqual(
+        (await queryDownloads(extensionPage)).filter(({ id }) => !knownDownloads.has(id)),
+        [],
+        'Source image failure navigation must not create a native download'
+      );
+      receipt.status = 'passed';
+    } catch (error) {
+      failures.push(error);
+      receipt.status = 'failed';
+      receipt.error = safeError(error);
+      if (owned && !owned.isClosed() && !receipt.screenshot) {
+        const screenshot = `src01-${kind}-error.png`;
+        await owned
+          .screenshot({ path: join(output, screenshot) })
+          .then(() => {
+            receipt.screenshot = screenshot;
+          })
+          .catch((screenshotError) => {
+            receipt.screenshotError = safeError(screenshotError);
+          });
+      }
+    } finally {
+      receipt.api = qualityApiResponses.slice(apiMark);
+      if (owned) {
+        if (!receipt.cleanup.routeRemoved) {
+          try {
+            await owned.unroute(originalUrl, faultRoute);
+            faultActive = false;
+            receipt.cleanup.routeRemoved = true;
+          } catch (error) {
+            receipt.cleanup.errors.push(safeError(error));
+            failures.push(error);
+          }
+        }
+        try {
+          owned.off('console', onConsole);
+          owned.off('pageerror', onPageError);
+          owned.off('response', onResponse);
+          receipt.cleanup.listenersRemoved = true;
+        } catch (error) {
+          receipt.cleanup.errors.push(safeError(error));
+          failures.push(error);
+        }
+        try {
+          await owned.close();
+          receipt.cleanup.pageClosed = true;
+        } catch (error) {
+          receipt.cleanup.errors.push(safeError(error));
+          failures.push(error);
+        }
+      } else {
+        receipt.cleanup = {
+          routeRemoved: true,
+          listenersRemoved: true,
+          pageClosed: true,
+          errors: [],
+        };
+      }
+      if (receipt.cleanup.errors.length) {
+        receipt.status = 'failed';
+      }
+    }
+    if (receipt.cleanup.errors.length) {
+      break;
+    }
+  }
+  evidence.status = failures.length ? 'failed' : 'passed';
+  if (failures.length) {
+    evidence.errors = failures.map(safeError);
+    throw new AggregateError(failures, 'Selected image failure validation or cleanup failed');
+  }
+}
+
 async function runOriginalAvailabilityCycles({
   consoleErrors,
   downloads,
@@ -10257,6 +10733,7 @@ async function exerciseInstalledExtension(
     downloads: [],
   };
   const sourceQuality: SourceQualityEvidence = { status: 'pending', sources: [], requests: [] };
+  const sourceImageFailures: SourceImageFailureEvidence = { status: 'pending', cases: [] };
   const originalAvailability: OriginalAvailabilityEvidence = {
     status: 'pending',
     cases: [],
@@ -10441,6 +10918,15 @@ async function exerciseInstalledExtension(
         });
       throw error;
     }
+    await runSourceImageFailureCases({
+      context,
+      evidence: sourceImageFailures,
+      extensionPage,
+      images,
+      output,
+      qualityApiResponses: fixtureRoutes.qualityApiResponses,
+      qualityRequests: fixtureRoutes.qualityRequests,
+    });
     await runOriginalAvailabilityCycles({
       consoleErrors,
       downloads,
@@ -10875,6 +11361,7 @@ async function exerciseInstalledExtension(
       consoleErrors,
       fixtureApiResponses: fixtureRoutes.apiResponses,
       sourceQuality,
+      sourceImageFailures,
       originalAvailability,
       compactQuotePhoto,
       apiReuse,
@@ -10960,6 +11447,7 @@ async function exerciseInstalledExtension(
             failedRequests,
             fixtureApiResponses: fixtureRoutes?.apiResponses ?? [],
             sourceQuality,
+            sourceImageFailures,
             originalAvailability,
             compactQuotePhoto,
             apiReuse,
