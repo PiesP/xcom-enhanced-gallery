@@ -281,9 +281,10 @@ unit, E2E and direct-Node projects together. The supply-chain and prebuild
 scripts retain their existing lifecycle order.
 
 The Vite alias reports the selected Vite+ version and records the bundled Vite
-version in its package metadata. Strict peer validation stays enabled. `pnpm-workspace.yaml` permits only that exact alias
+version in its package metadata. Strict peer validation stays enabled.
+`pnpm-workspace.yaml` permits only that exact alias
 for the reviewed Vitest, mocker, Solid plugin and vitefu versions, whose declared
-Vite ranges include 8.3.4. Recheck callers, their original ranges and both
+Vite ranges include the bundled implementation. Recheck callers, their original ranges and both
 versions together on updates; never widen this to `allowAny`. Validate a fresh
 dependency resolution as well as the frozen install, since a migration lockfile
 can otherwise hide peer metadata conflicts.
