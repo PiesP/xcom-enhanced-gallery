@@ -330,8 +330,12 @@ type DelayedVideoCase = {
   pendingStart: Awaited<ReturnType<typeof hostVideoState>>;
   pendingEnd: Awaited<ReturnType<typeof hostVideoState>>;
   navigation?: unknown;
+  expiry?: unknown;
+  negativeInputs?: unknown;
   failureObservation?: unknown;
   failure?: unknown;
+  photo?: unknown;
+  healthyVideo?: unknown;
   notificationObserverRestored?: unknown;
   settingRestored?: boolean;
 };
@@ -8093,6 +8097,7 @@ async function runDelayedVideoFailures({
   const delayedCases: Array<[string, string]> = [
     ['failure', DELAYED_FAILURE_ID],
     ['navigation', DELAYED_NAVIGATION_ID],
+    ['expiry-navigation', DELAYED_FAILURE_ID],
   ];
   for (const [name, tweetId] of delayedCases) {
     const pageUrl = `https://x.com/delayed_host/status/${tweetId}`;
@@ -8129,7 +8134,8 @@ async function runDelayedVideoFailures({
     const knownNotifications = await extensionPage.evaluate(async () =>
       Object.keys(await chrome.notifications.getAll())
     );
-    const priorSetting = name === 'failure' ? await readStoredVideoSettings(extensionPage) : null;
+    const priorSetting =
+      name === 'navigation' ? null : await readStoredVideoSettings(extensionPage);
     const notificationObserver = await observeNativeNotificationCreates(context, extensionId);
     const navigationEvents: Array<{ type: string; trusted: boolean }> = [];
     const recordNavigation = (message: ConsoleMessage) => {
@@ -8148,7 +8154,6 @@ async function runDelayedVideoFailures({
         }
       }
     };
-    let shortcutIssued = false;
     let observation: DelayedVideoCase | undefined;
     let validationError: unknown;
     let validationSeen = false;
@@ -8335,56 +8340,354 @@ async function runDelayedVideoFailures({
           observationEndedAt: observed.sampledAt,
           observerId: observed.observerId,
         };
-        shortcutIssued = true;
-        await page.keyboard.press('Alt+Shift+V');
-        const switchedMode = await waitForValue(async () => {
-          const mode = storedVideoClickMode(
-            (await readStoredVideoSettings(extensionPage)).settings
+        assert(priorSetting, 'Failed-video prior setting is missing');
+        if (name === 'expiry-navigation') {
+          await page.goto(FIXTURE_URL);
+          await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+          const nextDocumentStartedAt = await page.evaluate(() => performance.timeOrigin);
+          assert.notEqual(nextDocumentStartedAt, documentStartedAt);
+          const apiCount = fixtureRoutes.quotedApiResponses.length;
+          const notificationMark = await notificationObserver.snapshot();
+          await page.keyboard.press('Alt+Shift+V');
+          await page.waitForTimeout(150);
+          const afterShortcut = await readStoredVideoSettings(extensionPage);
+          const afterNotifications = await notificationObserver.snapshot();
+          assert.deepEqual(
+            afterShortcut.settings,
+            priorSetting.settings,
+            'A recovery shortcut from a retired document must not save settings'
           );
-          return mode === 'block-all' ? mode : undefined;
-        }, 'trusted native-video mode shortcut');
-        assert.equal(
-          switchedMode,
-          'block-all',
-          'Trusted recovery shortcut must persist the native video-click mode'
-        );
-        await shell.locator('[data-testid="playButton"]').click();
-        await page.waitForFunction(
-          () => {
-            const element = document.querySelector(
-              '[data-case="recognized"] [data-video-key] video'
+          assert.equal(fixtureRoutes.quotedApiResponses.length, apiCount);
+          assert.equal(notificationCallsSince(notificationMark, afterNotifications).length, 0);
+          assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0);
+          observation.expiry = {
+            documentStartedAt,
+            nextDocumentStartedAt,
+            url: page.url(),
+            mode: storedVideoClickMode(afterShortcut.settings),
+            apiCount,
+            notificationCalls: notificationCallsSince(notificationMark, afterNotifications),
+            galleryCount: 0,
+          };
+        } else {
+          const inputBaseline = await notificationObserver.snapshot();
+          const synthetic = await page.evaluate(() => {
+            const event = new KeyboardEvent('keydown', {
+              bubbles: true,
+              cancelable: true,
+              code: 'KeyV',
+              altKey: true,
+              shiftKey: true,
+            });
+            document.dispatchEvent(event);
+            return { trusted: event.isTrusted, defaultPrevented: event.defaultPrevented };
+          });
+          assert.deepEqual(synthetic, { trusted: false, defaultPrevented: false });
+          assert.deepEqual(
+            (await readStoredVideoSettings(extensionPage)).settings,
+            priorSetting.settings,
+            'Synthetic recovery input must not save settings'
+          );
+          const editable = page.locator('input[data-recovery-editable]');
+          let editableEvent: unknown;
+          try {
+            await page.locator('main').evaluate((main) => {
+              const input = document.createElement('input');
+              input.dataset.recoveryEditable = 'true';
+              input.addEventListener('keydown', (event) => {
+                if (event.code !== 'KeyV') {
+                  return;
+                }
+                input.dataset.recoveryKeydown = JSON.stringify({
+                  trusted: event.isTrusted,
+                  code: event.code,
+                  alt: event.altKey,
+                  shift: event.shiftKey,
+                  target: event.target === input,
+                });
+              });
+              main.append(input);
+            });
+            await editable.focus();
+            await page.keyboard.press('Alt+Shift+V');
+            const eventRecord = await editable.getAttribute('data-recovery-keydown');
+            assert(eventRecord, 'Editable field must receive the shortcut keydown');
+            editableEvent = JSON.parse(eventRecord);
+            assert.deepEqual(editableEvent, {
+              trusted: true,
+              code: 'KeyV',
+              alt: true,
+              shift: true,
+              target: true,
+            });
+            assert.deepEqual(
+              (await readStoredVideoSettings(extensionPage)).settings,
+              priorSetting.settings,
+              'Trusted recovery input from an editable field must not save settings'
             );
-            return (
-              element instanceof HTMLVideoElement &&
-              !element.paused &&
-              element.currentTime > 0.15 &&
-              element.error === null
+          } finally {
+            if (await editable.count()) {
+              await editable.evaluate((input) => input.remove());
+            }
+          }
+          const afterNegatives = await notificationObserver.snapshot();
+          assert.equal(notificationCallsSince(inputBaseline, afterNegatives).length, 0);
+          const nextApiStart = fixtureRoutes.quotedApiResponses.length;
+          fixtureRoutes.armDelayedFailure(tweetId);
+          await video.click();
+          const nextRequest = await waitForValue(
+            () =>
+              fixtureRoutes.quotedApiResponses
+                .slice(nextApiStart)
+                .find((item) => item.tweetId === tweetId),
+            'new video action held request'
+          );
+          assert.equal(nextRequest.fulfilledAtMonotonicMs, null);
+          await page.keyboard.press('Alt+Shift+V');
+          await page.waitForTimeout(150);
+          assert.deepEqual(
+            (await readStoredVideoSettings(extensionPage)).settings,
+            priorSetting.settings,
+            'The old recovery shortcut must expire as soon as a new click starts'
+          );
+          fixtureRoutes.releaseDelayedFailure();
+          await waitForValue(
+            () =>
+              nextRequest.routeSettledAtMonotonicMs !== null &&
+              nextRequest.transportSettledAtMonotonicMs !== null
+                ? nextRequest
+                : undefined,
+            'new video action exact request settlement',
+            5_000
+          );
+          await waitForValue(
+            async () =>
+              notificationCallsSince(inputBaseline, await notificationObserver.snapshot()).filter(
+                ({ message }) => /Alt\+Shift\+V/u.test(message ?? '')
+              ).length === 1,
+            'new video action failure notification'
+          );
+          assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0);
+          observation.negativeInputs = {
+            synthetic,
+            editable: editableEvent,
+            unchangedMode: storedVideoClickMode(priorSetting.settings),
+            newClickRequest: nextRequest,
+            galleryCount: 0,
+          };
+          await page.keyboard.press('Alt+Shift+V');
+          const switchedMode = await waitForValue(async () => {
+            const mode = storedVideoClickMode(
+              (await readStoredVideoSettings(extensionPage)).settings
             );
-          },
-          null,
-          { timeout: 5_000 }
-        );
-        const clickCount = await page.evaluate(() => window.__quoteFixtureClicks?.length ?? 0);
-        await video.click();
-        const nativeClick = await quotedClickRecord(page, clickCount, 'video');
-        assert.equal(
-          nativeClick.defaultPrevented,
-          false,
-          'After mode switch the direct video click must reach X natively'
-        );
-        assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0);
-        assert.equal(
-          fixtureRoutes.quotedApiResponses.length,
-          apiStart + 1,
-          'Native recovery must not start another extraction request'
-        );
-        observation.failure = {
-          notification,
-          failedHost,
-          switchedMode,
-          nativeClick,
-          nativeRecovery: await hostVideoState(video),
-        };
+            return mode === 'block-all' ? mode : undefined;
+          }, 'trusted native-video mode shortcut');
+          assert.equal(
+            switchedMode,
+            'block-all',
+            'Trusted recovery shortcut must persist the native video-click mode'
+          );
+          await shell.locator('[data-testid="playButton"]').click();
+          await page.waitForFunction(
+            () => {
+              const element = document.querySelector(
+                '[data-case="recognized"] [data-video-key] video'
+              );
+              return (
+                element instanceof HTMLVideoElement &&
+                !element.paused &&
+                element.currentTime > 0.15 &&
+                element.error === null
+              );
+            },
+            null,
+            { timeout: 5_000 }
+          );
+          const clickCount = await page.evaluate(() => window.__quoteFixtureClicks?.length ?? 0);
+          await video.click();
+          const nativeClick = await quotedClickRecord(page, clickCount, 'video');
+          assert.equal(
+            nativeClick.defaultPrevented,
+            false,
+            'After mode switch the direct video click must reach X natively'
+          );
+          assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0);
+          assert.equal(
+            fixtureRoutes.quotedApiResponses.length,
+            apiStart + 2,
+            'Native recovery must not start another extraction request'
+          );
+          observation.failure = {
+            notification,
+            failedHost,
+            switchedMode,
+            nativeClick,
+            nativeRecovery: await hostVideoState(video),
+          };
+          await page.goto(`https://x.com/rapid_a/status/${RAPID_CLICK_A}`);
+          await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+          const snapshot = (selector: string) =>
+            page.evaluate(
+              (targetSelector) => ({
+                focused: document.activeElement === document.querySelector(targetSelector),
+                scrollY,
+                bodyStyle: document.body.getAttribute('style'),
+                background: ['#host-layout-spacer', 'main'].map((item) => {
+                  const node = document.querySelector(item);
+                  return {
+                    hidden: node?.hasAttribute('data-xeg-gallery-hidden') ?? false,
+                    inert: node?.hasAttribute('inert') ?? false,
+                    ariaHidden: node?.getAttribute('aria-hidden') ?? null,
+                  };
+                }),
+              }),
+              selector
+            );
+          const photo = page.locator('[data-rapid="b"] [data-testid="tweetPhoto"] img');
+          await photo.scrollIntoViewIfNeeded();
+          await page.evaluate(() => window.scrollBy(0, -100));
+          const permalinkSelector = '[data-rapid="b"] > a[href*="/rapid_b/status/"]';
+          await page.locator(permalinkSelector).focus();
+          const photoBefore = await snapshot(permalinkSelector);
+          assert(photoBefore.focused && photoBefore.scrollY > 0);
+          const photoApiStart = fixtureRoutes.quotedApiResponses.length;
+          const photoHit = await photo.evaluate((element) => {
+            const rect = element.getBoundingClientRect();
+            const x = rect.left + rect.width / 2;
+            const y = rect.top + rect.height / 2;
+            return { x, y, hit: document.elementFromPoint(x, y) === element };
+          });
+          assert.equal(photoHit.hit, true, 'The photo must be the ordinary hit-tested target');
+          await page.mouse.click(photoHit.x, photoHit.y);
+          const photoGallery = page.locator('[data-xeg-gallery-container]');
+          await photoGallery.waitFor({ state: 'visible' });
+          const photoSelected = await assertQuotedSelection(page, {
+            position: 1,
+            total: 2,
+            type: 'image',
+            path: '/media/QQuoteTwoPhoto.jpg',
+          });
+          const photoOrigin = await assertQuotedOriginLink(
+            photoGallery,
+            `https://x.com/rapid_b/status/${RAPID_CLICK_B}`
+          );
+          const photoRequests = fixtureRoutes.quotedApiResponses.slice(photoApiStart);
+          assert.deepEqual(
+            photoRequests.map(({ tweetId, status }) => ({ tweetId, status })),
+            [{ tweetId: RAPID_CLICK_B, status: 200 }]
+          );
+          await page.keyboard.press('Escape');
+          await photoGallery.waitFor({ state: 'detached' });
+          const photoAfter = await snapshot(permalinkSelector);
+          assert.deepEqual(photoAfter, photoBefore, 'Photo close must restore host state');
+          assert.equal(
+            storedVideoClickMode((await readStoredVideoSettings(extensionPage)).settings),
+            'block-all',
+            'Photo gallery must not change the native video mode'
+          );
+          observation.photo = {
+            hit: photoHit,
+            selected: photoSelected,
+            origin: photoOrigin,
+            requests: photoRequests,
+            before: photoBefore,
+            after: photoAfter,
+          };
+
+          const restored = await restoreStoredVideoSettings(extensionPage, priorSetting);
+          assert.equal(restored, true);
+          assert.deepEqual(
+            (await readStoredVideoSettings(extensionPage)).settings,
+            priorSetting.settings
+          );
+          observation.settingRestored = true;
+          const closedNotificationMark = await notificationObserver.snapshot();
+          await page.keyboard.press('Alt+Shift+V');
+          await page.waitForTimeout(150);
+          assert.deepEqual(
+            (await readStoredVideoSettings(extensionPage)).settings,
+            priorSetting.settings,
+            'The old recovery shortcut must stay retired after the photo gallery closes'
+          );
+          assert.equal(
+            notificationCallsSince(closedNotificationMark, await notificationObserver.snapshot())
+              .length,
+            0
+          );
+          await page.reload();
+          await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+          const healthyTriggerSelector = '[data-rapid="b"] video';
+          const healthyTrigger = page.locator(healthyTriggerSelector);
+          await healthyTrigger.scrollIntoViewIfNeeded();
+          await healthyTrigger.focus();
+          const healthyBefore = await snapshot(healthyTriggerSelector);
+          assert(healthyBefore.focused);
+          const healthyApiStart = fixtureRoutes.quotedApiResponses.length;
+          await healthyTrigger.click();
+          const healthy = await assertQuotedGallery(page, {
+            name: 'rapid-b',
+            expectedPosition: 2,
+            expectedTotal: 2,
+            owner: RAPID_CLICK_B,
+            media: 'quote-two',
+          });
+          const healthyRequests = fixtureRoutes.quotedApiResponses.slice(healthyApiStart);
+          assert.deepEqual(
+            healthyRequests.map(({ tweetId, status }) => ({ tweetId, status })),
+            [{ tweetId: RAPID_CLICK_B, status: 200 }]
+          );
+          const playbackState = () =>
+            healthy.video.evaluate((element) => {
+              if (!(element instanceof HTMLVideoElement)) {
+                throw new Error('Selected healthy video is missing');
+              }
+              return {
+                paused: element.paused,
+                time: element.currentTime,
+                width: element.videoWidth,
+                height: element.videoHeight,
+                error: element.error?.code ?? null,
+              };
+            });
+          const initialPlayback = await playbackState();
+          assert.equal(initialPlayback.paused, true, 'Fresh video must begin paused');
+          assert(initialPlayback.time < 0.15, 'Fresh video must begin at the first frame');
+          await healthy.video.click();
+          await page.waitForFunction(
+            () => {
+              const element = document.querySelector(
+                '[data-xeg-gallery-container] [data-gallery-element="item"][data-index="1"] video'
+              );
+              return (
+                element instanceof HTMLVideoElement &&
+                !element.paused &&
+                element.currentTime > 0.15 &&
+                element.videoWidth > 0 &&
+                element.videoHeight > 0 &&
+                element.error === null
+              );
+            },
+            null,
+            { timeout: 15_000 }
+          );
+          const playing = await playbackState();
+          await page.keyboard.press('Escape');
+          await healthy.gallery.waitFor({ state: 'detached' });
+          const healthyAfter = await snapshot(healthyTriggerSelector);
+          assert.deepEqual(
+            healthyAfter,
+            healthyBefore,
+            'Healthy video close must restore host state'
+          );
+          observation.healthyVideo = {
+            selection: healthy.selection,
+            requests: healthyRequests,
+            initialPlayback,
+            playing,
+            before: healthyBefore,
+            after: healthyAfter,
+          };
+        }
       }
       cases.push(observation);
       await page.screenshot({ path: join(output, `quoted-delayed-${name}.png`) });
@@ -8408,9 +8711,8 @@ async function runDelayedVideoFailures({
           cleanupErrors.push(error);
         }
       }
-      if (shortcutIssued) {
+      if (priorSetting) {
         try {
-          assert(priorSetting, 'Recovery shortcut prior setting is missing');
           const restored = await restoreStoredVideoSettings(extensionPage, priorSetting);
           assert.equal(restored, true, 'Recovery shortcut must restore full prior task setting');
           if (observation) {
@@ -8419,6 +8721,26 @@ async function runDelayedVideoFailures({
         } catch (error) {
           cleanupErrors.push(error);
         }
+      }
+    }
+    if (validationSeen || cleanupErrors.length) {
+      try {
+        await writeFile(
+          join(output, `quoted-delayed-${name}-failure.json`),
+          JSON.stringify(
+            {
+              name,
+              observation,
+              error: validationSeen ? safeError(validationError) : null,
+              cleanupErrors: cleanupErrors.map((error) => safeError(error)),
+              api: fixtureRoutes.quotedApiResponses.slice(apiStart),
+            },
+            null,
+            2
+          )
+        );
+      } catch (error) {
+        cleanupErrors.push(error);
       }
     }
     if (validationSeen && cleanupErrors.length) {
