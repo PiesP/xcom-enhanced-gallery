@@ -9622,15 +9622,16 @@ async function runOwn12NativeControls({
         const photo = page.locator('[data-rapid="b"] [data-testid="tweetPhoto"] img');
         await photo.scrollIntoViewIfNeeded();
         await page.evaluate(() => window.scrollBy(0, -100));
-        const permalink = page.locator('[data-rapid="b"] > a[href*="/rapid_b/status/"]');
-        await permalink.focus();
+        await photo.focus();
         const snapshot = () =>
           page.evaluate(() => {
-            const target = document.querySelector('[data-rapid="b"] > a[href*="/rapid_b/status/"]');
+            const target = document.querySelector(
+              '[data-rapid="b"] [data-testid="tweetPhoto"] img'
+            );
             return {
               focused: document.activeElement === target,
               scrollY,
-              bodyStyle: document.body.getAttribute('style'),
+              bodyStyle: document.body.style.cssText,
               background: ['#host-layout-spacer', 'main'].map((selector) => {
                 const node = document.querySelector(selector);
                 return {
