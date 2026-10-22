@@ -50,7 +50,13 @@ type MediaEvidence = {
   cases: ApiCase[];
   requests: ApiRequest[];
   pageErrors: string[];
-  consoleErrors: { variant: Variant; text: string; expected: boolean; pageIndex: number }[];
+  consoleErrors: {
+    variant: Variant;
+    text: string;
+    expected: boolean;
+    pageIndex: number;
+    apiLocation: boolean;
+  }[];
   cleanup: Cleanup;
   responseAccounting?: AccountingEvidence;
   redirectReceiverRequests?: number;
@@ -463,7 +469,7 @@ export async function runInstalledMediaApiReuseProfile({
           (request) => request.variant === observedVariant && request.status === Number(status)
         );
       if (consoleErrors.length < MAX_OBSERVATIONS) {
-        consoleErrors.push({ variant: observedVariant, text, expected, pageIndex });
+        consoleErrors.push({ variant: observedVariant, text, expected, pageIndex, apiLocation });
       } else {
         errorOverflow = true;
       }
@@ -674,7 +680,8 @@ export async function runInstalledMediaApiReuseProfile({
     );
     assert(
       redirectConsoleErrors.every(
-        ({ pageIndex, text }) =>
+        ({ pageIndex, text, apiLocation }) =>
+          apiLocation &&
           /^Failed to load resource: net::ERR_(?:FAILED|UNSAFE_REDIRECT)$/u.test(text) &&
           redirectFailedRequests.some((failure) => failure.pageIndex === pageIndex)
       ),
