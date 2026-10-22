@@ -4,6 +4,7 @@
 import type { DownloadAdapter } from '@platform/types';
 import { USER_CANCELLED_MESSAGE } from '@shared/error/cancellation';
 import { LiveByteBudget } from '@shared/services/download/live-byte-budget';
+import { getImageDownloadSource } from '@shared/utils/media/media-source';
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 const { adapter, getDownloadAdapter } = vi.hoisted(() => ({
@@ -92,17 +93,23 @@ describe('downloadSingleFile route ownership', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  it('rejects an unverified original before either privileged route', async () => {
+  it.each([
+    ['unknown size', 'https://pbs.twimg.com/media/photo.jpg?name=preview'],
+    ['unknown format', 'https://pbs.twimg.com/media/photo?format=avif&name=small'],
+    ['poster path', 'https://pbs.twimg.com/ext_tw_video_thumb/222/img/photo.jpg'],
+    ['card path', 'https://pbs.twimg.com/card_img/photo.jpg'],
+    ['fragment', 'https://pbs.twimg.com/media/photo.jpg#preview'],
+    ['credentials', 'https://user@pbs.twimg.com/media/photo.jpg'],
+    ['nondefault port', 'https://pbs.twimg.com:444/media/photo.jpg'],
+    ['conflicting formats', 'https://pbs.twimg.com/media/photo?format=jpg&FORMAT=png'],
+    ['conflicting sizes', 'https://pbs.twimg.com/media/photo.jpg?name=small&NAME=large'],
+  ])('rejects an unverified %s original before either privileged route', async (_label, url) => {
     const fetch = vi.spyOn(globalThis, 'fetch');
     const displayed = {
       id: '222_dom_0',
       type: 'image' as const,
-      url: 'https://pbs.twimg.com/media/photo?format=jpg&name=small&name=large',
-      downloadSource: {
-        url: '' as const,
-        quality: 'unverified-original' as const,
-        provenance: 'dom' as const,
-      },
+      url,
+      downloadSource: getImageDownloadSource(url, 'dom'),
     };
 
     await expect(downloadSingleFile(displayed)).resolves.toMatchObject({

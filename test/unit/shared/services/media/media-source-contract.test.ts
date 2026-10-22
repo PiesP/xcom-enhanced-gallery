@@ -9,6 +9,10 @@ import { extractMediaFromTweet } from '@shared/services/media/twitter-parser/twi
 import type { TwitterMedia } from '@shared/services/media/types';
 import { DOMFallbackExtractor } from '@shared/services/media-extraction/extractors/dom-fallback-extractor';
 import type { TweetInfo } from '@shared/types/media.types';
+import {
+  getImageDownloadSource,
+  normalizeOriginalImageUrl,
+} from '@shared/utils/media/media-source';
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 const owner: TweetInfo = {
@@ -119,6 +123,48 @@ describe('canonical media source contract', () => {
       url: '',
       sourceUnavailable: true,
     });
+  });
+
+  it.each([
+    ['unknown size', 'https://pbs.twimg.com/media/EXAMPLE.jpg?name=preview'],
+    ['unknown format', 'https://pbs.twimg.com/media/EXAMPLE?format=avif&name=small'],
+    ['poster path', 'https://pbs.twimg.com/ext_tw_video_thumb/222/img/EXAMPLE.jpg'],
+    ['card path', 'https://pbs.twimg.com/card_img/EXAMPLE.jpg'],
+    ['fragment', 'https://pbs.twimg.com/media/EXAMPLE.jpg#preview'],
+    ['credentials', 'https://user@pbs.twimg.com/media/EXAMPLE.jpg'],
+    ['nondefault port', 'https://pbs.twimg.com:444/media/EXAMPLE.jpg'],
+    ['conflicting formats', 'https://pbs.twimg.com/media/EXAMPLE?format=jpg&FORMAT=png'],
+    ['conflicting sizes', 'https://pbs.twimg.com/media/EXAMPLE.jpg?name=small&NAME=large'],
+  ])('plans no original for %s', (_label, observed) => {
+    const media = {
+      id: '222_dom_0',
+      type: 'image' as const,
+      url: observed,
+      downloadSource: getImageDownloadSource(observed, 'dom'),
+    };
+
+    expect(media.downloadSource).toEqual({
+      url: '',
+      quality: 'unverified-original',
+      provenance: 'dom',
+    });
+    expect(planBulkDownload({ mediaItems: [media] }).items[0]).toMatchObject({
+      url: '',
+      sourceUnavailable: true,
+    });
+  });
+
+  it('keeps equivalent duplicate controls canonical and idempotent through planning', () => {
+    const observed =
+      'https://pbs.twimg.com/media/EXAMPLE?FORMAT=JPG&format=jpg&NAME=SMALL&name=small';
+    const source = getImageDownloadSource(observed, 'dom');
+    expect(source).toEqual({ url: original, quality: 'cdn-original', provenance: 'dom' });
+    expect(normalizeOriginalImageUrl(source.url)).toBe(source.url);
+    expect(
+      planBulkDownload({
+        mediaItems: [{ id: '222_dom_0', type: 'image', url: observed, downloadSource: source }],
+      }).items[0]?.url
+    ).toBe(original);
   });
 
   it('retains typed best-first video variants without inventing bitrate or dimensions', () => {

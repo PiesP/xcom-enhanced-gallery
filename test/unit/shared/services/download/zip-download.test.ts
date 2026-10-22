@@ -1,3 +1,4 @@
+import { planBulkDownload } from '@shared/core/download/download-plan';
 import {
   DownloadResourceLimitError,
   downloadLiveByteBudget,
@@ -6,6 +7,7 @@ import {
 } from '@shared/services/download/live-byte-budget';
 import type { DownloadOptions, OrchestratorItem, ZipResult } from '@shared/services/download/types';
 import { downloadAsZip as assembleZip } from '@shared/services/download/zip-download';
+import { getImageDownloadSource } from '@shared/utils/media/media-source';
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 interface FixtureRequest {
@@ -210,6 +212,51 @@ describe('user-facing bulk ZIP download', () => {
     expect(request).toHaveBeenCalledTimes(1);
   });
 
+  it('omits unverified originals before byte dispatch while including a normalized original', async () => {
+    const invalidUrls = [
+      'https://pbs.twimg.com/media/photo.jpg?name=preview',
+      'https://pbs.twimg.com/media/photo?format=avif&name=small',
+      'https://pbs.twimg.com/ext_tw_video_thumb/222/img/photo.jpg',
+      'https://pbs.twimg.com/card_img/photo.jpg',
+      'https://pbs.twimg.com/media/photo.jpg#preview',
+      'https://user@pbs.twimg.com/media/photo.jpg',
+      'https://pbs.twimg.com:444/media/photo.jpg',
+      'https://pbs.twimg.com/media/photo?format=jpg&FORMAT=png',
+      'https://pbs.twimg.com/media/photo.jpg?name=small&NAME=large',
+    ];
+    const validUrl =
+      'https://pbs.twimg.com/media/photo?FORMAT=JPG&format=jpg&NAME=SMALL&name=small';
+    const validSource = getImageDownloadSource(validUrl, 'dom');
+    const provider = vi.fn(async () => null);
+    const request = vi.fn();
+    setHttpFixture(request);
+    const plan = planBulkDownload({
+      mediaItems: [...invalidUrls, validUrl].map((url, index) => ({
+        id: `222_dom_${index}`,
+        type: 'image' as const,
+        url,
+        downloadSource: getImageDownloadSource(url, 'dom'),
+      })),
+      cachedBlobs: new Map([[validSource.url, ownedBlob(new Blob(['original']))]]),
+      mediaBlobProvider: provider,
+    });
+
+    const result = await downloadAsZip(plan.items, { retries: 0 });
+
+    expect(validSource.url).toBe('https://pbs.twimg.com/media/photo?format=jpg&name=orig');
+    expect(plan.items.slice(0, invalidUrls.length)).toEqual(
+      expect.arrayContaining(
+        invalidUrls.map(() => expect.objectContaining({ url: '', sourceUnavailable: true }))
+      )
+    );
+    expect(result.filesSuccessful).toBe(1);
+    expect(result.sourceUnavailable).toBe(true);
+    expect(result.failures).toHaveLength(invalidUrls.length);
+    expect(result.failures.every(({ error }) => error.includes('original image'))).toBe(true);
+    expect(provider).not.toHaveBeenCalled();
+    expect(request).not.toHaveBeenCalled();
+  });
+
   it.each([
     ['forbidden', Object.assign(new Error('HTTP:403'), { status: 403 })],
     ['rate-limited', Object.assign(new Error('HTTP:429'), { status: 429 })],
@@ -229,6 +276,27 @@ describe('user-facing bulk ZIP download', () => {
     expect(result.filesSuccessful).toBe(0);
     expect(result.failures).toHaveLength(1);
     expect(getBlob).toHaveBeenCalledTimes(1);
+    expect(request).not.toHaveBeenCalled();
+  });
+
+  it('retains a cancelled provider rejection without a direct URL retry', async () => {
+    const request = vi.fn();
+    setHttpFixture(request);
+    const cancelled = new DOMException('Provider request cancelled', 'AbortError');
+    const getBlob = vi.fn(async () => {
+      throw cancelled;
+    });
+
+    const result = await downloadAsZip(
+      [{ url: 'https://pbs.twimg.com/media/cancelled.jpg', desiredName: 'cancelled.jpg', getBlob }],
+      { retries: 0 }
+    );
+
+    expect(result.filesSuccessful).toBe(0);
+    expect(result.failures).toEqual([
+      { url: 'https://pbs.twimg.com/media/cancelled.jpg', error: cancelled.message },
+    ]);
+    expect(getBlob).toHaveBeenCalledOnce();
     expect(request).not.toHaveBeenCalled();
   });
 
