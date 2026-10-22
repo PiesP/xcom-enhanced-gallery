@@ -1145,13 +1145,22 @@ async function openManagerDomainBlacklist(page: Page, managerId: string, output:
   await settingsTab.waitFor({ state: 'visible' });
   assert.equal(await settingsTab.count(), 1, 'Expected one script-specific Settings tab');
   await settingsTab.click();
-  const section = page.locator('div.section.ta_security:visible');
-  await section.waitFor({ state: 'visible' });
-  assert.equal(await section.count(), 1, 'Expected one script-specific XHR Security section');
+  const heading = page.locator('div.section_head:visible').filter({
+    hasText: securityLabels.security,
+  });
+  await heading.waitFor({ state: 'visible' });
+  assert.equal(await heading.count(), 1, 'Expected one script-specific XHR Security heading');
   assert.equal(
-    (await section.locator('.section_head').innerText()).trim(),
+    (await heading.innerText()).trim(),
     securityLabels.security,
     'Manager XHR Security heading differs'
+  );
+  const section = heading.locator('xpath=..');
+  assert.equal(await section.count(), 1, 'Expected one script-specific XHR Security section');
+  assert.equal(
+    await section.evaluate((element) => element.classList.contains('section')),
+    true,
+    'Manager XHR Security heading is outside a section'
   );
   const blacklist = section
     .getByText(securityLabels.blacklist, { exact: true })
@@ -3465,6 +3474,60 @@ async function runFixture(
       managerDenialFailed = true;
       managerDenialError = error;
       managerDenialReceipt.error = safeRouteError(error);
+      if (
+        securityPage &&
+        !securityPage.isClosed() &&
+        isOwnedManagerOptionsUrl(securityPage.url(), managerId)
+      ) {
+        try {
+          managerDenialReceipt.managerUiFailureShape = await securityPage.evaluate(() => {
+            const visible = (element: Element) => {
+              const style = getComputedStyle(element);
+              const rect = element.getBoundingClientRect();
+              return (
+                style.display !== 'none' &&
+                style.visibility !== 'hidden' &&
+                rect.width > 0 &&
+                rect.height > 0
+              );
+            };
+            const label = (element: Element) => (element.textContent ?? '').trim().slice(0, 100);
+            const elements = (selector: string, limit: number) =>
+              Array.from(document.querySelectorAll(selector)).filter(visible).slice(0, limit);
+            const countVisible = (selector: string) =>
+              Array.from(document.querySelectorAll(selector)).filter(visible).length;
+            return {
+              tabs: elements('div[name^="tabview_tab"][tvid]', 12).map((element) => ({
+                name: element.getAttribute('name'),
+                tvid: element.getAttribute('tvid'),
+              })),
+              headings: elements('div.section_head', 16).map(label),
+              buttonLabels: elements('button', 24).map(label),
+              selectorCounts: {
+                scriptSettingsTabs: countVisible(
+                  'div[tvid="settings"][name^="tabview_tab"]:not([name="tabview_tabmain"])'
+                ),
+                visibleSections: countVisible('div.section'),
+                visibleHeadings: countVisible('div.section_head'),
+                visibleCludes: countVisible('div.cludes'),
+                visibleSelects: countVisible('select'),
+              },
+            };
+          });
+        } catch (diagnosticError) {
+          managerDenialReceipt.managerUiFailureShapeError = safeRouteError(diagnosticError);
+        }
+        try {
+          const screenshot = 'userscript-manager-denial-ui-failure.png';
+          await securityPage.screenshot({
+            path: join(output, screenshot),
+            mask: [securityPage.locator('input, select, textarea, pre, code, [contenteditable]')],
+          });
+          managerDenialReceipt.managerUiFailureScreenshot = screenshot;
+        } catch (diagnosticError) {
+          managerDenialReceipt.managerUiFailureScreenshotError = safeRouteError(diagnosticError);
+        }
+      }
     } finally {
       if (await gallery.isVisible().catch(() => false)) {
         await gallery
