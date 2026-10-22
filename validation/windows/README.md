@@ -280,6 +280,55 @@ verify that permission state stays unchanged. Their bounded event and request
 receipts retain failures as well as successes. Provider access, live-CDN compatibility and audible output remain
 outside the fixture evidence.
 
+The separate `installed-metadata-readiness.mp4` is a 117,289-byte, two-second
+VP9 Profile 0 MP4 with 48 real coded samples at 24 fps. Its dimensions are
+320×192; this case's API declares the same size and 5:3 aspect ratio. The
+synthetic `320x180` route name does not describe decoded dimensions. SHA-256:
+`d4ac575d4f6ce11458e61f948fab6becd37ae5530afc66db7141dcdde012e8a2`.
+
+The producer accepts only the immutable 92,715-byte base MP4 (SHA-256
+`5c2d73ce56a49e7ce51ce9edbbc780e3fe35daa3e00bbe5d5adeac871cc4b018`)
+and its exact layout. The [VP9 uncompressed header syntax, section 6.2](https://storage.googleapis.com/downloads.webmproject.org/docs/vp9/vp9-bitstream-specification-v0.6-20160331-draft.pdf)
+includes `show_frame` for key frames. The producer clears that bit in the first
+real coded key picture, leaving the reference picture coded but hidden. It
+enlarges the existing `free` box and adjusts the single `stco` offset to place
+that 7,172-byte key sample at bytes 25,596–32,767. The held native response
+ends at exclusive byte 32,768; all later samples remain behind it. The complete
+`moov` and VP9 sample description are available before the hold.
+
+The installed profile holds the response at that prefix and requires at least
+700 ms of selected, paused `readyState === 1`, nonzero dimensions, metadata
+readiness, no first-frame readiness, no presented callback, and zero decoded
+frames. After releasing the tail, it requires a native first-frame callback and
+at least 700 ms of first-frame readiness while still paused at the beginning.
+Ordinary Play must then advance time without an error. A separate playing
+capture supports scoped pixel review; paused poster captures alone do not prove
+that encoded pixels are visible.
+
+Each selected source request must settle. One complete no-Range `200`, or
+byte-complete `206` ranges, is valid. A post-release `net::ERR_ABORTED` is accepted
+only with an exact subsequent Range completing all remaining bytes; the receipt
+still labels the first request aborted. Missing bytes, early or unknown aborts,
+pending or duplicate terminals, and out-of-range transfers fail. Native served
+range lengths and hashes are checked separately from CDP received-byte totals.
+The profile preserves host focus/scroll/styles and permission state, and disposes
+owned routes, response gates, frame callbacks, observers, sessions, and pages.
+
+The checked candidate was generated from FFmpeg 7.1.5 and libvpx-vp9:
+
+```bash
+ffmpeg -hide_banner -loglevel warning -threads 1 -f lavfi \
+  -i 'testsrc2=size=320x192:rate=24:duration=2' -frames:v 48 -an \
+  -c:v libvpx-vp9 -threads 1 -deadline realtime -cpu-used 8 \
+  -lag-in-frames 0 -auto-alt-ref 0 -g 48 -b:v 0 -crf 32 -pix_fmt yuv420p \
+  -movflags +faststart -map_metadata -1 -metadata creation_time=1970-01-01T00:00:00Z \
+  -f mp4 /tmp/xeg-metadata-base.mp4
+python3 validation/windows/create-metadata-hidden-vp9-fixture.py \
+  /tmp/xeg-metadata-base.mp4 test/e2e/fixtures/installed-metadata-readiness.mp4 \
+  /tmp/xeg-metadata-hidden-vp9.json
+sha256sum test/e2e/fixtures/installed-metadata-readiness.mp4
+```
+
 The installed profile also serves the declared small MP4 assets and
 `installed-quoted-video-page.html` with deterministic `TweetResultByRestId`
 responses from `installed-quoted-video-api.ts`. Its quote cases cover a marked

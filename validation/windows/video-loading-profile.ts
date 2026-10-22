@@ -22,6 +22,8 @@ import {
 } from './download-memory.ts';
 import { restoreStoredVideoSettings } from './live-page.ts';
 
+const METADATA_READINESS_ID = '4666000111222333991';
+
 type NativeLoopback = Awaited<ReturnType<typeof startExtensionNativeFixtureLoopback>>;
 type ItemState = NonNullable<Awaited<ReturnType<typeof itemState>>>;
 type VideoRequest = {
@@ -72,7 +74,146 @@ type VideoObservation = {
   recoveryIntent?: unknown;
   rangeDiagnostics?: unknown;
   selectedFailures?: SelectedVideoFailureEvidence;
+  metadataReadiness?: MetadataReadinessEvidence;
   error?: string;
+};
+type MetadataReadinessEvent = {
+  type: 'loadedmetadata' | 'loadeddata' | 'error';
+  trusted: boolean;
+  atPageMonotonicMs: number;
+  currentSrc: string;
+  readyState: number;
+  errorCode: number | null;
+};
+type MetadataReadinessObserver = {
+  records: MetadataReadinessEvent[];
+  overflow: boolean;
+  frames: Array<{
+    atPageMonotonicMs: number;
+    presentedFrames: number;
+    mediaTime: number;
+    width: number;
+    height: number;
+  }>;
+  frameOverflow: boolean;
+  frameSupported: boolean | null;
+  dispose: () => { mutationObserverDisconnected: boolean; frameCallbackCanceled: boolean };
+};
+type MetadataFrameSnapshot = {
+  phase: 'first-poll' | 'stable-hold' | 'pre-tail-release' | 'on-failure' | 'after-tail' | 'play';
+  atMs: number;
+  callbackCount: number;
+  lastCallback: MetadataReadinessObserver['frames'][number] | null;
+  video: null | {
+    currentSrcMatches: boolean;
+    posterPresent: boolean;
+    posterMatches: boolean;
+    controls: boolean;
+    display: string;
+    visibility: string;
+    opacity: string;
+    objectFit: string;
+    parentDisplay: string | null;
+    parentVisibility: string | null;
+    parentOpacity: string | null;
+    width: number;
+    height: number;
+    rect: { width: number; height: number };
+    quality?: {
+      totalVideoFrames: number;
+      droppedVideoFrames: number;
+      corruptedVideoFrames: number;
+    };
+    webkitDecodedFrameCount?: number;
+  };
+};
+type MetadataReadinessEvidence = {
+  status: 'pending' | 'passed' | 'failed';
+  fixtureUrl: string;
+  bestUrl: string;
+  assetSha256: string;
+  prefixEnd: number;
+  api: Array<{ requestedId: string; status: number }>;
+  protocol: Array<{
+    requestId: string;
+    phase: string;
+    atMs: number;
+    status?: number;
+    range?: string | null;
+    errorText?: string;
+    blockedReason?: string;
+  }>;
+  transfer: Array<{
+    requestId: string;
+    chunks: number;
+    dataBytes: number;
+    encodedBytes: number;
+    firstAtMs: number;
+    lastAtMs: number;
+  }>;
+  requestSettlement?: {
+    outcome: 'finished' | 'aborted-continued';
+    requests: Array<{
+      requestId: string;
+      rangeStart: number;
+      receivedBytes: number;
+      terminal: 'finished' | 'aborted';
+    }>;
+  };
+  timing: { failureAtMs?: number; tailReleasedAtMs?: number; abortAtMs?: number };
+  stateSamples: Array<{
+    phase: 'first-poll' | 'last-poll' | 'on-failure' | 'after-tail';
+    atMs: number;
+    state: ItemState | null;
+  }>;
+  frameDiagnostics: {
+    supported: boolean | null;
+    callbacks: MetadataReadinessObserver['frames'];
+    overflow: boolean;
+    snapshots: MetadataFrameSnapshot[];
+    errors: string[];
+    cleanup: { mutationObserverDisconnected: boolean; frameCallbackCanceled: boolean };
+  };
+  mediaDiagnostics: {
+    players: string[];
+    matchedPlayers: string[];
+    records: Array<{ playerId: string; atMs: number; name: string; value: string }>;
+    overflow: boolean;
+    enabled: boolean;
+    error?: string;
+  };
+  failureProbe?: {
+    heldBeforeRelease: boolean;
+    outcome: 'not-held' | 'metadata' | 'no-metadata' | 'unavailable' | 'error';
+    terminalObserved: boolean;
+    error?: string;
+  };
+  nativeBeforeRelease?: ReturnType<NativeLoopback['since']>;
+  nativeAfterRelease?: ReturnType<NativeLoopback['since']>;
+  events: MetadataReadinessEvent[];
+  metadata?: { before: ItemState; after: ItemState; observationMs: number };
+  firstFrame?: { before: ItemState; after: ItemState; observationMs: number };
+  playback?: { before: ItemState; after: ItemState };
+  host?: {
+    before: { scrollY: number; bodyStyle: string | null; activeTarget: string | null };
+    after: { scrollY: number; bodyStyle: string | null; activeTarget: string | null };
+  };
+  permission?: { before: PermissionState; after?: PermissionState };
+  screenshots: string[];
+  pageErrors: string[];
+  consoleErrors: Array<{ text: string; location: string }>;
+  overflow: boolean;
+  error?: string;
+  screenshotError?: string;
+  cleanup: {
+    videoHoldReleased: boolean;
+    observerRemoved: boolean;
+    routeRemoved: boolean;
+    listenersRemoved: boolean;
+    protocolDetached: boolean;
+    pageClosed: boolean;
+    errors: string[];
+  };
 };
 type SelectedVideoFault = 'http-401' | 'http-403' | 'http-404' | 'html-200' | 'invalid-mp4-200';
 type SelectedVideoRouteRecord = {
@@ -306,6 +447,7 @@ declare global {
   interface Window {
     __xegRecoveryEventObservation?: RecoveryEventState;
     __xegSelectedVideoFailureObservation?: SelectedVideoPageObserver;
+    __xegMetadataReadinessObservation?: MetadataReadinessObserver;
     __xegRangeMediaObservation?: {
       records: RangeMediaEvent[];
       overflow: boolean;
@@ -363,38 +505,42 @@ function posterUrl(tweetId: string, index: number) {
   return `https://pbs.twimg.com/ext_tw_video_thumb/${tweetId}/pu/img/video-${index}.png`;
 }
 
-function fixtureHtml(tweetId: string, handle: string, count = VIDEO_COUNT) {
+function fixtureHtml(tweetId: string, handle: string, count = VIDEO_COUNT, height = 180) {
+  const description =
+    count === 1 ? 'One deterministic video variant' : 'Eight deterministic video variants';
   const players = Array.from(
     { length: count },
     (_, index) => `
     <div data-testid="videoPlayer" class="player" data-fixture-index="${index}">
       <div data-testid="previewInterstitial"><img tabindex="0" data-video-target="${index}"
-        src="${posterUrl(tweetId, index)}" alt="Video ${index + 1} preview" width="320" height="180"></div>
-      <video controls poster="${posterUrl(tweetId, index)}" width="320" height="180"></video>
+        src="${posterUrl(tweetId, index)}" alt="Video ${index + 1} preview" width="320" height="${height}"></div>
+      <video controls poster="${posterUrl(tweetId, index)}" width="320" height="${height}"></video>
     </div>`
   ).join('');
   return `<!doctype html><html lang="en"><head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Installed video loading fixture</title><style>
       body{margin:0;padding:20px;background:#000;color:#e7e9ea;font:16px Segoe UI,sans-serif}
-      #spacer{height:900px}.player{display:inline-block;position:relative;width:320px;height:180px;margin:8px}
-      .player img{display:block;width:320px;height:180px}.player video{display:none}
+      #spacer{height:900px}.player{display:inline-block;position:relative;width:320px;height:${height}px;margin:8px}
+      .player img{display:block;width:320px;height:${height}px}.player video{display:none}
     </style></head><body style="--xeg-fixture-host-state: retained;"><div id="spacer" aria-hidden="true"></div><main>
     <article data-testid="tweet"><a href="/${handle}/status/${tweetId}"><time>Video fixture</time></a>
-    <div data-testid="tweetText">Eight deterministic video variants</div>${players}
+    <div data-testid="tweetText">${description}</div>${players}
     </article></main></body></html>`;
 }
 
-function apiResponse(tweetId: string, handle: string, count = VIDEO_COUNT) {
+function apiResponse(tweetId: string, handle: string, count = VIDEO_COUNT, height = 180) {
+  const description =
+    count === 1 ? 'One deterministic video variant' : 'Eight deterministic video variants';
   const media = Array.from({ length: count }, (_, index) => ({
     type: 'video',
     id_str: `${tweetId}${index}`,
     media_key: `7_${tweetId}${index}`,
     media_url_https: posterUrl(tweetId, index),
     expanded_url: `https://x.com/${handle}/status/${tweetId}/video/${index + 1}`,
-    original_info: { width: 320, height: 180 },
+    original_info: { width: 320, height },
     video_info: {
-      aspect_ratio: [16, 9],
+      aspect_ratio: height === 180 ? [16, 9] : [5, 3],
       variants: [
         { content_type: 'video/mp4', bitrate: 832000, url: videoUrl(tweetId, index) },
         ...(index === 0
@@ -416,7 +562,7 @@ function apiResponse(tweetId: string, handle: string, count = VIDEO_COUNT) {
           },
           legacy: {
             id_str: tweetId,
-            full_text: 'Eight deterministic video variants',
+            full_text: description,
             extended_entities: { media },
           },
         },
@@ -1136,10 +1282,62 @@ export async function runVideoLoadingProfile({
     } catch (error) {
       followupErrors.push(error);
     }
+    observation.metadataReadiness = {
+      status: 'pending',
+      fixtureUrl: `https://x.com/intentrecovery/status/${METADATA_READINESS_ID}`,
+      bestUrl: videoUrl(METADATA_READINESS_ID, 0),
+      assetSha256: 'd4ac575d4f6ce11458e61f948fab6becd37ae5530afc66db7141dcdde012e8a2',
+      prefixEnd: 32768,
+      api: [],
+      protocol: [],
+      transfer: [],
+      timing: {},
+      stateSamples: [],
+      frameDiagnostics: {
+        supported: null,
+        callbacks: [],
+        overflow: false,
+        snapshots: [],
+        errors: [],
+        cleanup: { mutationObserverDisconnected: false, frameCallbackCanceled: false },
+      },
+      mediaDiagnostics: {
+        players: [],
+        matchedPlayers: [],
+        records: [],
+        overflow: false,
+        enabled: false,
+      },
+      events: [],
+      screenshots: [],
+      pageErrors: [],
+      consoleErrors: [],
+      overflow: false,
+      cleanup: {
+        videoHoldReleased: false,
+        observerRemoved: false,
+        routeRemoved: false,
+        listenersRemoved: false,
+        protocolDetached: false,
+        pageClosed: false,
+        errors: [],
+      },
+    };
+    try {
+      await runMetadataReadinessCase({
+        context,
+        root,
+        output,
+        nativeLoopback,
+        evidence: observation.metadataReadiness,
+      });
+    } catch (error) {
+      followupErrors.push(error);
+    }
     if (followupErrors.length) {
       throw new AggregateError(
         followupErrors,
-        'Required video failure, admission, or recovery intent cases failed'
+        'Required video failure, admission, range abort, recovery intent, or metadata readiness cases failed'
       );
     }
   } catch (error) {
@@ -2720,6 +2918,1078 @@ async function runSelectedVideoFailureCases({
     evidence.errors = failures.map((error) => String(error).slice(0, 1000));
     throw new AggregateError(failures, 'Selected video failure validation or cleanup failed');
   }
+}
+
+/** A bounded real decode failure after playback; MP4 metadata and early samples stay valid. */
+export function assertMetadataSourceRequestSettlement(
+  protocol: MetadataReadinessEvidence['protocol'],
+  transfer: MetadataReadinessEvidence['transfer'],
+  assetBytes: number,
+  tailReleasedAtMs: number
+): NonNullable<MetadataReadinessEvidence['requestSettlement']> {
+  assert(Number.isSafeInteger(assetBytes) && assetBytes > 0);
+  assert(Number.isFinite(tailReleasedAtMs));
+  const requests = protocol.filter((event) => event.phase === 'request');
+  assert(requests.length >= 1 && requests.length <= 4, 'Expected 1 to 4 selected source requests');
+  assert.equal(new Set(requests.map((event) => event.requestId)).size, requests.length);
+  assert.equal(transfer.length, requests.length, 'Every request needs a bounded byte count');
+  assert.equal(new Set(transfer.map((record) => record.requestId)).size, transfer.length);
+  assert.equal(
+    protocol.length,
+    requests.length * 3,
+    'Each request needs one response and one terminal event'
+  );
+  let nextByte = 0;
+  let abortedIndex = -1;
+  let abortedAtMs: number | undefined;
+  let previousRequestAtMs = -Infinity;
+  let finishedCount = 0;
+  const settled: NonNullable<MetadataReadinessEvidence['requestSettlement']>['requests'] = [];
+  for (const [index, request] of requests.entries()) {
+    assert(request.atMs > previousRequestAtMs, 'Selected source requests are out of order');
+    previousRequestAtMs = request.atMs;
+    if (abortedAtMs !== undefined) {
+      assert(request.atMs > abortedAtMs, 'Continuation must follow the aborted request');
+    }
+    const events = protocol.filter((event) => event.requestId === request.requestId);
+    assert.equal(events.length, 3, 'Duplicate or missing request lifecycle event');
+    const responses = events.filter((event) => event.phase === 'response');
+    const terminals = events.filter(
+      (event) => event.phase === 'finished' || event.phase === 'failed'
+    );
+    assert.equal(responses.length, 1, 'Request needs exactly one response');
+    assert.equal(terminals.length, 1, 'Request needs exactly one terminal event');
+    const terminal = terminals[0]!;
+    assert(request.atMs <= responses[0]!.atMs && responses[0]!.atMs <= terminal.atMs);
+    const fullBody = requests.length === 1 && request.range == null && responses[0]?.status === 200;
+    if (!fullBody) {
+      assert.equal(responses[0]?.status, 206, 'Ranged source response must be partial content');
+    }
+    const range = fullBody
+      ? null
+      : /^bytes=(0|[1-9]\d*)-(?:(0|[1-9]\d*))?$/u.exec(request.range ?? '');
+    assert(fullBody || range, 'Selected source request needs an exact byte range');
+    const start = fullBody ? 0 : Number(range![1]);
+    const end = fullBody
+      ? assetBytes - 1
+      : range![2] === undefined
+        ? assetBytes - 1
+        : Number(range![2]);
+    assert(Number.isSafeInteger(start) && Number.isSafeInteger(end));
+    assert(
+      start === nextByte && end >= start && end < assetBytes,
+      'Range has a hole or exceeds the asset'
+    );
+    const received = transfer.find((record) => record.requestId === request.requestId);
+    assert(received && Number.isSafeInteger(received.dataBytes));
+    assert(received.chunks > 0 && received.dataBytes > 0);
+    assert(received.dataBytes <= end - start + 1, 'Request received beyond its range');
+    if (terminal.phase === 'failed') {
+      assert.equal(terminal.errorText, 'net::ERR_ABORTED', 'Unexpected source request failure');
+      assert.equal(terminal.blockedReason, undefined);
+      assert(terminal.atMs >= tailReleasedAtMs, 'Source request aborted before tail release');
+      assert(abortedIndex === -1 && index < requests.length - 1, 'Abort needs one continuation');
+      assert(received.dataBytes < end - start + 1, 'Aborted request already covered its range');
+      abortedIndex = index;
+      abortedAtMs = terminal.atMs;
+    } else {
+      assert.equal(received.dataBytes, end - start + 1, 'Finished request has incomplete bytes');
+      finishedCount++;
+      if (abortedIndex !== -1) {
+        assert.equal(index, requests.length - 1, 'Abort continuation must be final');
+      }
+    }
+    nextByte += received.dataBytes;
+    settled.push({
+      requestId: request.requestId,
+      rangeStart: start,
+      receivedBytes: received.dataBytes,
+      terminal: terminal.phase === 'failed' ? 'aborted' : 'finished',
+    });
+  }
+  assert(finishedCount >= 1, 'At least one selected source request must finish');
+  assert.equal(nextByte, assetBytes, 'Selected source requests did not cover the asset');
+  if (abortedIndex !== -1) {
+    assert.equal(abortedIndex, requests.length - 2, 'Abort needs an immediate final continuation');
+  }
+  return { outcome: abortedIndex === -1 ? 'finished' : 'aborted-continued', requests: settled };
+}
+
+async function runMetadataReadinessCase({
+  context,
+  root,
+  output,
+  nativeLoopback,
+  evidence,
+}: {
+  context: BrowserContext;
+  root: string;
+  output: string;
+  nativeLoopback: NativeLoopback;
+  evidence: MetadataReadinessEvidence;
+}) {
+  const id = METADATA_READINESS_ID;
+  const bestPath = new URL(evidence.bestUrl).pathname;
+  const startedAtMs = performance.now();
+  const elapsedMs = () => performance.now() - startedAtMs;
+  let page: Page | undefined;
+  let protocol: CDPSession | undefined;
+  let routeArmed = false;
+  let nativeMark: number | undefined;
+  let primaryError: unknown;
+  let caughtPrimaryError = false;
+  let lastMetadataPoll: ItemState | null | undefined;
+  let captureFrameDiagnostics:
+    | ((phase: MetadataFrameSnapshot['phase']) => Promise<void>)
+    | undefined;
+  const boundedProtocol = (record: MetadataReadinessEvidence['protocol'][number]) => {
+    if (evidence.protocol.length >= 32) {
+      evidence.overflow = true;
+      return;
+    }
+    evidence.protocol.push(record);
+  };
+  const onPageError = (error: Error) => {
+    if (evidence.pageErrors.length >= 8) {
+      evidence.overflow = true;
+      return;
+    }
+    evidence.pageErrors.push(error.message.slice(0, 500));
+  };
+  const onConsole = (message: ConsoleMessage) => {
+    if (message.type() !== 'error') {
+      return;
+    }
+    if (evidence.consoleErrors.length >= 8) {
+      evidence.overflow = true;
+      return;
+    }
+    evidence.consoleErrors.push({
+      text: message.text().slice(0, 500),
+      location: message.location().url.slice(0, 500),
+    });
+  };
+  const routeHandler = async (route: Route) => {
+    const request = route.request();
+    const target = new URL(request.url());
+    if (request.isNavigationRequest() && request.url() === evidence.fixtureUrl) {
+      return route.continue();
+    }
+    if (target.hostname === 'x.com' && target.pathname.endsWith('/TweetResultByRestId')) {
+      let requestedId: unknown;
+      try {
+        requestedId = field(JSON.parse(target.searchParams.get('variables') ?? '{}'), 'tweetId');
+      } catch {
+        requestedId = undefined;
+      }
+      if (requestedId !== id || evidence.api.length >= 2) {
+        evidence.overflow = true;
+        return route.fulfill({ status: 503, body: '' });
+      }
+      evidence.api.push({ requestedId: id, status: 200 });
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(apiResponse(id, 'intentrecovery', 1, 192)),
+      });
+    }
+    if (
+      target.hostname === 'pbs.twimg.com' &&
+      target.pathname === `/ext_tw_video_thumb/${id}/pu/img/video-0.png`
+    ) {
+      return route.fulfill({ status: 200, contentType: 'image/png', body: POSTER_PNG });
+    }
+    if (target.hostname === 'video.twimg.com') {
+      if (request.url() !== evidence.bestUrl) {
+        evidence.overflow = true;
+        return route.fulfill({ status: 503, body: '' });
+      }
+      return route.continue();
+    }
+    return route.fallback();
+  };
+  try {
+    const bytes = await readFile(join(root, 'test/e2e/fixtures/installed-metadata-readiness.mp4'));
+    assert.equal(bytes.length, 117289, 'Metadata readiness VP9 asset size changed');
+    assert.equal(createHash('sha256').update(bytes).digest('hex'), evidence.assetSha256);
+    assert.equal(evidence.prefixEnd, 32768, 'The held response prefix boundary changed');
+    nativeLoopback.setRecoveryPayloads({ tweetId: id, validMp4: bytes, badMp4: bytes });
+    nativeLoopback.setRecoveryDocument({
+      tweetId: id,
+      html: fixtureHtml(id, 'intentrecovery', 1, 192),
+    });
+    nativeLoopback.armVideoHold(bestPath, evidence.prefixEnd);
+    nativeMark = nativeLoopback.mark();
+    const nativeBaseline = nativeLoopback.snapshot();
+    page = await context.newPage();
+    page.on('pageerror', onPageError);
+    page.on('console', onConsole);
+    await page.route('**/*', routeHandler);
+    routeArmed = true;
+    protocol = await context.newCDPSession(page);
+    const mediaPlayers = new Map<
+      string,
+      { matched: boolean; pending: MetadataReadinessEvidence['mediaDiagnostics']['records'] }
+    >();
+    let mediaRecordCount = 0;
+    const media = evidence.mediaDiagnostics;
+    const mediaPlayer = (value: unknown) => {
+      if (typeof value !== 'string' || value.length > 80) {
+        return undefined;
+      }
+      let player = mediaPlayers.get(value);
+      if (!player) {
+        if (mediaPlayers.size >= 2) {
+          media.overflow = true;
+          return undefined;
+        }
+        player = { matched: false, pending: [] };
+        mediaPlayers.set(value, player);
+        media.players.push(value);
+      }
+      return player;
+    };
+    const decodedMediaValue = (value: unknown): unknown => {
+      if (typeof value !== 'string') {
+        return undefined;
+      }
+      try {
+        return JSON.parse(value);
+      } catch {
+        return value;
+      }
+    };
+    const safeMediaScalar = (value: unknown) =>
+      (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') &&
+      String(value).length <= 80 &&
+      !String(value).includes('://')
+        ? String(value)
+        : undefined;
+    const mediaTracksSummary = (value: unknown) => {
+      const parts: string[] = [];
+      const walk = (node: unknown, depth: number) => {
+        if (depth > 3 || parts.length >= 8) {
+          return;
+        }
+        if (Array.isArray(node)) {
+          node.slice(0, 2).forEach((entry) => walk(entry, depth + 1));
+        } else if (isRecord(node)) {
+          for (const [key, entry] of Object.entries(node)) {
+            if (parts.length >= 8) {
+              break;
+            }
+            if (/^(codec|codecName|profile|width|height|codedSize|naturalSize)$/iu.test(key)) {
+              const scalar = safeMediaScalar(entry);
+              if (scalar) {
+                parts.push(`${key}=${scalar}`);
+              }
+            } else if (Array.isArray(entry) || isRecord(entry)) {
+              walk(entry, depth + 1);
+            }
+          }
+        }
+      };
+      walk(value, 0);
+      return parts.length ? parts.join(',').slice(0, 200) : undefined;
+    };
+    const recordMedia = (playerId: unknown, name: string, value: string) => {
+      const player = mediaPlayer(playerId);
+      if (!player) {
+        return;
+      }
+      if (mediaRecordCount >= 64) {
+        media.overflow = true;
+        return;
+      }
+      mediaRecordCount++;
+      const record = { playerId: playerId as string, atMs: elapsedMs(), name, value };
+      if (player.matched) {
+        media.records.push(record);
+      } else {
+        player.pending.push(record);
+      }
+    };
+    const matchMediaPlayer = (playerId: unknown) => {
+      const player = mediaPlayer(playerId);
+      if (!player || player.matched) {
+        return;
+      }
+      player.matched = true;
+      media.matchedPlayers.push(playerId as string);
+      media.records.push(...player.pending);
+      player.pending.length = 0;
+    };
+    protocol.on('Media.playerPropertiesChanged', (event: unknown) => {
+      const playerId = field(event, 'playerId');
+      const properties = field(event, 'properties');
+      if (!Array.isArray(properties)) {
+        return;
+      }
+      for (const property of properties.slice(0, 32)) {
+        const name = field(property, 'name');
+        const value = decodedMediaValue(field(property, 'value'));
+        if (name === 'kVideoTracks') {
+          const summary = mediaTracksSummary(value);
+          if (summary) {
+            recordMedia(playerId, name, summary);
+          }
+        } else if (name === 'kResolution') {
+          const width = field(value, 'width');
+          const height = field(value, 'height');
+          if (typeof width === 'number' && typeof height === 'number') {
+            recordMedia(playerId, name, `${width}x${height}`);
+          }
+        } else if (
+          name === 'kVideoDecoderName' ||
+          name === 'kRendererName' ||
+          name === 'kIsPlatformVideoDecoder'
+        ) {
+          const scalar = safeMediaScalar(value);
+          if (scalar) {
+            recordMedia(playerId, name, scalar);
+          }
+        }
+      }
+      if (properties.length > 32) {
+        media.overflow = true;
+      }
+    });
+    protocol.on('Media.playerEventsAdded', (event: unknown) => {
+      const playerId = field(event, 'playerId');
+      const events = field(event, 'events');
+      if (!Array.isArray(events)) {
+        return;
+      }
+      for (const playerEvent of events.slice(0, 32)) {
+        const type = field(playerEvent, 'type');
+        const value = decodedMediaValue(field(playerEvent, 'value'));
+        // kFrameUrl identifies the document; kLoad identifies this exact video resource.
+        if (
+          type === 'kLoad' &&
+          (value === evidence.bestUrl || field(value, 'url') === evidence.bestUrl)
+        ) {
+          matchMediaPlayer(playerId);
+        } else if (type === 'kPipelineStateChange') {
+          const state = safeMediaScalar(field(value, 'pipeline_state'));
+          if (state) {
+            recordMedia(playerId, type, state);
+          }
+        } else if (type === 'kVideoSizeChanged') {
+          const dimensions = field(value, 'dimensions');
+          const width = field(dimensions, 'width');
+          const height = field(dimensions, 'height');
+          if (typeof width === 'number' && typeof height === 'number') {
+            recordMedia(playerId, type, `${width}x${height}`);
+          }
+        }
+      }
+      if (events.length > 32) {
+        media.overflow = true;
+      }
+    });
+    await protocol.send('Media.enable').then(
+      () => {
+        media.enabled = true;
+      },
+      (error) => {
+        media.error = String(error).slice(0, 300);
+      }
+    );
+    const sourceRequestIds = new Set<string>();
+    protocol.on('Network.requestWillBeSent', (event) => {
+      if (event.request.url !== evidence.bestUrl) {
+        return;
+      }
+      if (sourceRequestIds.size >= 8 && !sourceRequestIds.has(event.requestId)) {
+        evidence.overflow = true;
+        return;
+      }
+      sourceRequestIds.add(event.requestId);
+      boundedProtocol({
+        requestId: event.requestId,
+        phase: 'request',
+        atMs: elapsedMs(),
+        range: event.request.headers.Range ?? event.request.headers.range ?? null,
+      });
+    });
+    protocol.on('Network.responseReceived', (event) => {
+      if (sourceRequestIds.has(event.requestId)) {
+        boundedProtocol({
+          requestId: event.requestId,
+          phase: 'response',
+          atMs: elapsedMs(),
+          status: event.response.status,
+        });
+      }
+    });
+    protocol.on('Network.dataReceived', (event) => {
+      if (!sourceRequestIds.has(event.requestId)) {
+        return;
+      }
+      const atMs = elapsedMs();
+      let transfer = evidence.transfer.find((record) => record.requestId === event.requestId);
+      if (!transfer) {
+        if (evidence.transfer.length >= 8) {
+          evidence.overflow = true;
+          return;
+        }
+        transfer = {
+          requestId: event.requestId,
+          chunks: 0,
+          dataBytes: 0,
+          encodedBytes: 0,
+          firstAtMs: atMs,
+          lastAtMs: atMs,
+        };
+        evidence.transfer.push(transfer);
+      }
+      transfer.chunks++;
+      transfer.dataBytes += event.dataLength;
+      transfer.encodedBytes += event.encodedDataLength;
+      transfer.lastAtMs = atMs;
+    });
+    protocol.on('Network.loadingFinished', (event) => {
+      if (sourceRequestIds.has(event.requestId)) {
+        boundedProtocol({ requestId: event.requestId, phase: 'finished', atMs: elapsedMs() });
+      }
+    });
+    protocol.on('Network.loadingFailed', (event) => {
+      if (sourceRequestIds.has(event.requestId)) {
+        boundedProtocol({
+          requestId: event.requestId,
+          phase: 'failed',
+          atMs: elapsedMs(),
+          errorText: event.errorText.slice(0, 200),
+          ...(event.blockedReason ? { blockedReason: event.blockedReason } : {}),
+        });
+      }
+    });
+    await protocol.send('Network.enable');
+    await page.goto(evidence.fixtureUrl);
+    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+    const documentBefore = await page.evaluate(() => ({
+      url: location.href,
+      timeOrigin: performance.timeOrigin,
+    }));
+    const permissionBefore = await page.evaluate(
+      async () => (await navigator.permissions.query({ name: 'loopback-network' })).state
+    );
+    evidence.permission = { before: permissionBefore };
+    await page.evaluate(() => {
+      let watchedVideo: HTMLVideoElement | undefined;
+      let pendingFrameCallback: number | null = null;
+      let disposed = false;
+      const state: MetadataReadinessObserver = {
+        records: [],
+        overflow: false,
+        frames: [],
+        frameOverflow: false,
+        frameSupported: null,
+        dispose: () => {
+          disposed = true;
+          for (const type of ['loadedmetadata', 'loadeddata', 'error']) {
+            document.removeEventListener(type, onMediaEvent, true);
+          }
+          mutationObserver.disconnect();
+          let frameCallbackCanceled = pendingFrameCallback === null;
+          if (pendingFrameCallback !== null && watchedVideo) {
+            watchedVideo.cancelVideoFrameCallback(pendingFrameCallback);
+            pendingFrameCallback = null;
+            frameCallbackCanceled = true;
+          }
+          return {
+            mutationObserverDisconnected: true,
+            frameCallbackCanceled,
+          };
+        },
+      };
+      const onVideoFrame: VideoFrameRequestCallback = (_now, metadata) => {
+        pendingFrameCallback = null;
+        if (disposed) {
+          return;
+        }
+        if (state.frames.length >= 8) {
+          state.frameOverflow = true;
+          return;
+        }
+        state.frames.push({
+          atPageMonotonicMs: performance.now(),
+          presentedFrames: metadata.presentedFrames,
+          mediaTime: metadata.mediaTime,
+          width: metadata.width,
+          height: metadata.height,
+        });
+        if (state.frames.length < 8 && watchedVideo) {
+          pendingFrameCallback = watchedVideo.requestVideoFrameCallback(onVideoFrame);
+        } else if (state.frames.length >= 8) {
+          state.frameOverflow = true;
+        }
+      };
+      const watchVideo = () => {
+        if (watchedVideo || disposed) {
+          return;
+        }
+        const video = document.querySelector<HTMLVideoElement>(
+          '[data-gallery-element="item"][data-index="0"] video'
+        );
+        if (!video) {
+          return;
+        }
+        watchedVideo = video;
+        state.frameSupported = typeof video.requestVideoFrameCallback === 'function';
+        if (state.frameSupported) {
+          pendingFrameCallback = video.requestVideoFrameCallback(onVideoFrame);
+        }
+      };
+      const mutationObserver = new MutationObserver(watchVideo);
+      mutationObserver.observe(document.documentElement, { childList: true, subtree: true });
+      watchVideo();
+      const onMediaEvent = (event: Event) => {
+        const video = event.target;
+        if (
+          !(video instanceof HTMLVideoElement) ||
+          !video.closest('[data-gallery-element="item"][data-index="0"]')
+        ) {
+          return;
+        }
+        if (state.records.length >= 32) {
+          state.overflow = true;
+          return;
+        }
+        state.records.push({
+          type: event.type as MetadataReadinessEvent['type'],
+          trusted: event.isTrusted,
+          atPageMonotonicMs: performance.now(),
+          currentSrc: video.currentSrc,
+          readyState: video.readyState,
+          errorCode: video.error?.code ?? null,
+        });
+      };
+      for (const type of ['loadedmetadata', 'loadeddata', 'error']) {
+        document.addEventListener(type, onMediaEvent, true);
+      }
+      window.__xegMetadataReadinessObservation = state;
+    });
+    captureFrameDiagnostics = async (phase: MetadataFrameSnapshot['phase']) => {
+      if (!page || page.isClosed() || evidence.frameDiagnostics.snapshots.length >= 8) {
+        return;
+      }
+      try {
+        const snapshot = await page.evaluate(
+          ({ expectedVideoUrl, expectedPoster }) => {
+            const frames = window.__xegMetadataReadinessObservation?.frames ?? [];
+            const video = document.querySelector<HTMLVideoElement>(
+              '[data-gallery-element="item"][data-index="0"] video'
+            );
+            if (!video) {
+              return {
+                callbackCount: frames.length,
+                lastCallback: frames.at(-1) ?? null,
+                video: null,
+              };
+            }
+            const style = getComputedStyle(video);
+            const parentStyle = video.parentElement ? getComputedStyle(video.parentElement) : null;
+            const rect = video.getBoundingClientRect();
+            const quality = video.getVideoPlaybackQuality?.();
+            const decoded = (video as HTMLVideoElement & { webkitDecodedFrameCount?: number })
+              .webkitDecodedFrameCount;
+            return {
+              callbackCount: frames.length,
+              lastCallback: frames.at(-1) ?? null,
+              video: {
+                currentSrcMatches: video.currentSrc === expectedVideoUrl,
+                posterPresent: Boolean(video.poster),
+                posterMatches: video.poster === expectedPoster,
+                controls: video.controls,
+                display: style.display,
+                visibility: style.visibility,
+                opacity: style.opacity,
+                objectFit: style.objectFit,
+                parentDisplay: parentStyle?.display ?? null,
+                parentVisibility: parentStyle?.visibility ?? null,
+                parentOpacity: parentStyle?.opacity ?? null,
+                width: video.videoWidth,
+                height: video.videoHeight,
+                rect: { width: rect.width, height: rect.height },
+                ...(quality
+                  ? {
+                      quality: {
+                        totalVideoFrames: quality.totalVideoFrames,
+                        droppedVideoFrames: quality.droppedVideoFrames,
+                        corruptedVideoFrames: quality.corruptedVideoFrames,
+                      },
+                    }
+                  : {}),
+                ...(typeof decoded === 'number' ? { webkitDecodedFrameCount: decoded } : {}),
+              },
+            };
+          },
+          { expectedVideoUrl: evidence.bestUrl, expectedPoster: posterUrl(id, 0) }
+        );
+        evidence.frameDiagnostics.snapshots.push({ phase, atMs: elapsedMs(), ...snapshot });
+      } catch (error) {
+        if (evidence.frameDiagnostics.errors.length < 8) {
+          evidence.frameDiagnostics.errors.push(String(error).slice(0, 300));
+        }
+      }
+    };
+    const trigger = page.locator('[data-video-target="0"]');
+    await trigger.scrollIntoViewIfNeeded();
+    await trigger.focus();
+    const beforeHost = await page.evaluate(() => ({
+      scrollY,
+      bodyStyle: document.body.getAttribute('style'),
+      activeTarget: document.activeElement?.getAttribute('data-video-target') ?? null,
+    }));
+    assert.equal(beforeHost.activeTarget, '0');
+    await trigger.click();
+    const gallery = page.locator('[data-xeg-gallery-container]');
+    await gallery.waitFor({ state: 'visible' });
+    const stateWhen = (
+      predicate: (state: ItemState) => boolean,
+      description: string,
+      sampleMetadata = false
+    ) =>
+      waitForValue(
+        async () => {
+          const state = await itemState(page!, 0);
+          if (sampleMetadata) {
+            lastMetadataPoll = state;
+            if (evidence.stateSamples.length === 0) {
+              evidence.stateSamples.push({ phase: 'first-poll', atMs: elapsedMs(), state });
+              await captureFrameDiagnostics?.('first-poll');
+            }
+          }
+          return state && predicate(state) ? state : undefined;
+        },
+        description,
+        15_000
+      );
+    const metadataBefore = await stateWhen(
+      (state) =>
+        state.currentIndex === 0 &&
+        state.focusedIndex === 0 &&
+        state.src === evidence.bestUrl &&
+        state.currentSrc === evidence.bestUrl &&
+        state.displayUrl === evidence.bestUrl &&
+        state.metadata === 'true' &&
+        state.firstFrame === 'false' &&
+        state.readyState === 1 &&
+        state.videoWidth === 320 &&
+        state.videoHeight === 192 &&
+        state.error === null &&
+        state.paused &&
+        state.currentTime <= 0.05,
+      'selected metadata without a decoded frame',
+      true
+    );
+    const metadataStartedAt = performance.now();
+    await page.waitForTimeout(700);
+    const metadataAfter = await itemState(page, 0);
+    await captureFrameDiagnostics('stable-hold');
+    assert(metadataAfter);
+    for (const state of [metadataBefore, metadataAfter]) {
+      assert.equal(state.readyState, 1);
+      assert.equal(state.firstFrame, 'false');
+      assert.equal(state.error, null);
+      assert.equal(state.paused, true);
+      assert(state.currentTime <= 0.05);
+      assert.equal(state.currentSrc, evidence.bestUrl);
+      assert.equal(state.videoWidth, 320);
+      assert.equal(state.videoHeight, 192);
+    }
+    evidence.metadata = {
+      before: metadataBefore,
+      after: metadataAfter,
+      observationMs: performance.now() - metadataStartedAt,
+    };
+    assert(nativeLoopback.videoHeld(), 'The native video tail must still be held');
+    evidence.nativeBeforeRelease = nativeLoopback.since(nativeMark);
+    const held = evidence.nativeBeforeRelease.find(
+      (event) =>
+        event.host === 'video.twimg.com' && event.path === bestPath && event.result === 'video-held'
+    );
+    assert(held, 'No exact native held video request reached the loopback');
+    assert.equal(held.prefixBytesQueued, evidence.prefixEnd);
+    assert([200, 206].includes(held.status));
+    assert.equal(held.finishedAtMs, undefined);
+    const eventsBefore = await page.evaluate(() => {
+      const state = window.__xegMetadataReadinessObservation;
+      return state ? { records: state.records, overflow: state.overflow } : null;
+    });
+    assert(eventsBefore && !eventsBefore.overflow);
+    assert(
+      eventsBefore.records.some(
+        (event) =>
+          event.type === 'loadedmetadata' && event.trusted && event.currentSrc === evidence.bestUrl
+      ),
+      'A native selected loadedmetadata event was not observed'
+    );
+    assert(
+      eventsBefore.records.every((event) => event.type !== 'loadeddata' && event.type !== 'error'),
+      'A first frame or media error arrived before the held tail was released'
+    );
+    assert(
+      evidence.protocol.some((event) => event.phase === 'request') &&
+        evidence.protocol.some(
+          (event) => event.phase === 'response' && [200, 206].includes(event.status ?? 0)
+        ),
+      'The source request and response headers were not observed through CDP'
+    );
+    const metadataScreenshot = 'src03-metadata-only.png';
+    await page.screenshot({ path: join(output, metadataScreenshot) });
+    evidence.screenshots.push(metadataScreenshot);
+    await captureFrameDiagnostics('pre-tail-release');
+    const beforeTailFrame = evidence.frameDiagnostics.snapshots.at(-1);
+    assert.equal(beforeTailFrame?.phase, 'pre-tail-release');
+    assert.equal(beforeTailFrame.callbackCount, 0, 'A frame was presented before tail release');
+    assert.equal(beforeTailFrame.video?.quality?.totalVideoFrames, 0);
+    assert.equal(beforeTailFrame.video?.webkitDecodedFrameCount ?? 0, 0);
+    nativeLoopback.completeVideoHold();
+    evidence.timing.tailReleasedAtMs = elapsedMs();
+    const frameBefore = await stateWhen(
+      (state) =>
+        state.src === evidence.bestUrl &&
+        state.currentSrc === evidence.bestUrl &&
+        state.firstFrame === 'true' &&
+        state.readyState >= 2 &&
+        state.videoWidth === 320 &&
+        state.videoHeight === 192 &&
+        state.error === null &&
+        state.paused &&
+        state.currentTime <= 0.05,
+      'first native frame while the fresh video remains paused'
+    );
+    const frameStartedAt = performance.now();
+    await page.waitForTimeout(700);
+    const frameAfter = await itemState(page, 0);
+    await captureFrameDiagnostics('after-tail');
+    const afterTailFrame = evidence.frameDiagnostics.snapshots.at(-1);
+    assert.equal(afterTailFrame?.phase, 'after-tail');
+    assert(afterTailFrame.callbackCount >= 1, 'No frame callback followed tail release');
+    assert((afterTailFrame.video?.quality?.totalVideoFrames ?? 0) >= 1);
+    if (afterTailFrame.video?.webkitDecodedFrameCount !== undefined) {
+      assert(afterTailFrame.video.webkitDecodedFrameCount >= 1);
+    }
+    assert.equal(afterTailFrame.lastCallback?.width, 320);
+    assert.equal(afterTailFrame.lastCallback?.height, 192);
+    assert(frameAfter);
+    for (const state of [frameBefore, frameAfter]) {
+      assert.equal(state.src, evidence.bestUrl);
+      assert.equal(state.currentSrc, evidence.bestUrl);
+      assert.equal(state.firstFrame, 'true');
+      assert(state.readyState >= 2);
+      assert.equal(state.error, null);
+      assert.equal(state.paused, true);
+      assert(state.currentTime <= 0.05);
+    }
+    evidence.firstFrame = {
+      before: frameBefore,
+      after: frameAfter,
+      observationMs: performance.now() - frameStartedAt,
+    };
+    const eventsAfter = await page.evaluate(() => {
+      const state = window.__xegMetadataReadinessObservation;
+      return state ? { records: state.records, overflow: state.overflow } : null;
+    });
+    assert(
+      eventsAfter?.records.some(
+        (event) =>
+          event.type === 'loadeddata' && event.trusted && event.currentSrc === evidence.bestUrl
+      ),
+      'A native first-frame loadeddata event was not observed'
+    );
+    const frameScreenshot = 'src03-first-frame-paused.png';
+    await page.screenshot({ path: join(output, frameScreenshot) });
+    evidence.screenshots.push(frameScreenshot);
+    await gallery.locator('[data-gallery-element="item"][data-index="0"] video').click();
+    const playing = await stateWhen(
+      (state) =>
+        state.src === evidence.bestUrl &&
+        state.currentSrc === evidence.bestUrl &&
+        state.error === null &&
+        !state.paused &&
+        state.currentTime > frameAfter.currentTime + 0.15,
+      'ordinary Play to advance the selected preferred video'
+    );
+    await captureFrameDiagnostics('play');
+    evidence.playback = { before: frameAfter, after: playing };
+    const playingScreenshot = 'src03-playing.png';
+    await page.screenshot({ path: join(output, playingScreenshot) });
+    evidence.screenshots.push(playingScreenshot);
+    await page.keyboard.press('Escape');
+    await gallery.waitFor({ state: 'detached' });
+    const afterHost = await page.evaluate(() => ({
+      scrollY,
+      bodyStyle: document.body.getAttribute('style'),
+      activeTarget: document.activeElement?.getAttribute('data-video-target') ?? null,
+    }));
+    evidence.host = { before: beforeHost, after: afterHost };
+    assert.deepEqual(afterHost, beforeHost, 'SRC-03 close did not restore the host state');
+    const documentAfter = await page.evaluate(() => ({
+      url: location.href,
+      timeOrigin: performance.timeOrigin,
+    }));
+    assert.deepEqual(documentAfter, documentBefore, 'SRC-03 left its original document');
+    evidence.permission.after = await page.evaluate(
+      async () => (await navigator.permissions.query({ name: 'loopback-network' })).state
+    );
+    assert.equal(evidence.permission.after, evidence.permission.before);
+    evidence.nativeAfterRelease = nativeLoopback.since(nativeMark);
+    const completed = evidence.nativeAfterRelease.find((event) => event.atMs === held.atMs);
+    assert(
+      completed && completed.result === 'served' && typeof completed.finishedAtMs === 'number'
+    );
+    const servedStart = completed.range?.start ?? 0;
+    const servedEnd = completed.range?.end ?? bytes.length - 1;
+    const servedSlice = bytes.subarray(servedStart, servedEnd + 1);
+    assert.equal(completed.bytes, servedSlice.length);
+    assert.equal(completed.sha256, createHash('sha256').update(servedSlice).digest('hex'));
+    assert(
+      evidence.nativeAfterRelease.some(
+        (event) =>
+          event.host === 'x.com' &&
+          event.path === new URL(evidence.fixtureUrl).pathname &&
+          event.result === 'served'
+      ),
+      'The requesting document was not served by the native HTTPS loopback'
+    );
+    evidence.requestSettlement = assertMetadataSourceRequestSettlement(
+      evidence.protocol,
+      evidence.transfer,
+      bytes.length,
+      evidence.timing.tailReleasedAtMs!
+    );
+    const nativeVideoTransfers = evidence.nativeAfterRelease.filter(
+      (event) => event.host === 'video.twimg.com' && event.path === bestPath
+    );
+    for (const event of nativeVideoTransfers) {
+      assert.equal(event.result, 'served', 'Native video transfer did not finish');
+      const start: number = event.range?.start ?? 0;
+      const end: number = event.range?.end ?? bytes.length - 1;
+      assert(start >= 0 && end >= start && end < bytes.length);
+      const slice = bytes.subarray(start, end + 1);
+      assert.equal(event.bytes, slice.length);
+      assert.equal(event.sha256, createHash('sha256').update(slice).digest('hex'));
+    }
+    for (const request of evidence.requestSettlement.requests) {
+      assert(
+        nativeVideoTransfers.some((event) => (event.range?.start ?? 0) === request.rangeStart),
+        'Selected browser range lacks a matching native transfer'
+      );
+    }
+    assert.equal(evidence.api.length, 1);
+    assert.equal(evidence.overflow, false);
+    assert.deepEqual(evidence.pageErrors, []);
+    assert.deepEqual(evidence.consoleErrors, []);
+    const nativeAfter = nativeLoopback.snapshot();
+    assert.equal(nativeAfter.unexpectedCount, nativeBaseline.unexpectedCount);
+    assert.equal(nativeAfter.overflow, false);
+    evidence.status = 'passed';
+  } catch (error) {
+    caughtPrimaryError = true;
+    primaryError = error;
+    evidence.status = 'failed';
+    evidence.error = String(error).slice(0, 1000);
+    evidence.timing.failureAtMs = elapsedMs();
+    if (lastMetadataPoll !== undefined && evidence.stateSamples.length < 4) {
+      evidence.stateSamples.push({
+        phase: 'last-poll',
+        atMs: elapsedMs(),
+        state: lastMetadataPoll,
+      });
+    }
+    if (nativeMark !== undefined && evidence.nativeBeforeRelease === undefined) {
+      evidence.nativeBeforeRelease = nativeLoopback.since(nativeMark);
+    }
+    const heldBeforeRelease = nativeLoopback.videoHeld();
+    const probe: NonNullable<MetadataReadinessEvidence['failureProbe']> = {
+      heldBeforeRelease,
+      outcome: heldBeforeRelease ? 'unavailable' : 'not-held',
+      terminalObserved: false,
+    };
+    evidence.failureProbe = probe;
+    if (page && !page.isClosed()) {
+      try {
+        const state = await itemState(page, 0);
+        if (evidence.stateSamples.length < 4) {
+          evidence.stateSamples.push({ phase: 'on-failure', atMs: elapsedMs(), state });
+        }
+      } catch (sampleError) {
+        probe.error = `Failure state read: ${String(sampleError).slice(0, 500)}`;
+      }
+      await captureFrameDiagnostics?.('on-failure');
+    }
+    if (page && !page.isClosed() && evidence.screenshots.length < 2) {
+      const screenshot = 'src03-failure.png';
+      await page
+        .screenshot({ path: join(output, screenshot) })
+        .then(() => {
+          evidence.screenshots.push(screenshot);
+        })
+        .catch((screenshotError) => {
+          evidence.screenshotError = String(screenshotError).slice(0, 500);
+        });
+    }
+    if (heldBeforeRelease) {
+      try {
+        nativeLoopback.completeVideoHold();
+        evidence.timing.tailReleasedAtMs = elapsedMs();
+        if (page && !page.isClosed()) {
+          probe.outcome = 'no-metadata';
+          const deadline = Date.now() + 4_000;
+          let latestState: ItemState | null = null;
+          do {
+            latestState = await itemState(page, 0);
+            if (latestState?.currentSrc === evidence.bestUrl && latestState.readyState >= 1) {
+              probe.outcome = 'metadata';
+            }
+            probe.terminalObserved =
+              nativeMark !== undefined &&
+              nativeLoopback
+                .since(nativeMark)
+                .some(
+                  (event) =>
+                    event.host === 'video.twimg.com' &&
+                    event.path === bestPath &&
+                    ['served', 'aborted'].includes(event.result)
+                );
+            if (probe.outcome === 'metadata' && probe.terminalObserved) {
+              break;
+            }
+            await new Promise((resolve) => setTimeout(resolve, 50));
+          } while (Date.now() < deadline);
+          await page.waitForTimeout(700);
+          latestState = await itemState(page, 0);
+          await captureFrameDiagnostics?.('after-tail');
+          if (evidence.stateSamples.length < 4) {
+            evidence.stateSamples.push({
+              phase: 'after-tail',
+              atMs: elapsedMs(),
+              state: latestState,
+            });
+          }
+        }
+        if (nativeMark !== undefined) {
+          evidence.nativeAfterRelease = nativeLoopback.since(nativeMark);
+        }
+      } catch (probeError) {
+        probe.outcome = 'error';
+        probe.error = String(probeError).slice(0, 500);
+      }
+    }
+  } finally {
+    if (nativeMark !== undefined && evidence.nativeBeforeRelease === undefined) {
+      evidence.nativeBeforeRelease = nativeLoopback.since(nativeMark);
+    }
+    if (nativeLoopback.videoHeld()) {
+      evidence.timing.abortAtMs = elapsedMs();
+    }
+    nativeLoopback.abortVideoHold();
+    evidence.cleanup.videoHoldReleased = !nativeLoopback.videoHeld();
+    if (nativeMark !== undefined && evidence.nativeAfterRelease === undefined) {
+      evidence.nativeAfterRelease = nativeLoopback.since(nativeMark);
+    }
+    if (page && !page.isClosed()) {
+      try {
+        const observed = await page.evaluate(() => {
+          const state = window.__xegMetadataReadinessObservation;
+          const result = {
+            records: state?.records ?? [],
+            overflow: state?.overflow ?? false,
+            frames: state?.frames ?? [],
+            frameOverflow: state?.frameOverflow ?? false,
+            frameSupported: state?.frameSupported ?? null,
+            frameCleanup: state?.dispose() ?? {
+              mutationObserverDisconnected: false,
+              frameCallbackCanceled: false,
+            },
+          };
+          delete window.__xegMetadataReadinessObservation;
+          return result;
+        });
+        evidence.events = observed.records;
+        evidence.overflow ||= observed.overflow;
+        evidence.frameDiagnostics.callbacks = observed.frames;
+        evidence.frameDiagnostics.overflow = observed.frameOverflow;
+        evidence.frameDiagnostics.supported = observed.frameSupported;
+        evidence.frameDiagnostics.cleanup = observed.frameCleanup;
+        evidence.cleanup.observerRemoved = true;
+      } catch (error) {
+        evidence.cleanup.errors.push(String(error).slice(0, 500));
+      }
+    } else {
+      evidence.cleanup.observerRemoved = page === undefined;
+    }
+    if (page && routeArmed) {
+      await page
+        .unroute('**/*', routeHandler)
+        .then(() => {
+          evidence.cleanup.routeRemoved = true;
+        })
+        .catch((error) => {
+          evidence.cleanup.errors.push(String(error).slice(0, 500));
+        });
+    } else {
+      evidence.cleanup.routeRemoved = true;
+    }
+    if (page) {
+      page.off('pageerror', onPageError);
+      page.off('console', onConsole);
+      evidence.cleanup.listenersRemoved = true;
+    } else {
+      evidence.cleanup.listenersRemoved = true;
+    }
+    if (protocol) {
+      await protocol
+        .detach()
+        .then(() => {
+          evidence.cleanup.protocolDetached = true;
+        })
+        .catch((error) => {
+          evidence.cleanup.errors.push(String(error).slice(0, 500));
+        });
+    } else {
+      evidence.cleanup.protocolDetached = true;
+    }
+    if (page) {
+      await page
+        .close()
+        .then(() => {
+          evidence.cleanup.pageClosed = true;
+        })
+        .catch((error) => {
+          evidence.cleanup.errors.push(String(error).slice(0, 500));
+        });
+    } else {
+      evidence.cleanup.pageClosed = true;
+    }
+    if (evidence.cleanup.errors.length) {
+      evidence.status = 'failed';
+    }
+    if (evidence.overflow || evidence.pageErrors.length || evidence.consoleErrors.length) {
+      evidence.status = 'failed';
+      evidence.error ??= 'Late metadata readiness observations failed their bounded checks';
+    }
+    await writeFile(
+      join(output, 'video-metadata-readiness-observations.json'),
+      JSON.stringify(evidence, null, 2)
+    ).catch((error) => {
+      evidence.cleanup.errors.push(`Receipt write failed: ${String(error).slice(0, 500)}`);
+      evidence.status = 'failed';
+    });
+  }
+  if (evidence.cleanup.errors.length) {
+    throw new AggregateError(
+      caughtPrimaryError ? [primaryError, ...evidence.cleanup.errors] : evidence.cleanup.errors,
+      'Metadata readiness case cleanup failed'
+    );
+  }
+  if (caughtPrimaryError) {
+    throw primaryError;
+  }
+  assert.equal(evidence.status, 'passed', evidence.error ?? 'Metadata readiness case failed');
 }
 
 /** A bounded real decode failure after playback; MP4 metadata and early samples stay valid. */
