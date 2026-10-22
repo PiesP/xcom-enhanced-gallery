@@ -122,6 +122,7 @@ type LiveReadiness =
 type LiveCandidate = ReturnType<typeof inspectLiveCandidateDocument>;
 type GalleryObservation = {
   status: string;
+  hostTimeline?: Array<Awaited<ReturnType<typeof captureHostGeometry>>>;
   before?: HostSnapshot;
   after?: HostSnapshot;
   focusPrepared?: boolean;
@@ -818,12 +819,41 @@ async function hostSnapshot(page: Page): Promise<HostSnapshot> {
   });
 }
 
+async function captureHostGeometry(action: ElementHandle<SVGElement | HTMLElement>, phase: string) {
+  return action
+    .evaluate((element, phase) => {
+      const geometry = (target: Element | null) => {
+        if (!target) {
+          return null;
+        }
+        const bounds = target.getBoundingClientRect();
+        return { top: bounds.top, bottom: bounds.bottom, height: bounds.height };
+      };
+      return {
+        phase,
+        atMs: performance.now(),
+        timeOrigin: performance.timeOrigin,
+        scrollY: window.scrollY,
+        maxScrollY: Math.max(0, document.documentElement.scrollHeight - window.innerHeight),
+        viewportHeight: window.innerHeight,
+        documentHeight: document.documentElement.scrollHeight,
+        bodyHeight: document.body.getBoundingClientRect().height,
+        bodyPosition: document.body.style.position,
+        bodyTop: document.body.style.top,
+        action: geometry(element),
+        article: geometry(element.closest('article')),
+        galleryPresent: document.querySelector('[data-xeg-gallery-container]') !== null,
+      };
+    }, phase)
+    .catch(() => ({ phase, unavailable: true as const }));
+}
+
 async function waitForRestoredHostState(
   page: Page,
   actionHandle: JSHandle<Node | null>,
-  before: HostSnapshot
+  before: HostSnapshot,
+  deadline = Date.now() + 3_000
 ) {
-  const deadline = Date.now() + 3_000;
   let state: RestoredHostState;
   do {
     const after = await hostSnapshot(page);
@@ -3325,7 +3355,15 @@ async function observeOne(
     const focusPrepared = await actionHandle.evaluate(
       (element) => document.activeElement === element
     );
-    observation.gallery = { status: 'attempting', before, focusPrepared };
+    observation.gallery = { status: 'attempting', before, focusPrepared, hostTimeline: [] };
+    const recordHostGeometry = async (phase: string) => {
+      const timeline = observation.gallery.hostTimeline;
+      if (!timeline || timeline.length >= 8 || !actionHandle) {
+        throw new Error('Live host geometry observation exceeded its bounded action lifetime');
+      }
+      timeline.push(await captureHostGeometry(actionHandle, phase));
+    };
+    await recordHostGeometry('prepared');
     observation.screenshots.before = await captureScreenshot(
       page,
       output,
@@ -3369,9 +3407,11 @@ async function observeOne(
       throw new Error('Top media action identity changed before click');
     }
 
+    await recordHostGeometry('before-click');
     await actionHandle.click({ timeout: ACTION_TIMEOUT_MS });
     const gallery = page.locator('[data-xeg-gallery-container]');
     await gallery.waitFor({ state: 'visible', timeout: ACTION_TIMEOUT_MS });
+    await recordHostGeometry('opened');
     const selectedGalleryHandle = await page
       .waitForFunction(
         inspectSelectedGalleryDocument,
@@ -3399,12 +3439,25 @@ async function observeOne(
       `live-page-${index}-gallery.png`
     );
 
+    await recordHostGeometry('before-Escape');
     await page.keyboard.press('Escape');
     const detached = await gallery.waitFor({ state: 'detached', timeout: ACTION_TIMEOUT_MS }).then(
       () => true,
       () => false
     );
-    const restored = await waitForRestoredHostState(page, actionHandle, before);
+    const restorationDeadline = Date.now() + 3_000;
+    await recordHostGeometry('closed');
+    const restored = await waitForRestoredHostState(
+      page,
+      actionHandle,
+      before,
+      restorationDeadline
+    );
+    await recordHostGeometry('after-restoration-wait');
+    await page.waitForTimeout(50);
+    await recordHostGeometry('after-decision-50ms');
+    await page.waitForTimeout(200);
+    await recordHostGeometry('after-decision-250ms');
     const { after, focusRestored } = restored;
     observation.gallery = {
       ...observation.gallery,
