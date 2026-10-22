@@ -58,6 +58,7 @@ type VideoObservation = {
   viewport?: { width: number; height: number };
   initial?: ItemState | null;
   metadata?: ItemState | null;
+  metadataHold?: unknown;
   beforeRecovery?: ItemState | null;
   distantBeforeActivation?: number[];
   recovered?: ItemState & { playbackEnd: number; hint: string };
@@ -491,6 +492,7 @@ export async function runVideoLoadingProfile({
   const lowerGate = new Promise<void>((resolve) => {
     releaseLower = resolve;
   });
+  let lowerHoldArmed = false;
   let settingsBefore: StorageBefore | undefined;
   let settingsChanged = false;
   let primaryError: unknown;
@@ -569,6 +571,11 @@ export async function runVideoLoadingProfile({
       }
       if (quality === 'lower') {
         await lowerGate;
+        // Only this declared synthetic source uses the HTTPS streaming fixture. Page
+        // fulfillment cannot expose metadata while withholding the first media sample.
+        await route.continue();
+        record.status = (await request.response())?.status() ?? null;
+        return;
       }
       const payload = index === 0 && quality === 'best' ? BAD_MP4 : validMp4;
       const range = /^bytes=(\d+)-(\d*)$/u.exec(request.headers().range ?? '');
@@ -702,6 +709,26 @@ export async function runVideoLoadingProfile({
     observation.beforeRecovery = beforeRecovery;
     observation.checks.push('distant-video-urls-absent-with-preload-count-20');
 
+    let sawMoov = false;
+    let metadataPrefixEnd = 0;
+    for (let offset = 0; offset + 8 <= validMp4.length;) {
+      const size = validMp4.readUInt32BE(offset);
+      assert(size >= 8 && offset + size <= validMp4.length, 'Invalid bounded fixture atom');
+      const kind = validMp4.toString('ascii', offset + 4, offset + 8);
+      if (kind === 'moov') {
+        sawMoov = true;
+      }
+      if (kind === 'mdat') {
+        assert(sawMoov, 'Metadata-only fixture requires moov before media samples');
+        metadataPrefixEnd = offset + 8;
+        break;
+      }
+      offset += size;
+    }
+    assert(metadataPrefixEnd > 0 && metadataPrefixEnd < validMp4.length);
+    const lowerTransportMark = nativeLoopback.mark();
+    nativeLoopback.armVideoHold(new URL(lowerUrl).pathname, metadataPrefixEnd);
+    lowerHoldArmed = true;
     const lowerReleasedAtMs = performance.now();
     releaseLower();
     await page.waitForFunction(
@@ -726,7 +753,28 @@ export async function runVideoLoadingProfile({
     assert(observation.metadata);
     observation.timingsMs.metadataAfterLowerRelease = performance.now() - lowerReleasedAtMs;
     assert.equal(observation.metadata.controls, true);
+    assert.equal(observation.metadata.readyState, 1, 'Withheld samples must leave metadata only');
+    assert.notEqual(
+      observation.metadata.firstFrame,
+      'true',
+      'Metadata is not a decoded first frame'
+    );
+    assert.equal(
+      nativeLoopback.videoHeld(),
+      true,
+      'The native source must still withhold media samples'
+    );
+    const metadataTransport = nativeLoopback
+      .since(lowerTransportMark)
+      .filter(
+        ({ host, path }) => host === 'video.twimg.com' && path === new URL(lowerUrl).pathname
+      );
+    assert(metadataTransport.some(({ result }) => result === 'video-held'));
+    observation.metadataHold = { metadataPrefixEnd, events: metadataTransport };
     observation.checks.push('metadata-ready-with-native-controls');
+    observation.checks.push('metadata-ready-without-first-frame-while-samples-held');
+    nativeLoopback.completeVideoHold();
+    lowerHoldArmed = false;
     await page.waitForFunction(
       () => {
         const item = document.querySelector(
@@ -1031,6 +1079,9 @@ export async function runVideoLoadingProfile({
   } finally {
     releaseBest();
     releaseLower();
+    if (lowerHoldArmed) {
+      nativeLoopback.abortVideoHold();
+    }
     const cleanupFailures: unknown[] = [];
     try {
       await context.unroute('**/*', routeHandler);
