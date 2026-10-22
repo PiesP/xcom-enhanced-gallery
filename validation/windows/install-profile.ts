@@ -8544,7 +8544,7 @@ async function runDelayedVideoFailures({
               (targetSelector) => ({
                 focused: document.activeElement === document.querySelector(targetSelector),
                 scrollY,
-                bodyStyle: document.body.getAttribute('style'),
+                bodyStyle: document.body.style.cssText,
                 background: ['#host-layout-spacer', 'main'].map((item) => {
                   const node = document.querySelector(item);
                   return {
@@ -8556,12 +8556,12 @@ async function runDelayedVideoFailures({
               }),
               selector
             );
-          const photo = page.locator('[data-rapid="b"] [data-testid="tweetPhoto"] img');
+          const photoSelector = '[data-rapid="b"] [data-testid="tweetPhoto"] img';
+          const photo = page.locator(photoSelector);
           await photo.scrollIntoViewIfNeeded();
           await page.evaluate(() => window.scrollBy(0, -100));
-          const permalinkSelector = '[data-rapid="b"] > a[href*="/rapid_b/status/"]';
-          await page.locator(permalinkSelector).focus();
-          const photoBefore = await snapshot(permalinkSelector);
+          await photo.focus();
+          const photoBefore = await snapshot(photoSelector);
           assert(photoBefore.focused && photoBefore.scrollY > 0);
           const photoApiStart = fixtureRoutes.quotedApiResponses.length;
           const photoHit = await photo.evaluate((element) => {
@@ -8591,7 +8591,7 @@ async function runDelayedVideoFailures({
           );
           await page.keyboard.press('Escape');
           await photoGallery.waitFor({ state: 'detached' });
-          const photoAfter = await snapshot(permalinkSelector);
+          const photoAfter = await snapshot(photoSelector);
           assert.deepEqual(photoAfter, photoBefore, 'Photo close must restore host state');
           assert.equal(
             storedVideoClickMode((await readStoredVideoSettings(extensionPage)).settings),

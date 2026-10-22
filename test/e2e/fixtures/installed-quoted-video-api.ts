@@ -9,7 +9,7 @@ export const CREDIT_CONTROLS_CASE = {
   name: 'credit-controls',
   route: 'credit-controls',
   handle: 'outer_credit',
-  outer: '8777777777777777777',
+  outer: '8777777777777777779',
   owner: '9777777777777777778',
   username: 'quote_credit',
   media: 'quote-two',
