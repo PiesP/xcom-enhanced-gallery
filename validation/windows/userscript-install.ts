@@ -1137,9 +1137,11 @@ async function openManagerDomainBlacklist(page: Page, managerId: string, output:
   await page.getByText(labels.installedUserscripts, { exact: true }).first().click();
   const row = await requireInstalledManagerRow(page, output, 'security');
   await row.locator(MANAGER_SCRIPT_NAME_SELECTOR).click();
-  const settingsTab = page.locator('div[tvid="settings"]:visible').filter({
-    hasText: securityLabels.settings,
-  });
+  const settingsTab = page
+    .locator('div[tvid="settings"][name^="tabview_tab"]:not([name="tabview_tabmain"]):visible')
+    .filter({
+      hasText: securityLabels.settings,
+    });
   await settingsTab.waitFor({ state: 'visible' });
   assert.equal(await settingsTab.count(), 1, 'Expected one script-specific Settings tab');
   await settingsTab.click();
