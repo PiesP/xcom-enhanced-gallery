@@ -273,66 +273,84 @@ describe('GalleryApp media-click currentness', () => {
     }
   );
 
-  it('cancels a held extraction when the user closes, with no stale opening or feedback', async () => {
-    const pending = deferredResult();
-    state.extract.mockReturnValue(pending.promise);
-    const app = new GalleryApp({ destroy: vi.fn() } as never);
-    await app.initialize();
-    const click = state.handlers?.onMediaClick(
-      document.createElement('video'),
-      new MouseEvent('click')
-    );
-    app.close();
-    expect(state.extract.mock.calls[0]?.[1]?.signal.aborted).toBe(true);
-    pending.resolve(success('late'));
-    await click;
-    expect(state.openGallery).not.toHaveBeenCalled();
-    expect(state.notify).not.toHaveBeenCalled();
-    await app.cleanup();
-  });
+  describe.each(['close', 'beforeunload', 'url-change', 'cleanup'] as const)(
+    'held extraction invalidated by %s',
+    (invalidation) => {
+      it.each(['success', 'failure'] as const)(
+        'retires a late %s and accepts a fresh action',
+        async (lateOutcome) => {
+          const priorUrl = location.href;
+          const pending = deferredResult();
+          state.extract
+            .mockReturnValueOnce(pending.promise)
+            .mockResolvedValueOnce(success('fresh'));
+          const add = vi.spyOn(window, 'addEventListener');
+          const remove = vi.spyOn(window, 'removeEventListener');
+          let app = new GalleryApp({ destroy: vi.fn() } as never);
+          try {
+            await app.initialize();
+            const click = state.handlers?.onMediaClick(
+              document.createElement('video'),
+              new MouseEvent('click')
+            );
+            const signal = state.extract.mock.calls[0]?.[1]?.signal as AbortSignal;
+            const navigationListener = add.mock.calls.find(
+              ([type]) => type === 'beforeunload'
+            )?.[1];
+            expect(navigationListener).toBeTypeOf('function');
+            if (invalidation === 'close') {
+              app.close();
+            } else if (invalidation === 'beforeunload') {
+              window.dispatchEvent(new Event('beforeunload'));
+            } else if (invalidation === 'url-change') {
+              history.pushState({}, '', '/other/status/999');
+            } else {
+              await app.cleanup();
+            }
+            expect(signal.aborted).toBe(invalidation !== 'url-change');
+            if (lateOutcome === 'success') {
+              pending.resolve(success('stale'));
+            } else {
+              pending.reject(new Error('Retired extraction failed'));
+            }
+            await click;
+            expect(state.openGallery).not.toHaveBeenCalled();
+            expect(state.notify).not.toHaveBeenCalled();
+            expect(state.warn).not.toHaveBeenCalled();
+            expect(state.error).not.toHaveBeenCalled();
+            expect(remove).toHaveBeenCalledWith('beforeunload', navigationListener);
 
-  it('retires pending extraction at beforeunload before a transport rejection or pagehide', async () => {
-    const pending = deferredResult();
-    state.extract.mockReturnValue(pending.promise);
-    const app = new GalleryApp({ destroy: vi.fn() } as never);
-    await app.initialize();
-    try {
-      const click = state.handlers?.onMediaClick(
-        document.createElement('video'),
-        new MouseEvent('click')
+            if (invalidation === 'cleanup') {
+              app = new GalleryApp({ destroy: vi.fn() } as never);
+              await app.initialize();
+            }
+            await state.handlers?.onMediaClick(
+              document.createElement('img'),
+              new MouseEvent('click')
+            );
+            expect(state.extract).toHaveBeenCalledTimes(2);
+            expect(state.openGallery).toHaveBeenCalledExactlyOnceWith(
+              expect.arrayContaining([expect.objectContaining({ id: 'fresh' })]),
+              0
+            );
+            expect(document.documentElement.getAttribute('data-xeg-gallery-ready')).toBe('true');
+            const freshSignal = state.extract.mock.calls[1]?.[1]?.signal as AbortSignal;
+            expect(freshSignal.aborted).toBe(false);
+            window.dispatchEvent(new Event('beforeunload'));
+            expect(freshSignal.aborted).toBe(false);
+            expect(signal.aborted).toBe(invalidation !== 'url-change');
+            expect(state.notify).not.toHaveBeenCalled();
+            expect(state.error).not.toHaveBeenCalled();
+          } finally {
+            history.replaceState({}, '', priorUrl);
+            await app.cleanup();
+            add.mockRestore();
+            remove.mockRestore();
+          }
+        }
       );
-      window.dispatchEvent(new Event('beforeunload'));
-      pending.reject(new Error('Transport closed during navigation'));
-      await click;
-      expect(state.extract.mock.calls[0]?.[1]?.signal.aborted).toBe(true);
-      expect(state.notify).not.toHaveBeenCalled();
-      expect(state.openGallery).not.toHaveBeenCalled();
-    } finally {
-      await app.cleanup();
     }
-  });
-
-  it('ignores a result after the URL changes before navigation reconciliation', async () => {
-    const priorUrl = location.href;
-    const pending = deferredResult();
-    state.extract.mockReturnValue(pending.promise);
-    const app = new GalleryApp({ destroy: vi.fn() } as never);
-    await app.initialize();
-    try {
-      const click = state.handlers?.onMediaClick(
-        document.createElement('video'),
-        new MouseEvent('click')
-      );
-      history.pushState({}, '', '/other/status/999');
-      pending.resolve(success('old-page'));
-      await click;
-      expect(state.notify).not.toHaveBeenCalled();
-      expect(state.openGallery).not.toHaveBeenCalled();
-    } finally {
-      history.replaceState({}, '', priorUrl);
-      await app.cleanup();
-    }
-  });
+  );
 
   it('removes navigation cancellation after extraction settles', async () => {
     state.extract.mockResolvedValue(success('settled'));
@@ -387,22 +405,5 @@ describe('GalleryApp media-click currentness', () => {
     await app.cleanup();
     expect(remove).toHaveBeenCalledWith('keydown', expect.any(Function), true);
     video.remove();
-  });
-
-  it('ignores extraction completion after cleanup', async () => {
-    const pending = deferredResult();
-    state.extract.mockReturnValue(pending.promise);
-    const app = new GalleryApp({ destroy: vi.fn() } as never);
-    await app.initialize();
-    const click = state.handlers?.onMediaClick(
-      document.createElement('video'),
-      new MouseEvent('click')
-    );
-    await app.cleanup();
-    expect(state.extract.mock.calls[0]?.[1]?.signal.aborted).toBe(true);
-    pending.resolve(success('after-cleanup'));
-    await click;
-    expect(state.openGallery).not.toHaveBeenCalled();
-    expect(state.notify).not.toHaveBeenCalled();
   });
 });
