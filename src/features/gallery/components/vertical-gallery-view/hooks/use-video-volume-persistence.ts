@@ -57,6 +57,7 @@ export function useVideoVolumePersistence(
   const [isApplyingVideoSettings, setIsApplyingVideoSettings] = createSignal(false);
 
   const volumeChangeGuard = createVideoVolumeChangeGuard();
+  let disposed = false;
 
   // A no-op assignment emits no event, but its guard mark could hide a prompt user change.
   const applyMutedProgrammatically = (videoEl: HTMLVideoElement, muted: boolean) => {
@@ -120,12 +121,16 @@ export function useVideoVolumePersistence(
 
   // Cleanup debounced function on unmount
   onCleanup(() => {
+    disposed = true;
     debouncedSaveVolume.flush();
   });
 
   // Handle volume change events from video controls
   const handleVolumeChange: JSX.EventHandlerUnion<HTMLVideoElement, Event> = (event) => {
     const video = event.currentTarget as HTMLVideoElement;
+    if (disposed || video !== videoRef() || !isVideo()) {
+      return;
+    }
     const snapshot = { volume: video.volume, muted: video.muted };
 
     if (isApplyingVideoSettings() || volumeChangeGuard.shouldIgnoreChange(snapshot)) {
