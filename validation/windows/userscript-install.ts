@@ -3291,6 +3291,52 @@ async function runFixture(
     let managerDenialError: unknown;
     let managerDenialFailed = false;
     const managerDenialCleanupErrors: unknown[] = [];
+    const observeSelectedManagerImage = async (expectedName: 'large' | 'orig', label: string) => {
+      const selected = gallery.locator('[data-gallery-element="item"][data-index="1"] img');
+      await selected.waitFor({ state: 'visible' });
+      return waitFor(async () => {
+        const observation = await gallery.evaluate((root) => {
+          const toolbar = root.querySelector('[data-gallery-element="toolbar"]');
+          const counter = toolbar?.querySelector('#xeg-toolbar-counter');
+          const item = root.querySelector('[data-gallery-element="item"][data-index="1"]');
+          const image = item?.querySelector('img');
+          return {
+            currentIndex: toolbar?.getAttribute('data-current-index') ?? null,
+            focusedIndex: toolbar?.getAttribute('data-focused-index') ?? null,
+            counterPosition: counter?.getAttribute('data-position') ?? null,
+            counterTotal: counter?.getAttribute('data-total') ?? null,
+            counterFocusedIndex: counter?.getAttribute('data-focused-index') ?? null,
+            itemIndex: item?.getAttribute('data-index') ?? null,
+            mediaLoaded: item?.getAttribute('data-media-loaded') ?? null,
+            source: image instanceof HTMLImageElement ? image.currentSrc || image.src : null,
+            complete: image instanceof HTMLImageElement && image.complete,
+            width: image instanceof HTMLImageElement ? image.naturalWidth : 0,
+            height: image instanceof HTMLImageElement ? image.naturalHeight : 0,
+          };
+        });
+        if (
+          observation.currentIndex !== '1' ||
+          observation.focusedIndex !== '1' ||
+          observation.counterPosition !== '2' ||
+          observation.counterTotal !== '3' ||
+          observation.counterFocusedIndex !== '1' ||
+          observation.itemIndex !== '1' ||
+          observation.mediaLoaded !== 'true' ||
+          !observation.source ||
+          !observation.complete ||
+          observation.width <= 0 ||
+          observation.height <= 0
+        ) {
+          return undefined;
+        }
+        const source = new URL(observation.source);
+        return source.origin === 'https://pbs.twimg.com' &&
+          source.pathname === `/media/${MEDIA_COHORTS.normal[1]}.jpg` &&
+          source.searchParams.get('name') === expectedName
+          ? observation
+          : undefined;
+      }, label);
+    };
     try {
       securityPage = await context.newPage();
       const initial = await openManagerDomainBlacklist(securityPage, managerId, output);
@@ -3331,17 +3377,10 @@ async function runFixture(
       const middle = page.locator('[data-phase="normal"] [data-testid="tweetPhoto"] img').nth(1);
       await middle.click();
       await gallery.waitFor({ state: 'visible' });
-      const deniedImage = gallery.locator('[data-gallery-element="item"][data-index="1"] img');
-      await deniedImage.waitFor({ state: 'visible' });
-      const deniedSource = await waitFor(async () => {
-        const source = await deniedImage.getAttribute('src');
-        if (!source) {
-          return undefined;
-        }
-        const url = new URL(source);
-        return url.searchParams.get('name') === 'large' ? url : undefined;
-      }, 'manager-denied DOM image');
-      assert.equal(deniedSource.pathname, `/media/${MEDIA_COHORTS.normal[1]}.jpg`);
+      const deniedImage = await observeSelectedManagerImage(
+        'large',
+        'manager-denied decoded DOM image'
+      );
       assert.equal(
         await gallery.locator('[data-gallery-element="item"]').count(),
         3,
@@ -3368,7 +3407,8 @@ async function runFixture(
       );
       managerDenialReceipt.denied = {
         physicalApiRequests: deniedApiEvents.length,
-        selectedName: deniedSource.searchParams.get('name'),
+        selectedName: 'large',
+        selectedImage: deniedImage,
         visiblePhotoCount: 3,
         nativeHostClicks: 1,
       };
@@ -3388,16 +3428,10 @@ async function runFixture(
       const healthyStart = loopback.mark();
       await middle.click();
       await gallery.waitFor({ state: 'visible' });
-      const healthyImage = gallery.locator('[data-gallery-element="item"][data-index="1"] img');
-      const healthySource = await waitFor(async () => {
-        const source = await healthyImage.getAttribute('src');
-        if (!source) {
-          return undefined;
-        }
-        const url = new URL(source);
-        return url.searchParams.get('name') === 'orig' ? url : undefined;
-      }, 'manager-restored original image');
-      assert.equal(healthySource.pathname, `/media/${MEDIA_COHORTS.normal[1]}.jpg`);
+      const healthyImage = await observeSelectedManagerImage(
+        'orig',
+        'manager-restored decoded original image'
+      );
       const healthyApiEvents = await waitFor(() => {
         const events = loopback
           .snapshot()
@@ -3419,7 +3453,8 @@ async function runFixture(
       managerDenialReceipt.healthy = {
         firstClickPhysicalApiRequests: healthyApiEvents.length,
         responseStatus: 200,
-        selectedName: healthySource.searchParams.get('name'),
+        selectedName: 'orig',
+        selectedImage: healthyImage,
         nativeHostClicks: 2,
         freshReopenAndClose: true,
       };
