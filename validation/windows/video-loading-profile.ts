@@ -712,7 +712,7 @@ export async function runVideoLoadingProfile({
     let sawMoov = false;
     let metadataPrefixEnd = 0;
     for (let offset = 0; offset + 8 <= validMp4.length;) {
-      const size = validMp4.readUInt32BE(offset);
+      const size: number = validMp4.readUInt32BE(offset);
       assert(size >= 8 && offset + size <= validMp4.length, 'Invalid bounded fixture atom');
       const kind = validMp4.toString('ascii', offset + 4, offset + 8);
       if (kind === 'moov') {
