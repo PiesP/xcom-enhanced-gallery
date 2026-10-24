@@ -234,8 +234,8 @@ test('same-version attribution is absent by default and rejects changed identiti
           coreSha: '588dce5dce2a79c2ed926626b5c97824d63a5203',
           extension: {
             path: 'dist-extension',
-            inventorySha256: '99dd9b7abed6c9690f262edafbb6116cca746ed036ac707b799161b837dd0a82',
-            contentSha256: '0a433fdd5d0a536912dfe5709c596c8c24c26f117bc26431d9b511a5e9d1132c',
+            inventorySha256: 'c7c3e6140b7f37eff302950282464187bf1e1c2c39498ede074c67b835ad6afa',
+            contentSha256: 'cee3872d0a5d929d56909cb801c4680090ea39d641939610d59d0c6acd156b2e',
           },
         },
         /current bundle/u,
