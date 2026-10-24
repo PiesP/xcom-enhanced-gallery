@@ -182,6 +182,21 @@ export interface LanguageStrings {
     };
     /** Download messages */
     readonly dl: {
+      readonly bulkOutcome: {
+        readonly titleHandedOff: string;
+        readonly titleFailed: string;
+        readonly previous: string;
+        readonly scope: string;
+        readonly counts: string;
+        readonly browserHandoff: string;
+        readonly noZip: string;
+        readonly resourceLimit: string;
+        readonly sourceUnavailable: string;
+        readonly zipSaveFailed: string;
+        readonly other: string;
+        readonly nextAction: string;
+        readonly dismiss: string;
+      };
       /** Observable download lifecycle labels */
       readonly status: {
         /** The app is preparing or handing off a download */

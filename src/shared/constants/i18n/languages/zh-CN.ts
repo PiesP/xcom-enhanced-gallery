@@ -97,6 +97,22 @@ export const zhCn: LanguageStrings = {
       toggle: '？：显示此帮助',
     },
     dl: {
+      bulkOutcome: {
+        titleHandedOff: 'ZIP 已交给浏览器',
+        titleFailed: '未交付 ZIP',
+        previous: '上一次 ZIP 结果',
+        scope: '范围：此图库中显示的 {total} 个媒体项目。',
+        counts: 'ZIP 包含 {included} 个，遗漏 {omitted} 个。',
+        browserHandoff: '浏览器已接受 ZIP 下载请求；尚未确认已保存到磁盘。',
+        noZip: '没有 ZIP 交给浏览器。',
+        resourceLimit: '已达到下载内存上限。请等待正在进行的下载完成；若问题持续，请刷新页面。',
+        sourceUnavailable: '无法核实原始图片来源。请打开原帖重试该项目。',
+        zipSaveFailed: 'ZIP 已准备好，但浏览器未接受保存请求。',
+        other: '部分项目无法加入 ZIP。请重新打开图库后重试。',
+        nextAction:
+          '再次点击“下载全部”会为所有显示的项目创建新的 ZIP，包括已交付的项目。必要时请重新打开帖子，减少项目后重试。',
+        dismiss: '关闭 ZIP 结果',
+      },
       status: {
         working: '正在准备下载…',
         handedOff: '已交由浏览器处理',

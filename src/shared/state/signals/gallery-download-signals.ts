@@ -13,9 +13,20 @@
 import { createSignal } from 'solid-js';
 
 export type DownloadStatus = 'idle' | 'working' | 'handedOff' | 'error';
+export interface BulkDownloadOutcome {
+  /** The count refers to the media shown when Download all was requested. */
+  readonly total: number;
+  /** Files included in the ZIP accepted by the browser, never merely prepared. */
+  readonly included: number;
+  readonly omitted: number;
+  readonly handedOff: boolean;
+  readonly reason: 'none' | 'resourceLimit' | 'sourceUnavailable' | 'zipSaveFailed' | 'other';
+  readonly sourceUnavailable: boolean;
+}
 
 // Internal signal — exported for use by disposeGallerySignals.
 export const [_downloadStatus, _setDownloadStatus] = createSignal<DownloadStatus>('idle');
+const [bulkOutcome, setBulkOutcomeSignal] = createSignal<BulkDownloadOutcome | null>(null);
 
 export const downloadState = {
   get status(): DownloadStatus {
@@ -24,7 +35,14 @@ export const downloadState = {
   get isProcessing(): boolean {
     return _downloadStatus() === 'working';
   },
+  get bulkOutcome(): BulkDownloadOutcome | null {
+    return bulkOutcome();
+  },
 };
+
+export function setBulkDownloadOutcome(outcome: BulkDownloadOutcome | null): void {
+  setBulkOutcomeSignal(outcome);
+}
 
 /**
  * Records only lifecycle states observable at the gallery boundary. "handedOff"

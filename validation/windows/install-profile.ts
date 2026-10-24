@@ -534,6 +534,7 @@ async function captureRecoveryUi(page: Page, output: string, name: string) {
       }));
     const toolbar = gallery?.querySelector('[data-gallery-element="toolbar"]');
     const status = toolbar?.querySelector('[data-download-status]');
+    const bulkOutcome = gallery?.querySelector('[data-gallery-element="bulk-download-outcome"]');
     const counter = toolbar?.querySelector('#xeg-toolbar-counter');
     return {
       url: location.href,
@@ -551,6 +552,9 @@ async function captureRecoveryUi(page: Page, output: string, name: string) {
             visible: isVisible(status),
           }
         : null,
+      bulkOutcome: bulkOutcome
+        ? { text: (bulkOutcome.textContent ?? '').trim(), visible: isVisible(bulkOutcome) }
+        : null,
       liveRegions: texts('[aria-live]'),
       alerts: texts('[role="alert"]'),
       recoveryActions: texts('button, a[href]')
@@ -563,6 +567,34 @@ async function captureRecoveryUi(page: Page, output: string, name: string) {
   });
   await page.screenshot({ path: join(output, screenshot) });
   return { ...snapshot, screenshot };
+}
+
+async function assertVisibleBulkOutcome(
+  page: Page,
+  expected: { included: number; omitted: number; handedOff: boolean; reason?: string }
+): Promise<string> {
+  const panel = page.locator(
+    '[data-xeg-gallery-container] [data-gallery-element="bulk-download-outcome"]'
+  );
+  await panel.waitFor({ state: 'visible' });
+  const text = (await panel.textContent())?.trim() ?? '';
+  assert.match(text, /Scope: 3 media items shown in this gallery\./u);
+  assert.match(
+    text,
+    new RegExp(`ZIP includes ${expected.included}; left out ${expected.omitted}\\.`, 'u')
+  );
+  assert.match(text, expected.handedOff ? /ZIP handed off to browser/u : /No ZIP handed off/u);
+  assert.match(
+    text,
+    expected.handedOff
+      ? /The browser accepted the ZIP request/u
+      : /No ZIP was handed off to the browser/u
+  );
+  assert.match(text, /Download all starts a new ZIP/u);
+  if (expected.reason) {
+    assert.match(text, new RegExp(expected.reason, 'u'));
+  }
+  return text;
 }
 type SourceQualityEvidence = {
   status: string;
@@ -4554,27 +4586,14 @@ async function runDownloadMemoryCycle({
       String(evidence.policy.declaredBytes),
       'Browser did not observe the declared oversized Content-Length'
     );
-    await page.waitForFunction(
-      () => {
-        const root = document.querySelector('[data-xeg-gallery-container]');
-        const error = root?.querySelector('[aria-live="polite"][aria-atomic="true"]');
-        const text = error?.textContent?.toLowerCase() ?? '';
-        return (
-          text.includes('zip includes 2 files') &&
-          text.includes('1 files were left out') &&
-          text.includes('download memory limit') &&
-          text.includes('reload this page')
-        );
-      },
-      null,
-      { timeout: 15_000 }
-    );
-    const errorText =
-      (
-        await gallery.locator('[aria-live="polite"][aria-atomic="true"]').first().textContent()
-      )?.trim() ?? '';
+    const errorText = await assertVisibleBulkOutcome(page, {
+      included: 2,
+      omitted: 1,
+      handedOff: true,
+      reason: 'Download memory limit reached',
+    });
     assert(
-      errorText.length > 0 && errorText.length <= 512,
+      errorText.length > 0 && errorText.length <= 1_500,
       'Rejection must show a bounded, understandable error'
     );
     const partialName = `testuser_${TWEET_ID}.zip`;
@@ -4636,6 +4655,12 @@ async function runDownloadMemoryCycle({
     if (uiProbe) {
       await page.waitForTimeout(5_250);
       await bulkButton.focus();
+      await assertVisibleBulkOutcome(page, {
+        included: 2,
+        omitted: 1,
+        handedOff: true,
+        reason: 'Download memory limit reached',
+      });
       evidence.uiPartialAfterFiveSeconds = await captureRecoveryUi(
         page,
         output,
@@ -4787,6 +4812,7 @@ async function runDownloadMemoryCycle({
     });
     if (uiProbe) {
       await bulkButton.focus();
+      await assertVisibleBulkOutcome(page, { included: 3, omitted: 0, handedOff: true });
       evidence.uiHealthy = await captureRecoveryUi(page, output, 'memory-healthy');
     }
     assert.deepEqual(
@@ -12897,12 +12923,12 @@ async function runFullZipFailureProbe({
     await page.route(routePattern, denyVerifiedOriginal);
     routeInstalled = true;
     await zipButton.click();
-    await page.waitForFunction(
-      () =>
-        document
-          .querySelector('[data-xeg-gallery-container] [data-download-status]')
-          ?.getAttribute('data-download-status') === 'error'
-    );
+    await assertVisibleBulkOutcome(page, {
+      included: 0,
+      omitted: 3,
+      handedOff: false,
+      reason: 'An original image source could not be verified',
+    });
     await waitForValue(
       async () => ((await zipButton.isEnabled()) ? true : undefined),
       'full ZIP failure settled'
@@ -12919,6 +12945,7 @@ async function runFullZipFailureProbe({
     );
     await page.waitForTimeout(5_250);
     await zipButton.focus();
+    await assertVisibleBulkOutcome(page, { included: 0, omitted: 3, handedOff: false });
     observations.afterFiveSeconds = await captureRecoveryUi(
       page,
       output,
@@ -12953,6 +12980,7 @@ async function runFullZipFailureProbe({
       expectedStoredZipBytes(expectedEntries)
     );
     const verified = verifyStoredZip(bytes, expectedEntries);
+    await assertVisibleBulkOutcome(page, { included: 3, omitted: 0, handedOff: true });
     const file = 'recovery-full-failure-healthy.zip';
     await copyFile(healthy.filename, join(output, file));
     observations.healthy = {
@@ -13646,9 +13674,16 @@ async function runOriginalAvailabilityCycles({
           async () => ((await zipButton.isEnabled()) ? true : undefined),
           'partial ZIP settled'
         );
+        await assertVisibleBulkOutcome(page, {
+          included: 2,
+          omitted: 1,
+          handedOff: true,
+          reason: 'An original image source could not be verified',
+        });
         if (uiProbe) {
           await page.waitForTimeout(5_250);
           await zipButton.focus();
+          await assertVisibleBulkOutcome(page, { included: 2, omitted: 1, handedOff: true });
           receipt.ui = {
             partialAfterFiveSeconds: await captureRecoveryUi(
               page,
@@ -13723,6 +13758,7 @@ async function runOriginalAvailabilityCycles({
       };
       if (uiProbe) {
         await zipButton.focus();
+        await assertVisibleBulkOutcome(page, { included: 3, omitted: 0, handedOff: true });
         receipt.ui = {
           ...(receipt.ui as object),
           healthy: await captureRecoveryUi(page, output, `source-${status}-healthy`),

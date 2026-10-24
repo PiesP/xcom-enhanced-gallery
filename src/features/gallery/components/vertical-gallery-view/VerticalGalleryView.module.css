@@ -198,6 +198,7 @@
 /* Items container: scrollable column */
 .itemsContainer {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: auto;
@@ -223,6 +224,44 @@
      the top of the list. */
   -webkit-mask-image: linear-gradient(to bottom, black 95%, transparent 100%);
   mask-image: linear-gradient(to bottom, black 95%, transparent 100%);
+}
+
+.bulkOutcome {
+  flex: none;
+  max-height: 40vh;
+  overflow: auto;
+  padding: var(--xeg-spacing-sm) var(--xeg-spacing-gallery);
+  color: var(--xeg-color-text-primary);
+  background: var(--xeg-gallery-bg);
+  border-block-start: 1px solid var(--xeg-color-neutral-300);
+  font-size: var(--xeg-font-size-sm);
+  line-height: 1.45;
+}
+
+.bulkOutcome p {
+  margin: var(--xeg-spacing-xs) 0 0;
+}
+
+.bulkOutcomeHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--xeg-spacing-md);
+}
+
+.bulkOutcomeHeading button {
+  min-height: 44px;
+  padding-inline: var(--xeg-spacing-sm);
+  color: inherit;
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: var(--xeg-radius-sm);
+  cursor: pointer;
+}
+
+.bulkOutcomeHeading button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
 }
 /* Custom scrollbar styling (WebKit browsers only) */
 .itemsContainer::-webkit-scrollbar {
