@@ -49,6 +49,7 @@ export async function runSettingsPersistenceFixture({
   browserVersion,
   runtimeErrors,
   installGMMock,
+  installMediaFixture,
   script,
 }: {
   page: Page;
@@ -56,6 +57,7 @@ export async function runSettingsPersistenceFixture({
   browserVersion: string;
   runtimeErrors: Array<{ source: string; message: string }>;
   installGMMock: (page: Page, options: { persistentStorage: boolean }) => Promise<void>;
+  installMediaFixture: () => Promise<void>;
   script: string;
 }): Promise<Record<string, unknown>> {
   const evidence: Record<string, unknown> = {
@@ -85,9 +87,17 @@ export async function runSettingsPersistenceFixture({
     await theme.selectOption('dark');
     await unsaved.waitFor({ state: 'visible', timeout: 5_000 });
     assert.equal(await gallery.getAttribute('data-theme'), 'dark');
+    const banner = await unsaved.boundingBox();
+    const panelBounds = await panel.boundingBox();
+    assert(banner && panelBounds, 'Unsaved feedback must have visible geometry');
+    assert(
+      banner.y >= panelBounds.y && banner.y + banner.height <= panelBounds.y + panelBounds.height,
+      'Unsaved feedback must appear within the visible settings panel'
+    );
     evidence.denied = {
       sessionTheme: await gallery.getAttribute('data-theme'),
       unsavedVisible: await unsaved.isVisible(),
+      feedbackInsidePanel: true,
       persistedTheme: await page.evaluate(() => {
         const raw = (window as StorageHost).GM_getValue?.<string>('xeg-app-settings');
         if (typeof raw !== 'string') {
@@ -127,12 +137,27 @@ export async function runSettingsPersistenceFixture({
     evidence.retry = { persistedTheme: persisted, unsavedVisible: false };
     await page.reload({ waitUntil: 'domcontentloaded' });
     await installGMMock(page, { persistentStorage: true });
+    await installMediaFixture();
     await page.addScriptTag({ content: script });
     await page.waitForFunction(
       () => document.documentElement.getAttribute('data-xeg-gallery-ready') === 'true',
       undefined,
       { timeout: 15_000 }
     );
+    await page.waitForFunction(
+      () => {
+        const image = document.querySelector('[data-testid="tweetPhoto"] img');
+        return image instanceof HTMLImageElement && image.complete && image.naturalWidth > 1;
+      },
+      undefined,
+      { timeout: 10_000 }
+    );
+    evidence.reloadBeforeClick = {
+      url: page.url(),
+      ready: true,
+      firstImageLoaded: true,
+      mediaFixtureReinstalled: true,
+    };
     await page.locator('[data-testid="tweetPhoto"] img').first().click();
     const reloadedGallery = page.locator('[data-xeg-gallery-container]');
     await reloadedGallery.waitFor({ state: 'visible', timeout: 15_000 });
@@ -143,6 +168,21 @@ export async function runSettingsPersistenceFixture({
     return evidence;
   } catch (error) {
     evidence.error = error instanceof Error ? error.message : String(error);
+    evidence.failureSnapshot = await page
+      .evaluate(() => ({
+        url: location.href,
+        ready: document.documentElement.getAttribute('data-xeg-gallery-ready'),
+        imageCount: document.querySelectorAll('[data-testid="tweetPhoto"] img').length,
+        firstImageLoaded: (() => {
+          const image = document.querySelector('[data-testid="tweetPhoto"] img');
+          return image instanceof HTMLImageElement && image.complete && image.naturalWidth > 1;
+        })(),
+        galleryCount: document.querySelectorAll('[data-xeg-gallery-container]').length,
+      }))
+      .catch(() => null);
+    await page
+      .screenshot({ path: path.join(output, 'settings-failure.png') })
+      .catch(() => undefined);
     throw error;
   } finally {
     evidence.runtimeErrors = [...runtimeErrors];

@@ -232,90 +232,93 @@ export async function run({
     if (settingsPersistenceOnly) {
       await installStorageFaultControl(page);
     }
-    await page.evaluate((encodedFixtures) => {
-      // Keep production media extraction deterministic: bypass the callback-only
-      // GM_cookie fallback and make the unavailable fixture API fail into DOM extraction.
-      // oxlint-disable-next-line unicorn/no-document-cookie -- The fixture exercises the userscript's existing cookie-backed path.
-      document.cookie = 'ct0=windows-acceptance-fixture; path=/; SameSite=Lax';
-      const fixtureBlob = (url: string) => {
-        const index = url.includes('5678') ? 1 : url.includes('9012') ? 2 : 0;
-        const encoded = encodedFixtures[index];
-        if (!encoded) {
-          throw new Error('Fixture image unavailable');
-        }
-        const binary = atob(encoded);
-        const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
-        return new Blob([bytes], { type: 'image/png' });
-      };
-      window.GM_xmlhttpRequest = (details) => {
-        let pending = true;
-        queueMicrotask(() => {
-          if (!pending) {
-            return;
+    const installMediaFixture = async (): Promise<void> => {
+      await page.evaluate((encodedFixtures) => {
+        // Keep production media extraction deterministic: bypass the callback-only
+        // GM_cookie fallback and make the unavailable fixture API fail into DOM extraction.
+        // oxlint-disable-next-line unicorn/no-document-cookie -- The fixture exercises the userscript's existing cookie-backed path.
+        document.cookie = 'ct0=windows-acceptance-fixture; path=/; SameSite=Lax';
+        const fixtureBlob = (url: string) => {
+          const index = url.includes('5678') ? 1 : url.includes('9012') ? 2 : 0;
+          const encoded = encodedFixtures[index];
+          if (!encoded) {
+            throw new Error('Fixture image unavailable');
           }
-          pending = false;
-          if (details.responseType !== 'blob') {
-            details.onerror?.({ status: 503, statusText: 'Fixture API disabled' });
-            return;
-          }
-          const dataset = document.documentElement.dataset;
-          dataset.xegAcceptanceDownload = details.url;
-          dataset.xegAcceptanceDownloadMethod = details.method ?? '';
-          dataset.xegAcceptanceDownloadResponseType = details.responseType;
-          details.onload?.({
-            finalUrl: details.url,
-            readyState: 4,
-            status: 200,
-            statusText: 'OK',
-            responseHeaders: 'content-type: image/png',
-            response: fixtureBlob(details.url),
-            responseText: '',
-            context: details.context,
-          });
-        });
-        return {
-          abort: () => {
+          const binary = atob(encoded);
+          const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+          return new Blob([bytes], { type: 'image/png' });
+        };
+        window.GM_xmlhttpRequest = (details) => {
+          let pending = true;
+          queueMicrotask(() => {
             if (!pending) {
               return;
             }
             pending = false;
-            queueMicrotask(() => details.onabort?.({ status: 0, statusText: 'Aborted' }));
-          },
+            if (details.responseType !== 'blob') {
+              details.onerror?.({ status: 503, statusText: 'Fixture API disabled' });
+              return;
+            }
+            const dataset = document.documentElement.dataset;
+            dataset.xegAcceptanceDownload = details.url;
+            dataset.xegAcceptanceDownloadMethod = details.method ?? '';
+            dataset.xegAcceptanceDownloadResponseType = details.responseType;
+            details.onload?.({
+              finalUrl: details.url,
+              readyState: 4,
+              status: 200,
+              statusText: 'OK',
+              responseHeaders: 'content-type: image/png',
+              response: fixtureBlob(details.url),
+              responseText: '',
+              context: details.context,
+            });
+          });
+          return {
+            abort: () => {
+              if (!pending) {
+                return;
+              }
+              pending = false;
+              queueMicrotask(() => details.onabort?.({ status: 0, statusText: 'Aborted' }));
+            },
+          };
         };
-      };
-      // Retain the legacy host fallback; the download assertion requires the blob request path.
-      window.GM_download = (details: string | MockDownloadDetails, name?: string) => {
-        const options = typeof details === 'string' ? { url: details, name } : details;
-        if (!options.name) {
-          if ('onerror' in options) {
-            options.onerror?.(new Error('GM_download requires name'));
+        // Retain the legacy host fallback; the download assertion requires the blob request path.
+        window.GM_download = (details: string | MockDownloadDetails, name?: string) => {
+          const options = typeof details === 'string' ? { url: details, name } : details;
+          if (!options.name) {
+            if ('onerror' in options) {
+              options.onerror?.(new Error('GM_download requires name'));
+            }
+            return;
           }
-          return;
-        }
-        const dataset = document.documentElement.dataset;
-        dataset.xegAcceptanceDownload = options.url;
-        dataset.xegAcceptanceDownloadMethod = 'GM_download';
-        dataset.xegAcceptanceDownloadResponseType = '';
-        try {
-          const blob = fixtureBlob(options.url);
-          const url = URL.createObjectURL(blob);
-          const anchor = document.createElement('a');
-          anchor.href = url;
-          anchor.download = options.name;
-          (document.querySelector('.xeg-gallery-root') ?? document.body).append(anchor);
-          anchor.click();
-          anchor.remove();
-          setTimeout(() => URL.revokeObjectURL(url), 1000);
-          if ('onload' in options) {
-            options.onload?.();
+          const dataset = document.documentElement.dataset;
+          dataset.xegAcceptanceDownload = options.url;
+          dataset.xegAcceptanceDownloadMethod = 'GM_download';
+          dataset.xegAcceptanceDownloadResponseType = '';
+          try {
+            const blob = fixtureBlob(options.url);
+            const url = URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.download = options.name;
+            (document.querySelector('.xeg-gallery-root') ?? document.body).append(anchor);
+            anchor.click();
+            anchor.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            if ('onload' in options) {
+              options.onload?.();
+            }
+          } catch (error) {
+            if ('onerror' in options) {
+              options.onerror?.(error instanceof Error ? error : new Error(String(error)));
+            }
           }
-        } catch (error) {
-          if ('onerror' in options) {
-            options.onerror?.(error instanceof Error ? error : new Error(String(error)));
-          }
-        }
-      };
-    }, images);
+        };
+      }, images);
+    };
+    await installMediaFixture();
     await page.addScriptTag({ content: script });
     // Wait for public UI behavior; the production artifact has no debug globals.
     await page.waitForFunction(
@@ -330,6 +333,7 @@ export async function run({
         browserVersion: browser.version(),
         runtimeErrors,
         installGMMock,
+        installMediaFixture,
         script,
       });
     }

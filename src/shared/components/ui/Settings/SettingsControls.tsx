@@ -229,6 +229,19 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
       class={cx(styles.body, local.compact && styles.bodyCompact)}
       data-testid={__DEV__ ? local['data-testid'] : undefined}
     >
+      {unsavedSettings() && (
+        <div class={styles.unsaved} role="status" data-xeg-settings-unsaved>
+          <span>{strings().unsaved}</span>
+          <button
+            type="button"
+            class={styles.retry}
+            onClick={() => void retrySettingsSave()}
+            disabled={retryingSave()}
+          >
+            {strings().retry}
+          </button>
+        </div>
+      )}
       <div class={cx(styles.setting, local.compact && styles.settingCompact)}>
         <label
           id={local['data-testid'] ? `${local['data-testid']}-theme-label` : 'settings-theme-label'}
@@ -374,19 +387,6 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
           ))}
         </select>
       </div>
-      {unsavedSettings() && (
-        <div class={styles.unsaved} role="status" data-xeg-settings-unsaved>
-          <span>{strings().unsaved}</span>
-          <button
-            type="button"
-            class={styles.retry}
-            onClick={() => void retrySettingsSave()}
-            disabled={retryingSave()}
-          >
-            {strings().retry}
-          </button>
-        </div>
-      )}
     </div>
   );
 }
