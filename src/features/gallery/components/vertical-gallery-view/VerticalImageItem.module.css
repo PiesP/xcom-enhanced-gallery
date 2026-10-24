@@ -401,6 +401,11 @@
 
 /* A failed image still has a media-sized button underneath its recovery panel.
    Let the panel size the row so its text and actions remain inside paint containment. */
+.container[data-media-error='true'] {
+  /* Keep recovery controls clear of the fixed toolbar hover sensor on realignment. */
+  scroll-margin-block-start: var(--xeg-hover-zone-height);
+}
+
 .container[data-media-error='true'] .imageWrapper {
   display: grid;
 }

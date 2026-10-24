@@ -595,6 +595,18 @@ async function captureRecoveryPaint(page: Page, index: number) {
       const x = rect.left + rect.width / 2;
       const y = rect.top + rect.height / 2;
       const hit = document.elementFromPoint(x, y);
+      const interactive = element.matches('button, a');
+      const inset = Math.min(4, rect.height / 4);
+      const hitSamples = interactive
+        ? [rect.top + inset, y, rect.bottom - inset].map((sampleY) => {
+            const sample = document.elementFromPoint(x, sampleY);
+            return {
+              y: sampleY,
+              element: sample?.tagName ?? null,
+              target: !!sample && element.contains(sample),
+            };
+          })
+        : [];
       const hasArea = rect.width > 0 && rect.height > 0;
       const insideViewport =
         rect.left >= viewport.left - 1 &&
@@ -611,16 +623,18 @@ async function captureRecoveryPaint(page: Page, index: number) {
         rect.right <= parent.right + 1 &&
         rect.top >= parent.top - 1 &&
         rect.bottom <= parent.bottom + 1;
-      const hitTarget = !!hit && element.contains(hit);
+      const hitTarget = hitSamples.every((sample) => sample.target);
       return {
         text: (element.textContent ?? '').trim(),
         bounds: boundsOf(rect),
+        interactive,
         hasArea,
         insideViewport,
         insideScrollport,
         insideWrapper,
         hitTarget,
         hitElement: hit?.tagName ?? null,
+        hitSamples,
         painted: hasArea && insideViewport && insideScrollport && insideWrapper && hitTarget,
       };
     });
