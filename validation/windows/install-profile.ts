@@ -583,33 +583,68 @@ async function captureRecoveryPaint(page: Page, index: number) {
     }
     const port = scrollport.getBoundingClientRect();
     const parent = wrapper.getBoundingClientRect();
+    const viewport = { left: 0, top: 0, right: innerWidth, bottom: innerHeight };
+    const boundsOf = (rect: DOMRect) => ({
+      left: rect.left,
+      top: rect.top,
+      right: rect.right,
+      bottom: rect.bottom,
+    });
     const targets = Array.from(alert.querySelectorAll('span, button, a')).map((element) => {
       const rect = element.getBoundingClientRect();
       const x = rect.left + rect.width / 2;
       const y = rect.top + rect.height / 2;
       const hit = document.elementFromPoint(x, y);
-      const bounds = {
-        left: rect.left,
-        top: rect.top,
-        right: rect.right,
-        bottom: rect.bottom,
-      };
+      const hasArea = rect.width > 0 && rect.height > 0;
+      const insideViewport =
+        rect.left >= viewport.left - 1 &&
+        rect.right <= viewport.right + 1 &&
+        rect.top >= viewport.top - 1 &&
+        rect.bottom <= viewport.bottom + 1;
+      const insideScrollport =
+        rect.left >= port.left - 1 &&
+        rect.right <= port.right + 1 &&
+        rect.top >= port.top - 1 &&
+        rect.bottom <= port.bottom + 1;
+      const insideWrapper =
+        rect.left >= parent.left - 1 &&
+        rect.right <= parent.right + 1 &&
+        rect.top >= parent.top - 1 &&
+        rect.bottom <= parent.bottom + 1;
+      const hitTarget = !!hit && element.contains(hit);
       return {
         text: (element.textContent ?? '').trim(),
-        bounds,
-        painted:
-          rect.width > 0 &&
-          rect.height > 0 &&
-          rect.left >= Math.max(0, port.left, parent.left) - 1 &&
-          rect.right <= Math.min(innerWidth, port.right, parent.right) + 1 &&
-          rect.top >= Math.max(0, port.top, parent.top) - 1 &&
-          rect.bottom <= Math.min(innerHeight, port.bottom, parent.bottom) + 1 &&
-          !!hit &&
-          element.contains(hit),
+        bounds: boundsOf(rect),
+        hasArea,
+        insideViewport,
+        insideScrollport,
+        insideWrapper,
+        hitTarget,
+        hitElement: hit?.tagName ?? null,
+        painted: hasArea && insideViewport && insideScrollport && insideWrapper && hitTarget,
       };
     });
-    return { painted: targets.length >= 3 && targets.every((target) => target.painted), targets };
+    return {
+      painted: targets.length >= 3 && targets.every((target) => target.painted),
+      viewport,
+      scrollport: boundsOf(port),
+      wrapper: boundsOf(parent),
+      targets,
+    };
   }, index);
+}
+
+async function waitForRecoveryPaint(page: Page, index: number, description: string) {
+  const deadline = Date.now() + 5_000;
+  let last = await captureRecoveryPaint(page, index);
+  while (!last.painted && Date.now() < deadline) {
+    await delay(50);
+    last = await captureRecoveryPaint(page, index);
+  }
+  if (!last.painted) {
+    throw new Error(`Timed out waiting for ${description}: ${JSON.stringify(last)}`);
+  }
+  return last;
 }
 
 async function assertVisibleBulkOutcome(
@@ -12800,10 +12835,11 @@ async function runTransientImageRecoveryProbe({
     const selected = gallery.locator('[data-gallery-element="item"][data-index="1"]');
     await selected.locator('[role="alert"]').waitFor({ state: 'visible' });
     await assertQuotedOriginLink(gallery, QUALITY_FIXTURE_URL);
-    observations.failedPaint = await waitForValue(async () => {
-      const paint = await captureRecoveryPaint(page, 1);
-      return paint.painted ? paint : undefined;
-    }, 'failed image recovery text and actions painted inside the viewport');
+    observations.failedPaint = await waitForRecoveryPaint(
+      page,
+      1,
+      'failed image recovery text and actions painted inside the viewport'
+    );
     observations.failed = await captureRecoveryUi(page, output, 'image-once-failed');
     observations.origin = QUALITY_FIXTURE_URL;
     assert.deepEqual(faults[0], { resourceType: 'image', response: 404 });
@@ -13233,10 +13269,11 @@ async function runSourceImageFailureCases({
           .isVisible(),
         true
       );
-      receipt.failedPaint = await waitForValue(async () => {
-        const paint = await captureRecoveryPaint(owned!, 1);
-        return paint.painted ? paint : undefined;
-      }, `${kind}: failed image recovery text and actions painted inside the viewport`);
+      receipt.failedPaint = await waitForRecoveryPaint(
+        owned,
+        1,
+        `${kind}: failed image recovery text and actions painted inside the viewport`
+      );
       if (kind === 'corrupt') {
         const screenshot = `src01-${kind}-error.png`;
         await owned.screenshot({ path: join(output, screenshot) });
@@ -13324,10 +13361,11 @@ async function runSourceImageFailureCases({
           .getAttribute('href'),
         QUALITY_FIXTURE_URL
       );
-      receipt.exhaustedPaint = await waitForValue(async () => {
-        const paint = await captureRecoveryPaint(owned!, 1);
-        return paint.painted ? paint : undefined;
-      }, `${kind}: exhausted image recovery text and action painted inside the viewport`);
+      receipt.exhaustedPaint = await waitForRecoveryPaint(
+        owned,
+        1,
+        `${kind}: exhausted image recovery text and action painted inside the viewport`
+      );
       await owned.screenshot({ path: join(output, `recovery-image-${kind}-exhausted.png`) });
       await owned.keyboard.press('Escape');
       await gallery.waitFor({ state: 'detached' });
