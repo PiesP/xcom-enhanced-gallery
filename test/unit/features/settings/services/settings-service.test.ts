@@ -192,6 +192,45 @@ describe('SettingsService', () => {
     });
   });
 
+  it('serializes a delayed retry ahead of a newer setting so the newer edit wins', async () => {
+    let stored = createDefaultSettings(1_000);
+    let releaseRetry: () => void = () => undefined;
+    let markRetryStarted: () => void = () => undefined;
+    const retryStarted = new Promise<void>((resolve) => {
+      markRetryStarted = resolve;
+    });
+    const retryGate = new Promise<void>((resolve) => {
+      releaseRetry = resolve;
+    });
+    let calls = 0;
+    const repository: SettingsRepository = {
+      load: vi.fn(async () => globalThis.structuredClone(stored)),
+      save: vi.fn(async (settings) => {
+        calls++;
+        if (calls === 1) {
+          throw new Error('denied');
+        }
+        if (calls === 2) {
+          markRetryStarted();
+          await retryGate;
+        }
+        stored = globalThis.structuredClone(settings);
+      }),
+    };
+    service = new SettingsService(repository);
+    await service.initialize();
+    await expect(service.set('gallery.theme', 'dark')).rejects.toThrow('denied');
+
+    const retry = service.retryUnsaved();
+    await retryStarted;
+    const newest = service.set('gallery.theme', 'light');
+    releaseRetry();
+    await Promise.all([retry, newest]);
+    expect(stored.gallery.theme).toBe('light');
+    expect(service.get('gallery.theme')).toBe('light');
+    expect(service.hasUnsavedChanges()).toBe(false);
+  });
+
   describe('isInitialized', () => {
     it('should return false before initialize', () => {
       service = new SettingsService(mockRepo);
