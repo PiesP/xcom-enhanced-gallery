@@ -176,6 +176,8 @@ type MemoryEvidence = {
   expectedConsoleErrors?: ConsoleErrorRecord[];
   recoveryTransport?: unknown;
   recoveryScreenshot?: string;
+  uiPartialAfterFiveSeconds?: unknown;
+  uiHealthy?: unknown;
   error?: string;
   failureScreenshot?: string;
   screenshotError?: string;
@@ -500,6 +502,56 @@ function assertOpeningTimeline(timeline: OpeningTimeline, label: string): void {
     `${label}: status must appear after the 500 ms threshold (observed ${elapsedMs} ms)`
   );
 }
+
+/** Capture what remains in the gallery itself, independently of native notifications. */
+async function captureRecoveryUi(page: Page, output: string, name: string) {
+  const screenshot = `recovery-${name}.png`;
+  const snapshot = await page.evaluate(() => {
+    const gallery = document.querySelector('[data-xeg-gallery-container]');
+    const isVisible = (element: Element): boolean => {
+      const style = getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+      return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0;
+    };
+    const texts = (selector: string) =>
+      Array.from(gallery?.querySelectorAll(selector) ?? []).map((element) => ({
+        text: (element.textContent ?? '').trim().slice(0, 512),
+        label: element.getAttribute('aria-label'),
+        visible: isVisible(element),
+        role: element.getAttribute('role'),
+      }));
+    const toolbar = gallery?.querySelector('[data-gallery-element="toolbar"]');
+    const status = toolbar?.querySelector('[data-download-status]');
+    const counter = toolbar?.querySelector('#xeg-toolbar-counter');
+    return {
+      url: location.href,
+      timeOrigin: performance.timeOrigin,
+      observedAt: performance.now(),
+      galleryCount: document.querySelectorAll('[data-xeg-gallery-container]').length,
+      activeElement:
+        document.activeElement?.getAttribute('aria-label') ?? document.activeElement?.tagName,
+      position: counter?.getAttribute('data-position') ?? null,
+      total: counter?.getAttribute('data-total') ?? null,
+      downloadStatus: status
+        ? {
+            state: status.getAttribute('data-download-status'),
+            text: (status.textContent ?? '').trim(),
+            visible: isVisible(status),
+          }
+        : null,
+      liveRegions: texts('[aria-live]'),
+      alerts: texts('[role="alert"]'),
+      recoveryActions: texts('button, a[href]')
+        .filter(({ text, label }) =>
+          /retry|reopen|original|download|zip/iu.test(`${text} ${label}`)
+        )
+        .slice(0, 16),
+      galleryTextIncludingHidden: (gallery?.textContent ?? '').trim().slice(0, 800),
+    };
+  });
+  await page.screenshot({ path: join(output, screenshot) });
+  return { ...snapshot, screenshot };
+}
 type SourceQualityEvidence = {
   status: string;
   url?: string;
@@ -724,6 +776,7 @@ type InstallResult = {
   sameVersion?: Awaited<ReturnType<typeof runSameVersionAttribution>>;
   fixture?: Awaited<ReturnType<typeof exerciseInstalledExtension>>;
   openingFeedback?: unknown;
+  mediaDownloadRecovery?: unknown;
   liveBrowserScope?: string;
   live?: unknown;
   evidenceStatus?: string;
@@ -4348,6 +4401,7 @@ async function runDownloadMemoryCycle({
   evidence,
   nativeLoopback,
   pageFetches,
+  uiProbe = false,
 }: {
   consoleErrors: ConsoleErrorRecord[];
   downloads: string;
@@ -4359,6 +4413,7 @@ async function runDownloadMemoryCycle({
   evidence: MemoryEvidence;
   nativeLoopback: NativeLoopback;
   pageFetches: PageFetch[];
+  uiProbe?: boolean;
 }) {
   Object.assign(evidence, { status: 'pending', cleanup: {}, requests: [], downloads: [] });
   const primaryMarker = IMAGE_URL_MARKERS[0];
@@ -4565,6 +4620,15 @@ async function runDownloadMemoryCycle({
       nativeFileRemoved: true,
       fileAbsence: partialAbsence,
     });
+    if (uiProbe) {
+      await page.waitForTimeout(5_250);
+      await bulkButton.focus();
+      evidence.uiPartialAfterFiveSeconds = await captureRecoveryUi(
+        page,
+        output,
+        'memory-partial-after-five-seconds'
+      );
+    }
     evidence.rejection = {
       declaredBytes: evidence.policy.declaredBytes,
       actualBodyBytes: images[0].length,
@@ -4708,6 +4772,10 @@ async function runDownloadMemoryCycle({
       elapsedMs: performance.now() - zipStartedAtMs,
       verified: parsedZip,
     });
+    if (uiProbe) {
+      await bulkButton.focus();
+      evidence.uiHealthy = await captureRecoveryUi(page, output, 'memory-healthy');
+    }
     assert.deepEqual(
       evidence.requests
         .filter(({ phase: requestPhase }) => requestPhase === 'declared-large')
@@ -8093,43 +8161,53 @@ export function assertNoRetiredExtractionNotifications(
   return creates;
 }
 
-async function observeNativeNotificationCreates(context: BrowserContext, extensionId: string) {
+async function observeNativeNotificationCreates(
+  context: BrowserContext,
+  extensionId: string,
+  suppress = false
+) {
   const worker = context
     .serviceWorkers()
     .find((item) => item.url() === `chrome-extension://${extensionId}/background.js`);
   assert(worker, 'Installed worker must be available for the native notification observer');
   const observerId = randomUUID();
-  await worker.evaluate((id) => {
-    if (globalThis.__xegInstalledNotificationObserver) {
-      throw new Error('Bounded native notification observer already installed');
-    }
-    const original = chrome.notifications.create;
-    const state: NativeNotificationState = {
-      observerId: id,
-      original,
-      calls: [],
-      overflow: false,
-      wrapper: null,
-    };
-    globalThis.__xegInstalledNotificationObserver = state;
-    state.wrapper = function (this: unknown, ...args: Parameters<ChromeNotificationCreate>) {
-      const [id, options] = args;
-      if (typeof id === 'string' && id.startsWith('xeg-')) {
-        if (state.calls.length < 8) {
-          state.calls.push({
-            id,
-            createdAt: Date.now(),
-            title: options?.title ?? null,
-            message: options?.message ?? null,
-          });
-        } else {
-          state.overflow = true;
-        }
+  await worker.evaluate(
+    ({ id, suppress }) => {
+      if (globalThis.__xegInstalledNotificationObserver) {
+        throw new Error('Bounded native notification observer already installed');
       }
-      return Reflect.apply(original, this, args);
-    };
-    chrome.notifications.create = state.wrapper;
-  }, observerId);
+      const original = chrome.notifications.create;
+      const state: NativeNotificationState = {
+        observerId: id,
+        original,
+        calls: [],
+        overflow: false,
+        wrapper: null,
+      };
+      globalThis.__xegInstalledNotificationObserver = state;
+      state.wrapper = function (this: unknown, ...args: Parameters<ChromeNotificationCreate>) {
+        const [id, options] = args;
+        if (typeof id === 'string' && id.startsWith('xeg-')) {
+          if (state.calls.length < 8) {
+            state.calls.push({
+              id,
+              createdAt: Date.now(),
+              title: options?.title ?? null,
+              message: options?.message ?? null,
+            });
+          } else {
+            state.overflow = true;
+          }
+        }
+        if (suppress && typeof id === 'string' && id.startsWith('xeg-')) {
+          return Promise.resolve(id);
+        }
+        return Reflect.apply(original, this, args);
+      };
+      chrome.notifications.create = state.wrapper;
+    },
+    { id: observerId, suppress }
+  );
   return {
     async snapshot() {
       const state = await worker.evaluate(async () => {
@@ -12586,6 +12664,282 @@ async function runSourceQualityCycle({
   evidence.status = 'passed';
 }
 
+/** A single failed display response, followed by the currently available in-task routes. */
+async function runTransientImageRecoveryProbe({
+  context,
+  extensionPage,
+  output,
+  qualityRequests,
+}: {
+  context: BrowserContext;
+  extensionPage: Page;
+  output: string;
+  qualityRequests: QualityRequest[];
+}) {
+  const page = await context.newPage();
+  const originalUrl = `https://pbs.twimg.com/media/${QUALITY_IMAGE_PATHS[1]}?format=jpg&name=orig`;
+  const requestMark = qualityRequests.length;
+  const knownDownloads = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+  const faults: Array<{ resourceType: string; response: number | 'healthy' }> = [];
+  const faultRoute = async (route: Route) => {
+    assert.equal(route.request().url(), originalUrl);
+    assert(faults.length < 4, 'Transient image received too many exact-source requests');
+    if (faults.length === 0) {
+      faults.push({ resourceType: route.request().resourceType(), response: 404 });
+      await route.fulfill({
+        status: 404,
+        body: '',
+        headers: { 'Cache-Control': 'no-store' },
+      });
+      return;
+    }
+    faults.push({ resourceType: route.request().resourceType(), response: 'healthy' });
+    await route.fallback();
+  };
+  let routeInstalled = false;
+  const cleanup = { routeRemoved: false, pageClosed: false };
+  let primaryError: unknown;
+  const observations: Record<string, unknown> = { faults, cleanup };
+  try {
+    await page.goto(QUALITY_FIXTURE_URL);
+    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+    const trigger = page
+      .locator('[data-route="classic"][data-phase="normal"] [data-testid="tweetPhoto"] img')
+      .nth(1);
+    await trigger.focus();
+    const before = await hostSnapshot(page, 1);
+    await page.route(originalUrl, faultRoute);
+    routeInstalled = true;
+    await trigger.click();
+    const gallery = page.locator('[data-xeg-gallery-container]');
+    await gallery.waitFor({ state: 'visible' });
+    const selected = gallery.locator('[data-gallery-element="item"][data-index="1"]');
+    await selected.locator('[role="alert"]').waitFor({ state: 'visible' });
+    await assertQuotedOriginLink(gallery, QUALITY_FIXTURE_URL);
+    observations.failed = await captureRecoveryUi(page, output, 'image-once-failed');
+    observations.origin = QUALITY_FIXTURE_URL;
+    assert.deepEqual(faults[0], { resourceType: 'image', response: 404 });
+    await gallery.locator('button[aria-label="Fit Window"]').click();
+    const fitBefore = await gallery
+      .locator('[data-gallery-element="fit-mode-label"]')
+      .textContent();
+    assert.equal(fitBefore?.trim(), 'Fit: Fit Window');
+    await page.keyboard.press('ArrowRight');
+    observations.third = await assertQuotedSelection(page, {
+      position: 3,
+      total: 3,
+      type: 'image',
+      path: `/media/${QUALITY_IMAGE_PATHS[2]}`,
+    });
+    await page.keyboard.press('ArrowLeft');
+    await page.waitForFunction(
+      () =>
+        document
+          .querySelector('[data-xeg-gallery-container] #xeg-toolbar-counter')
+          ?.getAttribute('data-position') === '2'
+    );
+    const fitAfter = await gallery.locator('[data-gallery-element="fit-mode-label"]').textContent();
+    assert.equal(fitAfter, fitBefore, 'Image failure navigation must preserve the selected fit');
+    observations.afterNavigation = await captureRecoveryUi(page, output, 'image-once-returned');
+    observations.display = await selected.locator('img').evaluate((element) => {
+      if (!(element instanceof HTMLImageElement)) {
+        throw new Error('Selected image disappeared during transient recovery probe');
+      }
+      return {
+        source: element.src,
+        complete: element.complete,
+        width: element.naturalWidth,
+        loaded: element.closest('[data-gallery-element="item"]')?.getAttribute('data-media-loaded'),
+      };
+    });
+    observations.fit = { before: fitBefore, after: fitAfter };
+    observations.requests = qualityRequests.slice(requestMark);
+    assert.deepEqual(
+      (await queryDownloads(extensionPage)).filter(({ id }) => !knownDownloads.has(id)),
+      [],
+      'Display failure and navigation must not start a native save'
+    );
+    await page.keyboard.press('Escape');
+    await gallery.waitFor({ state: 'detached' });
+    observations.close = await hostSnapshot(page, 1);
+    assert.deepEqual(observations.close, before);
+    await page.unroute(originalUrl, faultRoute);
+    routeInstalled = false;
+    cleanup.routeRemoved = true;
+    await trigger.click();
+    await gallery.waitFor({ state: 'visible' });
+    observations.reopened = await assertQuotedSelection(page, {
+      position: 2,
+      total: 3,
+      type: 'image',
+      path: `/media/${QUALITY_IMAGE_PATHS[1]}`,
+    });
+    observations.healthy = await captureRecoveryUi(page, output, 'image-once-reopened');
+    await page.keyboard.press('Escape');
+    await gallery.waitFor({ state: 'detached' });
+    return { status: 'observed', ...observations };
+  } catch (error) {
+    primaryError = error;
+    await page
+      .screenshot({ path: join(output, 'recovery-image-once-failure.png') })
+      .catch(() => {});
+    throw error;
+  } finally {
+    if (routeInstalled) {
+      await page.unroute(originalUrl, faultRoute);
+      cleanup.routeRemoved = true;
+    }
+    await page.close();
+    cleanup.pageClosed = true;
+    if (primaryError) {
+      await writeFile(
+        join(output, 'recovery-image-once-error.json'),
+        JSON.stringify({ error: safeError(primaryError), observations }, null, 2)
+      );
+    }
+  }
+}
+
+/** Deny only three verified-original application fetches, then restore a healthy ZIP. */
+async function runFullZipFailureProbe({
+  downloads,
+  extensionPage,
+  images,
+  output,
+  page,
+}: {
+  downloads: string;
+  extensionPage: Page;
+  images: ImageFixtures;
+  output: string;
+  page: Page;
+}) {
+  const denied: Array<{ path: string; type: string }> = [];
+  const routePattern = 'https://pbs.twimg.com/media/**';
+  const denyVerifiedOriginal = async (route: Route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    if (
+      !['fetch', 'xhr'].includes(request.resourceType()) ||
+      url.searchParams.get('name') !== 'orig'
+    ) {
+      await route.fallback();
+      return;
+    }
+    assert(
+      QUALITY_IMAGE_PATHS.some((path) => url.pathname === `/media/${path}`),
+      'Full failure route saw an unexpected original source'
+    );
+    assert(denied.length < 6, 'Full failure issued too many source requests');
+    denied.push({ path: url.pathname, type: request.resourceType() });
+    await route.fulfill({
+      status: 403,
+      body: '',
+      headers: { 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': 'https://x.com' },
+    });
+  };
+  const cleanup = { routeRemoved: false };
+  let routeInstalled = false;
+  const observations: Record<string, unknown> = { denied, cleanup };
+  try {
+    await page.goto(QUALITY_FIXTURE_URL);
+    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+    await page
+      .locator('[data-route="classic"][data-phase="normal"] [data-testid="tweetPhoto"] img')
+      .nth(1)
+      .click();
+    const gallery = page.locator('[data-xeg-gallery-container]');
+    await gallery.waitFor({ state: 'visible' });
+    await assertQuotedSelection(page, {
+      position: 2,
+      total: 3,
+      type: 'image',
+      path: `/media/${QUALITY_IMAGE_PATHS[1]}`,
+    });
+    const zipButton = gallery.locator(
+      '[data-gallery-element="toolbar"] button[aria-label="Download 3 shown files as ZIP"]'
+    );
+    const knownBeforeFailure = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+    await page.route(routePattern, denyVerifiedOriginal);
+    routeInstalled = true;
+    await zipButton.click();
+    await page.waitForFunction(
+      () =>
+        document
+          .querySelector('[data-xeg-gallery-container] [data-download-status]')
+          ?.getAttribute('data-download-status') === 'error'
+    );
+    await waitForValue(
+      async () => ((await zipButton.isEnabled()) ? true : undefined),
+      'full ZIP failure settled'
+    );
+    assert.deepEqual(
+      denied.map(({ path }) => path).sort(),
+      QUALITY_IMAGE_PATHS.map((path) => `/media/${path}`).sort(),
+      'The full failure must deny each shown verified source exactly once'
+    );
+    assert.deepEqual(
+      (await queryDownloads(extensionPage)).filter(({ id }) => !knownBeforeFailure.has(id)),
+      [],
+      'A full failure must not create a native ZIP'
+    );
+    await page.waitForTimeout(5_250);
+    await zipButton.focus();
+    observations.afterFiveSeconds = await captureRecoveryUi(
+      page,
+      output,
+      'zip-full-failure-after-five-seconds'
+    );
+    await page.unroute(routePattern, denyVerifiedOriginal);
+    routeInstalled = false;
+    cleanup.routeRemoved = true;
+    const knownHealthy = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+    await zipButton.click();
+    const healthy = await waitForValue(async () => {
+      const created = (await queryDownloads(extensionPage)).filter(
+        ({ id }) => !knownHealthy.has(id)
+      );
+      assert(created.length <= 1, 'One healthy ZIP action must create exactly one native ID');
+      const item = created[0];
+      assert(item?.state !== 'interrupted', 'Healthy ZIP must not be interrupted');
+      return item?.state === 'complete' ? item : undefined;
+    }, 'healthy ZIP after full failure');
+    assert.match(
+      basename(healthy.filename),
+      new RegExp(`^qualityuser_${QUALITY_TWEET_ID}(?: \\([1-9]\\d*\\))?\\.zip$`, 'u')
+    );
+    const relativePath = relative(downloads, healthy.filename);
+    assert(relativePath && !relativePath.startsWith('..') && !isAbsolute(relativePath));
+    const expectedEntries = images.map((bytes, index) => ({
+      filename: qualityFilename(index),
+      bytes,
+    }));
+    const { bytes } = await readExactDownloadFile(
+      healthy.filename,
+      expectedStoredZipBytes(expectedEntries)
+    );
+    const verified = verifyStoredZip(bytes, expectedEntries);
+    const file = 'recovery-full-failure-healthy.zip';
+    await copyFile(healthy.filename, join(output, file));
+    observations.healthy = {
+      id: healthy.id,
+      filename: basename(healthy.filename),
+      file,
+      ...imageReceipt(bytes),
+      verified,
+      ui: await captureRecoveryUi(page, output, 'zip-full-failure-healthy'),
+    };
+    await page.keyboard.press('Escape');
+    await gallery.waitFor({ state: 'detached' });
+    return { status: 'observed', ...observations };
+  } finally {
+    if (routeInstalled) {
+      await page.unroute(routePattern, denyVerifiedOriginal);
+      cleanup.routeRemoved = true;
+    }
+  }
+}
+
 async function runSourceImageFailureCases({
   context,
   evidence,
@@ -13029,6 +13383,7 @@ async function runOriginalAvailabilityCycles({
   output,
   page,
   pageFetches,
+  uiProbe = false,
 }: {
   consoleErrors: ConsoleErrorRecord[];
   downloads: string;
@@ -13039,6 +13394,7 @@ async function runOriginalAvailabilityCycles({
   output: string;
   page: Page;
   pageFetches: PageFetch[];
+  uiProbe?: boolean;
 }) {
   const original = `https://pbs.twimg.com/media/${QUALITY_IMAGE_PATHS[1]}?format=jpg&name=orig`;
   const matchesOriginal = (url: URL) => url.href === original;
@@ -13104,6 +13460,7 @@ async function runOriginalAvailabilityCycles({
         single: undefined as unknown,
         zip: undefined as unknown,
         restored: undefined as unknown,
+        ui: undefined as unknown,
         cleanup: { pageRouteRemoved: false, nativeFaultRemoved: false },
       };
       evidence.cases.push(receipt);
@@ -13230,6 +13587,17 @@ async function runOriginalAvailabilityCycles({
           async () => ((await zipButton.isEnabled()) ? true : undefined),
           'partial ZIP settled'
         );
+        if (uiProbe) {
+          await page.waitForTimeout(5_250);
+          await zipButton.focus();
+          receipt.ui = {
+            partialAfterFiveSeconds: await captureRecoveryUi(
+              page,
+              output,
+              `source-${status}-partial-after-five-seconds`
+            ),
+          };
+        }
         const resourceErrors = consoleErrors
           .slice(zipConsoleMark)
           .filter(
@@ -13294,6 +13662,13 @@ async function runOriginalAvailabilityCycles({
         single: { id: healthySingle.id, file: singleFile, ...imageReceipt(singleBytes), native },
         zip: { id: healthyZip.id, file: zipFile, ...imageReceipt(zipBytes), verified },
       };
+      if (uiProbe) {
+        await zipButton.focus();
+        receipt.ui = {
+          ...(receipt.ui as object),
+          healthy: await captureRecoveryUi(page, output, `source-${status}-healthy`),
+        };
+      }
       await page.keyboard.press('Escape');
       await gallery.waitFor({ state: 'detached' });
       const after = await hostSnapshot(page, 1);
@@ -13313,6 +13688,186 @@ async function runOriginalAvailabilityCycles({
     evidence.error = safeError(error);
     throw error;
   }
+}
+
+/** Issue #382: existing recovery mechanisms with the missing on-page observations. */
+async function runMediaDownloadRecoveryProbe({
+  context,
+  downloads,
+  extensionId,
+  nativeLoopback,
+  output,
+  root,
+  images,
+  displayImages,
+}: {
+  context: BrowserContext;
+  downloads: string;
+  extensionId: string;
+  nativeLoopback: NativeLoopback;
+  output: string;
+  root: string;
+  images: ImageFixtures;
+  displayImages: ImageFixtures;
+}) {
+  const observations: Record<string, unknown> = {};
+  const pageErrors: string[] = [];
+  const consoleErrors: ConsoleErrorRecord[] = [];
+  const pageFetches: PageFetch[] = [];
+  const cleanupErrors: unknown[] = [];
+  const routes = await installFixtureRoutes(context, root, images, displayImages);
+  nativeLoopback.setPayloads(images, routes.videoPayloads);
+  const extensionPage = await context.newPage();
+  const page = await context.newPage();
+  let notificationObserver:
+    | Awaited<ReturnType<typeof observeNativeNotificationCreates>>
+    | undefined;
+  let primaryError: unknown;
+  let result: Record<string, unknown> | undefined;
+  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('console', (message) => {
+    if (message.type() === 'error') {
+      assert(consoleErrors.length < 32, 'Recovery probe console observation overflowed');
+      consoleErrors.push({ location: message.location().url, text: message.text() });
+    }
+  });
+  page.on('request', (request) => {
+    if (!['fetch', 'xhr'].includes(request.resourceType())) {
+      return;
+    }
+    const url = new URL(request.url());
+    if (!['pbs.twimg.com', 'video.twimg.com'].includes(url.hostname)) {
+      return;
+    }
+    assert(pageFetches.length < 128, 'Recovery probe fetch observation overflowed');
+    pageFetches.push({
+      host: url.hostname,
+      path: url.pathname,
+      resourceType: request.resourceType(),
+    });
+  });
+  try {
+    await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
+    notificationObserver = await observeNativeNotificationCreates(context, extensionId, true);
+    observations.notificationBefore = await notificationObserver.snapshot();
+    observations.x03Transient = await runTransientImageRecoveryProbe({
+      context,
+      extensionPage,
+      output,
+      qualityRequests: routes.qualityRequests,
+    });
+    const persistent: SourceImageFailureEvidence = { status: 'pending', cases: [] };
+    await runSourceImageFailureCases({
+      context,
+      evidence: persistent,
+      extensionPage,
+      images,
+      output,
+      qualityApiResponses: routes.qualityApiResponses,
+      qualityRequests: routes.qualityRequests,
+    });
+    observations.x03Persistent = persistent;
+    const availability: OriginalAvailabilityEvidence = {
+      status: 'pending',
+      cases: [],
+      expectedConsoleErrors: [],
+    };
+    await runOriginalAvailabilityCycles({
+      consoleErrors,
+      downloads,
+      evidence: availability,
+      extensionPage,
+      images,
+      nativeLoopback,
+      output,
+      page,
+      pageFetches,
+      uiProbe: true,
+    });
+    observations.x03UnavailableOriginalAndX04Partial = availability;
+    await page.goto(FIXTURE_URL);
+    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+    const memory: MemoryEvidence = { status: 'pending', cleanup: {}, requests: [], downloads: [] };
+    await runDownloadMemoryCycle({
+      consoleErrors,
+      downloads,
+      extensionPage,
+      images,
+      output,
+      page,
+      root,
+      evidence: memory,
+      nativeLoopback,
+      pageFetches,
+      uiProbe: true,
+    });
+    observations.x04MemoryPartial = memory;
+    observations.x04FullFailure = await runFullZipFailureProbe({
+      downloads,
+      extensionPage,
+      images,
+      output,
+      page,
+    });
+    const notificationAfter = await notificationObserver.snapshot();
+    observations.notificationAfter = notificationAfter;
+    assert.deepEqual(
+      notificationAfter.activeIds.filter((id) => id.startsWith('xeg-')),
+      [],
+      'Suppressed recovery notifications must not be visible natively'
+    );
+    assert.deepEqual(pageErrors, [], 'Recovery fixture page must not throw');
+    observations.runtime = {
+      pageErrors,
+      consoleErrors,
+      pageFetches,
+      qualityApi: routes.qualityApiResponses,
+      qualityRequests: routes.qualityRequests,
+      nativeTransport: nativeLoopback.snapshot(),
+    };
+    result = {
+      status: 'observed',
+      scope: 'installed extension and deterministic owned X fixture',
+      ...observations,
+    };
+  } catch (error) {
+    primaryError = error;
+    await page.screenshot({ path: join(output, 'recovery-probe-failure.png') }).catch(() => {});
+    throw error;
+  } finally {
+    for (const [label, close] of [
+      ['notification observer', () => notificationObserver?.dispose()],
+      ['fixture routes', () => routes.remove()],
+      ['fixture page', () => page.close()],
+      ['extension page', () => extensionPage.close()],
+    ] as const) {
+      try {
+        await close();
+      } catch (error) {
+        cleanupErrors.push(new Error(`${label}: ${safeError(error)}`));
+      }
+    }
+    await writeFile(
+      join(output, 'media-download-recovery.json'),
+      JSON.stringify(
+        {
+          status: primaryError || cleanupErrors.length ? 'failed' : 'observed',
+          observations,
+          pageErrors,
+          consoleErrors,
+          cleanupErrors: cleanupErrors.map(safeError),
+          error: primaryError ? safeError(primaryError) : null,
+        },
+        null,
+        2
+      )
+    );
+  }
+  if (cleanupErrors.length) {
+    throw new AggregateError(cleanupErrors, 'Recovery probe cleanup failed');
+  }
+  assert(result, 'Recovery probe did not complete');
+  return result;
 }
 
 /** Issue #381: a short installed-extension comparison at the real click/API boundary. */
@@ -15069,6 +15624,22 @@ export async function run({
     assert(!upgradeInput && !sameVersionInput, 'Opening probe cannot run during upgrade checks');
     assert.equal(liveUrls.length, 0, 'Opening probe uses only the owned fixture');
   }
+  const recoverySelectorText = await readFile(
+    join(root, 'validation/windows/inputs/media-download-recovery.json'),
+    'utf8'
+  ).catch((error: unknown) => {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+      return null;
+    }
+    throw error;
+  });
+  const recoveryProbe = recoverySelectorText !== null;
+  if (recoverySelectorText !== null) {
+    assert.deepEqual(JSON.parse(recoverySelectorText), { scenario: 'media-download-recovery' });
+    assert(!upgradeInput && !sameVersionInput, 'Recovery probe cannot run during upgrade checks');
+    assert(!openingProbe, 'Only one focused installed-extension probe may run');
+    assert.equal(liveUrls.length, 0, 'Recovery probe uses only the owned fixture');
+  }
   assert(!(upgradeInput && sameVersionInput), 'Upgrade and same-version inputs cannot coexist');
   if (sameVersionInput) {
     assert.equal(liveUrls.length, 0, 'Same-version attribution does not observe live URLs');
@@ -15099,13 +15670,15 @@ export async function run({
     installationMethod: 'cdp-unpacked-extension',
     liveUrls: validatedLiveUrls,
     liveObservation,
-    scope: openingProbe
-      ? 'issue 381 installed-extension opening feedback fixture; no live X observation'
-      : validatedLiveUrls.length
-        ? 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
-        : sameVersionInput
-          ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
-          : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
+    scope: recoveryProbe
+      ? 'issue 382 installed-extension media/download recovery fixture; no live X observation'
+      : openingProbe
+        ? 'issue 381 installed-extension opening feedback fixture; no live X observation'
+        : validatedLiveUrls.length
+          ? 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
+          : sameVersionInput
+            ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
+            : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
     status: 'failed',
   };
   try {
@@ -15207,6 +15780,17 @@ export async function run({
       const displayImages = await createImageFixtures(context, 0.25);
       if (openingProbe) {
         result.openingFeedback = await runOpeningFeedbackProbe({
+          context,
+          downloads,
+          extensionId,
+          nativeLoopback,
+          output,
+          root,
+          images,
+          displayImages,
+        });
+      } else if (recoveryProbe) {
+        result.mediaDownloadRecovery = await runMediaDownloadRecoveryProbe({
           context,
           downloads,
           extensionId,
