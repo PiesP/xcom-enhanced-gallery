@@ -251,7 +251,11 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
       )}
       onClick={handleBackgroundClick}
     >
-      <div class={styles.toolbarHoverZone} aria-hidden="true" />
+      <div
+        class={styles.toolbarHoverZone}
+        data-gallery-element="toolbar-hover-zone"
+        aria-hidden="true"
+      />
 
       <div class={styles.toolbarWrapper} ref={(el) => setToolbarWrapperEl(el ?? null)}>
         <Toolbar

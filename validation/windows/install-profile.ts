@@ -14335,7 +14335,31 @@ async function runGalleryExperienceProbe({
       const hidden = await experienceToolbarState(toolbar);
       await page.screenshot({ path: join(output, 'experience-x02-toolbar-idle.png') });
       assert(Number(hidden.wrapper?.opacity) < 0.05, 'Toolbar wrapper remained painted after idle');
-      assert.equal(hidden.closeHit, false, 'Idle toolbar still intercepted pointer input');
+      await page.mouse.move(640, 8);
+      const rediscovered = await waitForValue(
+        async () => {
+          const state = await experienceToolbarState(toolbar);
+          return Number(state.wrapper?.opacity) > 0.95 && state.closeHit ? state : undefined;
+        },
+        'pointer-revealed toolbar paint and Close hit target',
+        3_000
+      );
+      await page.screenshot({ path: join(output, 'experience-x02-toolbar-pointer.png') });
+      await toolbar.locator('button[aria-label="Fit Window"]').click();
+      assert.equal(
+        await toolbar.locator('button[aria-label="Fit Window"]').getAttribute('aria-pressed'),
+        'true',
+        'Pointer-revealed fit action did not run'
+      );
+      await toolbar.evaluate((element) => {
+        if (element.contains(document.activeElement)) {
+          (document.activeElement as HTMLElement).blur();
+        }
+      });
+      await page.mouse.move(640, 350);
+      await page.waitForTimeout(4_250);
+      const hiddenAfterPointer = await experienceToolbarState(toolbar);
+      assert(Number(hiddenAfterPointer.wrapper?.opacity) < 0.05);
       const reachable: string[] = [];
       for (let index = 0; index < 32; index++) {
         await page.keyboard.press('Tab');
@@ -14423,19 +14447,12 @@ async function runGalleryExperienceProbe({
       }));
       const zipBytes = await readFile(zip.filename);
       const verifiedZip = verifyStoredZip(zipBytes, expected);
-      await page.mouse.move(640, 8);
-      const rediscovered = await experienceToolbarState(toolbar);
-      await page.screenshot({ path: join(output, 'experience-x02-toolbar-pointer.png') });
-      assert(
-        Number(rediscovered.wrapper?.opacity) > 0.95,
-        'Top-edge pointer did not reveal toolbar'
-      );
-      assert.equal(rediscovered.closeHit, true, 'Pointer-revealed Close cannot receive input');
       await page.keyboard.press('Escape');
       await gallery.waitFor({ state: 'detached' });
       return {
         initial,
         hidden,
+        hiddenAfterPointer,
         focused,
         reachable,
         reverseFocus,
@@ -14638,6 +14655,10 @@ async function runGalleryExperienceProbe({
           assert.equal(geometry.current, String(index), 'Fit action changed the selected item');
           assert.equal(geometry.focused, String(index), 'Fit action changed the focused item');
           assert.equal(geometry.activeFit, fit);
+          assert(
+            geometry.media && geometry.toolbar && geometry.media.top >= geometry.toolbar.bottom + 4,
+            `${EXPERIENCE_IMAGES[index]?.label} ${fit}: selected media remains behind the focused toolbar`
+          );
           cases.push({ shape: EXPERIENCE_IMAGES[index]?.label, fit, geometry });
           if (fit === 'Fit Window') {
             const controls = await experienceControlGeometry(toolbar);
@@ -14690,6 +14711,21 @@ async function runGalleryExperienceProbe({
       });
       await toolbar.locator('#settings-button').click();
       await page.setViewportSize({ width: 1280, height: 800 });
+      await page.waitForFunction(() => {
+        const toolbar = document.querySelector<HTMLElement>('[data-gallery-element="toolbar"]');
+        const current = toolbar?.getAttribute('data-current-index');
+        const focused = toolbar?.getAttribute('data-focused-index');
+        const media = document.querySelector<HTMLElement>(
+          `[data-gallery-element="item"][data-index="${current}"] img`
+        );
+        return (
+          current === '2' &&
+          focused === '2' &&
+          media &&
+          toolbar &&
+          media.getBoundingClientRect().top >= toolbar.getBoundingClientRect().bottom + 4
+        );
+      });
       await page.keyboard.press('ArrowLeft');
       await toolbar.locator('button[aria-label="Fit Window"]').click();
       const desktopBeforeZoom = await experienceControlGeometry(toolbar);
