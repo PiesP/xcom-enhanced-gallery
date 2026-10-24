@@ -511,7 +511,19 @@ async function captureRecoveryUi(page: Page, output: string, name: string) {
     const isVisible = (element: Element): boolean => {
       const style = getComputedStyle(element);
       const rect = element.getBoundingClientRect();
-      return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0;
+      if (element.closest('.xeg-sr-only, [hidden], [aria-hidden="true"]')) {
+        return false;
+      }
+      const clipped =
+        (style.clip !== 'auto' && style.clip !== '') ||
+        (style.clipPath !== 'none' && style.clipPath !== '');
+      return (
+        !clipped &&
+        style.display !== 'none' &&
+        style.visibility !== 'hidden' &&
+        rect.width > 1 &&
+        rect.height > 1
+      );
     };
     const texts = (selector: string) =>
       Array.from(gallery?.querySelectorAll(selector) ?? []).map((element) => ({
@@ -593,6 +605,7 @@ type SourceImageFailureEvidence = {
     failed?: unknown;
     neighbor?: unknown;
     returned?: unknown;
+    retries?: unknown[];
     firstClose?: unknown;
     healthy?: unknown;
     finalClose?: unknown;
@@ -12724,6 +12737,27 @@ async function runTransientImageRecoveryProbe({
       .locator('[data-gallery-element="fit-mode-label"]')
       .textContent();
     assert.equal(fitBefore?.trim(), 'Fit: Fit Window');
+    const retry = selected.locator('[role="alert"] button', { hasText: 'Retry loading' });
+    assert.equal(await retry.count(), 1, 'Failed item must offer one adjacent retry');
+    const post = selected.locator('[role="alert"] a', { hasText: 'Open original post' });
+    assert.equal(await post.getAttribute('href'), QUALITY_FIXTURE_URL);
+    await retry.click();
+    observations.recoveredInPlace = await assertQuotedSelection(page, {
+      position: 2,
+      total: 3,
+      type: 'image',
+      path: `/media/${QUALITY_IMAGE_PATHS[1]}`,
+    });
+    assert.equal(await selected.locator('[role="alert"]').count(), 0);
+    assert.deepEqual(
+      faults,
+      [
+        { resourceType: 'image', response: 404 },
+        { resourceType: 'image', response: 'healthy' },
+      ],
+      'One manual retry must reload only the exact failed display source'
+    );
+    observations.afterRetry = await captureRecoveryUi(page, output, 'image-once-retried');
     await page.keyboard.press('ArrowRight');
     observations.third = await assertQuotedSelection(page, {
       position: 3,
@@ -12732,12 +12766,12 @@ async function runTransientImageRecoveryProbe({
       path: `/media/${QUALITY_IMAGE_PATHS[2]}`,
     });
     await page.keyboard.press('ArrowLeft');
-    await page.waitForFunction(
-      () =>
-        document
-          .querySelector('[data-xeg-gallery-container] #xeg-toolbar-counter')
-          ?.getAttribute('data-position') === '2'
-    );
+    observations.returned = await assertQuotedSelection(page, {
+      position: 2,
+      total: 3,
+      type: 'image',
+      path: `/media/${QUALITY_IMAGE_PATHS[1]}`,
+    });
     const fitAfter = await gallery.locator('[data-gallery-element="fit-mode-label"]').textContent();
     assert.equal(fitAfter, fitBefore, 'Image failure navigation must preserve the selected fit');
     observations.afterNavigation = await captureRecoveryUi(page, output, 'image-once-returned');
@@ -13185,6 +13219,31 @@ async function runSourceImageFailureCases({
           .isVisible(),
         true
       );
+      const failedItem = gallery.locator('[data-gallery-element="item"][data-index="1"]');
+      const retryObservations: unknown[] = [];
+      for (let attempt = 1; attempt <= 2; attempt += 1) {
+        const retry = failedItem.locator('[role="alert"] button', { hasText: 'Retry loading' });
+        assert.equal(await retry.count(), 1, `${kind}: retry ${attempt} must belong to item 2`);
+        await retry.click();
+        await waitForValue(
+          () => (receipt.faultRequests.length === attempt + 1 ? true : undefined),
+          `${kind}: exact display retry ${attempt}`
+        );
+        retryObservations.push(await failedSelection());
+      }
+      receipt.retries = retryObservations;
+      assert.equal(
+        await failedItem.locator('[role="alert"] button').count(),
+        0,
+        `${kind}: retries must stop after two explicit attempts`
+      );
+      assert.equal(
+        await failedItem
+          .locator('[role="alert"] a', { hasText: 'Open original post' })
+          .getAttribute('href'),
+        QUALITY_FIXTURE_URL
+      );
+      await owned.screenshot({ path: join(output, `recovery-image-${kind}-exhausted.png`) });
       await owned.keyboard.press('Escape');
       await gallery.waitFor({ state: 'detached' });
       const firstClose = await hostSnapshot(owned, 1);

@@ -151,6 +151,10 @@ export const es: LanguageStrings = {
       imageGallery: 'Galería de imágenes',
       loading: 'Cargando',
       opening: 'Abriendo galería…',
+      retryLoading: 'Reintentar carga',
+      retryExhausted:
+        'Aún no se puede cargar. Vuelve a abrir la galería o inténtalo en la publicación original.',
+      openOriginalPost: 'Abrir publicación original',
       videoCount: 'Video {index} de {total}',
       imageCount: 'Imagen {index} de {total}: {alt}',
       hashtagLabel: 'Hashtag {value}',

@@ -253,6 +253,12 @@ export interface LanguageStrings {
       readonly loading: string;
       /** Delayed acknowledgement while the clicked media is being resolved */
       readonly opening: string;
+      /** Retry a failed image display request */
+      readonly retryLoading: string;
+      /** Guidance after the bounded image retries are exhausted */
+      readonly retryExhausted: string;
+      /** Open the failed image's original post in a new tab */
+      readonly openOriginalPost: string;
       /** Video count label */
       readonly videoCount: string;
       /** Image count label */
