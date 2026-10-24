@@ -249,7 +249,7 @@ test('same-version attribution is absent by default and rejects changed identiti
   }
 });
 
-test('same-version candidate requires the complete maintained extension inventory', async () => {
+test('same-version candidate rejects an unpinned extension inventory', async () => {
   const root = await mkdtemp(join(tmpdir(), 'xeg-same-version-candidate-'));
   const extension = join(root, 'dist-extension');
   const inputPath = join(root, 'validation/windows/release-upgrade/same-version-input.json');
@@ -257,6 +257,10 @@ test('same-version candidate requires the complete maintained extension inventor
     await cp(resolve(import.meta.dirname, '../../../dist-extension'), extension, {
       recursive: true,
     });
+    const originalInventory = await extensionInventorySha256(extension);
+    await writeFile(join(extension, 'background.js'), 'modified background');
+    const changedInventory = await extensionInventorySha256(extension);
+    assert.notEqual(changedInventory, originalInventory);
     await mkdir(join(root, 'validation/windows/release-upgrade'), { recursive: true });
     await writeFile(
       join(root, 'bundle.json'),
@@ -276,24 +280,11 @@ test('same-version candidate requires the complete maintained extension inventor
       coreSha: '588dce5dce2a79c2ed926626b5c97824d63a5203',
       extension: {
         path: 'dist-extension',
-        inventorySha256: await extensionInventorySha256(extension),
+        inventorySha256: changedInventory,
         contentSha256: sha256(await readFile(join(extension, 'content.js'))),
       },
     };
     await writeFile(inputPath, JSON.stringify(input));
-    const accepted = await readSameVersionInput(root);
-    assert.equal(accepted?.extensionPath, extension);
-    await writeFile(join(extension, 'background.js'), 'modified background');
-    await writeFile(
-      inputPath,
-      JSON.stringify({
-        ...input,
-        extension: {
-          ...input.extension,
-          inventorySha256: await extensionInventorySha256(extension),
-        },
-      })
-    );
     await assert.rejects(readSameVersionInput(root), /extension inventory is mismatched/u);
   } finally {
     await rm(root, { recursive: true, force: true });
