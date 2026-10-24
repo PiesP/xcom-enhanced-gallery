@@ -249,7 +249,7 @@ test('same-version attribution is absent by default and rejects changed identiti
   }
 });
 
-test('same-version candidate rejects an unpinned extension inventory', async () => {
+test('same-version candidate requires the pinned complete extension inventory', async () => {
   const root = await mkdtemp(join(tmpdir(), 'xeg-same-version-candidate-'));
   const extension = join(root, 'dist-extension');
   const inputPath = join(root, 'validation/windows/release-upgrade/same-version-input.json');
@@ -258,9 +258,16 @@ test('same-version candidate rejects an unpinned extension inventory', async () 
       recursive: true,
     });
     const originalInventory = await extensionInventorySha256(extension);
-    await writeFile(join(extension, 'background.js'), 'modified background');
-    const changedInventory = await extensionInventorySha256(extension);
-    assert.notEqual(changedInventory, originalInventory);
+    const background = join(extension, 'background.js');
+    const backgroundBytes = await readFile(background);
+    await rm(background);
+    assert.notEqual(await extensionInventorySha256(extension), originalInventory);
+    await writeFile(background, backgroundBytes);
+    const unexpected = join(extension, 'unexpected.txt');
+    await writeFile(unexpected, 'unexpected file');
+    assert.notEqual(await extensionInventorySha256(extension), originalInventory);
+    await rm(unexpected);
+    assert.equal(await extensionInventorySha256(extension), originalInventory);
     await mkdir(join(root, 'validation/windows/release-upgrade'), { recursive: true });
     await writeFile(
       join(root, 'bundle.json'),
@@ -280,11 +287,12 @@ test('same-version candidate rejects an unpinned extension inventory', async () 
       coreSha: '588dce5dce2a79c2ed926626b5c97824d63a5203',
       extension: {
         path: 'dist-extension',
-        inventorySha256: changedInventory,
+        inventorySha256: originalInventory,
         contentSha256: sha256(await readFile(join(extension, 'content.js'))),
       },
     };
     await writeFile(inputPath, JSON.stringify(input));
+    // The pinned same-version candidate is a historical artifact, not this build.
     await assert.rejects(readSameVersionInput(root), /extension inventory is mismatched/u);
   } finally {
     await rm(root, { recursive: true, force: true });
