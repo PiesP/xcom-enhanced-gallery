@@ -87,4 +87,5 @@ memory/
 /validation/windows/inputs/settings-persistence.json
 /validation/windows/inputs/opening-feedback.json
 /validation/windows/inputs/media-download-recovery.json
+/validation/windows/inputs/gallery-experience.json
 .vitest/

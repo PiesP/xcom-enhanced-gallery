@@ -104,15 +104,35 @@ export function useGalleryLifecycle(options: UseGalleryLifecycleOptions): void {
         return;
       }
 
+      const toolbar = wrapper.querySelector<HTMLElement>('[data-gallery-element="toolbar"]');
+
       // Initial alignment reads scroll/focus state. Those reads must not
       // recreate this observer when a user scrolls or changes the focused item.
       const cleanup = observeViewportCssVars(
         container,
         () => {
-          const toolbarHeight = Math.floor(wrapper.getBoundingClientRect().height);
-          return { toolbarHeight, paddingTop: 0, paddingBottom: 0 } as const;
+          const items = container.querySelector<HTMLElement>('[data-gallery-element="items"]');
+          const hoverZone = container.querySelector<HTMLElement>(
+            '[data-gallery-element="toolbar-hover-zone"]'
+          );
+          const itemsTop =
+            items?.getBoundingClientRect().top ?? container.getBoundingClientRect().top;
+          // The fixed toolbar does not contribute to its wrapper's height. Reserve the
+          // lower of its edge and the hover sensor so scroll alignment keeps media actionable.
+          const toolbarBottom = toolbar?.getBoundingClientRect().bottom ?? itemsTop;
+          const hoverBottom = hoverZone?.getBoundingClientRect().bottom ?? itemsTop;
+          const clearance = Math.max(
+            0,
+            Math.ceil(Math.max(toolbarBottom, hoverBottom) - itemsTop) + 8
+          );
+          const value = `${clearance}px`;
+          if (container.style.getPropertyValue('--xeg-toolbar-clearance') !== value) {
+            container.style.setProperty('--xeg-toolbar-clearance', value);
+          }
+          return { toolbarHeight: clearance, paddingTop: 0, paddingBottom: 0 } as const;
         },
-        onViewportApplied
+        onViewportApplied,
+        toolbar
       );
 
       onCleanup(cleanup);

@@ -193,6 +193,9 @@ export function useVerticalGallery(options: UseVerticalGalleryOptions): UseVerti
     toolbarWrapperEl,
     isVisible,
     onViewportApplied: (): void => {
+      if (!isVisible() || lastScrollTime() > navigationState.programmaticScrollTimestamp()) {
+        return;
+      }
       realignToItem(focusedIndex() ?? currentIndex());
     },
   });

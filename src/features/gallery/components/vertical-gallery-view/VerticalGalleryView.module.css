@@ -203,6 +203,8 @@
   flex-direction: column;
   overflow: auto;
   position: relative;
+  padding-block-start: var(--xeg-toolbar-clearance, var(--xeg-hover-zone-height));
+  scroll-padding-block-start: var(--xeg-toolbar-clearance, var(--xeg-hover-zone-height));
 
   /* Keep scroll surface behind the fixed toolbar within the same stacking context. */
   z-index: 0;
@@ -318,7 +320,7 @@
   display: block;
 
   /* Dynamic height via CSS custom property (set by viewport observer) */
-  height: calc(100vh - var(--xeg-toolbar-height, 3.75rem));
+  height: calc(100vh - var(--xeg-toolbar-clearance, var(--xeg-hover-zone-height)));
   min-height: 50vh; /* Fallback minimum height */
   pointer-events: none;
   user-select: none;
@@ -398,7 +400,8 @@
 /* Container query responsive sizing */
 @container gallery-container (max-width: 48rem) {
   .itemsContainer {
-    padding: var(--xeg-spacing-mobile);
+    padding-inline: var(--xeg-spacing-mobile);
+    padding-block-end: var(--xeg-spacing-mobile);
     gap: var(--xeg-spacing-mobile);
   }
 
@@ -409,7 +412,8 @@
 
 @container gallery-container (max-width: 30rem) {
   .itemsContainer {
-    padding: var(--xeg-spacing-compact);
+    padding-inline: var(--xeg-spacing-compact);
+    padding-block-end: var(--xeg-spacing-compact);
     gap: var(--xeg-spacing-compact);
   }
 }

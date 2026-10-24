@@ -361,7 +361,11 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
           throw new Error('Missing gallery items container');
         }
         return Math.abs(
-          Math.round(item.getBoundingClientRect().top - items.getBoundingClientRect().top)
+          Math.round(
+            item.getBoundingClientRect().top -
+              items.getBoundingClientRect().top -
+              parseFloat(getComputedStyle(items).scrollPaddingBlockStart)
+          )
         );
       });
     await expect.poll(selectedTopOffset).toBe(0);
@@ -523,7 +527,42 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
 
     const itemsContainer = page.locator('[data-gallery-element="items"]');
     await itemsContainer.hover();
-    await page.mouse.wheel(0, 1600);
+
+    // Aim the manual wheel at the last item's center from the initial layout.
+    // A second wheel issued before the first one settles can overshoot into
+    // the trailing spacer, so measure only once before scrolling.
+    const lastItem = page.locator('[data-gallery-element="item"][data-index="2"]');
+    const scrollDistance = await lastItem.evaluate((item) => {
+      const items = item.closest('[data-gallery-element="items"]');
+      if (!items) {
+        throw new Error('Missing gallery items container');
+      }
+      const containerRect = items.getBoundingClientRect();
+      const itemRect = item.getBoundingClientRect();
+      const clearance = parseFloat(getComputedStyle(items).scrollPaddingBlockStart);
+      const visibleCenter = containerRect.top + (clearance + containerRect.height) / 2;
+      return Math.max(0, Math.ceil(itemRect.top + itemRect.height / 2 - visibleCenter));
+    });
+    await page.mouse.wheel(0, scrollDistance);
+    await expect
+      .poll(() =>
+        lastItem.evaluate((item) => {
+          const items = item.closest('[data-gallery-element="items"]');
+          if (!items) {
+            throw new Error('Missing gallery items container');
+          }
+          const containerRect = items.getBoundingClientRect();
+          const itemRect = item.getBoundingClientRect();
+          const clearance = parseFloat(getComputedStyle(items).scrollPaddingBlockStart);
+          const visibleTop = Math.max(itemRect.top, containerRect.top + clearance);
+          const visibleBottom = Math.min(itemRect.bottom, containerRect.bottom);
+          return (
+            visibleBottom - visibleTop >=
+            Math.min(itemRect.height, containerRect.height - clearance) / 2
+          );
+        })
+      )
+      .toBe(true);
 
     const toolbar = page.locator('[data-gallery-element="toolbar"]');
     await expect(toolbar).toHaveAttribute('data-focused-index', '2');

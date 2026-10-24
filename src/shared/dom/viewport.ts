@@ -62,12 +62,14 @@ function applyViewportCssVars(el: HTMLElement, v: ViewportConstraints): void {
  * @param el - Target HTML element to observe and apply CSS vars to
  * @param getChrome - Function returning current chrome offsets
  * @param onApplied - Optional callback after new constraints are applied
+ * @param chromeElement - Optional fixed chrome whose size can change without resizing the viewport
  * @returns Cleanup function to disconnect observers and remove listeners
  */
 export function observeViewportCssVars(
   el: HTMLElement,
   getChrome: () => ChromeOffsets,
-  onApplied?: () => void
+  onApplied?: () => void,
+  chromeElement?: Element | null
 ): () => void {
   let disposed = false;
 
@@ -114,6 +116,9 @@ export function observeViewportCssVars(
     ro = new ResizeObserver(() => schedule());
     try {
       ro.observe(el);
+      if (chromeElement) {
+        ro.observe(chromeElement);
+      }
     } catch {
       /* ignore */
     }

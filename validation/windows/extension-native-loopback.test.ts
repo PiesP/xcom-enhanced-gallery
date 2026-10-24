@@ -6,6 +6,60 @@ import { createServer, request } from 'node:http';
 import { test } from 'node:test';
 import { createExtensionNativeFixtureHandler } from './extension-native-loopback.ts';
 
+test('experience originals use the exact owned bytes and reject other qualities', async () => {
+  const fixture = createExtensionNativeFixtureHandler();
+  const images = ['tall', 'panorama', 'small'].map((label) => Buffer.from(label));
+  fixture.setPayloads(
+    [Buffer.from('base'), Buffer.from('base'), Buffer.from('base')],
+    Object.fromEntries(
+      ['quote-one', 'quote-two', 'linked-four', 'quote-three', 'nested-c'].map((name) => [
+        name,
+        Buffer.from('video'),
+      ])
+    )
+  );
+  fixture.setExperienceImages(images);
+  assert.throws(() => fixture.setExperienceImages(images), /already installed/u);
+  const server = createServer(fixture.handle);
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const address = server.address();
+  assert(address && typeof address !== 'string');
+  const read = (path: string) =>
+    new Promise<{ status: number | undefined; bytes: Buffer }>((resolve, reject) => {
+      const outgoing = request(
+        { hostname: '127.0.0.1', port: address.port, path, headers: { Host: 'pbs.twimg.com' } },
+        (incoming) => {
+          const parts: Buffer[] = [];
+          incoming.on('data', (part: Buffer) => parts.push(part));
+          incoming.once('error', reject);
+          incoming.once('end', () =>
+            resolve({ status: incoming.statusCode, bytes: Buffer.concat(parts) })
+          );
+        }
+      );
+      outgoing.once('error', reject);
+      outgoing.end();
+    });
+  try {
+    for (const [index, path] of ['Tall', 'Panorama', 'Small'].entries()) {
+      assert.deepEqual(await read(`/media/XegExperience${path}.jpg?format=jpg&name=orig`), {
+        status: 200,
+        bytes: images[index],
+      });
+    }
+    assert.deepEqual(await read('/media/XegExperienceTall.jpg?format=jpg&name=large'), {
+      status: 404,
+      bytes: Buffer.alloc(0),
+    });
+    assert.equal(fixture.snapshot().unexpectedCount, 1);
+  } finally {
+    fixture.destroyActive();
+    await new Promise<void>((resolve, reject) =>
+      server.close((error) => (error ? reject(error) : resolve()))
+    );
+  }
+});
+
 test('original availability faults retain the allowlist and restore the exact healthy bytes', async () => {
   const fixture = createExtensionNativeFixtureHandler();
   const original = Buffer.from('bounded-original');

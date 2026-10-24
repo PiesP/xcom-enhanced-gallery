@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Installed gallery experience fixture</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 20px;
+        background: #000;
+        color: #e7e9ea;
+        font:
+          16px 'Segoe UI',
+          sans-serif;
+      }
+      #host-layout-spacer {
+        height: 600px;
+      }
+      article {
+        max-width: 600px;
+        margin: auto;
+      }
+      [data-testid='tweetPhoto'] {
+        margin-block: 8px;
+      }
+      img {
+        display: block;
+        max-width: 100%;
+        height: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="host-layout-spacer" aria-hidden="true"></div>
+    <main>
+      <article data-testid="tweet">
+        <a href="/experience/status/4666000000000000002"><time>Experience fixture</time></a>
+        <div data-testid="tweetText">
+          <p>
+            A deliberately long gallery caption with several clauses, a link-shaped token
+            https://example.invalid/long-caption, and multilingual text: 길게 이어지는 문장과
+            日本語の説明. The panel must keep its own scroll while the selected media and toolbar
+            remain usable.
+          </p>
+        </div>
+        <div data-testid="tweetPhoto">
+          <img
+            src="https://pbs.twimg.com/media/XegExperienceTall.jpg?format=jpg&amp;name=large"
+            alt="Tall fixture"
+            width="300"
+            height="900"
+            tabindex="0"
+          />
+        </div>
+        <div data-testid="tweetPhoto">
+          <img
+            src="https://pbs.twimg.com/media/XegExperiencePanorama.jpg?format=jpg&amp;name=large"
+            alt="Panoramic fixture"
+            width="1200"
+            height="200"
+            tabindex="0"
+          />
+        </div>
+        <div data-testid="tweetPhoto">
+          <img
+            src="https://pbs.twimg.com/media/XegExperienceSmall.jpg?format=jpg&amp;name=large"
+            alt="Small fixture"
+            width="120"
+            height="80"
+            tabindex="0"
+          />
+        </div>
+      </article>
+    </main>
+  </body>
+</html>
