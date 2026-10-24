@@ -53,8 +53,6 @@ function originalPostUrl(value: string | undefined): string | null {
       !url.port &&
       !url.username &&
       !url.password &&
-      !url.search &&
-      !url.hash &&
       status
       ? `https://x.com/${status[1]}/status/${status[2]}`
       : null;
