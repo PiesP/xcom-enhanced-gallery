@@ -228,15 +228,23 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     const imageAction = items
       .filter({ has: page.locator('img') })
       .first()
-      .locator('button');
+      .locator('button:has(> img)');
     await expect(imageAction).toHaveAttribute('type', 'button');
     await expect(imageAction).toHaveAttribute('aria-label', /Image \d+ of/);
 
-    const mediaActions = items.locator(':scope > *').locator('button, video');
+    const mediaActions = items.locator('button:has(> img), video');
+    await expect(mediaActions).toHaveCount(count);
     await expect(mediaActions.nth(0)).toHaveAttribute('tabindex', '0');
     for (let i = 1; i < (await mediaActions.count()); i++) {
       await expect(mediaActions.nth(i)).toHaveAttribute('tabindex', '-1');
     }
+
+    await imageAction.locator('img').dispatchEvent('error');
+    const retryAction = items.first().getByRole('button', { name: 'Retry loading' });
+    await expect(retryAction).toBeVisible();
+    await expect(retryAction).toHaveAttribute('type', 'button');
+    await expect(retryAction).toHaveAttribute('tabindex', '0');
+    await expect(imageAction.locator('button, a')).toHaveCount(0);
 
     await closeGallery(page);
   });
