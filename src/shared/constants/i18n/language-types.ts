@@ -114,6 +114,10 @@ export interface LanguageStrings {
     readonly videoClickHelp: string;
     /** Persisting the selected video click mode failed */
     readonly videoClickSaveError: string;
+    /** Settings are active in this session but not saved */
+    readonly unsavedSettings: string;
+    /** Retry saving the latest settings */
+    readonly retrySettingsSave: string;
   };
   /** Message strings */
   readonly msg: {

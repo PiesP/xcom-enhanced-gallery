@@ -108,6 +108,8 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
   const [revision, setRevision] = createSignal(0);
   const [videoClickMode, setVideoClickMode] = createSignal<VideoClickMode>(readVideoClickMode());
   const [savingVideoClickMode, setSavingVideoClickMode] = createSignal(false);
+  const [unsavedSettings, setUnsavedSettings] = createSignal(false);
+  const [retryingSave, setRetryingSave] = createSignal(false);
 
   // Subscribe to language changes
   onMount(() => {
@@ -116,6 +118,11 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
 
     const settings = tryGetSettings();
     setVideoClickMode(readVideoClickMode());
+    setUnsavedSettings(settings?.hasUnsavedChanges?.() ?? false);
+    const unsubscribePersistence = settings?.subscribePersistence?.(setUnsavedSettings);
+    if (unsubscribePersistence) {
+      onCleanup(unsubscribePersistence);
+    }
     const unsubscribeSettings = settings?.subscribe?.((event) => {
       if (event.key === 'gallery.videoClickMode') {
         setVideoClickMode(readVideoClickMode());
@@ -161,6 +168,8 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
         saveError: languageService.translate('st.videoClickSaveError'),
       },
       errorTitle: languageService.translate('msg.err.t'),
+      unsaved: languageService.translate('st.unsavedSettings'),
+      retry: languageService.translate('st.retrySettingsSave'),
     };
   });
 
@@ -199,12 +208,40 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
     }
   };
 
+  const retrySettingsSave = async (): Promise<void> => {
+    const settings = tryGetSettings();
+    if (!settings?.retryUnsaved) {
+      return;
+    }
+    setRetryingSave(true);
+    try {
+      await settings.retryUnsaved();
+    } catch {
+      // The persistent status stays visible for the next explicit attempt.
+    } finally {
+      setRetryingSave(false);
+    }
+  };
+
   // JSX return
   return (
     <div
       class={cx(styles.body, local.compact && styles.bodyCompact)}
       data-testid={__DEV__ ? local['data-testid'] : undefined}
     >
+      {unsavedSettings() && (
+        <div class={styles.unsaved} role="status" data-xeg-settings-unsaved>
+          <span>{strings().unsaved}</span>
+          <button
+            type="button"
+            class={styles.retry}
+            onClick={() => void retrySettingsSave()}
+            disabled={retryingSave()}
+          >
+            {strings().retry}
+          </button>
+        </div>
+      )}
       <div class={cx(styles.setting, local.compact && styles.settingCompact)}>
         <label
           id={local['data-testid'] ? `${local['data-testid']}-theme-label` : 'settings-theme-label'}

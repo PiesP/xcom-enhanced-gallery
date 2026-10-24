@@ -25,7 +25,11 @@ import { injectDevUserscript, waitForGalleryApp } from '../fixtures/userscript-h
  * Setup: Route x.com requests to mock HTML, install GM mocks, inject userscript.
  * @param usePersistence - Use localStorage-backed GM mocks for persistence tests
  */
-async function setupGalleryPage(page: Page, usePersistence = false): Promise<void> {
+async function setupGalleryPage(
+  page: Page,
+  usePersistence = false,
+  faultableStorage = false
+): Promise<void> {
   await page.route('https://pbs.twimg.com/**', async (route) => {
     await route.fulfill({
       status: 200,
@@ -62,6 +66,29 @@ async function setupGalleryPage(page: Page, usePersistence = false): Promise<voi
 
   await page.goto('https://x.com', { waitUntil: 'domcontentloaded', timeout: 15_000 });
   await installGMMock(page, { persistentStorage: usePersistence });
+  if (faultableStorage) {
+    await page.evaluate(() => {
+      const host = window as typeof window & {
+        __xegStorageFaults?: { denyPrimary: boolean; denyFallback: boolean };
+      };
+      const faults = { denyPrimary: false, denyFallback: false };
+      host.__xegStorageFaults = faults;
+      const originalSet = window.GM_setValue;
+      const originalFallbackSet = Storage.prototype.setItem;
+      window.GM_setValue = (key, value) => {
+        if (faults.denyPrimary) {
+          throw new Error('controlled primary denial');
+        }
+        return originalSet(key, value);
+      };
+      Storage.prototype.setItem = function (key, value) {
+        if (faults.denyFallback && key.startsWith('xeg-fallback:')) {
+          throw new Error('controlled fallback denial');
+        }
+        return originalFallbackSet.call(this, key, value);
+      };
+    });
+  }
   await injectDevUserscript(page);
   await waitForGalleryApp(page);
 }
@@ -289,5 +316,87 @@ test.describe('X.com Enhanced Gallery Settings & Theme', () => {
     );
     expect(pageErrors).toEqual([]);
     expect(consoleErrors).toEqual([]);
+  });
+
+  test('denied settings stay active in session and the latest value persists after retry and reload', async ({
+    page,
+  }) => {
+    const pageErrors: string[] = [];
+    page.on('pageerror', (error) => pageErrors.push(error.message));
+    await setupGalleryPage(page, true, true);
+    await openGallery(page);
+    await page.locator('[data-gallery-element="toolbar"] button[aria-label*="Settings" i]').click();
+    const panel = page.locator('[data-gallery-element="settings-panel"]');
+    const theme = panel.locator('select').first();
+    const unsaved = panel.locator('[data-xeg-settings-unsaved]');
+
+    await page.evaluate(() => {
+      const faults = (
+        window as typeof window & {
+          __xegStorageFaults?: { denyPrimary: boolean; denyFallback: boolean };
+        }
+      ).__xegStorageFaults;
+      if (!faults) {
+        throw new Error('Storage fault fixture unavailable');
+      }
+      faults.denyPrimary = true;
+      faults.denyFallback = true;
+    });
+
+    await theme.selectOption('dark');
+    await expect(unsaved).toBeVisible();
+    await expect(page.locator('[data-xeg-gallery-container]')).toHaveAttribute(
+      'data-theme',
+      'dark'
+    );
+    await theme.selectOption('light');
+    await expect(page.locator('[data-xeg-gallery-container]')).toHaveAttribute(
+      'data-theme',
+      'light'
+    );
+    await expect(unsaved).toBeVisible();
+    const persistedWhileDenied = await page.evaluate(() => {
+      const raw = window.GM_getValue?.<string>('xeg-app-settings');
+      return typeof raw === 'string' ? JSON.parse(raw) : null;
+    });
+    expect(persistedWhileDenied?.value?.gallery?.theme).not.toBe('light');
+
+    await page.evaluate(() => {
+      const faults = (
+        window as typeof window & {
+          __xegStorageFaults?: { denyPrimary: boolean; denyFallback: boolean };
+        }
+      ).__xegStorageFaults;
+      if (!faults) {
+        throw new Error('Storage fault fixture unavailable');
+      }
+      faults.denyPrimary = false;
+      faults.denyFallback = false;
+    });
+    await unsaved.getByRole('button').click();
+    await expect(unsaved).toHaveCount(0);
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const raw = window.GM_getValue?.<string>('xeg-app-settings');
+          if (typeof raw !== 'string') {
+            return null;
+          }
+          return (JSON.parse(raw) as { value?: { gallery?: { theme?: string } } }).value?.gallery
+            ?.theme;
+        })
+      )
+      .toBe('light');
+
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await installGMMock(page, { persistentStorage: true });
+    await injectDevUserscript(page);
+    await waitForGalleryApp(page);
+    await openGallery(page);
+    await expect(page.locator('[data-xeg-gallery-container]')).toHaveAttribute(
+      'data-theme',
+      'light'
+    );
+    expect(pageErrors).toEqual([]);
   });
 });

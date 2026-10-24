@@ -25,22 +25,45 @@ vi.mock('@shared/utils/events/trusted-event', () => ({
 
 function mountSettings(initial: VideoClickMode) {
   let current = initial;
+  let denied = false;
+  let unsaved = false;
   const subscribers = new Set<(event: SettingChangeEvent) => void>();
-  const notify = (oldValue: VideoClickMode, newValue: VideoClickMode): void => {
+  const persistenceSubscribers = new Set<(value: boolean) => void>();
+  const notify = (
+    oldValue: VideoClickMode,
+    newValue: VideoClickMode,
+    status: 'success' | 'error' = 'success'
+  ): void => {
     for (const subscriber of subscribers) {
       subscriber({
         key: 'gallery.videoClickMode',
         oldValue,
         newValue,
         timestamp: Date.now(),
-        status: 'success',
+        status,
       });
     }
   };
   const set = vi.fn(async (_key: string, value: unknown) => {
     const previous = current;
     current = value as VideoClickMode;
-    notify(previous, current);
+    notify(previous, current, denied ? 'error' : 'success');
+    unsaved = denied;
+    for (const subscriber of persistenceSubscribers) {
+      subscriber(unsaved);
+    }
+    if (denied) {
+      throw new Error('Storage unavailable');
+    }
+  });
+  const retryUnsaved = vi.fn(async () => {
+    if (denied) {
+      throw new Error('Storage unavailable');
+    }
+    unsaved = false;
+    for (const subscriber of persistenceSubscribers) {
+      subscriber(unsaved);
+    }
   });
   registerSettings({
     get: () => current,
@@ -49,6 +72,12 @@ function mountSettings(initial: VideoClickMode) {
       subscribers.add(listener);
       return () => subscribers.delete(listener);
     },
+    hasUnsavedChanges: () => unsaved,
+    subscribePersistence: (listener) => {
+      persistenceSubscribers.add(listener);
+      return () => persistenceSubscribers.delete(listener);
+    },
+    retryUnsaved,
   });
   const host = document.createElement('div');
   document.body.append(host);
@@ -71,6 +100,10 @@ function mountSettings(initial: VideoClickMode) {
   return {
     select,
     set,
+    retryUnsaved,
+    setDenied: (value: boolean) => {
+      denied = value;
+    },
     subscribers,
     updateExternally: (mode: VideoClickMode) => {
       const previous = current;
@@ -112,7 +145,7 @@ describe('video click setting control', () => {
     }
   });
 
-  it('persists a selected mode and restores the active mode after a failed save', async () => {
+  it('keeps a denied selection active and exposes an explicit retry', async () => {
     const ui = mountSettings('block-controls-only');
     try {
       ui.select.value = 'allow-all';
@@ -122,12 +155,23 @@ describe('video click setting control', () => {
       );
       expect(ui.select.value).toBe('allow-all');
 
-      ui.set.mockRejectedValueOnce(new Error('Storage unavailable'));
+      ui.setDenied(true);
       ui.select.value = 'block-all';
       ui.select.dispatchEvent(new Event('change', { bubbles: true }));
       await vi.waitFor(() => expect(notification.send).toHaveBeenCalledOnce());
-      expect(ui.select.value).toBe('allow-all');
+      expect(ui.select.value).toBe('block-all');
       expect(notification.send).toHaveBeenCalledWith({}, 'msg.err.t', 'st.videoClickSaveError');
+      const unsaved = document.querySelector('[data-xeg-settings-unsaved]');
+      expect(unsaved).not.toBeNull();
+      expect(unsaved?.textContent).toContain('st.unsavedSettings');
+      ui.setDenied(false);
+      const retry = unsaved?.querySelector('button');
+      expect(retry).toBeInstanceOf(HTMLButtonElement);
+      retry?.click();
+      await vi.waitFor(() => expect(ui.retryUnsaved).toHaveBeenCalledOnce());
+      await vi.waitFor(() =>
+        expect(document.querySelector('[data-xeg-settings-unsaved]')).toBeNull()
+      );
     } finally {
       ui.dispose();
     }
