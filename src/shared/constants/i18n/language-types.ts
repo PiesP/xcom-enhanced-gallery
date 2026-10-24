@@ -192,6 +192,7 @@ export interface LanguageStrings {
         readonly noZip: string;
         readonly resourceLimit: string;
         readonly sourceUnavailable: string;
+        readonly sourceFetchFailed: string;
         readonly zipSaveFailed: string;
         readonly other: string;
         readonly nextAction: string;

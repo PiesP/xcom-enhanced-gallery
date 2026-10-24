@@ -20,8 +20,15 @@ export interface BulkDownloadOutcome {
   readonly included: number;
   readonly omitted: number;
   readonly handedOff: boolean;
-  readonly reason: 'none' | 'resourceLimit' | 'sourceUnavailable' | 'zipSaveFailed' | 'other';
+  readonly reason:
+    | 'none'
+    | 'resourceLimit'
+    | 'sourceUnavailable'
+    | 'sourceFetchFailed'
+    | 'zipSaveFailed'
+    | 'other';
   readonly sourceUnavailable: boolean;
+  readonly sourceFetchStatuses?: readonly number[];
 }
 
 // Internal signal — exported for use by disposeGallerySignals.

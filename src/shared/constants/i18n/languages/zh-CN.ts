@@ -107,6 +107,7 @@ export const zhCn: LanguageStrings = {
         noZip: '没有 ZIP 交给浏览器。',
         resourceLimit: '已达到下载内存上限。请等待正在进行的下载完成；若问题持续，请刷新页面。',
         sourceUnavailable: '无法核实原始图片来源。请打开原帖重试该项目。',
+        sourceFetchFailed: '媒体源请求失败（HTTP {statuses}）。请重新打开原帖并重试遗漏的项目。',
         zipSaveFailed: 'ZIP 已准备好，但浏览器未接受保存请求。',
         other: '部分项目无法加入 ZIP。请重新打开图库后重试。',
         nextAction:

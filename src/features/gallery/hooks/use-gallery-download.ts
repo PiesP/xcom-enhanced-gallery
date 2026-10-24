@@ -160,11 +160,16 @@ export function createDownloadHandler() {
                 ? 'sourceUnavailable'
                 : !handedOff && result.filesSuccessful > 0
                   ? 'zipSaveFailed'
-                  : result.status === 'partial' || !handedOff
-                    ? 'other'
-                    : 'none',
+                  : result.sourceFetchStatuses?.length
+                    ? 'sourceFetchFailed'
+                    : result.status === 'partial' || !handedOff
+                      ? 'other'
+                      : 'none',
           sourceUnavailable:
             result.sourceUnavailable === true || result.code === 'SOURCE_UNAVAILABLE',
+          ...(result.sourceFetchStatuses?.length
+            ? { sourceFetchStatuses: result.sourceFetchStatuses }
+            : {}),
         });
         if (result.code === 'RESOURCE_LIMIT' && result.success && result.status === 'partial') {
           publishStatus('handedOff');

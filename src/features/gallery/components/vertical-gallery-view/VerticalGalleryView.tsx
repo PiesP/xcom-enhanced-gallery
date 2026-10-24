@@ -126,8 +126,17 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
   });
 
   const translate = useTranslation();
-  const outcomeReason = (reason: BulkDownloadOutcome['reason']): string =>
-    reason === 'none' ? '' : translate(`msg.dl.bulkOutcome.${reason}`);
+  const sourceFetchReason = (statuses: readonly number[]): string =>
+    translate('msg.dl.bulkOutcome.sourceFetchFailed', { statuses: statuses.join(', ') });
+  const outcomeReason = (outcome: BulkDownloadOutcome): string => {
+    if (outcome.reason === 'none') {
+      return '';
+    }
+    if (outcome.reason === 'sourceFetchFailed') {
+      return sourceFetchReason(outcome.sourceFetchStatuses ?? []);
+    }
+    return translate(`msg.dl.bulkOutcome.${outcome.reason}`);
+  };
 
   // Debounced scroll correction — adjusts scroll position after media loads
   const { debouncedScrollCorrection } = useGalleryScrollCorrection({
@@ -323,10 +332,14 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
                   : 'msg.dl.bulkOutcome.noZip'
               )}
             </p>
-            {outcome().reason !== 'none' && <p>{outcomeReason(outcome().reason)}</p>}
+            {outcome().reason !== 'none' && <p>{outcomeReason(outcome())}</p>}
             {outcome().sourceUnavailable && outcome().reason !== 'sourceUnavailable' && (
               <p>{translate('msg.dl.bulkOutcome.sourceUnavailable')}</p>
             )}
+            {(outcome().sourceFetchStatuses?.length ?? 0) > 0 &&
+              outcome().reason !== 'sourceFetchFailed' && (
+                <p>{sourceFetchReason(outcome().sourceFetchStatuses ?? [])}</p>
+              )}
             <p>{translate('msg.dl.bulkOutcome.nextAction')}</p>
           </section>
         )}

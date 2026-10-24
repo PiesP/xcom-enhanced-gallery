@@ -303,6 +303,30 @@ describe('createDownloadHandler bulk resource limits', () => {
     });
   });
 
+  it('distinguishes a verified original HTTP rejection from an unverified original', async () => {
+    state.downloadBulk.mockResolvedValue({
+      success: true,
+      status: 'partial',
+      filesProcessed: 2,
+      filesSuccessful: 1,
+      failures: [{ url: 'https://pbs.twimg.com/media/first.jpg?name=orig', error: 'HTTP:403' }],
+      sourceFetchStatuses: [403],
+      code: 'NONE',
+    });
+
+    await createDownloadHandler().handleDownload('all');
+
+    expect(state.setBulkDownloadOutcome).toHaveBeenLastCalledWith({
+      total: 2,
+      included: 1,
+      omitted: 1,
+      handedOff: true,
+      reason: 'sourceFetchFailed',
+      sourceUnavailable: false,
+      sourceFetchStatuses: [403],
+    });
+  });
+
   it('does not count prepared ZIP files as included when the browser rejects the save', async () => {
     state.downloadBulk.mockResolvedValue({
       success: false,

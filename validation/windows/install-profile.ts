@@ -592,7 +592,7 @@ async function assertVisibleBulkOutcome(
   );
   assert.match(text, /Download all starts a new ZIP/u);
   if (expected.reason) {
-    assert.match(text, new RegExp(expected.reason, 'u'));
+    assert(text.includes(expected.reason), `Visible ZIP result omitted: ${expected.reason}`);
   }
   return text;
 }
@@ -12927,7 +12927,7 @@ async function runFullZipFailureProbe({
       included: 0,
       omitted: 3,
       handedOff: false,
-      reason: 'An original image source could not be verified',
+      reason: 'A media source request failed (HTTP 403)',
     });
     await waitForValue(
       async () => ((await zipButton.isEnabled()) ? true : undefined),
@@ -13678,7 +13678,7 @@ async function runOriginalAvailabilityCycles({
           included: 2,
           omitted: 1,
           handedOff: true,
-          reason: 'An original image source could not be verified',
+          reason: `A media source request failed (HTTP ${status})`,
         });
         if (uiProbe) {
           await page.waitForTimeout(5_250);

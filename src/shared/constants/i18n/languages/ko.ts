@@ -114,6 +114,8 @@ export const ko: LanguageStrings = {
           '다운로드 메모리 한도에 도달했습니다. 진행 중인 다운로드가 끝날 때까지 기다리고, 계속되면 페이지를 새로고침하세요.',
         sourceUnavailable:
           '원본 이미지 출처를 확인할 수 없습니다. 해당 항목은 원래 게시물에서 다시 시도하세요.',
+        sourceFetchFailed:
+          '미디어 원본 요청에 실패했습니다(HTTP {statuses}). 원래 게시물을 다시 열어 제외된 항목을 재시도하세요.',
         zipSaveFailed: 'ZIP을 준비했지만 브라우저가 저장 요청을 받지 않았습니다.',
         other: '일부 항목을 포함할 수 없습니다. 갤러리를 다시 열어 시도하세요.',
         nextAction:

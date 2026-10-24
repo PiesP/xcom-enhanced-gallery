@@ -116,6 +116,8 @@ export const es: LanguageStrings = {
           'Se alcanzó el límite de memoria de descarga. Espera a que terminen las descargas activas; si persiste, recarga la página.',
         sourceUnavailable:
           'No se pudo verificar el origen de una imagen. Vuelve a la publicación original para intentar descargarla.',
+        sourceFetchFailed:
+          'Falló una solicitud al origen del contenido (HTTP {statuses}). Vuelve a la publicación original y reintenta los elementos omitidos.',
         zipSaveFailed: 'El ZIP se preparó, pero el navegador no aceptó la solicitud de guardado.',
         other:
           'No se pudieron incluir algunos elementos. Vuelve a abrir la galería e inténtalo de nuevo.',

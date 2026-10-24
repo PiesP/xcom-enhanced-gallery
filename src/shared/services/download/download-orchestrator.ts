@@ -35,6 +35,7 @@ function createErrorResponse(
     filesSuccessful?: number;
     failures?: BulkDownloadResult['failures'];
     sourceUnavailable?: boolean;
+    sourceFetchStatuses?: BulkDownloadResult['sourceFetchStatuses'];
   }
 ): BulkDownloadResult {
   return {
@@ -45,6 +46,9 @@ function createErrorResponse(
     error,
     ...(options?.failures ? { failures: options.failures } : {}),
     ...(options?.sourceUnavailable ? { sourceUnavailable: true } : {}),
+    ...(options?.sourceFetchStatuses?.length
+      ? { sourceFetchStatuses: options.sourceFetchStatuses }
+      : {}),
     code,
   };
 }
@@ -162,6 +166,7 @@ export class DownloadOrchestrator {
               {
                 failures: result.failures,
                 ...(result.sourceUnavailable ? { sourceUnavailable: true } : {}),
+                sourceFetchStatuses: result.sourceFetchStatuses,
               }
             );
           }
@@ -178,14 +183,22 @@ export class DownloadOrchestrator {
                 normalizeErrorMessage(getUserCancelledAbortErrorFromSignal(mergedSignal)),
                 ErrorCode.CANCELLED,
                 items.length,
-                { filesSuccessful: result.filesSuccessful, failures: result.failures }
+                {
+                  filesSuccessful: result.filesSuccessful,
+                  failures: result.failures,
+                  sourceFetchStatuses: result.sourceFetchStatuses,
+                }
               );
             }
             return createErrorResponse(
               saveResult.error || 'Failed to save ZIP file',
               ErrorCode.ALL_FAILED,
               items.length,
-              { filesSuccessful: result.filesSuccessful, failures: result.failures }
+              {
+                filesSuccessful: result.filesSuccessful,
+                failures: result.failures,
+                sourceFetchStatuses: result.sourceFetchStatuses,
+              }
             );
           }
 
@@ -197,6 +210,9 @@ export class DownloadOrchestrator {
             filename,
             failures: result.failures,
             ...(result.sourceUnavailable ? { sourceUnavailable: true } : {}),
+            ...(result.sourceFetchStatuses?.length
+              ? { sourceFetchStatuses: result.sourceFetchStatuses }
+              : {}),
             code: result.resourceLimitExceeded
               ? ErrorCode.RESOURCE_LIMIT
               : result.sourceUnavailable

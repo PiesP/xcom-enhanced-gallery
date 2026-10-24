@@ -21,7 +21,8 @@ import {
   type ZipEntryReservation,
   ZipResourceLimitError,
 } from '@shared/external/zip/streaming-zip-writer';
-import { fetchOwnedArrayBufferWithRetry } from '@shared/network/retry-fetch';
+import { fetchOwnedArrayBufferWithRetry, HttpStatusError } from '@shared/network/retry-fetch';
+import { HttpRequestError } from '@shared/services/http-request-service';
 import type { DownloadOptions, OrchestratorItem, ZipResult } from '@shared/services/download/types';
 import { getZipInputKind, reportProgress } from '@shared/services/download/types';
 import {
@@ -200,6 +201,7 @@ export async function downloadAsZip(
   let successful = 0;
   let resourceLimitExceeded = false;
   let sourceUnavailable = false;
+  const sourceFetchStatuses = new Set<number>();
   const failures: { url: string; error: string }[] = [];
   let currentIndex = 0;
 
@@ -351,6 +353,14 @@ export async function downloadAsZip(
           sourceUnavailable = true;
         }
         if (
+          (error instanceof HttpRequestError || error instanceof HttpStatusError) &&
+          error.category === 'http' &&
+          error.status >= 400 &&
+          error.status <= 599
+        ) {
+          sourceFetchStatuses.add(error.status);
+        }
+        if (
           error instanceof ZipResourceLimitError ||
           isHttpResponseSizeLimitError(error) ||
           error instanceof DownloadResourceLimitError
@@ -407,6 +417,9 @@ export async function downloadAsZip(
     zipData: parts,
     resourceLimitExceeded,
     sourceUnavailable,
+    ...(sourceFetchStatuses.size > 0
+      ? { sourceFetchStatuses: [...sourceFetchStatuses].sort((a, b) => a - b) }
+      : {}),
     createBlob: () => {
       if (transferred || disposed) {
         throw new Error('ZIP ownership is no longer available');

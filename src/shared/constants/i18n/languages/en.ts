@@ -112,6 +112,8 @@ export const en: LanguageStrings = {
           'Download memory limit reached. Wait for active downloads; reload the page if the limit remains.',
         sourceUnavailable:
           'An original image source could not be verified. Reopen the original post to try that item.',
+        sourceFetchFailed:
+          'A media source request failed (HTTP {statuses}). Reopen the original post and retry the omitted items.',
         zipSaveFailed: 'The ZIP was prepared, but the browser did not accept the save request.',
         other: 'Some items could not be included. Reopen the gallery to try again.',
         nextAction:
