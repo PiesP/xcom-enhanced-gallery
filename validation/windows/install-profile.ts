@@ -14215,7 +14215,9 @@ async function experienceToolbarState(toolbar: Locator) {
       wrapper: style(wrapper),
       close: style(close),
       closeHit: Boolean(hit && close?.contains(hit)),
-      activeLabel: document.activeElement?.getAttribute('aria-label') ?? null,
+      activeLabel:
+        document.activeElement?.getAttribute('aria-label') ??
+        (document.activeElement instanceof HTMLElement ? document.activeElement.id : null),
       focusedWithin: element.contains(document.activeElement),
     };
   });
@@ -14377,7 +14379,7 @@ async function runGalleryExperienceProbe({
   };
   try {
     await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
-    await phase('x02-toolbar', async () => {
+    await phase('x02-toolbar', async (partial) => {
       await page.goto(EXPERIENCE_FIXTURE_URL);
       await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
       const trigger = page.locator('[data-testid="tweetPhoto"] img').first();
@@ -14388,6 +14390,7 @@ async function runGalleryExperienceProbe({
       await gallery.waitFor({ state: 'visible' });
       const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
       const initial = await experienceToolbarState(toolbar);
+      partial.initial = initial;
       await page.screenshot({ path: join(output, 'experience-x02-toolbar-initial.png') });
       await toolbar.evaluate((element) => {
         if (element.contains(document.activeElement)) {
@@ -14397,6 +14400,7 @@ async function runGalleryExperienceProbe({
       await page.mouse.move(640, 350);
       await page.waitForTimeout(4_250);
       const hidden = await experienceToolbarState(toolbar);
+      partial.hidden = hidden;
       await page.screenshot({ path: join(output, 'experience-x02-toolbar-idle.png') });
       assert(Number(hidden.wrapper?.opacity) < 0.05, 'Toolbar wrapper remained painted after idle');
       await page.mouse.move(640, 8);
@@ -14408,6 +14412,7 @@ async function runGalleryExperienceProbe({
         'pointer-revealed toolbar paint and Close hit target',
         3_000
       );
+      partial.rediscovered = rediscovered;
       await page.screenshot({ path: join(output, 'experience-x02-toolbar-pointer.png') });
       await toolbar.locator('button[aria-label="Fit Window"]').click();
       assert.equal(
@@ -14423,21 +14428,9 @@ async function runGalleryExperienceProbe({
       await page.mouse.move(640, 350);
       await page.waitForTimeout(4_250);
       const hiddenAfterPointer = await experienceToolbarState(toolbar);
+      partial.hiddenAfterPointer = hiddenAfterPointer;
       assert(Number(hiddenAfterPointer.wrapper?.opacity) < 0.05);
-      const reachable: string[] = [];
-      for (let index = 0; index < 32; index++) {
-        await page.keyboard.press('Tab');
-        const state = await page.evaluate(() => {
-          const active = document.activeElement;
-          return active instanceof HTMLElement && active.closest('[data-gallery-element="toolbar"]')
-            ? (active.getAttribute('aria-label') ?? active.id)
-            : null;
-        });
-        if (state && !reachable.includes(state)) {
-          reachable.push(state);
-        }
-      }
-      for (const label of [
+      const requiredLabels = [
         'Fit Width',
         'Fit Height',
         'Fit Window',
@@ -14446,18 +14439,43 @@ async function runGalleryExperienceProbe({
         'Download 3 shown files as ZIP',
         'Open Settings',
         'Close',
-      ]) {
+      ];
+      const reachable: string[] = [];
+      const focusSteps: Array<Record<string, unknown>> = [];
+      partial.focusSteps = focusSteps;
+      for (let index = 0; index < 32; index++) {
+        await page.keyboard.press('Tab');
+        const state = await experienceToolbarState(toolbar);
+        focusSteps.push({ key: 'Tab', ...state });
+        const label = state.focusedWithin ? state.activeLabel : null;
+        if (label && !reachable.includes(label)) {
+          reachable.push(label);
+        }
+        if (requiredLabels.every((required) => reachable.includes(required))) {
+          break;
+        }
+      }
+      for (const label of requiredLabels) {
         assert(reachable.includes(label), `Toolbar Tab sequence missed ${label}`);
       }
       await page.keyboard.press('Shift+Tab');
-      const reverseFocus = await page.evaluate(
-        () => document.activeElement?.getAttribute('aria-label') ?? null
+      const reversed = await experienceToolbarState(toolbar);
+      focusSteps.push({ key: 'Shift+Tab', ...reversed });
+      const reverseFocus = reversed.activeLabel;
+      assert(reversed.focusedWithin && reverseFocus, 'Shift+Tab lost toolbar focus');
+      const focused = await waitForValue(
+        async () => {
+          const state = await experienceToolbarState(toolbar);
+          partial.lastFocusState = state;
+          return state.focusedWithin && Number(state.wrapper?.opacity) > 0.95 && state.closeHit
+            ? state
+            : undefined;
+        },
+        'keyboard-focused toolbar paint and Close hit target',
+        3_000
       );
-      assert(reverseFocus, 'Shift+Tab lost toolbar focus');
-      const focused = await experienceToolbarState(toolbar);
+      partial.focused = focused;
       await page.screenshot({ path: join(output, 'experience-x02-toolbar-focused.png') });
-      assert(Number(focused.wrapper?.opacity) > 0.95, 'Keyboard focus did not reveal toolbar');
-      assert.equal(focused.closeHit, true, 'Focused toolbar Close cannot receive pointer input');
       await page.mouse.move(640, 350);
       await toolbar.locator('#settings-button').click();
       const select = gallery.getByLabel('Video clicks');
@@ -14518,6 +14536,7 @@ async function runGalleryExperienceProbe({
         hidden,
         hiddenAfterPointer,
         focused,
+        focusSteps,
         reachable,
         reverseFocus,
         selectAfterPointerAway,
