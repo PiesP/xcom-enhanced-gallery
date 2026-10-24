@@ -45,14 +45,18 @@ function originalPostUrl(value: string | undefined): string | null {
   }
   try {
     const url = new URL(value);
+    const status = url.pathname.match(
+      /^\/([A-Za-z0-9_]{1,15})\/status\/([1-9]\d{0,19})(?:\/(?:photo|video)\/[1-9]\d*)?\/?$/u
+    );
     return url.protocol === 'https:' &&
       (url.hostname === 'x.com' || url.hostname === 'twitter.com') &&
+      !url.port &&
       !url.username &&
       !url.password &&
       !url.search &&
       !url.hash &&
-      /^\/[A-Za-z0-9_]{1,15}\/status\/[1-9]\d{0,19}\/?$/u.test(url.pathname)
-      ? url.href
+      status
+      ? `https://x.com/${status[1]}/status/${status[2]}`
       : null;
   } catch {
     return null;

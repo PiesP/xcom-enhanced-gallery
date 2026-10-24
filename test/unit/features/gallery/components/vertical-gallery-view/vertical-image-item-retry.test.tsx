@@ -101,7 +101,7 @@ describe('VerticalImageItem image recovery', () => {
   });
 
   it('bounds persistent failures to two user retries and keeps the original-post route', () => {
-    const { image } = mount();
+    const { image } = mount(media('https://twitter.com/owner/status/123/photo/1'));
     let current = image;
     for (let attempt = 0; attempt < 2; attempt += 1) {
       current.dispatchEvent(new Event('error'));
@@ -114,15 +114,21 @@ describe('VerticalImageItem image recovery', () => {
     expect(host.querySelector('[role="alert"] button')).toBeNull();
     expect(host.querySelector('[role="alert"]')?.textContent).toContain('msg.gal.retryExhausted');
     expect(host.querySelector('[role="alert"] a')?.textContent).toBe('msg.gal.openOriginalPost');
+    expect(host.querySelector<HTMLAnchorElement>('[role="alert"] a')?.href).toBe(
+      'https://x.com/owner/status/123'
+    );
   });
 
-  it('does not render an unsafe original-post link or update a disposed gallery', () => {
-    const { image } = mount(media('javascript:alert(1)'));
-    image.dispatchEvent(new Event('error'));
-    expect(host.querySelector('[role="alert"] a')).toBeNull();
-    dispose?.();
-    dispose = undefined;
-    image.dispatchEvent(new Event('load'));
-    expect(host.querySelector('[data-gallery-element="item"]')).toBeNull();
-  });
+  it.each(['javascript:alert(1)', 'https://x.com.evil.test/owner/status/123/photo/1'])(
+    'does not render an unsafe original-post link for %s or update a disposed gallery',
+    (url) => {
+      const { image } = mount(media(url));
+      image.dispatchEvent(new Event('error'));
+      expect(host.querySelector('[role="alert"] a')).toBeNull();
+      dispose?.();
+      dispose = undefined;
+      image.dispatchEvent(new Event('load'));
+      expect(host.querySelector('[data-gallery-element="item"]')).toBeNull();
+    }
+  );
 });

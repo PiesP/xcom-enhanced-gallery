@@ -13691,6 +13691,25 @@ async function runOriginalAvailabilityCycles({
               `source-${status}-partial-after-five-seconds`
             ),
           };
+          await gallery
+            .locator('[data-gallery-element="bulk-download-outcome"] button', {
+              hasText: 'Dismiss ZIP result',
+            })
+            .click();
+          assert.equal(
+            await gallery.locator('[data-gallery-element="bulk-download-outcome"]').count(),
+            0
+          );
+          assert.equal(await gallery.locator('[data-download-status]').count(), 0);
+          assert.equal(
+            await gallery.locator('.xeg-sr-only[aria-live="polite"]').textContent(),
+            '',
+            'Dismissing a partial ZIP must not revive its stale live error'
+          );
+          receipt.ui = {
+            ...(receipt.ui as object),
+            dismissed: await captureRecoveryUi(page, output, `source-${status}-dismissed`),
+          };
         }
         const resourceErrors = consoleErrors
           .slice(zipConsoleMark)

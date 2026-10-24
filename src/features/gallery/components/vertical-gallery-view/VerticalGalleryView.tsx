@@ -8,6 +8,7 @@
  */
 
 import { useGalleryFitMode } from '@features/gallery/components/vertical-gallery-view/hooks/use-gallery-fit-mode';
+import { dismissBulkDownloadOutcome } from '@features/gallery/hooks/dismiss-bulk-download-outcome';
 import { useGalleryNavigationHandlers } from '@features/gallery/components/vertical-gallery-view/hooks/use-gallery-navigation-handlers';
 import { useGalleryScrollCorrection } from '@features/gallery/components/vertical-gallery-view/hooks/use-gallery-scroll-correction';
 import { useGalleryWheelRedirect } from '@features/gallery/components/vertical-gallery-view/hooks/use-gallery-wheel-redirect';
@@ -26,7 +27,6 @@ import {
 import {
   type BulkDownloadOutcome,
   downloadState,
-  setBulkDownloadOutcome,
 } from '@shared/state/signals/gallery-download-signals';
 import { computePreloadIndices } from '@shared/utils/performance/preload';
 import { cx } from '@shared/utils/text/formatting';
@@ -305,7 +305,7 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
                     : 'msg.dl.bulkOutcome.titleFailed'
                 )}
               </strong>
-              <button type="button" onClick={() => setBulkDownloadOutcome(null)}>
+              <button type="button" onClick={dismissBulkDownloadOutcome}>
                 {translate('msg.dl.bulkOutcome.dismiss')}
               </button>
             </div>

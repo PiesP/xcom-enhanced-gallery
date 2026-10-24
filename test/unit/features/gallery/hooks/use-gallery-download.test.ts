@@ -69,7 +69,7 @@ describe('createDownloadHandler bulk resource limits', () => {
       'working',
       'handedOff',
     ]);
-    expect(state.setError).toHaveBeenLastCalledWith('msg.dl.part.resourceLimit');
+    expect(state.setError).toHaveBeenLastCalledWith('msg.dl.part.resourceLimit', 'bulkDownload');
     expect(state.notifySafely).toHaveBeenCalledWith(
       state.notify,
       'msg.dl.part.t',
@@ -116,7 +116,8 @@ describe('createDownloadHandler bulk resource limits', () => {
       await createDownloadHandler().handleDownload('all');
       expect(state.setDownloadStatus).toHaveBeenLastCalledWith(partial ? 'handedOff' : 'error');
       expect(state.setError).toHaveBeenLastCalledWith(
-        `${partial ? 'msg.dl.part.resourceLimit' : 'msg.dl.resourceLimit'} msg.dl.sourceUnavailable`
+        `${partial ? 'msg.dl.part.resourceLimit' : 'msg.dl.resourceLimit'} msg.dl.sourceUnavailable`,
+        'bulkDownload'
       );
       expect(state.notifySafely).toHaveBeenCalledWith(
         state.notify,
@@ -186,7 +187,7 @@ describe('createDownloadHandler bulk resource limits', () => {
       'working',
       'error',
     ]);
-    expect(state.setError).toHaveBeenLastCalledWith('msg.dl.resourceLimit');
+    expect(state.setError).toHaveBeenLastCalledWith('msg.dl.resourceLimit', 'bulkDownload');
     expect(state.notifySafely).toHaveBeenCalledWith(
       state.notify,
       'msg.dl.one.err.t',

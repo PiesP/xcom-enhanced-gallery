@@ -178,7 +178,7 @@ export function createDownloadHandler() {
             (result.sourceUnavailable
               ? ` ${languageService.translate('msg.dl.sourceUnavailable')}`
               : '');
-          setError(body);
+          setError(body, 'bulkDownload');
           notifyError(title, body);
           return;
         }
@@ -190,7 +190,7 @@ export function createDownloadHandler() {
             (result.sourceUnavailable
               ? ` ${languageService.translate('msg.dl.sourceUnavailable')}`
               : '');
-          setError(body);
+          setError(body, 'bulkDownload');
           notifyError(title, body);
           return;
         }
@@ -203,7 +203,7 @@ export function createDownloadHandler() {
             (result.success
               ? `${languageService.translate('msg.dl.part.b', { count: result.filesProcessed - result.filesSuccessful })} `
               : '') + languageService.translate('msg.dl.sourceUnavailable');
-          setError(body);
+          setError(body, 'bulkDownload');
           notifyError(title, body);
           return;
         }
@@ -213,13 +213,13 @@ export function createDownloadHandler() {
           if (result.filesSuccessful === 0) {
             const title = languageService.translate('msg.dl.allFail.t');
             const body = languageService.translate('msg.dl.allFail.b');
-            setError(body);
+            setError(body, 'bulkDownload');
             notifyError(title, body);
           } else {
             const error = result.error || languageService.translate('msg.dl.zipFail');
             const title = languageService.translate('msg.dl.one.err.t');
             const body = languageService.translate('msg.dl.one.err.b', { error });
-            setError(body);
+            setError(body, 'bulkDownload');
             notifyError(title, body);
           }
           return;
@@ -230,7 +230,7 @@ export function createDownloadHandler() {
           if (failures > 0) {
             const title = languageService.translate('msg.dl.part.t');
             const body = languageService.translate('msg.dl.part.b', { count: failures });
-            setError(body);
+            setError(body, 'bulkDownload');
             notifyError(title, body);
           }
         }
@@ -253,7 +253,7 @@ export function createDownloadHandler() {
       }
       logger.error('Download failed', error);
       const { title, body } = getDownloadErrorNotification(error);
-      setError(body);
+      setError(body, type === 'all' ? 'bulkDownload' : null);
       notifyError(title, body);
     }
   };

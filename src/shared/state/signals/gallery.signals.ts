@@ -38,6 +38,9 @@ export interface GalleryState {
   readonly error: string | null;
 }
 
+type GalleryErrorOwner = 'bulkDownload' | null;
+let errorOwner: GalleryErrorOwner = null;
+
 interface GallerySessionState {
   readonly isOpen: boolean;
   readonly mediaItems: readonly MediaInfo[];
@@ -125,6 +128,9 @@ export const gallerySignals = {
   get error() {
     return _errorSig();
   },
+  get errorOwner(): GalleryErrorOwner {
+    return errorOwner;
+  },
   get focusedIndex() {
     return focusedIndexSig();
   },
@@ -139,14 +145,16 @@ export const gallerySignals = {
  *
  * @param error - Error message string, or `null` to clear
  */
-export function setError(error: string | null): void {
+export function setError(error: string | null, owner: GalleryErrorOwner = null): void {
   batch(() => {
+    errorOwner = error ? owner : null;
     _setErrorSig(error);
   });
 }
 
 function applyGallerySessionUpdate(state: GallerySessionState): void {
   batch(() => {
+    errorOwner = null;
     setMediaItems(state.mediaItems);
     setCurrentIndex(state.currentIndex);
     _setFocusedIndex(state.focusedIndex);
@@ -294,6 +302,7 @@ export function navigateToItem(targetIndex: number, source: NavigationSource): v
 export function disposeGallerySignals(): void {
   galleryIndexEvents.dispose();
   batch(() => {
+    errorOwner = null;
     setIsOpenSig(INITIAL_STATE.isOpen);
     setMediaItems(INITIAL_STATE.mediaItems);
     setCurrentIndex(INITIAL_STATE.currentIndex);
