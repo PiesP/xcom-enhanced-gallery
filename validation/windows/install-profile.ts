@@ -14706,6 +14706,18 @@ async function runGalleryExperienceProbe({
           assert.equal(geometry.current, String(index), 'Fit action changed the selected item');
           assert.equal(geometry.focused, String(index), 'Fit action changed the focused item');
           assert.equal(geometry.activeFit, fit);
+          assert(
+            geometry.items &&
+              Math.abs(
+                Number.parseFloat(geometry.items.paddingBlockStart ?? '') -
+                  Number.parseFloat(geometry.items.clearance ?? '')
+              ) < 1 &&
+              Math.abs(
+                Number.parseFloat(geometry.items.scrollPaddingBlockStart ?? '') -
+                  Number.parseFloat(geometry.items.clearance ?? '')
+              ) < 1,
+            `${EXPERIENCE_IMAGES[index]?.label} ${fit}: responsive padding lost toolbar clearance`
+          );
           cases.push({ shape: EXPERIENCE_IMAGES[index]?.label, fit, geometry });
           if (fit === 'Fit Window') {
             const controls = await experienceControlGeometry(toolbar);

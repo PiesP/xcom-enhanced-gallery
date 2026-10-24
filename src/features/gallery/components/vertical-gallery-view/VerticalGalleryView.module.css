@@ -400,7 +400,8 @@
 /* Container query responsive sizing */
 @container gallery-container (max-width: 48rem) {
   .itemsContainer {
-    padding: var(--xeg-spacing-mobile);
+    padding-inline: var(--xeg-spacing-mobile);
+    padding-block-end: var(--xeg-spacing-mobile);
     gap: var(--xeg-spacing-mobile);
   }
 
@@ -411,7 +412,8 @@
 
 @container gallery-container (max-width: 30rem) {
   .itemsContainer {
-    padding: var(--xeg-spacing-compact);
+    padding-inline: var(--xeg-spacing-compact);
+    padding-block-end: var(--xeg-spacing-compact);
     gap: var(--xeg-spacing-compact);
   }
 }
