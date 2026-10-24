@@ -52,6 +52,8 @@ export const en: LanguageStrings = {
       'Eligible video surfaces open the gallery in the last two modes. Only validated unmarked play buttons join in the last mode; ordinary player controls stay in X.',
     videoClickSaveError:
       'Could not save Video clicks. The current setting is still active. Try again.',
+    unsavedSettings: 'Settings are active for this session but were not saved.',
+    retrySettingsSave: 'Retry saving',
   },
   msg: {
     err: {

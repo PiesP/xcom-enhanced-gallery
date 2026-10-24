@@ -20,6 +20,9 @@ interface SettingsLike {
   get(key: string): unknown;
   set(key: string, value: unknown): Promise<void>;
   subscribe?(listener: (event: SettingChangeEvent) => void): () => void;
+  hasUnsavedChanges?(): boolean;
+  subscribePersistence?(listener: (unsaved: boolean) => void): () => void;
+  retryUnsaved?(): Promise<void>;
 }
 
 /**

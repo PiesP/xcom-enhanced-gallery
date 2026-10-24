@@ -52,6 +52,8 @@ export const ko: LanguageStrings = {
       '뒤의 두 모드에서는 적격 동영상 화면을 클릭하면 갤러리가 열립니다. 마지막 모드는 확인된 표시 없는 재생 버튼도 포함합니다. 일반 플레이어 컨트롤은 X에서 작동합니다.',
     videoClickSaveError:
       '동영상 클릭 설정을 저장하지 못했습니다. 현재 설정이 계속 적용됩니다. 다시 시도하세요.',
+    unsavedSettings: '설정이 현재 세션에만 적용되었으며 저장되지 않았습니다.',
+    retrySettingsSave: '다시 저장',
   },
   msg: {
     err: {

@@ -99,6 +99,38 @@ describe('SettingsService', () => {
       // in destroy clears listeners
       expect(mockRepo.save).not.toHaveBeenCalled();
     });
+
+    it('does not emit a late completion for a retired owner', async () => {
+      let finishSave: () => void = () => undefined;
+      let started: () => void = () => undefined;
+      const startedGate = new Promise<void>((resolve) => {
+        started = resolve;
+      });
+      const repository: SettingsRepository = {
+        load: vi.fn(async () => createDefaultSettings(1_000)),
+        save: vi.fn(async () => {
+          started();
+          await new Promise<void>((resolve) => {
+            finishSave = resolve;
+          });
+        }),
+      };
+      service = new SettingsService(repository);
+      await service.initialize();
+      const listener = vi.fn();
+      const persistenceListener = vi.fn();
+      service.subscribe(listener);
+      service.subscribePersistence(persistenceListener);
+      const pending = service.set('gallery.theme', 'dark');
+      await startedGate;
+      service.destroy();
+      finishSave();
+      await pending;
+
+      expect(listener).not.toHaveBeenCalled();
+      expect(persistenceListener).not.toHaveBeenCalled();
+      expect(service.get('gallery.theme')).toBe('auto');
+    });
   });
 
   describe('SPA restart', () => {
@@ -130,6 +162,33 @@ describe('SettingsService', () => {
       expect(oldListener).not.toHaveBeenCalled();
       expect(newListener).toHaveBeenCalledTimes(1);
       expect(repository.load).toHaveBeenCalledTimes(2);
+    });
+
+    it('retains an unsaved session edit through restart and retries its latest value', async () => {
+      let stored = createDefaultSettings(1_000);
+      let denied = true;
+      const repository: SettingsRepository = {
+        load: vi.fn(async () => globalThis.structuredClone(stored)),
+        save: vi.fn(async (settings) => {
+          if (denied) {
+            throw new Error('denied');
+          }
+          stored = globalThis.structuredClone(settings);
+        }),
+      };
+      service = new SettingsService(repository);
+      await service.initialize();
+      await expect(service.set('gallery.theme', 'dark')).rejects.toThrow('denied');
+
+      await service.prepareForRestart();
+      await service.initialize();
+      expect(service.get('gallery.theme')).toBe('dark');
+      expect(service.hasUnsavedChanges()).toBe(true);
+      expect(repository.load).toHaveBeenCalledTimes(1);
+      denied = false;
+      await service.retryUnsaved();
+      expect(stored.gallery.theme).toBe('dark');
+      expect(service.hasUnsavedChanges()).toBe(false);
     });
   });
 
@@ -256,7 +315,7 @@ describe('SettingsService', () => {
       expect(saved[0]?.lastModified).toBe(service.get('lastModified'));
     });
 
-    it('should not commit state or a success event when persistence fails', async () => {
+    it('keeps a failed write active for this session and reports that it was not saved', async () => {
       const failure = new Error('Storage unavailable');
       let rejectSave: (reason?: unknown) => void = () => undefined;
       let markSaveStarted: () => void = () => undefined;
@@ -287,9 +346,12 @@ describe('SettingsService', () => {
 
       rejectSave(failure);
       await expect(pendingSet).rejects.toBe(failure);
-      expect(service.get('gallery.theme')).toBe('auto');
-      expect(service.get('lastModified')).toBe(1_000);
-      expect(listener).not.toHaveBeenCalled();
+      expect(service.get('gallery.theme')).toBe('dark');
+      expect(service.get('lastModified')).not.toBe(1_000);
+      expect(service.hasUnsavedChanges()).toBe(true);
+      expect(listener).toHaveBeenCalledWith(
+        expect.objectContaining({ key: 'gallery.theme', newValue: 'dark', status: 'error' })
+      );
     });
 
     it('should reject boolean when number is expected', async () => {

@@ -51,6 +51,8 @@ export const zhCn: LanguageStrings = {
     videoClickHelp:
       '后两种模式可通过点击符合条件的视频画面打开图库。只有最后一种模式还包括已验证的无标记播放按钮；普通播放器控件始终由 X 处理。',
     videoClickSaveError: '无法保存视频点击设置。当前设置仍然有效，请重试。',
+    unsavedSettings: '设置仅在当前会话生效，尚未保存。',
+    retrySettingsSave: '重试保存',
   },
   msg: {
     err: {

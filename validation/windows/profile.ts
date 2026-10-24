@@ -6,7 +6,11 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import type { Browser, Locator } from '@playwright/test';
+import type { Browser, Locator, Page } from '@playwright/test';
+import {
+  installStorageFaultControl,
+  runSettingsPersistenceFixture,
+} from './settings-persistence-profile.ts';
 
 type MockXhrResponse = {
   status: number;
@@ -111,6 +115,23 @@ export async function run({
   root: string;
   output: string;
 }) {
+  const selectorPath = path.join(root, 'validation/windows/inputs/settings-persistence.json');
+  const selectorText = await readFile(selectorPath, 'utf8').catch((error: unknown) => {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+      return null;
+    }
+    throw error;
+  });
+  const selector: unknown = selectorText === null ? null : JSON.parse(selectorText);
+  assert(
+    selector === null ||
+      (typeof selector === 'object' &&
+        Object.keys(selector).length === 1 &&
+        'scenario' in selector &&
+        selector.scenario === 'settings-persistence'),
+    'Unknown Windows artifact fixture selector'
+  );
+  const settingsPersistenceOnly = selector !== null;
   const faultMessages = [
     `XEG_WINDOWS_ACCEPTANCE_RENDER_FAULT_RETRY: ${'bounded-long-recovery-message-'.repeat(18)}`,
     'XEG_WINDOWS_ACCEPTANCE_RENDER_FAULT_CLOSE',
@@ -203,7 +224,14 @@ export async function run({
         typeof gmModule.installGMMock === 'function',
       'GM fixture module is unavailable'
     );
-    await gmModule.installGMMock(page);
+    const installGMMock = gmModule.installGMMock as (
+      page: Page,
+      options: { persistentStorage: boolean }
+    ) => Promise<void>;
+    await installGMMock(page, { persistentStorage: settingsPersistenceOnly });
+    if (settingsPersistenceOnly) {
+      await installStorageFaultControl(page);
+    }
     await page.evaluate((encodedFixtures) => {
       // Keep production media extraction deterministic: bypass the callback-only
       // GM_cookie fallback and make the unavailable fixture API fail into DOM extraction.
@@ -295,6 +323,16 @@ export async function run({
       undefined,
       { timeout: 15_000 }
     );
+    if (settingsPersistenceOnly) {
+      return await runSettingsPersistenceFixture({
+        page,
+        output,
+        browserVersion: browser.version(),
+        runtimeErrors,
+        installGMMock,
+        script,
+      });
+    }
 
     const installGalleryRenderFault = async (message: string) => {
       await page.evaluate((faultMessage) => {

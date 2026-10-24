@@ -4,7 +4,9 @@
   "assets": [
     "dist/xcom-enhanced-gallery.user.js",
     "test/e2e/fixtures/mock-gallery-page.html",
-    "test/e2e/fixtures/gm-mock.ts"
+    "test/e2e/fixtures/gm-mock.ts",
+    "validation/windows/settings-persistence-profile.ts",
+    "validation/windows/inputs"
   ],
   "installation": {
     "entry": "validation/windows/install-profile.ts",

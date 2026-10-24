@@ -34,11 +34,7 @@ function lsReadRaw(key: string): string | null {
 }
 
 function lsWriteRaw(key: string, value: string): void {
-  try {
-    localStorage.setItem(LS_FALLBACK_PREFIX + key, value);
-  } catch {
-    // localStorage may be unavailable (private browsing, quota exceeded)
-  }
+  localStorage.setItem(LS_FALLBACK_PREFIX + key, value);
 }
 
 function lsRemove(key: string): void {
@@ -53,10 +49,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
-function encodeValue(value: unknown): string {
+function encodeValue(value: unknown, updatedAt: number): string {
   const envelope: StoredValueEnvelope = {
     __xegStorageEnvelope: STORAGE_ENVELOPE_VERSION,
-    updatedAt: Date.now(),
+    updatedAt,
     value,
   };
   return JSON.stringify(envelope);
@@ -86,6 +82,8 @@ function decodeValue(raw: unknown): DecodedStoredValue | null {
 }
 
 export class PersistentStorage {
+  private readonly writeQueues = new Map<string, Promise<void>>();
+
   private get adapter() {
     return getStorageAdapter();
   }
@@ -96,14 +94,43 @@ export class PersistentStorage {
       return;
     }
 
-    const serialized = encodeValue(value);
+    const previous = this.writeQueues.get(key) ?? Promise.resolve();
+    const write = previous.catch(() => undefined).then(() => this.writeValue(key, value));
+    this.writeQueues.set(key, write);
+    try {
+      await write;
+    } finally {
+      if (this.writeQueues.get(key) === write) {
+        this.writeQueues.delete(key);
+      }
+    }
+  }
+
+  private async writeValue(key: string, value: unknown): Promise<void> {
+    // Keep the existing envelope readable while making each local write newer
+    // than both readable copies, even in the same millisecond or after a clock
+    // rollback. A primary read failure cannot establish its unseen revision.
+    let primary: DecodedStoredValue | null = null;
+    try {
+      const raw = await this.adapter.get<unknown>(key);
+      primary = raw == null ? null : decodeValue(raw);
+    } catch {
+      // The write may still work, and the fallback remains independently readable.
+    }
+    const fallback = this.readFallbackValue(key);
+    const updatedAt = Math.max(Date.now(), primary?.updatedAt ?? 0, fallback?.updatedAt ?? 0) + 1;
+    const serialized = encodeValue(value, updatedAt);
     try {
       await this.adapter.set(key, serialized);
       // Primary write succeeded — clean up any stale fallback entry
       lsRemove(key);
     } catch (error) {
       // Fallback to localStorage when primary storage fails
-      lsWriteRaw(key, serialized);
+      try {
+        lsWriteRaw(key, serialized);
+      } catch (fallbackError) {
+        throw new AggregateError([error, fallbackError], 'No settings storage accepted the write');
+      }
       __DEV__ && log.warn('storage.fallback', { error: String(error) });
     }
   }

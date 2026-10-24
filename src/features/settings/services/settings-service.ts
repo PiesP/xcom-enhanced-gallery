@@ -21,7 +21,10 @@ export class SettingsService {
 
   private settings: AppSettings = createDefaultSettings(Date.now());
   private readonly listeners = new Set<(event: SettingChangeEvent) => void>();
+  private readonly persistenceListeners = new Set<(unsaved: boolean) => void>();
   private updateQueue: Promise<void> = Promise.resolve();
+  private unsaved = false;
+  private generation = 0;
 
   constructor(
     private readonly repository: SettingsRepository = new PersistentSettingsRepository()
@@ -31,13 +34,22 @@ export class SettingsService {
     if (this._initialized) {
       return;
     }
+    // A same-document SPA restart must not discard a denied local edit. A real
+    // document reload creates a fresh service and reads durable storage again.
+    if (this.unsaved) {
+      this._initialized = true;
+      return;
+    }
     this.settings = await this.repository.load();
+    this.setUnsaved(false);
     this._initialized = true;
   }
 
   public destroy(): void {
     this.listeners.clear();
+    this.persistenceListeners.clear();
     this._initialized = false;
+    this.generation++;
   }
 
   /** Wait for queued writes, then reset lifecycle state for a fresh repository load. */
@@ -56,20 +68,31 @@ export class SettingsService {
   }
 
   public async set<T = unknown>(key: NestedSettingKey, value: T): Promise<void> {
+    if (!this._initialized) {
+      throw new Error('Settings service is not initialized');
+    }
     if (!validateSettingValue(key, value)) {
       throw new Error(`Invalid setting value for ${key}`);
     }
 
+    const generation = this.generation;
     const previous = this.updateQueue;
     const update = previous.then(
-      () => this.commitSetting(key, value),
-      () => this.commitSetting(key, value)
+      () => this.commitSetting(key, value, generation),
+      () => this.commitSetting(key, value, generation)
     );
     this.updateQueue = update.catch(() => undefined);
     await update;
   }
 
-  private async commitSetting<T>(key: NestedSettingKey, value: T): Promise<void> {
+  private async commitSetting<T>(
+    key: NestedSettingKey,
+    value: T,
+    generation: number
+  ): Promise<void> {
+    if (generation !== this.generation || !this._initialized) {
+      return;
+    }
     const oldValue = this.get(key);
 
     // Skip if value is unchanged (idempotent — avoid unnecessary saves)
@@ -84,16 +107,77 @@ export class SettingsService {
 
     const timestamp = Date.now();
     nextSettings.lastModified = timestamp;
-    await this.repository.save(nextSettings);
-
+    let saved = false;
+    let failure: unknown;
+    try {
+      await this.repository.save(nextSettings);
+      saved = true;
+    } catch (error) {
+      failure = error;
+    }
+    if (generation !== this.generation || !this._initialized) {
+      if (!saved) {
+        throw failure;
+      }
+      return;
+    }
     this.settings = nextSettings;
+    this.setUnsaved(!saved);
     this.notifyListeners({
       key,
       oldValue,
       newValue: value,
       timestamp,
-      status: 'success',
+      status: saved ? 'success' : 'error',
     });
+    if (!saved) {
+      throw failure;
+    }
+  }
+
+  public hasUnsavedChanges(): boolean {
+    return this.unsaved;
+  }
+
+  public subscribePersistence(listener: (unsaved: boolean) => void): () => void {
+    this.persistenceListeners.add(listener);
+    return () => this.persistenceListeners.delete(listener);
+  }
+
+  /** Retry only the latest in-memory snapshot after queued edits have settled. */
+  public async retryUnsaved(): Promise<void> {
+    if (!this._initialized) {
+      return;
+    }
+    const generation = this.generation;
+    const previous = this.updateQueue;
+    const retry = previous
+      .catch(() => undefined)
+      .then(async () => {
+        if (!this.unsaved || generation !== this.generation || !this._initialized) {
+          return;
+        }
+        await this.repository.save(globalThis.structuredClone(this.settings));
+        if (generation === this.generation && this._initialized) {
+          this.setUnsaved(false);
+        }
+      });
+    this.updateQueue = retry.catch(() => undefined);
+    await retry;
+  }
+
+  private setUnsaved(value: boolean): void {
+    if (this.unsaved === value) {
+      return;
+    }
+    this.unsaved = value;
+    for (const listener of this.persistenceListeners) {
+      try {
+        listener(value);
+      } catch (error) {
+        __DEV__ && logger.error('Settings persistence listener error:', error);
+      }
+    }
   }
 
   public subscribe(listener: (event: SettingChangeEvent) => void): () => void {

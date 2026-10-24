@@ -52,6 +52,8 @@ export const es: LanguageStrings = {
       'Los dos últimos modos abren la galería al pulsar un vídeo apto. Solo el último incluye botones de reproducción sin marcar y verificados; los controles normales siguen en X.',
     videoClickSaveError:
       'No se pudo guardar la opción de clics en vídeos. La configuración actual sigue activa. Inténtalo de nuevo.',
+    unsavedSettings: 'Los ajustes están activos en esta sesión, pero no se guardaron.',
+    retrySettingsSave: 'Reintentar guardado',
   },
   msg: {
     err: {

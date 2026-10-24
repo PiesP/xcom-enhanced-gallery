@@ -105,6 +105,34 @@
   color: var(--xeg-color-text-secondary);
 }
 
+.unsaved {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  color: var(--xeg-color-error);
+  font-size: var(--font-size-xs);
+}
+
+.retry {
+  min-height: 2.75em;
+  padding: var(--space-xs) var(--space-sm);
+  color: var(--xeg-color-text-primary);
+  background: var(--xeg-toolbar-element-bg);
+  border: var(--border-width-thin) solid var(--xeg-toolbar-border);
+  border-radius: var(--xeg-radius-md);
+  cursor: pointer;
+}
+
+.retry:focus-visible {
+  border-color: var(--xeg-focus-indicator-color);
+  outline: 2px solid var(--xeg-focus-indicator-color);
+}
+
+.retry:disabled {
+  cursor: wait;
+}
+
 /**
  * Compact Label Variant - Toolbar Label
  *
