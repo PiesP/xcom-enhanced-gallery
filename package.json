@@ -68,7 +68,7 @@
     "test": "vp test run",
     "test:policy": "node --experimental-strip-types --test scripts/release/verify-source.test.ts scripts/ci/repository-authority.test.ts",
     "test:ci": "pnpm -s test:policy && vp test run test/unit/tooling/node-ambient-types.test.ts",
-    "test:watch": "vp test",
+    "test:watch": "vp test watch",
     "test:cov": "vp test run --coverage",
     "test:cov:after-policy": "vp test run --coverage --config tooling/vitest.after-policy.config.ts",
     "test:e2e": "playwright test --config test/e2e/playwright.config.ts",
