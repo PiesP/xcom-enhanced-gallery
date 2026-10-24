@@ -569,6 +569,49 @@ async function captureRecoveryUi(page: Page, output: string, name: string) {
   return { ...snapshot, screenshot };
 }
 
+/** A visible DOM box may still be outside the scrollport or clipped by its media wrapper. */
+async function captureRecoveryPaint(page: Page, index: number) {
+  return page.evaluate((itemIndex) => {
+    const gallery = document.querySelector('[data-xeg-gallery-container]');
+    const scrollport = gallery?.querySelector('[data-gallery-element="items"]');
+    const alert = gallery?.querySelector(
+      `[data-gallery-element="item"][data-index="${itemIndex}"] [role="alert"]`
+    );
+    const wrapper = alert?.parentElement;
+    if (!scrollport || !alert || !wrapper) {
+      return { painted: false, targets: [] };
+    }
+    const port = scrollport.getBoundingClientRect();
+    const parent = wrapper.getBoundingClientRect();
+    const targets = Array.from(alert.querySelectorAll('span, button, a')).map((element) => {
+      const rect = element.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      const hit = document.elementFromPoint(x, y);
+      const bounds = {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+      };
+      return {
+        text: (element.textContent ?? '').trim(),
+        bounds,
+        painted:
+          rect.width > 0 &&
+          rect.height > 0 &&
+          rect.left >= Math.max(0, port.left, parent.left) - 1 &&
+          rect.right <= Math.min(innerWidth, port.right, parent.right) + 1 &&
+          rect.top >= Math.max(0, port.top, parent.top) - 1 &&
+          rect.bottom <= Math.min(innerHeight, port.bottom, parent.bottom) + 1 &&
+          !!hit &&
+          element.contains(hit),
+      };
+    });
+    return { painted: targets.length >= 3 && targets.every((target) => target.painted), targets };
+  }, index);
+}
+
 async function assertVisibleBulkOutcome(
   page: Page,
   expected: { included: number; omitted: number; handedOff: boolean; reason?: string }
@@ -635,9 +678,11 @@ type SourceImageFailureEvidence = {
     api: ApiRecord[];
     host?: unknown;
     failed?: unknown;
+    failedPaint?: Awaited<ReturnType<typeof captureRecoveryPaint>>;
     neighbor?: unknown;
     returned?: unknown;
     retries?: unknown[];
+    exhaustedPaint?: Awaited<ReturnType<typeof captureRecoveryPaint>>;
     firstClose?: unknown;
     healthy?: unknown;
     finalClose?: unknown;
@@ -12755,6 +12800,10 @@ async function runTransientImageRecoveryProbe({
     const selected = gallery.locator('[data-gallery-element="item"][data-index="1"]');
     await selected.locator('[role="alert"]').waitFor({ state: 'visible' });
     await assertQuotedOriginLink(gallery, QUALITY_FIXTURE_URL);
+    observations.failedPaint = await waitForValue(async () => {
+      const paint = await captureRecoveryPaint(page, 1);
+      return paint.painted ? paint : undefined;
+    }, 'failed image recovery text and actions painted inside the viewport');
     observations.failed = await captureRecoveryUi(page, output, 'image-once-failed');
     observations.origin = QUALITY_FIXTURE_URL;
     assert.deepEqual(faults[0], { resourceType: 'image', response: 404 });
@@ -13184,6 +13233,10 @@ async function runSourceImageFailureCases({
           .isVisible(),
         true
       );
+      receipt.failedPaint = await waitForValue(async () => {
+        const paint = await captureRecoveryPaint(owned!, 1);
+        return paint.painted ? paint : undefined;
+      }, `${kind}: failed image recovery text and actions painted inside the viewport`);
       if (kind === 'corrupt') {
         const screenshot = `src01-${kind}-error.png`;
         await owned.screenshot({ path: join(output, screenshot) });
@@ -13271,6 +13324,10 @@ async function runSourceImageFailureCases({
           .getAttribute('href'),
         QUALITY_FIXTURE_URL
       );
+      receipt.exhaustedPaint = await waitForValue(async () => {
+        const paint = await captureRecoveryPaint(owned!, 1);
+        return paint.painted ? paint : undefined;
+      }, `${kind}: exhausted image recovery text and action painted inside the viewport`);
       await owned.screenshot({ path: join(output, `recovery-image-${kind}-exhausted.png`) });
       await owned.keyboard.press('Escape');
       await gallery.waitFor({ state: 'detached' });

@@ -399,6 +399,34 @@
   inline-size: 100%;
 }
 
+/* A failed image still has a media-sized button underneath its recovery panel.
+   Let the panel size the row so its text and actions remain inside paint containment. */
+.container[data-media-error='true'] .imageWrapper {
+  display: grid;
+}
+
+.container[data-media-error='true'] :is(.mediaAction, .error) {
+  grid-area: 1 / 1;
+}
+
+.container[data-media-error='true'] .error {
+  position: relative;
+  inset: auto;
+  box-sizing: border-box;
+  min-inline-size: min(16rem, calc(100vw - var(--xeg-spacing-lg) * 2));
+  padding: var(--xeg-spacing-md);
+}
+
+.container[data-media-error='true'][data-media-loaded='false']:is(
+    [data-fit-mode='original'],
+    [data-fit-mode='fitHeight'],
+    [data-fit-mode='fitContainer']
+  ) {
+  inline-size: max-content;
+  max-inline-size: 100%;
+  max-block-size: none;
+}
+
 /* Container width now fits content by default - no forced 100% width needed */
 /* Removed: .container:not([data-fit-mode="original"]) forced full width */
 

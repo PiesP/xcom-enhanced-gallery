@@ -80,6 +80,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     'onClick',
     'className',
     'onMediaLoad',
+    'onMediaError',
     'fitMode',
     'style',
     'registerContainer',
@@ -236,8 +237,14 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   };
 
   const handleMediaError = () => {
+    if (isError()) {
+      return;
+    }
     setIsError(true);
     setIsLoaded(false);
+    if (!isVideo()) {
+      local.onMediaError?.(local.media.id, local.index);
+    }
   };
 
   const retryImage = (event: MouseEvent): void => {
@@ -347,6 +354,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       data-index={local.index}
       data-fit-mode={resolvedFitMode()}
       data-media-loaded={isLoaded() ? 'true' : 'false'}
+      data-media-error={!isVideo() && isError() ? 'true' : undefined}
       data-video-admitted={isVideo() ? String(recovery.isAdmitted()) : undefined}
       data-video-first-frame={isVideo() ? String(recovery.hasFirstFrame()) : undefined}
       data-media-display-url={displaySrc()}

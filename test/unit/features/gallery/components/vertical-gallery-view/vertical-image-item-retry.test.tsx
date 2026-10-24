@@ -52,6 +52,7 @@ describe('VerticalImageItem image recovery', () => {
 
   function mount(item = media()) {
     const onMediaLoad = vi.fn();
+    const onMediaError = vi.fn();
     dispose = render(
       () => (
         <VerticalImageItem
@@ -62,6 +63,7 @@ describe('VerticalImageItem image recovery', () => {
           fitMode="fitContainer"
           onClick={vi.fn()}
           onMediaLoad={onMediaLoad}
+          onMediaError={onMediaError}
           scrollRoot={() => host}
           scrollRootHeight={() => 800}
         />
@@ -70,12 +72,17 @@ describe('VerticalImageItem image recovery', () => {
     );
     const image = host.querySelector('img');
     expect(image).not.toBeNull();
-    return { item, image: image!, onMediaLoad };
+    return { item, image: image!, onMediaLoad, onMediaError };
   }
 
   it('retries only the failed image with the same display URL and preserves fit and focus', () => {
-    const { item, image, onMediaLoad } = mount();
+    const { item, image, onMediaLoad, onMediaError } = mount();
     image.dispatchEvent(new Event('error'));
+    image.dispatchEvent(new Event('error'));
+    expect(onMediaError).toHaveBeenCalledExactlyOnceWith('second', 1);
+    expect(
+      host.querySelector('[data-gallery-element="item"]')?.getAttribute('data-media-error')
+    ).toBe('true');
     expect(host.querySelector('[role="alert"]')?.textContent).toContain('msg.gal.loadFail');
     const retry = host.querySelector<HTMLButtonElement>('[role="alert"] button');
     expect(retry?.textContent).toBe('msg.gal.retryLoading');
@@ -97,6 +104,9 @@ describe('VerticalImageItem image recovery', () => {
     expect(
       host.querySelector('[data-gallery-element="item"]')?.getAttribute('data-media-loaded')
     ).toBe('true');
+    expect(
+      host.querySelector('[data-gallery-element="item"]')?.getAttribute('data-media-error')
+    ).toBeNull();
     expect(onMediaLoad).toHaveBeenCalledExactlyOnceWith('second', 1);
   });
 

@@ -287,6 +287,7 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
               fitMode={imageFitMode}
               onClick={() => handleMediaItemClick(index())}
               onMediaLoad={handleMediaLoad}
+              onMediaError={handleMediaLoad}
               className={cx(styles.galleryItem, index() === currentIndex() && styles.itemActive)}
               registerContainer={createRegisterContainer(index)}
               onFocus={createHandleFocus(index)}

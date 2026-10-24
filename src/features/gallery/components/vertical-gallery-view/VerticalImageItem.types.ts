@@ -60,6 +60,9 @@ export interface VerticalImageItemProps {
    */
   readonly onMediaLoad?: (mediaId: string, index: number) => void;
 
+  /** Reposition the selected item when a failed image changes its layout. */
+  readonly onMediaError?: (mediaId: string, index: number) => void;
+
   /**
    * Additional CSS class names to apply
    * @optional
