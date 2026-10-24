@@ -110,7 +110,12 @@ type QualityRequest = {
   bytes: number;
   sha256: string;
 };
-type DelayedFailureGate = { tweetId: string; promise: Promise<void>; release: () => void };
+type DelayedFailureGate = {
+  tweetId: string;
+  fail: boolean;
+  promise: Promise<void>;
+  release: () => void;
+};
 type ImageFixtures = [Buffer, Buffer, Buffer];
 type CompactImages = { display: Buffer; original: Buffer };
 type PageFetch = { host: string; path: string; resourceType: string };
@@ -334,6 +339,7 @@ type DelayedVideoCase = {
   pending: unknown;
   pendingStart: Awaited<ReturnType<typeof hostVideoState>>;
   pendingEnd: Awaited<ReturnType<typeof hostVideoState>>;
+  openingFeedback?: unknown;
   navigation?: unknown;
   expiry?: unknown;
   negativeInputs?: unknown;
@@ -344,6 +350,41 @@ type DelayedVideoCase = {
   notificationObserverRestored?: unknown;
   settingRestored?: boolean;
 };
+
+/** Observe only rendered fixture content while its real provider response is held. */
+async function captureOpeningFeedback(page: Page, output: string, name: string) {
+  const screenshot = `opening-${name}.png`;
+  const surface = await page.evaluate(() => {
+    const visible = (element: Element) => {
+      const style = getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+      return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0;
+    };
+    const statuses = Array.from(
+      document.querySelectorAll('[role="status"], [aria-live], [data-xeg-opening]')
+    )
+      .filter(visible)
+      .slice(0, 16)
+      .map((element) => ({
+        role: element.getAttribute('role'),
+        live: element.getAttribute('aria-live'),
+        text: (element.textContent ?? '').trim().slice(0, 240),
+      }));
+    return {
+      url: location.href,
+      documentStartedAt: performance.timeOrigin,
+      observedAt: performance.now(),
+      activeElement: document.activeElement?.tagName ?? null,
+      galleryCount: document.querySelectorAll('[data-xeg-gallery-container]').length,
+      firstMediaText: (document.querySelector('[data-rapid="a"]')?.textContent ?? '')
+        .trim()
+        .slice(0, 240),
+      statuses,
+    };
+  });
+  await page.screenshot({ path: join(output, screenshot) });
+  return { ...surface, screenshot };
+}
 type SourceQualityEvidence = {
   status: string;
   url?: string;
@@ -567,6 +608,7 @@ type InstallResult = {
   upgrade?: UpgradeReceipt;
   sameVersion?: Awaited<ReturnType<typeof runSameVersionAttribution>>;
   fixture?: Awaited<ReturnType<typeof exerciseInstalledExtension>>;
+  openingFeedback?: unknown;
   liveBrowserScope?: string;
   live?: unknown;
   evidenceStatus?: string;
@@ -1519,7 +1561,7 @@ export async function installFixtureRoutes(
           transportSettledAtMonotonicMs: null,
         };
         delayedRequests.set(route.request(), record);
-        if (rapidResponse) {
+        if (rapidResponse && !delayedFailureGate?.fail) {
           record.status = 200;
         }
         quotedApiResponses.push(record);
@@ -1532,7 +1574,7 @@ export async function installFixtureRoutes(
           await route.fulfill({
             status: record.status,
             contentType: 'application/json',
-            body: rapidResponse ? JSON.stringify(rapidResponse) : '{}',
+            body: record.status === 200 && rapidResponse ? JSON.stringify(rapidResponse) : '{}',
           });
           record.fulfilledAtMonotonicMs = performance.now();
         } catch (error) {
@@ -1809,14 +1851,14 @@ export async function installFixtureRoutes(
     clearOwn12RapidBAudioVideo() {
       own12RapidBPayload = null;
     },
-    armDelayedFailure(tweetId: string) {
+    armDelayedFailure(tweetId: string, fail = false) {
       assert.equal(delayedFailureGate, null, 'Only one delayed extraction may own the gate');
       assert([DELAYED_FAILURE_ID, DELAYED_NAVIGATION_ID, RAPID_CLICK_A].includes(tweetId));
       let release = () => {};
       const promise = new Promise<void>((resolve) => {
         release = resolve;
       });
-      delayedFailureGate = { tweetId, promise, release };
+      delayedFailureGate = { tweetId, fail, promise, release };
     },
     releaseDelayedFailure() {
       delayedFailureGate?.release();
@@ -8115,6 +8157,7 @@ async function runDelayedVideoFailures({
   extensionId,
   extensionPage,
   fixtureRoutes,
+  openingProbe = false,
   output,
   page,
 }: {
@@ -8122,15 +8165,21 @@ async function runDelayedVideoFailures({
   extensionId: string;
   extensionPage: Page;
   fixtureRoutes: Awaited<ReturnType<typeof installFixtureRoutes>>;
+  openingProbe?: boolean;
   output: string;
   page: Page;
 }) {
   const cases: DelayedVideoCase[] = [];
-  const delayedCases: Array<[string, string]> = [
-    ['failure', DELAYED_FAILURE_ID],
-    ['navigation', DELAYED_NAVIGATION_ID],
-    ['expiry-navigation', DELAYED_FAILURE_ID],
-  ];
+  const delayedCases: Array<[string, string]> = openingProbe
+    ? [
+        ['failure', DELAYED_FAILURE_ID],
+        ['navigation', DELAYED_NAVIGATION_ID],
+      ]
+    : [
+        ['failure', DELAYED_FAILURE_ID],
+        ['navigation', DELAYED_NAVIGATION_ID],
+        ['expiry-navigation', DELAYED_FAILURE_ID],
+      ];
   for (const [name, tweetId] of delayedCases) {
     const pageUrl = `https://x.com/delayed_host/status/${tweetId}`;
     await page.goto(pageUrl);
@@ -8250,6 +8299,17 @@ async function runDelayedVideoFailures({
         `${name}: actual host playback must continue while extraction is pending`
       );
       observation = { name, pageUrl, tweetId, before, request, pending, pendingStart, pendingEnd };
+      if (openingProbe) {
+        const early = await captureOpeningFeedback(page, output, `delayed-${name}-early`);
+        await page.waitForTimeout(4_650);
+        assert.equal(request.fulfilledAtMonotonicMs, null, `${name}: response ended before 5s`);
+        const afterFiveSeconds = await captureOpeningFeedback(
+          page,
+          output,
+          `delayed-${name}-five-seconds`
+        );
+        observation.openingFeedback = { early, afterFiveSeconds };
+      }
       if (name === 'navigation') {
         await page.goto(FIXTURE_URL);
         await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
@@ -8604,9 +8664,15 @@ async function runDelayedVideoFailures({
             `https://x.com/rapid_b/status/${RAPID_CLICK_B}`
           );
           const photoRequests = fixtureRoutes.quotedApiResponses.slice(photoApiStart);
-          assert.deepEqual(
-            photoRequests.map(({ tweetId, status }) => ({ tweetId, status })),
-            [{ tweetId: RAPID_CLICK_B, status: 200 }]
+          assert(
+            openingProbe ? photoRequests.length <= 1 : photoRequests.length === 1,
+            'Photo recovery must use at most one B request'
+          );
+          assert(
+            photoRequests.every(
+              ({ tweetId, status }) => tweetId === RAPID_CLICK_B && status === 200
+            ),
+            'Photo recovery must retain B ownership'
           );
           await page.keyboard.press('Escape');
           await photoGallery.waitFor({ state: 'detached' });
@@ -8664,9 +8730,15 @@ async function runDelayedVideoFailures({
             media: 'quote-two',
           });
           const healthyRequests = fixtureRoutes.quotedApiResponses.slice(healthyApiStart);
-          assert.deepEqual(
-            healthyRequests.map(({ tweetId, status }) => ({ tweetId, status })),
-            [{ tweetId: RAPID_CLICK_B, status: 200 }]
+          assert(
+            openingProbe ? healthyRequests.length <= 1 : healthyRequests.length === 1,
+            'Healthy recovery must use at most one B request'
+          );
+          assert(
+            healthyRequests.every(
+              ({ tweetId, status }) => tweetId === RAPID_CLICK_B && status === 200
+            ),
+            'Healthy recovery must retain B ownership'
           );
           const playbackState = () =>
             healthy.video.evaluate((element) => {
@@ -8797,20 +8869,26 @@ async function runRapidVideoClicks({
   extensionId,
   extensionPage,
   fixtureRoutes,
+  lateAFailure = false,
   nativeLoopback,
+  openingProbe = false,
   output,
   page,
   pageFetches,
+  skipDownload = false,
 }: {
   context: BrowserContext;
   downloads: string;
   extensionId: string;
   extensionPage: Page;
   fixtureRoutes: Awaited<ReturnType<typeof installFixtureRoutes>>;
+  lateAFailure?: boolean;
   nativeLoopback: NativeLoopback;
+  openingProbe?: boolean;
   output: string;
   page: Page;
   pageFetches: PageFetch[];
+  skipDownload?: boolean;
 }) {
   const pageUrl = `https://x.com/rapid_a/status/${RAPID_CLICK_A}`;
   await page.goto(pageUrl);
@@ -8829,6 +8907,10 @@ async function runRapidVideoClicks({
   let validationFailed = false;
   const cleanupErrors: unknown[] = [];
   const cleanup = { notificationObserverRestored: false, hostVideoControlRestored: false };
+  const probeName = openingProbe
+    ? `rapid-a-b-${lateAFailure ? 'late-failure' : 'late-success'}`
+    : 'rapid-a-b';
+  let openingFeedback: unknown;
   try {
     const initialHost = await hostVideoState(first);
     assert.equal(initialHost.paused, true, 'Rapid A host video must start paused');
@@ -8851,7 +8933,7 @@ async function runRapidVideoClicks({
       'Rapid A must have playable native media before the first gallery click'
     );
     const notificationBaseline = await notificationObserver.snapshot();
-    fixtureRoutes.armDelayedFailure(RAPID_CLICK_A);
+    fixtureRoutes.armDelayedFailure(RAPID_CLICK_A, lateAFailure);
     await first.click();
     const heldA = await waitForValue(
       async () =>
@@ -8874,6 +8956,17 @@ async function runRapidVideoClicks({
       'Rapid A host video must progress while its provider response is held'
     );
     assert.equal(heldA.fulfilledAtMonotonicMs, null, 'Rapid A must remain held during playback');
+    if (openingProbe) {
+      const early = await captureOpeningFeedback(page, output, `${probeName}-early`);
+      await page.waitForTimeout(4_650);
+      assert.equal(heldA.fulfilledAtMonotonicMs, null, 'Rapid A response ended before 5s');
+      const afterFiveSeconds = await captureOpeningFeedback(
+        page,
+        output,
+        `${probeName}-five-seconds`
+      );
+      openingFeedback = { early, afterFiveSeconds };
+    }
     assert.equal(
       await page.locator('[data-xeg-gallery-container]').count(),
       0,
@@ -8891,7 +8984,7 @@ async function runRapidVideoClicks({
     await second.click();
     const pendingB = await writeVideoBoundaryCheckpoint({
       output,
-      name: 'rapid-a-b',
+      name: probeName,
       page,
       api: fixtureRoutes.quotedApiResponses.slice(apiStart),
     });
@@ -8910,8 +9003,13 @@ async function runRapidVideoClicks({
     const bRequests = fixtureRoutes.quotedApiResponses
       .slice(apiStart)
       .filter(({ tweetId }) => tweetId === RAPID_CLICK_B);
-    assert.equal(bRequests.length, 1, 'B must make one independent owner request');
-    assert.equal(bRequests[0]?.status, 200);
+    assert(
+      openingProbe ? bRequests.length <= 1 : bRequests.length === 1,
+      'B must use at most one independent owner request'
+    );
+    if (bRequests.length) {
+      assert.equal(bRequests[0]?.status, 200);
+    }
     const afterB = await assertHostStopped(page, first, 'Rapid B gallery opening');
     const notificationsAfterB = await notificationObserver.snapshot();
     assertNoRetiredExtractionNotifications(notificationBaseline, notificationsAfterB);
@@ -8938,31 +9036,42 @@ async function runRapidVideoClicks({
     });
     const notificationsAfterA = await notificationObserver.snapshot();
     assertNoRetiredExtractionNotifications(notificationBaseline, notificationsAfterA);
-    const knownIds = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
-    const nativeMark = nativeLoopback.mark();
-    const fetchMark = pageFetches.length;
-    const filename = `rapid_b_${RAPID_CLICK_B}_1.mp4`;
-    await opened.gallery
-      .locator('[data-gallery-element="toolbar"] button[aria-label="Download"]')
-      .click();
-    const download = await waitForDownload(extensionPage, knownIds, filename);
-    const relativeDownload = relative(downloads, download.filename);
-    assert(relativeDownload && !relativeDownload.startsWith('..') && !isAbsolute(relativeDownload));
-    const bytes = await readFile(download.filename);
-    const expectedBytes = fixtureRoutes.videoPayloads['quote-two'];
-    assert(expectedBytes, 'Rapid B fixture payload is missing');
-    assert(expectedBytes.equals(bytes), 'Late A must not replace B preferred-save bytes');
-    assert(retained.source, 'Rapid B selection has no source');
-    const native = await assertNativeSingle({
-      extensionPage,
-      knownIds,
-      download,
-      expectedUrl: retained.source,
-      expectedBytes,
-      nativeLoopback,
-      nativeMark,
-      pageFetches: pageFetches.slice(fetchMark),
-    });
+    let downloadEvidence: Record<string, unknown> | null = null;
+    if (!skipDownload) {
+      const knownIds = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+      const nativeMark = nativeLoopback.mark();
+      const fetchMark = pageFetches.length;
+      const filename = `rapid_b_${RAPID_CLICK_B}_1.mp4`;
+      await opened.gallery
+        .locator('[data-gallery-element="toolbar"] button[aria-label="Download"]')
+        .click();
+      const download = await waitForDownload(extensionPage, knownIds, filename);
+      const relativeDownload = relative(downloads, download.filename);
+      assert(
+        relativeDownload && !relativeDownload.startsWith('..') && !isAbsolute(relativeDownload)
+      );
+      const bytes = await readFile(download.filename);
+      const expectedBytes = fixtureRoutes.videoPayloads['quote-two'];
+      assert(expectedBytes, 'Rapid B fixture payload is missing');
+      assert(expectedBytes.equals(bytes), 'Late A must not replace B preferred-save bytes');
+      assert(retained.source, 'Rapid B selection has no source');
+      const native = await assertNativeSingle({
+        extensionPage,
+        knownIds,
+        download,
+        expectedUrl: retained.source,
+        expectedBytes,
+        nativeLoopback,
+        nativeMark,
+        pageFetches: pageFetches.slice(fetchMark),
+      });
+      downloadEvidence = {
+        filename,
+        bytes: bytes.length,
+        native,
+        sha256: createHash('sha256').update(bytes).digest('hex'),
+      };
+    }
     const notificationsAfterSave = await notificationObserver.snapshot();
     assertNoRetiredExtractionNotifications(notificationBaseline, notificationsAfterSave);
     await opened.gallery
@@ -8974,11 +9083,12 @@ async function runRapidVideoClicks({
       body: document.body.style.cssText,
     }));
     assert.deepEqual(after, before, 'Rapid B close must restore host scroll and body styles');
-    await page.screenshot({ path: join(output, 'quoted-rapid-a-b-after.png') });
+    await page.screenshot({ path: join(output, `quoted-${probeName}-after.png`) });
     result = {
       status: 'passed',
       pageUrl,
       heldA,
+      openingFeedback,
       pendingB,
       bRequests,
       hostPlayback: { initialHost, begin, pendingStart, pendingEnd, beforeB, afterB, afterA },
@@ -8992,12 +9102,7 @@ async function runRapidVideoClicks({
       selected: opened.selectedMedia,
       retained,
       originUrl,
-      download: {
-        filename,
-        bytes: bytes.length,
-        native,
-        sha256: createHash('sha256').update(bytes).digest('hex'),
-      },
+      download: downloadEvidence,
       restoration: after,
       cleanup,
     };
@@ -13051,6 +13156,166 @@ async function runOriginalAvailabilityCycles({
   }
 }
 
+/** Issue #381: a short installed-extension comparison at the real click/API boundary. */
+async function runOpeningFeedbackProbe({
+  context,
+  downloads,
+  extensionId,
+  nativeLoopback,
+  output,
+  root,
+  images,
+  displayImages,
+}: {
+  context: BrowserContext;
+  downloads: string;
+  extensionId: string;
+  nativeLoopback: NativeLoopback;
+  output: string;
+  root: string;
+  images: ImageFixtures;
+  displayImages: ImageFixtures;
+}) {
+  const observations: Record<string, unknown> = {};
+  const pageFetches: PageFetch[] = [];
+  const pageErrors: string[] = [];
+  const consoleErrors: string[] = [];
+  const fixtureRoutes = await installFixtureRoutes(context, root, images, displayImages);
+  nativeLoopback.setPayloads(images, fixtureRoutes.videoPayloads);
+  const extensionPage = await context.newPage();
+  const page = await context.newPage();
+  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('console', (message) => {
+    if (message.type() === 'error') {
+      consoleErrors.push(message.text());
+    }
+  });
+  page.on('request', (request) => {
+    if (!['fetch', 'xhr'].includes(request.resourceType())) {
+      return;
+    }
+    const url = new URL(request.url());
+    if (!['pbs.twimg.com', 'video.twimg.com'].includes(url.hostname)) {
+      return;
+    }
+    assert(pageFetches.length < 128, 'Opening fixture page fetch observation overflow');
+    pageFetches.push({
+      host: url.hostname,
+      path: url.pathname,
+      resourceType: request.resourceType(),
+    });
+  });
+  let primaryError: unknown;
+  let result: Record<string, unknown> | undefined;
+  const cleanupErrors: unknown[] = [];
+  try {
+    await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
+    const fastCases: unknown[] = [];
+    await page.goto(`https://x.com/rapid_a/status/${RAPID_CLICK_A}`);
+    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+    const fastTrigger = page.locator('[data-rapid="b"] video');
+    for (const name of ['healthy', 'repeat'] as const) {
+      const requestStart = fixtureRoutes.quotedApiResponses.length;
+      const startedAt = performance.now();
+      await fastTrigger.click();
+      const opened = await assertQuotedGallery(page, {
+        name: `fast-${name}`,
+        expectedPosition: 2,
+        expectedTotal: 2,
+        owner: RAPID_CLICK_B,
+        media: 'quote-two',
+      });
+      const elapsedMs = performance.now() - startedAt;
+      const terminal = await captureOpeningFeedback(page, output, `fast-${name}-terminal`);
+      const requests = fixtureRoutes.quotedApiResponses.slice(requestStart);
+      assert(requests.every(({ tweetId }) => tweetId === RAPID_CLICK_B));
+      fastCases.push({ name, elapsedMs, terminal, requests, selected: opened.selectedMedia });
+      await page.keyboard.press('Escape');
+      await opened.gallery.waitFor({ state: 'detached' });
+    }
+    observations.fastCases = fastCases;
+    observations.lateSuccess = await runRapidVideoClicks({
+      context,
+      downloads,
+      extensionId,
+      extensionPage,
+      fixtureRoutes,
+      nativeLoopback,
+      openingProbe: true,
+      output,
+      page,
+      pageFetches,
+    });
+    observations.lateFailure = await runRapidVideoClicks({
+      context,
+      downloads,
+      extensionId,
+      extensionPage,
+      fixtureRoutes,
+      lateAFailure: true,
+      nativeLoopback,
+      openingProbe: true,
+      output,
+      page,
+      pageFetches,
+      skipDownload: true,
+    });
+    observations.delayedFailureAndNavigation = await runDelayedVideoFailures({
+      context,
+      extensionId,
+      extensionPage,
+      fixtureRoutes,
+      openingProbe: true,
+      output,
+      page,
+    });
+    assert.deepEqual(pageErrors, [], 'Opening probe page errors');
+    observations.runtime = { pageErrors, consoleErrors, pageFetches };
+    result = {
+      status: 'passed',
+      scope:
+        'installed Edge/Chrome extension with deterministic X fixture and actual provider routes',
+      ...observations,
+    };
+  } catch (error) {
+    primaryError = error;
+    await page.screenshot({ path: join(output, 'opening-failure.png') }).catch(() => {});
+    throw error;
+  } finally {
+    for (const [label, close] of [
+      ['fixture routes', () => fixtureRoutes.remove()],
+      ['fixture page', () => page.close()],
+      ['extension page', () => extensionPage.close()],
+    ] as const) {
+      try {
+        await close();
+      } catch (error) {
+        cleanupErrors.push(new Error(`${label}: ${safeError(error)}`));
+      }
+    }
+    await writeFile(
+      join(output, 'opening-feedback.json'),
+      JSON.stringify(
+        {
+          status: primaryError || cleanupErrors.length ? 'failed' : 'passed',
+          observations,
+          pageErrors,
+          consoleErrors,
+          cleanupErrors: cleanupErrors.map(safeError),
+          error: primaryError ? safeError(primaryError) : null,
+        },
+        null,
+        2
+      )
+    );
+  }
+  if (cleanupErrors.length) {
+    throw new AggregateError(cleanupErrors, 'Opening probe cleanup failed');
+  }
+  assert(result, 'Opening probe did not complete');
+  return result;
+}
+
 async function exerciseInstalledExtension(
   context: BrowserContext,
   extensionId: string,
@@ -14617,6 +14882,21 @@ export async function run({
   }
   const upgradeInput = await readUpgradeInput(root);
   const sameVersionInput = await readSameVersionInput(root);
+  const openingSelectorText = await readFile(
+    join(root, 'validation/windows/inputs/opening-feedback.json'),
+    'utf8'
+  ).catch((error: unknown) => {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+      return null;
+    }
+    throw error;
+  });
+  const openingProbe = openingSelectorText !== null;
+  if (openingSelectorText !== null) {
+    assert.deepEqual(JSON.parse(openingSelectorText), { scenario: 'opening-feedback' });
+    assert(!upgradeInput && !sameVersionInput, 'Opening probe cannot run during upgrade checks');
+    assert.equal(liveUrls.length, 0, 'Opening probe uses only the owned fixture');
+  }
   assert(!(upgradeInput && sameVersionInput), 'Upgrade and same-version inputs cannot coexist');
   if (sameVersionInput) {
     assert.equal(liveUrls.length, 0, 'Same-version attribution does not observe live URLs');
@@ -14647,11 +14927,13 @@ export async function run({
     installationMethod: 'cdp-unpacked-extension',
     liveUrls: validatedLiveUrls,
     liveObservation,
-    scope: validatedLiveUrls.length
-      ? 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
-      : sameVersionInput
-        ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
-        : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
+    scope: openingProbe
+      ? 'issue 381 installed-extension opening feedback fixture; no live X observation'
+      : validatedLiveUrls.length
+        ? 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
+        : sameVersionInput
+          ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
+          : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
     status: 'failed',
   };
   try {
@@ -14751,17 +15033,30 @@ export async function run({
     if (!sameVersionInput) {
       const images = await createImageFixtures(context);
       const displayImages = await createImageFixtures(context, 0.25);
-      result.fixture = await exerciseInstalledExtension(
-        context,
-        extensionId,
-        root,
-        output,
-        downloads,
-        images,
-        displayImages,
-        browserCdp,
-        nativeLoopback
-      );
+      if (openingProbe) {
+        result.openingFeedback = await runOpeningFeedbackProbe({
+          context,
+          downloads,
+          extensionId,
+          nativeLoopback,
+          output,
+          root,
+          images,
+          displayImages,
+        });
+      } else {
+        result.fixture = await exerciseInstalledExtension(
+          context,
+          extensionId,
+          root,
+          output,
+          downloads,
+          images,
+          displayImages,
+          browserCdp,
+          nativeLoopback
+        );
+      }
     }
     await context.unrouteAll({ behavior: 'wait' });
     if (validatedLiveUrls.length) {

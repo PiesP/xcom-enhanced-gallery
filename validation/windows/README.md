@@ -804,3 +804,9 @@ Review the retained screenshots separately before making a live-page claim.
 
 Run `node --experimental-strip-types --check validation/windows/install-profile.ts` for the installed
 profile syntax check.
+
+For a focused installed-extension opening-feedback comparison, the ignored
+`validation/windows/inputs/opening-feedback.json` selector described in that
+directory's README runs only the delayed-opening cases and records pending and
+terminal screenshots. The controller still binds the built package and cleans
+up the owned browser profile. Keep the selector outside Git.
