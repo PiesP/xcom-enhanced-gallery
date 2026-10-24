@@ -14266,6 +14266,50 @@ async function experienceControlGeometry(toolbar: Locator) {
   });
 }
 
+async function experienceSelectedGeometry(page: Page) {
+  return page.evaluate(() => {
+    const toolbar = document.querySelector<HTMLElement>('[data-gallery-element="toolbar"]');
+    const current = toolbar?.getAttribute('data-current-index');
+    const selected = document.querySelector<HTMLElement>(
+      `[data-gallery-element="item"][data-index="${current}"]`
+    );
+    const items = document.querySelector<HTMLElement>('[data-gallery-element="items"]');
+    const itemsStyle = items ? getComputedStyle(items) : null;
+    return {
+      innerWidth,
+      innerHeight,
+      devicePixelRatio,
+      visualViewport: visualViewport
+        ? {
+            width: visualViewport.width,
+            height: visualViewport.height,
+            scale: visualViewport.scale,
+          }
+        : null,
+      current,
+      focused: toolbar?.getAttribute('data-focused-index'),
+      selected: selected?.getBoundingClientRect().toJSON(),
+      media: selected?.querySelector('img')?.getBoundingClientRect().toJSON(),
+      toolbar: toolbar?.getBoundingClientRect().toJSON(),
+      activeFit: toolbar?.querySelector('[aria-pressed="true"]')?.getAttribute('aria-label'),
+      items: items
+        ? {
+            rect: items.getBoundingClientRect().toJSON(),
+            scrollTop: items.scrollTop,
+            scrollHeight: items.scrollHeight,
+            clientHeight: items.clientHeight,
+            paddingBlockStart: itemsStyle?.paddingBlockStart,
+            scrollPaddingBlockStart: itemsStyle?.scrollPaddingBlockStart,
+            clearance: itemsStyle?.getPropertyValue('--xeg-toolbar-clearance').trim(),
+            selectedScrollMargin: selected
+              ? getComputedStyle(selected).scrollMarginBlockStart
+              : null,
+          }
+        : null,
+    };
+  });
+}
+
 async function runGalleryExperienceProbe({
   context,
   downloads,
@@ -14295,17 +14339,37 @@ async function runGalleryExperienceProbe({
     experienceImages
   );
   nativeLoopback.setPayloads(images, routes.videoPayloads);
+  nativeLoopback.setExperienceImages(experienceImages);
   const extensionPage = await context.newPage();
   const page = await context.newPage();
   const phases: Record<string, { status: string; observations?: unknown; error?: string }> = {};
   const pageErrors: string[] = [];
   const cleanupErrors: string[] = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
-  const phase = async (name: string, action: () => Promise<unknown>) => {
+  const phase = async (
+    name: string,
+    action: (partial: Record<string, unknown>) => Promise<unknown>
+  ) => {
+    const partial: Record<string, unknown> = {};
     try {
-      phases[name] = { status: 'passed', observations: await action() };
+      phases[name] = { status: 'passed', observations: await action(partial) };
     } catch (error) {
-      phases[name] = { status: 'failed', error: safeError(error) };
+      partial.nativeTransport = nativeLoopback.snapshot();
+      if (name === 'x02-toolbar') {
+        partial.downloads = await queryDownloads(extensionPage).then(
+          (items) =>
+            items.map(({ id, url, state, error, bytesReceived, totalBytes }) => ({
+              id,
+              url,
+              state,
+              error,
+              bytesReceived,
+              totalBytes,
+            })),
+          (downloadError) => ({ error: safeError(downloadError) })
+        );
+      }
+      phases[name] = { status: 'failed', observations: partial, error: safeError(error) };
       await page
         .screenshot({ path: join(output, `experience-${name}-failure.png`) })
         .catch(() => {});
@@ -14608,7 +14672,7 @@ async function runGalleryExperienceProbe({
         quotedApiResponses: routes.quotedApiResponses,
       })
     );
-    await phase('x06-layout', async () => {
+    await phase('x06-layout', async (partial) => {
       await page.setViewportSize({ width: 401, height: 592 });
       await page.goto(EXPERIENCE_FIXTURE_URL);
       await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
@@ -14616,7 +14680,8 @@ async function runGalleryExperienceProbe({
       const gallery = page.locator('[data-xeg-gallery-container]');
       await gallery.waitFor({ state: 'visible' });
       const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
-      const cases = [];
+      const cases: unknown[] = [];
+      partial.cases = cases;
       for (let index = 0; index < EXPERIENCE_IMAGES.length; index++) {
         if (index) {
           await page.keyboard.press('ArrowRight');
@@ -14625,40 +14690,22 @@ async function runGalleryExperienceProbe({
           const button = toolbar.locator(`button[aria-label="${fit}"]`);
           await button.click();
           assert.equal(await button.getAttribute('aria-pressed'), 'true');
-          const geometry = await page.evaluate(() => {
-            const toolbar = document.querySelector<HTMLElement>('[data-gallery-element="toolbar"]');
-            const current = toolbar?.getAttribute('data-current-index');
-            const selected = document.querySelector<HTMLElement>(
-              `[data-gallery-element="item"][data-index="${current}"]`
-            );
-            return {
-              innerWidth,
-              innerHeight,
-              devicePixelRatio,
-              visualViewport: visualViewport
-                ? {
-                    width: visualViewport.width,
-                    height: visualViewport.height,
-                    scale: visualViewport.scale,
-                  }
-                : null,
-              current,
-              focused: toolbar?.getAttribute('data-focused-index'),
-              selected: selected?.getBoundingClientRect().toJSON(),
-              media: selected?.querySelector('img')?.getBoundingClientRect().toJSON(),
-              toolbar: toolbar?.getBoundingClientRect().toJSON(),
-              activeFit: toolbar
-                ?.querySelector('[aria-pressed="true"]')
-                ?.getAttribute('aria-label'),
-            };
-          });
+          const geometry = await waitForValue(
+            async () => {
+              const measured = await experienceSelectedGeometry(page);
+              partial.lastGeometry = { shape: EXPERIENCE_IMAGES[index]?.label, fit, ...measured };
+              return measured.media &&
+                measured.toolbar &&
+                measured.media.top >= measured.toolbar.bottom + 4
+                ? measured
+                : undefined;
+            },
+            `${EXPERIENCE_IMAGES[index]?.label} ${fit} media below toolbar`,
+            5_000
+          );
           assert.equal(geometry.current, String(index), 'Fit action changed the selected item');
           assert.equal(geometry.focused, String(index), 'Fit action changed the focused item');
           assert.equal(geometry.activeFit, fit);
-          assert(
-            geometry.media && geometry.toolbar && geometry.media.top >= geometry.toolbar.bottom + 4,
-            `${EXPERIENCE_IMAGES[index]?.label} ${fit}: selected media remains behind the focused toolbar`
-          );
           cases.push({ shape: EXPERIENCE_IMAGES[index]?.label, fit, geometry });
           if (fit === 'Fit Window') {
             const controls = await experienceControlGeometry(toolbar);

@@ -317,6 +317,22 @@ export function createExtensionNativeFixtureHandler() {
         allowed.set(`video.twimg.com${path}`, { bytes, host: 'video.twimg.com', path });
       }
     },
+    setExperienceImages(images: Buffer[]) {
+      assert.equal(allowed.size > 0, true, 'Install native fixture payloads first');
+      const paths = [
+        'XegExperienceTall.jpg',
+        'XegExperiencePanorama.jpg',
+        'XegExperienceSmall.jpg',
+      ];
+      assert.equal(images.length, paths.length);
+      for (const [index, path] of paths.entries()) {
+        const bytes = images[index];
+        assert(Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= MAX_BODY_BYTES);
+        const key = `pbs.twimg.com/media/${path}?format=jpg&name=orig`;
+        assert(!allowed.has(key), 'Experience original already installed');
+        allowed.set(key, { bytes, host: 'pbs.twimg.com', path: `/media/${path}` });
+      }
+    },
     setCompactImage(bytes: Buffer) {
       assert(allowed.size > 0, 'Install native fixture payloads first');
       assert(Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= MAX_BODY_BYTES);
