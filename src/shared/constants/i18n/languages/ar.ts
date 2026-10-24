@@ -100,6 +100,26 @@ export const ar: LanguageStrings = {
       toggle: '؟: عرض هذه المساعدة',
     },
     dl: {
+      bulkOutcome: {
+        titleHandedOff: 'تم تسليم ملف ZIP إلى المتصفح',
+        titleFailed: 'لم يُسلَّم ملف ZIP',
+        previous: 'نتيجة ZIP السابقة',
+        scope: 'النطاق: {total} عناصر وسائط معروضة في هذا المعرض.',
+        counts: 'يتضمن ZIP عدد {included}، واستُبعد {omitted}.',
+        browserHandoff: 'قبل المتصفح طلب تنزيل ZIP. لم يُتحقق من اكتمال الحفظ على القرص.',
+        noZip: 'لم يُسلَّم أي ملف ZIP إلى المتصفح.',
+        resourceLimit:
+          'تم بلوغ حد ذاكرة التنزيل. انتظر اكتمال التنزيلات النشطة، ثم أعد تحميل الصفحة إذا استمرت المشكلة.',
+        sourceUnavailable:
+          'تعذر التحقق من مصدر الصورة الأصلية. افتح المنشور الأصلي لمحاولة تنزيل هذا العنصر.',
+        sourceFetchFailed:
+          'فشل طلب مصدر الوسائط (HTTP {statuses}). أعد فتح المنشور الأصلي وحاول تنزيل العناصر المستبعدة.',
+        zipSaveFailed: 'جُهّز ZIP، لكن المتصفح لم يقبل طلب الحفظ.',
+        other: 'تعذر تضمين بعض العناصر. أعد فتح المعرض للمحاولة مجددًا.',
+        nextAction:
+          'تنزيل الكل ينشئ ملف ZIP جديدًا لكل العناصر المعروضة، بما فيها العناصر التي سُلّمت سابقًا. أعد فتح المنشور وحاول بعناصر أقل عند الحاجة.',
+        dismiss: 'إغلاق نتيجة ZIP',
+      },
       status: {
         working: 'جارٍ تجهيز التنزيل…',
         handedOff: 'تم تسليم طلب التنزيل إلى المتصفح',
@@ -147,6 +167,9 @@ export const ar: LanguageStrings = {
       imageGallery: 'معرض الصور',
       loading: 'جارٍ التحميل',
       opening: 'جارٍ فتح المعرض…',
+      retryLoading: 'إعادة التحميل',
+      retryExhausted: 'لا يزال التحميل غير متاح. أعد فتح المعرض أو جرّب من المنشور الأصلي.',
+      openOriginalPost: 'فتح المنشور الأصلي',
       videoCount: 'فيديو {index} من {total}',
       imageCount: 'صورة {index} من {total}: {alt}',
       hashtagLabel: 'وسم {value}',

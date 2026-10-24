@@ -17,7 +17,10 @@ import {
   getDisplayedMediaIndex,
   setError,
 } from '@shared/state/signals/gallery.signals';
-import { setDownloadStatus } from '@shared/state/signals/gallery-download-signals';
+import {
+  setBulkDownloadOutcome,
+  setDownloadStatus,
+} from '@shared/state/signals/gallery-download-signals';
 import type { MediaInfo } from '@shared/types/media.types';
 
 /**
@@ -60,6 +63,7 @@ export function createDownloadHandler() {
     // the new session's non-aborted signal.
     const controller = abortController;
     const signal = controller.signal;
+    const bulkTotal = type === 'all' ? gallerySignals.mediaItems.length : 0;
     const operationId = ++operationGeneration;
     const isCurrentOperation = (): boolean =>
       operationId === operationGeneration && !signal.aborted;
@@ -76,6 +80,9 @@ export function createDownloadHandler() {
 
     // A7: Clear stale error from a previous download before starting a new one.
     setError(null);
+    if (type === 'current') {
+      setBulkDownloadOutcome(null);
+    }
     setDownloadStatus('working');
 
     const notifyError = (title: string, body: string): void => {
@@ -139,6 +146,31 @@ export function createDownloadHandler() {
           publishStatus('idle');
           return;
         }
+        const handedOff = result.success;
+        const included = handedOff ? result.filesSuccessful : 0;
+        setBulkDownloadOutcome({
+          total: bulkTotal,
+          included,
+          omitted: Math.max(0, bulkTotal - included),
+          handedOff,
+          reason:
+            result.code === 'RESOURCE_LIMIT'
+              ? 'resourceLimit'
+              : result.code === 'SOURCE_UNAVAILABLE'
+                ? 'sourceUnavailable'
+                : !handedOff && result.filesSuccessful > 0
+                  ? 'zipSaveFailed'
+                  : result.sourceFetchStatuses?.length
+                    ? 'sourceFetchFailed'
+                    : result.status === 'partial' || !handedOff
+                      ? 'other'
+                      : 'none',
+          sourceUnavailable:
+            result.sourceUnavailable === true || result.code === 'SOURCE_UNAVAILABLE',
+          ...(result.sourceFetchStatuses?.length
+            ? { sourceFetchStatuses: result.sourceFetchStatuses }
+            : {}),
+        });
         if (result.code === 'RESOURCE_LIMIT' && result.success && result.status === 'partial') {
           publishStatus('handedOff');
           const failures = Math.max(0, result.filesProcessed - result.filesSuccessful);
@@ -151,7 +183,7 @@ export function createDownloadHandler() {
             (result.sourceUnavailable
               ? ` ${languageService.translate('msg.dl.sourceUnavailable')}`
               : '');
-          setError(body);
+          setError(body, 'bulkDownload');
           notifyError(title, body);
           return;
         }
@@ -163,7 +195,7 @@ export function createDownloadHandler() {
             (result.sourceUnavailable
               ? ` ${languageService.translate('msg.dl.sourceUnavailable')}`
               : '');
-          setError(body);
+          setError(body, 'bulkDownload');
           notifyError(title, body);
           return;
         }
@@ -176,7 +208,7 @@ export function createDownloadHandler() {
             (result.success
               ? `${languageService.translate('msg.dl.part.b', { count: result.filesProcessed - result.filesSuccessful })} `
               : '') + languageService.translate('msg.dl.sourceUnavailable');
-          setError(body);
+          setError(body, 'bulkDownload');
           notifyError(title, body);
           return;
         }
@@ -186,13 +218,13 @@ export function createDownloadHandler() {
           if (result.filesSuccessful === 0) {
             const title = languageService.translate('msg.dl.allFail.t');
             const body = languageService.translate('msg.dl.allFail.b');
-            setError(body);
+            setError(body, 'bulkDownload');
             notifyError(title, body);
           } else {
             const error = result.error || languageService.translate('msg.dl.zipFail');
             const title = languageService.translate('msg.dl.one.err.t');
             const body = languageService.translate('msg.dl.one.err.b', { error });
-            setError(body);
+            setError(body, 'bulkDownload');
             notifyError(title, body);
           }
           return;
@@ -203,7 +235,7 @@ export function createDownloadHandler() {
           if (failures > 0) {
             const title = languageService.translate('msg.dl.part.t');
             const body = languageService.translate('msg.dl.part.b', { count: failures });
-            setError(body);
+            setError(body, 'bulkDownload');
             notifyError(title, body);
           }
         }
@@ -214,9 +246,19 @@ export function createDownloadHandler() {
         return;
       }
       publishStatus('error');
+      if (type === 'all') {
+        setBulkDownloadOutcome({
+          total: bulkTotal,
+          included: 0,
+          omitted: bulkTotal,
+          handedOff: false,
+          reason: 'other',
+          sourceUnavailable: false,
+        });
+      }
       logger.error('Download failed', error);
       const { title, body } = getDownloadErrorNotification(error);
-      setError(body);
+      setError(body, type === 'all' ? 'bulkDownload' : null);
       notifyError(title, body);
     }
   };
@@ -226,6 +268,7 @@ export function createDownloadHandler() {
     abortController.abort();
     resetAbortController();
     setDownloadStatus('idle');
+    setBulkDownloadOutcome(null);
   };
 
   return { handleDownload, cancelDownloads };

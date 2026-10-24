@@ -101,6 +101,27 @@ export const ko: LanguageStrings = {
       toggle: '?: 이 도움말 표시',
     },
     dl: {
+      bulkOutcome: {
+        titleHandedOff: 'ZIP을 브라우저에 전달함',
+        titleFailed: 'ZIP을 브라우저에 전달하지 못함',
+        previous: '이전 ZIP 결과',
+        scope: '범위: 이 갤러리에 표시된 미디어 {total}개.',
+        counts: 'ZIP 포함 {included}개, 제외 {omitted}개.',
+        browserHandoff:
+          '브라우저가 ZIP 다운로드 요청을 받았습니다. 디스크 저장 완료 여부는 확인되지 않았습니다.',
+        noZip: '브라우저에 전달된 ZIP이 없습니다.',
+        resourceLimit:
+          '다운로드 메모리 한도에 도달했습니다. 진행 중인 다운로드가 끝날 때까지 기다리고, 계속되면 페이지를 새로고침하세요.',
+        sourceUnavailable:
+          '원본 이미지 출처를 확인할 수 없습니다. 해당 항목은 원래 게시물에서 다시 시도하세요.',
+        sourceFetchFailed:
+          '미디어 원본 요청에 실패했습니다(HTTP {statuses}). 원래 게시물을 다시 열어 제외된 항목을 재시도하세요.',
+        zipSaveFailed: 'ZIP을 준비했지만 브라우저가 저장 요청을 받지 않았습니다.',
+        other: '일부 항목을 포함할 수 없습니다. 갤러리를 다시 열어 시도하세요.',
+        nextAction:
+          '모두 다운로드를 다시 누르면 이미 전달된 항목을 포함해 표시된 모든 항목으로 새 ZIP을 만듭니다. 필요한 경우 게시물을 다시 열고 더 적은 항목으로 시도하세요.',
+        dismiss: 'ZIP 결과 닫기',
+      },
       status: {
         working: '다운로드 준비 중…',
         handedOff: '브라우저로 전달됨',
@@ -149,6 +170,9 @@ export const ko: LanguageStrings = {
       imageGallery: '이미지 갤러리',
       loading: '로딩 중',
       opening: '갤러리 여는 중…',
+      retryLoading: '다시 불러오기',
+      retryExhausted: '아직 불러올 수 없습니다. 갤러리를 다시 열거나 원본 게시물에서 시도하세요.',
+      openOriginalPost: '원본 게시물 열기',
       videoCount: '동영상 {index}/{total}',
       imageCount: '이미지 {index}/{total}: {alt}',
       hashtagLabel: '해시태그 {value}',

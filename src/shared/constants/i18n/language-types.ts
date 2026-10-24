@@ -182,6 +182,22 @@ export interface LanguageStrings {
     };
     /** Download messages */
     readonly dl: {
+      readonly bulkOutcome: {
+        readonly titleHandedOff: string;
+        readonly titleFailed: string;
+        readonly previous: string;
+        readonly scope: string;
+        readonly counts: string;
+        readonly browserHandoff: string;
+        readonly noZip: string;
+        readonly resourceLimit: string;
+        readonly sourceUnavailable: string;
+        readonly sourceFetchFailed: string;
+        readonly zipSaveFailed: string;
+        readonly other: string;
+        readonly nextAction: string;
+        readonly dismiss: string;
+      };
       /** Observable download lifecycle labels */
       readonly status: {
         /** The app is preparing or handing off a download */
@@ -253,6 +269,12 @@ export interface LanguageStrings {
       readonly loading: string;
       /** Delayed acknowledgement while the clicked media is being resolved */
       readonly opening: string;
+      /** Retry a failed image display request */
+      readonly retryLoading: string;
+      /** Guidance after the bounded image retries are exhausted */
+      readonly retryExhausted: string;
+      /** Open the failed image's original post in a new tab */
+      readonly openOriginalPost: string;
       /** Video count label */
       readonly videoCount: string;
       /** Image count label */

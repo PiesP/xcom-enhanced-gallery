@@ -13,6 +13,7 @@ vi.mock('@platform/index', () => ({
 }));
 
 import { DownloadOrchestrator } from '@shared/services/download/download-orchestrator';
+import { HttpRequestError } from '@shared/services/http-request-service';
 import {
   downloadLiveByteBudget,
   LiveByteBudget,
@@ -104,6 +105,57 @@ describe('DownloadOrchestrator bulk resource limits', () => {
     expect(state.downloadBlob).toHaveBeenCalledOnce();
     orchestrator.destroy();
   });
+
+  it.each([403, 404])(
+    'reports HTTP %i rejection of a verified original separately from source verification',
+    async (status) => {
+      const orchestrator = new DownloadOrchestrator();
+      orchestrator.initialize();
+      const deniedUrl = 'https://pbs.twimg.com/media/denied.jpg?name=orig';
+      const acceptedUrl = 'https://pbs.twimg.com/media/accepted.jpg?name=orig';
+      const denied = {
+        id: 'denied',
+        type: 'image' as const,
+        url: deniedUrl,
+        downloadSource: {
+          url: deniedUrl,
+          quality: 'cdn-original' as const,
+          provenance: 'dom' as const,
+        },
+      };
+      const accepted = {
+        id: 'accepted',
+        type: 'image' as const,
+        url: acceptedUrl,
+        downloadSource: {
+          url: acceptedUrl,
+          quality: 'cdn-original' as const,
+          provenance: 'dom' as const,
+        },
+      };
+      const provider = Object.assign(
+        vi.fn(async () => {
+          throw new HttpRequestError(status, true, 'http');
+        }),
+        { supports: (media: MediaInfo) => media.id === denied.id }
+      );
+      const result = await orchestrator.downloadBulk([denied, accepted], {
+        mediaBlobProvider: provider,
+        cachedBlobs: new Map([[acceptedUrl, ownedBlob(new Blob(['ok']))]]),
+      });
+
+      expect(result).toMatchObject({
+        success: true,
+        status: 'partial',
+        code: 'NONE',
+        filesSuccessful: 1,
+        sourceFetchStatuses: [status],
+      });
+      expect(result.sourceUnavailable).toBeUndefined();
+      expect(result.failures).toEqual([{ url: deniedUrl, error: `HTTP:${status}` }]);
+      orchestrator.destroy();
+    }
+  );
 
   it.each([false, true])(
     'retains unverified originals alongside resource rejection, with successful entry=%s',

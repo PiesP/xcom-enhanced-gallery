@@ -231,6 +231,36 @@
   min-height: var(--xeg-spacing-3xl);
 }
 
+.errorActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--xeg-spacing-sm);
+  max-inline-size: 100%;
+  margin-block-start: var(--xeg-spacing-md);
+  padding-inline: var(--xeg-spacing-sm);
+}
+
+.errorAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 44px;
+  padding: var(--xeg-spacing-xs) var(--xeg-spacing-md);
+  border: 1px solid var(--xeg-color-border-default);
+  border-radius: var(--xeg-radius-md);
+  background: var(--xeg-color-bg-surface);
+  color: var(--xeg-color-text-primary);
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.errorAction:focus-visible {
+  outline: 2px solid var(--xeg-focus-indicator-color, currentColor);
+  outline-offset: 2px;
+}
+
 .playbackFallback {
   position: absolute;
   inset-inline: var(--xeg-spacing-sm);
@@ -367,6 +397,39 @@
 .container[data-video-admitted]:is([data-fit-mode='fitHeight'], [data-fit-mode='fitContainer'])
   :is(.imageWrapper, .video) {
   inline-size: 100%;
+}
+
+/* A failed image still has a media-sized button underneath its recovery panel.
+   Let the panel size the row so its text and actions remain inside paint containment. */
+.container[data-media-error='true'] {
+  /* Keep recovery controls clear of the fixed toolbar hover sensor on realignment. */
+  scroll-margin-block-start: var(--xeg-hover-zone-height);
+}
+
+.container[data-media-error='true'] .imageWrapper {
+  display: grid;
+}
+
+.container[data-media-error='true'] :is(.mediaAction, .error) {
+  grid-area: 1 / 1;
+}
+
+.container[data-media-error='true'] .error {
+  position: relative;
+  inset: auto;
+  box-sizing: border-box;
+  min-inline-size: min(16rem, calc(100vw - var(--xeg-spacing-lg) * 2));
+  padding: var(--xeg-spacing-md);
+}
+
+.container[data-media-error='true'][data-media-loaded='false']:is(
+    [data-fit-mode='original'],
+    [data-fit-mode='fitHeight'],
+    [data-fit-mode='fitContainer']
+  ) {
+  inline-size: max-content;
+  max-inline-size: 100%;
+  max-block-size: none;
 }
 
 /* Container width now fits content by default - no forced 100% width needed */

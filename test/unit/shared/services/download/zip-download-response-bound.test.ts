@@ -7,7 +7,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
 const fetchOwnedArrayBufferWithRetry = vi.hoisted(() => vi.fn());
 
-vi.mock('@shared/network/retry-fetch', () => ({ fetchOwnedArrayBufferWithRetry }));
+vi.mock('@shared/network/retry-fetch', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@shared/network/retry-fetch')>()),
+  fetchOwnedArrayBufferWithRetry,
+}));
 
 import type { DownloadOptions, OrchestratorItem, ZipResult } from '@shared/services/download/types';
 import { downloadAsZip as assembleZip } from '@shared/services/download/zip-download';

@@ -86,4 +86,5 @@ memory/
 /validation/windows/release-upgrade/v2.3.7-extension/
 /validation/windows/inputs/settings-persistence.json
 /validation/windows/inputs/opening-feedback.json
+/validation/windows/inputs/media-download-recovery.json
 .vitest/

@@ -18,7 +18,7 @@ import {
 } from '@shared/services/download/live-byte-budget';
 import { getHttpRequestService } from '@shared/services/http-request-service';
 
-class HttpStatusError extends Error {
+export class HttpStatusError extends Error {
   override readonly name = 'HttpStatusError';
 
   constructor(

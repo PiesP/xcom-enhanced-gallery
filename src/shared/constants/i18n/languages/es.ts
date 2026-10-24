@@ -103,6 +103,28 @@ export const es: LanguageStrings = {
       toggle: '?: Mostrar esta ayuda',
     },
     dl: {
+      bulkOutcome: {
+        titleHandedOff: 'ZIP entregado al navegador',
+        titleFailed: 'No se entregó ningún ZIP',
+        previous: 'Resultado anterior del ZIP',
+        scope: 'Alcance: {total} elementos mostrados en esta galería.',
+        counts: 'El ZIP incluye {included}; se omitieron {omitted}.',
+        browserHandoff:
+          'El navegador aceptó la solicitud del ZIP. No se ha confirmado que se guardara en el disco.',
+        noZip: 'No se entregó ningún ZIP al navegador.',
+        resourceLimit:
+          'Se alcanzó el límite de memoria de descarga. Espera a que terminen las descargas activas; si persiste, recarga la página.',
+        sourceUnavailable:
+          'No se pudo verificar el origen de una imagen. Vuelve a la publicación original para intentar descargarla.',
+        sourceFetchFailed:
+          'Falló una solicitud al origen del contenido (HTTP {statuses}). Vuelve a la publicación original y reintenta los elementos omitidos.',
+        zipSaveFailed: 'El ZIP se preparó, pero el navegador no aceptó la solicitud de guardado.',
+        other:
+          'No se pudieron incluir algunos elementos. Vuelve a abrir la galería e inténtalo de nuevo.',
+        nextAction:
+          'Descargar todo crea otro ZIP con todos los elementos mostrados, incluso los ya entregados. Si hace falta, vuelve a la publicación e inténtalo con menos elementos.',
+        dismiss: 'Cerrar resultado del ZIP',
+      },
       status: {
         working: 'Preparando la descarga…',
         handedOff: 'Solicitud entregada al navegador',
@@ -151,6 +173,10 @@ export const es: LanguageStrings = {
       imageGallery: 'Galería de imágenes',
       loading: 'Cargando',
       opening: 'Abriendo galería…',
+      retryLoading: 'Reintentar carga',
+      retryExhausted:
+        'Aún no se puede cargar. Vuelve a abrir la galería o inténtalo en la publicación original.',
+      openOriginalPost: 'Abrir publicación original',
       videoCount: 'Video {index} de {total}',
       imageCount: 'Imagen {index} de {total}: {alt}',
       hashtagLabel: 'Hashtag {value}',

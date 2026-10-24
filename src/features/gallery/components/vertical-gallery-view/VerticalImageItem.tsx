@@ -26,7 +26,40 @@ import { getMediaDisplayUrl } from '@shared/utils/media/media-source';
 import { cx } from '@shared/utils/text/formatting';
 import { isUrlAllowed, MEDIA_URL_POLICY } from '@shared/utils/url/safety';
 import type { JSX, JSXElement } from 'solid-js';
-import { createEffect, createMemo, createSignal, splitProps, untrack } from 'solid-js';
+import {
+  batch,
+  createEffect,
+  createMemo,
+  createSignal,
+  For,
+  onCleanup,
+  splitProps,
+  untrack,
+} from 'solid-js';
+
+const MAX_IMAGE_RETRIES = 2;
+
+function originalPostUrl(value: string | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+  try {
+    const url = new URL(value);
+    const status = url.pathname.match(
+      /^\/([A-Za-z0-9_]{1,15})\/status\/([1-9]\d{0,19})(?:\/(?:photo|video)\/[1-9]\d*)?\/?$/u
+    );
+    return url.protocol === 'https:' &&
+      (url.hostname === 'x.com' || url.hostname === 'twitter.com') &&
+      !url.port &&
+      !url.username &&
+      !url.password &&
+      status
+      ? `https://x.com/${status[1]}/status/${status[2]}`
+      : null;
+  } catch {
+    return null;
+  }
+}
 
 const FIT_MODE_CLASSES: Record<ImageFitMode, string> = {
   original: styles.fitOriginal as string,
@@ -47,6 +80,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     'onClick',
     'className',
     'onMediaLoad',
+    'onMediaError',
     'fitMode',
     'style',
     'registerContainer',
@@ -71,6 +105,13 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   const displaySrc = createMemo(() => getMediaDisplayUrl(local.media));
   const [isLoaded, setIsLoaded] = createSignal(false);
   const [isError, setIsError] = createSignal(false);
+  const [imageAttempt, setImageAttempt] = createSignal(0);
+  const postUrl = createMemo(() => originalPostUrl(local.media.tweetUrl));
+  let imageAction: HTMLButtonElement | undefined;
+  let disposed = false;
+  onCleanup(() => {
+    disposed = true;
+  });
   let geometryReported = false;
   const recovery = useVideoPlaybackRecovery({
     media: () => local.media,
@@ -196,8 +237,28 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   };
 
   const handleMediaError = () => {
+    if (isError()) {
+      return;
+    }
     setIsError(true);
     setIsLoaded(false);
+    if (!isVideo()) {
+      local.onMediaError?.(local.media.id, local.index);
+    }
+  };
+
+  const retryImage = (event: MouseEvent): void => {
+    event.stopPropagation();
+    if (disposed || isVideo() || !isError() || imageAttempt() >= MAX_IMAGE_RETRIES) {
+      return;
+    }
+    batch(() => {
+      setImageRef(null);
+      setIsLoaded(false);
+      setIsError(false);
+      setImageAttempt((attempt) => attempt + 1);
+    });
+    imageAction?.focus();
   };
 
   // Supplement native readiness events for media that is already cached.
@@ -293,6 +354,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       data-index={local.index}
       data-fit-mode={resolvedFitMode()}
       data-media-loaded={isLoaded() ? 'true' : 'false'}
+      data-media-error={!isVideo() && isError() ? 'true' : undefined}
       data-video-admitted={isVideo() ? String(recovery.isAdmitted()) : undefined}
       data-video-first-frame={isVideo() ? String(recovery.hasFirstFrame()) : undefined}
       data-media-display-url={displaySrc()}
@@ -347,6 +409,9 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
         ) : !isVideo() && isDisplaySrcValid() ? (
           <button
             type="button"
+            ref={(element) => {
+              imageAction = element;
+            }}
             class={styles.mediaAction}
             aria-label={local['aria-label'] || imageAltText()}
             aria-describedby={local['aria-describedby']}
@@ -354,19 +419,43 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
             onFocus={local.onFocus}
             onClick={handleImageClick}
           >
-            <img
-              ref={setImageRef}
-              src={displaySrc()}
-              alt={imageAltText()}
-              width={dimensions().width}
-              height={dimensions().height}
-              loading={shouldEagerLoadImage() ? 'eager' : 'lazy'}
-              decoding="async"
-              class={cx(styles.image, fitModeClass(), isLoaded() ? styles.loaded : styles.loading)}
-              onLoad={handleMediaLoad}
-              onError={handleMediaError}
-              onDragStart={preventDragStart}
-            />
+            <For each={[imageAttempt()]}>
+              {(attempt) => (
+                <img
+                  ref={setImageRef}
+                  src={displaySrc()}
+                  alt={imageAltText()}
+                  width={dimensions().width}
+                  height={dimensions().height}
+                  loading={shouldEagerLoadImage() ? 'eager' : 'lazy'}
+                  decoding="async"
+                  class={cx(
+                    styles.image,
+                    fitModeClass(),
+                    isLoaded() ? styles.loaded : styles.loading
+                  )}
+                  onLoad={(event) => {
+                    if (
+                      !disposed &&
+                      attempt === imageAttempt() &&
+                      event.currentTarget === imageRef()
+                    ) {
+                      handleMediaLoad();
+                    }
+                  }}
+                  onError={(event) => {
+                    if (
+                      !disposed &&
+                      attempt === imageAttempt() &&
+                      event.currentTarget === imageRef()
+                    ) {
+                      handleMediaError();
+                    }
+                  }}
+                  onDragStart={preventDragStart}
+                />
+              )}
+            </For>
           </button>
         ) : null}
 
@@ -376,6 +465,34 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
             <span class={styles.errorText}>
               {translate('msg.gal.loadFail', { type: isVideo() ? 'video' : 'image' })}
             </span>
+            {!isVideo() && (
+              <div class={styles.errorActions}>
+                {imageAttempt() < MAX_IMAGE_RETRIES ? (
+                  <button
+                    type="button"
+                    class={styles.errorAction}
+                    tabIndex={isFocused() || local.isActive ? 0 : -1}
+                    onClick={retryImage}
+                  >
+                    {translate('msg.gal.retryLoading')}
+                  </button>
+                ) : (
+                  <span class={styles.errorText}>{translate('msg.gal.retryExhausted')}</span>
+                )}
+                {postUrl() && (
+                  <a
+                    class={styles.errorAction}
+                    href={postUrl() ?? ''}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    tabIndex={isFocused() || local.isActive ? 0 : -1}
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    {translate('msg.gal.openOriginalPost')}
+                  </a>
+                )}
+              </div>
+            )}
           </div>
         )}
         {isVideo() && recovery.isFallback() && !isError() && (

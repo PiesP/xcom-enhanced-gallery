@@ -8,6 +8,7 @@
  */
 
 import { useGalleryFitMode } from '@features/gallery/components/vertical-gallery-view/hooks/use-gallery-fit-mode';
+import { dismissBulkDownloadOutcome } from '@features/gallery/hooks/dismiss-bulk-download-outcome';
 import { useGalleryNavigationHandlers } from '@features/gallery/components/vertical-gallery-view/hooks/use-gallery-navigation-handlers';
 import { useGalleryScrollCorrection } from '@features/gallery/components/vertical-gallery-view/hooks/use-gallery-scroll-correction';
 import { useGalleryWheelRedirect } from '@features/gallery/components/vertical-gallery-view/hooks/use-gallery-wheel-redirect';
@@ -23,11 +24,14 @@ import {
   getDisplayedMediaIndex,
   navigateToItem,
 } from '@shared/state/signals/gallery.signals';
-import { downloadState } from '@shared/state/signals/gallery-download-signals';
+import {
+  type BulkDownloadOutcome,
+  downloadState,
+} from '@shared/state/signals/gallery-download-signals';
 import { computePreloadIndices } from '@shared/utils/performance/preload';
 import { cx } from '@shared/utils/text/formatting';
 import type { Accessor, JSXElement } from 'solid-js';
-import { createEffect, createMemo, createSignal, For, onCleanup, splitProps } from 'solid-js';
+import { createEffect, createMemo, createSignal, For, onCleanup, Show, splitProps } from 'solid-js';
 
 export interface VerticalGalleryViewProps {
   /** Handler for closing the gallery */
@@ -61,6 +65,10 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
   const currentIndex = createMemo(() => gallerySignals.currentIndex);
   const isDownloading = createMemo(() => downloadState.isProcessing);
   const downloadStatus = createMemo(() => downloadState.status);
+  const bulkOutcome = createMemo(() => downloadState.bulkOutcome);
+  const toolbarDownloadStatus = createMemo(() =>
+    bulkOutcome() && downloadStatus() !== 'working' ? 'idle' : downloadStatus()
+  );
 
   // Element refs
   const [containerEl, setContainerEl] = createSignal<HTMLDivElement | null>(null);
@@ -118,6 +126,17 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
   });
 
   const translate = useTranslation();
+  const sourceFetchReason = (statuses: readonly number[]): string =>
+    translate('msg.dl.bulkOutcome.sourceFetchFailed', { statuses: statuses.join(', ') });
+  const outcomeReason = (outcome: BulkDownloadOutcome): string => {
+    if (outcome.reason === 'none') {
+      return '';
+    }
+    if (outcome.reason === 'sourceFetchFailed') {
+      return sourceFetchReason(outcome.sourceFetchStatuses ?? []);
+    }
+    return translate(`msg.dl.bulkOutcome.${outcome.reason}`);
+  };
 
   // Debounced scroll correction — adjusts scroll position after media loads
   const { debouncedScrollCorrection } = useGalleryScrollCorrection({
@@ -240,7 +259,7 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
           focusedIndex={focus.focusedIndex}
           totalCount={() => mediaItems().length}
           isDownloading={isDownloading}
-          downloadStatus={downloadStatus}
+          downloadStatus={toolbarDownloadStatus}
           currentFitMode={imageFitMode}
           tweetText={tweetText}
           tweetTextContent={tweetTextContent}
@@ -268,6 +287,7 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
               fitMode={imageFitMode}
               onClick={() => handleMediaItemClick(index())}
               onMediaLoad={handleMediaLoad}
+              onMediaError={handleMediaLoad}
               className={cx(styles.galleryItem, index() === currentIndex() && styles.itemActive)}
               registerContainer={createRegisterContainer(index)}
               onFocus={createHandleFocus(index)}
@@ -275,6 +295,56 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
           )}
         </For>
       </ul>
+      <Show when={bulkOutcome()}>
+        {(outcome) => (
+          // biome-ignore lint/a11y/useKeyWithClickEvents: Keyboard users interact with the native dismissal button; pointer propagation only protects the backdrop close handler.
+          <section
+            class={styles.bulkOutcome}
+            data-gallery-element="bulk-download-outcome"
+            role="status"
+            aria-live={downloadStatus() === 'working' ? 'off' : 'polite'}
+            aria-atomic="true"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div class={styles.bulkOutcomeHeading}>
+              <strong>
+                {downloadStatus() === 'working' && `${translate('msg.dl.bulkOutcome.previous')}: `}
+                {translate(
+                  outcome().handedOff
+                    ? 'msg.dl.bulkOutcome.titleHandedOff'
+                    : 'msg.dl.bulkOutcome.titleFailed'
+                )}
+              </strong>
+              <button type="button" onClick={dismissBulkDownloadOutcome}>
+                {translate('msg.dl.bulkOutcome.dismiss')}
+              </button>
+            </div>
+            <p>{translate('msg.dl.bulkOutcome.scope', { total: outcome().total })}</p>
+            <p>
+              {translate('msg.dl.bulkOutcome.counts', {
+                included: outcome().included,
+                omitted: outcome().omitted,
+              })}
+            </p>
+            <p>
+              {translate(
+                outcome().handedOff
+                  ? 'msg.dl.bulkOutcome.browserHandoff'
+                  : 'msg.dl.bulkOutcome.noZip'
+              )}
+            </p>
+            {outcome().reason !== 'none' && <p>{outcomeReason(outcome())}</p>}
+            {outcome().sourceUnavailable && outcome().reason !== 'sourceUnavailable' && (
+              <p>{translate('msg.dl.bulkOutcome.sourceUnavailable')}</p>
+            )}
+            {(outcome().sourceFetchStatuses?.length ?? 0) > 0 &&
+              outcome().reason !== 'sourceFetchFailed' && (
+                <p>{sourceFetchReason(outcome().sourceFetchStatuses ?? [])}</p>
+              )}
+            <p>{translate('msg.dl.bulkOutcome.nextAction')}</p>
+          </section>
+        )}
+      </Show>
     </div>
   );
 }

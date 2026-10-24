@@ -817,3 +817,10 @@ without an acknowledgement. The 500 ms delay keeps those measured fast paths
 quiet while giving a held extraction a visible, source-adjacent status. The
 focused probe records trusted click, status insertion, and removal times and
 checks that no retired status survives a later action or navigation.
+
+The optional #382 recovery selector in `validation/windows/inputs/README.md`
+reuses the installed extension's three-image quality, original-availability,
+and bounded memory fixtures. It records the current on-page failure and save
+result after notifications are suppressed and more than five seconds have
+passed. Saved partial and healthy ZIPs retain their exact entry, CRC, byte, and
+SHA-256 checks. This focused baseline does not change product recovery behavior.

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
+import { dismissBulkDownloadOutcome } from '@features/gallery/hooks/dismiss-bulk-download-outcome';
 import {
   disposeGallerySignals,
   galleryIndexEvents,
@@ -10,9 +11,14 @@ import {
   navigatePrevious,
   navigateToItem,
   openGallery,
+  setError,
   setFocusedIndexOnly,
 } from '@shared/state/signals/gallery.signals';
-import { downloadState, setDownloadStatus } from '@shared/state/signals/gallery-download-signals';
+import {
+  downloadState,
+  setBulkDownloadOutcome,
+  setDownloadStatus,
+} from '@shared/state/signals/gallery-download-signals';
 import {
   resolveAdjacentNavigationTarget,
   resolveDisplayedIndex,
@@ -26,6 +32,33 @@ function media(id: string): MediaInfo {
 
 afterEach(() => {
   disposeGallerySignals();
+  setError(null);
+});
+
+it('dismisses a partial ZIP result without reviving its old live error or clearing a newer error', () => {
+  openGallery([media('a')]);
+  const partial = {
+    total: 1,
+    included: 0,
+    omitted: 1,
+    handedOff: false,
+    reason: 'sourceUnavailable' as const,
+    sourceUnavailable: true,
+  };
+  setBulkDownloadOutcome(partial);
+  setDownloadStatus('handedOff');
+  setError('Source unavailable', 'bulkDownload');
+  dismissBulkDownloadOutcome();
+  expect(downloadState.bulkOutcome).toBeNull();
+  expect(downloadState.status).toBe('idle');
+  expect(gallerySignals.error).toBeNull();
+
+  setBulkDownloadOutcome(partial);
+  setError('Source unavailable', 'bulkDownload');
+  setError('Source unavailable'); // Equal text from an unrelated operation has different ownership.
+  dismissBulkDownloadOutcome();
+  expect(downloadState.bulkOutcome).toBeNull();
+  expect(gallerySignals.error).toBe('Source unavailable');
 });
 
 describe('resolveAdjacentNavigationTarget', () => {

@@ -89,6 +89,8 @@ export interface ZipResult {
   zipData: BlobPart[];
   resourceLimitExceeded: boolean;
   sourceUnavailable?: boolean;
+  /** HTTP status codes returned by media source requests that failed. */
+  sourceFetchStatuses?: readonly number[];
   /** Uses copy capacity already reserved before entries were read. Transfers ownership. */
   createBlob(): OwnedBlob;
   /** Drop parts and return reservations when no Blob was handed to a download. */
@@ -106,6 +108,8 @@ export interface BulkDownloadResult {
   code: ErrorCode;
   /** Retain this cause even when resource rejection takes code precedence. */
   sourceUnavailable?: boolean;
+  /** HTTP status codes returned by media source requests that failed. */
+  sourceFetchStatuses?: readonly number[];
 }
 
 export function reportProgress(

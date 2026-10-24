@@ -101,6 +101,27 @@ export const ja: LanguageStrings = {
       toggle: '?: このヘルプを表示',
     },
     dl: {
+      bulkOutcome: {
+        titleHandedOff: 'ZIP をブラウザーに引き渡しました',
+        titleFailed: 'ZIP を引き渡せませんでした',
+        previous: '前回の ZIP 結果',
+        scope: '対象: このギャラリーに表示されたメディア {total} 件。',
+        counts: 'ZIP に含まれる: {included} 件、除外: {omitted} 件。',
+        browserHandoff:
+          'ブラウザーが ZIP のダウンロード要求を受け付けました。ディスクへの保存完了は確認できません。',
+        noZip: 'ブラウザーに引き渡された ZIP はありません。',
+        resourceLimit:
+          'ダウンロード用メモリの上限に達しました。進行中のダウンロードを待ち、続く場合はページを再読み込みしてください。',
+        sourceUnavailable:
+          '元画像の取得元を確認できませんでした。その項目は元の投稿から再試行してください。',
+        sourceFetchFailed:
+          'メディアの取得元への要求に失敗しました（HTTP {statuses}）。元の投稿を開き直し、除外された項目を再試行してください。',
+        zipSaveFailed: 'ZIP は準備できましたが、ブラウザーが保存要求を受け付けませんでした。',
+        other: '一部の項目を含められませんでした。ギャラリーを開き直して再試行してください。',
+        nextAction:
+          'すべてダウンロードを再実行すると、引き渡し済みの項目も含めて新しい ZIP を作成します。必要なら投稿を開き直し、項目を減らして試してください。',
+        dismiss: 'ZIP の結果を閉じる',
+      },
       status: {
         working: 'ダウンロードを準備中…',
         handedOff: 'ブラウザーに引き渡しました',
@@ -149,6 +170,9 @@ export const ja: LanguageStrings = {
       imageGallery: '画像ギャラリー',
       loading: '読み込み中',
       opening: 'ギャラリーを開いています…',
+      retryLoading: '再読み込み',
+      retryExhausted: 'まだ読み込めません。ギャラリーを開き直すか、元の投稿でお試しください。',
+      openOriginalPost: '元の投稿を開く',
       videoCount: '動画 {index}/{total}',
       imageCount: '画像 {index}/{total}: {alt}',
       hashtagLabel: 'ハッシュタグ {value}',

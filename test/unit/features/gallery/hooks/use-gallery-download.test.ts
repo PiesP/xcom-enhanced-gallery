@@ -8,6 +8,7 @@ const state = vi.hoisted(() => ({
   notify: vi.fn(),
   notifySafely: vi.fn(),
   setDownloadStatus: vi.fn(),
+  setBulkDownloadOutcome: vi.fn(),
   setError: vi.fn(),
   translate: vi.fn((key: string) => key),
 }));
@@ -41,6 +42,7 @@ vi.mock('@shared/state/signals/gallery.signals', () => ({
 }));
 vi.mock('@shared/state/signals/gallery-download-signals', () => ({
   setDownloadStatus: state.setDownloadStatus,
+  setBulkDownloadOutcome: state.setBulkDownloadOutcome,
 }));
 
 import { createDownloadHandler } from '@features/gallery/hooks/use-gallery-download';
@@ -67,7 +69,7 @@ describe('createDownloadHandler bulk resource limits', () => {
       'working',
       'handedOff',
     ]);
-    expect(state.setError).toHaveBeenLastCalledWith('msg.dl.part.resourceLimit');
+    expect(state.setError).toHaveBeenLastCalledWith('msg.dl.part.resourceLimit', 'bulkDownload');
     expect(state.notifySafely).toHaveBeenCalledWith(
       state.notify,
       'msg.dl.part.t',
@@ -76,6 +78,14 @@ describe('createDownloadHandler bulk resource limits', () => {
     expect(state.translate).toHaveBeenCalledWith('msg.dl.part.resourceLimit', {
       count: 1,
       failed: 1,
+    });
+    expect(state.setBulkDownloadOutcome).toHaveBeenLastCalledWith({
+      total: 2,
+      included: 1,
+      omitted: 1,
+      handedOff: true,
+      reason: 'resourceLimit',
+      sourceUnavailable: false,
     });
   });
 
@@ -106,7 +116,8 @@ describe('createDownloadHandler bulk resource limits', () => {
       await createDownloadHandler().handleDownload('all');
       expect(state.setDownloadStatus).toHaveBeenLastCalledWith(partial ? 'handedOff' : 'error');
       expect(state.setError).toHaveBeenLastCalledWith(
-        `${partial ? 'msg.dl.part.resourceLimit' : 'msg.dl.resourceLimit'} msg.dl.sourceUnavailable`
+        `${partial ? 'msg.dl.part.resourceLimit' : 'msg.dl.resourceLimit'} msg.dl.sourceUnavailable`,
+        'bulkDownload'
       );
       expect(state.notifySafely).toHaveBeenCalledWith(
         state.notify,
@@ -176,7 +187,7 @@ describe('createDownloadHandler bulk resource limits', () => {
       'working',
       'error',
     ]);
-    expect(state.setError).toHaveBeenLastCalledWith('msg.dl.resourceLimit');
+    expect(state.setError).toHaveBeenLastCalledWith('msg.dl.resourceLimit', 'bulkDownload');
     expect(state.notifySafely).toHaveBeenCalledWith(
       state.notify,
       'msg.dl.one.err.t',
@@ -260,5 +271,81 @@ describe('createDownloadHandler bulk resource limits', () => {
     expect(state.setError).toHaveBeenCalledTimes(2);
     expect(state.setError).toHaveBeenLastCalledWith(null);
     expect(state.notifySafely).not.toHaveBeenCalled();
+    expect(state.setBulkDownloadOutcome).toHaveBeenLastCalledWith({
+      total: 2,
+      included: 1,
+      omitted: 1,
+      handedOff: true,
+      reason: 'none',
+      sourceUnavailable: false,
+    });
+  });
+
+  it('reports both source unavailability and resource limits in the persistent result', async () => {
+    state.downloadBulk.mockResolvedValue({
+      success: true,
+      status: 'partial',
+      filesProcessed: 2,
+      filesSuccessful: 1,
+      code: 'RESOURCE_LIMIT',
+      sourceUnavailable: true,
+    });
+
+    await createDownloadHandler().handleDownload('all');
+
+    expect(state.setBulkDownloadOutcome).toHaveBeenLastCalledWith({
+      total: 2,
+      included: 1,
+      omitted: 1,
+      handedOff: true,
+      reason: 'resourceLimit',
+      sourceUnavailable: true,
+    });
+  });
+
+  it('distinguishes a verified original HTTP rejection from an unverified original', async () => {
+    state.downloadBulk.mockResolvedValue({
+      success: true,
+      status: 'partial',
+      filesProcessed: 2,
+      filesSuccessful: 1,
+      failures: [{ url: 'https://pbs.twimg.com/media/first.jpg?name=orig', error: 'HTTP:403' }],
+      sourceFetchStatuses: [403],
+      code: 'NONE',
+    });
+
+    await createDownloadHandler().handleDownload('all');
+
+    expect(state.setBulkDownloadOutcome).toHaveBeenLastCalledWith({
+      total: 2,
+      included: 1,
+      omitted: 1,
+      handedOff: true,
+      reason: 'sourceFetchFailed',
+      sourceUnavailable: false,
+      sourceFetchStatuses: [403],
+    });
+  });
+
+  it('does not count prepared ZIP files as included when the browser rejects the save', async () => {
+    state.downloadBulk.mockResolvedValue({
+      success: false,
+      status: 'error',
+      filesProcessed: 2,
+      filesSuccessful: 1,
+      code: 'ALL_FAILED',
+      error: 'Save rejected',
+    });
+
+    await createDownloadHandler().handleDownload('all');
+
+    expect(state.setBulkDownloadOutcome).toHaveBeenLastCalledWith({
+      total: 2,
+      included: 0,
+      omitted: 2,
+      handedOff: false,
+      reason: 'zipSaveFailed',
+      sourceUnavailable: false,
+    });
   });
 });

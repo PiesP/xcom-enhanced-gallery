@@ -16,7 +16,7 @@ import { logger } from '@shared/logging/logger';
 import type { MediaInfo } from '@shared/types/media.types';
 import { createEventEmitter } from '@shared/utils/events/emitter';
 import { batch, createSignal } from 'solid-js';
-import { _setDownloadStatus } from './gallery-download-signals';
+import { _setDownloadStatus, setBulkDownloadOutcome } from './gallery-download-signals';
 import { resolveAdjacentNavigationTarget, resolveDisplayedIndex } from './gallery-navigation';
 import {
   INITIAL_NAV_SOURCE,
@@ -37,6 +37,9 @@ export interface GalleryState {
   readonly currentIndex: number;
   readonly error: string | null;
 }
+
+type GalleryErrorOwner = 'bulkDownload' | null;
+let errorOwner: GalleryErrorOwner = null;
 
 interface GallerySessionState {
   readonly isOpen: boolean;
@@ -125,6 +128,9 @@ export const gallerySignals = {
   get error() {
     return _errorSig();
   },
+  get errorOwner(): GalleryErrorOwner {
+    return errorOwner;
+  },
   get focusedIndex() {
     return focusedIndexSig();
   },
@@ -139,14 +145,16 @@ export const gallerySignals = {
  *
  * @param error - Error message string, or `null` to clear
  */
-export function setError(error: string | null): void {
+export function setError(error: string | null, owner: GalleryErrorOwner = null): void {
   batch(() => {
+    errorOwner = error ? owner : null;
     _setErrorSig(error);
   });
 }
 
 function applyGallerySessionUpdate(state: GallerySessionState): void {
   batch(() => {
+    errorOwner = null;
     setMediaItems(state.mediaItems);
     setCurrentIndex(state.currentIndex);
     _setFocusedIndex(state.focusedIndex);
@@ -294,6 +302,7 @@ export function navigateToItem(targetIndex: number, source: NavigationSource): v
 export function disposeGallerySignals(): void {
   galleryIndexEvents.dispose();
   batch(() => {
+    errorOwner = null;
     setIsOpenSig(INITIAL_STATE.isOpen);
     setMediaItems(INITIAL_STATE.mediaItems);
     setCurrentIndex(INITIAL_STATE.currentIndex);
@@ -305,4 +314,5 @@ export function disposeGallerySignals(): void {
   });
 
   _setDownloadStatus('idle');
+  setBulkDownloadOutcome(null);
 }

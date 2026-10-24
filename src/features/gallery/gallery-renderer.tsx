@@ -25,6 +25,7 @@ import {
   navigatePrevious,
   setError,
 } from '@shared/state/signals/gallery.signals';
+import { downloadState } from '@shared/state/signals/gallery-download-signals';
 import { createEffectRoot } from '@shared/utils/solid/accessor-utils';
 import type { JSX } from 'solid-js';
 import { createSignal, onCleanup, splitProps } from 'solid-js';
@@ -91,7 +92,9 @@ function GalleryRoot(props: GalleryRootProps): JSX.Element {
             can register it and detect content changes. Only the text content
             updates conditionally — the element itself is never unmounted. */}
         <div aria-live="polite" class="xeg-sr-only" aria-atomic="true">
-          {gallerySignals.error ?? ''}
+          {downloadState.bulkOutcome && downloadState.status !== 'working'
+            ? ''
+            : (gallerySignals.error ?? '')}
         </div>
         <VerticalGalleryView
           onClose={local.onClose}
