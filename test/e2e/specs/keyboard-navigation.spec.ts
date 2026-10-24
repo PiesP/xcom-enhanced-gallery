@@ -527,13 +527,12 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
 
     const itemsContainer = page.locator('[data-gallery-element="items"]');
     await itemsContainer.hover();
-    await page.mouse.wheel(0, 1600);
 
-    // The toolbar clearance changes how far a fixed wheel delta reaches. Move
-    // the final item's center into the unobscured viewport before checking
-    // whether manual scrolling retargeted the toolbar without navigating.
+    // Aim the manual wheel at the last item's center from the initial layout.
+    // A second wheel issued before the first one settles can overshoot into
+    // the trailing spacer, so measure only once before scrolling.
     const lastItem = page.locator('[data-gallery-element="item"][data-index="2"]');
-    const remainingDistance = await lastItem.evaluate((item) => {
+    const scrollDistance = await lastItem.evaluate((item) => {
       const items = item.closest('[data-gallery-element="items"]');
       if (!items) {
         throw new Error('Missing gallery items container');
@@ -544,7 +543,7 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
       const visibleCenter = containerRect.top + (clearance + containerRect.height) / 2;
       return Math.max(0, Math.ceil(itemRect.top + itemRect.height / 2 - visibleCenter));
     });
-    await page.mouse.wheel(0, remainingDistance);
+    await page.mouse.wheel(0, scrollDistance);
     await expect
       .poll(() =>
         lastItem.evaluate((item) => {
