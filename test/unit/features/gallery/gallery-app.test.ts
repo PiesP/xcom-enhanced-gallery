@@ -43,6 +43,9 @@ vi.mock('@platform/index', () => ({
 vi.mock('@shared/services/language-service', () => ({
   getLanguageService: () => ({ translate: (key: string) => key }),
 }));
+vi.mock('@shared/services/theme-service', () => ({
+  getThemeService: () => ({ getEffectiveTheme: () => 'light' }),
+}));
 
 vi.mock('@shared/error/app-error-reporter', () => ({
   galleryErrorReporter: { critical: vi.fn(), error: vi.fn() },
@@ -90,7 +93,11 @@ function success(id: string): MediaExtractionResult {
 }
 
 describe('GalleryApp media-click currentness', () => {
-  afterEach(() => clearSettings());
+  afterEach(() => {
+    clearSettings();
+    vi.useRealTimers();
+    document.querySelectorAll('[data-xeg-opening]').forEach((element) => element.remove());
+  });
   beforeEach(() => {
     state.setSetting.mockClear();
     registerSettings({ get: () => undefined, set: state.setSetting });
@@ -140,6 +147,127 @@ describe('GalleryApp media-click currentness', () => {
     await app.cleanup();
     expect(document.documentElement.hasAttribute('data-xeg-gallery-ready')).toBe(false);
   });
+
+  it('does not flash opening feedback for a fast extraction', async () => {
+    vi.useFakeTimers();
+    state.extract.mockResolvedValue(success('fast'));
+    const app = new GalleryApp({ destroy: vi.fn() } as never);
+    const target = document.createElement('img');
+    document.body.append(target);
+    try {
+      await app.initialize();
+      await state.handlers?.onMediaClick(target, new MouseEvent('click'));
+      await vi.advanceTimersByTimeAsync(600);
+      expect(document.querySelector('[data-xeg-opening]')).toBeNull();
+    } finally {
+      target.remove();
+      await app.cleanup();
+    }
+  });
+
+  it.each(['success', 'failure'] as const)(
+    'shows feedback only after 500 ms and removes it on %s',
+    async (outcome) => {
+      vi.useFakeTimers();
+      const pending = deferredResult();
+      state.extract.mockReturnValue(pending.promise);
+      const app = new GalleryApp({ destroy: vi.fn() } as never);
+      const target = document.createElement('button');
+      document.body.append(target);
+      try {
+        await app.initialize();
+        target.focus();
+        const click = state.handlers?.onMediaClick(target, new MouseEvent('click'));
+        await vi.advanceTimersByTimeAsync(499);
+        expect(document.querySelector('[data-xeg-opening]')).toBeNull();
+        await vi.advanceTimersByTimeAsync(1);
+        const status = document.querySelector<HTMLElement>('[data-xeg-opening]');
+        expect(status?.textContent).toBe('msg.gal.opening');
+        expect(status?.getAttribute('role')).toBe('status');
+        expect(status?.getAttribute('aria-live')).toBe('polite');
+        expect(document.activeElement).toBe(target);
+        if (outcome === 'success') {
+          pending.resolve(success('slow'));
+        } else {
+          pending.reject(new Error('failed'));
+        }
+        await click;
+        expect(document.querySelector('[data-xeg-opening]')).toBeNull();
+        await vi.advanceTimersByTimeAsync(600);
+        expect(document.querySelector('[data-xeg-opening]')).toBeNull();
+      } finally {
+        target.remove();
+        await app.cleanup();
+      }
+    }
+  );
+
+  it('retires an old status immediately and never lets a late result remove the new one', async () => {
+    vi.useFakeTimers();
+    const first = deferredResult();
+    const second = deferredResult();
+    state.extract.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+    const app = new GalleryApp({ destroy: vi.fn() } as never);
+    const targets = [document.createElement('img'), document.createElement('img')];
+    document.body.append(...targets);
+    try {
+      await app.initialize();
+      const firstClick = state.handlers?.onMediaClick(targets[0]!, new MouseEvent('click'));
+      await vi.advanceTimersByTimeAsync(500);
+      const retired = document.querySelector('[data-xeg-opening]');
+      expect(retired).not.toBeNull();
+      const secondClick = state.handlers?.onMediaClick(targets[1]!, new MouseEvent('click'));
+      expect(document.querySelector('[data-xeg-opening]')).toBeNull();
+      await vi.advanceTimersByTimeAsync(500);
+      const current = document.querySelector('[data-xeg-opening]');
+      expect(current).not.toBeNull();
+      expect(current).not.toBe(retired);
+      first.resolve(success('stale'));
+      await firstClick;
+      expect(document.querySelector('[data-xeg-opening]')).toBe(current);
+      app.close();
+      expect(document.querySelector('[data-xeg-opening]')).toBeNull();
+      second.resolve(success('retired'));
+      await secondClick;
+      await vi.advanceTimersByTimeAsync(600);
+      expect(document.querySelector('[data-xeg-opening]')).toBeNull();
+    } finally {
+      targets.forEach((target) => target.remove());
+      await app.cleanup();
+    }
+  });
+
+  it.each(['navigation', 'cleanup'] as const)(
+    'removes visible feedback after %s before the held response settles',
+    async (reason) => {
+      vi.useFakeTimers();
+      const priorUrl = location.href;
+      const pending = deferredResult();
+      state.extract.mockReturnValue(pending.promise);
+      const app = new GalleryApp({ destroy: vi.fn() } as never);
+      const target = document.createElement('img');
+      document.body.append(target);
+      try {
+        await app.initialize();
+        const click = state.handlers?.onMediaClick(target, new MouseEvent('click'));
+        await vi.advanceTimersByTimeAsync(500);
+        expect(document.querySelector('[data-xeg-opening]')).not.toBeNull();
+        if (reason === 'navigation') {
+          history.pushState({}, '', '/other/status/999');
+          await vi.advanceTimersByTimeAsync(250);
+        } else {
+          await app.cleanup();
+        }
+        expect(document.querySelector('[data-xeg-opening]')).toBeNull();
+        pending.resolve(success('retired'));
+        await click;
+      } finally {
+        history.replaceState({}, '', priorUrl);
+        target.remove();
+        await app.cleanup();
+      }
+    }
+  );
 
   it('ignores stale errors without reporting or notifying', async () => {
     const first = deferredResult();

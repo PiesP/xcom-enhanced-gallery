@@ -148,6 +148,7 @@ export const ja: LanguageStrings = {
       loadFail: '{type} の読み込みに失敗しました',
       imageGallery: '画像ギャラリー',
       loading: '読み込み中',
+      opening: 'ギャラリーを開いています…',
       videoCount: '動画 {index}/{total}',
       imageCount: '画像 {index}/{total}: {alt}',
       hashtagLabel: 'ハッシュタグ {value}',

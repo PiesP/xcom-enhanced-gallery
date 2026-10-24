@@ -146,6 +146,7 @@ export const en: LanguageStrings = {
       loadFail: 'Failed to load {type}',
       imageGallery: 'Image gallery',
       loading: 'Loading',
+      opening: 'Opening gallery…',
       videoCount: 'Video {index} of {total}',
       imageCount: 'Image {index} of {total}: {alt}',
       hashtagLabel: 'Hashtag {value}',

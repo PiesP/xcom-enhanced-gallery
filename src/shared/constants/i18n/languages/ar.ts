@@ -146,6 +146,7 @@ export const ar: LanguageStrings = {
       loadFail: 'فشل تحميل {type}',
       imageGallery: 'معرض الصور',
       loading: 'جارٍ التحميل',
+      opening: 'جارٍ فتح المعرض…',
       videoCount: 'فيديو {index} من {total}',
       imageCount: 'صورة {index} من {total}: {alt}',
       hashtagLabel: 'وسم {value}',

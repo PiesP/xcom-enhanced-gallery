@@ -142,6 +142,7 @@ export const zhCn: LanguageStrings = {
       loadFail: '{type} 加载失败',
       imageGallery: '图片库',
       loading: '加载中',
+      opening: '正在打开图库…',
       videoCount: '视频 {index}/{total}',
       imageCount: '图片 {index}/{total}：{alt}',
       hashtagLabel: '话题标签 {value}',

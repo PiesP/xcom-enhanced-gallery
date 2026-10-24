@@ -370,6 +370,13 @@ async function captureOpeningFeedback(page: Page, output: string, name: string) 
         live: element.getAttribute('aria-live'),
         text: (element.textContent ?? '').trim().slice(0, 240),
       }));
+    const opening = Array.from(document.querySelectorAll('[data-xeg-opening]')).map((element) => ({
+      text: element.textContent?.trim() ?? '',
+      role: element.getAttribute('role'),
+      live: element.getAttribute('aria-live'),
+      visible: visible(element),
+      pointerEvents: getComputedStyle(element).pointerEvents,
+    }));
     return {
       url: location.href,
       documentStartedAt: performance.timeOrigin,
@@ -380,10 +387,118 @@ async function captureOpeningFeedback(page: Page, output: string, name: string) 
         .trim()
         .slice(0, 240),
       statuses,
+      opening,
     };
   });
   await page.screenshot({ path: join(output, screenshot) });
   return { ...surface, screenshot };
+}
+
+type OpeningTimeline = {
+  clicks: number[];
+  shown: Array<{ at: number; text: string }>;
+  removed: number[];
+};
+
+async function beginOpeningTimeline(page: Page, sourceSelector: string): Promise<void> {
+  await page.evaluate((selector) => {
+    type Probe = OpeningTimeline & {
+      observer: MutationObserver;
+      onClick: (event: MouseEvent) => void;
+    };
+    const scope = window as typeof window & { __xegOpeningProbe?: Probe };
+    if (scope.__xegOpeningProbe) {
+      throw new Error('Opening timeline already active');
+    }
+    const clicks: number[] = [];
+    const shown: Probe['shown'] = [];
+    const removed: number[] = [];
+    const onClick = (event: MouseEvent) => {
+      if (event.isTrusted && event.target instanceof Element && event.target.closest(selector)) {
+        clicks.push(performance.now());
+      }
+    };
+    const observer = new MutationObserver((records) => {
+      for (const record of records) {
+        for (const node of record.addedNodes) {
+          if (node instanceof HTMLElement && node.matches('[data-xeg-opening]')) {
+            shown.push({ at: performance.now(), text: node.textContent?.trim() ?? '' });
+          }
+        }
+        for (const node of record.removedNodes) {
+          if (node instanceof HTMLElement && node.matches('[data-xeg-opening]')) {
+            removed.push(performance.now());
+          }
+        }
+      }
+    });
+    document.addEventListener('click', onClick, true);
+    observer.observe(document.body, { childList: true });
+    scope.__xegOpeningProbe = { clicks, shown, removed, observer, onClick };
+  }, sourceSelector);
+}
+
+async function endOpeningTimeline(page: Page): Promise<OpeningTimeline> {
+  return page.evaluate(() => {
+    type Probe = OpeningTimeline & {
+      observer: MutationObserver;
+      onClick: (event: MouseEvent) => void;
+    };
+    const scope = window as typeof window & { __xegOpeningProbe?: Probe };
+    const probe = scope.__xegOpeningProbe;
+    if (!probe) {
+      throw new Error('Opening timeline missing');
+    }
+    probe.observer.takeRecords().forEach((record) => {
+      for (const node of record.removedNodes) {
+        if (node instanceof HTMLElement && node.matches('[data-xeg-opening]')) {
+          probe.removed.push(performance.now());
+        }
+      }
+    });
+    probe.observer.disconnect();
+    document.removeEventListener('click', probe.onClick, true);
+    delete scope.__xegOpeningProbe;
+    return { clicks: probe.clicks, shown: probe.shown, removed: probe.removed };
+  });
+}
+
+function assertOpeningVisible(
+  snapshot: Awaited<ReturnType<typeof captureOpeningFeedback>>,
+  label: string
+): void {
+  assert.deepEqual(
+    snapshot.opening,
+    [
+      {
+        text: 'Opening gallery…',
+        role: 'status',
+        live: 'polite',
+        visible: true,
+        pointerEvents: 'none',
+      },
+    ],
+    `${label}: exactly one localized, visible, nonblocking current-action status is required`
+  );
+  assert.equal(snapshot.galleryCount, 0, `${label}: feedback must precede the gallery`);
+}
+
+function assertOpeningAbsent(
+  snapshot: Awaited<ReturnType<typeof captureOpeningFeedback>>,
+  label: string
+): void {
+  assert.deepEqual(snapshot.opening, [], `${label}: stale opening status must be removed`);
+}
+
+function assertOpeningTimeline(timeline: OpeningTimeline, label: string): void {
+  assert.equal(timeline.clicks.length, 1, `${label}: exactly one trusted source click required`);
+  assert.equal(timeline.shown.length, 1, `${label}: exactly one delayed status required`);
+  assert.equal(timeline.shown[0]?.text, 'Opening gallery…');
+  const elapsedMs = timeline.shown[0]!.at - timeline.clicks[0]!;
+  assert(
+    elapsedMs >= 450 && elapsedMs <= 1_500,
+    `${label}: status must appear after the 500 ms threshold (observed ${elapsedMs} ms)`
+  );
 }
 type SourceQualityEvidence = {
   status: string;
@@ -8264,6 +8379,9 @@ async function runDelayedVideoFailures({
         });
       }
       const baseline = await notificationObserver.snapshot();
+      if (openingProbe) {
+        await beginOpeningTimeline(page, '[data-case="recognized"] [data-video-key] video');
+      }
       await video.click();
       const request = await waitForValue(
         async () =>
@@ -8308,11 +8426,22 @@ async function runDelayedVideoFailures({
           output,
           `delayed-${name}-five-seconds`
         );
+        assertOpeningVisible(afterFiveSeconds, `delayed ${name} held`);
         observation.openingFeedback = { early, afterFiveSeconds };
       }
       if (name === 'navigation') {
+        if (openingProbe) {
+          const timeline = await endOpeningTimeline(page);
+          assertOpeningTimeline(timeline, `delayed ${name}`);
+          observation.openingFeedback = { ...(observation.openingFeedback as object), timeline };
+        }
         await page.goto(FIXTURE_URL);
         await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+        if (openingProbe) {
+          const terminal = await captureOpeningFeedback(page, output, `delayed-${name}-terminal`);
+          assertOpeningAbsent(terminal, `delayed ${name} terminal`);
+          observation.openingFeedback = { ...(observation.openingFeedback as object), terminal };
+        }
         const nextDocumentStartedAt = await page.evaluate(() => performance.timeOrigin);
         assert.notEqual(
           nextDocumentStartedAt,
@@ -8397,6 +8526,18 @@ async function runDelayedVideoFailures({
             ({ id }) => active.includes(id) && !knownNotifications.includes(id)
           );
         }, 'delayed extraction failure native notification');
+        if (openingProbe) {
+          const terminal = await captureOpeningFeedback(page, output, `delayed-${name}-terminal`);
+          assertOpeningAbsent(terminal, `delayed ${name} terminal`);
+          const timeline = await endOpeningTimeline(page);
+          assertOpeningTimeline(timeline, `delayed ${name}`);
+          assert.equal(timeline.removed.length, 1, `delayed ${name}: settled status removal`);
+          observation.openingFeedback = {
+            ...(observation.openingFeedback as object),
+            terminal,
+            timeline,
+          };
+        }
         assert(
           notification.title && notification.message,
           'Native notification must retain its production title and message'
@@ -8910,7 +9051,7 @@ async function runRapidVideoClicks({
   const probeName = openingProbe
     ? `rapid-a-b-${lateAFailure ? 'late-failure' : 'late-success'}`
     : 'rapid-a-b';
-  let openingFeedback: unknown;
+  let openingFeedback: Record<string, unknown> | undefined;
   try {
     const initialHost = await hostVideoState(first);
     assert.equal(initialHost.paused, true, 'Rapid A host video must start paused');
@@ -8934,6 +9075,9 @@ async function runRapidVideoClicks({
     );
     const notificationBaseline = await notificationObserver.snapshot();
     fixtureRoutes.armDelayedFailure(RAPID_CLICK_A, lateAFailure);
+    if (openingProbe) {
+      await beginOpeningTimeline(page, '[data-rapid="a"] video');
+    }
     await first.click();
     const heldA = await waitForValue(
       async () =>
@@ -8965,6 +9109,7 @@ async function runRapidVideoClicks({
         output,
         `${probeName}-five-seconds`
       );
+      assertOpeningVisible(afterFiveSeconds, `${probeName} held A`);
       openingFeedback = { early, afterFiveSeconds };
     }
     assert.equal(
@@ -8982,6 +9127,11 @@ async function runRapidVideoClicks({
       body: document.body.style.cssText,
     }));
     await second.click();
+    if (openingProbe) {
+      const afterB = await captureOpeningFeedback(page, output, `${probeName}-after-b`);
+      assertOpeningAbsent(afterB, `${probeName} after B click`);
+      openingFeedback = { ...openingFeedback, afterB };
+    }
     const pendingB = await writeVideoBoundaryCheckpoint({
       output,
       name: probeName,
@@ -9027,6 +9177,15 @@ async function runRapidVideoClicks({
       'Rapid A must record its real transport outcome'
     );
     await page.waitForTimeout(350);
+    if (openingProbe) {
+      const afterA = await captureOpeningFeedback(page, output, `${probeName}-after-a`);
+      assertOpeningAbsent(afterA, `${probeName} after A settlement`);
+      const timeline = await endOpeningTimeline(page);
+      assertOpeningTimeline(timeline, probeName);
+      assert.equal(timeline.removed.length, 1, `${probeName}: A status must retire on B click`);
+      assert(timeline.removed[0]! >= timeline.shown[0]!.at);
+      openingFeedback = { ...openingFeedback, afterA, timeline };
+    }
     const afterA = await assertHostStopped(page, first, 'Late rapid A settlement');
     const retained = await assertQuotedSelection(page, {
       position: 2,
@@ -13216,6 +13375,7 @@ async function runOpeningFeedbackProbe({
     const fastTrigger = page.locator('[data-rapid="b"] video');
     for (const name of ['healthy', 'repeat'] as const) {
       const requestStart = fixtureRoutes.quotedApiResponses.length;
+      await beginOpeningTimeline(page, '[data-rapid="b"] video');
       const startedAt = performance.now();
       await fastTrigger.click();
       const opened = await assertQuotedGallery(page, {
@@ -13227,9 +13387,21 @@ async function runOpeningFeedbackProbe({
       });
       const elapsedMs = performance.now() - startedAt;
       const terminal = await captureOpeningFeedback(page, output, `fast-${name}-terminal`);
+      const timeline = await endOpeningTimeline(page);
+      assert.equal(timeline.clicks.length, 1, `fast ${name}: one trusted click required`);
+      assert.deepEqual(timeline.shown, [], `fast ${name}: no delayed status should flash`);
+      assertOpeningAbsent(terminal, `fast ${name} terminal`);
+      assert(elapsedMs < 500, `fast ${name}: fixture opened beyond the 500 ms delay`);
       const requests = fixtureRoutes.quotedApiResponses.slice(requestStart);
       assert(requests.every(({ tweetId }) => tweetId === RAPID_CLICK_B));
-      fastCases.push({ name, elapsedMs, terminal, requests, selected: opened.selectedMedia });
+      fastCases.push({
+        name,
+        elapsedMs,
+        terminal,
+        timeline,
+        requests,
+        selected: opened.selectedMedia,
+      });
       await page.keyboard.press('Escape');
       await opened.gallery.waitFor({ state: 'detached' });
     }
