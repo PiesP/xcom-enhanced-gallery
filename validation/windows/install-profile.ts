@@ -916,6 +916,7 @@ type InstallResult = {
   fixture?: Awaited<ReturnType<typeof exerciseInstalledExtension>>;
   openingFeedback?: unknown;
   mediaDownloadRecovery?: unknown;
+  galleryExperience?: unknown;
   liveBrowserScope?: string;
   live?: unknown;
   evidenceStatus?: string;
@@ -1111,6 +1112,15 @@ const FIXTURE_URL = `https://x.com/testuser/status/${TWEET_ID}`;
 const QUALITY_TWEET_ID = '4666000000000000001';
 const QUALITY_FIXTURE_URL = `https://x.com/qualityuser/status/${QUALITY_TWEET_ID}`;
 const QUALITY_IMAGE_PATHS = ['GkE1234ABCDEF', 'GkE5678GHIJKL.jpg', 'GkE9012MNOPQR.jpg'];
+const EXPERIENCE_TWEET_ID = '4666000000000000002';
+const EXPERIENCE_FIXTURE_URL = `https://x.com/experience/status/${EXPERIENCE_TWEET_ID}`;
+const EXPERIENCE_IMAGES = [
+  { path: 'XegExperienceTall.jpg', width: 300, height: 900, label: 'Tall' },
+  { path: 'XegExperiencePanorama.jpg', width: 1200, height: 200, label: 'Panorama' },
+  { path: 'XegExperienceSmall.jpg', width: 120, height: 80, label: 'Small' },
+] as const;
+const EXPERIENCE_CAPTION =
+  'A deliberately long gallery caption with several clauses, a link-shaped token https://example.invalid/long-caption, and multilingual text: 길게 이어지는 문장과 日本語の説明. The panel must keep its own scroll while the selected media and toolbar remain usable.';
 const SOURCE_IMAGE_FAULTS = ['404', 'empty', 'corrupt'] as const;
 // Three independent faults may each perform a failing and a healthy same-page open.
 const MAX_QUALITY_API_RESPONSES = 8 + SOURCE_IMAGE_FAULTS.length * 2;
@@ -1626,6 +1636,37 @@ export async function createImageFixtures(
   }
 }
 
+async function createExperienceImages(context: BrowserContext): Promise<Buffer[]> {
+  const page = await context.newPage();
+  try {
+    await page.goto('about:blank');
+    const encoded = await page.evaluate(
+      (sizes) =>
+        sizes.map(({ width, height, label }, index) => {
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const drawing = canvas.getContext('2d');
+          if (!drawing) {
+            throw new Error('Experience fixture Canvas 2D context unavailable');
+          }
+          drawing.fillStyle = ['#1b6094', '#99591d', '#287348'][index] ?? '#555';
+          drawing.fillRect(0, 0, width, height);
+          drawing.fillStyle = '#fff';
+          drawing.font = `bold ${Math.min(40, Math.max(18, width / 8))}px Segoe UI`;
+          drawing.fillText(label, 10, Math.min(height - 10, 55));
+          return canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
+        }),
+      EXPERIENCE_IMAGES
+    );
+    const images = encoded.map((value) => Buffer.from(value ?? '', 'base64'));
+    assert(images.length === EXPERIENCE_IMAGES.length && images.every((image) => image.length));
+    return images;
+  } finally {
+    await page.close();
+  }
+}
+
 async function createCompactImages(context: BrowserContext): Promise<CompactImages> {
   const page = await context.newPage();
   try {
@@ -1710,9 +1751,13 @@ export async function installFixtureRoutes(
   root: string,
   images: ImageFixtures,
   displayImages: ImageFixtures,
-  compactImages?: CompactImages
+  compactImages?: CompactImages,
+  experienceImages?: Buffer[]
 ) {
   const html = await readFile(join(root, 'test/e2e/fixtures/installed-gallery-page.html'), 'utf8');
+  const experienceHtml = experienceImages
+    ? await readFile(join(root, 'test/e2e/fixtures/installed-gallery-experience-page.html'), 'utf8')
+    : '';
   const extensionHtml = QUALITY_IMAGE_PATHS.reduce((page, path) => {
     const sharedPath = path.endsWith('.jpg') ? path : `${path}.jpg`;
     const sharedSource = `https://pbs.twimg.com/media/${sharedPath}?format=jpg&amp;name=large`;
@@ -1934,6 +1979,39 @@ export async function installFixtureRoutes(
         record.fulfilledAtMonotonicMs = performance.now();
         return;
       }
+      if (tweetId === EXPERIENCE_TWEET_ID && experienceImages) {
+        const media = EXPERIENCE_IMAGES.map(({ path, width, height }, index) => ({
+          type: 'photo',
+          id_str: `46661${index}`,
+          media_url_https: `https://pbs.twimg.com/media/${path}?format=jpg&name=orig`,
+          original_info: { width, height },
+        }));
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            data: {
+              tweetResult: {
+                result: {
+                  __typename: 'Tweet',
+                  rest_id: EXPERIENCE_TWEET_ID,
+                  core: {
+                    user_results: {
+                      result: { legacy: { screen_name: 'experience', name: 'experience' } },
+                    },
+                  },
+                  legacy: {
+                    id_str: EXPERIENCE_TWEET_ID,
+                    full_text: EXPERIENCE_CAPTION,
+                    extended_entities: { media },
+                  },
+                },
+              },
+            },
+          }),
+        });
+        return;
+      }
       const quotedResponse = tweetId === undefined ? undefined : quotedVideoApiResponse(tweetId);
       if (tweetId !== undefined && quotedResponse) {
         const quotedResult = quotedResponse.data?.tweetResult?.result;
@@ -2027,16 +2105,19 @@ export async function installFixtureRoutes(
                             '<body data-quote-case="recognized">',
                             `<body data-quote-case="${quotedCase.route}">`
                           )
-                      : url.pathname === new URL(QUALITY_FIXTURE_URL).pathname
-                        ? extensionHtml
-                            .replaceAll(TWEET_ID, QUALITY_TWEET_ID)
-                            .replaceAll('testuser', 'qualityuser')
-                        : url.pathname === new URL(PUBLIC_FIXTURE_URL).pathname
-                          ? html.replace(
-                              '<body data-fixture-route="classic">',
-                              '<body data-fixture-route="public">'
-                            )
-                          : extensionHtml,
+                      : url.pathname === new URL(EXPERIENCE_FIXTURE_URL).pathname &&
+                          experienceImages
+                        ? experienceHtml
+                        : url.pathname === new URL(QUALITY_FIXTURE_URL).pathname
+                          ? extensionHtml
+                              .replaceAll(TWEET_ID, QUALITY_TWEET_ID)
+                              .replaceAll('testuser', 'qualityuser')
+                          : url.pathname === new URL(PUBLIC_FIXTURE_URL).pathname
+                            ? html.replace(
+                                '<body data-fixture-route="classic">',
+                                '<body data-fixture-route="public">'
+                              )
+                            : extensionHtml,
       });
       return;
     }
@@ -2083,6 +2164,22 @@ export async function installFixtureRoutes(
       return;
     }
     if (url.hostname === 'pbs.twimg.com') {
+      const experienceIndex = EXPERIENCE_IMAGES.findIndex(
+        ({ path }) => url.pathname === `/media/${path}`
+      );
+      if (experienceImages && experienceIndex >= 0) {
+        const body = experienceImages[experienceIndex];
+        assert(body, 'Experience image route is missing its exact payload');
+        await route.fulfill({
+          contentType: 'image/jpeg',
+          body,
+          headers: {
+            'Access-Control-Allow-Origin': 'https://x.com',
+            'Access-Control-Allow-Credentials': 'true',
+          },
+        });
+        return;
+      }
       if (compactImages && url.pathname === '/media/CompactQuoteSelected') {
         const body =
           url.searchParams.get('name') === 'orig' ? compactImages.original : compactImages.display;
@@ -4089,9 +4186,10 @@ async function fixtureTabZoom(
   extensionId: string,
   page: Page,
   factor: number | null = null,
-  restoreSettings: { mode: string; scope: string } | null = null
+  restoreSettings: { mode: string; scope: string } | null = null,
+  expectedUrl = FIXTURE_URL
 ) {
-  assert.equal(page.url(), FIXTURE_URL, 'Browser zoom must target the exact owned fixture page');
+  assert.equal(page.url(), expectedUrl, 'Browser zoom must target the exact owned fixture page');
   const workerUrl = `chrome-extension://${extensionId}/background.js`;
   const workers = context.serviceWorkers().filter((worker) => worker.url() === workerUrl);
   assert.equal(workers.length, 1, 'Browser zoom requires the exact installed extension worker');
@@ -4121,7 +4219,7 @@ async function fixtureTabZoom(
         observedSettings: await chrome.tabs.getZoomSettings(id),
       };
     },
-    { url: FIXTURE_URL, zoomFactor: factor, restore: restoreSettings }
+    { url: expectedUrl, zoomFactor: factor, restore: restoreSettings }
   );
 }
 
@@ -14093,6 +14191,446 @@ async function runMediaDownloadRecoveryProbe({
   return result;
 }
 
+/** A small installed-extension baseline for issue #383's gallery experience. */
+async function runGalleryExperienceProbe({
+  context,
+  downloads,
+  extensionId,
+  nativeLoopback,
+  output,
+  root,
+  images,
+  displayImages,
+}: {
+  context: BrowserContext;
+  downloads: string;
+  extensionId: string;
+  nativeLoopback: NativeLoopback;
+  output: string;
+  root: string;
+  images: ImageFixtures;
+  displayImages: ImageFixtures;
+}) {
+  const experienceImages = await createExperienceImages(context);
+  const routes = await installFixtureRoutes(
+    context,
+    root,
+    images,
+    displayImages,
+    undefined,
+    experienceImages
+  );
+  nativeLoopback.setPayloads(images, routes.videoPayloads);
+  const extensionPage = await context.newPage();
+  const page = await context.newPage();
+  const phases: Record<string, { status: string; observations?: unknown; error?: string }> = {};
+  const pageErrors: string[] = [];
+  const cleanupErrors: string[] = [];
+  page.on('pageerror', (error) => pageErrors.push(error.message));
+  const phase = async (name: string, action: () => Promise<unknown>) => {
+    try {
+      phases[name] = { status: 'passed', observations: await action() };
+    } catch (error) {
+      phases[name] = { status: 'failed', error: safeError(error) };
+      await page
+        .screenshot({ path: join(output, `experience-${name}-failure.png`) })
+        .catch(() => {});
+    }
+  };
+  try {
+    await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
+    await phase('x02-toolbar', async () => {
+      await page.goto(EXPERIENCE_FIXTURE_URL);
+      await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+      const trigger = page.locator('[data-testid="tweetPhoto"] img').first();
+      await trigger.scrollIntoViewIfNeeded();
+      await trigger.focus();
+      await trigger.click();
+      const gallery = page.locator('[data-xeg-gallery-container]');
+      await gallery.waitFor({ state: 'visible' });
+      const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
+      await toolbar.evaluate((element) => {
+        if (element.contains(document.activeElement)) {
+          (document.activeElement as HTMLElement).blur();
+        }
+      });
+      await page.mouse.move(640, 350);
+      await page.waitForTimeout(4_250);
+      const hidden = await toolbar.evaluate((element) => ({
+        opacity: getComputedStyle(element).opacity,
+        visibility: getComputedStyle(element).visibility,
+      }));
+      assert.equal(hidden.visibility, 'hidden', 'Toolbar did not hide after the idle period');
+      const reachable: string[] = [];
+      for (let index = 0; index < 32; index++) {
+        await page.keyboard.press('Tab');
+        const state = await page.evaluate(() => {
+          const active = document.activeElement;
+          return active instanceof HTMLElement && active.closest('[data-gallery-element="toolbar"]')
+            ? (active.getAttribute('aria-label') ?? active.id)
+            : null;
+        });
+        if (state && !reachable.includes(state)) {
+          reachable.push(state);
+        }
+      }
+      for (const label of [
+        'Fit Width',
+        'Fit Height',
+        'Fit Window',
+        'Original',
+        'Download',
+        'Download 3 shown files as ZIP',
+        'Open Settings',
+        'Close',
+      ]) {
+        assert(reachable.includes(label), `Toolbar Tab sequence missed ${label}`);
+      }
+      await page.keyboard.press('Shift+Tab');
+      const reverseFocus = await page.evaluate(
+        () => document.activeElement?.getAttribute('aria-label') ?? null
+      );
+      assert(reverseFocus, 'Shift+Tab lost toolbar focus');
+      const focused = await toolbar.evaluate((element) => ({
+        opacity: getComputedStyle(element).opacity,
+        visibility: getComputedStyle(element).visibility,
+      }));
+      assert.equal(focused.visibility, 'visible');
+      await page.mouse.move(640, 350);
+      await toolbar.locator('#settings-button').click();
+      const select = gallery.getByLabel('Video clicks');
+      await select.waitFor({ state: 'visible' });
+      await select.click();
+      await page.mouse.move(640, 350);
+      const selectAfterPointerAway = await select.evaluate((element) => ({
+        focused: document.activeElement === element,
+        visible: getComputedStyle(element).visibility,
+        pointerEvents: getComputedStyle(element).pointerEvents,
+      }));
+      assert.equal(selectAfterPointerAway.visible, 'visible');
+      await toolbar.locator('#settings-button').click();
+      const nativeSetting = await runVideoClickSettingsCycle({
+        extensionPage,
+        gallery,
+        output,
+        page,
+      });
+      const knownSingle = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+      await toolbar.locator('button[aria-label="Download"]').click();
+      const single = await waitForValue(
+        async () => {
+          const added = (await queryDownloads(extensionPage)).filter(
+            ({ id }) => !knownSingle.has(id)
+          );
+          return added.length === 1 && added[0]?.state === 'complete' ? added[0] : undefined;
+        },
+        'experience current image download',
+        20_000
+      );
+      const singleRelative = relative(downloads, single.filename);
+      assert(singleRelative && !singleRelative.startsWith('..') && !isAbsolute(singleRelative));
+      const singleBytes = await readFile(single.filename);
+      assert(singleBytes.equals(experienceImages[0]!), 'Current image bytes differ from fixture');
+      const knownZip = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+      await toolbar.locator('button[aria-label="Download 3 shown files as ZIP"]').click();
+      const zip = await waitForValue(
+        async () => {
+          const added = (await queryDownloads(extensionPage)).filter(({ id }) => !knownZip.has(id));
+          return added.length === 1 && added[0]?.state === 'complete' ? added[0] : undefined;
+        },
+        'experience ZIP download',
+        20_000
+      );
+      const zipRelative = relative(downloads, zip.filename);
+      assert(zipRelative && !zipRelative.startsWith('..') && !isAbsolute(zipRelative));
+      const expected = experienceImages.map((bytes, index) => ({
+        filename: `experience_${EXPERIENCE_TWEET_ID}_${index}.jpg`,
+        bytes,
+      }));
+      const zipBytes = await readFile(zip.filename);
+      const verifiedZip = verifyStoredZip(zipBytes, expected);
+      await page.mouse.move(640, 8);
+      const rediscovered = await toolbar.evaluate((element) => ({
+        opacity: getComputedStyle(element).opacity,
+        visibility: getComputedStyle(element).visibility,
+      }));
+      assert.equal(
+        rediscovered.visibility,
+        'visible',
+        'Bottom-edge pointer did not reveal toolbar'
+      );
+      await page.screenshot({ path: join(output, 'experience-x02-toolbar.png') });
+      await page.keyboard.press('Escape');
+      await gallery.waitFor({ state: 'detached' });
+      return {
+        hidden,
+        focused,
+        reachable,
+        reverseFocus,
+        selectAfterPointerAway,
+        nativeSetting,
+        rediscovered,
+        downloads: { single: imageReceipt(singleBytes), zip: imageReceipt(zipBytes), verifiedZip },
+      };
+    });
+    await phase('x05-player-isolation', async () => {
+      const prior = await readStoredVideoSettings(extensionPage);
+      const settings = createControlledVideoSettings(prior.value, Date.now());
+      const gallerySettings: Record<string, unknown> = settings.gallery;
+      delete gallerySettings.videoClickMode;
+      gallerySettings.videoVolume = 0.27;
+      gallerySettings.videoMuted = true;
+      const transport = routes.armOwn12RapidBAudioVideo();
+      try {
+        await extensionPage.evaluate(async (value) => {
+          await chrome.storage.local.set({ 'xeg-app-settings': value });
+        }, settings);
+        const stored = await readStoredVideoSettings(extensionPage);
+        assert.equal(storedVideoClickMode(stored.settings), null);
+        assert.deepEqual(storedGalleryMediaPreferences(stored.settings), {
+          volume: 0.27,
+          muted: true,
+        });
+        await page.goto(`https://x.com/rapid_a/status/${RAPID_CLICK_A}`);
+        await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+        const host = page.locator('[data-rapid="b"] video');
+        await host.scrollIntoViewIfNeeded();
+        await page.waitForFunction(() => {
+          const video = document.querySelector('[data-rapid="b"] video');
+          return video instanceof HTMLVideoElement && video.readyState >= 2 && !video.error;
+        });
+        await page.mouse.click(10, 10);
+        await host.evaluate(async (element) => {
+          if (!(element instanceof HTMLVideoElement)) {
+            throw new Error('B host video missing');
+          }
+          element.volume = 0.8;
+          element.muted = false;
+          element.currentTime = 1;
+          await element.play();
+        });
+        await page.waitForFunction(() => {
+          const video = document.querySelector('[data-rapid="b"] video');
+          return video instanceof HTMLVideoElement && !video.paused && video.currentTime > 1.1;
+        });
+        const before = await hostVideoState(host);
+        await host.click({ position: { x: 160, y: 55 } });
+        const gallery = page.locator('[data-xeg-gallery-container]');
+        await gallery.waitFor({ state: 'visible' });
+        const hostAfterOpen = await hostVideoState(host);
+        assert.equal(hostAfterOpen.paused, true);
+        const fresh = gallery.locator('[data-gallery-element="item"][data-index="1"] video');
+        await fresh.waitFor({ state: 'visible' });
+        const galleryInitial = await hostVideoState(fresh);
+        assert.equal(galleryInitial.paused, true);
+        assert(galleryInitial.currentTime <= 0.1);
+        assert.equal(galleryInitial.muted, true);
+        assert(Math.abs(galleryInitial.volume - 0.27) < 0.01);
+        assert.equal(galleryInitial.error, null);
+        await fresh.click();
+        await page.waitForFunction(() => {
+          const video = document.querySelector(
+            '[data-xeg-gallery-container] [data-gallery-element="item"][data-index="1"] video'
+          );
+          return video instanceof HTMLVideoElement && !video.paused && video.currentTime > 0.1;
+        });
+        const galleryPlaying = await hostVideoState(fresh);
+        await gallery
+          .locator('[data-gallery-element="toolbar"] button[aria-label="Close"]')
+          .click();
+        await gallery.waitFor({ state: 'detached' });
+        const hostAfterClose = await hostVideoState(host);
+        assert.equal(hostAfterClose.paused, true);
+        assert(Math.abs(hostAfterClose.currentTime - hostAfterOpen.currentTime) < 0.1);
+        await page.screenshot({ path: join(output, 'experience-x05-host-after-close.png') });
+        return {
+          transport,
+          stored: { mode: null, volume: 0.27, muted: true },
+          before,
+          hostAfterOpen,
+          galleryInitial,
+          galleryPlaying,
+          hostAfterClose,
+        };
+      } finally {
+        routes.clearOwn12RapidBAudioVideo();
+        assert.equal(await restoreStoredVideoSettings(extensionPage, prior), true);
+      }
+    });
+    await phase('x05-native-video', async () =>
+      runOwn12NativeControls({
+        apiResponses: routes.apiResponses,
+        compactApiResponses: routes.compactApiResponses,
+        context,
+        extensionPage,
+        fixtureRoutes: routes,
+        output,
+        qualityApiResponses: routes.qualityApiResponses,
+        quotedApiResponses: routes.quotedApiResponses,
+      })
+    );
+    await phase('x06-layout', async () => {
+      await page.setViewportSize({ width: 401, height: 592 });
+      await page.goto(EXPERIENCE_FIXTURE_URL);
+      await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+      await page.locator('[data-testid="tweetPhoto"] img').first().click();
+      const gallery = page.locator('[data-xeg-gallery-container]');
+      await gallery.waitFor({ state: 'visible' });
+      const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
+      const cases = [];
+      for (let index = 0; index < EXPERIENCE_IMAGES.length; index++) {
+        if (index) {
+          await page.keyboard.press('ArrowRight');
+        }
+        for (const fit of ['Fit Width', 'Fit Height', 'Fit Window', 'Original']) {
+          const button = toolbar.locator(`button[aria-label="${fit}"]`);
+          await button.click();
+          assert.equal(await button.getAttribute('aria-pressed'), 'true');
+          const geometry = await page.evaluate(() => {
+            const toolbar = document.querySelector<HTMLElement>('[data-gallery-element="toolbar"]');
+            const current = toolbar?.getAttribute('data-current-index');
+            const selected = document.querySelector<HTMLElement>(
+              `[data-gallery-element="item"][data-index="${current}"]`
+            );
+            return {
+              innerWidth,
+              innerHeight,
+              devicePixelRatio,
+              visualViewport: visualViewport
+                ? {
+                    width: visualViewport.width,
+                    height: visualViewport.height,
+                    scale: visualViewport.scale,
+                  }
+                : null,
+              current,
+              selected: selected?.getBoundingClientRect().toJSON(),
+              toolbar: toolbar?.getBoundingClientRect().toJSON(),
+              activeFit: toolbar
+                ?.querySelector('[aria-pressed="true"]')
+                ?.getAttribute('aria-label'),
+            };
+          });
+          assert.equal(geometry.current, String(index), 'Fit action changed the selected item');
+          assert.equal(geometry.activeFit, fit);
+          cases.push({ shape: EXPERIENCE_IMAGES[index]?.label, fit, geometry });
+        }
+      }
+      const touchTargets = await toolbar.locator('button').evaluateAll((buttons) =>
+        buttons
+          .filter((button) => !button.hasAttribute('disabled'))
+          .map((button) => {
+            const rect = button.getBoundingClientRect();
+            return {
+              label: button.getAttribute('aria-label'),
+              width: rect.width,
+              height: rect.height,
+            };
+          })
+      );
+      assert(touchTargets.every(({ width, height }) => width >= 44 && height >= 44));
+      await toolbar.locator('#tweet-text-button').click();
+      const tweetPanel = gallery.locator('[data-gallery-element="tweet-panel"]');
+      await tweetPanel.waitFor({ state: 'visible' });
+      const caption = await tweetPanel.textContent();
+      assert(caption?.includes('日本語の説明') && caption.includes('길게 이어지는 문장'));
+      const tweetPanelScroll = await tweetPanel.evaluate((element) => {
+        const before = element.scrollTop;
+        element.scrollTop = element.scrollHeight;
+        return { before, after: element.scrollTop, overflow: getComputedStyle(element).overflowY };
+      });
+      await toolbar.locator('#tweet-text-button').click();
+      await toolbar.locator('#settings-button').click();
+      const settingsPanel = gallery.locator('[data-gallery-element="settings-panel"]');
+      await settingsPanel.waitFor({ state: 'visible' });
+      const settingsPanelScroll = await settingsPanel.evaluate((element) => {
+        const before = element.scrollTop;
+        element.scrollTop = element.scrollHeight;
+        return { before, after: element.scrollTop, overflow: getComputedStyle(element).overflowY };
+      });
+      await toolbar.locator('#settings-button').click();
+      const beforeZoom = await fixtureTabZoom(
+        context,
+        extensionId,
+        page,
+        null,
+        null,
+        EXPERIENCE_FIXTURE_URL
+      );
+      let zoomed: unknown;
+      try {
+        zoomed = await fixtureTabZoom(context, extensionId, page, 2, null, EXPERIENCE_FIXTURE_URL);
+        assert.equal((zoomed as { observed: number }).observed, 2);
+        const cdp = await context.newCDPSession(page);
+        try {
+          const capture = await cdp.send('Page.captureScreenshot', {
+            format: 'png',
+            fromSurface: true,
+            captureBeyondViewport: false,
+          });
+          await writeFile(
+            join(output, 'experience-x06-zoom200.png'),
+            Buffer.from(capture.data, 'base64')
+          );
+        } finally {
+          await cdp.detach();
+        }
+      } finally {
+        await fixtureTabZoom(
+          context,
+          extensionId,
+          page,
+          beforeZoom.previous,
+          beforeZoom.settings,
+          EXPERIENCE_FIXTURE_URL
+        );
+      }
+      await page.keyboard.press('Escape');
+      await gallery.waitFor({ state: 'detached' });
+      return { cases, touchTargets, tweetPanelScroll, settingsPanelScroll, beforeZoom, zoomed };
+    });
+  } finally {
+    for (const [name, close] of [
+      ['fixture page', () => page.close()],
+      ['extension page', () => extensionPage.close()],
+      ['fixture routes', () => routes.remove()],
+    ] as const) {
+      try {
+        await close();
+      } catch (error) {
+        cleanupErrors.push(`${name}: ${safeError(error)}`);
+      }
+    }
+    await writeFile(
+      join(output, 'gallery-experience.json'),
+      JSON.stringify(
+        {
+          status:
+            Object.values(phases).every(({ status }) => status === 'passed') &&
+            !pageErrors.length &&
+            !cleanupErrors.length
+              ? 'passed'
+              : 'failed',
+          scope:
+            'installed extension with owned deterministic X fixtures; no live X or human study',
+          phases,
+          pageErrors,
+          cleanupErrors,
+        },
+        null,
+        2
+      )
+    );
+  }
+  assert(
+    Object.values(phases).every(({ status }) => status === 'passed'),
+    'Gallery experience phase failed'
+  );
+  assert.deepEqual(pageErrors, []);
+  assert.deepEqual(cleanupErrors, []);
+  return { status: 'passed', phases };
+}
+
 /** Issue #381: a short installed-extension comparison at the real click/API boundary. */
 async function runOpeningFeedbackProbe({
   context,
@@ -15863,6 +16401,22 @@ export async function run({
     assert(!openingProbe, 'Only one focused installed-extension probe may run');
     assert.equal(liveUrls.length, 0, 'Recovery probe uses only the owned fixture');
   }
+  const experienceSelectorText = await readFile(
+    join(root, 'validation/windows/inputs/gallery-experience.json'),
+    'utf8'
+  ).catch((error: unknown) => {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+      return null;
+    }
+    throw error;
+  });
+  const experienceProbe = experienceSelectorText !== null;
+  if (experienceSelectorText !== null) {
+    assert.deepEqual(JSON.parse(experienceSelectorText), { scenario: 'gallery-experience' });
+    assert(!upgradeInput && !sameVersionInput, 'Experience probe cannot run during upgrade checks');
+    assert(!openingProbe && !recoveryProbe, 'Only one focused installed-extension probe may run');
+    assert.equal(liveUrls.length, 0, 'Experience probe uses only the owned fixture');
+  }
   assert(!(upgradeInput && sameVersionInput), 'Upgrade and same-version inputs cannot coexist');
   if (sameVersionInput) {
     assert.equal(liveUrls.length, 0, 'Same-version attribution does not observe live URLs');
@@ -15893,15 +16447,17 @@ export async function run({
     installationMethod: 'cdp-unpacked-extension',
     liveUrls: validatedLiveUrls,
     liveObservation,
-    scope: recoveryProbe
-      ? 'issue 382 installed-extension media/download recovery fixture; no live X observation'
-      : openingProbe
-        ? 'issue 381 installed-extension opening feedback fixture; no live X observation'
-        : validatedLiveUrls.length
-          ? 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
-          : sameVersionInput
-            ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
-            : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
+    scope: experienceProbe
+      ? 'issue 383 installed-extension gallery experience fixtures; no live X observation'
+      : recoveryProbe
+        ? 'issue 382 installed-extension media/download recovery fixture; no live X observation'
+        : openingProbe
+          ? 'issue 381 installed-extension opening feedback fixture; no live X observation'
+          : validatedLiveUrls.length
+            ? 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
+            : sameVersionInput
+              ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
+              : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
     status: 'failed',
   };
   try {
@@ -16001,7 +16557,18 @@ export async function run({
     if (!sameVersionInput) {
       const images = await createImageFixtures(context);
       const displayImages = await createImageFixtures(context, 0.25);
-      if (openingProbe) {
+      if (experienceProbe) {
+        result.galleryExperience = await runGalleryExperienceProbe({
+          context,
+          downloads,
+          extensionId,
+          nativeLoopback,
+          output,
+          root,
+          images,
+          displayImages,
+        });
+      } else if (openingProbe) {
         result.openingFeedback = await runOpeningFeedbackProbe({
           context,
           downloads,

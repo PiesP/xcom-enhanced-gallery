@@ -26,6 +26,20 @@ B opens, navigation, and failure recovery. The result is a controlled installed
 extension observation; it does not establish live X.com behavior. Remove this
 selector after the attempt.
 
+To run only the issue #383 gallery experience baseline in the installed
+Chrome/Edge extension, create the ignored `gallery-experience.json` file:
+
+```json
+{"scenario":"gallery-experience"}
+```
+
+Run the VM browser validation with `--installation extension`. The focused
+receipt `gallery-experience.json` separates toolbar keyboard and native save
+actions (X02), native host video controls across click modes (X05), and mixed
+aspect ratio layout with actual 200% browser tab zoom (X06). The page and media
+are deterministic owned fixtures; the observations do not claim live X.com
+behavior or a human study. Remove the selector after the attempt.
+
 To run only the issue #382 media and download recovery baseline in the installed
 Chrome/Edge extension, create the ignored `media-download-recovery.json` file:
 
