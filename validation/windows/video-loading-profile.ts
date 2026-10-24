@@ -5051,7 +5051,7 @@ async function runAdmissionGeometryCases({
         selected: 11,
         direction: 'above',
         viewport: { width: 700, height: 800 },
-        resize: { width: 700, height: 1000 },
+        resize: { width: 700, height: 1200 },
       },
     ];
     for (const descriptor of descriptors) {
