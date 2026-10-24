@@ -14192,6 +14192,80 @@ async function runMediaDownloadRecoveryProbe({
 }
 
 /** A small installed-extension baseline for issue #383's gallery experience. */
+async function experienceToolbarState(toolbar: Locator) {
+  return toolbar.evaluate((element) => {
+    const wrapper = element.parentElement;
+    const container = wrapper?.parentElement;
+    const close = element.querySelector<HTMLButtonElement>('button[aria-label="Close"]');
+    const rect = close?.getBoundingClientRect();
+    const hit = rect
+      ? document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2)
+      : null;
+    const style = (target: Element | null | undefined) =>
+      target
+        ? {
+            opacity: getComputedStyle(target).opacity,
+            visibility: getComputedStyle(target).visibility,
+            pointerEvents: getComputedStyle(target).pointerEvents,
+          }
+        : null;
+    return {
+      containerClass: container?.className ?? null,
+      toolbar: style(element),
+      wrapper: style(wrapper),
+      close: style(close),
+      closeHit: Boolean(hit && close?.contains(hit)),
+      activeLabel: document.activeElement?.getAttribute('aria-label') ?? null,
+      focusedWithin: element.contains(document.activeElement),
+    };
+  });
+}
+
+async function experienceControlGeometry(toolbar: Locator) {
+  return toolbar.evaluate((element) => {
+    const toolbarRect = element.getBoundingClientRect();
+    const controls = [...element.querySelectorAll<HTMLButtonElement>('button')]
+      .filter(
+        (button) =>
+          !button.disabled &&
+          !button.closest(
+            '[data-gallery-element="settings-panel"], [data-gallery-element="tweet-panel"]'
+          )
+      )
+      .map((button) => {
+        const rect = button.getBoundingClientRect();
+        const hit = document.elementFromPoint(
+          rect.left + rect.width / 2,
+          rect.top + rect.height / 2
+        );
+        return {
+          label: button.getAttribute('aria-label'),
+          rect: rect.toJSON(),
+          hit: Boolean(hit && button.contains(hit)),
+          withinViewport:
+            rect.left >= 0 &&
+            rect.top >= 0 &&
+            rect.right <= innerWidth &&
+            rect.bottom <= innerHeight,
+        };
+      });
+    return {
+      innerWidth,
+      innerHeight,
+      devicePixelRatio,
+      visualViewport: visualViewport
+        ? {
+            width: visualViewport.width,
+            height: visualViewport.height,
+            scale: visualViewport.scale,
+          }
+        : null,
+      toolbar: toolbarRect.toJSON(),
+      controls,
+    };
+  });
+}
+
 async function runGalleryExperienceProbe({
   context,
   downloads,
@@ -14249,6 +14323,8 @@ async function runGalleryExperienceProbe({
       const gallery = page.locator('[data-xeg-gallery-container]');
       await gallery.waitFor({ state: 'visible' });
       const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
+      const initial = await experienceToolbarState(toolbar);
+      await page.screenshot({ path: join(output, 'experience-x02-toolbar-initial.png') });
       await toolbar.evaluate((element) => {
         if (element.contains(document.activeElement)) {
           (document.activeElement as HTMLElement).blur();
@@ -14256,11 +14332,10 @@ async function runGalleryExperienceProbe({
       });
       await page.mouse.move(640, 350);
       await page.waitForTimeout(4_250);
-      const hidden = await toolbar.evaluate((element) => ({
-        opacity: getComputedStyle(element).opacity,
-        visibility: getComputedStyle(element).visibility,
-      }));
-      assert.equal(hidden.visibility, 'hidden', 'Toolbar did not hide after the idle period');
+      const hidden = await experienceToolbarState(toolbar);
+      await page.screenshot({ path: join(output, 'experience-x02-toolbar-idle.png') });
+      assert(Number(hidden.wrapper?.opacity) < 0.05, 'Toolbar wrapper remained painted after idle');
+      assert.equal(hidden.closeHit, false, 'Idle toolbar still intercepted pointer input');
       const reachable: string[] = [];
       for (let index = 0; index < 32; index++) {
         await page.keyboard.press('Tab');
@@ -14291,11 +14366,10 @@ async function runGalleryExperienceProbe({
         () => document.activeElement?.getAttribute('aria-label') ?? null
       );
       assert(reverseFocus, 'Shift+Tab lost toolbar focus');
-      const focused = await toolbar.evaluate((element) => ({
-        opacity: getComputedStyle(element).opacity,
-        visibility: getComputedStyle(element).visibility,
-      }));
-      assert.equal(focused.visibility, 'visible');
+      const focused = await experienceToolbarState(toolbar);
+      await page.screenshot({ path: join(output, 'experience-x02-toolbar-focused.png') });
+      assert(Number(focused.wrapper?.opacity) > 0.95, 'Keyboard focus did not reveal toolbar');
+      assert.equal(focused.closeHit, true, 'Focused toolbar Close cannot receive pointer input');
       await page.mouse.move(640, 350);
       await toolbar.locator('#settings-button').click();
       const select = gallery.getByLabel('Video clicks');
@@ -14350,19 +14424,17 @@ async function runGalleryExperienceProbe({
       const zipBytes = await readFile(zip.filename);
       const verifiedZip = verifyStoredZip(zipBytes, expected);
       await page.mouse.move(640, 8);
-      const rediscovered = await toolbar.evaluate((element) => ({
-        opacity: getComputedStyle(element).opacity,
-        visibility: getComputedStyle(element).visibility,
-      }));
-      assert.equal(
-        rediscovered.visibility,
-        'visible',
-        'Bottom-edge pointer did not reveal toolbar'
+      const rediscovered = await experienceToolbarState(toolbar);
+      await page.screenshot({ path: join(output, 'experience-x02-toolbar-pointer.png') });
+      assert(
+        Number(rediscovered.wrapper?.opacity) > 0.95,
+        'Top-edge pointer did not reveal toolbar'
       );
-      await page.screenshot({ path: join(output, 'experience-x02-toolbar.png') });
+      assert.equal(rediscovered.closeHit, true, 'Pointer-revealed Close cannot receive input');
       await page.keyboard.press('Escape');
       await gallery.waitFor({ state: 'detached' });
       return {
+        initial,
         hidden,
         focused,
         reachable,
@@ -14370,6 +14442,12 @@ async function runGalleryExperienceProbe({
         selectAfterPointerAway,
         nativeSetting,
         rediscovered,
+        screenshots: {
+          initial: 'experience-x02-toolbar-initial.png',
+          idle: 'experience-x02-toolbar-idle.png',
+          focused: 'experience-x02-toolbar-focused.png',
+          pointer: 'experience-x02-toolbar-pointer.png',
+        },
         downloads: { single: imageReceipt(singleBytes), zip: imageReceipt(zipBytes), verifiedZip },
       };
     });
@@ -14435,6 +14513,45 @@ async function runGalleryExperienceProbe({
           return video instanceof HTMLVideoElement && !video.paused && video.currentTime > 0.1;
         });
         const galleryPlaying = await hostVideoState(fresh);
+        await page.setViewportSize({ width: 401, height: 592 });
+        await fresh.scrollIntoViewIfNeeded();
+        await page.evaluate(() => {
+          const items = document.querySelector<HTMLElement>('[data-gallery-element="items"]');
+          const video = document.querySelector<HTMLElement>(
+            '[data-xeg-gallery-container] [data-gallery-element="item"][data-index="1"] video'
+          );
+          if (!items || !video) {
+            throw new Error('Narrow native video geometry is unavailable');
+          }
+          items.scrollTop +=
+            video.getBoundingClientRect().bottom - items.getBoundingClientRect().bottom + 8;
+        });
+        await page.evaluate(
+          () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+        );
+        const narrowVideo = await fresh.evaluate((element) => {
+          const rect = element.getBoundingClientRect();
+          const x = rect.left + rect.width / 2;
+          const y = Math.min(rect.bottom - 16, innerHeight - 8);
+          const items = element.closest('[data-gallery-element="items"]');
+          return {
+            rect: rect.toJSON(),
+            items: items?.getBoundingClientRect().toJSON(),
+            mask: items ? getComputedStyle(items).maskImage : null,
+            controlPoint: { x, y },
+            controlHit: document.elementFromPoint(x, y) === element,
+            viewport: { width: innerWidth, height: innerHeight, dpr: devicePixelRatio },
+          };
+        });
+        await page.mouse.move(narrowVideo.controlPoint.x, narrowVideo.controlPoint.y);
+        await page.waitForTimeout(200);
+        const nativeControlHit = await fresh.evaluate(
+          (element, point) => document.elementFromPoint(point.x, point.y) === element,
+          narrowVideo.controlPoint
+        );
+        await page.screenshot({ path: join(output, 'experience-x06-video-native-near-fade.png') });
+        assert.equal(nativeControlHit, true, 'Narrow native video control area is blocked');
+        await page.setViewportSize({ width: 1280, height: 800 });
         await gallery
           .locator('[data-gallery-element="toolbar"] button[aria-label="Close"]')
           .click();
@@ -14450,6 +14567,11 @@ async function runGalleryExperienceProbe({
           hostAfterOpen,
           galleryInitial,
           galleryPlaying,
+          narrowVideo: {
+            ...narrowVideo,
+            nativeControlHit,
+            screenshot: 'experience-x06-video-native-near-fade.png',
+          },
           hostAfterClose,
         };
       } finally {
@@ -14504,7 +14626,9 @@ async function runGalleryExperienceProbe({
                   }
                 : null,
               current,
+              focused: toolbar?.getAttribute('data-focused-index'),
               selected: selected?.getBoundingClientRect().toJSON(),
+              media: selected?.querySelector('img')?.getBoundingClientRect().toJSON(),
               toolbar: toolbar?.getBoundingClientRect().toJSON(),
               activeFit: toolbar
                 ?.querySelector('[aria-pressed="true"]')
@@ -14512,8 +14636,24 @@ async function runGalleryExperienceProbe({
             };
           });
           assert.equal(geometry.current, String(index), 'Fit action changed the selected item');
+          assert.equal(geometry.focused, String(index), 'Fit action changed the focused item');
           assert.equal(geometry.activeFit, fit);
           cases.push({ shape: EXPERIENCE_IMAGES[index]?.label, fit, geometry });
+          if (fit === 'Fit Window') {
+            const controls = await experienceControlGeometry(toolbar);
+            const screenshot = `experience-x06-narrow-${EXPERIENCE_IMAGES[index]?.label.toLowerCase()}.png`;
+            await page.screenshot({
+              path: join(output, screenshot),
+            });
+            assert(
+              controls.controls.every(
+                ({ rect, hit, withinViewport }) =>
+                  rect.width >= 44 && rect.height >= 44 && hit && withinViewport
+              ),
+              `${EXPERIENCE_IMAGES[index]?.label}: narrow toolbar control is clipped or blocked`
+            );
+            cases.push({ shape: EXPERIENCE_IMAGES[index]?.label, fit, controls, screenshot });
+          }
         }
       }
       const touchTargets = await toolbar.locator('button').evaluateAll((buttons) =>
@@ -14549,6 +14689,10 @@ async function runGalleryExperienceProbe({
         return { before, after: element.scrollTop, overflow: getComputedStyle(element).overflowY };
       });
       await toolbar.locator('#settings-button').click();
+      await page.setViewportSize({ width: 1280, height: 800 });
+      await page.keyboard.press('ArrowLeft');
+      await toolbar.locator('button[aria-label="Fit Window"]').click();
+      const desktopBeforeZoom = await experienceControlGeometry(toolbar);
       const beforeZoom = await fixtureTabZoom(
         context,
         extensionId,
@@ -14558,9 +14702,16 @@ async function runGalleryExperienceProbe({
         EXPERIENCE_FIXTURE_URL
       );
       let zoomed: unknown;
+      let desktopAtZoom: Awaited<ReturnType<typeof experienceControlGeometry>> | undefined;
+      let screenshotPixels: { width: number; height: number } | undefined;
       try {
         zoomed = await fixtureTabZoom(context, extensionId, page, 2, null, EXPERIENCE_FIXTURE_URL);
         assert.equal((zoomed as { observed: number }).observed, 2);
+        await page.waitForFunction(
+          (previous) => innerWidth < previous,
+          desktopBeforeZoom.innerWidth
+        );
+        desktopAtZoom = await experienceControlGeometry(toolbar);
         const cdp = await context.newCDPSession(page);
         try {
           const capture = await cdp.send('Page.captureScreenshot', {
@@ -14568,13 +14719,19 @@ async function runGalleryExperienceProbe({
             fromSurface: true,
             captureBeyondViewport: false,
           });
-          await writeFile(
-            join(output, 'experience-x06-zoom200.png'),
-            Buffer.from(capture.data, 'base64')
-          );
+          const png = Buffer.from(capture.data, 'base64');
+          screenshotPixels = { width: png.readUInt32BE(16), height: png.readUInt32BE(20) };
+          await writeFile(join(output, 'experience-x06-zoom200.png'), png);
         } finally {
           await cdp.detach();
         }
+        assert(
+          desktopAtZoom.controls.every(
+            ({ rect, hit, withinViewport }) =>
+              rect.width >= 44 && rect.height >= 44 && hit && withinViewport
+          ),
+          'Actual 200% desktop zoom clipped or blocked a toolbar control'
+        );
       } finally {
         await fixtureTabZoom(
           context,
@@ -14587,7 +14744,17 @@ async function runGalleryExperienceProbe({
       }
       await page.keyboard.press('Escape');
       await gallery.waitFor({ state: 'detached' });
-      return { cases, touchTargets, tweetPanelScroll, settingsPanelScroll, beforeZoom, zoomed };
+      return {
+        cases,
+        touchTargets,
+        tweetPanelScroll,
+        settingsPanelScroll,
+        desktopBeforeZoom,
+        beforeZoom,
+        zoomed,
+        desktopAtZoom,
+        screenshotPixels,
+      };
     });
   } finally {
     for (const [name, close] of [
