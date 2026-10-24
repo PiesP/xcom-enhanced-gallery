@@ -150,6 +150,7 @@ export const es: LanguageStrings = {
       loadFail: 'Error al cargar {type}',
       imageGallery: 'Galería de imágenes',
       loading: 'Cargando',
+      opening: 'Abriendo galería…',
       videoCount: 'Video {index} de {total}',
       imageCount: 'Imagen {index} de {total}: {alt}',
       hashtagLabel: 'Hashtag {value}',

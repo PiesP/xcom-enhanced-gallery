@@ -148,6 +148,7 @@ export const ko: LanguageStrings = {
       loadFail: '{type} 로드 실패',
       imageGallery: '이미지 갤러리',
       loading: '로딩 중',
+      opening: '갤러리 여는 중…',
       videoCount: '동영상 {index}/{total}',
       imageCount: '이미지 {index}/{total}: {alt}',
       hashtagLabel: '해시태그 {value}',

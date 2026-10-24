@@ -7,6 +7,7 @@
 
 import { GALLERY_READY_ATTRIBUTE } from '@constants/readiness';
 import type { GalleryRenderer } from '@features/gallery/gallery-renderer';
+import { startOpeningFeedback } from '@features/gallery/opening-feedback';
 import { mergeAbortSignalsWithCleanup } from '@piesp/browser-core/error';
 import { clampIndex } from '@piesp/browser-core/util';
 import { getNotificationAdapter, notifySafely } from '@platform/index';
@@ -157,8 +158,14 @@ export class GalleryApp {
       passive: true,
       signal: clickController.signal,
     });
-
+    let stopOpeningFeedback = (): void => undefined;
     try {
+      stopOpeningFeedback = startOpeningFeedback({
+        element,
+        signal: clickController.signal,
+        isCurrent: () => this.isCurrentMediaClick(opId, epoch, clickController, clickUrl),
+        text: getLanguageService().translate('msg.gal.opening'),
+      });
       const mediaService = getMediaService();
       const result = await mediaService.extractFromClickedElement(element, {
         signal: signalScope.signal,
@@ -167,6 +174,7 @@ export class GalleryApp {
       if (!this.isCurrentMediaClick(opId, epoch, clickController, clickUrl)) {
         return;
       }
+      stopOpeningFeedback();
 
       if (result.success && result.mediaItems.length > 0) {
         this.openGallery(result.mediaItems, result.clickedIndex);
@@ -208,6 +216,7 @@ export class GalleryApp {
       if (!this.isCurrentMediaClick(opId, epoch, clickController, clickUrl)) {
         return;
       }
+      stopOpeningFeedback();
       mediaErrorReporter.error(error, { code: 'MEDIA_EXTRACTION_ERROR' });
       const lang = getLanguageService();
       notifySafely(
@@ -217,6 +226,7 @@ export class GalleryApp {
           (videoClick ? this.armVideoRecoveryAndGetMessage(opId, epoch, element, clickUrl) : '')
       );
     } finally {
+      stopOpeningFeedback();
       window.removeEventListener('beforeunload', cancelOnNavigation);
       signalScope.cleanup();
       if (this.mediaClickAbortController === clickController) {

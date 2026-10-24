@@ -1,0 +1,24 @@
+/* SPDX-License-Identifier: MIT */
+/* Copyright (c) 2024-2026 PiesP */
+
+@layer xeg.features {
+  .xeg-opening-feedback {
+    position: fixed;
+    z-index: 9999;
+    max-width: min(20rem, calc(100vw - 16px));
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--xeg-color-border-default);
+    border-radius: 0.5rem;
+    background: var(--xeg-color-bg-surface);
+    color: var(--xeg-color-text-primary);
+    box-shadow: 0 2px 8px rgb(0 0 0 / 16%);
+    font:
+      500 0.875rem/1.35 system-ui,
+      sans-serif;
+    pointer-events: none;
+  }
+
+  .xeg-opening-feedback[hidden] {
+    display: none;
+  }
+}

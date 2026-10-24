@@ -804,3 +804,16 @@ Review the retained screenshots separately before making a live-page claim.
 
 Run `node --experimental-strip-types --check validation/windows/install-profile.ts` for the installed
 profile syntax check.
+
+For a focused installed-extension opening-feedback comparison, the ignored
+`validation/windows/inputs/opening-feedback.json` selector described in that
+directory's README runs only the delayed-opening cases and records pending and
+terminal screenshots. The controller still binds the built package and cleans
+up the owned browser profile. Keep the selector outside Git.
+
+The #381 baseline on installed Edge opened the healthy B gallery in 272.39 ms
+and repeated it in 204.65 ms; the held A response remained pending for 5 s
+without an acknowledgement. The 500 ms delay keeps those measured fast paths
+quiet while giving a held extraction a visible, source-adjacent status. The
+focused probe records trusted click, status insertion, and removal times and
+checks that no retired status survives a later action or navigation.

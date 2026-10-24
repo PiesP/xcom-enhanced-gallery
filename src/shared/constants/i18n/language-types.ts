@@ -251,6 +251,8 @@ export interface LanguageStrings {
       readonly imageGallery: string;
       /** Loading indicator label */
       readonly loading: string;
+      /** Delayed acknowledgement while the clicked media is being resolved */
+      readonly opening: string;
       /** Video count label */
       readonly videoCount: string;
       /** Image count label */
