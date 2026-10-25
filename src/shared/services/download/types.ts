@@ -82,9 +82,18 @@ export interface SingleDownloadResult {
   code?: ErrorCode;
 }
 
+/** The assigned name and original selection position survive a partial ZIP. */
+export interface ZipFailedEntry {
+  readonly index: number;
+  readonly url: string;
+  readonly filename: string;
+  readonly error: string;
+}
+
 export interface ZipResult {
   filesSuccessful: number;
   failures: Array<{ url: string; error: string }>;
+  failedEntries: readonly ZipFailedEntry[];
   /** Parts ready for `new Blob(parts, {type:'application/zip'})` — no monolithic copy */
   zipData: BlobPart[];
   resourceLimitExceeded: boolean;
@@ -105,6 +114,7 @@ export interface BulkDownloadResult {
   filename?: string;
   error?: string;
   failures?: Array<{ url: string; error: string }>;
+  failedEntries?: readonly ZipFailedEntry[];
   code: ErrorCode;
   /** Retain this cause even when resource rejection takes code precedence. */
   sourceUnavailable?: boolean;

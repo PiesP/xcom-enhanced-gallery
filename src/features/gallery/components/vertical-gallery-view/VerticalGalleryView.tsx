@@ -46,6 +46,9 @@ export interface VerticalGalleryViewProps {
   readonly onDownloadCurrent?: () => void;
   /** Handler for downloading all media items */
   readonly onDownloadAll?: () => void;
+  /** Retry only failed entries into a supplementary ZIP. */
+  readonly onRecoverFailed?: () => void;
+  readonly onDismissBulkOutcome?: () => void;
 }
 
 export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement {
@@ -56,6 +59,8 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
     'onNext',
     'onDownloadCurrent',
     'onDownloadAll',
+    'onRecoverFailed',
+    'onDismissBulkOutcome',
   ]);
 
   const handleClose = local.onClose ?? (() => {});
@@ -319,11 +324,27 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
                     : 'msg.dl.bulkOutcome.titleFailed'
                 )}
               </strong>
-              <button type="button" onClick={dismissBulkDownloadOutcome}>
+              <button
+                type="button"
+                onClick={() => {
+                  if (local.onDismissBulkOutcome) {
+                    local.onDismissBulkOutcome();
+                  } else {
+                    dismissBulkDownloadOutcome();
+                  }
+                }}
+              >
                 {translate('msg.dl.bulkOutcome.dismiss')}
               </button>
             </div>
-            <p>{translate('msg.dl.bulkOutcome.scope', { total: outcome().total })}</p>
+            <p>
+              {translate(
+                outcome().supplementary
+                  ? 'msg.dl.bulkOutcome.scopeSupplementary'
+                  : 'msg.dl.bulkOutcome.scope',
+                { total: outcome().total }
+              )}
+            </p>
             <p>
               {translate('msg.dl.bulkOutcome.counts', {
                 included: outcome().included,
@@ -345,7 +366,24 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
               outcome().reason !== 'sourceFetchFailed' && (
                 <p>{sourceFetchReason(outcome().sourceFetchStatuses ?? [])}</p>
               )}
-            <p>{translate('msg.dl.bulkOutcome.nextAction')}</p>
+            <p>
+              {translate(
+                outcome().supplementary
+                  ? 'msg.dl.bulkOutcome.nextActionSupplementary'
+                  : 'msg.dl.bulkOutcome.nextAction'
+              )}
+            </p>
+            <Show when={(outcome().recoverableCount ?? 0) > 0 && local.onRecoverFailed}>
+              <button
+                type="button"
+                disabled={isDownloading()}
+                onClick={() => local.onRecoverFailed?.()}
+              >
+                {translate('msg.dl.bulkOutcome.recoverMissing', {
+                  count: outcome().recoverableCount ?? 0,
+                })}
+              </button>
+            </Show>
           </section>
         )}
       </Show>

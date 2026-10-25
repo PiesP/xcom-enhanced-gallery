@@ -187,6 +187,7 @@ export interface LanguageStrings {
         readonly titleFailed: string;
         readonly previous: string;
         readonly scope: string;
+        readonly scopeSupplementary: string;
         readonly counts: string;
         readonly browserHandoff: string;
         readonly noZip: string;
@@ -196,6 +197,8 @@ export interface LanguageStrings {
         readonly zipSaveFailed: string;
         readonly other: string;
         readonly nextAction: string;
+        readonly nextActionSupplementary: string;
+        readonly recoverMissing: string;
         readonly dismiss: string;
       };
       /** Observable download lifecycle labels */

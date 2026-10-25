@@ -265,6 +265,27 @@
   outline: 2px solid currentColor;
   outline-offset: 2px;
 }
+
+.bulkOutcome > button {
+  min-height: 44px;
+  margin-block-start: var(--xeg-spacing-sm);
+  padding-inline: var(--xeg-spacing-sm);
+  color: inherit;
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: var(--xeg-radius-sm);
+  cursor: pointer;
+}
+
+.bulkOutcome > button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.bulkOutcome > button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
 /* Custom scrollbar styling (WebKit browsers only) */
 .itemsContainer::-webkit-scrollbar {
   width: var(--xeg-scrollbar-width); /* Tokenized replacement for the old 0.5rem magic number */

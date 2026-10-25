@@ -108,6 +108,7 @@ export const es: LanguageStrings = {
         titleFailed: 'No se entregó ningún ZIP',
         previous: 'Resultado anterior del ZIP',
         scope: 'Alcance: {total} elementos mostrados en esta galería.',
+        scopeSupplementary: 'Alcance: {total} elementos omitidos anteriormente en esta galería.',
         counts: 'El ZIP incluye {included}; se omitieron {omitted}.',
         browserHandoff:
           'El navegador aceptó la solicitud del ZIP. No se ha confirmado que se guardara en el disco.',
@@ -123,6 +124,9 @@ export const es: LanguageStrings = {
           'No se pudieron incluir algunos elementos. Vuelve a abrir la galería e inténtalo de nuevo.',
         nextAction:
           'Descargar todo crea otro ZIP con todos los elementos mostrados, incluso los ya entregados. Si hace falta, vuelve a la publicación e inténtalo con menos elementos.',
+        nextActionSupplementary:
+          'Este ZIP solo contiene elementos recuperados. Conserva el ZIP anterior con los demás elementos.',
+        recoverMissing: 'Descargar {count} elementos pendientes en otro ZIP',
         dismiss: 'Cerrar resultado del ZIP',
       },
       status: {

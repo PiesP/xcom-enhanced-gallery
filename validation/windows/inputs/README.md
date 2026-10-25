@@ -55,3 +55,17 @@ suppressed only inside this owned run, so the retained screenshots show what
 remains on the page after five seconds. ZIPs are checked against the fixture's
 independent entry list and copied into the evidence directory. Remove the
 selector after the attempt.
+
+To run only the issue #392 failed-entry ZIP acceptance in the installed Edge
+extension, create the ignored `failed-entry-recovery.json` file here:
+
+```json
+{"scenario":"failed-entry-recovery"}
+```
+
+Run with `--installation extension`. The installed package's gallery saves a
+partial ZIP after one bounded fixture response denial, then its visible recovery
+button saves only the omitted item in a separate `-missing.zip`. The receipt
+checks native download IDs, saved file identity, entry order, CRC, bytes, hashes,
+request count, result dismissal, session reopening, and exact cleanup. Retain
+failed receipts outside Git and remove the selector after the attempt.

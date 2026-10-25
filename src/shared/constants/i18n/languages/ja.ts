@@ -106,6 +106,7 @@ export const ja: LanguageStrings = {
         titleFailed: 'ZIP を引き渡せませんでした',
         previous: '前回の ZIP 結果',
         scope: '対象: このギャラリーに表示されたメディア {total} 件。',
+        scopeSupplementary: '対象: このギャラリーで先ほど欠落した項目 {total} 件。',
         counts: 'ZIP に含まれる: {included} 件、除外: {omitted} 件。',
         browserHandoff:
           'ブラウザーが ZIP のダウンロード要求を受け付けました。ディスクへの保存完了は確認できません。',
@@ -120,6 +121,9 @@ export const ja: LanguageStrings = {
         other: '一部の項目を含められませんでした。ギャラリーを開き直して再試行してください。',
         nextAction:
           'すべてダウンロードを再実行すると、引き渡し済みの項目も含めて新しい ZIP を作成します。必要なら投稿を開き直し、項目を減らして試してください。',
+        nextActionSupplementary:
+          'この ZIP には復旧した欠落項目のみが入っています。他の項目が入った前の ZIP も保管してください。',
+        recoverMissing: '欠落した {count} 件を別の ZIP としてダウンロード',
         dismiss: 'ZIP の結果を閉じる',
       },
       status: {

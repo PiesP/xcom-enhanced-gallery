@@ -110,6 +110,10 @@ import {
   openGallery,
   setFocusedIndexOnly,
 } from '@shared/state/signals/gallery.signals';
+import {
+  setBulkDownloadOutcome,
+  setDownloadStatus,
+} from '@shared/state/signals/gallery-download-signals';
 
 function media(id: string): MediaInfo {
   return {
@@ -184,6 +188,40 @@ describe('VerticalGalleryView preload reactivity', () => {
     expect(image(container, 'e').getAttribute('loading')).toBe('eager');
     expect(image(container, 'c').getAttribute('fetchpriority')).toBe('high');
     expect(image(container, 'b').getAttribute('fetchpriority')).toBe('low');
+  });
+
+  it('offers a distinct missing-items action only for an eligible partial ZIP', async () => {
+    const onRecoverFailed = vi.fn();
+    const onDismissBulkOutcome = vi.fn();
+    openGallery([media('a'), media('b')]);
+    dispose = render(
+      () => createComponent(VerticalGalleryView, { onRecoverFailed, onDismissBulkOutcome }),
+      container
+    );
+    setBulkDownloadOutcome({
+      total: 2,
+      included: 1,
+      omitted: 1,
+      handedOff: true,
+      reason: 'other',
+      sourceUnavailable: false,
+      recoverableCount: 1,
+    });
+    await flushEffects();
+    const recover = [...container.querySelectorAll('button')].find((button) =>
+      button.textContent?.includes('recoverMissing')
+    );
+    expect(recover).toBeDefined();
+    recover?.click();
+    expect(onRecoverFailed).toHaveBeenCalledOnce();
+
+    setDownloadStatus('working');
+    expect(recover?.disabled).toBe(true);
+    setDownloadStatus('handedOff');
+    setBulkDownloadOutcome(null);
+    await flushEffects();
+    expect(container.textContent).not.toContain('recoverMissing');
+    expect(onDismissBulkOutcome).not.toHaveBeenCalled();
   });
 
   it('updates item indices and preload state when keyed items reorder', async () => {

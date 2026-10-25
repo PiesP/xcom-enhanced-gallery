@@ -29,22 +29,40 @@ work and waits for active worker cleanup before ZIP storage is released. These
 reservations account for application-owned binary bytes and overlapping copies,
 not total browser heap or process memory; see [download binary ownership](download-memory.md).
 
+## Failed-entry recovery decision
+
+A partial ZIP remains the user's first output. Rebuilding the original archive
+would require retaining every successful input under the shared live-byte budget
+or fetching those entries again, so recovery uses an explicit supplementary ZIP
+containing only failed entries. Each additional attempt uses a distinct
+`-missing` ZIP filename. The original action keeps an immutable snapshot
+of each failed entry's selection index, media identity, verified preferred save
+URL, assigned ZIP filename, and error. Retry never derives a newer gallery's
+media or filenames, and the new ZIP is labeled as missing items rather than a
+replacement for the first archive. A resolved provider miss may use the same
+verified URL; a rejected provider request does not trigger an alternate URL
+within an attempt.
+
+The snapshot belongs to the open gallery and the visible partial-result action.
+Dismissal requests cancellation of an active recovery and revokes its result
+publication, without cancelling an unrelated ordinary download. A new download,
+gallery replacement, close, or cancellation also revokes the snapshot. A recovery
+is one explicit user action, not a loop. Each attempt uses the
+existing entry/archive/page budgets, reports its own included and omitted
+counts, and retains only still-failed descriptors for another explicit action.
+No successful media bytes are retained by the snapshot. A ZIP save that was not
+confirmed as handed off cannot offer recovery because another save could
+duplicate an unknown native handoff. Browser acceptance must verify the saved
+ZIP members and bytes independently; an adapter handoff alone is insufficient.
+
 ## Optional follow-ups
 
-Retrying only failed entries is deferred. A partial ZIP is already assembled
-from successful entries; a retry must preserve the original selection and
-filenames, keep successful entries available without charging or downloading
-them twice, and distinguish a resolved cache miss from a failed request. It
-also needs cancellation and partial-result ownership rules across a second
-assembly. A new button alone would hide these byte and lifecycle decisions.
-
-For a partial result, keep the saved archive, review its entry inventory and
-the reported included/omitted counts, and save missing items individually from
-the gallery. Wait for active saves before retrying or reloading. If the page
-allowance remains exhausted with no active save, reload and select fewer items;
-gallery close/reopen does not release userscript-owned downloads. The existing
-failure list retains each failed selected URL and its error for the current
-result; no persistent retry queue is added.
+For a partial result, keep the saved archive and review the included/omitted
+counts. The explicit missing-items action prepares a separate ZIP for eligible
+failed entries; an unverified original remains excluded. Wait for active saves
+before retrying or reloading. If the page allowance remains exhausted with no
+active save, reload and select fewer items; gallery close/reopen does not release
+userscript-owned downloads. The failure list is session-local, not persistent.
 
 A streamed file sink is also deferred. The current extension path hands a
 finished Blob URL to the native downloads API and releases its owner only

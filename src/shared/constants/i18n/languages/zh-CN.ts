@@ -102,6 +102,7 @@ export const zhCn: LanguageStrings = {
         titleFailed: '未交付 ZIP',
         previous: '上一次 ZIP 结果',
         scope: '范围：此图库中显示的 {total} 个媒体项目。',
+        scopeSupplementary: '范围：此图库中先前遗漏的 {total} 个项目。',
         counts: 'ZIP 包含 {included} 个，遗漏 {omitted} 个。',
         browserHandoff: '浏览器已接受 ZIP 下载请求；尚未确认已保存到磁盘。',
         noZip: '没有 ZIP 交给浏览器。',
@@ -112,6 +113,8 @@ export const zhCn: LanguageStrings = {
         other: '部分项目无法加入 ZIP。请重新打开图库后重试。',
         nextAction:
           '再次点击“下载全部”会为所有显示的项目创建新的 ZIP，包括已交付的项目。必要时请重新打开帖子，减少项目后重试。',
+        nextActionSupplementary: '此 ZIP 仅包含已恢复的遗漏项目。请保留包含其他项目的先前 ZIP。',
+        recoverMissing: '将遗漏的 {count} 个项目下载为单独的 ZIP',
         dismiss: '关闭 ZIP 结果',
       },
       status: {

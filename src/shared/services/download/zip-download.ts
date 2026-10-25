@@ -23,7 +23,12 @@ import {
 } from '@shared/external/zip/streaming-zip-writer';
 import { fetchOwnedArrayBufferWithRetry, HttpStatusError } from '@shared/network/retry-fetch';
 import { HttpRequestError } from '@shared/services/http-request-service';
-import type { DownloadOptions, OrchestratorItem, ZipResult } from '@shared/services/download/types';
+import type {
+  DownloadOptions,
+  OrchestratorItem,
+  ZipFailedEntry,
+  ZipResult,
+} from '@shared/services/download/types';
 import { getZipInputKind, reportProgress } from '@shared/services/download/types';
 import {
   combineLiveByteLeases,
@@ -203,6 +208,7 @@ export async function downloadAsZip(
   let sourceUnavailable = false;
   const sourceFetchStatuses = new Set<number>();
   const failures: { url: string; error: string }[] = [];
+  const failedEntries: ZipFailedEntry[] = [];
   let currentIndex = 0;
 
   const runNext = async (): Promise<void> => {
@@ -367,7 +373,9 @@ export async function downloadAsZip(
         ) {
           resourceLimitExceeded = true;
         }
-        failures.push({ url: item.url, error: normalizeErrorMessage(error) });
+        const message = normalizeErrorMessage(error);
+        failures.push({ url: item.url, error: message });
+        failedEntries.push({ index, url: item.url, filename, error: message });
       } finally {
         borrowed?.lease.release();
         body?.release();
@@ -414,6 +422,7 @@ export async function downloadAsZip(
   return {
     filesSuccessful: successful,
     failures,
+    failedEntries: failedEntries.sort((a, b) => a.index - b.index),
     zipData: parts,
     resourceLimitExceeded,
     sourceUnavailable,
