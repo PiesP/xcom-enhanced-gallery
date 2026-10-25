@@ -90,6 +90,7 @@ export const galleryIndexEvents = {
 
 const [isOpenSig, setIsOpenSig] = createSignal<boolean>(INITIAL_STATE.isOpen);
 const [mediaItemsSig, setMediaItems] = createSignal<readonly MediaInfo[]>(INITIAL_STATE.mediaItems);
+const [sessionRevisionSig, setSessionRevision] = createSignal(0);
 const [currentIndexSig, setCurrentIndex] = createSignal<number>(INITIAL_STATE.currentIndex);
 const [focusedIndexSig, _setFocusedIndex] = createSignal<number | null>(null);
 
@@ -121,6 +122,10 @@ export const gallerySignals = {
   },
   get mediaItems() {
     return mediaItemsSig();
+  },
+  /** Changes on every open, close, or disposal, even when media IDs repeat. */
+  get sessionRevision() {
+    return sessionRevisionSig();
   },
   get currentIndex() {
     return currentIndexSig();
@@ -154,6 +159,7 @@ export function setError(error: string | null, owner: GalleryErrorOwner = null):
 
 function applyGallerySessionUpdate(state: GallerySessionState): void {
   batch(() => {
+    setSessionRevision((revision) => revision + 1);
     errorOwner = null;
     setMediaItems(state.mediaItems);
     setCurrentIndex(state.currentIndex);
@@ -302,6 +308,7 @@ export function navigateToItem(targetIndex: number, source: NavigationSource): v
 export function disposeGallerySignals(): void {
   galleryIndexEvents.dispose();
   batch(() => {
+    setSessionRevision((revision) => revision + 1);
     errorOwner = null;
     setIsOpenSig(INITIAL_STATE.isOpen);
     setMediaItems(INITIAL_STATE.mediaItems);

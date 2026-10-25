@@ -106,6 +106,7 @@ export const ko: LanguageStrings = {
         titleFailed: 'ZIP을 브라우저에 전달하지 못함',
         previous: '이전 ZIP 결과',
         scope: '범위: 이 갤러리에 표시된 미디어 {total}개.',
+        scopeSupplementary: '범위: 이 갤러리에서 앞서 빠진 항목 {total}개.',
         counts: 'ZIP 포함 {included}개, 제외 {omitted}개.',
         browserHandoff:
           '브라우저가 ZIP 다운로드 요청을 받았습니다. 디스크 저장 완료 여부는 확인되지 않았습니다.',
@@ -120,6 +121,9 @@ export const ko: LanguageStrings = {
         other: '일부 항목을 포함할 수 없습니다. 갤러리를 다시 열어 시도하세요.',
         nextAction:
           '모두 다운로드를 다시 누르면 이미 전달된 항목을 포함해 표시된 모든 항목으로 새 ZIP을 만듭니다. 필요한 경우 게시물을 다시 열고 더 적은 항목으로 시도하세요.',
+        nextActionSupplementary:
+          '이 ZIP에는 복구된 누락 항목만 있습니다. 나머지 항목이 담긴 이전 ZIP도 보관하세요.',
+        recoverMissing: '누락 항목 {count}개를 별도 ZIP으로 다운로드',
         dismiss: 'ZIP 결과 닫기',
       },
       status: {

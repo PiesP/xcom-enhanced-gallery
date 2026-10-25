@@ -29,6 +29,10 @@ export interface BulkDownloadOutcome {
     | 'other';
   readonly sourceUnavailable: boolean;
   readonly sourceFetchStatuses?: readonly number[];
+  /** Eligible failures from this attempt; each retry is an explicit action. */
+  readonly recoverableCount?: number;
+  /** The ZIP contains only missing entries from a preceding attempt. */
+  readonly supplementary?: boolean;
 }
 
 // Internal signal — exported for use by disposeGallerySignals.

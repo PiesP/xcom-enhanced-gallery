@@ -6,10 +6,15 @@
  */
 
 import { getNotificationAdapter, notifySafely } from '@platform/index';
+import { dismissBulkDownloadOutcome } from '@features/gallery/hooks/dismiss-bulk-download-outcome';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { USER_CANCELLED_MESSAGE } from '@shared/error/cancellation';
 import { logger } from '@shared/logging/logger';
-import { getDownloadOrchestrator } from '@shared/services/download/download-orchestrator';
+import {
+  getDownloadOrchestrator,
+  type FailedEntryRecovery,
+} from '@shared/services/download/download-orchestrator';
+import type { BulkDownloadResult } from '@shared/services/download/types';
 import { getLanguageService } from '@shared/services/language-service';
 import { getMediaService } from '@shared/services/media-service';
 import {
@@ -18,10 +23,69 @@ import {
   setError,
 } from '@shared/state/signals/gallery.signals';
 import {
+  downloadState,
   setBulkDownloadOutcome,
   setDownloadStatus,
 } from '@shared/state/signals/gallery-download-signals';
 import type { MediaInfo } from '@shared/types/media.types';
+import { getMediaDownloadUrl } from '@shared/utils/media/media-source';
+
+interface RecoveryJob {
+  readonly entries: readonly FailedEntryRecovery[];
+  readonly originalFilename: string;
+  readonly sessionRevision: number;
+  readonly attempt: number;
+}
+
+/** Keep only identity and save metadata; a retry borrows bytes from normal owners. */
+function snapshotMedia(media: MediaInfo): MediaInfo {
+  return {
+    id: media.id,
+    type: media.type,
+    url: media.url,
+    originalUrl: media.originalUrl,
+    ...(media.downloadSource ? { downloadSource: { ...media.downloadSource } } : {}),
+    filename: media.filename,
+    fileSize: media.fileSize,
+    tweetUsername: media.tweetUsername,
+    tweetId: media.tweetId,
+    quotedUsername: media.quotedUsername,
+    quotedTweetId: media.quotedTweetId,
+    sourceLocation: media.sourceLocation,
+  };
+}
+
+function nextRecoveryJob(
+  result: BulkDownloadResult,
+  attempted: readonly { readonly media: MediaInfo; readonly index: number }[],
+  originalFilename: string,
+  sessionRevision: number,
+  attempt: number
+): RecoveryJob | null {
+  if (!result.success || result.status !== 'partial' || !result.failedEntries?.length) {
+    return null;
+  }
+  const entries = result.failedEntries.flatMap((failure) => {
+    const source = attempted[failure.index];
+    if (
+      !source ||
+      source.media.downloadSource?.quality === 'unverified-original' ||
+      getMediaDownloadUrl(source.media) !== failure.url ||
+      !failure.filename
+    ) {
+      return [];
+    }
+    return [
+      {
+        index: source.index,
+        media: source.media,
+        url: failure.url,
+        filename: failure.filename,
+      },
+    ];
+  });
+  return entries.length ? { entries, originalFilename, sessionRevision, attempt } : null;
+}
 
 /**
  * Hook providing gallery download functionality.
@@ -34,6 +98,7 @@ export function createDownloadHandler() {
   const notify = getNotificationAdapter();
   let abortController = new AbortController();
   let operationGeneration = 0;
+  let recoveryJob: RecoveryJob | null = null;
 
   const resetAbortController = (): void => {
     abortController = new AbortController();
@@ -57,6 +122,9 @@ export function createDownloadHandler() {
   };
 
   const handleDownload = async (type: 'current' | 'all'): Promise<void> => {
+    if (downloadState.status === 'working') {
+      return;
+    }
     // Capture the current abort controller before any async gap.
     // If cancelDownloads() replaces the controller while we're awaiting
     // a cached blob, the captured signal ensures we don't restart with
@@ -64,9 +132,12 @@ export function createDownloadHandler() {
     const controller = abortController;
     const signal = controller.signal;
     const bulkTotal = type === 'all' ? gallerySignals.mediaItems.length : 0;
+    const sessionRevision = gallerySignals.sessionRevision;
     const operationId = ++operationGeneration;
     const isCurrentOperation = (): boolean =>
-      operationId === operationGeneration && !signal.aborted;
+      operationId === operationGeneration &&
+      !signal.aborted &&
+      gallerySignals.sessionRevision === sessionRevision;
     const publishStatus = (status: Parameters<typeof setDownloadStatus>[0]): void => {
       if (!isCurrentOperation()) {
         return;
@@ -77,6 +148,7 @@ export function createDownloadHandler() {
     if (signal.aborted) {
       return;
     }
+    recoveryJob = null;
 
     // A7: Clear stale error from a previous download before starting a new one.
     setError(null);
@@ -130,6 +202,7 @@ export function createDownloadHandler() {
           );
         }
       } else {
+        const snapshot = mediaItems.map(snapshotMedia);
         const result = await downloadService.downloadBulk([...mediaItems], {
           mediaBlobProvider: Object.assign(
             (item: MediaInfo, requestSignal?: AbortSignal, maxResponseBytes?: number) =>
@@ -146,6 +219,15 @@ export function createDownloadHandler() {
           publishStatus('idle');
           return;
         }
+        recoveryJob = result.filename
+          ? nextRecoveryJob(
+              result,
+              snapshot.map((media, index) => ({ media, index })),
+              result.filename,
+              sessionRevision,
+              1
+            )
+          : null;
         const handedOff = result.success;
         const included = handedOff ? result.filesSuccessful : 0;
         setBulkDownloadOutcome({
@@ -170,6 +252,7 @@ export function createDownloadHandler() {
           ...(result.sourceFetchStatuses?.length
             ? { sourceFetchStatuses: result.sourceFetchStatuses }
             : {}),
+          ...(recoveryJob ? { recoverableCount: recoveryJob.entries.length } : {}),
         });
         if (result.code === 'RESOURCE_LIMIT' && result.success && result.status === 'partial') {
           publishStatus('handedOff');
@@ -263,13 +346,110 @@ export function createDownloadHandler() {
     }
   };
 
+  const recoverFailedEntries = async (): Promise<void> => {
+    const job = recoveryJob;
+    if (
+      !job ||
+      downloadState.status === 'working' ||
+      !downloadState.bulkOutcome ||
+      gallerySignals.sessionRevision !== job.sessionRevision
+    ) {
+      return;
+    }
+    const controller = abortController;
+    const signal = controller.signal;
+    const operationId = ++operationGeneration;
+    recoveryJob = null;
+    const previousOutcome = downloadState.bulkOutcome;
+    if (previousOutcome) {
+      setBulkDownloadOutcome({ ...previousOutcome, recoverableCount: 0 });
+    }
+    setError(null);
+    setDownloadStatus('working');
+    const isCurrent = (): boolean =>
+      operationId === operationGeneration &&
+      !signal.aborted &&
+      gallerySignals.sessionRevision === job.sessionRevision;
+
+    const attempted = job.entries.map((entry) => ({ media: entry.media, index: entry.index }));
+    let result: BulkDownloadResult;
+    try {
+      result = await getDownloadOrchestrator().downloadFailedEntries(
+        job.entries,
+        job.originalFilename,
+        job.attempt,
+        {
+          mediaBlobProvider: Object.assign(
+            (item: MediaInfo, requestSignal?: AbortSignal, maxResponseBytes?: number) =>
+              getMediaService().getDownloadMedia(item, requestSignal, maxResponseBytes),
+            { supports: (item: MediaInfo) => item.type === 'image' }
+          ),
+          signal,
+        }
+      );
+    } catch (error) {
+      if (isCurrent()) {
+        setDownloadStatus('error');
+        setError(normalizeErrorMessage(error), 'bulkDownload');
+      }
+      return;
+    }
+    if (!isCurrent()) {
+      return;
+    }
+    if (result.code === 'CANCELLED') {
+      setDownloadStatus('idle');
+      return;
+    }
+    recoveryJob = nextRecoveryJob(
+      result,
+      attempted,
+      job.originalFilename,
+      job.sessionRevision,
+      job.attempt + 1
+    );
+    const handedOff = result.success;
+    const included = handedOff ? result.filesSuccessful : 0;
+    setBulkDownloadOutcome({
+      total: job.entries.length,
+      included,
+      omitted: job.entries.length - included,
+      handedOff,
+      reason:
+        result.code === 'RESOURCE_LIMIT'
+          ? 'resourceLimit'
+          : result.code === 'SOURCE_UNAVAILABLE'
+            ? 'sourceUnavailable'
+            : !handedOff && result.filesSuccessful > 0
+              ? 'zipSaveFailed'
+              : result.sourceFetchStatuses?.length
+                ? 'sourceFetchFailed'
+                : result.status === 'partial' || !handedOff
+                  ? 'other'
+                  : 'none',
+      sourceUnavailable: result.sourceUnavailable === true,
+      ...(result.sourceFetchStatuses?.length
+        ? { sourceFetchStatuses: result.sourceFetchStatuses }
+        : {}),
+      ...(recoveryJob ? { recoverableCount: recoveryJob.entries.length } : {}),
+      supplementary: true,
+    });
+    setDownloadStatus(handedOff ? 'handedOff' : 'error');
+  };
+
+  const dismissOutcome = (): void => {
+    recoveryJob = null;
+    dismissBulkDownloadOutcome();
+  };
+
   const cancelDownloads = (): void => {
     operationGeneration += 1;
+    recoveryJob = null;
     abortController.abort();
     resetAbortController();
     setDownloadStatus('idle');
     setBulkDownloadOutcome(null);
   };
 
-  return { handleDownload, cancelDownloads };
+  return { handleDownload, recoverFailedEntries, dismissOutcome, cancelDownloads };
 }

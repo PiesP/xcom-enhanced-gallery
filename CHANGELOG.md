@@ -10,6 +10,7 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **Partial ZIP recovery** — Keep the original archive and offer a separate ZIP for eligible failed entries, preserving their assigned names and order without fetching successful entries again. Recovery ends when the gallery changes or closes and uses the existing download limits.
 - **Video volume persistence** — Ignore delayed volume events from closed or replaced gallery players so they cannot overwrite a newer player's preferences. Keep pending choices made before close.
 - **Deep quote ownership** — Find the enclosing quote link above deeply wrapped playing videos before treating the article permalink as the media owner. Keep exact-source selection and the quoted owner's attribution.
 - **Quoted video selection** — Keep exact click-time video identity through deeper overlays within a uniquely owned player, while rejecting ambiguous players and preserving the media owner's attribution.

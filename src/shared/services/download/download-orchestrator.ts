@@ -22,6 +22,20 @@ import { createSingleton } from '@shared/services/singleton-base';
 import type { MediaInfo } from '@shared/types/media.types';
 import { ErrorCode } from '@shared/types/media.types';
 import { DownloadResourceLimitError, type OwnedBlob } from './live-byte-budget';
+import { getMediaDownloadUrl } from '@shared/utils/media/media-source';
+
+export interface FailedEntryRecovery {
+  readonly index: number;
+  readonly media: MediaInfo;
+  readonly url: string;
+  readonly filename: string;
+}
+
+/** Preserve the first archive and label a second, failed-only ZIP clearly. */
+function supplementaryFilename(original: string, attempt: number): string {
+  const stem = original.toLowerCase().endsWith('.zip') ? original.slice(0, -4) : original;
+  return `${stem}-missing${attempt > 1 ? `-${attempt}` : ''}.zip`;
+}
 
 /**
  * Create a standardized error response for bulk download operations.
@@ -34,6 +48,7 @@ function createErrorResponse(
   options?: {
     filesSuccessful?: number;
     failures?: BulkDownloadResult['failures'];
+    failedEntries?: BulkDownloadResult['failedEntries'];
     sourceUnavailable?: boolean;
     sourceFetchStatuses?: BulkDownloadResult['sourceFetchStatuses'];
   }
@@ -45,6 +60,7 @@ function createErrorResponse(
     filesSuccessful: options?.filesSuccessful ?? 0,
     error,
     ...(options?.failures ? { failures: options.failures } : {}),
+    ...(options?.failedEntries ? { failedEntries: options.failedEntries } : {}),
     ...(options?.sourceUnavailable ? { sourceUnavailable: true } : {}),
     ...(options?.sourceFetchStatuses?.length
       ? { sourceFetchStatuses: options.sourceFetchStatuses }
@@ -165,6 +181,7 @@ export class DownloadOrchestrator {
               items.length,
               {
                 failures: result.failures,
+                failedEntries: result.failedEntries,
                 ...(result.sourceUnavailable ? { sourceUnavailable: true } : {}),
                 sourceFetchStatuses: result.sourceFetchStatuses,
               }
@@ -186,6 +203,7 @@ export class DownloadOrchestrator {
                 {
                   filesSuccessful: result.filesSuccessful,
                   failures: result.failures,
+                  failedEntries: result.failedEntries,
                   sourceFetchStatuses: result.sourceFetchStatuses,
                 }
               );
@@ -197,6 +215,7 @@ export class DownloadOrchestrator {
               {
                 filesSuccessful: result.filesSuccessful,
                 failures: result.failures,
+                failedEntries: result.failedEntries,
                 sourceFetchStatuses: result.sourceFetchStatuses,
               }
             );
@@ -209,6 +228,7 @@ export class DownloadOrchestrator {
             filesSuccessful: result.filesSuccessful,
             filename,
             failures: result.failures,
+            failedEntries: result.failedEntries,
             ...(result.sourceUnavailable ? { sourceUnavailable: true } : {}),
             ...(result.sourceFetchStatuses?.length
               ? { sourceFetchStatuses: result.sourceFetchStatuses }
@@ -242,6 +262,33 @@ export class DownloadOrchestrator {
     } finally {
       cleanup();
     }
+  }
+
+  /** A user-initiated second archive containing only the prior failed entries. */
+  public async downloadFailedEntries(
+    entries: readonly FailedEntryRecovery[],
+    originalFilename: string,
+    attempt: number,
+    options: DownloadOptions = {}
+  ): Promise<BulkDownloadResult> {
+    if (
+      entries.length === 0 ||
+      !Number.isSafeInteger(attempt) ||
+      attempt < 1 ||
+      entries.some(
+        (entry) =>
+          !entry.media.id ||
+          !entry.filename ||
+          entry.media.downloadSource?.quality === 'unverified-original' ||
+          getMediaDownloadUrl(entry.media) !== entry.url
+      )
+    ) {
+      return createErrorResponse('No eligible failed entries to recover', ErrorCode.EMPTY_INPUT, 0);
+    }
+    return this.downloadBulk(
+      entries.map((entry) => ({ ...entry.media, filename: entry.filename })),
+      { ...options, zipFilename: supplementaryFilename(originalFilename, attempt) }
+    );
   }
 
   /**

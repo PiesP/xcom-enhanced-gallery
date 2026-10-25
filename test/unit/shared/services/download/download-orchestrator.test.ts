@@ -106,6 +106,117 @@ describe('DownloadOrchestrator bulk resource limits', () => {
     orchestrator.destroy();
   });
 
+  it('makes a failed-only ZIP with the original assigned name and no success refetch', async () => {
+    const orchestrator = new DownloadOrchestrator();
+    orchestrator.initialize();
+    const media: MediaInfo[] = ['first', 'missing', 'last'].map((id) => ({
+      id,
+      type: 'image',
+      url: `https://pbs.twimg.com/media/${id}.jpg?name=orig`,
+      filename: 'same.jpg',
+    }));
+    const saved: Array<{ filename: string; bytes: Buffer }> = [];
+    state.downloadBlob.mockImplementation(
+      async (blob: Blob, filename: string, _signal, released) => {
+        saved.push({ filename, bytes: Buffer.from(await blob.arrayBuffer()) });
+        released?.();
+      }
+    );
+    const provider = Object.assign(
+      vi
+        .fn()
+        .mockRejectedValueOnce(new HttpRequestError(503, true, 'http'))
+        .mockImplementationOnce(async () => ownedBlob(new Blob(['recovered']))),
+      { supports: (item: MediaInfo) => item.id === 'missing' }
+    );
+    const cachedBlobs = new Map([
+      [media[0]!.url, ownedBlob(new Blob(['first']))],
+      [media[2]!.url, ownedBlob(new Blob(['last']))],
+    ]);
+    const first = await orchestrator.downloadBulk(media, {
+      zipFilename: 'gallery.zip',
+      cachedBlobs,
+      mediaBlobProvider: provider,
+      retries: 0,
+    });
+    expect(first).toMatchObject({ success: true, status: 'partial', filesSuccessful: 2 });
+    expect(first.failedEntries).toEqual([
+      {
+        index: 1,
+        url: media[1]!.url,
+        filename: 'same-1.jpg',
+        error: 'HTTP:503',
+      },
+    ]);
+    expect(
+      verifyStoredZip(saved[0]!.bytes, [
+        { filename: 'same.jpg', bytes: Buffer.from('first') },
+        { filename: 'same-2.jpg', bytes: Buffer.from('last') },
+      ]).entryOrder
+    ).toEqual(['same.jpg', 'same-2.jpg']);
+
+    const recovered = await orchestrator.downloadFailedEntries(
+      [{ index: 1, media: media[1]!, url: media[1]!.url, filename: 'same-1.jpg' }],
+      first.filename!,
+      1,
+      { mediaBlobProvider: provider, retries: 0 }
+    );
+    expect(recovered).toMatchObject({
+      success: true,
+      status: 'success',
+      filename: 'gallery-missing.zip',
+      filesSuccessful: 1,
+    });
+    expect(saved[1]!.filename).toBe('gallery-missing.zip');
+    expect(
+      verifyStoredZip(saved[1]!.bytes, [
+        { filename: 'same-1.jpg', bytes: Buffer.from('recovered') },
+      ]).entryOrder
+    ).toEqual(['same-1.jpg']);
+    expect(provider).toHaveBeenCalledTimes(2);
+    expect(state.downloadBlob).toHaveBeenCalledTimes(2);
+    provider.mockImplementationOnce(async () => ownedBlob(new Blob(['recovered again'])));
+    const repeated = await orchestrator.downloadFailedEntries(
+      [{ index: 1, media: media[1]!, url: media[1]!.url, filename: 'same-1.jpg' }],
+      first.filename!,
+      2,
+      { mediaBlobProvider: provider, retries: 0 }
+    );
+    expect(repeated.filename).toBe('gallery-missing-2.zip');
+    expect(
+      verifyStoredZip(saved[2]!.bytes, [
+        { filename: 'same-1.jpg', bytes: Buffer.from('recovered again') },
+      ]).entryOrder
+    ).toEqual(['same-1.jpg']);
+    orchestrator.destroy();
+  });
+
+  it('does not recover a changed or unverified source identity', async () => {
+    const orchestrator = new DownloadOrchestrator();
+    orchestrator.initialize();
+    const media: MediaInfo = {
+      id: 'missing',
+      type: 'image',
+      url: 'https://pbs.twimg.com/media/missing.jpg?name=small',
+      downloadSource: {
+        url: '',
+        quality: 'unverified-original',
+        provenance: 'dom',
+      },
+    };
+    const provider = vi.fn();
+    const result = await orchestrator.downloadFailedEntries(
+      [{ index: 0, media, url: media.url, filename: 'missing.jpg' }],
+      'gallery.zip',
+      1,
+      { mediaBlobProvider: provider }
+    );
+    expect(result).toMatchObject({ success: false, code: 'EMPTY_INPUT' });
+    expect(provider).not.toHaveBeenCalled();
+    expect(state.downloadBlob).not.toHaveBeenCalled();
+    orchestrator.destroy();
+  });
+
   it.each([403, 404])(
     'reports HTTP %i rejection of a verified original separately from source verification',
     async (status) => {

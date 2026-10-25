@@ -36,10 +36,18 @@ interface GalleryRootProps {
   readonly onClose: () => void;
   readonly onDownloadCurrent: () => void;
   readonly onDownloadAll: () => void;
+  readonly onRecoverFailed: () => void;
+  readonly onDismissBulkOutcome: () => void;
 }
 
 function GalleryRoot(props: GalleryRootProps): JSX.Element {
-  const [local] = splitProps(props, ['onClose', 'onDownloadCurrent', 'onDownloadAll']);
+  const [local] = splitProps(props, [
+    'onClose',
+    'onDownloadCurrent',
+    'onDownloadAll',
+    'onRecoverFailed',
+    'onDismissBulkOutcome',
+  ]);
   const themeService = getThemeService();
   const languageService = getLanguageService();
 
@@ -102,6 +110,8 @@ function GalleryRoot(props: GalleryRootProps): JSX.Element {
           onNext={() => navigateNext('button')}
           onDownloadCurrent={() => local.onDownloadCurrent()}
           onDownloadAll={() => local.onDownloadAll()}
+          onRecoverFailed={() => local.onRecoverFailed()}
+          onDismissBulkOutcome={() => local.onDismissBulkOutcome()}
           className={CSS.CLASSES.VERTICAL_VIEW}
         />
       </GalleryContainer>
@@ -115,6 +125,7 @@ export class GalleryRenderer {
   private destroyed = false;
   private stateUnsubscribe: (() => void) | null = null;
   private readonly downloadHandler: ReturnType<typeof createDownloadHandler>;
+  private observedSessionRevision = gallerySignals.sessionRevision;
 
   constructor() {
     this.downloadHandler = createDownloadHandler();
@@ -123,9 +134,19 @@ export class GalleryRenderer {
 
   private setupStateSubscription(): void {
     this.stateUnsubscribe = createEffectRoot(() => {
+      const sessionRevision = gallerySignals.sessionRevision;
       if (this.destroyed) {
         return;
       }
+      if (
+        sessionRevision !== this.observedSessionRevision &&
+        gallerySignals.isOpen &&
+        this.container
+      ) {
+        // Opening another gallery in the mounted renderer revokes its old job.
+        this.downloadHandler.cancelDownloads();
+      }
+      this.observedSessionRevision = sessionRevision;
       if (gallerySignals.isOpen && !this.container) {
         this.renderGallery();
       } else if (!gallerySignals.isOpen && this.container) {
@@ -187,6 +208,8 @@ export class GalleryRenderer {
         onClose={handleClose}
         onDownloadCurrent={() => this.downloadHandler.handleDownload('current')}
         onDownloadAll={() => this.downloadHandler.handleDownload('all')}
+        onRecoverFailed={() => this.downloadHandler.recoverFailedEntries()}
+        onDismissBulkOutcome={() => this.downloadHandler.dismissOutcome()}
       />
     ));
     __DEV__ && logger.info('[GalleryRenderer] Gallery mounted');

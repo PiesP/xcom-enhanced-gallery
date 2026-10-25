@@ -105,6 +105,7 @@ export const ar: LanguageStrings = {
         titleFailed: 'لم يُسلَّم ملف ZIP',
         previous: 'نتيجة ZIP السابقة',
         scope: 'النطاق: {total} عناصر وسائط معروضة في هذا المعرض.',
+        scopeSupplementary: 'النطاق: {total} عناصر فاتت سابقًا في هذا المعرض.',
         counts: 'يتضمن ZIP عدد {included}، واستُبعد {omitted}.',
         browserHandoff: 'قبل المتصفح طلب تنزيل ZIP. لم يُتحقق من اكتمال الحفظ على القرص.',
         noZip: 'لم يُسلَّم أي ملف ZIP إلى المتصفح.',
@@ -118,6 +119,9 @@ export const ar: LanguageStrings = {
         other: 'تعذر تضمين بعض العناصر. أعد فتح المعرض للمحاولة مجددًا.',
         nextAction:
           'تنزيل الكل ينشئ ملف ZIP جديدًا لكل العناصر المعروضة، بما فيها العناصر التي سُلّمت سابقًا. أعد فتح المنشور وحاول بعناصر أقل عند الحاجة.',
+        nextActionSupplementary:
+          'يحتوي هذا الملف على العناصر المستعادة فقط. احتفظ بملف ZIP السابق للعناصر الأخرى.',
+        recoverMissing: 'تنزيل {count} عناصر ناقصة في ملف ZIP منفصل',
         dismiss: 'إغلاق نتيجة ZIP',
       },
       status: {

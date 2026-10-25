@@ -104,6 +104,7 @@ export const en: LanguageStrings = {
         titleFailed: 'No ZIP handed off',
         previous: 'Previous ZIP result',
         scope: 'Scope: {total} media items shown in this gallery.',
+        scopeSupplementary: 'Scope: {total} previously missing items from this gallery.',
         counts: 'ZIP includes {included}; left out {omitted}.',
         browserHandoff:
           'The browser accepted the ZIP request. Completion on disk is not confirmed.',
@@ -118,6 +119,9 @@ export const en: LanguageStrings = {
         other: 'Some items could not be included. Reopen the gallery to try again.',
         nextAction:
           'Download all starts a new ZIP for every shown item, including items already handed off. Reopen the post and try fewer items if needed.',
+        nextActionSupplementary:
+          'This ZIP only contains recovered missing items. Keep the earlier ZIP for the other items.',
+        recoverMissing: 'Download {count} missing items as a separate ZIP',
         dismiss: 'Dismiss ZIP result',
       },
       status: {
