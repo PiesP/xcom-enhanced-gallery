@@ -88,6 +88,13 @@ function releaseFixture(root: string): { bin: string; calls: string } {
       join(root, 'reports', `modules-${target}.json`),
       JSON.stringify({
         target,
+        buildOptions: {
+          mode: 'production',
+          minify: false,
+          sourcemap: false,
+          target: 'fixture',
+          formats: ['iife'],
+        },
         method: 'fixture',
         categories: { application: { modules: 1, renderedBytesEstimate: 10 } },
       })

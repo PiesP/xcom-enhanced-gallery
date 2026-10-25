@@ -41,6 +41,13 @@ export interface BuildFootprint {
     | 'firefox-content',
     {
       target: string;
+      buildOptions: {
+        mode: string;
+        minify: string | boolean;
+        sourcemap: string | boolean;
+        target: string | string[] | false;
+        formats: string[];
+      };
       method: string;
       categories: Record<string, { modules: number; renderedBytesEstimate: number }>;
     }
@@ -140,6 +147,7 @@ export function collectBuildFootprint(): BuildFootprint {
     ) as BuildFootprint['moduleEstimates'][typeof target];
     if (
       report.target !== target ||
+      report.buildOptions?.mode !== 'production' ||
       !report.method ||
       !report.categories ||
       !Object.hasOwn(report.categories, 'application') ||
