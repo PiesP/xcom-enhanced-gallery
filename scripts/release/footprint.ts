@@ -60,10 +60,18 @@ function version(packageName: string): string {
 }
 
 function fileKind(path: string): FootprintFile['kind'] {
-  if (path.endsWith('.js')) return 'javascript';
-  if (path.endsWith('.css')) return 'css';
-  if (path.endsWith('manifest.json')) return 'manifest';
-  if (path === 'LICENSE' || path === 'NOTICE.md' || path.startsWith('LICENSES/')) return 'notice';
+  if (path.endsWith('.js')) {
+    return 'javascript';
+  }
+  if (path.endsWith('.css')) {
+    return 'css';
+  }
+  if (path.endsWith('manifest.json')) {
+    return 'manifest';
+  }
+  if (path === 'LICENSE' || path === 'NOTICE.md' || path.startsWith('LICENSES/')) {
+    return 'notice';
+  }
   return 'asset';
 }
 
@@ -77,7 +85,9 @@ function inventory(directory: string, selected?: ReadonlySet<string>): Footprint
         visit(fullPath);
       } else if (stat.isFile()) {
         const path = relative(directory, fullPath).replaceAll('\\', '/');
-        if (selected && !selected.has(path)) continue;
+        if (selected && !selected.has(path)) {
+          continue;
+        }
         const bytes = readFileSync(fullPath);
         result.push({
           path,
@@ -92,16 +102,18 @@ function inventory(directory: string, selected?: ReadonlySet<string>): Footprint
     }
   }
   visit(directory);
-  if (selected && result.length !== selected.size)
+  if (selected && result.length !== selected.size) {
     throw new Error('Production userscript or metadata is missing');
+  }
   return result;
 }
 
 /** The last step of the production build records only files produced by its three targets. */
 export function collectBuildFootprint(): BuildFootprint {
   const coreSha = command('git', ['rev-parse', 'HEAD:packages/core']);
-  if (command('git', ['-C', 'packages/core', 'rev-parse', 'HEAD']) !== coreSha)
+  if (command('git', ['-C', 'packages/core', 'rev-parse', 'HEAD']) !== coreSha) {
     throw new Error('Checked-out core does not match the recorded gitlink');
+  }
   const files = {
     userscript: inventory(
       join(root, 'dist'),
@@ -111,8 +123,9 @@ export function collectBuildFootprint(): BuildFootprint {
     firefox: inventory(join(root, 'dist-extension-firefox')),
   };
   for (const target of ['chrome', 'firefox'] as const) {
-    if (!files[target].some((file) => file.path === 'manifest.json'))
+    if (!files[target].some((file) => file.path === 'manifest.json')) {
       throw new Error(`Missing ${target} distribution manifest`);
+    }
   }
   const moduleEstimates = {} as BuildFootprint['moduleEstimates'];
   for (const target of [
@@ -139,8 +152,9 @@ export function collectBuildFootprint(): BuildFootprint {
           category.modules < 0 ||
           category.renderedBytesEstimate < 0
       )
-    )
+    ) {
       throw new Error(`Invalid emitted module estimate for ${target}`);
+    }
     moduleEstimates[target] = report;
   }
   return {
@@ -192,15 +206,23 @@ export function verifiedBuildFootprint(): BuildFootprint & { producedAt: string;
     runId: string;
   };
   const { producedAt, runId, ...identity } = saved;
-  if (!producedAt || !runId || JSON.stringify(identity) !== JSON.stringify(collectBuildFootprint()))
+  if (
+    !producedAt ||
+    !runId ||
+    JSON.stringify(identity) !== JSON.stringify(collectBuildFootprint())
+  ) {
     throw new Error(
       'Production footprint differs from source, tools or distribution files; rebuild all targets'
     );
-  if (!saved.sourceClean)
+  }
+  if (!saved.sourceClean) {
     throw new Error(
       'Production footprint was built from a dirty tracked source; rebuild from clean source'
     );
+  }
   return saved;
 }
 
-if (import.meta.main) writeBuildFootprint();
+if (import.meta.main) {
+  writeBuildFootprint();
+}

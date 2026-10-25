@@ -16,7 +16,9 @@ export function moduleFootprintPlugin(target: string): Plugin {
         other: { modules: 0, renderedBytesEstimate: 0 },
       };
       for (const output of Object.values(bundle)) {
-        if (output.type !== 'chunk') continue;
+        if (output.type !== 'chunk') {
+          continue;
+        }
         for (const [id, module] of Object.entries(output.modules)) {
           const path = id.replaceAll('\\', '/');
           const category = path.includes('/packages/core/')
