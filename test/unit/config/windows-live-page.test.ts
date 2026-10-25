@@ -187,6 +187,20 @@ type LivePageModule = Pick<
 };
 
 type InstallProfileModule = {
+  installFixtureRoutes(
+    context: unknown,
+    root: string,
+    images: [Buffer, Buffer, Buffer],
+    displayImages: [Buffer, Buffer, Buffer],
+    compactImages?: unknown,
+    experienceImages?: Buffer[],
+    options?: { classicTweetApi?: boolean }
+  ): Promise<{
+    apiResponses: Array<{ status: number }>;
+    classicApiResponses: Array<{ status: number; tweetId?: string }>;
+    unhandledRequests: unknown[];
+    remove(): Promise<void>;
+  }>;
   notificationCallsSince(cursor: unknown, observed: unknown): unknown[];
   assertNoRetiredExtractionNotifications(cursor: unknown, observed: unknown): unknown[];
   assertDownloadIncomplete(download: unknown, stage: string): void;
@@ -400,6 +414,79 @@ describe('installed navigation notification creation history', () => {
 });
 
 describe('Windows X live page validation', () => {
+  it('serves exact classic photo metadata only for the failed-entry fixture', async () => {
+    const root = resolve(import.meta.dirname, '../../..');
+    const images: [Buffer, Buffer, Buffer] = [
+      Buffer.from('first'),
+      Buffer.from('second'),
+      Buffer.from('third'),
+    ];
+    const url =
+      'https://x.com/i/api/graphql/owned/TweetResultByRestId?variables=' +
+      encodeURIComponent(JSON.stringify({ tweetId: '1234567890123456789' }));
+    const exercise = async (classicTweetApi: boolean) => {
+      let handler:
+        | ((route: {
+            request(): { url(): string; method(): string };
+            fulfill(response: { status: number; body: string }): Promise<void>;
+          }) => Promise<void>)
+        | undefined;
+      const context = Object.assign(new EventEmitter(), {
+        route: vi.fn(async (_pattern: string, routeHandler: typeof handler) => {
+          handler = routeHandler;
+        }),
+        unroute: vi.fn(async () => {}),
+      });
+      const routes = await installProfile.installFixtureRoutes(
+        context,
+        root,
+        images,
+        images,
+        undefined,
+        undefined,
+        { classicTweetApi }
+      );
+      const fulfill = vi.fn(async (_response: { status: number; body: string }) => {});
+      try {
+        expect(handler).toBeDefined();
+        await handler!({
+          request: () => ({ url: () => url, method: () => 'GET' }),
+          fulfill,
+        });
+        return { response: fulfill.mock.calls[0]![0], routes };
+      } finally {
+        await routes.remove();
+      }
+    };
+    const focused = await exercise(true);
+    expect(focused.response.status).toBe(200);
+    const result = JSON.parse(focused.response.body).data.tweetResult.result;
+    expect(result).toMatchObject({
+      rest_id: '1234567890123456789',
+      core: { user_results: { result: { legacy: { screen_name: 'testuser' } } } },
+    });
+    expect(
+      result.legacy.extended_entities.media.map(
+        (media: { media_url_https: string }) => media.media_url_https
+      )
+    ).toEqual([
+      'https://pbs.twimg.com/media/GkE1234ABCDEF?format=jpg&name=small',
+      'https://pbs.twimg.com/media/GkE5678GHIJKL.jpg?format=jpg&name=small',
+      'https://pbs.twimg.com/media/GkE9012MNOPQR.jpg?format=jpg&name=small',
+    ]);
+    expect(focused.routes.classicApiResponses).toMatchObject([
+      { status: 200, tweetId: '1234567890123456789' },
+    ]);
+    expect(focused.routes.apiResponses).toEqual([]);
+    expect(focused.routes.unhandledRequests).toEqual([]);
+
+    const defaultRoute = await exercise(false);
+    expect(defaultRoute.response.status).toBe(403);
+    expect(defaultRoute.routes.classicApiResponses).toEqual([]);
+    expect(defaultRoute.routes.apiResponses).toEqual([
+      { method: 'GET', status: 403, url: '/i/api/graphql/owned/TweetResultByRestId' },
+    ]);
+  });
   it('keeps the loopback certificate exception scoped to Chrome', async () => {
     const chromium = { launchPersistentContext: vi.fn() };
     await expect(

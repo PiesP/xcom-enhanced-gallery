@@ -1770,7 +1770,8 @@ export async function installFixtureRoutes(
   images: ImageFixtures,
   displayImages: ImageFixtures,
   compactImages?: CompactImages,
-  experienceImages?: Buffer[]
+  experienceImages?: Buffer[],
+  options: { classicTweetApi?: boolean } = {}
 ) {
   const html = await readFile(join(root, 'test/e2e/fixtures/installed-gallery-page.html'), 'utf8');
   const experienceHtml = experienceImages
@@ -1846,6 +1847,8 @@ export async function installFixtureRoutes(
   );
   let own12RapidBPayload: Buffer | null = null;
   const apiResponses: ApiRecord[] = [];
+  const classicApiResponses: ApiRecord[] = [];
+  const unhandledRequests: Array<{ host: string; path: string; resourceType: string }> = [];
   const quotedApiResponses: ApiRecord[] = [];
   const unavailableApiResponses: ApiRecord[] = [];
   const qualityApiResponses: ApiRecord[] = [];
@@ -1993,6 +1996,56 @@ export async function installFixtureRoutes(
           status: 200,
           contentType: 'application/json',
           body: JSON.stringify({ data: { tweetResult: { result } } }),
+        });
+        record.fulfilledAtMonotonicMs = performance.now();
+        return;
+      }
+      if (
+        tweetId === TWEET_ID &&
+        options.classicTweetApi &&
+        url.pathname.startsWith('/i/api/graphql/')
+      ) {
+        assert.equal(route.request().method(), 'GET', 'Classic fixture API must use GET');
+        assert(classicApiResponses.length < 3, 'Classic fixture API observation overflow');
+        const record: ApiRecord = {
+          tweetId,
+          method: route.request().method(),
+          status: 200,
+          url: url.pathname,
+          requestedAtMonotonicMs: performance.now(),
+          resultTypename: 'Tweet',
+          rootMediaCount: QUALITY_IMAGE_PATHS.length,
+        };
+        classicApiResponses.push(record);
+        const media = QUALITY_IMAGE_PATHS.map((path, index) => ({
+          type: 'photo',
+          id_str: `46662${index}`,
+          media_url_https: `https://pbs.twimg.com/media/${path}?format=jpg&name=small`,
+          original_info: { width: 480 + index * 80, height: 320 + index * 40 },
+        }));
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            data: {
+              tweetResult: {
+                result: {
+                  __typename: 'Tweet',
+                  rest_id: TWEET_ID,
+                  core: {
+                    user_results: {
+                      result: { legacy: { screen_name: 'testuser', name: 'Test User' } },
+                    },
+                  },
+                  legacy: {
+                    id_str: TWEET_ID,
+                    full_text: 'Three installed-extension fixtures.',
+                    extended_entities: { media },
+                  },
+                },
+              },
+            },
+          }),
         });
         record.fulfilledAtMonotonicMs = performance.now();
         return;
@@ -2247,11 +2300,18 @@ export async function installFixtureRoutes(
       });
       return;
     }
+    unhandledRequests.push({
+      host: url.hostname,
+      path: url.pathname,
+      resourceType: route.request().resourceType(),
+    });
     await route.abort('blockedbyclient');
   };
   await context.route('**/*', routeHandler);
   return {
     apiResponses,
+    classicApiResponses,
+    unhandledRequests,
     qualityApiResponses,
     quotedApiResponses,
     unavailableApiResponses,
@@ -14144,8 +14204,42 @@ async function runFailedEntryRecoveryProbe({
   const consoleErrors: ConsoleErrorRecord[] = [];
   const pageErrors: string[] = [];
   const pageFetches: PageFetch[] = [];
+  const apiRequests: Array<{ path: string; method: string; tweetId: string | null }> = [];
+  const unrelatedFetches: Array<{ host: string; path: string; resourceType: string }> = [];
   const cleanupErrors: string[] = [];
-  const routes = await installFixtureRoutes(context, root, images, displayImages);
+  const routes = await installFixtureRoutes(
+    context,
+    root,
+    images,
+    displayImages,
+    undefined,
+    undefined,
+    {
+      classicTweetApi: true,
+    }
+  );
+  const onApiRequest = (request: Request) => {
+    const url = new URL(request.url());
+    if (url.hostname !== 'x.com' || !url.pathname.endsWith('/TweetResultByRestId')) {
+      return;
+    }
+    let tweetId: string | null = null;
+    try {
+      const variables: unknown = JSON.parse(url.searchParams.get('variables') ?? '{}');
+      if (
+        typeof variables === 'object' &&
+        variables !== null &&
+        'tweetId' in variables &&
+        typeof variables.tweetId === 'string'
+      ) {
+        tweetId = variables.tweetId;
+      }
+    } catch {
+      // An invalid fixture API request is recorded below and fails the exact-ID assertion.
+    }
+    apiRequests.push({ path: url.pathname, method: request.method(), tweetId });
+  };
+  context.on('request', onApiRequest);
   nativeLoopback.setPayloads(images, routes.videoPayloads);
   const extensionPage = await context.newPage();
   const page = await context.newPage();
@@ -14161,8 +14255,14 @@ async function runFailedEntryRecoveryProbe({
       return;
     }
     const url = new URL(request.url());
-    if (['pbs.twimg.com', 'video.twimg.com'].includes(url.hostname)) {
+    if (url.hostname === 'pbs.twimg.com') {
       pageFetches.push({
+        host: url.hostname,
+        path: url.pathname,
+        resourceType: request.resourceType(),
+      });
+    } else if (url.hostname !== 'x.com' || !url.pathname.endsWith('/TweetResultByRestId')) {
+      unrelatedFetches.push({
         host: url.hostname,
         path: url.pathname,
         resourceType: request.resourceType(),
@@ -14185,6 +14285,43 @@ async function runFailedEntryRecoveryProbe({
       nativeLoopback,
       pageFetches,
     });
+    assert(apiRequests.length > 0 && apiRequests.length <= 2, 'Classic API request count changed');
+    assert.deepEqual(
+      apiRequests.map(({ method, tweetId }) => ({ method, tweetId })),
+      apiRequests.map(() => ({ method: 'GET', tweetId: TWEET_ID })),
+      'Classic fixture requested unrelated or malformed API metadata'
+    );
+    assert(
+      apiRequests.every(({ path }) =>
+        /^\/i\/api\/graphql\/[^/]+\/TweetResultByRestId$/u.test(path)
+      ),
+      'Classic fixture requested an unexpected GraphQL route'
+    );
+    assert.equal(routes.classicApiResponses.length, apiRequests.length);
+    assert(
+      routes.classicApiResponses.every(
+        ({ tweetId, method, status, fulfilledAtMonotonicMs }) =>
+          tweetId === TWEET_ID &&
+          method === 'GET' &&
+          status === 200 &&
+          typeof fulfilledAtMonotonicMs === 'number'
+      ),
+      'Classic fixture did not fulfill exact owned photo metadata'
+    );
+    assert.deepEqual(routes.apiResponses, [], 'An API request reached the generic 403 fallback');
+    assert.deepEqual(
+      routes.unhandledRequests,
+      [],
+      'Fixture routing left a network request unhandled'
+    );
+    assert.deepEqual(unrelatedFetches, [], 'Fixture made an unrelated fetch or XHR');
+    assert(
+      pageFetches.every(
+        ({ host, path }) =>
+          host === 'pbs.twimg.com' && IMAGE_URL_MARKERS.some((marker) => path.includes(marker))
+      ),
+      'Fixture fetched media outside its three owned images'
+    );
     assert.deepEqual(pageErrors, [], 'Failed-entry fixture page threw');
     const expectedErrors = new Set(evidence.expectedConsoleErrors ?? []);
     assert.deepEqual(
@@ -14195,6 +14332,7 @@ async function runFailedEntryRecoveryProbe({
   } catch (error) {
     primaryError = error;
   } finally {
+    context.off('request', onApiRequest);
     for (const [label, close] of [
       ['fixture page', () => page.close()],
       ['extension page', () => extensionPage.close()],
@@ -14213,6 +14351,11 @@ async function runFailedEntryRecoveryProbe({
           status: primaryError || cleanupErrors.length ? 'failed' : 'passed',
           scope: 'installed extension and owned deterministic X fixture',
           evidence,
+          apiRequests,
+          classicApiResponses: routes.classicApiResponses,
+          genericApiResponses: routes.apiResponses,
+          unhandledRequests: routes.unhandledRequests,
+          unrelatedFetches,
           pageErrors,
           consoleErrors,
           cleanupErrors,
