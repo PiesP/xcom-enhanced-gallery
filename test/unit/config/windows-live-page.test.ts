@@ -18,6 +18,7 @@ type LivePageModule = Pick<
   | 'restoreStoredVideoSettings'
   | 'validateLiveUrls'
   | 'validateBorrowedHostProof'
+  | 'fingerprintKnownInlineHandlerCsp'
   | 'fullVideoUrlIdentity'
   | 'captureApiVideoIdentities'
   | 'summarizeTweetResultResponse'
@@ -4046,6 +4047,177 @@ describe('Windows X live page validation', () => {
     expect(
       livePage.validateBorrowedHostProof(proof, ['https://x.com/other/status/12345'])
     ).toBeNull();
+
+    const canonicalProof = structuredClone(proof);
+    Object.assign(canonicalProof.baseline.pages[0]!.consoleErrors[0]!, {
+      nonceCanonical: {
+        algorithm: 'script-src-quoted-nonce-v1',
+        sha256: 'e'.repeat(64),
+        count: 1,
+        lengths: [48],
+      },
+    });
+    expect(livePage.validateBorrowedHostProof(canonicalProof, [url])?.get(url)?.[0]).toMatchObject({
+      nonceCanonical: {
+        algorithm: 'script-src-quoted-nonce-v1',
+        sha256: 'e'.repeat(64),
+        count: 1,
+        lengths: [48],
+      },
+    });
+    for (const changed of [
+      { algorithm: 'all-nonce-values-v1' },
+      { sha256: 'bad' },
+      { count: 0 },
+      { lengths: [47, 48] },
+      { lengths: [0] },
+    ]) {
+      const invalid = structuredClone(canonicalProof);
+      Object.assign(invalid.baseline.pages[0]!.consoleErrors[0]!, {
+        nonceCanonical: {
+          algorithm: 'script-src-quoted-nonce-v1',
+          sha256: 'e'.repeat(64),
+          count: 1,
+          lengths: [48],
+          ...changed,
+        },
+      });
+      expect(livePage.validateBorrowedHostProof(invalid, [url])).toBeNull();
+    }
+  });
+
+  it('qualifies only a strict quoted script-src nonce change with full-message bounds', () => {
+    const script =
+      'https://abs.twimg.com/responsive-web/client-web/loader.TimelineRenderer.abc123.js';
+    const csp = (nonce: string, tail = '', policy = "'self'") =>
+      `Executing inline event handler violates the following Content Security Policy directive 'script-src ${policy} 'nonce-${nonce}' https://x.com/'. Either a nonce or a hash is required.${tail}`;
+    const baselineRaw = csp('A'.repeat(48));
+    const baseline = livePage.fingerprintKnownInlineHandlerCsp(baselineRaw, script);
+    const current = livePage.fingerprintKnownInlineHandlerCsp(csp('B'.repeat(48)), script);
+    expect(baseline?.nonceCanonical).toMatchObject({
+      algorithm: 'script-src-quoted-nonce-v1',
+      count: 1,
+      lengths: [48],
+    });
+    expect(current?.messageSha256).not.toBe(baseline?.messageSha256);
+    expect(current?.nonceCanonical?.sha256).toBe(baseline?.nonceCanonical?.sha256);
+    if (!baseline?.nonceCanonical) {
+      throw new Error('Nonce fixture was not parsed');
+    }
+    const finalNonce = livePage.fingerprintKnownInlineHandlerCsp(
+      `Executing inline event handler violates the following Content Security Policy directive 'script-src 'self' 'nonce-${'A'.repeat(48)}''. Either a nonce is required.`,
+      script
+    );
+    expect(finalNonce?.nonceCanonical?.count).toBe(1);
+    const proof = {
+      expectedCsp: [baseline],
+      identities: {
+        selectedVideo: null,
+        apiVariants: [],
+        apiVariantOverflow: false,
+        requestUrls: [],
+        requestUrlOverflow: false,
+      },
+    };
+    const classify = (
+      raw: string,
+      rawScript = script,
+      extra: unknown[] = [],
+      candidateProof: unknown = proof
+    ) => {
+      const fingerprint = livePage.fingerprintKnownInlineHandlerCsp(raw, rawScript);
+      const observation = {
+        requiredAssertions: Object.fromEntries(
+          Array.from({ length: 13 }, (_, index) => [`assertion${index}`, true])
+        ),
+        missingAssertions: [],
+        gallery: { owner: null },
+        api: { overflow: 0 },
+        hostDiagnostics: [
+          {
+            kind: 'console',
+            location: rawScript,
+            inlineHandlerCsp: Boolean(fingerprint),
+            messageSha256: fingerprint?.messageSha256,
+            messageByteLength: fingerprint?.messageByteLength,
+            ...(fingerprint?.nonceCanonical ? { nonceCanonical: fingerprint.nonceCanonical } : {}),
+          },
+          ...extra,
+        ],
+        hostDiagnosticOverflow: 0,
+        productErrors: [],
+        productErrorOverflow: 0,
+        pageErrors: [],
+        pageErrorOverflow: 0,
+      };
+      return livePage.classifyLiveHostDiagnostics(observation, candidateProof);
+    };
+    expect(classify(csp('B'.repeat(48)))).toMatchObject({
+      qualifiedCspCount: 1,
+      evidenceStatus: 'observed',
+    });
+    expect(classify(baselineRaw)).toMatchObject({
+      qualifiedCspCount: 1,
+      evidenceStatus: 'observed',
+    });
+    const forgedProof = {
+      ...proof,
+      expectedCsp: [
+        {
+          ...baseline,
+          nonceCanonical: {
+            ...baseline.nonceCanonical,
+            sha256: 'f'.repeat(64),
+          },
+        },
+      ],
+    };
+    expect(classify(csp('B'.repeat(48)), script, [], forgedProof).evidenceStatus).toBe(
+      'unverified'
+    );
+    expect(
+      classify(csp('B'.repeat(48)), script, [{ kind: 'http-response', status: 500 }]).evidenceStatus
+    ).toBe('unverified');
+    for (const raw of [
+      csp('B'.repeat(47)),
+      csp('B'.repeat(48), 'Other suffix'),
+      csp('B'.repeat(48), '', "'sha256-other' 'self'"),
+      csp('B'.repeat(48), '', "'unsafe-inline'"),
+      csp('B'.repeat(48), ` Outside 'nonce-${'C'.repeat(48)}'`),
+      csp('B'.repeat(48)).replace('https://x.com/', 'https://twitter.com/'),
+      csp('B'.repeat(48)).replace("'nonce-", 'nonce-'),
+      csp('B'.repeat(48)).replace("'nonce-", "'nonce-!!!"),
+      csp('B'.repeat(48)).replace(" 'nonce-", "x'nonce-"),
+      csp('B'.repeat(48)).replace(" 'nonce-", " https://evil/'nonce-"),
+      csp('B'.repeat(48)).replace("' https://x.com/", "'suffix https://x.com/"),
+      csp('B'.repeat(48)).replace("https://x.com/'", ` 'nonce-${'C'.repeat(48)}' https://x.com/'`),
+    ]) {
+      expect(classify(raw).evidenceStatus).toBe('unverified');
+    }
+    expect(classify(csp('B'.repeat(48)), script + '?variant=1').evidenceStatus).toBe('unverified');
+    expect(
+      classify(
+        csp('B'.repeat(48)),
+        `https://abs.twimg.com/responsive-web/client-web/loader.TimelineRenderer.${'a'.repeat(260)}.js`
+      ).evidenceStatus
+    ).toBe('unverified');
+    expect(classify(csp('B'.repeat(48)) + 'x'.repeat(4096)).evidenceStatus).toBe('unverified');
+    expect(
+      livePage.classifyLiveHostDiagnostics({
+        requiredAssertions: Object.fromEntries(
+          Array.from({ length: 13 }, (_, index) => [`assertion${index}`, true])
+        ),
+        missingAssertions: [],
+        gallery: { owner: null },
+        api: { overflow: 0 },
+        hostDiagnostics: [{ kind: 'console', location: script }],
+        hostDiagnosticOverflow: 0,
+        productErrors: [],
+        productErrorOverflow: 0,
+        pageErrors: [],
+        pageErrorOverflow: 0,
+      }).evidenceStatus
+    ).toBe('unverified');
   });
 
   it('captures only bounded exact raw API video variants before retaining path-only evidence', () => {

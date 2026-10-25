@@ -822,7 +822,14 @@ inventory, installed extension path, and all 12 runtime resources. The live
 observer checks the packet's matching identities, baseline age of at most two
 hours, complete baseline, URL set, and a bounded exact multiset of the known X
 `loader.TimelineRenderer` inline-handler
-CSP message hashes and script locations. A matching baseline shows that those
+CSP message hashes and script locations. A new baseline independently checked
+with repeated visits may also supply an optional nonce canonical hash for each
+full message. The observer replaces only valid quoted nonce values inside the
+single `script-src` directive, then requires the entire canonical message hash,
+exact script, original UTF-8 message length, nonce count and lengths, and
+diagnostic multiset to match. Full message hashes remain in the evidence.
+Malformed nonce sources, changed policy bytes, and unknown diagnostics remain
+unverified. A matching baseline shows that those
 messages can occur without XEG; it does not assign them exclusively to X or
 other installed extensions. A query-bearing `ERR_ABORTED` is qualified only
 when the full HTTPS URL is byte-for-byte identical to the selected gallery

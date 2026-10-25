@@ -46,10 +46,22 @@ type Diagnostic = {
   messageSha256?: string;
   messageByteLength?: number;
   inlineHandlerCsp?: boolean;
+  nonceCanonical?: HostCspNonceCanonical;
   urlIdentitySha256?: string;
   queryIdentityMatched?: boolean;
 };
-type HostCspFingerprint = { script: string; messageSha256: string; messageByteLength: number };
+type HostCspNonceCanonical = {
+  algorithm: 'script-src-quoted-nonce-v1';
+  sha256: string;
+  count: number;
+  lengths: number[];
+};
+type HostCspFingerprint = {
+  script: string;
+  messageSha256: string;
+  messageByteLength: number;
+  nonceCanonical?: HostCspNonceCanonical;
+};
 type ApiVideoIdentity = {
   ownerId: string;
   mediaId: string;
@@ -103,6 +115,7 @@ export type BorrowedHostDiagnosticProof = {
         inlineHandlerCsp: true;
         messageSha256: string;
         messageByteLength: number;
+        nonceCanonical?: HostCspNonceCanonical;
       }>;
       consoleOverflow: 0;
       pageErrorCount: 0;
@@ -420,6 +433,100 @@ const MAX_CSP_MESSAGE_BYTES = 4096;
 const MAX_BORROWED_BASELINE_AGE_MS = 2 * 60 * 60 * 1000;
 const TIMELINE_SCRIPT_PATTERN =
   /^https:\/\/abs\.twimg\.com\/responsive-web\/client-web\/loader\.TimelineRenderer\.[a-z0-9]+\.js$/iu;
+const CSP_NONCE_TOKEN = /'nonce-([A-Za-z0-9+/_-]{16,256}={0,2})'/gu;
+const CSP_NONCE_ALGORITHM = 'script-src-quoted-nonce-v1';
+
+function validNonceCanonical(value: unknown): value is HostCspNonceCanonical {
+  const item = record(value);
+  return Boolean(
+    item &&
+    Object.keys(item).sort().join(',') === 'algorithm,count,lengths,sha256' &&
+    item.algorithm === CSP_NONCE_ALGORITHM &&
+    typeof item.sha256 === 'string' &&
+    SHA256_PATTERN.test(item.sha256) &&
+    Number.isSafeInteger(item.count) &&
+    Number(item.count) >= 1 &&
+    Number(item.count) <= 20 &&
+    Array.isArray(item.lengths) &&
+    item.lengths.length === item.count &&
+    item.lengths.every((length) => Number.isSafeInteger(length) && length >= 16 && length <= 258)
+  );
+}
+
+// This hashes the full console message. Only nonce values inside its one quoted
+// script-src directive are replaced for the optional canonical comparison.
+export function fingerprintKnownInlineHandlerCsp(
+  rawMessage: unknown,
+  rawScript: unknown
+): HostCspFingerprint | null {
+  if (
+    typeof rawMessage !== 'string' ||
+    typeof rawScript !== 'string' ||
+    Buffer.byteLength(rawScript, 'utf8') > 256 ||
+    !TIMELINE_SCRIPT_PATTERN.test(rawScript) ||
+    !rawMessage.startsWith(INLINE_HANDLER_CSP_PREFIX) ||
+    Buffer.byteLength(rawMessage, 'utf8') > MAX_CSP_MESSAGE_BYTES
+  ) {
+    return null;
+  }
+  const full = {
+    script: rawScript,
+    messageSha256: sha256(rawMessage),
+    messageByteLength: Buffer.byteLength(rawMessage, 'utf8'),
+  };
+  const marker = " 'script-src ";
+  const start = rawMessage.indexOf(marker, INLINE_HANDLER_CSP_PREFIX.length);
+  const end = start < 0 ? -1 : rawMessage.indexOf("'.", start + marker.length);
+  if (
+    start !== INLINE_HANDLER_CSP_PREFIX.length ||
+    end < 0 ||
+    end - start > 3500 ||
+    rawMessage.indexOf(marker, start + marker.length) !== -1
+  ) {
+    return full;
+  }
+  const directive = rawMessage.slice(start, end + 1);
+  const strict = [...directive.matchAll(CSP_NONCE_TOKEN)];
+  if (
+    strict.length < 1 ||
+    strict.length > 20 ||
+    (directive.match(/nonce-/gu) ?? []).length !== strict.length
+  ) {
+    return full;
+  }
+  const asciiWhitespace = (value: string | undefined) =>
+    value !== undefined && /^[\t\n\f\r ]$/u.test(value);
+  if (
+    strict.some((match) => {
+      const index = match.index;
+      const afterIndex = index + match[0].length;
+      const after = directive[afterIndex];
+      return (
+        !asciiWhitespace(directive[index - 1]) ||
+        !(
+          asciiWhitespace(after) ||
+          afterIndex === directive.length ||
+          (after === "'" && afterIndex === directive.length - 1)
+        )
+      );
+    })
+  ) {
+    return full;
+  }
+  const canonical =
+    rawMessage.slice(0, start) +
+    directive.replace(CSP_NONCE_TOKEN, "'nonce-[value]'") +
+    rawMessage.slice(end + 1);
+  return {
+    ...full,
+    nonceCanonical: {
+      algorithm: CSP_NONCE_ALGORITHM,
+      sha256: sha256(canonical),
+      count: strict.length,
+      lengths: strict.map((match) => match[1]!.length),
+    },
+  };
+}
 
 function hasControlCharacter(value: string) {
   for (const character of value) {
@@ -579,12 +686,14 @@ export function validateBorrowedHostProof(
         item.sourceKind !== 'x-host-script-location' ||
         item.inlineHandlerCsp !== true ||
         typeof item.script !== 'string' ||
+        Buffer.byteLength(item.script, 'utf8') > 256 ||
         !TIMELINE_SCRIPT_PATTERN.test(item.script) ||
         typeof item.messageSha256 !== 'string' ||
         !SHA256_PATTERN.test(item.messageSha256) ||
         !Number.isSafeInteger(item.messageByteLength) ||
         Number(item.messageByteLength) < INLINE_HANDLER_CSP_PREFIX.length ||
-        Number(item.messageByteLength) > MAX_CSP_MESSAGE_BYTES
+        Number(item.messageByteLength) > MAX_CSP_MESSAGE_BYTES ||
+        (Object.hasOwn(item, 'nonceCanonical') && !validNonceCanonical(item.nonceCanonical))
       ) {
         return null;
       }
@@ -592,6 +701,9 @@ export function validateBorrowedHostProof(
         script: item.script,
         messageSha256: item.messageSha256,
         messageByteLength: Number(item.messageByteLength),
+        ...(Object.hasOwn(item, 'nonceCanonical')
+          ? { nonceCanonical: item.nonceCanonical as HostCspNonceCanonical }
+          : {}),
       });
     }
     expected.set(page.requestedUrl, fingerprints);
@@ -999,32 +1111,67 @@ function matchedCspCount(records: Diagnostic[], expected: HostCspFingerprint[] |
   if (consoleErrors.length !== expected.length) {
     return 0;
   }
-  const fingerprint = (item: HostCspFingerprint) =>
-    `${item.script}\0${item.messageSha256}\0${item.messageByteLength}`;
-  const actual: string[] = [];
+  const actual: HostCspFingerprint[] = [];
   for (const record of consoleErrors) {
     if (
       record.inlineHandlerCsp !== true ||
       typeof record.location !== 'string' ||
+      Buffer.byteLength(record.location, 'utf8') > 256 ||
       !TIMELINE_SCRIPT_PATTERN.test(record.location) ||
       typeof record.messageSha256 !== 'string' ||
       !SHA256_PATTERN.test(record.messageSha256) ||
       !Number.isSafeInteger(record.messageByteLength) ||
       Number(record.messageByteLength) < INLINE_HANDLER_CSP_PREFIX.length ||
-      Number(record.messageByteLength) > MAX_CSP_MESSAGE_BYTES
+      Number(record.messageByteLength) > MAX_CSP_MESSAGE_BYTES ||
+      (Object.hasOwn(record, 'nonceCanonical') && !validNonceCanonical(record.nonceCanonical))
     ) {
       return 0;
     }
-    actual.push(
-      fingerprint({
-        script: record.location,
-        messageSha256: record.messageSha256,
-        messageByteLength: Number(record.messageByteLength),
-      })
-    );
+    actual.push({
+      script: record.location,
+      messageSha256: record.messageSha256,
+      messageByteLength: Number(record.messageByteLength),
+      ...(record.nonceCanonical ? { nonceCanonical: record.nonceCanonical } : {}),
+    });
   }
-  const reference = expected.map(fingerprint).sort();
-  return actual.sort().every((value, index) => value === reference[index]) ? actual.length : 0;
+  const matches = (seen: HostCspFingerprint, reference: HostCspFingerprint) => {
+    if (
+      seen.script !== reference.script ||
+      seen.messageByteLength !== reference.messageByteLength
+    ) {
+      return false;
+    }
+    if (seen.messageSha256 === reference.messageSha256) {
+      return true;
+    }
+    const a = seen.nonceCanonical;
+    const b = reference.nonceCanonical;
+    return (
+      validNonceCanonical(a) &&
+      validNonceCanonical(b) &&
+      a.algorithm === b.algorithm &&
+      a.sha256 === b.sha256 &&
+      a.count === b.count &&
+      a.lengths.every((length, index) => length === b.lengths[index])
+    );
+  };
+  // Exact multiset matching handles duplicate CSP messages without allowing one
+  // baseline entry to qualify several observed records.
+  const occupied = Array<number>(expected.length).fill(-1);
+  const assign = (index: number, visited: Set<number>): boolean => {
+    for (let slot = 0; slot < expected.length; slot += 1) {
+      if (visited.has(slot) || !matches(actual[index]!, expected[slot]!)) {
+        continue;
+      }
+      visited.add(slot);
+      if (occupied[slot] === -1 || assign(occupied[slot]!, visited)) {
+        occupied[slot] = index;
+        return true;
+      }
+    }
+    return false;
+  };
+  return actual.every((_, index) => assign(index, new Set())) ? actual.length : 0;
 }
 
 function matchesSelectedQueryAbort(
@@ -1208,25 +1355,26 @@ function attachDiagnostics(
       return;
     }
     const raw = message.text();
-    const location = sanitizedUrl(message.location().url || 'about:blank');
-    const messageByteLength =
-      raw.length <= MAX_CSP_MESSAGE_BYTES
-        ? Buffer.byteLength(raw, 'utf8')
-        : MAX_CSP_MESSAGE_BYTES + 1;
-    const knownCsp =
-      identities !== null &&
-      messageByteLength <= MAX_CSP_MESSAGE_BYTES &&
-      TIMELINE_SCRIPT_PATTERN.test(location) &&
-      raw.startsWith(INLINE_HANDLER_CSP_PREFIX);
+    const rawScript = message.location().url || 'about:blank';
+    const location = sanitizedUrl(rawScript);
+    const fingerprint = identities ? fingerprintKnownInlineHandlerCsp(raw, rawScript) : null;
     const record = {
       kind: 'console',
       location,
       text: sanitizedText(raw),
-      ...(knownCsp
-        ? { inlineHandlerCsp: true, messageSha256: sha256(raw), messageByteLength }
+      ...(fingerprint
+        ? {
+            inlineHandlerCsp: true,
+            messageSha256: fingerprint.messageSha256,
+            messageByteLength: fingerprint.messageByteLength,
+            ...(fingerprint.nonceCanonical ? { nonceCanonical: fingerprint.nonceCanonical } : {}),
+          }
         : {}),
     };
     const product = isProductConsoleError(record);
+    if (fingerprint) {
+      record.text = record.text.replace(/nonce-[^\s'"<>]*/gu, 'nonce-[redacted]');
+    }
     addBounded(
       product ? observation.productErrors : observation.hostDiagnostics,
       record,
