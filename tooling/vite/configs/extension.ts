@@ -4,6 +4,7 @@ import solidPlugin from 'vite-plugin-solid';
 import { copyExtensionAssetsPlugin } from '../plugins/copy-extension-assets.ts';
 import { cssInlinePlugin } from '../plugins/css-inline.ts';
 import { enforceIifePlugin } from '../plugins/enforce-iife.ts';
+import { moduleFootprintPlugin } from '../plugins/module-footprint.ts';
 import { getVersionFromPackageJson } from '../utils/version.ts';
 
 export type ExtensionBrowser = 'chrome' | 'firefox';
@@ -74,6 +75,7 @@ export function extensionBackgroundConfig(browser: ExtensionBrowser): UserConfig
       manifestFile: target.manifestFile,
     })
   );
+  plugins.push(moduleFootprintPlugin(`${browser}-background`));
   if (target.inlineBackgroundCss) {
     plugins.push(cssInlinePlugin());
   }
@@ -108,7 +110,12 @@ export function extensionContentConfig(browser: ExtensionBrowser): UserConfig {
 
   return {
     ...sharedConfig(),
-    plugins: [...extensionPlugins(), cssInlinePlugin(), enforceIifePlugin(browser)],
+    plugins: [
+      ...extensionPlugins(),
+      cssInlinePlugin(),
+      enforceIifePlugin(browser),
+      moduleFootprintPlugin(`${browser}-content`),
+    ],
     build: {
       outDir: target.outDir,
       emptyOutDir: false,

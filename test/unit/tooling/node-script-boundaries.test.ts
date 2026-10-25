@@ -23,6 +23,7 @@ const scripts = [
   'scripts/check/extension-build.ts',
   'scripts/release/package-extension.ts',
   'scripts/release/prepare.ts',
+  'scripts/release/footprint.ts',
   'scripts/release/artifact-preflight.ts',
   'scripts/release/version.ts',
   'tooling/vite/utils/distribution-licenses.ts',
@@ -64,13 +65,47 @@ function releaseFixture(root: string): { bin: string; calls: string } {
   const git = join(bin, 'git');
   writeFileSync(
     git,
-    `#!/bin/sh\nprintf '%s\\n' "$*" >> "$FAKE_CALLS"\ncase "$1" in\n  rev-parse) printf '%s\\n' '${'a'.repeat(40)}' ;;\n  tag) printf '%s\\n' 'v2.3.2' ;;\nesac\n`
+    `#!/bin/sh\nprintf '%s\\n' "$*" >> "$FAKE_CALLS"\ncase "$1" in\n  rev-parse|-C) printf '%s\\n' '${'a'.repeat(40)}' ;;\n  tag) printf '%s\\n' 'v2.3.2' ;;\nesac\n`
   );
   chmodSync(git, 0o755);
   const zip = join(bin, 'zip');
   writeFileSync(zip, '#!/bin/sh\nprintf archive > "$3"\nprintf zip >> "$FAKE_ZIP_CALLS"\n');
   chmodSync(zip, 0o755);
-  return { bin, calls: join(root, 'calls') };
+  mkdirSync(join(root, 'node_modules/vite'), { recursive: true });
+  mkdirSync(join(root, 'node_modules/vite-plus'), { recursive: true });
+  writeFileSync(join(root, 'node_modules/vite/package.json'), '{"version":"7.0.0"}');
+  writeFileSync(join(root, 'node_modules/vite-plus/package.json'), '{"version":"0.1.0"}');
+  writeFileSync(join(root, 'pnpm-lock.yaml'), 'lockfileVersion: 9\n');
+  mkdirSync(join(root, 'reports'), { recursive: true });
+  for (const target of [
+    'userscript',
+    'chrome-background',
+    'chrome-content',
+    'firefox-background',
+    'firefox-content',
+  ]) {
+    writeFileSync(
+      join(root, 'reports', `modules-${target}.json`),
+      JSON.stringify({
+        target,
+        method: 'fixture',
+        categories: { application: { modules: 1, renderedBytesEstimate: 10 } },
+      })
+    );
+  }
+  const calls = join(root, 'calls');
+  const result = spawnSync(
+    process.execPath,
+    ['--experimental-strip-types', join(root, 'scripts/release/footprint.ts')],
+    {
+      cwd: root,
+      encoding: 'utf8',
+      env: releaseEnv(root, bin, calls),
+    }
+  );
+  expect(result.status, result.stderr).toBe(0);
+  writeFileSync(calls, '');
+  return { bin, calls };
 }
 
 function releaseEnv(root: string, bin: string, calls: string): NodeJS.ProcessEnv {
@@ -267,13 +302,23 @@ describe('Node script import boundary', () => {
     const result = command('scripts/release/prepare.ts', [], releaseEnv(root, bin, calls));
     expect(result.status, result.stderr).toBe(0);
     expect(result.stdout).toContain('Prepared release-bundle/ for v2.3.3 (4 assets)');
-    expect(readFileSync(calls, 'utf8')).toBe('rev-parse HEAD\ntag --list v*\n');
+    expect(readFileSync(calls, 'utf8')).toContain('rev-parse HEAD');
+    expect(readFileSync(calls, 'utf8')).toContain('tag --list v*');
     expect(existsSync(join(root, 'release-bundle/sentinel'))).toBe(false);
     expect(
       readFileSync(join(root, 'release-bundle/deploy/dist/xcom-enhanced-gallery.user.js'), 'utf8')
     ).toBe(`${releaseHeader()}\nscript`);
     expect(readFileSync(join(root, 'zip-calls'), 'utf8')).toBe('zipzip');
     const release = join(root, 'release-bundle/release');
+    const footprint = JSON.parse(
+      readFileSync(join(root, 'release-bundle/footprint.json'), 'utf8')
+    ) as {
+      archiveFootprint: { name: string; bytes: number }[];
+      unpackedBytes: { userscript: number };
+    };
+    expect(footprint.archiveFootprint).toHaveLength(2);
+    expect(footprint.archiveFootprint[0]?.bytes).toBe(7);
+    expect(footprint.unpackedBytes.userscript).toBeGreaterThan(0);
     expect(readFileSync(join(release, 'checksums.txt'), 'utf8').trim().split('\n')).toHaveLength(4);
     expect(existsSync(join(release, 'xcom-enhanced-gallery-chrome.zip'))).toBe(true);
     expect(existsSync(join(release, 'xcom-enhanced-gallery-firefox.zip'))).toBe(true);
@@ -292,6 +337,35 @@ describe('Node script import boundary', () => {
     expect(releaseNotes).toContain('version-pinned `@downloadURL`');
     expect(releaseNotes).toContain('/releases/latest/download/xcom-enhanced-gallery.user.js');
     expect(releaseNotes).toContain('Confirm there is one X.com Enhanced Gallery entry');
+  });
+
+  it.each([
+    ['missing report', (root: string) => rmSync(join(root, 'reports/production-footprint.json'))],
+    [
+      'changed distribution',
+      (root: string) => writeFileSync(join(root, 'dist-extension/content.js'), 'changed content'),
+    ],
+    [
+      'changed lockfile',
+      (root: string) => writeFileSync(join(root, 'pnpm-lock.yaml'), 'changed lockfile'),
+    ],
+    [
+      'wrong source',
+      (root: string) => {
+        const path = join(root, 'reports/production-footprint.json');
+        const report = JSON.parse(readFileSync(path, 'utf8')) as { sourceSha: string };
+        report.sourceSha = 'b'.repeat(40);
+        writeFileSync(path, JSON.stringify(report));
+      },
+    ],
+  ])('rejects %s before replacing a prepared bundle', (_label, mutate) => {
+    const { root, command } = fixture();
+    const { bin, calls } = releaseFixture(root);
+    mutate(root);
+    const result = command('scripts/release/prepare.ts', [], releaseEnv(root, bin, calls));
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toMatch(/Production footprint/);
+    expect(readFileSync(join(root, 'release-bundle/sentinel'), 'utf8')).toBe('old bundle');
   });
 
   it.each([

@@ -16,6 +16,7 @@ import { defineConfig, mergeConfig, type UserConfig } from 'vite-plus';
 import { buildSummaryPlugin } from './tooling/vite/plugins/build-summary.ts';
 import { cssInlinePlugin } from './tooling/vite/plugins/css-inline.ts';
 import { metaOnlyPlugin } from './tooling/vite/plugins/meta-only.ts';
+import { moduleFootprintPlugin } from './tooling/vite/plugins/module-footprint.ts';
 import { basePreset } from './tooling/vite/presets/base.ts';
 import { solidPreset } from './tooling/vite/presets/solid.ts';
 import { userscriptPreset } from './tooling/vite/presets/userscript.ts';
@@ -207,6 +208,7 @@ export default defineConfig(({ mode }): UserConfig => {
 
       plugins: [
         cssInlinePlugin(),
+        ...(!isDev ? [moduleFootprintPlugin('userscript')] : []),
         ...(isDev
           ? []
           : [
