@@ -21,16 +21,17 @@ export function moduleFootprintPlugin(target: string): Plugin {
         }
         for (const [id, module] of Object.entries(output.modules)) {
           const path = id.replaceAll('\\', '/');
-          const category = path.includes('/packages/core/')
-            ? categories.core
-            : path.includes('/node_modules/solid-js/') ||
-                path.includes('/node_modules/.pnpm/solid-js@')
-              ? categories.solid
-              : path.includes('/node_modules/')
-                ? categories.otherDependency
-                : path.includes('/src/') || path.includes('/extension/')
-                  ? categories.application
-                  : categories.other;
+          const category =
+            path.includes('/packages/core/') || path.includes('/@piesp/browser-core/')
+              ? categories.core
+              : path.includes('/node_modules/solid-js/') ||
+                  path.includes('/node_modules/.pnpm/solid-js@')
+                ? categories.solid
+                : path.includes('/node_modules/')
+                  ? categories.otherDependency
+                  : path.includes('/src/') || path.includes('/extension/')
+                    ? categories.application
+                    : categories.other;
           category.modules += 1;
           category.renderedBytesEstimate += module.renderedLength;
         }
