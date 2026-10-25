@@ -8,9 +8,11 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.3.9] - Candidate (not published)
+
 ### Fixed
 
-- **Partial ZIP recovery** — Keep the original archive and offer a separate ZIP for eligible failed entries, preserving their assigned names and order without fetching successful entries again. Recovery ends when the gallery changes or closes and uses the existing download limits.
+- **Partial ZIP recovery** — Keep the original archive and offer a separate ZIP for eligible failed entries, preserving their assigned names and order without fetching successful entries again. Recovery is unavailable after an uncertain native download handoff or once the gallery changes or closes; supplementary saves use the existing resource limits.
 - **Video volume persistence** — Ignore delayed volume events from closed or replaced gallery players so they cannot overwrite a newer player's preferences. Keep pending choices made before close.
 - **Deep quote ownership** — Find the enclosing quote link above deeply wrapped playing videos before treating the article permalink as the media owner. Keep exact-source selection and the quoted owner's attribution.
 - **Quoted video selection** — Keep exact click-time video identity through deeper overlays within a uniquely owned player, while rejecting ambiguous players and preserving the media owner's attribution.
@@ -20,7 +22,8 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- **Installed acceptance** — Exercise compact nested quote photos, same-source owners, exact single and ZIP bytes, native post links, and close/reopen restoration. Observe the actual inner compact photo on public pages and keep API-denied recovery unverified.
+- **Installed acceptance** — Exercise compact nested quote photos, same-source owners, exact single and ZIP bytes, native post links, and close/reopen restoration in source-bound fixtures. Observe the inner compact photo on public pages; keep API-denied recovery and broader live-page behavior unverified.
+- **Upgrade qualification** — Accept the published v2.3.8 userscript and Chrome extension as exact-hash inputs for an optional v2.3.9 installed upgrade check. Preserve the historical v2.3.7→v2.3.8 upgrade and separate v2.3.8 same-version attribution inputs.
 
 ## [2.3.8] - 2026-10-21
 

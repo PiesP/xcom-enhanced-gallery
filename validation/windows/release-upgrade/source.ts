@@ -9,8 +9,10 @@ import type { BigIntStats } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 
 const DIRECTORY = 'validation/windows/release-upgrade';
-const USER_PATH = `${DIRECTORY}/v2.3.7.user.js`;
-const EXTENSION_PATH = `${DIRECTORY}/v2.3.7-extension`;
+const UPGRADE_TRANSITIONS = [
+  { previousVersion: '2.3.7', candidateVersion: '2.3.8' },
+  { previousVersion: '2.3.8', candidateVersion: '2.3.9' },
+] as const;
 const CANDIDATE_USER_PATH = 'dist/xcom-enhanced-gallery.user.js';
 const SCRIPT_NAME = 'X.com Enhanced Gallery';
 const SCRIPT_NAMESPACE = 'https://github.com/PiesP/xcom-enhanced-gallery';
@@ -222,20 +224,31 @@ export async function readUpgradeInput(root: string) {
     'schema',
   ]);
   assert.equal(value.schema, 1);
-  assert.equal(value.previousVersion, '2.3.7');
-  assert.equal(value.candidateVersion, '2.3.8');
+  const transition = UPGRADE_TRANSITIONS.find(
+    ({ previousVersion }) => previousVersion === value.previousVersion
+  );
+  assert(transition, `Unsupported public version: ${value.previousVersion}`);
+  assert.equal(value.candidateVersion, transition.candidateVersion);
   assert.deepEqual(Object.keys(value.previousUserscript).sort(), ['path', 'sha256', 'url']);
   assert.deepEqual(Object.keys(value.previousExtension).sort(), ['inventorySha256', 'path', 'url']);
   assert.equal(
     value.previousUserscript.url,
-    'https://github.com/PiesP/xcom-enhanced-gallery/releases/download/v2.3.7/xcom-enhanced-gallery.user.js'
+    `${SCRIPT_NAMESPACE}/releases/download/v${transition.previousVersion}/xcom-enhanced-gallery.user.js`
   );
   assert.equal(
     value.previousExtension.url,
-    'https://github.com/PiesP/xcom-enhanced-gallery/releases/download/v2.3.7/xcom-enhanced-gallery-chrome.zip'
+    `${SCRIPT_NAMESPACE}/releases/download/v${transition.previousVersion}/xcom-enhanced-gallery-chrome.zip`
   );
-  const userPath = fixedPath(root, value.previousUserscript.path, USER_PATH);
-  const extensionPath = fixedPath(root, value.previousExtension.path, EXTENSION_PATH);
+  const userPath = fixedPath(
+    root,
+    value.previousUserscript.path,
+    `${DIRECTORY}/v${transition.previousVersion}.user.js`
+  );
+  const extensionPath = fixedPath(
+    root,
+    value.previousExtension.path,
+    `${DIRECTORY}/v${transition.previousVersion}-extension`
+  );
   assert.match(value.previousUserscript.sha256, /^[0-9a-f]{64}$/u);
   assert.match(value.previousExtension.inventorySha256, /^[0-9a-f]{64}$/u);
   const previous = await readFile(userPath);
