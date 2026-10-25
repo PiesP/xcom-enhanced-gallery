@@ -2,6 +2,7 @@
 // Copyright (c) 2026 PiesP
 
 import { EventEmitter } from 'node:events';
+import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -16,6 +17,12 @@ type LivePageModule = Pick<
   | 'quotedVideoSurface'
   | 'restoreStoredVideoSettings'
   | 'validateLiveUrls'
+  | 'validateBorrowedHostProof'
+  | 'fingerprintKnownInlineHandlerCsp'
+  | 'fullVideoUrlIdentity'
+  | 'captureApiVideoIdentities'
+  | 'summarizeTweetResultResponse'
+  | 'readSelectedCurrentVideoUrlDocument'
   | 'inspectHitTestedAction'
   | 'inspectHitTestedNativePreviewAction'
   | 'inspectNativePreviewOwnerDocument'
@@ -117,7 +124,6 @@ type LivePageModule = Pick<
     matchingSiblingCount: number;
     currentTime: number;
   };
-  summarizeTweetResultResponse(url: string, status: number, body: unknown): unknown;
   summarizeQuoteProviderRejection(api: unknown): null | {
     operation: string;
     kind: string;
@@ -129,9 +135,13 @@ type LivePageModule = Pick<
     galleryStatus: string,
     providerRejection: unknown
   ): string;
-  classifyLiveHostDiagnostics(observation: unknown): {
+  classifyLiveHostDiagnostics(
+    observation: unknown,
+    proof?: unknown
+  ): {
     expectedLifecycleCancellationCount: number;
     evidenceStatus: string;
+    qualifiedCspCount?: number;
   };
   refreshQuotedVideoErrorAssertions(observation: {
     requiredAssertions: Record<string, boolean>;
@@ -3895,6 +3905,575 @@ describe('Windows X live page validation', () => {
     observation.pageErrors.push({ kind: 'page-error' });
     expect(livePage.refreshQuotedVideoErrorAssertions(observation)).toContain('noPageErrors');
     expect(observation.requiredAssertions.noPageErrors).toBe(false);
+  });
+
+  it('binds a borrowed CSP baseline to the same profile, source, URLs, and restored inventory', () => {
+    const url = 'https://x.com/tester/status/12345';
+    const script =
+      'https://abs.twimg.com/responsive-web/client-web/loader.TimelineRenderer.abc123.js';
+    const fingerprint = {
+      kind: 'console-error',
+      script,
+      sourceKind: 'x-host-script-location',
+      inlineHandlerCsp: true,
+      messageSha256: 'd'.repeat(64),
+      messageByteLength: 100,
+    };
+    const baseline = {
+      receiptSha256: '1'.repeat(64),
+      sourceSha: 'a'.repeat(40),
+      coreSha: 'b'.repeat(40),
+      bundleSha256: 'c'.repeat(64),
+      browserPid: 123,
+      browserBirthUtcTicks: '639284716450486670',
+      browserSessionId: 2,
+      browserSidSha256: '6'.repeat(64),
+      profilePathSha256: '2'.repeat(64),
+      portReceiptSha256: '3'.repeat(64),
+      status: 'baseline-observed',
+      completedAtUtc: new Date().toISOString(),
+      ownedPagesClosed: true,
+      originalPagesPreserved: true,
+      focusRestored: true,
+      disconnected: true,
+      inventory: {
+        count: 5,
+        developerMode: false,
+        relatedCount: 0,
+        unrelatedDigest: '4'.repeat(64),
+      },
+      pages: [
+        {
+          requestedUrl: url,
+          finalUrl: url,
+          responseStatus: 200,
+          articleVisible: true,
+          closed: true,
+          consoleErrors: [fingerprint],
+          consoleOverflow: 0,
+          pageErrorCount: 0,
+          pageErrorOverflow: 0,
+        },
+      ],
+    };
+    const current = {
+      sourceSha: baseline.sourceSha,
+      coreSha: baseline.coreSha,
+      bundleSha256: baseline.bundleSha256,
+      browserPid: baseline.browserPid,
+      browserBirthUtcTicks: baseline.browserBirthUtcTicks,
+      browserSessionId: baseline.browserSessionId,
+      browserSidSha256: baseline.browserSidSha256,
+      profilePathSha256: baseline.profilePathSha256,
+      portReceiptSha256: baseline.portReceiptSha256,
+      unrelatedCount: 5,
+      unrelatedDigest: baseline.inventory.unrelatedDigest,
+      targetCount: 1,
+      runtimeResourceCount: 12,
+      runtimeResourceBinding: 'matched',
+      extensionSourcePathVerified: true,
+    };
+    const proof = { schemaVersion: 1, kind: 'BorrowedHostDiagnosticProof', baseline, current };
+    expect(livePage.validateBorrowedHostProof(proof, [url])).toEqual(
+      new Map([
+        [
+          url,
+          [
+            {
+              script,
+              messageSha256: fingerprint.messageSha256,
+              messageByteLength: fingerprint.messageByteLength,
+            },
+          ],
+        ],
+      ])
+    );
+    const rejects = (change: (candidate: typeof proof) => void) => {
+      const candidate = structuredClone(proof);
+      change(candidate);
+      expect(livePage.validateBorrowedHostProof(candidate, [url])).toBeNull();
+    };
+    rejects((item) => {
+      item.current.profilePathSha256 = '5'.repeat(64);
+    });
+    rejects((item) => {
+      item.baseline.completedAtUtc = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
+    });
+    rejects((item) => {
+      item.current.browserPid = 124;
+    });
+    rejects((item) => {
+      item.current.browserSessionId = 3;
+    });
+    rejects((item) => {
+      item.current.browserSidSha256 = '7'.repeat(64);
+    });
+    rejects((item) => {
+      item.current.sourceSha = '0'.repeat(40);
+    });
+    rejects((item) => {
+      item.current.bundleSha256 = '0'.repeat(64);
+    });
+    rejects((item) => {
+      item.current.unrelatedCount = 6;
+    });
+    rejects((item) => {
+      item.current.targetCount = 0;
+    });
+    rejects((item) => {
+      item.current.runtimeResourceCount = 11;
+    });
+    rejects((item) => {
+      item.baseline.inventory.relatedCount = 1;
+    });
+    rejects((item) => {
+      item.baseline.pages[0]!.requestedUrl = 'https://x.com/other/status/12345';
+    });
+    rejects((item) => {
+      item.baseline.pages[0]!.consoleErrors[0]!.messageSha256 = 'bad';
+    });
+    rejects((item) => {
+      item.baseline.pages[0]!.consoleErrors[0]!.messageByteLength = 4097;
+    });
+    rejects((item) => {
+      item.baseline.pages[0]!.consoleErrors.push({
+        ...fingerprint,
+        kind: 'http-response',
+      });
+    });
+    rejects((item) => {
+      item.baseline.pages[0]!.consoleOverflow = 1;
+    });
+    expect(
+      livePage.validateBorrowedHostProof(proof, ['https://x.com/other/status/12345'])
+    ).toBeNull();
+
+    const canonicalProof = structuredClone(proof);
+    Object.assign(canonicalProof.baseline.pages[0]!.consoleErrors[0]!, {
+      nonceCanonical: {
+        algorithm: 'script-src-quoted-nonce-v1',
+        sha256: 'e'.repeat(64),
+        count: 1,
+        lengths: [48],
+      },
+    });
+    expect(livePage.validateBorrowedHostProof(canonicalProof, [url])?.get(url)?.[0]).toMatchObject({
+      nonceCanonical: {
+        algorithm: 'script-src-quoted-nonce-v1',
+        sha256: 'e'.repeat(64),
+        count: 1,
+        lengths: [48],
+      },
+    });
+    for (const changed of [
+      { algorithm: 'all-nonce-values-v1' },
+      { sha256: 'bad' },
+      { count: 0 },
+      { lengths: [47, 48] },
+      { lengths: [0] },
+    ]) {
+      const invalid = structuredClone(canonicalProof);
+      Object.assign(invalid.baseline.pages[0]!.consoleErrors[0]!, {
+        nonceCanonical: {
+          algorithm: 'script-src-quoted-nonce-v1',
+          sha256: 'e'.repeat(64),
+          count: 1,
+          lengths: [48],
+          ...changed,
+        },
+      });
+      expect(livePage.validateBorrowedHostProof(invalid, [url])).toBeNull();
+    }
+  });
+
+  it('qualifies only a strict quoted script-src nonce change with full-message bounds', () => {
+    const script =
+      'https://abs.twimg.com/responsive-web/client-web/loader.TimelineRenderer.abc123.js';
+    const csp = (nonce: string, tail = '', policy = "'self'") =>
+      `Executing inline event handler violates the following Content Security Policy directive 'script-src ${policy} 'nonce-${nonce}' https://x.com/'. Either a nonce or a hash is required.${tail}`;
+    const baselineRaw = csp('A'.repeat(48));
+    const baseline = livePage.fingerprintKnownInlineHandlerCsp(baselineRaw, script);
+    const current = livePage.fingerprintKnownInlineHandlerCsp(csp('B'.repeat(48)), script);
+    expect(baseline?.nonceCanonical).toMatchObject({
+      algorithm: 'script-src-quoted-nonce-v1',
+      count: 1,
+      lengths: [48],
+    });
+    expect(current?.messageSha256).not.toBe(baseline?.messageSha256);
+    expect(current?.nonceCanonical?.sha256).toBe(baseline?.nonceCanonical?.sha256);
+    if (!baseline?.nonceCanonical) {
+      throw new Error('Nonce fixture was not parsed');
+    }
+    const finalNonce = livePage.fingerprintKnownInlineHandlerCsp(
+      `Executing inline event handler violates the following Content Security Policy directive 'script-src 'self' 'nonce-${'A'.repeat(48)}''. Either a nonce is required.`,
+      script
+    );
+    expect(finalNonce?.nonceCanonical?.count).toBe(1);
+    const proof = {
+      expectedCsp: [baseline],
+      identities: {
+        selectedVideo: null,
+        apiVariants: [],
+        apiVariantOverflow: false,
+        requestUrls: [],
+        requestUrlOverflow: false,
+      },
+    };
+    const classify = (
+      raw: string,
+      rawScript = script,
+      extra: unknown[] = [],
+      candidateProof: unknown = proof
+    ) => {
+      const fingerprint = livePage.fingerprintKnownInlineHandlerCsp(raw, rawScript);
+      const observation = {
+        requiredAssertions: Object.fromEntries(
+          Array.from({ length: 13 }, (_, index) => [`assertion${index}`, true])
+        ),
+        missingAssertions: [],
+        gallery: { owner: null },
+        api: { overflow: 0 },
+        hostDiagnostics: [
+          {
+            kind: 'console',
+            location: rawScript,
+            inlineHandlerCsp: Boolean(fingerprint),
+            messageSha256: fingerprint?.messageSha256,
+            messageByteLength: fingerprint?.messageByteLength,
+            ...(fingerprint?.nonceCanonical ? { nonceCanonical: fingerprint.nonceCanonical } : {}),
+          },
+          ...extra,
+        ],
+        hostDiagnosticOverflow: 0,
+        productErrors: [],
+        productErrorOverflow: 0,
+        pageErrors: [],
+        pageErrorOverflow: 0,
+      };
+      return livePage.classifyLiveHostDiagnostics(observation, candidateProof);
+    };
+    expect(classify(csp('B'.repeat(48)))).toMatchObject({
+      qualifiedCspCount: 1,
+      evidenceStatus: 'observed',
+    });
+    expect(classify(baselineRaw)).toMatchObject({
+      qualifiedCspCount: 1,
+      evidenceStatus: 'observed',
+    });
+    const forgedProof = {
+      ...proof,
+      expectedCsp: [
+        {
+          ...baseline,
+          nonceCanonical: {
+            ...baseline.nonceCanonical,
+            sha256: 'f'.repeat(64),
+          },
+        },
+      ],
+    };
+    expect(classify(csp('B'.repeat(48)), script, [], forgedProof).evidenceStatus).toBe(
+      'unverified'
+    );
+    expect(
+      classify(csp('B'.repeat(48)), script, [{ kind: 'http-response', status: 500 }]).evidenceStatus
+    ).toBe('unverified');
+    for (const raw of [
+      csp('B'.repeat(47)),
+      csp('B'.repeat(48), 'Other suffix'),
+      csp('B'.repeat(48), '', "'sha256-other' 'self'"),
+      csp('B'.repeat(48), '', "'unsafe-inline'"),
+      csp('B'.repeat(48), ` Outside 'nonce-${'C'.repeat(48)}'`),
+      csp('B'.repeat(48)).replace('https://x.com/', 'https://twitter.com/'),
+      csp('B'.repeat(48)).replace("'nonce-", 'nonce-'),
+      csp('B'.repeat(48)).replace("'nonce-", "'nonce-!!!"),
+      csp('B'.repeat(48)).replace(" 'nonce-", "x'nonce-"),
+      csp('B'.repeat(48)).replace(" 'nonce-", " https://evil/'nonce-"),
+      csp('B'.repeat(48)).replace("' https://x.com/", "'suffix https://x.com/"),
+      csp('B'.repeat(48)).replace("https://x.com/'", ` 'nonce-${'C'.repeat(48)}' https://x.com/'`),
+    ]) {
+      expect(classify(raw).evidenceStatus).toBe('unverified');
+    }
+    expect(classify(csp('B'.repeat(48)), script + '?variant=1').evidenceStatus).toBe('unverified');
+    expect(
+      classify(
+        csp('B'.repeat(48)),
+        `https://abs.twimg.com/responsive-web/client-web/loader.TimelineRenderer.${'a'.repeat(260)}.js`
+      ).evidenceStatus
+    ).toBe('unverified');
+    expect(classify(csp('B'.repeat(48)) + 'x'.repeat(4096)).evidenceStatus).toBe('unverified');
+    expect(
+      livePage.classifyLiveHostDiagnostics({
+        requiredAssertions: Object.fromEntries(
+          Array.from({ length: 13 }, (_, index) => [`assertion${index}`, true])
+        ),
+        missingAssertions: [],
+        gallery: { owner: null },
+        api: { overflow: 0 },
+        hostDiagnostics: [{ kind: 'console', location: script }],
+        hostDiagnosticOverflow: 0,
+        productErrors: [],
+        productErrorOverflow: 0,
+        pageErrors: [],
+        pageErrorOverflow: 0,
+      }).evidenceStatus
+    ).toBe('unverified');
+  });
+
+  it('captures only bounded exact raw API video variants before retaining path-only evidence', () => {
+    const path = '/amplify_video/456/vid/clip.mp4';
+    const full = `https://video.twimg.com${path}?tag=opaque`;
+    const secondQuery = `${full}&second=1`;
+    expect(livePage.fullVideoUrlIdentity(full)).toEqual({
+      rawUrl: full,
+      source: { host: 'video.twimg.com', path },
+      hadQuery: true,
+    });
+    for (const value of [
+      full.replace('video.twimg.com/', 'video.twimg.com:443/'),
+      full.replace('video.twimg.com/', 'user:pass@video.twimg.com/'),
+      `${full}#fragment`,
+      `${full}\n`,
+      `${full}${'x'.repeat(2049)}`,
+      full.replace('https:', 'http:'),
+    ]) {
+      expect(livePage.fullVideoUrlIdentity(value)).toBeNull();
+    }
+    const variants = [
+      full,
+      secondQuery,
+      full.replace('video.twimg.com/', 'video.twimg.com:443/'),
+      `${full}#fragment`,
+    ].map((url) => ({ content_type: 'video/mp4', url }));
+    const body = {
+      data: {
+        tweetResult: {
+          result: {
+            result: {
+              rest_id: '123',
+              quoted_status_result: {
+                result: {
+                  rest_id: '789',
+                  legacy: {
+                    extended_entities: {
+                      media: [
+                        {
+                          id_str: '456',
+                          type: 'video',
+                          video_info: { variants },
+                        },
+                      ],
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+    const summary = livePage.summarizeTweetResultResponse(
+      'https://x.com/i/api/graphql/TweetResultByRestId',
+      200,
+      body
+    );
+    expect(summary?.directQuote?.media[0]?.playableVariants).toHaveLength(4);
+    if (!summary) {
+      throw new Error('API fixture was not summarized');
+    }
+    const identities: Parameters<typeof livePage.captureApiVideoIdentities>[2] = {
+      selectedVideo: null,
+      apiVariants: [],
+      apiVariantOverflow: false,
+      requestUrls: [],
+      requestUrlOverflow: false,
+    };
+    livePage.captureApiVideoIdentities(body, summary, identities);
+    expect(identities.apiVariants.map((entry) => entry.rawUrl)).toEqual([full, secondQuery]);
+    expect(JSON.stringify(summary)).not.toContain('opaque');
+    // Repeated responses cannot grow the ephemeral identity set without bound.
+    for (let index = 0; index < 49; index += 1) {
+      livePage.captureApiVideoIdentities(body, summary, identities);
+    }
+    expect(identities.apiVariantOverflow).toBe(true);
+    expect(identities.apiVariants.length).toBe(96);
+  });
+
+  it('requires the selected video currentSrc for full URL identity', () => {
+    document.body.innerHTML = `
+      <div data-xeg-gallery-container>
+        <div data-gallery-element="toolbar" data-current-index="0"></div>
+        <div data-gallery-element="item"><video src="https://video.twimg.com/amplify_video/456/vid/clip.mp4?configured=1"></video></div>
+      </div>`;
+    const video = document.querySelector('video');
+    if (!video) {
+      throw new Error('Video fixture missing');
+    }
+    Object.defineProperty(video, 'currentSrc', { configurable: true, value: '' });
+    expect(livePage.readSelectedCurrentVideoUrlDocument(0)).toBeNull();
+    Object.defineProperty(video, 'currentSrc', {
+      configurable: true,
+      value: 'https://video.twimg.com/amplify_video/456/vid/clip.mp4?active=1',
+    });
+    expect(livePage.readSelectedCurrentVideoUrlDocument(0)).toBe(
+      'https://video.twimg.com/amplify_video/456/vid/clip.mp4?active=1'
+    );
+    expect(livePage.readSelectedCurrentVideoUrlDocument(1)).toBeNull();
+  });
+
+  it('qualifies only exact borrowed CSP and full selected API video URL identities', () => {
+    const source = { host: 'video.twimg.com', path: '/amplify_video/456/vid/clip.mp4' };
+    const fullUrl = `https://${source.host}${source.path}?tag=opaque`;
+    const fullHash = createHash('sha256').update(fullUrl).digest('hex');
+    const csp = {
+      kind: 'console',
+      location: 'https://abs.twimg.com/responsive-web/client-web/loader.TimelineRenderer.abc123.js',
+      text: 'Executing inline event handler violates CSP',
+      inlineHandlerCsp: true,
+      messageSha256: 'd'.repeat(64),
+      messageByteLength: 100,
+    };
+    const abort = {
+      kind: 'request-failed',
+      error: 'net::ERR_ABORTED',
+      url: `https://${source.host}${source.path}`,
+      hadQuery: true,
+      hadFragment: false,
+      hadCredentials: false,
+      hadPort: false,
+    };
+    const observation = {
+      requiredAssertions: Object.fromEntries(
+        Array.from({ length: 13 }, (_, index) => [`assertion${index}`, true])
+      ),
+      missingAssertions: [] as string[],
+      gallery: {
+        owner: {
+          status: 'matched-direct-quote-variant',
+          ownerId: '789',
+          mediaId: '456',
+          mediaIndex: 0,
+        },
+        opened: { selectedVideo: { source } },
+      },
+      api: { overflow: 0 },
+      hostDiagnostics: [csp, csp, abort],
+      hostDiagnosticOverflow: 0,
+      productErrors: [] as unknown[],
+      productErrorOverflow: 0,
+      pageErrors: [] as unknown[],
+      pageErrorOverflow: 0,
+    };
+    const proof = {
+      expectedCsp: [csp, csp].map((item) => ({
+        script: item.location,
+        messageSha256: item.messageSha256,
+        messageByteLength: item.messageByteLength,
+      })),
+      identities: {
+        selectedVideo: { source, rawUrl: fullUrl },
+        apiVariants: [{ ownerId: '789', mediaId: '456', mediaIndex: 0, source, rawUrl: fullUrl }],
+        apiVariantOverflow: false,
+        requestUrls: [{ record: abort, rawUrl: fullUrl }],
+        requestUrlOverflow: false,
+      },
+    };
+    expect(livePage.classifyLiveHostDiagnostics(observation, proof)).toEqual({
+      expectedLifecycleCancellationCount: 1,
+      qualifiedCspCount: 2,
+      evidenceStatus: 'observed',
+    });
+    expect(abort).toHaveProperty('queryIdentityMatched', true);
+    expect(abort).toHaveProperty('urlIdentitySha256', fullHash);
+    const rejects = (change: (candidate: typeof proof, observed: typeof observation) => void) => {
+      const candidate = structuredClone(proof);
+      const observed = structuredClone(observation);
+      const observedAbort = observed.hostDiagnostics[2];
+      if (!observedAbort || !('error' in observedAbort)) {
+        throw new Error('Quoted-video abort fixture was not retained');
+      }
+      candidate.identities.requestUrls = [{ record: observedAbort, rawUrl: fullUrl }];
+      change(candidate, observed);
+      expect(livePage.classifyLiveHostDiagnostics(observed, candidate).evidenceStatus).toBe(
+        'unverified'
+      );
+    };
+    rejects((item) => {
+      item.expectedCsp[0]!.messageSha256 = 'e'.repeat(64);
+    });
+    rejects((item) => {
+      item.expectedCsp[0]!.messageByteLength = 101;
+    });
+    rejects((item) => {
+      item.expectedCsp.pop();
+    });
+    rejects((_item, observed) => {
+      observed.hostDiagnostics.push({
+        ...csp,
+        location: 'https://other.example/script.js',
+      });
+    });
+    rejects((item) => {
+      item.identities.selectedVideo.rawUrl += '&other=1';
+    });
+    rejects((item) => {
+      item.identities.apiVariants[0]!.rawUrl += '&other=1';
+    });
+    rejects((item) => {
+      item.identities.apiVariants.push({
+        ...item.identities.apiVariants[0]!,
+        rawUrl: `${fullUrl}&second=1`,
+      });
+    });
+    rejects((item) => {
+      item.identities.apiVariantOverflow = true;
+    });
+    rejects((item) => {
+      item.identities.requestUrlOverflow = true;
+    });
+    rejects((item) => {
+      item.identities.requestUrls.length = 0;
+    });
+    rejects((item) => {
+      item.identities.requestUrls[0]!.rawUrl = fullUrl.replace(
+        'video.twimg.com/',
+        'video.twimg.com:443/'
+      );
+    });
+    rejects((item) => {
+      item.identities.requestUrls[0]!.rawUrl += '#fragment';
+    });
+    rejects((item) => {
+      item.identities.requestUrls[0]!.rawUrl += '\n';
+    });
+    rejects((item) => {
+      item.identities.requestUrls[0]!.rawUrl += 'x'.repeat(2049);
+    });
+    rejects((_item, observed) => {
+      observed.hostDiagnosticOverflow = 1;
+    });
+    rejects((_item, observed) => {
+      observed.requiredAssertions.playbackProgress = false;
+    });
+    rejects((_item, observed) => {
+      observed.missingAssertions.push('playbackProgress');
+    });
+    rejects((_item, observed) => {
+      observed.productErrors.push({ kind: 'console' });
+    });
+    rejects((_item, observed) => {
+      observed.api.overflow = 1;
+    });
+    rejects((item) => {
+      item.identities.requestUrls[0]!.rawUrl += '&other=1';
+    });
+    rejects((_item, observed) => {
+      observed.hostDiagnostics[2]!.kind = 'console';
+    });
+    rejects((_item, observed) => {
+      Object.assign(observed.hostDiagnostics[2]!, { error: 'HTTP 403' });
+    });
+    expect(livePage.classifyLiveHostDiagnostics(observation).evidenceStatus).toBe('unverified');
   });
 
   it('accepts one sibling poster after the host clears video.poster and rejects conflicts', () => {

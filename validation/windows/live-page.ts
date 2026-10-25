@@ -2,6 +2,7 @@
 // Copyright (c) 2026 PiesP
 
 import { writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import type { BrowserContext, ElementHandle, JSHandle, Page } from '@playwright/test';
 
@@ -41,6 +42,103 @@ type Diagnostic = {
   hadQuery?: boolean;
   hadCredentials?: boolean;
   hadPort?: boolean;
+  hadFragment?: boolean;
+  messageSha256?: string;
+  messageByteLength?: number;
+  inlineHandlerCsp?: boolean;
+  nonceCanonical?: HostCspNonceCanonical;
+  urlIdentitySha256?: string;
+  queryIdentityMatched?: boolean;
+};
+type HostCspNonceCanonical = {
+  algorithm: 'script-src-quoted-nonce-v1';
+  sha256: string;
+  count: number;
+  lengths: number[];
+};
+type HostCspFingerprint = {
+  script: string;
+  messageSha256: string;
+  messageByteLength: number;
+  nonceCanonical?: HostCspNonceCanonical;
+};
+type ApiVideoIdentity = {
+  ownerId: string;
+  mediaId: string;
+  mediaIndex: number;
+  source: Source;
+  rawUrl: string;
+};
+type DiagnosticIdentities = {
+  selectedVideo: { source: Source; rawUrl: string } | null;
+  apiVariants: ApiVideoIdentity[];
+  apiVariantOverflow: boolean;
+  requestUrls: Array<{ record: Diagnostic; rawUrl: string }>;
+  requestUrlOverflow: boolean;
+};
+export type BorrowedHostDiagnosticProof = {
+  schemaVersion: 1;
+  kind: 'BorrowedHostDiagnosticProof';
+  baseline: {
+    receiptSha256: string;
+    sourceSha: string;
+    coreSha: string;
+    bundleSha256: string;
+    browserPid: number;
+    browserBirthUtcTicks: string;
+    browserSessionId: number;
+    browserSidSha256: string;
+    profilePathSha256: string;
+    portReceiptSha256: string;
+    status: 'baseline-observed';
+    completedAtUtc: string;
+    ownedPagesClosed: true;
+    originalPagesPreserved: true;
+    focusRestored: true;
+    disconnected: true;
+    inventory: {
+      count: number;
+      developerMode: false;
+      relatedCount: 0;
+      unrelatedDigest: string;
+    };
+    pages: Array<{
+      requestedUrl: string;
+      finalUrl: string;
+      responseStatus: 200;
+      articleVisible: true;
+      closed: true;
+      consoleErrors: Array<{
+        kind: 'console-error';
+        script: string;
+        sourceKind: 'x-host-script-location';
+        inlineHandlerCsp: true;
+        messageSha256: string;
+        messageByteLength: number;
+        nonceCanonical?: HostCspNonceCanonical;
+      }>;
+      consoleOverflow: 0;
+      pageErrorCount: 0;
+      pageErrorOverflow: 0;
+    }>;
+  };
+  current: {
+    sourceSha: string;
+    coreSha: string;
+    bundleSha256: string;
+    browserPid: number;
+    browserBirthUtcTicks: string;
+    browserSessionId: number;
+    browserSidSha256: string;
+    profilePathSha256: string;
+    portReceiptSha256: string;
+    unrelatedCount: number;
+    unrelatedDigest: string;
+    targetCount: 1;
+    runtimeResourceCount: 12;
+    runtimeResourceBinding: 'matched';
+    extensionSourcePathVerified: true;
+  };
 };
 type ProductDiagnostic = Diagnostic & { location: string; text: string };
 type HostSnapshot = {
@@ -159,6 +257,7 @@ type LiveObservation = {
     readinessMarker: boolean | null;
     readinessMarkerAtNavigation?: boolean;
     storedModeAfterReadiness?: string | null;
+    videoClickModeSource?: 'unset-default' | 'primary-valid' | 'fallback-valid';
   };
   videoClickMode: string;
   target: LiveTarget | null;
@@ -200,6 +299,42 @@ type ControlledProbe = {
   error?: string;
 };
 type StorageRecord = { exists: boolean; value: unknown; settings: unknown };
+type BorrowedVideoClickMode = {
+  mode: 'block-all' | 'block-controls-only' | 'allow-all';
+  source: 'unset-default' | 'primary-valid' | 'fallback-valid';
+};
+
+// Match DEFAULT_SETTINGS.gallery.videoClickMode in src/constants/settings.ts.
+// This Windows script is packaged without src/, so the focused test guards drift.
+const DEFAULT_VIDEO_CLICK_MODE = 'block-controls-only' as const;
+
+export function resolveBorrowedVideoClickMode(
+  stored: StorageRecord,
+  fallbackRaw: string | null
+): BorrowedVideoClickMode {
+  const primary = stored.exists && stored.value != null ? decodeStoredRecord(stored.value) : null;
+  const fallback = fallbackRaw === null ? null : decodeStoredRecord(fallbackRaw);
+  if (stored.exists && stored.value != null && !primary) {
+    throw new Error('Borrowed extension settings record could not be decoded');
+  }
+  if (fallbackRaw !== null && !fallback) {
+    throw new Error('Borrowed X-origin fallback settings record could not be decoded');
+  }
+  if (!primary && !fallback) {
+    return { mode: DEFAULT_VIDEO_CLICK_MODE, source: 'unset-default' };
+  }
+  const fallbackWins =
+    !primary ||
+    (fallback &&
+      fallback.updatedAt !== undefined &&
+      (primary.updatedAt === undefined || fallback.updatedAt > primary.updatedAt));
+  const selected = fallbackWins ? fallback : primary;
+  const mode = storedVideoClickMode(selected?.value);
+  if (mode === 'block-all' || mode === 'block-controls-only' || mode === 'allow-all') {
+    return { mode, source: fallbackWins ? 'fallback-valid' : 'primary-valid' };
+  }
+  throw new Error('Borrowed effective video click mode is unknown or invalid');
+}
 
 function storedVideoClickMode(settings: unknown): string | null {
   const mode = field(field(settings, 'gallery'), 'videoClickMode');
@@ -287,6 +422,293 @@ function sanitizedUrl(value: string) {
   } catch {
     return '[invalid-url]';
   }
+}
+
+const sha256 = (value: string) => createHash('sha256').update(value).digest('hex');
+const SHA256_PATTERN = /^[0-9a-f]{64}$/u;
+const SHA1_PATTERN = /^[0-9a-f]{40}$/u;
+const INLINE_HANDLER_CSP_PREFIX =
+  'Executing inline event handler violates the following Content Security Policy directive';
+const MAX_CSP_MESSAGE_BYTES = 4096;
+const MAX_BORROWED_BASELINE_AGE_MS = 2 * 60 * 60 * 1000;
+const TIMELINE_SCRIPT_PATTERN =
+  /^https:\/\/abs\.twimg\.com\/responsive-web\/client-web\/loader\.TimelineRenderer\.[a-z0-9]+\.js$/iu;
+const CSP_NONCE_TOKEN = /'nonce-([A-Za-z0-9+/_-]{16,256}={0,2})'/gu;
+const CSP_NONCE_ALGORITHM = 'script-src-quoted-nonce-v1';
+
+function validNonceCanonical(value: unknown): value is HostCspNonceCanonical {
+  const item = record(value);
+  return Boolean(
+    item &&
+    Object.keys(item).sort().join(',') === 'algorithm,count,lengths,sha256' &&
+    item.algorithm === CSP_NONCE_ALGORITHM &&
+    typeof item.sha256 === 'string' &&
+    SHA256_PATTERN.test(item.sha256) &&
+    Number.isSafeInteger(item.count) &&
+    Number(item.count) >= 1 &&
+    Number(item.count) <= 20 &&
+    Array.isArray(item.lengths) &&
+    item.lengths.length === item.count &&
+    item.lengths.every((length) => Number.isSafeInteger(length) && length >= 16 && length <= 258)
+  );
+}
+
+// This hashes the full console message. Only nonce values inside its one quoted
+// script-src directive are replaced for the optional canonical comparison.
+export function fingerprintKnownInlineHandlerCsp(
+  rawMessage: unknown,
+  rawScript: unknown
+): HostCspFingerprint | null {
+  if (
+    typeof rawMessage !== 'string' ||
+    typeof rawScript !== 'string' ||
+    Buffer.byteLength(rawScript, 'utf8') > 256 ||
+    !TIMELINE_SCRIPT_PATTERN.test(rawScript) ||
+    !rawMessage.startsWith(INLINE_HANDLER_CSP_PREFIX) ||
+    Buffer.byteLength(rawMessage, 'utf8') > MAX_CSP_MESSAGE_BYTES
+  ) {
+    return null;
+  }
+  const full = {
+    script: rawScript,
+    messageSha256: sha256(rawMessage),
+    messageByteLength: Buffer.byteLength(rawMessage, 'utf8'),
+  };
+  const marker = " 'script-src ";
+  const start = rawMessage.indexOf(marker, INLINE_HANDLER_CSP_PREFIX.length);
+  const end = start < 0 ? -1 : rawMessage.indexOf("'.", start + marker.length);
+  if (
+    start !== INLINE_HANDLER_CSP_PREFIX.length ||
+    end < 0 ||
+    end - start > 3500 ||
+    rawMessage.indexOf(marker, start + marker.length) !== -1
+  ) {
+    return full;
+  }
+  const directive = rawMessage.slice(start, end + 1);
+  const strict = [...directive.matchAll(CSP_NONCE_TOKEN)];
+  if (
+    strict.length < 1 ||
+    strict.length > 20 ||
+    (directive.match(/nonce-/gu) ?? []).length !== strict.length
+  ) {
+    return full;
+  }
+  const asciiWhitespace = (value: string | undefined) =>
+    value !== undefined && /^[\t\n\f\r ]$/u.test(value);
+  if (
+    strict.some((match) => {
+      const index = match.index;
+      const afterIndex = index + match[0].length;
+      const after = directive[afterIndex];
+      return (
+        !asciiWhitespace(directive[index - 1]) ||
+        !(
+          asciiWhitespace(after) ||
+          afterIndex === directive.length ||
+          (after === "'" && afterIndex === directive.length - 1)
+        )
+      );
+    })
+  ) {
+    return full;
+  }
+  const canonical =
+    rawMessage.slice(0, start) +
+    directive.replace(CSP_NONCE_TOKEN, "'nonce-[value]'") +
+    rawMessage.slice(end + 1);
+  return {
+    ...full,
+    nonceCanonical: {
+      algorithm: CSP_NONCE_ALGORITHM,
+      sha256: sha256(canonical),
+      count: strict.length,
+      lengths: strict.map((match) => match[1]!.length),
+    },
+  };
+}
+
+function hasControlCharacter(value: string) {
+  for (const character of value) {
+    const code = character.charCodeAt(0);
+    if (code < 32 || code === 127) {
+      return true;
+    }
+  }
+  return false;
+}
+
+export function fullVideoUrlIdentity(value: unknown): {
+  rawUrl: string;
+  source: Source;
+  hadQuery: boolean;
+} | null {
+  if (
+    typeof value !== 'string' ||
+    value.length > 2048 ||
+    Buffer.byteLength(value, 'utf8') > 2048 ||
+    !value.startsWith('https://video.twimg.com/') ||
+    hasControlCharacter(value)
+  ) {
+    return null;
+  }
+  try {
+    const url = new URL(value);
+    if (
+      url.href !== value ||
+      url.protocol !== 'https:' ||
+      url.hostname !== 'video.twimg.com' ||
+      url.username ||
+      url.password ||
+      url.port ||
+      hasExplicitUrlPort(value) ||
+      url.hash
+    ) {
+      return null;
+    }
+    return {
+      rawUrl: value,
+      source: { host: url.hostname, path: url.pathname },
+      hadQuery: Boolean(url.search),
+    };
+  } catch {
+    return null;
+  }
+}
+
+// The private caller verifies the receipt bytes and actual process/profile/source
+// identities before constructing this packet. This check binds those claims to
+// the URLs and diagnostics used by this observation; it does not read the VM.
+export function validateBorrowedHostProof(
+  proof: unknown,
+  urls: string[]
+): Map<string, HostCspFingerprint[]> | null {
+  const packet = record(proof);
+  const baseline = record(packet?.baseline);
+  const current = record(packet?.current);
+  const inventory = record(baseline?.inventory);
+  const sha256Fields = [
+    'bundleSha256',
+    'browserSidSha256',
+    'profilePathSha256',
+    'portReceiptSha256',
+  ];
+  const completedAt =
+    typeof baseline?.completedAtUtc === 'string' &&
+    /^20\d\d-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/u.test(baseline.completedAtUtc)
+      ? Date.parse(baseline.completedAtUtc)
+      : NaN;
+  if (
+    packet?.schemaVersion !== 1 ||
+    packet.kind !== 'BorrowedHostDiagnosticProof' ||
+    !baseline ||
+    !current ||
+    !inventory ||
+    typeof baseline.receiptSha256 !== 'string' ||
+    !SHA256_PATTERN.test(baseline.receiptSha256) ||
+    typeof baseline.sourceSha !== 'string' ||
+    !SHA1_PATTERN.test(baseline.sourceSha) ||
+    typeof baseline.coreSha !== 'string' ||
+    !SHA1_PATTERN.test(baseline.coreSha) ||
+    sha256Fields.some(
+      (key) =>
+        typeof baseline[key] !== 'string' ||
+        !SHA256_PATTERN.test(baseline[key]) ||
+        baseline[key] !== current[key]
+    ) ||
+    baseline.sourceSha !== current.sourceSha ||
+    baseline.coreSha !== current.coreSha ||
+    !Number.isSafeInteger(baseline.browserPid) ||
+    Number(baseline.browserPid) <= 0 ||
+    baseline.browserPid !== current.browserPid ||
+    typeof baseline.browserBirthUtcTicks !== 'string' ||
+    !/^\d{12,20}$/u.test(baseline.browserBirthUtcTicks) ||
+    baseline.browserBirthUtcTicks !== current.browserBirthUtcTicks ||
+    !Number.isSafeInteger(baseline.browserSessionId) ||
+    Number(baseline.browserSessionId) < 0 ||
+    baseline.browserSessionId !== current.browserSessionId ||
+    baseline.status !== 'baseline-observed' ||
+    !Number.isFinite(completedAt) ||
+    completedAt > Date.now() ||
+    Date.now() - completedAt > MAX_BORROWED_BASELINE_AGE_MS ||
+    baseline.ownedPagesClosed !== true ||
+    baseline.originalPagesPreserved !== true ||
+    baseline.focusRestored !== true ||
+    baseline.disconnected !== true ||
+    inventory.developerMode !== false ||
+    inventory.relatedCount !== 0 ||
+    !Number.isSafeInteger(inventory.count) ||
+    Number(inventory.count) < 0 ||
+    Number(inventory.count) > 100 ||
+    inventory.count !== current.unrelatedCount ||
+    typeof inventory.unrelatedDigest !== 'string' ||
+    !SHA256_PATTERN.test(inventory.unrelatedDigest) ||
+    inventory.unrelatedDigest !== current.unrelatedDigest ||
+    current.targetCount !== 1 ||
+    current.runtimeResourceCount !== 12 ||
+    current.runtimeResourceBinding !== 'matched' ||
+    current.extensionSourcePathVerified !== true ||
+    !Array.isArray(baseline.pages) ||
+    baseline.pages.length !== urls.length ||
+    urls.length === 0 ||
+    urls.length > 3 ||
+    urls.some((url) => typeof url !== 'string' || !LIVE_URL_PATTERN.test(url)) ||
+    new Set(urls).size !== urls.length
+  ) {
+    return null;
+  }
+  const expected = new Map<string, HostCspFingerprint[]>();
+  for (const value of baseline.pages) {
+    const page = record(value);
+    if (
+      !page ||
+      typeof page.requestedUrl !== 'string' ||
+      !urls.includes(page.requestedUrl) ||
+      expected.has(page.requestedUrl) ||
+      page.finalUrl !== page.requestedUrl ||
+      page.responseStatus !== 200 ||
+      page.articleVisible !== true ||
+      page.closed !== true ||
+      page.consoleOverflow !== 0 ||
+      page.pageErrorCount !== 0 ||
+      page.pageErrorOverflow !== 0 ||
+      !Array.isArray(page.consoleErrors) ||
+      page.consoleErrors.length > 50
+    ) {
+      return null;
+    }
+    const fingerprints: HostCspFingerprint[] = [];
+    for (const value of page.consoleErrors) {
+      const item = record(value);
+      if (
+        !item ||
+        item.kind !== 'console-error' ||
+        item.sourceKind !== 'x-host-script-location' ||
+        item.inlineHandlerCsp !== true ||
+        typeof item.script !== 'string' ||
+        Buffer.byteLength(item.script, 'utf8') > 256 ||
+        !TIMELINE_SCRIPT_PATTERN.test(item.script) ||
+        typeof item.messageSha256 !== 'string' ||
+        !SHA256_PATTERN.test(item.messageSha256) ||
+        !Number.isSafeInteger(item.messageByteLength) ||
+        Number(item.messageByteLength) < INLINE_HANDLER_CSP_PREFIX.length ||
+        Number(item.messageByteLength) > MAX_CSP_MESSAGE_BYTES ||
+        (Object.hasOwn(item, 'nonceCanonical') && !validNonceCanonical(item.nonceCanonical))
+      ) {
+        return null;
+      }
+      fingerprints.push({
+        script: item.script,
+        messageSha256: item.messageSha256,
+        messageByteLength: Number(item.messageByteLength),
+        ...(Object.hasOwn(item, 'nonceCanonical')
+          ? { nonceCanonical: item.nonceCanonical as HostCspNonceCanonical }
+          : {}),
+      });
+    }
+    expected.set(page.requestedUrl, fingerprints);
+  }
+  return expected.size === urls.length ? expected : null;
 }
 
 function sanitizedText(value: unknown, maximum = 600) {
@@ -416,6 +838,71 @@ export function summarizeTweetResultResponse(
     directQuote: summarizeTweet(directQuote),
     nestedQuoteId: summarizeTweet(unwrapTweet(directQuote?.quoted_status_result))?.id ?? null,
   };
+}
+
+export function captureApiVideoIdentities(
+  body: unknown,
+  summary: ApiObservation,
+  identities: DiagnosticIdentities
+): void {
+  if (summary.httpStatus !== 200 || summary.providerErrors) {
+    return;
+  }
+  const result = unwrapTweet(field(field(field(body, 'data'), 'tweetResult'), 'result'));
+  const directQuote = unwrapTweet(result?.quoted_status_result);
+  for (const [tweet, summarized] of [
+    [result, summary.result],
+    [directQuote, summary.directQuote],
+  ] as const) {
+    if (!tweet || !summarized?.id || !/^\d{1,40}$/u.test(summarized.id)) {
+      continue;
+    }
+    const media =
+      field(field(tweet.legacy, 'extended_entities'), 'media') ??
+      field(tweet.extended_entities, 'media');
+    if (!Array.isArray(media)) {
+      continue;
+    }
+    for (const [mediaIndex, rawMedia] of media.slice(0, 12).entries()) {
+      const item = summarized.media[mediaIndex];
+      if (item?.type !== 'video' && item?.type !== 'animated_gif') {
+        continue;
+      }
+      if (!item.id || !/^\d{1,40}$/u.test(item.id)) {
+        continue;
+      }
+      const variants = field(field(rawMedia, 'video_info'), 'variants');
+      if (!Array.isArray(variants)) {
+        continue;
+      }
+      for (const variant of variants.slice(0, 12)) {
+        if (field(variant, 'content_type') !== 'video/mp4') {
+          continue;
+        }
+        const identity = fullVideoUrlIdentity(field(variant, 'url'));
+        if (
+          !identity ||
+          !item.playableVariants.some(
+            (source) =>
+              source?.host === identity.source.host && source.path === identity.source.path
+          )
+        ) {
+          continue;
+        }
+        if (identities.apiVariants.length >= 96) {
+          identities.apiVariantOverflow = true;
+          return;
+        }
+        identities.apiVariants.push({
+          ownerId: summarized.id,
+          mediaId: item.id,
+          mediaIndex,
+          source: identity.source,
+          rawUrl: identity.rawUrl,
+        });
+      }
+    }
+  }
 }
 
 export function summarizeQuoteProviderRejection(api: ApiEvidence | null | undefined) {
@@ -616,7 +1103,153 @@ function hasExplicitUrlPort(value: string) {
   return /:\d+$/u.test(authority ?? '');
 }
 
-export function classifyLiveHostDiagnostics(observation: LiveObservation) {
+function matchedCspCount(records: Diagnostic[], expected: HostCspFingerprint[] | null) {
+  if (!expected) {
+    return 0;
+  }
+  const consoleErrors = records.filter((record) => record.kind === 'console');
+  if (consoleErrors.length !== expected.length) {
+    return 0;
+  }
+  const actual: HostCspFingerprint[] = [];
+  for (const record of consoleErrors) {
+    if (
+      record.inlineHandlerCsp !== true ||
+      typeof record.location !== 'string' ||
+      Buffer.byteLength(record.location, 'utf8') > 256 ||
+      !TIMELINE_SCRIPT_PATTERN.test(record.location) ||
+      typeof record.messageSha256 !== 'string' ||
+      !SHA256_PATTERN.test(record.messageSha256) ||
+      !Number.isSafeInteger(record.messageByteLength) ||
+      Number(record.messageByteLength) < INLINE_HANDLER_CSP_PREFIX.length ||
+      Number(record.messageByteLength) > MAX_CSP_MESSAGE_BYTES ||
+      (Object.hasOwn(record, 'nonceCanonical') && !validNonceCanonical(record.nonceCanonical))
+    ) {
+      return 0;
+    }
+    actual.push({
+      script: record.location,
+      messageSha256: record.messageSha256,
+      messageByteLength: Number(record.messageByteLength),
+      ...(record.nonceCanonical ? { nonceCanonical: record.nonceCanonical } : {}),
+    });
+  }
+  const matches = (seen: HostCspFingerprint, reference: HostCspFingerprint) => {
+    if (
+      seen.script !== reference.script ||
+      seen.messageByteLength !== reference.messageByteLength
+    ) {
+      return false;
+    }
+    if (seen.messageSha256 === reference.messageSha256) {
+      return true;
+    }
+    const a = seen.nonceCanonical;
+    const b = reference.nonceCanonical;
+    return (
+      validNonceCanonical(a) &&
+      validNonceCanonical(b) &&
+      a.algorithm === b.algorithm &&
+      a.sha256 === b.sha256 &&
+      a.count === b.count &&
+      a.lengths.every((length, index) => length === b.lengths[index])
+    );
+  };
+  // Exact multiset matching handles duplicate CSP messages without allowing one
+  // baseline entry to qualify several observed records.
+  const occupied = Array<number>(expected.length).fill(-1);
+  const assign = (index: number, visited: Set<number>): boolean => {
+    for (let slot = 0; slot < expected.length; slot += 1) {
+      if (visited.has(slot) || !matches(actual[index]!, expected[slot]!)) {
+        continue;
+      }
+      visited.add(slot);
+      if (occupied[slot] === -1 || assign(occupied[slot]!, visited)) {
+        occupied[slot] = index;
+        return true;
+      }
+    }
+    return false;
+  };
+  return actual.every((_, index) => assign(index, new Set())) ? actual.length : 0;
+}
+
+function matchesSelectedQueryAbort(
+  record: Diagnostic,
+  observation: LiveObservation,
+  identities: DiagnosticIdentities | null
+) {
+  if (
+    !identities?.selectedVideo ||
+    identities.apiVariantOverflow ||
+    identities.requestUrlOverflow ||
+    observation.api.overflow !== 0 ||
+    record.kind !== 'request-failed' ||
+    record.error !== 'net::ERR_ABORTED' ||
+    record.hadQuery !== true ||
+    record.hadFragment !== false ||
+    record.hadCredentials === true ||
+    record.hadPort === true ||
+    typeof record.url !== 'string'
+  ) {
+    return false;
+  }
+  const owner = observation.gallery.owner;
+  if (
+    owner?.status !== 'matched-direct-quote-variant' ||
+    !owner.ownerId ||
+    !owner.mediaId ||
+    !Number.isSafeInteger(owner.mediaIndex)
+  ) {
+    return false;
+  }
+  let request: URL;
+  try {
+    request = new URL(record.url);
+  } catch {
+    return false;
+  }
+  const selected = identities.selectedVideo.source;
+  if (
+    request.protocol !== 'https:' ||
+    request.hostname !== 'video.twimg.com' ||
+    request.pathname !== selected.path ||
+    selected.host !== request.hostname ||
+    !ownedVideoPath(selected, owner.mediaId)
+  ) {
+    return false;
+  }
+  const rawUrl = identities.requestUrls.find((item) => item.record === record)?.rawUrl;
+  const full = fullVideoUrlIdentity(rawUrl);
+  if (
+    !full?.hadQuery ||
+    full.rawUrl !== identities.selectedVideo.rawUrl ||
+    full.source.host !== selected.host ||
+    full.source.path !== selected.path
+  ) {
+    return false;
+  }
+  const variants = identities.apiVariants.filter(
+    (variant) =>
+      variant.ownerId === owner.ownerId &&
+      variant.mediaId === owner.mediaId &&
+      variant.mediaIndex === owner.mediaIndex &&
+      variant.source.host === selected.host &&
+      variant.source.path === selected.path
+  );
+  const uniqueUrls = new Set(variants.map((variant) => variant.rawUrl));
+  const matched = uniqueUrls.size === 1 && uniqueUrls.has(full.rawUrl);
+  if (matched) {
+    record.urlIdentitySha256 = sha256(full.rawUrl);
+    record.queryIdentityMatched = true;
+  }
+  return matched;
+}
+
+export function classifyLiveHostDiagnostics(
+  observation: LiveObservation,
+  proof: { expectedCsp: HostCspFingerprint[]; identities: DiagnosticIdentities } | null = null
+) {
   const required = observation.requiredAssertions;
   const allRequired =
     required &&
@@ -634,9 +1267,17 @@ export function classifyLiveHostDiagnostics(observation: LiveObservation) {
     owner?.status === 'matched-direct-quote-variant' && mediaId && /^\d{1,40}$/u.test(mediaId)
       ? ownedVideoPath(source, mediaId)
       : null;
+  const proofEligible = proof !== null && observation.missingAssertions.length === 0;
   const expectedLifecycleCancellationCount =
     allRequired && family
       ? observation.hostDiagnostics.filter((record) => {
+          if (
+            proof &&
+            proofEligible &&
+            matchesSelectedQueryAbort(record, observation, proof.identities)
+          ) {
+            return true;
+          }
           if (
             record.kind !== 'request-failed' ||
             record.error !== 'net::ERR_ABORTED' ||
@@ -663,14 +1304,19 @@ export function classifyLiveHostDiagnostics(observation: LiveObservation) {
           }
         }).length
       : 0;
+  const qualifiedCspCount =
+    proof && proofEligible && allRequired
+      ? matchedCspCount(observation.hostDiagnostics, proof.expectedCsp)
+      : 0;
   return {
     expectedLifecycleCancellationCount,
     evidenceStatus:
       allRequired &&
       observation.hostDiagnosticOverflow === 0 &&
-      expectedLifecycleCancellationCount === observation.hostDiagnostics.length
+      expectedLifecycleCancellationCount + qualifiedCspCount === observation.hostDiagnostics.length
         ? 'observed'
         : 'unverified',
+    ...(proof ? { qualifiedCspCount } : {}),
   };
 }
 
@@ -698,18 +1344,37 @@ function isProductConsoleError(record: ProductDiagnostic) {
   );
 }
 
-function attachDiagnostics(page: Page, observation: LiveObservation) {
+function attachDiagnostics(
+  page: Page,
+  observation: LiveObservation,
+  identities: DiagnosticIdentities | null = null
+) {
   const pendingResponses = new Set<Promise<void>>();
   page.on('console', (message) => {
     if (message.type() !== 'error') {
       return;
     }
+    const raw = message.text();
+    const rawScript = message.location().url || 'about:blank';
+    const location = sanitizedUrl(rawScript);
+    const fingerprint = identities ? fingerprintKnownInlineHandlerCsp(raw, rawScript) : null;
     const record = {
       kind: 'console',
-      location: sanitizedUrl(message.location().url || 'about:blank'),
-      text: sanitizedText(message.text()),
+      location,
+      text: sanitizedText(raw),
+      ...(fingerprint
+        ? {
+            inlineHandlerCsp: true,
+            messageSha256: fingerprint.messageSha256,
+            messageByteLength: fingerprint.messageByteLength,
+            ...(fingerprint.nonceCanonical ? { nonceCanonical: fingerprint.nonceCanonical } : {}),
+          }
+        : {}),
     };
     const product = isProductConsoleError(record);
+    if (fingerprint) {
+      record.text = record.text.replace(/nonce-[^\s'"<>]*/gu, 'nonce-[redacted]');
+    }
     addBounded(
       product ? observation.productErrors : observation.hostDiagnostics,
       record,
@@ -762,6 +1427,9 @@ function attachDiagnostics(page: Page, observation: LiveObservation) {
           const summary = summarizeTweetResultResponse(url, response.status(), body);
           if (summary) {
             observation.api.observations.push({ ...summary, bodyOutcome });
+            if (identities && bodyOutcome === 'parsed') {
+              captureApiVideoIdentities(body, summary, identities);
+            }
           }
         })();
         pendingResponses.add(capture);
@@ -780,16 +1448,29 @@ function attachDiagnostics(page: Page, observation: LiveObservation) {
     }
   });
   page.on('requestfailed', (request) => {
-    const url = new URL(request.url());
+    const rawUrl = request.url();
+    const url = new URL(rawUrl);
+    const fullIdentity = identities ? fullVideoUrlIdentity(rawUrl) : null;
     const record = {
       kind: 'request-failed',
       error: sanitizedText(request.failure()?.errorText ?? 'unknown', 200),
-      url: sanitizedUrl(request.url()),
+      url: sanitizedUrl(rawUrl),
       hadQuery: Boolean(url.search || url.hash),
       hadCredentials: Boolean(url.username || url.password),
-      hadPort: hasExplicitUrlPort(request.url()),
+      hadPort: hasExplicitUrlPort(rawUrl),
+      ...(identities ? { hadFragment: Boolean(url.hash) } : {}),
     };
     const product = record.url.startsWith('chrome-extension:');
+    if (identities && !product && fullIdentity?.hadQuery) {
+      if (
+        identities.requestUrls.length < MAX_DIAGNOSTICS &&
+        observation.hostDiagnostics.length < MAX_DIAGNOSTICS
+      ) {
+        identities.requestUrls.push({ record, rawUrl: fullIdentity.rawUrl });
+      } else {
+        identities.requestUrlOverflow = true;
+      }
+    }
     addBounded(
       product ? observation.productErrors : observation.hostDiagnostics,
       record,
@@ -2076,6 +2757,21 @@ export function inspectSelectedGalleryVideoDocument() {
   };
 }
 
+export function readSelectedCurrentVideoUrlDocument(selectedIndex: number): string | null {
+  const galleries = document.querySelectorAll('[data-xeg-gallery-container]');
+  const gallery = galleries.length === 1 ? galleries[0] : null;
+  const toolbar = gallery?.querySelector('[data-gallery-element="toolbar"]');
+  const items = gallery?.querySelectorAll('[data-gallery-element="item"]');
+  const video = items?.[selectedIndex]?.querySelector('video');
+  return Number.isSafeInteger(selectedIndex) &&
+    selectedIndex >= 0 &&
+    toolbar?.getAttribute('data-current-index') === String(selectedIndex) &&
+    video instanceof HTMLVideoElement &&
+    video.currentSrc
+    ? video.currentSrc
+    : null;
+}
+
 function quotedOwnerForSource(
   apiObservations: ApiObservation[],
   outerId: string,
@@ -2586,7 +3282,9 @@ async function observeQuotedVideo(
   output: string,
   index: string | number,
   settleApi: () => Promise<void>,
-  controlledVideoClickMode: string | null
+  controlledVideoClickMode: string | null,
+  verifyBorrowedMode: (() => Promise<void>) | null = null,
+  identities: DiagnosticIdentities | null = null
 ) {
   const target = observation.target;
   if (!target || target.kind !== 'quoted-video') {
@@ -2640,6 +3338,7 @@ async function observeQuotedVideo(
       x: confirmation.nativePlay.x - hit.nativePlay.x,
       y: confirmation.nativePlay.y - hit.nativePlay.y,
     };
+    await verifyBorrowedMode?.();
     await page.mouse.click(confirmation.nativePlay.x, confirmation.nativePlay.y);
     target.nativePlayback.galleryOpenedOnControlClick =
       (await page.locator('[data-xeg-gallery-container]').count()) > 0;
@@ -2826,6 +3525,7 @@ async function observeQuotedVideo(
         point,
       }
     );
+    await verifyBorrowedMode?.();
     await page.mouse.click(point.x, point.y);
     observation.gallery.activationFocusCaptured = await activationCaptureHandle.evaluate(
       (capture) => capture.captured
@@ -2911,6 +3611,19 @@ async function observeQuotedVideo(
         .catch(() => {});
     }
     const afterPlayback = (await page.evaluate(inspectSelectedGalleryVideoDocument)) || null;
+    if (identities && afterPlayback?.source) {
+      const rawSource = await page.evaluate(
+        readSelectedCurrentVideoUrlDocument,
+        afterPlayback.index
+      );
+      const full = fullVideoUrlIdentity(rawSource);
+      if (
+        full?.source.host === afterPlayback.source.host &&
+        full.source.path === afterPlayback.source.path
+      ) {
+        identities.selectedVideo = { source: full.source, rawUrl: full.rawUrl };
+      }
+    }
     const playback = {
       startTime,
       endTime: afterPlayback?.currentTime ?? null,
@@ -3026,7 +3739,8 @@ async function observeNativePreviewPhoto(
   target: NativePreviewTarget,
   output: string,
   index: string | number,
-  settleApi: () => Promise<void>
+  settleApi: () => Promise<void>,
+  verifyBorrowedMode: (() => Promise<void>) | null = null
 ) {
   const article = page.locator('article').nth(target.articleIndex);
   const action = article.locator('a[href]').nth(target.actionIndex);
@@ -3062,6 +3776,7 @@ async function observeNativePreviewPhoto(
     if (!identityBeforeClick) {
       throw new Error('Native preview action identity changed before click');
     }
+    await verifyBorrowedMode?.();
     await actionHandle.click({ timeout: ACTION_TIMEOUT_MS });
     const gallery = page.locator('[data-xeg-gallery-container]');
     await gallery.waitFor({ state: 'visible', timeout: ACTION_TIMEOUT_MS });
@@ -3203,7 +3918,9 @@ async function observeOne(
   output: string,
   index: string | number,
   controlledVideoClickMode: string | null = null,
-  verifyControlledMode: (() => Promise<string | null>) | null = null
+  verifyControlledMode: (() => Promise<string | null>) | null = null,
+  borrowedExtensionPage: Page | null = null,
+  expectedCsp: HostCspFingerprint[] | null = null
 ) {
   const identity = targetIdentity(targetUrl);
   const page = await context.newPage();
@@ -3214,7 +3931,7 @@ async function observeOne(
     finalUrl: null,
     responseStatus: null,
     extension: { id: extensionId, readinessMarker: null },
-    videoClickMode: controlledVideoClickMode ?? 'default',
+    videoClickMode: borrowedExtensionPage ? 'unverified' : (controlledVideoClickMode ?? 'default'),
     target: null,
     gallery: { status: 'not-run' },
     api: { tweetResultByRestId: { requests: 0, responses: [] }, observations: [], overflow: 0 },
@@ -3229,7 +3946,39 @@ async function observeOne(
     evidenceStatus: 'unverified',
     status: 'pending',
   };
-  const settleApi = attachDiagnostics(page, observation);
+  let borrowedMode: BorrowedVideoClickMode | null = null;
+  const identities: DiagnosticIdentities | null = expectedCsp
+    ? {
+        selectedVideo: null,
+        apiVariants: [],
+        apiVariantOverflow: false,
+        requestUrls: [],
+        requestUrlOverflow: false,
+      }
+    : null;
+  const verifyBorrowedMode = borrowedExtensionPage
+    ? async () => {
+        const finalUrl = new URL(page.url());
+        if (
+          !['x.com', 'twitter.com'].includes(finalUrl.hostname.toLowerCase()) ||
+          finalUrl.pathname.toLowerCase() !==
+            `/${identity.handle}/status/${identity.statusId}`.toLowerCase()
+        ) {
+          throw new Error('Borrowed page left the requested X status origin');
+        }
+        const current = await readBorrowedVideoClickMode(borrowedExtensionPage, page);
+        if (
+          borrowedMode &&
+          (current.mode !== borrowedMode.mode || current.source !== borrowedMode.source)
+        ) {
+          throw new Error('Borrowed effective video click mode changed during observation');
+        }
+        borrowedMode ??= current;
+        observation.videoClickMode = borrowedMode.mode;
+        observation.extension.videoClickModeSource = borrowedMode.source;
+      }
+    : null;
+  const settleApi = attachDiagnostics(page, observation, identities);
   let actionHandle: ElementHandle<SVGElement | HTMLElement> | null | undefined;
   try {
     const response = await page.goto(targetUrl, {
@@ -3238,6 +3987,7 @@ async function observeOne(
     });
     observation.responseStatus = response?.status() ?? null;
     observation.finalUrl = sanitizedUrl(page.url());
+    await verifyBorrowedMode?.();
     observation.extension.readinessMarkerAtNavigation =
       (await page.locator('html[data-xeg-gallery-ready="true"]').count()) === 1;
     observation.targetCandidatesBefore = await page
@@ -3281,11 +4031,15 @@ async function observeOne(
       observation.missingAssertions.push('extensionInjected');
       throw new Error('Installed extension readiness marker was not observed');
     }
-    if (controlledVideoClickMode === 'allow-all') {
+    if (controlledVideoClickMode === 'allow-all' && !borrowedExtensionPage) {
       observation.extension.storedModeAfterReadiness = (await verifyControlledMode?.()) ?? null;
       if (observation.extension.storedModeAfterReadiness !== 'allow-all') {
         throw new Error('Controlled video click mode was not observed after live-page readiness');
       }
+    }
+    if (borrowedExtensionPage) {
+      await verifyBorrowedMode?.();
+      observation.extension.storedModeAfterReadiness = observation.videoClickMode;
     }
 
     if (observation.target.kind === 'quoted-video') {
@@ -3296,7 +4050,10 @@ async function observeOne(
         output,
         index,
         settleApi,
-        controlledVideoClickMode
+        controlledVideoClickMode ??
+          (observation.videoClickMode === 'allow-all' ? 'allow-all' : null),
+        verifyBorrowedMode,
+        identities
       );
       await settleApi();
       if (refreshQuotedVideoErrorAssertions(observation).length) {
@@ -3309,6 +4066,7 @@ async function observeOne(
     }
 
     if (observation.target.kind === 'native-preview-photo') {
+      await verifyBorrowedMode?.();
       await observeNativePreviewPhoto(
         page,
         observation,
@@ -3316,7 +4074,8 @@ async function observeOne(
         observation.target,
         output,
         index,
-        settleApi
+        settleApi,
+        verifyBorrowedMode
       );
       observation.status = 'core-flow-observed';
       return observation;
@@ -3408,6 +4167,7 @@ async function observeOne(
     }
 
     await recordHostGeometry('before-click');
+    await verifyBorrowedMode?.();
     await actionHandle.click({ timeout: ACTION_TIMEOUT_MS });
     const gallery = page.locator('[data-xeg-gallery-container]');
     await gallery.waitFor({ state: 'visible', timeout: ACTION_TIMEOUT_MS });
@@ -3578,7 +4338,13 @@ async function observeOne(
           summarizeQuoteProviderRejection(observation.api)
         );
       } else {
-        Object.assign(observation, classifyLiveHostDiagnostics(observation));
+        Object.assign(
+          observation,
+          classifyLiveHostDiagnostics(
+            observation,
+            expectedCsp && identities ? { expectedCsp, identities } : null
+          )
+        );
       }
     }
     if (
@@ -3587,17 +4353,48 @@ async function observeOne(
     ) {
       refreshNativePreviewObservation(observation);
     }
+    if (
+      expectedCsp &&
+      identities &&
+      observation.status === 'core-flow-observed' &&
+      observation.target?.kind !== 'quoted-video'
+    ) {
+      Object.assign(
+        observation,
+        classifyLiveHostDiagnostics(observation, { expectedCsp, identities })
+      );
+    }
     if (actionHandle) {
       await actionHandle.dispose().catch(() => {});
     }
     observation.finalUrl = sanitizedUrl(page.url());
-    await writeFile(join(output, `live-page-${index}.json`), JSON.stringify(observation, null, 2));
-    await page.close().catch(() => {});
+    try {
+      await writeFile(
+        join(output, `live-page-${index}.json`),
+        JSON.stringify(observation, null, 2)
+      );
+    } finally {
+      try {
+        if (borrowedExtensionPage) {
+          await page.close();
+        } else {
+          await page.close().catch(() => {});
+        }
+      } finally {
+        if (identities) {
+          identities.selectedVideo = null;
+          identities.apiVariants.length = 0;
+          identities.requestUrls.length = 0;
+        }
+      }
+    }
   }
   return observation;
 }
 
-export function decodeStoredValue(raw: unknown): unknown {
+function decodeStoredRecord(
+  raw: unknown
+): { value: unknown; updatedAt: number | undefined } | null {
   let parsed = raw;
   if (typeof raw === 'string') {
     try {
@@ -3612,9 +4409,14 @@ export function decodeStoredValue(raw: unknown): unknown {
     typeof parsed.updatedAt === 'number' &&
     Object.hasOwn(parsed, 'value')
   ) {
-    return parsed.value;
+    return { value: parsed.value, updatedAt: parsed.updatedAt };
   }
-  return parsed;
+  return { value: parsed, updatedAt: undefined };
+}
+
+export function decodeStoredValue(raw: unknown): unknown {
+  const decoded = decodeStoredRecord(raw);
+  return decoded ? decoded.value : null;
 }
 
 export async function readStoredLanguage(extensionPage: {
@@ -3638,6 +4440,25 @@ export async function readStoredVideoSettings(extensionPage: Page): Promise<Stor
     return { exists: Object.hasOwn(values, storageKey), value: values[storageKey] ?? null };
   }, key);
   return { ...prior, settings: decodeStoredValue(prior.value) };
+}
+
+async function readBorrowedVideoClickMode(
+  extensionPage: Page,
+  livePage: Page
+): Promise<BorrowedVideoClickMode> {
+  const primary = await readStoredVideoSettings(extensionPage);
+  // The content script's PersistentStorage fallback is scoped to the X origin.
+  // An extension page's localStorage cannot reveal it.
+  const fallbackRaw = await livePage.evaluate(() => {
+    if (
+      location.protocol !== 'https:' ||
+      (location.hostname !== 'x.com' && location.hostname !== 'twitter.com')
+    ) {
+      throw new Error('Borrowed settings fallback is outside the supported X origin');
+    }
+    return localStorage.getItem('xeg-fallback:xeg-app-settings');
+  });
+  return resolveBorrowedVideoClickMode(primary, fallbackRaw);
 }
 
 export async function restoreStoredVideoSettings(
@@ -3782,37 +4603,96 @@ export async function observeLiveUrls({
   extensionId,
   liveUrls,
   output,
+  session = 'owned',
+  borrowedHostProof = null,
 }: {
   context: BrowserContext;
   extensionId: string;
   liveUrls: unknown;
   output: string;
+  session?: 'owned' | 'borrowed';
+  borrowedHostProof?: BorrowedHostDiagnosticProof | null;
 }) {
+  if (session !== 'owned' && session !== 'borrowed') {
+    throw new Error('Unknown live observation session mode');
+  }
   const urls = validateLiveUrls(liveUrls);
   if (!urls.length) {
     return { status: 'not-requested', evidenceStatus: 'not-applicable', pages: [] };
   }
   const pages: LiveObservation[] = [];
-  for (let index = 0; index < urls.length; index += 1) {
-    const url = urls[index];
-    if (!url) {
-      continue;
+  const baselineByUrl =
+    session === 'borrowed' && borrowedHostProof
+      ? validateBorrowedHostProof(borrowedHostProof, urls)
+      : null;
+  let extensionPage: Page | null = null;
+  let borrowedMode: BorrowedVideoClickMode | null = null;
+  let borrowedError: string | null = null;
+  try {
+    if (session === 'borrowed') {
+      extensionPage = await context.newPage();
+      await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
     }
-    const page = await observeOne(context, extensionId, url, output, index + 1);
-    if (page.classification === 'native-play-observed-gallery-action-unavailable') {
-      page.controlledProbe = await observeControlledVideoMode(
+    for (let index = 0; index < urls.length; index += 1) {
+      const url = urls[index];
+      if (!url) {
+        continue;
+      }
+      const page = await observeOne(
         context,
         extensionId,
         url,
         output,
-        index + 1
-      ).catch((error) => ({
-        status: 'failed',
-        error: safeError(error),
-        cleanup: { restored: false, extensionPageClosed: false },
-      }));
+        index + 1,
+        null,
+        null,
+        extensionPage,
+        baselineByUrl?.get(url) ?? null
+      );
+      if (
+        session === 'borrowed' &&
+        pages.length === 0 &&
+        page.extension.videoClickModeSource &&
+        (page.videoClickMode === 'block-all' ||
+          page.videoClickMode === 'block-controls-only' ||
+          page.videoClickMode === 'allow-all')
+      ) {
+        borrowedMode = {
+          mode: page.videoClickMode,
+          source: page.extension.videoClickModeSource,
+        };
+      }
+      if (
+        session === 'owned' &&
+        page.classification === 'native-play-observed-gallery-action-unavailable'
+      ) {
+        page.controlledProbe = await observeControlledVideoMode(
+          context,
+          extensionId,
+          url,
+          output,
+          index + 1
+        ).catch((error) => ({
+          status: 'failed',
+          error: safeError(error),
+          cleanup: { restored: false, extensionPageClosed: false },
+        }));
+      }
+      pages.push(page);
     }
-    pages.push(page);
+  } catch (error) {
+    if (session === 'owned') {
+      throw error;
+    }
+    borrowedError = safeError(error);
+  } finally {
+    if (extensionPage) {
+      try {
+        await extensionPage.close();
+      } catch (error) {
+        borrowedError ??= `Borrowed extension page cleanup failed: ${safeError(error)}`;
+      }
+    }
   }
   const passedPage = (page: LiveObservation) =>
     page.status === 'core-flow-observed' ||
@@ -3823,32 +4703,53 @@ export async function observeLiveUrls({
     (page) => page.controlledProbe?.observation?.status === 'core-flow-observed'
   );
   const summary = {
-    status: failed.length
-      ? 'failed'
-      : controlled
-        ? 'controlled-flow-observed'
-        : 'core-flow-observed',
-    evidenceStatus: pages.every(
-      (page) =>
-        passedPage(page) &&
-        (page.status === 'core-flow-observed'
-          ? page.evidenceStatus
-          : page.controlledProbe?.observation?.evidenceStatus) === 'observed'
-    )
-      ? 'observed'
-      : 'unverified',
+    status:
+      failed.length || borrowedError
+        ? 'failed'
+        : controlled
+          ? 'controlled-flow-observed'
+          : 'core-flow-observed',
+    evidenceStatus:
+      !borrowedError &&
+      pages.every(
+        (page) =>
+          passedPage(page) &&
+          (page.status === 'core-flow-observed'
+            ? page.evidenceStatus
+            : page.controlledProbe?.observation?.evidenceStatus) === 'observed'
+      )
+        ? 'observed'
+        : 'unverified',
     pages,
+    ...(session === 'borrowed'
+      ? {
+          session,
+          borrowedMode: urls.length === 1 ? borrowedMode : null,
+          borrowedError,
+          hostProofStatus: borrowedHostProof
+            ? baselineByUrl
+              ? 'validated'
+              : 'invalid'
+            : 'not-provided',
+          hostBaselineReceiptSha256: baselineByUrl
+            ? borrowedHostProof?.baseline.receiptSha256
+            : null,
+        }
+      : {}),
   };
   await writeFile(join(output, 'live-observations.json'), JSON.stringify(summary, null, 2));
-  if (failed.length) {
+  if (failed.length || borrowedError) {
     const error = new AggregateError(
-      failed.map(
-        (page) =>
-          new Error(
-            page.controlledProbe?.error ?? page.controlledProbe?.observation?.error ?? page.error
-          )
-      ),
-      `${failed.length} live X observation(s) missed required assertions`
+      [
+        ...failed.map(
+          (page) =>
+            new Error(
+              page.controlledProbe?.error ?? page.controlledProbe?.observation?.error ?? page.error
+            )
+        ),
+        ...(borrowedError ? [new Error(borrowedError)] : []),
+      ],
+      `${failed.length} live X observation(s) missed required assertions${borrowedError ? '; borrowed session check failed' : ''}`
     );
     throw Object.assign(error, { summary });
   }
