@@ -363,6 +363,42 @@ describe('Node script import boundary', () => {
     expect(existsSync(join(root, 'reports/production-footprint.json'))).toBe(false);
   });
 
+  it('hashes untracked symlink targets and rejects nonregular source entries', () => {
+    const { root } = fixture();
+    const { bin, calls } = releaseFixture(root);
+    writeFileSync(join(root, 'target-one'), 'same bytes');
+    writeFileSync(join(root, 'target-two'), 'same bytes');
+    const source = join(root, 'untracked-source.ts');
+    const capture = () =>
+      spawnSync(
+        process.execPath,
+        [
+          '--experimental-strip-types',
+          '--input-type=module',
+          '-e',
+          "import { captureBuildInputs } from './scripts/release/footprint.ts'; console.log(captureBuildInputs().sourceStateSha256);",
+        ],
+        {
+          cwd: root,
+          encoding: 'utf8',
+          env: { ...releaseEnv(root, bin, calls), FAKE_DIRTY: '1' },
+        }
+      );
+    symlinkSync('target-one', source);
+    const first = capture();
+    expect(first.status, first.stderr).toBe(0);
+    rmSync(source);
+    symlinkSync('target-two', source);
+    const second = capture();
+    expect(second.status, second.stderr).toBe(0);
+    expect(second.stdout).not.toBe(first.stdout);
+    rmSync(source);
+    mkdirSync(source);
+    const directory = capture();
+    expect(directory.status).not.toBe(0);
+    expect(directory.stderr).toContain('Unsupported untracked source entry');
+  });
+
   it('builds stable dirty source without claiming clean release provenance', () => {
     const { root, command } = fixture();
     const { bin, calls } = releaseFixture(root);
@@ -370,7 +406,7 @@ describe('Node script import boundary', () => {
     const pnpm = join(bin, 'pnpm');
     writeFileSync(
       pnpm,
-      '#!/bin/sh\nif [ "$1" = "--version" ]; then printf "12.15.0\\n"; exit 0; fi\nfor file in reports/modules-*.json; do sed -i "s/fixture-run/$XCOM_FOOTPRINT_RUN_ID/g" "$file"; done\n'
+      '#!/bin/sh\nif [ "$1" = "--version" ]; then printf "12.15.0\\n"; exit 0; fi\nif [ "$2" = "build:extension:ci" ]; then mkdir dist-extension; printf "{\\"version\\":\\"2.3.3\\"}\\n" > dist-extension/manifest.json; fi\nfor file in reports/modules-*.json; do sed -i "s/fixture-run/$XCOM_FOOTPRINT_RUN_ID/g" "$file"; done\n'
     );
     chmodSync(pnpm, 0o755);
     const result = command('scripts/release/build-all.ts', [], {
@@ -392,6 +428,41 @@ describe('Node script import boundary', () => {
     expect(readFileSync(join(root, 'release-bundle/sentinel'), 'utf8')).toBe('old bundle');
   });
 
+  it('removes stale Chrome output before its producing build and excludes it from release artifacts', () => {
+    const { root, command } = fixture();
+    const { bin, calls } = releaseFixture(root);
+    mkdirSync(join(root, 'dist-extension/legacy'));
+    writeFileSync(join(root, 'dist-extension/legacy/stale.js'), 'stale Chrome build');
+    writeFileSync(join(root, 'dist/xcom-enhanced-gallery.dev.user.js'), 'dev userscript');
+    const pnpm = join(bin, 'pnpm');
+    writeFileSync(
+      pnpm,
+      '#!/bin/sh\nif [ "$1" = "--version" ]; then printf "12.15.0\\n"; exit 0; fi\nif [ "$1" = "-s" ]; then shift; fi\ncase "$1" in\n  build:ci) test -f dist-extension/legacy/stale.js || exit 11 ;;\n  build:extension:ci) test ! -e dist-extension || exit 12; mkdir dist-extension; printf "{\\"version\\":\\"2.3.3\\"}\\n" > dist-extension/manifest.json; printf fresh > dist-extension/content.js ;;\nesac\nfor file in reports/modules-*.json; do sed -i "s/fixture-run/$XCOM_FOOTPRINT_RUN_ID/g" "$file"; done\n'
+    );
+    chmodSync(pnpm, 0o755);
+    writeFileSync(join(bin, 'zip'), '#!/bin/sh\nfind . -type f -print | sort > "$3"\n');
+
+    const build = command('scripts/release/build-all.ts', [], releaseEnv(root, bin, calls));
+    expect(build.status, build.stderr).toBe(0);
+    expect(existsSync(join(root, 'dist-extension/legacy/stale.js'))).toBe(false);
+    expect(readFileSync(join(root, 'dist/xcom-enhanced-gallery.dev.user.js'), 'utf8')).toBe(
+      'dev userscript'
+    );
+    const report = JSON.parse(
+      readFileSync(join(root, 'reports/production-footprint.json'), 'utf8')
+    ) as { files: { chrome: { path: string }[] } };
+    expect(report.files.chrome.map((file) => file.path)).toEqual(['content.js', 'manifest.json']);
+
+    const prepare = command('scripts/release/prepare.ts', [], releaseEnv(root, bin, calls));
+    expect(prepare.status, prepare.stderr).toBe(0);
+    const archive = readFileSync(
+      join(root, 'release-bundle/release/xcom-enhanced-gallery-chrome.zip'),
+      'utf8'
+    );
+    expect(archive).toContain('./content.js');
+    expect(archive).not.toContain('stale.js');
+  });
+
   it('rejects source changes during a producing build even when dirty status is unchanged', () => {
     const { root, command } = fixture();
     const { bin, calls } = releaseFixture(root);
@@ -399,7 +470,7 @@ describe('Node script import boundary', () => {
     const pnpm = join(bin, 'pnpm');
     writeFileSync(
       pnpm,
-      '#!/bin/sh\nif [ "$1" = "--version" ]; then printf "12.15.0\\n"; exit 0; fi\nprintf after > untracked-source.ts\nfor file in reports/modules-*.json; do sed -i "s/fixture-run/$XCOM_FOOTPRINT_RUN_ID/g" "$file"; done\n'
+      '#!/bin/sh\nif [ "$1" = "--version" ]; then printf "12.15.0\\n"; exit 0; fi\nif [ "$2" = "build:extension:ci" ]; then mkdir dist-extension; printf "{\\"version\\":\\"2.3.3\\"}\\n" > dist-extension/manifest.json; fi\nprintf after > untracked-source.ts\nfor file in reports/modules-*.json; do sed -i "s/fixture-run/$XCOM_FOOTPRINT_RUN_ID/g" "$file"; done\n'
     );
     chmodSync(pnpm, 0o755);
     const result = command('scripts/release/build-all.ts', [], {

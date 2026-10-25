@@ -1,5 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
+import { rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { beginBuildFootprint, captureBuildInputs, writeBuildFootprint } from './footprint.ts';
 
@@ -16,6 +17,9 @@ export function buildAll(): void {
     'build:extension:ci',
     'build:extension:firefox:ci',
   ]) {
+    if (script === 'build:extension:ci') {
+      rmSync(resolve(root, 'dist-extension'), { recursive: true, force: true });
+    }
     const result = spawnSync('pnpm', ['-s', script], {
       cwd: root,
       env: { ...process.env, XCOM_FOOTPRINT_RUN_ID: runId },

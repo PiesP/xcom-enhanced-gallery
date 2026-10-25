@@ -2,8 +2,12 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
   existsSync,
+  closeSync,
+  constants,
+  fstatSync,
   lstatSync,
   mkdirSync,
+  openSync,
   readFileSync,
   readlinkSync,
   readdirSync,
@@ -82,6 +86,29 @@ function sha256(bytes: Buffer): string {
   return createHash('sha256').update(bytes).digest('hex');
 }
 
+function readRegularFile(path: string, errorMessage: string): Buffer {
+  const fd = openSync(path, constants.O_RDONLY | constants.O_NONBLOCK | constants.O_NOFOLLOW);
+  try {
+    if (!fstatSync(fd).isFile()) {
+      throw new Error(errorMessage);
+    }
+    return readFileSync(fd);
+  } finally {
+    closeSync(fd);
+  }
+}
+
+function readUntrackedSource(path: string, errorMessage: string): Buffer | string {
+  try {
+    return readlinkSync(path);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'EINVAL') {
+      throw error;
+    }
+  }
+  return readRegularFile(path, errorMessage);
+}
+
 function command(file: string, args: string[]): string {
   return execFileSync(file, args, { cwd: root, encoding: 'utf8' }).trim();
 }
@@ -119,7 +146,7 @@ function inventory(directory: string, selected?: ReadonlySet<string>): Footprint
         if (selected && !selected.has(path)) {
           continue;
         }
-        const bytes = readFileSync(fullPath);
+        const bytes = readRegularFile(fullPath, `Non-regular distribution input: ${fullPath}`);
         result.push({
           path,
           bytes: bytes.length,
@@ -154,15 +181,8 @@ export function captureBuildInputs(): BuildInputs {
     .sort();
   for (const path of untracked) {
     const file = join(root, path);
-    const stat = lstatSync(file);
     sourceState.update(path).update('\0');
-    if (stat.isFile()) {
-      sourceState.update(readFileSync(file));
-    } else if (stat.isSymbolicLink()) {
-      sourceState.update(readlinkSync(file));
-    } else {
-      throw new Error(`Unsupported untracked source entry: ${path}`);
-    }
+    sourceState.update(readUntrackedSource(file, `Unsupported untracked source entry: ${path}`));
     sourceState.update('\0');
   }
   const coreStatus = command('git', [
@@ -189,15 +209,8 @@ export function captureBuildInputs(): BuildInputs {
     .sort();
   for (const path of coreUntracked) {
     const file = join(root, 'packages/core', path);
-    const stat = lstatSync(file);
     sourceState.update(path).update('\0');
-    if (stat.isFile()) {
-      sourceState.update(readFileSync(file));
-    } else if (stat.isSymbolicLink()) {
-      sourceState.update(readlinkSync(file));
-    } else {
-      throw new Error(`Unsupported untracked core entry: ${path}`);
-    }
+    sourceState.update(readUntrackedSource(file, `Unsupported untracked core entry: ${path}`));
     sourceState.update('\0');
   }
   return {
