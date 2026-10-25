@@ -813,6 +813,29 @@ selected, directly quoted video may be counted as an expected host media
 lifecycle cancellation. The request must be from the same `video.twimg.com`
 media family and media ID as the selected source. Other host diagnostics,
 diagnostic overflow, or any failed assertion keep the evidence unverified.
+For a **new** borrowed-session run, the private caller may provide a
+`BorrowedHostDiagnosticProof` built from a fresh, same-profile observation of
+the exact URLs while XEG is absent. Before passing it, the caller must verify
+the raw baseline receipt SHA-256 and the actual source/core/bundle, browser
+PID, birth, session and SID, profile, debug-port, unchanged unrelated extension
+inventory, installed extension path, and all 12 runtime resources. The live
+observer checks the packet's matching identities, baseline age of at most two
+hours, complete baseline, URL set, and a bounded exact multiset of the known X
+`loader.TimelineRenderer` inline-handler
+CSP message hashes and script locations. A matching baseline shows that those
+messages can occur without XEG; it does not assign them exclusively to X or
+other installed extensions. A query-bearing `ERR_ABORTED` is qualified only
+when the full HTTPS URL is byte-for-byte identical to the selected gallery
+video source and a video/mp4 API variant for the uniquely established direct
+quote and media item; conflicting full URLs for that same API variant path
+remain unverified. Full URLs are compared only in memory and discarded
+after the page; the receipt retains sanitized paths, hashes, and match flags,
+never query values or credentials. The borrowed summary records proof validity
+and the bound baseline receipt SHA-256. Missing or mismatched proof, a changed CSP
+message/count, any unknown host diagnostic, oversized input, overflow, or a
+failed required assertion remains unverified. The optional proof has no effect
+on owned-profile observations. Earlier receipts lack the full fingerprints and
+cannot be upgraded retroactively; a new source-bound run is required.
 Review the retained screenshots separately before making a live-page claim.
 
 Run `node --experimental-strip-types --check validation/windows/install-profile.ts` for the installed

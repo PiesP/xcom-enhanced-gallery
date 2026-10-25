@@ -7,9 +7,66 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { chromium, type BrowserContext } from '@playwright/test';
-import { observeLiveUrls, resolveBorrowedVideoClickMode } from './live-page.ts';
+import {
+  observeLiveUrls,
+  resolveBorrowedVideoClickMode,
+  type BorrowedHostDiagnosticProof,
+} from './live-page.ts';
 
 const liveUrl = 'https://x.com/tester/status/12345';
+const borrowedProof: BorrowedHostDiagnosticProof = {
+  schemaVersion: 1,
+  kind: 'BorrowedHostDiagnosticProof',
+  baseline: {
+    receiptSha256: '1'.repeat(64),
+    sourceSha: 'a'.repeat(40),
+    coreSha: 'b'.repeat(40),
+    bundleSha256: 'c'.repeat(64),
+    browserPid: 123,
+    browserBirthUtcTicks: '639284716450486670',
+    browserSessionId: 2,
+    browserSidSha256: '6'.repeat(64),
+    profilePathSha256: '2'.repeat(64),
+    portReceiptSha256: '3'.repeat(64),
+    status: 'baseline-observed',
+    completedAtUtc: new Date().toISOString(),
+    ownedPagesClosed: true,
+    originalPagesPreserved: true,
+    focusRestored: true,
+    disconnected: true,
+    inventory: { count: 5, developerMode: false, relatedCount: 0, unrelatedDigest: '4'.repeat(64) },
+    pages: [
+      {
+        requestedUrl: liveUrl,
+        finalUrl: liveUrl,
+        responseStatus: 200,
+        articleVisible: true,
+        closed: true,
+        consoleErrors: [],
+        consoleOverflow: 0,
+        pageErrorCount: 0,
+        pageErrorOverflow: 0,
+      },
+    ],
+  },
+  current: {
+    sourceSha: 'a'.repeat(40),
+    coreSha: 'b'.repeat(40),
+    bundleSha256: 'c'.repeat(64),
+    browserPid: 123,
+    browserBirthUtcTicks: '639284716450486670',
+    browserSessionId: 2,
+    browserSidSha256: '6'.repeat(64),
+    profilePathSha256: '2'.repeat(64),
+    portReceiptSha256: '3'.repeat(64),
+    unrelatedCount: 5,
+    unrelatedDigest: '4'.repeat(64),
+    targetCount: 1,
+    runtimeResourceCount: 12,
+    runtimeResourceBinding: 'matched',
+    extensionSourcePathVerified: true,
+  },
+};
 
 test('borrowed mode uses the canonical default only when storage is absent', async () => {
   const { DEFAULT_SETTINGS } = (await import(
@@ -192,6 +249,7 @@ test('borrowed observation reads installed settings without writing or closing t
           liveUrls: [liveUrl],
           output,
           session: 'borrowed',
+          borrowedHostProof: borrowedProof,
         }),
         (error: unknown) => {
           assert.ok(error instanceof AggregateError);
@@ -200,6 +258,8 @@ test('borrowed observation reads installed settings without writing or closing t
       );
       const summary = JSON.parse(readFileSync(join(output, 'live-observations.json'), 'utf8'));
       assert.equal(summary.status, 'failed');
+      assert.equal(summary.hostProofStatus, 'validated');
+      assert.equal(summary.hostBaselineReceiptSha256, borrowedProof.baseline.receiptSha256);
       assert.equal(summary.borrowedMode.mode, stored.mode);
       assert.equal(summary.borrowedMode.source, stored.source);
       assert.equal(summary.pages[0].videoClickMode, stored.mode);
