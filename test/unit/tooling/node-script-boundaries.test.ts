@@ -66,7 +66,7 @@ function releaseFixture(root: string): { bin: string; calls: string } {
   const git = join(bin, 'git');
   writeFileSync(
     git,
-    `#!/bin/sh\nprintf '%s\\n' "$*" >> "$FAKE_CALLS"\ncase "$1" in\n  rev-parse|-C) printf '%s\\n' '${'a'.repeat(40)}' ;;\n  status) if [ "$FAKE_DIRTY" = 1 ]; then printf '%s\\n' '?? untracked-source.ts'; fi ;;\n  ls-files) if [ "$FAKE_DIRTY" = 1 ]; then printf 'untracked-source.ts\\0'; fi ;;\n  tag) printf '%s\\n' 'v2.3.2' ;;\nesac\n`
+    `#!/bin/sh\nprintf '%s\\n' "$*" >> "$FAKE_CALLS"\ncase "$1" in\n  rev-parse) printf '%s\\n' '${'a'.repeat(40)}' ;;\n  -C) if [ "$3" = rev-parse ]; then printf '%s\\n' '${'a'.repeat(40)}'; fi ;;\n  status) if [ "$FAKE_DIRTY" = 1 ]; then printf '%s\\n' '?? untracked-source.ts'; fi ;;\n  ls-files) if [ "$FAKE_DIRTY" = 1 ]; then printf 'untracked-source.ts\\0'; fi ;;\n  tag) printf '%s\\n' 'v2.3.2' ;;\nesac\n`
   );
   chmodSync(git, 0o755);
   const zip = join(bin, 'zip');

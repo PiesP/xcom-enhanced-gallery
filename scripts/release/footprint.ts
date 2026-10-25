@@ -165,9 +165,44 @@ export function captureBuildInputs(): BuildInputs {
     }
     sourceState.update('\0');
   }
+  const coreStatus = command('git', [
+    '-C',
+    'packages/core',
+    'status',
+    '--porcelain',
+    '--untracked-files=all',
+  ]);
+  sourceState.update(coreStatus).update('\0');
+  sourceState
+    .update(command('git', ['-C', 'packages/core', 'diff', '--binary', 'HEAD']))
+    .update('\0');
+  const coreUntracked = command('git', [
+    '-C',
+    'packages/core',
+    'ls-files',
+    '--others',
+    '--exclude-standard',
+    '-z',
+  ])
+    .split('\0')
+    .filter(Boolean)
+    .sort();
+  for (const path of coreUntracked) {
+    const file = join(root, 'packages/core', path);
+    const stat = lstatSync(file);
+    sourceState.update(path).update('\0');
+    if (stat.isFile()) {
+      sourceState.update(readFileSync(file));
+    } else if (stat.isSymbolicLink()) {
+      sourceState.update(readlinkSync(file));
+    } else {
+      throw new Error(`Unsupported untracked core entry: ${path}`);
+    }
+    sourceState.update('\0');
+  }
   return {
     sourceSha: command('git', ['rev-parse', 'HEAD']),
-    sourceClean: sourceStatus === '',
+    sourceClean: sourceStatus === '' && coreStatus === '',
     sourceStateSha256: sourceState.digest('hex'),
     coreSha,
     lockSha256: sha256(readFileSync(join(root, 'pnpm-lock.yaml'))),
