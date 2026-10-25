@@ -159,6 +159,7 @@ type LiveObservation = {
     readinessMarker: boolean | null;
     readinessMarkerAtNavigation?: boolean;
     storedModeAfterReadiness?: string | null;
+    videoClickModeSource?: 'unset-default' | 'primary-valid' | 'fallback-valid';
   };
   videoClickMode: string;
   target: LiveTarget | null;
@@ -200,6 +201,42 @@ type ControlledProbe = {
   error?: string;
 };
 type StorageRecord = { exists: boolean; value: unknown; settings: unknown };
+type BorrowedVideoClickMode = {
+  mode: 'block-all' | 'block-controls-only' | 'allow-all';
+  source: 'unset-default' | 'primary-valid' | 'fallback-valid';
+};
+
+// Match DEFAULT_SETTINGS.gallery.videoClickMode in src/constants/settings.ts.
+// This Windows script is packaged without src/, so the focused test guards drift.
+const DEFAULT_VIDEO_CLICK_MODE = 'block-controls-only' as const;
+
+export function resolveBorrowedVideoClickMode(
+  stored: StorageRecord,
+  fallbackRaw: string | null
+): BorrowedVideoClickMode {
+  const primary = stored.exists && stored.value != null ? decodeStoredRecord(stored.value) : null;
+  const fallback = fallbackRaw === null ? null : decodeStoredRecord(fallbackRaw);
+  if (stored.exists && stored.value != null && !primary) {
+    throw new Error('Borrowed extension settings record could not be decoded');
+  }
+  if (fallbackRaw !== null && !fallback) {
+    throw new Error('Borrowed X-origin fallback settings record could not be decoded');
+  }
+  if (!primary && !fallback) {
+    return { mode: DEFAULT_VIDEO_CLICK_MODE, source: 'unset-default' };
+  }
+  const fallbackWins =
+    !primary ||
+    (fallback &&
+      fallback.updatedAt !== undefined &&
+      (primary.updatedAt === undefined || fallback.updatedAt > primary.updatedAt));
+  const selected = fallbackWins ? fallback : primary;
+  const mode = storedVideoClickMode(selected?.value);
+  if (mode === 'block-all' || mode === 'block-controls-only' || mode === 'allow-all') {
+    return { mode, source: fallbackWins ? 'fallback-valid' : 'primary-valid' };
+  }
+  throw new Error('Borrowed effective video click mode is unknown or invalid');
+}
 
 function storedVideoClickMode(settings: unknown): string | null {
   const mode = field(field(settings, 'gallery'), 'videoClickMode');
@@ -2586,7 +2623,8 @@ async function observeQuotedVideo(
   output: string,
   index: string | number,
   settleApi: () => Promise<void>,
-  controlledVideoClickMode: string | null
+  controlledVideoClickMode: string | null,
+  verifyBorrowedMode: (() => Promise<void>) | null = null
 ) {
   const target = observation.target;
   if (!target || target.kind !== 'quoted-video') {
@@ -2640,6 +2678,7 @@ async function observeQuotedVideo(
       x: confirmation.nativePlay.x - hit.nativePlay.x,
       y: confirmation.nativePlay.y - hit.nativePlay.y,
     };
+    await verifyBorrowedMode?.();
     await page.mouse.click(confirmation.nativePlay.x, confirmation.nativePlay.y);
     target.nativePlayback.galleryOpenedOnControlClick =
       (await page.locator('[data-xeg-gallery-container]').count()) > 0;
@@ -2826,6 +2865,7 @@ async function observeQuotedVideo(
         point,
       }
     );
+    await verifyBorrowedMode?.();
     await page.mouse.click(point.x, point.y);
     observation.gallery.activationFocusCaptured = await activationCaptureHandle.evaluate(
       (capture) => capture.captured
@@ -3026,7 +3066,8 @@ async function observeNativePreviewPhoto(
   target: NativePreviewTarget,
   output: string,
   index: string | number,
-  settleApi: () => Promise<void>
+  settleApi: () => Promise<void>,
+  verifyBorrowedMode: (() => Promise<void>) | null = null
 ) {
   const article = page.locator('article').nth(target.articleIndex);
   const action = article.locator('a[href]').nth(target.actionIndex);
@@ -3062,6 +3103,7 @@ async function observeNativePreviewPhoto(
     if (!identityBeforeClick) {
       throw new Error('Native preview action identity changed before click');
     }
+    await verifyBorrowedMode?.();
     await actionHandle.click({ timeout: ACTION_TIMEOUT_MS });
     const gallery = page.locator('[data-xeg-gallery-container]');
     await gallery.waitFor({ state: 'visible', timeout: ACTION_TIMEOUT_MS });
@@ -3203,7 +3245,8 @@ async function observeOne(
   output: string,
   index: string | number,
   controlledVideoClickMode: string | null = null,
-  verifyControlledMode: (() => Promise<string | null>) | null = null
+  verifyControlledMode: (() => Promise<string | null>) | null = null,
+  borrowedExtensionPage: Page | null = null
 ) {
   const identity = targetIdentity(targetUrl);
   const page = await context.newPage();
@@ -3214,7 +3257,7 @@ async function observeOne(
     finalUrl: null,
     responseStatus: null,
     extension: { id: extensionId, readinessMarker: null },
-    videoClickMode: controlledVideoClickMode ?? 'default',
+    videoClickMode: borrowedExtensionPage ? 'unverified' : (controlledVideoClickMode ?? 'default'),
     target: null,
     gallery: { status: 'not-run' },
     api: { tweetResultByRestId: { requests: 0, responses: [] }, observations: [], overflow: 0 },
@@ -3229,6 +3272,29 @@ async function observeOne(
     evidenceStatus: 'unverified',
     status: 'pending',
   };
+  let borrowedMode: BorrowedVideoClickMode | null = null;
+  const verifyBorrowedMode = borrowedExtensionPage
+    ? async () => {
+        const finalUrl = new URL(page.url());
+        if (
+          !['x.com', 'twitter.com'].includes(finalUrl.hostname.toLowerCase()) ||
+          finalUrl.pathname.toLowerCase() !==
+            `/${identity.handle}/status/${identity.statusId}`.toLowerCase()
+        ) {
+          throw new Error('Borrowed page left the requested X status origin');
+        }
+        const current = await readBorrowedVideoClickMode(borrowedExtensionPage, page);
+        if (
+          borrowedMode &&
+          (current.mode !== borrowedMode.mode || current.source !== borrowedMode.source)
+        ) {
+          throw new Error('Borrowed effective video click mode changed during observation');
+        }
+        borrowedMode ??= current;
+        observation.videoClickMode = borrowedMode.mode;
+        observation.extension.videoClickModeSource = borrowedMode.source;
+      }
+    : null;
   const settleApi = attachDiagnostics(page, observation);
   let actionHandle: ElementHandle<SVGElement | HTMLElement> | null | undefined;
   try {
@@ -3238,6 +3304,7 @@ async function observeOne(
     });
     observation.responseStatus = response?.status() ?? null;
     observation.finalUrl = sanitizedUrl(page.url());
+    await verifyBorrowedMode?.();
     observation.extension.readinessMarkerAtNavigation =
       (await page.locator('html[data-xeg-gallery-ready="true"]').count()) === 1;
     observation.targetCandidatesBefore = await page
@@ -3281,11 +3348,15 @@ async function observeOne(
       observation.missingAssertions.push('extensionInjected');
       throw new Error('Installed extension readiness marker was not observed');
     }
-    if (controlledVideoClickMode === 'allow-all') {
+    if (controlledVideoClickMode === 'allow-all' && !borrowedExtensionPage) {
       observation.extension.storedModeAfterReadiness = (await verifyControlledMode?.()) ?? null;
       if (observation.extension.storedModeAfterReadiness !== 'allow-all') {
         throw new Error('Controlled video click mode was not observed after live-page readiness');
       }
+    }
+    if (borrowedExtensionPage) {
+      await verifyBorrowedMode?.();
+      observation.extension.storedModeAfterReadiness = observation.videoClickMode;
     }
 
     if (observation.target.kind === 'quoted-video') {
@@ -3296,7 +3367,9 @@ async function observeOne(
         output,
         index,
         settleApi,
-        controlledVideoClickMode
+        controlledVideoClickMode ??
+          (observation.videoClickMode === 'allow-all' ? 'allow-all' : null),
+        verifyBorrowedMode
       );
       await settleApi();
       if (refreshQuotedVideoErrorAssertions(observation).length) {
@@ -3309,6 +3382,7 @@ async function observeOne(
     }
 
     if (observation.target.kind === 'native-preview-photo') {
+      await verifyBorrowedMode?.();
       await observeNativePreviewPhoto(
         page,
         observation,
@@ -3316,7 +3390,8 @@ async function observeOne(
         observation.target,
         output,
         index,
-        settleApi
+        settleApi,
+        verifyBorrowedMode
       );
       observation.status = 'core-flow-observed';
       return observation;
@@ -3408,6 +3483,7 @@ async function observeOne(
     }
 
     await recordHostGeometry('before-click');
+    await verifyBorrowedMode?.();
     await actionHandle.click({ timeout: ACTION_TIMEOUT_MS });
     const gallery = page.locator('[data-xeg-gallery-container]');
     await gallery.waitFor({ state: 'visible', timeout: ACTION_TIMEOUT_MS });
@@ -3591,13 +3667,25 @@ async function observeOne(
       await actionHandle.dispose().catch(() => {});
     }
     observation.finalUrl = sanitizedUrl(page.url());
-    await writeFile(join(output, `live-page-${index}.json`), JSON.stringify(observation, null, 2));
-    await page.close().catch(() => {});
+    try {
+      await writeFile(
+        join(output, `live-page-${index}.json`),
+        JSON.stringify(observation, null, 2)
+      );
+    } finally {
+      if (borrowedExtensionPage) {
+        await page.close();
+      } else {
+        await page.close().catch(() => {});
+      }
+    }
   }
   return observation;
 }
 
-export function decodeStoredValue(raw: unknown): unknown {
+function decodeStoredRecord(
+  raw: unknown
+): { value: unknown; updatedAt: number | undefined } | null {
   let parsed = raw;
   if (typeof raw === 'string') {
     try {
@@ -3612,9 +3700,14 @@ export function decodeStoredValue(raw: unknown): unknown {
     typeof parsed.updatedAt === 'number' &&
     Object.hasOwn(parsed, 'value')
   ) {
-    return parsed.value;
+    return { value: parsed.value, updatedAt: parsed.updatedAt };
   }
-  return parsed;
+  return { value: parsed, updatedAt: undefined };
+}
+
+export function decodeStoredValue(raw: unknown): unknown {
+  const decoded = decodeStoredRecord(raw);
+  return decoded ? decoded.value : null;
 }
 
 export async function readStoredLanguage(extensionPage: {
@@ -3638,6 +3731,25 @@ export async function readStoredVideoSettings(extensionPage: Page): Promise<Stor
     return { exists: Object.hasOwn(values, storageKey), value: values[storageKey] ?? null };
   }, key);
   return { ...prior, settings: decodeStoredValue(prior.value) };
+}
+
+async function readBorrowedVideoClickMode(
+  extensionPage: Page,
+  livePage: Page
+): Promise<BorrowedVideoClickMode> {
+  const primary = await readStoredVideoSettings(extensionPage);
+  // The content script's PersistentStorage fallback is scoped to the X origin.
+  // An extension page's localStorage cannot reveal it.
+  const fallbackRaw = await livePage.evaluate(() => {
+    if (
+      location.protocol !== 'https:' ||
+      (location.hostname !== 'x.com' && location.hostname !== 'twitter.com')
+    ) {
+      throw new Error('Borrowed settings fallback is outside the supported X origin');
+    }
+    return localStorage.getItem('xeg-fallback:xeg-app-settings');
+  });
+  return resolveBorrowedVideoClickMode(primary, fallbackRaw);
 }
 
 export async function restoreStoredVideoSettings(
@@ -3782,37 +3894,89 @@ export async function observeLiveUrls({
   extensionId,
   liveUrls,
   output,
+  session = 'owned',
 }: {
   context: BrowserContext;
   extensionId: string;
   liveUrls: unknown;
   output: string;
+  session?: 'owned' | 'borrowed';
 }) {
+  if (session !== 'owned' && session !== 'borrowed') {
+    throw new Error('Unknown live observation session mode');
+  }
   const urls = validateLiveUrls(liveUrls);
   if (!urls.length) {
     return { status: 'not-requested', evidenceStatus: 'not-applicable', pages: [] };
   }
   const pages: LiveObservation[] = [];
-  for (let index = 0; index < urls.length; index += 1) {
-    const url = urls[index];
-    if (!url) {
-      continue;
+  let extensionPage: Page | null = null;
+  let borrowedMode: BorrowedVideoClickMode | null = null;
+  let borrowedError: string | null = null;
+  try {
+    if (session === 'borrowed') {
+      extensionPage = await context.newPage();
+      await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
     }
-    const page = await observeOne(context, extensionId, url, output, index + 1);
-    if (page.classification === 'native-play-observed-gallery-action-unavailable') {
-      page.controlledProbe = await observeControlledVideoMode(
+    for (let index = 0; index < urls.length; index += 1) {
+      const url = urls[index];
+      if (!url) {
+        continue;
+      }
+      const page = await observeOne(
         context,
         extensionId,
         url,
         output,
-        index + 1
-      ).catch((error) => ({
-        status: 'failed',
-        error: safeError(error),
-        cleanup: { restored: false, extensionPageClosed: false },
-      }));
+        index + 1,
+        null,
+        null,
+        extensionPage
+      );
+      if (
+        session === 'borrowed' &&
+        pages.length === 0 &&
+        page.extension.videoClickModeSource &&
+        (page.videoClickMode === 'block-all' ||
+          page.videoClickMode === 'block-controls-only' ||
+          page.videoClickMode === 'allow-all')
+      ) {
+        borrowedMode = {
+          mode: page.videoClickMode,
+          source: page.extension.videoClickModeSource,
+        };
+      }
+      if (
+        session === 'owned' &&
+        page.classification === 'native-play-observed-gallery-action-unavailable'
+      ) {
+        page.controlledProbe = await observeControlledVideoMode(
+          context,
+          extensionId,
+          url,
+          output,
+          index + 1
+        ).catch((error) => ({
+          status: 'failed',
+          error: safeError(error),
+          cleanup: { restored: false, extensionPageClosed: false },
+        }));
+      }
+      pages.push(page);
     }
-    pages.push(page);
+  } catch (error) {
+    if (session === 'owned') {
+      throw error;
+    }
+    borrowedError = safeError(error);
+  } finally {
+    if (extensionPage) {
+      try {
+        await extensionPage.close();
+      } catch (error) {
+        borrowedError ??= `Borrowed extension page cleanup failed: ${safeError(error)}`;
+      }
+    }
   }
   const passedPage = (page: LiveObservation) =>
     page.status === 'core-flow-observed' ||
@@ -3823,32 +3987,41 @@ export async function observeLiveUrls({
     (page) => page.controlledProbe?.observation?.status === 'core-flow-observed'
   );
   const summary = {
-    status: failed.length
-      ? 'failed'
-      : controlled
-        ? 'controlled-flow-observed'
-        : 'core-flow-observed',
-    evidenceStatus: pages.every(
-      (page) =>
-        passedPage(page) &&
-        (page.status === 'core-flow-observed'
-          ? page.evidenceStatus
-          : page.controlledProbe?.observation?.evidenceStatus) === 'observed'
-    )
-      ? 'observed'
-      : 'unverified',
+    status:
+      failed.length || borrowedError
+        ? 'failed'
+        : controlled
+          ? 'controlled-flow-observed'
+          : 'core-flow-observed',
+    evidenceStatus:
+      !borrowedError &&
+      pages.every(
+        (page) =>
+          passedPage(page) &&
+          (page.status === 'core-flow-observed'
+            ? page.evidenceStatus
+            : page.controlledProbe?.observation?.evidenceStatus) === 'observed'
+      )
+        ? 'observed'
+        : 'unverified',
     pages,
+    ...(session === 'borrowed'
+      ? { session, borrowedMode: urls.length === 1 ? borrowedMode : null, borrowedError }
+      : {}),
   };
   await writeFile(join(output, 'live-observations.json'), JSON.stringify(summary, null, 2));
-  if (failed.length) {
+  if (failed.length || borrowedError) {
     const error = new AggregateError(
-      failed.map(
-        (page) =>
-          new Error(
-            page.controlledProbe?.error ?? page.controlledProbe?.observation?.error ?? page.error
-          )
-      ),
-      `${failed.length} live X observation(s) missed required assertions`
+      [
+        ...failed.map(
+          (page) =>
+            new Error(
+              page.controlledProbe?.error ?? page.controlledProbe?.observation?.error ?? page.error
+            )
+        ),
+        ...(borrowedError ? [new Error(borrowedError)] : []),
+      ],
+      `${failed.length} live X observation(s) missed required assertions${borrowedError ? '; borrowed session check failed' : ''}`
     );
     throw Object.assign(error, { summary });
   }

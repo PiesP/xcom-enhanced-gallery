@@ -784,6 +784,19 @@ setting in `finally`. The original user's installed setting is unknown; the
 controlled result applies only to the recorded mode. Native playback alone
 never counts as an XEG gallery pass.
 
+An observer attached to an existing authenticated extension context calls
+`observeLiveUrls` with `session: 'borrowed'`. This mode reads the installed
+extension's `xeg-app-settings` through an observer-owned extension page and the
+`xeg-fallback:xeg-app-settings` copy from the observed X page's localStorage.
+It applies the production revision ordering and records whether the effective
+video click mode came from the primary copy, a newer or sole fallback copy, or
+the production default when both copies are absent. Unknown values and unreadable
+fallback storage fail closed. Both copies are checked again after page readiness
+and immediately before media activation. The observer closes only pages it
+created and never changes extension settings. It does not run the controlled
+`allow-all` retry; native playback without a gallery action remains a failed
+observation.
+
 Each page writes a partial JSON record and screenshots even when a required
 assertion is missing; the profile then fails rather than treating an unavailable
 guest page as success. Host console, HTTP, and request diagnostics are retained
