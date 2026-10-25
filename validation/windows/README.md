@@ -549,14 +549,19 @@ must observe that header, the gallery must show localized resource guidance,
 and the native partial ZIP must include exactly the two remaining images with
 correct names, order, CRC and bytes. Its verified file is removed through the
 native API before reusing the same output name; its saved evidence is retained.
-Without reloading or replacing the gallery, keyboard navigation and a small
-direct single download must still work. A subsequent
-bulk action must save a separate native ZIP download with the exact three image
-names and contents; the profile verifies its stored-entry boundaries, local and
-central order, CRCs, and bytes. Only the previously rejected image needs a new
-application fetch; the two successful partial entries are reused from the same
-page's media cache. It records exact Chrome download IDs, elapsed
-times, request phases, page time origin, screenshots, and exact route cleanup.
+The on-page missing-items action must then save a separate native `-missing.zip`
+containing only the omitted original filename and bytes. Its exact download ID,
+on-disk identity, entry order, CRC, bytes, and SHA-256 are verified independently.
+Only the omitted image may be fetched for that action; the two successful items
+must not be requested again. Without reloading or replacing the gallery,
+keyboard navigation and a small direct single download must still work. A
+subsequent bulk action must save another native ZIP download with the exact
+three image names and contents; the profile verifies its stored-entry boundaries,
+local and central order, CRCs, and bytes. All three entries are reused from the
+same page's media cache. The completed result can be dismissed, and a reopened
+gallery session must have no old recovery action or ZIP result. The profile
+records exact Chrome download IDs, elapsed times, request phases, page time
+origin, screenshots, and exact route cleanup.
 The declared limit is an admission-policy check; browser heap and RSS are not
 measured, and the oversized body is never allocated.
 

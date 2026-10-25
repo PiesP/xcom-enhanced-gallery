@@ -175,6 +175,7 @@ type MemoryEvidence = {
   };
   expectedConsoleErrors?: ConsoleErrorRecord[];
   recoveryTransport?: unknown;
+  missingScreenshot?: string;
   recoveryScreenshot?: string;
   uiPartialAfterFiveSeconds?: unknown;
   uiHealthy?: unknown;
@@ -663,14 +664,25 @@ async function waitForRecoveryPaint(page: Page, index: number, description: stri
 
 async function assertVisibleBulkOutcome(
   page: Page,
-  expected: { included: number; omitted: number; handedOff: boolean; reason?: string }
+  expected: {
+    included: number;
+    omitted: number;
+    handedOff: boolean;
+    reason?: string;
+    supplementary?: boolean;
+  }
 ): Promise<string> {
   const panel = page.locator(
     '[data-xeg-gallery-container] [data-gallery-element="bulk-download-outcome"]'
   );
   await panel.waitFor({ state: 'visible' });
   const text = (await panel.textContent())?.trim() ?? '';
-  assert.match(text, /Scope: 3 media items shown in this gallery\./u);
+  assert.match(
+    text,
+    expected.supplementary
+      ? /Scope: 1 previously missing items from this gallery\./u
+      : /Scope: 3 media items shown in this gallery\./u
+  );
   assert.match(
     text,
     new RegExp(`ZIP includes ${expected.included}; left out ${expected.omitted}\\.`, 'u')
@@ -682,7 +694,12 @@ async function assertVisibleBulkOutcome(
       ? /The browser accepted the ZIP request/u
       : /No ZIP was handed off to the browser/u
   );
-  assert.match(text, /Download all starts a new ZIP/u);
+  assert.match(
+    text,
+    expected.supplementary
+      ? /This ZIP only contains recovered missing items\./u
+      : /Download all starts a new ZIP/u
+  );
   if (expected.reason) {
     assert(text.includes(expected.reason), `Visible ZIP result omitted: ${expected.reason}`);
   }
@@ -916,6 +933,7 @@ type InstallResult = {
   fixture?: Awaited<ReturnType<typeof exerciseInstalledExtension>>;
   openingFeedback?: unknown;
   mediaDownloadRecovery?: unknown;
+  failedEntryRecovery?: unknown;
   galleryExperience?: unknown;
   liveBrowserScope?: string;
   live?: unknown;
@@ -4886,6 +4904,72 @@ async function runDownloadMemoryCycle({
       evidence.expectedConsoleErrors.length <= 2,
       'Oversized fixture generated unexpected repeated console errors'
     );
+    const recoverButton = gallery.getByRole('button', {
+      name: 'Download 1 missing items as a separate ZIP',
+    });
+    await recoverButton.waitFor({ state: 'visible' });
+    phase = 'missing-zip';
+    const knownBeforeMissing = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+    const missingName = `testuser_${TWEET_ID}-missing.zip`;
+    const missingStartedAtMs = performance.now();
+    await recoverButton.click();
+    const missing = await waitForDownload(extensionPage, knownBeforeMissing, missingName);
+    assert.notEqual(missing.id, partial.id, 'Missing ZIP must have its own native download ID');
+    assert.equal(
+      dirname(resolve(missing.filename)),
+      resolve(downloads),
+      'Missing ZIP escaped the task-owned download directory'
+    );
+    assert.deepEqual(
+      (await queryDownloads(extensionPage))
+        .filter(({ id }) => !knownBeforeMissing.has(id))
+        .map(({ id }) => id),
+      [missing.id],
+      'Failed-only recovery must create exactly one native browser download'
+    );
+    const missingEntries = [{ filename: expectedFilename(0), bytes: images[0] }];
+    const { bytes: missingBytes, identity: missingIdentity } = await readExactDownloadFile(
+      missing.filename,
+      expectedStoredZipBytes(missingEntries)
+    );
+    const missingVerified = verifyStoredZip(missingBytes, missingEntries);
+    const missingHash = createHash('sha256').update(missingBytes).digest('hex');
+    await writeFile(join(output, 'installed-memory-missing.zip'), missingBytes);
+    verifiedDownloads.set(missing.id, {
+      filename: missing.filename,
+      identity: missingIdentity,
+      sha256: missingHash,
+    });
+    evidence.downloads.push({
+      kind: 'failed-only-zip',
+      id: missing.id,
+      filename: missingName,
+      file: 'installed-memory-missing.zip',
+      bytes: missingBytes.length,
+      sha256: missingHash,
+      elapsedMs: performance.now() - missingStartedAtMs,
+      verified: missingVerified,
+    });
+    await gallery
+      .getByText('Scope: 1 previously missing items from this gallery.')
+      .waitFor({ state: 'visible' });
+    await assertVisibleBulkOutcome(page, {
+      included: 1,
+      omitted: 0,
+      handedOff: true,
+      supplementary: true,
+    });
+    await recoverButton.waitFor({ state: 'detached' });
+    const missingRequests = evidence.requests
+      .filter(({ phase: requestPhase }) => requestPhase === 'missing-zip')
+      .map(({ marker }) => marker);
+    assert.deepEqual(
+      missingRequests,
+      [primaryMarker],
+      'Failed-only recovery must fetch only the original omitted image'
+    );
+    await page.screenshot({ path: join(output, 'installed-memory-missing.png') });
+    evidence.missingScreenshot = 'installed-memory-missing.png';
     await page.keyboard.press('ArrowRight');
     await page.waitForFunction(
       () =>
@@ -5022,22 +5106,23 @@ async function runDownloadMemoryCycle({
       [],
       'Native single recovery must not use application fetch'
     );
-    // The two successful partial-ZIP entries remain in the page's media cache.
-    // Only the rejected entry needs another fetch; all saved bytes are checked above.
+    // The recovered and partial-ZIP entries remain in the page's media cache.
+    // The full ZIP should reuse all three, with saved bytes checked above.
     const recoveryRequests = evidence.requests
       .filter(({ phase: requestPhase }) => requestPhase === 'small-zip')
       .map(({ marker }) => marker);
     assert.deepEqual(
       recoveryRequests,
-      [IMAGE_URL_MARKERS[0]],
-      'Recovered ZIP must fetch only the previously rejected image'
+      [],
+      'Full ZIP must reuse all three previously recovered or successful images'
     );
     evidence.recoveryTransport = {
-      freshMediaRequests: recoveryRequests,
-      reusedEntries: partialVerified.entryOrder,
+      missingMediaRequests: missingRequests,
+      fullZipFreshMediaRequests: recoveryRequests,
+      reusedEntries: [...partialVerified.entryOrder, ...missingVerified.entryOrder],
+      missingEntries: missingVerified.entryOrder,
       savedEntries: parsedZip.entryOrder,
-      verification:
-        'Exact ZIP bytes and CRCs; successful partial entries need no new application fetch',
+      verification: 'Exact ZIP bytes and CRCs; supplementary ZIP fetches only the omitted entry',
     };
     assert(
       await gallery.evaluate((node, original) => node === original, galleryHandle),
@@ -5045,6 +5130,11 @@ async function runDownloadMemoryCycle({
     );
     await page.screenshot({ path: join(output, 'installed-memory-recovery.png') });
     evidence.recoveryScreenshot = 'installed-memory-recovery.png';
+    await gallery.getByRole('button', { name: 'Dismiss ZIP result' }).click();
+    await gallery
+      .locator('[data-gallery-element="bulk-download-outcome"]')
+      .waitFor({ state: 'detached' });
+    assert.equal(await recoverButton.count(), 0, 'Dismiss restored a spent recovery action');
     await toolbar.locator('button[aria-label="Close"]').click();
     await gallery.waitFor({ state: 'detached' });
     const after = await hostSnapshot(page, 0);
@@ -5060,6 +5150,21 @@ async function runDownloadMemoryCycle({
       await page.evaluate(() => performance.timeOrigin),
       evidence.document.timeOrigin,
       'Memory cycle changed document time origin'
+    );
+    await page.locator('[data-testid="tweetPhoto"] img').first().click();
+    await gallery.waitFor({ state: 'visible', timeout: 15_000 });
+    assert.equal(
+      await gallery.locator('[data-gallery-element="bulk-download-outcome"]').count(),
+      0,
+      'A new gallery session inherited the previous ZIP result'
+    );
+    assert.equal(await recoverButton.count(), 0, 'A new gallery session inherited recovery work');
+    await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]').click();
+    await gallery.waitFor({ state: 'detached' });
+    assert.deepEqual(
+      await hostSnapshot(page, 0),
+      after,
+      'Reopened memory gallery did not restore host state'
     );
     evidence.status = 'passed';
   } catch (error) {
@@ -5100,7 +5205,11 @@ async function runDownloadMemoryCycle({
         const observed = (await queryDownloads(extensionPage)).filter(
           ({ id }) => !knownDownloadIds.has(id)
         );
-        const allowedNames = new Set([expectedFilename(0), `testuser_${TWEET_ID}.zip`]);
+        const allowedNames = new Set([
+          expectedFilename(0),
+          `testuser_${TWEET_ID}.zip`,
+          `testuser_${TWEET_ID}-missing.zip`,
+        ]);
         assert(
           observed.every(
             ({ filename }) =>
@@ -14011,6 +14120,122 @@ async function runOriginalAvailabilityCycles({
   }
 }
 
+/** Issue #392: saved-output acceptance through the installed extension and real gallery UI. */
+async function runFailedEntryRecoveryProbe({
+  context,
+  downloads,
+  extensionId,
+  nativeLoopback,
+  output,
+  root,
+  images,
+  displayImages,
+}: {
+  context: BrowserContext;
+  downloads: string;
+  extensionId: string;
+  nativeLoopback: NativeLoopback;
+  output: string;
+  root: string;
+  images: ImageFixtures;
+  displayImages: ImageFixtures;
+}) {
+  const evidence: MemoryEvidence = { status: 'pending', cleanup: {}, requests: [], downloads: [] };
+  const consoleErrors: ConsoleErrorRecord[] = [];
+  const pageErrors: string[] = [];
+  const pageFetches: PageFetch[] = [];
+  const cleanupErrors: string[] = [];
+  const routes = await installFixtureRoutes(context, root, images, displayImages);
+  nativeLoopback.setPayloads(images, routes.videoPayloads);
+  const extensionPage = await context.newPage();
+  const page = await context.newPage();
+  let primaryError: unknown;
+  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('console', (message) => {
+    if (message.type() === 'error') {
+      consoleErrors.push({ location: message.location().url, text: message.text() });
+    }
+  });
+  page.on('request', (request) => {
+    if (!['fetch', 'xhr'].includes(request.resourceType())) {
+      return;
+    }
+    const url = new URL(request.url());
+    if (['pbs.twimg.com', 'video.twimg.com'].includes(url.hostname)) {
+      pageFetches.push({
+        host: url.hostname,
+        path: url.pathname,
+        resourceType: request.resourceType(),
+      });
+    }
+  });
+  try {
+    await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
+    await page.goto(FIXTURE_URL);
+    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+    await runDownloadMemoryCycle({
+      consoleErrors,
+      downloads,
+      extensionPage,
+      images,
+      output,
+      page,
+      root,
+      evidence,
+      nativeLoopback,
+      pageFetches,
+    });
+    assert.deepEqual(pageErrors, [], 'Failed-entry fixture page threw');
+    const expectedErrors = new Set(evidence.expectedConsoleErrors ?? []);
+    assert.deepEqual(
+      consoleErrors.filter((error) => !expectedErrors.has(error)),
+      [],
+      'Failed-entry fixture reported unexpected console errors'
+    );
+  } catch (error) {
+    primaryError = error;
+  } finally {
+    for (const [label, close] of [
+      ['fixture page', () => page.close()],
+      ['extension page', () => extensionPage.close()],
+      ['fixture routes', () => routes.remove()],
+    ] as const) {
+      try {
+        await close();
+      } catch (error) {
+        cleanupErrors.push(`${label}: ${safeError(error)}`);
+      }
+    }
+    await writeFile(
+      join(output, 'failed-entry-recovery.json'),
+      JSON.stringify(
+        {
+          status: primaryError || cleanupErrors.length ? 'failed' : 'passed',
+          scope: 'installed extension and owned deterministic X fixture',
+          evidence,
+          pageErrors,
+          consoleErrors,
+          cleanupErrors,
+          error: primaryError ? safeError(primaryError) : null,
+        },
+        null,
+        2
+      )
+    );
+  }
+  if (primaryError && cleanupErrors.length) {
+    throw new AggregateError(
+      [primaryError, ...cleanupErrors],
+      'Failed-entry probe and cleanup failed'
+    );
+  }
+  if (primaryError) {
+    throw primaryError;
+  }
+  assert.deepEqual(cleanupErrors, [], 'Failed-entry probe cleanup failed');
+  return { status: 'passed', evidence };
+}
+
 /** Issue #382: existing recovery mechanisms with the missing on-page observations. */
 async function runMediaDownloadRecoveryProbe({
   context,
@@ -16682,6 +16907,22 @@ export async function run({
     assert(!openingProbe, 'Only one focused installed-extension probe may run');
     assert.equal(liveUrls.length, 0, 'Recovery probe uses only the owned fixture');
   }
+  const failedEntrySelectorText = await readFile(
+    join(root, 'validation/windows/inputs/failed-entry-recovery.json'),
+    'utf8'
+  ).catch((error: unknown) => {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+      return null;
+    }
+    throw error;
+  });
+  const failedEntryProbe = failedEntrySelectorText !== null;
+  if (failedEntrySelectorText !== null) {
+    assert.deepEqual(JSON.parse(failedEntrySelectorText), { scenario: 'failed-entry-recovery' });
+    assert(!upgradeInput && !sameVersionInput, 'Failed-entry probe cannot run during upgrades');
+    assert(!openingProbe && !recoveryProbe, 'Only one focused installed-extension probe may run');
+    assert.equal(liveUrls.length, 0, 'Failed-entry probe uses only the owned fixture');
+  }
   const experienceSelectorText = await readFile(
     join(root, 'validation/windows/inputs/gallery-experience.json'),
     'utf8'
@@ -16695,7 +16936,10 @@ export async function run({
   if (experienceSelectorText !== null) {
     assert.deepEqual(JSON.parse(experienceSelectorText), { scenario: 'gallery-experience' });
     assert(!upgradeInput && !sameVersionInput, 'Experience probe cannot run during upgrade checks');
-    assert(!openingProbe && !recoveryProbe, 'Only one focused installed-extension probe may run');
+    assert(
+      !openingProbe && !recoveryProbe && !failedEntryProbe,
+      'Only one focused installed-extension probe may run'
+    );
     assert.equal(liveUrls.length, 0, 'Experience probe uses only the owned fixture');
   }
   assert(!(upgradeInput && sameVersionInput), 'Upgrade and same-version inputs cannot coexist');
@@ -16728,17 +16972,19 @@ export async function run({
     installationMethod: 'cdp-unpacked-extension',
     liveUrls: validatedLiveUrls,
     liveObservation,
-    scope: experienceProbe
-      ? 'issue 383 installed-extension gallery experience fixtures; no live X observation'
-      : recoveryProbe
-        ? 'issue 382 installed-extension media/download recovery fixture; no live X observation'
-        : openingProbe
-          ? 'issue 381 installed-extension opening feedback fixture; no live X observation'
-          : validatedLiveUrls.length
-            ? 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
-            : sameVersionInput
-              ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
-              : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
+    scope: failedEntryProbe
+      ? 'issue 392 installed-extension failed-entry ZIP recovery fixture; no live X observation'
+      : experienceProbe
+        ? 'issue 383 installed-extension gallery experience fixtures; no live X observation'
+        : recoveryProbe
+          ? 'issue 382 installed-extension media/download recovery fixture; no live X observation'
+          : openingProbe
+            ? 'issue 381 installed-extension opening feedback fixture; no live X observation'
+            : validatedLiveUrls.length
+              ? 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
+              : sameVersionInput
+                ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
+                : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
     status: 'failed',
   };
   try {
@@ -16838,7 +17084,18 @@ export async function run({
     if (!sameVersionInput) {
       const images = await createImageFixtures(context);
       const displayImages = await createImageFixtures(context, 0.25);
-      if (experienceProbe) {
+      if (failedEntryProbe) {
+        result.failedEntryRecovery = await runFailedEntryRecoveryProbe({
+          context,
+          downloads,
+          extensionId,
+          nativeLoopback,
+          output,
+          root,
+          images,
+          displayImages,
+        });
+      } else if (experienceProbe) {
         result.galleryExperience = await runGalleryExperienceProbe({
           context,
           downloads,
