@@ -1,6 +1,14 @@
 import { execFileSync } from 'node:child_process';
-import { createHash, randomUUID } from 'node:crypto';
-import { lstatSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import {
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  renameSync,
+  writeFileSync,
+} from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { createRequire } from 'node:module';
 import { gzipSync } from 'node:zlib';
@@ -41,6 +49,7 @@ export interface BuildFootprint {
     | 'firefox-content',
     {
       target: string;
+      runId: string | null;
       buildOptions: {
         mode: string;
         minify: string | boolean;
@@ -53,6 +62,18 @@ export interface BuildFootprint {
     }
   >;
 }
+
+export type BuildInputs = Pick<
+  BuildFootprint,
+  | 'sourceSha'
+  | 'sourceClean'
+  | 'coreSha'
+  | 'lockSha256'
+  | 'nodeVersion'
+  | 'pnpmVersion'
+  | 'viteVersion'
+  | 'vitePlusVersion'
+>;
 
 function sha256(bytes: Buffer): string {
   return createHash('sha256').update(bytes).digest('hex');
@@ -115,12 +136,26 @@ function inventory(directory: string, selected?: ReadonlySet<string>): Footprint
   return result;
 }
 
-/** The last step of the production build records only files produced by its three targets. */
-export function collectBuildFootprint(): BuildFootprint {
+export function captureBuildInputs(): BuildInputs {
   const coreSha = command('git', ['rev-parse', 'HEAD:packages/core']);
   if (command('git', ['-C', 'packages/core', 'rev-parse', 'HEAD']) !== coreSha) {
     throw new Error('Checked-out core does not match the recorded gitlink');
   }
+  return {
+    sourceSha: command('git', ['rev-parse', 'HEAD']),
+    sourceClean: command('git', ['status', '--porcelain', '--untracked-files=all']) === '',
+    coreSha,
+    lockSha256: sha256(readFileSync(join(root, 'pnpm-lock.yaml'))),
+    nodeVersion: process.versions.node,
+    pnpmVersion: command('pnpm', ['--version']),
+    viteVersion: version('vite'),
+    vitePlusVersion: version('vite-plus'),
+  };
+}
+
+/** The build wrapper calls this only after every production target succeeds. */
+function collectBuildFootprint(runId: string): BuildFootprint {
+  const inputs = captureBuildInputs();
   const files = {
     userscript: inventory(
       join(root, 'dist'),
@@ -147,6 +182,7 @@ export function collectBuildFootprint(): BuildFootprint {
     ) as BuildFootprint['moduleEstimates'][typeof target];
     if (
       report.target !== target ||
+      report.runId !== runId ||
       report.buildOptions?.mode !== 'production' ||
       !report.method ||
       !report.categories ||
@@ -167,14 +203,7 @@ export function collectBuildFootprint(): BuildFootprint {
   }
   return {
     schemaVersion: 1,
-    sourceSha: command('git', ['rev-parse', 'HEAD']),
-    sourceClean: command('git', ['status', '--porcelain', '--untracked-files=no']) === '',
-    coreSha,
-    lockSha256: sha256(readFileSync(join(root, 'pnpm-lock.yaml'))),
-    nodeVersion: process.versions.node,
-    pnpmVersion: command('pnpm', ['--version']),
-    viteVersion: version('vite'),
-    vitePlusVersion: version('vite-plus'),
+    ...inputs,
     buildCommand: 'pnpm build:all:ci',
     mode: 'production',
     targets: ['userscript', 'chrome', 'firefox'],
@@ -189,15 +218,39 @@ export function collectBuildFootprint(): BuildFootprint {
   };
 }
 
-export function writeBuildFootprint(): void {
+export function writeBuildFootprint(start: BuildInputs, runId: string): void {
+  if (!start.sourceClean) {
+    throw new Error('Production build source must be clean before recording a footprint');
+  }
+  const observed = collectBuildFootprint(runId);
+  const end: BuildInputs = {
+    sourceSha: observed.sourceSha,
+    sourceClean: observed.sourceClean,
+    coreSha: observed.coreSha,
+    lockSha256: observed.lockSha256,
+    nodeVersion: observed.nodeVersion,
+    pnpmVersion: observed.pnpmVersion,
+    viteVersion: observed.viteVersion,
+    vitePlusVersion: observed.vitePlusVersion,
+  };
+  if (JSON.stringify(start) !== JSON.stringify(end)) {
+    throw new Error('Production build inputs changed during target builds');
+  }
   const report = {
-    ...collectBuildFootprint(),
+    ...observed,
     producedAt: new Date().toISOString(),
-    runId: randomUUID(),
+    runId,
   };
   mkdirSync(join(root, 'reports'), { recursive: true });
   writeFileSync(reportFile, `${JSON.stringify(report, null, 2)}\n`);
   console.log(`Production footprint recorded in ${relative(root, reportFile)}`);
+}
+
+/** A failed new build must not leave an older successful receipt active. */
+export function beginBuildFootprint(runId: string): void {
+  if (existsSync(reportFile)) {
+    renameSync(reportFile, join(root, 'reports', `production-footprint-before-${runId}.json`));
+  }
 }
 
 export function verifiedBuildFootprint(): BuildFootprint & { producedAt: string; runId: string } {
@@ -217,7 +270,7 @@ export function verifiedBuildFootprint(): BuildFootprint & { producedAt: string;
   if (
     !producedAt ||
     !runId ||
-    JSON.stringify(identity) !== JSON.stringify(collectBuildFootprint())
+    JSON.stringify(identity) !== JSON.stringify(collectBuildFootprint(runId))
   ) {
     throw new Error(
       'Production footprint differs from source, tools or distribution files; rebuild all targets'
@@ -229,8 +282,4 @@ export function verifiedBuildFootprint(): BuildFootprint & { producedAt: string;
     );
   }
   return saved;
-}
-
-if (import.meta.main) {
-  writeBuildFootprint();
 }

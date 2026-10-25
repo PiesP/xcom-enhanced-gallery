@@ -4,6 +4,7 @@ import type { Plugin } from 'vite';
 
 /** Rolldown's rendered module lengths attribute emitted JS, excluding wrapper and injected notices. */
 export function moduleFootprintPlugin(target: string): Plugin {
+  const runId = process.env.XCOM_FOOTPRINT_RUN_ID ?? null;
   let buildOptions: {
     mode: string;
     minify: string | boolean;
@@ -59,7 +60,7 @@ export function moduleFootprintPlugin(target: string): Plugin {
       mkdirSync(reportDir, { recursive: true });
       writeFileSync(
         resolve(reportDir, `modules-${target}.json`),
-        `${JSON.stringify({ target, buildOptions, method: 'chunk.modules.renderedLength; excludes wrappers, injected notices, CSS, and packaging', categories }, null, 2)}\n`
+        `${JSON.stringify({ target, runId, buildOptions, method: 'chunk.modules.renderedLength; excludes wrappers, injected notices, CSS, and packaging', categories }, null, 2)}\n`
       );
     },
   };

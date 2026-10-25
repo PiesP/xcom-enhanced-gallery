@@ -24,6 +24,7 @@ const scripts = [
   'scripts/release/package-extension.ts',
   'scripts/release/prepare.ts',
   'scripts/release/footprint.ts',
+  'scripts/release/build-all.ts',
   'scripts/release/artifact-preflight.ts',
   'scripts/release/version.ts',
   'tooling/vite/utils/distribution-licenses.ts',
@@ -65,7 +66,7 @@ function releaseFixture(root: string): { bin: string; calls: string } {
   const git = join(bin, 'git');
   writeFileSync(
     git,
-    `#!/bin/sh\nprintf '%s\\n' "$*" >> "$FAKE_CALLS"\ncase "$1" in\n  rev-parse|-C) printf '%s\\n' '${'a'.repeat(40)}' ;;\n  tag) printf '%s\\n' 'v2.3.2' ;;\nesac\n`
+    `#!/bin/sh\nprintf '%s\\n' "$*" >> "$FAKE_CALLS"\ncase "$1" in\n  rev-parse|-C) printf '%s\\n' '${'a'.repeat(40)}' ;;\n  status) if [ "$FAKE_DIRTY" = 1 ]; then printf '%s\\n' '?? untracked-source.ts'; fi ;;\n  tag) printf '%s\\n' 'v2.3.2' ;;\nesac\n`
   );
   chmodSync(git, 0o755);
   const zip = join(bin, 'zip');
@@ -88,6 +89,7 @@ function releaseFixture(root: string): { bin: string; calls: string } {
       join(root, 'reports', `modules-${target}.json`),
       JSON.stringify({
         target,
+        runId: 'fixture-run',
         buildOptions: {
           mode: 'production',
           minify: false,
@@ -103,7 +105,12 @@ function releaseFixture(root: string): { bin: string; calls: string } {
   const calls = join(root, 'calls');
   const result = spawnSync(
     process.execPath,
-    ['--experimental-strip-types', join(root, 'scripts/release/footprint.ts')],
+    [
+      '--experimental-strip-types',
+      '--input-type=module',
+      '-e',
+      "import { captureBuildInputs, writeBuildFootprint } from './scripts/release/footprint.ts'; writeBuildFootprint(captureBuildInputs(), 'fixture-run');",
+    ],
     {
       cwd: root,
       encoding: 'utf8',
@@ -346,6 +353,52 @@ describe('Node script import boundary', () => {
     expect(releaseNotes).toContain('Confirm there is one X.com Enhanced Gallery entry');
   });
 
+  it('does not allow a standalone footprint script to relabel existing outputs', () => {
+    const { root, command } = fixture();
+    const { bin, calls } = releaseFixture(root);
+    rmSync(join(root, 'reports/production-footprint.json'));
+    expect(command('scripts/release/footprint.ts', [], releaseEnv(root, bin, calls)).status).toBe(
+      0
+    );
+    expect(existsSync(join(root, 'reports/production-footprint.json'))).toBe(false);
+  });
+
+  it('rejects an untracked source before starting the producing build', () => {
+    const { root, command } = fixture();
+    const { bin, calls } = releaseFixture(root);
+    const result = command('scripts/release/build-all.ts', [], {
+      ...releaseEnv(root, bin, calls),
+      FAKE_DIRTY: '1',
+    });
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain('clean source before building');
+    expect(readFileSync(join(root, 'release-bundle/sentinel'), 'utf8')).toBe('old bundle');
+  });
+
+  it('preserves and deactivates an older receipt if a new producing build fails', () => {
+    const { root, command } = fixture();
+    const { bin, calls } = releaseFixture(root);
+    const original = readFileSync(join(root, 'reports/production-footprint.json'));
+    const pnpm = join(bin, 'pnpm');
+    writeFileSync(
+      pnpm,
+      '#!/bin/sh\nif [ "$1" = "--version" ]; then printf "12.15.0\\n"; exit 0; fi\nexit 17\n'
+    );
+    chmodSync(pnpm, 0o755);
+    const result = command('scripts/release/build-all.ts', [], releaseEnv(root, bin, calls));
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain('check:versions did not complete successfully');
+    expect(existsSync(join(root, 'reports/production-footprint.json'))).toBe(false);
+    const prior = readdirSync(join(root, 'reports')).find((name) =>
+      name.startsWith('production-footprint-before-')
+    );
+    expect(prior).toBeDefined();
+    expect(readFileSync(join(root, 'reports', prior!))).toEqual(original);
+    expect(
+      command('scripts/release/prepare.ts', [], releaseEnv(root, bin, calls)).stderr
+    ).toContain('Production footprint is missing');
+  });
+
   it.each([
     ['missing report', (root: string) => rmSync(join(root, 'reports/production-footprint.json'))],
     [
@@ -365,13 +418,22 @@ describe('Node script import boundary', () => {
         writeFileSync(path, JSON.stringify(report));
       },
     ],
+    [
+      'stale module estimate',
+      (root: string) => {
+        const path = join(root, 'reports/modules-userscript.json');
+        const report = JSON.parse(readFileSync(path, 'utf8')) as { runId: string };
+        report.runId = 'prior-build';
+        writeFileSync(path, JSON.stringify(report));
+      },
+    ],
   ])('rejects %s before replacing a prepared bundle', (_label, mutate) => {
     const { root, command } = fixture();
     const { bin, calls } = releaseFixture(root);
     mutate(root);
     const result = command('scripts/release/prepare.ts', [], releaseEnv(root, bin, calls));
     expect(result.status).not.toBe(0);
-    expect(result.stderr).toMatch(/Production footprint/);
+    expect(result.stderr).toMatch(/Production footprint|Invalid emitted module estimate/);
     expect(readFileSync(join(root, 'release-bundle/sentinel'), 'utf8')).toBe('old bundle');
   });
 
