@@ -187,6 +187,98 @@ test('upgrade inputs require the public asset hash, fixed paths and candidate ve
   }
 });
 
+test('v2.3.8 public assets upgrade only to a v2.3.9 candidate', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'xeg-upgrade-239-input-'));
+  try {
+    const assets = join(root, 'validation/windows/release-upgrade');
+    const extension = join(assets, 'v2.3.8-extension');
+    await mkdir(extension, { recursive: true });
+    await mkdir(join(root, 'dist'), { recursive: true });
+    await mkdir(join(root, 'dist-extension'), { recursive: true });
+    const publicUser = script('2.3.8');
+    await writeFile(join(assets, 'v2.3.8.user.js'), publicUser);
+    await writeFile(join(extension, 'manifest.json'), JSON.stringify({ version: '2.3.8' }));
+    await writeFile(join(root, 'dist/xcom-enhanced-gallery.user.js'), script('2.3.9'));
+    await writeFile(
+      join(root, 'dist-extension/manifest.json'),
+      JSON.stringify({ version: '2.3.9' })
+    );
+    const input = {
+      schema: 1,
+      previousVersion: '2.3.8',
+      candidateVersion: '2.3.9',
+      previousUserscript: {
+        path: 'validation/windows/release-upgrade/v2.3.8.user.js',
+        sha256: sha256(Buffer.from(publicUser)),
+        url: 'https://github.com/PiesP/xcom-enhanced-gallery/releases/download/v2.3.8/xcom-enhanced-gallery.user.js',
+      },
+      previousExtension: {
+        path: 'validation/windows/release-upgrade/v2.3.8-extension',
+        inventorySha256: await extensionInventorySha256(extension),
+        url: 'https://github.com/PiesP/xcom-enhanced-gallery/releases/download/v2.3.8/xcom-enhanced-gallery-chrome.zip',
+      },
+    };
+    const inputPath = join(assets, 'input.json');
+    await writeFile(inputPath, JSON.stringify(input));
+    const accepted = await readUpgradeInput(root);
+    assert(accepted, 'Upgrade input must be available');
+    assert.equal(accepted.candidateVersion, '2.3.9');
+    assert.equal(
+      accepted.previousExtensionInventorySha256,
+      input.previousExtension.inventorySha256
+    );
+    for (const [changed, error] of [
+      [{ ...input, candidateVersion: '2.3.8' }, /2\.3\.8/u],
+      [{ ...input, previousVersion: '2.3.9' }, /Unsupported public version: 2\.3\.9/u],
+      [
+        {
+          ...input,
+          previousUserscript: {
+            ...input.previousUserscript,
+            path: 'validation/windows/release-upgrade/v2.3.7.user.js',
+          },
+        },
+        /declared asset path/u,
+      ],
+      [
+        {
+          ...input,
+          previousExtension: {
+            ...input.previousExtension,
+            url: 'https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery-chrome.zip',
+          },
+        },
+        /releases\/latest\/download/u,
+      ],
+      [
+        {
+          ...input,
+          previousUserscript: { ...input.previousUserscript, sha256: '0'.repeat(64) },
+        },
+        /Public userscript hash mismatch/u,
+      ],
+      [
+        {
+          ...input,
+          previousExtension: { ...input.previousExtension, inventorySha256: '0'.repeat(64) },
+        },
+        /Public extension inventory mismatch/u,
+      ],
+    ] as const) {
+      await writeFile(inputPath, JSON.stringify(changed));
+      await assert.rejects(readUpgradeInput(root), error);
+    }
+    await writeFile(inputPath, JSON.stringify(input));
+    await writeFile(
+      join(root, 'dist-extension/manifest.json'),
+      JSON.stringify({ version: '2.3.8' })
+    );
+    await assert.rejects(readUpgradeInput(root), /2\.3\.8/u);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test('same-version attribution is absent by default and rejects changed identities and paths', async () => {
   const root = await mkdtemp(join(tmpdir(), 'xeg-same-version-input-'));
   try {
