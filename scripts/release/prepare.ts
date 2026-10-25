@@ -5,6 +5,7 @@ import { arch, platform } from 'node:os';
 import { basename, join, resolve } from 'node:path';
 import { preflightReleaseArtifacts } from './artifact-preflight.ts';
 import { packageExtensions } from './package-extension.ts';
+import { verifiedBuildFootprint } from './footprint.ts';
 
 const root = resolve(import.meta.dirname, '..', '..');
 const distDir = join(root, 'dist');
@@ -89,6 +90,10 @@ export function prepareRelease(): void {
   }
 
   const changes = changelogEntry(readFileSync(join(root, 'CHANGELOG.md'), 'utf8'), version);
+  const footprint = verifiedBuildFootprint();
+  if (footprint.sourceSha !== releaseCommit) {
+    throw new Error('Production footprint source does not match release commit');
+  }
 
   rmSync(bundleDir, { force: true, recursive: true });
   mkdirSync(releaseDir, { recursive: true });
@@ -100,6 +105,18 @@ export function prepareRelease(): void {
     outputDir: releaseDir,
     fileName: (browser) => `xcom-enhanced-gallery-${browser}.zip`,
   });
+  const archiveFootprint = archives.map((path) => {
+    const bytes = readFileSync(path);
+    return {
+      name: basename(path),
+      bytes: bytes.length,
+      sha256: createHash('sha256').update(bytes).digest('hex'),
+    };
+  });
+  writeFileSync(
+    join(bundleDir, 'footprint.json'),
+    `${JSON.stringify({ ...footprint, archiveFootprint, scope: 'Build artifact only; not a public release asset' }, null, 2)}\n`
+  );
   const releaseFiles = [
     join(releaseDir, userscriptFile),
     join(releaseDir, metadataFile),

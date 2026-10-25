@@ -23,6 +23,8 @@ const scripts = [
   'scripts/check/extension-build.ts',
   'scripts/release/package-extension.ts',
   'scripts/release/prepare.ts',
+  'scripts/release/footprint.ts',
+  'scripts/release/build-all.ts',
   'scripts/release/artifact-preflight.ts',
   'scripts/release/version.ts',
   'tooling/vite/utils/distribution-licenses.ts',
@@ -64,13 +66,60 @@ function releaseFixture(root: string): { bin: string; calls: string } {
   const git = join(bin, 'git');
   writeFileSync(
     git,
-    `#!/bin/sh\nprintf '%s\\n' "$*" >> "$FAKE_CALLS"\ncase "$1" in\n  rev-parse) printf '%s\\n' '${'a'.repeat(40)}' ;;\n  tag) printf '%s\\n' 'v2.3.2' ;;\nesac\n`
+    `#!/bin/sh\nprintf '%s\\n' "$*" >> "$FAKE_CALLS"\ncase "$1" in\n  rev-parse) printf '%s\\n' '${'a'.repeat(40)}' ;;\n  -C) if [ "$3" = rev-parse ]; then printf '%s\\n' '${'a'.repeat(40)}'; fi ;;\n  status) if [ "$FAKE_DIRTY" = 1 ]; then printf '%s\\n' '?? untracked-source.ts'; fi ;;\n  ls-files) if [ "$FAKE_DIRTY" = 1 ]; then printf 'untracked-source.ts\\0'; fi ;;\n  tag) printf '%s\\n' 'v2.3.2' ;;\nesac\n`
   );
   chmodSync(git, 0o755);
   const zip = join(bin, 'zip');
   writeFileSync(zip, '#!/bin/sh\nprintf archive > "$3"\nprintf zip >> "$FAKE_ZIP_CALLS"\n');
   chmodSync(zip, 0o755);
-  return { bin, calls: join(root, 'calls') };
+  mkdirSync(join(root, 'node_modules/vite'), { recursive: true });
+  mkdirSync(join(root, 'node_modules/vite-plus'), { recursive: true });
+  writeFileSync(join(root, 'node_modules/vite/package.json'), '{"version":"7.0.0"}');
+  writeFileSync(join(root, 'node_modules/vite-plus/package.json'), '{"version":"0.1.0"}');
+  writeFileSync(join(root, 'pnpm-lock.yaml'), 'lockfileVersion: 9\n');
+  mkdirSync(join(root, 'reports'), { recursive: true });
+  for (const target of [
+    'userscript',
+    'chrome-background',
+    'chrome-content',
+    'firefox-background',
+    'firefox-content',
+  ]) {
+    writeFileSync(
+      join(root, 'reports', `modules-${target}.json`),
+      JSON.stringify({
+        target,
+        runId: 'fixture-run',
+        buildOptions: {
+          mode: 'production',
+          minify: false,
+          sourcemap: false,
+          target: 'fixture',
+          formats: ['iife'],
+        },
+        method: 'fixture',
+        categories: { application: { modules: 1, renderedBytesEstimate: 10 } },
+      })
+    );
+  }
+  const calls = join(root, 'calls');
+  const result = spawnSync(
+    process.execPath,
+    [
+      '--experimental-strip-types',
+      '--input-type=module',
+      '-e',
+      "import { captureBuildInputs, writeBuildFootprint } from './scripts/release/footprint.ts'; writeBuildFootprint(captureBuildInputs(), 'fixture-run');",
+    ],
+    {
+      cwd: root,
+      encoding: 'utf8',
+      env: releaseEnv(root, bin, calls),
+    }
+  );
+  expect(result.status, result.stderr).toBe(0);
+  writeFileSync(calls, '');
+  return { bin, calls };
 }
 
 function releaseEnv(root: string, bin: string, calls: string): NodeJS.ProcessEnv {
@@ -267,13 +316,23 @@ describe('Node script import boundary', () => {
     const result = command('scripts/release/prepare.ts', [], releaseEnv(root, bin, calls));
     expect(result.status, result.stderr).toBe(0);
     expect(result.stdout).toContain('Prepared release-bundle/ for v2.3.3 (4 assets)');
-    expect(readFileSync(calls, 'utf8')).toBe('rev-parse HEAD\ntag --list v*\n');
+    expect(readFileSync(calls, 'utf8')).toContain('rev-parse HEAD');
+    expect(readFileSync(calls, 'utf8')).toContain('tag --list v*');
     expect(existsSync(join(root, 'release-bundle/sentinel'))).toBe(false);
     expect(
       readFileSync(join(root, 'release-bundle/deploy/dist/xcom-enhanced-gallery.user.js'), 'utf8')
     ).toBe(`${releaseHeader()}\nscript`);
     expect(readFileSync(join(root, 'zip-calls'), 'utf8')).toBe('zipzip');
     const release = join(root, 'release-bundle/release');
+    const footprint = JSON.parse(
+      readFileSync(join(root, 'release-bundle/footprint.json'), 'utf8')
+    ) as {
+      archiveFootprint: { name: string; bytes: number }[];
+      unpackedBytes: { userscript: number };
+    };
+    expect(footprint.archiveFootprint).toHaveLength(2);
+    expect(footprint.archiveFootprint[0]?.bytes).toBe(7);
+    expect(footprint.unpackedBytes.userscript).toBeGreaterThan(0);
     expect(readFileSync(join(release, 'checksums.txt'), 'utf8').trim().split('\n')).toHaveLength(4);
     expect(existsSync(join(release, 'xcom-enhanced-gallery-chrome.zip'))).toBe(true);
     expect(existsSync(join(release, 'xcom-enhanced-gallery-firefox.zip'))).toBe(true);
@@ -292,6 +351,197 @@ describe('Node script import boundary', () => {
     expect(releaseNotes).toContain('version-pinned `@downloadURL`');
     expect(releaseNotes).toContain('/releases/latest/download/xcom-enhanced-gallery.user.js');
     expect(releaseNotes).toContain('Confirm there is one X.com Enhanced Gallery entry');
+  });
+
+  it('does not allow a standalone footprint script to relabel existing outputs', () => {
+    const { root, command } = fixture();
+    const { bin, calls } = releaseFixture(root);
+    rmSync(join(root, 'reports/production-footprint.json'));
+    expect(command('scripts/release/footprint.ts', [], releaseEnv(root, bin, calls)).status).toBe(
+      0
+    );
+    expect(existsSync(join(root, 'reports/production-footprint.json'))).toBe(false);
+  });
+
+  it('hashes untracked symlink targets and rejects nonregular source entries', () => {
+    const { root } = fixture();
+    const { bin, calls } = releaseFixture(root);
+    writeFileSync(join(root, 'target-one'), 'same bytes');
+    writeFileSync(join(root, 'target-two'), 'same bytes');
+    const source = join(root, 'untracked-source.ts');
+    const capture = () =>
+      spawnSync(
+        process.execPath,
+        [
+          '--experimental-strip-types',
+          '--input-type=module',
+          '-e',
+          "import { captureBuildInputs } from './scripts/release/footprint.ts'; console.log(captureBuildInputs().sourceStateSha256);",
+        ],
+        {
+          cwd: root,
+          encoding: 'utf8',
+          env: { ...releaseEnv(root, bin, calls), FAKE_DIRTY: '1' },
+        }
+      );
+    symlinkSync('target-one', source);
+    const first = capture();
+    expect(first.status, first.stderr).toBe(0);
+    rmSync(source);
+    symlinkSync('target-two', source);
+    const second = capture();
+    expect(second.status, second.stderr).toBe(0);
+    expect(second.stdout).not.toBe(first.stdout);
+    rmSync(source);
+    mkdirSync(source);
+    const directory = capture();
+    expect(directory.status).not.toBe(0);
+    expect(directory.stderr).toContain('Unsupported untracked source entry');
+  });
+
+  it('builds stable dirty source without claiming clean release provenance', () => {
+    const { root, command } = fixture();
+    const { bin, calls } = releaseFixture(root);
+    writeFileSync(join(root, 'untracked-source.ts'), 'stable untracked source');
+    const pnpm = join(bin, 'pnpm');
+    writeFileSync(
+      pnpm,
+      '#!/bin/sh\nif [ "$1" = "--version" ]; then printf "12.15.0\\n"; exit 0; fi\nif [ "$2" = "build:extension:ci" ]; then mkdir dist-extension; printf "{\\"version\\":\\"2.3.3\\"}\\n" > dist-extension/manifest.json; fi\nfor file in reports/modules-*.json; do sed -i "s/fixture-run/$XCOM_FOOTPRINT_RUN_ID/g" "$file"; done\n'
+    );
+    chmodSync(pnpm, 0o755);
+    const result = command('scripts/release/build-all.ts', [], {
+      ...releaseEnv(root, bin, calls),
+      FAKE_DIRTY: '1',
+    });
+    expect(result.status, result.stderr).toBe(0);
+    const report = JSON.parse(
+      readFileSync(join(root, 'reports/production-footprint.json'), 'utf8')
+    ) as { sourceClean: boolean; sourceStateSha256: string };
+    expect(report.sourceClean).toBe(false);
+    expect(report.sourceStateSha256).toMatch(/^[a-f0-9]{64}$/);
+    const release = command('scripts/release/prepare.ts', [], {
+      ...releaseEnv(root, bin, calls),
+      FAKE_DIRTY: '1',
+    });
+    expect(release.status).not.toBe(0);
+    expect(release.stderr).toContain('built from a dirty source');
+    expect(readFileSync(join(root, 'release-bundle/sentinel'), 'utf8')).toBe('old bundle');
+  });
+
+  it('removes stale Chrome output before its producing build and excludes it from release artifacts', () => {
+    const { root, command } = fixture();
+    const { bin, calls } = releaseFixture(root);
+    mkdirSync(join(root, 'dist-extension/legacy'));
+    writeFileSync(join(root, 'dist-extension/legacy/stale.js'), 'stale Chrome build');
+    writeFileSync(join(root, 'dist/xcom-enhanced-gallery.dev.user.js'), 'dev userscript');
+    const pnpm = join(bin, 'pnpm');
+    writeFileSync(
+      pnpm,
+      '#!/bin/sh\nif [ "$1" = "--version" ]; then printf "12.15.0\\n"; exit 0; fi\nif [ "$1" = "-s" ]; then shift; fi\ncase "$1" in\n  build:ci) test -f dist-extension/legacy/stale.js || exit 11 ;;\n  build:extension:ci) test ! -e dist-extension || exit 12; mkdir dist-extension; printf "{\\"version\\":\\"2.3.3\\"}\\n" > dist-extension/manifest.json; printf fresh > dist-extension/content.js ;;\nesac\nfor file in reports/modules-*.json; do sed -i "s/fixture-run/$XCOM_FOOTPRINT_RUN_ID/g" "$file"; done\n'
+    );
+    chmodSync(pnpm, 0o755);
+    writeFileSync(join(bin, 'zip'), '#!/bin/sh\nfind . -type f -print | sort > "$3"\n');
+
+    const build = command('scripts/release/build-all.ts', [], releaseEnv(root, bin, calls));
+    expect(build.status, build.stderr).toBe(0);
+    expect(existsSync(join(root, 'dist-extension/legacy/stale.js'))).toBe(false);
+    expect(readFileSync(join(root, 'dist/xcom-enhanced-gallery.dev.user.js'), 'utf8')).toBe(
+      'dev userscript'
+    );
+    const report = JSON.parse(
+      readFileSync(join(root, 'reports/production-footprint.json'), 'utf8')
+    ) as { files: { chrome: { path: string }[] } };
+    expect(report.files.chrome.map((file) => file.path)).toEqual(['content.js', 'manifest.json']);
+
+    const prepare = command('scripts/release/prepare.ts', [], releaseEnv(root, bin, calls));
+    expect(prepare.status, prepare.stderr).toBe(0);
+    const archive = readFileSync(
+      join(root, 'release-bundle/release/xcom-enhanced-gallery-chrome.zip'),
+      'utf8'
+    );
+    expect(archive).toContain('./content.js');
+    expect(archive).not.toContain('stale.js');
+  });
+
+  it('rejects source changes during a producing build even when dirty status is unchanged', () => {
+    const { root, command } = fixture();
+    const { bin, calls } = releaseFixture(root);
+    writeFileSync(join(root, 'untracked-source.ts'), 'before');
+    const pnpm = join(bin, 'pnpm');
+    writeFileSync(
+      pnpm,
+      '#!/bin/sh\nif [ "$1" = "--version" ]; then printf "12.15.0\\n"; exit 0; fi\nif [ "$2" = "build:extension:ci" ]; then mkdir dist-extension; printf "{\\"version\\":\\"2.3.3\\"}\\n" > dist-extension/manifest.json; fi\nprintf after > untracked-source.ts\nfor file in reports/modules-*.json; do sed -i "s/fixture-run/$XCOM_FOOTPRINT_RUN_ID/g" "$file"; done\n'
+    );
+    chmodSync(pnpm, 0o755);
+    const result = command('scripts/release/build-all.ts', [], {
+      ...releaseEnv(root, bin, calls),
+      FAKE_DIRTY: '1',
+    });
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain('inputs changed during target builds');
+    expect(existsSync(join(root, 'reports/production-footprint.json'))).toBe(false);
+  });
+
+  it('preserves and deactivates an older receipt if a new producing build fails', () => {
+    const { root, command } = fixture();
+    const { bin, calls } = releaseFixture(root);
+    const original = readFileSync(join(root, 'reports/production-footprint.json'));
+    const pnpm = join(bin, 'pnpm');
+    writeFileSync(
+      pnpm,
+      '#!/bin/sh\nif [ "$1" = "--version" ]; then printf "12.15.0\\n"; exit 0; fi\nexit 17\n'
+    );
+    chmodSync(pnpm, 0o755);
+    const result = command('scripts/release/build-all.ts', [], releaseEnv(root, bin, calls));
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain('check:versions did not complete successfully');
+    expect(existsSync(join(root, 'reports/production-footprint.json'))).toBe(false);
+    const prior = readdirSync(join(root, 'reports')).find((name) =>
+      name.startsWith('production-footprint-before-')
+    );
+    expect(prior).toBeDefined();
+    expect(readFileSync(join(root, 'reports', prior!))).toEqual(original);
+    expect(
+      command('scripts/release/prepare.ts', [], releaseEnv(root, bin, calls)).stderr
+    ).toContain('Production footprint is missing');
+  });
+
+  it.each([
+    ['missing report', (root: string) => rmSync(join(root, 'reports/production-footprint.json'))],
+    [
+      'changed distribution',
+      (root: string) => writeFileSync(join(root, 'dist-extension/content.js'), 'changed content'),
+    ],
+    [
+      'changed lockfile',
+      (root: string) => writeFileSync(join(root, 'pnpm-lock.yaml'), 'changed lockfile'),
+    ],
+    [
+      'wrong source',
+      (root: string) => {
+        const path = join(root, 'reports/production-footprint.json');
+        const report = JSON.parse(readFileSync(path, 'utf8')) as { sourceSha: string };
+        report.sourceSha = 'b'.repeat(40);
+        writeFileSync(path, JSON.stringify(report));
+      },
+    ],
+    [
+      'stale module estimate',
+      (root: string) => {
+        const path = join(root, 'reports/modules-userscript.json');
+        const report = JSON.parse(readFileSync(path, 'utf8')) as { runId: string };
+        report.runId = 'prior-build';
+        writeFileSync(path, JSON.stringify(report));
+      },
+    ],
+  ])('rejects %s before replacing a prepared bundle', (_label, mutate) => {
+    const { root, command } = fixture();
+    const { bin, calls } = releaseFixture(root);
+    mutate(root);
+    const result = command('scripts/release/prepare.ts', [], releaseEnv(root, bin, calls));
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toMatch(/Production footprint|Invalid emitted module estimate/);
+    expect(readFileSync(join(root, 'release-bundle/sentinel'), 'utf8')).toBe('old bundle');
   });
 
   it.each([
