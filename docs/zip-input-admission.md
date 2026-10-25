@@ -44,8 +44,10 @@ verified URL; a rejected provider request does not trigger an alternate URL
 within an attempt.
 
 The snapshot belongs to the open gallery and the visible partial-result action.
-Dismissal, a new download, gallery replacement, close, or cancellation revokes
-it. A recovery is one explicit user action, not a loop. Each attempt uses the
+Dismissal requests cancellation of an active recovery and revokes its result
+publication, without cancelling an unrelated ordinary download. A new download,
+gallery replacement, close, or cancellation also revokes the snapshot. A recovery
+is one explicit user action, not a loop. Each attempt uses the
 existing entry/archive/page budgets, reports its own included and omitted
 counts, and retains only still-failed descriptors for another explicit action.
 No successful media bytes are retained by the snapshot. A ZIP save that was not

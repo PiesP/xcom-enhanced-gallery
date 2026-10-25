@@ -471,6 +471,42 @@ describe('DownloadOrchestrator bulk resource limits', () => {
     second.destroy();
   });
 
+  it('keeps a cancelled failed-entry ZIP owned until the native handoff settles', async () => {
+    const budget = new LiveByteBudget(4096);
+    const url = 'https://pbs.twimg.com/media/missing.jpg?name=orig';
+    const media: MediaInfo = { id: 'missing', type: 'image', url, filename: 'missing.jpg' };
+    const input = ownedBlob(new Blob(['recovered']), budget);
+    const controller = new AbortController();
+    const orchestrator = new DownloadOrchestrator();
+    orchestrator.initialize();
+    let releaseNative: (() => void) | undefined;
+    let heldZipSize = 0;
+    state.downloadBlob.mockImplementationOnce((blob, _filename, signal, released) => {
+      heldZipSize = blob.size;
+      releaseNative = released;
+      return new Promise<void>((_resolve, reject) => {
+        signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')), {
+          once: true,
+        });
+      });
+    });
+    const pending = orchestrator.downloadFailedEntries(
+      [{ index: 0, media, url, filename: 'missing.jpg' }],
+      'gallery.zip',
+      1,
+      { liveBudget: budget, cachedBlobs: new Map([[url, input]]), signal: controller.signal }
+    );
+    await vi.waitFor(() => expect(releaseNative).toBeTypeOf('function'));
+    input.lease.release();
+    controller.abort();
+    expect(await pending).toMatchObject({ success: false, code: 'CANCELLED' });
+    expect(budget.usedBytes).toBe(heldZipSize);
+    expect(state.downloadBlob).toHaveBeenCalledOnce();
+    releaseNative?.();
+    expect(budget.usedBytes).toBe(0);
+    orchestrator.destroy();
+  });
+
   it('waits for a cancelled ZIP Blob copy to settle before draining and admitting fresh work', async () => {
     const budget = new LiveByteBudget(8192);
     const firstUrl = 'https://pbs.twimg.com/media/first.jpg';

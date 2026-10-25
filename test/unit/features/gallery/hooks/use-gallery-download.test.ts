@@ -464,4 +464,88 @@ describe('createDownloadHandler bulk resource limits', () => {
     await handler.recoverFailedEntries();
     expect(state.downloadFailedEntries).not.toHaveBeenCalled();
   });
+
+  it('aborts an unresolved recovery on dismissal and ignores a late adapter handoff', async () => {
+    state.downloadBulk.mockResolvedValue({
+      success: true,
+      status: 'partial',
+      filesProcessed: 2,
+      filesSuccessful: 1,
+      filename: 'gallery.zip',
+      failedEntries: [
+        { index: 0, url: 'https://example.test/first.jpg', filename: 'first.jpg', error: 'failed' },
+      ],
+      code: 'NONE',
+    });
+    let resolveRecovery: ((value: unknown) => void) | undefined;
+    state.downloadFailedEntries.mockReturnValue(
+      new Promise((resolve) => {
+        resolveRecovery = resolve;
+      })
+    );
+    const handler = createDownloadHandler();
+    await handler.handleDownload('all');
+    const pending = handler.recoverFailedEntries();
+    await vi.waitFor(() => expect(state.downloadFailedEntries).toHaveBeenCalledOnce());
+    const signal = state.downloadFailedEntries.mock.calls[0]?.[3]?.signal as AbortSignal;
+    expect(signal.aborted).toBe(false);
+
+    handler.dismissOutcome();
+    expect(signal.aborted).toBe(true);
+    expect(state.status).toBe('idle');
+    expect(state.bulkOutcome).toBeNull();
+    const outcomeCalls = state.setBulkDownloadOutcome.mock.calls.length;
+    resolveRecovery?.({
+      success: true,
+      status: 'success',
+      filesProcessed: 1,
+      filesSuccessful: 1,
+      filename: 'gallery-missing.zip',
+      failedEntries: [],
+      code: 'NONE',
+    });
+    await pending;
+    expect(state.setBulkDownloadOutcome).toHaveBeenCalledTimes(outcomeCalls);
+    expect(state.bulkOutcome).toBeNull();
+    await handler.recoverFailedEntries();
+    expect(state.downloadFailedEntries).toHaveBeenCalledOnce();
+  });
+
+  it('dismissing a previous result does not cancel a separate ordinary download', async () => {
+    state.downloadBulk.mockResolvedValueOnce({
+      success: true,
+      status: 'partial',
+      filesProcessed: 2,
+      filesSuccessful: 1,
+      filename: 'gallery.zip',
+      failedEntries: [
+        { index: 0, url: 'https://example.test/first.jpg', filename: 'first.jpg', error: 'failed' },
+      ],
+      code: 'NONE',
+    });
+    let resolveOrdinary: ((value: unknown) => void) | undefined;
+    state.downloadBulk.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveOrdinary = resolve;
+      })
+    );
+    const handler = createDownloadHandler();
+    await handler.handleDownload('all');
+    const pending = handler.handleDownload('all');
+    await vi.waitFor(() => expect(state.downloadBulk).toHaveBeenCalledTimes(2));
+    const signal = state.downloadBulk.mock.calls[1]?.[1]?.signal as AbortSignal;
+    handler.dismissOutcome();
+    expect(signal.aborted).toBe(false);
+    expect(state.status).toBe('working');
+    resolveOrdinary?.({
+      success: true,
+      status: 'success',
+      filesProcessed: 2,
+      filesSuccessful: 2,
+      filename: 'next.zip',
+      code: 'NONE',
+    });
+    await pending;
+    expect(state.bulkOutcome).toMatchObject({ included: 2, omitted: 0 });
+  });
 });

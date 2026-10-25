@@ -99,6 +99,7 @@ export function createDownloadHandler() {
   let abortController = new AbortController();
   let operationGeneration = 0;
   let recoveryJob: RecoveryJob | null = null;
+  let activeRecoveryController: AbortController | null = null;
 
   const resetAbortController = (): void => {
     abortController = new AbortController();
@@ -356,7 +357,8 @@ export function createDownloadHandler() {
     ) {
       return;
     }
-    const controller = abortController;
+    const controller = new AbortController();
+    activeRecoveryController = controller;
     const signal = controller.signal;
     const operationId = ++operationGeneration;
     recoveryJob = null;
@@ -371,80 +373,97 @@ export function createDownloadHandler() {
       !signal.aborted &&
       gallerySignals.sessionRevision === job.sessionRevision;
 
-    const attempted = job.entries.map((entry) => ({ media: entry.media, index: entry.index }));
-    let result: BulkDownloadResult;
     try {
-      result = await getDownloadOrchestrator().downloadFailedEntries(
-        job.entries,
-        job.originalFilename,
-        job.attempt,
-        {
-          mediaBlobProvider: Object.assign(
-            (item: MediaInfo, requestSignal?: AbortSignal, maxResponseBytes?: number) =>
-              getMediaService().getDownloadMedia(item, requestSignal, maxResponseBytes),
-            { supports: (item: MediaInfo) => item.type === 'image' }
-          ),
-          signal,
+      const attempted = job.entries.map((entry) => ({ media: entry.media, index: entry.index }));
+      let result: BulkDownloadResult;
+      try {
+        result = await getDownloadOrchestrator().downloadFailedEntries(
+          job.entries,
+          job.originalFilename,
+          job.attempt,
+          {
+            mediaBlobProvider: Object.assign(
+              (item: MediaInfo, requestSignal?: AbortSignal, maxResponseBytes?: number) =>
+                getMediaService().getDownloadMedia(item, requestSignal, maxResponseBytes),
+              { supports: (item: MediaInfo) => item.type === 'image' }
+            ),
+            signal,
+          }
+        );
+      } catch (error) {
+        if (isCurrent()) {
+          setDownloadStatus('error');
+          setError(normalizeErrorMessage(error), 'bulkDownload');
         }
-      );
-    } catch (error) {
-      if (isCurrent()) {
-        setDownloadStatus('error');
-        setError(normalizeErrorMessage(error), 'bulkDownload');
+        return;
       }
-      return;
+      if (!isCurrent()) {
+        return;
+      }
+      if (result.code === 'CANCELLED') {
+        setDownloadStatus('idle');
+        return;
+      }
+      recoveryJob = nextRecoveryJob(
+        result,
+        attempted,
+        job.originalFilename,
+        job.sessionRevision,
+        job.attempt + 1
+      );
+      const handedOff = result.success;
+      const included = handedOff ? result.filesSuccessful : 0;
+      setBulkDownloadOutcome({
+        total: job.entries.length,
+        included,
+        omitted: job.entries.length - included,
+        handedOff,
+        reason:
+          result.code === 'RESOURCE_LIMIT'
+            ? 'resourceLimit'
+            : result.code === 'SOURCE_UNAVAILABLE'
+              ? 'sourceUnavailable'
+              : !handedOff && result.filesSuccessful > 0
+                ? 'zipSaveFailed'
+                : result.sourceFetchStatuses?.length
+                  ? 'sourceFetchFailed'
+                  : result.status === 'partial' || !handedOff
+                    ? 'other'
+                    : 'none',
+        sourceUnavailable: result.sourceUnavailable === true,
+        ...(result.sourceFetchStatuses?.length
+          ? { sourceFetchStatuses: result.sourceFetchStatuses }
+          : {}),
+        ...(recoveryJob ? { recoverableCount: recoveryJob.entries.length } : {}),
+        supplementary: true,
+      });
+      setDownloadStatus(handedOff ? 'handedOff' : 'error');
+    } finally {
+      if (activeRecoveryController === controller) {
+        activeRecoveryController = null;
+      }
     }
-    if (!isCurrent()) {
-      return;
-    }
-    if (result.code === 'CANCELLED') {
-      setDownloadStatus('idle');
-      return;
-    }
-    recoveryJob = nextRecoveryJob(
-      result,
-      attempted,
-      job.originalFilename,
-      job.sessionRevision,
-      job.attempt + 1
-    );
-    const handedOff = result.success;
-    const included = handedOff ? result.filesSuccessful : 0;
-    setBulkDownloadOutcome({
-      total: job.entries.length,
-      included,
-      omitted: job.entries.length - included,
-      handedOff,
-      reason:
-        result.code === 'RESOURCE_LIMIT'
-          ? 'resourceLimit'
-          : result.code === 'SOURCE_UNAVAILABLE'
-            ? 'sourceUnavailable'
-            : !handedOff && result.filesSuccessful > 0
-              ? 'zipSaveFailed'
-              : result.sourceFetchStatuses?.length
-                ? 'sourceFetchFailed'
-                : result.status === 'partial' || !handedOff
-                  ? 'other'
-                  : 'none',
-      sourceUnavailable: result.sourceUnavailable === true,
-      ...(result.sourceFetchStatuses?.length
-        ? { sourceFetchStatuses: result.sourceFetchStatuses }
-        : {}),
-      ...(recoveryJob ? { recoverableCount: recoveryJob.entries.length } : {}),
-      supplementary: true,
-    });
-    setDownloadStatus(handedOff ? 'handedOff' : 'error');
   };
 
   const dismissOutcome = (): void => {
+    const activeRecovery = activeRecoveryController;
+    if (activeRecovery) {
+      operationGeneration += 1;
+      activeRecovery.abort();
+      activeRecoveryController = null;
+    }
     recoveryJob = null;
     dismissBulkDownloadOutcome();
+    if (activeRecovery) {
+      setDownloadStatus('idle');
+    }
   };
 
   const cancelDownloads = (): void => {
     operationGeneration += 1;
     recoveryJob = null;
+    activeRecoveryController?.abort();
+    activeRecoveryController = null;
     abortController.abort();
     resetAbortController();
     setDownloadStatus('idle');
