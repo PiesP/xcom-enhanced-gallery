@@ -5,6 +5,7 @@ import {
   lstatSync,
   mkdirSync,
   readFileSync,
+  readlinkSync,
   readdirSync,
   renameSync,
   writeFileSync,
@@ -29,6 +30,7 @@ export interface BuildFootprint {
   schemaVersion: 1;
   sourceSha: string;
   sourceClean: boolean;
+  sourceStateSha256: string;
   coreSha: string;
   lockSha256: string;
   nodeVersion: string;
@@ -67,6 +69,7 @@ export type BuildInputs = Pick<
   BuildFootprint,
   | 'sourceSha'
   | 'sourceClean'
+  | 'sourceStateSha256'
   | 'coreSha'
   | 'lockSha256'
   | 'nodeVersion'
@@ -141,9 +144,31 @@ export function captureBuildInputs(): BuildInputs {
   if (command('git', ['-C', 'packages/core', 'rev-parse', 'HEAD']) !== coreSha) {
     throw new Error('Checked-out core does not match the recorded gitlink');
   }
+  const sourceStatus = command('git', ['status', '--porcelain', '--untracked-files=all']);
+  const sourceState = createHash('sha256');
+  sourceState.update(sourceStatus).update('\0');
+  sourceState.update(command('git', ['diff', '--binary', 'HEAD'])).update('\0');
+  const untracked = command('git', ['ls-files', '--others', '--exclude-standard', '-z'])
+    .split('\0')
+    .filter(Boolean)
+    .sort();
+  for (const path of untracked) {
+    const file = join(root, path);
+    const stat = lstatSync(file);
+    sourceState.update(path).update('\0');
+    if (stat.isFile()) {
+      sourceState.update(readFileSync(file));
+    } else if (stat.isSymbolicLink()) {
+      sourceState.update(readlinkSync(file));
+    } else {
+      throw new Error(`Unsupported untracked source entry: ${path}`);
+    }
+    sourceState.update('\0');
+  }
   return {
     sourceSha: command('git', ['rev-parse', 'HEAD']),
-    sourceClean: command('git', ['status', '--porcelain', '--untracked-files=all']) === '',
+    sourceClean: sourceStatus === '',
+    sourceStateSha256: sourceState.digest('hex'),
     coreSha,
     lockSha256: sha256(readFileSync(join(root, 'pnpm-lock.yaml'))),
     nodeVersion: process.versions.node,
@@ -219,13 +244,11 @@ function collectBuildFootprint(runId: string): BuildFootprint {
 }
 
 export function writeBuildFootprint(start: BuildInputs, runId: string): void {
-  if (!start.sourceClean) {
-    throw new Error('Production build source must be clean before recording a footprint');
-  }
   const observed = collectBuildFootprint(runId);
   const end: BuildInputs = {
     sourceSha: observed.sourceSha,
     sourceClean: observed.sourceClean,
+    sourceStateSha256: observed.sourceStateSha256,
     coreSha: observed.coreSha,
     lockSha256: observed.lockSha256,
     nodeVersion: observed.nodeVersion,
@@ -278,7 +301,7 @@ export function verifiedBuildFootprint(): BuildFootprint & { producedAt: string;
   }
   if (!saved.sourceClean) {
     throw new Error(
-      'Production footprint was built from a dirty tracked source; rebuild from clean source'
+      'Production footprint was built from a dirty source; rebuild from clean source'
     );
   }
   return saved;

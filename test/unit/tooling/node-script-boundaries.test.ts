@@ -66,7 +66,7 @@ function releaseFixture(root: string): { bin: string; calls: string } {
   const git = join(bin, 'git');
   writeFileSync(
     git,
-    `#!/bin/sh\nprintf '%s\\n' "$*" >> "$FAKE_CALLS"\ncase "$1" in\n  rev-parse|-C) printf '%s\\n' '${'a'.repeat(40)}' ;;\n  status) if [ "$FAKE_DIRTY" = 1 ]; then printf '%s\\n' '?? untracked-source.ts'; fi ;;\n  tag) printf '%s\\n' 'v2.3.2' ;;\nesac\n`
+    `#!/bin/sh\nprintf '%s\\n' "$*" >> "$FAKE_CALLS"\ncase "$1" in\n  rev-parse|-C) printf '%s\\n' '${'a'.repeat(40)}' ;;\n  status) if [ "$FAKE_DIRTY" = 1 ]; then printf '%s\\n' '?? untracked-source.ts'; fi ;;\n  ls-files) if [ "$FAKE_DIRTY" = 1 ]; then printf 'untracked-source.ts\\0'; fi ;;\n  tag) printf '%s\\n' 'v2.3.2' ;;\nesac\n`
   );
   chmodSync(git, 0o755);
   const zip = join(bin, 'zip');
@@ -363,16 +363,52 @@ describe('Node script import boundary', () => {
     expect(existsSync(join(root, 'reports/production-footprint.json'))).toBe(false);
   });
 
-  it('rejects an untracked source before starting the producing build', () => {
+  it('builds stable dirty source without claiming clean release provenance', () => {
     const { root, command } = fixture();
     const { bin, calls } = releaseFixture(root);
+    writeFileSync(join(root, 'untracked-source.ts'), 'stable untracked source');
+    const pnpm = join(bin, 'pnpm');
+    writeFileSync(
+      pnpm,
+      '#!/bin/sh\nif [ "$1" = "--version" ]; then printf "12.15.0\\n"; exit 0; fi\nfor file in reports/modules-*.json; do sed -i "s/fixture-run/$XCOM_FOOTPRINT_RUN_ID/g" "$file"; done\n'
+    );
+    chmodSync(pnpm, 0o755);
+    const result = command('scripts/release/build-all.ts', [], {
+      ...releaseEnv(root, bin, calls),
+      FAKE_DIRTY: '1',
+    });
+    expect(result.status, result.stderr).toBe(0);
+    const report = JSON.parse(
+      readFileSync(join(root, 'reports/production-footprint.json'), 'utf8')
+    ) as { sourceClean: boolean; sourceStateSha256: string };
+    expect(report.sourceClean).toBe(false);
+    expect(report.sourceStateSha256).toMatch(/^[a-f0-9]{64}$/);
+    const release = command('scripts/release/prepare.ts', [], {
+      ...releaseEnv(root, bin, calls),
+      FAKE_DIRTY: '1',
+    });
+    expect(release.status).not.toBe(0);
+    expect(release.stderr).toContain('built from a dirty source');
+    expect(readFileSync(join(root, 'release-bundle/sentinel'), 'utf8')).toBe('old bundle');
+  });
+
+  it('rejects source changes during a producing build even when dirty status is unchanged', () => {
+    const { root, command } = fixture();
+    const { bin, calls } = releaseFixture(root);
+    writeFileSync(join(root, 'untracked-source.ts'), 'before');
+    const pnpm = join(bin, 'pnpm');
+    writeFileSync(
+      pnpm,
+      '#!/bin/sh\nif [ "$1" = "--version" ]; then printf "12.15.0\\n"; exit 0; fi\nprintf after > untracked-source.ts\nfor file in reports/modules-*.json; do sed -i "s/fixture-run/$XCOM_FOOTPRINT_RUN_ID/g" "$file"; done\n'
+    );
+    chmodSync(pnpm, 0o755);
     const result = command('scripts/release/build-all.ts', [], {
       ...releaseEnv(root, bin, calls),
       FAKE_DIRTY: '1',
     });
     expect(result.status).not.toBe(0);
-    expect(result.stderr).toContain('clean source before building');
-    expect(readFileSync(join(root, 'release-bundle/sentinel'), 'utf8')).toBe('old bundle');
+    expect(result.stderr).toContain('inputs changed during target builds');
+    expect(existsSync(join(root, 'reports/production-footprint.json'))).toBe(false);
   });
 
   it('preserves and deactivates an older receipt if a new producing build fails', () => {

@@ -8,9 +8,6 @@ const root = resolve(import.meta.dirname, '..', '..');
 /** Run each existing production target once, then bind the resulting files to this invocation. */
 export function buildAll(): void {
   const start = captureBuildInputs();
-  if (!start.sourceClean) {
-    throw new Error('Production footprint requires a clean source before building');
-  }
   const runId = randomUUID();
   beginBuildFootprint(runId);
   for (const script of [
