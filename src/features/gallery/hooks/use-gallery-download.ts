@@ -84,6 +84,11 @@ function nextRecoveryJob(
   const seen = new Set<number>();
   for (const failure of result.failedEntries) {
     const source = attempted[failure.index];
+    // A saved partial ZIP can omit unverified originals alongside eligible failures.
+    // Only the new all-failed pre-save path requires every attempted entry to match.
+    if (!knownPreSaveFailure && source?.media.downloadSource?.quality === 'unverified-original') {
+      continue;
+    }
     if (
       !Number.isSafeInteger(failure.index) ||
       seen.has(failure.index) ||

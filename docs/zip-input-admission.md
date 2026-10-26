@@ -55,6 +55,8 @@ fails before saving, the producer's `saveAttempted: false` proof, zero successfu
 entries and complete matching failed-entry identities preserve the original
 missing descriptors for another explicit attempt. Names, order, source/owner
 identity and attempt numbering survive repeated provider or resource refusals.
+For a saved partial ZIP, unverified originals remain excluded without revoking
+other eligible missing entries.
 This does not offer recovery for an initially all-failed selection. Missing or
 ambiguous proof revokes recovery: an unconfirmed save could duplicate an unknown
 native handoff. Browser acceptance must verify the saved
