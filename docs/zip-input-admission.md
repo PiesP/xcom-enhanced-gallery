@@ -50,9 +50,16 @@ gallery replacement, close, or cancellation also revokes the snapshot. A recover
 is one explicit user action, not a loop. Each attempt uses the
 existing entry/archive/page budgets, reports its own included and omitted
 counts, and retains only still-failed descriptors for another explicit action.
-No successful media bytes are retained by the snapshot. A ZIP save that was not
-confirmed as handed off cannot offer recovery because another save could
-duplicate an unknown native handoff. Browser acceptance must verify the saved
+No successful media bytes are retained by the snapshot. If an explicit recovery
+fails before saving, the producer's `saveAttempted: false` proof, zero successful
+entries and complete matching failed-entry identities preserve the original
+missing descriptors for another explicit attempt. Names, order, source/owner
+identity and attempt numbering survive repeated provider or resource refusals.
+For a saved partial ZIP, unverified originals remain excluded without revoking
+other eligible missing entries.
+This does not offer recovery for an initially all-failed selection. Missing or
+ambiguous proof revokes recovery: an unconfirmed save could duplicate an unknown
+native handoff. Browser acceptance must verify the saved
 ZIP members and bytes independently; an adapter handoff alone is insufficient.
 
 ## Optional follow-ups

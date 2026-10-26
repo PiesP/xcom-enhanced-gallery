@@ -51,6 +51,7 @@ function createErrorResponse(
     failedEntries?: BulkDownloadResult['failedEntries'];
     sourceUnavailable?: boolean;
     sourceFetchStatuses?: BulkDownloadResult['sourceFetchStatuses'];
+    saveAttempted?: false;
   }
 ): BulkDownloadResult {
   return {
@@ -58,6 +59,7 @@ function createErrorResponse(
     status: 'error',
     filesProcessed,
     filesSuccessful: options?.filesSuccessful ?? 0,
+    ...(options?.saveAttempted === false ? { saveAttempted: false } : {}),
     error,
     ...(options?.failures ? { failures: options.failures } : {}),
     ...(options?.failedEntries ? { failedEntries: options.failedEntries } : {}),
@@ -180,6 +182,7 @@ export class DownloadOrchestrator {
                   : ErrorCode.ALL_FAILED,
               items.length,
               {
+                saveAttempted: false,
                 failures: result.failures,
                 failedEntries: result.failedEntries,
                 ...(result.sourceUnavailable ? { sourceUnavailable: true } : {}),

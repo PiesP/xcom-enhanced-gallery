@@ -126,6 +126,8 @@ describe('DownloadOrchestrator bulk resource limits', () => {
       vi
         .fn()
         .mockRejectedValueOnce(new HttpRequestError(503, true, 'http'))
+        .mockRejectedValueOnce(new HttpRequestError(503, true, 'http'))
+        .mockRejectedValueOnce(new HttpRequestError(503, true, 'http'))
         .mockImplementationOnce(async () => ownedBlob(new Blob(['recovered']))),
       { supports: (item: MediaInfo) => item.id === 'missing' }
     );
@@ -155,25 +157,44 @@ describe('DownloadOrchestrator bulk resource limits', () => {
       ]).entryOrder
     ).toEqual(['same.jpg', 'same-2.jpg']);
 
+    const entries = [{ index: 1, media: media[1]!, url: media[1]!.url, filename: 'same-1.jpg' }];
+    for (const attempt of [1, 2]) {
+      const failed = await orchestrator.downloadFailedEntries(entries, first.filename!, attempt, {
+        mediaBlobProvider: provider,
+        retries: 0,
+      });
+      expect(failed).toMatchObject({
+        success: false,
+        status: 'error',
+        saveAttempted: false,
+        filesProcessed: 1,
+        filesSuccessful: 0,
+        failedEntries: [
+          { index: 0, url: media[1]!.url, filename: 'same-1.jpg', error: 'HTTP:503' },
+        ],
+      });
+      expect(state.downloadBlob).toHaveBeenCalledOnce();
+    }
+
     const recovered = await orchestrator.downloadFailedEntries(
       [{ index: 1, media: media[1]!, url: media[1]!.url, filename: 'same-1.jpg' }],
       first.filename!,
-      1,
+      3,
       { mediaBlobProvider: provider, retries: 0 }
     );
     expect(recovered).toMatchObject({
       success: true,
       status: 'success',
-      filename: 'gallery-missing.zip',
+      filename: 'gallery-missing-3.zip',
       filesSuccessful: 1,
     });
-    expect(saved[1]!.filename).toBe('gallery-missing.zip');
+    expect(saved[1]!.filename).toBe('gallery-missing-3.zip');
     expect(
       verifyStoredZip(saved[1]!.bytes, [
         { filename: 'same-1.jpg', bytes: Buffer.from('recovered') },
       ]).entryOrder
     ).toEqual(['same-1.jpg']);
-    expect(provider).toHaveBeenCalledTimes(2);
+    expect(provider).toHaveBeenCalledTimes(4);
     expect(state.downloadBlob).toHaveBeenCalledTimes(2);
     provider.mockImplementationOnce(async () => ownedBlob(new Blob(['recovered again'])));
     const repeated = await orchestrator.downloadFailedEntries(
@@ -435,7 +456,9 @@ describe('DownloadOrchestrator bulk resource limits', () => {
     await vi.waitFor(() => expect(releaseNative).toBeTypeOf('function'));
     firstInput.lease.release();
     first.destroy();
-    expect(await pending).toMatchObject({ success: false, code: 'CANCELLED' });
+    const cancelled = await pending;
+    expect(cancelled).toMatchObject({ success: false, code: 'CANCELLED' });
+    expect(cancelled).not.toHaveProperty('saveAttempted');
     expect(budget.usedBytes).toBe(heldZipSize);
 
     const second = new DownloadOrchestrator();
