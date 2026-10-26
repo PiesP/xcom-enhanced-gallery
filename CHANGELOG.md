@@ -8,6 +8,10 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Missing-item ZIP retries** — Keep the explicit recovery action when all missing entries fail before saving starts. Repeated provider or memory-limit failures preserve the original missing filenames and order; a later attempt saves only those files. Uncertain native save handoffs remain non-retryable.
+
 ## [2.3.9] - Candidate (not published)
 
 ### Fixed

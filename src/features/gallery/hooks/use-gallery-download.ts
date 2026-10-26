@@ -57,33 +57,54 @@ function snapshotMedia(media: MediaInfo): MediaInfo {
 
 function nextRecoveryJob(
   result: BulkDownloadResult,
-  attempted: readonly { readonly media: MediaInfo; readonly index: number }[],
+  attempted: readonly {
+    readonly media: MediaInfo;
+    readonly index: number;
+    readonly filename?: string;
+  }[],
   originalFilename: string,
   sessionRevision: number,
   attempt: number
 ): RecoveryJob | null {
-  if (!result.success || result.status !== 'partial' || !result.failedEntries?.length) {
+  const knownPreSaveFailure =
+    !result.success &&
+    result.status === 'error' &&
+    result.saveAttempted === false &&
+    result.filesSuccessful === 0 &&
+    result.filesProcessed === attempted.length &&
+    result.failedEntries?.length === attempted.length &&
+    attempted.every((entry) => !!entry.filename);
+  if (
+    (!(result.success && result.status === 'partial') && !knownPreSaveFailure) ||
+    !result.failedEntries?.length
+  ) {
     return null;
   }
-  const entries = result.failedEntries.flatMap((failure) => {
+  const entries: FailedEntryRecovery[] = [];
+  const seen = new Set<number>();
+  for (const failure of result.failedEntries) {
     const source = attempted[failure.index];
     if (
+      !Number.isSafeInteger(failure.index) ||
+      seen.has(failure.index) ||
       !source ||
+      !source.media.id ||
       source.media.downloadSource?.quality === 'unverified-original' ||
       getMediaDownloadUrl(source.media) !== failure.url ||
-      !failure.filename
+      !failure.filename ||
+      (source.filename !== undefined && source.filename !== failure.filename)
     ) {
-      return [];
+      return null;
     }
-    return [
-      {
-        index: source.index,
-        media: source.media,
-        url: failure.url,
-        filename: failure.filename,
-      },
-    ];
-  });
+    seen.add(failure.index);
+    entries.push({
+      index: source.index,
+      media: source.media,
+      url: failure.url,
+      filename: failure.filename,
+    });
+  }
+  entries.sort((left, right) => left.index - right.index);
   return entries.length ? { entries, originalFilename, sessionRevision, attempt } : null;
 }
 
@@ -374,7 +395,6 @@ export function createDownloadHandler() {
       gallerySignals.sessionRevision === job.sessionRevision;
 
     try {
-      const attempted = job.entries.map((entry) => ({ media: entry.media, index: entry.index }));
       let result: BulkDownloadResult;
       try {
         result = await getDownloadOrchestrator().downloadFailedEntries(
@@ -406,7 +426,7 @@ export function createDownloadHandler() {
       }
       recoveryJob = nextRecoveryJob(
         result,
-        attempted,
+        job.entries,
         job.originalFilename,
         job.sessionRevision,
         job.attempt + 1

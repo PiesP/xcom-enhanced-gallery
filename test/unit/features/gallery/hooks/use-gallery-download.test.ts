@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
+import type { MediaInfo } from '@shared/types/media.types';
 
 const state = vi.hoisted(() => ({
   downloadBulk: vi.fn(),
@@ -15,6 +16,7 @@ const state = vi.hoisted(() => ({
   status: 'idle',
   bulkOutcome: null as object | null,
   sessionRevision: 1,
+  mediaItems: [] as MediaInfo[],
 }));
 
 vi.mock('@platform/index', () => ({
@@ -40,10 +42,9 @@ vi.mock('@shared/state/signals/gallery.signals', () => ({
       return state.sessionRevision;
     },
     currentIndex: 0,
-    mediaItems: [
-      { id: 'first', type: 'image', url: 'https://example.test/first.jpg' },
-      { id: 'shown', type: 'image', url: 'https://example.test/shown.jpg' },
-    ],
+    get mediaItems() {
+      return state.mediaItems;
+    },
   },
   getDisplayedMediaIndex: () => state.displayedIndex,
   setError: state.setError,
@@ -81,6 +82,10 @@ describe('createDownloadHandler bulk resource limits', () => {
     state.status = 'idle';
     state.bulkOutcome = null;
     state.sessionRevision = 1;
+    state.mediaItems = [
+      { id: 'first', type: 'image', url: 'https://example.test/first.jpg' },
+      { id: 'shown', type: 'image', url: 'https://example.test/shown.jpg' },
+    ];
     state.translate.mockImplementation((key: string) => key);
   });
 
@@ -439,6 +444,298 @@ describe('createDownloadHandler bulk resource limits', () => {
     });
     expect(state.bulkOutcome).not.toHaveProperty('recoverableCount');
   });
+
+  it.each(['ALL_FAILED', 'RESOURCE_LIMIT'])(
+    'retains a complete proven pre-save %s failure across explicit attempts',
+    async (code) => {
+      const failed = {
+        index: 0,
+        url: 'https://example.test/first.jpg',
+        filename: 'first-1.jpg',
+        error: 'HTTP:503',
+      };
+      state.downloadBulk.mockResolvedValue({
+        success: true,
+        status: 'partial',
+        filesProcessed: 2,
+        filesSuccessful: 1,
+        filename: 'gallery.zip',
+        failedEntries: [failed],
+        code: 'NONE',
+      });
+      state.downloadFailedEntries
+        .mockResolvedValueOnce({
+          success: false,
+          status: 'error',
+          filesProcessed: 1,
+          filesSuccessful: 0,
+          failedEntries: [failed],
+          code,
+          saveAttempted: false,
+        })
+        .mockResolvedValueOnce({
+          success: false,
+          status: 'error',
+          filesProcessed: 1,
+          filesSuccessful: 0,
+          failedEntries: [failed],
+          code,
+          saveAttempted: false,
+        })
+        .mockResolvedValueOnce({
+          success: true,
+          status: 'success',
+          filesProcessed: 1,
+          filesSuccessful: 1,
+          failedEntries: [],
+          code: 'NONE',
+          filename: 'gallery-missing-3.zip',
+        });
+      const handler = createDownloadHandler();
+      await handler.handleDownload('all');
+      for (let attempt = 1; attempt <= 2; attempt += 1) {
+        await handler.recoverFailedEntries();
+        expect(state.status).toBe('error');
+        expect(state.bulkOutcome).toMatchObject({
+          recoverableCount: 1,
+          total: 1,
+          included: 0,
+          omitted: 1,
+          supplementary: true,
+        });
+      }
+      await handler.recoverFailedEntries();
+      expect(state.status).toBe('handedOff');
+      expect(state.bulkOutcome).not.toHaveProperty('recoverableCount');
+      const calls = state.downloadFailedEntries.mock.calls;
+      expect(calls).toHaveLength(3);
+      expect(calls.map((call) => call[2])).toEqual([1, 2, 3]);
+      expect(calls.map((call) => call[0])).toEqual([calls[0]![0], calls[0]![0], calls[0]![0]]);
+      expect(calls[0]![0]).toEqual([
+        expect.objectContaining({
+          index: 0,
+          url: failed.url,
+          filename: failed.filename,
+          media: expect.objectContaining({ id: 'first', url: failed.url }),
+        }),
+      ]);
+    }
+  );
+
+  it.each([
+    {},
+    { saveAttempted: true },
+    { saveAttempted: false, filesSuccessful: 1 },
+    { saveAttempted: false, filesProcessed: 2 },
+    { saveAttempted: false, failedEntries: [] },
+    {
+      saveAttempted: false,
+      failedEntries: [{ index: 0, url: 'https://other.test/a', filename: 'first.jpg' }],
+    },
+    {
+      saveAttempted: false,
+      failedEntries: [{ index: 0, url: 'https://example.test/first.jpg', filename: 'changed.jpg' }],
+    },
+    {
+      saveAttempted: false,
+      failedEntries: [
+        { index: 0, url: 'https://example.test/first.jpg', filename: 'first.jpg' },
+        { index: 0, url: 'https://example.test/first.jpg', filename: 'first.jpg' },
+      ],
+    },
+  ])('revokes recovery when pre-save proof or identity is incomplete: %j', async (override) => {
+    const failed = {
+      index: 0,
+      url: 'https://example.test/first.jpg',
+      filename: 'first.jpg',
+      error: 'HTTP:503',
+    };
+    state.downloadBulk.mockResolvedValue({
+      success: true,
+      status: 'partial',
+      filesProcessed: 2,
+      filesSuccessful: 1,
+      filename: 'gallery.zip',
+      failedEntries: [failed],
+      code: 'NONE',
+    });
+    state.downloadFailedEntries.mockResolvedValue({
+      success: false,
+      status: 'error',
+      filesProcessed: 1,
+      filesSuccessful: 0,
+      failedEntries: [failed],
+      code: 'ALL_FAILED',
+      ...override,
+    });
+    const handler = createDownloadHandler();
+    await handler.handleDownload('all');
+    await handler.recoverFailedEntries();
+    await handler.recoverFailedEntries();
+    expect(state.downloadFailedEntries).toHaveBeenCalledOnce();
+    expect(state.bulkOutcome).not.toHaveProperty('recoverableCount');
+  });
+
+  it('keeps multiple missing identities ordered and retires only recovered entries', async () => {
+    state.mediaItems = ['saved', 'missing-a', 'missing-b', 'last'].map((id) => ({
+      id,
+      type: 'image',
+      url: `https://example.test/${id}.jpg`,
+      tweetId: `owner-${id}`,
+    }));
+    const failedA = {
+      index: 1,
+      url: state.mediaItems[1]!.url,
+      filename: 'assigned-a.jpg',
+      error: 'HTTP:503',
+    };
+    const failedB = {
+      index: 2,
+      url: state.mediaItems[2]!.url,
+      filename: 'assigned-b.jpg',
+      error: 'HTTP:503',
+    };
+    state.downloadBulk.mockResolvedValue({
+      success: true,
+      status: 'partial',
+      filesProcessed: 4,
+      filesSuccessful: 2,
+      filename: 'gallery.zip',
+      failedEntries: [failedB, failedA],
+      code: 'NONE',
+    });
+    state.downloadFailedEntries
+      .mockResolvedValueOnce({
+        success: false,
+        status: 'error',
+        filesProcessed: 2,
+        filesSuccessful: 0,
+        failedEntries: [
+          { ...failedB, index: 1 },
+          { ...failedA, index: 0 },
+        ],
+        code: 'ALL_FAILED',
+        saveAttempted: false,
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        status: 'partial',
+        filesProcessed: 2,
+        filesSuccessful: 1,
+        failedEntries: [{ ...failedB, index: 1 }],
+        code: 'NONE',
+        filename: 'gallery-missing-2.zip',
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        status: 'success',
+        filesProcessed: 1,
+        filesSuccessful: 1,
+        failedEntries: [],
+        code: 'NONE',
+        filename: 'gallery-missing-3.zip',
+      });
+    const handler = createDownloadHandler();
+    await handler.handleDownload('all');
+    state.mediaItems = []; // Recovery owns its original snapshot, not the live selection.
+    await handler.recoverFailedEntries();
+    expect(state.downloadFailedEntries).toHaveBeenCalledOnce();
+    expect(state.bulkOutcome).toMatchObject({ recoverableCount: 2 });
+    await handler.recoverFailedEntries();
+    expect(state.bulkOutcome).toMatchObject({ recoverableCount: 1 });
+    await handler.recoverFailedEntries();
+    const entries = state.downloadFailedEntries.mock.calls.map((call) => call[0]);
+    expect(entries[0]).toEqual(entries[1]);
+    expect(
+      entries[0].map((entry: { index: number; filename: string; media: MediaInfo }) => [
+        entry.index,
+        entry.filename,
+        entry.media.tweetId,
+      ])
+    ).toEqual([
+      [1, 'assigned-a.jpg', 'owner-missing-a'],
+      [2, 'assigned-b.jpg', 'owner-missing-b'],
+    ]);
+    expect(entries[2]).toEqual([entries[0][1]]);
+    expect(state.downloadFailedEntries.mock.calls.map((call) => call[2])).toEqual([1, 2, 3]);
+    expect(state.downloadBulk).toHaveBeenCalledOnce();
+    await handler.recoverFailedEntries();
+    expect(state.downloadFailedEntries).toHaveBeenCalledTimes(3);
+  });
+
+  it('does not create missing-entry recovery for an initially all-failed selection', async () => {
+    state.downloadBulk.mockResolvedValue({
+      success: false,
+      status: 'error',
+      filesProcessed: 2,
+      filesSuccessful: 0,
+      saveAttempted: false,
+      code: 'ALL_FAILED',
+      filename: 'gallery.zip',
+      failedEntries: [
+        {
+          index: 0,
+          url: 'https://example.test/first.jpg',
+          filename: 'first.jpg',
+          error: 'HTTP:503',
+        },
+        {
+          index: 1,
+          url: 'https://example.test/shown.jpg',
+          filename: 'shown.jpg',
+          error: 'HTTP:503',
+        },
+      ],
+    });
+    const handler = createDownloadHandler();
+    await handler.handleDownload('all');
+    await handler.recoverFailedEntries();
+    expect(state.downloadFailedEntries).not.toHaveBeenCalled();
+    expect(state.bulkOutcome).not.toHaveProperty('recoverableCount');
+  });
+
+  it.each(['cancel', 'dismiss', 'replace'] as const)(
+    'revokes a retained pre-save failure on %s',
+    async (action) => {
+      const failed = {
+        index: 0,
+        url: 'https://example.test/first.jpg',
+        filename: 'first.jpg',
+        error: 'HTTP:503',
+      };
+      state.downloadBulk.mockResolvedValue({
+        success: true,
+        status: 'partial',
+        filesProcessed: 2,
+        filesSuccessful: 1,
+        filename: 'gallery.zip',
+        failedEntries: [failed],
+        code: 'NONE',
+      });
+      state.downloadFailedEntries.mockResolvedValue({
+        success: false,
+        status: 'error',
+        filesProcessed: 1,
+        filesSuccessful: 0,
+        saveAttempted: false,
+        failedEntries: [failed],
+        code: 'ALL_FAILED',
+      });
+      const handler = createDownloadHandler();
+      await handler.handleDownload('all');
+      await handler.recoverFailedEntries();
+      expect(state.bulkOutcome).toMatchObject({ recoverableCount: 1 });
+      if (action === 'cancel') {
+        handler.cancelDownloads();
+      } else if (action === 'dismiss') {
+        handler.dismissOutcome();
+      } else {
+        state.sessionRevision += 1;
+      }
+      await handler.recoverFailedEntries();
+      expect(state.downloadFailedEntries).toHaveBeenCalledOnce();
+    }
+  );
 
   it('revokes failed-entry recovery on gallery replacement or dismissal', async () => {
     state.downloadBulk.mockResolvedValue({
