@@ -225,6 +225,24 @@ jobs:
       - name: 🎭 Run userscript and extension contract E2E tests
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.e2e != 'false' }}
         run: |
+          # The Azure archive stalled two hosted dependency installs before tests started.
+          # Keep the image's suites, components, signing keys and separate security source.
+          sudo python3 - <<'PY'
+          from pathlib import Path
+          sources = Path('/etc/apt/sources.list.d/ubuntu.sources')
+          original = sources.read_text()
+          lines = original.splitlines(keepends=True)
+          for index, line in enumerate(lines):
+              if line.startswith('URIs:'):
+                  for scheme in ('http', 'https'):
+                      line = line.replace(
+                          f'{scheme}://azure.archive.ubuntu.com/ubuntu',
+                          'https://archive.ubuntu.com/ubuntu')
+                  lines[index] = line
+          updated = ''.join(lines)
+          if updated != original:
+              sources.write_text(updated)
+          PY
           pnpm exec playwright install --with-deps chromium firefox webkit
           pnpm test:e2e:all
 
