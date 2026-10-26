@@ -663,6 +663,62 @@ describe('createDownloadHandler bulk resource limits', () => {
     expect(state.downloadFailedEntries).toHaveBeenCalledTimes(3);
   });
 
+  it('keeps eligible missing originals when a saved partial ZIP also excludes an unverified original', async () => {
+    state.mediaItems = [
+      { id: 'saved', type: 'image', url: 'https://example.test/saved.jpg' },
+      {
+        id: 'unverified',
+        type: 'image',
+        url: 'https://example.test/small.jpg',
+        downloadSource: { url: '', quality: 'unverified-original', provenance: 'dom' },
+      },
+      { id: 'missing', type: 'image', url: 'https://example.test/missing.jpg' },
+    ];
+    state.downloadBulk.mockResolvedValue({
+      success: true,
+      status: 'partial',
+      filesProcessed: 3,
+      filesSuccessful: 1,
+      filename: 'gallery.zip',
+      code: 'SOURCE_UNAVAILABLE',
+      sourceUnavailable: true,
+      failedEntries: [
+        { index: 1, url: '', filename: 'unverified.jpg', error: 'Unverified original' },
+        {
+          index: 2,
+          url: 'https://example.test/missing.jpg',
+          filename: 'missing.jpg',
+          error: 'HTTP:503',
+        },
+      ],
+    });
+    state.downloadFailedEntries.mockResolvedValue({
+      success: true,
+      status: 'success',
+      filesProcessed: 1,
+      filesSuccessful: 1,
+      filename: 'gallery-missing.zip',
+      code: 'NONE',
+      failedEntries: [],
+    });
+    const handler = createDownloadHandler();
+    await handler.handleDownload('all');
+    expect(state.bulkOutcome).toMatchObject({ recoverableCount: 1, included: 1, omitted: 2 });
+    await handler.recoverFailedEntries();
+    expect(state.downloadFailedEntries).toHaveBeenCalledExactlyOnceWith(
+      [
+        expect.objectContaining({
+          index: 2,
+          filename: 'missing.jpg',
+          media: expect.objectContaining({ id: 'missing' }),
+        }),
+      ],
+      'gallery.zip',
+      1,
+      expect.any(Object)
+    );
+  });
+
   it('does not create missing-entry recovery for an initially all-failed selection', async () => {
     state.downloadBulk.mockResolvedValue({
       success: false,
