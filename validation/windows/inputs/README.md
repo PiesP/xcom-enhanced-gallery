@@ -64,8 +64,10 @@ extension, create the ignored `failed-entry-recovery.json` file here:
 ```
 
 Run with `--installation extension`. The installed package's gallery saves a
-partial ZIP after one bounded fixture response denial, then its visible recovery
-button saves only the omitted item in a separate `-missing.zip`. The receipt
+partial ZIP after one bounded fixture response denial. Its visible recovery
+button then encounters HTTP 503 and resource-limit failures before native saving;
+both explicit failures must retain recovery without a new native download.
+The third explicit attempt saves only the omitted item in `-missing-3.zip`. The receipt
 checks native download IDs, saved file identity, entry order, CRC, bytes, hashes,
 request count, result dismissal, session reopening, and exact cleanup. Retain
 failed receipts outside Git and remove the selector after the attempt.
