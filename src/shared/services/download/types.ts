@@ -111,6 +111,8 @@ export interface BulkDownloadResult {
   status: 'success' | 'partial' | 'error';
   filesProcessed: number;
   filesSuccessful: number;
+  /** Explicit proof from the producer that no native save was attempted. Absence is unknown. */
+  saveAttempted?: false;
   filename?: string;
   error?: string;
   failures?: Array<{ url: string; error: string }>;

@@ -126,6 +126,7 @@ type MemoryRequest = {
   marker: string;
   resourceType: string;
   pathname: string;
+  status: number;
   declaredBytes: number;
   actualBodyBytes: number;
   startedAtMs: number;
@@ -173,6 +174,16 @@ type MemoryEvidence = {
     partialDownloadId: number;
     screenshot?: string;
   };
+  preSaveRetries?: Array<{
+    attempt: number;
+    cause: 'http-503' | 'resource-limit';
+    observedResponseStatus: number;
+    observedContentLength: string | null;
+    requests: string[];
+    newNativeDownloadIds: number[];
+    visibleOutcome: string;
+    recoveryActionEnabled: boolean;
+  }>;
   expectedConsoleErrors?: ConsoleErrorRecord[];
   recoveryTransport?: unknown;
   missingScreenshot?: string;
@@ -4717,6 +4728,7 @@ async function runDownloadMemoryCycle({
   nativeLoopback,
   pageFetches,
   uiProbe = false,
+  preSaveRetryProbe = false,
 }: {
   consoleErrors: ConsoleErrorRecord[];
   downloads: string;
@@ -4729,6 +4741,7 @@ async function runDownloadMemoryCycle({
   nativeLoopback: NativeLoopback;
   pageFetches: PageFetch[];
   uiProbe?: boolean;
+  preSaveRetryProbe?: boolean;
 }) {
   Object.assign(evidence, { status: 'pending', cleanup: {}, requests: [], downloads: [] });
   const primaryMarker = IMAGE_URL_MARKERS[0];
@@ -4740,6 +4753,7 @@ async function runDownloadMemoryCycle({
   let primarySeen = false;
   let cleanupError: unknown;
   let cleanupSeen = false;
+  const deniedBody = 'fixture 503';
   const recordCleanupError = (error: unknown) => {
     cleanupError = cleanupSeen
       ? new AggregateError([cleanupError, error], 'Memory cleanup failed in multiple steps')
@@ -4777,24 +4791,31 @@ async function runDownloadMemoryCycle({
     const body = images[IMAGE_URL_MARKERS.indexOf(marker)];
     assert(body, 'Memory fixture image is missing');
     assert(evidence.policy, 'Memory fixture policy is missing');
+    const isHttpRejection =
+      preSaveRetryProbe && phase === 'missing-http-503' && marker === primaryMarker;
+    const status = isHttpRejection ? 503 : 200;
     const declaredBytes =
-      phase === 'declared-large' && marker === IMAGE_URL_MARKERS[0]
+      (phase === 'declared-large' || (preSaveRetryProbe && phase === 'missing-resource-limit')) &&
+      marker === primaryMarker
         ? evidence.policy.declaredBytes
-        : body.length;
+        : isHttpRejection
+          ? Buffer.byteLength(deniedBody)
+          : body.length;
     const request: MemoryRequest = {
       phase,
       marker,
       resourceType,
       pathname: url.pathname,
+      status,
       declaredBytes,
-      actualBodyBytes: body.length,
+      actualBodyBytes: isHttpRejection ? Buffer.byteLength(deniedBody) : body.length,
       startedAtMs: performance.now(),
     };
     evidence.requests.push(request);
     await route.fulfill({
-      status: 200,
+      status,
       contentType: 'image/jpeg',
-      body,
+      body: isHttpRejection ? deniedBody : body,
       headers: {
         'Access-Control-Allow-Origin': 'https://x.com',
         'Access-Control-Allow-Credentials': 'true',
@@ -4968,9 +4989,109 @@ async function runDownloadMemoryCycle({
       name: 'Download 1 missing items as a separate ZIP',
     });
     await recoverButton.waitFor({ state: 'visible' });
-    phase = 'missing-zip';
     const knownBeforeMissing = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
-    const missingName = `testuser_${TWEET_ID}-missing.zip`;
+    if (preSaveRetryProbe) {
+      evidence.preSaveRetries = [];
+      for (const [attempt, cause, expectedStatus] of [
+        [1, 'http-503', 503],
+        [2, 'resource-limit', 200],
+      ] as const) {
+        phase = cause === 'http-503' ? 'missing-http-503' : 'missing-resource-limit';
+        const responsePromise = page.waitForResponse(
+          (response) =>
+            response.url().includes(primaryMarker) &&
+            ['fetch', 'xhr'].includes(response.request().resourceType()),
+          { timeout: 15_000 }
+        );
+        await recoverButton.click();
+        const response = await responsePromise;
+        assert.equal(response.status(), expectedStatus, 'Owned recovery response status changed');
+        const contentLength = await response.headerValue('content-length');
+        assert.equal(
+          contentLength,
+          String(
+            cause === 'resource-limit'
+              ? evidence.policy.declaredBytes
+              : Buffer.byteLength(deniedBody)
+          ),
+          'Owned recovery response length changed'
+        );
+        const visibleOutcome = await waitForValue(
+          async () => {
+            if (!(await recoverButton.isEnabled())) {
+              return undefined;
+            }
+            const panel = gallery.locator('[data-gallery-element="bulk-download-outcome"]');
+            const panelText = await panel.textContent();
+            return panelText?.includes('No ZIP was handed off to the browser.')
+              ? panelText
+              : undefined;
+          },
+          `pre-save ${cause} recovery action`,
+          15_000
+        );
+        const expectedReason =
+          cause === 'http-503'
+            ? 'A media source request failed (HTTP 503)'
+            : 'Download memory limit reached';
+        assert(visibleOutcome.includes(expectedReason), 'Pre-save recovery cause changed');
+        await assertVisibleBulkOutcome(page, {
+          included: 0,
+          omitted: 1,
+          handedOff: false,
+          reason: expectedReason,
+          supplementary: true,
+        });
+        const newNativeDownloadIds = (await queryDownloads(extensionPage))
+          .filter(({ id }) => !knownBeforeMissing.has(id))
+          .map(({ id }) => id);
+        assert.deepEqual(newNativeDownloadIds, [], 'Pre-save failure started a native save');
+        const requests = evidence.requests
+          .filter(({ phase: requestPhase }) => requestPhase === phase)
+          .map(({ marker }) => marker);
+        assert.deepEqual(requests, [primaryMarker], 'Retry fetched a successful original');
+        evidence.preSaveRetries.push({
+          attempt,
+          cause,
+          observedResponseStatus: response.status(),
+          observedContentLength: contentLength,
+          requests,
+          newNativeDownloadIds,
+          visibleOutcome,
+          recoveryActionEnabled: await recoverButton.isEnabled(),
+        });
+      }
+      const expectedHttpErrors = consoleErrors.slice(consoleStart).filter((record) => {
+        try {
+          return (
+            new URL(record.location).pathname === rejection.pathname && /503/u.test(record.text)
+          );
+        } catch {
+          return false;
+        }
+      });
+      assert(
+        expectedHttpErrors.length <= 2,
+        'HTTP 503 fixture generated unexpected repeated console errors'
+      );
+      evidence.expectedConsoleErrors?.push(...expectedHttpErrors);
+      const expectedLimitErrors = consoleErrors
+        .slice(consoleStart)
+        .filter((record) =>
+          isExpectedMemoryFixtureConsoleError(record, { status: 'passed', rejection })
+        );
+      assert(
+        expectedLimitErrors.length <= 4,
+        'Repeated oversized fixture generated unexpected repeated console errors'
+      );
+      for (const record of expectedLimitErrors) {
+        if (!evidence.expectedConsoleErrors?.includes(record)) {
+          evidence.expectedConsoleErrors?.push(record);
+        }
+      }
+    }
+    phase = 'missing-zip';
+    const missingName = `testuser_${TWEET_ID}-missing${preSaveRetryProbe ? '-3' : ''}.zip`;
     const missingStartedAtMs = performance.now();
     await recoverButton.click();
     const missing = await waitForDownload(extensionPage, knownBeforeMissing, missingName);
@@ -5268,7 +5389,7 @@ async function runDownloadMemoryCycle({
         const allowedNames = new Set([
           expectedFilename(0),
           `testuser_${TWEET_ID}.zip`,
-          `testuser_${TWEET_ID}-missing.zip`,
+          `testuser_${TWEET_ID}-missing${preSaveRetryProbe ? '-3' : ''}.zip`,
         ]);
         assert(
           observed.every(
@@ -14284,6 +14405,7 @@ async function runFailedEntryRecoveryProbe({
       evidence,
       nativeLoopback,
       pageFetches,
+      preSaveRetryProbe: true,
     });
     assert(apiRequests.length > 0 && apiRequests.length <= 2, 'Classic API request count changed');
     assert.deepEqual(
