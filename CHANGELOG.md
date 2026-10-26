@@ -8,14 +8,11 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Fixed
-
-- **Missing-item ZIP retries** — Keep the explicit recovery action when all missing entries fail before saving starts. Repeated provider or memory-limit failures preserve the original missing filenames and order; a later attempt saves only those files. Uncertain native save handoffs remain non-retryable.
-
 ## [2.3.9] - Candidate (not published)
 
 ### Fixed
 
+- **Missing-item ZIP retries** — Keep the explicit recovery action when all missing entries fail before saving starts. Repeated provider or memory-limit failures preserve the original missing filenames and order; a later attempt saves only those files. A saved partial ZIP still offers recovery for eligible missing entries when another original is unverified. Uncertain native save handoffs remain non-retryable.
 - **Partial ZIP recovery** — Keep the original archive and offer a separate ZIP for eligible failed entries, preserving their assigned names and order without fetching successful entries again. Recovery is unavailable after an uncertain native download handoff or once the gallery changes or closes; supplementary saves use the existing resource limits.
 - **Video volume persistence** — Ignore delayed volume events from closed or replaced gallery players so they cannot overwrite a newer player's preferences. Keep pending choices made before close.
 - **Deep quote ownership** — Find the enclosing quote link above deeply wrapped playing videos before treating the article permalink as the media owner. Keep exact-source selection and the quoted owner's attribution.
