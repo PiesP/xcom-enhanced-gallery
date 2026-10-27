@@ -135,6 +135,9 @@ describe('shared consumer OSV workflow composition', () => {
   });
 
   it('uses a private provider-owned helper with the consumer profile in every mode', () => {
+    expect(step(pr, '📦 Setup trusted OSV runtime')).toContain(
+      "node-version: ${{ github.event.pull_request.base.sha == 'f3f933d131b1953e6b188d58d7a8ffc1786f9bf1' && '26.12.1' || '' }}"
+    );
     for (const body of [pr, full]) {
       expect(step(body, '📦 Setup trusted OSV runtime')).toContain(`setup-project@${runtimePin}`);
       expect(step(body, '📦 Setup trusted OSV runtime')).toContain("install-dependencies: 'false'");
