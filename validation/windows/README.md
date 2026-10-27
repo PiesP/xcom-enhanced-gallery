@@ -96,9 +96,9 @@ the earlier failed attempt and its unchanged raw transport fields.
 ## Artifact-only smoke
 
 From a clean checkout, initialize the recorded submodule, install with
-`pnpm install --frozen-lockfile`, then run `pnpm verify`. Package the assets listed
+`vp install --frozen-lockfile -- --no-runtime`, then run `vp run verify`. Package the assets listed
 in `profile.json` together with this profile. A controller with portable Node
-matching the repository's Volta pin and Playwright must call
+matching the repository's `.node-version` pin and Playwright must call
 `run({ browser, root, output })`, where `browser` is an installed Chrome/Edge
 Playwright Browser, `root` contains the declared assets, and `output` is a new
 external evidence directory. Use the configured controller in the prepared

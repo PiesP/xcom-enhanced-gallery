@@ -8,6 +8,8 @@ blockExoticSubdeps: true
 
 # Fail if the current Node.js / pnpm version doesn't match engines field.
 engineStrict: true
+runtimeOnFail: ignore
+pmOnFail: ignore
 
 # Keep paired tooling and plugin peer requirements compatible during installs.
 strictPeerDependencies: true

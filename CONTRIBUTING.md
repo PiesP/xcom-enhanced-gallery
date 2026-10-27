@@ -19,23 +19,24 @@ Do not report vulnerability details publicly. Follow the
 
 ## Development setup
 
-Use the toolchain pinned in `package.json`, or versions that satisfy its
-`engines` fields.
+Install the [Vite+ global CLI](https://viteplus.dev/guide/env) before the first
+dependency install. `.node-version` pins the development Node runtime;
+`packageManager` in `package.json` pins pnpm. The `engines` range describes
+supported runtimes and does not replace the exact development pin.
 
 ```bash
 git clone --recurse-submodules https://github.com/PiesP/xcom-enhanced-gallery.git
 cd xcom-enhanced-gallery
 git submodule sync --recursive
 git submodule update --init --recursive
-npm install --global "$(node -p "require('./package.json').packageManager")" --allow-scripts=pnpm
-pnpm install --frozen-lockfile
+vp env current
+vp install --frozen-lockfile -- --no-runtime
 ```
 
-Volta selects Node.js; `packageManager` selects the native pnpm release. Put
-npm's global binary directory before Volta's experimental pnpm shim in `PATH`;
-that shim expects the older JavaScript entrypoint.
-For existing Volta pnpm selections, follow the [shared native pnpm bootstrap](https://github.com/PiesP/browser-core#native-pnpm-bootstrap)
-including the Node-spawned version check.
+The install retains the frozen pnpm lockfile, release-age window, provenance,
+strict peer and build-script policies in `pnpm-workspace.yaml`. `--no-runtime`
+prevents pnpm from selecting a second Node installation. The dependency-free
+`preinstall` check verifies the recorded core gitlink before dependencies exist.
 
 `packages/core` is a pinned Git submodule. Restore the recorded revision with
 `git submodule update --init --recursive`; do not pull inside the detached
@@ -44,8 +45,8 @@ be integrated here as a reviewed gitlink update.
 
 ## Command catalog
 
-Run package commands from the repository root with manifest-pinned Node and
-pnpm after restoring the recorded `packages/core` gitlink. The dependency-free
+Run package commands from the repository root with `.node-version`-pinned Node
+and manifest-pinned pnpm after restoring the recorded `packages/core` gitlink. The dependency-free
 `preinstall` check can run before dependencies exist. `packages/core` provides
 product runtime code; automation helpers are consumer-owned or separately pinned.
 The table gives each command family, execution stage, side effects, and checks.
@@ -353,16 +354,15 @@ updates follow the same admission boundary with higher review priority.
 Dependabot opens the update PR and requests PiesP's review; the ordinary CI and
 security checks run on that PR before its protected merge.
 
-The GitHub Actions updater also watches `.github/actions/setup-release/action.yaml`;
-CodeQL, Node/pnpm setup, and other Actions have independent groups. For each Action
+The GitHub Actions updater watches workflow provider pins;
+CodeQL, Vite+ setup, and other Actions have independent groups. For each Action
 SHA update, verify the full commit against the official upstream release and
 wait at least 24 hours from that release. Review the changed executable behavior,
 then update independent allowed-SHA assertions in
 `test/unit/tooling/toolchain-action.test.ts` and affected workflow tests in the
 same PR. Never derive a trusted expected SHA from the workflow or action under
-test. Preserve the release action's manifest runtime, selected Node before
-JavaScript pnpm, disabled cache, `run_install: false`, `standalone: false`,
-frozen install and no-publish boundary; a
+test. Preserve the release workflow's verified tagged runtime, numeric provider
+override for historical tags, frozen install, disabled cache and no-publish boundary; a
 major action upgrade needs an explicit compatibility review. Run the focused
 toolchain and dependency-policy tests, `pnpm verify`, and exact-head CI before
 merging. Resolve a stale fixture for its specific update without closing all

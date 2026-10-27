@@ -54,6 +54,7 @@ export function classifyChanges(
       [
         'packages/core',
         '.gitmodules',
+        '.node-version',
         'package.json',
         'pnpm-lock.yaml',
         'pnpm-workspace.yaml',

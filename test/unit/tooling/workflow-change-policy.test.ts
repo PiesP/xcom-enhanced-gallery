@@ -269,6 +269,7 @@ describe('workflow change policy', () => {
       quality: 'false',
     },
     { path: 'src/main.ts', focused: false, unit: 'true', quality: 'true' },
+    { path: '.node-version', focused: false, unit: 'true', quality: 'true' },
     { path: 'docs/policy.md', focused: false, unit: 'false', quality: 'false' },
     // The classifier treats translated root READMEs as unknown and safely selects every gate.
     { path: 'README.ko.md', focused: false, unit: 'true', quality: 'true' },
@@ -331,6 +332,7 @@ describe('workflow change policy', () => {
     'test/e2e/fixtures/installed-gallery-page.html',
     'test/e2e/fixtures/mock-gallery-page.html',
     'vitest.config.ts',
+    '.node-version',
     'tsconfig.node-tests.json',
     'tsconfig.new-runtime.json',
   ])('selects quality for managed supported input %s', (path) => {
@@ -517,7 +519,7 @@ describe('workflow change policy', () => {
       expect(changes).toContain('node --experimental-strip-types "$classifier"');
       expect(changes).toContain('reason=trusted-classifier-unavailable-full');
       expect(changes).toContain(
-        'uses: PiesP/browser-core/automation/actions/setup-project@af19a6597c351f03a65e49532bdec6276e4b5ae9'
+        'uses: PiesP/browser-core/automation/actions/setup-project@38cd1cb18c9c37e57e8b53a98e811450bb1a18fc'
       );
       expect(changes).toContain("install-dependencies: 'false'");
       expect(changes).not.toContain('runtime: node@');

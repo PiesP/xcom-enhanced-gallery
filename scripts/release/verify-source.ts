@@ -55,13 +55,35 @@ function taggedNodeVersion(sha: string, releaseVersion: string): string {
       `Release source lacks current workflow entrypoints: ${missingScripts.join(', ')}`
     );
   }
+  const nodeVersionEntry = git(['ls-tree', sha, '--', '.node-version']);
   const volta = (manifest as { volta?: unknown }).volta;
-  const version =
-    volta && typeof volta === 'object' && !Array.isArray(volta)
-      ? (volta as { node?: unknown }).node
-      : undefined;
-  if (typeof version !== 'string' || !matchesExactly(exactNodeVersion, version)) {
-    throw new Error('Release source must declare an exact volta.node pin');
+  let version: string;
+  if (nodeVersionEntry) {
+    if (!/^100644 blob [0-9a-f]{40}\t\.node-version$/.test(nodeVersionEntry)) {
+      throw new Error('Release source .node-version must be a regular file');
+    }
+    if (volta !== undefined) {
+      throw new Error('Release source declares competing Node runtime pins');
+    }
+    const pin = execFileSync('git', ['show', `${sha}:.node-version`], { encoding: 'utf8' });
+    if (!/^[0-9]+\.[0-9]+\.[0-9]+\n?$/.test(pin)) {
+      throw new Error('Release source must declare an exact .node-version pin');
+    }
+    version = pin.trimEnd();
+  } else {
+    // Older tagged sources selected Node through Volta; the protected workflow passes this pin
+    // into the reviewed Vite+ provider's numeric compatibility override.
+    const historicalVersion =
+      volta && typeof volta === 'object' && !Array.isArray(volta)
+        ? (volta as { node?: unknown }).node
+        : undefined;
+    if (
+      typeof historicalVersion !== 'string' ||
+      !matchesExactly(exactNodeVersion, historicalVersion)
+    ) {
+      throw new Error('Historical release source must declare an exact volta.node pin');
+    }
+    version = historicalVersion;
   }
   const sourceVersion = (manifest as { version?: unknown }).version;
   if (sourceVersion !== releaseVersion) {

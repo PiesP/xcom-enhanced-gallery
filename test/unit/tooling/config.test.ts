@@ -207,10 +207,12 @@ describe('tooling configuration', () => {
     expect(releasePrepare).not.toContain('process.env.GITHUB_SHA');
 
     const localExecutionMarkers = {
-      quality: 'uses: ./.github/actions/setup-release',
-      unit: 'uses: ./.github/actions/setup-release',
-      e2e: 'uses: ./.github/actions/setup-release',
-      build: 'uses: ./.github/actions/setup-release',
+      quality:
+        'uses: PiesP/browser-core/automation/actions/setup-project@38cd1cb18c9c37e57e8b53a98e811450bb1a18fc',
+      unit: 'uses: PiesP/browser-core/automation/actions/setup-project@38cd1cb18c9c37e57e8b53a98e811450bb1a18fc',
+      e2e: 'uses: PiesP/browser-core/automation/actions/setup-project@38cd1cb18c9c37e57e8b53a98e811450bb1a18fc',
+      build:
+        'uses: PiesP/browser-core/automation/actions/setup-project@38cd1cb18c9c37e57e8b53a98e811450bb1a18fc',
     } as const;
     for (const [job, marker] of Object.entries(localExecutionMarkers)) {
       const block = jobBlock(releaseWorkflow, job);

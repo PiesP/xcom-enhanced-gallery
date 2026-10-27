@@ -14,7 +14,7 @@ describe('browser-core workflow composition', () => {
   it('runs local policy from the trusted default branch after runtime setup', () => {
     const checkout = workflow.indexOf('ref: master');
     const runtime = workflow.indexOf(
-      'automation/actions/setup-project@af19a6597c351f03a65e49532bdec6276e4b5ae9'
+      'automation/actions/setup-project@38cd1cb18c9c37e57e8b53a98e811450bb1a18fc'
     );
     const prepare = workflow.indexOf(
       'run: node --experimental-strip-types scripts/ci/update-browser-core.ts prepare'
