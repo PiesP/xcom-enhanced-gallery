@@ -45,12 +45,26 @@ function fixture() {
     source,
     checkout,
     output,
-    commit(pin: unknown, version: unknown = '1.2.3', scripts: unknown = releaseScripts): string {
+    commit(
+      pin: unknown,
+      version: unknown = '1.2.3',
+      scripts: unknown = releaseScripts,
+      pinSource: 'volta' | 'node-version' = 'volta'
+    ): string {
       writeFileSync(
         join(source, 'package.json'),
-        JSON.stringify({ version, volta: { node: pin }, scripts })
+        JSON.stringify({
+          version,
+          ...(pinSource === 'volta' ? { volta: { node: pin } } : {}),
+          scripts,
+        })
       );
-      git(source, 'add', 'package.json');
+      if (pinSource === 'node-version') {
+        writeFileSync(join(source, '.node-version'), `${String(pin)}\n`);
+      } else {
+        rmSync(join(source, '.node-version'), { force: true });
+      }
+      git(source, 'add', '-A');
       git(source, 'commit', '-qm', `manifest ${String(pin)}`);
       return git(source, 'rev-parse', 'HEAD');
     },
@@ -97,6 +111,34 @@ test('annotated tag resolves to its commit and reads the tagged historical Node 
   assert.equal(result.status, 0, result.stderr);
   assert.equal(f.values(), `node-version=24.15.0\nrelease-sha=${releaseSha}\nversion=1.2.3\n`);
   assert.equal(git(f.checkout, 'tag', '--list', 'v1.2.3'), 'v1.2.3');
+});
+
+test('current tagged source reads its exact .node-version pin', () => {
+  const f = fixture();
+  const head = f.commit('26.12.1', '2.3.9', releaseScripts, 'node-version');
+  f.tag('v2.3.9');
+  f.clone();
+  const result = f.run('v2.3.9', head);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(f.values(), `node-version=26.12.1\nrelease-sha=${head}\nversion=2.3.9\n`);
+});
+
+test('current source rejects a competing Volta pin before publishing outputs', () => {
+  const f = fixture();
+  f.commit('26.12.1', '2.3.9', releaseScripts, 'node-version');
+  writeFileSync(
+    join(f.source, 'package.json'),
+    JSON.stringify({ version: '2.3.9', volta: { node: '26.12.1' }, scripts: releaseScripts })
+  );
+  git(f.source, 'add', 'package.json');
+  git(f.source, 'commit', '-qm', 'competing pin');
+  const head = git(f.source, 'rev-parse', 'HEAD');
+  f.tag('v2.3.9');
+  f.clone();
+  const result = f.run('v2.3.9', head);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /competing Node runtime pins/);
+  assert.equal(f.values(), '');
 });
 
 test('protected workflow source rejects an older tag with a retired Nose script', () => {

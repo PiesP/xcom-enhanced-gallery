@@ -50,7 +50,7 @@ jobs:
           persist-credentials: false
 
       - name: 📦 Setup trusted provenance runtime
-        uses: PiesP/browser-core/automation/actions/setup-project@af19a6597c351f03a65e49532bdec6276e4b5ae9
+        uses: PiesP/browser-core/automation/actions/setup-project@38cd1cb18c9c37e57e8b53a98e811450bb1a18fc
         with:
           install-dependencies: 'false'
 
@@ -88,12 +88,12 @@ jobs:
           git submodule update --init --recursive
 
       - name: 📦 Setup project
-        uses: ./.github/actions/setup-release
+        uses: PiesP/browser-core/automation/actions/setup-project@38cd1cb18c9c37e57e8b53a98e811450bb1a18fc
         with:
           node-version: ${{ needs.provenance.outputs.node-version }}
 
       - name: ✅ Run quality gate
-        run: pnpm quality:coverage-owned
+        run: vp run quality:coverage-owned
 
   unit:
     name: 🧪 Release unit + coverage
@@ -123,12 +123,12 @@ jobs:
           git submodule update --init --recursive
 
       - name: 📦 Setup project
-        uses: ./.github/actions/setup-release
+        uses: PiesP/browser-core/automation/actions/setup-project@38cd1cb18c9c37e57e8b53a98e811450bb1a18fc
         with:
           node-version: ${{ needs.provenance.outputs.node-version }}
 
       - name: 🧪 Run unit tests and coverage thresholds
-        run: pnpm test:cov
+        run: vp run test:cov
 
   e2e:
     name: 🎭 Release E2E
@@ -158,17 +158,17 @@ jobs:
           git submodule update --init --recursive
 
       - name: 📦 Setup project
-        uses: ./.github/actions/setup-release
+        uses: PiesP/browser-core/automation/actions/setup-project@38cd1cb18c9c37e57e8b53a98e811450bb1a18fc
         with:
           node-version: ${{ needs.provenance.outputs.node-version }}
 
       - name: 🏗️ Build bundles for E2E
-        run: pnpm build:e2e
+        run: vp run build:e2e
 
       - name: 🎭 Run E2E tests
         run: |
-          pnpm exec playwright install --with-deps chromium firefox webkit
-          pnpm test:e2e:all
+          vp exec playwright install --with-deps chromium firefox webkit
+          vp run test:e2e:all
 
   build:
     name: 🏗️ Build release package
@@ -199,20 +199,20 @@ jobs:
           git submodule update --init --recursive
 
       - name: 📦 Setup project
-        uses: ./.github/actions/setup-release
+        uses: PiesP/browser-core/automation/actions/setup-project@38cd1cb18c9c37e57e8b53a98e811450bb1a18fc
         with:
           node-version: ${{ needs.provenance.outputs.node-version }}
 
       - name: 🏗️ Build all targets
         env:
           BUILD_VERSION: ${{ needs.provenance.outputs.version }}
-        run: pnpm build:all:ci
+        run: vp run build:all:ci
 
       - name: 📦 Prepare release bundle
         env:
           RELEASE_VERSION: ${{ needs.provenance.outputs.version }}
           RELEASE_SHA: ${{ needs.provenance.outputs.release-sha }}
-        run: pnpm release:prepare
+        run: vp run release:prepare
 
       - name: 📊 Upload release bundle
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -247,7 +247,7 @@ jobs:
           persist-credentials: false
 
       - name: 📦 Setup trusted publication runtime
-        uses: PiesP/browser-core/automation/actions/setup-project@af19a6597c351f03a65e49532bdec6276e4b5ae9
+        uses: PiesP/browser-core/automation/actions/setup-project@38cd1cb18c9c37e57e8b53a98e811450bb1a18fc
         with:
           install-dependencies: 'false'
 

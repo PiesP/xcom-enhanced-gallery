@@ -73,6 +73,12 @@ function releaseFixture(root: string): { bin: string; calls: string } {
   const zip = join(bin, 'zip');
   writeFileSync(zip, '#!/bin/sh\nprintf archive > "$3"\nprintf zip >> "$FAKE_ZIP_CALLS"\n');
   chmodSync(zip, 0o755);
+  const vp = join(bin, 'vp');
+  writeFileSync(
+    vp,
+    '#!/bin/sh\nif [ "$1" = "exec" ] && [ "$2" = "pnpm" ] && [ "$3" = "--version" ]; then printf "12.15.0\\n"; exit 0; fi\nexit 91\n'
+  );
+  chmodSync(vp, 0o755);
   mkdirSync(join(root, 'node_modules/vite'), { recursive: true });
   mkdirSync(join(root, 'node_modules/vite-plus'), { recursive: true });
   writeFileSync(join(root, 'node_modules/vite/package.json'), '{"version":"7.0.0"}');
@@ -182,8 +188,8 @@ describe('Node script import boundary', () => {
     expect(nativeProject?.test.include).toEqual(['validation/windows/**/*.test.ts']);
     expect(nativeProject?.test.environment).toBe('node');
     expect(nativeProject?.test.fileParallelism).toBe(false);
-    expect(packageJson.scripts['test:e2e:all']).toContain('pnpm -s test:e2e:native');
-    expect(packageJson.scripts['verify:full']).toContain('test:e2e:all');
+    expect(packageJson.scripts['test:e2e:all']).toBe('vp run test:e2e:all:steps');
+    expect(packageJson.scripts['verify:full']).toBe('vp run verify:full:steps');
   });
 
   it('checks syntax of every bundled Windows module', () => {
@@ -410,12 +416,12 @@ describe('Node script import boundary', () => {
     const { root, command } = fixture();
     const { bin, calls } = releaseFixture(root);
     writeFileSync(join(root, 'untracked-source.ts'), 'stable untracked source');
-    const pnpm = join(bin, 'pnpm');
+    const vp = join(bin, 'vp');
     writeFileSync(
-      pnpm,
-      '#!/bin/sh\nif [ "$1" = "--version" ]; then printf "12.15.0\\n"; exit 0; fi\nif [ "$2" = "build:extension:ci" ]; then mkdir dist-extension; printf "{\\"version\\":\\"2.3.3\\"}\\n" > dist-extension/manifest.json; fi\nfor file in reports/modules-*.json; do sed -i "s/fixture-run/$XCOM_FOOTPRINT_RUN_ID/g" "$file"; done\n'
+      vp,
+      '#!/bin/sh\nif [ "$1" = "exec" ]; then printf "12.15.0\\n"; exit 0; fi\nif [ "$2" = "build:extension:ci" ]; then mkdir dist-extension; printf "{\\"version\\":\\"2.3.3\\"}\\n" > dist-extension/manifest.json; fi\nfor file in reports/modules-*.json; do sed -i "s/fixture-run/$XCOM_FOOTPRINT_RUN_ID/g" "$file"; done\n'
     );
-    chmodSync(pnpm, 0o755);
+    chmodSync(vp, 0o755);
     const result = command('scripts/release/build-all.ts', [], {
       ...releaseEnv(root, bin, calls),
       FAKE_DIRTY: '1',
@@ -423,9 +429,16 @@ describe('Node script import boundary', () => {
     expect(result.status, result.stderr).toBe(0);
     const report = JSON.parse(
       readFileSync(join(root, 'reports/production-footprint.json'), 'utf8')
-    ) as { sourceClean: boolean; sourceStateSha256: string };
+    ) as {
+      sourceClean: boolean;
+      sourceStateSha256: string;
+      pnpmVersion: string;
+      buildCommand: string;
+    };
     expect(report.sourceClean).toBe(false);
     expect(report.sourceStateSha256).toMatch(/^[a-f0-9]{64}$/);
+    expect(report.pnpmVersion).toBe('12.15.0');
+    expect(report.buildCommand).toBe('vp run build:all:ci');
     const release = command('scripts/release/prepare.ts', [], {
       ...releaseEnv(root, bin, calls),
       FAKE_DIRTY: '1',
@@ -441,12 +454,12 @@ describe('Node script import boundary', () => {
     mkdirSync(join(root, 'dist-extension/legacy'));
     writeFileSync(join(root, 'dist-extension/legacy/stale.js'), 'stale Chrome build');
     writeFileSync(join(root, 'dist/xcom-enhanced-gallery.dev.user.js'), 'dev userscript');
-    const pnpm = join(bin, 'pnpm');
+    const vp = join(bin, 'vp');
     writeFileSync(
-      pnpm,
-      '#!/bin/sh\nif [ "$1" = "--version" ]; then printf "12.15.0\\n"; exit 0; fi\nif [ "$1" = "-s" ]; then shift; fi\ncase "$1" in\n  build:ci) test -f dist-extension/legacy/stale.js || exit 11 ;;\n  build:extension:ci) test ! -e dist-extension || exit 12; mkdir dist-extension; printf "{\\"version\\":\\"2.3.3\\"}\\n" > dist-extension/manifest.json; printf fresh > dist-extension/content.js ;;\nesac\nfor file in reports/modules-*.json; do sed -i "s/fixture-run/$XCOM_FOOTPRINT_RUN_ID/g" "$file"; done\n'
+      vp,
+      '#!/bin/sh\nif [ "$1" = "exec" ]; then printf "12.15.0\\n"; exit 0; fi\ncase "$2" in\n  build:ci) test -f dist-extension/legacy/stale.js || exit 11 ;;\n  build:extension:ci) test ! -e dist-extension || exit 12; mkdir dist-extension; printf "{\\"version\\":\\"2.3.3\\"}\\n" > dist-extension/manifest.json; printf fresh > dist-extension/content.js ;;\nesac\nfor file in reports/modules-*.json; do sed -i "s/fixture-run/$XCOM_FOOTPRINT_RUN_ID/g" "$file"; done\n'
     );
-    chmodSync(pnpm, 0o755);
+    chmodSync(vp, 0o755);
     writeFileSync(join(bin, 'zip'), '#!/bin/sh\nfind . -type f -print | sort > "$3"\n');
 
     const build = command('scripts/release/build-all.ts', [], releaseEnv(root, bin, calls));
@@ -474,12 +487,12 @@ describe('Node script import boundary', () => {
     const { root, command } = fixture();
     const { bin, calls } = releaseFixture(root);
     writeFileSync(join(root, 'untracked-source.ts'), 'before');
-    const pnpm = join(bin, 'pnpm');
+    const vp = join(bin, 'vp');
     writeFileSync(
-      pnpm,
-      '#!/bin/sh\nif [ "$1" = "--version" ]; then printf "12.15.0\\n"; exit 0; fi\nif [ "$2" = "build:extension:ci" ]; then mkdir dist-extension; printf "{\\"version\\":\\"2.3.3\\"}\\n" > dist-extension/manifest.json; fi\nprintf after > untracked-source.ts\nfor file in reports/modules-*.json; do sed -i "s/fixture-run/$XCOM_FOOTPRINT_RUN_ID/g" "$file"; done\n'
+      vp,
+      '#!/bin/sh\nif [ "$1" = "exec" ]; then printf "12.15.0\\n"; exit 0; fi\nif [ "$2" = "build:extension:ci" ]; then mkdir dist-extension; printf "{\\"version\\":\\"2.3.3\\"}\\n" > dist-extension/manifest.json; fi\nprintf after > untracked-source.ts\nfor file in reports/modules-*.json; do sed -i "s/fixture-run/$XCOM_FOOTPRINT_RUN_ID/g" "$file"; done\n'
     );
-    chmodSync(pnpm, 0o755);
+    chmodSync(vp, 0o755);
     const result = command('scripts/release/build-all.ts', [], {
       ...releaseEnv(root, bin, calls),
       FAKE_DIRTY: '1',
@@ -493,12 +506,12 @@ describe('Node script import boundary', () => {
     const { root, command } = fixture();
     const { bin, calls } = releaseFixture(root);
     const original = readFileSync(join(root, 'reports/production-footprint.json'));
-    const pnpm = join(bin, 'pnpm');
+    const vp = join(bin, 'vp');
     writeFileSync(
-      pnpm,
-      '#!/bin/sh\nif [ "$1" = "--version" ]; then printf "12.15.0\\n"; exit 0; fi\nexit 17\n'
+      vp,
+      '#!/bin/sh\nif [ "$1" = "exec" ]; then printf "12.15.0\\n"; exit 0; fi\nexit 17\n'
     );
-    chmodSync(pnpm, 0o755);
+    chmodSync(vp, 0o755);
     const result = command('scripts/release/build-all.ts', [], releaseEnv(root, bin, calls));
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain('check:versions did not complete successfully');
@@ -511,6 +524,28 @@ describe('Node script import boundary', () => {
     expect(
       command('scripts/release/prepare.ts', [], releaseEnv(root, bin, calls)).stderr
     ).toContain('Production footprint is missing');
+  });
+
+  it('deactivates an older receipt when a producing build is interrupted', () => {
+    const { root, command } = fixture();
+    const { bin, calls } = releaseFixture(root);
+    const original = readFileSync(join(root, 'reports/production-footprint.json'));
+    const vp = join(bin, 'vp');
+    writeFileSync(
+      vp,
+      '#!/bin/sh\nif [ "$1" = "exec" ]; then printf "12.15.0\\n"; exit 0; fi\nkill -TERM $$\n'
+    );
+    chmodSync(vp, 0o755);
+
+    const result = command('scripts/release/build-all.ts', [], releaseEnv(root, bin, calls));
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain('SIGTERM');
+    expect(existsSync(join(root, 'reports/production-footprint.json'))).toBe(false);
+    const prior = readdirSync(join(root, 'reports')).find((name) =>
+      name.startsWith('production-footprint-before-')
+    );
+    expect(prior).toBeDefined();
+    expect(readFileSync(join(root, 'reports', prior!))).toEqual(original);
   });
 
   it.each([

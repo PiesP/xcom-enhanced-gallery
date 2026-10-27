@@ -2,7 +2,7 @@
 
 ## Change classification
 
-`classify-changes.ts` uses only Node.js built-ins, so CI sets up the manifest-pinned
+`classify-changes.ts` uses only Node.js built-ins, so CI sets up the `.node-version`-pinned
 Node runtime through the shared action without installing project dependencies
 or initializing the submodule.
 It writes the existing gate keys and a reason to `GITHUB_OUTPUT`; `--files`

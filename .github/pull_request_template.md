@@ -15,8 +15,8 @@ Describe how reviewers can verify the change, including relevant `pnpm` commands
 (for example):
 
 ```bash
-pnpm quality
-pnpm verify:full
+vp run quality
+vp run verify:full
 ```
 
 If tests are not required, briefly explain why.

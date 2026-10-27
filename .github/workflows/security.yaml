@@ -58,9 +58,11 @@ jobs:
           submodules: false
 
       - name: 📦 Setup reviewed pin runtime
-        uses: PiesP/browser-core/automation/actions/setup-project@af19a6597c351f03a65e49532bdec6276e4b5ae9
+        uses: PiesP/browser-core/automation/actions/setup-project@38cd1cb18c9c37e57e8b53a98e811450bb1a18fc
         with:
           install-dependencies: 'false'
+          # The immutable reviewed source pins Node in Volta and has no .node-version.
+          node-version: '26.12.1'
 
       - name: 🔐 Prepare reviewed scanner pin helper
         id: scanner_helper
@@ -98,7 +100,7 @@ jobs:
           submodules: false
 
       - name: 📦 Setup classifier runtime
-        uses: PiesP/browser-core/automation/actions/setup-project@af19a6597c351f03a65e49532bdec6276e4b5ae9
+        uses: PiesP/browser-core/automation/actions/setup-project@38cd1cb18c9c37e57e8b53a98e811450bb1a18fc
         with:
           install-dependencies: 'false'
 
@@ -146,9 +148,11 @@ jobs:
           submodules: false
 
       - name: 📦 Setup reviewed pin runtime
-        uses: PiesP/browser-core/automation/actions/setup-project@af19a6597c351f03a65e49532bdec6276e4b5ae9
+        uses: PiesP/browser-core/automation/actions/setup-project@38cd1cb18c9c37e57e8b53a98e811450bb1a18fc
         with:
           install-dependencies: 'false'
+          # The immutable reviewed source pins Node in Volta and has no .node-version.
+          node-version: '26.12.1'
 
       - name: 🔐 Prepare reviewed scanner pin helper
         id: scanner_helper
@@ -212,8 +216,10 @@ jobs:
 
       - name: 📦 Setup trusted OSV runtime
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
-        uses: PiesP/browser-core/automation/actions/setup-project@af19a6597c351f03a65e49532bdec6276e4b5ae9
+        uses: PiesP/browser-core/automation/actions/setup-project@38cd1cb18c9c37e57e8b53a98e811450bb1a18fc
         with:
+          # This immutable pre-migration base used only Volta; newer bases use .node-version.
+          node-version: ${{ github.event.pull_request.base.sha == 'f3f933d131b1953e6b188d58d7a8ffc1786f9bf1' && '26.12.1' || '' }}
           install-dependencies: 'false'
 
       - name: 🔒 Prepare pinned OSV helper
@@ -312,7 +318,7 @@ jobs:
 
       - name: 📦 Setup trusted OSV runtime
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
-        uses: PiesP/browser-core/automation/actions/setup-project@af19a6597c351f03a65e49532bdec6276e4b5ae9
+        uses: PiesP/browser-core/automation/actions/setup-project@38cd1cb18c9c37e57e8b53a98e811450bb1a18fc
         with:
           install-dependencies: 'false'
 

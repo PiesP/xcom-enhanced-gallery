@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vite-plus/test';
+import { RUN_TASKS } from '../../../vite.config.ts';
 
 const workflow = readFileSync(
   resolve(import.meta.dirname, '../../../.github/workflows/update-browser-core.yaml'),
@@ -14,7 +15,7 @@ describe('browser-core workflow composition', () => {
   it('runs local policy from the trusted default branch after runtime setup', () => {
     const checkout = workflow.indexOf('ref: master');
     const runtime = workflow.indexOf(
-      'automation/actions/setup-project@af19a6597c351f03a65e49532bdec6276e4b5ae9'
+      'automation/actions/setup-project@38cd1cb18c9c37e57e8b53a98e811450bb1a18fc'
     );
     const prepare = workflow.indexOf(
       'run: node --experimental-strip-types scripts/ci/update-browser-core.ts prepare'
@@ -61,7 +62,8 @@ describe('browser-core workflow composition', () => {
     expect(workflow).toContain('PREFLIGHT: ${{ inputs.preflight }}');
     expect(workflow).not.toContain('AUTO_MERGE_TOKEN');
     expect(workflow).not.toContain('gh pr merge');
-    expect(manifest.scripts['test:ci']).toContain('pnpm -s test:policy');
+    expect(manifest.scripts['test:ci']).toBe('vp run test:ci:steps');
+    expect(RUN_TASKS['test:ci:steps'].command).toContain('vp run test:policy');
     expect(manifest.scripts['test:policy']).toBe(
       'vp test run --config tooling/vitest.node.config.ts --project policy-node'
     );

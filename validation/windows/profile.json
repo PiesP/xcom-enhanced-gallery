@@ -45,8 +45,8 @@
       "validation/windows/live-page.ts"
     ],
     "build_commands": [
-      ["pnpm", "build:ci"],
-      ["pnpm", "build:extension:ci"]
+      ["vp", "run", "build:ci"],
+      ["vp", "run", "build:extension:ci"]
     ]
   }
 }

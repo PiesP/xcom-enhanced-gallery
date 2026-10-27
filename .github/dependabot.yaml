@@ -90,9 +90,7 @@ updates:
 
   # GitHub Actions updates
   - package-ecosystem: "github-actions"
-    directories:
-      - "/"
-      - "/.github/actions/setup-release"
+    directory: "/"
     schedule:
       interval: "weekly"
       time: "09:00"
@@ -112,12 +110,8 @@ updates:
       codeql:
         patterns:
           - "github/codeql-action*"
-      pnpm-setup:
-        patterns:
-          - "pnpm/action-setup"
       actions:
         patterns:
           - "*"
         exclude-patterns:
           - "github/codeql-action*"
-          - "pnpm/action-setup"

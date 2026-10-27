@@ -1,53 +1,29 @@
-import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vite-plus/test';
 
-const script = resolve(
-  import.meta.dirname,
-  '../../../.github/actions/setup-release/resolve-runtime.mjs'
-);
-
-function resolveRuntime(pin: unknown, requested = ''): string {
-  const fixture = mkdtempSync(join(tmpdir(), 'release-runtime-'));
-  try {
-    const output = join(fixture, 'output');
-    writeFileSync(join(fixture, 'package.json'), JSON.stringify({ volta: { node: pin } }));
-    execFileSync(process.execPath, [script], {
-      cwd: fixture,
-      env: {
-        ...process.env,
-        GITHUB_OUTPUT: output,
-        NODE_VERSION_OVERRIDE: '22',
-        REQUESTED_NODE_VERSION: requested,
-      },
-      stdio: 'pipe',
-    });
-    return readFileSync(output, 'utf8');
-  } finally {
-    rmSync(fixture, { recursive: true, force: true });
-  }
-}
+const root = resolve(import.meta.dirname, '../../..');
+const setupProject =
+  'PiesP/browser-core/automation/actions/setup-project@38cd1cb18c9c37e57e8b53a98e811450bb1a18fc';
+const release = readFileSync(resolve(root, '.github/workflows/release.yaml'), 'utf8');
 
 describe('release runtime selection', () => {
-  it('uses the official manifest pin even when a compatibility override is present', () => {
-    expect(resolveRuntime('26.9.0')).toBe('version=26.9.0\n');
-    expect(resolveRuntime('26.10.1')).toBe('version=26.10.1\n');
+  it('declares one exact current Node pin independently of the support range', () => {
+    const pin = readFileSync(resolve(root, '.node-version'), 'utf8');
+    const manifest = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8')) as {
+      volta?: unknown;
+      engines: { node: string };
+      packageManager: string;
+    };
+    expect(pin).toMatch(/^\d+\.\d+\.\d+\n$/);
+    expect(pin.trim()).toBe('26.12.1');
+    expect(manifest.volta).toBeUndefined();
+    expect(manifest.engines.node).toContain('26.12.1');
+    expect(manifest.packageManager).toBe('pnpm@12.15.0');
   });
 
-  it('requires the workflow-provided version to match the tagged source', () => {
-    expect(resolveRuntime('26.9.0', '26.9.0')).toBe('version=26.9.0\n');
-    expect(() => resolveRuntime('26.9.0', '26')).toThrow();
-    expect(() => resolveRuntime('26.9.0', '26.10.1')).toThrow();
-  });
-
-  it('runs the trusted provenance helper before tagged release setup', () => {
-    const workflow = readFileSync(
-      resolve(import.meta.dirname, '../../../.github/workflows/release.yaml'),
-      'utf8'
-    );
-    const provenance = workflow.split('  provenance:\n')[1]?.split('\n  quality:')[0] ?? '';
+  it('verifies the protected tag before installing its dependency graph', () => {
+    const provenance = release.split('  provenance:\n')[1]?.split('\n  quality:')[0] ?? '';
     const checkout = provenance.indexOf('name: 📥 Checkout protected workflow source');
     const runtime = provenance.indexOf('name: 📦 Setup trusted provenance runtime');
     const verify = provenance.indexOf(
@@ -56,21 +32,26 @@ describe('release runtime selection', () => {
     expect(checkout).toBeGreaterThan(-1);
     expect(runtime).toBeGreaterThan(checkout);
     expect(verify).toBeGreaterThan(runtime);
+    expect(provenance).toContain(`uses: ${setupProject}`);
     expect(provenance).toContain("install-dependencies: 'false'");
-    const trustedRuntime = 'node-version: ${{ needs.provenance.outputs.node-version }}';
-    for (const job of ['quality', 'unit', 'e2e', 'build']) {
-      const jobDefinition = workflow.split(`\n  ${job}:\n`)[1]?.split(/\n  [a-z-]+:\n/u)[0];
-      expect(jobDefinition, `Missing trusted runtime in ${job}`).toContain(trustedRuntime);
-    }
-    expect(workflow.split(trustedRuntime)).toHaveLength(5);
   });
 
-  it('selects the protected manifest runtime before publication HTTPS requests', () => {
-    const workflow = readFileSync(
-      resolve(import.meta.dirname, '../../../.github/workflows/release.yaml'),
-      'utf8'
-    );
-    const publish = workflow.slice(workflow.indexOf('\n  publish:'));
+  it('uses the reviewed provider with the verified numeric override for every tagged job', () => {
+    const override = 'node-version: ${{ needs.provenance.outputs.node-version }}';
+    for (const job of ['quality', 'unit', 'e2e', 'build']) {
+      const definition = release.split(`\n  ${job}:\n`)[1]?.split(/\n  [a-z-]+:\n/u)[0] ?? '';
+      const checkout = definition.indexOf('Checkout verified release commit');
+      const setup = definition.indexOf(`uses: ${setupProject}`);
+      expect(checkout, job).toBeGreaterThan(-1);
+      expect(setup, job).toBeGreaterThan(checkout);
+      expect(definition, job).toContain(override);
+      expect(definition, job).not.toContain('./.github/actions/setup-release');
+    }
+    expect(release.split(override)).toHaveLength(5);
+  });
+
+  it('selects the protected runtime before publication HTTPS requests', () => {
+    const publish = release.slice(release.indexOf('\n  publish:'));
     const checkout = publish.indexOf('ref: ${{ github.sha }}');
     const runtime = publish.indexOf('name: 📦 Setup trusted publication runtime');
     const verify = publish.indexOf('run: node scripts/release/verify-publication.ts');
@@ -78,17 +59,10 @@ describe('release runtime selection', () => {
     expect(runtime).toBeGreaterThan(checkout);
     expect(verify).toBeGreaterThan(runtime);
     const setup = publish.slice(runtime, publish.indexOf('\n      - name:', runtime + 1));
-    expect(setup).toMatch(
-      /uses: PiesP\/browser-core\/automation\/actions\/setup-project@[a-f0-9]{40}/u
-    );
+    expect(setup).toContain(`uses: ${setupProject}`);
     expect(setup).toContain("install-dependencies: 'false'");
     expect(setup).not.toContain('node-version:');
     expect(publish).toContain('contents: write');
     expect(publish).not.toContain('checkout --detach');
   });
-
-  it.each([undefined, 26, '26', 'latest', '26.9.0\nextra=value'])(
-    'rejects missing, moving or malformed release pins: %s',
-    (pin) => expect(() => resolveRuntime(pin)).toThrow()
-  );
 });

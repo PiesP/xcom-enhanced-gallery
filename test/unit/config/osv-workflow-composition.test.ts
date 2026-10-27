@@ -9,7 +9,7 @@ const workflow = readFileSync(
   'utf8'
 );
 const providerPin = '9a9471ad301e439bcd1ebc52334cf6b4399510e7';
-const runtimePin = 'af19a6597c351f03a65e49532bdec6276e4b5ae9';
+const runtimePin = '38cd1cb18c9c37e57e8b53a98e811450bb1a18fc';
 const active = "${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}";
 const inactive = "${{ needs.changes.result == 'success' && needs.changes.outputs.osv == 'false' }}";
 const upload =
@@ -135,6 +135,9 @@ describe('shared consumer OSV workflow composition', () => {
   });
 
   it('uses a private provider-owned helper with the consumer profile in every mode', () => {
+    expect(step(pr, '📦 Setup trusted OSV runtime')).toContain(
+      "node-version: ${{ github.event.pull_request.base.sha == 'f3f933d131b1953e6b188d58d7a8ffc1786f9bf1' && '26.12.1' || '' }}"
+    );
     for (const body of [pr, full]) {
       expect(step(body, '📦 Setup trusted OSV runtime')).toContain(`setup-project@${runtimePin}`);
       expect(step(body, '📦 Setup trusted OSV runtime')).toContain("install-dependencies: 'false'");

@@ -25,6 +25,10 @@ const pins = JSON.parse(metadata.toString('utf8')) as {
   semgrep: { version: string; image: string };
 };
 const consumerSha = '61c7623658a5aa6f199b942c5f256f4a44f1d3bf';
+// The immutable reviewed source records this Node pin in Volta, without .node-version.
+const consumerNodeVersion = '26.12.1';
+const setupProjectAction =
+  'uses: PiesP/browser-core/automation/actions/setup-project@38cd1cb18c9c37e57e8b53a98e811450bb1a18fc';
 const providerSha = '4ab0442d8d2e3cf640767b499b6444c92f6479b5';
 const action = 'uses: PiesP/browser-core/automation/actions/prepare-scanner-pins@' + providerSha;
 const files = [
@@ -166,12 +170,16 @@ describe('scanner pin consumer contract', () => {
     ] as const) {
       const body = job(name);
       const checkout = body.indexOf('ref: ' + consumerSha);
-      const runtime = body.indexOf("install-dependencies: 'false'");
+      const runtime = body.indexOf(setupProjectAction);
+      const override = body.indexOf(`node-version: '${consumerNodeVersion}'`);
       const helper = body.indexOf(action);
       const call = body.indexOf(' ' + mode + ' "$pin_metadata"');
       expect(checkout).toBeGreaterThan(0);
       expect(runtime).toBeGreaterThan(checkout);
-      expect(helper).toBeGreaterThan(runtime);
+      expect(body).toContain("install-dependencies: 'false'");
+      expect(override).toBeGreaterThan(runtime);
+      expect(body.split(`node-version: '${consumerNodeVersion}'`)).toHaveLength(2);
+      expect(helper).toBeGreaterThan(override);
       expect(call).toBeGreaterThan(helper);
       expect(body).toContain('id: scanner_helper');
       expect(body).toContain('chmod 0700 "$pinned_dir"');

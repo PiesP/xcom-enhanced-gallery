@@ -54,7 +54,7 @@ describe('dependency-free command adapters', () => {
     expect(manifest.scripts.preinstall).toBe(
       'node --experimental-strip-types scripts/check/bootstrap.ts'
     );
-    expect(manifest.scripts.prebuild).toBe('pnpm -s check:prebuild');
+    expect(manifest.scripts.prebuild).toBe('vp run check:prebuild');
   });
 
   it('rejects a missing submodule before node_modules exists and accepts a real or symlinked file', () => {
