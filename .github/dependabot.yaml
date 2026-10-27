@@ -65,15 +65,6 @@ updates:
           - "minor"
           - "patch"
 
-      # Residual CSS/HTML/Solid lint and dead-code analysis.
-      quality:
-        patterns:
-          - "@biomejs/*"
-          - "knip"
-        update-types:
-          - "minor"
-          - "patch"
-
     # Vite+ owns these component versions; keep its own update PR visible.
     ignore:
       - dependency-name: "vite"

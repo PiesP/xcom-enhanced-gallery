@@ -89,7 +89,7 @@ it('ignores actual programmatic changes and persists user volume and mute change
       isVideo: () => true,
       onUserVolumeChange,
     });
-    // biome-ignore lint/a11y/useMediaCaption: This test-only video has no media source or audio.
+    // This test-only video has no media source or audio.
     return <video ref={setVideoRef} onVolumeChange={handleVolumeChange} />;
   }, host);
   try {

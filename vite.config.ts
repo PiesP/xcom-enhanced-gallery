@@ -106,7 +106,7 @@ export default defineConfig(({ mode }): UserConfig => {
         ],
       },
       lint: {
-        plugins: ['vitest', 'import', 'typescript', 'unicorn'],
+        plugins: ['vitest', 'import', 'typescript', 'unicorn', 'oxc'],
         rules: {
           'typescript/no-explicit-any': 'error',
           'typescript/no-non-null-assertion': 'off',
@@ -129,6 +129,10 @@ export default defineConfig(({ mode }): UserConfig => {
           'unicorn/prefer-string-starts-ends-with': 'off',
           'unicorn/no-thenable': 'off',
           'unicorn/no-document-cookie': 'error',
+          'oxc/no-accumulating-spread': 'error',
+          'import/no-cycle': ['error', { ignoreTypes: false, ignoreExternal: false }],
+          'unicorn/no-useless-switch-case': 'error',
+          'no-cond-assign': 'error',
           'no-unused-expressions': ['error', { allowShortCircuit: true }],
           'no-unused-vars': [
             'error',

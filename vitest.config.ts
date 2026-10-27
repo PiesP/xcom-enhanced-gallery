@@ -8,7 +8,6 @@ import { defineConfig } from 'vite-plus';
 const repositoryProbeFiles = [
   'test/unit/tooling/toolchain-policy.test.ts',
   'test/unit/tooling/node-ambient-types.test.ts',
-  'test/unit/tooling/knip-boundaries.test.ts',
 ];
 
 export function createVitestConfig(excludeBoundaryProbe = false) {

@@ -42,8 +42,8 @@ See [PRIVACY.md](../PRIVACY.md) for data, storage, and network details.
 
 ## Development security
 
-CI combines strict TypeScript, Vite+ formatting and linting, scoped Biome residual
-lint, dependency and circular-import checks, unit coverage, userscript and Chrome
+CI combines strict TypeScript, Vite+ formatting and linting with static/type
+import-cycle checks, unit coverage, userscript and Chrome
 extension Playwright tests, Firefox extension runtime tests, production builds,
 CodeQL, OSV Scanner, and Semgrep. The workflow files and package scripts are
 authoritative for the exact checks.

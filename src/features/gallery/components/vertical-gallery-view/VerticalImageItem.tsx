@@ -378,7 +378,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
         )}
 
         {isVideo() && isDisplaySrcValid() ? (
-          // biome-ignore lint/a11y/useMediaCaption: X supplies external media without a caption track; a fabricated track would misrepresent it.
+          // X supplies external media without a caption track; a fabricated track would misrepresent it.
           <video
             src={recovery.isAdmitted() ? recovery.playbackSrc() : undefined}
             poster={posterSrc()}

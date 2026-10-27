@@ -245,7 +245,7 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
   }
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: Pointer backdrop dismissal has the Escape-key and close-button equivalents managed by the gallery dialog.
+    // Pointer backdrop dismissal has the Escape-key and close-button equivalents managed by the gallery dialog.
     <div
       ref={(el) => setContainerEl(el ?? null)}
       class={cx(
@@ -306,7 +306,7 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
       </ul>
       <Show when={bulkOutcome()}>
         {(outcome) => (
-          // biome-ignore lint/a11y/useKeyWithClickEvents: Keyboard users interact with the native dismissal button; pointer propagation only protects the backdrop close handler.
+          // Keyboard users interact with the native dismissal button; pointer propagation only protects the backdrop close handler.
           <section
             class={styles.bulkOutcome}
             data-gallery-element="bulk-download-outcome"

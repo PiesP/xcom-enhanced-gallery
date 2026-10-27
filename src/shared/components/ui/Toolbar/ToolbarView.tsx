@@ -385,7 +385,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
 
           <fieldset class={cx(styles.toolbarGroup, styles.fitGroup)}>
             <legend class="xeg-sr-only">{translate('tb.fitGroup')}</legend>
-            {/* biome-ignore lint/performance/useSolidForComponent: The parent passes the fixed fit-mode order; button state and labels update through Solid accessors. */}
+            {/* The parent passes the fixed fit-mode order; button state and labels update through Solid accessors. */}
             {local.fitModeOrder.map(({ mode, iconName }) => {
               const label = fitModeLabels()[mode];
               return (
@@ -502,7 +502,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
         </div>
       </div>
 
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: Click handling only stops backdrop propagation; keyboard interaction stays on the native controls inside the panel. */}
+      {/* Click handling only stops backdrop propagation; keyboard interaction stays on the native controls inside the panel. */}
       <section
         ref={assignSettingsPanelRef}
         id="toolbar-settings-panel"
