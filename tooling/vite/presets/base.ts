@@ -21,7 +21,6 @@ export interface BasePresetOptions {
   readonly root?: string;
   readonly isDev: boolean;
   readonly version: string;
-  readonly featureMediaExtraction: boolean;
 }
 
 // ── Preset ───────────────────────────────────────────────────────────────────
@@ -33,7 +32,7 @@ export interface BasePresetOptions {
  * @returns Partial `UserConfig` suitable for `mergeConfig`
  */
 export function basePreset(options: BasePresetOptions): UserConfig {
-  const { isDev, version, featureMediaExtraction } = options;
+  const { isDev, version } = options;
   const root = options.root ?? resolve(process.cwd());
 
   return {
@@ -46,7 +45,6 @@ export function basePreset(options: BasePresetOptions): UserConfig {
     define: {
       __DEV__: JSON.stringify(isDev),
       __VERSION__: JSON.stringify(version),
-      __FEATURE_MEDIA_EXTRACTION__: JSON.stringify(featureMediaExtraction),
     },
 
     logLevel: 'warn',

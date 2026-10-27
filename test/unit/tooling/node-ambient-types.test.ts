@@ -158,7 +158,6 @@ describe('TypeScript runtime boundaries', () => {
         'void window.location;',
         'void __DEV__;',
         'void __VERSION__;',
-        'void __FEATURE_MEDIA_EXTRACTION__;',
         'void import.meta.env.MODE;',
       ].join('\n')
     );

@@ -27,7 +27,7 @@ declare global {
 let earlyInputBundle = '';
 test.beforeAll(async () => {
   const result = await build({
-    ...basePreset({ isDev: false, version: 'test', featureMediaExtraction: true }),
+    ...basePreset({ isDev: false, version: 'test' }),
     configFile: false,
     build: {
       write: false,

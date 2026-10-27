@@ -6,9 +6,6 @@
 /** Development mode flag injected by Vite build. */
 declare const __DEV__: boolean;
 
-/** Feature flag for media extraction capabilities. */
-declare const __FEATURE_MEDIA_EXTRACTION__: boolean;
-
 /** Application version string from package.json. */
 declare const __VERSION__: string;
 
