@@ -3,6 +3,7 @@
 
 import { DEFAULT_SETTINGS } from '@constants/settings';
 import { PersistentSettingsRepository } from '@features/settings/services/settings-repository';
+import { SETTINGS_LEAF_KEYS } from '@features/settings/services/settings-validation';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 const mockStorageGet = vi.fn();
@@ -10,12 +11,24 @@ const mockStorageSet = vi.fn();
 
 vi.mock('@shared/services/persistent-storage', () => ({
   getPersistentStorage: () => ({
-    get: mockStorageGet,
+    getState: async (key: string) => ({
+      value: key === 'xeg-app-settings' ? await mockStorageGet(key) : undefined,
+      available: true,
+    }),
     set: mockStorageSet,
   }),
 }));
 
 describe('PersistentSettingsRepository', () => {
+  it('covers every mutable leaf in the settings schema', () => {
+    const leaves = Object.entries(DEFAULT_SETTINGS).flatMap(([group, value]) =>
+      typeof value === 'object' && value !== null
+        ? Object.keys(value).map((name) => `${group}.${name}`)
+        : []
+    );
+    expect([...SETTINGS_LEAF_KEYS].sort()).toEqual(leaves.sort());
+  });
+
   beforeEach(() => {
     mockStorageGet.mockReset();
     mockStorageSet.mockReset().mockResolvedValue(undefined);

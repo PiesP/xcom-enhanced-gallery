@@ -28,7 +28,9 @@ import { injectDevUserscript, waitForGalleryApp } from '../fixtures/userscript-h
 async function setupGalleryPage(
   page: Page,
   usePersistence = false,
-  faultableStorage = false
+  faultableStorage = false,
+  seedSettings?: unknown,
+  denyInitialRead = false
 ): Promise<void> {
   await page.route('https://pbs.twimg.com/**', async (route) => {
     await route.fulfill({
@@ -65,16 +67,29 @@ async function setupGalleryPage(
   });
 
   await page.goto('https://x.com', { waitUntil: 'domcontentloaded', timeout: 15_000 });
+  if (seedSettings !== undefined) {
+    await page.evaluate((seed) => {
+      localStorage.setItem('__xeg_e2e_gm_storage', JSON.stringify([['xeg-app-settings', seed]]));
+    }, seedSettings);
+  }
   await installGMMock(page, { persistentStorage: usePersistence });
   if (faultableStorage) {
-    await page.evaluate(() => {
+    await page.evaluate((denyRead) => {
       const host = window as typeof window & {
-        __xegStorageFaults?: { denyPrimary: boolean; denyFallback: boolean };
+        __xegStorageFaults?: { denyPrimary: boolean; denyFallback: boolean; denyNextRead: number };
       };
-      const faults = { denyPrimary: false, denyFallback: false };
+      const faults = { denyPrimary: false, denyFallback: false, denyNextRead: denyRead ? 1 : 0 };
       host.__xegStorageFaults = faults;
       const originalSet = window.GM_setValue;
+      const originalGet = window.GM_getValue;
       const originalFallbackSet = Storage.prototype.setItem;
+      window.GM_getValue = <T>(key: string, defaultValue?: T): T => {
+        if (faults.denyNextRead > 0) {
+          faults.denyNextRead--;
+          throw new Error('controlled initial read denial');
+        }
+        return originalGet(key, defaultValue);
+      };
       window.GM_setValue = (key, value) => {
         if (faults.denyPrimary) {
           throw new Error('controlled primary denial');
@@ -87,10 +102,20 @@ async function setupGalleryPage(
         }
         return originalFallbackSet.call(this, key, value);
       };
-    });
+    }, denyInitialRead);
   }
   await injectDevUserscript(page);
   await waitForGalleryApp(page);
+}
+
+async function readDurableTheme(page: Page): Promise<string | undefined> {
+  return page.evaluate(() => {
+    const raw = window.GM_getValue?.<string>('xeg-app-settings:field:gallery.theme');
+    if (typeof raw !== 'string') {
+      return undefined;
+    }
+    return (JSON.parse(raw) as { value?: string }).value;
+  });
 }
 
 /**
@@ -291,18 +316,7 @@ test.describe('X.com Enhanced Gallery Settings & Theme', () => {
 
     const container = page.locator('[data-xeg-gallery-container]');
     await expect(container).toHaveAttribute('data-theme', 'dark');
-    await expect
-      .poll(() =>
-        page.evaluate(() => {
-          const raw = window.GM_getValue?.<string>('xeg-app-settings');
-          if (typeof raw !== 'string') {
-            return undefined;
-          }
-          const envelope = JSON.parse(raw) as { value?: { gallery?: { theme?: string } } };
-          return envelope.value?.gallery?.theme;
-        })
-      )
-      .toBe('dark');
+    await expect.poll(() => readDurableTheme(page)).toBe('dark');
 
     await page.reload({ waitUntil: 'domcontentloaded' });
     await installGMMock(page, { persistentStorage: true });
@@ -329,6 +343,7 @@ test.describe('X.com Enhanced Gallery Settings & Theme', () => {
     const panel = page.locator('[data-gallery-element="settings-panel"]');
     const theme = panel.locator('select').first();
     const unsaved = panel.locator('[data-xeg-settings-unsaved]');
+    const initialDurableTheme = await readDurableTheme(page);
 
     await page.evaluate(() => {
       const faults = (
@@ -355,11 +370,7 @@ test.describe('X.com Enhanced Gallery Settings & Theme', () => {
       'light'
     );
     await expect(unsaved).toBeVisible();
-    const persistedWhileDenied = await page.evaluate(() => {
-      const raw = window.GM_getValue?.<string>('xeg-app-settings');
-      return typeof raw === 'string' ? JSON.parse(raw) : null;
-    });
-    expect(persistedWhileDenied?.value?.gallery?.theme).not.toBe('light');
+    expect(await readDurableTheme(page)).toBe(initialDurableTheme);
 
     await page.evaluate(() => {
       const faults = (
@@ -375,18 +386,7 @@ test.describe('X.com Enhanced Gallery Settings & Theme', () => {
     });
     await unsaved.getByRole('button').click();
     await expect(unsaved).toHaveCount(0);
-    await expect
-      .poll(() =>
-        page.evaluate(() => {
-          const raw = window.GM_getValue?.<string>('xeg-app-settings');
-          if (typeof raw !== 'string') {
-            return null;
-          }
-          return (JSON.parse(raw) as { value?: { gallery?: { theme?: string } } }).value?.gallery
-            ?.theme;
-        })
-      )
-      .toBe('light');
+    await expect.poll(() => readDurableTheme(page)).toBe('light');
 
     await page.reload({ waitUntil: 'domcontentloaded' });
     await installGMMock(page, { persistentStorage: true });
@@ -398,5 +398,55 @@ test.describe('X.com Enhanced Gallery Settings & Theme', () => {
       'light'
     );
     expect(pageErrors).toEqual([]);
+  });
+
+  test('an initial read denial preserves untouched preferences after a theme edit', async ({
+    page,
+  }) => {
+    const saved = {
+      gallery: { theme: 'dark', imageFitMode: 'fitHeight', videoVolume: 0.8 },
+      __schemaHash: '1',
+    };
+    await setupGalleryPage(
+      page,
+      true,
+      true,
+      JSON.stringify({
+        __xegStorageEnvelope: 1,
+        updatedAt: 1_001,
+        value: saved,
+      }),
+      true
+    );
+    await openGallery(page);
+    await page.locator('[data-gallery-element="toolbar"] button[aria-label*="Settings" i]').click();
+    const panel = page.locator('[data-gallery-element="settings-panel"]');
+    const unsaved = panel.locator('[data-xeg-settings-unsaved]');
+    await expect(unsaved).toBeVisible();
+    await panel.locator('select').first().selectOption('light');
+    await expect(unsaved).toHaveCount(0);
+    await expect(page.locator('[data-xeg-gallery-container]')).toHaveAttribute(
+      'data-theme',
+      'light'
+    );
+    await expect.poll(() => readDurableTheme(page)).toBe('light');
+
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await installGMMock(page, { persistentStorage: true });
+    await injectDevUserscript(page);
+    await waitForGalleryApp(page);
+    await openGallery(page);
+    await expect(page.locator('[data-xeg-gallery-container]')).toHaveAttribute(
+      'data-theme',
+      'light'
+    );
+    const durable = await page.evaluate(() => {
+      const raw = window.GM_getValue?.<string>('xeg-app-settings');
+      return typeof raw === 'string'
+        ? (JSON.parse(raw) as { value: { gallery: { imageFitMode: string; videoVolume: number } } })
+            .value.gallery
+        : null;
+    });
+    expect(durable).toMatchObject({ imageFitMode: 'fitHeight', videoVolume: 0.8 });
   });
 });

@@ -17,6 +17,7 @@ export type ThemeChangeListener = (theme: 'light' | 'dark', setting: ThemeSettin
 interface SettingsBinding {
   get(key: string): unknown;
   set(key: string, value: unknown): Promise<void> | void;
+  subscribe?(listener: (event: { key: string; newValue: unknown }) => void): () => void;
 }
 
 export class ThemeService {
@@ -25,6 +26,7 @@ export class ThemeService {
   private themeSetting: ThemeSetting = 'auto';
   private readonly listeners: Set<ThemeChangeListener> = new Set();
   private settings: SettingsBinding | null = null;
+  private unsubscribeSettings: (() => void) | null = null;
   private observedThemeScopes: WeakSet<Element> = new WeakSet();
   private mediaQueryList: MediaQueryList | null = null;
   private mediaQueryListener: ((event: MediaQueryListEvent) => void) | null = null;
@@ -45,10 +47,7 @@ export class ThemeService {
 
     const svc = tryGetSettings();
     if (svc) {
-      this.settings = {
-        get: (key: string) => svc.get(key),
-        set: (key: string, value: unknown) => svc.set(key, value),
-      };
+      this.bindSettingsService(svc);
     }
 
     // Re-create mediaQueryList if destroyed (supports destroy → reinitialize cycles)
@@ -86,7 +85,14 @@ export class ThemeService {
     if (!svc || this.settings === svc) {
       return;
     }
+    this.unsubscribeSettings?.();
     this.settings = svc;
+    this.unsubscribeSettings =
+      svc.subscribe?.((event) => {
+        if (event.key === 'gallery.theme' && isThemeSetting(event.newValue)) {
+          this.setTheme(event.newValue, { persist: false });
+        }
+      }) ?? null;
 
     const settingsTheme = svc.get('gallery.theme');
     if (isThemeSetting(settingsTheme) && settingsTheme !== this.themeSetting) {
@@ -188,6 +194,8 @@ export class ThemeService {
   }
 
   private cleanup(): void {
+    this.unsubscribeSettings?.();
+    this.unsubscribeSettings = null;
     this.settings = null;
     this.listeners.clear();
     this.observedThemeScopes = new WeakSet();

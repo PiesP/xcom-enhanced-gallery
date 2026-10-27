@@ -14,7 +14,7 @@ import type {
   SettingChangeEvent,
 } from '@shared/types/settings.types';
 import { resolveNestedPath } from '@shared/utils/object/path';
-import { validateSettingValue } from './settings-validation';
+import { SETTINGS_LEAF_KEYS, validateSettingValue } from './settings-validation';
 
 export class SettingsService {
   private _initialized = false;
@@ -24,6 +24,9 @@ export class SettingsService {
   private readonly persistenceListeners = new Set<(unsaved: boolean) => void>();
   private updateQueue: Promise<void> = Promise.resolve();
   private unsaved = false;
+  /** Only explicit user edits are eligible for retry after a failed read or write. */
+  private readonly pendingChanges = new Map<string, unknown>();
+  private baselineAvailable = true;
   private generation = 0;
 
   constructor(
@@ -36,12 +39,23 @@ export class SettingsService {
     }
     // A same-document SPA restart must not discard a denied local edit. A real
     // document reload creates a fresh service and reads durable storage again.
-    if (this.unsaved) {
+    if (this.unsaved && !this.repository.loadState) {
       this._initialized = true;
       return;
     }
-    this.settings = await this.repository.load();
-    this.setUnsaved(false);
+    const generation = this.generation;
+    const result = this.repository.loadState
+      ? await this.repository.loadState()
+      : { settings: await this.repository.load(), available: true };
+    if (generation !== this.generation) {
+      return;
+    }
+    this.settings = result.settings;
+    for (const [key, value] of this.pendingChanges) {
+      this.assignNestedPath(this.settings, key, value);
+    }
+    this.baselineAvailable = result.available;
+    this.setUnsaved(!result.available || this.pendingChanges.size > 0);
     this._initialized = true;
   }
 
@@ -95,8 +109,8 @@ export class SettingsService {
     }
     const oldValue = this.get(key);
 
-    // Skip if value is unchanged (idempotent — avoid unnecessary saves)
-    if (oldValue === value) {
+    // An identical choice during an unavailable read is still explicit intent.
+    if (oldValue === value && this.baselineAvailable) {
       return;
     }
 
@@ -105,23 +119,59 @@ export class SettingsService {
       throw new Error(`Failed to assign setting value for ${key}`);
     }
 
+    const changed = new Map<string, unknown>();
+    for (const leaf of SETTINGS_LEAF_KEYS) {
+      if (leaf !== key && !leaf.startsWith(`${key}.`)) {
+        continue;
+      }
+      const current = resolveNestedPath(this.settings, leaf);
+      const next =
+        resolveNestedPath(nextSettings, leaf) ?? resolveNestedPath(DEFAULT_SETTINGS, leaf);
+      if (!validateSettingValue(leaf, next)) {
+        throw new Error(`Invalid setting value for ${leaf}`);
+      }
+      if (!Object.is(current, next) || (!this.baselineAvailable && leaf === key)) {
+        changed.set(leaf, next);
+        this.assignNestedPath(nextSettings, leaf, next);
+      }
+    }
+    if (changed.size === 0) {
+      return;
+    }
+    for (const [leaf, next] of changed) {
+      this.pendingChanges.set(leaf, next);
+    }
+
     const timestamp = Date.now();
     nextSettings.lastModified = timestamp;
     let saved = false;
     let failure: unknown;
+    let savedSettings = nextSettings;
     try {
-      await this.repository.save(nextSettings);
+      if (this.repository.saveChanges) {
+        savedSettings = await this.repository.saveChanges(this.pendingChanges, timestamp);
+      } else {
+        await this.repository.save(nextSettings);
+      }
       saved = true;
     } catch (error) {
       failure = error;
     }
     if (generation !== this.generation || !this._initialized) {
+      if (saved) {
+        this.pendingChanges.clear();
+      }
       if (!saved) {
         throw failure;
       }
       return;
     }
-    this.settings = nextSettings;
+    const previousSettings = this.settings;
+    this.settings = saved ? savedSettings : nextSettings;
+    if (saved) {
+      this.pendingChanges.clear();
+      this.baselineAvailable = true;
+    }
     this.setUnsaved(!saved);
     this.notifyListeners({
       key,
@@ -130,6 +180,9 @@ export class SettingsService {
       timestamp,
       status: saved ? 'success' : 'error',
     });
+    if (saved) {
+      this.notifyRecoveredSettings(previousSettings, changed);
+    }
     if (!saved) {
       throw failure;
     }
@@ -144,7 +197,7 @@ export class SettingsService {
     return () => this.persistenceListeners.delete(listener);
   }
 
-  /** Retry only the latest in-memory snapshot after queued edits have settled. */
+  /** Retry only explicit pending edits after queued writes have settled. */
   public async retryUnsaved(): Promise<void> {
     if (!this._initialized) {
       return;
@@ -157,8 +210,31 @@ export class SettingsService {
         if (!this.unsaved || generation !== this.generation || !this._initialized) {
           return;
         }
-        await this.repository.save(globalThis.structuredClone(this.settings));
+        if (this.repository.saveChanges) {
+          if (this.pendingChanges.size > 0) {
+            const saved = await this.repository.saveChanges(this.pendingChanges, Date.now());
+            this.pendingChanges.clear();
+            if (generation === this.generation && this._initialized) {
+              const previousSettings = this.settings;
+              this.settings = saved;
+              this.notifyRecoveredSettings(previousSettings);
+            }
+          } else if (this.repository.loadState) {
+            const result = await this.repository.loadState();
+            if (!result.available) {
+              throw new Error('Settings storage is unreadable; retry after recovery');
+            }
+            if (generation === this.generation && this._initialized) {
+              const previousSettings = this.settings;
+              this.settings = result.settings;
+              this.notifyRecoveredSettings(previousSettings);
+            }
+          }
+        } else {
+          await this.repository.save(globalThis.structuredClone(this.settings));
+        }
         if (generation === this.generation && this._initialized) {
+          this.baselineAvailable = true;
           this.setUnsaved(false);
         }
       });
@@ -189,6 +265,28 @@ export class SettingsService {
 
   private getDefaultValue(key: string): unknown {
     return resolveNestedPath(DEFAULT_SETTINGS, key);
+  }
+
+  private notifyRecoveredSettings(
+    previous: AppSettings,
+    explicitlyChanged: ReadonlyMap<string, unknown> = new Map()
+  ): void {
+    for (const key of SETTINGS_LEAF_KEYS) {
+      if (explicitlyChanged.has(key)) {
+        continue;
+      }
+      const oldValue = resolveNestedPath(previous, key);
+      const newValue = resolveNestedPath(this.settings, key);
+      if (!Object.is(oldValue, newValue)) {
+        this.notifyListeners({
+          key,
+          oldValue,
+          newValue,
+          timestamp: Date.now(),
+          status: 'success',
+        });
+      }
+    }
   }
 
   /** Assign value to nested object property by dot-notation path */

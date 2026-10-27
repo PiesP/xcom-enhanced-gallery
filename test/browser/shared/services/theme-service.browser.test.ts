@@ -349,6 +349,27 @@ describe('ThemeService', () => {
   // ── bindSettingsService ──────────────────────────────────────────────
 
   describe('bindSettingsService', () => {
+    it('applies a recovered stored theme without writing it again and releases the listener', () => {
+      const listeners = new Set<(event: { key: string; newValue: unknown }) => void>();
+      const binding = {
+        get: vi.fn(() => 'auto'),
+        set: vi.fn(async () => undefined),
+        subscribe: vi.fn((listener: (event: { key: string; newValue: unknown }) => void) => {
+          listeners.add(listener);
+          return () => listeners.delete(listener);
+        }),
+      };
+      service = new ThemeService();
+      service.bindSettingsService(binding);
+      for (const listener of listeners) {
+        listener({ key: 'gallery.theme', newValue: 'dark' });
+      }
+      expect(service.getCurrentTheme()).toBe('dark');
+      expect(binding.set).not.toHaveBeenCalled();
+      service.destroy();
+      expect(listeners.size).toBe(0);
+    });
+
     it('should accept a settings binding and read gallery.theme', () => {
       const mockSettings = createMockSettingsBinding();
       service = new ThemeService();

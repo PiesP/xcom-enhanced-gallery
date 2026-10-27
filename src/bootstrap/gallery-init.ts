@@ -25,6 +25,7 @@ async function initializeSettingsService(): Promise<void> {
   const settings = getSettingsService();
   await settings.initialize();
   registerSettings(settings);
+  getThemeService().bindSettingsService(settings);
 }
 
 export async function initializeGalleryServices(): Promise<void> {

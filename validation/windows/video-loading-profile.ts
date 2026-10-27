@@ -20,7 +20,7 @@ import {
   readExactDownloadFile,
   verifyStoredZip,
 } from './download-memory.ts';
-import { restoreStoredVideoSettings } from './live-page.ts';
+import { readStoredVideoSettings, restoreStoredVideoSettings } from './live-page.ts';
 
 const METADATA_READINESS_ID = '4666000111222333991';
 
@@ -484,11 +484,7 @@ const SETTINGS_KEY = 'xeg-app-settings';
 
 /** Exposed for browser-serialization regression coverage. */
 export async function readAppliedVideoGallerySettings(extensionPage: Page): Promise<unknown> {
-  const stored = await extensionPage.evaluate(async (key) => {
-    const values = await chrome.storage.local.get(key);
-    return values[key];
-  }, SETTINGS_KEY);
-  return field(stored, 'gallery');
+  return field((await readStoredVideoSettings(extensionPage)).settings, 'gallery');
 }
 
 const BAD_MP4 = Buffer.from('controlled invalid MP4 bytes for decode recovery');

@@ -282,7 +282,13 @@ type ControlledProbe = {
   status: string;
   error?: string;
 };
-type StorageRecord = { exists: boolean; value: unknown; settings: unknown };
+type StoredField = { exists: boolean; value: unknown };
+type StorageRecord = {
+  exists: boolean;
+  value: unknown;
+  settings: unknown;
+  fields?: Record<string, StoredField>;
+};
 type BorrowedVideoClickMode = {
   mode: 'block-all' | 'block-controls-only' | 'allow-all';
   source: 'unset-default' | 'primary-valid' | 'fallback-valid';
@@ -291,11 +297,52 @@ type BorrowedVideoClickMode = {
 // Match DEFAULT_SETTINGS.gallery.videoClickMode in src/constants/settings.ts.
 // This Windows script is packaged without src/, so the focused test guards drift.
 const DEFAULT_VIDEO_CLICK_MODE = 'block-controls-only' as const;
+const SETTINGS_FIELD_KEYS = [
+  'gallery.preloadCount',
+  'gallery.imageFitMode',
+  'gallery.theme',
+  'gallery.animations',
+  'gallery.enableKeyboardNav',
+  'gallery.videoVolume',
+  'gallery.videoMuted',
+  'gallery.videoClickMode',
+  'toolbar.autoHideDelay',
+  'features.gallery',
+  'features.settings',
+  'features.download',
+  'features.mediaExtraction',
+  'features.accessibility',
+] as const;
+const settingsFieldStorageKey = (key: string): string => `xeg-app-settings:field:${key}`;
 
 export function resolveBorrowedVideoClickMode(
   stored: StorageRecord,
-  fallbackRaw: string | null
+  fallbackRaw: string | null,
+  fallbackFieldRaw: string | null = null
 ): BorrowedVideoClickMode {
+  const fieldKey = settingsFieldStorageKey('gallery.videoClickMode');
+  const field = stored.fields?.[fieldKey];
+  if (field?.exists || fallbackFieldRaw !== null) {
+    const primaryField = field?.exists ? decodeStoredRecord(field.value) : null;
+    const fallbackField = fallbackFieldRaw === null ? null : decodeStoredRecord(fallbackFieldRaw);
+    if ((field?.exists && !primaryField) || (fallbackFieldRaw !== null && !fallbackField)) {
+      throw new Error('Borrowed video click field could not be decoded');
+    }
+    const fallbackWins =
+      !primaryField ||
+      (fallbackField &&
+        fallbackField.updatedAt !== undefined &&
+        (primaryField.updatedAt === undefined || fallbackField.updatedAt > primaryField.updatedAt));
+    const selected = fallbackWins ? fallbackField : primaryField;
+    if (
+      selected?.value === 'block-all' ||
+      selected?.value === 'block-controls-only' ||
+      selected?.value === 'allow-all'
+    ) {
+      return { mode: selected.value, source: fallbackWins ? 'fallback-valid' : 'primary-valid' };
+    }
+    throw new Error('Borrowed effective video click field is unknown or invalid');
+  }
   const primary = stored.exists && stored.value != null ? decodeStoredRecord(stored.value) : null;
   const fallback = fallbackRaw === null ? null : decodeStoredRecord(fallbackRaw);
   if (stored.exists && stored.value != null && !primary) {
@@ -2722,11 +2769,41 @@ export async function readStoredLanguage(extensionPage: {
 
 export async function readStoredVideoSettings(extensionPage: Page): Promise<StorageRecord> {
   const key = 'xeg-app-settings';
-  const prior = await extensionPage.evaluate(async (storageKey) => {
-    const values = await chrome.storage.local.get(storageKey);
-    return { exists: Object.hasOwn(values, storageKey), value: values[storageKey] ?? null };
-  }, key);
-  return { ...prior, settings: decodeStoredValue(prior.value) };
+  const prior = await extensionPage.evaluate(
+    async ({ storageKey, fieldKeys }) => {
+      const keys = [storageKey, ...fieldKeys];
+      const values = await Promise.all(keys.map((entry) => chrome.storage.local.get(entry)));
+      const base = values[0] ?? {};
+      const fields: Record<string, StoredField> = {};
+      for (let index = 0; index < fieldKeys.length; index++) {
+        const fieldKey = fieldKeys[index];
+        if (!fieldKey) {
+          continue;
+        }
+        const stored = values[index + 1] ?? {};
+        fields[fieldKey] = {
+          exists: Object.hasOwn(stored, fieldKey),
+          value: stored[fieldKey] ?? null,
+        };
+      }
+      return { exists: Object.hasOwn(base, storageKey), value: base[storageKey] ?? null, fields };
+    },
+    { storageKey: key, fieldKeys: SETTINGS_FIELD_KEYS.map(settingsFieldStorageKey) }
+  );
+  const decoded = decodeStoredValue(prior.value);
+  let settings: unknown = decoded;
+  for (const path of SETTINGS_FIELD_KEYS) {
+    const raw = prior.fields[settingsFieldStorageKey(path)];
+    if (!raw?.exists) {
+      continue;
+    }
+    const value = decodeStoredValue(raw.value);
+    const [group, name] = path.split('.') as [string, string];
+    const parent = isRecord(settings) ? settings : {};
+    const section = isRecord(parent[group]) ? parent[group] : {};
+    settings = { ...parent, [group]: { ...section, [name]: value } };
+  }
+  return { ...prior, settings };
 }
 
 async function readBorrowedVideoClickMode(
@@ -2736,21 +2813,24 @@ async function readBorrowedVideoClickMode(
   const primary = await readStoredVideoSettings(extensionPage);
   // The content script's PersistentStorage fallback is scoped to the X origin.
   // An extension page's localStorage cannot reveal it.
-  const fallbackRaw = await livePage.evaluate(() => {
+  const fallback = await livePage.evaluate(() => {
     if (
       location.protocol !== 'https:' ||
       (location.hostname !== 'x.com' && location.hostname !== 'twitter.com')
     ) {
       throw new Error('Borrowed settings fallback is outside the supported X origin');
     }
-    return localStorage.getItem('xeg-fallback:xeg-app-settings');
+    return {
+      base: localStorage.getItem('xeg-fallback:xeg-app-settings'),
+      field: localStorage.getItem('xeg-fallback:xeg-app-settings:field:gallery.videoClickMode'),
+    };
   });
-  return resolveBorrowedVideoClickMode(primary, fallbackRaw);
+  return resolveBorrowedVideoClickMode(primary, fallback.base, fallback.field);
 }
 
 export async function restoreStoredVideoSettings(
   extensionPage: Page,
-  previous: Pick<StorageRecord, 'exists' | 'value'>
+  previous: Pick<StorageRecord, 'exists' | 'value' | 'fields'>
 ): Promise<boolean> {
   const storageKey = 'xeg-app-settings';
   await extensionPage.evaluate(
@@ -2763,13 +2843,36 @@ export async function restoreStoredVideoSettings(
     },
     { storageKey, previous }
   );
+  if (previous.fields) {
+    await extensionPage.evaluate(async (fields) => {
+      for (const [key, field] of Object.entries(fields)) {
+        if (field.exists) {
+          await chrome.storage.local.set({ [key]: field.value });
+        } else {
+          await chrome.storage.local.remove(key);
+        }
+      }
+    }, previous.fields);
+  }
   return extensionPage.evaluate(
     async ({ storageKey, previous }) => {
       const values = await chrome.storage.local.get(storageKey);
-      return (
+      const baseMatches =
         Object.hasOwn(values, storageKey) === previous.exists &&
-        (!previous.exists || JSON.stringify(values[storageKey]) === JSON.stringify(previous.value))
-      );
+        (!previous.exists || JSON.stringify(values[storageKey]) === JSON.stringify(previous.value));
+      if (!baseMatches || !previous.fields) {
+        return baseMatches;
+      }
+      for (const [key, field] of Object.entries(previous.fields)) {
+        const stored = await chrome.storage.local.get(key);
+        if (
+          Object.hasOwn(stored, key) !== field.exists ||
+          (field.exists && JSON.stringify(stored[key]) !== JSON.stringify(field.value))
+        ) {
+          return false;
+        }
+      }
+      return true;
     },
     { storageKey, previous }
   );
@@ -2825,10 +2928,13 @@ async function observeControlledVideoMode(
     const next = createControlledVideoSettings(prior.value, Date.now());
     mutated = true;
     await extensionPage.evaluate(
-      async ({ storageKey, value }) => {
-        await chrome.storage.local.set({ [storageKey]: value });
+      async ({ storageKey, fieldKey, value }) => {
+        await chrome.storage.local.set({
+          [storageKey]: value,
+          [fieldKey]: { __xegStorageEnvelope: 1, updatedAt: Date.now(), value: 'allow-all' },
+        });
       },
-      { storageKey: key, value: next }
+      { storageKey: key, fieldKey: settingsFieldStorageKey('gallery.videoClickMode'), value: next }
     );
     result.appliedMode = storedVideoClickMode(
       (await readStoredVideoSettings(extensionPage)).settings

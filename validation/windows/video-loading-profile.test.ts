@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { test } from 'vite-plus/test';
 import { chromium, type Locator } from '@playwright/test';
 import { assertQuotedOriginLink } from './install-profile.ts';
-import { restoreStoredVideoSettings } from './live-page.ts';
+import { readStoredVideoSettings, restoreStoredVideoSettings } from './live-page.ts';
 import {
   assertMetadataSourceRequestSettlement,
   readAppliedVideoGallerySettings,
@@ -215,11 +215,14 @@ test('installed video settings readback runs its callback in the browser realm',
         chrome: {
           storage: {
             local: {
-              get: async (key: string) => ({
-                [key]: {
-                  gallery: { videoClickMode: 'allow-all', preloadCount: 20 },
-                },
-              }),
+              get: async (key: string) =>
+                key === 'xeg-app-settings'
+                  ? {
+                      [key]: {
+                        gallery: { videoClickMode: 'allow-all', preloadCount: 20 },
+                      },
+                    }
+                  : {},
             },
           },
         },
@@ -230,6 +233,58 @@ test('installed video settings readback runs its callback in the browser realm',
       videoClickMode: 'allow-all',
       preloadCount: 20,
     });
+  } finally {
+    await browser.close();
+  }
+});
+
+test('installed settings readback composes field values and restores their exact prior bytes', async () => {
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage();
+    await page.evaluate(() => {
+      const values: Record<string, unknown> = {
+        'xeg-app-settings': { gallery: { theme: 'dark', videoVolume: 0.8 } },
+        'xeg-app-settings:field:gallery.videoVolume': {
+          __xegStorageEnvelope: 1,
+          updatedAt: 1_001,
+          value: 0.25,
+        },
+      };
+      Object.assign(globalThis, {
+        __settingsTestValues: values,
+        chrome: {
+          storage: {
+            local: {
+              get: async (key: string) =>
+                Object.hasOwn(values, key) ? { [key]: values[key] } : {},
+              set: async (next: Record<string, unknown>) => Object.assign(values, next),
+              remove: async (key: string) => {
+                Reflect.deleteProperty(values, key);
+              },
+            },
+          },
+        },
+      });
+    });
+    const prior = await readStoredVideoSettings(page);
+    assert.deepEqual(prior.settings, { gallery: { theme: 'dark', videoVolume: 0.25 } });
+    await page.evaluate(() => {
+      const values = (globalThis as unknown as { __settingsTestValues: Record<string, unknown> })
+        .__settingsTestValues;
+      values['xeg-app-settings:field:gallery.videoVolume'] = 'changed';
+      values['xeg-app-settings:field:gallery.videoClickMode'] = 'allow-all';
+    });
+    assert.equal(await restoreStoredVideoSettings(page, prior), true);
+    assert.deepEqual((await readStoredVideoSettings(page)).settings, prior.settings);
+    assert.equal(
+      await page.evaluate(() => {
+        const values = (globalThis as unknown as { __settingsTestValues: Record<string, unknown> })
+          .__settingsTestValues;
+        return Object.hasOwn(values, 'xeg-app-settings:field:gallery.videoClickMode');
+      }),
+      false
+    );
   } finally {
     await browser.close();
   }

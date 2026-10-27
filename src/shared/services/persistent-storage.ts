@@ -25,6 +25,12 @@ interface DecodedStoredValue {
   readonly updatedAt: number | undefined;
 }
 
+export interface StorageReadResult<T> {
+  readonly value: T | undefined;
+  /** A failed read cannot prove that a fallback or absent key is current. */
+  readonly available: boolean;
+}
+
 function lsReadRaw(key: string): string | null {
   try {
     return localStorage.getItem(LS_FALLBACK_PREFIX + key);
@@ -136,19 +142,32 @@ export class PersistentStorage {
   }
 
   async get<T>(key: string, defaultValue?: T): Promise<T | undefined> {
+    const result = await this.getState<T>(key);
+    return result.value ?? defaultValue;
+  }
+
+  async getState<T>(key: string): Promise<StorageReadResult<T>> {
     let value: unknown;
+    let primaryAvailable = true;
     try {
       value = await this.adapter.get<unknown>(key);
     } catch (_error) {
-      // Adapter failed — try localStorage fallback from a previous failure
-      return this.readFallbackOrDefault<T>(key, defaultValue);
+      primaryAvailable = false;
     }
 
     const primary = value === undefined || value === null ? null : decodeValue(value);
-    const fallback = this.readFallbackValue(key);
+    let fallback: DecodedStoredValue | null = null;
+    let fallbackAvailable = true;
+    try {
+      const raw = localStorage.getItem(LS_FALLBACK_PREFIX + key);
+      fallback = raw === null ? null : decodeValue(raw);
+    } catch {
+      fallbackAvailable = false;
+    }
+    const available = primaryAvailable && fallbackAvailable;
 
     if (!primary) {
-      return (fallback?.value as T | undefined) ?? defaultValue;
+      return { value: fallback?.value as T | undefined, available };
     }
 
     // A primary write can fail while the adapter still returns its previous
@@ -158,14 +177,10 @@ export class PersistentStorage {
       fallback.updatedAt !== undefined &&
       (primary.updatedAt === undefined || fallback.updatedAt > primary.updatedAt)
     ) {
-      return fallback.value as T;
+      return { value: fallback.value as T, available };
     }
 
-    return primary.value as T;
-  }
-
-  private readFallbackOrDefault<T>(key: string, defaultValue?: T): T | undefined {
-    return (this.readFallbackValue(key)?.value as T | undefined) ?? defaultValue;
+    return { value: primary.value as T, available };
   }
 
   private readFallbackValue(key: string): DecodedStoredValue | null {
