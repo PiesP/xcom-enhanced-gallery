@@ -130,6 +130,7 @@ export default defineConfig(({ mode }): UserConfig => {
           'unicorn/no-thenable': 'off',
           'unicorn/no-document-cookie': 'error',
           'oxc/no-accumulating-spread': 'error',
+          'import/no-cycle': ['error', { ignoreTypes: false, ignoreExternal: false }],
           'unicorn/no-useless-switch-case': 'error',
           'no-cond-assign': 'error',
           'no-unused-expressions': ['error', { allowShortCircuit: true }],

@@ -8,10 +8,6 @@ const packageJson = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8
   scripts: Record<string, string>;
   devDependencies: Record<string, string>;
 };
-const knipConfig = JSON.parse(readFileSync(resolve(root, 'knip.json'), 'utf8')) as {
-  entry: string[];
-  project: string[];
-};
 const ciWorkflow = readFileSync(resolve(root, '.github/workflows/ci.yaml'), 'utf8');
 const releaseWorkflow = readFileSync(resolve(root, '.github/workflows/release.yaml'), 'utf8');
 const releasePrepare = readFileSync(resolve(root, 'scripts/release/prepare.ts'), 'utf8');
@@ -44,7 +40,6 @@ describe('tooling configuration', () => {
     expect(fullProbes?.test.include).toEqual([
       'test/unit/tooling/toolchain-policy.test.ts',
       'test/unit/tooling/node-ambient-types.test.ts',
-      'test/unit/tooling/knip-boundaries.test.ts',
     ]);
     expect(afterProbes?.test.include).toEqual(
       fullProbes?.test.include.filter(
@@ -68,24 +63,12 @@ describe('tooling configuration', () => {
     expect(packageJson.scripts['check:versions']).toContain('node --experimental-strip-types');
   });
 
-  it('fails quality checks for unused dependencies, files, and exports across source and tests', () => {
-    expect(packageJson.scripts.knip).toBe('pnpm -s knip:full && pnpm -s knip:production');
-    expect(packageJson.scripts['knip:full']).toBe(
-      'knip --files --exports --dependencies --treat-config-hints-as-errors'
-    );
-    expect(packageJson.scripts['knip:production']).toBe(
-      'knip --production --files --exports --dependencies --tags=-testOnly --treat-config-hints-as-errors'
-    );
-    expect(knipConfig.entry).toEqual(
-      expect.arrayContaining([
-        'src/main.ts!',
-        'src/extension/background.ts!',
-        'src/extension/content.ts!',
-      ])
-    );
-    expect(knipConfig.project).toEqual(
-      expect.arrayContaining(['src/**/*.ts!', 'src/**/*.tsx!', 'test/**/*.ts', 'test/**/*.tsx'])
-    );
+  it('uses native lint for import cycles and unused bindings', () => {
+    expect(packageJson.devDependencies.dpdm).toBeUndefined();
+    expect(packageJson.devDependencies.knip).toBeUndefined();
+    expect(packageJson.scripts.circular).toBeUndefined();
+    expect(packageJson.scripts.knip).toBeUndefined();
+    expect(packageJson.scripts.quality).toContain('pnpm -s lint');
   });
 
   it('scans the exact default-branch push with OSV and Semgrep', () => {
@@ -126,7 +109,7 @@ describe('tooling configuration', () => {
     expect(scripts['lint:fix']).toBe('vp lint . --fix --deny-warnings');
     expect(packageJson.devDependencies['@biomejs/biome']).toBeUndefined();
     expect(scripts.quality).toBe(
-      'pnpm -s fmt && pnpm -s lint && pnpm -s check && pnpm -s check:e2e && pnpm -s test:ci && pnpm -s circular && pnpm -s knip'
+      'pnpm -s fmt && pnpm -s lint && pnpm -s check && pnpm -s check:e2e && pnpm -s test:ci'
     );
     expect(scripts['quality:coverage-owned']).toBe(
       (scripts.quality ?? '').replace('pnpm -s test:ci', 'pnpm -s test:policy')

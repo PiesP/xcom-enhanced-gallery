@@ -263,7 +263,6 @@ describe('workflow change policy', () => {
       quality: 'false',
     },
     { path: 'src/main.ts', focused: false, unit: 'true', quality: 'true' },
-    { path: 'knip.json', focused: false, unit: 'true', quality: 'true' },
     { path: 'docs/policy.md', focused: false, unit: 'false', quality: 'false' },
     // The classifier treats translated root READMEs as unknown and safely selects every gate.
     { path: 'README.ko.md', focused: false, unit: 'true', quality: 'true' },

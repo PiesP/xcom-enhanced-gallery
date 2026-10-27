@@ -32,6 +32,53 @@ function diagnostics(command: string, args: string[]): { status: number | null; 
 
 describe('toolchain policy boundaries', () => {
   it.each([
+    {
+      extension: 'ts',
+      forward: (deep: string) =>
+        `import { b } from '@shared/utils/${deep}';\nexport const a = b;\n`,
+      reverse: (root: string) => `import { a } from '../../${root}';\nexport const b = a;\n`,
+      restored: 'export const b = 1;\n',
+    },
+    {
+      extension: 'ts',
+      forward: (deep: string) =>
+        `import type { B } from '@shared/utils/${deep}';\nexport type A = { b: B };\n`,
+      reverse: (root: string) =>
+        `import type { A } from '../../${root}';\nexport type B = { a: A };\n`,
+      restored: 'export type B = { value: number };\n',
+    },
+    {
+      extension: 'tsx',
+      forward: (deep: string) =>
+        `export { b } from '@shared/utils/${deep}';\nexport const a = 1;\n`,
+      reverse: (root: string) => `export { a } from '../../${root}';\nexport const b = 2;\n`,
+      restored: 'export const b = 2;\n',
+    },
+  ])('rejects static and type cycles across root, deep, alias and TSX imports', (entry) => {
+    const id = randomUUID();
+    const rootName = `xeg-cycle-${id}`;
+    const deepName = `xeg-cycle-deep-${id}`;
+    const rootPath = `src/${rootName}.${entry.extension}`;
+    const deepPath = `src/shared/utils/${deepName}.${entry.extension}`;
+    const absoluteRoot = resolve(root, rootPath);
+    const absoluteDeep = resolve(root, deepPath);
+    writeFileSync(absoluteRoot, entry.forward(deepName), { flag: 'wx' });
+    writeFileSync(absoluteDeep, entry.reverse(rootName), { flag: 'wx' });
+    try {
+      const cyclic = diagnostics(vp, ['lint', rootPath, deepPath, '--format=json']);
+      expect(cyclic.status).toBe(1);
+      expect(cyclic.codes).toContain('import(no-cycle)');
+      writeFileSync(absoluteDeep, entry.restored);
+      const acyclic = diagnostics(vp, ['lint', rootPath, deepPath, '--format=json']);
+      expect(acyclic.status).toBe(0);
+      expect(acyclic.codes).not.toContain('import(no-cycle)');
+    } finally {
+      unlinkSync(absoluteDeep);
+      unlinkSync(absoluteRoot);
+    }
+  });
+
+  it.each([
     { directory: 'src/shared/utils', extension: 'ts', source: 'export const value=1;\n' },
     {
       directory: 'test/e2e/fixtures',

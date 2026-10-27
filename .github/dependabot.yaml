@@ -65,14 +65,6 @@ updates:
           - "minor"
           - "patch"
 
-      # Knip remains until the separate graph-policy stage.
-      quality:
-        patterns:
-          - "knip"
-        update-types:
-          - "minor"
-          - "patch"
-
     # Vite+ owns these component versions; keep its own update PR visible.
     ignore:
       - dependency-name: "vite"
