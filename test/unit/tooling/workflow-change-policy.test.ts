@@ -112,7 +112,13 @@ function commandBoundaryCount(command: string): number {
       return count + commandBoundaryCount(scripts[nested] ?? '');
     }
     if (part.startsWith('vp test run')) {
-      return count + (part.includes('--config tooling/vitest.after-policy.config.ts') ? 0 : 1);
+      return (
+        count +
+        (part.includes('--config tooling/vitest.after-policy.config.ts') ||
+        part.includes('--config tooling/vitest.node.config.ts')
+          ? 0
+          : 1)
+      );
     }
     return count;
   }, 0);

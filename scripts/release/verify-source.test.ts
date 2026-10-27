@@ -3,7 +3,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import test, { after } from 'node:test';
+import { afterAll, test } from 'vite-plus/test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const script = fileURLToPath(new URL('./verify-source.ts', import.meta.url));
@@ -16,7 +16,7 @@ const releaseScripts = {
   'release:prepare': 'node scripts/release/prepare.ts',
 };
 const roots: string[] = [];
-after(() => {
+afterAll(() => {
   for (const root of roots) {
     rmSync(root, { recursive: true, force: true });
   }

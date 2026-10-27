@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import test, { after } from 'node:test';
+import { afterAll, test } from 'vite-plus/test';
 import { fileURLToPath } from 'node:url';
 
 const dir = fileURLToPath(new URL('.', import.meta.url));
@@ -11,7 +11,11 @@ const head = 'a'.repeat(40);
 const other = 'b'.repeat(40);
 const repository = 'PiesP/xcom-enhanced-gallery';
 const temporaryFixtures: string[] = [];
-after(() => {
+test('policy tests run without browser globals or userscript setup', () => {
+  assert.equal(Reflect.has(globalThis, 'window'), false);
+  assert.equal(Reflect.has(globalThis, 'GM_getValue'), false);
+});
+afterAll(() => {
   for (const path of temporaryFixtures) {
     rmSync(path, { recursive: true, force: true });
   }

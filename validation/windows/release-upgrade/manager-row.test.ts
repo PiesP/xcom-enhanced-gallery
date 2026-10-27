@@ -5,15 +5,15 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { after, before, test } from 'node:test';
+import { afterAll, beforeAll, test } from 'vite-plus/test';
 import { chromium, type Browser } from '@playwright/test';
 import { managerRowShowsVersion, requireInstalledManagerRow } from '../userscript-install.ts';
 
 let browser: Browser | undefined;
-before(async () => {
+beforeAll(async () => {
   browser = await chromium.launch();
 });
-after(async () => {
+afterAll(async () => {
   await browser?.close();
 });
 

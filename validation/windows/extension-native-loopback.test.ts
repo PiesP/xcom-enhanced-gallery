@@ -3,7 +3,7 @@
 
 import assert from 'node:assert/strict';
 import { createServer, request } from 'node:http';
-import { test } from 'node:test';
+import { test } from 'vite-plus/test';
 import { createExtensionNativeFixtureHandler } from './extension-native-loopback.ts';
 
 test('experience originals use the exact owned bytes and reject other qualities', async () => {

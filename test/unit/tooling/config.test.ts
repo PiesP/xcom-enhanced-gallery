@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vite-plus/test';
+import nodeTestConfig from '../../../tooling/vitest.node.config.ts';
 import { createVitestConfig } from '../../../vitest.config.ts';
 
 const root = resolve(import.meta.dirname, '../../..');
@@ -52,6 +53,29 @@ describe('tooling configuration', () => {
       fullProjects.find((project) => project.test.name === 'unit')
     );
     expect(afterPolicy.test?.coverage).toEqual(full.test?.coverage);
+  });
+  it('keeps Node projects outside the browser unit and coverage config', () => {
+    const unitProjects = createVitestConfig().test?.projects as Array<{ test: { name: string } }>;
+    expect(unitProjects.map((project) => project.test.name)).toEqual(['unit', 'repository-probes']);
+    type NodeProject = {
+      test: { name: string; include: string[]; environment: string; fileParallelism?: boolean };
+    };
+    const nodeProjects = nodeTestConfig.test?.projects as NodeProject[];
+    expect(nodeTestConfig.test?.setupFiles).toBeUndefined();
+    expect(nodeTestConfig.test?.environment).toBe('node');
+    for (const name of ['policy-node', 'firefox-installed', 'windows-native']) {
+      const project = nodeProjects.find((entry) => entry.test.name === name);
+      expect(project?.test.environment).toBe('node');
+    }
+    expect(
+      nodeProjects.find((project) => project.test.name === 'policy-node')?.test.include
+    ).toEqual(['scripts/ci/repository-authority.test.ts', 'scripts/release/verify-source.test.ts']);
+    expect(
+      nodeProjects.find((project) => project.test.name === 'firefox-installed')?.test.include
+    ).toEqual(['test/e2e/firefox-extension-runtime.test.ts']);
+    expect(
+      nodeProjects.find((project) => project.test.name === 'windows-native')?.test.include
+    ).toEqual(['validation/windows/**/*.test.ts']);
   });
   it('uses native TypeScript execution without redundant runner dependencies', () => {
     expect(packageJson.devDependencies.tsx).toBeUndefined();
@@ -117,9 +141,19 @@ describe('tooling configuration', () => {
     expect(scripts['test:ci']).toBe(
       'pnpm -s test:policy && vp test run test/unit/tooling/node-ambient-types.test.ts'
     );
+    expect(scripts.test).toBe('vp test run');
+    expect(scripts['test:policy']).toBe(
+      'vp test run --config tooling/vitest.node.config.ts --project policy-node'
+    );
     expect(scripts['test:cov']).toBe('vp test run --coverage');
     expect(scripts['test:cov:after-policy']).toBe(
       'vp test run --coverage --config tooling/vitest.after-policy.config.ts'
+    );
+    expect(scripts['test:e2e:extension:firefox']).toBe(
+      'vp test run --config tooling/vitest.node.config.ts --project firefox-installed'
+    );
+    expect(scripts['test:e2e:native']).toBe(
+      'vp test run --config tooling/vitest.node.config.ts --project windows-native'
     );
     expect(jobBlock(ciWorkflow, 'quality')).toContain('pnpm quality:coverage-owned');
     expect(jobBlock(ciWorkflow, 'unit')).toContain('run: pnpm test:cov');
