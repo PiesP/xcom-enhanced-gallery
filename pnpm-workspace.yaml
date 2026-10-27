@@ -2,9 +2,6 @@ overrides:
   vite@*: "catalog:"
   vitest@*: "catalog:"
 
-allowBuilds:
-  esbuild: true
-
 strictDepBuilds: true
 
 blockExoticSubdeps: true
