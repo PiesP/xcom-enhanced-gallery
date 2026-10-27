@@ -343,6 +343,7 @@ test.describe('X.com Enhanced Gallery Settings & Theme', () => {
     const panel = page.locator('[data-gallery-element="settings-panel"]');
     const theme = panel.locator('select').first();
     const unsaved = panel.locator('[data-xeg-settings-unsaved]');
+    const initialDurableTheme = await readDurableTheme(page);
 
     await page.evaluate(() => {
       const faults = (
@@ -369,7 +370,7 @@ test.describe('X.com Enhanced Gallery Settings & Theme', () => {
       'light'
     );
     await expect(unsaved).toBeVisible();
-    expect(await readDurableTheme(page)).toBe('dark');
+    expect(await readDurableTheme(page)).toBe(initialDurableTheme);
 
     await page.evaluate(() => {
       const faults = (

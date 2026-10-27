@@ -53,6 +53,18 @@ export async function installStorageFaultControl(page: Page): Promise<void> {
   });
 }
 
+async function readDurableTheme(page: Page): Promise<string | null> {
+  return page.evaluate(() => {
+    const raw = (window as StorageHost).GM_getValue?.<string>(
+      'xeg-app-settings:field:gallery.theme'
+    );
+    if (typeof raw !== 'string') {
+      return null;
+    }
+    return (JSON.parse(raw) as { value?: string }).value ?? null;
+  });
+}
+
 export async function runSettingsPersistenceFixture({
   page,
   output,
@@ -86,6 +98,7 @@ export async function runSettingsPersistenceFixture({
     const panel = gallery.locator('[data-gallery-element="settings-panel"]');
     const theme = panel.locator('select').first();
     const unsaved = panel.locator('[data-xeg-settings-unsaved]');
+    const initialPersistedTheme = await readDurableTheme(page);
     await page.evaluate(() => {
       const faults = (window as StorageHost).__xegStorageFaults;
       if (!faults) {
@@ -104,24 +117,23 @@ export async function runSettingsPersistenceFixture({
       banner.y >= panelBounds.y && banner.y + banner.height <= panelBounds.y + panelBounds.height,
       'Unsaved feedback must appear within the visible settings panel'
     );
+    const deniedPersistedTheme = await readDurableTheme(page);
+    assert.equal(
+      deniedPersistedTheme,
+      initialPersistedTheme,
+      'Denied writes must leave durable theme unchanged'
+    );
     evidence.denied = {
       sessionTheme: await gallery.getAttribute('data-theme'),
       unsavedVisible: await unsaved.isVisible(),
       feedbackInsidePanel: true,
-      persistedTheme: await page.evaluate(() => {
-        const raw = (window as StorageHost).GM_getValue?.<string>(
-          'xeg-app-settings:field:gallery.theme'
-        );
-        if (typeof raw !== 'string') {
-          return null;
-        }
-        return (JSON.parse(raw) as { value?: string }).value ?? null;
-      }),
+      persistedTheme: deniedPersistedTheme,
     };
     await page.screenshot({ path: path.join(output, 'settings-unsaved.png') });
     await theme.selectOption('light');
     assert.equal(await gallery.getAttribute('data-theme'), 'light');
     assert.equal(await unsaved.isVisible(), true);
+    assert.equal(await readDurableTheme(page), initialPersistedTheme);
     await page.evaluate(() => {
       const faults = (window as StorageHost).__xegStorageFaults;
       if (!faults) {
@@ -132,15 +144,7 @@ export async function runSettingsPersistenceFixture({
     });
     await unsaved.getByRole('button').click();
     await unsaved.waitFor({ state: 'detached', timeout: 5_000 });
-    const persisted = await page.evaluate(() => {
-      const raw = (window as StorageHost).GM_getValue?.<string>(
-        'xeg-app-settings:field:gallery.theme'
-      );
-      if (typeof raw !== 'string') {
-        return null;
-      }
-      return (JSON.parse(raw) as { value?: string }).value ?? null;
-    });
+    const persisted = await readDurableTheme(page);
     assert.equal(persisted, 'light', 'Retry must save the latest intended theme');
     evidence.retry = { persistedTheme: persisted, unsavedVisible: false };
     await page.reload({ waitUntil: 'domcontentloaded' });
