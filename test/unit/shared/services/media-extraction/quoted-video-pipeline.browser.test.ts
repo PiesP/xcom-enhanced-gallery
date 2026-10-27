@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 PiesP
 
-import { readFileSync } from 'node:fs';
+import unavailableSequenceHtml from '../../../../e2e/fixtures/installed-unavailable-sequence-page.html?raw';
 import { generateMediaFilename } from '@shared/core/filename/filename-utils';
 import { getTweetMedias } from '@shared/services/media/twitter-api-client';
 import type { TwitterMedia, TwitterTweet } from '@shared/services/media/types';
@@ -197,10 +197,7 @@ describe('production quoted-video pipeline', () => {
   });
 
   it('routes each installed unavailable fixture button through the production click handler', async () => {
-    document.body.innerHTML = readFileSync(
-      'test/e2e/fixtures/installed-unavailable-sequence-page.html',
-      'utf8'
-    );
+    document.body.innerHTML = unavailableSequenceHtml;
     const service = new MediaExtractionService();
     const buttons = document.querySelectorAll<HTMLButtonElement>(
       '[data-sequence-step="unavailable"] button, [data-sequence-step="tombstone"] button, [data-sequence-step="visibility"] button'

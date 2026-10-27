@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 PiesP
 
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import compactQuoteHtml from '../../../../e2e/fixtures/installed-compact-quote-photo-page.html?raw';
 import { generateMediaFilename } from '@shared/core/filename/filename-utils';
 import type { TwitterMedia, TwitterTweet } from '@shared/services/media/types';
 import { captureClickedMediaEvidence } from '@shared/services/media-extraction/determine-clicked-index';
@@ -80,10 +79,7 @@ function installMiddlePhoto(): HTMLAnchorElement {
 describe('compact inner quote photo, preserving observed overlay ownership', () => {
   beforeEach(() => {
     httpGet.mockReset();
-    document.body.innerHTML = readFileSync(
-      resolve(process.cwd(), 'test/e2e/fixtures/installed-compact-quote-photo-page.html'),
-      'utf8'
-    );
+    document.body.innerHTML = compactQuoteHtml;
   });
   afterEach(() => {
     vi.restoreAllMocks();

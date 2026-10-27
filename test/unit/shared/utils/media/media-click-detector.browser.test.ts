@@ -9,6 +9,21 @@ import { handleMediaClick } from '@shared/utils/events/handlers/media-click';
 import { isProcessableMedia } from '@shared/utils/media/media-click-detector';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
+function dispatchLinkWithoutNavigation(target: Element, event: MouseEvent): boolean {
+  let productPrevented: boolean | undefined;
+  const guard = (click: MouseEvent): void => {
+    productPrevented = click.defaultPrevented;
+    click.preventDefault();
+  };
+  document.addEventListener('click', guard);
+  try {
+    target.dispatchEvent(event);
+    return !(productPrevented ?? event.defaultPrevented);
+  } finally {
+    document.removeEventListener('click', guard);
+  }
+}
+
 function renderTarget(markup: string, selector: string): HTMLElement {
   document.body.innerHTML = markup;
   const target = document.querySelector(selector);
@@ -224,8 +239,7 @@ describe('compact quote photo hit boundary', () => {
     document.body.addEventListener('click', capture, true);
     try {
       const event = new MouseEvent('click', { bubbles: true, cancelable: true });
-      expect(link.dispatchEvent(event)).toBe(true);
-      expect(event.defaultPrevented).toBe(false);
+      expect(dispatchLinkWithoutNavigation(link, event)).toBe(true);
       expect(onMediaClick).not.toHaveBeenCalled();
     } finally {
       document.body.removeEventListener('click', capture, true);
@@ -303,7 +317,7 @@ describe('compact quote photo hit boundary', () => {
         clientY: 12,
         detail: 1,
       });
-      expect(path.dispatchEvent(statusClick)).toBe(true);
+      expect(dispatchLinkWithoutNavigation(path, statusClick)).toBe(true);
       expect(onMediaClick).toHaveBeenCalledTimes(1);
     } finally {
       document.body.removeEventListener('click', capture, true);

@@ -39,9 +39,16 @@ function restoreUserscriptGlobals(): void {
   }
 }
 
+let adapterInstance = 0;
+
 async function loadUserscriptAdapter() {
-  vi.resetModules();
-  return (await import('@shared/external/userscript/adapter')).getUserscript();
+  // Native browser ESM caches modules; each case needs its own GM capability
+  // snapshot while exercising the unmodified production singleton.
+  const url = `/src/shared/external/userscript/adapter.ts?browser-test=${++adapterInstance}`;
+  const adapter = (await import(
+    /* @vite-ignore */ url
+  )) as typeof import('@shared/external/userscript/adapter');
+  return adapter.getUserscript();
 }
 
 function invokeTrustedPageHide(persisted: boolean): void {

@@ -492,8 +492,12 @@ The deterministic fixture also exercises the MV3 download restart boundary. A
 bounded 256 MiB Blob belongs to the routed `https://x.com` fixture and enters the
 existing `DOWNLOAD_BLOB_URL_REQUEST` path. An extension utility page listens for
 the exact Blob URL through `chrome.downloads.onCreated` and immediately invokes
-the real `chrome.downloads.pause`. The check fails if pause loses the race. It
-then requires a new Chrome download ID, exact filename, `in_progress` and
+the real `chrome.downloads.pause`. If all Blob bytes arrive before pause takes
+effect, the profile records that failed preparation and permits at most three
+preparations, each after confirmed cleanup of its download, tracking, listener,
+Blob URL and added files. The qualifying preparation still requires bytes
+remaining. Any Worker-stop or cancellation failure ends the regression without
+retry. It then requires a new Chrome download ID, exact filename, `in_progress` and
 `paused` browser state, and the matching persisted tracking record before
 invoking CDP `ServiceWorker.stopWorker`.
 

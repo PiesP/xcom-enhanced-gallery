@@ -3,6 +3,7 @@
 
 import solid from 'vite-plugin-solid';
 import { defineConfig } from 'vite-plus';
+import { playwright } from 'vite-plus/test/browser-playwright';
 
 // These suites temporarily mutate files observed by repository-wide tools.
 const repositoryProbeFiles = [
@@ -15,21 +16,40 @@ export function createVitestConfig(excludeBoundaryProbe = false) {
     define: { __DEV__: true },
     plugins: [solid()],
     test: {
-      // Preserve Vitest 4 mock history and per-project plugin lifecycles during migration.
+      // Preserve mock history and per-project plugin lifecycles.
       clearMocks: false,
       sharedViteServer: false,
       fakeTimers: { toNotFake: ['Temporal'] },
       globals: true,
-      environment: 'jsdom',
+      environment: 'node',
       setupFiles: ['./test/setup.ts'],
       exclude: ['node_modules', 'dist'],
       projects: [
         {
           extends: true,
           test: {
-            name: 'unit',
+            name: 'node',
             include: ['test/unit/**/*.test.{ts,tsx}'],
-            exclude: ['node_modules', 'dist', ...repositoryProbeFiles],
+            exclude: [
+              'node_modules',
+              'dist',
+              'test/unit/**/*.browser.test.{ts,tsx}',
+              ...repositoryProbeFiles,
+            ],
+            sequence: { groupOrder: 0 },
+          },
+        },
+        {
+          extends: true,
+          test: {
+            name: 'browser',
+            include: ['test/unit/**/*.browser.test.{ts,tsx}'],
+            browser: {
+              enabled: true,
+              provider: playwright(),
+              headless: true,
+              instances: [{ browser: 'chromium' }],
+            },
             sequence: { groupOrder: 0 },
           },
         },

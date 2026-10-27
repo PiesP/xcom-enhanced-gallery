@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import capturedVideoPlayer from '../../../../fixtures/authenticated-x-layouts/video-surface-controls.html?raw';
 import { clearSettings, registerSettings } from '@shared/container/settings-registry';
 import { getEventManager } from '@shared/services/event-manager';
 import { closeGallery } from '@shared/state/signals/gallery.signals';
@@ -11,10 +10,6 @@ import { createGalleryLifecycle } from '@shared/utils/events/lifecycle/gallery-l
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 // Exact sanitized videoPlayer subtree from the authenticated Edge click record.
-const capturedVideoPlayer = readFileSync(
-  resolve('test/fixtures/authenticated-x-layouts/video-surface-controls.html'),
-  'utf8'
-);
 
 function requireTarget(selector: string): HTMLElement {
   const target = document.querySelector(selector);

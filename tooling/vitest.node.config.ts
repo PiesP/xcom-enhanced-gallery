@@ -3,7 +3,8 @@
 
 import { defineConfig } from 'vite-plus';
 
-// Kept outside the jsdom unit config so Node suites cannot inherit userscript setup.
+// Kept outside the unit config so Node policy and installed-browser harnesses
+// cannot inherit its GM boundary setup or browser project.
 export default defineConfig({
   test: {
     environment: 'node',

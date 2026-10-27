@@ -66,6 +66,15 @@ vi.mock('@shared/error/app-error-reporter', () => ({
 
 import { cleanup, startApplication } from '../../src/main';
 
+function dispatchNavigation(url: string): void {
+  if (typeof navigation === 'undefined') {
+    throw new Error('Chromium Navigation API unavailable');
+  }
+  const event = new Event('navigate') as Event & { destination?: { url: string } };
+  event.destination = { url };
+  navigation.dispatchEvent(event);
+}
+
 describe('application media-service lifecycle', () => {
   beforeEach(() => {
     state.initializeCoreBaseServices.mockClear();
@@ -91,21 +100,24 @@ describe('application media-service lifecycle', () => {
 
   it('invalidates API metadata on every accepted SPA route signal, including the same URL', async () => {
     await startApplication();
-    expect(state.navigationCallback).toBeTypeOf('function');
-    state.navigationCallback?.('https://x.com/user/status/123');
-    state.navigationCallback?.('https://x.com/user/status/123');
+    dispatchNavigation('https://x.com/user/status/123');
+    dispatchNavigation('https://x.com/user/status/123');
     expect(state.mediaRefresh).toHaveBeenCalledTimes(2);
     await cleanup();
   });
 
   it('retires gallery click and modal intent on allowed SPA navigation in an initialized app', async () => {
     vi.stubEnv('MODE', 'development');
-    vi.resetModules();
-    const application = await import('../../src/main');
+    // Browser ESM keeps the first import's test-mode constant. A fresh same-origin
+    // module URL lets this case exercise the development-mode gallery lifetime.
+    const moduleUrl = '/src/main.ts?browser-test=gallery-intent';
+    const application = (await import(
+      /* @vite-ignore */ moduleUrl
+    )) as typeof import('../../src/main');
     try {
       await application.startApplication();
-      state.navigationCallback?.('https://x.com/user/status/123');
-      state.navigationCallback?.('https://x.com/user/status/456');
+      dispatchNavigation('https://x.com/user/status/123');
+      dispatchNavigation('https://x.com/user/status/456');
       expect(state.galleryClose).toHaveBeenCalledTimes(2);
     } finally {
       await application.cleanup();

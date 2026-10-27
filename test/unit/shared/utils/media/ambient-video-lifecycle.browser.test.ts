@@ -7,7 +7,7 @@ import {
 } from '@shared/components/isolation/gallery-host-state';
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
-// Native media is a boundary in jsdom; real progression is checked in installed Edge.
+// This unit controls media playback; real progression is checked in installed Edge.
 function hostVideo(parent: HTMLElement = document.body) {
   const video = document.createElement('video');
   let paused = false;

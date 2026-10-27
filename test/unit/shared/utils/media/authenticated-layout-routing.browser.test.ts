@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { clearSettings, registerSettings } from '@shared/container/settings-registry';
 import type { EventHandlers, GalleryEventOptions } from '@shared/services/event-manager';
 import { closeGallery } from '@shared/state/signals/gallery.signals';
@@ -10,6 +8,12 @@ import type { VideoClickMode } from '@shared/types/settings.types';
 import { handleMediaClick } from '@shared/utils/events/handlers/media-click';
 import { isProcessableMedia } from '@shared/utils/media/media-click-detector';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
+
+const capturedShapes = import.meta.glob<string>('/test/fixtures/authenticated-x-layouts/*.html', {
+  eager: true,
+  query: '?raw',
+  import: 'default',
+});
 
 type CapturedShape =
   | 'timeline-image'
@@ -34,8 +38,11 @@ const options: GalleryEventOptions = {
 };
 
 function loadCapturedShape(name: CapturedShape): void {
-  const path = resolve('test/fixtures/authenticated-x-layouts', `${name}.html`);
-  document.body.innerHTML = readFileSync(path, 'utf8');
+  const html = capturedShapes[`/test/fixtures/authenticated-x-layouts/${name}.html`];
+  if (html === undefined) {
+    throw new Error(`Missing captured shape: ${name}`);
+  }
+  document.body.innerHTML = html;
 }
 
 function requireTarget(selector: string): HTMLElement {
@@ -49,6 +56,7 @@ function requireTarget(selector: string): HTMLElement {
 function clickThroughHandler(target: HTMLElement): {
   event: MouseEvent;
   delivered: boolean;
+  productDefaultPrevented: boolean;
   onMediaClick: ReturnType<typeof vi.fn>;
   nativeClick: ReturnType<typeof vi.fn>;
 } {
@@ -58,13 +66,29 @@ function clickThroughHandler(target: HTMLElement): {
   const capture = (event: MouseEvent): void => {
     void handleMediaClick(event, handlers, options);
   };
+  // A real browser follows fixture links after an unhandled click. Observe the
+  // product decision first, then keep this test's iframe on its fixture page.
+  let productDefaultPrevented: boolean | undefined;
+  const preventFixtureNavigation = (event: MouseEvent): void => {
+    productDefaultPrevented = event.defaultPrevented;
+    event.preventDefault();
+  };
   target.addEventListener('click', nativeClick);
   document.body.addEventListener('click', capture, true);
+  document.addEventListener('click', preventFixtureNavigation);
   try {
     const event = new MouseEvent('click', { bubbles: true, cancelable: true });
-    const delivered = target.dispatchEvent(event);
-    return { event, delivered, onMediaClick, nativeClick };
+    target.dispatchEvent(event);
+    const prevented = productDefaultPrevented ?? event.defaultPrevented;
+    return {
+      event,
+      delivered: !prevented,
+      productDefaultPrevented: prevented,
+      onMediaClick,
+      nativeClick,
+    };
   } finally {
+    document.removeEventListener('click', preventFixtureNavigation);
     document.body.removeEventListener('click', capture, true);
     target.removeEventListener('click', nativeClick);
   }
@@ -72,9 +96,10 @@ function clickThroughHandler(target: HTMLElement): {
 
 function expectClickRouting(target: HTMLElement, gallery: boolean): void {
   expect(isProcessableMedia(target)).toBe(gallery);
-  const { event, delivered, onMediaClick, nativeClick } = clickThroughHandler(target);
+  const { delivered, productDefaultPrevented, onMediaClick, nativeClick } =
+    clickThroughHandler(target);
   expect(delivered).toBe(!gallery);
-  expect(event.defaultPrevented).toBe(gallery);
+  expect(productDefaultPrevented).toBe(gallery);
   expect(onMediaClick).toHaveBeenCalledTimes(gallery ? 1 : 0);
   expect(nativeClick).toHaveBeenCalledTimes(gallery ? 0 : 1);
 }
@@ -97,9 +122,10 @@ describe('authenticated X layout click routing', () => {
       expect(target.closest('a[href$="/photo/2"]')).not.toBeNull();
       expect(isProcessableMedia(target)).toBe(true);
 
-      const { event, delivered, onMediaClick, nativeClick } = clickThroughHandler(target);
+      const { event, delivered, productDefaultPrevented, onMediaClick, nativeClick } =
+        clickThroughHandler(target);
       expect(delivered).toBe(false);
-      expect(event.defaultPrevented).toBe(true);
+      expect(productDefaultPrevented).toBe(true);
       expect(onMediaClick).toHaveBeenCalledOnce();
       expect(onMediaClick).toHaveBeenCalledWith(target, event);
       expect(nativeClick).not.toHaveBeenCalled();
@@ -113,9 +139,10 @@ describe('authenticated X layout click routing', () => {
       loadCapturedShape('timeline-image');
       for (const label of ['이전', '다음']) {
         const target = requireTarget(`nav button[aria-label="${label}"]`);
-        const { event, delivered, onMediaClick, nativeClick } = clickThroughHandler(target);
+        const { delivered, productDefaultPrevented, onMediaClick, nativeClick } =
+          clickThroughHandler(target);
         expect(delivered).toBe(true);
-        expect(event.defaultPrevented).toBe(false);
+        expect(productDefaultPrevented).toBe(false);
         expect(onMediaClick).not.toHaveBeenCalled();
         expect(nativeClick).toHaveBeenCalledOnce();
       }
@@ -131,9 +158,10 @@ describe('authenticated X layout click routing', () => {
       expect(target.closest('a')?.getAttribute('href')).toBe('https://example.invalid/other-link');
       expect(isProcessableMedia(target)).toBe(false);
 
-      const { event, delivered, onMediaClick, nativeClick } = clickThroughHandler(target);
+      const { delivered, productDefaultPrevented, onMediaClick, nativeClick } =
+        clickThroughHandler(target);
       expect(delivered).toBe(true);
-      expect(event.defaultPrevented).toBe(false);
+      expect(productDefaultPrevented).toBe(false);
       expect(onMediaClick).not.toHaveBeenCalled();
       expect(nativeClick).toHaveBeenCalledOnce();
     }
@@ -147,9 +175,10 @@ describe('authenticated X layout click routing', () => {
       const target = requireTarget('button[data-testid="reply"] div div');
       expect(isProcessableMedia(target)).toBe(false);
 
-      const { event, delivered, onMediaClick, nativeClick } = clickThroughHandler(target);
+      const { delivered, productDefaultPrevented, onMediaClick, nativeClick } =
+        clickThroughHandler(target);
       expect(delivered).toBe(true);
-      expect(event.defaultPrevented).toBe(false);
+      expect(productDefaultPrevented).toBe(false);
       expect(onMediaClick).not.toHaveBeenCalled();
       expect(nativeClick).toHaveBeenCalledOnce();
     }
@@ -169,9 +198,10 @@ describe('authenticated X layout click routing', () => {
           new RegExp(`/photo/${index + 1}$`)
         );
         expect(isProcessableMedia(target)).toBe(true);
-        const { event, delivered, onMediaClick, nativeClick } = clickThroughHandler(target);
+        const { event, delivered, productDefaultPrevented, onMediaClick, nativeClick } =
+          clickThroughHandler(target);
         expect(delivered).toBe(false);
-        expect(event.defaultPrevented).toBe(true);
+        expect(productDefaultPrevented).toBe(true);
         expect(onMediaClick).toHaveBeenCalledExactlyOnceWith(target, event);
         expect(nativeClick).not.toHaveBeenCalled();
       }
@@ -185,9 +215,10 @@ describe('authenticated X layout click routing', () => {
       loadCapturedShape('inline-multi-media');
       for (const label of ['이전', '다음']) {
         const target = requireTarget(`nav button[aria-label="${label}"]`);
-        const { event, delivered, onMediaClick, nativeClick } = clickThroughHandler(target);
+        const { delivered, productDefaultPrevented, onMediaClick, nativeClick } =
+          clickThroughHandler(target);
         expect(delivered).toBe(true);
-        expect(event.defaultPrevented).toBe(false);
+        expect(productDefaultPrevented).toBe(false);
         expect(onMediaClick).not.toHaveBeenCalled();
         expect(nativeClick).toHaveBeenCalledOnce();
       }
@@ -207,9 +238,10 @@ describe('authenticated X layout click routing', () => {
       expect(targets).toHaveLength(5);
       for (const target of targets) {
         expect(isProcessableMedia(target)).toBe(false);
-        const { event, delivered, onMediaClick, nativeClick } = clickThroughHandler(target);
+        const { delivered, productDefaultPrevented, onMediaClick, nativeClick } =
+          clickThroughHandler(target);
         expect(delivered).toBe(true);
-        expect(event.defaultPrevented).toBe(false);
+        expect(productDefaultPrevented).toBe(false);
         expect(onMediaClick).not.toHaveBeenCalled();
         expect(nativeClick).toHaveBeenCalledOnce();
       }
@@ -225,9 +257,10 @@ describe('authenticated X layout click routing', () => {
       expect(target.closest('a')?.getAttribute('href')).toMatch(/\/status\/224\/photo\/1$/u);
       expect(isProcessableMedia(target)).toBe(true);
 
-      const { event, delivered, onMediaClick, nativeClick } = clickThroughHandler(target);
+      const { event, delivered, productDefaultPrevented, onMediaClick, nativeClick } =
+        clickThroughHandler(target);
       expect(delivered).toBe(false);
-      expect(event.defaultPrevented).toBe(true);
+      expect(productDefaultPrevented).toBe(true);
       expect(onMediaClick).toHaveBeenCalledExactlyOnceWith(target, event);
       expect(nativeClick).not.toHaveBeenCalled();
     }

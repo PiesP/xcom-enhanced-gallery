@@ -5,7 +5,7 @@
  * @fileoverview Global test setup for xcom-enhanced-gallery
  *
  * Provides mocks for the userscript environment (GM_* APIs),
- * DOM polyfills missing from jsdom, and logger suppression.
+ * and logger suppression.
  *
  * Architecture: test/ is a standalone pnpm workspace.
  * Source code is imported via `@bootstrap`, `@constants`,
@@ -60,69 +60,7 @@ globalThis.GM_info = {
 };
 
 /* ------------------------------------------------------------------ */
-/*  Section 2: DOM API polyfills (missing/incomplete in jsdom)        */
-/* ------------------------------------------------------------------ */
-
-// requestAnimationFrame / cancelAnimationFrame
-// jsdom may not provide these; fall back to setTimeout(..., 16ms)
-
-if (typeof globalThis.requestAnimationFrame === 'undefined') {
-  globalThis.requestAnimationFrame = (cb: FrameRequestCallback): number => {
-    return setTimeout(cb, 16) as unknown as number;
-  };
-}
-
-if (typeof globalThis.cancelAnimationFrame === 'undefined') {
-  globalThis.cancelAnimationFrame = (id: number): void => {
-    clearTimeout(id);
-  };
-}
-
-// ResizeObserver (not fully implemented in jsdom)
-
-if (typeof globalThis.ResizeObserver === 'undefined') {
-  class MockResizeObserver {
-    observe(): void {}
-    unobserve(): void {}
-    disconnect(): void {}
-  }
-  globalThis.ResizeObserver = MockResizeObserver;
-}
-
-// IntersectionObserver (not fully implemented in jsdom)
-
-if (typeof globalThis.IntersectionObserver === 'undefined') {
-  class MockIntersectionObserver {
-    observe(): void {}
-    unobserve(): void {}
-    disconnect(): void {}
-    takeRecords(): IntersectionObserverEntry[] {
-      return [];
-    }
-  }
-  // @ts-expect-error
-  globalThis.IntersectionObserver = MockIntersectionObserver;
-}
-
-// matchMedia (not fully implemented in jsdom)
-
-if (typeof globalThis.matchMedia === 'undefined') {
-  globalThis.matchMedia = (): MediaQueryList => {
-    return {
-      matches: false,
-      media: '',
-      onchange: null,
-      addListener: () => {},
-      removeListener: () => {},
-      addEventListener: () => {},
-      removeEventListener: () => {},
-      dispatchEvent: () => false,
-    } as unknown as MediaQueryList;
-  };
-}
-
-/* ------------------------------------------------------------------ */
-/*  Section 3: Logger mock (suppress log noise during tests)          */
+/*  Section 2: Logger mock (suppress log noise during tests)          */
 /* ------------------------------------------------------------------ */
 
 import { vi } from 'vite-plus/test';
@@ -141,7 +79,7 @@ vi.mock('@shared/logging', () => {
 });
 
 /* ------------------------------------------------------------------ */
-/*  Section 4: Lifecycle hooks                                        */
+/*  Section 3: Lifecycle hooks                                        */
 /* ------------------------------------------------------------------ */
 
 beforeEach(() => {

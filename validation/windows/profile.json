@@ -14,6 +14,7 @@
       "dist/xcom-enhanced-gallery.user.js",
       "validation/windows/install-preparation.ts",
       "validation/windows/userscript-install.ts",
+      "validation/windows/userscript-document.ts",
       "validation/windows/release-upgrade",
       "validation/windows/userscript-loopback.ts",
       "validation/windows/extension-native-loopback.ts",
@@ -42,7 +43,8 @@
       "test/e2e/fixtures/installed-nested-c.mp4",
       "src/shared/services/download/live-byte-budget.ts",
       "validation/windows/download-memory.ts",
-      "validation/windows/live-page.ts"
+      "validation/windows/live-page.ts",
+      "validation/windows/live-page-document.ts"
     ],
     "build_commands": [
       ["vp", "run", "build:ci"],

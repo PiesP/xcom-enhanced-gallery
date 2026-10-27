@@ -1,9 +1,15 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { describe, expect, it } from 'vite-plus/test';
+import { describe, expect, it, vi } from 'vite-plus/test';
 import nodeTestConfig from '../../../tooling/vitest.node.config.ts';
 import { RUN_TASKS } from '../../../vite.config.ts';
 import { createVitestConfig } from '../../../vitest.config.ts';
+
+// This Node policy suite inspects the project graph; Browser Mode tests exercise
+// the real provider. Avoid loading its browser transport inside the Node runner.
+vi.mock('vite-plus/test/browser-playwright', () => ({
+  playwright: () => ({ name: 'playwright' }),
+}));
 
 const root = resolve(import.meta.dirname, '../../..');
 const packageJson = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8')) as {
@@ -50,14 +56,21 @@ describe('tooling configuration', () => {
     );
     expect(fullProbes?.test.fileParallelism).toBe(false);
     expect(afterProbes?.test.fileParallelism).toBe(false);
-    expect(afterProjects.find((project) => project.test.name === 'unit')).toEqual(
-      fullProjects.find((project) => project.test.name === 'unit')
+    expect(afterProjects.find((project) => project.test.name === 'node')).toEqual(
+      fullProjects.find((project) => project.test.name === 'node')
+    );
+    expect(afterProjects.find((project) => project.test.name === 'browser')).toEqual(
+      fullProjects.find((project) => project.test.name === 'browser')
     );
     expect(afterPolicy.test?.coverage).toEqual(full.test?.coverage);
   });
   it('keeps Node projects outside the browser unit and coverage config', () => {
     const unitProjects = createVitestConfig().test?.projects as Array<{ test: { name: string } }>;
-    expect(unitProjects.map((project) => project.test.name)).toEqual(['unit', 'repository-probes']);
+    expect(unitProjects.map((project) => project.test.name)).toEqual([
+      'node',
+      'browser',
+      'repository-probes',
+    ]);
     type NodeProject = {
       test: { name: string; include: string[]; environment: string; fileParallelism?: boolean };
     };

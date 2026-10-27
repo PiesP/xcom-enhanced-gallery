@@ -270,6 +270,7 @@ type Mv3RestartEvidence = {
   workerObservation?: unknown;
   error?: string;
   failureSnapshot?: unknown;
+  preparationFailures?: Mv3RestartEvidence[];
 };
 type NativeNotificationCall = {
   id: string;
@@ -1706,6 +1707,45 @@ export function assertDownloadIncomplete(
         bytesReceived: download?.bytesReceived,
         totalBytes: download?.totalBytes,
       })
+  );
+}
+
+/** A fast local Blob can finish receiving bytes before Chrome acknowledges pause. */
+export function canRetryMv3PausePreparation(evidence: Mv3RestartEvidence, error: unknown): boolean {
+  const snapshot = evidence.failureSnapshot;
+  const download =
+    snapshot !== null && typeof snapshot === 'object' && 'download' in snapshot
+      ? snapshot.download
+      : undefined;
+  const cleanup = evidence.cleanup;
+  return (
+    error instanceof Error &&
+    'code' in error &&
+    error.code === 'ERR_ASSERTION' &&
+    error.message.startsWith('before worker stop: paused download must have bytes remaining: ') &&
+    evidence.source.bytes === MV3_RESTART_BLOB_BYTES &&
+    evidence.source.productionMessageType === 'DOWNLOAD_BLOB_URL_REQUEST' &&
+    evidence.beforeStop === undefined &&
+    evidence.stop === undefined &&
+    download !== null &&
+    typeof download === 'object' &&
+    'state' in download &&
+    download.state === 'in_progress' &&
+    'paused' in download &&
+    download.paused === true &&
+    'bytesReceived' in download &&
+    download.bytesReceived === evidence.source.bytes &&
+    'totalBytes' in download &&
+    download.totalBytes === evidence.source.bytes &&
+    cleanup.errorCount === 0 &&
+    cleanup.download?.historyRemoved === true &&
+    cleanup.trackingRemoved === true &&
+    cleanup.pauseListener?.removed === true &&
+    cleanup.pauseListener.controlCleared === true &&
+    cleanup.pauseListener.requestOutcomeCleared === true &&
+    cleanup.blob?.revoked === true &&
+    cleanup.blob.globalCleared === true &&
+    cleanup.addedFilesRemoved === true
   );
 }
 
@@ -14868,7 +14908,7 @@ async function exerciseInstalledExtension(
     },
   };
   let fixtureVideoAssets: Record<string, { bytes: number; sha256: string }> | undefined;
-  const mv3RestartCancellation: Mv3RestartEvidence = {
+  let mv3RestartCancellation: Mv3RestartEvidence = {
     source: {
       bytes: MV3_RESTART_BLOB_BYTES,
       mimeType: 'application/octet-stream',
@@ -14985,14 +15025,41 @@ async function exerciseInstalledExtension(
       'block-controls-only',
       'Installed profile must use the configured noncontrol video click mode'
     );
-    await verifyMv3RestartCancellation({
-      downloads,
-      evidence: mv3RestartCancellation,
-      extensionId,
-      extensionPage,
-      page,
-      workerObserver,
-    });
+    const preparationFailures: Mv3RestartEvidence[] = [];
+    for (let preparation = 0; preparation < 3; preparation += 1) {
+      const attempt: Mv3RestartEvidence = {
+        source: {
+          bytes: MV3_RESTART_BLOB_BYTES,
+          mimeType: 'application/octet-stream',
+          productionMessageType: 'DOWNLOAD_BLOB_URL_REQUEST',
+        },
+        cleanup: {},
+        preparationFailures,
+      };
+      mv3RestartCancellation = attempt;
+      try {
+        await verifyMv3RestartCancellation({
+          downloads,
+          evidence: attempt,
+          extensionId,
+          extensionPage,
+          page,
+          workerObserver,
+        });
+        break;
+      } catch (error) {
+        attempt.status = 'failed';
+        attempt.error ??= safeError(error);
+        if (preparation === 2 || !canRetryMv3PausePreparation(attempt, error)) {
+          throw error;
+        }
+        // The old attempt owns its cleanup; retain it before creating another
+        // request. Restart/cancellation assertions are never retried.
+        const archived = { ...attempt };
+        delete archived.preparationFailures;
+        preparationFailures.push(structuredClone(archived));
+      }
+    }
     await verifyDirectRestartCancellation({
       downloads,
       extensionId,
