@@ -251,6 +251,12 @@ drops type-only edges and passed a pure `import type` cycle that current dpdm
 rejects. Replacing dpdm would therefore change the current failing policy; no
 second permanent cycle gate is added.
 
+The `circular` script passes double-quoted recursive `src/**/*.ts` and
+`src/**/*.tsx` patterns to dpdm. dpdm expands these entries regardless of shell
+glob behavior, then follows resolved imports (including linked core imports).
+The maintained source graph includes the userscript and extension TypeScript;
+tooling, tests, and top-level `extension/` assets are outside this `src/` gate.
+
 ### Rule policy and source conventions
 
 `vite.config.ts` owns Oxlint rules. `biome.json`

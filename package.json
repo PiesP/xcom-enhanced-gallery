@@ -59,7 +59,7 @@
     "fmt": "vp fmt --check",
     "fmt:fix": "vp fmt --write",
     "fmt:check": "pnpm -s fmt",
-    "circular": "dpdm --tsconfig tsconfig.json --circular --no-tree --no-warning --exit-code circular:1 src/**/*.ts src/**/*.tsx",
+    "circular": "dpdm --tsconfig tsconfig.json --circular --no-tree --no-warning --exit-code circular:1 \"src/**/*.ts\" \"src/**/*.tsx\"",
     "quality": "pnpm -s fmt && pnpm -s lint && pnpm -s check && pnpm -s check:e2e && pnpm -s test:ci && pnpm -s circular && pnpm -s knip",
     "quality:coverage-owned": "pnpm -s fmt && pnpm -s lint && pnpm -s check && pnpm -s check:e2e && pnpm -s test:policy && pnpm -s circular && pnpm -s knip",
     "quality:fix": "pnpm -s fmt:fix && pnpm -s lint:fix && pnpm -s quality",
