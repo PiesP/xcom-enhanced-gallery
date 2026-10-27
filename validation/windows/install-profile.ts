@@ -6086,10 +6086,22 @@ async function withControlledFixtureVideoMode<T extends object>(
     }
     mutated = true;
     await extensionPage.evaluate(
-      async ({ storageKey, value }) => {
+      async ({ storageKey, fieldKey, value, mode }) => {
         await chrome.storage.local.set({ [storageKey]: value });
+        if (mode === 'default') {
+          await chrome.storage.local.remove(fieldKey);
+        } else {
+          await chrome.storage.local.set({
+            [fieldKey]: { __xegStorageEnvelope: 1, updatedAt: Date.now(), value: mode },
+          });
+        }
       },
-      { storageKey: key, value: next }
+      {
+        storageKey: key,
+        fieldKey: 'xeg-app-settings:field:gallery.videoClickMode',
+        value: next,
+        mode,
+      }
     );
     const effective = storedVideoClickMode((await readStoredVideoSettings(extensionPage)).settings);
     assert.equal(
@@ -14335,6 +14347,9 @@ async function runGalleryExperienceProbe({
       try {
         await extensionPage.evaluate(async (value) => {
           await chrome.storage.local.set({ 'xeg-app-settings': value });
+          await chrome.storage.local.remove('xeg-app-settings:field:gallery.videoClickMode');
+          await chrome.storage.local.remove('xeg-app-settings:field:gallery.videoVolume');
+          await chrome.storage.local.remove('xeg-app-settings:field:gallery.videoMuted');
         }, settings);
         const stored = await readStoredVideoSettings(extensionPage);
         assert.equal(storedVideoClickMode(stored.settings), null);

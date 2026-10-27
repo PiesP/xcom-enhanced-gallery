@@ -213,7 +213,8 @@ test('borrowed observation reads installed settings without writing or closing t
                     chrome: {
                       storage: {
                         local: {
-                          get: async (key: string) => (exists ? { [key]: value } : {}),
+                          get: async (key: string) =>
+                            exists && key === 'xeg-app-settings' ? { [key]: value } : {},
                           set: async () => {
                             await (
                               globalThis as unknown as {
@@ -639,11 +640,13 @@ test('borrowed native playback never starts the owned allow-all settings probe',
         assert.equal(page.controlledProbe.kind, 'task-owned-extension-setting-probe');
         assert.equal(page.controlledProbe.appliedMode, 'allow-all');
         assert.equal(page.controlledProbe.cleanup.restored, true);
-        assert.deepEqual(writes, ['set', 'set']);
+        assert.equal(writes.filter((operation) => operation === 'set').length, 2);
+        assert.equal(writes.filter((operation) => operation === 'remove').length, 14);
         assert.equal(liveRequests, 2);
         assert.equal(pagesCreated, 3);
       }
       assert.deepEqual(settings['xeg-app-settings'], originalSettings);
+      assert.deepEqual(Object.keys(settings), ['xeg-app-settings']);
       assert.equal(context.pages().length, 0);
       await context.close();
     }

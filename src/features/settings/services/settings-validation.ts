@@ -11,13 +11,31 @@
 
 import { isImageFitMode, isThemeSetting, isVideoClickMode } from '@constants/setting-options';
 import { DEFAULT_SETTINGS } from '@constants/settings';
-import type { AppSettings, GallerySettings } from '@shared/types/settings.types';
+import type { AppSettings, GallerySettings, NestedSettingKey } from '@shared/types/settings.types';
 import { isRecord } from '@shared/utils/types/guards';
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 
 /** Keys that must never be copied via spread to prevent prototype pollution. */
 const FORBIDDEN_KEYS = new Set<string>(['__proto__', 'constructor', 'prototype']);
+
+/** Independently persisted setting values; metadata and empty groups stay in the legacy record. */
+export const SETTINGS_LEAF_KEYS = [
+  'gallery.preloadCount',
+  'gallery.imageFitMode',
+  'gallery.theme',
+  'gallery.animations',
+  'gallery.enableKeyboardNav',
+  'gallery.videoVolume',
+  'gallery.videoMuted',
+  'gallery.videoClickMode',
+  'toolbar.autoHideDelay',
+  'features.gallery',
+  'features.settings',
+  'features.download',
+  'features.mediaExtraction',
+  'features.accessibility',
+] as const satisfies ReadonlyArray<NestedSettingKey>;
 
 function isBoolean(value: unknown): value is boolean {
   return value === true || value === false;

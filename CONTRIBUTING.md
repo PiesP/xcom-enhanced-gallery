@@ -192,6 +192,8 @@ are not Windows runtime acceptance.
   values. Avoid unnecessary `!important` rules.
 - Keep settings migrations, platform cleanup, and download cancellation
   behavior explicit.
+- Follow the [settings persistence contract](./docs/settings-persistence.md)
+  when changing settings storage, retries, or migration.
 
 ### Runtime and import boundaries
 
