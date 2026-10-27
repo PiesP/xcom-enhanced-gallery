@@ -62,6 +62,8 @@ describe('browser-core workflow composition', () => {
     expect(workflow).not.toContain('AUTO_MERGE_TOKEN');
     expect(workflow).not.toContain('gh pr merge');
     expect(manifest.scripts['test:ci']).toContain('pnpm -s test:policy');
-    expect(manifest.scripts['test:policy']).toContain('scripts/ci/repository-authority.test.ts');
+    expect(manifest.scripts['test:policy']).toBe(
+      'vp test run --config tooling/vitest.node.config.ts --project policy-node'
+    );
   });
 });

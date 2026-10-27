@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { test } from 'node:test';
+import { test } from 'vite-plus/test';
 import { chromium, type Locator } from '@playwright/test';
 import { assertQuotedOriginLink } from './install-profile.ts';
 import { restoreStoredVideoSettings } from './live-page.ts';

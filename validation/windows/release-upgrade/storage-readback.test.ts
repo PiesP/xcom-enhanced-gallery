@@ -2,7 +2,7 @@
 // Copyright (c) 2026 PiesP
 
 import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { test } from 'vite-plus/test';
 import { readStoredLanguage } from '../live-page.ts';
 
 test('upgrade language readback decodes the persisted storage envelope', async () => {

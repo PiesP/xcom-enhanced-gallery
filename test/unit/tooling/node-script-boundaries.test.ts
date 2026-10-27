@@ -15,6 +15,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vite-plus/test';
 import { DISTRIBUTION_NOTICE_PATHS } from '../../../tooling/vite/utils/distribution-licenses.ts';
+import nodeTestConfig from '../../../tooling/vitest.node.config.ts';
 
 const sourceRoot = resolve(import.meta.dirname, '../../..');
 const roots: string[] = [];
@@ -166,15 +167,21 @@ describe('Node script import boundary', () => {
     const packageJson = JSON.parse(readFileSync(join(sourceRoot, 'package.json'), 'utf8')) as {
       scripts: Record<string, string>;
     };
-    const nativeCommand = packageJson.scripts['test:e2e:native'] ?? '';
-    const argumentsList = nativeCommand.split(' ');
-    expect(argumentsList.slice(0, 3)).toEqual(['node', '--experimental-strip-types', '--test']);
+    expect(packageJson.scripts['test:e2e:native']).toBe(
+      'vp test run --config tooling/vitest.node.config.ts --project windows-native'
+    );
     const nativeFiles = readdirSync(join(sourceRoot, 'validation/windows'), { recursive: true })
       .map((path) => `validation/windows/${path.toString()}`)
       .filter((path) => path.endsWith('.test.ts'))
       .sort();
     expect(nativeFiles).toHaveLength(8);
-    expect(argumentsList.slice(3).sort()).toEqual(nativeFiles);
+    const projects = nodeTestConfig.test?.projects as Array<{
+      test: { name: string; include: string[]; environment?: string; fileParallelism?: boolean };
+    }>;
+    const nativeProject = projects.find((project) => project.test.name === 'windows-native');
+    expect(nativeProject?.test.include).toEqual(['validation/windows/**/*.test.ts']);
+    expect(nativeProject?.test.environment).toBe('node');
+    expect(nativeProject?.test.fileParallelism).toBe(false);
     expect(packageJson.scripts['test:e2e:all']).toContain('pnpm -s test:e2e:native');
     expect(packageJson.scripts['verify:full']).toContain('test:e2e:all');
   });

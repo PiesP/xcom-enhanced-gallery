@@ -8,7 +8,7 @@ import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:f
 import { createServer, type Server } from 'node:https';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { after, test } from 'node:test';
+import { afterAll, test } from 'vite-plus/test';
 import { createContext, Script } from 'node:vm';
 import { By, Key, until } from 'selenium-webdriver';
 import * as firefox from 'selenium-webdriver/firefox.js';
@@ -232,7 +232,7 @@ let server: Server | undefined;
 let certificateDirectory: string | undefined;
 let extensionDirectory: string | undefined;
 
-after(async () => {
+afterAll(async () => {
   let cleanupError: unknown;
   try {
     if (driver) {

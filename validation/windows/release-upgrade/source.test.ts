@@ -6,7 +6,7 @@ import type { BigIntStats } from 'node:fs';
 import { cp, mkdir, mkdtemp, open, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { test } from 'node:test';
+import { test } from 'vite-plus/test';
 import {
   extensionInventorySha256,
   hashInventoryFile,
