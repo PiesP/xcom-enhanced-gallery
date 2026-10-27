@@ -40,10 +40,7 @@
     "build:all:ci": "node --experimental-strip-types scripts/release/build-all.ts",
     "build:e2e": "vp run build:e2e:steps",
     "clean": "node --experimental-strip-types scripts/build/clean.ts",
-    "check:src": "tsc --noEmit",
-    "check:test": "tsc -p tsconfig.test.json --noEmit",
-    "check:scripts": "tsc -p tsconfig.scripts.json --noEmit && tsc -p tsconfig.node-tests.json --noEmit && tsc -p tsconfig.windows.json --noEmit",
-    "check": "vp run check:steps",
+    "check": "vp check",
     "check:versions": "node --experimental-strip-types scripts/release/version.ts check",
     "sync:versions": "node --experimental-strip-types scripts/release/version.ts sync",
     "typecheck": "vp run check",
@@ -68,9 +65,7 @@
     "test:e2e:extension:firefox": "vp test run --config tooling/vitest.node.config.ts --project firefox-installed",
     "test:e2e:native": "vp test run --config tooling/vitest.node.config.ts --project windows-native",
     "test:e2e:all": "vp run test:e2e:all:steps",
-    "check:e2e": "tsc -p tsconfig.e2e.json --noEmit",
-    "test:e2e:headed": "playwright test --config test/e2e/playwright.config.ts --headed",
-    "check:tooling": "tsc -p tsconfig.tooling.json --noEmit"
+    "test:e2e:headed": "playwright test --config test/e2e/playwright.config.ts --headed"
   },
   "dependencies": {
     "@piesp/browser-core": "file:packages/core",
@@ -85,7 +80,6 @@
     "@vitest/coverage-v8": "catalog:",
     "playwright": "1.64.1",
     "selenium-webdriver": "4.51.0",
-    "typescript": "7.0.2",
     "vite": "catalog:",
     "vite-plugin-solid": "^2.11.14",
     "vite-plus": "catalog:",

@@ -13,7 +13,7 @@ import {
   quotedVideoApiResponse,
   RAPID_CLICK_A,
   UNAVAILABLE_SEQUENCE,
-} from '../../test/e2e/fixtures/installed-quoted-video-api.ts';
+} from './fixtures/installed-quoted-video-api.ts';
 
 declare const chrome: {
   settingsPrivate: {

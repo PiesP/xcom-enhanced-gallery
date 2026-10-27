@@ -88,25 +88,11 @@ export const RUN_TASKS = {
     ],
   },
   'package:all:steps': { command: ['vp run build:all', 'vp run package:extension'] },
-  'check:steps': {
-    command: [
-      'vp run check:src',
-      'vp run check:tooling',
-      'vp run check:test',
-      'vp run check:scripts',
-    ],
-  },
   'quality:steps': {
-    command: ['vp run fmt', 'vp run lint', 'vp run check', 'vp run check:e2e', 'vp run test:ci'],
+    command: ['vp run check', 'vp run test:ci'],
   },
   'quality:coverage-owned:steps': {
-    command: [
-      'vp run fmt',
-      'vp run lint',
-      'vp run check',
-      'vp run check:e2e',
-      'vp run test:policy',
-    ],
+    command: ['vp run check', 'vp run test:policy'],
   },
   'quality:fix:steps': {
     command: ['vp run fmt:fix', 'vp run lint:fix', 'vp run quality'],
@@ -289,7 +275,7 @@ export default defineConfig(({ mode }): UserConfig => {
           'coverage/**',
           'test/fixtures/authenticated-x-layouts/*.html',
         ],
-        options: { typeAware: true, typeCheck: false, maxWarnings: 0 },
+        options: { typeAware: true, typeCheck: true, maxWarnings: 0 },
       },
       resolve: {
         alias: [],

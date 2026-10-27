@@ -33,7 +33,7 @@ import {
   RAPID_CLICK_A,
   RAPID_CLICK_B,
   UNAVAILABLE_SEQUENCE,
-} from '../../test/e2e/fixtures/installed-quoted-video-api.ts';
+} from './fixtures/installed-quoted-video-api.ts';
 import {
   expectedStoredZipBytes,
   readDownloadLiveLimit,

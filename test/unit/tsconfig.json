@@ -1,0 +1,13 @@
+{
+  "extends": "../../src/tsconfig.json",
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "../../src/types/env.d.ts",
+    "../../src/shared/types/core/userscript.d.ts"
+  ],
+  "compilerOptions": {
+    "types": ["node", "vitest/globals"],
+    "tsBuildInfoFile": "../../.vscode/.tsbuildinfo-test"
+  }
+}
