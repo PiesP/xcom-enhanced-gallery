@@ -22,6 +22,21 @@ import {
   findActivationHitDocument,
   quotedVideoSurface,
 } from './live-page-document.ts';
+import type {
+  Source,
+  Identity,
+  NativePreviewTarget,
+  LiveTarget,
+  LiveReadiness,
+} from './live-page-document.ts';
+export type {
+  Source,
+  Identity,
+  QuoteTarget,
+  ImageTarget,
+  NativePreviewTarget,
+  LiveReadiness,
+} from './live-page-document.ts';
 export {
   inspectHitTestedAction,
   inspectHitTestedNativePreviewAction,
@@ -40,8 +55,6 @@ export {
   quotedVideoSurface,
 } from './live-page-document.ts';
 
-export type Source = { host: string; path: string };
-export type Identity = { handle: string; statusId: string };
 type TweetMedia = {
   id: string | null;
   type: string;
@@ -187,70 +200,7 @@ type RestoredHostState = {
   scrollRestorationRestored: boolean;
   scrollRestored: boolean;
 };
-export type QuoteTarget = {
-  kind: 'quoted-video';
-  articleIndex: number;
-  quoteBoundary: string;
-  quoteIndex: number;
-  nestedArticleIndex: number;
-  quoteStatusIds: string[];
-  ownershipPath: { tag: string; testId: string | null }[];
-  videoIndex: number;
-  playerIndex: number;
-  previewIndex: number;
-  posterIndex: number;
-  hitKind: string;
-  posterSource: Source | null;
-  hostVideoSource: Source | null;
-  initialHitTest?: ReturnType<typeof inspectHitTestedVideoActionDocument>;
-  hitTestAfterNativePlayback?: ReturnType<typeof inspectHitTestedVideoActionDocument>;
-  nativePlayback?: {
-    status: string;
-    before?: ReturnType<typeof inspectHostVideoDocument>;
-    confirmation?: {
-      inQuote: boolean;
-      nativePlay: NonNullable<ReturnType<typeof inspectHitTestedVideoActionDocument>>['nativePlay'];
-      rejectedControls: number;
-    } | null;
-    action?: NonNullable<ReturnType<typeof inspectHitTestedVideoActionDocument>>['nativePlay'];
-    pointShift?: { x: number; y: number };
-    galleryOpenedOnControlClick?: boolean;
-    after?: ReturnType<typeof inspectHostVideoDocument> | null;
-  };
-  galleryActionKind?: string;
-};
-export type ImageTarget = {
-  kind: 'image';
-  articleIndex: number;
-  imageIndex: number;
-  imageLoaded: boolean;
-  imageSource: Source;
-  imageVisible: boolean;
-  quoteBoundary?: 'compact-two-level';
-  directQuoteId?: string;
-  ownerStatusId?: string;
-  ownerHandle?: string;
-  selectedPhotoIndex?: number;
-  actionAriaLabel?: string | null;
-  actionIndex?: number;
-  actionPath?: string;
-  duplicateActionCount?: number;
-};
-export type NativePreviewTarget = {
-  kind: 'native-preview-photo';
-  articleIndex: number;
-  actionIndex: number;
-  actionPath: string;
-  ownerHandle: string;
-  ownerStatusId: string;
-  photoNumber: number;
-  quoteBoundary: 'flat-nested-preview';
-};
-type LiveTarget = QuoteTarget | ImageTarget | NativePreviewTarget;
-export type LiveReadiness =
-  | { state: 'ready'; target: LiveTarget }
-  | { state: 'ambiguous' | 'terminal'; reason: string; candidateCount?: number }
-  | false;
+
 type LiveCandidate = ReturnType<typeof inspectLiveCandidateDocument>;
 type GalleryObservation = {
   status: string;

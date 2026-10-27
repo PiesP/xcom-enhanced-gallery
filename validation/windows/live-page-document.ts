@@ -1,11 +1,78 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 PiesP
 
-type Identity = import('./live-page.js').Identity;
-type ImageTarget = import('./live-page.js').ImageTarget;
-type LiveReadiness = import('./live-page.js').LiveReadiness;
-type NativePreviewTarget = import('./live-page.js').NativePreviewTarget;
-type QuoteTarget = import('./live-page.js').QuoteTarget;
+export type Source = { host: string; path: string };
+
+export type Identity = { handle: string; statusId: string };
+
+export type QuoteTarget = {
+  kind: 'quoted-video';
+  articleIndex: number;
+  quoteBoundary: string;
+  quoteIndex: number;
+  nestedArticleIndex: number;
+  quoteStatusIds: string[];
+  ownershipPath: { tag: string; testId: string | null }[];
+  videoIndex: number;
+  playerIndex: number;
+  previewIndex: number;
+  posterIndex: number;
+  hitKind: string;
+  posterSource: Source | null;
+  hostVideoSource: Source | null;
+  initialHitTest?: ReturnType<typeof inspectHitTestedVideoActionDocument>;
+  hitTestAfterNativePlayback?: ReturnType<typeof inspectHitTestedVideoActionDocument>;
+  nativePlayback?: {
+    status: string;
+    before?: ReturnType<typeof inspectHostVideoDocument>;
+    confirmation?: {
+      inQuote: boolean;
+      nativePlay: NonNullable<ReturnType<typeof inspectHitTestedVideoActionDocument>>['nativePlay'];
+      rejectedControls: number;
+    } | null;
+    action?: NonNullable<ReturnType<typeof inspectHitTestedVideoActionDocument>>['nativePlay'];
+    pointShift?: { x: number; y: number };
+    galleryOpenedOnControlClick?: boolean;
+    after?: ReturnType<typeof inspectHostVideoDocument> | null;
+  };
+  galleryActionKind?: string;
+};
+
+export type ImageTarget = {
+  kind: 'image';
+  articleIndex: number;
+  imageIndex: number;
+  imageLoaded: boolean;
+  imageSource: Source;
+  imageVisible: boolean;
+  quoteBoundary?: 'compact-two-level';
+  directQuoteId?: string;
+  ownerStatusId?: string;
+  ownerHandle?: string;
+  selectedPhotoIndex?: number;
+  actionAriaLabel?: string | null;
+  actionIndex?: number;
+  actionPath?: string;
+  duplicateActionCount?: number;
+};
+
+export type NativePreviewTarget = {
+  kind: 'native-preview-photo';
+  articleIndex: number;
+  actionIndex: number;
+  actionPath: string;
+  ownerHandle: string;
+  ownerStatusId: string;
+  photoNumber: number;
+  quoteBoundary: 'flat-nested-preview';
+};
+
+export type LiveTarget = QuoteTarget | ImageTarget | NativePreviewTarget;
+
+export type LiveReadiness =
+  | { state: 'ready'; target: LiveTarget }
+  | { state: 'ambiguous' | 'terminal'; reason: string; candidateCount?: number }
+  | false;
 
 export function inspectLiveTargetDocument({ handle, statusId }: Identity): LiveReadiness {
   const statusPath = `/${handle}/status/${statusId}`.toLowerCase();
