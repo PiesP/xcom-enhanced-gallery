@@ -321,7 +321,7 @@ export function Tooltip(props: TooltipProps): JSXElement {
   });
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: This display:contents wrapper delegates hover, focus, and Escape behavior to its native focusable child.
+    // This display:contents wrapper delegates hover, focus, and Escape behavior to its native focusable child.
     <span
       ref={(element) => {
         triggerRef = element;

@@ -54,8 +54,8 @@
     "knip": "pnpm -s knip:full && pnpm -s knip:production",
     "knip:full": "knip --files --exports --dependencies --treat-config-hints-as-errors",
     "knip:production": "knip --production --files --exports --dependencies --tags=-testOnly --treat-config-hints-as-errors",
-    "lint": "vp lint . --deny-warnings && biome lint --error-on-warnings .",
-    "lint:fix": "vp lint . --fix --deny-warnings && biome lint --write --error-on-warnings .",
+    "lint": "vp lint . --deny-warnings",
+    "lint:fix": "vp lint . --fix --deny-warnings",
     "fmt": "vp fmt --check",
     "fmt:fix": "vp fmt --write",
     "fmt:check": "pnpm -s fmt",
@@ -86,7 +86,6 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
-    "@biomejs/biome": "^2.6.3",
     "@playwright/test": "^1.64.1",
     "@types/node": "^26.6.5",
     "@types/selenium-webdriver": "4.35.7",

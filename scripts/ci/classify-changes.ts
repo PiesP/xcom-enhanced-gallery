@@ -99,13 +99,7 @@ export function classifyChanges(
 
     if (
       /^vite.*\.ts$/.test(path) ||
-      [
-        'tsconfig.json',
-        'tsconfig.e2e.json',
-        'tsconfig.scripts.json',
-        'biome.json',
-        'knip.json',
-      ].includes(path)
+      ['tsconfig.json', 'tsconfig.e2e.json', 'tsconfig.scripts.json', 'knip.json'].includes(path)
     ) {
       known = true;
       select('quality', 'unit', 'e2e', 'build', 'codeql_javascript');

@@ -122,11 +122,9 @@ describe('tooling configuration', () => {
     const scripts = packageJson.scripts;
     expect(scripts.fmt).toBe('vp fmt --check');
     expect(scripts['fmt:fix']).toBe('vp fmt --write');
-    expect(scripts.lint).toBe('vp lint . --deny-warnings && biome lint --error-on-warnings .');
-    expect(scripts['lint:fix']).toBe(
-      'vp lint . --fix --deny-warnings && biome lint --write --error-on-warnings .'
-    );
-    expect(scripts['check:biome']).toBeUndefined();
+    expect(scripts.lint).toBe('vp lint . --deny-warnings');
+    expect(scripts['lint:fix']).toBe('vp lint . --fix --deny-warnings');
+    expect(packageJson.devDependencies['@biomejs/biome']).toBeUndefined();
     expect(scripts.quality).toBe(
       'pnpm -s fmt && pnpm -s lint && pnpm -s check && pnpm -s check:e2e && pnpm -s test:ci && pnpm -s circular && pnpm -s knip'
     );

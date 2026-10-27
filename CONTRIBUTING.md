@@ -68,23 +68,22 @@ before job steps and tools with separate TLS stores have separate trust boundari
 | `pnpm check:versions`, `sync:versions` | `scripts/release/version.ts` checks or synchronizes package/extension versions. | `check` reads and fails on mismatch; `sync` writes manifests. `test/unit/tooling/release-runtime.test.ts` plus version check. |
 | `pnpm package:extension`, `package:all`, `release:prepare` | `scripts/release/package-extension.ts` archives built Chrome/Firefox extensions; `package:all` builds first. `scripts/release/prepare.ts` checks production artifact metadata, built extension versions, the changelog and the recorded build footprint before preparing a release bundle. | `release:prepare` reads `RELEASE_VERSION`, optional `RELEASE_SHA`, package metadata and existing `dist*`; it requires a clean-source `build:all:ci` report matching the current source, toolchain and file hashes, then replaces `release-bundle/`, creates ZIPs/checksums/source-runtime metadata, and records final archive hashes/bytes in internal `release-bundle/footprint.json`. The public asset allowlist remains the production userscript, production metadata, two extension ZIPs, `checksums.txt` and `metadata.json`; retained development files are internal deploy/build outputs. Run `build:all:ci` first from eligible clean source. These commands do not publish a release. |
 | `pnpm check:src`, `check:tooling`, `check:test`, `check:scripts`, `check:e2e`, `check`, `typecheck` | Separate browser, build/config, Vitest, NodeNext/erasable script/direct Firefox, and Playwright TypeScript projects. `check` chains source/tooling/test/scripts; `check:e2e` checks Playwright separately. | Read-only; `tsconfig.e2e.json` excludes the direct Firefox test so it is checked in the Node project instead. `pnpm quality` includes every project boundary. |
-| `pnpm fmt`, `fmt:check`, `lint`, `knip`, `knip:full`, `knip:production`, `circular` | Vite+ Oxfmt and Oxlint with scoped Biome residual lint, dependency/entry analysis, and source graph checks. | Read-only; `lint` denies warnings in both lint owners. `fmt:fix`, `lint:fix`, `quality:fix` write fixes for review. Knip and dpdm retain separate responsibilities. |
-| `pnpm quality`, `verify`, `verify:full` | `quality` chains Vite+ formatting, Vite+ lint with scoped Biome residual rules, all runtime type checks, the focused policy suite, circular, and Knip. `verify` adds production userscript/metadata and both extension targets; `verify:full` adds coverage, a retained development userscript build, and all E2E browser lanes. Its internal coverage command omits only the boundary suite already run by `quality`. | Build/test outputs and browser profiles are generated; `verify:full` leaves production and development userscripts together with production metadata. `verify` alone does not prove E2E. Read exact command outcomes and artifacts; no VM/publication inference. |
+| `pnpm fmt`, `fmt:check`, `lint`, `knip`, `knip:full`, `knip:production`, `circular` | Vite+ Oxfmt and Oxlint, plus the separately maintained graph checks. | Read-only; `lint` denies native warnings. `fmt:fix`, `lint:fix`, `quality:fix` write fixes for review. Knip and dpdm remain until the graph-policy stage. |
+| `pnpm quality`, `verify`, `verify:full` | `quality` chains Vite+ formatting, Vite+ lint, all runtime type checks, the focused policy suite, circular, and Knip. `verify` adds production userscript/metadata and both extension targets; `verify:full` adds coverage, a retained development userscript build, and all E2E browser lanes. Its internal coverage command omits only the boundary suite already run by `quality`. | Build/test outputs and browser profiles are generated; `verify:full` leaves production and development userscripts together with production metadata. `verify` alone does not prove E2E. Read exact command outcomes and artifacts; no VM/publication inference. |
 | `pnpm test`, `test:watch`, `test:cov`, `test:ci` | Vite+ Vitest suites and direct Node CI policy tests in `scripts/ci/repository-authority.test.ts` and `scripts/release/verify-source.test.ts`. | `test` and `test:cov` run once; `test:watch` explicitly starts persistent watch mode and reruns changed tests. Coverage writes reports. `test:ci` also runs real compiler/import boundary probes; run that part alone with `pnpm test test/unit/tooling/node-ambient-types.test.ts`. This focused suite checks repository authority, tagged source and runtime types; it is not the complete unit suite. |
 | `pnpm test:e2e`, `test:e2e:headed`, `test:e2e:extension`, `test:e2e:extension:firefox`, `test:e2e:all` | Playwright configs under `test/e2e/`; direct Firefox lane executes `test/e2e/firefox-extension-runtime.test.ts` with Node/Selenium. | Requires built artifacts, browser binaries and loopback fixtures; may create browser profiles/downloads. `test:e2e:all` chains the lanes; distinguish fixture browser evidence from authenticated Windows/live-site evidence. |
 
 ### Quality ownership
 
-`fmt` runs read-only `vp fmt --check` and `lint` runs `vp lint . --deny-warnings`
-followed by `biome lint --error-on-warnings .`. The latter is restricted to CSS,
-HTML/accessibility, accumulating-spread and Solid-component rules listed below;
-it does not format or run its former general JavaScript/TypeScript preset.
+`fmt` runs read-only `vp fmt --check` and `lint` runs `vp lint . --deny-warnings`.
+Vite+ is the sole routine formatter and linter. The former Biome-only CSS,
+HTML and Solid checks are retired with the scope described below.
 `quality:fix` runs reviewed formatter/linter fixes. CI and ordinary prebuild
 invoke `quality` without task-result caching.
 
 | Check | Local owner | Hosted owner |
 | --- | --- | --- |
-| Vite+ format/lint, scoped Biome residual lint, every runtime type project, dpdm and full/production Knip | `quality` (also ordinary prebuild and `verify`) | CI/release quality |
+| Vite+ format/lint, every runtime type project, dpdm and full/production Knip | `quality` (also ordinary prebuild and `verify`) | CI/release quality |
 | Focused direct Node policy tests | `test:ci`; retained within `quality` | CI quality when selected, otherwise CI unit for an explicitly unit-only decision; release quality |
 | Runtime/import boundary probes | `test:ci`; retained within `quality` and `verify` | CI/release unit coverage when selected; CI quality when unit is explicitly unselected |
 | Complete unit suite and unchanged coverage thresholds | `test` / `test:cov`; `verify:full` uses internal `test:cov:after-policy` after `quality` | CI/release unit |
@@ -154,22 +153,20 @@ live-site, hosted-CI, or public-release evidence.
 Oxfmt owns maintained TS/TSX, JS/MJS, CSS, JSON and HTML formatting using
 two-space indentation, 100-column width, LF, single JavaScript quotes,
 semicolons, ES5 trailing commas and parenthesized arrow parameters. Oxlint
-owns supported JS/TS lint. Biome's `biome.json` has its
-formatter and assist disabled and its linter preset set to `none`; it retains
-only the residual rules below. `test/unit/tooling/toolchain-policy.test.ts`
-checks representative real-tool failures. The quality classifier includes
+owns JS/TS lint. `test/unit/tooling/toolchain-policy.test.ts` checks
+representative real-tool failures. The quality classifier includes
 these maintained file families and executable dot-directory helpers.
 
 | Maintained family | Format and lint owner | Type or runtime validation |
 | --- | --- | --- |
-| `src` TS/TSX/CSS | Oxfmt; Oxlint for TS/TSX; Biome for residual CSS, accessibility and performance rules | `check:src`; unit and browser suites |
-| Tests and fixtures JS/TS/TSX/HTML | Oxfmt; Oxlint for JS/TS/TSX; Biome for residual HTML/accessibility | Test, Playwright and Node projects |
+| `src` TS/TSX/CSS | Oxfmt; Oxlint for TS/TSX | `check:src`; unit and browser suites |
+| Tests and fixtures JS/TS/TSX/HTML | Oxfmt; Oxlint for JS/TS/TSX | Test, Playwright and Node projects |
 | `scripts`, `tooling`, root TS/JSON configs | Oxfmt; Oxlint for JS/TS | Node-specific TypeScript projects and command tests |
-| Windows validation TS and profile JSON, executable `.github/actions` helpers, extension manifests | Oxfmt; Oxlint for TS/JS/MJS; Biome residual rules where applicable | Windows TypeScript check, native Node syntax check, Windows profile, version and built-package checks |
+| Windows validation TS and profile JSON, executable `.github/actions` helpers, extension manifests | Oxfmt; Oxlint for TS/JS/MJS | Windows TypeScript check, native Node syntax check, Windows profile, version and built-package checks |
 | YAML/workflow shell, Markdown, TOML, PowerShell and Git hooks | Existing workflow/command checks; no general prose/TOML/PowerShell linter is claimed | Relevant CI and Windows runtime lanes |
 
 VCS ignores exclude dependencies and generated outputs. Both formatter and
-linters exclude the detached `packages/core` gitlink and exact-byte captured
+linter exclude the detached `packages/core` gitlink and exact-byte captured
 HTML in `test/fixtures/authenticated-x-layouts/*.html`; the formatter also
 excludes `pnpm-lock.yaml` and Markdown/YAML. Installed-page HTML fixtures
 reproduce X markup; their specific native-host accessibility exceptions stay
@@ -259,34 +256,37 @@ tooling, tests, and top-level `extension/` assets are outside this `src/` gate.
 
 ### Rule policy and source conventions
 
-`vite.config.ts` owns Oxlint rules. `biome.json`
-owns only residual rules that the selected Vite+/Oxlint toolchain
-does not cover at equivalent scope. The two lint commands both fail on warnings.
-Review this split when Vite+/Oxlint adds native CSS or equivalent accessibility,
-Solid-component and accumulating-spread rules; move a rule only with a passing
-negative probe and a clean repository-wide check.
+`vite.config.ts` owns Oxfmt and Oxlint. `vp lint . --deny-warnings` is the only
+routine lint command. The former 16 Biome restrictions have these dispositions:
 
-| Existing rule or responsibility | Current owner, files and rationale |
+| Former Biome rule | Current disposition |
 | --- | --- |
-| Solid destructured props | Biome `noSolidDestructuredProps` error on maintained TSX; a real component probe fails. `solid/no-destructure` was evaluated but its plugin has an unsupported TypeScript 7 peer dependency, and `solid/reactivity` is not an exact substitute. |
-| Solid list rendering | `solid/prefer-for` was evaluated but fixed option arrays intentionally use maps; Biome `useSolidForComponent` remains a warning for JSX component list sites. Revisit with keyed identity/disposal tests and a peer-compatible plugin. |
-| CSS unknown media features and pseudo-elements | Biome `noUnknownMediaFeatureName` and `noUnknownPseudoElement` errors in maintained CSS. |
-| Accessibility | Biome's explicit `noStaticElementInteractions`, `useKeyWithClickEvents`, `useMediaCaption`, `noSvgWithoutTitle`, `useAriaPropsSupportedByRole` and `useSemanticElements` errors for maintained TSX/HTML. Native host/video exceptions remain adjacent to fixtures. |
-| Browser Node imports, ambient types, non-null assertions | Oxlint `no-restricted-imports` bans `node:*` and public bare Node builtins in `src/**`; `typescript/no-non-null-assertion` errors only in `src/**`. Separate `tsc -p` projects preserve browser and Node ambient scopes. A bounded CRC byte loop has an inline exception. |
-| Cookie writes, accumulating spread | Oxlint `unicorn/no-document-cookie` errors in product code; controlled test/VM writes are exempt. Biome `noAccumulatingSpread` remains an error. |
-| Explicit `any`, focused tests, braces | Oxlint `typescript/no-explicit-any`, `vitest/no-focused-tests` and `curly` errors; real-tool probes reject each. |
-| Unused template literals and SVG titles | Biome `noUnusedTemplateLiteral` and `noSvgWithoutTitle` errors remain because the selected Oxlint release does not provide equivalent enforced rules; negative probes reject both. |
-| Other supported JS/TS rules | Oxlint errors cover unused variables/imports, `prefer-const`, exponentiation, callback returns, ternaries, lone blocks, empty exports, parameter reassignment, self-comparison and control-character regexes. Existing delayed-assignment and host-mock blocks have local reasons. |
-| Unsupported explicit JS/TS rules | Biome retains `noAssignInExpressions`, `noImplicitAnyLet`, `noUselessSwitchCase` errors and `noConfusingVoidType` warning for maintained JS/TS. These have no exact enforced equivalents in Oxlint 1.88.0; review with the same trigger as CSS/Solid residual rules. |
-| Semantic and graph checks | Explicit TypeScript projects remain for semantic boundaries; Knip checks unused files/dependencies and dpdm checks import cycles. |
+| `noUnknownMediaFeatureName` | Retired CSS diagnostic; Oxfmt and build still process CSS. |
+| `noUnknownPseudoElement` | Retired CSS diagnostic; browser styles need rendered checks. |
+| `noSolidDestructuredProps` | Retired Solid-specific diagnostic; keep reactive-props behavior tests and direct prop access conventions. |
+| `noUnusedTemplateLiteral` | Retired restriction on non-interpolated templates; native unused bindings still apply. |
+| `noAssignInExpressions` | Retired broad restriction; native `no-cond-assign` still rejects assignment in conditions. |
+| `noImplicitAnyLet` | Retired evolving-any restriction; TypeScript `noImplicitAny` is narrower here. |
+| `noConfusingVoidType` | Retired style warning; `typescript/no-invalid-void-type` also rejects legitimate test `deferred<void>` uses. |
+| `noUselessSwitchCase` | Native `unicorn/no-useless-switch-case` error. |
+| `noAccumulatingSpread` | Native `oxc/no-accumulating-spread` error. |
+| `useSolidForComponent` | Retired Solid list style warning; fixed option lists retain their lifecycle tests. |
+| `noStaticElementInteractions` | Retired JSX/HTML diagnostic; keyboard and native-control behavior remains test-owned. |
+| `useKeyWithClickEvents` | Retired JSX/HTML diagnostic; keyboard behavior remains test-owned. |
+| `useMediaCaption` | Retired JSX/HTML diagnostic for host media fixtures; media and controls remain browser-tested. |
+| `noSvgWithoutTitle` | Retired JSX/HTML diagnostic; icon labels remain a product accessibility contract. |
+| `useAriaPropsSupportedByRole` | Retired JSX/HTML diagnostic; rendered semantics remain a product contract. |
+| `useSemanticElements` | Retired JSX/HTML diagnostic; native controls and keyboard behavior remain product contracts. |
 
-The residual command is exactly `biome lint --error-on-warnings .` after
-`vp lint . --deny-warnings`; its file scope is declared in `biome.json`.
-No general Biome formatting or import-assist pass remains. Oxfmt's ignore
-patterns are in `vite.config.ts`. The root `tsc` commands remain explicit
-because one Vite+ type-check invocation does not cover the browser, tooling,
-unit, E2E and direct-Node projects together. The supply-chain and prebuild
-scripts retain their existing lifecycle order.
+The selected Oxlint JSX accessibility plugin is not a drop-in owner for Solid
+and HTML fixtures. A separate Solid ESLint stack would add a TypeScript peer
+mismatch. The accepted reduced static scope does not relax accessibility behavior.
+`test/unit/tooling/toolchain-policy.test.ts` runs native negative controls for
+adopted rules. The existing `src/**` Node-import boundary, native explicit-any,
+unused-binding, correctness and test rules remain active. Oxfmt's ignore patterns
+are in `vite.config.ts`. The root `tsc` commands remain explicit until the
+integrated type-project stage qualifies their browser, tooling, unit, E2E and
+Node contexts. Supply-chain and prebuild scripts retain their lifecycle order.
 
 The Vite alias reports the selected Vite+ version and records the bundled Vite
 version in its package metadata. Strict peer validation stays enabled.

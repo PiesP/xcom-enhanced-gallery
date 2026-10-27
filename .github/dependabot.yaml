@@ -65,10 +65,9 @@ updates:
           - "minor"
           - "patch"
 
-      # Residual CSS/HTML/Solid lint and dead-code analysis.
+      # Knip remains until the separate graph-policy stage.
       quality:
         patterns:
-          - "@biomejs/*"
           - "knip"
         update-types:
           - "minor"
