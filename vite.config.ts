@@ -67,9 +67,6 @@ export default defineConfig(({ mode }): UserConfig => {
   const root = resolve(import.meta.dirname);
   const entryFile = resolve(root, './src/main.ts');
 
-  // Feature flags: media extraction is always enabled (the disabled variant was deleted)
-  const featureMediaExtraction = true;
-
   // Build output configuration
   const outputFileName = isDev ? OUTPUT_FILE_NAMES.dev : OUTPUT_FILE_NAMES.prod;
 
@@ -77,7 +74,7 @@ export default defineConfig(({ mode }): UserConfig => {
   return mergeConfig(
     mergeConfig(
       mergeConfig(
-        basePreset({ root, isDev, version, featureMediaExtraction }),
+        basePreset({ root, isDev, version }),
         solidPreset({ isDev, cssClassNamePattern: config.cssClassNamePattern })
       ),
       userscriptPreset({

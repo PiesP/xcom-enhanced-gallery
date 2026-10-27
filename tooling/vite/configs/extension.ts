@@ -58,7 +58,6 @@ function sharedConfig(): Pick<UserConfig, 'define' | 'logLevel' | 'resolve' | 'r
     },
     define: {
       __DEV__: JSON.stringify(false),
-      __FEATURE_MEDIA_EXTRACTION__: JSON.stringify(true),
       __VERSION__: JSON.stringify(version),
     },
     logLevel: 'warn',
