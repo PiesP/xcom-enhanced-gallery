@@ -12,6 +12,7 @@
     "entry": "validation/windows/install-profile.ts",
     "assets": [
       "dist/xcom-enhanced-gallery.user.js",
+      "validation/windows/install-preparation.ts",
       "validation/windows/userscript-install.ts",
       "validation/windows/release-upgrade",
       "validation/windows/userscript-loopback.ts",

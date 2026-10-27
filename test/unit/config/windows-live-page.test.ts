@@ -187,6 +187,21 @@ type LivePageModule = Pick<
 };
 
 type InstallProfileModule = {
+  notificationCallsSince(cursor: unknown, observed: unknown): unknown[];
+  assertNoRetiredExtractionNotifications(cursor: unknown, observed: unknown): unknown[];
+  assertDownloadIncomplete(download: unknown, stage: string): void;
+  run(options: {
+    browserName: string;
+    chromium: { launchPersistentContext(): Promise<never> };
+    headless: boolean;
+    installation: string;
+    liveUrls: string[];
+    output: string;
+    root: string;
+  }): Promise<unknown>;
+};
+
+type InstallPreparationModule = {
   installFixtureRoutes(
     context: unknown,
     root: string,
@@ -201,19 +216,7 @@ type InstallProfileModule = {
     unhandledRequests: unknown[];
     remove(): Promise<void>;
   }>;
-  notificationCallsSince(cursor: unknown, observed: unknown): unknown[];
-  assertNoRetiredExtractionNotifications(cursor: unknown, observed: unknown): unknown[];
-  assertDownloadIncomplete(download: unknown, stage: string): void;
   enableDeveloperMode(context: unknown, browserName: string): Promise<void>;
-  run(options: {
-    browserName: string;
-    chromium: { launchPersistentContext(): Promise<never> };
-    headless: boolean;
-    installation: string;
-    liveUrls: string[];
-    output: string;
-    root: string;
-  }): Promise<unknown>;
 };
 
 const livePage = (await import(
@@ -222,6 +225,10 @@ const livePage = (await import(
 const installProfile = (await import(
   pathToFileURL(resolve(import.meta.dirname, '../../../validation/windows/install-profile.ts')).href
 )) as InstallProfileModule;
+const installPreparation = (await import(
+  pathToFileURL(resolve(import.meta.dirname, '../../../validation/windows/install-preparation.ts'))
+    .href
+)) as InstallPreparationModule;
 const userscriptInstall = (await import(
   pathToFileURL(resolve(import.meta.dirname, '../../../validation/windows/userscript-install.ts'))
     .href
@@ -437,7 +444,7 @@ describe('Windows X live page validation', () => {
         }),
         unroute: vi.fn(async () => {}),
       });
-      const routes = await installProfile.installFixtureRoutes(
+      const routes = await installPreparation.installFixtureRoutes(
         context,
         root,
         images,
@@ -2175,7 +2182,7 @@ describe('Windows X live page validation', () => {
         };
       });
       const page = { goto: vi.fn(async () => {}), locator, close: vi.fn(async () => {}) };
-      await installProfile.enableDeveloperMode({ newPage: async () => page }, browserName);
+      await installPreparation.enableDeveloperMode({ newPage: async () => page }, browserName);
       expect(page.goto).toHaveBeenCalledWith(
         browserName === 'msedge' ? 'edge://extensions/' : 'chrome://extensions/'
       );
@@ -2200,7 +2207,7 @@ describe('Windows X live page validation', () => {
       close: vi.fn(async () => {}),
     };
     await expect(
-      installProfile.enableDeveloperMode({ newPage: async () => page }, 'msedge')
+      installPreparation.enableDeveloperMode({ newPage: async () => page }, 'msedge')
     ).rejects.toThrow('developer mode is disabled');
     expect(page.close).toHaveBeenCalledOnce();
   });
@@ -2319,6 +2326,7 @@ describe('Windows X live page validation', () => {
       readFileSync(resolve(import.meta.dirname, '../../../validation/windows/profile.json'), 'utf8')
     ) as { installation?: { assets?: string[] } };
     expect(profile.installation?.assets).toContain('validation/windows/live-page.ts');
+    expect(profile.installation?.assets).toContain('validation/windows/install-preparation.ts');
     expect(profile.installation?.assets).toContain('validation/windows/userscript-install.ts');
     expect(profile.installation?.assets).toContain('dist/xcom-enhanced-gallery.user.js');
   });

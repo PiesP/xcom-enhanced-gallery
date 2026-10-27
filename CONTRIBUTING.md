@@ -134,7 +134,7 @@ change align; tests establish that preserved behavior still works.
 
 ### Windows bundle and retained languages
 
-The Windows profile uses `profile.ts`; `validation/windows/profile.json` declares installation `install-profile.ts`, `live-page.ts`, and built extension/userscript assets. The controller ships portable Windows Node and `playwright-core`, then imports the declared entries with `run({ browser, root, output })`. The pinned Node runtime directly strips erasable TypeScript in imported helpers and fixtures; no project transpilation/loader or duplicate generated source is declared.
+The Windows profile uses `profile.ts`; `validation/windows/profile.json` declares installation `install-profile.ts`, shared `install-preparation.ts`, `live-page.ts`, and built extension/userscript assets. The extension orchestrator and userscript runner import installation preparation from the shared module. The controller ships portable Windows Node and `playwright-core`, then imports the declared entries with `run({ browser, root, output })`. The pinned Node runtime directly strips erasable TypeScript in imported helpers and fixtures; no project transpilation/loader or duplicate generated source is declared.
 
 The Windows profile entries, installation flows, and scenario modules are maintained directly as TypeScript under [issue #329](https://github.com/PiesP/xcom-enhanced-gallery/issues/329). `validation/windows/README.md` describes bundle inputs and targeted native Node syntax checks; the Node boundary suite checks maintained Windows modules, followed by the Windows-focused unit tests. A syntax check is not VM acceptance.
 
