@@ -25,6 +25,7 @@ function setMode(mode: VideoClickMode): void {
 
 function click(target: Element): {
   event: MouseEvent;
+  productDefaultPrevented: boolean;
   originalTarget: EventTarget | null;
   onMediaClick: ReturnType<typeof vi.fn>;
   nativeClick: ReturnType<typeof vi.fn>;
@@ -39,11 +40,24 @@ function click(target: Element): {
   };
   document.body.addEventListener('click', capture, true);
   target.addEventListener('click', nativeClick);
+  let productDefaultPrevented: boolean | undefined;
+  const preventFixtureNavigation = (event: MouseEvent): void => {
+    productDefaultPrevented = event.defaultPrevented;
+    if (target.closest('a[href]')) event.preventDefault();
+  };
+  document.addEventListener('click', preventFixtureNavigation);
   try {
     const event = new MouseEvent('click', { bubbles: true, cancelable: true, composed: true });
     target.dispatchEvent(event);
-    return { event, originalTarget, onMediaClick, nativeClick };
+    return {
+      event,
+      productDefaultPrevented: productDefaultPrevented ?? event.defaultPrevented,
+      originalTarget,
+      onMediaClick,
+      nativeClick,
+    };
   } finally {
+    document.removeEventListener('click', preventFixtureNavigation);
     document.body.removeEventListener('click', capture, true);
     target.removeEventListener('click', nativeClick);
   }
@@ -78,7 +92,7 @@ describe('unmarked video and icon click routing', () => {
           Object.defineProperty(video, 'paused', { get: () => state !== 'playing' });
           Object.defineProperty(video, 'ended', { get: () => state === 'ended' });
           const routed = click(video);
-          expect(routed.event.defaultPrevented).toBe(mode !== 'block-all');
+          expect(routed.productDefaultPrevented).toBe(mode !== 'block-all');
           expect(routed.onMediaClick).toHaveBeenCalledTimes(mode === 'block-all' ? 0 : 1);
           expect(routed.nativeClick).toHaveBeenCalledTimes(mode === 'block-all' ? 1 : 0);
         }
@@ -91,7 +105,7 @@ describe('unmarked video and icon click routing', () => {
     document.body.innerHTML =
       '<article><a href="/author/status/333"><time>Post</time></a><video id="default-video" src="blob:https://x.com/playing"></video></article>';
     const routed = click(requireElement('#default-video'));
-    expect(routed.event.defaultPrevented).toBe(true);
+    expect(routed.productDefaultPrevented).toBe(true);
     expect(routed.onMediaClick).toHaveBeenCalledOnce();
   });
 
@@ -127,7 +141,7 @@ describe('unmarked video and icon click routing', () => {
     expect(isVideoClickAllowed(video, undefined, 'block-all')).toBe(false);
     expect(isProcessableMedia(video)).toBe(false);
     const routedVideo = click(video);
-    expect(routedVideo.event.defaultPrevented).toBe(false);
+    expect(routedVideo.productDefaultPrevented).toBe(false);
     expect(routedVideo.nativeClick).toHaveBeenCalledOnce();
     expect(routedVideo.onMediaClick).not.toHaveBeenCalled();
     expect(isProcessableMedia(photo)).toBe(true);
@@ -146,7 +160,7 @@ describe('unmarked video and icon click routing', () => {
     </div></article>`;
     for (const selector of ['#marked', '#ordinary-path']) {
       const routed = click(requireElement(selector));
-      expect(routed.event.defaultPrevented).toBe(false);
+      expect(routed.productDefaultPrevented).toBe(false);
       expect(routed.onMediaClick).not.toHaveBeenCalled();
       expect(routed.nativeClick).toHaveBeenCalledOnce();
     }
@@ -164,7 +178,7 @@ describe('unmarked video and icon click routing', () => {
       }
       expect(isProcessableMedia(video)).toBe(true);
       const routed = click(video);
-      expect(routed.event.defaultPrevented).toBe(true);
+      expect(routed.productDefaultPrevented).toBe(true);
       expect(routed.onMediaClick).toHaveBeenCalledExactlyOnceWith(video, routed.event);
       expect(routed.nativeClick).not.toHaveBeenCalled();
     }
@@ -184,7 +198,7 @@ describe('unmarked video and icon click routing', () => {
         const target = requireElement(selector);
         const routed = click(target);
         expect(routed.originalTarget).toBe(target);
-        expect(routed.event.defaultPrevented).toBe(mode === 'allow-all');
+        expect(routed.productDefaultPrevented).toBe(mode === 'allow-all');
         expect(routed.onMediaClick).toHaveBeenCalledTimes(mode === 'allow-all' ? 1 : 0);
         if (mode === 'allow-all') {
           expect(routed.onMediaClick).toHaveBeenCalledWith(

@@ -1,5 +1,4 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import errorBoundaryCss from '../../../../../src/shared/components/ui/ErrorBoundary/ErrorBoundary.module.css?raw';
 import { notifySafely } from '@platform/index';
 import {
   GalleryContainer,
@@ -243,10 +242,7 @@ describe('gallery host-state recovery', () => {
   });
 
   it('keeps recovery color scheme and long localized actions explicit after all reset', () => {
-    const css = readFileSync(
-      resolve(process.cwd(), 'src/shared/components/ui/ErrorBoundary/ErrorBoundary.module.css'),
-      'utf8'
-    );
+    const css = errorBoundaryCss;
     expect(css).toMatch(/\.recoveryRoot\[data-theme=(['"])light\1\]\s*\{\s*color-scheme: light;/u);
     expect(css).toMatch(/\.recoveryRoot\[data-theme=(['"])dark\1\]\s*\{\s*color-scheme: dark;/u);
     expect(css).toMatch(

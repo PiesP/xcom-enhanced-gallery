@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 PiesP
 
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import preplayerHtml from '../../../../e2e/fixtures/installed-public-preplayer-page.html?raw';
 import type { TwitterMedia, TwitterTweet } from '@shared/services/media/types';
 import { captureClickedMediaEvidence } from '@shared/services/media-extraction/determine-clicked-index';
 import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
@@ -130,10 +129,7 @@ describe('nested quote request context with separate header and credit links', (
   });
 
   it('runs the exact installed preplayer HTML through production context and media extraction', async () => {
-    document.body.innerHTML = readFileSync(
-      resolve(process.cwd(), 'test/e2e/fixtures/installed-public-preplayer-page.html'),
-      'utf8'
-    );
+    document.body.innerHTML = preplayerHtml;
     const button = document.querySelector<HTMLButtonElement>('[data-preplayer-media] button')!;
     const outer = '8555555555555555555';
     const owner = '9555555555555555555';

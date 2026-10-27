@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import deepOverlayHtml from '../../../../fixtures/authenticated-x-layouts/video-deep-overlay.html?raw';
 import { captureClickedMediaEvidence } from '@shared/services/media-extraction/determine-clicked-index';
 import { DOMFallbackExtractor } from '@shared/services/media-extraction/extractors/dom-fallback-extractor';
 import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
@@ -96,10 +95,7 @@ describe('scoped DOM recovery', () => {
   });
 
   it('resolves the uniquely owned video from the actual deep X overlay click', () => {
-    document.body.innerHTML = readFileSync(
-      resolve('test/fixtures/authenticated-x-layouts/video-deep-overlay.html'),
-      'utf8'
-    );
+    document.body.innerHTML = deepOverlayHtml;
     const target = document.querySelector<HTMLElement>('[data-capture-event-target="true"]');
     const player = target?.closest('[data-testid="videoPlayer"]');
     const video = player?.querySelector('video');
@@ -114,10 +110,7 @@ describe('scoped DOM recovery', () => {
   });
 
   it('does not choose between two videos in the captured click player', () => {
-    document.body.innerHTML = readFileSync(
-      resolve('test/fixtures/authenticated-x-layouts/video-deep-overlay.html'),
-      'utf8'
-    );
+    document.body.innerHTML = deepOverlayHtml;
     const target = document.querySelector<HTMLElement>('[data-capture-event-target="true"]')!;
     const player = target.closest<HTMLElement>('[data-testid="videoPlayer"]')!;
     const second = document.createElement('video');
@@ -128,10 +121,7 @@ describe('scoped DOM recovery', () => {
   });
 
   it('keeps adjacent and nested players outside the clicked player ownership', () => {
-    document.body.innerHTML = readFileSync(
-      resolve('test/fixtures/authenticated-x-layouts/video-deep-overlay.html'),
-      'utf8'
-    );
+    document.body.innerHTML = deepOverlayHtml;
     const target = document.querySelector<HTMLElement>('[data-capture-event-target="true"]')!;
     const player = target.closest<HTMLElement>('[data-testid="videoPlayer"]')!;
     const ownedVideo = player.querySelector('video')!;
@@ -155,10 +145,7 @@ describe('scoped DOM recovery', () => {
   });
 
   it('keeps the explicit player video lookup within the descendant depth bound', () => {
-    document.body.innerHTML = readFileSync(
-      resolve('test/fixtures/authenticated-x-layouts/video-deep-overlay.html'),
-      'utf8'
-    );
+    document.body.innerHTML = deepOverlayHtml;
     const target = document.querySelector<HTMLElement>('[data-capture-event-target="true"]')!;
     expect(findMediaElementInDOM(target, { maxAncestorHops: 0 })).toBeNull();
     expect(findMediaElementInDOM(target, { maxAncestorHops: 7 })).toBe(

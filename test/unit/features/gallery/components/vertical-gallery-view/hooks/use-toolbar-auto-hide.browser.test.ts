@@ -5,7 +5,6 @@ const { getTypedSettingOr, setTimer } = vi.hoisted(() => ({
   setTimer: vi.fn(),
 }));
 
-vi.mock('solid-js', async () => vi.importActual('solid-js/dist/solid.js'));
 vi.mock('@shared/container/settings-registry', () => ({ getTypedSettingOr }));
 vi.mock('@shared/hooks/use-timer', () => ({
   createTimeout: () => ({ set: setTimer }),

@@ -27,7 +27,7 @@ import { LanguageService } from '@shared/services/language-service';
 function setNavigatorLanguage(lang: string): void {
   // Stub both navigator.language AND navigator.languages
   // detectLanguage() checks navigator.languages[] first;
-  // jsdom provides navigator.languages as empty array by default
+  // Keep both browser language properties aligned for this controlled locale.
   Object.defineProperty(navigator, 'language', {
     value: lang,
     configurable: true,

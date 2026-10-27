@@ -1,7 +1,5 @@
 import { describe, expect, it, vi } from 'vite-plus/test';
 
-vi.mock('solid-js', async () => vi.importActual('solid-js/dist/solid.js'));
-
 vi.mock('@shared/dom/viewport', () => ({
   observeViewportCssVars: vi.fn(() => vi.fn()),
 }));

@@ -1,7 +1,11 @@
 import { resolve } from 'node:path';
 import { resolveConfig } from 'vite';
-import { describe, expect, it } from 'vite-plus/test';
+import { describe, expect, it, vi } from 'vite-plus/test';
 import vitestConfig from '../../../vitest.config.ts';
+
+vi.mock('vite-plus/test/browser-playwright', () => ({
+  playwright: () => ({ name: 'playwright' }),
+}));
 
 const root = resolve(import.meta.dirname, '../../..');
 

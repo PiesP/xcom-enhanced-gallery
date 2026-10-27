@@ -825,20 +825,14 @@ describe('twitter-api-client request boundary', () => {
   });
 
   it('uses the current browser location when no location override is provided', async () => {
-    vi.stubGlobal('location', {
-      hostname: 'mobile.twitter.com',
-      href: 'https://mobile.twitter.com/example/status/123',
-      origin: 'https://mobile.twitter.com',
-    });
-
     await getTweetMedias('123');
 
-    expect(new URL(httpGet.mock.calls[0]?.[0] as string).hostname).toBe('twitter.com');
+    expect(new URL(httpGet.mock.calls[0]?.[0] as string).hostname).toBe('x.com');
     expect(httpGet.mock.calls[0]?.[1]).toEqual(
       expect.objectContaining({
         headers: expect.objectContaining({
-          origin: 'https://mobile.twitter.com',
-          referer: 'https://mobile.twitter.com/example/status/123',
+          origin: window.location.origin,
+          referer: window.location.href,
         }),
       })
     );

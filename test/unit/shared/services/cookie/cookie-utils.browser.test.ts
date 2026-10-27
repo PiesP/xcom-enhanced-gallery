@@ -51,19 +51,14 @@ describe('cookie-utils (pure functions)', () => {
     it('should return raw value when decodeURIComponent fails', () => {
       // Set a cookie with an invalid percent-encoding
       document.cookie = 'bad=%E0%A4';
-      const result = getCookieValueSync('bad');
-      // The value is already set as literal text, so decodeURIComponent may or may not throw
-      // Either way we should get a string back
-      expect(typeof result).toBe('string');
+      expect(getCookieValueSync('bad')).toBe('%E0%A4');
     });
 
     it('should handle cookie with empty value', () => {
-      // Set cookie with empty value directly on document.cookie
-      // jsdom may strip trailing = so we verify the function handles it gracefully
+      // A real browser stores an empty cookie value, which this API treats as absent.
       document.cookie = 'empty=';
-      const result = getCookieValueSync('empty');
-      // Both '' and undefined are acceptable outcomes depending on jsdom behavior
-      expect(typeof result === 'string' || result === undefined).toBe(true);
+      expect(document.cookie).toContain('empty=');
+      expect(getCookieValueSync('empty')).toBeUndefined();
     });
 
     it('should handle cookie name with special regex characters', () => {

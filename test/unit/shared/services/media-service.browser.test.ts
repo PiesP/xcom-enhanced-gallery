@@ -17,7 +17,8 @@ vi.mock('@shared/services/media-extraction/media-extraction-service', () => ({
   },
 }));
 
-vi.mock('@shared/services/http-request-service', () => ({
+vi.mock('@shared/services/http-request-service', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@shared/services/http-request-service')>()),
   getHttpRequestService: () => ({ getOwnedBinary: mocks.httpGetOwnedBinary }),
 }));
 

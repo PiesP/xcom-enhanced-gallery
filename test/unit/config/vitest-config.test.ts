@@ -1,7 +1,11 @@
 import { globSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { loadConfigFromFile } from 'vite';
-import { beforeAll, describe, expect, it } from 'vite-plus/test';
+import { describe, expect, it, vi } from 'vite-plus/test';
+import { createVitestConfig } from '../../../vitest.config.ts';
+
+vi.mock('vite-plus/test/browser-playwright', () => ({
+  playwright: () => ({ name: 'playwright' }),
+}));
 
 interface CoveragePolicy {
   readonly include?: string[];
@@ -9,7 +13,7 @@ interface CoveragePolicy {
   readonly thresholds?: Partial<Record<'statements' | 'branches' | 'functions' | 'lines', number>>;
 }
 
-let coverage: CoveragePolicy | undefined;
+const coverage = createVitestConfig().test?.coverage as CoveragePolicy | undefined;
 const root = resolve(import.meta.dirname, '../../..');
 const unitCoverageExemptions = [
   'src/**/*.d.ts',
@@ -56,15 +60,6 @@ function coversCompleteRuntimeSet(policy: CoveragePolicy): boolean {
   ].sort();
   return measuredSourceFiles(policy).join('\n') === expected.join('\n');
 }
-
-beforeAll(async () => {
-  const loaded = await loadConfigFromFile(
-    { command: 'serve', mode: 'test' },
-    resolve(root, 'vitest.config.ts')
-  );
-  coverage = (loaded?.config as { test?: { coverage?: CoveragePolicy } } | undefined)?.test
-    ?.coverage;
-});
 
 describe('Vitest coverage gate', () => {
   it('measures all runtime source files instead of only imported modules', () => {

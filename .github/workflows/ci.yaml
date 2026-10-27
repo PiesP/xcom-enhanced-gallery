@@ -175,6 +175,10 @@ jobs:
         if: ${{ needs.changes.result == 'success' && needs.changes.outputs.unit != 'false' && needs.changes.outputs.quality == 'false' }}
         run: vp run test:policy
 
+      - name: 🎭 Install Chromium for Browser Mode
+        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.unit != 'false' }}
+        run: vp exec playwright install --with-deps chromium
+
       - name: 🧪 Run unit tests and coverage thresholds
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.unit != 'false' }}
         run: vp run test:cov
