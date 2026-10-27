@@ -35,7 +35,7 @@ for another, and none is a required CI lane.
    X/Twitter status URLs after the installed deterministic fixture. It remains
    observational and can finish as `unverified`.
 
-The six native regression files under `validation/windows/` run with
+The native regression suite under `validation/windows/` runs with
 `pnpm test:e2e:native` after the project dependencies and Playwright Chromium
 are installed. This command executes Node test cases, including Chromium
 tests, and is included in `test:e2e:all`, CI E2E, and `verify:full`. It checks
@@ -855,7 +855,8 @@ on owned-profile observations. Earlier receipts lack the full fingerprints and
 cannot be upgraded retroactively; a new source-bound run is required.
 Review the retained screenshots separately before making a live-page claim.
 
-Run `node --experimental-strip-types --check validation/windows/install-profile.ts` for the installed
+Run `node --experimental-strip-types --check validation/windows/install-preparation.ts` and
+`node --experimental-strip-types --check validation/windows/install-profile.ts` for the installed
 profile syntax check.
 
 For a focused installed-extension opening-feedback comparison, the ignored

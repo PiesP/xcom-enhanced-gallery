@@ -29,7 +29,7 @@ import {
   enableDeveloperMode,
   installFixtureRoutes,
   verifyDownloadDirectory,
-} from './install-profile.ts';
+} from './install-preparation.ts';
 import {
   captureGalleryVolumeFailure,
   captureUpgradeSettingsFailure,
