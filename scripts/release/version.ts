@@ -34,7 +34,7 @@ export function main(): void {
     }
 
     if (failed) {
-      throw new Error('Version mismatch detected. Run: pnpm sync:versions');
+      throw new Error('Version mismatch detected. Run: vp run sync:versions');
     }
     console.log(`\n✓ All versions match: ${expectedVersion}`);
   }

@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vite-plus/test';
+import { RUN_TASKS } from '../../../vite.config.ts';
 
 const workflow = readFileSync(
   resolve(import.meta.dirname, '../../../.github/workflows/update-browser-core.yaml'),
@@ -61,7 +62,8 @@ describe('browser-core workflow composition', () => {
     expect(workflow).toContain('PREFLIGHT: ${{ inputs.preflight }}');
     expect(workflow).not.toContain('AUTO_MERGE_TOKEN');
     expect(workflow).not.toContain('gh pr merge');
-    expect(manifest.scripts['test:ci']).toContain('pnpm -s test:policy');
+    expect(manifest.scripts['test:ci']).toBe('vp run test:ci:steps');
+    expect(RUN_TASKS['test:ci:steps'].command).toContain('vp run test:policy');
     expect(manifest.scripts['test:policy']).toBe(
       'vp test run --config tooling/vitest.node.config.ts --project policy-node'
     );

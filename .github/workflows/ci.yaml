@@ -115,9 +115,9 @@ jobs:
           COVERAGE_OWNS_BOUNDARY: ${{ needs.changes.result != 'success' || needs.changes.outputs.unit != 'false' }}
         run: |
           if [[ "$COVERAGE_OWNS_BOUNDARY" == 'true' ]]; then
-            pnpm quality:coverage-owned
+            vp run quality:coverage-owned
           else
-            pnpm quality
+            vp run quality
           fi
 
   unit:
@@ -173,11 +173,11 @@ jobs:
       # Quality owns policy tests when selected; unit-only changes need them here.
       - name: 🧪 Run focused policy suite for unit-only changes
         if: ${{ needs.changes.result == 'success' && needs.changes.outputs.unit != 'false' && needs.changes.outputs.quality == 'false' }}
-        run: pnpm test:policy
+        run: vp run test:policy
 
       - name: 🧪 Run unit tests and coverage thresholds
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.unit != 'false' }}
-        run: pnpm test:cov
+        run: vp run test:cov
 
   e2e:
     name: pr-gate/e2e
@@ -227,7 +227,7 @@ jobs:
 
       - name: 🏗️ Build browser bundles
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.e2e != 'false' }}
-        run: pnpm build:e2e
+        run: vp run build:e2e
 
       - name: 🎭 Run userscript and extension contract E2E tests
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.e2e != 'false' }}
@@ -266,8 +266,8 @@ jobs:
               if updated != original:
                   mirrors.write_text(updated)
           PY
-          pnpm exec playwright install --with-deps chromium firefox webkit
-          pnpm test:e2e:all
+          vp exec playwright install --with-deps chromium firefox webkit
+          vp run test:e2e:all
 
       - name: 📤 Upload Playwright diagnostics
         if: ${{ steps.node_trust.outcome == 'success' && (failure() && (needs.changes.result != 'success' || needs.changes.outputs.e2e != 'false')) }}
@@ -311,7 +311,7 @@ jobs:
 
       - name: 🏗️ Build all targets
         if: ${{ (needs.changes.result != 'success' || needs.changes.outputs.build != 'false') && needs.quality.result == 'success' }}
-        run: pnpm build:all:ci
+        run: vp run build:all:ci
 
       - name: 📊 Upload userscript artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

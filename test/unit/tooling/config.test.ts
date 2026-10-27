@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vite-plus/test';
 import nodeTestConfig from '../../../tooling/vitest.node.config.ts';
+import { RUN_TASKS } from '../../../vite.config.ts';
 import { createVitestConfig } from '../../../vitest.config.ts';
 
 const root = resolve(import.meta.dirname, '../../..');
@@ -92,7 +93,7 @@ describe('tooling configuration', () => {
     expect(packageJson.devDependencies.knip).toBeUndefined();
     expect(packageJson.scripts.circular).toBeUndefined();
     expect(packageJson.scripts.knip).toBeUndefined();
-    expect(packageJson.scripts.quality).toContain('pnpm -s lint');
+    expect(RUN_TASKS['quality:steps'].command).toContain('vp run lint');
   });
 
   it('scans the exact default-branch push with OSV and Semgrep', () => {
@@ -114,15 +115,30 @@ describe('tooling configuration', () => {
     expect(securityWorkflow).not.toContain('report-pr-gate-statuses:');
   });
 
-  it('lets pnpm run extension prebuild hooks exactly once', () => {
-    expect(packageJson.scripts['build:extension']).not.toContain('prebuild:extension');
-    expect(packageJson.scripts['build:extension:firefox']).not.toContain(
-      'prebuild:extension:firefox'
-    );
-    expect(packageJson.scripts['build:all']).toContain('build:extension:ci');
-    expect(packageJson.scripts['quality:fix']).toBe(
-      'pnpm -s fmt:fix && pnpm -s lint:fix && pnpm -s quality'
-    );
+  it('runs ordinary prebuild checks once and keeps CI builds gate-free', () => {
+    expect(packageJson.scripts.prebuild).toBe('vp run check:prebuild');
+    expect(packageJson.scripts['prebuild:extension']).toBeUndefined();
+    expect(packageJson.scripts['prebuild:extension:firefox']).toBeUndefined();
+    expect(packageJson.scripts['prebuild:all']).toBeUndefined();
+    expect(RUN_TASKS['check:prebuild'].command).toEqual([
+      'vp run check:versions',
+      'vp run quality',
+    ]);
+    expect(RUN_TASKS['build:extension:steps'].command).toEqual([
+      'vp run check:prebuild',
+      'vp run build:extension:ci',
+    ]);
+    expect(RUN_TASKS['build:extension:firefox:steps'].command).toEqual([
+      'vp run check:prebuild',
+      'vp run build:extension:firefox:ci',
+    ]);
+    expect(RUN_TASKS['build:all:steps'].command).toEqual([
+      'vp run check:prebuild',
+      'vp run build:ci',
+      'vp run build:extension:ci',
+      'vp run build:extension:firefox:ci',
+    ]);
+    expect(packageJson.scripts['quality:fix']).toBe('vp run quality:fix:steps');
   });
 
   it('routes formatting, lint, tests and coverage through the maintained toolchain', () => {
@@ -132,15 +148,27 @@ describe('tooling configuration', () => {
     expect(scripts.lint).toBe('vp lint . --deny-warnings');
     expect(scripts['lint:fix']).toBe('vp lint . --fix --deny-warnings');
     expect(packageJson.devDependencies['@biomejs/biome']).toBeUndefined();
-    expect(scripts.quality).toBe(
-      'pnpm -s fmt && pnpm -s lint && pnpm -s check && pnpm -s check:e2e && pnpm -s test:ci'
-    );
-    expect(scripts['quality:coverage-owned']).toBe(
-      (scripts.quality ?? '').replace('pnpm -s test:ci', 'pnpm -s test:policy')
-    );
-    expect(scripts['test:ci']).toBe(
-      'pnpm -s test:policy && vp test run test/unit/tooling/node-ambient-types.test.ts'
-    );
+    expect(scripts.quality).toBe('vp run quality:steps');
+    expect(RUN_TASKS['quality:steps'].command).toEqual([
+      'vp run fmt',
+      'vp run lint',
+      'vp run check',
+      'vp run check:e2e',
+      'vp run test:ci',
+    ]);
+    expect(scripts['quality:coverage-owned']).toBe('vp run quality:coverage-owned:steps');
+    expect(RUN_TASKS['quality:coverage-owned:steps'].command).toEqual([
+      'vp run fmt',
+      'vp run lint',
+      'vp run check',
+      'vp run check:e2e',
+      'vp run test:policy',
+    ]);
+    expect(scripts['test:ci']).toBe('vp run test:ci:steps');
+    expect(RUN_TASKS['test:ci:steps'].command).toEqual([
+      'vp run test:policy',
+      'vp test run test/unit/tooling/node-ambient-types.test.ts',
+    ]);
     expect(scripts.test).toBe('vp test run');
     expect(scripts['test:policy']).toBe(
       'vp test run --config tooling/vitest.node.config.ts --project policy-node'
@@ -155,32 +183,41 @@ describe('tooling configuration', () => {
     expect(scripts['test:e2e:native']).toBe(
       'vp test run --config tooling/vitest.node.config.ts --project windows-native'
     );
-    expect(jobBlock(ciWorkflow, 'quality')).toContain('pnpm quality:coverage-owned');
-    expect(jobBlock(ciWorkflow, 'unit')).toContain('run: pnpm test:cov');
+    expect(jobBlock(ciWorkflow, 'quality')).toContain('vp run quality:coverage-owned');
+    expect(jobBlock(ciWorkflow, 'unit')).toContain('run: vp run test:cov');
   });
 
   it('centralizes the browser E2E build and test command contracts', () => {
-    expect(packageJson.scripts['build:e2e']).toBe(
-      'pnpm clean && pnpm build:ci && pnpm build:dev && pnpm build:extension:ci && pnpm build:extension:firefox:ci'
-    );
-    expect(packageJson.scripts['test:e2e:all']).toBe(
-      'pnpm -s test:e2e && pnpm -s test:e2e:extension && pnpm -s test:e2e:extension:firefox && pnpm -s test:e2e:native'
-    );
-    expect(packageJson.scripts['verify:full']).toContain('pnpm -s test:e2e:all');
+    expect(packageJson.scripts['build:e2e']).toBe('vp run build:e2e:steps');
+    expect(RUN_TASKS['build:e2e:steps'].command).toEqual([
+      'vp run clean',
+      'vp run build:ci',
+      'vp run build:dev',
+      'vp run build:extension:ci',
+      'vp run build:extension:firefox:ci',
+    ]);
+    expect(packageJson.scripts['test:e2e:all']).toBe('vp run test:e2e:all:steps');
+    expect(RUN_TASKS['test:e2e:all:steps'].command).toEqual([
+      'vp run test:e2e',
+      'vp run test:e2e:extension',
+      'vp run test:e2e:extension:firefox',
+      'vp run test:e2e:native',
+    ]);
+    expect(RUN_TASKS['verify:full:steps'].command).toContain('vp run test:e2e:all');
 
     for (const workflow of [ciWorkflow, releaseWorkflow]) {
-      expect(workflow).toContain('run: pnpm build:e2e');
-      expect(workflow).toContain('pnpm test:e2e:all');
-      expect(workflow).not.toContain('pnpm test:e2e:extension\n');
+      expect(workflow).toContain('run: vp run build:e2e');
+      expect(workflow).toContain('vp run test:e2e:all');
+      expect(workflow).not.toContain('vp run test:e2e:extension\n');
     }
   });
 
   it('builds and smoke-tests both extension targets in CI', () => {
-    expect(packageJson.scripts['build:e2e']).toContain('pnpm build:extension:ci');
-    expect(packageJson.scripts['build:e2e']).toContain('pnpm build:extension:firefox:ci');
-    expect(packageJson.scripts['test:e2e:all']).toContain('pnpm -s test:e2e:extension');
-    expect(ciWorkflow).toContain('pnpm build:e2e');
-    expect(ciWorkflow).toContain('pnpm test:e2e:all');
+    expect(RUN_TASKS['build:e2e:steps'].command).toContain('vp run build:extension:ci');
+    expect(RUN_TASKS['build:e2e:steps'].command).toContain('vp run build:extension:firefox:ci');
+    expect(RUN_TASKS['test:e2e:all:steps'].command).toContain('vp run test:e2e:extension');
+    expect(ciWorkflow).toContain('vp run build:e2e');
+    expect(ciWorkflow).toContain('vp run test:e2e:all');
     expect(ciWorkflow).toContain('playwright install --with-deps chromium firefox webkit');
   });
 
@@ -232,8 +269,8 @@ describe('tooling configuration', () => {
 
   it('keeps protected-release browser coverage aligned with CI', () => {
     expect(releaseWorkflow).toContain('playwright install --with-deps chromium firefox webkit');
-    expect(releaseWorkflow).toContain('pnpm test:e2e:all');
-    expect(packageJson.scripts['test:e2e:all']).toContain('pnpm -s test:e2e:extension:firefox');
+    expect(releaseWorkflow).toContain('vp run test:e2e:all');
+    expect(RUN_TASKS['test:e2e:all:steps'].command).toContain('vp run test:e2e:extension:firefox');
     expect(releaseWorkflow).not.toContain('path: ~/.cache/selenium');
   });
 
@@ -279,9 +316,9 @@ describe('tooling configuration', () => {
       'name: 📦 Setup project',
       'name: 🎭 Read installed Playwright version',
       'name: 🎭 Cache Playwright browsers',
-      'run: pnpm build:e2e',
-      'pnpm exec playwright install --with-deps chromium firefox webkit',
-      'pnpm test:e2e:all',
+      'run: vp run build:e2e',
+      'vp exec playwright install --with-deps chromium firefox webkit',
+      'vp run test:e2e:all',
     ];
     const positions = commands.map((command) => e2e.indexOf(command));
     expect(positions.every((position) => position >= 0)).toBe(true);

@@ -41,7 +41,7 @@ export interface BuildFootprint {
   pnpmVersion: string;
   viteVersion: string;
   vitePlusVersion: string;
-  buildCommand: 'pnpm build:all:ci';
+  buildCommand: 'vp run build:all:ci';
   mode: 'production';
   targets: ['userscript', 'chrome', 'firefox'];
   compressionComparison: 'gzip level 9 per JavaScript file; not observed network transfer';
@@ -220,7 +220,7 @@ export function captureBuildInputs(): BuildInputs {
     coreSha,
     lockSha256: sha256(readFileSync(join(root, 'pnpm-lock.yaml'))),
     nodeVersion: process.versions.node,
-    pnpmVersion: command('pnpm', ['--version']),
+    pnpmVersion: command('vp', ['exec', 'pnpm', '--version']),
     viteVersion: version('vite'),
     vitePlusVersion: version('vite-plus'),
   };
@@ -277,7 +277,7 @@ function collectBuildFootprint(runId: string): BuildFootprint {
   return {
     schemaVersion: 1,
     ...inputs,
-    buildCommand: 'pnpm build:all:ci',
+    buildCommand: 'vp run build:all:ci',
     mode: 'production',
     targets: ['userscript', 'chrome', 'firefox'],
     compressionComparison: 'gzip level 9 per JavaScript file; not observed network transfer',
@@ -330,7 +330,7 @@ export function verifiedBuildFootprint(): BuildFootprint & { producedAt: string;
     serialized = readFileSync(reportFile, 'utf8');
   } catch {
     throw new Error(
-      'Production footprint is missing; run pnpm build:all:ci before release:prepare'
+      'Production footprint is missing; run vp run build:all:ci before release:prepare'
     );
   }
   const saved = JSON.parse(serialized) as BuildFootprint & {

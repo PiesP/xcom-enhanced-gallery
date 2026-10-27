@@ -20,7 +20,7 @@ export function buildAll(): void {
     if (script === 'build:extension:ci') {
       rmSync(resolve(root, 'dist-extension'), { recursive: true, force: true });
     }
-    const result = spawnSync('pnpm', ['-s', script], {
+    const result = spawnSync('vp', ['run', script], {
       cwd: root,
       env: { ...process.env, XCOM_FOOTPRINT_RUN_ID: runId },
       stdio: 'inherit',

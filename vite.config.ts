@@ -4,7 +4,7 @@
 /**
  * Userscript build: Solid bundling, inline CSS, and userscript metadata.
  *
- * Ordinary `pnpm build` runs version/quality checks through its prebuild hook.
+ * Ordinary `vp run build` runs version/quality checks through its prebuild hook.
  * `build:ci`, `build:dev`, and `build:fast` invoke the bundler without that gate.
  * CONTRIBUTING.md owns the current command and validation contracts.
  */
@@ -43,6 +43,93 @@ const BUILD_MODE_CONFIGS: Record<'development' | 'production', BuildModeConfig> 
     cssCompress: true,
     cssClassNamePattern: 'xg-[hash:base64:4]',
     sourceMap: false as const,
+  },
+};
+
+// Public package scripts are stable entrypoints; Vite Task owns their ordered steps.
+// Every run must execute afresh because builds, receipts, and browser tests bind to this source.
+export const RUN_TASKS = {
+  'check:prebuild': { command: ['vp run check:versions', 'vp run quality'] },
+  'build:extension:ci:steps': {
+    command: [
+      'vp build --config vite.extension.config.ts',
+      'vp build --config vite.extension.cs.config.ts',
+      'node --experimental-strip-types scripts/check/extension-build.ts dist-extension',
+    ],
+  },
+  'build:extension:firefox:ci:steps': {
+    command: [
+      'vp build --config vite.extension.firefox.config.ts',
+      'vp build --config vite.extension.firefox.cs.config.ts',
+      'node --experimental-strip-types scripts/check/extension-build.ts dist-extension-firefox',
+    ],
+  },
+  'build:extension:steps': {
+    command: ['vp run check:prebuild', 'vp run build:extension:ci'],
+  },
+  'build:extension:firefox:steps': {
+    command: ['vp run check:prebuild', 'vp run build:extension:firefox:ci'],
+  },
+  'build:all:steps': {
+    command: [
+      'vp run check:prebuild',
+      'vp run build:ci',
+      'vp run build:extension:ci',
+      'vp run build:extension:firefox:ci',
+    ],
+  },
+  'build:e2e:steps': {
+    command: [
+      'vp run clean',
+      'vp run build:ci',
+      'vp run build:dev',
+      'vp run build:extension:ci',
+      'vp run build:extension:firefox:ci',
+    ],
+  },
+  'package:all:steps': { command: ['vp run build:all', 'vp run package:extension'] },
+  'check:steps': {
+    command: [
+      'vp run check:src',
+      'vp run check:tooling',
+      'vp run check:test',
+      'vp run check:scripts',
+    ],
+  },
+  'quality:steps': {
+    command: ['vp run fmt', 'vp run lint', 'vp run check', 'vp run check:e2e', 'vp run test:ci'],
+  },
+  'quality:coverage-owned:steps': {
+    command: [
+      'vp run fmt',
+      'vp run lint',
+      'vp run check',
+      'vp run check:e2e',
+      'vp run test:policy',
+    ],
+  },
+  'quality:fix:steps': {
+    command: ['vp run fmt:fix', 'vp run lint:fix', 'vp run quality'],
+  },
+  'verify:steps': { command: ['vp run quality', 'vp run build:all:ci'] },
+  'verify:full:steps': {
+    command: [
+      'vp run verify',
+      'vp run test:cov:after-policy',
+      'vp run build:dev',
+      'vp run test:e2e:all',
+    ],
+  },
+  'test:ci:steps': {
+    command: ['vp run test:policy', 'vp test run test/unit/tooling/node-ambient-types.test.ts'],
+  },
+  'test:e2e:all:steps': {
+    command: [
+      'vp run test:e2e',
+      'vp run test:e2e:extension',
+      'vp run test:e2e:extension:firefox',
+      'vp run test:e2e:native',
+    ],
   },
 };
 
@@ -86,6 +173,7 @@ export default defineConfig(({ mode }): UserConfig => {
       })
     ),
     {
+      run: { cache: false, tasks: RUN_TASKS },
       fmt: {
         useTabs: false,
         tabWidth: 2,

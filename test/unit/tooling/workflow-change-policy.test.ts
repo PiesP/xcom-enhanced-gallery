@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vite-plus/test';
 import { classifyChanges } from '../../../scripts/ci/classify-changes.ts';
+import { RUN_TASKS } from '../../../vite.config.ts';
 
 const root = resolve(import.meta.dirname, '../../..');
 const classifier = resolve(root, 'scripts/ci/classify-changes.ts');
@@ -106,10 +107,12 @@ function routeExpression(
 
 function commandBoundaryCount(command: string): number {
   return command.split(' && ').reduce((count, part) => {
-    const nested = part.match(/^pnpm (?:-s )?([\w:-]+)$/)?.[1];
+    const nested = part.match(/^vp run ([\w:-]+)$/)?.[1];
     if (nested) {
-      expect(scripts[nested], nested).toBeDefined();
-      return count + commandBoundaryCount(scripts[nested] ?? '');
+      const task = (RUN_TASKS as Record<string, { command: string[] }>)[nested];
+      const next = scripts[nested] ?? task?.command.join(' && ');
+      expect(next, nested).toBeDefined();
+      return count + commandBoundaryCount(next ?? '');
     }
     if (part.startsWith('vp test run')) {
       return (
@@ -137,9 +140,9 @@ function runSelectedQuality(route: {
   expect(script).toBeDefined();
   const directory = mkdtempSync(join(tmpdir(), 'xeg-boundary-route-'));
   const commandLog = join(directory, 'commands');
-  const fakePnpm = join(directory, 'pnpm');
-  writeFileSync(fakePnpm, '#!/usr/bin/env bash\nprintf "%s\\n" "$*" >> "$COMMAND_LOG"\n');
-  chmodSync(fakePnpm, 0o755);
+  const fakeVp = join(directory, 'vp');
+  writeFileSync(fakeVp, '#!/usr/bin/env bash\nprintf "%s\\n" "$*" >> "$COMMAND_LOG"\n');
+  chmodSync(fakeVp, 0o755);
   try {
     const result = spawnSync('bash', ['-e', '-c', script ?? ''], {
       cwd: root,
@@ -152,7 +155,7 @@ function runSelectedQuality(route: {
       },
     });
     expect(result.status, result.stderr).toBe(0);
-    return readFileSync(commandLog, 'utf8').trim();
+    return readFileSync(commandLog, 'utf8').trim().replace(/^run /, '');
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
@@ -164,7 +167,7 @@ function focusedPolicyCondition(): string {
   const start = unitJob.indexOf(marker);
   expect(start).toBeGreaterThanOrEqual(0);
   const step = unitJob.slice(start).split('\n      - name:')[0] ?? '';
-  expect(step).toContain('run: pnpm test:policy');
+  expect(step).toContain('run: vp run test:policy');
   const expression = step.match(/^\s*if:\s*\$\{\{\s*(.*?)\s*\}\}\s*$/m)?.[1];
   expect(expression).toBeDefined();
   return expression ?? '';
@@ -240,11 +243,11 @@ describe('workflow change policy', () => {
     expect(commandBoundaryCount(scripts['quality:coverage-owned'] ?? '')).toBe(0);
     expect(commandBoundaryCount(scripts['test:cov:after-policy'] ?? '')).toBe(0);
     expect(stepBlock(releaseWorkflow, 'quality', '✅ Run quality gate')).toContain(
-      'run: pnpm quality:coverage-owned'
+      'run: vp run quality:coverage-owned'
     );
     expect(
       stepBlock(releaseWorkflow, 'unit', '🧪 Run unit tests and coverage thresholds')
-    ).toContain('run: pnpm test:cov');
+    ).toContain('run: vp run test:cov');
     expect(jobBlock(releaseWorkflow, 'publish')).toContain(
       'needs: [provenance, quality, unit, e2e, build]'
     );
@@ -315,7 +318,7 @@ describe('workflow change policy', () => {
     expect(unitJob).toContain(
       "needs.changes.result != 'success' || needs.changes.outputs.unit != 'false'"
     );
-    expect(unitJob).toContain('run: pnpm test:cov');
+    expect(unitJob).toContain('run: vp run test:cov');
     expect(unitJob).toContain(
       "needs.changes.result == 'success' && needs.changes.outputs.unit == 'false'"
     );
