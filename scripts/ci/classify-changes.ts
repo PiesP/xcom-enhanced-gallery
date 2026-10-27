@@ -74,14 +74,15 @@ export function classifyChanges(
       select('quality', 'unit', 'e2e', 'build', 'codeql_javascript');
     } else if (
       path.startsWith('test/unit/') ||
-      ['test/setup.ts', 'vitest.config.ts', 'tsconfig.test.json'].includes(path)
+      path.startsWith('test/browser/') ||
+      ['test/setup.ts', 'test/tsconfig.json', 'vitest.config.ts'].includes(path)
     ) {
       known = true;
       select('unit', 'codeql_javascript');
     } else if (/^test\/e2e\/playwright.*\.config\.ts$/.test(path)) {
       known = true;
       select('unit', 'e2e', 'codeql_javascript');
-    } else if (path.startsWith('test/e2e/')) {
+    } else if (path.startsWith('test/e2e/') || path.startsWith('test/firefox/')) {
       known = true;
       select('e2e', 'codeql_javascript');
     } else if (path.startsWith('test/fixtures/')) {
@@ -100,7 +101,7 @@ export function classifyChanges(
 
     if (
       /^vite.*\.ts$/.test(path) ||
-      ['tsconfig.json', 'tsconfig.e2e.json', 'tsconfig.scripts.json'].includes(path)
+      ['tsconfig.json', 'tsconfig.base.json', 'tsconfig.node.json'].includes(path)
     ) {
       known = true;
       select('quality', 'unit', 'e2e', 'build', 'codeql_javascript');

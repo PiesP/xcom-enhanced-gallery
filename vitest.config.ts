@@ -33,7 +33,7 @@ export function createVitestConfig(excludeBoundaryProbe = false) {
             exclude: [
               'node_modules',
               'dist',
-              'test/unit/**/*.browser.test.{ts,tsx}',
+              'test/browser/**/*.browser.test.{ts,tsx}',
               ...repositoryProbeFiles,
             ],
             sequence: { groupOrder: 0 },
@@ -43,7 +43,7 @@ export function createVitestConfig(excludeBoundaryProbe = false) {
           extends: true,
           test: {
             name: 'browser',
-            include: ['test/unit/**/*.browser.test.{ts,tsx}'],
+            include: ['test/browser/**/*.browser.test.{ts,tsx}'],
             browser: {
               enabled: true,
               provider: playwright(),

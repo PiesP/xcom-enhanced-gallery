@@ -13,7 +13,7 @@ import { createContext, Script } from 'node:vm';
 import { By, Key, until } from 'selenium-webdriver';
 import * as firefox from 'selenium-webdriver/firefox.js';
 import { STATUS_TILE_DOM } from '../fixtures/issue-217-dom.ts';
-import { FIREFOX_EXTENSION_DIR, MOCK_GALLERY_HTML } from './fixtures/artifacts.ts';
+import { FIREFOX_EXTENSION_DIR, MOCK_GALLERY_HTML } from '../e2e/fixtures/artifacts.ts';
 
 const TEST_TIMEOUT_MS = 120_000;
 const WAIT_TIMEOUT_MS = 20_000;

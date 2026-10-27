@@ -26,7 +26,7 @@ export default defineConfig({
         test: {
           name: 'firefox-installed',
           environment: 'node',
-          include: ['test/e2e/firefox-extension-runtime.test.ts'],
+          include: ['test/firefox/firefox-extension-runtime.test.ts'],
           testTimeout: 120_000,
           hookTimeout: 120_000,
         },

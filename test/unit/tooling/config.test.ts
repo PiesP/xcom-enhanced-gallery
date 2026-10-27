@@ -56,6 +56,9 @@ describe('tooling configuration', () => {
     );
     expect(fullProbes?.test.fileParallelism).toBe(false);
     expect(afterProbes?.test.fileParallelism).toBe(false);
+    expect(fullProjects.find((project) => project.test.name === 'browser')?.test.include).toEqual([
+      'test/browser/**/*.browser.test.{ts,tsx}',
+    ]);
     expect(afterProjects.find((project) => project.test.name === 'node')).toEqual(
       fullProjects.find((project) => project.test.name === 'node')
     );
@@ -86,7 +89,7 @@ describe('tooling configuration', () => {
     ).toEqual(['scripts/ci/repository-authority.test.ts', 'scripts/release/verify-source.test.ts']);
     expect(
       nodeProjects.find((project) => project.test.name === 'firefox-installed')?.test.include
-    ).toEqual(['test/e2e/firefox-extension-runtime.test.ts']);
+    ).toEqual(['test/firefox/firefox-extension-runtime.test.ts']);
     expect(
       nodeProjects.find((project) => project.test.name === 'windows-native')?.test.include
     ).toEqual(['validation/windows/**/*.test.ts']);
@@ -94,9 +97,10 @@ describe('tooling configuration', () => {
   it('uses native TypeScript execution without redundant runner dependencies', () => {
     expect(packageJson.devDependencies.tsx).toBeUndefined();
     expect(packageJson.devDependencies.rimraf).toBeUndefined();
+    expect(packageJson.devDependencies.typescript).toBeUndefined();
 
     for (const script of Object.values(packageJson.scripts)) {
-      expect(script).not.toMatch(/\bnpx\b|pnpm exec tsx\b|\brimraf\b/);
+      expect(script).not.toMatch(/\bnpx\b|pnpm exec tsx\b|\brimraf\b|\btsc\b/);
     }
     expect(packageJson.scripts['check:versions']).toContain('node --experimental-strip-types');
   });
@@ -106,7 +110,7 @@ describe('tooling configuration', () => {
     expect(packageJson.devDependencies.knip).toBeUndefined();
     expect(packageJson.scripts.circular).toBeUndefined();
     expect(packageJson.scripts.knip).toBeUndefined();
-    expect(RUN_TASKS['quality:steps'].command).toContain('vp run lint');
+    expect(RUN_TASKS['quality:steps'].command).toContain('vp run check');
   });
 
   it('scans the exact default-branch push with OSV and Semgrep', () => {
@@ -162,19 +166,11 @@ describe('tooling configuration', () => {
     expect(scripts['lint:fix']).toBe('vp lint . --fix --deny-warnings');
     expect(packageJson.devDependencies['@biomejs/biome']).toBeUndefined();
     expect(scripts.quality).toBe('vp run quality:steps');
-    expect(RUN_TASKS['quality:steps'].command).toEqual([
-      'vp run fmt',
-      'vp run lint',
-      'vp run check',
-      'vp run check:e2e',
-      'vp run test:ci',
-    ]);
+    expect(scripts.check).toBe('vp check');
+    expect(RUN_TASKS['quality:steps'].command).toEqual(['vp run check', 'vp run test:ci']);
     expect(scripts['quality:coverage-owned']).toBe('vp run quality:coverage-owned:steps');
     expect(RUN_TASKS['quality:coverage-owned:steps'].command).toEqual([
-      'vp run fmt',
-      'vp run lint',
       'vp run check',
-      'vp run check:e2e',
       'vp run test:policy',
     ]);
     expect(scripts['test:ci']).toBe('vp run test:ci:steps');

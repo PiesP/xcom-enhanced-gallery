@@ -10,7 +10,7 @@ import {
   NESTED_OWNER,
   QUOTED_CASES,
   RAPID_CLICK_B,
-} from '../../test/e2e/fixtures/installed-quoted-video-api.ts';
+} from './fixtures/installed-quoted-video-api.ts';
 import { generateFixtureCertificate } from './userscript-loopback.ts';
 import { startHttpsLoopback } from './https-loopback-lifecycle.ts';
 

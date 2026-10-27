@@ -62,16 +62,16 @@ before job steps and tools with separate TLS stores have separate trust boundari
 
 | Public command or family | Purpose; owner and execution stage | Inputs, outputs, side effects; verification |
 | --- | --- | --- |
-| `vp install` (`preinstall`) | Before dependencies, Node built-ins in `scripts/check/bootstrap.ts` check the `packages/core` manifest. | Reads the submodule path; no writes by the check; missing core prints recovery steps and fails. `test/unit/tooling/command-adapters.test.ts`, `vp run check:scripts`; frozen install is a separate package-manager operation. |
+| `vp install` (`preinstall`) | Before dependencies, Node built-ins in `scripts/check/bootstrap.ts` check the `packages/core` manifest. | Reads the submodule path; no writes by the check; missing core prints recovery steps and fails. `test/unit/tooling/command-adapters.test.ts`, `vp run check`; frozen install is a separate package-manager operation. |
 | `vp run build`, `build:fast`, `build:dev`, `build:ci` | Vite userscript builds; `build:dev` selects development mode. Ordinary `build` has the `prebuild` quality/version gate (`check:prebuild` runs versions then quality); `:ci` is the explicit gate-free build step. | Reads `src`, Vite configs, core; writes `dist/`. Production writes the public `.user.js` and `.meta.js`; development writes the retained `.dev.user.js` without writing production metadata. Check `vp run verify` and the relevant userscript Playwright lane. |
 | `vp run build:extension`, `build:extension:firefox`, their `:ci` variants | Vite background/content builds plus `scripts/check/extension-build.ts`; ordinary names call the shared `check:prebuild` task before their `:ci` builds. | Writes `dist-extension*`; checker verifies classic content script and assets and fails on a bad bundle. `vp run verify`, `test/unit/extension`, `test:e2e:extension`, and Firefox runtime lane as applicable. |
 | `vp run build:all`, `build:all:ci`, `build:e2e` | Chain userscript and both extension targets; `build:e2e` first calls `clean` then produces development and extension fixtures. `build:all:ci` runs the three CI builds through `scripts/release/build-all.ts` after checking versions; the ordinary build calls the shared `check:prebuild` task first. | Mutates generated `dist*`; `build:all:ci` checks source/core, lockfile and tool identity before and after its target builds, including a digest of tracked changes and untracked source when dirty. It writes ignored `reports/production-footprint.json` with the invocation ID, file hashes/bytes, and labeled module-size estimates; dirty builds remain valid for development but cannot prepare a release. A failed new build leaves its previous report inactive. The report counts only production userscript/metadata and each extension's packaged files; gzip level 9 is a comparison metric. A retained development userscript may coexist in `dist/`. `build:e2e` removes generated outputs first. Validate with `verify`, artifact tests, and affected browser lanes; `:ci` is not a replacement for quality when invoked alone. |
 | `vp run clean` | `scripts/build/clean.ts` removes generated build directories. | Destructive only for the declared generated outputs; test CLI/import boundary in `test/unit/tooling/node-script-boundaries.test.ts`. |
 | `vp run check:versions`, `sync:versions` | `scripts/release/version.ts` checks or synchronizes package/extension versions. | `check` reads and fails on mismatch; `sync` writes manifests. `test/unit/tooling/release-runtime.test.ts` plus version check. |
 | `vp run package:extension`, `package:all`, `release:prepare` | `scripts/release/package-extension.ts` archives built Chrome/Firefox extensions; `package:all` builds first. `scripts/release/prepare.ts` checks production artifact metadata, built extension versions, the changelog and the recorded build footprint before preparing a release bundle. | `release:prepare` reads `RELEASE_VERSION`, optional `RELEASE_SHA`, package metadata and existing `dist*`; it requires a clean-source `build:all:ci` report matching the current source, toolchain and file hashes, then replaces `release-bundle/`, creates ZIPs/checksums/source-runtime metadata, and records final archive hashes/bytes in internal `release-bundle/footprint.json`. The public asset allowlist remains the production userscript, production metadata, two extension ZIPs, `checksums.txt` and `metadata.json`; retained development files are internal deploy/build outputs. Run `build:all:ci` first from eligible clean source. These commands do not publish a release. |
-| `vp run check:src`, `check:tooling`, `check:test`, `check:scripts`, `check:e2e`, `check`, `typecheck` | Separate browser, build/config, Vitest, NodeNext/erasable script and installed Firefox, and Playwright TypeScript projects. `check` chains source/tooling/test/scripts; `check:e2e` checks Playwright separately. | Read-only; `tsconfig.e2e.json` excludes the installed Firefox test so it is checked in the Node project instead. `vp run quality` includes every project boundary. |
+| `vp run check`, `typecheck` | Native Vite+ formatting, lint and type checking through the nearest canonical tsconfig. Browser source and Browser Mode, Node tooling/scripts/Firefox, mixed unit/Playwright, and Windows NodeNext+DOM each retain their own type context. | Read-only; `vp run quality` uses this single checker before policy tests. `vp check --no-fmt --no-lint` isolates type diagnostics. |
 | `vp run fmt`, `fmt:check`, `lint` | Vite+ Oxfmt and Oxlint, including static/type import-cycle analysis. | Read-only; `lint` denies native warnings. `fmt:fix`, `lint:fix`, `quality:fix` write fixes for review. |
-| `vp run quality`, `verify`, `verify:full` | `quality` chains Vite+ formatting, Vite+ lint, all runtime type checks, the focused policy suite, and the compiler/import boundary probes. `verify` adds production userscript/metadata and both extension targets; `verify:full` adds coverage, a retained development userscript build, and all E2E browser lanes. Its internal coverage command omits only the boundary suite already run by `quality`. | Build/test outputs and browser profiles are generated; `verify:full` leaves production and development userscripts together with production metadata. `verify` alone does not prove E2E. Read exact command outcomes and artifacts; no VM/publication inference. |
+| `vp run quality`, `verify`, `verify:full` | `quality` runs one integrated Vite+ check, the focused policy suite, and native type/import boundary probes. `verify` adds production userscript/metadata and both extension targets; `verify:full` adds coverage, a retained development userscript build, and all E2E browser lanes. Its internal coverage command omits only the boundary suite already run by `quality`. | Build/test outputs and browser profiles are generated; `verify:full` leaves production and development userscripts together with production metadata. `verify` alone does not prove E2E. Read exact command outcomes and artifacts; no VM/publication inference. |
 | `vp run test`, `test:watch`, `test:cov`, `test:policy`, `test:ci` | Vite+ Node and Chromium Browser Mode unit projects, plus serial repository probes; `test:policy` selects the separate Node policy project for `scripts/ci/repository-authority.test.ts` and `scripts/release/verify-source.test.ts`. | `test` and `test:cov` run Node, Browser Mode and repository probes; `test:watch` explicitly starts persistent watch mode. Coverage keeps the complete runtime source scope and existing thresholds. CI and release unit jobs install matching Chromium before coverage. `test:ci` runs policy and real compiler/import boundary probes; run the latter alone with `vp test run test/unit/tooling/node-ambient-types.test.ts`. The focused policy and boundary suites are not the complete unit suite. |
 | `vp run test:e2e`, `test:e2e:headed`, `test:e2e:extension`, `test:e2e:extension:firefox`, `test:e2e:native`, `test:e2e:all` | Playwright configs under `test/e2e/`; Vite+ Node projects run the installed Firefox/Selenium suite and eight Windows helper regressions on their explicit commands. | Requires built artifacts and browser binaries for installed-browser cases; may create browser profiles/downloads. `test:e2e:all` chains the lanes; distinguish fixture browser evidence from authenticated Windows/live-site evidence. |
 
@@ -133,7 +133,7 @@ change align; tests establish that preserved behavior still works.
 | `.github/workflows/release.yaml` | `scripts/release/verify-source.ts` checks protected tagged source before fan-out; `prepare.ts` creates local release files and `verify-publication.ts` checks the public write decision in the locked publish job. Runner `run:` blocks still select checkout, append short outputs, and launch artifacts/actions. | `scripts/release/verify-source.test.ts`, `test/unit/tooling/{release-runtime,release-publication}.test.ts`, and exact-source artifact inspection. Preparation does not publish. |
 | `.github/dependabot.yaml`, `update-browser-core.yaml` | Dependabot opens npm and GitHub Actions update PRs for maintainer review; repository workflows do not approve or merge dependency updates. `scripts/ci/update-browser-core.ts` verifies remote SHA/impact and owns gitlink PR preparation/publication. Workflow shell supplies event inputs and bounded output/checkout glue. | `test/unit/config/dependency-review-policy.test.ts`, `test/unit/config/browser-core-automation.test.ts`, `scripts/ci/repository-authority.test.ts`; privileged results require exact-SHA hosted evidence. |
 | `.githooks/pre-commit`, `.githooks/pre-push` | Small Git-invoked Bash guards before any Node setup: reject detached/default-branch commit and direct default-branch push; no network or write by the hooks. | `test/unit/tooling/git-hooks.test.ts`. Retained minimal pre-runtime Git transport exception; revisit if the hook execution contract guarantees pinned Node before invocation without weakening the branch guard. |
-| Test subprocess callers | `test/unit/tooling/{command-adapters,workflow-change-classifier-git,node-script-boundaries,release-runtime,git-hooks}.test.ts` and `test/e2e/firefox-extension-runtime.test.ts` invoke CLI, Git, Node, or browser helpers with fixtures. `scripts/ci/repository-authority.test.ts` exercises privileged command policy; provider tests own OSV parser/scanner behavior. | Run the focused suite and NodeNext checks after an entrypoint change; fixtures do not prove live browser or publication behavior. |
+| Test subprocess callers | `test/unit/tooling/{command-adapters,workflow-change-classifier-git,node-script-boundaries,release-runtime,git-hooks}.test.ts` and `test/firefox/firefox-extension-runtime.test.ts` invoke CLI, Git, Node, or browser helpers with fixtures. `scripts/ci/repository-authority.test.ts` exercises privileged command policy; provider tests own OSV parser/scanner behavior. | Run the focused suite and native NodeNext checks after an entrypoint change; fixtures do not prove live browser or publication behavior. |
 
 ### Windows bundle and retained languages
 
@@ -163,7 +163,7 @@ these maintained file families and executable dot-directory helpers.
 
 | Maintained family | Format and lint owner | Type or runtime validation |
 | --- | --- | --- |
-| `src` TS/TSX/CSS | Oxfmt; Oxlint for TS/TSX | `check:src`; unit and browser suites |
+| `src` TS/TSX/CSS | Oxfmt; Oxlint for TS/TSX | `vp run check`; unit and browser suites |
 | Tests and fixtures JS/TS/TSX/HTML | Oxfmt; Oxlint for JS/TS/TSX | Test, Playwright and Node projects |
 | `scripts`, `tooling`, root TS/JSON configs | Oxfmt; Oxlint for JS/TS | Node-specific TypeScript projects and command tests |
 | Windows validation TS and profile JSON, executable `.github/actions` helpers, extension manifests | Oxfmt; Oxlint for TS/JS/MJS | Windows TypeScript check, native Node syntax check, Windows profile, version and built-package checks |
@@ -196,19 +196,21 @@ are not Windows runtime acceptance.
 ### Runtime and import boundaries
 
 `tsconfig.base.json` shares runtime-neutral strict/no-emit options only. The
-browser `tsconfig.json` owns the seven alias definitions and checks only `src`
-with DOM libraries, bundler resolution and `types: []`. Direct Node scripts
-and the direct Firefox test use NodeNext, real Node types, erasable syntax and
-explicit relative `.ts` imports. `tsconfig.tooling.json` checks Vite helpers,
-all Vite configs and `vitest.config.ts` with Node types and ECMAScript libraries.
-Each incremental project has its own build-info file.
+root `tsconfig.json` owns Vite configs and tooling with Node types. The nearest
+`src/tsconfig.json` owns the seven browser aliases and checks browser source
+with DOM libraries, bundler resolution and `types: []`. `tsconfig.node.json`
+provides NodeNext, real Node types, erasable syntax and explicit relative `.ts`
+imports to `scripts/`, `test/firefox/` and `validation/windows/`; the Windows
+project adds DOM libraries for installed-page fixtures. Each incremental
+project has its own build-info file.
 
 Vitest and Playwright execute in Node while their fixtures and serialized
-`page.evaluate` callbacks use browser APIs; their type projects intentionally
-include both Node and DOM. `tsconfig.test.json` forwards to `test/tsconfig.json`.
-That discoverable test config has explicit local includes so Vite's native
-`resolve.tsconfigPaths` matches test importers. Vite+, Vitest and Oxlint consume the
-browser TypeScript paths directly; no synchronized alias map is maintained.
+`page.evaluate` callbacks use browser APIs; `test/unit/` and `test/e2e/` each
+have a discoverable Node+DOM project. `test/browser/` owns Chromium Browser
+Mode tests with DOM and no Node ambient types. `test/tsconfig.json` owns shared
+test setup and fixtures. These nearest configs make native Vite+ type checking
+and `resolve.tsconfigPaths` select the intended project; no synchronized alias
+map is maintained.
 Short relative imports remain valid within a cohesive module. Ordered CSS and
 other side-effect imports retain their cascade/order contracts.
 
@@ -279,9 +281,9 @@ mismatch. The accepted reduced static scope does not relax accessibility behavio
 `test/unit/tooling/toolchain-policy.test.ts` runs native negative controls for
 adopted rules. The existing `src/**` Node-import boundary, native explicit-any,
 unused-binding, correctness and test rules remain active. Oxfmt's ignore patterns
-are in `vite.config.ts`. The root `tsc` commands remain explicit until the
-integrated type-project stage qualifies their browser, tooling, unit, E2E and
-Node contexts. Supply-chain and prebuild scripts retain their lifecycle order.
+are in `vite.config.ts`. Native `vp check` owns formatting, lint and type
+diagnostics across browser, tooling, unit, E2E and Node contexts. Supply-chain
+and prebuild scripts retain their lifecycle order.
 
 The Vite alias reports the selected Vite+ version and records the bundled Vite
 version in its package metadata. Strict peer validation stays enabled.

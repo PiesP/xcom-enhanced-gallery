@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from 'node:child_process';
-import { chmodSync, globSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vite-plus/test';
@@ -336,8 +336,11 @@ describe('workflow change policy', () => {
     'test/e2e/fixtures/mock-gallery-page.html',
     'vitest.config.ts',
     '.node-version',
-    'tsconfig.node-tests.json',
+    'tsconfig.node.json',
     'tsconfig.new-runtime.json',
+    'test/firefox/tsconfig.json',
+    'test/browser/tsconfig.json',
+    'validation/windows/fixtures/installed-quoted-video-api.ts',
   ])('selects quality for managed supported input %s', (path) => {
     expect(classifyChanges(['--files', path]).selected.has('quality')).toBe(true);
   });
@@ -387,39 +390,39 @@ describe('workflow change policy', () => {
     expectAll(core, ['osv', 'semgrep', 'codeql_javascript']);
   });
 
-  it('type-checks every test source and selects quality for test-only changes', () => {
-    const checkedFiles = new Set<string>();
-    for (const project of ['tsconfig.test.json', 'tsconfig.e2e.json', 'tsconfig.node-tests.json']) {
-      const config = JSON.parse(
-        execFileSync(
-          process.execPath,
-          [resolve(root, 'node_modules/typescript/bin/tsc'), '--project', project, '--showConfig'],
-          { cwd: root, encoding: 'utf8' }
-        )
-      ) as {
-        files: string[];
-        compilerOptions: { noUnusedLocals?: boolean; noUnusedParameters?: boolean };
-      };
-      expect(config.compilerOptions.noUnusedLocals, project).toBe(true);
-      expect(config.compilerOptions.noUnusedParameters, project).toBe(true);
-      for (const file of config.files) {
-        checkedFiles.add(resolve(root, file));
+  it('checks test-only changes with native projects and selects quality', () => {
+    const checker = resolve(root, 'node_modules/vite-plus/bin/vp');
+    for (const directory of ['test/unit', 'test/browser', 'test/e2e', 'test/firefox']) {
+      const fixture = mkdtempSync(join(root, directory, 'workflow-type-policy-'));
+      const probe = join(fixture, 'probe.ts');
+      const relative = probe.slice(root.length + 1);
+      const run = () =>
+        spawnSync(process.execPath, [checker, 'check', '--no-fmt', '--no-lint', probe], {
+          cwd: root,
+          encoding: 'utf8',
+        });
+      try {
+        expect(classifyChanges(['--files', relative]).selected.has('quality'), relative).toBe(true);
+        writeFileSync(probe, 'export const typed: number = 1;\n');
+        const positive = run();
+        expect(positive.error).toBeUndefined();
+        expect(positive.status, positive.stdout + positive.stderr).toBe(0);
+        expect(positive.stdout).toContain('Found no type errors in 1 file');
+        writeFileSync(
+          probe,
+          'export function typed(unusedParameter: number) { const unusedLocal = 1; return 1; }\n'
+        );
+        const negative = run();
+        expect(negative.error).toBeUndefined();
+        expect(negative.status, negative.stdout + negative.stderr).toBe(1);
+        expect(negative.stdout).toContain('TS6133');
+        expect(negative.stdout).toContain('unusedParameter');
+        expect(negative.stdout).toContain('unusedLocal');
+      } finally {
+        rmSync(fixture, { recursive: true, force: true });
       }
     }
-    const testFiles = globSync('test/**/*.{ts,tsx}', {
-      cwd: root,
-      exclude: ['test/node_modules/**'],
-    });
-    expect(testFiles.length).toBeGreaterThan(0);
-    expect(classify(['test/unit/tooling/workflow-change-policy.test.ts']).quality).toBe('true');
-    for (const file of testFiles) {
-      expect(checkedFiles.has(resolve(root, file)), file).toBe(true);
-      expect(
-        classifyChanges(['--files', file.replaceAll('\\', '/')]).selected.has('quality'),
-        file
-      ).toBe(true);
-    }
-  });
+  }, 60_000);
 
   it('scopes binary icons without weakening build and browser coverage', () => {
     const icon = classify(['assets/icons/icon-128x128.png']);

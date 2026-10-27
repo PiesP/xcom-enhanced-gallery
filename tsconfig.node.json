@@ -9,6 +9,6 @@
     "erasableSyntaxOnly": true,
     "allowImportingTsExtensions": true
   },
-  "include": ["scripts/**/*.ts"],
-  "extends": "./tsconfig.base.json"
+  "extends": "./tsconfig.base.json",
+  "files": []
 }
