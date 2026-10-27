@@ -39,7 +39,9 @@ const options: GalleryEventOptions = {
 
 function loadCapturedShape(name: CapturedShape): void {
   const html = capturedShapes[`/test/fixtures/authenticated-x-layouts/${name}.html`];
-  if (html === undefined) throw new Error(`Missing captured shape: ${name}`);
+  if (html === undefined) {
+    throw new Error(`Missing captured shape: ${name}`);
+  }
   document.body.innerHTML = html;
 }
 

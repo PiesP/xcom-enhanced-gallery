@@ -43,7 +43,9 @@ function click(target: Element): {
   let productDefaultPrevented: boolean | undefined;
   const preventFixtureNavigation = (event: MouseEvent): void => {
     productDefaultPrevented = event.defaultPrevented;
-    if (target.closest('a[href]')) event.preventDefault();
+    if (target.closest('a[href]')) {
+      event.preventDefault();
+    }
   };
   document.addEventListener('click', preventFixtureNavigation);
   try {

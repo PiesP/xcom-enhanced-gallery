@@ -67,7 +67,9 @@ vi.mock('@shared/error/app-error-reporter', () => ({
 import { cleanup, startApplication } from '../../src/main';
 
 function dispatchNavigation(url: string): void {
-  if (typeof navigation === 'undefined') throw new Error('Chromium Navigation API unavailable');
+  if (typeof navigation === 'undefined') {
+    throw new Error('Chromium Navigation API unavailable');
+  }
   const event = new Event('navigate') as Event & { destination?: { url: string } };
   event.destination = { url };
   navigation.dispatchEvent(event);
