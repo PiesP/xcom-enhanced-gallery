@@ -7,9 +7,9 @@
  * Provides mocks for the userscript environment (GM_* APIs),
  * and logger suppression.
  *
- * Architecture: test/ is a standalone pnpm workspace.
- * Source code is imported via `@bootstrap`, `@constants`,
- * `@features`, `@shared` path aliases mapped to `../src/`.
+ * Dependencies are managed at the repository root. The Vite+ projects in
+ * `vitest.config.ts` share this setup and resolve source aliases through
+ * the nearest tsconfig via `resolve.tsconfigPaths`.
  */
 
 /* ------------------------------------------------------------------ */
