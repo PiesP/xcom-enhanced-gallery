@@ -61,6 +61,8 @@ jobs:
         uses: PiesP/browser-core/automation/actions/setup-project@38cd1cb18c9c37e57e8b53a98e811450bb1a18fc
         with:
           install-dependencies: 'false'
+          # The immutable reviewed source pins Node in Volta and has no .node-version.
+          node-version: '26.12.1'
 
       - name: 🔐 Prepare reviewed scanner pin helper
         id: scanner_helper
@@ -149,6 +151,8 @@ jobs:
         uses: PiesP/browser-core/automation/actions/setup-project@38cd1cb18c9c37e57e8b53a98e811450bb1a18fc
         with:
           install-dependencies: 'false'
+          # The immutable reviewed source pins Node in Volta and has no .node-version.
+          node-version: '26.12.1'
 
       - name: 🔐 Prepare reviewed scanner pin helper
         id: scanner_helper
