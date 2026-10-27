@@ -65,7 +65,11 @@ describe('central setup-project action', () => {
         const block = jobBlock(workflow, job);
 
         expect(block, `${filename} ${job} job`).toContain(`uses: ${centralSetupAction}`);
-        if (job !== 'unit') {
+        if (filename === 'security.yaml' && job === 'osv-scan-pr') {
+          expect(block).toContain(
+            "node-version: ${{ github.event.pull_request.base.sha == 'f3f933d131b1953e6b188d58d7a8ffc1786f9bf1' && '26.12.1' || '' }}"
+          );
+        } else if (job !== 'unit') {
           expect(block).not.toContain('node-version:');
         }
       }
