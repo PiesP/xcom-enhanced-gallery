@@ -220,10 +220,11 @@ imports, type-only imports/re-exports and dynamic imports. The installed
 `noNodejsModules` rule ignores type-only imports, so it cannot own this complete
 boundary alone. The builtin coverage test requires deliberate review when Node
 adds a public bare specifier. No browser `process` convenience ambient remains.
-`node-ambient-types.test.ts` invokes the real compiler projects and checks their
-loaded roots/declarations, valid inputs, intended errors and restored controls;
-`import-aliases.test.ts` resolves all seven alias families with Vite and executes
-a public-platform import under Vitest.
+`node-ambient-types.test.ts` runs the native Vite+ checker on valid and invalid
+inputs across the maintained type contexts, asserting exit status and expected
+diagnostics. Its Oxlint probes reject Node imports and verify that restored
+valid imports pass. `import-aliases.test.ts` resolves all seven alias families
+with Vite and executes a public-platform import under Vitest.
 
 The repository-wide toolchain-policy and node-ambient-types probe suites listed
 in `vitest.config.ts` run in a serial Vitest project after the ordinary parallel
