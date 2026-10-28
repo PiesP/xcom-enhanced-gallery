@@ -881,7 +881,7 @@ may instead select `borrowed-browser-owned-extension` only for a freshly loaded,
 attested task-owned candidate in an existing browser, with a validated same-profile
 host baseline, new task-owned pages, and an owned download directory. That mode
 does not own or close the browser profile; the older `borrowed` mode stays read-only.
-Native download observation and cancellation select only IDs whose
+Native download observation selects only IDs whose
 `byExtensionId` matches the candidate's runtime ID; missing ownership metadata
 leaves acceptance unverified. The ordinary
 fixture and live core-flow gates still run. One eligible public image gallery
@@ -896,9 +896,11 @@ requested-status HTTP 200 provider photo path and format; the gallery display fo
 is not treated as original proof. Public image HEAD responses must declare
 each source at no more than 64 MiB and a projected single plus ZIP total below
 128 MiB; absent or larger declarations leave the lane unverified before any
-download click. Chrome progress is watched and an over-budget download is
-cancelled; a failed attempt retains a partial receipt and the normal owned
-profile cleanup. These are acceptance and retained-file bounds, not a hard
+download click. Chrome progress is watched; an ambiguous or over-budget new ID
+fails the lane without automatic cancellation, because the candidate's extension ID
+alone cannot prove which browser tab started it. The private caller retains failed
+artifacts and closes only task-owned pages; a fresh owned profile follows its normal
+cleanup. These are acceptance and retained-file bounds, not a hard
 instantaneous network-byte guarantee.
 
 The same lane changes the theme through the visible settings control, reads

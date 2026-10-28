@@ -4,9 +4,10 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
-import { test } from 'vite-plus/test';
-import type { BrowserContext } from '@playwright/test';
+import { test, vi } from 'vite-plus/test';
+import type { BrowserContext, Page } from '@playwright/test';
 import {
+  closeObservedLivePage,
   directOwnerForSource,
   observeLiveUrls,
   validateOwnedCandidateInBorrowedBrowser,
@@ -14,9 +15,11 @@ import {
 import {
   canonicalOwnedPhotoSources,
   inspectLiveStoredZip,
+  nativeSingleSourceMatchesDocument,
   parseActualSiteAcceptanceSelector,
-  taskOwnedDownloads,
+  taskOwnedDownloadsDocument,
   verifyLiveArchiveSources,
+  waitForOwnedDownload,
 } from './live-acceptance.ts';
 
 const STORED_ZIP_HEX =
@@ -101,7 +104,7 @@ test('borrowed browser acceptance requires the newly owned candidate and downloa
   );
 });
 
-test('download ownership excludes human and unlabelled native IDs', () => {
+test('download ownership stays inside the extension page and returns only task fields', async () => {
   const extensionId = 'm'.repeat(32);
   const item = (id: number, byExtensionId?: string) => ({
     id,
@@ -109,22 +112,120 @@ test('download ownership excludes human and unlabelled native IDs', () => {
     state: 'complete',
     filename: '/tmp/task-owned-downloads/file',
     url: 'https://pbs.twimg.com/media/photo.jpg?name=orig',
+    finalUrl: 'https://pbs.twimg.com/media/photo.jpg?name=orig',
+    referrer: 'https://private.example/secret',
     bytesReceived: 10,
     totalBytes: 10,
     exists: true,
   });
-  assert.deepEqual(
-    taskOwnedDownloads(
-      [item(1), item(2, 'n'.repeat(32)), item(3, extensionId)],
-      extensionId,
-      extensionId
-    ).map(({ id }) => id),
-    [3]
-  );
-  assert.throws(
-    () => taskOwnedDownloads([item(3, extensionId)], 'n'.repeat(32), extensionId),
-    /owned extension origin/u
-  );
+  const all = [item(1), item(2, 'n'.repeat(32)), item(3, extensionId)];
+  vi.stubGlobal('chrome', {
+    runtime: { id: extensionId },
+    downloads: {
+      search: async (query: { id?: number }) =>
+        query.id === undefined ? all : all.filter((entry) => entry.id === query.id),
+    },
+  });
+  try {
+    const selected = await taskOwnedDownloadsDocument(extensionId);
+    assert.deepEqual(
+      selected.map(({ id }) => id),
+      [3]
+    );
+    assert.deepEqual(Object.keys(selected[0] ?? {}).sort(), [
+      'byExtensionId',
+      'bytesReceived',
+      'exists',
+      'filename',
+      'id',
+      'state',
+      'totalBytes',
+    ]);
+    assert.equal(
+      await nativeSingleSourceMatchesDocument({
+        id: 3,
+        extensionId,
+        expectedSource: item(3, extensionId).url,
+      }),
+      true
+    );
+    assert.equal(
+      await nativeSingleSourceMatchesDocument({
+        id: 2,
+        extensionId,
+        expectedSource: item(2, extensionId).url,
+      }),
+      false
+    );
+    await assert.rejects(
+      () => taskOwnedDownloadsDocument('n'.repeat(32)),
+      /owned extension origin/u
+    );
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});
+
+test('ambiguous and oversized task downloads fail without cancelling any ID', async () => {
+  const extensionId = 'm'.repeat(32);
+  let cancelled = 0;
+  let items = [
+    {
+      id: 1,
+      byExtensionId: extensionId,
+      state: 'in_progress',
+      filename: '/tmp/a',
+      bytesReceived: 1,
+      totalBytes: 10,
+      exists: false,
+    },
+    {
+      id: 2,
+      byExtensionId: extensionId,
+      state: 'in_progress',
+      filename: '/tmp/b',
+      bytesReceived: 1,
+      totalBytes: 10,
+      exists: false,
+    },
+  ];
+  vi.stubGlobal('chrome', {
+    runtime: { id: extensionId },
+    downloads: {
+      search: async () => items,
+      cancel: async () => {
+        cancelled += 1;
+      },
+    },
+  });
+  const page = {
+    evaluate: async (callback: (value: string) => unknown, value: string) => callback(value),
+  } as unknown as Page;
+  try {
+    await assert.rejects(
+      () => waitForOwnedDownload(page, extensionId, new Set(), 100, []),
+      /Ambiguous/u
+    );
+    items = [items[0]!];
+    items[0] = { ...items[0]!, bytesReceived: 101 };
+    await assert.rejects(
+      () => waitForOwnedDownload(page, extensionId, new Set(), 100, []),
+      /budget/u
+    );
+    assert.equal(cancelled, 0);
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});
+
+test('borrowed-browser task page close errors remain terminal', async () => {
+  const page = {
+    close: async () => {
+      throw new Error('owned tab still open');
+    },
+  } as unknown as Page;
+  await assert.rejects(() => closeObservedLivePage(page, true), /owned tab still open/u);
+  await closeObservedLivePage(page, false);
 });
 
 test('canonical photo references require exact owned provider order and format', () => {

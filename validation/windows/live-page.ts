@@ -304,6 +304,7 @@ type LiveObservation = {
   requiredAssertions?: Record<string, boolean>;
   evidenceStatus: string;
   status: string;
+  cleanup?: { pageClosed: boolean; pageCloseError?: string };
   classification?: string;
   providerRejection?: ReturnType<typeof summarizeQuoteProviderRejection>;
   error?: string;
@@ -2332,6 +2333,14 @@ async function observeNativePreviewPhoto(
   }
 }
 
+export async function closeObservedLivePage(page: Pick<Page, 'close'>, strict: boolean) {
+  if (strict) {
+    await page.close();
+  } else {
+    await page.close().catch(() => {});
+  }
+}
+
 async function observeOne(
   context: BrowserContext,
   extensionId: string,
@@ -2346,7 +2355,8 @@ async function observeOne(
     downloads: string;
     navigationUrl: string | null;
     runMultiImage: boolean;
-  } | null = null
+  } | null = null,
+  strictPageClose = false
 ) {
   const identity = targetIdentity(targetUrl);
   const page = await context.newPage();
@@ -3015,10 +3025,24 @@ async function observeOne(
       );
     } finally {
       try {
-        if (borrowedExtensionPage) {
-          await page.close();
-        } else {
-          await page.close().catch(() => {});
+        const requireClose = borrowedExtensionPage !== null || strictPageClose;
+        try {
+          await closeObservedLivePage(page, requireClose);
+          if (requireClose) {
+            observation.cleanup = { pageClosed: true };
+          }
+        } catch (error) {
+          const message = `Task-owned live page close failed: ${safeError(error)}`;
+          observation.cleanup = { pageClosed: false, pageCloseError: message };
+          observation.status = 'failed';
+          observation.evidenceStatus = 'unverified';
+          observation.error = observation.error ? `${observation.error}; ${message}` : message;
+        }
+        if (requireClose) {
+          await writeFile(
+            join(output, `live-page-${index}.json`),
+            JSON.stringify(observation, null, 2)
+          );
         }
       } finally {
         if (identities) {
@@ -3209,7 +3233,8 @@ async function observeControlledVideoMode(
   targetUrl: string,
   output: string,
   index: number,
-  actualSiteAcceptance: { downloads: string } | null = null
+  actualSiteAcceptance: { downloads: string } | null = null,
+  strictPageClose = false
 ): Promise<ControlledProbe> {
   const key = 'xeg-app-settings';
   const extensionPage = await context.newPage();
@@ -3261,7 +3286,8 @@ async function observeControlledVideoMode(
       null,
       actualSiteAcceptance
         ? { ...actualSiteAcceptance, navigationUrl: null, runMultiImage: false }
-        : null
+        : null,
+      strictPageClose
     );
     result.modeAfterObservation = storedVideoClickMode(
       (await readStoredVideoSettings(extensionPage)).settings
@@ -3389,7 +3415,8 @@ export async function observeLiveUrls({
                 (entry) => entry.actualSiteAcceptance?.status === 'observed'
               ),
             }
-          : null
+          : null,
+        session === 'borrowed-browser-owned-extension'
       );
       if (
         session === 'borrowed' &&
@@ -3414,7 +3441,8 @@ export async function observeLiveUrls({
           url,
           output,
           index + 1,
-          actualSiteAcceptance
+          actualSiteAcceptance,
+          session === 'borrowed-browser-owned-extension'
         ).catch((error) => ({
           status: 'failed',
           error: safeError(error),

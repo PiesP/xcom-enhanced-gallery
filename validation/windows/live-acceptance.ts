@@ -23,8 +23,7 @@ import type { Identity, ImageTarget, Source } from './live-page-document.ts';
 declare const chrome: {
   runtime: { id: string };
   downloads: {
-    search(query: { orderBy: string[] }): Promise<DownloadItem[]>;
-    cancel(id: number): Promise<void>;
+    search(query: { orderBy: string[] } | { id: number }): Promise<BrowserDownloadItem[]>;
   };
 };
 
@@ -45,12 +44,15 @@ type DownloadItem = {
   byExtensionId?: string;
   state: string;
   filename: string;
-  url: string;
-  finalUrl?: string;
   bytesReceived: number;
   totalBytes: number;
   exists: boolean;
   error?: string;
+};
+type BrowserDownloadItem = DownloadItem & {
+  url?: string;
+  finalUrl?: string;
+  referrer?: string;
 };
 type Selection = {
   position: number;
@@ -583,27 +585,71 @@ async function preflightSources(page: Page, sources: readonly string[], selected
   return originals;
 }
 
-export function taskOwnedDownloads(
-  items: readonly DownloadItem[],
-  runtimeId: string,
+export async function taskOwnedDownloadsDocument(
   expectedExtensionId: string
-): DownloadItem[] {
-  assert.equal(runtimeId, expectedExtensionId, 'Download query left the owned extension origin');
-  return items.filter((item) => item.byExtensionId === expectedExtensionId);
+): Promise<DownloadItem[]> {
+  if (chrome.runtime.id !== expectedExtensionId) {
+    throw new Error('Download query left the owned extension origin');
+  }
+  const items = await chrome.downloads.search({ orderBy: ['-startTime'] });
+  return items
+    .filter((item) => item.byExtensionId === expectedExtensionId)
+    .map((item) => ({
+      id: item.id,
+      byExtensionId: expectedExtensionId,
+      state: item.state,
+      filename: item.filename,
+      bytesReceived: item.bytesReceived,
+      totalBytes: item.totalBytes,
+      exists: item.exists,
+      ...(item.error ? { error: item.error } : {}),
+    }));
 }
 
 async function queryDownloads(
   extensionPage: Page,
   expectedExtensionId: string
 ): Promise<DownloadItem[]> {
-  const result = await extensionPage.evaluate(async () => ({
-    runtimeId: chrome.runtime.id,
-    items: await chrome.downloads.search({ orderBy: ['-startTime'] }),
-  }));
-  return taskOwnedDownloads(result.items, result.runtimeId, expectedExtensionId);
+  return extensionPage.evaluate(taskOwnedDownloadsDocument, expectedExtensionId);
 }
 
-async function waitForOwnedDownload(
+export async function nativeSingleSourceMatchesDocument({
+  id,
+  extensionId,
+  expectedSource,
+}: {
+  id: number;
+  extensionId: string;
+  expectedSource: string;
+}): Promise<boolean> {
+  if (chrome.runtime.id !== extensionId) {
+    return false;
+  }
+  const items = await chrome.downloads.search({ id });
+  const item = items.length === 1 ? items[0] : null;
+  if (item?.id !== id || item.byExtensionId !== extensionId || !item.url) {
+    return false;
+  }
+  try {
+    const expected = new URL(expectedSource);
+    const source = new URL(item.url);
+    const final = item.finalUrl ? new URL(item.finalUrl) : null;
+    return (
+      source.protocol === 'https:' &&
+      source.hostname === expected.hostname &&
+      source.pathname === expected.pathname &&
+      source.searchParams.get('name') === 'orig' &&
+      (!final ||
+        (final.protocol === 'https:' &&
+          final.hostname === expected.hostname &&
+          final.pathname === expected.pathname))
+    );
+  } catch {
+    return false;
+  }
+}
+
+export async function waitForOwnedDownload(
   extensionPage: Page,
   extensionId: string,
   previous: Set<number>,
@@ -611,22 +657,15 @@ async function waitForOwnedDownload(
   progress: Array<{ id: number; state: string; bytesReceived: number; totalBytes: number }>
 ): Promise<DownloadItem> {
   const deadline = Date.now() + DOWNLOAD_TIMEOUT_MS;
-  let observedId: number | null = null;
   while (Date.now() < deadline) {
     const added = (await queryDownloads(extensionPage, extensionId)).filter(
       ({ id }) => !previous.has(id)
     );
     if (added.length > 1) {
-      await Promise.all(
-        added.map(({ id }) =>
-          extensionPage.evaluate((value) => chrome.downloads.cancel(value), id).catch(() => {})
-        )
-      );
       throw new Error('Ambiguous new native download IDs');
     }
     const item = added[0];
     if (item) {
-      observedId = item.id;
       const current = {
         id: item.id,
         state: item.state,
@@ -641,7 +680,6 @@ async function waitForOwnedDownload(
         }
       }
       if (item.bytesReceived > limit || item.totalBytes > limit) {
-        await extensionPage.evaluate((id) => chrome.downloads.cancel(id), item.id).catch(() => {});
         throw new Error('Native download exceeded the retained-file budget');
       }
       if (item.state === 'interrupted') {
@@ -653,9 +691,6 @@ async function waitForOwnedDownload(
       }
     }
     await new Promise((done) => setTimeout(done, 100));
-  }
-  if (observedId !== null) {
-    await extensionPage.evaluate((id) => chrome.downloads.cancel(id), observedId).catch(() => {});
   }
   throw new Error('Timed out waiting for one new extension-owned download with byExtensionId');
 }
@@ -956,24 +991,14 @@ export async function runActualSiteAcceptance({
       MAX_FILE_BYTES,
       singleProgress
     );
-    const expectedSingle = new URL(sources[0]!);
-    const singleUrl = new URL(single.url);
     assert(
-      singleUrl.protocol === 'https:' &&
-        singleUrl.hostname === expectedSingle.hostname &&
-        singleUrl.pathname === expectedSingle.pathname &&
-        singleUrl.searchParams.get('name') === 'orig',
+      await extensionPage.evaluate(nativeSingleSourceMatchesDocument, {
+        id: single.id,
+        extensionId,
+        expectedSource: sources[0]!,
+      }),
       'Native single download did not use the selected public original'
     );
-    if (single.finalUrl) {
-      const final = new URL(single.finalUrl);
-      assert(
-        final.protocol === 'https:' &&
-          final.hostname === expectedSingle.hostname &&
-          final.pathname === expectedSingle.pathname,
-        'Native single download redirected outside the selected original'
-      );
-    }
     const singleBytes = await readOwnedFile(single, downloads, MAX_FILE_BYTES);
     assert.equal(
       singleBytes.length,
