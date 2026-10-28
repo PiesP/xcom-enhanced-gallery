@@ -876,7 +876,14 @@ Review the retained screenshots separately before making a live-page claim.
 
 The explicit `{"scenario":"actual-site-acceptance"}` selector is accepted only
 with an installed extension, at least one validated public `--live-url`, an
-owned profile, and no other focused selector or upgrade input. The ordinary
+owned profile, and no other focused selector or upgrade input. A private caller
+may instead select `borrowed-browser-owned-extension` only for a freshly loaded,
+attested task-owned candidate in an existing browser, with a validated same-profile
+host baseline, new task-owned pages, and an owned download directory. That mode
+does not own or close the browser profile; the older `borrowed` mode stays read-only.
+Native download observation and cancellation select only IDs whose
+`byExtensionId` matches the candidate's runtime ID; missing ownership metadata
+leaves acceptance unverified. The ordinary
 fixture and live core-flow gates still run. One eligible public image gallery
 must contain two to four distinct public images. The lane verifies actual
 Next/Previous selected and focused identities, a single toolbar download, and

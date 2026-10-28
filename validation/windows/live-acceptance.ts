@@ -21,6 +21,7 @@ import {
 import type { Identity, ImageTarget, Source } from './live-page-document.ts';
 
 declare const chrome: {
+  runtime: { id: string };
   downloads: {
     search(query: { orderBy: string[] }): Promise<DownloadItem[]>;
     cancel(id: number): Promise<void>;
@@ -41,6 +42,7 @@ type StoredSettings = {
 };
 type DownloadItem = {
   id: number;
+  byExtensionId?: string;
   state: string;
   filename: string;
   url: string;
@@ -581,12 +583,29 @@ async function preflightSources(page: Page, sources: readonly string[], selected
   return originals;
 }
 
-async function queryDownloads(extensionPage: Page): Promise<DownloadItem[]> {
-  return extensionPage.evaluate(() => chrome.downloads.search({ orderBy: ['-startTime'] }));
+export function taskOwnedDownloads(
+  items: readonly DownloadItem[],
+  runtimeId: string,
+  expectedExtensionId: string
+): DownloadItem[] {
+  assert.equal(runtimeId, expectedExtensionId, 'Download query left the owned extension origin');
+  return items.filter((item) => item.byExtensionId === expectedExtensionId);
+}
+
+async function queryDownloads(
+  extensionPage: Page,
+  expectedExtensionId: string
+): Promise<DownloadItem[]> {
+  const result = await extensionPage.evaluate(async () => ({
+    runtimeId: chrome.runtime.id,
+    items: await chrome.downloads.search({ orderBy: ['-startTime'] }),
+  }));
+  return taskOwnedDownloads(result.items, result.runtimeId, expectedExtensionId);
 }
 
 async function waitForOwnedDownload(
   extensionPage: Page,
+  extensionId: string,
   previous: Set<number>,
   limit: number,
   progress: Array<{ id: number; state: string; bytesReceived: number; totalBytes: number }>
@@ -594,7 +613,9 @@ async function waitForOwnedDownload(
   const deadline = Date.now() + DOWNLOAD_TIMEOUT_MS;
   let observedId: number | null = null;
   while (Date.now() < deadline) {
-    const added = (await queryDownloads(extensionPage)).filter(({ id }) => !previous.has(id));
+    const added = (await queryDownloads(extensionPage, extensionId)).filter(
+      ({ id }) => !previous.has(id)
+    );
     if (added.length > 1) {
       await Promise.all(
         added.map(({ id }) =>
@@ -636,7 +657,7 @@ async function waitForOwnedDownload(
   if (observedId !== null) {
     await extensionPage.evaluate((id) => chrome.downloads.cancel(id), observedId).catch(() => {});
   }
-  throw new Error('Timed out waiting for one new native download');
+  throw new Error('Timed out waiting for one new extension-owned download with byExtensionId');
 }
 
 async function readOwnedFile(
@@ -917,7 +938,9 @@ export async function runActualSiteAcceptance({
       limits: { perFile: MAX_FILE_BYTES, retainedTotal: MAX_RETAINED_BYTES },
     };
     const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
-    const knownSingle = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+    const knownSingle = new Set(
+      (await queryDownloads(extensionPage, extensionId)).map(({ id }) => id)
+    );
     const singleProgress: Array<{
       id: number;
       state: string;
@@ -928,6 +951,7 @@ export async function runActualSiteAcceptance({
     await toolbar.locator('button[aria-label="Download"]').click();
     const single = await waitForOwnedDownload(
       extensionPage,
+      extensionId,
       knownSingle,
       MAX_FILE_BYTES,
       singleProgress
@@ -968,7 +992,9 @@ export async function runActualSiteAcceptance({
       bytes: singleBytes.length,
       sha256: createHash('sha256').update(singleBytes).digest('hex'),
     };
-    const knownZip = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+    const knownZip = new Set(
+      (await queryDownloads(extensionPage, extensionId)).map(({ id }) => id)
+    );
     const zipProgress: Array<{
       id: number;
       state: string;
@@ -981,6 +1007,7 @@ export async function runActualSiteAcceptance({
       .click();
     const zip = await waitForOwnedDownload(
       extensionPage,
+      extensionId,
       knownZip,
       MAX_RETAINED_BYTES - singleBytes.length,
       zipProgress

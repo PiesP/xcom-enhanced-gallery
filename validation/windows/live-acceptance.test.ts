@@ -3,13 +3,19 @@
 
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { resolve } from 'node:path';
 import { test } from 'vite-plus/test';
 import type { BrowserContext } from '@playwright/test';
-import { directOwnerForSource, observeLiveUrls } from './live-page.ts';
+import {
+  directOwnerForSource,
+  observeLiveUrls,
+  validateOwnedCandidateInBorrowedBrowser,
+} from './live-page.ts';
 import {
   canonicalOwnedPhotoSources,
   inspectLiveStoredZip,
   parseActualSiteAcceptanceSelector,
+  taskOwnedDownloads,
   verifyLiveArchiveSources,
 } from './live-acceptance.ts';
 
@@ -21,6 +27,105 @@ const context = {
   installation: 'extension',
   otherFocusedInput: false,
 };
+
+test('borrowed browser acceptance requires the newly owned candidate and download directory', async () => {
+  const extensionId = 'm'.repeat(32);
+  const proof = {
+    kind: 'task-owned-extension-in-borrowed-browser' as const,
+    extensionId,
+    installedPathSha256: 'a'.repeat(64),
+    newlyLoaded: true as const,
+    sourcePathVerified: true as const,
+    runtimeResourceCount: 12 as const,
+    runtimeResourceBinding: 'matched' as const,
+    newPagesOnly: true as const,
+    downloadsPath: resolve('task-owned-downloads'),
+    downloadsDirectoryOwned: true as const,
+  };
+  assert.equal(
+    validateOwnedCandidateInBorrowedBrowser(proof, extensionId, proof.downloadsPath),
+    true
+  );
+  assert.equal(
+    validateOwnedCandidateInBorrowedBrowser(proof, 'n'.repeat(32), proof.downloadsPath),
+    false
+  );
+  assert.equal(
+    validateOwnedCandidateInBorrowedBrowser(
+      { ...proof, newlyLoaded: false as never },
+      extensionId,
+      proof.downloadsPath
+    ),
+    false
+  );
+  assert.equal(
+    validateOwnedCandidateInBorrowedBrowser(proof, extensionId, resolve('other-downloads')),
+    false
+  );
+  await assert.rejects(
+    () =>
+      observeLiveUrls({
+        context: null as unknown as BrowserContext,
+        extensionId,
+        liveUrls: context.liveUrls,
+        output: '/tmp/unused',
+        session: 'borrowed',
+        actualSiteAcceptance: { downloads: proof.downloadsPath },
+      }),
+    /task-owned extension/u
+  );
+  await assert.rejects(
+    () =>
+      observeLiveUrls({
+        context: null as unknown as BrowserContext,
+        extensionId,
+        liveUrls: context.liveUrls,
+        output: '/tmp/unused',
+        session: 'borrowed-browser-owned-extension',
+        actualSiteAcceptance: { downloads: proof.downloadsPath },
+      }),
+    /attested task-owned candidate/u
+  );
+  await assert.rejects(
+    () =>
+      observeLiveUrls({
+        context: null as unknown as BrowserContext,
+        extensionId,
+        liveUrls: context.liveUrls,
+        output: '/tmp/unused',
+        session: 'borrowed-browser-owned-extension',
+        ownedCandidateProof: proof,
+        actualSiteAcceptance: { downloads: proof.downloadsPath },
+      }),
+    /validated host baseline/u
+  );
+});
+
+test('download ownership excludes human and unlabelled native IDs', () => {
+  const extensionId = 'm'.repeat(32);
+  const item = (id: number, byExtensionId?: string) => ({
+    id,
+    ...(byExtensionId ? { byExtensionId } : {}),
+    state: 'complete',
+    filename: '/tmp/task-owned-downloads/file',
+    url: 'https://pbs.twimg.com/media/photo.jpg?name=orig',
+    bytesReceived: 10,
+    totalBytes: 10,
+    exists: true,
+  });
+  assert.deepEqual(
+    taskOwnedDownloads(
+      [item(1), item(2, 'n'.repeat(32)), item(3, extensionId)],
+      extensionId,
+      extensionId
+    ).map(({ id }) => id),
+    [3]
+  );
+  assert.throws(
+    () => taskOwnedDownloads([item(3, extensionId)], 'n'.repeat(32), extensionId),
+    /owned extension origin/u
+  );
+});
 
 test('canonical photo references require exact owned provider order and format', () => {
   const displays = [

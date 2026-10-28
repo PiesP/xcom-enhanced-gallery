@@ -3,7 +3,7 @@
 
 import { writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { join } from 'node:path';
+import { isAbsolute, join } from 'node:path';
 import type { BrowserContext, ElementHandle, JSHandle, Page } from '@playwright/test';
 import {
   observeSameDocumentPostNavigationAfterClose,
@@ -197,6 +197,40 @@ export type BorrowedHostDiagnosticProof = {
     extensionSourcePathVerified: true;
   };
 };
+export type OwnedCandidateInBorrowedBrowser = {
+  kind: 'task-owned-extension-in-borrowed-browser';
+  extensionId: string;
+  installedPathSha256: string;
+  newlyLoaded: true;
+  sourcePathVerified: true;
+  runtimeResourceCount: 12;
+  runtimeResourceBinding: 'matched';
+  newPagesOnly: true;
+  downloadsPath: string;
+  downloadsDirectoryOwned: true;
+};
+
+export function validateOwnedCandidateInBorrowedBrowser(
+  proof: OwnedCandidateInBorrowedBrowser | null,
+  extensionId: string,
+  downloadsPath: string | null
+): boolean {
+  return (
+    proof?.kind === 'task-owned-extension-in-borrowed-browser' &&
+    /^[a-p]{32}$/u.test(extensionId) &&
+    proof.extensionId === extensionId &&
+    SHA256_PATTERN.test(proof.installedPathSha256) &&
+    proof.newlyLoaded === true &&
+    proof.sourcePathVerified === true &&
+    proof.runtimeResourceCount === 12 &&
+    proof.runtimeResourceBinding === 'matched' &&
+    proof.newPagesOnly === true &&
+    proof.downloadsDirectoryOwned === true &&
+    downloadsPath !== null &&
+    proof.downloadsPath === downloadsPath &&
+    isAbsolute(downloadsPath)
+  );
+}
 type ProductDiagnostic = Diagnostic & { location: string; text: string };
 type HostSnapshot = {
   bodyStyle: { left: string; overflow: string; position: string; right: string; top: string };
@@ -3276,22 +3310,39 @@ export async function observeLiveUrls({
   output,
   session = 'owned',
   borrowedHostProof = null,
+  ownedCandidateProof = null,
   actualSiteAcceptance = null,
 }: {
   context: BrowserContext;
   extensionId: string;
   liveUrls: unknown;
   output: string;
-  session?: 'owned' | 'borrowed';
+  session?: 'owned' | 'borrowed' | 'borrowed-browser-owned-extension';
   borrowedHostProof?: BorrowedHostDiagnosticProof | null;
+  ownedCandidateProof?: OwnedCandidateInBorrowedBrowser | null;
   actualSiteAcceptance?: { downloads: string } | null;
 }) {
-  if (session !== 'owned' && session !== 'borrowed') {
+  if (
+    session !== 'owned' &&
+    session !== 'borrowed' &&
+    session !== 'borrowed-browser-owned-extension'
+  ) {
     throw new Error('Unknown live observation session mode');
   }
   const urls = validateLiveUrls(liveUrls);
-  if (actualSiteAcceptance && session !== 'owned') {
-    throw new Error('Actual-site acceptance requires a task-owned installed profile');
+  if (actualSiteAcceptance && session === 'borrowed') {
+    throw new Error('Actual-site acceptance requires a task-owned extension');
+  }
+  if (
+    session === 'borrowed-browser-owned-extension' &&
+    (!actualSiteAcceptance ||
+      !validateOwnedCandidateInBorrowedBrowser(
+        ownedCandidateProof,
+        extensionId,
+        actualSiteAcceptance.downloads
+      ))
+  ) {
+    throw new Error('Borrowed-browser acceptance requires an attested task-owned candidate');
   }
   if (actualSiteAcceptance && urls.length === 0) {
     throw new Error('Actual-site acceptance requires at least one public status URL');
@@ -3301,9 +3352,12 @@ export async function observeLiveUrls({
   }
   const pages: LiveObservation[] = [];
   const baselineByUrl =
-    session === 'borrowed' && borrowedHostProof
+    session !== 'owned' && borrowedHostProof
       ? validateBorrowedHostProof(borrowedHostProof, urls)
       : null;
+  if (session === 'borrowed-browser-owned-extension' && !baselineByUrl) {
+    throw new Error('Borrowed-browser acceptance requires a validated host baseline');
+  }
   let extensionPage: Page | null = null;
   let borrowedMode: BorrowedVideoClickMode | null = null;
   let borrowedError: string | null = null;
@@ -3351,7 +3405,7 @@ export async function observeLiveUrls({
         };
       }
       if (
-        session === 'owned' &&
+        session !== 'borrowed' &&
         page.classification === 'native-play-observed-gallery-action-unavailable'
       ) {
         page.controlledProbe = await observeControlledVideoMode(
@@ -3370,7 +3424,7 @@ export async function observeLiveUrls({
       pages.push(page);
     }
   } catch (error) {
-    if (session === 'owned') {
+    if (session !== 'borrowed') {
       throw error;
     }
     borrowedError = safeError(error);
@@ -3435,10 +3489,16 @@ export async function observeLiveUrls({
           },
         }
       : {}),
-    ...(session === 'borrowed'
+    ...(session !== 'owned'
       ? {
           session,
-          borrowedMode: urls.length === 1 ? borrowedMode : null,
+          ...(session === 'borrowed'
+            ? { borrowedMode: urls.length === 1 ? borrowedMode : null }
+            : {
+                profileOwned: false,
+                extensionOwned: true,
+                candidateExtensionId: extensionId,
+              }),
           borrowedError,
           hostProofStatus: borrowedHostProof
             ? baselineByUrl
