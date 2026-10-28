@@ -91,4 +91,5 @@ memory/
 /validation/windows/inputs/media-download-recovery.json
 /validation/windows/inputs/failed-entry-recovery.json
 /validation/windows/inputs/gallery-experience.json
+/validation/windows/inputs/live-acceptance.json
 .vitest/

@@ -5,6 +5,7 @@ import { writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import type { BrowserContext, ElementHandle, JSHandle, Page } from '@playwright/test';
+import { runActualSiteAcceptance } from './live-acceptance.ts';
 import {
   inspectHitTestedAction,
   inspectHitTestedNativePreviewAction,
@@ -268,6 +269,7 @@ type LiveObservation = {
   error?: string;
   expectedLifecycleCancellationCount?: number;
   controlledProbe?: ControlledProbe;
+  actualSiteAcceptance?: Awaited<ReturnType<typeof runActualSiteAcceptance>>;
 };
 type ControlledProbe = {
   kind?: string;
@@ -2257,7 +2259,8 @@ async function observeOne(
   controlledVideoClickMode: string | null = null,
   verifyControlledMode: (() => Promise<string | null>) | null = null,
   borrowedExtensionPage: Page | null = null,
-  expectedCsp: HostCspFingerprint[] | null = null
+  expectedCsp: HostCspFingerprint[] | null = null,
+  actualSiteAcceptance: { downloads: string; navigationUrl: string | null } | null = null
 ) {
   const identity = targetIdentity(targetUrl);
   const page = await context.newPage();
@@ -2555,6 +2558,7 @@ async function observeOne(
     await actionHandle.click({ timeout: ACTION_TIMEOUT_MS });
     const gallery = page.locator('[data-xeg-gallery-container]');
     await gallery.waitFor({ state: 'visible', timeout: ACTION_TIMEOUT_MS });
+    const galleryItemCount = await gallery.locator('[data-gallery-element="item"]').count();
     await recordHostGeometry('opened');
     const selectedGalleryHandle = await page
       .waitForFunction(
@@ -2670,6 +2674,39 @@ async function observeOne(
     );
     if (requiredProductAssertions.length) {
       throw new Error(`Missing live assertions: ${observation.missingAssertions.join(', ')}`);
+    }
+    if (actualSiteAcceptance && !compactQuote && galleryItemCount >= 2) {
+      observation.actualSiteAcceptance = await runActualSiteAcceptance({
+        context,
+        page,
+        action: actionHandle as ElementHandle<HTMLAnchorElement>,
+        image,
+        imageOwner: imageOwnerHandle as ElementHandle<HTMLElement>,
+        target: observation.target,
+        actionPath: actionIdentity.actionPath,
+        extensionId,
+        targetUrl,
+        navigationUrl: actualSiteAcceptance.navigationUrl,
+        downloads: actualSiteAcceptance.downloads,
+        output,
+        index,
+        readSettings: readStoredVideoSettings,
+        restoreSettings: restoreStoredVideoSettings,
+      });
+      await settleApi();
+      if (observation.actualSiteAcceptance.status !== 'observed') {
+        throw new Error(
+          `Actual-site acceptance failed: ${observation.actualSiteAcceptance.error ?? 'unknown'}`
+        );
+      }
+      if (
+        observation.productErrors.length ||
+        observation.productErrorOverflow ||
+        observation.pageErrors.length ||
+        observation.pageErrorOverflow
+      ) {
+        throw new Error('Actual-site acceptance introduced console or page errors');
+      }
     }
     observation.status = 'core-flow-observed';
     observation.evidenceStatus =
@@ -3054,6 +3091,7 @@ export async function observeLiveUrls({
   output,
   session = 'owned',
   borrowedHostProof = null,
+  actualSiteAcceptance = null,
 }: {
   context: BrowserContext;
   extensionId: string;
@@ -3061,11 +3099,15 @@ export async function observeLiveUrls({
   output: string;
   session?: 'owned' | 'borrowed';
   borrowedHostProof?: BorrowedHostDiagnosticProof | null;
+  actualSiteAcceptance?: { downloads: string } | null;
 }) {
   if (session !== 'owned' && session !== 'borrowed') {
     throw new Error('Unknown live observation session mode');
   }
   const urls = validateLiveUrls(liveUrls);
+  if (actualSiteAcceptance && session !== 'owned') {
+    throw new Error('Actual-site acceptance requires a task-owned installed profile');
+  }
   if (!urls.length) {
     return { status: 'not-requested', evidenceStatus: 'not-applicable', pages: [] };
   }
@@ -3096,7 +3138,14 @@ export async function observeLiveUrls({
         null,
         null,
         extensionPage,
-        baselineByUrl?.get(url) ?? null
+        baselineByUrl?.get(url) ?? null,
+        actualSiteAcceptance &&
+          !pages.some((entry) => entry.actualSiteAcceptance?.status === 'observed')
+          ? {
+              ...actualSiteAcceptance,
+              navigationUrl: urls.find((candidate) => candidate !== url) ?? null,
+            }
+          : null
       );
       if (
         session === 'borrowed' &&
@@ -3148,18 +3197,22 @@ export async function observeLiveUrls({
     (page.controlledProbe?.observation?.status === 'core-flow-observed' &&
       page.controlledProbe?.cleanup?.restored === true);
   const failed = pages.filter((page) => !passedPage(page));
+  const acceptanceMissing =
+    actualSiteAcceptance !== null &&
+    !pages.some((page) => page.actualSiteAcceptance?.status === 'observed');
   const controlled = pages.some(
     (page) => page.controlledProbe?.observation?.status === 'core-flow-observed'
   );
   const summary = {
     status:
-      failed.length || borrowedError
+      failed.length || borrowedError || acceptanceMissing
         ? 'failed'
         : controlled
           ? 'controlled-flow-observed'
           : 'core-flow-observed',
     evidenceStatus:
       !borrowedError &&
+      !acceptanceMissing &&
       pages.every(
         (page) =>
           passedPage(page) &&
@@ -3170,6 +3223,9 @@ export async function observeLiveUrls({
         ? 'observed'
         : 'unverified',
     pages,
+    ...(actualSiteAcceptance
+      ? { actualSiteAcceptance: acceptanceMissing ? 'unverified' : 'observed' }
+      : {}),
     ...(session === 'borrowed'
       ? {
           session,
@@ -3187,7 +3243,7 @@ export async function observeLiveUrls({
       : {}),
   };
   await writeFile(join(output, 'live-observations.json'), JSON.stringify(summary, null, 2));
-  if (failed.length || borrowedError) {
+  if (failed.length || borrowedError || acceptanceMissing) {
     const error = new AggregateError(
       [
         ...failed.map(
@@ -3197,6 +3253,9 @@ export async function observeLiveUrls({
             )
         ),
         ...(borrowedError ? [new Error(borrowedError)] : []),
+        ...(acceptanceMissing
+          ? [new Error('No multi-image actual-site acceptance completed')]
+          : []),
       ],
       `${failed.length} live X observation(s) missed required assertions${borrowedError ? '; borrowed session check failed' : ''}`
     );

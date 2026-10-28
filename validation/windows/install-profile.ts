@@ -52,6 +52,7 @@ import {
   validateLiveObservation,
   validateLiveUrls,
 } from './live-page.ts';
+import { parseActualSiteAcceptanceSelector } from './live-acceptance.ts';
 import { runInstalledMediaApiReuseProfile } from './media-api-reuse-profile.ts';
 import {
   captureUpgradeSettingsFailure,
@@ -16671,7 +16672,17 @@ export async function run({
     'Installed XCOM profile supports Chrome and Edge only'
   );
   assert(['extension', 'userscript'].includes(installation), 'Unknown XCOM installation mode');
+  const acceptanceSelectorText = await readFile(
+    join(root, 'validation/windows/inputs/live-acceptance.json'),
+    'utf8'
+  ).catch((error: unknown) => {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+      return null;
+    }
+    throw error;
+  });
   if (installation === 'userscript') {
+    assert.equal(acceptanceSelectorText, null, 'Actual-site acceptance requires an extension');
     assert.equal(liveUrls.length, 0, 'Installed userscript fixture does not support public URLs');
     assert.equal(
       liveObservation,
@@ -16755,6 +16766,17 @@ export async function run({
     assert.equal(liveObservation, null);
   }
   const validatedLiveUrls = validateLiveUrls(liveUrls);
+  const actualSiteAcceptance = parseActualSiteAcceptanceSelector(acceptanceSelectorText, {
+    liveUrls: validatedLiveUrls,
+    installation,
+    otherFocusedInput:
+      !!upgradeInput ||
+      !!sameVersionInput ||
+      openingProbe ||
+      recoveryProbe ||
+      failedEntryProbe ||
+      experienceProbe,
+  });
   validateLiveObservation(liveObservation);
   await mkdir(output, { recursive: true });
   const profile = await mkdtemp(join(root, PROFILE_PREFIX));
@@ -16788,7 +16810,9 @@ export async function run({
           : openingProbe
             ? 'issue 381 installed-extension opening feedback fixture; no live X observation'
             : validatedLiveUrls.length
-              ? 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
+              ? actualSiteAcceptance
+                ? 'deterministic fixture followed by explicit actual-site gallery acceptance with bounded retained downloads; no auth, consent, CAPTCHA, native Save As, Explorer, or performance claim'
+                : 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
               : sameVersionInput
                 ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
                 : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
@@ -16991,6 +17015,7 @@ export async function run({
         extensionId,
         liveUrls: validatedLiveUrls,
         output,
+        actualSiteAcceptance: actualSiteAcceptance ? { downloads } : null,
       });
       result.live = live;
       result.evidenceStatus = validatedLiveUrls.length ? live.evidenceStatus : 'fixture-observed';

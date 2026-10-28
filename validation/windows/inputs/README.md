@@ -1,5 +1,18 @@
 # Optional Windows artifact fixture selector
 
+For explicit installed-extension acceptance on public X statuses, create the
+ignored `live-acceptance.json` file here with exactly:
+
+```json
+{"scenario":"actual-site-acceptance"}
+```
+
+Pass public `--live-url` status URLs, including a two-to-four-image post and a
+different status for navigation. The normal installed fixture still runs first.
+This selector enables bounded real toolbar downloads and settings changes only
+in the task-owned profile; failed receipts are retained outside Git. Remove the
+selector after the attempt. See `../README.md` for evidence and byte limits.
+
 To run only the built userscript settings-persistence fixture, create the ignored
 `settings-persistence.json` file in this directory with this exact content:
 
