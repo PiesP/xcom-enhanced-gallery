@@ -29,6 +29,7 @@ import {
   downloadState,
 } from '@shared/state/signals/gallery-download-signals';
 import { computePreloadIndices } from '@shared/utils/performance/preload';
+import { withTrustedEvent } from '@shared/utils/events/trusted-event';
 import { cx } from '@shared/utils/text/formatting';
 import type { Accessor, JSXElement } from 'solid-js';
 import { createEffect, createMemo, createSignal, For, onCleanup, Show, splitProps } from 'solid-js';
@@ -377,7 +378,7 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
               <button
                 type="button"
                 disabled={isDownloading()}
-                onClick={() => local.onRecoverFailed?.()}
+                onClick={withTrustedEvent(() => local.onRecoverFailed?.())}
               >
                 {translate('msg.dl.bulkOutcome.recoverMissing', {
                   count: outcome().recoverableCount ?? 0,
