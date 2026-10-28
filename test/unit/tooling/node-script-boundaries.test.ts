@@ -180,7 +180,8 @@ describe('Node script import boundary', () => {
       .map((path) => `validation/windows/${path.toString()}`)
       .filter((path) => path.endsWith('.test.ts'))
       .sort();
-    expect(nativeFiles).toHaveLength(8);
+    expect(nativeFiles).toHaveLength(9);
+    expect(nativeFiles).toContain('validation/windows/live-acceptance.test.ts');
     const projects = nodeTestConfig.test?.projects as Array<{
       test: { name: string; include: string[]; environment?: string; fileParallelism?: boolean };
     }>;

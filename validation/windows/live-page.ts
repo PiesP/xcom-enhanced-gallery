@@ -1,17 +1,26 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 PiesP
 
-import { writeFile } from 'node:fs/promises';
+import { open, writeFile, type FileHandle } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { join } from 'node:path';
+import { isAbsolute, join } from 'node:path';
 import type { BrowserContext, ElementHandle, JSHandle, Page } from '@playwright/test';
+import {
+  observeSameDocumentPostNavigationAfterClose,
+  observeActualSiteVideoNavigation,
+  runActualSiteAcceptance,
+} from './live-acceptance.ts';
 import {
   inspectHitTestedAction,
   inspectHitTestedNativePreviewAction,
   inspectLiveTargetDocument,
+  resolveLiveImageDocument,
+  resolveLiveImageActionDocument,
+  isBoundLiveImageOwnerDocument,
   inspectLiveCandidateDocument,
   inspectNativePreviewOwnerDocument,
   inspectSelectedGalleryDocument,
+  eligibleLiveImageGalleryCountDocument,
   inspectSelectedGalleryVideoDocument,
   readSelectedCurrentVideoUrlDocument,
   inspectHitTestedVideoActionDocument,
@@ -28,6 +37,7 @@ import type {
   NativePreviewTarget,
   LiveTarget,
   LiveReadiness,
+  QuoteTarget,
 } from './live-page-document.ts';
 export type {
   Source,
@@ -187,6 +197,40 @@ export type BorrowedHostDiagnosticProof = {
     extensionSourcePathVerified: true;
   };
 };
+export type OwnedCandidateInBorrowedBrowser = {
+  kind: 'task-owned-extension-in-borrowed-browser';
+  extensionId: string;
+  installedPathSha256: string;
+  newlyLoaded: true;
+  sourcePathVerified: true;
+  runtimeResourceCount: 12;
+  runtimeResourceBinding: 'matched';
+  newPagesOnly: true;
+  downloadsPath: string;
+  downloadsDirectoryOwned: true;
+};
+
+export function validateOwnedCandidateInBorrowedBrowser(
+  proof: OwnedCandidateInBorrowedBrowser | null,
+  extensionId: string,
+  downloadsPath: string | null
+): boolean {
+  return (
+    proof?.kind === 'task-owned-extension-in-borrowed-browser' &&
+    /^[a-p]{32}$/u.test(extensionId) &&
+    proof.extensionId === extensionId &&
+    SHA256_PATTERN.test(proof.installedPathSha256) &&
+    proof.newlyLoaded === true &&
+    proof.sourcePathVerified === true &&
+    proof.runtimeResourceCount === 12 &&
+    proof.runtimeResourceBinding === 'matched' &&
+    proof.newPagesOnly === true &&
+    proof.downloadsDirectoryOwned === true &&
+    downloadsPath !== null &&
+    proof.downloadsPath === downloadsPath &&
+    isAbsolute(downloadsPath)
+  );
+}
 type ProductDiagnostic = Diagnostic & { location: string; text: string };
 type HostSnapshot = {
   bodyStyle: { left: string; overflow: string; position: string; right: string; top: string };
@@ -221,7 +265,7 @@ type GalleryObservation = {
     selectedVideo?: ReturnType<typeof inspectSelectedGalleryVideoDocument> | null;
   };
   playback?: { startTime: number; endTime: number | null; progressed: boolean };
-  owner?: ReturnType<typeof quotedOwnerForSource>;
+  owner?: ReturnType<typeof quotedOwnerForSource> | ReturnType<typeof directOwnerForSource>;
   ownerPath?: string | null;
   closeMethod?: string;
   detached?: boolean;
@@ -260,11 +304,28 @@ type LiveObservation = {
   requiredAssertions?: Record<string, boolean>;
   evidenceStatus: string;
   status: string;
+  cleanup?: { pageClosed: boolean; pageCloseError?: string };
   classification?: string;
   providerRejection?: ReturnType<typeof summarizeQuoteProviderRejection>;
   error?: string;
   expectedLifecycleCancellationCount?: number;
   controlledProbe?: ControlledProbe;
+  actualSiteAcceptance?: Awaited<ReturnType<typeof runActualSiteAcceptance>>;
+  sameDocumentPostNavigationAfterClose?: Awaited<
+    ReturnType<typeof observeSameDocumentPostNavigationAfterClose>
+  >;
+  actualSiteVideoNavigation?: Awaited<ReturnType<typeof observeActualSiteVideoNavigation>>;
+  imageBinding?: {
+    status: 'bound' | 'timeout';
+    timeoutMs: number;
+    sameSourceImages?: {
+      articleIndex: number;
+      nearestArticleOwnsStatus: boolean;
+      complete: boolean;
+      naturalWidth: number;
+    }[];
+    sameSourceOverflow?: boolean;
+  };
 };
 type ControlledProbe = {
   kind?: string;
@@ -282,6 +343,34 @@ type ControlledProbe = {
   status: string;
   error?: string;
 };
+type LiveCompletionOutcome = {
+  status: string;
+  cleanup?: { pageClosed: boolean };
+  controlledProbe?: {
+    status: string;
+    observation?: { status: string; cleanup?: { pageClosed: boolean } } | null;
+    cleanup: { restored: boolean; extensionPageClosed: boolean };
+  } | null;
+};
+
+function controlledRetryComplete(page: LiveCompletionOutcome): boolean {
+  const retry = page.controlledProbe;
+  return (
+    page.cleanup?.pageClosed !== false &&
+    retry?.status === 'core-flow-observed' &&
+    retry.observation?.status === 'core-flow-observed' &&
+    retry.observation.cleanup?.pageClosed !== false &&
+    retry.cleanup.restored === true &&
+    retry.cleanup.extensionPageClosed === true
+  );
+}
+
+export function liveCompletionPassed(page: LiveCompletionOutcome): boolean {
+  return (
+    page.cleanup?.pageClosed !== false &&
+    (page.status === 'core-flow-observed' || controlledRetryComplete(page))
+  );
+}
 type StoredField = { exists: boolean; value: unknown };
 type StorageRecord = {
   exists: boolean;
@@ -1597,6 +1686,19 @@ async function captureScreenshot(page: Page, output: string, filename: string) {
   return filename;
 }
 
+async function writeOpenLiveReceipt(handle: FileHandle, receipt: LiveObservation): Promise<void> {
+  const bytes = Buffer.from(JSON.stringify(receipt, null, 2));
+  let written = 0;
+  while (written < bytes.length) {
+    const result = await handle.write(bytes, written, bytes.length - written, written);
+    if (result.bytesWritten === 0) {
+      throw new Error('Live receipt write made no progress');
+    }
+    written += result.bytesWritten;
+  }
+  await handle.truncate(bytes.length);
+}
+
 async function waitForTarget(page: Page, identity: Identity) {
   const handle = await page.waitForFunction(inspectLiveTargetDocument, identity, {
     timeout: READINESS_TIMEOUT_MS,
@@ -1618,7 +1720,8 @@ async function observeQuotedVideo(
   settleApi: () => Promise<void>,
   controlledVideoClickMode: string | null,
   verifyBorrowedMode: (() => Promise<void>) | null = null,
-  identities: DiagnosticIdentities | null = null
+  identities: DiagnosticIdentities | null = null,
+  actualSiteAcceptance = false
 ) {
   const target = observation.target;
   if (!target || target.kind !== 'quoted-video') {
@@ -1965,12 +2068,29 @@ async function observeQuotedVideo(
     };
     observation.gallery.playback = playback;
     await settleApi();
-    const owner = quotedOwnerForSource(
-      observation.api.observations,
-      identity.statusId,
-      afterPlayback?.source
-    );
+    const directOwnerCandidate =
+      target.quoteBoundary === 'unmarked-candidate' && target.quoteStatusIds.length === 0;
+    const owner = directOwnerCandidate
+      ? directOwnerForSource(
+          observation.api.observations,
+          identity.statusId,
+          afterPlayback?.source,
+          target
+        )
+      : quotedOwnerForSource(
+          observation.api.observations,
+          identity.statusId,
+          afterPlayback?.source
+        );
     observation.gallery.owner = owner;
+    if (actualSiteAcceptance) {
+      observation.actualSiteVideoNavigation = await observeActualSiteVideoNavigation(page);
+      if (observation.actualSiteVideoNavigation.status === 'failed') {
+        throw new Error(
+          `Actual-site video navigation failed: ${observation.actualSiteVideoNavigation.error ?? 'unknown'}`
+        );
+      }
+    }
     await page.keyboard.press('Escape');
     const detached = await gallery.waitFor({ state: 'detached', timeout: ACTION_TIMEOUT_MS }).then(
       () => true,
@@ -2015,10 +2135,19 @@ async function observeQuotedVideo(
         video.height > 0 &&
         video.mediaErrorCode === null
       ),
-      directQuotedOwner:
-        owner.status === 'matched-direct-quote-variant' &&
-        (target.quoteStatusIds.length === 0 ||
-          (typeof owner.ownerId === 'string' && target.quoteStatusIds.includes(owner.ownerId))),
+      ...(directOwnerCandidate
+        ? {
+            directStatusOwner:
+              owner.status === 'matched-direct-owner-variant' &&
+              owner.ownerId === identity.statusId,
+          }
+        : {
+            directQuotedOwner:
+              owner.status === 'matched-direct-quote-variant' &&
+              (target.quoteStatusIds.length === 0 ||
+                (typeof owner.ownerId === 'string' &&
+                  target.quoteStatusIds.includes(owner.ownerId))),
+          }),
       playbackProgress: playback.progressed,
       escapeClosed: detached,
       exactFocusRestored:
@@ -2245,6 +2374,14 @@ async function observeNativePreviewPhoto(
   }
 }
 
+export async function closeObservedLivePage(page: Pick<Page, 'close'>, strict: boolean) {
+  if (strict) {
+    await page.close();
+  } else {
+    await page.close().catch(() => {});
+  }
+}
+
 async function observeOne(
   context: BrowserContext,
   extensionId: string,
@@ -2254,7 +2391,13 @@ async function observeOne(
   controlledVideoClickMode: string | null = null,
   verifyControlledMode: (() => Promise<string | null>) | null = null,
   borrowedExtensionPage: Page | null = null,
-  expectedCsp: HostCspFingerprint[] | null = null
+  expectedCsp: HostCspFingerprint[] | null = null,
+  actualSiteAcceptance: {
+    downloads: string;
+    navigationUrl: string | null;
+    runMultiImage: boolean;
+  } | null = null,
+  strictPageClose = false
 ) {
   const identity = targetIdentity(targetUrl);
   const page = await context.newPage();
@@ -2314,6 +2457,8 @@ async function observeOne(
     : null;
   const settleApi = attachDiagnostics(page, observation, identities);
   let actionHandle: ElementHandle<SVGElement | HTMLElement> | null | undefined;
+  let imageHandle: ElementHandle<HTMLImageElement> | null = null;
+  let imageOwnerHandle: ElementHandle<HTMLElement> | null = null;
   try {
     const response = await page.goto(targetUrl, {
       waitUntil: 'domcontentloaded',
@@ -2348,7 +2493,20 @@ async function observeOne(
       observation.classification = 'provider-or-page-unavailable';
       throw new Error(`Live target stopped before media readiness: ${readiness.reason}`);
     }
-    observation.target = readiness.target;
+    const mixedPhotoEntry =
+      actualSiteAcceptance !== null &&
+      readiness.target.kind === 'quoted-video' &&
+      readiness.target.quoteBoundary === 'unmarked-candidate' &&
+      readiness.target.quoteStatusIds.length === 0;
+    const mixedVideoTarget = mixedPhotoEntry ? readiness.target : null;
+    const photoReadiness = mixedPhotoEntry
+      ? await page.evaluate(inspectLiveTargetDocument, { ...identity, preferOwnedPhoto: true })
+      : false;
+    observation.target =
+      photoReadiness && photoReadiness.state === 'ready' && photoReadiness.target.kind === 'image'
+        ? photoReadiness.target
+        : readiness.target;
+    const enteredMixedViaPhoto = mixedPhotoEntry && observation.target.kind === 'image';
     observation.targetCandidates = await page
       .evaluate(inspectLiveCandidateDocument, identity)
       .catch(() => null);
@@ -2387,7 +2545,8 @@ async function observeOne(
         controlledVideoClickMode ??
           (observation.videoClickMode === 'allow-all' ? 'allow-all' : null),
         verifyBorrowedMode,
-        identities
+        identities,
+        actualSiteAcceptance !== null
       );
       await settleApi();
       if (refreshQuotedVideoErrorAssertions(observation).length) {
@@ -2415,9 +2574,85 @@ async function observeOne(
       return observation;
     }
 
-    const article = page.locator('article').nth(observation.target.articleIndex);
-    const image = article.locator('img').nth(observation.target.imageIndex);
+    const imageReference = await page
+      .waitForFunction(
+        resolveLiveImageDocument,
+        { identity, target: observation.target },
+        { timeout: ACTION_TIMEOUT_MS, polling: 100 }
+      )
+      .catch(() => null);
+    if (!imageReference) {
+      const diagnostic = await page
+        .evaluate(
+          ({ identity, target }) => {
+            const expected = `/${identity.handle}/status/${identity.statusId}`.toLowerCase();
+            const matches = [...document.querySelectorAll<HTMLImageElement>('article img')].filter(
+              (image) => {
+                try {
+                  const source = new URL(image.currentSrc || image.src);
+                  return (
+                    source.hostname.toLowerCase() === target.imageSource.host &&
+                    source.pathname === target.imageSource.path
+                  );
+                } catch {
+                  return false;
+                }
+              }
+            );
+            return {
+              sameSourceImages: matches.slice(0, 12).map((image) => {
+                const article = image.closest('article');
+                return {
+                  articleIndex: article
+                    ? [...document.querySelectorAll('article')].indexOf(article)
+                    : -1,
+                  nearestArticleOwnsStatus: Boolean(
+                    article &&
+                    [...article.querySelectorAll<HTMLAnchorElement>('a[href]')].some((anchor) => {
+                      try {
+                        return (
+                          anchor.closest('article') === article &&
+                          new URL(anchor.href, location.href).pathname.toLowerCase() === expected
+                        );
+                      } catch {
+                        return false;
+                      }
+                    })
+                  ),
+                  complete: image.complete,
+                  naturalWidth: image.naturalWidth,
+                };
+              }),
+              sameSourceOverflow: matches.length > 12,
+            };
+          },
+          { identity, target: observation.target }
+        )
+        .catch(() => ({ sameSourceImages: [], sameSourceOverflow: false }));
+      observation.imageBinding = {
+        status: 'timeout',
+        timeoutMs: ACTION_TIMEOUT_MS,
+        ...diagnostic,
+      };
+      throw new Error('Requested image source and owner were not uniquely bound before timeout');
+    }
+    observation.imageBinding = { status: 'bound', timeoutMs: ACTION_TIMEOUT_MS };
+    const image = imageReference.asElement() as ElementHandle<HTMLImageElement> | null;
+    if (!image) {
+      await imageReference.dispose();
+      throw new Error('Requested image source and owner were not uniquely bound');
+    }
+    imageHandle = image;
+    const ownerReference = await image.evaluateHandle((element) => element.closest('article'));
+    imageOwnerHandle = ownerReference.asElement() as ElementHandle<HTMLElement> | null;
+    if (!imageOwnerHandle) {
+      await ownerReference.dispose();
+      throw new Error('Requested image owner detached before interaction');
+    }
     await image.scrollIntoViewIfNeeded({ timeout: ACTION_TIMEOUT_MS });
+    if (!(await image.evaluate(isBoundLiveImageOwnerDocument, imageOwnerHandle))) {
+      throw new Error('Requested image moved to a different article');
+    }
     const actionIdentity = await inspectHitTestedAction(image, identity, observation.target);
     if (!actionIdentity) {
       throw new Error('No owned top media action was found by hit test');
@@ -2431,19 +2666,23 @@ async function observeOne(
       ...actionIdentity,
       ...(selectedPhotoIndex === null ? {} : { selectedPhotoIndex }),
     };
-    const action = article.locator('a[href]').nth(actionIdentity.actionIndex);
-    actionHandle = await action.elementHandle();
+    const actionReference = await image.evaluateHandle(resolveLiveImageActionDocument, {
+      actionIndex: actionIdentity.actionIndex,
+      compactQuote,
+    });
+    actionHandle = actionReference.asElement() as ElementHandle<HTMLAnchorElement> | null;
     if (!actionHandle) {
+      await actionReference.dispose();
       throw new Error('Selected target action detached before interaction');
     }
-    await action.focus({ timeout: ACTION_TIMEOUT_MS });
+    await actionHandle.focus();
     if ((await hostSnapshot(page)).scrollY === 0) {
       await page.mouse.wheel(0, 160);
       await page.waitForFunction(() => window.scrollY > 0, null, {
         timeout: ACTION_TIMEOUT_MS,
       });
     }
-    await action.focus({ timeout: ACTION_TIMEOUT_MS });
+    await actionHandle.focus();
     const before = await hostSnapshot(page);
     const focusPrepared = await actionHandle.evaluate(
       (element) => document.activeElement === element
@@ -2463,21 +2702,40 @@ async function observeOne(
       `live-page-${index}-before.png`
     );
 
-    if (compactQuote) {
-      const refreshedAction = await inspectHitTestedAction(image, identity, observation.target);
-      if (
-        !refreshedAction ||
-        refreshedAction.actionIndex !== actionIdentity.actionIndex ||
-        refreshedAction.actionPath !== actionIdentity.actionPath
-      ) {
-        throw new Error('Compact quote owner or image changed before click');
-      }
+    const refreshedAction = await inspectHitTestedAction(image, identity, observation.target);
+    if (
+      !refreshedAction ||
+      refreshedAction.actionIndex !== actionIdentity.actionIndex ||
+      refreshedAction.actionPath !== actionIdentity.actionPath
+    ) {
+      throw new Error('Selected image owner or action changed before click');
     }
 
     const identityBeforeClick = await actionHandle.evaluate(
       (element, expected) => {
         const article = element.closest('article');
-        if (!(element instanceof HTMLAnchorElement) || !article) {
+        const image = expected.image;
+        if (
+          !(element instanceof HTMLAnchorElement) ||
+          !article ||
+          !(image instanceof HTMLImageElement) ||
+          !image.isConnected ||
+          !(expected.imageOwner instanceof HTMLElement) ||
+          image.closest('article') !== expected.imageOwner ||
+          image.closest('article') !== article
+        ) {
+          return false;
+        }
+        try {
+          const source = new URL(image.currentSrc || image.src);
+          if (
+            source.protocol !== 'https:' ||
+            source.hostname.toLowerCase() !== expected.imageSource.host ||
+            source.pathname !== expected.imageSource.path
+          ) {
+            return false;
+          }
+        } catch {
           return false;
         }
         const rectangle = element.getBoundingClientRect();
@@ -2493,7 +2751,12 @@ async function observeOne(
           new URL(element.href, location.href).pathname === expected.actionPath
         );
       },
-      { actionPath: observation.target.actionPath }
+      {
+        actionPath: observation.target.actionPath,
+        image,
+        imageOwner: imageOwnerHandle,
+        imageSource: observation.target.imageSource,
+      }
     );
     observation.gallery.identityBeforeClick = identityBeforeClick;
     if (!identityBeforeClick) {
@@ -2505,6 +2768,8 @@ async function observeOne(
     await actionHandle.click({ timeout: ACTION_TIMEOUT_MS });
     const gallery = page.locator('[data-xeg-gallery-container]');
     await gallery.waitFor({ state: 'visible', timeout: ACTION_TIMEOUT_MS });
+    const galleryItemCount = await gallery.locator('[data-gallery-element="item"]').count();
+    const eligibleImageGalleryCount = await gallery.evaluate(eligibleLiveImageGalleryCountDocument);
     await recordHostGeometry('opened');
     const selectedGalleryHandle = await page
       .waitForFunction(
@@ -2532,6 +2797,25 @@ async function observeOne(
       output,
       `live-page-${index}-gallery.png`
     );
+
+    if (enteredMixedViaPhoto && mixedVideoTarget?.kind === 'quoted-video') {
+      observation.actualSiteVideoNavigation = await observeActualSiteVideoNavigation(
+        page,
+        'owned-photo'
+      );
+      if (observation.actualSiteVideoNavigation.status !== 'observed') {
+        throw new Error(
+          `Actual-site photo-to-video navigation was unverified: ${observation.actualSiteVideoNavigation.error ?? 'unknown'}`
+        );
+      }
+      await settleApi();
+      observation.gallery.owner = directOwnerForSource(
+        observation.api.observations,
+        identity.statusId,
+        observation.actualSiteVideoNavigation.neighbor?.source,
+        mixedVideoTarget
+      );
+    }
 
     await recordHostGeometry('before-Escape');
     await page.keyboard.press('Escape');
@@ -2598,6 +2882,14 @@ async function observeOne(
         observation.gallery.opened?.role === 'dialog' &&
         observation.gallery.opened.ariaModal === 'true',
       galleryHostImage: observation.gallery.opened?.selectedGallery != null,
+      ...(enteredMixedViaPhoto
+        ? {
+            mixedVideoNavigation: observation.actualSiteVideoNavigation?.status === 'observed',
+            directStatusVideoOwner:
+              observation.gallery.owner?.status === 'matched-direct-owner-variant' &&
+              observation.gallery.owner.ownerId === identity.statusId,
+          }
+        : {}),
       ...(compactQuote
         ? { compactProviderOwnership: compactEvidence?.providerConfirmed === true }
         : {}),
@@ -2620,6 +2912,65 @@ async function observeOne(
     );
     if (requiredProductAssertions.length) {
       throw new Error(`Missing live assertions: ${observation.missingAssertions.join(', ')}`);
+    }
+    if (actualSiteAcceptance?.runMultiImage && !compactQuote && eligibleImageGalleryCount >= 2) {
+      observation.actualSiteAcceptance = await runActualSiteAcceptance({
+        context,
+        page,
+        action: actionHandle as ElementHandle<HTMLAnchorElement>,
+        image,
+        imageOwner: imageOwnerHandle as ElementHandle<HTMLElement>,
+        target: observation.target,
+        actionPath: actionIdentity.actionPath,
+        extensionId,
+        targetUrl,
+        navigationUrl: actualSiteAcceptance.navigationUrl,
+        downloads: actualSiteAcceptance.downloads,
+        output,
+        index,
+        readSettings: readStoredVideoSettings,
+        restoreSettings: restoreStoredVideoSettings,
+        readProviderObservations: async () => {
+          await settleApi();
+          return observation.api.observations;
+        },
+      });
+      await settleApi();
+      if (observation.actualSiteAcceptance.status !== 'observed') {
+        throw new Error(
+          `Actual-site acceptance failed: ${observation.actualSiteAcceptance.error ?? 'unknown'}`
+        );
+      }
+      if (
+        observation.productErrors.length ||
+        observation.productErrorOverflow ||
+        observation.pageErrors.length ||
+        observation.pageErrorOverflow
+      ) {
+        throw new Error('Actual-site acceptance introduced console or page errors');
+      }
+    }
+    if (actualSiteAcceptance && !compactQuote && galleryItemCount === 1) {
+      observation.sameDocumentPostNavigationAfterClose =
+        await observeSameDocumentPostNavigationAfterClose({
+          page,
+          image,
+          targetUrl,
+        });
+      await settleApi();
+      if (observation.sameDocumentPostNavigationAfterClose.status === 'failed') {
+        throw new Error(
+          `Actual-site post-close same-document navigation failed: ${observation.sameDocumentPostNavigationAfterClose.reason ?? 'unknown'}`
+        );
+      }
+      if (
+        observation.productErrors.length ||
+        observation.productErrorOverflow ||
+        observation.pageErrors.length ||
+        observation.pageErrorOverflow
+      ) {
+        throw new Error('Actual-site post-close navigation introduced console or page errors');
+      }
     }
     observation.status = 'core-flow-observed';
     observation.evidenceStatus =
@@ -2701,24 +3052,44 @@ async function observeOne(
     if (actionHandle) {
       await actionHandle.dispose().catch(() => {});
     }
+    if (imageHandle) {
+      await imageHandle.dispose().catch(() => {});
+    }
+    if (imageOwnerHandle) {
+      await imageOwnerHandle.dispose().catch(() => {});
+    }
     observation.finalUrl = sanitizedUrl(page.url());
+    let receiptHandle: FileHandle | null = null;
     try {
-      await writeFile(
-        join(output, `live-page-${index}.json`),
-        JSON.stringify(observation, null, 2)
-      );
+      receiptHandle = await open(join(output, `live-page-${index}.json`), 'wx', 0o600);
+      await writeOpenLiveReceipt(receiptHandle, observation);
     } finally {
       try {
-        if (borrowedExtensionPage) {
-          await page.close();
-        } else {
-          await page.close().catch(() => {});
+        const requireClose = borrowedExtensionPage !== null || strictPageClose;
+        try {
+          await closeObservedLivePage(page, requireClose);
+          if (requireClose) {
+            observation.cleanup = { pageClosed: true };
+          }
+        } catch (error) {
+          const message = `Task-owned live page close failed: ${safeError(error)}`;
+          observation.cleanup = { pageClosed: false, pageCloseError: message };
+          observation.status = 'failed';
+          observation.evidenceStatus = 'unverified';
+          observation.error = observation.error ? `${observation.error}; ${message}` : message;
+        }
+        if (requireClose && receiptHandle) {
+          await writeOpenLiveReceipt(receiptHandle, observation);
         }
       } finally {
-        if (identities) {
-          identities.selectedVideo = null;
-          identities.apiVariants.length = 0;
-          identities.requestUrls.length = 0;
+        try {
+          await receiptHandle?.close();
+        } finally {
+          if (identities) {
+            identities.selectedVideo = null;
+            identities.apiVariants.length = 0;
+            identities.requestUrls.length = 0;
+          }
         }
       }
     }
@@ -2902,7 +3273,9 @@ async function observeControlledVideoMode(
   extensionId: string,
   targetUrl: string,
   output: string,
-  index: number
+  index: number,
+  actualSiteAcceptance: { downloads: string } | null = null,
+  strictPageClose = false
 ): Promise<ControlledProbe> {
   const key = 'xeg-app-settings';
   const extensionPage = await context.newPage();
@@ -2949,7 +3322,13 @@ async function observeControlledVideoMode(
       output,
       `${index}-allow-all`,
       'allow-all',
-      async () => storedVideoClickMode((await readStoredVideoSettings(extensionPage)).settings)
+      async () => storedVideoClickMode((await readStoredVideoSettings(extensionPage)).settings),
+      null,
+      null,
+      actualSiteAcceptance
+        ? { ...actualSiteAcceptance, navigationUrl: null, runMultiImage: false }
+        : null,
+      strictPageClose
     );
     result.modeAfterObservation = storedVideoClickMode(
       (await readStoredVideoSettings(extensionPage)).settings
@@ -2998,26 +3377,54 @@ export async function observeLiveUrls({
   output,
   session = 'owned',
   borrowedHostProof = null,
+  ownedCandidateProof = null,
+  actualSiteAcceptance = null,
 }: {
   context: BrowserContext;
   extensionId: string;
   liveUrls: unknown;
   output: string;
-  session?: 'owned' | 'borrowed';
+  session?: 'owned' | 'borrowed' | 'borrowed-browser-owned-extension';
   borrowedHostProof?: BorrowedHostDiagnosticProof | null;
+  ownedCandidateProof?: OwnedCandidateInBorrowedBrowser | null;
+  actualSiteAcceptance?: { downloads: string } | null;
 }) {
-  if (session !== 'owned' && session !== 'borrowed') {
+  if (
+    session !== 'owned' &&
+    session !== 'borrowed' &&
+    session !== 'borrowed-browser-owned-extension'
+  ) {
     throw new Error('Unknown live observation session mode');
   }
   const urls = validateLiveUrls(liveUrls);
+  if (actualSiteAcceptance && session === 'borrowed') {
+    throw new Error('Actual-site acceptance requires a task-owned extension');
+  }
+  if (
+    session === 'borrowed-browser-owned-extension' &&
+    (!actualSiteAcceptance ||
+      !validateOwnedCandidateInBorrowedBrowser(
+        ownedCandidateProof,
+        extensionId,
+        actualSiteAcceptance.downloads
+      ))
+  ) {
+    throw new Error('Borrowed-browser acceptance requires an attested task-owned candidate');
+  }
+  if (actualSiteAcceptance && urls.length === 0) {
+    throw new Error('Actual-site acceptance requires at least one public status URL');
+  }
   if (!urls.length) {
     return { status: 'not-requested', evidenceStatus: 'not-applicable', pages: [] };
   }
   const pages: LiveObservation[] = [];
   const baselineByUrl =
-    session === 'borrowed' && borrowedHostProof
+    session !== 'owned' && borrowedHostProof
       ? validateBorrowedHostProof(borrowedHostProof, urls)
       : null;
+  if (session === 'borrowed-browser-owned-extension' && !baselineByUrl) {
+    throw new Error('Borrowed-browser acceptance requires a validated host baseline');
+  }
   let extensionPage: Page | null = null;
   let borrowedMode: BorrowedVideoClickMode | null = null;
   let borrowedError: string | null = null;
@@ -3040,7 +3447,17 @@ export async function observeLiveUrls({
         null,
         null,
         extensionPage,
-        baselineByUrl?.get(url) ?? null
+        baselineByUrl?.get(url) ?? null,
+        actualSiteAcceptance
+          ? {
+              ...actualSiteAcceptance,
+              navigationUrl: urls.find((candidate) => candidate !== url) ?? null,
+              runMultiImage: !pages.some(
+                (entry) => entry.actualSiteAcceptance?.status === 'observed'
+              ),
+            }
+          : null,
+        session === 'borrowed-browser-owned-extension'
       );
       if (
         session === 'borrowed' &&
@@ -3056,7 +3473,7 @@ export async function observeLiveUrls({
         };
       }
       if (
-        session === 'owned' &&
+        session !== 'borrowed' &&
         page.classification === 'native-play-observed-gallery-action-unavailable'
       ) {
         page.controlledProbe = await observeControlledVideoMode(
@@ -3064,7 +3481,9 @@ export async function observeLiveUrls({
           extensionId,
           url,
           output,
-          index + 1
+          index + 1,
+          actualSiteAcceptance,
+          session === 'borrowed-browser-owned-extension'
         ).catch((error) => ({
           status: 'failed',
           error: safeError(error),
@@ -3074,7 +3493,7 @@ export async function observeLiveUrls({
       pages.push(page);
     }
   } catch (error) {
-    if (session === 'owned') {
+    if (session !== 'borrowed') {
       throw error;
     }
     borrowedError = safeError(error);
@@ -3087,26 +3506,38 @@ export async function observeLiveUrls({
       }
     }
   }
-  const passedPage = (page: LiveObservation) =>
-    page.status === 'core-flow-observed' ||
-    (page.controlledProbe?.observation?.status === 'core-flow-observed' &&
-      page.controlledProbe?.cleanup?.restored === true);
-  const failed = pages.filter((page) => !passedPage(page));
-  const controlled = pages.some(
-    (page) => page.controlledProbe?.observation?.status === 'core-flow-observed'
-  );
+  const failed = pages.filter((page) => !liveCompletionPassed(page));
+  const cleanAcceptedPages = pages.filter(liveCompletionPassed);
+  const acceptanceCoverage = {
+    multiImageDownloadsSettings: cleanAcceptedPages.some(
+      (page) => page.actualSiteAcceptance?.status === 'observed'
+    ),
+    videoNavigation: cleanAcceptedPages.some(
+      (page) =>
+        page.actualSiteVideoNavigation?.status === 'observed' ||
+        (controlledRetryComplete(page) &&
+          page.controlledProbe?.observation?.actualSiteVideoNavigation?.status === 'observed')
+    ),
+    sameDocumentPostNavigationAfterClose: cleanAcceptedPages.some(
+      (page) => page.sameDocumentPostNavigationAfterClose?.status === 'observed'
+    ),
+  };
+  const acceptanceMissing =
+    actualSiteAcceptance !== null && Object.values(acceptanceCoverage).some((passed) => !passed);
+  const controlled = cleanAcceptedPages.some((page) => controlledRetryComplete(page));
   const summary = {
     status:
-      failed.length || borrowedError
+      failed.length || borrowedError || acceptanceMissing
         ? 'failed'
         : controlled
           ? 'controlled-flow-observed'
           : 'core-flow-observed',
     evidenceStatus:
       !borrowedError &&
+      !acceptanceMissing &&
       pages.every(
         (page) =>
-          passedPage(page) &&
+          liveCompletionPassed(page) &&
           (page.status === 'core-flow-observed'
             ? page.evidenceStatus
             : page.controlledProbe?.observation?.evidenceStatus) === 'observed'
@@ -3114,10 +3545,24 @@ export async function observeLiveUrls({
         ? 'observed'
         : 'unverified',
     pages,
-    ...(session === 'borrowed'
+    ...(actualSiteAcceptance
+      ? {
+          actualSiteAcceptance: {
+            status: acceptanceMissing ? 'unverified' : 'observed',
+            coverage: acceptanceCoverage,
+          },
+        }
+      : {}),
+    ...(session !== 'owned'
       ? {
           session,
-          borrowedMode: urls.length === 1 ? borrowedMode : null,
+          ...(session === 'borrowed'
+            ? { borrowedMode: urls.length === 1 ? borrowedMode : null }
+            : {
+                profileOwned: false,
+                extensionOwned: true,
+                candidateExtensionId: extensionId,
+              }),
           borrowedError,
           hostProofStatus: borrowedHostProof
             ? baselineByUrl
@@ -3130,8 +3575,11 @@ export async function observeLiveUrls({
         }
       : {}),
   };
-  await writeFile(join(output, 'live-observations.json'), JSON.stringify(summary, null, 2));
-  if (failed.length || borrowedError) {
+  await writeFile(join(output, 'live-observations.json'), JSON.stringify(summary, null, 2), {
+    flag: 'wx',
+    mode: 0o600,
+  });
+  if (failed.length || borrowedError || acceptanceMissing) {
     const error = new AggregateError(
       [
         ...failed.map(
@@ -3141,12 +3589,65 @@ export async function observeLiveUrls({
             )
         ),
         ...(borrowedError ? [new Error(borrowedError)] : []),
+        ...(acceptanceMissing
+          ? [new Error('Actual-site acceptance coverage remains incomplete')]
+          : []),
       ],
       `${failed.length} live X observation(s) missed required assertions${borrowedError ? '; borrowed session check failed' : ''}`
     );
     throw Object.assign(error, { summary });
   }
   return summary;
+}
+
+export function directOwnerForSource(
+  apiObservations: ApiObservation[],
+  outerId: string,
+  source: Source | null | undefined,
+  target: Pick<QuoteTarget, 'quoteBoundary' | 'quoteStatusIds'>
+) {
+  if (target.quoteBoundary !== 'unmarked-candidate' || target.quoteStatusIds.length !== 0) {
+    return { status: 'not-direct-owner-candidate', ownerId: null, mediaId: null };
+  }
+  if (!source) {
+    return { status: 'missing-video-source', ownerId: null, mediaId: null };
+  }
+  const matches = new Map<
+    string,
+    { ownerId: string; mediaId: string | null; mediaIndex: number }
+  >();
+  for (const entry of apiObservations) {
+    if (
+      entry.operation !== 'TweetResultByRestId' ||
+      entry.requestedTweetId !== outerId ||
+      entry.httpStatus !== 200 ||
+      entry.providerErrors ||
+      entry.result?.id !== outerId ||
+      entry.directQuote
+    ) {
+      continue;
+    }
+    entry.result.media.forEach((media, mediaIndex) => {
+      if (
+        media.playableVariants.some(
+          (variant) => variant?.host === source.host && variant.path === source.path
+        )
+      ) {
+        matches.set(JSON.stringify([mediaIndex, media.id]), {
+          ownerId: outerId,
+          mediaId: media.id,
+          mediaIndex,
+        });
+      }
+    });
+  }
+  return matches.size === 1
+    ? { status: 'matched-direct-owner-variant', ...[...matches.values()][0] }
+    : {
+        status: matches.size > 1 ? 'ambiguous-media' : 'no-direct-owner-variant',
+        ownerId: null,
+        mediaId: null,
+      };
 }
 
 function quotedOwnerForSource(

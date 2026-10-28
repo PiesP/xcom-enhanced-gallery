@@ -44,6 +44,7 @@
       "src/shared/services/download/live-byte-budget.ts",
       "validation/windows/download-memory.ts",
       "validation/windows/live-page.ts",
+      "validation/windows/live-acceptance.ts",
       "validation/windows/live-page-document.ts"
     ],
     "build_commands": [

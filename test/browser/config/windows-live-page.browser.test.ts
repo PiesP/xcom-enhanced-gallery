@@ -20,6 +20,24 @@ function inspectFirstCurrentDownload(page: unknown, expectedUrl: string) {
 }
 
 describe('Windows X live page DOM validation', () => {
+  it('admits only galleries containing two to four image-only items', () => {
+    document.body.innerHTML = `<div data-xeg-gallery-container>
+      <div data-gallery-element="item"><img src="https://pbs.twimg.com/media/a.jpg"></div>
+      <div data-gallery-element="item"><img src="https://pbs.twimg.com/media/b.jpg"></div>
+    </div>`;
+    const gallery = document.querySelector('[data-xeg-gallery-container]');
+    if (!gallery) {
+      throw new Error('Gallery fixture missing');
+    }
+    expect(livePage.eligibleLiveImageGalleryCountDocument(gallery)).toBe(2);
+    gallery.querySelectorAll('[data-gallery-element="item"]')[1]!.innerHTML =
+      '<video src="https://video.twimg.com/clip.mp4"></video>';
+    expect(livePage.eligibleLiveImageGalleryCountDocument(gallery)).toBe(0);
+    gallery.querySelectorAll('[data-gallery-element="item"]')[1]!.innerHTML =
+      '<img src="https://pbs.twimg.com/media/b.jpg"><video src="https://video.twimg.com/clip.mp4"></video>';
+    expect(livePage.eligibleLiveImageGalleryCountDocument(gallery)).toBe(0);
+  });
+
   it('matches the bundled Downloads BETA heading in localized options markup', () => {
     document.body.innerHTML = `
       <table><tbody>
@@ -342,6 +360,210 @@ describe('Windows X live page DOM validation', () => {
     });
   });
 
+  it('keeps the requested image bound when an earlier thread article appears', async () => {
+    const identity = { handle: 'NASA', statusId: '2040059770237849635' };
+    const statusPath = '/NASA/status/2040059770237849635';
+    document.body.innerHTML = `
+      <article id="requested">
+        <a id="status" href="https://x.com${statusPath}">Status</a>
+        <a id="action" href="https://x.com${statusPath}/photo/1">
+          <img id="requested-image" src="https://pbs.twimg.com/media/HE-_ijrXYAA_Wiq?format=jpg" alt="Image">
+        </a>
+      </article>`;
+    const image = document.querySelector<HTMLImageElement>('#requested-image');
+    const action = document.querySelector<HTMLAnchorElement>('#action');
+    const status = document.querySelector<HTMLAnchorElement>('#status');
+    if (!image || !action || !status) {
+      throw new Error('Requested image fixture is incomplete');
+    }
+    image.getBoundingClientRect = () => ({
+      bottom: 180,
+      height: 160,
+      left: 20,
+      right: 180,
+      toJSON: () => ({}),
+      top: 20,
+      width: 160,
+      x: 20,
+      y: 20,
+    });
+    Object.defineProperties(image, {
+      complete: { configurable: true, value: true },
+      naturalWidth: { configurable: true, value: 160 },
+    });
+    const ready = livePage.inspectLiveTargetDocument(identity);
+    if (!ready || ready.state !== 'ready' || ready.target.kind !== 'image') {
+      throw new Error('Requested image readiness was not established');
+    }
+    const boundTarget = ready.target;
+    expect(ready.target.articleIndex).toBe(0);
+
+    const preceding = document.createElement('article');
+    preceding.innerHTML = `
+      <a href="https://x.com/NASA/status/2040059740848283920">Earlier status</a>
+      <a href="https://x.com/NASA/status/2040059740848283920/photo/1">
+        <img src="https://pbs.twimg.com/media/HE-_hJkWgAApuRC" alt="Earlier image">
+      </a>`;
+    document.querySelector('#requested')?.before(preceding);
+    expect(document.querySelectorAll('article')[ready.target.articleIndex]).toBe(preceding);
+
+    const previousHitTest = Object.getOwnPropertyDescriptor(document, 'elementsFromPoint');
+    Object.defineProperty(document, 'elementsFromPoint', {
+      configurable: true,
+      value: () => [action],
+    });
+    try {
+      const selected = livePage.resolveLiveImageDocument({ identity, target: ready.target });
+      expect(selected).toBe(image);
+      image.src = 'https://pbs.twimg.com/media/temporarily-replaced';
+      const rebound = vi.waitFor(
+        () =>
+          expect(livePage.resolveLiveImageDocument({ identity, target: boundTarget })).toBe(image),
+        { interval: 10, timeout: 250 }
+      );
+      setTimeout(() => {
+        image.src = 'https://pbs.twimg.com/media/HE-_ijrXYAA_Wiq?format=jpg';
+      }, 20);
+      await rebound;
+      const boundImage = {
+        evaluate: async (
+          callback: (element: HTMLImageElement, value: unknown) => unknown,
+          value: unknown
+        ) => callback(image, value),
+      };
+      const actionIdentity = await livePage.inspectHitTestedAction(
+        boundImage as unknown as Parameters<LivePageModule['inspectHitTestedAction']>[0],
+        identity,
+        ready.target
+      );
+      expect(actionIdentity).toMatchObject({ actionPath: `${statusPath}/photo/1`, actionIndex: 1 });
+      expect(
+        livePage.resolveLiveImageActionDocument(image, {
+          actionIndex: actionIdentity?.actionIndex ?? -1,
+          compactQuote: false,
+        })
+      ).toBe(action);
+
+      const duplicate = image.cloneNode() as HTMLImageElement;
+      action.append(duplicate);
+      expect(livePage.resolveLiveImageDocument({ identity, target: ready.target })).toBeNull();
+      duplicate.remove();
+
+      const requestedArticle = document.querySelector('#requested');
+      if (!requestedArticle) {
+        throw new Error('Requested article detached');
+      }
+      expect(livePage.isBoundLiveImageOwnerDocument(image, requestedArticle)).toBe(true);
+      const movedOwner = document.createElement('article');
+      movedOwner.innerHTML = `<a href="https://x.com${statusPath}">Status copy</a>`;
+      movedOwner.append(action);
+      document.body.append(movedOwner);
+      expect(livePage.isBoundLiveImageOwnerDocument(image, requestedArticle)).toBe(false);
+      requestedArticle.append(action);
+
+      status.href = 'https://x.com/NASA/status/2040059740848283920';
+      expect(livePage.resolveLiveImageDocument({ identity, target: ready.target })).toBeNull();
+      expect(
+        await livePage.inspectHitTestedAction(
+          boundImage as unknown as Parameters<LivePageModule['inspectHitTestedAction']>[0],
+          identity,
+          ready.target
+        )
+      ).toBeNull();
+      status.href = `https://x.com${statusPath}`;
+
+      image.src = 'https://pbs.twimg.com/media/changed';
+      expect(livePage.resolveLiveImageDocument({ identity, target: ready.target })).toBeNull();
+      expect(
+        await livePage.inspectHitTestedAction(
+          boundImage as unknown as Parameters<LivePageModule['inspectHitTestedAction']>[0],
+          identity,
+          ready.target
+        )
+      ).toBeNull();
+      image.remove();
+      expect(livePage.resolveLiveImageDocument({ identity, target: ready.target })).toBeNull();
+    } finally {
+      if (previousHitTest) {
+        Object.defineProperty(document, 'elementsFromPoint', previousHitTest);
+      } else {
+        Reflect.deleteProperty(document, 'elementsFromPoint');
+      }
+    }
+  });
+
+  it('uses only a real preceding same-author status anchor for SPA evidence', () => {
+    document.body.innerHTML = `
+      <article><a id="parent" href="https://x.com/NASA/status/2040059740848283920">Parent</a></article>
+      <article><a href="https://x.com/NASA/status/2040059770237849635">Requested</a>
+        <img id="requested" src="https://pbs.twimg.com/media/HE-_ijrXYAA_Wiq"></article>`;
+    const image = document.querySelector<HTMLImageElement>('#requested');
+    const parent = document.querySelector<HTMLAnchorElement>('#parent');
+    if (!image || !parent) {
+      throw new Error('SPA status-link fixture is incomplete');
+    }
+    const argument = {
+      identity: { handle: 'NASA', statusId: '2040059770237849635' },
+      host: 'x.com',
+    };
+    expect(livePage.findPrecedingLiveStatusAnchorDocument(image, argument)).toBe(parent);
+    parent.href = 'https://x.com/other/status/2040059740848283920';
+    expect(livePage.findPrecedingLiveStatusAnchorDocument(image, argument)).toBeNull();
+    parent.href = 'https://x.com/NASA/status/2040059740848283920?context=unsafe';
+    expect(livePage.findPrecedingLiveStatusAnchorDocument(image, argument)).toBeNull();
+  });
+
+  it('reads mixed gallery selected and focused media without treating a hidden playing video as selected', () => {
+    document.body.innerHTML = `
+      <div data-xeg-gallery-container>
+        <div data-gallery-element="toolbar" data-current-index="1" data-focused-index="1">
+          <span id="xeg-toolbar-counter" data-gallery-element="position" data-position="2"
+            data-total="2" data-current-index="1" data-focused-index="1"></span>
+        </div>
+        <div data-gallery-element="item" data-index="0" data-media-loaded="true">
+          <img id="photo" src="https://pbs.twimg.com/media/mixed-photo"></div>
+        <div data-gallery-element="item" data-index="1" data-media-loaded="true">
+          <video id="video" src="https://video.twimg.com/ext_tw_video/mixed.mp4"></video></div>
+      </div>`;
+    const video = document.querySelector<HTMLVideoElement>('#video');
+    const photo = document.querySelector<HTMLImageElement>('#photo');
+    const toolbar = document.querySelector('[data-gallery-element="toolbar"]');
+    const counter = document.querySelector('#xeg-toolbar-counter');
+    if (!video || !photo || !toolbar || !counter) {
+      throw new Error('Mixed gallery fixture is incomplete');
+    }
+    Object.defineProperties(video, {
+      readyState: { configurable: true, value: 2 },
+      paused: { configurable: true, value: false },
+    });
+    Object.defineProperties(photo, {
+      complete: { configurable: true, value: true },
+      naturalWidth: { configurable: true, value: 20 },
+    });
+    expect(livePage.inspectLiveMixedGallerySelectionDocument()).toMatchObject({
+      index: 1,
+      kind: 'video',
+      source: { path: '/ext_tw_video/mixed.mp4' },
+      otherPlayingVideos: 0,
+    });
+    toolbar.setAttribute('data-current-index', '0');
+    toolbar.setAttribute('data-focused-index', '0');
+    counter.setAttribute('data-position', '1');
+    counter.setAttribute('data-current-index', '0');
+    counter.setAttribute('data-focused-index', '0');
+    expect(livePage.inspectLiveMixedGallerySelectionDocument()).toMatchObject({
+      index: 0,
+      kind: 'image',
+      otherPlayingVideos: 1,
+    });
+    Object.defineProperty(video, 'paused', { configurable: true, value: true });
+    expect(livePage.inspectLiveMixedGallerySelectionDocument()).toMatchObject({
+      index: 0,
+      kind: 'image',
+      otherPlayingVideos: 0,
+    });
+  });
+
   it.each(['', '/photo/1'])(
     'recognizes only the bounded A > B > C compact photo with its same-owner %s overlay',
     async (photoSuffix) => {
@@ -399,19 +621,30 @@ describe('Windows X live page DOM validation', () => {
         if (!ready || ready.state !== 'ready' || !ready.target || ready.target.kind !== 'image') {
           throw new Error('Compact image readiness was not established');
         }
+        const preceding = document.createElement('article');
+        preceding.innerHTML =
+          '<a href="https://x.com/other_fixture/status/6555555555555555555">Earlier status</a>';
+        document.body.prepend(preceding);
+        expect(document.querySelectorAll('article')[ready.target.articleIndex]).toBe(preceding);
+        expect(livePage.resolveLiveImageDocument({ identity, target: ready.target })).toBe(image);
         const locator = {
           evaluate: async (
             callback: (image: HTMLImageElement, value: unknown) => unknown,
             value: unknown
           ) => callback(image, value),
         };
+        const actionIdentity = await livePage.inspectHitTestedAction(
+          locator as unknown as Parameters<LivePageModule['inspectHitTestedAction']>[0],
+          identity,
+          ready.target as Parameters<LivePageModule['inspectHitTestedAction']>[2]
+        );
+        expect(actionIdentity).toMatchObject({ actionPath: `${ownerPath}${photoSuffix}` });
         expect(
-          await livePage.inspectHitTestedAction(
-            locator as unknown as Parameters<LivePageModule['inspectHitTestedAction']>[0],
-            identity,
-            ready.target as Parameters<LivePageModule['inspectHitTestedAction']>[2]
-          )
-        ).toMatchObject({ actionPath: `${ownerPath}${photoSuffix}` });
+          livePage.resolveLiveImageActionDocument(image, {
+            actionIndex: actionIdentity?.actionIndex ?? -1,
+            compactQuote: true,
+          })
+        ).toBe(overlay);
 
         const bSlot = document.querySelector('#b-media-slot');
         if (!bSlot) {
@@ -693,6 +926,12 @@ describe('Windows X live page DOM validation', () => {
         ],
       },
     });
+    expect(
+      livePage.inspectLiveTargetDocument({ ...identity, preferOwnedPhoto: true })
+    ).toMatchObject({
+      state: 'ready',
+      target: { kind: 'quoted-video', quoteBoundary: 'quoteTweet' },
+    });
     expect(livePage.inspectLiveCandidateDocument(identity)).toMatchObject({
       exactArticleFound: true,
       statusIds: ['123', '456'],
@@ -730,6 +969,33 @@ describe('Windows X live page DOM validation', () => {
         quoteBoundary: 'unmarked-candidate',
         quoteStatusIds: [],
       },
+    });
+    const photo = document.createElement('a');
+    photo.href = 'https://x.com/outer/status/123/photo/1';
+    photo.innerHTML = '<img src="https://pbs.twimg.com/media/direct-photo" alt="Direct photo">';
+    document.querySelector('article')?.append(photo);
+    const image = photo.querySelector('img');
+    if (!image) {
+      throw new Error('Mixed photo fixture missing');
+    }
+    image.getBoundingClientRect = video.getBoundingClientRect;
+    Object.defineProperties(image, {
+      complete: { configurable: true, value: true },
+      naturalWidth: { configurable: true, value: 160 },
+    });
+    expect(livePage.inspectLiveTargetDocument({ handle: 'outer', statusId: '123' })).toMatchObject({
+      state: 'ready',
+      target: { kind: 'quoted-video' },
+    });
+    expect(
+      livePage.inspectLiveTargetDocument({
+        handle: 'outer',
+        statusId: '123',
+        preferOwnedPhoto: true,
+      })
+    ).toMatchObject({
+      state: 'ready',
+      target: { kind: 'image', imageSource: { path: '/media/direct-photo' } },
     });
   });
 

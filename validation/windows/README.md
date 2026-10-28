@@ -35,7 +35,9 @@ for another, and none is a required CI lane.
    The production byte budget is unchanged.
 4. **Optional public-page observation:** observes up to three unchanged public
    X/Twitter status URLs after the installed deterministic fixture. It remains
-   observational and can finish as `unverified`.
+   observational and can finish as `unverified`. A separate ignored
+   `inputs/live-acceptance.json` selector opts the installed extension into
+   actual-site image navigation, downloads, settings, and status-navigation checks.
 
 The native regression suite under `validation/windows/` runs with
 `vp run test:e2e:native` after the project dependencies and Playwright Chromium
@@ -767,9 +769,9 @@ rules or SPKI exception, and the unpacked extension is loaded again.
 
 The deterministic installed fixture always runs first with strict console and
 page-error checks. The profile then removes every fixture route before opening
-the caller's unchanged URL. It does not intercept traffic, add authentication,
-accept consent or CAPTCHA prompts, start downloads, force clicks, or edit the
-host DOM. For an image it checks the exact status-owned photo action and loaded
+the caller's unchanged URL. The default public observation does not intercept
+traffic, add authentication, accept consent or CAPTCHA prompts, start downloads,
+force clicks, or edit the host DOM. For an image it checks the exact status-owned photo action and loaded
 gallery image. For a visible video or video preview in that status's quote card, it records a
 bounded ownership path and observed status links, uses an ordinary hit-tested
 click, and checks the selected gallery video, playable source, dimensions,
@@ -871,6 +873,62 @@ failed required assertion remains unverified. The optional proof has no effect
 on owned-profile observations. Earlier receipts lack the full fingerprints and
 cannot be upgraded retroactively; a new source-bound run is required.
 Review the retained screenshots separately before making a live-page claim.
+
+The explicit `{"scenario":"actual-site-acceptance"}` selector is accepted only
+with an installed extension, at least one validated public `--live-url`, an
+owned profile, and no other focused selector or upgrade input. A private caller
+may instead select `borrowed-browser-owned-extension` only for a freshly loaded,
+attested task-owned candidate in an existing browser, with a validated same-profile
+host baseline, new task-owned pages, and an owned download directory. That mode
+does not own or close the browser profile; the older `borrowed` mode stays read-only.
+Native download observation selects only IDs whose
+`byExtensionId` matches the candidate's runtime ID; missing ownership metadata
+leaves acceptance unverified. The ordinary
+fixture and live core-flow gates still run. One eligible public image gallery
+must contain two to four distinct public images. The lane verifies actual
+Next/Previous selected and focused identities, a single toolbar download, and
+a ZIP toolbar download with exactly that many stored entries. It requires new
+completed Chrome download IDs, files inside the task-owned download directory,
+bounded file reads, SHA-256, ZIP central-directory/CRC checks, and every ZIP
+item's size and hash against an independent bounded public original GET. The
+selected single file must match its original as well. Each original comes from an exact
+requested-status HTTP 200 provider photo path and format; the gallery display format
+is not treated as original proof. Public image HEAD responses must declare
+each source at no more than 64 MiB and a projected single plus ZIP total below
+128 MiB; absent or larger declarations leave the lane unverified before any
+download click. Chrome progress is watched; an ambiguous or over-budget new ID
+fails the lane without automatic cancellation, because the candidate's extension ID
+alone cannot prove which browser tab started it. The private caller retains failed
+artifacts and closes only task-owned pages; a fresh owned profile follows its normal
+cleanup. These are acceptance and retained-file bounds, not a hard
+instantaneous network-byte guarantee.
+
+The same lane changes the theme through the visible settings control, reads
+extension storage, confirms it in a reloaded new document, restores the exact
+prior stored settings, and checks the restored UI after another reload. It then
+performs a full-document visit to a second supplied public status and records
+that scope separately. A distinct post-close same-document navigation probe clicks an existing
+preceding same-author public status anchor on an observed image page, if one is
+available and top hit-tested. A public login barrier leaves this probe unverified.
+The gallery is already closed by Escape before this click,
+and the receipt records that boundary. The probe requires the same document time origin
+and no reappearing gallery or changed body style or scroll policy. It does not establish
+that navigation closes an open gallery. A video gallery with at least
+two items must show actual Next/Previous navigation, selected/focused media
+identity, a paused nonselected player, and return to the same source-bound
+current video. For an opt-in direct mixed post, the observer may enter through its
+owned photo action and verify photo-to-video-to-photo navigation with real gallery
+video playback controls; the receipt names this entry. This mixed post does not
+qualify for image-only downloads. The existing direct-quote ownership and playback checks still
+apply. An unmarked candidate without quoted status IDs instead requires unique direct
+status ownership from the exact playable provider variant. A controlled allow-all retry
+still applies when needed. The summary has
+separate coverage flags for multi-image downloads/settings, video navigation,
+and post-close same-document navigation; all three are required for actual-site acceptance.
+Absent source size, native completion, eligible video neighbor or same-document
+status link leaves this opt-in acceptance unverified. Default no-download
+diagnostics remain separate. No authentication, consent, CAPTCHA, traffic rewriting, Explorer,
+native Save As, or performance claim is made by this lane.
 
 Run `node --experimental-strip-types --check validation/windows/install-preparation.ts` and
 `node --experimental-strip-types --check validation/windows/install-profile.ts` for the installed
