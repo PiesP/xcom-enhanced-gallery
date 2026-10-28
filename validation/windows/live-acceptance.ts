@@ -61,6 +61,10 @@ type Selection = {
   focusedIndex: number;
   path: string;
 };
+type SelectedGalleryVideo = Exclude<
+  ReturnType<typeof inspectSelectedGalleryVideoDocument>,
+  false | null
+>;
 type PhotoProviderObservation = {
   operation: string;
   requestedTweetId: string | null;
@@ -74,7 +78,8 @@ type PhotoProviderObservation = {
 
 export async function observeActualSiteVideoNavigation(
   page: Page,
-  entryKind: 'video' | 'owned-photo' = 'video'
+  entryKind: 'video' | 'owned-photo' = 'video',
+  onSelectedVideo?: (video: SelectedGalleryVideo) => Promise<void>
 ) {
   const receipt: {
     status: 'observed' | 'unverified' | 'failed';
@@ -211,6 +216,8 @@ export async function observeActualSiteVideoNavigation(
         progressed: endTime >= startTime + 0.15,
         control: 'native-space',
       };
+      assert(receipt.playback.progressed, 'Native selected video did not progress');
+      await onSelectedVideo?.(playedVideo);
     }
     await toolbar.locator(`button[aria-label="${forward ? 'Previous' : 'Next'}"]`).click();
     await page.waitForFunction(

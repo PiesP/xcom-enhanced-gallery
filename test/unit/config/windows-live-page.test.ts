@@ -142,6 +142,7 @@ type LivePageModule = Pick<
     proof?: unknown
   ): {
     expectedLifecycleCancellationCount: number;
+    ownedPageCloseAbortCount: number;
     evidenceStatus: string;
     qualifiedCspCount?: number;
   };
@@ -2392,6 +2393,7 @@ describe('Windows X live page validation', () => {
     };
     expect(livePage.classifyLiveHostDiagnostics(observation)).toEqual({
       expectedLifecycleCancellationCount: 1,
+      ownedPageCloseAbortCount: 0,
       evidenceStatus: 'observed',
     });
     const unverified = (override: Record<string, unknown>): void => {
@@ -2468,6 +2470,145 @@ describe('Windows X live page validation', () => {
     observation.pageErrors.push({ kind: 'page-error' });
     expect(livePage.refreshQuotedVideoErrorAssertions(observation)).toContain('noPageErrors');
     expect(observation.requiredAssertions.noPageErrors).toBe(false);
+  });
+
+  it('qualifies a direct owned-photo video abort only with complete return and exact API URL proof', () => {
+    const source = { host: 'video.twimg.com', path: '/amplify_video/456/vid/clip.mp4' };
+    const photo = { host: 'pbs.twimg.com', path: '/media/photo.jpg' };
+    const fullUrl = `https://${source.host}${source.path}?tag=opaque`;
+    const abort = {
+      kind: 'request-failed',
+      error: 'net::ERR_ABORTED',
+      url: `https://${source.host}${source.path}`,
+      hadQuery: true,
+      hadFragment: false,
+      hadCredentials: false,
+      hadPort: false,
+    };
+    const observation = {
+      requestedUrl: 'https://x.com/owner/status/123',
+      requiredAssertions: {
+        ...Object.fromEntries(
+          Array.from({ length: 13 }, (_, index) => [`assertion${index}`, true])
+        ),
+        mixedVideoNavigation: true,
+        directStatusVideoOwner: true,
+      },
+      missingAssertions: [] as string[],
+      gallery: {
+        owner: {
+          status: 'matched-direct-owner-variant',
+          ownerId: '123',
+          mediaId: '456',
+          mediaIndex: 1,
+        },
+        opened: {
+          selectedGallery: { itemIndex: 0, imageSource: photo },
+          selectedVideo: { source },
+        },
+        playback: { progressed: true },
+      },
+      actualSiteVideoNavigation: {
+        entryKind: 'owned-photo',
+        status: 'observed',
+        original: { index: 0, kind: 'image', source: { ...photo }, otherPlayingVideos: 0 },
+        neighbor: { index: 1, kind: 'video', source, otherPlayingVideos: 0 },
+        returned: { index: 0, kind: 'image', source: { ...photo }, otherPlayingVideos: 0 },
+        selectedVideo: { source },
+        playback: { control: 'native-space', progressed: true },
+      },
+      api: { overflow: 0 },
+      hostDiagnostics: [abort],
+      hostDiagnosticOverflow: 0,
+      productErrors: [] as unknown[],
+      productErrorOverflow: 0,
+      pageErrors: [] as unknown[],
+      pageErrorOverflow: 0,
+    };
+    const proof = {
+      expectedCsp: [],
+      identities: {
+        selectedVideo: { source, rawUrl: fullUrl },
+        apiVariants: [{ ownerId: '123', mediaId: '456', mediaIndex: 1, source, rawUrl: fullUrl }],
+        apiVariantOverflow: false,
+        requestUrls: [{ record: abort, rawUrl: fullUrl }],
+        requestUrlOverflow: false,
+      },
+    };
+    expect(livePage.classifyLiveHostDiagnostics(observation, proof)).toEqual({
+      expectedLifecycleCancellationCount: 1,
+      ownedPageCloseAbortCount: 0,
+      qualifiedCspCount: 0,
+      evidenceStatus: 'observed',
+    });
+    expect(abort).toMatchObject({ queryIdentityMatched: true });
+    const rejects = (change: (candidate: typeof proof, observed: typeof observation) => void) => {
+      const candidate = structuredClone(proof);
+      const observed = structuredClone(observation);
+      candidate.identities.requestUrls[0]!.record = observed.hostDiagnostics[0]!;
+      change(candidate, observed);
+      expect(livePage.classifyLiveHostDiagnostics(observed, candidate).evidenceStatus).toBe(
+        'unverified'
+      );
+    };
+    rejects((_proof, observed) => {
+      observed.actualSiteVideoNavigation.status = 'failed';
+    });
+    rejects((_proof, observed) => {
+      observed.actualSiteVideoNavigation.returned.source.path = '/media/other.jpg';
+    });
+    rejects((_proof, observed) => {
+      observed.gallery.opened.selectedGallery.imageSource.path = '/media/other.jpg';
+    });
+    rejects((_proof, observed) => {
+      observed.gallery.opened.selectedGallery.itemIndex = 1;
+    });
+    rejects((_proof, observed) => {
+      observed.gallery.owner.ownerId = '999';
+    });
+    rejects((_proof, observed) => {
+      observed.requiredAssertions.mixedVideoNavigation = false;
+    });
+    rejects((candidate) => {
+      candidate.identities.apiVariants[0]!.ownerId = '999';
+    });
+    rejects((candidate) => {
+      candidate.identities.apiVariants[0]!.rawUrl += '&other=1';
+    });
+    rejects((candidate) => {
+      candidate.identities.apiVariants.push({
+        ...candidate.identities.apiVariants[0]!,
+        rawUrl: `${fullUrl}&second=1`,
+      });
+    });
+    rejects((candidate) => {
+      candidate.identities.selectedVideo.rawUrl += '&other=1';
+    });
+    rejects((candidate) => {
+      candidate.identities.requestUrls[0]!.rawUrl += '&other=1';
+    });
+    rejects((_proof, observed) => {
+      observed.hostDiagnostics[0]!.hadQuery = false;
+    });
+    rejects((candidate) => {
+      candidate.identities.apiVariantOverflow = true;
+    });
+    rejects((candidate) => {
+      candidate.identities.requestUrlOverflow = true;
+    });
+    rejects((_proof, observed) => {
+      observed.hostDiagnosticOverflow = 1;
+    });
+    rejects((_proof, observed) => {
+      observed.hostDiagnostics.push({ ...abort, kind: 'console' });
+    });
+    const changedAfterMatch = { ...observation, hostDiagnosticOverflow: 1 };
+    expect(livePage.classifyLiveHostDiagnostics(changedAfterMatch, proof).evidenceStatus).toBe(
+      'unverified'
+    );
+    expect(abort).not.toHaveProperty('queryIdentityMatched');
+    expect(abort).not.toHaveProperty('urlIdentitySha256');
+    expect(livePage.classifyLiveHostDiagnostics(observation).evidenceStatus).toBe('unverified');
   });
 
   it('binds a borrowed CSP baseline to the same profile, source, URLs, and restored inventory', () => {
@@ -2921,6 +3062,7 @@ describe('Windows X live page validation', () => {
     };
     expect(livePage.classifyLiveHostDiagnostics(observation, proof)).toEqual({
       expectedLifecycleCancellationCount: 1,
+      ownedPageCloseAbortCount: 0,
       qualifiedCspCount: 2,
       evidenceStatus: 'observed',
     });
@@ -3071,6 +3213,7 @@ describe('Windows X live page validation', () => {
     };
     expect(livePage.classifyLiveHostDiagnostics(observation, proof)).toEqual({
       expectedLifecycleCancellationCount: 0,
+      ownedPageCloseAbortCount: 0,
       qualifiedCspCount: 4,
       evidenceStatus: 'observed',
     });

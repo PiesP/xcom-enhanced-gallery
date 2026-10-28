@@ -105,6 +105,72 @@ test('return navigation waits for the exact original media and all other players
   assert.deepEqual(failed.returned, { ...original, source: neighbor.source });
 });
 
+test('owned-photo navigation reports the played video before returning to the photo', async () => {
+  const photo = {
+    index: 0,
+    total: 2,
+    kind: 'image' as const,
+    source: { host: 'pbs.twimg.com', path: '/media/photo.jpg' },
+    otherPlayingVideos: 0,
+  };
+  const neighbor = {
+    ...photo,
+    index: 1,
+    kind: 'video' as const,
+    source: { host: 'video.twimg.com', path: '/amplify_video/456/vid/clip.mp4' },
+  };
+  let position = 0;
+  let videoReads = 0;
+  let controlReads = 0;
+  const events: string[] = [];
+  const videoControl = {
+    focus: async () => undefined,
+    evaluate: async () => [true, 0, 0.2][controlReads++],
+  };
+  const page = {
+    evaluate: async (fn: unknown) => {
+      if (fn === inspectLiveMixedGallerySelectionDocument) {
+        return position === 0 ? photo : neighbor;
+      }
+      assert.equal(fn, inspectSelectedGalleryVideoDocument);
+      return {
+        index: 1,
+        total: 2,
+        itemLoaded: true,
+        visible: true,
+        readyState: 4,
+        width: 720,
+        height: 1280,
+        mediaErrorCode: null,
+        source: neighbor.source,
+        currentTime: videoReads++ === 0 ? 0 : 0.2,
+      };
+    },
+    locator: (selector: string) =>
+      selector.includes('toolbar')
+        ? {
+            locator: (button: string) => ({
+              click: async () => {
+                events.push(button.includes('Next') ? 'next' : 'return');
+                position = button.includes('Next') ? 1 : 0;
+              },
+            }),
+          }
+        : { nth: () => ({ locator: () => videoControl }) },
+    waitForFunction: async () => true,
+    keyboard: { press: async () => events.push('space') },
+  } as unknown as Page;
+  const receipt = await observeActualSiteVideoNavigation(page, 'owned-photo', async (video) => {
+    events.push('selected-video');
+    assert.deepEqual(video.source, neighbor.source);
+    assert.equal(video.currentTime, 0.2);
+  });
+  assert.equal(receipt.status, 'observed');
+  assert.equal(receipt.playback?.progressed, true);
+  assert.deepEqual(receipt.returned, photo);
+  assert.deepEqual(events, ['next', 'space', 'selected-video', 'return']);
+});
+
 test('actual-site acceptance restores the owned X tab before revalidating and clicking', async () => {
   const output = await mkdtemp(join(tmpdir(), 'xeg-live-acceptance-'));
   const events: string[] = [];
