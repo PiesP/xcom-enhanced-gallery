@@ -1069,10 +1069,12 @@ export function inspectNativePreviewOwnerDocument(): string | null {
 export function inspectSelectedGalleryDocument({
   expectedIndex,
   expectedPath,
+  canonicalPhotoPath = null,
   allowPhotoFormatVariant = false,
 }: {
   expectedIndex: number | null;
   expectedPath: string;
+  canonicalPhotoPath?: string | null;
   allowPhotoFormatVariant?: boolean;
 }) {
   const galleries = document.querySelectorAll('[data-xeg-gallery-container]');
@@ -1138,7 +1140,7 @@ export function inspectSelectedGalleryDocument({
         if (url.hostname !== 'pbs.twimg.com') {
           return false;
         }
-        if (url.pathname === expectedPath) {
+        if (url.pathname === expectedPath || url.pathname === canonicalPhotoPath) {
           return true;
         }
         if (!allowPhotoFormatVariant) {
@@ -1690,6 +1692,98 @@ export function quotedVideoHitTestPassed({
       control.mediaScopeDepth >= 0 &&
       control.mediaScopeDepth <= 5
   );
+}
+
+export type LiveHostSnapshot = {
+  bodyStyle: { left: string; overflow: string; position: string; right: string; top: string };
+  scrollRestoration: ScrollRestoration;
+  scrollY: number;
+};
+
+export function captureLiveImageActivationDocument(
+  action: HTMLAnchorElement,
+  {
+    image,
+    owner,
+    actionPath,
+    source,
+  }: { image: HTMLImageElement; owner: HTMLElement; actionPath: string; source: Source }
+): { readonly before: LiveHostSnapshot | null; readonly captured: boolean; dispose(): void } {
+  const state: { before: LiveHostSnapshot | null; captured: boolean } = {
+    before: null,
+    captured: false,
+  };
+  const onClick = (event: MouseEvent) => {
+    if (
+      state.captured ||
+      !event.isTrusted ||
+      event.button !== 0 ||
+      !(event.target instanceof Element) ||
+      !action.isConnected ||
+      !image.isConnected ||
+      !owner.isConnected ||
+      image.closest('article') !== owner ||
+      action.closest('article') !== owner ||
+      !action.contains(event.target) ||
+      document.querySelector('[data-xeg-gallery-container]')
+    ) {
+      return;
+    }
+    const rect = action.getBoundingClientRect();
+    if (
+      rect.width <= 0 ||
+      rect.height <= 0 ||
+      event.clientX < rect.left ||
+      event.clientX >= rect.right ||
+      event.clientY < rect.top ||
+      event.clientY >= rect.bottom ||
+      !image.complete ||
+      image.naturalWidth <= 0
+    ) {
+      return;
+    }
+    try {
+      const actionUrl = new URL(action.href, location.href);
+      const imageUrl = new URL(image.currentSrc || image.src);
+      if (
+        actionUrl.protocol !== 'https:' ||
+        !['x.com', 'twitter.com'].includes(actionUrl.hostname.toLowerCase()) ||
+        actionUrl.pathname !== actionPath ||
+        imageUrl.protocol !== 'https:' ||
+        imageUrl.hostname.toLowerCase() !== source.host ||
+        imageUrl.pathname !== source.path
+      ) {
+        return;
+      }
+    } catch {
+      return;
+    }
+    const style = document.body.style;
+    state.before = {
+      bodyStyle: {
+        left: style.left,
+        overflow: style.overflow,
+        position: style.position,
+        right: style.right,
+        top: style.top,
+      },
+      scrollRestoration: history.scrollRestoration,
+      scrollY: window.scrollY,
+    };
+    state.captured = true;
+  };
+  window.addEventListener('click', onClick, true);
+  return {
+    get before() {
+      return state.before;
+    },
+    get captured() {
+      return state.captured;
+    },
+    dispose() {
+      window.removeEventListener('click', onClick, true);
+    },
+  };
 }
 
 export function captureActivationFocusDocument(

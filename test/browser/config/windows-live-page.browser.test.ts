@@ -462,6 +462,67 @@ describe('Windows X live page DOM validation', () => {
     }
   });
 
+  it('captures the owned trusted photo click state at activation time', () => {
+    document.body.innerHTML = `
+      <article>
+        <a id="action" href="https://x.com/owner/status/123/photo/1">
+          <img id="image" src="https://pbs.twimg.com/media/photo" alt="Photo">
+        </a>
+      </article>`;
+    const owner = document.querySelector<HTMLElement>('article');
+    const action = document.querySelector<HTMLAnchorElement>('#action');
+    const image = document.querySelector<HTMLImageElement>('#image');
+    if (!owner || !action || !image) {
+      throw new Error('Activation photo fixture is incomplete');
+    }
+    action.getBoundingClientRect = () => ({
+      bottom: 200,
+      height: 120,
+      left: 20,
+      right: 200,
+      toJSON: () => ({}),
+      top: 80,
+      width: 180,
+      x: 20,
+      y: 80,
+    });
+    Object.defineProperties(image, {
+      complete: { configurable: true, value: true },
+      naturalWidth: { configurable: true, value: 180 },
+    });
+    const add = vi.spyOn(window, 'addEventListener');
+    let capture: ReturnType<LivePageModule['captureLiveImageActivationDocument']> | undefined;
+    try {
+      capture = livePage.captureLiveImageActivationDocument(action, {
+        image,
+        owner,
+        actionPath: '/owner/status/123/photo/1',
+        source: { host: 'pbs.twimg.com', path: '/media/photo' },
+      });
+      const listener = add.mock.calls.find(([type]) => type === 'click')?.[1];
+      if (typeof listener !== 'function') {
+        throw new Error('Trusted activation listener missing');
+      }
+      const event = { button: 0, clientX: 40, clientY: 120, target: image };
+      listener({ ...event, isTrusted: false } as unknown as MouseEvent);
+      listener({ ...event, isTrusted: true, target: document.body } as unknown as MouseEvent);
+      expect(capture.captured).toBe(false);
+      document.body.style.top = '-17px';
+      listener({ ...event, isTrusted: true } as unknown as MouseEvent);
+      expect(capture.captured).toBe(true);
+      expect(capture.before).toMatchObject({
+        bodyStyle: { top: '-17px' },
+        scrollY: window.scrollY,
+      });
+      document.body.style.top = '-99px';
+      expect(capture.before?.bodyStyle.top).toBe('-17px');
+    } finally {
+      capture?.dispose();
+      add.mockRestore();
+      document.body.style.top = '';
+    }
+  });
+
   it('keeps the requested image bound when an earlier thread article appears', async () => {
     const identity = { handle: 'NASA', statusId: '2040059770237849635' };
     const statusPath = '/NASA/status/2040059770237849635';
@@ -2039,6 +2100,20 @@ describe('Windows X live page DOM validation', () => {
       itemVisible: true,
       positionValue: 2,
     });
+    expect(
+      livePage.inspectSelectedGalleryDocument({
+        expectedIndex: 2,
+        expectedPath: '/media/target',
+        canonicalPhotoPath: '/media/target.jpg',
+      })
+    ).toMatchObject({ itemIndex: 1, positionValue: 2 });
+    expect(
+      livePage.inspectSelectedGalleryDocument({
+        expectedIndex: 2,
+        expectedPath: '/media/target',
+        canonicalPhotoPath: '/media/target.png',
+      })
+    ).toBe(false);
     expect(
       livePage.inspectSelectedGalleryDocument({
         expectedIndex: null,

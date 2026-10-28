@@ -29,6 +29,8 @@ type LivePageModule = Pick<
   | 'refreshNativePreviewObservation'
   | 'summarizeCompactImageEvidence'
   | 'summarizeNativePreviewEvidence'
+  | 'canonicalOwnedPhotoPath'
+  | 'ownedMixedPhotoVideo'
 > & {
   inspectLiveTargetDocument(identity: { handle: string; statusId: string }):
     | false
@@ -3013,6 +3015,172 @@ describe('Windows X live page validation', () => {
       Object.assign(observed.hostDiagnostics[2]!, { error: 'HTTP 403' });
     });
     expect(livePage.classifyLiveHostDiagnostics(observation).evidenceStatus).toBe('unverified');
+  });
+
+  it('qualifies known CSP only within each validated main-frame document', () => {
+    const firstUrl = 'https://x.com/owner/status/123';
+    const nextUrl = 'https://x.com/owner/status/456';
+    const location =
+      'https://abs.twimg.com/responsive-web/client-web/loader.TimelineRenderer.abc123.js';
+    const fingerprint = (sha: string) => ({
+      script: location,
+      messageSha256: sha.repeat(64),
+      messageByteLength: 100,
+    });
+    const csp = (id: string, url: string, sha: string) => ({
+      kind: 'console',
+      location,
+      inlineHandlerCsp: true,
+      messageSha256: sha.repeat(64),
+      messageByteLength: 100,
+      documentId: id,
+      documentUrl: url,
+    });
+    const observation = {
+      requiredAssertions: Object.fromEntries(
+        Array.from({ length: 13 }, (_, index) => [`assertion${index}`, true])
+      ),
+      missingAssertions: [] as string[],
+      gallery: {},
+      api: { overflow: 0 },
+      hostDiagnostics: [
+        csp('first-loader', firstUrl, 'a'),
+        csp('first-reload', firstUrl, 'a'),
+        csp('second-reload', firstUrl, 'a'),
+        csp('destination', nextUrl, 'b'),
+      ],
+      hostDiagnosticOverflow: 0,
+      productErrors: [],
+      productErrorOverflow: 0,
+      pageErrors: [] as unknown[],
+      pageErrorOverflow: 0,
+    };
+    const proof = {
+      expectedCsp: [fingerprint('a')],
+      documentBaselines: new Map([
+        [firstUrl, [fingerprint('a')]],
+        [nextUrl, [fingerprint('b')]],
+      ]),
+      identities: {
+        selectedVideo: null,
+        apiVariants: [],
+        apiVariantOverflow: false,
+        requestUrls: [],
+        requestUrlOverflow: false,
+      },
+    };
+    expect(livePage.classifyLiveHostDiagnostics(observation, proof)).toEqual({
+      expectedLifecycleCancellationCount: 0,
+      qualifiedCspCount: 4,
+      evidenceStatus: 'observed',
+    });
+    const rejects = (change: (candidate: typeof observation) => void) => {
+      const candidate = structuredClone(observation);
+      change(candidate);
+      expect(livePage.classifyLiveHostDiagnostics(candidate, proof).evidenceStatus).toBe(
+        'unverified'
+      );
+    };
+    rejects((candidate) => {
+      candidate.hostDiagnostics[0]!.documentId = '';
+    });
+    rejects((candidate) => {
+      candidate.hostDiagnostics[3]!.documentUrl = 'https://x.com/other/status/999';
+    });
+    rejects((candidate) => {
+      candidate.hostDiagnostics[3]!.documentId = 'first-loader';
+    });
+    rejects((candidate) => {
+      candidate.hostDiagnostics[1]!.messageSha256 = 'c'.repeat(64);
+    });
+    rejects((candidate) => {
+      candidate.hostDiagnostics.push(csp('first-reload', firstUrl, 'a'));
+    });
+    rejects((candidate) => {
+      candidate.hostDiagnostics.push({
+        ...csp('foreign', firstUrl, 'a'),
+        location: 'https://other.example/script.js',
+      });
+    });
+    rejects((candidate) => {
+      candidate.hostDiagnostics.push({
+        ...csp('foreign', firstUrl, 'a'),
+        kind: 'request-failed',
+      });
+    });
+    rejects((candidate) => {
+      candidate.pageErrors.push({ kind: 'page-error' });
+    });
+  });
+
+  it('uses only the indexed owner photo from parsed provider evidence as a canonical path', () => {
+    const source = { host: 'pbs.twimg.com', path: '/media/target' };
+    const api: Parameters<LivePageModule['canonicalOwnedPhotoPath']>[0] = {
+      tweetResultByRestId: { requests: 1, responses: [200] },
+      overflow: 0,
+      observations: [
+        {
+          operation: 'TweetResultByRestId',
+          requestedTweetId: '123',
+          httpStatus: 200,
+          providerErrors: false,
+          bodyOutcome: 'parsed',
+          directQuote: null,
+          nestedQuoteId: null,
+          result: {
+            id: '123',
+            media: [
+              {
+                id: '1',
+                type: 'photo',
+                poster: { host: 'pbs.twimg.com', path: '/media/target.jpg' },
+                playableVariants: [],
+              },
+              {
+                id: '2',
+                type: 'photo',
+                poster: { host: 'pbs.twimg.com', path: '/media/other.jpg' },
+                playableVariants: [],
+              },
+            ],
+          },
+        },
+      ],
+    };
+    const canonical = () => livePage.canonicalOwnedPhotoPath(api, '123', 1, source);
+    expect(canonical()).toBe('/media/target.jpg');
+    expect(livePage.canonicalOwnedPhotoPath(api, '123', 2, source)).toBeNull();
+    expect(livePage.canonicalOwnedPhotoPath(api, '456', 1, source)).toBeNull();
+    const parsed = api.observations[0]!;
+    parsed.result!.media[0]!.poster = { host: 'pbs.twimg.com', path: '/media/targetx.jpg' };
+    expect(canonical()).toBeNull();
+    parsed.result!.media[0]!.poster = { host: 'other.example', path: '/media/target.jpg' };
+    expect(canonical()).toBeNull();
+    parsed.result!.media[0]!.poster = { host: 'pbs.twimg.com', path: '/media/target.jpg' };
+    api.overflow = 1;
+    expect(canonical()).toBeNull();
+    api.overflow = 0;
+    const video = parsed.result!.media[1]!;
+    video.id = '456';
+    video.type = 'video';
+    video.playableVariants = [
+      { host: 'video.twimg.com', path: '/ext_tw_video/456/pu/vid/720x1280/clip.mp4' },
+    ];
+    expect(
+      livePage.ownedMixedPhotoVideo(api, '123', 1, {
+        host: 'pbs.twimg.com',
+        path: '/media/target.jpg',
+      })
+    ).toMatchObject({ mediaId: '456', mediaIndex: 1 });
+    video.playableVariants = [
+      { host: 'video.twimg.com', path: '/ext_tw_video/999/pu/vid/720x1280/clip.mp4' },
+    ];
+    expect(
+      livePage.ownedMixedPhotoVideo(api, '123', 1, {
+        host: 'pbs.twimg.com',
+        path: '/media/target.jpg',
+      })
+    ).toBeNull();
   });
 
   it('summarizes direct quote API relationships and playable variants without response text', () => {
