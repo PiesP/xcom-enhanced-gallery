@@ -74,6 +74,96 @@ export type LiveReadiness =
   | { state: 'ambiguous' | 'terminal'; reason: string; candidateCount?: number }
   | false;
 
+export function resolveLiveImageDocument({
+  identity,
+  target,
+}: {
+  identity: Identity;
+  target: ImageTarget;
+}): HTMLImageElement | null {
+  const expectedStatus = `/${identity.handle}/status/${identity.statusId}`.toLowerCase();
+  const ownsStatus = (article: Element, status: string) =>
+    [...article.querySelectorAll<HTMLAnchorElement>('a[href]')].some((anchor) => {
+      if (anchor.closest('article') !== article) {
+        return false;
+      }
+      try {
+        const url = new URL(anchor.href, location.href);
+        return (
+          ['x.com', 'twitter.com'].includes(url.hostname.toLowerCase()) &&
+          url.pathname.toLowerCase() === status
+        );
+      } catch {
+        return false;
+      }
+    });
+  const matches = [...document.querySelectorAll<HTMLImageElement>('article img')].filter(
+    (image) => {
+      const article = image.closest('article');
+      if (!article || !image.isConnected) {
+        return false;
+      }
+      try {
+        const source = new URL(image.currentSrc || image.src);
+        if (
+          source.protocol !== 'https:' ||
+          source.hostname.toLowerCase() !== target.imageSource.host ||
+          source.pathname !== target.imageSource.path
+        ) {
+          return false;
+        }
+      } catch {
+        return false;
+      }
+      if (target.quoteBoundary === 'compact-two-level') {
+        const outerArticle = article.parentElement?.closest('article');
+        const compact = image.closest('[role="link"]');
+        if (!outerArticle || !compact || compact.closest('article') !== article) {
+          return false;
+        }
+        const ownerPath = `/${target.ownerHandle}/status/${target.ownerStatusId}`.toLowerCase();
+        return (
+          !!target.ownerHandle &&
+          !!target.ownerStatusId &&
+          ownsStatus(outerArticle, expectedStatus) &&
+          [...compact.querySelectorAll<HTMLAnchorElement>('a[href]')].some((anchor) => {
+            try {
+              const url = new URL(anchor.href, location.href);
+              return (
+                ['x.com', 'twitter.com'].includes(url.hostname.toLowerCase()) &&
+                url.pathname.toLowerCase().startsWith(ownerPath) &&
+                (url.pathname.length === ownerPath.length ||
+                  /^\/photo\/[1-9]\d*$/u.test(url.pathname.slice(ownerPath.length)))
+              );
+            } catch {
+              return false;
+            }
+          })
+        );
+      }
+      return ownsStatus(article, expectedStatus);
+    }
+  );
+  const selected = matches.length === 1 ? matches[0] : null;
+  return selected?.complete && selected.naturalWidth > 0 ? selected : null;
+}
+
+export function resolveLiveImageActionDocument(
+  image: HTMLImageElement,
+  { actionIndex, compactQuote }: { actionIndex: number; compactQuote: boolean }
+): HTMLAnchorElement | null {
+  if (!image.isConnected) {
+    return null;
+  }
+  const article = image.closest('article');
+  const actionRoot = compactQuote ? article?.parentElement?.closest('article') : article;
+  return actionRoot?.querySelectorAll<HTMLAnchorElement>('a[href]')[actionIndex] ?? null;
+}
+
+export function isBoundLiveImageOwnerDocument(image: HTMLImageElement, owner: Element): boolean {
+  return image.isConnected && owner.isConnected && image.closest('article') === owner;
+}
+
 export function inspectLiveTargetDocument({ handle, statusId }: Identity): LiveReadiness {
   const statusPath = `/${handle}/status/${statusId}`.toLowerCase();
   const parseVideo = (value: string | null | undefined) => {
@@ -1463,7 +1553,9 @@ export function quotedVideoSurface(
 }
 
 export async function inspectHitTestedAction(
-  image: import('@playwright/test').Locator,
+  image:
+    | import('@playwright/test').Locator
+    | import('@playwright/test').ElementHandle<HTMLImageElement>,
   identity: Identity,
   target?: ImageTarget
 ): Promise<{
@@ -1472,11 +1564,28 @@ export async function inspectHitTestedAction(
   actionPath: string;
   duplicateActionCount: number;
 } | null> {
-  return image.evaluate(
+  return (image as import('@playwright/test').Locator).evaluate(
     (element, { identity: { handle, statusId }, target }) => {
       const article = element.closest('article');
-      if (!(element instanceof HTMLImageElement) || !article) {
+      if (!(element instanceof HTMLImageElement) || !article || !element.isConnected) {
         return null;
+      }
+      if (target) {
+        if (!element.complete || element.naturalWidth <= 0) {
+          return null;
+        }
+        try {
+          const source = new URL(element.currentSrc || element.src);
+          if (
+            source.protocol !== 'https:' ||
+            source.hostname.toLowerCase() !== target.imageSource.host ||
+            source.pathname !== target.imageSource.path
+          ) {
+            return null;
+          }
+        } catch {
+          return null;
+        }
       }
       const mediaPath = new RegExp(`^/${handle}/status/${statusId}/photo/\\d+$`, 'iu');
       const anchors = [...article.querySelectorAll<HTMLAnchorElement>('a[href]')];
@@ -1520,7 +1629,7 @@ export async function inspectHitTestedAction(
         } catch {
           return null;
         }
-        const outerArticle = document.querySelectorAll('article')[target.articleIndex];
+        const outerArticle = article.parentElement?.closest('article');
         const compact = element.closest('[role="link"]');
         const ownerPath = `/${target.ownerHandle}/status/${target.ownerStatusId}`;
         const compactOwnerPath = (anchor: HTMLAnchorElement) =>
@@ -1534,6 +1643,13 @@ export async function inspectHitTestedAction(
         const actionPath = hitLink ? parseLink(hitLink)?.pathname : null;
         if (
           !outerArticle?.contains(article) ||
+          ![...outerArticle.querySelectorAll<HTMLAnchorElement>('a[href]')].some((anchor) => {
+            const url = parseLink(anchor);
+            return (
+              anchor.closest('article') === outerArticle &&
+              url?.pathname.toLowerCase() === `/${handle}/status/${statusId}`.toLowerCase()
+            );
+          }) ||
           !compact ||
           compact.closest('article') !== article ||
           !imageLink ||
@@ -1612,6 +1728,38 @@ export async function inspectHitTestedAction(
             .filter((candidate): candidate is HTMLAnchorElement => candidate !== null)
         ),
       ];
+      const ownsStatus = anchors.some((anchor) => {
+        const url = parseLink(anchor);
+        return (
+          anchor.closest('article') === article &&
+          url?.pathname.toLowerCase() === `/${handle}/status/${statusId}`.toLowerCase()
+        );
+      });
+      if (!ownsStatus) {
+        return null;
+      }
+      if (target) {
+        const sameSourceCount = [...article.querySelectorAll<HTMLImageElement>('img')].filter(
+          (candidate) => {
+            if (candidate.closest('article') !== article) {
+              return false;
+            }
+            try {
+              const source = new URL(candidate.currentSrc || candidate.src);
+              return (
+                source.protocol === 'https:' &&
+                source.hostname.toLowerCase() === target.imageSource.host &&
+                source.pathname === target.imageSource.path
+              );
+            } catch {
+              return false;
+            }
+          }
+        ).length;
+        if (sameSourceCount !== 1) {
+          return null;
+        }
+      }
       const action = hitAnchors.find((anchor) => {
         const url = parseLink(anchor);
         return anchor.closest('article') === article && url && mediaPath.test(url.pathname);

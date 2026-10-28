@@ -9,6 +9,9 @@ import {
   inspectHitTestedAction,
   inspectHitTestedNativePreviewAction,
   inspectLiveTargetDocument,
+  resolveLiveImageDocument,
+  resolveLiveImageActionDocument,
+  isBoundLiveImageOwnerDocument,
   inspectLiveCandidateDocument,
   inspectNativePreviewOwnerDocument,
   inspectSelectedGalleryDocument,
@@ -2314,6 +2317,8 @@ async function observeOne(
     : null;
   const settleApi = attachDiagnostics(page, observation, identities);
   let actionHandle: ElementHandle<SVGElement | HTMLElement> | null | undefined;
+  let imageHandle: ElementHandle<HTMLImageElement> | null = null;
+  let imageOwnerHandle: ElementHandle<HTMLElement> | null = null;
   try {
     const response = await page.goto(targetUrl, {
       waitUntil: 'domcontentloaded',
@@ -2415,9 +2420,26 @@ async function observeOne(
       return observation;
     }
 
-    const article = page.locator('article').nth(observation.target.articleIndex);
-    const image = article.locator('img').nth(observation.target.imageIndex);
+    const imageReference = await page.evaluateHandle(resolveLiveImageDocument, {
+      identity,
+      target: observation.target,
+    });
+    const image = imageReference.asElement() as ElementHandle<HTMLImageElement> | null;
+    if (!image) {
+      await imageReference.dispose();
+      throw new Error('Requested image source and owner were not uniquely bound');
+    }
+    imageHandle = image;
+    const ownerReference = await image.evaluateHandle((element) => element.closest('article'));
+    imageOwnerHandle = ownerReference.asElement() as ElementHandle<HTMLElement> | null;
+    if (!imageOwnerHandle) {
+      await ownerReference.dispose();
+      throw new Error('Requested image owner detached before interaction');
+    }
     await image.scrollIntoViewIfNeeded({ timeout: ACTION_TIMEOUT_MS });
+    if (!(await image.evaluate(isBoundLiveImageOwnerDocument, imageOwnerHandle))) {
+      throw new Error('Requested image moved to a different article');
+    }
     const actionIdentity = await inspectHitTestedAction(image, identity, observation.target);
     if (!actionIdentity) {
       throw new Error('No owned top media action was found by hit test');
@@ -2431,19 +2453,23 @@ async function observeOne(
       ...actionIdentity,
       ...(selectedPhotoIndex === null ? {} : { selectedPhotoIndex }),
     };
-    const action = article.locator('a[href]').nth(actionIdentity.actionIndex);
-    actionHandle = await action.elementHandle();
+    const actionReference = await image.evaluateHandle(resolveLiveImageActionDocument, {
+      actionIndex: actionIdentity.actionIndex,
+      compactQuote,
+    });
+    actionHandle = actionReference.asElement() as ElementHandle<HTMLAnchorElement> | null;
     if (!actionHandle) {
+      await actionReference.dispose();
       throw new Error('Selected target action detached before interaction');
     }
-    await action.focus({ timeout: ACTION_TIMEOUT_MS });
+    await actionHandle.focus();
     if ((await hostSnapshot(page)).scrollY === 0) {
       await page.mouse.wheel(0, 160);
       await page.waitForFunction(() => window.scrollY > 0, null, {
         timeout: ACTION_TIMEOUT_MS,
       });
     }
-    await action.focus({ timeout: ACTION_TIMEOUT_MS });
+    await actionHandle.focus();
     const before = await hostSnapshot(page);
     const focusPrepared = await actionHandle.evaluate(
       (element) => document.activeElement === element
@@ -2463,21 +2489,40 @@ async function observeOne(
       `live-page-${index}-before.png`
     );
 
-    if (compactQuote) {
-      const refreshedAction = await inspectHitTestedAction(image, identity, observation.target);
-      if (
-        !refreshedAction ||
-        refreshedAction.actionIndex !== actionIdentity.actionIndex ||
-        refreshedAction.actionPath !== actionIdentity.actionPath
-      ) {
-        throw new Error('Compact quote owner or image changed before click');
-      }
+    const refreshedAction = await inspectHitTestedAction(image, identity, observation.target);
+    if (
+      !refreshedAction ||
+      refreshedAction.actionIndex !== actionIdentity.actionIndex ||
+      refreshedAction.actionPath !== actionIdentity.actionPath
+    ) {
+      throw new Error('Selected image owner or action changed before click');
     }
 
     const identityBeforeClick = await actionHandle.evaluate(
       (element, expected) => {
         const article = element.closest('article');
-        if (!(element instanceof HTMLAnchorElement) || !article) {
+        const image = expected.image;
+        if (
+          !(element instanceof HTMLAnchorElement) ||
+          !article ||
+          !(image instanceof HTMLImageElement) ||
+          !image.isConnected ||
+          !(expected.imageOwner instanceof HTMLElement) ||
+          image.closest('article') !== expected.imageOwner ||
+          image.closest('article') !== article
+        ) {
+          return false;
+        }
+        try {
+          const source = new URL(image.currentSrc || image.src);
+          if (
+            source.protocol !== 'https:' ||
+            source.hostname.toLowerCase() !== expected.imageSource.host ||
+            source.pathname !== expected.imageSource.path
+          ) {
+            return false;
+          }
+        } catch {
           return false;
         }
         const rectangle = element.getBoundingClientRect();
@@ -2493,7 +2538,12 @@ async function observeOne(
           new URL(element.href, location.href).pathname === expected.actionPath
         );
       },
-      { actionPath: observation.target.actionPath }
+      {
+        actionPath: observation.target.actionPath,
+        image,
+        imageOwner: imageOwnerHandle,
+        imageSource: observation.target.imageSource,
+      }
     );
     observation.gallery.identityBeforeClick = identityBeforeClick;
     if (!identityBeforeClick) {
@@ -2700,6 +2750,12 @@ async function observeOne(
     }
     if (actionHandle) {
       await actionHandle.dispose().catch(() => {});
+    }
+    if (imageHandle) {
+      await imageHandle.dispose().catch(() => {});
+    }
+    if (imageOwnerHandle) {
+      await imageOwnerHandle.dispose().catch(() => {});
     }
     observation.finalUrl = sanitizedUrl(page.url());
     try {

@@ -342,6 +342,127 @@ describe('Windows X live page DOM validation', () => {
     });
   });
 
+  it('keeps the requested image bound when an earlier thread article appears', async () => {
+    const identity = { handle: 'NASA', statusId: '2040059770237849635' };
+    const statusPath = '/NASA/status/2040059770237849635';
+    document.body.innerHTML = `
+      <article id="requested">
+        <a id="status" href="https://x.com${statusPath}">Status</a>
+        <a id="action" href="https://x.com${statusPath}/photo/1">
+          <img id="requested-image" src="https://pbs.twimg.com/media/HE-_ijrXYAA_Wiq?format=jpg" alt="Image">
+        </a>
+      </article>`;
+    const image = document.querySelector<HTMLImageElement>('#requested-image');
+    const action = document.querySelector<HTMLAnchorElement>('#action');
+    const status = document.querySelector<HTMLAnchorElement>('#status');
+    if (!image || !action || !status) {
+      throw new Error('Requested image fixture is incomplete');
+    }
+    image.getBoundingClientRect = () => ({
+      bottom: 180,
+      height: 160,
+      left: 20,
+      right: 180,
+      toJSON: () => ({}),
+      top: 20,
+      width: 160,
+      x: 20,
+      y: 20,
+    });
+    Object.defineProperties(image, {
+      complete: { configurable: true, value: true },
+      naturalWidth: { configurable: true, value: 160 },
+    });
+    const ready = livePage.inspectLiveTargetDocument(identity);
+    if (!ready || ready.state !== 'ready' || ready.target.kind !== 'image') {
+      throw new Error('Requested image readiness was not established');
+    }
+    expect(ready.target.articleIndex).toBe(0);
+
+    const preceding = document.createElement('article');
+    preceding.innerHTML = `
+      <a href="https://x.com/NASA/status/2040059740848283920">Earlier status</a>
+      <a href="https://x.com/NASA/status/2040059740848283920/photo/1">
+        <img src="https://pbs.twimg.com/media/HE-_hJkWgAApuRC" alt="Earlier image">
+      </a>`;
+    document.querySelector('#requested')?.before(preceding);
+    expect(document.querySelectorAll('article')[ready.target.articleIndex]).toBe(preceding);
+
+    const previousHitTest = Object.getOwnPropertyDescriptor(document, 'elementsFromPoint');
+    Object.defineProperty(document, 'elementsFromPoint', {
+      configurable: true,
+      value: () => [action],
+    });
+    try {
+      const selected = livePage.resolveLiveImageDocument({ identity, target: ready.target });
+      expect(selected).toBe(image);
+      const boundImage = {
+        evaluate: async (
+          callback: (element: HTMLImageElement, value: unknown) => unknown,
+          value: unknown
+        ) => callback(image, value),
+      };
+      const actionIdentity = await livePage.inspectHitTestedAction(
+        boundImage as unknown as Parameters<LivePageModule['inspectHitTestedAction']>[0],
+        identity,
+        ready.target
+      );
+      expect(actionIdentity).toMatchObject({ actionPath: `${statusPath}/photo/1`, actionIndex: 1 });
+      expect(
+        livePage.resolveLiveImageActionDocument(image, {
+          actionIndex: actionIdentity?.actionIndex ?? -1,
+          compactQuote: false,
+        })
+      ).toBe(action);
+
+      const duplicate = image.cloneNode() as HTMLImageElement;
+      action.append(duplicate);
+      expect(livePage.resolveLiveImageDocument({ identity, target: ready.target })).toBeNull();
+      duplicate.remove();
+
+      const requestedArticle = document.querySelector('#requested');
+      if (!requestedArticle) {
+        throw new Error('Requested article detached');
+      }
+      expect(livePage.isBoundLiveImageOwnerDocument(image, requestedArticle)).toBe(true);
+      const movedOwner = document.createElement('article');
+      movedOwner.innerHTML = `<a href="https://x.com${statusPath}">Status copy</a>`;
+      movedOwner.append(action);
+      document.body.append(movedOwner);
+      expect(livePage.isBoundLiveImageOwnerDocument(image, requestedArticle)).toBe(false);
+      requestedArticle.append(action);
+
+      status.href = 'https://x.com/NASA/status/2040059740848283920';
+      expect(livePage.resolveLiveImageDocument({ identity, target: ready.target })).toBeNull();
+      expect(
+        await livePage.inspectHitTestedAction(
+          boundImage as unknown as Parameters<LivePageModule['inspectHitTestedAction']>[0],
+          identity,
+          ready.target
+        )
+      ).toBeNull();
+      status.href = `https://x.com${statusPath}`;
+
+      image.src = 'https://pbs.twimg.com/media/changed';
+      expect(livePage.resolveLiveImageDocument({ identity, target: ready.target })).toBeNull();
+      expect(
+        await livePage.inspectHitTestedAction(
+          boundImage as unknown as Parameters<LivePageModule['inspectHitTestedAction']>[0],
+          identity,
+          ready.target
+        )
+      ).toBeNull();
+      image.remove();
+      expect(livePage.resolveLiveImageDocument({ identity, target: ready.target })).toBeNull();
+    } finally {
+      if (previousHitTest) {
+        Object.defineProperty(document, 'elementsFromPoint', previousHitTest);
+      } else {
+        Reflect.deleteProperty(document, 'elementsFromPoint');
+      }
+    }
+  });
+
   it.each(['', '/photo/1'])(
     'recognizes only the bounded A > B > C compact photo with its same-owner %s overlay',
     async (photoSuffix) => {
@@ -399,19 +520,30 @@ describe('Windows X live page DOM validation', () => {
         if (!ready || ready.state !== 'ready' || !ready.target || ready.target.kind !== 'image') {
           throw new Error('Compact image readiness was not established');
         }
+        const preceding = document.createElement('article');
+        preceding.innerHTML =
+          '<a href="https://x.com/other_fixture/status/6555555555555555555">Earlier status</a>';
+        document.body.prepend(preceding);
+        expect(document.querySelectorAll('article')[ready.target.articleIndex]).toBe(preceding);
+        expect(livePage.resolveLiveImageDocument({ identity, target: ready.target })).toBe(image);
         const locator = {
           evaluate: async (
             callback: (image: HTMLImageElement, value: unknown) => unknown,
             value: unknown
           ) => callback(image, value),
         };
+        const actionIdentity = await livePage.inspectHitTestedAction(
+          locator as unknown as Parameters<LivePageModule['inspectHitTestedAction']>[0],
+          identity,
+          ready.target as Parameters<LivePageModule['inspectHitTestedAction']>[2]
+        );
+        expect(actionIdentity).toMatchObject({ actionPath: `${ownerPath}${photoSuffix}` });
         expect(
-          await livePage.inspectHitTestedAction(
-            locator as unknown as Parameters<LivePageModule['inspectHitTestedAction']>[0],
-            identity,
-            ready.target as Parameters<LivePageModule['inspectHitTestedAction']>[2]
-          )
-        ).toMatchObject({ actionPath: `${ownerPath}${photoSuffix}` });
+          livePage.resolveLiveImageActionDocument(image, {
+            actionIndex: actionIdentity?.actionIndex ?? -1,
+            compactQuote: true,
+          })
+        ).toBe(overlay);
 
         const bSlot = document.querySelector('#b-media-slot');
         if (!bSlot) {
