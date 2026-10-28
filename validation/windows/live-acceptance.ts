@@ -1184,7 +1184,8 @@ export async function runActualSiteAcceptance({
     }
     await writeFile(
       join(output, `live-page-${index}-acceptance.json`),
-      JSON.stringify(receipt, null, 2)
+      JSON.stringify(receipt, null, 2),
+      { flag: 'wx', mode: 0o600 }
     );
   }
   return receipt;

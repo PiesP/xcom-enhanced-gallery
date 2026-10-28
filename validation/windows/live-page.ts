@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 PiesP
 
-import { writeFile } from 'node:fs/promises';
+import { open, writeFile, type FileHandle } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { isAbsolute, join } from 'node:path';
 import type { BrowserContext, ElementHandle, JSHandle, Page } from '@playwright/test';
@@ -1686,6 +1686,19 @@ async function captureScreenshot(page: Page, output: string, filename: string) {
   return filename;
 }
 
+async function writeOpenLiveReceipt(handle: FileHandle, receipt: LiveObservation): Promise<void> {
+  const bytes = Buffer.from(JSON.stringify(receipt, null, 2));
+  let written = 0;
+  while (written < bytes.length) {
+    const result = await handle.write(bytes, written, bytes.length - written, written);
+    if (result.bytesWritten === 0) {
+      throw new Error('Live receipt write made no progress');
+    }
+    written += result.bytesWritten;
+  }
+  await handle.truncate(bytes.length);
+}
+
 async function waitForTarget(page: Page, identity: Identity) {
   const handle = await page.waitForFunction(inspectLiveTargetDocument, identity, {
     timeout: READINESS_TIMEOUT_MS,
@@ -3046,11 +3059,10 @@ async function observeOne(
       await imageOwnerHandle.dispose().catch(() => {});
     }
     observation.finalUrl = sanitizedUrl(page.url());
+    let receiptHandle: FileHandle | null = null;
     try {
-      await writeFile(
-        join(output, `live-page-${index}.json`),
-        JSON.stringify(observation, null, 2)
-      );
+      receiptHandle = await open(join(output, `live-page-${index}.json`), 'wx', 0o600);
+      await writeOpenLiveReceipt(receiptHandle, observation);
     } finally {
       try {
         const requireClose = borrowedExtensionPage !== null || strictPageClose;
@@ -3066,17 +3078,18 @@ async function observeOne(
           observation.evidenceStatus = 'unverified';
           observation.error = observation.error ? `${observation.error}; ${message}` : message;
         }
-        if (requireClose) {
-          await writeFile(
-            join(output, `live-page-${index}.json`),
-            JSON.stringify(observation, null, 2)
-          );
+        if (requireClose && receiptHandle) {
+          await writeOpenLiveReceipt(receiptHandle, observation);
         }
       } finally {
-        if (identities) {
-          identities.selectedVideo = null;
-          identities.apiVariants.length = 0;
-          identities.requestUrls.length = 0;
+        try {
+          await receiptHandle?.close();
+        } finally {
+          if (identities) {
+            identities.selectedVideo = null;
+            identities.apiVariants.length = 0;
+            identities.requestUrls.length = 0;
+          }
         }
       }
     }
@@ -3562,7 +3575,10 @@ export async function observeLiveUrls({
         }
       : {}),
   };
-  await writeFile(join(output, 'live-observations.json'), JSON.stringify(summary, null, 2));
+  await writeFile(join(output, 'live-observations.json'), JSON.stringify(summary, null, 2), {
+    flag: 'wx',
+    mode: 0o600,
+  });
   if (failed.length || borrowedError || acceptanceMissing) {
     const error = new AggregateError(
       [

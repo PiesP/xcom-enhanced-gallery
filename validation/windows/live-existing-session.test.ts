@@ -2,7 +2,7 @@
 // Copyright (c) 2026 PiesP
 
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'vite-plus/test';
@@ -12,8 +12,35 @@ import {
   resolveBorrowedVideoClickMode,
   type BorrowedHostDiagnosticProof,
 } from './live-page.ts';
+import { runActualSiteAcceptance } from './live-acceptance.ts';
 
 const liveUrl = 'https://x.com/tester/status/12345';
+
+test('live acceptance creates private evidence once and preserves an existing receipt', async () => {
+  const output = mkdtempSync(join(tmpdir(), 'xeg-live-receipt-'));
+  const path = join(output, 'live-page-1-acceptance.json');
+  const options = {
+    page: { screenshot: async () => Promise.reject(new Error('screenshot unavailable')) },
+    targetUrl: liveUrl,
+    navigationUrl: liveUrl,
+    output,
+    index: 1,
+  } as unknown as Parameters<typeof runActualSiteAcceptance>[0];
+  try {
+    const receipt = await runActualSiteAcceptance(options);
+    assert.equal(receipt.status, 'failed');
+    assert.deepEqual(JSON.parse(readFileSync(path, 'utf8')), receipt);
+    if (process.platform !== 'win32') {
+      assert.equal(statSync(path).mode & 0o777, 0o600);
+    }
+    writeFileSync(path, 'original receipt');
+    await assert.rejects(runActualSiteAcceptance(options), { code: 'EEXIST' });
+    assert.equal(readFileSync(path, 'utf8'), 'original receipt');
+  } finally {
+    rmSync(output, { recursive: true, force: true });
+  }
+});
+
 const borrowedProof: BorrowedHostDiagnosticProof = {
   schemaVersion: 1,
   kind: 'BorrowedHostDiagnosticProof',
@@ -135,7 +162,7 @@ test('borrowed mode uses the canonical default only when storage is absent', asy
 
 test('borrowed observation reads installed settings without writing or closing the context', async () => {
   const browser = await chromium.launch();
-  const output = mkdtempSync(join(tmpdir(), 'xeg-borrowed-live-'));
+  const outputRoot = mkdtempSync(join(tmpdir(), 'xeg-borrowed-live-'));
   try {
     for (const stored of [
       {
@@ -183,6 +210,7 @@ test('borrowed observation reads installed settings without writing or closing t
         source: 'fallback-valid',
       },
     ]) {
+      const output = mkdtempSync(join(outputRoot, 'attempt-'));
       const context = await browser.newContext();
       const writes: string[] = [];
       let createdPages = 0;
@@ -258,6 +286,8 @@ test('borrowed observation reads installed settings without writing or closing t
         }
       );
       const summary = JSON.parse(readFileSync(join(output, 'live-observations.json'), 'utf8'));
+      const pageReceipt = JSON.parse(readFileSync(join(output, 'live-page-1.json'), 'utf8'));
+      assert.deepEqual(pageReceipt.cleanup, { pageClosed: true });
       assert.equal(summary.status, 'failed');
       assert.equal(summary.hostProofStatus, 'validated');
       assert.equal(summary.hostBaselineReceiptSha256, borrowedProof.baseline.receiptSha256);
@@ -276,7 +306,7 @@ test('borrowed observation reads installed settings without writing or closing t
     }
   } finally {
     await browser.close();
-    rmSync(output, { recursive: true, force: true });
+    rmSync(outputRoot, { recursive: true, force: true });
   }
 });
 
@@ -526,12 +556,13 @@ test('borrowed observation preserves a failure receipt when X-origin fallback ca
 
 test('borrowed native playback never starts the owned allow-all settings probe', async () => {
   const browser = await chromium.launch();
-  const output = mkdtempSync(join(tmpdir(), 'xeg-borrowed-native-'));
+  const outputRoot = mkdtempSync(join(tmpdir(), 'xeg-borrowed-native-'));
   const videoBytes = readFileSync(
     new URL('../../test/e2e/fixtures/installed-metadata-readiness.mp4', import.meta.url)
   );
   try {
     for (const session of ['borrowed', 'owned'] as const) {
+      const output = mkdtempSync(join(outputRoot, 'attempt-'));
       const context = await browser.newContext();
       const originalSettings = { gallery: { videoClickMode: 'block-controls-only' } };
       const settings: Record<string, unknown> = { 'xeg-app-settings': originalSettings };
@@ -652,6 +683,6 @@ test('borrowed native playback never starts the owned allow-all settings probe',
     }
   } finally {
     await browser.close();
-    rmSync(output, { recursive: true, force: true });
+    rmSync(outputRoot, { recursive: true, force: true });
   }
 });
