@@ -232,6 +232,100 @@ export function inspectLiveTargetDocument({
       rectangle.height > 0
     );
   };
+  const isRenderedPhoto = (image: HTMLImageElement, source: Source, article: Element) => {
+    if (isVisible(image)) {
+      return true;
+    }
+    const style = getComputedStyle(image);
+    const photo = image.parentElement;
+    if (
+      style.display === 'none' ||
+      style.visibility === 'hidden' ||
+      Number(style.opacity) !== 0 ||
+      !photo?.matches('[data-testid="tweetPhoto"]') ||
+      photo.closest('article') !== article ||
+      photo.querySelectorAll('img').length !== 1 ||
+      !isVisible(photo)
+    ) {
+      return false;
+    }
+    for (let ancestor: Element | null = photo; ancestor; ancestor = ancestor.parentElement) {
+      const ancestorStyle = getComputedStyle(ancestor);
+      if (
+        ancestorStyle.display === 'none' ||
+        ancestorStyle.visibility === 'hidden' ||
+        Number(ancestorStyle.opacity) === 0
+      ) {
+        return false;
+      }
+      if (ancestor === article) {
+        break;
+      }
+    }
+    let activeSource: URL;
+    try {
+      activeSource = new URL(image.currentSrc || image.src);
+    } catch {
+      return false;
+    }
+    if (
+      activeSource.protocol !== 'https:' ||
+      activeSource.hostname.toLowerCase() !== source.host ||
+      activeSource.pathname !== source.path
+    ) {
+      return false;
+    }
+    const imageRect = image.getBoundingClientRect();
+    if (imageRect.width <= 0 || imageRect.height <= 0) {
+      return false;
+    }
+    const paintedSiblings = [...photo.children].filter(
+      (sibling) => sibling !== image && getComputedStyle(sibling).backgroundImage !== 'none'
+    );
+    if (paintedSiblings.length !== 1) {
+      return false;
+    }
+    const surface = paintedSiblings[0];
+    if (!surface || !isVisible(surface)) {
+      return false;
+    }
+    const match = /^url\((?:"([^"]+)"|'([^']+)'|([^'")]+))\)$/u.exec(
+      getComputedStyle(surface).backgroundImage
+    );
+    if (!match) {
+      return false;
+    }
+    try {
+      const background = new URL(match[1] ?? match[2] ?? match[3] ?? '', location.href);
+      if (
+        background.protocol !== 'https:' ||
+        background.hostname.toLowerCase() !== source.host ||
+        background.pathname !== source.path ||
+        background.username ||
+        background.password ||
+        background.port
+      ) {
+        return false;
+      }
+    } catch {
+      return false;
+    }
+    const surfaceRect = surface.getBoundingClientRect();
+    const centerX = imageRect.left + imageRect.width / 2;
+    const centerY = imageRect.top + imageRect.height / 2;
+    const hit =
+      centerX >= 0 && centerY >= 0 && centerX < innerWidth && centerY < innerHeight
+        ? document.elementFromPoint(centerX, centerY)
+        : null;
+    return (
+      hit !== null &&
+      photo.contains(hit) &&
+      Math.abs(imageRect.left - surfaceRect.left) <= 1 &&
+      Math.abs(imageRect.top - surfaceRect.top) <= 1 &&
+      Math.abs(imageRect.width - surfaceRect.width) <= 1 &&
+      Math.abs(imageRect.height - surfaceRect.height) <= 1
+    );
+  };
   const parseLink = (anchor: HTMLAnchorElement) => {
     try {
       const url = new URL(anchor.href, location.href);
@@ -463,7 +557,7 @@ export function inspectLiveTargetDocument({
         image.closest('article') !== article ||
         image.closest('[data-testid="videoPlayer"], [data-testid="previewInterstitial"]') ||
         !source ||
-        !isVisible(image) ||
+        !isRenderedPhoto(image, source, article) ||
         !image.complete ||
         image.naturalWidth <= 0
       ) {
@@ -527,7 +621,12 @@ export function inspectLiveTargetDocument({
             continue;
           }
           const source = parseMedia(image);
-          if (!source || !isVisible(image) || !image.complete || image.naturalWidth <= 0) {
+          if (
+            !source ||
+            !isRenderedPhoto(image, source, quoteArticle) ||
+            !image.complete ||
+            image.naturalWidth <= 0
+          ) {
             continue;
           }
           const imageLink = image.closest<HTMLAnchorElement>('a[href]');
