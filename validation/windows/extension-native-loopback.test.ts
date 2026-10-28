@@ -3,6 +3,7 @@
 
 import assert from 'node:assert/strict';
 import { createServer, request } from 'node:http';
+import type { IncomingMessage } from 'node:http';
 import { test } from 'vite-plus/test';
 import { createExtensionNativeFixtureHandler } from './extension-native-loopback.ts';
 
@@ -252,6 +253,147 @@ test('a held video range overlaps a second owned video and later resumes', async
     );
     assert(ranges[0]!.atMs < ranges[1]!.finishedAtMs!);
     assert(ranges[1]!.atMs < ranges[0]!.closedAtMs!);
+  } finally {
+    first.destroy();
+    fixture.abortVideoHold();
+    fixture.destroyActive();
+    await new Promise<void>((resolve, reject) =>
+      server.close((error) => (error ? reject(error) : resolve()))
+    );
+  }
+});
+
+test('a first range waits for the exact adjacent GET before queuing its prefix', async () => {
+  const fixture = createExtensionNativeFixtureHandler();
+  const video = Buffer.alloc(200, 7);
+  const adjacent = Buffer.alloc(80, 8);
+  fixture.setPayloads(
+    [Buffer.from('image'), Buffer.from('image'), Buffer.from('image')],
+    Object.fromEntries(
+      ['quote-one', 'quote-two', 'linked-four', 'quote-three', 'nested-c'].map((name) => [
+        name,
+        video,
+      ])
+    )
+  );
+  const tweetId = '4666000111222333888';
+  const otherId = '4666000111222333889';
+  fixture.setRecoveryPayloads({ tweetId, validMp4: video, badMp4: video, adjacentMp4: adjacent });
+  fixture.setRecoveryPayloads({ tweetId: otherId, validMp4: video, badMp4: video });
+  const firstPath = `/ext_tw_video/${tweetId}/pu/vid/320x180/video-0-best.mp4`;
+  const secondPath = `/ext_tw_video/${tweetId}/pu/vid/320x180/video-1-best.mp4`;
+  const wrongPath = `/ext_tw_video/${tweetId}/pu/vid/320x180/video-2-best.mp4`;
+  const otherPath = `/ext_tw_video/${otherId}/pu/vid/320x180/video-1-best.mp4`;
+  assert.throws(
+    () => fixture.armFirstVideoHold(firstPath, 100, { afterRequestPath: otherPath }),
+    /share the held video owner/u
+  );
+  fixture.armFirstVideoHold(firstPath, 100, { afterRequestPath: secondPath });
+  const server = createServer(fixture.handle);
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const address = server.address();
+  assert(address && typeof address !== 'string');
+  const options = {
+    hostname: '127.0.0.1',
+    port: address.port,
+    headers: { Host: 'video.twimg.com' },
+  };
+  const readRange = (path: string, range: string, method = 'GET') =>
+    new Promise<{ status: number | undefined; bytes: Buffer; range: string; length: string }>(
+      (resolve, reject) => {
+        const outgoing = request(
+          { ...options, method, path, headers: { ...options.headers, Range: range } },
+          (incoming) => {
+            const parts: Buffer[] = [];
+            incoming.on('data', (part: Buffer) => parts.push(part));
+            incoming.once('end', () =>
+              resolve({
+                status: incoming.statusCode,
+                bytes: Buffer.concat(parts),
+                range: String(incoming.headers['content-range']),
+                length: String(incoming.headers['content-length']),
+              })
+            );
+            incoming.once('error', reject);
+          }
+        );
+        outgoing.once('error', reject);
+        outgoing.end();
+      }
+    );
+  const first = request({
+    ...options,
+    path: firstPath,
+    headers: { ...options.headers, Range: 'bytes=0-199' },
+  });
+  first.on('error', () => undefined);
+  try {
+    const firstResponse = new Promise<IncomingMessage>((resolve, reject) => {
+      first.once('response', resolve);
+      first.once('error', reject);
+    });
+    first.end();
+    const incoming = await firstResponse;
+    assert.equal(incoming.statusCode, 206);
+    assert.equal(incoming.headers['content-range'], 'bytes 0-199/200');
+    assert.equal(incoming.headers['content-length'], '200');
+    let prefixReceived = false;
+    const firstPrefix = new Promise<Buffer>((resolve, reject) => {
+      incoming.once('data', (part: Buffer) => {
+        prefixReceived = true;
+        resolve(part);
+      });
+      incoming.once('error', reject);
+    });
+    assert.equal(fixture.videoHeld(), true);
+    assert.deepEqual(await readRange(wrongPath, 'bytes=0-199'), {
+      status: 206,
+      bytes: video,
+      range: 'bytes 0-199/200',
+      length: '200',
+    });
+    assert.deepEqual(await readRange(otherPath, 'bytes=0-199'), {
+      status: 206,
+      bytes: video,
+      range: 'bytes 0-199/200',
+      length: '200',
+    });
+    assert.deepEqual(await readRange(secondPath, 'bytes=0-79', 'HEAD'), {
+      status: 206,
+      bytes: Buffer.alloc(0),
+      range: 'bytes 0-79/80',
+      length: '80',
+    });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    assert.equal(prefixReceived, false);
+    assert.equal(fixture.snapshot().events[0]?.prefixBytesQueued, undefined);
+    assert.deepEqual(await readRange(secondPath, 'bytes=0-79'), {
+      status: 206,
+      bytes: adjacent,
+      range: 'bytes 0-79/80',
+      length: '80',
+    });
+    assert.deepEqual(await firstPrefix, video.subarray(0, 100));
+    assert.equal(fixture.videoHeld(), true);
+    first.destroy();
+    const deadline = Date.now() + 2_000;
+    while (fixture.videoHeld() && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    assert.equal(fixture.videoHeld(), false);
+    const events = fixture.snapshot().events;
+    const firstEvent = events.find((event) => event.path === firstPath);
+    const adjacentEvent = events.find(
+      (event) => event.path === secondPath && event.method === 'GET'
+    );
+    assert(firstEvent && adjacentEvent);
+    assert.equal(firstEvent.result, 'aborted');
+    assert.equal(firstEvent.prefixBytesQueued, 100);
+    assert(firstEvent.atMs < adjacentEvent.atMs);
+    assert(adjacentEvent.atMs < firstEvent.firstByteQueuedAtMs!);
+    assert(adjacentEvent.atMs < firstEvent.closedAtMs!);
+    assert.equal(adjacentEvent.result, 'served');
+    assert.equal(fixture.snapshot().activeCount, 0);
   } finally {
     first.destroy();
     fixture.abortVideoHold();

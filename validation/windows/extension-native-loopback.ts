@@ -44,6 +44,8 @@ type VideoHold = {
   prefixEnd: number;
   remaining: number;
   responses: Map<ServerResponse, Buffer>;
+  afterRequestPath?: string;
+  pendingPrefixes: Map<ServerResponse, { bytes: Buffer; event: NativeEvent }>;
 };
 
 function allowedVideos(payloads: Record<string, Buffer>) {
@@ -84,6 +86,16 @@ export function createExtensionNativeFixtureHandler() {
   let videoHold: VideoHold | null = null;
   let redirectOnce: { source: string; destination: string } | null = null;
   let httpFailure: { key: string; status: 403 | 404 } | null = null;
+  const queueVideoPrefix = (
+    response: ServerResponse,
+    prefix: { bytes: Buffer; event: NativeEvent }
+  ): void => {
+    if (prefix.bytes.length > 0) {
+      response.write(prefix.bytes);
+    }
+    prefix.event.prefixBytesQueued = prefix.bytes.length;
+    prefix.event.firstByteQueuedAtMs = prefix.bytes.length > 0 ? performance.now() : null;
+  };
   const reject = (response: ServerResponse, status = 404) => {
     unexpectedCount += 1;
     response.writeHead(status, { 'Content-Length': '0', 'Cache-Control': 'no-store' });
@@ -231,6 +243,7 @@ export function createExtensionNativeFixtureHandler() {
       }
       active.delete(response);
       videoHold?.responses.delete(response);
+      videoHold?.pendingPrefixes.delete(response);
       if (response === heldResponse) {
         heldResponse = null;
         heldTail = null;
@@ -254,6 +267,14 @@ export function createExtensionNativeFixtureHandler() {
       ...(range === undefined ? {} : { 'Content-Range': `bytes ${start}-${end}/${bytes.length}` }),
     });
     event.headersQueuedAtMs = performance.now();
+    if (request.method === 'GET' && videoHold?.afterRequestPath === route.path) {
+      for (const [held, prefix] of videoHold.pendingPrefixes) {
+        if (!held.destroyed) {
+          queueVideoPrefix(held, prefix);
+        }
+      }
+      videoHold.pendingPrefixes.clear();
+    }
     if (
       request.method === 'GET' &&
       videoHold?.path === `${route.host}${route.path}` &&
@@ -271,11 +292,13 @@ export function createExtensionNativeFixtureHandler() {
       }
       videoHold.responses.set(response, body.subarray(prefixBytes));
       videoHold.remaining--;
-      if (prefixBytes > 0) {
-        response.write(body.subarray(0, prefixBytes));
+      const prefix = { bytes: body.subarray(0, prefixBytes), event };
+      if (videoHold.afterRequestPath) {
+        videoHold.pendingPrefixes.set(response, prefix);
+        response.flushHeaders();
+      } else {
+        queueVideoPrefix(response, prefix);
       }
-      event.prefixBytesQueued = prefixBytes;
-      event.firstByteQueuedAtMs = prefixBytes > 0 ? performance.now() : null;
       event.result = 'video-held';
       return;
     }
@@ -401,9 +424,10 @@ export function createExtensionNativeFixtureHandler() {
         prefixEnd,
         remaining: Number.POSITIVE_INFINITY,
         responses: new Map<ServerResponse, Buffer>(),
+        pendingPrefixes: new Map(),
       };
     },
-    armFirstVideoHold(path: string, prefixEnd: number) {
+    armFirstVideoHold(path: string, prefixEnd: number, options?: { afterRequestPath: string }) {
       assert.equal(videoHold, null, 'Only one bounded video source may be held');
       const route = allowed.get(`video.twimg.com${path}`);
       assert(route && route.host === 'video.twimg.com', 'Only a declared video may be held');
@@ -411,11 +435,29 @@ export function createExtensionNativeFixtureHandler() {
         Number.isSafeInteger(prefixEnd) && prefixEnd > 0 && prefixEnd < route.bytes.length,
         'The first video hold must leave declared samples outstanding'
       );
+      if (options) {
+        const ownerOf = (videoPath: string) =>
+          /^\/ext_tw_video\/([1-9][0-9]{0,19})\/pu\/vid\/320x180\/video-[0-7]-best\.mp4$/u.exec(
+            videoPath
+          )?.[1];
+        const owner = ownerOf(path);
+        assert(
+          owner && ownerOf(options.afterRequestPath) === owner,
+          'The release request must share the held video owner'
+        );
+        assert.notEqual(options.afterRequestPath, path, 'The release request must be adjacent');
+        assert(
+          allowed.has(`video.twimg.com${options.afterRequestPath}`),
+          'The release video must be declared'
+        );
+      }
       videoHold = {
         path: `video.twimg.com${path}`,
         prefixEnd,
         remaining: 1,
         responses: new Map<ServerResponse, Buffer>(),
+        afterRequestPath: options?.afterRequestPath,
+        pendingPrefixes: new Map(),
       };
     },
     videoHeld: () => videoHold !== null && videoHold.responses.size > 0,
@@ -425,10 +467,15 @@ export function createExtensionNativeFixtureHandler() {
       videoHold = null;
       for (const [response, tail] of pending.responses) {
         if (!response.destroyed) {
+          const prefix = pending.pendingPrefixes.get(response);
+          if (prefix) {
+            queueVideoPrefix(response, prefix);
+          }
           response.end(tail);
         }
       }
       pending.responses.clear();
+      pending.pendingPrefixes.clear();
     },
     abortVideoHold() {
       if (!videoHold) {
@@ -440,6 +487,7 @@ export function createExtensionNativeFixtureHandler() {
         response.destroy();
       }
       pending.responses.clear();
+      pending.pendingPrefixes.clear();
     },
     mark: () => events.length,
     armHttpFailure(source: string, status: 403 | 404) {
