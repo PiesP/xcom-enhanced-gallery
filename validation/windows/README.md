@@ -896,16 +896,20 @@ The same lane changes the theme through the visible settings control, reads
 extension storage, confirms it in a reloaded new document, restores the exact
 prior stored settings, and checks the restored UI after another reload. It then
 performs a full-document visit to a second supplied public status and records
-that scope separately. A distinct same-document cleanup probe clicks an existing
+that scope separately. A distinct post-close same-document navigation probe clicks an existing
 preceding same-author public status anchor on an observed image page, if one is
-available and top hit-tested. It requires the same document time origin and no
-retained gallery, body style, or scroll policy. A video gallery with at least
+available and top hit-tested. The gallery is already closed by Escape before this click,
+and the receipt records that boundary. The probe requires the same document time origin
+and no reappearing gallery or changed body style or scroll policy. It does not establish
+that navigation closes an open gallery. A video gallery with at least
 two items must show actual Next/Previous navigation, selected/focused media
 identity, a paused nonselected player, and return to the same source-bound
 current video. The existing direct-quote ownership and playback checks still
-apply, including the controlled allow-all retry when needed. The summary has
+apply. An unmarked candidate without quoted status IDs instead requires unique direct
+status ownership from the exact playable provider variant. A controlled allow-all retry
+still applies when needed. The summary has
 separate coverage flags for multi-image downloads/settings, video navigation,
-and same-document cleanup; all three are required for actual-site acceptance.
+and post-close same-document navigation; all three are required for actual-site acceptance.
 Absent source size, native completion, eligible video neighbor or same-document
 status link leaves this opt-in acceptance unverified. Default no-download
 diagnostics remain separate. No authentication, consent, CAPTCHA, traffic rewriting, Explorer,

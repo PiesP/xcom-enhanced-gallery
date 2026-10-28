@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import type { BrowserContext, ElementHandle, JSHandle, Page } from '@playwright/test';
 import {
-  observeActualSiteSpaNavigation,
+  observeSameDocumentPostNavigationAfterClose,
   observeActualSiteVideoNavigation,
   runActualSiteAcceptance,
 } from './live-acceptance.ts';
@@ -20,6 +20,7 @@ import {
   inspectLiveCandidateDocument,
   inspectNativePreviewOwnerDocument,
   inspectSelectedGalleryDocument,
+  eligibleLiveImageGalleryCountDocument,
   inspectSelectedGalleryVideoDocument,
   readSelectedCurrentVideoUrlDocument,
   inspectHitTestedVideoActionDocument,
@@ -36,6 +37,7 @@ import type {
   NativePreviewTarget,
   LiveTarget,
   LiveReadiness,
+  QuoteTarget,
 } from './live-page-document.ts';
 export type {
   Source,
@@ -229,7 +231,7 @@ type GalleryObservation = {
     selectedVideo?: ReturnType<typeof inspectSelectedGalleryVideoDocument> | null;
   };
   playback?: { startTime: number; endTime: number | null; progressed: boolean };
-  owner?: ReturnType<typeof quotedOwnerForSource>;
+  owner?: ReturnType<typeof quotedOwnerForSource> | ReturnType<typeof directOwnerForSource>;
   ownerPath?: string | null;
   closeMethod?: string;
   detached?: boolean;
@@ -274,7 +276,9 @@ type LiveObservation = {
   expectedLifecycleCancellationCount?: number;
   controlledProbe?: ControlledProbe;
   actualSiteAcceptance?: Awaited<ReturnType<typeof runActualSiteAcceptance>>;
-  actualSiteSpaNavigation?: Awaited<ReturnType<typeof observeActualSiteSpaNavigation>>;
+  sameDocumentPostNavigationAfterClose?: Awaited<
+    ReturnType<typeof observeSameDocumentPostNavigationAfterClose>
+  >;
   actualSiteVideoNavigation?: Awaited<ReturnType<typeof observeActualSiteVideoNavigation>>;
 };
 type ControlledProbe = {
@@ -1977,11 +1981,20 @@ async function observeQuotedVideo(
     };
     observation.gallery.playback = playback;
     await settleApi();
-    const owner = quotedOwnerForSource(
-      observation.api.observations,
-      identity.statusId,
-      afterPlayback?.source
-    );
+    const directOwnerCandidate =
+      target.quoteBoundary === 'unmarked-candidate' && target.quoteStatusIds.length === 0;
+    const owner = directOwnerCandidate
+      ? directOwnerForSource(
+          observation.api.observations,
+          identity.statusId,
+          afterPlayback?.source,
+          target
+        )
+      : quotedOwnerForSource(
+          observation.api.observations,
+          identity.statusId,
+          afterPlayback?.source
+        );
     observation.gallery.owner = owner;
     if (actualSiteAcceptance) {
       observation.actualSiteVideoNavigation = await observeActualSiteVideoNavigation(page);
@@ -2035,10 +2048,19 @@ async function observeQuotedVideo(
         video.height > 0 &&
         video.mediaErrorCode === null
       ),
-      directQuotedOwner:
-        owner.status === 'matched-direct-quote-variant' &&
-        (target.quoteStatusIds.length === 0 ||
-          (typeof owner.ownerId === 'string' && target.quoteStatusIds.includes(owner.ownerId))),
+      ...(directOwnerCandidate
+        ? {
+            directStatusOwner:
+              owner.status === 'matched-direct-owner-variant' &&
+              owner.ownerId === identity.statusId,
+          }
+        : {
+            directQuotedOwner:
+              owner.status === 'matched-direct-quote-variant' &&
+              (target.quoteStatusIds.length === 0 ||
+                (typeof owner.ownerId === 'string' &&
+                  target.quoteStatusIds.includes(owner.ownerId))),
+          }),
       playbackProgress: playback.progressed,
       escapeClosed: detached,
       exactFocusRestored:
@@ -2579,6 +2601,7 @@ async function observeOne(
     const gallery = page.locator('[data-xeg-gallery-container]');
     await gallery.waitFor({ state: 'visible', timeout: ACTION_TIMEOUT_MS });
     const galleryItemCount = await gallery.locator('[data-gallery-element="item"]').count();
+    const eligibleImageGalleryCount = await gallery.evaluate(eligibleLiveImageGalleryCountDocument);
     await recordHostGeometry('opened');
     const selectedGalleryHandle = await page
       .waitForFunction(
@@ -2695,7 +2718,7 @@ async function observeOne(
     if (requiredProductAssertions.length) {
       throw new Error(`Missing live assertions: ${observation.missingAssertions.join(', ')}`);
     }
-    if (actualSiteAcceptance?.runMultiImage && !compactQuote && galleryItemCount >= 2) {
+    if (actualSiteAcceptance?.runMultiImage && !compactQuote && eligibleImageGalleryCount >= 2) {
       observation.actualSiteAcceptance = await runActualSiteAcceptance({
         context,
         page,
@@ -2729,15 +2752,16 @@ async function observeOne(
       }
     }
     if (actualSiteAcceptance && !compactQuote && galleryItemCount === 1) {
-      observation.actualSiteSpaNavigation = await observeActualSiteSpaNavigation({
-        page,
-        image,
-        targetUrl,
-      });
+      observation.sameDocumentPostNavigationAfterClose =
+        await observeSameDocumentPostNavigationAfterClose({
+          page,
+          image,
+          targetUrl,
+        });
       await settleApi();
-      if (observation.actualSiteSpaNavigation.status === 'failed') {
+      if (observation.sameDocumentPostNavigationAfterClose.status === 'failed') {
         throw new Error(
-          `Actual-site SPA navigation failed: ${observation.actualSiteSpaNavigation.reason ?? 'unknown'}`
+          `Actual-site post-close same-document navigation failed: ${observation.sameDocumentPostNavigationAfterClose.reason ?? 'unknown'}`
         );
       }
       if (
@@ -2746,7 +2770,7 @@ async function observeOne(
         observation.pageErrors.length ||
         observation.pageErrorOverflow
       ) {
-        throw new Error('Actual-site SPA navigation introduced console or page errors');
+        throw new Error('Actual-site post-close navigation introduced console or page errors');
       }
     }
     observation.status = 'core-flow-observed';
@@ -3260,8 +3284,8 @@ export async function observeLiveUrls({
         (page.controlledProbe?.cleanup.restored === true &&
           page.controlledProbe.observation?.actualSiteVideoNavigation?.status === 'observed')
     ),
-    sameDocumentNavigationCleanup: pages.some(
-      (page) => page.actualSiteSpaNavigation?.status === 'observed'
+    sameDocumentPostNavigationAfterClose: pages.some(
+      (page) => page.sameDocumentPostNavigationAfterClose?.status === 'observed'
     ),
   };
   const acceptanceMissing =
@@ -3333,6 +3357,52 @@ export async function observeLiveUrls({
     throw Object.assign(error, { summary });
   }
   return summary;
+}
+
+export function directOwnerForSource(
+  apiObservations: ApiObservation[],
+  outerId: string,
+  source: Source | null | undefined,
+  target: Pick<QuoteTarget, 'quoteBoundary' | 'quoteStatusIds'>
+) {
+  if (target.quoteBoundary !== 'unmarked-candidate' || target.quoteStatusIds.length !== 0) {
+    return { status: 'not-direct-owner-candidate', ownerId: null, mediaId: null };
+  }
+  if (!source) {
+    return { status: 'missing-video-source', ownerId: null, mediaId: null };
+  }
+  const matches = new Map<
+    number,
+    { ownerId: string; mediaId: string | null; mediaIndex: number }
+  >();
+  for (const entry of apiObservations) {
+    if (
+      entry.operation !== 'TweetResultByRestId' ||
+      entry.requestedTweetId !== outerId ||
+      entry.httpStatus !== 200 ||
+      entry.providerErrors ||
+      entry.result?.id !== outerId ||
+      entry.directQuote
+    ) {
+      continue;
+    }
+    entry.result.media.forEach((media, mediaIndex) => {
+      if (
+        media.playableVariants.some(
+          (variant) => variant?.host === source.host && variant.path === source.path
+        )
+      ) {
+        matches.set(mediaIndex, { ownerId: outerId, mediaId: media.id, mediaIndex });
+      }
+    });
+  }
+  return matches.size === 1
+    ? { status: 'matched-direct-owner-variant', ...[...matches.values()][0] }
+    : {
+        status: matches.size > 1 ? 'ambiguous-media' : 'no-direct-owner-variant',
+        ownerId: null,
+        mediaId: null,
+      };
 }
 
 function quotedOwnerForSource(

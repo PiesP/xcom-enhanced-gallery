@@ -20,6 +20,24 @@ function inspectFirstCurrentDownload(page: unknown, expectedUrl: string) {
 }
 
 describe('Windows X live page DOM validation', () => {
+  it('admits only galleries containing two to four image-only items', () => {
+    document.body.innerHTML = `<div data-xeg-gallery-container>
+      <div data-gallery-element="item"><img src="https://pbs.twimg.com/media/a.jpg"></div>
+      <div data-gallery-element="item"><img src="https://pbs.twimg.com/media/b.jpg"></div>
+    </div>`;
+    const gallery = document.querySelector('[data-xeg-gallery-container]');
+    if (!gallery) {
+      throw new Error('Gallery fixture missing');
+    }
+    expect(livePage.eligibleLiveImageGalleryCountDocument(gallery)).toBe(2);
+    gallery.querySelectorAll('[data-gallery-element="item"]')[1]!.innerHTML =
+      '<video src="https://video.twimg.com/clip.mp4"></video>';
+    expect(livePage.eligibleLiveImageGalleryCountDocument(gallery)).toBe(0);
+    gallery.querySelectorAll('[data-gallery-element="item"]')[1]!.innerHTML =
+      '<img src="https://pbs.twimg.com/media/b.jpg"><video src="https://video.twimg.com/clip.mp4"></video>';
+    expect(livePage.eligibleLiveImageGalleryCountDocument(gallery)).toBe(0);
+  });
+
   it('matches the bundled Downloads BETA heading in localized options markup', () => {
     document.body.innerHTML = `
       <table><tbody>

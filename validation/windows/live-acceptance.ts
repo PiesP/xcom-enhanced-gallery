@@ -137,7 +137,7 @@ export async function observeActualSiteVideoNavigation(page: Page) {
   return receipt;
 }
 
-export async function observeActualSiteSpaNavigation({
+export async function observeSameDocumentPostNavigationAfterClose({
   page,
   image,
   targetUrl,
@@ -164,6 +164,7 @@ export async function observeActualSiteSpaNavigation({
       galleryCount: number;
     };
     sameDocument?: boolean;
+    galleryAlreadyClosed?: boolean;
   } = { status: 'unverified' };
   const anchorRef = await image.evaluateHandle(findPrecedingLiveStatusAnchorDocument, {
     identity,
@@ -202,8 +203,9 @@ export async function observeActualSiteSpaNavigation({
     assert.equal(
       receipt.before.galleryCount,
       0,
-      'Old gallery was open at host navigation boundary'
+      'Gallery must already be closed before host navigation'
     );
+    receipt.galleryAlreadyClosed = true;
     await anchor.click({ timeout: 10_000 });
     await page.waitForURL((url) => url.pathname === path, { timeout: 15_000 });
     await page
@@ -215,7 +217,11 @@ export async function observeActualSiteSpaNavigation({
       receipt.reason = 'Existing status anchor performed a full-document navigation';
       return receipt;
     }
-    assert.equal(receipt.after.galleryCount, 0, 'Gallery survived same-document X navigation');
+    assert.equal(
+      receipt.after.galleryCount,
+      0,
+      'Gallery reappeared after same-document X navigation'
+    );
     assert.equal(
       receipt.after.bodyStyle,
       receipt.before.bodyStyle,

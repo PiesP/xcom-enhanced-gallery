@@ -1064,6 +1064,15 @@ export function inspectSelectedGalleryDocument({
   };
 }
 
+export function eligibleLiveImageGalleryCountDocument(gallery: Element): number {
+  const items = [...gallery.querySelectorAll('[data-gallery-element="item"]')];
+  return items.length >= 2 &&
+    items.length <= 4 &&
+    items.every((item) => item.querySelectorAll('img').length === 1 && !item.querySelector('video'))
+    ? items.length
+    : 0;
+}
+
 export function inspectSelectedGalleryVideoDocument() {
   const galleries = document.querySelectorAll('[data-xeg-gallery-container]');
   const gallery = galleries.length === 1 ? galleries[0] : null;

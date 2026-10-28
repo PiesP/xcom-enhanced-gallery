@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { test } from 'vite-plus/test';
 import type { BrowserContext } from '@playwright/test';
-import { observeLiveUrls } from './live-page.ts';
+import { directOwnerForSource, observeLiveUrls } from './live-page.ts';
 import {
   inspectLiveStoredZip,
   parseActualSiteAcceptanceSelector,
@@ -20,6 +20,61 @@ const context = {
   installation: 'extension',
   otherFocusedInput: false,
 };
+
+test('direct-owned video requires a unique exact provider variant and an unmarked boundary', () => {
+  const source = { host: 'video.twimg.com', path: '/amplify_video/123/vid/clip.mp4' };
+  const media = (id: string) => ({
+    id,
+    type: 'video',
+    poster: null,
+    playableVariants: [source],
+  });
+  const entry = {
+    operation: 'TweetResultByRestId',
+    requestedTweetId: '123',
+    httpStatus: 200,
+    providerErrors: false,
+    result: { id: '123', media: [media('video-1')] },
+    directQuote: null,
+    nestedQuoteId: null,
+  };
+  const direct = { quoteBoundary: 'unmarked-candidate', quoteStatusIds: [] };
+  assert.deepEqual(directOwnerForSource([entry], '123', source, direct), {
+    status: 'matched-direct-owner-variant',
+    ownerId: '123',
+    mediaId: 'video-1',
+    mediaIndex: 0,
+  });
+  assert.equal(
+    directOwnerForSource(
+      [{ ...entry, result: { ...entry.result, id: '456' } }],
+      '123',
+      source,
+      direct
+    ).status,
+    'no-direct-owner-variant'
+  );
+  assert.equal(
+    directOwnerForSource(
+      [{ ...entry, result: { ...entry.result, media: [media('video-1'), media('video-2')] } }],
+      '123',
+      source,
+      direct
+    ).status,
+    'ambiguous-media'
+  );
+  assert.equal(
+    directOwnerForSource([entry], '123', source, {
+      quoteBoundary: 'quoteTweet',
+      quoteStatusIds: ['456'],
+    }).status,
+    'not-direct-owner-candidate'
+  );
+  assert.equal(
+    directOwnerForSource([entry], '123', { ...source, path: '/other.mp4' }, direct).status,
+    'no-direct-owner-variant'
+  );
+});
 
 test('actual-site acceptance requires one exact ignored selector and an owned live lane', () => {
   assert.equal(parseActualSiteAcceptanceSelector(null, context), false);
