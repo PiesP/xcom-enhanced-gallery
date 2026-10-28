@@ -6295,13 +6295,26 @@ async function runVideoClickNewDocumentReadback({
         fullSettingRestored: boolean;
       }
     | undefined;
+  let validationError: unknown;
+  let validationSeen = false;
+  const cleanupErrors: unknown[] = [];
   try {
     await settingsButton.click();
     const select = gallery.getByLabel('Video clicks');
     await select.waitFor({ state: 'visible' });
     assert.equal(await select.inputValue(), initialMode);
     const pressAndConfirm = async (keyPress: string, expectedMode: string) => {
+      await waitForValue(
+        async () => ((await select.isEnabled()) ? true : undefined),
+        `enabled video-click select before ${keyPress}`,
+        5_000
+      );
       await select.focus();
+      assert.equal(
+        await select.evaluate((element) => document.activeElement === element),
+        true,
+        `Video-click select must be focused before ${keyPress}`
+      );
       await page.keyboard.press(keyPress);
       await waitForValue(
         async () => {
@@ -6356,10 +6369,16 @@ async function runVideoClickNewDocumentReadback({
       newDocumentSelectedValue: 'allow-all',
       fullSettingRestored: false,
     };
+  } catch (error) {
+    validationSeen = true;
+    validationError = error;
   } finally {
     try {
       await newDocument?.close();
-    } finally {
+    } catch (error) {
+      cleanupErrors.push(error);
+    }
+    try {
       assert.equal(
         await restoreStoredVideoSettings(extensionPage, prior),
         true,
@@ -6368,7 +6387,16 @@ async function runVideoClickNewDocumentReadback({
       if (receipt) {
         receipt.fullSettingRestored = true;
       }
+    } catch (error) {
+      cleanupErrors.push(error);
     }
+  }
+  const failures = validationSeen ? [validationError, ...cleanupErrors] : cleanupErrors;
+  if (failures.length > 1) {
+    throw new AggregateError(failures, 'New-document settings validation or cleanup failed');
+  }
+  if (failures.length === 1) {
+    throw failures[0];
   }
   assert(receipt, 'New-document settings readback produced no receipt');
   return receipt;
