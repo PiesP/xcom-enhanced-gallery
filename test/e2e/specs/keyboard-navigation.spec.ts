@@ -326,6 +326,22 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
     await expect(page.locator('[data-xeg-gallery-container]')).toHaveCount(0);
   });
 
+  test('gallery arrows navigate after a focused fit button is clicked', async ({ page }) => {
+    await page.setViewportSize({ width: 401, height: 592 });
+    await setupGalleryPage(page);
+    await openGallery(page);
+
+    const originalFit = page.getByRole('button', { name: 'Original', exact: true });
+    await originalFit.click();
+    await expect(originalFit).toBeFocused();
+    await page.keyboard.press('ArrowRight');
+    await expect.poll(() => getIndex(page)).toBe(1);
+
+    await expect(originalFit).toBeFocused();
+    await page.keyboard.press('ArrowLeft');
+    await expect.poll(() => getIndex(page)).toBe(0);
+  });
+
   test('navigation commands return to the displayed item after manual scrolling', async ({
     page,
   }) => {

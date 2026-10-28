@@ -22,11 +22,12 @@ The gallery's body capture listener in
 admits only trusted browser events. The shared shortcut guard determines whether
 composition, an already-handled event, or editable content makes a global
 shortcut ineligible. Product key ownership is narrower: focused native buttons,
-links, form controls and nested panels keep their own keyboard behavior. In
-particular, Space and Enter activate a focused button; Space on the gallery
-media surface remains a playback command. The gallery can claim an eligible
-navigation key only after checking the event's composed path and modifier
-chord. [W3C button keyboard interaction](https://www.w3.org/WAI/ARIA/apg/patterns/button/#keyboard-interaction)
+links, form controls and nested panels keep the keys they own. Space and Enter
+activate a focused button; gallery Left/Right navigation still works when that
+button retains focus after a toolbar click. Space on the gallery media surface
+remains a playback command. The gallery can claim an eligible navigation key
+only after checking the event's composed path and modifier chord.
+[W3C button keyboard interaction](https://www.w3.org/WAI/ARIA/apg/patterns/button/#keyboard-interaction)
 defines the native-control expectation.
 
 [`VerticalGalleryView.tsx`](../src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx)

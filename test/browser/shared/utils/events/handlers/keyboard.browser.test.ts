@@ -146,6 +146,48 @@ describe('handleKeyboardEvent', () => {
     expect(navigateToItem).not.toHaveBeenCalled();
   });
 
+  it('keeps button activation native but routes gallery arrows after a toolbar click', () => {
+    const toolbar = document.createElement('div');
+    toolbar.dataset.galleryElement = 'toolbar';
+    const button = document.createElement('button');
+    const label = document.createElement('span');
+    button.append(label);
+    toolbar.append(button);
+    document.body.append(toolbar);
+    const captureHandler: EventListener = (event) => {
+      if (event instanceof KeyboardEvent) {
+        handleKeyboardEvent(
+          event,
+          { onGalleryClose: vi.fn(), onMediaClick: vi.fn(async () => undefined) },
+          {
+            enableKeyboard: true,
+            enableMediaDetection: true,
+            debugMode: false,
+            preventBubbling: true,
+            context: 'toolbar-button-test',
+          }
+        );
+      }
+    };
+    captureHandlers.push(captureHandler);
+    document.body.addEventListener('keydown', captureHandler, { capture: true });
+
+    for (const key of [' ', 'Enter']) {
+      const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
+      label.dispatchEvent(event);
+      expect(event.defaultPrevented).toBe(false);
+    }
+    expect(executeVideoControl).not.toHaveBeenCalled();
+
+    for (const key of ['ArrowRight', 'ArrowLeft']) {
+      const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
+      label.dispatchEvent(event);
+      expect(event.defaultPrevented).toBe(true);
+    }
+    expect(navigateNext).toHaveBeenCalledOnce();
+    expect(navigatePrevious).toHaveBeenCalledOnce();
+  });
+
   it('does not claim modified, composed or already-handled navigation keys', () => {
     const element = document.createElement('div');
     document.body.append(element);

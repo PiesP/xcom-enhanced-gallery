@@ -99,7 +99,8 @@ const NAVIGATION_KEYS = new Set([
 const VIDEO_CONTROL_KEYS = new Set(['ArrowUp', 'ArrowDown', 'm', 'M']);
 
 const OWNED_CONTROL_SELECTOR =
-  'button, a[href], input, select, textarea, summary, [role="button"], [role="menuitem"], [role="slider"], [data-gallery-element="settings-panel"], [data-gallery-element="tweet-panel"]';
+  'a[href], input, select, textarea, summary, [role="menuitem"], [role="slider"], [data-gallery-element="settings-panel"], [data-gallery-element="tweet-panel"]';
+const ACTIVATION_CONTROL_SELECTOR = 'button, [role="button"]';
 
 function eventPath(event: KeyboardEvent): readonly EventTarget[] {
   try {
@@ -110,11 +111,16 @@ function eventPath(event: KeyboardEvent): readonly EventTarget[] {
 }
 
 function nativeControlOwnsKey(event: KeyboardEvent): boolean {
+  // Buttons own activation; gallery Left/Right still work after a toolbar click.
+  const selector =
+    event.key === ' ' || event.key === 'Enter'
+      ? `${OWNED_CONTROL_SELECTOR}, ${ACTIVATION_CONTROL_SELECTOR}`
+      : OWNED_CONTROL_SELECTOR;
   const path = eventPath(event);
-  if (path.some((target) => target instanceof Element && target.matches(OWNED_CONTROL_SELECTOR))) {
+  if (path.some((target) => target instanceof Element && target.matches(selector))) {
     return true;
   }
-  return event.target instanceof Element && event.target.closest(OWNED_CONTROL_SELECTOR) !== null;
+  return event.target instanceof Element && event.target.closest(selector) !== null;
 }
 
 function expandedSettingsOwnsEscape(event: KeyboardEvent): boolean {
