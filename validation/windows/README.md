@@ -898,13 +898,17 @@ prior stored settings, and checks the restored UI after another reload. It then
 performs a full-document visit to a second supplied public status and records
 that scope separately. A distinct post-close same-document navigation probe clicks an existing
 preceding same-author public status anchor on an observed image page, if one is
-available and top hit-tested. The gallery is already closed by Escape before this click,
+available and top hit-tested. A public login barrier leaves this probe unverified.
+The gallery is already closed by Escape before this click,
 and the receipt records that boundary. The probe requires the same document time origin
 and no reappearing gallery or changed body style or scroll policy. It does not establish
 that navigation closes an open gallery. A video gallery with at least
 two items must show actual Next/Previous navigation, selected/focused media
 identity, a paused nonselected player, and return to the same source-bound
-current video. The existing direct-quote ownership and playback checks still
+current video. For an opt-in direct mixed post, the observer may enter through its
+owned photo action and verify photo-to-video-to-photo navigation with real gallery
+video playback controls; the receipt names this entry. This mixed post does not
+qualify for image-only downloads. The existing direct-quote ownership and playback checks still
 apply. An unmarked candidate without quoted status IDs instead requires unique direct
 status ownership from the exact playable provider variant. A controlled allow-all retry
 still applies when needed. The summary has

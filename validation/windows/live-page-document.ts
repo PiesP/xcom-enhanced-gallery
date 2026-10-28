@@ -202,7 +202,11 @@ export function findPrecedingLiveStatusAnchorDocument(
   return null;
 }
 
-export function inspectLiveTargetDocument({ handle, statusId }: Identity): LiveReadiness {
+export function inspectLiveTargetDocument({
+  handle,
+  statusId,
+  preferOwnedPhoto = false,
+}: Identity & { preferOwnedPhoto?: boolean }): LiveReadiness {
   const statusPath = `/${handle}/status/${statusId}`.toLowerCase();
   const parseVideo = (value: string | null | undefined) => {
     if (!value) {
@@ -429,10 +433,16 @@ export function inspectLiveTargetDocument({ handle, statusId }: Identity): LiveR
         candidateCount: Math.min(videoTargets.length, 20),
       };
     }
-    if (videoTargets.length === 1 && videoTargets[0]) {
+    const directMixedPhotoEntry =
+      preferOwnedPhoto &&
+      videoTargets.length === 1 &&
+      videoTargets[0]?.target.quoteBoundary === 'unmarked-candidate' &&
+      videoTargets[0].target.quoteStatusIds.length === 0;
+    if (videoTargets.length === 1 && videoTargets[0] && !directMixedPhotoEntry) {
       return videoTargets[0];
     }
     if (
+      !directMixedPhotoEntry &&
       scopes.some((quote) =>
         quote.querySelector(
           '[data-testid="videoPlayer"], video, [data-testid="previewInterstitial"]'

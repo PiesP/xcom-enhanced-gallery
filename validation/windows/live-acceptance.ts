@@ -58,24 +58,32 @@ type Selection = {
   path: string;
 };
 
-export async function observeActualSiteVideoNavigation(page: Page) {
+export async function observeActualSiteVideoNavigation(
+  page: Page,
+  entryKind: 'video' | 'owned-photo' = 'video'
+) {
   const receipt: {
     status: 'observed' | 'unverified' | 'failed';
+    entryKind: 'video' | 'owned-photo';
     original?: NonNullable<ReturnType<typeof inspectLiveMixedGallerySelectionDocument>>;
     neighbor?: NonNullable<ReturnType<typeof inspectLiveMixedGallerySelectionDocument>>;
     returned?: NonNullable<ReturnType<typeof inspectLiveMixedGallerySelectionDocument>>;
+    selectedVideo?: NonNullable<ReturnType<typeof inspectSelectedGalleryVideoDocument>>;
+    playback?: { startTime: number; endTime: number; progressed: boolean; control: 'native-space' };
     error?: string;
-  } = { status: 'unverified' };
-  const selectedVideo = await page.evaluate(inspectSelectedGalleryVideoDocument);
-  if (!selectedVideo || selectedVideo.total < 2) {
+  } = { status: 'unverified', entryKind };
+  const selectedVideo =
+    entryKind === 'video' ? await page.evaluate(inspectSelectedGalleryVideoDocument) : null;
+  if (entryKind === 'video' && (!selectedVideo || selectedVideo.total < 2)) {
     receipt.error = 'Selected live video has fewer than two gallery items';
     return receipt;
   }
   try {
     const original = await page.evaluate(inspectLiveMixedGallerySelectionDocument);
     assert(
-      original?.kind === 'video' && original.otherPlayingVideos === 0,
-      'Original video selection or other-player state is unavailable'
+      original?.kind === (entryKind === 'video' ? 'video' : 'image') &&
+        original.otherPlayingVideos === 0,
+      'Original media selection or other-player state is unavailable'
     );
     receipt.original = original;
     const forward = original.index < original.total - 1;
@@ -106,6 +114,90 @@ export async function observeActualSiteVideoNavigation(page: Page) {
       'Video navigation retained the same media source'
     );
     receipt.neighbor = neighbor;
+    if (entryKind === 'owned-photo') {
+      assert.equal(neighbor.kind, 'video', 'Photo neighbor was not a video');
+      let video = await page.evaluate(inspectSelectedGalleryVideoDocument);
+      const videoDeadline = Date.now() + 10_000;
+      while (
+        (!video ||
+          !video.itemLoaded ||
+          !video.visible ||
+          video.readyState < 2 ||
+          video.width <= 0 ||
+          video.height <= 0) &&
+        Date.now() < videoDeadline
+      ) {
+        await new Promise((done) => setTimeout(done, 100));
+        video = await page.evaluate(inspectSelectedGalleryVideoDocument);
+      }
+      assert(
+        video &&
+          video.itemLoaded &&
+          video.visible &&
+          video.readyState >= 2 &&
+          video.width > 0 &&
+          video.height > 0 &&
+          video.mediaErrorCode === null &&
+          video.source?.host === neighbor.source.host &&
+          video.source.path === neighbor.source.path,
+        'Neighbor video was not source-bound and playable'
+      );
+      const videoControl = page
+        .locator('[data-xeg-gallery-container] [data-gallery-element="item"]')
+        .nth(neighbor.index)
+        .locator('video[controls]');
+      await videoControl.focus();
+      if (
+        !(await videoControl.evaluate(
+          (element) => element instanceof HTMLVideoElement && element.paused
+        ))
+      ) {
+        await page.keyboard.press('Space');
+        await page.waitForFunction(
+          (index) =>
+            document
+              .querySelectorAll('[data-xeg-gallery-container] [data-gallery-element="item"]')
+              [index]?.querySelector('video')?.paused === true,
+          neighbor.index,
+          { timeout: 5_000 }
+        );
+      }
+      const startTime = await videoControl.evaluate((element) =>
+        element instanceof HTMLVideoElement ? element.currentTime : -1
+      );
+      assert(startTime >= 0, 'Selected gallery video control detached');
+      await page.keyboard.press('Space');
+      await page.waitForFunction(
+        ({ index, startTime }) => {
+          const element = document
+            .querySelectorAll('[data-xeg-gallery-container] [data-gallery-element="item"]')
+            [index]?.querySelector('video');
+          return (
+            element && !element.paused && !element.error && element.currentTime >= startTime + 0.15
+          );
+        },
+        { index: neighbor.index, startTime },
+        { timeout: 5_000, polling: 100 }
+      );
+      const endTime = await videoControl.evaluate((element) =>
+        element instanceof HTMLVideoElement ? element.currentTime : -1
+      );
+      const playedVideo = await page.evaluate(inspectSelectedGalleryVideoDocument);
+      assert(
+        playedVideo &&
+          playedVideo.source?.host === neighbor.source.host &&
+          playedVideo.source.path === neighbor.source.path &&
+          playedVideo.currentTime >= startTime + 0.15,
+        'Played video changed source or lost the selected player'
+      );
+      receipt.selectedVideo = playedVideo;
+      receipt.playback = {
+        startTime,
+        endTime,
+        progressed: endTime >= startTime + 0.15,
+        control: 'native-space',
+      };
+    }
     await toolbar.locator(`button[aria-label="${forward ? 'Previous' : 'Next'}"]`).click();
     await page.waitForFunction(
       (index) =>
@@ -122,7 +214,7 @@ export async function observeActualSiteVideoNavigation(page: Page) {
       returned = await page.evaluate(inspectLiveMixedGallerySelectionDocument);
     }
     assert(
-      returned?.kind === 'video' &&
+      returned?.kind === (entryKind === 'video' ? 'video' : 'image') &&
         returned.otherPlayingVideos === 0 &&
         returned.source.host === original.source.host &&
         returned.source.path === original.source.path,

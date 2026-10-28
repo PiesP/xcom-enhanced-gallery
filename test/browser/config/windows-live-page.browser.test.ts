@@ -395,6 +395,7 @@ describe('Windows X live page DOM validation', () => {
     if (!ready || ready.state !== 'ready' || ready.target.kind !== 'image') {
       throw new Error('Requested image readiness was not established');
     }
+    const boundTarget = ready.target;
     expect(ready.target.articleIndex).toBe(0);
 
     const preceding = document.createElement('article');
@@ -414,6 +415,16 @@ describe('Windows X live page DOM validation', () => {
     try {
       const selected = livePage.resolveLiveImageDocument({ identity, target: ready.target });
       expect(selected).toBe(image);
+      image.src = 'https://pbs.twimg.com/media/temporarily-replaced';
+      const rebound = vi.waitFor(
+        () =>
+          expect(livePage.resolveLiveImageDocument({ identity, target: boundTarget })).toBe(image),
+        { interval: 10, timeout: 250 }
+      );
+      setTimeout(() => {
+        image.src = 'https://pbs.twimg.com/media/HE-_ijrXYAA_Wiq?format=jpg';
+      }, 20);
+      await rebound;
       const boundImage = {
         evaluate: async (
           callback: (element: HTMLImageElement, value: unknown) => unknown,
@@ -915,6 +926,12 @@ describe('Windows X live page DOM validation', () => {
         ],
       },
     });
+    expect(
+      livePage.inspectLiveTargetDocument({ ...identity, preferOwnedPhoto: true })
+    ).toMatchObject({
+      state: 'ready',
+      target: { kind: 'quoted-video', quoteBoundary: 'quoteTweet' },
+    });
     expect(livePage.inspectLiveCandidateDocument(identity)).toMatchObject({
       exactArticleFound: true,
       statusIds: ['123', '456'],
@@ -952,6 +969,33 @@ describe('Windows X live page DOM validation', () => {
         quoteBoundary: 'unmarked-candidate',
         quoteStatusIds: [],
       },
+    });
+    const photo = document.createElement('a');
+    photo.href = 'https://x.com/outer/status/123/photo/1';
+    photo.innerHTML = '<img src="https://pbs.twimg.com/media/direct-photo" alt="Direct photo">';
+    document.querySelector('article')?.append(photo);
+    const image = photo.querySelector('img');
+    if (!image) {
+      throw new Error('Mixed photo fixture missing');
+    }
+    image.getBoundingClientRect = video.getBoundingClientRect;
+    Object.defineProperties(image, {
+      complete: { configurable: true, value: true },
+      naturalWidth: { configurable: true, value: 160 },
+    });
+    expect(livePage.inspectLiveTargetDocument({ handle: 'outer', statusId: '123' })).toMatchObject({
+      state: 'ready',
+      target: { kind: 'quoted-video' },
+    });
+    expect(
+      livePage.inspectLiveTargetDocument({
+        handle: 'outer',
+        statusId: '123',
+        preferOwnedPhoto: true,
+      })
+    ).toMatchObject({
+      state: 'ready',
+      target: { kind: 'image', imageSource: { path: '/media/direct-photo' } },
     });
   });
 

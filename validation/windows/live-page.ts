@@ -280,6 +280,17 @@ type LiveObservation = {
     ReturnType<typeof observeSameDocumentPostNavigationAfterClose>
   >;
   actualSiteVideoNavigation?: Awaited<ReturnType<typeof observeActualSiteVideoNavigation>>;
+  imageBinding?: {
+    status: 'bound' | 'timeout';
+    timeoutMs: number;
+    sameSourceImages?: {
+      articleIndex: number;
+      nearestArticleOwnsStatus: boolean;
+      complete: boolean;
+      naturalWidth: number;
+    }[];
+    sameSourceOverflow?: boolean;
+  };
 };
 type ControlledProbe = {
   kind?: string;
@@ -2397,7 +2408,20 @@ async function observeOne(
       observation.classification = 'provider-or-page-unavailable';
       throw new Error(`Live target stopped before media readiness: ${readiness.reason}`);
     }
-    observation.target = readiness.target;
+    const mixedPhotoEntry =
+      actualSiteAcceptance !== null &&
+      readiness.target.kind === 'quoted-video' &&
+      readiness.target.quoteBoundary === 'unmarked-candidate' &&
+      readiness.target.quoteStatusIds.length === 0;
+    const mixedVideoTarget = mixedPhotoEntry ? readiness.target : null;
+    const photoReadiness = mixedPhotoEntry
+      ? await page.evaluate(inspectLiveTargetDocument, { ...identity, preferOwnedPhoto: true })
+      : false;
+    observation.target =
+      photoReadiness && photoReadiness.state === 'ready' && photoReadiness.target.kind === 'image'
+        ? photoReadiness.target
+        : readiness.target;
+    const enteredMixedViaPhoto = mixedPhotoEntry && observation.target.kind === 'image';
     observation.targetCandidates = await page
       .evaluate(inspectLiveCandidateDocument, identity)
       .catch(() => null);
@@ -2465,10 +2489,69 @@ async function observeOne(
       return observation;
     }
 
-    const imageReference = await page.evaluateHandle(resolveLiveImageDocument, {
-      identity,
-      target: observation.target,
-    });
+    const imageReference = await page
+      .waitForFunction(
+        resolveLiveImageDocument,
+        { identity, target: observation.target },
+        { timeout: ACTION_TIMEOUT_MS, polling: 100 }
+      )
+      .catch(() => null);
+    if (!imageReference) {
+      const diagnostic = await page
+        .evaluate(
+          ({ identity, target }) => {
+            const expected = `/${identity.handle}/status/${identity.statusId}`.toLowerCase();
+            const matches = [...document.querySelectorAll<HTMLImageElement>('article img')].filter(
+              (image) => {
+                try {
+                  const source = new URL(image.currentSrc || image.src);
+                  return (
+                    source.hostname.toLowerCase() === target.imageSource.host &&
+                    source.pathname === target.imageSource.path
+                  );
+                } catch {
+                  return false;
+                }
+              }
+            );
+            return {
+              sameSourceImages: matches.slice(0, 12).map((image) => {
+                const article = image.closest('article');
+                return {
+                  articleIndex: article
+                    ? [...document.querySelectorAll('article')].indexOf(article)
+                    : -1,
+                  nearestArticleOwnsStatus: Boolean(
+                    article &&
+                    [...article.querySelectorAll<HTMLAnchorElement>('a[href]')].some((anchor) => {
+                      try {
+                        return (
+                          anchor.closest('article') === article &&
+                          new URL(anchor.href, location.href).pathname.toLowerCase() === expected
+                        );
+                      } catch {
+                        return false;
+                      }
+                    })
+                  ),
+                  complete: image.complete,
+                  naturalWidth: image.naturalWidth,
+                };
+              }),
+              sameSourceOverflow: matches.length > 12,
+            };
+          },
+          { identity, target: observation.target }
+        )
+        .catch(() => ({ sameSourceImages: [], sameSourceOverflow: false }));
+      observation.imageBinding = {
+        status: 'timeout',
+        timeoutMs: ACTION_TIMEOUT_MS,
+        ...diagnostic,
+      };
+      throw new Error('Requested image source and owner were not uniquely bound before timeout');
+    }
+    observation.imageBinding = { status: 'bound', timeoutMs: ACTION_TIMEOUT_MS };
     const image = imageReference.asElement() as ElementHandle<HTMLImageElement> | null;
     if (!image) {
       await imageReference.dispose();
@@ -2630,6 +2713,25 @@ async function observeOne(
       `live-page-${index}-gallery.png`
     );
 
+    if (enteredMixedViaPhoto && mixedVideoTarget?.kind === 'quoted-video') {
+      observation.actualSiteVideoNavigation = await observeActualSiteVideoNavigation(
+        page,
+        'owned-photo'
+      );
+      if (observation.actualSiteVideoNavigation.status !== 'observed') {
+        throw new Error(
+          `Actual-site photo-to-video navigation was unverified: ${observation.actualSiteVideoNavigation.error ?? 'unknown'}`
+        );
+      }
+      await settleApi();
+      observation.gallery.owner = directOwnerForSource(
+        observation.api.observations,
+        identity.statusId,
+        observation.actualSiteVideoNavigation.neighbor?.source,
+        mixedVideoTarget
+      );
+    }
+
     await recordHostGeometry('before-Escape');
     await page.keyboard.press('Escape');
     const detached = await gallery.waitFor({ state: 'detached', timeout: ACTION_TIMEOUT_MS }).then(
@@ -2695,6 +2797,14 @@ async function observeOne(
         observation.gallery.opened?.role === 'dialog' &&
         observation.gallery.opened.ariaModal === 'true',
       galleryHostImage: observation.gallery.opened?.selectedGallery != null,
+      ...(enteredMixedViaPhoto
+        ? {
+            mixedVideoNavigation: observation.actualSiteVideoNavigation?.status === 'observed',
+            directStatusVideoOwner:
+              observation.gallery.owner?.status === 'matched-direct-owner-variant' &&
+              observation.gallery.owner.ownerId === identity.statusId,
+          }
+        : {}),
       ...(compactQuote
         ? { compactProviderOwnership: compactEvidence?.providerConfirmed === true }
         : {}),
