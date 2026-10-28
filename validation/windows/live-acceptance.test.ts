@@ -46,6 +46,19 @@ test('direct-owned video requires a unique exact provider variant and an unmarke
     mediaIndex: 0,
   });
   assert.equal(
+    directOwnerForSource([entry, entry], '123', source, direct).status,
+    'matched-direct-owner-variant'
+  );
+  assert.equal(
+    directOwnerForSource(
+      [entry, { ...entry, result: { ...entry.result, media: [media('conflicting-video')] } }],
+      '123',
+      source,
+      direct
+    ).status,
+    'ambiguous-media'
+  );
+  assert.equal(
     directOwnerForSource(
       [{ ...entry, result: { ...entry.result, id: '456' } }],
       '123',

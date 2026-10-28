@@ -3372,7 +3372,7 @@ export function directOwnerForSource(
     return { status: 'missing-video-source', ownerId: null, mediaId: null };
   }
   const matches = new Map<
-    number,
+    string,
     { ownerId: string; mediaId: string | null; mediaIndex: number }
   >();
   for (const entry of apiObservations) {
@@ -3392,7 +3392,11 @@ export function directOwnerForSource(
           (variant) => variant?.host === source.host && variant.path === source.path
         )
       ) {
-        matches.set(mediaIndex, { ownerId: outerId, mediaId: media.id, mediaIndex });
+        matches.set(JSON.stringify([mediaIndex, media.id]), {
+          ownerId: outerId,
+          mediaId: media.id,
+          mediaIndex,
+        });
       }
     });
   }
