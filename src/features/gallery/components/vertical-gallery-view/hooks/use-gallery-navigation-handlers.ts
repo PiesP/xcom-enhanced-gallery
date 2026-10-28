@@ -8,7 +8,11 @@
  */
 
 import { CSS } from '@constants/css';
-import { navigateToItem } from '@shared/state/signals/gallery.signals';
+import {
+  navigateNext,
+  navigatePrevious,
+  navigateToItem,
+} from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
 import { withTrustedEvent } from '@shared/utils/events/trusted-event';
 import type { JSX } from 'solid-js';
@@ -31,15 +35,6 @@ function withViewTransition(update: () => void): void {
  * Parameters for useGalleryNavigationHandlers hook
  */
 interface UseGalleryNavigationHandlersOptions {
-  /** Current active media index (last explicitly navigated to) */
-  readonly currentIndex: () => number;
-  /**
-   * Focus-tracked index from IntersectionObserver.
-   * When non-null and in-bounds, prev/next buttons navigate relative
-   * to this index (what the user is actually looking at) instead of
-   * currentIndex. Falls back to currentIndex when null.
-   */
-  readonly focusedIndex?: (() => number | null) | undefined;
   /** Gallery media items array (used for bounds checking) */
   readonly mediaItems: () => readonly MediaInfo[];
   /** Callback invoked when background is clicked (gallery close) */
@@ -71,36 +66,14 @@ interface UseGalleryNavigationHandlersResult {
 export function useGalleryNavigationHandlers(
   options: UseGalleryNavigationHandlersOptions
 ): UseGalleryNavigationHandlersResult {
-  const { currentIndex, focusedIndex, mediaItems, onClose } = options;
-
-  /**
-   * Returns the index to use as the navigation anchor for prev/next buttons.
-   * Prefers focusedIndex (what the user is actually looking at via
-   * IntersectionObserver) over currentIndex (last explicitly navigated to).
-   * Falls back to currentIndex when focusedIndex is null or out of bounds.
-   */
-  const resolveNavAnchor = (): number => {
-    const focus = focusedIndex?.() ?? null;
-    const items = mediaItems();
-    if (typeof focus === 'number' && focus >= 0 && focus < items.length) {
-      return focus;
-    }
-    return currentIndex();
-  };
+  const { mediaItems, onClose } = options;
 
   const handlePrevious = () => {
-    const anchor = resolveNavAnchor();
-    if (anchor > 0) {
-      withViewTransition(() => navigateToItem(anchor - 1, 'button'));
-    }
+    withViewTransition(() => navigatePrevious('button'));
   };
 
   const handleNext = () => {
-    const anchor = resolveNavAnchor();
-    const items = mediaItems();
-    if (anchor < items.length - 1) {
-      withViewTransition(() => navigateToItem(anchor + 1, 'button'));
-    }
+    withViewTransition(() => navigateNext('button'));
   };
 
   const handleBackgroundClick: JSX.EventHandlerUnion<HTMLDivElement, MouseEvent> = withTrustedEvent(
@@ -124,9 +97,8 @@ export function useGalleryNavigationHandlers(
 
   const handleMediaItemClick = (index: number) => {
     const items = mediaItems();
-    const current = currentIndex();
 
-    if (index >= 0 && index < items.length && index !== current) {
+    if (index >= 0 && index < items.length) {
       withViewTransition(() => navigateToItem(index, 'scroll'));
     }
   };

@@ -405,4 +405,27 @@ describe('VerticalGalleryView preload reactivity', () => {
     await flushEffects();
     expect(toolbar.getAttribute('data-toolbar-url')).toBe(items[0]!.tweetUrl);
   });
+
+  it('publishes only the displayed video as the keyboard control target after scrolling', async () => {
+    openGallery([media('image'), video('first'), video('second')]);
+    dispose = render(() => createComponent(VerticalGalleryView, {}), container);
+    await flushEffects();
+
+    const videos = [...container.querySelectorAll('video')];
+    expect(videos).toHaveLength(2);
+    expect(gallerySignals.currentVideoElement).toBeNull();
+
+    setFocusedIndexOnly(1);
+    await flushEffects();
+    expect(gallerySignals.currentIndex).toBe(0);
+    expect(gallerySignals.currentVideoElement).toBe(videos[0]);
+
+    setFocusedIndexOnly(2);
+    await flushEffects();
+    expect(gallerySignals.currentVideoElement).toBe(videos[1]);
+
+    setFocusedIndexOnly(0);
+    await flushEffects();
+    expect(gallerySignals.currentVideoElement).toBeNull();
+  });
 });

@@ -29,7 +29,6 @@ function setupBackgroundClickFixture(): {
 
   const onClose = vi.fn();
   const { handleBackgroundClick } = useGalleryNavigationHandlers({
-    currentIndex: () => 0,
     mediaItems: () => [],
     onClose,
   });

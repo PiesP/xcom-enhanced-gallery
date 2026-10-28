@@ -320,7 +320,7 @@ describe('VerticalImageItem video admission and playback', () => {
       const item = media();
       openGallery([item]);
       resetKeyboardDebounceState();
-      const { video } = mount({ media: item, active: true });
+      const { video } = mount({ media: item, active: true, index: 0 });
       Object.defineProperty(video, 'readyState', { configurable: true, get: () => 1 });
       let paused = false;
       Object.defineProperty(video, 'paused', { configurable: true, get: () => paused });
@@ -895,7 +895,12 @@ describe('VerticalImageItem video admission and playback', () => {
     const item = media();
     openGallery([item]);
     resetKeyboardDebounceState();
-    const { video, row, onMediaLoad } = mount({ media: item, active: true, focused: true });
+    const { video, row, onMediaLoad } = mount({
+      media: item,
+      active: true,
+      focused: true,
+      index: 0,
+    });
     Object.defineProperty(video, 'readyState', { configurable: true, get: () => 2 });
     let paused = true;
     Object.defineProperty(video, 'paused', { configurable: true, get: () => paused });

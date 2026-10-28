@@ -32,7 +32,16 @@ import { computePreloadIndices } from '@shared/utils/performance/preload';
 import { withTrustedEvent } from '@shared/utils/events/trusted-event';
 import { cx } from '@shared/utils/text/formatting';
 import type { Accessor, JSXElement } from 'solid-js';
-import { createEffect, createMemo, createSignal, For, onCleanup, Show, splitProps } from 'solid-js';
+import {
+  createEffect,
+  createMemo,
+  createSignal,
+  For,
+  onCleanup,
+  Show,
+  splitProps,
+  untrack,
+} from 'solid-js';
 
 export interface VerticalGalleryViewProps {
   /** Handler for closing the gallery */
@@ -161,7 +170,10 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
     }
 
     // Initial focus is treated as keyboard/manual navigation
-    navigateToItem(currentIndex(), 'auto-focus');
+    const requestedIndex = currentIndex();
+    // The navigation call reads viewport focus; that observation must not
+    // subscribe this initial-focus effect and snap a later manual scroll back.
+    untrack(() => navigateToItem(requestedIndex, 'auto-focus'));
   });
 
   // Fit mode state — managed via useGalleryFitMode hook with persistence
@@ -195,8 +207,6 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
   // Navigation handlers — previous/next, background click, media item click
   const { handlePrevious, handleNext, handleBackgroundClick, handleMediaItemClick } =
     useGalleryNavigationHandlers({
-      currentIndex,
-      focusedIndex: focus.focusedIndex,
       mediaItems,
       onClose: handleClose,
     });

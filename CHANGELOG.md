@@ -8,6 +8,11 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Gallery commands** — Target the displayed item after manual scrolling for toolbar, Home/End and page navigation, including commands that return to the last requested index. Keyboard video controls follow the displayed video.
+- **Keyboard controls** — Let focused buttons and nested panels retain native Space, Enter and Escape behavior while gallery Left/Right navigation still works after a toolbar button receives focus.
+
 ## [2.3.9] - 2026-10-28
 
 ### Fixed

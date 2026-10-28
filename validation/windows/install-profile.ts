@@ -14457,7 +14457,79 @@ async function runGalleryExperienceProbe({
       }));
       const zipBytes = await readFile(zip.filename);
       const verifiedZip = verifyStoredZip(zipBytes, expected);
+
+      const nextButton = toolbar.locator('button[aria-label="Next"]');
+      const previousButton = toolbar.locator('button[aria-label="Previous"]');
+      await nextButton.focus();
+      await page.keyboard.press('Space');
+      await waitForValue(
+        async () => ((await toolbar.getAttribute('data-current-index')) === '1' ? true : undefined),
+        'installed gallery native Next Space activation',
+        3_000
+      );
+      await previousButton.focus();
+      await page.keyboard.press('Space');
+      await waitForValue(
+        async () => ((await toolbar.getAttribute('data-current-index')) === '0' ? true : undefined),
+        'installed gallery native Previous Space activation',
+        3_000
+      );
+
+      const scrollport = gallery.locator('[data-gallery-element="items"]');
+      await scrollport.hover();
+      const manualScrollDelta = await gallery
+        .locator('[data-gallery-element="item"][data-index="1"]')
+        .evaluate((item) => {
+          const root = item.closest('[data-gallery-element="items"]');
+          if (!root) {
+            throw new Error('Missing installed gallery scrollport');
+          }
+          const rootRect = root.getBoundingClientRect();
+          const itemRect = item.getBoundingClientRect();
+          const clearance = Number.parseFloat(getComputedStyle(root).scrollPaddingBlockStart);
+          const visibleCenter = rootRect.top + (clearance + rootRect.height) / 2;
+          return Math.round(itemRect.top + itemRect.height / 2 - visibleCenter);
+        });
+      await page.mouse.wheel(0, manualScrollDelta);
+      await waitForValue(
+        async () =>
+          (await toolbar.getAttribute('data-focused-index')) === '1' &&
+          (await toolbar.getAttribute('data-current-index')) === '0'
+            ? true
+            : undefined,
+        'installed manual scroll preserves requested position',
+        3_000
+      );
+      await previousButton.click();
+      await waitForValue(
+        async () =>
+          (await toolbar.getAttribute('data-focused-index')) === '0' &&
+          (await toolbar.getAttribute('data-current-index')) === '0'
+            ? true
+            : undefined,
+        'installed Previous returns from manual scroll',
+        3_000
+      );
+
+      const settingsButton = toolbar.locator('#settings-button');
+      await settingsButton.focus();
+      await page.keyboard.press('Space');
+      const firstSetting = gallery
+        .locator('[data-gallery-element="settings-panel"] select')
+        .first();
+      await firstSetting.waitFor({ state: 'visible' });
+      await firstSetting.focus();
       await page.keyboard.press('Escape');
+      await firstSetting.waitFor({ state: 'hidden' });
+      assert(await gallery.isVisible(), 'Settings Escape closed the gallery');
+      partial.nativeKeyboard = {
+        nextSpace: true,
+        previousSpace: true,
+        manualScrollPrevious: true,
+        settingsSpaceAndEscape: true,
+      };
+      await toolbar.locator('button[aria-label="Close"]').focus();
+      await page.keyboard.press('Space');
       await gallery.waitFor({ state: 'detached' });
       return {
         initial,
@@ -14470,6 +14542,7 @@ async function runGalleryExperienceProbe({
         selectAfterPointerAway,
         nativeSetting,
         newDocumentSetting,
+        nativeKeyboard: partial.nativeKeyboard,
         rediscovered,
         screenshots: {
           initial: 'experience-x02-toolbar-initial.png',

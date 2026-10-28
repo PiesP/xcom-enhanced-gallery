@@ -275,7 +275,8 @@ export function navigatePrevious(trigger: NavigationSource = 'click'): void {
 
 /**
  * Navigates directly to a specific item index.
- * The target index is clamped to the valid range. No-op when already at the target.
+ * The target index is clamped to the valid range. No-op only when both the
+ * displayed item and last requested destination already match the target.
  * Emits `navigate:complete` event on success.
  *
  * @param targetIndex - Desired item index (clamped to `[0, items.length)`)
@@ -283,8 +284,12 @@ export function navigatePrevious(trigger: NavigationSource = 'click'): void {
  */
 export function navigateToItem(targetIndex: number, source: NavigationSource): void {
   const items = mediaItemsSig();
+  if (items.length === 0) {
+    return;
+  }
   const clampedIndex = clampIndex(targetIndex, items.length);
   const current = currentIndexSig();
+  const displayed = getDisplayedMediaIndex();
 
   if (__DEV__ && clampedIndex !== targetIndex) {
     logger.debug('gallery.navigate-clamped', {
@@ -294,7 +299,7 @@ export function navigateToItem(targetIndex: number, source: NavigationSource): v
     });
   }
 
-  if (clampedIndex === current) {
+  if (clampedIndex === current && clampedIndex === displayed) {
     return;
   }
 

@@ -149,6 +149,28 @@ async function getIndex(page: Page): Promise<number> {
   return v ? parseInt(v, 10) - 1 : -1;
 }
 
+async function scrollToObservedItem(page: Page, index: number): Promise<void> {
+  const itemsContainer = page.locator('[data-gallery-element="items"]');
+  await itemsContainer.hover();
+  const item = page.locator(`[data-gallery-element="item"][data-index="${index}"]`);
+  const delta = await item.evaluate((target) => {
+    const root = target.closest('[data-gallery-element="items"]');
+    if (!root) {
+      throw new Error('Missing gallery scrollport');
+    }
+    const rootRect = root.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    const clearance = parseFloat(getComputedStyle(root).scrollPaddingBlockStart);
+    const visibleCenter = rootRect.top + (clearance + rootRect.height) / 2;
+    return Math.round(targetRect.top + targetRect.height / 2 - visibleCenter);
+  });
+  await page.mouse.wheel(0, delta);
+  await expect(page.locator('[data-gallery-element="toolbar"]')).toHaveAttribute(
+    'data-focused-index',
+    String(index)
+  );
+}
+
 function getPreviousButton(page: Page) {
   return page.getByRole('button', { name: 'Previous' });
 }
@@ -262,6 +284,99 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
 
     await previousButton.click();
     await expect.poll(() => getIndex(page)).toBe(1);
+  });
+
+  test('focused toolbar buttons keep native Space and Enter activation', async ({ page }) => {
+    await setupGalleryPage(page);
+    await openGallery(page);
+
+    const next = getNextButton(page);
+    await next.focus();
+    await page.keyboard.press('Space');
+    await expect.poll(() => getIndex(page)).toBe(1);
+
+    await getPreviousButton(page).focus();
+    await page.keyboard.press('Tab');
+    await expect(next).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect.poll(() => getIndex(page)).toBe(2);
+
+    const settings = page.locator('#settings-button');
+    await settings.focus();
+    await page.keyboard.press('Space');
+    await expect(
+      page.locator('[data-gallery-element="settings-panel"] select').first()
+    ).toBeVisible();
+    await settings.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('[data-gallery-element="settings-panel"] select')).toHaveCount(0);
+
+    await settings.focus();
+    await page.keyboard.press('Space');
+    const firstSetting = page.locator('[data-gallery-element="settings-panel"] select').first();
+    await expect(firstSetting).toBeVisible();
+    await firstSetting.focus();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('[data-gallery-element="settings-panel"] select')).toHaveCount(0);
+    await expect(page.locator('[data-xeg-gallery-container]')).toBeVisible();
+
+    const close = page.getByRole('button', { name: 'Close', exact: true });
+    await close.focus();
+    await page.keyboard.press('Space');
+    await expect(page.locator('[data-xeg-gallery-container]')).toHaveCount(0);
+  });
+
+  test('gallery arrows navigate after a focused fit button is clicked', async ({ page }) => {
+    await page.setViewportSize({ width: 401, height: 592 });
+    await setupGalleryPage(page);
+    await openGallery(page);
+
+    const originalFit = page.getByRole('button', { name: 'Original', exact: true });
+    await originalFit.click();
+    await expect(originalFit).toBeFocused();
+    await page.keyboard.press('ArrowRight');
+    await expect.poll(() => getIndex(page)).toBe(1);
+
+    await expect(originalFit).toBeFocused();
+    await page.keyboard.press('ArrowLeft');
+    await expect.poll(() => getIndex(page)).toBe(0);
+  });
+
+  test('navigation commands return to the displayed item after manual scrolling', async ({
+    page,
+  }) => {
+    await setupGalleryPage(page);
+    await openGallery(page, 8);
+
+    const toolbar = page.locator('[data-gallery-element="toolbar"]');
+    await scrollToObservedItem(page, 1);
+    await expect(toolbar).toHaveAttribute('data-current-index', '0');
+    await getPreviousButton(page).click();
+    await expect(toolbar).toHaveAttribute('data-focused-index', '0');
+    await expect(toolbar).toHaveAttribute('data-current-index', '0');
+
+    await scrollToObservedItem(page, 1);
+    await page.keyboard.press('Home');
+    await expect(toolbar).toHaveAttribute('data-focused-index', '0');
+    await expect(toolbar).toHaveAttribute('data-current-index', '0');
+
+    await scrollToObservedItem(page, 7);
+    await expect(toolbar).toHaveAttribute('data-current-index', '0');
+    await page.keyboard.press('PageUp');
+    await expect(toolbar).toHaveAttribute('data-focused-index', '2');
+    await expect(toolbar).toHaveAttribute('data-current-index', '2');
+
+    await page.keyboard.press('PageDown');
+    await expect(toolbar).toHaveAttribute('data-focused-index', '7');
+    await expect(toolbar).toHaveAttribute('data-current-index', '7');
+    await scrollToObservedItem(page, 6);
+    await getNextButton(page).click();
+    await expect(toolbar).toHaveAttribute('data-focused-index', '7');
+    await expect(toolbar).toHaveAttribute('data-current-index', '7');
+
+    await scrollToObservedItem(page, 5);
+    await page.keyboard.press('End');
+    await expect(toolbar).toHaveAttribute('data-focused-index', '7');
   });
 
   test('toolbar controls remain fully operable across supported viewport widths', async ({
