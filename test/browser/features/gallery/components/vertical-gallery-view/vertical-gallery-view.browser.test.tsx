@@ -5,6 +5,7 @@ import type { ToolbarProps } from '@shared/components/ui/Toolbar/Toolbar.types';
 import type { MediaInfo } from '@shared/types/media.types';
 import { createComponent } from 'solid-js';
 import { render } from 'solid-js/web';
+import { userEvent } from 'vite-plus/test/browser/context';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 const preloadSetting = vi.hoisted(() => ({ count: 1 }));
@@ -216,6 +217,16 @@ describe('VerticalGalleryView preload reactivity', () => {
       );
       expect(recover).toBeDefined();
       recover?.click();
+      expect(onRecoverFailed).not.toHaveBeenCalled();
+      if (!recover) {
+        throw new Error('Missing recovery button');
+      }
+      if (status === 'error') {
+        recover.focus();
+        await userEvent.keyboard('{Enter}');
+      } else {
+        await userEvent.click(recover);
+      }
       expect(onRecoverFailed).toHaveBeenCalledOnce();
 
       setDownloadStatus('working');

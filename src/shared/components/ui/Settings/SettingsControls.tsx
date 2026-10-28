@@ -235,7 +235,7 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
           <button
             type="button"
             class={styles.retry}
-            onClick={() => void retrySettingsSave()}
+            onClick={withTrustedEvent(() => void retrySettingsSave())}
             disabled={retryingSave()}
           >
             {strings().retry}

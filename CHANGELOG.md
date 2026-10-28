@@ -12,6 +12,8 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **Recovery controls** — Start missing-item ZIP recovery and settings save retry only from browser-dispatched button input. Both controls remain available to pointer and keyboard users.
+- **Settings storage recovery** — Retain pending field edits when the storage baseline is unreadable, retry only those edits after a successful read, and restore stored preferences after a no-edit retry without overwriting unrelated fields.
 - **Missing-item ZIP retries** — Keep the explicit recovery action when all missing entries fail before saving starts. Repeated provider or memory-limit failures preserve the original missing filenames and order; a later attempt saves only those files. A saved partial ZIP still offers recovery for eligible missing entries when another original is unverified. Uncertain native save handoffs remain non-retryable.
 - **Partial ZIP recovery** — Keep the original archive and offer a separate ZIP for eligible failed entries, preserving their assigned names and order without fetching successful entries again. Recovery is unavailable after an uncertain native download handoff or once the gallery changes or closes; supplementary saves use the existing resource limits.
 - **Video volume persistence** — Ignore delayed volume events from closed or replaced gallery players so they cannot overwrite a newer player's preferences. Keep pending choices made before close.
@@ -23,6 +25,7 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **Settings downgrade** — Older builds ignore the newer per-field setting keys. Returning to 2.3.9 restores those edits while the keys remain; reverting the source or version does not migrate them into the legacy record.
 - **Installed acceptance** — Exercise compact nested quote photos, same-source owners, exact single and ZIP bytes, native post links, and close/reopen restoration in source-bound fixtures. Observe the inner compact photo on public pages; keep API-denied recovery and broader live-page behavior unverified.
 - **Upgrade qualification** — Accept the published v2.3.8 userscript and Chrome extension as exact-hash inputs for an optional v2.3.9 installed upgrade check. Preserve the historical v2.3.7→v2.3.8 upgrade and separate v2.3.8 same-version attribution inputs.
 
