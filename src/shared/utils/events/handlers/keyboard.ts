@@ -7,12 +7,14 @@
  */
 
 import { getNotificationAdapter, notifySafely } from '@platform/index';
+import { shouldHandleGlobalShortcut } from '@piesp/browser-core/design';
 import { isGalleryRecoveryActive } from '@shared/dom/utils';
 import { logger } from '@shared/logging/logger';
 import type { EventHandlers, GalleryEventOptions } from '@shared/services/event-manager';
 import { getLanguageService } from '@shared/services/language-service';
 import {
   gallerySignals,
+  getDisplayedMediaIndex,
   navigateNext,
   navigatePrevious,
   navigateToItem,
@@ -96,12 +98,31 @@ const NAVIGATION_KEYS = new Set([
 /** Video control keys: ArrowUp/Down, M (mute) */
 const VIDEO_CONTROL_KEYS = new Set(['ArrowUp', 'ArrowDown', 'm', 'M']);
 
-function isEditableTarget(target: EventTarget | null | undefined): boolean {
-  if (!(target instanceof HTMLElement)) {
-    return false;
+const OWNED_CONTROL_SELECTOR =
+  'button, a[href], input, select, textarea, summary, [role="button"], [role="menuitem"], [role="slider"], [data-gallery-element="settings-panel"], [data-gallery-element="tweet-panel"]';
+
+function eventPath(event: KeyboardEvent): readonly EventTarget[] {
+  try {
+    return event.composedPath();
+  } catch {
+    return event.target ? [event.target] : [];
   }
-  const tag = target.tagName;
-  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable;
+}
+
+function nativeControlOwnsKey(event: KeyboardEvent): boolean {
+  const path = eventPath(event);
+  if (path.some((target) => target instanceof Element && target.matches(OWNED_CONTROL_SELECTOR))) {
+    return true;
+  }
+  return event.target instanceof Element && event.target.closest(OWNED_CONTROL_SELECTOR) !== null;
+}
+
+function expandedSettingsOwnsEscape(event: KeyboardEvent): boolean {
+  const toolbar = eventPath(event).find(
+    (target): target is HTMLElement =>
+      target instanceof HTMLElement && target.matches('[data-gallery-element="toolbar"]')
+  );
+  return (toolbar?.querySelector('#settings-button[aria-expanded="true"]') ?? null) !== null;
 }
 
 /**
@@ -129,10 +150,13 @@ export function handleKeyboardEvent(
 
     const key = event.key;
     const isGalleryOpen = gallerySignals.isOpen;
+    if (!shouldHandleGlobalShortcut(event)) {
+      return;
+    }
 
-    // ESC closes gallery regardless of other state, but not when editing form fields
+    // An expanded settings panel owns Escape and returns focus to its button.
     if (key === 'Escape' && isGalleryOpen) {
-      if (isEditableTarget(event.target)) {
+      if (expandedSettingsOwnsEscape(event)) {
         return;
       }
       handlers.onGalleryClose();
@@ -147,7 +171,13 @@ export function handleKeyboardEvent(
       return;
     }
 
-    if (isEditableTarget(event.target)) {
+    if (
+      nativeControlOwnsKey(event) ||
+      event.ctrlKey ||
+      event.altKey ||
+      event.metaKey ||
+      (event.shiftKey && key !== '?')
+    ) {
       return;
     }
 
@@ -197,8 +227,11 @@ export function handleKeyboardEvent(
  * @internal
  */
 function handleNavigation(key: string): void {
-  const current = gallerySignals.currentIndex;
+  const displayed = getDisplayedMediaIndex();
   const total = gallerySignals.mediaItems.length;
+  if (displayed === null) {
+    return;
+  }
 
   switch (key) {
     case 'ArrowLeft':
@@ -220,10 +253,10 @@ function handleNavigation(key: string): void {
       navigateToItem(Math.max(0, total - 1), 'keyboard');
       break;
     case 'PageUp':
-      navigateToItem(Math.max(0, current - 5), 'keyboard');
+      navigateToItem(Math.max(0, displayed - 5), 'keyboard');
       break;
     case 'PageDown':
-      navigateToItem(Math.min(total - 1, current + 5), 'keyboard');
+      navigateToItem(Math.min(total - 1, displayed + 5), 'keyboard');
       break;
   }
 }

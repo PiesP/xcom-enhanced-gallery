@@ -101,6 +101,40 @@ describe('displayed media identity', () => {
 });
 
 describe('gallery navigation transitions', () => {
+  it('revisits a requested target when manual scrolling displays another item', () => {
+    const listener = vi.fn();
+    galleryIndexEvents.on('navigate:complete', listener);
+    openGallery([media('a'), media('b'), media('c')]);
+    setFocusedIndexOnly(1);
+
+    navigateToItem(0, 'button');
+
+    expect(gallerySignals.currentIndex).toBe(0);
+    expect(getDisplayedMediaIndex()).toBe(0);
+    expect(listener).toHaveBeenCalledOnce();
+    expect(listener).toHaveBeenCalledWith({ index: 0, trigger: 'button' });
+
+    navigateToItem(2, 'keyboard');
+    setFocusedIndexOnly(1);
+    navigateToItem(2, 'button');
+    expect(getDisplayedMediaIndex()).toBe(2);
+    expect(listener).toHaveBeenCalledTimes(3);
+  });
+
+  it('records a deliberate selection of the displayed item when the request is stale', () => {
+    const listener = vi.fn();
+    galleryIndexEvents.on('navigate:complete', listener);
+    openGallery([media('a'), media('b')]);
+    setFocusedIndexOnly(1);
+
+    navigateToItem(1, 'scroll');
+
+    expect(gallerySignals.currentIndex).toBe(1);
+    expect(gallerySignals.focusedIndex).toBe(1);
+    expect(listener).toHaveBeenCalledOnce();
+    expect(listener).toHaveBeenCalledWith({ index: 1, trigger: 'scroll' });
+  });
+
   it('uses the focused item as the next-navigation anchor and emits the committed target', () => {
     const listener = vi.fn();
     galleryIndexEvents.on('navigate:complete', listener);

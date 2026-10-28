@@ -15,7 +15,11 @@ import { cleanFilename } from '@features/gallery/components/vertical-gallery-vie
 import styles from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css';
 import type { VerticalImageItemProps } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.types';
 import { useTranslation } from '@shared/hooks/use-translation';
-import { gallerySignals, setCurrentVideoElement } from '@shared/state/signals/gallery.signals';
+import {
+  gallerySignals,
+  getDisplayedMediaIndex,
+  setCurrentVideoElement,
+} from '@shared/state/signals/gallery.signals';
 import type { ImageFitMode } from '@shared/types/settings.types';
 import {
   computeContainIntrinsicSizeOverride,
@@ -191,7 +195,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
 
   createEffect(() => {
     const video = videoRef();
-    if (local.isActive && video) {
+    if (getDisplayedMediaIndex() === local.index && video) {
       const alreadySignaled = untrack(() => gallerySignals.currentVideoElement === video);
       if (!alreadySignaled) {
         setCurrentVideoElement(video);

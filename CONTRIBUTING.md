@@ -317,6 +317,10 @@ rule is imposed.
 
 ## Browser validation
 
+The [gallery interaction contract](docs/gallery-interaction.md) distinguishes
+explicit navigation, observed scroll focus, displayed-item commands and native
+keyboard ownership. Use its linked source and tests when changing those paths.
+
 For user-visible changes, verify the affected distribution on X.com and check:
 
 1. Gallery open and close behavior

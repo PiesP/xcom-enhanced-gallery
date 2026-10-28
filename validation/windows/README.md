@@ -8,7 +8,9 @@ for another, and none is a required CI lane.
    download behavior.
 2. **Installed Chrome/Edge profile:** loads the production unpacked extension
    in a fresh task-owned browser profile and checks the real privileged download
-   and extension lifecycle paths against a deterministic fixture. A declared
+   and extension lifecycle paths against a deterministic fixture. Its gallery
+   experience case also checks native keyboard activation and a return from
+   manually scrolled focus to the last requested item. A declared
    public-release input first exercises a same-profile unpacked update.
 3. **Installed Chrome Tampermonkey profile:** installs the exact production
    `.user.js` through the reviewed manager UI in a fresh owned profile. A declared

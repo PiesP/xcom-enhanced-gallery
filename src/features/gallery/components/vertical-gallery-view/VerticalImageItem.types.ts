@@ -24,12 +24,12 @@ export interface VerticalImageItemProps {
   readonly index: number;
 
   /**
-   * True if this is the currently visible/active item
+   * True for the last explicitly requested item (preload and selection state)
    */
   readonly isActive: boolean;
 
   /**
-   * True if item has keyboard focus
+   * True for the item observed in the scrollport (keyboard tab stop)
    * @optional
    */
   readonly isFocused?: boolean;
