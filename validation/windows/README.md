@@ -226,9 +226,15 @@ document and its held media use real HTTPS responses from the same loopback
 listener, so the browser can classify the document's network address space.
 No permission is overridden; TLS, CORS and OS protections stay enabled. These
 cases do not validate public-to-loopback permission behavior.
+The selected-fault request budget covers two opens of eight best sources and
+one selected lower-source recovery. Each open rejects duplicate source requests;
+the healthy reopen cannot request a lower rendition. Unexpected URLs and console
+errors still fail the run.
+
 The native range overlap case uses two distinct videos from one owned post.
-It holds late bytes in A's first 206 while adjacent B must be naturally
-admitted and complete its own 206. A must then resume ordinary Play and a
+It gates A's first prefix on the actual server arrival of the declared B GET,
+holding B's body until A arrives if B is first. It then holds A's late bytes while
+adjacent B must be naturally admitted and complete its own 206. A must then resume ordinary Play and a
 settled native seek with decoded progress. Exact A-abort/B-completion server
 and CDP intervals must intersect; this proves cross-attachment overlap only.
 Earlier single-player open-ended and finite held-range attempts produced a

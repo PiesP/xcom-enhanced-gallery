@@ -45,7 +45,9 @@ type VideoHold = {
   remaining: number;
   responses: Map<ServerResponse, Buffer>;
   afterRequestPath?: string;
+  afterRequestSeen: boolean;
   pendingPrefixes: Map<ServerResponse, { bytes: Buffer; event: NativeEvent }>;
+  pendingAdjacent: Map<ServerResponse, Buffer>;
 };
 
 function allowedVideos(payloads: Record<string, Buffer>) {
@@ -244,6 +246,7 @@ export function createExtensionNativeFixtureHandler() {
       active.delete(response);
       videoHold?.responses.delete(response);
       videoHold?.pendingPrefixes.delete(response);
+      videoHold?.pendingAdjacent.delete(response);
       if (response === heldResponse) {
         heldResponse = null;
         heldTail = null;
@@ -268,12 +271,19 @@ export function createExtensionNativeFixtureHandler() {
     });
     event.headersQueuedAtMs = performance.now();
     if (request.method === 'GET' && videoHold?.afterRequestPath === route.path) {
+      videoHold.afterRequestSeen = true;
       for (const [held, prefix] of videoHold.pendingPrefixes) {
         if (!held.destroyed) {
           queueVideoPrefix(held, prefix);
         }
       }
       videoHold.pendingPrefixes.clear();
+      if (videoHold.remaining > 0) {
+        videoHold.pendingAdjacent.set(response, body);
+        response.flushHeaders();
+        event.result = 'adjacent-held';
+        return;
+      }
     }
     if (
       request.method === 'GET' &&
@@ -293,12 +303,18 @@ export function createExtensionNativeFixtureHandler() {
       videoHold.responses.set(response, body.subarray(prefixBytes));
       videoHold.remaining--;
       const prefix = { bytes: body.subarray(0, prefixBytes), event };
-      if (videoHold.afterRequestPath) {
+      if (videoHold.afterRequestPath && !videoHold.afterRequestSeen) {
         videoHold.pendingPrefixes.set(response, prefix);
         response.flushHeaders();
       } else {
         queueVideoPrefix(response, prefix);
       }
+      for (const [adjacent, bytes] of videoHold.pendingAdjacent) {
+        if (!adjacent.destroyed) {
+          adjacent.end(bytes);
+        }
+      }
+      videoHold.pendingAdjacent.clear();
       event.result = 'video-held';
       return;
     }
@@ -424,7 +440,9 @@ export function createExtensionNativeFixtureHandler() {
         prefixEnd,
         remaining: Number.POSITIVE_INFINITY,
         responses: new Map<ServerResponse, Buffer>(),
+        afterRequestSeen: false,
         pendingPrefixes: new Map(),
+        pendingAdjacent: new Map(),
       };
     },
     armFirstVideoHold(path: string, prefixEnd: number, options?: { afterRequestPath: string }) {
@@ -456,8 +474,10 @@ export function createExtensionNativeFixtureHandler() {
         prefixEnd,
         remaining: 1,
         responses: new Map<ServerResponse, Buffer>(),
-        afterRequestPath: options?.afterRequestPath,
+        ...(options ? { afterRequestPath: options.afterRequestPath } : {}),
+        afterRequestSeen: false,
         pendingPrefixes: new Map(),
+        pendingAdjacent: new Map(),
       };
     },
     videoHeld: () => videoHold !== null && videoHold.responses.size > 0,
@@ -476,6 +496,12 @@ export function createExtensionNativeFixtureHandler() {
       }
       pending.responses.clear();
       pending.pendingPrefixes.clear();
+      for (const [response, bytes] of pending.pendingAdjacent) {
+        if (!response.destroyed) {
+          response.end(bytes);
+        }
+      }
+      pending.pendingAdjacent.clear();
     },
     abortVideoHold() {
       if (!videoHold) {
@@ -488,6 +514,10 @@ export function createExtensionNativeFixtureHandler() {
       }
       pending.responses.clear();
       pending.pendingPrefixes.clear();
+      for (const response of pending.pendingAdjacent.keys()) {
+        response.destroy();
+      }
+      pending.pendingAdjacent.clear();
     },
     mark: () => events.length,
     armHttpFailure(source: string, status: 403 | 404) {

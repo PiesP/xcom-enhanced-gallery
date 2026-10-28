@@ -286,6 +286,7 @@ type SelectedVideoFailureCase = {
   };
   screenshot?: string;
   screenshotError?: string;
+  requestBudget?: { fault: number; healthy: number };
   error?: string;
   cleanup: {
     gateReleased: boolean;
@@ -481,6 +482,36 @@ const VIDEO_COUNT = 8;
 const MAX_REQUESTS = 64;
 const MAX_MP4_BYTES = 256 * 1024;
 const SETTINGS_KEY = 'xeg-app-settings';
+
+/** Two gallery opens may each admit eight best sources; only the fault open may recover lower. */
+export function assertSelectedVideoRequestBudget(
+  requests: readonly Pick<SelectedVideoRouteRecord, 'index' | 'quality'>[],
+  healthyStart: number
+): { fault: number; healthy: number } {
+  assert(
+    Number.isSafeInteger(healthyStart) && healthyStart >= 0 && healthyStart <= requests.length
+  );
+  for (const [phase, records] of [
+    ['fault', requests.slice(0, healthyStart)],
+    ['healthy', requests.slice(healthyStart)],
+  ] as const) {
+    const seen = new Set<string>();
+    for (const request of records) {
+      assert(
+        Number.isSafeInteger(request.index) && request.index >= 0 && request.index < VIDEO_COUNT
+      );
+      assert(
+        request.quality === 'best' ||
+          (phase === 'fault' && request.index === 0 && request.quality === 'lower'),
+        'Only the selected fault open may request its lower source'
+      );
+      const key = `${request.index}:${request.quality}`;
+      assert(!seen.has(key), `Duplicate ${phase} source request: ${key}`);
+      seen.add(key);
+    }
+  }
+  return { fault: healthyStart, healthy: requests.length - healthyStart };
+}
 
 /** Exposed for browser-serialization regression coverage. */
 export async function readAppliedVideoGallerySettings(extensionPage: Page): Promise<unknown> {
@@ -1245,7 +1276,7 @@ export async function runVideoLoadingProfile({
     observation.selectedFailures = {
       status: 'pending',
       cases: [],
-      requestCapPerCase: 16,
+      requestCapPerCase: 2 * VIDEO_COUNT + 1,
     };
     try {
       await runSelectedVideoFailureCases({
@@ -1676,7 +1707,9 @@ async function runRangeAbortDiagnostics({
         html: fixtureHtml(id, 'intentrecovery', name === 'overlap' ? 2 : 1),
       });
       if (name === 'overlap') {
-        nativeLoopback.armFirstVideoHold(new URL(best).pathname, prefixEnd);
+        nativeLoopback.armFirstVideoHold(new URL(best).pathname, prefixEnd, {
+          afterRequestPath: new URL(adjacent).pathname,
+        });
       } else {
         nativeLoopback.armVideoHold(new URL(best).pathname, prefixEnd);
       }
@@ -2788,6 +2821,7 @@ async function runSelectedVideoFailureCases({
       assert.deepEqual(firstClose, before, 'Fault close did not restore host state');
       faultActive = false;
       const healthyMark = receipt.requests.length;
+      assertSelectedVideoRequestBudget(receipt.requests, healthyMark);
       await trigger.click();
       await gallery.waitFor({ state: 'visible' });
       receipt.recovered = await stateWhen(
@@ -2890,6 +2924,7 @@ async function runSelectedVideoFailureCases({
         'Selected video failure and recovery left the original document'
       );
       await captureObserver();
+      receipt.requestBudget = assertSelectedVideoRequestBudget(receipt.requests, healthyMark);
       assertConsoleDiagnostics();
       assert.equal(receipt.overflow, false);
       assert.deepEqual(receipt.unexpectedVideo, []);
