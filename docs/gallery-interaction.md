@@ -33,10 +33,37 @@ defines the native-control expectation.
 connects the toolbar and media items. The navigation event drives the owned
 scroll effect. Focus observation, video visibility and playback recovery remain
 separate; [video loading](media-video-loading.md) owns admission and pause/resume
-rules. [`GalleryContainer.tsx`](../src/shared/components/isolation/GalleryContainer.tsx)
+rules, and [video click policy](video-click-policy.md) owns click behavior.
+[`GalleryContainer.tsx`](../src/shared/components/isolation/GalleryContainer.tsx)
 owns opener focus restoration, while the lifecycle listener and focus tracker
 remove their listeners and observers on cleanup. The maintained
 [`keyboard-navigation.spec.ts`](../test/e2e/specs/keyboard-navigation.spec.ts)
 exercises the rendered userscript flow; browser component tests and the Windows
 profile cover their own narrower environments. Installed extension and live X
 behavior require separate source-bound observations.
+
+The correction keeps the existing displayed-index selector and gallery signal
+commands as the common target policy. A narrow patch in each toolbar and keyboard
+caller would repeat the rule and allow their no-op and page targets to diverge
+again. A new command layer shared with video control would duplicate state and
+lifecycle ownership for little gain: the existing selector already gives those
+callers one displayed identity without coupling viewport observation to requested
+navigation. Keeping the established commands also preserves their event, scroll,
+and cleanup paths and lets the same browser regressions exercise every caller.
+
+[`package.json`](../package.json) is the authority for the current TypeScript,
+Solid, Vite Plus, Vitest, Playwright, and browser-core dependency versions;
+[`tsconfig.base.json`](../tsconfig.base.json) owns strict TypeScript settings.
+[`vite.config.ts`](../vite.config.ts) defines the build and verification tasks;
+[`vitest.config.ts`](../vitest.config.ts) and its
+[`after-policy` coverage entrypoint](../tooling/vitest.after-policy.config.ts)
+select the maintained Node and Chromium Browser Mode lanes. The
+userscript and installed Chrome Playwright lanes are configured in
+[`playwright.config.ts`](../test/e2e/playwright.config.ts) and
+[`playwright.extension.config.ts`](../test/e2e/playwright.extension.config.ts);
+the Firefox and Windows lanes are routed by the package scripts. The prepared
+Windows installed profile lives in
+[`install-profile.ts`](../validation/windows/install-profile.ts). The consumed
+[shared design](../packages/core/docs/DESIGN.md) and
+[shortcut eligibility helper](../packages/core/src/design/shortcut.ts) define
+shared eligibility; this product keeps native-control ownership here.
