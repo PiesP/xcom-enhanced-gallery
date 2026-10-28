@@ -9,6 +9,7 @@ import type { BrowserContext, Page } from '@playwright/test';
 import {
   closeObservedLivePage,
   directOwnerForSource,
+  liveCompletionPassed,
   observeLiveUrls,
   validateOwnedCandidateInBorrowedBrowser,
 } from './live-page.ts';
@@ -30,6 +31,49 @@ const context = {
   installation: 'extension',
   otherFocusedInput: false,
 };
+
+test('live completion requires cleanup from both initial and controlled pages', () => {
+  const retry = {
+    status: 'core-flow-observed',
+    observation: { status: 'core-flow-observed', cleanup: { pageClosed: true } },
+    cleanup: { restored: true, extensionPageClosed: true },
+  };
+  assert.equal(
+    liveCompletionPassed({
+      status: 'failed',
+      cleanup: { pageClosed: false },
+      controlledProbe: retry,
+    }),
+    false
+  );
+  assert.equal(
+    liveCompletionPassed({
+      status: 'failed',
+      controlledProbe: {
+        ...retry,
+        cleanup: { ...retry.cleanup, extensionPageClosed: false },
+      },
+    }),
+    false
+  );
+  assert.equal(liveCompletionPassed({ status: 'failed', controlledProbe: retry }), true);
+  assert.equal(
+    liveCompletionPassed({
+      status: 'failed',
+      cleanup: { pageClosed: true },
+      controlledProbe: retry,
+    }),
+    true
+  );
+  assert.equal(
+    liveCompletionPassed({ status: 'core-flow-observed', cleanup: { pageClosed: true } }),
+    true
+  );
+  assert.equal(
+    liveCompletionPassed({ status: 'core-flow-observed', cleanup: { pageClosed: false } }),
+    false
+  );
+});
 
 test('borrowed browser acceptance requires the newly owned candidate and download directory', async () => {
   const extensionId = 'm'.repeat(32);

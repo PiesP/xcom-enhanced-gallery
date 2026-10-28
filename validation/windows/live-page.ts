@@ -343,6 +343,34 @@ type ControlledProbe = {
   status: string;
   error?: string;
 };
+type LiveCompletionOutcome = {
+  status: string;
+  cleanup?: { pageClosed: boolean };
+  controlledProbe?: {
+    status: string;
+    observation?: { status: string; cleanup?: { pageClosed: boolean } } | null;
+    cleanup: { restored: boolean; extensionPageClosed: boolean };
+  } | null;
+};
+
+function controlledRetryComplete(page: LiveCompletionOutcome): boolean {
+  const retry = page.controlledProbe;
+  return (
+    page.cleanup?.pageClosed !== false &&
+    retry?.status === 'core-flow-observed' &&
+    retry.observation?.status === 'core-flow-observed' &&
+    retry.observation.cleanup?.pageClosed !== false &&
+    retry.cleanup.restored === true &&
+    retry.cleanup.extensionPageClosed === true
+  );
+}
+
+export function liveCompletionPassed(page: LiveCompletionOutcome): boolean {
+  return (
+    page.cleanup?.pageClosed !== false &&
+    (page.status === 'core-flow-observed' || controlledRetryComplete(page))
+  );
+}
 type StoredField = { exists: boolean; value: unknown };
 type StorageRecord = {
   exists: boolean;
@@ -3465,30 +3493,25 @@ export async function observeLiveUrls({
       }
     }
   }
-  const passedPage = (page: LiveObservation) =>
-    page.status === 'core-flow-observed' ||
-    (page.controlledProbe?.observation?.status === 'core-flow-observed' &&
-      page.controlledProbe?.cleanup?.restored === true);
-  const failed = pages.filter((page) => !passedPage(page));
+  const failed = pages.filter((page) => !liveCompletionPassed(page));
+  const cleanAcceptedPages = pages.filter(liveCompletionPassed);
   const acceptanceCoverage = {
-    multiImageDownloadsSettings: pages.some(
+    multiImageDownloadsSettings: cleanAcceptedPages.some(
       (page) => page.actualSiteAcceptance?.status === 'observed'
     ),
-    videoNavigation: pages.some(
+    videoNavigation: cleanAcceptedPages.some(
       (page) =>
         page.actualSiteVideoNavigation?.status === 'observed' ||
-        (page.controlledProbe?.cleanup.restored === true &&
-          page.controlledProbe.observation?.actualSiteVideoNavigation?.status === 'observed')
+        (controlledRetryComplete(page) &&
+          page.controlledProbe?.observation?.actualSiteVideoNavigation?.status === 'observed')
     ),
-    sameDocumentPostNavigationAfterClose: pages.some(
+    sameDocumentPostNavigationAfterClose: cleanAcceptedPages.some(
       (page) => page.sameDocumentPostNavigationAfterClose?.status === 'observed'
     ),
   };
   const acceptanceMissing =
     actualSiteAcceptance !== null && Object.values(acceptanceCoverage).some((passed) => !passed);
-  const controlled = pages.some(
-    (page) => page.controlledProbe?.observation?.status === 'core-flow-observed'
-  );
+  const controlled = cleanAcceptedPages.some((page) => controlledRetryComplete(page));
   const summary = {
     status:
       failed.length || borrowedError || acceptanceMissing
@@ -3501,7 +3524,7 @@ export async function observeLiveUrls({
       !acceptanceMissing &&
       pages.every(
         (page) =>
-          passedPage(page) &&
+          liveCompletionPassed(page) &&
           (page.status === 'core-flow-observed'
             ? page.evidenceStatus
             : page.controlledProbe?.observation?.evidenceStatus) === 'observed'
