@@ -44,6 +44,7 @@ import {
 import { startExtensionNativeFixtureLoopback } from './extension-native-loopback.ts';
 import {
   createControlledVideoSettings,
+  decodeStoredValue,
   observeLiveUrls,
   readStoredLanguage,
   readStoredVideoSettings,
@@ -6262,6 +6263,142 @@ async function runVideoClickSettingsCycle({
     throw cleanupError;
   }
   assert(receipt, 'Video-click settings cycle produced no receipt');
+  return receipt;
+}
+
+async function runVideoClickNewDocumentReadback({
+  context,
+  extensionPage,
+  gallery,
+  page,
+}: {
+  context: BrowserContext;
+  extensionPage: Page;
+  gallery: Locator;
+  page: Page;
+}) {
+  const prior = await readStoredVideoSettings(extensionPage);
+  const initialMode = storedVideoClickMode(prior.settings) ?? 'block-controls-only';
+  const fieldKey = 'xeg-app-settings:field:gallery.videoClickMode';
+  const settingsButton = gallery.locator('[data-gallery-element="toolbar"] #settings-button');
+  let newDocument: Page | undefined;
+  let receipt:
+    | {
+        initialMode: string;
+        legacyRecordExists: boolean;
+        legacyRecordRawType: string | null;
+        fieldKey: string;
+        fieldExistedBefore: boolean;
+        persistedFieldRawType: string;
+        persistedFieldValue: string;
+        newDocumentSelectedValue: string;
+        fullSettingRestored: boolean;
+      }
+    | undefined;
+  let validationError: unknown;
+  let validationSeen = false;
+  const cleanupErrors: unknown[] = [];
+  try {
+    await settingsButton.click();
+    const select = gallery.getByLabel('Video clicks');
+    await select.waitFor({ state: 'visible' });
+    assert.equal(await select.inputValue(), initialMode);
+    const pressAndConfirm = async (keyPress: string, expectedMode: string) => {
+      await waitForValue(
+        async () => ((await select.isEnabled()) ? true : undefined),
+        `enabled video-click select before ${keyPress}`,
+        5_000
+      );
+      await select.focus();
+      assert.equal(
+        await select.evaluate((element) => document.activeElement === element),
+        true,
+        `Video-click select must be focused before ${keyPress}`
+      );
+      await page.keyboard.press(keyPress);
+      await waitForValue(
+        async () => {
+          const stored = await readStoredVideoSettings(extensionPage);
+          const field = stored.fields?.[fieldKey];
+          return field?.exists &&
+            decodeStoredValue(field.value) === expectedMode &&
+            storedVideoClickMode(stored.settings) === expectedMode
+            ? true
+            : undefined;
+        },
+        `persisted native video-click field ${expectedMode}`,
+        5_000
+      );
+      assert.equal(await select.inputValue(), expectedMode);
+    };
+    await pressAndConfirm(
+      initialMode === 'block-all' ? 'ArrowDown' : 'Home',
+      initialMode === 'block-all' ? 'block-controls-only' : 'block-all'
+    );
+    await pressAndConfirm('End', 'allow-all');
+    const persisted = await readStoredVideoSettings(extensionPage);
+    const persistedField = persisted.fields?.[fieldKey];
+    assert(persistedField?.exists, 'Native video-click field was not stored');
+    assert.equal(decodeStoredValue(persistedField.value), 'allow-all');
+    await settingsButton.click();
+
+    newDocument = await context.newPage();
+    await newDocument.goto(EXPERIENCE_FIXTURE_URL);
+    await newDocument.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+    const trigger = newDocument.locator('[data-testid="tweetPhoto"] img').first();
+    await trigger.scrollIntoViewIfNeeded();
+    await trigger.click();
+    const newGallery = newDocument.locator('[data-xeg-gallery-container]');
+    await newGallery.waitFor({ state: 'visible' });
+    await newGallery.locator('[data-gallery-element="toolbar"] #settings-button').click();
+    const newSelect = newGallery.getByLabel('Video clicks');
+    await newSelect.waitFor({ state: 'visible' });
+    await waitForValue(
+      async () => ((await newSelect.inputValue()) === 'allow-all' ? true : undefined),
+      'new-document Video clicks setting loaded from native storage',
+      5_000
+    );
+    receipt = {
+      initialMode,
+      legacyRecordExists: prior.exists,
+      legacyRecordRawType: prior.exists ? typeof prior.value : null,
+      fieldKey,
+      fieldExistedBefore: prior.fields?.[fieldKey]?.exists ?? false,
+      persistedFieldRawType: typeof persistedField.value,
+      persistedFieldValue: 'allow-all',
+      newDocumentSelectedValue: 'allow-all',
+      fullSettingRestored: false,
+    };
+  } catch (error) {
+    validationSeen = true;
+    validationError = error;
+  } finally {
+    try {
+      await newDocument?.close();
+    } catch (error) {
+      cleanupErrors.push(error);
+    }
+    try {
+      assert.equal(
+        await restoreStoredVideoSettings(extensionPage, prior),
+        true,
+        'New-document settings readback must restore the full prior setting'
+      );
+      if (receipt) {
+        receipt.fullSettingRestored = true;
+      }
+    } catch (error) {
+      cleanupErrors.push(error);
+    }
+  }
+  const failures = validationSeen ? [validationError, ...cleanupErrors] : cleanupErrors;
+  if (failures.length > 1) {
+    throw new AggregateError(failures, 'New-document settings validation or cleanup failed');
+  }
+  if (failures.length === 1) {
+    throw failures[0];
+  }
+  assert(receipt, 'New-document settings readback produced no receipt');
   return receipt;
 }
 
@@ -14280,6 +14417,12 @@ async function runGalleryExperienceProbe({
         output,
         page,
       });
+      const newDocumentSetting = await runVideoClickNewDocumentReadback({
+        context,
+        extensionPage,
+        gallery,
+        page,
+      });
       const knownSingle = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
       await toolbar.locator('button[aria-label="Download"]').click();
       const single = await waitForValue(
@@ -14326,6 +14469,7 @@ async function runGalleryExperienceProbe({
         reverseFocus,
         selectAfterPointerAway,
         nativeSetting,
+        newDocumentSetting,
         rediscovered,
         screenshots: {
           initial: 'experience-x02-toolbar-initial.png',

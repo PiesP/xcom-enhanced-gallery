@@ -388,10 +388,14 @@ counts as stopped only while decoded, unended and paused, and gallery progress
 is measured inside a short interval before the next loop boundary.
 The first gallery also opens its real Video clicks settings control, changes all
 three modes with trusted keyboard input, checks persisted values and visible
-help, then restores the exact prior stored value. The profile decodes the
-production JSON storage envelope when reading settings while preserving its
-raw value for restoration. This checks playback state and time progression,
-not audible output or host-to-gallery time transfer.
+help, then restores the exact prior stored value. It then saves `allow-all`
+through that control, verifies the native per-field storage record, and checks
+that a newly opened fixture document reads `allow-all` in its gallery Settings.
+The new document closes and the full prior storage state is restored before
+the original gallery's download checks. The profile composes the production
+legacy and per-field JSON storage envelopes while preserving raw values for
+restoration. This checks playback state and time progression, not audible
+output or host-to-gallery time transfer.
 
 The same production installation routes a direct, unmarked MP4 under a valid
 post owner. Its `block-all` click must reach the native video without a gallery
