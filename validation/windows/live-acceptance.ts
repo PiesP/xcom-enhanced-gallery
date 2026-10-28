@@ -222,19 +222,24 @@ export async function observeActualSiteVideoNavigation(
       { timeout: 10_000 }
     );
     let returned = await page.evaluate(inspectLiveMixedGallerySelectionDocument);
+    if (returned) {
+      receipt.returned = returned;
+    }
     const returnDeadline = Date.now() + 10_000;
-    while ((!returned || returned.index !== original.index) && Date.now() < returnDeadline) {
+    const restoredOriginal = () =>
+      returned?.index === original.index &&
+      returned.kind === (entryKind === 'video' ? 'video' : 'image') &&
+      returned.otherPlayingVideos === 0 &&
+      returned.source.host === original.source.host &&
+      returned.source.path === original.source.path;
+    while (!restoredOriginal() && Date.now() < returnDeadline) {
       await new Promise((done) => setTimeout(done, 100));
       returned = await page.evaluate(inspectLiveMixedGallerySelectionDocument);
+      if (returned) {
+        receipt.returned = returned;
+      }
     }
-    assert(
-      returned?.kind === (entryKind === 'video' ? 'video' : 'image') &&
-        returned.otherPlayingVideos === 0 &&
-        returned.source.host === original.source.host &&
-        returned.source.path === original.source.path,
-      'Video navigation did not restore the owned current player'
-    );
-    receipt.returned = returned;
+    assert(restoredOriginal(), 'Video navigation did not restore the owned current player');
     receipt.status = 'observed';
   } catch (error) {
     receipt.status = 'failed';
@@ -924,6 +929,7 @@ export async function runActualSiteAcceptance({
     extensionPage = await context.newPage();
     await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
     prior = await readSettings(extensionPage);
+    await page.bringToFront();
     const ownerBound = await image.evaluate(isBoundLiveImageOwnerDocument, imageOwner);
     const refreshedAction = await inspectHitTestedAction(image, identityFromUrl(targetUrl), target);
     assert(
