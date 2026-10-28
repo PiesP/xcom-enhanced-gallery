@@ -11,9 +11,41 @@ import { assertQuotedOriginLink } from './install-profile.ts';
 import { readStoredVideoSettings, restoreStoredVideoSettings } from './live-page.ts';
 import {
   assertMetadataSourceRequestSettlement,
+  assertSelectedVideoRequestBudget,
   readAppliedVideoGallerySettings,
   runVideoLoadingProfile,
 } from './video-loading-profile.ts';
+
+test('selected video recovery admits both eight-source opens and the one owned fallback', () => {
+  const best = Array.from({ length: 8 }, (_, index) => ({ index, quality: 'best' }));
+  const fault = [...best, { index: 0, quality: 'lower' }];
+  assert.deepEqual(assertSelectedVideoRequestBudget([...fault, ...best], fault.length), {
+    fault: 9,
+    healthy: 8,
+  });
+  assert.deepEqual(assertSelectedVideoRequestBudget([...best, ...best], best.length), {
+    fault: 8,
+    healthy: 8,
+  });
+});
+
+test('selected video request phases reject repeats, foreign variants and misplaced fallbacks', () => {
+  const best = Array.from({ length: 8 }, (_, index) => ({ index, quality: 'best' }));
+  for (const [requests, healthyStart] of [
+    [[...best, best[0]!], 9],
+    [[...best, ...best, best[0]!], 8],
+    [[...best, { index: 1, quality: 'lower' }], 9],
+    [[...best, { index: 0, quality: 'lower' }], 8],
+    [[{ index: 8, quality: 'best' }], 1],
+    [[{ index: 0, quality: 'unknown' }], 1],
+    [best, -1],
+    [best, 9],
+  ] as const) {
+    assert.throws(() => assertSelectedVideoRequestBudget(requests, healthyStart), {
+      name: 'AssertionError',
+    });
+  }
+});
 
 const observedRangeHandoff = {
   protocol: [
