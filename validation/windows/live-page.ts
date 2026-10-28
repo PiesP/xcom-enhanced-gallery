@@ -2845,6 +2845,10 @@ async function observeOne(
         index,
         readSettings: readStoredVideoSettings,
         restoreSettings: restoreStoredVideoSettings,
+        readProviderObservations: async () => {
+          await settleApi();
+          return observation.api.observations;
+        },
       });
       await settleApi();
       if (observation.actualSiteAcceptance.status !== 'observed') {

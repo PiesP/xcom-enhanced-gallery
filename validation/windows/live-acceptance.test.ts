@@ -7,6 +7,7 @@ import { test } from 'vite-plus/test';
 import type { BrowserContext } from '@playwright/test';
 import { directOwnerForSource, observeLiveUrls } from './live-page.ts';
 import {
+  canonicalOwnedPhotoSources,
   inspectLiveStoredZip,
   parseActualSiteAcceptanceSelector,
   verifyLiveArchiveSources,
@@ -20,6 +21,102 @@ const context = {
   installation: 'extension',
   otherFocusedInput: false,
 };
+
+test('canonical photo references require exact owned provider order and format', () => {
+  const displays = [
+    'https://pbs.twimg.com/media/PHOTO_one?format=webp&name=small',
+    'https://pbs.twimg.com/media/PHOTO_two?format=webp&name=small',
+  ];
+  const media = [
+    { id: '101', type: 'photo', poster: { host: 'pbs.twimg.com', path: '/media/PHOTO_one.jpg' } },
+    { id: '102', type: 'photo', poster: { host: 'pbs.twimg.com', path: '/media/PHOTO_two.png' } },
+  ];
+  const entry = {
+    operation: 'TweetResultByRestId',
+    requestedTweetId: '123',
+    httpStatus: 200,
+    providerErrors: false,
+    result: { id: '123', media },
+  };
+  assert.deepEqual(canonicalOwnedPhotoSources(displays, [entry], '123'), {
+    mediaIds: ['101', '102'],
+    sources: [
+      'https://pbs.twimg.com/media/PHOTO_one.jpg?format=jpg&name=orig',
+      'https://pbs.twimg.com/media/PHOTO_two.png?format=png&name=orig',
+    ],
+  });
+  assert.throws(
+    () =>
+      canonicalOwnedPhotoSources(
+        displays,
+        [{ ...entry, result: { ...entry.result, id: 'other' } }],
+        '123'
+      ),
+    /provider evidence is missing/u
+  );
+  assert.throws(
+    () => canonicalOwnedPhotoSources(displays, [{ ...entry, httpStatus: 403 }], '123'),
+    /provider evidence is missing/u
+  );
+  assert.throws(
+    () =>
+      canonicalOwnedPhotoSources(
+        displays,
+        [
+          {
+            ...entry,
+            result: {
+              ...entry.result,
+              media: [
+                { ...media[0]!, poster: { host: 'pbs.twimg.com', path: '/media/PHOTO_one' } },
+                media[1]!,
+              ],
+            },
+          },
+        ],
+        '123'
+      ),
+    /identity or order/u
+  );
+  assert.throws(
+    () =>
+      canonicalOwnedPhotoSources(
+        displays,
+        [{ ...entry, result: { ...entry.result, media: [media[1]!, media[0]!] } }],
+        '123'
+      ),
+    /identity or order/u
+  );
+  assert.throws(
+    () =>
+      canonicalOwnedPhotoSources(
+        displays,
+        [
+          {
+            ...entry,
+            result: { ...entry.result, media: [media[0]!, { ...media[1]!, id: '101' }] },
+          },
+        ],
+        '123'
+      ),
+    /media ID duplicated/u
+  );
+  assert.throws(
+    () =>
+      canonicalOwnedPhotoSources(
+        displays,
+        [
+          entry,
+          {
+            ...entry,
+            result: { ...entry.result, media: [media[0]!, { ...media[1]!, id: '103' }] },
+          },
+        ],
+        '123'
+      ),
+    /Conflicting/u
+  );
+});
 
 test('direct-owned video requires a unique exact provider variant and an unmarked boundary', () => {
   const source = { host: 'video.twimg.com', path: '/amplify_video/123/vid/clip.mp4' };

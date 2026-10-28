@@ -18,7 +18,7 @@ import {
   resolveLiveImageActionDocument,
   resolveLiveImageDocument,
 } from './live-page-document.ts';
-import type { Identity, ImageTarget } from './live-page-document.ts';
+import type { Identity, ImageTarget, Source } from './live-page-document.ts';
 
 declare const chrome: {
   downloads: {
@@ -56,6 +56,16 @@ type Selection = {
   currentIndex: number;
   focusedIndex: number;
   path: string;
+};
+type PhotoProviderObservation = {
+  operation: string;
+  requestedTweetId: string | null;
+  httpStatus: number;
+  providerErrors: boolean;
+  result: {
+    id: string | null;
+    media: readonly { id: string | null; type: string; poster: Source | null }[];
+  } | null;
 };
 
 export async function observeActualSiteVideoNavigation(
@@ -447,20 +457,85 @@ async function gallerySources(page: Page): Promise<string[]> {
     sources.length >= 2 && sources.length <= MAX_MEDIA,
     'Actual-site acceptance needs 2-4 images'
   );
-  const originals = sources.map((source) => {
+  const displays = sources.map((source) => {
     assert(source, 'Gallery media source is missing');
     const url = new URL(source);
     assert(
       url.protocol === 'https:' &&
         url.hostname === 'pbs.twimg.com' &&
-        url.pathname.startsWith('/media/'),
+        /^\/media\/[A-Za-z0-9_-]+(?:\.(?:jpe?g|png|webp|gif))?$/iu.test(url.pathname),
       'Gallery contains a non-public-image source'
     );
-    url.searchParams.set('name', 'orig');
-    return url.href;
+    return source;
   });
-  assert.equal(new Set(originals.map((value) => new URL(value).pathname)).size, originals.length);
-  return originals;
+  assert.equal(new Set(displays.map((value) => new URL(value).pathname)).size, displays.length);
+  return displays;
+}
+
+export function canonicalOwnedPhotoSources(
+  displays: readonly string[],
+  observations: readonly PhotoProviderObservation[],
+  requestedStatusId: string
+): { sources: string[]; mediaIds: string[] } {
+  assert(displays.length >= 2 && displays.length <= MAX_MEDIA, 'Expected 2-4 gallery photos');
+  const displayIds = displays.map((value) => {
+    const url = new URL(value);
+    const match = /^\/media\/([A-Za-z0-9_-]+)(?:\.(?:jpe?g|png|webp|gif))?$/iu.exec(url.pathname);
+    assert(
+      url.protocol === 'https:' &&
+        url.hostname === 'pbs.twimg.com' &&
+        !url.username &&
+        !url.password &&
+        !url.port &&
+        !url.hash &&
+        match?.[1],
+      'Gallery photo identity is invalid'
+    );
+    return match[1];
+  });
+  assert.equal(new Set(displayIds).size, displayIds.length, 'Gallery photo identity duplicated');
+  const candidates = observations.filter(
+    (entry) =>
+      entry.operation === 'TweetResultByRestId' &&
+      entry.requestedTweetId === requestedStatusId &&
+      entry.httpStatus === 200 &&
+      !entry.providerErrors &&
+      entry.result?.id === requestedStatusId
+  );
+  assert(candidates.length > 0, 'Exact requested-status photo provider evidence is missing');
+  const mappings = candidates.map((entry) => {
+    const media = entry.result?.media ?? [];
+    assert.equal(media.length, displays.length, 'Provider photo item count differs from gallery');
+    const mediaIds: string[] = [];
+    const sources = media.map((item, index) => {
+      assert(item.type === 'photo' && item.id, 'Provider media is not an identified photo');
+      const match = /^\/media\/([A-Za-z0-9_-]+)\.(jpe?g|png|webp|gif)$/iu.exec(
+        item.poster?.path ?? ''
+      );
+      assert(
+        item.poster?.host === 'pbs.twimg.com' &&
+          match !== null &&
+          match[1] === displayIds[index] &&
+          match[2],
+        'Provider photo identity or order differs from gallery'
+      );
+      mediaIds.push(item.id);
+      const original = new URL(`https://pbs.twimg.com${item.poster.path}`);
+      original.searchParams.set('format', match[2].toLowerCase());
+      original.searchParams.set('name', 'orig');
+      return original.href;
+    });
+    assert.equal(new Set(mediaIds).size, mediaIds.length, 'Provider photo media ID duplicated');
+    assert.equal(new Set(sources).size, sources.length, 'Provider photo source duplicated');
+    return { sources, mediaIds };
+  });
+  const first = mappings[0];
+  assert(first, 'Exact requested-status photo provider evidence is missing');
+  assert(
+    mappings.every((mapping) => JSON.stringify(mapping) === JSON.stringify(first)),
+    'Conflicting requested-status photo provider evidence'
+  );
+  return first;
 }
 
 async function preflightSources(page: Page, sources: readonly string[], selectedIndex: number) {
@@ -758,6 +833,7 @@ export async function runActualSiteAcceptance({
   index,
   readSettings,
   restoreSettings,
+  readProviderObservations,
 }: {
   context: BrowserContext;
   page: Page;
@@ -774,6 +850,7 @@ export async function runActualSiteAcceptance({
   index: string | number;
   readSettings: (page: Page) => Promise<StoredSettings>;
   restoreSettings: (page: Page, previous: StoredSettings) => Promise<boolean>;
+  readProviderObservations: () => Promise<readonly PhotoProviderObservation[]>;
 }) {
   const receipt: {
     status: string;
@@ -822,7 +899,17 @@ export async function runActualSiteAcceptance({
     assert.equal(returned.path, first.path, 'Previous did not restore selected media identity');
     receipt.steps.navigation = { first, second, returned };
 
-    const sources = await gallerySources(page);
+    const displays = await gallerySources(page);
+    const { sources, mediaIds } = canonicalOwnedPhotoSources(
+      displays,
+      await readProviderObservations(),
+      identityFromUrl(targetUrl).statusId
+    );
+    receipt.steps.canonicalPhotos = {
+      mediaIds,
+      displayPaths: displays.map((value) => new URL(value).pathname),
+      providerPaths: sources.map((value) => new URL(value).pathname),
+    };
     const originals = await preflightSources(page, sources, 0);
     receipt.steps.preflight = {
       mediaPaths: sources.map((value) => new URL(value).pathname),

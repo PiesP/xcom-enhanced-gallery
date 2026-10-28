@@ -884,7 +884,9 @@ a ZIP toolbar download with exactly that many stored entries. It requires new
 completed Chrome download IDs, files inside the task-owned download directory,
 bounded file reads, SHA-256, ZIP central-directory/CRC checks, and every ZIP
 item's size and hash against an independent bounded public original GET. The
-selected single file must match its original as well. Public image HEAD responses must declare
+selected single file must match its original as well. Each original comes from an exact
+requested-status HTTP 200 provider photo path and format; the gallery display format
+is not treated as original proof. Public image HEAD responses must declare
 each source at no more than 64 MiB and a projected single plus ZIP total below
 128 MiB; absent or larger declarations leave the lane unverified before any
 download click. Chrome progress is watched and an over-budget download is
