@@ -862,16 +862,23 @@ unverified. A matching baseline shows that those
 messages can occur without XEG; it does not assign them exclusively to X or
 other installed extensions. A query-bearing `ERR_ABORTED` is qualified only
 when the full HTTPS URL is byte-for-byte identical to the selected gallery
-video source and a video/mp4 API variant for the uniquely established direct
-quote and media item; conflicting full URLs for that same API variant path
-remain unverified. Full URLs are compared only in memory and discarded
-after the page; the receipt retains sanitized paths, hashes, and match flags,
-never query values or credentials. The borrowed summary records proof validity
-and the bound baseline receipt SHA-256. Missing or mismatched proof, a changed CSP
+video source and a video/mp4 API variant for the uniquely established owner
+and media item. Direct-owned mixed posts additionally require a fully observed
+photo-to-video-to-photo return, native playback, and exact requested-status
+ownership; their queryless aborts have no family fallback. Conflicting full URLs
+for the same API variant path remain unverified. Full URLs are compared only in
+memory and discarded after the page; the receipt retains sanitized paths, hashes,
+and match flags, never query values or credentials. The borrowed summary records
+proof validity and the bound baseline receipt SHA-256. Missing or mismatched proof, a changed CSP
 message/count, any unknown host diagnostic, oversized input, overflow, or a
 failed required assertion remains unverified. The optional proof has no effect
 on owned-profile observations. Earlier receipts lack the full fingerprints and
 cannot be upgraded retroactively; a new source-bound run is required.
+During task-owned page disposal, an aborted HTTPS request is associated with
+that close only when the same request object was already in flight at the close
+boundary. The listener is sealed before the final receipt is classified. This
+association does not prove cancellation cause and does not excuse gallery-close
+failures or other unknown diagnostics.
 Review the retained screenshots separately before making a live-page claim.
 
 The explicit `{"scenario":"actual-site-acceptance"}` selector is accepted only

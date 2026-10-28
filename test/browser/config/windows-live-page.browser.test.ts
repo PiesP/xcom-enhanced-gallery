@@ -360,6 +360,169 @@ describe('Windows X live page DOM validation', () => {
     });
   });
 
+  it('admits an opacity-zero photo only through its matching painted sibling', () => {
+    const identity = { handle: 'NASA', statusId: '2040059770237849635' };
+    const mediaUrl = 'https://pbs.twimg.com/media/HE-_ijrXYAA_Wiq';
+    document.body.innerHTML = `
+      <article>
+        <a id="status" href="https://x.com/NASA/status/2040059770237849635">Status</a>
+        <a href="https://x.com/NASA/status/2040059770237849635/photo/1">
+          <div data-testid="tweetPhoto" id="photo">
+            <div id="surface"></div><img id="image" src="${mediaUrl}" alt="Photo">
+          </div>
+        </a>
+      </article>`;
+    const article = document.querySelector('article');
+    const photo = document.querySelector<HTMLElement>('#photo');
+    const surface = document.querySelector<HTMLElement>('#surface');
+    const image = document.querySelector<HTMLImageElement>('#image');
+    const status = document.querySelector<HTMLAnchorElement>('#status');
+    if (!article || !photo || !surface || !image || !status) {
+      throw new Error('Painted photo fixture is incomplete');
+    }
+    const rect = (width = 180) => ({
+      bottom: 200,
+      height: 120,
+      left: 20,
+      right: 20 + width,
+      toJSON: () => ({}),
+      top: 80,
+      width,
+      x: 20,
+      y: 80,
+    });
+    photo.getBoundingClientRect = () => rect();
+    surface.getBoundingClientRect = () => rect();
+    image.getBoundingClientRect = () => rect();
+    image.style.opacity = '0';
+    surface.style.backgroundImage = `url("${mediaUrl}")`;
+    Object.defineProperties(image, {
+      complete: { configurable: true, value: true },
+      naturalWidth: { configurable: true, value: 180 },
+    });
+    const originalHitTest = Object.getOwnPropertyDescriptor(document, 'elementFromPoint');
+    Object.defineProperty(document, 'elementFromPoint', { configurable: true, value: () => image });
+    try {
+      const ready = livePage.inspectLiveTargetDocument(identity);
+      expect(ready).toMatchObject({
+        state: 'ready',
+        target: { kind: 'image', imageSource: { path: '/media/HE-_ijrXYAA_Wiq' } },
+      });
+      if (!ready || ready.state !== 'ready' || ready.target.kind !== 'image') {
+        throw new Error('Painted photo readiness was not established');
+      }
+      expect(livePage.resolveLiveImageDocument({ identity, target: ready.target })).toBe(image);
+
+      const rejected = () => expect(livePage.inspectLiveTargetDocument(identity)).toBe(false);
+      surface.style.backgroundImage = `url("${mediaUrl}x")`;
+      rejected();
+      surface.style.backgroundImage = 'url("https://other.example/media/HE-_ijrXYAA_Wiq")';
+      rejected();
+      surface.style.backgroundImage = '';
+      rejected();
+      surface.style.backgroundImage = `url("${mediaUrl}")`;
+      surface.style.opacity = '0';
+      rejected();
+      surface.style.opacity = '';
+      surface.getBoundingClientRect = () => rect(150);
+      rejected();
+      surface.getBoundingClientRect = () => rect();
+      const overlay = document.createElement('div');
+      document.body.append(overlay);
+      Object.defineProperty(document, 'elementFromPoint', {
+        configurable: true,
+        value: () => overlay,
+      });
+      rejected();
+      Object.defineProperty(document, 'elementFromPoint', {
+        configurable: true,
+        value: () => image,
+      });
+      const duplicate = surface.cloneNode() as HTMLElement;
+      photo.prepend(duplicate);
+      rejected();
+      duplicate.remove();
+      photo.style.visibility = 'hidden';
+      rejected();
+      photo.style.visibility = '';
+      status.href = 'https://x.com/foreign/status/2040059770237849635';
+      rejected();
+      status.href = 'https://x.com/NASA/status/2040059770237849635';
+      const nested = document.createElement('article');
+      nested.innerHTML = '<a href="https://x.com/foreign/status/123">Foreign</a>';
+      article.append(nested);
+      nested.append(photo.parentElement!);
+      rejected();
+    } finally {
+      if (originalHitTest) {
+        Object.defineProperty(document, 'elementFromPoint', originalHitTest);
+      } else {
+        Reflect.deleteProperty(document, 'elementFromPoint');
+      }
+    }
+  });
+
+  it('captures the owned trusted photo click state at activation time', () => {
+    document.body.innerHTML = `
+      <article>
+        <a id="action" href="https://x.com/owner/status/123/photo/1">
+          <img id="image" src="https://pbs.twimg.com/media/photo" alt="Photo">
+        </a>
+      </article>`;
+    const owner = document.querySelector<HTMLElement>('article');
+    const action = document.querySelector<HTMLAnchorElement>('#action');
+    const image = document.querySelector<HTMLImageElement>('#image');
+    if (!owner || !action || !image) {
+      throw new Error('Activation photo fixture is incomplete');
+    }
+    action.getBoundingClientRect = () => ({
+      bottom: 200,
+      height: 120,
+      left: 20,
+      right: 200,
+      toJSON: () => ({}),
+      top: 80,
+      width: 180,
+      x: 20,
+      y: 80,
+    });
+    Object.defineProperties(image, {
+      complete: { configurable: true, value: true },
+      naturalWidth: { configurable: true, value: 180 },
+    });
+    const add = vi.spyOn(window, 'addEventListener');
+    let capture: ReturnType<LivePageModule['captureLiveImageActivationDocument']> | undefined;
+    try {
+      capture = livePage.captureLiveImageActivationDocument(action, {
+        image,
+        owner,
+        actionPath: '/owner/status/123/photo/1',
+        source: { host: 'pbs.twimg.com', path: '/media/photo' },
+      });
+      const listener = add.mock.calls.find(([type]) => type === 'click')?.[1];
+      if (typeof listener !== 'function') {
+        throw new Error('Trusted activation listener missing');
+      }
+      const event = { button: 0, clientX: 40, clientY: 120, target: image };
+      listener({ ...event, isTrusted: false } as unknown as MouseEvent);
+      listener({ ...event, isTrusted: true, target: document.body } as unknown as MouseEvent);
+      expect(capture.captured).toBe(false);
+      document.body.style.top = '-17px';
+      listener({ ...event, isTrusted: true } as unknown as MouseEvent);
+      expect(capture.captured).toBe(true);
+      expect(capture.before).toMatchObject({
+        bodyStyle: { top: '-17px' },
+        scrollY: window.scrollY,
+      });
+      document.body.style.top = '-99px';
+      expect(capture.before?.bodyStyle.top).toBe('-17px');
+    } finally {
+      capture?.dispose();
+      add.mockRestore();
+      document.body.style.top = '';
+    }
+  });
+
   it('keeps the requested image bound when an earlier thread article appears', async () => {
     const identity = { handle: 'NASA', statusId: '2040059770237849635' };
     const statusPath = '/NASA/status/2040059770237849635';
@@ -1937,6 +2100,20 @@ describe('Windows X live page DOM validation', () => {
       itemVisible: true,
       positionValue: 2,
     });
+    expect(
+      livePage.inspectSelectedGalleryDocument({
+        expectedIndex: 2,
+        expectedPath: '/media/target',
+        canonicalPhotoPath: '/media/target.jpg',
+      })
+    ).toMatchObject({ itemIndex: 1, positionValue: 2 });
+    expect(
+      livePage.inspectSelectedGalleryDocument({
+        expectedIndex: 2,
+        expectedPath: '/media/target',
+        canonicalPhotoPath: '/media/target.png',
+      })
+    ).toBe(false);
     expect(
       livePage.inspectSelectedGalleryDocument({
         expectedIndex: null,

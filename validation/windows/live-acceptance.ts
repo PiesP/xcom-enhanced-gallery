@@ -61,6 +61,10 @@ type Selection = {
   focusedIndex: number;
   path: string;
 };
+type SelectedGalleryVideo = Exclude<
+  ReturnType<typeof inspectSelectedGalleryVideoDocument>,
+  false | null
+>;
 type PhotoProviderObservation = {
   operation: string;
   requestedTweetId: string | null;
@@ -74,7 +78,8 @@ type PhotoProviderObservation = {
 
 export async function observeActualSiteVideoNavigation(
   page: Page,
-  entryKind: 'video' | 'owned-photo' = 'video'
+  entryKind: 'video' | 'owned-photo' = 'video',
+  onSelectedVideo?: (video: SelectedGalleryVideo) => Promise<void>
 ) {
   const receipt: {
     status: 'observed' | 'unverified' | 'failed';
@@ -211,6 +216,8 @@ export async function observeActualSiteVideoNavigation(
         progressed: endTime >= startTime + 0.15,
         control: 'native-space',
       };
+      assert(receipt.playback.progressed, 'Native selected video did not progress');
+      await onSelectedVideo?.(playedVideo);
     }
     await toolbar.locator(`button[aria-label="${forward ? 'Previous' : 'Next'}"]`).click();
     await page.waitForFunction(
@@ -222,19 +229,24 @@ export async function observeActualSiteVideoNavigation(
       { timeout: 10_000 }
     );
     let returned = await page.evaluate(inspectLiveMixedGallerySelectionDocument);
+    if (returned) {
+      receipt.returned = returned;
+    }
     const returnDeadline = Date.now() + 10_000;
-    while ((!returned || returned.index !== original.index) && Date.now() < returnDeadline) {
+    const restoredOriginal = () =>
+      returned?.index === original.index &&
+      returned.kind === (entryKind === 'video' ? 'video' : 'image') &&
+      returned.otherPlayingVideos === 0 &&
+      returned.source.host === original.source.host &&
+      returned.source.path === original.source.path;
+    while (!restoredOriginal() && Date.now() < returnDeadline) {
       await new Promise((done) => setTimeout(done, 100));
       returned = await page.evaluate(inspectLiveMixedGallerySelectionDocument);
+      if (returned) {
+        receipt.returned = returned;
+      }
     }
-    assert(
-      returned?.kind === (entryKind === 'video' ? 'video' : 'image') &&
-        returned.otherPlayingVideos === 0 &&
-        returned.source.host === original.source.host &&
-        returned.source.path === original.source.path,
-      'Video navigation did not restore the owned current player'
-    );
-    receipt.returned = returned;
+    assert(restoredOriginal(), 'Video navigation did not restore the owned current player');
     receipt.status = 'observed';
   } catch (error) {
     receipt.status = 'failed';
@@ -924,6 +936,7 @@ export async function runActualSiteAcceptance({
     extensionPage = await context.newPage();
     await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
     prior = await readSettings(extensionPage);
+    await page.bringToFront();
     const ownerBound = await image.evaluate(isBoundLiveImageOwnerDocument, imageOwner);
     const refreshedAction = await inspectHitTestedAction(image, identityFromUrl(targetUrl), target);
     assert(

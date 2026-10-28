@@ -232,6 +232,100 @@ export function inspectLiveTargetDocument({
       rectangle.height > 0
     );
   };
+  const isRenderedPhoto = (image: HTMLImageElement, source: Source, article: Element) => {
+    if (isVisible(image)) {
+      return true;
+    }
+    const style = getComputedStyle(image);
+    const photo = image.parentElement;
+    if (
+      style.display === 'none' ||
+      style.visibility === 'hidden' ||
+      Number(style.opacity) !== 0 ||
+      !photo?.matches('[data-testid="tweetPhoto"]') ||
+      photo.closest('article') !== article ||
+      photo.querySelectorAll('img').length !== 1 ||
+      !isVisible(photo)
+    ) {
+      return false;
+    }
+    for (let ancestor: Element | null = photo; ancestor; ancestor = ancestor.parentElement) {
+      const ancestorStyle = getComputedStyle(ancestor);
+      if (
+        ancestorStyle.display === 'none' ||
+        ancestorStyle.visibility === 'hidden' ||
+        Number(ancestorStyle.opacity) === 0
+      ) {
+        return false;
+      }
+      if (ancestor === article) {
+        break;
+      }
+    }
+    let activeSource: URL;
+    try {
+      activeSource = new URL(image.currentSrc || image.src);
+    } catch {
+      return false;
+    }
+    if (
+      activeSource.protocol !== 'https:' ||
+      activeSource.hostname.toLowerCase() !== source.host ||
+      activeSource.pathname !== source.path
+    ) {
+      return false;
+    }
+    const imageRect = image.getBoundingClientRect();
+    if (imageRect.width <= 0 || imageRect.height <= 0) {
+      return false;
+    }
+    const paintedSiblings = [...photo.children].filter(
+      (sibling) => sibling !== image && getComputedStyle(sibling).backgroundImage !== 'none'
+    );
+    if (paintedSiblings.length !== 1) {
+      return false;
+    }
+    const surface = paintedSiblings[0];
+    if (!surface || !isVisible(surface)) {
+      return false;
+    }
+    const match = /^url\((?:"([^"]+)"|'([^']+)'|([^'")]+))\)$/u.exec(
+      getComputedStyle(surface).backgroundImage
+    );
+    if (!match) {
+      return false;
+    }
+    try {
+      const background = new URL(match[1] ?? match[2] ?? match[3] ?? '', location.href);
+      if (
+        background.protocol !== 'https:' ||
+        background.hostname.toLowerCase() !== source.host ||
+        background.pathname !== source.path ||
+        background.username ||
+        background.password ||
+        background.port
+      ) {
+        return false;
+      }
+    } catch {
+      return false;
+    }
+    const surfaceRect = surface.getBoundingClientRect();
+    const centerX = imageRect.left + imageRect.width / 2;
+    const centerY = imageRect.top + imageRect.height / 2;
+    const hit =
+      centerX >= 0 && centerY >= 0 && centerX < innerWidth && centerY < innerHeight
+        ? document.elementFromPoint(centerX, centerY)
+        : null;
+    return (
+      hit !== null &&
+      photo.contains(hit) &&
+      Math.abs(imageRect.left - surfaceRect.left) <= 1 &&
+      Math.abs(imageRect.top - surfaceRect.top) <= 1 &&
+      Math.abs(imageRect.width - surfaceRect.width) <= 1 &&
+      Math.abs(imageRect.height - surfaceRect.height) <= 1
+    );
+  };
   const parseLink = (anchor: HTMLAnchorElement) => {
     try {
       const url = new URL(anchor.href, location.href);
@@ -463,7 +557,7 @@ export function inspectLiveTargetDocument({
         image.closest('article') !== article ||
         image.closest('[data-testid="videoPlayer"], [data-testid="previewInterstitial"]') ||
         !source ||
-        !isVisible(image) ||
+        !isRenderedPhoto(image, source, article) ||
         !image.complete ||
         image.naturalWidth <= 0
       ) {
@@ -527,7 +621,12 @@ export function inspectLiveTargetDocument({
             continue;
           }
           const source = parseMedia(image);
-          if (!source || !isVisible(image) || !image.complete || image.naturalWidth <= 0) {
+          if (
+            !source ||
+            !isRenderedPhoto(image, source, quoteArticle) ||
+            !image.complete ||
+            image.naturalWidth <= 0
+          ) {
             continue;
           }
           const imageLink = image.closest<HTMLAnchorElement>('a[href]');
@@ -970,10 +1069,12 @@ export function inspectNativePreviewOwnerDocument(): string | null {
 export function inspectSelectedGalleryDocument({
   expectedIndex,
   expectedPath,
+  canonicalPhotoPath = null,
   allowPhotoFormatVariant = false,
 }: {
   expectedIndex: number | null;
   expectedPath: string;
+  canonicalPhotoPath?: string | null;
   allowPhotoFormatVariant?: boolean;
 }) {
   const galleries = document.querySelectorAll('[data-xeg-gallery-container]');
@@ -1039,7 +1140,7 @@ export function inspectSelectedGalleryDocument({
         if (url.hostname !== 'pbs.twimg.com') {
           return false;
         }
-        if (url.pathname === expectedPath) {
+        if (url.pathname === expectedPath || url.pathname === canonicalPhotoPath) {
           return true;
         }
         if (!allowPhotoFormatVariant) {
@@ -1591,6 +1692,98 @@ export function quotedVideoHitTestPassed({
       control.mediaScopeDepth >= 0 &&
       control.mediaScopeDepth <= 5
   );
+}
+
+export type LiveHostSnapshot = {
+  bodyStyle: { left: string; overflow: string; position: string; right: string; top: string };
+  scrollRestoration: ScrollRestoration;
+  scrollY: number;
+};
+
+export function captureLiveImageActivationDocument(
+  action: HTMLAnchorElement,
+  {
+    image,
+    owner,
+    actionPath,
+    source,
+  }: { image: HTMLImageElement; owner: HTMLElement; actionPath: string; source: Source }
+): { readonly before: LiveHostSnapshot | null; readonly captured: boolean; dispose(): void } {
+  const state: { before: LiveHostSnapshot | null; captured: boolean } = {
+    before: null,
+    captured: false,
+  };
+  const onClick = (event: MouseEvent) => {
+    if (
+      state.captured ||
+      !event.isTrusted ||
+      event.button !== 0 ||
+      !(event.target instanceof Element) ||
+      !action.isConnected ||
+      !image.isConnected ||
+      !owner.isConnected ||
+      image.closest('article') !== owner ||
+      action.closest('article') !== owner ||
+      !action.contains(event.target) ||
+      document.querySelector('[data-xeg-gallery-container]')
+    ) {
+      return;
+    }
+    const rect = action.getBoundingClientRect();
+    if (
+      rect.width <= 0 ||
+      rect.height <= 0 ||
+      event.clientX < rect.left ||
+      event.clientX >= rect.right ||
+      event.clientY < rect.top ||
+      event.clientY >= rect.bottom ||
+      !image.complete ||
+      image.naturalWidth <= 0
+    ) {
+      return;
+    }
+    try {
+      const actionUrl = new URL(action.href, location.href);
+      const imageUrl = new URL(image.currentSrc || image.src);
+      if (
+        actionUrl.protocol !== 'https:' ||
+        !['x.com', 'twitter.com'].includes(actionUrl.hostname.toLowerCase()) ||
+        actionUrl.pathname !== actionPath ||
+        imageUrl.protocol !== 'https:' ||
+        imageUrl.hostname.toLowerCase() !== source.host ||
+        imageUrl.pathname !== source.path
+      ) {
+        return;
+      }
+    } catch {
+      return;
+    }
+    const style = document.body.style;
+    state.before = {
+      bodyStyle: {
+        left: style.left,
+        overflow: style.overflow,
+        position: style.position,
+        right: style.right,
+        top: style.top,
+      },
+      scrollRestoration: history.scrollRestoration,
+      scrollY: window.scrollY,
+    };
+    state.captured = true;
+  };
+  window.addEventListener('click', onClick, true);
+  return {
+    get before() {
+      return state.before;
+    },
+    get captured() {
+      return state.captured;
+    },
+    dispose() {
+      window.removeEventListener('click', onClick, true);
+    },
+  };
 }
 
 export function captureActivationFocusDocument(

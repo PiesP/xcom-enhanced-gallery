@@ -3,9 +3,11 @@
 
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { resolve } from 'node:path';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { test, vi } from 'vite-plus/test';
-import type { BrowserContext, Page } from '@playwright/test';
+import type { BrowserContext, ElementHandle, Page } from '@playwright/test';
 import {
   closeObservedLivePage,
   directOwnerForSource,
@@ -17,11 +19,18 @@ import {
   canonicalOwnedPhotoSources,
   inspectLiveStoredZip,
   nativeSingleSourceMatchesDocument,
+  observeActualSiteVideoNavigation,
   parseActualSiteAcceptanceSelector,
+  runActualSiteAcceptance,
   taskOwnedDownloadsDocument,
   verifyLiveArchiveSources,
   waitForOwnedDownload,
 } from './live-acceptance.ts';
+import {
+  inspectLiveMixedGallerySelectionDocument,
+  inspectSelectedGalleryVideoDocument,
+} from './live-page-document.ts';
+import type { ImageTarget } from './live-page-document.ts';
 
 const STORED_ZIP_HEX =
   '504b0304140000080000000000002639f4cb09000000090000000900000066697273742e747874313233343536373839504b0304140000080000000000002438b23f04000000040000000a0000007365636f6e642e62696e000102ff504b01021400140000080000000000002639f4cb090000000900000009000000000000000000000000000000000066697273742e747874504b01021400140000080000000000002438b23f04000000040000000a00000000000000000000000000300000007365636f6e642e62696e504b050600000000020002006f0000005c0000000000';
@@ -31,6 +40,207 @@ const context = {
   installation: 'extension',
   otherFocusedInput: false,
 };
+
+test('return navigation waits for the exact original media and all other players to pause', async () => {
+  const original = {
+    index: 0,
+    total: 2,
+    kind: 'video' as const,
+    source: { host: 'video.twimg.com', path: '/original.mp4' },
+    otherPlayingVideos: 0,
+  };
+  const neighbor = {
+    ...original,
+    index: 1,
+    source: { host: 'video.twimg.com', path: '/neighbor.mp4' },
+  };
+  let position = 0;
+  let returnReads = 0;
+  let failOnSecondReturnRead = false;
+  const page = {
+    evaluate: async (fn: unknown) => {
+      if (fn === inspectSelectedGalleryVideoDocument) {
+        return { total: 2 };
+      }
+      assert.equal(fn, inspectLiveMixedGallerySelectionDocument);
+      if (position === 0) {
+        return original;
+      }
+      if (position === 1) {
+        return neighbor;
+      }
+      if (failOnSecondReturnRead && returnReads === 1) {
+        throw new Error('return inspection failed');
+      }
+      return (
+        [
+          { ...original, source: neighbor.source },
+          { ...original, kind: 'image' },
+          { ...original, otherPlayingVideos: 1 },
+          original,
+        ][returnReads++] ?? original
+      );
+    },
+    locator: () => ({
+      locator: (selector: string) => ({
+        click: async () => {
+          assert.match(selector, /aria-label/u);
+          position += 1;
+        },
+      }),
+    }),
+    waitForFunction: async () => true,
+  } as unknown as Page;
+  const receipt = await observeActualSiteVideoNavigation(page);
+  assert.equal(receipt.status, 'observed');
+  assert.deepEqual(receipt.returned, original);
+  assert.equal(returnReads, 4);
+
+  position = 0;
+  returnReads = 0;
+  failOnSecondReturnRead = true;
+  const failed = await observeActualSiteVideoNavigation(page);
+  assert.equal(failed.status, 'failed');
+  assert.match(failed.error ?? '', /return inspection failed/u);
+  assert.deepEqual(failed.returned, { ...original, source: neighbor.source });
+});
+
+test('owned-photo navigation reports the played video before returning to the photo', async () => {
+  const photo = {
+    index: 0,
+    total: 2,
+    kind: 'image' as const,
+    source: { host: 'pbs.twimg.com', path: '/media/photo.jpg' },
+    otherPlayingVideos: 0,
+  };
+  const neighbor = {
+    ...photo,
+    index: 1,
+    kind: 'video' as const,
+    source: { host: 'video.twimg.com', path: '/amplify_video/456/vid/clip.mp4' },
+  };
+  let position = 0;
+  let videoReads = 0;
+  let controlReads = 0;
+  const events: string[] = [];
+  const videoControl = {
+    focus: async () => undefined,
+    evaluate: async () => [true, 0, 0.2][controlReads++],
+  };
+  const page = {
+    evaluate: async (fn: unknown) => {
+      if (fn === inspectLiveMixedGallerySelectionDocument) {
+        return position === 0 ? photo : neighbor;
+      }
+      assert.equal(fn, inspectSelectedGalleryVideoDocument);
+      return {
+        index: 1,
+        total: 2,
+        itemLoaded: true,
+        visible: true,
+        readyState: 4,
+        width: 720,
+        height: 1280,
+        mediaErrorCode: null,
+        source: neighbor.source,
+        currentTime: videoReads++ === 0 ? 0 : 0.2,
+      };
+    },
+    locator: (selector: string) =>
+      selector.includes('toolbar')
+        ? {
+            locator: (button: string) => ({
+              click: async () => {
+                events.push(button.includes('Next') ? 'next' : 'return');
+                position = button.includes('Next') ? 1 : 0;
+              },
+            }),
+          }
+        : { nth: () => ({ locator: () => videoControl }) },
+    waitForFunction: async () => true,
+    keyboard: { press: async () => events.push('space') },
+  } as unknown as Page;
+  const receipt = await observeActualSiteVideoNavigation(page, 'owned-photo', async (video) => {
+    events.push('selected-video');
+    assert.deepEqual(video.source, neighbor.source);
+    assert.equal(video.currentTime, 0.2);
+  });
+  assert.equal(receipt.status, 'observed');
+  assert.equal(receipt.playback?.progressed, true);
+  assert.deepEqual(receipt.returned, photo);
+  assert.deepEqual(events, ['next', 'space', 'selected-video', 'return']);
+});
+
+test('actual-site acceptance restores the owned X tab before revalidating and clicking', async () => {
+  const output = await mkdtemp(join(tmpdir(), 'xeg-live-acceptance-'));
+  const events: string[] = [];
+  const extensionPage = {
+    goto: async () => undefined,
+    close: async () => {
+      events.push('close-extension');
+    },
+  } as unknown as Page;
+  const page = {
+    bringToFront: async () => {
+      events.push('focus-owned-page');
+    },
+    screenshot: async () => {
+      throw new Error('test screenshot unavailable');
+    },
+  } as unknown as Page;
+  let imageChecks = 0;
+  const image = {
+    evaluate: async () => {
+      events.push('validate-image');
+      return ++imageChecks === 1
+        ? true
+        : { actionIndex: 0, actionPath: '/NASA/status/123/photo/1' };
+    },
+    evaluateHandle: async () => ({ dispose: async () => undefined }),
+  } as unknown as ElementHandle<HTMLImageElement>;
+  const action = {
+    evaluate: async () => {
+      events.push('validate-action');
+      return true;
+    },
+    click: async () => {
+      events.push('click');
+      throw new Error('stop after click');
+    },
+  } as unknown as ElementHandle<HTMLAnchorElement>;
+  try {
+    const receipt = await runActualSiteAcceptance({
+      context: { newPage: async () => extensionPage } as unknown as BrowserContext,
+      page,
+      action,
+      image,
+      imageOwner: {} as ElementHandle<HTMLElement>,
+      target: {} as ImageTarget,
+      actionPath: '/NASA/status/123/photo/1',
+      extensionId: 'm'.repeat(32),
+      targetUrl: 'https://x.com/NASA/status/123',
+      navigationUrl: 'https://x.com/NASA/status/456',
+      downloads: output,
+      output,
+      index: 1,
+      readSettings: async () => ({ exists: true, value: {}, settings: {} }),
+      restoreSettings: async () => true,
+      readProviderObservations: async () => [],
+    });
+    assert.equal(receipt.status, 'failed');
+    assert.match(receipt.error ?? '', /stop after click/u);
+    assert.deepEqual(events, [
+      'focus-owned-page',
+      'validate-image',
+      'validate-image',
+      'validate-action',
+      'click',
+      'close-extension',
+    ]);
+  } finally {
+    await rm(output, { recursive: true, force: true });
+  }
+});
 
 test('live completion requires cleanup from both initial and controlled pages', () => {
   const retry = {

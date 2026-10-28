@@ -4,7 +4,16 @@
 import { open, writeFile, type FileHandle } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { isAbsolute, join } from 'node:path';
-import type { BrowserContext, ElementHandle, JSHandle, Page } from '@playwright/test';
+import type {
+  BrowserContext,
+  CDPSession,
+  ConsoleMessage,
+  ElementHandle,
+  JSHandle,
+  Page,
+  Request,
+  Response,
+} from '@playwright/test';
 import {
   observeSameDocumentPostNavigationAfterClose,
   observeActualSiteVideoNavigation,
@@ -28,6 +37,7 @@ import {
   inspectHostVideoDocument,
   quotedVideoHitTestPassed,
   captureActivationFocusDocument,
+  captureLiveImageActivationDocument,
   findActivationHitDocument,
   quotedVideoSurface,
 } from './live-page-document.ts';
@@ -38,6 +48,7 @@ import type {
   LiveTarget,
   LiveReadiness,
   QuoteTarget,
+  LiveHostSnapshot,
 } from './live-page-document.ts';
 export type {
   Source,
@@ -61,6 +72,7 @@ export {
   inspectHostVideoDocument,
   quotedVideoHitTestPassed,
   captureActivationFocusDocument,
+  captureLiveImageActivationDocument,
   findActivationHitDocument,
   quotedVideoSurface,
 } from './live-page-document.ts';
@@ -106,6 +118,9 @@ type Diagnostic = {
   nonceCanonical?: HostCspNonceCanonical;
   urlIdentitySha256?: string;
   queryIdentityMatched?: boolean;
+  documentId?: string;
+  documentUrl?: string;
+  ownedPageCloseAssociation?: 'same-inflight-request';
 };
 type HostCspNonceCanonical = {
   algorithm: 'script-src-quoted-nonce-v1';
@@ -232,11 +247,7 @@ export function validateOwnedCandidateInBorrowedBrowser(
   );
 }
 type ProductDiagnostic = Diagnostic & { location: string; text: string };
-type HostSnapshot = {
-  bodyStyle: { left: string; overflow: string; position: string; right: string; top: string };
-  scrollRestoration: ScrollRestoration;
-  scrollY: number;
-};
+type HostSnapshot = LiveHostSnapshot;
 type RestoredHostState = {
   after: HostSnapshot;
   focusRestored: boolean;
@@ -250,6 +261,8 @@ type GalleryObservation = {
   status: string;
   hostTimeline?: Array<Awaited<ReturnType<typeof captureHostGeometry>>>;
   before?: HostSnapshot;
+  preparedBefore?: HostSnapshot;
+  trustedActivationCaptured?: boolean;
   after?: HostSnapshot;
   focusPrepared?: boolean;
   identityBeforeClick?: boolean;
@@ -309,6 +322,7 @@ type LiveObservation = {
   providerRejection?: ReturnType<typeof summarizeQuoteProviderRejection>;
   error?: string;
   expectedLifecycleCancellationCount?: number;
+  ownedPageCloseAbortCount?: number;
   controlledProbe?: ControlledProbe;
   actualSiteAcceptance?: Awaited<ReturnType<typeof runActualSiteAcceptance>>;
   sameDocumentPostNavigationAfterClose?: Awaited<
@@ -1294,6 +1308,39 @@ function matchedCspCount(records: Diagnostic[], expected: HostCspFingerprint[] |
   return actual.every((_, index) => assign(index, new Set())) ? actual.length : 0;
 }
 
+function matchedDocumentCspCount(
+  records: Diagnostic[],
+  baselines: Map<string, HostCspFingerprint[]>
+) {
+  const documents = new Map<string, { url: string; records: Diagnostic[] }>();
+  for (const record of records.filter((item) => item.kind === 'console')) {
+    if (!record.documentId || !record.documentUrl || !baselines.has(record.documentUrl)) {
+      return 0;
+    }
+    const document = documents.get(record.documentId);
+    if (document && document.url !== record.documentUrl) {
+      return 0;
+    }
+    if (!document) {
+      if (documents.size >= 8) {
+        return 0;
+      }
+      documents.set(record.documentId, { url: record.documentUrl, records: [record] });
+    } else {
+      document.records.push(record);
+    }
+  }
+  let matched = 0;
+  for (const document of documents.values()) {
+    const expected = baselines.get(document.url);
+    if (!expected || matchedCspCount(document.records, expected) !== document.records.length) {
+      return 0;
+    }
+    matched += document.records.length;
+  }
+  return matched;
+}
+
 function matchesSelectedQueryAbort(
   record: Diagnostic,
   observation: LiveObservation,
@@ -1316,12 +1363,66 @@ function matchesSelectedQueryAbort(
   }
   const owner = observation.gallery.owner;
   if (
-    owner?.status !== 'matched-direct-quote-variant' ||
+    (owner?.status !== 'matched-direct-quote-variant' &&
+      owner?.status !== 'matched-direct-owner-variant') ||
     !owner.ownerId ||
     !owner.mediaId ||
-    !Number.isSafeInteger(owner.mediaIndex)
+    !/^\d{1,40}$/u.test(owner.mediaId) ||
+    typeof owner.mediaIndex !== 'number' ||
+    !Number.isSafeInteger(owner.mediaIndex) ||
+    owner.mediaIndex < 0
   ) {
     return false;
+  }
+  if (owner.status === 'matched-direct-owner-variant') {
+    const mixed = observation.actualSiteVideoNavigation;
+    const selected = identities.selectedVideo.source;
+    const openedPhoto = observation.gallery.opened?.selectedGallery;
+    const openedVideo = observation.gallery.opened?.selectedVideo;
+    const playedVideo = mixed?.selectedVideo;
+    const opened = openedVideo && openedVideo.source;
+    const played = playedVideo && playedVideo.source;
+    const neighbor = mixed?.neighbor;
+    const original = mixed?.original;
+    const returned = mixed?.returned;
+    const requestedId =
+      /^https:\/\/(?:x|twitter)\.com\/[A-Za-z0-9_]{1,15}\/status\/([1-9]\d*)$/u.exec(
+        observation.requestedUrl
+      )?.[1];
+    if (
+      owner.ownerId !== requestedId ||
+      mixed?.entryKind !== 'owned-photo' ||
+      mixed.status !== 'observed' ||
+      observation.requiredAssertions?.mixedVideoNavigation !== true ||
+      observation.requiredAssertions.directStatusVideoOwner !== true ||
+      original?.kind !== 'image' ||
+      original.otherPlayingVideos !== 0 ||
+      !openedPhoto ||
+      openedPhoto.itemIndex !== original.index ||
+      openedPhoto.imageSource.host !== original.source.host ||
+      openedPhoto.imageSource.path !== original.source.path ||
+      neighbor?.kind !== 'video' ||
+      neighbor.index !== owner.mediaIndex ||
+      neighbor.otherPlayingVideos !== 0 ||
+      returned?.kind !== 'image' ||
+      returned.index !== original.index ||
+      returned.otherPlayingVideos !== 0 ||
+      returned.source.host !== original.source.host ||
+      returned.source.path !== original.source.path ||
+      !opened ||
+      opened.host !== selected.host ||
+      opened.path !== selected.path ||
+      !played ||
+      played.host !== selected.host ||
+      played.path !== selected.path ||
+      neighbor.source.host !== selected.host ||
+      neighbor.source.path !== selected.path ||
+      mixed.playback?.control !== 'native-space' ||
+      mixed.playback.progressed !== true ||
+      observation.gallery.playback?.progressed !== true
+    ) {
+      return false;
+    }
   }
   let request: URL;
   try {
@@ -1368,8 +1469,20 @@ function matchesSelectedQueryAbort(
 
 export function classifyLiveHostDiagnostics(
   observation: LiveObservation,
-  proof: { expectedCsp: HostCspFingerprint[]; identities: DiagnosticIdentities } | null = null
+  proof: {
+    expectedCsp: HostCspFingerprint[];
+    identities: DiagnosticIdentities;
+    documentBaselines?: Map<string, HostCspFingerprint[]>;
+  } | null = null
 ) {
+  // Reclassification after page close must not retain an earlier URL match flag.
+  const clearQueryIdentityFlags = () => {
+    for (const record of observation.hostDiagnostics) {
+      delete record.urlIdentitySha256;
+      delete record.queryIdentityMatched;
+    }
+  };
+  clearQueryIdentityFlags();
   const required = observation.requiredAssertions;
   const allRequired =
     required &&
@@ -1388,15 +1501,48 @@ export function classifyLiveHostDiagnostics(
       ? ownedVideoPath(source, mediaId)
       : null;
   const proofEligible = proof !== null && observation.missingAssertions.length === 0;
-  const expectedLifecycleCancellationCount =
-    allRequired && family
+  // This is a bounded association with harness target disposal, not proof of
+  // cancellation causality or an exemption for gallery close under test.
+  const closeAssociated = new Set(
+    allRequired && observation.cleanup?.pageClosed === true
       ? observation.hostDiagnostics.filter((record) => {
+          if (
+            record.ownedPageCloseAssociation !== 'same-inflight-request' ||
+            record.kind !== 'request-failed' ||
+            record.error !== 'net::ERR_ABORTED' ||
+            record.hadCredentials !== false ||
+            record.hadPort !== false ||
+            record.hadFragment !== false ||
+            !record.url
+          ) {
+            return false;
+          }
+          try {
+            return new URL(record.url).protocol === 'https:';
+          } catch {
+            return false;
+          }
+        })
+      : []
+  );
+  const directMixedVideo =
+    owner?.status === 'matched-direct-owner-variant' &&
+    observation.actualSiteVideoNavigation?.status === 'observed';
+  const expectedLifecycleCancellationCount =
+    allRequired && (family || directMixedVideo)
+      ? observation.hostDiagnostics.filter((record) => {
+          if (closeAssociated.has(record)) {
+            return false;
+          }
           if (
             proof &&
             proofEligible &&
             matchesSelectedQueryAbort(record, observation, proof.identities)
           ) {
             return true;
+          }
+          if (!family) {
+            return false;
           }
           if (
             record.kind !== 'request-failed' ||
@@ -1426,16 +1572,24 @@ export function classifyLiveHostDiagnostics(
       : 0;
   const qualifiedCspCount =
     proof && proofEligible && allRequired
-      ? matchedCspCount(observation.hostDiagnostics, proof.expectedCsp)
+      ? proof.documentBaselines
+        ? matchedDocumentCspCount(observation.hostDiagnostics, proof.documentBaselines)
+        : matchedCspCount(observation.hostDiagnostics, proof.expectedCsp)
       : 0;
+  const evidenceStatus =
+    allRequired &&
+    observation.hostDiagnosticOverflow === 0 &&
+    expectedLifecycleCancellationCount + qualifiedCspCount + closeAssociated.size ===
+      observation.hostDiagnostics.length
+      ? 'observed'
+      : 'unverified';
+  if (evidenceStatus !== 'observed') {
+    clearQueryIdentityFlags();
+  }
   return {
     expectedLifecycleCancellationCount,
-    evidenceStatus:
-      allRequired &&
-      observation.hostDiagnosticOverflow === 0 &&
-      expectedLifecycleCancellationCount + qualifiedCspCount === observation.hostDiagnostics.length
-        ? 'observed'
-        : 'unverified',
+    ownedPageCloseAbortCount: closeAssociated.size,
+    evidenceStatus,
     ...(proof ? { qualifiedCspCount } : {}),
   };
 }
@@ -1464,13 +1618,17 @@ function isProductConsoleError(record: ProductDiagnostic) {
   );
 }
 
-function attachDiagnostics(
+export function attachDiagnostics(
   page: Page,
   observation: LiveObservation,
-  identities: DiagnosticIdentities | null = null
+  identities: DiagnosticIdentities | null = null,
+  currentDocument: (() => { id: string; url: string | null } | null) | null = null
 ) {
   const pendingResponses = new Set<Promise<void>>();
-  page.on('console', (message) => {
+  const inFlight = new Set<Request>();
+  let requestTrackingOverflow = false;
+  let closingRequests: Set<Request> | null = null;
+  const onConsole = (message: ConsoleMessage) => {
     if (message.type() !== 'error') {
       return;
     }
@@ -1478,6 +1636,7 @@ function attachDiagnostics(
     const rawScript = message.location().url || 'about:blank';
     const location = sanitizedUrl(rawScript);
     const fingerprint = identities ? fingerprintKnownInlineHandlerCsp(raw, rawScript) : null;
+    const document = currentDocument?.();
     const record = {
       kind: 'console',
       location,
@@ -1490,6 +1649,9 @@ function attachDiagnostics(
             ...(fingerprint.nonceCanonical ? { nonceCanonical: fingerprint.nonceCanonical } : {}),
           }
         : {}),
+      ...(document
+        ? { documentId: document.id, ...(document.url ? { documentUrl: document.url } : {}) }
+        : {}),
     };
     const product = isProductConsoleError(record);
     if (fingerprint) {
@@ -1501,8 +1663,8 @@ function attachDiagnostics(
       observation,
       product ? 'productErrorOverflow' : 'hostDiagnosticOverflow'
     );
-  });
-  page.on('pageerror', (error) => {
+  };
+  const onPageError = (error: Error) => {
     addBounded(
       observation.pageErrors,
       {
@@ -1513,13 +1675,18 @@ function attachDiagnostics(
       observation,
       'pageErrorOverflow'
     );
-  });
-  page.on('request', (request) => {
+  };
+  const onRequest = (request: Request) => {
+    if (inFlight.size < MAX_DIAGNOSTICS * 4) {
+      inFlight.add(request);
+    } else {
+      requestTrackingOverflow = true;
+    }
     if (new URL(request.url()).pathname.endsWith('/TweetResultByRestId')) {
       observation.api.tweetResultByRestId.requests += 1;
     }
-  });
-  page.on('response', (response) => {
+  };
+  const onResponse = (response: Response) => {
     const url = response.url();
     const path = new URL(url).pathname;
     if (path.endsWith('/TweetResultByRestId')) {
@@ -1566,19 +1733,27 @@ function attachDiagnostics(
         'hostDiagnosticOverflow'
       );
     }
-  });
-  page.on('requestfailed', (request) => {
+  };
+  const onRequestFinished = (request: Request) => {
+    inFlight.delete(request);
+    closingRequests?.delete(request);
+  };
+  const onRequestFailed = (request: Request) => {
+    inFlight.delete(request);
     const rawUrl = request.url();
     const url = new URL(rawUrl);
     const fullIdentity = identities ? fullVideoUrlIdentity(rawUrl) : null;
     const record = {
       kind: 'request-failed',
+      ...(closingRequests?.has(request)
+        ? { ownedPageCloseAssociation: 'same-inflight-request' as const }
+        : {}),
       error: sanitizedText(request.failure()?.errorText ?? 'unknown', 200),
       url: sanitizedUrl(rawUrl),
       hadQuery: Boolean(url.search || url.hash),
       hadCredentials: Boolean(url.username || url.password),
       hadPort: hasExplicitUrlPort(rawUrl),
-      ...(identities ? { hadFragment: Boolean(url.hash) } : {}),
+      hadFragment: Boolean(url.hash),
     };
     const product = record.url.startsWith('chrome-extension:');
     if (identities && !product && fullIdentity?.hadQuery) {
@@ -1597,10 +1772,33 @@ function attachDiagnostics(
       observation,
       product ? 'productErrorOverflow' : 'hostDiagnosticOverflow'
     );
-  });
-  return async () => {
-    await Promise.allSettled([...pendingResponses]);
   };
+  page.on('console', onConsole);
+  page.on('pageerror', onPageError);
+  page.on('request', onRequest);
+  page.on('response', onResponse);
+  page.on('requestfinished', onRequestFinished);
+  page.on('requestfailed', onRequestFailed);
+  return Object.assign(
+    async () => {
+      await Promise.allSettled([...pendingResponses]);
+    },
+    {
+      beginOwnedPageClose() {
+        closingRequests = requestTrackingOverflow ? null : new Set(inFlight);
+      },
+      seal() {
+        page.off('console', onConsole);
+        page.off('pageerror', onPageError);
+        page.off('request', onRequest);
+        page.off('response', onResponse);
+        page.off('requestfinished', onRequestFinished);
+        page.off('requestfailed', onRequestFailed);
+        inFlight.clear();
+        closingRequests?.clear();
+      },
+    }
+  );
 }
 
 async function hostSnapshot(page: Page): Promise<HostSnapshot> {
@@ -2195,6 +2393,112 @@ function photoIndexFromActionPath(path: string) {
   return value;
 }
 
+export function canonicalOwnedPhotoPath(
+  api: ApiEvidence,
+  ownerId: string,
+  photoIndex: number | null,
+  source: Source
+): string | null {
+  if (
+    !Number.isSafeInteger(photoIndex) ||
+    photoIndex === null ||
+    photoIndex < 1 ||
+    photoIndex > 4 ||
+    source.host !== 'pbs.twimg.com' ||
+    api.overflow !== 0
+  ) {
+    return null;
+  }
+  const paths = new Set<string>();
+  for (const observation of api.observations) {
+    if (
+      observation.operation !== 'TweetResultByRestId' ||
+      observation.bodyOutcome !== 'parsed' ||
+      observation.httpStatus !== 200 ||
+      observation.providerErrors ||
+      observation.requestedTweetId !== ownerId ||
+      observation.result?.id !== ownerId
+    ) {
+      continue;
+    }
+    const media = observation.result.media[photoIndex - 1];
+    const path = media?.poster?.path;
+    if (media?.type !== 'photo' || media.poster?.host !== source.host || !path) {
+      return null;
+    }
+    const formatSuffix = path.slice(source.path.length);
+    if (
+      path !== source.path &&
+      (!source.path.startsWith('/media/') ||
+        /\.(?:jpe?g|png|webp|gif)$/iu.test(source.path) ||
+        !/^\.(?:jpe?g|png|webp|gif)$/iu.test(formatSuffix))
+    ) {
+      return null;
+    }
+    paths.add(path);
+  }
+  return paths.size === 1 ? ([...paths][0] ?? null) : null;
+}
+
+export function ownedMixedPhotoVideo(
+  api: ApiEvidence,
+  ownerId: string,
+  photoIndex: number | null,
+  selectedPhoto: Source
+): { mediaId: string; mediaIndex: number; variants: Source[] } | null {
+  if (
+    api.overflow !== 0 ||
+    !Number.isSafeInteger(photoIndex) ||
+    photoIndex === null ||
+    photoIndex < 1 ||
+    photoIndex > 2 ||
+    selectedPhoto.host !== 'pbs.twimg.com'
+  ) {
+    return null;
+  }
+  const candidates = new Map<string, { mediaId: string; mediaIndex: number; variants: Source[] }>();
+  for (const observation of api.observations) {
+    if (
+      observation.operation !== 'TweetResultByRestId' ||
+      observation.bodyOutcome !== 'parsed' ||
+      observation.requestedTweetId !== ownerId ||
+      observation.httpStatus !== 200 ||
+      observation.providerErrors ||
+      observation.result?.id !== ownerId ||
+      observation.directQuote ||
+      observation.result.media.length !== 2
+    ) {
+      continue;
+    }
+    const photo = observation.result.media[photoIndex - 1];
+    const mediaIndex = photoIndex === 1 ? 1 : 0;
+    const video = observation.result.media[mediaIndex];
+    if (
+      photo?.type !== 'photo' ||
+      photo.poster?.host !== selectedPhoto.host ||
+      photo.poster.path !== selectedPhoto.path ||
+      video?.type !== 'video' ||
+      !video.id ||
+      !/^\d{1,40}$/u.test(video.id)
+    ) {
+      return null;
+    }
+    const mediaId = video.id;
+    const variants = video.playableVariants.filter(
+      (variant): variant is Source => !!variant && ownedVideoPath(variant, mediaId) !== null
+    );
+    if (variants.length === 0) {
+      return null;
+    }
+    candidates.set(JSON.stringify([mediaIndex, mediaId, variants]), {
+      mediaId,
+      mediaIndex,
+      variants,
+    });
+  }
+  return candidates.size === 1 ? ([...candidates.values()][0] ?? null) : null;
+}
+
 async function observeNativePreviewPhoto(
   page: Page,
   observation: LiveObservation,
@@ -2382,6 +2686,52 @@ export async function closeObservedLivePage(page: Pick<Page, 'close'>, strict: b
   }
 }
 
+export async function finishObservedLivePage(
+  page: Pick<Page, 'close'>,
+  strict: boolean,
+  observation: LiveObservation,
+  diagnostics: ReturnType<typeof attachDiagnostics>,
+  proof: Parameters<typeof classifyLiveHostDiagnostics>[1],
+  receiptHandle: FileHandle | null
+) {
+  try {
+    if (strict) {
+      diagnostics.beginOwnedPageClose();
+    }
+    await closeObservedLivePage(page, strict);
+    if (strict) {
+      observation.cleanup = { pageClosed: true };
+    }
+  } catch (error) {
+    const message = `Task-owned live page close failed: ${safeError(error)}`;
+    observation.cleanup = { pageClosed: false, pageCloseError: message };
+    observation.status = 'failed';
+    observation.evidenceStatus = 'unverified';
+    observation.error = observation.error ? `${observation.error}; ${message}` : message;
+  } finally {
+    try {
+      await diagnostics();
+    } finally {
+      diagnostics.seal();
+    }
+    if (observation.status === 'core-flow-observed') {
+      if (observation.target?.kind === 'native-preview-photo') {
+        refreshNativePreviewObservation(observation);
+      } else if (refreshQuotedVideoErrorAssertions(observation).length) {
+        observation.status = 'failed';
+        observation.evidenceStatus = 'unverified';
+        observation.error = `Missing final live assertions: ${observation.missingAssertions.join(', ')}`;
+      }
+      if (observation.status === 'core-flow-observed') {
+        Object.assign(observation, classifyLiveHostDiagnostics(observation, proof));
+      }
+    }
+    if (receiptHandle) {
+      await writeOpenLiveReceipt(receiptHandle, observation);
+    }
+  }
+}
+
 async function observeOne(
   context: BrowserContext,
   extensionId: string,
@@ -2397,7 +2747,8 @@ async function observeOne(
     navigationUrl: string | null;
     runMultiImage: boolean;
   } | null = null,
-  strictPageClose = false
+  strictPageClose = false,
+  documentBaselines: Map<string, HostCspFingerprint[]> | null = null
 ) {
   const identity = targetIdentity(targetUrl);
   const page = await context.newPage();
@@ -2455,11 +2806,45 @@ async function observeOne(
         observation.extension.videoClickModeSource = borrowedMode.source;
       }
     : null;
-  const settleApi = attachDiagnostics(page, observation, identities);
+  let documentSession: CDPSession | null = null;
+  let currentDocument: { id: string; url: string | null } | null = null;
+  const seenDocumentIds = new Set<string>();
+  const settleApi = attachDiagnostics(
+    page,
+    observation,
+    identities,
+    documentBaselines ? () => currentDocument : null
+  );
   let actionHandle: ElementHandle<SVGElement | HTMLElement> | null | undefined;
   let imageHandle: ElementHandle<HTMLImageElement> | null = null;
   let imageOwnerHandle: ElementHandle<HTMLElement> | null = null;
+  let imageActivationHandle: JSHandle<
+    ReturnType<typeof captureLiveImageActivationDocument>
+  > | null = null;
   try {
+    if (documentBaselines) {
+      documentSession = await context.newCDPSession(page);
+      documentSession.on(
+        'Page.frameNavigated',
+        (event: { frame: { parentId?: string; loaderId?: string; url: string } }) => {
+          const { frame } = event;
+          if (frame.parentId || !frame.loaderId || seenDocumentIds.has(frame.loaderId)) {
+            return;
+          }
+          if (seenDocumentIds.size >= 8) {
+            observation.hostDiagnosticOverflow += 1;
+            currentDocument = null;
+            return;
+          }
+          seenDocumentIds.add(frame.loaderId);
+          currentDocument = {
+            id: frame.loaderId,
+            url: documentBaselines.has(frame.url) ? frame.url : null,
+          };
+        }
+      );
+      await documentSession.send('Page.enable');
+    }
     const response = await page.goto(targetUrl, {
       waitUntil: 'domcontentloaded',
       timeout: NAVIGATION_TIMEOUT_MS,
@@ -2498,7 +2883,6 @@ async function observeOne(
       readiness.target.kind === 'quoted-video' &&
       readiness.target.quoteBoundary === 'unmarked-candidate' &&
       readiness.target.quoteStatusIds.length === 0;
-    const mixedVideoTarget = mixedPhotoEntry ? readiness.target : null;
     const photoReadiness = mixedPhotoEntry
       ? await page.evaluate(inspectLiveTargetDocument, { ...identity, preferOwnedPhoto: true })
       : false;
@@ -2506,7 +2890,6 @@ async function observeOne(
       photoReadiness && photoReadiness.state === 'ready' && photoReadiness.target.kind === 'image'
         ? photoReadiness.target
         : readiness.target;
-    const enteredMixedViaPhoto = mixedPhotoEntry && observation.target.kind === 'image';
     observation.targetCandidates = await page
       .evaluate(inspectLiveCandidateDocument, identity)
       .catch(() => null);
@@ -2683,7 +3066,8 @@ async function observeOne(
       });
     }
     await actionHandle.focus();
-    const before = await hostSnapshot(page);
+    const preparedBefore = await hostSnapshot(page);
+    let before = preparedBefore;
     const focusPrepared = await actionHandle.evaluate(
       (element) => document.activeElement === element
     );
@@ -2765,18 +3149,52 @@ async function observeOne(
 
     await recordHostGeometry('before-click');
     await verifyBorrowedMode?.();
+    if (!compactQuote) {
+      imageActivationHandle = await actionHandle.evaluateHandle(
+        captureLiveImageActivationDocument,
+        {
+          image,
+          owner: imageOwnerHandle,
+          actionPath: actionIdentity.actionPath,
+          source: observation.target.imageSource,
+        }
+      );
+    }
     await actionHandle.click({ timeout: ACTION_TIMEOUT_MS });
+    if (imageActivationHandle) {
+      const activation = await imageActivationHandle.evaluate((capture) => ({
+        before: capture.before,
+        captured: capture.captured,
+      }));
+      observation.gallery.trustedActivationCaptured = activation.captured;
+      if (!activation.captured || !activation.before) {
+        throw new Error('Trusted live image activation was not captured before gallery lock');
+      }
+      before = activation.before;
+      observation.gallery.preparedBefore = preparedBefore;
+      observation.gallery.before = before;
+    }
     const gallery = page.locator('[data-xeg-gallery-container]');
     await gallery.waitFor({ state: 'visible', timeout: ACTION_TIMEOUT_MS });
     const galleryItemCount = await gallery.locator('[data-gallery-element="item"]').count();
     const eligibleImageGalleryCount = await gallery.evaluate(eligibleLiveImageGalleryCountDocument);
     await recordHostGeometry('opened');
+    await settleApi();
+    const canonicalPhotoPath = compactQuote
+      ? null
+      : canonicalOwnedPhotoPath(
+          observation.api,
+          identity.statusId,
+          selectedPhotoIndex,
+          observation.target.imageSource
+        );
     const selectedGalleryHandle = await page
       .waitForFunction(
         inspectSelectedGalleryDocument,
         {
           expectedIndex: selectedPhotoIndex,
           expectedPath: observation.target.imageSource.path,
+          canonicalPhotoPath,
           allowPhotoFormatVariant: compactQuote,
         },
         {
@@ -2792,29 +3210,88 @@ async function observeOne(
       selectedGallery,
       role: await gallery.getAttribute('role'),
     };
+    const mixedProviderVideo =
+      actualSiteAcceptance && !compactQuote && selectedGallery
+        ? ownedMixedPhotoVideo(
+            observation.api,
+            identity.statusId,
+            selectedPhotoIndex,
+            selectedGallery.imageSource
+          )
+        : null;
+    const mixedGalleryVideoIndex =
+      mixedProviderVideo && selectedGallery
+        ? await gallery.evaluate((root, selectedIndex) => {
+            const items = [...root.querySelectorAll('[data-gallery-element="item"]')];
+            const videoIndex = selectedIndex === 0 ? 1 : 0;
+            const item = items[videoIndex];
+            return items.length === 2 &&
+              item?.getAttribute('data-index') === String(videoIndex) &&
+              item.querySelectorAll('video').length === 1 &&
+              item.querySelectorAll('img').length === 0
+              ? videoIndex
+              : null;
+          }, selectedGallery.itemIndex)
+        : null;
+    const enteredMixedViaPhoto =
+      mixedProviderVideo !== null && mixedGalleryVideoIndex === mixedProviderVideo.mediaIndex;
     observation.screenshots.open = await captureScreenshot(
       page,
       output,
       `live-page-${index}-gallery.png`
     );
 
-    if (enteredMixedViaPhoto && mixedVideoTarget?.kind === 'quoted-video') {
+    if (enteredMixedViaPhoto && mixedProviderVideo) {
       observation.actualSiteVideoNavigation = await observeActualSiteVideoNavigation(
         page,
-        'owned-photo'
+        'owned-photo',
+        async (video) => {
+          const full = fullVideoUrlIdentity(
+            await page.evaluate(readSelectedCurrentVideoUrlDocument, video.index)
+          );
+          if (
+            !full ||
+            full.source.host !== video.source?.host ||
+            full.source.path !== video.source.path
+          ) {
+            throw new Error('Played mixed-gallery video lost its exact source identity');
+          }
+          if (identities) {
+            identities.selectedVideo = { source: full.source, rawUrl: full.rawUrl };
+          }
+        }
       );
       if (observation.actualSiteVideoNavigation.status !== 'observed') {
         throw new Error(
           `Actual-site photo-to-video navigation was unverified: ${observation.actualSiteVideoNavigation.error ?? 'unknown'}`
         );
       }
+      const opened = observation.gallery.opened;
+      const selectedVideo = observation.actualSiteVideoNavigation.selectedVideo;
+      const playback = observation.actualSiteVideoNavigation.playback;
+      if (!opened || !selectedVideo || !playback) {
+        throw new Error('Observed mixed-gallery video evidence was incomplete');
+      }
+      opened.selectedVideo = selectedVideo;
+      observation.gallery.playback = {
+        startTime: playback.startTime,
+        endTime: playback.endTime,
+        progressed: playback.progressed,
+      };
       await settleApi();
-      observation.gallery.owner = directOwnerForSource(
-        observation.api.observations,
-        identity.statusId,
-        observation.actualSiteVideoNavigation.neighbor?.source,
-        mixedVideoTarget
-      );
+      const neighbor = observation.actualSiteVideoNavigation.neighbor?.source;
+      observation.gallery.owner =
+        neighbor &&
+        mixedProviderVideo.variants.some(
+          (variant) => variant.host === neighbor.host && variant.path === neighbor.path
+        )
+          ? {
+              status: 'matched-direct-owner-variant',
+              ownerId: identity.statusId,
+              mediaId: mixedProviderVideo.mediaId,
+              mediaIndex: mixedProviderVideo.mediaIndex,
+            }
+          : { status: 'no-direct-owner-variant', ownerId: null, mediaId: null };
     }
 
     await recordHostGeometry('before-Escape');
@@ -2895,7 +3372,7 @@ async function observeOne(
         : {}),
       escapeClosed: detached,
       exactFocusRestored: focusRestored,
-      nonzeroScrollPrepared: before.scrollY > 0,
+      nonzeroScrollPrepared: preparedBefore.scrollY > 0 && before.scrollY > 0,
       scrollRestored: after.scrollY === before.scrollY,
       scrollRestorationRestored: after.scrollRestoration === before.scrollRestoration,
       bodyStylesRestored: JSON.stringify(after.bodyStyle) === JSON.stringify(before.bodyStyle),
@@ -3027,7 +3504,9 @@ async function observeOne(
           observation,
           classifyLiveHostDiagnostics(
             observation,
-            expectedCsp && identities ? { expectedCsp, identities } : null
+            expectedCsp && identities
+              ? { expectedCsp, identities, ...(documentBaselines ? { documentBaselines } : {}) }
+              : null
           )
         );
       }
@@ -3046,11 +3525,19 @@ async function observeOne(
     ) {
       Object.assign(
         observation,
-        classifyLiveHostDiagnostics(observation, { expectedCsp, identities })
+        classifyLiveHostDiagnostics(observation, {
+          expectedCsp,
+          identities,
+          ...(documentBaselines ? { documentBaselines } : {}),
+        })
       );
     }
     if (actionHandle) {
       await actionHandle.dispose().catch(() => {});
+    }
+    if (imageActivationHandle) {
+      await imageActivationHandle.evaluate((capture) => capture.dispose()).catch(() => {});
+      await imageActivationHandle.dispose().catch(() => {});
     }
     if (imageHandle) {
       await imageHandle.dispose().catch(() => {});
@@ -3066,25 +3553,21 @@ async function observeOne(
     } finally {
       try {
         const requireClose = borrowedExtensionPage !== null || strictPageClose;
-        try {
-          await closeObservedLivePage(page, requireClose);
-          if (requireClose) {
-            observation.cleanup = { pageClosed: true };
-          }
-        } catch (error) {
-          const message = `Task-owned live page close failed: ${safeError(error)}`;
-          observation.cleanup = { pageClosed: false, pageCloseError: message };
-          observation.status = 'failed';
-          observation.evidenceStatus = 'unverified';
-          observation.error = observation.error ? `${observation.error}; ${message}` : message;
-        }
-        if (requireClose && receiptHandle) {
-          await writeOpenLiveReceipt(receiptHandle, observation);
-        }
+        await finishObservedLivePage(
+          page,
+          requireClose,
+          observation,
+          settleApi,
+          expectedCsp && identities
+            ? { expectedCsp, identities, ...(documentBaselines ? { documentBaselines } : {}) }
+            : null,
+          receiptHandle
+        );
       } finally {
         try {
           await receiptHandle?.close();
         } finally {
+          await documentSession?.detach().catch(() => {});
           if (identities) {
             identities.selectedVideo = null;
             identities.apiVariants.length = 0;
@@ -3457,7 +3940,8 @@ export async function observeLiveUrls({
               ),
             }
           : null,
-        session === 'borrowed-browser-owned-extension'
+        session === 'borrowed-browser-owned-extension',
+        session === 'borrowed-browser-owned-extension' ? baselineByUrl : null
       );
       if (
         session === 'borrowed' &&
