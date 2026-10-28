@@ -463,6 +463,78 @@ describe('Windows X live page DOM validation', () => {
     }
   });
 
+  it('uses only a real preceding same-author status anchor for SPA evidence', () => {
+    document.body.innerHTML = `
+      <article><a id="parent" href="https://x.com/NASA/status/2040059740848283920">Parent</a></article>
+      <article><a href="https://x.com/NASA/status/2040059770237849635">Requested</a>
+        <img id="requested" src="https://pbs.twimg.com/media/HE-_ijrXYAA_Wiq"></article>`;
+    const image = document.querySelector<HTMLImageElement>('#requested');
+    const parent = document.querySelector<HTMLAnchorElement>('#parent');
+    if (!image || !parent) {
+      throw new Error('SPA status-link fixture is incomplete');
+    }
+    const argument = {
+      identity: { handle: 'NASA', statusId: '2040059770237849635' },
+      host: 'x.com',
+    };
+    expect(livePage.findPrecedingLiveStatusAnchorDocument(image, argument)).toBe(parent);
+    parent.href = 'https://x.com/other/status/2040059740848283920';
+    expect(livePage.findPrecedingLiveStatusAnchorDocument(image, argument)).toBeNull();
+    parent.href = 'https://x.com/NASA/status/2040059740848283920?context=unsafe';
+    expect(livePage.findPrecedingLiveStatusAnchorDocument(image, argument)).toBeNull();
+  });
+
+  it('reads mixed gallery selected and focused media without treating a hidden playing video as selected', () => {
+    document.body.innerHTML = `
+      <div data-xeg-gallery-container>
+        <div data-gallery-element="toolbar" data-current-index="1" data-focused-index="1">
+          <span id="xeg-toolbar-counter" data-gallery-element="position" data-position="2"
+            data-total="2" data-current-index="1" data-focused-index="1"></span>
+        </div>
+        <div data-gallery-element="item" data-index="0" data-media-loaded="true">
+          <img id="photo" src="https://pbs.twimg.com/media/mixed-photo"></div>
+        <div data-gallery-element="item" data-index="1" data-media-loaded="true">
+          <video id="video" src="https://video.twimg.com/ext_tw_video/mixed.mp4"></video></div>
+      </div>`;
+    const video = document.querySelector<HTMLVideoElement>('#video');
+    const photo = document.querySelector<HTMLImageElement>('#photo');
+    const toolbar = document.querySelector('[data-gallery-element="toolbar"]');
+    const counter = document.querySelector('#xeg-toolbar-counter');
+    if (!video || !photo || !toolbar || !counter) {
+      throw new Error('Mixed gallery fixture is incomplete');
+    }
+    Object.defineProperties(video, {
+      readyState: { configurable: true, value: 2 },
+      paused: { configurable: true, value: false },
+    });
+    Object.defineProperties(photo, {
+      complete: { configurable: true, value: true },
+      naturalWidth: { configurable: true, value: 20 },
+    });
+    expect(livePage.inspectLiveMixedGallerySelectionDocument()).toMatchObject({
+      index: 1,
+      kind: 'video',
+      source: { path: '/ext_tw_video/mixed.mp4' },
+      otherPlayingVideos: 0,
+    });
+    toolbar.setAttribute('data-current-index', '0');
+    toolbar.setAttribute('data-focused-index', '0');
+    counter.setAttribute('data-position', '1');
+    counter.setAttribute('data-current-index', '0');
+    counter.setAttribute('data-focused-index', '0');
+    expect(livePage.inspectLiveMixedGallerySelectionDocument()).toMatchObject({
+      index: 0,
+      kind: 'image',
+      otherPlayingVideos: 1,
+    });
+    Object.defineProperty(video, 'paused', { configurable: true, value: true });
+    expect(livePage.inspectLiveMixedGallerySelectionDocument()).toMatchObject({
+      index: 0,
+      kind: 'image',
+      otherPlayingVideos: 0,
+    });
+  });
+
   it.each(['', '/photo/1'])(
     'recognizes only the bounded A > B > C compact photo with its same-owner %s overlay',
     async (photoSuffix) => {

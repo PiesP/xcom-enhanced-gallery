@@ -10,8 +10,11 @@ import type { BrowserContext, ElementHandle, Page } from '@playwright/test';
 import { verifyStoredZip } from './download-memory.ts';
 import {
   inspectHitTestedAction,
+  inspectLiveMixedGallerySelectionDocument,
   inspectLiveTargetDocument,
+  inspectSelectedGalleryVideoDocument,
   isBoundLiveImageOwnerDocument,
+  findPrecedingLiveStatusAnchorDocument,
   resolveLiveImageActionDocument,
   resolveLiveImageDocument,
 } from './live-page-document.ts';
@@ -54,6 +57,184 @@ type Selection = {
   focusedIndex: number;
   path: string;
 };
+
+export async function observeActualSiteVideoNavigation(page: Page) {
+  const receipt: {
+    status: 'observed' | 'unverified' | 'failed';
+    original?: NonNullable<ReturnType<typeof inspectLiveMixedGallerySelectionDocument>>;
+    neighbor?: NonNullable<ReturnType<typeof inspectLiveMixedGallerySelectionDocument>>;
+    returned?: NonNullable<ReturnType<typeof inspectLiveMixedGallerySelectionDocument>>;
+    error?: string;
+  } = { status: 'unverified' };
+  const selectedVideo = await page.evaluate(inspectSelectedGalleryVideoDocument);
+  if (!selectedVideo || selectedVideo.total < 2) {
+    receipt.error = 'Selected live video has fewer than two gallery items';
+    return receipt;
+  }
+  try {
+    const original = await page.evaluate(inspectLiveMixedGallerySelectionDocument);
+    assert(
+      original?.kind === 'video' && original.otherPlayingVideos === 0,
+      'Original video selection or other-player state is unavailable'
+    );
+    receipt.original = original;
+    const forward = original.index < original.total - 1;
+    const neighborIndex = original.index + (forward ? 1 : -1);
+    const toolbar = page.locator('[data-xeg-gallery-container] [data-gallery-element="toolbar"]');
+    await toolbar.locator(`button[aria-label="${forward ? 'Next' : 'Previous'}"]`).click();
+    await page.waitForFunction(
+      (index) =>
+        document
+          .querySelector('[data-xeg-gallery-container] [data-gallery-element="toolbar"]')
+          ?.getAttribute('data-current-index') === String(index),
+      neighborIndex,
+      { timeout: 10_000 }
+    );
+    let neighbor = await page.evaluate(inspectLiveMixedGallerySelectionDocument);
+    const deadline = Date.now() + 10_000;
+    while ((!neighbor || neighbor.index !== neighborIndex) && Date.now() < deadline) {
+      await new Promise((done) => setTimeout(done, 100));
+      neighbor = await page.evaluate(inspectLiveMixedGallerySelectionDocument);
+    }
+    assert(
+      neighbor && neighbor.index === neighborIndex && neighbor.otherPlayingVideos === 0,
+      'Neighbor media selection or paused prior player was not observed'
+    );
+    assert.notEqual(
+      neighbor.source.path,
+      original.source.path,
+      'Video navigation retained the same media source'
+    );
+    receipt.neighbor = neighbor;
+    await toolbar.locator(`button[aria-label="${forward ? 'Previous' : 'Next'}"]`).click();
+    await page.waitForFunction(
+      (index) =>
+        document
+          .querySelector('[data-xeg-gallery-container] [data-gallery-element="toolbar"]')
+          ?.getAttribute('data-current-index') === String(index),
+      original.index,
+      { timeout: 10_000 }
+    );
+    let returned = await page.evaluate(inspectLiveMixedGallerySelectionDocument);
+    const returnDeadline = Date.now() + 10_000;
+    while ((!returned || returned.index !== original.index) && Date.now() < returnDeadline) {
+      await new Promise((done) => setTimeout(done, 100));
+      returned = await page.evaluate(inspectLiveMixedGallerySelectionDocument);
+    }
+    assert(
+      returned?.kind === 'video' &&
+        returned.otherPlayingVideos === 0 &&
+        returned.source.host === original.source.host &&
+        returned.source.path === original.source.path,
+      'Video navigation did not restore the owned current player'
+    );
+    receipt.returned = returned;
+    receipt.status = 'observed';
+  } catch (error) {
+    receipt.status = 'failed';
+    receipt.error = safeError(error);
+  }
+  return receipt;
+}
+
+export async function observeActualSiteSpaNavigation({
+  page,
+  image,
+  targetUrl,
+}: {
+  page: Page;
+  image: ElementHandle<HTMLImageElement>;
+  targetUrl: string;
+}) {
+  const identity = identityFromUrl(targetUrl);
+  const receipt: {
+    status: 'observed' | 'unverified' | 'failed';
+    reason?: string;
+    anchorPath?: string;
+    before?: {
+      timeOrigin: number;
+      bodyStyle: string;
+      scrollRestoration: string;
+      galleryCount: number;
+    };
+    after?: {
+      timeOrigin: number;
+      bodyStyle: string;
+      scrollRestoration: string;
+      galleryCount: number;
+    };
+    sameDocument?: boolean;
+  } = { status: 'unverified' };
+  const anchorRef = await image.evaluateHandle(findPrecedingLiveStatusAnchorDocument, {
+    identity,
+    host: new URL(page.url()).hostname,
+  });
+  const anchor = anchorRef.asElement() as ElementHandle<HTMLAnchorElement> | null;
+  if (!anchor) {
+    await anchorRef.dispose();
+    receipt.reason = 'No existing preceding same-author status anchor was available';
+    return receipt;
+  }
+  try {
+    await anchor.scrollIntoViewIfNeeded({ timeout: 10_000 });
+    const path = await anchor.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      const x = Math.max(0, Math.min(innerWidth - 1, rect.left + rect.width / 2));
+      const y = Math.max(0, Math.min(innerHeight - 1, rect.top + rect.height / 2));
+      const hit = document
+        .elementsFromPoint(x, y)
+        .find((candidate) => candidate.closest('a[href]'));
+      return hit?.closest('a[href]') === element ? new URL(element.href).pathname : null;
+    });
+    if (!path) {
+      receipt.reason = 'Existing status anchor was not the top hit target';
+      return receipt;
+    }
+    receipt.anchorPath = path;
+    const snapshot = () =>
+      page.evaluate(() => ({
+        timeOrigin: performance.timeOrigin,
+        bodyStyle: document.body.style.cssText,
+        scrollRestoration: history.scrollRestoration,
+        galleryCount: document.querySelectorAll('[data-xeg-gallery-container]').length,
+      }));
+    receipt.before = await snapshot();
+    assert.equal(
+      receipt.before.galleryCount,
+      0,
+      'Old gallery was open at host navigation boundary'
+    );
+    await anchor.click({ timeout: 10_000 });
+    await page.waitForURL((url) => url.pathname === path, { timeout: 15_000 });
+    await page
+      .locator('html[data-xeg-gallery-ready="true"]')
+      .waitFor({ state: 'attached', timeout: 20_000 });
+    receipt.after = await snapshot();
+    receipt.sameDocument = receipt.after.timeOrigin === receipt.before.timeOrigin;
+    if (!receipt.sameDocument) {
+      receipt.reason = 'Existing status anchor performed a full-document navigation';
+      return receipt;
+    }
+    assert.equal(receipt.after.galleryCount, 0, 'Gallery survived same-document X navigation');
+    assert.equal(
+      receipt.after.bodyStyle,
+      receipt.before.bodyStyle,
+      'Gallery body style survived same-document X navigation'
+    );
+    assert.equal(
+      receipt.after.scrollRestoration,
+      receipt.before.scrollRestoration,
+      'Gallery scroll policy survived same-document X navigation'
+    );
+    receipt.status = 'observed';
+  } catch (error) {
+    receipt.status = 'failed';
+    receipt.reason = safeError(error);
+  } finally {
+    await anchor.dispose();
+  }
+  return receipt;
+}
 
 export function parseActualSiteAcceptanceSelector(
   text: string | null,
@@ -202,7 +383,29 @@ async function preflightSources(page: Page, sources: readonly string[], selected
     projected + 1_048_576 <= MAX_RETAINED_BYTES,
     'Declared single and ZIP media exceed retained-file budget'
   );
-  return lengths;
+  const originals: Array<{ bytes: number; sha256: string }> = [];
+  for (let index = 0; index < sources.length; index += 1) {
+    const source = sources[index];
+    assert(source, 'Admitted public image source disappeared');
+    const response = await page.request.get(source, { timeout: 20_000, maxRedirects: 3 });
+    try {
+      assert(response.ok(), 'Public original GET preflight failed');
+      const declared = response.headers()['content-length'];
+      assert.equal(Number(declared), lengths[index], 'Public original GET size differs from HEAD');
+      const bytes = await response.body();
+      assert(
+        bytes.length > 0 && bytes.length <= MAX_FILE_BYTES && bytes.length === lengths[index],
+        'Public original GET exceeded its declared media bound'
+      );
+      originals.push({
+        bytes: bytes.length,
+        sha256: createHash('sha256').update(bytes).digest('hex'),
+      });
+    } finally {
+      await response.dispose();
+    }
+  }
+  return originals;
 }
 
 async function queryDownloads(extensionPage: Page): Promise<DownloadItem[]> {
@@ -340,6 +543,39 @@ export function inspectLiveStoredZip(bytes: Buffer, expectedCount: number) {
   }
   assert.equal(entries.length, expectedCount, 'ZIP media item count differs');
   return verifyStoredZip(bytes, entries);
+}
+
+export function verifyLiveArchiveSources(
+  archive: ReturnType<typeof inspectLiveStoredZip>,
+  originals: readonly { bytes: number; sha256: string }[],
+  single: Buffer,
+  selectedIndex: number
+): void {
+  assert.equal(archive.entries.length, originals.length, 'ZIP source count differs');
+  assert(
+    originals.length >= 2 && originals.length <= MAX_MEDIA,
+    'Public source set is out of bounds'
+  );
+  assert(
+    Number.isSafeInteger(selectedIndex) && selectedIndex >= 0 && selectedIndex < originals.length
+  );
+  assert.equal(
+    createHash('sha256').update(single).digest('hex'),
+    originals[selectedIndex]?.sha256,
+    'Native single bytes differ from the independent public original'
+  );
+  for (let index = 0; index < originals.length; index += 1) {
+    assert.equal(
+      archive.entries[index]?.bytes,
+      originals[index]?.bytes,
+      `ZIP item ${index} size differs from its public original`
+    );
+    assert.equal(
+      archive.entries[index]?.sha256,
+      originals[index]?.sha256,
+      `ZIP item ${index} bytes differ from its public original`
+    );
+  }
 }
 
 async function openCurrentStatusImage(page: Page, targetUrl: string): Promise<void> {
@@ -489,10 +725,10 @@ export async function runActualSiteAcceptance({
     receipt.steps.navigation = { first, second, returned };
 
     const sources = await gallerySources(page);
-    const declaredBytes = await preflightSources(page, sources, 0);
+    const originals = await preflightSources(page, sources, 0);
     receipt.steps.preflight = {
       mediaPaths: sources.map((value) => new URL(value).pathname),
-      declaredBytes,
+      originals,
       limits: { perFile: MAX_FILE_BYTES, retainedTotal: MAX_RETAINED_BYTES },
     };
     const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
@@ -532,8 +768,8 @@ export async function runActualSiteAcceptance({
     const singleBytes = await readOwnedFile(single, downloads, MAX_FILE_BYTES);
     assert.equal(
       singleBytes.length,
-      declaredBytes[0],
-      'Native single bytes differ from HEAD declaration'
+      originals[0]?.bytes,
+      'Native single size differs from original'
     );
     assert.equal(
       single.bytesReceived,
@@ -567,16 +803,7 @@ export async function runActualSiteAcceptance({
     const zipBytes = await readOwnedFile(zip, downloads, MAX_RETAINED_BYTES - singleBytes.length);
     const contents = inspectLiveStoredZip(zipBytes, sources.length);
     assert.equal(zip.bytesReceived, zipBytes.length, 'Native ZIP completion byte count differs');
-    assert(
-      contents.entries.every((entry, itemIndex) => entry.bytes === declaredBytes[itemIndex]),
-      'ZIP media sizes differ from bounded public source declarations'
-    );
-    assert(
-      contents.entries.some(
-        (entry) => entry.sha256 === createHash('sha256').update(singleBytes).digest('hex')
-      ),
-      'ZIP does not contain the selected single image bytes'
-    );
+    verifyLiveArchiveSources(contents, originals, singleBytes, 0);
     receipt.steps.zip = {
       nativeId: zip.id,
       state: zip.state,
@@ -653,6 +880,7 @@ export async function runActualSiteAcceptance({
     await restored.locator('#settings-theme-select').waitFor({ state: 'hidden', timeout: 5_000 });
     await page.keyboard.press('Escape');
     await restored.waitFor({ state: 'detached', timeout: 10_000 });
+    const beforeFullDocumentTimeOrigin = await page.evaluate(() => performance.timeOrigin);
     const navigationResponse = await page.goto(navigationUrl, {
       waitUntil: 'domcontentloaded',
       timeout: 30_000,
@@ -671,9 +899,16 @@ export async function runActualSiteAcceptance({
       new URL(navigationUrl).pathname,
       'X status navigation reached another path'
     );
-    receipt.steps.statusNavigation = {
+    const afterFullDocumentTimeOrigin = await page.evaluate(() => performance.timeOrigin);
+    assert.notEqual(
+      afterFullDocumentTimeOrigin,
+      beforeFullDocumentTimeOrigin,
+      'Explicit status navigation did not create a new document'
+    );
+    receipt.steps.fullDocumentNavigation = {
       from: new URL(targetUrl).pathname,
       to: new URL(navigationUrl).pathname,
+      newDocument: true,
       galleryDetached: true,
       extensionReady: true,
     };

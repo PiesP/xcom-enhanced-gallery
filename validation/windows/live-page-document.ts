@@ -164,6 +164,44 @@ export function isBoundLiveImageOwnerDocument(image: HTMLImageElement, owner: El
   return image.isConnected && owner.isConnected && image.closest('article') === owner;
 }
 
+export function findPrecedingLiveStatusAnchorDocument(
+  image: HTMLImageElement,
+  { identity, host }: { identity: Identity; host: string }
+): HTMLAnchorElement | null {
+  const article = image.closest('article');
+  const articles = [...document.querySelectorAll('article')];
+  const articleIndex = article ? articles.indexOf(article) : -1;
+  for (let index = articleIndex - 1; index >= 0; index -= 1) {
+    const preceding = articles[index];
+    if (!preceding) {
+      continue;
+    }
+    const candidate = [...preceding.querySelectorAll<HTMLAnchorElement>('a[href]')].find((link) => {
+      if (link.closest('article') !== preceding) {
+        return false;
+      }
+      try {
+        const url = new URL(link.href, location.href);
+        const match = /^\/([A-Za-z0-9_]{1,15})\/status\/([1-9]\d*)$/u.exec(url.pathname);
+        return (
+          url.protocol === 'https:' &&
+          url.hostname === host &&
+          !url.search &&
+          !url.hash &&
+          match?.[1]?.toLowerCase() === identity.handle.toLowerCase() &&
+          match[2] !== identity.statusId
+        );
+      } catch {
+        return false;
+      }
+    });
+    if (candidate) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
 export function inspectLiveTargetDocument({ handle, statusId }: Identity): LiveReadiness {
   const statusPath = `/${handle}/status/${statusId}`.toLowerCase();
   const parseVideo = (value: string | null | undefined) => {
@@ -1086,6 +1124,84 @@ export function inspectSelectedGalleryVideoDocument() {
     mediaErrorCode: video.error?.code ?? null,
     currentTime: video.currentTime,
   };
+}
+
+export function inspectLiveMixedGallerySelectionDocument(): {
+  index: number;
+  total: number;
+  kind: 'image' | 'video';
+  source: Source;
+  otherPlayingVideos: number;
+} | null {
+  const galleries = document.querySelectorAll('[data-xeg-gallery-container]');
+  const gallery = galleries.length === 1 ? galleries[0] : null;
+  const toolbar = gallery?.querySelector('[data-gallery-element="toolbar"]');
+  const counter = toolbar?.querySelector('#xeg-toolbar-counter[data-gallery-element="position"]');
+  const items = [...(gallery?.querySelectorAll('[data-gallery-element="item"]') ?? [])];
+  const index = Number(counter?.getAttribute('data-current-index'));
+  const total = Number(counter?.getAttribute('data-total'));
+  const item = items[index];
+  if (
+    !gallery ||
+    !toolbar ||
+    !counter ||
+    !item ||
+    !Number.isSafeInteger(index) ||
+    index < 0 ||
+    !Number.isSafeInteger(total) ||
+    total !== items.length ||
+    total < 2 ||
+    total > 4 ||
+    counter.getAttribute('data-position') !== String(index + 1) ||
+    counter.getAttribute('data-focused-index') !== String(index) ||
+    toolbar.getAttribute('data-current-index') !== String(index) ||
+    toolbar.getAttribute('data-focused-index') !== String(index) ||
+    item.getAttribute('data-media-loaded') !== 'true'
+  ) {
+    return null;
+  }
+  const video = item.querySelector('video');
+  const image = item.querySelector('img');
+  const kind =
+    video instanceof HTMLVideoElement
+      ? 'video'
+      : image instanceof HTMLImageElement
+        ? 'image'
+        : null;
+  if (
+    !kind ||
+    (kind === 'video' && (video?.readyState ?? 0) < 2) ||
+    (kind === 'image' && (!image?.complete || (image?.naturalWidth ?? 0) <= 0))
+  ) {
+    return null;
+  }
+  try {
+    const source = new URL(
+      kind === 'video'
+        ? video?.currentSrc || video?.src || ''
+        : image?.currentSrc || image?.src || ''
+    );
+    if (
+      source.protocol !== 'https:' ||
+      (kind === 'video'
+        ? source.hostname !== 'video.twimg.com'
+        : source.hostname !== 'pbs.twimg.com' || !source.pathname.startsWith('/media/'))
+    ) {
+      return null;
+    }
+    const otherPlayingVideos = [...gallery.querySelectorAll('video')].filter(
+      (candidate) => !item.contains(candidate) && !candidate.paused && !candidate.ended
+    ).length;
+    return {
+      index,
+      total,
+      kind,
+      source: { host: source.hostname, path: source.pathname },
+      otherPlayingVideos,
+    };
+  } catch {
+    return null;
+  }
 }
 
 export function readSelectedCurrentVideoUrlDocument(selectedIndex: number): string | null {

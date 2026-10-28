@@ -882,8 +882,9 @@ must contain two to four distinct public images. The lane verifies actual
 Next/Previous selected and focused identities, a single toolbar download, and
 a ZIP toolbar download with exactly that many stored entries. It requires new
 completed Chrome download IDs, files inside the task-owned download directory,
-bounded file reads, SHA-256, ZIP central-directory/CRC checks, and the selected
-single image's bytes inside the ZIP. Public image HEAD responses must declare
+bounded file reads, SHA-256, ZIP central-directory/CRC checks, and every ZIP
+item's size and hash against an independent bounded public original GET. The
+selected single file must match its original as well. Public image HEAD responses must declare
 each source at no more than 64 MiB and a projected single plus ZIP total below
 128 MiB; absent or larger declarations leave the lane unverified before any
 download click. Chrome progress is watched and an over-budget download is
@@ -894,11 +895,20 @@ instantaneous network-byte guarantee.
 The same lane changes the theme through the visible settings control, reads
 extension storage, confirms it in a reloaded new document, restores the exact
 prior stored settings, and checks the restored UI after another reload. It then
-navigates to a second supplied public status and requires the gallery to remain
-detached with extension readiness restored. A missing multi-image post, second
-status, HEAD size, native completion, or cleanup leaves the full lane failed or
-unverified. The video observation and default no-download diagnostics remain
-separate. No authentication, consent, CAPTCHA, traffic rewriting, Explorer,
+performs a full-document visit to a second supplied public status and records
+that scope separately. A distinct same-document cleanup probe clicks an existing
+preceding same-author public status anchor on an observed image page, if one is
+available and top hit-tested. It requires the same document time origin and no
+retained gallery, body style, or scroll policy. A video gallery with at least
+two items must show actual Next/Previous navigation, selected/focused media
+identity, a paused nonselected player, and return to the same source-bound
+current video. The existing direct-quote ownership and playback checks still
+apply, including the controlled allow-all retry when needed. The summary has
+separate coverage flags for multi-image downloads/settings, video navigation,
+and same-document cleanup; all three are required for actual-site acceptance.
+Absent source size, native completion, eligible video neighbor or same-document
+status link leaves this opt-in acceptance unverified. Default no-download
+diagnostics remain separate. No authentication, consent, CAPTCHA, traffic rewriting, Explorer,
 native Save As, or performance claim is made by this lane.
 
 Run `node --experimental-strip-types --check validation/windows/install-preparation.ts` and

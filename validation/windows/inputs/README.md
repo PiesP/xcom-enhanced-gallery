@@ -7,8 +7,10 @@ ignored `live-acceptance.json` file here with exactly:
 {"scenario":"actual-site-acceptance"}
 ```
 
-Pass public `--live-url` status URLs, including a two-to-four-image post and a
-different status for navigation. The normal installed fixture still runs first.
+Pass up to three public `--live-url` status URLs: a two-to-four-image post, a
+mixed image/video post for actual video navigation, and an image post with an
+existing preceding status link for the same-document cleanup probe. The normal
+installed fixture still runs first.
 This selector enables bounded real toolbar downloads and settings changes only
 in the task-owned profile; failed receipts are retained outside Git. Remove the
 selector after the attempt. See `../README.md` for evidence and byte limits.
