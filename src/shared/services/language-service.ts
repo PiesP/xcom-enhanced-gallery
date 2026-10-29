@@ -24,6 +24,12 @@ export class LanguageService {
   private currentLanguage: SupportedLanguage = 'auto';
   private readonly listeners: Set<(language: SupportedLanguage) => void> = new Set();
   private readonly storage = getPersistentStorage();
+  private readonly persistenceListeners = new Set<(unsaved: boolean) => void>();
+  private pendingLanguage: SupportedLanguage | undefined;
+  private unsaved = false;
+  private revision = 0;
+  private generation = 0;
+  private updateQueue: Promise<void> = Promise.resolve();
   private readonly translator: ReturnType<typeof createTranslator>;
   private readonly _nav: Pick<Navigator, 'language'> | undefined;
 
@@ -37,8 +43,26 @@ export class LanguageService {
     if (this._initialized) {
       return;
     }
+    const generation = this.generation;
+    await this.updateQueue;
+    if (generation !== this.generation) {
+      return;
+    }
+    // A same-document restart retains denied intent; a new document reads storage.
+    if (this.pendingLanguage !== undefined) {
+      this._initialized = true;
+      return;
+    }
+    const revision = this.revision;
     try {
       const saved = await this.storage.get<string>(LanguageService.STORAGE_KEY);
+      if (generation !== this.generation) {
+        return;
+      }
+      if (revision !== this.revision) {
+        this._initialized = true;
+        return;
+      }
       const normalized = this.normalizeLanguage(saved);
       if (normalized !== this.currentLanguage) {
         this.currentLanguage = normalized;
@@ -47,13 +71,17 @@ export class LanguageService {
     } catch (error) {
       __DEV__ && logger.warn('Failed to restore language setting from storage:', error);
     }
-    this._initialized = true;
+    if (generation === this.generation) {
+      this._initialized = true;
+    }
   }
 
   /** Destroy service (idempotent) */
   public destroy(): void {
     this.listeners.clear();
+    this.persistenceListeners.clear();
     this._initialized = false;
+    this.generation++;
   }
 
   /** Check if service is initialized */
@@ -85,14 +113,19 @@ export class LanguageService {
       }
     }
 
-    // Prevent duplicate saves when value is unchanged
+    // A saved unchanged choice is a no-op; an unsaved one is explicit retry intent.
     if (this.currentLanguage === normalized) {
+      if (this.pendingLanguage !== undefined) {
+        void this.retryUnsaved().catch(() => undefined);
+      }
       return;
     }
 
     this.currentLanguage = normalized;
+    this.pendingLanguage = normalized;
+    const revision = ++this.revision;
+    this.updateQueue = this.persistLanguage(normalized, revision).catch(() => undefined);
     this.notifyListeners(normalized);
-    void this.persistLanguage(normalized);
 
     if (__DEV__) {
       logger.debug(`Language changed to: ${normalized}`);
@@ -148,13 +181,53 @@ export class LanguageService {
     });
   }
 
-  private async persistLanguage(language: SupportedLanguage): Promise<void> {
+  public hasUnsavedChanges(): boolean {
+    return this.unsaved;
+  }
+
+  public subscribePersistence(listener: (unsaved: boolean) => void): () => void {
+    this.persistenceListeners.add(listener);
+    return () => this.persistenceListeners.delete(listener);
+  }
+
+  /** One explicit attempt, serialized after all earlier language writes. */
+  public async retryUnsaved(): Promise<void> {
+    const retry = this.updateQueue.then(async () => {
+      if (this.pendingLanguage !== undefined) {
+        await this.persistLanguage(this.pendingLanguage, this.revision);
+      }
+    });
+    this.updateQueue = retry.catch(() => undefined);
+    await retry;
+  }
+
+  private setUnsaved(value: boolean): void {
+    if (this.unsaved === value) {
+      return;
+    }
+    this.unsaved = value;
+    for (const listener of this.persistenceListeners) {
+      try {
+        listener(value);
+      } catch (error) {
+        __DEV__ && logger.warn('Language persistence listener error:', error);
+      }
+    }
+  }
+
+  private async persistLanguage(language: SupportedLanguage, revision: number): Promise<void> {
     try {
       await this.storage.set(LanguageService.STORAGE_KEY, language);
-    } catch (error) {
-      if (__DEV__) {
-        logger.warn('Failed to persist language setting:', error);
+      if (revision === this.revision) {
+        this.pendingLanguage = undefined;
+        this.setUnsaved(false);
       }
+    } catch (error) {
+      if (revision === this.revision) {
+        this.setUnsaved(true);
+      }
+      __DEV__ && logger.warn('Failed to persist language setting:', error);
+      throw error;
     }
   }
 

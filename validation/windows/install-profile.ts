@@ -52,7 +52,7 @@ import {
   validateLiveObservation,
   validateLiveUrls,
 } from './live-page.ts';
-import { parseActualSiteAcceptanceSelector } from './live-acceptance.ts';
+import { parseActualSiteAcceptanceSelector, runLiveSettingsAcceptance } from './live-acceptance.ts';
 import { runInstalledMediaApiReuseProfile } from './media-api-reuse-profile.ts';
 import {
   captureUpgradeSettingsFailure,
@@ -945,6 +945,7 @@ type InstallResult = {
   mediaDownloadRecovery?: unknown;
   failedEntryRecovery?: unknown;
   galleryExperience?: unknown;
+  settingsPersistence?: unknown;
   liveBrowserScope?: string;
   live?: unknown;
   evidenceStatus?: string;
@@ -16648,6 +16649,141 @@ async function runSameVersionAttribution({
   return receipt;
 }
 
+async function runSettingsPersistenceProbe({
+  context,
+  root,
+  output,
+  extensionId,
+  nativeLoopback,
+  images,
+  displayImages,
+}: {
+  context: BrowserContext;
+  root: string;
+  output: string;
+  extensionId: string;
+  nativeLoopback: NativeLoopback;
+  images: ImageFixtures;
+  displayImages: ImageFixtures;
+}) {
+  const routes = await installFixtureRoutes(context, root, images, displayImages);
+  nativeLoopback.setPayloads(images, routes.videoPayloads);
+  const extensionPage = await context.newPage();
+  const page = await context.newPage();
+  const evidence: Record<string, unknown> = {
+    status: 'failed',
+    scope: 'installed extension healthy language and controlled unsupported-schema fixture',
+  };
+  let prior: Awaited<ReturnType<typeof readStoredVideoSettings>> | undefined;
+  let priorLanguage: Record<string, unknown> | undefined;
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  try {
+    await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
+    prior = await readStoredVideoSettings(extensionPage);
+    priorLanguage = await extensionPage.evaluate(() => chrome.storage.local.get('xeg-language'));
+    const open = async () => {
+      await page.goto(FIXTURE_URL);
+      await page.locator('html[data-xeg-gallery-ready="true"]').waitFor();
+      await page.locator('[data-testid="tweetPhoto"] img').first().click();
+      await page.locator('[data-xeg-gallery-container]').waitFor({ state: 'visible' });
+      await page.locator('#settings-button').click();
+    };
+    await open();
+    await page.locator('#settings-language-select').selectOption('ko');
+    await waitForValue(async () => {
+      const saved = await readStoredLanguage(extensionPage);
+      return saved.language === 'ko' ? true : undefined;
+    }, 'installed language durable readback');
+    await page.screenshot({ path: join(output, 'installed-language-ko.png') });
+    await open();
+    assert.equal(await page.locator('#settings-language-select').inputValue(), 'ko');
+    await page.locator('#settings-language-select').selectOption('en');
+    await waitForValue(async () => {
+      const saved = await readStoredLanguage(extensionPage);
+      return saved.language === 'en' ? true : undefined;
+    }, 'installed English restoration');
+    evidence.language = { selected: 'ko', durable: 'ko', freshSelection: 'ko', restored: 'en' };
+    const raw = JSON.stringify({
+      __schemaHash: 'unsupported-fixture',
+      version: 'unknown',
+      futureRoot: { retained: true },
+      gallery: { theme: 'dark', futureField: 42 },
+    });
+    await extensionPage.evaluate(async (value) => {
+      await chrome.storage.local.set({ 'xeg-app-settings': value });
+    }, raw);
+    await open();
+    assert.equal(await page.locator('#settings-theme-select').inputValue(), 'dark');
+    const status = page.locator('[data-xeg-settings-unsaved]');
+    await status.waitFor({ state: 'visible' });
+    await page.locator('#settings-theme-select').selectOption('light');
+    await status.getByRole('button').click();
+    assert.equal(await status.isVisible(), true);
+    const stored = await extensionPage.evaluate(async () => ({
+      base: (await chrome.storage.local.get('xeg-app-settings'))['xeg-app-settings'],
+      leaf: (await chrome.storage.local.get('xeg-app-settings:field:gallery.theme'))[
+        'xeg-app-settings:field:gallery.theme'
+      ],
+    }));
+    assert.equal(stored.base, raw);
+    assert.equal(stored.leaf, undefined);
+    await page.screenshot({ path: join(output, 'installed-unsupported-schema.png') });
+    await open();
+    assert.equal(await page.locator('#settings-theme-select').inputValue(), 'dark');
+    assert.equal(await status.isVisible(), true);
+    evidence.unsupportedSchema = {
+      rawPreserved: true,
+      leafAbsent: true,
+      sessionEdit: 'light',
+      freshSelection: 'dark',
+      retryStillUnsaved: true,
+    };
+    assert.deepEqual(errors, []);
+    evidence.status = 'passed';
+    return evidence;
+  } catch (error) {
+    evidence.error = safeError(error);
+    await page
+      .screenshot({ path: join(output, 'installed-settings-failure.png') })
+      .catch(() => undefined);
+    throw error;
+  } finally {
+    const cleanupErrors: string[] = [];
+    await page.close().catch((error: unknown) => cleanupErrors.push(safeError(error)));
+    try {
+      if (prior) {
+        evidence.settingsRestored = await restoreStoredVideoSettings(extensionPage, prior);
+        assert.equal(evidence.settingsRestored, true);
+      }
+      if (priorLanguage) {
+        await extensionPage.evaluate(async (values) => {
+          await chrome.storage.local.remove('xeg-language');
+          await chrome.storage.local.set(values);
+        }, priorLanguage);
+        assert.deepEqual(
+          await extensionPage.evaluate(() => chrome.storage.local.get('xeg-language')),
+          priorLanguage
+        );
+        evidence.languageRestored = true;
+      }
+    } catch (error) {
+      cleanupErrors.push(safeError(error));
+    }
+    await extensionPage.close().catch((error: unknown) => cleanupErrors.push(safeError(error)));
+    evidence.runtimeErrors = errors;
+    evidence.cleanupErrors = cleanupErrors;
+    if (cleanupErrors.length) {
+      evidence.status = 'failed';
+    }
+    await writeFile(
+      join(output, 'installed-settings-persistence.json'),
+      JSON.stringify(evidence, null, 2)
+    );
+    assert.deepEqual(cleanupErrors, [], 'Installed settings fixture cleanup failed');
+  }
+}
+
 export async function run({
   chromium,
   root,
@@ -16681,6 +16817,17 @@ export async function run({
     }
     throw error;
   });
+  const liveSettingsProbe =
+    acceptanceSelectorText !== null &&
+    (JSON.parse(acceptanceSelectorText) as { scenario?: unknown }).scenario ===
+      'actual-site-settings-acceptance';
+  if (liveSettingsProbe) {
+    assert.deepEqual(JSON.parse(acceptanceSelectorText!), {
+      scenario: 'actual-site-settings-acceptance',
+    });
+    assert.equal(installation, 'extension', 'Live settings acceptance requires an extension');
+    assert(liveUrls.length > 0, 'Live settings acceptance requires public X URLs');
+  }
   if (installation === 'userscript') {
     assert.equal(acceptanceSelectorText, null, 'Actual-site acceptance requires an extension');
     assert.equal(liveUrls.length, 0, 'Installed userscript fixture does not support public URLs');
@@ -16760,23 +16907,61 @@ export async function run({
     );
     assert.equal(liveUrls.length, 0, 'Experience probe uses only the owned fixture');
   }
+  const settingsSelectorText = await readFile(
+    join(root, 'validation/windows/inputs/settings-persistence.json'),
+    'utf8'
+  ).catch((error: unknown) => {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+      return null;
+    }
+    throw error;
+  });
+  const settingsProbe = settingsSelectorText !== null;
+  if (settingsSelectorText !== null) {
+    assert.deepEqual(JSON.parse(settingsSelectorText), { scenario: 'settings-persistence' });
+    assert(
+      !upgradeInput &&
+        !sameVersionInput &&
+        !openingProbe &&
+        !recoveryProbe &&
+        !failedEntryProbe &&
+        !experienceProbe,
+      'Only one focused installed-extension probe may run'
+    );
+    assert.equal(liveUrls.length, 0, 'Settings probe uses only the owned fixture');
+  }
   assert(!(upgradeInput && sameVersionInput), 'Upgrade and same-version inputs cannot coexist');
   if (sameVersionInput) {
     assert.equal(liveUrls.length, 0, 'Same-version attribution does not observe live URLs');
     assert.equal(liveObservation, null);
   }
   const validatedLiveUrls = validateLiveUrls(liveUrls);
-  const actualSiteAcceptance = parseActualSiteAcceptanceSelector(acceptanceSelectorText, {
-    liveUrls: validatedLiveUrls,
-    installation,
-    otherFocusedInput:
-      !!upgradeInput ||
-      !!sameVersionInput ||
-      openingProbe ||
-      recoveryProbe ||
-      failedEntryProbe ||
-      experienceProbe,
-  });
+  assert(
+    !liveSettingsProbe ||
+      (!settingsProbe &&
+        !experienceProbe &&
+        !failedEntryProbe &&
+        !recoveryProbe &&
+        !openingProbe &&
+        !upgradeInput &&
+        !sameVersionInput),
+    'Live settings acceptance cannot share another focused selector'
+  );
+  const actualSiteAcceptance = parseActualSiteAcceptanceSelector(
+    liveSettingsProbe ? null : acceptanceSelectorText,
+    {
+      liveUrls: validatedLiveUrls,
+      installation,
+      otherFocusedInput:
+        !!upgradeInput ||
+        !!sameVersionInput ||
+        openingProbe ||
+        recoveryProbe ||
+        failedEntryProbe ||
+        experienceProbe ||
+        settingsProbe,
+    }
+  );
   validateLiveObservation(liveObservation);
   await mkdir(output, { recursive: true });
   const profile = await mkdtemp(join(root, PROFILE_PREFIX));
@@ -16801,21 +16986,25 @@ export async function run({
     installationMethod: 'cdp-unpacked-extension',
     liveUrls: validatedLiveUrls,
     liveObservation,
-    scope: failedEntryProbe
-      ? 'issue 392 installed-extension failed-entry ZIP recovery fixture; no live X observation'
-      : experienceProbe
-        ? 'issue 383 installed-extension gallery experience fixtures; no live X observation'
-        : recoveryProbe
-          ? 'issue 382 installed-extension media/download recovery fixture; no live X observation'
-          : openingProbe
-            ? 'issue 381 installed-extension opening feedback fixture; no live X observation'
-            : validatedLiveUrls.length
-              ? actualSiteAcceptance
-                ? 'deterministic fixture followed by explicit actual-site gallery acceptance with bounded retained downloads; no auth, consent, CAPTCHA, native Save As, Explorer, or performance claim'
-                : 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
-              : sameVersionInput
-                ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
-                : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
+    scope: liveSettingsProbe
+      ? 'focused installed language/theme settings acceptance; no full prior live campaign'
+      : settingsProbe
+        ? 'installed-extension settings persistence fixture; no live X observation'
+        : failedEntryProbe
+          ? 'issue 392 installed-extension failed-entry ZIP recovery fixture; no live X observation'
+          : experienceProbe
+            ? 'issue 383 installed-extension gallery experience fixtures; no live X observation'
+            : recoveryProbe
+              ? 'issue 382 installed-extension media/download recovery fixture; no live X observation'
+              : openingProbe
+                ? 'issue 381 installed-extension opening feedback fixture; no live X observation'
+                : validatedLiveUrls.length
+                  ? actualSiteAcceptance
+                    ? 'deterministic fixture followed by explicit actual-site gallery acceptance with bounded retained downloads; no auth, consent, CAPTCHA, native Save As, Explorer, or performance claim'
+                    : 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
+                  : sameVersionInput
+                    ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
+                    : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
     status: 'failed',
   };
   try {
@@ -16926,6 +17115,16 @@ export async function run({
           images,
           displayImages,
         });
+      } else if (settingsProbe || liveSettingsProbe) {
+        result.settingsPersistence = await runSettingsPersistenceProbe({
+          context,
+          root,
+          output,
+          extensionId,
+          nativeLoopback,
+          images,
+          displayImages,
+        });
       } else if (experienceProbe) {
         result.galleryExperience = await runGalleryExperienceProbe({
           context,
@@ -17010,13 +17209,27 @@ export async function run({
         'fresh browser process without fixture host mapping or SPKI exception';
     }
     if (!sameVersionInput) {
-      const live = await observeLiveUrls({
-        context,
-        extensionId,
-        liveUrls: validatedLiveUrls,
-        output,
-        actualSiteAcceptance: actualSiteAcceptance ? { downloads } : null,
-      });
+      const live = liveSettingsProbe
+        ? await runLiveSettingsAcceptance({
+            context,
+            extensionId,
+            liveUrls: validatedLiveUrls,
+            output,
+          })
+        : await observeLiveUrls({
+            context,
+            extensionId,
+            liveUrls: validatedLiveUrls,
+            output,
+            actualSiteAcceptance: actualSiteAcceptance ? { downloads } : null,
+          });
+      if (liveSettingsProbe) {
+        assert.equal(
+          live.evidenceStatus,
+          'observed',
+          'Required current X language/settings acceptance is blocked or failed'
+        );
+      }
       result.live = live;
       result.evidenceStatus = validatedLiveUrls.length ? live.evidenceStatus : 'fixture-observed';
     } else {

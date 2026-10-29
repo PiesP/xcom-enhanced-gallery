@@ -15,6 +15,9 @@ import {
 
 /** Schema version hash - bump when persisted settings shape changes */
 const SETTINGS_SCHEMA_HASH = '1';
+// Released deterministic identities; provenance and migration contract live in
+// docs/settings-persistence.md. Never accept an arbitrary hash as a legacy format.
+const LEGACY_SCHEMA_HASHES = new Set(['24a4127f', '7893980e', '67545f71', '6b0705af', '58349bc7']);
 // Older builds read only the legacy record and will not display these newer edits.
 // Keep both forms for compatibility; a downgrade needs an explicit data migration.
 const FIELD_PREFIX = `${APP_SETTINGS_STORAGE_KEY}:field:`;
@@ -53,6 +56,9 @@ export interface SettingsRepository {
 export class PersistentSettingsRepository implements SettingsRepository {
   private readonly storage = getPersistentStorage();
   private readonly schemaHash = SETTINGS_SCHEMA_HASH;
+  // A hash mismatch gives no migration authority. Keep this owner closed even
+  // if another document later replaces the record; a fresh owner re-evaluates it.
+  private unsupportedSchema = false;
 
   public async load(): Promise<AppSettings> {
     return (await this.loadState()).settings;
@@ -69,10 +75,21 @@ export class PersistentSettingsRepository implements SettingsRepository {
     let normalized = createDefaultSettings(nowMs);
     if (isRecord(raw)) {
       const stored = raw as unknown as StoredSettings;
+      if (
+        Object.hasOwn(stored, '__schemaHash') &&
+        stored.__schemaHash !== this.schemaHash &&
+        !(typeof stored.__schemaHash === 'string' && LEGACY_SCHEMA_HASHES.has(stored.__schemaHash))
+      ) {
+        this.unsupportedSchema = true;
+      }
       const migrated = migrateSettings(stored, nowMs);
       normalized = normalizeStoredSettings(migrated, nowMs);
       const normalizationChanged = !settingsMatch(migrated, normalized);
-      if (base.available && (stored.__schemaHash !== this.schemaHash || normalizationChanged)) {
+      if (
+        base.available &&
+        !this.unsupportedSchema &&
+        (stored.__schemaHash !== this.schemaHash || normalizationChanged)
+      ) {
         await this.persist(normalized).catch(() => {
           __DEV__ && logger.warn('[SettingsRepository] Failed to persist normalized settings');
         });
@@ -88,7 +105,8 @@ export class PersistentSettingsRepository implements SettingsRepository {
     }
     return {
       settings: globalThis.structuredClone(normalized),
-      available: base.available && fields.every((field) => field?.available),
+      available:
+        !this.unsupportedSchema && base.available && fields.every((field) => field?.available),
     };
   }
 
@@ -103,7 +121,9 @@ export class PersistentSettingsRepository implements SettingsRepository {
   ): Promise<AppSettings> {
     const current = await this.loadState();
     if (!current.available) {
-      throw new Error('Settings storage is unreadable; explicit changes remain unsaved');
+      throw new Error(
+        'Settings storage is unreadable or has an unsupported schema; explicit changes remain unsaved'
+      );
     }
     for (const [key, value] of changes) {
       if (!SETTINGS_LEAF_KEYS.some((leaf) => leaf === key) || !validateSettingValue(key, value)) {

@@ -222,7 +222,9 @@ export class SettingsService {
           } else if (this.repository.loadState) {
             const result = await this.repository.loadState();
             if (!result.available) {
-              throw new Error('Settings storage is unreadable; retry after recovery');
+              throw new Error(
+                'Settings storage is unreadable or has an unsupported schema; retry after recovery'
+              );
             }
             if (generation === this.generation && this._initialized) {
               const previousSettings = this.settings;

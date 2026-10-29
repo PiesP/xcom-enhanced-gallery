@@ -149,6 +149,7 @@ export async function runSettingsPersistenceFixture({
     evidence.retry = { persistedTheme: persisted, unsavedVisible: false };
     await page.reload({ waitUntil: 'domcontentloaded' });
     await installGMMock(page, { persistentStorage: true });
+    await installStorageFaultControl(page);
     await installMediaFixture();
     await page.addScriptTag({ content: script });
     await page.waitForFunction(
@@ -175,6 +176,58 @@ export async function runSettingsPersistenceFixture({
     await reloadedGallery.waitFor({ state: 'visible', timeout: 15_000 });
     assert.equal(await reloadedGallery.getAttribute('data-theme'), 'light');
     evidence.reload = { theme: 'light', freshDocument: true };
+
+    await reloadedGallery.locator('#settings-button').click();
+    await page.evaluate(() => {
+      const faults = (window as StorageHost).__xegStorageFaults!;
+      faults.denyPrimary = true;
+      faults.denyFallback = true;
+    });
+    const language = reloadedGallery.locator('#settings-language-select');
+    const languageUnsaved = reloadedGallery.locator('[data-xeg-settings-unsaved]');
+    await language.selectOption('ko');
+    await languageUnsaved.waitFor({ state: 'visible' });
+    assert.equal(
+      await reloadedGallery.locator('label[for="settings-language-select"]').textContent(),
+      '언어'
+    );
+    await language.selectOption('ja');
+    await languageUnsaved.getByRole('button').click();
+    assert.equal(await languageUnsaved.isVisible(), true);
+    await page.screenshot({ path: path.join(output, 'language-unsaved.png') });
+    await page.evaluate(() => {
+      const faults = (window as StorageHost).__xegStorageFaults!;
+      faults.denyPrimary = false;
+      faults.denyFallback = false;
+    });
+    await languageUnsaved.getByRole('button').click();
+    await languageUnsaved.waitFor({ state: 'detached' });
+    const durableLanguage = await page.evaluate(() => {
+      const raw = (window as StorageHost).GM_getValue?.<string>('xeg-language');
+      return typeof raw === 'string' ? (JSON.parse(raw) as { value: string }).value : null;
+    });
+    assert.equal(durableLanguage, 'ja');
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await installGMMock(page, { persistentStorage: true });
+    await installMediaFixture();
+    await page.addScriptTag({ content: script });
+    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor();
+    await page.locator('[data-testid="tweetPhoto"] img').first().click();
+    await page.locator('[data-xeg-gallery-container]').waitFor({ state: 'visible' });
+    await page.locator('#settings-button').click();
+    assert.equal(await page.locator('#settings-language-select').inputValue(), 'ja');
+    evidence.languageRecovery = {
+      deniedFeedback: true,
+      repeatedDenial: true,
+      latest: durableLanguage,
+      freshSelection: 'ja',
+    };
+    // Restore English for the remaining baseline/read-recovery fixture.
+    await page.locator('#settings-language-select').selectOption('en');
+    await page.waitForFunction(() => {
+      const raw = (window as StorageHost).GM_getValue?.<string>('xeg-language');
+      return typeof raw === 'string' && (JSON.parse(raw) as { value: string }).value === 'en';
+    });
 
     await page.evaluate(() => {
       const host = window as StorageHost;
@@ -267,6 +320,42 @@ export async function runSettingsPersistenceFixture({
       preservedImageFitMode: recovered.base.imageFitMode,
       preservedVideoVolume: recovered.base.videoVolume,
       freshTheme: 'light',
+    };
+    const unsupportedRaw = JSON.stringify({
+      __schemaHash: 'unsupported-fixture',
+      version: 'unknown',
+      futureRoot: { retained: true },
+      gallery: { theme: 'dark', futureField: 42 },
+    });
+    await page.evaluate((raw) => {
+      const host = window as StorageHost;
+      host.GM_deleteValue?.('xeg-app-settings:field:gallery.theme');
+      host.GM_setValue?.('xeg-app-settings', raw);
+    }, unsupportedRaw);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await installGMMock(page, { persistentStorage: true });
+    await installMediaFixture();
+    await page.addScriptTag({ content: script });
+    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor();
+    await page.locator('[data-testid="tweetPhoto"] img').first().click();
+    await page.locator('[data-xeg-gallery-container]').waitFor({ state: 'visible' });
+    await page.locator('#settings-button').click();
+    const protectedStatus = page.locator('[data-xeg-settings-unsaved]');
+    await protectedStatus.waitFor({ state: 'visible' });
+    await page.locator('#settings-theme-select').selectOption('light');
+    await protectedStatus.getByRole('button').click();
+    assert.equal(await protectedStatus.isVisible(), true);
+    assert.equal(
+      await page.evaluate(() => (window as StorageHost).GM_getValue?.('xeg-app-settings')),
+      unsupportedRaw
+    );
+    assert.equal(await readDurableTheme(page), null);
+    await page.screenshot({ path: path.join(output, 'unsupported-schema-unsaved.png') });
+    evidence.unsupportedSchema = {
+      rawPreserved: true,
+      editInSession: true,
+      retryStillUnsaved: true,
+      leafAbsent: true,
     };
     assert.deepEqual(runtimeErrors, []);
     evidence.status = 'passed';

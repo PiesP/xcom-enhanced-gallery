@@ -46,3 +46,64 @@ representation. To retain effective preferences in an older build, back up
 the raw baseline and field keys, explicitly compose and validate their values
 into an older-build-compatible legacy record, and verify that record with the
 target build. Reverting source alone is not a data rollback.
+
+## Schema recognition and preservation
+
+The recognized baseline formats are the legacy record with no `__schemaHash`
+property, the deterministic released identities below, and the current record
+with hash `"1"`. Existing legacy boolean and known-field migrations remain supported.
+
+| Historical identity | Released source |
+| --- | --- |
+| `24a4127f` | `v0.4.0`, shape/type signature |
+| `7893980e` | `v0.4.3` through `v0.5.0`, serialized static defaults |
+| `67545f71` | `v1.0.0` through `v1.2.1`, serialized static defaults |
+| `6b0705af` | `v1.2.2`, serialized static defaults |
+| `58349bc7` | `v1.3.0`, normalized/sorted static defaults |
+
+The source-bound [historical baseline fixtures](../test/fixtures/settings/recognized-schema-baselines.json)
+record representative tags, exact commits and defaults. `v0.4.0`'s runtime timestamp
+is represented by a deterministic sample because its hash uses only field types.
+`v0.4.1` and `v0.4.2` included a runtime timestamp in value-based hashing, so their
+identities cannot be exhaustively recognized. Such an unrecognized hashed record
+is preserved, with validated session values, until a compatible build or explicit
+reviewed migration handles it; an arbitrary hexadecimal hash is not migration
+authority. Hash `"1"` replaced computed current identities in `v1.4.0` and later. A present hash with any other value
+(including a malformed identity) is unsupported; a mismatch does not establish
+whether a record is newer or safe to migrate.
+
+On encountering an unsupported identity, the repository validates known fields
+for session use, preserves the original durable record and closes all settings
+writes for that repository owner's lifetime. Initialization, field edits,
+normalization and retry cannot replace it or create leaf writes. The existing
+unsaved settings status remains visible; explicit edits work in the session and
+remain pending across a same-document restart. Retry makes one bounded attempt
+and remains unsaved. Use a compatible build or an explicit reviewed data migration
+to recover; a fresh document/repository owner re-evaluates the durable format.
+Another document replacing the baseline cannot reopen the existing owner.
+Language has a separate key and remains independently writable.
+
+Preserving only unknown properties while rewriting the record would assume their
+meaning and compatibility. Allowing leaf writes beside an unsupported baseline
+would also assume the unknown format still interprets those keys. Closing writes
+is proportionate protection for a conditional rollback hazard: no released
+incompatible producer is established. This policy does not add downgrade support,
+a storage transaction, or atomic detection of a format change between a supported
+read and a write in another document. The existing adapters provide no such
+cross-document transaction.
+
+## Language save outcomes
+
+`LanguageService` owns `xeg-language` separately from gallery settings. Language
+selection updates translations immediately. A rejected primary and fallback write
+retains the latest language intent and activates the same unsaved status used by
+gallery settings. The existing retry button gives each owner one explicit attempt;
+a failure in either owner does not prevent the other from recovering. Repeated
+denial keeps feedback visible without an automatic retry loop.
+
+A successfully saved unchanged choice is deduplicated. An unchanged unsaved choice
+can retry, and a newer selection supersedes earlier pending intent. Completion of
+an older write cannot mark the newer selection saved. Pending intent survives
+same-document language-service restart; a fresh document reads durable storage
+and cannot recover unsaved memory. Successful primary and fallback writes retain
+the existing envelope and fallback ordering.
