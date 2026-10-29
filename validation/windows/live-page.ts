@@ -385,6 +385,38 @@ export function liveCompletionPassed(page: LiveCompletionOutcome): boolean {
     (page.status === 'core-flow-observed' || controlledRetryComplete(page))
   );
 }
+
+export function actualSiteAcceptanceCoverage(pages: LiveObservation[]) {
+  const accepted = pages.filter(liveCompletionPassed);
+  return {
+    multiImageDownloadsSettings: accepted.some(
+      (page) => page.actualSiteAcceptance?.status === 'observed'
+    ),
+    manualScrollCommandTargeting: accepted.some(
+      (page) =>
+        page.actualSiteAcceptance?.status === 'observed' &&
+        page.actualSiteAcceptance.steps.manualScrollCommandTargeting?.status === 'observed'
+    ),
+    videoNavigation: accepted.some(
+      (page) =>
+        page.actualSiteVideoNavigation?.status === 'observed' ||
+        (controlledRetryComplete(page) &&
+          page.controlledProbe?.observation?.actualSiteVideoNavigation?.status === 'observed')
+    ),
+    nativeToolbarButtonOwnership: accepted.some(
+      (page) =>
+        (page.actualSiteVideoNavigation?.status === 'observed' &&
+          page.actualSiteVideoNavigation.nativeToolbarButtonOwnership?.status === 'observed') ||
+        (controlledRetryComplete(page) &&
+          page.controlledProbe?.observation?.actualSiteVideoNavigation?.status === 'observed' &&
+          page.controlledProbe.observation.actualSiteVideoNavigation.nativeToolbarButtonOwnership
+            ?.status === 'observed')
+    ),
+    sameDocumentPostNavigationAfterClose: accepted.some(
+      (page) => page.sameDocumentPostNavigationAfterClose?.status === 'observed'
+    ),
+  };
+}
 type StoredField = { exists: boolean; value: unknown };
 type StorageRecord = {
   exists: boolean;
@@ -3992,20 +4024,7 @@ export async function observeLiveUrls({
   }
   const failed = pages.filter((page) => !liveCompletionPassed(page));
   const cleanAcceptedPages = pages.filter(liveCompletionPassed);
-  const acceptanceCoverage = {
-    multiImageDownloadsSettings: cleanAcceptedPages.some(
-      (page) => page.actualSiteAcceptance?.status === 'observed'
-    ),
-    videoNavigation: cleanAcceptedPages.some(
-      (page) =>
-        page.actualSiteVideoNavigation?.status === 'observed' ||
-        (controlledRetryComplete(page) &&
-          page.controlledProbe?.observation?.actualSiteVideoNavigation?.status === 'observed')
-    ),
-    sameDocumentPostNavigationAfterClose: cleanAcceptedPages.some(
-      (page) => page.sameDocumentPostNavigationAfterClose?.status === 'observed'
-    ),
-  };
+  const acceptanceCoverage = actualSiteAcceptanceCoverage(pages);
   const acceptanceMissing =
     actualSiteAcceptance !== null && Object.values(acceptanceCoverage).some((passed) => !passed);
   const controlled = cleanAcceptedPages.some((page) => controlledRetryComplete(page));

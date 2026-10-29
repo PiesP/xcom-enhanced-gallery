@@ -7,8 +7,9 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { test, vi } from 'vite-plus/test';
-import type { BrowserContext, ElementHandle, Page } from '@playwright/test';
+import { chromium, type BrowserContext, type ElementHandle, type Page } from '@playwright/test';
 import {
+  actualSiteAcceptanceCoverage,
   closeObservedLivePage,
   directOwnerForSource,
   liveCompletionPassed,
@@ -17,9 +18,14 @@ import {
 } from './live-page.ts';
 import {
   canonicalOwnedPhotoSources,
+  displayedGalleryImageDocument,
   inspectLiveStoredZip,
+  installNativeButtonObserverDocument,
+  matchesDisplayedImage,
+  nativeButtonActivationPassed,
   nativeSingleSourceMatchesDocument,
   observeActualSiteVideoNavigation,
+  observeManualScrollCommandTargeting,
   parseActualSiteAcceptanceSelector,
   runActualSiteAcceptance,
   taskOwnedDownloadsDocument,
@@ -105,7 +111,7 @@ test('return navigation waits for the exact original media and all other players
   assert.deepEqual(failed.returned, { ...original, source: neighbor.source });
 });
 
-test('owned-photo navigation reports the played video before returning to the photo', async () => {
+test('owned-photo navigation retains positive playback but fails closed without native-button proof', async () => {
   const photo = {
     index: 0,
     total: 2,
@@ -165,10 +171,417 @@ test('owned-photo navigation reports the played video before returning to the ph
     assert.deepEqual(video.source, neighbor.source);
     assert.equal(video.currentTime, 0.2);
   });
-  assert.equal(receipt.status, 'observed');
+  assert.equal(receipt.status, 'failed');
   assert.equal(receipt.playback?.progressed, true);
-  assert.deepEqual(receipt.returned, photo);
-  assert.deepEqual(events, ['next', 'space', 'selected-video', 'return']);
+  assert.equal(receipt.returned, undefined);
+  assert.deepEqual(events, ['next', 'space', 'selected-video', 'space']);
+});
+
+test('displayed media requires exact divergent indices, visible owned image and finite geometry', () => {
+  const image = {
+    position: 2,
+    total: 4,
+    currentIndex: 0,
+    focusedIndex: 1,
+    path: '/media/second.jpg',
+    scrollTop: 200,
+    itemCenter: 300,
+    visibleCenter: 300,
+    scrollportTop: 100,
+    scrollportBottom: 500,
+    imageVisible: true,
+    imageHitTested: true,
+    documentTimeOrigin: 123456,
+  };
+  assert(matchesDisplayedImage(image, 0, 1, '/media/second.jpg'));
+  assert(!matchesDisplayedImage({ ...image, currentIndex: 1 }, 0, 1, image.path));
+  assert(!matchesDisplayedImage({ ...image, focusedIndex: 0 }, 0, 1, image.path));
+  assert(!matchesDisplayedImage({ ...image, imageVisible: false }, 0, 1, image.path));
+  assert(!matchesDisplayedImage({ ...image, imageHitTested: false }, 0, 1, image.path));
+  assert(!matchesDisplayedImage({ ...image, path: '/media/other.jpg' }, 0, 1, image.path));
+  assert(!matchesDisplayedImage({ ...image, scrollTop: Number.NaN }, 0, 1, image.path));
+});
+
+test('native button proof requires each trusted target, exactly one activation and no playback', () => {
+  const snapshot = {
+    keys: [
+      { key: ' ', trusted: true, targetButton: true, focusedButton: true, disabled: false },
+      { key: 'Enter', trusted: true, targetButton: true, focusedButton: true, disabled: false },
+    ],
+    clicks: [
+      { trusted: true, targetButton: true },
+      { trusted: true, targetButton: true },
+    ],
+    plays: 0,
+    overflow: false,
+    allPaused: true,
+    galleryCurrent: true,
+    documentTimeOrigin: 123456,
+  };
+  assert(nativeButtonActivationPassed(snapshot, [' ', 'Enter'], 2));
+  assert(
+    !nativeButtonActivationPassed({ ...snapshot, keys: [snapshot.keys[0]!] }, [' ', 'Enter'], 2)
+  );
+  assert(
+    !nativeButtonActivationPassed(
+      { ...snapshot, clicks: [...snapshot.clicks, snapshot.clicks[0]!] },
+      [' ', 'Enter'],
+      2
+    )
+  );
+  assert(
+    !nativeButtonActivationPassed(
+      { ...snapshot, keys: [{ ...snapshot.keys[0]!, trusted: false }, snapshot.keys[1]!] },
+      [' ', 'Enter'],
+      2
+    )
+  );
+  assert(
+    !nativeButtonActivationPassed(
+      { ...snapshot, keys: [{ ...snapshot.keys[0]!, targetButton: false }, snapshot.keys[1]!] },
+      [' ', 'Enter'],
+      2
+    )
+  );
+  assert(
+    !nativeButtonActivationPassed(
+      { ...snapshot, keys: [{ ...snapshot.keys[0]!, focusedButton: false }, snapshot.keys[1]!] },
+      [' ', 'Enter'],
+      2
+    )
+  );
+  assert(
+    !nativeButtonActivationPassed(
+      { ...snapshot, keys: [{ ...snapshot.keys[0]!, disabled: true }, snapshot.keys[1]!] },
+      [' ', 'Enter'],
+      2
+    )
+  );
+  assert(!nativeButtonActivationPassed({ ...snapshot, plays: 1 }, [' ', 'Enter'], 2));
+  assert(!nativeButtonActivationPassed({ ...snapshot, allPaused: false }, [' ', 'Enter'], 2));
+  assert(!nativeButtonActivationPassed({ ...snapshot, galleryCurrent: false }, [' ', 'Enter'], 2));
+});
+
+test('Chromium divergent reader rejects missing attributes, obscured media and replaced gallery', async () => {
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
+  try {
+    await page.route('https://pbs.twimg.com/media/**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/svg+xml',
+        body: '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" />',
+      });
+    });
+    await page.setContent(`
+      <div data-xeg-gallery-container>
+        <div data-gallery-element="toolbar" data-current-index="0" data-focused-index="1">
+          <span id="xeg-toolbar-counter" data-gallery-element="position" data-position="2"
+            data-total="2" data-current-index="0" data-focused-index="1"></span>
+        </div>
+        <div data-gallery-element="items" style="width:200px;height:180px;overflow:auto;scroll-padding-block-start:0px">
+          <div data-gallery-element="item" data-index="0" data-media-loaded="true"
+            data-media-display-url="https://pbs.twimg.com/media/first.jpg" style="height:180px">
+            <img src="https://pbs.twimg.com/media/first.jpg" width="100" height="100" />
+          </div>
+          <div data-gallery-element="item" data-index="1" data-media-loaded="true"
+            data-media-display-url="https://pbs.twimg.com/media/second.jpg" style="height:180px">
+            <img src="https://pbs.twimg.com/media/second.jpg" width="100" height="100" />
+          </div>
+        </div>
+      </div>`);
+    await page.waitForFunction(() =>
+      [...document.images].every((image) => image.complete && image.naturalWidth > 0)
+    );
+    const gallery = await page.locator('[data-xeg-gallery-container]').elementHandle();
+    assert(gallery);
+    await page.locator('[data-gallery-element="items"]').evaluate((element) => {
+      element.scrollTop = 180;
+    });
+    const observed = await gallery.evaluate(displayedGalleryImageDocument);
+    assert(matchesDisplayedImage(observed, 0, 1, '/media/second.jpg'));
+    const displayedItem = page.locator('[data-index="1"]');
+    await displayedItem.evaluate((item) => item.setAttribute('data-media-loaded', 'false'));
+    assert.equal(await gallery.evaluate(displayedGalleryImageDocument), null);
+    await displayedItem.evaluate((item) => item.setAttribute('data-media-loaded', 'true'));
+    await displayedItem.evaluate((item) =>
+      item.setAttribute('data-media-display-url', 'https://pbs.twimg.com/media/wrong.jpg')
+    );
+    assert.equal(await gallery.evaluate(displayedGalleryImageDocument), null);
+    await displayedItem.evaluate((item) =>
+      item.setAttribute('data-media-display-url', 'https://pbs.twimg.com/media/second.jpg')
+    );
+    await page
+      .locator('#xeg-toolbar-counter')
+      .evaluate((counter) => counter.removeAttribute('data-current-index'));
+    assert.equal(await gallery.evaluate(displayedGalleryImageDocument), null);
+    await page
+      .locator('#xeg-toolbar-counter')
+      .evaluate((counter) => counter.setAttribute('data-current-index', '0'));
+    await page.evaluate(() => {
+      const image = document.querySelector('[data-index="1"] img');
+      if (!image) {
+        throw new Error('Missing test image');
+      }
+      const rect = image.getBoundingClientRect();
+      const cover = document.createElement('div');
+      cover.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;z-index:9999`;
+      document.body.append(cover);
+    });
+    assert.equal(await gallery.evaluate(displayedGalleryImageDocument), null);
+    await gallery.evaluate((element) => element.remove());
+    assert.equal(await gallery.evaluate(displayedGalleryImageDocument), null);
+    await gallery.dispose();
+  } finally {
+    await browser.close();
+  }
+});
+
+test('Chromium manual-scroll flow waits for delayed wheel delivery and rejects synthetic input or snap-back', async () => {
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
+  const displayPaths = [
+    'https://pbs.twimg.com/media/first.jpg',
+    'https://pbs.twimg.com/media/second.jpg',
+  ];
+  try {
+    await page.route('https://pbs.twimg.com/media/**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/svg+xml',
+        body: '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" />',
+      });
+    });
+    await page.setContent(`
+      <div data-xeg-gallery-container>
+        <div data-gallery-element="toolbar" data-current-index="0" data-focused-index="0">
+          <button aria-label="Previous">Previous</button><button aria-label="Next">Next</button>
+          <span id="xeg-toolbar-counter" data-gallery-element="position" data-position="1"
+            data-total="2" data-current-index="0" data-focused-index="0"></span>
+        </div>
+        <div data-gallery-element="items" style="width:200px;height:180px;overflow:auto;scroll-padding-block-start:0px">
+          <div data-gallery-element="item" data-index="0" data-media-loaded="true"
+            data-media-display-url="https://pbs.twimg.com/media/first.jpg" style="height:180px">
+            <img src="https://pbs.twimg.com/media/first.jpg" width="100" height="100" />
+          </div>
+          <div data-gallery-element="item" data-index="1" data-media-loaded="true"
+            data-media-display-url="https://pbs.twimg.com/media/second.jpg" style="height:180px">
+            <img src="https://pbs.twimg.com/media/second.jpg" width="100" height="100" />
+          </div>
+        </div>
+      </div>
+      <script>
+        const toolbar = document.querySelector('[data-gallery-element="toolbar"]');
+        const counter = document.querySelector('#xeg-toolbar-counter');
+        const scroll = document.querySelector('[data-gallery-element="items"]');
+        const render = (requested, displayed) => {
+          toolbar.setAttribute('data-current-index', String(requested));
+          toolbar.setAttribute('data-focused-index', String(displayed));
+          counter.setAttribute('data-current-index', String(requested));
+          counter.setAttribute('data-focused-index', String(displayed));
+          counter.setAttribute('data-position', String(displayed + 1));
+        };
+        scroll.addEventListener('scroll', () => {
+          const requested = Number(toolbar.getAttribute('data-current-index'));
+          const displayed = scroll.scrollTop >= 90 ? 1 : 0;
+          render(requested, displayed);
+          if (document.documentElement.dataset.snapBack === 'true' && requested === 0 && displayed === 1) {
+            setTimeout(() => { scroll.scrollTop = 0; }, 150);
+          }
+        });
+        for (const label of ['Previous', 'Next']) {
+          toolbar.querySelector('[aria-label="' + label + '"]').addEventListener('click', () => {
+            const displayed = Number(toolbar.getAttribute('data-focused-index'));
+            const target = Math.max(0, Math.min(1, displayed + (label === 'Next' ? 1 : -1)));
+            render(target, target);
+            scroll.scrollTop = target * 180;
+          });
+        }
+      </script>`);
+    await page.waitForFunction(() =>
+      [...document.images].every((image) => image.complete && image.naturalWidth > 0)
+    );
+    const pendingWheels: Promise<void>[] = [];
+    const delayedPage = {
+      locator: page.locator.bind(page),
+      waitForTimeout: page.waitForTimeout.bind(page),
+      mouse: {
+        wheel: async (x: number, y: number) => {
+          pendingWheels.push(
+            new Promise<void>((resolveWheel, rejectWheel) => {
+              setTimeout(() => {
+                page.mouse.wheel(x, y).then(resolveWheel, rejectWheel);
+              }, 150);
+            })
+          );
+        },
+      },
+    } as unknown as Page;
+    const observed = await observeManualScrollCommandTargeting(delayedPage, displayPaths);
+    await Promise.all(pendingWheels);
+    assert.equal(observed.status, 'observed');
+    assert.deepEqual(
+      observed.phases.map((phase) => phase.phase),
+      [
+        'opening',
+        'previous-precondition',
+        'previous-result',
+        'next-setup',
+        'next-precondition',
+        'next-result',
+        'continuation',
+      ]
+    );
+    assert.equal(observed.wheelTrace?.events.length, 2);
+    assert.equal(observed.wheelTrace?.clicks.length, 4);
+    assert.equal(observed.phases[1]?.stableSamples?.length, 11);
+    assert.equal(observed.phases[4]?.stableSamples?.length, 11);
+
+    const syntheticPage = {
+      locator: page.locator.bind(page),
+      waitForTimeout: page.waitForTimeout.bind(page),
+      mouse: {
+        wheel: async (_x: number, y: number) => {
+          await page.locator('[data-gallery-element="items"]').evaluate((element, delta) => {
+            element.dispatchEvent(new WheelEvent('wheel', { bubbles: true, deltaY: delta }));
+          }, y);
+        },
+      },
+    } as unknown as Page;
+    const synthetic = await observeManualScrollCommandTargeting(syntheticPage, displayPaths);
+    assert.equal(synthetic.status, 'failed');
+    assert.match(synthetic.error ?? '', /trusted gallery event/u);
+
+    await page.evaluate(() => {
+      document.documentElement.dataset.snapBack = 'true';
+    });
+    const snapBack = await observeManualScrollCommandTargeting(page, displayPaths);
+    assert.equal(snapBack.status, 'failed');
+    assert.match(snapBack.error ?? '', /snapped back|divergence/u);
+  } finally {
+    await browser.close();
+  }
+});
+
+test('Chromium observer records native keys, synthetic input, transient play and disposal', async () => {
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
+  try {
+    await page.setContent(`
+      <div data-xeg-gallery-container>
+        <button id="settings-button">Settings</button><video></video>
+        <div id="panel" hidden>Panel</div>
+      </div>`);
+    await page.evaluate(() => {
+      const button = document.querySelector('#settings-button');
+      const panel = document.querySelector('#panel');
+      if (!button || !(panel instanceof HTMLElement)) {
+        throw new Error('Missing test controls');
+      }
+      button.addEventListener('click', () => {
+        panel.hidden = !panel.hidden;
+      });
+    });
+    const gallery = await page.locator('[data-xeg-gallery-container]').elementHandle();
+    assert(gallery);
+    const button = await page.locator('#settings-button').elementHandle();
+    assert(button);
+    const tracker = await gallery.evaluateHandle(installNativeButtonObserverDocument);
+    const snapshot = () => tracker.evaluate((value) => value.snapshot());
+    try {
+      await page.locator('#settings-button').focus();
+      await page.keyboard.press('Space');
+      const native = await snapshot();
+      assert(nativeButtonActivationPassed(native, [' '], 1));
+      assert.equal(await page.locator('#panel').isVisible(), true);
+      await page.evaluate(() => {
+        const button = document.querySelector('#settings-button');
+        button?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        (button as HTMLButtonElement | null)?.click();
+      });
+      const synthetic = await snapshot();
+      assert.equal(synthetic.keys[1]?.trusted, false);
+      assert.equal(synthetic.clicks[1]?.trusted, false);
+      assert(!nativeButtonActivationPassed(synthetic, [' ', 'Enter'], 2));
+      await page.locator('video').evaluate((video) => video.dispatchEvent(new Event('play')));
+      const transient = await snapshot();
+      assert.equal(transient.plays, 1);
+      assert(!nativeButtonActivationPassed(transient, [' ', 'Enter'], 2));
+      await gallery.evaluate((element) => element.remove());
+      assert.equal((await snapshot()).galleryCurrent, false);
+      await tracker.evaluate((value) => value.dispose());
+      await button.evaluate((element) =>
+        element.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }))
+      );
+      assert.equal((await snapshot()).keys.length, 2);
+    } finally {
+      await tracker.dispose();
+      await button.dispose();
+      await gallery.dispose();
+    }
+  } finally {
+    await browser.close();
+  }
+});
+
+test('final actual-site coverage requires both interactions and completed retry cleanup', () => {
+  type PageReceipt = Parameters<typeof actualSiteAcceptanceCoverage>[0][number];
+  const image = {
+    status: 'core-flow-observed',
+    cleanup: { pageClosed: true },
+    actualSiteAcceptance: {
+      status: 'observed',
+      steps: { manualScrollCommandTargeting: { status: 'observed' } },
+    },
+    sameDocumentPostNavigationAfterClose: { status: 'observed' },
+  } as unknown as PageReceipt;
+  const video = {
+    status: 'core-flow-observed',
+    cleanup: { pageClosed: true },
+    actualSiteVideoNavigation: {
+      status: 'observed',
+      nativeToolbarButtonOwnership: { status: 'observed' },
+    },
+  } as unknown as PageReceipt;
+  assert(Object.values(actualSiteAcceptanceCoverage([image, video])).every(Boolean));
+  assert.equal(
+    actualSiteAcceptanceCoverage([
+      { ...image, actualSiteAcceptance: { status: 'observed', steps: {} } } as PageReceipt,
+      video,
+    ]).manualScrollCommandTargeting,
+    false
+  );
+  assert.equal(
+    actualSiteAcceptanceCoverage([
+      image,
+      { ...video, actualSiteVideoNavigation: { status: 'observed' } } as PageReceipt,
+    ]).nativeToolbarButtonOwnership,
+    false
+  );
+  const failedRetry = {
+    status: 'failed',
+    cleanup: { pageClosed: true },
+    controlledProbe: {
+      status: 'core-flow-observed',
+      observation: video,
+      cleanup: { restored: true, extensionPageClosed: false },
+    },
+  } as unknown as PageReceipt;
+  assert.equal(
+    actualSiteAcceptanceCoverage([image, failedRetry]).nativeToolbarButtonOwnership,
+    false
+  );
+  const passedRetry = {
+    ...failedRetry,
+    controlledProbe: {
+      ...failedRetry.controlledProbe,
+      cleanup: { restored: true, extensionPageClosed: true },
+    },
+  } as PageReceipt;
+  assert.equal(
+    actualSiteAcceptanceCoverage([image, passedRetry]).nativeToolbarButtonOwnership,
+    true
+  );
 });
 
 test('actual-site acceptance restores the owned X tab before revalidating and clicking', async () => {

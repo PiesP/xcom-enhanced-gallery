@@ -910,6 +910,23 @@ artifacts and closes only task-owned pages; a fresh owned profile follows its no
 cleanup. These are acceptance and retained-file bounds, not a hard
 instantaneous network-byte guarantee.
 
+The multi-image lane also requires a trusted wheel inside the gallery to establish
+stable requested/displayed divergence (0/1), then Previous must restore owned
+image 0. It requests image 1, wheels back to displayed image 0 while the request
+remains 1, then Next must restore owned image 1 before returning to 0 for
+downloads. The separate divergent reader checks both indices and counter, the
+loaded and hit-tested visible provider-owned image, scroll geometry, same
+gallery/document and a captured trusted wheel event. Ten samples over one
+second must retain each divergent precondition; automatic snap-back fails.
+
+The mixed-media lane retains positive native video playback, then pauses that
+exact owned player through its native Space control. A passive gallery observer
+records trusted key targets, focused Settings-button activation counts and any
+gallery-video `play` event. Focused Space opens Settings once and focused Enter
+closes it once after the delayed select-focus transition. The selected video
+identity and every player's paused state must remain stable. Capture listeners
+are removed before the page is disposed.
+
 The same lane changes the theme through the visible settings control, reads
 extension storage, confirms it in a reloaded new document, restores the exact
 prior stored settings, and checks the restored UI after another reload. It then
@@ -929,9 +946,12 @@ video playback controls; the receipt names this entry. This mixed post does not
 qualify for image-only downloads. The existing direct-quote ownership and playback checks still
 apply. An unmarked candidate without quoted status IDs instead requires unique direct
 status ownership from the exact playable provider variant. A controlled allow-all retry
-still applies when needed. The summary has
-separate coverage flags for multi-image downloads/settings, video navigation,
-and post-close same-document navigation; all three are required for actual-site acceptance.
+still applies when needed. The summary has separate required coverage flags for
+multi-image downloads/settings, manual-scroll command targeting, video navigation,
+native toolbar-button ownership and post-close same-document navigation. Missing
+or failed observations keep actual-site acceptance unverified. A controlled video
+retry contributes only after its page and settings cleanup pass. Earlier receipts
+retain their original scope and do not acquire these later observations.
 Absent source size, native completion, eligible video neighbor or same-document
 status link leaves this opt-in acceptance unverified. Default no-download
 diagnostics remain separate. No authentication, consent, CAPTCHA, traffic rewriting, Explorer,

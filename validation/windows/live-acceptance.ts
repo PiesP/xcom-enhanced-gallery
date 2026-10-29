@@ -61,6 +61,16 @@ type Selection = {
   focusedIndex: number;
   path: string;
 };
+type DisplayedImage = Selection & {
+  scrollTop: number;
+  itemCenter: number;
+  visibleCenter: number;
+  scrollportTop: number;
+  scrollportBottom: number;
+  imageVisible: boolean;
+  imageHitTested: boolean;
+  documentTimeOrigin: number;
+};
 type SelectedGalleryVideo = Exclude<
   ReturnType<typeof inspectSelectedGalleryVideoDocument>,
   false | null
@@ -89,6 +99,7 @@ export async function observeActualSiteVideoNavigation(
     returned?: NonNullable<ReturnType<typeof inspectLiveMixedGallerySelectionDocument>>;
     selectedVideo?: NonNullable<ReturnType<typeof inspectSelectedGalleryVideoDocument>>;
     playback?: { startTime: number; endTime: number; progressed: boolean; control: 'native-space' };
+    nativeToolbarButtonOwnership?: Awaited<ReturnType<typeof observeNativeToolbarButtonOwnership>>;
     error?: string;
   } = { status: 'unverified', entryKind };
   const selectedVideo =
@@ -218,6 +229,25 @@ export async function observeActualSiteVideoNavigation(
       };
       assert(receipt.playback.progressed, 'Native selected video did not progress');
       await onSelectedVideo?.(playedVideo);
+      await videoControl.focus();
+      await page.keyboard.press('Space');
+      await page.waitForFunction(
+        (index) =>
+          document
+            .querySelectorAll('[data-xeg-gallery-container] [data-gallery-element="item"]')
+            [index]?.querySelector('video')?.paused === true,
+        neighbor.index,
+        { timeout: 5_000 }
+      );
+      receipt.nativeToolbarButtonOwnership = await observeNativeToolbarButtonOwnership(
+        page,
+        playedVideo
+      );
+      assert.equal(
+        receipt.nativeToolbarButtonOwnership.status,
+        'observed',
+        receipt.nativeToolbarButtonOwnership.error ?? 'Native toolbar-button observation failed'
+      );
     }
     await toolbar.locator(`button[aria-label="${forward ? 'Previous' : 'Next'}"]`).click();
     await page.waitForFunction(
@@ -457,6 +487,588 @@ async function waitSelection(page: Page, position: number): Promise<Selection> {
     'Gallery selected/focused image identity differs'
   );
   return selected;
+}
+
+export function displayedGalleryImageDocument(gallery: Element): DisplayedImage | null {
+  if (
+    !gallery.isConnected ||
+    document.querySelectorAll('[data-xeg-gallery-container]').length !== 1 ||
+    document.querySelector('[data-xeg-gallery-container]') !== gallery
+  ) {
+    return null;
+  }
+  const toolbar = gallery.querySelector('[data-gallery-element="toolbar"]');
+  const counter = toolbar?.querySelector('#xeg-toolbar-counter[data-gallery-element="position"]');
+  const scrollport = gallery.querySelector('[data-gallery-element="items"]');
+  const integer = (element: Element | null | undefined, attribute: string): number | null => {
+    const raw = element?.getAttribute(attribute);
+    return raw !== null && raw !== undefined && /^(?:0|[1-9]\d*)$/u.test(raw) ? Number(raw) : null;
+  };
+  const position = integer(counter, 'data-position');
+  const total = integer(counter, 'data-total');
+  const currentIndex = integer(toolbar, 'data-current-index');
+  const focusedIndex = integer(toolbar, 'data-focused-index');
+  if (
+    position === null ||
+    total === null ||
+    currentIndex === null ||
+    focusedIndex === null ||
+    !Number.isSafeInteger(position) ||
+    !Number.isSafeInteger(total) ||
+    !Number.isSafeInteger(currentIndex) ||
+    !Number.isSafeInteger(focusedIndex) ||
+    total < 2 ||
+    position < 1 ||
+    position > total ||
+    currentIndex >= total ||
+    focusedIndex >= total ||
+    position !== focusedIndex + 1 ||
+    counter?.getAttribute('data-current-index') !== String(currentIndex) ||
+    counter.getAttribute('data-focused-index') !== String(focusedIndex) ||
+    !(scrollport instanceof HTMLElement)
+  ) {
+    return null;
+  }
+  const items = gallery.querySelectorAll('[data-gallery-element="item"]');
+  const item = items[focusedIndex];
+  if (
+    items.length !== total ||
+    item?.getAttribute('data-index') !== String(focusedIndex) ||
+    item.getAttribute('data-media-loaded') !== 'true' ||
+    item.querySelectorAll('img').length !== 1
+  ) {
+    return null;
+  }
+  const image = item.querySelector('img');
+  if (!(image instanceof HTMLImageElement) || !image.complete || image.naturalWidth <= 0) {
+    return null;
+  }
+  const scrollportRect = scrollport.getBoundingClientRect();
+  const itemRect = item.getBoundingClientRect();
+  const imageRect = image.getBoundingClientRect();
+  const padding = Number.parseFloat(getComputedStyle(scrollport).scrollPaddingBlockStart);
+  const visibleTop = scrollportRect.top + padding;
+  const itemCenter = itemRect.top + itemRect.height / 2;
+  const visibleCenter = (visibleTop + scrollportRect.bottom) / 2;
+  const imageVisible =
+    imageRect.width > 0 &&
+    imageRect.height > 0 &&
+    imageRect.bottom > visibleTop &&
+    imageRect.top < scrollportRect.bottom;
+  const visibleLeft = Math.max(imageRect.left, scrollportRect.left);
+  const visibleRight = Math.min(imageRect.right, scrollportRect.right);
+  const visibleImageTop = Math.max(imageRect.top, visibleTop);
+  const visibleImageBottom = Math.min(imageRect.bottom, scrollportRect.bottom);
+  const point = document.elementFromPoint(
+    (visibleLeft + visibleRight) / 2,
+    (visibleImageTop + visibleImageBottom) / 2
+  );
+  const imageHitTested =
+    visibleLeft < visibleRight &&
+    visibleImageTop < visibleImageBottom &&
+    (point === image || point === image.parentElement);
+  if (
+    !Number.isFinite(padding) ||
+    padding < 0 ||
+    !Number.isFinite(scrollport.scrollTop) ||
+    visibleTop >= scrollportRect.bottom ||
+    !imageVisible ||
+    !imageHitTested
+  ) {
+    return null;
+  }
+  try {
+    const url = new URL(image.currentSrc || image.src);
+    const declared = new URL(item.getAttribute('data-media-display-url') ?? '');
+    return url.protocol === 'https:' &&
+      url.hostname === 'pbs.twimg.com' &&
+      url.pathname.startsWith('/media/') &&
+      declared.protocol === url.protocol &&
+      declared.hostname === url.hostname &&
+      declared.pathname === url.pathname
+      ? {
+          position,
+          total,
+          currentIndex,
+          focusedIndex,
+          path: url.pathname,
+          scrollTop: scrollport.scrollTop,
+          itemCenter,
+          visibleCenter,
+          scrollportTop: scrollportRect.top,
+          scrollportBottom: scrollportRect.bottom,
+          imageVisible,
+          imageHitTested,
+          documentTimeOrigin: performance.timeOrigin,
+        }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+export function matchesDisplayedImage(
+  image: DisplayedImage | null,
+  requested: number,
+  displayed: number,
+  path: string
+): image is DisplayedImage {
+  return (
+    image !== null &&
+    image.currentIndex === requested &&
+    image.focusedIndex === displayed &&
+    image.position === displayed + 1 &&
+    image.path === path &&
+    image.imageVisible &&
+    image.imageHitTested &&
+    Number.isFinite(image.documentTimeOrigin) &&
+    Number.isFinite(image.scrollTop) &&
+    Number.isFinite(image.itemCenter) &&
+    Number.isFinite(image.visibleCenter)
+  );
+}
+
+export async function observeManualScrollCommandTargeting(page: Page, displayPaths: string[]) {
+  const gallery = page.locator('[data-xeg-gallery-container]');
+  const handle = await gallery.elementHandle();
+  assert(handle, 'Gallery detached before manual-scroll observation');
+  const read = () => handle.evaluate(displayedGalleryImageDocument);
+  const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
+  const scrollport = gallery.locator('[data-gallery-element="items"]');
+  const phases: Array<{
+    phase: string;
+    image: DisplayedImage;
+    wheelDelta?: number;
+    stableSamples?: DisplayedImage[];
+  }> = [];
+  const wheelObserver = await handle
+    .evaluateHandle((root) => {
+      const scroll = root.querySelector('[data-gallery-element="items"]');
+      if (!(scroll instanceof HTMLElement)) {
+        throw new Error('Gallery scrollport is unavailable');
+      }
+      const events: Array<{ trusted: boolean; ownedTarget: boolean; deltaY: number }> = [];
+      const clicks: Array<{ trusted: boolean; command: string }> = [];
+      let overflow = false;
+      const onWheel = (event: Event) => {
+        if (!(event instanceof WheelEvent)) {
+          return;
+        }
+        if (events.length >= 4) {
+          overflow = true;
+          return;
+        }
+        events.push({
+          trusted: event.isTrusted,
+          ownedTarget: event.target instanceof Node && scroll.contains(event.target),
+          deltaY: event.deltaY,
+        });
+      };
+      const onClick = (event: Event) => {
+        const button =
+          event.target instanceof Element
+            ? event.target.closest('button[aria-label="Previous"],button[aria-label="Next"]')
+            : null;
+        if (!button || !root.contains(button)) {
+          return;
+        }
+        if (clicks.length >= 6) {
+          overflow = true;
+          return;
+        }
+        clicks.push({ trusted: event.isTrusted, command: button.getAttribute('aria-label') ?? '' });
+      };
+      root.addEventListener('wheel', onWheel, true);
+      root.addEventListener('click', onClick, true);
+      return {
+        events,
+        clicks,
+        get overflow() {
+          return overflow;
+        },
+        dispose: () => {
+          root.removeEventListener('wheel', onWheel, true);
+          root.removeEventListener('click', onClick, true);
+        },
+      };
+    })
+    .catch(async (error: unknown) => {
+      await handle.dispose();
+      throw error;
+    });
+  let documentTimeOrigin: number | null = null;
+  let wheelActionCount = 0;
+  const expectImage = async (phase: string, requested: number, displayed: number) => {
+    const path = new URL(displayPaths[displayed]!).pathname;
+    const deadline = Date.now() + 5_000;
+    let image = await read();
+    while (!matchesDisplayedImage(image, requested, displayed, path) && Date.now() < deadline) {
+      await new Promise((done) => setTimeout(done, 100));
+      image = await read();
+    }
+    assert(
+      matchesDisplayedImage(image, requested, displayed, path),
+      `${phase} image was not owned and visible`
+    );
+    documentTimeOrigin ??= image.documentTimeOrigin;
+    assert.equal(image.documentTimeOrigin, documentTimeOrigin, `${phase} changed document`);
+    phases.push({ phase, image });
+    return image;
+  };
+  const wheelTo = async (phase: string, requested: number, displayed: number) => {
+    await scrollport.hover();
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const before = await read();
+      assert(before, `${phase} gallery geometry is unavailable`);
+      const target = await gallery
+        .locator(`[data-gallery-element="item"][data-index="${displayed}"]`)
+        .evaluate((item) => {
+          const scroll = item.closest('[data-gallery-element="items"]');
+          if (!(scroll instanceof HTMLElement)) {
+            throw new Error('Missing gallery scrollport');
+          }
+          const viewport = scroll.getBoundingClientRect();
+          const rect = item.getBoundingClientRect();
+          const padding = Number.parseFloat(getComputedStyle(scroll).scrollPaddingBlockStart);
+          return {
+            itemCenter: rect.top + rect.height / 2,
+            visibleCenter: (viewport.top + padding + viewport.bottom) / 2,
+          };
+        });
+      const delta = Math.round(target.itemCenter - target.visibleCenter);
+      assert(Number.isFinite(delta) && delta !== 0, `${phase} wheel delta is invalid`);
+      const beforeWheelCount = await wheelObserver.evaluate((value) => value.events.length);
+      assert.equal(beforeWheelCount, wheelActionCount, `${phase} received an extra wheel event`);
+      wheelActionCount += 1;
+      await page.mouse.wheel(0, delta);
+      const deliveryDeadline = Date.now() + 3_000;
+      for (;;) {
+        const wheelEvent = await wheelObserver.evaluate(
+          (value, index) => ({
+            event: value.events[index],
+            count: value.events.length,
+            overflow: value.overflow,
+          }),
+          beforeWheelCount
+        );
+        assert(
+          !wheelEvent.overflow && wheelEvent.count <= wheelActionCount,
+          `${phase} received duplicate wheel events`
+        );
+        if (wheelEvent.count === wheelActionCount) {
+          assert(
+            wheelEvent.event?.trusted &&
+              wheelEvent.event.ownedTarget &&
+              wheelEvent.event.deltaY === delta,
+            `${phase} wheel was not a trusted gallery event with the expected delta`
+          );
+          break;
+        }
+        assert(Date.now() < deliveryDeadline, `${phase} trusted wheel event was not delivered`);
+        await new Promise((done) => setTimeout(done, 25));
+      }
+      const path = new URL(displayPaths[displayed]!).pathname;
+      const deadline = Date.now() + 3_000;
+      let result = await read();
+      while (!matchesDisplayedImage(result, requested, displayed, path) && Date.now() < deadline) {
+        await new Promise((done) => setTimeout(done, 100));
+        result = await read();
+      }
+      if (matchesDisplayedImage(result, requested, displayed, path)) {
+        const stableSamples = [result];
+        for (let sample = 0; sample < 10; sample += 1) {
+          await page.waitForTimeout(100);
+          result = await read();
+          assert(
+            matchesDisplayedImage(result, requested, displayed, path) &&
+              result.documentTimeOrigin === documentTimeOrigin,
+            `${phase} divergence snapped back or source changed`
+          );
+          const observedWheels = await wheelObserver.evaluate((value) => ({
+            count: value.events.length,
+            overflow: value.overflow,
+          }));
+          assert(
+            !observedWheels.overflow && observedWheels.count === wheelActionCount,
+            `${phase} received an extra wheel event during stability observation`
+          );
+          stableSamples.push(result);
+        }
+        phases.push({ phase, image: result, wheelDelta: delta, stableSamples });
+        return;
+      }
+    }
+    throw new Error(`${phase} trusted wheel did not produce the requested/displayed divergence`);
+  };
+  try {
+    assert(
+      displayPaths.length >= 2 && displayPaths.length <= MAX_MEDIA,
+      'Manual-scroll input count is invalid'
+    );
+    await expectImage('opening', 0, 0);
+    await wheelTo('previous-precondition', 0, 1);
+    await toolbar.locator('button[aria-label="Previous"]').click();
+    await expectImage('previous-result', 0, 0);
+    await toolbar.locator('button[aria-label="Next"]').click();
+    await expectImage('next-setup', 1, 1);
+    await wheelTo('next-precondition', 1, 0);
+    await toolbar.locator('button[aria-label="Next"]').click();
+    await expectImage('next-result', 1, 1);
+    await toolbar.locator('button[aria-label="Previous"]').click();
+    await expectImage('continuation', 0, 0);
+    const wheelTrace = await wheelObserver.evaluate((value) => ({
+      events: value.events,
+      clicks: value.clicks,
+      overflow: value.overflow,
+    }));
+    assert(
+      !wheelTrace.overflow &&
+        wheelTrace.events.length === wheelActionCount &&
+        wheelActionCount >= 2,
+      'Manual wheel trace is incomplete'
+    );
+    assert.deepEqual(
+      wheelTrace.clicks,
+      [
+        { trusted: true, command: 'Previous' },
+        { trusted: true, command: 'Next' },
+        { trusted: true, command: 'Next' },
+        { trusted: true, command: 'Previous' },
+      ],
+      'Manual-scroll command clicks were not trusted and ordered'
+    );
+    return { schemaVersion: 1 as const, status: 'observed' as const, phases, wheelTrace };
+  } catch (error) {
+    return {
+      schemaVersion: 1 as const,
+      status: 'failed' as const,
+      phases,
+      wheelTrace: await wheelObserver
+        .evaluate((value) => ({
+          events: value.events,
+          clicks: value.clicks,
+          overflow: value.overflow,
+        }))
+        .catch(() => null),
+      error: safeError(error),
+    };
+  } finally {
+    try {
+      await wheelObserver.evaluate((value) => value.dispose());
+    } finally {
+      await wheelObserver.dispose();
+      await handle.dispose();
+    }
+  }
+}
+
+type NativeButtonEvent = {
+  key?: string;
+  trusted: boolean;
+  targetButton: boolean;
+  focusedButton?: boolean;
+  disabled?: boolean;
+};
+type NativeButtonSnapshot = {
+  keys: NativeButtonEvent[];
+  clicks: NativeButtonEvent[];
+  plays: number;
+  overflow: boolean;
+  allPaused: boolean;
+  galleryCurrent: boolean;
+  documentTimeOrigin: number;
+};
+
+export function installNativeButtonObserverDocument(root: Element) {
+  const button = root.querySelector('#settings-button');
+  if (!(button instanceof HTMLButtonElement) || button.disabled) {
+    throw new Error('Enabled native Settings button is unavailable');
+  }
+  const keys: NativeButtonEvent[] = [];
+  const clicks: NativeButtonEvent[] = [];
+  let plays = 0;
+  let overflow = false;
+  const onKey = (event: Event) => {
+    if (!(event instanceof KeyboardEvent)) {
+      return;
+    }
+    if (keys.length >= 8) {
+      overflow = true;
+      return;
+    }
+    keys.push({
+      key: event.key,
+      trusted: event.isTrusted,
+      targetButton: event.target === button,
+      focusedButton: document.activeElement === button,
+      disabled: button.disabled,
+    });
+  };
+  const onClick = (event: Event) => {
+    if (event.target !== button) {
+      return;
+    }
+    if (clicks.length >= 8) {
+      overflow = true;
+      return;
+    }
+    clicks.push({ trusted: event.isTrusted, targetButton: true });
+  };
+  const onPlay = (event: Event) => {
+    if (event.target instanceof HTMLVideoElement && root.contains(event.target)) {
+      plays += 1;
+      if (plays > 8) {
+        overflow = true;
+      }
+    }
+  };
+  root.addEventListener('keydown', onKey, true);
+  root.addEventListener('click', onClick, true);
+  root.addEventListener('play', onPlay, true);
+  return {
+    snapshot(): NativeButtonSnapshot {
+      return {
+        keys: [...keys],
+        clicks: [...clicks],
+        plays,
+        overflow,
+        allPaused: [...root.querySelectorAll('video')].every((video) => video.paused),
+        galleryCurrent:
+          root.isConnected &&
+          document.querySelectorAll('[data-xeg-gallery-container]').length === 1 &&
+          document.querySelector('[data-xeg-gallery-container]') === root,
+        documentTimeOrigin: performance.timeOrigin,
+      };
+    },
+    dispose() {
+      root.removeEventListener('keydown', onKey, true);
+      root.removeEventListener('click', onClick, true);
+      root.removeEventListener('play', onPlay, true);
+    },
+  };
+}
+
+export function nativeButtonActivationPassed(
+  snapshot: NativeButtonSnapshot,
+  expectedKeys: readonly string[],
+  expectedClicks: number
+): boolean {
+  return (
+    !snapshot.overflow &&
+    snapshot.plays === 0 &&
+    snapshot.allPaused &&
+    snapshot.galleryCurrent &&
+    Number.isFinite(snapshot.documentTimeOrigin) &&
+    snapshot.keys.length === expectedKeys.length &&
+    snapshot.keys.every(
+      (event, index) =>
+        event.key === expectedKeys[index] &&
+        event.trusted &&
+        event.targetButton &&
+        event.focusedButton &&
+        event.disabled === false
+    ) &&
+    snapshot.clicks.length === expectedClicks &&
+    snapshot.clicks.every((event) => event.trusted && event.targetButton)
+  );
+}
+
+async function observeNativeToolbarButtonOwnership(page: Page, expected: SelectedGalleryVideo) {
+  const gallery = page.locator('[data-xeg-gallery-container]');
+  const root = await gallery.elementHandle();
+  assert(root, 'Gallery detached before native-button observation');
+  const button = gallery.locator('[data-gallery-element="toolbar"] #settings-button');
+  const theme = gallery.locator('#settings-theme-select');
+  const tracker = await root
+    .evaluateHandle(installNativeButtonObserverDocument)
+    .catch(async (error: unknown) => {
+      await root.dispose();
+      throw error;
+    });
+  const snapshot = () => tracker.evaluate((value) => value.snapshot());
+  const documentTimeOrigin = await root.evaluate(() => performance.timeOrigin);
+  const media = async () => {
+    const selected = await page.evaluate(inspectLiveMixedGallerySelectionDocument);
+    const current = await page.evaluate(inspectSelectedGalleryVideoDocument);
+    const allPaused = await root.evaluate((element) =>
+      [...element.querySelectorAll('video')].every((video) => video.paused)
+    );
+    const sameGallery = await root.evaluate(
+      (element, expectedTimeOrigin) =>
+        element.isConnected &&
+        document.querySelectorAll('[data-xeg-gallery-container]').length === 1 &&
+        document.querySelector('[data-xeg-gallery-container]') === element &&
+        performance.timeOrigin === expectedTimeOrigin,
+      documentTimeOrigin
+    );
+    assert(
+      selected?.kind === 'video' &&
+        selected.index === expected.index &&
+        selected.source.host === expected.source?.host &&
+        selected.source.path === expected.source.path &&
+        current &&
+        current.index === expected.index &&
+        current.source?.host === expected.source.host &&
+        current.source.path === expected.source.path &&
+        allPaused &&
+        sameGallery,
+      'Settings key action changed the owned selected video or playback state'
+    );
+    return { selected, current, allPaused };
+  };
+  try {
+    const before = await media();
+    await button.focus();
+    assert.equal(await button.evaluate((element) => document.activeElement === element), true);
+    await page.keyboard.press('Space');
+    await theme.waitFor({ state: 'visible', timeout: 5_000 });
+    assert.equal(await button.getAttribute('aria-expanded'), 'true');
+    const opened = await snapshot();
+    assert(
+      nativeButtonActivationPassed(opened, [' '], 1),
+      'Native Settings Space ownership failed'
+    );
+    await media();
+    await page.waitForFunction(
+      () => document.activeElement === document.querySelector('#settings-theme-select'),
+      undefined,
+      { timeout: 5_000 }
+    );
+    await button.focus();
+    assert.equal(await button.evaluate((element) => document.activeElement === element), true);
+    await page.keyboard.press('Enter');
+    await theme.waitFor({ state: 'hidden', timeout: 5_000 });
+    assert.equal(await button.getAttribute('aria-expanded'), 'false');
+    await page.waitForTimeout(300);
+    const closed = await snapshot();
+    assert(
+      nativeButtonActivationPassed(closed, [' ', 'Enter'], 2),
+      'Native Settings Enter ownership failed'
+    );
+    const after = await media();
+    return {
+      schemaVersion: 1 as const,
+      status: 'observed' as const,
+      before,
+      opened,
+      closed,
+      after,
+    };
+  } catch (error) {
+    return {
+      schemaVersion: 1 as const,
+      status: 'failed' as const,
+      events: await snapshot().catch(() => null),
+      error: safeError(error),
+    };
+  } finally {
+    try {
+      await tracker.evaluate((value) => value.dispose());
+    } finally {
+      await tracker.dispose();
+      await root.dispose();
+    }
+  }
 }
 
 async function gallerySources(page: Page): Promise<string[]> {
@@ -922,7 +1534,11 @@ export async function runActualSiteAcceptance({
 }) {
   const receipt: {
     status: string;
-    steps: Record<string, unknown>;
+    steps: Record<string, unknown> & {
+      manualScrollCommandTargeting?: Awaited<
+        ReturnType<typeof observeManualScrollCommandTargeting>
+      >;
+    };
     cleanup: Record<string, unknown>;
     error?: string;
   } = { status: 'pending', steps: {}, cleanup: {} };
@@ -986,6 +1602,15 @@ export async function runActualSiteAcceptance({
       limits: { perFile: MAX_FILE_BYTES, retainedTotal: MAX_RETAINED_BYTES },
     };
     const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
+    receipt.steps.manualScrollCommandTargeting = await observeManualScrollCommandTargeting(
+      page,
+      displays
+    );
+    assert.equal(
+      receipt.steps.manualScrollCommandTargeting.status,
+      'observed',
+      receipt.steps.manualScrollCommandTargeting.error ?? 'Manual-scroll observation failed'
+    );
     const knownSingle = new Set(
       (await queryDownloads(extensionPage, extensionId)).map(({ id }) => id)
     );
