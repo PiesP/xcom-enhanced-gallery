@@ -1836,7 +1836,10 @@ export async function runActualSiteAcceptance({
   return receipt;
 }
 
-/** Affected settings scope only; no download, video-navigation or site-navigation campaign. */
+/**
+ * Affected settings scope only; no download, video-navigation or site-navigation campaign.
+ * The caller owns context/browser lifecycle and borrowed-profile focus restoration.
+ */
 export async function runLiveSettingsAcceptance({
   context,
   extensionId,
@@ -1912,6 +1915,7 @@ export async function runLiveSettingsAcceptance({
     await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
     const all = await extensionPage.evaluate(() => chrome.storage.local.get(null));
     prior = Object.fromEntries(preferenceKeys(all).map((key) => [key, all[key]]));
+    await page.bringToFront();
     let target: string | undefined;
     for (const url of liveUrls) {
       const attempt: { url: string; error?: string } = { url };
@@ -2020,7 +2024,7 @@ export async function runLiveSettingsAcceptance({
     cleanup.errors = errors;
     receipt.productErrors = productErrors;
     receipt.productErrorOverflow = productErrorOverflow;
-    if (errors.length) {
+    if (errors.length || productErrors.length || productErrorOverflow) {
       receipt.status = 'failed';
       receipt.evidenceStatus = 'unverified';
     }

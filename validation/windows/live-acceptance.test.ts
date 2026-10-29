@@ -1147,6 +1147,9 @@ test('focused live settings reports an unavailable current X prerequisite withou
   let values: Record<string, unknown> = { 'xeg-language': '"en"', unrelated: 'preserved' };
   const page = {
     on: () => undefined,
+    bringToFront: async () => {
+      events.push('focus-owned-page');
+    },
     goto: async () => ({ status: () => 200 }),
     locator: () => ({ waitFor: async () => undefined }),
     evaluate: async () => ({ state: 'terminal', reason: 'host-challenge-or-unavailable' }),
@@ -1187,7 +1190,7 @@ test('focused live settings reports an unavailable current X prerequisite withou
     assert.equal(receipt.status, 'blocked');
     assert.equal(receipt.evidenceStatus, 'unverified');
     assert.deepEqual(values, { 'xeg-language': '"en"', unrelated: 'preserved' });
-    assert.deepEqual(events, ['close-owned-page', 'close-extension-page']);
+    assert.deepEqual(events, ['focus-owned-page', 'close-owned-page', 'close-extension-page']);
   } finally {
     await rm(output, { recursive: true, force: true });
   }
