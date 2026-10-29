@@ -22,6 +22,13 @@ import type { Identity, ImageTarget, Source } from './live-page-document.ts';
 
 declare const chrome: {
   runtime: { id: string };
+  storage: {
+    local: {
+      get(key: string): Promise<Record<string, unknown>>;
+      set(values: Record<string, unknown>): Promise<void>;
+      remove(key: string): Promise<void>;
+    };
+  };
   downloads: {
     search(query: { orderBy: string[] } | { id: number }): Promise<BrowserDownloadItem[]>;
   };
@@ -1544,6 +1551,20 @@ export async function runActualSiteAcceptance({
   } = { status: 'pending', steps: {}, cleanup: {} };
   let extensionPage: Page | null = null;
   let prior: StoredSettings | null = null;
+  let priorLanguage: Record<string, unknown> | null = null;
+  const restoreLanguage = async (): Promise<void> => {
+    if (extensionPage && priorLanguage) {
+      await extensionPage.evaluate(async (values) => {
+        await chrome.storage.local.remove('xeg-language');
+        await chrome.storage.local.set(values);
+      }, priorLanguage);
+      assert.deepEqual(
+        await extensionPage.evaluate(() => chrome.storage.local.get('xeg-language')),
+        priorLanguage
+      );
+      receipt.cleanup.languageRestored = true;
+    }
+  };
   try {
     assert(
       navigationUrl && navigationUrl !== targetUrl,
@@ -1552,6 +1573,7 @@ export async function runActualSiteAcceptance({
     extensionPage = await context.newPage();
     await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
     prior = await readSettings(extensionPage);
+    priorLanguage = await extensionPage.evaluate(() => chrome.storage.local.get('xeg-language'));
     await page.bringToFront();
     const ownerBound = await image.evaluate(isBoundLiveImageOwnerDocument, imageOwner);
     const refreshedAction = await inspectHitTestedAction(image, identityFromUrl(targetUrl), target);
@@ -1706,7 +1728,40 @@ export async function runActualSiteAcceptance({
       savedTheme = storedTheme((await readSettings(extensionPage)).settings);
     }
     assert.equal(savedTheme, changedTheme, 'Theme change was not saved to extension storage');
+    const language = gallery.locator('#settings-language-select');
+    const initialLanguage = await language.inputValue();
+    const changedLanguage = initialLanguage === 'ko' ? 'en' : 'ko';
+    await language.selectOption(changedLanguage);
+    await page.waitForFunction(
+      (expected) =>
+        document.querySelector('#settings-language-select') instanceof HTMLSelectElement &&
+        (document.querySelector('#settings-language-select') as HTMLSelectElement).value ===
+          expected,
+      changedLanguage
+    );
+    const languageDeadline = Date.now() + 5_000;
+    let savedLanguage: unknown;
+    do {
+      const stored = await extensionPage.evaluate(() => chrome.storage.local.get('xeg-language'));
+      const raw = stored['xeg-language'];
+      savedLanguage =
+        typeof raw === 'string' ? (JSON.parse(raw) as { value?: unknown }).value : undefined;
+      if (savedLanguage === changedLanguage) {
+        break;
+      }
+      await new Promise((done) => setTimeout(done, 100));
+    } while (Date.now() < languageDeadline);
+    assert.equal(
+      savedLanguage,
+      changedLanguage,
+      'Language change was not saved to extension storage'
+    );
     const settingsStep = {
+      initialLanguage,
+      changedLanguage,
+      languageStorageReadback: true,
+      languageNewDocumentReadback: false,
+      languageRestoredNewDocument: false,
       initialTheme,
       changedTheme,
       storageReadback: true,
@@ -1730,6 +1785,9 @@ export async function runActualSiteAcceptance({
       'Theme did not persist in a new document'
     );
     settingsStep.newDocumentReadback = true;
+    assert.equal(await reopened.locator('#settings-language-select').inputValue(), changedLanguage);
+    settingsStep.languageNewDocumentReadback = true;
+    await restoreLanguage();
     assert.equal(
       await restoreSettings(extensionPage, prior),
       true,
@@ -1751,6 +1809,8 @@ export async function runActualSiteAcceptance({
       'Restored theme did not reach the UI'
     );
     settingsStep.restoredNewDocument = true;
+    assert.equal(await restored.locator('#settings-language-select').inputValue(), initialLanguage);
+    settingsStep.languageRestoredNewDocument = true;
     await restored.locator('[data-gallery-element="toolbar"] #settings-button').click();
     await restored.locator('#settings-theme-select').waitFor({ state: 'hidden', timeout: 5_000 });
     await page.keyboard.press('Escape');
@@ -1801,6 +1861,12 @@ export async function runActualSiteAcceptance({
       receipt.steps.failureScreenshot = screenshot;
     }
   } finally {
+    try {
+      await restoreLanguage();
+    } catch (error) {
+      receipt.cleanup.languageRestoreError = safeError(error);
+      receipt.status = 'failed';
+    }
     if (extensionPage && prior && receipt.cleanup.settingsRestored !== true) {
       try {
         receipt.cleanup.settingsRestored = await restoreSettings(extensionPage, prior);

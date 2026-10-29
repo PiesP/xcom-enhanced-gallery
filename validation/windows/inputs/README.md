@@ -23,9 +23,13 @@ To run only the built userscript settings-persistence fixture, create the ignore
 ```
 
 The shared VM controller packages this directory with the source-bound artifact.
-Remove the selector after the attempt. The fixture intercepts GM storage and
-localStorage on an owned X.com page. It does not install a userscript manager or
-exercise extension storage.
+Remove the selector after the attempt. The artifact fixture intercepts GM
+storage and localStorage on an owned X.com page and exercises language denial/retry/reload plus schema preservation. With
+`--installation extension`, the same selector runs a focused installed-package
+fixture for healthy language persistence/reload and unsupported-schema session
+edits/retry/raw preservation. The installed fixture uses real extension storage;
+controlled write denial remains an artifact-fixture boundary. Neither mode
+establishes live X.com behavior or a userscript-manager installation.
 
 To run only the issue #381 opening-feedback fixture with the installed
 Chrome/Edge extension, create the ignored `opening-feedback.json` file here:

@@ -589,6 +589,7 @@ test('actual-site acceptance restores the owned X tab before revalidating and cl
   const events: string[] = [];
   const extensionPage = {
     goto: async () => undefined,
+    evaluate: async () => ({}),
     close: async () => {
       events.push('close-extension');
     },
