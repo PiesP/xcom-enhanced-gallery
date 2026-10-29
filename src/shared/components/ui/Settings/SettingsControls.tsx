@@ -109,12 +109,15 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
   const [videoClickMode, setVideoClickMode] = createSignal<VideoClickMode>(readVideoClickMode());
   const [savingVideoClickMode, setSavingVideoClickMode] = createSignal(false);
   const [unsavedSettings, setUnsavedSettings] = createSignal(false);
+  const [unsavedLanguage, setUnsavedLanguage] = createSignal(false);
   const [retryingSave, setRetryingSave] = createSignal(false);
 
   // Subscribe to language changes
   onMount(() => {
     const unsubscribe = languageService.onLanguageChange(() => setRevision((v) => v + 1));
     onCleanup(unsubscribe);
+    setUnsavedLanguage(languageService.hasUnsavedChanges());
+    onCleanup(languageService.subscribePersistence(setUnsavedLanguage));
 
     const settings = tryGetSettings();
     setVideoClickMode(readVideoClickMode());
@@ -210,12 +213,9 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
 
   const retrySettingsSave = async (): Promise<void> => {
     const settings = tryGetSettings();
-    if (!settings?.retryUnsaved) {
-      return;
-    }
     setRetryingSave(true);
     try {
-      await settings.retryUnsaved();
+      await Promise.allSettled([settings?.retryUnsaved?.(), languageService.retryUnsaved()]);
     } catch {
       // The persistent status stays visible for the next explicit attempt.
     } finally {
@@ -229,7 +229,7 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
       class={cx(styles.body, local.compact && styles.bodyCompact)}
       data-testid={__DEV__ ? local['data-testid'] : undefined}
     >
-      {unsavedSettings() && (
+      {(unsavedSettings() || unsavedLanguage()) && (
         <div class={styles.unsaved} role="status" data-xeg-settings-unsaved>
           <span>{strings().unsaved}</span>
           <button

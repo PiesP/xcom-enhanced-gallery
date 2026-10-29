@@ -16,6 +16,9 @@ vi.mock('@shared/services/language-service', () => ({
   getLanguageService: () => ({
     translate: (key: string) => key,
     onLanguageChange: () => () => undefined,
+    hasUnsavedChanges: () => false,
+    subscribePersistence: () => () => undefined,
+    retryUnsaved: async () => undefined,
   }),
 }));
 // Browser trust admission is covered separately; exercise the selected value here.

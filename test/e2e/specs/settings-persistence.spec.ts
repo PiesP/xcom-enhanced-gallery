@@ -400,6 +400,87 @@ test.describe('X.com Enhanced Gallery Settings & Theme', () => {
     expect(pageErrors).toEqual([]);
   });
 
+  test('denied language stays translated and recovers the latest selection after retry and reload', async ({
+    page,
+  }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await setupGalleryPage(page, true, true);
+    await openGallery(page);
+    await page.locator('[data-gallery-element="toolbar"] button[aria-label*="Settings" i]').click();
+    const panel = page.locator('[data-gallery-element="settings-panel"]');
+    const language = panel.locator('select').nth(1);
+    const unsaved = panel.locator('[data-xeg-settings-unsaved]');
+    const deny = async (value: boolean): Promise<void> => {
+      await page.evaluate((denied) => {
+        const faults = (
+          window as typeof window & {
+            __xegStorageFaults: { denyPrimary: boolean; denyFallback: boolean };
+          }
+        ).__xegStorageFaults;
+        faults.denyPrimary = denied;
+        faults.denyFallback = denied;
+      }, value);
+    };
+    await deny(true);
+    await language.selectOption('ko');
+    await expect(unsaved).toBeVisible();
+    await expect(panel.locator('label').nth(1)).toHaveText('언어');
+    await language.selectOption('ja');
+    await expect(panel.locator('label').nth(1)).toHaveText('言語');
+    await unsaved.getByRole('button').click();
+    await expect(unsaved).toBeVisible();
+    await deny(false);
+    await unsaved.getByRole('button').click();
+    await expect(unsaved).toHaveCount(0);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await installGMMock(page, { persistentStorage: true });
+    await injectDevUserscript(page);
+    await waitForGalleryApp(page);
+    await openGallery(page);
+    await page.locator('[data-gallery-element="toolbar"] button[aria-label*="設定"]').click();
+    await expect(page.locator('[data-gallery-element="settings-panel"] select').nth(1)).toHaveValue(
+      'ja'
+    );
+    expect(errors).toEqual([]);
+  });
+
+  test('unsupported schema stays byte-preserved through rendered edits and retry', async ({
+    page,
+  }) => {
+    const raw = JSON.stringify({
+      __schemaHash: 'unsupported-fixture',
+      version: 'unrecognized',
+      futureRoot: { retained: true },
+      gallery: { theme: 'dark', futureField: 42 },
+    });
+    await setupGalleryPage(page, true, false, raw);
+    await openGallery(page);
+    await page.locator('[data-gallery-element="toolbar"] button[aria-label*="Settings" i]').click();
+    const panel = page.locator('[data-gallery-element="settings-panel"]');
+    const unsaved = panel.locator('[data-xeg-settings-unsaved]');
+    await expect(unsaved).toBeVisible();
+    await panel.locator('select').first().selectOption('light');
+    await expect(page.locator('[data-xeg-gallery-container]')).toHaveAttribute(
+      'data-theme',
+      'light'
+    );
+    await unsaved.getByRole('button').click();
+    await expect(unsaved).toBeVisible();
+    expect(await page.evaluate(() => window.GM_getValue?.('xeg-app-settings'))).toBe(raw);
+    expect(await readDurableTheme(page)).toBeUndefined();
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await installGMMock(page, { persistentStorage: true });
+    await injectDevUserscript(page);
+    await waitForGalleryApp(page);
+    await openGallery(page);
+    await expect(page.locator('[data-xeg-gallery-container]')).toHaveAttribute(
+      'data-theme',
+      'dark'
+    );
+    expect(await page.evaluate(() => window.GM_getValue?.('xeg-app-settings'))).toBe(raw);
+  });
+
   test('an initial read denial preserves untouched preferences after a theme edit', async ({
     page,
   }) => {

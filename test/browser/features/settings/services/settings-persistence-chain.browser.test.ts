@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 PiesP
 
+import { LanguageService } from '@shared/services/language-service';
 import { PersistentSettingsRepository } from '@features/settings/services/settings-repository';
 import { SettingsService } from '@features/settings/services/settings-service';
 import { createDefaultSettings } from '@constants/settings';
@@ -74,6 +75,159 @@ describe('settings storage and service outcome', () => {
     resetPersistentStorageForTests();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+  });
+
+  it('retains the latest denied language, retries once, and restores it in a fresh service', async () => {
+    backend.values.set('xeg-language', JSON.stringify('en'));
+    const language = new LanguageService();
+    await language.initialize();
+    backend.denyPrimary = true;
+    backend.denyFallback = true;
+    language.setLanguage('ko');
+    await expect.poll(() => language.hasUnsavedChanges()).toBe(true);
+    expect(language.translate('tb.prev')).toBe('이전');
+    language.setLanguage('ja');
+    await expect(language.retryUnsaved()).rejects.toThrow();
+    expect(language.getCurrentLanguage()).toBe('ja');
+    language.destroy();
+    await language.initialize();
+    expect(language.getCurrentLanguage()).toBe('ja');
+    backend.denyPrimary = false;
+    backend.denyFallback = false;
+    // Same-value explicit intent is eligible after failure.
+    language.setLanguage('ja');
+    await expect.poll(() => language.hasUnsavedChanges()).toBe(false);
+    const reloaded = new LanguageService();
+    await reloaded.initialize();
+    expect(reloaded.getCurrentLanguage()).toBe('ja');
+    const raw = backend.values.get('xeg-language');
+    language.setLanguage('ja');
+    await language.retryUnsaved();
+    expect(backend.values.get('xeg-language')).toBe(raw);
+    language.destroy();
+    reloaded.destroy();
+  });
+
+  it.each([false, true])(
+    'restores a healthy language write with primary denied=%s',
+    async (denied) => {
+      const language = new LanguageService();
+      await language.initialize();
+      backend.denyPrimary = denied;
+      language.setLanguage('ko');
+      await language.retryUnsaved();
+      expect(language.hasUnsavedChanges()).toBe(false);
+      const fresh = new LanguageService();
+      await fresh.initialize();
+      expect(fresh.getCurrentLanguage()).toBe('ko');
+      language.destroy();
+      fresh.destroy();
+    }
+  );
+
+  it('does not let an older language completion clear newer pending intent', async () => {
+    const language = new LanguageService();
+    await language.initialize();
+    let release: () => void = () => undefined;
+    let started: () => void = () => undefined;
+    const began = new Promise<void>((resolve) => {
+      started = resolve;
+    });
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    backend.beforeSet = async (_key, value) => {
+      if (value.includes('"ko"')) {
+        started();
+        await gate;
+      }
+    };
+    language.setLanguage('ko');
+    await began;
+    language.setLanguage('ja');
+    backend.rejectSet = (_key, value) => value.includes('"ja"');
+    backend.denyFallback = true;
+    release();
+    await expect(language.retryUnsaved()).rejects.toThrow();
+    expect(language.hasUnsavedChanges()).toBe(true);
+    expect(language.getCurrentLanguage()).toBe('ja');
+    backend.rejectSet = null;
+    backend.denyFallback = false;
+    await language.retryUnsaved();
+    const fresh = new LanguageService();
+    await fresh.initialize();
+    expect(fresh.getCurrentLanguage()).toBe('ja');
+    language.destroy();
+    fresh.destroy();
+  });
+
+  it('preserves unsupported raw records through load, edit, retry and owner restart', async () => {
+    const saved = createDefaultSettings(1_000);
+    const raw = JSON.stringify({
+      ...saved,
+      version: 'unrecognized',
+      __schemaHash: 'unsupported-fixture',
+      futureRoot: { retained: true },
+      gallery: { ...saved.gallery, theme: 'dark', videoVolume: 'invalid', futureField: 42 },
+    });
+    backend.values.set('xeg-app-settings', raw);
+    const repository = new PersistentSettingsRepository();
+    const settings = new SettingsService(repository);
+    await settings.initialize();
+    expect(backend.values.get('xeg-app-settings')).toBe(raw);
+    expect(settings.get('gallery.theme')).toBe('dark');
+    expect(settings.get('gallery.videoVolume')).toBe(saved.gallery.videoVolume);
+    expect(settings.hasUnsavedChanges()).toBe(true);
+    await expect(settings.set('gallery.theme', 'light')).rejects.toThrow();
+    expect(settings.get('gallery.theme')).toBe('light');
+    await expect(settings.retryUnsaved()).rejects.toThrow();
+    await settings.prepareForRestart();
+    await settings.initialize();
+    await expect(settings.retryUnsaved()).rejects.toThrow();
+    expect(backend.values.size).toBe(1);
+    expect(backend.values.get('xeg-app-settings')).toBe(raw);
+    // Another document changing the baseline cannot reopen this owner.
+    backend.values.set('xeg-app-settings', JSON.stringify({ ...saved, __schemaHash: '1' }));
+    await expect(settings.retryUnsaved()).rejects.toThrow();
+    const fresh = new SettingsService(new PersistentSettingsRepository());
+    await fresh.initialize();
+    await fresh.set('gallery.theme', 'light');
+    expect(fresh.hasUnsavedChanges()).toBe(false);
+    settings.destroy();
+    fresh.destroy();
+  });
+
+  it.each([null, 2, ''])('preserves an explicitly unsupported schema identity %s', async (hash) => {
+    const raw = JSON.stringify({ ...createDefaultSettings(1_000), __schemaHash: hash });
+    backend.values.set('xeg-app-settings', raw);
+    const state = await new PersistentSettingsRepository().loadState();
+    expect(state.available).toBe(false);
+    expect(backend.values.get('xeg-app-settings')).toBe(raw);
+  });
+
+  it('migrates recognized legacy records while leaving valid current unknown fields untouched', async () => {
+    const legacy = createDefaultSettings(1_000);
+    const gallery: Record<string, unknown> = {
+      ...legacy.gallery,
+      blockVideoControlClick: true,
+      preciseVideoControlDetection: false,
+    };
+    delete gallery.videoClickMode;
+    backend.values.set('xeg-app-settings', JSON.stringify({ ...legacy, gallery }));
+    const migrated = await new PersistentSettingsRepository().loadState();
+    expect(migrated.available).toBe(true);
+    expect(migrated.settings.gallery.videoClickMode).toBe('block-all');
+    expect(backend.values.get('xeg-app-settings')).toContain('"__schemaHash":"1"');
+    const raw = JSON.stringify({
+      ...legacy,
+      __schemaHash: '1',
+      futureRoot: 42,
+      gallery: { ...legacy.gallery, futureField: 42 },
+    });
+    backend.values.set('xeg-app-settings', raw);
+    const current = await new PersistentSettingsRepository().loadState();
+    expect(current.available).toBe(true);
+    expect(backend.values.get('xeg-app-settings')).toBe(raw);
   });
 
   it('keeps the latest session value when both stores deny writes and persists it on explicit retry', async () => {
