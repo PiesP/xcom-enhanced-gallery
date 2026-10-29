@@ -52,7 +52,7 @@ import {
   validateLiveObservation,
   validateLiveUrls,
 } from './live-page.ts';
-import { parseActualSiteAcceptanceSelector } from './live-acceptance.ts';
+import { parseActualSiteAcceptanceSelector, runLiveSettingsAcceptance } from './live-acceptance.ts';
 import { runInstalledMediaApiReuseProfile } from './media-api-reuse-profile.ts';
 import {
   captureUpgradeSettingsFailure,
@@ -16817,6 +16817,17 @@ export async function run({
     }
     throw error;
   });
+  const liveSettingsProbe =
+    acceptanceSelectorText !== null &&
+    (JSON.parse(acceptanceSelectorText) as { scenario?: unknown }).scenario ===
+      'actual-site-settings-acceptance';
+  if (liveSettingsProbe) {
+    assert.deepEqual(JSON.parse(acceptanceSelectorText!), {
+      scenario: 'actual-site-settings-acceptance',
+    });
+    assert.equal(installation, 'extension', 'Live settings acceptance requires an extension');
+    assert(liveUrls.length > 0, 'Live settings acceptance requires public X URLs');
+  }
   if (installation === 'userscript') {
     assert.equal(acceptanceSelectorText, null, 'Actual-site acceptance requires an extension');
     assert.equal(liveUrls.length, 0, 'Installed userscript fixture does not support public URLs');
@@ -16925,18 +16936,32 @@ export async function run({
     assert.equal(liveObservation, null);
   }
   const validatedLiveUrls = validateLiveUrls(liveUrls);
-  const actualSiteAcceptance = parseActualSiteAcceptanceSelector(acceptanceSelectorText, {
-    liveUrls: validatedLiveUrls,
-    installation,
-    otherFocusedInput:
-      !!upgradeInput ||
-      !!sameVersionInput ||
-      openingProbe ||
-      recoveryProbe ||
-      failedEntryProbe ||
-      experienceProbe ||
-      settingsProbe,
-  });
+  assert(
+    !liveSettingsProbe ||
+      (!settingsProbe &&
+        !experienceProbe &&
+        !failedEntryProbe &&
+        !recoveryProbe &&
+        !openingProbe &&
+        !upgradeInput &&
+        !sameVersionInput),
+    'Live settings acceptance cannot share another focused selector'
+  );
+  const actualSiteAcceptance = parseActualSiteAcceptanceSelector(
+    liveSettingsProbe ? null : acceptanceSelectorText,
+    {
+      liveUrls: validatedLiveUrls,
+      installation,
+      otherFocusedInput:
+        !!upgradeInput ||
+        !!sameVersionInput ||
+        openingProbe ||
+        recoveryProbe ||
+        failedEntryProbe ||
+        experienceProbe ||
+        settingsProbe,
+    }
+  );
   validateLiveObservation(liveObservation);
   await mkdir(output, { recursive: true });
   const profile = await mkdtemp(join(root, PROFILE_PREFIX));
@@ -16961,23 +16986,25 @@ export async function run({
     installationMethod: 'cdp-unpacked-extension',
     liveUrls: validatedLiveUrls,
     liveObservation,
-    scope: settingsProbe
-      ? 'installed-extension settings persistence fixture; no live X observation'
-      : failedEntryProbe
-        ? 'issue 392 installed-extension failed-entry ZIP recovery fixture; no live X observation'
-        : experienceProbe
-          ? 'issue 383 installed-extension gallery experience fixtures; no live X observation'
-          : recoveryProbe
-            ? 'issue 382 installed-extension media/download recovery fixture; no live X observation'
-            : openingProbe
-              ? 'issue 381 installed-extension opening feedback fixture; no live X observation'
-              : validatedLiveUrls.length
-                ? actualSiteAcceptance
-                  ? 'deterministic fixture followed by explicit actual-site gallery acceptance with bounded retained downloads; no auth, consent, CAPTCHA, native Save As, Explorer, or performance claim'
-                  : 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
-                : sameVersionInput
-                  ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
-                  : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
+    scope: liveSettingsProbe
+      ? 'focused installed language/theme settings acceptance; no full prior live campaign'
+      : settingsProbe
+        ? 'installed-extension settings persistence fixture; no live X observation'
+        : failedEntryProbe
+          ? 'issue 392 installed-extension failed-entry ZIP recovery fixture; no live X observation'
+          : experienceProbe
+            ? 'issue 383 installed-extension gallery experience fixtures; no live X observation'
+            : recoveryProbe
+              ? 'issue 382 installed-extension media/download recovery fixture; no live X observation'
+              : openingProbe
+                ? 'issue 381 installed-extension opening feedback fixture; no live X observation'
+                : validatedLiveUrls.length
+                  ? actualSiteAcceptance
+                    ? 'deterministic fixture followed by explicit actual-site gallery acceptance with bounded retained downloads; no auth, consent, CAPTCHA, native Save As, Explorer, or performance claim'
+                    : 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
+                  : sameVersionInput
+                    ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
+                    : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
     status: 'failed',
   };
   try {
@@ -17088,7 +17115,7 @@ export async function run({
           images,
           displayImages,
         });
-      } else if (settingsProbe) {
+      } else if (settingsProbe || liveSettingsProbe) {
         result.settingsPersistence = await runSettingsPersistenceProbe({
           context,
           root,
@@ -17182,13 +17209,27 @@ export async function run({
         'fresh browser process without fixture host mapping or SPKI exception';
     }
     if (!sameVersionInput) {
-      const live = await observeLiveUrls({
-        context,
-        extensionId,
-        liveUrls: validatedLiveUrls,
-        output,
-        actualSiteAcceptance: actualSiteAcceptance ? { downloads } : null,
-      });
+      const live = liveSettingsProbe
+        ? await runLiveSettingsAcceptance({
+            context,
+            extensionId,
+            liveUrls: validatedLiveUrls,
+            output,
+          })
+        : await observeLiveUrls({
+            context,
+            extensionId,
+            liveUrls: validatedLiveUrls,
+            output,
+            actualSiteAcceptance: actualSiteAcceptance ? { downloads } : null,
+          });
+      if (liveSettingsProbe) {
+        assert.equal(
+          live.evidenceStatus,
+          'observed',
+          'Required current X language/settings acceptance is blocked or failed'
+        );
+      }
       result.live = live;
       result.evidenceStatus = validatedLiveUrls.length ? live.evidenceStatus : 'fixture-observed';
     } else {

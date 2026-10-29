@@ -28,6 +28,7 @@ import {
   observeManualScrollCommandTargeting,
   parseActualSiteAcceptanceSelector,
   runActualSiteAcceptance,
+  runLiveSettingsAcceptance,
   taskOwnedDownloadsDocument,
   verifyLiveArchiveSources,
   waitForOwnedDownload,
@@ -589,7 +590,6 @@ test('actual-site acceptance restores the owned X tab before revalidating and cl
   const events: string[] = [];
   const extensionPage = {
     goto: async () => undefined,
-    evaluate: async () => ({}),
     close: async () => {
       events.push('close-extension');
     },
@@ -1139,4 +1139,56 @@ test('each ZIP item and the single file match independent public originals', () 
     )
   );
   assert.throws(() => verifyLiveArchiveSources(archive, originals, Buffer.from('other'), 0));
+});
+
+test('focused live settings reports an unavailable current X prerequisite without clicking host UI', async () => {
+  const output = await mkdtemp(join(tmpdir(), 'xeg-live-settings-'));
+  const events: string[] = [];
+  let values: Record<string, unknown> = { 'xeg-language': '"en"', unrelated: 'preserved' };
+  const page = {
+    on: () => undefined,
+    goto: async () => ({ status: () => 200 }),
+    locator: () => ({ waitFor: async () => undefined }),
+    evaluate: async () => ({ state: 'terminal', reason: 'host-challenge-or-unavailable' }),
+    screenshot: async () => undefined,
+    close: async () => {
+      events.push('close-owned-page');
+    },
+  } as unknown as Page;
+  const extensionPage = {
+    goto: async () => undefined,
+    evaluate: async (
+      _callback: unknown,
+      input?: { keys: string[]; values: Record<string, unknown> }
+    ) => {
+      if (input) {
+        for (const key of input.keys) {
+          delete values[key];
+        }
+        values = { ...values, ...input.values };
+        return undefined;
+      }
+      return { ...values };
+    },
+    close: async () => {
+      events.push('close-extension-page');
+    },
+  } as unknown as Page;
+  let pages = 0;
+  try {
+    const receipt = await runLiveSettingsAcceptance({
+      context: {
+        newPage: async () => (++pages === 1 ? page : extensionPage),
+      } as unknown as BrowserContext,
+      extensionId: 'm'.repeat(32),
+      liveUrls: ['https://x.com/NASA/status/123'],
+      output,
+    });
+    assert.equal(receipt.status, 'blocked');
+    assert.equal(receipt.evidenceStatus, 'unverified');
+    assert.deepEqual(values, { 'xeg-language': '"en"', unrelated: 'preserved' });
+    assert.deepEqual(events, ['close-owned-page', 'close-extension-page']);
+  } finally {
+    await rm(output, { recursive: true, force: true });
+  }
 });

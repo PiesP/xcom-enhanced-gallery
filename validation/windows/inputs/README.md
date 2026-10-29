@@ -90,3 +90,17 @@ The third explicit attempt saves only the omitted item in `-missing-3.zip`. The 
 checks native download IDs, saved file identity, entry order, CRC, bytes, hashes,
 request count, result dismissal, session reopening, and exact cleanup. Retain
 failed receipts outside Git and remove the selector after the attempt.
+
+For a focused current-X language/theme check, use the existing ignored
+`live-acceptance.json` with exactly:
+
+```json
+{"scenario":"actual-site-settings-acceptance"}
+```
+
+Run with extension installation and one to three unchanged, currently qualified
+public image status URLs. This selector exercises only the affected settings
+fixture followed by language/theme selection, durable and fresh-document readback,
+and exact prior preference restoration on X. It does not run the previous full
+live download, keyboard, video or site-navigation campaign. Login, consent and
+challenge prerequisites remain untouched; a missing prerequisite is blocked.

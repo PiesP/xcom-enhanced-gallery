@@ -24,9 +24,9 @@ declare const chrome: {
   runtime: { id: string };
   storage: {
     local: {
-      get(key: string): Promise<Record<string, unknown>>;
+      get(key: string | null): Promise<Record<string, unknown>>;
       set(values: Record<string, unknown>): Promise<void>;
-      remove(key: string): Promise<void>;
+      remove(keys: string[]): Promise<void>;
     };
   };
   downloads: {
@@ -1551,20 +1551,6 @@ export async function runActualSiteAcceptance({
   } = { status: 'pending', steps: {}, cleanup: {} };
   let extensionPage: Page | null = null;
   let prior: StoredSettings | null = null;
-  let priorLanguage: Record<string, unknown> | null = null;
-  const restoreLanguage = async (): Promise<void> => {
-    if (extensionPage && priorLanguage) {
-      await extensionPage.evaluate(async (values) => {
-        await chrome.storage.local.remove('xeg-language');
-        await chrome.storage.local.set(values);
-      }, priorLanguage);
-      assert.deepEqual(
-        await extensionPage.evaluate(() => chrome.storage.local.get('xeg-language')),
-        priorLanguage
-      );
-      receipt.cleanup.languageRestored = true;
-    }
-  };
   try {
     assert(
       navigationUrl && navigationUrl !== targetUrl,
@@ -1573,7 +1559,6 @@ export async function runActualSiteAcceptance({
     extensionPage = await context.newPage();
     await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
     prior = await readSettings(extensionPage);
-    priorLanguage = await extensionPage.evaluate(() => chrome.storage.local.get('xeg-language'));
     await page.bringToFront();
     const ownerBound = await image.evaluate(isBoundLiveImageOwnerDocument, imageOwner);
     const refreshedAction = await inspectHitTestedAction(image, identityFromUrl(targetUrl), target);
@@ -1728,40 +1713,7 @@ export async function runActualSiteAcceptance({
       savedTheme = storedTheme((await readSettings(extensionPage)).settings);
     }
     assert.equal(savedTheme, changedTheme, 'Theme change was not saved to extension storage');
-    const language = gallery.locator('#settings-language-select');
-    const initialLanguage = await language.inputValue();
-    const changedLanguage = initialLanguage === 'ko' ? 'en' : 'ko';
-    await language.selectOption(changedLanguage);
-    await page.waitForFunction(
-      (expected) =>
-        document.querySelector('#settings-language-select') instanceof HTMLSelectElement &&
-        (document.querySelector('#settings-language-select') as HTMLSelectElement).value ===
-          expected,
-      changedLanguage
-    );
-    const languageDeadline = Date.now() + 5_000;
-    let savedLanguage: unknown;
-    do {
-      const stored = await extensionPage.evaluate(() => chrome.storage.local.get('xeg-language'));
-      const raw = stored['xeg-language'];
-      savedLanguage =
-        typeof raw === 'string' ? (JSON.parse(raw) as { value?: unknown }).value : undefined;
-      if (savedLanguage === changedLanguage) {
-        break;
-      }
-      await new Promise((done) => setTimeout(done, 100));
-    } while (Date.now() < languageDeadline);
-    assert.equal(
-      savedLanguage,
-      changedLanguage,
-      'Language change was not saved to extension storage'
-    );
     const settingsStep = {
-      initialLanguage,
-      changedLanguage,
-      languageStorageReadback: true,
-      languageNewDocumentReadback: false,
-      languageRestoredNewDocument: false,
       initialTheme,
       changedTheme,
       storageReadback: true,
@@ -1785,9 +1737,6 @@ export async function runActualSiteAcceptance({
       'Theme did not persist in a new document'
     );
     settingsStep.newDocumentReadback = true;
-    assert.equal(await reopened.locator('#settings-language-select').inputValue(), changedLanguage);
-    settingsStep.languageNewDocumentReadback = true;
-    await restoreLanguage();
     assert.equal(
       await restoreSettings(extensionPage, prior),
       true,
@@ -1809,8 +1758,6 @@ export async function runActualSiteAcceptance({
       'Restored theme did not reach the UI'
     );
     settingsStep.restoredNewDocument = true;
-    assert.equal(await restored.locator('#settings-language-select').inputValue(), initialLanguage);
-    settingsStep.languageRestoredNewDocument = true;
     await restored.locator('[data-gallery-element="toolbar"] #settings-button').click();
     await restored.locator('#settings-theme-select').waitFor({ state: 'hidden', timeout: 5_000 });
     await page.keyboard.press('Escape');
@@ -1861,12 +1808,6 @@ export async function runActualSiteAcceptance({
       receipt.steps.failureScreenshot = screenshot;
     }
   } finally {
-    try {
-      await restoreLanguage();
-    } catch (error) {
-      receipt.cleanup.languageRestoreError = safeError(error);
-      receipt.status = 'failed';
-    }
     if (extensionPage && prior && receipt.cleanup.settingsRestored !== true) {
       try {
         receipt.cleanup.settingsRestored = await restoreSettings(extensionPage, prior);
@@ -1890,6 +1831,195 @@ export async function runActualSiteAcceptance({
       join(output, `live-page-${index}-acceptance.json`),
       JSON.stringify(receipt, null, 2),
       { flag: 'wx', mode: 0o600 }
+    );
+  }
+  return receipt;
+}
+
+/** Affected settings scope only; no download, video-navigation or site-navigation campaign. */
+export async function runLiveSettingsAcceptance({
+  context,
+  extensionId,
+  liveUrls,
+  output,
+}: {
+  context: BrowserContext;
+  extensionId: string;
+  liveUrls: readonly string[];
+  output: string;
+}): Promise<Record<string, unknown> & { evidenceStatus: string }> {
+  const receipt: Record<string, unknown> & { evidenceStatus: string } = {
+    status: 'blocked',
+    evidenceStatus: 'unverified',
+    scope:
+      'current public X language/theme selection, durable readback, fresh document and exact preference restoration',
+  };
+  const attempts: Array<{ url: string; error?: string }> = [];
+  const cleanup: Record<string, unknown> = {};
+  receipt.attempts = attempts;
+  receipt.cleanup = cleanup;
+  const page = await context.newPage();
+  const extensionPage = await context.newPage();
+  const productErrors: string[] = [];
+  let productErrorOverflow = 0;
+  page.on('console', (message) => {
+    if (
+      message.type() === 'error' &&
+      message.location().url.startsWith(`chrome-extension://${extensionId}/`)
+    ) {
+      if (productErrors.length < 20) {
+        productErrors.push(safeError(message.text()));
+      } else {
+        productErrorOverflow++;
+      }
+    }
+  });
+  let prior: Record<string, unknown> | undefined;
+  const preferenceKeys = (values: Record<string, unknown>) =>
+    Object.keys(values).filter(
+      (key) =>
+        key === 'xeg-language' ||
+        key === 'xeg-app-settings' ||
+        key.startsWith('xeg-app-settings:field:')
+    );
+  const restore = async () => {
+    if (!prior) {
+      return;
+    }
+    const all = await extensionPage.evaluate(() => chrome.storage.local.get(null));
+    await extensionPage.evaluate(
+      async ({ keys, values }) => {
+        await chrome.storage.local.remove(keys);
+        await chrome.storage.local.set(values);
+      },
+      { keys: preferenceKeys(all), values: prior }
+    );
+    const restored = await extensionPage.evaluate(() => chrome.storage.local.get(null));
+    assert.deepEqual(
+      Object.fromEntries(preferenceKeys(restored).map((key) => [key, restored[key]])),
+      prior
+    );
+    cleanup.preferencesRestored = true;
+  };
+  try {
+    await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
+    const all = await extensionPage.evaluate(() => chrome.storage.local.get(null));
+    prior = Object.fromEntries(preferenceKeys(all).map((key) => [key, all[key]]));
+    let target: string | undefined;
+    for (const url of liveUrls) {
+      const attempt: { url: string; error?: string } = { url };
+      attempts.push(attempt);
+      try {
+        const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+        assert.equal(response?.status(), 200);
+        await page
+          .locator('html[data-xeg-gallery-ready="true"]')
+          .waitFor({ state: 'attached', timeout: 20_000 });
+        await openCurrentStatusImage(page, url);
+        target = url;
+        break;
+      } catch (error) {
+        attempt.error = safeError(error);
+      }
+    }
+    assert(
+      target,
+      'Required current X image/settings prerequisite unavailable; no login or consent action attempted'
+    );
+    const targetUrl = target;
+    receipt.status = 'failed';
+    const gallery = page.locator('[data-xeg-gallery-container]');
+    await gallery.locator('#settings-button').click();
+    const theme = gallery.locator('#settings-theme-select');
+    const language = gallery.locator('#settings-language-select');
+    const initialTheme = await theme.inputValue();
+    const initialLanguage = await language.inputValue();
+    const nextTheme = initialTheme === 'dark' ? 'light' : 'dark';
+    const nextLanguage = initialLanguage === 'ko' ? 'en' : 'ko';
+    await theme.selectOption(nextTheme);
+    await language.selectOption(nextLanguage);
+    const deadline = Date.now() + 5_000;
+    let durable: { theme?: unknown; language?: unknown } = {};
+    do {
+      durable = await extensionPage.evaluate(async () => {
+        const values = await chrome.storage.local.get(null);
+        const decode = (raw: unknown): unknown => {
+          const value: unknown = typeof raw === 'string' ? JSON.parse(raw) : raw;
+          return value && typeof value === 'object' && 'value' in value ? value.value : value;
+        };
+        return {
+          theme: decode(values['xeg-app-settings:field:gallery.theme']),
+          language: decode(values['xeg-language']),
+        };
+      });
+      if (durable.theme === nextTheme && durable.language === nextLanguage) {
+        break;
+      }
+      await new Promise((done) => setTimeout(done, 100));
+    } while (Date.now() < deadline);
+    assert.deepEqual(durable, { theme: nextTheme, language: nextLanguage });
+    assert.equal(await gallery.locator('[data-xeg-settings-unsaved]').count(), 0);
+    await page.screenshot({ path: join(output, 'live-settings-changed.png') });
+    const reopen = async () => {
+      await page.reload({ waitUntil: 'domcontentloaded', timeout: 30_000 });
+      await page
+        .locator('html[data-xeg-gallery-ready="true"]')
+        .waitFor({ state: 'attached', timeout: 20_000 });
+      await openCurrentStatusImage(page, targetUrl);
+      await page.locator('[data-xeg-gallery-container] #settings-button').click();
+    };
+    await reopen();
+    assert.equal(await page.locator('#settings-theme-select').inputValue(), nextTheme);
+    assert.equal(await page.locator('#settings-language-select').inputValue(), nextLanguage);
+    await restore();
+    await reopen();
+    assert.equal(await page.locator('#settings-theme-select').inputValue(), initialTheme);
+    assert.equal(await page.locator('#settings-language-select').inputValue(), initialLanguage);
+    await page.screenshot({ path: join(output, 'live-settings-restored.png') });
+    receipt.observations = {
+      target,
+      initialTheme,
+      initialLanguage,
+      nextTheme,
+      nextLanguage,
+      durableReadback: true,
+      newDocumentReadback: true,
+      restoredNewDocumentReadback: true,
+    };
+    assert.deepEqual(productErrors, []);
+    assert.equal(productErrorOverflow, 0);
+    receipt.status = 'observed';
+    receipt.evidenceStatus = 'observed';
+  } catch (error) {
+    receipt.error = safeError(error);
+    await page
+      .screenshot({ path: join(output, 'live-settings-failure.png') })
+      .catch(() => undefined);
+  } finally {
+    const errors: string[] = [];
+    await page.close().then(
+      () => {
+        cleanup.ownedPageClosed = true;
+      },
+      (error: unknown) => errors.push(safeError(error))
+    );
+    await restore().catch((error: unknown) => errors.push(safeError(error)));
+    await extensionPage.close().then(
+      () => {
+        cleanup.extensionPageClosed = true;
+      },
+      (error: unknown) => errors.push(safeError(error))
+    );
+    cleanup.errors = errors;
+    receipt.productErrors = productErrors;
+    receipt.productErrorOverflow = productErrorOverflow;
+    if (errors.length) {
+      receipt.status = 'failed';
+      receipt.evidenceStatus = 'unverified';
+    }
+    await writeFile(
+      join(output, 'live-settings-acceptance.json'),
+      JSON.stringify(receipt, null, 2)
     );
   }
   return receipt;
