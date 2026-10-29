@@ -1848,6 +1848,13 @@ export async function runLiveSettingsAcceptance({
   liveUrls: readonly string[];
   output: string;
 }): Promise<Record<string, unknown> & { evidenceStatus: string }> {
+  assert(
+    liveUrls.length > 0 && liveUrls.length <= 3,
+    'Focused live settings accepts one to three public X statuses'
+  );
+  for (const url of liveUrls) {
+    identityFromUrl(url);
+  }
   const receipt: Record<string, unknown> & { evidenceStatus: string } = {
     status: 'blocked',
     evidenceStatus: 'unverified',
