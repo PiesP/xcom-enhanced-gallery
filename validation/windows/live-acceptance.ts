@@ -697,6 +697,7 @@ export async function observeManualScrollCommandTargeting(page: Page, displayPat
       throw error;
     });
   let documentTimeOrigin: number | null = null;
+  let wheelActionCount = 0;
   const expectImage = async (phase: string, requested: number, displayed: number) => {
     const path = new URL(displayPaths[displayed]!).pathname;
     const deadline = Date.now() + 5_000;
@@ -737,23 +738,35 @@ export async function observeManualScrollCommandTargeting(page: Page, displayPat
       const delta = Math.round(target.itemCenter - target.visibleCenter);
       assert(Number.isFinite(delta) && delta !== 0, `${phase} wheel delta is invalid`);
       const beforeWheelCount = await wheelObserver.evaluate((value) => value.events.length);
+      assert.equal(beforeWheelCount, wheelActionCount, `${phase} received an extra wheel event`);
+      wheelActionCount += 1;
       await page.mouse.wheel(0, delta);
-      const wheelEvent = await wheelObserver.evaluate(
-        (value, index) => ({
-          event: value.events[index],
-          count: value.events.length,
-          overflow: value.overflow,
-        }),
-        beforeWheelCount
-      );
-      assert(
-        !wheelEvent.overflow &&
-          wheelEvent.count === beforeWheelCount + 1 &&
-          wheelEvent.event?.trusted &&
-          wheelEvent.event.ownedTarget &&
-          wheelEvent.event.deltaY === delta,
-        `${phase} wheel was not a single trusted gallery event`
-      );
+      const deliveryDeadline = Date.now() + 3_000;
+      for (;;) {
+        const wheelEvent = await wheelObserver.evaluate(
+          (value, index) => ({
+            event: value.events[index],
+            count: value.events.length,
+            overflow: value.overflow,
+          }),
+          beforeWheelCount
+        );
+        assert(
+          !wheelEvent.overflow && wheelEvent.count <= wheelActionCount,
+          `${phase} received duplicate wheel events`
+        );
+        if (wheelEvent.count === wheelActionCount) {
+          assert(
+            wheelEvent.event?.trusted &&
+              wheelEvent.event.ownedTarget &&
+              wheelEvent.event.deltaY === delta,
+            `${phase} wheel was not a trusted gallery event with the expected delta`
+          );
+          break;
+        }
+        assert(Date.now() < deliveryDeadline, `${phase} trusted wheel event was not delivered`);
+        await new Promise((done) => setTimeout(done, 25));
+      }
       const path = new URL(displayPaths[displayed]!).pathname;
       const deadline = Date.now() + 3_000;
       let result = await read();
@@ -770,6 +783,14 @@ export async function observeManualScrollCommandTargeting(page: Page, displayPat
             matchesDisplayedImage(result, requested, displayed, path) &&
               result.documentTimeOrigin === documentTimeOrigin,
             `${phase} divergence snapped back or source changed`
+          );
+          const observedWheels = await wheelObserver.evaluate((value) => ({
+            count: value.events.length,
+            overflow: value.overflow,
+          }));
+          assert(
+            !observedWheels.overflow && observedWheels.count === wheelActionCount,
+            `${phase} received an extra wheel event during stability observation`
           );
           stableSamples.push(result);
         }
@@ -801,7 +822,9 @@ export async function observeManualScrollCommandTargeting(page: Page, displayPat
       overflow: value.overflow,
     }));
     assert(
-      !wheelTrace.overflow && wheelTrace.events.length >= 2,
+      !wheelTrace.overflow &&
+        wheelTrace.events.length === wheelActionCount &&
+        wheelActionCount >= 2,
       'Manual wheel trace is incomplete'
     );
     assert.deepEqual(

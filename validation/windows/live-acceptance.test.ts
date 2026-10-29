@@ -25,6 +25,7 @@ import {
   nativeButtonActivationPassed,
   nativeSingleSourceMatchesDocument,
   observeActualSiteVideoNavigation,
+  observeManualScrollCommandTargeting,
   parseActualSiteAcceptanceSelector,
   runActualSiteAcceptance,
   taskOwnedDownloadsDocument,
@@ -331,6 +332,132 @@ test('Chromium divergent reader rejects missing attributes, obscured media and r
     await gallery.evaluate((element) => element.remove());
     assert.equal(await gallery.evaluate(displayedGalleryImageDocument), null);
     await gallery.dispose();
+  } finally {
+    await browser.close();
+  }
+});
+
+test('Chromium manual-scroll flow waits for delayed wheel delivery and rejects synthetic input or snap-back', async () => {
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
+  const displayPaths = [
+    'https://pbs.twimg.com/media/first.jpg',
+    'https://pbs.twimg.com/media/second.jpg',
+  ];
+  try {
+    await page.route('https://pbs.twimg.com/media/**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/svg+xml',
+        body: '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" />',
+      });
+    });
+    await page.setContent(`
+      <div data-xeg-gallery-container>
+        <div data-gallery-element="toolbar" data-current-index="0" data-focused-index="0">
+          <button aria-label="Previous">Previous</button><button aria-label="Next">Next</button>
+          <span id="xeg-toolbar-counter" data-gallery-element="position" data-position="1"
+            data-total="2" data-current-index="0" data-focused-index="0"></span>
+        </div>
+        <div data-gallery-element="items" style="width:200px;height:180px;overflow:auto;scroll-padding-block-start:0px">
+          <div data-gallery-element="item" data-index="0" data-media-loaded="true"
+            data-media-display-url="https://pbs.twimg.com/media/first.jpg" style="height:180px">
+            <img src="https://pbs.twimg.com/media/first.jpg" width="100" height="100" />
+          </div>
+          <div data-gallery-element="item" data-index="1" data-media-loaded="true"
+            data-media-display-url="https://pbs.twimg.com/media/second.jpg" style="height:180px">
+            <img src="https://pbs.twimg.com/media/second.jpg" width="100" height="100" />
+          </div>
+        </div>
+      </div>
+      <script>
+        const toolbar = document.querySelector('[data-gallery-element="toolbar"]');
+        const counter = document.querySelector('#xeg-toolbar-counter');
+        const scroll = document.querySelector('[data-gallery-element="items"]');
+        const render = (requested, displayed) => {
+          toolbar.setAttribute('data-current-index', String(requested));
+          toolbar.setAttribute('data-focused-index', String(displayed));
+          counter.setAttribute('data-current-index', String(requested));
+          counter.setAttribute('data-focused-index', String(displayed));
+          counter.setAttribute('data-position', String(displayed + 1));
+        };
+        scroll.addEventListener('scroll', () => {
+          const requested = Number(toolbar.getAttribute('data-current-index'));
+          const displayed = scroll.scrollTop >= 90 ? 1 : 0;
+          render(requested, displayed);
+          if (document.documentElement.dataset.snapBack === 'true' && requested === 0 && displayed === 1) {
+            setTimeout(() => { scroll.scrollTop = 0; }, 150);
+          }
+        });
+        for (const label of ['Previous', 'Next']) {
+          toolbar.querySelector('[aria-label="' + label + '"]').addEventListener('click', () => {
+            const displayed = Number(toolbar.getAttribute('data-focused-index'));
+            const target = Math.max(0, Math.min(1, displayed + (label === 'Next' ? 1 : -1)));
+            render(target, target);
+            scroll.scrollTop = target * 180;
+          });
+        }
+      </script>`);
+    await page.waitForFunction(() =>
+      [...document.images].every((image) => image.complete && image.naturalWidth > 0)
+    );
+    const pendingWheels: Promise<void>[] = [];
+    const delayedPage = {
+      locator: page.locator.bind(page),
+      waitForTimeout: page.waitForTimeout.bind(page),
+      mouse: {
+        wheel: async (x: number, y: number) => {
+          pendingWheels.push(
+            new Promise<void>((resolveWheel, rejectWheel) => {
+              setTimeout(() => {
+                page.mouse.wheel(x, y).then(resolveWheel, rejectWheel);
+              }, 150);
+            })
+          );
+        },
+      },
+    } as unknown as Page;
+    const observed = await observeManualScrollCommandTargeting(delayedPage, displayPaths);
+    await Promise.all(pendingWheels);
+    assert.equal(observed.status, 'observed');
+    assert.deepEqual(
+      observed.phases.map((phase) => phase.phase),
+      [
+        'opening',
+        'previous-precondition',
+        'previous-result',
+        'next-setup',
+        'next-precondition',
+        'next-result',
+        'continuation',
+      ]
+    );
+    assert.equal(observed.wheelTrace?.events.length, 2);
+    assert.equal(observed.wheelTrace?.clicks.length, 4);
+    assert.equal(observed.phases[1]?.stableSamples?.length, 11);
+    assert.equal(observed.phases[4]?.stableSamples?.length, 11);
+
+    const syntheticPage = {
+      locator: page.locator.bind(page),
+      waitForTimeout: page.waitForTimeout.bind(page),
+      mouse: {
+        wheel: async (_x: number, y: number) => {
+          await page.locator('[data-gallery-element="items"]').evaluate((element, delta) => {
+            element.dispatchEvent(new WheelEvent('wheel', { bubbles: true, deltaY: delta }));
+          }, y);
+        },
+      },
+    } as unknown as Page;
+    const synthetic = await observeManualScrollCommandTargeting(syntheticPage, displayPaths);
+    assert.equal(synthetic.status, 'failed');
+    assert.match(synthetic.error ?? '', /trusted gallery event/u);
+
+    await page.evaluate(() => {
+      document.documentElement.dataset.snapBack = 'true';
+    });
+    const snapBack = await observeManualScrollCommandTargeting(page, displayPaths);
+    assert.equal(snapBack.status, 'failed');
+    assert.match(snapBack.error ?? '', /snapped back|divergence/u);
   } finally {
     await browser.close();
   }
