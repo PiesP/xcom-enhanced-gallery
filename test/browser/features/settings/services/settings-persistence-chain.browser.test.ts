@@ -137,7 +137,9 @@ describe('settings storage and service outcome', () => {
     const gate = new Promise<void>((resolve) => {
       release = resolve;
     });
+    const attemptedLanguages: unknown[] = [];
     backend.beforeSet = async (_key, value) => {
+      attemptedLanguages.push((JSON.parse(value) as { value: unknown }).value);
       if (value.includes('"ko"')) {
         started();
         await gate;
@@ -146,15 +148,20 @@ describe('settings storage and service outcome', () => {
     language.setLanguage('ko');
     await began;
     language.setLanguage('ja');
+    // Let the real adapter queue advance while ko is still held.
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    expect(attemptedLanguages).toEqual(['ko']);
     backend.rejectSet = (_key, value) => value.includes('"ja"');
     backend.denyFallback = true;
     release();
     await expect(language.retryUnsaved()).rejects.toThrow();
+    expect(attemptedLanguages).toEqual(['ko', 'ja', 'ja']);
     expect(language.hasUnsavedChanges()).toBe(true);
     expect(language.getCurrentLanguage()).toBe('ja');
     backend.rejectSet = null;
     backend.denyFallback = false;
     await language.retryUnsaved();
+    expect(attemptedLanguages).toEqual(['ko', 'ja', 'ja', 'ja']);
     const fresh = new LanguageService();
     await fresh.initialize();
     expect(fresh.getCurrentLanguage()).toBe('ja');
