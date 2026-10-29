@@ -7,6 +7,7 @@ import { SettingsService } from '@features/settings/services/settings-service';
 import { createDefaultSettings } from '@constants/settings';
 import { resetPersistentStorageForTests } from '@shared/services/persistent-storage';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
+import historicalBaselines from '../../../../fixtures/settings/recognized-schema-baselines.json';
 
 const backend = vi.hoisted(() => ({
   values: new Map<string, string>(),
@@ -204,6 +205,21 @@ describe('settings storage and service outcome', () => {
     expect(state.available).toBe(false);
     expect(backend.values.get('xeg-app-settings')).toBe(raw);
   });
+
+  it.each(historicalBaselines)(
+    'migrates released deterministic schema $hash from $tag',
+    async ({ hash, settings }) => {
+      backend.values.set('xeg-app-settings', JSON.stringify({ ...settings, __schemaHash: hash }));
+      const loaded = await new PersistentSettingsRepository().loadState();
+      expect(loaded.available).toBe(true);
+      expect(loaded.settings.gallery.theme).toBe('auto');
+      expect(loaded.settings.gallery.videoVolume).toBe(1);
+      const raw = backend.values.get('xeg-app-settings');
+      expect(raw).toBeDefined();
+      const persisted: unknown = JSON.parse(raw ?? '{}');
+      expect(persisted).toMatchObject({ value: { __schemaHash: '1' } });
+    }
+  );
 
   it('migrates recognized legacy records while leaving valid current unknown fields untouched', async () => {
     const legacy = createDefaultSettings(1_000);

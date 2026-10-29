@@ -15,6 +15,9 @@ import {
 
 /** Schema version hash - bump when persisted settings shape changes */
 const SETTINGS_SCHEMA_HASH = '1';
+// Released deterministic identities; provenance and migration contract live in
+// docs/settings-persistence.md. Never accept an arbitrary hash as a legacy format.
+const LEGACY_SCHEMA_HASHES = new Set(['24a4127f', '7893980e', '67545f71', '6b0705af', '58349bc7']);
 // Older builds read only the legacy record and will not display these newer edits.
 // Keep both forms for compatibility; a downgrade needs an explicit data migration.
 const FIELD_PREFIX = `${APP_SETTINGS_STORAGE_KEY}:field:`;
@@ -72,7 +75,11 @@ export class PersistentSettingsRepository implements SettingsRepository {
     let normalized = createDefaultSettings(nowMs);
     if (isRecord(raw)) {
       const stored = raw as unknown as StoredSettings;
-      if (Object.hasOwn(stored, '__schemaHash') && stored.__schemaHash !== this.schemaHash) {
+      if (
+        Object.hasOwn(stored, '__schemaHash') &&
+        stored.__schemaHash !== this.schemaHash &&
+        !(typeof stored.__schemaHash === 'string' && LEGACY_SCHEMA_HASHES.has(stored.__schemaHash))
+      ) {
         this.unsupportedSchema = true;
       }
       const migrated = migrateSettings(stored, nowMs);
