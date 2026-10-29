@@ -7,7 +7,13 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { test, vi } from 'vite-plus/test';
-import { chromium, type BrowserContext, type ElementHandle, type Page } from '@playwright/test';
+import {
+  chromium,
+  type BrowserContext,
+  type ConsoleMessage,
+  type ElementHandle,
+  type Page,
+} from '@playwright/test';
 import {
   actualSiteAcceptanceCoverage,
   closeObservedLivePage,
@@ -29,6 +35,7 @@ import {
   parseActualSiteAcceptanceSelector,
   runActualSiteAcceptance,
   runLiveSettingsAcceptance,
+  openCurrentStatusImage,
   taskOwnedDownloadsDocument,
   verifyLiveArchiveSources,
   waitForOwnedDownload,
@@ -36,6 +43,8 @@ import {
 import {
   inspectLiveMixedGallerySelectionDocument,
   inspectSelectedGalleryVideoDocument,
+  inspectLiveTargetDocument,
+  resolveLiveImageDocument,
 } from './live-page-document.ts';
 import type { ImageTarget } from './live-page-document.ts';
 
@@ -1141,16 +1150,26 @@ test('each ZIP item and the single file match independent public originals', () 
   assert.throws(() => verifyLiveArchiveSources(archive, originals, Buffer.from('other'), 0));
 });
 
-test('focused live settings reports an unavailable current X prerequisite without clicking host UI', async () => {
+test('focused live settings retains unverified entry diagnostics without assigning an external blocker', async () => {
   const output = await mkdtemp(join(tmpdir(), 'xeg-live-settings-'));
   const events: string[] = [];
   let values: Record<string, unknown> = { 'xeg-language': '"en"', unrelated: 'preserved' };
+  let consoleListener: ((message: ConsoleMessage) => void) | undefined;
   const page = {
-    on: () => undefined,
+    on: (_name: string, listener: (message: ConsoleMessage) => void) => {
+      consoleListener = listener;
+    },
     bringToFront: async () => {
       events.push('focus-owned-page');
     },
-    goto: async () => ({ status: () => 200 }),
+    goto: async () => {
+      consoleListener?.({
+        type: () => 'warning',
+        text: () => '[XEG] Media extraction returned no items',
+        location: () => ({ url: '', lineNumber: 0, columnNumber: 0 }),
+      } as ConsoleMessage);
+      return { status: () => 200 };
+    },
     locator: () => ({ waitFor: async () => undefined }),
     evaluate: async () => ({ state: 'terminal', reason: 'host-challenge-or-unavailable' }),
     screenshot: async () => undefined,
@@ -1187,11 +1206,182 @@ test('focused live settings reports an unavailable current X prerequisite withou
       liveUrls: ['https://x.com/NASA/status/123'],
       output,
     });
-    assert.equal(receipt.status, 'blocked');
+    assert.equal(receipt.status, 'unverified');
     assert.equal(receipt.evidenceStatus, 'unverified');
+    assert.deepEqual(receipt.productWarnings, ['[XEG] Media extraction returned no items']);
+    assert.equal(receipt.productWarningOverflow, 0);
+    assert.equal(
+      (receipt.attempts as Array<{ opening: { phase: string } }>)[0]?.opening.phase,
+      'target-readiness'
+    );
     assert.deepEqual(values, { 'xeg-language': '"en"', unrelated: 'preserved' });
     assert.deepEqual(events, ['focus-owned-page', 'close-owned-page', 'close-extension-page']);
   } finally {
     await rm(output, { recursive: true, force: true });
   }
+});
+
+const SETTINGS_PHOTO_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a8V0AAAAASUVORK5CYII=',
+  'base64'
+);
+
+async function withSettingsPhotoFixture(
+  run: (page: Page) => Promise<void>,
+  duplicate = false,
+  covered = false
+): Promise<void> {
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage();
+  await page.route('**/*', async (route) => {
+    if (route.request().url() === 'https://pbs.twimg.com/media/settings-owned.png') {
+      await route.fulfill({ status: 200, contentType: 'image/png', body: SETTINGS_PHOTO_PNG });
+    } else {
+      await route.abort();
+    }
+  });
+  try {
+    await page.setContent(`<html data-xeg-gallery-ready="true"><body>
+      <article style="position:relative;width:700px;height:400px">
+        <a href="https://x.com/NASA/status/123">Post identity</a>
+        <a id="photo-action" aria-label="View media" href="https://x.com/NASA/status/123/photo/1"
+          style="position:absolute;left:10px;top:30px;width:600px;height:300px;border:3px solid black">
+          <img id="owned-photo" src="https://pbs.twimg.com/media/settings-owned.png" style="width:100px;height:100px">
+        </a>
+        ${duplicate ? '<img id="duplicate-photo" src="https://pbs.twimg.com/media/settings-owned.png" style="position:absolute;left:620px;top:30px;width:40px;height:40px">' : ''}
+        ${covered ? '<button id="cover" style="position:absolute;left:40px;top:60px;width:60px;height:60px;z-index:3">Host control</button>' : ''}
+      </article></body></html>`);
+    await page.waitForFunction(() =>
+      [...document.querySelectorAll('img')].every(
+        (image) => image.complete && image.naturalWidth > 0
+      )
+    );
+    await page.evaluate(() => {
+      document.body.addEventListener('click', (event) => {
+        event.preventDefault();
+        const image = document.querySelector<HTMLImageElement>('#owned-photo');
+        if (!image || !event.isTrusted) {
+          return;
+        }
+        const bounds = image.getBoundingClientRect();
+        if (
+          event.clientX < bounds.left ||
+          event.clientX >= bounds.right ||
+          event.clientY < bounds.top ||
+          event.clientY >= bounds.bottom
+        ) {
+          return;
+        }
+        const gallery = document.createElement('div');
+        gallery.setAttribute('data-xeg-gallery-container', '');
+        const toolbar = document.createElement('div');
+        toolbar.setAttribute('data-gallery-element', 'toolbar');
+        toolbar.setAttribute('data-current-index', '0');
+        toolbar.setAttribute('data-focused-index', '0');
+        const counter = document.createElement('span');
+        counter.id = 'xeg-toolbar-counter';
+        for (const [key, value] of Object.entries({
+          'data-gallery-element': 'position',
+          'data-position': '1',
+          'data-total': '1',
+          'data-current-index': '0',
+          'data-focused-index': '0',
+        })) {
+          counter.setAttribute(key, value);
+        }
+        toolbar.append(counter);
+        gallery.append(toolbar);
+        const item = document.createElement('div');
+        item.setAttribute('data-gallery-element', 'item');
+        item.setAttribute('data-index', '0');
+        item.append(image);
+        gallery.append(item);
+        document.body.append(gallery);
+      });
+    });
+    await run(page);
+  } finally {
+    await page.close();
+    await browser.close();
+  }
+}
+
+test('settings entry waits for strict unique binding and clicks the admitted photo point rather than a wide link center', async () => {
+  await withSettingsPhotoFixture(async (page) => {
+    const identity = { handle: 'NASA', statusId: '123' };
+    const ready = await page.evaluate(inspectLiveTargetDocument, identity);
+    assert(ready && ready.state === 'ready' && ready.target.kind === 'image');
+    assert.equal(
+      await page.evaluate(resolveLiveImageDocument, { identity, target: ready.target }),
+      null
+    );
+    await page.evaluate(() => {
+      setTimeout(() => document.querySelector('#duplicate-photo')?.remove(), 200);
+    });
+    const observation: Record<string, unknown> = {};
+    await openCurrentStatusImage(page, 'https://x.com/NASA/status/123', observation);
+    assert.equal(observation.phase, 'opened');
+    assert.deepEqual(observation.imageBinding, { status: 'bound', timeoutMs: 10_000 });
+    const activation = observation.activation as {
+      events: Array<{
+        trusted: boolean;
+        pointInsideImage: boolean;
+        actionInPath: boolean;
+        sameOwner: boolean;
+        imageSource: { path: string };
+      }>;
+      overflow: number;
+    };
+    assert.equal(activation.events.length, 1);
+    assert.equal(activation.overflow, 0);
+    assert.equal(activation.events[0]?.trusted, true);
+    assert.equal(activation.events[0]?.pointInsideImage, true);
+    assert.equal(activation.events[0]?.actionInPath, true);
+    assert.equal(activation.events[0]?.sameOwner, true);
+    assert.equal(activation.events[0]?.imageSource.path, '/media/settings-owned.png');
+    assert.deepEqual(observation.displayedSelection, {
+      position: 1,
+      total: 1,
+      currentIndex: 0,
+      focusedIndex: 0,
+      path: '/media/settings-owned.png',
+    });
+  }, true);
+});
+
+test('settings entry keeps duplicate owner/source binding closed and retains bounded candidate diagnostics', async () => {
+  await withSettingsPhotoFixture(async (page) => {
+    const observation: Record<string, unknown> = {};
+    await assert.rejects(
+      openCurrentStatusImage(page, 'https://x.com/NASA/status/123', observation),
+      /Timeout/u
+    );
+    assert.equal(observation.phase, 'image-binding');
+    const binding = observation.imageBinding as {
+      status: string;
+      sameSourceImages: unknown[];
+      sameSourceOverflow: boolean;
+    };
+    assert.equal(binding.status, 'timeout');
+    assert.equal(binding.sameSourceImages.length, 2);
+    assert.equal(binding.sameSourceOverflow, false);
+    assert.equal(observation.activation, undefined);
+  }, true);
+});
+
+test('settings entry rejects a host control over the photo point without dispatching a click', async () => {
+  await withSettingsPhotoFixture(
+    async (page) => {
+      const observation: Record<string, unknown> = {};
+      await assert.rejects(
+        openCurrentStatusImage(page, 'https://x.com/NASA/status/123', observation),
+        /ownership or hit-tested image point changed/u
+      );
+      assert.equal(observation.phase, 'action-preflight');
+      assert.equal(observation.activation, undefined);
+      assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0);
+    },
+    false,
+    true
+  );
 });

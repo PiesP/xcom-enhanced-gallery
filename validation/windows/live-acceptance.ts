@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto';
 import { constants } from 'node:fs';
 import { open, writeFile } from 'node:fs/promises';
 import { basename, dirname, join, resolve } from 'node:path';
-import type { BrowserContext, ElementHandle, Page } from '@playwright/test';
+import type { BrowserContext, ElementHandle, JSHandle, Page } from '@playwright/test';
 import { verifyStoredZip } from './download-memory.ts';
 import {
   inspectHitTestedAction,
@@ -1438,8 +1438,95 @@ export function verifyLiveArchiveSources(
   }
 }
 
-async function openCurrentStatusImage(page: Page, targetUrl: string): Promise<void> {
+/** Passive, bounded evidence for one task-owned photo activation. */
+export function captureSettingsPhotoClickDocument(
+  action: HTMLAnchorElement,
+  { image, owner }: { image: HTMLImageElement; owner: HTMLElement }
+) {
+  const events: Array<Record<string, unknown>> = [];
+  let overflow = 0;
+  const statusPath = (element: Element) => {
+    const anchor = element.closest('a[href]');
+    if (!(anchor instanceof HTMLAnchorElement)) {
+      return null;
+    }
+    try {
+      const url = new URL(anchor.href, location.href);
+      return url.protocol === 'https:' &&
+        ['x.com', 'twitter.com'].includes(url.hostname) &&
+        /^\/[A-Za-z0-9_]{1,15}\/status\/[1-9]\d*(?:\/photo\/[1-9]\d*)?$/u.test(url.pathname)
+        ? url.pathname
+        : null;
+    } catch {
+      return null;
+    }
+  };
+  const describe = (element: Element) => ({
+    tag: element.tagName,
+    testId: element.getAttribute('data-testid')?.slice(0, 80) ?? null,
+    role: element.getAttribute('role')?.slice(0, 40) ?? null,
+    statusPath: statusPath(element),
+    isAction: element === action,
+    isImage: element === image,
+    isOwner: element === owner,
+  });
+  const onClick = (event: MouseEvent) => {
+    if (events.length >= 4) {
+      overflow++;
+      return;
+    }
+    const path = event.composedPath().filter((item): item is Element => item instanceof Element);
+    const bounds = image.getBoundingClientRect();
+    let source = null;
+    try {
+      const url = new URL(image.currentSrc || image.src);
+      if (url.protocol === 'https:' && url.hostname === 'pbs.twimg.com') {
+        source = { host: url.hostname, path: url.pathname };
+      }
+    } catch {
+      /* No source identity is inferred from an invalid URL. */
+    }
+    events.push({
+      trusted: event.isTrusted,
+      button: event.button,
+      detail: event.detail,
+      clientX: event.clientX,
+      clientY: event.clientY,
+      target: event.target instanceof Element ? describe(event.target) : null,
+      path: path.slice(0, 12).map(describe),
+      pathTruncated: path.length > 12,
+      actionInPath: path.includes(action),
+      ownerInPath: path.includes(owner),
+      imageConnected: image.isConnected,
+      sameOwner: image.closest('article') === owner,
+      imageSource: source,
+      imageLoaded: image.complete && image.naturalWidth > 0,
+      pointInsideImage:
+        event.clientX >= bounds.left &&
+        event.clientX < bounds.right &&
+        event.clientY >= bounds.top &&
+        event.clientY < bounds.bottom,
+    });
+  };
+  window.addEventListener('click', onClick, { capture: true, passive: true });
+  return {
+    snapshot: () => ({ events, overflow }),
+    dispose: () => window.removeEventListener('click', onClick, true),
+  };
+}
+
+export async function openCurrentStatusImage(
+  page: Page,
+  targetUrl: string,
+  observation: Record<string, unknown> = {}
+): Promise<void> {
   const identity = identityFromUrl(targetUrl);
+  observation.requestedStatus = identity;
+  observation.phase = 'target-readiness';
+  observation.readinessBefore = await page.evaluate(() => ({
+    marker: document.documentElement.getAttribute('data-xeg-gallery-ready'),
+    timeOrigin: performance.timeOrigin,
+  }));
   const deadline = Date.now() + 20_000;
   let ready = await page.evaluate(inspectLiveTargetDocument, identity);
   while ((!ready || ready.state !== 'ready') && Date.now() < deadline) {
@@ -1449,41 +1536,224 @@ async function openCurrentStatusImage(page: Page, targetUrl: string): Promise<vo
     await new Promise((done) => setTimeout(done, 100));
     ready = await page.evaluate(inspectLiveTargetDocument, identity);
   }
+  observation.readiness = ready;
   assert(
     ready && ready.state === 'ready' && ready.target.kind === 'image',
-    'New document did not expose the requested status image'
+    'Current document did not expose the requested status image'
   );
-  const imageRef = await page.evaluateHandle(resolveLiveImageDocument, {
-    identity,
-    target: ready.target,
-  });
+  const target = ready.target;
+  observation.phase = 'image-binding';
+  const imageRef = await page
+    .waitForFunction(
+      resolveLiveImageDocument,
+      { identity, target },
+      { timeout: 10_000, polling: 100 }
+    )
+    .catch(async (error: unknown) => {
+      const diagnostic = await page
+        .evaluate(
+          ({ identity, target }) => {
+            const expected = `/${identity.handle}/status/${identity.statusId}`.toLowerCase();
+            const matches = [...document.querySelectorAll<HTMLImageElement>('article img')].filter(
+              (image) => {
+                try {
+                  const source = new URL(image.currentSrc || image.src);
+                  return (
+                    source.hostname.toLowerCase() === target.imageSource.host &&
+                    source.pathname === target.imageSource.path
+                  );
+                } catch {
+                  return false;
+                }
+              }
+            );
+            return {
+              sameSourceImages: matches.slice(0, 12).map((image) => {
+                const article = image.closest('article');
+                return {
+                  articleIndex: article
+                    ? [...document.querySelectorAll('article')].indexOf(article)
+                    : -1,
+                  nearestArticleOwnsStatus: Boolean(
+                    article &&
+                    [...article.querySelectorAll<HTMLAnchorElement>('a[href]')].some((anchor) => {
+                      try {
+                        return (
+                          anchor.closest('article') === article &&
+                          new URL(anchor.href, location.href).pathname.toLowerCase() === expected
+                        );
+                      } catch {
+                        return false;
+                      }
+                    })
+                  ),
+                  complete: image.complete,
+                  naturalWidth: image.naturalWidth,
+                };
+              }),
+              sameSourceOverflow: matches.length > 12,
+            };
+          },
+          { identity, target }
+        )
+        .catch(() => ({ sameSourceImages: [], sameSourceOverflow: false, unavailable: true }));
+      observation.imageBinding = { status: 'timeout', timeoutMs: 10_000, ...diagnostic };
+      throw error;
+    });
+  observation.imageBinding = { status: 'bound', timeoutMs: 10_000 };
   const image = imageRef.asElement() as ElementHandle<HTMLImageElement> | null;
   if (!image) {
     await imageRef.dispose();
-    throw new Error('New document image source or owner is ambiguous');
+    throw new Error('Requested image source and owner were not uniquely bound');
   }
+  let capture: JSHandle<ReturnType<typeof captureSettingsPhotoClickDocument>> | undefined;
+  const ownerRef = await image.evaluateHandle((element) => element.closest('article'));
+  const owner = ownerRef.asElement() as ElementHandle<HTMLElement> | null;
+  let actionHandle: ElementHandle<HTMLAnchorElement> | null = null;
   try {
+    assert(owner, 'Requested image owner detached before interaction');
     await image.scrollIntoViewIfNeeded({ timeout: 10_000 });
+    observation.phase = 'action-preflight';
     const action = await inspectHitTestedAction(image, identity, ready.target);
-    assert(action, 'New document image has no owned top action');
+    observation.action = action;
+    assert(action, 'Current image has no owned top photo action');
     const actionRef = await image.evaluateHandle(resolveLiveImageActionDocument, {
       actionIndex: action.actionIndex,
-      compactQuote: ready.target.quoteBoundary === 'compact-two-level',
+      compactQuote: target.quoteBoundary === 'compact-two-level',
     });
-    const actionHandle = actionRef.asElement() as ElementHandle<HTMLAnchorElement> | null;
+    actionHandle = actionRef.asElement() as ElementHandle<HTMLAnchorElement> | null;
     if (!actionHandle) {
       await actionRef.dispose();
-      throw new Error('New document action detached');
+      throw new Error('Current photo action detached');
     }
+    const point = await actionHandle.evaluate(
+      (element, expected) => {
+        const image = expected.image;
+        if (
+          !image.isConnected ||
+          !expected.owner.isConnected ||
+          image.closest('article') !== expected.owner ||
+          element.closest('article') !==
+            (expected.compactQuote
+              ? expected.owner.parentElement?.closest('article')
+              : expected.owner)
+        ) {
+          return null;
+        }
+        const source = new URL(image.currentSrc || image.src);
+        const actionUrl = new URL(element.href, location.href);
+        if (
+          source.protocol !== 'https:' ||
+          actionUrl.protocol !== 'https:' ||
+          !['x.com', 'twitter.com'].includes(actionUrl.hostname) ||
+          actionUrl.username ||
+          actionUrl.password ||
+          actionUrl.port ||
+          source.hostname !== expected.source.host ||
+          source.pathname !== expected.source.path ||
+          actionUrl.pathname !== expected.actionPath
+        ) {
+          return null;
+        }
+        const bounds = image.getBoundingClientRect();
+        const x = Math.max(0, Math.min(innerWidth - 1, bounds.left + bounds.width / 2));
+        const y = Math.max(0, Math.min(innerHeight - 1, bounds.top + bounds.height / 2));
+        const top = document.elementFromPoint(x, y);
+        const actionBounds = element.getBoundingClientRect();
+        const offsetX = x - actionBounds.left - element.clientLeft;
+        const offsetY = y - actionBounds.top - element.clientTop;
+        return {
+          admitted:
+            bounds.width > 0 &&
+            bounds.height > 0 &&
+            top?.closest('a[href]') === element &&
+            offsetX >= 0 &&
+            offsetY >= 0 &&
+            offsetX < element.clientWidth &&
+            offsetY < element.clientHeight,
+          x,
+          y,
+          position: { x: offsetX, y: offsetY },
+          topTag: top?.tagName ?? null,
+          topTestId: top?.getAttribute('data-testid')?.slice(0, 80) ?? null,
+          topRole: top?.getAttribute('role')?.slice(0, 40) ?? null,
+        };
+      },
+      {
+        image,
+        owner,
+        source: target.imageSource,
+        actionPath: action.actionPath,
+        compactQuote: target.quoteBoundary === 'compact-two-level',
+      }
+    );
+    observation.clickPoint = point;
+    assert(
+      point?.admitted,
+      'Current photo/action ownership or hit-tested image point changed before click'
+    );
+    capture = await actionHandle.evaluateHandle(captureSettingsPhotoClickDocument, {
+      image,
+      owner,
+    });
+    observation.phase = 'trusted-click';
+    await actionHandle.click({ timeout: 10_000, position: point.position });
+    observation.phase = 'gallery-open';
+    await page
+      .locator('[data-xeg-gallery-container]')
+      .waitFor({ state: 'visible', timeout: 10_000 });
+    observation.phase = 'displayed-selection';
+    const selection = await page.waitForFunction(selectedGalleryImageDocument, undefined, {
+      timeout: 10_000,
+      polling: 100,
+    });
     try {
-      await actionHandle.click({ timeout: 10_000 });
+      observation.displayedSelection = await selection.jsonValue();
     } finally {
-      await actionHandle.dispose();
+      await selection.dispose();
     }
+    const activation = await capture.evaluate((value) => value.snapshot());
+    observation.activation = activation;
+    const ownedActivations = activation.events.filter((event) => {
+      const source = event.imageSource;
+      return (
+        event.trusted === true &&
+        event.button === 0 &&
+        event.pointInsideImage === true &&
+        event.actionInPath === true &&
+        event.sameOwner === true &&
+        event.imageLoaded === true &&
+        source !== null &&
+        typeof source === 'object' &&
+        'host' in source &&
+        'path' in source &&
+        source.host === target.imageSource.host &&
+        source.path === target.imageSource.path
+      );
+    });
+    assert(
+      ownedActivations.length === 1 && activation.overflow === 0,
+      'Trusted owned photo activation was not observed before gallery opening'
+    );
+    observation.phase = 'opened';
   } finally {
-    await image.dispose();
+    if (capture) {
+      observation.activation = await capture
+        .evaluate((value) => value.snapshot())
+        .catch(() => ({ unavailable: true }));
+      await capture.evaluate((value) => value.dispose()).catch(() => undefined);
+      await capture.dispose();
+    }
+    observation.readinessAfter = await page
+      .evaluate(() => ({
+        marker: document.documentElement.getAttribute('data-xeg-gallery-ready'),
+        timeOrigin: performance.timeOrigin,
+      }))
+      .catch(() => ({ unavailable: true }));
+    await actionHandle?.dispose();
+    await ownerRef.dispose();
+    await imageRef.dispose();
   }
-  await page.locator('[data-xeg-gallery-container]').waitFor({ state: 'visible', timeout: 10_000 });
 }
 
 function storedTheme(value: unknown): string {
@@ -1859,12 +2129,12 @@ export async function runLiveSettingsAcceptance({
     identityFromUrl(url);
   }
   const receipt: Record<string, unknown> & { evidenceStatus: string } = {
-    status: 'blocked',
+    status: 'unverified',
     evidenceStatus: 'unverified',
     scope:
       'current public X language/theme selection, durable readback, fresh document and exact preference restoration',
   };
-  const attempts: Array<{ url: string; error?: string }> = [];
+  const attempts: Array<{ url: string; error?: string; opening: Record<string, unknown> }> = [];
   const cleanup: Record<string, unknown> = {};
   receipt.attempts = attempts;
   receipt.cleanup = cleanup;
@@ -1872,15 +2142,26 @@ export async function runLiveSettingsAcceptance({
   const extensionPage = await context.newPage();
   const productErrors: string[] = [];
   let productErrorOverflow = 0;
+  const productWarnings: string[] = [];
+  let productWarningOverflow = 0;
   page.on('console', (message) => {
-    if (
-      message.type() === 'error' &&
-      message.location().url.startsWith(`chrome-extension://${extensionId}/`)
-    ) {
+    const sourceMatches =
+      message.location().url.startsWith(`chrome-extension://${extensionId}/`) ||
+      message.text().startsWith('[XEG]');
+    if (!sourceMatches) {
+      return;
+    }
+    if (message.type() === 'error') {
       if (productErrors.length < 20) {
         productErrors.push(safeError(message.text()));
       } else {
         productErrorOverflow++;
+      }
+    } else if (message.type() === 'warning') {
+      if (productWarnings.length < 20) {
+        productWarnings.push(safeError(message.text()));
+      } else {
+        productWarningOverflow++;
       }
     }
   });
@@ -1918,24 +2199,38 @@ export async function runLiveSettingsAcceptance({
     await page.bringToFront();
     let target: string | undefined;
     for (const url of liveUrls) {
-      const attempt: { url: string; error?: string } = { url };
+      const attempt: { url: string; error?: string; opening: Record<string, unknown> } = {
+        url,
+        opening: {},
+      };
       attempts.push(attempt);
       try {
+        attempt.opening.phase = 'navigation';
         const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+        attempt.opening.responseStatus = response?.status();
         assert.equal(response?.status(), 200);
+        attempt.opening.phase = 'injection-readiness';
         await page
           .locator('html[data-xeg-gallery-ready="true"]')
           .waitFor({ state: 'attached', timeout: 20_000 });
-        await openCurrentStatusImage(page, url);
+        await openCurrentStatusImage(page, url, attempt.opening);
         target = url;
         break;
       } catch (error) {
         attempt.error = safeError(error);
+        attempt.opening.failureState = await page
+          .evaluate(() => ({
+            hostname: location.hostname,
+            pathname: location.pathname,
+            readyMarker: document.documentElement.getAttribute('data-xeg-gallery-ready'),
+            galleryCount: document.querySelectorAll('[data-xeg-gallery-container]').length,
+          }))
+          .catch(() => ({ unavailable: true }));
       }
     }
     assert(
       target,
-      'Required current X image/settings prerequisite unavailable; no login or consent action attempted'
+      'Current X image/settings entry was not established; inspect per-attempt binding, activation and product diagnostics'
     );
     const targetUrl = target;
     receipt.status = 'failed';
@@ -1971,19 +2266,23 @@ export async function runLiveSettingsAcceptance({
     assert.deepEqual(durable, { theme: nextTheme, language: nextLanguage });
     assert.equal(await gallery.locator('[data-xeg-settings-unsaved]').count(), 0);
     await page.screenshot({ path: join(output, 'live-settings-changed.png') });
-    const reopen = async () => {
+    const readbacks: Array<{ stage: string; opening: Record<string, unknown> }> = [];
+    receipt.readbacks = readbacks;
+    const reopen = async (stage: string) => {
+      const opening: Record<string, unknown> = {};
+      readbacks.push({ stage, opening });
       await page.reload({ waitUntil: 'domcontentloaded', timeout: 30_000 });
       await page
         .locator('html[data-xeg-gallery-ready="true"]')
         .waitFor({ state: 'attached', timeout: 20_000 });
-      await openCurrentStatusImage(page, targetUrl);
+      await openCurrentStatusImage(page, targetUrl, opening);
       await page.locator('[data-xeg-gallery-container] #settings-button').click();
     };
-    await reopen();
+    await reopen('saved');
     assert.equal(await page.locator('#settings-theme-select').inputValue(), nextTheme);
     assert.equal(await page.locator('#settings-language-select').inputValue(), nextLanguage);
     await restore();
-    await reopen();
+    await reopen('restored');
     assert.equal(await page.locator('#settings-theme-select').inputValue(), initialTheme);
     assert.equal(await page.locator('#settings-language-select').inputValue(), initialLanguage);
     await page.screenshot({ path: join(output, 'live-settings-restored.png') });
@@ -2024,6 +2323,8 @@ export async function runLiveSettingsAcceptance({
     cleanup.errors = errors;
     receipt.productErrors = productErrors;
     receipt.productErrorOverflow = productErrorOverflow;
+    receipt.productWarnings = productWarnings;
+    receipt.productWarningOverflow = productWarningOverflow;
     if (errors.length || productErrors.length || productErrorOverflow) {
       receipt.status = 'failed';
       receipt.evidenceStatus = 'unverified';
