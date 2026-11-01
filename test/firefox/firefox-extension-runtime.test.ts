@@ -637,6 +637,21 @@ test(
 
     const firefoxDriver = firefox.Driver.createSession(options);
     driver = firefoxDriver;
+    const capabilities = await firefoxDriver.getCapabilities();
+    const browserVersion = capabilities.get('browserVersion');
+    const geckodriverVersion = capabilities.get('moz:geckodriverVersion');
+    assert.match(browserVersion, /^\d/);
+    assert.match(geckodriverVersion, /^\d/);
+    process.stdout.write(
+      `${JSON.stringify({
+        event: 'firefox-runtime',
+        nodeVersion: process.versions.node,
+        platform: capabilities.get('platformName'),
+        browserVersion,
+        geckodriverVersion,
+        openssl: execFileSync('openssl', ['version'], { encoding: 'utf8' }).trim(),
+      })}\n`
+    );
     const addonId = await firefoxDriver.installAddon(createRuntimeTestExtension(), true);
     assert.equal(addonId, 'xcom-enhanced-gallery@piesp.dev');
 
