@@ -15330,8 +15330,16 @@ async function uxControlGeometry(control: Locator, label: string) {
   return geometry;
 }
 
-async function uxOwnedWheel(page: Page, panel: Locator, media: Locator, label: string) {
+async function uxOwnedWheel(
+  page: Page,
+  panel: Locator,
+  media: Locator,
+  label: string,
+  target: Locator = panel,
+  observations: Array<Record<string, unknown>> = []
+) {
   assert.equal(await panel.count(), 1, `${label} detached before wheel input`);
+  await target.scrollIntoViewIfNeeded();
   await panel.evaluate((element) => {
     element.scrollTop = 0;
   });
@@ -15347,26 +15355,61 @@ async function uxOwnedWheel(page: Page, panel: Locator, media: Locator, label: s
   if (overflow <= 2) {
     return { overflow: false, before: before[0], mediaBefore: before[1] };
   }
-  const bounds = await panel.boundingBox();
-  assert(bounds, `${label} must have painted bounds for real wheel input`);
-  await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+  const point = await target.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    const hit = document.elementFromPoint(x, y);
+    return {
+      x,
+      y,
+      painted: rect.width > 0 && rect.height > 0,
+      ownsHit: Boolean(hit && element.contains(hit)),
+      hitTag: hit?.tagName ?? null,
+      hitGalleryElement: hit?.closest('[data-gallery-element]')?.getAttribute('data-gallery-element') ?? null,
+    };
+  });
+  const selection = () =>
+    page.evaluate(() => {
+      const toolbar = document.querySelector('[data-gallery-element="toolbar"]');
+      return {
+        current: toolbar?.getAttribute('data-current-index') ?? null,
+        focused: toolbar?.getAttribute('data-focused-index') ?? null,
+        activeTag: document.activeElement?.tagName ?? null,
+        pageY: scrollY,
+      };
+    });
+  const beforeSelection = await selection();
+  observations.push({ label, stage: 'before', point, panel: before[0], mediaTop: before[1], selection: beforeSelection });
+  assert(point.painted && point.ownsHit, `${label} wheel point is not owned by its painted target`);
+  await page.mouse.move(point.x, point.y);
   await page.mouse.wheel(0, Math.min(240, overflow));
   await page.waitForTimeout(200);
-  const after = await Promise.all([
-    panel.evaluate((element) => element.scrollTop),
-    media.evaluate((element) => element.scrollTop),
-  ]);
-  assert(after[0] > before[0].scrollTop + 1, `${label} did not own its real wheel scroll`);
+  const panelAttached = (await panel.count()) === 1;
+  const after = {
+    panelTop: panelAttached ? await panel.evaluate((element) => element.scrollTop) : null,
+    mediaTop: await media.evaluate((element) => element.scrollTop),
+    selection: await selection(),
+  };
+  observations.push({ label, stage: 'after', panelAttached, ...after });
+  assert(panelAttached, `${label} detached during real wheel input: ${JSON.stringify(observations)}`);
   assert(
-    Math.abs(after[1] - before[1]) < 1,
+    after.panelTop !== null && after.panelTop > before[0].scrollTop + 1,
+    `${label} did not own its real wheel scroll`
+  );
+  assert(
+    Math.abs(after.mediaTop - before[1]) < 1,
     `${label} wheel input unexpectedly scrolled gallery media`
   );
+  assert.deepEqual(after.selection, beforeSelection, `${label} wheel changed gallery selection or focus`);
   return {
     overflow: true,
     before: before[0],
-    after: after[0],
+    after: after.panelTop,
     mediaBefore: before[1],
-    mediaAfter: after[1],
+    mediaAfter: after.mediaTop,
+    point,
+    selection: { before: beforeSelection, after: after.selection },
   };
 }
 
@@ -15753,7 +15796,16 @@ async function runUxDetailsProbe({
       const summaryGeometry = await uxControlGeometry(summary, `${locale} source summary`);
       await requireVideoDetails('after-geometry');
       const items = gallery.locator('[data-gallery-element="items"]');
-      const sourceWheel = await uxOwnedWheel(page, details, items, `${locale} source details`);
+      const wheelObservations: Array<Record<string, unknown>> = [];
+      panelReceipt.wheelObservations = wheelObservations;
+      const sourceWheel = await uxOwnedWheel(
+        page,
+        details,
+        items,
+        `${locale} source details`,
+        summary,
+        wheelObservations
+      );
       panelReceipt.sourceWheel = sourceWheel;
       await summary.focus();
       await page.keyboard.press('Space');
@@ -15766,7 +15818,14 @@ async function runUxDetailsProbe({
       assert.equal(await helpButton.getAttribute('aria-expanded'), 'true');
       const helpClose = helpPanel.locator('button').first();
       const closeGeometry = await uxControlGeometry(helpClose, `${locale} help close`);
-      const helpWheel = await uxOwnedWheel(page, helpPanel, items, `${locale} keyboard help`);
+      const helpWheel = await uxOwnedWheel(
+        page,
+        helpPanel,
+        items,
+        `${locale} keyboard help`,
+        helpPanel,
+        wheelObservations
+      );
       panelReceipt.helpWheel = helpWheel;
       await uxControlGeometry(helpClose, `${locale} help close after scroll`);
       const screenshot = zoom ? 'ux-details-en-zoom200.png' : 'ux-details-ko-401x592.png';
@@ -16146,16 +16205,24 @@ async function runUxDetailsProbe({
     await language.waitFor({ state: 'visible' });
     await language.selectOption('en');
     await settingsButton.click();
+    const fitWindow = toolbar.locator('button[aria-label="Fit Window"]');
+    await fitWindow.click();
+    assert.equal(await fitWindow.getAttribute('aria-pressed'), 'true');
     const media = gallery.locator('[data-gallery-element="items"]');
     const result = receipt.oneItemPanel as Record<string, unknown>;
-    result.mediaOverflow = await media.evaluate(
+    result.fit = 'Fit Window';
+    result.mediaOverflowBeforeFailure = await media.evaluate(
       (element) => element.scrollHeight - element.clientHeight
     );
-    assert(Number(result.mediaOverflow) <= 2, 'One-item media list must not overflow');
+    assert(Number(result.mediaOverflowBeforeFailure) <= 2, 'Fit Window media must not overflow');
     const knownDownloads = new Set((await queryDownloads(extensionPage!)).map(({ id }) => id));
     await toolbar.locator('button[aria-label="Download"]').click();
     const panel = gallery.locator('[data-gallery-element="gallery-failure-notice"]');
     await panel.waitFor({ state: 'visible' });
+    result.mediaOverflow = await media.evaluate(
+      (element) => element.scrollHeight - element.clientHeight
+    );
+    assert(Number(result.mediaOverflow) <= 2, 'One-item media list must not overflow with notice');
     assert.deepEqual(
       api.map(({ tweetId }) => tweetId),
       [TWEET_ID]
