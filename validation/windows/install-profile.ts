@@ -15227,8 +15227,9 @@ async function uxControlGeometry(control: Locator, label: string) {
     };
   });
   assert(
-    geometry.rect.width >= 44 &&
-      geometry.rect.height >= 44 &&
+    // DOMRect's floating-point transform can round an exact 44px CSS box by < 0.001px.
+    geometry.rect.width >= 44 - 0.001 &&
+      geometry.rect.height >= 44 - 0.001 &&
       geometry.withinViewport &&
       geometry.hit,
     `${label} must be a visible, hit-tested 44px control: ${JSON.stringify(geometry)}`
