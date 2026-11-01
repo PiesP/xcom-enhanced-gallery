@@ -14648,21 +14648,12 @@ async function runMediaDownloadRecoveryProbe({
       await videoGallery.waitFor({ state: 'detached' });
       await page.goto(`https://x.com/rapid_a/status/${RAPID_CLICK_A}`);
       await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
-      await page.evaluate((source) => {
-        const article = document.querySelector('article[data-rapid="a"]');
-        if (!article) {
-          throw new Error('Owned mixed-quality article is missing');
-        }
-        const tile = document.createElement('div');
-        tile.dataset.testid = 'tweetPhoto';
-        const image = document.createElement('img');
-        image.src = source;
-        image.width = 140;
-        image.height = 90;
-        image.alt = 'Verified fixture image';
-        tile.append(image);
-        article.append(tile);
-      }, `https://pbs.twimg.com/media/${QUALITY_IMAGE_PATHS[0]}?format=jpg&name=small`);
+      const mixedImage = page.locator('article[data-rapid="a"] [data-testid="tweetPhoto"] img');
+      assert.equal(await mixedImage.count(), 1, 'Mixed fixture must retain its one owned photo');
+      assert.equal(
+        new URL((await mixedImage.getAttribute('src')) ?? '').pathname,
+        '/media/QQuoteOnePhoto.jpg'
+      );
       await page.locator('article[data-rapid="a"] video').click();
       const mixedGallery = page.locator('[data-xeg-gallery-container]');
       await mixedGallery.waitFor({ state: 'visible' });
@@ -14678,7 +14669,7 @@ async function runMediaDownloadRecoveryProbe({
         position: videoPosition === 1 ? 2 : 1,
         total: 2,
         type: 'image',
-        path: `/media/${QUALITY_IMAGE_PATHS[0]}`,
+        path: '/media/QQuoteOnePhoto.jpg',
       });
       await assertSourceDetails(mixedGallery, 'absent');
       await mixedGallery
