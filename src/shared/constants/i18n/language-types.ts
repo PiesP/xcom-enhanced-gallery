@@ -75,6 +75,10 @@ export interface LanguageStrings {
     readonly auxGroup: string;
     /** Settings panel label */
     readonly settingsPanel: string;
+    /** Persistent keyboard help controls and panel. */
+    readonly helpOpen: string;
+    readonly helpPanel: string;
+    readonly helpClose: string;
   };
   /** Settings strings */
   readonly st: {
@@ -116,6 +120,8 @@ export interface LanguageStrings {
     readonly videoClickSaveError: string;
     /** Settings are active in this session but not saved */
     readonly unsavedSettings: string;
+    /** Compact toolbar cue for unsaved session settings. */
+    readonly unsavedSession: string;
     /** Retry saving the latest settings */
     readonly retrySettingsSave: string;
   };
@@ -179,6 +185,13 @@ export interface LanguageStrings {
       readonly cls: string;
       /** Toggle help shortcut */
       readonly toggle: string;
+      readonly firstLast: string;
+      readonly five: string;
+      readonly vertical: string;
+      readonly playback: string;
+      readonly focus: string;
+      readonly context: string;
+      readonly recovery: string;
     };
     /** Download messages */
     readonly dl: {
@@ -200,6 +213,8 @@ export interface LanguageStrings {
         readonly nextActionSupplementary: string;
         readonly recoverMissing: string;
         readonly dismiss: string;
+        readonly cancelRecoveryAndDismiss: string;
+        readonly details: string;
       };
       /** Observable download lifecycle labels */
       readonly status: {
@@ -246,6 +261,17 @@ export interface LanguageStrings {
     };
     /** Gallery messages */
     readonly gal: {
+      /** Session-owned acquisition scope and displayed-item save source. */
+      readonly sourceDetails: {
+        readonly title: string;
+        readonly shown: string;
+        readonly cdnOriginal: string;
+        readonly bestMp4: string;
+        readonly observed: string;
+        readonly observedDetail: string;
+        readonly unavailable: string;
+        readonly unavailableDetail: string;
+      };
       readonly video: {
         readonly playbackFallback: string;
       };
@@ -266,6 +292,14 @@ export interface LanguageStrings {
       readonly itemLbl: string;
       /** Load failure message */
       readonly loadFail: string;
+      /** Localized media type for failure messages. */
+      readonly mediaType: {
+        readonly image: string;
+        readonly video: string;
+      };
+      readonly entryFailureNext: string;
+      readonly downloadFailureNext: string;
+      readonly dismissFailure: string;
       /** Image gallery label */
       readonly imageGallery: string;
       /** Loading indicator label */
