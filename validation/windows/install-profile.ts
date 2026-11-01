@@ -16291,7 +16291,10 @@ async function runUxDetailsProbe({
         result.roomyZoom = roomyZoom;
       }
       await page.setViewportSize({ width: 1280, height: 900 });
-      result.roomyViewport = await page.evaluate(() => ({ width: innerWidth, height: innerHeight }));
+      result.roomyViewport = await page.evaluate(() => ({
+        width: innerWidth,
+        height: innerHeight,
+      }));
       const roomyPanelOverflow = await panel.evaluate(
         (element) => element.scrollHeight - element.clientHeight
       );
@@ -16451,7 +16454,9 @@ async function runUxDetailsProbe({
     const layout = () =>
       media.evaluate((element) => {
         const item = element.querySelector<HTMLElement>('[data-gallery-element="item"]');
-        const source = document.querySelector<HTMLElement>('[data-gallery-element="source-details"]');
+        const source = document.querySelector<HTMLElement>(
+          '[data-gallery-element="source-details"]'
+        );
         const spacer = getComputedStyle(element, '::after');
         return {
           viewport: { width: innerWidth, height: innerHeight },
@@ -16480,7 +16485,8 @@ async function runUxDetailsProbe({
     await panel.waitFor({ state: 'visible' });
     const withNoticeLayout = await layout();
     result.withNoticeLayout = withNoticeLayout;
-    result.mediaOverflow = withNoticeLayout.media.scrollHeight - withNoticeLayout.media.clientHeight;
+    result.mediaOverflow =
+      withNoticeLayout.media.scrollHeight - withNoticeLayout.media.clientHeight;
     result.mediaNoOverflow = 'not-applicable-unreachable-with-product-spacer';
     assert.deepEqual(
       api.map(({ tweetId }) => tweetId),
