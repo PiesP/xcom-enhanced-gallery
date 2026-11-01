@@ -14273,8 +14273,16 @@ async function runHeldMissingRecoveryCancellation({
         assert.equal(applied.observed, 2);
         receipt.recoveryZoom = applied;
       }
+      const trigger = page.locator('[data-testid="tweetPhoto"] img').first();
+      await trigger.scrollIntoViewIfNeeded();
+      await trigger.focus();
       const beforeHost = await hostSnapshot(page, 0);
-      await page.locator('[data-testid="tweetPhoto"] img').first().click();
+      assert.equal(
+        beforeHost.activeElementAlt,
+        beforeHost.triggerAlt,
+        'Held fixture must capture the focused trigger baseline'
+      );
+      await trigger.click();
       const gallery = page.locator('[data-xeg-gallery-container]');
       await gallery.waitFor({ state: 'visible' });
       phase = 'partial';
