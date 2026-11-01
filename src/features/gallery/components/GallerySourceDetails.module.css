@@ -5,6 +5,7 @@
   flex: 0 0 auto;
   max-height: 25vh;
   overflow: auto;
+  overscroll-behavior: contain;
   border-block-start: 1px solid var(--xeg-color-border-default);
   background: var(--xeg-color-bg-surface);
   color: var(--xeg-color-text-primary);

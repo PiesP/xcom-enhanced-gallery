@@ -75,6 +75,38 @@ describe('current media source limitations', () => {
     expect(host.querySelector('details')).toBeNull();
   });
 
+  it('keeps detail wheel input from moving gallery media or chaining at its boundary', () => {
+    openGallery([observed]);
+    const details = host.querySelector('details');
+    expect(details).not.toBeNull();
+    if (!details) {
+      throw new Error('Expected source details');
+    }
+    details.open = true;
+    Object.defineProperties(details, {
+      scrollHeight: { configurable: true, value: 300 },
+      clientHeight: { configurable: true, value: 100 },
+    });
+    let redirected = 0;
+    const redirect = () => {
+      redirected++;
+    };
+    host.addEventListener('wheel', redirect);
+    try {
+      details.scrollTop = 0;
+      const inner = new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: 100 });
+      details.querySelector('p')!.dispatchEvent(inner);
+      expect(inner.defaultPrevented).toBe(false);
+      expect(redirected).toBe(0);
+      const boundary = new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: -100 });
+      details.dispatchEvent(boundary);
+      expect(boundary.defaultPrevented).toBe(true);
+      expect(redirected).toBe(0);
+    } finally {
+      host.removeEventListener('wheel', redirect);
+    }
+  });
+
   it('retains only validated visible-tile scope for this session and never invents a post total', () => {
     openGallery([verified, observed], 0, 'visible-tile');
     expect(host.querySelector('summary')?.textContent).toContain('msg.gal.sourceDetails.shown:2');

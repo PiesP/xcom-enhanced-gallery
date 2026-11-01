@@ -4,6 +4,7 @@
 import styles from '@features/gallery/components/GallerySourceDetails.module.css';
 import { useTranslation } from '@shared/hooks/use-translation';
 import { gallerySignals, getDisplayedMediaIndex } from '@shared/state/signals/gallery.signals';
+import { shouldAllowWheelDefault } from '@shared/utils/events/wheel-scroll-guard';
 import type { JSXElement } from 'solid-js';
 import { createMemo, Show } from 'solid-js';
 
@@ -25,6 +26,17 @@ export function GallerySourceDetails(): JSXElement {
         <details
           class={styles.details}
           data-gallery-element="source-details"
+          data-gallery-scrollable="true"
+          onWheel={(event) => {
+            event.stopPropagation();
+            if (
+              !shouldAllowWheelDefault(event, {
+                scrollableSelector: '[data-gallery-scrollable="true"]',
+              })
+            ) {
+              event.preventDefault();
+            }
+          }}
           data-media-id={media.id}
           onClick={(event) => event.stopPropagation()}
         >
