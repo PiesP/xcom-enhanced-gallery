@@ -53,7 +53,7 @@ jobs:
       - name: 📥 Checkout reviewed pin source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: 61c7623658a5aa6f199b942c5f256f4a44f1d3bf
+          ref: dccb799bf687d03139fec1b4447d209d2c2ef7dc
           persist-credentials: false
           submodules: false
 
@@ -61,8 +61,6 @@ jobs:
         uses: PiesP/browser-core/automation/actions/setup-project@38cd1cb18c9c37e57e8b53a98e811450bb1a18fc
         with:
           install-dependencies: 'false'
-          # The immutable reviewed source pins Node in Volta and has no .node-version.
-          node-version: '26.12.1'
 
       - name: 🔐 Prepare reviewed scanner pin helper
         id: scanner_helper
@@ -143,7 +141,7 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: 61c7623658a5aa6f199b942c5f256f4a44f1d3bf
+          ref: dccb799bf687d03139fec1b4447d209d2c2ef7dc
           persist-credentials: false
           submodules: false
 
@@ -151,8 +149,6 @@ jobs:
         uses: PiesP/browser-core/automation/actions/setup-project@38cd1cb18c9c37e57e8b53a98e811450bb1a18fc
         with:
           install-dependencies: 'false'
-          # The immutable reviewed source pins Node in Volta and has no .node-version.
-          node-version: '26.12.1'
 
       - name: 🔐 Prepare reviewed scanner pin helper
         id: scanner_helper
