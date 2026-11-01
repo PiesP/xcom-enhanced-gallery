@@ -107,7 +107,20 @@ inputs, or another focused selector. This case uses only the owned rapid-A post
 fixture. A real provider 403 opens its one-image/one-video DOM recovery gallery.
 It checks the opened source details and keyboard help in Korean at 401×592 and
 English at actual 200% tab zoom, including native keys, visible controls, and
-wheel ownership when a panel overflows. A separate fresh fixture document
+wheel ownership when a panel overflows. It also checks toolbar-focused Settings
+and Help Escape against media-focused Escape while Help is open. Separate owned
+source-quality documents produce a real native single-save failure in Korean at
+401×360 and a partial ZIP with expanded details in English at actual 200% tab
+zoom. The result probes measure positive panel and media overflow, real wheel
+movement over text, controls, and the ZIP summary, top and bottom containment,
+non-overflow containment, and normal media-wheel scrolling after dismissal.
+The existing one-item, article-less source-limitation fixture checks notice
+containment without notice overflow and records the media list's spacer, item,
+and viewport geometry. The real gallery intentionally keeps its media list
+scrollable with a last-item alignment spacer; the media-no-overflow branch is
+covered by the focused synthetic regression, not claimed from this GUI case.
+Each case keeps a receipt even when its assertion fails, so baseline and
+candidate behavior can be compared without hiding the second panel. A fresh fixture document
 returns HTTP 503 for the exact known video source after opening the gallery;
 the terminal video alert must provide a canonical original-post link that a
 trusted Enter key opens in a new owned fixture tab. Screenshots and request,

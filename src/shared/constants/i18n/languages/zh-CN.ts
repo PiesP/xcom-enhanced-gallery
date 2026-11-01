@@ -97,7 +97,7 @@ export const zhCn: LanguageStrings = {
       t: '键盘快捷键',
       prev: '左方向键：上一项',
       next: '右方向键：下一项',
-      cls: 'Escape：关闭当前面板或图库',
+      cls: 'Escape：关闭图库；焦点在工具栏内时，先关闭已打开的设置或键盘帮助。',
       toggle: '?：打开此帮助',
       firstLast: 'Home / End：第一项 / 最后一项',
       five: 'PageUp / PageDown：后退 / 前进五项',

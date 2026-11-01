@@ -101,7 +101,7 @@ export const ko: LanguageStrings = {
       t: '키보드 단축키',
       prev: '왼쪽: 표시된 이전 항목',
       next: '오른쪽: 표시된 다음 항목',
-      cls: 'Escape: 열린 패널 또는 갤러리 닫기',
+      cls: 'Escape: 갤러리를 닫습니다. 도구 모음에 초점이 있으면 열린 설정이나 키보드 도움말을 먼저 닫습니다.',
       toggle: '?: 이 도움말 열기',
       firstLast: 'Home / End: 첫 / 마지막 항목',
       five: 'PageUp / PageDown: 5개 항목 뒤로 / 앞으로',
