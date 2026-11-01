@@ -25,7 +25,7 @@ installations. See [browser support](#browser-support) for version floors.
    keep their native action.
 2. Move between displayed items with the toolbar's Previous/Next buttons,
    arrow keys, or wheel. In the unreleased development build, use the toolbar's
-   Help control or `?` for the full desktop key map.
+   Keyboard help (?) button or `?` for the full desktop key map.
 3. Choose a display fit in the toolbar. This changes the view, not the
    [preferred save source or quality](./docs/media-sources.md).
 4. Save the currently displayed item with Download, or choose Download shown
@@ -36,15 +36,15 @@ installations. See [browser support](#browser-support) for version floors.
 5. Close the gallery with Close or Escape to return to the post. When an
    original-post link is available, it opens that source post separately.
 
-![Gallery with navigation, fit, download, help, and close controls](./docs/images/gallery-overview.png)
+![Gallery with position 1 of 3, selected Fit Width, Keyboard help, download, and close controls](./docs/images/gallery-overview.png)
 
-*Unreleased development build. The final capture will identify its source,
-distribution, browser, viewport, and zoom.*
+*Unreleased development build: installed Edge extension with controlled media;
+1280 × 800 viewport, 100% tab zoom, 200% system DPI. [Capture details](./docs/images/README.md).*
 
-![Gallery controls in a constrained desktop window](./docs/images/gallery-constrained.png)
+![Gallery controls wrapped in a 401-pixel-wide window with Fit Window selected](./docs/images/gallery-constrained.png)
 
-*Unreleased development build at a constrained desktop size. The final capture
-will identify its source, distribution, browser, viewport, and zoom.*
+*Unreleased development build: installed Edge extension with controlled media;
+401 × 592 viewport, 100% tab zoom, 200% system DPI. [Capture details](./docs/images/README.md).*
 
 A gallery video uses a separate paused player starting at the beginning, with
 its own saved audio preferences. Closing the gallery does not automatically
