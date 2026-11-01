@@ -15366,7 +15366,8 @@ async function uxOwnedWheel(
       painted: rect.width > 0 && rect.height > 0,
       ownsHit: Boolean(hit && element.contains(hit)),
       hitTag: hit?.tagName ?? null,
-      hitGalleryElement: hit?.closest('[data-gallery-element]')?.getAttribute('data-gallery-element') ?? null,
+      hitGalleryElement:
+        hit?.closest('[data-gallery-element]')?.getAttribute('data-gallery-element') ?? null,
     };
   });
   const selection = () =>
@@ -15380,7 +15381,14 @@ async function uxOwnedWheel(
       };
     });
   const beforeSelection = await selection();
-  observations.push({ label, stage: 'before', point, panel: before[0], mediaTop: before[1], selection: beforeSelection });
+  observations.push({
+    label,
+    stage: 'before',
+    point,
+    panel: before[0],
+    mediaTop: before[1],
+    selection: beforeSelection,
+  });
   assert(point.painted && point.ownsHit, `${label} wheel point is not owned by its painted target`);
   await page.mouse.move(point.x, point.y);
   await page.mouse.wheel(0, Math.min(240, overflow));
@@ -15392,7 +15400,10 @@ async function uxOwnedWheel(
     selection: await selection(),
   };
   observations.push({ label, stage: 'after', panelAttached, ...after });
-  assert(panelAttached, `${label} detached during real wheel input: ${JSON.stringify(observations)}`);
+  assert(
+    panelAttached,
+    `${label} detached during real wheel input: ${JSON.stringify(observations)}`
+  );
   assert(
     after.panelTop !== null && after.panelTop > before[0].scrollTop + 1,
     `${label} did not own its real wheel scroll`
@@ -15401,7 +15412,11 @@ async function uxOwnedWheel(
     Math.abs(after.mediaTop - before[1]) < 1,
     `${label} wheel input unexpectedly scrolled gallery media`
   );
-  assert.deepEqual(after.selection, beforeSelection, `${label} wheel changed gallery selection or focus`);
+  assert.deepEqual(
+    after.selection,
+    beforeSelection,
+    `${label} wheel changed gallery selection or focus`
+  );
   return {
     overflow: true,
     before: before[0],
