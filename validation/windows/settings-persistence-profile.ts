@@ -65,6 +65,15 @@ async function readDurableTheme(page: Page): Promise<string | null> {
   });
 }
 
+async function readDurableFit(page: Page): Promise<string | null> {
+  return page.evaluate(() => {
+    const raw = (window as StorageHost).GM_getValue?.<string>(
+      'xeg-app-settings:field:gallery.imageFitMode'
+    );
+    return typeof raw === 'string' ? (JSON.parse(raw) as { value?: string }).value ?? null : null;
+  });
+}
+
 export async function runSettingsPersistenceFixture({
   page,
   output,
@@ -177,7 +186,49 @@ export async function runSettingsPersistenceFixture({
     assert.equal(await reloadedGallery.getAttribute('data-theme'), 'light');
     evidence.reload = { theme: 'light', freshDocument: true };
 
-    await reloadedGallery.locator('#settings-button').click();
+    const fitBefore = await readDurableFit(page);
+    await page.evaluate(() => {
+      const faults = (window as StorageHost).__xegStorageFaults!;
+      faults.denyPrimary = true;
+      faults.denyFallback = true;
+    });
+    const fitButton = reloadedGallery.locator('button[aria-label="Fit Height"]');
+    await fitButton.click();
+    assert.equal(await fitButton.getAttribute('aria-pressed'), 'true');
+    const outerCue = reloadedGallery.locator('[data-xeg-settings-unsaved-indicator]');
+    await outerCue.waitFor({ state: 'visible' });
+    assert.equal(
+      await reloadedGallery.locator('#settings-button').getAttribute('aria-expanded'),
+      'false'
+    );
+    assert.match((await outerCue.textContent()) ?? '', /not saved|unsaved/i);
+    assert.equal(
+      await readDurableFit(page),
+      fitBefore,
+      'Closed Settings denied fit save reached storage'
+    );
+    await outerCue.getByRole('button').click();
+    await reloadedGallery
+      .locator('[data-gallery-element="settings-panel"]')
+      .waitFor({ state: 'visible' });
+    const fitUnsaved = reloadedGallery.locator('[data-xeg-settings-unsaved]');
+    await fitUnsaved.waitFor({ state: 'visible' });
+    await page.evaluate(() => {
+      const faults = (window as StorageHost).__xegStorageFaults!;
+      faults.denyPrimary = false;
+      faults.denyFallback = false;
+    });
+    await fitUnsaved.getByRole('button').click();
+    await fitUnsaved.waitFor({ state: 'detached' });
+    assert.equal(await outerCue.count(), 0, 'Saved fit left the toolbar unsaved cue');
+    assert.equal(await readDurableFit(page), 'fitHeight');
+    evidence.closedSettingsFitRecovery = {
+      priorDurableFit: fitBefore,
+      deniedDurableFit: fitBefore,
+      cueVisible: true,
+      reopenedFromCue: true,
+      retriedDurableFit: 'fitHeight',
+    };
     await page.evaluate(() => {
       const faults = (window as StorageHost).__xegStorageFaults!;
       faults.denyPrimary = true;

@@ -390,6 +390,14 @@ async function captureOpeningFeedback(page: Page, output: string, name: string) 
       visible: visible(element),
       pointerEvents: getComputedStyle(element).pointerEvents,
     }));
+    const failures = Array.from(document.querySelectorAll('[data-xeg-entry-failure]')).map(
+      (element) => ({
+        text: (element.textContent ?? '').trim(),
+        visible: visible(element),
+        dismiss: element.querySelector('button')?.textContent?.trim() ?? null,
+        role: element.querySelector('[role="status"]')?.getAttribute('role') ?? null,
+      })
+    );
     return {
       url: location.href,
       documentStartedAt: performance.timeOrigin,
@@ -401,6 +409,7 @@ async function captureOpeningFeedback(page: Page, output: string, name: string) 
         .slice(0, 240),
       statuses,
       opening,
+      failures,
     };
   });
   await page.screenshot({ path: join(output, screenshot) });
@@ -501,6 +510,30 @@ function assertOpeningAbsent(
   label: string
 ): void {
   assert.deepEqual(snapshot.opening, [], `${label}: stale opening status must be removed`);
+}
+
+async function assertSourceDetails(
+  gallery: Locator,
+  expected: 'absent' | 'visible-tile' | 'observed' | 'unverified-original'
+): Promise<string | null> {
+  const details = gallery.locator('[data-gallery-element="source-details"]');
+  if (expected === 'absent') {
+    assert.equal(await details.count(), 0, 'Verified full-scope media must not show a limitation');
+    return null;
+  }
+  await details.waitFor({ state: 'visible' });
+  const summary = (await details.locator('summary').textContent())?.trim() ?? '';
+  const pattern = {
+    'visible-tile': /recovered from this tile only/u,
+    observed: /Video save quality is unverified/u,
+    'unverified-original': /Original image unavailable for saving/u,
+  }[expected];
+  assert.match(summary, pattern);
+  await details.locator('summary').click();
+  assert.equal(await details.getAttribute('open'), '');
+  assert.match((await details.textContent()) ?? '', /Media and save details/u);
+  await details.locator('summary').click();
+  return summary;
 }
 
 function assertOpeningTimeline(timeline: OpeningTimeline, label: string): void {
@@ -687,6 +720,18 @@ async function assertVisibleBulkOutcome(
   );
   await panel.waitFor({ state: 'visible' });
   const text = (await panel.textContent())?.trim() ?? '';
+  const summary = panel.locator('details > summary');
+  if (expected.reason) {
+    await summary.waitFor({ state: 'visible' });
+    assert.match((await summary.textContent()) ?? '', /ZIP result details/u);
+    await summary.click();
+    assert.equal(await summary.locator('..').getAttribute('open'), '');
+    assert(
+      await panel.getByText(expected.reason, { exact: false }).isVisible(),
+      'ZIP failure reason must be readable when details are expanded'
+    );
+    await summary.click();
+  }
   assert.match(
     text,
     expected.supplementary
@@ -4901,6 +4946,7 @@ async function runPublicFixtureCycle({
     'Public fixture must request TweetResultByRestId once'
   );
   assert.equal(apiResponses.at(-1)?.status, 403, 'Public fixture API route must return 403');
+  await assertSourceDetails(gallery, 'absent');
   await page.screenshot({ path: join(output, 'public-dom-gallery.png') });
 
   await page.keyboard.press('Escape');
@@ -8365,7 +8411,12 @@ async function runDelayedVideoFailures({
     );
     const priorSetting =
       name === 'navigation' ? null : await readStoredVideoSettings(extensionPage);
-    const notificationObserver = await observeNativeNotificationCreates(context, extensionId);
+    const suppressFailureNotification = openingProbe && name === 'failure';
+    const notificationObserver = await observeNativeNotificationCreates(
+      context,
+      extensionId,
+      suppressFailureNotification
+    );
     const navigationEvents: Array<{ type: string; trusted: boolean }> = [];
     const recordNavigation = (message: ConsoleMessage) => {
       const text = message.text();
@@ -8473,6 +8524,11 @@ async function runDelayedVideoFailures({
         if (openingProbe) {
           const terminal = await captureOpeningFeedback(page, output, `delayed-${name}-terminal`);
           assertOpeningAbsent(terminal, `delayed ${name} terminal`);
+          assert.deepEqual(
+            terminal.failures,
+            [],
+            'Navigation left a source failure in the new document'
+          );
           observation.openingFeedback = { ...(observation.openingFeedback as object), terminal };
         }
         const nextDocumentStartedAt = await page.evaluate(() => performance.timeOrigin);
@@ -8556,12 +8612,28 @@ async function runDelayedVideoFailures({
           );
           const observed = await notificationObserver.snapshot();
           return observed.calls.find(
-            ({ id }) => active.includes(id) && !knownNotifications.includes(id)
+            ({ id }) =>
+              !knownNotifications.includes(id) &&
+              (suppressFailureNotification || active.includes(id))
           );
         }, 'delayed extraction failure native notification');
         if (openingProbe) {
           const terminal = await captureOpeningFeedback(page, output, `delayed-${name}-terminal`);
           assertOpeningAbsent(terminal, `delayed ${name} terminal`);
+          assert.equal(
+            terminal.failures.length,
+            1,
+            'Failed extraction needs one terminal source notice'
+          );
+          assert(terminal.failures[0]?.visible, 'Terminal source notice must be visibly painted');
+          assert.equal(terminal.failures[0]?.role, 'status');
+          assert.match(terminal.failures[0]?.text ?? '', /Use the post on X to view this media/u);
+          await page.waitForTimeout(1_000);
+          assert.equal(
+            await page.locator('[data-xeg-entry-failure]').count(),
+            1,
+            'Terminal source notice must persist until dismissal or supersession'
+          );
           const timeline = await endOpeningTimeline(page);
           assertOpeningTimeline(timeline, `delayed ${name}`);
           assert.equal(timeline.removed.length, 1, `delayed ${name}: settled status removal`);
@@ -8592,6 +8664,15 @@ async function runDelayedVideoFailures({
           'Failed extraction must leave native host playback usable'
         );
         const observed = await notificationObserver.snapshot();
+        if (suppressFailureNotification) {
+          assert.deepEqual(
+            observed.activeIds.filter(
+              (id) => id.startsWith('xeg-') && !knownNotifications.includes(id)
+            ),
+            [],
+            'Suppressed native notification unexpectedly appeared'
+          );
+        }
         const creates = notificationCallsSince(baseline, observed);
         assert(
           creates.some((call) => call.id === notification.id),
@@ -8701,6 +8782,13 @@ async function runDelayedVideoFailures({
           const nextApiStart = fixtureRoutes.quotedApiResponses.length;
           fixtureRoutes.armDelayedFailure(tweetId);
           await video.click();
+          if (openingProbe) {
+            assert.equal(
+              await page.locator('[data-xeg-entry-failure]').count(),
+              0,
+              'New source attempt must supersede the previous terminal failure'
+            );
+          }
           const nextRequest = await waitForValue(
             () =>
               fixtureRoutes.quotedApiResponses
@@ -8733,6 +8821,17 @@ async function runDelayedVideoFailures({
               ).length === 1,
             'new video action failure notification'
           );
+          if (openingProbe) {
+            const notice = page.locator('[data-xeg-entry-failure]');
+            await notice.waitFor({ state: 'visible' });
+            await notice.locator('button').focus();
+            await notice.locator('button').click();
+            await notice.waitFor({ state: 'detached' });
+            assert.equal(
+              await video.evaluate((element) => document.activeElement === element),
+              true
+            );
+          }
           assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0);
           observation.negativeInputs = {
             synthetic,
@@ -12277,6 +12376,7 @@ async function runSourceQualityCycle({
     selectedSource.originalUrl,
     'A healthy API result must render its verified original source'
   );
+  await assertSourceDetails(gallery, 'absent');
   const selectedImage = await gallery
     .locator('[data-gallery-element="item"][data-index="1"] img')
     .evaluate((element) => {
@@ -13454,6 +13554,7 @@ async function runOriginalAvailabilityCycles({
         path: `/media/${QUALITY_IMAGE_PATHS[1]}`,
       });
       assert.equal(selection.source, original);
+      await assertSourceDetails(gallery, 'absent');
       await assertQuotedOriginLink(gallery, QUALITY_FIXTURE_URL);
       const selectedImage = gallery.locator('[data-gallery-element="item"][data-index="1"] img');
       const decodedImage = () =>
@@ -14054,6 +14155,109 @@ async function runMediaDownloadRecoveryProbe({
       output,
       page,
     });
+    await page.goto(FIXTURE_URL);
+    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+    await page.evaluate(() => {
+      const article = document.querySelector('article[data-route="classic"][data-phase="normal"]');
+      const tile = article?.querySelector<HTMLElement>('[data-testid="tweetPhoto"]');
+      const image = tile?.querySelector<HTMLImageElement>('img');
+      if (!article || !tile || !image) {
+        throw new Error('Owned article-less source fixture is missing');
+      }
+      const link = document.createElement('a');
+      link.href = '/testuser/status/1234567890123456789';
+      link.dataset.sourceLimitationTile = '';
+      link.append(tile);
+      article.after(link);
+      image.src = image.src.replace(/name=[^&]+/u, 'name=giant');
+    });
+    const tileImage = page.locator('[data-source-limitation-tile] [data-testid="tweetPhoto"] img');
+    await tileImage.scrollIntoViewIfNeeded();
+    await page.waitForFunction(() => {
+      const image = document.querySelector('[data-source-limitation-tile] img');
+      return image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0;
+    });
+    const tileApiStart = routes.apiResponses.length;
+    await tileImage.click();
+    const tileGallery = page.locator('[data-xeg-gallery-container]');
+    await tileGallery.waitFor({ state: 'visible' });
+    assert.equal(await tileGallery.locator('[data-gallery-element="item"]').count(), 1);
+    const tileSummary = await assertSourceDetails(tileGallery, 'visible-tile');
+    await assertSourceDetails(tileGallery, 'unverified-original');
+    const tileKnownDownloads = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+    await tileGallery
+      .locator('[data-gallery-element="toolbar"] button[aria-label="Download"]')
+      .click();
+    const singleFailure = tileGallery.locator('[data-gallery-element="gallery-failure-notice"]');
+    await singleFailure.waitFor({ state: 'visible' });
+    assert.match(
+      (await singleFailure.textContent()) ?? '',
+      /original image source could not be verified/iu
+    );
+    assert.match(
+      (await singleFailure.textContent()) ?? '',
+      /Check your browser.s downloads|return to the post on X/iu
+    );
+    assert.deepEqual(
+      (await queryDownloads(extensionPage)).filter(({ id }) => !tileKnownDownloads.has(id)),
+      [],
+      'Unverified source must not start a native single save'
+    );
+    await singleFailure.locator('button').click();
+    await singleFailure.waitFor({ state: 'detached' });
+    assert.deepEqual(
+      routes.apiResponses.slice(tileApiStart).map(({ status }) => status),
+      [403],
+      'Tile limitation must follow the real rejected provider route'
+    );
+    observations.x03TileSourceLimit = {
+      summary: tileSummary,
+      rejectedApi: true,
+      shown: 1,
+      singleFailure: 'visible cause and safe next action; no native download',
+    };
+    await page.keyboard.press('Escape');
+    await tileGallery.waitFor({ state: 'detached' });
+    const deniedVideoApi: string[] = [];
+    const videoApiPattern = /TweetResultByRestId/u;
+    const denyVideoApi = async (route: Route) => {
+      deniedVideoApi.push(route.request().url());
+      await route.fulfill({ status: 403, contentType: 'application/json', body: '{}' });
+    };
+    await page.route(videoApiPattern, denyVideoApi);
+    try {
+      await page.goto(`https://x.com/rapid_a/status/${RAPID_CLICK_A}`);
+      await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+      await page.evaluate(() => {
+        const article = document.querySelector('article[data-rapid="a"]');
+        const tile = article?.querySelector<HTMLElement>('[data-testid="videoPlayer"]');
+        if (!article || !tile) {
+          throw new Error('Owned article-less video fixture is missing');
+        }
+        const link = document.createElement('a');
+        link.href = '/rapid_a/status/8888888888888888881';
+        link.dataset.observedVideoTile = '';
+        link.append(tile);
+        article.after(link);
+      });
+      const videoTile = page.locator('[data-observed-video-tile] video');
+      await videoTile.scrollIntoViewIfNeeded();
+      await videoTile.click();
+      const videoGallery = page.locator('[data-xeg-gallery-container]');
+      await videoGallery.waitFor({ state: 'visible' });
+      assert.equal(await videoGallery.locator('[data-gallery-element="item"]').count(), 1);
+      const observedSummary = await assertSourceDetails(videoGallery, 'observed');
+      assert.equal(
+        deniedVideoApi.length,
+        1,
+        'Observed video must follow one denied provider route'
+      );
+      observations.x03ObservedVideo = { summary: observedSummary, deniedApi: deniedVideoApi };
+      await page.keyboard.press('Escape');
+      await videoGallery.waitFor({ state: 'detached' });
+    } finally {
+      await page.unroute(videoApiPattern, denyVideoApi);
+    }
     const notificationAfter = await notificationObserver.snapshot();
     observations.notificationAfter = notificationAfter;
     assert.deepEqual(
@@ -14313,8 +14517,38 @@ async function runGalleryExperienceProbe({
       const gallery = page.locator('[data-xeg-gallery-container]');
       await gallery.waitFor({ state: 'visible' });
       const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
+      assert.equal(
+        await gallery.locator('[data-xeg-settings-unsaved-indicator]').count(),
+        0,
+        'Healthy installed settings must not show an unsaved cue'
+      );
       const initial = await experienceToolbarState(toolbar);
       partial.initial = initial;
+      const helpButton = toolbar.locator('#keyboard-help-button');
+      const helpPanel = gallery.locator('[data-gallery-element="keyboard-help-panel"]');
+      assert.equal(await helpButton.getAttribute('aria-expanded'), 'false');
+      await helpButton.click();
+      await helpPanel.waitFor({ state: 'visible' });
+      assert.equal(await helpButton.getAttribute('aria-expanded'), 'true');
+      assert.match((await helpPanel.textContent()) ?? '', /Escape|←|→|Arrow/u);
+      await helpPanel.locator('button').first().focus();
+      await page.keyboard.press('Escape');
+      await helpPanel.waitFor({ state: 'hidden' });
+      assert.equal(await helpButton.getAttribute('aria-expanded'), 'false');
+      assert.equal(
+        await helpButton.evaluate((element) => document.activeElement === element),
+        true
+      );
+      assert(await gallery.isVisible(), 'Help Escape closed the gallery');
+      await toolbar.focus();
+      await page.keyboard.press('?');
+      await helpPanel.waitFor({ state: 'visible' });
+      await helpPanel.locator('button').first().click();
+      await helpPanel.waitFor({ state: 'hidden' });
+      await page.mouse.move(0, 0);
+      await page.waitForTimeout(500);
+      await page.screenshot({ path: join(output, 'gallery-overview.png') });
+      partial.help = { pointer: true, eligibleShortcut: true, nestedEscape: true };
       await page.screenshot({ path: join(output, 'experience-x02-toolbar-initial.png') });
       await toolbar.evaluate((element) => {
         if (element.contains(document.activeElement)) {
@@ -14361,6 +14595,7 @@ async function runGalleryExperienceProbe({
         'Original',
         'Download',
         'Download 3 shown files as ZIP',
+        'Keyboard help',
         'Open Settings',
         'Close',
       ];
@@ -14748,6 +14983,11 @@ async function runGalleryExperienceProbe({
           if (fit === 'Fit Window') {
             const controls = await experienceControlGeometry(toolbar);
             const screenshot = `experience-x06-narrow-${EXPERIENCE_IMAGES[index]?.label.toLowerCase()}.png`;
+            if (index === 0) {
+              await page.mouse.move(0, 0);
+              await page.waitForTimeout(500);
+              await page.screenshot({ path: join(output, 'gallery-constrained.png') });
+            }
             await page.screenshot({
               path: join(output, screenshot),
             });
@@ -14794,7 +15034,42 @@ async function runGalleryExperienceProbe({
         element.scrollTop = element.scrollHeight;
         return { before, after: element.scrollTop, overflow: getComputedStyle(element).overflowY };
       });
+      const boundedVariants: unknown[] = [];
+      for (const theme of ['dark', 'light'] as const) {
+        await settingsPanel.locator('#settings-theme-select').selectOption(theme);
+        assert.equal(await gallery.getAttribute('data-theme'), theme);
+        const controls = await experienceControlGeometry(toolbar);
+        assert(controls.controls.every(({ hit, withinViewport }) => hit && withinViewport));
+        boundedVariants.push({ theme, controls });
+      }
+      for (const language of ['ko', 'ar'] as const) {
+        await settingsPanel.locator('#settings-language-select').selectOption(language);
+        const controls = await experienceControlGeometry(toolbar);
+        assert(controls.controls.every(({ hit, withinViewport }) => hit && withinViewport));
+        boundedVariants.push({ language, controls });
+      }
+      await settingsPanel.locator('#settings-language-select').selectOption('en');
+      await settingsPanel.locator('#settings-theme-select').selectOption('auto');
       await toolbar.locator('#settings-button').click();
+      await page.emulateMedia({ forcedColors: 'active', reducedMotion: 'reduce' });
+      try {
+        const controls = await experienceControlGeometry(toolbar);
+        assert(controls.controls.every(({ hit, withinViewport }) => hit && withinViewport));
+        boundedVariants.push({ forcedColors: true, reducedMotion: true, controls });
+      } finally {
+        await page.emulateMedia({ forcedColors: 'none', reducedMotion: 'no-preference' });
+      }
+      partial.boundedVariants = boundedVariants;
+      await page.setViewportSize({ width: 401, height: 360 });
+      const shortViewport = await experienceControlGeometry(toolbar);
+      assert(
+        shortViewport.controls.every(
+          ({ rect, hit, withinViewport }) =>
+            rect.width >= 44 && rect.height >= 44 && hit && withinViewport
+        ),
+        'Short 401x360 viewport clipped a toolbar action'
+      );
+      partial.shortViewport = shortViewport;
       await page.setViewportSize({ width: 1280, height: 800 });
       await page.waitForFunction(() => {
         const toolbar = document.querySelector<HTMLElement>('[data-gallery-element="toolbar"]');

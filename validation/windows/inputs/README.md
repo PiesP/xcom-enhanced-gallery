@@ -24,7 +24,10 @@ To run only the built userscript settings-persistence fixture, create the ignore
 
 The shared VM controller packages this directory with the source-bound artifact.
 Remove the selector after the attempt. The artifact fixture intercepts GM
-storage and localStorage on an owned X.com page and exercises language denial/retry/reload plus schema preservation. With
+storage and localStorage on an owned X.com page and exercises language
+denial/retry/reload plus schema preservation. It also rejects a fit-mode save
+while Settings is closed, checks the toolbar unsaved cue, reopens Settings from
+that cue, and verifies durable retry. With
 `--installation extension`, the same selector runs a focused installed-package
 fixture for healthy language persistence/reload and unsupported-schema session
 edits/retry/raw preservation. The installed fixture uses real extension storage;
@@ -41,7 +44,9 @@ Chrome/Edge extension, create the ignored `opening-feedback.json` file here:
 Run the VM browser validation with `--installation extension`. The fixture holds
 the real provider response for five seconds, records the rendered pending state
 and host playback, then checks fast opening, later A completion or failure after
-B opens, navigation, and failure recovery. The result is a controlled installed
+B opens, navigation, and failure recovery. The failure case suppresses native
+notifications and requires a persistent, dismissible source notice after the
+held request settles. The result is a controlled installed
 extension observation; it does not establish live X.com behavior. Remove this
 selector after the attempt.
 
@@ -55,7 +60,11 @@ Chrome/Edge extension, create the ignored `gallery-experience.json` file:
 Run the VM browser validation with `--installation extension`. The focused
 receipt `gallery-experience.json` separates toolbar keyboard and native save
 actions (X02), native host video controls across click modes (X05), and mixed
-aspect ratio layout with actual 200% browser tab zoom (X06). The page and media
+aspect ratio layout with actual 200% browser tab zoom (X06).
+The run also checks pointer and eligible `?` help, nested Escape, a 401×360
+short viewport, and bounded theme, language, forced-colors and reduced-motion
+states. `gallery-overview.png` and `gallery-constrained.png` are clean UI
+captures from the English fixture for documentation review. The page and media
 are deterministic owned fixtures; the observations do not claim live X.com
 behavior or a human study. Remove the selector after the attempt.
 
@@ -74,6 +83,13 @@ suppressed only inside this owned run, so the retained screenshots show what
 remains on the page after five seconds. ZIPs are checked against the fixture's
 independent entry list and copied into the evidence directory. Remove the
 selector after the attempt.
+
+The same run also checks a bounded article-less tile with one original URL that
+cannot be verified and an observed video tile. Each opens through the installed
+extension after a real provider rejection; the rendered source details must
+name the limited scope or quality. Verified API and article DOM fixtures must
+remain free of limitation details. ZIP result reasons must be visible when their
+native details control is opened.
 
 To run only the issue #392 failed-entry ZIP acceptance in the installed Edge
 extension, create the ignored `failed-entry-recovery.json` file here:
