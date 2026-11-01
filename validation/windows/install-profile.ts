@@ -15065,7 +15065,6 @@ async function experienceSelectedGeometry(page: Page) {
 }
 
 async function uxControlGeometry(control: Locator, label: string) {
-  await control.scrollIntoViewIfNeeded();
   const geometry = await control.evaluate((element) => {
     const rect = element.getBoundingClientRect();
     const x = rect.left + rect.width / 2;
@@ -15089,6 +15088,7 @@ async function uxControlGeometry(control: Locator, label: string) {
 }
 
 async function uxOwnedWheel(page: Page, panel: Locator, media: Locator, label: string) {
+  assert.equal(await panel.count(), 1, `${label} detached before wheel input`);
   await panel.evaluate((element) => {
     element.scrollTop = 0;
   });
@@ -15200,6 +15200,20 @@ async function runUxDetailsProbe({
       await action(page, receipt);
       assert.equal(receipt.observationOverflow, false, `${name} observation overflow`);
       assert.deepEqual(receipt.pageErrors, [], `${name} page errors`);
+      const unexpectedConsoleErrors = (receipt.consoleErrors as Array<{
+        location: string;
+        text: string;
+      }>).filter(({ location, text }) => {
+        const expectedApi =
+          location.startsWith('https://x.com/i/api/graphql/') &&
+          location.includes('/TweetResultByRestId') &&
+          /403/u.test(text);
+        const expectedVideo =
+          name === 'terminal-video-exit' && location.startsWith(videoUrl) && /503/u.test(text);
+        return !expectedApi && !expectedVideo;
+      });
+      receipt.unexpectedConsoleErrors = unexpectedConsoleErrors;
+      assert.deepEqual(unexpectedConsoleErrors, [], `${name} unexpected console errors`);
       receipt.status = 'passed';
     } catch (error) {
       receipt.status = 'failed';
@@ -15273,6 +15287,43 @@ async function runUxDetailsProbe({
     );
     const panelReceipt: Record<string, unknown> = { locale, api: [...api] };
     receipt.panel = panelReceipt;
+    const selectionSnapshots: Array<Record<string, unknown>> = [];
+    panelReceipt.selectionSnapshots = selectionSnapshots;
+    const captureSelection = async (stage: string) => {
+      const state = await page.evaluate(() => {
+        const toolbar = document.querySelector<HTMLElement>('[data-gallery-element="toolbar"]');
+        const details = document.querySelector<HTMLElement>(
+          '[data-gallery-element="source-details"]'
+        );
+        const items = document.querySelector<HTMLElement>('[data-gallery-element="items"]');
+        const active = document.activeElement;
+        const current = toolbar?.getAttribute('data-current-index') ?? null;
+        const focused = toolbar?.getAttribute('data-focused-index') ?? null;
+        return {
+          current,
+          focused,
+          displayed: focused ?? current,
+          counterPosition:
+            document.querySelector('#xeg-toolbar-counter')?.getAttribute('data-position') ?? null,
+          detailsMediaId: details?.getAttribute('data-media-id') ?? null,
+          detailsOpen: details?.hasAttribute('open') ?? null,
+          mediaScrollTop: items?.scrollTop ?? null,
+          mediaScrollHeight: items?.scrollHeight ?? null,
+          mediaClientHeight: items?.clientHeight ?? null,
+          activeElement: {
+            tag: active?.tagName ?? null,
+            id: active instanceof HTMLElement ? active.id : null,
+            label: active?.getAttribute('aria-label') ?? null,
+            itemIndex: active instanceof Element
+              ? active.closest('[data-gallery-element="item"]')?.getAttribute('data-index') ?? null
+              : null,
+          },
+          viewport: { width: innerWidth, height: innerHeight },
+        };
+      });
+      selectionSnapshots.push({ stage, ...state });
+      return state;
+    };
     const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
     const settingsButton = toolbar.locator('#settings-button');
     await settingsButton.click();
@@ -15295,6 +15346,7 @@ async function runUxDetailsProbe({
         height: innerHeight,
       }));
       panelReceipt.browserZoom = zoom ? 2 : 1;
+      await captureSelection('after-zoom');
       const selected = await toolbar.getAttribute('data-current-index');
       assert.equal(
         selected,
@@ -15308,14 +15360,28 @@ async function runUxDetailsProbe({
       const mediaId = await details.getAttribute('data-media-id');
       panelReceipt.selected = selected;
       panelReceipt.mediaId = mediaId;
+      const requireVideoDetails = async (stage: string) => {
+        const state = await captureSelection(stage);
+        assert(
+          state.current === selected &&
+            state.displayed === selected &&
+            state.detailsMediaId === mediaId,
+          `${locale} source detail selection drift at ${stage}: ` +
+            JSON.stringify(selectionSnapshots)
+        );
+      };
       const summary = details.locator('summary');
       const expectedSummary =
         locale === 'ko' ? /동영상 저장 화질을 확인하지 못함/u : /Video save quality is unverified/u;
       assert.match((await summary.textContent()) ?? '', expectedSummary);
+      await requireVideoDetails('before-focus');
       await summary.focus();
+      await requireVideoDetails('after-focus');
       await page.keyboard.press('Enter');
+      await requireVideoDetails('after-Enter');
       assert.equal(await details.getAttribute('open'), '');
       const summaryGeometry = await uxControlGeometry(summary, `${locale} source summary`);
+      await requireVideoDetails('after-geometry');
       const items = gallery.locator('[data-gallery-element="items"]');
       const sourceWheel = await uxOwnedWheel(page, details, items, `${locale} source details`);
       panelReceipt.sourceWheel = sourceWheel;
@@ -15380,21 +15446,6 @@ async function runUxDetailsProbe({
     receipt.api = api;
     receipt.videoFailures = rejectedVideo;
     await page.route(apiPattern, denyProvider(api));
-    await page.goto(pageUrl);
-    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
-    const article = page.locator('article[data-rapid="a"]');
-    assert.equal(await article.locator('[data-testid="tweetPhoto"] img').count(), 1);
-    assert.equal(await article.locator('[data-testid="videoPlayer"] video').count(), 1);
-    await article.locator('[data-testid="tweetPhoto"] img').click();
-    const gallery = page.locator('[data-xeg-gallery-container]');
-    await gallery.waitFor({ state: 'visible' });
-    assert.equal(await gallery.locator('[data-gallery-element="item"]').count(), 2);
-    assert.deepEqual(
-      api.map(({ tweetId }) => tweetId),
-      [RAPID_CLICK_A]
-    );
-    const videoItem = gallery.locator('[data-gallery-element="item"]:has(video)');
-    assert.equal(await videoItem.getAttribute('data-video-admitted'), 'false');
     await page.route(videoUrl, async (route) => {
       assert(rejectedVideo.length < 8, 'Terminal video failure request budget exceeded');
       rejectedVideo.push({
@@ -15409,6 +15460,20 @@ async function runUxDetailsProbe({
         headers: { 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': 'https://x.com' },
       });
     });
+    await page.goto(pageUrl);
+    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+    const article = page.locator('article[data-rapid="a"]');
+    assert.equal(await article.locator('[data-testid="tweetPhoto"] img').count(), 1);
+    assert.equal(await article.locator('[data-testid="videoPlayer"] video').count(), 1);
+    await article.locator('[data-testid="tweetPhoto"] img').click();
+    const gallery = page.locator('[data-xeg-gallery-container]');
+    await gallery.waitFor({ state: 'visible' });
+    assert.equal(await gallery.locator('[data-gallery-element="item"]').count(), 2);
+    assert.deepEqual(
+      api.map(({ tweetId }) => tweetId),
+      [RAPID_CLICK_A]
+    );
+    const videoItem = gallery.locator('[data-gallery-element="item"]:has(video)');
     const videoIndex = await videoItem.getAttribute('data-index');
     assert(videoIndex !== null && Number.isSafeInteger(Number(videoIndex)));
     await gallery.locator('button[aria-label="Next"]').click();
