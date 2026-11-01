@@ -15924,11 +15924,17 @@ async function runUxDetailsProbe({
     let restoreZoom: Awaited<ReturnType<typeof fixtureTabZoom>> | undefined;
     try {
       if (zoom) {
+        // Prepare the host tab's zoom before opening the gallery under test.
+        await toolbar.locator('button[aria-label="Close"]').click();
+        await gallery.waitFor({ state: 'detached' });
         restoreZoom = await fixtureTabZoom(context, extensionId, page, null, null, pageUrl);
         const applied = await fixtureTabZoom(context, extensionId, page, 2, null, pageUrl);
         assert.equal(applied.observed, 2);
-        await page.waitForFunction(() => innerWidth < 1280);
+        await page.waitForFunction(() => innerWidth === 640 && innerHeight === 400);
+        await article.locator('video').click();
+        await gallery.waitFor({ state: 'visible' });
         receipt.zoom = { prior: restoreZoom, applied };
+        panelReceipt.zoomPreparation = 'host tab zoom applied before native gallery open';
       }
       panelReceipt.viewport = await page.evaluate(() => ({
         width: innerWidth,
@@ -15936,12 +15942,6 @@ async function runUxDetailsProbe({
       }));
       panelReceipt.browserZoom = zoom ? 2 : 1;
       await captureSelection('after-zoom');
-      if (zoom) {
-        // Re-anchor through normal controls after zoom changes the visible media geometry.
-        await toolbar.locator('button[aria-label="Previous"]').click();
-        await toolbar.locator('button[aria-label="Next"]').click();
-        panelReceipt.postZoomNativeReselection = ['Previous', 'Next'];
-      }
       const selected = await toolbar.getAttribute('data-current-index');
       assert.equal(
         selected,
