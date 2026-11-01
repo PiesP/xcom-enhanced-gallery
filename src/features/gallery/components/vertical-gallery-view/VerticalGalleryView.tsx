@@ -8,6 +8,7 @@
  */
 
 import { useGalleryFitMode } from '@features/gallery/components/vertical-gallery-view/hooks/use-gallery-fit-mode';
+import { GalleryFailureNotice } from '@features/gallery/components/GalleryFailureNotice';
 import { dismissBulkDownloadOutcome } from '@features/gallery/hooks/dismiss-bulk-download-outcome';
 import { useGalleryNavigationHandlers } from '@features/gallery/components/vertical-gallery-view/hooks/use-gallery-navigation-handlers';
 import { useGalleryScrollCorrection } from '@features/gallery/components/vertical-gallery-view/hooks/use-gallery-scroll-correction';
@@ -81,6 +82,11 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
   const isDownloading = createMemo(() => downloadState.isProcessing);
   const downloadStatus = createMemo(() => downloadState.status);
   const bulkOutcome = createMemo(() => downloadState.bulkOutcome);
+  // A recovery marks the retained previous result with zero eligible items
+  // while its own request is working. Ordinary downloads retain the old count.
+  const isRecoveringMissing = createMemo(
+    () => downloadStatus() === 'working' && bulkOutcome()?.recoverableCount === 0
+  );
   const toolbarDownloadStatus = createMemo(() =>
     bulkOutcome() && downloadStatus() !== 'working' ? 'idle' : downloadStatus()
   );
@@ -315,6 +321,7 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
           )}
         </For>
       </ul>
+      <GalleryFailureNotice />
       <Show when={bulkOutcome()}>
         {(outcome) => (
           // Keyboard users interact with the native dismissal button; pointer propagation only protects the backdrop close handler.
@@ -345,18 +352,14 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
                   }
                 }}
               >
-                {translate('msg.dl.bulkOutcome.dismiss')}
+                {translate(
+                  isRecoveringMissing()
+                    ? 'msg.dl.bulkOutcome.cancelRecoveryAndDismiss'
+                    : 'msg.dl.bulkOutcome.dismiss'
+                )}
               </button>
             </div>
-            <p>
-              {translate(
-                outcome().supplementary
-                  ? 'msg.dl.bulkOutcome.scopeSupplementary'
-                  : 'msg.dl.bulkOutcome.scope',
-                { total: outcome().total }
-              )}
-            </p>
-            <p>
+            <p class={styles.bulkOutcomeSummary}>
               {translate('msg.dl.bulkOutcome.counts', {
                 included: outcome().included,
                 omitted: outcome().omitted,
@@ -364,24 +367,10 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
             </p>
             <p>
               {translate(
-                outcome().handedOff
-                  ? 'msg.dl.bulkOutcome.browserHandoff'
-                  : 'msg.dl.bulkOutcome.noZip'
-              )}
-            </p>
-            {outcome().reason !== 'none' && <p>{outcomeReason(outcome())}</p>}
-            {outcome().sourceUnavailable && outcome().reason !== 'sourceUnavailable' && (
-              <p>{translate('msg.dl.bulkOutcome.sourceUnavailable')}</p>
-            )}
-            {(outcome().sourceFetchStatuses?.length ?? 0) > 0 &&
-              outcome().reason !== 'sourceFetchFailed' && (
-                <p>{sourceFetchReason(outcome().sourceFetchStatuses ?? [])}</p>
-              )}
-            <p>
-              {translate(
                 outcome().supplementary
-                  ? 'msg.dl.bulkOutcome.nextActionSupplementary'
-                  : 'msg.dl.bulkOutcome.nextAction'
+                  ? 'msg.dl.bulkOutcome.scopeSupplementary'
+                  : 'msg.dl.bulkOutcome.scope',
+                { total: outcome().total }
               )}
             </p>
             <Show when={(outcome().recoverableCount ?? 0) > 0 && local.onRecoverFailed}>
@@ -395,6 +384,37 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
                 })}
               </button>
             </Show>
+            <p>
+              {translate(
+                outcome().handedOff
+                  ? 'msg.dl.bulkOutcome.browserHandoff'
+                  : 'msg.dl.bulkOutcome.noZip'
+              )}
+            </p>
+            {outcome().supplementary && (
+              <p>{translate('msg.dl.bulkOutcome.nextActionSupplementary')}</p>
+            )}
+            {(outcome().recoverableCount ?? 0) === 0 &&
+              !outcome().supplementary &&
+              (outcome().omitted > 0 || !outcome().handedOff) && (
+                <p>{translate('msg.dl.bulkOutcome.nextAction')}</p>
+              )}
+            {(outcome().reason !== 'none' ||
+              (outcome().sourceUnavailable && outcome().reason !== 'sourceUnavailable') ||
+              ((outcome().sourceFetchStatuses?.length ?? 0) > 0 &&
+                outcome().reason !== 'sourceFetchFailed')) && (
+              <details class={styles.bulkOutcomeDetails}>
+                <summary>{translate('msg.dl.bulkOutcome.details')}</summary>
+                {outcome().reason !== 'none' && <p>{outcomeReason(outcome())}</p>}
+                {outcome().sourceUnavailable && outcome().reason !== 'sourceUnavailable' && (
+                  <p>{translate('msg.dl.bulkOutcome.sourceUnavailable')}</p>
+                )}
+                {(outcome().sourceFetchStatuses?.length ?? 0) > 0 &&
+                  outcome().reason !== 'sourceFetchFailed' && (
+                    <p>{sourceFetchReason(outcome().sourceFetchStatuses ?? [])}</p>
+                  )}
+              </details>
+            )}
           </section>
         )}
       </Show>

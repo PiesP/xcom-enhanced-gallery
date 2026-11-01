@@ -248,11 +248,17 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: var(--xeg-spacing-md);
+}
+
+.bulkOutcomeHeading strong {
+  min-width: 0;
 }
 
 .bulkOutcomeHeading button {
   min-height: 44px;
+  max-width: 100%;
   padding-inline: var(--xeg-spacing-sm);
   color: inherit;
   background: transparent;
@@ -283,6 +289,25 @@
 }
 
 .bulkOutcome > button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.bulkOutcomeSummary {
+  font-weight: 600;
+}
+
+.bulkOutcomeDetails {
+  margin-block-start: var(--xeg-spacing-sm);
+}
+
+.bulkOutcomeDetails summary {
+  min-height: 44px;
+  padding-block: var(--xeg-spacing-sm);
+  cursor: pointer;
+}
+
+.bulkOutcomeDetails summary:focus-visible {
   outline: 2px solid currentColor;
   outline-offset: 2px;
 }
