@@ -6,12 +6,14 @@ import { IconButton } from '@shared/components/ui/Button/IconButton';
 import type { LucideIconName } from '@shared/components/ui/Icon/lucide/icon-nodes';
 import { LucideIcon } from '@shared/components/ui/Icon/lucide/lucide-icons';
 import { SettingsControls } from '@shared/components/ui/Settings/SettingsControls';
+import { SettingsPersistenceNotice } from '@shared/components/ui/Settings/SettingsPersistenceNotice';
 import type { ToolbarSettingsControllerResult } from '@shared/hooks/toolbar/use-toolbar-settings-controller.types';
 import { useTranslation } from '@shared/hooks/use-translation';
 import { getEventManager } from '@shared/services/event-manager';
 import type { DownloadStatus } from '@shared/state/signals/gallery-download-signals';
 import type { ImageFitMode } from '@shared/types/settings.types';
 import { shouldAllowWheelDefault as shouldAllowWheelDefaultBase } from '@shared/utils/events/wheel-scroll-guard';
+import { KEYBOARD_HELP_REQUEST } from '@shared/utils/events/handlers/keyboard-help-event';
 import { cx } from '@shared/utils/text/formatting';
 import type { JSXElement } from 'solid-js';
 import { createEffect, createMemo, createSignal, onCleanup, Show, splitProps } from 'solid-js';
@@ -92,6 +94,8 @@ interface ToolbarViewProps {
   readonly isTweetPanelExpanded: () => boolean;
   /** Toggle tweet panel */
   readonly toggleTweetPanelExpanded: () => void;
+  /** Close sibling panels before the keyboard help opens. */
+  readonly onOpenHelp?: (() => void) | undefined;
   /** Focus event handler */
   readonly onFocus?: ((event: FocusEvent) => void) | undefined;
   /** Blur event handler */
@@ -139,6 +143,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
     'showSettingsButton',
     'isTweetPanelExpanded',
     'toggleTweetPanelExpanded',
+    'onOpenHelp',
     'aria-label',
     'aria-describedby',
     'data-testid',
@@ -157,7 +162,45 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
   const [counterElement, setCounterElement] = createSignal<HTMLSpanElement | null>(null);
   const [settingsPanelEl, setSettingsPanelEl] = createSignal<HTMLElement | null>(null);
   const [tweetPanelEl, setTweetPanelEl] = createSignal<HTMLElement | null>(null);
+  const [helpPanelEl, setHelpPanelEl] = createSignal<HTMLElement | null>(null);
+  const [helpExpanded, setHelpExpanded] = createSignal(false);
+  let helpButtonEl: HTMLButtonElement | undefined;
+  let helpCloseEl: HTMLButtonElement | undefined;
   const translate = useTranslation();
+
+  const closeHelp = (restoreFocus: boolean): void => {
+    if (!helpExpanded()) {
+      return;
+    }
+    setHelpExpanded(false);
+    if (restoreFocus && helpButtonEl?.isConnected) {
+      helpButtonEl.focus({ preventScroll: true });
+    }
+  };
+
+  const openHelp = (): void => {
+    if (helpExpanded()) {
+      return;
+    }
+    local.onOpenHelp?.();
+    const focusedAtOpen = document.activeElement;
+    setHelpExpanded(true);
+    queueMicrotask(() => {
+      if (helpExpanded() && document.activeElement === focusedAtOpen) {
+        helpCloseEl?.focus({ preventScroll: true });
+      }
+    });
+  };
+
+  const handleHelpRequest = (): void => openHelp();
+  document.body.addEventListener(KEYBOARD_HELP_REQUEST, handleHelpRequest);
+  onCleanup(() => document.body.removeEventListener(KEYBOARD_HELP_REQUEST, handleHelpRequest));
+
+  createEffect(() => {
+    if (local.settingsController.isSettingsExpanded() || local.isTweetPanelExpanded()) {
+      closeHelp(false);
+    }
+  });
 
   // Memos for derived state
   const nav = createMemo(() => local.navState());
@@ -305,6 +348,10 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
     passive: true,
     context: 'toolbar:wheel:panel',
   });
+  registerWheelListener(helpPanelEl, preventScrollChaining, {
+    passive: false,
+    context: 'toolbar:wheel:prevent-scroll-chaining:help-panel',
+  });
 
   return (
     <fieldset
@@ -313,7 +360,8 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
         local.toolbarClass(),
         toolbarStateClass(),
         local.settingsController.isSettingsExpanded() ? styles.settingsExpanded : undefined,
-        local.isTweetPanelExpanded() ? styles.tweetPanelExpanded : undefined
+        local.isTweetPanelExpanded() ? styles.tweetPanelExpanded : undefined,
+        helpExpanded() ? styles.helpPanelExpanded : undefined
       )}
       aria-describedby={local['aria-describedby']}
       disabled={isToolbarDisabled()}
@@ -322,7 +370,15 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
       tabIndex={local.tabIndex}
       onFocus={local.onFocus as ((event: FocusEvent) => void) | undefined}
       onBlur={local.onBlur as ((event: FocusEvent) => void) | undefined}
-      onKeyDown={(event) => local.settingsController.handleToolbarKeyDown(event)}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape' && helpExpanded()) {
+          event.preventDefault();
+          event.stopPropagation();
+          closeHelp(true);
+          return;
+        }
+        local.settingsController.handleToolbarKeyDown(event);
+      }}
     >
       <legend class="xeg-sr-only">{local['aria-label'] ?? translate('tb.galleryToolbar')}</legend>
       <div class={cx(styles.toolbarContent, 'xeg-row-center')}>
@@ -380,6 +436,30 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               onClick={local.onNextClick}
             >
               <LucideIcon name="chevron-right" size={TOOLBAR_ICON_SIZE_VAR} />
+            </IconButton>
+            <IconButton
+              ref={(button) => {
+                helpButtonEl = button;
+              }}
+              id="keyboard-help-button"
+              class={toolbarButtonClass()}
+              size="toolbar"
+              aria-label={translate('tb.helpOpen')}
+              aria-expanded={helpExpanded() ? 'true' : 'false'}
+              aria-controls="toolbar-keyboard-help-panel"
+              tooltip={translate('tb.helpOpen')}
+              disabled={isToolbarDisabled()}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                if (helpExpanded()) {
+                  closeHelp(true);
+                } else {
+                  openHelp();
+                }
+              }}
+            >
+              <span aria-hidden="true">?</span>
             </IconButton>
           </fieldset>
 
@@ -502,6 +582,14 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
         </div>
       </div>
 
+      <SettingsPersistenceNotice
+        expanded={local.settingsController.isSettingsExpanded()}
+        onOpen={(event) => {
+          toolbarElement()?.querySelector<HTMLButtonElement>('#settings-button')?.focus();
+          local.settingsController.handleSettingsClick(event);
+        }}
+      />
+
       {/* Click handling only stops backdrop propagation; keyboard interaction stays on the native controls inside the panel. */}
       <section
         ref={assignSettingsPanelRef}
@@ -526,6 +614,48 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             compact
             data-testid={__DEV__ ? 'settings-controls' : undefined}
           />
+        </Show>
+      </section>
+
+      <section
+        ref={setHelpPanelEl}
+        id="toolbar-keyboard-help-panel"
+        class={cx(styles.helpPanel, helpExpanded() ? styles.panelExpanded : undefined)}
+        data-gallery-element="keyboard-help-panel"
+        data-gallery-scrollable="true"
+        aria-label={translate('tb.helpPanel')}
+        aria-labelledby="keyboard-help-button"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <Show when={helpExpanded()}>
+          <div class={styles.helpPanelBody}>
+            <div class={styles.helpPanelHeader}>
+              <strong>{translate('msg.kb.t')}</strong>
+              <button
+                ref={(button) => {
+                  helpCloseEl = button;
+                }}
+                type="button"
+                class={styles.helpCloseButton}
+                onClick={() => closeHelp(true)}
+              >
+                {translate('tb.helpClose')}
+              </button>
+            </div>
+            <ul class={styles.helpList}>
+              <li>{translate('msg.kb.prev')}</li>
+              <li>{translate('msg.kb.next')}</li>
+              <li>{translate('msg.kb.firstLast')}</li>
+              <li>{translate('msg.kb.five')}</li>
+              <li>{translate('msg.kb.vertical')}</li>
+              <li>{translate('msg.kb.playback')}</li>
+              <li>{translate('msg.kb.focus')}</li>
+              <li>{translate('msg.kb.cls')}</li>
+              <li>{translate('msg.kb.toggle')}</li>
+            </ul>
+            <p>{translate('msg.kb.context')}</p>
+            <p>{translate('msg.kb.recovery')}</p>
+          </div>
         </Show>
       </section>
 

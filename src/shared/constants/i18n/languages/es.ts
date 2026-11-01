@@ -30,6 +30,9 @@ export const es: LanguageStrings = {
     downloadGroup: 'Descargas',
     auxGroup: 'Más acciones',
     settingsPanel: 'Panel de configuración',
+    helpOpen: 'Ayuda del teclado',
+    helpPanel: 'Panel de ayuda del teclado',
+    helpClose: 'Cerrar ayuda',
   },
   st: {
     th: 'Tema',
@@ -46,13 +49,14 @@ export const es: LanguageStrings = {
     langAr: 'Árabe',
     videoClickMode: 'Clics en vídeos',
     videoClickNative: 'Mantener los clics en X',
-    videoClickSurfaces: 'Abrir la galería desde el vídeo',
-    videoClickUnmarked: 'Incluir botones de reproducción aptos',
+    videoClickSurfaces: 'Abrir la galería desde el área del vídeo',
+    videoClickUnmarked: 'Abrir también desde botones de reproducción compatibles',
     videoClickHelp:
-      'Los dos últimos modos abren la galería al pulsar un vídeo apto. Solo el último incluye botones de reproducción sin marcar y verificados; los controles normales siguen en X.',
+      'Elige dónde se gestionan los clics de vídeo admitidos. La galería abre otro reproductor, pausado desde el principio, con sus preferencias de audio guardadas. Al cerrarla, X no reanuda la reproducción automáticamente. Los controles habituales del reproductor siguen en X.',
     videoClickSaveError:
       'No se pudo guardar la opción de clics en vídeos. La configuración actual sigue activa. Inténtalo de nuevo.',
     unsavedSettings: 'Los ajustes están activos en esta sesión, pero no se guardaron.',
+    unsavedSession: 'Activo en esta sesión · sin guardar',
     retrySettingsSave: 'Reintentar guardado',
   },
   msg: {
@@ -97,13 +101,24 @@ export const es: LanguageStrings = {
     },
     kb: {
       t: 'Atajos de teclado',
-      prev: 'ArrowLeft: Medio anterior',
-      next: 'ArrowRight: Medio siguiente',
-      cls: 'Escape: Cerrar galería',
-      toggle: '?: Mostrar esta ayuda',
+      prev: 'Izquierda: elemento anterior',
+      next: 'Derecha: elemento siguiente',
+      cls: 'Escape: cerrar el panel abierto o la galería',
+      toggle: '?: abrir esta ayuda',
+      firstLast: 'Home / End: primer / último elemento',
+      five: 'PageUp / PageDown: retroceder / avanzar cinco elementos',
+      vertical: 'Arriba / Abajo: cambiar de imagen; ajustar el volumen del vídeo mostrado',
+      playback: 'Espacio: reproducir o pausar el vídeo; M: activar o desactivar el silencio',
+      focus: 'Tab / Mayús+Tab: recorrer los controles',
+      context:
+        'Los botones enfocados conservan Espacio / Intro; los formularios y paneles gestionan sus propias teclas.',
+      recovery: 'Alt+Mayús+V solo está disponible tras un clic de vídeo admitido que haya fallado.',
     },
     dl: {
       bulkOutcome: {
+        cancelRecoveryAndDismiss:
+          'Cancelar la recuperación de elementos omitidos y cerrar el resultado ZIP',
+        details: 'Detalles del resultado ZIP',
         titleHandedOff: 'ZIP entregado al navegador',
         titleFailed: 'No se entregó ningún ZIP',
         previous: 'Resultado anterior del ZIP',
@@ -158,6 +173,23 @@ export const es: LanguageStrings = {
         'Se alcanzó el límite de memoria para descargas. Espera a que terminen las descargas en curso. Si no hay ninguna activa y el límite persiste, recarga esta página. Después, vuelve a intentarlo con menos archivos.',
     },
     gal: {
+      sourceDetails: {
+        title: 'Detalles del contenido y guardado',
+        shown: '{count} elementos mostrados · recuperados solo de este bloque',
+        cdnOriginal: 'Origen de guardado: imagen original verificada de la CDN de X.',
+        bestMp4: 'Origen de guardado: mejor MP4 disponible en X.',
+        observed: 'No se ha verificado la calidad del vídeo guardado',
+        observedDetail:
+          'Se guarda la fuente de vídeo observada. La reproducción puede usar otra versión.',
+        unavailable: 'Imagen original no disponible para guardar',
+        unavailableDetail:
+          'No se encontró una imagen original verificada. Este elemento no se puede guardar ni se sustituye por una versión de menor calidad.',
+      },
+      entryFailureNext: 'Consulta este contenido en la publicación de X.',
+      downloadFailureNext:
+        'Comprueba el estado en las descargas del navegador o vuelve a la publicación de X.',
+      dismissFailure: 'Cerrar aviso de error',
+      mediaType: { image: 'Imagen', video: 'Vídeo' },
       video: {
         playbackFallback:
           'La reproducción usa otra versión; la descarga conserva la mejor fuente disponible.',

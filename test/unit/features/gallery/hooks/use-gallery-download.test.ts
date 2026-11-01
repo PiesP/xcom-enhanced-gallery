@@ -864,6 +864,60 @@ describe('createDownloadHandler bulk resource limits', () => {
     expect(state.downloadFailedEntries).toHaveBeenCalledOnce();
   });
 
+  it.each(['throw', 'cancel'] as const)(
+    'retires the in-flight recovery marker after an adapter %s before another ZIP starts',
+    async (result) => {
+      state.downloadBulk.mockResolvedValueOnce({
+        success: true,
+        status: 'partial',
+        filesProcessed: 2,
+        filesSuccessful: 1,
+        filename: 'gallery.zip',
+        failedEntries: [
+          {
+            index: 0,
+            url: 'https://example.test/first.jpg',
+            filename: 'first.jpg',
+            error: 'failed',
+          },
+        ],
+        code: 'NONE',
+      });
+      if (result === 'throw') {
+        state.downloadFailedEntries.mockRejectedValueOnce(new Error('recovery adapter failed'));
+      } else {
+        state.downloadFailedEntries.mockResolvedValueOnce({ code: 'CANCELLED' });
+      }
+      const handler = createDownloadHandler();
+      await handler.handleDownload('all');
+      expect(state.bulkOutcome).toMatchObject({ recoverableCount: 1 });
+
+      await handler.recoverFailedEntries();
+      expect(state.bulkOutcome).not.toHaveProperty('recoverableCount');
+
+      let resolveOrdinary: ((value: unknown) => void) | undefined;
+      state.downloadBulk.mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveOrdinary = resolve;
+        })
+      );
+      const ordinary = handler.handleDownload('all');
+      await vi.waitFor(() => expect(state.downloadBulk).toHaveBeenCalledTimes(2));
+      expect(state.status).toBe('working');
+      expect(state.bulkOutcome).not.toHaveProperty('recoverableCount');
+      resolveOrdinary?.({
+        success: true,
+        status: 'success',
+        filesProcessed: 2,
+        filesSuccessful: 2,
+        filename: 'next.zip',
+        code: 'NONE',
+      });
+      await ordinary;
+      expect(state.bulkOutcome).toMatchObject({ included: 2, omitted: 0 });
+    }
+  );
+
   it('dismissing a previous result does not cancel a separate ordinary download', async () => {
     state.downloadBulk.mockResolvedValueOnce({
       success: true,

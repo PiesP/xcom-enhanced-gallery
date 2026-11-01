@@ -35,6 +35,7 @@ import {
   handleKeyboardEvent,
   resetKeyboardDebounceState,
 } from '@shared/utils/events/handlers/keyboard';
+import { KEYBOARD_HELP_REQUEST } from '@shared/utils/events/handlers/keyboard-help-event';
 
 describe('handleKeyboardEvent', () => {
   const captureHandlers: EventListener[] = [];
@@ -103,6 +104,71 @@ describe('handleKeyboardEvent', () => {
 
     expect(executeVideoControl).toHaveBeenCalledWith('togglePlayPause');
     expect(event.defaultPrevented).toBe(true);
+  });
+
+  it('routes eligible ? to persistent gallery help rather than a transient notification', () => {
+    const request = vi.fn();
+    document.body.addEventListener(KEYBOARD_HELP_REQUEST, request);
+    try {
+      const event = new KeyboardEvent('keydown', { key: '?', cancelable: true });
+      handleKeyboardEvent(
+        event,
+        { onGalleryClose: vi.fn(), onMediaClick: vi.fn(async () => undefined) },
+        {
+          enableKeyboard: true,
+          enableMediaDetection: true,
+          debugMode: false,
+          preventBubbling: true,
+          context: 'help-test',
+        }
+      );
+      expect(event.defaultPrevented).toBe(true);
+      expect(request).toHaveBeenCalledOnce();
+      expect(navigateNext).not.toHaveBeenCalled();
+      expect(executeVideoControl).not.toHaveBeenCalled();
+    } finally {
+      document.body.removeEventListener(KEYBOARD_HELP_REQUEST, request);
+    }
+  });
+
+  it('lets a focused help panel close before Escape closes the gallery', () => {
+    const toolbar = document.createElement('fieldset');
+    toolbar.dataset.galleryElement = 'toolbar';
+    const helpButton = document.createElement('button');
+    helpButton.id = 'keyboard-help-button';
+    helpButton.setAttribute('aria-expanded', 'true');
+    const helpPanel = document.createElement('section');
+    helpPanel.dataset.galleryElement = 'keyboard-help-panel';
+    const closeButton = document.createElement('button');
+    helpPanel.append(closeButton);
+    toolbar.append(helpButton, helpPanel);
+    document.body.append(toolbar);
+    const onGalleryClose = vi.fn();
+    const captureHandler: EventListener = (event) => {
+      if (event instanceof KeyboardEvent) {
+        handleKeyboardEvent(
+          event,
+          { onGalleryClose, onMediaClick: vi.fn(async () => undefined) },
+          {
+            enableKeyboard: true,
+            enableMediaDetection: true,
+            debugMode: false,
+            preventBubbling: true,
+            context: 'nested-help-test',
+          }
+        );
+      }
+    };
+    captureHandlers.push(captureHandler);
+    document.body.addEventListener('keydown', captureHandler, { capture: true });
+    const event = new KeyboardEvent('keydown', {
+      key: 'Escape',
+      bubbles: true,
+      cancelable: true,
+    });
+    closeButton.dispatchEvent(event);
+    expect(onGalleryClose).not.toHaveBeenCalled();
+    expect(event.defaultPrevented).toBe(false);
   });
 
   it('leaves focused native controls and nested panels in charge of their keys', () => {

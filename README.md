@@ -4,8 +4,51 @@
 
 Browse images and videos from an X.com post in a focused, keyboard-friendly
 gallery and download supported media at its verified available quality. The
-project is available as a userscript and as unpacked Chrome and temporary
-Firefox extension builds.
+gallery is for desktop browsers.
+
+## Choose an installation
+
+| Distribution | Stays installed after restart? | Updates | What you need |
+| --- | --- | --- | --- |
+| [Userscript](#userscript) | Yes, through your userscript manager | The manager can offer updates; review and approve each offered update | A supported desktop browser and a userscript manager |
+| [Chrome, Edge, or Brave extension](#chrome-edge-or-brave-extension) | Yes, while the unpacked extension and its directory remain in place | Replace the extracted files and reload the extension manually | Developer mode and a permanent directory |
+| [Firefox extension](#firefox-extension) | No; the temporary add-on is removed on browser restart | Load a new ZIP manually for each session | Firefox 128+ and `about:debugging` |
+
+The archives below are GitHub release builds; they are not public browser-store
+installations. See [browser support](#browser-support) for version floors.
+
+## Quick start
+
+1. Open an X.com post with a supported image or video. Select an image or an
+   eligible video area to open the gallery. Video clicks follow the saved
+   [video-click mode](./docs/video-click-policy.md); X's player controls can
+   keep their native action.
+2. Move between displayed items with the toolbar's Previous/Next buttons,
+   arrow keys, or wheel. In the unreleased development build, use the toolbar's
+   Keyboard help (?) button or `?` for the full desktop key map.
+3. Choose a display fit in the toolbar. This changes the view, not the
+   [preferred save source or quality](./docs/media-sources.md).
+4. Save the currently displayed item with Download, or choose Download shown
+   files as ZIP for the items in this gallery. A browser handoff does not prove
+   that the file finished saving on disk. If a ZIP leaves items out, read its
+   result and use its offered missing-item recovery only when available; keep
+   the earlier ZIP with any supplementary archive. See [download limits](#download-limits).
+5. Close the gallery with Close or Escape to return to the post. When an
+   original-post link is available, it opens that source post separately.
+
+![Gallery with position 1 of 3, selected Fit Width, Keyboard help, download, and close controls](./docs/images/gallery-overview.png)
+
+*Unreleased development build: installed Edge extension with controlled media;
+1280 × 800 viewport, 100% tab zoom, 200% system DPI. [Capture details](./docs/images/README.md).*
+
+![Gallery controls wrapped in a 401-pixel-wide window with Fit Window selected](./docs/images/gallery-constrained.png)
+
+*Unreleased development build: installed Edge extension with controlled media;
+401 × 592 viewport, 100% tab zoom, 200% system DPI. [Capture details](./docs/images/README.md).*
+
+A gallery video uses a separate paused player starting at the beginning, with
+its own saved audio preferences. Closing the gallery does not automatically
+resume X's player. See the [video-click and native playback policy](./docs/video-click-policy.md).
 
 ## Features
 
@@ -23,32 +66,25 @@ Firefox extension builds.
 Install a userscript manager such as
 [Tampermonkey](https://www.tampermonkey.net/) or
 [Violentmonkey](https://violentmonkey.github.io/), then install the
-[latest userscript](https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js).
-
-The userscript manager can check for updates through the metadata URLs embedded
-in the script header. Review and approve an offered update in the manager.
-
-If an installed copy has a versioned `@downloadURL`, an update check may find a
-new version but still fetch the old script. After the corrected release is
-public, update the existing script once from the
 [latest userscript](https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js)
-in your manager, or change its download URL through a reviewed manager workflow.
-**Check for updates** alone cannot repair the pinned URL. Verify the installed
-header and saved settings after the one-time update.
+in that manager. Review and approve its installation. The manager can check
+for updates through the metadata URLs in the script header; review and approve
+an offered update in the manager. If an older installed copy keeps fetching a
+version-pinned URL, use the [one-time repair](#older-version-pinned-userscript)
+for that copy.
 
 ### Chrome, Edge, or Brave extension
 
-The release archive is an unpacked developer build; it is not installed from a
-browser store and does not update automatically.
+The `xcom-enhanced-gallery-chrome.zip` asset on the
+[latest release](https://github.com/PiesP/xcom-enhanced-gallery/releases/latest)
+is an unpacked developer build. It does not update automatically.
 
-1. Download `xcom-enhanced-gallery-chrome.zip` from the
-   [latest release](https://github.com/PiesP/xcom-enhanced-gallery/releases/latest).
-2. Extract the archive to a permanent directory.
-3. Open `chrome://extensions` and enable **Developer mode**.
-4. Select **Load unpacked** and choose the extracted directory.
+1. Download the archive and extract it to a directory you will keep.
+2. Open `chrome://extensions` and enable **Developer mode**.
+3. Select **Load unpacked** and choose the extracted directory.
 
-For a later release, replace the files in that same directory and reload the
-extension from `chrome://extensions`; check the saved settings after updating.
+For a later release, replace the files in that directory and reload the
+extension from `chrome://extensions`. Check saved settings after updating.
 
 ### Firefox extension
 
@@ -57,54 +93,49 @@ extension from `chrome://extensions`; check the saved settings after updating.
 2. Open `about:debugging#/runtime/this-firefox`.
 3. Select **Load Temporary Add-on** and choose the ZIP.
 
-This development installation is removed when Firefox restarts. Use the
-userscript for a persistent installation.
+Firefox removes this development installation on restart. Load it again for a
+later session, or use a supported userscript manager for a persistent install.
 
-## Use
+## Troubleshooting and limits
 
-1. Open an X.com post containing media.
-2. Select an image or video to open the enhanced gallery.
-3. Use the arrow keys, navigation buttons, or wheel to move between items.
-4. Use the toolbar to change fit mode, download the current item, or download
-   all media as a ZIP.
+### Older version-pinned userscript
 
-Video clicks follow the saved click mode. The gallery opens a separate player
-at the beginning with its own saved volume; closing does not restart X's player.
-See the [video-click policy](./docs/video-click-policy.md) for modes and native-player recovery.
+If an installed copy has a versioned `@downloadURL`, an update check may find a
+new version but still fetch the old script. Once the corrected release is
+public, update that existing script once from the
+[latest userscript](https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js)
+in your manager, or change its download URL through a reviewed manager
+workflow. **Check for updates** alone cannot repair the pinned URL. Verify the
+installed header and saved settings after the one-time update.
+
+### Partial media and save sources
 
 If post extraction is unavailable, a status-linked media tile may recover only
-its visible, accessible media. A notification identifies this partial recovery;
-bulk ZIP downloads include only the items shown in the gallery. A tile does not
-establish all attachments of the post.
+its visible, accessible media. A notice identifies that limited scope; the ZIP
+contains only the items shown, which may not be every attachment in the post.
+A CDN-original photo is the CDN's original-size representation, not a promise
+of bytes identical to the uploader's file. An unverified original photo is not
+silently saved at a smaller size. Recovered video may use an observed save
+source; alternate playback does not change that choice. HLS-only attachments
+need a supported MP4 source. See [media sources](./docs/media-sources.md),
+[video loading](./docs/media-video-loading.md), and
+[API acquisition and failures](./docs/twitter-api-contract.md).
 
-Ordinary CDN photos keep a separate original-size save source. This is the CDN's
-original-size representation, not a promise of bytes identical to the uploader's
-file. If that source cannot be verified, saving reports a failure instead of
-silently saving a smaller image. Recovered DOM videos disclose their observed
-source-quality limit. The displayed or recovered playback source can differ
-from the selected save source and quality.
-HLS-only attachments require a supported MP4 source in this flow. See the
-[media source policy](./docs/media-sources.md) for selection and quality details.
+### Download limits
 
-Generated Blob and ZIP downloads share an in-page memory allowance for their
-data. Extension single-file saves use the browser's download manager and do not
-reserve a whole-file page Blob. If the allowance is reached,
-wait for active downloads to finish. If none are active and the limit remains,
-reload this page, then try fewer files at once. A userscript save can keep its
-allowance until the page is reloaded or closed. A memory-limit partial ZIP
-notification reports included and omitted counts; other partial ZIP
-notifications report the failed-item count. Reopening the gallery does not
-return the userscript allowance, and the shared allowance is not a per-file
-entitlement. See the [download ownership contract](./docs/download-memory.md)
-for its scope.
+Generated Blob and ZIP downloads share an in-page memory allowance. Extension
+single-file saves use the browser's download manager without reserving a
+whole-file page Blob. If the allowance is reached, wait for active downloads
+to finish. If none are active and the limit remains, reload the page and try
+fewer files at once. Wait for a browser-managed save before reloading; an
+unknown native handoff does not prove completion or make a duplicate save safe.
+A userscript save can retain its allowance until the page closes or reloads;
+reopening the gallery does not return it. A partial ZIP result states its
+included/omitted scope and failure reason. See the
+[download ownership and recovery contract](./docs/download-memory.md) and
+[ZIP input rules](./docs/zip-input-admission.md).
 
-Video sources load when the item is active or near the gallery viewport. A
-supported alternate MP4 may restore playback after a decoding failure; saves
-retain the selected download quality. See [video loading](./docs/media-video-loading.md),
-[API reuse and failures](./docs/twitter-api-contract.md), and
-[ZIP input admission](./docs/zip-input-admission.md) for the related contracts.
-
-The gallery targets desktop browsers and does not provide a mobile/touch flow.
+The gallery does not provide a mobile or touch flow.
 
 ## Browser support
 

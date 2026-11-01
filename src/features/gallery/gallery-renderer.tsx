@@ -96,9 +96,7 @@ function GalleryRoot(props: GalleryRootProps): JSX.Element {
         lang={resolvedLanguage()}
         dir={dir()}
       >
-        {/* M8: aria-live region is always rendered in the DOM so screen readers
-            can register it and detect content changes. Only the text content
-            updates conditionally — the element itself is never unmounted. */}
+        {/* Keep one mounted announcement owner; visible notices repeat no live role. */}
         <div aria-live="polite" class="xeg-sr-only" aria-atomic="true">
           {downloadState.bulkOutcome && downloadState.status !== 'working'
             ? ''

@@ -259,7 +259,7 @@ test.describe('X.com Enhanced Gallery Settings & Theme', () => {
     expect(contract.sharedAccent).not.toBe('');
     expect(contract.xegAccent).toBe(contract.sharedAccent);
 
-    await page.locator('[data-gallery-element="toolbar"] button[aria-label*="Settings" i]').click();
+    await page.locator('#settings-button').click();
     await page
       .locator('[data-gallery-element="settings-panel"] select')
       .first()
@@ -339,7 +339,7 @@ test.describe('X.com Enhanced Gallery Settings & Theme', () => {
     page.on('pageerror', (error) => pageErrors.push(error.message));
     await setupGalleryPage(page, true, true);
     await openGallery(page);
-    await page.locator('[data-gallery-element="toolbar"] button[aria-label*="Settings" i]').click();
+    await page.locator('#settings-button').click();
     const panel = page.locator('[data-gallery-element="settings-panel"]');
     const theme = panel.locator('select').first();
     const unsaved = panel.locator('[data-xeg-settings-unsaved]');
@@ -407,7 +407,7 @@ test.describe('X.com Enhanced Gallery Settings & Theme', () => {
     page.on('pageerror', (error) => errors.push(error.message));
     await setupGalleryPage(page, true, true);
     await openGallery(page);
-    await page.locator('[data-gallery-element="toolbar"] button[aria-label*="Settings" i]').click();
+    await page.locator('#settings-button').click();
     const panel = page.locator('[data-gallery-element="settings-panel"]');
     const language = panel.locator('select').nth(1);
     const unsaved = panel.locator('[data-xeg-settings-unsaved]');
@@ -456,7 +456,7 @@ test.describe('X.com Enhanced Gallery Settings & Theme', () => {
     });
     await setupGalleryPage(page, true, false, raw);
     await openGallery(page);
-    await page.locator('[data-gallery-element="toolbar"] button[aria-label*="Settings" i]').click();
+    await page.locator('#settings-button').click();
     const panel = page.locator('[data-gallery-element="settings-panel"]');
     const unsaved = panel.locator('[data-xeg-settings-unsaved]');
     await expect(unsaved).toBeVisible();
@@ -500,7 +500,7 @@ test.describe('X.com Enhanced Gallery Settings & Theme', () => {
       true
     );
     await openGallery(page);
-    await page.locator('[data-gallery-element="toolbar"] button[aria-label*="Settings" i]').click();
+    await page.locator('#settings-button').click();
     const panel = page.locator('[data-gallery-element="settings-panel"]');
     const unsaved = panel.locator('[data-xeg-settings-unsaved]');
     await expect(unsaved).toBeVisible();

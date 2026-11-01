@@ -107,3 +107,14 @@ an older write cannot mark the newer selection saved. Pending intent survives
 same-document language-service restart; a fresh document reads durable storage
 and cannot recover unsaved memory. Successful primary and fallback writes retain
 the existing envelope and fallback ordering.
+
+## Gallery feedback
+
+When either owner reports an unsaved edit, the gallery toolbar shows a session-only
+notice even while Settings is closed. This includes fit changes made directly in
+the toolbar. The notice opens Settings, where the existing status and explicit
+retry button remain the only recovery controls. A pending write or a successful
+primary/fallback save does not show the unsaved notice. Successful retry clears it;
+closing and reopening the gallery reads the owners' current state. The notice
+does not make in-memory preferences survive a document reload or bypass the
+unsupported-schema write protection described above.

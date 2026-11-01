@@ -1,0 +1,44 @@
+/* SPDX-License-Identifier: MIT */
+/* Copyright (c) 2024-2026 PiesP */
+
+@layer xeg.features {
+  .xeg-entry-failure {
+    position: fixed;
+    z-index: 9999;
+    max-width: min(24rem, calc(100vw - 16px));
+    max-height: calc(100vh - 16px);
+    overflow: auto;
+    padding: 0.75rem;
+    border: 1px solid var(--xeg-color-border-default);
+    border-radius: var(--xeg-radius-md);
+    background: var(--xeg-color-bg-surface);
+    color: var(--xeg-color-text-primary);
+    font:
+      400 0.875rem/1.4 system-ui,
+      sans-serif;
+  }
+
+  .xeg-entry-failure[hidden] {
+    display: none;
+  }
+
+  .xeg-entry-failure p {
+    margin: 0 0 0.5rem;
+  }
+
+  .xeg-entry-failure button {
+    min-height: 44px;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid currentColor;
+    border-radius: var(--xeg-radius-md);
+    background: var(--xeg-color-bg-surface);
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .xeg-entry-failure button:focus-visible {
+    outline: 2px solid var(--xeg-color-text-primary);
+    outline-offset: 2px;
+  }
+}

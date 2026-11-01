@@ -30,6 +30,9 @@ export const ko: LanguageStrings = {
     downloadGroup: '다운로드',
     auxGroup: '기타 작업',
     settingsPanel: '설정 패널',
+    helpOpen: '키보드 도움말',
+    helpPanel: '키보드 도움말 패널',
+    helpClose: '도움말 닫기',
   },
   st: {
     th: '테마',
@@ -46,13 +49,14 @@ export const ko: LanguageStrings = {
     langAr: '아랍어',
     videoClickMode: '동영상 클릭',
     videoClickNative: '동영상 클릭을 X에서 처리',
-    videoClickSurfaces: '동영상 화면에서 갤러리 열기',
-    videoClickUnmarked: '적격 재생 버튼에서도 갤러리 열기',
+    videoClickSurfaces: '동영상 영역에서 갤러리 열기',
+    videoClickUnmarked: '지원되는 재생 버튼에서도 열기',
     videoClickHelp:
-      '뒤의 두 모드에서는 적격 동영상 화면을 클릭하면 갤러리가 열립니다. 마지막 모드는 확인된 표시 없는 재생 버튼도 포함합니다. 일반 플레이어 컨트롤은 X에서 작동합니다.',
+      '적격 동영상 클릭을 처리할 위치를 선택합니다. 갤러리는 별도의 일시정지된 플레이어를 처음부터 열고 저장된 오디오 설정을 사용합니다. 닫아도 X의 재생은 자동으로 재개되지 않습니다. 일반 플레이어 컨트롤은 X에서 작동합니다.',
     videoClickSaveError:
       '동영상 클릭 설정을 저장하지 못했습니다. 현재 설정이 계속 적용됩니다. 다시 시도하세요.',
     unsavedSettings: '설정이 현재 세션에만 적용되었으며 저장되지 않았습니다.',
+    unsavedSession: '현재 세션에만 적용됨 · 저장되지 않음',
     retrySettingsSave: '다시 저장',
   },
   msg: {
@@ -95,13 +99,23 @@ export const ko: LanguageStrings = {
     },
     kb: {
       t: '키보드 단축키',
-      prev: 'ArrowLeft: 이전 미디어',
-      next: 'ArrowRight: 다음 미디어',
-      cls: 'Escape: 갤러리 닫기',
-      toggle: '?: 이 도움말 표시',
+      prev: '왼쪽: 표시된 이전 항목',
+      next: '오른쪽: 표시된 다음 항목',
+      cls: 'Escape: 열린 패널 또는 갤러리 닫기',
+      toggle: '?: 이 도움말 열기',
+      firstLast: 'Home / End: 첫 / 마지막 항목',
+      five: 'PageUp / PageDown: 5개 항목 뒤로 / 앞으로',
+      vertical: '위 / 아래: 이미지 항목 이동, 표시된 갤러리 동영상의 음량 조절',
+      playback: 'Space: 갤러리 동영상 재생·일시정지, M: 음소거 전환',
+      focus: 'Tab / Shift+Tab: 컨트롤 사이 이동',
+      context:
+        '포커스된 버튼은 Space / Enter를 사용하며, 양식과 패널의 키는 해당 컨트롤에서 처리합니다.',
+      recovery: 'Alt+Shift+V는 적격 동영상 클릭이 실패한 직후에만 사용할 수 있습니다.',
     },
     dl: {
       bulkOutcome: {
+        cancelRecoveryAndDismiss: '누락 항목 복구를 취소하고 ZIP 결과 닫기',
+        details: 'ZIP 결과 자세히 보기',
         titleHandedOff: 'ZIP을 브라우저에 전달함',
         titleFailed: 'ZIP을 브라우저에 전달하지 못함',
         previous: '이전 ZIP 결과',
@@ -155,6 +169,23 @@ export const ko: LanguageStrings = {
         '다운로드 메모리 한도에 도달했습니다. 먼저 진행 중인 다운로드가 끝날 때까지 기다리세요. 진행 중인 다운로드가 없는데도 한도가 계속되면 이 페이지를 새로고침하세요. 그런 다음 파일 수를 줄여 다시 시도하세요.',
     },
     gal: {
+      sourceDetails: {
+        title: '미디어와 저장 정보',
+        shown: '표시된 {count}개 항목 · 이 타일에서만 복구됨',
+        cdnOriginal: '저장 소스: X CDN에서 확인된 원본 이미지.',
+        bestMp4: '저장 소스: X에서 제공된 최선의 MP4.',
+        observed: '동영상 저장 화질을 확인하지 못함',
+        observedDetail:
+          '저장 시 확인된 동영상 소스를 사용합니다. 재생에는 다른 버전이 사용될 수 있습니다.',
+        unavailable: '저장할 원본 이미지를 사용할 수 없음',
+        unavailableDetail:
+          '확인된 원본 이미지를 찾지 못했습니다. 이 항목은 저장할 수 없으며 낮은 화질로 대체하지 않습니다.',
+      },
+      entryFailureNext: 'X의 게시물에서 이 미디어를 확인하세요.',
+      downloadFailureNext:
+        '브라우저 다운로드 목록에서 저장 상태를 확인하거나 X의 게시물로 돌아가세요.',
+      dismissFailure: '오류 안내 닫기',
+      mediaType: { image: '이미지', video: '동영상' },
       video: {
         playbackFallback:
           '다른 화질로 재생합니다. 다운로드에는 사용 가능한 최적의 소스를 사용합니다.',

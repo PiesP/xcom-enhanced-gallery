@@ -239,6 +239,29 @@ describe('VerticalGalleryView preload reactivity', () => {
     }
   );
 
+  it('describes active recovery cancellation without suggesting a new ordinary ZIP', async () => {
+    openGallery([media('a'), media('b')]);
+    dispose = render(() => createComponent(VerticalGalleryView, {}), container);
+    setBulkDownloadOutcome({
+      total: 2,
+      included: 1,
+      omitted: 1,
+      handedOff: true,
+      reason: 'other',
+      sourceUnavailable: false,
+      recoverableCount: 0,
+    });
+    setDownloadStatus('working');
+    await flushEffects();
+    const result = container.querySelector('[data-gallery-element="bulk-download-outcome"]');
+    expect(result?.textContent).toContain('msg.dl.bulkOutcome.cancelRecoveryAndDismiss');
+    expect(result?.textContent).not.toContain('msg.dl.bulkOutcome.nextAction');
+    setDownloadStatus('error');
+    await flushEffects();
+    expect(result?.textContent).toContain('msg.dl.bulkOutcome.nextAction');
+    expect(result?.textContent).not.toContain('msg.dl.bulkOutcome.cancelRecoveryAndDismiss');
+  });
+
   it('updates item indices and preload state when keyed items reorder', async () => {
     const items = ['a', 'b', 'c', 'd', 'e'].map(media);
     openGallery(items, 0);

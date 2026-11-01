@@ -135,6 +135,15 @@
   --toolbar-transform-y: 0;
 }
 
+/* A requested help panel and failed-save recovery must remain discoverable after idle. */
+.toolbarWrapper:has(#keyboard-help-button[aria-expanded='true']),
+.toolbarWrapper:has([data-xeg-settings-unsaved-indicator]) {
+  --toolbar-opacity: 1;
+  --toolbar-visibility: visible;
+  --toolbar-pointer-events: auto;
+  --toolbar-transform-y: 0;
+}
+
 /* Keep toolbar visible when focused */
 .toolbarWrapper:focus-within {
   transition: var(--xeg-transition-elevation-fast);
@@ -248,11 +257,17 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: var(--xeg-spacing-md);
+}
+
+.bulkOutcomeHeading strong {
+  min-width: 0;
 }
 
 .bulkOutcomeHeading button {
   min-height: 44px;
+  max-width: 100%;
   padding-inline: var(--xeg-spacing-sm);
   color: inherit;
   background: transparent;
@@ -283,6 +298,25 @@
 }
 
 .bulkOutcome > button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.bulkOutcomeSummary {
+  font-weight: 600;
+}
+
+.bulkOutcomeDetails {
+  margin-block-start: var(--xeg-spacing-sm);
+}
+
+.bulkOutcomeDetails summary {
+  min-height: 44px;
+  padding-block: var(--xeg-spacing-sm);
+  cursor: pointer;
+}
+
+.bulkOutcomeDetails summary:focus-visible {
   outline: 2px solid currentColor;
   outline-offset: 2px;
 }

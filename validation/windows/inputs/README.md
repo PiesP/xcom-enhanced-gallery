@@ -24,12 +24,19 @@ To run only the built userscript settings-persistence fixture, create the ignore
 
 The shared VM controller packages this directory with the source-bound artifact.
 Remove the selector after the attempt. The artifact fixture intercepts GM
-storage and localStorage on an owned X.com page and exercises language denial/retry/reload plus schema preservation. With
+storage and localStorage on an owned X.com page and exercises language
+denial/retry/reload plus schema preservation. It also rejects a fit-mode save
+while Settings is closed, checks the toolbar unsaved cue, reopens Settings from
+that cue, and verifies durable retry, including a delayed failure after Settings
+closes. With
 `--installation extension`, the same selector runs a focused installed-package
-fixture for healthy language persistence/reload and unsupported-schema session
-edits/retry/raw preservation. The installed fixture uses real extension storage;
-controlled write denial remains an artifact-fixture boundary. Neither mode
-establishes live X.com behavior or a userscript-manager installation.
+fixture for healthy language persistence/reload, controlled fit-mode storage
+failures and retries, and unsupported-schema session edits/retry/raw preservation.
+The installed fixture intercepts only the exact fit-mode keys in the extension
+content script's primary and X-origin fallback storage paths. It checks healthy
+primary and fallback saves, denial with Settings closed, and a delayed denial
+after closing Settings. Neither mode establishes live X.com behavior or a
+userscript-manager installation.
 
 To run only the issue #381 opening-feedback fixture with the installed
 Chrome/Edge extension, create the ignored `opening-feedback.json` file here:
@@ -41,7 +48,9 @@ Chrome/Edge extension, create the ignored `opening-feedback.json` file here:
 Run the VM browser validation with `--installation extension`. The fixture holds
 the real provider response for five seconds, records the rendered pending state
 and host playback, then checks fast opening, later A completion or failure after
-B opens, navigation, and failure recovery. The result is a controlled installed
+B opens, navigation, and failure recovery. The failure case suppresses native
+notifications and requires a persistent, dismissible source notice after the
+held request settles. The result is a controlled installed
 extension observation; it does not establish live X.com behavior. Remove this
 selector after the attempt.
 
@@ -55,7 +64,11 @@ Chrome/Edge extension, create the ignored `gallery-experience.json` file:
 Run the VM browser validation with `--installation extension`. The focused
 receipt `gallery-experience.json` separates toolbar keyboard and native save
 actions (X02), native host video controls across click modes (X05), and mixed
-aspect ratio layout with actual 200% browser tab zoom (X06). The page and media
+aspect ratio layout with actual 200% browser tab zoom (X06).
+The run also checks pointer and eligible `?` help, nested Escape, a 401×360
+short viewport, and bounded theme, language, forced-colors and reduced-motion
+states. `gallery-overview.png` and `gallery-constrained.png` are clean UI
+captures from the English fixture for documentation review. The page and media
 are deterministic owned fixtures; the observations do not claim live X.com
 behavior or a human study. Remove the selector after the attempt.
 
@@ -75,6 +88,33 @@ remains on the page after five seconds. ZIPs are checked against the fixture's
 independent entry list and copied into the evidence directory. Remove the
 selector after the attempt.
 
+The same run also checks a bounded article-less tile with one original URL that
+cannot be verified and an observed video tile. Each opens through the installed
+extension after a real provider rejection; the rendered source details must
+name the limited scope or quality. Verified API and article DOM fixtures must
+remain free of limitation details. ZIP result reasons must be visible when their
+native details control is opened.
+
+To inspect opened help and source details with one bounded installed Edge profile,
+create the ignored `ux-details.json` file here with exactly:
+
+```json
+{"scenario":"ux-details"}
+```
+
+Run with `--installation extension`, without live URLs, live acceptance, upgrade
+inputs, or another focused selector. This case uses only the owned rapid-A post
+fixture. A real provider 403 opens its one-image/one-video DOM recovery gallery.
+It checks the opened source details and keyboard help in Korean at 401×592 and
+English at actual 200% tab zoom, including native keys, visible controls, and
+wheel ownership when a panel overflows. A separate fresh fixture document
+returns HTTP 503 for the exact known video source after opening the gallery;
+the terminal video alert must provide a canonical original-post link that a
+trusted Enter key opens in a new owned fixture tab. Screenshots and request,
+error, zoom, and cleanup observations remain in the private run output.
+This is fixture evidence, not live X or screen-reader speech evidence. Remove
+the selector after the attempt.
+
 To run only the issue #392 failed-entry ZIP acceptance in the installed Edge
 extension, create the ignored `failed-entry-recovery.json` file here:
 
@@ -90,6 +130,17 @@ The third explicit attempt saves only the omitted item in `-missing-3.zip`. The 
 checks native download IDs, saved file identity, entry order, CRC, bytes, hashes,
 request count, result dismissal, session reopening, and exact cleanup. Retain
 failed receipts outside Git and remove the selector after the attempt.
+
+After that campaign, two fresh owned-fixture sessions check #442's control meanings.
+Each produces and byte-verifies a separate partial ZIP. The first holds a new
+ordinary ZIP source through the native loopback: dismissing the previous result
+must leave the new request running, and closing the gallery then aborts that
+owned source. The second holds a missing-item recovery: the visible control must
+say it cancels recovery and dismisses the result, and activating it must abort
+the held source without a replacement native ZIP or a late result. The receipt
+records the exact native events, download IDs, screenshots, and cleanup. This is
+installed fixture evidence, not a claim about a live X.com transfer or disk
+completion after a browser handoff.
 
 For a focused current-X language/theme check, use the existing ignored
 `live-acceptance.json` with exactly:

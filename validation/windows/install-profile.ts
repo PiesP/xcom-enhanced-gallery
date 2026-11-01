@@ -53,6 +53,7 @@ import {
   validateLiveUrls,
 } from './live-page.ts';
 import { parseActualSiteAcceptanceSelector, runLiveSettingsAcceptance } from './live-acceptance.ts';
+import { runInstalledSettingsUx } from './installed-settings-ux.ts';
 import { runInstalledMediaApiReuseProfile } from './media-api-reuse-profile.ts';
 import {
   captureUpgradeSettingsFailure,
@@ -188,6 +189,7 @@ type MemoryEvidence = {
   recoveryScreenshot?: string;
   uiPartialAfterFiveSeconds?: unknown;
   uiHealthy?: unknown;
+  heldCancellation?: unknown;
   error?: string;
   failureScreenshot?: string;
   screenshotError?: string;
@@ -311,6 +313,7 @@ type UnavailableStep = {
   notification?: { id: string; message: string };
   api?: ApiRecord[];
   recoveryClosedThroughUi?: boolean;
+  entryFailureDismissed?: boolean;
   selected?: unknown;
   selection?: unknown;
   originUrl?: string | null;
@@ -390,6 +393,14 @@ async function captureOpeningFeedback(page: Page, output: string, name: string) 
       visible: visible(element),
       pointerEvents: getComputedStyle(element).pointerEvents,
     }));
+    const failures = Array.from(document.querySelectorAll('[data-xeg-entry-failure]')).map(
+      (element) => ({
+        text: (element.textContent ?? '').trim(),
+        visible: visible(element),
+        dismiss: element.querySelector('button')?.textContent?.trim() ?? null,
+        role: element.querySelector('[role="status"]')?.getAttribute('role') ?? null,
+      })
+    );
     return {
       url: location.href,
       documentStartedAt: performance.timeOrigin,
@@ -401,6 +412,7 @@ async function captureOpeningFeedback(page: Page, output: string, name: string) 
         .slice(0, 240),
       statuses,
       opening,
+      failures,
     };
   });
   await page.screenshot({ path: join(output, screenshot) });
@@ -501,6 +513,30 @@ function assertOpeningAbsent(
   label: string
 ): void {
   assert.deepEqual(snapshot.opening, [], `${label}: stale opening status must be removed`);
+}
+
+async function assertSourceDetails(
+  gallery: Locator,
+  expected: 'absent' | 'visible-tile' | 'observed' | 'unverified-original'
+): Promise<string | null> {
+  const details = gallery.locator('[data-gallery-element="source-details"]');
+  if (expected === 'absent') {
+    assert.equal(await details.count(), 0, 'Verified full-scope media must not show a limitation');
+    return null;
+  }
+  await details.waitFor({ state: 'visible' });
+  const summary = (await details.locator('summary').textContent())?.trim() ?? '';
+  const pattern = {
+    'visible-tile': /recovered from this tile only/u,
+    observed: /Video save quality is unverified/u,
+    'unverified-original': /Original image unavailable for saving/u,
+  }[expected];
+  assert.match(summary, pattern);
+  await details.locator('summary').click();
+  assert.equal(await details.getAttribute('open'), '');
+  assert.match((await details.textContent()) ?? '', /Media and save details/u);
+  await details.locator('summary').click();
+  return summary;
 }
 
 function assertOpeningTimeline(timeline: OpeningTimeline, label: string): void {
@@ -680,6 +716,7 @@ async function assertVisibleBulkOutcome(
     handedOff: boolean;
     reason?: string;
     supplementary?: boolean;
+    recovery: 'available' | 'working' | 'ordinary-working' | 'absent';
   }
 ): Promise<string> {
   const panel = page.locator(
@@ -687,6 +724,18 @@ async function assertVisibleBulkOutcome(
   );
   await panel.waitFor({ state: 'visible' });
   const text = (await panel.textContent())?.trim() ?? '';
+  const summary = panel.locator('details > summary');
+  if (expected.reason) {
+    await summary.waitFor({ state: 'visible' });
+    assert.match((await summary.textContent()) ?? '', /ZIP result details/u);
+    await summary.click();
+    assert.equal(await summary.locator('..').getAttribute('open'), '');
+    assert(
+      await panel.getByText(expected.reason, { exact: false }).isVisible(),
+      'ZIP failure reason must be readable when details are expanded'
+    );
+    await summary.click();
+  }
   assert.match(
     text,
     expected.supplementary
@@ -704,12 +753,42 @@ async function assertVisibleBulkOutcome(
       ? /The browser accepted the ZIP request/u
       : /No ZIP was handed off to the browser/u
   );
-  assert.match(
-    text,
-    expected.supplementary
-      ? /This ZIP only contains recovered missing items\./u
-      : /Download all starts a new ZIP/u
-  );
+  const recoverButton = panel.getByRole('button', {
+    name: /Download [0-9]+ missing items as a separate ZIP/u,
+  });
+  if (expected.recovery === 'available') {
+    assert.equal(await recoverButton.count(), 1, 'Eligible missing items need a visible action');
+    assert(await recoverButton.isVisible(), 'Missing-item action is hidden');
+    assert(await recoverButton.isEnabled(), 'Missing-item action is disabled');
+  } else if (expected.recovery === 'ordinary-working') {
+    assert.equal(await recoverButton.count(), 1, 'Previous recovery action disappeared');
+    assert(await recoverButton.isDisabled(), 'Recovery must be disabled during another ZIP');
+  } else {
+    assert.equal(await recoverButton.count(), 0, 'A spent or working recovery was offered again');
+  }
+  const cancelRecovery = panel.getByRole('button', {
+    name: 'Cancel missing-item recovery and dismiss ZIP result',
+  });
+  const dismiss = panel.getByRole('button', { name: 'Dismiss ZIP result', exact: true });
+  if (expected.recovery === 'working') {
+    assert.equal(
+      await cancelRecovery.count(),
+      1,
+      'Working recovery needs an explicit cancel action'
+    );
+    assert(await cancelRecovery.isVisible());
+    assert.equal(await dismiss.count(), 0, 'Working recovery must not look like passive dismissal');
+  } else {
+    assert.equal(await cancelRecovery.count(), 0, 'Idle result must not claim to cancel recovery');
+    assert.equal(await dismiss.count(), 1, 'Idle result needs ordinary dismissal');
+  }
+  if (expected.supplementary) {
+    assert.match(text, /This ZIP only contains recovered missing items\./u);
+  } else if (expected.recovery === 'absent' && (expected.omitted > 0 || !expected.handedOff)) {
+    assert.match(text, /Download all starts a new ZIP/u);
+  } else {
+    assert.doesNotMatch(text, /Download all starts a new ZIP/u);
+  }
   if (expected.reason) {
     assert(text.includes(expected.reason), `Visible ZIP result omitted: ${expected.reason}`);
   }
@@ -945,6 +1024,7 @@ type InstallResult = {
   mediaDownloadRecovery?: unknown;
   failedEntryRecovery?: unknown;
   galleryExperience?: unknown;
+  uxDetails?: unknown;
   settingsPersistence?: unknown;
   liveBrowserScope?: string;
   live?: unknown;
@@ -1793,7 +1873,7 @@ async function verifyTrustedDownloadInput({
     sourceUrl,
     syntheticInputs: [],
     notificationScope:
-      'Production SHOW_NOTIFICATION path counted at native create boundary; delivery suppressed during this case',
+      'Persistent help uses the rendered panel; synthetic input must not cross the native notification boundary; delivery is suppressed',
     downloadScope:
       'Real direct URL download held by bounded fixture body and asynchronous native onDeterminingFilename listener',
     cleanup: {},
@@ -1889,19 +1969,26 @@ async function verifyTrustedDownloadInput({
     const gallery = page.locator('[data-xeg-gallery-container]');
     await gallery.waitFor({ state: 'visible' });
     await page.keyboard.press('?');
-    await waitForValue(
-      async () =>
-        (await worker.evaluate(() => {
-          const state = globalThis.__xegIngressNotifications;
-          if (!state) {
-            throw new Error('Notification seam disappeared');
-          }
-          return state.calls;
-        })) === 1
-          ? true
-          : undefined,
-      'trusted help input to reach the notification boundary'
+    const helpPanel = gallery.locator('[data-gallery-element="keyboard-help-panel"]');
+    await helpPanel.waitFor({ state: 'visible' });
+    assert.equal(
+      await gallery.locator('#keyboard-help-button').getAttribute('aria-expanded'),
+      'true'
     );
+    assert.equal(
+      await worker.evaluate(() => {
+        const state = globalThis.__xegIngressNotifications;
+        if (!state) {
+          throw new Error('Notification seam disappeared');
+        }
+        return state.calls;
+      }),
+      0,
+      'Rendered help must not create a native notification'
+    );
+    await page.keyboard.press('Escape');
+    await helpPanel.waitFor({ state: 'hidden' });
+    assert.equal(await gallery.isVisible(), true, 'Help Escape must retain the gallery');
     await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download"]').click();
     const control = await waitForValue(async () => {
       const value = await extensionPage.evaluate(() => {
@@ -1980,7 +2067,7 @@ async function verifyTrustedDownloadInput({
       paused: before.download.paused,
       requestBinding: before.record,
       filenameGate: control.filenameGate,
-      notificationCalls: 1,
+      notificationCalls: 0,
     };
     for (const input of [
       'Escape',
@@ -2062,8 +2149,13 @@ async function verifyTrustedDownloadInput({
           }
           return state.calls;
         }),
-        1,
+        0,
         `${input}: synthetic input must not induce a notification`
+      );
+      assert.equal(
+        await helpPanel.isVisible(),
+        false,
+        `${input}: synthetic input must not open help`
       );
       evidence.syntheticInputs.push({
         input,
@@ -2074,7 +2166,7 @@ async function verifyTrustedDownloadInput({
         bytesReceived: current.download.bytesReceived,
         filenameGate,
         cancellationRequested: false,
-        notificationCalls: 1,
+        notificationCalls: 0,
       });
     }
     await page.keyboard.press('Escape');
@@ -2132,7 +2224,7 @@ async function verifyTrustedDownloadInput({
         return state.calls;
       }),
     };
-    assert.equal(evidence.after.notificationCalls, 1);
+    assert.equal(evidence.after.notificationCalls, 0);
     evidence.status = 'passed';
   } catch (error) {
     primarySeen = true;
@@ -4168,6 +4260,7 @@ async function runDownloadMemoryCycle({
       omitted: 1,
       handedOff: true,
       reason: 'Download memory limit reached',
+      recovery: 'available',
     });
     assert(
       errorText.length > 0 && errorText.length <= 1_500,
@@ -4237,6 +4330,7 @@ async function runDownloadMemoryCycle({
         omitted: 1,
         handedOff: true,
         reason: 'Download memory limit reached',
+        recovery: 'available',
       });
       evidence.uiPartialAfterFiveSeconds = await captureRecoveryUi(
         page,
@@ -4327,6 +4421,7 @@ async function runDownloadMemoryCycle({
           handedOff: false,
           reason: expectedReason,
           supplementary: true,
+          recovery: 'available',
         });
         const newNativeDownloadIds = (await queryDownloads(extensionPage))
           .filter(({ id }) => !knownBeforeMissing.has(id))
@@ -4425,6 +4520,7 @@ async function runDownloadMemoryCycle({
       omitted: 0,
       handedOff: true,
       supplementary: true,
+      recovery: 'absent',
     });
     await recoverButton.waitFor({ state: 'detached' });
     const missingRequests = evidence.requests
@@ -4555,7 +4651,12 @@ async function runDownloadMemoryCycle({
     });
     if (uiProbe) {
       await bulkButton.focus();
-      await assertVisibleBulkOutcome(page, { included: 3, omitted: 0, handedOff: true });
+      await assertVisibleBulkOutcome(page, {
+        included: 3,
+        omitted: 0,
+        handedOff: true,
+        recovery: 'absent',
+      });
       evidence.uiHealthy = await captureRecoveryUi(page, output, 'memory-healthy');
     }
     assert.deepEqual(
@@ -4901,6 +5002,7 @@ async function runPublicFixtureCycle({
     'Public fixture must request TweetResultByRestId once'
   );
   assert.equal(apiResponses.at(-1)?.status, 403, 'Public fixture API route must return 403');
+  await assertSourceDetails(gallery, 'absent');
   await page.screenshot({ path: join(output, 'public-dom-gallery.png') });
 
   await page.keyboard.press('Escape');
@@ -6185,7 +6287,10 @@ async function runVideoClickSettingsCycle({
     const help = gallery.locator('#settings-video-click-help');
     const helpText = await help.textContent();
     assert(helpText, 'Video-click settings help text is missing');
-    assert.match(helpText, /video surfaces open the gallery/i);
+    assert.match(helpText, /separate paused player at the beginning/iu);
+    assert.match(helpText, /saved audio settings/iu);
+    assert.match(helpText, /does not automatically resume X/iu);
+    assert.match(helpText, /Ordinary player controls stay in X/iu);
     const pressAndConfirmMode = async (keyPress: string, expectedMode: string) => {
       await waitForValue(
         async () => ((await select.isEnabled()) ? true : undefined),
@@ -7689,6 +7794,45 @@ async function runUnavailableSequence({
         await recovery.waitFor({ state: 'detached' });
         step.recoveryClosedThroughUi = true;
       }
+      const notice = page.locator('[data-xeg-entry-failure]');
+      await notice.waitFor({ state: 'visible' });
+      assert.equal(await notice.count(), 1, `${failure.name} must show one entry failure`);
+      const content = await notice.evaluate((element) => ({
+        cause: element.querySelector('p[role="status"]')?.textContent?.trim(),
+        action: element.querySelector('p:nth-of-type(2)')?.textContent?.trim(),
+        dismiss: element.querySelector('button')?.textContent?.trim(),
+        buttonCount: element.querySelectorAll('button').length,
+      }));
+      assert.equal(content.cause, created.message, `${failure.name} must show the safe cause`);
+      assert(content.cause, `${failure.name} entry failure cause is missing`);
+      assert.match(content.cause, /^No media was returned for this post\./u);
+      assert.equal(content.action, 'Use the post on X to view this media.');
+      assert.equal(content.dismiss, 'Dismiss error');
+      assert.equal(content.buttonCount, 1);
+      const dismiss = notice.getByRole('button', { name: 'Dismiss error' });
+      await dismiss.focus();
+      assert.equal(
+        await dismiss.evaluate((button) => document.activeElement === button),
+        true,
+        `${failure.name} dismissal must receive focus`
+      );
+      await dismiss.click();
+      await notice.waitFor({ state: 'detached' });
+      assert.equal(
+        await article.evaluate((element) => {
+          const active = document.activeElement;
+          const trigger = element.querySelector('.media-shell button');
+          return (
+            active !== null &&
+            trigger !== null &&
+            element.contains(active) &&
+            (active === trigger || active.contains(trigger))
+          );
+        }),
+        true,
+        `${failure.name} dismissal must restore focus to its current article trigger`
+      );
+      step.entryFailureDismissed = true;
       await assertSameDocument();
       step.status = 'failed-extraction-completed';
     }
@@ -8365,7 +8509,12 @@ async function runDelayedVideoFailures({
     );
     const priorSetting =
       name === 'navigation' ? null : await readStoredVideoSettings(extensionPage);
-    const notificationObserver = await observeNativeNotificationCreates(context, extensionId);
+    const suppressFailureNotification = openingProbe && name === 'failure';
+    const notificationObserver = await observeNativeNotificationCreates(
+      context,
+      extensionId,
+      suppressFailureNotification
+    );
     const navigationEvents: Array<{ type: string; trusted: boolean }> = [];
     const recordNavigation = (message: ConsoleMessage) => {
       const text = message.text();
@@ -8473,6 +8622,11 @@ async function runDelayedVideoFailures({
         if (openingProbe) {
           const terminal = await captureOpeningFeedback(page, output, `delayed-${name}-terminal`);
           assertOpeningAbsent(terminal, `delayed ${name} terminal`);
+          assert.deepEqual(
+            terminal.failures,
+            [],
+            'Navigation left a source failure in the new document'
+          );
           observation.openingFeedback = { ...(observation.openingFeedback as object), terminal };
         }
         const nextDocumentStartedAt = await page.evaluate(() => performance.timeOrigin);
@@ -8556,12 +8710,28 @@ async function runDelayedVideoFailures({
           );
           const observed = await notificationObserver.snapshot();
           return observed.calls.find(
-            ({ id }) => active.includes(id) && !knownNotifications.includes(id)
+            ({ id }) =>
+              !knownNotifications.includes(id) &&
+              (suppressFailureNotification || active.includes(id))
           );
         }, 'delayed extraction failure native notification');
         if (openingProbe) {
           const terminal = await captureOpeningFeedback(page, output, `delayed-${name}-terminal`);
           assertOpeningAbsent(terminal, `delayed ${name} terminal`);
+          assert.equal(
+            terminal.failures.length,
+            1,
+            'Failed extraction needs one terminal source notice'
+          );
+          assert(terminal.failures[0]?.visible, 'Terminal source notice must be visibly painted');
+          assert.equal(terminal.failures[0]?.role, 'status');
+          assert.match(terminal.failures[0]?.text ?? '', /Use the post on X to view this media/u);
+          await page.waitForTimeout(5_250);
+          assert.equal(
+            await page.locator('[data-xeg-entry-failure]').count(),
+            1,
+            'Terminal source notice must persist until dismissal or supersession'
+          );
           const timeline = await endOpeningTimeline(page);
           assertOpeningTimeline(timeline, `delayed ${name}`);
           assert.equal(timeline.removed.length, 1, `delayed ${name}: settled status removal`);
@@ -8592,6 +8762,15 @@ async function runDelayedVideoFailures({
           'Failed extraction must leave native host playback usable'
         );
         const observed = await notificationObserver.snapshot();
+        if (suppressFailureNotification) {
+          assert.deepEqual(
+            observed.activeIds.filter(
+              (id) => id.startsWith('xeg-') && !knownNotifications.includes(id)
+            ),
+            [],
+            'Suppressed native notification unexpectedly appeared'
+          );
+        }
         const creates = notificationCallsSince(baseline, observed);
         assert(
           creates.some((call) => call.id === notification.id),
@@ -8701,6 +8880,13 @@ async function runDelayedVideoFailures({
           const nextApiStart = fixtureRoutes.quotedApiResponses.length;
           fixtureRoutes.armDelayedFailure(tweetId);
           await video.click();
+          if (openingProbe) {
+            assert.equal(
+              await page.locator('[data-xeg-entry-failure]').count(),
+              0,
+              'New source attempt must supersede the previous terminal failure'
+            );
+          }
           const nextRequest = await waitForValue(
             () =>
               fixtureRoutes.quotedApiResponses
@@ -8733,6 +8919,17 @@ async function runDelayedVideoFailures({
               ).length === 1,
             'new video action failure notification'
           );
+          if (openingProbe) {
+            const notice = page.locator('[data-xeg-entry-failure]');
+            await notice.waitFor({ state: 'visible' });
+            await notice.locator('button').focus();
+            await notice.locator('button').click();
+            await notice.waitFor({ state: 'detached' });
+            assert.equal(
+              await video.evaluate((element) => document.activeElement === element),
+              true
+            );
+          }
           assert.equal(await page.locator('[data-xeg-gallery-container]').count(), 0);
           observation.negativeInputs = {
             synthetic,
@@ -12277,6 +12474,7 @@ async function runSourceQualityCycle({
     selectedSource.originalUrl,
     'A healthy API result must render its verified original source'
   );
+  await assertSourceDetails(gallery, 'absent');
   const selectedImage = await gallery
     .locator('[data-gallery-element="item"][data-index="1"] img')
     .evaluate((element) => {
@@ -12849,6 +13047,7 @@ async function runFullZipFailureProbe({
       omitted: 3,
       handedOff: false,
       reason: 'A media source request failed (HTTP 403)',
+      recovery: 'absent',
     });
     await waitForValue(
       async () => ((await zipButton.isEnabled()) ? true : undefined),
@@ -12866,7 +13065,12 @@ async function runFullZipFailureProbe({
     );
     await page.waitForTimeout(5_250);
     await zipButton.focus();
-    await assertVisibleBulkOutcome(page, { included: 0, omitted: 3, handedOff: false });
+    await assertVisibleBulkOutcome(page, {
+      included: 0,
+      omitted: 3,
+      handedOff: false,
+      recovery: 'absent',
+    });
     observations.afterFiveSeconds = await captureRecoveryUi(
       page,
       output,
@@ -12901,7 +13105,12 @@ async function runFullZipFailureProbe({
       expectedStoredZipBytes(expectedEntries)
     );
     const verified = verifyStoredZip(bytes, expectedEntries);
-    await assertVisibleBulkOutcome(page, { included: 3, omitted: 0, handedOff: true });
+    await assertVisibleBulkOutcome(page, {
+      included: 3,
+      omitted: 0,
+      handedOff: true,
+      recovery: 'absent',
+    });
     const file = 'recovery-full-failure-healthy.zip';
     await copyFile(healthy.filename, join(output, file));
     observations.healthy = {
@@ -13454,6 +13663,7 @@ async function runOriginalAvailabilityCycles({
         path: `/media/${QUALITY_IMAGE_PATHS[1]}`,
       });
       assert.equal(selection.source, original);
+      await assertSourceDetails(gallery, 'absent');
       await assertQuotedOriginLink(gallery, QUALITY_FIXTURE_URL);
       const selectedImage = gallery.locator('[data-gallery-element="item"][data-index="1"] img');
       const decodedImage = () =>
@@ -13610,11 +13820,17 @@ async function runOriginalAvailabilityCycles({
           omitted: 1,
           handedOff: true,
           reason: `A media source request failed (HTTP ${status})`,
+          recovery: 'available',
         });
         if (uiProbe) {
           await page.waitForTimeout(5_250);
           await zipButton.focus();
-          await assertVisibleBulkOutcome(page, { included: 2, omitted: 1, handedOff: true });
+          await assertVisibleBulkOutcome(page, {
+            included: 2,
+            omitted: 1,
+            handedOff: true,
+            recovery: 'available',
+          });
           receipt.ui = {
             partialAfterFiveSeconds: await captureRecoveryUi(
               page,
@@ -13708,7 +13924,12 @@ async function runOriginalAvailabilityCycles({
       };
       if (uiProbe) {
         await zipButton.focus();
-        await assertVisibleBulkOutcome(page, { included: 3, omitted: 0, handedOff: true });
+        await assertVisibleBulkOutcome(page, {
+          included: 3,
+          omitted: 0,
+          handedOff: true,
+          recovery: 'absent',
+        });
         receipt.ui = {
           ...(receipt.ui as object),
           healthy: await captureRecoveryUi(page, output, `source-${status}-healthy`),
@@ -13732,6 +13953,682 @@ async function runOriginalAvailabilityCycles({
     evidence.status = 'failed';
     evidence.error = safeError(error);
     throw error;
+  }
+}
+
+/** Issue #442: distinguish passive result dismissal from an owned recovery abort. */
+async function runHeldMissingRecoveryCancellation({
+  downloads,
+  evidence,
+  extensionPage,
+  images,
+  nativeLoopback,
+  output,
+  page,
+  consoleErrors,
+}: {
+  downloads: string;
+  evidence: MemoryEvidence;
+  extensionPage: Page;
+  images: ImageFixtures;
+  nativeLoopback: NativeLoopback;
+  output: string;
+  page: Page;
+  consoleErrors: ConsoleErrorRecord[];
+}): Promise<void> {
+  const originalPath = `/media/${QUALITY_IMAGE_PATHS[0]}`;
+  const initialIds = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+  const ownedIds = new Set<number>();
+  const removedIds = new Set<number>();
+  const receipt: Record<string, unknown> = { status: 'pending', cleanup: {} };
+  evidence.heldCancellation = receipt;
+  const routePattern = 'https://pbs.twimg.com/**';
+  const deniedBody = 'fixture 503';
+  let phase: 'partial' | 'ordinary-held' | 'recovery-held' = 'partial';
+  let routeInstalled = false;
+  let activeNativeMark = nativeLoopback.mark();
+  type HeldRoute = {
+    request: Request;
+    released: boolean;
+    settled: boolean;
+    responseObserved: boolean;
+    aborted: string | null;
+    fulfillment: string;
+    release: () => void;
+  };
+  let heldRoute: HeldRoute | null = null;
+  const currentHeld = (): HeldRoute | null => heldRoute;
+  receipt.holdScope =
+    'Installed provider fetch held before an owned HTTP response; no application or download mock';
+
+  const ownedTrace: Array<Record<string, string | number | null>> = [];
+  let traceOverflow = 0;
+  const ownedSource = (rawUrl: string): URL | null => {
+    const url = new URL(rawUrl);
+    return url.origin === 'https://pbs.twimg.com' &&
+      IMAGE_URL_MARKERS.some((marker) => url.pathname.includes(marker)) &&
+      url.searchParams.get('name') === 'orig'
+      ? url
+      : null;
+  };
+  const trace = (entry: Record<string, string | number | null>): void => {
+    if (ownedTrace.length < 48) {
+      ownedTrace.push({ phase, ...entry });
+    } else {
+      traceOverflow += 1;
+    }
+  };
+  const onOwnedRequest = (request: Request): void => {
+    const url = ownedSource(request.url());
+    if (url) {
+      trace({
+        event: 'request',
+        url: url.href,
+        method: request.method(),
+        resourceType: request.resourceType(),
+      });
+    }
+  };
+  const onOwnedResponse = (response: Response): void => {
+    const held = currentHeld();
+    if (held?.request === response.request()) {
+      held.responseObserved = true;
+    }
+    const url = ownedSource(response.url());
+    if (url) {
+      trace({ event: 'response', url: url.href, status: response.status() });
+    }
+  };
+  const onOwnedRequestFailed = (request: Request): void => {
+    const held = currentHeld();
+    if (held?.request === request) {
+      held.aborted = request.failure()?.errorText ?? 'unknown';
+    }
+    const url = ownedSource(request.url());
+    if (url) {
+      trace({
+        event: 'requestfailed',
+        url: url.href,
+        failure: request.failure()?.errorText ?? null,
+      });
+    }
+  };
+  const captureSnapshot = async (label: string): Promise<void> => {
+    const observed = await newDownloads();
+    const panel = page.locator(
+      '[data-xeg-gallery-container] [data-gallery-element="bulk-download-outcome"]'
+    );
+    receipt[label] = {
+      phase,
+      ownedTrace: [...ownedTrace],
+      traceOverflow,
+      native: nativeLoopback.since(activeNativeMark),
+      nativeHeld: nativeLoopback.held(),
+      downloads: observed.map(
+        ({ id, url, filename, state, exists, bytesReceived, totalBytes }) => ({
+          id,
+          url,
+          filename: basename(filename),
+          state,
+          exists,
+          bytesReceived,
+          totalBytes,
+        })
+      ),
+      panel: (await panel.count()) ? ((await panel.textContent()) ?? '').slice(0, 1_500) : null,
+    };
+  };
+  const routeHandler = async (route: Route): Promise<void> => {
+    if (!['fetch', 'xhr'].includes(route.request().resourceType())) {
+      await route.fallback();
+      return;
+    }
+    const url = new URL(route.request().url());
+    const index = IMAGE_URL_MARKERS.findIndex((marker) => url.pathname.includes(marker));
+    assert(index >= 0, 'Held-recovery fixture fetched an unrelated image');
+    const image = images[index];
+    assert(image, 'Held-recovery fixture image is missing');
+    if (phase !== 'partial') {
+      assert.equal(index, 0, 'A working ZIP refetched a successful sibling');
+      assert.equal(url.pathname, originalPath, 'Held source identity changed');
+      assert.equal(currentHeld(), null, 'Only one exact source response may be held');
+      let resolveGate: () => void = () => undefined;
+      const gate = new Promise<void>((resolve) => {
+        resolveGate = resolve;
+      });
+      const held: HeldRoute = {
+        request: route.request(),
+        released: false,
+        settled: false,
+        responseObserved: false,
+        aborted: null,
+        fulfillment: 'pending',
+        release: () => {
+          held.released = true;
+          resolveGate();
+        },
+      };
+      heldRoute = held;
+      trace({
+        event: 'route',
+        url: url.href,
+        decision: 'held-before-response',
+        resourceType: held.request.resourceType(),
+      });
+      try {
+        await gate;
+        await route.fulfill({
+          status: 200,
+          contentType: 'image/jpeg',
+          body: image,
+          headers: {
+            'Access-Control-Allow-Origin': 'https://x.com',
+            'Access-Control-Allow-Credentials': 'true',
+            'Cache-Control': 'no-store',
+          },
+        });
+        held.fulfillment = 'fulfilled-after-release';
+      } catch (error) {
+        held.fulfillment = safeError(error);
+      } finally {
+        held.settled = true;
+      }
+      return;
+    }
+    const rejected = index === 0;
+    trace({
+      event: 'route',
+      url: url.href,
+      decision: rejected ? 'fulfill-503' : 'fulfill-200',
+      resourceType: route.request().resourceType(),
+    });
+    await route.fulfill({
+      status: rejected ? 503 : 200,
+      contentType: rejected ? 'text/plain' : 'image/jpeg',
+      body: rejected ? deniedBody : image,
+      headers: {
+        'Access-Control-Allow-Origin': 'https://x.com',
+        'Access-Control-Allow-Credentials': 'true',
+        'Cache-Control': 'no-store',
+      },
+    });
+  };
+  const newDownloads = async (): Promise<ChromeDownloadItem[]> =>
+    (await queryDownloads(extensionPage)).filter(({ id }) => !initialIds.has(id));
+  const unexpectedDownloads: Array<Record<string, unknown>> = [];
+  receipt.unexpectedDownloads = unexpectedDownloads;
+  const captureUnexpected = async (item: ChromeDownloadItem): Promise<void> => {
+    const observation: Record<string, unknown> = {
+      id: item.id,
+      url: item.url,
+      filename: basename(item.filename),
+      state: item.state,
+      exists: item.exists,
+    };
+    unexpectedDownloads.push(observation);
+    if (item.state !== 'complete' || !item.exists) {
+      return;
+    }
+    const expectedEntries = images.map((bytes, index) => ({
+      filename: expectedFilename(index),
+      bytes,
+    }));
+    const maximumBytes = expectedStoredZipBytes(expectedEntries);
+    const file = await stat(item.filename);
+    assert(file.isFile() && file.size > 0 && file.size <= maximumBytes);
+    const { bytes } = await readExactDownloadFile(item.filename, file.size);
+    const artifact = `installed-held-unexpected-${item.id}.zip`;
+    await writeFile(join(output, artifact), bytes);
+    Object.assign(observation, {
+      artifact,
+      bytes: bytes.length,
+      sha256: createHash('sha256').update(bytes).digest('hex'),
+    });
+    try {
+      observation.verified = verifyStoredZip(bytes, expectedEntries);
+    } catch (error) {
+      observation.verificationError = safeError(error);
+    }
+  };
+  const savePartial = async (label: string): Promise<void> => {
+    const before = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+    const gallery = page.locator('[data-xeg-gallery-container]');
+    const bulk = gallery.locator(
+      '[data-gallery-element="toolbar"] button[aria-label="Download 3 shown files as ZIP"]'
+    );
+    await bulk.click();
+    const download = await waitForDownload(extensionPage, before, `testuser_${TWEET_ID}.zip`);
+    assert.equal(dirname(resolve(download.filename)), resolve(downloads));
+    assert.deepEqual(
+      new Set((await newDownloads()).map(({ id }) => id)),
+      new Set([...ownedIds, download.id]),
+      'Initial partial ZIP allocated an unexpected native ID'
+    );
+    ownedIds.add(download.id);
+    const entries = [1, 2].map((index) => ({
+      filename: expectedFilename(index),
+      bytes: images[index]!,
+    }));
+    const { bytes, identity } = await readExactDownloadFile(
+      download.filename,
+      expectedStoredZipBytes(entries)
+    );
+    const verified = verifyStoredZip(bytes, entries);
+    await writeFile(join(output, `installed-${label}-partial.zip`), bytes);
+    await extensionPage.evaluate(async (id) => chrome.downloads.removeFile(id), download.id);
+    const absence = await waitForRemovedDownloadFile(download.filename, identity);
+    removedIds.add(download.id);
+    await assertVisibleBulkOutcome(page, {
+      included: 2,
+      omitted: 1,
+      handedOff: true,
+      reason: 'A media source request failed (HTTP 503)',
+      recovery: 'available',
+    });
+    receipt[label] = {
+      nativeId: download.id,
+      filename: basename(download.filename),
+      savedZipSha256: createHash('sha256').update(bytes).digest('hex'),
+      verified,
+      nativeFileRemoved: true,
+      absence,
+    };
+  };
+  let primaryError: unknown;
+  const cleanupErrors: unknown[] = [];
+  let invariantError: unknown;
+  let priorZoom: Awaited<ReturnType<typeof fixtureTabZoom>> | undefined;
+  const extensionId = new URL(extensionPage.url()).hostname;
+  try {
+    page.on('request', onOwnedRequest);
+    page.on('response', onOwnedResponse);
+    page.on('requestfailed', onOwnedRequestFailed);
+    await page.route(routePattern, routeHandler);
+    routeInstalled = true;
+    for (const mode of ['ordinary', 'recovery'] as const) {
+      // Reload only this owned fixture document to discard the previous gallery's
+      // blob cache. Both phases use the same known three-image source contract.
+      await page.setViewportSize(
+        mode === 'ordinary' ? { width: 401, height: 592 } : { width: 1280, height: 800 }
+      );
+      await page.goto(FIXTURE_URL);
+      await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+      if (mode === 'recovery') {
+        priorZoom = await fixtureTabZoom(
+          page.context(),
+          extensionId,
+          page,
+          null,
+          null,
+          FIXTURE_URL
+        );
+        const applied = await fixtureTabZoom(
+          page.context(),
+          extensionId,
+          page,
+          2,
+          null,
+          FIXTURE_URL
+        );
+        assert.equal(applied.observed, 2);
+        receipt.recoveryZoom = applied;
+      }
+      const trigger = page.locator('[data-testid="tweetPhoto"] img').first();
+      await trigger.scrollIntoViewIfNeeded();
+      await trigger.focus();
+      const beforeHost = await hostSnapshot(page, 0);
+      assert.equal(
+        beforeHost.activeElementAlt,
+        beforeHost.triggerAlt,
+        'Held fixture must capture the focused trigger baseline'
+      );
+      await trigger.click();
+      const gallery = page.locator('[data-xeg-gallery-container]');
+      await gallery.waitFor({ state: 'visible' });
+      phase = 'partial';
+      const consoleMark = consoleErrors.length;
+      await savePartial(mode);
+      if (mode === 'ordinary') {
+        const settings = gallery.locator('#settings-button');
+        await settings.click();
+        await gallery.locator('#settings-language-select').selectOption('ko');
+        await settings.click();
+        const result = gallery.locator('[data-gallery-element="bulk-download-outcome"]');
+        assert.match((await result.textContent()) ?? '', /ZIP 포함 2개, 제외 1개/u);
+        const recovery = result.getByRole('button', {
+          name: '누락 항목 1개를 별도 ZIP으로 다운로드',
+          exact: true,
+        });
+        await recovery.focus();
+        const recoveryGeometry = await uxControlGeometry(recovery, 'Korean narrow recovery action');
+        const summary = result.locator('summary');
+        await summary.focus();
+        await page.keyboard.press('Enter');
+        assert.equal(await result.locator('details').getAttribute('open'), '');
+        assert.match((await result.textContent()) ?? '', /HTTP 503/u);
+        await page.keyboard.press('Space');
+        assert.equal(await result.locator('details').getAttribute('open'), null);
+        const koreanScreenshot = 'installed-partial-ko-401x592.png';
+        await page.screenshot({ path: join(output, koreanScreenshot) });
+        receipt.koreanNarrow = {
+          screenshot: koreanScreenshot,
+          recoveryGeometry,
+          nativeDetailsEnterAndSpace: true,
+        };
+        await settings.click();
+        await gallery.locator('#settings-language-select').selectOption('en');
+        await settings.click();
+      }
+
+      const expectedHttpErrors = consoleErrors.slice(consoleMark).filter((record) => {
+        try {
+          return new URL(record.location).pathname === originalPath && /503/u.test(record.text);
+        } catch {
+          return false;
+        }
+      });
+      assert(expectedHttpErrors.length <= 2, 'Held fixture generated repeated 503 errors');
+      evidence.expectedConsoleErrors?.push(...expectedHttpErrors);
+      const nativeMark = nativeLoopback.mark();
+      activeNativeMark = nativeMark;
+      const heldConsoleMark = consoleErrors.length;
+      phase = mode === 'ordinary' ? 'ordinary-held' : 'recovery-held';
+      heldRoute = null;
+      if (mode === 'ordinary') {
+        await gallery
+          .locator(
+            '[data-gallery-element="toolbar"] button[aria-label="Download 3 shown files as ZIP"]'
+          )
+          .click();
+      } else {
+        await gallery
+          .getByRole('button', { name: 'Download 1 missing items as a separate ZIP' })
+          .click();
+      }
+      try {
+        await waitForValue(
+          () => {
+            const held = currentHeld();
+            return held &&
+              !held.released &&
+              !held.settled &&
+              !held.aborted &&
+              !held.responseObserved
+              ? held
+              : undefined;
+          },
+          `${mode} exact provider request to remain held before response`,
+          10_000
+        );
+      } catch (error) {
+        await captureSnapshot(`${mode}HoldTimeout`).catch((diagnosticError) => {
+          receipt[`${mode}HoldTimeoutError`] = safeError(diagnosticError);
+        });
+        throw error;
+      }
+      await assertVisibleBulkOutcome(page, {
+        included: 2,
+        omitted: 1,
+        handedOff: true,
+        recovery: mode === 'ordinary' ? 'ordinary-working' : 'working',
+      });
+      const screenshot = `installed-${mode}-held-zip.png`;
+      await page.screenshot({ path: join(output, screenshot) });
+      const panel = gallery.locator('[data-gallery-element="bulk-download-outcome"]');
+      await panel
+        .getByRole('button', {
+          name:
+            mode === 'ordinary'
+              ? 'Dismiss ZIP result'
+              : 'Cancel missing-item recovery and dismiss ZIP result',
+          exact: true,
+        })
+        .click();
+      await panel.waitFor({ state: 'detached' });
+      if (mode === 'ordinary') {
+        await delay(250);
+        assert.equal(currentHeld()?.aborted, null, 'Dismissing an old result aborted a new ZIP');
+        assert.equal(currentHeld()?.released, false);
+        assert.equal(currentHeld()?.settled, false);
+        await gallery
+          .locator('[data-gallery-element="toolbar"] button[aria-label="Close"]')
+          .click();
+      } else {
+        assert.equal(await gallery.isVisible(), true, 'Recovery cancellation closed the gallery');
+      }
+      const aborted = await waitForValue(
+        () => {
+          const held = currentHeld();
+          return held?.aborted === 'net::ERR_ABORTED' ? held : undefined;
+        },
+        `${mode} exact owned provider request to abort without replacement`,
+        10_000
+      );
+      assert.equal(
+        aborted.responseObserved,
+        false,
+        'Held request received a response before cancellation'
+      );
+      aborted.release();
+      await waitForValue(
+        () => (aborted.settled ? true : undefined),
+        'cancelled HTTP route handler to settle',
+        5_000
+      );
+      await delay(250);
+      assert.equal(
+        aborted.responseObserved,
+        false,
+        'Released cancelled source produced a late response'
+      );
+      const expectedAbortErrors = consoleErrors.slice(heldConsoleMark).filter((record) => {
+        try {
+          return (
+            new URL(record.location).pathname === originalPath &&
+            /net::ERR_ABORTED/u.test(record.text)
+          );
+        } catch {
+          return false;
+        }
+      });
+      assert(expectedAbortErrors.length <= 1, 'Held source produced repeated abort errors');
+      evidence.expectedConsoleErrors?.push(...expectedAbortErrors);
+      assert.deepEqual(
+        new Set((await newDownloads()).map(({ id }) => id)),
+        ownedIds,
+        'Cancelled work created a native replacement ZIP'
+      );
+      assert.equal(await panel.count(), 0, 'Late completion restored a dismissed ZIP result');
+      assert.equal(
+        ownedTrace.filter(
+          (entry) =>
+            entry.phase === phase && entry.event === 'request' && entry.resourceType === 'fetch'
+        ).length,
+        1,
+        'Cancelled source was replaced or a successful sibling was fetched again'
+      );
+
+      if (mode === 'recovery') {
+        await gallery
+          .locator('[data-gallery-element="toolbar"] button[aria-label="Close"]')
+          .click();
+      }
+      await gallery.waitFor({ state: 'detached' });
+      assert.deepEqual(await hostSnapshot(page, 0), beforeHost, 'Held session changed host state');
+      if (priorZoom) {
+        await fixtureTabZoom(
+          page.context(),
+          extensionId,
+          page,
+          priorZoom.previous,
+          priorZoom.settings,
+          FIXTURE_URL
+        );
+        priorZoom = undefined;
+      }
+      receipt[`${mode}Held`] = {
+        screenshot,
+        providerRequest: {
+          url: aborted.request.url(),
+          failure: aborted.aborted,
+          responseObserved: aborted.responseObserved,
+          routeSettled: aborted.settled,
+          fulfillment: aborted.fulfillment,
+        },
+        physicalNativeEvents: nativeLoopback.since(nativeMark),
+        nativeDownloadIds: [...ownedIds],
+        panelDismissed: true,
+        hostRestored: true,
+      };
+    }
+    assert.equal(traceOverflow, 0, 'Owned source trace exceeded its 48-event bound');
+    receipt.status = 'passed';
+  } catch (error) {
+    primaryError = error;
+    receipt.status = 'failed';
+    receipt.error = safeError(error);
+  } finally {
+    await captureSnapshot('beforeCleanup').catch((diagnosticError) => {
+      receipt.beforeCleanupError = safeError(diagnosticError);
+    });
+    const pending = currentHeld();
+    if (pending) {
+      try {
+        const gallery = page.locator('[data-xeg-gallery-container]');
+        if (await gallery.count()) {
+          await gallery
+            .locator('[data-gallery-element="toolbar"] button[aria-label="Close"]')
+            .click();
+          await gallery.waitFor({ state: 'detached' });
+        }
+      } catch (error) {
+        cleanupErrors.push(error);
+      }
+      if (!pending.released) {
+        pending.release();
+      }
+      await waitForValue(
+        () => (pending.settled ? true : undefined),
+        'held HTTP handler cleanup',
+        5_000
+      ).catch((error) => cleanupErrors.push(error));
+    }
+    if (priorZoom) {
+      await fixtureTabZoom(
+        page.context(),
+        extensionId,
+        page,
+        priorZoom.previous,
+        priorZoom.settings,
+        FIXTURE_URL
+      ).catch((error) => cleanupErrors.push(error));
+    }
+    page.off('request', onOwnedRequest);
+    page.off('response', onOwnedResponse);
+    page.off('requestfailed', onOwnedRequestFailed);
+    nativeLoopback.releaseHold();
+    if (routeInstalled) {
+      try {
+        await page.unroute(routePattern, routeHandler);
+        (receipt.cleanup as Record<string, unknown>).routeRemoved = true;
+      } catch (error) {
+        cleanupErrors.push(error);
+      }
+    }
+    try {
+      const gallery = page.locator('[data-xeg-gallery-container]');
+      if (await gallery.count()) {
+        await gallery
+          .locator('[data-gallery-element="toolbar"] button[aria-label="Close"]')
+          .click();
+        await gallery.waitFor({ state: 'detached' });
+      }
+    } catch (error) {
+      cleanupErrors.push(error);
+    }
+    try {
+      const observed = await newDownloads();
+      const unexpectedIds = observed.filter(({ id }) => !ownedIds.has(id)).map(({ id }) => id);
+      if (unexpectedIds.length > 0) {
+        invariantError = new Error(
+          `Held probe created unrecorded native download IDs: ${unexpectedIds.join(', ')}`
+        );
+        receipt.unexpectedNativeIds = unexpectedIds;
+      }
+      const cleanedIds: number[] = [];
+      for (const item of observed) {
+        try {
+          assert.equal(dirname(resolve(item.filename)), resolve(downloads));
+          const expectedName = `testuser_${TWEET_ID}.zip`;
+          assert(
+            [expectedName, `testuser_${TWEET_ID} (1).zip`, `testuser_${TWEET_ID} (2).zip`].includes(
+              basename(item.filename)
+            ),
+            'Held probe download filename escaped its bounded ZIP names'
+          );
+          if (!ownedIds.has(item.id)) {
+            await captureUnexpected(item).catch((error) => {
+              unexpectedDownloads.push({ id: item.id, captureError: safeError(error) });
+            });
+          }
+          let terminal = item;
+          if (terminal.state === 'in_progress') {
+            await extensionPage.evaluate(async (id) => chrome.downloads.cancel(id), item.id);
+            terminal = await waitForValue(
+              async () => {
+                const [current] = await extensionPage.evaluate(
+                  async (id) => chrome.downloads.search({ id }),
+                  item.id
+                );
+                return current?.state !== 'in_progress' ? current : undefined;
+              },
+              `held probe native download ${item.id} to stop`,
+              10_000
+            );
+          }
+          if (!removedIds.has(item.id) && terminal.exists) {
+            assert.equal(terminal.state, 'complete', 'Interrupted download retained a native file');
+            await extensionPage.evaluate(async (id) => chrome.downloads.removeFile(id), item.id);
+          }
+          const erased = await extensionPage.evaluate(
+            async (id) => chrome.downloads.erase({ id }),
+            item.id
+          );
+          assert.deepEqual(erased, [item.id]);
+          cleanedIds.push(item.id);
+        } catch (error) {
+          cleanupErrors.push(error);
+        }
+      }
+      (receipt.cleanup as Record<string, unknown>).downloadIdsErased = cleanedIds;
+    } catch (error) {
+      cleanupErrors.push(error);
+    }
+    if (cleanupErrors.length) {
+      receipt.status = 'failed';
+      receipt.cleanupErrors = cleanupErrors.map(safeError);
+    }
+  }
+  if (primaryError && cleanupErrors.length) {
+    throw new AggregateError(
+      [primaryError, ...(invariantError ? [invariantError] : []), ...cleanupErrors],
+      'Held ZIP probe and cleanup failed'
+    );
+  }
+  if (primaryError) {
+    throw primaryError;
+  }
+  if (invariantError && cleanupErrors.length) {
+    throw new AggregateError(
+      [invariantError, ...cleanupErrors],
+      'Held ZIP invariant and cleanup failed'
+    );
+  }
+  if (invariantError) {
+    throw invariantError;
+  }
+  if (cleanupErrors.length) {
+    throw new AggregateError(cleanupErrors, 'Held ZIP probe cleanup failed');
   }
 }
 
@@ -13841,7 +14738,25 @@ async function runFailedEntryRecoveryProbe({
       pageFetches,
       preSaveRetryProbe: true,
     });
-    assert(apiRequests.length > 0 && apiRequests.length <= 2, 'Classic API request count changed');
+    const nominalApiCount = apiRequests.length;
+    assert(
+      nominalApiCount > 0 && nominalApiCount <= 2,
+      'Nominal failed-entry campaign changed its bounded classic API count'
+    );
+    await runHeldMissingRecoveryCancellation({
+      downloads,
+      evidence,
+      extensionPage,
+      images,
+      nativeLoopback,
+      output,
+      page,
+      consoleErrors,
+    });
+    assert(
+      apiRequests.length - nominalApiCount > 0 && apiRequests.length - nominalApiCount <= 2,
+      'Held-cancellation sessions changed their bounded classic API count'
+    );
     assert.deepEqual(
       apiRequests.map(({ method, tweetId }) => ({ method, tweetId })),
       apiRequests.map(() => ({ method: 'GET', tweetId: TWEET_ID })),
@@ -14054,8 +14969,163 @@ async function runMediaDownloadRecoveryProbe({
       output,
       page,
     });
+    const recoveryNotifications = await notificationObserver.snapshot();
+    observations.notificationAfter = recoveryNotifications;
+    assert.deepEqual(
+      recoveryNotifications.activeIds.filter((id) => id.startsWith('xeg-')),
+      [],
+      'Suppressed recovery notifications must not be visible natively'
+    );
+    await notificationObserver.dispose();
+    notificationObserver = await observeNativeNotificationCreates(context, extensionId, true);
+    observations.sourceLimitNotificationBefore = await notificationObserver.snapshot();
+    await page.goto(FIXTURE_URL);
+    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+    await page.evaluate(() => {
+      const article = document.querySelector('article[data-route="classic"][data-phase="normal"]');
+      const tile = article?.querySelector<HTMLElement>('[data-testid="tweetPhoto"]');
+      const image = tile?.querySelector<HTMLImageElement>('img');
+      if (!article || !tile || !image) {
+        throw new Error('Owned article-less source fixture is missing');
+      }
+      const link = document.createElement('a');
+      link.href = '/testuser/status/1234567890123456789';
+      link.dataset.sourceLimitationTile = '';
+      link.append(tile);
+      article.after(link);
+      image.src = image.src.replace(/name=[^&]+/u, 'name=giant');
+    });
+    const tileImage = page.locator('[data-source-limitation-tile] [data-testid="tweetPhoto"] img');
+    await tileImage.scrollIntoViewIfNeeded();
+    await page.waitForFunction(() => {
+      const image = document.querySelector('[data-source-limitation-tile] img');
+      return image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0;
+    });
+    const tileApiStart = routes.apiResponses.length;
+    await tileImage.click();
+    const tileGallery = page.locator('[data-xeg-gallery-container]');
+    await tileGallery.waitFor({ state: 'visible' });
+    assert.equal(await tileGallery.locator('[data-gallery-element="item"]').count(), 1);
+    await page.waitForTimeout(5_250);
+    const tileSummary = await assertSourceDetails(tileGallery, 'visible-tile');
+    await assertSourceDetails(tileGallery, 'unverified-original');
+    const tileKnownDownloads = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+    await tileGallery
+      .locator('[data-gallery-element="toolbar"] button[aria-label="Download"]')
+      .click();
+    const singleFailure = tileGallery.locator('[data-gallery-element="gallery-failure-notice"]');
+    await singleFailure.waitFor({ state: 'visible' });
+    assert.match(
+      (await singleFailure.textContent()) ?? '',
+      /original image source could not be verified/iu
+    );
+    assert.match(
+      (await singleFailure.textContent()) ?? '',
+      /Check your browser.s downloads|return to the post on X/iu
+    );
+    assert.deepEqual(
+      (await queryDownloads(extensionPage)).filter(({ id }) => !tileKnownDownloads.has(id)),
+      [],
+      'Unverified source must not start a native single save'
+    );
+    await singleFailure.locator('button').click();
+    await singleFailure.waitFor({ state: 'detached' });
+    assert.deepEqual(
+      routes.apiResponses.slice(tileApiStart).map(({ status }) => status),
+      [403],
+      'Tile limitation must follow the real rejected provider route'
+    );
+    observations.x03TileSourceLimit = {
+      summary: tileSummary,
+      rejectedApi: true,
+      shown: 1,
+      singleFailure: 'visible cause and safe next action; no native download',
+    };
+    await page.keyboard.press('Escape');
+    await tileGallery.waitFor({ state: 'detached' });
+    const deniedVideoApi: string[] = [];
+    const videoApiPattern = /TweetResultByRestId/u;
+    const denyVideoApi = async (route: Route) => {
+      deniedVideoApi.push(route.request().url());
+      await route.fulfill({ status: 403, contentType: 'application/json', body: '{}' });
+    };
+    await page.route(videoApiPattern, denyVideoApi);
+    try {
+      await page.goto(`https://x.com/rapid_a/status/${RAPID_CLICK_A}`);
+      await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+      await page.evaluate(() => {
+        const article = document.querySelector('article[data-rapid="a"]');
+        const tile = article?.querySelector<HTMLElement>('[data-testid="videoPlayer"]');
+        if (!article || !tile) {
+          throw new Error('Owned article-less video fixture is missing');
+        }
+        const link = document.createElement('a');
+        link.href = '/rapid_a/status/8888888888888888881';
+        link.dataset.observedVideoTile = '';
+        link.append(tile);
+        article.after(link);
+      });
+      const videoTile = page.locator('[data-observed-video-tile] video');
+      await videoTile.scrollIntoViewIfNeeded();
+      await videoTile.click();
+      const videoGallery = page.locator('[data-xeg-gallery-container]');
+      await videoGallery.waitFor({ state: 'visible' });
+      assert.equal(await videoGallery.locator('[data-gallery-element="item"]').count(), 1);
+      await page.waitForTimeout(5_250);
+      const observedSummary = await assertSourceDetails(videoGallery, 'observed');
+      assert.equal(
+        deniedVideoApi.length,
+        1,
+        'Observed video must follow one denied provider route'
+      );
+      observations.x03ObservedVideo = { summary: observedSummary, deniedApi: [...deniedVideoApi] };
+      await page.keyboard.press('Escape');
+      await videoGallery.waitFor({ state: 'detached' });
+      await page.goto(`https://x.com/rapid_a/status/${RAPID_CLICK_A}`);
+      await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+      const mixedImage = page.locator('article[data-rapid="a"] [data-testid="tweetPhoto"] img');
+      assert.equal(await mixedImage.count(), 1, 'Mixed fixture must retain its one owned photo');
+      assert.equal(
+        new URL((await mixedImage.getAttribute('src')) ?? '').pathname,
+        '/media/QQuoteOnePhoto.jpg'
+      );
+      await page.locator('article[data-rapid="a"] video').click();
+      const mixedGallery = page.locator('[data-xeg-gallery-container]');
+      await mixedGallery.waitFor({ state: 'visible' });
+      assert.equal(await mixedGallery.locator('[data-gallery-element="item"]').count(), 2);
+      const mixedSummary = await assertSourceDetails(mixedGallery, 'observed');
+      assert(!mixedSummary?.includes('recovered from this tile only'));
+      const videoPosition = Number(
+        await mixedGallery.locator('#xeg-toolbar-counter').getAttribute('data-position')
+      );
+      const towardImage = videoPosition === 1 ? 'Next' : 'Previous';
+      await mixedGallery.locator(`button[aria-label="${towardImage}"]`).click();
+      await assertQuotedSelection(page, {
+        position: videoPosition === 1 ? 2 : 1,
+        total: 2,
+        type: 'image',
+        path: '/media/QQuoteOnePhoto.jpg',
+      });
+      await assertSourceDetails(mixedGallery, 'absent');
+      await mixedGallery
+        .locator(`button[aria-label="${towardImage === 'Next' ? 'Previous' : 'Next'}"]`)
+        .click();
+      await assertSourceDetails(mixedGallery, 'observed');
+      observations.x03MixedSaveQuality = {
+        observedVideoPosition: videoPosition,
+        verifiedImageHasNoWarning: true,
+        displayedItemDetailsUpdated: true,
+        noFalseTileScope: true,
+        deniedApi: deniedVideoApi.slice(1),
+      };
+      assert.equal(deniedVideoApi.length, 2, 'Each video fixture must make one provider request');
+      await page.keyboard.press('Escape');
+      await mixedGallery.waitFor({ state: 'detached' });
+    } finally {
+      await page.unroute(videoApiPattern, denyVideoApi);
+    }
     const notificationAfter = await notificationObserver.snapshot();
-    observations.notificationAfter = notificationAfter;
+    observations.sourceLimitNotificationAfter = notificationAfter;
     assert.deepEqual(
       notificationAfter.activeIds.filter((id) => id.startsWith('xeg-')),
       [],
@@ -14236,6 +15306,529 @@ async function experienceSelectedGeometry(page: Page) {
   });
 }
 
+async function uxControlGeometry(control: Locator, label: string) {
+  const geometry = await control.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    const hit = document.elementFromPoint(x, y);
+    return {
+      rect: rect.toJSON(),
+      withinViewport:
+        rect.left >= 0 && rect.top >= 0 && rect.right <= innerWidth && rect.bottom <= innerHeight,
+      hit: !!hit && element.contains(hit),
+    };
+  });
+  assert(
+    // DOMRect's floating-point transform can round an exact 44px CSS box by < 0.001px.
+    geometry.rect.width >= 44 - 0.001 &&
+      geometry.rect.height >= 44 - 0.001 &&
+      geometry.withinViewport &&
+      geometry.hit,
+    `${label} must be a visible, hit-tested 44px control: ${JSON.stringify(geometry)}`
+  );
+  return geometry;
+}
+
+async function uxOwnedWheel(page: Page, panel: Locator, media: Locator, label: string) {
+  assert.equal(await panel.count(), 1, `${label} detached before wheel input`);
+  await panel.evaluate((element) => {
+    element.scrollTop = 0;
+  });
+  const before = await Promise.all([
+    panel.evaluate((element) => ({
+      scrollTop: element.scrollTop,
+      scrollHeight: element.scrollHeight,
+      clientHeight: element.clientHeight,
+    })),
+    media.evaluate((element) => element.scrollTop),
+  ]);
+  const overflow = before[0].scrollHeight - before[0].clientHeight;
+  if (overflow <= 2) {
+    return { overflow: false, before: before[0], mediaBefore: before[1] };
+  }
+  const bounds = await panel.boundingBox();
+  assert(bounds, `${label} must have painted bounds for real wheel input`);
+  await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+  await page.mouse.wheel(0, Math.min(240, overflow));
+  await page.waitForTimeout(200);
+  const after = await Promise.all([
+    panel.evaluate((element) => element.scrollTop),
+    media.evaluate((element) => element.scrollTop),
+  ]);
+  assert(after[0] > before[0].scrollTop + 1, `${label} did not own its real wheel scroll`);
+  assert(
+    Math.abs(after[1] - before[1]) < 1,
+    `${label} wheel input unexpectedly scrolled gallery media`
+  );
+  return {
+    overflow: true,
+    before: before[0],
+    after: after[0],
+    mediaBefore: before[1],
+    mediaAfter: after[1],
+  };
+}
+
+/** A bounded installed-Edge readback of opened detail panels and the terminal video exit. */
+async function runUxDetailsProbe({
+  context,
+  extensionId,
+  nativeLoopback,
+  output,
+  root,
+  images,
+  displayImages,
+}: {
+  context: BrowserContext;
+  extensionId: string;
+  nativeLoopback: NativeLoopback;
+  output: string;
+  root: string;
+  images: ImageFixtures;
+  displayImages: ImageFixtures;
+}) {
+  const observations: Record<string, unknown> = { cases: [] as Record<string, unknown>[] };
+  const cases = observations.cases as Record<string, unknown>[];
+  const failures: Error[] = [];
+  const cleanupErrors: Error[] = [];
+  const pageUrl = `https://x.com/rapid_a/status/${RAPID_CLICK_A}`;
+  const videoUrl =
+    'https://video.twimg.com/ext_tw_video/8888888888888888881/pu/vid/320x180/quote-one.mp4';
+  const apiPattern = /TweetResultByRestId/u;
+  let routes: Awaited<ReturnType<typeof installFixtureRoutes>> | undefined;
+  let extensionPage: Page | undefined;
+  let notificationObserver:
+    | Awaited<ReturnType<typeof observeNativeNotificationCreates>>
+    | undefined;
+  let primaryError: unknown;
+
+  const phase = async (
+    name: string,
+    action: (page: Page, receipt: Record<string, unknown>) => Promise<void>
+  ) => {
+    const receipt: Record<string, unknown> = {
+      name,
+      status: 'pending',
+      pageErrors: [] as string[],
+      consoleErrors: [] as Array<{ location: string; text: string }>,
+      observationOverflow: false,
+    };
+    cases.push(receipt);
+    let page: Page | undefined;
+    try {
+      page = await context.newPage();
+      page.on('pageerror', (error) => {
+        const errors = receipt.pageErrors as string[];
+        if (errors.length < 8) {
+          errors.push(error.message);
+        } else {
+          receipt.observationOverflow = true;
+        }
+      });
+      page.on('console', (message) => {
+        if (message.type() !== 'error') {
+          return;
+        }
+        const errors = receipt.consoleErrors as Array<{ location: string; text: string }>;
+        if (errors.length < 16) {
+          errors.push({
+            location: message.location().url.slice(0, 240),
+            text: message.text().slice(0, 240),
+          });
+        } else {
+          receipt.observationOverflow = true;
+        }
+      });
+      await action(page, receipt);
+      assert.equal(receipt.observationOverflow, false, `${name} observation overflow`);
+      assert.deepEqual(receipt.pageErrors, [], `${name} page errors`);
+      const unexpectedConsoleErrors = (
+        receipt.consoleErrors as Array<{
+          location: string;
+          text: string;
+        }>
+      ).filter(({ location, text }) => {
+        const expectedApi =
+          location.startsWith('https://x.com/i/api/graphql/') &&
+          location.includes('/TweetResultByRestId') &&
+          /403/u.test(text);
+        const expectedVideo =
+          name === 'terminal-video-exit' && location.startsWith(videoUrl) && /503/u.test(text);
+        return !expectedApi && !expectedVideo;
+      });
+      receipt.unexpectedConsoleErrors = unexpectedConsoleErrors;
+      assert.deepEqual(unexpectedConsoleErrors, [], `${name} unexpected console errors`);
+      receipt.status = 'passed';
+    } catch (error) {
+      receipt.status = 'failed';
+      receipt.error = safeError(error);
+      failures.push(new Error(`${name}: ${safeError(error)}`));
+      if (page) {
+        const screenshot = `ux-details-${name}-failure.png`;
+        await page.screenshot({ path: join(output, screenshot) }).then(
+          () => {
+            receipt.failureScreenshot = screenshot;
+          },
+          (captureError) => {
+            receipt.screenshotError = safeError(captureError);
+          }
+        );
+      }
+    } finally {
+      if (page) {
+        await page.close().catch((error: unknown) => {
+          receipt.cleanupError = safeError(error);
+          receipt.status = 'failed';
+          cleanupErrors.push(new Error(`${name} page: ${safeError(error)}`));
+        });
+      }
+    }
+  };
+
+  const denyProvider =
+    (requests: Array<{ tweetId: string | null; url: string }>) => async (route: Route) => {
+      const url = new URL(route.request().url());
+      let variables: unknown;
+      try {
+        variables = JSON.parse(url.searchParams.get('variables') ?? '{}');
+      } catch {
+        variables = null;
+      }
+      const tweetId =
+        variables &&
+        typeof variables === 'object' &&
+        'tweetId' in variables &&
+        typeof variables.tweetId === 'string'
+          ? variables.tweetId
+          : null;
+      assert(requests.length < 4, 'UX details provider request budget exceeded');
+      requests.push({ tweetId, url: url.pathname });
+      await route.fulfill({ status: 403, contentType: 'application/json', body: '{}' });
+    };
+
+  const panelCase = async (
+    page: Page,
+    receipt: Record<string, unknown>,
+    locale: 'ko' | 'en',
+    zoom: boolean
+  ) => {
+    const api: Array<{ tweetId: string | null; url: string }> = [];
+    receipt.api = api;
+    await page.route(apiPattern, denyProvider(api));
+    await page.setViewportSize(zoom ? { width: 1280, height: 800 } : { width: 401, height: 592 });
+    await page.goto(pageUrl);
+    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+    const article = page.locator('article[data-rapid="a"]');
+    assert.equal(await article.locator('[data-testid="tweetPhoto"] img').count(), 1);
+    assert.equal(await article.locator('[data-testid="videoPlayer"] video').count(), 1);
+    await article.locator('video').click();
+    const gallery = page.locator('[data-xeg-gallery-container]');
+    await gallery.waitFor({ state: 'visible' });
+    assert.equal(await gallery.locator('[data-gallery-element="item"]').count(), 2);
+    assert.deepEqual(
+      api.map(({ tweetId }) => tweetId),
+      [RAPID_CLICK_A]
+    );
+    const panelReceipt: Record<string, unknown> = { locale, api: [...api] };
+    receipt.panel = panelReceipt;
+    const selectionSnapshots: Array<Record<string, unknown>> = [];
+    panelReceipt.selectionSnapshots = selectionSnapshots;
+    const captureSelection = async (stage: string) => {
+      const state = await page.evaluate(() => {
+        const toolbar = document.querySelector<HTMLElement>('[data-gallery-element="toolbar"]');
+        const details = document.querySelector<HTMLElement>(
+          '[data-gallery-element="source-details"]'
+        );
+        const items = document.querySelector<HTMLElement>('[data-gallery-element="items"]');
+        const active = document.activeElement;
+        const current = toolbar?.getAttribute('data-current-index') ?? null;
+        const focused = toolbar?.getAttribute('data-focused-index') ?? null;
+        return {
+          current,
+          focused,
+          displayed: focused ?? current,
+          counterPosition:
+            document.querySelector('#xeg-toolbar-counter')?.getAttribute('data-position') ?? null,
+          detailsMediaId: details?.getAttribute('data-media-id') ?? null,
+          detailsOpen: details?.hasAttribute('open') ?? null,
+          mediaScrollTop: items?.scrollTop ?? null,
+          mediaScrollHeight: items?.scrollHeight ?? null,
+          mediaClientHeight: items?.clientHeight ?? null,
+          activeElement: {
+            tag: active?.tagName ?? null,
+            id: active instanceof HTMLElement ? active.id : null,
+            label: active?.getAttribute('aria-label') ?? null,
+            itemIndex:
+              active instanceof Element
+                ? (active.closest('[data-gallery-element="item"]')?.getAttribute('data-index') ??
+                  null)
+                : null,
+          },
+          viewport: { width: innerWidth, height: innerHeight },
+        };
+      });
+      selectionSnapshots.push({ stage, ...state });
+      return state;
+    };
+    const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
+    const settingsButton = toolbar.locator('#settings-button');
+    await settingsButton.click();
+    const language = gallery.locator('#settings-language-select');
+    await language.waitFor({ state: 'visible' });
+    await language.selectOption(locale);
+    assert.equal(await language.inputValue(), locale);
+    await settingsButton.click();
+    let restoreZoom: Awaited<ReturnType<typeof fixtureTabZoom>> | undefined;
+    try {
+      if (zoom) {
+        restoreZoom = await fixtureTabZoom(context, extensionId, page, null, null, pageUrl);
+        const applied = await fixtureTabZoom(context, extensionId, page, 2, null, pageUrl);
+        assert.equal(applied.observed, 2);
+        await page.waitForFunction(() => innerWidth < 1280);
+        receipt.zoom = { prior: restoreZoom, applied };
+      }
+      panelReceipt.viewport = await page.evaluate(() => ({
+        width: innerWidth,
+        height: innerHeight,
+      }));
+      panelReceipt.browserZoom = zoom ? 2 : 1;
+      await captureSelection('after-zoom');
+      const selected = await toolbar.getAttribute('data-current-index');
+      assert.equal(
+        selected,
+        await gallery
+          .locator('[data-gallery-element="item"]:has(video)')
+          .getAttribute('data-index'),
+        'Opened detail cases must keep the observed video selected'
+      );
+      const details = gallery.locator('[data-gallery-element="source-details"]');
+      await details.waitFor({ state: 'visible' });
+      const mediaId = await details.getAttribute('data-media-id');
+      panelReceipt.selected = selected;
+      panelReceipt.mediaId = mediaId;
+      const requireVideoDetails = async (stage: string) => {
+        const state = await captureSelection(stage);
+        assert(
+          state.current === selected &&
+            state.displayed === selected &&
+            state.detailsMediaId === mediaId,
+          `${locale} source detail selection drift at ${stage}: ` +
+            JSON.stringify(selectionSnapshots)
+        );
+      };
+      const summary = details.locator('summary');
+      const expectedSummary =
+        locale === 'ko' ? /동영상 저장 화질을 확인하지 못함/u : /Video save quality is unverified/u;
+      assert.match((await summary.textContent()) ?? '', expectedSummary);
+      await requireVideoDetails('before-focus');
+      await summary.focus();
+      await requireVideoDetails('after-focus');
+      await page.keyboard.press('Enter');
+      await requireVideoDetails('after-Enter');
+      assert.equal(await details.getAttribute('open'), '');
+      const summaryGeometry = await uxControlGeometry(summary, `${locale} source summary`);
+      await requireVideoDetails('after-geometry');
+      const items = gallery.locator('[data-gallery-element="items"]');
+      const sourceWheel = await uxOwnedWheel(page, details, items, `${locale} source details`);
+      panelReceipt.sourceWheel = sourceWheel;
+      await summary.focus();
+      await page.keyboard.press('Space');
+      assert.equal(await details.getAttribute('open'), null);
+      const helpButton = toolbar.locator('#keyboard-help-button');
+      const helpPanel = gallery.locator('[data-gallery-element="keyboard-help-panel"]');
+      await helpButton.focus();
+      await page.keyboard.press('Space');
+      await helpPanel.waitFor({ state: 'visible' });
+      assert.equal(await helpButton.getAttribute('aria-expanded'), 'true');
+      const helpClose = helpPanel.locator('button').first();
+      const closeGeometry = await uxControlGeometry(helpClose, `${locale} help close`);
+      const helpWheel = await uxOwnedWheel(page, helpPanel, items, `${locale} keyboard help`);
+      panelReceipt.helpWheel = helpWheel;
+      await uxControlGeometry(helpClose, `${locale} help close after scroll`);
+      const screenshot = zoom ? 'ux-details-en-zoom200.png' : 'ux-details-ko-401x592.png';
+      await page.mouse.move(0, 0);
+      await page.screenshot({ path: join(output, screenshot) });
+      panelReceipt.screenshot = screenshot;
+      await helpClose.focus();
+      await page.keyboard.press('Enter');
+      await helpPanel.waitFor({ state: 'hidden' });
+      await helpButton.focus();
+      await page.keyboard.press('Enter');
+      await helpPanel.waitFor({ state: 'visible' });
+      await helpClose.focus();
+      await page.keyboard.press('Escape');
+      await helpPanel.waitFor({ state: 'hidden' });
+      assert.equal(
+        await helpButton.evaluate((element) => document.activeElement === element),
+        true
+      );
+      assert(await gallery.isVisible(), 'Nested help Escape closed the gallery');
+      assert.equal(await toolbar.getAttribute('data-current-index'), selected);
+      assert.equal(await details.getAttribute('data-media-id'), mediaId);
+      Object.assign(panelReceipt, {
+        summary: (await summary.textContent())?.trim(),
+        summaryGeometry,
+        closeGeometry,
+        nativeEnterAndSpace: true,
+        nestedEscapeRestoredFocus: true,
+      });
+    } finally {
+      if (restoreZoom) {
+        await fixtureTabZoom(
+          context,
+          extensionId,
+          page,
+          restoreZoom.previous,
+          restoreZoom.settings,
+          pageUrl
+        );
+      }
+    }
+  };
+
+  const terminalCase = async (page: Page, receipt: Record<string, unknown>) => {
+    const api: Array<{ tweetId: string | null; url: string }> = [];
+    const rejectedVideo: Array<{ path: string; method: string; status: number }> = [];
+    receipt.api = api;
+    receipt.videoFailures = rejectedVideo;
+    await page.route(apiPattern, denyProvider(api));
+    await page.route(videoUrl, async (route) => {
+      assert(rejectedVideo.length < 8, 'Terminal video failure request budget exceeded');
+      rejectedVideo.push({
+        path: new URL(route.request().url()).pathname,
+        method: route.request().method(),
+        status: 503,
+      });
+      await route.fulfill({
+        status: 503,
+        contentType: 'video/mp4',
+        body: '',
+        headers: { 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': 'https://x.com' },
+      });
+    });
+    await page.goto(pageUrl);
+    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+    const article = page.locator('article[data-rapid="a"]');
+    assert.equal(await article.locator('[data-testid="tweetPhoto"] img').count(), 1);
+    assert.equal(await article.locator('[data-testid="videoPlayer"] video').count(), 1);
+    await article.locator('[data-testid="tweetPhoto"] img').click();
+    const gallery = page.locator('[data-xeg-gallery-container]');
+    await gallery.waitFor({ state: 'visible' });
+    assert.equal(await gallery.locator('[data-gallery-element="item"]').count(), 2);
+    assert.deepEqual(
+      api.map(({ tweetId }) => tweetId),
+      [RAPID_CLICK_A]
+    );
+    const videoItem = gallery.locator('[data-gallery-element="item"]:has(video)');
+    const videoIndex = await videoItem.getAttribute('data-index');
+    assert(videoIndex !== null && Number.isSafeInteger(Number(videoIndex)));
+    await gallery.locator('button[aria-label="Next"]').click();
+    await waitForValue(
+      async () =>
+        (await gallery.locator('#xeg-toolbar-counter').getAttribute('data-position')) ===
+        String(Number(videoIndex) + 1)
+          ? true
+          : undefined,
+      'terminal video selected after native Next action',
+      3_000
+    );
+    const alert = videoItem.locator('[role="alert"]');
+    await alert.waitFor({ state: 'visible', timeout: 15_000 });
+    assert(rejectedVideo.length > 0, 'Terminal alert lacked a genuine owned HTTP 503');
+    const original = alert.locator('a[href]');
+    assert.equal(await original.count(), 1, 'Terminal video needs one original-post exit');
+    assert.equal(await original.getAttribute('href'), pageUrl);
+    assert.equal(await original.getAttribute('target'), '_blank');
+    await uxControlGeometry(original, 'terminal original-post exit');
+    const screenshot = 'ux-details-terminal-video.png';
+    await page.screenshot({ path: join(output, screenshot) });
+    const terminalReceipt: Record<string, unknown> = {
+      selectedVideoIndex: videoIndex,
+      source: videoUrl,
+      rejectedVideo,
+      originalPostUrl: await original.getAttribute('href'),
+      screenshot,
+    };
+    receipt.terminal = terminalReceipt;
+    let popup: Page | undefined;
+    try {
+      await original.focus();
+      const [openedPopup] = await Promise.all([
+        context.waitForEvent('page', { timeout: 10_000 }),
+        page.keyboard.press('Enter'),
+      ]);
+      popup = openedPopup;
+      await openedPopup.waitForLoadState('domcontentloaded');
+      assert.equal(openedPopup.url(), pageUrl, 'Terminal exit must open the canonical owned post');
+      assert.equal(page.url(), pageUrl, 'Terminal exit must not navigate the gallery tab');
+      terminalReceipt.popupUrl = openedPopup.url();
+    } finally {
+      if (popup) {
+        await popup.close();
+        receipt.popupClosed = true;
+      }
+    }
+  };
+
+  try {
+    routes = await installFixtureRoutes(context, root, images, displayImages);
+    nativeLoopback.setPayloads(images, routes.videoPayloads);
+    extensionPage = await context.newPage();
+    await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
+    notificationObserver = await observeNativeNotificationCreates(context, extensionId, true);
+    observations.notificationBefore = await notificationObserver.snapshot();
+    await phase('ko-401x592', (page, receipt) => panelCase(page, receipt, 'ko', false));
+    await phase('en-zoom200', (page, receipt) => panelCase(page, receipt, 'en', true));
+    await phase('terminal-video-exit', terminalCase);
+    const after = await notificationObserver.snapshot();
+    observations.notificationAfter = after;
+    const before = observations.notificationBefore as typeof after;
+    assert.deepEqual(
+      after.activeIds.filter((id) => id.startsWith('xeg-') && !before.activeIds.includes(id)),
+      [],
+      'Suppressed UX details notifications became visible natively'
+    );
+    if (failures.length) {
+      throw new AggregateError(failures, 'UX details cases failed');
+    }
+  } catch (error) {
+    primaryError = error;
+  } finally {
+    for (const [label, close] of [
+      ['notification observer', () => notificationObserver?.dispose()],
+      ['fixture routes', () => routes?.remove()],
+      ['extension page', () => extensionPage?.close()],
+    ] as const) {
+      try {
+        await close();
+      } catch (error) {
+        cleanupErrors.push(new Error(`${label}: ${safeError(error)}`));
+      }
+    }
+    await writeFile(
+      join(output, 'ux-details.json'),
+      JSON.stringify(
+        {
+          status: primaryError || cleanupErrors.length ? 'failed' : 'passed',
+          observations,
+          cleanupErrors: cleanupErrors.map(safeError),
+          error: primaryError ? safeError(primaryError) : null,
+        },
+        null,
+        2
+      )
+    );
+  }
+  if (primaryError || cleanupErrors.length) {
+    throw new AggregateError(
+      [...(primaryError ? [primaryError] : []), ...cleanupErrors],
+      'UX details probe or cleanup failed'
+    );
+  }
+  return { status: 'passed', ...observations };
+}
+
 async function runGalleryExperienceProbe({
   context,
   downloads,
@@ -14269,6 +15862,7 @@ async function runGalleryExperienceProbe({
   const extensionPage = await context.newPage();
   const page = await context.newPage();
   const phases: Record<string, { status: string; observations?: unknown; error?: string }> = {};
+  const documentationScreenshots: Record<string, unknown> = {};
   const pageErrors: string[] = [];
   const cleanupErrors: string[] = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
@@ -14313,8 +15907,66 @@ async function runGalleryExperienceProbe({
       const gallery = page.locator('[data-xeg-gallery-container]');
       await gallery.waitFor({ state: 'visible' });
       const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
+      assert.equal(
+        await gallery.locator('[data-xeg-settings-unsaved-indicator]').count(),
+        0,
+        'Healthy installed settings must not show an unsaved cue'
+      );
       const initial = await experienceToolbarState(toolbar);
       partial.initial = initial;
+      const helpButton = toolbar.locator('#keyboard-help-button');
+      const helpPanel = gallery.locator('[data-gallery-element="keyboard-help-panel"]');
+      assert.equal(await helpButton.getAttribute('aria-expanded'), 'false');
+      await helpButton.click();
+      await helpPanel.waitFor({ state: 'visible' });
+      assert.equal(await helpButton.getAttribute('aria-expanded'), 'true');
+      assert.match((await helpPanel.textContent()) ?? '', /Escape|←|→|Arrow/u);
+      await helpPanel.locator('button').first().focus();
+      await page.keyboard.press('Escape');
+      await helpPanel.waitFor({ state: 'hidden' });
+      assert.equal(await helpButton.getAttribute('aria-expanded'), 'false');
+      assert.equal(
+        await helpButton.evaluate((element) => document.activeElement === element),
+        true
+      );
+      assert(await gallery.isVisible(), 'Help Escape closed the gallery');
+      await toolbar.focus();
+      await page.keyboard.press('?');
+      await helpPanel.waitFor({ state: 'visible' });
+      await helpPanel.locator('button').first().click();
+      await helpPanel.waitFor({ state: 'hidden' });
+      await helpButton.focus();
+      await page.keyboard.press('Space');
+      await helpPanel.waitFor({ state: 'visible' });
+      await page.keyboard.press('Escape');
+      await helpPanel.waitFor({ state: 'hidden' });
+      await toolbar.evaluate(() => {
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
+      });
+      await page.mouse.move(0, 0);
+      await page.waitForTimeout(500);
+      const overviewZoom = await fixtureTabZoom(
+        context,
+        extensionId,
+        page,
+        null,
+        null,
+        EXPERIENCE_FIXTURE_URL
+      );
+      documentationScreenshots.overview = {
+        file: 'gallery-overview.png',
+        viewport: page.viewportSize(),
+        zoom: overviewZoom.observed,
+      };
+      await page.screenshot({ path: join(output, 'gallery-overview.png') });
+      partial.help = {
+        pointer: true,
+        eligibleShortcut: true,
+        nativeSpace: true,
+        nestedEscape: true,
+      };
       await page.screenshot({ path: join(output, 'experience-x02-toolbar-initial.png') });
       await toolbar.evaluate((element) => {
         if (element.contains(document.activeElement)) {
@@ -14361,6 +16013,7 @@ async function runGalleryExperienceProbe({
         'Original',
         'Download',
         'Download 3 shown files as ZIP',
+        'Keyboard help',
         'Open Settings',
         'Close',
       ];
@@ -14405,6 +16058,12 @@ async function runGalleryExperienceProbe({
       const select = gallery.getByLabel('Video clicks');
       await select.waitFor({ state: 'visible' });
       await select.click();
+      await page.keyboard.press('?');
+      assert.equal(
+        await gallery.locator('[data-gallery-element="keyboard-help-panel"]').isVisible(),
+        false,
+        'Native Settings select must keep its own keyboard input'
+      );
       await page.mouse.move(640, 350);
       const selectAfterPointerAway = await select.evaluate((element) => ({
         focused: document.activeElement === element,
@@ -14535,6 +16194,7 @@ async function runGalleryExperienceProbe({
       await gallery.waitFor({ state: 'detached' });
       return {
         initial,
+        help: partial.help,
         hidden,
         hiddenAfterPointer,
         focused,
@@ -14748,6 +16408,24 @@ async function runGalleryExperienceProbe({
           if (fit === 'Fit Window') {
             const controls = await experienceControlGeometry(toolbar);
             const screenshot = `experience-x06-narrow-${EXPERIENCE_IMAGES[index]?.label.toLowerCase()}.png`;
+            if (index === 0) {
+              await page.mouse.move(0, 0);
+              await page.waitForTimeout(500);
+              const constrainedZoom = await fixtureTabZoom(
+                context,
+                extensionId,
+                page,
+                null,
+                null,
+                EXPERIENCE_FIXTURE_URL
+              );
+              documentationScreenshots.constrained = {
+                file: 'gallery-constrained.png',
+                viewport: page.viewportSize(),
+                zoom: constrainedZoom.observed,
+              };
+              await page.screenshot({ path: join(output, 'gallery-constrained.png') });
+            }
             await page.screenshot({
               path: join(output, screenshot),
             });
@@ -14794,7 +16472,42 @@ async function runGalleryExperienceProbe({
         element.scrollTop = element.scrollHeight;
         return { before, after: element.scrollTop, overflow: getComputedStyle(element).overflowY };
       });
+      const boundedVariants: unknown[] = [];
+      for (const theme of ['dark', 'light'] as const) {
+        await settingsPanel.locator('#settings-theme-select').selectOption(theme);
+        assert.equal(await gallery.getAttribute('data-theme'), theme);
+        const controls = await experienceControlGeometry(toolbar);
+        assert(controls.controls.every(({ hit, withinViewport }) => hit && withinViewport));
+        boundedVariants.push({ theme, controls });
+      }
+      for (const language of ['ko', 'ar'] as const) {
+        await settingsPanel.locator('#settings-language-select').selectOption(language);
+        const controls = await experienceControlGeometry(toolbar);
+        assert(controls.controls.every(({ hit, withinViewport }) => hit && withinViewport));
+        boundedVariants.push({ language, controls });
+      }
+      await settingsPanel.locator('#settings-language-select').selectOption('en');
+      await settingsPanel.locator('#settings-theme-select').selectOption('auto');
       await toolbar.locator('#settings-button').click();
+      await page.emulateMedia({ forcedColors: 'active', reducedMotion: 'reduce' });
+      try {
+        const controls = await experienceControlGeometry(toolbar);
+        assert(controls.controls.every(({ hit, withinViewport }) => hit && withinViewport));
+        boundedVariants.push({ forcedColors: true, reducedMotion: true, controls });
+      } finally {
+        await page.emulateMedia({ forcedColors: 'none', reducedMotion: 'no-preference' });
+      }
+      partial.boundedVariants = boundedVariants;
+      await page.setViewportSize({ width: 401, height: 360 });
+      const shortViewport = await experienceControlGeometry(toolbar);
+      assert(
+        shortViewport.controls.every(
+          ({ rect, hit, withinViewport }) =>
+            rect.width >= 44 && rect.height >= 44 && hit && withinViewport
+        ),
+        'Short 401x360 viewport clipped a toolbar action'
+      );
+      partial.shortViewport = shortViewport;
       await page.setViewportSize({ width: 1280, height: 800 });
       await page.waitForFunction(() => {
         const toolbar = document.querySelector<HTMLElement>('[data-gallery-element="toolbar"]');
@@ -14870,6 +16583,8 @@ async function runGalleryExperienceProbe({
         touchTargets,
         tweetPanelScroll,
         settingsPanelScroll,
+        boundedVariants,
+        shortViewport,
         desktopBeforeZoom,
         beforeZoom,
         zoomed,
@@ -14902,6 +16617,7 @@ async function runGalleryExperienceProbe({
           scope:
             'installed extension with owned deterministic X fixtures; no live X or human study',
           phases,
+          documentationScreenshots,
           pageErrors,
           cleanupErrors,
         },
@@ -14916,7 +16632,7 @@ async function runGalleryExperienceProbe({
   );
   assert.deepEqual(pageErrors, []);
   assert.deepEqual(cleanupErrors, []);
-  return { status: 'passed', phases };
+  return { status: 'passed', phases, documentationScreenshots };
 }
 
 /** Issue #381: a short installed-extension comparison at the real click/API boundary. */
@@ -16672,7 +18388,8 @@ async function runSettingsPersistenceProbe({
   const page = await context.newPage();
   const evidence: Record<string, unknown> = {
     status: 'failed',
-    scope: 'installed extension healthy language and controlled unsupported-schema fixture',
+    scope:
+      'installed extension language, controlled fit-storage faults, and unsupported-schema fixture',
   };
   let prior: Awaited<ReturnType<typeof readStoredVideoSettings>> | undefined;
   let priorLanguage: Record<string, unknown> | undefined;
@@ -16682,6 +18399,19 @@ async function runSettingsPersistenceProbe({
     await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
     prior = await readStoredVideoSettings(extensionPage);
     priorLanguage = await extensionPage.evaluate(() => chrome.storage.local.get('xeg-language'));
+    const healthyBaseline = createControlledVideoSettings(prior.value, Date.now());
+    healthyBaseline.gallery.theme = 'dark';
+    healthyBaseline.gallery.imageFitMode = 'fitWidth';
+    const baselineRaw = JSON.stringify(healthyBaseline);
+    await extensionPage.evaluate(async (raw) => {
+      await chrome.storage.local.set({ 'xeg-app-settings': raw });
+    }, baselineRaw);
+    assert.equal((await readStoredVideoSettings(extensionPage)).value, baselineRaw);
+    evidence.healthyBaseline = {
+      recognizedSchema: healthyBaseline.__schemaHash,
+      unrelatedTheme: 'dark',
+    };
+
     const open = async () => {
       await page.goto(FIXTURE_URL);
       await page.locator('html[data-xeg-gallery-ready="true"]').waitFor();
@@ -16704,6 +18434,27 @@ async function runSettingsPersistenceProbe({
       return saved.language === 'en' ? true : undefined;
     }, 'installed English restoration');
     evidence.language = { selected: 'ko', durable: 'ko', freshSelection: 'ko', restored: 'en' };
+    const contentRealm = await installedContentRealm(context, page, extensionId);
+    try {
+      evidence.unsavedUx = await runInstalledSettingsUx({
+        page,
+        extensionPage,
+        extensionId,
+        output,
+        contentRealm,
+      });
+    } catch (error) {
+      try {
+        await contentRealm.cdp.detach();
+      } catch (cleanupError) {
+        throw new AggregateError(
+          [error, cleanupError],
+          'Installed settings UX and CDP cleanup failed'
+        );
+      }
+      throw error;
+    }
+    await contentRealm.cdp.detach();
     const raw = JSON.stringify({
       __schemaHash: 'unsupported-fixture',
       version: 'unknown',
@@ -16828,6 +18579,23 @@ export async function run({
     assert.equal(installation, 'extension', 'Live settings acceptance requires an extension');
     assert(liveUrls.length > 0, 'Live settings acceptance requires public X URLs');
   }
+  const uxDetailsSelectorText = await readFile(
+    join(root, 'validation/windows/inputs/ux-details.json'),
+    'utf8'
+  ).catch((error: unknown) => {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+      return null;
+    }
+    throw error;
+  });
+  const uxDetailsProbe = uxDetailsSelectorText !== null;
+  if (uxDetailsSelectorText !== null) {
+    assert.deepEqual(JSON.parse(uxDetailsSelectorText), { scenario: 'ux-details' });
+    assert.equal(installation, 'extension', 'UX details requires the installed extension');
+    assert.equal(liveUrls.length, 0, 'UX details uses only owned fixture URLs');
+    assert.equal(liveObservation, null, 'UX details cannot share live observation');
+    assert.equal(acceptanceSelectorText, null, 'UX details cannot share live acceptance');
+  }
   if (installation === 'userscript') {
     assert.equal(acceptanceSelectorText, null, 'Actual-site acceptance requires an extension');
     assert.equal(liveUrls.length, 0, 'Installed userscript fixture does not support public URLs');
@@ -16841,6 +18609,9 @@ export async function run({
   }
   const upgradeInput = await readUpgradeInput(root);
   const sameVersionInput = await readSameVersionInput(root);
+  if (uxDetailsProbe) {
+    assert(!upgradeInput && !sameVersionInput, 'UX details cannot run during upgrade checks');
+  }
   const openingSelectorText = await readFile(
     join(root, 'validation/windows/inputs/opening-feedback.json'),
     'utf8'
@@ -16930,6 +18701,12 @@ export async function run({
     );
     assert.equal(liveUrls.length, 0, 'Settings probe uses only the owned fixture');
   }
+  if (uxDetailsProbe) {
+    assert(
+      !openingProbe && !recoveryProbe && !failedEntryProbe && !experienceProbe && !settingsProbe,
+      'Only one focused installed-extension probe may run'
+    );
+  }
   assert(!(upgradeInput && sameVersionInput), 'Upgrade and same-version inputs cannot coexist');
   if (sameVersionInput) {
     assert.equal(liveUrls.length, 0, 'Same-version attribution does not observe live URLs');
@@ -16939,6 +18716,7 @@ export async function run({
   assert(
     !liveSettingsProbe ||
       (!settingsProbe &&
+        !uxDetailsProbe &&
         !experienceProbe &&
         !failedEntryProbe &&
         !recoveryProbe &&
@@ -16959,7 +18737,8 @@ export async function run({
         recoveryProbe ||
         failedEntryProbe ||
         experienceProbe ||
-        settingsProbe,
+        settingsProbe ||
+        uxDetailsProbe,
     }
   );
   validateLiveObservation(liveObservation);
@@ -16988,23 +18767,25 @@ export async function run({
     liveObservation,
     scope: liveSettingsProbe
       ? 'focused installed language/theme settings acceptance; no full prior live campaign'
-      : settingsProbe
-        ? 'installed-extension settings persistence fixture; no live X observation'
-        : failedEntryProbe
-          ? 'issue 392 installed-extension failed-entry ZIP recovery fixture; no live X observation'
-          : experienceProbe
-            ? 'issue 383 installed-extension gallery experience fixtures; no live X observation'
-            : recoveryProbe
-              ? 'issue 382 installed-extension media/download recovery fixture; no live X observation'
-              : openingProbe
-                ? 'issue 381 installed-extension opening feedback fixture; no live X observation'
-                : validatedLiveUrls.length
-                  ? actualSiteAcceptance
-                    ? 'deterministic fixture followed by explicit actual-site gallery acceptance with bounded retained downloads; no auth, consent, CAPTCHA, native Save As, Explorer, or performance claim'
-                    : 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
-                  : sameVersionInput
-                    ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
-                    : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
+      : uxDetailsProbe
+        ? 'focused installed-extension opened details and terminal-video exit; owned X fixture only'
+        : settingsProbe
+          ? 'installed-extension settings persistence fixture; no live X observation'
+          : failedEntryProbe
+            ? 'issue 392 installed-extension failed-entry ZIP recovery fixture; no live X observation'
+            : experienceProbe
+              ? 'issue 383 installed-extension gallery experience fixtures; no live X observation'
+              : recoveryProbe
+                ? 'issue 382 installed-extension media/download recovery fixture; no live X observation'
+                : openingProbe
+                  ? 'issue 381 installed-extension opening feedback fixture; no live X observation'
+                  : validatedLiveUrls.length
+                    ? actualSiteAcceptance
+                      ? 'deterministic fixture followed by explicit actual-site gallery acceptance with bounded retained downloads; no auth, consent, CAPTCHA, native Save As, Explorer, or performance claim'
+                      : 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
+                    : sameVersionInput
+                      ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
+                      : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
     status: 'failed',
   };
   try {
@@ -17104,7 +18885,17 @@ export async function run({
     if (!sameVersionInput) {
       const images = await createImageFixtures(context);
       const displayImages = await createImageFixtures(context, 0.25);
-      if (failedEntryProbe) {
+      if (uxDetailsProbe) {
+        result.uxDetails = await runUxDetailsProbe({
+          context,
+          extensionId,
+          nativeLoopback,
+          output,
+          root,
+          images,
+          displayImages,
+        });
+      } else if (failedEntryProbe) {
         result.failedEntryRecovery = await runFailedEntryRecoveryProbe({
           context,
           downloads,

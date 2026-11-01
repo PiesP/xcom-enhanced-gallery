@@ -30,6 +30,9 @@ export const en: LanguageStrings = {
     downloadGroup: 'Downloads',
     auxGroup: 'More actions',
     settingsPanel: 'Settings Panel',
+    helpOpen: 'Keyboard help',
+    helpPanel: 'Keyboard help panel',
+    helpClose: 'Close help',
   },
   st: {
     th: 'Theme',
@@ -46,13 +49,14 @@ export const en: LanguageStrings = {
     langAr: 'Arabic',
     videoClickMode: 'Video clicks',
     videoClickNative: 'Keep video clicks in X',
-    videoClickSurfaces: 'Open video surfaces in gallery',
-    videoClickUnmarked: 'Also open eligible play buttons',
+    videoClickSurfaces: 'Open gallery from the video area',
+    videoClickUnmarked: 'Also open from supported play buttons',
     videoClickHelp:
-      'Eligible video surfaces open the gallery in the last two modes. Only validated unmarked play buttons join in the last mode; ordinary player controls stay in X.',
+      'Choose where eligible video clicks go. The gallery starts a separate paused player at the beginning with its saved audio settings; closing it does not automatically resume X. Ordinary player controls stay in X.',
     videoClickSaveError:
       'Could not save Video clicks. The current setting is still active. Try again.',
     unsavedSettings: 'Settings are active for this session but were not saved.',
+    unsavedSession: 'Active in this session · not saved',
     retrySettingsSave: 'Retry saving',
   },
   msg: {
@@ -93,13 +97,22 @@ export const en: LanguageStrings = {
     },
     kb: {
       t: 'Keyboard shortcuts',
-      prev: 'ArrowLeft: Previous media',
-      next: 'ArrowRight: Next media',
-      cls: 'Escape: Close gallery',
-      toggle: '?: Show this help',
+      prev: 'Left: previous displayed item',
+      next: 'Right: next displayed item',
+      cls: 'Escape: close the open panel, or close the gallery',
+      toggle: '?: open this help',
+      firstLast: 'Home / End: first / last item',
+      five: 'PageUp / PageDown: five items backward / forward',
+      vertical: 'Up / Down: change image item; adjust volume for the displayed gallery video',
+      playback: 'Space: play or pause the gallery video; M: mute or unmute',
+      focus: 'Tab / Shift+Tab: move through controls',
+      context: 'Focused buttons keep Space / Enter; forms and panels keep their own keys.',
+      recovery: 'Alt+Shift+V is available only after an eligible failed video click.',
     },
     dl: {
       bulkOutcome: {
+        cancelRecoveryAndDismiss: 'Cancel missing-item recovery and dismiss ZIP result',
+        details: 'ZIP result details',
         titleHandedOff: 'ZIP handed off to browser',
         titleFailed: 'No ZIP handed off',
         previous: 'Previous ZIP result',
@@ -153,6 +166,23 @@ export const en: LanguageStrings = {
         'The download memory limit was reached. Wait for active downloads to finish. If none are active and the limit remains, reload this page. Then retry with fewer files.',
     },
     gal: {
+      sourceDetails: {
+        title: 'Media and save details',
+        shown: '{count} shown items · recovered from this tile only',
+        cdnOriginal: 'Save source: verified original image from X’s CDN.',
+        bestMp4: 'Save source: best available MP4 from X.',
+        observed: 'Video save quality is unverified',
+        observedDetail:
+          'Saving uses the observed video source. Playback may use a different rendition.',
+        unavailable: 'Original image unavailable for saving',
+        unavailableDetail:
+          'A verified original image was not found. This item cannot be saved; no lower-quality replacement is used.',
+      },
+      entryFailureNext: 'Use the post on X to view this media.',
+      downloadFailureNext:
+        'Check your browser’s downloads for the save status, or return to the post on X.',
+      dismissFailure: 'Dismiss error',
+      mediaType: { image: 'Image', video: 'Video' },
       video: {
         playbackFallback:
           'Playback uses another rendition; downloads keep the best available source.',
