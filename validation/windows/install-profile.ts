@@ -53,6 +53,7 @@ import {
   validateLiveUrls,
 } from './live-page.ts';
 import { parseActualSiteAcceptanceSelector, runLiveSettingsAcceptance } from './live-acceptance.ts';
+import { runInstalledSettingsUx } from './installed-settings-ux.ts';
 import { runInstalledMediaApiReuseProfile } from './media-api-reuse-profile.ts';
 import {
   captureUpgradeSettingsFailure,
@@ -15200,10 +15201,12 @@ async function runUxDetailsProbe({
       await action(page, receipt);
       assert.equal(receipt.observationOverflow, false, `${name} observation overflow`);
       assert.deepEqual(receipt.pageErrors, [], `${name} page errors`);
-      const unexpectedConsoleErrors = (receipt.consoleErrors as Array<{
-        location: string;
-        text: string;
-      }>).filter(({ location, text }) => {
+      const unexpectedConsoleErrors = (
+        receipt.consoleErrors as Array<{
+          location: string;
+          text: string;
+        }>
+      ).filter(({ location, text }) => {
         const expectedApi =
           location.startsWith('https://x.com/i/api/graphql/') &&
           location.includes('/TweetResultByRestId') &&
@@ -15314,9 +15317,11 @@ async function runUxDetailsProbe({
             tag: active?.tagName ?? null,
             id: active instanceof HTMLElement ? active.id : null,
             label: active?.getAttribute('aria-label') ?? null,
-            itemIndex: active instanceof Element
-              ? active.closest('[data-gallery-element="item"]')?.getAttribute('data-index') ?? null
-              : null,
+            itemIndex:
+              active instanceof Element
+                ? (active.closest('[data-gallery-element="item"]')?.getAttribute('data-index') ??
+                  null)
+                : null,
           },
           viewport: { width: innerWidth, height: innerHeight },
         };
@@ -18141,7 +18146,8 @@ async function runSettingsPersistenceProbe({
   const page = await context.newPage();
   const evidence: Record<string, unknown> = {
     status: 'failed',
-    scope: 'installed extension healthy language and controlled unsupported-schema fixture',
+    scope:
+      'installed extension language, controlled fit-storage faults, and unsupported-schema fixture',
   };
   let prior: Awaited<ReturnType<typeof readStoredVideoSettings>> | undefined;
   let priorLanguage: Record<string, unknown> | undefined;
@@ -18151,6 +18157,19 @@ async function runSettingsPersistenceProbe({
     await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
     prior = await readStoredVideoSettings(extensionPage);
     priorLanguage = await extensionPage.evaluate(() => chrome.storage.local.get('xeg-language'));
+    const healthyBaseline = createControlledVideoSettings(prior.value, Date.now());
+    healthyBaseline.gallery.theme = 'dark';
+    healthyBaseline.gallery.imageFitMode = 'fitWidth';
+    const baselineRaw = JSON.stringify(healthyBaseline);
+    await extensionPage.evaluate(async (raw) => {
+      await chrome.storage.local.set({ 'xeg-app-settings': raw });
+    }, baselineRaw);
+    assert.equal((await readStoredVideoSettings(extensionPage)).value, baselineRaw);
+    evidence.healthyBaseline = {
+      recognizedSchema: healthyBaseline.__schemaHash,
+      unrelatedTheme: 'dark',
+    };
+
     const open = async () => {
       await page.goto(FIXTURE_URL);
       await page.locator('html[data-xeg-gallery-ready="true"]').waitFor();
@@ -18173,6 +18192,27 @@ async function runSettingsPersistenceProbe({
       return saved.language === 'en' ? true : undefined;
     }, 'installed English restoration');
     evidence.language = { selected: 'ko', durable: 'ko', freshSelection: 'ko', restored: 'en' };
+    const contentRealm = await installedContentRealm(context, page, extensionId);
+    try {
+      evidence.unsavedUx = await runInstalledSettingsUx({
+        page,
+        extensionPage,
+        extensionId,
+        output,
+        contentRealm,
+      });
+    } catch (error) {
+      try {
+        await contentRealm.cdp.detach();
+      } catch (cleanupError) {
+        throw new AggregateError(
+          [error, cleanupError],
+          'Installed settings UX and CDP cleanup failed'
+        );
+      }
+      throw error;
+    }
+    await contentRealm.cdp.detach();
     const raw = JSON.stringify({
       __schemaHash: 'unsupported-fixture',
       version: 'unknown',

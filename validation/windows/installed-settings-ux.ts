@@ -7,6 +7,10 @@ import { join } from 'node:path';
 import type { CDPSession, Page } from '@playwright/test';
 import { decodeStoredValue } from './live-page.ts';
 
+declare const chrome: {
+  storage: { local: { get(keys: string | string[]): Promise<Record<string, unknown>> } };
+};
+
 const FIT_KEY = 'xeg-app-settings:field:gallery.imageFitMode';
 const FALLBACK_KEY = `xeg-fallback:${FIT_KEY}`;
 const MARKER = '__xegInstalledSettingsFaults445';
@@ -36,13 +40,17 @@ async function waitFor<T>(read: () => Promise<T | undefined>, label: string): Pr
   const deadline = Date.now() + 5_000;
   while (Date.now() < deadline) {
     const value = await read();
-    if (value !== undefined) return value;
+    if (value !== undefined) {
+      return value;
+    }
     await new Promise<void>((resolve) => setTimeout(resolve, 50));
   }
   throw new Error(`Timed out waiting for ${label}`);
 }
 
-async function readPrimaryFit(extensionPage: Page): Promise<{ exists: boolean; raw: unknown; mode: string | null }> {
+async function readPrimaryFit(
+  extensionPage: Page
+): Promise<{ exists: boolean; raw: unknown; mode: string | null }> {
   const stored = await extensionPage.evaluate(async (key) => {
     const values = await chrome.storage.local.get(key);
     return { exists: Object.hasOwn(values, key), raw: values[key] ?? null };
@@ -94,7 +102,8 @@ export async function runInstalledSettingsUx({
   };
 
   const snapshot = async (): Promise<FaultSnapshot> => {
-    const result = await evaluateRealm<FaultSnapshot>(`(() => {
+    const result = await evaluateRealm<FaultSnapshot>(
+      `(() => {
       const state = globalThis.${MARKER};
       if (!state) throw new Error('Installed settings fault marker is missing');
       return {
@@ -105,30 +114,48 @@ export async function runInstalledSettingsUx({
           state.storage.set === state.setWrapper && Storage.prototype.setItem === state.fallbackWrapper,
         events: state.events
       };
-    })()`, 'fault snapshot');
+    })()`,
+      'fault snapshot'
+    );
     assert.equal(result.wrappersIntact, true, 'Installed storage fault wrapper was replaced');
     assert.equal(result.overflow, false, 'Installed storage fault event limit was exceeded');
     return result;
   };
 
-  const configure = async (phase: string, denyPrimary: boolean, denyFallback: boolean, holdNext = false): Promise<void> => {
+  const configure = async (
+    phase: string,
+    denyPrimary: boolean,
+    denyFallback: boolean,
+    holdNext = false
+  ): Promise<void> => {
     const config = JSON.stringify({ phase, denyPrimary, denyFallback, holdNext });
-    const changed = await evaluateRealm<boolean>(`(() => {
+    const changed = await evaluateRealm<boolean>(
+      `(() => {
       const state = globalThis.${MARKER};
       if (!state) throw new Error('Installed settings fault marker is missing');
       Object.assign(state, ${config});
       return state.storage.set === state.setWrapper && Storage.prototype.setItem === state.fallbackWrapper;
-    })()`, 'fault configuration');
+    })()`,
+      'fault configuration'
+    );
     assert.equal(changed, true, 'Installed storage fault wrapper was replaced');
   };
 
   try {
-    const origin = await page.evaluate(() => ({ protocol: location.protocol, host: location.hostname }));
+    const origin = await page.evaluate(() => ({
+      protocol: location.protocol,
+      host: location.hostname,
+    }));
     assert.equal(origin.protocol, 'https:', 'Settings fixture must use HTTPS X origin');
     assert(['x.com', 'twitter.com'].includes(origin.host), 'Settings fixture must use an X origin');
     fallbackBefore = await readFallbackFit(page);
     fallbackSnapshotTaken = true;
-    const installation = await evaluateRealm<{ installed: boolean; runtimeId: string; topFrame: boolean }>(`(() => {
+    const installation = await evaluateRealm<{
+      installed: boolean;
+      runtimeId: string;
+      topFrame: boolean;
+    }>(
+      `(() => {
       if (Object.hasOwn(globalThis, '${MARKER}')) throw new Error('Settings fault marker already exists');
       const api = globalThis.browser ?? chrome;
       const storage = api.storage?.local;
@@ -226,7 +253,9 @@ export async function runInstalledSettingsUx({
         throw error;
       }
       return { installed: true, runtimeId, topFrame };
-    })()`, 'fault installation');
+    })()`,
+      'fault installation'
+    );
     installed = installation.installed === true;
     assert.deepEqual(installation, { installed: true, runtimeId: extensionId, topFrame: true });
 
@@ -238,6 +267,20 @@ export async function runInstalledSettingsUx({
     const fitWidth = page.locator('button[aria-label="Fit Width"]');
     assert.equal(await settingsButton.getAttribute('aria-expanded'), 'true');
     assert.equal(await panel.isVisible(), true);
+    const readUnrelated = () =>
+      extensionPage.evaluate(async () =>
+        chrome.storage.local.get(['xeg-app-settings', 'xeg-app-settings:field:gallery.theme'])
+      );
+    const unrelatedBefore = await readUnrelated();
+    const baseline = decodeStoredValue(unrelatedBefore['xeg-app-settings']);
+    assert(baseline && typeof baseline === 'object' && '__schemaHash' in baseline);
+    assert.equal(
+      baseline.__schemaHash,
+      '1',
+      'Installed fault fixture needs a recognized stored baseline'
+    );
+    assert.equal(await page.locator('#settings-theme-select').inputValue(), 'dark');
+    evidence.healthyBaseline = { recognizedSchema: '1', unrelatedTheme: 'dark' };
 
     await configure('healthy-primary', false, false);
     const healthyStart = await snapshot();
@@ -259,7 +302,7 @@ export async function runInstalledSettingsUx({
     await fitWidth.click();
     await waitFor(async () => {
       const raw = await readFallbackFit(page);
-      return decodeStoredValue(raw) === 'fitWidth' ? raw ?? undefined : undefined;
+      return decodeStoredValue(raw) === 'fitWidth' ? (raw ?? undefined) : undefined;
     }, 'installed fallback fit persistence');
     const fallback = await snapshot();
     assert.equal(fallback.primaryAttempts, fallbackStart.primaryAttempts + 1);
@@ -300,10 +343,17 @@ export async function runInstalledSettingsUx({
     await innerCue.waitFor({ state: 'detached', timeout: 5_000 });
     await waitFor(async () => {
       const stored = await readPrimaryFit(extensionPage);
-      return stored.mode === 'fitHeight' && (await readFallbackFit(page)) === null ? true : undefined;
+      return stored.mode === 'fitHeight' && (await readFallbackFit(page)) === null
+        ? true
+        : undefined;
     }, 'installed closed Settings retry persistence');
     assert.equal(await outerCue.count(), 0);
-    evidence.closedDeniedRetry = { deniedPrimaryAndFallback: true, repeatedDenial: true, storedFit: 'fitHeight', fallbackAbsent: true };
+    evidence.closedDeniedRetry = {
+      deniedPrimaryAndFallback: true,
+      repeatedDenial: true,
+      storedFit: 'fitHeight',
+      fallbackAbsent: true,
+    };
 
     await configure('late-held', false, false, true);
     const lateStart = await snapshot();
@@ -318,12 +368,19 @@ export async function runInstalledSettingsUx({
     assert.deepEqual(await readPrimaryFit(extensionPage), primaryBeforeLate);
     await settingsButton.click();
     assert.equal(await settingsButton.getAttribute('aria-expanded'), 'false');
-    assert.equal(await outerCue.count(), 0, 'Closing Settings while write was pending showed failure');
+    assert.equal(
+      await outerCue.count(),
+      0,
+      'Closing Settings while write was pending showed failure'
+    );
     await configure('late-denied', true, true);
-    const released = await evaluateRealm<boolean>(`(() => {
+    const released = await evaluateRealm<boolean>(
+      `(() => {
       const state = globalThis.${MARKER};
       return state?.release?.() === true;
-    })()`, 'held fit release');
+    })()`,
+      'held fit release'
+    );
     assert.equal(released, true);
     await outerCue.waitFor({ state: 'visible', timeout: 5_000 });
     const lateDenied = await snapshot();
@@ -340,22 +397,38 @@ export async function runInstalledSettingsUx({
     await innerCue.waitFor({ state: 'detached', timeout: 5_000 });
     await waitFor(async () => {
       const stored = await readPrimaryFit(extensionPage);
-      return stored.mode === 'fitWidth' && (await readFallbackFit(page)) === null ? true : undefined;
+      return stored.mode === 'fitWidth' && (await readFallbackFit(page)) === null
+        ? true
+        : undefined;
     }, 'installed late fit retry persistence');
     assert.equal(await outerCue.count(), 0);
-    evidence.lateDeniedRetry = { pendingCueAbsent: true, closedBeforeDenial: true, storedFit: 'fitWidth', fallbackAbsent: true };
+    evidence.lateDeniedRetry = {
+      pendingCueAbsent: true,
+      closedBeforeDenial: true,
+      storedFit: 'fitWidth',
+      fallbackAbsent: true,
+    };
+    assert.deepEqual(
+      await readUnrelated(),
+      unrelatedBefore,
+      'Fit failures or retries changed the base or unrelated theme'
+    );
+    evidence.unrelatedPreferencesPreserved = true;
     evidence.faults = await snapshot();
     evidence.status = 'passed';
   } catch (error) {
     primaryError = error;
     evidence.error = errorText(error);
-    await page.screenshot({ path: join(output, 'installed-settings-ux-failure.png') }).catch((screenshotError: unknown) => {
-      evidence.failureScreenshotError = errorText(screenshotError);
-    });
+    await page
+      .screenshot({ path: join(output, 'installed-settings-ux-failure.png') })
+      .catch((screenshotError: unknown) => {
+        evidence.failureScreenshotError = errorText(screenshotError);
+      });
   } finally {
     if (installed) {
       try {
-        const disposal = await evaluateRealm<{ restored: boolean; heldReleased: boolean }>(`(async () => {
+        const disposal = await evaluateRealm<{ restored: boolean; heldReleased: boolean }>(
+          `(async () => {
           const state = globalThis.${MARKER};
           if (!state) throw new Error('Installed settings fault marker is missing at cleanup');
           state.denyPrimary = true;
@@ -389,8 +462,14 @@ export async function runInstalledSettingsUx({
             sameDescriptor(Object.getOwnPropertyDescriptor(Storage.prototype, 'setItem'), state.fallbackDescriptor);
           delete globalThis.${MARKER};
           return { restored: restored && !Object.hasOwn(globalThis, '${MARKER}'), heldReleased };
-        })()`, 'fault disposal');
-        assert.equal(disposal.restored, true, 'Installed storage methods/descriptors were not restored');
+        })()`,
+          'fault disposal'
+        );
+        assert.equal(
+          disposal.restored,
+          true,
+          'Installed storage methods/descriptors were not restored'
+        );
         evidence.faultMethodsRestored = true;
         evidence.heldReleasedDuringCleanup = disposal.heldReleased;
       } catch (error) {
@@ -399,28 +478,50 @@ export async function runInstalledSettingsUx({
     }
     if (fallbackSnapshotTaken) {
       try {
-        await page.evaluate(({ key, raw }) => {
-          if (raw === null) localStorage.removeItem(key);
-          else localStorage.setItem(key, raw);
-        }, { key: FALLBACK_KEY, raw: fallbackBefore });
-        assert.equal(await readFallbackFit(page), fallbackBefore, 'X-origin fallback was not restored');
+        await page.evaluate(
+          ({ key, raw }) => {
+            if (raw === null) {
+              localStorage.removeItem(key);
+            } else {
+              localStorage.setItem(key, raw);
+            }
+          },
+          { key: FALLBACK_KEY, raw: fallbackBefore }
+        );
+        assert.equal(
+          await readFallbackFit(page),
+          fallbackBefore,
+          'X-origin fallback was not restored'
+        );
         evidence.originFallbackRestored = true;
       } catch (error) {
         cleanupErrors.push(`X-origin fallback: ${errorText(error)}`);
       }
     }
     evidence.cleanupErrors = cleanupErrors;
-    if (cleanupErrors.length) evidence.status = 'failed';
+    if (cleanupErrors.length) {
+      evidence.status = 'failed';
+    }
     try {
-      await writeFile(join(output, 'installed-settings-ux.json'), JSON.stringify(evidence, null, 2));
+      await writeFile(
+        join(output, 'installed-settings-ux.json'),
+        JSON.stringify(evidence, null, 2)
+      );
     } catch (error) {
       cleanupErrors.push(`receipt: ${errorText(error)}`);
     }
   }
   if (primaryError && cleanupErrors.length) {
-    throw new AggregateError([primaryError, ...cleanupErrors], 'Installed settings UX and cleanup failed');
+    throw new AggregateError(
+      [primaryError, ...cleanupErrors],
+      'Installed settings UX and cleanup failed'
+    );
   }
-  if (primaryError) throw primaryError;
-  if (cleanupErrors.length) throw new Error(`Installed settings UX cleanup failed: ${cleanupErrors.join('; ')}`);
+  if (primaryError) {
+    throw primaryError;
+  }
+  if (cleanupErrors.length) {
+    throw new Error(`Installed settings UX cleanup failed: ${cleanupErrors.join('; ')}`);
+  }
   return evidence;
 }
