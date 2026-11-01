@@ -13966,7 +13966,12 @@ async function runHeldMissingRecoveryCancellation({
   const onOwnedRequest = (request: Request): void => {
     const url = ownedSource(request.url());
     if (url) {
-      trace({ event: 'request', url: url.href, method: request.method(), resourceType: request.resourceType() });
+      trace({
+        event: 'request',
+        url: url.href,
+        method: request.method(),
+        resourceType: request.resourceType(),
+      });
     }
   };
   const onOwnedResponse = (response: Response): void => {
@@ -13978,27 +13983,35 @@ async function runHeldMissingRecoveryCancellation({
   const onOwnedRequestFailed = (request: Request): void => {
     const url = ownedSource(request.url());
     if (url) {
-      trace({ event: 'requestfailed', url: url.href, failure: request.failure()?.errorText ?? null });
+      trace({
+        event: 'requestfailed',
+        url: url.href,
+        failure: request.failure()?.errorText ?? null,
+      });
     }
   };
   const captureSnapshot = async (label: string): Promise<void> => {
     const observed = await newDownloads();
-    const panel = page.locator('[data-xeg-gallery-container] [data-gallery-element="bulk-download-outcome"]');
+    const panel = page.locator(
+      '[data-xeg-gallery-container] [data-gallery-element="bulk-download-outcome"]'
+    );
     receipt[label] = {
       phase,
       ownedTrace: [...ownedTrace],
       traceOverflow,
       native: nativeLoopback.since(activeNativeMark),
       nativeHeld: nativeLoopback.held(),
-      downloads: observed.map(({ id, url, filename, state, exists, bytesReceived, totalBytes }) => ({
-        id,
-        url,
-        filename: basename(filename),
-        state,
-        exists,
-        bytesReceived,
-        totalBytes,
-      })),
+      downloads: observed.map(
+        ({ id, url, filename, state, exists, bytesReceived, totalBytes }) => ({
+          id,
+          url,
+          filename: basename(filename),
+          state,
+          exists,
+          bytesReceived,
+          totalBytes,
+        })
+      ),
       panel: (await panel.count()) ? ((await panel.textContent()) ?? '').slice(0, 1_500) : null,
     };
   };
@@ -14015,14 +14028,24 @@ async function runHeldMissingRecoveryCancellation({
     if (phase !== 'partial') {
       assert.equal(index, 0, 'A working ZIP refetched a successful sibling');
       assert.equal(url.pathname, originalPath, 'Held source identity changed');
-      trace({ event: 'route', url: url.href, decision: 'continue', resourceType: route.request().resourceType() });
+      trace({
+        event: 'route',
+        url: url.href,
+        decision: 'continue',
+        resourceType: route.request().resourceType(),
+      });
       // Bypass the context's deterministic display route for this one owned
       // original so the loopback can hold its actual response until abort.
       await route.continue();
       return;
     }
     const rejected = index === 0;
-    trace({ event: 'route', url: url.href, decision: rejected ? 'fulfill-503' : 'fulfill-200', resourceType: route.request().resourceType() });
+    trace({
+      event: 'route',
+      url: url.href,
+      decision: rejected ? 'fulfill-503' : 'fulfill-200',
+      resourceType: route.request().resourceType(),
+    });
     await route.fulfill({
       status: rejected ? 503 : 200,
       contentType: rejected ? 'text/plain' : 'image/jpeg',
@@ -14054,7 +14077,7 @@ async function runHeldMissingRecoveryCancellation({
       filename: expectedFilename(index),
       bytes,
     }));
-    const maximumBytes = expectedStoredZipBytes(expectedEntries).length;
+    const maximumBytes = expectedStoredZipBytes(expectedEntries);
     const file = await stat(item.filename);
     assert(file.isFile() && file.size > 0 && file.size <= maximumBytes);
     const { bytes } = await readExactDownloadFile(item.filename, file.size);
@@ -14283,9 +14306,7 @@ async function runHeldMissingRecoveryCancellation({
     }
     try {
       const observed = await newDownloads();
-      const unexpectedIds = observed
-        .filter(({ id }) => !ownedIds.has(id))
-        .map(({ id }) => id);
+      const unexpectedIds = observed.filter(({ id }) => !ownedIds.has(id)).map(({ id }) => id);
       if (unexpectedIds.length > 0) {
         invariantError = new Error(
           `Held probe created unrecorded native download IDs: ${unexpectedIds.join(', ')}`
@@ -14356,7 +14377,10 @@ async function runHeldMissingRecoveryCancellation({
     throw primaryError;
   }
   if (invariantError && cleanupErrors.length) {
-    throw new AggregateError([invariantError, ...cleanupErrors], 'Held ZIP invariant and cleanup failed');
+    throw new AggregateError(
+      [invariantError, ...cleanupErrors],
+      'Held ZIP invariant and cleanup failed'
+    );
   }
   if (invariantError) {
     throw invariantError;
