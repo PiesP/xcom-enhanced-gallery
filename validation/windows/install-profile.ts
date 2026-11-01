@@ -1022,6 +1022,7 @@ type InstallResult = {
   mediaDownloadRecovery?: unknown;
   failedEntryRecovery?: unknown;
   galleryExperience?: unknown;
+  uxDetails?: unknown;
   settingsPersistence?: unknown;
   liveBrowserScope?: string;
   live?: unknown;
@@ -14871,6 +14872,428 @@ async function experienceSelectedGeometry(page: Page) {
   });
 }
 
+async function uxControlGeometry(control: Locator, label: string) {
+  await control.scrollIntoViewIfNeeded();
+  const geometry = await control.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    const hit = document.elementFromPoint(x, y);
+    return {
+      rect: rect.toJSON(),
+      withinViewport:
+        rect.left >= 0 && rect.top >= 0 && rect.right <= innerWidth && rect.bottom <= innerHeight,
+      hit: !!hit && element.contains(hit),
+    };
+  });
+  assert(
+    geometry.rect.width >= 44 &&
+      geometry.rect.height >= 44 &&
+      geometry.withinViewport &&
+      geometry.hit,
+    `${label} must be a visible, hit-tested 44px control: ${JSON.stringify(geometry)}`
+  );
+  return geometry;
+}
+
+async function uxOwnedWheel(page: Page, panel: Locator, media: Locator, label: string) {
+  await panel.evaluate((element) => {
+    element.scrollTop = 0;
+  });
+  const before = await Promise.all([
+    panel.evaluate((element) => ({
+      scrollTop: element.scrollTop,
+      scrollHeight: element.scrollHeight,
+      clientHeight: element.clientHeight,
+    })),
+    media.evaluate((element) => element.scrollTop),
+  ]);
+  const overflow = before[0].scrollHeight - before[0].clientHeight;
+  if (overflow <= 2) {
+    return { overflow: false, before: before[0], mediaBefore: before[1] };
+  }
+  const bounds = await panel.boundingBox();
+  assert(bounds, `${label} must have painted bounds for real wheel input`);
+  await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+  await page.mouse.wheel(0, Math.min(240, overflow));
+  await page.waitForTimeout(200);
+  const after = await Promise.all([
+    panel.evaluate((element) => element.scrollTop),
+    media.evaluate((element) => element.scrollTop),
+  ]);
+  assert(after[0] > before[0].scrollTop + 1, `${label} did not own its real wheel scroll`);
+  assert(
+    Math.abs(after[1] - before[1]) < 1,
+    `${label} wheel input unexpectedly scrolled gallery media`
+  );
+  return {
+    overflow: true,
+    before: before[0],
+    after: after[0],
+    mediaBefore: before[1],
+    mediaAfter: after[1],
+  };
+}
+
+/** A bounded installed-Edge readback of opened detail panels and the terminal video exit. */
+async function runUxDetailsProbe({
+  context,
+  extensionId,
+  nativeLoopback,
+  output,
+  root,
+  images,
+  displayImages,
+}: {
+  context: BrowserContext;
+  extensionId: string;
+  nativeLoopback: NativeLoopback;
+  output: string;
+  root: string;
+  images: ImageFixtures;
+  displayImages: ImageFixtures;
+}) {
+  const observations: Record<string, unknown> = { cases: [] as Record<string, unknown>[] };
+  const cases = observations.cases as Record<string, unknown>[];
+  const failures: Error[] = [];
+  const cleanupErrors: Error[] = [];
+  const pageUrl = `https://x.com/rapid_a/status/${RAPID_CLICK_A}`;
+  const videoUrl =
+    'https://video.twimg.com/ext_tw_video/8888888888888888881/pu/vid/320x180/quote-one.mp4';
+  const apiPattern = /TweetResultByRestId/u;
+  let routes: Awaited<ReturnType<typeof installFixtureRoutes>> | undefined;
+  let extensionPage: Page | undefined;
+  let notificationObserver:
+    | Awaited<ReturnType<typeof observeNativeNotificationCreates>>
+    | undefined;
+  let primaryError: unknown;
+
+  const phase = async (
+    name: string,
+    action: (page: Page, receipt: Record<string, unknown>) => Promise<void>
+  ) => {
+    const receipt: Record<string, unknown> = {
+      name,
+      status: 'pending',
+      pageErrors: [] as string[],
+      consoleErrors: [] as Array<{ location: string; text: string }>,
+      observationOverflow: false,
+    };
+    cases.push(receipt);
+    let page: Page | undefined;
+    try {
+      page = await context.newPage();
+      page.on('pageerror', (error) => {
+        const errors = receipt.pageErrors as string[];
+        if (errors.length < 8) errors.push(error.message);
+        else receipt.observationOverflow = true;
+      });
+      page.on('console', (message) => {
+        if (message.type() !== 'error') return;
+        const errors = receipt.consoleErrors as Array<{ location: string; text: string }>;
+        if (errors.length < 16) {
+          errors.push({
+            location: message.location().url.slice(0, 240),
+            text: message.text().slice(0, 240),
+          });
+        } else receipt.observationOverflow = true;
+      });
+      await action(page, receipt);
+      assert.equal(receipt.observationOverflow, false, `${name} observation overflow`);
+      assert.deepEqual(receipt.pageErrors, [], `${name} page errors`);
+      receipt.status = 'passed';
+    } catch (error) {
+      receipt.status = 'failed';
+      receipt.error = safeError(error);
+      failures.push(new Error(`${name}: ${safeError(error)}`));
+      if (page) {
+        const screenshot = `ux-details-${name}-failure.png`;
+        await page.screenshot({ path: join(output, screenshot) }).then(
+          () => { receipt.failureScreenshot = screenshot; },
+          (captureError) => { receipt.screenshotError = safeError(captureError); }
+        );
+      }
+    } finally {
+      if (page) {
+        await page.close().catch((error: unknown) => {
+          receipt.cleanupError = safeError(error);
+          receipt.status = 'failed';
+          cleanupErrors.push(new Error(`${name} page: ${safeError(error)}`));
+        });
+      }
+    }
+  };
+
+  const denyProvider = (requests: Array<{ tweetId: string | null; url: string }>) =>
+    async (route: Route) => {
+      const url = new URL(route.request().url());
+      let variables: unknown;
+      try {
+        variables = JSON.parse(url.searchParams.get('variables') ?? '{}');
+      } catch {
+        variables = null;
+      }
+      const tweetId =
+        variables && typeof variables === 'object' && 'tweetId' in variables &&
+        typeof variables.tweetId === 'string'
+          ? variables.tweetId
+          : null;
+      assert(requests.length < 4, 'UX details provider request budget exceeded');
+      requests.push({ tweetId, url: url.pathname });
+      await route.fulfill({ status: 403, contentType: 'application/json', body: '{}' });
+    };
+
+  const panelCase = async (
+    page: Page,
+    receipt: Record<string, unknown>,
+    locale: 'ko' | 'en',
+    zoom: boolean
+  ) => {
+    const api: Array<{ tweetId: string | null; url: string }> = [];
+    receipt.api = api;
+    await page.route(apiPattern, denyProvider(api));
+    await page.setViewportSize(zoom ? { width: 1280, height: 800 } : { width: 401, height: 592 });
+    await page.goto(pageUrl);
+    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+    const article = page.locator('article[data-rapid="a"]');
+    assert.equal(await article.locator('[data-testid="tweetPhoto"] img').count(), 1);
+    assert.equal(await article.locator('[data-testid="videoPlayer"] video').count(), 1);
+    await article.locator('video').click();
+    const gallery = page.locator('[data-xeg-gallery-container]');
+    await gallery.waitFor({ state: 'visible' });
+    assert.equal(await gallery.locator('[data-gallery-element="item"]').count(), 2);
+    assert.deepEqual(api.map(({ tweetId }) => tweetId), [RAPID_CLICK_A]);
+    const panelReceipt: Record<string, unknown> = { locale, api: [...api] };
+    receipt.panel = panelReceipt;
+    const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
+    const settingsButton = toolbar.locator('#settings-button');
+    await settingsButton.click();
+    const language = gallery.locator('#settings-language-select');
+    await language.waitFor({ state: 'visible' });
+    await language.selectOption(locale);
+    assert.equal(await language.inputValue(), locale);
+    await settingsButton.click();
+    let restoreZoom: Awaited<ReturnType<typeof fixtureTabZoom>> | undefined;
+    try {
+      if (zoom) {
+        restoreZoom = await fixtureTabZoom(context, extensionId, page, null, null, pageUrl);
+        const applied = await fixtureTabZoom(context, extensionId, page, 2, null, pageUrl);
+        assert.equal(applied.observed, 2);
+        await page.waitForFunction(() => innerWidth < 1280);
+        receipt.zoom = { prior: restoreZoom, applied };
+      }
+      panelReceipt.viewport = await page.evaluate(() => ({
+        width: innerWidth,
+        height: innerHeight,
+      }));
+      panelReceipt.browserZoom = zoom ? 2 : 1;
+      const selected = await toolbar.getAttribute('data-current-index');
+      assert.equal(
+        selected,
+        await gallery.locator('[data-gallery-element="item"]:has(video)').getAttribute('data-index'),
+        'Opened detail cases must keep the observed video selected'
+      );
+      const details = gallery.locator('[data-gallery-element="source-details"]');
+      await details.waitFor({ state: 'visible' });
+      const mediaId = await details.getAttribute('data-media-id');
+      panelReceipt.selected = selected;
+      panelReceipt.mediaId = mediaId;
+      const summary = details.locator('summary');
+      const expectedSummary = locale === 'ko'
+        ? /동영상 저장 화질을 확인하지 못함/u
+        : /Video save quality is unverified/u;
+      assert.match((await summary.textContent()) ?? '', expectedSummary);
+      await summary.focus();
+      await page.keyboard.press('Enter');
+      assert.equal(await details.getAttribute('open'), '');
+      const summaryGeometry = await uxControlGeometry(summary, `${locale} source summary`);
+      const items = gallery.locator('[data-gallery-element="items"]');
+      const sourceWheel = await uxOwnedWheel(page, details, items, `${locale} source details`);
+      panelReceipt.sourceWheel = sourceWheel;
+      await summary.focus();
+      await page.keyboard.press('Space');
+      assert.equal(await details.getAttribute('open'), null);
+      const helpButton = toolbar.locator('#keyboard-help-button');
+      const helpPanel = gallery.locator('[data-gallery-element="keyboard-help-panel"]');
+      await helpButton.focus();
+      await page.keyboard.press('Space');
+      await helpPanel.waitFor({ state: 'visible' });
+      assert.equal(await helpButton.getAttribute('aria-expanded'), 'true');
+      const helpClose = helpPanel.locator('button').first();
+      const closeGeometry = await uxControlGeometry(helpClose, `${locale} help close`);
+      const helpWheel = await uxOwnedWheel(page, helpPanel, items, `${locale} keyboard help`);
+      panelReceipt.helpWheel = helpWheel;
+      await uxControlGeometry(helpClose, `${locale} help close after scroll`);
+      const screenshot = zoom ? 'ux-details-en-zoom200.png' : 'ux-details-ko-401x592.png';
+      await page.mouse.move(0, 0);
+      await page.screenshot({ path: join(output, screenshot) });
+      panelReceipt.screenshot = screenshot;
+      await helpClose.focus();
+      await page.keyboard.press('Enter');
+      await helpPanel.waitFor({ state: 'hidden' });
+      await helpButton.focus();
+      await page.keyboard.press('Enter');
+      await helpPanel.waitFor({ state: 'visible' });
+      await helpClose.focus();
+      await page.keyboard.press('Escape');
+      await helpPanel.waitFor({ state: 'hidden' });
+      assert.equal(
+        await helpButton.evaluate((element) => document.activeElement === element),
+        true
+      );
+      assert(await gallery.isVisible(), 'Nested help Escape closed the gallery');
+      assert.equal(await toolbar.getAttribute('data-current-index'), selected);
+      assert.equal(await details.getAttribute('data-media-id'), mediaId);
+      Object.assign(panelReceipt, {
+        summary: (await summary.textContent())?.trim(),
+        summaryGeometry,
+        closeGeometry,
+        nativeEnterAndSpace: true,
+        nestedEscapeRestoredFocus: true,
+      });
+    } finally {
+      if (restoreZoom) {
+        await fixtureTabZoom(
+          context, extensionId, page, restoreZoom.previous, restoreZoom.settings, pageUrl
+        );
+      }
+    }
+  };
+
+  const terminalCase = async (page: Page, receipt: Record<string, unknown>) => {
+    const api: Array<{ tweetId: string | null; url: string }> = [];
+    const rejectedVideo: Array<{ path: string; method: string; status: number }> = [];
+    receipt.api = api;
+    receipt.videoFailures = rejectedVideo;
+    await page.route(apiPattern, denyProvider(api));
+    await page.goto(pageUrl);
+    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+    const article = page.locator('article[data-rapid="a"]');
+    assert.equal(await article.locator('[data-testid="tweetPhoto"] img').count(), 1);
+    assert.equal(await article.locator('[data-testid="videoPlayer"] video').count(), 1);
+    await article.locator('[data-testid="tweetPhoto"] img').click();
+    const gallery = page.locator('[data-xeg-gallery-container]');
+    await gallery.waitFor({ state: 'visible' });
+    assert.equal(await gallery.locator('[data-gallery-element="item"]').count(), 2);
+    assert.deepEqual(api.map(({ tweetId }) => tweetId), [RAPID_CLICK_A]);
+    const videoItem = gallery.locator('[data-gallery-element="item"]:has(video)');
+    assert.equal(await videoItem.getAttribute('data-video-admitted'), 'false');
+    await page.route(videoUrl, async (route) => {
+      assert(rejectedVideo.length < 8, 'Terminal video failure request budget exceeded');
+      rejectedVideo.push({
+        path: new URL(route.request().url()).pathname,
+        method: route.request().method(),
+        status: 503,
+      });
+      await route.fulfill({
+        status: 503,
+        contentType: 'video/mp4',
+        body: '',
+        headers: { 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': 'https://x.com' },
+      });
+    });
+    const videoIndex = await videoItem.getAttribute('data-index');
+    assert(videoIndex !== null && Number.isSafeInteger(Number(videoIndex)));
+    await gallery.locator('button[aria-label="Next"]').click();
+    await waitForValue(
+      async () =>
+        (await gallery.locator('#xeg-toolbar-counter').getAttribute('data-position')) ===
+        String(Number(videoIndex) + 1)
+          ? true
+          : undefined,
+      'terminal video selected after native Next action',
+      3_000
+    );
+    const alert = videoItem.locator('[role="alert"]');
+    await alert.waitFor({ state: 'visible', timeout: 15_000 });
+    assert(rejectedVideo.length > 0, 'Terminal alert lacked a genuine owned HTTP 503');
+    const original = alert.locator('a[href]');
+    assert.equal(await original.count(), 1, 'Terminal video needs one original-post exit');
+    assert.equal(await original.getAttribute('href'), pageUrl);
+    assert.equal(await original.getAttribute('target'), '_blank');
+    await uxControlGeometry(original, 'terminal original-post exit');
+    const screenshot = 'ux-details-terminal-video.png';
+    await page.screenshot({ path: join(output, screenshot) });
+    const terminalReceipt: Record<string, unknown> = {
+      selectedVideoIndex: videoIndex,
+      source: videoUrl,
+      rejectedVideo,
+      originalPostUrl: await original.getAttribute('href'),
+      screenshot,
+    };
+    receipt.terminal = terminalReceipt;
+    let popup: Page | undefined;
+    try {
+      await original.focus();
+      const [openedPopup] = await Promise.all([
+        context.waitForEvent('page', { timeout: 10_000 }),
+        page.keyboard.press('Enter'),
+      ]);
+      popup = openedPopup;
+      await openedPopup.waitForLoadState('domcontentloaded');
+      assert.equal(openedPopup.url(), pageUrl, 'Terminal exit must open the canonical owned post');
+      assert.equal(page.url(), pageUrl, 'Terminal exit must not navigate the gallery tab');
+      terminalReceipt.popupUrl = openedPopup.url();
+    } finally {
+      if (popup) {
+        await popup.close();
+        receipt.popupClosed = true;
+      }
+    }
+  };
+
+  try {
+    routes = await installFixtureRoutes(context, root, images, displayImages);
+    nativeLoopback.setPayloads(images, routes.videoPayloads);
+    extensionPage = await context.newPage();
+    await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
+    notificationObserver = await observeNativeNotificationCreates(context, extensionId, true);
+    observations.notificationBefore = await notificationObserver.snapshot();
+    await phase('ko-401x592', (page, receipt) => panelCase(page, receipt, 'ko', false));
+    await phase('en-zoom200', (page, receipt) => panelCase(page, receipt, 'en', true));
+    await phase('terminal-video-exit', terminalCase);
+    const after = await notificationObserver.snapshot();
+    observations.notificationAfter = after;
+    const before = observations.notificationBefore as typeof after;
+    assert.deepEqual(
+      after.activeIds.filter((id) => id.startsWith('xeg-') && !before.activeIds.includes(id)),
+      [],
+      'Suppressed UX details notifications became visible natively'
+    );
+    if (failures.length) throw new AggregateError(failures, 'UX details cases failed');
+  } catch (error) {
+    primaryError = error;
+  } finally {
+    for (const [label, close] of [
+      ['notification observer', () => notificationObserver?.dispose()],
+      ['fixture routes', () => routes?.remove()],
+      ['extension page', () => extensionPage?.close()],
+    ] as const) {
+      try {
+        await close();
+      } catch (error) {
+        cleanupErrors.push(new Error(`${label}: ${safeError(error)}`));
+      }
+    }
+    await writeFile(
+      join(output, 'ux-details.json'),
+      JSON.stringify({
+        status: primaryError || cleanupErrors.length ? 'failed' : 'passed',
+        observations,
+        cleanupErrors: cleanupErrors.map(safeError),
+        error: primaryError ? safeError(primaryError) : null,
+      }, null, 2)
+    );
+  }
+  if (primaryError || cleanupErrors.length) {
+    throw new AggregateError(
+      [...(primaryError ? [primaryError] : []), ...cleanupErrors],
+      'UX details probe or cleanup failed'
+    );
+  }
+  return { status: 'passed', ...observations };
+}
+
 async function runGalleryExperienceProbe({
   context,
   downloads,
@@ -17586,6 +18009,23 @@ export async function run({
     assert.equal(installation, 'extension', 'Live settings acceptance requires an extension');
     assert(liveUrls.length > 0, 'Live settings acceptance requires public X URLs');
   }
+  const uxDetailsSelectorText = await readFile(
+    join(root, 'validation/windows/inputs/ux-details.json'),
+    'utf8'
+  ).catch((error: unknown) => {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+      return null;
+    }
+    throw error;
+  });
+  const uxDetailsProbe = uxDetailsSelectorText !== null;
+  if (uxDetailsSelectorText !== null) {
+    assert.deepEqual(JSON.parse(uxDetailsSelectorText), { scenario: 'ux-details' });
+    assert.equal(installation, 'extension', 'UX details requires the installed extension');
+    assert.equal(liveUrls.length, 0, 'UX details uses only owned fixture URLs');
+    assert.equal(liveObservation, null, 'UX details cannot share live observation');
+    assert.equal(acceptanceSelectorText, null, 'UX details cannot share live acceptance');
+  }
   if (installation === 'userscript') {
     assert.equal(acceptanceSelectorText, null, 'Actual-site acceptance requires an extension');
     assert.equal(liveUrls.length, 0, 'Installed userscript fixture does not support public URLs');
@@ -17599,6 +18039,9 @@ export async function run({
   }
   const upgradeInput = await readUpgradeInput(root);
   const sameVersionInput = await readSameVersionInput(root);
+  if (uxDetailsProbe) {
+    assert(!upgradeInput && !sameVersionInput, 'UX details cannot run during upgrade checks');
+  }
   const openingSelectorText = await readFile(
     join(root, 'validation/windows/inputs/opening-feedback.json'),
     'utf8'
@@ -17688,6 +18131,16 @@ export async function run({
     );
     assert.equal(liveUrls.length, 0, 'Settings probe uses only the owned fixture');
   }
+  if (uxDetailsProbe) {
+    assert(
+      !openingProbe &&
+        !recoveryProbe &&
+        !failedEntryProbe &&
+        !experienceProbe &&
+        !settingsProbe,
+      'Only one focused installed-extension probe may run'
+    );
+  }
   assert(!(upgradeInput && sameVersionInput), 'Upgrade and same-version inputs cannot coexist');
   if (sameVersionInput) {
     assert.equal(liveUrls.length, 0, 'Same-version attribution does not observe live URLs');
@@ -17697,6 +18150,7 @@ export async function run({
   assert(
     !liveSettingsProbe ||
       (!settingsProbe &&
+        !uxDetailsProbe &&
         !experienceProbe &&
         !failedEntryProbe &&
         !recoveryProbe &&
@@ -17717,7 +18171,8 @@ export async function run({
         recoveryProbe ||
         failedEntryProbe ||
         experienceProbe ||
-        settingsProbe,
+        settingsProbe ||
+        uxDetailsProbe,
     }
   );
   validateLiveObservation(liveObservation);
@@ -17746,6 +18201,8 @@ export async function run({
     liveObservation,
     scope: liveSettingsProbe
       ? 'focused installed language/theme settings acceptance; no full prior live campaign'
+      : uxDetailsProbe
+        ? 'focused installed-extension opened details and terminal-video exit; owned X fixture only'
       : settingsProbe
         ? 'installed-extension settings persistence fixture; no live X observation'
         : failedEntryProbe
@@ -17862,7 +18319,17 @@ export async function run({
     if (!sameVersionInput) {
       const images = await createImageFixtures(context);
       const displayImages = await createImageFixtures(context, 0.25);
-      if (failedEntryProbe) {
+      if (uxDetailsProbe) {
+        result.uxDetails = await runUxDetailsProbe({
+          context,
+          extensionId,
+          nativeLoopback,
+          output,
+          root,
+          images,
+          displayImages,
+        });
+      } else if (failedEntryProbe) {
         result.failedEntryRecovery = await runFailedEntryRecoveryProbe({
           context,
           downloads,
