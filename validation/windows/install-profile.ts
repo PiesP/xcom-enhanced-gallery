@@ -15330,6 +15330,115 @@ async function uxControlGeometry(control: Locator, label: string) {
   return geometry;
 }
 
+async function uxStartWheelEventProbe(owner: Locator) {
+  await owner.evaluate((element) => {
+    const scoped = window as Window & {
+      __xegUxWheelProbe?: {
+        controller: AbortController;
+        events: Array<Record<string, unknown>>;
+        overflow: boolean;
+      };
+    };
+    if (scoped.__xegUxWheelProbe) {
+      throw new Error('A prior UX wheel observer was not removed');
+    }
+    const controller = new AbortController();
+    const events: Array<Record<string, unknown>> = [];
+    const probe = { controller, events, overflow: false };
+    scoped.__xegUxWheelProbe = probe;
+    const media = document.querySelector<HTMLElement>('[data-gallery-element="items"]');
+    const toolbar = document.querySelector<HTMLElement>('[data-gallery-element="toolbar"]');
+    const record = (event: Record<string, unknown>) => {
+      if (events.length < 24) {
+        events.push({ atMs: performance.now(), ...event });
+      } else {
+        probe.overflow = true;
+      }
+    };
+    const state = () => ({
+      ownerTop: element.scrollTop,
+      ownerConnected: element.isConnected,
+      mediaTop: media?.scrollTop ?? null,
+      current: toolbar?.getAttribute('data-current-index') ?? null,
+      focused: toolbar?.getAttribute('data-focused-index') ?? null,
+      activeTag: document.activeElement?.tagName ?? null,
+    });
+    window.addEventListener(
+      'wheel',
+      (event) => {
+        const target = event.target instanceof Element ? event.target : null;
+        const row: Record<string, unknown> = {
+          kind: 'wheel',
+          trusted: event.isTrusted,
+          deltaX: event.deltaX,
+          deltaY: event.deltaY,
+          deltaMode: event.deltaMode,
+          targetTag: target?.tagName ?? null,
+          targetOwner: Boolean(target && element.contains(target)),
+          targetMedia: Boolean(target && media?.contains(target)),
+          path: event
+            .composedPath()
+            .filter((node): node is Element => node instanceof Element)
+            .slice(0, 8)
+            .map((node) => ({
+              tag: node.tagName,
+              galleryElement: node.getAttribute('data-gallery-element'),
+            })),
+          ...state(),
+        };
+        record(row);
+        queueMicrotask(() => {
+          row.defaultPreventedAfterDispatch = event.defaultPrevented;
+        });
+      },
+      { capture: true, passive: true, signal: controller.signal }
+    );
+    for (const [name, target] of [
+      ['owner', element],
+      ['media', media],
+    ] as const) {
+      target?.addEventListener(
+        'scroll',
+        () => record({ kind: 'scroll', surface: name, ...state() }),
+        { passive: true, signal: controller.signal }
+      );
+    }
+    document.addEventListener(
+      'focusin',
+      (event) => {
+        const target = event.target instanceof Element ? event.target : null;
+        record({
+          kind: 'focus',
+          targetTag: target?.tagName ?? null,
+          targetGalleryElement:
+            target?.closest('[data-gallery-element]')?.getAttribute('data-gallery-element') ?? null,
+          ...state(),
+        });
+      },
+      { capture: true, signal: controller.signal }
+    );
+  });
+}
+
+async function uxStopWheelEventProbe(page: Page) {
+  return page.evaluate(() => {
+    const scoped = window as Window & {
+      __xegUxWheelProbe?: {
+        controller: AbortController;
+        events: Array<Record<string, unknown>>;
+        overflow: boolean;
+      };
+    };
+    const probe = scoped.__xegUxWheelProbe;
+    if (!probe) {
+      throw new Error('UX wheel observer was missing');
+    }
+    probe.controller.abort();
+    delete scoped.__xegUxWheelProbe;
+    return { events: probe.events, overflow: probe.overflow };
+  });
+}
+
 async function uxOwnedWheel(
   page: Page,
   panel: Locator,
@@ -15390,16 +15499,40 @@ async function uxOwnedWheel(
     selection: beforeSelection,
   });
   assert(point.painted && point.ownsHit, `${label} wheel point is not owned by its painted target`);
-  await page.mouse.move(point.x, point.y);
-  await page.mouse.wheel(0, Math.min(240, overflow));
-  await page.waitForTimeout(200);
+  await uxStartWheelEventProbe(panel);
+  let eventProbe: Awaited<ReturnType<typeof uxStopWheelEventProbe>>;
+  let afterMoveHit: Record<string, unknown> | undefined;
+  try {
+    await page.mouse.move(point.x, point.y);
+    afterMoveHit = await target.evaluate((element, position) => {
+      const rect = element.getBoundingClientRect();
+      const hit = document.elementFromPoint(position.x, position.y);
+      return {
+        rect: rect.toJSON(),
+        targetOwnsHit: Boolean(hit && element.contains(hit)),
+        hitTag: hit?.tagName ?? null,
+        hitGalleryElement:
+          hit?.closest('[data-gallery-element]')?.getAttribute('data-gallery-element') ?? null,
+      };
+    }, point);
+    observations.push({ label, stage: 'after-mousemove', afterMoveHit });
+    await page.mouse.wheel(0, Math.min(240, overflow));
+    await page.waitForTimeout(200);
+  } finally {
+    eventProbe = await uxStopWheelEventProbe(page);
+  }
   const panelAttached = (await panel.count()) === 1;
   const after = {
     panelTop: panelAttached ? await panel.evaluate((element) => element.scrollTop) : null,
     mediaTop: await media.evaluate((element) => element.scrollTop),
     selection: await selection(),
   };
-  observations.push({ label, stage: 'after', panelAttached, ...after });
+  observations.push({ label, stage: 'after', panelAttached, afterMoveHit, eventProbe, ...after });
+  assert.equal(eventProbe.overflow, false, `${label} wheel event observation overflowed`);
+  const ownedWheels = eventProbe.events.filter((event) => event.kind === 'wheel');
+  assert.equal(ownedWheels.length, 1, `${label} must receive one trusted wheel event`);
+  assert.equal(ownedWheels[0]?.trusted, true, `${label} wheel event must be trusted`);
+  assert.equal(ownedWheels[0]?.targetOwner, true, `${label} wheel did not target its panel`);
   assert(
     panelAttached,
     `${label} detached during real wheel input: ${JSON.stringify(observations)}`
@@ -15499,9 +15632,27 @@ async function uxResultWheel(
     clientHeight: element.clientHeight,
   }));
   const before = await snapshot();
-  await page.mouse.move(point.x, point.y);
-  await page.mouse.wheel(0, deltaY);
-  await page.waitForTimeout(200);
+  await uxStartWheelEventProbe(panel);
+  let eventProbe: Awaited<ReturnType<typeof uxStopWheelEventProbe>>;
+  let afterMoveHit: Record<string, unknown> | undefined;
+  try {
+    await page.mouse.move(point.x, point.y);
+    afterMoveHit = await target.evaluate((element, position) => {
+      const rect = element.getBoundingClientRect();
+      const hit = document.elementFromPoint(position.x, position.y);
+      return {
+        rect: rect.toJSON(),
+        targetOwnsHit: Boolean(hit && element.contains(hit)),
+        hitTag: hit?.tagName ?? null,
+        hitGalleryElement:
+          hit?.closest('[data-gallery-element]')?.getAttribute('data-gallery-element') ?? null,
+      };
+    }, point);
+    await page.mouse.wheel(0, deltaY);
+    await page.waitForTimeout(200);
+  } finally {
+    eventProbe = await uxStopWheelEventProbe(page);
+  }
   const afterPanel = await panel.evaluate((element) => ({
     top: element.scrollTop,
     scrollHeight: element.scrollHeight,
@@ -15519,13 +15670,20 @@ async function uxResultWheel(
     expected,
     setup: { beforeSetup, targetScrollTop, ...setup },
     point,
+    afterMoveHit,
     beforePanel,
     afterPanel,
     before,
     after,
     room,
+    eventProbe,
   };
   observations.push(wheelReceipt);
+  assert.equal(eventProbe.overflow, false, `${label} wheel event observation overflowed`);
+  const ownedWheels = eventProbe.events.filter((event) => event.kind === 'wheel');
+  assert.equal(ownedWheels.length, 1, `${label} must receive one trusted wheel event`);
+  assert.equal(ownedWheels[0]?.trusted, true, `${label} wheel event must be trusted`);
+  assert.equal(ownedWheels[0]?.targetOwner, true, `${label} wheel did not target its panel`);
   assert(
     expected === 'move' ? room > 2 : room <= 2,
     `${label} fixture did not provide the required ${expected} direction: ${JSON.stringify(wheelReceipt)}`
@@ -15801,7 +15959,8 @@ async function runUxDetailsProbe({
       const summary = details.locator('summary');
       const expectedSummary =
         locale === 'ko' ? /동영상 저장 화질을 확인하지 못함/u : /Video save quality is unverified/u;
-      assert.match((await summary.textContent()) ?? '', expectedSummary);
+      const summaryText = (await summary.textContent())?.trim() ?? '';
+      assert.match(summaryText, expectedSummary);
       await requireVideoDetails('before-focus');
       await summary.focus();
       await requireVideoDetails('after-focus');
@@ -15813,18 +15972,25 @@ async function runUxDetailsProbe({
       const items = gallery.locator('[data-gallery-element="items"]');
       const wheelObservations: Array<Record<string, unknown>> = [];
       panelReceipt.wheelObservations = wheelObservations;
-      const sourceWheel = await uxOwnedWheel(
-        page,
-        details,
-        items,
-        `${locale} source details`,
-        summary,
-        wheelObservations
-      );
-      panelReceipt.sourceWheel = sourceWheel;
-      await summary.focus();
-      await page.keyboard.press('Space');
-      assert.equal(await details.getAttribute('open'), null);
+      let sourceWheelError: unknown;
+      try {
+        panelReceipt.sourceWheel = await uxOwnedWheel(
+          page,
+          details,
+          items,
+          `${locale} source details`,
+          summary,
+          wheelObservations
+        );
+      } catch (error) {
+        sourceWheelError = error;
+        panelReceipt.sourceWheelError = safeError(error);
+      }
+      if (!sourceWheelError) {
+        await summary.focus();
+        await page.keyboard.press('Space');
+        assert.equal(await details.getAttribute('open'), null);
+      }
       const helpButton = toolbar.locator('#keyboard-help-button');
       const helpPanel = gallery.locator('[data-gallery-element="keyboard-help-panel"]');
       await helpButton.focus();
@@ -15862,9 +16028,11 @@ async function runUxDetailsProbe({
       );
       assert(await gallery.isVisible(), 'Nested help Escape closed the gallery');
       assert.equal(await toolbar.getAttribute('data-current-index'), selected);
-      assert.equal(await details.getAttribute('data-media-id'), mediaId);
+      if (!sourceWheelError) {
+        assert.equal(await details.getAttribute('data-media-id'), mediaId);
+      }
       Object.assign(panelReceipt, {
-        summary: (await summary.textContent())?.trim(),
+        summary: summaryText,
         summaryGeometry,
         closeGeometry,
         nativeEnterAndSpace: true,
@@ -15902,6 +16070,9 @@ async function runUxDetailsProbe({
         settingsToolbarFocusClosesSettings: true,
         mediaFocusWithHelpOpenClosesGallery: true,
       };
+      if (sourceWheelError) {
+        throw sourceWheelError;
+      }
     } finally {
       if (restoreZoom) {
         await fixtureTabZoom(
@@ -16107,9 +16278,20 @@ async function runUxDetailsProbe({
         'stop',
         wheelObservations
       );
-      await page.setViewportSize(
-        zoom ? { width: 1280, height: 1200 } : { width: 1280, height: 900 }
-      );
+      if (zoom) {
+        const roomyZoom = await fixtureTabZoom(
+          context,
+          extensionId,
+          page,
+          1,
+          null,
+          QUALITY_FIXTURE_URL
+        );
+        assert.equal(roomyZoom.observed, 1);
+        result.roomyZoom = roomyZoom;
+      }
+      await page.setViewportSize({ width: 1280, height: 900 });
+      result.roomyViewport = await page.evaluate(() => ({ width: innerWidth, height: innerHeight }));
       const roomyPanelOverflow = await panel.evaluate(
         (element) => element.scrollHeight - element.clientHeight
       );
@@ -16140,24 +16322,64 @@ async function runUxDetailsProbe({
       await panel.locator('button').first().click();
       await panel.waitFor({ state: 'detached' });
       await page.setViewportSize(viewport);
+      if (zoom) {
+        const reapplied = await fixtureTabZoom(
+          context,
+          extensionId,
+          page,
+          2,
+          null,
+          QUALITY_FIXTURE_URL
+        );
+        assert.equal(reapplied.observed, 2);
+        result.reappliedZoom = reapplied;
+      }
       await media.evaluate((element) => {
         element.scrollTop = 0;
       });
-      const mediaBounds = await media.boundingBox();
-      assert(mediaBounds, `${kind} media list is not painted`);
-      await page.mouse.move(
-        mediaBounds.x + mediaBounds.width / 2,
-        mediaBounds.y + mediaBounds.height / 2
-      );
-      await page.mouse.wheel(0, 120);
-      await page.waitForTimeout(200);
-      result.normalMediaWheel = await media.evaluate((element) => ({
-        top: element.scrollTop,
-        scrollHeight: element.scrollHeight,
-        clientHeight: element.clientHeight,
-      }));
+      const mediaPoint = await media.evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        const samples = [0.85, 0.75, 0.65, 0.95, 0.5].map((fraction) => {
+          const x = rect.left + rect.width / 2;
+          const y = rect.top + rect.height * fraction;
+          const hit = document.elementFromPoint(x, y);
+          return {
+            x,
+            y,
+            hitTag: hit?.tagName ?? null,
+            hitItem: Boolean(hit?.closest('[data-gallery-element="item"]')),
+            hitMedia: Boolean(hit && element.contains(hit)),
+          };
+        });
+        return { rect: rect.toJSON(), samples, chosen: samples.find((sample) => sample.hitMedia) };
+      });
+      result.normalMediaPoint = mediaPoint;
+      assert(mediaPoint.chosen, `${kind} has no visible, hit-tested media wheel point`);
+      const mediaBeforeWheel = await media.evaluate((element) => element.scrollTop);
+      await uxStartWheelEventProbe(media);
+      let mediaEventProbe: Awaited<ReturnType<typeof uxStopWheelEventProbe>>;
+      try {
+        await page.mouse.move(mediaPoint.chosen.x, mediaPoint.chosen.y);
+        await page.mouse.wheel(0, 120);
+        await page.waitForTimeout(200);
+      } finally {
+        mediaEventProbe = await uxStopWheelEventProbe(page);
+      }
+      result.normalMediaWheel = {
+        before: mediaBeforeWheel,
+        after: await media.evaluate((element) => ({
+          top: element.scrollTop,
+          scrollHeight: element.scrollHeight,
+          clientHeight: element.clientHeight,
+        })),
+        eventProbe: mediaEventProbe,
+      };
+      const mediaWheelEvents = mediaEventProbe.events.filter((event) => event.kind === 'wheel');
+      assert.equal(mediaWheelEvents.length, 1, `${kind} media wheel must be one native event`);
+      assert.equal(mediaWheelEvents[0]?.trusted, true, `${kind} media wheel must be trusted`);
+      assert.equal(mediaWheelEvents[0]?.targetOwner, true, `${kind} media wheel missed the list`);
       assert(
-        (result.normalMediaWheel as { top: number }).top > 1,
+        (result.normalMediaWheel as { after: { top: number } }).after.top > mediaBeforeWheel + 1,
         `${kind} normal media wheel stopped scrolling the gallery`
       );
     } finally {
@@ -16226,18 +16448,40 @@ async function runUxDetailsProbe({
     const media = gallery.locator('[data-gallery-element="items"]');
     const result = receipt.oneItemPanel as Record<string, unknown>;
     result.fit = 'Fit Window';
-    result.mediaOverflowBeforeFailure = await media.evaluate(
-      (element) => element.scrollHeight - element.clientHeight
-    );
-    assert(Number(result.mediaOverflowBeforeFailure) <= 2, 'Fit Window media must not overflow');
+    const layout = () =>
+      media.evaluate((element) => {
+        const item = element.querySelector<HTMLElement>('[data-gallery-element="item"]');
+        const source = document.querySelector<HTMLElement>('[data-gallery-element="source-details"]');
+        const spacer = getComputedStyle(element, '::after');
+        return {
+          viewport: { width: innerWidth, height: innerHeight },
+          media: {
+            scrollTop: element.scrollTop,
+            scrollHeight: element.scrollHeight,
+            clientHeight: element.clientHeight,
+            bounds: element.getBoundingClientRect().toJSON(),
+            paddingTop: getComputedStyle(element).paddingTop,
+          },
+          item: {
+            fit: item?.getAttribute('data-fit-mode') ?? null,
+            bounds: item?.getBoundingClientRect().toJSON() ?? null,
+          },
+          sourceBounds: source?.getBoundingClientRect().toJSON() ?? null,
+          spacerHeight: spacer.height,
+          toolbarClearance: getComputedStyle(element)
+            .getPropertyValue('--xeg-toolbar-clearance')
+            .trim(),
+        };
+      });
+    result.beforeFailureLayout = await layout();
     const knownDownloads = new Set((await queryDownloads(extensionPage!)).map(({ id }) => id));
     await toolbar.locator('button[aria-label="Download"]').click();
     const panel = gallery.locator('[data-gallery-element="gallery-failure-notice"]');
     await panel.waitFor({ state: 'visible' });
-    result.mediaOverflow = await media.evaluate(
-      (element) => element.scrollHeight - element.clientHeight
-    );
-    assert(Number(result.mediaOverflow) <= 2, 'One-item media list must not overflow with notice');
+    const withNoticeLayout = await layout();
+    result.withNoticeLayout = withNoticeLayout;
+    result.mediaOverflow = withNoticeLayout.media.scrollHeight - withNoticeLayout.media.clientHeight;
+    result.mediaNoOverflow = 'not-applicable-unreachable-with-product-spacer';
     assert.deepEqual(
       api.map(({ tweetId }) => tweetId),
       [TWEET_ID]
@@ -16251,7 +16495,7 @@ async function runUxDetailsProbe({
       (element) => element.scrollHeight - element.clientHeight
     );
     assert(Number(result.panelOverflow) <= 2, 'One-item failure notice must not overflow');
-    const screenshot = 'ux-details-one-item-no-overflow.png';
+    const screenshot = 'ux-details-one-item-panel-no-overflow.png';
     await page.screenshot({ path: join(output, screenshot) });
     result.screenshot = screenshot;
     await uxResultWheel(
@@ -16259,7 +16503,7 @@ async function runUxDetailsProbe({
       panel,
       panel.locator('p').first(),
       media,
-      'one-item text with no panel or media overflow',
+      'one-item text with no panel overflow',
       120,
       'top',
       'stop',
@@ -16270,7 +16514,7 @@ async function runUxDetailsProbe({
       panel,
       panel.locator('button'),
       media,
-      'one-item button with no panel or media overflow',
+      'one-item button with no panel overflow',
       -120,
       'bottom',
       'stop',
@@ -16379,7 +16623,7 @@ async function runUxDetailsProbe({
     await phase('result-partial-zip', (page, receipt) =>
       resultPanelCase(page, receipt, 'partial-zip')
     );
-    await phase('result-one-item-no-overflow', oneItemPanelCase);
+    await phase('result-one-item-panel-no-overflow', oneItemPanelCase);
     await phase('terminal-video-exit', terminalCase);
     const after = await notificationObserver.snapshot();
     observations.notificationAfter = after;
