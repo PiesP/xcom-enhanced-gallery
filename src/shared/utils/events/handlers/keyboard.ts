@@ -6,12 +6,10 @@
  * PC-only policy: Handles keyboard events only
  */
 
-import { getNotificationAdapter, notifySafely } from '@platform/index';
 import { shouldHandleGlobalShortcut } from '@piesp/browser-core/design';
 import { isGalleryRecoveryActive } from '@shared/dom/utils';
 import { logger } from '@shared/logging/logger';
 import type { EventHandlers, GalleryEventOptions } from '@shared/services/event-manager';
-import { getLanguageService } from '@shared/services/language-service';
 import {
   gallerySignals,
   getDisplayedMediaIndex,
@@ -21,6 +19,7 @@ import {
 } from '@shared/state/signals/gallery.signals';
 
 import { executeVideoControl } from '@shared/utils/events/handlers/video-control-helper';
+import { KEYBOARD_HELP_REQUEST } from '@shared/utils/events/handlers/keyboard-help-event';
 
 // ============================================================================
 // Keyboard Debounce State (closure-encapsulated to avoid module-level mutable state)
@@ -99,7 +98,7 @@ const NAVIGATION_KEYS = new Set([
 const VIDEO_CONTROL_KEYS = new Set(['ArrowUp', 'ArrowDown', 'm', 'M']);
 
 const OWNED_CONTROL_SELECTOR =
-  'a[href], input, select, textarea, summary, [role="menuitem"], [role="slider"], [data-gallery-element="settings-panel"], [data-gallery-element="tweet-panel"]';
+  'a[href], input, select, textarea, summary, [role="menuitem"], [role="slider"], [data-gallery-element="settings-panel"], [data-gallery-element="tweet-panel"], [data-gallery-element="keyboard-help-panel"]';
 const ACTIVATION_CONTROL_SELECTOR = 'button, [role="button"]';
 
 function eventPath(event: KeyboardEvent): readonly EventTarget[] {
@@ -123,12 +122,15 @@ function nativeControlOwnsKey(event: KeyboardEvent): boolean {
   return event.target instanceof Element && event.target.closest(selector) !== null;
 }
 
-function expandedSettingsOwnsEscape(event: KeyboardEvent): boolean {
+function expandedToolbarPanelOwnsEscape(event: KeyboardEvent): boolean {
   const toolbar = eventPath(event).find(
     (target): target is HTMLElement =>
       target instanceof HTMLElement && target.matches('[data-gallery-element="toolbar"]')
   );
-  return (toolbar?.querySelector('#settings-button[aria-expanded="true"]') ?? null) !== null;
+  return (
+    (toolbar?.querySelector('#settings-button[aria-expanded="true"]') ?? null) !== null ||
+    (toolbar?.querySelector('#keyboard-help-button[aria-expanded="true"]') ?? null) !== null
+  );
 }
 
 /**
@@ -160,9 +162,9 @@ export function handleKeyboardEvent(
       return;
     }
 
-    // An expanded settings panel owns Escape and returns focus to its button.
+    // Expanded toolbar panels own Escape and restore focus to their entry buttons.
     if (key === 'Escape' && isGalleryOpen) {
-      if (expandedSettingsOwnsEscape(event)) {
+      if (expandedToolbarPanelOwnsEscape(event)) {
         return;
       }
       handlers.onGalleryClose();
@@ -202,7 +204,7 @@ export function handleKeyboardEvent(
     event.stopPropagation();
 
     if (key === '?') {
-      showKeyboardHelp();
+      requestKeyboardHelp();
     } else if (key === ' ') {
       handleVideoControl(key);
     } else if (
@@ -298,27 +300,13 @@ function handleVideoControl(key: string): void {
 }
 
 /**
- * Shows keyboard help notification with debouncing to prevent spam.
+ * Opens the gallery toolbar's persistent help without repeating a platform notification.
  * @internal
  */
-function showKeyboardHelp(): void {
+function requestKeyboardHelp(): void {
   if (!keyboardDebouncer.shouldExecute('?', 500)) {
     return;
   }
 
-  try {
-    const lang = getLanguageService();
-    notifySafely(
-      getNotificationAdapter(),
-      lang.translate('msg.kb.t'),
-      [
-        lang.translate('msg.kb.prev'),
-        lang.translate('msg.kb.next'),
-        lang.translate('msg.kb.cls'),
-        lang.translate('msg.kb.toggle'),
-      ].join('\n')
-    );
-  } catch {
-    // Notification failure must not break keyboard navigation
-  }
+  document.body.dispatchEvent(new Event(KEYBOARD_HELP_REQUEST));
 }

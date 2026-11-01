@@ -158,7 +158,8 @@
 
 /* Expanded toolbar state: visually connect the toolbar with the panel */
 .galleryToolbar.settingsExpanded,
-.galleryToolbar.tweetPanelExpanded {
+.galleryToolbar.tweetPanelExpanded,
+.galleryToolbar.helpPanelExpanded {
   /* Remove the bottom radius for a seamless connection to the panel */
   border-radius: var(--xeg-radius-lg) var(--xeg-radius-lg) 0 0;
 }
@@ -452,11 +453,11 @@ button.fitButton {
     transition: none;
   }
 
-  :where(.settingsPanel, .tweetPanel) {
+  :where(.settingsPanel, .tweetPanel, .helpPanel) {
     transition: none;
   }
 
-  :where(.settingsPanel, .tweetPanel).panelExpanded {
+  :where(.settingsPanel, .tweetPanel, .helpPanel).panelExpanded {
     transition: none;
   }
 
@@ -472,7 +473,7 @@ button.fitButton {
 
 /* ===== Phase 44: Toolbar Expandable Panel Styles ===== */
 
-:where(.settingsPanel, .tweetPanel) {
+:where(.settingsPanel, .tweetPanel, .helpPanel) {
   position: absolute;
   top: 100%;
   left: 0;
@@ -524,7 +525,61 @@ button.fitButton {
   min-height: var(--xeg-toolbar-panel-height);
 }
 
-:where(.settingsPanel, .tweetPanel).panelExpanded {
+.helpPanelBody {
+  display: grid;
+  gap: var(--xeg-spacing-sm);
+  color: var(--xeg-toolbar-text-color, var(--xeg-color-text-primary));
+  font-size: var(--xeg-font-size-sm);
+  line-height: var(--xeg-line-height-snug);
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+.helpPanelBody p,
+.helpList {
+  margin: 0;
+}
+
+.helpList {
+  padding-inline-start: 1.5em;
+}
+
+.helpList li + li {
+  margin-block-start: var(--xeg-spacing-xs);
+}
+
+.helpPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--xeg-spacing-sm);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(
+    --toolbar-surface-base,
+    var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface))
+  );
+}
+
+.helpCloseButton {
+  min-block-size: 44px;
+  min-inline-size: 44px;
+  padding: var(--xeg-spacing-xs) var(--xeg-spacing-sm);
+  color: var(--xeg-toolbar-text-color, var(--xeg-color-text-primary));
+  background: var(--xeg-toolbar-element-bg, var(--xeg-color-neutral-100));
+  border: 1px solid var(--xeg-toolbar-border, currentColor);
+  border-radius: var(--xeg-radius-sm);
+  cursor: pointer;
+}
+
+.helpCloseButton:focus-visible {
+  outline: 2px solid var(--xeg-focus-indicator-color, currentColor);
+  outline-offset: 2px;
+}
+
+:where(.settingsPanel, .tweetPanel, .helpPanel).panelExpanded {
   height: auto;
   opacity: 1;
   transform: translateY(0);

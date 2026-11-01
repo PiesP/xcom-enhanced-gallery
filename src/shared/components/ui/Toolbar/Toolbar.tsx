@@ -231,6 +231,10 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
       showSettingsButton={typeof local.handlers.lifecycle.onOpenSettings === 'function'}
       isTweetPanelExpanded={tweetExpanded}
       toggleTweetPanelExpanded={toggleTweet}
+      onOpenHelp={() => {
+        setSettingsExpanded(false);
+        setTweetExpanded(false);
+      }}
     />
   );
 }

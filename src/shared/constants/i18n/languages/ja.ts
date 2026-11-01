@@ -30,6 +30,9 @@ export const ja: LanguageStrings = {
     downloadGroup: 'ダウンロード',
     auxGroup: 'その他の操作',
     settingsPanel: '設定パネル',
+    helpOpen: 'キーボードヘルプ',
+    helpPanel: 'キーボードヘルプパネル',
+    helpClose: 'ヘルプを閉じる',
   },
   st: {
     th: 'テーマ',
@@ -46,13 +49,14 @@ export const ja: LanguageStrings = {
     langAr: 'アラビア語',
     videoClickMode: '動画のクリック',
     videoClickNative: '動画のクリックをXで処理',
-    videoClickSurfaces: '動画画面からギャラリーを開く',
-    videoClickUnmarked: '対象の再生ボタンもギャラリーで開く',
+    videoClickSurfaces: '動画エリアからギャラリーを開く',
+    videoClickUnmarked: '対応する再生ボタンからも開く',
     videoClickHelp:
-      '後ろの2つのモードでは対象の動画画面からギャラリーを開きます。最後のモードのみ、検証済みの目印のない再生ボタンも対象です。通常のプレーヤー操作はXで行います。',
+      '対象の動画クリックの動作を選びます。ギャラリーでは保存済みの音声設定を使い、別の一時停止したプレーヤーを最初から開きます。閉じてもXでの再生は自動的に再開しません。通常のプレーヤー操作はXで行います。',
     videoClickSaveError:
       '動画のクリック設定を保存できませんでした。現在の設定が引き続き有効です。もう一度お試しください。',
     unsavedSettings: '設定は現在のセッションで有効ですが、保存されていません。',
+    unsavedSession: 'このセッションに適用中・未保存',
     retrySettingsSave: '保存を再試行',
   },
   msg: {
@@ -95,13 +99,23 @@ export const ja: LanguageStrings = {
     },
     kb: {
       t: 'キーボードショートカット',
-      prev: 'ArrowLeft: 前のメディア',
-      next: 'ArrowRight: 次のメディア',
-      cls: 'Escape: ギャラリーを閉じる',
-      toggle: '?: このヘルプを表示',
+      prev: '左: 表示中の前の項目',
+      next: '右: 表示中の次の項目',
+      cls: 'Escape: 開いているパネルまたはギャラリーを閉じる',
+      toggle: '?: このヘルプを開く',
+      firstLast: 'Home / End: 最初 / 最後の項目',
+      five: 'PageUp / PageDown: 5項目戻る / 進む',
+      vertical: '上 / 下: 画像の項目を移動、表示中のギャラリー動画では音量を調整',
+      playback: 'Space: ギャラリー動画の再生・一時停止、M: ミュート切替',
+      focus: 'Tab / Shift+Tab: コントロールを移動',
+      context:
+        'フォーカス中のボタンではSpace / Enterが使われ、フォームとパネルのキー操作はそれぞれで処理されます。',
+      recovery: 'Alt+Shift+Vは対象の動画クリックに失敗した直後のみ利用できます。',
     },
     dl: {
       bulkOutcome: {
+        cancelRecoveryAndDismiss: '欠落項目の復旧をキャンセルして ZIP の結果を閉じる',
+        details: 'ZIP の結果の詳細',
         titleHandedOff: 'ZIP をブラウザーに引き渡しました',
         titleFailed: 'ZIP を引き渡せませんでした',
         previous: '前回の ZIP 結果',
@@ -155,6 +169,23 @@ export const ja: LanguageStrings = {
         'ダウンロード用のメモリ上限に達しました。まず進行中のダウンロードが終わるまで待ってください。進行中のダウンロードがなくても上限に達する場合は、このページを再読み込みしてください。その後、ファイル数を減らして再試行してください。',
     },
     gal: {
+      sourceDetails: {
+        title: 'メディアと保存の詳細',
+        shown: '表示中の{count}件 · このタイルからのみ復旧',
+        cdnOriginal: '保存元: X の CDN で確認された元画像。',
+        bestMp4: '保存元: X で利用可能な最良の MP4。',
+        observed: '動画の保存画質を確認できません',
+        observedDetail:
+          '保存には確認した動画ソースを使用します。再生には別の映像が使われる場合があります。',
+        unavailable: '元画像を保存できません',
+        unavailableDetail:
+          '確認済みの元画像が見つかりません。この項目は保存できず、低画質版で代用しません。',
+      },
+      entryFailureNext: 'X のポストでこのメディアを確認してください。',
+      downloadFailureNext:
+        'ブラウザーのダウンロード一覧で保存状況を確認するか、X のポストに戻ってください。',
+      dismissFailure: 'エラー案内を閉じる',
+      mediaType: { image: '画像', video: '動画' },
       video: {
         playbackFallback:
           '別の画質で再生します。ダウンロードには利用可能な最良のソースを使用します。',
