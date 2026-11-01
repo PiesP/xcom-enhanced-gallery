@@ -101,7 +101,7 @@ export const ja: LanguageStrings = {
       t: 'キーボードショートカット',
       prev: '左: 表示中の前の項目',
       next: '右: 表示中の次の項目',
-      cls: 'Escape: 開いているパネルまたはギャラリーを閉じる',
+      cls: 'Escape: ギャラリーを閉じる。ツールバー内にフォーカスがある場合、開いている設定またはキーボードヘルプを先に閉じる',
       toggle: '?: このヘルプを開く',
       firstLast: 'Home / End: 最初 / 最後の項目',
       five: 'PageUp / PageDown: 5項目戻る / 進む',
