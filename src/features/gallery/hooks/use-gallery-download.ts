@@ -176,6 +176,11 @@ export function createDownloadHandler() {
       return;
     }
     recoveryJob = null;
+    // A zero count marks only an in-flight recovery. A later ordinary ZIP
+    // request must not inherit that marker from a cancelled or failed retry.
+    if (type === 'all' && downloadState.bulkOutcome?.recoverableCount === 0) {
+      setBulkDownloadOutcome({ ...downloadState.bulkOutcome, recoverableCount: undefined });
+    }
 
     // A7: Clear stale error from a previous download before starting a new one.
     setError(null);
@@ -390,6 +395,8 @@ export function createDownloadHandler() {
     recoveryJob = null;
     const previousOutcome = downloadState.bulkOutcome;
     if (previousOutcome) {
+      // The old result remains visible while a recovery runs. This zero count
+      // is its in-flight marker, not an offer to start another recovery.
       setBulkDownloadOutcome({ ...previousOutcome, recoverableCount: 0 });
     }
     setError(null);
@@ -417,6 +424,9 @@ export function createDownloadHandler() {
         );
       } catch (error) {
         if (isCurrent()) {
+          if (previousOutcome) {
+            setBulkDownloadOutcome({ ...previousOutcome, recoverableCount: undefined });
+          }
           setDownloadStatus('error');
           setError(normalizeErrorMessage(error), 'bulkDownload');
         }
@@ -426,6 +436,9 @@ export function createDownloadHandler() {
         return;
       }
       if (result.code === 'CANCELLED') {
+        if (previousOutcome) {
+          setBulkDownloadOutcome({ ...previousOutcome, recoverableCount: undefined });
+        }
         setDownloadStatus('idle');
         return;
       }
