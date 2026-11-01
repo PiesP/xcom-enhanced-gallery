@@ -15378,16 +15378,23 @@ async function uxResultWheel(
   label: string,
   deltaY: number,
   position: 'top' | 'bottom' | 'current',
+  expected: 'move' | 'stop',
   observations: Array<Record<string, unknown>>
 ) {
   assert.equal(await panel.count(), 1, `${label} result panel is missing`);
   assert.equal(await target.count(), 1, `${label} wheel target is ambiguous`);
+  const beforeSetup = await panel.evaluate((element) => element.scrollTop);
+  await target.scrollIntoViewIfNeeded();
+  const targetScrollTop = await panel.evaluate((element) => element.scrollTop);
   if (position !== 'current') {
     await panel.evaluate((element, edge) => {
       element.scrollTop = edge === 'top' ? 0 : element.scrollHeight;
     }, position);
   }
-  await target.scrollIntoViewIfNeeded();
+  const setup = await panel.evaluate((element) => ({
+    top: element.scrollTop,
+    max: element.scrollHeight - element.clientHeight,
+  }));
   const point = await target.evaluate((element) => {
     const rect = element.getBoundingClientRect();
     const x = rect.left + rect.width / 2;
@@ -15395,6 +15402,14 @@ async function uxResultWheel(
     const hit = document.elementFromPoint(x, y);
     return { x, y, hit: Boolean(hit && element.contains(hit)) };
   });
+  observations.push({ label, stage: 'setup', position, beforeSetup, targetScrollTop, ...setup, point });
+  if (position !== 'current') {
+    const edge = position === 'top' ? 0 : Math.max(0, setup.max);
+    assert(
+      Math.abs(setup.top - edge) < 2,
+      `${label} did not reach its requested ${position} edge`
+    );
+  }
   assert(point.hit, `${label} target must receive the real wheel input`);
   const snapshot = () =>
     page.evaluate(() => {
@@ -15434,10 +15449,26 @@ async function uxResultWheel(
     deltaY > 0
       ? beforePanel.scrollHeight - beforePanel.clientHeight - beforePanel.top
       : beforePanel.top;
-  const wheelReceipt = { label, deltaY, point, beforePanel, afterPanel, before, after, room };
+  const wheelReceipt = {
+    label,
+    deltaY,
+    position,
+    expected,
+    setup: { beforeSetup, targetScrollTop, ...setup },
+    point,
+    beforePanel,
+    afterPanel,
+    before,
+    after,
+    room,
+  };
   observations.push(wheelReceipt);
+  assert(
+    expected === 'move' ? room > 2 : room <= 2,
+    `${label} fixture did not provide the required ${expected} direction: ${JSON.stringify(wheelReceipt)}`
+  );
   assert.deepEqual(after, before, `${label} wheel changed gallery, focus, or host state`);
-  if (room > 2) {
+  if (expected === 'move') {
     assert(
       (afterPanel.top - beforePanel.top) * Math.sign(deltaY) > 1,
       `${label} did not consume real wheel input in its available direction`
@@ -15768,6 +15799,9 @@ async function runUxDetailsProbe({
       await page.keyboard.press('Escape');
       await settingsPanel.waitFor({ state: 'hidden' });
       assert(await gallery.isVisible(), 'Settings Escape closed the gallery');
+      await page.waitForFunction(() => document.activeElement?.id === 'settings-button', null, {
+        timeout: 2_000,
+      });
       assert.equal(
         await settingsButton.evaluate((element) => document.activeElement === element),
         true,
@@ -15776,12 +15810,12 @@ async function runUxDetailsProbe({
       await helpButton.focus();
       await page.keyboard.press('Enter');
       await helpPanel.waitFor({ state: 'visible' });
-      const mediaImage = gallery.locator('[data-gallery-element="item"] img').first();
-      await mediaImage.focus();
+      const mediaAction = gallery.locator('[data-gallery-element="item"] button').first();
+      await mediaAction.focus();
       assert.equal(
-        await mediaImage.evaluate((element) => document.activeElement === element),
+        await mediaAction.evaluate((element) => document.activeElement === element),
         true,
-        'Media image must own focus for ordinary Escape'
+        'Media action must own focus for ordinary Escape'
       );
       await page.keyboard.press('Escape');
       await gallery.waitFor({ state: 'detached' });
@@ -15945,16 +15979,18 @@ async function runUxDetailsProbe({
         `${kind} paragraph down`,
         120,
         'top',
+        'move',
         wheelObservations
       );
       await uxResultWheel(
         page,
         panel,
-        panel.locator('button').first(),
+        kind === 'partial-zip' ? panel.locator('button').last() : panel.locator('button'),
         media,
-        `${kind} button up`,
-        -120,
-        'bottom',
+        `${kind} button wheel`,
+        kind === 'partial-zip' ? 120 : -120,
+        kind === 'partial-zip' ? 'current' : 'bottom',
+        'move',
         wheelObservations
       );
       if (kind === 'partial-zip') {
@@ -15965,7 +16001,8 @@ async function runUxDetailsProbe({
           media,
           'partial ZIP summary up',
           -120,
-          'bottom',
+          'current',
+          'move',
           wheelObservations
         );
       }
@@ -15977,6 +16014,7 @@ async function runUxDetailsProbe({
         `${kind} top boundary`,
         -120,
         'top',
+        'stop',
         wheelObservations
       );
       await uxResultWheel(
@@ -15987,6 +16025,7 @@ async function runUxDetailsProbe({
         `${kind} bottom boundary`,
         120,
         'bottom',
+        'stop',
         wheelObservations
       );
       await page.setViewportSize(
@@ -16005,6 +16044,7 @@ async function runUxDetailsProbe({
         `${kind} non-overflow`,
         120,
         'top',
+        'stop',
         wheelObservations
       );
       assert.equal(await panel.count(), 1, `${kind} wheel dismissed its panel`);
@@ -16057,6 +16097,97 @@ async function runUxDetailsProbe({
         );
       }
     }
+  };
+
+  const oneItemPanelCase = async (page: Page, receipt: Record<string, unknown>) => {
+    const api: Array<{ tweetId: string | null; url: string }> = [];
+    const wheelObservations: Array<Record<string, unknown>> = [];
+    receipt.oneItemPanel = { api, wheelObservations };
+    await page.route(apiPattern, denyProvider(api));
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(FIXTURE_URL);
+    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+    await page.evaluate(() => {
+      const article = document.querySelector('article[data-route="classic"][data-phase="normal"]');
+      const tile = article?.querySelector<HTMLElement>('[data-testid="tweetPhoto"]');
+      const image = tile?.querySelector<HTMLImageElement>('img');
+      if (!article || !tile || !image) {
+        throw new Error('Owned one-item source-limitation fixture is missing');
+      }
+      const link = document.createElement('a');
+      link.href = '/testuser/status/1234567890123456789';
+      link.dataset.sourceLimitationTile = '';
+      link.append(tile);
+      article.after(link);
+      image.src = image.src.replace(/name=[^&]+/u, 'name=giant');
+    });
+    const tile = page.locator('[data-source-limitation-tile] [data-testid="tweetPhoto"] img');
+    await tile.scrollIntoViewIfNeeded();
+    await page.waitForFunction(() => {
+      const image = document.querySelector('[data-source-limitation-tile] img');
+      return image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0;
+    });
+    await tile.click();
+    const gallery = page.locator('[data-xeg-gallery-container]');
+    await gallery.waitFor({ state: 'visible' });
+    assert.equal(await gallery.locator('[data-gallery-element="item"]').count(), 1);
+    await page.waitForTimeout(5_250);
+    await assertSourceDetails(gallery, 'visible-tile');
+    await assertSourceDetails(gallery, 'unverified-original');
+    const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
+    const settingsButton = toolbar.locator('#settings-button');
+    await settingsButton.click();
+    const language = gallery.locator('#settings-language-select');
+    await language.waitFor({ state: 'visible' });
+    await language.selectOption('en');
+    await settingsButton.click();
+    const media = gallery.locator('[data-gallery-element="items"]');
+    const result = receipt.oneItemPanel as Record<string, unknown>;
+    result.mediaOverflow = await media.evaluate(
+      (element) => element.scrollHeight - element.clientHeight
+    );
+    assert(Number(result.mediaOverflow) <= 2, 'One-item media list must not overflow');
+    const knownDownloads = new Set((await queryDownloads(extensionPage!)).map(({ id }) => id));
+    await toolbar.locator('button[aria-label="Download"]').click();
+    const panel = gallery.locator('[data-gallery-element="gallery-failure-notice"]');
+    await panel.waitFor({ state: 'visible' });
+    assert.deepEqual(api.map(({ tweetId }) => tweetId), [TWEET_ID]);
+    assert.deepEqual(
+      (await queryDownloads(extensionPage!)).filter(({ id }) => !knownDownloads.has(id)),
+      [],
+      'Unverified one-item source must not start a native download'
+    );
+    result.panelOverflow = await panel.evaluate(
+      (element) => element.scrollHeight - element.clientHeight
+    );
+    assert(Number(result.panelOverflow) <= 2, 'One-item failure notice must not overflow');
+    const screenshot = 'ux-details-one-item-no-overflow.png';
+    await page.screenshot({ path: join(output, screenshot) });
+    result.screenshot = screenshot;
+    await uxResultWheel(
+      page,
+      panel,
+      panel.locator('p').first(),
+      media,
+      'one-item text with no panel or media overflow',
+      120,
+      'top',
+      'stop',
+      wheelObservations
+    );
+    await uxResultWheel(
+      page,
+      panel,
+      panel.locator('button'),
+      media,
+      'one-item button with no panel or media overflow',
+      -120,
+      'bottom',
+      'stop',
+      wheelObservations
+    );
+    await panel.locator('button').click();
+    await panel.waitFor({ state: 'detached' });
   };
 
   const terminalCase = async (page: Page, receipt: Record<string, unknown>) => {
@@ -16158,6 +16289,7 @@ async function runUxDetailsProbe({
     await phase('result-partial-zip', (page, receipt) =>
       resultPanelCase(page, receipt, 'partial-zip')
     );
+    await phase('result-one-item-no-overflow', oneItemPanelCase);
     await phase('terminal-video-exit', terminalCase);
     const after = await notificationObserver.snapshot();
     observations.notificationAfter = after;

@@ -114,6 +114,8 @@ source-quality documents produce a real native single-save failure in Korean at
 zoom. The result probes measure positive panel and media overflow, real wheel
 movement over text, controls, and the ZIP summary, top and bottom containment,
 non-overflow containment, and normal media-wheel scrolling after dismissal.
+The existing one-item, article-less source-limitation fixture checks wheel
+containment when both the notice and the media list have no overflow.
 Each case keeps a receipt even when its assertion fails, so baseline and
 candidate behavior can be compared without hiding the second panel. A fresh fixture document
 returns HTTP 503 for the exact known video source after opening the gallery;
