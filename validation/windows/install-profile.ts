@@ -14643,9 +14643,58 @@ async function runMediaDownloadRecoveryProbe({
         1,
         'Observed video must follow one denied provider route'
       );
-      observations.x03ObservedVideo = { summary: observedSummary, deniedApi: deniedVideoApi };
+      observations.x03ObservedVideo = { summary: observedSummary, deniedApi: [...deniedVideoApi] };
       await page.keyboard.press('Escape');
       await videoGallery.waitFor({ state: 'detached' });
+      await page.goto(`https://x.com/rapid_a/status/${RAPID_CLICK_A}`);
+      await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+      await page.evaluate((source) => {
+        const article = document.querySelector('article[data-rapid="a"]');
+        if (!article) {
+          throw new Error('Owned mixed-quality article is missing');
+        }
+        const tile = document.createElement('div');
+        tile.dataset.testid = 'tweetPhoto';
+        const image = document.createElement('img');
+        image.src = source;
+        image.width = 140;
+        image.height = 90;
+        image.alt = 'Verified fixture image';
+        tile.append(image);
+        article.append(tile);
+      }, `https://pbs.twimg.com/media/${QUALITY_IMAGE_PATHS[0]}?format=jpg&name=small`);
+      await page.locator('article[data-rapid="a"] video').click();
+      const mixedGallery = page.locator('[data-xeg-gallery-container]');
+      await mixedGallery.waitFor({ state: 'visible' });
+      assert.equal(await mixedGallery.locator('[data-gallery-element="item"]').count(), 2);
+      const mixedSummary = await assertSourceDetails(mixedGallery, 'observed');
+      assert(!mixedSummary?.includes('recovered from this tile only'));
+      const videoPosition = Number(
+        await mixedGallery.locator('#xeg-toolbar-counter').getAttribute('data-position')
+      );
+      const towardImage = videoPosition === 1 ? 'Next' : 'Previous';
+      await mixedGallery.locator(`button[aria-label="${towardImage}"]`).click();
+      await assertQuotedSelection(page, {
+        position: videoPosition === 1 ? 2 : 1,
+        total: 2,
+        type: 'image',
+        path: `/media/${QUALITY_IMAGE_PATHS[0]}`,
+      });
+      await assertSourceDetails(mixedGallery, 'absent');
+      await mixedGallery
+        .locator(`button[aria-label="${towardImage === 'Next' ? 'Previous' : 'Next'}"]`)
+        .click();
+      await assertSourceDetails(mixedGallery, 'observed');
+      observations.x03MixedSaveQuality = {
+        observedVideoPosition: videoPosition,
+        verifiedImageHasNoWarning: true,
+        displayedItemDetailsUpdated: true,
+        noFalseTileScope: true,
+        deniedApi: deniedVideoApi.slice(1),
+      };
+      assert.equal(deniedVideoApi.length, 2, 'Each video fixture must make one provider request');
+      await page.keyboard.press('Escape');
+      await mixedGallery.waitFor({ state: 'detached' });
     } finally {
       await page.unroute(videoApiPattern, denyVideoApi);
     }

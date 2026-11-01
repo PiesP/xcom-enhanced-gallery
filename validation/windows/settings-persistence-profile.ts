@@ -60,10 +60,13 @@ export async function installStorageFaultControl(page: Page): Promise<void> {
       const result = gate.then(write);
       faults.releaseHeldFitPrimary = () => {
         faults.fitPrimaryHeld = false;
-        faults.releaseHeldFitPrimary = undefined;
+        delete faults.releaseHeldFitPrimary;
         release();
         // The application still receives the original result, including denial.
-        return result.then(() => undefined, () => undefined);
+        return result.then(
+          () => undefined,
+          () => undefined
+        );
       };
       return result;
     };
@@ -100,12 +103,18 @@ export async function installStorageFaultControl(page: Page): Promise<void> {
         }
         faults.denyPrimary = false;
         faults.denyFallback = false;
-        if (host.GM_getValue === controlledGet) host.GM_getValue = originalGet;
-        if (host.GM_setValue === controlledSet) host.GM_setValue = originalSet;
+        if (host.GM_getValue === controlledGet) {
+          host.GM_getValue = originalGet;
+        }
+        if (host.GM_setValue === controlledSet) {
+          host.GM_setValue = originalSet;
+        }
         if (Storage.prototype.setItem === controlledFallbackSet) {
           Storage.prototype.setItem = originalFallbackSet;
         }
-        if (host.__xegStorageFaults === faults) delete host.__xegStorageFaults;
+        if (host.__xegStorageFaults === faults) {
+          delete host.__xegStorageFaults;
+        }
       },
     };
     host.__xegStorageFaults = faults;
@@ -159,6 +168,7 @@ export async function runSettingsPersistenceFixture({
       'built userscript with controlled GM/localStorage boundary; no manager or extension installation',
     browserVersion,
   };
+  const failures: unknown[] = [];
   try {
     await page.locator('[data-testid="tweetPhoto"] img').first().click();
     const gallery = page.locator('[data-xeg-gallery-container]');
@@ -311,7 +321,11 @@ export async function runSettingsPersistenceFixture({
     assert.equal(await readDurableFit(page), delayedFitBefore);
     await settingsButton.click();
     assert.equal(await settingsButton.getAttribute('aria-expanded'), 'false');
-    assert.equal(await outerCue.count(), 0, 'Closing Settings while save is pending showed failure');
+    assert.equal(
+      await outerCue.count(),
+      0,
+      'Closing Settings while save is pending showed failure'
+    );
     await page.evaluate(async () => {
       const faults = (window as StorageHost).__xegStorageFaults!;
       faults.denyPrimary = true;
@@ -524,8 +538,8 @@ export async function runSettingsPersistenceFixture({
     };
     assert.deepEqual(runtimeErrors, []);
     evidence.status = 'passed';
-    return evidence;
   } catch (error) {
+    failures.push(error);
     evidence.error = error instanceof Error ? error.message : String(error);
     evidence.failureSnapshot = await page
       .evaluate(() => ({
@@ -542,25 +556,24 @@ export async function runSettingsPersistenceFixture({
     await page
       .screenshot({ path: path.join(output, 'settings-failure.png') })
       .catch(() => undefined);
-    throw error;
   } finally {
-    let faultCleanupError: string | null = null;
     await page
       .evaluate(async () => {
         await (window as StorageHost).__xegStorageFaults?.restore();
       })
       .catch((error: unknown) => {
-        faultCleanupError = error instanceof Error ? error.message : String(error);
-        evidence.faultCleanupError = faultCleanupError;
+        failures.push(error);
+        evidence.faultCleanupError = error instanceof Error ? error.message : String(error);
         evidence.status = 'failed';
       });
     evidence.runtimeErrors = [...runtimeErrors];
     await writeFile(
       path.join(output, 'settings-persistence-observations.json'),
       JSON.stringify(evidence, null, 2)
-    );
-    if (faultCleanupError) {
-      throw new Error(`Storage fault cleanup failed: ${faultCleanupError}`);
-    }
+    ).catch((error: unknown) => failures.push(error));
   }
+  if (failures.length) {
+    throw new AggregateError(failures, 'Settings persistence validation or cleanup failed');
+  }
+  return evidence;
 }
