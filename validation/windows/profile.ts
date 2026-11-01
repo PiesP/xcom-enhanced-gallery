@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';
 import { createHash } from 'node:crypto';
-import { mkdir, readFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { Browser, Locator, Page } from '@playwright/test';
@@ -983,20 +983,76 @@ export async function run({
     assert.equal(next, '2', 'ArrowRight must select the second image');
     await page.screenshot({ path: path.join(output, 'gallery-panorama.png') });
     await page.setViewportSize({ width: 401, height: 592 });
-    await page.waitForFunction(() => {
-      const items = document.querySelector('[data-gallery-element="items"]');
-      const selected = items?.querySelector('[data-gallery-element="item"][data-index="1"]');
-      const gallery = items?.parentElement;
-      if (!(items instanceof HTMLElement) || !(selected instanceof HTMLElement) || !gallery) {
-        return false;
+    try {
+      await page.waitForFunction(() => {
+        const items = document.querySelector('[data-gallery-element="items"]');
+        const selected = items?.querySelector('[data-gallery-element="item"][data-index="1"]');
+        const gallery = items?.parentElement;
+        if (!(items instanceof HTMLElement) || !(selected instanceof HTMLElement) || !gallery) {
+          return false;
+        }
+        const scrollPadding = Number.parseFloat(getComputedStyle(items).scrollPaddingBlockStart);
+        if (!Number.isFinite(scrollPadding)) {
+          return false;
+        }
+        return (
+          gallery.style.getPropertyValue('--xeg-viewport-w') === '401px' &&
+          Math.abs(
+            Math.round(
+              selected.getBoundingClientRect().top -
+                items.getBoundingClientRect().top -
+                scrollPadding
+            )
+          ) === 0
+        );
+      });
+    } catch (error) {
+      try {
+        const geometry = await page.evaluate(() => {
+          const items = document.querySelector<HTMLElement>('[data-gallery-element="items"]');
+          const selected = items?.querySelector<HTMLElement>(
+            '[data-gallery-element="item"][data-index="1"]'
+          );
+          const toolbar = document.querySelector<HTMLElement>('[data-gallery-element="toolbar"]');
+          const rect = (element: HTMLElement | undefined | null) => {
+            if (!element) {
+              return null;
+            }
+            const { top, right, bottom, left, width, height } = element.getBoundingClientRect();
+            return { top, right, bottom, left, width, height };
+          };
+          const scrollPadding = items ? getComputedStyle(items).scrollPaddingBlockStart : null;
+          return {
+            viewport: { width: innerWidth, height: innerHeight },
+            galleryViewportWidth:
+              items?.parentElement?.style.getPropertyValue('--xeg-viewport-w') ?? null,
+            scrollRect: rect(items),
+            selectedRect: rect(selected),
+            scrollPaddingBlockStart: scrollPadding,
+            parsedScrollPaddingBlockStart: scrollPadding ? Number.parseFloat(scrollPadding) : null,
+            scrollTop: items?.scrollTop ?? null,
+            selectedIndex: selected?.getAttribute('data-index') ?? null,
+            currentIndex: toolbar?.getAttribute('data-current-index') ?? null,
+            focusedIndex: toolbar?.getAttribute('data-focused-index') ?? null,
+            focusItemIndex:
+              document.activeElement
+                ?.closest('[data-gallery-element="item"]')
+                ?.getAttribute('data-index') ?? null,
+          };
+        });
+        await writeFile(
+          path.join(output, 'gallery-narrow-alignment-diagnostic.json'),
+          JSON.stringify(geometry, null, 2) + '\n',
+          'utf8'
+        );
+      } catch (diagnosticError) {
+        throw new AggregateError(
+          [error, diagnosticError],
+          'Gallery resize alignment and diagnostic collection failed'
+        );
       }
-      const selectedTop = selected.getBoundingClientRect().top;
-      const itemsTop = items.getBoundingClientRect().top;
-      return (
-        gallery.style.getPropertyValue('--xeg-viewport-w') === '401px' &&
-        Math.abs(selectedTop - itemsTop) <= 1
-      );
-    });
+      throw error;
+    }
     assert.equal(
       await progress.getAttribute('data-position'),
       '2',
