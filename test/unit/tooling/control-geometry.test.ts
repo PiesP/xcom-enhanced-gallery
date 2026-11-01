@@ -3,7 +3,7 @@
 
 import assert from 'node:assert/strict';
 import { test } from 'vite-plus/test';
-import { isOperable44CssPxControl } from './control-geometry.ts';
+import { isOperable44CssPxControl } from '../../../validation/windows/control-geometry.ts';
 
 function control(width: number, height: number, hit = true, withinViewport = true) {
   return { rect: { width, height }, hit, withinViewport };
