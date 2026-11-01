@@ -6272,7 +6272,10 @@ async function runVideoClickSettingsCycle({
     const help = gallery.locator('#settings-video-click-help');
     const helpText = await help.textContent();
     assert(helpText, 'Video-click settings help text is missing');
-    assert.match(helpText, /video surfaces open the gallery/i);
+    assert.match(helpText, /separate paused player at the beginning/iu);
+    assert.match(helpText, /saved audio settings/iu);
+    assert.match(helpText, /does not automatically resume X/iu);
+    assert.match(helpText, /Ordinary player controls stay in X/iu);
     const pressAndConfirmMode = async (keyPress: string, expectedMode: string) => {
       await waitForValue(
         async () => ((await select.isEnabled()) ? true : undefined),
