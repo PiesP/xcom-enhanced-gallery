@@ -13987,6 +13987,20 @@ async function runHeldMissingRecoveryCancellation({
   let phase: 'partial' | 'ordinary-held' | 'recovery-held' = 'partial';
   let routeInstalled = false;
   let activeNativeMark = nativeLoopback.mark();
+  type HeldRoute = {
+    request: Request;
+    released: boolean;
+    settled: boolean;
+    responseObserved: boolean;
+    aborted: string | null;
+    fulfillment: string;
+    release: () => void;
+  };
+  let heldRoute: HeldRoute | null = null;
+  const currentHeld = (): HeldRoute | null => heldRoute;
+  receipt.holdScope =
+    'Installed provider fetch held before an owned HTTP response; no application or download mock';
+
   const ownedTrace: Array<Record<string, string | number | null>> = [];
   let traceOverflow = 0;
   const ownedSource = (rawUrl: string): URL | null => {
@@ -14016,12 +14030,20 @@ async function runHeldMissingRecoveryCancellation({
     }
   };
   const onOwnedResponse = (response: Response): void => {
+    const held = currentHeld();
+    if (held?.request === response.request()) {
+      held.responseObserved = true;
+    }
     const url = ownedSource(response.url());
     if (url) {
       trace({ event: 'response', url: url.href, status: response.status() });
     }
   };
   const onOwnedRequestFailed = (request: Request): void => {
+    const held = currentHeld();
+    if (held?.request === request) {
+      held.aborted = request.failure()?.errorText ?? 'unknown';
+    }
     const url = ownedSource(request.url());
     if (url) {
       trace({
@@ -14069,15 +14091,48 @@ async function runHeldMissingRecoveryCancellation({
     if (phase !== 'partial') {
       assert.equal(index, 0, 'A working ZIP refetched a successful sibling');
       assert.equal(url.pathname, originalPath, 'Held source identity changed');
+      assert.equal(currentHeld(), null, 'Only one exact source response may be held');
+      let resolveGate: () => void = () => undefined;
+      const gate = new Promise<void>((resolve) => {
+        resolveGate = resolve;
+      });
+      const held: HeldRoute = {
+        request: route.request(),
+        released: false,
+        settled: false,
+        responseObserved: false,
+        aborted: null,
+        fulfillment: 'pending',
+        release: () => {
+          held.released = true;
+          resolveGate();
+        },
+      };
+      heldRoute = held;
       trace({
         event: 'route',
         url: url.href,
-        decision: 'continue',
-        resourceType: route.request().resourceType(),
+        decision: 'held-before-response',
+        resourceType: held.request.resourceType(),
       });
-      // Bypass the context's deterministic display route for this one owned
-      // original so the loopback can hold its actual response until abort.
-      await route.continue();
+      try {
+        await gate;
+        await route.fulfill({
+          status: 200,
+          contentType: 'image/jpeg',
+          body: image,
+          headers: {
+            'Access-Control-Allow-Origin': 'https://x.com',
+            'Access-Control-Allow-Credentials': 'true',
+            'Cache-Control': 'no-store',
+          },
+        });
+        held.fulfillment = 'fulfilled-after-release';
+      } catch (error) {
+        held.fulfillment = safeError(error);
+      } finally {
+        held.settled = true;
+      }
       return;
     }
     const rejected = index === 0;
@@ -14213,7 +14268,7 @@ async function runHeldMissingRecoveryCancellation({
       activeNativeMark = nativeMark;
       const heldConsoleMark = consoleErrors.length;
       phase = mode === 'ordinary' ? 'ordinary-held' : 'recovery-held';
-      nativeLoopback.armHold('pbs.twimg.com', originalPath);
+      heldRoute = null;
       if (mode === 'ordinary') {
         await gallery
           .locator(
@@ -14227,8 +14282,17 @@ async function runHeldMissingRecoveryCancellation({
       }
       try {
         await waitForValue(
-          () => (nativeLoopback.held() ? true : undefined),
-          `${mode} exact source response to remain held`,
+          () => {
+            const held = currentHeld();
+            return held &&
+              !held.released &&
+              !held.settled &&
+              !held.aborted &&
+              !held.responseObserved
+              ? held
+              : undefined;
+          },
+          `${mode} exact provider request to remain held before response`,
           10_000
         );
       } catch (error) {
@@ -14257,7 +14321,10 @@ async function runHeldMissingRecoveryCancellation({
         .click();
       await panel.waitFor({ state: 'detached' });
       if (mode === 'ordinary') {
-        assert.equal(nativeLoopback.held(), true, 'Dismissing an old result aborted a new ZIP');
+        await delay(250);
+        assert.equal(currentHeld()?.aborted, null, 'Dismissing an old result aborted a new ZIP');
+        assert.equal(currentHeld()?.released, false);
+        assert.equal(currentHeld()?.settled, false);
         await gallery
           .locator('[data-gallery-element="toolbar"] button[aria-label="Close"]')
           .click();
@@ -14266,18 +14333,23 @@ async function runHeldMissingRecoveryCancellation({
       }
       const aborted = await waitForValue(
         () => {
-          const events = nativeLoopback
-            .since(nativeMark)
-            .filter(
-              ({ host, path, purpose }) =>
-                host === 'pbs.twimg.com' && path === originalPath && purpose === 'transfer'
-            );
-          return events.length === 1 && events[0]?.result === 'aborted' ? events[0] : undefined;
+          const held = currentHeld();
+          return held?.aborted === 'net::ERR_ABORTED' ? held : undefined;
         },
-        `${mode} owned source to abort without replacement`,
+        `${mode} exact owned provider request to abort without replacement`,
         10_000
       );
-      assert.equal(nativeLoopback.held(), false);
+      assert.equal(
+        aborted.responseObserved,
+        false,
+        'Held request received a response before cancellation'
+      );
+      aborted.release();
+      await waitForValue(
+        () => (aborted.settled ? true : undefined),
+        'cancelled HTTP route handler to settle',
+        5_000
+      );
       await delay(250);
       const expectedAbortErrors = consoleErrors.slice(heldConsoleMark).filter((record) => {
         try {
@@ -14297,6 +14369,15 @@ async function runHeldMissingRecoveryCancellation({
         'Cancelled work created a native replacement ZIP'
       );
       assert.equal(await panel.count(), 0, 'Late completion restored a dismissed ZIP result');
+      assert.equal(
+        ownedTrace.filter(
+          (entry) =>
+            entry.phase === phase && entry.event === 'request' && entry.resourceType === 'fetch'
+        ).length,
+        1,
+        'Cancelled source was replaced or a successful sibling was fetched again'
+      );
+
       if (mode === 'recovery') {
         await gallery
           .locator('[data-gallery-element="toolbar"] button[aria-label="Close"]')
@@ -14306,7 +14387,14 @@ async function runHeldMissingRecoveryCancellation({
       assert.deepEqual(await hostSnapshot(page, 0), beforeHost, 'Held session changed host state');
       receipt[`${mode}Held`] = {
         screenshot,
-        nativeRequest: aborted,
+        providerRequest: {
+          url: aborted.request.url(),
+          failure: aborted.aborted,
+          responseObserved: aborted.responseObserved,
+          routeSettled: aborted.settled,
+          fulfillment: aborted.fulfillment,
+        },
+        physicalNativeEvents: nativeLoopback.since(nativeMark),
         nativeDownloadIds: [...ownedIds],
         panelDismissed: true,
         hostRestored: true,
@@ -14322,6 +14410,26 @@ async function runHeldMissingRecoveryCancellation({
     await captureSnapshot('beforeCleanup').catch((diagnosticError) => {
       receipt.beforeCleanupError = safeError(diagnosticError);
     });
+    const pending = currentHeld();
+    if (pending && !pending.released) {
+      try {
+        const gallery = page.locator('[data-xeg-gallery-container]');
+        if (await gallery.count()) {
+          await gallery
+            .locator('[data-gallery-element="toolbar"] button[aria-label="Close"]')
+            .click();
+          await gallery.waitFor({ state: 'detached' });
+        }
+      } catch (error) {
+        cleanupErrors.push(error);
+      }
+      pending.release();
+      await waitForValue(
+        () => (pending.settled ? true : undefined),
+        'held HTTP handler cleanup',
+        5_000
+      ).catch((error) => cleanupErrors.push(error));
+    }
     page.off('request', onOwnedRequest);
     page.off('response', onOwnedResponse);
     page.off('requestfailed', onOwnedRequestFailed);
