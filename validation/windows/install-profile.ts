@@ -14416,6 +14416,11 @@ async function runHeldMissingRecoveryCancellation({
         5_000
       );
       await delay(250);
+      assert.equal(
+        aborted.responseObserved,
+        false,
+        'Released cancelled source produced a late response'
+      );
       const expectedAbortErrors = consoleErrors.slice(heldConsoleMark).filter((record) => {
         try {
           return (
@@ -14487,7 +14492,7 @@ async function runHeldMissingRecoveryCancellation({
       receipt.beforeCleanupError = safeError(diagnosticError);
     });
     const pending = currentHeld();
-    if (pending && !pending.released) {
+    if (pending) {
       try {
         const gallery = page.locator('[data-xeg-gallery-container]');
         if (await gallery.count()) {
@@ -14499,7 +14504,9 @@ async function runHeldMissingRecoveryCancellation({
       } catch (error) {
         cleanupErrors.push(error);
       }
-      pending.release();
+      if (!pending.released) {
+        pending.release();
+      }
       await waitForValue(
         () => (pending.settled ? true : undefined),
         'held HTTP handler cleanup',
