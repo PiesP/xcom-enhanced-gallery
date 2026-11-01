@@ -15402,13 +15402,18 @@ async function uxResultWheel(
     const hit = document.elementFromPoint(x, y);
     return { x, y, hit: Boolean(hit && element.contains(hit)) };
   });
-  observations.push({ label, stage: 'setup', position, beforeSetup, targetScrollTop, ...setup, point });
+  observations.push({
+    label,
+    stage: 'setup',
+    position,
+    beforeSetup,
+    targetScrollTop,
+    ...setup,
+    point,
+  });
   if (position !== 'current') {
     const edge = position === 'top' ? 0 : Math.max(0, setup.max);
-    assert(
-      Math.abs(setup.top - edge) < 2,
-      `${label} did not reach its requested ${position} edge`
-    );
+    assert(Math.abs(setup.top - edge) < 2, `${label} did not reach its requested ${position} edge`);
   }
   assert(point.hit, `${label} target must receive the real wheel input`);
   const snapshot = () =>
@@ -16151,7 +16156,10 @@ async function runUxDetailsProbe({
     await toolbar.locator('button[aria-label="Download"]').click();
     const panel = gallery.locator('[data-gallery-element="gallery-failure-notice"]');
     await panel.waitFor({ state: 'visible' });
-    assert.deepEqual(api.map(({ tweetId }) => tweetId), [TWEET_ID]);
+    assert.deepEqual(
+      api.map(({ tweetId }) => tweetId),
+      [TWEET_ID]
+    );
     assert.deepEqual(
       (await queryDownloads(extensionPage!)).filter(({ id }) => !knownDownloads.has(id)),
       [],
