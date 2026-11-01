@@ -17374,11 +17374,46 @@ async function runGalleryExperienceProbe({
         } finally {
           await cdp.detach();
         }
+        const clippedControls = desktopAtZoom.controls.filter(
+          ({ rect, hit, withinViewport }) =>
+            rect.width < 44 || rect.height < 44 || !hit || !withinViewport
+        );
+        if (clippedControls.length) {
+          partial.desktopAtZoom = desktopAtZoom;
+          partial.clippedControls = clippedControls;
+          partial.zoomLayout = await toolbar.evaluate((element) => {
+            const describe = (node: Element | null) => {
+              if (!node) {
+                return null;
+              }
+              const style = getComputedStyle(node);
+              return {
+                rect: node.getBoundingClientRect().toJSON(),
+                display: style.display,
+                flexWrap: style.flexWrap,
+                flex: style.flex,
+                inlineSize: style.inlineSize,
+                maxInlineSize: style.maxInlineSize,
+                overflowX: style.overflowX,
+              };
+            };
+            const content = element.querySelector(':scope > div');
+            const controls = content?.firstElementChild ?? null;
+            return {
+              toolbar: describe(element),
+              content: describe(content),
+              controls: describe(controls),
+              groups: [...(controls?.children ?? [])]
+                .filter((node) => node instanceof HTMLFieldSetElement)
+                .map((group) => ({
+                  legend: group.querySelector('legend')?.textContent?.trim() ?? null,
+                  ...describe(group),
+                })),
+            };
+          });
+        }
         assert(
-          desktopAtZoom.controls.every(
-            ({ rect, hit, withinViewport }) =>
-              rect.width >= 44 && rect.height >= 44 && hit && withinViewport
-          ),
+          clippedControls.length === 0,
           'Actual 200% desktop zoom clipped or blocked a toolbar control'
         );
       } finally {
