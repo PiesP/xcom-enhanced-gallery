@@ -14985,18 +14985,25 @@ async function runUxDetailsProbe({
       page = await context.newPage();
       page.on('pageerror', (error) => {
         const errors = receipt.pageErrors as string[];
-        if (errors.length < 8) errors.push(error.message);
-        else receipt.observationOverflow = true;
+        if (errors.length < 8) {
+          errors.push(error.message);
+        } else {
+          receipt.observationOverflow = true;
+        }
       });
       page.on('console', (message) => {
-        if (message.type() !== 'error') return;
+        if (message.type() !== 'error') {
+          return;
+        }
         const errors = receipt.consoleErrors as Array<{ location: string; text: string }>;
         if (errors.length < 16) {
           errors.push({
             location: message.location().url.slice(0, 240),
             text: message.text().slice(0, 240),
           });
-        } else receipt.observationOverflow = true;
+        } else {
+          receipt.observationOverflow = true;
+        }
       });
       await action(page, receipt);
       assert.equal(receipt.observationOverflow, false, `${name} observation overflow`);
@@ -15009,8 +15016,12 @@ async function runUxDetailsProbe({
       if (page) {
         const screenshot = `ux-details-${name}-failure.png`;
         await page.screenshot({ path: join(output, screenshot) }).then(
-          () => { receipt.failureScreenshot = screenshot; },
-          (captureError) => { receipt.screenshotError = safeError(captureError); }
+          () => {
+            receipt.failureScreenshot = screenshot;
+          },
+          (captureError) => {
+            receipt.screenshotError = safeError(captureError);
+          }
         );
       }
     } finally {
@@ -15024,8 +15035,8 @@ async function runUxDetailsProbe({
     }
   };
 
-  const denyProvider = (requests: Array<{ tweetId: string | null; url: string }>) =>
-    async (route: Route) => {
+  const denyProvider =
+    (requests: Array<{ tweetId: string | null; url: string }>) => async (route: Route) => {
       const url = new URL(route.request().url());
       let variables: unknown;
       try {
@@ -15034,7 +15045,9 @@ async function runUxDetailsProbe({
         variables = null;
       }
       const tweetId =
-        variables && typeof variables === 'object' && 'tweetId' in variables &&
+        variables &&
+        typeof variables === 'object' &&
+        'tweetId' in variables &&
         typeof variables.tweetId === 'string'
           ? variables.tweetId
           : null;
@@ -15062,7 +15075,10 @@ async function runUxDetailsProbe({
     const gallery = page.locator('[data-xeg-gallery-container]');
     await gallery.waitFor({ state: 'visible' });
     assert.equal(await gallery.locator('[data-gallery-element="item"]').count(), 2);
-    assert.deepEqual(api.map(({ tweetId }) => tweetId), [RAPID_CLICK_A]);
+    assert.deepEqual(
+      api.map(({ tweetId }) => tweetId),
+      [RAPID_CLICK_A]
+    );
     const panelReceipt: Record<string, unknown> = { locale, api: [...api] };
     receipt.panel = panelReceipt;
     const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
@@ -15090,7 +15106,9 @@ async function runUxDetailsProbe({
       const selected = await toolbar.getAttribute('data-current-index');
       assert.equal(
         selected,
-        await gallery.locator('[data-gallery-element="item"]:has(video)').getAttribute('data-index'),
+        await gallery
+          .locator('[data-gallery-element="item"]:has(video)')
+          .getAttribute('data-index'),
         'Opened detail cases must keep the observed video selected'
       );
       const details = gallery.locator('[data-gallery-element="source-details"]');
@@ -15099,9 +15117,8 @@ async function runUxDetailsProbe({
       panelReceipt.selected = selected;
       panelReceipt.mediaId = mediaId;
       const summary = details.locator('summary');
-      const expectedSummary = locale === 'ko'
-        ? /동영상 저장 화질을 확인하지 못함/u
-        : /Video save quality is unverified/u;
+      const expectedSummary =
+        locale === 'ko' ? /동영상 저장 화질을 확인하지 못함/u : /Video save quality is unverified/u;
       assert.match((await summary.textContent()) ?? '', expectedSummary);
       await summary.focus();
       await page.keyboard.press('Enter');
@@ -15154,7 +15171,12 @@ async function runUxDetailsProbe({
     } finally {
       if (restoreZoom) {
         await fixtureTabZoom(
-          context, extensionId, page, restoreZoom.previous, restoreZoom.settings, pageUrl
+          context,
+          extensionId,
+          page,
+          restoreZoom.previous,
+          restoreZoom.settings,
+          pageUrl
         );
       }
     }
@@ -15175,7 +15197,10 @@ async function runUxDetailsProbe({
     const gallery = page.locator('[data-xeg-gallery-container]');
     await gallery.waitFor({ state: 'visible' });
     assert.equal(await gallery.locator('[data-gallery-element="item"]').count(), 2);
-    assert.deepEqual(api.map(({ tweetId }) => tweetId), [RAPID_CLICK_A]);
+    assert.deepEqual(
+      api.map(({ tweetId }) => tweetId),
+      [RAPID_CLICK_A]
+    );
     const videoItem = gallery.locator('[data-gallery-element="item"]:has(video)');
     assert.equal(await videoItem.getAttribute('data-video-admitted'), 'false');
     await page.route(videoUrl, async (route) => {
@@ -15260,7 +15285,9 @@ async function runUxDetailsProbe({
       [],
       'Suppressed UX details notifications became visible natively'
     );
-    if (failures.length) throw new AggregateError(failures, 'UX details cases failed');
+    if (failures.length) {
+      throw new AggregateError(failures, 'UX details cases failed');
+    }
   } catch (error) {
     primaryError = error;
   } finally {
@@ -15277,12 +15304,16 @@ async function runUxDetailsProbe({
     }
     await writeFile(
       join(output, 'ux-details.json'),
-      JSON.stringify({
-        status: primaryError || cleanupErrors.length ? 'failed' : 'passed',
-        observations,
-        cleanupErrors: cleanupErrors.map(safeError),
-        error: primaryError ? safeError(primaryError) : null,
-      }, null, 2)
+      JSON.stringify(
+        {
+          status: primaryError || cleanupErrors.length ? 'failed' : 'passed',
+          observations,
+          cleanupErrors: cleanupErrors.map(safeError),
+          error: primaryError ? safeError(primaryError) : null,
+        },
+        null,
+        2
+      )
     );
   }
   if (primaryError || cleanupErrors.length) {
@@ -18133,11 +18164,7 @@ export async function run({
   }
   if (uxDetailsProbe) {
     assert(
-      !openingProbe &&
-        !recoveryProbe &&
-        !failedEntryProbe &&
-        !experienceProbe &&
-        !settingsProbe,
+      !openingProbe && !recoveryProbe && !failedEntryProbe && !experienceProbe && !settingsProbe,
       'Only one focused installed-extension probe may run'
     );
   }
@@ -18203,23 +18230,23 @@ export async function run({
       ? 'focused installed language/theme settings acceptance; no full prior live campaign'
       : uxDetailsProbe
         ? 'focused installed-extension opened details and terminal-video exit; owned X fixture only'
-      : settingsProbe
-        ? 'installed-extension settings persistence fixture; no live X observation'
-        : failedEntryProbe
-          ? 'issue 392 installed-extension failed-entry ZIP recovery fixture; no live X observation'
-          : experienceProbe
-            ? 'issue 383 installed-extension gallery experience fixtures; no live X observation'
-            : recoveryProbe
-              ? 'issue 382 installed-extension media/download recovery fixture; no live X observation'
-              : openingProbe
-                ? 'issue 381 installed-extension opening feedback fixture; no live X observation'
-                : validatedLiveUrls.length
-                  ? actualSiteAcceptance
-                    ? 'deterministic fixture followed by explicit actual-site gallery acceptance with bounded retained downloads; no auth, consent, CAPTCHA, native Save As, Explorer, or performance claim'
-                    : 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
-                  : sameVersionInput
-                    ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
-                    : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
+        : settingsProbe
+          ? 'installed-extension settings persistence fixture; no live X observation'
+          : failedEntryProbe
+            ? 'issue 392 installed-extension failed-entry ZIP recovery fixture; no live X observation'
+            : experienceProbe
+              ? 'issue 383 installed-extension gallery experience fixtures; no live X observation'
+              : recoveryProbe
+                ? 'issue 382 installed-extension media/download recovery fixture; no live X observation'
+                : openingProbe
+                  ? 'issue 381 installed-extension opening feedback fixture; no live X observation'
+                  : validatedLiveUrls.length
+                    ? actualSiteAcceptance
+                      ? 'deterministic fixture followed by explicit actual-site gallery acceptance with bounded retained downloads; no auth, consent, CAPTCHA, native Save As, Explorer, or performance claim'
+                      : 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
+                    : sameVersionInput
+                      ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
+                      : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
     status: 'failed',
   };
   try {
