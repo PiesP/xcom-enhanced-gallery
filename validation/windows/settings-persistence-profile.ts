@@ -10,6 +10,11 @@ interface FaultControl {
   denyPrimary: boolean;
   denyFallback: boolean;
   denyNextRead: number;
+  holdNextFitPrimary: boolean;
+  fitPrimaryHeld: boolean;
+  fitFallbackDenials: number;
+  releaseHeldFitPrimary?: () => Promise<void>;
+  restore: () => Promise<void>;
 }
 
 type StorageHost = Window & {
@@ -23,33 +28,90 @@ type StorageHost = Window & {
 export async function installStorageFaultControl(page: Page): Promise<void> {
   await page.evaluate(() => {
     const host = window as StorageHost;
-    const faults: FaultControl = { denyPrimary: false, denyFallback: false, denyNextRead: 0 };
-    host.__xegStorageFaults = faults;
     const originalSet = host.GM_setValue;
     const originalGet = host.GM_getValue;
     if (!originalSet || !originalGet) {
       throw new Error('GM storage fixture is unavailable');
     }
     const originalFallbackSet = Storage.prototype.setItem;
-    host.GM_getValue = <T>(key: string): T | undefined => {
+    const controlledGet = <T>(key: string): T | undefined => {
       if (faults.denyNextRead > 0) {
         faults.denyNextRead--;
         throw new Error('controlled initial read denial');
       }
       return originalGet<T>(key);
     };
-    host.GM_setValue = (key, value) => {
-      if (faults.denyPrimary) {
-        throw new Error('controlled primary denial');
+    const controlledSet = (key: string, value: unknown): void | Promise<void> => {
+      const write = (): void | Promise<void> => {
+        if (faults.denyPrimary) {
+          throw new Error('controlled primary denial');
+        }
+        return originalSet(key, value);
+      };
+      if (key !== 'xeg-app-settings:field:gallery.imageFitMode' || !faults.holdNextFitPrimary) {
+        return write();
       }
-      return originalSet(key, value);
+      faults.holdNextFitPrimary = false;
+      faults.fitPrimaryHeld = true;
+      let release!: () => void;
+      const gate = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const result = gate.then(write);
+      faults.releaseHeldFitPrimary = () => {
+        faults.fitPrimaryHeld = false;
+        faults.releaseHeldFitPrimary = undefined;
+        release();
+        // The application still receives the original result, including denial.
+        return result.then(() => undefined, () => undefined);
+      };
+      return result;
     };
-    Storage.prototype.setItem = function (key, value) {
+    const controlledFallbackSet = function (this: Storage, key: string, value: string): void {
       if (faults.denyFallback && key.startsWith('xeg-fallback:')) {
+        if (key === 'xeg-fallback:xeg-app-settings:field:gallery.imageFitMode') {
+          faults.fitFallbackDenials++;
+        }
         throw new Error('controlled fallback denial');
       }
       return originalFallbackSet.call(this, key, value);
     };
+    const faults: FaultControl = {
+      denyPrimary: false,
+      denyFallback: false,
+      denyNextRead: 0,
+      holdNextFitPrimary: false,
+      fitPrimaryHeld: false,
+      fitFallbackDenials: 0,
+      restore: async () => {
+        faults.holdNextFitPrimary = false;
+        if (faults.releaseHeldFitPrimary) {
+          const fallbackDenialsBefore = faults.fitFallbackDenials;
+          faults.denyPrimary = true;
+          faults.denyFallback = true;
+          await faults.releaseHeldFitPrimary();
+          const deadline = Date.now() + 5_000;
+          while (faults.fitFallbackDenials === fallbackDenialsBefore && Date.now() < deadline) {
+            await new Promise<void>((resolve) => setTimeout(resolve, 0));
+          }
+          if (faults.fitFallbackDenials === fallbackDenialsBefore) {
+            throw new Error('Held fit write did not attempt fallback during cleanup');
+          }
+        }
+        faults.denyPrimary = false;
+        faults.denyFallback = false;
+        if (host.GM_getValue === controlledGet) host.GM_getValue = originalGet;
+        if (host.GM_setValue === controlledSet) host.GM_setValue = originalSet;
+        if (Storage.prototype.setItem === controlledFallbackSet) {
+          Storage.prototype.setItem = originalFallbackSet;
+        }
+        if (host.__xegStorageFaults === faults) delete host.__xegStorageFaults;
+      },
+    };
+    host.__xegStorageFaults = faults;
+    host.GM_getValue = controlledGet;
+    host.GM_setValue = controlledSet;
+    Storage.prototype.setItem = controlledFallbackSet;
   });
 }
 
@@ -228,6 +290,58 @@ export async function runSettingsPersistenceFixture({
       cueVisible: true,
       reopenedFromCue: true,
       retriedDurableFit: 'fitHeight',
+    };
+
+    const delayedFitBefore = await readDurableFit(page);
+    assert.equal(delayedFitBefore, 'fitHeight');
+    await page.evaluate(() => {
+      const faults = (window as StorageHost).__xegStorageFaults!;
+      faults.holdNextFitPrimary = true;
+    });
+    const settingsButton = reloadedGallery.locator('#settings-button');
+    assert.equal(await settingsButton.getAttribute('aria-expanded'), 'true');
+    const delayedFitButton = reloadedGallery.locator('button[aria-label="Fit Width"]');
+    await delayedFitButton.click();
+    assert.equal(await delayedFitButton.getAttribute('aria-pressed'), 'true');
+    await page.waitForFunction(
+      () => (window as StorageHost).__xegStorageFaults?.fitPrimaryHeld === true
+    );
+    assert.equal(await outerCue.count(), 0, 'Pending fit save was labelled as failed');
+    assert.equal(await fitUnsaved.count(), 0, 'Pending fit save showed failed Settings status');
+    assert.equal(await readDurableFit(page), delayedFitBefore);
+    await settingsButton.click();
+    assert.equal(await settingsButton.getAttribute('aria-expanded'), 'false');
+    assert.equal(await outerCue.count(), 0, 'Closing Settings while save is pending showed failure');
+    await page.evaluate(async () => {
+      const faults = (window as StorageHost).__xegStorageFaults!;
+      faults.denyPrimary = true;
+      faults.denyFallback = true;
+      const release = faults.releaseHeldFitPrimary;
+      if (!release) {
+        throw new Error('Held fit write was not available for release');
+      }
+      await release();
+    });
+    await outerCue.waitFor({ state: 'visible', timeout: 5_000 });
+    assert.equal(await settingsButton.getAttribute('aria-expanded'), 'false');
+    assert.equal(await readDurableFit(page), delayedFitBefore);
+    await page.screenshot({ path: path.join(output, 'settings-late-fit-failure.png') });
+    await outerCue.getByRole('button').click();
+    await fitUnsaved.waitFor({ state: 'visible', timeout: 5_000 });
+    await page.evaluate(() => {
+      const faults = (window as StorageHost).__xegStorageFaults!;
+      faults.denyPrimary = false;
+      faults.denyFallback = false;
+    });
+    await fitUnsaved.getByRole('button').click();
+    await fitUnsaved.waitFor({ state: 'detached', timeout: 5_000 });
+    assert.equal(await outerCue.count(), 0, 'Successful delayed-fit retry left failure cue');
+    assert.equal(await readDurableFit(page), 'fitWidth');
+    evidence.lateSettingsFitRecovery = {
+      pendingCueAbsent: true,
+      failedAfterPanelClosed: true,
+      deniedDurableFit: delayedFitBefore,
+      retriedDurableFit: 'fitWidth',
     };
     await page.evaluate(() => {
       const faults = (window as StorageHost).__xegStorageFaults!;
@@ -430,10 +544,23 @@ export async function runSettingsPersistenceFixture({
       .catch(() => undefined);
     throw error;
   } finally {
+    let faultCleanupError: string | null = null;
+    await page
+      .evaluate(async () => {
+        await (window as StorageHost).__xegStorageFaults?.restore();
+      })
+      .catch((error: unknown) => {
+        faultCleanupError = error instanceof Error ? error.message : String(error);
+        evidence.faultCleanupError = faultCleanupError;
+        evidence.status = 'failed';
+      });
     evidence.runtimeErrors = [...runtimeErrors];
     await writeFile(
       path.join(output, 'settings-persistence-observations.json'),
       JSON.stringify(evidence, null, 2)
     );
+    if (faultCleanupError) {
+      throw new Error(`Storage fault cleanup failed: ${faultCleanupError}`);
+    }
   }
 }
