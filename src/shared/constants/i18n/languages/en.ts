@@ -99,7 +99,7 @@ export const en: LanguageStrings = {
       t: 'Keyboard shortcuts',
       prev: 'Left: previous displayed item',
       next: 'Right: next displayed item',
-      cls: 'Escape: close the open panel, or close the gallery',
+      cls: 'Escape: close the gallery; with focus in the toolbar, close open Settings or Keyboard help first',
       toggle: '?: open this help',
       firstLast: 'Home / End: first / last item',
       five: 'PageUp / PageDown: five items backward / forward',

@@ -33,7 +33,8 @@ installations. See [browser support](#browser-support) for version floors.
    that the file finished saving on disk. If a ZIP leaves items out, read its
    result and use its offered missing-item recovery only when available; keep
    the earlier ZIP with any supplementary archive. See [download limits](#download-limits).
-5. Close the gallery with Close or Escape to return to the post. When an
+5. Close the gallery with Close or Escape to return to the post. With focus in
+   the toolbar, Escape closes open Settings or Keyboard help first. When an
    original-post link is available, it opens that source post separately.
 
 ![Gallery with position 1 of 3, selected Fit Width, Keyboard help, download, and close controls](./docs/images/gallery-overview.png)

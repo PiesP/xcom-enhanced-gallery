@@ -103,7 +103,7 @@ export const es: LanguageStrings = {
       t: 'Atajos de teclado',
       prev: 'Izquierda: elemento anterior',
       next: 'Derecha: elemento siguiente',
-      cls: 'Escape: cerrar el panel abierto o la galería',
+      cls: 'Escape: cerrar la galería. Con el foco en la barra de herramientas, cerrar primero Configuración o la ayuda de teclado si están abiertos',
       toggle: '?: abrir esta ayuda',
       firstLast: 'Home / End: primer / último elemento',
       five: 'PageUp / PageDown: retroceder / avanzar cinco elementos',
