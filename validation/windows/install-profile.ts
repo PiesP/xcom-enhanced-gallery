@@ -15370,6 +15370,88 @@ async function uxOwnedWheel(page: Page, panel: Locator, media: Locator, label: s
   };
 }
 
+async function uxResultWheel(
+  page: Page,
+  panel: Locator,
+  target: Locator,
+  media: Locator,
+  label: string,
+  deltaY: number,
+  position: 'top' | 'bottom' | 'current',
+  observations: Array<Record<string, unknown>>
+) {
+  assert.equal(await panel.count(), 1, `${label} result panel is missing`);
+  assert.equal(await target.count(), 1, `${label} wheel target is ambiguous`);
+  if (position !== 'current') {
+    await panel.evaluate((element, edge) => {
+      element.scrollTop = edge === 'top' ? 0 : element.scrollHeight;
+    }, position);
+  }
+  await target.scrollIntoViewIfNeeded();
+  const point = await target.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    const hit = document.elementFromPoint(x, y);
+    return { x, y, hit: Boolean(hit && element.contains(hit)) };
+  });
+  assert(point.hit, `${label} target must receive the real wheel input`);
+  const snapshot = () =>
+    page.evaluate(() => {
+      const gallery = document.querySelector('[data-xeg-gallery-container]');
+      const mediaList = gallery?.querySelector<HTMLElement>('[data-gallery-element="items"]');
+      const toolbar = gallery?.querySelector<HTMLElement>('[data-gallery-element="toolbar"]');
+      const active = document.activeElement;
+      return {
+        mediaTop: mediaList?.scrollTop ?? null,
+        mediaHeight: mediaList?.scrollHeight ?? null,
+        mediaClientHeight: mediaList?.clientHeight ?? null,
+        current: toolbar?.getAttribute('data-current-index') ?? null,
+        focused: toolbar?.getAttribute('data-focused-index') ?? null,
+        activeTag: active?.tagName ?? null,
+        activeId: active instanceof HTMLElement ? active.id : null,
+        activeLabel: active?.getAttribute('aria-label') ?? null,
+        pageX: scrollX,
+        pageY: scrollY,
+      };
+    });
+  const beforePanel = await panel.evaluate((element) => ({
+    top: element.scrollTop,
+    scrollHeight: element.scrollHeight,
+    clientHeight: element.clientHeight,
+  }));
+  const before = await snapshot();
+  await page.mouse.move(point.x, point.y);
+  await page.mouse.wheel(0, deltaY);
+  await page.waitForTimeout(200);
+  const afterPanel = await panel.evaluate((element) => ({
+    top: element.scrollTop,
+    scrollHeight: element.scrollHeight,
+    clientHeight: element.clientHeight,
+  }));
+  const after = await snapshot();
+  const room =
+    deltaY > 0
+      ? beforePanel.scrollHeight - beforePanel.clientHeight - beforePanel.top
+      : beforePanel.top;
+  const wheelReceipt = { label, deltaY, point, beforePanel, afterPanel, before, after, room };
+  observations.push(wheelReceipt);
+  assert.deepEqual(after, before, `${label} wheel changed gallery, focus, or host state`);
+  if (room > 2) {
+    assert(
+      (afterPanel.top - beforePanel.top) * Math.sign(deltaY) > 1,
+      `${label} did not consume real wheel input in its available direction`
+    );
+  } else {
+    assert(
+      Math.abs(afterPanel.top - beforePanel.top) < 1,
+      `${label} scrolled past its boundary`
+    );
+  }
+  assert.equal(await media.count(), 1);
+  return wheelReceipt;
+}
+
 /** A bounded installed-Edge readback of opened detail panels and the terminal video exit. */
 async function runUxDetailsProbe({
   context,
@@ -15455,7 +15537,15 @@ async function runUxDetailsProbe({
           /403/u.test(text);
         const expectedVideo =
           name === 'terminal-video-exit' && location.startsWith(videoUrl) && /503/u.test(text);
-        return !expectedApi && !expectedVideo;
+        const expectedResultFault =
+          name.startsWith('result-') &&
+          ((location ===
+            `https://pbs.twimg.com/media/${QUALITY_IMAGE_PATHS[1]}?format=jpg&name=orig` &&
+            /403/u.test(text)) ||
+            (name === 'result-single-failure' &&
+              text.startsWith('[XEG] Download failed ') &&
+              text.includes('SERVER_FORBIDDEN')));
+        return !expectedApi && !expectedVideo && !expectedResultFault;
       });
       receipt.unexpectedConsoleErrors = unexpectedConsoleErrors;
       assert.deepEqual(unexpectedConsoleErrors, [], `${name} unexpected console errors`);
@@ -15673,6 +15763,35 @@ async function runUxDetailsProbe({
         nativeEnterAndSpace: true,
         nestedEscapeRestoredFocus: true,
       });
+      await settingsButton.focus();
+      await page.keyboard.press('Enter');
+      const settingsPanel = gallery.locator('[data-gallery-element="settings-panel"]');
+      await settingsPanel.waitFor({ state: 'visible' });
+      await language.focus();
+      await page.keyboard.press('Escape');
+      await settingsPanel.waitFor({ state: 'hidden' });
+      assert(await gallery.isVisible(), 'Settings Escape closed the gallery');
+      assert.equal(
+        await settingsButton.evaluate((element) => document.activeElement === element),
+        true,
+        'Settings Escape must return focus to its toolbar button'
+      );
+      await helpButton.focus();
+      await page.keyboard.press('Enter');
+      await helpPanel.waitFor({ state: 'visible' });
+      const mediaImage = gallery.locator('[data-gallery-element="item"] img').first();
+      await mediaImage.focus();
+      assert.equal(
+        await mediaImage.evaluate((element) => document.activeElement === element),
+        true,
+        'Media image must own focus for ordinary Escape'
+      );
+      await page.keyboard.press('Escape');
+      await gallery.waitFor({ state: 'detached' });
+      panelReceipt.escapeFocusBoundary = {
+        settingsToolbarFocusClosesSettings: true,
+        mediaFocusWithHelpOpenClosesGallery: true,
+      };
     } finally {
       if (restoreZoom) {
         await fixtureTabZoom(
@@ -15682,6 +15801,259 @@ async function runUxDetailsProbe({
           restoreZoom.previous,
           restoreZoom.settings,
           pageUrl
+        );
+      }
+    }
+  };
+
+  const resultPanelCase = async (
+    page: Page,
+    receipt: Record<string, unknown>,
+    kind: 'single-failure' | 'partial-zip'
+  ) => {
+    const locale = kind === 'single-failure' ? 'ko' : 'en';
+    const zoom = kind === 'partial-zip';
+    const viewport = zoom ? { width: 1280, height: 800 } : { width: 401, height: 360 };
+    const original = `https://pbs.twimg.com/media/${QUALITY_IMAGE_PATHS[1]}?format=jpg&name=orig`;
+    const matchesOriginal = (url: URL) => url.href === original;
+    const denied: Array<{ method: string; resourceType: string; status: number }> = [];
+    const wheelObservations: Array<Record<string, unknown>> = [];
+    receipt.resultPanel = { kind, locale, viewport, denied, wheelObservations };
+    await page.setViewportSize(viewport);
+    await page.goto(QUALITY_FIXTURE_URL);
+    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+    await page
+      .locator('[data-route="classic"][data-phase="normal"] [data-testid="tweetPhoto"] img')
+      .nth(1)
+      .click();
+    const gallery = page.locator('[data-xeg-gallery-container]');
+    await gallery.waitFor({ state: 'visible' });
+    await assertQuotedSelection(page, {
+      position: 2,
+      total: 3,
+      type: 'image',
+      path: `/media/${QUALITY_IMAGE_PATHS[1]}`,
+    });
+    const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
+    const media = gallery.locator('[data-gallery-element="items"]');
+    const settingsButton = toolbar.locator('#settings-button');
+    await settingsButton.click();
+    const language = gallery.locator('#settings-language-select');
+    await language.waitFor({ state: 'visible' });
+    await language.selectOption(locale);
+    await settingsButton.click();
+    let previousZoom: Awaited<ReturnType<typeof fixtureTabZoom>> | undefined;
+    let routeInstalled = false;
+    const deniedOriginal = async (route: Route) => {
+      assert.equal(route.request().url(), original);
+      assert(denied.length < 3, 'Result-panel fixture exceeded its source request budget');
+      denied.push({
+        method: route.request().method(),
+        resourceType: route.request().resourceType(),
+        status: 403,
+      });
+      await route.fulfill({
+        status: 403,
+        body: '',
+        headers: { 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': 'https://x.com' },
+      });
+    };
+    try {
+      if (zoom) {
+        previousZoom = await fixtureTabZoom(
+          context,
+          extensionId,
+          page,
+          null,
+          null,
+          QUALITY_FIXTURE_URL
+        );
+        const applied = await fixtureTabZoom(
+          context,
+          extensionId,
+          page,
+          2,
+          null,
+          QUALITY_FIXTURE_URL
+        );
+        assert.equal(applied.observed, 2);
+        receipt.zoom = { previous: previousZoom, applied };
+      }
+      const result = receipt.resultPanel as Record<string, unknown>;
+      result.layout = await page.evaluate(() => ({ width: innerWidth, height: innerHeight }));
+      result.mediaOverflow = await media.evaluate(
+        (element) => element.scrollHeight - element.clientHeight
+      );
+      assert(Number(result.mediaOverflow) > 2, `${kind} media list must really overflow`);
+      const knownDownloads = new Set((await queryDownloads(extensionPage!)).map(({ id }) => id));
+      let panel: Locator;
+      if (kind === 'single-failure') {
+        nativeLoopback.armHttpFailure(original, 403);
+        await toolbar.locator('button[aria-label="다운로드"]').click();
+        const failed = await waitForValue(async () => {
+          const created = (await queryDownloads(extensionPage!)).filter(
+            ({ id }) => !knownDownloads.has(id)
+          );
+          assert(created.length <= 1, 'One single save must create at most one download');
+          return created[0]?.state === 'interrupted' ? created[0] : undefined;
+        }, 'result-panel native single failure');
+        assert.equal(failed.url, original);
+        result.single = { id: failed.id, state: failed.state, error: failed.error };
+        panel = gallery.locator('[data-gallery-element="gallery-failure-notice"]');
+        await panel.waitFor({ state: 'visible' });
+        assert.equal(await panel.locator('button').count(), 1);
+      } else {
+        await page.route(matchesOriginal, deniedOriginal);
+        routeInstalled = true;
+        await toolbar
+          .locator('button[aria-label="Download 3 shown files as ZIP"]')
+          .click();
+        await assertVisibleBulkOutcome(page, {
+          included: 2,
+          omitted: 1,
+          handedOff: true,
+          reason: 'A media source request failed (HTTP 403)',
+          recovery: 'available',
+        });
+        const zip = await waitForValue(async () => {
+          const created = (await queryDownloads(extensionPage!)).filter(
+            ({ id }) => !knownDownloads.has(id)
+          );
+          assert(created.length <= 1, 'One ZIP action must create at most one download');
+          return created[0]?.state === 'complete' ? created[0] : undefined;
+        }, 'result-panel partial ZIP completion');
+        result.zip = { id: zip.id, state: zip.state, filename: basename(zip.filename) };
+        panel = gallery.locator('[data-gallery-element="bulk-download-outcome"]');
+        await panel.waitFor({ state: 'visible' });
+        const summary = panel.locator('details summary');
+        assert.equal(await summary.count(), 1);
+        await summary.click();
+        assert.equal(await panel.locator('details').getAttribute('open'), '');
+        assert.deepEqual(denied.map(({ status }) => status), [403]);
+      }
+      const overflow = await panel.evaluate(
+        (element) => element.scrollHeight - element.clientHeight
+      );
+      result.panelOverflow = overflow;
+      assert(overflow > 2, `${kind} panel must really overflow at its recorded viewport`);
+      const screenshot = `ux-details-${kind}-${locale}${zoom ? '-zoom200' : '-short'}.png`;
+      await page.screenshot({ path: join(output, screenshot) });
+      result.screenshot = screenshot;
+      await uxResultWheel(
+        page,
+        panel,
+        panel.locator('p').first(),
+        media,
+        `${kind} paragraph down`,
+        120,
+        'top',
+        wheelObservations
+      );
+      await uxResultWheel(
+        page,
+        panel,
+        panel.locator('button').first(),
+        media,
+        `${kind} button up`,
+        -120,
+        'bottom',
+        wheelObservations
+      );
+      if (kind === 'partial-zip') {
+        await uxResultWheel(
+          page,
+          panel,
+          panel.locator('details summary'),
+          media,
+          'partial ZIP summary up',
+          -120,
+          'bottom',
+          wheelObservations
+        );
+      }
+      await uxResultWheel(
+        page,
+        panel,
+        panel.locator('p').first(),
+        media,
+        `${kind} top boundary`,
+        -120,
+        'top',
+        wheelObservations
+      );
+      await uxResultWheel(
+        page,
+        panel,
+        kind === 'partial-zip' ? panel.locator('details p').last() : panel.locator('button'),
+        media,
+        `${kind} bottom boundary`,
+        120,
+        'bottom',
+        wheelObservations
+      );
+      await page.setViewportSize(zoom ? { width: 1280, height: 1200 } : { width: 1280, height: 900 });
+      const roomyPanelOverflow = await panel.evaluate(
+        (element) => element.scrollHeight - element.clientHeight
+      );
+      result.roomyPanelOverflow = roomyPanelOverflow;
+      assert(roomyPanelOverflow <= 2, `${kind} roomy panel must provide a non-overflow case`);
+      await uxResultWheel(
+        page,
+        panel,
+        panel.locator('p').first(),
+        media,
+        `${kind} non-overflow`,
+        120,
+        'top',
+        wheelObservations
+      );
+      assert.equal(await panel.count(), 1, `${kind} wheel dismissed its panel`);
+      assert.deepEqual(
+        (await queryDownloads(extensionPage!)).filter(({ id }) => !knownDownloads.has(id)).map(
+          ({ id, state }) => ({ id, state })
+        ),
+        [kind === 'single-failure' ? result.single : result.zip].map((item) => {
+          const download = item as { id: number; state: string };
+          return { id: download.id, state: download.state };
+        }),
+        `${kind} wheel started another download`
+      );
+      await panel.locator('button').first().click();
+      await panel.waitFor({ state: 'detached' });
+      await page.setViewportSize(viewport);
+      await media.evaluate((element) => {
+        element.scrollTop = 0;
+      });
+      const mediaBounds = await media.boundingBox();
+      assert(mediaBounds, `${kind} media list is not painted`);
+      await page.mouse.move(
+        mediaBounds.x + mediaBounds.width / 2,
+        mediaBounds.y + mediaBounds.height / 2
+      );
+      await page.mouse.wheel(0, 120);
+      await page.waitForTimeout(200);
+      result.normalMediaWheel = await media.evaluate((element) => ({
+        top: element.scrollTop,
+        scrollHeight: element.scrollHeight,
+        clientHeight: element.clientHeight,
+      }));
+      assert(
+        (result.normalMediaWheel as { top: number }).top > 1,
+        `${kind} normal media wheel stopped scrolling the gallery`
+      );
+    } finally {
+      nativeLoopback.clearHttpFailure();
+      if (routeInstalled) {
+        await page.unroute(matchesOriginal, deniedOriginal);
+      }
+      if (previousZoom) {
+        await fixtureTabZoom(
+          context,
+          extensionId,
+          page,
+          previousZoom.previous,
+          previousZoom.settings,
+          QUALITY_FIXTURE_URL
         );
       }
     }
@@ -15780,6 +16152,12 @@ async function runUxDetailsProbe({
     observations.notificationBefore = await notificationObserver.snapshot();
     await phase('ko-401x592', (page, receipt) => panelCase(page, receipt, 'ko', false));
     await phase('en-zoom200', (page, receipt) => panelCase(page, receipt, 'en', true));
+    await phase('result-single-failure', (page, receipt) =>
+      resultPanelCase(page, receipt, 'single-failure')
+    );
+    await phase('result-partial-zip', (page, receipt) =>
+      resultPanelCase(page, receipt, 'partial-zip')
+    );
     await phase('terminal-video-exit', terminalCase);
     const after = await notificationObserver.snapshot();
     observations.notificationAfter = after;
