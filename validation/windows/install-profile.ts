@@ -188,6 +188,7 @@ type MemoryEvidence = {
   recoveryScreenshot?: string;
   uiPartialAfterFiveSeconds?: unknown;
   uiHealthy?: unknown;
+  heldCancellation?: unknown;
   error?: string;
   failureScreenshot?: string;
   screenshotError?: string;
@@ -713,6 +714,7 @@ async function assertVisibleBulkOutcome(
     handedOff: boolean;
     reason?: string;
     supplementary?: boolean;
+    recovery: 'available' | 'working' | 'ordinary-working' | 'absent';
   }
 ): Promise<string> {
   const panel = page.locator(
@@ -749,12 +751,38 @@ async function assertVisibleBulkOutcome(
       ? /The browser accepted the ZIP request/u
       : /No ZIP was handed off to the browser/u
   );
-  assert.match(
-    text,
-    expected.supplementary
-      ? /This ZIP only contains recovered missing items\./u
-      : /Download all starts a new ZIP/u
-  );
+  const recoverButton = panel.getByRole('button', {
+    name: /Download [0-9]+ missing items as a separate ZIP/u,
+  });
+  if (expected.recovery === 'available') {
+    assert.equal(await recoverButton.count(), 1, 'Eligible missing items need a visible action');
+    assert(await recoverButton.isVisible(), 'Missing-item action is hidden');
+    assert(await recoverButton.isEnabled(), 'Missing-item action is disabled');
+  } else if (expected.recovery === 'ordinary-working') {
+    assert.equal(await recoverButton.count(), 1, 'Previous recovery action disappeared');
+    assert(await recoverButton.isDisabled(), 'Recovery must be disabled during another ZIP');
+  } else {
+    assert.equal(await recoverButton.count(), 0, 'A spent or working recovery was offered again');
+  }
+  const cancelRecovery = panel.getByRole('button', {
+    name: 'Cancel missing-item recovery and dismiss ZIP result',
+  });
+  const dismiss = panel.getByRole('button', { name: 'Dismiss ZIP result', exact: true });
+  if (expected.recovery === 'working') {
+    assert.equal(await cancelRecovery.count(), 1, 'Working recovery needs an explicit cancel action');
+    assert(await cancelRecovery.isVisible());
+    assert.equal(await dismiss.count(), 0, 'Working recovery must not look like passive dismissal');
+  } else {
+    assert.equal(await cancelRecovery.count(), 0, 'Idle result must not claim to cancel recovery');
+    assert.equal(await dismiss.count(), 1, 'Idle result needs ordinary dismissal');
+  }
+  if (expected.supplementary) {
+    assert.match(text, /This ZIP only contains recovered missing items\./u);
+  } else if (expected.recovery === 'absent' && (expected.omitted > 0 || !expected.handedOff)) {
+    assert.match(text, /Download all starts a new ZIP/u);
+  } else {
+    assert.doesNotMatch(text, /Download all starts a new ZIP/u);
+  }
   if (expected.reason) {
     assert(text.includes(expected.reason), `Visible ZIP result omitted: ${expected.reason}`);
   }
@@ -4213,6 +4241,7 @@ async function runDownloadMemoryCycle({
       omitted: 1,
       handedOff: true,
       reason: 'Download memory limit reached',
+      recovery: 'available',
     });
     assert(
       errorText.length > 0 && errorText.length <= 1_500,
@@ -4282,6 +4311,7 @@ async function runDownloadMemoryCycle({
         omitted: 1,
         handedOff: true,
         reason: 'Download memory limit reached',
+        recovery: 'available',
       });
       evidence.uiPartialAfterFiveSeconds = await captureRecoveryUi(
         page,
@@ -4372,6 +4402,7 @@ async function runDownloadMemoryCycle({
           handedOff: false,
           reason: expectedReason,
           supplementary: true,
+          recovery: 'available',
         });
         const newNativeDownloadIds = (await queryDownloads(extensionPage))
           .filter(({ id }) => !knownBeforeMissing.has(id))
@@ -4470,6 +4501,7 @@ async function runDownloadMemoryCycle({
       omitted: 0,
       handedOff: true,
       supplementary: true,
+      recovery: 'absent',
     });
     await recoverButton.waitFor({ state: 'detached' });
     const missingRequests = evidence.requests
@@ -4600,7 +4632,12 @@ async function runDownloadMemoryCycle({
     });
     if (uiProbe) {
       await bulkButton.focus();
-      await assertVisibleBulkOutcome(page, { included: 3, omitted: 0, handedOff: true });
+      await assertVisibleBulkOutcome(page, {
+        included: 3,
+        omitted: 0,
+        handedOff: true,
+        recovery: 'absent',
+      });
       evidence.uiHealthy = await captureRecoveryUi(page, output, 'memory-healthy');
     }
     assert.deepEqual(
@@ -12949,6 +12986,7 @@ async function runFullZipFailureProbe({
       omitted: 3,
       handedOff: false,
       reason: 'A media source request failed (HTTP 403)',
+      recovery: 'absent',
     });
     await waitForValue(
       async () => ((await zipButton.isEnabled()) ? true : undefined),
@@ -12966,7 +13004,12 @@ async function runFullZipFailureProbe({
     );
     await page.waitForTimeout(5_250);
     await zipButton.focus();
-    await assertVisibleBulkOutcome(page, { included: 0, omitted: 3, handedOff: false });
+    await assertVisibleBulkOutcome(page, {
+      included: 0,
+      omitted: 3,
+      handedOff: false,
+      recovery: 'absent',
+    });
     observations.afterFiveSeconds = await captureRecoveryUi(
       page,
       output,
@@ -13001,7 +13044,12 @@ async function runFullZipFailureProbe({
       expectedStoredZipBytes(expectedEntries)
     );
     const verified = verifyStoredZip(bytes, expectedEntries);
-    await assertVisibleBulkOutcome(page, { included: 3, omitted: 0, handedOff: true });
+    await assertVisibleBulkOutcome(page, {
+      included: 3,
+      omitted: 0,
+      handedOff: true,
+      recovery: 'absent',
+    });
     const file = 'recovery-full-failure-healthy.zip';
     await copyFile(healthy.filename, join(output, file));
     observations.healthy = {
@@ -13711,11 +13759,17 @@ async function runOriginalAvailabilityCycles({
           omitted: 1,
           handedOff: true,
           reason: `A media source request failed (HTTP ${status})`,
+          recovery: 'available',
         });
         if (uiProbe) {
           await page.waitForTimeout(5_250);
           await zipButton.focus();
-          await assertVisibleBulkOutcome(page, { included: 2, omitted: 1, handedOff: true });
+          await assertVisibleBulkOutcome(page, {
+            included: 2,
+            omitted: 1,
+            handedOff: true,
+            recovery: 'available',
+          });
           receipt.ui = {
             partialAfterFiveSeconds: await captureRecoveryUi(
               page,
@@ -13809,7 +13863,12 @@ async function runOriginalAvailabilityCycles({
       };
       if (uiProbe) {
         await zipButton.focus();
-        await assertVisibleBulkOutcome(page, { included: 3, omitted: 0, handedOff: true });
+        await assertVisibleBulkOutcome(page, {
+          included: 3,
+          omitted: 0,
+          handedOff: true,
+          recovery: 'absent',
+        });
         receipt.ui = {
           ...(receipt.ui as object),
           healthy: await captureRecoveryUi(page, output, `source-${status}-healthy`),
@@ -13833,6 +13892,290 @@ async function runOriginalAvailabilityCycles({
     evidence.status = 'failed';
     evidence.error = safeError(error);
     throw error;
+  }
+}
+
+/** Issue #442: distinguish passive result dismissal from an owned recovery abort. */
+async function runHeldMissingRecoveryCancellation({
+  downloads,
+  evidence,
+  extensionPage,
+  images,
+  nativeLoopback,
+  output,
+  page,
+  consoleErrors,
+}: {
+  downloads: string;
+  evidence: MemoryEvidence;
+  extensionPage: Page;
+  images: ImageFixtures;
+  nativeLoopback: NativeLoopback;
+  output: string;
+  page: Page;
+  consoleErrors: ConsoleErrorRecord[];
+}): Promise<void> {
+  const originalPath = `/media/${QUALITY_IMAGE_PATHS[0]}`;
+  const initialIds = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+  const ownedIds = new Set<number>();
+  const removedIds = new Set<number>();
+  const receipt: Record<string, unknown> = { status: 'pending', cleanup: {} };
+  evidence.heldCancellation = receipt;
+  const routePattern = 'https://pbs.twimg.com/**';
+  const deniedBody = 'fixture 503';
+  let phase: 'partial' | 'ordinary-held' | 'recovery-held' = 'partial';
+  let routeInstalled = false;
+  const routeHandler = async (route: Route): Promise<void> => {
+    if (!['fetch', 'xhr'].includes(route.request().resourceType())) {
+      await route.fallback();
+      return;
+    }
+    const url = new URL(route.request().url());
+    const index = IMAGE_URL_MARKERS.findIndex((marker) => url.pathname.includes(marker));
+    assert(index >= 0, 'Held-recovery fixture fetched an unrelated image');
+    const image = images[index];
+    assert(image, 'Held-recovery fixture image is missing');
+    if (phase !== 'partial') {
+      assert.equal(index, 0, 'A working ZIP refetched a successful sibling');
+      assert.equal(url.pathname, originalPath, 'Held source identity changed');
+      // Bypass the context's deterministic display route for this one owned
+      // original so the loopback can hold its actual response until abort.
+      await route.continue();
+      return;
+    }
+    const rejected = index === 0;
+    await route.fulfill({
+      status: rejected ? 503 : 200,
+      contentType: rejected ? 'text/plain' : 'image/jpeg',
+      body: rejected ? deniedBody : image,
+      headers: {
+        'Access-Control-Allow-Origin': 'https://x.com',
+        'Access-Control-Allow-Credentials': 'true',
+        'Cache-Control': 'no-store',
+      },
+    });
+  };
+  const newDownloads = async (): Promise<ChromeDownloadItem[]> =>
+    (await queryDownloads(extensionPage)).filter(({ id }) => !initialIds.has(id));
+  const savePartial = async (label: string): Promise<void> => {
+    const before = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+    const gallery = page.locator('[data-xeg-gallery-container]');
+    const bulk = gallery.locator(
+      '[data-gallery-element="toolbar"] button[aria-label="Download 3 shown files as ZIP"]'
+    );
+    await bulk.click();
+    const download = await waitForDownload(extensionPage, before, `testuser_${TWEET_ID}.zip`);
+    assert.equal(dirname(resolve(download.filename)), resolve(downloads));
+    assert.deepEqual(
+      new Set((await newDownloads()).map(({ id }) => id)),
+      new Set([...ownedIds, download.id]),
+      'Initial partial ZIP allocated an unexpected native ID'
+    );
+    ownedIds.add(download.id);
+    const entries = [1, 2].map((index) => ({
+      filename: expectedFilename(index),
+      bytes: images[index]!,
+    }));
+    const { bytes, identity } = await readExactDownloadFile(
+      download.filename,
+      expectedStoredZipBytes(entries)
+    );
+    const verified = verifyStoredZip(bytes, entries);
+    await writeFile(join(output, `installed-${label}-partial.zip`), bytes);
+    await extensionPage.evaluate(async (id) => chrome.downloads.removeFile(id), download.id);
+    const absence = await waitForRemovedDownloadFile(download.filename, identity);
+    removedIds.add(download.id);
+    await assertVisibleBulkOutcome(page, {
+      included: 2,
+      omitted: 1,
+      handedOff: true,
+      reason: 'A media source request failed (HTTP 503)',
+      recovery: 'available',
+    });
+    receipt[label] = {
+      nativeId: download.id,
+      filename: basename(download.filename),
+      savedZipSha256: createHash('sha256').update(bytes).digest('hex'),
+      verified,
+      nativeFileRemoved: true,
+      absence,
+    };
+  };
+  let primaryError: unknown;
+  const cleanupErrors: unknown[] = [];
+  try {
+    await page.route(routePattern, routeHandler);
+    routeInstalled = true;
+    for (const mode of ['ordinary', 'recovery'] as const) {
+      // Reload only this owned fixture document to discard the previous gallery's
+      // blob cache. Both phases use the same known three-image source contract.
+      await page.goto(FIXTURE_URL);
+      await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+      const beforeHost = await hostSnapshot(page, 0);
+      await page.locator('[data-testid="tweetPhoto"] img').first().click();
+      const gallery = page.locator('[data-xeg-gallery-container]');
+      await gallery.waitFor({ state: 'visible' });
+      phase = 'partial';
+      const consoleMark = consoleErrors.length;
+      await savePartial(mode);
+      const expectedHttpErrors = consoleErrors.slice(consoleMark).filter((record) => {
+        try {
+          return new URL(record.location).pathname === originalPath && /503/u.test(record.text);
+        } catch {
+          return false;
+        }
+      });
+      assert(expectedHttpErrors.length <= 2, 'Held fixture generated repeated 503 errors');
+      evidence.expectedConsoleErrors?.push(...expectedHttpErrors);
+      const nativeMark = nativeLoopback.mark();
+      const heldConsoleMark = consoleErrors.length;
+      phase = mode === 'ordinary' ? 'ordinary-held' : 'recovery-held';
+      nativeLoopback.armHold('pbs.twimg.com', originalPath);
+      if (mode === 'ordinary') {
+        await gallery
+          .locator('[data-gallery-element="toolbar"] button[aria-label="Download 3 shown files as ZIP"]')
+          .click();
+      } else {
+        await gallery
+          .getByRole('button', { name: 'Download 1 missing items as a separate ZIP' })
+          .click();
+      }
+      await waitForValue(
+        () => (nativeLoopback.held() ? true : undefined),
+        `${mode} exact source response to remain held`,
+        10_000
+      );
+      await assertVisibleBulkOutcome(page, {
+        included: 2,
+        omitted: 1,
+        handedOff: true,
+        recovery: mode === 'ordinary' ? 'ordinary-working' : 'working',
+      });
+      const screenshot = `installed-${mode}-held-zip.png`;
+      await page.screenshot({ path: join(output, screenshot) });
+      const panel = gallery.locator('[data-gallery-element="bulk-download-outcome"]');
+      await panel
+        .getByRole('button', {
+          name:
+            mode === 'ordinary'
+              ? 'Dismiss ZIP result'
+              : 'Cancel missing-item recovery and dismiss ZIP result',
+          exact: true,
+        })
+        .click();
+      await panel.waitFor({ state: 'detached' });
+      if (mode === 'ordinary') {
+        assert.equal(nativeLoopback.held(), true, 'Dismissing an old result aborted a new ZIP');
+        await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]').click();
+      } else {
+        assert.equal(await gallery.isVisible(), true, 'Recovery cancellation closed the gallery');
+      }
+      const aborted = await waitForValue(
+        () => {
+          const events = nativeLoopback
+            .since(nativeMark)
+            .filter(
+              ({ host, path, purpose }) =>
+                host === 'pbs.twimg.com' && path === originalPath && purpose === 'transfer'
+            );
+          return events.length === 1 && events[0]?.result === 'aborted' ? events[0] : undefined;
+        },
+        `${mode} owned source to abort without replacement`,
+        10_000
+      );
+      assert.equal(nativeLoopback.held(), false);
+      await delay(250);
+      const expectedAbortErrors = consoleErrors.slice(heldConsoleMark).filter((record) => {
+        try {
+          return (
+            new URL(record.location).pathname === originalPath &&
+            /net::ERR_ABORTED/u.test(record.text)
+          );
+        } catch {
+          return false;
+        }
+      });
+      assert(expectedAbortErrors.length <= 1, 'Held source produced repeated abort errors');
+      evidence.expectedConsoleErrors?.push(...expectedAbortErrors);
+      assert.deepEqual(
+        new Set((await newDownloads()).map(({ id }) => id)),
+        ownedIds,
+        'Cancelled work created a native replacement ZIP'
+      );
+      assert.equal(await panel.count(), 0, 'Late completion restored a dismissed ZIP result');
+      if (mode === 'recovery') {
+        await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]').click();
+      }
+      await gallery.waitFor({ state: 'detached' });
+      assert.deepEqual(await hostSnapshot(page, 0), beforeHost, 'Held session changed host state');
+      receipt[`${mode}Held`] = {
+        screenshot,
+        nativeRequest: aborted,
+        nativeDownloadIds: [...ownedIds],
+        panelDismissed: true,
+        hostRestored: true,
+      };
+    }
+    receipt.status = 'passed';
+  } catch (error) {
+    primaryError = error;
+    receipt.status = 'failed';
+    receipt.error = safeError(error);
+  } finally {
+    nativeLoopback.releaseHold();
+    if (routeInstalled) {
+      try {
+        await page.unroute(routePattern, routeHandler);
+        (receipt.cleanup as Record<string, unknown>).routeRemoved = true;
+      } catch (error) {
+        cleanupErrors.push(error);
+      }
+    }
+    try {
+      const gallery = page.locator('[data-xeg-gallery-container]');
+      if (await gallery.count()) {
+        await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]').click();
+        await gallery.waitFor({ state: 'detached' });
+      }
+    } catch (error) {
+      cleanupErrors.push(error);
+    }
+    try {
+      const observed = await newDownloads();
+      assert.deepEqual(
+        new Set(observed.map(({ id }) => id)),
+        ownedIds,
+        'Held probe created an unrecorded native download'
+      );
+      for (const item of observed) {
+        assert.equal(dirname(resolve(item.filename)), resolve(downloads));
+        assert.equal(basename(item.filename), `testuser_${TWEET_ID}.zip`);
+        if (item.state === 'in_progress') {
+          await extensionPage.evaluate(async (id) => chrome.downloads.cancel(id), item.id);
+        }
+        if (!removedIds.has(item.id) && item.exists) {
+          await extensionPage.evaluate(async (id) => chrome.downloads.removeFile(id), item.id);
+        }
+        const erased = await extensionPage.evaluate(async (id) => chrome.downloads.erase({ id }), item.id);
+        assert.deepEqual(erased, [item.id]);
+      }
+      (receipt.cleanup as Record<string, unknown>).downloadIdsErased = [...ownedIds];
+    } catch (error) {
+      cleanupErrors.push(error);
+    }
+    if (cleanupErrors.length) {
+      receipt.status = 'failed';
+      receipt.cleanupErrors = cleanupErrors.map(safeError);
+    }
+  }
+  if (primaryError && cleanupErrors.length) {
+    throw new AggregateError([primaryError, ...cleanupErrors], 'Held ZIP probe and cleanup failed');
+  }
+  if (primaryError) {
+    throw primaryError;
+  }
+  if (cleanupErrors.length) {
+    throw new AggregateError(cleanupErrors, 'Held ZIP probe cleanup failed');
   }
 }
 
@@ -13942,7 +14285,25 @@ async function runFailedEntryRecoveryProbe({
       pageFetches,
       preSaveRetryProbe: true,
     });
-    assert(apiRequests.length > 0 && apiRequests.length <= 2, 'Classic API request count changed');
+    const nominalApiCount = apiRequests.length;
+    assert(
+      nominalApiCount > 0 && nominalApiCount <= 2,
+      'Nominal failed-entry campaign changed its bounded classic API count'
+    );
+    await runHeldMissingRecoveryCancellation({
+      downloads,
+      evidence,
+      extensionPage,
+      images,
+      nativeLoopback,
+      output,
+      page,
+      consoleErrors,
+    });
+    assert(
+      apiRequests.length - nominalApiCount > 0 && apiRequests.length - nominalApiCount <= 2,
+      'Held-cancellation sessions changed their bounded classic API count'
+    );
     assert.deepEqual(
       apiRequests.map(({ method, tweetId }) => ({ method, tweetId })),
       apiRequests.map(() => ({ method: 'GET', tweetId: TWEET_ID })),
