@@ -9,6 +9,7 @@
 
 import { useGalleryFitMode } from '@features/gallery/components/vertical-gallery-view/hooks/use-gallery-fit-mode';
 import { GalleryFailureNotice } from '@features/gallery/components/GalleryFailureNotice';
+import { GallerySourceDetails } from '@features/gallery/components/GallerySourceDetails';
 import { dismissBulkDownloadOutcome } from '@features/gallery/hooks/dismiss-bulk-download-outcome';
 import { useGalleryNavigationHandlers } from '@features/gallery/components/vertical-gallery-view/hooks/use-gallery-navigation-handlers';
 import { useGalleryScrollCorrection } from '@features/gallery/components/vertical-gallery-view/hooks/use-gallery-scroll-correction';
@@ -321,6 +322,7 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
           )}
         </For>
       </ul>
+      <GallerySourceDetails />
       <GalleryFailureNotice />
       <Show when={bulkOutcome()}>
         {(outcome) => (
@@ -395,6 +397,7 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
               <p>{translate('msg.dl.bulkOutcome.nextActionSupplementary')}</p>
             )}
             {(outcome().recoverableCount ?? 0) === 0 &&
+              !isRecoveringMissing() &&
               !outcome().supplementary &&
               (outcome().omitted > 0 || !outcome().handedOff) && (
                 <p>{translate('msg.dl.bulkOutcome.nextAction')}</p>

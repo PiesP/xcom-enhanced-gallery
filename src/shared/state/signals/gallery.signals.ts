@@ -39,7 +39,7 @@ export interface GalleryState {
 }
 
 type GalleryErrorOwner = 'bulkDownload' | null;
-let errorOwner: GalleryErrorOwner = null;
+const [errorOwnerSig, setErrorOwner] = createSignal<GalleryErrorOwner>(null);
 
 interface GallerySessionState {
   readonly isOpen: boolean;
@@ -48,6 +48,7 @@ interface GallerySessionState {
   readonly focusedIndex: number | null;
   readonly currentVideoElement: HTMLVideoElement | null;
   readonly error: string | null;
+  readonly recoveryScope: 'visible-tile' | null;
 }
 
 export interface GalleryNavigateCompletePayload {
@@ -91,6 +92,7 @@ export const galleryIndexEvents = {
 const [isOpenSig, setIsOpenSig] = createSignal<boolean>(INITIAL_STATE.isOpen);
 const [mediaItemsSig, setMediaItems] = createSignal<readonly MediaInfo[]>(INITIAL_STATE.mediaItems);
 const [sessionRevisionSig, setSessionRevision] = createSignal(0);
+const [recoveryScopeSig, setRecoveryScope] = createSignal<'visible-tile' | null>(null);
 const [currentIndexSig, setCurrentIndex] = createSignal<number>(INITIAL_STATE.currentIndex);
 const [focusedIndexSig, _setFocusedIndex] = createSignal<number | null>(null);
 
@@ -127,6 +129,9 @@ export const gallerySignals = {
   get sessionRevision() {
     return sessionRevisionSig();
   },
+  get recoveryScope() {
+    return recoveryScopeSig();
+  },
   get currentIndex() {
     return currentIndexSig();
   },
@@ -134,7 +139,7 @@ export const gallerySignals = {
     return _errorSig();
   },
   get errorOwner(): GalleryErrorOwner {
-    return errorOwner;
+    return errorOwnerSig();
   },
   get focusedIndex() {
     return focusedIndexSig();
@@ -152,7 +157,7 @@ export const gallerySignals = {
  */
 export function setError(error: string | null, owner: GalleryErrorOwner = null): void {
   batch(() => {
-    errorOwner = error ? owner : null;
+    setErrorOwner(error ? owner : null);
     _setErrorSig(error);
   });
 }
@@ -160,7 +165,8 @@ export function setError(error: string | null, owner: GalleryErrorOwner = null):
 function applyGallerySessionUpdate(state: GallerySessionState): void {
   batch(() => {
     setSessionRevision((revision) => revision + 1);
-    errorOwner = null;
+    setErrorOwner(null);
+    setRecoveryScope(state.recoveryScope);
     setMediaItems(state.mediaItems);
     setCurrentIndex(state.currentIndex);
     _setFocusedIndex(state.focusedIndex);
@@ -178,7 +184,11 @@ function applyGallerySessionUpdate(state: GallerySessionState): void {
  * @param items - Media items to display in the gallery
  * @param startIndex - Initial focused item index (default: 0, clamped to valid range)
  */
-export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
+export function openGallery(
+  items: readonly MediaInfo[],
+  startIndex = 0,
+  recoveryScope: 'visible-tile' | null = null
+): void {
   const validIndex = clampIndex(startIndex, items.length);
   applyGallerySessionUpdate({
     isOpen: true,
@@ -187,6 +197,7 @@ export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
     focusedIndex: validIndex,
     currentVideoElement: null,
     error: null,
+    recoveryScope,
   });
   resetNavigation();
   if (__DEV__) {
@@ -206,6 +217,7 @@ export function closeGallery(): void {
     focusedIndex: null,
     currentVideoElement: null,
     error: null,
+    recoveryScope: null,
   });
   resetNavigation();
   if (__DEV__) {
@@ -314,7 +326,8 @@ export function disposeGallerySignals(): void {
   galleryIndexEvents.dispose();
   batch(() => {
     setSessionRevision((revision) => revision + 1);
-    errorOwner = null;
+    setErrorOwner(null);
+    setRecoveryScope(null);
     setIsOpenSig(INITIAL_STATE.isOpen);
     setMediaItems(INITIAL_STATE.mediaItems);
     setCurrentIndex(INITIAL_STATE.currentIndex);

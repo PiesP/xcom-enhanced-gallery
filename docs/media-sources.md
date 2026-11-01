@@ -76,3 +76,15 @@ The [download ownership contract](download-memory.md) governs accepted binary
 storage and handoffs. Deterministic installed Edge fixtures compare small
 display payloads with original single-save and ZIP entry bytes; those fixtures
 do not prove live-X authentication, DOM availability or production-CDN access.
+
+## In-gallery limitations
+
+A gallery recovered only from the clicked visible tile retains that scope for
+its own session. Its media details disclosure states the shown-item count,
+without inventing the total number of attachments in the post. The disclosure
+also follows the displayed item's preferred save source: observed video quality
+and an unavailable verified image original remain visible in its summary.
+Playback fallback does not change these save-source details. Complete API and
+verified DOM collections add no warning solely because of their extraction path.
+Closing or replacing a gallery clears the prior acquisition scope; navigating
+to another item closes the disclosure and updates the current source details.

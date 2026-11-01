@@ -349,7 +349,7 @@ describe('GalleryApp media-click currentness', () => {
     const app = new GalleryApp({ destroy: vi.fn() } as never);
     await app.initialize();
     await state.handlers?.onMediaClick(document.createElement('img'), new MouseEvent('click'));
-    expect(state.openGallery).toHaveBeenCalledWith(result.mediaItems, 0);
+    expect(state.openGallery).toHaveBeenCalledWith(result.mediaItems, 0, 'visible-tile');
     expect(state.notify).toHaveBeenCalledWith(
       {},
       'msg.gal.partialRecovery.title',
@@ -357,6 +357,74 @@ describe('GalleryApp media-click currentness', () => {
     );
     await app.cleanup();
   });
+
+  it.each(['button', 'img'] as const)(
+    'keeps entry failure from a %s visible beyond notification expiry and restores focus on dismissal',
+    async (tag) => {
+      vi.useFakeTimers();
+      state.extract.mockResolvedValue({ success: false, mediaItems: [], failureKind: 'denied' });
+      const app = new GalleryApp({ destroy: vi.fn() } as never);
+      const source = document.createElement(tag);
+      source.style.width = '100px';
+      source.style.height = '80px';
+      document.body.append(source);
+      try {
+        await app.initialize();
+        const focusedBefore = document.activeElement;
+        await state.handlers?.onMediaClick(source, new MouseEvent('click'));
+        await vi.advanceTimersByTimeAsync(6_000);
+        const notice = document.querySelector<HTMLElement>('[data-xeg-entry-failure]');
+        expect(notice?.textContent).toContain('msg.err.loadMedia.denied');
+        expect(notice?.textContent).toContain('msg.gal.entryFailureNext');
+        expect(document.activeElement).toBe(focusedBefore);
+        const dismiss = notice?.querySelector('button');
+        dismiss?.focus();
+        dismiss?.click();
+        expect(document.querySelector('[data-xeg-entry-failure]')).toBeNull();
+        expect(document.activeElement).toBe(source);
+        source.blur();
+        expect(source.hasAttribute('tabindex')).toBe(false);
+        expect(state.openGallery).not.toHaveBeenCalled();
+      } finally {
+        await app.cleanup();
+        source.remove();
+      }
+    }
+  );
+
+  it.each(['new-click', 'navigation', 'source-removed', 'cleanup'] as const)(
+    'invalidates a terminal entry notice on %s',
+    async (reason) => {
+      vi.useFakeTimers();
+      const priorUrl = location.href;
+      state.extract
+        .mockResolvedValueOnce({ success: false, mediaItems: [], failureKind: 'unreadable' })
+        .mockResolvedValueOnce(success('later'));
+      const app = new GalleryApp({ destroy: vi.fn() } as never);
+      const source = document.createElement('button');
+      document.body.append(source);
+      try {
+        await app.initialize();
+        await state.handlers?.onMediaClick(source, new MouseEvent('click'));
+        expect(document.querySelector('[data-xeg-entry-failure]')).not.toBeNull();
+        if (reason === 'new-click') {
+          await state.handlers?.onMediaClick(source, new MouseEvent('click'));
+        } else if (reason === 'navigation') {
+          history.pushState({}, '', '/other/status/999');
+        } else if (reason === 'source-removed') {
+          source.remove();
+        } else {
+          await app.cleanup();
+        }
+        await vi.advanceTimersByTimeAsync(250);
+        expect(document.querySelector('[data-xeg-entry-failure]')).toBeNull();
+      } finally {
+        history.replaceState({}, '', priorUrl);
+        source.remove();
+        await app.cleanup();
+      }
+    }
+  );
 
   it.each([
     ['denied', 'msg.err.loadMedia.denied'],

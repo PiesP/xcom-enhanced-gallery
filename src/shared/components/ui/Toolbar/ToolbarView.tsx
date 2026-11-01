@@ -6,6 +6,7 @@ import { IconButton } from '@shared/components/ui/Button/IconButton';
 import type { LucideIconName } from '@shared/components/ui/Icon/lucide/icon-nodes';
 import { LucideIcon } from '@shared/components/ui/Icon/lucide/lucide-icons';
 import { SettingsControls } from '@shared/components/ui/Settings/SettingsControls';
+import { SettingsPersistenceNotice } from '@shared/components/ui/Settings/SettingsPersistenceNotice';
 import type { ToolbarSettingsControllerResult } from '@shared/hooks/toolbar/use-toolbar-settings-controller.types';
 import { useTranslation } from '@shared/hooks/use-translation';
 import { getEventManager } from '@shared/services/event-manager';
@@ -168,7 +169,9 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
   const translate = useTranslation();
 
   const closeHelp = (restoreFocus: boolean): void => {
-    if (!helpExpanded()) return;
+    if (!helpExpanded()) {
+      return;
+    }
     setHelpExpanded(false);
     if (restoreFocus && helpButtonEl?.isConnected) {
       helpButtonEl.focus({ preventScroll: true });
@@ -176,7 +179,9 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
   };
 
   const openHelp = (): void => {
-    if (helpExpanded()) return;
+    if (helpExpanded()) {
+      return;
+    }
     local.onOpenHelp?.();
     const focusedAtOpen = document.activeElement;
     setHelpExpanded(true);
@@ -508,8 +513,11 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               onClick={(event) => {
                 event.preventDefault();
                 event.stopPropagation();
-                if (helpExpanded()) closeHelp(true);
-                else openHelp();
+                if (helpExpanded()) {
+                  closeHelp(true);
+                } else {
+                  openHelp();
+                }
               }}
             >
               <span aria-hidden="true">?</span>
@@ -573,6 +581,14 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
           </Show>
         </div>
       </div>
+
+      <SettingsPersistenceNotice
+        expanded={local.settingsController.isSettingsExpanded()}
+        onOpen={(event) => {
+          toolbarElement()?.querySelector<HTMLButtonElement>('#settings-button')?.focus();
+          local.settingsController.handleSettingsClick(event);
+        }}
+      />
 
       {/* Click handling only stops backdrop propagation; keyboard interaction stays on the native controls inside the panel. */}
       <section

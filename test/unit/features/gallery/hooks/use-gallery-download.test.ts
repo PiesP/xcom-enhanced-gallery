@@ -893,7 +893,7 @@ describe('createDownloadHandler bulk resource limits', () => {
       expect(state.bulkOutcome).toMatchObject({ recoverableCount: 1 });
 
       await handler.recoverFailedEntries();
-      expect(state.bulkOutcome).toMatchObject({ recoverableCount: undefined });
+      expect(state.bulkOutcome).not.toHaveProperty('recoverableCount');
 
       let resolveOrdinary: ((value: unknown) => void) | undefined;
       state.downloadBulk.mockReturnValueOnce(
@@ -904,7 +904,7 @@ describe('createDownloadHandler bulk resource limits', () => {
       const ordinary = handler.handleDownload('all');
       await vi.waitFor(() => expect(state.downloadBulk).toHaveBeenCalledTimes(2));
       expect(state.status).toBe('working');
-      expect(state.bulkOutcome).toMatchObject({ recoverableCount: undefined });
+      expect(state.bulkOutcome).not.toHaveProperty('recoverableCount');
       resolveOrdinary?.({
         success: true,
         status: 'success',

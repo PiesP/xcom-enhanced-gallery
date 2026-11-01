@@ -708,7 +708,10 @@ describe('VerticalImageItem video admission and playback', () => {
   });
 
   it('stops after three distinct attempts and ignores stale source and teardown events', () => {
-    const { video, row } = mount({ active: true });
+    const { video, row } = mount({
+      active: true,
+      media: { ...media(), tweetUrl: 'https://x.com/owner/status/222' },
+    });
     let currentSrc = source('best');
     Object.defineProperty(video, 'currentSrc', { configurable: true, get: () => currentSrc });
     mediaEvent(video, 'loadstart');
@@ -725,12 +728,31 @@ describe('VerticalImageItem video admission and playback', () => {
     mediaEvent(video, 'loadstart');
     mediaEvent(video, 'error');
     expect(row.querySelector('[role="alert"]')).not.toBeNull();
+    const originalPost = row.querySelector<HTMLAnchorElement>('[role="alert"] a');
+    expect(originalPost?.href).toBe('https://x.com/owner/status/222');
+    expect(originalPost?.rel).toBe('noopener noreferrer');
+    expect(row.querySelector('[role="alert"] button')).toBeNull();
     expect(video.getAttribute('src')).toBe(source('low'));
     dispose?.();
     dispose = undefined;
     mediaEvent(video, 'error');
     expect(video.getAttribute('src')).toBe(source('low'));
   });
+
+  it.each([undefined, 'https://x.com.evil.test/owner/status/222'])(
+    'does not invent an original-post exit for terminal video with owner URL %s',
+    (tweetUrl) => {
+      const { video, row } = mount({
+        active: true,
+        media: { ...media(), tweetUrl, videoVariants: [] },
+      });
+      mediaEvent(video, 'loadstart');
+      setMediaError(video, 3);
+      mediaEvent(video, 'error');
+      expect(row.querySelector('[role="alert"]')).not.toBeNull();
+      expect(row.querySelector('[role="alert"] a')).toBeNull();
+    }
+  );
 
   it('discards retired fallback callbacks after close and a new gallery session mounts', async () => {
     const previous = media();

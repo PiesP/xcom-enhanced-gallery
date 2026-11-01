@@ -23,6 +23,7 @@ import {
   setError,
 } from '@shared/state/signals/gallery.signals';
 import {
+  type BulkDownloadOutcome,
   downloadState,
   setBulkDownloadOutcome,
   setDownloadStatus,
@@ -35,6 +36,12 @@ interface RecoveryJob {
   readonly originalFilename: string;
   readonly sessionRevision: number;
   readonly attempt: number;
+}
+
+function withoutRecoveryOffer(outcome: BulkDownloadOutcome): BulkDownloadOutcome {
+  const next = { ...outcome };
+  delete next.recoverableCount;
+  return next;
 }
 
 /** Keep only identity and save metadata; a retry borrows bytes from normal owners. */
@@ -179,7 +186,7 @@ export function createDownloadHandler() {
     // A zero count marks only an in-flight recovery. A later ordinary ZIP
     // request must not inherit that marker from a cancelled or failed retry.
     if (type === 'all' && downloadState.bulkOutcome?.recoverableCount === 0) {
-      setBulkDownloadOutcome({ ...downloadState.bulkOutcome, recoverableCount: undefined });
+      setBulkDownloadOutcome(withoutRecoveryOffer(downloadState.bulkOutcome));
     }
 
     // A7: Clear stale error from a previous download before starting a new one.
@@ -425,7 +432,7 @@ export function createDownloadHandler() {
       } catch (error) {
         if (isCurrent()) {
           if (previousOutcome) {
-            setBulkDownloadOutcome({ ...previousOutcome, recoverableCount: undefined });
+            setBulkDownloadOutcome(withoutRecoveryOffer(previousOutcome));
           }
           setDownloadStatus('error');
           setError(normalizeErrorMessage(error), 'bulkDownload');
@@ -437,7 +444,7 @@ export function createDownloadHandler() {
       }
       if (result.code === 'CANCELLED') {
         if (previousOutcome) {
-          setBulkDownloadOutcome({ ...previousOutcome, recoverableCount: undefined });
+          setBulkDownloadOutcome(withoutRecoveryOffer(previousOutcome));
         }
         setDownloadStatus('idle');
         return;

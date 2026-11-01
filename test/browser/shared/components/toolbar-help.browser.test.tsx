@@ -86,7 +86,9 @@ function mountHelp() {
 
 const disposers: Array<() => void> = [];
 afterEach(() => {
-  for (const dispose of disposers.splice(0)) dispose();
+  for (const dispose of disposers.splice(0)) {
+    dispose();
+  }
   document.body.replaceChildren();
 });
 

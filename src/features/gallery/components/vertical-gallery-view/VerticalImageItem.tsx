@@ -467,11 +467,13 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
           <div class={styles.error} role="alert">
             <span class={styles.errorIcon}>⚠️</span>
             <span class={styles.errorText}>
-              {translate('msg.gal.loadFail', { type: isVideo() ? 'video' : 'image' })}
+              {translate('msg.gal.loadFail', {
+                type: translate(isVideo() ? 'msg.gal.mediaType.video' : 'msg.gal.mediaType.image'),
+              })}
             </span>
-            {!isVideo() && (
-              <div class={styles.errorActions}>
-                {imageAttempt() < MAX_IMAGE_RETRIES ? (
+            <div class={styles.errorActions}>
+              {!isVideo() &&
+                (imageAttempt() < MAX_IMAGE_RETRIES ? (
                   <button
                     type="button"
                     class={styles.errorAction}
@@ -482,21 +484,20 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
                   </button>
                 ) : (
                   <span class={styles.errorText}>{translate('msg.gal.retryExhausted')}</span>
-                )}
-                {postUrl() && (
-                  <a
-                    class={styles.errorAction}
-                    href={postUrl() ?? ''}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    tabIndex={isFocused() || local.isActive ? 0 : -1}
-                    onClick={(event) => event.stopPropagation()}
-                  >
-                    {translate('msg.gal.openOriginalPost')}
-                  </a>
-                )}
-              </div>
-            )}
+                ))}
+              {postUrl() && (
+                <a
+                  class={styles.errorAction}
+                  href={postUrl() ?? ''}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  tabIndex={isFocused() || local.isActive ? 0 : -1}
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  {translate('msg.gal.openOriginalPost')}
+                </a>
+              )}
+            </div>
           </div>
         )}
         {isVideo() && recovery.isFallback() && !isError() && (

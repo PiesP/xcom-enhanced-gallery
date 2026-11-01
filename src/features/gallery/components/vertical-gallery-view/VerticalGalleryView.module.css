@@ -135,6 +135,15 @@
   --toolbar-transform-y: 0;
 }
 
+/* A requested help panel and failed-save recovery must remain discoverable after idle. */
+.toolbarWrapper:has(#keyboard-help-button[aria-expanded='true']),
+.toolbarWrapper:has([data-xeg-settings-unsaved-indicator]) {
+  --toolbar-opacity: 1;
+  --toolbar-visibility: visible;
+  --toolbar-pointer-events: auto;
+  --toolbar-transform-y: 0;
+}
+
 /* Keep toolbar visible when focused */
 .toolbarWrapper:focus-within {
   transition: var(--xeg-transition-elevation-fast);

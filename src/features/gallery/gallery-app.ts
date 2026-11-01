@@ -8,6 +8,7 @@
 import { GALLERY_READY_ATTRIBUTE } from '@constants/readiness';
 import type { GalleryRenderer } from '@features/gallery/gallery-renderer';
 import { startOpeningFeedback } from '@features/gallery/opening-feedback';
+import { showEntryFailure } from '@features/gallery/entry-failure-feedback';
 import { mergeAbortSignalsWithCleanup } from '@piesp/browser-core/error';
 import { clampIndex } from '@piesp/browser-core/util';
 import { getNotificationAdapter, notifySafely } from '@platform/index';
@@ -79,6 +80,7 @@ export class GalleryApp {
   private sessionEpoch = 0;
   private sessionAbortController: AbortController | null = null;
   private nativeVideoRecoveryDispose: (() => void) | null = null;
+  private entryFailureDispose: (() => void) | null = null;
 
   constructor(renderer: GalleryRenderer) {
     this.renderer = renderer;
@@ -138,6 +140,8 @@ export class GalleryApp {
   }
 
   private async handleMediaClick(element: HTMLElement, _event: MouseEvent): Promise<void> {
+    this.entryFailureDispose?.();
+    this.entryFailureDispose = null;
     this.nativeVideoRecoveryDispose?.();
     this.nativeVideoRecoveryDispose = null;
     const videoClick = captureClickedMediaEvidence(element).mediaType === 'video';
@@ -177,8 +181,12 @@ export class GalleryApp {
       stopOpeningFeedback();
 
       if (result.success && result.mediaItems.length > 0) {
-        this.openGallery(result.mediaItems, result.clickedIndex);
         const partialRecovery = result.metadata?.recoveryScope === 'visible-tile';
+        this.openGallery(
+          result.mediaItems,
+          result.clickedIndex,
+          partialRecovery ? 'visible-tile' : null
+        );
         const observedQuality = result.mediaItems.some(
           (media) =>
             media.downloadSource?.quality === 'observed' ||
@@ -206,6 +214,13 @@ export class GalleryApp {
         const recovery = videoClick
           ? this.armVideoRecoveryAndGetMessage(opId, epoch, element, clickUrl)
           : '';
+        this.showEntryFailure(
+          element,
+          opId,
+          epoch,
+          clickUrl,
+          lang.translate(mediaFailureMessage(result.failureKind)) + recovery
+        );
         notifySafely(
           getNotificationAdapter(),
           lang.translate('msg.err.loadMedia.title'),
@@ -219,11 +234,20 @@ export class GalleryApp {
       stopOpeningFeedback();
       mediaErrorReporter.error(error, { code: 'MEDIA_EXTRACTION_ERROR' });
       const lang = getLanguageService();
+      const recovery = videoClick
+        ? this.armVideoRecoveryAndGetMessage(opId, epoch, element, clickUrl)
+        : '';
+      this.showEntryFailure(
+        element,
+        opId,
+        epoch,
+        clickUrl,
+        lang.translate('msg.err.loadMedia.body') + recovery
+      );
       notifySafely(
         getNotificationAdapter(),
         lang.translate('msg.err.generic'),
-        normalizeErrorMessage(error).slice(0, 240) +
-          (videoClick ? this.armVideoRecoveryAndGetMessage(opId, epoch, element, clickUrl) : '')
+        normalizeErrorMessage(error).slice(0, 240) + recovery
       );
     } finally {
       stopOpeningFeedback();
@@ -233,6 +257,29 @@ export class GalleryApp {
         this.mediaClickAbortController = null;
       }
     }
+  }
+
+  private showEntryFailure(
+    element: HTMLElement,
+    opId: number,
+    epoch: number,
+    clickUrl: string,
+    message: string
+  ): void {
+    const lang = getLanguageService();
+    this.entryFailureDispose = showEntryFailure({
+      element,
+      message,
+      nextAction: lang.translate('msg.gal.entryFailureNext'),
+      dismissLabel: lang.translate('msg.gal.dismissFailure'),
+      // This message outlives extraction, but never its attempt/source/session.
+      isCurrent: () =>
+        this.initialized &&
+        opId === this.mediaClickCounter &&
+        epoch === this.sessionEpoch &&
+        location.href === clickUrl &&
+        !gallerySignals.isOpen,
+    });
   }
 
   private isCurrentMediaClick(
@@ -287,14 +334,24 @@ export class GalleryApp {
     return ` ${lang.translate('msg.err.loadMedia.nativeVideoRecovery')}`;
   }
 
-  openGallery(mediaItems: MediaInfo[], startIndex = 0): void {
+  openGallery(
+    mediaItems: MediaInfo[],
+    startIndex = 0,
+    recoveryScope: 'visible-tile' | null = null
+  ): void {
     if (mediaItems.length === 0) {
       return;
     }
+    this.entryFailureDispose?.();
+    this.entryFailureDispose = null;
 
     try {
       const validIndex = clampIndex(startIndex, mediaItems.length);
-      openGallery(mediaItems, validIndex);
+      if (recoveryScope === 'visible-tile') {
+        openGallery(mediaItems, validIndex, recoveryScope);
+      } else {
+        openGallery(mediaItems, validIndex);
+      }
     } catch (error) {
       galleryErrorReporter.error(error, {
         code: 'GALLERY_OPEN_FAILED',
@@ -311,6 +368,8 @@ export class GalleryApp {
   }
 
   close(): void {
+    this.entryFailureDispose?.();
+    this.entryFailureDispose = null;
     this.nativeVideoRecoveryDispose?.();
     this.nativeVideoRecoveryDispose = null;
     this.mediaClickAbortController?.abort();
@@ -322,6 +381,8 @@ export class GalleryApp {
   }
 
   async cleanup(): Promise<void> {
+    this.entryFailureDispose?.();
+    this.entryFailureDispose = null;
     this.nativeVideoRecoveryDispose?.();
     this.nativeVideoRecoveryDispose = null;
     document.documentElement.removeAttribute(GALLERY_READY_ATTRIBUTE);
