@@ -437,6 +437,30 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             >
               <LucideIcon name="chevron-right" size={TOOLBAR_ICON_SIZE_VAR} />
             </IconButton>
+            <IconButton
+              ref={(button) => {
+                helpButtonEl = button;
+              }}
+              id="keyboard-help-button"
+              class={toolbarButtonClass()}
+              size="toolbar"
+              aria-label={translate('tb.helpOpen')}
+              aria-expanded={helpExpanded() ? 'true' : 'false'}
+              aria-controls="toolbar-keyboard-help-panel"
+              tooltip={translate('tb.helpOpen')}
+              disabled={isToolbarDisabled()}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                if (helpExpanded()) {
+                  closeHelp(true);
+                } else {
+                  openHelp();
+                }
+              }}
+            >
+              <span aria-hidden="true">?</span>
+            </IconButton>
           </fieldset>
 
           <fieldset class={cx(styles.toolbarGroup, styles.fitGroup)}>
@@ -498,30 +522,6 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
 
           <fieldset class={styles.toolbarGroup}>
             <legend class="xeg-sr-only">{translate('tb.auxGroup')}</legend>
-            <IconButton
-              ref={(button) => {
-                helpButtonEl = button;
-              }}
-              id="keyboard-help-button"
-              class={toolbarButtonClass()}
-              size="toolbar"
-              aria-label={translate('tb.helpOpen')}
-              aria-expanded={helpExpanded() ? 'true' : 'false'}
-              aria-controls="toolbar-keyboard-help-panel"
-              tooltip={translate('tb.helpOpen')}
-              disabled={isToolbarDisabled()}
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                if (helpExpanded()) {
-                  closeHelp(true);
-                } else {
-                  openHelp();
-                }
-              }}
-            >
-              <span aria-hidden="true">?</span>
-            </IconButton>
             {local.showSettingsButton && (
               <IconButton
                 ref={local.settingsController.assignSettingsButtonRef}
