@@ -14237,6 +14237,8 @@ async function runHeldMissingRecoveryCancellation({
   let primaryError: unknown;
   const cleanupErrors: unknown[] = [];
   let invariantError: unknown;
+  let priorZoom: Awaited<ReturnType<typeof fixtureTabZoom>> | undefined;
+  const extensionId = new URL(extensionPage.url()).hostname;
   try {
     page.on('request', onOwnedRequest);
     page.on('response', onOwnedResponse);
@@ -14246,8 +14248,31 @@ async function runHeldMissingRecoveryCancellation({
     for (const mode of ['ordinary', 'recovery'] as const) {
       // Reload only this owned fixture document to discard the previous gallery's
       // blob cache. Both phases use the same known three-image source contract.
+      await page.setViewportSize(
+        mode === 'ordinary' ? { width: 401, height: 592 } : { width: 1280, height: 800 }
+      );
       await page.goto(FIXTURE_URL);
       await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+      if (mode === 'recovery') {
+        priorZoom = await fixtureTabZoom(
+          page.context(),
+          extensionId,
+          page,
+          null,
+          null,
+          FIXTURE_URL
+        );
+        const applied = await fixtureTabZoom(
+          page.context(),
+          extensionId,
+          page,
+          2,
+          null,
+          FIXTURE_URL
+        );
+        assert.equal(applied.observed, 2);
+        receipt.recoveryZoom = applied;
+      }
       const beforeHost = await hostSnapshot(page, 0);
       await page.locator('[data-testid="tweetPhoto"] img').first().click();
       const gallery = page.locator('[data-xeg-gallery-container]');
@@ -14255,6 +14280,38 @@ async function runHeldMissingRecoveryCancellation({
       phase = 'partial';
       const consoleMark = consoleErrors.length;
       await savePartial(mode);
+      if (mode === 'ordinary') {
+        const settings = gallery.locator('#settings-button');
+        await settings.click();
+        await gallery.locator('#settings-language-select').selectOption('ko');
+        await settings.click();
+        const result = gallery.locator('[data-gallery-element="bulk-download-outcome"]');
+        assert.match((await result.textContent()) ?? '', /ZIP 포함 2개, 제외 1개/u);
+        const recovery = result.getByRole('button', {
+          name: '누락 항목 1개를 별도 ZIP으로 다운로드',
+          exact: true,
+        });
+        await recovery.focus();
+        const recoveryGeometry = await uxControlGeometry(recovery, 'Korean narrow recovery action');
+        const summary = result.locator('summary');
+        await summary.focus();
+        await page.keyboard.press('Enter');
+        assert.equal(await result.locator('details').getAttribute('open'), '');
+        assert.match((await result.textContent()) ?? '', /HTTP 503/u);
+        await page.keyboard.press('Space');
+        assert.equal(await result.locator('details').getAttribute('open'), null);
+        const koreanScreenshot = 'installed-partial-ko-401x592.png';
+        await page.screenshot({ path: join(output, koreanScreenshot) });
+        receipt.koreanNarrow = {
+          screenshot: koreanScreenshot,
+          recoveryGeometry,
+          nativeDetailsEnterAndSpace: true,
+        };
+        await settings.click();
+        await gallery.locator('#settings-language-select').selectOption('en');
+        await settings.click();
+      }
+
       const expectedHttpErrors = consoleErrors.slice(consoleMark).filter((record) => {
         try {
           return new URL(record.location).pathname === originalPath && /503/u.test(record.text);
@@ -14385,6 +14442,17 @@ async function runHeldMissingRecoveryCancellation({
       }
       await gallery.waitFor({ state: 'detached' });
       assert.deepEqual(await hostSnapshot(page, 0), beforeHost, 'Held session changed host state');
+      if (priorZoom) {
+        await fixtureTabZoom(
+          page.context(),
+          extensionId,
+          page,
+          priorZoom.previous,
+          priorZoom.settings,
+          FIXTURE_URL
+        );
+        priorZoom = undefined;
+      }
       receipt[`${mode}Held`] = {
         screenshot,
         providerRequest: {
@@ -14428,6 +14496,16 @@ async function runHeldMissingRecoveryCancellation({
         () => (pending.settled ? true : undefined),
         'held HTTP handler cleanup',
         5_000
+      ).catch((error) => cleanupErrors.push(error));
+    }
+    if (priorZoom) {
+      await fixtureTabZoom(
+        page.context(),
+        extensionId,
+        page,
+        priorZoom.previous,
+        priorZoom.settings,
+        FIXTURE_URL
       ).catch((error) => cleanupErrors.push(error));
     }
     page.off('request', onOwnedRequest);
