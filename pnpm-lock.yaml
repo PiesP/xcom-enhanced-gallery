@@ -31,8 +31,8 @@ importers:
         specifier: file:packages/core
         version: file:packages/core
       solid-js:
-        specifier: ^1.9.17
-        version: 1.9.17
+        specifier: ^1.9.18
+        version: 1.9.18
     devDependencies:
       '@axe-core/playwright':
         specifier: ^4.14.0
@@ -62,8 +62,8 @@ importers:
         specifier: 'catalog:'
         version: '@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(typescript@7.0.2)'
       vite-plugin-solid:
-        specifier: ^2.11.14
-        version: 2.11.14(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(typescript@7.0.2))(solid-js@1.9.17)
+        specifier: ^2.11.15
+        version: 2.11.15(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(typescript@7.0.2))(solid-js@1.9.18)
       vite-plus:
         specifier: 'catalog:'
         version: 1.4.0(@types/node@26.6.6)(@vitest/browser-playwright@5.0.5)(@vitest/coverage-v8@5.0.5)(@vitest/ui@5.0.5)(playwright@1.64.1)(typescript@7.0.2)
@@ -1285,8 +1285,8 @@ packages:
     resolution: {integrity: sha512-2wcC/oGxHis/BoHkkPwldgiPSYcpZK3JU28WoMVv55yHJgcZ8rlXvuG9iZggz+sU1d4bRgIGASwyWqjxu3FM0g==}
     engines: {node: '>=18'}
 
-  solid-js@1.9.17:
-    resolution: {integrity: sha512-4GAmLOWPfNV8H9Jfn2LSFTpNEG6jiOKPiwd5lnLGQtehHaX6l3TOLzJqQ7mqwB/3k1Yy3zyumFVopmc/tm34ow==}
+  solid-js@1.9.18:
+    resolution: {integrity: sha512-CHGO5YFk6Y9m/1YSxVtKnXfrW7JD3Tmof8HmR4z6TmCPsS8efo8LnzIR8CQh3cUvffqYm6DWyBFfk8dQw1CNQQ==}
 
   solid-refresh@0.6.3:
     resolution: {integrity: sha512-F3aPsX6hVw9ttm5LYlth8Q15x6MlI/J3Dn+o3EQyRTtTxidepSTwAYdozt01/YA+7ObcciagGEyXIopGZzQtbA==}
@@ -1348,8 +1348,8 @@ packages:
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
 
-  vite-plugin-solid@2.11.14:
-    resolution: {integrity: sha512-7ZVBt8rpoyqmlwin2kRIUveaHoF6/kulY7gsnD+qFh4nS29V4OPAnw+ojoAspXIjObiL9o1xh9a/nTuYHm02Rw==}
+  vite-plugin-solid@2.11.15:
+    resolution: {integrity: sha512-twDNPdUDbhem+UOXVu5PyRJvwHFmxSJ3+NxbCgT9iFL42EmWS7lBfFskVM/HXLwd86fh1BgHKJBfGCWkTu2zEg==}
     peerDependencies:
       '@testing-library/jest-dom': ^5.16.6 || ^5.17.0 || ^6.0.0 || ^7.0.0
       solid-js: ^1.7.2
@@ -2072,12 +2072,12 @@ snapshots:
       html-entities: 2.3.3
       parse5: 7.3.0
 
-  babel-preset-solid@1.9.16(@babel/core@7.29.7)(solid-js@1.9.17):
+  babel-preset-solid@1.9.16(@babel/core@7.29.7)(solid-js@1.9.18):
     dependencies:
       '@babel/core': 7.29.7
       babel-plugin-jsx-dom-expressions: 0.40.11(@babel/core@7.29.7)
     optionalDependencies:
-      solid-js: 1.9.17
+      solid-js: 1.9.18
 
   baseline-browser-mapping@2.11.33: {}
 
@@ -2376,18 +2376,18 @@ snapshots:
       mrmime: 2.0.1
       totalist: 3.0.1
 
-  solid-js@1.9.17:
+  solid-js@1.9.18:
     dependencies:
       csstype: 3.2.3
       seroval: 1.6.12
       seroval-plugins: 1.6.12(seroval@1.6.12)
 
-  solid-refresh@0.6.3(solid-js@1.9.17):
+  solid-refresh@0.6.3(solid-js@1.9.18):
     dependencies:
       '@babel/generator': 7.29.8
       '@babel/helper-module-imports': 7.29.7
       '@babel/types': 7.29.11
-      solid-js: 1.9.17
+      solid-js: 1.9.18
     transitivePeerDependencies:
       - supports-color
 
@@ -2450,14 +2450,14 @@ snapshots:
 
   util-deprecate@1.0.2: {}
 
-  vite-plugin-solid@2.11.14(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(typescript@7.0.2))(solid-js@1.9.17):
+  vite-plugin-solid@2.11.15(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(typescript@7.0.2))(solid-js@1.9.18):
     dependencies:
       '@babel/core': 7.29.7
       '@types/babel__core': 7.20.5
-      babel-preset-solid: 1.9.16(@babel/core@7.29.7)(solid-js@1.9.17)
+      babel-preset-solid: 1.9.16(@babel/core@7.29.7)(solid-js@1.9.18)
       merge-anything: 5.1.7
-      solid-js: 1.9.17
-      solid-refresh: 0.6.3(solid-js@1.9.17)
+      solid-js: 1.9.18
+      solid-refresh: 0.6.3(solid-js@1.9.18)
       vite: '@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(typescript@7.0.2)'
       vitefu: 1.1.3(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.6)(typescript@7.0.2))
     transitivePeerDependencies:
