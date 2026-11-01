@@ -70,7 +70,7 @@ async function readDurableFit(page: Page): Promise<string | null> {
     const raw = (window as StorageHost).GM_getValue?.<string>(
       'xeg-app-settings:field:gallery.imageFitMode'
     );
-    return typeof raw === 'string' ? (JSON.parse(raw) as { value?: string }).value ?? null : null;
+    return typeof raw === 'string' ? ((JSON.parse(raw) as { value?: string }).value ?? null) : null;
   });
 }
 
