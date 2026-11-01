@@ -14852,6 +14852,7 @@ async function runGalleryExperienceProbe({
   const extensionPage = await context.newPage();
   const page = await context.newPage();
   const phases: Record<string, { status: string; observations?: unknown; error?: string }> = {};
+  const documentationScreenshots: Record<string, unknown> = {};
   const pageErrors: string[] = [];
   const cleanupErrors: string[] = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
@@ -14936,6 +14937,19 @@ async function runGalleryExperienceProbe({
       });
       await page.mouse.move(0, 0);
       await page.waitForTimeout(500);
+      const overviewZoom = await fixtureTabZoom(
+        context,
+        extensionId,
+        page,
+        null,
+        null,
+        EXPERIENCE_FIXTURE_URL
+      );
+      documentationScreenshots.overview = {
+        file: 'gallery-overview.png',
+        viewport: page.viewportSize(),
+        zoom: overviewZoom.observed,
+      };
       await page.screenshot({ path: join(output, 'gallery-overview.png') });
       partial.help = {
         pointer: true,
@@ -15170,6 +15184,7 @@ async function runGalleryExperienceProbe({
       await gallery.waitFor({ state: 'detached' });
       return {
         initial,
+        help: partial.help,
         hidden,
         hiddenAfterPointer,
         focused,
@@ -15386,6 +15401,19 @@ async function runGalleryExperienceProbe({
             if (index === 0) {
               await page.mouse.move(0, 0);
               await page.waitForTimeout(500);
+              const constrainedZoom = await fixtureTabZoom(
+                context,
+                extensionId,
+                page,
+                null,
+                null,
+                EXPERIENCE_FIXTURE_URL
+              );
+              documentationScreenshots.constrained = {
+                file: 'gallery-constrained.png',
+                viewport: page.viewportSize(),
+                zoom: constrainedZoom.observed,
+              };
               await page.screenshot({ path: join(output, 'gallery-constrained.png') });
             }
             await page.screenshot({
@@ -15545,6 +15573,8 @@ async function runGalleryExperienceProbe({
         touchTargets,
         tweetPanelScroll,
         settingsPanelScroll,
+        boundedVariants,
+        shortViewport,
         desktopBeforeZoom,
         beforeZoom,
         zoomed,
@@ -15577,6 +15607,7 @@ async function runGalleryExperienceProbe({
           scope:
             'installed extension with owned deterministic X fixtures; no live X or human study',
           phases,
+          documentationScreenshots,
           pageErrors,
           cleanupErrors,
         },
@@ -15591,7 +15622,7 @@ async function runGalleryExperienceProbe({
   );
   assert.deepEqual(pageErrors, []);
   assert.deepEqual(cleanupErrors, []);
-  return { status: 'passed', phases };
+  return { status: 'passed', phases, documentationScreenshots };
 }
 
 /** Issue #381: a short installed-extension comparison at the real click/API boundary. */
