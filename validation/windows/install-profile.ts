@@ -312,6 +312,7 @@ type UnavailableStep = {
   notification?: { id: string; message: string };
   api?: ApiRecord[];
   recoveryClosedThroughUi?: boolean;
+  entryFailureDismissed?: boolean;
   selected?: unknown;
   selection?: unknown;
   originUrl?: string | null;
@@ -7792,6 +7793,41 @@ async function runUnavailableSequence({
         await recovery.waitFor({ state: 'detached' });
         step.recoveryClosedThroughUi = true;
       }
+      const notice = page.locator('[data-xeg-entry-failure]');
+      await notice.waitFor({ state: 'visible' });
+      assert.equal(await notice.count(), 1, `${failure.name} must show one entry failure`);
+      const content = await notice.evaluate((element) => ({
+        cause: element.querySelector('p[role="status"]')?.textContent?.trim(),
+        action: element.querySelector('p:nth-of-type(2)')?.textContent?.trim(),
+        dismiss: element.querySelector('button')?.textContent?.trim(),
+        buttonCount: element.querySelectorAll('button').length,
+      }));
+      assert.equal(content.cause, created.message, `${failure.name} must show the safe cause`);
+      assert(content.cause, `${failure.name} entry failure cause is missing`);
+      assert.match(content.cause, /^No media was returned for this post\./u);
+      assert.equal(content.action, 'Use the post on X to view this media.');
+      assert.equal(content.dismiss, 'Dismiss error');
+      assert.equal(content.buttonCount, 1);
+      const dismiss = notice.getByRole('button', { name: 'Dismiss error' });
+      await dismiss.focus();
+      assert.equal(
+        await dismiss.evaluate((button) => document.activeElement === button),
+        true,
+        `${failure.name} dismissal must receive focus`
+      );
+      await dismiss.click();
+      await notice.waitFor({ state: 'detached' });
+      assert.equal(
+        await article.evaluate((element) => {
+          const active = document.activeElement;
+          const trigger = element.querySelector('.media-shell button');
+          return active !== null && trigger !== null && element.contains(active) &&
+            (active === trigger || active.contains(trigger));
+        }),
+        true,
+        `${failure.name} dismissal must restore focus to its current article trigger`
+      );
+      step.entryFailureDismissed = true;
       await assertSameDocument();
       step.status = 'failed-extraction-completed';
     }
