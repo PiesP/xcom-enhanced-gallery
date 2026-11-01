@@ -14534,6 +14534,16 @@ async function runMediaDownloadRecoveryProbe({
       output,
       page,
     });
+    const recoveryNotifications = await notificationObserver.snapshot();
+    observations.notificationAfter = recoveryNotifications;
+    assert.deepEqual(
+      recoveryNotifications.activeIds.filter((id) => id.startsWith('xeg-')),
+      [],
+      'Suppressed recovery notifications must not be visible natively'
+    );
+    await notificationObserver.dispose();
+    notificationObserver = await observeNativeNotificationCreates(context, extensionId, true);
+    observations.sourceLimitNotificationBefore = await notificationObserver.snapshot();
     await page.goto(FIXTURE_URL);
     await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
     await page.evaluate(() => {
@@ -14638,7 +14648,7 @@ async function runMediaDownloadRecoveryProbe({
       await page.unroute(videoApiPattern, denyVideoApi);
     }
     const notificationAfter = await notificationObserver.snapshot();
-    observations.notificationAfter = notificationAfter;
+    observations.sourceLimitNotificationAfter = notificationAfter;
     assert.deepEqual(
       notificationAfter.activeIds.filter((id) => id.startsWith('xeg-')),
       [],
