@@ -27,12 +27,16 @@ Remove the selector after the attempt. The artifact fixture intercepts GM
 storage and localStorage on an owned X.com page and exercises language
 denial/retry/reload plus schema preservation. It also rejects a fit-mode save
 while Settings is closed, checks the toolbar unsaved cue, reopens Settings from
-that cue, and verifies durable retry. With
+that cue, and verifies durable retry, including a delayed failure after Settings
+closes. With
 `--installation extension`, the same selector runs a focused installed-package
-fixture for healthy language persistence/reload and unsupported-schema session
-edits/retry/raw preservation. The installed fixture uses real extension storage;
-controlled write denial remains an artifact-fixture boundary. Neither mode
-establishes live X.com behavior or a userscript-manager installation.
+fixture for healthy language persistence/reload, controlled fit-mode storage
+failures and retries, and unsupported-schema session edits/retry/raw preservation.
+The installed fixture intercepts only the exact fit-mode keys in the extension
+content script's primary and X-origin fallback storage paths. It checks healthy
+primary and fallback saves, denial with Settings closed, and a delayed denial
+after closing Settings. Neither mode establishes live X.com behavior or a
+userscript-manager installation.
 
 To run only the issue #381 opening-feedback fixture with the installed
 Chrome/Edge extension, create the ignored `opening-feedback.json` file here:
