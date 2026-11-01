@@ -7822,8 +7822,12 @@ async function runUnavailableSequence({
         await article.evaluate((element) => {
           const active = document.activeElement;
           const trigger = element.querySelector('.media-shell button');
-          return active !== null && trigger !== null && element.contains(active) &&
-            (active === trigger || active.contains(trigger));
+          return (
+            active !== null &&
+            trigger !== null &&
+            element.contains(active) &&
+            (active === trigger || active.contains(trigger))
+          );
         }),
         true,
         `${failure.name} dismissal must restore focus to its current article trigger`
