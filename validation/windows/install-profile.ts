@@ -16337,6 +16337,16 @@ async function runUxDetailsProbe({
         assert.equal(reapplied.observed, 2);
         result.reappliedZoom = reapplied;
       }
+      await page.waitForFunction(
+        ({ width, height, factor }) =>
+          Math.abs(innerWidth - width / factor) <= 1 &&
+          Math.abs(innerHeight - height / factor) <= 1,
+        { ...viewport, factor: zoom ? 2 : 1 }
+      );
+      result.normalMediaLayout = await page.evaluate(() => ({
+        width: innerWidth,
+        height: innerHeight,
+      }));
       await media.evaluate((element) => {
         element.scrollTop = 0;
       });
