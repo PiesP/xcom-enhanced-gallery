@@ -109,6 +109,7 @@ import {
   getDisplayedMediaIndex,
   navigateToItem,
   openGallery,
+  setError,
   setFocusedIndexOnly,
 } from '@shared/state/signals/gallery.signals';
 import {
@@ -260,6 +261,114 @@ describe('VerticalGalleryView preload reactivity', () => {
     await flushEffects();
     expect(result?.textContent).toContain('msg.dl.bulkOutcome.nextAction');
     expect(result?.textContent).not.toContain('msg.dl.bulkOutcome.cancelRecoveryAndDismiss');
+  });
+
+  it('keeps failure and ZIP-result wheel events in their scrollports', async () => {
+    const onRecoverFailed = vi.fn();
+    const onDismissBulkOutcome = vi.fn();
+    openGallery([media('a'), media('b')]);
+    dispose = render(
+      () => createComponent(VerticalGalleryView, { onRecoverFailed, onDismissBulkOutcome }),
+      container
+    );
+    setError('The preferred source is unavailable. '.repeat(20));
+    setBulkDownloadOutcome({
+      total: 2,
+      included: 1,
+      omitted: 1,
+      handedOff: true,
+      reason: 'other',
+      sourceUnavailable: false,
+      recoverableCount: 1,
+    });
+    setDownloadStatus('handedOff');
+    await flushEffects();
+
+    const gallery = container.firstElementChild;
+    const items = container.querySelector<HTMLElement>('[data-gallery-element="items"]');
+    const failure = container.querySelector<HTMLElement>(
+      '[data-gallery-element="gallery-failure-notice"]'
+    );
+    const result = container.querySelector<HTMLElement>(
+      '[data-gallery-element="bulk-download-outcome"]'
+    );
+    expect(gallery).not.toBeNull();
+    expect(items).not.toBeNull();
+    expect(failure).not.toBeNull();
+    expect(result).not.toBeNull();
+    if (!gallery || !items || !failure || !result) {
+      throw new Error('Expected gallery items and result panels');
+    }
+
+    result.querySelector('details')!.open = true;
+    items.style.height = '48px';
+    items.style.flex = 'none';
+    expect(items.scrollHeight).toBeGreaterThan(items.clientHeight);
+    items.scrollTop = 10;
+    const mediaScrollTop = items.scrollTop;
+    const displayedIndex = getDisplayedMediaIndex();
+    let redirected = 0;
+    gallery.addEventListener('wheel', () => {
+      redirected += 1;
+      items.scrollTop += 100;
+    });
+
+    for (const [panel, descendant] of [
+      [failure, failure.querySelector('p')],
+      [result, result.querySelector('summary')],
+    ] as const) {
+      if (!descendant) {
+        throw new Error('Expected text or summary inside a result panel');
+      }
+      panel.style.height = '48px';
+      panel.style.maxHeight = '48px';
+      expect(getComputedStyle(panel).overflowY).toBe('auto');
+      expect(panel.scrollHeight).toBeGreaterThan(panel.clientHeight);
+
+      const button = panel.querySelector('button');
+      button?.focus();
+      const focus = document.activeElement;
+      panel.scrollTop = 0;
+      const interior = new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: 30 });
+      descendant.dispatchEvent(interior);
+      expect(interior.defaultPrevented).toBe(false);
+      expect(redirected).toBe(0);
+      const buttonInterior = new WheelEvent('wheel', {
+        bubbles: true,
+        cancelable: true,
+        deltaY: 30,
+      });
+      button?.dispatchEvent(buttonInterior);
+      expect(buttonInterior.defaultPrevented).toBe(false);
+
+      const upper = new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: -30 });
+      button?.dispatchEvent(upper);
+      expect(upper.defaultPrevented).toBe(true);
+      panel.scrollTop = panel.scrollHeight;
+      const lower = new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: 30 });
+      descendant.dispatchEvent(lower);
+      expect(lower.defaultPrevented).toBe(true);
+      expect(redirected).toBe(0);
+      expect(items.scrollTop).toBe(mediaScrollTop);
+      expect(getDisplayedMediaIndex()).toBe(displayedIndex);
+      expect(document.activeElement).toBe(focus);
+    }
+
+    Object.defineProperties(failure, {
+      scrollHeight: { configurable: true, value: 48 },
+      clientHeight: { configurable: true, value: 48 },
+    });
+    Object.defineProperties(items, {
+      scrollHeight: { configurable: true, value: 48 },
+      clientHeight: { configurable: true, value: 48 },
+    });
+    const noOverflow = new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: 30 });
+    failure.querySelector('button')!.dispatchEvent(noOverflow);
+    expect(noOverflow.defaultPrevented).toBe(true);
+    expect(redirected).toBe(0);
+    expect(gallerySignals.error).toContain('preferred source');
+    expect(onRecoverFailed).not.toHaveBeenCalled();
+    expect(onDismissBulkOutcome).not.toHaveBeenCalled();
   });
 
   it('updates item indices and preload state when keyed items reorder', async () => {
