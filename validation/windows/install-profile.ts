@@ -34,6 +34,7 @@ import {
   RAPID_CLICK_B,
   UNAVAILABLE_SEQUENCE,
 } from './fixtures/installed-quoted-video-api.ts';
+import { has44CssPxTouchTarget, isOperable44CssPxControl } from './control-geometry.ts';
 import {
   expectedStoredZipBytes,
   readDownloadLiveLimit,
@@ -15327,11 +15328,7 @@ async function uxControlGeometry(control: Locator, label: string) {
     };
   });
   assert(
-    // DOMRect's floating-point transform can round an exact 44px CSS box by < 0.001px.
-    geometry.rect.width >= 44 - 0.001 &&
-      geometry.rect.height >= 44 - 0.001 &&
-      geometry.withinViewport &&
-      geometry.hit,
+    isOperable44CssPxControl(geometry),
     `${label} must be a visible, hit-tested 44px control: ${JSON.stringify(geometry)}`
   );
   return geometry;
@@ -17245,10 +17242,7 @@ async function runGalleryExperienceProbe({
               path: join(output, screenshot),
             });
             assert(
-              controls.controls.every(
-                ({ rect, hit, withinViewport }) =>
-                  rect.width >= 44 && rect.height >= 44 && hit && withinViewport
-              ),
+              controls.controls.every(isOperable44CssPxControl),
               `${EXPERIENCE_IMAGES[index]?.label}: narrow toolbar control is clipped or blocked`
             );
             cases.push({ shape: EXPERIENCE_IMAGES[index]?.label, fit, controls, screenshot });
@@ -17267,7 +17261,7 @@ async function runGalleryExperienceProbe({
             };
           })
       );
-      assert(touchTargets.every(({ width, height }) => width >= 44 && height >= 44));
+      assert(touchTargets.every(({ width, height }) => has44CssPxTouchTarget(width, height)));
       await toolbar.locator('#tweet-text-button').click();
       const tweetPanel = gallery.locator('[data-gallery-element="tweet-panel"]');
       await tweetPanel.waitFor({ state: 'visible' });
@@ -17316,10 +17310,7 @@ async function runGalleryExperienceProbe({
       await page.setViewportSize({ width: 401, height: 360 });
       const shortViewport = await experienceControlGeometry(toolbar);
       assert(
-        shortViewport.controls.every(
-          ({ rect, hit, withinViewport }) =>
-            rect.width >= 44 && rect.height >= 44 && hit && withinViewport
-        ),
+        shortViewport.controls.every(isOperable44CssPxControl),
         'Short 401x360 viewport clipped a toolbar action'
       );
       partial.shortViewport = shortViewport;
@@ -17374,11 +17365,45 @@ async function runGalleryExperienceProbe({
         } finally {
           await cdp.detach();
         }
+        const clippedControls = desktopAtZoom.controls.filter(
+          (control) => !isOperable44CssPxControl(control)
+        );
+        if (clippedControls.length) {
+          partial.desktopAtZoom = desktopAtZoom;
+          partial.clippedControls = clippedControls;
+          partial.zoomLayout = await toolbar.evaluate((element) => {
+            const describe = (node: Element | null) => {
+              if (!node) {
+                return null;
+              }
+              const style = getComputedStyle(node);
+              return {
+                rect: node.getBoundingClientRect().toJSON(),
+                display: style.display,
+                flexWrap: style.flexWrap,
+                flex: style.flex,
+                inlineSize: style.inlineSize,
+                maxInlineSize: style.maxInlineSize,
+                overflowX: style.overflowX,
+              };
+            };
+            const content = element.querySelector(':scope > div');
+            const controls = content?.firstElementChild ?? null;
+            return {
+              toolbar: describe(element),
+              content: describe(content),
+              controls: describe(controls),
+              groups: [...(controls?.children ?? [])]
+                .filter((node) => node instanceof HTMLFieldSetElement)
+                .map((group) => ({
+                  legend: group.querySelector('legend')?.textContent?.trim() ?? null,
+                  ...describe(group),
+                })),
+            };
+          });
+        }
         assert(
-          desktopAtZoom.controls.every(
-            ({ rect, hit, withinViewport }) =>
-              rect.width >= 44 && rect.height >= 44 && hit && withinViewport
-          ),
+          clippedControls.length === 0,
           'Actual 200% desktop zoom clipped or blocked a toolbar control'
         );
       } finally {

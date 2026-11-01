@@ -104,6 +104,7 @@ vi.mock('@shared/hooks/use-translation', () => ({
 import { useVideoVisibility } from '@features/gallery/components/vertical-gallery-view/hooks/use-video-visibility';
 import { VerticalGalleryView } from '@features/gallery/components/vertical-gallery-view/VerticalGalleryView';
 import {
+  closeGallery,
   disposeGallerySignals,
   gallerySignals,
   getDisplayedMediaIndex,
@@ -387,6 +388,36 @@ describe('VerticalGalleryView preload reactivity', () => {
     expect(image(container, 'e').getAttribute('loading')).toBe('eager');
     expect(image(container, 'e').getAttribute('fetchpriority')).toBe('high');
     expect(image(container, 'd').getAttribute('loading')).toBe('lazy');
+  });
+
+  it('disposes removed For rows across replacement, close, and remount', async () => {
+    const first = ['a', 'b', 'c'].map(media);
+    openGallery(first);
+    dispose = render(() => createComponent(VerticalGalleryView, {}), container);
+    await flushEffects();
+
+    const initialRows = [...container.querySelectorAll('[data-gallery-element="item"]')];
+    expect(initialRows).toHaveLength(3);
+
+    openGallery([first[1]!, media('d')]);
+    await flushEffects();
+    const replacedRows = [...container.querySelectorAll('[data-gallery-element="item"]')];
+    expect(replacedRows).toHaveLength(2);
+    expect(replacedRows[0]).toBe(initialRows[1]);
+    expect(initialRows[0]?.isConnected).toBe(false);
+    expect(initialRows[2]?.isConnected).toBe(false);
+
+    closeGallery();
+    await flushEffects();
+    expect(container.querySelectorAll('[data-gallery-element="item"]')).toHaveLength(0);
+    expect(replacedRows.every((row) => !row.isConnected)).toBe(true);
+
+    openGallery([first[0]!, media('d')]);
+    await flushEffects();
+    expect([...container.querySelectorAll('[data-gallery-element="item"]')]).toHaveLength(2);
+    expect(image(container, 'a').isConnected).toBe(true);
+    expect(image(container, 'd').isConnected).toBe(true);
+    expect(initialRows.every((row) => !row.isConnected)).toBe(true);
   });
 
   it('keeps a keyed video element, fallback readiness, and attempt budget when reordered', async () => {
