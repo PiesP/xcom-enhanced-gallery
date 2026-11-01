@@ -4,6 +4,7 @@
 import styles from '@features/gallery/components/GalleryFailureNotice.module.css';
 import { useTranslation } from '@shared/hooks/use-translation';
 import { gallerySignals, setError } from '@shared/state/signals/gallery.signals';
+import { shouldAllowWheelDefault } from '@shared/utils/events/wheel-scroll-guard';
 import type { JSXElement } from 'solid-js';
 import { Show } from 'solid-js';
 
@@ -15,6 +16,17 @@ export function GalleryFailureNotice(): JSXElement {
       <section
         class={styles.notice}
         data-gallery-element="gallery-failure-notice"
+        data-gallery-scrollable="true"
+        onWheel={(event) => {
+          event.stopPropagation();
+          if (
+            !shouldAllowWheelDefault(event, {
+              scrollableSelector: '[data-gallery-scrollable="true"]',
+            })
+          ) {
+            event.preventDefault();
+          }
+        }}
         onClick={(event) => event.stopPropagation()}
       >
         <p>{gallerySignals.error}</p>

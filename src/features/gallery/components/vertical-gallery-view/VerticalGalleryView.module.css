@@ -241,6 +241,7 @@
   flex: none;
   max-height: 40vh;
   overflow: auto;
+  overscroll-behavior: contain;
   padding: var(--xeg-spacing-sm) var(--xeg-spacing-gallery);
   color: var(--xeg-color-text-primary);
   background: var(--xeg-gallery-bg);

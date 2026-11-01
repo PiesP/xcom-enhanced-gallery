@@ -32,6 +32,7 @@ import {
 } from '@shared/state/signals/gallery-download-signals';
 import { computePreloadIndices } from '@shared/utils/performance/preload';
 import { withTrustedEvent } from '@shared/utils/events/trusted-event';
+import { shouldAllowWheelDefault } from '@shared/utils/events/wheel-scroll-guard';
 import { cx } from '@shared/utils/text/formatting';
 import type { Accessor, JSXElement } from 'solid-js';
 import {
@@ -330,9 +331,20 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
           <section
             class={styles.bulkOutcome}
             data-gallery-element="bulk-download-outcome"
+            data-gallery-scrollable="true"
             role="status"
             aria-live={downloadStatus() === 'working' ? 'off' : 'polite'}
             aria-atomic="true"
+            onWheel={(event) => {
+              event.stopPropagation();
+              if (
+                !shouldAllowWheelDefault(event, {
+                  scrollableSelector: '[data-gallery-scrollable="true"]',
+                })
+              ) {
+                event.preventDefault();
+              }
+            }}
             onClick={(event) => event.stopPropagation()}
           >
             <div class={styles.bulkOutcomeHeading}>
