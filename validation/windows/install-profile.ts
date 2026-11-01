@@ -15894,6 +15894,9 @@ async function runUxDetailsProbe({
           mediaScrollTop: items?.scrollTop ?? null,
           mediaScrollHeight: items?.scrollHeight ?? null,
           mediaClientHeight: items?.clientHeight ?? null,
+          toolbarClearance: items
+            ? getComputedStyle(items).getPropertyValue('--xeg-toolbar-clearance').trim()
+            : null,
           activeElement: {
             tag: active?.tagName ?? null,
             id: active instanceof HTMLElement ? active.id : null,
@@ -15933,6 +15936,12 @@ async function runUxDetailsProbe({
       }));
       panelReceipt.browserZoom = zoom ? 2 : 1;
       await captureSelection('after-zoom');
+      if (zoom) {
+        // Re-anchor through normal controls after zoom changes the visible media geometry.
+        await toolbar.locator('button[aria-label="Previous"]').click();
+        await toolbar.locator('button[aria-label="Next"]').click();
+        panelReceipt.postZoomNativeReselection = ['Previous', 'Next'];
+      }
       const selected = await toolbar.getAttribute('data-current-index');
       assert.equal(
         selected,
@@ -15956,17 +15965,48 @@ async function runUxDetailsProbe({
             JSON.stringify(selectionSnapshots)
         );
       };
+      const waitForVideoLayout = async (stage: string) => {
+        let lastKey: string | undefined;
+        let stableSince = Date.now();
+        await waitForValue(
+          async () => {
+            const state = await captureSelection(stage);
+            const key = JSON.stringify([
+              state.current,
+              state.focused,
+              state.detailsMediaId,
+              state.mediaScrollTop,
+              state.mediaClientHeight,
+              state.toolbarClearance,
+            ]);
+            const ownsVideo =
+              state.current === selected &&
+              state.displayed === selected &&
+              state.detailsMediaId === mediaId;
+            if (key !== lastKey || !ownsVideo) {
+              stableSince = Date.now();
+            }
+            lastKey = key;
+            // The product's scroll-idle focus synchronization takes 250ms.
+            return ownsVideo && Date.now() - stableSince >= 300 ? true : undefined;
+          },
+          `${locale} selected video layout after ${stage}`,
+          3_000
+        );
+      };
       const summary = details.locator('summary');
       const expectedSummary =
         locale === 'ko' ? /동영상 저장 화질을 확인하지 못함/u : /Video save quality is unverified/u;
       const summaryText = (await summary.textContent())?.trim() ?? '';
       assert.match(summaryText, expectedSummary);
+      await waitForVideoLayout('before-summary-focus-stable');
       await requireVideoDetails('before-focus');
       await summary.focus();
       await requireVideoDetails('after-focus');
       await page.keyboard.press('Enter');
       await requireVideoDetails('after-Enter');
       assert.equal(await details.getAttribute('open'), '');
+      await waitForVideoLayout('after-summary-open-stable');
       const summaryGeometry = await uxControlGeometry(summary, `${locale} source summary`);
       await requireVideoDetails('after-geometry');
       const items = gallery.locator('[data-gallery-element="items"]');
