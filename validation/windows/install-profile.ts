@@ -15443,10 +15443,7 @@ async function uxResultWheel(
       `${label} did not consume real wheel input in its available direction`
     );
   } else {
-    assert(
-      Math.abs(afterPanel.top - beforePanel.top) < 1,
-      `${label} scrolled past its boundary`
-    );
+    assert(Math.abs(afterPanel.top - beforePanel.top) < 1, `${label} scrolled past its boundary`);
   }
   assert.equal(await media.count(), 1);
   return wheelReceipt;
@@ -15905,9 +15902,7 @@ async function runUxDetailsProbe({
       } else {
         await page.route(matchesOriginal, deniedOriginal);
         routeInstalled = true;
-        await toolbar
-          .locator('button[aria-label="Download 3 shown files as ZIP"]')
-          .click();
+        await toolbar.locator('button[aria-label="Download 3 shown files as ZIP"]').click();
         await assertVisibleBulkOutcome(page, {
           included: 2,
           omitted: 1,
@@ -15929,7 +15924,10 @@ async function runUxDetailsProbe({
         assert.equal(await summary.count(), 1);
         await summary.click();
         assert.equal(await panel.locator('details').getAttribute('open'), '');
-        assert.deepEqual(denied.map(({ status }) => status), [403]);
+        assert.deepEqual(
+          denied.map(({ status }) => status),
+          [403]
+        );
       }
       const overflow = await panel.evaluate(
         (element) => element.scrollHeight - element.clientHeight
@@ -15991,7 +15989,9 @@ async function runUxDetailsProbe({
         'bottom',
         wheelObservations
       );
-      await page.setViewportSize(zoom ? { width: 1280, height: 1200 } : { width: 1280, height: 900 });
+      await page.setViewportSize(
+        zoom ? { width: 1280, height: 1200 } : { width: 1280, height: 900 }
+      );
       const roomyPanelOverflow = await panel.evaluate(
         (element) => element.scrollHeight - element.clientHeight
       );
@@ -16009,9 +16009,9 @@ async function runUxDetailsProbe({
       );
       assert.equal(await panel.count(), 1, `${kind} wheel dismissed its panel`);
       assert.deepEqual(
-        (await queryDownloads(extensionPage!)).filter(({ id }) => !knownDownloads.has(id)).map(
-          ({ id, state }) => ({ id, state })
-        ),
+        (await queryDownloads(extensionPage!))
+          .filter(({ id }) => !knownDownloads.has(id))
+          .map(({ id, state }) => ({ id, state })),
         [kind === 'single-failure' ? result.single : result.zip].map((item) => {
           const download = item as { id: number; state: string };
           return { id: download.id, state: download.state };
