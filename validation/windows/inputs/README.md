@@ -107,6 +107,17 @@ checks native download IDs, saved file identity, entry order, CRC, bytes, hashes
 request count, result dismissal, session reopening, and exact cleanup. Retain
 failed receipts outside Git and remove the selector after the attempt.
 
+After that campaign, two fresh owned-fixture sessions check #442's control meanings.
+Each produces and byte-verifies a separate partial ZIP. The first holds a new
+ordinary ZIP source through the native loopback: dismissing the previous result
+must leave the new request running, and closing the gallery then aborts that
+owned source. The second holds a missing-item recovery: the visible control must
+say it cancels recovery and dismisses the result, and activating it must abort
+the held source without a replacement native ZIP or a late result. The receipt
+records the exact native events, download IDs, screenshots, and cleanup. This is
+installed fixture evidence, not a claim about a live X.com transfer or disk
+completion after a browser handoff.
+
 For a focused current-X language/theme check, use the existing ignored
 `live-acceptance.json` with exactly:
 
