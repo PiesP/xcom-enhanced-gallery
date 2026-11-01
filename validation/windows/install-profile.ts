@@ -8672,7 +8672,7 @@ async function runDelayedVideoFailures({
           assert(terminal.failures[0]?.visible, 'Terminal source notice must be visibly painted');
           assert.equal(terminal.failures[0]?.role, 'status');
           assert.match(terminal.failures[0]?.text ?? '', /Use the post on X to view this media/u);
-          await page.waitForTimeout(1_000);
+          await page.waitForTimeout(5_250);
           assert.equal(
             await page.locator('[data-xeg-entry-failure]').count(),
             1,
@@ -14571,6 +14571,7 @@ async function runMediaDownloadRecoveryProbe({
     const tileGallery = page.locator('[data-xeg-gallery-container]');
     await tileGallery.waitFor({ state: 'visible' });
     assert.equal(await tileGallery.locator('[data-gallery-element="item"]').count(), 1);
+    await page.waitForTimeout(5_250);
     const tileSummary = await assertSourceDetails(tileGallery, 'visible-tile');
     await assertSourceDetails(tileGallery, 'unverified-original');
     const tileKnownDownloads = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
@@ -14635,6 +14636,7 @@ async function runMediaDownloadRecoveryProbe({
       const videoGallery = page.locator('[data-xeg-gallery-container]');
       await videoGallery.waitFor({ state: 'visible' });
       assert.equal(await videoGallery.locator('[data-gallery-element="item"]').count(), 1);
+      await page.waitForTimeout(5_250);
       const observedSummary = await assertSourceDetails(videoGallery, 'observed');
       assert.equal(
         deniedVideoApi.length,
