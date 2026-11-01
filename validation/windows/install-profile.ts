@@ -1871,7 +1871,7 @@ async function verifyTrustedDownloadInput({
     sourceUrl,
     syntheticInputs: [],
     notificationScope:
-      'Production SHOW_NOTIFICATION path counted at native create boundary; delivery suppressed during this case',
+      'Persistent help uses the rendered panel; synthetic input must not cross the native notification boundary; delivery is suppressed',
     downloadScope:
       'Real direct URL download held by bounded fixture body and asynchronous native onDeterminingFilename listener',
     cleanup: {},
@@ -1967,19 +1967,26 @@ async function verifyTrustedDownloadInput({
     const gallery = page.locator('[data-xeg-gallery-container]');
     await gallery.waitFor({ state: 'visible' });
     await page.keyboard.press('?');
-    await waitForValue(
-      async () =>
-        (await worker.evaluate(() => {
-          const state = globalThis.__xegIngressNotifications;
-          if (!state) {
-            throw new Error('Notification seam disappeared');
-          }
-          return state.calls;
-        })) === 1
-          ? true
-          : undefined,
-      'trusted help input to reach the notification boundary'
+    const helpPanel = gallery.locator('[data-gallery-element="keyboard-help-panel"]');
+    await helpPanel.waitFor({ state: 'visible' });
+    assert.equal(
+      await gallery.locator('#keyboard-help-button').getAttribute('aria-expanded'),
+      'true'
     );
+    assert.equal(
+      await worker.evaluate(() => {
+        const state = globalThis.__xegIngressNotifications;
+        if (!state) {
+          throw new Error('Notification seam disappeared');
+        }
+        return state.calls;
+      }),
+      0,
+      'Rendered help must not create a native notification'
+    );
+    await page.keyboard.press('Escape');
+    await helpPanel.waitFor({ state: 'hidden' });
+    assert.equal(await gallery.isVisible(), true, 'Help Escape must retain the gallery');
     await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download"]').click();
     const control = await waitForValue(async () => {
       const value = await extensionPage.evaluate(() => {
@@ -2058,7 +2065,7 @@ async function verifyTrustedDownloadInput({
       paused: before.download.paused,
       requestBinding: before.record,
       filenameGate: control.filenameGate,
-      notificationCalls: 1,
+      notificationCalls: 0,
     };
     for (const input of [
       'Escape',
@@ -2140,8 +2147,13 @@ async function verifyTrustedDownloadInput({
           }
           return state.calls;
         }),
-        1,
+        0,
         `${input}: synthetic input must not induce a notification`
+      );
+      assert.equal(
+        await helpPanel.isVisible(),
+        false,
+        `${input}: synthetic input must not open help`
       );
       evidence.syntheticInputs.push({
         input,
@@ -2152,7 +2164,7 @@ async function verifyTrustedDownloadInput({
         bytesReceived: current.download.bytesReceived,
         filenameGate,
         cancellationRequested: false,
-        notificationCalls: 1,
+        notificationCalls: 0,
       });
     }
     await page.keyboard.press('Escape');
@@ -2210,7 +2222,7 @@ async function verifyTrustedDownloadInput({
         return state.calls;
       }),
     };
-    assert.equal(evidence.after.notificationCalls, 1);
+    assert.equal(evidence.after.notificationCalls, 0);
     evidence.status = 'passed';
   } catch (error) {
     primarySeen = true;
