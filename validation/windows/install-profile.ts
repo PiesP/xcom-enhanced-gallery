@@ -14545,10 +14545,25 @@ async function runGalleryExperienceProbe({
       await helpPanel.waitFor({ state: 'visible' });
       await helpPanel.locator('button').first().click();
       await helpPanel.waitFor({ state: 'hidden' });
+      await helpButton.focus();
+      await page.keyboard.press('Space');
+      await helpPanel.waitFor({ state: 'visible' });
+      await page.keyboard.press('Escape');
+      await helpPanel.waitFor({ state: 'hidden' });
+      await toolbar.evaluate(() => {
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
+      });
       await page.mouse.move(0, 0);
       await page.waitForTimeout(500);
       await page.screenshot({ path: join(output, 'gallery-overview.png') });
-      partial.help = { pointer: true, eligibleShortcut: true, nestedEscape: true };
+      partial.help = {
+        pointer: true,
+        eligibleShortcut: true,
+        nativeSpace: true,
+        nestedEscape: true,
+      };
       await page.screenshot({ path: join(output, 'experience-x02-toolbar-initial.png') });
       await toolbar.evaluate((element) => {
         if (element.contains(document.activeElement)) {
@@ -14640,6 +14655,12 @@ async function runGalleryExperienceProbe({
       const select = gallery.getByLabel('Video clicks');
       await select.waitFor({ state: 'visible' });
       await select.click();
+      await page.keyboard.press('?');
+      assert.equal(
+        await gallery.locator('[data-gallery-element="keyboard-help-panel"]').isVisible(),
+        false,
+        'Native Settings select must keep its own keyboard input'
+      );
       await page.mouse.move(640, 350);
       const selectAfterPointerAway = await select.evaluate((element) => ({
         focused: document.activeElement === element,
