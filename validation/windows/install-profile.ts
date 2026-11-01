@@ -13933,6 +13933,63 @@ async function runHeldMissingRecoveryCancellation({
   const deniedBody = 'fixture 503';
   let phase: 'partial' | 'ordinary-held' | 'recovery-held' = 'partial';
   let routeInstalled = false;
+  let activeNativeMark = nativeLoopback.mark();
+  const ownedTrace: Array<Record<string, string | number | null>> = [];
+  let traceOverflow = 0;
+  const ownedSource = (rawUrl: string): URL | null => {
+    const url = new URL(rawUrl);
+    return url.origin === 'https://pbs.twimg.com' &&
+      IMAGE_URL_MARKERS.some((marker) => url.pathname.includes(marker)) &&
+      url.searchParams.get('name') === 'orig'
+      ? url
+      : null;
+  };
+  const trace = (entry: Record<string, string | number | null>): void => {
+    if (ownedTrace.length < 48) {
+      ownedTrace.push({ phase, ...entry });
+    } else {
+      traceOverflow += 1;
+    }
+  };
+  const onOwnedRequest = (request: Request): void => {
+    const url = ownedSource(request.url());
+    if (url) {
+      trace({ event: 'request', url: url.href, method: request.method(), resourceType: request.resourceType() });
+    }
+  };
+  const onOwnedResponse = (response: Response): void => {
+    const url = ownedSource(response.url());
+    if (url) {
+      trace({ event: 'response', url: url.href, status: response.status() });
+    }
+  };
+  const onOwnedRequestFailed = (request: Request): void => {
+    const url = ownedSource(request.url());
+    if (url) {
+      trace({ event: 'requestfailed', url: url.href, failure: request.failure()?.errorText ?? null });
+    }
+  };
+  const captureSnapshot = async (label: string): Promise<void> => {
+    const observed = await newDownloads();
+    const panel = page.locator('[data-xeg-gallery-container] [data-gallery-element="bulk-download-outcome"]');
+    receipt[label] = {
+      phase,
+      ownedTrace: [...ownedTrace],
+      traceOverflow,
+      native: nativeLoopback.since(activeNativeMark),
+      nativeHeld: nativeLoopback.held(),
+      downloads: observed.map(({ id, url, filename, state, exists, bytesReceived, totalBytes }) => ({
+        id,
+        url,
+        filename: basename(filename),
+        state,
+        exists,
+        bytesReceived,
+        totalBytes,
+      })),
+      panel: (await panel.count()) ? ((await panel.textContent()) ?? '').slice(0, 1_500) : null,
+    };
+  };
   const routeHandler = async (route: Route): Promise<void> => {
     if (!['fetch', 'xhr'].includes(route.request().resourceType())) {
       await route.fallback();
@@ -13946,12 +14003,14 @@ async function runHeldMissingRecoveryCancellation({
     if (phase !== 'partial') {
       assert.equal(index, 0, 'A working ZIP refetched a successful sibling');
       assert.equal(url.pathname, originalPath, 'Held source identity changed');
+      trace({ event: 'route', url: url.href, decision: 'continue', resourceType: route.request().resourceType() });
       // Bypass the context's deterministic display route for this one owned
       // original so the loopback can hold its actual response until abort.
       await route.continue();
       return;
     }
     const rejected = index === 0;
+    trace({ event: 'route', url: url.href, decision: rejected ? 'fulfill-503' : 'fulfill-200', resourceType: route.request().resourceType() });
     await route.fulfill({
       status: rejected ? 503 : 200,
       contentType: rejected ? 'text/plain' : 'image/jpeg',
@@ -13965,6 +14024,41 @@ async function runHeldMissingRecoveryCancellation({
   };
   const newDownloads = async (): Promise<ChromeDownloadItem[]> =>
     (await queryDownloads(extensionPage)).filter(({ id }) => !initialIds.has(id));
+  const unexpectedDownloads: Array<Record<string, unknown>> = [];
+  receipt.unexpectedDownloads = unexpectedDownloads;
+  const captureUnexpected = async (item: ChromeDownloadItem): Promise<void> => {
+    const observation: Record<string, unknown> = {
+      id: item.id,
+      url: item.url,
+      filename: basename(item.filename),
+      state: item.state,
+      exists: item.exists,
+    };
+    unexpectedDownloads.push(observation);
+    if (item.state !== 'complete' || !item.exists) {
+      return;
+    }
+    const expectedEntries = images.map((bytes, index) => ({
+      filename: expectedFilename(index),
+      bytes,
+    }));
+    const maximumBytes = expectedStoredZipBytes(expectedEntries).length;
+    const file = await stat(item.filename);
+    assert(file.isFile() && file.size > 0 && file.size <= maximumBytes);
+    const { bytes } = await readExactDownloadFile(item.filename, file.size);
+    const artifact = `installed-held-unexpected-${item.id}.zip`;
+    await writeFile(join(output, artifact), bytes);
+    Object.assign(observation, {
+      artifact,
+      bytes: bytes.length,
+      sha256: createHash('sha256').update(bytes).digest('hex'),
+    });
+    try {
+      observation.verified = verifyStoredZip(bytes, expectedEntries);
+    } catch (error) {
+      observation.verificationError = safeError(error);
+    }
+  };
   const savePartial = async (label: string): Promise<void> => {
     const before = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
     const gallery = page.locator('[data-xeg-gallery-container]');
@@ -14011,7 +14105,11 @@ async function runHeldMissingRecoveryCancellation({
   };
   let primaryError: unknown;
   const cleanupErrors: unknown[] = [];
+  let invariantError: unknown;
   try {
+    page.on('request', onOwnedRequest);
+    page.on('response', onOwnedResponse);
+    page.on('requestfailed', onOwnedRequestFailed);
     await page.route(routePattern, routeHandler);
     routeInstalled = true;
     for (const mode of ['ordinary', 'recovery'] as const) {
@@ -14036,6 +14134,7 @@ async function runHeldMissingRecoveryCancellation({
       assert(expectedHttpErrors.length <= 2, 'Held fixture generated repeated 503 errors');
       evidence.expectedConsoleErrors?.push(...expectedHttpErrors);
       const nativeMark = nativeLoopback.mark();
+      activeNativeMark = nativeMark;
       const heldConsoleMark = consoleErrors.length;
       phase = mode === 'ordinary' ? 'ordinary-held' : 'recovery-held';
       nativeLoopback.armHold('pbs.twimg.com', originalPath);
@@ -14050,11 +14149,18 @@ async function runHeldMissingRecoveryCancellation({
           .getByRole('button', { name: 'Download 1 missing items as a separate ZIP' })
           .click();
       }
-      await waitForValue(
-        () => (nativeLoopback.held() ? true : undefined),
-        `${mode} exact source response to remain held`,
-        10_000
-      );
+      try {
+        await waitForValue(
+          () => (nativeLoopback.held() ? true : undefined),
+          `${mode} exact source response to remain held`,
+          10_000
+        );
+      } catch (error) {
+        await captureSnapshot(`${mode}HoldTimeout`).catch((diagnosticError) => {
+          receipt[`${mode}HoldTimeoutError`] = safeError(diagnosticError);
+        });
+        throw error;
+      }
       await assertVisibleBulkOutcome(page, {
         included: 2,
         omitted: 1,
@@ -14130,12 +14236,19 @@ async function runHeldMissingRecoveryCancellation({
         hostRestored: true,
       };
     }
+    assert.equal(traceOverflow, 0, 'Owned source trace exceeded its 48-event bound');
     receipt.status = 'passed';
   } catch (error) {
     primaryError = error;
     receipt.status = 'failed';
     receipt.error = safeError(error);
   } finally {
+    await captureSnapshot('beforeCleanup').catch((diagnosticError) => {
+      receipt.beforeCleanupError = safeError(diagnosticError);
+    });
+    page.off('request', onOwnedRequest);
+    page.off('response', onOwnedResponse);
+    page.off('requestfailed', onOwnedRequestFailed);
     nativeLoopback.releaseHold();
     if (routeInstalled) {
       try {
@@ -14158,27 +14271,61 @@ async function runHeldMissingRecoveryCancellation({
     }
     try {
       const observed = await newDownloads();
-      assert.deepEqual(
-        new Set(observed.map(({ id }) => id)),
-        ownedIds,
-        'Held probe created an unrecorded native download'
-      );
-      for (const item of observed) {
-        assert.equal(dirname(resolve(item.filename)), resolve(downloads));
-        assert.equal(basename(item.filename), `testuser_${TWEET_ID}.zip`);
-        if (item.state === 'in_progress') {
-          await extensionPage.evaluate(async (id) => chrome.downloads.cancel(id), item.id);
-        }
-        if (!removedIds.has(item.id) && item.exists) {
-          await extensionPage.evaluate(async (id) => chrome.downloads.removeFile(id), item.id);
-        }
-        const erased = await extensionPage.evaluate(
-          async (id) => chrome.downloads.erase({ id }),
-          item.id
+      const unexpectedIds = observed
+        .filter(({ id }) => !ownedIds.has(id))
+        .map(({ id }) => id);
+      if (unexpectedIds.length > 0) {
+        invariantError = new Error(
+          `Held probe created unrecorded native download IDs: ${unexpectedIds.join(', ')}`
         );
-        assert.deepEqual(erased, [item.id]);
+        receipt.unexpectedNativeIds = unexpectedIds;
       }
-      (receipt.cleanup as Record<string, unknown>).downloadIdsErased = [...ownedIds];
+      const cleanedIds: number[] = [];
+      for (const item of observed) {
+        try {
+          assert.equal(dirname(resolve(item.filename)), resolve(downloads));
+          const expectedName = `testuser_${TWEET_ID}.zip`;
+          assert(
+            [expectedName, `testuser_${TWEET_ID} (1).zip`, `testuser_${TWEET_ID} (2).zip`].includes(
+              basename(item.filename)
+            ),
+            'Held probe download filename escaped its bounded ZIP names'
+          );
+          if (!ownedIds.has(item.id)) {
+            await captureUnexpected(item).catch((error) => {
+              unexpectedDownloads.push({ id: item.id, captureError: safeError(error) });
+            });
+          }
+          let terminal = item;
+          if (terminal.state === 'in_progress') {
+            await extensionPage.evaluate(async (id) => chrome.downloads.cancel(id), item.id);
+            terminal = await waitForValue(
+              async () => {
+                const [current] = await extensionPage.evaluate(
+                  async (id) => chrome.downloads.search({ id }),
+                  item.id
+                );
+                return current?.state !== 'in_progress' ? current : undefined;
+              },
+              `held probe native download ${item.id} to stop`,
+              10_000
+            );
+          }
+          if (!removedIds.has(item.id) && terminal.exists) {
+            assert.equal(terminal.state, 'complete', 'Interrupted download retained a native file');
+            await extensionPage.evaluate(async (id) => chrome.downloads.removeFile(id), item.id);
+          }
+          const erased = await extensionPage.evaluate(
+            async (id) => chrome.downloads.erase({ id }),
+            item.id
+          );
+          assert.deepEqual(erased, [item.id]);
+          cleanedIds.push(item.id);
+        } catch (error) {
+          cleanupErrors.push(error);
+        }
+      }
+      (receipt.cleanup as Record<string, unknown>).downloadIdsErased = cleanedIds;
     } catch (error) {
       cleanupErrors.push(error);
     }
@@ -14188,10 +14335,19 @@ async function runHeldMissingRecoveryCancellation({
     }
   }
   if (primaryError && cleanupErrors.length) {
-    throw new AggregateError([primaryError, ...cleanupErrors], 'Held ZIP probe and cleanup failed');
+    throw new AggregateError(
+      [primaryError, ...(invariantError ? [invariantError] : []), ...cleanupErrors],
+      'Held ZIP probe and cleanup failed'
+    );
   }
   if (primaryError) {
     throw primaryError;
+  }
+  if (invariantError && cleanupErrors.length) {
+    throw new AggregateError([invariantError, ...cleanupErrors], 'Held ZIP invariant and cleanup failed');
+  }
+  if (invariantError) {
+    throw invariantError;
   }
   if (cleanupErrors.length) {
     throw new AggregateError(cleanupErrors, 'Held ZIP probe cleanup failed');
