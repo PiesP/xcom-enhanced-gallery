@@ -15065,7 +15065,6 @@ async function experienceSelectedGeometry(page: Page) {
 }
 
 async function uxControlGeometry(control: Locator, label: string) {
-  await control.scrollIntoViewIfNeeded();
   const geometry = await control.evaluate((element) => {
     const rect = element.getBoundingClientRect();
     const x = rect.left + rect.width / 2;
