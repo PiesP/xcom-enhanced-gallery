@@ -91,6 +91,26 @@ name the limited scope or quality. Verified API and article DOM fixtures must
 remain free of limitation details. ZIP result reasons must be visible when their
 native details control is opened.
 
+To inspect opened help and source details with one bounded installed Edge profile,
+create the ignored `ux-details.json` file here with exactly:
+
+```json
+{"scenario":"ux-details"}
+```
+
+Run with `--installation extension`, without live URLs, live acceptance, upgrade
+inputs, or another focused selector. This case uses only the owned rapid-A post
+fixture. A real provider 403 opens its one-image/one-video DOM recovery gallery.
+It checks the opened source details and keyboard help in Korean at 401×592 and
+English at actual 200% tab zoom, including native keys, visible controls, and
+wheel ownership when a panel overflows. A separate fresh fixture document
+returns HTTP 503 for the exact known video source after opening the gallery;
+the terminal video alert must provide a canonical original-post link that a
+trusted Enter key opens in a new owned fixture tab. Screenshots and request,
+error, zoom, and cleanup observations remain in the private run output.
+This is fixture evidence, not live X or screen-reader speech evidence. Remove
+the selector after the attempt.
+
 To run only the issue #392 failed-entry ZIP acceptance in the installed Edge
 extension, create the ignored `failed-entry-recovery.json` file here:
 
