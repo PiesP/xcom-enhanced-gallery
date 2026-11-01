@@ -91,6 +91,13 @@ import {
   installFixtureRoutes,
   verifyDownloadDirectory,
 } from './install-preparation.ts';
+import {
+  assertMovedPointerOnTarget,
+  assertSelectedResultWheel,
+  qualifyOneItemMediaNoOverflow,
+  uxStartWheelEventProbe,
+  uxStopWheelEventProbe,
+} from './ux-result-validation.ts';
 import type {
   ApiRecord,
   CompactImages,
@@ -15330,115 +15337,6 @@ async function uxControlGeometry(control: Locator, label: string) {
   return geometry;
 }
 
-async function uxStartWheelEventProbe(owner: Locator) {
-  await owner.evaluate((element) => {
-    const scoped = window as Window & {
-      __xegUxWheelProbe?: {
-        controller: AbortController;
-        events: Array<Record<string, unknown>>;
-        overflow: boolean;
-      };
-    };
-    if (scoped.__xegUxWheelProbe) {
-      throw new Error('A prior UX wheel observer was not removed');
-    }
-    const controller = new AbortController();
-    const events: Array<Record<string, unknown>> = [];
-    const probe = { controller, events, overflow: false };
-    scoped.__xegUxWheelProbe = probe;
-    const media = document.querySelector<HTMLElement>('[data-gallery-element="items"]');
-    const toolbar = document.querySelector<HTMLElement>('[data-gallery-element="toolbar"]');
-    const record = (event: Record<string, unknown>) => {
-      if (events.length < 24) {
-        events.push({ atMs: performance.now(), ...event });
-      } else {
-        probe.overflow = true;
-      }
-    };
-    const state = () => ({
-      ownerTop: element.scrollTop,
-      ownerConnected: element.isConnected,
-      mediaTop: media?.scrollTop ?? null,
-      current: toolbar?.getAttribute('data-current-index') ?? null,
-      focused: toolbar?.getAttribute('data-focused-index') ?? null,
-      activeTag: document.activeElement?.tagName ?? null,
-    });
-    window.addEventListener(
-      'wheel',
-      (event) => {
-        const target = event.target instanceof Element ? event.target : null;
-        const row: Record<string, unknown> = {
-          kind: 'wheel',
-          trusted: event.isTrusted,
-          deltaX: event.deltaX,
-          deltaY: event.deltaY,
-          deltaMode: event.deltaMode,
-          targetTag: target?.tagName ?? null,
-          targetOwner: Boolean(target && element.contains(target)),
-          targetMedia: Boolean(target && media?.contains(target)),
-          path: event
-            .composedPath()
-            .filter((node): node is Element => node instanceof Element)
-            .slice(0, 8)
-            .map((node) => ({
-              tag: node.tagName,
-              galleryElement: node.getAttribute('data-gallery-element'),
-            })),
-          ...state(),
-        };
-        record(row);
-        queueMicrotask(() => {
-          row.defaultPreventedAfterDispatch = event.defaultPrevented;
-        });
-      },
-      { capture: true, passive: true, signal: controller.signal }
-    );
-    for (const [name, target] of [
-      ['owner', element],
-      ['media', media],
-    ] as const) {
-      target?.addEventListener(
-        'scroll',
-        () => record({ kind: 'scroll', surface: name, ...state() }),
-        { passive: true, signal: controller.signal }
-      );
-    }
-    document.addEventListener(
-      'focusin',
-      (event) => {
-        const target = event.target instanceof Element ? event.target : null;
-        record({
-          kind: 'focus',
-          targetTag: target?.tagName ?? null,
-          targetGalleryElement:
-            target?.closest('[data-gallery-element]')?.getAttribute('data-gallery-element') ?? null,
-          ...state(),
-        });
-      },
-      { capture: true, signal: controller.signal }
-    );
-  });
-}
-
-async function uxStopWheelEventProbe(page: Page) {
-  return page.evaluate(() => {
-    const scoped = window as Window & {
-      __xegUxWheelProbe?: {
-        controller: AbortController;
-        events: Array<Record<string, unknown>>;
-        overflow: boolean;
-      };
-    };
-    const probe = scoped.__xegUxWheelProbe;
-    if (!probe) {
-      throw new Error('UX wheel observer was missing');
-    }
-    probe.controller.abort();
-    delete scoped.__xegUxWheelProbe;
-    return { events: probe.events, overflow: probe.overflow };
-  });
-}
-
 async function uxOwnedWheel(
   page: Page,
   panel: Locator,
@@ -15632,9 +15530,11 @@ async function uxResultWheel(
     clientHeight: element.clientHeight,
   }));
   const before = await snapshot();
-  await uxStartWheelEventProbe(panel);
+  await uxStartWheelEventProbe(panel, target);
   let eventProbe: Awaited<ReturnType<typeof uxStopWheelEventProbe>>;
   let afterMoveHit: Record<string, unknown> | undefined;
+  let inputError: unknown;
+  let inputFailed = false;
   try {
     await page.mouse.move(point.x, point.y);
     afterMoveHit = await target.evaluate((element, position) => {
@@ -15648,8 +15548,12 @@ async function uxResultWheel(
           hit?.closest('[data-gallery-element]')?.getAttribute('data-gallery-element') ?? null,
       };
     }, point);
+    assertMovedPointerOnTarget(label, afterMoveHit.targetOwnsHit === true);
     await page.mouse.wheel(0, deltaY);
     await page.waitForTimeout(200);
+  } catch (error) {
+    inputFailed = true;
+    inputError = error;
   } finally {
     eventProbe = await uxStopWheelEventProbe(page);
   }
@@ -15677,13 +15581,18 @@ async function uxResultWheel(
     after,
     room,
     eventProbe,
+    inputError: inputFailed ? safeError(inputError) : null,
   };
   observations.push(wheelReceipt);
+  if (inputFailed) {
+    throw inputError;
+  }
   assert.equal(eventProbe.overflow, false, `${label} wheel event observation overflowed`);
   const ownedWheels = eventProbe.events.filter((event) => event.kind === 'wheel');
   assert.equal(ownedWheels.length, 1, `${label} must receive one trusted wheel event`);
   assert.equal(ownedWheels[0]?.trusted, true, `${label} wheel event must be trusted`);
   assert.equal(ownedWheels[0]?.targetOwner, true, `${label} wheel did not target its panel`);
+  assertSelectedResultWheel(label, ownedWheels[0]);
   assert(
     expected === 'move' ? room > 2 : room <= 2,
     `${label} fixture did not provide the required ${expected} direction: ${JSON.stringify(wheelReceipt)}`
@@ -16535,9 +16444,15 @@ async function runUxDetailsProbe({
     await panel.waitFor({ state: 'visible' });
     const withNoticeLayout = await layout();
     result.withNoticeLayout = withNoticeLayout;
-    result.mediaOverflow =
-      withNoticeLayout.media.scrollHeight - withNoticeLayout.media.clientHeight;
-    result.mediaNoOverflow = 'not-applicable-unreachable-with-product-spacer';
+    const mediaNoOverflowQualification = qualifyOneItemMediaNoOverflow(withNoticeLayout);
+    result.mediaOverflow = mediaNoOverflowQualification.mediaOverflow;
+    result.mediaNoOverflowQualification = mediaNoOverflowQualification;
+    result.mediaNoOverflow = mediaNoOverflowQualification.verdict;
+    assert.equal(
+      mediaNoOverflowQualification.verdict,
+      'not-applicable-unreachable-with-product-spacer',
+      `One-item media-no-overflow prerequisite changed: ${JSON.stringify(mediaNoOverflowQualification)}`
+    );
     assert.deepEqual(
       api.map(({ tweetId }) => tweetId),
       [TWEET_ID]

@@ -13,6 +13,7 @@
     "assets": [
       "dist/xcom-enhanced-gallery.user.js",
       "validation/windows/install-preparation.ts",
+      "validation/windows/ux-result-validation.ts",
       "validation/windows/installed-settings-ux.ts",
       "validation/windows/userscript-install.ts",
       "validation/windows/userscript-document.ts",
