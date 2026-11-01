@@ -769,7 +769,11 @@ async function assertVisibleBulkOutcome(
   });
   const dismiss = panel.getByRole('button', { name: 'Dismiss ZIP result', exact: true });
   if (expected.recovery === 'working') {
-    assert.equal(await cancelRecovery.count(), 1, 'Working recovery needs an explicit cancel action');
+    assert.equal(
+      await cancelRecovery.count(),
+      1,
+      'Working recovery needs an explicit cancel action'
+    );
     assert(await cancelRecovery.isVisible());
     assert.equal(await dismiss.count(), 0, 'Working recovery must not look like passive dismissal');
   } else {
@@ -14033,7 +14037,9 @@ async function runHeldMissingRecoveryCancellation({
       nativeLoopback.armHold('pbs.twimg.com', originalPath);
       if (mode === 'ordinary') {
         await gallery
-          .locator('[data-gallery-element="toolbar"] button[aria-label="Download 3 shown files as ZIP"]')
+          .locator(
+            '[data-gallery-element="toolbar"] button[aria-label="Download 3 shown files as ZIP"]'
+          )
           .click();
       } else {
         await gallery
@@ -14066,7 +14072,9 @@ async function runHeldMissingRecoveryCancellation({
       await panel.waitFor({ state: 'detached' });
       if (mode === 'ordinary') {
         assert.equal(nativeLoopback.held(), true, 'Dismissing an old result aborted a new ZIP');
-        await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]').click();
+        await gallery
+          .locator('[data-gallery-element="toolbar"] button[aria-label="Close"]')
+          .click();
       } else {
         assert.equal(await gallery.isVisible(), true, 'Recovery cancellation closed the gallery');
       }
@@ -14104,7 +14112,9 @@ async function runHeldMissingRecoveryCancellation({
       );
       assert.equal(await panel.count(), 0, 'Late completion restored a dismissed ZIP result');
       if (mode === 'recovery') {
-        await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]').click();
+        await gallery
+          .locator('[data-gallery-element="toolbar"] button[aria-label="Close"]')
+          .click();
       }
       await gallery.waitFor({ state: 'detached' });
       assert.deepEqual(await hostSnapshot(page, 0), beforeHost, 'Held session changed host state');
@@ -14134,7 +14144,9 @@ async function runHeldMissingRecoveryCancellation({
     try {
       const gallery = page.locator('[data-xeg-gallery-container]');
       if (await gallery.count()) {
-        await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]').click();
+        await gallery
+          .locator('[data-gallery-element="toolbar"] button[aria-label="Close"]')
+          .click();
         await gallery.waitFor({ state: 'detached' });
       }
     } catch (error) {
@@ -14156,7 +14168,10 @@ async function runHeldMissingRecoveryCancellation({
         if (!removedIds.has(item.id) && item.exists) {
           await extensionPage.evaluate(async (id) => chrome.downloads.removeFile(id), item.id);
         }
-        const erased = await extensionPage.evaluate(async (id) => chrome.downloads.erase({ id }), item.id);
+        const erased = await extensionPage.evaluate(
+          async (id) => chrome.downloads.erase({ id }),
+          item.id
+        );
         assert.deepEqual(erased, [item.id]);
       }
       (receipt.cleanup as Record<string, unknown>).downloadIdsErased = [...ownedIds];
