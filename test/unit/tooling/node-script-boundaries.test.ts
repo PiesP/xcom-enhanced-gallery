@@ -196,6 +196,34 @@ describe('Node script import boundary', () => {
     expect(packageJson.scripts['verify:full']).toBe('vp run verify:full:steps');
   });
 
+  it('loads the live proof consumer from declared installation assets', () => {
+    const root = mkdtempSync(join(tmpdir(), 'xeg-windows-assets-'));
+    roots.push(root);
+    const profile = JSON.parse(
+      readFileSync(join(sourceRoot, 'validation/windows/profile.json'), 'utf8')
+    ) as {
+      installation: { assets: string[] };
+    };
+    for (const asset of profile.installation.assets.filter(
+      (path) => path.startsWith('validation/windows/') && /\.(?:ts|mjs)$/u.test(path)
+    )) {
+      const target = join(root, asset);
+      mkdirSync(dirname(target), { recursive: true });
+      copyFileSync(join(sourceRoot, asset), target);
+    }
+    const result = spawnSync(
+      process.execPath,
+      [
+        '--experimental-strip-types',
+        '--input-type=module',
+        '-e',
+        "await import('./validation/windows/live-page.ts');",
+      ],
+      { cwd: root, encoding: 'utf8' }
+    );
+    expect(result.status, result.stderr).toBe(0);
+  });
+
   it('checks syntax of every bundled Windows module', () => {
     const moduleRoot = join(sourceRoot, 'validation/windows');
     const modules = readdirSync(moduleRoot, { recursive: true })
