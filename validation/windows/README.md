@@ -895,7 +895,12 @@ coverage through the cutoff. HTTP 200 or a streaming MIME type alone does not
 meet this condition. A pending finite request, unknown attribution or coverage,
 lost records, abort, HTTP or unexpected console error, or failed exact-media
 readiness leaves the baseline unverified. Playwright diagnostics stay a separate
-channel; URL matching never joins them to page-CDP occurrences. This policy
+channel; URL matching never joins them to page-CDP occurrences. The prospective
+collector ends native observation after the declared cutoff and detaches its
+owned session before closing the owned page. It records detach, listener removal,
+page-close request and final seal separately. Any event received before listener
+removal stays retained; later native lifecycle is unobserved, not declared absent.
+The observation result does not assert transport termination during cleanup. This policy
 does not qualify any retained historical run or authorize another actual-X
 visit. The next #453 D decision requires new source-bound observation or a
 repaired prerequisite, then the existing admission and stop rules.

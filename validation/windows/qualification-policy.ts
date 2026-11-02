@@ -78,7 +78,10 @@ export type VisitDecisionV2 = {
     candidateFunctionalResult: ClaimState;
     cleanup: ClaimState;
   };
-  lifecycle: Array<{ occurrenceId: string; state: 'finished' | 'ongoing-at-cutoff' | 'failed' | 'unknown' }>;
+  lifecycle: Array<{
+    occurrenceId: string;
+    state: 'finished' | 'ongoing-at-cutoff' | 'failed' | 'unknown';
+  }>;
   eligibleBeforeFinalCleanup: boolean;
   baselineQualified: boolean;
   candidateQualified: boolean;
@@ -96,25 +99,33 @@ function coherentOccurrence(
   const response = request.responseObservedMs;
   const terminal = request.terminalObservedMs;
   const transport = request.lastTransportObservedMs;
-  return request.observerStartMs === api.observerStartMs &&
+  return (
+    request.observerStartMs === api.observerStartMs &&
     request.observerEndMs === api.observerEndMs &&
     request.observerStartMs <= request.requestObservedMs &&
-    request.requestObservedMs <= cutoff && cutoff <= request.observerEndMs &&
+    request.requestObservedMs <= cutoff &&
+    cutoff <= request.observerEndMs &&
     (request.responseStatus === null) === (response === null) &&
     (request.responseStatus === null || httpStatus(request.responseStatus)) &&
-    (response === null || response >= request.requestObservedMs && response <= cutoff) &&
+    (response === null || (response >= request.requestObservedMs && response <= cutoff)) &&
     (request.terminal === 'none') === (terminal === null) &&
     (request.terminal === 'failed') === (request.failure !== 'none') &&
-    (terminal === null || terminal >= request.requestObservedMs && terminal <= cutoff &&
-      (response === null || terminal >= response)) &&
-    ((request.deliveredMessageCount > 0 || request.deliveredDataChunkCount > 0) ===
-      (transport !== null)) &&
+    (terminal === null ||
+      (terminal >= request.requestObservedMs &&
+        terminal <= cutoff &&
+        (response === null || terminal >= response))) &&
+    (request.deliveredMessageCount > 0 || request.deliveredDataChunkCount > 0) ===
+      (transport !== null) &&
     (request.deliveredDataBytes === 0 || request.deliveredDataChunkCount > 0) &&
-    (transport === null || response !== null && transport >= response &&
-      transport <= cutoff && (terminal === null || transport <= terminal)) &&
+    (transport === null ||
+      (response !== null &&
+        transport >= response &&
+        transport <= cutoff &&
+        (terminal === null || transport <= terminal))) &&
     (request.streamContract !== 'declared-task-stream' ||
-      request.relation === 'task-required' &&
-      (request.class === 'event-source' || request.class === 'fetch-stream'));
+      (request.relation === 'task-required' &&
+        (request.class === 'event-source' || request.class === 'fetch-stream')))
+  );
 }
 
 function requestState(
@@ -122,75 +133,139 @@ function requestState(
   cutoff: number,
   api: VisitEvidenceV2['api']
 ): VisitDecisionV2['lifecycle'][number]['state'] {
-  const attributed = request.occurrenceId.length > 0 && request.targetId && request.sessionId &&
-    request.frameId;
-  if (!attributed || !coherentOccurrence(request, cutoff, api)) return 'unknown';
-  if (request.terminal === 'failed' || request.failure !== 'none') return 'failed';
+  const attributed =
+    request.occurrenceId.length > 0 && request.targetId && request.sessionId && request.frameId;
+  if (!attributed || !coherentOccurrence(request, cutoff, api)) {
+    return 'unknown';
+  }
+  if (request.terminal === 'failed' || request.failure !== 'none') {
+    return 'failed';
+  }
   if (request.terminal === 'finished') {
     return request.terminalObservedMs !== null &&
-      request.responseStatus !== null && request.responseStatus >= 100 &&
+      request.responseStatus !== null &&
+      request.responseStatus >= 100 &&
       request.responseStatus <= 599 &&
       request.responseObservedMs !== null &&
-      request.terminalObservedMs >= request.responseObservedMs ? 'finished' : 'unknown';
+      request.terminalObservedMs >= request.responseObservedMs
+      ? 'finished'
+      : 'unknown';
   }
-  const transport = request.relation === 'task-required' &&
+  const transport =
+    request.relation === 'task-required' &&
     request.streamContract === 'declared-task-stream' &&
     request.class === 'event-source'
-    ? request.deliveredMessageCount > 0
-    : request.relation === 'task-required' &&
-      request.streamContract === 'declared-task-stream' &&
-      request.class === 'fetch-stream' && request.deliveredDataChunkCount >= 2 &&
-      request.deliveredDataBytes > 0;
-  if (request.terminal === 'none' && transport && request.responseStatus === 200 &&
-      request.responseObservedMs !== null && request.lastTransportObservedMs !== null &&
-      request.lastTransportObservedMs >= request.responseObservedMs &&
-      request.lastTransportObservedMs <= cutoff) return 'ongoing-at-cutoff';
+      ? request.deliveredMessageCount > 0
+      : request.relation === 'task-required' &&
+        request.streamContract === 'declared-task-stream' &&
+        request.class === 'fetch-stream' &&
+        request.deliveredDataChunkCount >= 2 &&
+        request.deliveredDataBytes > 0;
+  if (
+    request.terminal === 'none' &&
+    transport &&
+    request.responseStatus === 200 &&
+    request.responseObservedMs !== null &&
+    request.lastTransportObservedMs !== null &&
+    request.lastTransportObservedMs >= request.responseObservedMs &&
+    request.lastTransportObservedMs <= cutoff
+  ) {
+    return 'ongoing-at-cutoff';
+  }
   return 'unknown';
 }
 
 export function assessVisitEvidence(input: VisitEvidenceV2): VisitDecisionV2 {
   const cutoff = input.observationCutoffMs;
-  const versionSupported = input.policyVersion === QUALIFICATION_POLICY_VERSION &&
+  const versionSupported =
+    input.policyVersion === QUALIFICATION_POLICY_VERSION &&
     input.receiptSchemaVersion === QUALIFICATION_RECEIPT_SCHEMA_VERSION;
-  const recorderIntegrity: ClaimState = versionSupported && input.recorder.sealed &&
-    input.recorder.lostEvents === 0 && input.recorder.overflow === 0 &&
+  const recorderIntegrity: ClaimState =
+    versionSupported &&
+    input.recorder.sealed &&
+    input.recorder.lostEvents === 0 &&
+    input.recorder.overflow === 0 &&
     input.recorder.incompleteAttribution === 0 &&
-    [input.recorder.lostEvents, input.recorder.overflow, input.recorder.incompleteAttribution]
-      .every((count) => Number.isSafeInteger(count) && count >= 0) ? 'pass' : 'fail';
-  const apiObservationCoverage: ClaimState = versionSupported && input.networkChannel === 'page-cdp' &&
-    input.api.supported && !input.api.detachedEarly && validTime(cutoff) &&
-    validTime(input.api.observerStartMs) && input.api.observerStartMs <= cutoff &&
-    input.api.observerEndMs >= cutoff ? 'pass' : 'unknown';
+    [
+      input.recorder.lostEvents,
+      input.recorder.overflow,
+      input.recorder.incompleteAttribution,
+    ].every((count) => Number.isSafeInteger(count) && count >= 0)
+      ? 'pass'
+      : 'fail';
+  const apiObservationCoverage: ClaimState =
+    versionSupported &&
+    input.networkChannel === 'page-cdp' &&
+    input.api.supported &&
+    !input.api.detachedEarly &&
+    validTime(cutoff) &&
+    validTime(input.api.observerStartMs) &&
+    input.api.observerStartMs <= cutoff &&
+    input.api.observerEndMs >= cutoff
+      ? 'pass'
+      : 'unknown';
   const lifecycle = input.requests.map((request) => ({
     occurrenceId: request.occurrenceId,
     state: requestState(request, cutoff, input.api),
   }));
-  const distinctOccurrences = new Set(input.requests.map((request) => request.occurrenceId)).size === input.requests.length;
+  const distinctOccurrences =
+    new Set(input.requests.map((request) => request.occurrenceId)).size === input.requests.length;
   const observedLifecycle: ClaimState = lifecycle.some((entry) => entry.state === 'failed')
-    ? 'fail' : lifecycle.length > 0 && lifecycle.every((entry) =>
-      entry.state === 'finished' || entry.state === 'ongoing-at-cutoff') && distinctOccurrences
-        ? 'pass' : 'unknown';
-  const productPrerequisites: ClaimState = input.product.finalUrlExact &&
-    input.product.responseStatus === 200 && input.product.articleVisible &&
-    input.product.extensionAbsent && input.product.exactMediaReady &&
-    input.product.observationCompleted ? 'pass' : 'fail';
-  const errorsClear = Object.values(input.errors).every((count) => count === 0) &&
-    input.requests.every((request) => request.responseStatus === null || request.responseStatus < 400);
-  const diagnosticEligibility: ClaimState = recorderIntegrity === 'pass' &&
-    apiObservationCoverage === 'pass' && observedLifecycle === 'pass' && errorsClear
-      ? 'pass' : errorsClear && observedLifecycle !== 'fail' && recorderIntegrity === 'pass'
-        ? 'unknown' : 'fail';
-  const cleanup: ClaimState = input.cleanup.ownedPageClosed &&
-    input.cleanup.originalPagesPreserved && input.cleanup.focusRestored &&
-    input.cleanup.disconnected ? 'pass' : 'fail';
+    ? 'fail'
+    : lifecycle.length > 0 &&
+        lifecycle.every(
+          (entry) => entry.state === 'finished' || entry.state === 'ongoing-at-cutoff'
+        ) &&
+        distinctOccurrences
+      ? 'pass'
+      : 'unknown';
+  const productPrerequisites: ClaimState =
+    input.product.finalUrlExact &&
+    input.product.responseStatus === 200 &&
+    input.product.articleVisible &&
+    input.product.extensionAbsent &&
+    input.product.exactMediaReady &&
+    input.product.observationCompleted
+      ? 'pass'
+      : 'fail';
+  const errorsClear =
+    Object.values(input.errors).every((count) => count === 0) &&
+    input.requests.every(
+      (request) => request.responseStatus === null || request.responseStatus < 400
+    );
+  const diagnosticEligibility: ClaimState =
+    recorderIntegrity === 'pass' &&
+    apiObservationCoverage === 'pass' &&
+    observedLifecycle === 'pass' &&
+    errorsClear
+      ? 'pass'
+      : errorsClear && observedLifecycle !== 'fail' && recorderIntegrity === 'pass'
+        ? 'unknown'
+        : 'fail';
+  const cleanup: ClaimState =
+    input.cleanup.ownedPageClosed &&
+    input.cleanup.originalPagesPreserved &&
+    input.cleanup.focusRestored &&
+    input.cleanup.disconnected
+      ? 'pass'
+      : 'fail';
   const candidateFunctionalResult: ClaimState = input.candidate.state;
-  const eligibleBeforeFinalCleanup = diagnosticEligibility === 'pass' &&
-    productPrerequisites === 'pass' && input.cleanup.ownedPageClosed;
+  const eligibleBeforeFinalCleanup =
+    diagnosticEligibility === 'pass' &&
+    productPrerequisites === 'pass' &&
+    input.cleanup.ownedPageClosed;
   const baselineQualified = eligibleBeforeFinalCleanup && cleanup === 'pass';
   return {
     policyVersion: 2,
-    claims: { recorderIntegrity, apiObservationCoverage, observedLifecycle,
-      productPrerequisites, diagnosticEligibility, candidateFunctionalResult, cleanup },
+    claims: {
+      recorderIntegrity,
+      apiObservationCoverage,
+      observedLifecycle,
+      productPrerequisites,
+      diagnosticEligibility,
+      candidateFunctionalResult,
+      cleanup,
+    },
     lifecycle,
     eligibleBeforeFinalCleanup,
     baselineQualified,
@@ -200,7 +275,8 @@ export function assessVisitEvidence(input: VisitEvidenceV2): VisitDecisionV2 {
 
 function object(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
-    ? value as Record<string, unknown> : null;
+    ? (value as Record<string, unknown>)
+    : null;
 }
 
 function keysOnly(value: Record<string, unknown>, allowed: string[]): boolean {
@@ -208,8 +284,7 @@ function keysOnly(value: Record<string, unknown>, allowed: string[]): boolean {
 }
 
 function count(value: unknown, maximum: number): boolean {
-  return typeof value === 'number' && Number.isSafeInteger(value) &&
-    value >= 0 && value <= maximum;
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 && value <= maximum;
 }
 
 function oneOf(value: unknown, allowed: readonly string[]): boolean {
@@ -229,8 +304,12 @@ function optionalTimestamp(value: unknown): boolean {
 }
 
 function boundedId(value: unknown): boolean {
-  return typeof value === 'string' && value.length > 0 && value.length <= 128 &&
-    /^[A-Za-z0-9_.:-]+$/u.test(value);
+  return (
+    typeof value === 'string' &&
+    value.length > 0 &&
+    value.length <= 128 &&
+    /^[A-Za-z0-9_.:-]+$/u.test(value)
+  );
 }
 
 export function isVisitEvidenceV2(value: unknown): value is VisitEvidenceV2 {
@@ -241,44 +320,99 @@ export function isVisitEvidenceV2(value: unknown): value is VisitEvidenceV2 {
   const errors = object(input?.errors);
   const cleanup = object(input?.cleanup);
   const candidate = object(input?.candidate);
-  if (!input || input.policyVersion !== 2 || input.receiptSchemaVersion !== 2 ||
-      !keysOnly(input, ['policyVersion', 'receiptSchemaVersion', 'networkChannel',
-        'observationCutoffMs', 'recorder', 'api', 'requests', 'product', 'errors',
-        'cleanup', 'candidate']) ||
-      input.networkChannel !== 'page-cdp' || !timestamp(input.observationCutoffMs) ||
-      !recorder || recorder.sealed !== true || !count(recorder.lostEvents, 500) ||
-      !keysOnly(recorder, ['sealed', 'lostEvents', 'overflow', 'incompleteAttribution']) ||
-      !count(recorder.overflow, 500) || !count(recorder.incompleteAttribution, 500) ||
-      !api || typeof api.supported !== 'boolean' || typeof api.detachedEarly !== 'boolean' ||
-      !keysOnly(api, ['supported', 'detachedEarly', 'observerStartMs', 'observerEndMs']) ||
-      !timestamp(api.observerStartMs) || !timestamp(api.observerEndMs) ||
-      !Array.isArray(input.requests) || input.requests.length > 500 ||
-      !product || typeof product.finalUrlExact !== 'boolean' ||
-      !(product.responseStatus === null || httpStatus(product.responseStatus)) ||
-      typeof product.articleVisible !== 'boolean' ||
-      typeof product.extensionAbsent !== 'boolean' ||
-      typeof product.exactMediaReady !== 'boolean' ||
-      typeof product.observationCompleted !== 'boolean' ||
-      !keysOnly(product, ['finalUrlExact', 'responseStatus', 'articleVisible',
-        'extensionAbsent', 'exactMediaReady', 'observationCompleted']) ||
-      !errors || !['http', 'console', 'page', 'request'].every((key) => count(errors[key], 500)) ||
-      !keysOnly(errors, ['http', 'console', 'page', 'request']) ||
-      !cleanup || !['ownedPageClosed', 'originalPagesPreserved', 'focusRestored', 'disconnected']
-        .every((key) => typeof cleanup[key] === 'boolean') ||
-      !keysOnly(cleanup, ['ownedPageClosed', 'originalPagesPreserved',
-        'focusRestored', 'disconnected']) ||
-      !candidate || !keysOnly(candidate, ['state']) ||
-      !oneOf(candidate.state, ['not-run', 'pass', 'fail', 'unknown'])) {
+  if (
+    !input ||
+    input.policyVersion !== 2 ||
+    input.receiptSchemaVersion !== 2 ||
+    !keysOnly(input, [
+      'policyVersion',
+      'receiptSchemaVersion',
+      'networkChannel',
+      'observationCutoffMs',
+      'recorder',
+      'api',
+      'requests',
+      'product',
+      'errors',
+      'cleanup',
+      'candidate',
+    ]) ||
+    input.networkChannel !== 'page-cdp' ||
+    !timestamp(input.observationCutoffMs) ||
+    !recorder ||
+    recorder.sealed !== true ||
+    !count(recorder.lostEvents, 500) ||
+    !keysOnly(recorder, ['sealed', 'lostEvents', 'overflow', 'incompleteAttribution']) ||
+    !count(recorder.overflow, 500) ||
+    !count(recorder.incompleteAttribution, 500) ||
+    !api ||
+    typeof api.supported !== 'boolean' ||
+    typeof api.detachedEarly !== 'boolean' ||
+    !keysOnly(api, ['supported', 'detachedEarly', 'observerStartMs', 'observerEndMs']) ||
+    !timestamp(api.observerStartMs) ||
+    !timestamp(api.observerEndMs) ||
+    !Array.isArray(input.requests) ||
+    input.requests.length > 500 ||
+    !product ||
+    typeof product.finalUrlExact !== 'boolean' ||
+    !(product.responseStatus === null || httpStatus(product.responseStatus)) ||
+    typeof product.articleVisible !== 'boolean' ||
+    typeof product.extensionAbsent !== 'boolean' ||
+    typeof product.exactMediaReady !== 'boolean' ||
+    typeof product.observationCompleted !== 'boolean' ||
+    !keysOnly(product, [
+      'finalUrlExact',
+      'responseStatus',
+      'articleVisible',
+      'extensionAbsent',
+      'exactMediaReady',
+      'observationCompleted',
+    ]) ||
+    !errors ||
+    !['http', 'console', 'page', 'request'].every((key) => count(errors[key], 500)) ||
+    !keysOnly(errors, ['http', 'console', 'page', 'request']) ||
+    !cleanup ||
+    !['ownedPageClosed', 'originalPagesPreserved', 'focusRestored', 'disconnected'].every(
+      (key) => typeof cleanup[key] === 'boolean'
+    ) ||
+    !keysOnly(cleanup, [
+      'ownedPageClosed',
+      'originalPagesPreserved',
+      'focusRestored',
+      'disconnected',
+    ]) ||
+    !candidate ||
+    !keysOnly(candidate, ['state']) ||
+    !oneOf(candidate.state, ['not-run', 'pass', 'fail', 'unknown'])
+  ) {
     return false;
   }
   return input.requests.every((value: unknown) => {
     const request = object(value);
-    return !!request && boundedId(request.occurrenceId) &&
-      keysOnly(request, ['occurrenceId', 'targetId', 'sessionId', 'frameId',
-        'relation', 'class', 'streamContract', 'requestObservedMs',
-        'responseStatus', 'responseObservedMs', 'terminal', 'terminalObservedMs',
-        'failure', 'deliveredMessageCount', 'deliveredDataChunkCount',
-        'deliveredDataBytes', 'lastTransportObservedMs', 'observerStartMs', 'observerEndMs']) &&
+    return (
+      !!request &&
+      boundedId(request.occurrenceId) &&
+      keysOnly(request, [
+        'occurrenceId',
+        'targetId',
+        'sessionId',
+        'frameId',
+        'relation',
+        'class',
+        'streamContract',
+        'requestObservedMs',
+        'responseStatus',
+        'responseObservedMs',
+        'terminal',
+        'terminalObservedMs',
+        'failure',
+        'deliveredMessageCount',
+        'deliveredDataChunkCount',
+        'deliveredDataBytes',
+        'lastTransportObservedMs',
+        'observerStartMs',
+        'observerEndMs',
+      ]) &&
       (request.targetId === null || boundedId(request.targetId)) &&
       (request.sessionId === null || boundedId(request.sessionId)) &&
       (request.frameId === null || boundedId(request.frameId)) &&
@@ -295,8 +429,13 @@ export function isVisitEvidenceV2(value: unknown): value is VisitEvidenceV2 {
       count(request.deliveredDataChunkCount, 500) &&
       count(request.deliveredDataBytes, Number.MAX_SAFE_INTEGER) &&
       optionalTimestamp(request.lastTransportObservedMs) &&
-      timestamp(request.observerStartMs) && timestamp(request.observerEndMs) &&
-      coherentOccurrence(request as unknown as RequestOccurrenceV2,
-        input.observationCutoffMs as number, api as unknown as VisitEvidenceV2['api']);
+      timestamp(request.observerStartMs) &&
+      timestamp(request.observerEndMs) &&
+      coherentOccurrence(
+        request as unknown as RequestOccurrenceV2,
+        input.observationCutoffMs as number,
+        api as unknown as VisitEvidenceV2['api']
+      )
+    );
   });
 }
