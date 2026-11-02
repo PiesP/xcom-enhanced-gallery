@@ -905,25 +905,27 @@ function validQualificationPacket(packet: Record<string, unknown>, urls: string[
   if (packet.schemaVersion !== 2 || urls.length !== 3 ||
       Object.hasOwn(packet, 'policyVersion') ||
       Object.hasOwn(packet, 'receiptSchemaVersion')) return false;
-  const qualification = record(packet.qualification);
-  if (qualification?.policyVersion !== 2 || qualification.receiptSchemaVersion !== 2 ||
-      !Array.isArray(qualification.visits) || qualification.visits.length !== 6) return false;
   try {
+    const qualification = record(packet.qualification);
+    if (qualification?.policyVersion !== 2 || qualification.receiptSchemaVersion !== 2 ||
+        !Array.isArray(qualification.visits) || qualification.visits.length !== 6) return false;
     if (Buffer.byteLength(JSON.stringify(qualification), 'utf8') > 1_048_576) return false;
-  } catch { return false; }
-  const seen = new Set<string>();
-  for (const value of qualification.visits) {
-    const row = record(value);
-    if (!row || typeof row.requestedUrl !== 'string' || !urls.includes(row.requestedUrl) ||
-        (row.visit !== 1 && row.visit !== 2) || !isVisitEvidenceV2(row.evidence)) return false;
-    const key = `${row.requestedUrl}#${row.visit}`;
-    if (seen.has(key) || row.evidence.candidate.state !== 'not-run') return false;
-    seen.add(key);
-    const computed = assessVisitEvidence(row.evidence);
-    if (!computed.baselineQualified || computed.candidateQualified ||
-        JSON.stringify(computed) !== JSON.stringify(row.decision)) return false;
+    const seen = new Set<string>();
+    for (const value of qualification.visits) {
+      const row = record(value);
+      if (!row || typeof row.requestedUrl !== 'string' || !urls.includes(row.requestedUrl) ||
+          (row.visit !== 1 && row.visit !== 2) || !isVisitEvidenceV2(row.evidence)) return false;
+      const key = `${row.requestedUrl}#${row.visit}`;
+      if (seen.has(key) || row.evidence.candidate.state !== 'not-run') return false;
+      seen.add(key);
+      const computed = assessVisitEvidence(row.evidence);
+      if (!computed.baselineQualified || computed.candidateQualified ||
+          JSON.stringify(computed) !== JSON.stringify(row.decision)) return false;
+    }
+    return seen.size === 6;
+  } catch {
+    return false;
   }
-  return seen.size === 6;
 }
 
 function sanitizedText(value: unknown, maximum = 600) {

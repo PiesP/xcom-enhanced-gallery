@@ -88,19 +88,48 @@ function validTime(value: number): boolean {
   return Number.isFinite(value) && value >= 0;
 }
 
-function requestState(request: RequestOccurrenceV2, cutoff: number): VisitDecisionV2['lifecycle'][number]['state'] {
+function coherentOccurrence(
+  request: RequestOccurrenceV2,
+  cutoff: number,
+  api: VisitEvidenceV2['api']
+): boolean {
+  const response = request.responseObservedMs;
+  const terminal = request.terminalObservedMs;
+  const transport = request.lastTransportObservedMs;
+  return request.observerStartMs === api.observerStartMs &&
+    request.observerEndMs === api.observerEndMs &&
+    request.observerStartMs <= request.requestObservedMs &&
+    request.requestObservedMs <= cutoff && cutoff <= request.observerEndMs &&
+    (request.responseStatus === null) === (response === null) &&
+    (request.responseStatus === null || httpStatus(request.responseStatus)) &&
+    (response === null || response >= request.requestObservedMs && response <= cutoff) &&
+    (request.terminal === 'none') === (terminal === null) &&
+    (request.terminal === 'failed') === (request.failure !== 'none') &&
+    (terminal === null || terminal >= request.requestObservedMs && terminal <= cutoff &&
+      (response === null || terminal >= response)) &&
+    ((request.deliveredMessageCount > 0 || request.deliveredDataChunkCount > 0) ===
+      (transport !== null)) &&
+    (request.deliveredDataBytes === 0 || request.deliveredDataChunkCount > 0) &&
+    (transport === null || response !== null && transport >= response &&
+      transport <= cutoff && (terminal === null || transport <= terminal)) &&
+    (request.streamContract !== 'declared-task-stream' ||
+      request.relation === 'task-required' &&
+      (request.class === 'event-source' || request.class === 'fetch-stream'));
+}
+
+function requestState(
+  request: RequestOccurrenceV2,
+  cutoff: number,
+  api: VisitEvidenceV2['api']
+): VisitDecisionV2['lifecycle'][number]['state'] {
   const attributed = request.occurrenceId.length > 0 && request.targetId && request.sessionId &&
     request.frameId;
-  const windowCovered = validTime(request.observerStartMs) &&
-    request.observerStartMs <= request.requestObservedMs &&
-    request.observerEndMs >= cutoff;
-  if (!attributed || !windowCovered || request.requestObservedMs > cutoff ||
-      request.responseObservedMs !== null &&
-        (request.responseObservedMs < request.requestObservedMs || request.responseObservedMs > cutoff) ||
-      request.terminalObservedMs !== null && request.terminalObservedMs > cutoff) return 'unknown';
+  if (!attributed || !coherentOccurrence(request, cutoff, api)) return 'unknown';
   if (request.terminal === 'failed' || request.failure !== 'none') return 'failed';
   if (request.terminal === 'finished') {
-    return request.terminalObservedMs !== null && request.responseStatus !== null &&
+    return request.terminalObservedMs !== null &&
+      request.responseStatus !== null && request.responseStatus >= 100 &&
+      request.responseStatus <= 599 &&
       request.responseObservedMs !== null &&
       request.terminalObservedMs >= request.responseObservedMs ? 'finished' : 'unknown';
   }
@@ -134,7 +163,7 @@ export function assessVisitEvidence(input: VisitEvidenceV2): VisitDecisionV2 {
     input.api.observerEndMs >= cutoff ? 'pass' : 'unknown';
   const lifecycle = input.requests.map((request) => ({
     occurrenceId: request.occurrenceId,
-    state: requestState(request, cutoff),
+    state: requestState(request, cutoff, input.api),
   }));
   const distinctOccurrences = new Set(input.requests.map((request) => request.occurrenceId)).size === input.requests.length;
   const observedLifecycle: ClaimState = lifecycle.some((entry) => entry.state === 'failed')
@@ -179,7 +208,16 @@ function keysOnly(value: Record<string, unknown>, allowed: string[]): boolean {
 }
 
 function count(value: unknown, maximum: number): boolean {
-  return Number.isSafeInteger(value) && Number(value) >= 0 && Number(value) <= maximum;
+  return typeof value === 'number' && Number.isSafeInteger(value) &&
+    value >= 0 && value <= maximum;
+}
+
+function oneOf(value: unknown, allowed: readonly string[]): boolean {
+  return typeof value === 'string' && allowed.includes(value);
+}
+
+function httpStatus(value: unknown): value is number {
+  return typeof value === 'number' && count(value, 599) && value >= 100;
 }
 
 function timestamp(value: unknown): boolean {
@@ -216,7 +254,7 @@ export function isVisitEvidenceV2(value: unknown): value is VisitEvidenceV2 {
       !timestamp(api.observerStartMs) || !timestamp(api.observerEndMs) ||
       !Array.isArray(input.requests) || input.requests.length > 500 ||
       !product || typeof product.finalUrlExact !== 'boolean' ||
-      !(product.responseStatus === null || count(product.responseStatus, 599)) ||
+      !(product.responseStatus === null || httpStatus(product.responseStatus)) ||
       typeof product.articleVisible !== 'boolean' ||
       typeof product.extensionAbsent !== 'boolean' ||
       typeof product.exactMediaReady !== 'boolean' ||
@@ -230,7 +268,7 @@ export function isVisitEvidenceV2(value: unknown): value is VisitEvidenceV2 {
       !keysOnly(cleanup, ['ownedPageClosed', 'originalPagesPreserved',
         'focusRestored', 'disconnected']) ||
       !candidate || !keysOnly(candidate, ['state']) ||
-      !['not-run', 'pass', 'fail', 'unknown'].includes(String(candidate.state))) {
+      !oneOf(candidate.state, ['not-run', 'pass', 'fail', 'unknown'])) {
     return false;
   }
   return input.requests.every((value: unknown) => {
@@ -244,19 +282,21 @@ export function isVisitEvidenceV2(value: unknown): value is VisitEvidenceV2 {
       (request.targetId === null || boundedId(request.targetId)) &&
       (request.sessionId === null || boundedId(request.sessionId)) &&
       (request.frameId === null || boundedId(request.frameId)) &&
-      ['task-required', 'task-context', 'unrelated', 'unknown'].includes(String(request.relation)) &&
-      ['finite', 'event-source', 'fetch-stream', 'unknown'].includes(String(request.class)) &&
-      ['declared-task-stream', 'none'].includes(String(request.streamContract)) &&
+      oneOf(request.relation, ['task-required', 'task-context', 'unrelated', 'unknown']) &&
+      oneOf(request.class, ['finite', 'event-source', 'fetch-stream', 'unknown']) &&
+      oneOf(request.streamContract, ['declared-task-stream', 'none']) &&
       timestamp(request.requestObservedMs) &&
-      (request.responseStatus === null || count(request.responseStatus, 599)) &&
+      (request.responseStatus === null || httpStatus(request.responseStatus)) &&
       optionalTimestamp(request.responseObservedMs) &&
-      ['finished', 'failed', 'none'].includes(String(request.terminal)) &&
+      oneOf(request.terminal, ['finished', 'failed', 'none']) &&
       optionalTimestamp(request.terminalObservedMs) &&
-      ['none', 'explicit-abort', 'unexplained-abort', 'other'].includes(String(request.failure)) &&
+      oneOf(request.failure, ['none', 'explicit-abort', 'unexplained-abort', 'other']) &&
       count(request.deliveredMessageCount, 500) &&
       count(request.deliveredDataChunkCount, 500) &&
       count(request.deliveredDataBytes, Number.MAX_SAFE_INTEGER) &&
       optionalTimestamp(request.lastTransportObservedMs) &&
-      timestamp(request.observerStartMs) && timestamp(request.observerEndMs);
+      timestamp(request.observerStartMs) && timestamp(request.observerEndMs) &&
+      coherentOccurrence(request as unknown as RequestOccurrenceV2,
+        input.observationCutoffMs as number, api as unknown as VisitEvidenceV2['api']);
   });
 }

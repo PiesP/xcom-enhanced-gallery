@@ -101,3 +101,38 @@ test('public visit evidence rejects unbounded or raw request fields', () => {
     rawUrl: 'https://x.com/private/status/1' }] }), false);
   assert.equal(isVisitEvidenceV2({ ...input, requests: Array.from({ length: 501 }, finite) }), false);
 });
+
+test('contradictory terminal, API window and transport times cannot qualify', () => {
+  const cases: Array<(input: VisitEvidenceV2) => void> = [
+    (input) => {
+      Object.assign(input.requests[0], { class: 'fetch-stream',
+        streamContract: 'declared-task-stream', terminal: 'none',
+        deliveredDataChunkCount: 2, deliveredDataBytes: 64,
+        lastTransportObservedMs: 100, terminalObservedMs: 50 });
+    },
+    (input) => { input.api.observerStartMs = 10; },
+    (input) => { input.requests[0].responseObservedMs = 0; },
+    (input) => { input.requests[0].terminalObservedMs = 1; },
+    (input) => { Object.assign(input.requests[0], {
+      deliveredDataChunkCount: 2, deliveredDataBytes: 64,
+      lastTransportObservedMs: 4 }); },
+    (input) => { Object.assign(input.requests[0], {
+      deliveredDataChunkCount: 2, deliveredDataBytes: 64,
+      lastTransportObservedMs: 20_001 }); },
+    (input) => { input.requests[0].responseStatus = 0; },
+  ];
+  for (const mutate of cases) {
+    const input = evidence(); mutate(input);
+    assert.equal(isVisitEvidenceV2(input), false);
+    assert.equal(assessVisitEvidence(input).baselineQualified, false);
+  }
+});
+
+test('malformed enum objects are rejected without coercion', () => {
+  const input = evidence();
+  const malformed = { ...input, candidate: { state: { toString: null } } };
+  assert.doesNotThrow(() => isVisitEvidenceV2(malformed));
+  assert.equal(isVisitEvidenceV2(malformed), false);
+  assert.equal(isVisitEvidenceV2({ ...input, requests: [{ ...input.requests[0],
+    relation: { toString: null } }] }), false);
+});

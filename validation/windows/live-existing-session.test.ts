@@ -140,6 +140,12 @@ test('v2 host proof requires six recomputed decisions and compatible versions', 
     ...qualification, visits: qualification.visits.map((row, index) => index === 0
       ? { ...row, decision: { ...row.decision, baselineQualified: false } } : row),
   } }, urls), null);
+  const malformed = structuredClone(proof) as unknown as {
+    qualification: { visits: Array<{ evidence: { candidate: { state: unknown } } }> };
+  };
+  malformed.qualification.visits[0].evidence.candidate.state = { toString: null };
+  assert.doesNotThrow(() => validateBorrowedHostProof(malformed, urls));
+  assert.equal(validateBorrowedHostProof(malformed, urls), null);
 });
 
 test('borrowed mode uses the canonical default only when storage is absent', async () => {
