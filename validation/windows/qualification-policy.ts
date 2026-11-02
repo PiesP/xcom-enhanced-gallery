@@ -425,8 +425,8 @@ export function isVisitEvidenceV2(value: unknown): value is VisitEvidenceV2 {
       oneOf(request.terminal, ['finished', 'failed', 'none']) &&
       optionalTimestamp(request.terminalObservedMs) &&
       oneOf(request.failure, ['none', 'explicit-abort', 'unexplained-abort', 'other']) &&
-      count(request.deliveredMessageCount, 500) &&
-      count(request.deliveredDataChunkCount, 500) &&
+      count(request.deliveredMessageCount, 1_000_000) &&
+      count(request.deliveredDataChunkCount, 1_000_000) &&
       count(request.deliveredDataBytes, Number.MAX_SAFE_INTEGER) &&
       optionalTimestamp(request.lastTransportObservedMs) &&
       timestamp(request.observerStartMs) &&

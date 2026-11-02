@@ -252,3 +252,15 @@ test('malformed enum objects are rejected without coercion', () => {
     false
   );
 });
+
+test('transport aggregate counters are distinct from the retained-record limit', () => {
+  const input = evidence();
+  Object.assign(firstRequest(input), {
+    deliveredDataChunkCount: 501,
+    deliveredDataBytes: 501,
+    lastTransportObservedMs: 2.5,
+  });
+  assert.equal(input.requests.length, 1);
+  assert.equal(isVisitEvidenceV2(input), true);
+  assert.equal(assessVisitEvidence(input).baselineQualified, true);
+});
