@@ -4,6 +4,12 @@
 import { open, writeFile, type FileHandle } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { isAbsolute, join } from 'node:path';
+import {
+  assessVisitEvidence,
+  isVisitEvidenceV2,
+  type VisitDecisionV2,
+  type VisitEvidenceV2,
+} from './qualification-policy.ts';
 import type {
   BrowserContext,
   CDPSession,
@@ -148,7 +154,7 @@ type DiagnosticIdentities = {
   requestUrls: Array<{ record: Diagnostic; rawUrl: string }>;
   requestUrlOverflow: boolean;
 };
-export type BorrowedHostDiagnosticProof = {
+export type BorrowedHostDiagnosticProofV1 = {
   schemaVersion: 1;
   kind: 'BorrowedHostDiagnosticProof';
   baseline: {
@@ -212,6 +218,22 @@ export type BorrowedHostDiagnosticProof = {
     extensionSourcePathVerified: true;
   };
 };
+export type BorrowedHostDiagnosticProofV2 = Omit<BorrowedHostDiagnosticProofV1, 'schemaVersion'> & {
+  schemaVersion: 2;
+  qualification: {
+    policyVersion: 2;
+    receiptSchemaVersion: 2;
+    visits: Array<{
+      requestedUrl: string;
+      visit: 1 | 2;
+      evidence: VisitEvidenceV2;
+      decision: VisitDecisionV2;
+    }>;
+  };
+};
+export type BorrowedHostDiagnosticProof =
+  | BorrowedHostDiagnosticProofV1
+  | BorrowedHostDiagnosticProofV2;
 export type OwnedCandidateInBorrowedBrowser = {
   kind: 'task-owned-extension-in-borrowed-browser';
   extensionId: string;
@@ -750,6 +772,9 @@ export function validateBorrowedHostProof(
   urls: string[]
 ): Map<string, HostCspFingerprint[]> | null {
   const packet = record(proof);
+  if (!packet || !validQualificationPacket(packet, urls)) {
+    return null;
+  }
   const baseline = record(packet?.baseline);
   const current = record(packet?.current);
   const inventory = record(baseline?.inventory);
@@ -765,7 +790,7 @@ export function validateBorrowedHostProof(
       ? Date.parse(baseline.completedAtUtc)
       : NaN;
   if (
-    packet?.schemaVersion !== 1 ||
+    (packet.schemaVersion !== 1 && packet.schemaVersion !== 2) ||
     packet.kind !== 'BorrowedHostDiagnosticProof' ||
     !baseline ||
     !current ||
@@ -875,6 +900,67 @@ export function validateBorrowedHostProof(
     expected.set(page.requestedUrl, fingerprints);
   }
   return expected.size === urls.length ? expected : null;
+}
+
+function validQualificationPacket(packet: Record<string, unknown>, urls: string[]): boolean {
+  if (packet.schemaVersion === 1) {
+    return (
+      !Object.hasOwn(packet, 'qualification') &&
+      !Object.hasOwn(packet, 'policyVersion') &&
+      !Object.hasOwn(packet, 'receiptSchemaVersion')
+    );
+  }
+  if (
+    packet.schemaVersion !== 2 ||
+    urls.length !== 3 ||
+    Object.hasOwn(packet, 'policyVersion') ||
+    Object.hasOwn(packet, 'receiptSchemaVersion')
+  ) {
+    return false;
+  }
+  try {
+    const qualification = record(packet.qualification);
+    if (
+      qualification?.policyVersion !== 2 ||
+      qualification.receiptSchemaVersion !== 2 ||
+      !Array.isArray(qualification.visits) ||
+      qualification.visits.length !== 6
+    ) {
+      return false;
+    }
+    if (Buffer.byteLength(JSON.stringify(qualification), 'utf8') > 1_048_576) {
+      return false;
+    }
+    const seen = new Set<string>();
+    for (const value of qualification.visits) {
+      const row = record(value);
+      if (
+        !row ||
+        typeof row.requestedUrl !== 'string' ||
+        !urls.includes(row.requestedUrl) ||
+        (row.visit !== 1 && row.visit !== 2) ||
+        !isVisitEvidenceV2(row.evidence)
+      ) {
+        return false;
+      }
+      const key = `${row.requestedUrl}#${row.visit}`;
+      if (seen.has(key) || row.evidence.candidate.state !== 'not-run') {
+        return false;
+      }
+      seen.add(key);
+      const computed = assessVisitEvidence(row.evidence);
+      if (
+        !computed.baselineQualified ||
+        computed.candidateQualified ||
+        JSON.stringify(computed) !== JSON.stringify(row.decision)
+      ) {
+        return false;
+      }
+    }
+    return seen.size === 6;
+  } catch {
+    return false;
+  }
 }
 
 function sanitizedText(value: unknown, maximum = 600) {

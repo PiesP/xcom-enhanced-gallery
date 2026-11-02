@@ -180,7 +180,8 @@ describe('Node script import boundary', () => {
       .map((path) => `validation/windows/${path.toString()}`)
       .filter((path) => path.endsWith('.test.ts'))
       .sort();
-    expect(nativeFiles).toHaveLength(11);
+    expect(nativeFiles).toHaveLength(12);
+    expect(nativeFiles).toContain('validation/windows/qualification-policy.test.ts');
     expect(nativeFiles).toContain('validation/windows/live-acceptance.test.ts');
     expect(nativeFiles).toContain('validation/windows/live-diagnostics-close.test.ts');
     expect(nativeFiles).toContain('validation/windows/ux-result-validation.test.ts');
@@ -193,6 +194,34 @@ describe('Node script import boundary', () => {
     expect(nativeProject?.test.fileParallelism).toBe(false);
     expect(packageJson.scripts['test:e2e:all']).toBe('vp run test:e2e:all:steps');
     expect(packageJson.scripts['verify:full']).toBe('vp run verify:full:steps');
+  });
+
+  it('loads the live proof consumer from declared installation assets', () => {
+    const root = mkdtempSync(join(tmpdir(), 'xeg-windows-assets-'));
+    roots.push(root);
+    const profile = JSON.parse(
+      readFileSync(join(sourceRoot, 'validation/windows/profile.json'), 'utf8')
+    ) as {
+      installation: { assets: string[] };
+    };
+    for (const asset of profile.installation.assets.filter(
+      (path) => path.startsWith('validation/windows/') && /\.(?:ts|mjs)$/u.test(path)
+    )) {
+      const target = join(root, asset);
+      mkdirSync(dirname(target), { recursive: true });
+      copyFileSync(join(sourceRoot, asset), target);
+    }
+    const result = spawnSync(
+      process.execPath,
+      [
+        '--experimental-strip-types',
+        '--input-type=module',
+        '-e',
+        "await import('./validation/windows/live-page.ts');",
+      ],
+      { cwd: root, encoding: 'utf8' }
+    );
+    expect(result.status, result.stderr).toBe(0);
   });
 
   it('checks syntax of every bundled Windows module', () => {

@@ -10,8 +10,10 @@ import { chromium, type BrowserContext } from '@playwright/test';
 import {
   observeLiveUrls,
   resolveBorrowedVideoClickMode,
+  validateBorrowedHostProof,
   type BorrowedHostDiagnosticProof,
 } from './live-page.ts';
+import { assessVisitEvidence, type VisitEvidenceV2 } from './qualification-policy.ts';
 import { runActualSiteAcceptance } from './live-acceptance.ts';
 
 const liveUrl = 'https://x.com/tester/status/12345';
@@ -94,6 +96,132 @@ const borrowedProof: BorrowedHostDiagnosticProof = {
     extensionSourcePathVerified: true,
   },
 };
+
+test('v1 host proof remains readable without policy promotion', () => {
+  assert.ok(validateBorrowedHostProof(borrowedProof, [liveUrl]));
+  assert.equal(
+    validateBorrowedHostProof({ ...borrowedProof, qualification: { policyVersion: 2 } }, [liveUrl]),
+    null
+  );
+});
+
+test('v2 host proof requires six recomputed decisions and compatible versions', () => {
+  const urls = [liveUrl, 'https://x.com/tester/status/12346', 'https://x.com/tester/status/12347'];
+  const baseline = structuredClone(borrowedProof.baseline);
+  const firstPage = baseline.pages[0];
+  assert.ok(firstPage);
+  baseline.pages = urls.map((url) => ({ ...firstPage, requestedUrl: url, finalUrl: url }));
+  const evidence: VisitEvidenceV2 = {
+    policyVersion: 2,
+    receiptSchemaVersion: 2,
+    networkChannel: 'page-cdp',
+    observationCutoffMs: 20_000,
+    recorder: { sealed: true, lostEvents: 0, overflow: 0, incompleteAttribution: 0 },
+    api: { supported: true, detachedEarly: false, observerStartMs: 0, observerEndMs: 20_000 },
+    requests: [
+      {
+        occurrenceId: 'occ-1',
+        targetId: 'target',
+        sessionId: 'session',
+        frameId: 'frame',
+        relation: 'task-required',
+        class: 'finite',
+        streamContract: 'none',
+        requestObservedMs: 1,
+        responseStatus: 200,
+        responseObservedMs: 2,
+        terminal: 'finished',
+        terminalObservedMs: 3,
+        failure: 'none',
+        deliveredMessageCount: 0,
+        deliveredDataChunkCount: 0,
+        deliveredDataBytes: 0,
+        lastTransportObservedMs: null,
+        observerStartMs: 0,
+        observerEndMs: 20_000,
+      },
+    ],
+    product: {
+      finalUrlExact: true,
+      responseStatus: 200,
+      articleVisible: true,
+      extensionAbsent: true,
+      exactMediaReady: true,
+      observationCompleted: true,
+    },
+    errors: { http: 0, console: 0, page: 0, request: 0 },
+    cleanup: {
+      ownedPageClosed: true,
+      originalPagesPreserved: true,
+      focusRestored: true,
+      disconnected: true,
+    },
+    candidate: { state: 'not-run' },
+  };
+  const qualification = {
+    policyVersion: 2 as const,
+    receiptSchemaVersion: 2 as const,
+    visits: urls.flatMap((requestedUrl) =>
+      [1, 2].map((visit) => ({
+        requestedUrl,
+        visit: visit as 1 | 2,
+        evidence,
+        decision: assessVisitEvidence(evidence),
+      }))
+    ),
+  };
+  const proof = { ...borrowedProof, schemaVersion: 2, baseline, qualification };
+  assert.ok(validateBorrowedHostProof(proof, urls));
+  assert.equal(
+    validateBorrowedHostProof(
+      {
+        ...proof,
+        qualification: {
+          ...qualification,
+          policyVersion: 3,
+        },
+      },
+      urls
+    ),
+    null
+  );
+  assert.equal(
+    validateBorrowedHostProof(
+      {
+        ...proof,
+        qualification: {
+          ...qualification,
+          visits: qualification.visits.slice(0, 5),
+        },
+      },
+      urls
+    ),
+    null
+  );
+  assert.equal(
+    validateBorrowedHostProof(
+      {
+        ...proof,
+        qualification: {
+          ...qualification,
+          visits: qualification.visits.map((row, index) =>
+            index === 0 ? { ...row, decision: { ...row.decision, baselineQualified: false } } : row
+          ),
+        },
+      },
+      urls
+    ),
+    null
+  );
+  const malformed = structuredClone(proof) as unknown as {
+    qualification: { visits: Array<{ evidence: { candidate: { state: unknown } } }> };
+  };
+  const firstVisit = malformed.qualification.visits[0];
+  assert.ok(firstVisit);
+  firstVisit.evidence.candidate.state = { toString: null };
+  assert.doesNotThrow(() => validateBorrowedHostProof(malformed, urls));
+  assert.equal(validateBorrowedHostProof(malformed, urls), null);
+});
 
 test('borrowed mode uses the canonical default only when storage is absent', async () => {
   const { DEFAULT_SETTINGS } = (await import(
