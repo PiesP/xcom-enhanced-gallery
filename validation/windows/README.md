@@ -874,6 +874,32 @@ message/count, any unknown host diagnostic, oversized input, overflow, or a
 failed required assertion remains unverified. The optional proof has no effect
 on owned-profile observations. Earlier receipts lack the full fingerprints and
 cannot be upgraded retroactively; a new source-bound run is required.
+
+Prospective policy version 2 keeps recorder integrity, API observation coverage,
+observed request lifecycle, product prerequisites, diagnostic eligibility,
+candidate functionality, and cleanup as separate claims. It derives baseline
+and candidate results separately; a candidate result is `not-run` during the
+host baseline. The private producer checks the raw schema-2 receipt SHA-256,
+fresh source/browser/profile bindings, three URLs visited twice, final parent
+disconnect and cleanup, and each policy decision before creating a schema-2
+public proof. The public observer recomputes all six decisions and rejects
+unsupported or mixed policy/receipt versions. Historical schema-1 proofs keep
+their original validation scope and are never promoted to policy 2.
+
+Policy 2 uses the explicitly declared page-CDP network channel. A request with
+a real terminal callback remains a finished or failed occurrence. A declared
+current-visit EventSource or fetch stream may remain `ongoing-at-cutoff` only
+with target/session/frame attribution, a response, delivered message evidence
+or at least two received data chunks with positive data bytes, and observer
+coverage through the cutoff. HTTP 200 or a streaming MIME type alone does not
+meet this condition. A pending finite request, unknown attribution or coverage,
+lost records, abort, HTTP or unexpected console error, or failed exact-media
+readiness leaves the baseline unverified. Playwright diagnostics stay a separate
+channel; URL matching never joins them to page-CDP occurrences. This policy
+does not qualify any retained historical run or authorize another actual-X
+visit. The next #453 D decision requires new source-bound observation or a
+repaired prerequisite, then the existing admission and stop rules.
+
 During task-owned page disposal, an aborted HTTPS request is associated with
 that close only when the same request object was already in flight at the close
 boundary. The listener is sealed before the final receipt is classified. This
