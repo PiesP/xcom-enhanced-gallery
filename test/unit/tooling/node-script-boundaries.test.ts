@@ -22,6 +22,7 @@ const roots: string[] = [];
 const scripts = [
   'scripts/build/clean.ts',
   'scripts/check/extension-build.ts',
+  'scripts/check/firefox-manifest.ts',
   'scripts/release/package-extension.ts',
   'scripts/release/prepare.ts',
   'scripts/release/footprint.ts',
@@ -48,6 +49,23 @@ function releaseHeader(version = '2.3.3', development = false): string {
   ].join('\n');
 }
 
+function firefoxManifest(version = '2.3.3'): string {
+  return JSON.stringify({
+    version,
+    browser_specific_settings: {
+      gecko: {
+        id: 'xcom-enhanced-gallery@piesp.dev',
+        strict_min_version: '140.0',
+        data_collection_permissions: {
+          required: ['authenticationInfo', 'browsingActivity', 'websiteContent'],
+        },
+      },
+      gecko_android: { strict_min_version: '142.0' },
+    },
+    icons: { 128: 'icons/icon-128x128.png' },
+  });
+}
+
 function releaseFixture(root: string): { bin: string; calls: string } {
   for (const dir of ['dist', 'dist-extension', 'dist-extension-firefox', 'release-bundle']) {
     mkdirSync(join(root, dir));
@@ -57,7 +75,9 @@ function releaseFixture(root: string): { bin: string; calls: string } {
   for (const dir of ['dist-extension', 'dist-extension-firefox']) {
     writeFileSync(
       join(root, dir, 'manifest.json'),
-      '{"version":"2.3.3","icons":{"128":"icons/icon-128x128.png"}}\n'
+      dir === 'dist-extension-firefox'
+        ? `${firefoxManifest()}\n`
+        : '{"version":"2.3.3","icons":{"128":"icons/icon-128x128.png"}}\n'
     );
   }
   writeFileSync(join(root, 'release-bundle/sentinel'), 'old bundle');
@@ -336,6 +356,35 @@ describe('Node script import boundary', () => {
     expect(result.stderr + result.stdout).toContain('was not produced');
   });
 
+  it.each(['dist-extension-firefox', './dist-extension-firefox', 'absolute'])(
+    'rejects a Firefox build via %s path when its manifest omits consent',
+    (directoryArgument) => {
+      const { root, command } = fixture();
+      const dist = join(root, 'dist-extension-firefox');
+      mkdirSync(join(dist, 'icons'), { recursive: true });
+      writeFileSync(join(dist, 'content.js'), '(function() {})();\n');
+      writeFileSync(join(dist, 'background.js'), 'background');
+      writeFileSync(
+        join(dist, 'manifest.json'),
+        firefoxManifest().replace(
+          'data_collection_permissions',
+          'missing_data_collection_permissions'
+        )
+      );
+      writeFileSync(join(dist, 'icons/icon-128x128.png'), 'icon');
+      for (const path of DISTRIBUTION_NOTICE_PATHS) {
+        mkdirSync(dirname(join(root, path)), { recursive: true });
+        mkdirSync(dirname(join(dist, path)), { recursive: true });
+        copyFileSync(join(sourceRoot, path), join(root, path));
+        copyFileSync(join(sourceRoot, path), join(dist, path));
+      }
+      const directory = directoryArgument === 'absolute' ? dist : directoryArgument;
+      const result = command('scripts/check/extension-build.ts', [directory]);
+      expect(result.status).not.toBe(0);
+      expect(result.stderr + result.stdout).toContain('data_collection_permissions');
+    }
+  );
+
   it('preserves early release validation without modifying an existing bundle', () => {
     const { root, command } = fixture();
     mkdirSync(join(root, 'release-bundle'));
@@ -396,6 +445,44 @@ describe('Node script import boundary', () => {
     expect(releaseNotes).toContain('version-pinned `@downloadURL`');
     expect(releaseNotes).toContain('/releases/latest/download/xcom-enhanced-gallery.user.js');
     expect(releaseNotes).toContain('Confirm there is one X.com Enhanced Gallery entry');
+  });
+
+  it('rejects a stale Firefox manifest before replacing a prepared release', () => {
+    const { root, command } = fixture();
+    const { bin, calls } = releaseFixture(root);
+    const manifestPath = join(root, 'dist-extension-firefox/manifest.json');
+    writeFileSync(manifestPath, firefoxManifest().replace('140.0', '128.0'));
+    const result = command('scripts/release/prepare.ts', [], releaseEnv(root, bin, calls));
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain('strict_min_version');
+    expect(readFileSync(join(root, 'release-bundle/sentinel'), 'utf8')).toBe('old bundle');
+    expect(existsSync(join(root, 'zip-calls'))).toBe(false);
+  });
+
+  it('rejects direct packaging before replacing either archive when Firefox consent is missing', () => {
+    const { root, command } = fixture();
+    const { bin, calls } = releaseFixture(root);
+    const chromeArchive = join(root, 'dist/extension-chrome-v2.3.3.zip');
+    const firefoxArchive = join(root, 'dist/extension-firefox-v2.3.3.zip');
+    writeFileSync(chromeArchive, 'existing Chrome archive');
+    writeFileSync(firefoxArchive, 'existing Firefox archive');
+    writeFileSync(
+      join(root, 'dist-extension-firefox/manifest.json'),
+      firefoxManifest().replace(
+        'data_collection_permissions',
+        'missing_data_collection_permissions'
+      )
+    );
+    const result = command(
+      'scripts/release/package-extension.ts',
+      [],
+      releaseEnv(root, bin, calls)
+    );
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain('data_collection_permissions');
+    expect(readFileSync(chromeArchive, 'utf8')).toBe('existing Chrome archive');
+    expect(readFileSync(firefoxArchive, 'utf8')).toBe('existing Firefox archive');
+    expect(existsSync(join(root, 'zip-calls'))).toBe(false);
   });
 
   it('does not allow a standalone footprint script to relabel existing outputs', () => {

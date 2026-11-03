@@ -4,6 +4,8 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { readExtensionManifestVersion } from '../../tooling/vite/utils/extension-icons.ts';
+import { assertFirefoxConsentManifestFile } from '../check/firefox-manifest.ts';
 
 const root = resolve(import.meta.dirname, '..', '..');
 function packageVersion(): string {
@@ -27,14 +29,29 @@ export function packageExtensions(options?: {
 }): string[] {
   const version = packageVersion();
   const outputDir = options?.outputDir ?? resolve(root, 'dist');
-  mkdirSync(outputDir, { recursive: true });
-  const archives: string[] = [];
-
+  // Validate every input before replacing an archive, including direct CLI use.
   for (const { dir, name } of targets) {
     const sourceDir = resolve(root, dir);
     if (!existsSync(sourceDir)) {
       throw new Error(`[package:extension] ${dir} does not exist. Run build first.`);
     }
+    const manifestPath = resolve(sourceDir, 'manifest.json');
+    const found = readExtensionManifestVersion(manifestPath);
+    if (found !== version) {
+      throw new Error(
+        `[package:extension] ${dir}/manifest.json version ${found} differs from ${version}.`
+      );
+    }
+    if (name === 'firefox') {
+      assertFirefoxConsentManifestFile(manifestPath);
+    }
+  }
+
+  mkdirSync(outputDir, { recursive: true });
+  const archives: string[] = [];
+
+  for (const { dir, name } of targets) {
+    const sourceDir = resolve(root, dir);
 
     const fileName = options?.fileName?.(name, version) ?? `extension-${name}-v${version}.zip`;
     const outputFile = resolve(outputDir, fileName);

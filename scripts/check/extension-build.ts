@@ -13,6 +13,7 @@ import {
   type ExtensionIconDeclaration,
   readExtensionIconDeclarations,
 } from '../../tooling/vite/utils/extension-icons.ts';
+import { assertFirefoxConsentManifestFile } from './firefox-manifest.ts';
 
 export function verifyExtensionBuild(): void {
   const root = resolve(import.meta.dirname, '..', '..');
@@ -71,6 +72,9 @@ export function verifyExtensionBuild(): void {
   if (existsSync(manifestJson)) {
     try {
       icons = readExtensionIconDeclarations(manifestJson);
+      if (resolve(root, distDir) === resolve(root, 'dist-extension-firefox')) {
+        assertFirefoxConsentManifestFile(manifestJson);
+      }
     } catch (error: unknown) {
       fail(error instanceof Error ? error.message : String(error));
     }

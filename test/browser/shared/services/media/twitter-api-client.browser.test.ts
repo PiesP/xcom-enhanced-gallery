@@ -808,7 +808,7 @@ describe('twitter-api-client request boundary', () => {
         headers: expect.objectContaining({
           authorization: 'Bearer test-token',
           origin: 'https://x.com',
-          referer: 'https://x.com/example/status/123',
+          referer: 'https://x.com/',
           'x-csrf-token': 'csrf-token',
         }),
         responseType: 'json',
@@ -824,18 +824,38 @@ describe('twitter-api-client request boundary', () => {
     });
   });
 
-  it('uses the current browser location when no location override is provided', async () => {
+  it('omits a referrer when the current browser location is outside X', async () => {
     await getTweetMedias('123');
 
     expect(new URL(httpGet.mock.calls[0]?.[0] as string).hostname).toBe('x.com');
-    expect(httpGet.mock.calls[0]?.[1]).toEqual(
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          origin: window.location.origin,
-          referer: window.location.href,
-        }),
-      })
-    );
+    const options = httpGet.mock.calls[0]?.[1] as { headers: Record<string, string> };
+    expect(options.headers).not.toHaveProperty('origin');
+    expect(options.headers).not.toHaveProperty('referer');
+  });
+
+  it('does not disclose search terms or fragments through the request referrer', async () => {
+    await getTweetMedias('123', {
+      hostname: 'x.com',
+      href: 'https://x.com/search?q=private+terms#results',
+      origin: 'https://x.com',
+    });
+
+    const options = httpGet.mock.calls[0]?.[1] as { headers: Record<string, string> };
+    expect(options.headers.referer).toBe('https://x.com/');
+    expect(JSON.stringify(options.headers)).not.toContain('private');
+    expect(JSON.stringify(options.headers)).not.toContain('#results');
+  });
+
+  it('does not turn a malformed page location into a request referrer', async () => {
+    await getTweetMedias('123', {
+      hostname: 'x.com',
+      href: 'not a URL?query=private',
+      origin: 'not an origin?query=private',
+    });
+
+    const options = httpGet.mock.calls[0]?.[1] as { headers: Record<string, string> };
+    expect(options.headers).not.toHaveProperty('referer');
+    expect(options.headers).not.toHaveProperty('origin');
   });
 
   it('uses an empty CSRF header without inventing browser origin headers', async () => {

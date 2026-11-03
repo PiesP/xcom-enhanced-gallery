@@ -162,6 +162,7 @@ export class MV3HttpRequestAdapter implements HttpRequestAdapter {
       method,
       signal: controller.signal,
       redirect: 'error',
+      referrerPolicy: 'origin',
     };
 
     if (details.headers !== undefined) {

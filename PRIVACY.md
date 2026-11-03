@@ -18,9 +18,11 @@ To request post metadata from X/Twitter, the application reads the page's `ct0`
 CSRF cookie and may resolve authorization data embedded in the X page, with a
 built-in guest authorization fallback. API requests send authorization/CSRF
 headers and post identifiers to X/Twitter, and may include the current page
-address as request context. Browser or userscript-manager cookie rules also
-apply. The absence of a browser `cookies` permission does not mean that
-page-readable cookies are never accessed.
+origin as explicit referrer context. The constructed request does not add the
+current page path, query, or fragment to that header. Browser or
+userscript-manager cookie and referrer rules also apply. The absence of a
+browser `cookies` permission does not mean that page-readable cookies are never
+accessed.
 
 Authentication values are held in request/page memory, including the current
 authentication context used to reuse metadata requests. The application does
@@ -79,6 +81,16 @@ and `USERSCRIPT_CONFIG.connect` in
 [`tooling/vite/utils/userscript.ts`](./tooling/vite/utils/userscript.ts), and
 `host_permissions` in the [Chrome](./extension/manifest.json) and
 [Firefox](./extension/manifest.firefox.json) manifests.
+
+The Firefox extension declares required data collection permissions for
+`authenticationInfo` (X authorization and CSRF values), `browsingActivity`
+(post identifiers used in requests), and `websiteContent` (page-derived request
+and media context). These functional requests go to X/Twitter and its media
+providers as described above. Firefox supports built-in data collection consent
+from desktop version 140 and Android version 142; the manifest sets those
+respective minimums. The gallery is designed for desktop use. The userscript
+has a separate compatibility range. See
+[Mozilla's data collection consent guidance](https://extensionworkshop.com/documentation/develop/firefox-builtin-data-consent/).
 
 Initial host admission is not a guarantee about every network hop. Extension
 content-script HTTP requests reject redirects; browser-native downloads and
