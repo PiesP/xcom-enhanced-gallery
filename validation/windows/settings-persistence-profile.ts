@@ -173,9 +173,7 @@ export async function runSettingsPersistenceFixture({
     await page.locator('[data-testid="tweetPhoto"] img').first().click();
     const gallery = page.locator('[data-xeg-gallery-container]');
     await gallery.waitFor({ state: 'visible', timeout: 15_000 });
-    await gallery
-      .locator('[data-gallery-element="toolbar"] button[aria-label*="Settings" i]')
-      .click();
+    await gallery.locator('#settings-button').click();
     const panel = gallery.locator('[data-gallery-element="settings-panel"]');
     const theme = panel.locator('select').first();
     const unsaved = panel.locator('[data-xeg-settings-unsaved]');
@@ -452,9 +450,7 @@ export async function runSettingsPersistenceFixture({
     await page.locator('[data-testid="tweetPhoto"] img').first().click();
     const recoveredGallery = page.locator('[data-xeg-gallery-container]');
     await recoveredGallery.waitFor({ state: 'visible', timeout: 15_000 });
-    await recoveredGallery
-      .locator('[data-gallery-element="toolbar"] button[aria-label*="Settings" i]')
-      .click();
+    await recoveredGallery.locator('#settings-button').click();
     const recoveredPanel = recoveredGallery.locator('[data-gallery-element="settings-panel"]');
     const initialUnsaved = recoveredPanel.locator('[data-xeg-settings-unsaved]');
     await initialUnsaved.waitFor({ state: 'visible', timeout: 5_000 });

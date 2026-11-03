@@ -7,6 +7,7 @@
  * Prevents Twitter's native gallery and triggers custom gallery behavior.
  */
 
+import { DEFAULT_SETTINGS } from '@constants/settings';
 import { getTypedSettingOr, tryGetSettings } from '@shared/container/settings-registry';
 import {
   isGalleryInternalElement,
@@ -24,9 +25,9 @@ import { getMediaClickTarget } from '@shared/utils/media/media-click-target';
 function resolveVideoClickMode(): VideoClickMode {
   const settings = tryGetSettings();
   if (!settings) {
-    return 'block-controls-only';
+    return DEFAULT_SETTINGS.gallery.videoClickMode;
   }
-  return getTypedSettingOr('gallery.videoClickMode', 'block-controls-only');
+  return getTypedSettingOr('gallery.videoClickMode', DEFAULT_SETTINGS.gallery.videoClickMode);
 }
 
 export async function handleMediaClick(

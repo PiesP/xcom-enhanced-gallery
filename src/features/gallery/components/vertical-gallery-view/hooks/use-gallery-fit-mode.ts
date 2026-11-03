@@ -6,6 +6,7 @@
  * persistence to settings, and fit mode toggle handlers.
  */
 
+import { DEFAULT_SETTINGS } from '@constants/settings';
 import {
   getTypedSettingOr,
   setTypedSetting,
@@ -51,7 +52,7 @@ export function useGalleryFitMode(options: UseGalleryFitModeOptions): UseGallery
   const { scrollToCurrentItem } = options;
 
   const getInitialFitMode = (): ImageFitMode => {
-    return getTypedSettingOr('gallery.imageFitMode', 'fitWidth');
+    return getTypedSettingOr('gallery.imageFitMode', DEFAULT_SETTINGS.gallery.imageFitMode);
   };
 
   const [imageFitMode, setImageFitMode] = createSignal<ImageFitMode>(getInitialFitMode());
