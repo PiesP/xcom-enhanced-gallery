@@ -85,6 +85,20 @@ describe('final Firefox ZIP static HTML disposition', () => {
         'function f(){for(const template of [1]){} consume(template);} const a ='
       ),
     ],
+    [
+      'escape from a default parameter before a body var shadow',
+      source.replace(
+        'const a =',
+        'function f(value = consume(template)){var template = 1;} const a ='
+      ),
+    ],
+    [
+      'unmodeled switch binding and after-switch escape',
+      source.replace(
+        'const a =',
+        'function f(){switch(value){case 1: const template = 1;} consume(template);} const a ='
+      ),
+    ],
     ['extra sink', source.replace('const a =', "other.outerHTML = '<p>'; const a =")],
     ['computed sink', source.replace('const a =', "other['innerHTML'] = '<p>'; const a =")],
     [

@@ -41,6 +41,57 @@ function templateElementCall(node: Node, method: string): boolean {
   return last?.type === 'Literal' && last.value === 'template';
 }
 
+function isFunction(node: Node): boolean {
+  return ['FunctionDeclaration', 'FunctionExpression', 'ArrowFunctionExpression'].includes(
+    node.type
+  );
+}
+
+function shadowsFactory(chain: Node[], factory: Node, factoryName: string): boolean {
+  // A local binding in an enclosing function wins over the IIFE-level Solid factory.
+  for (const scope of chain.filter(isFunction).reverse()) {
+    if (scope === factory) {
+      continue;
+    }
+    const params = scope.params;
+    if (Array.isArray(params) && params.some((param) => name(param as Node) === factoryName)) {
+      return true;
+    }
+    let local = false;
+    fullAncestor(scope, (value, _state, ancestors) => {
+      const node = value as Node;
+      if (node.type !== 'VariableDeclarator' || name(child(node, 'id')) !== factoryName) {
+        return;
+      }
+      const owner = [...ancestors]
+        .slice(0, -1)
+        .reverse()
+        .find((item) => isFunction(item as Node));
+      const declaration = ancestors.at(-2) as Node | undefined;
+      const directBlock = ancestors.at(-3) as Node | undefined;
+      // Only proven function-body var scope or direct lexical-block bindings
+      // may shadow this one factory name. Loop/switch/static-block declarations
+      // have other scopes and require review instead of hiding a reference.
+      const bindingScope =
+        declaration?.kind === 'var'
+          ? child(scope, 'body')
+          : directBlock?.type === 'BlockStatement' &&
+              Array.isArray(directBlock.body) &&
+              directBlock.body.includes(declaration)
+            ? directBlock
+            : undefined;
+      const staticBlock = ancestors.some((item) => (item as Node).type === 'StaticBlock');
+      if (!staticBlock && owner === scope && bindingScope && chain.includes(bindingScope as Node)) {
+        local = true;
+      }
+    });
+    if (local) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /** Accept only the reviewed Solid factory and direct, literal HTML inputs. */
 export function inspectStaticTemplate(source: string): {
   line: number;
@@ -188,7 +239,11 @@ export function inspectStaticTemplate(source: string): {
 
   let calls = 0;
   for (const { node, ancestors: chain } of identifiers) {
-    if (name(node) !== name(factoryName) || node.start === factoryName.start) {
+    if (
+      name(node) !== name(factoryName) ||
+      node.start === factoryName.start ||
+      shadowsFactory(chain, factory, name(factoryName)!)
+    ) {
       continue;
     }
     const parent = chain.at(-2);
