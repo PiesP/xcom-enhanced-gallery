@@ -72,7 +72,7 @@ export function verifyExtensionBuild(): void {
   if (existsSync(manifestJson)) {
     try {
       icons = readExtensionIconDeclarations(manifestJson);
-      if (distDir === 'dist-extension-firefox') {
+      if (resolve(root, distDir) === resolve(root, 'dist-extension-firefox')) {
         assertFirefoxConsentManifestFile(manifestJson);
       }
     } catch (error: unknown) {

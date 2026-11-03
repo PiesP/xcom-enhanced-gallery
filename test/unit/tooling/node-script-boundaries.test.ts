@@ -356,30 +356,34 @@ describe('Node script import boundary', () => {
     expect(result.stderr + result.stdout).toContain('was not produced');
   });
 
-  it('rejects a Firefox build whose manifest omits the consent declaration', () => {
-    const { root, command } = fixture();
-    const dist = join(root, 'dist-extension-firefox');
-    mkdirSync(join(dist, 'icons'), { recursive: true });
-    writeFileSync(join(dist, 'content.js'), '(function() {})();\n');
-    writeFileSync(join(dist, 'background.js'), 'background');
-    writeFileSync(
-      join(dist, 'manifest.json'),
-      firefoxManifest().replace(
-        'data_collection_permissions',
-        'missing_data_collection_permissions'
-      )
-    );
-    writeFileSync(join(dist, 'icons/icon-128x128.png'), 'icon');
-    for (const path of DISTRIBUTION_NOTICE_PATHS) {
-      mkdirSync(dirname(join(root, path)), { recursive: true });
-      mkdirSync(dirname(join(dist, path)), { recursive: true });
-      copyFileSync(join(sourceRoot, path), join(root, path));
-      copyFileSync(join(sourceRoot, path), join(dist, path));
+  it.each(['dist-extension-firefox', './dist-extension-firefox', 'absolute'])(
+    'rejects a Firefox build via %s path when its manifest omits consent',
+    (directoryArgument) => {
+      const { root, command } = fixture();
+      const dist = join(root, 'dist-extension-firefox');
+      mkdirSync(join(dist, 'icons'), { recursive: true });
+      writeFileSync(join(dist, 'content.js'), '(function() {})();\n');
+      writeFileSync(join(dist, 'background.js'), 'background');
+      writeFileSync(
+        join(dist, 'manifest.json'),
+        firefoxManifest().replace(
+          'data_collection_permissions',
+          'missing_data_collection_permissions'
+        )
+      );
+      writeFileSync(join(dist, 'icons/icon-128x128.png'), 'icon');
+      for (const path of DISTRIBUTION_NOTICE_PATHS) {
+        mkdirSync(dirname(join(root, path)), { recursive: true });
+        mkdirSync(dirname(join(dist, path)), { recursive: true });
+        copyFileSync(join(sourceRoot, path), join(root, path));
+        copyFileSync(join(sourceRoot, path), join(dist, path));
+      }
+      const directory = directoryArgument === 'absolute' ? dist : directoryArgument;
+      const result = command('scripts/check/extension-build.ts', [directory]);
+      expect(result.status).not.toBe(0);
+      expect(result.stderr + result.stdout).toContain('data_collection_permissions');
     }
-    const result = command('scripts/check/extension-build.ts', ['dist-extension-firefox']);
-    expect(result.status).not.toBe(0);
-    expect(result.stderr + result.stdout).toContain('data_collection_permissions');
-  });
+  );
 
   it('preserves early release validation without modifying an existing bundle', () => {
     const { root, command } = fixture();
