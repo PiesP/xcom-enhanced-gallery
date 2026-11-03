@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Installed panel ownership fixture</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 20px;
+        background: #000;
+        color: #e7e9ea;
+        font:
+          16px 'Segoe UI',
+          sans-serif;
+      }
+      #host-layout-spacer {
+        height: 600px;
+      }
+      article {
+        max-width: 600px;
+        margin: auto;
+      }
+      [data-testid='tweetPhoto'] {
+        margin-block: 8px;
+      }
+      img {
+        display: block;
+        max-width: 100%;
+        height: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="host-layout-spacer" aria-hidden="true"></div>
+    <main>
+      <article data-testid="tweet">
+        <a href="/experience_a/status/4666000000000000003"><time>Owner A</time></a>
+        <div data-testid="tweetText">A panel caption https://example.invalid/owner-a</div>
+        <div data-testid="tweetPhoto">
+          <img
+            src="https://pbs.twimg.com/media/XegExperienceTall.jpg?format=jpg&amp;name=large"
+            alt="Owner A tall photo"
+            width="300"
+            height="900"
+            tabindex="0"
+          />
+        </div>
+        <div role="link" class="quote-branch">
+          <article>
+            <a href="/experience_b/status/4666000000000000004"><time>Owner B</time></a>
+            <div data-testid="tweetText">B quoted caption https://example.invalid/owner-b</div>
+            <div data-testid="tweetPhoto">
+              <img
+                src="https://pbs.twimg.com/media/XegExperiencePanorama.jpg?format=jpg&amp;name=large"
+                alt="Owner B panorama photo"
+                width="1200"
+                height="200"
+                tabindex="0"
+              />
+            </div>
+          </article>
+        </div>
+      </article>
+    </main>
+  </body>
+</html>

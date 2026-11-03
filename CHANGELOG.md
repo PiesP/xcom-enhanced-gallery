@@ -8,13 +8,22 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.3.10] - 2026-11-03
+
 ### Fixed
 
+- **Expanded post text** — Keep the displayed text, token links and source URL aligned with the selected media while the panel stays open. Preserve focus on the source link and show that link for posts without text.
 - **Language saves** — Keep failed selections active with visible unsaved feedback and an explicit retry for the latest choice.
 - **Schema preservation** — Preserve settings records with unsupported schema identities and keep affected edits in the session until a compatible format is available.
 
 - **Gallery commands** — Target the displayed item after manual scrolling for toolbar, Home/End and page navigation, including commands that return to the last requested index. Keyboard video controls follow the displayed video.
 - **Keyboard controls** — Let focused buttons and nested panels retain native Space, Enter and Escape behavior while gallery Left/Right navigation still works after a toolbar button receives focus.
+
+### Changed
+
+- **Firefox extension support** — Raise the extension minimum from Firefox 128 to 140 and use Firefox's built-in consent for functional data access. The Android consent API floor is 142; Android acceptance remains unverified and the product remains desktop-only. The userscript retains its separate compatibility range.
+- **Request context** — Send origin-only referrers for media and metadata requests, avoiding post paths and query strings.
+- **Upgrade qualification** — Add the published v2.3.9 → v2.3.10 userscript and Chromium-extension transition to the optional source-bound Windows validation inputs.
 
 ## [2.3.9] - 2026-10-28
 

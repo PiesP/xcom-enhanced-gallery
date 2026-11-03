@@ -5,7 +5,7 @@ import { LucideIcon } from '@shared/components/ui/Icon/lucide/lucide-icons';
 import { useTranslation } from '@shared/hooks/use-translation';
 import { isUrlAllowed } from '@shared/utils/url/safety';
 import type { JSXElement } from 'solid-js';
-import { splitProps } from 'solid-js';
+import { createMemo, Show, splitProps } from 'solid-js';
 import styles from './Toolbar.module.css';
 
 /**
@@ -200,10 +200,9 @@ function TweetUrlLink(props: {
 export function TweetTextPanel(props: TweetTextPanelProps): JSXElement {
   const [local] = splitProps(props, ['tweetText', 'tweetTextContent', 'tweetUrl']);
   const translate = useTranslation();
-  const tweetText = local.tweetTextContent ?? local.tweetText ?? '';
-  const tokens = tweetText ? tokenizeTweetText(tweetText) : [];
-  const safeTweetUrl = normalizeTweetUrl(local.tweetUrl);
-  const tweetUrlLabel = safeTweetUrl ? formatTweetUrlLabel(safeTweetUrl) : '';
+  const tweetText = () => local.tweetTextContent ?? local.tweetText ?? '';
+  const tokens = createMemo(() => (tweetText() ? tokenizeTweetText(tweetText()) : []));
+  const safeTweetUrl = createMemo(() => normalizeTweetUrl(local.tweetUrl));
 
   return (
     <div class={styles.tweetPanelBody}>
@@ -211,11 +210,13 @@ export function TweetTextPanel(props: TweetTextPanelProps): JSXElement {
         <span class={styles.tweetTextLabel}>{translate('tb.twTxt')}</span>
       </div>
       <div class={styles.tweetContent} data-gallery-scrollable="true">
-        {safeTweetUrl && (
-          <TweetUrlLink url={safeTweetUrl} label={tweetUrlLabel} translate={translate} />
-        )}
-        {safeTweetUrl && tokens.length > 0 && <div class={styles.tweetUrlDivider} />}
-        <span>{renderTweetTokens(tokens, translate)}</span>
+        <Show when={safeTweetUrl()}>
+          {(url) => (
+            <TweetUrlLink url={url()} label={formatTweetUrlLabel(url())} translate={translate} />
+          )}
+        </Show>
+        {safeTweetUrl() && tokens().length > 0 && <div class={styles.tweetUrlDivider} />}
+        <span>{renderTweetTokens(tokens(), translate)}</span>
       </div>
     </div>
   );
