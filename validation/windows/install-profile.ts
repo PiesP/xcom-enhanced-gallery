@@ -19364,6 +19364,22 @@ async function runSameVersionAttribution({
   return receipt;
 }
 
+export async function installSettingsBaseFixture(
+  extensionPage: Page,
+  prior: Awaited<ReturnType<typeof readStoredVideoSettings>>,
+  raw: string
+): Promise<void> {
+  assert(prior.fields, 'Settings field keys must be present in the fixture snapshot');
+  const fields = Object.fromEntries(
+    Object.keys(prior.fields).map((key) => [key, { exists: false, value: null }])
+  );
+  assert.equal(
+    await restoreStoredVideoSettings(extensionPage, { exists: true, value: raw, fields }),
+    true,
+    'Controlled base settings and cleared field overrides were not stored'
+  );
+}
+
 async function runSettingsPersistenceProbe({
   context,
   root,
@@ -19402,10 +19418,10 @@ async function runSettingsPersistenceProbe({
     healthyBaseline.gallery.theme = 'dark';
     healthyBaseline.gallery.imageFitMode = 'fitWidth';
     const baselineRaw = JSON.stringify(healthyBaseline);
-    await extensionPage.evaluate(async (raw) => {
-      await chrome.storage.local.set({ 'xeg-app-settings': raw });
-    }, baselineRaw);
-    assert.equal((await readStoredVideoSettings(extensionPage)).value, baselineRaw);
+    await installSettingsBaseFixture(extensionPage, prior, baselineRaw);
+    const healthyStored = await readStoredVideoSettings(extensionPage);
+    assert.equal(healthyStored.value, baselineRaw);
+    assert.deepEqual(healthyStored.settings, healthyBaseline);
     evidence.healthyBaseline = {
       recognizedSchema: healthyBaseline.__schemaHash,
       unrelatedTheme: 'dark',
@@ -19460,9 +19476,10 @@ async function runSettingsPersistenceProbe({
       futureRoot: { retained: true },
       gallery: { theme: 'dark', futureField: 42 },
     });
-    await extensionPage.evaluate(async (value) => {
-      await chrome.storage.local.set({ 'xeg-app-settings': value });
-    }, raw);
+    await installSettingsBaseFixture(extensionPage, prior, raw);
+    const unsupportedStored = await readStoredVideoSettings(extensionPage);
+    assert.equal(unsupportedStored.value, raw);
+    assert.deepEqual(unsupportedStored.settings, JSON.parse(raw));
     await open();
     assert.equal(await page.locator('#settings-theme-select').inputValue(), 'dark');
     const status = page.locator('[data-xeg-settings-unsaved]');

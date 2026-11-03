@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'vite-plus/test';
 import { chromium, type Locator } from '@playwright/test';
-import { assertQuotedOriginLink } from './install-profile.ts';
+import { assertQuotedOriginLink, installSettingsBaseFixture } from './install-profile.ts';
 import { readStoredVideoSettings, restoreStoredVideoSettings } from './live-page.ts';
 import {
   assertMetadataSourceRequestSettlement,
@@ -365,6 +365,87 @@ test('settings restoration serializes raw values into separate browser evaluatio
             .__settingsTestValues
       ),
       { unrelated: { retained: true } }
+    );
+  } finally {
+    await browser.close();
+  }
+});
+
+test('settings base fixture clears known overrides for both schemas and preserves unknown leaves', async () => {
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage();
+    const previous = {
+      'xeg-app-settings': { gallery: { theme: 'system', imageFitMode: 'fitWidth' } },
+      'xeg-app-settings:field:gallery.theme': {
+        __xegStorageEnvelope: 1,
+        updatedAt: 1,
+        value: 'light',
+      },
+      'xeg-app-settings:field:gallery.imageFitMode': {
+        __xegStorageEnvelope: 1,
+        updatedAt: 2,
+        value: 'fitHeight',
+      },
+      'xeg-app-settings:field:future.setting': { untouched: true },
+    };
+    await page.evaluate((initial) => {
+      const values: Record<string, unknown> = structuredClone(initial);
+      Object.assign(globalThis, {
+        __settingsTestValues: values,
+        chrome: {
+          storage: {
+            local: {
+              get: async (key: string) =>
+                Object.hasOwn(values, key) ? { [key]: values[key] } : {},
+              set: async (next: Record<string, unknown>) => Object.assign(values, next),
+              remove: async (key: string) => {
+                Reflect.deleteProperty(values, key);
+              },
+            },
+          },
+        },
+      });
+    }, previous);
+    const prior = await readStoredVideoSettings(page);
+    const bases = [
+      { __schemaHash: '1', gallery: { theme: 'dark', imageFitMode: 'fitWidth' } },
+      { __schemaHash: 'unsupported-fixture', gallery: { theme: 'dark', futureField: 42 } },
+    ];
+    for (const [index, base] of bases.entries()) {
+      await installSettingsBaseFixture(page, prior, JSON.stringify(base));
+      const stored = await readStoredVideoSettings(page);
+      assert.deepEqual(stored.settings, base);
+      assert.deepEqual(
+        await page.evaluate(() => {
+          const values = (
+            globalThis as unknown as { __settingsTestValues: Record<string, unknown> }
+          ).__settingsTestValues;
+          return values['xeg-app-settings:field:future.setting'];
+        }),
+        { untouched: true }
+      );
+      if (index === 0) {
+        await page.evaluate(() => {
+          const values = (
+            globalThis as unknown as { __settingsTestValues: Record<string, unknown> }
+          ).__settingsTestValues;
+          values['xeg-app-settings:field:gallery.theme'] = {
+            __xegStorageEnvelope: 1,
+            updatedAt: 3,
+            value: 'light',
+          };
+        });
+      }
+    }
+    assert.equal(await restoreStoredVideoSettings(page, prior), true);
+    assert.deepEqual(
+      await page.evaluate(
+        () =>
+          (globalThis as unknown as { __settingsTestValues: Record<string, unknown> })
+            .__settingsTestValues
+      ),
+      previous
     );
   } finally {
     await browser.close();
