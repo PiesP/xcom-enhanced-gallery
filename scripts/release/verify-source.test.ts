@@ -14,6 +14,7 @@ const releaseScripts = {
   'test:e2e:all': 'pnpm test:e2e',
   'build:all:ci': 'pnpm build',
   'release:prepare': 'node scripts/release/prepare.ts',
+  'release:firefox-validate': 'node scripts/release/firefox-final-zip.ts',
 };
 const roots: string[] = [];
 afterAll(() => {
@@ -176,6 +177,21 @@ test('historical sources missing a current release entrypoint fail before checko
   const result = f.run('v1.2.3', head);
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /Release source lacks current workflow entrypoints: build:e2e/);
+  assert.equal(f.values(), '');
+});
+
+test('a tag without the final Firefox ZIP validator fails before build', () => {
+  const f = fixture();
+  const { 'release:firefox-validate': _omitted, ...oldScripts } = releaseScripts;
+  const head = f.commit('26.12.1', '2.3.10', oldScripts, 'node-version');
+  f.tag('v2.3.10');
+  f.clone();
+  const result = f.run('v2.3.10', head);
+  assert.notEqual(result.status, 0);
+  assert.match(
+    result.stderr,
+    /Release source lacks current workflow entrypoints: release:firefox-validate/
+  );
   assert.equal(f.values(), '');
 });
 
