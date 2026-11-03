@@ -10,6 +10,7 @@
  */
 
 import type { ThemeSetting } from '@constants/setting-options';
+import type { SupportedLanguage } from '@shared/constants/i18n/language-types';
 import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
 
 /** Theme setting option */
@@ -18,7 +19,7 @@ export type ThemeOption = ThemeSetting;
 /**
  * Union type for language setting options
  */
-export type LanguageOption = 'auto' | 'ko' | 'en' | 'ja' | 'zh-CN' | 'es' | 'ar';
+export type LanguageOption = SupportedLanguage;
 
 /**
  * Props for SettingsControls component

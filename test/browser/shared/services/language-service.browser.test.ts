@@ -102,6 +102,12 @@ describe('LanguageService', () => {
       expect(service.detectLanguage()).toBe('ja');
     });
 
+    it('detects Arabic from a browser region code for RTL rendering', () => {
+      setNavigatorLanguage('ar-SA');
+      service = new LanguageService();
+      expect(service.detectLanguage()).toBe('ar');
+    });
+
     it('should return default language for completely unsupported languages', () => {
       setNavigatorLanguage('fr');
       service = new LanguageService();
@@ -248,6 +254,19 @@ describe('LanguageService', () => {
       await service.initialize();
 
       expect(service.getCurrentLanguage()).toBe('zh-CN');
+    });
+
+    it('keeps region variants out of saved choices while accepting canonical case variants', async () => {
+      mockStorageGet.mockResolvedValue('KO');
+      service = new LanguageService();
+      await service.initialize();
+      expect(service.getCurrentLanguage()).toBe('ko');
+
+      service.destroy();
+      mockStorageGet.mockResolvedValue('es-ES');
+      service = new LanguageService();
+      await service.initialize();
+      expect(service.getCurrentLanguage()).toBe('en');
     });
 
     it('should keep "auto" when storage has no value', async () => {

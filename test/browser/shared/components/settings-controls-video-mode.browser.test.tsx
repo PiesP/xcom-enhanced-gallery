@@ -127,6 +127,29 @@ describe('video click setting control', () => {
     document.body.replaceChildren();
   });
 
+  it('renders the fixed product language order with native provider labels', () => {
+    const ui = mountSettings('block-controls-only');
+    try {
+      const language = document.querySelector<HTMLSelectElement>(
+        '#settings-controls-language-select'
+      );
+      expect(language).not.toBeNull();
+      expect(
+        Array.from(language?.options ?? [], (option) => [option.value, option.textContent])
+      ).toEqual([
+        ['auto', 'Auto'],
+        ['en', 'English'],
+        ['ko', '한국어'],
+        ['ja', '日本語'],
+        ['zh-CN', '简体中文'],
+        ['es', 'Español'],
+        ['ar', 'العربية'],
+      ]);
+    } finally {
+      ui.dispose();
+    }
+  });
+
   it('shows the current mode and follows external setting changes', () => {
     const ui = mountSettings('block-controls-only');
     try {
