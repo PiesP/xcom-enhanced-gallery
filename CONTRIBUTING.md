@@ -421,6 +421,12 @@ the published source metadata and skips publication, preserving existing assets
 and Latest. Incomplete releases, drafts and archive retries require maintainer
 review; the workflow does not overwrite assets or move tags to repair them.
 
+Prepare a dated, release-specific account of executed, reused and unverified
+checks using the [verification coverage procedure](./docs/release-verification.md).
+Review its source/artifact links alongside the generated notes from
+`scripts/release/prepare.ts`. Coverage claims require fresh author input for
+each version; the preparation script does not infer or inherit them.
+
 ## Pull requests
 
 Keep changes focused and describe what changed, why it changed, and how it was
