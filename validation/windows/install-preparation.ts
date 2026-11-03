@@ -74,6 +74,10 @@ export const EXPERIENCE_TWEET_ID = '4666000000000000002';
 
 export const EXPERIENCE_FIXTURE_URL = `https://x.com/experience/status/${EXPERIENCE_TWEET_ID}`;
 
+export const PANEL_OWNER_A_ID = '4666000000000000003';
+export const PANEL_OWNER_B_ID = '4666000000000000004';
+export const PANEL_OWNERSHIP_FIXTURE_URL = `https://x.com/experience_a/status/${PANEL_OWNER_A_ID}`;
+
 export const EXPERIENCE_IMAGES = [
   { path: 'XegExperienceTall.jpg', width: 300, height: 900, label: 'Tall' },
   { path: 'XegExperiencePanorama.jpg', width: 1200, height: 200, label: 'Panorama' },
@@ -252,6 +256,9 @@ export async function installFixtureRoutes(
   const html = await readFile(join(root, 'test/e2e/fixtures/installed-gallery-page.html'), 'utf8');
   const experienceHtml = experienceImages
     ? await readFile(join(root, 'test/e2e/fixtures/installed-gallery-experience-page.html'), 'utf8')
+    : '';
+  const panelOwnershipHtml = experienceImages
+    ? await readFile(join(root, 'test/e2e/fixtures/installed-panel-ownership-page.html'), 'utf8')
     : '';
   const extensionHtml = QUALITY_IMAGE_PATHS.reduce((page, path) => {
     const sharedPath = path.endsWith('.jpg') ? path : `${path}.jpg`;
@@ -559,6 +566,58 @@ export async function installFixtureRoutes(
         });
         return;
       }
+      if (tweetId === PANEL_OWNER_A_ID && experienceImages) {
+        const photo = (path: string, id: string, width: number, height: number) => ({
+          type: 'photo',
+          id_str: id,
+          media_url_https: `https://pbs.twimg.com/media/${path}?format=jpg&name=orig`,
+          original_info: { width, height },
+        });
+        const quoted = {
+          __typename: 'Tweet',
+          rest_id: PANEL_OWNER_B_ID,
+          core: { user_results: { result: { legacy: { screen_name: 'experience_b' } } } },
+          legacy: {
+            id_str: PANEL_OWNER_B_ID,
+            full_text: 'B quoted caption https://example.invalid/owner-b',
+            extended_entities: {
+              media: [photo(EXPERIENCE_IMAGES[1].path, '4666201', 1200, 200)],
+            },
+          },
+        };
+        apiResponses.push({
+          method: route.request().method(),
+          status: 200,
+          url: url.pathname,
+          tweetId,
+        });
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            data: {
+              tweetResult: {
+                result: {
+                  __typename: 'Tweet',
+                  rest_id: PANEL_OWNER_A_ID,
+                  core: {
+                    user_results: { result: { legacy: { screen_name: 'experience_a' } } },
+                  },
+                  legacy: {
+                    id_str: PANEL_OWNER_A_ID,
+                    full_text: 'A panel caption https://example.invalid/owner-a',
+                    extended_entities: {
+                      media: [photo(EXPERIENCE_IMAGES[0].path, '4666200', 300, 900)],
+                    },
+                  },
+                  quoted_status_result: { result: quoted },
+                },
+              },
+            },
+          }),
+        });
+        return;
+      }
       const quotedResponse = tweetId === undefined ? undefined : quotedVideoApiResponse(tweetId);
       if (tweetId !== undefined && quotedResponse) {
         const quotedResult = quotedResponse.data?.tweetResult?.result;
@@ -652,19 +711,22 @@ export async function installFixtureRoutes(
                             '<body data-quote-case="recognized">',
                             `<body data-quote-case="${quotedCase.route}">`
                           )
-                      : url.pathname === new URL(EXPERIENCE_FIXTURE_URL).pathname &&
+                      : url.pathname === new URL(PANEL_OWNERSHIP_FIXTURE_URL).pathname &&
                           experienceImages
-                        ? experienceHtml
-                        : url.pathname === new URL(QUALITY_FIXTURE_URL).pathname
-                          ? extensionHtml
-                              .replaceAll(TWEET_ID, QUALITY_TWEET_ID)
-                              .replaceAll('testuser', 'qualityuser')
-                          : url.pathname === new URL(PUBLIC_FIXTURE_URL).pathname
-                            ? html.replace(
-                                '<body data-fixture-route="classic">',
-                                '<body data-fixture-route="public">'
-                              )
-                            : extensionHtml,
+                        ? panelOwnershipHtml
+                        : url.pathname === new URL(EXPERIENCE_FIXTURE_URL).pathname &&
+                            experienceImages
+                          ? experienceHtml
+                          : url.pathname === new URL(QUALITY_FIXTURE_URL).pathname
+                            ? extensionHtml
+                                .replaceAll(TWEET_ID, QUALITY_TWEET_ID)
+                                .replaceAll('testuser', 'qualityuser')
+                            : url.pathname === new URL(PUBLIC_FIXTURE_URL).pathname
+                              ? html.replace(
+                                  '<body data-fixture-route="classic">',
+                                  '<body data-fixture-route="public">'
+                                )
+                              : extensionHtml,
       });
       return;
     }

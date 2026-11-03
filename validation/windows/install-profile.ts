@@ -80,6 +80,9 @@ import {
   EXPERIENCE_IMAGES,
   EXPERIENCE_TWEET_ID,
   IMAGE_URL_MARKERS,
+  PANEL_OWNER_A_ID,
+  PANEL_OWNER_B_ID,
+  PANEL_OWNERSHIP_FIXTURE_URL,
   PUBLIC_FIXTURE_URL,
   QUALITY_FIXTURE_URL,
   QUALITY_IMAGE_PATHS,
@@ -17430,6 +17433,138 @@ async function runGalleryExperienceProbe({
         zoomed,
         desktopAtZoom,
         screenshotPixels,
+      };
+    });
+    await phase('x07-panel-ownership', async (partial) => {
+      await page.goto(PANEL_OWNERSHIP_FIXTURE_URL);
+      await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+      await page.locator('[data-testid="tweetPhoto"] img').first().click();
+      const gallery = page.locator('[data-xeg-gallery-container]');
+      await gallery.waitFor({ state: 'visible' });
+      assert.equal(await gallery.locator('[data-gallery-element="item"]').count(), 2);
+      const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
+      const panelButton = toolbar.locator('#tweet-text-button');
+      await panelButton.click();
+      const panel = gallery.locator('[data-gallery-element="tweet-panel"]');
+      await panel.waitFor({ state: 'visible' });
+      const sourceLink = panel.locator('a[href^="https://x.com/experience_"]');
+      assert.equal(await sourceLink.count(), 1, 'Panel source link must be unambiguous');
+      const sourceNode = await sourceLink.elementHandle();
+      assert(sourceNode, 'Panel source link has no DOM node');
+      const observe = async (
+        owner: 'a' | 'b',
+        current: string,
+        focused: string,
+        expectedCaption: string,
+        otherCaption: string
+      ) => {
+        const expectedUrl = `https://x.com/experience_${owner}/status/${owner === 'a' ? PANEL_OWNER_A_ID : PANEL_OWNER_B_ID}`;
+        const state = await waitForValue(
+          async () => {
+            const [expanded, visible, href, content, requested, focus] = await Promise.all([
+              panelButton.getAttribute('aria-expanded'),
+              panel.isVisible(),
+              sourceLink.getAttribute('href'),
+              panel.textContent(),
+              toolbar.getAttribute('data-current-index'),
+              toolbar.getAttribute('data-focused-index'),
+            ]);
+            return expanded === 'true' &&
+              visible &&
+              href === expectedUrl &&
+              content?.includes(expectedCaption) &&
+              !content.includes(otherCaption) &&
+              requested === current &&
+              focus === focused
+              ? { expanded, visible, href, content, requested, focus }
+              : undefined;
+          },
+          `expanded ${owner.toUpperCase()} panel and displayed ownership`,
+          4_000
+        );
+        assert(state.content.includes(`x.com/experience_${owner}/status/`));
+        assert.equal(
+          await sourceNode.evaluate((element) => element.isConnected),
+          true,
+          'The expanded source link remounted during item navigation'
+        );
+        assert.equal(
+          await sourceNode.evaluate((element) => element.getAttribute('href')),
+          expectedUrl
+        );
+        return state;
+      };
+      const aCaption = 'A panel caption';
+      const bCaption = 'B quoted caption';
+      const states: Record<string, unknown> = {};
+      partial.states = states;
+      states.openA = await observe('a', '0', '0', aCaption, bCaption);
+      await page.screenshot({ path: join(output, 'experience-x07-panel-a.png') });
+      await toolbar.locator('button[aria-label="Next"]').click();
+      states.buttonB = await observe('b', '1', '1', bCaption, aCaption);
+      await page.screenshot({ path: join(output, 'experience-x07-panel-b.png') });
+      await page.keyboard.press('ArrowLeft');
+      states.keyboardA = await observe('a', '0', '0', aCaption, bCaption);
+      const scrollport = gallery.locator('[data-gallery-element="items"]');
+      await scrollport.hover();
+      const scrollDelta = await gallery
+        .locator('[data-gallery-element="item"][data-index="1"]')
+        .evaluate((item) => {
+          const root = item.closest('[data-gallery-element="items"]');
+          if (!root) {
+            throw new Error('Panel ownership scrollport is missing');
+          }
+          const rootRect = root.getBoundingClientRect();
+          const itemRect = item.getBoundingClientRect();
+          const clearance = Number.parseFloat(getComputedStyle(root).scrollPaddingBlockStart);
+          const visibleCenter = rootRect.top + (clearance + rootRect.height) / 2;
+          return Math.round(itemRect.top + itemRect.height / 2 - visibleCenter);
+        });
+      await page.mouse.wheel(0, scrollDelta);
+      states.manualB = await observe('b', '0', '1', bCaption, aCaption);
+      await page.screenshot({ path: join(output, 'experience-x07-panel-manual-b.png') });
+      const known = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+      await toolbar.locator('button[aria-label="Download"]').click();
+      const download = await waitForValue(
+        async () => {
+          const added = (await queryDownloads(extensionPage)).filter(({ id }) => !known.has(id));
+          return added.length === 1 && added[0]?.state === 'complete' ? added[0] : undefined;
+        },
+        'displayed owner B original download',
+        20_000
+      );
+      const relativeFile = relative(downloads, download.filename);
+      assert(relativeFile && !relativeFile.startsWith('..') && !isAbsolute(relativeFile));
+      assert(
+        basename(download.filename).startsWith(`experience_b_${PANEL_OWNER_B_ID}_`),
+        'Displayed owner B download filename has the wrong owner'
+      );
+      const downloadedBytes = await readFile(download.filename);
+      assert(downloadedBytes.equals(experienceImages[1]!), 'Displayed owner B bytes differ');
+      states.afterDownloadB = await observe('b', '0', '1', bCaption, aCaption);
+      await toolbar.locator('button[aria-label="Previous"]').click();
+      states.returnA = await observe('a', '0', '0', aCaption, bCaption);
+      assert(
+        routes.apiResponses.some(
+          ({ tweetId, status }) => tweetId === PANEL_OWNER_A_ID && status === 200
+        ),
+        'The mixed-owner fixture did not exercise the admitted root API response'
+      );
+      await toolbar.locator('button[aria-label="Close"]').click();
+      await gallery.waitFor({ state: 'detached' });
+      return {
+        states,
+        scrollDelta,
+        download: {
+          filename: basename(download.filename),
+          ...imageReceipt(downloadedBytes),
+        },
+        api: routes.apiResponses.filter(({ tweetId }) => tweetId === PANEL_OWNER_A_ID),
+        screenshots: [
+          'experience-x07-panel-a.png',
+          'experience-x07-panel-b.png',
+          'experience-x07-panel-manual-b.png',
+        ],
       };
     });
   } finally {
