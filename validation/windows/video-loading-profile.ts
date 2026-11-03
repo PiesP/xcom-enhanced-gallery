@@ -303,7 +303,7 @@ type SelectedVideoFailureEvidence = {
   requestCapPerCase: number;
   errors?: string[];
 };
-type StorageBefore = { exists: boolean; value: unknown };
+type StorageBefore = Awaited<ReturnType<typeof readStoredVideoSettings>>;
 type NativeDownload = {
   id: number;
   state: string;
@@ -883,10 +883,7 @@ export async function runVideoLoadingProfile({
   try {
     await page.setViewportSize({ width: 1280, height: 500 });
     observation.viewport = { width: 1280, height: 500 };
-    settingsBefore = await extensionPage.evaluate(async (key) => {
-      const values = await chrome.storage.local.get(key);
-      return { exists: Object.hasOwn(values, key), value: values[key] ?? null };
-    }, SETTINGS_KEY);
+    settingsBefore = await readStoredVideoSettings(extensionPage);
     const previous = settingsBefore.value;
     const previousSettings = isRecord(previous) ? previous : null;
     const value = {
@@ -899,13 +896,26 @@ export async function runVideoLoadingProfile({
       lastModified: Date.now(),
       __schemaHash: '1',
     };
+    settingsChanged = true;
     await extensionPage.evaluate(
       async ({ key, value }) => {
-        await chrome.storage.local.set({ [key]: value });
+        const updatedAt = Date.now();
+        await chrome.storage.local.set({
+          [key]: value,
+          [`${key}:field:gallery.videoClickMode`]: {
+            __xegStorageEnvelope: 1,
+            updatedAt,
+            value: 'allow-all',
+          },
+          [`${key}:field:gallery.preloadCount`]: {
+            __xegStorageEnvelope: 1,
+            updatedAt,
+            value: 20,
+          },
+        });
       },
       { key: SETTINGS_KEY, value }
     );
-    settingsChanged = true;
     const applied = await readAppliedVideoGallerySettings(extensionPage);
     assert.equal(field(applied, 'videoClickMode'), 'allow-all');
     assert.equal(field(applied, 'preloadCount'), 20);
