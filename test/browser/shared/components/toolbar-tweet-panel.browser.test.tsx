@@ -62,6 +62,13 @@ const items: MediaInfo[] = [
     tweetText: 'Beta #south https://example.com/b',
     tweetUrl: 'https://x.com/beta/status/2',
   },
+  {
+    id: 'c',
+    type: 'image',
+    url: 'https://pbs.twimg.com/media/c.jpg',
+    tweetText: '',
+    tweetUrl: 'https://x.com/gamma/status/3',
+  },
 ];
 
 let dispose: (() => void) | undefined;
@@ -197,5 +204,12 @@ describe('expanded post-text panel attribution', () => {
     setFocusedIndexOnly(null);
     expect(panel.textContent).toContain('Alpha #north');
     expect(sourceLink().getAttribute('href')).toBe(items[0]?.tweetUrl);
+
+    // A textless media post still offers its validated source link.
+    setFocusedIndexOnly(2);
+    expect(root.querySelector('#toolbar-tweet-panel')).toBe(panel);
+    expect(sourceLink().getAttribute('href')).toBe(items[2]?.tweetUrl);
+    expect(sourceLink().textContent).toContain('x.com/gamma/status/3');
+    expect(panel.textContent).not.toContain('Alpha #north');
   });
 });

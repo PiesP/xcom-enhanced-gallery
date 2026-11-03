@@ -235,7 +235,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
       counter.dataset.focusedIndex = focused;
     }
   });
-  const hasTweetContent = () => !!(tweetTextContent() ?? tweetText() ?? tweetUrl());
+  const hasTweetContent = () => !!(tweetTextContent() || tweetText() || tweetUrl());
   const displayedPosition = createMemo(() => {
     const index = local.displayedIndex();
     return index === null ? null : index + 1;
