@@ -65,6 +65,10 @@ describe('final Firefox ZIP static HTML disposition', () => {
 
   it.each([
     ['dynamic input', source.replace("template('<p>')", 'template(userHtml)')],
+    [
+      'implicit sloppy-mode parameter alias',
+      source.replace('  const create =', '  arguments[0] = userHtml; const create ='),
+    ],
     ['alias', source.replace('const a =', 'const alias = template; const a =')],
     ['escape', source.replace('const a =', 'consume(template); const a =')],
     [
@@ -72,6 +76,13 @@ describe('final Firefox ZIP static HTML disposition', () => {
       source.replace(
         'const a =',
         'function f(){ {const template = 1;} consume(template); } const a ='
+      ),
+    ],
+    [
+      'escape after an unrelated loop binding',
+      source.replace(
+        'const a =',
+        'function f(){for(const template of [1]){} consume(template);} const a ='
       ),
     ],
     ['extra sink', source.replace('const a =', "other.outerHTML = '<p>'; const a =")],
