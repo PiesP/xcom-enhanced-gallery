@@ -128,6 +128,7 @@ export function inspectStaticTemplate(source: string): {
   const factory = [...ancestors].reverse().find((item) => item.type === 'FunctionDeclaration');
   const factoryName = factory && child(factory, 'id');
   const params = factory?.params;
+  const creator = [...ancestors].reverse().find((item) => item.type === 'ArrowFunctionExpression');
   if (
     sink.operator !== '=' ||
     name(child(left, 'object')) !== 't' ||
@@ -136,7 +137,10 @@ export function inspectStaticTemplate(source: string): {
     !Array.isArray(params) ||
     name(params[0] as Node) !== name(html) ||
     name(html) !== 'html' ||
-    !ancestors.some((item) => item.type === 'ArrowFunctionExpression')
+    !creator ||
+    !Array.isArray(creator.params) ||
+    creator.params.length !== 0 ||
+    child(creator, 'body').type !== 'BlockStatement'
   ) {
     throw new Error('Unreviewed Solid template sink or parameter binding');
   }
@@ -144,43 +148,84 @@ export function inspectStaticTemplate(source: string): {
   if (!declaration) {
     throw new Error('Solid template factory declaration is missing');
   }
-  let templateElement = false;
-  const creator = [...ancestors].reverse().find((item) => item.type === 'ArrowFunctionExpression');
-  let htmlRebound = false;
-  fullAncestor(factory, (value, _state, chain) => {
+  const factoryStatements = child(factory, 'body').body;
+  const creatorStatements = child(creator, 'body').body;
+  if (
+    !Array.isArray(factoryStatements) ||
+    !Array.isArray(creatorStatements) ||
+    !creatorStatements.some(
+      (statement) =>
+        (statement as Node).type === 'ExpressionStatement' &&
+        child(statement as Node, 'expression') === sink
+    )
+  ) {
+    throw new Error('Solid template sink must be a direct statement in the creator');
+  }
+  const creatorDeclarations = factoryStatements.filter((statement) => {
+    const item = statement as Node;
+    return (
+      item.type === 'VariableDeclaration' &&
+      item.kind === 'const' &&
+      Array.isArray(item.declarations) &&
+      item.declarations.some((declaration) => child(declaration as Node, 'init') === creator)
+    );
+  });
+  if (creatorDeclarations.length !== 1) {
+    throw new Error('Solid template creator is not a direct factory const');
+  }
+  const templateDeclarations = creatorStatements
+    .flatMap((statement) => {
+      const item = statement as Node;
+      return item.type === 'VariableDeclaration' && Array.isArray(item.declarations)
+        ? item.declarations.map((declaration) => ({
+            statement: item,
+            declaration: declaration as Node,
+          }))
+        : [];
+    })
+    .filter(({ declaration }) => name(child(declaration, 'id')) === 't');
+  const templateDeclaration = templateDeclarations[0];
+  if (
+    templateDeclarations.length !== 1 ||
+    !templateDeclaration ||
+    templateDeclaration.statement.kind !== 'const' ||
+    templateDeclaration.declaration.start >= sink.start
+  ) {
+    throw new Error('Solid template sink receiver is not the direct template-element const');
+  }
+  const init = child(templateDeclaration.declaration, 'init');
+  if (
+    init.type !== 'ConditionalExpression' ||
+    !templateElementCall(child(init, 'consequent'), 'createElementNS') ||
+    !templateElementCall(child(init, 'alternate'), 'createElement')
+  ) {
+    throw new Error('Solid template sink receiver is not a template element');
+  }
+  const htmlReferences: number[] = [];
+  let extraReceiverBinding = false;
+  fullAncestor(factory, (value) => {
     const item = value as Node;
-    if (
-      (item.type === 'AssignmentExpression' && name(child(item, 'left')) === 'html') ||
-      (item.type === 'UpdateExpression' && name(child(item, 'argument')) === 'html')
-    ) {
-      htmlRebound = true;
+    if (name(item) === 'html') {
+      htmlReferences.push(item.start);
     }
-    if (item.type !== 'VariableDeclarator' || name(child(item, 'id')) !== 't') {
-      return;
-    }
-    const ownFunction = [...chain]
-      .slice(0, -1)
-      .reverse()
-      .find((node) => isFunction(node as Node));
-    const declaration = chain.at(-2) as Node | undefined;
     if (
-      ownFunction !== creator ||
-      declaration?.type !== 'VariableDeclaration' ||
-      declaration.kind !== 'const'
+      item.type === 'VariableDeclarator' &&
+      item !== templateDeclaration.declaration &&
+      name(child(item, 'id')) === 't'
     ) {
-      return;
+      extraReceiverBinding = true;
     }
-    const init = child(item, 'init');
-    if (
-      init.type === 'ConditionalExpression' &&
-      templateElementCall(child(init, 'consequent'), 'createElementNS') &&
-      templateElementCall(child(init, 'alternate'), 'createElement')
-    ) {
-      templateElement = true;
+    if (item.type === 'AssignmentExpression' && name(child(item, 'left')) === 't') {
+      extraReceiverBinding = true;
     }
   });
-  if (!templateElement || htmlRebound) {
-    throw new Error('Solid template sink is not bound to a template element');
+  if (
+    htmlReferences.length !== 2 ||
+    !htmlReferences.includes((params[0] as Node).start) ||
+    !htmlReferences.includes(html.start) ||
+    extraReceiverBinding
+  ) {
+    throw new Error('Solid template parameter or receiver binding was shadowed or rebound');
   }
 
   let calls = 0;

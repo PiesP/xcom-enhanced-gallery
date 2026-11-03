@@ -54,6 +54,10 @@ export function validateFinalFirefoxZip(
   }
   const result = JSON.parse(run.stdout) as LinterResult;
   assessLinterResult(result, version, staticTemplate);
+  const afterLinterSha256 = createHash('sha256').update(readFileSync(zipPath)).digest('hex');
+  if (afterLinterSha256 !== zipSha256) {
+    throw new Error('Final Firefox ZIP bytes changed during validation');
+  }
   const report = {
     schemaVersion: 1,
     accepted: true,
