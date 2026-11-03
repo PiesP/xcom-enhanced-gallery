@@ -40,6 +40,7 @@ describe('MV3HttpRequestAdapter', () => {
   it('rejects redirects through fetch policy while preserving caller headers and browser credential defaults', async () => {
     const fetchSpy = vi.fn((_url: string, init: RequestInit) => {
       expect(init.redirect).toBe('error');
+      expect(init.referrerPolicy).toBe('origin');
       expect(init.headers).toEqual({ 'x-fixture-marker': 'harmless' });
       expect(init.credentials).toBeUndefined();
       return Promise.reject(new TypeError('Redirect rejected'));

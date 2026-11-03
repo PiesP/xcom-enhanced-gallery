@@ -124,6 +124,30 @@ function resolveTwitterApiHost(
   return defaultHost;
 }
 
+function safePageOrigin(value: string | undefined): string | undefined {
+  if (!value) {
+    return;
+  }
+  try {
+    const url = new URL(value);
+    const hostname = url.hostname.toLowerCase();
+    if (
+      url.protocol !== 'https:' ||
+      url.username ||
+      url.password ||
+      url.port ||
+      !TWITTER_API_CONFIG.SUPPORTED_HOSTS.some(
+        (host) => hostname === host || hostname.endsWith(`.${host}`)
+      )
+    ) {
+      return;
+    }
+    return url.origin;
+  } catch {
+    return;
+  }
+}
+
 function getSafeHost(location?: LocationConfig): string {
   const loc = location ?? resolveLocationConfig();
   return resolveTwitterApiHost(
@@ -337,11 +361,10 @@ async function apiRequest(
     'x-twitter-auth-type': 'OAuth2Session',
   });
 
-  if (requestContext.href) {
-    headers.append('referer', requestContext.href);
-  }
-  if (requestContext.origin) {
-    headers.append('origin', requestContext.origin);
+  const sourceOrigin = safePageOrigin(requestContext.origin);
+  if (sourceOrigin) {
+    headers.append('referer', `${sourceOrigin}/`);
+    headers.append('origin', sourceOrigin);
   }
 
   const httpService = getHttpRequestService();

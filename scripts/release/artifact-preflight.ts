@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { readExtensionManifestVersion } from '../../tooling/vite/utils/extension-icons.ts';
+import { assertFirefoxConsentManifestFile } from '../check/firefox-manifest.ts';
 import {
   generateMetaOnlyHeader,
   generateUserscriptHeader,
@@ -86,9 +87,13 @@ export function preflightReleaseArtifacts(root: string, version: string): void {
 
   for (const dir of ['dist-extension', 'dist-extension-firefox']) {
     const artifact = join(dir, 'manifest.json');
-    const found = readExtensionManifestVersion(join(root, artifact));
+    const path = join(root, artifact);
+    const found = readExtensionManifestVersion(path);
     if (found !== version) {
       throw new Error(`${artifact}: version ${found} does not match release version ${version}.`);
+    }
+    if (dir === 'dist-extension-firefox') {
+      assertFirefoxConsentManifestFile(path);
     }
   }
 }
