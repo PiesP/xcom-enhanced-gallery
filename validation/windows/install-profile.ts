@@ -17483,6 +17483,31 @@ async function runGalleryExperienceProbe({
           `expanded ${owner.toUpperCase()} panel and displayed ownership`,
           4_000
         );
+        await page.mouse.move(640, 8);
+        const paint = await waitForValue(
+          async () => {
+            const toolbarState = await experienceToolbarState(toolbar);
+            const sourcePaint = await sourceLink.evaluate((element) => {
+              const panel = element.closest('[data-gallery-element="tweet-panel"]');
+              const rect = element.getBoundingClientRect();
+              const hit = document.elementFromPoint(
+                rect.left + rect.width / 2,
+                rect.top + rect.height / 2
+              );
+              return {
+                opacity: panel ? Number(getComputedStyle(panel).opacity) : 0,
+                sourceHit: Boolean(hit && element.contains(hit)),
+              };
+            });
+            return Number(toolbarState.wrapper?.opacity) > 0.95 &&
+              sourcePaint.opacity > 0.95 &&
+              sourcePaint.sourceHit
+              ? { toolbarOpacity: toolbarState.wrapper?.opacity, ...sourcePaint }
+              : undefined;
+          },
+          'expanded source panel paint after normal toolbar reveal',
+          3_000
+        );
         assert(state.content.includes(`x.com/experience_${owner}/status/`));
         assert.equal(
           await sourceNode.evaluate((element) => element.isConnected),
@@ -17493,7 +17518,7 @@ async function runGalleryExperienceProbe({
           await sourceNode.evaluate((element) => element.getAttribute('href')),
           expectedUrl
         );
-        return state;
+        return { ...state, paint };
       };
       const aCaption = 'A panel caption';
       const bCaption = 'B quoted caption';
