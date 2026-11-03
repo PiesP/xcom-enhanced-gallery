@@ -19749,7 +19749,7 @@ export async function run({
           : failedEntryProbe
             ? 'issue 392 installed-extension failed-entry ZIP recovery fixture; no live X observation'
             : experienceProbe
-              ? 'issue 383 installed-extension gallery experience fixtures; no live X observation'
+              ? 'installed gallery experience and expanded-panel ownership fixtures; no live X observation'
               : recoveryProbe
                 ? 'issue 382 installed-extension media/download recovery fixture; no live X observation'
                 : openingProbe
