@@ -684,7 +684,7 @@ upgrade or identify a product regression without the case evidence.
 
 Prepare a reviewed unpacked Tampermonkey package outside the checkout, then
 pass that directory as `--manager-directory` to the shared controller. The
-maintained YT `validation/windows/prepare-userscript-manager.py` helper pins
+maintained YT `validation/windows/prepare-userscript-manager.ts` helper pins
 5.5.1 and must not be used for a different Store version. The controller
 validates the manager identity and bundles its exact file hashes. Record the
 original package digest and installation source separately. Use a clean

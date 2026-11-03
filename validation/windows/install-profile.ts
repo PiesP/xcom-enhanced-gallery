@@ -17469,6 +17469,7 @@ async function runGalleryExperienceProbe({
               toolbar.getAttribute('data-current-index'),
               toolbar.getAttribute('data-focused-index'),
             ]);
+            partial.lastPanelState = { expanded, visible, href, content, requested, focus };
             return expanded === 'true' &&
               visible &&
               href === expectedUrl &&
@@ -17498,17 +17499,17 @@ async function runGalleryExperienceProbe({
       const bCaption = 'B quoted caption';
       const states: Record<string, unknown> = {};
       partial.states = states;
-      states.openA = await observe('a', '0', '0', aCaption, bCaption);
+      states.openA = await observe('a', '1', '1', aCaption, bCaption);
       await page.screenshot({ path: join(output, 'experience-x07-panel-a.png') });
-      await toolbar.locator('button[aria-label="Next"]').click();
-      states.buttonB = await observe('b', '1', '1', bCaption, aCaption);
+      await toolbar.locator('button[aria-label="Previous"]').click();
+      states.buttonB = await observe('b', '0', '0', bCaption, aCaption);
       await page.screenshot({ path: join(output, 'experience-x07-panel-b.png') });
-      await page.keyboard.press('ArrowLeft');
-      states.keyboardA = await observe('a', '0', '0', aCaption, bCaption);
+      await page.keyboard.press('ArrowRight');
+      states.keyboardA = await observe('a', '1', '1', aCaption, bCaption);
       const scrollport = gallery.locator('[data-gallery-element="items"]');
       await scrollport.hover();
       const scrollDelta = await gallery
-        .locator('[data-gallery-element="item"][data-index="1"]')
+        .locator('[data-gallery-element="item"][data-index="0"]')
         .evaluate((item) => {
           const root = item.closest('[data-gallery-element="items"]');
           if (!root) {
@@ -17521,7 +17522,7 @@ async function runGalleryExperienceProbe({
           return Math.round(itemRect.top + itemRect.height / 2 - visibleCenter);
         });
       await page.mouse.wheel(0, scrollDelta);
-      states.manualB = await observe('b', '0', '1', bCaption, aCaption);
+      states.manualB = await observe('b', '1', '0', bCaption, aCaption);
       await page.screenshot({ path: join(output, 'experience-x07-panel-manual-b.png') });
       const known = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
       await toolbar.locator('button[aria-label="Download"]').click();
@@ -17541,9 +17542,9 @@ async function runGalleryExperienceProbe({
       );
       const downloadedBytes = await readFile(download.filename);
       assert(downloadedBytes.equals(experienceImages[1]!), 'Displayed owner B bytes differ');
-      states.afterDownloadB = await observe('b', '0', '1', bCaption, aCaption);
-      await toolbar.locator('button[aria-label="Previous"]').click();
-      states.returnA = await observe('a', '0', '0', aCaption, bCaption);
+      states.afterDownloadB = await observe('b', '1', '0', bCaption, aCaption);
+      await toolbar.locator('button[aria-label="Next"]').click();
+      states.returnA = await observe('a', '1', '1', aCaption, bCaption);
       assert(
         routes.apiResponses.some(
           ({ tweetId, status }) => tweetId === PANEL_OWNER_A_ID && status === 200
