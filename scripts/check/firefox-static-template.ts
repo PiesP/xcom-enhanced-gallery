@@ -67,7 +67,15 @@ function shadowsFactory(chain: Node[], factory: Node, factoryName: string): bool
         .slice(0, -1)
         .reverse()
         .find((item) => isFunction(item as Node));
-      if (owner === scope) {
+      const declaration = ancestors.at(-2) as Node | undefined;
+      const bindingScope =
+        declaration?.kind === 'var'
+          ? scope
+          : [...ancestors]
+              .slice(0, -2)
+              .reverse()
+              .find((item) => (item as Node).type === 'BlockStatement');
+      if (owner === scope && bindingScope && chain.includes(bindingScope as Node)) {
         local = true;
       }
     });

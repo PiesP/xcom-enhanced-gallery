@@ -65,6 +65,13 @@ describe('final Firefox ZIP static HTML disposition', () => {
     ['dynamic input', source.replace("template('<p>')", 'template(userHtml)')],
     ['alias', source.replace('const a =', 'const alias = template; const a =')],
     ['escape', source.replace('const a =', 'consume(template); const a =')],
+    [
+      'escape outside an unrelated shadow block',
+      source.replace(
+        'const a =',
+        'function f(){ {const template = 1;} consume(template); } const a ='
+      ),
+    ],
     ['extra sink', source.replace('const a =', "other.outerHTML = '<p>'; const a =")],
     ['computed sink', source.replace('const a =', "other['innerHTML'] = '<p>'; const a =")],
     [
