@@ -28,6 +28,7 @@ import { isVideoClickMode, THEME_OPTIONS, VIDEO_CLICK_MODES } from '@constants/s
 import { DEFAULT_SETTINGS } from '@constants/settings';
 import { getNotificationAdapter, notifySafely } from '@platform/index';
 import { Tooltip } from '@shared/components/ui/Tooltip/Tooltip';
+import { getLanguageInfo, LANGUAGE_OPTIONS } from '@shared/constants/i18n/language-types';
 import { tryGetSettings } from '@shared/container/settings-registry';
 import { getLanguageService } from '@shared/services/language-service';
 import type { VideoClickMode } from '@shared/types/settings.types';
@@ -37,34 +38,7 @@ import { cx } from '@shared/utils/text/formatting';
 import type { JSXElement } from 'solid-js';
 import { createMemo, createSignal, onCleanup, onMount, splitProps } from 'solid-js';
 import styles from './SettingsControls.module.css';
-import type { LanguageOption, SettingsControlsProps, ThemeOption } from './SettingsControls.types';
-
-/**
- * Available language options
- */
-const LANGUAGE_OPTIONS: readonly LanguageOption[] = [
-  'auto',
-  'en',
-  'ko',
-  'ja',
-  'zh-CN',
-  'es',
-  'ar',
-] as const;
-
-/**
- * Native-language display labels for each language option.
- * Each language is shown in its own script, regardless of the current UI language.
- */
-const LANGUAGE_NATIVE_LABELS: Record<LanguageOption, string> = {
-  auto: 'Auto',
-  en: 'English',
-  ko: '한국어',
-  ja: '日本語',
-  'zh-CN': '简体中文',
-  es: 'Español',
-  ar: 'العربية',
-};
+import type { SettingsControlsProps, ThemeOption } from './SettingsControls.types';
 
 function readVideoClickMode(): VideoClickMode {
   const current = tryGetSettings()?.get('gallery.videoClickMode');
@@ -150,15 +124,6 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
       },
       language: {
         title: languageService.translate('st.lang'),
-        labels: {
-          auto: languageService.translate('st.langAuto'),
-          ko: languageService.translate('st.langKo'),
-          en: languageService.translate('st.langEn'),
-          ja: languageService.translate('st.langJa'),
-          'zh-CN': languageService.translate('st.langZhCn'),
-          es: languageService.translate('st.langEs'),
-          ar: languageService.translate('st.langAr'),
-        } as Record<LanguageOption, string>,
       },
       video: {
         title: languageService.translate('st.videoClickMode'),
@@ -320,7 +285,9 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
           >
             {/* The language options are a fixed list with stable native labels. */}
             {LANGUAGE_OPTIONS.map((option) => (
-              <option value={option}>{LANGUAGE_NATIVE_LABELS[option] ?? option}</option>
+              <option value={option}>
+                {option === 'auto' ? 'Auto' : getLanguageInfo(option).name}
+              </option>
             ))}
           </select>
         </Tooltip>

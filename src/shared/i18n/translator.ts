@@ -17,14 +17,14 @@ import { zhCn } from '@shared/constants/i18n/languages/zh-CN';
 import { resolveNestedPath } from '@shared/utils/object/path';
 import type { TranslationBundleInput, TranslationKey, TranslationParams } from './types';
 
-export const TRANSLATION_REGISTRY: Partial<Record<BaseLanguageCode, LanguageStrings>> = {
+export const TRANSLATION_REGISTRY = {
   en,
   ko,
   ja,
   'zh-CN': zhCn,
   es,
   ar,
-} as const;
+} satisfies Record<BaseLanguageCode, LanguageStrings>;
 
 export const DEFAULT_LANGUAGE: BaseLanguageCode = 'en';
 

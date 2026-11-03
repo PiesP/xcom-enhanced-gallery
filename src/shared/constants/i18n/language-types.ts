@@ -1,28 +1,45 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import type { Locale, SettingLocale } from '@piesp/browser-core/locale';
-import { LOCALE_CODES } from '@piesp/browser-core/locale';
+import type { Locale, LocaleInfo } from '@piesp/browser-core/locale';
+import { isLocale, SUPPORTED_LOCALES } from '@piesp/browser-core/locale';
 
 /**
  * Supported language codes for the application
  * These must match the available language files in the languages directory
  */
-export const LANGUAGE_CODES = LOCALE_CODES;
+export const LANGUAGE_CODES = [
+  'en',
+  'ko',
+  'ja',
+  'zh-CN',
+  'es',
+  'ar',
+] as const satisfies readonly Locale[];
 
 /**
  * Base language code type derived from LANGUAGE_CODES
  */
-export type BaseLanguageCode = Locale;
+export type BaseLanguageCode = (typeof LANGUAGE_CODES)[number];
 
 /**
  * Supported language options including auto-detection
  */
-export type SupportedLanguage = SettingLocale;
+export type SupportedLanguage = 'auto' | BaseLanguageCode;
 
-const NORMALIZED_LANGUAGE_CODES: ReadonlySet<string> = new Set(
-  LANGUAGE_CODES.map((code) => code.toLowerCase())
-);
+export const LANGUAGE_OPTIONS = [
+  'auto',
+  ...LANGUAGE_CODES,
+] as const satisfies readonly SupportedLanguage[];
+
+/** Product locales use the provider's native names and text direction. */
+export function getLanguageInfo(code: BaseLanguageCode): LocaleInfo {
+  const info = SUPPORTED_LOCALES.find((locale) => locale.code === code);
+  if (!info) {
+    throw new Error(`Missing locale metadata for ${code}`);
+  }
+  return info;
+}
 
 /**
  * Translation schema contract shared across all languages
@@ -324,10 +341,10 @@ export interface LanguageStrings {
 
 /**
  * Type guard to check if a value is a valid base language code.
- * Normalizes case before comparison so BCP 47 variants (e.g., `zh-CN`) are accepted.
+ * Accepts only a canonical product locale. Case and region handling belong to normalization.
  * @param value - Value to check
  * @returns True if value is a valid BaseLanguageCode
  */
-export function isBaseLanguageCode(value: string | null | undefined): value is BaseLanguageCode {
-  return value ? NORMALIZED_LANGUAGE_CODES.has(value.toLowerCase()) : false;
+export function isBaseLanguageCode(value: unknown): value is BaseLanguageCode {
+  return isLocale(value) && LANGUAGE_CODES.some((code) => code === value);
 }
