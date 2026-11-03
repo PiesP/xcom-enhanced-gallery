@@ -224,7 +224,7 @@ jobs:
         run: vp run release:firefox-validate
 
       - name: 📋 Retain Firefox validation evidence
-        if: always()
+        if: ${{ steps.node_trust.outcome == 'success' && (success() || failure()) }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: firefox-validation-${{ needs.provenance.outputs.release-sha }}
