@@ -18800,7 +18800,7 @@ async function runExtensionUpgrade({
     assert.equal(
       await gallery.locator('#settings-video-click-select').inputValue(),
       'block-controls-only',
-      'Public 2.3.6 video-click control must show the default mode'
+      `Public ${input.previousVersion} video-click control must show the default mode`
     );
     await gallery.locator('#settings-language-select').selectOption('ko');
     receipt.baselineClickModeUi = 'block-controls-only';
@@ -18808,8 +18808,8 @@ async function runExtensionUpgrade({
     await waitForValue(async () => {
       const stored = await readStoredVideoSettings(extensionPage);
       const { language } = await readStoredLanguage(extensionPage);
+      // Public settings persist explicit edits as leaves; default values need UI/behavior checks.
       return storedGallerySetting(stored.settings, 'imageFitMode') === 'fitHeight' &&
-        storedGallerySetting(stored.settings, 'videoClickMode') === 'block-controls-only' &&
         language === 'ko'
         ? true
         : undefined;
@@ -18817,8 +18817,6 @@ async function runExtensionUpgrade({
     const before = await readStoredVideoSettings(extensionPage);
     const { language: languageBefore } = await readStoredLanguage(extensionPage);
     assert.equal(storedGallerySetting(before.settings, 'imageFitMode'), 'fitHeight');
-    assert.equal(storedGallerySetting(before.settings, 'videoClickMode'), 'block-controls-only');
-    assert.equal(storedGallerySetting(before.settings, 'enableKeyboardNav'), true);
     assert.equal(languageBefore, 'ko');
     await toolbar.locator('#settings-button').click();
     receipt.keyboardBefore = await observeGalleryKeyboardNavigation(page, gallery);
