@@ -8,6 +8,7 @@
  */
 
 import { VOLUME_PERSISTENCE_DEBOUNCE_MS } from '@constants/performance';
+import { DEFAULT_SETTINGS } from '@constants/settings';
 import { createVideoVolumeChangeGuard } from '@features/gallery/components/vertical-gallery-view/utils/video-volume-change-guard';
 import {
   normalizeVideoMutedSetting,
@@ -45,10 +46,16 @@ export function useVideoVolumePersistence(
   const { videoRef, isVideo } = options;
 
   const [videoVolume, setVideoVolume] = createSignal(
-    normalizeVideoVolumeSetting(getTypedSettingOr('gallery.videoVolume', 1.0), 1.0)
+    normalizeVideoVolumeSetting(
+      getTypedSettingOr('gallery.videoVolume', DEFAULT_SETTINGS.gallery.videoVolume),
+      DEFAULT_SETTINGS.gallery.videoVolume
+    )
   );
   const [videoMuted, setVideoMuted] = createSignal(
-    normalizeVideoMutedSetting(getTypedSettingOr('gallery.videoMuted', false), false)
+    normalizeVideoMutedSetting(
+      getTypedSettingOr('gallery.videoMuted', DEFAULT_SETTINGS.gallery.videoMuted),
+      DEFAULT_SETTINGS.gallery.videoMuted
+    )
   );
 
   // Guard to prevent handling synthetic volumechange events triggered by us when
@@ -89,8 +96,14 @@ export function useVideoVolumePersistence(
         // This ensures we only apply settings once when the video element becomes ready,
         // not on every subsequent signal change.
         untrack(() => {
-          const nextMuted = normalizeVideoMutedSetting(videoMuted(), false);
-          const nextVolume = normalizeVideoVolumeSetting(videoVolume(), 1.0);
+          const nextMuted = normalizeVideoMutedSetting(
+            videoMuted(),
+            DEFAULT_SETTINGS.gallery.videoMuted
+          );
+          const nextVolume = normalizeVideoVolumeSetting(
+            videoVolume(),
+            DEFAULT_SETTINGS.gallery.videoVolume
+          );
 
           // Keep the signals normalized as well.
           if (nextMuted !== videoMuted()) {
@@ -137,8 +150,14 @@ export function useVideoVolumePersistence(
       return;
     }
     options.onUserVolumeChange?.(video);
-    const newVolume = normalizeVideoVolumeSetting(snapshot.volume, 1.0);
-    const newMuted = normalizeVideoMutedSetting(snapshot.muted, false);
+    const newVolume = normalizeVideoVolumeSetting(
+      snapshot.volume,
+      DEFAULT_SETTINGS.gallery.videoVolume
+    );
+    const newMuted = normalizeVideoMutedSetting(
+      snapshot.muted,
+      DEFAULT_SETTINGS.gallery.videoMuted
+    );
 
     // Update local signals immediately for responsive UI
     setVideoVolume(newVolume);

@@ -14,6 +14,9 @@ import type { AppSettings } from '@shared/types/settings.types';
 
 export const APP_SETTINGS_STORAGE_KEY = 'xeg-app-settings' as const;
 
+export const MAX_PRELOAD_COUNT = 100;
+export const MAX_AUTO_HIDE_DELAY = 60_000;
+
 // ============================================================================
 // Default Settings
 // ============================================================================

@@ -10,14 +10,21 @@
  */
 
 import { isImageFitMode, isThemeSetting, isVideoClickMode } from '@constants/setting-options';
-import { DEFAULT_SETTINGS } from '@constants/settings';
-import type { AppSettings, GallerySettings, NestedSettingKey } from '@shared/types/settings.types';
+import { DEFAULT_SETTINGS, MAX_AUTO_HIDE_DELAY, MAX_PRELOAD_COUNT } from '@constants/settings';
+import type { AppSettings, GallerySettings } from '@shared/types/settings.types';
 import { isRecord } from '@shared/utils/types/guards';
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 
 /** Keys that must never be copied via spread to prevent prototype pollution. */
 const FORBIDDEN_KEYS = new Set<string>(['__proto__', 'constructor', 'prototype']);
+
+type PersistedSettings = Pick<AppSettings, 'gallery' | 'toolbar' | 'features'>;
+type PersistedLeafKey = {
+  [Group in keyof PersistedSettings]: `${Group}.${keyof PersistedSettings[Group] & string}`;
+}[keyof PersistedSettings];
+
+type AssertNever<T extends never> = T;
 
 /** Independently persisted setting values; metadata and empty groups stay in the legacy record. */
 export const SETTINGS_LEAF_KEYS = [
@@ -35,7 +42,12 @@ export const SETTINGS_LEAF_KEYS = [
   'features.download',
   'features.mediaExtraction',
   'features.accessibility',
-] as const satisfies ReadonlyArray<NestedSettingKey>;
+] as const satisfies ReadonlyArray<PersistedLeafKey>;
+
+/** A new persisted setting must be added to the list used by reads and writes. */
+export type SettingsLeafCoverage = AssertNever<
+  Exclude<PersistedLeafKey, (typeof SETTINGS_LEAF_KEYS)[number]>
+>;
 
 function isBoolean(value: unknown): value is boolean {
   return value === true || value === false;
@@ -102,7 +114,7 @@ function normalizeGallery(raw: Record<string, unknown> | undefined): GallerySett
 
   return {
     preloadCount: isFiniteNonNegativeNumber(raw.preloadCount)
-      ? Math.min(raw.preloadCount, 100)
+      ? Math.min(raw.preloadCount, MAX_PRELOAD_COUNT)
       : d.preloadCount,
     imageFitMode: isImageFitMode(raw.imageFitMode) ? raw.imageFitMode : d.imageFitMode,
     theme: isThemeSetting(raw.theme) ? raw.theme : d.theme,
@@ -124,7 +136,7 @@ function normalizeToolbar(raw: Record<string, unknown> | undefined) {
 
   return {
     autoHideDelay: isFiniteNonNegativeNumber(raw.autoHideDelay)
-      ? Math.min(raw.autoHideDelay, 60000)
+      ? Math.min(raw.autoHideDelay, MAX_AUTO_HIDE_DELAY)
       : d.autoHideDelay,
   };
 }
@@ -167,7 +179,7 @@ export function validateSettingValue(key: string, value: unknown): boolean {
       return isRecord(value);
     // gallery subtree
     case 'gallery.preloadCount':
-      return isFiniteNonNegativeNumber(value) && value <= 100;
+      return isFiniteNonNegativeNumber(value) && value <= MAX_PRELOAD_COUNT;
     case 'gallery.imageFitMode':
       return isImageFitMode(value);
     case 'gallery.theme':
@@ -182,7 +194,7 @@ export function validateSettingValue(key: string, value: unknown): boolean {
       return isVideoClickMode(value);
     // toolbar
     case 'toolbar.autoHideDelay':
-      return isFiniteNonNegativeNumber(value) && value <= 60000;
+      return isFiniteNonNegativeNumber(value) && value <= MAX_AUTO_HIDE_DELAY;
     // features
     case 'features.gallery':
     case 'features.settings':
