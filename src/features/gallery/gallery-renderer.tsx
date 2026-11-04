@@ -13,7 +13,11 @@ import {
 } from '@shared/components/isolation/GalleryContainer';
 import { restoreActiveGalleryHostState } from '@shared/components/isolation/gallery-host-state';
 import { ErrorBoundary } from '@shared/components/ui/ErrorBoundary/ErrorBoundary';
-import type { BaseLanguageCode, SupportedLanguage } from '@shared/constants/i18n/language-types';
+import {
+  getLanguageInfo,
+  type BaseLanguageCode,
+  type SupportedLanguage,
+} from '@shared/constants/i18n/language-types';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
 import { getLanguageService } from '@shared/services/language-service';
@@ -78,7 +82,7 @@ function GalleryRoot(props: GalleryRootProps): JSX.Element {
   };
 
   /** Determine text direction for RTL languages like Arabic */
-  const dir = (): 'ltr' | 'rtl' => (resolvedLanguage() === 'ar' ? 'rtl' : 'ltr');
+  const dir = (): 'ltr' | 'rtl' => getLanguageInfo(resolvedLanguage()).dir;
 
   return (
     <ErrorBoundary

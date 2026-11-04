@@ -13,6 +13,7 @@ import type {
   LanguageOption,
   ThemeOption,
 } from '@shared/components/ui/Settings/SettingsControls.types';
+import { isBaseLanguageCode } from '@shared/constants/i18n/language-types';
 import { tryGetSettings } from '@shared/container/settings-registry';
 import { logger } from '@shared/logging/logger';
 import { getEventManager } from '@shared/services/event-manager';
@@ -100,7 +101,7 @@ export function useToolbarSettingsController(
 
   const [currentTheme, setCurrentTheme] = createSignal<ThemeOption>(getInitialTheme());
   const [currentLanguage, setCurrentLanguage] = createSignal<LanguageOption>(
-    languageService.getCurrentLanguage() as LanguageOption
+    languageService.getCurrentLanguage()
   );
 
   const syncThemeFromService = () => {
@@ -342,7 +343,10 @@ export function useToolbarSettingsController(
     if (!select) {
       return;
     }
-    const language = (select.value as LanguageOption) || 'auto';
+    const language = select.value || 'auto';
+    if (language !== 'auto' && !isBaseLanguageCode(language)) {
+      return;
+    }
     setCurrentLanguage(language);
     languageService.setLanguage(language);
   };

@@ -10,6 +10,7 @@ import { detectLocale } from '@piesp/browser-core/locale';
 import {
   type BaseLanguageCode,
   isBaseLanguageCode,
+  LANGUAGE_CODES,
   type SupportedLanguage,
 } from '@shared/constants/i18n/language-types';
 import { createTranslator, DEFAULT_LANGUAGE } from '@shared/i18n/translator';
@@ -97,7 +98,7 @@ export class LanguageService {
           ? [this._nav.language]
           : undefined;
     const result = detectLocale(browserLangs ? { languages: browserLangs } : {});
-    return result;
+    return isBaseLanguageCode(result) ? result : DEFAULT_LANGUAGE;
   }
 
   getCurrentLanguage(): SupportedLanguage {
@@ -153,20 +154,16 @@ export class LanguageService {
       return 'auto';
     }
 
-    // Normalize case before validation (e.g., zh-CN → zh-cn)
-    const lower = language.toLowerCase();
-    if (lower === 'zh-cn') {
-      return 'zh-CN';
-    }
-    if (isBaseLanguageCode(lower)) {
-      return lower;
-    }
-
     if (isBaseLanguageCode(language)) {
       return language;
     }
 
-    return DEFAULT_LANGUAGE;
+    // Saved case variants retain their canonical product spelling, but region variants
+    // are not persisted choices; browser locale detection handles those separately.
+    return (
+      LANGUAGE_CODES.find((code) => code.toLowerCase() === language.toLowerCase()) ??
+      DEFAULT_LANGUAGE
+    );
   }
 
   private notifyListeners(language: SupportedLanguage): void {

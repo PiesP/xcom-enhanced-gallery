@@ -7,6 +7,7 @@
  * toolbar visibility, keyboard navigation, and fit mode support via useVerticalGallery hook.
  */
 
+import { DEFAULT_SETTINGS } from '@constants/settings';
 import { useGalleryFitMode } from '@features/gallery/components/vertical-gallery-view/hooks/use-gallery-fit-mode';
 import { GalleryFailureNotice } from '@features/gallery/components/GalleryFailureNotice';
 import { GallerySourceDetails } from '@features/gallery/components/GallerySourceDetails';
@@ -133,7 +134,9 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
   const tweetTextContent = () => displayedMedia()?.tweetTextContent ?? null;
   const tweetUrl = () => displayedMedia()?.tweetUrl ?? null;
 
-  const preloadCount = createMemo(() => getTypedSettingOr('gallery.preloadCount', 3));
+  const preloadCount = createMemo(() =>
+    getTypedSettingOr('gallery.preloadCount', DEFAULT_SETTINGS.gallery.preloadCount)
+  );
   const preloadIndices = createMemo(() =>
     computePreloadIndices(currentIndex(), mediaItems().length, preloadCount())
   );
