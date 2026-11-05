@@ -5876,11 +5876,13 @@ async function runAttachmentFilenameCycle({
       name: 'filename-failed-only-retry',
       fault: { context: contextFaults, native: nativeFaults },
       partial: {
+        nativeId: partial.id,
         filename: basename(partial.filename),
         ...imageReceipt(partialBytes),
         verified: partialVerified,
       },
       supplementary: {
+        nativeId: supplementary.id,
         filename: basename(supplementary.filename),
         ...imageReceipt(recoveredBytes),
         verified: recoveredVerified,
