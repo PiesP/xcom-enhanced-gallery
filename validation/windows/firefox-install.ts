@@ -19,6 +19,8 @@ import {
 } from 'node:fs/promises';
 import type { FileHandle } from 'node:fs/promises';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { startExtensionNativeFixtureLoopback } from './extension-native-loopback.ts';
+import { startFirefoxNativeProxy } from './firefox-native-proxy.ts';
 
 const EXTENSION_ID = 'xcom-enhanced-gallery@piesp.dev';
 const FIXTURE_URL = 'https://x.com/testuser/status/1234567890123456789';
@@ -30,6 +32,7 @@ export type FirefoxSession = {
   readonly context: string;
   readonly browserName: string;
   readonly browserVersion: string;
+  readonly acceptInsecureCerts: boolean;
   readonly pageErrors?: Array<{ level: string; text: string; type: string }>;
   readonly pageLogs?: Array<{ level: string; text: string; type: string }>;
   subscribeLogs?(): Promise<void>;
@@ -50,6 +53,7 @@ export type FirefoxLauncher = {
     root: string;
     executablePath: string;
     headless: boolean;
+    acceptInsecureCerts?: boolean;
     preferences?: Record<string, string | number | boolean>;
   }): Promise<FirefoxSession>;
   executablePath?: string;
@@ -68,8 +72,23 @@ type DownloadItem = {
   mime?: string;
 };
 
+type NativeTransferRecord = {
+  host: string;
+  path: string;
+  method: string;
+  status: number;
+  result: string;
+  bytes: number;
+  sha256: string | null;
+};
+
 type FixtureNetworkEvent = {
-  event: 'beforeRequestSent' | 'provideResponse' | 'fetchError' | 'responseCompleted';
+  event:
+    | 'beforeRequestSent'
+    | 'provideResponse'
+    | 'continueRequest'
+    | 'fetchError'
+    | 'responseCompleted';
   atMs: number;
   requestId: string;
   url: string;
@@ -242,6 +261,10 @@ function responseBody(value: string, mime: string, request: string, binary = fal
   };
 }
 
+export function shouldContinueFirefoxOriginal(url: URL) {
+  return url.href === ORIGINAL_URL;
+}
+
 async function installFixtureIntercept(session: FirefoxSession, html: string, image: Buffer) {
   const requests: Array<{ url: string; navigation: boolean }> = [];
   const events: FixtureNetworkEvent[] = [];
@@ -278,6 +301,16 @@ async function installFixtureIntercept(session: FirefoxSession, html: string, im
     );
     const id = request.request;
     const url = new URL(request.url);
+    if (shouldContinueFirefoxOriginal(url)) {
+      try {
+        await session.command('network.continueRequest', { request: id });
+        record('continueRequest', { request });
+      } catch (error) {
+        record('continueRequest', { request, errorText: errorText(error) });
+        throw error;
+      }
+      return;
+    }
     const provide = async (options: Record<string, unknown>) => {
       try {
         await session.command('network.provideResponse', options);
@@ -575,15 +608,40 @@ export async function runFirefoxInstallation({
   };
   let session: FirefoxSession | undefined;
   let extensionId: string | undefined;
+  let nativeLoopback: Awaited<ReturnType<typeof startExtensionNativeFixtureLoopback>> | undefined;
+  let nativeProxy: Awaited<ReturnType<typeof startFirefoxNativeProxy>> | undefined;
   let intercept: Awaited<ReturnType<typeof installFixtureIntercept>> | undefined;
   let fixtureNetwork: Awaited<ReturnType<typeof installFixtureIntercept>> | undefined;
   const errors: string[] = [];
   const cleanup = receipt.cleanup as Record<string, unknown>;
   try {
+    nativeLoopback = await startExtensionNativeFixtureLoopback(
+      join(root, 'validation/windows/userscript-fixture-certificate.ps1')
+    );
+    const unusedVideo = Buffer.from('unreachable Firefox fixture video');
+    nativeLoopback.setPayloads(
+      [image, image, image],
+      Object.fromEntries(
+        ['quote-one', 'quote-two', 'linked-four', 'quote-three', 'nested-c'].map((name) => [
+          name,
+          unusedVideo,
+        ])
+      )
+    );
+    nativeProxy = await startFirefoxNativeProxy(nativeLoopback.port);
+    receipt.fixtureTransport = {
+      kind: 'task-owned-connect-proxy-to-https-loopback',
+      proxyPort: nativeProxy.port,
+      nativePort: nativeLoopback.port,
+      allowedAuthorities: ['x.com:443', 'pbs.twimg.com:443'],
+      certificateSpkiSha256: nativeLoopback.spkiSha256,
+      certificateScope: 'one-run-BiDi-acceptInsecureCerts',
+    };
     session = await firefox.launch({
       root,
       executablePath: firefox.executablePath,
       headless,
+      acceptInsecureCerts: true,
       preferences: {
         'browser.download.dir': downloads,
         'browser.download.folderList': 2,
@@ -591,12 +649,24 @@ export async function runFirefoxInstallation({
         'browser.download.always_ask_before_handling_new_types': false,
         'intl.accept_languages': 'en-US,en',
         'extensions.webextensions.uuids': JSON.stringify({ [EXTENSION_ID]: uuid }),
+        'network.proxy.type': 1,
+        'network.proxy.http': '127.0.0.1',
+        'network.proxy.http_port': nativeProxy.port,
+        'network.proxy.ssl': '127.0.0.1',
+        'network.proxy.ssl_port': nativeProxy.port,
+        'network.proxy.no_proxies_on': '',
+        'network.proxy.failover_direct': false,
       },
     });
     receipt.browser = { name: session.browserName, version: session.browserVersion };
     receipt.browserName = session.browserName;
     receipt.browserVersion = session.browserVersion;
     assert.equal(session.browserName.toLowerCase(), 'firefox', 'Unexpected browser');
+    assert.equal(
+      session.acceptInsecureCerts,
+      true,
+      'Firefox did not admit the task certificate capability'
+    );
     try {
       await session.subscribeLogs?.();
       receipt.logSubscription = 'available';
@@ -630,6 +700,7 @@ export async function runFirefoxInstallation({
         "document.querySelector('#xeg-toolbar-counter')?.getAttribute('data-position')"
       );
       assert.equal(selected, '1', 'Selected image differs from native source');
+      const nativeMark = nativeLoopback.mark();
       await click(
         session,
         '[data-xeg-gallery-container] [data-gallery-element="toolbar"] button[aria-label="Download"]'
@@ -679,6 +750,19 @@ export async function runFirefoxInstallation({
       );
       const item = selectOwnedDownload(previous.items, after.items, extensionId);
       const native = await readOwnedNativeFile(downloads, item.filename, image);
+      const nativeTransfers: NativeTransferRecord[] = nativeLoopback
+        .since(nativeMark)
+        .filter(
+          (event: NativeTransferRecord) =>
+            event.host === 'pbs.twimg.com' &&
+            event.path === '/media/GkE1234ABCDEF.jpg' &&
+            event.method === 'GET' &&
+            event.status === 200 &&
+            event.result === 'served'
+        );
+      assert.equal(nativeTransfers.length, 1, 'Expected one task HTTPS original transfer');
+      assert.equal(nativeTransfers[0]?.bytes, image.length, 'Task HTTPS transfer size differs');
+      assert.equal(nativeTransfers[0]?.sha256, digest(image), 'Task HTTPS transfer bytes differ');
       assert.deepEqual(
         native,
         nativeBeforeDismissal,
@@ -719,13 +803,17 @@ export async function runFirefoxInstallation({
         notice,
         noticeScreenshot,
         screenshotSha256,
+        nativeTransfer: nativeTransfers[0],
         retainedName,
       });
       previous = after;
     }
+    receipt.nativeBidiOriginalObserved = intercept.requests.some(
+      (request) => request.url === ORIGINAL_URL
+    );
     assert(
-      intercept.requests.some((request) => request.url === ORIGINAL_URL),
-      'No original media request reached the fixture'
+      nativeProxy.snapshot().pbsConnectedCount > 0,
+      'Native original did not traverse task CONNECT proxy'
     );
     receipt.requests = intercept.requests;
     assert((await readFile(sentinel)).equals(sentinelBytes), 'Preexisting sentinel changed');
@@ -780,6 +868,10 @@ export async function runFirefoxInstallation({
       }
     }
   } finally {
+    if (nativeProxy && nativeLoopback) {
+      (receipt.fixtureTransport as Record<string, unknown>).proxy = nativeProxy.snapshot();
+      (receipt.fixtureTransport as Record<string, unknown>).https = nativeLoopback.snapshot();
+    }
     if (fixtureNetwork) {
       receipt.requests = fixtureNetwork.requests;
       receipt.network = {
@@ -815,6 +907,28 @@ export async function runFirefoxInstallation({
         errors.push(`browser cleanup: ${errorText(error)}`);
         cleanup.browser = 'failed';
       }
+    }
+    if (nativeProxy) {
+      try {
+        await nativeProxy.close();
+        cleanup.nativeProxy = 'closed';
+      } catch (error) {
+        errors.push(`native proxy cleanup: ${errorText(error)}`);
+        cleanup.nativeProxy = 'failed';
+      }
+    }
+    if (nativeLoopback) {
+      try {
+        await nativeLoopback.close();
+        cleanup.nativeHttps = 'closed';
+      } catch (error) {
+        errors.push(`native HTTPS cleanup: ${errorText(error)}`);
+        cleanup.nativeHttps = 'failed';
+      }
+    }
+    if (nativeProxy && nativeLoopback) {
+      cleanup.nativeProxyAfter = nativeProxy.snapshot();
+      cleanup.nativeHttpsAfter = nativeLoopback.snapshot();
     }
     try {
       assert((await readFile(sentinel)).equals(sentinelBytes));
