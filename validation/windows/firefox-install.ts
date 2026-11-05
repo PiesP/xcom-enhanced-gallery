@@ -30,6 +30,9 @@ export type FirefoxSession = {
   readonly context: string;
   readonly browserName: string;
   readonly browserVersion: string;
+  readonly pageErrors?: Array<{ level: string; text: string; type: string }>;
+  readonly pageLogs?: Array<{ level: string; text: string; type: string }>;
+  subscribeLogs?(): Promise<void>;
   on(event: string, listener: (params: Record<string, unknown>) => void | Promise<void>): void;
   off(event: string, listener: (params: Record<string, unknown>) => void | Promise<void>): void;
   command(method: string, params?: Record<string, unknown>, timeoutMs?: number): Promise<unknown>;
@@ -60,7 +63,111 @@ type DownloadItem = {
   url: string;
   finalUrl?: string;
   error?: string;
+  bytesReceived?: number;
+  totalBytes?: number;
+  mime?: string;
 };
+
+type FixtureNetworkEvent = {
+  event: 'beforeRequestSent' | 'provideResponse' | 'fetchError' | 'responseCompleted';
+  atMs: number;
+  requestId: string;
+  url: string;
+  context?: string | null;
+  userContext?: string;
+  isBlocked?: boolean;
+  intercepts?: string[];
+  navigation?: string | null;
+  destination?: string;
+  initiatorType?: string;
+  status?: number;
+  error?: string;
+};
+
+const MAX_NETWORK_EVENTS = 100;
+const MAX_NETWORK_FIELD = 300;
+
+function bounded(value: unknown): string | undefined {
+  return typeof value === 'string' ? value.slice(0, MAX_NETWORK_FIELD) : undefined;
+}
+
+/** Converts only fixture-host BiDi traffic to a bounded path-free receipt row. */
+export function fixtureNetworkEvent(
+  event: FixtureNetworkEvent['event'],
+  params: Record<string, unknown>,
+  atMs: number
+): FixtureNetworkEvent | null {
+  const request = params.request;
+  if (!request || typeof request !== 'object' || Array.isArray(request)) return null;
+  const data = request as Record<string, unknown>;
+  if (typeof data.url !== 'string' || typeof data.request !== 'string') return null;
+  let url: URL;
+  try {
+    url = new URL(data.url);
+  } catch {
+    return null;
+  }
+  if (!['x.com', 'pbs.twimg.com'].includes(url.hostname) || url.protocol !== 'https:') return null;
+  const response = params.response;
+  const responseData =
+    response && typeof response === 'object' && !Array.isArray(response)
+      ? (response as Record<string, unknown>)
+      : undefined;
+  const intercepts = Array.isArray(params.intercepts)
+    ? params.intercepts
+        .filter((id): id is string => typeof id === 'string')
+        .slice(0, 4)
+        .map((id) => id.slice(0, MAX_NETWORK_FIELD))
+    : undefined;
+  return {
+    event,
+    atMs,
+    requestId: data.request.slice(0, MAX_NETWORK_FIELD),
+    url: url.href.slice(0, MAX_NETWORK_FIELD),
+    context: params.context === null ? null : bounded(params.context),
+    userContext: bounded(params.userContext),
+    isBlocked: typeof params.isBlocked === 'boolean' ? params.isBlocked : undefined,
+    intercepts,
+    navigation: params.navigation === null ? null : bounded(params.navigation),
+    destination: bounded(data.destination),
+    initiatorType: bounded(data.initiatorType),
+    status: typeof responseData?.status === 'number' ? responseData.status : undefined,
+    error: bounded(params.errorText),
+  };
+}
+
+export function ownsBlockedIntercept(
+  params: Record<string, unknown>,
+  intercept: string | undefined
+) {
+  return (
+    params.isBlocked === true &&
+    typeof intercept === 'string' &&
+    Array.isArray(params.intercepts) &&
+    params.intercepts.includes(intercept)
+  );
+}
+
+export function ownedNativeHistory(items: DownloadItem[], extensionId: string) {
+  return items
+    .filter(
+      (item) =>
+        item.byExtensionId === extensionId &&
+        (item.url === ORIGINAL_URL || item.finalUrl === ORIGINAL_URL)
+    )
+    .slice(0, 16)
+    .map((item) => ({
+      id: item.id,
+      state: bounded(item.state),
+      error: bounded(item.error),
+      url: item.url,
+      finalUrl: item.finalUrl,
+      basename: basename(item.filename),
+      bytesReceived: item.bytesReceived,
+      totalBytes: item.totalBytes,
+      mime: bounded(item.mime),
+    }));
+}
 
 function digest(bytes: Uint8Array): string {
   return createHash('sha256').update(bytes).digest('hex');
@@ -131,10 +238,26 @@ function responseBody(value: string, mime: string, request: string, binary = fal
 
 async function installFixtureIntercept(session: FirefoxSession, html: string, image: Buffer) {
   const requests: Array<{ url: string; navigation: boolean }> = [];
-  const handler = async (params: Record<string, unknown>) => {
-    if (params.isBlocked !== true) {
-      return;
+  const events: FixtureNetworkEvent[] = [];
+  let omittedEvents = 0;
+  let completionEventsSubscribed = false;
+  let completionEventsSubscriptionError: string | undefined;
+  let intercept: string | undefined;
+  const record = (event: FixtureNetworkEvent['event'], params: Record<string, unknown>) => {
+    const row = fixtureNetworkEvent(event, params, performance.now());
+    if (row) {
+      if (events.length < MAX_NETWORK_EVENTS) events.push(row);
+      else omittedEvents += 1;
     }
+    return row;
+  };
+  const handler = async (params: Record<string, unknown>) => {
+    const row = record('beforeRequestSent', params);
+    if (!row) return;
+    if (requests.length < MAX_NETWORK_EVENTS) {
+      requests.push({ url: row.url, navigation: typeof params.navigation === 'string' });
+    }
+    if (!ownsBlockedIntercept(params, intercept)) return;
     const request = params.request as Record<string, unknown> | undefined;
     assert(
       request && typeof request.request === 'string' && typeof request.url === 'string',
@@ -142,34 +265,49 @@ async function installFixtureIntercept(session: FirefoxSession, html: string, im
     );
     const id = request.request;
     const url = new URL(request.url);
-    assert(['x.com', 'pbs.twimg.com'].includes(url.hostname), 'Unexpected fixture host');
-    requests.push({ url: url.href, navigation: typeof params.navigation === 'string' });
-    assert(requests.length <= 100, 'Fixture request bound exceeded');
+    const provide = async (options: Record<string, unknown>) => {
+      try {
+        await session.command('network.provideResponse', options);
+        record('provideResponse', { request, response: { status: options.statusCode } });
+      } catch (error) {
+        record('provideResponse', { request, errorText: errorText(error) });
+        throw error;
+      }
+    };
     if (
       url.hostname === 'x.com' &&
       url.pathname === new URL(FIXTURE_URL).pathname &&
       params.navigation
     ) {
-      await session.command(
-        'network.provideResponse',
-        responseBody(html, 'text/html; charset=utf-8', id)
-      );
+      await provide(responseBody(html, 'text/html; charset=utf-8', id));
     } else if (url.hostname === 'pbs.twimg.com' && url.pathname.startsWith('/media/GkE')) {
-      await session.command(
-        'network.provideResponse',
-        responseBody(image.toString('base64'), 'image/jpeg', id, true)
-      );
+      await provide(responseBody(image.toString('base64'), 'image/jpeg', id, true));
     } else {
-      await session.command('network.provideResponse', {
+      await provide({
         request: id,
         statusCode: url.hostname === 'x.com' ? 403 : 404,
       });
     }
   };
+  const fetchError = (params: Record<string, unknown>) => {
+    record('fetchError', params);
+  };
+  const responseCompleted = (params: Record<string, unknown>) => {
+    record('responseCompleted', params);
+  };
   session.on('network.beforeRequestSent', handler);
-  let intercept: string | undefined;
+  session.on('network.fetchError', fetchError);
+  session.on('network.responseCompleted', responseCompleted);
   try {
     await session.command('session.subscribe', { events: ['network.beforeRequestSent'] });
+    try {
+      await session.command('session.subscribe', {
+        events: ['network.fetchError', 'network.responseCompleted'],
+      });
+      completionEventsSubscribed = true;
+    } catch (error) {
+      completionEventsSubscriptionError = errorText(error).slice(0, MAX_NETWORK_FIELD);
+    }
     const value = (await session.command('network.addIntercept', {
       phases: ['beforeRequestSent'],
       urlPatterns: [
@@ -181,12 +319,26 @@ async function installFixtureIntercept(session: FirefoxSession, html: string, im
     intercept = value.intercept;
   } catch (error) {
     session.off('network.beforeRequestSent', handler);
+    session.off('network.fetchError', fetchError);
+    session.off('network.responseCompleted', responseCompleted);
     throw error;
   }
   return {
     requests,
+    events,
+    get omittedEvents() {
+      return omittedEvents;
+    },
+    get completionEventsSubscribed() {
+      return completionEventsSubscribed;
+    },
+    get completionEventsSubscriptionError() {
+      return completionEventsSubscriptionError;
+    },
     async stop() {
       session.off('network.beforeRequestSent', handler);
+      session.off('network.fetchError', fetchError);
+      session.off('network.responseCompleted', responseCompleted);
       await session.command('network.removeIntercept', { intercept });
     },
   };
@@ -411,6 +563,7 @@ export async function runFirefoxInstallation({
   let session: FirefoxSession | undefined;
   let extensionId: string | undefined;
   let intercept: Awaited<ReturnType<typeof installFixtureIntercept>> | undefined;
+  let fixtureNetwork: Awaited<ReturnType<typeof installFixtureIntercept>> | undefined;
   const errors: string[] = [];
   const cleanup = receipt.cleanup as Record<string, unknown>;
   try {
@@ -431,7 +584,14 @@ export async function runFirefoxInstallation({
     receipt.browserName = session.browserName;
     receipt.browserVersion = session.browserVersion;
     assert.equal(session.browserName.toLowerCase(), 'firefox', 'Unexpected browser');
+    try {
+      await session.subscribeLogs?.();
+      receipt.logSubscription = 'available';
+    } catch (error) {
+      receipt.logSubscription = `unavailable: ${errorText(error).slice(0, MAX_NETWORK_FIELD)}`;
+    }
     intercept = await installFixtureIntercept(session, fixture, image);
+    fixtureNetwork = intercept;
     extensionId = await session.installExtension(prepared.copy);
     assert.equal(extensionId, EXTENSION_ID, 'Installed Firefox extension ID mismatch');
     let previous = await readDownloads(session, diagnosticUrl);
@@ -563,6 +723,41 @@ export async function runFirefoxInstallation({
   } catch (error) {
     errors.push(errorText(error));
     if (session) {
+      const failure: Record<string, unknown> = {};
+      receipt.failure = failure;
+      try {
+        failure.ui = await session.evaluateJson(`(() => {
+          const gallery = document.querySelector('[data-xeg-gallery-container]');
+          const notice = document.querySelector('[data-gallery-element=download-filename-notice]');
+          const error = document.querySelector('[data-xeg-error-boundary], [role=alert]');
+          return {
+            galleryOpen: Boolean(gallery),
+            downloadStatus: gallery?.querySelector('[data-download-status]')?.getAttribute('data-download-status') ?? null,
+            noticeVisible: Boolean(notice),
+            errorText: error?.textContent?.slice(0, 500) ?? null,
+          };
+        })()`);
+      } catch (diagnosticError) {
+        failure.uiError = errorText(diagnosticError)
+          .replaceAll(root, '<bundle>')
+          .replaceAll(output, '<output>')
+          .slice(0, 300);
+      }
+      if (extensionId === EXTENSION_ID) {
+        try {
+          const history = await readDownloads(session, diagnosticUrl);
+          failure.nativeHistory = ownedNativeHistory(history.items, extensionId);
+          failure.nativeHistoryMatches = (failure.nativeHistory as unknown[]).length;
+        } catch (diagnosticError) {
+          failure.nativeHistoryError = errorText(diagnosticError)
+            .replaceAll(root, '<bundle>')
+            .replaceAll(output, '<output>')
+            .slice(0, 300);
+        }
+      }
+      failure.pageErrorCount = session.pageErrors?.length ?? null;
+      failure.logErrorCount =
+        session.pageLogs?.filter((entry) => entry.level === 'error').length ?? null;
       try {
         await writeFile(join(output, 'firefox-failure.png'), await session.captureScreenshot(), {
           flag: 'wx',
@@ -572,6 +767,15 @@ export async function runFirefoxInstallation({
       }
     }
   } finally {
+    if (fixtureNetwork) {
+      receipt.requests = fixtureNetwork.requests;
+      receipt.network = {
+        events: fixtureNetwork.events,
+        omittedEvents: fixtureNetwork.omittedEvents,
+        completionEventsSubscribed: fixtureNetwork.completionEventsSubscribed,
+        completionEventsSubscriptionError: fixtureNetwork.completionEventsSubscriptionError,
+      };
+    }
     if (intercept) {
       try {
         await intercept.stop();
