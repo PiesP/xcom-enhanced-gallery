@@ -1,6 +1,31 @@
 {
   "id": "xeg-gallery",
   "entry": "validation/windows/profile.ts",
+  "preparation": {
+    "selector_files": ["filename-boundaries.json", "settings-persistence.json"],
+    "scenarios": {
+      "filename-boundaries": {
+        "selector": "filename-boundaries.json",
+        "browsers": ["msedge"],
+        "modes": ["desktop"],
+        "required_inputs": [
+          "dist-validation/filename-boundary-fixture.mjs",
+          "validation/windows/inputs/filename-boundaries.json"
+        ],
+        "generated_assets": ["dist-validation/filename-boundary-fixture.mjs"],
+        "bundle_asset_policy": "source-modules-and-required-inputs",
+        "build_commands": [
+          ["vp", "run", "build:ci"],
+          ["vp", "run", "build:filename-boundaries"]
+        ],
+        "unused_full_campaign_assets": [
+          "dist/xcom-enhanced-gallery.user.js",
+          "test/e2e/fixtures/mock-gallery-page.html",
+          "validation/windows/inputs"
+        ]
+      }
+    }
+  },
   "assets": [
     "dist/xcom-enhanced-gallery.user.js",
     "test/e2e/fixtures/mock-gallery-page.html",

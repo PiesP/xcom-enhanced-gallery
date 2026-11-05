@@ -121,6 +121,35 @@ This artifact-only result records browser zoom as `not-run`: the injected
 userscript has no installed extension worker with access to the browser tab's
 actual zoom setting. CSS zoom or pinch emulation is not used as a substitute.
 
+### Filename and ZIP utility boundary fixture (#483)
+
+The focused `filename-boundaries` scenario runs the production filename planner,
+download orchestrator, ZIP allocator/writer, and failed-entry recovery through a
+dedicated source-built Node bundle. Its save adapter writes real files in a fresh
+private directory on the prepared Windows guest. It verifies Unicode, reserved
+device names, malformed names, the 255 UTF-16-unit limit, duplicate identity
+suffixes, partial ZIP members and bytes, a failed retry with no save, and a
+successful `-missing-2.zip` recovery. The fixture retains safe ASCII evidence
+copies and a receipt, then deletes only its own verified native files and
+directory after rechecking directory and file identities. Replaced files,
+symlinks, reparse points, and foreign entries stop cleanup and remain for review.
+A failed assertion still writes a path-free receipt and copies any remaining
+unchanged, bounded native outputs before cleanup; failed cleanup is reported
+separately.
+
+Use the shared controller's `--scenario filename-boundaries --browser msedge
+--mode desktop` contract from a clean, exact-source checkout. Its declared
+preparation runs `build:ci` and the isolated `build:filename-boundaries` script;
+the controller generates the selector and hashes only the exact generated
+`dist-validation/filename-boundary-fixture.mjs` file.
+The normal product build target remains unchanged. The case names and long
+account name are deliberately supplied at the utility boundary because the
+current gallery has no custom filename control. A passing result is Windows
+Node native filesystem and production utility evidence; it does not prove a
+browser Save As dialog, installed extension download, gallery click path, or
+live X.com reachability. The browser launch in the shared controller does not
+change this tier because this fixture does not use that browser instance.
+
 This does not test userscript-manager installation, unpacked extension installation,
 privileged extension downloads, live authenticated X.com, Windows native Save As,
 Explorer, OS compositor, actual DPI changes, or physical GPU performance. A headless
