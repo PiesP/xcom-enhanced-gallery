@@ -5068,6 +5068,7 @@ type CompactEvidence = {
   error?: string;
   failureScreenshot?: string;
   screenshotError?: string;
+  cleanupErrors?: string[];
 };
 
 async function compactHostSnapshot(page: Page, selector: string) {
@@ -5588,7 +5589,13 @@ async function runAttachmentFilenameCycle({
           if (added[0]?.state === 'interrupted') {
             throw new Error(`${label} native download was interrupted`);
           }
-          return added[0]?.state === 'complete' ? added[0] : undefined;
+          const item = added[0];
+          if (item?.state !== 'complete') {
+            return undefined;
+          }
+          const ownedPath = relative(downloads, item.filename);
+          assert(ownedPath && !ownedPath.startsWith('..') && !isAbsolute(ownedPath));
+          return item;
         },
         label,
         20_000
@@ -5681,7 +5688,11 @@ async function runAttachmentFilenameCycle({
       label: string,
       expected: Buffer
     ) => {
-      const savedPath = join(downloads, item.filename);
+      const savedPath = isAbsolute(item.filename)
+        ? item.filename
+        : join(downloads, item.filename);
+      const ownedPath = relative(downloads, savedPath);
+      assert(ownedPath && !ownedPath.startsWith('..') && !isAbsolute(ownedPath));
       const retainedPath = join(output, `attachment-filename-${label}`);
       await copyFile(savedPath, retainedPath);
       assert((await readFile(retainedPath)).equals(expected), `${label} retained bytes differ`);
@@ -5877,6 +5888,8 @@ async function runAttachmentFilenameCycle({
     });
     await page.keyboard.press('Escape');
     await retry.waitFor({ state: 'detached' });
+    await retire(partial, 'retry-partial.zip', partialBytes);
+    await retire(supplementary, 'retry-supplementary.zip', recoveredBytes);
   } finally {
     routes.clearFilenameB1Failure();
     nativeLoopback.clearHttpFailure();
@@ -5927,6 +5940,9 @@ async function runAttachmentFilenameFocusedProbe({
     });
   });
   const evidence: CompactEvidence = { status: 'pending', api: [], images: [], steps: [] };
+  let primaryError: unknown;
+  let primarySeen = false;
+  const cleanupErrors: Error[] = [];
   try {
     await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
     await runAttachmentFilenameCycle({
@@ -5944,22 +5960,54 @@ async function runAttachmentFilenameFocusedProbe({
     evidence.api = routes.compactApiResponses;
     evidence.images = routes.compactImageRequests;
     evidence.status = 'passed';
-    return evidence;
   } catch (error) {
+    primarySeen = true;
+    primaryError = error;
     evidence.status = 'failed';
     evidence.error = safeError(error);
     evidence.api = routes.compactApiResponses;
     evidence.images = routes.compactImageRequests;
-    await page
-      .screenshot({ path: join(output, 'attachment-filenames-failure.png') })
-      .catch(() => {});
-    throw error;
+    try {
+      await page.screenshot({ path: join(output, 'attachment-filenames-failure.png') });
+      evidence.failureScreenshot = 'attachment-filenames-failure.png';
+    } catch (captureError) {
+      evidence.screenshotError = safeError(captureError);
+    }
   } finally {
-    await page.close();
-    await extensionPage.close();
-    await routes.remove();
-    await writeFile(join(output, 'attachment-filenames.json'), JSON.stringify(evidence, null, 2));
+    for (const [label, close] of [
+      ['fixture page', () => page.close()],
+      ['extension page', () => extensionPage.close()],
+      ['fixture routes', () => routes.remove()],
+    ] as const) {
+      try {
+        await close();
+      } catch (cleanupError) {
+        cleanupErrors.push(new Error(`${label}: ${safeError(cleanupError)}`));
+      }
+    }
+    if (cleanupErrors.length) {
+      evidence.status = 'failed';
+      evidence.cleanupErrors = cleanupErrors.map(safeError);
+    }
+    try {
+      await writeFile(join(output, 'attachment-filenames.json'), JSON.stringify(evidence, null, 2));
+    } catch (receiptError) {
+      cleanupErrors.push(new Error(`fixture receipt: ${safeError(receiptError)}`));
+    }
   }
+  if (primarySeen && cleanupErrors.length) {
+    throw new AggregateError(
+      [primaryError, ...cleanupErrors],
+      'Attachment filename probe and cleanup failed'
+    );
+  }
+  if (primarySeen) {
+    throw primaryError;
+  }
+  if (cleanupErrors.length) {
+    throw new AggregateError(cleanupErrors, 'Attachment filename probe cleanup failed');
+  }
+  return evidence;
 }
 
 async function quotedHostSnapshot(page: Page, caseName: string, triggerSelector: string) {
