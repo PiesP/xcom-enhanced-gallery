@@ -66,6 +66,12 @@ export interface ChromeDownloadsModule {
   cancel(id: number): Promise<void>;
   search(query: ChromeDownloadQuery, ...rest: unknown[]): Promise<ChromeDownloadItem[]>;
   onChanged: ChromeEvent<(delta: ChromeDownloadDelta) => void>;
+  onDeterminingFilename?: ChromeEvent<
+    (
+      item: ChromeDownloadItem,
+      suggest: (value?: { filename: string; conflictAction: 'uniquify' }) => void
+    ) => boolean | void
+  >;
 }
 
 export interface ChromeDownloadQuery {
@@ -78,6 +84,8 @@ export interface ChromeDownloadItem {
   readonly url?: string;
   readonly state?: string;
   readonly error?: string;
+  readonly filename?: string;
+  readonly byExtensionId?: string;
 }
 
 export interface ChromeDownloadOptions {

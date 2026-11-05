@@ -26,6 +26,12 @@ const state = vi.hoisted(() => ({
   storageValues: {} as Record<string, unknown>,
   storageSetError: null as unknown,
   storageSetFailuresRemaining: 1,
+  filenameListener: null as
+    | null
+    | ((
+        item: { id: number; url: string; byExtensionId: string },
+        suggest: (value?: unknown) => void
+      ) => boolean | void),
 }));
 
 vi.mock('@platform/chrome-runtime', () => ({
@@ -83,6 +89,12 @@ vi.mock('@platform/chrome-runtime', () => ({
       download: state.download,
       cancel: state.cancelDownload,
       search: state.searchDownload,
+      onDeterminingFilename: {
+        addListener: vi.fn((listener: NonNullable<typeof state.filenameListener>) => {
+          state.filenameListener = listener;
+        }),
+        removeListener: vi.fn(),
+      },
       onChanged: {
         addListener: vi.fn((listener: DownloadChangedListener) => {
           state.downloadChangedListener = listener;
@@ -190,14 +202,60 @@ describe('background direct download ownership', () => {
       success: true,
       data: { requestId, status: 'unknown' },
     });
+    state.searchDownload.mockResolvedValue([
+      {
+        id: 801,
+        url,
+        state: 'complete',
+        filename: 'C:\\Private\\cdn-original.jpg',
+        byExtensionId: 'extension-id',
+      },
+    ]);
     nativeCompletion.resolve();
-    expect(await pending).toEqual({ success: true, data: { requestId, status: 'complete' } });
+    const completed = {
+      requestId,
+      status: 'complete',
+      requestedFilename: 'direct-original.jpg',
+      observedFilename: 'cdn-original.jpg',
+      filenameConforms: false,
+    };
+    expect(await pending).toEqual({ success: true, data: completed });
     expect(await sendMessage(status(requestId), owner)).toEqual({
       success: true,
-      data: { requestId, status: 'complete' },
+      data: completed,
     });
     expect(state.download).toHaveBeenCalledOnce();
     expect(JSON.stringify(state.storageValues)).not.toContain(url);
+  });
+
+  it('suggests only after the exact native allocation is bound and preserves the request name', async () => {
+    const requestId = `filename-race-${crypto.randomUUID()}`;
+    const allocation = deferred<number>();
+    state.download.mockReturnValueOnce(allocation.promise);
+    state.searchDownload.mockResolvedValue([
+      {
+        id: 811,
+        url,
+        state: 'complete',
+        filename: 'C:\\Private\\direct-original.jpg',
+        byExtensionId: 'extension-id',
+      },
+    ]);
+    const pending = sendMessage(request(requestId), owner);
+    await vi.waitFor(() => expect(state.download).toHaveBeenCalledOnce());
+    const suggest = vi.fn();
+    expect(state.filenameListener?.({ id: 811, url, byExtensionId: 'extension-id' }, suggest)).toBe(
+      true
+    );
+    expect(suggest).not.toHaveBeenCalled();
+    allocation.resolve(811);
+    await pending;
+    await vi.waitFor(() =>
+      expect(suggest).toHaveBeenCalledExactlyOnceWith({
+        filename: 'direct-original.jpg',
+        conflictAction: 'uniquify',
+      })
+    );
   });
 
   it('keeps an unassigned restarted request unknown even if another download has the same URL', async () => {
@@ -250,12 +308,26 @@ describe('background direct download ownership', () => {
       expect(records[requestId]?.downloadId).toBe(802);
     });
 
-    state.searchDownload.mockResolvedValue([{ id: 802, url, state: 'complete' }]);
+    state.searchDownload.mockResolvedValue([
+      {
+        id: 802,
+        url,
+        state: 'complete',
+        filename: 'C:\\Private\\direct-original (1).jpg',
+        byExtensionId: 'extension-id',
+      },
+    ]);
     vi.resetModules();
     await import('@extension/background');
     expect(await sendMessage(status(requestId), owner)).toEqual({
       success: true,
-      data: { requestId, status: 'complete' },
+      data: {
+        requestId,
+        status: 'complete',
+        requestedFilename: 'direct-original.jpg',
+        observedFilename: 'direct-original (1).jpg',
+        filenameConforms: true,
+      },
     });
     expect(state.download).toHaveBeenCalledOnce();
     nativeCompletion.resolve();

@@ -106,6 +106,29 @@ describe('DownloadTrackingStore', () => {
     );
   });
 
+  it('restores a safe requested filename bound to the exact native ID and URL hash', async () => {
+    const worker = createStorage();
+    const first = new DownloadTrackingStore(worker.storage);
+    await first.registerDirectRequest('filename-1', 7, urlHash);
+    await first.bindDirectDownload('filename-1', 42, 7, urlHash, 'owner_123_1.jpg');
+    const restarted = new DownloadTrackingStore(worker.storage);
+    await restarted.ready();
+    expect(restarted.get('filename-1')).toMatchObject({
+      downloadId: 42,
+      urlHash,
+      requestedFilename: 'owner_123_1.jpg',
+    });
+    const raw = worker.values['xeg.download-tracking.v1'] as Record<
+      string,
+      Record<string, unknown>
+    >;
+    raw['filename-1']!.requestedFilename = '../unrelated.jpg';
+    const invalid = new DownloadTrackingStore(worker.storage);
+    await invalid.ready();
+    expect(invalid.get('filename-1')?.requestedFilename).toBeUndefined();
+    expect(invalid.get('filename-1')?.downloadId).toBe(42);
+  });
+
   it('honors same-owner cancellation before an ID without allowing a second dispatch', async () => {
     const worker = createStorage();
     const store = new DownloadTrackingStore(worker.storage);

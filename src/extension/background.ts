@@ -35,6 +35,7 @@ import { MV3StorageAdapter } from '@platform/mv3-storage-adapters';
 import { createLogger } from '@shared/logging/logger';
 import { isAllowedUrl } from '@shared/utils/url/url-safety';
 import { waitForDownloadComplete } from './download-completion';
+import { observeDownloadFilename, OwnedDownloadFilenamePolicy } from './download-filename';
 import { DownloadTrackingStore, type PersistedDownloadRecord } from './download-tracking';
 import type {
   DownloadBlobStatusRequestMessage,
@@ -104,6 +105,21 @@ const downloadTracking = new DownloadTrackingStore(new MV3StorageAdapter(), (ope
     error: error instanceof Error ? error.message : String(error),
   });
 });
+
+const filenamePolicy = new OwnedDownloadFilenamePolicy(browserApi.runtime.id, async (id, url) => {
+  await downloadTracking.ready();
+  const urlHash = await hashDownloadUrl(url);
+  const matches = downloadTracking
+    .entries()
+    .filter(
+      ([, record]) =>
+        record.downloadId === id &&
+        record.urlHash === urlHash &&
+        record.requestedFilename !== undefined
+    );
+  return matches.length === 1 ? matches[0]?.[1].requestedFilename : undefined;
+});
+browserApi.downloads.onDeterminingFilename?.addListener(filenamePolicy.listener);
 
 function readDownloadState(value: ChromeDownloadDelta['state']): string | undefined {
   return typeof value === 'string' ? value : value?.current;
@@ -649,9 +665,7 @@ async function inspectDirectDownload(
       record.cancellationRequested ? 'user-cancelled' : 'browser-rejected'
     );
   }
-  if (record.terminalState === 'complete') {
-    return directStatus(requestId, 'complete');
-  }
+
   if (record.terminalState === 'interrupted') {
     return directStatus(
       requestId,
@@ -665,28 +679,43 @@ async function inspectDirectDownload(
   try {
     const [item] = await browserApi.downloads.search({ id: record.downloadId });
     if (item?.id !== record.downloadId || item.url !== url) {
-      return directStatus(requestId, 'unknown');
+      return directStatus(requestId, record.terminalState === 'complete' ? 'complete' : 'unknown');
     }
     if (item.state === 'complete' || item.state === 'interrupted') {
       await downloadTracking.markDirectTerminal(requestId, item.state);
       activeDownloadIds.delete(requestId);
-      return directStatus(
-        requestId,
-        item.state,
-        item.state === 'interrupted'
-          ? record.cancellationRequested
-            ? 'user-cancelled'
-            : 'browser-interrupted'
-          : undefined
-      );
+      return {
+        ...directStatus(
+          requestId,
+          item.state,
+          item.state === 'interrupted'
+            ? record.cancellationRequested
+              ? 'user-cancelled'
+              : 'browser-interrupted'
+            : undefined
+        ),
+        ...(item.state === 'complete' && record.requestedFilename
+          ? observeDownloadFilename(
+              record.requestedFilename,
+              item.byExtensionId === browserApi.runtime.id ? item.filename : undefined
+            )
+          : {}),
+      };
     }
-    return directStatus(requestId, item.state === 'in_progress' ? 'active' : 'unknown');
+    return directStatus(
+      requestId,
+      record.terminalState === 'complete'
+        ? 'complete'
+        : item.state === 'in_progress'
+          ? 'active'
+          : 'unknown'
+    );
   } catch (error: unknown) {
     log.warn('download-direct-status-check-failed', {
       requestId,
       error: error instanceof Error ? error.message : String(error),
     });
-    return directStatus(requestId, 'unknown');
+    return directStatus(requestId, record.terminalState === 'complete' ? 'complete' : 'unknown');
   }
 }
 
@@ -778,6 +807,7 @@ async function runDirectDownload(
   }
 
   let downloadId: number | undefined;
+  const filenameAllocation = filenamePolicy.beginAllocation();
   try {
     downloadId = await browserApi.downloads.download(options);
     if (!isValidDownloadId(downloadId)) {
@@ -799,8 +829,11 @@ async function runDirectDownload(
       requestId,
       downloadId,
       ownerTabId,
-      urlHash
+      urlHash,
+      options.filename
     );
+    filenameAllocation.bound(downloadId);
+    filenameAllocation.finish();
     if (cancellationRequested === undefined) {
       await cancelDownloadWithRetry(downloadId, 'failure', () => tracked.terminalObserved);
       return {
@@ -814,7 +847,11 @@ async function runDirectDownload(
     }
     await waitForDownloadComplete(browserApi.downloads, downloadId);
     await downloadTracking.markDirectTerminal(requestId, 'complete');
-    return { success: true, data: directStatus(requestId, 'complete') };
+    const record = downloadTracking.get(requestId);
+    const status = record
+      ? await inspectDirectDownload(requestId, record, options.url)
+      : directStatus(requestId, 'complete');
+    return { success: true, data: status };
   } catch {
     if (downloadId === undefined) {
       await downloadTracking.markDirectTerminal(requestId, 'never-started');
@@ -852,6 +889,7 @@ async function runDirectDownload(
       data: status,
     };
   } finally {
+    filenameAllocation.finish();
     downloadTracking.finishDirectAllocation(requestId);
     const tracked = activeDownloadIds.get(requestId);
     if (tracked !== undefined && tracked.downloadId === downloadId) {
@@ -870,6 +908,8 @@ async function runTrackedDownload(
   downloadOptions: ChromeDownloadOptions,
   requestId?: string
 ): Promise<void> {
+  requestId ??= crypto.randomUUID();
+  const filenameAllocation = filenamePolicy.beginAllocation();
   let downloadId: number | undefined;
   let cancellationAlreadyTerminal = false;
   let retainTrackingAfterFailure = false;
@@ -889,7 +929,13 @@ async function runTrackedDownload(
         terminalObserved: false,
       };
       activeDownloadIds.set(requestId, tracked);
-      if (await downloadTracking.bindDownload(requestId, downloadId)) {
+      const cancellationRequested = await downloadTracking.bindDownload(requestId, downloadId, {
+        requestedFilename: downloadOptions.filename ?? '',
+        urlHash: await hashDownloadUrl(downloadOptions.url),
+      });
+      filenameAllocation.bound(downloadId);
+      filenameAllocation.finish();
+      if (cancellationRequested) {
         const cancellationStatus = await cancelDownloadWithRetry(
           downloadId,
           'request',
@@ -927,6 +973,7 @@ async function runTrackedDownload(
     operationFailure = new DownloadOperationError(error, requestId, terminal);
     throw operationFailure;
   } finally {
+    filenameAllocation.finish();
     if (requestId) {
       if (downloadId !== undefined) {
         const tracked = activeDownloadIds.get(requestId);

@@ -3,6 +3,7 @@
 
 import { DOWNLOAD_PRE_ID_CANCELLATION_TTL_MS } from '@constants/performance';
 import type { StorageAdapter } from '@platform/types';
+import { isSafeFilename } from './message-validation';
 
 const DOWNLOAD_TRACKING_STORAGE_KEY = 'xeg.download-tracking.v1';
 const DIRECT_TERMINAL_TTL_MS = 10 * 60_000;
@@ -13,6 +14,7 @@ export type DirectTerminalState = 'never-started' | 'complete' | 'interrupted';
 
 export interface PersistedDownloadRecord {
   readonly downloadId?: number;
+  readonly requestedFilename?: string;
   readonly cancellationRequested: boolean;
   readonly cancellationRequestedAt?: number;
   readonly route?: 'direct';
@@ -149,6 +151,11 @@ function parseStoredRecords(
 
     records.set(requestId, {
       ...(typeof downloadId === 'number' ? { downloadId } : {}),
+      ...(isSafeFilename(rawRecord.requestedFilename) &&
+      typeof rawRecord.urlHash === 'string' &&
+      /^[a-f0-9]{64}$/u.test(rawRecord.urlHash)
+        ? { requestedFilename: rawRecord.requestedFilename, urlHash: rawRecord.urlHash }
+        : {}),
       cancellationRequested: rawRecord.cancellationRequested,
       ...(cancellationRequestedAt === undefined ? {} : { cancellationRequestedAt }),
       ...(route === 'direct'
@@ -296,7 +303,8 @@ export class DownloadTrackingStore {
     requestId: string,
     downloadId: number,
     ownerTabId: number,
-    urlHash: string
+    urlHash: string,
+    requestedFilename?: string
   ): Promise<boolean | undefined> {
     return this.enqueue(async () => {
       await this.ensureLoaded();
@@ -310,7 +318,11 @@ export class DownloadTrackingStore {
       ) {
         return undefined;
       }
-      const updated = { ...current, downloadId };
+      const updated = {
+        ...current,
+        downloadId,
+        ...(requestedFilename ? { requestedFilename } : {}),
+      };
       this.records.set(requestId, updated);
       await this.persist();
       return current.cancellationRequested;
@@ -371,7 +383,11 @@ export class DownloadTrackingStore {
     });
   }
 
-  async bindDownload(requestId: string, downloadId: number): Promise<boolean> {
+  async bindDownload(
+    requestId: string,
+    downloadId: number,
+    filenameBinding?: { requestedFilename: string; urlHash: string }
+  ): Promise<boolean> {
     return this.enqueue(async () => {
       await this.ensureLoaded();
       const current = this.records.get(requestId);
@@ -380,6 +396,7 @@ export class DownloadTrackingStore {
       const { cancellationRequestedAt: priorCancellationAt, ...retained } = current ?? {};
       this.records.set(requestId, {
         ...retained,
+        ...filenameBinding,
         downloadId,
         cancellationRequested,
         ...(cancellationRequested && priorCancellationAt !== undefined
