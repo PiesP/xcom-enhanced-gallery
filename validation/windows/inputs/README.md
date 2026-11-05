@@ -12,6 +12,23 @@ conflict and failed-only recovery cycle. With `--installation userscript`, it
 runs a smaller manager-backed visible `/photo/2` save and checks the native
 filename, source and bytes. Remove the selector after the attempt. Neither
 route runs against live X.
+To check issue #484's video save format through the installed Chrome/Edge
+extension, create the ignored `video-save-format.json` file here with exactly:
+
+```json
+{"scenario":"video-save-format"}
+```
+
+Run `vmctl.py` with `--installation extension` and no live URLs. This focused
+owned fixture first denies the provider response and clicks a direct MP4 and
+three unsupported or ambiguous DOM video sources. It then serves API-shaped
+responses for a direct video, a video-encoded GIF, and conflicting or duplicate
+format queries. The API rejection cases include a valid sibling photo to check
+that the clicked video does not borrow its save. The scenario checks native MP4
+filenames and bytes, mixed ZIP member names and contents, API response status,
+and no gallery or native save for rejected sources. The source-bound receipt
+and copied files are retained outside Git. This does not establish live X
+behavior. Remove the selector after the attempt.
 
 For explicit installed-extension acceptance on public X statuses, create the
 ignored `live-acceptance.json` file here with exactly:

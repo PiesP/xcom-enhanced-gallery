@@ -200,11 +200,12 @@ describe('Node script import boundary', () => {
       .map((path) => `validation/windows/${path.toString()}`)
       .filter((path) => path.endsWith('.test.ts'))
       .sort();
-    expect(nativeFiles).toHaveLength(13);
+    expect(nativeFiles).toHaveLength(14);
     expect(nativeFiles).toContain('validation/windows/qualification-policy.test.ts');
     expect(nativeFiles).toContain('validation/windows/live-acceptance.test.ts');
     expect(nativeFiles).toContain('validation/windows/live-diagnostics-close.test.ts');
     expect(nativeFiles).toContain('validation/windows/native-file-cleanup.test.ts');
+    expect(nativeFiles).toContain('validation/windows/video-save-format-api.test.ts');
     expect(nativeFiles).toContain('validation/windows/ux-result-validation.test.ts');
     const projects = nodeTestConfig.test?.projects as Array<{
       test: { name: string; include: string[]; environment?: string; fileParallelism?: boolean };
@@ -238,7 +239,7 @@ describe('Node script import boundary', () => {
         '--experimental-strip-types',
         '--input-type=module',
         '-e',
-        "await import('./validation/windows/live-page.ts');",
+        "await import('./validation/windows/live-page.ts'); await import('./validation/windows/video-save-format-profile.ts');",
       ],
       { cwd: root, encoding: 'utf8' }
     );

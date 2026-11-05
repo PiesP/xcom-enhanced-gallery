@@ -80,6 +80,58 @@ describe('twitter-response-parser (pure functions)', () => {
   });
 
   describe('getHighQualityMediaUrl', () => {
+    it.each(['video', 'animated_gif'] as const)(
+      'adopts only an unambiguous direct MP4 variant for %s',
+      (kind) => {
+        const base = 'https://video.twimg.com/ext_tw_video/900/pu/vid/320x180/clip.mp4';
+        for (const [query, accepted] of [
+          ['', true],
+          ['?format=mp4', true],
+          ['?format=jpg', false],
+          ['?format=webp', false],
+          ['?format=jpg&format=mp4', false],
+          ['?format=mp4&format=mp4', false],
+          ['?FORMAT=jpg', false],
+        ] as const) {
+          const source = `${base}${query}`;
+          const media: TwitterMedia = {
+            type: kind,
+            id_str: '900',
+            media_url_https: 'https://pbs.twimg.com/ext_tw_video_thumb/900/preview.jpg',
+            video_info: { variants: [{ content_type: 'video/mp4', url: source }] },
+          };
+          const entries = extractMediaFromTweet(
+            { rest_id: '222', extended_entities: { media: [media] } },
+            { screen_name: 'author' }
+          );
+          expect(
+            entries.map((entry) => entry.download_url),
+            source
+          ).toEqual(accepted ? [source] : []);
+        }
+      }
+    );
+
+    it('selects a valid MP4 variant when a higher-bitrate variant contradicts its format', () => {
+      const admitted = 'https://video.twimg.com/ext_tw_video/900/pu/vid/clip.mp4?token=opaque';
+      const media: TwitterMedia = {
+        type: 'video',
+        id_str: '900',
+        media_url_https: 'https://pbs.twimg.com/ext_tw_video_thumb/900/preview.jpg',
+        video_info: {
+          variants: [
+            {
+              content_type: 'video/mp4',
+              bitrate: 900,
+              url: 'https://video.twimg.com/ext_tw_video/900/pu/vid/clip.mp4?format=jpg',
+            },
+            { content_type: 'video/mp4', bitrate: 300, url: admitted },
+          ],
+        },
+      };
+      expect(getHighQualityMediaUrl(media)).toBe(admitted);
+    });
+
     it('should return photo URL with format param', () => {
       const media = {
         type: 'photo',

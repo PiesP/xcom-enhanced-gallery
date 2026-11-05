@@ -3,10 +3,15 @@
 
 import { planBulkDownload } from '@shared/core/download/download-plan';
 import { generateMediaFilename } from '@shared/core/filename/filename-utils';
+import { isValidIncomingMessage } from '@extension/message-validation';
 import { LiveByteBudget } from '@shared/services/download/live-byte-budget';
-import { convertAPIMediaToMediaInfo } from '@shared/services/media/media-factory';
+import {
+  convertAPIMediaToMediaInfo,
+  getAPIMediaSelectionItems,
+} from '@shared/services/media/media-factory';
 import { extractMediaFromTweet } from '@shared/services/media/twitter-parser/twitter-response-parser';
 import type { TwitterMedia } from '@shared/services/media/types';
+import { matchClickedMedia } from '@shared/services/media-extraction/determine-clicked-index';
 import { DOMFallbackExtractor } from '@shared/services/media-extraction/extractors/dom-fallback-extractor';
 import type { TweetInfo } from '@shared/types/media.types';
 import {
@@ -27,6 +32,69 @@ const original = 'https://pbs.twimg.com/media/EXAMPLE?format=jpg&name=orig';
 
 describe('canonical media source contract', () => {
   afterEach(() => document.body.replaceChildren());
+
+  it.each(['video', 'animated_gif'] as const)(
+    'keeps API %s source admission, clicked owner, and requested save name consistent',
+    (kind) => {
+      const base = 'https://video.twimg.com/ext_tw_video/900/pu/vid/320x180/clip.mp4';
+      const preview = 'https://pbs.twimg.com/ext_tw_video_thumb/900/preview.jpg';
+      const video = document.createElement('video');
+      video.poster = preview;
+      for (const [query, accepted] of [
+        ['', true],
+        ['?format=mp4', true],
+        ['?format=jpg', false],
+        ['?format=webp', false],
+        ['?format=jpg&format=mp4', false],
+      ] as const) {
+        const source = `${base}${query}`;
+        video.src = source;
+        const raw: TwitterMedia = {
+          type: kind,
+          id_str: '900',
+          media_url_https: preview,
+          video_info: { variants: [{ content_type: 'video/mp4', url: source }] },
+        };
+        const entries = extractMediaFromTweet(
+          { rest_id: '222', extended_entities: { media: [raw] } },
+          { screen_name: 'author' }
+        );
+        const selection = getAPIMediaSelectionItems(entries, owner);
+        const media = convertAPIMediaToMediaInfo(entries, owner);
+        const plan = planBulkDownload({ mediaItems: media });
+        if (!accepted) {
+          expect(entries, source).toEqual([]);
+          expect(media, source).toEqual([]);
+          expect(plan.items, source).toEqual([]);
+          continue;
+        }
+
+        expect(entries[0]?.download_url).toBe(source);
+        expect(matchClickedMedia(video, selection, owner.tweetId)).toEqual({
+          status: 'matched',
+          index: 0,
+        });
+        expect(media[0]).toMatchObject({
+          tweetId: '222',
+          tweetUsername: 'author',
+          downloadSource: { url: source, quality: 'best-mp4', provenance: 'api' },
+        });
+        expect(generateMediaFilename(media[0]!)).toBe('author_222_0.mp4');
+        expect(plan.items[0]).toMatchObject({ url: source, desiredName: 'author_222_0.mp4' });
+        expect(
+          isValidIncomingMessage({
+            type: 'DOWNLOAD_REQUEST',
+            payload: {
+              url: source,
+              filename: 'author_222_0.mp4',
+              mode: 'direct',
+              requestId: 'api-video-fixture',
+            },
+          })
+        ).toBe(true);
+      }
+    }
+  );
 
   it('saves the CDN original for an API query-format photo', () => {
     const photo: TwitterMedia = { type: 'photo', id_str: '100', media_url_https: small };
