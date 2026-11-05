@@ -42,14 +42,15 @@ not collect an analytics clickstream or a history of pages you visit.
 | Storage | Contents and retention |
 | --- | --- |
 | Extension local storage | Theme, language, gallery and playback preferences persist across sessions until changed or cleared. This is local extension storage, not browser sync storage. |
-| Extension download recovery storage | Request/download identifiers and cancellation state; direct downloads also record the originating tab ID, a hash of the media URL, timestamps and terminal state. These records recover ownership/cancellation after background-worker restarts. They do not store the raw media URL, authentication headers or media bytes. |
+| Extension download recovery storage | Request/download identifiers and cancellation state; direct downloads also record the requested filename, originating tab ID, a hash of the media URL, timestamps and terminal state. The requested filename can include post or author identifiers. These records recover ownership/cancellation after background-worker restarts. They do not store the raw media URL, authentication headers or media bytes. |
 | Userscript-manager storage | Preferences are stored through the manager's `GM_*` APIs and retained according to that manager's settings and removal behavior. Extension download recovery records are not used by this route. |
 | Settings fallback | If the primary settings API fails, a best-effort `localStorage` fallback uses the `xeg-fallback:` prefix on the X/Twitter site origin. It contains settings only, can survive reloads, and may be unavailable in some browser contexts. A successful primary write removes the corresponding stale fallback value. |
 
 Download recovery records have different lifetimes. Ordinary Blob-download
 records are removed on observed completion/interruption or reconciliation.
 Direct-download terminal results and unassigned requests become eligible for
-expiry after ten minutes, subject to live allocation protection. Assigned active
+expiry after ten minutes, subject to live allocation protection. The requested
+filename follows the same recovery-record lifetime. Assigned active
 downloads are not subject to that fixed expiry. Pending non-direct cancellation
 records without a download ID have a shorter, thirty-second expiry. Cleanup
 happens when records are loaded or relevant tracking operations prune and
