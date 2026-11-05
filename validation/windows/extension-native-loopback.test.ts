@@ -42,6 +42,10 @@ test('experience originals use the exact owned bytes and reject other qualities'
       outgoing.end();
     });
   try {
+    assert.deepEqual(await read('/media/GkE1234ABCDEF.jpg?format=jpg&name=orig'), {
+      status: 200,
+      bytes: Buffer.from('base'),
+    });
     for (const [index, path] of ['Tall', 'Panorama', 'Small'].entries()) {
       assert.deepEqual(await read(`/media/XegExperience${path}.jpg?format=jpg&name=orig`), {
         status: 200,
