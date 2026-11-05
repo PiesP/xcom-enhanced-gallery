@@ -39,14 +39,15 @@ video dimensions. Click-time source evidence, requested/quoted owner separation,
 stale-click checks and originating-post filename attribution still govern
 selection; a candidate list is not a second owner-discovery mechanism.
 
-The API video parser admits a variant only when its declared MIME is
-`video/mp4` and its validated `video.twimg.com` path ends in `.mp4`. After a
-provider failure, DOM recovery admits only the selected owner-local video URL
-with a direct `.mp4` path and no `format` control or one matching `format=mp4`.
+The API video parser requires declared `video/mp4` metadata. Both API and DOM
+video admission require a validated `video.twimg.com` URL with a direct `.mp4`
+path and either no `format` control or one matching `format=mp4`; control names
+are compared case-insensitively. After provider failure, DOM recovery applies
+that same rule to the selected owner-local video URL.
 A playlist, extensionless path, image path or contradictory/duplicate format
-control yields no DOM media item for that click, so single-save and ZIP naming
+control is rejected before filename planning, so single-save and ZIP naming
 cannot assign an image extension to the video. An ordinary image's supported
-extensionless `?format=` URL remains eligible. The DOM rule relies on the
+extensionless `?format=` URL remains eligible. This rule relies on the
 direct-source URL contract; it does not inspect response MIME or relabel an
 unknown container. Controlled installed evidence for the actual native name,
 MP4 bytes and ZIP entries is tracked separately from these source rules.
