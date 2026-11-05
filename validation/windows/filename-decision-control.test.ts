@@ -66,18 +66,23 @@ function control() {
   const invoke = listenerState.value;
   return {
     stored,
-    async determine(item: Download): Promise<{ returned: boolean | void; calls: Suggestion[] }> {
+    async determine(
+      item: Download
+    ): Promise<{ returned: boolean | void; calls: Suggestion[]; arities: number[] }> {
       const calls: Suggestion[] = [];
+      const arities: number[] = [];
       let finish: (() => void) | undefined;
       const completed = new Promise<void>((resolve) => {
         finish = resolve;
       });
-      const returned = invoke(item, (suggestion) => {
+      const returned = invoke(item, (...args) => {
+        arities.push(args.length);
+        const [suggestion] = args;
         calls.push(suggestion ? JSON.parse(JSON.stringify(suggestion)) : undefined);
         finish?.();
       });
       await completed;
-      return { returned, calls };
+      return { returned, calls, arities };
     },
   };
 }
@@ -103,11 +108,21 @@ describe('task-owned filename decision control', () => {
     assert.deepEqual(fixture.stored.observations, []);
   });
 
+  it('keeps the explicit undefined control distinct from a no-argument callback', async () => {
+    const fixture = control();
+    fixture.stored.mode = 'passive-undefined';
+    const result = await fixture.determine(owned);
+    assert.equal(result.returned, true);
+    assert.deepEqual(result.calls, [undefined]);
+    assert.deepEqual(result.arities, [1]);
+  });
+
   it('records the native tentative basename and distinguishes passive from active suggestions', async () => {
     const fixture = control();
     const passive = await fixture.determine(owned);
     assert.equal(passive.returned, true);
     assert.deepEqual(passive.calls, [undefined]);
+    assert.deepEqual(passive.arities, [0]);
 
     fixture.stored.mode = 'filename';
     const active = await fixture.determine({ ...owned, id: 42 });

@@ -5581,7 +5581,7 @@ async function runAttachmentFilenameCycle({
   initiatingExtensionId?: string;
   filenameControlFactory?: () => Promise<FilenameDecisionControl>;
   runFilenameDiagnostic?: <T>(
-    label: 'xeg-alone' | 'active-suggestion',
+    label: 'xeg-alone' | 'passive' | 'passive-undefined' | 'active-suggestion',
     action: () => Promise<T>
   ) => Promise<T>;
 }) {
@@ -5648,7 +5648,8 @@ async function runAttachmentFilenameCycle({
       url: string,
       bytes: Buffer,
       conflict = false,
-      expectedApplicationFilename = assignedName
+      expectedApplicationFilename = assignedName,
+      observeCdnFallback = false
     ) => {
       const known = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
       const nativeMark = nativeLoopback.mark();
@@ -5685,16 +5686,20 @@ async function runAttachmentFilenameCycle({
         if (conflict) {
           assertNativeName(basename(item.filename), assignedName);
           assert.notEqual(basename(item.filename), assignedName);
+        } else if (observeCdnFallback) {
+          assert(
+            [assignedName, basename(new URL(url).pathname)].includes(basename(item.filename)),
+            'Filename control produced an unrecognized basename'
+          );
         } else {
           assert.equal(basename(item.filename), assignedName);
         }
       } catch (error) {
-        const retainedDirectory = join(output, `native-failure-${item.id}`);
-        await mkdir(retainedDirectory);
-        const retainedFile = join(retainedDirectory, basename(item.filename));
-        await copyFile(item.filename, retainedFile);
-        assert((await readFile(retainedFile)).equals(saved), 'Failed native-file copy differs');
-        observation.retainedFile = `native-failure-${item.id}/${basename(item.filename)}`;
+        const retainedName = `native-failure-${item.id}.bin`;
+        const retainedFile = join(output, retainedName);
+        await writeFile(retainedFile, saved, { flag: 'wx' });
+        assert((await readExactDownloadFile(retainedFile, saved.length)).bytes.equals(saved));
+        observation.retainedFile = retainedName;
         throw error;
       }
       const native = await assertNativeSingle({
@@ -5976,12 +5981,19 @@ async function runAttachmentFilenameCycle({
           type: 'image',
           path: '/media/GkE5678GHIJKL.jpg',
         });
-        for (const mode of ['passive', 'filename', 'conflict-action'] as const) {
+        for (const mode of [
+          'passive',
+          'passive-undefined',
+          'filename',
+          'conflict-action',
+        ] as const) {
           await control.setMode(mode);
-          const observedName = mode === 'passive' ? b1 : 'GkE5678GHIJKL.jpg';
-          if (mode === 'filename' && runFilenameDiagnostic) {
-            const diagnostic = await runFilenameDiagnostic('active-suggestion', () =>
-              single(gallery, observedName, b1Url, images[1], false, b1)
+          const passive = mode === 'passive' || mode === 'passive-undefined';
+          const observedName = passive ? b1 : 'GkE5678GHIJKL.jpg';
+          if ((passive || mode === 'filename') && runFilenameDiagnostic) {
+            const label = passive ? mode : 'active-suggestion';
+            const diagnostic = await runFilenameDiagnostic(label, () =>
+              single(gallery, observedName, b1Url, images[1], false, b1, passive)
             );
             const diagnosticControl = await control.readObservations();
             assert.equal(diagnosticControl.overflow, false);
@@ -5990,17 +6002,17 @@ async function runAttachmentFilenameCycle({
               ({ id }) => id === diagnostic.id
             );
             assert.equal(diagnosticMatches.length, 1, 'Diagnostic filename suggestion is missing');
-            assert.equal(diagnosticMatches[0]?.mode, 'filename');
-            assert.equal(diagnosticMatches[0]?.suggestedFilename, observedName);
+            assert.equal(diagnosticMatches[0]?.mode, mode);
+            assert.equal(diagnosticMatches[0]?.suggestedFilename, passive ? null : observedName);
             evidence.steps.push({
-              name: 'filename-diagnostic-active-suggestion',
+              name: `filename-diagnostic-${label}`,
               nativeId: diagnostic.id,
-              trace: 'filename-correlation-active-suggestion.json',
+              trace: `filename-correlation-${label}.json`,
               suggestion: diagnosticMatches[0],
             });
-            await retire(diagnostic, 'diagnostic-active-suggestion.jpg', images[1]);
+            await retire(diagnostic, `diagnostic-${label}.jpg`, images[1]);
           }
-          const saved = await single(gallery, observedName, b1Url, images[1], false, b1);
+          const saved = await single(gallery, observedName, b1Url, images[1], false, b1, passive);
           const observation = await control.readObservations();
           assert.equal(observation.overflow, false);
           assert.equal(observation.controlError, null);
@@ -6011,7 +6023,7 @@ async function runAttachmentFilenameCycle({
             'Filename suggestion was not observed for this native ID'
           );
           assert.equal(matching[0]?.mode, mode);
-          assert.equal(matching[0]?.suggestedFilename, mode === 'passive' ? null : observedName);
+          assert.equal(matching[0]?.suggestedFilename, passive ? null : observedName);
           assert.equal(matching[0]?.conflictAction, mode === 'conflict-action' ? 'uniquify' : null);
           (controlEvidence.cases as unknown[]).push({
             mode,
@@ -6024,6 +6036,11 @@ async function runAttachmentFilenameCycle({
         await page.keyboard.press('Escape');
         await gallery.waitFor({ state: 'detached' });
       } finally {
+        try {
+          controlEvidence.finalObservation = await control.readObservations();
+        } catch (error) {
+          controlEvidence.observationError = safeError(error);
+        }
         await control.dispose();
         controlEvidence.cleanup = 'complete';
       }
@@ -6113,7 +6130,7 @@ async function runAttachmentFilenameFocusedProbe({
                 suggestedFilename: 'GkE5678GHIJKL.jpg',
               }),
             runFilenameDiagnostic: <T>(
-              label: 'xeg-alone' | 'active-suggestion',
+              label: 'xeg-alone' | 'passive' | 'passive-undefined' | 'active-suggestion',
               action: () => Promise<T>
             ) =>
               withFilenameCorrelation({

@@ -16,7 +16,7 @@ declare const chrome: {
   };
 };
 
-export type FilenameDecisionMode = 'passive' | 'filename' | 'conflict-action';
+export type FilenameDecisionMode = 'passive' | 'passive-undefined' | 'filename' | 'conflict-action';
 
 export interface FilenameDecisionObservation {
   readonly id: number;
@@ -61,15 +61,16 @@ chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
   // The callback stays alive while storage is read; every path calls suggest once.
   void (async () => {
     let suggestion;
+    let mode;
     try {
-      const { mode } = await chrome.storage.local.get('mode');
+      ({ mode } = await chrome.storage.local.get('mode'));
       if (mode === 'filename') {
         suggestion = { filename: suggestedFilename };
       } else if (mode === 'conflict-action') {
         // Explicit uniquify cannot overwrite a preexisting same-name file.
         suggestion = { filename: suggestedFilename, conflictAction: 'uniquify' };
       }
-      if (mode === 'passive' || mode === 'filename' || mode === 'conflict-action') {
+      if (mode === 'passive' || mode === 'passive-undefined' || mode === 'filename' || mode === 'conflict-action') {
         const { observations = [], overflow = false } = await chrome.storage.local.get([
           'observations', 'overflow',
         ]);
@@ -94,7 +95,11 @@ chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
       await chrome.storage.local.set({ controlError: 'filename-control-storage-failed' }).catch(() => {});
       suggestion = undefined;
     } finally {
-      suggest(suggestion);
+      if (suggestion === undefined && mode !== 'passive-undefined') {
+        suggest();
+      } else {
+        suggest(suggestion);
+      }
     }
   })();
   return true;
@@ -213,7 +218,7 @@ export async function installFilenameDecisionControl({
     id: controlId,
     async setMode(mode) {
       assert(!disposed, 'Filename control is disposed');
-      assert(['passive', 'filename', 'conflict-action'].includes(mode));
+      assert(['passive', 'passive-undefined', 'filename', 'conflict-action'].includes(mode));
       await controlPage.evaluate((value) => chrome.storage.local.set({ mode: value }), mode);
       assert.equal(
         await controlPage.evaluate(async () => (await chrome.storage.local.get('mode')).mode),

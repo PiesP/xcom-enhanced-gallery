@@ -4,7 +4,7 @@
 /** Diagnostic-only instrumentation for one task-owned installed Chrome download. */
 import assert from 'node:assert/strict';
 import { createHash, randomUUID } from 'node:crypto';
-import { mkdir, readFile, realpath, writeFile } from 'node:fs/promises';
+import { readFile, realpath, writeFile } from 'node:fs/promises';
 import { basename, isAbsolute, relative, resolve } from 'node:path';
 import type { BrowserContext, CDPSession, Page, Worker } from '@playwright/test';
 import { COMPACT_FIXTURE_URL } from './install-preparation.ts';
@@ -509,7 +509,7 @@ export async function withFilenameCorrelation<T>(options: {
   expectedUrl: string;
   expectedBytes: Uint8Array;
   action: () => Promise<T>;
-  label?: 'xeg-alone' | 'active-suggestion';
+  label?: 'xeg-alone' | 'passive' | 'passive-undefined' | 'active-suggestion';
 }): Promise<T> {
   const {
     context,
@@ -908,13 +908,9 @@ export async function withFilenameCorrelation<T>(options: {
           matchesExpectedBytes: Buffer.from(bytes).equals(Buffer.from(expectedBytes)),
         };
         fileVerified = true;
-        const retainedDirectory = resolve(
-          output,
-          `filename-correlation-${options.label ?? 'xeg-alone'}-${nativeItem.id}`
-        );
+        const retainedName = `filename-correlation-${options.label ?? 'xeg-alone'}-${nativeItem.id}.bin`;
         try {
-          await mkdir(retainedDirectory);
-          const retainedFile = resolve(retainedDirectory, basename(savedPath));
+          const retainedFile = resolve(output, retainedName);
           await writeFile(retainedFile, bytes, { flag: 'wx' });
           const retained = await readExactDownloadFile(retainedFile, bytes.length);
           assert(
@@ -923,7 +919,7 @@ export async function withFilenameCorrelation<T>(options: {
           );
           receipt.savedFile = {
             ...(receipt.savedFile as Record<string, unknown>),
-            retainedFile: `${basename(retainedDirectory)}/${basename(savedPath)}`,
+            retainedFile: retainedName,
           };
         } catch (error) {
           addError('retention', error);
