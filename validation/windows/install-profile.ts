@@ -5688,9 +5688,7 @@ async function runAttachmentFilenameCycle({
       label: string,
       expected: Buffer
     ) => {
-      const savedPath = isAbsolute(item.filename)
-        ? item.filename
-        : join(downloads, item.filename);
+      const savedPath = isAbsolute(item.filename) ? item.filename : join(downloads, item.filename);
       const ownedPath = relative(downloads, savedPath);
       assert(ownedPath && !ownedPath.startsWith('..') && !isAbsolute(ownedPath));
       const retainedPath = join(output, `attachment-filename-${label}`);
