@@ -119,7 +119,11 @@ const filenamePolicy = new OwnedDownloadFilenamePolicy(browserApi.runtime.id, as
     );
   return matches.length === 1 ? matches[0]?.[1].requestedFilename : undefined;
 });
-browserApi.downloads.onDeterminingFilename?.addListener(filenamePolicy.listener);
+// Chrome's promise-only browser.* namespace may omit callback-bearing events.
+// The native chrome.* event is also the route used by filename-determining extensions.
+const filenameEvents =
+  globalThis.chrome?.downloads?.onDeterminingFilename ?? browserApi.downloads.onDeterminingFilename;
+filenameEvents?.addListener(filenamePolicy.listener);
 
 function readDownloadState(value: ChromeDownloadDelta['state']): string | undefined {
   return typeof value === 'string' ? value : value?.current;
@@ -929,10 +933,16 @@ async function runTrackedDownload(
         terminalObserved: false,
       };
       activeDownloadIds.set(requestId, tracked);
-      const cancellationRequested = await downloadTracking.bindDownload(requestId, downloadId, {
-        requestedFilename: downloadOptions.filename ?? '',
-        urlHash: await hashDownloadUrl(downloadOptions.url),
-      });
+      const cancellationRequested = await downloadTracking.bindDownload(
+        requestId,
+        downloadId,
+        filenameEvents && downloadOptions.filename
+          ? {
+              requestedFilename: downloadOptions.filename,
+              urlHash: await hashDownloadUrl(downloadOptions.url),
+            }
+          : undefined
+      );
       filenameAllocation.bound(downloadId);
       filenameAllocation.finish();
       if (cancellationRequested) {

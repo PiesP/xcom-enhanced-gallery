@@ -12,6 +12,7 @@ import { readExactDownloadFile } from './download-memory.ts';
 
 declare const chrome: {
   runtime: {
+    id: string;
     sendMessage(message: unknown): Promise<unknown>;
     onMessage: {
       addListener(
@@ -717,6 +718,26 @@ export async function withFilenameCorrelation<T>(options: {
     cleanup.workerListener = 'failed';
     cleanup.nativeWrapper = 'failed';
     await installWorkerObserver(worker, marker, expectedUrl, extensionId);
+    receipt.filenameCapabilities = await worker.evaluate(() => {
+      type Api = typeof chrome & {
+        downloads: typeof chrome.downloads & {
+          onDeterminingFilename?: { hasListeners(): boolean };
+        };
+      };
+      const alternate = (globalThis as typeof globalThis & { browser?: Api }).browser;
+      const native = chrome as Api;
+      const describe = (api: Api | undefined) => ({
+        runtimeId: api?.runtime.id ?? null,
+        eventAvailable: !!api?.downloads.onDeterminingFilename,
+        hasListeners: api?.downloads.onDeterminingFilename?.hasListeners() ?? null,
+      });
+      return {
+        chrome: describe(native),
+        browser: describe(alternate),
+        sameEvent:
+          native.downloads.onDeterminingFilename === alternate?.downloads.onDeterminingFilename,
+      };
+    });
     actionStarted = true;
     result = await action();
     receipt.actionOutcome = { status: 'passed' };
