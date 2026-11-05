@@ -220,8 +220,10 @@ test('loads the Chrome extension, completes a privileged download, and restores 
     );
     expect(completedDownload?.url).toBe(NATIVE_ORIGINAL_URL);
     expect(completedDownload?.filename.startsWith(downloadDirectory)).toBe(true);
-    // The fixture's first photo belongs to testuser's /photo/1 (zero-based attachment 0).
-    expect(basename(completedDownload?.filename ?? '')).toBe('testuser_1234567890123456789_0.jpg');
+    // The fixture has no /photo/N hint; the first owned CDN path has this stable source key.
+    expect(basename(completedDownload?.filename ?? '')).toBe(
+      'testuser_1234567890123456789_source-b44cfa31f709d13f.jpg'
+    );
     expect(readFileSync(completedDownload?.filename ?? '')).toEqual(MOCK_IMAGE);
     const nativeTransfer = nativeLoopback.snapshot();
     expect(nativeTransfer).toMatchObject({
