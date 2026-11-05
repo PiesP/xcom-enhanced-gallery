@@ -21,6 +21,10 @@ const INSTALLED_GALLERY_HTML = readFileSync(
   resolve(import.meta.dirname, '../fixtures/installed-gallery-page.html'),
   'utf8'
 );
+// Project-generated JPEG; the native original's URL, MIME and bytes describe the same format.
+const NATIVE_ORIGINAL_IMAGE = readFileSync(
+  resolve(import.meta.dirname, '../fixtures/native-original.jpg')
+);
 const PUBLIC_FIXTURE_URL = 'https://x.com/public_user/status/9876543210987654321';
 
 function isExpectedFixtureApiConsoleError(record: { location: string; text: string }): boolean {
@@ -45,6 +49,7 @@ declare module '../../../src/platform/chrome' {
   }
   interface ChromeDownloadItem {
     readonly filename: string;
+    readonly mime: string;
   }
   interface ChromeNotificationsModule {
     getAll(): Promise<Record<string, boolean>>;
@@ -80,7 +85,7 @@ test('loads the Chrome extension, completes a privileged download, and restores 
         },
       })
     );
-    nativeLoopback = await startNativeDownloadLoopback(MOCK_IMAGE);
+    nativeLoopback = await startNativeDownloadLoopback(NATIVE_ORIGINAL_IMAGE);
     context = await chromium.launchPersistentContext(userDataDir, {
       channel: 'chromium',
       headless: true,
@@ -243,16 +248,17 @@ test('loads the Chrome extension, completes a privileged download, and restores 
       chrome.downloads.search({ orderBy: ['-startTime'], limit: 1 })
     );
     expect(completedDownload?.url).toBe(NATIVE_ORIGINAL_URL);
+    expect(completedDownload?.mime).toBe('image/jpeg');
     expect(completedDownload?.filename.startsWith(downloadDirectory)).toBe(true);
     // The fixture has no /photo/N hint; the first owned CDN path has this stable source key.
     expect(basename(completedDownload?.filename ?? '')).toBe(
       'testuser_1234567890123456789_source-b44cfa31f709d13f.jpg'
     );
-    expect(readFileSync(completedDownload?.filename ?? '')).toEqual(MOCK_IMAGE);
+    expect(readFileSync(completedDownload?.filename ?? '')).toEqual(NATIVE_ORIGINAL_IMAGE);
     const nativeTransfer = nativeLoopback.snapshot();
     expect(nativeTransfer).toMatchObject({
       servedGets: 1,
-      servedBytes: MOCK_IMAGE.length,
+      servedBytes: NATIVE_ORIGINAL_IMAGE.length,
       previewRequests: 0,
       unexpected: 0,
       overflow: false,
