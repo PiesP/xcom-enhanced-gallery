@@ -139,33 +139,20 @@ Ordinary extracted media currently starts with an empty filename and usually
 produces short handle/post/ordinal names. The length, control-character and
 device-name cases are supported utility and caller boundaries; no previous
 Windows save failure is inferred from their unit tests. Parsed-ZIP tests cover
-entry bytes, duplicate names and failed-entry recovery. Exact native saved
-basenames and Windows filesystem behavior remain unverified until the prepared
-Windows validation environment is available.
+entry bytes, duplicate names and failed-entry recovery. These utility tests alone
+do not verify native saved basenames or Windows filesystem behavior.
 
-The Chrome extension submits the requested name to the native API and also
-suggests it during filename determination only after matching this extension's
-initiator ID, the persisted request/native-download ID, and the initial URL hash.
-The requested name survives worker restarts in that bounded ownership record.
-Identical-source native allocations run in order, so an early filename event
-can bind its owned native ID to the one pending request before the API promise
-returns. Different sources and native transfers remain independent. Unavailable
-or ambiguous ownership leaves the browser's decision unchanged after a bounded wait.
-Dispatched allocations that lost their native ID remain marked across worker
-restart; another same-source request cannot claim their early event. Provisional
-IDs cannot drive status or cancellation until the native API confirms its ID.
-A queued cancellation never starts another native save. Suggestions use
-`uniquify`, preserving preexisting files. They do not rename unrelated downloads
-or guarantee priority over another extension's active filename suggestion.
-
-A completed direct download reports transfer success separately from its name.
-The single-download result's `filename` remains the requested name for existing
-callers; optional `requestedFilename`, `observedFilename` (basename only), and
-`filenameConforms` expose the native observation when available. Conformance
-accepts the exact basename or a browser numeric ` (N)` conflict suffix before
-the extension. An unavailable observation is not replaced with the requested
-name. An unexpected completed name never starts another save or overwrites the
-completed file.
+The Chrome extension passes the requested filename to the native download API.
+For a completed direct download, the result keeps that request separate from the
+native observed basename. `requestedFilename` comes from the request bound to the
+actual native ID. Optional `observedFilename` and `filenameConforms` require an
+exact download ID, original URL, and initiating extension match. A numeric ` (N)`
+conflict suffix is conforming.
+If native history is unavailable, the completed transfer remains complete and
+the observed filename stays unknown. A mismatched basename does not start another
+download or overwrite the saved file. The installed Chrome 156.0.8078.80
+experiment showed that a passive filename listener could not override another
+extension's filename choice, so no filename suggestion policy is installed.
 
 ## In-gallery limitations
 
