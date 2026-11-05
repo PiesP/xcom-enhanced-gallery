@@ -17,6 +17,11 @@ describe('filename-utils', () => {
     it('returns null for undefined mediaId', () => {
       expect(getIndexFromMediaId(undefined)).toBeNull();
     });
+
+    it('retains the legacy suffix mapping', () => {
+      expect(getIndexFromMediaId('222_media_0')).toBe('1');
+      expect(getIndexFromMediaId('222_dom_0')).toBe('0');
+    });
   });
 
   describe('generateMediaFilename', () => {
@@ -38,6 +43,22 @@ describe('filename-utils', () => {
       });
       expect(filename).toBeTruthy();
       expect(filename.endsWith('.jpg')).toBe(true);
+    });
+
+    it('prefers explicit owner-local identity over gallery or legacy ID positions', () => {
+      const media = {
+        id: '222_api_5',
+        url: 'https://pbs.twimg.com/media/example.jpg',
+        type: 'image' as const,
+        tweetUsername: 'bob',
+        tweetId: '222',
+        attachmentOrdinal: 0,
+        attachmentSourceKey: 'source-0123456789abcdef',
+      };
+      expect(generateMediaFilename(media, { index: 7 })).toBe('bob_222_0.jpg');
+      expect(generateMediaFilename({ ...media, attachmentOrdinal: undefined })).toBe(
+        'bob_222_source-0123456789abcdef.jpg'
+      );
     });
   });
 });

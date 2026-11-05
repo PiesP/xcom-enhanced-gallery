@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import deepOverlayHtml from '../../../../fixtures/authenticated-x-layouts/video-deep-overlay.html?raw';
+import { generateMediaFilename } from '@shared/core/filename/filename-utils';
 import { captureClickedMediaEvidence } from '@shared/services/media-extraction/determine-clicked-index';
 import { DOMFallbackExtractor } from '@shared/services/media-extraction/extractors/dom-fallback-extractor';
 import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
@@ -58,6 +59,7 @@ describe('scoped DOM recovery', () => {
     expect(result.success).toBe(true);
     expect(result.mediaItems).toHaveLength(1);
     expect(result.mediaItems[0]?.url).toContain('selected.jpg');
+    expect(generateMediaFilename(result.mediaItems[0]!)).toBe('author_222_1.jpg');
     expect(result.metadata?.recoveryScope).toBe('visible-tile');
   });
 
@@ -66,6 +68,100 @@ describe('scoped DOM recovery', () => {
     const result = await recover('second');
     expect(result.success).toBe(true);
     expect(result.clickedIndex).toBe(1);
+    expect(result.mediaItems[1]?.attachmentOrdinal).toBeUndefined();
+    expect(generateMediaFilename(result.mediaItems[1]!)).toMatch(
+      /^author_222_source-[0-9a-f]{16}\.jpg$/u
+    );
+  });
+
+  it('does not derive a filename from an excluded candidate or a partial DOM position', async () => {
+    document.body.innerHTML = `<article><a href="/author/status/222"><time>Now</time></a><img src="https://pbs.twimg.com/profile_images/222/avatar.jpg"><img id="target" src="https://pbs.twimg.com/media/second.jpg?name=small"></article>`;
+    const first = await recover('target');
+    expect(first.success).toBe(true);
+    expect(first.mediaItems).toHaveLength(1);
+    expect(first.mediaItems[0]?.id).toBe('222_dom_1');
+    const filename = generateMediaFilename(first.mediaItems[0]!);
+    expect(filename).toMatch(/^author_222_source-[0-9a-f]{16}\.jpg$/u);
+
+    document.querySelector('img[src*="profile_images"]')!.remove();
+    const partial = await recover('target');
+    expect(partial.mediaItems[0]?.id).toBe('222_dom_0');
+    expect(generateMediaFilename(partial.mediaItems[0]!)).toBe(filename);
+
+    document
+      .getElementById('target')!
+      .setAttribute('src', 'https://pbs.twimg.com/media/second?format=jpg&name=orig');
+    const variant = await recover('target');
+    expect(generateMediaFilename(variant.mediaItems[0]!)).toBe(filename);
+    document
+      .getElementById('target')!
+      .setAttribute('src', 'https://pbs.twimg.com/media/second:small');
+    const legacySize = await recover('target');
+    expect(generateMediaFilename(legacySize.mediaItems[0]!)).toBe(filename);
+  });
+
+  it('uses the installed compact quote source key for an unpositioned DOM photo', async () => {
+    document.body.innerHTML =
+      '<article><a href="/author/status/222"><time>Now</time></a><a href="/author/status/222"><img id="target" src="https://pbs.twimg.com/media/CompactQuoteSelected?format=webp&name=medium"></a></article>';
+    const result = await recover('target');
+    expect(result.success).toBe(true);
+    expect(result.mediaItems[0]?.attachmentOrdinal).toBeUndefined();
+    expect(generateMediaFilename(result.mediaItems[0]!)).toBe(
+      'author_222_source-2c5997cbd4186b55.webp'
+    );
+  });
+
+  it('does not assign one photo link ordinal to multiple enclosed sources', async () => {
+    document.body.innerHTML = `<article><a href="/author/status/222"><time>Now</time></a><a href="/author/status/222/photo/2">${photo('first')}${photo('second')}</a></article>`;
+    const result = await recover('second');
+    expect(result.success).toBe(true);
+    expect(result.mediaItems.map((item) => item.attachmentOrdinal)).toEqual([undefined, undefined]);
+    expect(generateMediaFilename(result.mediaItems[1]!)).toMatch(
+      /^author_222_source-[0-9a-f]{16}\.jpg$/u
+    );
+  });
+
+  it.each([
+    'https://evil.invalid/author/status/222/photo/8',
+    'http://x.com/author/status/222/photo/8',
+    '/other/status/222/photo/8',
+    '/author/status/222/photo/8/extra',
+  ])('does not borrow an ordinal from a conflicting image link: %s', async (href) => {
+    document.body.innerHTML = `<article><a href="/author/status/222"><time>Now</time></a><a href="${href}">${photo('target')}</a></article>`;
+    const result = await new DOMFallbackExtractor().extract(
+      {
+        tweetId: '222',
+        username: 'author',
+        tweetUrl: 'https://x.com/author/status/222',
+        extractionMethod: 'fixture',
+        confidence: 1,
+      },
+      document.getElementById('target')!,
+      {},
+      'conflicting-link'
+    );
+    expect(result.success).toBe(true);
+    expect(result.mediaItems[0]?.attachmentOrdinal).toBeUndefined();
+    expect(generateMediaFilename(result.mediaItems[0]!)).toMatch(
+      /^author_222_source-[0-9a-f]{16}\.jpg$/u
+    );
+  });
+
+  it('rejects a different post link instead of borrowing its position', async () => {
+    document.body.innerHTML = `<article><a href="/author/status/222"><time>Now</time></a><a href="/author/status/333/photo/8">${photo('target')}</a></article>`;
+    const result = await new DOMFallbackExtractor().extract(
+      {
+        tweetId: '222',
+        username: 'author',
+        tweetUrl: 'https://x.com/author/status/222',
+        extractionMethod: 'fixture',
+        confidence: 1,
+      },
+      document.getElementById('target')!,
+      {},
+      'other-post'
+    );
+    expect(result.success).toBe(false);
   });
 
   it.each(['https://x.com.evil.invalid/a/status/222/photo/1', '/author/status/333/photo/1'])(

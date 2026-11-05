@@ -186,6 +186,21 @@ also checks keyboard activation of the media link, native B/C header navigation,
 gallery navigation, close/reopen and host-state restoration. Its
 bounded requests and partial failure observations remain separate from live X.
 
+For #482, the C 403 recovery additionally requires a completed native single
+save with the exact `source-2c5997cbd4186b55` filename and original WebP
+bytes. This fixture change has not run in a VM. Full filename acceptance still
+needs a source-bound installed cycle for A quoting B with B1/B2 and B quoting C:
+compare B1/B2 single saves and ZIP members across both request contexts,
+preserve gallery and ZIP order, and check the mixed-owner archive name against
+the first displayed item. Repeat the same source through complete API, complete
+DOM, and visible `/photo/2` partial DOM recovery; compare known ordinals where
+available and require a source-key name where position is unknown. Include an
+excluded earlier DOM candidate, changed query/size spelling, an existing
+same-name native file, and missing-member retry after a partial ZIP. Read each
+owned native file independently for exact name and bytes; verify ZIP member
+order and CRC; retain cleanup and failure receipts. These cases remain pending
+until their fixture routes and VM execution are complete.
+
 The same installed profile invokes `media-api-reuse-profile.ts` to compare
 physical API requests across successive clicks, navigation, reload and a fresh
 page. It checks independent selected-photo identity, uncached provider failures,
@@ -691,11 +706,11 @@ original package digest and installation source separately. Use a clean
 committed checkout and run:
 
 ```bash
-python3 /home/piesp/projects/windows-acceptance/vmctl.py run \
+hyperv-control --profile /absolute/private/profile.json validate --kind browser \
   --repo /home/piesp/projects/xcom-enhanced-gallery \
-  --browser chrome --mode desktop --installation userscript \
-  --manager-directory /path/to/unpacked/tampermonkey \
-  --output /path/to/private/xcom-userscript-evidence
+  --output /path/to/private/xcom-userscript-evidence -- \
+  --browser chrome --installation userscript \
+  --manager-directory /path/to/unpacked/tampermonkey
 ```
 
 The HTTPS userscript fixture currently supports Chrome only; Edge userscript

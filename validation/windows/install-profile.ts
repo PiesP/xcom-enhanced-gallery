@@ -5491,11 +5491,43 @@ async function runCompactQuotePhotoCycle({
   assert(!fallbackPanel.text?.includes('B parent caption'));
   assert(!fallbackPanel.text?.includes('B verified API caption'));
   assert(!fallbackPanel.text?.includes('Outer post'));
+  const knownFallbackSingle = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+  const fallbackNativeMark = nativeLoopback.mark();
+  const fallbackFetchMark = pageFetches.length;
+  await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download"]').click();
+  const fallbackFilename = `inner_fixture_${COMPACT_INNER_ID}_source-2c5997cbd4186b55.webp`;
+  const fallbackDownload = await waitForDownload(
+    extensionPage,
+    knownFallbackSingle,
+    fallbackFilename
+  );
+  const fallbackPath = relative(downloads, fallbackDownload.filename);
+  assert(fallbackPath && !fallbackPath.startsWith('..') && !isAbsolute(fallbackPath));
+  const { bytes: fallbackBytes } = await readExactDownloadFile(
+    fallbackDownload.filename,
+    compactImages.original.length
+  );
+  assert(fallbackBytes.equals(compactImages.original));
+  const fallbackNative = await assertNativeSingle({
+    extensionPage,
+    knownIds: knownFallbackSingle,
+    download: fallbackDownload,
+    expectedUrl: COMPACT_ORIGINAL_URL,
+    expectedBytes: compactImages.original,
+    nativeLoopback,
+    nativeMark: fallbackNativeMark,
+    pageFetches: pageFetches.slice(fallbackFetchMark),
+  });
   evidence.steps.push({
     name: 'c-403',
     selection: fallback,
     panel: fallbackPanel,
     api: deniedRequests,
+    single: {
+      filename: basename(fallbackDownload.filename),
+      ...imageReceipt(fallbackBytes),
+      native: fallbackNative,
+    },
     after: await compactClose(page, '#c-overlay', denied.before, 'escape'),
   });
   evidence.api = compactApiResponses.slice(apiStart);
