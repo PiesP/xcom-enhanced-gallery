@@ -20,6 +20,7 @@ export type FilenameDecisionMode = 'passive' | 'passive-undefined' | 'filename' 
 
 export interface FilenameDecisionObservation {
   readonly id: number;
+  readonly determinedAt?: number;
   readonly mode: FilenameDecisionMode;
   readonly tentativeBasename: string;
   readonly suggestedFilename: string | null;
@@ -77,6 +78,7 @@ chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
         if (observations.length < maxObservations) {
           observations.push({
             id: item.id,
+            determinedAt: Date.now(),
             mode,
             tentativeBasename: basename(item.filename),
             suggestedFilename: suggestion?.filename ?? null,

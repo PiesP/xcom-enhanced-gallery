@@ -37,48 +37,52 @@ export function observeDownloadFilename(
 
 /** Filename suggestions require the initiating extension AND an exact persisted native-ID binding. */
 export class OwnedDownloadFilenamePolicy {
-  private allocations = 0;
-  private readonly waiters = new Map<number, Set<() => void>>();
+  private readonly queues = new Map<string, Promise<void>>();
+  private readonly pending = new Map<
+    string,
+    {
+      bind: (id: number, confirmed: boolean) => Promise<boolean>;
+      id: number | undefined;
+      startedAt: number;
+    }
+  >();
 
   constructor(
     private readonly extensionId: string | undefined,
     private readonly findFilename: (id: number, url: string) => Promise<string | undefined>
   ) {}
 
-  private async lookup(id: number, url: string, deadline: number): Promise<string | undefined> {
-    const remaining = deadline - Date.now();
-    if (remaining <= 0) {
-      return undefined;
-    }
-    let timer: ReturnType<typeof setTimeout> | undefined;
+  /** Serialize allocation for an identical source until its native ID is bound. Transfers remain native. */
+  async allocate(
+    url: string,
+    download: () => Promise<number>,
+    bind: (id: number, confirmed: boolean) => Promise<boolean>
+  ): Promise<number> {
+    const previous = this.queues.get(url) ?? Promise.resolve();
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const queued = previous.then(() => gate);
+    this.queues.set(url, queued);
+    await previous;
+    const allocation = { bind, id: undefined as number | undefined, startedAt: Date.now() };
+    this.pending.set(url, allocation);
     try {
-      return await Promise.race([
-        this.findFilename(id, url),
-        new Promise<undefined>((resolve) => {
-          timer = setTimeout(() => resolve(undefined), remaining);
-        }),
-      ]);
+      const id = await download();
+      if (Number.isSafeInteger(id) && id > 0) {
+        await bind(id, true);
+      }
+      return id;
     } finally {
-      clearTimeout(timer);
+      if (this.pending.get(url) === allocation) {
+        this.pending.delete(url);
+      }
+      release();
+      if (this.queues.get(url) === queued) {
+        this.queues.delete(url);
+      }
     }
-  }
-
-  beginAllocation(): { bound: (id: number) => void; finish: () => void } {
-    this.allocations += 1;
-    let finished = false;
-    return {
-      bound: (id) => {
-        for (const notify of this.waiters.get(id) ?? []) {
-          notify();
-        }
-      },
-      finish: () => {
-        if (!finished) {
-          finished = true;
-          this.allocations -= 1;
-        }
-      },
-    };
   }
 
   readonly listener = (
@@ -96,47 +100,54 @@ export class OwnedDownloadFilenamePolicy {
       return;
     }
     const url = item.url;
-    const deadline = Date.now() + 2_000;
-    void (async () => {
-      let filename: string | undefined;
-      try {
-        // Subscribe before the first lookup to close the allocation/binding race.
-        let notify: (() => void) | undefined;
-        let timer: ReturnType<typeof setTimeout> | undefined;
-        const wait = new Promise<void>((resolve) => {
-          notify = resolve;
-          const pending = this.waiters.get(item.id) ?? new Set<() => void>();
-          pending.add(resolve);
-          this.waiters.set(item.id, pending);
-          timer = setTimeout(resolve, 2_000);
-        });
-        try {
-          filename = await this.lookup(item.id, url, deadline);
-          if (filename === undefined) {
-            if (this.allocations > 0) {
-              await wait;
-            }
-            filename = await this.lookup(item.id, url, deadline);
-          }
-        } finally {
-          clearTimeout(timer);
-          if (notify) {
-            this.waiters.get(item.id)?.delete(notify);
-          }
-          if (this.waiters.get(item.id)?.size === 0) {
-            this.waiters.delete(item.id);
-          }
-        }
-      } catch {
-        // Missing ownership or unavailable storage must not rename or stall a download.
-      } finally {
-        if (filename) {
-          suggest({ filename, conflictAction: 'uniquify' });
-        } else {
-          suggest();
+    const allocation = this.pending.get(url);
+    const startedAt = item.startTime === undefined ? Number.NaN : Date.parse(item.startTime);
+    let settled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const determine = async (): Promise<string | undefined> => {
+      let filename = await this.findFilename(item.id, url);
+      if (
+        !settled &&
+        filename === undefined &&
+        allocation &&
+        this.pending.get(url) === allocation &&
+        Number.isFinite(startedAt) &&
+        startedAt >= allocation.startedAt &&
+        (allocation.id === undefined || allocation.id === item.id)
+      ) {
+        // Chrome may determine the target before download() resolves. One exclusive
+        // same-URL allocation binds this exact owned native ID before suggesting.
+        allocation.id = item.id;
+        if ((await allocation.bind(item.id, false)) && !settled) {
+          filename = await this.findFilename(item.id, url);
         }
       }
-    })();
+      return filename;
+    };
+    void Promise.race([
+      determine(),
+      new Promise<undefined>((resolve) => {
+        timer = setTimeout(() => {
+          settled = true;
+          resolve(undefined);
+        }, 2_000);
+      }),
+    ])
+      .then(
+        (filename) => {
+          settled = true;
+          if (filename) {
+            suggest({ filename, conflictAction: 'uniquify' });
+          } else {
+            suggest();
+          }
+        },
+        () => {
+          settled = true;
+          suggest();
+        }
+      )
+      .finally(() => clearTimeout(timer));
     return true;
   };
 }

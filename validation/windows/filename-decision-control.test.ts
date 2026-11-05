@@ -55,7 +55,7 @@ function control() {
     },
   };
   const source = createFilenameDecisionControlWorkerSource(TARGET_ID, SOURCE, SUGGESTED);
-  new Script(source).runInNewContext({ chrome, URL });
+  new Script(source).runInNewContext({ chrome, URL, Date: { now: () => 1234 } });
   assert(listenerState.value);
   assert(runtimeState.value);
   let ping: unknown;
@@ -134,6 +134,7 @@ describe('task-owned filename decision control', () => {
     assert.deepEqual(JSON.parse(JSON.stringify(fixture.stored.observations)), [
       {
         id: 41,
+        determinedAt: 1234,
         mode: 'passive',
         tentativeBasename: 'middle_fixture_9555555555555555555_0.jpg',
         suggestedFilename: null,
@@ -144,6 +145,7 @@ describe('task-owned filename decision control', () => {
       },
       {
         id: 42,
+        determinedAt: 1234,
         mode: 'filename',
         tentativeBasename: 'middle_fixture_9555555555555555555_0.jpg',
         suggestedFilename: SUGGESTED,
@@ -154,6 +156,7 @@ describe('task-owned filename decision control', () => {
       },
       {
         id: 43,
+        determinedAt: 1234,
         mode: 'conflict-action',
         tentativeBasename: 'middle_fixture_9555555555555555555_0.jpg',
         suggestedFilename: SUGGESTED,

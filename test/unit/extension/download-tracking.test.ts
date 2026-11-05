@@ -129,6 +129,33 @@ describe('DownloadTrackingStore', () => {
     expect(invalid.get('filename-1')?.downloadId).toBe(42);
   });
 
+  it('keeps an unresolved dispatched source ambiguous across restart and expiry', async () => {
+    const worker = createStorage();
+    let now = 1_000;
+    const first = new DownloadTrackingStore(worker.storage, undefined, () => now);
+    await first.registerDirectRequest('orphan', 7, urlHash, 'old.jpg');
+    await first.prepareFilename('orphan', 'old.jpg', urlHash);
+    now += 20 * 60_000;
+    const restarted = new DownloadTrackingStore(worker.storage, undefined, () => now);
+    await restarted.registerDirectRequest('new', 8, urlHash, 'new.jpg');
+    expect(restarted.get('orphan')?.filenamePending).toBe(true);
+    expect(restarted.canBindEarlyFilename('new', urlHash)).toBe(false);
+    expect(restarted.canBindEarlyFilename('new', 'b'.repeat(64))).toBe(true);
+  });
+
+  it('discards a differing provisional ID before confirming the returned native ID', async () => {
+    const worker = createStorage();
+    const store = new DownloadTrackingStore(worker.storage);
+    await store.registerDirectRequest('provisional', 7, urlHash, 'name.jpg');
+    await store.prepareFilename('provisional', 'name.jpg', urlHash);
+    await store.bindDirectDownload('provisional', 41, 7, urlHash, 'name.jpg');
+    await store.confirmFilename('provisional', 42);
+    expect(store.get('provisional')?.downloadId).toBeUndefined();
+    await store.bindDirectDownload('provisional', 42, 7, urlHash, 'name.jpg');
+    expect(store.get('provisional')).toMatchObject({ downloadId: 42, ownerTabId: 7 });
+    expect(store.get('provisional')?.filenamePending).toBeUndefined();
+  });
+
   it('honors same-owner cancellation before an ID without allowing a second dispatch', async () => {
     const worker = createStorage();
     const store = new DownloadTrackingStore(worker.storage);

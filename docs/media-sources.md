@@ -147,8 +147,14 @@ The Chrome extension submits the requested name to the native API and also
 suggests it during filename determination only after matching this extension's
 initiator ID, the persisted request/native-download ID, and the initial URL hash.
 The requested name survives worker restarts in that bounded ownership record.
-An event arriving before the native ID is bound waits briefly; unavailable or
-ambiguous ownership leaves the browser's decision unchanged. Suggestions use
+Identical-source native allocations run in order, so an early filename event
+can bind its owned native ID to the one pending request before the API promise
+returns. Different sources and native transfers remain independent. Unavailable
+or ambiguous ownership leaves the browser's decision unchanged after a bounded wait.
+Dispatched allocations that lost their native ID remain marked across worker
+restart; another same-source request cannot claim their early event. Provisional
+IDs cannot drive status or cancellation until the native API confirms its ID.
+A queued cancellation never starts another native save. Suggestions use
 `uniquify`, preserving preexisting files. They do not rename unrelated downloads
 or guarantee priority over another extension's active filename suggestion.
 

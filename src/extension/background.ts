@@ -119,10 +119,7 @@ const filenamePolicy = new OwnedDownloadFilenamePolicy(browserApi.runtime.id, as
     );
   return matches.length === 1 ? matches[0]?.[1].requestedFilename : undefined;
 });
-// Chrome's promise-only browser.* namespace may omit callback-bearing events.
-// The native chrome.* event is also the route used by filename-determining extensions.
-const filenameEvents =
-  globalThis.chrome?.downloads?.onDeterminingFilename ?? browserApi.downloads.onDeterminingFilename;
+const filenameEvents = browserApi.downloads.onDeterminingFilename;
 filenameEvents?.addListener(filenamePolicy.listener);
 
 function readDownloadState(value: ChromeDownloadDelta['state']): string | undefined {
@@ -181,7 +178,7 @@ async function restoreTrackedDownloadsFromStorage(): Promise<void> {
   activeDownloadIds.clear();
 
   for (const [requestId, record] of records) {
-    if (record.downloadId === undefined) {
+    if (record.downloadId === undefined || record.filenamePending) {
       continue;
     }
 
@@ -542,6 +539,19 @@ async function handleDownloadBlobStatusRequest(
 
   try {
     await restoreTrackedDownloads();
+    const pendingFilename = downloadTracking.get(requestId);
+    if (pendingFilename?.filenamePending) {
+      if (
+        pendingFilename.route === 'direct' ||
+        pendingFilename.urlHash !== (await hashDownloadUrl(objectUrl))
+      ) {
+        return result('unknown');
+      }
+      if (cancelRequested) {
+        await downloadTracking.requestCancellation(requestId);
+      }
+      return result('unknown');
+    }
     const downloadId =
       activeDownloadIds.get(requestId)?.downloadId ?? downloadTracking.get(requestId)?.downloadId;
     if (downloadId !== undefined) {
@@ -662,6 +672,9 @@ async function inspectDirectDownload(
   record: PersistedDownloadRecord,
   url: string
 ): Promise<DownloadDirectStatusResponse> {
+  if (record.filenamePending) {
+    return directStatus(requestId, 'unknown');
+  }
   if (record.terminalState === 'never-started') {
     return directStatus(
       requestId,
@@ -748,7 +761,7 @@ async function handleDownloadDirectStatusRequest(
         return directStatus(requestId, 'unknown');
       }
       record = downloadTracking.get(requestId);
-      if (isValidDownloadId(record?.downloadId)) {
+      if (isValidDownloadId(record?.downloadId) && !record.filenamePending) {
         const beforeCancel = await inspectDirectDownload(requestId, record, url);
         if (beforeCancel.status === 'active') {
           const tracked = activeDownloadIds.get(requestId);
@@ -779,7 +792,12 @@ async function runDirectDownload(
 ): Promise<ExtensionMessageResponse> {
   await restoreTrackedDownloads();
   const urlHash = await hashDownloadUrl(options.url);
-  const registered = await downloadTracking.registerDirectRequest(requestId, ownerTabId, urlHash);
+  const registered = await downloadTracking.registerDirectRequest(
+    requestId,
+    ownerTabId,
+    urlHash,
+    options.filename
+  );
   if (registered === 'wrong-owner' || registered === 'capacity') {
     return {
       success: false,
@@ -811,9 +829,40 @@ async function runDirectDownload(
   }
 
   let downloadId: number | undefined;
-  const filenameAllocation = filenamePolicy.beginAllocation();
+  let confirmedCancellation: boolean | undefined;
   try {
-    downloadId = await browserApi.downloads.download(options);
+    downloadId = await filenamePolicy.allocate(
+      options.url,
+      async () => {
+        if (downloadTracking.get(requestId)?.cancellationRequested) {
+          throw new Error('Download cancelled');
+        }
+        if (filenameEvents && options.filename) {
+          await downloadTracking.prepareFilename(requestId, options.filename, urlHash);
+        }
+        return browserApi.downloads.download(options);
+      },
+      async (id, confirmed) => {
+        if (!confirmed && !downloadTracking.canBindEarlyFilename(requestId, urlHash)) {
+          return false;
+        }
+        if (confirmed) {
+          await downloadTracking.confirmFilename(requestId, id);
+        }
+        downloadId = id;
+        const result = await downloadTracking.bindDirectDownload(
+          requestId,
+          id,
+          ownerTabId,
+          urlHash,
+          options.filename
+        );
+        if (confirmed) {
+          confirmedCancellation = result;
+        }
+        return result !== undefined;
+      }
+    );
     if (!isValidDownloadId(downloadId)) {
       return {
         success: false,
@@ -829,15 +878,7 @@ async function runDirectDownload(
       direct: true,
     };
     activeDownloadIds.set(requestId, tracked);
-    const cancellationRequested = await downloadTracking.bindDirectDownload(
-      requestId,
-      downloadId,
-      ownerTabId,
-      urlHash,
-      options.filename
-    );
-    filenameAllocation.bound(downloadId);
-    filenameAllocation.finish();
+    const cancellationRequested = confirmedCancellation;
     if (cancellationRequested === undefined) {
       await cancelDownloadWithRetry(downloadId, 'failure', () => tracked.terminalObserved);
       return {
@@ -861,8 +902,16 @@ async function runDirectDownload(
       await downloadTracking.markDirectTerminal(requestId, 'never-started');
       return {
         success: false,
-        error: 'Browser rejected the download',
-        data: directStatus(requestId, 'never-started', 'browser-rejected'),
+        error: downloadTracking.get(requestId)?.cancellationRequested
+          ? 'Download cancelled'
+          : 'Browser rejected the download',
+        data: directStatus(
+          requestId,
+          'never-started',
+          downloadTracking.get(requestId)?.cancellationRequested
+            ? 'user-cancelled'
+            : 'browser-rejected'
+        ),
       };
     }
     const record = downloadTracking.get(requestId);
@@ -893,7 +942,6 @@ async function runDirectDownload(
       data: status,
     };
   } finally {
-    filenameAllocation.finish();
     downloadTracking.finishDirectAllocation(requestId);
     const tracked = activeDownloadIds.get(requestId);
     if (tracked !== undefined && tracked.downloadId === downloadId) {
@@ -913,18 +961,52 @@ async function runTrackedDownload(
   suppliedRequestId?: string
 ): Promise<void> {
   const requestId = suppliedRequestId ?? crypto.randomUUID();
-  const filenameAllocation = filenamePolicy.beginAllocation();
   let downloadId: number | undefined;
   let cancellationAlreadyTerminal = false;
   let retainTrackingAfterFailure = false;
   let operationFailure: DownloadOperationError | undefined;
   let cleanupFailure: unknown;
   try {
-    if (requestId) {
-      await restoreTrackedDownloads();
-      await downloadTracking.registerRequest(requestId);
-    }
-    downloadId = await browserApi.downloads.download(downloadOptions);
+    const filenameBinding =
+      filenameEvents && downloadOptions.filename
+        ? {
+            requestedFilename: downloadOptions.filename,
+            urlHash: await hashDownloadUrl(downloadOptions.url),
+          }
+        : undefined;
+    await restoreTrackedDownloads();
+    await downloadTracking.registerRequest(requestId, filenameBinding);
+    downloadId = await filenamePolicy.allocate(
+      downloadOptions.url,
+      async () => {
+        if (downloadTracking.get(requestId)?.cancellationRequested) {
+          throw new Error('Download cancelled');
+        }
+        if (filenameBinding) {
+          await downloadTracking.prepareFilename(
+            requestId,
+            filenameBinding.requestedFilename,
+            filenameBinding.urlHash
+          );
+        }
+        return browserApi.downloads.download(downloadOptions);
+      },
+      async (id, confirmed) => {
+        if (
+          !confirmed &&
+          filenameBinding &&
+          !downloadTracking.canBindEarlyFilename(requestId, filenameBinding.urlHash)
+        ) {
+          return false;
+        }
+        if (confirmed) {
+          await downloadTracking.confirmFilename(requestId, id);
+        }
+        downloadId = id;
+        await downloadTracking.bindDownload(requestId, id, filenameBinding);
+        return true;
+      }
+    );
     if (requestId) {
       const tracked: TrackedDownload = {
         downloadId,
@@ -936,15 +1018,8 @@ async function runTrackedDownload(
       const cancellationRequested = await downloadTracking.bindDownload(
         requestId,
         downloadId,
-        filenameEvents && downloadOptions.filename
-          ? {
-              requestedFilename: downloadOptions.filename,
-              urlHash: await hashDownloadUrl(downloadOptions.url),
-            }
-          : undefined
+        filenameBinding
       );
-      filenameAllocation.bound(downloadId);
-      filenameAllocation.finish();
       if (cancellationRequested) {
         const cancellationStatus = await cancelDownloadWithRetry(
           downloadId,
@@ -983,7 +1058,6 @@ async function runTrackedDownload(
     operationFailure = new DownloadOperationError(error, requestId, terminal);
     throw operationFailure;
   } finally {
-    filenameAllocation.finish();
     if (requestId) {
       if (downloadId !== undefined) {
         const tracked = activeDownloadIds.get(requestId);
@@ -1120,6 +1194,10 @@ async function handleDownloadCancelRequest(
   }
   if (downloadTracking.get(requestId)?.route === 'direct') {
     throw new Error('Direct download cancellation requires its original URL');
+  }
+  if (downloadTracking.get(requestId)?.filenamePending) {
+    await downloadTracking.requestCancellation(requestId);
+    return;
   }
   let tracked = activeDownloadIds.get(requestId);
   if (tracked === undefined) {

@@ -108,6 +108,8 @@ type WorkerTrace = {
     filename?: string;
     saveAs?: boolean;
     downloadId?: number;
+    calledAt?: number;
+    returnedAt?: number;
     error?: string;
   }>;
   overflow: boolean;
@@ -390,6 +392,7 @@ async function installWorkerObserver(
               url: target,
               filename: clip(options.filename),
               saveAs: options.saveAs,
+              calledAt: Date.now(),
             } as WorkerTrace['native'][number])
           : null;
         if (entry) {
@@ -405,6 +408,7 @@ async function installWorkerObserver(
           void Promise.resolve(result).then(
             (id) => {
               entry.downloadId = id;
+              entry.returnedAt = Date.now();
             },
             () => {
               entry.error = 'native-rejected';

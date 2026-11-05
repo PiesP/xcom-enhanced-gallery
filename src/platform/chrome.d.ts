@@ -86,6 +86,7 @@ export interface ChromeDownloadItem {
   readonly error?: string;
   readonly filename?: string;
   readonly byExtensionId?: string;
+  readonly startTime?: string;
 }
 
 export interface ChromeDownloadOptions {

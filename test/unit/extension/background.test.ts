@@ -29,7 +29,7 @@ const state = vi.hoisted(() => ({
   filenameListener: null as
     | null
     | ((
-        item: { id: number; url: string; byExtensionId: string },
+        item: { id: number; url: string; byExtensionId: string; startTime?: string },
         suggest: (value?: unknown) => void
       ) => boolean | void),
 }));
@@ -153,9 +153,9 @@ describe('background direct download ownership', () => {
   const url = 'https://pbs.twimg.com/media/direct.jpg?format=jpg&name=orig';
   const owner = { id: 'extension-id', tab: { id: 17 }, url: 'https://x.com/author/status/123' };
   const otherTab = { id: 'extension-id', tab: { id: 18 }, url: 'https://x.com/other/status/456' };
-  const request = (requestId: string) => ({
+  const request = (requestId: string, requestedUrl = url) => ({
     type: 'DOWNLOAD_REQUEST',
-    payload: { url, filename: 'direct-original.jpg', requestId, mode: 'direct' },
+    payload: { url: requestedUrl, filename: 'direct-original.jpg', requestId, mode: 'direct' },
   });
   const status = (requestId: string, requestedUrl = url) => ({
     type: 'DOWNLOAD_DIRECT_STATUS_REQUEST',
@@ -244,9 +244,12 @@ describe('background direct download ownership', () => {
     const pending = sendMessage(request(requestId), owner);
     await vi.waitFor(() => expect(state.download).toHaveBeenCalledOnce());
     const suggest = vi.fn();
-    expect(state.filenameListener?.({ id: 811, url, byExtensionId: 'extension-id' }, suggest)).toBe(
-      true
-    );
+    expect(
+      state.filenameListener?.(
+        { id: 811, url, byExtensionId: 'extension-id', startTime: new Date().toISOString() },
+        suggest
+      )
+    ).toBe(true);
     expect(suggest).not.toHaveBeenCalled();
     allocation.resolve(811);
     await pending;
@@ -256,6 +259,28 @@ describe('background direct download ownership', () => {
         conflictAction: 'uniquify',
       })
     );
+  });
+
+  it('never allocates a same-source request canceled while queued', async () => {
+    const firstId = `queue-first-${crypto.randomUUID()}`;
+    const secondId = `queue-second-${crypto.randomUUID()}`;
+    const native = deferred<number>();
+    state.download.mockReturnValueOnce(native.promise);
+    state.searchDownload.mockResolvedValue([{ id: 812, url, state: 'complete' }]);
+    const first = sendMessage(request(firstId), owner);
+    await vi.waitFor(() => expect(state.download).toHaveBeenCalledOnce());
+    const second = sendMessage(request(secondId), owner);
+    await sendMessage(
+      { type: 'DOWNLOAD_CANCEL_REQUEST', payload: { requestId: secondId, url } },
+      owner
+    );
+    native.resolve(812);
+    await first;
+    expect(await second).toMatchObject({
+      success: false,
+      data: { requestId: secondId, status: 'never-started', reason: 'user-cancelled' },
+    });
+    expect(state.download).toHaveBeenCalledOnce();
   });
 
   it('keeps an unassigned restarted request unknown even if another download has the same URL', async () => {
@@ -413,7 +438,9 @@ describe('background direct download ownership', () => {
       await vi.waitFor(() => expect(state.download).toHaveBeenCalledOnce());
       now += 10 * 60_000 + 1;
       // Another direct registration invokes pruning while the first Chrome call is pending.
-      expect(await sendMessage(request(otherRequestId), owner)).toMatchObject({ success: false });
+      expect(
+        await sendMessage(request(otherRequestId, 'https://pbs.twimg.com/media/other.jpg'), owner)
+      ).toMatchObject({ success: false });
       const stored = state.storageValues['xeg.download-tracking.v1'] as Record<
         string,
         { ownerTabId?: number }
@@ -808,9 +835,11 @@ describe.each([
     state.download.mockReturnValueOnce(firstDownload.promise);
 
     const failedResponse = sendMessage(request(requestId));
+    await vi.waitFor(() => expect(state.download).toHaveBeenCalledOnce());
     await expect(
       sendMessage({ type: 'DOWNLOAD_CANCEL_REQUEST', payload: { requestId } })
     ).resolves.toEqual({ success: true });
+    await vi.waitFor(() => expect(state.download).toHaveBeenCalledOnce());
     firstDownload.reject(new Error('download ID unavailable'));
     await expect(failedResponse).resolves.toEqual({
       success: false,
@@ -833,6 +862,7 @@ describe.each([
     );
 
     const downloadResponse = sendMessage(request(requestId));
+    await vi.waitFor(() => expect(state.download).toHaveBeenCalledOnce());
     await expect(
       sendMessage({ type: 'DOWNLOAD_CANCEL_REQUEST', payload: { requestId } })
     ).resolves.toEqual({ success: true });
