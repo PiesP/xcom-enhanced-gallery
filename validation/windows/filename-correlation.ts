@@ -4,10 +4,11 @@
 /** Diagnostic-only instrumentation for one task-owned installed Chrome download. */
 import assert from 'node:assert/strict';
 import { createHash, randomUUID } from 'node:crypto';
-import { copyFile, lstat, mkdir, readFile, realpath, stat, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, realpath, writeFile } from 'node:fs/promises';
 import { basename, isAbsolute, relative, resolve } from 'node:path';
 import type { BrowserContext, CDPSession, Page, Worker } from '@playwright/test';
 import { COMPACT_FIXTURE_URL } from './install-preparation.ts';
+import { readExactDownloadFile } from './download-memory.ts';
 
 declare const chrome: {
   runtime: {
@@ -43,6 +44,54 @@ declare const chrome: {
 const TRACKING_KEY = 'xeg.download-tracking.v1';
 const MAX_EVENTS = 4;
 const MAX_FILE_BYTES = 4 * 1024 * 1024;
+const CONTENT_KEY = '__xegFilenameCorrelation482V1';
+
+// These CDP functions are static. The marker and fixture URL cross as structured arguments.
+const CONTENT_INSTALL_FUNCTION = `function(config) {
+  if (Object.prototype.hasOwnProperty.call(globalThis, '__xegFilenameCorrelation482V1')) {
+    return { installed: false, reason: 'preexisting' };
+  }
+  if (typeof config?.marker !== 'string' || config?.maxEvents !== 4 || typeof config?.expectedUrl !== 'string') {
+    return { installed: false, reason: 'invalid-config' };
+  }
+  globalThis.__xegFilenameCorrelation482V1 = {
+    marker: config.marker, expectedUrl: config.expectedUrl, maxEvents: config.maxEvents, events: []
+  };
+  return { installed: true };
+}`;
+const CONTENT_LOGPOINT_CONDITION = `(() => {
+  const state = globalThis.__xegFilenameCorrelation482V1;
+  if (!state ||
+      (media?.downloadSource?.url ?? media?.originalUrl ?? media?.url) !== state.expectedUrl ||
+      typeof media?.id !== 'string' || !media.id || typeof filename !== 'string' || !filename) return false;
+  if (state.events.length < state.maxEvents) state.events.push({
+    id: media.id.slice(0, 128), type: media.type, url: String(media.url).slice(0, 256),
+    originalUrl: media.originalUrl?.slice(0, 256),
+    downloadSource: media.downloadSource ? {
+      url: media.downloadSource.url.slice(0, 256), quality: media.downloadSource.quality,
+      provenance: media.downloadSource.provenance
+    } : undefined,
+    filename: media.filename?.slice(0, 256), attachmentOrdinal: media.attachmentOrdinal,
+    attachmentSourceKey: media.attachmentSourceKey?.slice(0, 128),
+    tweetUsername: media.tweetUsername?.slice(0, 128), tweetId: media.tweetId?.slice(0, 128),
+    quotedUsername: media.quotedUsername?.slice(0, 128),
+    quotedTweetId: media.quotedTweetId?.slice(0, 128), sourceLocation: media.sourceLocation,
+    generatedFilename: filename.slice(0, 256)
+  });
+  return false;
+})()`;
+const CONTENT_CAPTURE_FUNCTION = `function(marker) {
+  const state = globalThis.__xegFilenameCorrelation482V1;
+  return state?.marker === marker ? { matched: true, events: state.events } : { matched: false, events: [] };
+}`;
+const CONTENT_REMOVE_FUNCTION = `function(marker) {
+  const state = globalThis.__xegFilenameCorrelation482V1;
+  if (!state) return { matched: false, existed: false, removed: true };
+  if (state.marker !== marker) return { matched: false, existed: true, removed: false };
+  const removed = delete globalThis.__xegFilenameCorrelation482V1;
+  return { matched: true, existed: true,
+    removed: removed && !Object.prototype.hasOwnProperty.call(globalThis, '__xegFilenameCorrelation482V1') };
+}`;
 
 type WorkerTrace = {
   marker: string;
@@ -66,7 +115,7 @@ type WorkerTrace = {
 };
 
 type CleanupOutcome = {
-  contentGlobal: 'not-installed' | 'absent' | 'removed' | 'failed';
+  contentGlobal: 'not-installed' | 'absent' | 'removed' | 'foreign-preserved' | 'failed';
   workerListener: 'not-installed' | 'removed' | 'failed';
   nativeWrapper: 'not-installed' | 'restored' | 'failed';
   breakpoint: 'not-installed' | 'removed' | 'failed';
@@ -477,6 +526,7 @@ export async function withFilenameCorrelation<T>(options: {
   const receipt: Record<string, unknown> = {
     status: 'incomplete',
     diagnosticOnly: true,
+    contentKey: CONTENT_KEY,
     label: options.label ?? 'xeg-alone',
     expectedUrl,
     expectedBytes: expectedBytes.length,
@@ -513,6 +563,8 @@ export async function withFilenameCorrelation<T>(options: {
   let workerInstalled = false;
   let breakpointId: string | undefined;
   let contentRealmId: number | undefined;
+  let contentInstallAttempted = false;
+  let contentOwned = false;
   let targetTabId: number | undefined;
   let targetPageUrl: string | undefined;
   let targetTimeOrigin: number | undefined;
@@ -521,7 +573,7 @@ export async function withFilenameCorrelation<T>(options: {
   let selectedVerified = false;
   let identityVerified = false;
   let fileVerified = false;
-  const marker = `__xegFilenameCorrelation_${randomUUID().replaceAll('-', '')}`;
+  const marker = `__xegFilenameCorrelation_${randomUUID()}`;
   try {
     assertOwnedFixtureUrl(expectedUrl);
     assert.equal(page.context(), context, 'Target page is outside the installed context');
@@ -612,11 +664,26 @@ export async function withFilenameCorrelation<T>(options: {
     }, 'Installed content realm');
     contentRealmId = realm.id;
     cleanup.contentGlobal = 'failed';
-    const expression = `(() => { if ((media?.downloadSource?.url ?? media?.originalUrl ?? media?.url) !== ${JSON.stringify(expectedUrl)} || typeof media?.id !== "string" || !media.id || typeof filename !== "string" || !filename) return false; const a = globalThis[${JSON.stringify(marker)}] ??= []; if (a.length < ${MAX_EVENTS}) a.push({ id: media.id.slice(0,128), type: media.type, url: String(media.url).slice(0,256), originalUrl: media.originalUrl?.slice(0,256), downloadSource: media.downloadSource ? { url: media.downloadSource.url.slice(0,256), quality: media.downloadSource.quality, provenance: media.downloadSource.provenance } : undefined, filename: media.filename?.slice(0,256), attachmentOrdinal: media.attachmentOrdinal, attachmentSourceKey: media.attachmentSourceKey?.slice(0,128), tweetUsername: media.tweetUsername?.slice(0,128), tweetId: media.tweetId?.slice(0,128), quotedUsername: media.quotedUsername?.slice(0,128), quotedTweetId: media.quotedTweetId?.slice(0,128), sourceLocation: media.sourceLocation, generatedFilename: filename.slice(0,256) }); return false; })()`;
+    contentInstallAttempted = true;
+    const installed = await cdp.send('Runtime.callFunctionOn', {
+      executionContextId: contentRealmId,
+      functionDeclaration: CONTENT_INSTALL_FUNCTION,
+      arguments: [{ value: { marker, expectedUrl, maxEvents: MAX_EVENTS } }],
+      returnByValue: true,
+    });
+    const installState = recordFromRemote(installed, 'Content observer install') as {
+      installed?: boolean;
+      reason?: string;
+    };
+    if (installState?.reason === 'preexisting') {
+      cleanup.contentGlobal = 'foreign-preserved';
+    }
+    assert.equal(installState?.installed, true, 'Content observer slot was unavailable');
+    contentOwned = true;
     const breakpoint = await cdp.send('Debugger.setBreakpointByUrl', {
       url: script.url,
       lineNumber: location.lineNumber,
-      condition: expression,
+      condition: CONTENT_LOGPOINT_CONDITION,
     });
     breakpointId = breakpoint.breakpointId;
     cleanup.breakpoint = 'failed';
@@ -675,14 +742,20 @@ export async function withFilenameCorrelation<T>(options: {
       }
     }
     if (cdp && contentRealmId !== undefined) {
-      if (actionStarted && breakpointId) {
+      if (actionStarted && breakpointId && contentOwned) {
         try {
-          const capture = await cdp.send('Runtime.evaluate', {
-            contextId: contentRealmId,
-            expression: `globalThis[${JSON.stringify(marker)}] ?? []`,
+          const capture = await cdp.send('Runtime.callFunctionOn', {
+            executionContextId: contentRealmId,
+            functionDeclaration: CONTENT_CAPTURE_FUNCTION,
+            arguments: [{ value: marker }],
             returnByValue: true,
           });
-          const selected = recordFromRemote(capture, 'Filename logpoint');
+          const captured = recordFromRemote(capture, 'Filename logpoint') as {
+            matched?: boolean;
+            events?: unknown;
+          };
+          assert.equal(captured?.matched, true, 'Content observer marker changed');
+          const selected = captured.events;
           assert(
             Array.isArray(selected) && selected.length === 1,
             'Expected one selected MediaInfo logpoint hit'
@@ -701,21 +774,32 @@ export async function withFilenameCorrelation<T>(options: {
           addError('content-capture', error);
         }
       }
-      try {
-        const removed = await cdp.send('Runtime.evaluate', {
-          contextId: contentRealmId,
-          expression: `(() => { const key = ${JSON.stringify(marker)}; const existed = Object.prototype.hasOwnProperty.call(globalThis, key); const deleted = delete globalThis[key]; return { existed, removed: deleted && !Object.prototype.hasOwnProperty.call(globalThis, key) }; })()`,
-          returnByValue: true,
-        });
-        const state = recordFromRemote(removed, 'Content observer cleanup') as {
-          existed?: boolean;
-          removed?: boolean;
-        };
-        assert(state?.removed === true, 'Content observer global removal failed');
-        cleanup.contentGlobal = state.existed ? 'removed' : 'absent';
-      } catch (error) {
-        cleanup.contentGlobal = 'failed';
-        addError('content-cleanup', error);
+      if (contentInstallAttempted) {
+        try {
+          const removed = await cdp.send('Runtime.callFunctionOn', {
+            executionContextId: contentRealmId,
+            functionDeclaration: CONTENT_REMOVE_FUNCTION,
+            arguments: [{ value: marker }],
+            returnByValue: true,
+          });
+          const state = recordFromRemote(removed, 'Content observer cleanup') as {
+            matched?: boolean;
+            existed?: boolean;
+            removed?: boolean;
+          };
+          if (state?.existed && !state.matched) {
+            cleanup.contentGlobal = 'foreign-preserved';
+            assert.equal(contentOwned, false, 'Content observer marker changed before cleanup');
+          } else {
+            assert(state?.removed === true, 'Content observer global removal failed');
+            cleanup.contentGlobal = state.existed ? 'removed' : 'absent';
+          }
+        } catch (error) {
+          if (cleanup.contentGlobal !== 'foreign-preserved') {
+            cleanup.contentGlobal = 'failed';
+          }
+          addError('content-cleanup', error);
+        }
       }
     }
     let trace: WorkerTrace | undefined;
@@ -815,12 +899,8 @@ export async function withFilenameCorrelation<T>(options: {
             !isAbsolute(inside),
           'Native file escaped owned downloads directory'
         );
-        const fileStat = await lstat(savedPath);
-        assert(fileStat.isFile(), 'Native file is not a regular file');
-        const size = (await stat(savedPath)).size;
-        assert(size > 0 && size <= MAX_FILE_BYTES, 'Native file exceeded inspection bound');
-        const bytes = await readFile(savedPath);
-        assert.equal(bytes.length, size, 'Native file changed during inspection');
+        const { bytes } = await readExactDownloadFile(savedPath, expectedBytes.length);
+        const size = bytes.length;
         receipt.savedFile = {
           basename: basename(savedPath),
           size,
@@ -835,9 +915,10 @@ export async function withFilenameCorrelation<T>(options: {
         try {
           await mkdir(retainedDirectory);
           const retainedFile = resolve(retainedDirectory, basename(savedPath));
-          await copyFile(savedPath, retainedFile);
+          await writeFile(retainedFile, bytes, { flag: 'wx' });
+          const retained = await readExactDownloadFile(retainedFile, bytes.length);
           assert(
-            sha256(await readFile(retainedFile)) === sha256(bytes),
+            sha256(retained.bytes) === sha256(bytes),
             'Retained native file differs from inspected file'
           );
           receipt.savedFile = {
