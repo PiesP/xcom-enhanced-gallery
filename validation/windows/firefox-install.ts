@@ -73,15 +73,15 @@ type FixtureNetworkEvent = {
   atMs: number;
   requestId: string;
   url: string;
-  context?: string | null;
-  userContext?: string;
-  isBlocked?: boolean;
-  intercepts?: string[];
-  navigation?: string | null;
-  destination?: string;
-  initiatorType?: string;
-  status?: number;
-  error?: string;
+  context?: string | null | undefined;
+  userContext?: string | undefined;
+  isBlocked?: boolean | undefined;
+  intercepts?: string[] | undefined;
+  navigation?: string | null | undefined;
+  destination?: string | undefined;
+  initiatorType?: string | undefined;
+  status?: number | undefined;
+  error?: string | undefined;
 };
 
 const MAX_NETWORK_EVENTS = 100;
@@ -98,16 +98,22 @@ export function fixtureNetworkEvent(
   atMs: number
 ): FixtureNetworkEvent | null {
   const request = params.request;
-  if (!request || typeof request !== 'object' || Array.isArray(request)) return null;
+  if (!request || typeof request !== 'object' || Array.isArray(request)) {
+    return null;
+  }
   const data = request as Record<string, unknown>;
-  if (typeof data.url !== 'string' || typeof data.request !== 'string') return null;
+  if (typeof data.url !== 'string' || typeof data.request !== 'string') {
+    return null;
+  }
   let url: URL;
   try {
     url = new URL(data.url);
   } catch {
     return null;
   }
-  if (!['x.com', 'pbs.twimg.com'].includes(url.hostname) || url.protocol !== 'https:') return null;
+  if (!['x.com', 'pbs.twimg.com'].includes(url.hostname) || url.protocol !== 'https:') {
+    return null;
+  }
   const response = params.response;
   const responseData =
     response && typeof response === 'object' && !Array.isArray(response)
@@ -246,18 +252,25 @@ async function installFixtureIntercept(session: FirefoxSession, html: string, im
   const record = (event: FixtureNetworkEvent['event'], params: Record<string, unknown>) => {
     const row = fixtureNetworkEvent(event, params, performance.now());
     if (row) {
-      if (events.length < MAX_NETWORK_EVENTS) events.push(row);
-      else omittedEvents += 1;
+      if (events.length < MAX_NETWORK_EVENTS) {
+        events.push(row);
+      } else {
+        omittedEvents += 1;
+      }
     }
     return row;
   };
   const handler = async (params: Record<string, unknown>) => {
     const row = record('beforeRequestSent', params);
-    if (!row) return;
+    if (!row) {
+      return;
+    }
     if (requests.length < MAX_NETWORK_EVENTS) {
       requests.push({ url: row.url, navigation: typeof params.navigation === 'string' });
     }
-    if (!ownsBlockedIntercept(params, intercept)) return;
+    if (!ownsBlockedIntercept(params, intercept)) {
+      return;
+    }
     const request = params.request as Record<string, unknown> | undefined;
     assert(
       request && typeof request.request === 'string' && typeof request.url === 'string',
