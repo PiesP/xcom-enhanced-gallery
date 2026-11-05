@@ -1002,6 +1002,11 @@ export async function captureAndConfirmManagerPermissionAsk(
     isOwnedManagerPermissionAskUrl(ask.url(), managerId),
     'Manager permission confirmation navigated away before confirmation'
   );
+  await ask.bringToFront();
+  assert(
+    isOwnedManagerPermissionAskUrl(ask.url(), managerId),
+    'Manager permission confirmation navigated away before confirmation'
+  );
   await ask.getByRole('button', { name: okLabel, exact: true }).click();
 }
 
