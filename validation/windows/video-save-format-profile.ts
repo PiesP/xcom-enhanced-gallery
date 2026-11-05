@@ -135,12 +135,12 @@ export async function runInstalledVideoSaveFormatProbe({
     const single = await waitForDownload(
       extensionPage,
       beforeSingle,
-      `format_fixture_${OWNER}_1.mp4`
+      `format_fixture_${OWNER}_source-433f260a01b3e905.mp4`
     );
     const singleCase: Record<string, unknown> = {
       kind: 'direct-mp4',
       nativeId: single.id,
-      expectedFilename: `format_fixture_${OWNER}_1.mp4`,
+      expectedFilename: `format_fixture_${OWNER}_source-433f260a01b3e905.mp4`,
       filename: basename(single.filename),
       sourceUrl: single.url,
     };
@@ -160,8 +160,8 @@ export async function runInstalledVideoSaveFormatProbe({
     assert(savedVideo.bytes.equals(videoBytes), 'Native MP4 bytes differ from the owned fixture');
 
     const expectedEntries = [
-      { filename: `format_fixture_${OWNER}_0.jpg`, bytes: imageBytes },
-      { filename: `format_fixture_${OWNER}_1.mp4`, bytes: videoBytes },
+      { filename: `format_fixture_${OWNER}_source-b44cfa31f709d13f.jpg`, bytes: imageBytes },
+      { filename: `format_fixture_${OWNER}_source-433f260a01b3e905.mp4`, bytes: videoBytes },
     ];
     const beforeZip = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
     await gallery

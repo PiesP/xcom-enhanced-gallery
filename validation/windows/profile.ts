@@ -132,6 +132,37 @@ export async function run({
     'Unknown Windows artifact fixture selector'
   );
   const settingsPersistenceOnly = selector !== null;
+  const filenameSelectorPath = path.join(
+    root,
+    'validation/windows/inputs/filename-boundaries.json'
+  );
+  const filenameSelectorText = await readFile(filenameSelectorPath, 'utf8').catch(
+    (error: unknown) => {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+        return null;
+      }
+      throw error;
+    }
+  );
+  const filenameSelector: unknown =
+    filenameSelectorText === null ? null : JSON.parse(filenameSelectorText);
+  assert(
+    filenameSelector === null ||
+      (typeof filenameSelector === 'object' &&
+        Object.keys(filenameSelector).length === 1 &&
+        'scenario' in filenameSelector &&
+        filenameSelector.scenario === 'filename-boundaries'),
+    'Unknown Windows filename fixture selector'
+  );
+  assert(
+    !settingsPersistenceOnly || filenameSelector === null,
+    'Conflicting Windows fixture selectors'
+  );
+  if (filenameSelector !== null) {
+    const fixturePath = path.join(root, 'dist-validation/filename-boundary-fixture.mjs');
+    const { run } = await import(pathToFileURL(fixturePath).href);
+    return run({ root, output });
+  }
   const faultMessages = [
     `XEG_WINDOWS_ACCEPTANCE_RENDER_FAULT_RETRY: ${'bounded-long-recovery-message-'.repeat(18)}`,
     'XEG_WINDOWS_ACCEPTANCE_RENDER_FAULT_CLOSE',

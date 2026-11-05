@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Owned attachment filename fixture</title>
+    <style>
+      body {
+        margin: 0;
+        background: #111;
+        color: #eee;
+        font: 16px sans-serif;
+      }
+      #spacer {
+        height: 1100px;
+      }
+      article {
+        padding: 16px;
+        max-width: 640px;
+      }
+      .quote {
+        margin: 12px;
+        padding: 12px;
+        border: 1px solid #777;
+      }
+      img.media {
+        width: 160px;
+        height: 100px;
+        object-fit: cover;
+      }
+      img.avatar {
+        width: 32px;
+        height: 32px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="spacer" aria-hidden="true"></div>
+    <article data-testid="tweet" id="filename-a">
+      <a href="/outer_fixture/status/8555555555555555555"><time>Outer post</time></a>
+      <a href="/outer_fixture/status/8555555555555555555/photo/1"
+        ><img
+          class="media"
+          id="filename-a1"
+          src="https://pbs.twimg.com/media/GkE1234ABCDEF?format=jpg&amp;name=medium"
+          alt="A1"
+      /></a>
+      <div class="quote" role="link" id="filename-b">
+        <article data-testid="tweet">
+          <a href="/middle_fixture/status/9555555555555555555"><time>Middle post</time></a>
+          <img class="avatar" src="https://pbs.twimg.com/profile_images/2/fixture-b.jpg" alt="" />
+          <!-- B1_START -->
+          <a href="/middle_fixture/status/9555555555555555555/photo/1"
+            ><img
+              class="media"
+              id="filename-b1"
+              src="https://pbs.twimg.com/media/GkE5678GHIJKL.jpg?format=jpg&amp;name=medium"
+              alt="B1"
+          /></a>
+          <!-- B1_END -->
+          <a href="/middle_fixture/status/9555555555555555555/photo/2"
+            ><img
+              class="media"
+              id="filename-b2"
+              src="https://pbs.twimg.com/media/GkE9012MNOPQR.jpg?format=jpg&amp;name=medium"
+              alt="B2"
+          /></a>
+          <div class="quote" role="link" id="filename-c">
+            <article data-testid="tweet">
+              <a href="/inner_fixture/status/7555555555555555555"><time>Inner post</time></a>
+              <a href="/inner_fixture/status/7555555555555555555/photo/1"
+                ><img
+                  class="media"
+                  id="filename-c1"
+                  src="https://pbs.twimg.com/media/CompactQuoteSelected?format=webp&amp;name=medium"
+                  alt="C1"
+              /></a>
+            </article>
+          </div>
+        </article>
+      </div>
+    </article>
+  </body>
+</html>

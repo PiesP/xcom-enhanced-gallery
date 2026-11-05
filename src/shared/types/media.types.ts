@@ -46,6 +46,10 @@ export interface MediaInfo {
   readonly videoVariants?: readonly VideoSourceVariant[];
   readonly type: 'image' | 'video' | 'gif';
   readonly filename?: string | undefined;
+  /** Zero-based owner-local attachment position when the provider or owned link supplies it. */
+  readonly attachmentOrdinal?: number | undefined;
+  /** Stable CDN identity for an owned DOM source whose original position is unknown. */
+  readonly attachmentSourceKey?: string | undefined;
   readonly fileSize?: number | undefined;
   readonly width?: number | undefined;
   readonly height?: number | undefined;

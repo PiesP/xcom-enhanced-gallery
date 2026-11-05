@@ -1039,6 +1039,7 @@ type InstallResult = {
   galleryExperience?: unknown;
   uxDetails?: unknown;
   settingsPersistence?: unknown;
+  attachmentFilenames?: unknown;
   liveBrowserScope?: string;
   live?: unknown;
   evidenceStatus?: string;
@@ -5069,6 +5070,7 @@ type CompactEvidence = {
   error?: string;
   failureScreenshot?: string;
   screenshotError?: string;
+  cleanupErrors?: string[];
 };
 
 async function compactHostSnapshot(page: Page, selector: string) {
@@ -5493,11 +5495,43 @@ async function runCompactQuotePhotoCycle({
   assert(!fallbackPanel.text?.includes('B parent caption'));
   assert(!fallbackPanel.text?.includes('B verified API caption'));
   assert(!fallbackPanel.text?.includes('Outer post'));
+  const knownFallbackSingle = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+  const fallbackNativeMark = nativeLoopback.mark();
+  const fallbackFetchMark = pageFetches.length;
+  await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download"]').click();
+  const fallbackFilename = `inner_fixture_${COMPACT_INNER_ID}_source-2c5997cbd4186b55.webp`;
+  const fallbackDownload = await waitForDownload(
+    extensionPage,
+    knownFallbackSingle,
+    fallbackFilename
+  );
+  const fallbackPath = relative(downloads, fallbackDownload.filename);
+  assert(fallbackPath && !fallbackPath.startsWith('..') && !isAbsolute(fallbackPath));
+  const { bytes: fallbackBytes } = await readExactDownloadFile(
+    fallbackDownload.filename,
+    compactImages.original.length
+  );
+  assert(fallbackBytes.equals(compactImages.original));
+  const fallbackNative = await assertNativeSingle({
+    extensionPage,
+    knownIds: knownFallbackSingle,
+    download: fallbackDownload,
+    expectedUrl: COMPACT_ORIGINAL_URL,
+    expectedBytes: compactImages.original,
+    nativeLoopback,
+    nativeMark: fallbackNativeMark,
+    pageFetches: pageFetches.slice(fallbackFetchMark),
+  });
   evidence.steps.push({
     name: 'c-403',
     selection: fallback,
     panel: fallbackPanel,
     api: deniedRequests,
+    single: {
+      filename: basename(fallbackDownload.filename),
+      ...imageReceipt(fallbackBytes),
+      native: fallbackNative,
+    },
     after: await compactClose(page, '#c-overlay', denied.before, 'escape'),
   });
   evidence.api = compactApiResponses.slice(apiStart);
@@ -5508,6 +5542,472 @@ async function runCompactQuotePhotoCycle({
     )
   );
   evidence.status = 'passed';
+}
+
+/** Installed #482 filename contract using the owned compact-route payloads. */
+async function runAttachmentFilenameCycle({
+  page,
+  extensionPage,
+  downloads,
+  output,
+  images,
+  compactImages,
+  nativeLoopback,
+  pageFetches,
+  routes,
+  evidence,
+}: {
+  page: Page;
+  extensionPage: Page;
+  downloads: string;
+  output: string;
+  images: ImageFixtures;
+  compactImages: CompactImages;
+  nativeLoopback: NativeLoopback;
+  pageFetches: PageFetch[];
+  routes: Awaited<ReturnType<typeof installFixtureRoutes>>;
+  evidence: CompactEvidence;
+}) {
+  const b1 = `middle_fixture_${COMPACT_MIDDLE_ID}_0.jpg`;
+  const b2 = `middle_fixture_${COMPACT_MIDDLE_ID}_1.jpg`;
+  const b1Url = 'https://pbs.twimg.com/media/GkE5678GHIJKL.jpg?format=jpg&name=orig';
+  const b2Url = 'https://pbs.twimg.com/media/GkE9012MNOPQR.jpg?format=jpg&name=orig';
+  const c1 = `inner_fixture_${COMPACT_INNER_ID}_0.webp`;
+  const c1Bytes = compactImages.original;
+  const originalFile = join(downloads, b1);
+  const sentinel = Buffer.from('task-owned preexisting filename fixture');
+  try {
+    const assertNativeName = (actual: string, desired: string) => {
+      const dot = desired.lastIndexOf('.');
+      assert(
+        dot > 0 && actual.startsWith(desired.slice(0, dot)) && actual.endsWith(desired.slice(dot))
+      );
+    };
+    const newDownload = async (known: Set<number>, label: string) =>
+      waitForValue(
+        async () => {
+          const added = (await queryDownloads(extensionPage)).filter(({ id }) => !known.has(id));
+          assert(added.length <= 1, `${label} created multiple native downloads`);
+          if (added[0]?.state === 'interrupted') {
+            throw new Error(`${label} native download was interrupted`);
+          }
+          const item = added[0];
+          if (item?.state !== 'complete') {
+            return undefined;
+          }
+          const ownedPath = relative(downloads, item.filename);
+          assert(ownedPath && !ownedPath.startsWith('..') && !isAbsolute(ownedPath));
+          return item;
+        },
+        label,
+        20_000
+      );
+    const open = async (mode: string, selector: string) => {
+      await page.goto(`${COMPACT_FIXTURE_URL}?compact=${mode}`);
+      await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+      const target = page.locator(selector);
+      await target.scrollIntoViewIfNeeded();
+      const hit = await target.evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        return (
+          document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2) ===
+          element
+        );
+      });
+      assert(hit, `${mode} pointer did not hit the selected image`);
+      const apiStart = routes.compactApiResponses.length;
+      await target.click();
+      const gallery = page.locator('[data-xeg-gallery-container]');
+      await gallery.waitFor({ state: 'visible', timeout: 15_000 });
+      evidence.steps.push({
+        name: `${mode}-open`,
+        api: routes.compactApiResponses.slice(apiStart),
+      });
+      return gallery;
+    };
+    const single = async (
+      gallery: Locator,
+      assignedName: string,
+      url: string,
+      bytes: Buffer,
+      conflict = false
+    ) => {
+      const known = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+      const nativeMark = nativeLoopback.mark();
+      const fetchMark = pageFetches.length;
+      await gallery
+        .locator('[data-gallery-element="toolbar"] button[aria-label="Download"]')
+        .click();
+      const item = await newDownload(known, assignedName);
+      if (conflict) {
+        assertNativeName(basename(item.filename), assignedName);
+        assert.notEqual(basename(item.filename), assignedName);
+      } else {
+        assert.equal(basename(item.filename), assignedName);
+      }
+      const path = relative(downloads, item.filename);
+      assert(path && !path.startsWith('..') && !isAbsolute(path));
+      const { bytes: saved } = await readExactDownloadFile(item.filename, bytes.length);
+      assert(saved.equals(bytes), `${assignedName} saved bytes differ`);
+      const native = await assertNativeSingle({
+        extensionPage,
+        knownIds: known,
+        download: item,
+        expectedUrl: url,
+        expectedBytes: bytes,
+        nativeLoopback,
+        nativeMark,
+        pageFetches: pageFetches.slice(fetchMark),
+      });
+      return { id: item.id, filename: basename(item.filename), ...imageReceipt(saved), native };
+    };
+    const zip = async (
+      gallery: Locator,
+      count: number,
+      archiveName: string,
+      entries: Array<{ filename: string; bytes: Buffer }>
+    ) => {
+      const known = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+      await gallery
+        .locator(
+          `[data-gallery-element="toolbar"] button[aria-label="Download ${count} shown files as ZIP"]`
+        )
+        .click();
+      const item = await newDownload(known, archiveName);
+      assert.equal(basename(item.filename), archiveName);
+      const path = relative(downloads, item.filename);
+      assert(path && !path.startsWith('..') && !isAbsolute(path));
+      const { bytes } = await readExactDownloadFile(item.filename, expectedStoredZipBytes(entries));
+      return {
+        id: item.id,
+        filename: basename(item.filename),
+        ...imageReceipt(bytes),
+        verified: verifyStoredZip(bytes, entries),
+      };
+    };
+    const retire = async (
+      item: { id: number; filename: string },
+      label: string,
+      expected: Buffer
+    ) => {
+      const savedPath = isAbsolute(item.filename) ? item.filename : join(downloads, item.filename);
+      const ownedPath = relative(downloads, savedPath);
+      assert(ownedPath && !ownedPath.startsWith('..') && !isAbsolute(ownedPath));
+      const retainedPath = join(output, `attachment-filename-${label}`);
+      await copyFile(savedPath, retainedPath);
+      assert((await readFile(retainedPath)).equals(expected), `${label} retained bytes differ`);
+      await extensionPage.evaluate(async (id) => {
+        await chrome.downloads.removeFile(id);
+        const erased = await chrome.downloads.erase({ id });
+        if (!erased.includes(id)) {
+          throw new Error('Verified download history was not erased');
+        }
+      }, item.id);
+      evidence.steps.push({
+        name: `filename-retained-${label}`,
+        file: basename(retainedPath),
+        ...imageReceipt(expected),
+      });
+    };
+    const a = await open('filename-api-a', '#filename-a1');
+    await assertQuotedSelection(page, {
+      position: 3,
+      total: 3,
+      type: 'image',
+      path: '/media/GkE1234ABCDEF',
+    });
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
+    await assertQuotedSelection(page, {
+      position: 1,
+      total: 3,
+      type: 'image',
+      path: '/media/GkE5678GHIJKL.jpg',
+    });
+    const aB1 = await single(a, b1, b1Url, images[1]);
+    await page.keyboard.press('ArrowRight');
+    await assertQuotedSelection(page, {
+      position: 2,
+      total: 3,
+      type: 'image',
+      path: '/media/GkE9012MNOPQR.jpg',
+    });
+    const aB2 = await single(a, b2, b2Url, images[2]);
+    const aZip = await zip(a, 3, `middle_fixture_${COMPACT_MIDDLE_ID}.zip`, [
+      { filename: b1, bytes: images[1] },
+      { filename: b2, bytes: images[2] },
+      { filename: `outer_fixture_8555555555555555555_0.jpg`, bytes: images[0] },
+    ]);
+    evidence.steps.push({ name: 'filename-a-context', b1: aB1, b2: aB2, zip: aZip });
+    await page.keyboard.press('Escape');
+    await a.waitFor({ state: 'detached' });
+    await retire(aB1, 'a-b1.jpg', images[1]);
+    await retire(aB2, 'a-b2.jpg', images[2]);
+    await retire(aZip, 'a.zip', await readFile(join(downloads, aZip.filename)));
+
+    const b = await open('filename-api-b', '#filename-b1');
+    await assertQuotedSelection(page, {
+      position: 2,
+      total: 3,
+      type: 'image',
+      path: '/media/GkE5678GHIJKL.jpg',
+    });
+    const bB1 = await single(b, b1, b1Url, images[1]);
+    await page.keyboard.press('ArrowRight');
+    await assertQuotedSelection(page, {
+      position: 3,
+      total: 3,
+      type: 'image',
+      path: '/media/GkE9012MNOPQR.jpg',
+    });
+    const bB2 = await single(b, b2, b2Url, images[2]);
+    const bZip = await zip(b, 3, `inner_fixture_${COMPACT_INNER_ID}.zip`, [
+      { filename: c1, bytes: c1Bytes },
+      { filename: b1, bytes: images[1] },
+      { filename: b2, bytes: images[2] },
+    ]);
+    evidence.steps.push({ name: 'filename-b-context', b1: bB1, b2: bB2, zip: bZip });
+    await page.keyboard.press('Escape');
+    await b.waitFor({ state: 'detached' });
+    await retire(bB1, 'b-b1.jpg', images[1]);
+    await retire(bB2, 'b-b2.jpg', images[2]);
+    await retire(bZip, 'b.zip', await readFile(join(downloads, bZip.filename)));
+
+    for (const [mode, position, total] of [
+      ['filename-dom-full', 2, 2],
+      ['filename-dom-partial', 1, 1],
+    ] as const) {
+      const gallery = await open(mode, '#filename-b2');
+      await assertQuotedSelection(page, {
+        position,
+        total,
+        type: 'image',
+        path: '/media/GkE9012MNOPQR.jpg',
+      });
+      const saved = await single(
+        gallery,
+        b2,
+        mode === 'filename-dom-partial'
+          ? 'https://pbs.twimg.com/media/GkE9012MNOPQR.jpg?format=jpg&name=orig'
+          : b2Url,
+        images[2]
+      );
+      evidence.steps.push({ name: mode, saved });
+      await page.keyboard.press('Escape');
+      await gallery.waitFor({ state: 'detached' });
+      await retire(saved, `${mode}.jpg`, images[2]);
+    }
+    assert.equal((await readdir(downloads)).includes(b1), false);
+    await writeFile(originalFile, sentinel, { flag: 'wx' });
+    assert((await readFile(originalFile)).equals(sentinel), 'Preexisting control was not staged');
+    const conflictGallery = await open('filename-api-a', '#filename-a1');
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
+    await assertQuotedSelection(page, {
+      position: 1,
+      total: 3,
+      type: 'image',
+      path: '/media/GkE5678GHIJKL.jpg',
+    });
+    const conflict = await single(conflictGallery, b1, b1Url, images[1], true);
+    assert((await readFile(originalFile)).equals(sentinel), 'Preexisting owned file changed');
+    evidence.steps.push({
+      name: 'filename-existing-file',
+      conflict,
+      unchanged: true,
+      control: imageReceipt(sentinel),
+    });
+    await page.keyboard.press('Escape');
+    await conflictGallery.waitFor({ state: 'detached' });
+    await rm(originalFile);
+    await retire(conflict, 'conflict-b1.jpg', images[1]);
+
+    const retry = await open('filename-retry', '#filename-b1');
+    await assertQuotedSelection(page, {
+      position: 2,
+      total: 3,
+      type: 'image',
+      path: '/media/GkE5678GHIJKL.jpg',
+    });
+    const faultNativeMark = nativeLoopback.mark();
+    const faultContextMark = routes.filenameFaults.length;
+    routes.armFilenameB1Failure();
+    nativeLoopback.armHttpFailure(b1Url, 404);
+    const knownPartial = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+    await retry
+      .locator(
+        '[data-gallery-element="toolbar"] button[aria-label="Download 3 shown files as ZIP"]'
+      )
+      .click();
+    const partial = await newDownload(knownPartial, 'filename partial ZIP');
+    assert.equal(basename(partial.filename), `inner_fixture_${COMPACT_INNER_ID}.zip`);
+    const partialEntries = [
+      { filename: c1, bytes: c1Bytes },
+      { filename: b2, bytes: images[2] },
+    ];
+    const { bytes: partialBytes } = await readExactDownloadFile(
+      partial.filename,
+      expectedStoredZipBytes(partialEntries)
+    );
+    const partialVerified = verifyStoredZip(partialBytes, partialEntries);
+    const contextFaults = routes.filenameFaults.slice(faultContextMark);
+    const nativeFaults = nativeLoopback
+      .snapshot()
+      .events.slice(faultNativeMark)
+      .filter((event) => event.status === 404 && event.path === '/media/GkE5678GHIJKL.jpg');
+    assert(contextFaults.length + nativeFaults.length > 0, 'B1 failure transport was not observed');
+    routes.clearFilenameB1Failure();
+    nativeLoopback.clearHttpFailure();
+    const recover = retry.getByRole('button', {
+      name: 'Download 1 missing items as a separate ZIP',
+    });
+    await recover.waitFor({ state: 'visible' });
+    const knownRecovery = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+    await recover.click();
+    const supplementary = await newDownload(knownRecovery, 'filename supplementary ZIP');
+    assert.equal(basename(supplementary.filename), `inner_fixture_${COMPACT_INNER_ID}-missing.zip`);
+    const recoveredEntries = [{ filename: b1, bytes: images[1] }];
+    const { bytes: recoveredBytes } = await readExactDownloadFile(
+      supplementary.filename,
+      expectedStoredZipBytes(recoveredEntries)
+    );
+    const recoveredVerified = verifyStoredZip(recoveredBytes, recoveredEntries);
+    evidence.steps.push({
+      name: 'filename-failed-only-retry',
+      fault: { context: contextFaults, native: nativeFaults },
+      partial: {
+        filename: basename(partial.filename),
+        ...imageReceipt(partialBytes),
+        verified: partialVerified,
+      },
+      supplementary: {
+        filename: basename(supplementary.filename),
+        ...imageReceipt(recoveredBytes),
+        verified: recoveredVerified,
+      },
+    });
+    await page.keyboard.press('Escape');
+    await retry.waitFor({ state: 'detached' });
+    await retire(partial, 'retry-partial.zip', partialBytes);
+    await retire(supplementary, 'retry-supplementary.zip', recoveredBytes);
+  } finally {
+    routes.clearFilenameB1Failure();
+    nativeLoopback.clearHttpFailure();
+    if (
+      (await readdir(downloads)).includes(b1) &&
+      (await readFile(originalFile)).equals(sentinel)
+    ) {
+      await rm(originalFile);
+    }
+  }
+}
+
+async function runAttachmentFilenameFocusedProbe({
+  context,
+  downloads,
+  extensionId,
+  images,
+  displayImages,
+  nativeLoopback,
+  output,
+  root,
+}: {
+  context: BrowserContext;
+  downloads: string;
+  extensionId: string;
+  images: ImageFixtures;
+  displayImages: ImageFixtures;
+  nativeLoopback: NativeLoopback;
+  output: string;
+  root: string;
+}) {
+  const compactImages = await createCompactImages(context);
+  const routes = await installFixtureRoutes(context, root, images, displayImages, compactImages);
+  nativeLoopback.setPayloads(images, routes.videoPayloads);
+  nativeLoopback.setCompactImage(compactImages.original);
+  const extensionPage = await context.newPage();
+  const page = await context.newPage();
+  const pageFetches: PageFetch[] = [];
+  page.on('request', (request) => {
+    if (!['fetch', 'xhr'].includes(request.resourceType())) {
+      return;
+    }
+    const url = new URL(request.url());
+    pageFetches.push({
+      host: url.hostname,
+      path: url.pathname,
+      resourceType: request.resourceType(),
+    });
+  });
+  const evidence: CompactEvidence = { status: 'pending', api: [], images: [], steps: [] };
+  let primaryError: unknown;
+  let primarySeen = false;
+  const cleanupErrors: Error[] = [];
+  try {
+    await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
+    await runAttachmentFilenameCycle({
+      page,
+      extensionPage,
+      downloads,
+      output,
+      images,
+      compactImages,
+      nativeLoopback,
+      pageFetches,
+      routes,
+      evidence,
+    });
+    evidence.api = routes.compactApiResponses;
+    evidence.images = routes.compactImageRequests;
+    evidence.status = 'passed';
+  } catch (error) {
+    primarySeen = true;
+    primaryError = error;
+    evidence.status = 'failed';
+    evidence.error = safeError(error);
+    evidence.api = routes.compactApiResponses;
+    evidence.images = routes.compactImageRequests;
+    try {
+      await page.screenshot({ path: join(output, 'attachment-filenames-failure.png') });
+      evidence.failureScreenshot = 'attachment-filenames-failure.png';
+    } catch (captureError) {
+      evidence.screenshotError = safeError(captureError);
+    }
+  } finally {
+    for (const [label, close] of [
+      ['fixture page', () => page.close()],
+      ['extension page', () => extensionPage.close()],
+      ['fixture routes', () => routes.remove()],
+    ] as const) {
+      try {
+        await close();
+      } catch (cleanupError) {
+        cleanupErrors.push(new Error(`${label}: ${safeError(cleanupError)}`));
+      }
+    }
+    if (cleanupErrors.length) {
+      evidence.status = 'failed';
+      evidence.cleanupErrors = cleanupErrors.map(safeError);
+    }
+    try {
+      await writeFile(join(output, 'attachment-filenames.json'), JSON.stringify(evidence, null, 2));
+    } catch (receiptError) {
+      cleanupErrors.push(new Error(`fixture receipt: ${safeError(receiptError)}`));
+    }
+  }
+  if (primarySeen && cleanupErrors.length) {
+    throw new AggregateError(
+      [primaryError, ...cleanupErrors],
+      'Attachment filename probe and cleanup failed'
+    );
+  }
+  if (primarySeen) {
+    throw primaryError;
+  }
+  if (cleanupErrors.length) {
+    throw new AggregateError(cleanupErrors, 'Attachment filename probe cleanup failed');
+  }
+  return evidence;
 }
 
 async function quotedHostSnapshot(page: Page, caseName: string, triggerSelector: string) {
@@ -18138,6 +18638,18 @@ async function exerciseInstalledExtension(
       page,
     });
     try {
+      await runAttachmentFilenameCycle({
+        page,
+        extensionPage,
+        downloads,
+        output,
+        images,
+        compactImages,
+        nativeLoopback,
+        pageFetches,
+        routes: fixtureRoutes,
+        evidence: compactQuotePhoto,
+      });
       await runCompactQuotePhotoCycle({
         page,
         extensionPage,
@@ -19614,6 +20126,44 @@ export async function run({
     assert.equal(liveObservation, null, 'UX details cannot share live observation');
     assert.equal(acceptanceSelectorText, null, 'UX details cannot share live acceptance');
   }
+  const attachmentFilenameSelectorText = await readFile(
+    join(root, 'validation/windows/inputs/attachment-filenames.json'),
+    'utf8'
+  ).catch((error: unknown) => {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+      return null;
+    }
+    throw error;
+  });
+  const attachmentFilenameProbe = attachmentFilenameSelectorText !== null;
+  if (attachmentFilenameSelectorText !== null) {
+    assert.deepEqual(JSON.parse(attachmentFilenameSelectorText), {
+      scenario: 'attachment-filenames',
+    });
+    assert.equal(liveUrls.length, 0);
+    assert.equal(liveObservation, null);
+    assert.equal(acceptanceSelectorText, null);
+    assert.equal(uxDetailsSelectorText, null);
+    for (const name of [
+      'settings-persistence',
+      'opening-feedback',
+      'media-download-recovery',
+      'failed-entry-recovery',
+      'gallery-experience',
+      'video-save-format',
+    ]) {
+      const other = await readFile(
+        join(root, `validation/windows/inputs/${name}.json`),
+        'utf8'
+      ).catch((error: unknown) => {
+        if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+          return null;
+        }
+        throw error;
+      });
+      assert.equal(other, null, 'Attachment filename selector cannot share another focused input');
+    }
+  }
   const videoFormatSelectorText = await readFile(
     join(root, 'validation/windows/inputs/video-save-format.json'),
     'utf8'
@@ -19626,6 +20176,11 @@ export async function run({
   const videoFormatProbe = videoFormatSelectorText !== null;
   if (videoFormatSelectorText !== null) {
     assert.deepEqual(JSON.parse(videoFormatSelectorText), { scenario: 'video-save-format' });
+    assert.equal(
+      attachmentFilenameSelectorText,
+      null,
+      'Video format cannot share attachment filenames'
+    );
     assert.equal(installation, 'extension', 'Video format fixture requires an extension');
     assert.equal(liveUrls.length, 0, 'Video format fixture uses only owned URLs');
     assert.equal(liveObservation, null, 'Video format fixture cannot share live observation');
@@ -19640,7 +20195,14 @@ export async function run({
       'Installed userscript fixture does not support duration observation'
     );
     const { runUserscriptInstallation } = await import('./userscript-install.ts');
-    return runUserscriptInstallation({ chromium, root, output, browserName, headless });
+    return runUserscriptInstallation({
+      chromium,
+      root,
+      output,
+      browserName,
+      headless,
+      attachmentFilenameProbe,
+    });
   }
   const upgradeInput = await readUpgradeInput(root);
   const sameVersionInput = await readSameVersionInput(root);
@@ -19742,9 +20304,24 @@ export async function run({
       'Only one focused installed-extension probe may run'
     );
   }
+  if (attachmentFilenameProbe) {
+    assert(
+      !videoFormatProbe &&
+        !upgradeInput &&
+        !sameVersionInput &&
+        !openingProbe &&
+        !recoveryProbe &&
+        !failedEntryProbe &&
+        !experienceProbe &&
+        !settingsProbe &&
+        !uxDetailsProbe,
+      'Attachment filenames require an exclusive focused selector'
+    );
+  }
   if (videoFormatProbe) {
     assert(
-      !upgradeInput &&
+      !attachmentFilenameProbe &&
+        !upgradeInput &&
         !sameVersionInput &&
         !uxDetailsProbe &&
         !openingProbe &&
@@ -19781,6 +20358,7 @@ export async function run({
       otherFocusedInput:
         !!upgradeInput ||
         !!sameVersionInput ||
+        attachmentFilenameProbe ||
         openingProbe ||
         recoveryProbe ||
         failedEntryProbe ||
@@ -19936,7 +20514,18 @@ export async function run({
     if (!sameVersionInput) {
       const images = await createImageFixtures(context);
       const displayImages = await createImageFixtures(context, 0.25);
-      if (uxDetailsProbe) {
+      if (attachmentFilenameProbe) {
+        result.attachmentFilenames = await runAttachmentFilenameFocusedProbe({
+          context,
+          downloads,
+          extensionId,
+          images,
+          displayImages,
+          nativeLoopback,
+          output,
+          root,
+        });
+      } else if (uxDetailsProbe) {
         result.uxDetails = await runUxDetailsProbe({
           context,
           extensionId,

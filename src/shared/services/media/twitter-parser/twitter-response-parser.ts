@@ -12,6 +12,7 @@ import type { VideoSourceVariant } from '@shared/types/media.types';
 import { isDirectMp4Source } from '@shared/utils/media/direct-mp4-source';
 import { extractDimensionsFromUrl, normalizeDimension } from '@shared/utils/media/media-dimensions';
 import { normalizeOriginalImageUrl } from '@shared/utils/media/media-source';
+import { isHostMatching, tryParseUrl, TWITTER_HOSTS } from '@shared/utils/url/host';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
 
 const MAX_VIDEO_VARIANT_URLS = 32;
@@ -154,6 +155,7 @@ function createMediaEntry(
   tweetId: string,
   tweetText: string,
   index: number,
+  attachmentOrdinal: number,
   sourceLocation: 'original' | 'quoted'
 ): TweetMediaEntry {
   const mediaType = media.type === 'animated_gif' ? 'video' : media.type;
@@ -168,6 +170,7 @@ function createMediaEntry(
     type: mediaType as 'photo' | 'video',
     typeOriginal: media.type as 'photo' | 'video' | 'animated_gif',
     index,
+    attachmentOrdinal,
     preview_url: media.media_url_https,
     media_id: media.id_str,
     media_key: media.media_key ?? '',
@@ -185,6 +188,22 @@ function createMediaEntry(
     ...(dims.height && { original_height: dims.height }),
     ...(aspectRatio && { aspect_ratio: aspectRatio }),
   };
+}
+
+function getOwnedAttachmentOrdinal(
+  media: TwitterMedia,
+  tweetId: string,
+  orderedIndex: number
+): number {
+  const url = tryParseUrl(media.expanded_url);
+  const match = url?.pathname.match(/^\/[^/]+\/status\/(\d+)\/(?:photo|video)\/([1-9]\d*)\/?$/u);
+  if (url?.protocol === 'https:' && isHostMatching(url, TWITTER_HOSTS) && match?.[1] === tweetId) {
+    const position = Number(match[2]);
+    if (Number.isSafeInteger(position)) {
+      return position - 1;
+    }
+  }
+  return orderedIndex;
 }
 
 function sortByInlineOrder(
@@ -260,6 +279,7 @@ export function extractMediaFromTweet(
     }
 
     try {
+      const attachmentOrdinal = getOwnedAttachmentOrdinal(media, tweetId, i);
       const mediaUrl = getHighQualityMediaUrl(media);
       if (!mediaUrl || !isValidMediaUrl(mediaUrl)) {
         const unsupportedVariantUrls = getUnsupportedHlsUrls(media);
@@ -275,6 +295,7 @@ export function extractMediaFromTweet(
               tweetId,
               normalizedTweetText,
               i,
+              attachmentOrdinal,
               sourceLocation
             ),
             availability: 'unsupported-hls',
@@ -292,6 +313,7 @@ export function extractMediaFromTweet(
           tweetId,
           normalizedTweetText,
           i,
+          attachmentOrdinal,
           sourceLocation
         )
       );

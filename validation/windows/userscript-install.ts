@@ -49,6 +49,7 @@ import {
   FIXTURE_ZIP_NAME,
   fixtureZipEntries,
   fixtureFilename as filename,
+  attachmentFilenameUserscriptHtml,
   requireManagerDownloadsHeading,
   managerSettingRow,
   inspectFirstCurrentDownload,
@@ -1001,6 +1002,11 @@ export async function captureAndConfirmManagerPermissionAsk(
     isOwnedManagerPermissionAskUrl(ask.url(), managerId),
     'Manager permission confirmation navigated away before confirmation'
   );
+  await ask.bringToFront();
+  assert(
+    isOwnedManagerPermissionAskUrl(ask.url(), managerId),
+    'Manager permission confirmation navigated away before confirmation'
+  );
   await ask.getByRole('button', { name: okLabel, exact: true }).click();
 }
 
@@ -1439,8 +1445,7 @@ export async function inspectManagerDownloadHistoryDocument({
     current.protocol !== 'chrome-extension:' ||
     current.hostname !== managerId ||
     current.pathname !== '/options.html' ||
-    current.search ||
-    current.hash
+    current.search
   ) {
     return { status: 'unowned-page', items: [] };
   }
@@ -2495,7 +2500,8 @@ async function runFixture(
   managerId: string,
   managerVersion: string,
   profile: string,
-  sourceSha256: string
+  sourceSha256: string,
+  attachmentFilenameProbe = false
 ) {
   const imageAt = (index: number): Buffer => {
     const bytes = images[index];
@@ -2509,6 +2515,10 @@ async function runFixture(
   );
   const settingsPageUrl = `${FIXTURE_URL}?xeg-settings-readback=1`;
   const apiPageUrl = `${FIXTURE_URL}?xeg-api-admission=1`;
+  const filenamePageUrl = `${FIXTURE_URL}?xeg-attachment-filename=1`;
+  const filenameMarker = MEDIA_COHORTS.normal[0];
+  assert(filenameMarker);
+  const filenameHtml = attachmentFilenameUserscriptHtml(filenameMarker);
   const compactHtml = (
     imageCount: 1 | 3
   ) => `<!doctype html><html lang="en"><head><meta charset="UTF-8"></head><body>
@@ -2562,10 +2572,19 @@ async function runFixture(
       const noDom = url.href === `${FIXTURE_URL}?xeg-no-dom=1`;
       const settingsReadback = url.href === settingsPageUrl;
       const apiAdmission = url.href === apiPageUrl;
+      const filenameAdmission = url.href === filenamePageUrl;
       await route.fulfill({
         status: 200,
         contentType: 'text/html',
-        body: noDom ? noDomHtml : settingsReadback ? settingsHtml : apiAdmission ? apiHtml : html,
+        body: filenameAdmission
+          ? filenameHtml
+          : noDom
+            ? noDomHtml
+            : settingsReadback
+              ? settingsHtml
+              : apiAdmission
+                ? apiHtml
+                : html,
       });
       return;
     }
@@ -2718,6 +2737,69 @@ async function runFixture(
     }
   };
   try {
+    if (attachmentFilenameProbe) {
+      await page.goto(filenamePageUrl, { waitUntil: 'domcontentloaded' });
+      await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+      const trigger = page.locator('#filename-userscript-photo');
+      await trigger.scrollIntoViewIfNeeded();
+      const hit = await trigger.evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        return (
+          document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2) ===
+          element
+        );
+      });
+      assert(hit, 'Userscript filename target was not hit-tested');
+      await trigger.click();
+      const gallery = page.locator('[data-xeg-gallery-container]');
+      await gallery.waitFor({ state: 'visible' });
+      assert.equal(
+        await gallery.locator('#xeg-toolbar-counter').getAttribute('data-position'),
+        '1'
+      );
+      const requestedName = filename(1);
+      const beforeFiles = new Set(await readdir(downloads));
+      const beforeDownloads = observer.snapshot();
+      const historyBefore = await captureManagerDownloadHistory(
+        context,
+        managerId,
+        downloads,
+        requestedName,
+        imageAt(0).length
+      );
+      assert.equal(historyBefore.status, 'observed');
+      const transportStart = loopback.mark();
+      await gallery
+        .locator('[data-gallery-element="toolbar"] button[aria-label="Download"]')
+        .click();
+      const saved = await waitForManagerDownload(
+        context,
+        managerId,
+        observer,
+        beforeDownloads,
+        beforeFiles,
+        historyBefore,
+        requestedName,
+        requestedName,
+        downloads,
+        imageAt(0).length
+      );
+      assert(saved.bytes.equals(imageAt(0)));
+      const transport = await waitFor(
+        () => loopback.findSince(transportStart, 'normal', 0, 'served'),
+        'userscript owner-local filename original'
+      );
+      assert.equal(transport.sha256, sha256(imageAt(0)));
+      result.downloads.push({ kind: 'owner-local-photo-2', ...saved, bytes: saved.bytes.length });
+      result.cases.attachmentFilename = {
+        status: 'passed',
+        requestedName,
+        nativeName: saved.filename,
+        transport,
+      };
+      result.status = 'passed';
+      return result;
+    }
     await page.goto(FIXTURE_URL, { waitUntil: 'domcontentloaded' });
     const trigger = page.locator('[data-phase="normal"] [data-testid="tweetPhoto"] img').first();
     await trigger.click();
@@ -4150,15 +4232,21 @@ export async function runUserscriptInstallation({
   output,
   browserName,
   headless,
+  attachmentFilenameProbe = false,
 }: {
   chromium: BrowserType;
   root: string;
   output: string;
   browserName: string;
   headless: boolean;
+  attachmentFilenameProbe?: boolean;
 }) {
   assert.equal(browserName, 'chrome', 'HTTPS userscript fixture currently supports Chrome only');
   const upgradeInput = await readUpgradeInput(root);
+  assert(
+    !attachmentFilenameProbe || !upgradeInput,
+    'Filename fixture cannot share userscript upgrade'
+  );
   await mkdir(output, { recursive: true });
   const source = await readFile(join(root, 'dist/xcom-enhanced-gallery.user.js'));
   const profile = await mkdtemp(join(root, PROFILE_PREFIX));
@@ -4298,7 +4386,8 @@ export async function runUserscriptInstallation({
       managerId,
       manager.managerVersion,
       profile,
-      result.sourceSha256
+      result.sourceSha256,
+      attachmentFilenameProbe
     );
     result.status = 'passed';
   } catch (error) {

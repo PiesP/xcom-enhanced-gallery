@@ -121,6 +121,35 @@ This artifact-only result records browser zoom as `not-run`: the injected
 userscript has no installed extension worker with access to the browser tab's
 actual zoom setting. CSS zoom or pinch emulation is not used as a substitute.
 
+### Filename and ZIP utility boundary fixture (#483)
+
+The focused `filename-boundaries` scenario runs the production filename planner,
+download orchestrator, ZIP allocator/writer, and failed-entry recovery through a
+dedicated source-built Node bundle. Its save adapter writes real files in a fresh
+private directory on the prepared Windows guest. It verifies Unicode, reserved
+device names, malformed names, the 255 UTF-16-unit limit, duplicate identity
+suffixes, partial ZIP members and bytes, a failed retry with no save, and a
+successful `-missing-2.zip` recovery. The fixture retains safe ASCII evidence
+copies and a receipt, then deletes only its own verified native files and
+directory after rechecking directory and file identities. Replaced files,
+symlinks, reparse points, and foreign entries stop cleanup and remain for review.
+A failed assertion still writes a path-free receipt and copies any remaining
+unchanged, bounded native outputs before cleanup; failed cleanup is reported
+separately.
+
+Use the shared controller's `--scenario filename-boundaries --browser msedge
+--mode desktop` contract from a clean, exact-source checkout. Its declared
+preparation runs `build:ci` and the isolated `build:filename-boundaries` script;
+the controller generates the selector and hashes only the exact generated
+`dist-validation/filename-boundary-fixture.mjs` file.
+The normal product build target remains unchanged. The case names and long
+account name are deliberately supplied at the utility boundary because the
+current gallery has no custom filename control. A passing result is Windows
+Node native filesystem and production utility evidence; it does not prove a
+browser Save As dialog, installed extension download, gallery click path, or
+live X.com reachability. The browser launch in the shared controller does not
+change this tier because this fixture does not use that browser instance.
+
 This does not test userscript-manager installation, unpacked extension installation,
 privileged extension downloads, live authenticated X.com, Windows native Save As,
 Explorer, OS compositor, actual DPI changes, or physical GPU performance. A headless
@@ -163,8 +192,15 @@ active transfer from an uncertain worker reply without a throughput claim.
 The extension-only classic route serves smaller display JPEGs, including one
 extensionless query-format photo URL, and separate original JPEGs. Each DOM
 recovery cycle asserts the observed display URL and natural dimensions, then
-checks that the native current save contains the original bytes. A separate
-healthy production-shaped API photo response starts from the same small sources,
+checks that the native current save contains the original bytes.
+The classic fixture now gives each of its known three photo positions a
+same-owner `/photo/N` link. Its numeric filename assertions rely on that
+explicit source position in all four phases. The browser contract test also
+removes those links from the actual fixture markup and checks literal stable
+source-key names for the no-hint DOM path. This synthetic position evidence
+does not establish what a live X page exposes.
+
+A separate healthy production-shaped API photo response starts from the same small sources,
 opens the second of three owned images, preserves original-quality API display,
 and verifies its source link, current filename and exact original bytes. Its ZIP
 must contain all three original entries with expected filenames, order, contents
@@ -185,6 +221,32 @@ beside the photo must navigate natively without requesting media. The cycle
 also checks keyboard activation of the media link, native B/C header navigation,
 gallery navigation, close/reopen and host-state restoration. Its
 bounded requests and partial failure observations remain separate from live X.
+
+For #482, the maintained filename cycle uses a second owned page with A quoting
+B (B1/B2) and B quoting C (C1). It opens A and B through hit-tested image
+clicks, checks B1/B2 single saves in both API request contexts, and reads the
+mixed-owner ZIP files for literal owner-local member names, order, bytes and
+CRC. The archive names follow the first gallery-order item: B in A's gallery,
+C in B's gallery, regardless of the active selection. B2 is saved again from
+complete and visible `/photo/2` partial DOM recovery after a controlled API
+403; the partial DOM uses an alternate size URL and retains an excluded profile
+image. Exact ordinary native names and bytes are retained before their verified
+task-owned files are cleared for the next context. A task-owned file with the
+desired B1 name is checked byte-identical before and after a separate conflict
+save; the browser's actual conflict name and new download ID are recorded. A
+controlled B1 source failure is armed at both context and native transports,
+and the observed 404 route is recorded. It then requires a partial ZIP with C1/B2 and a
+separate failed-only ZIP containing the assigned B1 name and original bytes.
+The existing C 403 recovery also checks its exact source-key filename and
+original WebP bytes. An executed run must bind these assertions to its source
+and installed artifact, retain the observed names and content checks, and
+report scoped cleanup. Prepared assertions alone do not establish Windows
+runtime acceptance.
+
+The ignored `validation/windows/inputs/attachment-filenames.json` selector
+(`{"scenario":"attachment-filenames"}`) runs the focused extension cycle.
+With `--installation userscript`, the same selector runs a manager-backed
+visible `/photo/2` save that checks the owner-local filename and native bytes.
 
 The same installed profile invokes `media-api-reuse-profile.ts` to compare
 physical API requests across successive clicks, navigation, reload and a fresh
@@ -699,11 +761,11 @@ original package digest and installation source separately. Use a clean
 committed checkout and run:
 
 ```bash
-python3 /home/piesp/projects/windows-acceptance/vmctl.py run \
+hyperv-control --profile /absolute/private/profile.json validate --kind browser \
   --repo /home/piesp/projects/xcom-enhanced-gallery \
-  --browser chrome --mode desktop --installation userscript \
-  --manager-directory /path/to/unpacked/tampermonkey \
-  --output /path/to/private/xcom-userscript-evidence
+  --output /path/to/private/xcom-userscript-evidence -- \
+  --browser chrome --installation userscript \
+  --manager-directory /path/to/unpacked/tampermonkey
 ```
 
 The HTTPS userscript fixture currently supports Chrome only; Edge userscript

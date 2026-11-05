@@ -30,8 +30,8 @@ describe('owned installed video-format fixture', () => {
         ({ desiredName }) => desiredName
       )
     ).toEqual([
-      'format_fixture_4666000000000000484_0.jpg',
-      'format_fixture_4666000000000000484_1.mp4',
+      'format_fixture_4666000000000000484_source-b44cfa31f709d13f.jpg',
+      'format_fixture_4666000000000000484_source-433f260a01b3e905.mp4',
     ]);
   });
 

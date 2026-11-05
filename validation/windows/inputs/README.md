@@ -1,5 +1,17 @@
 # Optional Windows artifact fixture selector
 
+For the focused #482 installed filename scenario, create ignored
+`attachment-filenames.json` with exactly:
+
+```json
+{"scenario":"attachment-filenames"}
+```
+
+With `--installation extension`, this runs the owned A/B/C quote, DOM, ZIP,
+conflict and failed-only recovery cycle. With `--installation userscript`, it
+runs a smaller manager-backed visible `/photo/2` save and checks the native
+filename, source and bytes. Remove the selector after the attempt. Neither
+route runs against live X.
 To check issue #484's video save format through the installed Chrome/Edge
 extension, create the ignored `video-save-format.json` file here with exactly:
 

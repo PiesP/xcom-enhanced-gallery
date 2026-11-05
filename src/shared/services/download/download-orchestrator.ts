@@ -7,6 +7,7 @@ import { mergeAbortSignalsWithCleanup } from '@piesp/browser-core/error';
 import { schedulerYield } from '@piesp/browser-core/util';
 import { getDownloadAdapter } from '@platform/index';
 import { planBulkDownload } from '@shared/core/download/download-plan';
+import { appendFilenameSuffix, finalizeFilename } from '@shared/core/filename/filename-utils';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { getUserCancelledAbortErrorFromSignal, isAbortError } from '@shared/error/cancellation';
 import { DownloadSourceUnavailableError } from '@shared/error/download-source-unavailable-error';
@@ -33,8 +34,10 @@ export interface FailedEntryRecovery {
 
 /** Preserve the first archive and label a second, failed-only ZIP clearly. */
 function supplementaryFilename(original: string, attempt: number): string {
-  const stem = original.toLowerCase().endsWith('.zip') ? original.slice(0, -4) : original;
-  return `${stem}-missing${attempt > 1 ? `-${attempt}` : ''}.zip`;
+  const archive = original.toLowerCase().endsWith('.zip')
+    ? finalizeFilename(original)
+    : finalizeFilename(original, { extension: 'zip' });
+  return appendFilenameSuffix(archive, `-missing${attempt > 1 ? `-${attempt}` : ''}`);
 }
 
 /**

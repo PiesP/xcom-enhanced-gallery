@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 PiesP
 
+import assert from 'node:assert/strict';
 import type { Locator, Page } from '@playwright/test';
 
 export const TWEET_ID = '1234567890123456789';
@@ -57,6 +58,11 @@ export function isPublicAvatarFixtureUrl(value: string) {
 }
 
 export const FIXTURE_ZIP_NAME = `testuser_${TWEET_ID}.zip`;
+
+export function attachmentFilenameUserscriptHtml(marker: string) {
+  assert(/^[A-Za-z0-9_-]+$/u.test(marker), 'Invalid owned userscript media marker');
+  return `<!doctype html><html lang="en"><body><div style="height:1100px"></div><article data-testid="tweet"><a href="/testuser/status/${TWEET_ID}"><time>Now</time></a><a href="/testuser/status/${TWEET_ID}/photo/2"><img id="filename-userscript-photo" src="https://pbs.twimg.com/media/${marker}.jpg?format=jpg&amp;name=large" alt="Second attachment"></a></article></body></html>`;
+}
 
 export function fixtureFilename(index: number) {
   return `testuser_${TWEET_ID}_${index}.jpg`;
