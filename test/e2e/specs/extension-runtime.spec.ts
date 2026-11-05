@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
 import { chromium, expect, test } from '@playwright/test';
@@ -68,6 +68,18 @@ test('loads the Chrome extension, completes a privileged download, and restores 
   let nativeLoopback: Awaited<ReturnType<typeof startNativeDownloadLoopback>> | undefined;
   let context: Awaited<ReturnType<typeof chromium.launchPersistentContext>> | undefined;
   try {
+    mkdirSync(join(userDataDir, 'Default'));
+    mkdirSync(downloadDirectory);
+    writeFileSync(
+      join(userDataDir, 'Default', 'Preferences'),
+      JSON.stringify({
+        download: {
+          default_directory: downloadDirectory,
+          prompt_for_download: false,
+          directory_upgrade: true,
+        },
+      })
+    );
     nativeLoopback = await startNativeDownloadLoopback(MOCK_IMAGE);
     context = await chromium.launchPersistentContext(userDataDir, {
       channel: 'chromium',
@@ -81,6 +93,18 @@ test('loads the Chrome extension, completes a privileged download, and restores 
         `--ignore-certificate-errors-spki-list=${nativeLoopback.spkiSha256}`,
       ],
     });
+    const browser = context.browser();
+    expect(browser).not.toBeNull();
+    const browserCdp = await browser!.newBrowserCDPSession();
+    try {
+      // Playwright's allowAndName substitutes a GUID; exercise the native filename decision.
+      await browserCdp.send('Browser.setDownloadBehavior', {
+        behavior: 'default',
+        eventsEnabled: true,
+      });
+    } finally {
+      await browserCdp.detach();
+    }
     let routedOriginalRequests = 0;
     await context.route('https://x.com/**', async (route) => {
       const url = new URL(route.request().url());

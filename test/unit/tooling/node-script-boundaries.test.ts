@@ -200,7 +200,8 @@ describe('Node script import boundary', () => {
       .map((path) => `validation/windows/${path.toString()}`)
       .filter((path) => path.endsWith('.test.ts'))
       .sort();
-    expect(nativeFiles).toHaveLength(14);
+    expect(nativeFiles).toHaveLength(15);
+    expect(nativeFiles).toContain('validation/windows/filename-decision-control.test.ts');
     expect(nativeFiles).toContain('validation/windows/qualification-policy.test.ts');
     expect(nativeFiles).toContain('validation/windows/live-acceptance.test.ts');
     expect(nativeFiles).toContain('validation/windows/live-diagnostics-close.test.ts');
