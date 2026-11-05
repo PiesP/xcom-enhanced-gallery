@@ -140,8 +140,8 @@ separately.
 Use the shared controller's `--scenario filename-boundaries --browser msedge
 --mode desktop` contract from a clean, exact-source checkout. Its declared
 preparation runs `build:ci` and the isolated `build:filename-boundaries` script;
-the controller generates the selector and hashes only the exact generated ESM
-fixture file from `dist/validation/`.
+the controller generates the selector and hashes only the exact generated
+`dist-validation/filename-boundary-fixture.mjs` file.
 The normal product build target remains unchanged. The case names and long
 account name are deliberately supplied at the utility boundary because the
 current gallery has no custom filename control. A passing result is Windows

@@ -159,7 +159,7 @@ export async function run({
     'Conflicting Windows fixture selectors'
   );
   if (filenameSelector !== null) {
-    const fixturePath = path.join(root, 'dist/validation/filename-boundary-fixture.mjs');
+    const fixturePath = path.join(root, 'dist-validation/filename-boundary-fixture.mjs');
     const { run } = await import(pathToFileURL(fixturePath).href);
     return run({ root, output });
   }

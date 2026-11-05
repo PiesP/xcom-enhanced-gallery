@@ -9,10 +9,10 @@
         "browsers": ["msedge"],
         "modes": ["desktop"],
         "required_inputs": [
-          "dist/validation/filename-boundary-fixture.mjs",
+          "dist-validation/filename-boundary-fixture.mjs",
           "validation/windows/inputs/filename-boundaries.json"
         ],
-        "generated_assets": ["dist/validation/filename-boundary-fixture.mjs"],
+        "generated_assets": ["dist-validation/filename-boundary-fixture.mjs"],
         "bundle_asset_policy": "source-modules-and-required-inputs",
         "build_commands": [
           ["vp", "run", "build:ci"],

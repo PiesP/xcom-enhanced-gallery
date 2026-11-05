@@ -21,14 +21,15 @@ export default defineConfig({
   define: { __DEV__: 'false', __VERSION__: JSON.stringify(resolveVersion(false)) },
   build: {
     target: 'node26',
-    outDir: 'dist',
+    outDir: 'dist-validation',
+    // The packager retires the declared file; retain any unrelated output.
     emptyOutDir: false,
     minify: false,
     sourcemap: false,
     lib: {
       entry: resolve('validation/windows/filename-boundary-fixture.ts'),
       formats: ['es'],
-      fileName: () => 'validation/filename-boundary-fixture.mjs',
+      fileName: () => 'filename-boundary-fixture.mjs',
     },
     rolldownOptions: { external: (id) => id.startsWith('node:') },
   },
