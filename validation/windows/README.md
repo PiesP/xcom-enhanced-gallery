@@ -245,6 +245,9 @@ runtime acceptance.
 
 The ignored `validation/windows/inputs/attachment-filenames.json` selector
 (`{"scenario":"attachment-filenames"}`) runs the focused extension cycle.
+An extension run may append ordinary `--live-url` public observations after
+closing the fixture browser and loopback; those observations remain separate
+from the controlled saved-file qualification.
 With `--installation userscript`, the same selector runs a manager-backed
 visible `/photo/2` save that checks the owner-local filename and native bytes.
 
@@ -261,10 +264,9 @@ worker options are captured. An intentional active override is an arbitration
 observation, not filename conformance. Unexpected completed basenames retain
 their native-item receipt and a byte-checked copy under a flat neutral `.bin`
 evidence name before the fixture fails and profile cleanup runs. The browser-reported
-basename remains separate; the original download is never renamed. Passive controls
-record conformance independently and allow only the intended or exact CDN basename
-while diagnosing browser filename determination. Helper observations are read before
-uninstallation even when a case fails.
+basename remains separate; the original download is never renamed. Passive controls require the intended native basename. Active controls intentionally
+suggest the CDN basename and record that override separately from conformance.
+Helper observations are read before uninstallation even when a case fails.
 The preexisting-file control above runs before this helper is installed and
 preserves its sentinel. The helper is uninstalled and its owned files removed
 before the normal profile cleanup. These controls do not identify the cause of

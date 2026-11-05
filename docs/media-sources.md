@@ -143,6 +143,24 @@ entry bytes, duplicate names and failed-entry recovery. Exact native saved
 basenames and Windows filesystem behavior remain unverified until the prepared
 Windows validation environment is available.
 
+The Chrome extension submits the requested name to the native API and also
+suggests it during filename determination only after matching this extension's
+initiator ID, the persisted request/native-download ID, and the initial URL hash.
+The requested name survives worker restarts in that bounded ownership record.
+An event arriving before the native ID is bound waits briefly; unavailable or
+ambiguous ownership leaves the browser's decision unchanged. Suggestions use
+`uniquify`, preserving preexisting files. They do not rename unrelated downloads
+or guarantee priority over another extension's active filename suggestion.
+
+A completed direct download reports transfer success separately from its name.
+The single-download result's `filename` remains the requested name for existing
+callers; optional `requestedFilename`, `observedFilename` (basename only), and
+`filenameConforms` expose the native observation when available. Conformance
+accepts the exact basename or a browser numeric ` (N)` conflict suffix before
+the extension. An unavailable observation is not replaced with the requested
+name. An unexpected completed name never starts another save or overwrites the
+completed file.
+
 ## In-gallery limitations
 
 A gallery recovered only from the clicked visible tile retains that scope for

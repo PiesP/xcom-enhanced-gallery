@@ -906,9 +906,9 @@ async function runDirectDownload(
 
 async function runTrackedDownload(
   downloadOptions: ChromeDownloadOptions,
-  requestId?: string
+  suppliedRequestId?: string
 ): Promise<void> {
-  requestId ??= crypto.randomUUID();
+  const requestId = suppliedRequestId ?? crypto.randomUUID();
   const filenameAllocation = filenamePolicy.beginAllocation();
   let downloadId: number | undefined;
   let cancellationAlreadyTerminal = false;

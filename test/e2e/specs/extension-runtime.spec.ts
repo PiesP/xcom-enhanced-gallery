@@ -48,7 +48,6 @@ declare module '../../../src/platform/chrome' {
     readonly limit?: number;
   }
   interface ChromeDownloadItem {
-    readonly filename: string;
     readonly mime: string;
   }
   interface ChromeNotificationsModule {
@@ -249,7 +248,7 @@ test('loads the Chrome extension, completes a privileged download, and restores 
     );
     expect(completedDownload?.url).toBe(NATIVE_ORIGINAL_URL);
     expect(completedDownload?.mime).toBe('image/jpeg');
-    expect(completedDownload?.filename.startsWith(downloadDirectory)).toBe(true);
+    expect(completedDownload?.filename?.startsWith(downloadDirectory)).toBe(true);
     // The fixture has no /photo/N hint; the first owned CDN path has this stable source key.
     expect(basename(completedDownload?.filename ?? '')).toBe(
       'testuser_1234567890123456789_source-b44cfa31f709d13f.jpg'

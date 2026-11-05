@@ -5648,8 +5648,7 @@ async function runAttachmentFilenameCycle({
       url: string,
       bytes: Buffer,
       conflict = false,
-      expectedApplicationFilename = assignedName,
-      observeCdnFallback = false
+      expectedApplicationFilename = assignedName
     ) => {
       const known = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
       const nativeMark = nativeLoopback.mark();
@@ -5686,11 +5685,6 @@ async function runAttachmentFilenameCycle({
         if (conflict) {
           assertNativeName(basename(item.filename), assignedName);
           assert.notEqual(basename(item.filename), assignedName);
-        } else if (observeCdnFallback) {
-          assert(
-            [assignedName, basename(new URL(url).pathname)].includes(basename(item.filename)),
-            'Filename control produced an unrecognized basename'
-          );
         } else {
           assert.equal(basename(item.filename), assignedName);
         }
@@ -5993,7 +5987,7 @@ async function runAttachmentFilenameCycle({
           if ((passive || mode === 'filename') && runFilenameDiagnostic) {
             const label = passive ? mode : 'active-suggestion';
             const diagnostic = await runFilenameDiagnostic(label, () =>
-              single(gallery, observedName, b1Url, images[1], false, b1, passive)
+              single(gallery, observedName, b1Url, images[1], false, b1)
             );
             const diagnosticControl = await control.readObservations();
             assert.equal(diagnosticControl.overflow, false);
@@ -6012,7 +6006,7 @@ async function runAttachmentFilenameCycle({
             });
             await retire(diagnostic, `diagnostic-${label}.jpg`, images[1]);
           }
-          const saved = await single(gallery, observedName, b1Url, images[1], false, b1, passive);
+          const saved = await single(gallery, observedName, b1Url, images[1], false, b1);
           const observation = await control.readObservations();
           assert.equal(observation.overflow, false);
           assert.equal(observation.controlError, null);
@@ -20332,7 +20326,6 @@ export async function run({
     assert.deepEqual(JSON.parse(attachmentFilenameSelectorText), {
       scenario: 'attachment-filenames',
     });
-    assert.equal(liveUrls.length, 0);
     assert.equal(liveObservation, null);
     assert.equal(acceptanceSelectorText, null);
     assert.equal(uxDetailsSelectorText, null);

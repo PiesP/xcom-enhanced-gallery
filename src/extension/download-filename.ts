@@ -16,7 +16,7 @@ export function observeDownloadFilename(
   if (
     !observed ||
     observed.length > 255 ||
-    [...observed].some((char) => char.charCodeAt(0) < 32 || char.charCodeAt(0) === 127)
+    observed.split('').some((char) => char.charCodeAt(0) < 32 || char.charCodeAt(0) === 127)
   ) {
     return { requestedFilename: requested };
   }
@@ -47,7 +47,9 @@ export class OwnedDownloadFilenamePolicy {
 
   private async lookup(id: number, url: string, deadline: number): Promise<string | undefined> {
     const remaining = deadline - Date.now();
-    if (remaining <= 0) return undefined;
+    if (remaining <= 0) {
+      return undefined;
+    }
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
       return await Promise.race([
@@ -66,7 +68,9 @@ export class OwnedDownloadFilenamePolicy {
     let finished = false;
     return {
       bound: (id) => {
-        for (const notify of this.waiters.get(id) ?? []) notify();
+        for (const notify of this.waiters.get(id) ?? []) {
+          notify();
+        }
       },
       finish: () => {
         if (!finished) {
@@ -109,19 +113,28 @@ export class OwnedDownloadFilenamePolicy {
         try {
           filename = await this.lookup(item.id, url, deadline);
           if (filename === undefined) {
-            if (this.allocations > 0) await wait;
+            if (this.allocations > 0) {
+              await wait;
+            }
             filename = await this.lookup(item.id, url, deadline);
           }
         } finally {
           clearTimeout(timer);
-          if (notify) this.waiters.get(item.id)?.delete(notify);
-          if (this.waiters.get(item.id)?.size === 0) this.waiters.delete(item.id);
+          if (notify) {
+            this.waiters.get(item.id)?.delete(notify);
+          }
+          if (this.waiters.get(item.id)?.size === 0) {
+            this.waiters.delete(item.id);
+          }
         }
       } catch {
         // Missing ownership or unavailable storage must not rename or stall a download.
       } finally {
-        if (filename) suggest({ filename, conflictAction: 'uniquify' });
-        else suggest();
+        if (filename) {
+          suggest({ filename, conflictAction: 'uniquify' });
+        } else {
+          suggest();
+        }
       }
     })();
     return true;
