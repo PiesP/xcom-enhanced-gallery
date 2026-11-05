@@ -36,7 +36,53 @@ import type {
 } from '@extension/extension-message-types';
 import { getUserCancelledAbortErrorFromSignal } from '@shared/error/cancellation';
 import { browserApi } from './chrome-runtime';
-import type { DownloadAdapter } from './types';
+import type { DownloadAdapter, DownloadReceipt } from './types';
+
+/** Only forward a bounded native basename; message data crosses a runtime boundary. */
+function isPlainBasename(name: unknown): name is string {
+  if (
+    typeof name !== 'string' ||
+    name.length === 0 ||
+    name.length > 255 ||
+    name === '.' ||
+    name === '..'
+  ) {
+    return false;
+  }
+  for (const character of name) {
+    const codePoint = character.codePointAt(0) ?? 0;
+    if (
+      character === '/' ||
+      character === '\\' ||
+      character === ':' ||
+      codePoint <= 31 ||
+      (codePoint >= 127 && codePoint <= 159)
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function getDownloadReceipt(data: unknown, requestedFilename: string): DownloadReceipt | undefined {
+  if (!data || typeof data !== 'object') {
+    return undefined;
+  }
+  const metadata = data as Partial<DownloadDirectStatusResponse>;
+  if (metadata.requestedFilename !== requestedFilename) {
+    return undefined;
+  }
+  if (!isPlainBasename(metadata.observedFilename)) {
+    return { requestedFilename };
+  }
+  return {
+    requestedFilename,
+    observedFilename: metadata.observedFilename,
+    ...(typeof metadata.filenameConforms === 'boolean'
+      ? { filenameConforms: metadata.filenameConforms }
+      : {}),
+  };
+}
 
 /**
  * Check if a sendMessage response indicates success.
@@ -79,8 +125,8 @@ export class MV3DownloadAdapter implements DownloadAdapter {
     filename: string,
     headers?: Record<string, string>,
     signal?: AbortSignal
-  ): Promise<void> {
-    await this.sendDirectDownloadRequest(url, filename, headers, signal);
+  ): Promise<void | DownloadReceipt> {
+    return this.sendDirectDownloadRequest(url, filename, headers, signal);
   }
 
   async downloadBlob(
@@ -243,7 +289,7 @@ export class MV3DownloadAdapter implements DownloadAdapter {
     filename: string,
     headers?: Record<string, string>,
     signal?: AbortSignal
-  ): Promise<void> {
+  ): Promise<void | DownloadReceipt> {
     if (signal?.aborted) {
       throw getUserCancelledAbortErrorFromSignal(signal);
     }
@@ -345,7 +391,7 @@ export class MV3DownloadAdapter implements DownloadAdapter {
             data.status === 'complete' &&
             message?.success === true
           ) {
-            return;
+            return getDownloadReceipt(data, filename);
           }
           if (data?.requestId === requestId && data.status === 'active') {
             activeObserved = true;
@@ -379,7 +425,7 @@ export class MV3DownloadAdapter implements DownloadAdapter {
           }
         }
         if (status?.status === 'complete') {
-          return;
+          return getDownloadReceipt(status, filename);
         }
         if (status?.status === 'never-started') {
           throw new Error(lastError);

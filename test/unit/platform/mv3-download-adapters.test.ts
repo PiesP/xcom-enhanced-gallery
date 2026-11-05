@@ -261,6 +261,142 @@ describe('MV3DownloadAdapter', () => {
     });
   });
 
+  it('returns the observed CDN basename separately from a successful requested name', async () => {
+    sendMessage.mockImplementation(
+      (message: { type: string; payload: { requestId: string; filename: string } }) =>
+        Promise.resolve({
+          success: true,
+          data: {
+            requestId: message.payload.requestId,
+            status: 'complete',
+            requestedFilename: message.payload.filename,
+            observedFilename: 'HWXMF0bbcAEnfk6.jpg',
+            filenameConforms: false,
+          },
+        })
+    );
+
+    await expect(
+      new MV3DownloadAdapter().download(
+        'https://pbs.twimg.com/media/HWXMF0bbcAEnfk6.jpg',
+        'author_222_1.jpg'
+      )
+    ).resolves.toEqual({
+      requestedFilename: 'author_222_1.jpg',
+      observedFilename: 'HWXMF0bbcAEnfk6.jpg',
+      filenameConforms: false,
+    });
+    expect(sendMessage).toHaveBeenCalledTimes(1);
+    expect(sendMessage.mock.calls[0]?.[0]).toMatchObject({ type: 'DOWNLOAD_REQUEST' });
+  });
+
+  it('preserves a conforming native conflict suffix without a second request', async () => {
+    sendMessage.mockImplementation(
+      (message: { payload: { requestId: string; filename: string } }) =>
+        Promise.resolve({
+          success: true,
+          data: {
+            requestId: message.payload.requestId,
+            status: 'complete',
+            requestedFilename: message.payload.filename,
+            observedFilename: 'author_222_1 (1).jpg',
+            filenameConforms: true,
+          },
+        })
+    );
+
+    await expect(
+      new MV3DownloadAdapter().download(
+        'https://pbs.twimg.com/media/example.jpg',
+        'author_222_1.jpg'
+      )
+    ).resolves.toEqual({
+      requestedFilename: 'author_222_1.jpg',
+      observedFilename: 'author_222_1 (1).jpg',
+      filenameConforms: true,
+    });
+    expect(sendMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it('forwards native name metadata after a lost completion reply via status', async () => {
+    sendMessage.mockImplementation((message: { type: string; payload: { requestId: string } }) => {
+      if (message.type === 'DOWNLOAD_REQUEST') {
+        return Promise.reject(new Error('Worker reply lost'));
+      }
+      return Promise.resolve({
+        success: true,
+        data: {
+          requestId: message.payload.requestId,
+          status: 'complete',
+          requestedFilename: 'author_222_1.jpg',
+          observedFilename: 'HWXMF0bbcAEnfk6.jpg',
+          filenameConforms: false,
+        },
+      });
+    });
+
+    await expect(
+      new MV3DownloadAdapter().download(
+        'https://pbs.twimg.com/media/example.jpg',
+        'author_222_1.jpg'
+      )
+    ).resolves.toEqual({
+      requestedFilename: 'author_222_1.jpg',
+      observedFilename: 'HWXMF0bbcAEnfk6.jpg',
+      filenameConforms: false,
+    });
+    expect(
+      sendMessage.mock.calls.filter(
+        ([message]) => (message as { type: string }).type === 'DOWNLOAD_REQUEST'
+      )
+    ).toHaveLength(1);
+    expect(
+      sendMessage.mock.calls.some(
+        ([message]) => (message as { type: string }).type === 'DOWNLOAD_DIRECT_STATUS_REQUEST'
+      )
+    ).toBe(true);
+  });
+
+  it('drops untrusted name metadata that does not match the request or is not a basename', async () => {
+    const adapter = new MV3DownloadAdapter();
+    sendMessage.mockImplementation((message: { payload: { requestId: string } }) =>
+      Promise.resolve({
+        success: true,
+        data: {
+          requestId: message.payload.requestId,
+          status: 'complete',
+          requestedFilename: 'another.jpg',
+          observedFilename: 'another.jpg',
+          filenameConforms: true,
+        },
+      })
+    );
+    await expect(
+      adapter.download('https://pbs.twimg.com/media/example.jpg', 'author_222_1.jpg')
+    ).resolves.toBeUndefined();
+
+    sendMessage.mockImplementation((message: { payload: { requestId: string } }) =>
+      Promise.resolve({
+        success: true,
+        data: {
+          requestId: message.payload.requestId,
+          status: 'complete',
+          requestedFilename: 'author_222_1.jpg',
+          observedFilename: 'C:\\Downloads\\other.jpg',
+          filenameConforms: false,
+        },
+      })
+    );
+    await expect(
+      adapter.download('https://pbs.twimg.com/media/example.jpg', 'author_222_1.jpg')
+    ).resolves.toEqual({ requestedFilename: 'author_222_1.jpg' });
+    expect(
+      sendMessage.mock.calls.filter(
+        ([message]) => (message as { type: string }).type === 'DOWNLOAD_REQUEST'
+      )
+    ).toHaveLength(2);
+  });
+
   it.each(['active reply', 'lost reply'])(
     'waits past the initial checks for one %s download to complete',
     async (replyKind) => {

@@ -17,13 +17,23 @@ export interface StorageAdapter {
   getSync?<T>(key: string, defaultValue?: T): T | undefined; // Optional — only userscript supports this
 }
 
+/** Names reported for a completed native URL download. */
+export interface DownloadReceipt {
+  /** The filename submitted to the native download API. */
+  readonly requestedFilename: string;
+  /** Basename observed from the completed native download, when available. */
+  readonly observedFilename?: string;
+  /** Whether the observed name conforms to the request, including conflict suffixes. */
+  readonly filenameConforms?: boolean;
+}
+
 export interface DownloadAdapter {
   download(
     url: string,
     filename: string,
     headers?: Record<string, string>,
     signal?: AbortSignal
-  ): Promise<void>;
+  ): Promise<void | DownloadReceipt>;
   downloadBlob(
     blob: Blob,
     filename: string,
