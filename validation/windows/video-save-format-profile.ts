@@ -213,6 +213,11 @@ export async function runInstalledVideoSaveFormatProbe({
       });
       await notice.locator('button').click();
       await notice.waitFor({ state: 'detached' });
+      if (kind === 'unknown') {
+        // The three intentional API denials open this page's extraction circuit.
+        await page.goto(VIDEO_FORMAT_FIXTURE_URL);
+        await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+      }
     }
     for (const fixture of VIDEO_FORMAT_API_CASES) {
       const before = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
