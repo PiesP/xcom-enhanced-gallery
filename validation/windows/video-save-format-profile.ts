@@ -16,6 +16,8 @@ import {
 import type { startExtensionNativeFixtureLoopback } from './extension-native-loopback.ts';
 import {
   installFixtureRoutes,
+  VIDEO_FORMAT_API_CASES,
+  VIDEO_FORMAT_DIRECT_SOURCE,
   VIDEO_FORMAT_FIXTURE_URL,
   type ImageFixtures,
 } from './install-preparation.ts';
@@ -38,9 +40,6 @@ declare const chrome: {
 };
 
 const OWNER = '4666000000000000484';
-const VIDEO_SOURCE =
-  'https://video.twimg.com/ext_tw_video/9111111111111111111/pu/vid/320x180/quote-one.mp4';
-
 const digest = (bytes: Uint8Array): string => createHash('sha256').update(bytes).digest('hex');
 
 async function queryDownloads(page: Page) {
@@ -62,6 +61,19 @@ async function waitForDownload(page: Page, before: ReadonlySet<number>, filename
     await new Promise((resolveDelay) => setTimeout(resolveDelay, 100));
   }
   throw new Error(`Timed out waiting for native format fixture download ${filename}`);
+}
+
+async function assertNoNativeDownload(page: Page, before: ReadonlySet<number>, kind: string) {
+  const settleMs = 500;
+  const deadline = Date.now() + settleMs;
+  while (Date.now() < deadline) {
+    const added = (await queryDownloads(page)).filter(({ id }) => !before.has(id));
+    assert.deepEqual(added, [], `${kind}: rejected video started a native save`);
+    await new Promise((resolveDelay) => setTimeout(resolveDelay, 100));
+  }
+  const added = (await queryDownloads(page)).filter(({ id }) => !before.has(id));
+  assert.deepEqual(added, [], `${kind}: rejected video started a native save`);
+  return settleMs;
 }
 
 export async function runInstalledVideoSaveFormatProbe({
@@ -116,7 +128,7 @@ export async function runInstalledVideoSaveFormatProbe({
     await gallery.waitFor({ state: 'visible' });
     assert.equal(await gallery.locator('[data-gallery-element="item"]').count(), 2);
     const selectedSource = await gallery.locator('video').first().getAttribute('src');
-    assert.equal(selectedSource, VIDEO_SOURCE, 'Gallery chose a different source');
+    assert.equal(selectedSource, VIDEO_FORMAT_DIRECT_SOURCE, 'Gallery chose a different source');
 
     const beforeSingle = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
     await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download"]').click();
@@ -140,7 +152,11 @@ export async function runInstalledVideoSaveFormatProbe({
     singleCase.bytes = savedVideo.bytes.length;
     singleCase.sha256 = digest(savedVideo.bytes);
     assert.equal(singleCase.filename, singleCase.expectedFilename, 'Saved MP4 name differs');
-    assert.equal(single.url, VIDEO_SOURCE, 'Native MP4 source differs from the selected URL');
+    assert.equal(
+      single.url,
+      VIDEO_FORMAT_DIRECT_SOURCE,
+      'Native MP4 source differs from the selected URL'
+    );
     assert(savedVideo.bytes.equals(videoBytes), 'Native MP4 bytes differ from the owned fixture');
 
     const expectedEntries = [
@@ -178,21 +194,92 @@ export async function runInstalledVideoSaveFormatProbe({
     for (const kind of ['playlist', 'unknown', 'conflict']) {
       const before = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
       const apiStart = routes.apiResponses.length;
+      const notice = page.locator('[data-xeg-entry-failure]');
+      assert.equal(await notice.count(), 0, `${kind}: prior failure notice was not dismissed`);
       await page.locator(`[data-format-case="${kind}"] video`).click();
-      const notice = page.locator('[data-xeg-entry-failure] [role="status"]');
       await notice.waitFor({ state: 'visible' });
+      assert.equal(await notice.count(), 1, `${kind}: expected one terminal failure notice`);
       assert.equal(routes.apiResponses.length, apiStart + 1, `${kind}: expected one API denial`);
       assert.equal(routes.apiResponses[apiStart]?.status, 403);
       assert.equal(await gallery.count(), 0, `${kind}: unsupported video opened a gallery`);
-      const added = (await queryDownloads(extensionPage)).filter(({ id }) => !before.has(id));
-      assert.deepEqual(added, [], `${kind}: unsupported video started a native save`);
+      const nativeSettleMs = await assertNoNativeDownload(extensionPage, before, kind);
       cases.push({
         kind,
         status: 'save-rejected',
-        notice: (await notice.textContent())?.trim() ?? '',
+        notice: (await notice.locator('[role="status"]').textContent())?.trim() ?? '',
         apiStatus: 403,
-        nativeDownloads: added.length,
+        nativeDownloads: 0,
+        nativeSettleMs,
       });
+      await notice.locator('button').click();
+      await notice.waitFor({ state: 'detached' });
+    }
+    for (const fixture of VIDEO_FORMAT_API_CASES) {
+      const before = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
+      const apiStart = routes.videoFormatApiResponses.length;
+      const notice = page.locator('[data-xeg-entry-failure]');
+      assert.equal(await notice.count(), 0, `${fixture.name}: prior failure notice remains`);
+      await page.locator(`[data-format-case="${fixture.name}"] video`).click();
+      const apiDeadline = Date.now() + 10_000;
+      while (routes.videoFormatApiResponses.length === apiStart && Date.now() < apiDeadline) {
+        await new Promise((resolveDelay) => setTimeout(resolveDelay, 100));
+      }
+      const records = routes.videoFormatApiResponses.slice(apiStart);
+      assert.equal(records.length, 1, `${fixture.name}: expected one successful API response`);
+      assert.equal(records[0]?.tweetId, fixture.tweetId);
+      assert.equal(records[0]?.status, 200);
+      const source = `${VIDEO_FORMAT_DIRECT_SOURCE}${fixture.query}`;
+      if (!fixture.accepted) {
+        await notice.waitFor({ state: 'visible' });
+        assert.equal(await notice.count(), 1, `${fixture.name}: expected one terminal failure`);
+        assert.equal(await gallery.count(), 0, `${fixture.name}: sibling photo replaced the video`);
+        const nativeSettleMs = await assertNoNativeDownload(extensionPage, before, fixture.name);
+        cases.push({
+          kind: fixture.name,
+          status: 'save-rejected',
+          ownerTweetId: fixture.tweetId,
+          selectedSource: source,
+          apiStatus: 200,
+          apiRootMediaCount: records[0]?.rootMediaCount,
+          notice: (await notice.locator('[role="status"]').textContent())?.trim() ?? '',
+          nativeDownloads: 0,
+          nativeSettleMs,
+        });
+        await notice.locator('button').click();
+        await notice.waitFor({ state: 'detached' });
+        continue;
+      }
+
+      await gallery.waitFor({ state: 'visible' });
+      assert.equal(await gallery.locator('[data-gallery-element="item"]').count(), 1);
+      assert.equal(await gallery.locator('video').first().getAttribute('src'), source);
+      const expectedFilename = `format_fixture_${fixture.tweetId}_0.mp4`;
+      await gallery
+        .locator('[data-gallery-element="toolbar"] button[aria-label="Download"]')
+        .click();
+      const saved = await waitForDownload(extensionPage, before, expectedFilename);
+      const savedCase: Record<string, unknown> = {
+        kind: fixture.name,
+        ownerTweetId: fixture.tweetId,
+        selectedSource: source,
+        apiStatus: 200,
+        nativeId: saved.id,
+        expectedFilename,
+        filename: basename(saved.filename),
+        sourceUrl: saved.url,
+      };
+      cases.push(savedCase);
+      assert.equal(dirname(resolve(saved.filename)), resolve(downloads));
+      const file = await readExactDownloadFile(saved.filename, videoBytes.length);
+      verified.set(saved.id, { item: saved, identity: file.identity });
+      await writeFile(join(output, `${fixture.name}.mp4`), file.bytes, { flag: 'wx' });
+      savedCase.bytes = file.bytes.length;
+      savedCase.sha256 = digest(file.bytes);
+      assert.equal(savedCase.filename, expectedFilename);
+      assert.equal(saved.url, source);
+      assert(file.bytes.equals(videoBytes), `${fixture.name}: saved MP4 bytes differ`);
+      await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]').click();
+      await gallery.waitFor({ state: 'detached' });
     }
     const transport = nativeLoopback.snapshot();
     assert.equal(transport.unexpectedCount, 0, 'Native fixture received an unknown CDN request');

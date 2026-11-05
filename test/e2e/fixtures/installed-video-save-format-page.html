@@ -58,6 +58,46 @@
           src="https://video.twimg.com/ext_tw_video/9111111111111111111/pu/vid/320x180/quote-one.mp4?format=jpg"
         ></video>
       </article>
+      <article data-testid="tweet" data-format-case="api-video">
+        <a href="/format_fixture/status/4666000000000000488"><time>API MP4 owner</time></a>
+        <video
+          src="https://video.twimg.com/ext_tw_video/9111111111111111111/pu/vid/320x180/quote-one.mp4"
+        ></video>
+      </article>
+      <article data-testid="tweet" data-format-case="api-gif">
+        <a href="/format_fixture/status/4666000000000000489"><time>API video GIF owner</time></a>
+        <video
+          src="https://video.twimg.com/ext_tw_video/9111111111111111111/pu/vid/320x180/quote-one.mp4"
+        ></video>
+      </article>
+      <article data-testid="tweet" data-format-case="api-conflict">
+        <a href="/format_fixture/status/4666000000000000490"
+          ><time>API conflicting MP4 owner</time></a
+        >
+        <div data-testid="tweetPhoto">
+          <img
+            src="https://pbs.twimg.com/media/GkE1234ABCDEF?format=jpg&amp;name=small"
+            alt="Other owned photo"
+          />
+        </div>
+        <video
+          src="https://video.twimg.com/ext_tw_video/9111111111111111111/pu/vid/320x180/quote-one.mp4?format=jpg"
+        ></video>
+      </article>
+      <article data-testid="tweet" data-format-case="api-duplicate">
+        <a href="/format_fixture/status/4666000000000000491"
+          ><time>API ambiguous video GIF owner</time></a
+        >
+        <div data-testid="tweetPhoto">
+          <img
+            src="https://pbs.twimg.com/media/GkE1234ABCDEF?format=jpg&amp;name=small"
+            alt="Other owned photo"
+          />
+        </div>
+        <video
+          src="https://video.twimg.com/ext_tw_video/9111111111111111111/pu/vid/320x180/quote-one.mp4?format=jpg&amp;format=mp4"
+        ></video>
+      </article>
     </main>
   </body>
 </html>

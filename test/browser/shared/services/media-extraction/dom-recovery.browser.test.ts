@@ -172,6 +172,58 @@ describe('scoped DOM recovery', () => {
     );
   });
 
+  it('does not borrow a valid API sibling photo for a selected contradictory video', async () => {
+    const selectedSource = 'https://video.twimg.com/ext_tw_video/900/pu/vid/clip.mp4?format=jpg';
+    const siblingSource = 'https://pbs.twimg.com/media/sibling?format=jpg&name=small';
+    httpGet.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        data: {
+          tweetResult: {
+            result: {
+              __typename: 'Tweet',
+              rest_id: '222',
+              core: {
+                user_results: {
+                  result: { legacy: { screen_name: 'author', name: 'author' } },
+                },
+              },
+              legacy: {
+                id_str: '222',
+                full_text: 'Video and sibling photo',
+                extended_entities: {
+                  media: [
+                    { type: 'photo', id_str: '901', media_url_https: siblingSource },
+                    {
+                      type: 'video',
+                      id_str: '900',
+                      media_url_https: 'https://pbs.twimg.com/ext_tw_video_thumb/900/poster.jpg',
+                      video_info: {
+                        variants: [{ content_type: 'video/mp4', url: selectedSource }],
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    document.body.innerHTML =
+      '<article><a href="/author/status/222"><time>Now</time></a><img id="sibling"><video id="target"></video></article>';
+    (document.getElementById('sibling') as HTMLImageElement).src = siblingSource;
+    (document.getElementById('target') as HTMLVideoElement).src = selectedSource;
+    const result = await new MediaExtractionService().extractFromClickedElement(
+      document.getElementById('target')!
+    );
+    expect(httpGet).toHaveBeenCalled();
+    expect(result.success).toBe(false);
+    expect(result.mediaItems).toEqual([]);
+    expect(planBulkDownload({ mediaItems: result.mediaItems }).items).toEqual([]);
+  });
+
   it('resolves the uniquely owned video from the actual deep X overlay click', () => {
     document.body.innerHTML = deepOverlayHtml;
     const target = document.querySelector<HTMLElement>('[data-capture-event-target="true"]');
