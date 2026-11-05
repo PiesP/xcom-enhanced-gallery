@@ -1440,8 +1440,7 @@ export async function inspectManagerDownloadHistoryDocument({
     current.protocol !== 'chrome-extension:' ||
     current.hostname !== managerId ||
     current.pathname !== '/options.html' ||
-    current.search ||
-    current.hash
+    current.search
   ) {
     return { status: 'unowned-page', items: [] };
   }

@@ -1575,6 +1575,46 @@ describe('Windows X live page validation', () => {
     }
   });
 
+  it('observes manager history on its owned options hash and rejects other routes', async () => {
+    const args = {
+      managerId: 'manager',
+      fixtureUrl: 'https://pbs.twimg.com/media/first.jpg',
+      expectedName: 'first.jpg',
+      expectedPath: 'C:\\owned\\first.jpg',
+      expectedBytes: 5,
+    };
+    const search = vi.fn(async () => []);
+    vi.stubGlobal('chrome', { downloads: { search } });
+    try {
+      const ownedHash = 'chrome-extension://manager/options.html#/downloads';
+      vi.stubGlobal('location', { href: ownedHash });
+      expect(userscriptInstall.isOwnedManagerOptionsUrl(ownedHash, args.managerId)).toBe(true);
+      expect(await userscriptInstall.inspectManagerDownloadHistoryDocument(args)).toEqual({
+        status: 'observed',
+        items: [],
+      });
+      expect(search).toHaveBeenCalledExactlyOnceWith({ url: args.fixtureUrl, limit: 9 });
+
+      for (const url of [
+        'chrome-extension://foreign/options.html#/downloads',
+        'chrome-extension://manager/options.html?token=private#/downloads',
+        'chrome-extension://manager/other.html#/downloads',
+        'chrome-extension://manager/options.html/child#/downloads',
+      ]) {
+        search.mockClear();
+        vi.stubGlobal('location', { href: url });
+        expect(userscriptInstall.isOwnedManagerOptionsUrl(url, args.managerId)).toBe(false);
+        expect(await userscriptInstall.inspectManagerDownloadHistoryDocument(args)).toEqual({
+          status: 'unowned-page',
+          items: [],
+        });
+        expect(search).not.toHaveBeenCalled();
+      }
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('records only an exact owned native redirect destination match', async () => {
     const fixtureUrl = 'https://pbs.twimg.com/media/GkE1234ABCDEF.jpg?format=jpg&name=orig';
     vi.stubGlobal('location', { href: 'chrome-extension://manager/options.html' });
