@@ -245,8 +245,51 @@ runtime acceptance.
 
 The ignored `validation/windows/inputs/attachment-filenames.json` selector
 (`{"scenario":"attachment-filenames"}`) runs the focused extension cycle.
+An extension run may append ordinary `--live-url` public observations after
+closing the fixture browser and loopback; those observations remain separate
+from the controlled saved-file qualification.
 With `--installation userscript`, the same selector runs a manager-backed
 visible `/photo/2` save that checks the owner-local filename and native bytes.
+
+With `--browser chrome --installation extension`, this cycle additionally
+installs a separate task-owned filename-decision control extension after the
+XEG-only cases. It repeats one known B1 Download-button save with a passive
+`suggest()` and separate `suggest(undefined)` control, an explicit distinct
+`control-override-482.jpg` suggestion, and that same suggestion with
+`conflictAction: 'uniquify'`. The helper filters by the XEG extension ID and the
+exact synthetic source URL. Each case records the matching native ID,
+tentative/suggested/final basenames, initiating extension, MIME, and original
+saved bytes. Independent expected names and observed native names remain
+separate. The request name is explicitly unobserved until the MV3 payload and
+worker options are captured. An intentional active override is an arbitration
+observation, not filename conformance. Unexpected completed basenames retain
+their native-item receipt and a byte-checked copy under a flat neutral `.bin`
+evidence name before the fixture fails and profile cleanup runs. The browser-reported
+basename remains separate; the original download is never renamed. Chrome
+acceptance keeps automatic saving and checks the visible actual-filename
+notice against the native item and disk file. Passive controls permit the intended
+or known CDN fallback basename while recording conformance separately. Active
+controls require the distinct suggested basename. A mismatch must remain a completed
+transfer with a notice, without another save or overwrite.
+Helper observations are read before uninstallation even when a case fails.
+The preexisting-file control above runs before this helper is installed and
+preserves its sentinel. The helper is uninstalled and its owned files removed
+before the normal profile cleanup. These controls do not identify the cause of
+a live-post report; request/worker correlation and a source-bound installed
+Chrome run still require separate observations.
+
+The Chrome cycle also performs two separate diagnostic B1 saves: XEG alone and
+an active filename suggestion. `filename-correlation.ts` binds the executed
+content script's SHA-256 and filename-generation location to a non-pausing CDP
+logpoint, observes the matching MV3 request and unchanged native API call, and
+checks the persisted request/native-ID/owner/source relationship. It records
+selected attachment metadata, generated/requested/native/final names and the
+actual saved file's bytes/hash in separately labeled JSON receipts. Name
+comparisons remain independent of request ownership. Missing or ambiguous
+observations fail with partial receipts. The debugger and worker observers are
+removed before repeating the ordinary, uninstrumented save and continuing the
+controls. These diagnostic saves do not qualify worker lifecycle behavior or
+identify the live-report cause without the required runtime evidence.
 
 The same installed profile invokes `media-api-reuse-profile.ts` to compare
 physical API requests across successive clicks, navigation, reload and a fresh

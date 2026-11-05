@@ -16,7 +16,11 @@ import { logger } from '@shared/logging/logger';
 import type { MediaInfo } from '@shared/types/media.types';
 import { createEventEmitter } from '@shared/utils/events/emitter';
 import { batch, createSignal } from 'solid-js';
-import { _setDownloadStatus, setBulkDownloadOutcome } from './gallery-download-signals';
+import {
+  _setDownloadStatus,
+  setBulkDownloadOutcome,
+  setSingleDownloadOutcome,
+} from './gallery-download-signals';
 import { resolveAdjacentNavigationTarget, resolveDisplayedIndex } from './gallery-navigation';
 import {
   INITIAL_NAV_SOURCE,
@@ -163,6 +167,7 @@ export function setError(error: string | null, owner: GalleryErrorOwner = null):
 }
 
 function applyGallerySessionUpdate(state: GallerySessionState): void {
+  setSingleDownloadOutcome(null);
   batch(() => {
     setSessionRevision((revision) => revision + 1);
     setErrorOwner(null);
@@ -340,4 +345,5 @@ export function disposeGallerySignals(): void {
 
   _setDownloadStatus('idle');
   setBulkDownloadOutcome(null);
+  setSingleDownloadOutcome(null);
 }

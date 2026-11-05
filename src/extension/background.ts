@@ -35,6 +35,7 @@ import { MV3StorageAdapter } from '@platform/mv3-storage-adapters';
 import { createLogger } from '@shared/logging/logger';
 import { isAllowedUrl } from '@shared/utils/url/url-safety';
 import { waitForDownloadComplete } from './download-completion';
+import { observeDownloadFilename } from './download-filename';
 import { DownloadTrackingStore, type PersistedDownloadRecord } from './download-tracking';
 import type {
   DownloadBlobStatusRequestMessage,
@@ -649,9 +650,6 @@ async function inspectDirectDownload(
       record.cancellationRequested ? 'user-cancelled' : 'browser-rejected'
     );
   }
-  if (record.terminalState === 'complete') {
-    return directStatus(requestId, 'complete');
-  }
   if (record.terminalState === 'interrupted') {
     return directStatus(
       requestId,
@@ -665,28 +663,43 @@ async function inspectDirectDownload(
   try {
     const [item] = await browserApi.downloads.search({ id: record.downloadId });
     if (item?.id !== record.downloadId || item.url !== url) {
-      return directStatus(requestId, 'unknown');
+      return directStatus(requestId, record.terminalState === 'complete' ? 'complete' : 'unknown');
     }
     if (item.state === 'complete' || item.state === 'interrupted') {
       await downloadTracking.markDirectTerminal(requestId, item.state);
       activeDownloadIds.delete(requestId);
-      return directStatus(
-        requestId,
-        item.state,
-        item.state === 'interrupted'
-          ? record.cancellationRequested
-            ? 'user-cancelled'
-            : 'browser-interrupted'
-          : undefined
-      );
+      return {
+        ...directStatus(
+          requestId,
+          item.state,
+          item.state === 'interrupted'
+            ? record.cancellationRequested
+              ? 'user-cancelled'
+              : 'browser-interrupted'
+            : undefined
+        ),
+        ...(item.state === 'complete' && record.requestedFilename
+          ? observeDownloadFilename(
+              record.requestedFilename,
+              item.byExtensionId === browserApi.runtime.id ? item.filename : undefined
+            )
+          : {}),
+      };
     }
-    return directStatus(requestId, item.state === 'in_progress' ? 'active' : 'unknown');
+    return directStatus(
+      requestId,
+      record.terminalState === 'complete'
+        ? 'complete'
+        : item.state === 'in_progress'
+          ? 'active'
+          : 'unknown'
+    );
   } catch (error: unknown) {
     log.warn('download-direct-status-check-failed', {
       requestId,
       error: error instanceof Error ? error.message : String(error),
     });
-    return directStatus(requestId, 'unknown');
+    return directStatus(requestId, record.terminalState === 'complete' ? 'complete' : 'unknown');
   }
 }
 
@@ -799,7 +812,8 @@ async function runDirectDownload(
       requestId,
       downloadId,
       ownerTabId,
-      urlHash
+      urlHash,
+      options.filename
     );
     if (cancellationRequested === undefined) {
       await cancelDownloadWithRetry(downloadId, 'failure', () => tracked.terminalObserved);
@@ -814,7 +828,11 @@ async function runDirectDownload(
     }
     await waitForDownloadComplete(browserApi.downloads, downloadId);
     await downloadTracking.markDirectTerminal(requestId, 'complete');
-    return { success: true, data: directStatus(requestId, 'complete') };
+    const record = downloadTracking.get(requestId);
+    const status = record
+      ? await inspectDirectDownload(requestId, record, options.url)
+      : directStatus(requestId, 'complete');
+    return { success: true, data: status };
   } catch {
     if (downloadId === undefined) {
       await downloadTracking.markDirectTerminal(requestId, 'never-started');

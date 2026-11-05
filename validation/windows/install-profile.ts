@@ -44,6 +44,11 @@ import {
 } from './download-memory.ts';
 import { startExtensionNativeFixtureLoopback } from './extension-native-loopback.ts';
 import {
+  installFilenameDecisionControl,
+  type FilenameDecisionControl,
+} from './filename-decision-control.ts';
+import { withFilenameCorrelation } from './filename-correlation.ts';
+import {
   createControlledVideoSettings,
   decodeStoredValue,
   observeLiveUrls,
@@ -1159,6 +1164,9 @@ type ChromeDownloadItem = {
   exists: boolean;
   error?: string;
   finalUrl?: string;
+  mime?: string;
+  byExtensionId?: string;
+  byExtensionName?: string;
 };
 type ChromeEvent<T extends (...args: never[]) => unknown> = {
   addListener(listener: T): void;
@@ -5063,6 +5071,7 @@ async function runPublicFixtureCycle({
 }
 
 type CompactEvidence = {
+  diagnosticOnly?: boolean;
   status: string;
   api: ApiRecord[];
   images: QualityRequest[];
@@ -5556,6 +5565,11 @@ async function runAttachmentFilenameCycle({
   pageFetches,
   routes,
   evidence,
+  initiatingExtensionId,
+  filenameControlFactory,
+  runFilenameDiagnostic,
+  diagnosticOnly = false,
+  requireNativeFilenameNotice = false,
 }: {
   page: Page;
   extensionPage: Page;
@@ -5567,6 +5581,14 @@ async function runAttachmentFilenameCycle({
   pageFetches: PageFetch[];
   routes: Awaited<ReturnType<typeof installFixtureRoutes>>;
   evidence: CompactEvidence;
+  diagnosticOnly?: boolean;
+  requireNativeFilenameNotice?: boolean;
+  initiatingExtensionId?: string;
+  filenameControlFactory?: () => Promise<FilenameDecisionControl>;
+  runFilenameDiagnostic?: <T>(
+    label: 'xeg-alone' | 'passive' | 'passive-undefined' | 'active-suggestion',
+    action: () => Promise<T>
+  ) => Promise<T>;
 }) {
   const b1 = `middle_fixture_${COMPACT_MIDDLE_ID}_0.jpg`;
   const b2 = `middle_fixture_${COMPACT_MIDDLE_ID}_1.jpg`;
@@ -5630,7 +5652,9 @@ async function runAttachmentFilenameCycle({
       assignedName: string,
       url: string,
       bytes: Buffer,
-      conflict = false
+      conflict = false,
+      expectedApplicationFilename = assignedName,
+      observeNativeFilename = false
     ) => {
       const known = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
       const nativeMark = nativeLoopback.mark();
@@ -5639,16 +5663,77 @@ async function runAttachmentFilenameCycle({
         .locator('[data-gallery-element="toolbar"] button[aria-label="Download"]')
         .click();
       const item = await newDownload(known, assignedName);
-      if (conflict) {
-        assertNativeName(basename(item.filename), assignedName);
-        assert.notEqual(basename(item.filename), assignedName);
-      } else {
-        assert.equal(basename(item.filename), assignedName);
-      }
-      const path = relative(downloads, item.filename);
-      assert(path && !path.startsWith('..') && !isAbsolute(path));
+      const nativeItem = {
+        id: item.id,
+        filename: basename(item.filename),
+        state: item.state,
+        url: item.url,
+        finalUrl: item.finalUrl,
+        mime: item.mime,
+        byExtensionId: item.byExtensionId,
+        byExtensionName: item.byExtensionName,
+      };
+      const observation: Record<string, unknown> = {
+        name: 'filename-native-single',
+        expectedApplicationFilename,
+        requestedFilename: null,
+        requestObservation: 'not-captured',
+        nativeItem,
+      };
+      evidence.steps.push(observation);
       const { bytes: saved } = await readExactDownloadFile(item.filename, bytes.length);
-      assert(saved.equals(bytes), `${assignedName} saved bytes differ`);
+      observation.file = imageReceipt(saved);
+      try {
+        if (requireNativeFilenameNotice) {
+          const notice = gallery.locator('[data-gallery-element="download-filename-notice"]');
+          await notice.waitFor({ state: 'visible', timeout: 15_000 });
+          assert.equal(await notice.locator('bdi').textContent(), basename(item.filename));
+          const conforms = conflict || basename(item.filename) === expectedApplicationFilename;
+          assert.equal(await notice.getAttribute('data-filename-conforms'), String(conforms));
+          const text = await notice.textContent();
+          assert(text?.includes('Saved filename'));
+          assert.equal(
+            text?.includes('The saved name differs from the requested name.'),
+            !conforms
+          );
+          await gallery.locator('[data-download-status="handedOff"]').waitFor({ state: 'visible' });
+          observation.notice = {
+            visible: true,
+            observedFilename: basename(item.filename),
+            filenameConforms: conforms,
+            transferStatus: 'handedOff',
+          };
+          if (!conforms || conflict) {
+            const screenshot = `filename-notice-${item.id}.png`;
+            await page.screenshot({ path: join(output, screenshot) });
+            observation.noticeScreenshot = screenshot;
+          }
+        }
+        assert(saved.equals(bytes), `${assignedName} saved bytes differ`);
+        if (initiatingExtensionId) {
+          assert.equal(item.byExtensionId, initiatingExtensionId, 'Native initiator differs');
+        }
+        if (conflict) {
+          assertNativeName(basename(item.filename), assignedName);
+          assert.notEqual(basename(item.filename), assignedName);
+        } else if (observeNativeFilename) {
+          assert(
+            [assignedName, b1, 'GkE5678GHIJKL.jpg', 'control-override-482.jpg'].includes(
+              basename(item.filename)
+            ),
+            'Unexpected diagnostic basename'
+          );
+        } else {
+          assert.equal(basename(item.filename), assignedName);
+        }
+      } catch (error) {
+        const retainedName = `native-failure-${item.id}.bin`;
+        const retainedFile = join(output, retainedName);
+        await writeFile(retainedFile, saved, { flag: 'wx' });
+        assert((await readExactDownloadFile(retainedFile, saved.length)).bytes.equals(saved));
+        observation.retainedFile = retainedName;
+        throw error;
+      }
       const native = await assertNativeSingle({
         extensionPage,
         knownIds: known,
@@ -5659,7 +5744,14 @@ async function runAttachmentFilenameCycle({
         nativeMark,
         pageFetches: pageFetches.slice(fetchMark),
       });
-      return { id: item.id, filename: basename(item.filename), ...imageReceipt(saved), native };
+      return {
+        id: item.id,
+        filename: basename(item.filename),
+        expectedApplicationFilename,
+        nativeItem,
+        ...imageReceipt(saved),
+        native,
+      };
     };
     const zip = async (
       gallery: Locator,
@@ -5724,6 +5816,17 @@ async function runAttachmentFilenameCycle({
       type: 'image',
       path: '/media/GkE5678GHIJKL.jpg',
     });
+    if (runFilenameDiagnostic) {
+      const diagnostic = await runFilenameDiagnostic('xeg-alone', () =>
+        single(a, b1, b1Url, images[1])
+      );
+      evidence.steps.push({
+        name: 'filename-diagnostic-xeg-alone',
+        nativeId: diagnostic.id,
+        trace: 'filename-correlation-xeg-alone.json',
+      });
+      await retire(diagnostic, 'diagnostic-xeg-alone.jpg', images[1]);
+    }
     const aB1 = await single(a, b1, b1Url, images[1]);
     await page.keyboard.press('ArrowRight');
     await assertQuotedSelection(page, {
@@ -5892,6 +5995,117 @@ async function runAttachmentFilenameCycle({
     await retry.waitFor({ state: 'detached' });
     await retire(partial, 'retry-partial.zip', partialBytes);
     await retire(supplementary, 'retry-supplementary.zip', recoveredBytes);
+    if (filenameControlFactory) {
+      const control = await filenameControlFactory();
+      const controlEvidence: Record<string, unknown> = {
+        name: 'chrome-filename-decision-controls',
+        helperExtensionId: control.id,
+        scope: 'controlled filename arbitration; does not identify the live-report cause',
+        diagnosticOnly,
+        cases: [],
+        cleanup: 'pending',
+      };
+      evidence.steps.push(controlEvidence);
+      try {
+        const gallery = await open('filename-api-b', '#filename-b1');
+        await assertQuotedSelection(page, {
+          position: 2,
+          total: 3,
+          type: 'image',
+          path: '/media/GkE5678GHIJKL.jpg',
+        });
+        for (const mode of [
+          'passive',
+          'passive-undefined',
+          'filename',
+          'conflict-action',
+        ] as const) {
+          await control.setMode(mode);
+          const passive = mode === 'passive' || mode === 'passive-undefined';
+          const observedName = passive ? b1 : 'control-override-482.jpg';
+          if ((passive || mode === 'filename') && runFilenameDiagnostic) {
+            const label = passive ? mode : 'active-suggestion';
+            const diagnostic = await runFilenameDiagnostic(label, () =>
+              single(gallery, observedName, b1Url, images[1], false, b1, passive || diagnosticOnly)
+            );
+            const diagnosticControl = await control.readObservations();
+            assert.equal(diagnosticControl.overflow, false);
+            assert.equal(diagnosticControl.controlError, null);
+            const diagnosticMatches = diagnosticControl.observations.filter(
+              ({ id }) => id === diagnostic.id
+            );
+            assert.equal(diagnosticMatches.length, 1, 'Diagnostic filename suggestion is missing');
+            assert.equal(diagnosticMatches[0]?.mode, mode);
+            assert.equal(diagnosticMatches[0]?.suggestedFilename, passive ? null : observedName);
+            evidence.steps.push({
+              name: `filename-diagnostic-${label}`,
+              nativeId: diagnostic.id,
+              trace: `filename-correlation-${label}.json`,
+              suggestion: diagnosticMatches[0],
+            });
+            await retire(diagnostic, `diagnostic-${label}.jpg`, images[1]);
+          }
+          const saved = await single(
+            gallery,
+            observedName,
+            b1Url,
+            images[1],
+            false,
+            b1,
+            passive || diagnosticOnly
+          );
+          const observation = await control.readObservations();
+          assert.equal(observation.overflow, false);
+          assert.equal(observation.controlError, null);
+          const matching = observation.observations.filter(({ id }) => id === saved.id);
+          assert.equal(
+            matching.length,
+            1,
+            'Filename suggestion was not observed for this native ID'
+          );
+          assert.equal(matching[0]?.mode, mode);
+          assert.equal(matching[0]?.suggestedFilename, passive ? null : observedName);
+          assert.equal(matching[0]?.conflictAction, mode === 'conflict-action' ? 'uniquify' : null);
+          let noticeDismissed = false;
+          if (mode === 'passive' && requireNativeFilenameNotice) {
+            const knownNoticeIds = (await queryDownloads(extensionPage)).map(({ id }) => id);
+            const notice = gallery.locator('[data-gallery-element="download-filename-notice"]');
+            await notice.getByRole('button', { name: 'Dismiss filename notice' }).click();
+            await notice.waitFor({ state: 'detached' });
+            assert.deepEqual(
+              (await queryDownloads(extensionPage)).map(({ id }) => id),
+              knownNoticeIds,
+              'Dismissing the filename notice created another download'
+            );
+            assert(
+              (
+                await readExactDownloadFile(join(downloads, saved.filename), images[1].length)
+              ).bytes.equals(images[1])
+            );
+            noticeDismissed = true;
+          }
+          (controlEvidence.cases as unknown[]).push({
+            mode,
+            saved,
+            suggestion: matching[0],
+            filenameConforms: saved.filename === b1,
+            controlExpectationMet: saved.filename === observedName,
+            noticeDismissed,
+          });
+          await retire(saved, `chrome-${mode}.jpg`, images[1]);
+        }
+        await page.keyboard.press('Escape');
+        await gallery.waitFor({ state: 'detached' });
+      } finally {
+        try {
+          controlEvidence.finalObservation = await control.readObservations();
+        } catch (error) {
+          controlEvidence.observationError = safeError(error);
+        }
+        await control.dispose();
+        controlEvidence.cleanup = 'complete';
+      }
+    }
   } finally {
     routes.clearFilenameB1Failure();
     nativeLoopback.clearHttpFailure();
@@ -5913,8 +6127,13 @@ async function runAttachmentFilenameFocusedProbe({
   nativeLoopback,
   output,
   root,
+  browserName,
+  browserCdp,
+  profile,
+  diagnosticOnly,
 }: {
   context: BrowserContext;
+  diagnosticOnly: boolean;
   downloads: string;
   extensionId: string;
   images: ImageFixtures;
@@ -5922,6 +6141,9 @@ async function runAttachmentFilenameFocusedProbe({
   nativeLoopback: NativeLoopback;
   output: string;
   root: string;
+  browserName: string;
+  browserCdp: CDPSession;
+  profile: string;
 }) {
   const compactImages = await createCompactImages(context);
   const routes = await installFixtureRoutes(context, root, images, displayImages, compactImages);
@@ -5958,10 +6180,44 @@ async function runAttachmentFilenameFocusedProbe({
       pageFetches,
       routes,
       evidence,
+      initiatingExtensionId: extensionId,
+      diagnosticOnly,
+      requireNativeFilenameNotice: browserName === 'chrome',
+      ...(browserName === 'chrome'
+        ? {
+            filenameControlFactory: () =>
+              installFilenameDecisionControl({
+                context,
+                browserCdp,
+                profile,
+                targetExtensionId: extensionId,
+                expectedUrl: 'https://pbs.twimg.com/media/GkE5678GHIJKL.jpg?format=jpg&name=orig',
+                suggestedFilename: 'control-override-482.jpg',
+              }),
+            runFilenameDiagnostic: <T>(
+              label: 'xeg-alone' | 'passive' | 'passive-undefined' | 'active-suggestion',
+              action: () => Promise<T>
+            ) =>
+              withFilenameCorrelation({
+                context,
+                page,
+                extensionPage,
+                extensionId,
+                root,
+                output,
+                downloads,
+                expectedUrl: 'https://pbs.twimg.com/media/GkE5678GHIJKL.jpg?format=jpg&name=orig',
+                expectedBytes: images[1],
+                label,
+                action,
+              }),
+          }
+        : {}),
     });
     evidence.api = routes.compactApiResponses;
     evidence.images = routes.compactImageRequests;
     evidence.status = 'passed';
+    evidence.diagnosticOnly = diagnosticOnly;
   } catch (error) {
     primarySeen = true;
     primaryError = error;
@@ -20138,11 +20394,18 @@ export async function run({
     throw error;
   });
   const attachmentFilenameProbe = attachmentFilenameSelectorText !== null;
+  const filenameDiagnosticOnly =
+    attachmentFilenameSelectorText !== null &&
+    (JSON.parse(attachmentFilenameSelectorText) as { diagnosticOnly?: unknown }).diagnosticOnly ===
+      true;
   if (attachmentFilenameSelectorText !== null) {
     assert.deepEqual(JSON.parse(attachmentFilenameSelectorText), {
       scenario: 'attachment-filenames',
+      ...(filenameDiagnosticOnly ? { diagnosticOnly: true } : {}),
     });
-    assert.equal(liveUrls.length, 0);
+    if (filenameDiagnosticOnly) {
+      assert.equal(installation, 'extension');
+    }
     assert.equal(liveObservation, null);
     assert.equal(acceptanceSelectorText, null);
     assert.equal(uxDetailsSelectorText, null);
@@ -20526,6 +20789,10 @@ export async function run({
           nativeLoopback,
           output,
           root,
+          browserName,
+          browserCdp,
+          profile,
+          diagnosticOnly: filenameDiagnosticOnly,
         });
       } else if (uxDetailsProbe) {
         result.uxDetails = await runUxDetailsProbe({

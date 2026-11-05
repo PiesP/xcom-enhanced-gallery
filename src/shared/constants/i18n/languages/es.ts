@@ -115,6 +115,11 @@ export const es: LanguageStrings = {
       recovery: 'Alt+Mayús+V solo está disponible tras un clic de vídeo admitido que haya fallado.',
     },
     dl: {
+      filenameNotice: {
+        label: 'Nombre de archivo guardado',
+        mismatch: 'El nombre guardado es diferente del solicitado.',
+        dismiss: 'Descartar aviso del nombre de archivo',
+      },
       bulkOutcome: {
         cancelRecoveryAndDismiss:
           'Cancelar la recuperación de elementos omitidos y cerrar el resultado ZIP',

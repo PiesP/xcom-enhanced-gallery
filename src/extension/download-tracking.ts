@@ -3,6 +3,7 @@
 
 import { DOWNLOAD_PRE_ID_CANCELLATION_TTL_MS } from '@constants/performance';
 import type { StorageAdapter } from '@platform/types';
+import { isSafeFilename } from './message-validation';
 
 const DOWNLOAD_TRACKING_STORAGE_KEY = 'xeg.download-tracking.v1';
 const DIRECT_TERMINAL_TTL_MS = 10 * 60_000;
@@ -13,6 +14,7 @@ export type DirectTerminalState = 'never-started' | 'complete' | 'interrupted';
 
 export interface PersistedDownloadRecord {
   readonly downloadId?: number;
+  readonly requestedFilename?: string;
   readonly cancellationRequested: boolean;
   readonly cancellationRequestedAt?: number;
   readonly route?: 'direct';
@@ -149,6 +151,11 @@ function parseStoredRecords(
 
     records.set(requestId, {
       ...(typeof downloadId === 'number' ? { downloadId } : {}),
+      ...(route === 'direct' &&
+      typeof downloadId === 'number' &&
+      isSafeFilename(rawRecord.requestedFilename)
+        ? { requestedFilename: rawRecord.requestedFilename }
+        : {}),
       cancellationRequested: rawRecord.cancellationRequested,
       ...(cancellationRequestedAt === undefined ? {} : { cancellationRequestedAt }),
       ...(route === 'direct'
@@ -296,7 +303,8 @@ export class DownloadTrackingStore {
     requestId: string,
     downloadId: number,
     ownerTabId: number,
-    urlHash: string
+    urlHash: string,
+    requestedFilename?: string
   ): Promise<boolean | undefined> {
     return this.enqueue(async () => {
       await this.ensureLoaded();
@@ -310,7 +318,11 @@ export class DownloadTrackingStore {
       ) {
         return undefined;
       }
-      const updated = { ...current, downloadId };
+      const updated = {
+        ...current,
+        downloadId,
+        ...(isSafeFilename(requestedFilename) ? { requestedFilename } : {}),
+      };
       this.records.set(requestId, updated);
       await this.persist();
       return current.cancellationRequested;

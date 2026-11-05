@@ -1786,6 +1786,99 @@ export function captureLiveImageActivationDocument(
   };
 }
 
+export function captureLiveImageClickEventsDocument(
+  action: HTMLAnchorElement,
+  {
+    image,
+    owner,
+    actionPath,
+    source,
+    bindingName,
+  }: {
+    image: HTMLImageElement;
+    owner: HTMLElement;
+    actionPath: string;
+    source: Source;
+    bindingName: string;
+  }
+): { dispose(): void } {
+  const observe = (phase: 'capture' | 'bubble') => (event: MouseEvent) => {
+    const target = event.target;
+    if (
+      !event.isTrusted ||
+      event.button !== 0 ||
+      !(target instanceof Element) ||
+      !action.isConnected ||
+      !image.isConnected ||
+      !owner.isConnected ||
+      image.closest('article') !== owner ||
+      action.closest('article') !== owner ||
+      !action.contains(target)
+    ) {
+      return;
+    }
+    try {
+      const actionUrl = new URL(action.href, location.href);
+      const imageUrl = new URL(image.currentSrc || image.src);
+      if (
+        actionUrl.protocol !== 'https:' ||
+        !['x.com', 'twitter.com'].includes(actionUrl.hostname.toLowerCase()) ||
+        actionUrl.pathname !== actionPath ||
+        imageUrl.protocol !== 'https:' ||
+        imageUrl.hostname.toLowerCase() !== source.host ||
+        imageUrl.pathname !== source.path
+      ) {
+        return;
+      }
+    } catch {
+      return;
+    }
+    const bridge: unknown = Reflect.get(window, bindingName);
+    if (typeof bridge !== 'function') {
+      return;
+    }
+    const imageRect = image.getBoundingClientRect();
+    const path = event.composedPath().filter((node): node is Element => node instanceof Element);
+    // Send only bounded DOM labels. The Node binding applies a second allowlist.
+    const invoke = bridge as (record: Record<string, unknown>) => Promise<void>;
+    void invoke({
+      phase,
+      timeOrigin: performance.timeOrigin,
+      timeStamp: event.timeStamp,
+      detail: event.detail,
+      defaultPrevented: event.defaultPrevented,
+      altKey: event.altKey,
+      ctrlKey: event.ctrlKey,
+      metaKey: event.metaKey,
+      shiftKey: event.shiftKey,
+      pointInsideImage:
+        event.clientX >= imageRect.left &&
+        event.clientX < imageRect.right &&
+        event.clientY >= imageRect.top &&
+        event.clientY < imageRect.bottom,
+      targetTag: target.tagName,
+      targetClosestTweetPhoto: target.closest('[data-testid="tweetPhoto"]') !== null,
+      actionContainsImage: action.contains(image),
+      targetContainsImage: target.contains(image),
+      linkHasText: (action.textContent?.trim().length ?? 0) > 0,
+      path: path.slice(0, 8).map((element) => ({
+        tag: element.tagName,
+        testId: element.getAttribute('data-testid'),
+      })),
+    }).catch(() => {});
+  };
+  const onCapture = observe('capture');
+  const onBubble = observe('bubble');
+  window.addEventListener('click', onCapture, true);
+  window.addEventListener('click', onBubble);
+  return {
+    dispose() {
+      window.removeEventListener('click', onCapture, true);
+      window.removeEventListener('click', onBubble);
+    },
+  };
+}
+
 export function captureActivationFocusDocument(
   surface: Element,
   { articleIndex, point }: { articleIndex: number; point: { x: number; y: number } }

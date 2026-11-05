@@ -79,7 +79,12 @@ export interface DownloadOptions {
 
 export interface SingleDownloadResult {
   success: boolean;
+  /** Legacy field: the requested name, never a claim about the saved file. */
   filename?: string;
+  /** Native URL download metadata, available only when its adapter reports it. */
+  requestedFilename?: string;
+  observedFilename?: string;
+  filenameConforms?: boolean;
   error?: string;
   code?: ErrorCode;
 }

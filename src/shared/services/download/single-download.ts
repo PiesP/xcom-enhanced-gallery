@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { getDownloadAdapter } from '@platform/index';
+import type { DownloadReceipt } from '@platform/types';
 import { generateMediaFilename } from '@shared/core/filename/filename-utils';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { USER_CANCELLED_MESSAGE } from '@shared/error/cancellation';
@@ -26,6 +27,15 @@ const createErrorDownloadResult = (error: unknown): SingleDownloadResult => ({
     : error instanceof DownloadSourceUnavailableError
       ? { code: ErrorCode.SOURCE_UNAVAILABLE }
       : {}),
+});
+
+const createSuccessDownloadResult = (
+  filename: string,
+  receipt: void | DownloadReceipt
+): SingleDownloadResult => ({
+  success: true,
+  filename,
+  ...(typeof receipt === 'object' && receipt !== null ? receipt : {}),
 });
 
 /**
@@ -112,7 +122,7 @@ async function downloadWithAdapter(
   if (abortSignal) {
     return raceWithAbort(
       adapter.download(url, filename, undefined, abortSignal).then(
-        () => {
+        (receipt) => {
           reportProgress(options.onProgress, {
             phase: 'complete',
             current: 1,
@@ -120,7 +130,7 @@ async function downloadWithAdapter(
             percentage: 100,
             filename,
           });
-          return { success: true, filename } satisfies SingleDownloadResult;
+          return createSuccessDownloadResult(filename, receipt);
         },
         (error: unknown) => createErrorDownloadResult(error)
       ),
@@ -130,7 +140,7 @@ async function downloadWithAdapter(
   }
 
   try {
-    await adapter.download(url, filename, undefined, abortSignal);
+    const receipt = await adapter.download(url, filename, undefined, abortSignal);
     reportProgress(options.onProgress, {
       phase: 'complete',
       current: 1,
@@ -138,7 +148,7 @@ async function downloadWithAdapter(
       percentage: 100,
       filename,
     });
-    return { success: true, filename };
+    return createSuccessDownloadResult(filename, receipt);
   } catch (error) {
     return createErrorDownloadResult(error);
   }

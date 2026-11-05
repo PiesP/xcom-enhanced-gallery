@@ -10,6 +10,7 @@
 import { DEFAULT_SETTINGS } from '@constants/settings';
 import { useGalleryFitMode } from '@features/gallery/components/vertical-gallery-view/hooks/use-gallery-fit-mode';
 import { GalleryFailureNotice } from '@features/gallery/components/GalleryFailureNotice';
+import { DownloadFilenameNotice } from '@features/gallery/components/DownloadFilenameNotice';
 import { GallerySourceDetails } from '@features/gallery/components/GallerySourceDetails';
 import { dismissBulkDownloadOutcome } from '@features/gallery/hooks/dismiss-bulk-download-outcome';
 import { useGalleryNavigationHandlers } from '@features/gallery/components/vertical-gallery-view/hooks/use-gallery-navigation-handlers';
@@ -328,6 +329,7 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
       </ul>
       <GallerySourceDetails />
       <GalleryFailureNotice />
+      <DownloadFilenameNotice />
       <Show when={bulkOutcome()}>
         {(outcome) => (
           // Keyboard users interact with the native dismissal button; pointer propagation only protects the backdrop close handler.

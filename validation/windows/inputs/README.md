@@ -10,8 +10,15 @@ For the focused #482 installed filename scenario, create ignored
 With `--installation extension`, this runs the owned A/B/C quote, DOM, ZIP,
 conflict and failed-only recovery cycle. With `--installation userscript`, it
 runs a smaller manager-backed visible `/photo/2` save and checks the native
-filename, source and bytes. Remove the selector after the attempt. Neither
-route runs against live X.
+filename, source and bytes. Remove the selector after the attempt. The filename
+cycle uses controlled fixtures. Extension runs may append separate public-status
+observations with `--live-url`; the live observer does not save files.
+For a diagnosis that must retain nonconforming native names and continue to the
+public observation, add `"diagnosticOnly": true` to this selector. Only that
+explicit mode records known CDN/active-control basenames without accepting
+filename conformance. Default qualification requires intended XEG-only names and visible actual-name
+reporting for browser filename overrides. Active controls use a distinct literal
+basename and verify the native bytes; a completed mismatch never starts another save.
 To check issue #484's video save format through the installed Chrome/Edge
 extension, create the ignored `video-save-format.json` file here with exactly:
 

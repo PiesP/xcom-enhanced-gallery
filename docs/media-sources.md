@@ -139,9 +139,34 @@ Ordinary extracted media currently starts with an empty filename and usually
 produces short handle/post/ordinal names. The length, control-character and
 device-name cases are supported utility and caller boundaries; no previous
 Windows save failure is inferred from their unit tests. Parsed-ZIP tests cover
-entry bytes, duplicate names and failed-entry recovery. Exact native saved
-basenames and Windows filesystem behavior remain unverified until the prepared
-Windows validation environment is available.
+entry bytes, duplicate names and failed-entry recovery. These utility tests alone
+do not verify native saved basenames or Windows filesystem behavior.
+
+The Chrome extension passes the requested filename to the native download API.
+For a completed direct download, the result keeps that request separate from the
+native observed basename. `requestedFilename` comes from the request bound to the
+actual native ID. Optional `observedFilename` and `filenameConforms` require an
+exact download ID, original URL, and initiating extension match. A numeric ` (N)`
+conflict suffix is conforming.
+If native history is unavailable, the completed transfer remains complete and
+the observed filename stays unknown. A mismatched basename does not start another
+download or overwrite the saved file. A confirmed native basename is shown in a
+polite in-gallery notice. A mismatch adds a separate explanation while the transfer
+remains successful. Unknown native names keep the ordinary handoff status. The
+notice can be dismissed and clears on the next download or gallery session.
+
+Chrome 156.0.8078.80, recorded revision
+`fb096c0011f9d50f0a264a9376420cdea9c421e3`, reproduced CDN fallback with a
+separate passive filename listener. Its [binding sends empty name/action values
+for no suggestion](https://github.com/chromium/chromium/blob/fb096c0011f9d50f0a264a9376420cdea9c421e3/chrome/renderer/resources/extensions/downloads_custom_bindings.js).
+The [internal API parses that action](https://github.com/chromium/chromium/blob/fb096c0011f9d50f0a264a9376420cdea9c421e3/chrome/browser/extensions/api/downloads_internal/downloads_internal_api.cc)
+into the enum's absent value; [native arbitration treats it as non-default and
+can clear the creator filename](https://github.com/chromium/chromium/blob/fb096c0011f9d50f0a264a9376420cdea9c421e3/chrome/browser/extensions/api/downloads/downloads_api.cc).
+A scoped explicit XEG suggestion also lost to the later-installed helper in the
+controlled run. XEG therefore preserves automatic native saving and reports the
+actual result; it installs no filename-renaming listener and claims no priority
+over other extensions. This controlled mechanism does not identify a particular
+extension in the original user's profile.
 
 ## In-gallery limitations
 

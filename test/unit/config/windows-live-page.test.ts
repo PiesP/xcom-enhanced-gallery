@@ -31,6 +31,7 @@ type LivePageModule = Pick<
   | 'summarizeNativePreviewEvidence'
   | 'canonicalOwnedPhotoPath'
   | 'ownedMixedPhotoVideo'
+  | 'sanitizeLiveImageClickEvent'
 > & {
   inspectLiveTargetDocument(identity: { handle: string; statusId: string }):
     | false
@@ -424,6 +425,44 @@ describe('installed navigation notification creation history', () => {
 });
 
 describe('Windows X live page validation', () => {
+  it('retains only bounded click labels from a page binding payload', () => {
+    const event = livePage.sanitizeLiveImageClickEvent({
+      phase: 'bubble',
+      timeOrigin: 1_800_000_000_000,
+      timeStamp: 23,
+      detail: 1,
+      defaultPrevented: false,
+      altKey: false,
+      ctrlKey: false,
+      metaKey: false,
+      shiftKey: false,
+      pointInsideImage: true,
+      targetTag: 'IMG',
+      targetClosestTweetPhoto: true,
+      actionContainsImage: true,
+      targetContainsImage: false,
+      linkHasText: false,
+      path: [
+        { tag: 'IMG', testId: 'tweetPhoto', href: 'private URL' },
+        { tag: 'DIV', testId: 'private-id' },
+        { tag: 'SCRIPT', testId: null },
+      ],
+      arbitraryPageContent: 'private text',
+    });
+    expect(event).toMatchObject({
+      phase: 'bubble',
+      pointInsideImage: true,
+      targetTag: 'IMG',
+      path: [
+        { tag: 'IMG', testId: 'tweetPhoto' },
+        { tag: 'DIV', testId: null },
+        { tag: 'OTHER', testId: null },
+      ],
+    });
+    expect(JSON.stringify(event)).not.toContain('private');
+    expect(livePage.sanitizeLiveImageClickEvent({ ...event, phase: 'unknown' })).toBeNull();
+    expect(livePage.sanitizeLiveImageClickEvent({ ...event, path: Array(9).fill({}) })).toBeNull();
+  });
   it('serves exact classic photo metadata only for the failed-entry fixture', async () => {
     const root = resolve(import.meta.dirname, '../../..');
     const images: [Buffer, Buffer, Buffer] = [

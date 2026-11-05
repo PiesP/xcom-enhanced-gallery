@@ -39,6 +39,9 @@ export async function startNativeDownloadLoopback(image: Buffer): Promise<{
   if (image.length === 0 || image.length > MAX_IMAGE_BYTES) {
     throw new Error('Native fixture image exceeds its byte limit');
   }
+  if (image[0] !== 0xff || image[1] !== 0xd8) {
+    throw new Error('Native JPG source requires JPEG fixture bytes');
+  }
   const certificateDir = mkdtempSync(join(tmpdir(), 'xeg-native-download-'));
   const keyPath = join(certificateDir, 'key.pem');
   const certPath = join(certificateDir, 'cert.pem');
@@ -149,7 +152,7 @@ export async function startNativeDownloadLoopback(image: Buffer): Promise<{
         }
       });
       response.writeHead(match ? 206 : 200, {
-        'Content-Type': 'image/png',
+        'Content-Type': 'image/jpeg',
         'Content-Length': String(body.length),
         'Cache-Control': 'no-store',
         'Accept-Ranges': 'bytes',
