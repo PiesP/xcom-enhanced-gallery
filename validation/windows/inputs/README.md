@@ -13,6 +13,10 @@ runs a smaller manager-backed visible `/photo/2` save and checks the native
 filename, source and bytes. Remove the selector after the attempt. The filename
 cycle uses controlled fixtures. Extension runs may append separate public-status
 observations with `--live-url`; the live observer does not save files.
+For a diagnosis that must retain nonconforming native names and continue to the
+public observation, add `"diagnosticOnly": true` to this selector. Only that
+explicit mode records known CDN/active-control basenames without accepting
+filename conformance. Default qualification still requires the intended names.
 To check issue #484's video save format through the installed Chrome/Edge
 extension, create the ignored `video-save-format.json` file here with exactly:
 

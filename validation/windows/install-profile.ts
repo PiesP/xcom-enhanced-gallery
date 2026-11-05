@@ -5071,6 +5071,7 @@ async function runPublicFixtureCycle({
 }
 
 type CompactEvidence = {
+  diagnosticOnly?: boolean;
   status: string;
   api: ApiRecord[];
   images: QualityRequest[];
@@ -5567,6 +5568,7 @@ async function runAttachmentFilenameCycle({
   initiatingExtensionId,
   filenameControlFactory,
   runFilenameDiagnostic,
+  diagnosticOnly = false,
 }: {
   page: Page;
   extensionPage: Page;
@@ -5578,6 +5580,7 @@ async function runAttachmentFilenameCycle({
   pageFetches: PageFetch[];
   routes: Awaited<ReturnType<typeof installFixtureRoutes>>;
   evidence: CompactEvidence;
+  diagnosticOnly?: boolean;
   initiatingExtensionId?: string;
   filenameControlFactory?: () => Promise<FilenameDecisionControl>;
   runFilenameDiagnostic?: <T>(
@@ -5648,7 +5651,8 @@ async function runAttachmentFilenameCycle({
       url: string,
       bytes: Buffer,
       conflict = false,
-      expectedApplicationFilename = assignedName
+      expectedApplicationFilename = assignedName,
+      observeNativeFilename = false
     ) => {
       const known = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
       const nativeMark = nativeLoopback.mark();
@@ -5685,6 +5689,13 @@ async function runAttachmentFilenameCycle({
         if (conflict) {
           assertNativeName(basename(item.filename), assignedName);
           assert.notEqual(basename(item.filename), assignedName);
+        } else if (observeNativeFilename) {
+          assert(
+            [assignedName, b1, 'GkE5678GHIJKL.jpg', 'control-override-482.jpg'].includes(
+              basename(item.filename)
+            ),
+            'Unexpected diagnostic basename'
+          );
         } else {
           assert.equal(basename(item.filename), assignedName);
         }
@@ -5963,6 +5974,7 @@ async function runAttachmentFilenameCycle({
         name: 'chrome-filename-decision-controls',
         helperExtensionId: control.id,
         scope: 'controlled filename arbitration; does not identify the live-report cause',
+        diagnosticOnly,
         cases: [],
         cleanup: 'pending',
       };
@@ -5983,11 +5995,11 @@ async function runAttachmentFilenameCycle({
         ] as const) {
           await control.setMode(mode);
           const passive = mode === 'passive' || mode === 'passive-undefined';
-          const observedName = passive ? b1 : 'GkE5678GHIJKL.jpg';
+          const observedName = passive ? b1 : 'control-override-482.jpg';
           if ((passive || mode === 'filename') && runFilenameDiagnostic) {
             const label = passive ? mode : 'active-suggestion';
             const diagnostic = await runFilenameDiagnostic(label, () =>
-              single(gallery, observedName, b1Url, images[1], false, b1)
+              single(gallery, observedName, b1Url, images[1], false, b1, diagnosticOnly)
             );
             const diagnosticControl = await control.readObservations();
             assert.equal(diagnosticControl.overflow, false);
@@ -6006,7 +6018,15 @@ async function runAttachmentFilenameCycle({
             });
             await retire(diagnostic, `diagnostic-${label}.jpg`, images[1]);
           }
-          const saved = await single(gallery, observedName, b1Url, images[1], false, b1);
+          const saved = await single(
+            gallery,
+            observedName,
+            b1Url,
+            images[1],
+            false,
+            b1,
+            diagnosticOnly
+          );
           const observation = await control.readObservations();
           assert.equal(observation.overflow, false);
           assert.equal(observation.controlError, null);
@@ -6024,6 +6044,7 @@ async function runAttachmentFilenameCycle({
             saved,
             suggestion: matching[0],
             filenameConforms: saved.filename === b1,
+            controlExpectationMet: saved.filename === observedName,
           });
           await retire(saved, `chrome-${mode}.jpg`, images[1]);
         }
@@ -6063,8 +6084,10 @@ async function runAttachmentFilenameFocusedProbe({
   browserName,
   browserCdp,
   profile,
+  diagnosticOnly,
 }: {
   context: BrowserContext;
+  diagnosticOnly: boolean;
   downloads: string;
   extensionId: string;
   images: ImageFixtures;
@@ -6112,6 +6135,7 @@ async function runAttachmentFilenameFocusedProbe({
       routes,
       evidence,
       initiatingExtensionId: extensionId,
+      diagnosticOnly,
       ...(browserName === 'chrome'
         ? {
             filenameControlFactory: () =>
@@ -6121,7 +6145,7 @@ async function runAttachmentFilenameFocusedProbe({
                 profile,
                 targetExtensionId: extensionId,
                 expectedUrl: 'https://pbs.twimg.com/media/GkE5678GHIJKL.jpg?format=jpg&name=orig',
-                suggestedFilename: 'GkE5678GHIJKL.jpg',
+                suggestedFilename: 'control-override-482.jpg',
               }),
             runFilenameDiagnostic: <T>(
               label: 'xeg-alone' | 'passive' | 'passive-undefined' | 'active-suggestion',
@@ -6146,6 +6170,7 @@ async function runAttachmentFilenameFocusedProbe({
     evidence.api = routes.compactApiResponses;
     evidence.images = routes.compactImageRequests;
     evidence.status = 'passed';
+    evidence.diagnosticOnly = diagnosticOnly;
   } catch (error) {
     primarySeen = true;
     primaryError = error;
@@ -20322,10 +20347,18 @@ export async function run({
     throw error;
   });
   const attachmentFilenameProbe = attachmentFilenameSelectorText !== null;
+  const filenameDiagnosticOnly =
+    attachmentFilenameSelectorText !== null &&
+    (JSON.parse(attachmentFilenameSelectorText) as { diagnosticOnly?: unknown }).diagnosticOnly ===
+      true;
   if (attachmentFilenameSelectorText !== null) {
     assert.deepEqual(JSON.parse(attachmentFilenameSelectorText), {
       scenario: 'attachment-filenames',
+      ...(filenameDiagnosticOnly ? { diagnosticOnly: true } : {}),
     });
+    if (filenameDiagnosticOnly) {
+      assert.equal(installation, 'extension');
+    }
     assert.equal(liveObservation, null);
     assert.equal(acceptanceSelectorText, null);
     assert.equal(uxDetailsSelectorText, null);
@@ -20712,6 +20745,7 @@ export async function run({
           browserName,
           browserCdp,
           profile,
+          diagnosticOnly: filenameDiagnosticOnly,
         });
       } else if (uxDetailsProbe) {
         result.uxDetails = await runUxDetailsProbe({

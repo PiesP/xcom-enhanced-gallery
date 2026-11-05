@@ -334,17 +334,30 @@ async function observeFilenamePolicy(
   const browser = context.browser();
   assert(browser);
   const protocol = await browser.newBrowserCDPSession();
-  const targets = await protocol.send('Target.getTargets');
-  const matches = targets.targetInfos.filter(
-    (target: { type: string; url: string }) =>
-      target.type === 'service_worker' &&
-      target.url === `chrome-extension://${extensionId}/background.js`
-  );
-  assert.equal(matches.length, 1);
-  const { sessionId } = await protocol.send('Target.attachToTarget', {
-    targetId: matches[0]!.targetId,
-    flatten: false,
-  });
+  const { version, sessionId } = await (async () => {
+    try {
+      const version = await protocol.send('Browser.getVersion');
+      const targets = await protocol.send('Target.getTargets');
+      const matches = targets.targetInfos.filter(
+        (target: { type: string; url: string }) =>
+          target.type === 'service_worker' &&
+          target.url === `chrome-extension://${extensionId}/background.js`
+      );
+      assert.equal(matches.length, 1);
+      const { sessionId } = await protocol.send('Target.attachToTarget', {
+        targetId: matches[0]!.targetId,
+        flatten: false,
+      });
+      return { version, sessionId };
+    } catch (error) {
+      try {
+        await protocol.detach();
+      } catch (cleanupError) {
+        throw new AggregateError([error, cleanupError], 'Worker debugger setup cleanup failed');
+      }
+      throw error;
+    }
+  })();
   let nextId = 0;
   const pending = new Map<
     number,
@@ -406,24 +419,37 @@ async function observeFilenamePolicy(
         });
     });
   const close = async () => {
-    await worker.evaluate((owner) => {
-      const store = globalThis as typeof globalThis & {
-        __xegFilenamePolicy482?: { marker: string };
-      };
-      if (store.__xegFilenamePolicy482?.marker === owner) {
-        delete store.__xegFilenamePolicy482;
-      }
-    }, marker);
+    const failures: unknown[] = [];
+    try {
+      await worker.evaluate((owner) => {
+        const store = globalThis as typeof globalThis & {
+          __xegFilenamePolicy482?: { marker: string };
+        };
+        if (store.__xegFilenamePolicy482?.marker === owner) {
+          delete store.__xegFilenamePolicy482;
+        }
+      }, marker);
+    } catch (error) {
+      failures.push(error);
+    }
     try {
       await protocol.send('Target.detachFromTarget', { sessionId });
-    } finally {
-      protocol.off('Target.receivedMessageFromTarget', receive);
-      for (const request of pending.values()) {
-        clearTimeout(request.timer);
-        request.reject(new Error('Worker debugger closed'));
-      }
-      pending.clear();
+    } catch (error) {
+      failures.push(error);
+    }
+    protocol.off('Target.receivedMessageFromTarget', receive);
+    for (const request of pending.values()) {
+      clearTimeout(request.timer);
+      request.reject(new Error('Worker debugger closed'));
+    }
+    pending.clear();
+    try {
       await protocol.detach();
+    } catch (error) {
+      failures.push(error);
+    }
+    if (failures.length) {
+      throw new AggregateError(failures, 'Worker debugger cleanup failed');
     }
   };
   try {
@@ -477,6 +503,11 @@ async function observeFilenamePolicy(
     }
     return {
       artifactSha256: sha256(Buffer.from(source)),
+      browserVersion: {
+        product: version.product,
+        revision: version.revision,
+        protocolVersion: version.protocolVersion,
+      },
       read: () =>
         worker.evaluate((owner) => {
           const store = globalThis as typeof globalThis & {
@@ -490,7 +521,14 @@ async function observeFilenamePolicy(
       close,
     };
   } catch (error) {
-    await close();
+    try {
+      await close();
+    } catch (cleanupError) {
+      throw new AggregateError(
+        [error, cleanupError],
+        'Worker policy observation and cleanup failed'
+      );
+    }
     throw error;
   }
 }
@@ -741,6 +779,8 @@ export async function withFilenameCorrelation<T>(options: {
   let workerInstalled = false;
   let policyObserver: Awaited<ReturnType<typeof observeFilenamePolicy>> | undefined;
   let policyClean = true;
+  let policyEvents: unknown[] | undefined;
+  let policyVerified = false;
   let breakpointId: string | undefined;
   let contentRealmId: number | undefined;
   let contentInstallAttempted = false;
@@ -937,9 +977,11 @@ export async function withFilenameCorrelation<T>(options: {
   } finally {
     if (policyObserver) {
       try {
+        policyEvents = await policyObserver.read();
         receipt.filenamePolicy = {
           artifactSha256: policyObserver.artifactSha256,
-          events: await policyObserver.read(),
+          browserVersion: policyObserver.browserVersion,
+          events: policyEvents,
         };
       } catch (error) {
         addError('worker-capture', error);
@@ -1048,6 +1090,27 @@ export async function withFilenameCorrelation<T>(options: {
       const nativeId = trace.native.length === 1 ? trace.native[0]?.downloadId : undefined;
       if (Number.isSafeInteger(nativeId)) {
         try {
+          const events = policyEvents?.filter(
+            (value) => value && typeof value === 'object' && 'id' in value && value.id === nativeId
+          );
+          policyVerified =
+            events?.length === 2 &&
+            events.some(
+              (value) =>
+                typeof value === 'object' &&
+                value !== null &&
+                'stage' in value &&
+                value.stage === 'entry'
+            ) &&
+            events.some(
+              (value) =>
+                typeof value === 'object' &&
+                value !== null &&
+                'stage' in value &&
+                value.stage === 'suggest'
+            );
+          assert(policyVerified, 'Product filename listener observation missing');
+
           const observed = await extensionPage.evaluate(
             (id) => chrome.downloads.search({ id }),
             nativeId!
@@ -1205,8 +1268,14 @@ export async function withFilenameCorrelation<T>(options: {
         addError('debugger-cleanup', error);
       }
     }
+    receipt.policyObserved = policyVerified;
     receipt.observationComplete =
-      pageIdentityVerified && selectedVerified && identityVerified && fileVerified && namesVerified;
+      policyVerified &&
+      pageIdentityVerified &&
+      selectedVerified &&
+      identityVerified &&
+      fileVerified &&
+      namesVerified;
     receipt.cleanupComplete =
       policyClean &&
       ['absent', 'removed', 'not-installed'].includes(cleanup.contentGlobal) &&
