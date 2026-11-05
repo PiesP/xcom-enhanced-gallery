@@ -1,0 +1,105 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 PiesP
+
+import { createHash } from 'node:crypto';
+import { describe, expect, it } from 'vitest';
+import {
+  compareObservedFilenames,
+  resolveFilenameCaptureLine,
+  verifyFilenameCorrelation,
+} from './filename-correlation.ts';
+
+const expectedUrl = 'https://pbs.twimg.com/media/GkE5678GHIJKL.jpg?format=jpg&name=orig';
+const urlHash = createHash('sha256').update(expectedUrl).digest('hex');
+const source = `function other() {
+  const filename = generateMediaFilename(media, { nowMs: Date.now() });
+}
+async function downloadSingleFile(media, options = {}) {
+  const filename = generateMediaFilename(media, { nowMs: Date.now() });
+  if (options.blob) return filename;
+}
+function next() {}
+`;
+
+describe('filename correlation diagnostic', () => {
+  it('binds to the line after the sole downloadSingleFile generation site', () => {
+    expect(resolveFilenameCaptureLine(source).lineNumber).toBe(5);
+    expect(() =>
+      resolveFilenameCaptureLine(source.replace('if (options.blob)', 'if (options.other)'))
+    ).toThrow();
+    expect(() =>
+      resolveFilenameCaptureLine(
+        source.replace(
+          'function next() {}',
+          `async function downloadSingleFile(media) {\n  const filename = generateMediaFilename(media, { nowMs: Date.now() });\n  if (options.blob) return filename;\n}`
+        )
+      )
+    ).toThrow();
+  });
+
+  it('proves ownership through the observed request, native ID, and persisted binding even when names diverge', () => {
+    const input = {
+      expectedUrl,
+      extensionId: 'installed-extension',
+      expectedOwnerTabId: 42,
+      requests: [
+        {
+          url: expectedUrl,
+          requestId: 'actual-request',
+          senderTabId: 42,
+          filename: 'intended.jpg',
+          mode: 'direct',
+        },
+      ],
+      native: [{ url: expectedUrl, filename: 'different.jpg', saveAs: false, downloadId: 7 }],
+      tracking: { 'actual-request': { route: 'direct', downloadId: 7, ownerTabId: 42, urlHash } },
+      nativeItem: { id: 7, url: expectedUrl, byExtensionId: 'installed-extension' },
+    };
+    expect(verifyFilenameCorrelation(input)).toEqual({
+      requestId: 'actual-request',
+      downloadId: 7,
+      ownerTabId: 42,
+      urlHash,
+    });
+    expect(() =>
+      verifyFilenameCorrelation({
+        ...input,
+        tracking: { 'actual-request': { route: 'direct', downloadId: 8, ownerTabId: 42, urlHash } },
+      })
+    ).toThrow();
+    expect(() =>
+      verifyFilenameCorrelation({
+        ...input,
+        nativeItem: { ...input.nativeItem, byExtensionId: 'other-extension' },
+      })
+    ).toThrow();
+    expect(() =>
+      verifyFilenameCorrelation({ ...input, requests: [...input.requests, input.requests[0]!] })
+    ).toThrow();
+    expect(() => verifyFilenameCorrelation({ ...input, expectedOwnerTabId: 99 })).toThrow();
+    expect(() =>
+      verifyFilenameCorrelation({
+        ...input,
+        native: [{ ...input.native[0]!, url: 'https://pbs.twimg.com/media/other.jpg' }],
+      })
+    ).toThrow();
+  });
+
+  it('requires all four real names while allowing their values to differ', () => {
+    const names = {
+      generated: 'wanted.jpg',
+      requested: 'wanted.jpg',
+      nativeOption: 'cdn.jpg',
+      finalBasename: 'cdn (1).jpg',
+    };
+    expect(compareObservedFilenames(names)).toEqual({
+      generatedEqualsRequest: true,
+      requestEqualsNativeOption: false,
+      nativeOptionEqualsFinal: false,
+    });
+    for (const key of Object.keys(names) as Array<keyof typeof names>) {
+      expect(() => compareObservedFilenames({ ...names, [key]: '' })).toThrow();
+      expect(() => compareObservedFilenames({ ...names, [key]: undefined })).toThrow();
+    }
+  });
+});

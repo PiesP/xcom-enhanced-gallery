@@ -47,6 +47,7 @@ import {
   installFilenameDecisionControl,
   type FilenameDecisionControl,
 } from './filename-decision-control.ts';
+import { withFilenameCorrelation } from './filename-correlation.ts';
 import {
   createControlledVideoSettings,
   decodeStoredValue,
@@ -5565,6 +5566,7 @@ async function runAttachmentFilenameCycle({
   evidence,
   initiatingExtensionId,
   filenameControlFactory,
+  runFilenameDiagnostic,
 }: {
   page: Page;
   extensionPage: Page;
@@ -5578,6 +5580,10 @@ async function runAttachmentFilenameCycle({
   evidence: CompactEvidence;
   initiatingExtensionId?: string;
   filenameControlFactory?: () => Promise<FilenameDecisionControl>;
+  runFilenameDiagnostic?: <T>(
+    label: 'xeg-alone' | 'active-suggestion',
+    action: () => Promise<T>
+  ) => Promise<T>;
 }) {
   const b1 = `middle_fixture_${COMPACT_MIDDLE_ID}_0.jpg`;
   const b2 = `middle_fixture_${COMPACT_MIDDLE_ID}_1.jpg`;
@@ -5773,6 +5779,17 @@ async function runAttachmentFilenameCycle({
       type: 'image',
       path: '/media/GkE5678GHIJKL.jpg',
     });
+    if (runFilenameDiagnostic) {
+      const diagnostic = await runFilenameDiagnostic('xeg-alone', () =>
+        single(a, b1, b1Url, images[1])
+      );
+      evidence.steps.push({
+        name: 'filename-diagnostic-xeg-alone',
+        nativeId: diagnostic.id,
+        trace: 'filename-correlation-xeg-alone.json',
+      });
+      await retire(diagnostic, 'diagnostic-xeg-alone.jpg', images[1]);
+    }
     const aB1 = await single(a, b1, b1Url, images[1]);
     await page.keyboard.press('ArrowRight');
     await assertQuotedSelection(page, {
@@ -5962,6 +5979,27 @@ async function runAttachmentFilenameCycle({
         for (const mode of ['passive', 'filename', 'conflict-action'] as const) {
           await control.setMode(mode);
           const observedName = mode === 'passive' ? b1 : 'GkE5678GHIJKL.jpg';
+          if (mode === 'filename' && runFilenameDiagnostic) {
+            const diagnostic = await runFilenameDiagnostic('active-suggestion', () =>
+              single(gallery, observedName, b1Url, images[1], false, b1)
+            );
+            const diagnosticControl = await control.readObservations();
+            assert.equal(diagnosticControl.overflow, false);
+            assert.equal(diagnosticControl.controlError, null);
+            const diagnosticMatches = diagnosticControl.observations.filter(
+              ({ id }) => id === diagnostic.id
+            );
+            assert.equal(diagnosticMatches.length, 1, 'Diagnostic filename suggestion is missing');
+            assert.equal(diagnosticMatches[0]?.mode, 'filename');
+            assert.equal(diagnosticMatches[0]?.suggestedFilename, observedName);
+            evidence.steps.push({
+              name: 'filename-diagnostic-active-suggestion',
+              nativeId: diagnostic.id,
+              trace: 'filename-correlation-active-suggestion.json',
+              suggestion: diagnosticMatches[0],
+            });
+            await retire(diagnostic, 'diagnostic-active-suggestion.jpg', images[1]);
+          }
           const saved = await single(gallery, observedName, b1Url, images[1], false, b1);
           const observation = await control.readObservations();
           assert.equal(observation.overflow, false);
@@ -5973,6 +6011,8 @@ async function runAttachmentFilenameCycle({
             'Filename suggestion was not observed for this native ID'
           );
           assert.equal(matching[0]?.mode, mode);
+          assert.equal(matching[0]?.suggestedFilename, mode === 'passive' ? null : observedName);
+          assert.equal(matching[0]?.conflictAction, mode === 'conflict-action' ? 'uniquify' : null);
           (controlEvidence.cases as unknown[]).push({
             mode,
             saved,
@@ -6071,6 +6111,23 @@ async function runAttachmentFilenameFocusedProbe({
                 targetExtensionId: extensionId,
                 expectedUrl: 'https://pbs.twimg.com/media/GkE5678GHIJKL.jpg?format=jpg&name=orig',
                 suggestedFilename: 'GkE5678GHIJKL.jpg',
+              }),
+            runFilenameDiagnostic: <T>(
+              label: 'xeg-alone' | 'active-suggestion',
+              action: () => Promise<T>
+            ) =>
+              withFilenameCorrelation({
+                context,
+                page,
+                extensionPage,
+                extensionId,
+                root,
+                output,
+                downloads,
+                expectedUrl: 'https://pbs.twimg.com/media/GkE5678GHIJKL.jpg?format=jpg&name=orig',
+                expectedBytes: images[1],
+                label,
+                action,
               }),
           }
         : {}),

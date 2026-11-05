@@ -267,6 +267,19 @@ before the normal profile cleanup. These controls do not identify the cause of
 a live-post report; request/worker correlation and a source-bound installed
 Chrome run still require separate observations.
 
+The Chrome cycle also performs two separate diagnostic B1 saves: XEG alone and
+an active filename suggestion. `filename-correlation.ts` binds the executed
+content script's SHA-256 and filename-generation location to a non-pausing CDP
+logpoint, observes the matching MV3 request and unchanged native API call, and
+checks the persisted request/native-ID/owner/source relationship. It records
+selected attachment metadata, generated/requested/native/final names and the
+actual saved file's bytes/hash in separately labeled JSON receipts. Name
+comparisons remain independent of request ownership. Missing or ambiguous
+observations fail with partial receipts. The debugger and worker observers are
+removed before repeating the ordinary, uninstrumented save and continuing the
+controls. These diagnostic saves do not qualify worker lifecycle behavior or
+identify the live-report cause without the required runtime evidence.
+
 The same installed profile invokes `media-api-reuse-profile.ts` to compare
 physical API requests across successive clicks, navigation, reload and a fresh
 page. It checks independent selected-photo identity, uncached provider failures,
