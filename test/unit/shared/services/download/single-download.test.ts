@@ -77,6 +77,44 @@ describe('downloadSingleFile route ownership', () => {
     ]);
   });
 
+  it('reports a completed native CDN-name mismatch without changing the requested name or retrying', async () => {
+    const onProgress = vi.fn();
+    adapter.download.mockImplementationOnce(async (_url, filename) => ({
+      requestedFilename: filename,
+      observedFilename: 'original-cdn.mp4',
+      filenameConforms: false,
+    }));
+
+    const result = await downloadSingleFile(video, { onProgress });
+    expect(result).toMatchObject({
+      success: true,
+      observedFilename: 'original-cdn.mp4',
+      filenameConforms: false,
+    });
+    expect(result.requestedFilename).toBe(result.filename);
+    expect(result.filename).toBe(adapter.download.mock.calls[0]?.[1]);
+    expect(onProgress.mock.calls.map(([progress]) => progress.filename)).toEqual([
+      result.filename,
+      result.filename,
+    ]);
+    expect(adapter.download).toHaveBeenCalledOnce();
+    expect(adapter.downloadBlob).not.toHaveBeenCalled();
+  });
+
+  it('propagates a conforming conflict suffix without changing transfer success', async () => {
+    adapter.download.mockImplementationOnce(async (_url, filename) => ({
+      requestedFilename: filename,
+      observedFilename: `${filename.slice(0, -4)} (1).mp4`,
+      filenameConforms: true,
+    }));
+
+    const result = await downloadSingleFile(video, { signal: new AbortController().signal });
+    expect(result).toMatchObject({ success: true, filenameConforms: true });
+    expect(result.requestedFilename).toBe(result.filename);
+    expect(result.observedFilename).not.toBe(result.filename);
+    expect(adapter.download).toHaveBeenCalledOnce();
+  });
+
   it('sends a normal MP4 directly and does not replace a native failure with a Blob request', async () => {
     const fetch = vi.spyOn(globalThis, 'fetch');
     adapter.download.mockRejectedValueOnce(new Error('Browser download was interrupted'));
