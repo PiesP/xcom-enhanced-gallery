@@ -30,8 +30,9 @@ test('Firefox native originals continue to owned HTTPS transport instead of BiDi
     'https://pbs.twimg.com/media/GkE1234ABCDEF.jpg?format=jpg&name=orig&extra=1',
     'https://pbs.twimg.com/media/foreign.jpg?format=jpg&name=orig',
     'https://example.org/media/GkE1234ABCDEF.jpg?format=jpg&name=orig',
-  ])
+  ]) {
     assert.equal(shouldContinueFirefoxOriginal(new URL(value)), false);
+  }
 });
 
 test('Firefox BiDi fixture event serializer keeps unblocked requests and bounded correlation fields', () => {

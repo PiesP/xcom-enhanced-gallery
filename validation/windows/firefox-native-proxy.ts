@@ -167,7 +167,9 @@ export async function startFirefoxNativeProxy(nativePort: number) {
         return;
       }
       closed = true;
-      for (const socket of [...sockets, ...upstreams]) socket.destroy();
+      for (const socket of [...sockets, ...upstreams]) {
+        socket.destroy();
+      }
       await new Promise<void>((resolveClose, rejectClose) =>
         server.close((error) => (error ? rejectClose(error) : resolveClose()))
       );

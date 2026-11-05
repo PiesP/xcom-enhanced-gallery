@@ -169,9 +169,12 @@ focused selectors are rejected.
 The runner creates a task-owned profile and an installation copy. Its diagnostic
 extension page is added only to that copy; an inventory proves that every
 production file keeps its original digest. Profile preferences select the owned
-download directory and diagnostic extension origin. The fixture uses bounded
-network interception without changing Windows trust or browser settings outside
-that profile.
+download directory and diagnostic extension origin. BiDi supplies the page
+fixture, while a task-owned loopback CONNECT proxy routes only the declared
+fixture hosts to its local HTTPS server for native download responses. The
+session explicitly accepts that server's temporary certificate and records
+Firefox's capability readback. This does not change Windows trust, hosts files
+or browser settings outside that profile.
 
 Trusted pointer actions open the installed gallery and activate its Download
 button. The fixture reads only matching extension-owned native download records,
