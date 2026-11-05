@@ -42,12 +42,14 @@ describe('owned native fixture cleanup', () => {
     const original = join(fixture.root, 'original.bin');
     await rename(fixture.path, original);
     await writeFile(fixture.path, 'other bytes');
-    assert.equal((await lstat(fixture.path)).size, fixture.file.identity.size);
+    const replacement = await readExactDownloadFile(fixture.path, fixture.file.identity.size);
+    assert.equal(replacement.bytes.toString('utf8'), 'other bytes');
     await assert.rejects(
       removeOwnedNativeDirectory(fixture.directory, fixture.directoryIdentity, [fixture.file]),
       /Owned native fixture file changed/
     );
-    assert.equal(await readFile(fixture.path, 'utf8'), 'other bytes');
+    const preserved = await readExactDownloadFile(fixture.path, fixture.file.identity.size);
+    assert.equal(preserved.bytes.toString('utf8'), 'other bytes');
     assert.equal(await readFile(original, 'utf8'), 'owned bytes');
   });
 
