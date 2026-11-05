@@ -12,7 +12,8 @@ preferred source selector; display bytes cannot satisfy a different save URL.
 | DOM ordinary CDN photo | Observed image URL | Verified CDN original |
 | Unverified photo | Observed image URL | Explicit original-source failure; no smaller substitute |
 | API MP4 video or animated GIF | Existing best-MP4 policy | Preferred best MP4, independent of display recovery |
-| DOM video | Observed playable source | Observed source, with the quality limitation disclosed |
+| DOM video with a direct MP4 source | Observed video URL | Observed MP4 URL, with the quality limitation disclosed |
+| DOM video with a playlist, unknown format or conflicting format control | Host video remains outside the gallery | No admitted save source |
 | Positively selected HLS-only API attachment | Unsupported-source diagnostic | Unavailable |
 
 The pure normalizer accepts validated HTTPS `pbs.twimg.com/media/` photo
@@ -37,6 +38,19 @@ absent bitrates preserve source order. Query data and posters cannot supply
 video dimensions. Click-time source evidence, requested/quoted owner separation,
 stale-click checks and originating-post filename attribution still govern
 selection; a candidate list is not a second owner-discovery mechanism.
+
+The API video parser requires declared `video/mp4` metadata. Both API and DOM
+video admission require a validated `video.twimg.com` URL with a direct `.mp4`
+path and either no `format` control or one matching `format=mp4`; control names
+are compared case-insensitively. After provider failure, DOM recovery applies
+that same rule to the selected owner-local video URL.
+A playlist, extensionless path, image path or contradictory/duplicate format
+control is rejected before filename planning, so single-save and ZIP naming
+cannot assign an image extension to the video. An ordinary image's supported
+extensionless `?format=` URL remains eligible. This rule relies on the
+direct-source URL contract; it does not inspect response MIME or relabel an
+unknown container. Controlled installed evidence for the actual native name,
+MP4 bytes and ZIP entries is tracked separately from these source rules.
 
 ## Attachment filenames
 

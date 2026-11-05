@@ -7,6 +7,7 @@ import {
   generateMediaFilename,
   generateZipFilename,
   getIndexFromMediaId,
+  planMediaFilename,
 } from '@shared/core/filename/filename-utils';
 import { describe, expect, it } from 'vite-plus/test';
 
@@ -76,6 +77,21 @@ describe('filename-utils', () => {
       });
       expect(filename).toBe(`${'a'.repeat(239)}_123456789_1.jpg`);
       expect(filename.length).toBe(255);
+    });
+
+    it('reserves an ambiguous DOM source identity when allocating a long duplicate name', () => {
+      const planned = planMediaFilename({
+        id: '222_dom_5',
+        type: 'image',
+        url: 'https://pbs.twimg.com/media/example.jpg',
+        tweetUsername: 'a'.repeat(260),
+        tweetId: '222',
+        attachmentSourceKey: 'source-0123456789abcdef',
+      });
+      expect(planned.filename).toBe(`${'a'.repeat(223)}_222_source-0123456789abcdef.jpg`);
+      const duplicate = appendFilenameSuffix(planned.filename, '-1', planned.identitySuffix);
+      expect(duplicate).toBe(`${'a'.repeat(221)}_222_source-0123456789abcdef-1.jpg`);
+      expect(finalizeFilename(duplicate)).toBe(duplicate);
     });
 
     it('retains the tail of an explicit attachment filename without inferring its identity', () => {

@@ -74,6 +74,91 @@ export const EXPERIENCE_TWEET_ID = '4666000000000000002';
 
 export const EXPERIENCE_FIXTURE_URL = `https://x.com/experience/status/${EXPERIENCE_TWEET_ID}`;
 
+export const VIDEO_FORMAT_FIXTURE_URL = 'https://x.com/format_fixture/status/4666000000000000484';
+
+export const VIDEO_FORMAT_DIRECT_SOURCE =
+  'https://video.twimg.com/ext_tw_video/9111111111111111111/pu/vid/320x180/quote-one.mp4';
+
+export const VIDEO_FORMAT_API_CASES = [
+  {
+    name: 'api-video',
+    tweetId: '4666000000000000488',
+    mediaType: 'video',
+    query: '',
+    accepted: true,
+  },
+  {
+    name: 'api-gif',
+    tweetId: '4666000000000000489',
+    mediaType: 'animated_gif',
+    query: '',
+    accepted: true,
+  },
+  {
+    name: 'api-conflict',
+    tweetId: '4666000000000000490',
+    mediaType: 'video',
+    query: '?format=jpg',
+    accepted: false,
+  },
+  {
+    name: 'api-duplicate',
+    tweetId: '4666000000000000491',
+    mediaType: 'animated_gif',
+    query: '?format=jpg&format=mp4',
+    accepted: false,
+  },
+] as const;
+
+/** Production-shaped API responses for the installed source/filename controls. */
+export function videoFormatApiResponse(tweetId: string) {
+  const fixture = VIDEO_FORMAT_API_CASES.find((item) => item.tweetId === tweetId);
+  if (!fixture) {
+    return null;
+  }
+  const media = [
+    ...(!fixture.accepted
+      ? [
+          {
+            type: 'photo',
+            id_str: `${tweetId}0`,
+            media_url_https: 'https://pbs.twimg.com/media/GkE1234ABCDEF?format=jpg&name=small',
+          },
+        ]
+      : []),
+    {
+      type: fixture.mediaType,
+      id_str: `${tweetId}1`,
+      media_url_https: 'https://pbs.twimg.com/ext_tw_video_thumb/9111111111111111111/preview.jpg',
+      video_info: {
+        variants: [
+          { content_type: 'video/mp4', url: `${VIDEO_FORMAT_DIRECT_SOURCE}${fixture.query}` },
+        ],
+      },
+    },
+  ];
+  return {
+    data: {
+      tweetResult: {
+        result: {
+          __typename: 'Tweet',
+          rest_id: tweetId,
+          core: {
+            user_results: {
+              result: { legacy: { screen_name: 'format_fixture', name: 'format_fixture' } },
+            },
+          },
+          legacy: {
+            id_str: tweetId,
+            full_text: 'Installed video format API fixture',
+            extended_entities: { media },
+          },
+        },
+      },
+    },
+  };
+}
+
 export const PANEL_OWNER_A_ID = '4666000000000000003';
 export const PANEL_OWNER_B_ID = '4666000000000000004';
 export const PANEL_OWNERSHIP_FIXTURE_URL = `https://x.com/experience_a/status/${PANEL_OWNER_A_ID}`;
@@ -392,6 +477,20 @@ export async function installFixtureRoutes(
     join(root, 'test/e2e/fixtures/installed-unmarked-video-page.html'),
     'utf8'
   );
+  const videoFormatHtml = await readFile(
+    join(root, 'test/e2e/fixtures/installed-video-save-format-page.html'),
+    'utf8'
+  );
+  for (const fixture of VIDEO_FORMAT_API_CASES) {
+    assert(
+      videoFormatHtml.includes(`data-format-case="${fixture.name}"`) &&
+        videoFormatHtml.includes(`/format_fixture/status/${fixture.tweetId}`) &&
+        videoFormatHtml.includes(
+          `src="${VIDEO_FORMAT_DIRECT_SOURCE}${fixture.query.replaceAll('&', '&amp;')}"`
+        ),
+      `Video format API fixture markup is missing ${fixture.name}`
+    );
+  }
   const rapidVideoHtml = await readFile(
     join(root, 'test/e2e/fixtures/installed-rapid-video-page.html'),
     'utf8'
@@ -410,6 +509,7 @@ export async function installFixtureRoutes(
   );
   let own12RapidBPayload: Buffer | null = null;
   const apiResponses: ApiRecord[] = [];
+  const videoFormatApiResponses: ApiRecord[] = [];
   const classicApiResponses: ApiRecord[] = [];
   const unhandledRequests: Array<{ host: string; path: string; resourceType: string }> = [];
   const quotedApiResponses: ApiRecord[] = [];
@@ -468,6 +568,25 @@ export async function installFixtureRoutes(
             : undefined;
       } catch {
         tweetId = undefined;
+      }
+      const videoFormatResponse = tweetId === undefined ? null : videoFormatApiResponse(tweetId);
+      if (videoFormatResponse) {
+        assert(videoFormatApiResponses.length < 8, 'Video format API observation overflow');
+        const record: ApiRecord = {
+          tweetId: videoFormatResponse.data.tweetResult.result.rest_id,
+          method: route.request().method(),
+          status: 200,
+          url: url.pathname,
+          rootMediaCount:
+            videoFormatResponse.data.tweetResult.result.legacy.extended_entities.media.length,
+        };
+        videoFormatApiResponses.push(record);
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(videoFormatResponse),
+        });
+        return;
       }
       if (
         compactImages &&
@@ -807,39 +926,41 @@ export async function installFixtureRoutes(
                     .replaceAll('/outer_one/status/', '/delayed_host/status/')
                 : url.pathname === '/quote_one/status/9111111111111111111'
                   ? unmarkedVideoHtml
-                  : url.pathname === `/rapid_a/status/${RAPID_CLICK_A}`
-                    ? rapidVideoHtml
-                    : creditControlsRoute
-                      ? quotedHtml.replace(
-                          '<body data-quote-case="recognized">',
-                          `<body data-quote-case="${CREDIT_CONTROLS_CASE.route}">`
-                        )
-                      : quotedCase
-                        ? quotedCase.name === 'public-preplayer'
-                          ? preplayerHtml
-                          : (quotedCase.name === 'unmarked-no-outer'
-                              ? noOuterHtml
-                              : quotedHtml
-                            ).replace(
-                              '<body data-quote-case="recognized">',
-                              `<body data-quote-case="${quotedCase.route}">`
-                            )
-                        : url.pathname === new URL(PANEL_OWNERSHIP_FIXTURE_URL).pathname &&
-                            experienceImages
-                          ? panelOwnershipHtml
-                          : url.pathname === new URL(EXPERIENCE_FIXTURE_URL).pathname &&
+                  : url.pathname === new URL(VIDEO_FORMAT_FIXTURE_URL).pathname
+                    ? videoFormatHtml
+                    : url.pathname === `/rapid_a/status/${RAPID_CLICK_A}`
+                      ? rapidVideoHtml
+                      : creditControlsRoute
+                        ? quotedHtml.replace(
+                            '<body data-quote-case="recognized">',
+                            `<body data-quote-case="${CREDIT_CONTROLS_CASE.route}">`
+                          )
+                        : quotedCase
+                          ? quotedCase.name === 'public-preplayer'
+                            ? preplayerHtml
+                            : (quotedCase.name === 'unmarked-no-outer'
+                                ? noOuterHtml
+                                : quotedHtml
+                              ).replace(
+                                '<body data-quote-case="recognized">',
+                                `<body data-quote-case="${quotedCase.route}">`
+                              )
+                          : url.pathname === new URL(PANEL_OWNERSHIP_FIXTURE_URL).pathname &&
                               experienceImages
-                            ? experienceHtml
-                            : url.pathname === new URL(QUALITY_FIXTURE_URL).pathname
-                              ? extensionHtml
-                                  .replaceAll(TWEET_ID, QUALITY_TWEET_ID)
-                                  .replaceAll('testuser', 'qualityuser')
-                              : url.pathname === new URL(PUBLIC_FIXTURE_URL).pathname
-                                ? html.replace(
-                                    '<body data-fixture-route="classic">',
-                                    '<body data-fixture-route="public">'
-                                  )
-                                : extensionHtml,
+                            ? panelOwnershipHtml
+                            : url.pathname === new URL(EXPERIENCE_FIXTURE_URL).pathname &&
+                                experienceImages
+                              ? experienceHtml
+                              : url.pathname === new URL(QUALITY_FIXTURE_URL).pathname
+                                ? extensionHtml
+                                    .replaceAll(TWEET_ID, QUALITY_TWEET_ID)
+                                    .replaceAll('testuser', 'qualityuser')
+                                : url.pathname === new URL(PUBLIC_FIXTURE_URL).pathname
+                                  ? html.replace(
+                                      '<body data-fixture-route="classic">',
+                                      '<body data-fixture-route="public">'
+                                    )
+                                  : extensionHtml,
       });
       return;
     }
@@ -975,6 +1096,7 @@ export async function installFixtureRoutes(
   await context.route('**/*', routeHandler);
   return {
     apiResponses,
+    videoFormatApiResponses,
     classicApiResponses,
     unhandledRequests,
     qualityApiResponses,
