@@ -157,6 +157,40 @@ run is functional diagnostics only, not desktop visual acceptance.
 
 Run `node --experimental-strip-types --check validation/windows/profile.ts` for the profile syntax check.
 
+## Installed Firefox filename flow
+
+`--browser firefox --mode desktop --installation extension` uses the maintained
+controller's shared Firefox WebDriver BiDi transport and the production
+`dist-extension-firefox` distribution. It runs a focused filename fixture rather
+than the broader Chromium gallery matrix. An optional `attachment-filenames.json`
+selector must contain exactly `{"scenario":"attachment-filenames"}`; other
+focused selectors are rejected.
+
+The runner creates a task-owned profile and an installation copy. Its diagnostic
+extension page is added only to that copy; an inventory proves that every
+production file keeps its original digest. Profile preferences select the owned
+download directory and diagnostic extension origin. The fixture uses bounded
+network interception without changing Windows trust or browser settings outside
+that profile.
+
+Trusted pointer actions open the installed gallery and activate its Download
+button. The fixture reads only matching extension-owned native download records,
+checks an independently specified owner/attachment basename and the original
+file bytes, and compares the visible saved-name notice with the native basename.
+It also exercises a same-name collision and dismisses the notice while requiring
+the native download IDs and original file contents to remain unchanged. Output
+copies are retained under flat neutral evidence names after byte-verifying the
+original browser-reported file; the original is never renamed for qualification.
+
+Firefox does not support
+[`downloads.onDeterminingFilename`](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Chrome_incompatibilities#javascript-apis).
+Its receipt records that capability separately; Chromium's passive/active
+filename-arbitration controls are not simulated. Browser installation, network
+intercepts, copied files, downloads and profile cleanup have separate outcomes.
+The focused fixture does not establish live X.com behavior or the Chromium
+matrix. This Firefox route rejects live URLs; existing Chrome/Edge public
+observations remain separate evidence.
+
 ## Installed Chrome/Edge extension flow
 
 The opt-in installed flow uses a fresh task-owned browser profile, enables

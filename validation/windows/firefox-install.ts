@@ -72,7 +72,9 @@ async function readBounded(handle: FileHandle, maximumBytes: number): Promise<Bu
   for (;;) {
     const chunk = Buffer.alloc(Math.min(64 * 1024, maximumBytes - length + 1));
     const { bytesRead } = await handle.read(chunk, 0, chunk.length, null);
-    if (bytesRead === 0) break;
+    if (bytesRead === 0) {
+      break;
+    }
     length += bytesRead;
     assert(length <= maximumBytes, 'Native file exceeded bounded read');
     chunks.push(chunk.subarray(0, bytesRead));
@@ -85,8 +87,9 @@ async function inventory(directory: string, prefix = ''): Promise<Record<string,
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     const path = join(directory, entry.name);
     const name = prefix ? `${prefix}/${entry.name}` : entry.name;
-    if (entry.isDirectory()) Object.assign(result, await inventory(path, name));
-    else {
+    if (entry.isDirectory()) {
+      Object.assign(result, await inventory(path, name));
+    } else {
       assert(entry.isFile(), `Firefox distribution contains a non-file: ${name}`);
       result[name] = digest(await readFile(path));
     }
@@ -129,7 +132,9 @@ function responseBody(value: string, mime: string, request: string, binary = fal
 async function installFixtureIntercept(session: FirefoxSession, html: string, image: Buffer) {
   const requests: Array<{ url: string; navigation: boolean }> = [];
   const handler = async (params: Record<string, unknown>) => {
-    if (params.isBlocked !== true) return;
+    if (params.isBlocked !== true) {
+      return;
+    }
     const request = params.request as Record<string, unknown> | undefined;
     assert(
       request && typeof request.request === 'string' && typeof request.url === 'string',
@@ -318,12 +323,16 @@ function errorText(error: unknown): string {
 export async function validateFirefoxSelectors(root: string) {
   const inputDirectory = join(root, 'validation/windows/inputs');
   const names = await readdir(inputDirectory).catch((error: NodeJS.ErrnoException) => {
-    if (error.code === 'ENOENT') return [];
+    if (error.code === 'ENOENT') {
+      return [];
+    }
     throw error;
   });
   const selectors = names.filter((name) => name.endsWith('.json'));
   assert(selectors.length <= 1, 'Firefox acceptance cannot share focused selectors');
-  if (selectors.length === 0) return 'default';
+  if (selectors.length === 0) {
+    return 'default';
+  }
   assert.deepEqual(
     selectors,
     ['attachment-filenames.json'],
@@ -516,12 +525,13 @@ export async function runFirefoxInstallation({
           image
         );
         assert.equal(original.basename, EXPECTED_NAME, 'Collision changed original native file');
-      } else
+      } else {
         assert.equal(
           native.basename,
           EXPECTED_NAME,
           'Native basename differs from owner and attachment'
         );
+      }
       assert.equal(notice.name, native.basename, 'Notice differs from native saved basename');
       const retainedName = `firefox-native-${index + 1}.jpg`;
       await writeFile(join(output, retainedName), image, { flag: 'wx' });
@@ -625,7 +635,9 @@ export async function runFirefoxInstallation({
         const originals: Array<{ name: string; bytes: number; sha256: string; retained: string }> =
           [];
         for (const [index, name] of files.entries()) {
-          if (name === basename(sentinel)) continue;
+          if (name === basename(sentinel)) {
+            continue;
+          }
           const path = join(downloads, name);
           assert((await lstat(path)).isFile(), 'Native directory contains a foreign entry');
           const handle = await open(path, 'r');
@@ -671,14 +683,17 @@ export async function runFirefoxInstallation({
         .replaceAll(output, '<output>')
         .replaceAll(root, '<bundle>')
     );
-    if (errors.length) receipt.status = 'failed';
+    if (errors.length) {
+      receipt.status = 'failed';
+    }
     await writeFile(
       join(output, 'firefox-installation.json'),
       `${JSON.stringify(receipt, null, 2)}\n`,
       { flag: 'wx' }
     );
   }
-  if (errors.length)
+  if (errors.length) {
     throw new Error(`Firefox installed-extension acceptance failed: ${errors.join('; ')}`);
+  }
   return receipt;
 }
