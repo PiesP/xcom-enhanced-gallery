@@ -35,6 +35,7 @@
     "package:all": "vp run package:all:steps",
     "release:prepare": "node --experimental-strip-types scripts/release/prepare.ts",
     "build:ci": "vp build",
+    "build:filename-boundaries": "vp build --config vite.filename-boundaries.config.ts",
     "build:extension:ci": "vp run build:extension:ci:steps",
     "build:extension:firefox:ci": "vp run build:extension:firefox:ci:steps",
     "build:all:ci": "node --experimental-strip-types scripts/release/build-all.ts",
