@@ -212,6 +212,11 @@ export interface LanguageStrings {
     };
     /** Download messages */
     readonly dl: {
+      readonly filenameNotice: {
+        readonly label: string;
+        readonly mismatch: string;
+        readonly dismiss: string;
+      };
       readonly bulkOutcome: {
         readonly titleHandedOff: string;
         readonly titleFailed: string;

@@ -110,6 +110,11 @@ export const en: LanguageStrings = {
       recovery: 'Alt+Shift+V is available only after an eligible failed video click.',
     },
     dl: {
+      filenameNotice: {
+        label: 'Saved filename',
+        mismatch: 'The saved name differs from the requested name.',
+        dismiss: 'Dismiss filename notice',
+      },
       bulkOutcome: {
         cancelRecoveryAndDismiss: 'Cancel missing-item recovery and dismiss ZIP result',
         details: 'ZIP result details',

@@ -26,6 +26,7 @@ import {
   type BulkDownloadOutcome,
   downloadState,
   setBulkDownloadOutcome,
+  setSingleDownloadOutcome,
   setDownloadStatus,
 } from '@shared/state/signals/gallery-download-signals';
 import type { MediaInfo } from '@shared/types/media.types';
@@ -191,6 +192,7 @@ export function createDownloadHandler() {
 
     // A7: Clear stale error from a previous download before starting a new one.
     setError(null);
+    setSingleDownloadOutcome(null);
     if (type === 'current') {
       setBulkDownloadOutcome(null);
     }
@@ -218,6 +220,22 @@ export function createDownloadHandler() {
           }
           if (result.success) {
             publishStatus('handedOff');
+            const observed = result.observedFilename;
+            if (
+              observed &&
+              observed.length <= 255 &&
+              !/[\\/]/u.test(observed) &&
+              !observed
+                .split('')
+                .some((char) => char.charCodeAt(0) < 32 || char.charCodeAt(0) === 127)
+            ) {
+              setSingleDownloadOutcome({
+                observedFilename: observed,
+                ...(typeof result.filenameConforms === 'boolean'
+                  ? { filenameConforms: result.filenameConforms }
+                  : {}),
+              });
+            }
           } else if (result.error === USER_CANCELLED_MESSAGE) {
             publishStatus('idle');
           } else {
@@ -513,6 +531,7 @@ export function createDownloadHandler() {
     resetAbortController();
     setDownloadStatus('idle');
     setBulkDownloadOutcome(null);
+    setSingleDownloadOutcome(null);
   };
 
   return { handleDownload, recoverFailedEntries, dismissOutcome, cancelDownloads };

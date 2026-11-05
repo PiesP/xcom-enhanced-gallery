@@ -111,6 +111,11 @@ export const ar: LanguageStrings = {
       recovery: 'يتاح Alt+Shift+V فقط بعد فشل نقرة مؤهلة على فيديو.',
     },
     dl: {
+      filenameNotice: {
+        label: 'اسم الملف المحفوظ',
+        mismatch: 'يختلف الاسم المحفوظ عن الاسم المطلوب.',
+        dismiss: 'إغلاق إشعار اسم الملف',
+      },
       bulkOutcome: {
         cancelRecoveryAndDismiss: 'إلغاء استرداد العناصر المفقودة وإغلاق نتيجة ZIP',
         details: 'تفاصيل نتيجة ZIP',
