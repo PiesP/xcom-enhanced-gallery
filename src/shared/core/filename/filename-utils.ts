@@ -67,10 +67,10 @@ function getExtension(url: string): string {
 }
 
 /**
- * Extract index from media ID.
- * Parses patterns like '_media_0' → '1' (1-indexed) or '_1' → '1'.
+ * Legacy ID fallback when no explicit attachment identity is available.
+ * `_media_0` maps to '1'; generic suffixes such as `_dom_0` retain '0'.
  * @param mediaId - Media identifier string to parse
- * @returns 1-indexed position string, or null if no match
+ * @returns Legacy suffix string, or null if no match
  */
 export function getIndexFromMediaId(mediaId?: string): string | null {
   if (!mediaId) {
@@ -148,7 +148,13 @@ export function generateMediaFilename(media: MediaInfo, options: FilenameOptions
 
     const nowMs = resolveNowMs(options.nowMs);
     const extension = options.extension ?? getExtension(getMediaDownloadUrl(media));
-    const index = getIndexFromMediaId(media.id) ?? normalizeIndex(options.index);
+    const index =
+      (Number.isSafeInteger(media.attachmentOrdinal) && (media.attachmentOrdinal ?? -1) >= 0
+        ? String(media.attachmentOrdinal)
+        : null) ??
+      media.attachmentSourceKey ??
+      getIndexFromMediaId(media.id) ??
+      normalizeIndex(options.index);
     const { username, tweetId } = resolveMetadata(media, options.fallbackUsername);
 
     if (username && tweetId) {
