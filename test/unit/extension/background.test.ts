@@ -26,12 +26,6 @@ const state = vi.hoisted(() => ({
   storageValues: {} as Record<string, unknown>,
   storageSetError: null as unknown,
   storageSetFailuresRemaining: 1,
-  filenameListener: null as
-    | null
-    | ((
-        item: { id: number; url: string; byExtensionId: string; startTime?: string },
-        suggest: (value?: unknown) => void
-      ) => boolean | void),
 }));
 
 vi.mock('@platform/chrome-runtime', () => ({
@@ -89,12 +83,6 @@ vi.mock('@platform/chrome-runtime', () => ({
       download: state.download,
       cancel: state.cancelDownload,
       search: state.searchDownload,
-      onDeterminingFilename: {
-        addListener: vi.fn((listener: NonNullable<typeof state.filenameListener>) => {
-          state.filenameListener = listener;
-        }),
-        removeListener: vi.fn(),
-      },
       onChanged: {
         addListener: vi.fn((listener: DownloadChangedListener) => {
           state.downloadChangedListener = listener;
@@ -228,57 +216,27 @@ describe('background direct download ownership', () => {
     expect(JSON.stringify(state.storageValues)).not.toContain(url);
   });
 
-  it('suggests only after the exact native allocation is bound and preserves the request name', async () => {
-    const requestId = `filename-race-${crypto.randomUUID()}`;
-    const allocation = deferred<number>();
-    state.download.mockReturnValueOnce(allocation.promise);
+  it('does not expose a filename from another initiator or invent one when history is absent', async () => {
+    const requestId = `direct-unobserved-${crypto.randomUUID()}`;
+    state.download.mockResolvedValueOnce(813);
     state.searchDownload.mockResolvedValue([
       {
-        id: 811,
+        id: 813,
         url,
         state: 'complete',
-        filename: 'C:\\Private\\direct-original.jpg',
-        byExtensionId: 'extension-id',
+        filename: 'C:\\Private\\unrelated.jpg',
+        byExtensionId: 'other-extension',
       },
     ]);
-    const pending = sendMessage(request(requestId), owner);
-    await vi.waitFor(() => expect(state.download).toHaveBeenCalledOnce());
-    const suggest = vi.fn();
-    expect(
-      state.filenameListener?.(
-        { id: 811, url, byExtensionId: 'extension-id', startTime: new Date().toISOString() },
-        suggest
-      )
-    ).toBe(true);
-    expect(suggest).not.toHaveBeenCalled();
-    allocation.resolve(811);
-    await pending;
-    await vi.waitFor(() =>
-      expect(suggest).toHaveBeenCalledExactlyOnceWith({
-        filename: 'direct-original.jpg',
-        conflictAction: 'uniquify',
-      })
-    );
-  });
 
-  it('never allocates a same-source request canceled while queued', async () => {
-    const firstId = `queue-first-${crypto.randomUUID()}`;
-    const secondId = `queue-second-${crypto.randomUUID()}`;
-    const native = deferred<number>();
-    state.download.mockReturnValueOnce(native.promise);
-    state.searchDownload.mockResolvedValue([{ id: 812, url, state: 'complete' }]);
-    const first = sendMessage(request(firstId), owner);
-    await vi.waitFor(() => expect(state.download).toHaveBeenCalledOnce());
-    const second = sendMessage(request(secondId), owner);
-    await sendMessage(
-      { type: 'DOWNLOAD_CANCEL_REQUEST', payload: { requestId: secondId, url } },
-      owner
-    );
-    native.resolve(812);
-    await first;
-    expect(await second).toMatchObject({
-      success: false,
-      data: { requestId: secondId, status: 'never-started', reason: 'user-cancelled' },
+    expect(await sendMessage(request(requestId), owner)).toEqual({
+      success: true,
+      data: { requestId, status: 'complete', requestedFilename: 'direct-original.jpg' },
+    });
+    state.searchDownload.mockResolvedValue([]);
+    expect(await sendMessage(status(requestId), owner)).toEqual({
+      success: true,
+      data: { requestId, status: 'complete' },
     });
     expect(state.download).toHaveBeenCalledOnce();
   });

@@ -15,7 +15,6 @@ export type DirectTerminalState = 'never-started' | 'complete' | 'interrupted';
 export interface PersistedDownloadRecord {
   readonly downloadId?: number;
   readonly requestedFilename?: string;
-  readonly filenamePending?: true;
   readonly cancellationRequested: boolean;
   readonly cancellationRequestedAt?: number;
   readonly route?: 'direct';
@@ -112,8 +111,7 @@ function parseStoredRecords(
         (terminalState === undefined &&
           downloadId === undefined &&
           age >= DIRECT_UNASSIGNED_TTL_MS &&
-          !liveDirectAllocations.has(requestId) &&
-          rawRecord.filenamePending !== true)
+          !liveDirectAllocations.has(requestId))
       ) {
         needsPersistence = true;
         continue;
@@ -142,10 +140,7 @@ function parseStoredRecords(
         // grace period, then are normalized on the next successful write.
         cancellationRequestedAt = nowMs;
         needsPersistence = true;
-      } else if (
-        nowMs - cancellationRequestedAt >= DOWNLOAD_PRE_ID_CANCELLATION_TTL_MS &&
-        rawRecord.filenamePending !== true
-      ) {
+      } else if (nowMs - cancellationRequestedAt >= DOWNLOAD_PRE_ID_CANCELLATION_TTL_MS) {
         needsPersistence = true;
         continue;
       }
@@ -156,14 +151,10 @@ function parseStoredRecords(
 
     records.set(requestId, {
       ...(typeof downloadId === 'number' ? { downloadId } : {}),
-      ...(isSafeFilename(rawRecord.requestedFilename) &&
-      typeof rawRecord.urlHash === 'string' &&
-      /^[a-f0-9]{64}$/u.test(rawRecord.urlHash)
-        ? {
-            requestedFilename: rawRecord.requestedFilename,
-            urlHash: rawRecord.urlHash,
-            ...(rawRecord.filenamePending === true ? { filenamePending: true as const } : {}),
-          }
+      ...(route === 'direct' &&
+      typeof downloadId === 'number' &&
+      isSafeFilename(rawRecord.requestedFilename)
+        ? { requestedFilename: rawRecord.requestedFilename }
         : {}),
       cancellationRequested: rawRecord.cancellationRequested,
       ...(cancellationRequestedAt === undefined ? {} : { cancellationRequestedAt }),
@@ -190,7 +181,6 @@ function parseStoredRecords(
 function isExpiredPreIdCancellation(record: PersistedDownloadRecord, nowMs: number): boolean {
   return (
     record.route !== 'direct' &&
-    !record.filenamePending &&
     record.downloadId === undefined &&
     record.cancellationRequested &&
     record.cancellationRequestedAt !== undefined &&
@@ -248,66 +238,11 @@ export class DownloadTrackingStore {
     return [...this.records.entries()];
   }
 
-  async prepareFilename(
-    requestId: string,
-    requestedFilename: string,
-    urlHash: string
-  ): Promise<void> {
-    await this.enqueue(async () => {
-      await this.ensureLoaded();
-      const current = this.records.get(requestId);
-      if (!current || !isSafeFilename(requestedFilename)) {
-        throw new Error('Missing filename owner');
-      }
-      this.records.set(requestId, {
-        ...current,
-        requestedFilename,
-        urlHash,
-        filenamePending: true,
-      });
-      await this.persist();
-    });
-  }
-
-  canBindEarlyFilename(requestId: string, urlHash: string): boolean {
-    return this.entries().every(
-      ([otherId, record]) =>
-        otherId === requestId ||
-        !(
-          record.filenamePending ||
-          (record.downloadId === undefined &&
-            record.requestedFilename === undefined &&
-            record.terminalState === undefined)
-        ) ||
-        (record.urlHash !== undefined && record.urlHash !== urlHash)
-    );
-  }
-
-  async confirmFilename(requestId: string, nativeId: number): Promise<void> {
-    await this.enqueue(async () => {
-      await this.ensureLoaded();
-      const current = this.records.get(requestId);
-      if (!current?.filenamePending) {
-        return;
-      }
-      const { filenamePending: _pending, downloadId: priorId, ...rest } = current;
-      // A differing provisional ID is discarded before any status/cancel route can use it.
-      this.records.set(requestId, {
-        ...rest,
-        ...(priorId === nativeId ? { downloadId: nativeId } : {}),
-      });
-      await this.persist();
-    });
-  }
-
-  async registerRequest(
-    requestId: string,
-    filenameBinding?: { requestedFilename: string; urlHash: string }
-  ): Promise<void> {
+  async registerRequest(requestId: string): Promise<void> {
     await this.enqueue(async () => {
       await this.ensureLoaded();
       if (!this.records.has(requestId)) {
-        this.records.set(requestId, { cancellationRequested: false, ...filenameBinding });
+        this.records.set(requestId, { cancellationRequested: false });
         await this.persist();
       }
     });
@@ -316,8 +251,7 @@ export class DownloadTrackingStore {
   async registerDirectRequest(
     requestId: string,
     ownerTabId: number,
-    urlHash: string,
-    requestedFilename?: string
+    urlHash: string
   ): Promise<'new' | 'cancelled' | 'existing' | 'wrong-owner' | 'capacity'> {
     return this.enqueue(async () => {
       await this.ensureLoaded();
@@ -346,7 +280,6 @@ export class DownloadTrackingStore {
         route: 'direct',
         ownerTabId,
         urlHash,
-        ...(requestedFilename ? { requestedFilename } : {}),
         createdAt: this.now(),
         cancellationRequested: false,
       });
@@ -377,15 +310,6 @@ export class DownloadTrackingStore {
       await this.ensureLoaded();
       const current = this.records.get(requestId);
       if (
-        current?.route === 'direct' &&
-        current.ownerTabId === ownerTabId &&
-        current.urlHash === urlHash &&
-        current.downloadId === downloadId
-      ) {
-        return current.cancellationRequested;
-      }
-
-      if (
         current?.route !== 'direct' ||
         current.ownerTabId !== ownerTabId ||
         current.urlHash !== urlHash ||
@@ -397,7 +321,7 @@ export class DownloadTrackingStore {
       const updated = {
         ...current,
         downloadId,
-        ...(requestedFilename ? { requestedFilename } : {}),
+        ...(isSafeFilename(requestedFilename) ? { requestedFilename } : {}),
       };
       this.records.set(requestId, updated);
       await this.persist();
@@ -454,33 +378,20 @@ export class DownloadTrackingStore {
       if (current?.route !== 'direct' || current.terminalState !== undefined) {
         return;
       }
-      const { filenamePending: _pending, ...retained } = current;
-      this.records.set(requestId, { ...retained, terminalState, terminalAt: this.now() });
+      this.records.set(requestId, { ...current, terminalState, terminalAt: this.now() });
       await this.persist();
     });
   }
 
-  async bindDownload(
-    requestId: string,
-    downloadId: number,
-    filenameBinding?: { requestedFilename: string; urlHash: string }
-  ): Promise<boolean> {
+  async bindDownload(requestId: string, downloadId: number): Promise<boolean> {
     return this.enqueue(async () => {
       await this.ensureLoaded();
       const current = this.records.get(requestId);
-      if (current?.downloadId !== undefined) {
-        if (current.downloadId !== downloadId) {
-          throw new Error('Download request already owns another native ID');
-        }
-        return current.cancellationRequested;
-      }
-
       const cancellationRequested =
         current?.cancellationRequested === true && !isExpiredPreIdCancellation(current, this.now());
       const { cancellationRequestedAt: priorCancellationAt, ...retained } = current ?? {};
       this.records.set(requestId, {
         ...retained,
-        ...filenameBinding,
         downloadId,
         cancellationRequested,
         ...(cancellationRequested && priorCancellationAt !== undefined
@@ -531,7 +442,6 @@ export class DownloadTrackingStore {
       const expiredTerminal =
         record.terminalAt !== undefined && now - record.terminalAt >= DIRECT_TERMINAL_TTL_MS;
       const expiredUnassigned =
-        !record.filenamePending &&
         record.terminalAt === undefined &&
         record.downloadId === undefined &&
         record.createdAt !== undefined &&
