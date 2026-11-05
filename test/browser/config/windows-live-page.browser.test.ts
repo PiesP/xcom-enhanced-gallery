@@ -553,6 +553,7 @@ describe('Windows X live page DOM validation', () => {
     Object.defineProperties(image, {
       complete: { configurable: true, value: true },
       naturalWidth: { configurable: true, value: 160 },
+      currentSrc: { configurable: true, get: () => image.src },
     });
     const ready = livePage.inspectLiveTargetDocument(identity);
     if (!ready || ready.state !== 'ready' || ready.target.kind !== 'image') {
