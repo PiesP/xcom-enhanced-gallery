@@ -11,10 +11,12 @@ const state = vi.hoisted(() => ({
   notifySafely: vi.fn(),
   setDownloadStatus: vi.fn(),
   setBulkDownloadOutcome: vi.fn(),
+  setSingleDownloadOutcome: vi.fn(),
   setError: vi.fn(),
   translate: vi.fn((key: string) => key),
   status: 'idle',
   bulkOutcome: null as object | null,
+  singleOutcome: null as { observedFilename: string; filenameConforms?: boolean } | null,
   sessionRevision: 1,
   mediaItems: [] as MediaInfo[],
 }));
@@ -57,6 +59,9 @@ vi.mock('@shared/state/signals/gallery-download-signals', () => ({
     get bulkOutcome() {
       return state.bulkOutcome;
     },
+    get singleOutcome() {
+      return state.singleOutcome;
+    },
   },
   setDownloadStatus: (status: string) => {
     state.status = status;
@@ -65,6 +70,12 @@ vi.mock('@shared/state/signals/gallery-download-signals', () => ({
   setBulkDownloadOutcome: (outcome: object | null) => {
     state.bulkOutcome = outcome;
     state.setBulkDownloadOutcome(outcome);
+  },
+  setSingleDownloadOutcome: (
+    outcome: { observedFilename: string; filenameConforms?: boolean } | null
+  ) => {
+    state.singleOutcome = outcome;
+    state.setSingleDownloadOutcome(outcome);
   },
 }));
 vi.mock('@features/gallery/hooks/dismiss-bulk-download-outcome', () => ({
@@ -81,6 +92,7 @@ describe('createDownloadHandler bulk resource limits', () => {
     state.displayedIndex = 0;
     state.status = 'idle';
     state.bulkOutcome = null;
+    state.singleOutcome = null;
     state.sessionRevision = 1;
     state.mediaItems = [
       { id: 'first', type: 'image', url: 'https://example.test/first.jpg' },
@@ -135,6 +147,89 @@ describe('createDownloadHandler bulk resource limits', () => {
       expect.objectContaining({ signal: expect.any(AbortSignal) })
     );
     expect(state.setDownloadStatus).toHaveBeenLastCalledWith('handedOff');
+  });
+
+  it('reports a completed native filename mismatch without marking the download failed or saving again', async () => {
+    state.downloadSingle.mockResolvedValue({
+      success: true,
+      requestedFilename: 'wanted.jpg',
+      observedFilename: 'actual.jpg',
+      filenameConforms: false,
+    });
+
+    await createDownloadHandler().handleDownload('current');
+
+    expect(state.singleOutcome).toEqual({
+      observedFilename: 'actual.jpg',
+      filenameConforms: false,
+    });
+    expect(state.status).toBe('handedOff');
+    expect(state.setError).toHaveBeenCalledExactlyOnceWith(null);
+    expect(state.downloadSingle).toHaveBeenCalledOnce();
+    expect(state.notifySafely).not.toHaveBeenCalled();
+  });
+
+  it('reports the actual name without a mismatch for browser conflict suffixes', async () => {
+    state.downloadSingle.mockResolvedValue({
+      success: true,
+      requestedFilename: 'wanted.jpg',
+      observedFilename: 'wanted (1).jpg',
+      filenameConforms: true,
+    });
+
+    await createDownloadHandler().handleDownload('current');
+
+    expect(state.singleOutcome).toEqual({
+      observedFilename: 'wanted (1).jpg',
+      filenameConforms: true,
+    });
+  });
+
+  it.each([{ success: true }, { success: true, filename: 'requested.jpg' }])(
+    'does not claim an actual filename without native observation: %j',
+    async (result) => {
+      state.downloadSingle.mockResolvedValue(result);
+
+      await createDownloadHandler().handleDownload('current');
+
+      expect(state.singleOutcome).toBeNull();
+      expect(state.status).toBe('handedOff');
+    }
+  );
+
+  it('does not expose a native path as an observed filename', async () => {
+    state.downloadSingle.mockResolvedValue({
+      success: true,
+      requestedFilename: 'wanted.jpg',
+      observedFilename: 'C:\\Users\\person\\wanted.jpg',
+      filenameConforms: false,
+    });
+
+    await createDownloadHandler().handleDownload('current');
+
+    expect(state.singleOutcome).toBeNull();
+    expect(state.status).toBe('handedOff');
+  });
+
+  it('clears the prior filename on a new download and ignores an old session result', async () => {
+    state.downloadSingle.mockResolvedValueOnce({ success: true, observedFilename: 'first.jpg' });
+    const handler = createDownloadHandler();
+    await handler.handleDownload('current');
+    expect(state.singleOutcome?.observedFilename).toBe('first.jpg');
+
+    let resolveLate: ((value: unknown) => void) | undefined;
+    state.downloadSingle.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveLate = resolve;
+      })
+    );
+    const pending = handler.handleDownload('current');
+    expect(state.singleOutcome).toBeNull();
+    state.sessionRevision += 1;
+    resolveLate?.({ success: true, observedFilename: 'late.jpg', filenameConforms: false });
+    await pending;
+    expect(state.singleOutcome).toBeNull();
+    expect(state.setSingleDownloadOutcome).toHaveBeenCalledTimes(3);
   });
 
   it.each([false, true])(

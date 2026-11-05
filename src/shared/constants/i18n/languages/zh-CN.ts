@@ -108,6 +108,11 @@ export const zhCn: LanguageStrings = {
       recovery: 'Alt+Shift+V 仅在符合条件的视频点击失败后可用。',
     },
     dl: {
+      filenameNotice: {
+        label: '保存的文件名',
+        mismatch: '保存的名称与请求的名称不同。',
+        dismiss: '关闭文件名提示',
+      },
       bulkOutcome: {
         cancelRecoveryAndDismiss: '取消缺失项目恢复并关闭 ZIP 结果',
         details: 'ZIP 结果详情',
