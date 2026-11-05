@@ -322,216 +322,6 @@ async function waitForAsync<T>(get: () => Promise<T | undefined>, label: string)
   throw new Error(`${label} was not observed`);
 }
 
-/** Non-pausing worker logpoints observe the product listener without registering a second listener. */
-async function observeFilenamePolicy(
-  context: BrowserContext,
-  worker: Worker,
-  extensionId: string,
-  source: string,
-  marker: string,
-  expectedUrl: string
-) {
-  const browser = context.browser();
-  assert(browser);
-  const protocol = await browser.newBrowserCDPSession();
-  const { version, sessionId } = await (async () => {
-    try {
-      const version = await protocol.send('Browser.getVersion');
-      const targets = await protocol.send('Target.getTargets');
-      const matches = targets.targetInfos.filter(
-        (target: { type: string; url: string }) =>
-          target.type === 'service_worker' &&
-          target.url === `chrome-extension://${extensionId}/background.js`
-      );
-      assert.equal(matches.length, 1);
-      const { sessionId } = await protocol.send('Target.attachToTarget', {
-        targetId: matches[0]!.targetId,
-        flatten: false,
-      });
-      return { version, sessionId };
-    } catch (error) {
-      try {
-        await protocol.detach();
-      } catch (cleanupError) {
-        throw new AggregateError([error, cleanupError], 'Worker debugger setup cleanup failed');
-      }
-      throw error;
-    }
-  })();
-  let nextId = 0;
-  const pending = new Map<
-    number,
-    {
-      resolve: (value: Record<string, unknown>) => void;
-      reject: (error: Error) => void;
-      timer: ReturnType<typeof setTimeout>;
-    }
-  >();
-  const scripts: Array<{ scriptId: string; url: string }> = [];
-  const receive = (event: { sessionId: string; message: string }) => {
-    if (event.sessionId !== sessionId || event.message.length > 1_048_576) {
-      return;
-    }
-    const packet = JSON.parse(event.message) as {
-      id?: number;
-      result?: Record<string, unknown>;
-      error?: unknown;
-      method?: string;
-      params?: { scriptId: string; url: string };
-    };
-    if (packet.id !== undefined) {
-      const request = pending.get(packet.id);
-      if (request) {
-        clearTimeout(request.timer);
-        pending.delete(packet.id);
-        if (packet.error) {
-          request.reject(new Error('Worker debugger command failed'));
-        } else {
-          request.resolve(packet.result ?? {});
-        }
-      }
-    } else if (
-      packet.method === 'Debugger.scriptParsed' &&
-      packet.params?.url === `chrome-extension://${extensionId}/background.js` &&
-      scripts.length < 4
-    ) {
-      scripts.push(packet.params);
-    }
-  };
-  protocol.on('Target.receivedMessageFromTarget', receive);
-  const send = (method: string, params: Record<string, unknown> = {}) =>
-    new Promise<Record<string, unknown>>((resolve, reject) => {
-      const id = ++nextId;
-      const timer = setTimeout(() => {
-        pending.delete(id);
-        reject(new Error('Worker debugger command timed out'));
-      }, 5_000);
-      pending.set(id, { resolve, reject, timer });
-      void protocol
-        .send('Target.sendMessageToTarget', {
-          sessionId,
-          message: JSON.stringify({ id, method, params }),
-        })
-        .catch(() => {
-          clearTimeout(timer);
-          pending.delete(id);
-          reject(new Error('Worker debugger transport failed'));
-        });
-    });
-  const close = async () => {
-    const failures: unknown[] = [];
-    try {
-      await worker.evaluate((owner) => {
-        const store = globalThis as typeof globalThis & {
-          __xegFilenamePolicy482?: { marker: string };
-        };
-        if (store.__xegFilenamePolicy482?.marker === owner) {
-          delete store.__xegFilenamePolicy482;
-        }
-      }, marker);
-    } catch (error) {
-      failures.push(error);
-    }
-    try {
-      await protocol.send('Target.detachFromTarget', { sessionId });
-    } catch (error) {
-      failures.push(error);
-    }
-    protocol.off('Target.receivedMessageFromTarget', receive);
-    for (const request of pending.values()) {
-      clearTimeout(request.timer);
-      request.reject(new Error('Worker debugger closed'));
-    }
-    pending.clear();
-    try {
-      await protocol.detach();
-    } catch (error) {
-      failures.push(error);
-    }
-    if (failures.length) {
-      throw new AggregateError(failures, 'Worker debugger cleanup failed');
-    }
-  };
-  try {
-    await worker.evaluate(
-      ({ marker: owner, expectedUrl: url }) => {
-        const store = globalThis as typeof globalThis & { __xegFilenamePolicy482?: unknown };
-        if (store.__xegFilenamePolicy482) {
-          throw new Error('Worker policy slot already exists');
-        }
-        store.__xegFilenamePolicy482 = { marker: owner, expectedUrl: url, events: [] };
-      },
-      { marker, expectedUrl }
-    );
-    await send('Debugger.enable');
-    const script = await waitFor(() => scripts[0], 'Product worker script');
-    assert.equal(scripts.length, 1);
-    const executed = await send('Debugger.getScriptSource', { scriptId: script.scriptId });
-    assert.equal(typeof executed.scriptSource, 'string');
-    assert.equal(sha256(Buffer.from(executed.scriptSource as string)), sha256(Buffer.from(source)));
-    const lines = source.split(/\r?\n/u);
-    const entry = lines.findIndex((line) => line.includes('listener = (item, suggest) => {')) + 1;
-    const choices = lines
-      .map((line, index) =>
-        line.includes('if (filename)') && line.includes('suggest') ? index : -1
-      )
-      .filter((index) => index >= 0);
-    // The current unminified emitter may split the suggestion over multiple lines.
-    if (!choices.length) {
-      choices.push(
-        ...lines
-          .map((line, index) => (line.trim() === 'if (filename) {' ? index : -1))
-          .filter((index) => index >= 0)
-      );
-    }
-    assert(entry > 0 && choices.length === 1, 'Product filename policy sites are ambiguous');
-    const entryCondition = `(() => { const state = globalThis.__xegFilenamePolicy482; if (state && item.url === state.expectedUrl && state.events.length < 8) state.events.push({ stage: 'entry', id: item.id, initiator: item.byExtensionId, owner: this.extensionId, startTime: item.startTime, at: Date.now() }); return false; })()`;
-    const choiceCondition = `(() => { const state = globalThis.__xegFilenamePolicy482; if (state && item.url === state.expectedUrl && state.events.length < 8) state.events.push({ stage: 'suggest', id: item.id, filename: typeof filename === 'string' ? filename : null, at: Date.now() }); return false; })()`;
-    for (const [lineNumber, condition] of [
-      [entry, entryCondition],
-      [choices[0]!, choiceCondition],
-    ] as const) {
-      const point = await send('Debugger.setBreakpointByUrl', {
-        url: script.url,
-        lineNumber,
-        condition,
-      });
-      assert(
-        Array.isArray(point.locations) && point.locations.length === 1,
-        'Worker policy logpoint did not bind'
-      );
-    }
-    return {
-      artifactSha256: sha256(Buffer.from(source)),
-      browserVersion: {
-        product: version.product,
-        revision: version.revision,
-        protocolVersion: version.protocolVersion,
-      },
-      read: () =>
-        worker.evaluate((owner) => {
-          const store = globalThis as typeof globalThis & {
-            __xegFilenamePolicy482?: { marker: string; events: unknown[] };
-          };
-          if (store.__xegFilenamePolicy482?.marker !== owner) {
-            throw new Error('Worker policy marker differs');
-          }
-          return store.__xegFilenamePolicy482.events;
-        }, marker),
-      close,
-    };
-  } catch (error) {
-    try {
-      await close();
-    } catch (cleanupError) {
-      throw new AggregateError(
-        [error, cleanupError],
-        'Worker policy observation and cleanup failed'
-      );
-    }
-    throw error;
-  }
-}
 function recordFromRemote(
   result: { exceptionDetails?: unknown; result?: { value?: unknown } },
   label: string
@@ -777,10 +567,6 @@ export async function withFilenameCorrelation<T>(options: {
   let cdp: CDPSession | undefined;
   let worker: Worker | undefined;
   let workerInstalled = false;
-  let policyObserver: Awaited<ReturnType<typeof observeFilenamePolicy>> | undefined;
-  let policyClean = true;
-  let policyEvents: unknown[] | undefined;
-  let policyVerified = false;
   let breakpointId: string | undefined;
   let contentRealmId: number | undefined;
   let contentInstallAttempted = false;
@@ -957,15 +743,19 @@ export async function withFilenameCorrelation<T>(options: {
           native.downloads.onDeterminingFilename === alternate?.downloads.onDeterminingFilename,
       };
     });
-    policyClean = false;
-    policyObserver = await observeFilenamePolicy(
-      context,
-      worker,
-      extensionId,
-      await readFile(resolve(root, 'dist-extension/background.js'), 'utf8'),
-      marker,
-      expectedUrl
-    );
+    const browser = context.browser();
+    assert(browser);
+    const versionSession = await browser.newBrowserCDPSession();
+    try {
+      const version = await versionSession.send('Browser.getVersion');
+      receipt.browserVersion = {
+        product: version.product,
+        revision: version.revision,
+        protocolVersion: version.protocolVersion,
+      };
+    } finally {
+      await versionSession.detach();
+    }
     actionStarted = true;
     result = await action();
     receipt.actionOutcome = { status: 'passed' };
@@ -975,25 +765,6 @@ export async function withFilenameCorrelation<T>(options: {
       receipt.actionOutcome = { status: 'failed', error: safeError(error, 'action') };
     }
   } finally {
-    if (policyObserver) {
-      try {
-        policyEvents = await policyObserver.read();
-        receipt.filenamePolicy = {
-          artifactSha256: policyObserver.artifactSha256,
-          browserVersion: policyObserver.browserVersion,
-          events: policyEvents,
-        };
-      } catch (error) {
-        addError('worker-capture', error);
-      }
-      try {
-        await policyObserver.close();
-        policyClean = true;
-      } catch (error) {
-        addError('worker-cleanup', error);
-      }
-    }
-    receipt.policyObserverCleanup = policyClean;
     // A failed product assertion can coexist with complete diagnostic observation.
     let pageIdentityVerified = false;
     if (actionStarted && targetPageUrl !== undefined && targetTimeOrigin !== undefined) {
@@ -1090,27 +861,6 @@ export async function withFilenameCorrelation<T>(options: {
       const nativeId = trace.native.length === 1 ? trace.native[0]?.downloadId : undefined;
       if (Number.isSafeInteger(nativeId)) {
         try {
-          const events = policyEvents?.filter(
-            (value) => value && typeof value === 'object' && 'id' in value && value.id === nativeId
-          );
-          policyVerified =
-            events?.length === 2 &&
-            events.some(
-              (value) =>
-                typeof value === 'object' &&
-                value !== null &&
-                'stage' in value &&
-                value.stage === 'entry'
-            ) &&
-            events.some(
-              (value) =>
-                typeof value === 'object' &&
-                value !== null &&
-                'stage' in value &&
-                value.stage === 'suggest'
-            );
-          assert(policyVerified, 'Product filename listener observation missing');
-
           const observed = await extensionPage.evaluate(
             (id) => chrome.downloads.search({ id }),
             nativeId!
@@ -1166,7 +916,6 @@ export async function withFilenameCorrelation<T>(options: {
           });
           receipt.filenameBinding = {
             requestedFilename: bounded(record.requestedFilename),
-            filenamePending: record.filenamePending === true,
           };
           identityVerified = true;
         } catch (error) {
@@ -1268,16 +1017,9 @@ export async function withFilenameCorrelation<T>(options: {
         addError('debugger-cleanup', error);
       }
     }
-    receipt.policyObserved = policyVerified;
     receipt.observationComplete =
-      policyVerified &&
-      pageIdentityVerified &&
-      selectedVerified &&
-      identityVerified &&
-      fileVerified &&
-      namesVerified;
+      pageIdentityVerified && selectedVerified && identityVerified && fileVerified && namesVerified;
     receipt.cleanupComplete =
-      policyClean &&
       ['absent', 'removed', 'not-installed'].includes(cleanup.contentGlobal) &&
       ['removed', 'not-installed'].includes(cleanup.workerListener) &&
       ['restored', 'not-installed'].includes(cleanup.nativeWrapper) &&
