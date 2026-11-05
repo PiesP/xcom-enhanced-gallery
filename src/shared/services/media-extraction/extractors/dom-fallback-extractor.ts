@@ -38,6 +38,7 @@ import {
 } from '@shared/utils/media/media-element-utils';
 import { getImageDownloadSource } from '@shared/utils/media/media-source';
 import { isVideoPreview, isVideoThumbnailUrl } from '@shared/utils/media/video-preview';
+import { isHostMatching, tryParseUrl, TWITTER_HOSTS } from '@shared/utils/url/host';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
 
 /**
@@ -51,6 +52,43 @@ function findAllMediaInContainer(container: HTMLElement): MediaElement[] {
   return Array.from(container.querySelectorAll<HTMLElement>(`${cdnSelector}, video`)).filter(
     isMediaElement
   );
+}
+
+function getOwnedPhotoOrdinal(element: MediaElement, tweetInfo: TweetInfo): number | null {
+  if (!(element instanceof HTMLImageElement)) {
+    return null;
+  }
+  const link = element.closest<HTMLAnchorElement>('a[href]');
+  if (!link || link.querySelectorAll('img, video').length !== 1) {
+    return null;
+  }
+  const url = tryParseUrl(link.getAttribute('href'));
+  if (url?.protocol !== 'https:' || !isHostMatching(url, TWITTER_HOSTS)) {
+    return null;
+  }
+  const match = url.pathname.match(/^\/([^/]+)\/status\/(\d+)\/photo\/([1-9]\d*)\/?$/u);
+  if (
+    match?.[2] !== tweetInfo.tweetId ||
+    match[1]?.toLowerCase() !== tweetInfo.username.toLowerCase()
+  ) {
+    return null;
+  }
+  const ordinal = Number(match[3]) - 1;
+  return Number.isSafeInteger(ordinal) ? ordinal : null;
+}
+
+function getSourceFilenameKey(url: string): string | null {
+  const source =
+    getMediaSourceKey(url)?.replace(/:(?:thumb|small|medium|large|orig)$/iu, '') ?? null;
+  if (!source) {
+    return null;
+  }
+  // Hash the canonical CDN path; display size and query variants retain one identity.
+  let hash = 0xcbf29ce484222325n;
+  for (let i = 0; i < source.length; i++) {
+    hash = BigInt.asUintN(64, (hash ^ BigInt(source.charCodeAt(i))) * 0x100000001b3n);
+  }
+  return `source-${hash.toString(16).padStart(16, '0')}`;
 }
 
 /**
@@ -90,6 +128,8 @@ function createMediaInfoFromDOM(
       mediaType === 'image'
         ? getImageDownloadSource(mediaUrl, 'dom')
         : { url: mediaUrl, quality: 'observed' as const, provenance: 'dom' as const };
+    const attachmentOrdinal = getOwnedPhotoOrdinal(element, tweetInfo);
+    const attachmentSourceKey = getSourceFilenameKey(mediaUrl);
 
     // Extract dimensions if available
     let width: number | undefined;
@@ -112,6 +152,8 @@ function createMediaInfoFromDOM(
       url: mediaUrl,
       type: mediaType,
       filename: '',
+      ...(attachmentOrdinal !== null ? { attachmentOrdinal } : {}),
+      ...(attachmentSourceKey ? { attachmentSourceKey } : {}),
       tweetUsername: tweetInfo.username,
       tweetId: tweetInfo.tweetId,
       tweetUrl: tweetInfo.tweetUrl,

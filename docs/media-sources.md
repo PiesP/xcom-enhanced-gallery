@@ -38,6 +38,25 @@ video dimensions. Click-time source evidence, requested/quoted owner separation,
 stale-click checks and originating-post filename attribution still govern
 selection; a candidate list is not a second owner-discovery mechanism.
 
+## Attachment filenames
+
+Single downloads and ZIP entries use the attachment's owning handle and post ID,
+followed by a zero-based owner-local attachment number when the API supplies its
+full media list or a uniquely bound, same-owner `/photo/N` DOM link establishes
+the position. Sorting the gallery, opening A's quote of B, or filtering an
+unavailable earlier attachment does not renumber B's attachments. A mixed-owner
+ZIP keeps gallery order, while each entry keeps its own owner and attachment
+identity; the ZIP archive name follows the first item in gallery order,
+independently of the active selection.
+
+If DOM recovery sees only part of a post and has no unambiguous position link,
+the filename uses `source-` plus a 16-digit hexadecimal key derived from the
+validated CDN path. Display-size and query variants of one image share the key;
+different sources are separated by a 64-bit hash rather than a DOM candidate
+position. A hash collision remains theoretically possible, so this key does
+not assert the missing original position or guarantee equality with an API
+filename. The selected item and preferred save URL are unchanged by naming.
+
 ## HLS feasibility decision
 
 HLS playback and standalone HLS downloads are deferred. The current flow

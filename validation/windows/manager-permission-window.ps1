@@ -39,6 +39,10 @@ public static class XegPermissionWindow {
     [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr hwnd);
     [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint pid);
     [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+    public static uint ProcessIdOf(IntPtr hwnd) {
+        uint pid;
+        return hwnd != IntPtr.Zero && GetWindowThreadProcessId(hwnd, out pid) != 0 ? pid : 0;
+    }
     public static IntPtr[] OwnedVisibleWindows(uint expectedPid) {
         var found = new List<IntPtr>();
         int visited = 0;
@@ -201,6 +205,18 @@ try {
     $before = Test-OwnedProcess
     $windows = [XegPermissionWindow]::OwnedVisibleWindows([uint32]$BrowserPid)
     $foreground = [XegPermissionWindow]::GetForegroundWindow()
+    $windowOwnership = @{
+        browserPid = [int]$before.ProcessId;
+        creationUtcTicks = ([datetime]$before.CreationDate).ToUniversalTime().Ticks.ToString();
+        browserSessionId = [int]$before.SessionId;
+        observerSessionId = [Diagnostics.Process]::GetCurrentProcess().SessionId;
+        ownedVisibleWindowCount = $windows.Count;
+        ownedVisibleHandles = @($windows | ForEach-Object { $_.ToInt64().ToString() });
+        foregroundHandle = $foreground.ToInt64().ToString();
+        foregroundPid = [XegPermissionWindow]::ProcessIdOf($foreground);
+        foregroundIsOwned = [bool]($windows -contains $foreground)
+    }
+    $receipt.windowOwnership = $windowOwnership
     if ($windows.Count -eq 0 -or $foreground -eq [IntPtr]::Zero -or
         -not ($windows -contains $foreground)) { throw 'owned-window-not-foreground' }
     Add-Type -AssemblyName UIAutomationClient
@@ -268,6 +284,7 @@ try {
     }
     $receipt = @{ status = 'captured'; capture = 'uia-only'; screenshot = 'not-captured';
         permissionGrantAttempted = $false;
+        windowOwnership = $windowOwnership;
         browserPid = [int]$before.ProcessId;
         creationUtcTicks = ([datetime]$before.CreationDate).ToUniversalTime().Ticks.ToString();
         browserSessionId = [int]$before.SessionId;
