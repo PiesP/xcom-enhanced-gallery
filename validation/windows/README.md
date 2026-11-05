@@ -238,8 +238,10 @@ controlled B1 source failure is armed at both context and native transports,
 and the observed 404 route is recorded. It then requires a partial ZIP with C1/B2 and a
 separate failed-only ZIP containing the assigned B1 name and original bytes.
 The existing C 403 recovery also checks its exact source-key filename and
-original WebP bytes. All of these installed assertions are prepared in source
-but have not run in a VM, so runtime acceptance remains pending.
+original WebP bytes. An executed run must bind these assertions to its source
+and installed artifact, retain the observed names and content checks, and
+report scoped cleanup. Prepared assertions alone do not establish Windows
+runtime acceptance.
 
 The ignored `validation/windows/inputs/attachment-filenames.json` selector
 (`{"scenario":"attachment-filenames"}`) runs the focused extension cycle.
