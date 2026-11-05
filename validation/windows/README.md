@@ -254,7 +254,8 @@ visible `/photo/2` save that checks the owner-local filename and native bytes.
 With `--browser chrome --installation extension`, this cycle additionally
 installs a separate task-owned filename-decision control extension after the
 XEG-only cases. It repeats one known B1 Download-button save with a passive
-`suggest()` and separate `suggest(undefined)` control, an explicit CDN-basename suggestion, and that same suggestion with
+`suggest()` and separate `suggest(undefined)` control, an explicit distinct
+`control-override-482.jpg` suggestion, and that same suggestion with
 `conflictAction: 'uniquify'`. The helper filters by the XEG extension ID and the
 exact synthetic source URL. Each case records the matching native ID,
 tentative/suggested/final basenames, initiating extension, MIME, and original
@@ -264,8 +265,12 @@ worker options are captured. An intentional active override is an arbitration
 observation, not filename conformance. Unexpected completed basenames retain
 their native-item receipt and a byte-checked copy under a flat neutral `.bin`
 evidence name before the fixture fails and profile cleanup runs. The browser-reported
-basename remains separate; the original download is never renamed. Passive controls require the intended native basename. Active controls intentionally
-suggest the CDN basename and record that override separately from conformance.
+basename remains separate; the original download is never renamed. Chrome
+acceptance keeps automatic saving and checks the visible actual-filename
+notice against the native item and disk file. Passive controls permit the intended
+or known CDN fallback basename while recording conformance separately. Active
+controls require the distinct suggested basename. A mismatch must remain a completed
+transfer with a notice, without another save or overwrite.
 Helper observations are read before uninstallation even when a case fails.
 The preexisting-file control above runs before this helper is installed and
 preserves its sentinel. The helper is uninstalled and its owned files removed

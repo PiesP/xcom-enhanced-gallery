@@ -5569,6 +5569,7 @@ async function runAttachmentFilenameCycle({
   filenameControlFactory,
   runFilenameDiagnostic,
   diagnosticOnly = false,
+  requireNativeFilenameNotice = false,
 }: {
   page: Page;
   extensionPage: Page;
@@ -5581,6 +5582,7 @@ async function runAttachmentFilenameCycle({
   routes: Awaited<ReturnType<typeof installFixtureRoutes>>;
   evidence: CompactEvidence;
   diagnosticOnly?: boolean;
+  requireNativeFilenameNotice?: boolean;
   initiatingExtensionId?: string;
   filenameControlFactory?: () => Promise<FilenameDecisionControl>;
   runFilenameDiagnostic?: <T>(
@@ -5682,6 +5684,31 @@ async function runAttachmentFilenameCycle({
       const { bytes: saved } = await readExactDownloadFile(item.filename, bytes.length);
       observation.file = imageReceipt(saved);
       try {
+        if (requireNativeFilenameNotice) {
+          const notice = gallery.locator('[data-gallery-element="download-filename-notice"]');
+          await notice.waitFor({ state: 'visible', timeout: 15_000 });
+          assert.equal(await notice.locator('bdi').textContent(), basename(item.filename));
+          const conforms = conflict || basename(item.filename) === expectedApplicationFilename;
+          assert.equal(await notice.getAttribute('data-filename-conforms'), String(conforms));
+          const text = await notice.textContent();
+          assert(text?.includes('Saved filename'));
+          assert.equal(
+            text?.includes('The saved name differs from the requested name.'),
+            !conforms
+          );
+          await gallery.locator('[data-download-status="handedOff"]').waitFor({ state: 'visible' });
+          observation.notice = {
+            visible: true,
+            observedFilename: basename(item.filename),
+            filenameConforms: conforms,
+            transferStatus: 'handedOff',
+          };
+          if (!conforms || conflict) {
+            const screenshot = `filename-notice-${item.id}.png`;
+            await page.screenshot({ path: join(output, screenshot) });
+            observation.noticeScreenshot = screenshot;
+          }
+        }
         assert(saved.equals(bytes), `${assignedName} saved bytes differ`);
         if (initiatingExtensionId) {
           assert.equal(item.byExtensionId, initiatingExtensionId, 'Native initiator differs');
@@ -5999,7 +6026,7 @@ async function runAttachmentFilenameCycle({
           if ((passive || mode === 'filename') && runFilenameDiagnostic) {
             const label = passive ? mode : 'active-suggestion';
             const diagnostic = await runFilenameDiagnostic(label, () =>
-              single(gallery, observedName, b1Url, images[1], false, b1, diagnosticOnly)
+              single(gallery, observedName, b1Url, images[1], false, b1, passive || diagnosticOnly)
             );
             const diagnosticControl = await control.readObservations();
             assert.equal(diagnosticControl.overflow, false);
@@ -6025,7 +6052,7 @@ async function runAttachmentFilenameCycle({
             images[1],
             false,
             b1,
-            diagnosticOnly
+            passive || diagnosticOnly
           );
           const observation = await control.readObservations();
           assert.equal(observation.overflow, false);
@@ -6039,12 +6066,31 @@ async function runAttachmentFilenameCycle({
           assert.equal(matching[0]?.mode, mode);
           assert.equal(matching[0]?.suggestedFilename, passive ? null : observedName);
           assert.equal(matching[0]?.conflictAction, mode === 'conflict-action' ? 'uniquify' : null);
+          let noticeDismissed = false;
+          if (mode === 'passive' && requireNativeFilenameNotice) {
+            const knownNoticeIds = (await queryDownloads(extensionPage)).map(({ id }) => id);
+            const notice = gallery.locator('[data-gallery-element="download-filename-notice"]');
+            await notice.getByRole('button', { name: 'Dismiss filename notice' }).click();
+            await notice.waitFor({ state: 'detached' });
+            assert.deepEqual(
+              (await queryDownloads(extensionPage)).map(({ id }) => id),
+              knownNoticeIds,
+              'Dismissing the filename notice created another download'
+            );
+            assert(
+              (
+                await readExactDownloadFile(join(downloads, saved.filename), images[1].length)
+              ).bytes.equals(images[1])
+            );
+            noticeDismissed = true;
+          }
           (controlEvidence.cases as unknown[]).push({
             mode,
             saved,
             suggestion: matching[0],
             filenameConforms: saved.filename === b1,
             controlExpectationMet: saved.filename === observedName,
+            noticeDismissed,
           });
           await retire(saved, `chrome-${mode}.jpg`, images[1]);
         }
@@ -6136,6 +6182,7 @@ async function runAttachmentFilenameFocusedProbe({
       evidence,
       initiatingExtensionId: extensionId,
       diagnosticOnly,
+      requireNativeFilenameNotice: browserName === 'chrome',
       ...(browserName === 'chrome'
         ? {
             filenameControlFactory: () =>

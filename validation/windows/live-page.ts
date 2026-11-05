@@ -525,7 +525,7 @@ export function sanitizeLiveImageClickEvent(value: unknown): LiveImageClickEvent
   }
   const tag = (raw: unknown): string =>
     typeof raw === 'string' && LIVE_IMAGE_CLICK_TAGS.has(raw) ? raw : 'OTHER';
-  const path = record.path.map((entry: unknown) => {
+  const path = record.path.map((entry: unknown): LiveImageClickEvent['path'][number] => {
     const item =
       entry && typeof entry === 'object' && !Array.isArray(entry)
         ? (entry as Record<string, unknown>)
