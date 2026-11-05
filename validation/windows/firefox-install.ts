@@ -770,8 +770,9 @@ export async function runFirefoxInstallation({
       );
       if (collision) {
         assert.notEqual(native.basename, EXPECTED_NAME, 'Filename collision overwrote original');
-        assert(
-          /^testuser_1234567890123456789_0 \([1-9]\d*\)\.jpg$/u.test(native.basename),
+        assert.equal(
+          native.basename,
+          'testuser_1234567890123456789_0(1).jpg',
           'Unexpected collision name'
         );
         const first = (receipt.scenarios as Array<{ native?: { basename?: string } }>)[0]?.native;
