@@ -11,6 +11,7 @@ import {
   ZIP_MAX_ARCHIVE_BYTES,
   ZIP_MAX_ENTRY_BYTES,
 } from '@constants/performance';
+import { appendFilenameSuffix } from '@shared/core/filename/filename-utils';
 import { schedulerYield } from '@piesp/browser-core/util';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { getUserCancelledAbortErrorFromSignal } from '@shared/error/cancellation';
@@ -38,7 +39,7 @@ import {
   type OwnedBlob,
 } from './live-byte-budget';
 
-type UniqueFilenameFactory = (desired: string) => string;
+type UniqueFilenameFactory = (desired: string, identitySuffix?: string) => string;
 
 type ReleaseReservation = () => void;
 
@@ -121,24 +122,22 @@ class RetainedByteBudget {
 const ensureUniqueFilenameFactory = (): UniqueFilenameFactory => {
   const usedNames = new Set<string>();
   const baseCounts = new Map<string, number>();
-  return (desired: string): string => {
-    if (!usedNames.has(desired)) {
-      usedNames.add(desired);
-      baseCounts.set(desired, 0);
+  return (desired: string, identitySuffix = ''): string => {
+    const desiredKey = desired.toLowerCase();
+    if (!usedNames.has(desiredKey)) {
+      usedNames.add(desiredKey);
+      baseCounts.set(desiredKey, 0);
       return desired;
     }
-    const lastDot = desired.lastIndexOf('.');
-    const name = lastDot > 0 ? desired.slice(0, lastDot) : desired;
-    const ext = lastDot > 0 ? desired.slice(lastDot) : '';
-    const baseKey = desired;
+    const baseKey = desiredKey;
     let count = baseCounts.get(baseKey) ?? 0;
     let candidate = '';
     do {
       count += 1;
-      candidate = `${name}-${count}${ext}`;
-    } while (usedNames.has(candidate));
+      candidate = appendFilenameSuffix(desired, `-${count}`, identitySuffix);
+    } while (usedNames.has(candidate.toLowerCase()));
     baseCounts.set(baseKey, count);
-    usedNames.add(candidate);
+    usedNames.add(candidate.toLowerCase());
     return candidate;
   };
 };
@@ -190,7 +189,9 @@ export async function downloadAsZip(
   const blobLeases: LiveByteLease[] = [];
   throwIfAborted(abortSignal);
   const ensureUniqueFilename = ensureUniqueFilenameFactory();
-  const assignedFilenames = items.map((item) => ensureUniqueFilename(item.desiredName));
+  const assignedFilenames = items.map((item) =>
+    ensureUniqueFilename(item.desiredName, item.identitySuffix)
+  );
   // EOCD plus its final Blob snapshot are admitted before the writer can allocate them.
   partLeases.push(liveBudget.reserve(22));
   try {

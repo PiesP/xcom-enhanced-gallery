@@ -12,6 +12,8 @@ import type { LiveByteBudget, OwnedBlob } from './live-byte-budget';
 export interface OrchestratorItem {
   readonly url: string;
   readonly desiredName: string;
+  /** Generator-owned post/attachment suffix retained when ZIP names collide. */
+  readonly identitySuffix?: string;
   readonly inputKind?: ZipInputKind;
   readonly sourceUnavailable?: boolean;
   readonly expectedSizeBytes?: number | undefined;

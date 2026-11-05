@@ -77,6 +77,39 @@ storage and handoffs. Deterministic installed Edge fixtures compare small
 display payloads with original single-save and ZIP entry bytes; those fixtures
 do not prove live-X authentication, DOM availability or production-CDN access.
 
+## Saved filename boundary
+
+Single-media, ZIP-entry and archive filenames use one final basename policy.
+The validator bounds its output to 255 UTF-16 code units, without splitting a
+Unicode surrogate pair. This is an application convention, not a universal
+filesystem or UTF-8 byte limit. It replaces Windows-reserved punctuation,
+ASCII controls (including NUL and newline), DEL and lone surrogates; trims
+leading/trailing spaces and periods; and prefixes reserved device basenames
+with `_`. The device list includes `CON`, `PRN`, `AUX`, `NUL`, `COM1`–`COM9`,
+`LPT1`–`LPT9`, and the documented `COM`/`LPT` superscript-digit forms, with
+or without an extension. These rules follow [Microsoft's file naming
+guidance](https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file).
+
+Generated names reserve the verified media extension and post/attachment
+identity before shortening the author or fallback prefix. ZIP duplicate
+allocation then reserves `-N` while retaining that generator-owned identity;
+it compares assigned names without case to avoid collisions on common Windows
+extraction paths, including an already present `-1` name. Assigned failed-entry
+names are reused exactly during recovery, and supplementary archives reserve
+`-missing[-N].zip` before truncation. Explicit caller-provided names retain up
+to 32 UTF-16 units from the end of an overlong stem as a best-effort way to
+keep a trailing identifier; arbitrary text in that tail is not treated as a
+verified post or attachment identity. Reapplying finalization to an assigned
+name is idempotent.
+
+Ordinary extracted media currently starts with an empty filename and usually
+produces short handle/post/ordinal names. The length, control-character and
+device-name cases are supported utility and caller boundaries; no previous
+Windows save failure is inferred from their unit tests. Parsed-ZIP tests cover
+entry bytes, duplicate names and failed-entry recovery. Exact native saved
+basenames and Windows filesystem behavior remain unverified until the prepared
+Windows validation environment is available.
+
 ## In-gallery limitations
 
 A gallery recovered only from the clicked visible tile retains that scope for

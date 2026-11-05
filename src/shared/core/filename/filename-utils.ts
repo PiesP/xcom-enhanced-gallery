@@ -29,14 +29,109 @@ interface MediaMetadata {
   readonly tweetId: string | null;
 }
 
+export interface PlannedMediaFilename {
+  readonly filename: string;
+  /** Generated post/attachment identity to retain when a ZIP collision adds -N. */
+  readonly identitySuffix: string;
+}
+
 // Internal pure functions
 
-function sanitize(name: string): string {
-  const sanitized = name
-    .replace(/[<>:"/\\|?*]/g, '_')
-    .replace(/^[\s.]+|[\s.]+$/g, '')
-    .slice(0, 255);
-  return sanitized || 'media';
+const MAX_BASENAME_UNITS = 255;
+const SAFE_EXTENSION = /\.([a-z0-9]{1,16})$/i;
+const RESERVED_DEVICE = /^(?:con|prn|aux|nul|com[1-9¹²³]|lpt[1-9¹²³])(?:\.|$)/i;
+
+/** Keep a valid Unicode prefix within this validator's 255 UTF-16-unit convention. */
+function prefixWithinUnits(value: string, limit: number): string {
+  let result = '';
+  for (const character of value) {
+    if (result.length + character.length > limit) {
+      break;
+    }
+    result += character;
+  }
+  return result;
+}
+
+function suffixWithinUnits(value: string, limit: number): string {
+  let result = '';
+  const characters = Array.from(value);
+  for (let index = characters.length - 1; index >= 0; index--) {
+    const character = characters[index];
+    if (character === undefined) {
+      break;
+    }
+    if (character.length + result.length > limit) {
+      break;
+    }
+    result = character + result;
+  }
+  return result;
+}
+
+function cleanPart(value: string): string {
+  // Array.from exposes lone surrogates as one-unit characters, which cannot form valid Unicode.
+  const wellFormed = Array.from(value, (character) =>
+    character.length === 1 && /[\uD800-\uDFFF]/.test(character) ? '_' : character
+  ).join('');
+  /* oxlint-disable no-control-regex -- Windows file names exclude ASCII control characters. */
+  return wellFormed.replace(/[<>:"/\\|?*\u0000-\u001f\u007f]/g, '_');
+  /* oxlint-enable no-control-regex */
+}
+
+/** Finalize one basename after reserving an optional identity/collision suffix and extension. */
+export function finalizeFilename(
+  name: string,
+  options: {
+    readonly suffix?: string;
+    readonly extension?: string;
+    readonly preserveTailUnits?: number;
+  } = {}
+): string {
+  const cleaned = cleanPart(name).replace(/^[\s.]+|[\s.]+$/g, '');
+  const matchedExtension = options.extension === undefined ? cleaned.match(SAFE_EXTENSION) : null;
+  const requestedExtension = cleanPart(options.extension ?? '').replace(/^\.+|\.+$/g, '');
+  const extension =
+    options.extension === undefined
+      ? (matchedExtension?.[0] ?? '')
+      : /^[a-z0-9]{1,16}$/i.test(requestedExtension)
+        ? `.${requestedExtension}`
+        : '';
+  const rawStem = matchedExtension ? cleaned.slice(0, -extension.length) : cleaned;
+  const stem = rawStem.replace(/^[\s.]+|[\s.]+$/g, '') || 'media';
+  const suffix = prefixWithinUnits(
+    cleanPart(options.suffix ?? '').replace(/[\s.]+$/g, ''),
+    MAX_BASENAME_UNITS - extension.length - 1
+  ).replace(/[\s.]+$/g, '');
+  const suffixAndExtension = `${suffix}${extension}`;
+  const reservedPrefix = RESERVED_DEVICE.test(`${stem}${suffixAndExtension}`) ? '_' : '';
+  const available = Math.max(
+    1,
+    MAX_BASENAME_UNITS - reservedPrefix.length - suffixAndExtension.length
+  );
+  const requestedTailUnits = options.preserveTailUnits ?? 0;
+  const tailUnits = Math.min(
+    Number.isFinite(requestedTailUnits) ? Math.max(0, Math.floor(requestedTailUnits)) : 0,
+    Math.floor(available / 2)
+  );
+  const tail = stem.length > available ? suffixWithinUnits(stem, tailUnits) : '';
+  const boundedStem =
+    prefixWithinUnits(stem, available - tail.length).replace(/[\s.]+$/g, '') + tail ||
+    prefixWithinUnits('media', available);
+  return `${reservedPrefix}${boundedStem}${suffixAndExtension}`;
+}
+
+/** Add a ZIP collision suffix while retaining the generator-owned identity at the tail. */
+export function appendFilenameSuffix(name: string, suffix: string, identitySuffix = ''): string {
+  const extension = name.match(SAFE_EXTENSION)?.[0] ?? '';
+  const stem = extension ? name.slice(0, -extension.length) : name;
+  const identity = identitySuffix && stem.endsWith(identitySuffix) ? identitySuffix : '';
+  const prefix = identity ? stem.slice(0, -identity.length) : stem;
+  return finalizeFilename(prefix, {
+    suffix: `${identity}${suffix}`,
+    extension: extension.slice(1),
+    preserveTailUnits: identity ? 0 : 32,
+  });
 }
 
 function resolveNowMs(nowMs?: number): number {
@@ -141,9 +236,22 @@ function resolveMetadata(media: MediaInfo, fallbackUsername?: string | null): Me
  * @returns Sanitized filename string
  */
 export function generateMediaFilename(media: MediaInfo, options: FilenameOptions = {}): string {
+  return planMediaFilename(media, options).filename;
+}
+
+/** Keep generated post/attachment identity available to ZIP duplicate allocation. */
+export function planMediaFilename(
+  media: MediaInfo,
+  options: FilenameOptions = {}
+): PlannedMediaFilename {
   try {
     if (media.filename) {
-      return sanitize(media.filename);
+      // Explicit names may already carry an attachment identity; retain their tail without
+      // treating an arbitrary filename substring as trusted generated metadata.
+      return {
+        filename: finalizeFilename(media.filename, { preserveTailUnits: 32 }),
+        identitySuffix: '',
+      };
     }
 
     const nowMs = resolveNowMs(options.nowMs);
@@ -152,18 +260,36 @@ export function generateMediaFilename(media: MediaInfo, options: FilenameOptions
     const { username, tweetId } = resolveMetadata(media, options.fallbackUsername);
 
     if (username && tweetId) {
-      return sanitize(`${username}_${tweetId}_${index}.${extension}`);
+      const identitySuffix = cleanPart(`_${tweetId}_${index}`);
+      return {
+        filename: finalizeFilename(username, { suffix: identitySuffix, extension }),
+        identitySuffix,
+      };
     }
 
     if (tweetId && /^\d+$/.test(tweetId)) {
-      return sanitize(`tweet_${tweetId}_${index}.${extension}`);
+      const identitySuffix = cleanPart(`_${tweetId}_${index}`);
+      return {
+        filename: finalizeFilename('tweet', { suffix: identitySuffix, extension }),
+        identitySuffix,
+      };
     }
 
     const prefix = options.fallbackPrefix ?? 'media';
-    return sanitize(`${prefix}_${nowMs}_${index}.${extension}`);
+    const identitySuffix = cleanPart(`_${nowMs}_${index}`);
+    return {
+      filename: finalizeFilename(prefix, { suffix: identitySuffix, extension }),
+      identitySuffix,
+    };
   } catch {
     const nowMs = resolveNowMs(options.nowMs);
-    return `media_${nowMs}.${options.extension || 'jpg'}`;
+    return {
+      filename: finalizeFilename('media', {
+        suffix: `_${nowMs}`,
+        extension: options.extension || 'jpg',
+      }),
+      identitySuffix: `_${nowMs}`,
+    };
   }
 }
 
@@ -183,13 +309,13 @@ export function generateZipFilename(
     if (firstItem) {
       const { username, tweetId } = resolveMetadata(firstItem);
       if (username && tweetId) {
-        return sanitize(`${username}_${tweetId}.zip`);
+        return finalizeFilename(username, { suffix: `_${tweetId}`, extension: 'zip' });
       }
     }
 
     const prefix = options.fallbackPrefix ?? 'xcom_gallery';
     const nowMs = resolveNowMs(options.nowMs);
-    return sanitize(`${prefix}_${nowMs}.zip`);
+    return finalizeFilename(prefix, { suffix: `_${nowMs}`, extension: 'zip' });
   } catch {
     const nowMs = resolveNowMs(options.nowMs);
     return `download_${nowMs}.zip`;
