@@ -2790,11 +2790,17 @@ async function runFixture(
         'userscript owner-local filename original'
       );
       assert.equal(transport.sha256, sha256(imageAt(0)));
+      const artifact = 'userscript-attachment-photo-2.jpg';
+      await writeFile(join(output, artifact), saved.bytes, { flag: 'wx' });
       result.downloads.push({ kind: 'owner-local-photo-2', ...saved, bytes: saved.bytes.length });
       result.cases.attachmentFilename = {
         status: 'passed',
         requestedName,
         nativeName: saved.filename,
+        artifact,
+        bytes: saved.bytes.length,
+        sha256: saved.sha256,
+        nativeId: saved.nativeId,
         transport,
       };
       result.status = 'passed';
