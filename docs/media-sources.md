@@ -46,7 +46,8 @@ full media list or a uniquely bound, same-owner `/photo/N` DOM link establishes
 the position. Sorting the gallery, opening A's quote of B, or filtering an
 unavailable earlier attachment does not renumber B's attachments. A mixed-owner
 ZIP keeps gallery order, while each entry keeps its own owner and attachment
-identity; the ZIP archive name follows the first displayed item's owner.
+identity; the ZIP archive name follows the first item in gallery order,
+independently of the active selection.
 
 If DOM recovery sees only part of a post and has no unambiguous position link,
 the filename uses `source-` plus a 16-digit hexadecimal key derived from the

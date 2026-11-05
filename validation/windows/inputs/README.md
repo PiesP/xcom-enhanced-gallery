@@ -1,5 +1,18 @@
 # Optional Windows artifact fixture selector
 
+For the focused #482 installed filename scenario, create ignored
+`attachment-filenames.json` with exactly:
+
+```json
+{"scenario":"attachment-filenames"}
+```
+
+With `--installation extension`, this runs the owned A/B/C quote, DOM, ZIP,
+conflict and failed-only recovery cycle. With `--installation userscript`, it
+runs a smaller manager-backed visible `/photo/2` save and checks the native
+filename, source and bytes. Remove the selector after the attempt. Neither
+route runs against live X.
+
 For explicit installed-extension acceptance on public X statuses, create the
 ignored `live-acceptance.json` file here with exactly:
 
