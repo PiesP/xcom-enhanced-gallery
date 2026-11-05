@@ -237,7 +237,7 @@ describe('Node script import boundary', () => {
         '--experimental-strip-types',
         '--input-type=module',
         '-e',
-        "await import('./validation/windows/live-page.ts');",
+        "await import('./validation/windows/live-page.ts'); await import('./validation/windows/video-save-format-profile.ts');",
       ],
       { cwd: root, encoding: 'utf8' }
     );

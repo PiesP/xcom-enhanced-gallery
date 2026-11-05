@@ -1,5 +1,20 @@
 # Optional Windows artifact fixture selector
 
+To check issue #484's video save format through the installed Chrome/Edge
+extension, create the ignored `video-save-format.json` file here with exactly:
+
+```json
+{"scenario":"video-save-format"}
+```
+
+Run `vmctl.py` with `--installation extension` and no live URLs. This focused
+owned fixture denies the provider response, then clicks a direct MP4 and three
+unsupported or ambiguous video sources. It checks the direct MP4's native
+filename and bytes, a mixed image/MP4 ZIP's entry names, CRCs and bytes, and
+that the rejected sources open no gallery or native save. The source-bound
+receipt and copied files are retained outside Git. This does not establish
+live X behavior. Remove the selector after the attempt.
+
 For explicit installed-extension acceptance on public X statuses, create the
 ignored `live-acceptance.json` file here with exactly:
 

@@ -75,8 +75,20 @@ function createMediaInfoFromDOM(
     if (!mediaUrl || !isValidMediaUrl(mediaUrl)) {
       return null;
     }
-    if (element instanceof HTMLVideoElement && new URL(mediaUrl).hostname !== 'video.twimg.com') {
-      return null;
+    if (element instanceof HTMLVideoElement) {
+      const videoUrl = new URL(mediaUrl);
+      const formats = videoUrl.searchParams.getAll('format');
+      // A DOM video can play a playlist or an unknown source, but neither is a
+      // verified direct download. The filename code trusts ?format first, so a
+      // conflicting or ambiguous query must not relabel a selected MP4 path.
+      if (
+        videoUrl.hostname !== 'video.twimg.com' ||
+        !/\.mp4$/i.test(videoUrl.pathname) ||
+        formats.length > 1 ||
+        (formats.length === 1 && formats[0]?.toLowerCase() !== 'mp4')
+      ) {
+        return null;
+      }
     }
 
     if (

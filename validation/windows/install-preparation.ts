@@ -74,6 +74,8 @@ export const EXPERIENCE_TWEET_ID = '4666000000000000002';
 
 export const EXPERIENCE_FIXTURE_URL = `https://x.com/experience/status/${EXPERIENCE_TWEET_ID}`;
 
+export const VIDEO_FORMAT_FIXTURE_URL = 'https://x.com/format_fixture/status/4666000000000000484';
+
 export const PANEL_OWNER_A_ID = '4666000000000000003';
 export const PANEL_OWNER_B_ID = '4666000000000000004';
 export const PANEL_OWNERSHIP_FIXTURE_URL = `https://x.com/experience_a/status/${PANEL_OWNER_A_ID}`;
@@ -310,6 +312,10 @@ export async function installFixtureRoutes(
   );
   const unmarkedVideoHtml = await readFile(
     join(root, 'test/e2e/fixtures/installed-unmarked-video-page.html'),
+    'utf8'
+  );
+  const videoFormatHtml = await readFile(
+    join(root, 'test/e2e/fixtures/installed-video-save-format-page.html'),
     'utf8'
   );
   const rapidVideoHtml = await readFile(
@@ -694,39 +700,41 @@ export async function installFixtureRoutes(
                   .replaceAll('/outer_one/status/', '/delayed_host/status/')
               : url.pathname === '/quote_one/status/9111111111111111111'
                 ? unmarkedVideoHtml
-                : url.pathname === `/rapid_a/status/${RAPID_CLICK_A}`
-                  ? rapidVideoHtml
-                  : creditControlsRoute
-                    ? quotedHtml.replace(
-                        '<body data-quote-case="recognized">',
-                        `<body data-quote-case="${CREDIT_CONTROLS_CASE.route}">`
-                      )
-                    : quotedCase
-                      ? quotedCase.name === 'public-preplayer'
-                        ? preplayerHtml
-                        : (quotedCase.name === 'unmarked-no-outer'
-                            ? noOuterHtml
-                            : quotedHtml
-                          ).replace(
-                            '<body data-quote-case="recognized">',
-                            `<body data-quote-case="${quotedCase.route}">`
-                          )
-                      : url.pathname === new URL(PANEL_OWNERSHIP_FIXTURE_URL).pathname &&
-                          experienceImages
-                        ? panelOwnershipHtml
-                        : url.pathname === new URL(EXPERIENCE_FIXTURE_URL).pathname &&
+                : url.pathname === new URL(VIDEO_FORMAT_FIXTURE_URL).pathname
+                  ? videoFormatHtml
+                  : url.pathname === `/rapid_a/status/${RAPID_CLICK_A}`
+                    ? rapidVideoHtml
+                    : creditControlsRoute
+                      ? quotedHtml.replace(
+                          '<body data-quote-case="recognized">',
+                          `<body data-quote-case="${CREDIT_CONTROLS_CASE.route}">`
+                        )
+                      : quotedCase
+                        ? quotedCase.name === 'public-preplayer'
+                          ? preplayerHtml
+                          : (quotedCase.name === 'unmarked-no-outer'
+                              ? noOuterHtml
+                              : quotedHtml
+                            ).replace(
+                              '<body data-quote-case="recognized">',
+                              `<body data-quote-case="${quotedCase.route}">`
+                            )
+                        : url.pathname === new URL(PANEL_OWNERSHIP_FIXTURE_URL).pathname &&
                             experienceImages
-                          ? experienceHtml
-                          : url.pathname === new URL(QUALITY_FIXTURE_URL).pathname
-                            ? extensionHtml
-                                .replaceAll(TWEET_ID, QUALITY_TWEET_ID)
-                                .replaceAll('testuser', 'qualityuser')
-                            : url.pathname === new URL(PUBLIC_FIXTURE_URL).pathname
-                              ? html.replace(
-                                  '<body data-fixture-route="classic">',
-                                  '<body data-fixture-route="public">'
-                                )
-                              : extensionHtml,
+                          ? panelOwnershipHtml
+                          : url.pathname === new URL(EXPERIENCE_FIXTURE_URL).pathname &&
+                              experienceImages
+                            ? experienceHtml
+                            : url.pathname === new URL(QUALITY_FIXTURE_URL).pathname
+                              ? extensionHtml
+                                  .replaceAll(TWEET_ID, QUALITY_TWEET_ID)
+                                  .replaceAll('testuser', 'qualityuser')
+                              : url.pathname === new URL(PUBLIC_FIXTURE_URL).pathname
+                                ? html.replace(
+                                    '<body data-fixture-route="classic">',
+                                    '<body data-fixture-route="public">'
+                                  )
+                                : extensionHtml,
       });
       return;
     }

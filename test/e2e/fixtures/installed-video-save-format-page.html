@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Installed video save format fixture</title>
+    <style>
+      body {
+        background: #000;
+        color: #e7e9ea;
+        font:
+          16px 'Segoe UI',
+          sans-serif;
+      }
+      article {
+        max-width: 600px;
+        margin: 32px auto;
+      }
+      img,
+      video {
+        display: block;
+        width: 320px;
+        height: 180px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <article data-testid="tweet" data-format-case="direct-mp4">
+        <a href="/format_fixture/status/4666000000000000484"><time>Direct MP4 owner</time></a>
+        <div data-testid="tweetPhoto">
+          <img
+            src="https://pbs.twimg.com/media/GkE1234ABCDEF?format=jpg&amp;name=small"
+            alt="Owned photo"
+          />
+        </div>
+        <video
+          src="https://video.twimg.com/ext_tw_video/9111111111111111111/pu/vid/320x180/quote-one.mp4"
+        ></video>
+      </article>
+      <article data-testid="tweet" data-format-case="playlist">
+        <a href="/format_fixture/status/4666000000000000485"><time>Playlist owner</time></a>
+        <video
+          src="https://video.twimg.com/ext_tw_video/9111111111111111111/pu/vid/320x180/playlist.m3u8"
+        ></video>
+      </article>
+      <article data-testid="tweet" data-format-case="unknown">
+        <a href="/format_fixture/status/4666000000000000486"><time>Unknown source owner</time></a>
+        <video
+          src="https://video.twimg.com/ext_tw_video/9111111111111111111/pu/vid/320x180/clip"
+        ></video>
+      </article>
+      <article data-testid="tweet" data-format-case="conflict">
+        <a href="/format_fixture/status/4666000000000000487"
+          ><time>Conflicting format owner</time></a
+        >
+        <video
+          src="https://video.twimg.com/ext_tw_video/9111111111111111111/pu/vid/320x180/quote-one.mp4?format=jpg"
+        ></video>
+      </article>
+    </main>
+  </body>
+</html>

@@ -69,6 +69,7 @@ import {
   sha256,
 } from './release-upgrade/source.ts';
 import { runVideoLoadingProfile } from './video-loading-profile.ts';
+import { runInstalledVideoSaveFormatProbe } from './video-save-format-profile.ts';
 import {
   COMPACT_DISPLAY_URL,
   COMPACT_FIXTURE_URL,
@@ -1033,6 +1034,7 @@ type InstallResult = {
   fixture?: Awaited<ReturnType<typeof exerciseInstalledExtension>>;
   openingFeedback?: unknown;
   mediaDownloadRecovery?: unknown;
+  videoSaveFormat?: unknown;
   failedEntryRecovery?: unknown;
   galleryExperience?: unknown;
   uxDetails?: unknown;
@@ -19612,6 +19614,23 @@ export async function run({
     assert.equal(liveObservation, null, 'UX details cannot share live observation');
     assert.equal(acceptanceSelectorText, null, 'UX details cannot share live acceptance');
   }
+  const videoFormatSelectorText = await readFile(
+    join(root, 'validation/windows/inputs/video-save-format.json'),
+    'utf8'
+  ).catch((error: unknown) => {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+      return null;
+    }
+    throw error;
+  });
+  const videoFormatProbe = videoFormatSelectorText !== null;
+  if (videoFormatSelectorText !== null) {
+    assert.deepEqual(JSON.parse(videoFormatSelectorText), { scenario: 'video-save-format' });
+    assert.equal(installation, 'extension', 'Video format fixture requires an extension');
+    assert.equal(liveUrls.length, 0, 'Video format fixture uses only owned URLs');
+    assert.equal(liveObservation, null, 'Video format fixture cannot share live observation');
+    assert.equal(acceptanceSelectorText, null, 'Video format fixture cannot share live acceptance');
+  }
   if (installation === 'userscript') {
     assert.equal(acceptanceSelectorText, null, 'Actual-site acceptance requires an extension');
     assert.equal(liveUrls.length, 0, 'Installed userscript fixture does not support public URLs');
@@ -19723,6 +19742,19 @@ export async function run({
       'Only one focused installed-extension probe may run'
     );
   }
+  if (videoFormatProbe) {
+    assert(
+      !upgradeInput &&
+        !sameVersionInput &&
+        !uxDetailsProbe &&
+        !openingProbe &&
+        !recoveryProbe &&
+        !failedEntryProbe &&
+        !experienceProbe &&
+        !settingsProbe,
+      'Video format fixture cannot share another focused installed-extension probe'
+    );
+  }
   assert(!(upgradeInput && sameVersionInput), 'Upgrade and same-version inputs cannot coexist');
   if (sameVersionInput) {
     assert.equal(liveUrls.length, 0, 'Same-version attribution does not observe live URLs');
@@ -19754,7 +19786,8 @@ export async function run({
         failedEntryProbe ||
         experienceProbe ||
         settingsProbe ||
-        uxDetailsProbe,
+        uxDetailsProbe ||
+        videoFormatProbe,
     }
   );
   validateLiveObservation(liveObservation);
@@ -19783,25 +19816,27 @@ export async function run({
     liveObservation,
     scope: liveSettingsProbe
       ? 'focused installed language/theme settings acceptance; no full prior live campaign'
-      : uxDetailsProbe
-        ? 'focused installed-extension opened details and terminal-video exit; owned X fixture only'
-        : settingsProbe
-          ? 'installed-extension settings persistence fixture; no live X observation'
-          : failedEntryProbe
-            ? 'issue 392 installed-extension failed-entry ZIP recovery fixture; no live X observation'
-            : experienceProbe
-              ? 'installed gallery experience and expanded-panel ownership fixtures; no live X observation'
-              : recoveryProbe
-                ? 'issue 382 installed-extension media/download recovery fixture; no live X observation'
-                : openingProbe
-                  ? 'issue 381 installed-extension opening feedback fixture; no live X observation'
-                  : validatedLiveUrls.length
-                    ? actualSiteAcceptance
-                      ? 'deterministic fixture followed by explicit actual-site gallery acceptance with bounded retained downloads; no auth, consent, CAPTCHA, native Save As, Explorer, or performance claim'
-                      : 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
-                    : sameVersionInput
-                      ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
-                      : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
+      : videoFormatProbe
+        ? 'issue 484 installed video save format and rejected source fixture; no live X observation'
+        : uxDetailsProbe
+          ? 'focused installed-extension opened details and terminal-video exit; owned X fixture only'
+          : settingsProbe
+            ? 'installed-extension settings persistence fixture; no live X observation'
+            : failedEntryProbe
+              ? 'issue 392 installed-extension failed-entry ZIP recovery fixture; no live X observation'
+              : experienceProbe
+                ? 'installed gallery experience and expanded-panel ownership fixtures; no live X observation'
+                : recoveryProbe
+                  ? 'issue 382 installed-extension media/download recovery fixture; no live X observation'
+                  : openingProbe
+                    ? 'issue 381 installed-extension opening feedback fixture; no live X observation'
+                    : validatedLiveUrls.length
+                      ? actualSiteAcceptance
+                        ? 'deterministic fixture followed by explicit actual-site gallery acceptance with bounded retained downloads; no auth, consent, CAPTCHA, native Save As, Explorer, or performance claim'
+                        : 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
+                      : sameVersionInput
+                        ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
+                        : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
     status: 'failed',
   };
   try {
@@ -19904,6 +19939,17 @@ export async function run({
       if (uxDetailsProbe) {
         result.uxDetails = await runUxDetailsProbe({
           context,
+          extensionId,
+          nativeLoopback,
+          output,
+          root,
+          images,
+          displayImages,
+        });
+      } else if (videoFormatProbe) {
+        result.videoSaveFormat = await runInstalledVideoSaveFormatProbe({
+          context,
+          downloads,
           extensionId,
           nativeLoopback,
           output,
