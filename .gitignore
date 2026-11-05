@@ -95,4 +95,5 @@ memory/
 /validation/windows/inputs/gallery-experience.json
 /validation/windows/inputs/ux-details.json
 /validation/windows/inputs/live-acceptance.json
+/validation/windows/inputs/video-save-format.json
 .vitest/
