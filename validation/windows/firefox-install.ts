@@ -483,33 +483,69 @@ export function selectOwnedDownload(
   return item;
 }
 
-export async function readOwnedNativeFile(directory: string, filename: string, expected: Buffer) {
+export async function readOwnedNativeBytes(
+  directory: string,
+  filename: string,
+  maximumBytes: number
+): Promise<{ filename: string; bytes: Buffer }> {
   assert(isAbsolute(filename), 'Native filename is not absolute');
-  const root = await realpath(directory);
-  const file = await realpath(filename);
-  const inside = relative(root, file);
+  assert(Number.isSafeInteger(maximumBytes) && maximumBytes >= 0, 'Invalid native read bound');
+  const lexical = relative(resolve(directory), resolve(filename));
   assert(
-    inside && !inside.startsWith('..') && !isAbsolute(inside),
-    'Native file escaped owned downloads'
+    lexical && !lexical.startsWith('..') && !isAbsolute(lexical),
+    'Native filename escaped owned downloads'
   );
-  assert((await lstat(filename)).isFile(), 'Native download is not a regular file');
+  const root = await realpath(directory);
+  // Open first, then validate this handle and its current path before reading any bytes.
   const handle = await open(filename, 'r');
-  let bytes: Buffer;
   try {
     const opened = await handle.stat();
     assert(opened.isFile(), 'Opened native download is not a file');
-    assert.equal(opened.size, expected.length, 'Native file size differs from original');
-    const linked = await stat(file);
-    assert.equal(linked.dev, opened.dev, 'Native download device changed after open');
-    assert.equal(linked.ino, opened.ino, 'Native download identity changed after open');
-    bytes = await readBounded(handle, expected.length);
-    assert.equal(bytes.length, expected.length, 'Native file changed while read');
-    const after = await stat(file);
-    assert.equal(after.dev, opened.dev, 'Native download device changed during read');
-    assert.equal(after.ino, opened.ino, 'Native download identity changed during read');
+    assert(opened.size <= maximumBytes, 'Native file exceeds bounded read');
+    const verifyPath = async () => {
+      const file = await realpath(filename);
+      const inside = relative(root, file);
+      assert(
+        inside && !inside.startsWith('..') && !isAbsolute(inside),
+        'Native file escaped owned downloads'
+      );
+      const entry = await lstat(filename);
+      assert(entry.isFile(), 'Native download is not a regular file');
+      assert.equal(entry.dev, opened.dev, 'Native download path device changed');
+      assert.equal(entry.ino, opened.ino, 'Native download path identity changed');
+      const linked = await stat(file);
+      assert.equal(linked.dev, opened.dev, 'Native download device changed after open');
+      assert.equal(linked.ino, opened.ino, 'Native download identity changed after open');
+      assert.equal(linked.size, opened.size, 'Native download size changed after open');
+      assert.equal(linked.mtimeMs, opened.mtimeMs, 'Native download was modified after open');
+      assert.equal(linked.ctimeMs, opened.ctimeMs, 'Native download metadata changed after open');
+      return file;
+    };
+    const file = await verifyPath();
+    const bytes = await readBounded(handle, maximumBytes);
+    assert.equal(bytes.length, opened.size, 'Native file changed while read');
+    assert.equal(await verifyPath(), file, 'Native download path changed during read');
+    const after = await handle.stat();
+    assert.equal(after.size, opened.size, 'Opened native download size changed during read');
+    assert.equal(after.mtimeMs, opened.mtimeMs, 'Opened native download was modified during read');
+    assert.equal(
+      after.ctimeMs,
+      opened.ctimeMs,
+      'Opened native download metadata changed during read'
+    );
+    return { filename: file, bytes };
   } finally {
     await handle.close();
   }
+}
+
+export async function readOwnedNativeFile(directory: string, filename: string, expected: Buffer) {
+  const { filename: file, bytes } = await readOwnedNativeBytes(
+    directory,
+    filename,
+    expected.length
+  );
+  assert.equal(bytes.length, expected.length, 'Native file size differs from original');
   assert(bytes.equals(expected), 'Native file bytes differ from original');
   return { filename: file, basename: basename(file), bytes: bytes.length, sha256: digest(bytes) };
 }
@@ -971,25 +1007,7 @@ export async function runFirefoxInstallation({
             continue;
           }
           const path = join(downloads, name);
-          assert((await lstat(path)).isFile(), 'Native directory contains a foreign entry');
-          const handle = await open(path, 'r');
-          let bytes: Buffer;
-          try {
-            const opened = await handle.stat();
-            assert(opened.isFile(), 'Opened native retention entry is not a file');
-            assert(opened.size <= 20_000_000, 'Native file exceeds failure retention bound');
-            const linked = await stat(path);
-            assert.equal(linked.dev, opened.dev, 'Native retention device changed after open');
-            assert.equal(linked.ino, opened.ino, 'Native retention identity changed after open');
-            bytes = await readBounded(handle, 20_000_000);
-            assert.equal(bytes.length, opened.size, 'Native retention file changed during read');
-            assert((await lstat(path)).isFile(), 'Native retention path was replaced');
-            const after = await stat(path);
-            assert.equal(after.dev, opened.dev, 'Native retention device changed during read');
-            assert.equal(after.ino, opened.ino, 'Native retention identity changed during read');
-          } finally {
-            await handle.close();
-          }
+          const { bytes } = await readOwnedNativeBytes(downloads, path, 20_000_000);
           const retained = `firefox-original-${index}.bin`;
           await writeFile(join(output, retained), bytes, { flag: 'wx' });
           assert(

@@ -3,20 +3,26 @@
 
 import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';
-import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, open, readFile, rename, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { test } from 'vitest';
+import { test, vi } from 'vitest';
 import {
   fixtureNetworkEvent,
   ownsBlockedIntercept,
   ownedNativeHistory,
   prepareFirefoxInstallation,
+  readOwnedNativeBytes,
   readOwnedNativeFile,
   selectOwnedDownload,
   shouldContinueFirefoxOriginal,
   validateFirefoxSelectors,
 } from './firefox-install.ts';
+
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs/promises')>();
+  return { ...actual, open: vi.fn(actual.open) };
+});
 
 test('Firefox native originals continue to owned HTTPS transport instead of BiDi response', () => {
   assert(
@@ -180,6 +186,44 @@ test('Firefox native bytes must stay under owned directory and match original be
     await assert.rejects(readOwnedNativeFile(downloads, foreign, bytes));
     await symlink(foreign, join(downloads, 'linked.jpg'));
     await assert.rejects(readOwnedNativeFile(downloads, join(downloads, 'linked.jpg'), bytes));
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('Firefox failure retention rejects oversized files and links within the owned directory', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'xeg-firefox-retention-test-'));
+  try {
+    const native = join(root, 'original.jpg');
+    const bytes = Buffer.from('native original bytes');
+    await writeFile(native, bytes);
+    assert.deepEqual((await readOwnedNativeBytes(root, native, bytes.length)).bytes, bytes);
+    await assert.rejects(readOwnedNativeBytes(root, native, bytes.length - 1), /bounded read/);
+    const link = join(root, 'linked.jpg');
+    await symlink(native, link);
+    await assert.rejects(readOwnedNativeBytes(root, link, bytes.length), /regular file/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('Firefox rejects a path replaced after open before reading or retaining any bytes', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'xeg-firefox-replacement-test-'));
+  try {
+    const native = join(root, 'original.jpg');
+    const bytes = Buffer.from('native original bytes');
+    await writeFile(native, bytes);
+    const handle = await open(native, 'r');
+    const read = vi.spyOn(handle, 'read');
+    const close = vi.spyOn(handle, 'close');
+    vi.mocked(open).mockImplementationOnce(async () => {
+      await rename(native, join(root, 'old-original.jpg'));
+      await writeFile(native, bytes);
+      return handle;
+    });
+    await assert.rejects(readOwnedNativeBytes(root, native, bytes.length), /identity changed/);
+    assert.equal(read.mock.calls.length, 0);
+    assert.equal(close.mock.calls.length, 1);
   } finally {
     await rm(root, { recursive: true, force: true });
   }
