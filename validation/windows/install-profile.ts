@@ -48,6 +48,7 @@ import {
   type FilenameDecisionControl,
 } from './filename-decision-control.ts';
 import { withFilenameCorrelation } from './filename-correlation.ts';
+import { runFirefoxInstallation, type FirefoxLauncher } from './firefox-install.ts';
 import {
   createControlledVideoSettings,
   decodeStoredValue,
@@ -6182,8 +6183,8 @@ async function runAttachmentFilenameFocusedProbe({
       evidence,
       initiatingExtensionId: extensionId,
       diagnosticOnly,
-      requireNativeFilenameNotice: browserName === 'chrome',
-      ...(browserName === 'chrome'
+      requireNativeFilenameNotice: ['chrome', 'msedge'].includes(browserName),
+      ...(['chrome', 'msedge'].includes(browserName)
         ? {
             filenameControlFactory: () =>
               installFilenameDecisionControl({
@@ -20325,6 +20326,7 @@ async function runSettingsPersistenceProbe({
 
 export async function run({
   chromium,
+  firefox,
   root,
   output,
   browserName,
@@ -20334,6 +20336,7 @@ export async function run({
   liveObservation = null,
 }: {
   chromium: (typeof import('@playwright/test'))['chromium'];
+  firefox?: FirefoxLauncher;
   root: string;
   output: string;
   browserName: string;
@@ -20342,6 +20345,12 @@ export async function run({
   liveUrls: string[];
   liveObservation?: null;
 }) {
+  if (browserName === 'firefox') {
+    assert.equal(installation, 'extension', 'Firefox validation requires extension installation');
+    assert.equal(liveObservation, null, 'Firefox duration observation is not configured');
+    assert(firefox, 'The maintained Firefox transport is required');
+    return runFirefoxInstallation({ root, output, headless, liveUrls, firefox });
+  }
   assert(
     ['chrome', 'msedge'].includes(browserName),
     'Installed XCOM profile supports Chrome and Edge only'

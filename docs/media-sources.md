@@ -146,8 +146,9 @@ The Chrome extension passes the requested filename to the native download API.
 For a completed direct download, the result keeps that request separate from the
 native observed basename. `requestedFilename` comes from the request bound to the
 actual native ID. Optional `observedFilename` and `filenameConforms` require an
-exact download ID, original URL, and initiating extension match. A numeric ` (N)`
-conflict suffix is conforming.
+exact download ID, original URL, and initiating extension match. Numeric ` (N)`
+and `(N)` conflict suffixes are conforming; the prepared Windows runs observed
+the spaced form in Chrome/Edge and the unspaced form in Firefox.
 If native history is unavailable, the completed transfer remains complete and
 the observed filename stays unknown. A mismatched basename does not start another
 download or overwrite the saved file. A confirmed native basename is shown in a

@@ -8,7 +8,8 @@ For the focused #482 installed filename scenario, create ignored
 ```
 
 With `--installation extension`, this runs the owned A/B/C quote, DOM, ZIP,
-conflict and failed-only recovery cycle. With `--installation userscript`, it
+conflict and failed-only recovery cycle in Chrome/Edge. Firefox uses its separate
+focused installed filename, collision and notice fixture. With `--installation userscript`, it
 runs a smaller manager-backed visible `/photo/2` save and checks the native
 filename, source and bytes. Remove the selector after the attempt. The filename
 cycle uses controlled fixtures. Extension runs may append separate public-status

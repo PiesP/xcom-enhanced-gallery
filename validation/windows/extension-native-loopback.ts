@@ -352,6 +352,12 @@ export function createExtensionNativeFixtureHandler() {
           path: `/media/${path}`,
         });
       }
+      // The Firefox filename fixture preserves its explicit JPEG source path.
+      allowed.set('pbs.twimg.com/media/GkE1234ABCDEF.jpg?format=jpg&name=orig', {
+        bytes: images[0]!,
+        host: 'pbs.twimg.com',
+        path: '/media/GkE1234ABCDEF.jpg',
+      });
       for (const [path, bytes] of allowedVideos(videoPayloads)) {
         allowed.set(`video.twimg.com${path}`, { bytes, host: 'video.twimg.com', path });
       }

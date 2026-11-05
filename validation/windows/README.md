@@ -157,6 +157,43 @@ run is functional diagnostics only, not desktop visual acceptance.
 
 Run `node --experimental-strip-types --check validation/windows/profile.ts` for the profile syntax check.
 
+## Installed Firefox filename flow
+
+`--browser firefox --mode desktop --installation extension` uses the maintained
+controller's shared Firefox WebDriver BiDi transport and the production
+`dist-extension-firefox` distribution. It runs a focused filename fixture rather
+than the broader Chromium gallery matrix. An optional `attachment-filenames.json`
+selector must contain exactly `{"scenario":"attachment-filenames"}`; other
+focused selectors are rejected.
+
+The runner creates a task-owned profile and an installation copy. Its diagnostic
+extension page is added only to that copy; an inventory proves that every
+production file keeps its original digest. Profile preferences select the owned
+download directory and diagnostic extension origin. BiDi supplies the page
+fixture, while a task-owned loopback CONNECT proxy routes only the declared
+fixture hosts to its local HTTPS server for native download responses. The
+session explicitly accepts that server's temporary certificate and records
+Firefox's capability readback. This does not change Windows trust, hosts files
+or browser settings outside that profile.
+
+Trusted pointer actions open the installed gallery and activate its Download
+button. The fixture reads only matching extension-owned native download records,
+checks an independently specified owner/attachment basename and the original
+file bytes, and compares the visible saved-name notice with the native basename.
+It also exercises a same-name collision and dismisses the notice while requiring
+the native download IDs and original file contents to remain unchanged. Output
+copies are retained under flat neutral evidence names after byte-verifying the
+original browser-reported file; the original is never renamed for qualification.
+
+Firefox does not support
+[`downloads.onDeterminingFilename`](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Chrome_incompatibilities#javascript-apis).
+Its receipt records that capability separately; Chromium's passive/active
+filename-arbitration controls are not simulated. Browser installation, network
+intercepts, copied files, downloads and profile cleanup have separate outcomes.
+The focused fixture does not establish live X.com behavior or the Chromium
+matrix. This Firefox route rejects live URLs; existing Chrome/Edge public
+observations remain separate evidence.
+
 ## Installed Chrome/Edge extension flow
 
 The opt-in installed flow uses a fresh task-owned browser profile, enables
@@ -251,7 +288,7 @@ from the controlled saved-file qualification.
 With `--installation userscript`, the same selector runs a manager-backed
 visible `/photo/2` save that checks the owner-local filename and native bytes.
 
-With `--browser chrome --installation extension`, this cycle additionally
+With `--browser chrome` or `--browser msedge` and `--installation extension`, this cycle additionally
 installs a separate task-owned filename-decision control extension after the
 XEG-only cases. It repeats one known B1 Download-button save with a passive
 `suggest()` and separate `suggest(undefined)` control, an explicit distinct
@@ -265,7 +302,7 @@ worker options are captured. An intentional active override is an arbitration
 observation, not filename conformance. Unexpected completed basenames retain
 their native-item receipt and a byte-checked copy under a flat neutral `.bin`
 evidence name before the fixture fails and profile cleanup runs. The browser-reported
-basename remains separate; the original download is never renamed. Chrome
+basename remains separate; the original download is never renamed. Chrome and Edge
 acceptance keeps automatic saving and checks the visible actual-filename
 notice against the native item and disk file. Passive controls permit the intended
 or known CDN fallback basename while recording conformance separately. Active
@@ -278,7 +315,7 @@ before the normal profile cleanup. These controls do not identify the cause of
 a live-post report; request/worker correlation and a source-bound installed
 Chrome run still require separate observations.
 
-The Chrome cycle also performs two separate diagnostic B1 saves: XEG alone and
+The Chrome and Edge cycles also perform two separate diagnostic B1 saves: XEG alone and
 an active filename suggestion. `filename-correlation.ts` binds the executed
 content script's SHA-256 and filename-generation location to a non-pausing CDP
 logpoint, observes the matching MV3 request and unchanged native API call, and

@@ -22,9 +22,10 @@ export function observeDownloadFilename(
   const dot = desired.lastIndexOf('.');
   const stem = dot > 0 ? desired.slice(0, dot) : desired;
   const extension = dot > 0 ? desired.slice(dot) : '';
+  const conflictPrefix = observed.startsWith(`${stem} (`) ? `${stem} (` : `${stem}(`;
   const suffix =
-    observed.startsWith(`${stem} (`) && observed.endsWith(`)${extension}`)
-      ? observed.slice(stem.length + 2, observed.length - extension.length - 1)
+    observed.startsWith(conflictPrefix) && observed.endsWith(`)${extension}`)
+      ? observed.slice(conflictPrefix.length, observed.length - extension.length - 1)
       : '';
   return {
     requestedFilename: requested,
