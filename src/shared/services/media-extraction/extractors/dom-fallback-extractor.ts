@@ -29,6 +29,7 @@ import type {
 } from '@shared/types/media.types';
 import { createFailureResult } from '@shared/types/media.types';
 import { closestWithFallback } from '@shared/utils/dom/query-helpers';
+import { isDirectMp4Source } from '@shared/utils/media/direct-mp4-source';
 import {
   extractMediaUrlFromElement,
   findMediaElementInDOM,
@@ -77,16 +78,10 @@ function createMediaInfoFromDOM(
     }
     if (element instanceof HTMLVideoElement) {
       const videoUrl = new URL(mediaUrl);
-      const formats = videoUrl.searchParams.getAll('format');
       // A DOM video can play a playlist or an unknown source, but neither is a
       // verified direct download. The filename code trusts ?format first, so a
       // conflicting or ambiguous query must not relabel a selected MP4 path.
-      if (
-        videoUrl.hostname !== 'video.twimg.com' ||
-        !/\.mp4$/i.test(videoUrl.pathname) ||
-        formats.length > 1 ||
-        (formats.length === 1 && formats[0]?.toLowerCase() !== 'mp4')
-      ) {
+      if (!isDirectMp4Source(videoUrl)) {
         return null;
       }
     }

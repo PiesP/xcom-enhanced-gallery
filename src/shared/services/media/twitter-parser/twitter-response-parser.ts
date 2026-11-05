@@ -9,6 +9,7 @@ import type {
   TwitterUser,
 } from '@shared/services/media/types';
 import type { VideoSourceVariant } from '@shared/types/media.types';
+import { isDirectMp4Source } from '@shared/utils/media/direct-mp4-source';
 import { extractDimensionsFromUrl, normalizeDimension } from '@shared/utils/media/media-dimensions';
 import { normalizeOriginalImageUrl } from '@shared/utils/media/media-source';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
@@ -77,11 +78,7 @@ function getVideoVariants(media: TwitterMedia): readonly VideoSourceVariant[] {
       continue;
     }
     const parsed = new URL(variant.url);
-    if (
-      parsed.hostname !== 'video.twimg.com' ||
-      !parsed.pathname.toLowerCase().endsWith('.mp4') ||
-      seen.has(variant.url)
-    ) {
+    if (!isDirectMp4Source(parsed) || seen.has(variant.url)) {
       continue;
     }
     seen.add(variant.url);

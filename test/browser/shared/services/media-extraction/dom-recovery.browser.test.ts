@@ -116,6 +116,16 @@ describe('scoped DOM recovery', () => {
       'https://video.twimg.com/ext_tw_video/900/pu/vid/clip.mp4?format=mp4&format=jpg',
       false,
     ],
+    [
+      'case-varied conflicting format',
+      'https://video.twimg.com/ext_tw_video/900/pu/vid/clip.mp4?FORMAT=jpg',
+      false,
+    ],
+    [
+      'case-varied duplicate format',
+      'https://video.twimg.com/ext_tw_video/900/pu/vid/clip.mp4?format=mp4&FORMAT=mp4',
+      false,
+    ],
     ['misleading query', 'https://video.twimg.com/ext_tw_video/900/pu/vid/clip?format=mp4', false],
   ])(
     'admits only a direct owned video save source after API denial: %s',
@@ -148,10 +158,11 @@ describe('scoped DOM recovery', () => {
   it('keeps extensionless image query formats after API denial', async () => {
     httpGet.mockResolvedValue({ ok: false, status: 403, data: {} });
     const url = 'https://pbs.twimg.com/media/known-image?format=webp&name=large';
-    document.body.innerHTML = `<article><a href="/author/status/222"><time>Now</time></a><img id="target" src="${url.replace('&', '&amp;')}"></article>`;
-    const result = await new MediaExtractionService().extractFromClickedElement(
-      document.getElementById('target')!
-    );
+    document.body.innerHTML =
+      '<article><a href="/author/status/222"><time>Now</time></a><img id="target"></article>';
+    const target = document.getElementById('target') as HTMLImageElement;
+    target.src = url;
+    const result = await new MediaExtractionService().extractFromClickedElement(target);
     expect(result.success).toBe(true);
     const selected = result.mediaItems[result.clickedIndex ?? -1];
     expect(selected?.type).toBe('image');
