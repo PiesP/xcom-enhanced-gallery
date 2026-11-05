@@ -6182,8 +6182,8 @@ async function runAttachmentFilenameFocusedProbe({
       evidence,
       initiatingExtensionId: extensionId,
       diagnosticOnly,
-      requireNativeFilenameNotice: browserName === 'chrome',
-      ...(browserName === 'chrome'
+      requireNativeFilenameNotice: ['chrome', 'msedge'].includes(browserName),
+      ...(['chrome', 'msedge'].includes(browserName)
         ? {
             filenameControlFactory: () =>
               installFilenameDecisionControl({
