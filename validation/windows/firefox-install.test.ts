@@ -8,11 +8,110 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'vitest';
 import {
+  fixtureNetworkEvent,
+  ownsBlockedIntercept,
+  ownedNativeHistory,
   prepareFirefoxInstallation,
   readOwnedNativeFile,
   selectOwnedDownload,
   validateFirefoxSelectors,
 } from './firefox-install.ts';
+
+test('Firefox BiDi fixture event serializer keeps unblocked requests and bounded correlation fields', () => {
+  const event = fixtureNetworkEvent(
+    'beforeRequestSent',
+    {
+      request: {
+        request: 'native-42',
+        url: 'https://pbs.twimg.com/media/GkE1234ABCDEF.jpg?format=jpg&name=orig',
+        destination: 'image',
+        initiatorType: 'img',
+      },
+      context: null,
+      userContext: 'profile-1',
+      isBlocked: false,
+      intercepts: ['fixture-intercept'],
+      navigation: null,
+    },
+    123.5
+  );
+  assert.deepEqual(event, {
+    event: 'beforeRequestSent',
+    atMs: 123.5,
+    requestId: 'native-42',
+    url: 'https://pbs.twimg.com/media/GkE1234ABCDEF.jpg?format=jpg&name=orig',
+    context: null,
+    userContext: 'profile-1',
+    isBlocked: false,
+    intercepts: ['fixture-intercept'],
+    navigation: null,
+    destination: 'image',
+    initiatorType: 'img',
+    status: undefined,
+    error: undefined,
+  });
+  assert.equal(
+    fixtureNetworkEvent(
+      'beforeRequestSent',
+      {
+        request: { request: 'other', url: 'https://example.org/private' },
+      },
+      125
+    ),
+    null
+  );
+  const failed = fixtureNetworkEvent(
+    'fetchError',
+    {
+      request: { request: 'native-42', url: event?.url ?? '' },
+      errorText: 'NETWORK_FAILED'.repeat(40),
+    },
+    126
+  );
+  assert.equal(failed?.error?.length, 300);
+});
+
+test('Firefox native history reports only exact extension and original URL without absolute paths', () => {
+  const original = 'https://pbs.twimg.com/media/GkE1234ABCDEF.jpg?format=jpg&name=orig';
+  const extensionId = 'xcom-enhanced-gallery@piesp.dev';
+  const owned = {
+    id: 7,
+    byExtensionId: extensionId,
+    filename: '/private/downloads/testuser_1234567890123456789_0.jpg',
+    state: 'interrupted',
+    error: 'NETWORK_FAILED',
+    url: original,
+    finalUrl: original,
+    bytesReceived: 0,
+    totalBytes: -1,
+    mime: 'image/jpeg',
+  };
+  const observed = ownedNativeHistory(
+    [
+      { ...owned, id: 4, byExtensionId: 'foreign' },
+      {
+        ...owned,
+        id: 5,
+        url: 'https://pbs.twimg.com/other',
+        finalUrl: 'https://pbs.twimg.com/other',
+      },
+      owned,
+    ],
+    extensionId
+  );
+  assert.equal(observed.length, 1);
+  assert.equal(observed[0]?.id, 7);
+  assert.equal(observed[0]?.error, 'NETWORK_FAILED');
+  assert.equal(observed[0]?.basename, 'testuser_1234567890123456789_0.jpg');
+  assert(!JSON.stringify(observed).includes('/private/downloads'));
+});
+
+test('Firefox response fulfillment belongs to the blocked task intercept', () => {
+  assert.equal(ownsBlockedIntercept({ isBlocked: true, intercepts: ['owned'] }, 'owned'), true);
+  assert.equal(ownsBlockedIntercept({ isBlocked: false, intercepts: ['owned'] }, 'owned'), false);
+  assert.equal(ownsBlockedIntercept({ isBlocked: true, intercepts: ['foreign'] }, 'owned'), false);
+  assert.equal(ownsBlockedIntercept({ isBlocked: true }, 'owned'), false);
+});
 
 test('Firefox native ID selection requires one new completed extension-owned original', () => {
   const original = 'https://pbs.twimg.com/media/GkE1234ABCDEF.jpg?format=jpg&name=orig';
