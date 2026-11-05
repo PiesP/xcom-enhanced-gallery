@@ -248,6 +248,25 @@ The ignored `validation/windows/inputs/attachment-filenames.json` selector
 With `--installation userscript`, the same selector runs a manager-backed
 visible `/photo/2` save that checks the owner-local filename and native bytes.
 
+With `--browser chrome --installation extension`, this cycle additionally
+installs a separate task-owned filename-decision control extension after the
+XEG-only cases. It repeats one known B1 Download-button save with a passive
+`suggest()`, an explicit CDN-basename suggestion, and that same suggestion with
+`conflictAction: 'uniquify'`. The helper filters by the XEG extension ID and the
+exact synthetic source URL. Each case records the matching native ID,
+tentative/suggested/final basenames, initiating extension, MIME, and original
+saved bytes. Independent expected names and observed native names remain
+separate. The request name is explicitly unobserved until the MV3 payload and
+worker options are captured. An intentional active override is an arbitration
+observation, not filename conformance. Unexpected completed basenames retain
+their native-item receipt and a byte-checked copy under the original basename
+before the fixture fails and profile cleanup runs.
+The preexisting-file control above runs before this helper is installed and
+preserves its sentinel. The helper is uninstalled and its owned files removed
+before the normal profile cleanup. These controls do not identify the cause of
+a live-post report; request/worker correlation and a source-bound installed
+Chrome run still require separate observations.
+
 The same installed profile invokes `media-api-reuse-profile.ts` to compare
 physical API requests across successive clicks, navigation, reload and a fresh
 page. It checks independent selected-photo identity, uncached provider failures,

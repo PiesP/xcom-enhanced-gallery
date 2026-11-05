@@ -44,6 +44,10 @@ import {
 } from './download-memory.ts';
 import { startExtensionNativeFixtureLoopback } from './extension-native-loopback.ts';
 import {
+  installFilenameDecisionControl,
+  type FilenameDecisionControl,
+} from './filename-decision-control.ts';
+import {
   createControlledVideoSettings,
   decodeStoredValue,
   observeLiveUrls,
@@ -1159,6 +1163,9 @@ type ChromeDownloadItem = {
   exists: boolean;
   error?: string;
   finalUrl?: string;
+  mime?: string;
+  byExtensionId?: string;
+  byExtensionName?: string;
 };
 type ChromeEvent<T extends (...args: never[]) => unknown> = {
   addListener(listener: T): void;
@@ -5556,6 +5563,8 @@ async function runAttachmentFilenameCycle({
   pageFetches,
   routes,
   evidence,
+  initiatingExtensionId,
+  filenameControlFactory,
 }: {
   page: Page;
   extensionPage: Page;
@@ -5567,6 +5576,8 @@ async function runAttachmentFilenameCycle({
   pageFetches: PageFetch[];
   routes: Awaited<ReturnType<typeof installFixtureRoutes>>;
   evidence: CompactEvidence;
+  initiatingExtensionId?: string;
+  filenameControlFactory?: () => Promise<FilenameDecisionControl>;
 }) {
   const b1 = `middle_fixture_${COMPACT_MIDDLE_ID}_0.jpg`;
   const b2 = `middle_fixture_${COMPACT_MIDDLE_ID}_1.jpg`;
@@ -5630,7 +5641,8 @@ async function runAttachmentFilenameCycle({
       assignedName: string,
       url: string,
       bytes: Buffer,
-      conflict = false
+      conflict = false,
+      expectedApplicationFilename = assignedName
     ) => {
       const known = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
       const nativeMark = nativeLoopback.mark();
@@ -5639,16 +5651,46 @@ async function runAttachmentFilenameCycle({
         .locator('[data-gallery-element="toolbar"] button[aria-label="Download"]')
         .click();
       const item = await newDownload(known, assignedName);
-      if (conflict) {
-        assertNativeName(basename(item.filename), assignedName);
-        assert.notEqual(basename(item.filename), assignedName);
-      } else {
-        assert.equal(basename(item.filename), assignedName);
-      }
-      const path = relative(downloads, item.filename);
-      assert(path && !path.startsWith('..') && !isAbsolute(path));
+      const nativeItem = {
+        id: item.id,
+        filename: basename(item.filename),
+        state: item.state,
+        url: item.url,
+        finalUrl: item.finalUrl,
+        mime: item.mime,
+        byExtensionId: item.byExtensionId,
+        byExtensionName: item.byExtensionName,
+      };
+      const observation: Record<string, unknown> = {
+        name: 'filename-native-single',
+        expectedApplicationFilename,
+        requestedFilename: null,
+        requestObservation: 'not-captured',
+        nativeItem,
+      };
+      evidence.steps.push(observation);
       const { bytes: saved } = await readExactDownloadFile(item.filename, bytes.length);
-      assert(saved.equals(bytes), `${assignedName} saved bytes differ`);
+      observation.file = imageReceipt(saved);
+      try {
+        assert(saved.equals(bytes), `${assignedName} saved bytes differ`);
+        if (initiatingExtensionId) {
+          assert.equal(item.byExtensionId, initiatingExtensionId, 'Native initiator differs');
+        }
+        if (conflict) {
+          assertNativeName(basename(item.filename), assignedName);
+          assert.notEqual(basename(item.filename), assignedName);
+        } else {
+          assert.equal(basename(item.filename), assignedName);
+        }
+      } catch (error) {
+        const retainedDirectory = join(output, `native-failure-${item.id}`);
+        await mkdir(retainedDirectory);
+        const retainedFile = join(retainedDirectory, basename(item.filename));
+        await copyFile(item.filename, retainedFile);
+        assert((await readFile(retainedFile)).equals(saved), 'Failed native-file copy differs');
+        observation.retainedFile = `native-failure-${item.id}/${basename(item.filename)}`;
+        throw error;
+      }
       const native = await assertNativeSingle({
         extensionPage,
         knownIds: known,
@@ -5659,7 +5701,14 @@ async function runAttachmentFilenameCycle({
         nativeMark,
         pageFetches: pageFetches.slice(fetchMark),
       });
-      return { id: item.id, filename: basename(item.filename), ...imageReceipt(saved), native };
+      return {
+        id: item.id,
+        filename: basename(item.filename),
+        expectedApplicationFilename,
+        nativeItem,
+        ...imageReceipt(saved),
+        native,
+      };
     };
     const zip = async (
       gallery: Locator,
@@ -5892,6 +5941,53 @@ async function runAttachmentFilenameCycle({
     await retry.waitFor({ state: 'detached' });
     await retire(partial, 'retry-partial.zip', partialBytes);
     await retire(supplementary, 'retry-supplementary.zip', recoveredBytes);
+    if (filenameControlFactory) {
+      const control = await filenameControlFactory();
+      const controlEvidence: Record<string, unknown> = {
+        name: 'chrome-filename-decision-controls',
+        helperExtensionId: control.id,
+        scope: 'controlled filename arbitration; does not identify the live-report cause',
+        cases: [],
+        cleanup: 'pending',
+      };
+      evidence.steps.push(controlEvidence);
+      try {
+        const gallery = await open('filename-api-b', '#filename-b1');
+        await assertQuotedSelection(page, {
+          position: 2,
+          total: 3,
+          type: 'image',
+          path: '/media/GkE5678GHIJKL.jpg',
+        });
+        for (const mode of ['passive', 'filename', 'conflict-action'] as const) {
+          await control.setMode(mode);
+          const observedName = mode === 'passive' ? b1 : 'GkE5678GHIJKL.jpg';
+          const saved = await single(gallery, observedName, b1Url, images[1], false, b1);
+          const observation = await control.readObservations();
+          assert.equal(observation.overflow, false);
+          assert.equal(observation.controlError, null);
+          const matching = observation.observations.filter(({ id }) => id === saved.id);
+          assert.equal(
+            matching.length,
+            1,
+            'Filename suggestion was not observed for this native ID'
+          );
+          assert.equal(matching[0]?.mode, mode);
+          (controlEvidence.cases as unknown[]).push({
+            mode,
+            saved,
+            suggestion: matching[0],
+            filenameConforms: saved.filename === b1,
+          });
+          await retire(saved, `chrome-${mode}.jpg`, images[1]);
+        }
+        await page.keyboard.press('Escape');
+        await gallery.waitFor({ state: 'detached' });
+      } finally {
+        await control.dispose();
+        controlEvidence.cleanup = 'complete';
+      }
+    }
   } finally {
     routes.clearFilenameB1Failure();
     nativeLoopback.clearHttpFailure();
@@ -5913,6 +6009,9 @@ async function runAttachmentFilenameFocusedProbe({
   nativeLoopback,
   output,
   root,
+  browserName,
+  browserCdp,
+  profile,
 }: {
   context: BrowserContext;
   downloads: string;
@@ -5922,6 +6021,9 @@ async function runAttachmentFilenameFocusedProbe({
   nativeLoopback: NativeLoopback;
   output: string;
   root: string;
+  browserName: string;
+  browserCdp: CDPSession;
+  profile: string;
 }) {
   const compactImages = await createCompactImages(context);
   const routes = await installFixtureRoutes(context, root, images, displayImages, compactImages);
@@ -5958,6 +6060,20 @@ async function runAttachmentFilenameFocusedProbe({
       pageFetches,
       routes,
       evidence,
+      initiatingExtensionId: extensionId,
+      ...(browserName === 'chrome'
+        ? {
+            filenameControlFactory: () =>
+              installFilenameDecisionControl({
+                context,
+                browserCdp,
+                profile,
+                targetExtensionId: extensionId,
+                expectedUrl: 'https://pbs.twimg.com/media/GkE5678GHIJKL.jpg?format=jpg&name=orig',
+                suggestedFilename: 'GkE5678GHIJKL.jpg',
+              }),
+          }
+        : {}),
     });
     evidence.api = routes.compactApiResponses;
     evidence.images = routes.compactImageRequests;
@@ -20526,6 +20642,9 @@ export async function run({
           nativeLoopback,
           output,
           root,
+          browserName,
+          browserCdp,
+          profile,
         });
       } else if (uxDetailsProbe) {
         result.uxDetails = await runUxDetailsProbe({
