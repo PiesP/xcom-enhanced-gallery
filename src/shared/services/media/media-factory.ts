@@ -102,6 +102,10 @@ function createMediaInfoFromAPI(
       url: apiMedia.download_url,
       type: mediaType,
       filename: '',
+      ...(Number.isSafeInteger(apiMedia.attachmentOrdinal) &&
+      (apiMedia.attachmentOrdinal ?? -1) >= 0
+        ? { attachmentOrdinal: apiMedia.attachmentOrdinal }
+        : {}),
       ...(ownerHandle ? { tweetUsername: ownerHandle } : {}),
       tweetId: ownerId,
       tweetUrl: ownerUrl,
