@@ -38,6 +38,13 @@ import {
 } from './live-page-document.ts';
 import { resolveFilenameCaptureLine } from './filename-correlation.ts';
 import {
+  createPreArmPauseGuard,
+  createInstalledUserscriptFrameTrace,
+  type FrameGmCall,
+  type FrameMedia,
+  type InstalledUserscriptFrameTrace,
+} from './userscript-frame-trace.ts';
+import {
   createImageFixtures,
   enableDeveloperMode,
   installFixtureRoutes,
@@ -4966,83 +4973,23 @@ async function retainFailedLiveNativeFiles(
 }
 
 const LIVE_SANDBOX_PROBE = `(() => {
-  if (typeof GM_info !== 'object' || GM_info?.script?.name !== 'X.com Enhanced Gallery')
-    return null;
+  const info = typeof GM_info === 'object' && GM_info !== null ? GM_info : null;
+  const globalInfo = typeof globalThis.GM_info === 'object' && globalThis.GM_info !== null
+    ? globalThis.GM_info : null;
   return {
-    scriptName: GM_info.script.name,
-    scriptVersion: GM_info.script.version ?? null,
-    scriptHandler: GM_info.scriptHandler ?? null,
-    handlerVersion: GM_info.version ?? null,
-    grants: Array.isArray(GM_info.script.grant) ? GM_info.script.grant.slice(0, 24) : null,
+    scriptName: info?.script?.name ?? null,
+    scriptVersion: info?.script?.version ?? null,
+    scriptHandler: info?.scriptHandler ?? null,
+    handlerVersion: info?.version ?? null,
+    globalScriptName: globalInfo?.script?.name ?? null,
+    globalHandler: globalInfo?.scriptHandler ?? null,
+    grants: Array.isArray(info?.script?.grant) ? info.script.grant.slice(0, 24) : null,
     legacyDownloadType: typeof GM_download,
     modernDownloadType: typeof GM === 'object' ? typeof GM.download : 'undefined',
-    managerMode: GM_info.downloadMode ?? null
+    globalLegacyDownloadType: typeof globalThis.GM_download,
+    globalModernDownloadType: typeof globalThis.GM?.download,
+    managerMode: info?.downloadMode ?? null
   };
-})()`;
-const LIVE_CAPTURE_CONDITION = `(() => {
-  const slot = globalThis.__xegLiveFilename495;
-  if (!slot || slot.events.length >= 1 || !media || typeof filename !== 'string') return false;
-  const source = media.downloadSource?.url ?? media.originalUrl ?? media.url;
-  let url;
-  try { url = new URL(source); } catch { return false; }
-  const path = /^\\/media\\/([A-Za-z0-9_-]{1,40})(?:\\.(jpg|jpeg|png|webp|gif))?$/.exec(url.pathname);
-  if (!path || path[1] !== slot.mediaBasename || url.origin !== 'https://pbs.twimg.com') return false;
-  slot.events.push({
-    generatedFilename: filename.slice(0, 256),
-    id: String(media.id ?? '').slice(0, 128),
-    type: media.type,
-    url: String(media.url ?? '').slice(0, 256),
-    originalUrl: String(media.originalUrl ?? '').slice(0, 256),
-    downloadSource: media.downloadSource ? {
-      url: String(media.downloadSource.url ?? '').slice(0, 256),
-      quality: media.downloadSource.quality,
-      provenance: media.downloadSource.provenance
-    } : null,
-    filename: media.filename ?? null,
-    tweetUsername: media.tweetUsername ?? null,
-    tweetId: media.tweetId ?? null,
-    quotedUsername: media.quotedUsername ?? null,
-    quotedTweetId: media.quotedTweetId ?? null,
-    sourceLocation: media.sourceLocation ?? null,
-    attachmentOrdinal: media.attachmentOrdinal ?? null,
-    attachmentSourceKey: media.attachmentSourceKey ?? null,
-    gm: {
-      legacyDownloadType: typeof GM_download,
-      modernDownloadType: typeof GM === 'object' ? typeof GM.download : 'undefined',
-      handler: typeof GM_info === 'object' ? GM_info.scriptHandler : null,
-      version: typeof GM_info === 'object' ? GM_info.version : null,
-      scriptName: typeof GM_info === 'object' ? GM_info.script?.name : null,
-      scriptVersion: typeof GM_info === 'object' ? GM_info.script?.version : null,
-      grants: typeof GM_info === 'object' && Array.isArray(GM_info.script?.grant)
-        ? GM_info.script.grant.slice(0, 24) : null,
-      mode: typeof GM_info === 'object' ? GM_info.downloadMode : null
-    }
-  });
-  return false;
-})()`;
-const LIVE_GM_CALL_CONDITION = `(() => {
-  const slot = globalThis.__xegLiveFilename495;
-  if (!slot || slot.calls.length >= 1) return false;
-  slot.calls.push({
-    apiName,
-    args: { url, name: filename, saveAs: false, timeout: GM_DOWNLOAD_TIMEOUT_MS },
-    returnType: typeof handle,
-    abortType: typeof handle?.abort,
-    thenType: typeof handle?.then
-  });
-  return false;
-})()`;
-const LIVE_OLD_GM_CALL_CONDITION = `(() => {
-  const slot = globalThis.__xegLiveFilename495;
-  if (!slot || slot.calls.length >= 1) return false;
-  slot.calls.push({
-    apiName: 'GM.download',
-    args: { url, name: filename, saveAs: false, timeout: GM_DOWNLOAD_TIMEOUT_MS },
-    returnType: typeof handle,
-    abortType: typeof handle?.abort,
-    thenType: typeof handle?.then
-  });
-  return false;
 })()`;
 
 /** Bind the executed manager wrapper to the exact installed product body. */
@@ -5095,27 +5042,6 @@ export function resolveUserscriptGMCallLine(source: string): number | null {
     'GM call source changed before return capture'
   );
   return calls[0]!;
-}
-
-async function removeLiveSandboxDiagnostic(session: CDPSession, contextId: number): Promise<void> {
-  const removed = await session.send('Runtime.evaluate', {
-    contextId,
-    expression: 'delete globalThis.__xegLiveFilename495',
-    returnByValue: true,
-  });
-  assert(
-    !removed.exceptionDetails && removed.result?.value === true,
-    'Userscript diagnostic slot deletion failed'
-  );
-  const readback = await session.send('Runtime.evaluate', {
-    contextId,
-    expression: "Object.prototype.hasOwnProperty.call(globalThis, '__xegLiveFilename495')",
-    returnByValue: true,
-  });
-  assert(
-    !readback.exceptionDetails && readback.result?.value === false,
-    'Userscript diagnostic slot remains after deletion'
-  );
 }
 
 function diagnosticScriptUrl(value: string): string {
@@ -5412,9 +5338,8 @@ export async function runUserscriptLiveInstallation(options: {
   let managerPage: Page | undefined;
   let managerId: string | undefined;
   let observer: ReturnType<typeof createBrowserDownloadObserver> | undefined;
-  let breakpointId: string | undefined;
-  let gmBreakpointId: string | undefined;
-  let sandboxId: number | undefined;
+  let pauseGuard: ReturnType<typeof createPreArmPauseGuard> | undefined;
+  let frameTrace: InstalledUserscriptFrameTrace | undefined;
   let primaryError: unknown;
   let dispatchedClicks = 0;
   const cleanupErrors: unknown[] = [];
@@ -5480,6 +5405,8 @@ export async function runUserscriptLiveInstallation(options: {
         }
       }
     );
+    pauseGuard = createPreArmPauseGuard(debuggerSession);
+    pauseGuard.start();
     await debuggerSession.send('Runtime.enable');
     await debuggerSession.send('Debugger.enable');
     const navigation = await page.goto(target.pageUrl, {
@@ -5491,6 +5418,7 @@ export async function runUserscriptLiveInstallation(options: {
       finalUrl: diagnosticScriptUrl(page.url()),
     };
     assert.equal(page.url(), target.pageUrl, 'Live status navigated away');
+    pauseGuard.assertClean();
     const liveEntry = await openUserscriptLivePhoto(page, target, output);
     receipt.liveEntryReadiness = liveEntry.readiness;
     receipt.liveEntryAction = liveEntry.action;
@@ -5585,43 +5513,39 @@ export async function runUserscriptLiveInstallation(options: {
       };
     }
     assert(script, 'Installed XCOM download source was not uniquely identified');
+    pauseGuard.assertClean();
     assert(
       Number.isSafeInteger(script.executionContextId) && script.executionContextId > 0,
       'Installed XCOM script has no execution realm'
     );
-    sandboxId = script.executionContextId;
     receipt.executedScript = script;
     const sandboxProbe = await debuggerSession
       .send('Runtime.evaluate', {
-        contextId: sandboxId,
+        contextId: script.executionContextId,
         expression: LIVE_SANDBOX_PROBE,
         returnByValue: true,
       })
       .catch(() => null);
-    receipt.sandboxGlobalProbe = sandboxProbe?.result?.value ?? null;
-    const slot = await debuggerSession.send('Runtime.callFunctionOn', {
-      executionContextId: sandboxId,
-      functionDeclaration:
-        'function(mediaBasename) { if (this.__xegLiveFilename495) return false; this.__xegLiveFilename495 = { mediaBasename, events: [], calls: [] }; return true; }',
-      arguments: [{ value: target.mediaBasename }],
-      returnByValue: true,
+    receipt.sandboxGlobalProbe = !sandboxProbe
+      ? { status: 'transport-unavailable' }
+      : sandboxProbe.exceptionDetails
+        ? {
+            status: 'expression-exception',
+            text: String(sandboxProbe.exceptionDetails.text).slice(0, 160),
+          }
+        : { status: 'evaluated', value: sandboxProbe.result?.value ?? null };
+    assert(script.gmCallLine !== null && script.gmCallKind, 'Installed GM call site missing');
+    frameTrace = createInstalledUserscriptFrameTrace({
+      session: debuggerSession,
+      scriptId: script.scriptId,
+      filenameLine: script.lineNumber,
+      gmCallLine: script.gmCallLine,
+      gmCallKind: script.gmCallKind,
+      target,
     });
-    assert.equal(slot.result?.value, true, 'Userscript diagnostic slot was occupied');
-    const breakpoint = await debuggerSession.send('Debugger.setBreakpoint', {
-      location: { scriptId: script.scriptId, lineNumber: script.lineNumber },
-      condition: LIVE_CAPTURE_CONDITION,
-    });
-    breakpointId = breakpoint.breakpointId;
-    if (script.gmCallLine !== null) {
-      const gmBreakpoint = await debuggerSession.send('Debugger.setBreakpoint', {
-        location: { scriptId: script.scriptId, lineNumber: script.gmCallLine },
-        condition:
-          script.gmCallKind === 'older-modern'
-            ? LIVE_OLD_GM_CALL_CONDITION
-            : LIVE_GM_CALL_CONDITION,
-      });
-      gmBreakpointId = gmBreakpoint.breakpointId;
-    }
+    await frameTrace.arm();
+    await pauseGuard.handoff();
+    receipt.frameTraceArmed = frameTrace.snapshot();
     const button = gallery.locator(
       '[data-gallery-element="toolbar"] button[aria-label="Download"]'
     );
@@ -5645,24 +5569,10 @@ export async function runUserscriptLiveInstallation(options: {
       dispatchedClicks += 1;
       await button.click();
       if (number === 1) {
-        const captured = await waitFor(
-          async () => {
-            const result = await debuggerSession!.send('Runtime.evaluate', {
-              contextId: sandboxId!,
-              expression: 'globalThis.__xegLiveFilename495?.events ?? []',
-              returnByValue: true,
-            });
-            const events = result.result?.value;
-            return Array.isArray(events) && events.length === 1
-              ? (events[0] as Record<string, unknown>)
-              : undefined;
-          },
-          'selected installed MediaInfo',
-          10_000
-        );
+        const captured: FrameMedia = await frameTrace.waitForMedia();
         receipt.selectedMedia = captured;
         receipt.sandbox = captured.gm ?? null;
-        const sourceUrl =
+        const sourceUrl: unknown =
           (captured.downloadSource as { url?: unknown } | null)?.url ??
           captured.originalUrl ??
           captured.url;
@@ -5780,36 +5690,19 @@ export async function runUserscriptLiveInstallation(options: {
         retained,
       });
       if (number === 1) {
-        const callResult: { result?: { value?: unknown } } = await debuggerSession.send(
-          'Runtime.evaluate',
-          {
-            contextId: sandboxId,
-            expression: 'globalThis.__xegLiveFilename495?.calls ?? []',
-            returnByValue: true,
-          }
-        );
-        const calls: unknown = callResult.result?.value;
-        assert(Array.isArray(calls) && calls.length <= 1, 'GM call capture exceeded bound');
-        receipt.gmCalls = calls;
-        if (calls.length === 1) {
-          assert.equal(calls[0]?.args?.url, sourceUrl);
-          assert.equal(calls[0]?.args?.name, requestedName);
-          receipt.route = { kind: 'GM', apiName: calls[0]?.apiName };
-        } else {
-          receipt.route = {
-            kind: 'unverified',
-            reason: 'GM call and fallback dispatch not observed',
-          };
-        }
-        assert(breakpointId);
-        await debuggerSession.send('Debugger.removeBreakpoint', { breakpointId });
-        breakpointId = undefined;
-        if (gmBreakpointId) {
-          await debuggerSession.send('Debugger.removeBreakpoint', { breakpointId: gmBreakpointId });
-          gmBreakpointId = undefined;
-        }
-        await removeLiveSandboxDiagnostic(debuggerSession, sandboxId);
-        await debuggerSession.send('Debugger.disable');
+        const call: FrameGmCall = await frameTrace.waitForGmCall();
+        receipt.gmCalls = [call];
+        assert.equal(call.args.url, sourceUrl);
+        assert.equal(call.args.name, requestedName);
+        receipt.route = { kind: 'GM', apiName: call.apiName };
+        const traceStop: {
+          removed: boolean;
+          debuggerDisabled: boolean;
+          debuggerDetached: boolean;
+          errors: string[];
+        } = await frameTrace.stop();
+        receipt.frameTrace = frameTrace.snapshot();
+        assert(traceStop.removed && traceStop.debuggerDisabled);
         receipt.diagnosticsRemovedBeforeRepeat = true;
         const gm = receipt.sandbox as Record<string, unknown> | null;
         assert(
@@ -5831,7 +5724,6 @@ export async function runUserscriptLiveInstallation(options: {
           requestedName,
           'Executed product filename differs from independent MediaInfo policy'
         );
-        assert.equal(calls.length, 1, 'No observed GM call; fallback route is unverified');
         assert(nameConforms, 'First native filename differs from selected attachment policy');
         firstNativeName = observedName;
         const sentinelName = browserFilename(requestedName, 1);
@@ -5894,70 +5786,31 @@ export async function runUserscriptLiveInstallation(options: {
     if (observer) {
       receipt.browserDownloadEvents = observer.events();
     }
-    if (debuggerSession && sandboxId && !receipt.diagnosticsRemovedBeforeRepeat) {
+    if (frameTrace && !receipt.diagnosticsRemovedBeforeRepeat) {
       try {
-        const captured = await debuggerSession.send('Runtime.evaluate', {
-          contextId: sandboxId,
-          expression:
-            '({ events: globalThis.__xegLiveFilename495?.events ?? [], calls: globalThis.__xegLiveFilename495?.calls ?? [] })',
-          returnByValue: true,
-        });
-        assert(!captured.exceptionDetails, 'Failed to harvest live sandbox diagnostics');
-        const values = captured.result?.value as
-          | {
-              events?: unknown;
-              calls?: unknown;
-            }
-          | undefined;
-        assert(
-          values &&
-            Array.isArray(values.events) &&
-            values.events.length <= 1 &&
-            Array.isArray(values.calls) &&
-            values.calls.length <= 1,
-          'Live sandbox diagnostic capture exceeded its bound'
-        );
-        receipt.finalSandboxEvents = values.events;
-        receipt.finalSandboxCalls = values.calls;
-        if (receipt.selectedMedia === undefined && values.events.length === 1) {
-          receipt.selectedMedia = values.events[0];
-        }
-        if (receipt.gmCalls === undefined) {
-          receipt.gmCalls = values.calls;
-        }
-        cleanup.sandboxDiagnosticsHarvested = true;
+        const stopped = await frameTrace.stop();
+        receipt.frameTrace = frameTrace.snapshot();
+        cleanup.frameTraceStopped = stopped.removed && stopped.debuggerDisabled;
       } catch (error) {
+        receipt.frameTrace = frameTrace.snapshot();
         cleanupErrors.push(error);
-        cleanup.sandboxHarvestError = safeRouteError(error);
+        cleanup.frameTraceStopError = safeRouteError(error);
       }
     }
-    if (debuggerSession && breakpointId) {
-      await debuggerSession.send('Debugger.removeBreakpoint', { breakpointId }).then(
-        () => {
-          cleanup.breakpointRemoved = true;
-        },
-        (error) => cleanupErrors.push(error)
-      );
+    if (pauseGuard) {
+      try {
+        cleanup.preArmPauseGuard = await pauseGuard.stop();
+      } catch (error) {
+        cleanupErrors.push(error);
+        cleanup.preArmPauseGuardError = safeRouteError(error);
+      }
     }
-    if (debuggerSession && gmBreakpointId) {
-      await debuggerSession
-        .send('Debugger.removeBreakpoint', { breakpointId: gmBreakpointId })
-        .then(
-          () => {
-            cleanup.gmBreakpointRemoved = true;
-          },
-          (error) => cleanupErrors.push(error)
-        );
-    }
-    if (debuggerSession && sandboxId) {
-      await removeLiveSandboxDiagnostic(debuggerSession, sandboxId).then(
-        () => {
-          cleanup.sandboxDiagnosticRemoved = true;
-        },
-        (error) => cleanupErrors.push(error)
-      );
-    }
-    if (debuggerSession) {
+    if (
+      debuggerSession &&
+      (frameTrace?.snapshot().debuggerDetached || pauseGuard?.snapshot().detached)
+    ) {
+      cleanup.debuggerDetached = true;
+    } else if (debuggerSession) {
       await debuggerSession.detach().then(
         () => {
           cleanup.debuggerDetached = true;
