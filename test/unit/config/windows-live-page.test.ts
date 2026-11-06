@@ -632,8 +632,45 @@ describe('Windows X live page validation', () => {
     const prompt = nativePrompt();
     const edgeTitle = '"Tampermonkey" 이(가) 사용 권한을 요청했습니다.';
     prompt.controls[0]!.name = edgeTitle;
-    prompt.promptScope.controls[0]!.name = edgeTitle;
-    prompt.promptScope.controls[1]!.name = edgeTitle;
+    const pane = (depth: number) => ({
+      name: '',
+      controlType: 'ControlType.Pane',
+      depth,
+      isEnabled: true,
+      isOffscreen: false,
+    });
+    const named = (name: string, controlType: string, depth: number) => ({
+      name,
+      controlType,
+      depth,
+      isEnabled: true,
+      isOffscreen: false,
+    });
+    prompt.promptScope.controls = [
+      named(edgeTitle, 'ControlType.Window', 0),
+      pane(1),
+      pane(2),
+      pane(3),
+      pane(3),
+      pane(4),
+      pane(4),
+      pane(4),
+      named('허용', 'ControlType.Button', 4),
+      named('거부', 'ControlType.Button', 4),
+      pane(5),
+      pane(5),
+      named(edgeTitle, 'ControlType.Text', 6),
+      pane(6),
+      pane(6),
+      pane(7),
+      pane(8),
+      pane(9),
+      named('확장은 다음을 할 수 있습니다.', 'ControlType.Text', 10),
+      pane(10),
+      named('• 다운로드 관리', 'ControlType.Text', 11),
+    ];
+    prompt.promptScope.visitedControls = prompt.promptScope.controls.length;
+    prompt.promptScope.attemptedNodes = prompt.promptScope.controls.length;
     return prompt;
   };
 
@@ -644,6 +681,14 @@ describe('Windows X live page validation', () => {
     expect(userscriptInstall.isObservedNativeDownloadPrompt(edgeNativePrompt(), 'chrome')).toBe(
       false
     );
+    const chromeBody = edgeNativePrompt();
+    chromeBody.promptScope.controls[18]!.name = '이전에 가능했던 대상:';
+    chromeBody.promptScope.controls[20]!.name = '다운로드 관리';
+    expect(userscriptInstall.isObservedNativeDownloadPrompt(chromeBody, 'msedge')).toBe(false);
+    const edgeBody = nativePrompt();
+    edgeBody.promptScope.controls[2]!.name = '확장은 다음을 할 수 있습니다.';
+    edgeBody.promptScope.controls[3]!.name = '• 다운로드 관리';
+    expect(userscriptInstall.isObservedNativeDownloadPrompt(edgeBody, 'chrome')).toBe(false);
     const extraPermission = edgeNativePrompt();
     extraPermission.promptScope.controls.push({
       name: '방문 기록 읽기',
@@ -891,8 +936,10 @@ describe('Windows X live page validation', () => {
     expect(codePoints('EdgePermissionTitle')).toBe(
       '"Tampermonkey" 이(가) 사용 권한을 요청했습니다.'
     );
-    expect(codePoints('PriorPermissionsLabel')).toBe('이전에 가능했던 대상:');
-    expect(codePoints('DownloadsPermissionLabel')).toBe('다운로드 관리');
+    expect(codePoints('ChromePriorPermissionsLabel')).toBe('이전에 가능했던 대상:');
+    expect(codePoints('ChromeDownloadsPermissionLabel')).toBe('다운로드 관리');
+    expect(codePoints('EdgePriorPermissionsLabel')).toBe('확장은 다음을 할 수 있습니다.');
+    expect(codePoints('EdgeDownloadsPermissionLabel')).toBe('• 다운로드 관리');
     expect(codePoints('AllowButtonLabel')).toBe('허용');
     expect(codePoints('DenyButtonLabel')).toBe('거부');
   });

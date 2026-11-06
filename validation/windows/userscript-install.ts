@@ -84,6 +84,10 @@ const NATIVE_PERMISSION_RECEIPT = 'userscript-manager-native-permission.json';
 const NATIVE_PERMISSION_ACTION_RECEIPT = 'userscript-manager-native-permission-action.json';
 const CHROME_KO_PERMISSION_TITLE = "'Tampermonkey'이(가) 추가 승인을 요청했습니다.";
 const EDGE_KO_PERMISSION_TITLE = '"Tampermonkey" 이(가) 사용 권한을 요청했습니다.';
+const CHROME_KO_PRIOR_PERMISSIONS_LABEL = '이전에 가능했던 대상:';
+const CHROME_KO_DOWNLOADS_PERMISSION_LABEL = '다운로드 관리';
+const EDGE_KO_PRIOR_PERMISSIONS_LABEL = '확장은 다음을 할 수 있습니다.';
+const EDGE_KO_DOWNLOADS_PERMISSION_LABEL = '• 다운로드 관리';
 const PROMPT_SCOPE_REASONS = new Set([
   'prompt-window-not-unique',
   'prompt-identity-changed',
@@ -445,6 +449,12 @@ export function isObservedNativeDownloadPrompt(
       : browserName === 'msedge'
         ? EDGE_KO_PERMISSION_TITLE
         : null;
+  const priorPermissionsLabel =
+    browserName === 'msedge' ? EDGE_KO_PRIOR_PERMISSIONS_LABEL : CHROME_KO_PRIOR_PERMISSIONS_LABEL;
+  const downloadsPermissionLabel =
+    browserName === 'msedge'
+      ? EDGE_KO_DOWNLOADS_PERMISSION_LABEL
+      : CHROME_KO_DOWNLOADS_PERMISSION_LABEL;
   const scope = receipt?.promptScope;
   if (
     title === null ||
@@ -491,14 +501,14 @@ export function isObservedNativeDownloadPrompt(
     ).length === 1 &&
     count('ControlType.Window', title) === 1 &&
     count('ControlType.Text', title) === 1 &&
-    count('ControlType.Text', '이전에 가능했던 대상:') === 1 &&
-    count('ControlType.Text', '다운로드 관리') === 1 &&
+    count('ControlType.Text', priorPermissionsLabel) === 1 &&
+    count('ControlType.Text', downloadsPermissionLabel) === 1 &&
     count('ControlType.Button', '허용') === 1 &&
     count('ControlType.Button', '거부') === 1 &&
     controls.filter(
       (control) =>
         control.name &&
-        ![title, '이전에 가능했던 대상:', '다운로드 관리', '허용', '거부'].includes(
+        ![title, priorPermissionsLabel, downloadsPermissionLabel, '허용', '거부'].includes(
           control.name ?? ''
         )
     ).length === 0 &&

@@ -25,9 +25,10 @@ for another, and none is a required CI lane.
    only for the fully recognized downloads-only prompt in that fresh owned profile.
    It rechecks the browser process, session and foreground window before acting;
    unrecognized, incomplete or changed prompts are skipped. Edge uses its observed
-   title and the same strict downloads-only label check; if its scoped UIA labels
-   differ, the action remains skipped for review. An independent manager permission
-   probe records whether the permission was actually granted or remains pending.
+   title, permission description, and bullet-prefixed downloads-only label; if
+   its scoped UIA labels differ, the action remains skipped for review. An
+   independent manager permission probe records whether the permission was
+   actually granted or remains pending.
    Native completion and saved bytes require separate evidence.
    The fresh manager profile sets General > LogLevel to Info (60) through its
    options UI, and the manager-console receipt keeps only bounded known branch counts.

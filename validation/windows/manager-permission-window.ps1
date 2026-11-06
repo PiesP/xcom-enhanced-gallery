@@ -30,10 +30,21 @@ $script:EdgePermissionTitle = [string]::Concat([char[]]@(
 $script:PermissionTitle = $(if ($BrowserName -eq 'msedge') {
     $script:EdgePermissionTitle
 } else { $script:ChromePermissionTitle })
-$script:PriorPermissionsLabel = [string]::Concat([char[]]@(
+$script:ChromePriorPermissionsLabel = [string]::Concat([char[]]@(
     0xC774,0xC804,0xC5D0,0x0020,0xAC00,0xB2A5,0xD588,0xB358,0x0020,0xB300,0xC0C1,0x003A))
-$script:DownloadsPermissionLabel = [string]::Concat([char[]]@(
+$script:ChromeDownloadsPermissionLabel = [string]::Concat([char[]]@(
     0xB2E4,0xC6B4,0xB85C,0xB4DC,0x0020,0xAD00,0xB9AC))
+$script:EdgePriorPermissionsLabel = [string]::Concat([char[]]@(
+    0xD655,0xC7A5,0xC740,0x0020,0xB2E4,0xC74C,0xC744,0x0020,0xD560,
+    0x0020,0xC218,0x0020,0xC788,0xC2B5,0xB2C8,0xB2E4,0x002E))
+$script:EdgeDownloadsPermissionLabel = [string]::Concat([char[]]@(
+    0x2022,0x0020,0xB2E4,0xC6B4,0xB85C,0xB4DC,0x0020,0xAD00,0xB9AC))
+$script:PriorPermissionsLabel = $(if ($BrowserName -eq 'msedge') {
+    $script:EdgePriorPermissionsLabel
+} else { $script:ChromePriorPermissionsLabel })
+$script:DownloadsPermissionLabel = $(if ($BrowserName -eq 'msedge') {
+    $script:EdgeDownloadsPermissionLabel
+} else { $script:ChromeDownloadsPermissionLabel })
 $script:AllowButtonLabel = [string]::Concat([char[]]@(0xD5C8,0xC6A9))
 $script:DenyButtonLabel = [string]::Concat([char[]]@(0xAC70,0xBD80))
 
