@@ -187,7 +187,20 @@ file independently. API selection and cancellation follow the
 [transport contract](network-redirects.md); a manager setting alone does not
 establish which product route executed.
 
-Chrome 156.0.8078.80, recorded revision
+### External filename interference
+
+During manual reproduction on 2026-11-06, the user isolated
+[FetchV 4.0.3](https://chromewebstore.google.com/detail/fetchv-video-downloader-f/nfmmmhanepmpifddlkkmihkalkoekpfd)
+as the interfering extension: disabling it restored the generated filenames for
+both the XEG extension and userscript. This identifies the cause in that tested
+profile. The earlier reported profile was unavailable for the same comparison.
+The filename-listener callback order was not captured. FetchV's own
+[filename notice](https://v4.fetchv.net/announcement/en.html) describes native
+download filename interference and its 4.0.3 protection logic; its stated intent
+to change only its own downloads does not establish the original event sequence.
+The user-confirmed workaround is to disable FetchV during XEG downloads.
+
+In a controlled experiment, Chrome 156.0.8078.80, recorded revision
 `fb096c0011f9d50f0a264a9376420cdea9c421e3`, reproduced CDN fallback with a
 separate passive filename listener. Its [binding sends empty name/action values
 for no suggestion](https://github.com/chromium/chromium/blob/fb096c0011f9d50f0a264a9376420cdea9c421e3/chrome/renderer/resources/extensions/downloads_custom_bindings.js).
@@ -197,8 +210,14 @@ can clear the creator filename](https://github.com/chromium/chromium/blob/fb096c
 A scoped explicit XEG suggestion also lost to the later-installed helper in the
 controlled run. XEG therefore preserves automatic native saving and reports the
 actual result; it installs no filename-renaming listener and claims no priority
-over other extensions. This controlled mechanism does not identify a particular
-extension in the original user's profile.
+over other extensions. This version-specific experiment demonstrates a mechanism;
+it is not a replay of FetchV 4.0.3 in the user's tested profile.
+
+The userscript cancellation correction in
+[#496](https://github.com/PiesP/xcom-enhanced-gallery/pull/496) addresses a
+separate legacy-only API routing defect. A clean-profile baseline already saved
+the requested name through the modern API, so that correction is not evidence
+that XEG fixed the FetchV filename conflict.
 
 ## In-gallery limitations
 
