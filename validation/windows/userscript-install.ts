@@ -83,6 +83,7 @@ const execFileAsync = promisify(execFile);
 const NATIVE_PERMISSION_RECEIPT = 'userscript-manager-native-permission.json';
 const NATIVE_PERMISSION_ACTION_RECEIPT = 'userscript-manager-native-permission-action.json';
 const CHROME_KO_PERMISSION_TITLE = "'Tampermonkey'이(가) 추가 승인을 요청했습니다.";
+const EDGE_KO_PERMISSION_TITLE = '"Tampermonkey" 이(가) 사용 권한을 요청했습니다.';
 const PROMPT_SCOPE_REASONS = new Set([
   'prompt-window-not-unique',
   'prompt-identity-changed',
@@ -433,10 +434,20 @@ export async function captureNativeManagerPermission(
   return { status: receipt.status, reason: receipt.reason ?? null };
 }
 
-/** Only the observed Korean Chrome downloads-only prompt is eligible for native Invoke. */
-export function isObservedChromeNativeDownloadPrompt(receipt: NativePromptReceipt | null) {
+/** Only a complete known Korean downloads-only prompt is eligible for native Invoke. */
+export function isObservedNativeDownloadPrompt(
+  receipt: NativePromptReceipt | null,
+  browserName: string
+) {
+  const title =
+    browserName === 'chrome'
+      ? CHROME_KO_PERMISSION_TITLE
+      : browserName === 'msedge'
+        ? EDGE_KO_PERMISSION_TITLE
+        : null;
   const scope = receipt?.promptScope;
   if (
+    title === null ||
     receipt?.status !== 'captured' ||
     receipt.capture !== 'uia-only' ||
     receipt.screenshot !== 'not-captured' ||
@@ -476,11 +487,10 @@ export function isObservedChromeNativeDownloadPrompt(receipt: NativePromptReceip
     controls.filter((control) => control.controlType === type && control.name === name).length;
   return (
     receipt.controls.filter(
-      (control) =>
-        control.controlType === 'ControlType.Window' && control.name === CHROME_KO_PERMISSION_TITLE
+      (control) => control.controlType === 'ControlType.Window' && control.name === title
     ).length === 1 &&
-    count('ControlType.Window', CHROME_KO_PERMISSION_TITLE) === 1 &&
-    count('ControlType.Text', CHROME_KO_PERMISSION_TITLE) === 1 &&
+    count('ControlType.Window', title) === 1 &&
+    count('ControlType.Text', title) === 1 &&
     count('ControlType.Text', '이전에 가능했던 대상:') === 1 &&
     count('ControlType.Text', '다운로드 관리') === 1 &&
     count('ControlType.Button', '허용') === 1 &&
@@ -488,13 +498,9 @@ export function isObservedChromeNativeDownloadPrompt(receipt: NativePromptReceip
     controls.filter(
       (control) =>
         control.name &&
-        ![
-          CHROME_KO_PERMISSION_TITLE,
-          '이전에 가능했던 대상:',
-          '다운로드 관리',
-          '허용',
-          '거부',
-        ].includes(control.name ?? '')
+        ![title, '이전에 가능했던 대상:', '다운로드 관리', '허용', '거부'].includes(
+          control.name ?? ''
+        )
     ).length === 0 &&
     controls
       .filter(
@@ -504,6 +510,11 @@ export function isObservedChromeNativeDownloadPrompt(receipt: NativePromptReceip
       )
       .every((control) => control.isEnabled === true && control.isOffscreen === false)
   );
+}
+
+/** Preserve the Chrome-specific predicate for existing validator callers. */
+export function isObservedChromeNativeDownloadPrompt(receipt: NativePromptReceipt | null) {
+  return isObservedNativeDownloadPrompt(receipt, 'chrome');
 }
 
 /** Recheck the owned manager ask before a second, OS-bound UIA-only Invoke pass. */
@@ -527,7 +538,7 @@ export async function inspectAndAllowNativeManagerPermission(
     run
   );
   const skipped = (reason: string) => ({ ...diagnostic, action: { status: 'skipped', reason } });
-  if (browserName !== 'chrome') {
+  if (browserName !== 'chrome' && browserName !== 'msedge') {
     return skipped('browser-not-observed');
   }
   if (diagnostic.status !== 'captured') {
@@ -541,7 +552,7 @@ export async function inspectAndAllowNativeManagerPermission(
         : 'incomplete';
       return skipped(`prompt-scope-${reason}`);
     }
-    if (!isObservedChromeNativeDownloadPrompt(receipt)) {
+    if (!isObservedNativeDownloadPrompt(receipt, browserName)) {
       return skipped('prompt-not-exact');
     }
     const currentPid = browserProcessId(await cdp.send('SystemInfo.getProcessInfo'));

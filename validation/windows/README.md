@@ -12,7 +12,7 @@ for another, and none is a required CI lane.
    experience case also checks native keyboard activation and a return from
    manually scrolled focus to the last requested item. A declared
    public-release input first exercises a same-profile unpacked update.
-3. **Installed Chrome Tampermonkey profile:** installs the exact production
+3. **Installed Chrome/Edge Tampermonkey profile:** installs the exact production
    `.user.js` through the reviewed manager UI in a fresh owned profile. A declared
    public-release input first exercises the manager's update confirmation. It checks
    repeated native singles and ZIPs, a partial ZIP, routed transport failure,
@@ -20,14 +20,15 @@ for another, and none is a required CI lane.
    independently read saved files. It configures Browser API mode in the
    task-owned Tampermonkey options UI, checks the existing JPG/ZIP whitelist,
    and confirms the manager's own permission page when shown. That UI may
-   request Tampermonkey's optional downloads permission. On Chrome, a bounded
-   Windows UI Automation step may invoke the ordinary **Allow** button only
-   for the fully recognized downloads-only prompt in that fresh owned profile.
+   request Tampermonkey's optional downloads permission. On Chrome or Edge, a
+   bounded Windows UI Automation step may invoke the ordinary **Allow** button
+   only for the fully recognized downloads-only prompt in that fresh owned profile.
    It rechecks the browser process, session and foreground window before acting;
-   unrecognized, incomplete or changed prompts are skipped. Edge prompts are
-   not automated. An independent manager permission probe records whether the
-   permission was actually granted or remains pending. Native completion and
-   saved bytes require separate evidence.
+   unrecognized, incomplete or changed prompts are skipped. Edge uses its observed
+   title and the same strict downloads-only label check; if its scoped UIA labels
+   differ, the action remains skipped for review. An independent manager permission
+   probe records whether the permission was actually granted or remains pending.
+   Native completion and saved bytes require separate evidence.
    The fresh manager profile sets General > LogLevel to Info (60) through its
    options UI, and the manager-console receipt keeps only bounded known branch counts.
    That setting is removed with the owned profile after browser closure; failed

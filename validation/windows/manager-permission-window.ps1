@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 PiesP
-# UIA evidence and one guarded native Chrome permission action in the task browser.
+# UIA evidence and one guarded native permission action in the task browser.
 param(
     [Parameter(Mandatory=$true)][ValidateRange(1,2147483647)][int]$BrowserPid,
     [Parameter(Mandatory=$true)][ValidateSet('chrome','msedge')][string]$BrowserName,
@@ -18,10 +18,18 @@ $receiptPath = Join-Path $Output $(if ($InvokeAllow) {
 $receipt = @{ status = 'skipped'; reason = 'ownership-unverified';
     capture = 'uia-only'; screenshot = 'not-captured'; permissionGrantAttempted = $false }
 
-# Exact Chrome ko-KR UIA names from the owned permission prompt; keep this file ASCII for Windows PowerShell 5.1 -File.
-$script:PermissionTitle = "'Tampermonkey'" + [string]::Concat([char[]]@(
+# Exact ko-KR UIA names from owned Chrome and Edge permission prompts; keep this file ASCII for Windows PowerShell 5.1 -File.
+$script:ChromePermissionTitle = "'Tampermonkey'" + [string]::Concat([char[]]@(
     0xC774,0x0028,0xAC00,0x0029,0x0020,0xCD94,0xAC00,0x0020,0xC2B9,0xC778,
     0xC744,0x0020,0xC694,0xCCAD,0xD588,0xC2B5,0xB2C8,0xB2E4,0x002E))
+$script:EdgePermissionTitle = [string]::Concat([char[]]@(
+    0x0022,0x0054,0x0061,0x006D,0x0070,0x0065,0x0072,0x006D,0x006F,0x006E,
+    0x006B,0x0065,0x0079,0x0022,0x0020,0xC774,0x0028,0xAC00,0x0029,0x0020,
+    0xC0AC,0xC6A9,0x0020,0xAD8C,0xD55C,0xC744,0x0020,0xC694,0xCCAD,
+    0xD588,0xC2B5,0xB2C8,0xB2E4,0x002E))
+$script:PermissionTitle = $(if ($BrowserName -eq 'msedge') {
+    $script:EdgePermissionTitle
+} else { $script:ChromePermissionTitle })
 $script:PriorPermissionsLabel = [string]::Concat([char[]]@(
     0xC774,0xC804,0xC5D0,0x0020,0xAC00,0xB2A5,0xD588,0xB358,0x0020,0xB300,0xC0C1,0x003A))
 $script:DownloadsPermissionLabel = [string]::Concat([char[]]@(
@@ -298,8 +306,7 @@ try {
         promptScope = $promptScope }
     if ($InvokeAllow) {
         $receipt.permissionGrantAttempted = $false
-        if ($BrowserName -ne 'chrome' -or
-            $ExpectedCreationUtcTicks -cne $receipt.creationUtcTicks -or
+        if ($ExpectedCreationUtcTicks -cne $receipt.creationUtcTicks -or
             $ExpectedSessionId -ne $receipt.browserSessionId -or
             $ExpectedForegroundHandle -cne $receipt.foregroundHandle -or
             -not $promptScope.complete -or $promptWindows.Count -ne 1) {

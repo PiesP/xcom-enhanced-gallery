@@ -257,6 +257,7 @@ const userscriptInstall = (await import(
   isOwnedManagerPermissionAskUrl(value: string, managerId: string): boolean;
   browserProcessId(value: unknown): number | null;
   isObservedChromeNativeDownloadPrompt(value: unknown): boolean;
+  isObservedNativeDownloadPrompt(value: unknown, browserName: string): boolean;
   captureNativeManagerPermission(
     cdp: { send(method: string): Promise<unknown> },
     root: string,
@@ -536,17 +537,17 @@ describe('Windows X live page validation', () => {
       { method: 'GET', status: 403, url: '/i/api/graphql/owned/TweetResultByRestId' },
     ]);
   });
-  it('keeps the loopback certificate exception scoped to Chrome', async () => {
+  it('rejects an unsupported installed userscript browser before filesystem access', async () => {
     const chromium = { launchPersistentContext: vi.fn() };
     await expect(
       userscriptInstall.runUserscriptInstallation({
-        browserName: 'msedge',
+        browserName: 'firefox',
         chromium,
         root: '/unused',
         output: '/unused',
         headless: false,
       })
-    ).rejects.toThrow('Chrome only');
+    ).rejects.toThrow('HTTPS userscript fixture supports installed Chrome and Edge only');
     expect(chromium.launchPersistentContext).not.toHaveBeenCalled();
   });
 
@@ -625,6 +626,39 @@ describe('Windows X live page validation', () => {
         },
       ],
     },
+  });
+
+  const edgeNativePrompt = () => {
+    const prompt = nativePrompt();
+    const edgeTitle = '"Tampermonkey" 이(가) 사용 권한을 요청했습니다.';
+    prompt.controls[0]!.name = edgeTitle;
+    prompt.promptScope.controls[0]!.name = edgeTitle;
+    prompt.promptScope.controls[1]!.name = edgeTitle;
+    return prompt;
+  };
+
+  it('admits only a complete known Edge downloads prompt in the Edge browser', () => {
+    expect(userscriptInstall.isObservedNativeDownloadPrompt(edgeNativePrompt(), 'msedge')).toBe(
+      true
+    );
+    expect(userscriptInstall.isObservedNativeDownloadPrompt(edgeNativePrompt(), 'chrome')).toBe(
+      false
+    );
+    const extraPermission = edgeNativePrompt();
+    extraPermission.promptScope.controls.push({
+      name: '방문 기록 읽기',
+      controlType: 'ControlType.Text',
+      depth: 2,
+      isEnabled: true,
+      isOffscreen: false,
+    });
+    extraPermission.promptScope.visitedControls++;
+    extraPermission.promptScope.attemptedNodes++;
+    expect(userscriptInstall.isObservedNativeDownloadPrompt(extraPermission, 'msedge')).toBe(false);
+    const truncated = edgeNativePrompt();
+    truncated.promptScope.complete = false;
+    truncated.promptScope.reason = 'node-cap';
+    expect(userscriptInstall.isObservedNativeDownloadPrompt(truncated, 'msedge')).toBe(false);
   });
 
   it('rejects a changed native title, extra permission, ambiguous Allow, and mismatched process', () => {
@@ -778,6 +812,37 @@ describe('Windows X live page validation', () => {
         ])
       );
       expect(cdp.send).toHaveBeenCalledWith('SystemInfo.getProcessInfo');
+      run.mockClear();
+      promptReceipt = edgeNativePrompt();
+      const edgeInvoked = await userscriptInstall.inspectAndAllowNativeManagerPermission(
+        cdp,
+        root,
+        output,
+        profile,
+        'msedge',
+        ask,
+        'owned',
+        context,
+        run
+      );
+      expect(edgeInvoked.action.status).toBe('invoked');
+      expect(run.mock.calls[1]?.[1]).toEqual(
+        expect.arrayContaining(['-BrowserName', 'msedge', '-InvokeAllow'])
+      );
+      run.mockClear();
+      const otherContext = await userscriptInstall.inspectAndAllowNativeManagerPermission(
+        cdp,
+        root,
+        output,
+        profile,
+        'msedge',
+        ask,
+        'owned',
+        {},
+        run
+      );
+      expect(otherContext.action).toEqual({ status: 'skipped', reason: 'manager-ask-not-current' });
+      expect(run).toHaveBeenCalledOnce();
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
@@ -820,8 +885,11 @@ describe('Windows X live page validation', () => {
         ...[...script.slice(start, end).matchAll(/0x[0-9A-F]{4}/gu)].map(([hex]) => Number(hex))
       );
     };
-    expect(`'Tampermonkey'${codePoints('PermissionTitle')}`).toBe(
+    expect(`'Tampermonkey'${codePoints('ChromePermissionTitle')}`).toBe(
       "'Tampermonkey'이(가) 추가 승인을 요청했습니다."
+    );
+    expect(codePoints('EdgePermissionTitle')).toBe(
+      '"Tampermonkey" 이(가) 사용 권한을 요청했습니다.'
     );
     expect(codePoints('PriorPermissionsLabel')).toBe('이전에 가능했던 대상:');
     expect(codePoints('DownloadsPermissionLabel')).toBe('다운로드 관리');
@@ -2092,7 +2160,7 @@ describe('Windows X live page validation', () => {
     }
   });
 
-  it('routes the installed userscript separately and rejects public URLs', async () => {
+  it('rejects installed userscript public URLs without an exact photo selector', async () => {
     const chromium = {
       launchPersistentContext: async (): Promise<never> => {
         throw new Error('browser must not launch');
@@ -2108,7 +2176,7 @@ describe('Windows X live page validation', () => {
         output: '/unused',
         root: '/unused',
       })
-    ).rejects.toThrow('does not support public URLs');
+    ).rejects.toThrow('Installed userscript public URL requires the exact reported photo selector');
   });
 
   it('keeps live observation opt-in and bundles its imported module', async () => {
