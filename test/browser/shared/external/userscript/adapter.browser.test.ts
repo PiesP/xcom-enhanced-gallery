@@ -139,6 +139,8 @@ describe('userscript download adapter failure handling', () => {
       return { abort: vi.fn() };
     });
     userscriptGlobals.GM = { download: modernDownload };
+    const legacyDownload = vi.fn();
+    userscriptGlobals.GM_download = legacyDownload as unknown as typeof GM_download;
     userscriptGlobals.GM_xmlhttpRequest = vi.fn(() => ({ abort: vi.fn() }));
     const api = await loadUserscriptAdapter();
 
@@ -146,6 +148,7 @@ describe('userscript download adapter failure handling', () => {
       api.download('https://pbs.twimg.com/media/image.jpg', 'image.jpg')
     ).resolves.toBeUndefined();
     expect(modernDownload).toHaveBeenCalledOnce();
+    expect(legacyDownload).not.toHaveBeenCalled();
   });
 
   it('observes a Promise-based GM.download rejection even when callbacks are not invoked', async () => {
@@ -168,11 +171,85 @@ describe('userscript download adapter failure handling', () => {
     ).rejects.toThrow('download permission denied');
   });
 
-  it('uses the cancellable fallback instead of legacy GM_download when a signal is supplied', async () => {
-    const legacyDownload = vi.fn();
-    const abortRequest = vi.fn();
-    const xmlHttpRequest = vi.fn(() => ({ abort: abortRequest }));
-    userscriptGlobals.GM_download = legacyDownload;
+  it('observes modern Promise rejection after synchronous onload without settling twice', async () => {
+    const lateFailure = new Error('late Promise rejection');
+    const modernDownload = vi.fn((details: GMDownloadDetails) => {
+      details.onload?.();
+      return Object.assign(Promise.reject(lateFailure), { abort: vi.fn() });
+    });
+    userscriptGlobals.GM = { download: modernDownload };
+    userscriptGlobals.GM_xmlhttpRequest = vi.fn(() => ({ abort: vi.fn() }));
+    const api = await loadUserscriptAdapter();
+
+    await expect(
+      api.download('https://pbs.twimg.com/media/image.jpg', 'image.jpg')
+    ).resolves.toBeUndefined();
+    await Promise.resolve();
+    expect(modernDownload).toHaveBeenCalledOnce();
+  });
+
+  it('uses the abortable legacy GM_download path with a signal and ignores late callbacks', async () => {
+    const abortDownload = vi.fn();
+    let details: GMDownloadDetails | undefined;
+    const legacyDownload = vi.fn((request: GMDownloadDetails) => {
+      details = request;
+      return { abort: abortDownload };
+    });
+    const xmlHttpRequest = vi.fn(() => ({ abort: vi.fn() }));
+    userscriptGlobals.GM_download = legacyDownload as unknown as typeof GM_download;
+    userscriptGlobals.GM_xmlhttpRequest = xmlHttpRequest;
+    const controller = new AbortController();
+    const removeEventListener = vi.spyOn(controller.signal, 'removeEventListener');
+    const api = await loadUserscriptAdapter();
+
+    const pending = api.download(
+      'https://pbs.twimg.com/media/image.jpg',
+      'image.jpg',
+      controller.signal
+    );
+    controller.abort();
+
+    await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+    details?.onload?.();
+    details?.onerror?.(new Error('late callback'));
+    expect(legacyDownload).toHaveBeenCalledOnce();
+    expect(legacyDownload).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: 'https://pbs.twimg.com/media/image.jpg',
+        name: 'image.jpg',
+        saveAs: false,
+      })
+    );
+    expect(xmlHttpRequest).not.toHaveBeenCalled();
+    expect(abortDownload).toHaveBeenCalledOnce();
+    expect(removeEventListener).toHaveBeenCalledOnce();
+  });
+
+  it('aborts the legacy handle returned after cancellation during dispatch', async () => {
+    const controller = new AbortController();
+    const abortDownload = vi.fn();
+    const legacyDownload = vi.fn((details: GMDownloadDetails) => {
+      controller.abort();
+      details.onload?.();
+      return { abort: abortDownload };
+    });
+    const xmlHttpRequest = vi.fn(() => ({ abort: vi.fn() }));
+    userscriptGlobals.GM_download = legacyDownload as unknown as typeof GM_download;
+    userscriptGlobals.GM_xmlhttpRequest = xmlHttpRequest;
+    const api = await loadUserscriptAdapter();
+
+    await expect(
+      api.download('https://pbs.twimg.com/media/image.jpg', 'image.jpg', controller.signal)
+    ).rejects.toMatchObject({ name: 'AbortError' });
+    expect(abortDownload).toHaveBeenCalledOnce();
+    expect(legacyDownload).toHaveBeenCalledOnce();
+    expect(xmlHttpRequest).not.toHaveBeenCalled();
+  });
+
+  it('reports unknown outcome without redispatch when the legacy abort handle is missing', async () => {
+    const legacyDownload = vi.fn((_details: GMDownloadDetails) => undefined);
+    const xmlHttpRequest = vi.fn(() => ({ abort: vi.fn() }));
+    userscriptGlobals.GM_download = legacyDownload as unknown as typeof GM_download;
     userscriptGlobals.GM_xmlhttpRequest = xmlHttpRequest;
     const controller = new AbortController();
     const api = await loadUserscriptAdapter();
@@ -184,10 +261,52 @@ describe('userscript download adapter failure handling', () => {
     );
     controller.abort();
 
-    await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+    await expect(pending).rejects.toThrow('download outcome unknown');
+    expect(legacyDownload).toHaveBeenCalledOnce();
+    expect(xmlHttpRequest).not.toHaveBeenCalled();
+  });
+
+  it('contains a throwing legacy abort and never retries the possible download', async () => {
+    const legacyDownload = vi.fn((_details: GMDownloadDetails) => ({
+      abort: () => {
+        throw new Error('manager abort failed');
+      },
+    }));
+    const xmlHttpRequest = vi.fn(() => ({ abort: vi.fn() }));
+    userscriptGlobals.GM_download = legacyDownload as unknown as typeof GM_download;
+    userscriptGlobals.GM_xmlhttpRequest = xmlHttpRequest;
+    const controller = new AbortController();
+    const api = await loadUserscriptAdapter();
+
+    const pending = api.download(
+      'https://pbs.twimg.com/media/image.jpg',
+      'image.jpg',
+      controller.signal
+    );
+    expect(() => controller.abort()).not.toThrow();
+
+    await expect(pending).rejects.toThrow('download outcome unknown');
+    expect(legacyDownload).toHaveBeenCalledOnce();
+    expect(xmlHttpRequest).not.toHaveBeenCalled();
+  });
+
+  it('does not dispatch to any download path when already cancelled', async () => {
+    const modernDownload = vi.fn();
+    const legacyDownload = vi.fn();
+    const xmlHttpRequest = vi.fn(() => ({ abort: vi.fn() }));
+    userscriptGlobals.GM = { download: modernDownload };
+    userscriptGlobals.GM_download = legacyDownload;
+    userscriptGlobals.GM_xmlhttpRequest = xmlHttpRequest;
+    const controller = new AbortController();
+    controller.abort();
+    const api = await loadUserscriptAdapter();
+
+    await expect(
+      api.download('https://pbs.twimg.com/media/image.jpg', 'image.jpg', controller.signal)
+    ).rejects.toMatchObject({ name: 'AbortError' });
+    expect(modernDownload).not.toHaveBeenCalled();
     expect(legacyDownload).not.toHaveBeenCalled();
-    expect(xmlHttpRequest).toHaveBeenCalledOnce();
-    expect(abortRequest).toHaveBeenCalledOnce();
+    expect(xmlHttpRequest).not.toHaveBeenCalled();
   });
 
   it('keeps legacy GM_download for callers that do not request cancellation', async () => {
@@ -206,6 +325,25 @@ describe('userscript download adapter failure handling', () => {
       api.download('https://pbs.twimg.com/media/image.jpg', 'image.jpg')
     ).resolves.toBeUndefined();
 
+    expect(legacyDownload).toHaveBeenCalledOnce();
+    expect(xmlHttpRequest).not.toHaveBeenCalled();
+  });
+
+  it('preserves a structured legacy error and ignores a later success callback', async () => {
+    const failure = { error: 'permission denied', details: { name: 'image.jpg' } };
+    const legacyDownload = vi.fn((details: GMDownloadDetails) => {
+      details.onerror?.(failure);
+      details.onload?.();
+      return { abort: vi.fn() };
+    });
+    const xmlHttpRequest = vi.fn(() => ({ abort: vi.fn() }));
+    userscriptGlobals.GM_download = legacyDownload as unknown as typeof GM_download;
+    userscriptGlobals.GM_xmlhttpRequest = xmlHttpRequest;
+    const api = await loadUserscriptAdapter();
+
+    await expect(api.download('https://pbs.twimg.com/media/image.jpg', 'image.jpg')).rejects.toBe(
+      failure
+    );
     expect(legacyDownload).toHaveBeenCalledOnce();
     expect(xmlHttpRequest).not.toHaveBeenCalled();
   });

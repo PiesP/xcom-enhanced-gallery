@@ -13,8 +13,8 @@
 import type { CookieAPI } from './cookie.types';
 
 declare global {
-  function GM_download(url: string, name: string): void;
-  function GM_download(details: GMDownloadDetails): void;
+  function GM_download(url: string, name: string): GMDownloadControl | void;
+  function GM_download(details: GMDownloadDetails): GMDownloadControl | void;
   function GM_getValue<T = unknown>(name: string, defaultValue?: T): T;
   function GM_setValue(name: string, value: unknown): void;
   function GM_deleteValue(name: string): void;
@@ -46,8 +46,12 @@ export interface GMDownloadDetails {
   headers?: Record<string, string>;
   timeout?: number;
   onload?: () => void;
-  onerror?: (error: Error) => void;
+  onerror?: (error: unknown) => void;
   ontimeout?: () => void;
+}
+
+export interface GMDownloadControl {
+  abort(): void;
 }
 
 export interface GMNotificationDetails {

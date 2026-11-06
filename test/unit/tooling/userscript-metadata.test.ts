@@ -167,6 +167,18 @@ describe('userscript release metadata provenance', () => {
     expect(connectLines).not.toContain('// @connect api.twitter.com');
   });
 
+  it('grants the legacy download API used by signal-aware gallery saves', () => {
+    const header = generateUserscriptHeader({
+      baseConfig: USERSCRIPT_CONFIG,
+      isDev: false,
+      version: '2.3.0',
+    });
+    const grantLines = header.match(/^\/\/ @grant .+$/gm) ?? [];
+
+    expect(grantLines).toContain('// @grant GM_download');
+    expect(grantLines).toContain('// @grant GM_xmlhttpRequest');
+  });
+
   it('uses the latest release asset for production script downloads', () => {
     const header = generateUserscriptHeader({
       baseConfig: USERSCRIPT_CONFIG,
