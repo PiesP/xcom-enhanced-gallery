@@ -11,7 +11,6 @@ import type {
   BrowserContext,
   BrowserType,
   CDPSession,
-  APIResponse,
   ConsoleMessage,
   Locator,
   Page,
@@ -26,6 +25,7 @@ import {
   verifyStoredZip,
 } from './download-memory.ts';
 import { expectedLiveFilename, liveFilenameConforms } from './live-filename.ts';
+import { fetchBoundedLiveOriginal } from './live-original-fetch.ts';
 import { readOwnedNativeBytes } from './firefox-install.ts';
 import {
   isLiveFilenameOriginal,
@@ -4662,6 +4662,32 @@ export function resolveUserscriptGMCallLine(source: string): number | null {
   return calls[0]!;
 }
 
+async function removeLiveSandboxDiagnostic(session: CDPSession, contextId: number): Promise<void> {
+  const removed = await session.send('Runtime.evaluate', {
+    contextId,
+    expression: 'delete globalThis.__xegLiveFilename495',
+    returnByValue: true,
+  });
+  assert(!removed.exceptionDetails && removed.result?.value === true,
+    'Userscript diagnostic slot deletion failed');
+  const readback = await session.send('Runtime.evaluate', {
+    contextId,
+    expression: "Object.prototype.hasOwnProperty.call(globalThis, '__xegLiveFilename495')",
+    returnByValue: true,
+  });
+  assert(!readback.exceptionDetails && readback.result?.value === false,
+    'Userscript diagnostic slot remains after deletion');
+}
+
+function diagnosticScriptUrl(value: string): string {
+  try {
+    const parsed = new URL(value);
+    return (parsed.origin + parsed.pathname).slice(0, 256);
+  } catch {
+    return value.split(/[?#]/u)[0]!.slice(0, 256);
+  }
+}
+
 /** Fresh manager profile: one observed live save and one repeat after diagnostics are removed. */
 export async function runUserscriptLiveInstallation(options: {
   chromium: BrowserType;
@@ -4749,12 +4775,14 @@ export async function runUserscriptLiveInstallation(options: {
     page = await context.newPage();
     debuggerSession = await context.newCDPSession(page);
     const scripts: Array<{ scriptId: string; url: string; executionContextId: number }> = [];
+    let scriptOverflow = 0;
     debuggerSession.on('Debugger.scriptParsed', (item: {
       scriptId: string;
       url: string;
       executionContextId: number;
     }) => {
       if (scripts.length < 256) scripts.push(item);
+      else scriptOverflow += 1;
     });
     await debuggerSession.send('Runtime.enable');
     await debuggerSession.send('Debugger.enable');
@@ -4805,6 +4833,21 @@ export async function runUserscriptLiveInstallation(options: {
     }, target.mediaBasename);
     assert(selected, 'Live gallery selection differs from reported photo');
     receipt.gallerySelection = selected;
+    const sourceLookup: Record<string, unknown> = {
+      parsedCount: scripts.length,
+      overflow: scriptOverflow,
+      taskCandidates: scripts
+        .filter((item) =>
+          item.url.includes(managerId!) ||
+          /(?:user-script|userscript|\.user\.js)/iu.test(item.url))
+        .slice(0, 16)
+        .map((item) => ({
+          url: diagnosticScriptUrl(item.url),
+          executionContextId: item.executionContextId,
+        })),
+      matches: [],
+    };
+    receipt.scriptSourceLookup = sourceLookup;
     let script: {
       scriptId: string;
       url: string;
@@ -4822,6 +4865,11 @@ export async function runUserscriptLiveInstallation(options: {
       if (!text || text.length > 5_000_000 || !text.includes('function downloadSingleFile('))
         continue;
       const location = resolveFilenameCaptureLine(text);
+      (sourceLookup.matches as Record<string, unknown>[]).push({
+        url: diagnosticScriptUrl(item.url),
+        executionContextId: item.executionContextId,
+        sha256: location.expectedSourceSha256,
+      });
       assert(!script, 'Multiple installed XCOM download scripts');
       script = {
         ...item,
@@ -4903,38 +4951,14 @@ export async function runUserscriptLiveInstallation(options: {
         receipt.expectedFilename = requestedName;
         receipt.generatedFilename = captured.generatedFilename;
         receipt.selectedSource = sourceUrlText;
-        const head: APIResponse = await page.request.head(sourceUrlText, {
-          timeout: 15_000, maxRedirects: 0,
-        });
-        let length: number;
-        try {
-          assert.equal(head.status(), 200);
-          length = Number(head.headers()['content-length']);
-          assert(Number.isSafeInteger(length) && length > 0 && length <= 4 * 1024 * 1024);
-        } finally {
-          await head.dispose();
-        }
-        const response: APIResponse = await page.request.get(sourceUrlText, {
-          timeout: 20_000, maxRedirects: 0,
-        });
-        try {
-          assert.equal(response.status(), 200);
-          assert.equal(
-            (response.headers()['content-type'] ?? '').split(';')[0]?.toLowerCase(),
-            'image/' + (format === 'jpg' ? 'jpeg' : format),
-            'Independent original MIME differs from selected format'
-          );
-          assert.equal(Number(response.headers()['content-length']), length,
-            'Independent original GET length differs from HEAD');
-          const body: Buffer = await response.body();
-          original = body;
-          assert.equal(body.length, length);
-          receipt.independentOriginal = {
-            bytes: length, sha256: sha256(body), contentType: response.headers()['content-type'],
-          };
-        } finally {
-          await response.dispose();
-        }
+        const reference = await fetchBoundedLiveOriginal(sourceUrlText, format);
+        original = reference.bytes;
+        receipt.independentOriginal = {
+          bytes: reference.contentLength,
+          sha256: sha256(reference.bytes),
+          contentType: reference.contentType,
+          transport: 'independent bounded Node GET without redirect',
+        };
       }
       const native: LiveNativeItem = await waitFor<LiveNativeItem>(async (): Promise<LiveNativeItem | undefined> => {
         const added: LiveNativeItem[] = (await liveNativeInventory(managerPage!))
@@ -5017,11 +5041,7 @@ export async function runUserscriptLiveInstallation(options: {
           await debuggerSession.send('Debugger.removeBreakpoint', { breakpointId: gmBreakpointId });
           gmBreakpointId = undefined;
         }
-        await debuggerSession.send('Runtime.evaluate', {
-          contextId: sandboxId,
-          expression: 'delete globalThis.__xegLiveFilename495',
-          returnByValue: true,
-        });
+        await removeLiveSandboxDiagnostic(debuggerSession, sandboxId);
         await debuggerSession.send('Debugger.disable');
         receipt.diagnosticsRemovedBeforeRepeat = true;
         const gm = receipt.sandbox as Record<string, unknown> | null;
@@ -5083,11 +5103,7 @@ export async function runUserscriptLiveInstallation(options: {
       );
     }
     if (debuggerSession && sandboxId) {
-      await debuggerSession.send('Runtime.evaluate', {
-        contextId: sandboxId,
-        expression: 'delete globalThis.__xegLiveFilename495',
-        returnByValue: true,
-      }).then(
+      await removeLiveSandboxDiagnostic(debuggerSession, sandboxId).then(
         () => { cleanup.sandboxDiagnosticRemoved = true; },
         (error) => cleanupErrors.push(error)
       );
