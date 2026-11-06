@@ -254,6 +254,7 @@ type ManagerHistoryItem = {
   state: string;
   declaredRedirectFinalUrlMatch?: true;
   managerOwnerMatch?: boolean;
+  filenameEmpty?: boolean;
   interruptReason: string | null;
   requestedNameMatch: boolean;
   ownedPathMatch: boolean;
@@ -2254,12 +2255,14 @@ export async function inspectManagerDownloadHistoryDocument({
   expectedName,
   expectedPath,
   expectedBytes,
+  captureFilenameEmpty = false,
 }: {
   managerId: string;
   fixtureUrl: string;
   expectedName: string;
   expectedPath: string;
   expectedBytes: number;
+  captureFilenameEmpty?: boolean;
 }): Promise<ManagerHistory> {
   const current = new URL(location.href);
   if (
@@ -2340,6 +2343,7 @@ export async function inspectManagerDownloadHistoryDocument({
       id: item.id,
       state: item.state,
       ...(byExtensionId === managerId && { managerOwnerMatch: true }),
+      ...(captureFilenameEmpty && { filenameEmpty: item.filename === '' }),
       ...(finalUrl === 'https://pbs.twimg.com/media/xeg-owned-redirect-final.jpg'
         ? { declaredRedirectFinalUrlMatch: true as const }
         : {}),
@@ -2363,7 +2367,8 @@ async function captureManagerDownloadHistory(
   downloads: string,
   savedName: string,
   expectedBytes: number,
-  fixtureUrl = FIRST_MEDIA_URL
+  fixtureUrl = FIRST_MEDIA_URL,
+  captureFilenameEmpty = false
 ): Promise<ManagerHistory> {
   let page: Page | undefined;
   try {
@@ -2381,6 +2386,7 @@ async function captureManagerDownloadHistory(
       expectedName: savedName,
       expectedPath: join(downloads, savedName),
       expectedBytes,
+      ...(captureFilenameEmpty && { captureFilenameEmpty: true }),
     });
     if (!isOwnedManagerOptionsUrl(page.url(), managerId)) {
       return { status: 'unowned-page', items: [] };
@@ -3164,10 +3170,13 @@ export function assertHeldSingleCancellationState(input: {
       (item) =>
         item.fixtureUrlMatch &&
         item.managerOwnerMatch === true &&
-        item.requestedNameMatch &&
-        item.ownedPathMatch &&
         item.state === 'interrupted' &&
-        (item.interruptReason === null || item.interruptReason === 'USER_CANCELED')
+        (item.filenameEmpty === true
+          ? item.interruptReason === 'USER_CANCELED'
+          : item.filenameEmpty === false &&
+            item.requestedNameMatch &&
+            item.ownedPathMatch &&
+            (item.interruptReason === null || item.interruptReason === 'USER_CANCELED'))
     ),
     'Held native ID did not end as an owned interrupted download'
   );
@@ -3187,7 +3196,15 @@ export function assertHeldSingleCancellationState(input: {
   assert.equal(transferEvents[0]?.result, 'aborted');
   assert.deepEqual(files.sort(), [...beforeFiles].sort(), 'Held single left a native file');
   return {
-    nativeIds: created.map(({ id, state, interruptReason }) => ({ id, state, interruptReason })),
+    nativeIds: created.map(({ id, state, interruptReason, filenameEmpty }) => ({
+      id,
+      state,
+      interruptReason,
+      filenameEmpty,
+      filenameEvidence: filenameEmpty
+        ? 'native filename empty; requested name and path unverified'
+        : 'requested name and owned path verified',
+    })),
     browserStarts: browserBegins.length,
   };
 }
@@ -3993,7 +4010,8 @@ async function runFixture(
       downloads,
       heldSavedName,
       imageAt(0).length,
-      heldOriginalUrl
+      heldOriginalUrl,
+      true
     );
     assert.equal(heldNativeBefore.status, 'observed', 'Held native baseline is unavailable');
     assert.equal(heldNativeBefore.items.length, 0, 'Pre-dispatch ZIP created a held native ID');
@@ -4105,7 +4123,8 @@ async function runFixture(
         downloads,
         heldSavedName,
         imageAt(0).length,
-        heldOriginalUrl
+        heldOriginalUrl,
+        true
       );
     await page.keyboard.press('Escape');
     await gallery.waitFor({ state: 'detached' });
@@ -4152,11 +4171,30 @@ async function runFixture(
             event.index === 0 &&
             event.purpose === 'transfer'
         );
+    const terminalNativeSnapshots: Array<{
+      elapsedMs: number;
+      status: string;
+      items: ManagerHistoryItem[];
+    }> = [];
+    heldCase.terminalNativeSnapshots = terminalNativeSnapshots;
+    const terminalNativeStart = Date.now();
+    const captureTerminalNative = async () => {
+      const inventory = await heldSingleNative();
+      if (terminalNativeSnapshots.length === 8) {
+        terminalNativeSnapshots.shift();
+      }
+      terminalNativeSnapshots.push({
+        elapsedMs: Date.now() - terminalNativeStart,
+        status: inventory.status,
+        items: inventory.items,
+      });
+      return inventory;
+    };
     // A manager may briefly expose an in-progress ID and a .crdownload after
     // the socket closes. Wait for terminal cleanup before the absence window.
     const initialHeldState = await waitFor(
       async () => {
-        const inventory = await heldSingleNative();
+        const inventory = await captureTerminalNative();
         assert.equal(inventory.status, 'observed', 'Held native inventory is unavailable');
         const seen = new Set(heldNativeBefore.items.map(({ id }) => id));
         const created = inventory.items.filter(({ id }) => !seen.has(id));
@@ -4203,7 +4241,7 @@ async function runFixture(
     while (Date.now() - absenceStart < 2_000) {
       const state = assertHeldSingleCancellationState({
         before: heldNativeBefore,
-        after: await heldSingleNative(),
+        after: await captureTerminalNative(),
         browserBegins: observer.beginsSince(heldSingleSince),
         expectedUrl: heldOriginalUrl,
         expectedNames: [filename(0), heldSavedName],

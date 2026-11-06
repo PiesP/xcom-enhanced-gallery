@@ -357,6 +357,7 @@ const userscriptInstall = (await import(
     expectedName: string;
     expectedPath: string;
     expectedBytes: number;
+    captureFilenameEmpty?: boolean;
   }): Promise<{
     status: string;
     items: Array<{
@@ -3119,6 +3120,7 @@ $stable.sameForeground = $true
       expectedSizeMatch: false,
       fixtureUrlMatch: true,
       managerOwnerMatch: true,
+      filenameEmpty: false,
     };
     const transfer = {
       phase: 'held',
@@ -3148,7 +3150,15 @@ $stable.sameForeground = $true
       files: ['earlier.jpg'],
     };
     expect(userscriptInstall.assertHeldSingleCancellationState(input)).toEqual({
-      nativeIds: [{ id: 41, state: 'interrupted', interruptReason: 'USER_CANCELED' }],
+      nativeIds: [
+        {
+          id: 41,
+          state: 'interrupted',
+          interruptReason: 'USER_CANCELED',
+          filenameEmpty: false,
+          filenameEvidence: 'requested name and owned path verified',
+        },
+      ],
       browserStarts: 1,
     });
     expect(() =>
@@ -3187,6 +3197,40 @@ $stable.sameForeground = $true
         after: { status: 'observed', items: [{ ...item, ownedPathMatch: false }] },
       })
     ).toThrow('owned interrupted');
+    const emptyCanceled = {
+      ...item,
+      filenameEmpty: true,
+      requestedNameMatch: false,
+      ownedPathMatch: false,
+    };
+    expect(
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        after: { status: 'observed', items: [emptyCanceled] },
+      }).nativeIds
+    ).toEqual([
+      {
+        id: 41,
+        state: 'interrupted',
+        interruptReason: 'USER_CANCELED',
+        filenameEmpty: true,
+        filenameEvidence: 'native filename empty; requested name and path unverified',
+      },
+    ]);
+    for (const changed of [
+      { ...emptyCanceled, interruptReason: null },
+      { ...emptyCanceled, interruptReason: 'NETWORK_FAILED' },
+      { ...emptyCanceled, managerOwnerMatch: false },
+      { ...emptyCanceled, fixtureUrlMatch: false },
+      { ...emptyCanceled, state: 'complete' },
+    ]) {
+      expect(() =>
+        userscriptInstall.assertHeldSingleCancellationState({
+          ...input,
+          after: { status: 'observed', items: [changed] },
+        })
+      ).toThrow('owned interrupted');
+    }
     expect(() =>
       userscriptInstall.assertHeldSingleCancellationState({
         ...input,
@@ -3248,6 +3292,44 @@ $stable.sameForeground = $true
         files: ['earlier.jpg', 'late.crdownload'],
       })
     ).toThrow('native file');
+  });
+
+  it('records an empty held filename only from a literal empty native field', async () => {
+    const fixtureUrl = 'https://pbs.twimg.com/media/GkH1234ABCDEF.jpg?format=jpg&name=orig';
+    const item = {
+      id: 41,
+      url: fixtureUrl,
+      filename: '',
+      state: 'interrupted',
+      error: 'USER_CANCELED',
+      byExtensionId: 'manager',
+    };
+    let nativeFilename: string | undefined = '';
+    const search = vi.fn(async () => [{ ...item, filename: nativeFilename }]);
+    vi.stubGlobal('location', { href: 'chrome-extension://manager/options.html' });
+    vi.stubGlobal('chrome', { downloads: { search } });
+    const args = {
+      managerId: 'manager',
+      fixtureUrl,
+      expectedName: 'held.jpg',
+      expectedPath: 'C:\\owned\\held.jpg',
+      expectedBytes: 4_237,
+      captureFilenameEmpty: true,
+    };
+    try {
+      const empty = await userscriptInstall.inspectManagerDownloadHistoryDocument(args);
+      expect(empty.items[0]).toMatchObject({
+        filenameEmpty: true,
+        managerOwnerMatch: true,
+        requestedNameMatch: false,
+        ownedPathMatch: false,
+      });
+      nativeFilename = undefined;
+      const missing = await userscriptInstall.inspectManagerDownloadHistoryDocument(args);
+      expect(missing.items[0]).toMatchObject({ filenameEmpty: false });
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('rejects a paused in-progress download after all bytes have arrived', () => {
