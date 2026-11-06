@@ -141,6 +141,14 @@ describe('final Firefox ZIP static HTML disposition', () => {
       'extra HTML call',
       source.replace('const a =', "other.insertAdjacentHTML('beforeend', '<p>'); const a ="),
     ],
+    [
+      'extra HTML fragment parser',
+      source.replace('const a =', "range.createContextualFragment('<p>'); const a ="),
+    ],
+    [
+      'computed HTML fragment parser',
+      source.replace('const a =', "range['createContextualFragment']('<p>'); const a ="),
+    ],
   ])('rejects %s', (_case, changed) => {
     expect(() => inspectStaticTemplate(changed)).toThrow();
   });
@@ -160,7 +168,7 @@ describe('final Firefox ZIP static HTML disposition', () => {
     ).toThrow('receiver is not a template element');
   });
 
-  it('rejects a new linter error or warning and accepts only the reviewed sink', () => {
+  it('rejects a new linter error, warning or notice and accepts only the reviewed sink', () => {
     const sink = inspectStaticTemplate(source);
     const accepted = linter(sink.line, sink.column);
     expect(() => assessLinterResult(accepted, version, sink)).not.toThrow();
@@ -186,6 +194,17 @@ describe('final Firefox ZIP static HTML disposition', () => {
         sink
       )
     ).toThrow('warning');
+    expect(() =>
+      assessLinterResult(
+        {
+          ...accepted,
+          notices: [{ code: 'NEW_NOTICE' }],
+          summary: { errors: 0, warnings: 1, notices: 1 },
+        },
+        version,
+        sink
+      )
+    ).toThrow('notice');
     expect(() => assessLinterResult(linter(sink.line + 1, sink.column), version, sink)).toThrow(
       'warning'
     );
@@ -232,6 +251,19 @@ describe('final Firefox ZIP static HTML disposition', () => {
     expect(() => verifyFinalFirefoxHandoff(root, 'b'.repeat(40), version)).toThrow(
       'does not match'
     );
+    const unreviewed = {
+      ...result,
+      notices: [{ code: 'NEW_NOTICE' }],
+      summary: { errors: 0, warnings: 1, notices: 1 },
+    };
+    writeFileSync(join(evidence, 'addons-linter.json'), JSON.stringify(unreviewed));
+    writeFileSync(
+      join(evidence, 'firefox-final-zip.json'),
+      JSON.stringify({ ...report, linter: { ...report.linter, result: unreviewed } })
+    );
+    expect(() => verifyFinalFirefoxHandoff(root, sha, version)).toThrow('notice');
+    writeFileSync(join(evidence, 'addons-linter.json'), JSON.stringify(result));
+    writeFileSync(join(evidence, 'firefox-final-zip.json'), JSON.stringify(report));
     writeFileSync(zip, 'changed ZIP bytes');
     expect(() => verifyFinalFirefoxHandoff(root, sha, version)).toThrow('does not match');
   });

@@ -117,6 +117,7 @@ export function inspectStaticTemplate(source: string): {
       const callee = child(node, 'callee');
       if (
         member(callee, 'insertAdjacentHTML') ||
+        member(callee, 'createContextualFragment') ||
         member(callee, 'write') ||
         member(callee, 'writeln')
       ) {

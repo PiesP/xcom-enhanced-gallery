@@ -39,6 +39,9 @@ export function assessLinterResult(
   if (result.errors.length !== 0) {
     throw new Error('addons-linter reported errors');
   }
+  if (result.notices.length !== 0) {
+    throw new Error('Unreviewed addons-linter notice');
+  }
   if (result.warnings.length !== 1) {
     throw new Error('Unreviewed addons-linter warning count');
   }
