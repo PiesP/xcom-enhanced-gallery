@@ -4110,17 +4110,25 @@ async function runFixture(
     await page.keyboard.press('Escape');
     await gallery.waitFor({ state: 'detached' });
     heldCase.galleryDetachedBeforeHeaders = true;
-    const preHeaderNative = [];
+    const preHeaderNative: Array<{
+      elapsedMs: number;
+      status: string;
+      items: ManagerHistoryItem[];
+    }> = [];
+    heldCase.preHeaderNative = preHeaderNative;
     const preHeaderStart = Date.now();
     for (let sample = 0; sample < 2; sample += 1) {
       if (sample) {
         await delay(250);
       }
       const inventory = await heldSingleNative();
+      preHeaderNative.push({
+        elapsedMs: Date.now() - preHeaderStart,
+        status: inventory.status,
+        items: inventory.items,
+      });
       assert.equal(inventory.status, 'observed', 'Pre-header manager inventory is unavailable');
-      preHeaderNative.push({ elapsedMs: Date.now() - preHeaderStart, items: inventory.items });
     }
-    heldCase.preHeaderNative = preHeaderNative;
     heldCase.headerRelease = loopback.releaseHeldHeaders();
     const heldSingleTerminal = await waitFor(
       () => loopback.findSince(heldSingleTransportStart, 'held', 0, 'aborted'),
