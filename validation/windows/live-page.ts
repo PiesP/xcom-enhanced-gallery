@@ -4,6 +4,7 @@
 import { open, writeFile, type FileHandle } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { isAbsolute, join } from 'node:path';
+import { withClickAdmissionTrace } from './click-admission.ts';
 import {
   assessVisitEvidence,
   isVisitEvidenceV2,
@@ -282,6 +283,7 @@ type RestoredHostState = {
 type LiveCandidate = ReturnType<typeof inspectLiveCandidateDocument>;
 type GalleryObservation = {
   status: string;
+  clickAdmission?: { receipt: string; diagnosticOnly: true };
   activationEvents?: LiveImageClickEvent[];
   hostTimeline?: Array<Awaited<ReturnType<typeof captureHostGeometry>>>;
   before?: HostSnapshot;
@@ -2970,7 +2972,8 @@ async function observeOne(
     runMultiImage: boolean;
   } | null = null,
   strictPageClose = false,
-  documentBaselines: Map<string, HostCspFingerprint[]> | null = null
+  documentBaselines: Map<string, HostCspFingerprint[]> | null = null,
+  clickAdmission: { root: string } | null = null
 ) {
   const identity = targetIdentity(targetUrl);
   const page = await context.newPage();
@@ -3408,7 +3411,28 @@ async function observeOne(
         }
       );
     }
-    await actionHandle.click({ timeout: ACTION_TIMEOUT_MS });
+    if (clickAdmission) {
+      if (compactQuote) {
+        throw new Error('Click admission diagnostic requires a direct photo action');
+      }
+      observation.gallery.clickAdmission = {
+        receipt: `live-click-admission-${index}.json`,
+        diagnosticOnly: true,
+      };
+      await withClickAdmissionTrace({
+        context,
+        page,
+        extensionId,
+        root: clickAdmission.root,
+        output,
+        index,
+        statusPath: new URL(targetUrl).pathname,
+        actionPath: actionIdentity.actionPath,
+        action: () => actionHandle!.click({ timeout: ACTION_TIMEOUT_MS }),
+      });
+    } else {
+      await actionHandle.click({ timeout: ACTION_TIMEOUT_MS });
+    }
     if (imageActivationHandle) {
       const activation = await imageActivationHandle.evaluate((capture) => ({
         before: capture.before,
@@ -4114,6 +4138,7 @@ export async function observeLiveUrls({
   borrowedHostProof = null,
   ownedCandidateProof = null,
   actualSiteAcceptance = null,
+  clickAdmission = null,
 }: {
   context: BrowserContext;
   extensionId: string;
@@ -4123,6 +4148,7 @@ export async function observeLiveUrls({
   borrowedHostProof?: BorrowedHostDiagnosticProof | null;
   ownedCandidateProof?: OwnedCandidateInBorrowedBrowser | null;
   actualSiteAcceptance?: { downloads: string } | null;
+  clickAdmission?: { root: string } | null;
 }) {
   if (
     session !== 'owned' &&
@@ -4148,6 +4174,9 @@ export async function observeLiveUrls({
   }
   if (actualSiteAcceptance && urls.length === 0) {
     throw new Error('Actual-site acceptance requires at least one public status URL');
+  }
+  if (clickAdmission && (session !== 'owned' || actualSiteAcceptance || urls.length !== 1)) {
+    throw new Error('Click admission diagnostic requires one owned ordinary live observation');
   }
   if (!urls.length) {
     return { status: 'not-requested', evidenceStatus: 'not-applicable', pages: [] };
@@ -4193,7 +4222,8 @@ export async function observeLiveUrls({
             }
           : null,
         session === 'borrowed-browser-owned-extension',
-        session === 'borrowed-browser-owned-extension' ? baselineByUrl : null
+        session === 'borrowed-browser-owned-extension' ? baselineByUrl : null,
+        clickAdmission
       );
       if (
         session === 'borrowed' &&

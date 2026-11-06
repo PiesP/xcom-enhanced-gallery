@@ -14,6 +14,24 @@ runs a smaller manager-backed visible `/photo/2` save and checks the native
 filename, source and bytes. Remove the selector after the attempt. The filename
 cycle uses controlled fixtures. Extension runs may append separate public-status
 observations with `--live-url`; the live observer does not save files.
+
+For #482's reported image click, the installed Chrome extension accepts the
+separate ignored `live-click-admission.json` input:
+
+```json
+{"scenario":"live-click-admission","diagnosticOnly":true}
+```
+
+Supply only `--live-url https://x.com/yukurach/status/2118323627615785399`.
+This input must be the only focused selector. It skips controlled fixtures
+that do not diagnose the reported click. The live observer binds
+non-pausing click-admission logpoints to the executed production content
+artifact and retains bounded branch observations even if the click navigates.
+It uses normal hit-tested input and leaves the existing gallery assertions
+in force. This diagnostic does not enable downloads or establish live-file
+acceptance. Remove the selector after the attempt, and repeat any successful
+acceptance path without intervening diagnostic hooks.
+
 For a diagnosis that must retain nonconforming native names and continue to the
 public observation, add `"diagnosticOnly": true` to this selector. Only that
 explicit mode records known CDN/active-control basenames without accepting
