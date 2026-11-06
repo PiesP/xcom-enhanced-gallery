@@ -25,6 +25,31 @@ async function owned() {
 }
 
 describe('flat installed userscript evidence', () => {
+  it.each([60, 61])('reserves both final guest files with %i existing files', async (count) => {
+    const paths = await owned();
+    try {
+      await Promise.all(
+        Array.from({ length: count }, (_, index) =>
+          writeFile(join(paths.output, `fixture-${index}.json`), '{}')
+        )
+      );
+      await writeFile(join(paths.stage, 'proof.json'), '{}');
+      const transfer = flattenUserscriptLiveEvidence({ ...paths, phaseStatus: 'observed' });
+      if (count === 61) {
+        await expect(transfer).rejects.toThrow('output file limit');
+        expect(await readFile(join(paths.stage, 'proof.json'), 'utf8')).toBe('{}');
+        expect(await readdir(paths.output)).toHaveLength(count);
+      } else {
+        await transfer;
+        await writeFile(join(paths.output, 'result.json'), '{}');
+        await writeFile(join(paths.output, 'environment.json'), '{}');
+        expect(await readdir(paths.output)).toHaveLength(64);
+      }
+    } finally {
+      await rm(paths.root, { recursive: true, force: true });
+    }
+  });
+
   it('copies and verifies regular stage files with a flat artifact index', async () => {
     const paths = await owned();
     try {

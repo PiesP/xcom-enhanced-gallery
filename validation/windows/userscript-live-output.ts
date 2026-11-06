@@ -61,9 +61,9 @@ export async function flattenUserscriptLiveEvidence(options: {
     existingBytes + RESERVED_RESULT_BYTES <= MAX_OUTPUT_BYTES,
     'Flat output already exceeds collection size'
   );
-  // guest.mjs adds result.json after the installation entry returns.
+  // guest.mjs and guest.ps1 add result.json and environment.json after this entry returns.
   assert(
-    outputEntries.length + stageEntries.length + 2 <= MAX_OUTPUT_FILES,
+    outputEntries.length + stageEntries.length + 3 <= MAX_OUTPUT_FILES,
     'Live stage would exceed the controller output file limit'
   );
   const planned = stageEntries.map((entry) => {
