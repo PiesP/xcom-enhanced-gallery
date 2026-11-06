@@ -318,6 +318,7 @@ type UserscriptInstallationResult = {
     loopbackClosed?: boolean;
     profileRemoved?: boolean;
     profilePreserved?: boolean;
+    failedNativeRetentionVerified?: boolean;
     errorCount?: number;
     errors?: string[];
   };
@@ -344,6 +345,7 @@ type UserscriptInstallationResult = {
     productionBudget: string;
   };
   fixture?: FixtureResult;
+  failedNativeRetention?: Awaited<ReturnType<typeof retainFailedLiveNativeFiles>>;
   error?: string;
 };
 
@@ -4465,7 +4467,22 @@ export async function runUserscriptInstallation({
         () => errors.push(new Error('fixture-loopback-cleanup-failed'))
       );
     }
-    if (result.cleanup.browserClosed || !context) {
+    let failureRetentionComplete = true;
+    if (caughtPrimaryError && (result.cleanup.browserClosed || !context)) {
+      try {
+        result.failedNativeRetention = await retainFailedLiveNativeFiles(
+          downloads,
+          output,
+          observer?.events()
+        );
+        result.cleanup.failedNativeRetentionVerified = true;
+      } catch (error) {
+        failureRetentionComplete = false;
+        result.cleanup.failedNativeRetentionVerified = false;
+        errors.push(error);
+      }
+    }
+    if ((result.cleanup.browserClosed || !context) && failureRetentionComplete) {
       try {
         assertOwned(root, profile);
         await rm(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
