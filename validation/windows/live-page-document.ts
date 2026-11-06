@@ -1879,6 +1879,73 @@ export function captureLiveImageClickEventsDocument(
   };
 }
 
+/** Bounded source hints for the exact already-bound public image; no DOM changes. */
+export function inspectLivePhotoSourceHintsDocument(image: HTMLImageElement) {
+  const candidates: Array<{ via: string; url: string }> = [];
+  const add = (via: string, value: string | null) => {
+    if (!value || candidates.length >= 24) {
+      return;
+    }
+    try {
+      const url = new URL(value, location.href);
+      if (
+        url.origin !== 'https://pbs.twimg.com' ||
+        url.username ||
+        url.password ||
+        url.hash ||
+        !/^\/media\/HWXMF0bbcAEnfk6(?:\.(?:jpg|jpeg|png|webp|gif))?$/u.test(url.pathname)
+      ) {
+        return;
+      }
+      if ([...url.searchParams].some(([key]) => key !== 'format' && key !== 'name')) {
+        return;
+      }
+      if (!candidates.some((item) => item.via === via && item.url === url.href)) {
+        candidates.push({ via, url: url.href });
+      }
+    } catch {
+      /* Unrelated and malformed attributes cannot establish a source. */
+    }
+  };
+  add('currentSrc', image.currentSrc);
+  add('src', image.src);
+  add('src-attribute', image.getAttribute('src'));
+  const sourceSet = (via: string, value: string | null) => {
+    for (const candidate of (value ?? '').split(',').slice(0, 8)) {
+      add(via, candidate.trim().split(/\s+/u)[0] ?? null);
+    }
+  };
+  sourceSet('img-srcset', image.getAttribute('srcset'));
+  for (const source of [...(image.closest('picture')?.querySelectorAll('source') ?? [])].slice(
+    0,
+    4
+  )) {
+    sourceSet('picture-source', source.getAttribute('srcset'));
+  }
+  let element: HTMLElement | null = image;
+  for (let depth = 0; element && depth < 6; depth += 1, element = element.parentElement) {
+    add(
+      `background-${depth}`,
+      getComputedStyle(element).backgroundImage.match(/^url\(["']?(.*?)["']?\)$/u)?.[1] ?? null
+    );
+    if (element.tagName === 'ARTICLE') {
+      break;
+    }
+  }
+  for (const meta of [
+    ...document.querySelectorAll<HTMLMetaElement>(
+      'meta[property="og:image"],meta[name="twitter:image"]'
+    ),
+  ].slice(0, 8)) {
+    add('page-meta', meta.content);
+  }
+  return {
+    candidates,
+    imageConnected: image.isConnected,
+    ownerArticle: image.closest('article') !== null,
+  };
+}
+
 export function captureActivationFocusDocument(
   surface: Element,
   { articleIndex, point }: { articleIndex: number; point: { x: number; y: number } }

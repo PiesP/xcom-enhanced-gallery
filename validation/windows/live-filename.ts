@@ -18,6 +18,9 @@ type NativeItem = {
   mime?: string;
   byExtensionId?: string;
   byExtensionName?: string;
+  error?: string;
+  bytesReceived?: number;
+  totalBytes?: number;
 };
 declare const chrome: {
   runtime: { id: string };
@@ -29,10 +32,11 @@ const LIMIT = 4 * 1024 * 1024;
 const sha256 = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
 
 /** Independent policy expectation from observed metadata, never gallery position. */
-export function expectedLiveFilename(media: Record<string, unknown>): string {
+export function expectedLiveFilename(media: Record<string, unknown>, extension: string): string {
+  assert(/^(?:jpg|jpeg|png|gif|webp)$/u.test(extension));
   const explicit = media.filename;
   if (typeof explicit === 'string' && explicit.length > 0) {
-    assert(/^[A-Za-z0-9_-][A-Za-z0-9_. -]{0,179}\.jpg$/u.test(explicit));
+    assert(/^[A-Za-z0-9_-][A-Za-z0-9_. -]{0,179}\.(?:jpg|jpeg|png|gif|webp)$/u.test(explicit));
     assert(!/^(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)/iu.test(explicit));
     return explicit;
   }
@@ -52,18 +56,20 @@ export function expectedLiveFilename(media: Record<string, unknown>): string {
     );
     identity = media.attachmentSourceKey;
   }
-  return `${owner}_${post}_${identity}.jpg`;
+  return `${owner}_${post}_${identity}.${extension}`;
 }
 
 export function liveFilenameConforms(actual: string, requested: string): boolean {
   if (actual === requested) {
     return true;
   }
-  const stem = requested.slice(0, -4);
-  if (!actual.startsWith(stem) || !actual.endsWith('.jpg')) {
+  const dot = requested.lastIndexOf('.');
+  const stem = requested.slice(0, dot);
+  const extension = requested.slice(dot);
+  if (dot < 1 || !actual.startsWith(stem) || !actual.endsWith(extension)) {
     return false;
   }
-  return /^ ?\([1-9]\d*\)$/u.test(actual.slice(stem.length, -4));
+  return /^ ?\([1-9]\d*\)$/u.test(actual.slice(stem.length, -extension.length));
 }
 
 async function ownedDownloads(extensionPage: Page, extensionId: string) {
@@ -135,6 +141,8 @@ export async function runReportedLiveFilename(options: {
     });
     evidence.selection = selection;
     const resolved: { source?: string; original?: Buffer; expected?: string } = {};
+    const nativeObservations: unknown[] = [];
+    evidence.nativeObservations = nativeObservations;
     await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
     const gallery = page.locator('[data-xeg-gallery-container]');
     const button = gallery.locator(
@@ -149,10 +157,32 @@ export async function runReportedLiveFilename(options: {
       );
       const prior = await ownedDownloads(extensionPage, extensionId);
       const ids = new Set(prior.map((row) => row.id));
+      let previousState: string | undefined;
       await button.click();
       const deadline = Date.now() + 30_000;
       while (Date.now() < deadline) {
         const added = onlyNewLiveDownload(await ownedDownloads(extensionPage, extensionId), ids);
+        if (added) {
+          const record = {
+            id: added.id,
+            state: added.state,
+            filename: basename(added.filename),
+            url: added.url,
+            finalUrl: added.finalUrl,
+            mime: added.mime,
+            byExtensionId: added.byExtensionId,
+            byExtensionName: added.byExtensionName,
+            error: added.error,
+            bytesReceived: added.bytesReceived,
+            totalBytes: added.totalBytes,
+          };
+          const serialized = JSON.stringify([added.id, added.state, added.filename, added.error]);
+          if (serialized !== previousState) {
+            assert(nativeObservations.length < 12, 'Native state observation bound exceeded');
+            nativeObservations.push(record);
+            previousState = serialized;
+          }
+        }
         if (added?.state === 'complete') {
           return { item: added, priorIds: [...ids] };
         }
@@ -175,7 +205,9 @@ export async function runReportedLiveFilename(options: {
       resolveLiveOriginal: async (selected) => {
         const source = selectedLivePreferredSource(selected);
         resolved.source = source;
-        resolved.expected = expectedLiveFilename(selected);
+        const format = new URL(source).searchParams.get('format');
+        assert(format && /^(?:jpg|jpeg|png|gif|webp)$/u.test(format));
+        resolved.expected = expectedLiveFilename(selected, format);
         evidence.selectedMedia = selected;
         evidence.source = source;
         evidence.expectedFilename = resolved.expected;
@@ -195,17 +227,22 @@ export async function runReportedLiveFilename(options: {
         try {
           assert.equal(response.status(), 200, 'Live original GET failed');
           assert.equal(Number(response.headers()['content-length']), length);
-          assert(/^image\/jpeg(?:;|$)/iu.test(response.headers()['content-type'] ?? ''));
+          const mime = (response.headers()['content-type'] ?? '').split(';')[0]?.toLowerCase();
+          assert.equal(mime, `image/${format === 'jpg' ? 'jpeg' : format}`);
           resolved.original = await response.body();
           assert.equal(resolved.original.length, length);
-          assert(
-            resolved.original[0] === 0xff && resolved.original[1] === 0xd8,
-            'Live original is not JPEG'
-          );
+          if (format === 'webp') {
+            assert(
+              resolved.original.toString('ascii', 0, 4) === 'RIFF' &&
+                resolved.original.toString('ascii', 8, 12) === 'WEBP'
+            );
+          } else if (format === 'jpg' || format === 'jpeg') {
+            assert(resolved.original[0] === 0xff && resolved.original[1] === 0xd8);
+          }
           evidence.publicOriginal = {
             bytes: resolved.original.length,
             sha256: sha256(resolved.original),
-            mime: 'image/jpeg',
+            mime,
           };
           return { url: source, bytes: resolved.original };
         } finally {

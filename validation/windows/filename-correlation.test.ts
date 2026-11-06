@@ -27,13 +27,22 @@ function next() {}
 describe('filename correlation diagnostic', () => {
   it('confines live correlation to the reported public page and original photo', () => {
     const page = 'https://x.com/yukurach/status/2118323627615785399';
-    const source = 'https://pbs.twimg.com/media/HWXMF0bbcAEnfk6?format=jpg&name=orig';
+    const source = 'https://pbs.twimg.com/media/HWXMF0bbcAEnfk6?format=webp&name=orig';
     expect(() => assertReportedLiveFilenameTarget(page, source)).not.toThrow();
+    for (const format of ['jpg', 'jpeg', 'png', 'webp', 'gif']) {
+      expect(
+        isReportedLiveDownloadSource(
+          `https://pbs.twimg.com/media/HWXMF0bbcAEnfk6.${format}?format=${format}&name=orig`
+        )
+      ).toBe(true);
+    }
     for (const [target, url] of [
       [page + '/photo/1', source],
       [page, source.replace('HWXMF0bbcAEnfk6', 'OtherPhoto')],
-      [page, source + '&format=jpg'],
+      [page, source + '&format=png'],
       [page, source.replace('name=orig', 'name=small')],
+      [page, source.replace('format=webp', 'format=svg')],
+      [page, source.replace('HWXMF0bbcAEnfk6?', 'HWXMF0bbcAEnfk6.jpg?')],
       [page, source.replace('https://', 'https://user@')],
       [page, source + '#fragment'],
     ]) {
@@ -42,9 +51,9 @@ describe('filename correlation diagnostic', () => {
   });
 
   it('uses the exact selected original URL even when its query order differs from the rendered image', () => {
-    const preferred = 'https://pbs.twimg.com/media/HWXMF0bbcAEnfk6.jpg?name=orig&format=jpg';
+    const preferred = 'https://pbs.twimg.com/media/HWXMF0bbcAEnfk6?name=orig&format=webp';
     const media = {
-      url: 'https://pbs.twimg.com/media/HWXMF0bbcAEnfk6?format=webp&name=medium',
+      url: 'https://pbs.twimg.com/media/HWXMF0bbcAEnfk6.jpg?format=jpg&name=medium',
       originalUrl: 'https://pbs.twimg.com/media/HWXMF0bbcAEnfk6?format=jpg&name=large',
       downloadSource: { url: preferred, quality: 'original' },
     };

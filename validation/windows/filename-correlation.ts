@@ -35,6 +35,7 @@ declare const chrome: {
         mime?: string;
         byExtensionId?: string;
         byExtensionName?: string;
+        error?: string;
       }>
     >;
   };
@@ -72,8 +73,15 @@ const CONTENT_LOGPOINT_CONDITION = `(() => {
   if (state.target === 'reported-live-post') {
     let source;
     try { source = new URL(preferred); } catch { return false; }
-    if (source.origin !== 'https://pbs.twimg.com' ||
-        !/^\\/media\\/HWXMF0bbcAEnfk6(?:\\.jpg)?$/.test(source.pathname)) return false;
+    const path = /^\\/media\\/HWXMF0bbcAEnfk6(?:\\.(jpg|jpeg|png|webp|gif))?$/.exec(source.pathname);
+    const pairs = [...source.searchParams].sort();
+    const format = pairs[0]?.[1];
+    if (source.href !== preferred || source.origin !== 'https://pbs.twimg.com' ||
+        source.username || source.password || source.hash || source.port || !path ||
+        pairs.length !== 2 || pairs[0][0] !== 'format' ||
+        !/^(?:jpg|jpeg|png|webp|gif)$/.test(format) ||
+        pairs[1][0] !== 'name' || pairs[1][1] !== 'orig' ||
+        (path[1] && path[1] !== format)) return false;
   }
   if (state.events.length < state.maxEvents) state.events.push({
     id: media.id.slice(0, 128), type: media.type, url: String(media.url).slice(0, 256),
@@ -269,6 +277,7 @@ const SAFE_MESSAGES = new Set([
   'Observed request came from a different tab',
   'Native initiator differs',
   'Native item URL differs',
+  'Live native download interrupted',
   'Tracked native ID differs',
   'Tracked owner differs',
   'Tracked URL hash differs',
@@ -343,16 +352,19 @@ export function isReportedLiveDownloadSource(sourceUrl: unknown): sourceUrl is s
   if (source.username || source.password || source.hash || source.port) {
     return false;
   }
-  if (!/^\/media\/HWXMF0bbcAEnfk6(?:\.jpg)?$/u.test(source.pathname)) {
+  const path = /^\/media\/HWXMF0bbcAEnfk6(?:\.(jpg|jpeg|png|webp|gif))?$/u.exec(source.pathname);
+  if (!path) {
     return false;
   }
   const pairs = [...source.searchParams].sort();
+  const format = pairs[0]?.[1];
   return (
     pairs.length === 2 &&
     pairs[0]?.[0] === 'format' &&
-    pairs[0][1] === 'jpg' &&
+    /^(?:jpg|jpeg|png|webp|gif)$/u.test(format ?? '') &&
     pairs[1]?.[0] === 'name' &&
-    pairs[1][1] === 'orig'
+    pairs[1][1] === 'orig' &&
+    (!path[1] || path[1] === format)
   );
 }
 
@@ -449,6 +461,10 @@ async function installWorkerObserver(
           return false;
         }
         const pairs = [...parsed.searchParams].sort();
+        const path = /^\/media\/HWXMF0bbcAEnfk6(?:\.(jpg|jpeg|png|webp|gif))?$/u.exec(
+          parsed.pathname
+        );
+        const format = pairs[0]?.[1];
         return (
           parsed.href === url &&
           parsed.origin === 'https://pbs.twimg.com' &&
@@ -456,12 +472,13 @@ async function installWorkerObserver(
           !parsed.password &&
           !parsed.hash &&
           !parsed.port &&
-          /^\/media\/HWXMF0bbcAEnfk6(?:\.jpg)?$/u.test(parsed.pathname) &&
+          !!path &&
           pairs.length === 2 &&
           pairs[0]?.[0] === 'format' &&
-          pairs[0][1] === 'jpg' &&
+          /^(?:jpg|jpeg|png|webp|gif)$/u.test(format ?? '') &&
           pairs[1]?.[0] === 'name' &&
-          pairs[1][1] === 'orig'
+          pairs[1][1] === 'orig' &&
+          (!path[1] || path[1] === format)
         );
       };
       state.listener = (message, sender) => {
@@ -1030,6 +1047,7 @@ export async function withFilenameCorrelation<T>(
             url: item.url,
             finalUrl: item.finalUrl,
             mime: item.mime,
+            error: bounded(item.error, 128),
           };
           const requestId = trace.requests.length === 1 ? trace.requests[0]?.requestId : undefined;
           assert(

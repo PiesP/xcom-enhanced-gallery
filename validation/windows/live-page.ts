@@ -47,6 +47,7 @@ import {
   captureActivationFocusDocument,
   captureLiveImageActivationDocument,
   captureLiveImageClickEventsDocument,
+  inspectLivePhotoSourceHintsDocument,
   findActivationHitDocument,
   quotedVideoSurface,
 } from './live-page-document.ts';
@@ -315,6 +316,7 @@ type GalleryObservation = {
   scrollRestored?: boolean;
 };
 type LiveObservation = {
+  sourceHints?: ReturnType<typeof inspectLivePhotoSourceHintsDocument>;
   reportedFilename?: Record<string, unknown>;
   schemaVersion: number;
   kind: string;
@@ -3380,6 +3382,9 @@ async function observeOne(
 
     await recordHostGeometry('before-click');
     await verifyBorrowedMode?.();
+    if (clickAdmission || reportedFilename) {
+      observation.sourceHints = await image.evaluate(inspectLivePhotoSourceHintsDocument);
+    }
     if (!compactQuote) {
       imageActivationHandle = await actionHandle.evaluateHandle(
         captureLiveImageActivationDocument,
