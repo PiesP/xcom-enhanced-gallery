@@ -5,7 +5,7 @@
  * @fileoverview Userscript API adapter with robust download strategy.
  *
  * Download strategy (in priority order):
- * 1. GM.download (Promise-based) — if available
+ * 1. GM.download — if available
  * 2. GM_download options-object form — supported by Tampermonkey and Violentmonkey
  * 3. Blob-based fallback via GM_xmlhttpRequest + anchor download
  *
@@ -86,7 +86,7 @@ export interface ResolvedGMAPIs {
 function getGMAPIs(): ResolvedGMAPIs {
   const g = globalThis as unknown as Record<string, unknown>;
   return {
-    // Manager-provided Promise-based download API.
+    // Manager-provided modern download API; aliases and return values vary.
     download:
       typeof g.GM !== 'undefined' && g.GM !== null
         ? (g.GM as Record<string, unknown>).download
@@ -497,7 +497,7 @@ export function getUserscript(): UserscriptAPI {
 
   const g = getGMAPIs();
 
-  // GM.download (Promise-based) — preferred when exposed
+  // GM.download — preferred when exposed
   const gmDownloadModern = asFunction<(details: GMDownloadDetails) => GMDownloadHandle>(g.download);
   // GM_download (legacy) — fallback
   const gmDownloadLegacy = asFunction<typeof GM_download>(g.downloadLegacy);
@@ -537,7 +537,7 @@ export function getUserscript(): UserscriptAPI {
         throw new Error('Blocked unsafe media download URL');
       }
 
-      // Strategy 1: GM.download (Promise-based)
+      // Strategy 1: GM.download when exposed by the installed manager.
       if (gmDownloadModern) {
         return downloadViaGM('GM.download', gmDownloadModern, url, filename, signal);
       }
