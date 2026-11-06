@@ -687,10 +687,14 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
     await expect(getNextButton(page)).toBeDisabled();
 
     await toolbar.getByRole('button', { name: 'Download', exact: true }).click();
-    await expect(page.locator('[data-gm-xhr-download="true"]')).toHaveAttribute(
-      'data-gm-xhr-download-url',
-      /E3\.jpg/
+    const download = page.locator('[data-gm-download="true"]');
+    await expect(download).toHaveCount(1);
+    await expect(download).toHaveAttribute(
+      'data-gm-download-url',
+      'https://pbs.twimg.com/media/E3.jpg?format=jpg&name=large'
     );
+    await expect(download).toHaveAttribute('data-gm-download-name', 'E3.jpg');
+    await expect(page.locator('[data-gm-xhr-download="true"]')).toHaveCount(0);
 
     await getPreviousButton(page).click();
     await expect.poll(() => getIndex(page)).toBe(1);

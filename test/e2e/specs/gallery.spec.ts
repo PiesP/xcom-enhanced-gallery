@@ -356,11 +356,14 @@ test.describe('X.com Enhanced Gallery E2E', () => {
         'Bulk download includes only the items shown.'
       );
       await gallery.getByRole('button', { name: 'Download', exact: true }).click();
-      await expect(page.locator('[data-gm-xhr-download="true"]')).toHaveCount(cycle + 1);
-      await expect(page.locator('[data-gm-xhr-download="true"]').last()).toHaveAttribute(
-        'data-gm-xhr-download-url',
-        /tile-photo/
+      const download = page.locator('[data-gm-download="true"]');
+      await expect(download).toHaveCount(cycle + 1);
+      await expect(download.last()).toHaveAttribute(
+        'data-gm-download-url',
+        'https://pbs.twimg.com/media/tile-photo.jpg?format=jpg&name=orig'
       );
+      await expect(download.last()).toHaveAttribute('data-gm-download-name', 'author_222_1.jpg');
+      await expect(page.locator('[data-gm-xhr-download="true"]')).toHaveCount(0);
       await page.keyboard.press('Escape');
       await expect(gallery).toHaveCount(0);
     }
