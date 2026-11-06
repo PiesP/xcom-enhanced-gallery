@@ -48,6 +48,7 @@ import {
   type FilenameDecisionControl,
 } from './filename-decision-control.ts';
 import { withFilenameCorrelation } from './filename-correlation.ts';
+import { parseLiveFilenameSelector } from './live-filename-target.ts';
 import { runFirefoxInstallation, type FirefoxLauncher } from './firefox-install.ts';
 import {
   createControlledVideoSettings,
@@ -20365,11 +20366,12 @@ export async function run({
     }
     throw error;
   });
-  if (reportedFilenameText !== null) {
-    assert.deepEqual(JSON.parse(reportedFilenameText), { scenario: 'reported-live-filename' });
-    assert.equal(browserName, 'chrome');
+  const reportedFilenameTarget =
+    reportedFilenameText === null ? null : parseLiveFilenameSelector(JSON.parse(reportedFilenameText));
+  if (reportedFilenameTarget !== null) {
+    assert(['chrome', 'msedge'].includes(browserName));
     assert.equal(installation, 'extension');
-    assert.deepEqual(liveUrls, ['https://x.com/yukurach/status/2118323627615785399']);
+    assert.deepEqual(liveUrls, [reportedFilenameTarget.pageUrl]);
   }
   const reportedFilenameProbe = reportedFilenameText !== null;
   const acceptanceSelectorText = await readFile(
@@ -20478,14 +20480,20 @@ export async function run({
   }
   if (installation === 'userscript') {
     assert.equal(acceptanceSelectorText, null, 'Actual-site acceptance requires an extension');
-    assert.equal(liveUrls.length, 0, 'Installed userscript fixture does not support public URLs');
+    assert(
+      liveUrls.length === 0 ||
+        (reportedFilenameTarget !== null &&
+          liveUrls.length === 1 &&
+          liveUrls[0] === reportedFilenameTarget.pageUrl),
+      'Installed userscript public URL requires the exact reported photo selector'
+    );
     assert.equal(
       liveObservation,
       null,
       'Installed userscript fixture does not support duration observation'
     );
-    const { runUserscriptInstallation } = await import('./userscript-install.ts');
-    return runUserscriptInstallation({
+    const { runUserscriptInstallation, runUserscriptLiveInstallation } = await import('./userscript-install.ts');
+    const fixture = await runUserscriptInstallation({
       chromium,
       root,
       output,
@@ -20493,6 +20501,16 @@ export async function run({
       headless,
       attachmentFilenameProbe,
     });
+    if (reportedFilenameTarget === null) return fixture;
+    const live = await runUserscriptLiveInstallation({
+      chromium,
+      root,
+      output: join(output, 'userscript-live'),
+      browserName,
+      headless,
+      target: reportedFilenameTarget,
+    });
+    return { ...fixture, live, liveUrls: [reportedFilenameTarget.pageUrl] };
   }
   const upgradeInput = await readUpgradeInput(root);
   const sameVersionInput = await readSameVersionInput(root);
@@ -20985,7 +21003,15 @@ export async function run({
             liveUrls: validatedLiveUrls,
             output,
             actualSiteAcceptance: actualSiteAcceptance ? { downloads } : null,
-            reportedFilename: reportedFilenameText === null ? null : { root, downloads },
+            reportedFilename:
+              reportedFilenameTarget === null
+                ? null
+                : {
+                    root,
+                    downloads,
+                    target: reportedFilenameTarget,
+                    browserName: browserName as 'chrome' | 'msedge',
+                  },
           });
       if (liveSettingsProbe) {
         assert.equal(

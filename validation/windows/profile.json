@@ -48,6 +48,7 @@
       "validation/windows/extension-native-loopback.ts",
       "validation/windows/filename-decision-control.ts",
       "validation/windows/filename-correlation.ts",
+      "validation/windows/live-filename-target.ts",
       "validation/windows/live-filename.ts",
       "validation/windows/firefox-install.ts",
       "validation/windows/firefox-native-proxy.ts",

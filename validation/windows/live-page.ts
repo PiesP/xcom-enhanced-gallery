@@ -5,6 +5,7 @@ import { open, writeFile, type FileHandle } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { isAbsolute, join } from 'node:path';
 import { runReportedLiveFilename } from './live-filename.ts';
+import type { LiveFilenameTarget } from './live-filename-target.ts';
 import {
   assessVisitEvidence,
   isVisitEvidenceV2,
@@ -2973,7 +2974,12 @@ async function observeOne(
   } | null = null,
   strictPageClose = false,
   documentBaselines: Map<string, HostCspFingerprint[]> | null = null,
-  reportedFilename: { root: string; downloads: string } | null = null
+  reportedFilename: {
+    root: string;
+    downloads: string;
+    target: LiveFilenameTarget;
+    browserName: 'chrome' | 'msedge';
+  } | null = null
 ) {
   const identity = targetIdentity(targetUrl);
   const page = await context.newPage();
@@ -4139,7 +4145,12 @@ export async function observeLiveUrls({
   borrowedHostProof?: BorrowedHostDiagnosticProof | null;
   ownedCandidateProof?: OwnedCandidateInBorrowedBrowser | null;
   actualSiteAcceptance?: { downloads: string } | null;
-  reportedFilename?: { root: string; downloads: string } | null;
+  reportedFilename?: {
+    root: string;
+    downloads: string;
+    target: LiveFilenameTarget;
+    browserName: 'chrome' | 'msedge';
+  } | null;
 }) {
   if (
     session !== 'owned' &&
@@ -4170,6 +4181,9 @@ export async function observeLiveUrls({
     throw new Error(
       'Reported filename acceptance requires one owned live observation without admission hooks'
     );
+  }
+  if (reportedFilename && urls[0] !== reportedFilename.target.pageUrl) {
+    throw new Error('Reported filename URL differs from the task-owned target');
   }
   if (!urls.length) {
     return { status: 'not-requested', evidenceStatus: 'not-applicable', pages: [] };
