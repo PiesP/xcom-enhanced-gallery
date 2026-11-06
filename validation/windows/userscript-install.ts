@@ -90,6 +90,17 @@ const FIRST_MEDIA_URL = `https://pbs.twimg.com/media/${MEDIA_COHORTS.normal[0]}.
 const execFileAsync = promisify(execFile);
 const NATIVE_PERMISSION_RECEIPT = 'userscript-manager-native-permission.json';
 const NATIVE_PERMISSION_ACTION_RECEIPT = 'userscript-manager-native-permission-action.json';
+const EDGE_WARNING_RECEIPT = 'userscript-manager-edge-warning.json';
+const EDGE_WARNING_ACTION_RECEIPT = 'userscript-manager-edge-warning-action.json';
+const EDGE_WARNING_TITLE = '개발자 모드에서 확장 사용 해제';
+const EDGE_WARNING_BODY =
+  '개발자 모드에서 확장을 실행하면 장치를 손상시킬 수 있습니다. 개발자가 아닌 경우 개발자 모드에서 확장 사용을 해제하여 장치를 보호하세요.';
+const SAFE_EDGE_WARNING_PREDECESSORS = new Set([
+  'action-identity-or-prompt-mismatch',
+  'window-identity-changed',
+  'action-identity-changed-before-invoke',
+  'edge-refocus-identity-changed',
+]);
 const CHROME_KO_PERMISSION_TITLE = "'Tampermonkey'이(가) 추가 승인을 요청했습니다.";
 const EDGE_KO_PERMISSION_TITLE = '"Tampermonkey" 이(가) 사용 권한을 요청했습니다.';
 const CHROME_KO_PRIOR_PERMISSIONS_LABEL = '이전에 가능했던 대상:';
@@ -140,6 +151,25 @@ type NativePromptReceipt = {
     controls?: NativeControl[];
   };
   reason?: string;
+};
+type EdgeWarningReceipt = {
+  status?: string;
+  capture?: string;
+  screenshot?: string;
+  laterAttempted?: boolean;
+  reason?: string | null;
+  browserPid?: number;
+  creationUtcTicks?: string;
+  browserSessionId?: number;
+  originalPermissionHandle?: string;
+  warningHandle?: string;
+  warningScope?: {
+    complete?: boolean;
+    reason?: string | null;
+    visitedControls?: number;
+    attemptedNodes?: number;
+    controls?: Array<NativeControl & { depth?: number }>;
+  };
 };
 type FixtureMediaEvent = {
   kind: string;
@@ -537,6 +567,302 @@ export function isObservedChromeNativeDownloadPrompt(receipt: NativePromptReceip
   return isObservedNativeDownloadPrompt(receipt, 'chrome');
 }
 
+export function isObservedEdgeWarning(
+  receipt: EdgeWarningReceipt | null,
+  original: NativePromptReceipt
+) {
+  const scope = receipt?.warningScope;
+  if (
+    !(
+      receipt?.status === 'captured' &&
+      receipt.capture === 'uia-only' &&
+      receipt.screenshot === 'not-captured' &&
+      receipt.laterAttempted === false &&
+      receipt.browserPid === original.browserPid &&
+      receipt.creationUtcTicks === original.creationUtcTicks &&
+      receipt.browserSessionId === original.browserSessionId &&
+      receipt.originalPermissionHandle === original.foregroundHandle &&
+      typeof receipt.warningHandle === 'string' &&
+      /^[1-9]\d{0,19}$/u.test(receipt.warningHandle) &&
+      receipt.warningHandle !== original.foregroundHandle &&
+      scope?.complete === true &&
+      scope.reason === null &&
+      typeof scope.visitedControls === 'number' &&
+      scope.visitedControls >= 8 &&
+      scope.visitedControls <= 128 &&
+      scope.attemptedNodes === scope.visitedControls &&
+      Array.isArray(scope.controls) &&
+      scope.controls.length === scope.visitedControls
+    )
+  ) {
+    return false;
+  }
+  const counts = new Map<string, number>();
+  for (const control of scope.controls) {
+    if (
+      typeof control.isEnabled !== 'boolean' ||
+      typeof control.isOffscreen !== 'boolean' ||
+      !Number.isSafeInteger(control.depth) ||
+      control.depth! < 0 ||
+      control.depth! > 16
+    ) {
+      return false;
+    }
+    if (control.name === '' && control.controlType === 'ControlType.Pane') {
+      continue;
+    }
+    const key = `${control.controlType}:${control.name}`;
+    if (
+      ![
+        `ControlType.Pane:${EDGE_WARNING_TITLE}`,
+        `ControlType.Text:${EDGE_WARNING_TITLE}`,
+        'ControlType.Button:닫기',
+        'ControlType.Button:확장 사용 해제',
+        'ControlType.Button:나중에',
+        `ControlType.Text:${EDGE_WARNING_BODY}`,
+        'ControlType.Hyperlink:자세히 알아보기',
+      ].includes(key)
+    ) {
+      return false;
+    }
+    if (key === `ControlType.Pane:${EDGE_WARNING_TITLE}` && control.depth !== 0) {
+      return false;
+    }
+    if (
+      key === 'ControlType.Button:나중에' &&
+      (control.isEnabled !== true || control.isOffscreen !== false)
+    ) {
+      return false;
+    }
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return (
+    counts.get(`ControlType.Pane:${EDGE_WARNING_TITLE}`) === 1 &&
+    counts.get(`ControlType.Text:${EDGE_WARNING_TITLE}`) === 2 &&
+    counts.get('ControlType.Button:닫기') === 1 &&
+    counts.get('ControlType.Button:확장 사용 해제') === 1 &&
+    counts.get('ControlType.Button:나중에') === 1 &&
+    counts.get(`ControlType.Text:${EDGE_WARNING_BODY}`) === 1 &&
+    counts.get('ControlType.Hyperlink:자세히 알아보기') === 1
+  );
+}
+
+/** A known skipped permission action may expose the separate owned Edge warning. */
+export async function dismissObservedEdgeWarningOnce(
+  cdp: CDPSession,
+  root: string,
+  output: string,
+  profile: string,
+  ask: Page,
+  managerId: string,
+  context: BrowserContext,
+  original: NativePromptReceipt,
+  originalAction: NativePromptReceipt,
+  run = execFileAsync
+) {
+  const skipped = (reason: string) => ({ status: 'skipped', reason });
+  if (
+    !isObservedNativeDownloadPrompt(original, 'msedge') ||
+    originalAction.status !== 'skipped' ||
+    originalAction.permissionGrantAttempted !== false ||
+    !SAFE_EDGE_WARNING_PREDECESSORS.has(originalAction.reason ?? '') ||
+    originalAction.browserPid !== original.browserPid ||
+    originalAction.creationUtcTicks !== original.creationUtcTicks ||
+    originalAction.browserSessionId !== original.browserSessionId ||
+    originalAction.foregroundHandle === original.foregroundHandle
+  ) {
+    return skipped('predecessor-not-safe');
+  }
+  const askCurrent = () =>
+    !ask.isClosed() &&
+    ask.context() === context &&
+    isOwnedManagerPermissionAskUrl(ask.url(), managerId);
+  try {
+    assert(askCurrent(), 'manager-ask-not-current');
+    const options = context
+      .pages()
+      .filter((page) => !page.isClosed() && isOwnedManagerOptionsUrl(page.url(), managerId));
+    assert.equal(options.length, 1, 'manager-options-not-unique');
+    const pending = async () => {
+      assert(askCurrent(), 'manager-ask-not-current');
+      assert.equal(
+        await probeManagerDownloadsPermission(options[0]!, managerId),
+        false,
+        'downloads-permission-not-pending'
+      );
+    };
+    await pending();
+    assert.equal(
+      browserProcessId(await cdp.send('SystemInfo.getProcessInfo')),
+      original.browserPid,
+      'browser-pid-changed'
+    );
+    const initialBytes = await readFile(join(output, NATIVE_PERMISSION_RECEIPT));
+    const actionBytes = await readFile(join(output, NATIVE_PERMISSION_ACTION_RECEIPT));
+    assert.deepEqual(JSON.parse(initialBytes.toString('utf8')), original);
+    assert.deepEqual(JSON.parse(actionBytes.toString('utf8')), originalAction);
+    await writeFile(
+      join(output, 'userscript-manager-native-permission-initial.json'),
+      initialBytes
+    );
+    await writeFile(
+      join(output, 'userscript-manager-native-permission-initial-action.json'),
+      actionBytes
+    );
+    const args = [
+      '-NoProfile',
+      '-NonInteractive',
+      '-File',
+      join(root, 'validation/windows/manager-edge-warning-window.ps1'),
+      '-BrowserPid',
+      String(original.browserPid),
+      '-Profile',
+      profile,
+      '-Output',
+      output,
+      '-OriginalPermissionHandle',
+      original.foregroundHandle!,
+      '-ExpectedCreationUtcTicks',
+      original.creationUtcTicks!,
+      '-ExpectedSessionId',
+      String(original.browserSessionId),
+    ];
+    await run('powershell.exe', args, { timeout: 12_000, windowsHide: true, maxBuffer: 4_096 });
+    const warning: EdgeWarningReceipt = JSON.parse(
+      await readFile(join(output, EDGE_WARNING_RECEIPT), 'utf8')
+    );
+    if (!isObservedEdgeWarning(warning, original)) {
+      return skipped('warning-not-exact');
+    }
+    await pending();
+    assert.equal(
+      browserProcessId(await cdp.send('SystemInfo.getProcessInfo')),
+      original.browserPid,
+      'browser-pid-changed'
+    );
+    await run(
+      'powershell.exe',
+      [...args, '-InvokeLater', '-ExpectedWarningHandle', warning.warningHandle!],
+      { timeout: 12_000, windowsHide: true, maxBuffer: 4_096 }
+    );
+    const action: EdgeWarningReceipt = JSON.parse(
+      await readFile(join(output, EDGE_WARNING_ACTION_RECEIPT), 'utf8')
+    );
+    if (action.status !== 'invoked' || action.laterAttempted !== true) {
+      return { status: action.status ?? 'unavailable', reason: action.reason ?? null };
+    }
+    if (
+      action.capture !== 'uia-only' ||
+      action.screenshot !== 'not-captured' ||
+      action.browserPid !== warning.browserPid ||
+      action.creationUtcTicks !== warning.creationUtcTicks ||
+      action.browserSessionId !== warning.browserSessionId ||
+      action.originalPermissionHandle !== warning.originalPermissionHandle ||
+      action.warningHandle !== warning.warningHandle ||
+      !action.warningScope ||
+      !warning.warningScope ||
+      !isObservedEdgeWarning({ ...action, status: 'captured', laterAttempted: false }, original)
+    ) {
+      return { status: 'unavailable', reason: 'warning-action-identity-changed' };
+    }
+    assert.deepEqual(action.warningScope, warning.warningScope, 'Warning signature changed');
+    return { status: 'invoked', reason: null };
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : typeof error;
+    return {
+      status: [
+        'manager-ask-not-current',
+        'manager-options-not-unique',
+        'downloads-permission-not-pending',
+        'browser-pid-changed',
+      ].some((known) => reason.startsWith(known))
+        ? 'skipped'
+        : 'unavailable',
+      reason,
+    };
+  }
+}
+
+async function retryNativePermissionAfterWarning(
+  cdp: CDPSession,
+  root: string,
+  output: string,
+  profile: string,
+  ask: Page,
+  managerId: string,
+  context: BrowserContext,
+  run: typeof execFileAsync
+) {
+  const diagnostic = await captureNativeManagerPermission(
+    cdp,
+    root,
+    output,
+    profile,
+    'msedge',
+    run
+  );
+  if (diagnostic.status !== 'captured') {
+    return { status: 'skipped', reason: 'prompt-not-captured' };
+  }
+  const receipt: NativePromptReceipt = JSON.parse(
+    await readFile(join(output, NATIVE_PERMISSION_RECEIPT), 'utf8')
+  );
+  if (!isObservedNativeDownloadPrompt(receipt, 'msedge')) {
+    return { status: 'skipped', reason: 'prompt-not-exact' };
+  }
+  if (
+    ask.isClosed() ||
+    ask.context() !== context ||
+    !isOwnedManagerPermissionAskUrl(ask.url(), managerId)
+  ) {
+    return { status: 'skipped', reason: 'manager-ask-not-current' };
+  }
+  if (browserProcessId(await cdp.send('SystemInfo.getProcessInfo')) !== receipt.browserPid) {
+    return { status: 'skipped', reason: 'browser-pid-changed' };
+  }
+  const options = context
+    .pages()
+    .filter((page) => !page.isClosed() && isOwnedManagerOptionsUrl(page.url(), managerId));
+  if (options.length !== 1 || (await probeManagerDownloadsPermission(options[0]!, managerId))) {
+    return { status: 'skipped', reason: 'downloads-permission-not-pending' };
+  }
+  await run(
+    'powershell.exe',
+    [
+      '-NoProfile',
+      '-NonInteractive',
+      '-File',
+      join(root, 'validation/windows/manager-permission-window.ps1'),
+      '-BrowserPid',
+      String(receipt.browserPid),
+      '-BrowserName',
+      'msedge',
+      '-Profile',
+      profile,
+      '-Output',
+      output,
+      '-InvokeAllow',
+      '-ExpectedCreationUtcTicks',
+      receipt.creationUtcTicks!,
+      '-ExpectedSessionId',
+      String(receipt.browserSessionId),
+      '-ExpectedForegroundHandle',
+      receipt.foregroundHandle!,
+    ],
+    { timeout: 12_000, windowsHide: true, maxBuffer: 4_096 }
+  );
+  const action: NativePromptReceipt = JSON.parse(
+    await readFile(join(output, NATIVE_PERMISSION_ACTION_RECEIPT), 'utf8')
+  );
+  if (
+    !['skipped', 'invoked', 'unverified-after-invoke'].includes(action.status ?? '') ||
+    action.permissionGrantAttempted !== (action.status !== 'skipped')
+  ) {
+    return { status: 'unavailable', reason: 'invalid-native-action-receipt' };
+  }
+  return { status: action.status, reason: action.reason ?? null };
+}
+
 /** Recheck the owned manager ask before a second, OS-bound UIA-only Invoke pass. */
 export async function inspectAndAllowNativeManagerPermission(
   cdp: CDPSession,
@@ -626,7 +952,7 @@ export async function inspectAndAllowNativeManagerPermission(
       assert.equal(action.postProcessStable, true);
       assert.equal(action.postForegroundOwned, true);
     }
-    return {
+    const outcome = {
       ...diagnostic,
       action: {
         status: action.status,
@@ -636,6 +962,40 @@ export async function inspectAndAllowNativeManagerPermission(
         postForegroundOwned: action.postForegroundOwned ?? null,
       },
     };
+    if (browserName !== 'msedge' || action.status !== 'skipped') {
+      return outcome;
+    }
+    const warning = await dismissObservedEdgeWarningOnce(
+      cdp,
+      root,
+      output,
+      profile,
+      ask,
+      managerId,
+      context,
+      receipt,
+      action,
+      run
+    );
+    if (warning.status !== 'invoked') {
+      return { ...outcome, warning };
+    }
+    let retry;
+    try {
+      retry = await retryNativePermissionAfterWarning(
+        cdp,
+        root,
+        output,
+        profile,
+        ask,
+        managerId,
+        context,
+        run
+      );
+    } catch (error) {
+      retry = { status: 'unavailable', reason: error instanceof Error ? error.name : typeof error };
+    }
+    return { ...outcome, warning, retry };
   } catch (error) {
     return {
       ...diagnostic,

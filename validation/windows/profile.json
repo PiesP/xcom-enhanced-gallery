@@ -60,6 +60,7 @@
       "validation/windows/video-save-format-profile.ts",
       "validation/windows/userscript-fixture-certificate.ps1",
       "validation/windows/manager-permission-window.ps1",
+      "validation/windows/manager-edge-warning-window.ps1",
       "dist-extension",
       "dist-extension-firefox",
       "test/e2e/fixtures/native-original.jpg",

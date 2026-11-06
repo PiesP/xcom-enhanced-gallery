@@ -27,6 +27,11 @@ for another, and none is a required CI lane.
    unrecognized, incomplete or changed prompts are skipped. Edge uses its observed
    title, permission description, and bullet-prefixed downloads-only label; if
    its scoped UIA labels differ, the action remains skipped for review. An
+   owned Edge developer-mode warning can obscure that prompt. After an exact
+   permission capture and a safely skipped action, the validator may dismiss
+   one fully recognized warning through its visible **Later** control, then
+   recapture the still-pending permission prompt and make one guarded retry.
+   It preserves the initial permission receipts and never invokes **Disable**.
    independent manager permission probe records whether the permission was
    actually granted or remains pending.
    Native completion and saved bytes require separate evidence.
