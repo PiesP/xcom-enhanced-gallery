@@ -909,7 +909,7 @@ describe('Windows X live page validation', () => {
         depth: 1,
         processIdSupported: false,
         nativeWindowHandleSupported: false,
-        providerDescription: 'virtual UIA provider',
+        providerDescriptionSupported: true,
       },
     });
     expect(userscriptInstall.isObservedEdgeWarning(crossProcess, original)).toBe(false);
@@ -945,7 +945,8 @@ describe('Windows X live page validation', () => {
     expect(script).toContain('::NativeWindowHandleProperty, $true)');
     expect(script).toContain('::ProviderDescriptionProperty, $true)');
     expect(script).toContain('::NotSupported');
-    expect(script).toContain('[Math]::Min(256, $description.Length)');
+    expect(script).toContain('$rejectedControl.providerDescriptionSupported = -not');
+    expect(script).not.toContain('$rejectedControl.providerDescription =');
     expect(script).toContain('$attempted -ge 128');
     expect(script).toContain('$pattern.Invoke()');
     expect(script).not.toMatch(/SetForegroundWindow|SendInput|CopyFromScreen|BitBlt/u);

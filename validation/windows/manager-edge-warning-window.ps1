@@ -97,7 +97,7 @@ function Get-CompleteTree {
             $currentPid = [int]$current.ProcessId
             if ($currentPid -ne $BrowserPid) {
                 $rejectedControl = @{ processId = $currentPid; depth = $depth;
-                    controlType = ''; name = ''; providerDescription = '';
+                    controlType = ''; name = ''; providerDescriptionSupported = $null;
                     processIdSupported = $null; nativeWindowHandleSupported = $null }
                 try {
                     $value = $element.GetCurrentPropertyValue(
@@ -130,12 +130,8 @@ function Get-CompleteTree {
                 try {
                     $value = $element.GetCurrentPropertyValue(
                         [Windows.Automation.AutomationElement]::ProviderDescriptionProperty, $true)
-                    if (-not [object]::ReferenceEquals(
-                        $value, [Windows.Automation.AutomationElement]::NotSupported)) {
-                        $description = [string]$value
-                        $rejectedControl.providerDescription = $description.Substring(
-                            0, [Math]::Min(256, $description.Length))
-                    }
+                    $rejectedControl.providerDescriptionSupported = -not [object]::ReferenceEquals(
+                        $value, [Windows.Automation.AutomationElement]::NotSupported)
                 } catch {}
                 $reason = 'cross-process'; break
             }
