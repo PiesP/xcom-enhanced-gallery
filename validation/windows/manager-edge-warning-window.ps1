@@ -36,7 +36,12 @@ using System.Runtime.InteropServices;
 public static class XegEdgeWarningWindow {
     [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr hwnd);
     [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint pid);
+    [DllImport("user32.dll")] public static extern bool IsChild(IntPtr parent, IntPtr child);
     [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+    public static uint WindowPid(IntPtr hwnd) {
+        uint pid;
+        return hwnd != IntPtr.Zero && GetWindowThreadProcessId(hwnd, out pid) != 0 ? pid : 0;
+    }
     public static bool IsOwned(IntPtr hwnd, uint expectedPid) {
         uint pid;
         return hwnd != IntPtr.Zero && GetWindowThreadProcessId(hwnd, out pid) != 0 &&
@@ -44,6 +49,28 @@ public static class XegEdgeWarningWindow {
     }
 }
 '@
+
+function Test-OwnedChildPane {
+    param($Facts)
+    if ($null -eq $Facts -or $Facts.depth -ne 1 -or $Facts.name -cne '' -or
+        $Facts.controlType -cne 'ControlType.Pane' -or
+        $Facts.hasChild -ne $false -or $Facts.processId -le 0 -or
+        $Facts.processId -eq $Facts.browserPid -or
+        $Facts.nativeWindowHandle -le 0 -or
+        $Facts.windowPid -ne $Facts.processId -or
+        $Facts.insideWarning -ne $true -or
+        $Facts.parentPid -ne $Facts.browserPid -or
+        $Facts.sessionId -ne $Facts.browserSessionId -or
+        $Facts.executablePath -ine $Facts.browserExecutablePath -or
+        $Facts.executablePath -match '^\\\\' -or
+        $Facts.creationUtcTicks -cnotmatch '^\d{15,20}$' -or
+        [int64]$Facts.creationUtcTicks -lt [int64]$Facts.browserCreationUtcTicks) {
+        return $false
+    }
+    $escapedProfile = [regex]::Escape($Facts.profile)
+    return [bool]($Facts.commandLine -match
+        "(?i)(?:^|\s)`"?--user-data-dir=`"?$escapedProfile`"?(?=\s|$)")
+}
 
 function Get-OwnedBrowser {
     $process = Get-CimInstance Win32_Process -Filter "ProcessId = $BrowserPid"
@@ -73,7 +100,8 @@ function Get-OwnedBrowser {
 }
 
 function Get-CompleteTree {
-    param([Windows.Automation.AutomationElement]$Root)
+    param([Windows.Automation.AutomationElement]$Root, [IntPtr]$WarningWindow,
+        $BrowserProcess, [string]$ResolvedProfile)
     $walker = [Windows.Automation.TreeWalker]::ControlViewWalker
     $queue = New-Object System.Collections.Queue
     $queue.Enqueue(@($Root, 0))
@@ -83,6 +111,7 @@ function Get-CompleteTree {
     $reason = $null
     $rejectedControl = $null
     $attempted = 0
+    $ownedChildPanes = 0
     while ($queue.Count -gt 0 -and $null -eq $reason) {
         if ($attempted -ge 128) { $reason = 'node-cap'; break }
         $entry = $queue.Dequeue()
@@ -133,7 +162,45 @@ function Get-CompleteTree {
                     $rejectedControl.providerDescriptionSupported = -not [object]::ReferenceEquals(
                         $value, [Windows.Automation.AutomationElement]::NotSupported)
                 } catch {}
-                $reason = 'cross-process'; break
+                $firstChild = $walker.GetFirstChild($element)
+                $rejectedControl.hasChild = ($null -ne $firstChild)
+                $nativeHandle = [int]$current.NativeWindowHandle
+                $window = [IntPtr]::new([int64]$nativeHandle)
+                $windowPid = [int][XegEdgeWarningWindow]::WindowPid($window)
+                $insideWarning = [XegEdgeWarningWindow]::IsChild($WarningWindow, $window)
+                $rejectedControl.windowPid = $windowPid
+                $rejectedControl.insideWarning = $insideWarning
+                $childProcess = $(if ($currentPid -gt 0) {
+                    Get-CimInstance Win32_Process -Filter "ProcessId = $currentPid"
+                } else { $null })
+                $facts = @{ depth = $depth; name = [string]$current.Name;
+                    controlType = [string]$current.ControlType.ProgrammaticName;
+                    hasChild = ($null -ne $firstChild); processId = $currentPid;
+                    browserPid = $BrowserPid; nativeWindowHandle = $nativeHandle;
+                    windowPid = $windowPid; insideWarning = $insideWarning;
+                    parentPid = $(if ($childProcess) { [int]$childProcess.ParentProcessId } else { -1 });
+                    sessionId = $(if ($childProcess) { [int]$childProcess.SessionId } else { -1 });
+                    browserSessionId = $ExpectedSessionId;
+                    executablePath = $(if ($childProcess) { [string]$childProcess.ExecutablePath } else { '' });
+                    browserExecutablePath = [string]$BrowserProcess.ExecutablePath;
+                    creationUtcTicks = $(if ($childProcess -and $childProcess.CreationDate) {
+                        ([datetime]$childProcess.CreationDate).ToUniversalTime().Ticks.ToString()
+                    } else { '' });
+                    browserCreationUtcTicks = $ExpectedCreationUtcTicks;
+                    commandLine = $(if ($childProcess) { [string]$childProcess.CommandLine } else { '' });
+                    profile = $ResolvedProfile }
+                if ($ownedChildPanes -ge 1 -or -not (Test-OwnedChildPane -Facts $facts)) {
+                    $reason = 'cross-process'; break
+                }
+                $ownedChildPanes++
+                [void]$controls.Add(@{ depth = $depth; name = ''; controlType = 'ControlType.Pane';
+                    isEnabled = [bool]$current.IsEnabled;
+                    isOffscreen = [bool]$current.IsOffscreen;
+                    ownership = 'owned-child-pane'; processId = $currentPid;
+                    nativeWindowHandle = $nativeHandle;
+                    creationUtcTicks = $facts.creationUtcTicks })
+                $rejectedControl = $null
+                continue
             }
             $name = [string]$current.Name
             $type = [string]$current.ControlType.ProgrammaticName
@@ -221,7 +288,11 @@ function Test-SameWarningScope {
         if ($before.depth -ne $after.depth -or $before.name -cne $after.name -or
             $before.controlType -cne $after.controlType -or
             $before.isEnabled -ne $after.isEnabled -or
-            $before.isOffscreen -ne $after.isOffscreen) { return $false }
+            $before.isOffscreen -ne $after.isOffscreen -or
+            $before.ownership -cne $after.ownership -or
+            $before.processId -ne $after.processId -or
+            $before.nativeWindowHandle -ne $after.nativeWindowHandle -or
+            $before.creationUtcTicks -cne $after.creationUtcTicks) { return $false }
     }
     return $true
 }
@@ -254,7 +325,9 @@ try {
     $warningRoot = [Windows.Automation.AutomationElement]::FromHandle($warning)
     if ($null -eq $warningRoot -or
         $warningRoot.Current.ProcessId -ne $BrowserPid) { throw 'uia-root-unverified' }
-    $inspection = Get-CompleteTree -Root $warningRoot
+    $resolvedProfile = (Resolve-Path -LiteralPath $Profile).ProviderPath.TrimEnd('\')
+    $inspection = Get-CompleteTree -Root $warningRoot -WarningWindow $warning `
+        -BrowserProcess $before -ResolvedProfile $resolvedProfile
     $receipt.warningScope = @{ complete = $inspection.complete; reason = $inspection.reason;
         controls = $inspection.controls; visitedControls = $inspection.visitedControls;
         attemptedNodes = $inspection.attemptedNodes;
