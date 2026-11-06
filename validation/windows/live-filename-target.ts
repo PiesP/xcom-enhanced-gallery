@@ -53,9 +53,7 @@ export function admitReportedLiveFilenameInstall(options: {
   const { selector, browserName, installation, liveUrls } = options;
   const target = parseLiveFilenameSelector(selector);
   const explicit =
-    selector !== null &&
-    typeof selector === 'object' &&
-    Object.hasOwn(selector, 'target');
+    selector !== null && typeof selector === 'object' && Object.hasOwn(selector, 'target');
   if (explicit) {
     assert(['chrome', 'msedge'].includes(browserName), 'Explicit live photo needs Chrome or Edge');
     assert(['extension', 'userscript'].includes(installation), 'Unknown live photo installation');

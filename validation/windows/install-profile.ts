@@ -20494,8 +20494,11 @@ export async function run({
       const selectors = (await readdir(join(root, 'validation/windows/inputs')))
         .filter((name) => name.endsWith('.json'))
         .sort();
-      assert.deepEqual(selectors, ['reported-live-filename.json'],
-        'Live userscript qualification requires an exclusive photo selector');
+      assert.deepEqual(
+        selectors,
+        ['reported-live-filename.json'],
+        'Live userscript qualification requires an exclusive photo selector'
+      );
     }
     assert.equal(
       liveObservation,
@@ -20554,7 +20557,9 @@ export async function run({
         'Flattened live userscript stage could not be removed'
       );
     }
-    if (liveFailed) throw liveError;
+    if (liveFailed) {
+      throw liveError;
+    }
     assert(live, 'Live userscript phase produced no result');
     return { ...fixture, live, liveEvidence, liveUrls: [reportedFilenameTarget.pageUrl] };
   }

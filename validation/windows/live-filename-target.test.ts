@@ -16,25 +16,49 @@ const jeppi = {
 describe('live filename target', () => {
   it('admits the exact Edge userscript target and preserves the old Chrome extension entry', () => {
     const explicit = { scenario: 'reported-live-filename', target: jeppi };
-    expect(admitReportedLiveFilenameInstall({
-      selector: explicit,
-      browserName: 'msedge',
-      installation: 'userscript',
-      liveUrls: [jeppi.pageUrl],
-    })).toEqual(jeppi);
+    expect(
+      admitReportedLiveFilenameInstall({
+        selector: explicit,
+        browserName: 'msedge',
+        installation: 'userscript',
+        liveUrls: [jeppi.pageUrl],
+      })
+    ).toEqual(jeppi);
     const legacy = { scenario: 'reported-live-filename' };
-    expect(admitReportedLiveFilenameInstall({
-      selector: legacy,
-      browserName: 'chrome',
-      installation: 'extension',
-      liveUrls: ['https://x.com/yukurach/status/2118323627615785399'],
-    }).mediaBasename).toBe('HWXMF0bbcAEnfk6');
+    expect(
+      admitReportedLiveFilenameInstall({
+        selector: legacy,
+        browserName: 'chrome',
+        installation: 'extension',
+        liveUrls: ['https://x.com/yukurach/status/2118323627615785399'],
+      }).mediaBasename
+    ).toBe('HWXMF0bbcAEnfk6');
     for (const options of [
-      { selector: legacy, browserName: 'msedge', installation: 'userscript', liveUrls: [jeppi.pageUrl] },
-      { selector: explicit, browserName: 'firefox', installation: 'userscript', liveUrls: [jeppi.pageUrl] },
+      {
+        selector: legacy,
+        browserName: 'msedge',
+        installation: 'userscript',
+        liveUrls: [jeppi.pageUrl],
+      },
+      {
+        selector: explicit,
+        browserName: 'firefox',
+        installation: 'userscript',
+        liveUrls: [jeppi.pageUrl],
+      },
       { selector: explicit, browserName: 'msedge', installation: 'userscript', liveUrls: [] },
-      { selector: explicit, browserName: 'msedge', installation: 'userscript', liveUrls: [jeppi.pageUrl, jeppi.pageUrl] },
-      { selector: explicit, browserName: 'msedge', installation: 'userscript', liveUrls: ['https://x.com/other/status/1'] },
+      {
+        selector: explicit,
+        browserName: 'msedge',
+        installation: 'userscript',
+        liveUrls: [jeppi.pageUrl, jeppi.pageUrl],
+      },
+      {
+        selector: explicit,
+        browserName: 'msedge',
+        installation: 'userscript',
+        liveUrls: ['https://x.com/other/status/1'],
+      },
     ]) {
       expect(() => admitReportedLiveFilenameInstall(options)).toThrow();
     }

@@ -1,7 +1,16 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 PiesP
 
-import { mkdtemp, mkdir, readFile, readdir, rm, symlink, truncate, writeFile } from 'node:fs/promises';
+import {
+  mkdtemp,
+  mkdir,
+  readFile,
+  readdir,
+  rm,
+  symlink,
+  truncate,
+  writeFile,
+} from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { describe, expect, it } from 'vitest';
@@ -31,14 +40,14 @@ describe('flat installed userscript evidence', () => {
           bytes: 21,
         }),
       ]);
-      expect(await readFile(join(paths.output, 'userscript-live-proof.json'), 'utf8'))
-        .toBe('{"status":"observed"}');
+      expect(await readFile(join(paths.output, 'userscript-live-proof.json'), 'utf8')).toBe(
+        '{"status":"observed"}'
+      );
       expect((await readdir(paths.output)).sort()).toEqual([
         'userscript-live-artifacts.json',
         'userscript-live-proof.json',
       ]);
-      expect(await readFile(join(paths.stage, 'proof.json'), 'utf8'))
-        .toBe('{"status":"observed"}');
+      expect(await readFile(join(paths.stage, 'proof.json'), 'utf8')).toBe('{"status":"observed"}');
     } finally {
       await rm(paths.root, { recursive: true, force: true });
     }
@@ -49,8 +58,9 @@ describe('flat installed userscript evidence', () => {
     try {
       await writeFile(join(paths.stage, 'proof.json'), 'original');
       await writeFile(join(paths.stage, 'userscript-live-proof.json'), 'other');
-      await expect(flattenUserscriptLiveEvidence({ ...paths, phaseStatus: 'failed' }))
-        .rejects.toThrow('names collide');
+      await expect(
+        flattenUserscriptLiveEvidence({ ...paths, phaseStatus: 'failed' })
+      ).rejects.toThrow('names collide');
       expect((await readdir(paths.stage)).length).toBe(2);
       expect(await readdir(paths.output)).toEqual([]);
     } finally {
@@ -62,14 +72,16 @@ describe('flat installed userscript evidence', () => {
     const paths = await owned();
     try {
       await mkdir(join(paths.stage, 'nested'));
-      await expect(flattenUserscriptLiveEvidence({ ...paths, phaseStatus: 'failed' }))
-        .rejects.toThrow('non-file');
+      await expect(
+        flattenUserscriptLiveEvidence({ ...paths, phaseStatus: 'failed' })
+      ).rejects.toThrow('non-file');
       await rm(join(paths.stage, 'nested'), { recursive: true });
       const oversized = join(paths.stage, 'large.bin');
       await writeFile(oversized, '');
       await truncate(oversized, 64 * 1024 * 1024 + 1);
-      await expect(flattenUserscriptLiveEvidence({ ...paths, phaseStatus: 'failed' }))
-        .rejects.toThrow('bounded read');
+      await expect(
+        flattenUserscriptLiveEvidence({ ...paths, phaseStatus: 'failed' })
+      ).rejects.toThrow('bounded read');
     } finally {
       await rm(paths.root, { recursive: true, force: true });
     }
@@ -80,8 +92,9 @@ describe('flat installed userscript evidence', () => {
     try {
       await writeFile(join(paths.root, 'outside.txt'), 'unowned');
       await symlink(join(paths.root, 'outside.txt'), join(paths.stage, 'alias.txt'));
-      await expect(flattenUserscriptLiveEvidence({ ...paths, phaseStatus: 'failed' }))
-        .rejects.toThrow('non-file');
+      await expect(
+        flattenUserscriptLiveEvidence({ ...paths, phaseStatus: 'failed' })
+      ).rejects.toThrow('non-file');
     } finally {
       await rm(paths.root, { recursive: true, force: true });
     }
@@ -92,11 +105,13 @@ describe('flat installed userscript evidence', () => {
     try {
       await writeFile(join(paths.stage, 'proof.json'), 'retain-me');
       await writeFile(join(paths.output, 'userscript-live-proof.json'), 'fixture');
-      await expect(flattenUserscriptLiveEvidence({ ...paths, phaseStatus: 'failed' }))
-        .rejects.toThrow('collides');
+      await expect(
+        flattenUserscriptLiveEvidence({ ...paths, phaseStatus: 'failed' })
+      ).rejects.toThrow('collides');
       expect(await readFile(join(paths.stage, 'proof.json'), 'utf8')).toBe('retain-me');
-      expect(await readFile(join(paths.output, 'userscript-live-proof.json'), 'utf8'))
-        .toBe('fixture');
+      expect(await readFile(join(paths.output, 'userscript-live-proof.json'), 'utf8')).toBe(
+        'fixture'
+      );
     } finally {
       await rm(paths.root, { recursive: true, force: true });
     }

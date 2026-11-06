@@ -41,16 +41,26 @@ export async function flattenUserscriptLiveEvidence(options: {
     readdir(output, { withFileTypes: true }),
   ]);
   assert(stageEntries.length <= MAX_STAGE_FILES, 'Too many live stage artifacts');
-  assert(stageEntries.every((entry) => entry.isFile()), 'Live stage contains a non-file entry');
-  assert(outputEntries.every((entry) => entry.isFile()), 'Flat output contains a non-file entry');
+  assert(
+    stageEntries.every((entry) => entry.isFile()),
+    'Live stage contains a non-file entry'
+  );
+  assert(
+    outputEntries.every((entry) => entry.isFile()),
+    'Flat output contains a non-file entry'
+  );
   const existingStats = await Promise.all(
     outputEntries.map((entry) => lstat(join(output, entry.name)))
   );
-  assert(existingStats.every((item) => item.isFile() && item.size <= MAX_FILE_BYTES),
-    'Flat output contains an unsafe or oversized file');
+  assert(
+    existingStats.every((item) => item.isFile() && item.size <= MAX_FILE_BYTES),
+    'Flat output contains an unsafe or oversized file'
+  );
   const existingBytes = existingStats.reduce((sum, item) => sum + item.size, 0);
-  assert(existingBytes + RESERVED_RESULT_BYTES <= MAX_OUTPUT_BYTES,
-    'Flat output already exceeds collection size');
+  assert(
+    existingBytes + RESERVED_RESULT_BYTES <= MAX_OUTPUT_BYTES,
+    'Flat output already exceeds collection size'
+  );
   // guest.mjs adds result.json after the installation entry returns.
   assert(
     outputEntries.length + stageEntries.length + 2 <= MAX_OUTPUT_FILES,
@@ -58,18 +68,22 @@ export async function flattenUserscriptLiveEvidence(options: {
   );
   const planned = stageEntries.map((entry) => {
     assert(safeName(entry.name), 'Unsafe live stage artifact basename');
-    const name = entry.name.startsWith(OUTPUT_PREFIX)
-      ? entry.name
-      : OUTPUT_PREFIX + entry.name;
+    const name = entry.name.startsWith(OUTPUT_PREFIX) ? entry.name : OUTPUT_PREFIX + entry.name;
     assert(safeName(name) && name !== INDEX_NAME, 'Unsafe flattened live artifact name');
-    assert(!outputEntries.some((existing) => existing.name === name),
-      'Flattened live artifact collides with fixture output');
+    assert(
+      !outputEntries.some((existing) => existing.name === name),
+      'Flattened live artifact collides with fixture output'
+    );
     return { originalName: entry.name, name };
   });
-  assert(new Set(planned.map((entry) => entry.name)).size === planned.length,
-    'Flattened live artifact names collide');
-  assert(!outputEntries.some((entry) => entry.name === INDEX_NAME),
-    'Live artifact index already exists');
+  assert(
+    new Set(planned.map((entry) => entry.name)).size === planned.length,
+    'Flattened live artifact names collide'
+  );
+  assert(
+    !outputEntries.some((entry) => entry.name === INDEX_NAME),
+    'Live artifact index already exists'
+  );
   let total = 0;
   const files: Array<{ source: string; file: string; bytes: number; sha256: string }> = [];
   for (const item of planned) {
@@ -77,13 +91,18 @@ export async function flattenUserscriptLiveEvidence(options: {
     const read = await readOwnedNativeBytes(stage, source, MAX_FILE_BYTES);
     total += read.bytes.length;
     assert(total <= MAX_STAGE_BYTES, 'Live stage exceeds bounded transfer size');
-    assert(existingBytes + total + RESERVED_RESULT_BYTES <= MAX_OUTPUT_BYTES,
-      'Live stage would exceed collection byte limit');
+    assert(
+      existingBytes + total + RESERVED_RESULT_BYTES <= MAX_OUTPUT_BYTES,
+      'Live stage would exceed collection byte limit'
+    );
     const target = join(output, item.name);
     await writeFile(target, read.bytes, { flag: 'wx', mode: 0o600 });
     const verified = await readOwnedNativeBytes(output, target, MAX_FILE_BYTES);
-    assert.equal(sha256(verified.bytes), sha256(read.bytes),
-      'Flattened live artifact copy differs from stage');
+    assert.equal(
+      sha256(verified.bytes),
+      sha256(read.bytes),
+      'Flattened live artifact copy differs from stage'
+    );
     files.push({
       source: item.originalName,
       file: item.name,
@@ -96,7 +115,10 @@ export async function flattenUserscriptLiveEvidence(options: {
   assert(encoded.length <= 64 * 1024, 'Live artifact index exceeded its bound');
   const indexPath = join(output, INDEX_NAME);
   await writeFile(indexPath, encoded, { flag: 'wx', mode: 0o600 });
-  assert.equal(sha256(await readFile(indexPath)), sha256(encoded),
-    'Live artifact index copy differs');
+  assert.equal(
+    sha256(await readFile(indexPath)),
+    sha256(encoded),
+    'Live artifact index copy differs'
+  );
   return index;
 }
