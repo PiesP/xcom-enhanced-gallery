@@ -814,6 +814,21 @@ describe('Windows X live page validation', () => {
     const incomplete = edgeWarning();
     incomplete.warningScope.complete = false;
     expect(userscriptInstall.isObservedEdgeWarning(incomplete, original)).toBe(false);
+    const crossProcess = edgeWarning();
+    crossProcess.warningScope.complete = false;
+    crossProcess.warningScope.reason = 'cross-process';
+    Object.assign(crossProcess.warningScope, {
+      rejectedControl: {
+        processId: 0,
+        controlType: 'ControlType.Pane',
+        name: 'provider',
+        depth: 1,
+        processIdSupported: false,
+        nativeWindowHandleSupported: false,
+        providerDescription: 'virtual UIA provider',
+      },
+    });
+    expect(userscriptInstall.isObservedEdgeWarning(crossProcess, original)).toBe(false);
   });
 
   it('keeps the separate warning helper ASCII, bounded, and free of focus or input injection', () => {
@@ -833,6 +848,19 @@ describe('Windows X live page validation', () => {
     expect(script.match(/IsOwned\(\$oldHandle, \[uint32\]\$BrowserPid\)/gu)).toHaveLength(3);
     expect(script).not.toContain('GetFirstChild($oldRoot)');
     expect(script).not.toContain('prior-permission-cross-process');
+    expect(script).toContain(
+      '$rejectedControl.name = $name.Substring(0, [Math]::Min(120, $name.Length))'
+    );
+    expect(script).toContain(
+      '$rejectedControl.controlType = $type.Substring(0, [Math]::Min(80, $type.Length))'
+    );
+    expect(script).toContain('rejectedControl = $inspection.rejectedControl');
+    expect(script).toContain('GetCurrentPropertyValue(');
+    expect(script).toContain('::ProcessIdProperty, $true)');
+    expect(script).toContain('::NativeWindowHandleProperty, $true)');
+    expect(script).toContain('::ProviderDescriptionProperty, $true)');
+    expect(script).toContain('::NotSupported');
+    expect(script).toContain('[Math]::Min(256, $description.Length)');
     expect(script).toContain('$attempted -ge 128');
     expect(script).toContain('$pattern.Invoke()');
     expect(script).not.toMatch(/SetForegroundWindow|SendInput|CopyFromScreen|BitBlt/u);

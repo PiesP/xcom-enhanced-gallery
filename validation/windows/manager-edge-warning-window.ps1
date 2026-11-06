@@ -77,6 +77,7 @@ function Get-CompleteTree {
     $controls = New-Object System.Collections.ArrayList
     $later = New-Object System.Collections.ArrayList
     $reason = $null
+    $rejectedControl = $null
     $attempted = 0
     while ($queue.Count -gt 0 -and $null -eq $reason) {
         if ($attempted -ge 128) { $reason = 'node-cap'; break }
@@ -89,7 +90,45 @@ function Get-CompleteTree {
             if ($null -eq $id -or $id.Length -eq 0) { $reason = 'runtime-id-unavailable'; break }
             if (-not $seen.Add(($id -join ','))) { $reason = 'duplicate-runtime-id'; break }
             $current = $element.Current
-            if ($current.ProcessId -ne $BrowserPid) { $reason = 'cross-process'; break }
+            $currentPid = [int]$current.ProcessId
+            if ($currentPid -ne $BrowserPid) {
+                $rejectedControl = @{ processId = $currentPid; depth = $depth;
+                    controlType = ''; name = ''; providerDescription = '';
+                    processIdSupported = $null; nativeWindowHandleSupported = $null }
+                try {
+                    $value = $element.GetCurrentPropertyValue(
+                        [Windows.Automation.AutomationElement]::ProcessIdProperty, $true)
+                    $rejectedControl.processIdSupported = -not [object]::ReferenceEquals(
+                        $value, [Windows.Automation.AutomationElement]::NotSupported)
+                } catch {}
+                try {
+                    $type = [string]$current.ControlType.ProgrammaticName
+                    $rejectedControl.controlType = $type.Substring(0, [Math]::Min(80, $type.Length))
+                } catch {}
+                try {
+                    $name = [string]$current.Name
+                    $rejectedControl.name = $name.Substring(0, [Math]::Min(120, $name.Length))
+                } catch {}
+                try {
+                    $value = $element.GetCurrentPropertyValue(
+                        [Windows.Automation.AutomationElement]::NativeWindowHandleProperty, $true)
+                    $supported = -not [object]::ReferenceEquals(
+                        $value, [Windows.Automation.AutomationElement]::NotSupported)
+                    $rejectedControl.nativeWindowHandleSupported = $supported
+                    if ($supported) { $rejectedControl.nativeWindowHandle = [int]$value }
+                } catch {}
+                try {
+                    $value = $element.GetCurrentPropertyValue(
+                        [Windows.Automation.AutomationElement]::ProviderDescriptionProperty, $true)
+                    if (-not [object]::ReferenceEquals(
+                        $value, [Windows.Automation.AutomationElement]::NotSupported)) {
+                        $description = [string]$value
+                        $rejectedControl.providerDescription = $description.Substring(
+                            0, [Math]::Min(256, $description.Length))
+                    }
+                } catch {}
+                $reason = 'cross-process'; break
+            }
             $name = [string]$current.Name
             $type = [string]$current.ControlType.ProgrammaticName
             if ($name.Length -gt 180 -or $type.Length -gt 80) { $reason = 'name-cap'; break }
@@ -117,6 +156,7 @@ function Get-CompleteTree {
     return @{ complete = ($null -eq $reason -and $queue.Count -eq 0);
         reason = $reason; controls = @($controls.ToArray());
         visitedControls = $controls.Count; attemptedNodes = $attempted;
+        rejectedControl = $rejectedControl;
         laterElements = @($later.ToArray()) }
 }
 
@@ -204,7 +244,28 @@ try {
     $inspection = Get-CompleteTree -Root $warningRoot
     $receipt.warningScope = @{ complete = $inspection.complete; reason = $inspection.reason;
         controls = $inspection.controls; visitedControls = $inspection.visitedControls;
-        attemptedNodes = $inspection.attemptedNodes }
+        attemptedNodes = $inspection.attemptedNodes;
+        rejectedControl = $inspection.rejectedControl }
+    if ($inspection.rejectedControl -and $inspection.rejectedControl.processId -gt 0) {
+        try {
+            $rejectedPid = [int]$inspection.rejectedControl.processId
+            $rejectedProcess = Get-CimInstance Win32_Process -Filter "ProcessId = $rejectedPid"
+            if ($null -ne $rejectedProcess) {
+                $resolvedProfile = (Resolve-Path -LiteralPath $Profile).ProviderPath.TrimEnd('\')
+                $escapedProfile = [regex]::Escape($resolvedProfile)
+                $executableLeaf = [IO.Path]::GetFileName([string]$rejectedProcess.ExecutablePath)
+                $receipt.warningScope.rejectedProcess = @{
+                    executableLeaf = $executableLeaf.Substring(0, [Math]::Min(120, $executableLeaf.Length))
+                    parentPid = [int]$rejectedProcess.ParentProcessId
+                    sessionId = [int]$rejectedProcess.SessionId
+                    creationUtcTicks = ([datetime]$rejectedProcess.CreationDate).ToUniversalTime().Ticks.ToString()
+                    sameExecutable = ($rejectedProcess.ExecutablePath -ieq $before.ExecutablePath)
+                    taskProfile = ([string]$rejectedProcess.CommandLine -match
+                        "(?i)(?:^|\s)`"?--user-data-dir=`"?$escapedProfile`"?(?=\s|$)")
+                }
+            }
+        } catch {}
+    }
     $receipt.browserPid = $BrowserPid
     $receipt.creationUtcTicks = $ExpectedCreationUtcTicks
     $receipt.browserSessionId = $ExpectedSessionId
