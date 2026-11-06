@@ -5288,6 +5288,48 @@ export function resolveUserscriptGMCallLine(source: string): number | null {
   return calls[0]!;
 }
 
+/** Optional probe sites inside the exact installed adapter source. */
+export function resolveUserscriptGMCallerLines(
+  source: string
+): { modern: number; legacy: number } | null {
+  const lines = source.split(/\r?\n/u);
+  const starts = lines.flatMap((line, index) =>
+    /^\s*function getUserscript\(\) \{/u.test(line) ? [index] : []
+  );
+  if (starts.length !== 1) {
+    return null;
+  }
+  const start = starts[0]!;
+  const adapter = lines.slice(start, start + 80);
+  if (
+    !adapter.some((line) =>
+      /^\s*const gmDownloadModern = asFunction\(g\.download\);/u.test(line)
+    ) ||
+    !adapter.some((line) =>
+      /^\s*const gmDownloadLegacy = asFunction\(g\.downloadLegacy\);/u.test(line)
+    )
+  ) {
+    return null;
+  }
+  const modern = adapter.flatMap((line, index) =>
+    /^\s*if \(gmDownloadModern\) return downloadViaGM\("GM\.download", gmDownloadModern, url, filename, signal\);/u.test(
+      line
+    )
+      ? [start + index]
+      : []
+  );
+  const legacy = adapter.flatMap((line, index) =>
+    /^\s*if \(gmDownloadLegacy\) return downloadViaGM\("GM_download", gmDownloadLegacy, url, filename, signal\);/u.test(
+      line
+    )
+      ? [start + index]
+      : []
+  );
+  return modern.length === 1 && legacy.length === 1
+    ? { modern: modern[0]!, legacy: legacy[0]! }
+    : null;
+}
+
 function diagnosticScriptUrl(value: string): string {
   try {
     const parsed = new URL(value);
@@ -5722,6 +5764,7 @@ export async function runUserscriptLiveInstallation(options: {
           lineNumber: number;
           gmCallLine: number | null;
           gmCallKind: 'shared' | 'older-modern' | null;
+          gmCallerLines: { modern: number; legacy: number } | null;
           sha256: string;
           productBody: ReturnType<typeof bindInstalledUserscriptSource>;
         }
@@ -5747,6 +5790,7 @@ export async function runUserscriptLiveInstallation(options: {
         ...item,
         lineNumber: location.lineNumber,
         gmCallLine: resolveUserscriptGMCallLine(text),
+        gmCallerLines: resolveUserscriptGMCallerLines(text),
         gmCallKind: text.includes('function downloadViaGM(')
           ? 'shared'
           : text.includes('const handle = gmDownloadModern({')
@@ -5778,6 +5822,7 @@ export async function runUserscriptLiveInstallation(options: {
             text: String(sandboxProbe.exceptionDetails.text).slice(0, 160),
           }
         : { status: 'evaluated', value: sandboxProbe.result?.value ?? null };
+    receipt.sandboxGlobalProbeScope = 'diagnostic-only; undefined does not establish API absence';
     assert(script.gmCallLine !== null && script.gmCallKind, 'Installed GM call site missing');
     frameTrace = createInstalledUserscriptFrameTrace({
       session: debuggerSession,
@@ -5785,6 +5830,7 @@ export async function runUserscriptLiveInstallation(options: {
       filenameLine: script.lineNumber,
       gmCallLine: script.gmCallLine,
       gmCallKind: script.gmCallKind,
+      gmCallerLines: script.gmCallerLines,
       target,
     });
     await frameTrace.arm();
@@ -5816,6 +5862,9 @@ export async function runUserscriptLiveInstallation(options: {
         const captured: FrameMedia = await frameTrace.waitForMedia();
         receipt.selectedMedia = captured;
         receipt.sandbox = captured.gm ?? null;
+        receipt.sandboxFrameGlobal = captured.frameGlobal;
+        receipt.sandboxScope =
+          'filename-frame visibility only; undefined does not establish API absence';
         const sourceUrl: unknown =
           (captured.downloadSource as { url?: unknown } | null)?.url ??
           captured.originalUrl ??
@@ -5948,21 +5997,14 @@ export async function runUserscriptLiveInstallation(options: {
         receipt.frameTrace = frameTrace.snapshot();
         assert(traceStop.removed && traceStop.debuggerDisabled);
         receipt.diagnosticsRemovedBeforeRepeat = true;
-        const gm = receipt.sandbox as Record<string, unknown> | null;
-        assert(
-          gm && gm.scriptName === SCRIPT_NAME,
-          'Executed userscript GM_info script identity was not observed'
-        );
-        assert.equal(gm.handler, 'Tampermonkey');
-        assert.equal(gm.version, manager.managerVersion);
-        assert(
-          Array.isArray(gm.grants) && gm.grants.includes('GM_download'),
-          'Installed GM_info grants omit declared download permission'
-        );
-        assert(
-          gm.legacyDownloadType === 'function' || gm.modernDownloadType === 'function',
-          'Installed userscript exposes no GM download API'
-        );
+        const gm = (receipt.sandbox as FrameMedia['gm'] | null) ?? null;
+        receipt.gmInfoVisibility = {
+          scope: 'filename-utility-frame-diagnostic-only',
+          scriptNameMatches: gm?.scriptName == null ? null : gm.scriptName === SCRIPT_NAME,
+          handlerMatches: gm?.handler == null ? null : gm.handler === 'Tampermonkey',
+          versionMatches: gm?.version == null ? null : gm.version === manager.managerVersion,
+          grantsIncludeDownload: gm?.grants == null ? null : gm.grants.includes('GM_download'),
+        };
         assert.equal(
           receipt.generatedFilename,
           requestedName,

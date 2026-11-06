@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import {
   bindInstalledUserscriptSource,
   resolveUserscriptGMCallLine,
+  resolveUserscriptGMCallerLines,
 } from './userscript-install.ts';
 
 describe('installed userscript product identity', () => {
@@ -64,5 +65,26 @@ describe('installed userscript GM call diagnostic', () => {
         )
       )
     ).toThrow();
+  });
+
+  it('resolves only paired modern and legacy callsites inside the installed adapter', () => {
+    const source = [
+      'function getUserscript() {',
+      '  const gmDownloadModern = asFunction(g.download);',
+      '  const gmDownloadLegacy = asFunction(g.downloadLegacy);',
+      '  cachedUserscriptAPI = {',
+      '    async download(url, filename, signal) {',
+      '      if (gmDownloadModern) return downloadViaGM("GM.download", gmDownloadModern, url, filename, signal);',
+      '      if (gmDownloadLegacy) return downloadViaGM("GM_download", gmDownloadLegacy, url, filename, signal);',
+      '    }',
+      '  };',
+      '}',
+    ].join('\n');
+    expect(resolveUserscriptGMCallerLines(source)).toEqual({ modern: 5, legacy: 6 });
+    expect(
+      resolveUserscriptGMCallerLines(source.replace('g.downloadLegacy', 'g.other'))
+    ).toBeNull();
+    expect(resolveUserscriptGMCallerLines(source.replace('GM_download', 'GM.other'))).toBeNull();
+    expect(resolveUserscriptGMCallerLines(source + '\n' + source)).toBeNull();
   });
 });

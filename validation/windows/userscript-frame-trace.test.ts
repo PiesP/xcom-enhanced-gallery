@@ -2,10 +2,13 @@
 // Copyright (c) 2026 PiesP
 
 import { EventEmitter } from 'node:events';
+import { runInNewContext } from 'node:vm';
 import { describe, expect, it } from 'vitest';
 import {
   createInstalledUserscriptFrameTrace,
   createPreArmPauseGuard,
+  LIVE_FILENAME_FRAME_EXPRESSION,
+  LIVE_SHARED_GM_FRAME_EXPRESSION,
 } from './userscript-frame-trace.ts';
 
 const target = {
@@ -53,6 +56,7 @@ const gmCall = () => ({
     saveAs: false,
     timeout: 30000,
   },
+  downloadFunctionType: 'function',
   returnType: 'object',
   abortType: 'function',
   thenType: 'function',
@@ -111,6 +115,28 @@ function create(session: FakeTraceSession, kind: 'shared' | 'older-modern' = 'sh
 }
 
 describe('installed userscript lexical frame trace', () => {
+  it('evaluates utility and GM call expressions without assuming global GM_info visibility', () => {
+    const media = selectedMedia();
+    const value = runInNewContext(LIVE_FILENAME_FRAME_EXPRESSION, {
+      filename: media.generatedFilename,
+      media,
+    }) as { gm: { scriptName: string | null; grants: string[] | null } };
+    expect(value.gm).toMatchObject({ scriptName: null, grants: null });
+    const call = runInNewContext(LIVE_SHARED_GM_FRAME_EXPRESSION, {
+      apiName: 'GM.download',
+      gmDownload: () => {},
+      url: sourceUrl,
+      filename: media.generatedFilename,
+      GM_DOWNLOAD_TIMEOUT_MS: 30_000,
+      handle: { abort: () => {}, then: () => {} },
+    }) as { apiName: string; downloadFunctionType: string; args: { url: string; name: string } };
+    expect(call).toMatchObject({
+      apiName: 'GM.download',
+      downloadFunctionType: 'function',
+      args: { url: sourceUrl, name: media.generatedFilename },
+    });
+  });
+
   it('guards a pre-arm pause and retains the listener through a delayed handoff', async () => {
     const session = new FakeTraceSession();
     let releaseDisable = () => {};
@@ -169,10 +195,22 @@ describe('installed userscript lexical frame trace', () => {
     session.pause('media');
     expect((await trace.waitForMedia()).generatedFilename).toBe(gmCall().args.name);
     session.pause('gm');
-    expect((await trace.waitForGmCall()).args.url).toBe(sourceUrl);
+    expect(await trace.waitForGmCall()).toMatchObject({
+      apiName: 'GM.download',
+      downloadFunctionType: 'function',
+      args: { url: sourceUrl, name: gmCall().args.name },
+    });
     const stopped = await trace.stop();
     expect(stopped).toMatchObject({ removed: true, debuggerDisabled: true, errors: [] });
-    expect(trace.snapshot()).toMatchObject({ pauseCount: 2, captureJobs: 2, errors: [] });
+    expect(trace.snapshot()).toMatchObject({
+      pauseCount: 2,
+      captureJobs: 2,
+      errors: [],
+      evaluatedObservations: [
+        { kind: 'filename', status: 'captured' },
+        { kind: 'gm', status: 'captured' },
+      ],
+    });
     expect(session.calls.filter((call) => call.method === 'Debugger.resume')).toHaveLength(2);
     expect(
       session.calls.filter((call) => call.method === 'Debugger.removeBreakpoint')
@@ -310,6 +348,9 @@ describe('installed userscript lexical frame trace', () => {
     await mediaTrace.arm();
     mediaSession.pause('media');
     await expect(mediaTrace.waitForMedia()).rejects.toThrow('selected original');
+    expect(mediaTrace.snapshot().evaluatedObservations).toMatchObject([
+      { kind: 'filename', status: 'captured', value: { generatedFilename: gmCall().args.name } },
+    ]);
     await expect(mediaTrace.stop()).rejects.toThrow();
 
     const gmSession = new FakeTraceSession();
@@ -320,6 +361,156 @@ describe('installed userscript lexical frame trace', () => {
     await gmTrace.waitForMedia();
     gmSession.pause('gm');
     await expect(gmTrace.waitForGmCall()).rejects.toThrow('GM frame name differs');
+    expect(gmTrace.snapshot().evaluatedObservations).toHaveLength(2);
     await expect(gmTrace.stop()).rejects.toThrow();
+
+    const wrongUrl = new FakeTraceSession();
+    wrongUrl.values.gm = {
+      ...gmCall(),
+      args: { ...gmCall().args, url: 'https://other.invalid/a.jpg' },
+    };
+    const urlTrace = create(wrongUrl);
+    await urlTrace.arm();
+    wrongUrl.pause('media');
+    await urlTrace.waitForMedia();
+    wrongUrl.pause('gm');
+    await expect(urlTrace.waitForGmCall()).rejects.toThrow('GM frame URL differs');
+    await expect(urlTrace.stop()).rejects.toThrow();
+  });
+
+  it('accepts selected media when GM_info and grants are invisible in its utility frame', async () => {
+    const session = new FakeTraceSession();
+    session.values.media = {
+      ...selectedMedia(),
+      gm: {
+        legacyDownloadType: 'undefined',
+        modernDownloadType: 'undefined',
+        handler: null,
+        version: null,
+        scriptName: null,
+        scriptVersion: null,
+        grants: null,
+        mode: null,
+      },
+      frameGlobal: {
+        scriptName: null,
+        handler: null,
+        legacyDownloadType: 'undefined',
+        modernDownloadType: 'undefined',
+      },
+    };
+    const trace = create(session);
+    await trace.arm();
+    session.pause('media');
+    expect((await trace.waitForMedia()).generatedFilename).toBe(gmCall().args.name);
+    session.pause('gm');
+    expect((await trace.waitForGmCall()).downloadFunctionType).toBe('function');
+    await expect(trace.stop()).resolves.toMatchObject({ removed: true, errors: [] });
+  });
+
+  it('retains a visible but mismatched GM_info value as a diagnostic', async () => {
+    const session = new FakeTraceSession();
+    session.values.media = {
+      ...selectedMedia(),
+      gm: { ...selectedMedia().gm, scriptName: 'Other script', grants: [] },
+    };
+    const trace = create(session);
+    await trace.arm();
+    session.pause('media');
+    expect((await trace.waitForMedia()).gm).toMatchObject({
+      scriptName: 'Other script',
+      grants: [],
+    });
+    expect(trace.snapshot().evaluatedObservations[0]).toMatchObject({
+      kind: 'filename',
+      status: 'captured',
+      value: { gm: { scriptName: 'Other script', grants: [] } },
+    });
+    await trace.stop();
+  });
+
+  it('probes adapter capabilities only from the exact source-bound caller frame', async () => {
+    const session = new FakeTraceSession();
+    session.values.caller = { modernType: 'function', legacyType: 'undefined' };
+    const trace = createInstalledUserscriptFrameTrace({
+      session,
+      scriptId: 'installed-script',
+      filenameLine: 20,
+      gmCallLine: 40,
+      gmCallKind: 'shared',
+      gmCallerLines: { modern: 50, legacy: 51 },
+      target,
+    });
+    await trace.arm();
+    session.pause('media');
+    await trace.waitForMedia();
+    session.pause('gm', {
+      callFrames: [
+        { callFrameId: 'gm', location: { scriptId: 'installed-script', lineNumber: 40 } },
+        { callFrameId: 'caller', location: { scriptId: 'installed-script', lineNumber: 50 } },
+      ],
+    });
+    expect((await trace.waitForGmCall()).callerCapability).toEqual({
+      status: 'captured',
+      modernType: 'function',
+      legacyType: 'undefined',
+    });
+    expect(
+      session.calls.filter((call) => call.method === 'Debugger.evaluateOnCallFrame')
+    ).toHaveLength(3);
+    await trace.stop();
+
+    const wrong = new FakeTraceSession();
+    const unknown = createInstalledUserscriptFrameTrace({
+      session: wrong,
+      scriptId: 'installed-script',
+      filenameLine: 20,
+      gmCallLine: 40,
+      gmCallKind: 'shared',
+      gmCallerLines: { modern: 50, legacy: 51 },
+      target,
+    });
+    await unknown.arm();
+    wrong.pause('media');
+    await unknown.waitForMedia();
+    wrong.pause('gm', {
+      callFrames: [
+        { callFrameId: 'gm', location: { scriptId: 'installed-script', lineNumber: 40 } },
+        { callFrameId: 'caller', location: { scriptId: 'foreign-script', lineNumber: 50 } },
+      ],
+    });
+    expect((await unknown.waitForGmCall()).callerCapability).toEqual({
+      status: 'unknown',
+      modernType: null,
+      legacyType: null,
+    });
+    expect(
+      wrong.calls.filter((call) => call.method === 'Debugger.evaluateOnCallFrame')
+    ).toHaveLength(2);
+    await unknown.stop();
+  });
+
+  it('keeps failed evaluated observations bounded and rejects a missing GM function', async () => {
+    const large = new FakeTraceSession();
+    large.values.media = { ...selectedMedia(), generatedFilename: 'x'.repeat(5000) };
+    const largeTrace = create(large);
+    await largeTrace.arm();
+    large.pause('media');
+    await expect(largeTrace.waitForMedia()).rejects.toThrow('CDP frame value exceeded bound');
+    expect(largeTrace.snapshot().evaluatedObservations).toMatchObject([
+      { kind: 'filename', status: 'over-limit' },
+    ]);
+    await expect(largeTrace.stop()).rejects.toThrow();
+
+    const missing = new FakeTraceSession();
+    missing.values.gm = { ...gmCall(), downloadFunctionType: 'undefined' };
+    const missingTrace = create(missing);
+    await missingTrace.arm();
+    missing.pause('media');
+    await missingTrace.waitForMedia();
+    missing.pause('gm');
+    await expect(missingTrace.waitForGmCall()).rejects.toThrow('download function unavailable');
+    expect(missingTrace.snapshot().evaluatedObservations).toHaveLength(2);
+    await expect(missingTrace.stop()).rejects.toThrow();
   });
 });

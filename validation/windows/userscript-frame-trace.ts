@@ -2,6 +2,7 @@
 // Copyright (c) 2026 PiesP
 
 import assert from 'node:assert/strict';
+import { Buffer } from 'node:buffer';
 import type { LiveFilenameTarget } from './live-filename-target.ts';
 import { isLiveFilenameOriginal } from './live-filename-target.ts';
 
@@ -128,6 +129,12 @@ export type FrameTraceSnapshot = {
   captureJobs: number;
   media: FrameMedia | null;
   gmCall: FrameGmCall | null;
+  evaluatedObservations: Array<{
+    kind: 'filename' | 'gm';
+    status: 'captured' | 'over-limit' | 'unserializable';
+    value?: unknown;
+    serializedBytes?: number;
+  }>;
   errors: string[];
   debuggerDisabled: boolean;
   debuggerDetached: boolean;
@@ -160,8 +167,8 @@ export type FrameMedia = {
   attachmentOrdinal: number | null;
   attachmentSourceKey: string | null;
   gm: {
-    legacyDownloadType: string;
-    modernDownloadType: string;
+    legacyDownloadType: string | null;
+    modernDownloadType: string | null;
     handler: string | null;
     version: string | null;
     scriptName: string | null;
@@ -172,16 +179,22 @@ export type FrameMedia = {
   frameGlobal: {
     scriptName: string | null;
     handler: string | null;
-    legacyDownloadType: string;
-    modernDownloadType: string;
+    legacyDownloadType: string | null;
+    modernDownloadType: string | null;
   };
 };
 export type FrameGmCall = {
   apiName: string;
   args: { url: string; name: string; saveAs: false; timeout: number };
+  downloadFunctionType: string;
   returnType: string;
   abortType: string;
   thenType: string;
+  callerCapability: {
+    status: 'captured' | 'unknown';
+    modernType: string | null;
+    legacyType: string | null;
+  };
 };
 
 // These expressions read only the current lexical call frame. No page global receives evidence.
@@ -206,7 +219,8 @@ export const LIVE_FILENAME_FRAME_EXPRESSION = `(() => {
     attachmentSourceKey: text(media?.attachmentSourceKey, 80),
     gm: {
       legacyDownloadType: typeof GM_download,
-      modernDownloadType: typeof GM === 'object' ? typeof GM.download : 'undefined',
+      modernDownloadType: typeof GM === 'object' && GM !== null
+        ? typeof GM.download : 'undefined',
       handler: text(info?.scriptHandler, 80), version: text(info?.version, 40),
       scriptName: text(info?.script?.name, 80), scriptVersion: text(info?.script?.version, 40),
       grants: Array.isArray(info?.script?.grant)
@@ -229,13 +243,21 @@ const GM_FRAME_BODY = `(() => ({
     name: typeof filename === 'string' ? filename.slice(0, 256) : null,
     saveAs: false,
     timeout: typeof GM_DOWNLOAD_TIMEOUT_MS === 'number' ? GM_DOWNLOAD_TIMEOUT_MS : null },
+  downloadFunctionType: DOWNLOAD_FUNCTION_TYPE,
   returnType: typeof handle, abortType: typeof handle?.abort, thenType: typeof handle?.then
 }))()`;
 export const LIVE_SHARED_GM_FRAME_EXPRESSION = GM_FRAME_BODY.replace(
   'API_NAME',
   "typeof apiName === 'string' ? apiName.slice(0, 32) : null"
-);
-export const LIVE_OLD_GM_FRAME_EXPRESSION = GM_FRAME_BODY.replace('API_NAME', "'GM.download'");
+).replace('DOWNLOAD_FUNCTION_TYPE', 'typeof gmDownload');
+export const LIVE_OLD_GM_FRAME_EXPRESSION = GM_FRAME_BODY.replace(
+  'API_NAME',
+  "'GM.download'"
+).replace('DOWNLOAD_FUNCTION_TYPE', 'typeof gmDownloadModern');
+export const LIVE_GM_CALLER_FRAME_EXPRESSION = `(() => ({
+  modernType: typeof gmDownloadModern,
+  legacyType: typeof gmDownloadLegacy
+}))()`;
 
 function record(value: unknown): Record<string, unknown> {
   assert(value && typeof value === 'object' && !Array.isArray(value), 'CDP value is not an object');
@@ -244,12 +266,16 @@ function record(value: unknown): Record<string, unknown> {
 
 function boundedFrameValue(value: unknown): Record<string, unknown> {
   const item = record(value);
-  assert(JSON.stringify(item).length <= 4096, 'CDP frame value exceeded bound');
+  assert(Buffer.byteLength(JSON.stringify(item), 'utf8') <= 4096, 'CDP frame value exceeded bound');
   return item;
 }
 
 function stringField(value: unknown, max: number): value is string {
   return typeof value === 'string' && value.length > 0 && value.length <= max;
+}
+
+function nullableDiagnosticString(value: unknown, max: number): boolean {
+  return value === null || (typeof value === 'string' && value.length <= max);
 }
 
 function validateMedia(value: unknown, target: LiveFilenameTarget): FrameMedia {
@@ -260,20 +286,15 @@ function validateMedia(value: unknown, target: LiveFilenameTarget): FrameMedia {
   assert(isLiveFilenameOriginal(source, target), 'Frame media is not the selected original');
   const gm = record(item.gm);
   const frameGlobal = record(item.frameGlobal);
+  assert(nullableDiagnosticString(gm.scriptName, 80));
+  assert(nullableDiagnosticString(gm.handler, 80));
   assert(
-    gm.scriptName === 'X.com Enhanced Gallery' &&
-      typeof gm.legacyDownloadType === 'string' &&
-      typeof gm.modernDownloadType === 'string' &&
-      Array.isArray(gm.grants) &&
-      gm.grants.length <= 24 &&
-      gm.grants.every((grant) => typeof grant === 'string' && grant.length <= 80),
-    'Frame GM identity is incomplete'
+    gm.grants === null ||
+      (Array.isArray(gm.grants) &&
+        gm.grants.length <= 24 &&
+        gm.grants.every((grant) => typeof grant === 'string' && grant.length <= 80))
   );
-  assert(
-    typeof frameGlobal.legacyDownloadType === 'string' &&
-      typeof frameGlobal.modernDownloadType === 'string',
-    'Frame global capability types are missing'
-  );
+  assert(nullableDiagnosticString(frameGlobal.scriptName, 80));
   return item as FrameMedia;
 }
 
@@ -286,6 +307,11 @@ function validateGmCall(value: unknown, media: FrameMedia): FrameGmCall {
   assert.equal(args.name, media.generatedFilename, 'GM frame name differs from product filename');
   assert.equal(args.saveAs, false);
   assert(Number.isSafeInteger(args.timeout) && Number(args.timeout) > 0);
+  assert.equal(
+    item.downloadFunctionType,
+    'function',
+    'GM call frame download function unavailable'
+  );
   assert(['undefined', 'object', 'function'].includes(String(item.returnType)));
   assert(['undefined', 'function'].includes(String(item.abortType)));
   assert(['undefined', 'function'].includes(String(item.thenType)));
@@ -308,12 +334,15 @@ export function createInstalledUserscriptFrameTrace(options: {
   filenameLine: number;
   gmCallLine: number;
   gmCallKind: 'shared' | 'older-modern';
+  gmCallerLines?: { modern: number; legacy: number } | null;
   target: LiveFilenameTarget;
 }): InstalledUserscriptFrameTrace {
-  const { session, scriptId, filenameLine, gmCallLine, gmCallKind, target } = options;
+  const { session, scriptId, filenameLine, gmCallLine, gmCallKind, gmCallerLines, target } =
+    options;
   const breakpoints: Breakpoint[] = [];
   const pauses: Pause[] = [];
   const errors: string[] = [];
+  const evaluatedObservations: FrameTraceSnapshot['evaluatedObservations'] = [];
   let media: FrameMedia | null = null;
   let gmCall: FrameGmCall | null = null;
   let pauseCount = 0;
@@ -338,6 +367,31 @@ export function createInstalledUserscriptFrameTrace(options: {
   const fail = (error: unknown) => {
     if (errors.length < 4) {
       errors.push(error instanceof Error ? error.message.slice(0, 160) : 'unknown');
+    }
+  };
+  // Diagnostic only: retain evaluated frame values even when semantic validation rejects them.
+  const noteEvaluated = (kind: 'filename' | 'gm', value: unknown) => {
+    if (evaluatedObservations.length >= 2) {
+      return;
+    }
+    try {
+      const encoded = JSON.stringify({ kind, status: 'captured', value });
+      if (typeof encoded !== 'string') {
+        evaluatedObservations.push({ kind, status: 'unserializable' });
+        return;
+      }
+      const bytes = Buffer.byteLength(encoded, 'utf8');
+      if (bytes > 4096) {
+        evaluatedObservations.push({
+          kind,
+          status: 'over-limit',
+          serializedBytes: Math.min(bytes, 1_000_000),
+        });
+        return;
+      }
+      evaluatedObservations.push(JSON.parse(encoded));
+    } catch {
+      evaluatedObservations.push({ kind, status: 'unserializable' });
     }
   };
   let terminal = false;
@@ -424,11 +478,63 @@ export function createInstalledUserscriptFrameTrace(options: {
       assert(!evaluated.exceptionDetails, 'CDP call-frame expression threw');
       const result = record(evaluated.result);
       assert(Object.hasOwn(result, 'value'), 'CDP call-frame value missing');
+      noteEvaluated(kind, result.value);
       if (kind === 'filename') {
         media = validateMedia(result.value, target);
       } else {
         assert(media, 'GM call preceded selected media');
-        gmCall = validateGmCall(result.value, media);
+        const call = validateGmCall(result.value, media);
+        const callerLine =
+          call.apiName === 'GM.download' ? gmCallerLines?.modern : gmCallerLines?.legacy;
+        const callers =
+          Number.isSafeInteger(callerLine) && Array.isArray(frames)
+            ? frames.slice(1, 8).filter((candidate) => {
+                if (!candidate || typeof candidate !== 'object') {
+                  return false;
+                }
+                const frame = candidate as Record<string, unknown>;
+                if (!frame.location || typeof frame.location !== 'object') {
+                  return false;
+                }
+                const at = frame.location as Record<string, unknown>;
+                return at.scriptId === scriptId && at.lineNumber === callerLine;
+              })
+            : [];
+        const caller = callers.length === 1 ? callers[0] : null;
+        call.callerCapability = { status: 'unknown', modernType: null, legacyType: null };
+        if (caller) {
+          try {
+            const callerFrame = record(caller);
+            assert(stringField(callerFrame.callFrameId, 128));
+            const probe = record(
+              await send('Debugger.evaluateOnCallFrame', {
+                callFrameId: callerFrame.callFrameId,
+                expression: LIVE_GM_CALLER_FRAME_EXPRESSION,
+                returnByValue: true,
+              })
+            );
+            assert(!probe.exceptionDetails);
+            const result = record(record(probe.result).value);
+            const modernType = result.modernType;
+            const legacyType = result.legacyType;
+            if (
+              ['function', 'undefined'].includes(String(modernType)) &&
+              ['function', 'undefined'].includes(String(legacyType)) &&
+              (call.apiName === 'GM.download'
+                ? modernType === 'function'
+                : legacyType === 'function')
+            ) {
+              call.callerCapability = {
+                status: 'captured',
+                modernType: modernType as string,
+                legacyType: legacyType as string,
+              };
+            }
+          } catch {
+            // An optimized or unavailable caller frame is diagnostic unknown.
+          }
+        }
+        gmCall = call;
       }
     } catch (error) {
       fatal(error);
@@ -560,6 +666,7 @@ export function createInstalledUserscriptFrameTrace(options: {
       captureJobs,
       media,
       gmCall,
+      evaluatedObservations: evaluatedObservations.map((item) => ({ ...item })),
       errors: [...errors],
       debuggerDisabled,
       debuggerDetached,
