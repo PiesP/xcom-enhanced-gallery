@@ -903,7 +903,7 @@ describe('Windows X live page validation', () => {
       /CopyFromScreen|PrintWindow|BitBlt|System\.Drawing|GetWindowRect|SendInput/u
     );
     expect(source.match(/\[XegPermissionWindow\]::SetForegroundWindow\([^)]*\)/gu)).toEqual([
-      '[XegPermissionWindow]::SetForegroundWindow($foreground)',
+      '[XegPermissionWindow]::SetForegroundWindow($OriginalForeground)',
     ]);
     expect(source).toContain("screenshot = 'not-captured'");
     expect(source).toContain('@($child, ($depth + 1))');
@@ -925,10 +925,14 @@ describe('Windows X live page validation', () => {
       'ascii'
     );
     const start = source.indexOf('function Test-EdgeRefocusEligibility {');
-    const end = source.indexOf('\n\ntry {', start);
+    const end = source.indexOf('\n\nfunction Invoke-OneTimeEdgePromptRefocus {', start);
+    const finalStart = source.indexOf('function Test-FinalInvokeIdentity {');
+    const finalEnd = source.indexOf('\n\ntry {', finalStart);
     expect(start).toBeGreaterThanOrEqual(0);
     expect(end).toBeGreaterThan(start);
-    const helper = source.slice(start, end);
+    expect(finalStart).toBeGreaterThan(end);
+    expect(finalEnd).toBeGreaterThan(finalStart);
+    const helper = `${source.slice(start, end)}\n${source.slice(finalStart, finalEnd)}`;
     const shell = process.platform === 'win32' ? 'powershell.exe' : 'pwsh';
     const result = spawnSync(
       shell,
@@ -951,6 +955,19 @@ function Test-Case([string]$Key, $Value) {
     if ($Key) { $candidate[$Key] = $Value }
     return [bool](Test-EdgeRefocusEligibility @candidate)
 }
+$finalState = @{
+    sameCreation = $true; sameForeground = $false;
+    originalOwned = $true; currentOwned = $true; enumeration = 'complete';
+    allowProcessId = 16616; allowEnabled = $true; allowOffscreen = $false
+}
+function Test-FinalCase([string]$Key, $Value, [string]$Browser = 'msedge',
+    [bool]$Attempted = $false) {
+    $state = $finalState.Clone()
+    if ($Key) { $state[$Key] = $Value }
+    return [bool](Test-FinalEdgeRefocusCandidate -State $state -CandidateBrowserName $Browser -ExpectedPid 16616 -AlreadyAttempted $Attempted)
+}
+$stable = $finalState.Clone()
+$stable.sameForeground = $true
 [ordered]@{
     observed = (Test-Case '' $null);
     chrome = (Test-Case 'CandidateBrowserName' 'chrome');
@@ -963,10 +980,22 @@ function Test-Case([string]$Key, $Value) {
     wrongExpectedHandle = (Test-Case 'ExpectedHandle' '1442762');
     incompletePrompt = (Test-Case 'PromptComplete' $false);
     truncatedPrompt = (Test-Case 'PromptNameTruncated' $true);
-    multiplePrompts = (Test-Case 'PromptWindowCount' 2)
+    multiplePrompts = (Test-Case 'PromptWindowCount' 2);
+    finalStable = (Test-FinalInvokeIdentity -State $stable -ExpectedPid 16616);
+    finalChanged = (Test-FinalInvokeIdentity -State $finalState -ExpectedPid 16616);
+    finalOwnedDrift = (Test-FinalCase '' $null);
+    finalChrome = (Test-FinalCase '' $null 'chrome');
+    finalAlreadyAttempted = (Test-FinalCase '' $null 'msedge' $true);
+    finalForeign = (Test-FinalCase 'currentOwned' $false);
+    finalOriginalGone = (Test-FinalCase 'originalOwned' $false);
+    finalBadBirth = (Test-FinalCase 'sameCreation' $false);
+    finalDisabled = (Test-FinalCase 'allowEnabled' $false);
+    finalOtherPid = (Test-FinalCase 'allowProcessId' 77);
+    finalEnumerationIncomplete = (Test-FinalCase 'enumeration' 'unavailable');
+    finalNoDrift = (Test-FinalCase 'sameForeground' $true)
 } | ConvertTo-Json -Compress`,
       ],
-      { encoding: 'utf8' }
+      { encoding: 'utf8', timeout: 20_000 }
     );
     expect(result.error).toBeUndefined();
     expect(result.status, result.stderr).toBe(0);
@@ -983,8 +1012,20 @@ function Test-Case([string]$Key, $Value) {
       incompletePrompt: false,
       truncatedPrompt: false,
       multiplePrompts: false,
+      finalStable: true,
+      finalChanged: false,
+      finalOwnedDrift: true,
+      finalChrome: false,
+      finalAlreadyAttempted: false,
+      finalForeign: false,
+      finalOriginalGone: false,
+      finalBadBirth: false,
+      finalDisabled: false,
+      finalOtherPid: false,
+      finalEnumerationIncomplete: false,
+      finalNoDrift: false,
     });
-  });
+  }, 30_000);
 
   it('keeps PowerShell 5.1 prompt labels ASCII-source and exact to observed ko-KR UIA', () => {
     const source = readFileSync(

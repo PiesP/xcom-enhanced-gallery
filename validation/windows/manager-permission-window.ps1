@@ -259,6 +259,191 @@ function Test-EdgeRefocusEligibility {
         $PromptWindowCount -eq 1)
 }
 
+function Invoke-OneTimeEdgePromptRefocus {
+    param(
+        [ValidateSet('initial','final')][string]$Phase,
+        [IntPtr]$OriginalForeground,
+        [IntPtr]$CurrentForeground,
+        $OriginalProcess,
+        $CurrentProcess,
+        $PromptInspection,
+        $PromptScope,
+        [int]$PromptWindowCount,
+        [string]$WindowEnumeration,
+        [IntPtr[]]$OwnedWindows,
+        [hashtable]$Receipt,
+        [bool]$AlreadyAttempted
+    )
+    if ($AlreadyAttempted) {
+        $Receipt.edgeRefocusRepeat = @{ phase = $Phase; status = 'already-attempted' }
+        return @{ restored = $false; process = $CurrentProcess;
+            foreground = $CurrentForeground }
+    }
+    $candidate = @{
+        CandidateBrowserName = $BrowserName;
+        CandidateInvokeAllow = [bool]$InvokeAllow;
+        CandidateBrowserPid = $BrowserPid;
+        ExpectedCreation = $ExpectedCreationUtcTicks;
+        ActualCreation = ([datetime]$CurrentProcess.CreationDate).ToUniversalTime().Ticks.ToString();
+        ExpectedSession = $ExpectedSessionId;
+        ActualSession = [int]$CurrentProcess.SessionId;
+        ExpectedHandle = $ExpectedForegroundHandle;
+        OriginalHandle = $OriginalForeground.ToInt64().ToString();
+        CurrentHandle = $CurrentForeground.ToInt64().ToString();
+        CurrentPid = [XegPermissionWindow]::ProcessIdOf($CurrentForeground);
+        SameCreation = ($OriginalProcess.CreationDate -eq $CurrentProcess.CreationDate);
+        OriginalOwned = [XegPermissionWindow]::IsOwned($OriginalForeground, [uint32]$BrowserPid);
+        CurrentOwned = [XegPermissionWindow]::IsOwned($CurrentForeground, [uint32]$BrowserPid);
+        WindowEnumeration = $WindowEnumeration;
+        OwnedVisibleHandles = @($OwnedWindows | ForEach-Object { $_.ToInt64().ToString() });
+        PromptComplete = [bool]$PromptScope.complete;
+        PromptNameTruncated = [bool]$PromptScope.nameTruncated;
+        PromptWindowCount = $PromptWindowCount
+    }
+    $eligible = Test-EdgeRefocusEligibility @candidate
+    $Receipt.edgeRefocus = @{ phase = $Phase; status = 'ineligible'; eligible = $eligible;
+        setForegroundWindowReturned = $null; exactPromptValidatedBeforeRefocus = $false;
+        before = @{ creationUtcTicks = $candidate.ActualCreation;
+            foregroundHandle = $candidate.CurrentHandle;
+            foregroundPid = $candidate.CurrentPid;
+            originalHandle = $candidate.OriginalHandle } }
+    if (-not $eligible) {
+        return @{ restored = $false; process = $CurrentProcess;
+            foreground = $CurrentForeground }
+    }
+    $Receipt.edgeRefocus.status = 'checking-prompt'
+    try {
+        [void](Get-PromptAction -Inspection $PromptInspection)
+    } catch {
+        $Receipt.edgeRefocus.status = 'prompt-rejected'
+        throw
+    }
+    $Receipt.edgeRefocus.exactPromptValidatedBeforeRefocus = $true
+    $preRefocus = Test-OwnedProcess
+    $preRefocusForeground = [XegPermissionWindow]::GetForegroundWindow()
+    $Receipt.edgeRefocus.preRefocus = @{
+        creationUtcTicks = ([datetime]$preRefocus.CreationDate).ToUniversalTime().Ticks.ToString();
+        browserSessionId = [int]$preRefocus.SessionId;
+        foregroundHandle = $preRefocusForeground.ToInt64().ToString();
+        originalOwned = [XegPermissionWindow]::IsOwned($OriginalForeground, [uint32]$BrowserPid);
+        currentOwned = [XegPermissionWindow]::IsOwned($preRefocusForeground,
+            [uint32]$BrowserPid)
+    }
+    if ($preRefocus.CreationDate -ne $OriginalProcess.CreationDate -or
+        $ExpectedCreationUtcTicks -cne $Receipt.edgeRefocus.preRefocus.creationUtcTicks -or
+        $ExpectedSessionId -ne $preRefocus.SessionId -or
+        $ExpectedForegroundHandle -cne $OriginalForeground.ToInt64().ToString() -or
+        $preRefocusForeground -ne $CurrentForeground -or
+        -not $Receipt.edgeRefocus.preRefocus.originalOwned -or
+        -not $Receipt.edgeRefocus.preRefocus.currentOwned) {
+        $Receipt.edgeRefocus.status = 'pre-check-failed'
+        throw 'edge-refocus-identity-changed'
+    }
+    $Receipt.edgeRefocus.status = 'attempted'
+    $refocusReturned = [XegPermissionWindow]::SetForegroundWindow($OriginalForeground)
+    $Receipt.edgeRefocus.setForegroundWindowReturned = $refocusReturned
+    if (-not $refocusReturned) {
+        $Receipt.edgeRefocus.status = 'api-rejected'
+        throw 'edge-refocus-failed'
+    }
+    $after = Test-OwnedProcess
+    $afterForeground = [XegPermissionWindow]::GetForegroundWindow()
+    $sameCreation = ($OriginalProcess.CreationDate -eq $after.CreationDate)
+    $sameForeground = ($afterForeground -eq $OriginalForeground)
+    $originalOwned = [XegPermissionWindow]::IsOwned($OriginalForeground, [uint32]$BrowserPid)
+    $Receipt.edgeRefocus.after = @{
+        creationUtcTicks = ([datetime]$after.CreationDate).ToUniversalTime().Ticks.ToString();
+        browserSessionId = [int]$after.SessionId;
+        foregroundHandle = $afterForeground.ToInt64().ToString();
+        foregroundPid = [XegPermissionWindow]::ProcessIdOf($afterForeground);
+        foregroundOwned = $originalOwned;
+        sameCreation = $sameCreation;
+        sameForeground = $sameForeground
+    }
+    if (-not $sameCreation -or -not $sameForeground -or
+        -not $originalOwned -or
+        $ExpectedCreationUtcTicks -cne $Receipt.edgeRefocus.after.creationUtcTicks -or
+        $ExpectedSessionId -ne $after.SessionId -or
+        $ExpectedForegroundHandle -cne $afterForeground.ToInt64().ToString()) {
+        $Receipt.edgeRefocus.status = 'post-check-failed'
+        throw 'edge-refocus-identity-changed'
+    }
+    $Receipt.edgeRefocus.status = 'restored'
+    return @{ restored = $true; process = $after; foreground = $afterForeground }
+}
+
+function Get-FinalInvokeIdentity {
+    param($OriginalProcess, [IntPtr]$OriginalForeground, $Allow)
+    $process = Test-OwnedProcess
+    $windows = @()
+    $enumeration = 'complete'
+    try {
+        $windows = @([XegPermissionWindow]::OwnedVisibleWindows([uint32]$BrowserPid))
+    } catch {
+        $enumeration = 'unavailable'
+    }
+    $allowCurrent = $Allow.Current
+    $currentForeground = [XegPermissionWindow]::GetForegroundWindow()
+    return @{
+        process = $process;
+        foreground = $currentForeground;
+        windows = $windows;
+        enumeration = $enumeration;
+        sameCreation = ($process.CreationDate -eq $OriginalProcess.CreationDate);
+        sameForeground = ($currentForeground -eq $OriginalForeground);
+        originalOwned = [XegPermissionWindow]::IsOwned($OriginalForeground,
+            [uint32]$BrowserPid);
+        currentOwned = [XegPermissionWindow]::IsOwned($currentForeground,
+            [uint32]$BrowserPid);
+        allowProcessId = [int]$allowCurrent.ProcessId;
+        allowEnabled = [bool]$allowCurrent.IsEnabled;
+        allowOffscreen = [bool]$allowCurrent.IsOffscreen;
+        diagnostic = @{
+            expectedBrowserPid = $BrowserPid;
+            browserPid = [int]$process.ProcessId;
+            expectedCreationUtcTicks = $ExpectedCreationUtcTicks;
+            originalCreationUtcTicks = ([datetime]$OriginalProcess.CreationDate).ToUniversalTime().Ticks.ToString();
+            currentCreationUtcTicks = ([datetime]$process.CreationDate).ToUniversalTime().Ticks.ToString();
+            sameCreation = ($process.CreationDate -eq $OriginalProcess.CreationDate);
+            expectedSessionId = $ExpectedSessionId;
+            browserSessionId = [int]$process.SessionId;
+            expectedForegroundHandle = $ExpectedForegroundHandle;
+            originalForegroundHandle = $OriginalForeground.ToInt64().ToString();
+            currentForegroundHandle = $currentForeground.ToInt64().ToString();
+            sameForeground = ($currentForeground -eq $OriginalForeground);
+            currentForegroundPid = [XegPermissionWindow]::ProcessIdOf($currentForeground);
+            originalOwned = [XegPermissionWindow]::IsOwned($OriginalForeground,
+                [uint32]$BrowserPid);
+            currentOwned = [XegPermissionWindow]::IsOwned($currentForeground,
+                [uint32]$BrowserPid);
+            ownedVisibleWindowEnumeration = $enumeration;
+            ownedVisibleWindowCount = $(if ($enumeration -eq 'complete') { $windows.Count } else { $null });
+            ownedVisibleHandles = @($windows | ForEach-Object { $_.ToInt64().ToString() });
+            allowProcessId = [int]$allowCurrent.ProcessId;
+            allowEnabled = [bool]$allowCurrent.IsEnabled;
+            allowOffscreen = [bool]$allowCurrent.IsOffscreen
+        }
+    }
+}
+
+function Test-FinalInvokeIdentity {
+    param($State, [int]$ExpectedPid)
+    return ($State.sameCreation -and $State.sameForeground -and $State.originalOwned -and
+        $State.allowProcessId -eq $ExpectedPid -and $State.allowEnabled -and
+        -not $State.allowOffscreen)
+}
+
+function Test-FinalEdgeRefocusCandidate {
+    param($State, [string]$CandidateBrowserName, [int]$ExpectedPid,
+        [bool]$AlreadyAttempted)
+    return ($CandidateBrowserName -ceq 'msedge' -and -not $AlreadyAttempted -and
+        $State.sameCreation -and -not $State.sameForeground -and
+        $State.originalOwned -and $State.currentOwned -and
+        $State.enumeration -ceq 'complete' -and
+        $State.allowProcessId -eq $ExpectedPid -and $State.allowEnabled -and
+        -not $State.allowOffscreen)
+}
+
 try {
     $before = Test-OwnedProcess
     $windows = [XegPermissionWindow]::OwnedVisibleWindows([uint32]$BrowserPid)
@@ -360,98 +545,26 @@ try {
         ownedVisibleWindowCount = $(if ($afterWindowEnumeration -eq 'complete') { $afterWindows.Count } else { $null });
         ownedVisibleHandles = @($afterWindows | ForEach-Object { $_.ToInt64().ToString() })
     }
+    $refocusAttempted = $false
     if ((-not $sameCreation -or -not $sameForeground -or
             -not $foregroundOwnedAndVisible) -and
         $InvokeAllow -and $BrowserName -ceq 'msedge') {
-        $candidate = @{
-            CandidateBrowserName = $BrowserName;
-            CandidateInvokeAllow = [bool]$InvokeAllow;
-            CandidateBrowserPid = $BrowserPid;
-            ExpectedCreation = $ExpectedCreationUtcTicks;
-            ActualCreation = $receipt.identityRecheck.afterCreationUtcTicks;
-            ExpectedSession = $ExpectedSessionId;
-            ActualSession = [int]$after.SessionId;
-            ExpectedHandle = $ExpectedForegroundHandle;
-            OriginalHandle = $foreground.ToInt64().ToString();
-            CurrentHandle = $afterForeground.ToInt64().ToString();
-            CurrentPid = [XegPermissionWindow]::ProcessIdOf($afterForeground);
-            SameCreation = $sameCreation;
-            OriginalOwned = $foregroundOwnedAndVisible;
-            CurrentOwned = [XegPermissionWindow]::IsOwned($afterForeground, [uint32]$BrowserPid);
-            WindowEnumeration = $afterWindowEnumeration;
-            OwnedVisibleHandles = @($afterWindows | ForEach-Object { $_.ToInt64().ToString() });
-            PromptComplete = [bool]$promptScope.complete;
-            PromptNameTruncated = [bool]$promptScope.nameTruncated;
-            PromptWindowCount = [int]$promptScope.windowCount
+        $refocusArgs = @{
+            Phase = 'initial'; OriginalForeground = $foreground;
+            CurrentForeground = $afterForeground; OriginalProcess = $before;
+            CurrentProcess = $after; PromptInspection = $inspection;
+            PromptScope = $promptScope; PromptWindowCount = $promptWindows.Count;
+            WindowEnumeration = $afterWindowEnumeration; OwnedWindows = $afterWindows;
+            Receipt = $receipt; AlreadyAttempted = $refocusAttempted
         }
-        $eligible = Test-EdgeRefocusEligibility @candidate
-        $receipt.edgeRefocus = @{ status = 'ineligible'; eligible = $eligible;
-            setForegroundWindowReturned = $null; exactPromptValidatedBeforeRefocus = $false;
-            before = @{ creationUtcTicks = $candidate.ActualCreation;
-                foregroundHandle = $candidate.CurrentHandle;
-                foregroundPid = $candidate.CurrentPid;
-                originalHandle = $candidate.OriginalHandle } }
-        if ($eligible) {
-            $receipt.edgeRefocus.status = 'checking-prompt'
-            try {
-                [void](Get-PromptAction -Inspection $inspection)
-            } catch {
-                $receipt.edgeRefocus.status = 'prompt-rejected'
-                throw
-            }
-            $receipt.edgeRefocus.exactPromptValidatedBeforeRefocus = $true
-            $preRefocus = Test-OwnedProcess
-            $preRefocusForeground = [XegPermissionWindow]::GetForegroundWindow()
-            $receipt.edgeRefocus.preRefocus = @{
-                creationUtcTicks = ([datetime]$preRefocus.CreationDate).ToUniversalTime().Ticks.ToString();
-                browserSessionId = [int]$preRefocus.SessionId;
-                foregroundHandle = $preRefocusForeground.ToInt64().ToString();
-                originalOwned = [XegPermissionWindow]::IsOwned($foreground, [uint32]$BrowserPid);
-                currentOwned = [XegPermissionWindow]::IsOwned($preRefocusForeground,
-                    [uint32]$BrowserPid)
-            }
-            if ($preRefocus.CreationDate -ne $before.CreationDate -or
-                $ExpectedCreationUtcTicks -cne $receipt.edgeRefocus.preRefocus.creationUtcTicks -or
-                $ExpectedSessionId -ne $preRefocus.SessionId -or
-                $ExpectedForegroundHandle -cne $foreground.ToInt64().ToString() -or
-                $preRefocusForeground -ne $afterForeground -or
-                -not $receipt.edgeRefocus.preRefocus.originalOwned -or
-                -not $receipt.edgeRefocus.preRefocus.currentOwned) {
-                $receipt.edgeRefocus.status = 'pre-check-failed'
-                throw 'edge-refocus-identity-changed'
-            }
-            $receipt.edgeRefocus.status = 'attempted'
-            $refocusReturned = [XegPermissionWindow]::SetForegroundWindow($foreground)
-            $receipt.edgeRefocus.setForegroundWindowReturned = $refocusReturned
-            if (-not $refocusReturned) {
-                $receipt.edgeRefocus.status = 'api-rejected'
-                throw 'edge-refocus-failed'
-            }
-            $after = Test-OwnedProcess
-            $afterForeground = [XegPermissionWindow]::GetForegroundWindow()
-            $foregroundOwnedAndVisible = [XegPermissionWindow]::IsOwned($foreground,
-                [uint32]$BrowserPid)
-            $sameCreation = ($before.CreationDate -eq $after.CreationDate)
-            $sameForeground = ($afterForeground -eq $foreground)
-            $receipt.edgeRefocus.after = @{
-                creationUtcTicks = ([datetime]$after.CreationDate).ToUniversalTime().Ticks.ToString();
-                browserSessionId = [int]$after.SessionId;
-                foregroundHandle = $afterForeground.ToInt64().ToString();
-                foregroundPid = [XegPermissionWindow]::ProcessIdOf($afterForeground);
-                foregroundOwned = $foregroundOwnedAndVisible;
-                sameCreation = $sameCreation;
-                sameForeground = $sameForeground
-            }
-            if (-not $sameCreation -or -not $sameForeground -or
-                -not $foregroundOwnedAndVisible -or
-                $ExpectedCreationUtcTicks -cne $receipt.edgeRefocus.after.creationUtcTicks -or
-                $ExpectedSessionId -ne $after.SessionId -or
-                $ExpectedForegroundHandle -cne $afterForeground.ToInt64().ToString()) {
-                $receipt.edgeRefocus.status = 'post-check-failed'
-                throw 'edge-refocus-identity-changed'
-            }
-            $receipt.edgeRefocus.status = 'restored'
-        }
+        $refocus = Invoke-OneTimeEdgePromptRefocus @refocusArgs
+        $refocusAttempted = [bool]$refocus.restored
+        $after = $refocus.process
+        $afterForeground = $refocus.foreground
+        $foregroundOwnedAndVisible = [XegPermissionWindow]::IsOwned($foreground,
+            [uint32]$BrowserPid)
+        $sameCreation = ($before.CreationDate -eq $after.CreationDate)
+        $sameForeground = ($afterForeground -eq $foreground)
     }
     if (-not $sameCreation -or -not $sameForeground -or
         -not $foregroundOwnedAndVisible) {
@@ -492,12 +605,46 @@ try {
             rootProcessId = $actionInspection.rootProcessId;
             nameTruncated = $actionInspection.nameTruncated }
         $allow = Get-PromptAction -Inspection $actionInspection
-        $justBefore = Test-OwnedProcess
-        if ($justBefore.CreationDate -ne $before.CreationDate -or
-            [XegPermissionWindow]::GetForegroundWindow() -ne $foreground -or
-            -not [XegPermissionWindow]::IsOwned($foreground, [uint32]$BrowserPid) -or
-            $allow.Current.ProcessId -ne $BrowserPid -or
-            -not $allow.Current.IsEnabled -or $allow.Current.IsOffscreen) {
+        $final = Get-FinalInvokeIdentity -OriginalProcess $before `
+            -OriginalForeground $foreground -Allow $allow
+        $receipt.finalIdentityRecheck = @{ before = $final.diagnostic }
+        if (-not (Test-FinalInvokeIdentity -State $final -ExpectedPid $BrowserPid)) {
+            if (Test-FinalEdgeRefocusCandidate -State $final `
+                -CandidateBrowserName $BrowserName -ExpectedPid $BrowserPid `
+                -AlreadyAttempted $refocusAttempted) {
+                $refocusArgs = @{
+                    Phase = 'final'; OriginalForeground = $foreground;
+                    CurrentForeground = $final.foreground; OriginalProcess = $before;
+                    CurrentProcess = $final.process; PromptInspection = $actionInspection;
+                    PromptScope = $receipt.actionPromptScope;
+                    PromptWindowCount = $promptWindows.Count;
+                    WindowEnumeration = $final.enumeration; OwnedWindows = $final.windows;
+                    Receipt = $receipt; AlreadyAttempted = $refocusAttempted
+                }
+                $refocus = Invoke-OneTimeEdgePromptRefocus @refocusArgs
+                if ($refocus.restored) {
+                    $refocusAttempted = $true
+                    $actionInspection = Get-PromptInspection -Prompt $promptWindows[0] `
+                        -ExpectedPid $BrowserPid
+                    $receipt.actionPromptScopeAfterRefocus = @{
+                        complete = $actionInspection.complete;
+                        reason = $actionInspection.reason;
+                        controls = $actionInspection.controls;
+                        visitedControls = $actionInspection.visitedControls;
+                        attemptedNodes = $actionInspection.attemptedNodes;
+                        rootProcessId = $actionInspection.rootProcessId;
+                        nameTruncated = $actionInspection.nameTruncated
+                    }
+                    $allow = Get-PromptAction -Inspection $actionInspection
+                    $final = Get-FinalInvokeIdentity -OriginalProcess $before `
+                        -OriginalForeground $foreground -Allow $allow
+                    $receipt.finalIdentityRecheck.afterRefocus = $final.diagnostic
+                }
+            } elseif ($BrowserName -ceq 'msedge' -and $refocusAttempted) {
+                $receipt.edgeRefocusRepeat = @{ phase = 'final'; status = 'already-attempted' }
+            }
+        }
+        if (-not (Test-FinalInvokeIdentity -State $final -ExpectedPid $BrowserPid)) {
             throw 'action-identity-changed-before-invoke'
         }
         $pattern = $allow.GetCurrentPattern([Windows.Automation.InvokePattern]::Pattern)
