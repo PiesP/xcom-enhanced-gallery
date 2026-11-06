@@ -70,6 +70,11 @@ file is retained, a distinct-byte sentinel occupies its next conflict name.
 The repeat runs after the diagnostic breakpoints are removed and verifies that
 both the original file and sentinel remain unchanged. The original user profile cause
 remains outside this controlled scope.
+The separate live phase stages its evidence outside the flat output folder.
+After either success or failure, bounded regular files are copied under the
+`userscript-live-` prefix and listed in `userscript-live-artifacts.json`.
+If a copy cannot be verified, the task-owned stage is preserved and the run
+fails before collection.
 
 To check issue #484's video save format through the installed Chrome/Edge
 extension, create the ignored `video-save-format.json` file here with exactly:

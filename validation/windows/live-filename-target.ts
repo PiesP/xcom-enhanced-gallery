@@ -43,6 +43,30 @@ export function parseLiveFilenameSelector(value: unknown): LiveFilenameTarget {
   return parseLiveFilenameTarget(input.target);
 }
 
+/** Entry contract: only an explicit exact photo may use the installed userscript live path. */
+export function admitReportedLiveFilenameInstall(options: {
+  selector: unknown;
+  browserName: string;
+  installation: string;
+  liveUrls: readonly string[];
+}): LiveFilenameTarget {
+  const { selector, browserName, installation, liveUrls } = options;
+  const target = parseLiveFilenameSelector(selector);
+  const explicit =
+    selector !== null &&
+    typeof selector === 'object' &&
+    Object.hasOwn(selector, 'target');
+  if (explicit) {
+    assert(['chrome', 'msedge'].includes(browserName), 'Explicit live photo needs Chrome or Edge');
+    assert(['extension', 'userscript'].includes(installation), 'Unknown live photo installation');
+  } else {
+    assert.equal(browserName, 'chrome', 'Historical live photo was qualified in Chrome');
+    assert.equal(installation, 'extension', 'Historical live photo requires an extension');
+  }
+  assert.deepEqual(liveUrls, [target.pageUrl], 'Live URL differs from the exact photo selector');
+  return target;
+}
+
 /** Accept only a selected original from the exact configured attachment. */
 export function isLiveFilenameOriginal(sourceUrl: unknown, target: LiveFilenameTarget): boolean {
   if (typeof sourceUrl !== 'string') {
