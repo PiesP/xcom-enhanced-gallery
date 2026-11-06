@@ -1,12 +1,16 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 PiesP
 
+import { mkdtemp, readFile, rm, stat } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { selectedLivePreferredSource } from './filename-correlation.ts';
 import {
   expectedLiveFilename,
   liveFilenameConforms,
   onlyNewLiveDownload,
+  writeLiveFilenameEvidence,
 } from './live-filename.ts';
 
 const expectedJpegFilename = (media: Record<string, unknown>) => expectedLiveFilename(media, 'jpg');
@@ -103,4 +107,23 @@ describe('reported live filename qualification expectations', () => {
       expect(liveFilenameConforms(actual, requested)).toBe(false);
     }
   });
+});
+
+it('retains private evidence once and refuses to overwrite an existing receipt', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'xeg-live-evidence-'));
+  try {
+    const path = join(root, 'native.bin');
+    const bytes = Buffer.from([0xff, 0xd8, 1, 2, 3]);
+    await writeLiveFilenameEvidence(path, bytes);
+    expect(await readFile(path)).toEqual(bytes);
+    if (process.platform !== 'win32') {
+      expect((await stat(path)).mode & 0o777).toBe(0o600);
+    }
+    await expect(writeLiveFilenameEvidence(path, 'replacement')).rejects.toMatchObject({
+      code: 'EEXIST',
+    });
+    expect(await readFile(path)).toEqual(bytes);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 });

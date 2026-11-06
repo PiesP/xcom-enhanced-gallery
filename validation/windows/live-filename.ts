@@ -3,7 +3,7 @@
 
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { readFile, writeFile } from 'node:fs/promises';
+import { open, readFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import type { BrowserContext, Page } from '@playwright/test';
 import { readExactDownloadFile } from './download-memory.ts';
@@ -31,6 +31,16 @@ declare const chrome: {
 };
 const LIMIT = 4 * 1024 * 1024;
 const sha256 = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
+
+/** Create each owned evidence file once with a private, exclusive descriptor. */
+export async function writeLiveFilenameEvidence(path: string, content: string | Uint8Array) {
+  const file = await open(path, 'wx', 0o600);
+  try {
+    await file.writeFile(content);
+  } finally {
+    await file.close();
+  }
+}
 
 /** Independent policy expectation from observed metadata, never gallery position. */
 export function expectedLiveFilename(media: Record<string, unknown>, extension: string): string {
@@ -295,7 +305,7 @@ export async function runReportedLiveFilename(options: {
       const actualName = basename(item.filename);
       // The maintained transport accepts flat safe names; retain the native name in evidence.
       const retainedFile = `live-original-${item.id}.bin`;
-      await writeFile(join(output, retainedFile), bytes, { flag: 'wx' });
+      await writeLiveFilenameEvidence(join(output, retainedFile), bytes);
       assert(
         (await readExactDownloadFile(join(output, retainedFile), bytes.length)).bytes.equals(bytes)
       );
@@ -359,7 +369,10 @@ export async function runReportedLiveFilename(options: {
     try {
       await extensionPage.close();
     } finally {
-      await writeFile(join(output, 'live-filename.json'), `${JSON.stringify(evidence, null, 2)}\n`);
+      await writeLiveFilenameEvidence(
+        join(output, 'live-filename.json'),
+        `${JSON.stringify(evidence, null, 2)}\n`
+      );
     }
   }
 }
