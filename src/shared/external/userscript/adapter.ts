@@ -86,7 +86,7 @@ export interface ResolvedGMAPIs {
 function getGMAPIs(): ResolvedGMAPIs {
   const g = globalThis as unknown as Record<string, unknown>;
   return {
-    // GM.download (GM4+/Tampermonkey Promise-based API)
+    // Manager-provided Promise-based download API.
     download:
       typeof g.GM !== 'undefined' && g.GM !== null
         ? (g.GM as Record<string, unknown>).download
@@ -213,7 +213,7 @@ function retainBlobUrl(url: string, onReleased?: () => void): () => void {
 
 /**
  * Blob-based download fallback using GM_xmlhttpRequest + anchor element.
- * Works in all userscript environments regardless of GM_download support.
+ * Fetches through the manager's HTTP API and requests a Blob URL save.
  */
 async function downloadViaBlob(
   url: string,
