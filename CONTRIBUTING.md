@@ -413,6 +413,12 @@ source manifest, bundle metadata, public release history and Latest selection
 before writing. Historical targets and unavailable or conflicting state stop
 publication; this workflow has no archive or rollback mode.
 
+After final packaging, the workflow runs `vp run release:firefox-validate` on
+the exact Firefox ZIP and checks its report again at publication. Follow the
+[Firefox artifact validation reference](./docs/firefox-artifact-validation.md)
+for the static-template warning disposition, retained evidence and re-review
+procedure when compiler or dependency output changes.
+
 Provenance first verifies that the tagged source declares every command the
 current release jobs invoke (`quality:coverage-owned`, `test:cov`, `build:e2e`,
 `test:e2e:all`, `build:all:ci` and `release:prepare`). Older tags without one
