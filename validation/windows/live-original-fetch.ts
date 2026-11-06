@@ -43,8 +43,7 @@ export async function fetchBoundedLiveOriginal(
       if (done) break;
       assert(value instanceof Uint8Array, 'Independent original yielded non-byte data');
       assert(
-        total + value.byteLength <= contentLength &&
-          total + value.byteLength <= MAX_ORIGINAL_BYTES,
+        total + value.byteLength <= contentLength && total + value.byteLength <= MAX_ORIGINAL_BYTES,
         'Independent original streamed beyond its declared bound'
       );
       total += value.byteLength;

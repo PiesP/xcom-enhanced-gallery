@@ -39,7 +39,9 @@ describe('bounded independent live original GET', () => {
         controller.close();
       },
     });
-    const result = await fetchBoundedLiveOriginal(source, 'jpg', async () => responseFor(stream, 2));
+    const result = await fetchBoundedLiveOriginal(source, 'jpg', async () =>
+      responseFor(stream, 2)
+    );
     expect([...result.bytes]).toEqual([1, 2]);
     expect(result.contentLength).toBe(2);
   });

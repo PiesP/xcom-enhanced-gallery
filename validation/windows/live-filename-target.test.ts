@@ -2,10 +2,7 @@
 // Copyright (c) 2026 PiesP
 
 import { describe, expect, it } from 'vitest';
-import {
-  isLiveFilenameOriginal,
-  parseLiveFilenameSelector,
-} from './live-filename-target.ts';
+import { isLiveFilenameOriginal, parseLiveFilenameSelector } from './live-filename-target.ts';
 
 const jeppi = {
   pageUrl: 'https://x.com/Jeppi_tan/status/2118423501095030841',
@@ -17,16 +14,18 @@ describe('live filename target', () => {
     expect(parseLiveFilenameSelector({ scenario: 'reported-live-filename' }).mediaBasename).toBe(
       'HWXMF0bbcAEnfk6'
     );
-    expect(parseLiveFilenameSelector({ scenario: 'reported-live-filename', target: jeppi })).toEqual(
-      jeppi
-    );
+    expect(
+      parseLiveFilenameSelector({ scenario: 'reported-live-filename', target: jeppi })
+    ).toEqual(jeppi);
     for (const target of [
       { ...jeppi, pageUrl: jeppi.pageUrl + '/photo/1' },
       { ...jeppi, pageUrl: 'http://x.com/Jeppi_tan/status/2118423501095030841' },
       { ...jeppi, mediaBasename: '../other' },
       { ...jeppi, extra: true },
     ]) {
-      expect(() => parseLiveFilenameSelector({ scenario: 'reported-live-filename', target })).toThrow();
+      expect(() =>
+        parseLiveFilenameSelector({ scenario: 'reported-live-filename', target })
+      ).toThrow();
     }
   });
 

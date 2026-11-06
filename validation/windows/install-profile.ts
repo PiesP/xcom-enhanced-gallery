@@ -20367,7 +20367,9 @@ export async function run({
     throw error;
   });
   const reportedFilenameTarget =
-    reportedFilenameText === null ? null : parseLiveFilenameSelector(JSON.parse(reportedFilenameText));
+    reportedFilenameText === null
+      ? null
+      : parseLiveFilenameSelector(JSON.parse(reportedFilenameText));
   if (reportedFilenameTarget !== null) {
     assert(['chrome', 'msedge'].includes(browserName));
     assert.equal(installation, 'extension');
@@ -20492,7 +20494,8 @@ export async function run({
       null,
       'Installed userscript fixture does not support duration observation'
     );
-    const { runUserscriptInstallation, runUserscriptLiveInstallation } = await import('./userscript-install.ts');
+    const { runUserscriptInstallation, runUserscriptLiveInstallation } =
+      await import('./userscript-install.ts');
     const fixture = await runUserscriptInstallation({
       chromium,
       root,

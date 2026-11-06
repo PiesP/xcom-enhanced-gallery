@@ -18,18 +18,25 @@ describe('installed userscript GM call diagnostic', () => {
     ].join('\n');
     expect(resolveUserscriptGMCallLine(source)).toBe(5);
     expect(resolveUserscriptGMCallLine('function olderDownload() {}')).toBeNull();
-    expect(resolveUserscriptGMCallLine([
-      'const handle = gmDownloadModern({',
-      '  url, name: filename, saveAs: false',
-      '});',
-      'if (settled) return;',
-    ].join('\n'))).toBe(3);
+    expect(
+      resolveUserscriptGMCallLine(
+        [
+          'const handle = gmDownloadModern({',
+          '  url, name: filename, saveAs: false',
+          '});',
+          'if (settled) return;',
+        ].join('\n')
+      )
+    ).toBe(3);
     expect(() =>
       resolveUserscriptGMCallLine(source.replace('handle = gmDownload({', 'return gmDownload({'))
     ).toThrow();
     expect(() =>
       resolveUserscriptGMCallLine(
-        source.replace('function next() {}', '  Promise.resolve(handle).then(void 0, fail);\nfunction next() {}')
+        source.replace(
+          'function next() {}',
+          '  Promise.resolve(handle).then(void 0, fail);\nfunction next() {}'
+        )
       )
     ).toThrow();
   });

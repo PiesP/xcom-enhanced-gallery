@@ -25,8 +25,7 @@ export function parseLiveFilenameTarget(value: unknown): LiveFilenameTarget {
     'Live filename target must be one exact public X status URL'
   );
   assert(
-    typeof input.mediaBasename === 'string' &&
-      /^[A-Za-z0-9_-]{1,40}$/u.test(input.mediaBasename),
+    typeof input.mediaBasename === 'string' && /^[A-Za-z0-9_-]{1,40}$/u.test(input.mediaBasename),
     'Live filename target must be one exact CDN media basename'
   );
   return { pageUrl: input.pageUrl, mediaBasename: input.mediaBasename };

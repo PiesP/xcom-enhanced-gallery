@@ -27,10 +27,7 @@ import {
 import { expectedLiveFilename, liveFilenameConforms } from './live-filename.ts';
 import { fetchBoundedLiveOriginal } from './live-original-fetch.ts';
 import { readOwnedNativeBytes } from './firefox-install.ts';
-import {
-  isLiveFilenameOriginal,
-  type LiveFilenameTarget,
-} from './live-filename-target.ts';
+import { isLiveFilenameOriginal, type LiveFilenameTarget } from './live-filename-target.ts';
 import { resolveFilenameCaptureLine } from './filename-correlation.ts';
 import {
   createImageFixtures,
@@ -4545,8 +4542,10 @@ async function retainFailedLiveNativeFiles(
     const verified = await readFile(retainedPath);
     assert.equal(sha256(verified), sha256(observed.bytes), 'Retained native copy differs');
     const attempts = Array.isArray(nativeAttempts)
-      ? nativeAttempts.filter((item) =>
-          item && typeof item === 'object' && basename(String(item.filename ?? '')) === name)
+      ? nativeAttempts.filter(
+          (item) =>
+            item && typeof item === 'object' && basename(String(item.filename ?? '')) === name
+        )
       : [];
     retained.push({
       originalPath: observed.filename,
@@ -4646,19 +4645,23 @@ export function resolveUserscriptGMCallLine(source: string): number | null {
   if (start < 0) {
     const older = lines.findIndex((line) => /^\s*const handle = gmDownloadModern\(\{/u.test(line));
     if (older < 0) return null;
-    const next = lines.findIndex((line, index) =>
-      index > older && index <= older + 15 && /^\s*if \(settled\) return;/u.test(line));
+    const next = lines.findIndex(
+      (line, index) =>
+        index > older && index <= older + 15 && /^\s*if \(settled\) return;/u.test(line)
+    );
     assert(next > older, 'Older installed GM call return site changed');
     return next;
   }
-  const end = lines.findIndex((line, index) =>
-    index > start && /^\s*function \w+\(/u.test(line));
+  const end = lines.findIndex((line, index) => index > start && /^\s*function \w+\(/u.test(line));
   const range = lines.slice(start, end < 0 ? undefined : end);
   const calls = range.flatMap((line, index) =>
-    /^\s*Promise\.resolve\(handle\)\.then\(/u.test(line) ? [start + index] : []);
+    /^\s*Promise\.resolve\(handle\)\.then\(/u.test(line) ? [start + index] : []
+  );
   assert.equal(calls.length, 1, 'Expected one installed GM call return site');
-  assert(range.some((line) => /^\s*handle = gmDownload\(\{/u.test(line)),
-    'GM call source changed before return capture');
+  assert(
+    range.some((line) => /^\s*handle = gmDownload\(\{/u.test(line)),
+    'GM call source changed before return capture'
+  );
   return calls[0]!;
 }
 
@@ -4668,15 +4671,19 @@ async function removeLiveSandboxDiagnostic(session: CDPSession, contextId: numbe
     expression: 'delete globalThis.__xegLiveFilename495',
     returnByValue: true,
   });
-  assert(!removed.exceptionDetails && removed.result?.value === true,
-    'Userscript diagnostic slot deletion failed');
+  assert(
+    !removed.exceptionDetails && removed.result?.value === true,
+    'Userscript diagnostic slot deletion failed'
+  );
   const readback = await session.send('Runtime.evaluate', {
     contextId,
     expression: "Object.prototype.hasOwnProperty.call(globalThis, '__xegLiveFilename495')",
     returnByValue: true,
   });
-  assert(!readback.exceptionDetails && readback.result?.value === false,
-    'Userscript diagnostic slot remains after deletion');
+  assert(
+    !readback.exceptionDetails && readback.result?.value === false,
+    'Userscript diagnostic slot remains after deletion'
+  );
 }
 
 function diagnosticScriptUrl(value: string): string {
@@ -4707,13 +4714,16 @@ export async function runUserscriptLiveInstallation(options: {
   const downloads = join(profile, 'downloads');
   await mkdir(downloads);
   await mkdir(join(profile, 'Default'));
-  await writeFile(join(profile, 'Default', 'Preferences'), JSON.stringify({
-    download: {
-      default_directory: downloads,
-      prompt_for_download: false,
-      directory_upgrade: true,
-    },
-  }));
+  await writeFile(
+    join(profile, 'Default', 'Preferences'),
+    JSON.stringify({
+      download: {
+        default_directory: downloads,
+        prompt_for_download: false,
+        directory_upgrade: true,
+      },
+    })
+  );
   const receipt: Record<string, unknown> = {
     schemaVersion: 1,
     status: 'incomplete',
@@ -4762,10 +4772,24 @@ export async function runUserscriptLiveInstallation(options: {
     }));
     assert(typeof managerId === 'string');
     const manager = await installUserscript(
-      context, managerId, root, output, browserName, sha256(source), profile,
-      (ask, id, ownedContext) => inspectAndAllowNativeManagerPermission(
-        cdp!, root, output, profile, browserName, ask, id, ownedContext
-      )
+      context,
+      managerId,
+      root,
+      output,
+      browserName,
+      sha256(source),
+      profile,
+      (ask, id, ownedContext) =>
+        inspectAndAllowNativeManagerPermission(
+          cdp!,
+          root,
+          output,
+          profile,
+          browserName,
+          ask,
+          id,
+          ownedContext
+        )
     );
     receipt.manager = manager;
     observer = createBrowserDownloadObserver(cdp);
@@ -4776,39 +4800,57 @@ export async function runUserscriptLiveInstallation(options: {
     debuggerSession = await context.newCDPSession(page);
     const scripts: Array<{ scriptId: string; url: string; executionContextId: number }> = [];
     let scriptOverflow = 0;
-    debuggerSession.on('Debugger.scriptParsed', (item: {
-      scriptId: string;
-      url: string;
-      executionContextId: number;
-    }) => {
-      if (scripts.length < 256) scripts.push(item);
-      else scriptOverflow += 1;
-    });
+    debuggerSession.on(
+      'Debugger.scriptParsed',
+      (item: { scriptId: string; url: string; executionContextId: number }) => {
+        if (scripts.length < 256) scripts.push(item);
+        else scriptOverflow += 1;
+      }
+    );
     await debuggerSession.send('Runtime.enable');
     await debuggerSession.send('Debugger.enable');
     await page.goto(target.pageUrl, { waitUntil: 'domcontentloaded', timeout: 30_000 });
     assert.equal(page.url(), target.pageUrl, 'Live status navigated away');
     const statusPath = new URL(target.pageUrl).pathname;
-    const action = page.locator('article a[href$="' + statusPath + '/photo/1"]')
+    const action = page
+      .locator('article a[href$="' + statusPath + '/photo/1"]')
       .filter({ has: page.locator('img[src*="' + target.mediaBasename + '"]') });
     await action.first().waitFor({ state: 'visible', timeout: 30_000 });
     assert.equal(await action.count(), 1, 'Live photo action is ambiguous');
-    const actionBinding = await action.evaluate((element, expected) => {
-      const image = element.querySelector('img');
-      const article = element.closest('article');
-      if (!(element instanceof HTMLAnchorElement) ||
-          !(image instanceof HTMLImageElement) || !article ||
-          !image.complete || image.naturalWidth <= 0) return null;
-      const source = new URL(image.currentSrc || image.src);
-      const sourceMedia = /^\/media\/([A-Za-z0-9_-]{1,40})(?:\.(?:jpg|jpeg|png|webp|gif))?$/u
-        .exec(source.pathname);
-      const owner = [...article.querySelectorAll('a[href]')].some((candidate) =>
-        new URL((candidate as HTMLAnchorElement).href).pathname === expected.statusPath);
-      if (!owner || source.origin !== 'https://pbs.twimg.com' ||
-          sourceMedia?.[1] !== expected.mediaBasename) return null;
-      return { imageSource: image.currentSrc || image.src, actionUrl: element.href,
-        width: image.naturalWidth, height: image.naturalHeight };
-    }, { statusPath, mediaBasename: target.mediaBasename });
+    const actionBinding = await action.evaluate(
+      (element, expected) => {
+        const image = element.querySelector('img');
+        const article = element.closest('article');
+        if (
+          !(element instanceof HTMLAnchorElement) ||
+          !(image instanceof HTMLImageElement) ||
+          !article ||
+          !image.complete ||
+          image.naturalWidth <= 0
+        )
+          return null;
+        const source = new URL(image.currentSrc || image.src);
+        const sourceMedia =
+          /^\/media\/([A-Za-z0-9_-]{1,40})(?:\.(?:jpg|jpeg|png|webp|gif))?$/u.exec(source.pathname);
+        const owner = [...article.querySelectorAll('a[href]')].some(
+          (candidate) =>
+            new URL((candidate as HTMLAnchorElement).href).pathname === expected.statusPath
+        );
+        if (
+          !owner ||
+          source.origin !== 'https://pbs.twimg.com' ||
+          sourceMedia?.[1] !== expected.mediaBasename
+        )
+          return null;
+        return {
+          imageSource: image.currentSrc || image.src,
+          actionUrl: element.href,
+          width: image.naturalWidth,
+          height: image.naturalHeight,
+        };
+      },
+      { statusPath, mediaBasename: target.mediaBasename }
+    );
     assert(actionBinding, 'Live displayed photo and owner were not bound');
     receipt.actionBinding = actionBinding;
     await action.click();
@@ -4819,17 +4861,24 @@ export async function runUserscriptLiveInstallation(options: {
     const selected = await gallery.evaluate((element, mediaBasename) => {
       const toolbar = element.querySelector('[data-gallery-element="toolbar"]');
       const index = toolbar?.getAttribute('data-focused-index');
-      const item = element.querySelector('[data-gallery-element="item"][data-index="' + index + '"]');
+      const item = element.querySelector(
+        '[data-gallery-element="item"][data-index="' + index + '"]'
+      );
       const image = item?.querySelector('img');
-      if (!(image instanceof HTMLImageElement) || !image.complete ||
-          image.naturalWidth <= 0 || toolbar?.getAttribute('data-current-index') !== index)
+      if (
+        !(image instanceof HTMLImageElement) ||
+        !image.complete ||
+        image.naturalWidth <= 0 ||
+        toolbar?.getAttribute('data-current-index') !== index
+      )
         return null;
       const source = new URL(image.currentSrc || image.src);
-      const sourceMedia = /^\/media\/([A-Za-z0-9_-]{1,40})(?:\.(?:jpg|jpeg|png|webp|gif))?$/u
-        .exec(source.pathname);
-      return source.origin === 'https://pbs.twimg.com' &&
-        sourceMedia?.[1] === mediaBasename
-        ? { index, source: image.currentSrc || image.src } : null;
+      const sourceMedia = /^\/media\/([A-Za-z0-9_-]{1,40})(?:\.(?:jpg|jpeg|png|webp|gif))?$/u.exec(
+        source.pathname
+      );
+      return source.origin === 'https://pbs.twimg.com' && sourceMedia?.[1] === mediaBasename
+        ? { index, source: image.currentSrc || image.src }
+        : null;
     }, target.mediaBasename);
     assert(selected, 'Live gallery selection differs from reported photo');
     receipt.gallerySelection = selected;
@@ -4837,9 +4886,11 @@ export async function runUserscriptLiveInstallation(options: {
       parsedCount: scripts.length,
       overflow: scriptOverflow,
       taskCandidates: scripts
-        .filter((item) =>
-          item.url.includes(managerId!) ||
-          /(?:user-script|userscript|\.user\.js)/iu.test(item.url))
+        .filter(
+          (item) =>
+            item.url.includes(managerId!) ||
+            /(?:user-script|userscript|\.user\.js)/iu.test(item.url)
+        )
         .slice(0, 16)
         .map((item) => ({
           url: diagnosticScriptUrl(item.url),
@@ -4848,19 +4899,23 @@ export async function runUserscriptLiveInstallation(options: {
       matches: [],
     };
     receipt.scriptSourceLookup = sourceLookup;
-    let script: {
-      scriptId: string;
-      url: string;
-      executionContextId: number;
-      lineNumber: number;
-      gmCallLine: number | null;
-      gmCallKind: 'shared' | 'older-modern' | null;
-      sha256: string;
-    } | undefined;
+    let script:
+      | {
+          scriptId: string;
+          url: string;
+          executionContextId: number;
+          lineNumber: number;
+          gmCallLine: number | null;
+          gmCallKind: 'shared' | 'older-modern' | null;
+          sha256: string;
+        }
+      | undefined;
     for (const item of scripts) {
-      const result = await debuggerSession.send('Debugger.getScriptSource', {
-        scriptId: item.scriptId,
-      }).catch(() => null);
+      const result = await debuggerSession
+        .send('Debugger.getScriptSource', {
+          scriptId: item.scriptId,
+        })
+        .catch(() => null);
       const text = result?.scriptSource;
       if (!text || text.length > 5_000_000 || !text.includes('function downloadSingleFile('))
         continue;
@@ -4884,17 +4939,24 @@ export async function runUserscriptLiveInstallation(options: {
       };
     }
     assert(script, 'Installed XCOM download source was not uniquely identified');
-    assert(Number.isSafeInteger(script.executionContextId) && script.executionContextId > 0,
-      'Installed XCOM script has no execution realm');
+    assert(
+      Number.isSafeInteger(script.executionContextId) && script.executionContextId > 0,
+      'Installed XCOM script has no execution realm'
+    );
     sandboxId = script.executionContextId;
     receipt.executedScript = script;
-    const sandboxProbe = await debuggerSession.send('Runtime.evaluate', {
-      contextId: sandboxId, expression: LIVE_SANDBOX_PROBE, returnByValue: true,
-    }).catch(() => null);
+    const sandboxProbe = await debuggerSession
+      .send('Runtime.evaluate', {
+        contextId: sandboxId,
+        expression: LIVE_SANDBOX_PROBE,
+        returnByValue: true,
+      })
+      .catch(() => null);
     receipt.sandboxGlobalProbe = sandboxProbe?.result?.value ?? null;
     const slot = await debuggerSession.send('Runtime.callFunctionOn', {
       executionContextId: sandboxId,
-      functionDeclaration: 'function(mediaBasename) { if (this.__xegLiveFilename495) return false; this.__xegLiveFilename495 = { mediaBasename, events: [], calls: [] }; return true; }',
+      functionDeclaration:
+        'function(mediaBasename) { if (this.__xegLiveFilename495) return false; this.__xegLiveFilename495 = { mediaBasename, events: [], calls: [] }; return true; }',
       arguments: [{ value: target.mediaBasename }],
       returnByValue: true,
     });
@@ -4907,21 +4969,28 @@ export async function runUserscriptLiveInstallation(options: {
     if (script.gmCallLine !== null) {
       const gmBreakpoint = await debuggerSession.send('Debugger.setBreakpoint', {
         location: { scriptId: script.scriptId, lineNumber: script.gmCallLine },
-        condition: script.gmCallKind === 'older-modern'
-          ? LIVE_OLD_GM_CALL_CONDITION
-          : LIVE_GM_CALL_CONDITION,
+        condition:
+          script.gmCallKind === 'older-modern'
+            ? LIVE_OLD_GM_CALL_CONDITION
+            : LIVE_GM_CALL_CONDITION,
       });
       gmBreakpointId = gmBreakpoint.breakpointId;
     }
-    const button = gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download"]');
+    const button = gallery.locator(
+      '[data-gallery-element="toolbar"] button[aria-label="Download"]'
+    );
     const saves = receipt.saves as Record<string, unknown>[];
     let original: Buffer | undefined;
     let requestedName: string | undefined;
     let sentinelBytes: Buffer | undefined;
     let firstNativeName: string | undefined;
     for (let number = 1; number <= 2; number += 1) {
-      assert.equal(await gallery.locator('[data-gallery-element="toolbar"]')
-        .getAttribute('data-focused-index'), selected.index);
+      assert.equal(
+        await gallery
+          .locator('[data-gallery-element="toolbar"]')
+          .getAttribute('data-focused-index'),
+        selected.index
+      );
       const before: Set<number> = new Set(
         (await liveNativeInventory(managerPage)).map((item) => item.id)
       );
@@ -4930,19 +4999,27 @@ export async function runUserscriptLiveInstallation(options: {
       dispatchedClicks += 1;
       await button.click();
       if (number === 1) {
-        const captured = await waitFor(async () => {
-          const result = await debuggerSession!.send('Runtime.evaluate', {
-            contextId: sandboxId!, expression: 'globalThis.__xegLiveFilename495?.events ?? []',
-            returnByValue: true,
-          });
-          const events = result.result?.value;
-          return Array.isArray(events) && events.length === 1
-            ? events[0] as Record<string, unknown> : undefined;
-        }, 'selected installed MediaInfo', 10_000);
+        const captured = await waitFor(
+          async () => {
+            const result = await debuggerSession!.send('Runtime.evaluate', {
+              contextId: sandboxId!,
+              expression: 'globalThis.__xegLiveFilename495?.events ?? []',
+              returnByValue: true,
+            });
+            const events = result.result?.value;
+            return Array.isArray(events) && events.length === 1
+              ? (events[0] as Record<string, unknown>)
+              : undefined;
+          },
+          'selected installed MediaInfo',
+          10_000
+        );
         receipt.selectedMedia = captured;
         receipt.sandbox = captured.gm ?? null;
-        const sourceUrl = (captured.downloadSource as { url?: unknown } | null)?.url ??
-          captured.originalUrl ?? captured.url;
+        const sourceUrl =
+          (captured.downloadSource as { url?: unknown } | null)?.url ??
+          captured.originalUrl ??
+          captured.url;
         assert(isLiveFilenameOriginal(sourceUrl, target), 'Selected original source differs');
         const sourceUrlText = sourceUrl as string;
         const format = new URL(sourceUrlText).searchParams.get('format');
@@ -4960,40 +5037,68 @@ export async function runUserscriptLiveInstallation(options: {
           transport: 'independent bounded Node GET without redirect',
         };
       }
-      const native: LiveNativeItem = await waitFor<LiveNativeItem>(async (): Promise<LiveNativeItem | undefined> => {
-        const added: LiveNativeItem[] = (await liveNativeInventory(managerPage!))
-          .filter((item) => !before.has(item.id));
-        assert(added.length <= 1, 'One live click created multiple native IDs');
-        const attempts = receipt.nativeAttempts as Record<string, unknown>[];
-        const current = added[0];
-        if (current && !attempts.some((item) =>
-          item.number === number && item.id === current.id && item.state === current.state)) {
-          assert(attempts.length < 16, 'Live native observation bound exceeded');
-          attempts.push({
-            number, id: current.id, state: current.state, url: current.url,
-            finalUrl: current.finalUrl ?? null, filename: current.filename,
-            byExtensionId: current.byExtensionId ?? null, error: current.error ?? null,
-          });
-        }
-        if (added[0]?.state === 'interrupted') throw new Error('Native download interrupted: ' + added[0].error);
-        return added[0]?.state === 'complete' ? added[0] : undefined;
-      }, 'unique live native completion', 30_000);
-      assert.equal(native.byExtensionId, managerId,
-        'New native ID is not owned by the installed manager');
+      const native: LiveNativeItem = await waitFor<LiveNativeItem>(
+        async (): Promise<LiveNativeItem | undefined> => {
+          const added: LiveNativeItem[] = (await liveNativeInventory(managerPage!)).filter(
+            (item) => !before.has(item.id)
+          );
+          assert(added.length <= 1, 'One live click created multiple native IDs');
+          const attempts = receipt.nativeAttempts as Record<string, unknown>[];
+          const current = added[0];
+          if (
+            current &&
+            !attempts.some(
+              (item) =>
+                item.number === number && item.id === current.id && item.state === current.state
+            )
+          ) {
+            assert(attempts.length < 16, 'Live native observation bound exceeded');
+            attempts.push({
+              number,
+              id: current.id,
+              state: current.state,
+              url: current.url,
+              finalUrl: current.finalUrl ?? null,
+              filename: current.filename,
+              byExtensionId: current.byExtensionId ?? null,
+              error: current.error ?? null,
+            });
+          }
+          if (added[0]?.state === 'interrupted')
+            throw new Error('Native download interrupted: ' + added[0].error);
+          return added[0]?.state === 'complete' ? added[0] : undefined;
+        },
+        'unique live native completion',
+        30_000
+      );
+      assert.equal(
+        native.byExtensionId,
+        managerId,
+        'New native ID is not owned by the installed manager'
+      );
       assert(original && requestedName);
-      const newNames = (await readdir(downloads)).filter((name) =>
-        !beforeFiles.has(name) && !name.endsWith('.crdownload'));
+      const newNames = (await readdir(downloads)).filter(
+        (name) => !beforeFiles.has(name) && !name.endsWith('.crdownload')
+      );
       assert.equal(newNames.length, 1, 'One live click must save one new original file');
       const observedName = newNames[0]!;
-      assert.equal(resolve(native.filename), resolve(downloads, observedName),
-        'Native ID did not own the sole new file');
+      assert.equal(
+        resolve(native.filename),
+        resolve(downloads, observedName),
+        'Native ID did not own the sole new file'
+      );
       const { bytes } = await readExactDownloadFile(join(downloads, observedName), original.length);
-      assert.equal(sha256(bytes), sha256(original), 'Native original bytes differ from independent GET');
+      assert.equal(
+        sha256(bytes),
+        sha256(original),
+        'Native original bytes differ from independent GET'
+      );
       await observer.flush();
       const eventCount: number = observer.snapshot() - since;
       assert(eventCount <= 1, 'One live click created multiple CDP downloads');
-      const cdpItem: (BrowserDownloadBegin & BrowserDownloadStatus) | null =
-        eventCount ? await observer.waitForCompletion(since) : null;
+      const cdpItem: (BrowserDownloadBegin & BrowserDownloadStatus) | null = eventCount
+        ? await observer.waitForCompletion(since)
+        : null;
       if (cdpItem) {
         assert.equal(cdpItem.url, native.url, 'CDP GUID and native ID identify different URLs');
         assert.equal(cdpItem.receivedBytes, bytes.length);
@@ -5006,24 +5111,36 @@ export async function runUserscriptLiveInstallation(options: {
         'Native URL is not the selected original or an owned Blob'
       );
       const nameConforms = liveFilenameConforms(observedName, requestedName);
-      const retained = 'live-original-' + number + '.' +
-        (new URL(sourceUrl).searchParams.get('format') ?? 'bin');
+      const retained =
+        'live-original-' + number + '.' + (new URL(sourceUrl).searchParams.get('format') ?? 'bin');
       await writeFile(join(output, retained), bytes, { flag: 'wx' });
       saves.push({
-        number, nativeId: native.id, nativeUrl: native.url, nativeState: native.state,
-        nativeFinalUrl: native.finalUrl ?? null, nativeOriginalPath: native.filename,
+        number,
+        nativeId: native.id,
+        nativeUrl: native.url,
+        nativeState: native.state,
+        nativeFinalUrl: native.finalUrl ?? null,
+        nativeOriginalPath: native.filename,
         byExtensionId: native.byExtensionId,
-        cdpGuid: cdpItem?.guid ?? null, cdpSuggestedFilename: cdpItem?.suggestedFilename ?? null,
-        requestedFilename: requestedName, observedFilename: observedName,
-        productObservedName: null, nameConforms, bytes: bytes.length,
-        sha256: sha256(bytes), retained,
+        cdpGuid: cdpItem?.guid ?? null,
+        cdpSuggestedFilename: cdpItem?.suggestedFilename ?? null,
+        requestedFilename: requestedName,
+        observedFilename: observedName,
+        productObservedName: null,
+        nameConforms,
+        bytes: bytes.length,
+        sha256: sha256(bytes),
+        retained,
       });
       if (number === 1) {
-        const callResult: { result?: { value?: unknown } } = await debuggerSession.send('Runtime.evaluate', {
-          contextId: sandboxId,
-          expression: 'globalThis.__xegLiveFilename495?.calls ?? []',
-          returnByValue: true,
-        });
+        const callResult: { result?: { value?: unknown } } = await debuggerSession.send(
+          'Runtime.evaluate',
+          {
+            contextId: sandboxId,
+            expression: 'globalThis.__xegLiveFilename495?.calls ?? []',
+            returnByValue: true,
+          }
+        );
         const calls: unknown = callResult.result?.value;
         assert(Array.isArray(calls) && calls.length <= 1, 'GM call capture exceeded bound');
         receipt.gmCalls = calls;
@@ -5032,7 +5149,10 @@ export async function runUserscriptLiveInstallation(options: {
           assert.equal(calls[0]?.args?.name, requestedName);
           receipt.route = { kind: 'GM', apiName: calls[0]?.apiName };
         } else {
-          receipt.route = { kind: 'unverified', reason: 'GM call and fallback dispatch not observed' };
+          receipt.route = {
+            kind: 'unverified',
+            reason: 'GM call and fallback dispatch not observed',
+          };
         }
         assert(breakpointId);
         await debuggerSession.send('Debugger.removeBreakpoint', { breakpointId });
@@ -5045,38 +5165,66 @@ export async function runUserscriptLiveInstallation(options: {
         await debuggerSession.send('Debugger.disable');
         receipt.diagnosticsRemovedBeforeRepeat = true;
         const gm = receipt.sandbox as Record<string, unknown> | null;
-        assert(gm && gm.scriptName === SCRIPT_NAME,
-          'Executed userscript GM_info script identity was not observed');
+        assert(
+          gm && gm.scriptName === SCRIPT_NAME,
+          'Executed userscript GM_info script identity was not observed'
+        );
         assert.equal(gm.handler, 'Tampermonkey');
         assert.equal(gm.version, manager.managerVersion);
-        assert(Array.isArray(gm.grants) && gm.grants.includes('GM_download'),
-          'Installed GM_info grants omit declared download permission');
-        assert(gm.legacyDownloadType === 'function' || gm.modernDownloadType === 'function',
-          'Installed userscript exposes no GM download API');
-        assert.equal(receipt.generatedFilename, requestedName,
-          'Executed product filename differs from independent MediaInfo policy');
+        assert(
+          Array.isArray(gm.grants) && gm.grants.includes('GM_download'),
+          'Installed GM_info grants omit declared download permission'
+        );
+        assert(
+          gm.legacyDownloadType === 'function' || gm.modernDownloadType === 'function',
+          'Installed userscript exposes no GM download API'
+        );
+        assert.equal(
+          receipt.generatedFilename,
+          requestedName,
+          'Executed product filename differs from independent MediaInfo policy'
+        );
         assert.equal(calls.length, 1, 'No observed GM call; fallback route is unverified');
         assert(nameConforms, 'First native filename differs from selected attachment policy');
         firstNativeName = observedName;
         const sentinelName = browserFilename(requestedName, 1);
-        assert(!(await readdir(downloads)).includes(sentinelName), 'Sentinel candidate already exists');
+        assert(
+          !(await readdir(downloads)).includes(sentinelName),
+          'Sentinel candidate already exists'
+        );
         sentinelBytes = Buffer.from('xeg-owned-distinct-same-name-sentinel-495');
         assert.notEqual(sha256(sentinelBytes), sha256(original));
         await writeFile(join(downloads, sentinelName), sentinelBytes, { flag: 'wx' });
         receipt.sameNameSentinel = {
-          filename: sentinelName, sha256: sha256(sentinelBytes), firstOriginal: observedName,
+          filename: sentinelName,
+          sha256: sha256(sentinelBytes),
+          firstOriginal: observedName,
         };
       } else {
         assert(sentinelBytes && firstNativeName);
-        assert.equal(observedName, browserFilename(requestedName, 2),
-          'Repeat did not use the expected conflict suffix');
-        const sentinel = await readExactDownloadFile(
-          join(downloads, browserFilename(requestedName, 1)), sentinelBytes.length
+        assert.equal(
+          observedName,
+          browserFilename(requestedName, 2),
+          'Repeat did not use the expected conflict suffix'
         );
-        assert.equal(sha256(sentinel.bytes), sha256(sentinelBytes),
-          'Distinct same-name sentinel was overwritten');
-        const first = await readExactDownloadFile(join(downloads, firstNativeName), original.length);
-        assert.equal(sha256(first.bytes), sha256(original), 'First native original was overwritten');
+        const sentinel = await readExactDownloadFile(
+          join(downloads, browserFilename(requestedName, 1)),
+          sentinelBytes.length
+        );
+        assert.equal(
+          sha256(sentinel.bytes),
+          sha256(sentinelBytes),
+          'Distinct same-name sentinel was overwritten'
+        );
+        const first = await readExactDownloadFile(
+          join(downloads, firstNativeName),
+          original.length
+        );
+        assert.equal(
+          sha256(first.bytes),
+          sha256(original),
+          'First native original was overwritten'
+        );
         receipt.sameNameSentinelPreserved = true;
       }
       assert(nameConforms, 'Observed native filename differs from selected attachment policy');
@@ -5094,14 +5242,17 @@ export async function runUserscriptLiveInstallation(options: {
       try {
         const captured = await debuggerSession.send('Runtime.evaluate', {
           contextId: sandboxId,
-          expression: '({ events: globalThis.__xegLiveFilename495?.events ?? [], calls: globalThis.__xegLiveFilename495?.calls ?? [] })',
+          expression:
+            '({ events: globalThis.__xegLiveFilename495?.events ?? [], calls: globalThis.__xegLiveFilename495?.calls ?? [] })',
           returnByValue: true,
         });
         assert(!captured.exceptionDetails, 'Failed to harvest live sandbox diagnostics');
-        const values = captured.result?.value as {
-          events?: unknown;
-          calls?: unknown;
-        } | undefined;
+        const values = captured.result?.value as
+          | {
+              events?: unknown;
+              calls?: unknown;
+            }
+          | undefined;
         assert(
           values &&
             Array.isArray(values.events) &&
@@ -5124,51 +5275,75 @@ export async function runUserscriptLiveInstallation(options: {
     }
     if (debuggerSession && breakpointId) {
       await debuggerSession.send('Debugger.removeBreakpoint', { breakpointId }).then(
-        () => { cleanup.breakpointRemoved = true; },
+        () => {
+          cleanup.breakpointRemoved = true;
+        },
         (error) => cleanupErrors.push(error)
       );
     }
     if (debuggerSession && gmBreakpointId) {
-      await debuggerSession.send('Debugger.removeBreakpoint', { breakpointId: gmBreakpointId }).then(
-        () => { cleanup.gmBreakpointRemoved = true; },
-        (error) => cleanupErrors.push(error)
-      );
+      await debuggerSession
+        .send('Debugger.removeBreakpoint', { breakpointId: gmBreakpointId })
+        .then(
+          () => {
+            cleanup.gmBreakpointRemoved = true;
+          },
+          (error) => cleanupErrors.push(error)
+        );
     }
     if (debuggerSession && sandboxId) {
       await removeLiveSandboxDiagnostic(debuggerSession, sandboxId).then(
-        () => { cleanup.sandboxDiagnosticRemoved = true; },
+        () => {
+          cleanup.sandboxDiagnosticRemoved = true;
+        },
         (error) => cleanupErrors.push(error)
       );
     }
     if (debuggerSession) {
       await debuggerSession.detach().then(
-        () => { cleanup.debuggerDetached = true; },
+        () => {
+          cleanup.debuggerDetached = true;
+        },
         (error) => cleanupErrors.push(error)
       );
     }
     observer?.dispose();
     cleanup.downloadObserverRemoved = Boolean(observer);
-    if (managerPage) await managerPage.close().then(
-      () => { cleanup.managerPageClosed = true; },
-      (error) => cleanupErrors.push(error)
-    );
-    if (page) await page.close().then(
-      () => { cleanup.livePageClosed = true; },
-      (error) => cleanupErrors.push(error)
-    );
-    if (cdp && managerId) await cdp.send('Extensions.uninstall', { id: managerId }).then(
-      () => { cleanup.managerUninstalled = true; },
-      (error) => cleanupErrors.push(error)
-    );
-    if (context) await context.close().then(
-      () => { cleanup.browserClosed = true; },
-      (error) => cleanupErrors.push(error)
-    );
+    if (managerPage)
+      await managerPage.close().then(
+        () => {
+          cleanup.managerPageClosed = true;
+        },
+        (error) => cleanupErrors.push(error)
+      );
+    if (page)
+      await page.close().then(
+        () => {
+          cleanup.livePageClosed = true;
+        },
+        (error) => cleanupErrors.push(error)
+      );
+    if (cdp && managerId)
+      await cdp.send('Extensions.uninstall', { id: managerId }).then(
+        () => {
+          cleanup.managerUninstalled = true;
+        },
+        (error) => cleanupErrors.push(error)
+      );
+    if (context)
+      await context.close().then(
+        () => {
+          cleanup.browserClosed = true;
+        },
+        (error) => cleanupErrors.push(error)
+      );
     let failureRetentionComplete = true;
     if (dispatchedClicks > 0 && (primaryError || cleanupErrors.length)) {
       try {
         const retained = await retainFailedLiveNativeFiles(
-          downloads, output, receipt.nativeAttempts
+          downloads,
+          output,
+          receipt.nativeAttempts
         );
         receipt.failedNativeRetention = retained;
         failureRetentionComplete = retained.length > 0;

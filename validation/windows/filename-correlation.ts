@@ -425,7 +425,13 @@ async function installWorkerObserver(
   mediaBasename: string
 ): Promise<void> {
   await worker.evaluate(
-    ({ marker: key, expectedUrl: target, extensionId: owner, ownerTabId: tabId, mediaBasename }) => {
+    ({
+      marker: key,
+      expectedUrl: target,
+      extensionId: owner,
+      ownerTabId: tabId,
+      mediaBasename,
+    }) => {
       type Request = {
         type?: string;
         payload?: { url?: string; filename?: string; requestId?: string; mode?: string };

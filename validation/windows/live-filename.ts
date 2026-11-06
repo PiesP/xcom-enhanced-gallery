@@ -9,10 +9,7 @@ import type { BrowserContext, Page } from '@playwright/test';
 import { readExactDownloadFile } from './download-memory.ts';
 import { readOwnedNativeBytes, readOwnedNativeFile } from './firefox-install.ts';
 import { selectedLivePreferredSource, withFilenameCorrelation } from './filename-correlation.ts';
-import {
-  PREVIOUS_LIVE_FILENAME_TARGET,
-  type LiveFilenameTarget,
-} from './live-filename-target.ts';
+import { PREVIOUS_LIVE_FILENAME_TARGET, type LiveFilenameTarget } from './live-filename-target.ts';
 
 type NativeItem = {
   id: number;
@@ -133,33 +130,37 @@ export async function runReportedLiveFilename(options: {
   };
   const extensionPage = await context.newPage();
   try {
-    const selection = await page.locator('[data-xeg-gallery-container]').evaluate((gallery, mediaBasename) => {
-      const toolbar = gallery.querySelector('[data-gallery-element="toolbar"]');
-      const index = toolbar?.getAttribute('data-focused-index');
-      const item = gallery.querySelector(`[data-gallery-element="item"][data-index="${index}"]`);
-      const images = item?.querySelectorAll('img');
-      const image = images?.length === 1 ? images[0] : null;
-      if (!(image instanceof HTMLImageElement) || !image.complete || image.naturalWidth <= 0) {
-        throw new Error('Selected live photo is not loaded');
-      }
-      if (toolbar?.getAttribute('data-current-index') !== index) {
-        throw new Error('Live requested and displayed items differ');
-      }
-      const display = new URL(image.currentSrc || image.src);
-      if (
-        display.hostname !== 'pbs.twimg.com' ||
-        !/^\/media\/([A-Za-z0-9_-]{1,40})(?:\.(?:jpg|jpeg|png|webp|gif))?$/u.test(display.pathname) ||
-        /^\/media\/([A-Za-z0-9_-]{1,40})/u.exec(display.pathname)?.[1] !== mediaBasename
-      ) {
-        throw new Error('Gallery is not displaying the reported attachment');
-      }
-      return {
-        index,
-        source: image.currentSrc || image.src,
-        width: image.naturalWidth,
-        height: image.naturalHeight,
-      };
-    }, target.mediaBasename);
+    const selection = await page
+      .locator('[data-xeg-gallery-container]')
+      .evaluate((gallery, mediaBasename) => {
+        const toolbar = gallery.querySelector('[data-gallery-element="toolbar"]');
+        const index = toolbar?.getAttribute('data-focused-index');
+        const item = gallery.querySelector(`[data-gallery-element="item"][data-index="${index}"]`);
+        const images = item?.querySelectorAll('img');
+        const image = images?.length === 1 ? images[0] : null;
+        if (!(image instanceof HTMLImageElement) || !image.complete || image.naturalWidth <= 0) {
+          throw new Error('Selected live photo is not loaded');
+        }
+        if (toolbar?.getAttribute('data-current-index') !== index) {
+          throw new Error('Live requested and displayed items differ');
+        }
+        const display = new URL(image.currentSrc || image.src);
+        if (
+          display.hostname !== 'pbs.twimg.com' ||
+          !/^\/media\/([A-Za-z0-9_-]{1,40})(?:\.(?:jpg|jpeg|png|webp|gif))?$/u.test(
+            display.pathname
+          ) ||
+          /^\/media\/([A-Za-z0-9_-]{1,40})/u.exec(display.pathname)?.[1] !== mediaBasename
+        ) {
+          throw new Error('Gallery is not displaying the reported attachment');
+        }
+        return {
+          index,
+          source: image.currentSrc || image.src,
+          width: image.naturalWidth,
+          height: image.naturalHeight,
+        };
+      }, target.mediaBasename);
     evidence.selection = selection;
     const resolved: { source?: string; original?: Buffer; expected?: string } = {};
     const nativeObservations: unknown[] = [];
