@@ -239,7 +239,7 @@ const userscriptInstall = (await import(
     .href
 )) as Pick<
   typeof import('../../../validation/windows/userscript-install.ts'),
-  'managerDetailsUrl'
+  'managerDetailsUrl' | 'openUserscriptLivePhoto'
 > & {
   MEDIA_COHORTS: Record<'normal' | 'failure' | 'partial' | 'held', string[]>;
   PUBLIC_AVATAR_PATH: string;
@@ -2295,6 +2295,107 @@ function Test-Case([string]$Key, $Value) {
         root: '/unused',
       })
     ).rejects.toThrow('Installed userscript public URL requires the exact reported photo selector');
+  });
+
+  it('opens a reported live photo through its sibling hit-tested action', async () => {
+    const target = {
+      pageUrl: 'https://x.com/fixture/status/123',
+      mediaBasename: 'PhotoOne',
+    };
+    const imageTarget = {
+      kind: 'image' as const,
+      articleIndex: 0,
+      imageIndex: 0,
+      imageLoaded: true,
+      imageSource: { host: 'pbs.twimg.com', path: '/media/PhotoOne' },
+      imageVisible: true,
+    };
+    const hit = {
+      actionAriaLabel: 'View media',
+      actionIndex: 4,
+      actionPath: '/fixture/status/123/photo/1',
+      duplicateActionCount: 1,
+    };
+    const order: string[] = [];
+    const action = {
+      evaluate: vi.fn(async () => {
+        order.push('binding');
+        return {
+          imageSource: 'https://pbs.twimg.com/media/PhotoOne?format=jpg&name=small',
+          actionUrl: 'https://x.com/fixture/status/123/photo/1',
+          width: 500,
+          height: 400,
+          actionIndex: 4,
+        };
+      }),
+      click: vi.fn(async () => {
+        order.push('click');
+      }),
+      dispose: vi.fn(async () => {}),
+    };
+    const actionReference = { asElement: () => action, dispose: vi.fn(async () => {}) };
+    const image = {
+      scrollIntoViewIfNeeded: vi.fn(async () => {}),
+      evaluate: vi.fn(async () => {
+        order.push('hit');
+        return hit;
+      }),
+      evaluateHandle: vi.fn(async () => actionReference),
+    };
+    const imageReference = { asElement: () => image, dispose: vi.fn(async () => {}) };
+    const readinessReference = {
+      jsonValue: vi.fn(async () => ({ state: 'ready', target: imageTarget })),
+      dispose: vi.fn(async () => {}),
+    };
+    const page = {
+      waitForFunction: vi
+        .fn()
+        .mockResolvedValueOnce(readinessReference)
+        .mockResolvedValueOnce(imageReference),
+      screenshot: vi.fn(async () => {
+        order.push('screenshot');
+      }),
+      locator: vi.fn(() => {
+        throw new Error('Descendant anchor locator must not be used');
+      }),
+    };
+    const open = () =>
+      userscriptInstall.openUserscriptLivePhoto(
+        page as unknown as Parameters<typeof userscriptInstall.openUserscriptLivePhoto>[0],
+        target,
+        '/output'
+      );
+    await expect(open()).resolves.toMatchObject({
+      readiness: imageTarget,
+      action: hit,
+      beforeScreenshot: 'userscript-live-entry-before.png',
+    });
+    expect(order).toEqual(['hit', 'screenshot', 'binding', 'click']);
+    expect(page.locator).not.toHaveBeenCalled();
+    expect(page.screenshot).toHaveBeenCalledWith({
+      path: join('/output', 'userscript-live-entry-before.png'),
+      timeout: 5_000,
+    });
+    expect(action.dispose).toHaveBeenCalledOnce();
+    expect(imageReference.dispose).toHaveBeenCalledOnce();
+
+    page.waitForFunction.mockReset().mockResolvedValueOnce({
+      jsonValue: async () => ({
+        state: 'ready',
+        target: { ...imageTarget, imageSource: { host: 'pbs.twimg.com', path: '/media/Other' } },
+      }),
+      dispose: async () => {},
+    });
+    await expect(open()).rejects.toThrow('Live image differs from reported media');
+    expect(page.screenshot).toHaveBeenCalledOnce();
+
+    hit.actionPath = '/other/status/123/photo/1';
+    page.waitForFunction
+      .mockReset()
+      .mockResolvedValueOnce(readinessReference)
+      .mockResolvedValueOnce(imageReference);
+    await expect(open()).rejects.toThrow('Live photo action path or uniqueness changed');
+    expect(action.click).toHaveBeenCalledOnce();
   });
 
   it('keeps live observation opt-in and bundles its imported module', async () => {

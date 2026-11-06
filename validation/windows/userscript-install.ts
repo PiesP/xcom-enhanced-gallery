@@ -12,6 +12,7 @@ import type {
   BrowserType,
   CDPSession,
   ConsoleMessage,
+  ElementHandle,
   Locator,
   Page,
   Request,
@@ -28,6 +29,13 @@ import { expectedLiveFilename, liveFilenameConforms } from './live-filename.ts';
 import { fetchBoundedLiveOriginal } from './live-original-fetch.ts';
 import { readOwnedNativeBytes } from './firefox-install.ts';
 import { isLiveFilenameOriginal, type LiveFilenameTarget } from './live-filename-target.ts';
+import {
+  inspectHitTestedAction,
+  inspectLiveCandidateDocument,
+  inspectLiveTargetDocument,
+  resolveLiveImageActionDocument,
+  resolveLiveImageDocument,
+} from './live-page-document.ts';
 import { resolveFilenameCaptureLine } from './filename-correlation.ts';
 import {
   createImageFixtures,
@@ -4759,6 +4767,244 @@ function diagnosticScriptUrl(value: string): string {
   }
 }
 
+function livePhotoIdentity(target: LiveFilenameTarget) {
+  const statusPath = new URL(target.pageUrl).pathname;
+  const match = /^\/([A-Za-z0-9_]{1,15})\/status\/([1-9]\d*)$/u.exec(statusPath);
+  assert(match, 'Live photo target has no exact status identity');
+  return { statusPath, identity: { handle: match[1]!, statusId: match[2]! } };
+}
+
+/** Bind the displayed image and the hit-tested action; X may render them as siblings. */
+export async function openUserscriptLivePhoto(
+  page: Page,
+  target: LiveFilenameTarget,
+  output: string
+) {
+  const { statusPath, identity } = livePhotoIdentity(target);
+  const readinessHandle = await page.waitForFunction(inspectLiveTargetDocument, identity, {
+    timeout: 30_000,
+    polling: 100,
+  });
+  const readiness = await readinessHandle.jsonValue().finally(() => readinessHandle.dispose());
+  assert(readiness && readiness.state === 'ready', 'Live status image is not ready');
+  assert.equal(readiness.target.kind, 'image', 'Live status target is not one image');
+  const imageTarget = readiness.target;
+  const sourceMedia = /^\/media\/([A-Za-z0-9_-]{1,40})(?:\.(?:jpg|jpeg|png|webp|gif))?$/u.exec(
+    imageTarget.imageSource.path
+  );
+  assert.equal(imageTarget.imageSource.host, 'pbs.twimg.com');
+  assert.equal(sourceMedia?.[1], target.mediaBasename, 'Live image differs from reported media');
+  const imageReference = await page.waitForFunction(
+    resolveLiveImageDocument,
+    { identity, target: imageTarget },
+    { timeout: 30_000, polling: 100 }
+  );
+  const image = imageReference.asElement() as ElementHandle<HTMLImageElement> | null;
+  if (!image) {
+    await imageReference.dispose();
+    throw new Error('Live image did not resolve to one element');
+  }
+  let action: ElementHandle<HTMLAnchorElement> | null = null;
+  try {
+    await image.scrollIntoViewIfNeeded({ timeout: 20_000 });
+    const hit = await inspectHitTestedAction(image, identity, imageTarget);
+    assert(hit, 'Live photo has no owned hit-tested action');
+    const photoSuffix = hit.actionPath.slice(statusPath.length);
+    assert(
+      hit.actionPath.toLowerCase().startsWith(statusPath.toLowerCase() + '/photo/') &&
+        /^\/photo\/[1-9]\d*$/u.test(photoSuffix) &&
+        hit.duplicateActionCount === 1,
+      'Live photo action path or uniqueness changed'
+    );
+    const actionReference = await image.evaluateHandle(resolveLiveImageActionDocument, {
+      actionIndex: hit.actionIndex,
+      compactQuote: false,
+    });
+    action = actionReference.asElement() as ElementHandle<HTMLAnchorElement> | null;
+    if (!action) {
+      await actionReference.dispose();
+      throw new Error('Live photo action detached');
+    }
+    const beforeScreenshot = 'userscript-live-entry-before.png';
+    await page.screenshot({ path: join(output, beforeScreenshot), timeout: 5_000 });
+    const binding = await action.evaluate(
+      (element, expected) => {
+        const image = expected.image;
+        const article = image.closest('article');
+        if (
+          !(element instanceof HTMLAnchorElement) ||
+          !(image instanceof HTMLImageElement) ||
+          !image.isConnected ||
+          !article ||
+          element.closest('article') !== article ||
+          !image.complete ||
+          image.naturalWidth <= 0
+        ) {
+          return null;
+        }
+        const anchors = [...article.querySelectorAll<HTMLAnchorElement>('a[href]')];
+        if (anchors.indexOf(element) !== expected.actionIndex) {
+          return null;
+        }
+        const actionUrl = new URL(element.href, location.href);
+        const imageUrl = new URL(image.currentSrc || image.src);
+        if (
+          !['x.com', 'twitter.com'].includes(actionUrl.hostname.toLowerCase()) ||
+          actionUrl.pathname !== expected.actionPath ||
+          imageUrl.origin !== 'https://pbs.twimg.com' ||
+          imageUrl.pathname !== expected.imagePath ||
+          !anchors.some((anchor) => {
+            try {
+              return (
+                anchor.closest('article') === article &&
+                new URL(anchor.href, location.href).pathname.toLowerCase() ===
+                  expected.statusPath.toLowerCase()
+              );
+            } catch {
+              return false;
+            }
+          })
+        ) {
+          return null;
+        }
+        const rectangle = image.getBoundingClientRect();
+        const x = Math.max(0, Math.min(innerWidth - 1, rectangle.left + rectangle.width / 2));
+        const y = Math.max(0, Math.min(innerHeight - 1, rectangle.top + rectangle.height / 2));
+        const topAction = document
+          .elementsFromPoint(x, y)
+          .map((candidate) => candidate.closest('a[href]'))
+          .find(Boolean);
+        if (topAction !== element) {
+          return null;
+        }
+        return {
+          imageSource: image.currentSrc || image.src,
+          actionUrl: element.href,
+          width: image.naturalWidth,
+          height: image.naturalHeight,
+          actionIndex: expected.actionIndex,
+        };
+      },
+      {
+        image,
+        actionIndex: hit.actionIndex,
+        actionPath: hit.actionPath,
+        imagePath: imageTarget.imageSource.path,
+        statusPath,
+      }
+    );
+    assert(binding, 'Live displayed photo and hit-tested action were not bound');
+    await action.click();
+    return { readiness: imageTarget, action: hit, binding, beforeScreenshot };
+  } finally {
+    await action?.dispose();
+    await imageReference.dispose();
+  }
+}
+
+async function captureUserscriptLiveEntryFailure(
+  page: Page,
+  target: LiveFilenameTarget,
+  output: string
+): Promise<Record<string, unknown>> {
+  const { statusPath, identity } = livePhotoIdentity(target);
+  const evidence: Record<string, unknown> = {
+    url: diagnosticScriptUrl(page.url()),
+    title: await page.title().then(
+      (value) => value.slice(0, 160),
+      () => null
+    ),
+    screenshot: 'not-captured',
+  };
+  evidence.candidates = await page
+    .evaluate(inspectLiveCandidateDocument, identity)
+    .catch(() => null);
+  evidence.dom = await page
+    .evaluate(
+      ({ statusPath, mediaBasename }) => {
+        const articles = document.querySelectorAll('article');
+        const links = [...document.querySelectorAll<HTMLAnchorElement>('article a[href]')].slice(
+          0,
+          256
+        );
+        const exactStatusLinks = links.filter((anchor) => {
+          try {
+            return (
+              new URL(anchor.href, location.href).pathname.toLowerCase() ===
+              statusPath.toLowerCase()
+            );
+          } catch {
+            return false;
+          }
+        }).length;
+        const selectedImages = [...document.querySelectorAll<HTMLImageElement>('img')]
+          .slice(0, 256)
+          .flatMap((image) => {
+            try {
+              const source = new URL(image.currentSrc || image.src);
+              const media =
+                /^\/media\/([A-Za-z0-9_-]{1,40})(?:\.(?:jpg|jpeg|png|webp|gif))?$/u.exec(
+                  source.pathname
+                );
+              if (source.hostname !== 'pbs.twimg.com' || media?.[1] !== mediaBasename) {
+                return [];
+              }
+              const article = image.closest('article');
+              return [
+                {
+                  sourcePath: source.pathname,
+                  articleIndex: article ? [...articles].indexOf(article) : -1,
+                  loaded: image.complete && image.naturalWidth > 0,
+                  ownStatusLinkCount: article
+                    ? [...article.querySelectorAll<HTMLAnchorElement>('a[href]')].filter(
+                        (anchor) => {
+                          try {
+                            return (
+                              anchor.closest('article') === article &&
+                              new URL(anchor.href, location.href).pathname.toLowerCase() ===
+                                statusPath.toLowerCase()
+                            );
+                          } catch {
+                            return false;
+                          }
+                        }
+                      ).length
+                    : 0,
+                },
+              ];
+            } catch {
+              return [];
+            }
+          });
+        return {
+          readyState: document.readyState,
+          articleCount: Math.min(articles.length, 100),
+          articleOverflow: articles.length > 100,
+          exactStatusLinkCount: Math.min(exactStatusLinks, 100),
+          selectedImages: selectedImages.slice(0, 8),
+          selectedImageOverflow: selectedImages.length > 8,
+          loginLinkCount: Math.min(
+            document.querySelectorAll('a[href="/login"], a[href*="/i/flow/login"]').length,
+            20
+          ),
+          dialogCount: Math.min(document.querySelectorAll('[role="dialog"]').length, 20),
+        };
+      },
+      { statusPath, mediaBasename: target.mediaBasename }
+    )
+    .catch(() => null);
+  try {
+    await page.screenshot({
+      path: join(output, 'userscript-live-entry-failure.png'),
+      timeout: 5_000,
+    });
+    evidence.screenshot = 'userscript-live-entry-failure.png';
+  } catch (error) {
+    evidence.screenshotError = error instanceof Error ? error.name : typeof error;
+  }
+  return evidence;
+}
+
 /** Fresh manager profile: one observed live save and one repeat after diagnostics are removed. */
 export async function runUserscriptLiveInstallation(options: {
   chromium: BrowserType;
@@ -4876,53 +5122,20 @@ export async function runUserscriptLiveInstallation(options: {
     );
     await debuggerSession.send('Runtime.enable');
     await debuggerSession.send('Debugger.enable');
-    await page.goto(target.pageUrl, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+    const navigation = await page.goto(target.pageUrl, {
+      waitUntil: 'domcontentloaded',
+      timeout: 30_000,
+    });
+    receipt.liveNavigation = {
+      responseStatus: navigation?.status() ?? null,
+      finalUrl: diagnosticScriptUrl(page.url()),
+    };
     assert.equal(page.url(), target.pageUrl, 'Live status navigated away');
-    const statusPath = new URL(target.pageUrl).pathname;
-    const action = page
-      .locator('article a[href$="' + statusPath + '/photo/1"]')
-      .filter({ has: page.locator('img[src*="' + target.mediaBasename + '"]') });
-    await action.first().waitFor({ state: 'visible', timeout: 30_000 });
-    assert.equal(await action.count(), 1, 'Live photo action is ambiguous');
-    const actionBinding = await action.evaluate(
-      (element, expected) => {
-        const image = element.querySelector('img');
-        const article = element.closest('article');
-        if (
-          !(element instanceof HTMLAnchorElement) ||
-          !(image instanceof HTMLImageElement) ||
-          !article ||
-          !image.complete ||
-          image.naturalWidth <= 0
-        ) {
-          return null;
-        }
-        const source = new URL(image.currentSrc || image.src);
-        const sourceMedia =
-          /^\/media\/([A-Za-z0-9_-]{1,40})(?:\.(?:jpg|jpeg|png|webp|gif))?$/u.exec(source.pathname);
-        const owner = [...article.querySelectorAll('a[href]')].some(
-          (candidate) =>
-            new URL((candidate as HTMLAnchorElement).href).pathname === expected.statusPath
-        );
-        if (
-          !owner ||
-          source.origin !== 'https://pbs.twimg.com' ||
-          sourceMedia?.[1] !== expected.mediaBasename
-        ) {
-          return null;
-        }
-        return {
-          imageSource: image.currentSrc || image.src,
-          actionUrl: element.href,
-          width: image.naturalWidth,
-          height: image.naturalHeight,
-        };
-      },
-      { statusPath, mediaBasename: target.mediaBasename }
-    );
-    assert(actionBinding, 'Live displayed photo and owner were not bound');
-    receipt.actionBinding = actionBinding;
-    await action.click();
+    const liveEntry = await openUserscriptLivePhoto(page, target, output);
+    receipt.liveEntryReadiness = liveEntry.readiness;
+    receipt.liveEntryAction = liveEntry.action;
+    receipt.actionBinding = liveEntry.binding;
+    receipt.liveEntryBeforeScreenshot = liveEntry.beforeScreenshot;
     const gallery = page.locator('[data-xeg-gallery-container]');
     await gallery.waitFor({ state: 'visible', timeout: 20_000 });
     assert.equal(await gallery.getAttribute('role'), 'dialog');
@@ -5308,6 +5521,13 @@ export async function runUserscriptLiveInstallation(options: {
     primaryError = error;
     receipt.status = 'failed';
     receipt.error = safeRouteError(error);
+    if (page && dispatchedClicks === 0) {
+      receipt.liveEntryFailure = await captureUserscriptLiveEntryFailure(
+        page,
+        target,
+        output
+      ).catch((captureError) => ({ captureError: safeRouteError(captureError) }));
+    }
   } finally {
     const cleanup = receipt.cleanup as Record<string, unknown>;
     receipt.dispatchedClicks = dispatchedClicks;
