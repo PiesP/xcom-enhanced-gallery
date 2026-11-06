@@ -22,31 +22,15 @@ filename conformance. Default qualification requires intended XEG-only names and
 reporting for browser filename overrides. Active controls use a distinct literal
 basename and verify the native bytes; a completed mismatch never starts another save.
 
-For #482's reported image click, the installed Chrome extension accepts the
-separate ignored `live-click-admission.json` input:
-
-```json
-{"scenario":"live-click-admission","diagnosticOnly":true}
-```
-
-Supply only `--live-url https://x.com/yukurach/status/2118323627615785399`.
-This input must be the only focused selector. It skips controlled fixtures
-that do not diagnose the reported click. The live observer binds
-non-pausing click-admission logpoints to the executed production content
-artifact and retains bounded branch observations even if the click navigates.
-It uses normal hit-tested input and leaves the existing gallery assertions
-in force. This diagnostic does not enable downloads or establish live-file
-acceptance. Remove the selector after the attempt, and repeat any successful
-acceptance path without intervening diagnostic hooks.
-
 To qualify the reported photo's actual native save after gallery entry, use
-the exclusive ignored `reported-live-filename.json` selector instead:
+the exclusive ignored `reported-live-filename.json` selector:
 
 ```json
 {"scenario":"reported-live-filename"}
 ```
 
-Use the same exact Chrome-extension live URL. This focused route uses the
+Use `--installation extension --browser chrome` with only
+`--live-url https://x.com/yukurach/status/2118323627615785399`. This focused route uses the
 ordinary image click without admission logpoints, captures the selected
 MediaInfo and its preferred save URL during the real Download click, and
 compares the original native file with an independent bounded GET of that

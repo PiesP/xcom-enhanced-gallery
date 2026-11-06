@@ -42,7 +42,6 @@ import {
   verifyStoredZip,
   waitForRemovedDownloadFile,
 } from './download-memory.ts';
-import { parseClickAdmissionSelector } from './click-admission.ts';
 import { startExtensionNativeFixtureLoopback } from './extension-native-loopback.ts';
 import {
   installFilenameDecisionControl,
@@ -20357,22 +20356,6 @@ export async function run({
     'Installed XCOM profile supports Chrome and Edge only'
   );
   assert(['extension', 'userscript'].includes(installation), 'Unknown XCOM installation mode');
-  const clickAdmissionText = await readFile(
-    join(root, 'validation/windows/inputs/live-click-admission.json'),
-    'utf8'
-  ).catch((error: unknown) => {
-    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
-      return null;
-    }
-    throw error;
-  });
-  const clickAdmissionSelector =
-    clickAdmissionText === null ? null : parseClickAdmissionSelector(clickAdmissionText);
-  if (clickAdmissionText !== null) {
-    assert.equal(browserName, 'chrome', 'Live click diagnosis requires installed Chrome');
-    assert.equal(installation, 'extension');
-    assert.deepEqual(liveUrls, ['https://x.com/yukurach/status/2118323627615785399']);
-  }
   const reportedFilenameText = await readFile(
     join(root, 'validation/windows/inputs/reported-live-filename.json'),
     'utf8'
@@ -20384,16 +20367,11 @@ export async function run({
   });
   if (reportedFilenameText !== null) {
     assert.deepEqual(JSON.parse(reportedFilenameText), { scenario: 'reported-live-filename' });
-    assert.equal(
-      clickAdmissionText,
-      null,
-      'Live filename acceptance excludes click diagnostic hooks'
-    );
     assert.equal(browserName, 'chrome');
     assert.equal(installation, 'extension');
     assert.deepEqual(liveUrls, ['https://x.com/yukurach/status/2118323627615785399']);
   }
-  const focusedLiveProbe = clickAdmissionText !== null || reportedFilenameText !== null;
+  const reportedFilenameProbe = reportedFilenameText !== null;
   const acceptanceSelectorText = await readFile(
     join(root, 'validation/windows/inputs/live-acceptance.json'),
     'utf8'
@@ -20680,7 +20658,7 @@ export async function run({
         videoFormatProbe,
     }
   );
-  if (focusedLiveProbe) {
+  if (reportedFilenameProbe) {
     assert(
       !actualSiteAcceptance &&
         !liveSettingsProbe &&
@@ -20724,31 +20702,29 @@ export async function run({
     scope:
       reportedFilenameText !== null
         ? 'reported live photo native filename and original-byte qualification; original user-profile cause unverified'
-        : clickAdmissionText !== null
-          ? 'diagnostic-only live image click admission; no controlled-fixture or live-download qualification'
-          : liveSettingsProbe
-            ? 'focused installed language/theme settings acceptance; no full prior live campaign'
-            : videoFormatProbe
-              ? 'issue 484 installed video save format and rejected source fixture; no live X observation'
-              : uxDetailsProbe
-                ? 'focused installed-extension opened details and terminal-video exit; owned X fixture only'
-                : settingsProbe
-                  ? 'installed-extension settings persistence fixture; no live X observation'
-                  : failedEntryProbe
-                    ? 'issue 392 installed-extension failed-entry ZIP recovery fixture; no live X observation'
-                    : experienceProbe
-                      ? 'installed gallery experience and expanded-panel ownership fixtures; no live X observation'
-                      : recoveryProbe
-                        ? 'issue 382 installed-extension media/download recovery fixture; no live X observation'
-                        : openingProbe
-                          ? 'issue 381 installed-extension opening feedback fixture; no live X observation'
-                          : validatedLiveUrls.length
-                            ? actualSiteAcceptance
-                              ? 'deterministic fixture followed by explicit actual-site gallery acceptance with bounded retained downloads; no auth, consent, CAPTCHA, native Save As, Explorer, or performance claim'
-                              : 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
-                            : sameVersionInput
-                              ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
-                              : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
+        : liveSettingsProbe
+          ? 'focused installed language/theme settings acceptance; no full prior live campaign'
+          : videoFormatProbe
+            ? 'issue 484 installed video save format and rejected source fixture; no live X observation'
+            : uxDetailsProbe
+              ? 'focused installed-extension opened details and terminal-video exit; owned X fixture only'
+              : settingsProbe
+                ? 'installed-extension settings persistence fixture; no live X observation'
+                : failedEntryProbe
+                  ? 'issue 392 installed-extension failed-entry ZIP recovery fixture; no live X observation'
+                  : experienceProbe
+                    ? 'installed gallery experience and expanded-panel ownership fixtures; no live X observation'
+                    : recoveryProbe
+                      ? 'issue 382 installed-extension media/download recovery fixture; no live X observation'
+                      : openingProbe
+                        ? 'issue 381 installed-extension opening feedback fixture; no live X observation'
+                        : validatedLiveUrls.length
+                          ? actualSiteAcceptance
+                            ? 'deterministic fixture followed by explicit actual-site gallery acceptance with bounded retained downloads; no auth, consent, CAPTCHA, native Save As, Explorer, or performance claim'
+                            : 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
+                          : sameVersionInput
+                            ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
+                            : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
     status: 'failed',
   };
   try {
@@ -20848,7 +20824,7 @@ export async function run({
     if (!sameVersionInput) {
       const images = await createImageFixtures(context);
       const displayImages = await createImageFixtures(context, 0.25);
-      if (focusedLiveProbe) {
+      if (reportedFilenameProbe) {
         // Focused live runs reuse the installed artifact without repeating completed fixtures.
         result.evidenceStatus = 'diagnostic-only';
       } else if (attachmentFilenameProbe) {
@@ -21009,8 +20985,6 @@ export async function run({
             liveUrls: validatedLiveUrls,
             output,
             actualSiteAcceptance: actualSiteAcceptance ? { downloads } : null,
-            clickAdmission:
-              clickAdmissionText === null ? null : { root, ...clickAdmissionSelector },
             reportedFilename: reportedFilenameText === null ? null : { root, downloads },
           });
       if (liveSettingsProbe) {

@@ -49,7 +49,6 @@
       "validation/windows/filename-decision-control.ts",
       "validation/windows/filename-correlation.ts",
       "validation/windows/live-filename.ts",
-      "validation/windows/click-admission.ts",
       "validation/windows/firefox-install.ts",
       "validation/windows/firefox-native-proxy.ts",
       "validation/windows/https-loopback-lifecycle.ts",

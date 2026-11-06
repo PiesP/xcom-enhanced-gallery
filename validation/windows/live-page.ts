@@ -4,7 +4,6 @@
 import { open, writeFile, type FileHandle } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { isAbsolute, join } from 'node:path';
-import { withClickAdmissionTrace } from './click-admission.ts';
 import { runReportedLiveFilename } from './live-filename.ts';
 import {
   assessVisitEvidence,
@@ -47,7 +46,6 @@ import {
   captureActivationFocusDocument,
   captureLiveImageActivationDocument,
   captureLiveImageClickEventsDocument,
-  inspectLivePhotoSourceHintsDocument,
   findActivationHitDocument,
   quotedVideoSurface,
 } from './live-page-document.ts';
@@ -285,7 +283,6 @@ type RestoredHostState = {
 type LiveCandidate = ReturnType<typeof inspectLiveCandidateDocument>;
 type GalleryObservation = {
   status: string;
-  clickAdmission?: { receipt: string; diagnosticOnly: true };
   activationEvents?: LiveImageClickEvent[];
   hostTimeline?: Array<Awaited<ReturnType<typeof captureHostGeometry>>>;
   before?: HostSnapshot;
@@ -316,7 +313,6 @@ type GalleryObservation = {
   scrollRestored?: boolean;
 };
 type LiveObservation = {
-  sourceHints?: ReturnType<typeof inspectLivePhotoSourceHintsDocument>;
   reportedFilename?: Record<string, unknown>;
   schemaVersion: number;
   kind: string;
@@ -2977,7 +2973,6 @@ async function observeOne(
   } | null = null,
   strictPageClose = false,
   documentBaselines: Map<string, HostCspFingerprint[]> | null = null,
-  clickAdmission: { root: string; phaseOnly?: true } | null = null,
   reportedFilename: { root: string; downloads: string } | null = null
 ) {
   const identity = targetIdentity(targetUrl);
@@ -3382,9 +3377,6 @@ async function observeOne(
 
     await recordHostGeometry('before-click');
     await verifyBorrowedMode?.();
-    if (clickAdmission || reportedFilename) {
-      observation.sourceHints = await image.evaluate(inspectLivePhotoSourceHintsDocument);
-    }
     if (!compactQuote) {
       imageActivationHandle = await actionHandle.evaluateHandle(
         captureLiveImageActivationDocument,
@@ -3419,29 +3411,7 @@ async function observeOne(
         }
       );
     }
-    if (clickAdmission) {
-      if (compactQuote) {
-        throw new Error('Click admission diagnostic requires a direct photo action');
-      }
-      observation.gallery.clickAdmission = {
-        receipt: `live-click-admission-${index}.json`,
-        diagnosticOnly: true,
-      };
-      await withClickAdmissionTrace({
-        context,
-        page,
-        extensionId,
-        root: clickAdmission.root,
-        ...(clickAdmission.phaseOnly ? { phaseOnly: true as const } : {}),
-        output,
-        index,
-        statusPath: new URL(targetUrl).pathname,
-        actionPath: actionIdentity.actionPath,
-        action: () => actionHandle!.click({ timeout: ACTION_TIMEOUT_MS }),
-      });
-    } else {
-      await actionHandle.click({ timeout: ACTION_TIMEOUT_MS });
-    }
+    await actionHandle.click({ timeout: ACTION_TIMEOUT_MS });
     if (imageActivationHandle) {
       const activation = await imageActivationHandle.evaluate((capture) => ({
         before: capture.before,
@@ -4159,7 +4129,6 @@ export async function observeLiveUrls({
   borrowedHostProof = null,
   ownedCandidateProof = null,
   actualSiteAcceptance = null,
-  clickAdmission = null,
   reportedFilename = null,
 }: {
   context: BrowserContext;
@@ -4170,7 +4139,6 @@ export async function observeLiveUrls({
   borrowedHostProof?: BorrowedHostDiagnosticProof | null;
   ownedCandidateProof?: OwnedCandidateInBorrowedBrowser | null;
   actualSiteAcceptance?: { downloads: string } | null;
-  clickAdmission?: { root: string; phaseOnly?: true } | null;
   reportedFilename?: { root: string; downloads: string } | null;
 }) {
   if (
@@ -4198,13 +4166,7 @@ export async function observeLiveUrls({
   if (actualSiteAcceptance && urls.length === 0) {
     throw new Error('Actual-site acceptance requires at least one public status URL');
   }
-  if (clickAdmission && (session !== 'owned' || actualSiteAcceptance || urls.length !== 1)) {
-    throw new Error('Click admission diagnostic requires one owned ordinary live observation');
-  }
-  if (
-    reportedFilename &&
-    (session !== 'owned' || actualSiteAcceptance || clickAdmission || urls.length !== 1)
-  ) {
+  if (reportedFilename && (session !== 'owned' || actualSiteAcceptance || urls.length !== 1)) {
     throw new Error(
       'Reported filename acceptance requires one owned live observation without admission hooks'
     );
@@ -4254,7 +4216,6 @@ export async function observeLiveUrls({
           : null,
         session === 'borrowed-browser-owned-extension',
         session === 'borrowed-browser-owned-extension' ? baselineByUrl : null,
-        clickAdmission,
         reportedFilename
       );
       if (
