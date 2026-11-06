@@ -71,6 +71,29 @@ position. A hash collision remains theoretically possible, so this key does
 not assert the missing original position or guarantee equality with an API
 filename. The selected item and preferred save URL are unchanged by naming.
 
+## DOM WebP originals
+
+An extensionless DOM WebP can be a display encoding whose `name=orig` URL is
+unavailable. DOM recovery confirms that original before returning the gallery's
+media. A successful WebP original remains WebP. Only HTTP 404 or 410 permits
+checking JPEG, then PNG originals of the same validated attachment, preserving
+the encoded identity, `name=orig`, and other query data. A candidate must return
+HTTP 200 with its expected image MIME type at the exact requested URL.
+
+The resolver uses bounded HEAD requests through the platform adapter and honors
+extraction cancellation. A forbidden response, network failure, timeout, missing
+source metadata, or failed alternatives leaves the original unverified. The
+observed display, owner, attachment identity, and gallery order remain intact.
+Single and ZIP plans receive the resolved preferred source and derive their
+extensions from it. Resolution happens before any native save; it does not
+retry or overwrite a completed transfer.
+
+`resolveDomImageOriginal` in
+[`dom-image-original.ts`](../src/shared/services/media-extraction/extractors/dom-image-original.ts)
+owns probe scope and limits. The DOM extractor bounds concurrency and rechecks
+the clicked source and owner after asynchronous work. Resolution observations
+retain only candidate URLs, HTTP status, and normalized image MIME metadata.
+
 ## HLS feasibility decision
 
 HLS playback and standalone HLS downloads are deferred. The current flow

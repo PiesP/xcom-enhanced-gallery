@@ -8,6 +8,7 @@ import { closeGallery } from '@shared/state/signals/gallery.signals';
 import type { VideoClickMode } from '@shared/types/settings.types';
 import { createGalleryLifecycle } from '@shared/utils/events/lifecycle/gallery-lifecycle';
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
+import { userEvent } from 'vite-plus/test/browser/context';
 
 // Exact sanitized videoPlayer subtree from the authenticated Edge click record.
 
@@ -68,6 +69,58 @@ describe('gallery lifecycle with authenticated X video targets', () => {
     } finally {
       lifecycle.cleanup();
     }
+  });
+
+  it('reaches a trusted photo click after a preceding document capture listener stops propagation', async () => {
+    const photo = document.createElement('div');
+    photo.dataset.testid = 'tweetPhoto';
+    const image = document.createElement('img');
+    image.src = 'https://pbs.twimg.com/media/GkE5678GHIJKL.jpg?format=jpg&name=small';
+    image.width = 48;
+    image.height = 48;
+    photo.append(image);
+    document.body.append(photo);
+
+    const bodyClick = vi.fn();
+    const stopAtDocument = vi.fn((event: Event) => event.stopPropagation());
+    const observed: MouseEvent[] = [];
+    const captureEvent = (event: MouseEvent): void => {
+      observed.push(event);
+    };
+    const onMediaClick = vi.fn(async () => undefined);
+    const lifecycle = createGalleryLifecycle();
+    const listenersBefore = getEventManager().getListenerStatus();
+    window.addEventListener('click', captureEvent, true);
+    document.addEventListener('click', stopAtDocument, true);
+    document.body.addEventListener('click', bodyClick, true);
+    try {
+      await userEvent.click(image);
+      expect(stopAtDocument).toHaveBeenCalledOnce();
+      expect(bodyClick).not.toHaveBeenCalled();
+      expect(observed.at(-1)?.isTrusted).toBe(true);
+      expect(observed.at(-1)?.defaultPrevented).toBe(false);
+
+      lifecycle.initialize({ onMediaClick, onGalleryClose: vi.fn() });
+      expect(getEventManager().getListenerStatus()).toBe(listenersBefore + 2);
+      await userEvent.click(image);
+
+      expect(stopAtDocument).toHaveBeenCalledTimes(2);
+      expect(bodyClick).not.toHaveBeenCalled();
+      expect(observed.at(-1)?.isTrusted).toBe(true);
+      expect(observed.at(-1)?.defaultPrevented).toBe(true);
+      expect(onMediaClick).toHaveBeenCalledOnce();
+
+      lifecycle.cleanup();
+      await userEvent.click(image);
+      expect(observed.at(-1)?.defaultPrevented).toBe(false);
+      expect(onMediaClick).toHaveBeenCalledOnce();
+    } finally {
+      lifecycle.cleanup();
+      document.body.removeEventListener('click', bodyClick, true);
+      document.removeEventListener('click', stopAtDocument, true);
+      window.removeEventListener('click', captureEvent, true);
+    }
+    expect(getEventManager().getListenerStatus()).toBe(listenersBefore);
   });
 
   it.each(['block-all', 'block-controls-only', 'allow-all'] as const)(
