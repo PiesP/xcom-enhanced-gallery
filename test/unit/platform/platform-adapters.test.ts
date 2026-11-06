@@ -17,6 +17,7 @@ import { getDownloadAdapter } from '@platform/platform-adapters';
 describe('userscript download platform adapter', () => {
   it('forwards AbortSignal to the userscript API', async () => {
     const controller = new AbortController();
+    expect(getDownloadAdapter().ownsUrlCancellation).toBe(true);
 
     await getDownloadAdapter().download(
       'https://example.com/image.jpg',

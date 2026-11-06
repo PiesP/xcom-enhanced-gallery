@@ -10,7 +10,19 @@ policy broadens those initial authorities.
 | MV3 content-script HTTP | `isAllowedUrl` admits the initial URL; `redirect: 'error'` rejects redirects before following, so no redirected body reaches the reader or API parser. | The caller supplies headers; browser credential defaults remain in effect. | `AbortController` owns abort and timeout; the adapter reports one terminal callback and settlement. |
 | GM HTTP | `isAllowedUrl` admits the initial URL. The manager follows redirects; the final URL must pass `isAllowedUrl` before response use or bounded JSON parsing. Missing destination metadata fails as unreadable. | Caller headers and browser/manager cookies may cross hops under manager policy; final admission cannot prevent prior disclosure. | The GM request handle owns abort; manager callbacks report completion, failure, timeout or abort, with one adapter settlement. |
 | GM XMLHTTP Blob download fallback | The initial media URL passes `isValidMediaUrl`. After manager following and buffering, the observed final URL must pass the same validator before Blob URL creation; the application does not enforce intermediate-hop destinations. | This GET supplies no custom headers; the manager controls cookies and redirect dispatch. | The GM handle aborts on cancellation or size failure. A successful Blob becomes a page-owned anchor URL; its lease and URL remain until real page teardown because anchor dispatch has no native completion signal. |
-| Browser native downloads and GM download APIs | The initial media URL passes `isValidMediaUrl`; the browser/manager controls following and provides no portable pre-follow destination callback. Chrome may expose `DownloadItem.finalUrl` afterward; Firefox and userscript managers differ. | Ordinary single downloads supply no custom headers; browser/manager credential behavior owns each hop. | MV3 retains pre-ID cancellation intent and reconciles the native ID through `complete` or `interrupted`; an allocated ID alone is not success. Modern GM download uses its abort handle and completion callback; legacy GM download is used only without a cancellation signal. No duplicate fallback starts after an ambiguous native result. |
+| Browser native downloads and GM download APIs | The initial media URL passes `isValidMediaUrl`; the browser/manager controls following and provides no portable pre-follow destination callback. Chrome may expose `DownloadItem.finalUrl` afterward; Firefox and userscript managers differ. | Ordinary single downloads supply no custom headers; browser/manager credential behavior owns each hop. | MV3 retains pre-ID cancellation intent and reconciles the native ID through `complete` or `interrupted`; an allocated ID alone is not success. Modern and legacy GM downloads use the returned abort handle and completion callbacks, including when the gallery supplies a cancellation signal. No duplicate fallback starts after an ambiguous native result. |
+
+The userscript adapter prefers an exposed `GM.download`, then `GM_download`, and
+uses the bounded GM HTTP/Blob fallback only when neither function is available.
+The [distributed grant list](../tooling/vite/utils/userscript.ts) grants the
+legacy API; managers can expose modern aliases for that grant. Runtime sandbox
+capabilities determine the selected function. [Tampermonkey](https://www.tampermonkey.net/documentation.php?locale=en&q=GM_download)
+and [Violentmonkey](https://violentmonkey.github.io/api/gm/) document an abortable
+legacy handle. Callbacks settle the adapter once; returned Promise rejections
+are observed even after a synchronous callback. A missing or throwing abort
+handle leaves the download outcome uncertain and never starts another save.
+The single-download service preserves that adapter result. Gallery cancellation
+still invalidates its operation, so a late result cannot change a newer session.
 
 Canonical API/media requests do not need HTTP redirects in the maintained
 deterministic request fixtures. Rejecting redirects in content-script Fetch

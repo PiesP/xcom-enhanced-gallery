@@ -6,12 +6,13 @@ import { Buffer } from 'node:buffer';
 import { execFile } from 'node:child_process';
 import { mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { basename, dirname, join, resolve } from 'node:path';
-import { promisify } from 'node:util';
+import { isDeepStrictEqual, promisify } from 'node:util';
 import type {
   BrowserContext,
   BrowserType,
   CDPSession,
   ConsoleMessage,
+  ElementHandle,
   Locator,
   Page,
   Request,
@@ -24,6 +25,25 @@ import {
   readExactDownloadFile,
   verifyStoredZip,
 } from './download-memory.ts';
+import { expectedLiveFilename, liveFilenameConforms } from './live-filename.ts';
+import { fetchBoundedLiveOriginal } from './live-original-fetch.ts';
+import { readOwnedNativeBytes } from './firefox-install.ts';
+import { isLiveFilenameOriginal, type LiveFilenameTarget } from './live-filename-target.ts';
+import {
+  inspectHitTestedAction,
+  inspectLiveCandidateDocument,
+  inspectLiveTargetDocument,
+  resolveLiveImageActionDocument,
+  resolveLiveImageDocument,
+} from './live-page-document.ts';
+import { resolveFilenameCaptureLine } from './filename-correlation.ts';
+import {
+  createPreArmPauseGuard,
+  createInstalledUserscriptFrameTrace,
+  type FrameGmCall,
+  type FrameMedia,
+  type InstalledUserscriptFrameTrace,
+} from './userscript-frame-trace.ts';
 import {
   createImageFixtures,
   enableDeveloperMode,
@@ -77,7 +97,46 @@ const FIRST_MEDIA_URL = `https://pbs.twimg.com/media/${MEDIA_COHORTS.normal[0]}.
 const execFileAsync = promisify(execFile);
 const NATIVE_PERMISSION_RECEIPT = 'userscript-manager-native-permission.json';
 const NATIVE_PERMISSION_ACTION_RECEIPT = 'userscript-manager-native-permission-action.json';
+const EDGE_WARNING_RECEIPT = 'userscript-manager-edge-warning.json';
+const EDGE_WARNING_ACTION_RECEIPT = 'userscript-manager-edge-warning-action.json';
+const EDGE_WARNING_TITLE = '개발자 모드에서 확장 사용 해제';
+const EDGE_WARNING_BODY =
+  '개발자 모드에서 확장을 실행하면 장치를 손상시킬 수 있습니다. 개발자가 아닌 경우 개발자 모드에서 확장 사용을 해제하여 장치를 보호하세요.';
+const SAFE_EDGE_WARNING_PREDECESSORS = new Set([
+  'action-identity-or-prompt-mismatch',
+  'window-identity-changed',
+  'action-identity-changed-before-invoke',
+  'edge-refocus-identity-changed',
+]);
 const CHROME_KO_PERMISSION_TITLE = "'Tampermonkey'이(가) 추가 승인을 요청했습니다.";
+const EDGE_KO_PERMISSION_TITLE = '"Tampermonkey" 이(가) 사용 권한을 요청했습니다.';
+const CHROME_KO_PRIOR_PERMISSIONS_LABEL = '이전에 가능했던 대상:';
+const CHROME_KO_DOWNLOADS_PERMISSION_LABEL = '다운로드 관리';
+const EDGE_KO_PRIOR_PERMISSIONS_LABEL = '확장은 다음을 할 수 있습니다.';
+const EDGE_KO_DOWNLOADS_PERMISSION_LABEL = '• 다운로드 관리';
+const EDGE_PERMISSION_SCOPE_21: ReadonlyArray<readonly [string, string, number]> = [
+  ['ControlType.Window', EDGE_KO_PERMISSION_TITLE, 0],
+  ['ControlType.Pane', '', 1],
+  ['ControlType.Pane', '', 2],
+  ['ControlType.Pane', '', 3],
+  ['ControlType.Pane', '', 3],
+  ['ControlType.Pane', '', 4],
+  ['ControlType.Pane', '', 4],
+  ['ControlType.Pane', '', 4],
+  ['ControlType.Button', '허용', 4],
+  ['ControlType.Button', '거부', 4],
+  ['ControlType.Pane', '', 5],
+  ['ControlType.Pane', '', 5],
+  ['ControlType.Text', EDGE_KO_PERMISSION_TITLE, 6],
+  ['ControlType.Pane', '', 6],
+  ['ControlType.Pane', '', 6],
+  ['ControlType.Pane', '', 7],
+  ['ControlType.Pane', '', 8],
+  ['ControlType.Pane', '', 9],
+  ['ControlType.Text', EDGE_KO_PRIOR_PERMISSIONS_LABEL, 10],
+  ['ControlType.Pane', '', 10],
+  ['ControlType.Text', EDGE_KO_DOWNLOADS_PERMISSION_LABEL, 11],
+];
 const PROMPT_SCOPE_REASONS = new Set([
   'prompt-window-not-unique',
   'prompt-identity-changed',
@@ -95,6 +154,7 @@ type ProcessInfo = { processInfo?: { type: string; id: number }[] };
 type NativeControl = {
   controlType?: string;
   name?: string;
+  depth?: number;
   isEnabled?: boolean;
   isOffscreen?: boolean;
 };
@@ -103,6 +163,8 @@ type NativePromptReceipt = {
   capture?: string;
   screenshot?: string;
   permissionGrantAttempted?: boolean;
+  truncated?: boolean;
+  visitedControls?: number;
   foregroundOwnedAndVisible?: boolean;
   browserPid?: number;
   uiaRootProcessId?: number;
@@ -110,6 +172,31 @@ type NativePromptReceipt = {
   observerSessionId?: number;
   creationUtcTicks?: string;
   foregroundHandle?: string;
+  windowOwnership?: {
+    browserPid?: number;
+    foregroundIsOwned?: boolean;
+    foregroundPid?: number;
+    foregroundHandle?: string;
+    creationUtcTicks?: string;
+    browserSessionId?: number;
+    observerSessionId?: number;
+    ownedVisibleWindowCount?: number;
+    ownedVisibleHandles?: string[];
+  };
+  identityRecheck?: {
+    ownedVisibleWindowCount?: number;
+    ownedVisibleHandles?: string[];
+    sameCreation?: boolean;
+    sameForeground?: boolean;
+    afterForegroundOwned?: boolean;
+    originalForegroundOwnedAndVisible?: boolean;
+    ownedVisibleWindowEnumeration?: string;
+    beforeForegroundHandle?: string;
+    afterForegroundHandle?: string;
+    beforeCreationUtcTicks?: string;
+    afterCreationUtcTicks?: string;
+    afterForegroundPid?: number;
+  };
   controls?: NativeControl[];
   promptScope?: {
     complete?: boolean;
@@ -122,6 +209,36 @@ type NativePromptReceipt = {
     controls?: NativeControl[];
   };
   reason?: string;
+};
+type EdgeWarningReceipt = {
+  status?: string;
+  mode?: 'after-permission' | 'warning-first';
+  capture?: string;
+  screenshot?: string;
+  laterAttempted?: boolean;
+  reason?: string | null;
+  browserPid?: number;
+  creationUtcTicks?: string;
+  browserSessionId?: number;
+  originalPermissionHandle?: string | null;
+  warningHandle?: string;
+  warningScope?: {
+    complete?: boolean;
+    reason?: string | null;
+    visitedControls?: number;
+    attemptedNodes?: number;
+    controls?: Array<NativeControl & { depth?: number }>;
+  };
+};
+type EdgeWarningIdentity = {
+  browserPid: number;
+  creationUtcTicks: string;
+  browserSessionId: number;
+  foregroundHandle: string;
+};
+type EdgeWarningFirstEntry = {
+  kind: 'initial-warning' | 'owned-foreground-drift';
+  identity: EdgeWarningIdentity;
 };
 type FixtureMediaEvent = {
   kind: string;
@@ -136,6 +253,8 @@ type ManagerHistoryItem = {
   id: number;
   state: string;
   declaredRedirectFinalUrlMatch?: true;
+  managerOwnerMatch?: boolean;
+  filenameEmpty?: boolean;
   interruptReason: string | null;
   requestedNameMatch: boolean;
   ownedPathMatch: boolean;
@@ -232,6 +351,9 @@ type FixtureResult = {
     pageError?: string;
     routeRemoved?: boolean;
     routeError?: string;
+    heldFrameTraceError?: string;
+    heldPauseGuardError?: string;
+    heldDebuggerDetachError?: string;
   };
   firstCurrentDownload?: unknown;
   browserDownloadEvents?: ReturnType<ReturnType<typeof createBrowserDownloadObserver>['events']>;
@@ -308,6 +430,7 @@ type UserscriptInstallationResult = {
     loopbackClosed?: boolean;
     profileRemoved?: boolean;
     profilePreserved?: boolean;
+    failedNativeRetentionVerified?: boolean;
     errorCount?: number;
     errors?: string[];
   };
@@ -334,6 +457,7 @@ type UserscriptInstallationResult = {
     productionBudget: string;
   };
   fixture?: FixtureResult;
+  failedNativeRetention?: Awaited<ReturnType<typeof retainFailedLiveNativeFiles>>;
   error?: string;
 };
 
@@ -428,10 +552,26 @@ export async function captureNativeManagerPermission(
   return { status: receipt.status, reason: receipt.reason ?? null };
 }
 
-/** Only the observed Korean Chrome downloads-only prompt is eligible for native Invoke. */
-export function isObservedChromeNativeDownloadPrompt(receipt: NativePromptReceipt | null) {
+/** Only a complete known Korean downloads-only prompt is eligible for native Invoke. */
+export function isObservedNativeDownloadPrompt(
+  receipt: NativePromptReceipt | null,
+  browserName: string
+) {
+  const title =
+    browserName === 'chrome'
+      ? CHROME_KO_PERMISSION_TITLE
+      : browserName === 'msedge'
+        ? EDGE_KO_PERMISSION_TITLE
+        : null;
+  const priorPermissionsLabel =
+    browserName === 'msedge' ? EDGE_KO_PRIOR_PERMISSIONS_LABEL : CHROME_KO_PRIOR_PERMISSIONS_LABEL;
+  const downloadsPermissionLabel =
+    browserName === 'msedge'
+      ? EDGE_KO_DOWNLOADS_PERMISSION_LABEL
+      : CHROME_KO_DOWNLOADS_PERMISSION_LABEL;
   const scope = receipt?.promptScope;
   if (
+    title === null ||
     receipt?.status !== 'captured' ||
     receipt.capture !== 'uia-only' ||
     receipt.screenshot !== 'not-captured' ||
@@ -471,25 +611,20 @@ export function isObservedChromeNativeDownloadPrompt(receipt: NativePromptReceip
     controls.filter((control) => control.controlType === type && control.name === name).length;
   return (
     receipt.controls.filter(
-      (control) =>
-        control.controlType === 'ControlType.Window' && control.name === CHROME_KO_PERMISSION_TITLE
+      (control) => control.controlType === 'ControlType.Window' && control.name === title
     ).length === 1 &&
-    count('ControlType.Window', CHROME_KO_PERMISSION_TITLE) === 1 &&
-    count('ControlType.Text', CHROME_KO_PERMISSION_TITLE) === 1 &&
-    count('ControlType.Text', '이전에 가능했던 대상:') === 1 &&
-    count('ControlType.Text', '다운로드 관리') === 1 &&
+    count('ControlType.Window', title) === 1 &&
+    count('ControlType.Text', title) === 1 &&
+    count('ControlType.Text', priorPermissionsLabel) === 1 &&
+    count('ControlType.Text', downloadsPermissionLabel) === 1 &&
     count('ControlType.Button', '허용') === 1 &&
     count('ControlType.Button', '거부') === 1 &&
     controls.filter(
       (control) =>
         control.name &&
-        ![
-          CHROME_KO_PERMISSION_TITLE,
-          '이전에 가능했던 대상:',
-          '다운로드 관리',
-          '허용',
-          '거부',
-        ].includes(control.name ?? '')
+        ![title, priorPermissionsLabel, downloadsPermissionLabel, '허용', '거부'].includes(
+          control.name ?? ''
+        )
     ).length === 0 &&
     controls
       .filter(
@@ -499,6 +634,588 @@ export function isObservedChromeNativeDownloadPrompt(receipt: NativePromptReceip
       )
       .every((control) => control.isEnabled === true && control.isOffscreen === false)
   );
+}
+
+/** Preserve the Chrome-specific predicate for existing validator callers. */
+export function isObservedChromeNativeDownloadPrompt(receipt: NativePromptReceipt | null) {
+  return isObservedNativeDownloadPrompt(receipt, 'chrome');
+}
+
+/** A stable owned Edge foreground warning may precede the permission prompt. */
+export function isObservedInitialEdgeWarning(receipt: NativePromptReceipt | null) {
+  const ownership = receipt?.windowOwnership;
+  const recheck = receipt?.identityRecheck;
+  if (
+    receipt?.status !== 'captured' ||
+    receipt.capture !== 'uia-only' ||
+    receipt.screenshot !== 'not-captured' ||
+    receipt.permissionGrantAttempted !== false ||
+    receipt.truncated !== false ||
+    receipt.foregroundOwnedAndVisible !== true ||
+    !Number.isSafeInteger(receipt.browserPid) ||
+    receipt.browserPid! <= 0 ||
+    receipt.uiaRootProcessId !== receipt.browserPid ||
+    !Number.isSafeInteger(receipt.browserSessionId) ||
+    receipt.browserSessionId! <= 0 ||
+    receipt.observerSessionId !== receipt.browserSessionId ||
+    typeof receipt.creationUtcTicks !== 'string' ||
+    !/^\d{15,20}$/u.test(receipt.creationUtcTicks) ||
+    typeof receipt.foregroundHandle !== 'string' ||
+    !/^[1-9]\d{0,19}$/u.test(receipt.foregroundHandle) ||
+    !ownership ||
+    ownership.browserPid !== receipt.browserPid ||
+    ownership.foregroundIsOwned !== true ||
+    ownership.foregroundPid !== receipt.browserPid ||
+    ownership.foregroundHandle !== receipt.foregroundHandle ||
+    ownership.creationUtcTicks !== receipt.creationUtcTicks ||
+    ownership.browserSessionId !== receipt.browserSessionId ||
+    ownership.observerSessionId !== receipt.browserSessionId ||
+    !Number.isSafeInteger(ownership.ownedVisibleWindowCount) ||
+    ownership.ownedVisibleWindowCount! <= 0 ||
+    ownership.ownedVisibleWindowCount! > 8 ||
+    !Array.isArray(ownership.ownedVisibleHandles) ||
+    ownership.ownedVisibleHandles.length !== ownership.ownedVisibleWindowCount ||
+    !ownership.ownedVisibleHandles.includes(receipt.foregroundHandle) ||
+    recheck?.sameCreation !== true ||
+    recheck.sameForeground !== true ||
+    recheck.afterForegroundOwned !== true ||
+    recheck.originalForegroundOwnedAndVisible !== true ||
+    recheck.ownedVisibleWindowEnumeration !== 'complete' ||
+    recheck.beforeForegroundHandle !== receipt.foregroundHandle ||
+    recheck.afterForegroundHandle !== receipt.foregroundHandle ||
+    recheck.beforeCreationUtcTicks !== receipt.creationUtcTicks ||
+    recheck.afterCreationUtcTicks !== receipt.creationUtcTicks ||
+    recheck.afterForegroundPid !== receipt.browserPid ||
+    receipt.promptScope?.complete !== false ||
+    receipt.promptScope.visitedControls !== 0 ||
+    receipt.promptScope.attemptedNodes !== 0 ||
+    receipt.promptScope.reason !== 'prompt-window-not-unique' ||
+    !Array.isArray(receipt.controls) ||
+    receipt.controls.length !== 14 ||
+    !Number.isSafeInteger(receipt.visitedControls) ||
+    receipt.visitedControls! < 14 ||
+    receipt.visitedControls! > 256
+  ) {
+    return false;
+  }
+  const counts = new Map<string, number>();
+  for (const control of receipt.controls) {
+    if (!Number.isSafeInteger(control.depth) || control.depth! < 0 || control.depth! > 16) {
+      return false;
+    }
+    if (control.name === '' && control.controlType === 'ControlType.Pane') {
+      continue;
+    }
+    const key = `${control.controlType}:${control.name}`;
+    if (
+      ![
+        `ControlType.Pane:${EDGE_WARNING_TITLE}`,
+        `ControlType.Text:${EDGE_WARNING_TITLE}`,
+        'ControlType.Button:닫기',
+        'ControlType.Button:확장 사용 해제',
+        'ControlType.Button:나중에',
+        `ControlType.Text:${EDGE_WARNING_BODY}`,
+        'ControlType.Hyperlink:자세히 알아보기',
+      ].includes(key) ||
+      (key === `ControlType.Pane:${EDGE_WARNING_TITLE}` && control.depth !== 0)
+    ) {
+      return false;
+    }
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return (
+    counts.get(`ControlType.Pane:${EDGE_WARNING_TITLE}`) === 1 &&
+    counts.get(`ControlType.Text:${EDGE_WARNING_TITLE}`) === 2 &&
+    counts.get('ControlType.Button:닫기') === 1 &&
+    counts.get('ControlType.Button:확장 사용 해제') === 1 &&
+    counts.get('ControlType.Button:나중에') === 1 &&
+    counts.get(`ControlType.Text:${EDGE_WARNING_BODY}`) === 1 &&
+    counts.get('ControlType.Hyperlink:자세히 알아보기') === 1
+  );
+}
+
+/** Eligible to inspect a new foreground HWND; this does not identify it as a warning. */
+export function observedOwnedEdgeForegroundDrift(
+  receipt: NativePromptReceipt | null
+): EdgeWarningIdentity | null {
+  const before = receipt?.windowOwnership;
+  const after = receipt?.identityRecheck;
+  const scope = receipt?.promptScope;
+  const validHandles = (handles: unknown, count: unknown) =>
+    Array.isArray(handles) &&
+    Number.isSafeInteger(count) &&
+    Number(count) > 0 &&
+    Number(count) <= 8 &&
+    handles.length === count &&
+    handles.every((handle) => typeof handle === 'string' && /^[1-9]\d{0,19}$/u.test(handle)) &&
+    new Set(handles).size === handles.length;
+  if (
+    receipt?.status !== 'skipped' ||
+    receipt.reason !== 'window-identity-changed' ||
+    receipt.capture !== 'uia-only' ||
+    receipt.screenshot !== 'not-captured' ||
+    receipt.permissionGrantAttempted !== false ||
+    !before ||
+    !after ||
+    !Number.isSafeInteger(before.browserPid) ||
+    before.browserPid! <= 0 ||
+    typeof before.creationUtcTicks !== 'string' ||
+    !/^\d{15,20}$/u.test(before.creationUtcTicks) ||
+    !Number.isSafeInteger(before.browserSessionId) ||
+    before.browserSessionId! <= 0 ||
+    before.observerSessionId !== before.browserSessionId ||
+    before.foregroundIsOwned !== true ||
+    before.foregroundPid !== before.browserPid ||
+    typeof before.foregroundHandle !== 'string' ||
+    !/^[1-9]\d{0,19}$/u.test(before.foregroundHandle) ||
+    !validHandles(before.ownedVisibleHandles, before.ownedVisibleWindowCount) ||
+    !before.ownedVisibleHandles?.includes(before.foregroundHandle) ||
+    after.sameCreation !== true ||
+    after.sameForeground !== false ||
+    after.afterForegroundOwned !== true ||
+    after.originalForegroundOwnedAndVisible !== true ||
+    after.ownedVisibleWindowEnumeration !== 'complete' ||
+    after.beforeCreationUtcTicks !== before.creationUtcTicks ||
+    after.afterCreationUtcTicks !== before.creationUtcTicks ||
+    after.beforeForegroundHandle !== before.foregroundHandle ||
+    typeof after.afterForegroundHandle !== 'string' ||
+    !/^[1-9]\d{0,19}$/u.test(after.afterForegroundHandle) ||
+    after.afterForegroundHandle === before.foregroundHandle ||
+    after.afterForegroundPid !== before.browserPid ||
+    !validHandles(after.ownedVisibleHandles, after.ownedVisibleWindowCount) ||
+    !after.ownedVisibleHandles?.includes(before.foregroundHandle) ||
+    !after.ownedVisibleHandles?.includes(after.afterForegroundHandle) ||
+    (receipt.browserPid !== undefined && receipt.browserPid !== before.browserPid) ||
+    (receipt.creationUtcTicks !== undefined &&
+      receipt.creationUtcTicks !== before.creationUtcTicks) ||
+    (receipt.browserSessionId !== undefined &&
+      receipt.browserSessionId !== before.browserSessionId) ||
+    (receipt.foregroundHandle !== undefined &&
+      receipt.foregroundHandle !== before.foregroundHandle) ||
+    scope?.complete !== true ||
+    scope.reason !== null ||
+    scope.nameTruncated !== false ||
+    scope.windowCount !== 1 ||
+    scope.rootProcessId !== before.browserPid ||
+    scope.visitedControls !== 21 ||
+    scope.attemptedNodes !== 21 ||
+    !Array.isArray(scope.controls) ||
+    scope.controls.length !== EDGE_PERMISSION_SCOPE_21.length ||
+    !scope.controls.every((control, index) => {
+      const [type, name, depth] = EDGE_PERMISSION_SCOPE_21[index]!;
+      return (
+        control.controlType === type &&
+        control.name === name &&
+        control.depth === depth &&
+        control.isEnabled === true &&
+        control.isOffscreen === false
+      );
+    })
+  ) {
+    return null;
+  }
+  return {
+    browserPid: before.browserPid!,
+    creationUtcTicks: before.creationUtcTicks,
+    browserSessionId: before.browserSessionId!,
+    foregroundHandle: after.afterForegroundHandle,
+  };
+}
+
+export function isObservedEdgeWarning(
+  receipt: EdgeWarningReceipt | null,
+  original: EdgeWarningIdentity,
+  mode: 'after-permission' | 'warning-first' = 'after-permission'
+) {
+  const scope = receipt?.warningScope;
+  if (
+    !(
+      receipt?.status === 'captured' &&
+      receipt.mode === mode &&
+      receipt.capture === 'uia-only' &&
+      receipt.screenshot === 'not-captured' &&
+      receipt.laterAttempted === false &&
+      receipt.browserPid === original.browserPid &&
+      receipt.creationUtcTicks === original.creationUtcTicks &&
+      receipt.browserSessionId === original.browserSessionId &&
+      receipt.originalPermissionHandle ===
+        (mode === 'after-permission' ? original.foregroundHandle : null) &&
+      typeof receipt.warningHandle === 'string' &&
+      /^[1-9]\d{0,19}$/u.test(receipt.warningHandle) &&
+      (mode === 'after-permission'
+        ? receipt.warningHandle !== original.foregroundHandle
+        : receipt.warningHandle === original.foregroundHandle) &&
+      scope?.complete === true &&
+      scope.reason === null &&
+      typeof scope.visitedControls === 'number' &&
+      scope.visitedControls >= 8 &&
+      scope.visitedControls <= 128 &&
+      scope.attemptedNodes === scope.visitedControls &&
+      Array.isArray(scope.controls) &&
+      scope.controls.length === scope.visitedControls
+    )
+  ) {
+    return false;
+  }
+  const counts = new Map<string, number>();
+  for (const control of scope.controls) {
+    if (
+      typeof control.isEnabled !== 'boolean' ||
+      typeof control.isOffscreen !== 'boolean' ||
+      !Number.isSafeInteger(control.depth) ||
+      control.depth! < 0 ||
+      control.depth! > 16
+    ) {
+      return false;
+    }
+    if (control.name === '' && control.controlType === 'ControlType.Pane') {
+      continue;
+    }
+    const key = `${control.controlType}:${control.name}`;
+    if (
+      ![
+        `ControlType.Pane:${EDGE_WARNING_TITLE}`,
+        `ControlType.Text:${EDGE_WARNING_TITLE}`,
+        'ControlType.Button:닫기',
+        'ControlType.Button:확장 사용 해제',
+        'ControlType.Button:나중에',
+        `ControlType.Text:${EDGE_WARNING_BODY}`,
+        'ControlType.Hyperlink:자세히 알아보기',
+      ].includes(key)
+    ) {
+      return false;
+    }
+    if (key === `ControlType.Pane:${EDGE_WARNING_TITLE}` && control.depth !== 0) {
+      return false;
+    }
+    if (
+      key === 'ControlType.Button:나중에' &&
+      (control.isEnabled !== true || control.isOffscreen !== false)
+    ) {
+      return false;
+    }
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return (
+    counts.get(`ControlType.Pane:${EDGE_WARNING_TITLE}`) === 1 &&
+    counts.get(`ControlType.Text:${EDGE_WARNING_TITLE}`) === 2 &&
+    counts.get('ControlType.Button:닫기') === 1 &&
+    counts.get('ControlType.Button:확장 사용 해제') === 1 &&
+    counts.get('ControlType.Button:나중에') === 1 &&
+    counts.get(`ControlType.Text:${EDGE_WARNING_BODY}`) === 1 &&
+    counts.get('ControlType.Hyperlink:자세히 알아보기') === 1
+  );
+}
+
+/** A known skipped permission action may expose the separate owned Edge warning. */
+export async function dismissObservedEdgeWarningOnce(
+  cdp: CDPSession,
+  root: string,
+  output: string,
+  profile: string,
+  ask: Page,
+  managerId: string,
+  context: BrowserContext,
+  original: NativePromptReceipt,
+  originalAction: NativePromptReceipt,
+  run = execFileAsync
+) {
+  const skipped = (reason: string) => ({ status: 'skipped', reason });
+  if (
+    !isObservedNativeDownloadPrompt(original, 'msedge') ||
+    originalAction.status !== 'skipped' ||
+    originalAction.permissionGrantAttempted !== false ||
+    !SAFE_EDGE_WARNING_PREDECESSORS.has(originalAction.reason ?? '') ||
+    originalAction.browserPid !== original.browserPid ||
+    originalAction.creationUtcTicks !== original.creationUtcTicks ||
+    originalAction.browserSessionId !== original.browserSessionId ||
+    originalAction.foregroundHandle === original.foregroundHandle ||
+    typeof originalAction.foregroundHandle !== 'string' ||
+    !/^[1-9]\d{0,19}$/u.test(originalAction.foregroundHandle)
+  ) {
+    return skipped('predecessor-not-safe');
+  }
+  return captureAndDismissEdgeWarningOnce(
+    cdp,
+    root,
+    output,
+    profile,
+    ask,
+    managerId,
+    context,
+    original,
+    {
+      browserPid: original.browserPid!,
+      creationUtcTicks: original.creationUtcTicks!,
+      browserSessionId: original.browserSessionId!,
+      foregroundHandle: original.foregroundHandle!,
+    },
+    'after-permission',
+    originalAction.foregroundHandle,
+    originalAction,
+    run
+  );
+}
+
+async function dismissObservedEdgeWarningFirstOnce(
+  cdp: CDPSession,
+  root: string,
+  output: string,
+  profile: string,
+  ask: Page,
+  managerId: string,
+  context: BrowserContext,
+  initial: NativePromptReceipt,
+  entry: EdgeWarningFirstEntry,
+  run: typeof execFileAsync
+) {
+  const observed =
+    entry.kind === 'initial-warning'
+      ? isObservedInitialEdgeWarning(initial)
+        ? {
+            browserPid: initial.browserPid!,
+            creationUtcTicks: initial.creationUtcTicks!,
+            browserSessionId: initial.browserSessionId!,
+            foregroundHandle: initial.foregroundHandle!,
+          }
+        : null
+      : observedOwnedEdgeForegroundDrift(initial);
+  if (!observed || !isDeepStrictEqual(observed, entry.identity)) {
+    return { status: 'skipped', reason: 'initial-warning-not-exact' };
+  }
+  return captureAndDismissEdgeWarningOnce(
+    cdp,
+    root,
+    output,
+    profile,
+    ask,
+    managerId,
+    context,
+    initial,
+    entry.identity,
+    'warning-first',
+    entry.identity.foregroundHandle,
+    null,
+    run
+  );
+}
+
+async function captureAndDismissEdgeWarningOnce(
+  cdp: CDPSession,
+  root: string,
+  output: string,
+  profile: string,
+  ask: Page,
+  managerId: string,
+  context: BrowserContext,
+  initial: NativePromptReceipt,
+  identity: EdgeWarningIdentity,
+  mode: 'after-permission' | 'warning-first',
+  expectedWarningHandle: string,
+  originalAction: NativePromptReceipt | null,
+  run: typeof execFileAsync
+) {
+  const skipped = (reason: string) => ({ status: 'skipped', reason });
+  const askCurrent = () =>
+    !ask.isClosed() &&
+    ask.context() === context &&
+    isOwnedManagerPermissionAskUrl(ask.url(), managerId);
+  try {
+    assert(askCurrent(), 'manager-ask-not-current');
+    const options = context
+      .pages()
+      .filter((page) => !page.isClosed() && isOwnedManagerOptionsUrl(page.url(), managerId));
+    assert.equal(options.length, 1, 'manager-options-not-unique');
+    const pending = async () => {
+      assert(askCurrent(), 'manager-ask-not-current');
+      assert.equal(
+        await probeManagerDownloadsPermission(options[0]!, managerId),
+        false,
+        'downloads-permission-not-pending'
+      );
+    };
+    await pending();
+    assert.equal(
+      browserProcessId(await cdp.send('SystemInfo.getProcessInfo')),
+      identity.browserPid,
+      'browser-pid-changed'
+    );
+    const initialBytes = await readFile(join(output, NATIVE_PERMISSION_RECEIPT));
+    assert.deepEqual(JSON.parse(initialBytes.toString('utf8')), initial);
+    await writeFile(
+      join(output, 'userscript-manager-native-permission-initial.json'),
+      initialBytes
+    );
+    if (originalAction) {
+      const actionBytes = await readFile(join(output, NATIVE_PERMISSION_ACTION_RECEIPT));
+      assert.deepEqual(JSON.parse(actionBytes.toString('utf8')), originalAction);
+      await writeFile(
+        join(output, 'userscript-manager-native-permission-initial-action.json'),
+        actionBytes
+      );
+    }
+    const args = [
+      '-NoProfile',
+      '-NonInteractive',
+      '-File',
+      join(root, 'validation/windows/manager-edge-warning-window.ps1'),
+      '-BrowserPid',
+      String(identity.browserPid),
+      '-Profile',
+      profile,
+      '-Output',
+      output,
+      '-Mode',
+      mode,
+      '-ExpectedCreationUtcTicks',
+      identity.creationUtcTicks,
+      '-ExpectedSessionId',
+      String(identity.browserSessionId),
+      '-ExpectedWarningHandle',
+      expectedWarningHandle,
+    ];
+    if (mode === 'after-permission') {
+      args.push('-OriginalPermissionHandle', identity.foregroundHandle);
+    }
+    await run('powershell.exe', args, { timeout: 12_000, windowsHide: true, maxBuffer: 4_096 });
+    const warning: EdgeWarningReceipt = JSON.parse(
+      await readFile(join(output, EDGE_WARNING_RECEIPT), 'utf8')
+    );
+    if (!isObservedEdgeWarning(warning, identity, mode)) {
+      return skipped('warning-not-exact');
+    }
+    await pending();
+    assert.equal(
+      browserProcessId(await cdp.send('SystemInfo.getProcessInfo')),
+      identity.browserPid,
+      'browser-pid-changed'
+    );
+    await run('powershell.exe', [...args, '-InvokeLater'], {
+      timeout: 12_000,
+      windowsHide: true,
+      maxBuffer: 4_096,
+    });
+    const action: EdgeWarningReceipt = JSON.parse(
+      await readFile(join(output, EDGE_WARNING_ACTION_RECEIPT), 'utf8')
+    );
+    if (action.status !== 'invoked' || action.laterAttempted !== true) {
+      return { status: action.status ?? 'unavailable', reason: action.reason ?? null };
+    }
+    if (
+      action.capture !== 'uia-only' ||
+      action.screenshot !== 'not-captured' ||
+      action.mode !== warning.mode ||
+      action.browserPid !== warning.browserPid ||
+      action.creationUtcTicks !== warning.creationUtcTicks ||
+      action.browserSessionId !== warning.browserSessionId ||
+      action.originalPermissionHandle !== warning.originalPermissionHandle ||
+      action.warningHandle !== warning.warningHandle ||
+      !action.warningScope ||
+      !warning.warningScope ||
+      !isObservedEdgeWarning(
+        { ...action, status: 'captured', laterAttempted: false },
+        identity,
+        mode
+      )
+    ) {
+      return { status: 'unavailable', reason: 'warning-action-identity-changed' };
+    }
+    assert.deepEqual(action.warningScope, warning.warningScope, 'Warning signature changed');
+    return { status: 'invoked', reason: null };
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : typeof error;
+    return {
+      status: [
+        'manager-ask-not-current',
+        'manager-options-not-unique',
+        'downloads-permission-not-pending',
+        'browser-pid-changed',
+      ].some((known) => reason.startsWith(known))
+        ? 'skipped'
+        : 'unavailable',
+      reason,
+    };
+  }
+}
+
+async function retryNativePermissionAfterWarning(
+  cdp: CDPSession,
+  root: string,
+  output: string,
+  profile: string,
+  ask: Page,
+  managerId: string,
+  context: BrowserContext,
+  run: typeof execFileAsync
+) {
+  const diagnostic = await captureNativeManagerPermission(
+    cdp,
+    root,
+    output,
+    profile,
+    'msedge',
+    run
+  );
+  if (diagnostic.status !== 'captured') {
+    return { status: 'skipped', reason: 'prompt-not-captured' };
+  }
+  const receipt: NativePromptReceipt = JSON.parse(
+    await readFile(join(output, NATIVE_PERMISSION_RECEIPT), 'utf8')
+  );
+  if (!isObservedNativeDownloadPrompt(receipt, 'msedge')) {
+    return { status: 'skipped', reason: 'prompt-not-exact' };
+  }
+  if (
+    ask.isClosed() ||
+    ask.context() !== context ||
+    !isOwnedManagerPermissionAskUrl(ask.url(), managerId)
+  ) {
+    return { status: 'skipped', reason: 'manager-ask-not-current' };
+  }
+  if (browserProcessId(await cdp.send('SystemInfo.getProcessInfo')) !== receipt.browserPid) {
+    return { status: 'skipped', reason: 'browser-pid-changed' };
+  }
+  const options = context
+    .pages()
+    .filter((page) => !page.isClosed() && isOwnedManagerOptionsUrl(page.url(), managerId));
+  if (options.length !== 1 || (await probeManagerDownloadsPermission(options[0]!, managerId))) {
+    return { status: 'skipped', reason: 'downloads-permission-not-pending' };
+  }
+  await run(
+    'powershell.exe',
+    [
+      '-NoProfile',
+      '-NonInteractive',
+      '-File',
+      join(root, 'validation/windows/manager-permission-window.ps1'),
+      '-BrowserPid',
+      String(receipt.browserPid),
+      '-BrowserName',
+      'msedge',
+      '-Profile',
+      profile,
+      '-Output',
+      output,
+      '-InvokeAllow',
+      '-ExpectedCreationUtcTicks',
+      receipt.creationUtcTicks!,
+      '-ExpectedSessionId',
+      String(receipt.browserSessionId),
+      '-ExpectedForegroundHandle',
+      receipt.foregroundHandle!,
+    ],
+    { timeout: 12_000, windowsHide: true, maxBuffer: 4_096 }
+  );
+  const action: NativePromptReceipt = JSON.parse(
+    await readFile(join(output, NATIVE_PERMISSION_ACTION_RECEIPT), 'utf8')
+  );
+  if (
+    !['skipped', 'invoked', 'unverified-after-invoke'].includes(action.status ?? '') ||
+    action.permissionGrantAttempted !== (action.status !== 'skipped')
+  ) {
+    return { status: 'unavailable', reason: 'invalid-native-action-receipt' };
+  }
+  return { status: action.status, reason: action.reason ?? null };
 }
 
 /** Recheck the owned manager ask before a second, OS-bound UIA-only Invoke pass. */
@@ -522,21 +1239,92 @@ export async function inspectAndAllowNativeManagerPermission(
     run
   );
   const skipped = (reason: string) => ({ ...diagnostic, action: { status: 'skipped', reason } });
-  if (browserName !== 'chrome') {
+  if (browserName !== 'chrome' && browserName !== 'msedge') {
     return skipped('browser-not-observed');
   }
-  if (diagnostic.status !== 'captured') {
+  const mayBeOwnedDrift =
+    browserName === 'msedge' &&
+    diagnostic.status === 'skipped' &&
+    diagnostic.reason === 'window-identity-changed';
+  if (diagnostic.status !== 'captured' && !mayBeOwnedDrift) {
     return skipped('prompt-not-captured');
   }
   try {
     const receipt = JSON.parse(await readFile(join(output, NATIVE_PERMISSION_RECEIPT), 'utf8'));
+    const driftIdentity = mayBeOwnedDrift ? observedOwnedEdgeForegroundDrift(receipt) : null;
+    const warningEntry: EdgeWarningFirstEntry | null =
+      browserName === 'msedge' &&
+      diagnostic.status === 'captured' &&
+      isObservedInitialEdgeWarning(receipt)
+        ? {
+            kind: 'initial-warning',
+            identity: {
+              browserPid: receipt.browserPid,
+              creationUtcTicks: receipt.creationUtcTicks,
+              browserSessionId: receipt.browserSessionId,
+              foregroundHandle: receipt.foregroundHandle,
+            },
+          }
+        : driftIdentity
+          ? { kind: 'owned-foreground-drift', identity: driftIdentity }
+          : null;
+    if (warningEntry) {
+      const warning = await dismissObservedEdgeWarningFirstOnce(
+        cdp,
+        root,
+        output,
+        profile,
+        ask,
+        managerId,
+        context,
+        receipt,
+        warningEntry,
+        run
+      );
+      const outcome = {
+        ...diagnostic,
+        warningEntryKind: warningEntry.kind,
+        inspectionCandidate: warningEntry.identity,
+        action: {
+          status: 'skipped',
+          reason: 'warning-before-permission-action',
+          permissionGrantAttempted: false,
+        },
+        warning,
+      };
+      if (warning.status !== 'invoked') {
+        return outcome;
+      }
+      let retry;
+      try {
+        retry = await retryNativePermissionAfterWarning(
+          cdp,
+          root,
+          output,
+          profile,
+          ask,
+          managerId,
+          context,
+          run
+        );
+      } catch (error) {
+        retry = {
+          status: 'unavailable',
+          reason: error instanceof Error ? error.name : typeof error,
+        };
+      }
+      return { ...outcome, retry };
+    }
+    if (diagnostic.status !== 'captured') {
+      return skipped('prompt-not-captured');
+    }
     if (receipt.promptScope?.complete === false) {
       const reason = PROMPT_SCOPE_REASONS.has(receipt.promptScope.reason)
         ? receipt.promptScope.reason
         : 'incomplete';
       return skipped(`prompt-scope-${reason}`);
     }
-    if (!isObservedChromeNativeDownloadPrompt(receipt)) {
+    if (!isObservedNativeDownloadPrompt(receipt, browserName)) {
       return skipped('prompt-not-exact');
     }
     const currentPid = browserProcessId(await cdp.send('SystemInfo.getProcessInfo'));
@@ -590,7 +1378,7 @@ export async function inspectAndAllowNativeManagerPermission(
       assert.equal(action.postProcessStable, true);
       assert.equal(action.postForegroundOwned, true);
     }
-    return {
+    const outcome = {
       ...diagnostic,
       action: {
         status: action.status,
@@ -600,6 +1388,40 @@ export async function inspectAndAllowNativeManagerPermission(
         postForegroundOwned: action.postForegroundOwned ?? null,
       },
     };
+    if (browserName !== 'msedge' || action.status !== 'skipped') {
+      return outcome;
+    }
+    const warning = await dismissObservedEdgeWarningOnce(
+      cdp,
+      root,
+      output,
+      profile,
+      ask,
+      managerId,
+      context,
+      receipt,
+      action,
+      run
+    );
+    if (warning.status !== 'invoked') {
+      return { ...outcome, warning };
+    }
+    let retry;
+    try {
+      retry = await retryNativePermissionAfterWarning(
+        cdp,
+        root,
+        output,
+        profile,
+        ask,
+        managerId,
+        context,
+        run
+      );
+    } catch (error) {
+      retry = { status: 'unavailable', reason: error instanceof Error ? error.name : typeof error };
+    }
+    return { ...outcome, warning, retry };
   } catch (error) {
     return {
       ...diagnostic,
@@ -1433,12 +2255,14 @@ export async function inspectManagerDownloadHistoryDocument({
   expectedName,
   expectedPath,
   expectedBytes,
+  captureFilenameEmpty = false,
 }: {
   managerId: string;
   fixtureUrl: string;
   expectedName: string;
   expectedPath: string;
   expectedBytes: number;
+  captureFilenameEmpty?: boolean;
 }): Promise<ManagerHistory> {
   const current = new URL(location.href);
   if (
@@ -1514,9 +2338,12 @@ export async function inspectManagerDownloadHistoryDocument({
       item.filename.replaceAll('/', '\\').toLowerCase() ===
         expectedPath.replaceAll('/', '\\').toLowerCase();
     const finalUrl: unknown = Reflect.get(item, 'finalUrl');
+    const byExtensionId: unknown = Reflect.get(item, 'byExtensionId');
     items.push({
       id: item.id,
       state: item.state,
+      ...(byExtensionId === managerId && { managerOwnerMatch: true }),
+      ...(captureFilenameEmpty && { filenameEmpty: item.filename === '' }),
       ...(finalUrl === 'https://pbs.twimg.com/media/xeg-owned-redirect-final.jpg'
         ? { declaredRedirectFinalUrlMatch: true as const }
         : {}),
@@ -1539,7 +2366,9 @@ async function captureManagerDownloadHistory(
   managerId: string,
   downloads: string,
   savedName: string,
-  expectedBytes: number
+  expectedBytes: number,
+  fixtureUrl = FIRST_MEDIA_URL,
+  captureFilenameEmpty = false
 ): Promise<ManagerHistory> {
   let page: Page | undefined;
   try {
@@ -1553,10 +2382,11 @@ async function captureManagerDownloadHistory(
     }
     const result = await page.evaluate(inspectManagerDownloadHistoryDocument, {
       managerId,
-      fixtureUrl: FIRST_MEDIA_URL,
+      fixtureUrl,
       expectedName: savedName,
       expectedPath: join(downloads, savedName),
       expectedBytes,
+      ...(captureFilenameEmpty && { captureFilenameEmpty: true }),
     });
     if (!isOwnedManagerOptionsUrl(page.url(), managerId)) {
       return { status: 'unowned-page', items: [] };
@@ -2102,6 +2932,10 @@ export function createBrowserDownloadObserver(cdp: CDPSession) {
   cdp.on('Browser.downloadProgress', onProgress);
   return {
     snapshot: () => begun.length,
+    beginsSince(since: number) {
+      assert(Number.isSafeInteger(since) && since >= 0 && since <= begun.length);
+      return begun.slice(since).map((item) => ({ ...item }));
+    },
     events: () =>
       begun.map(({ guid, suggestedFilename, url }) => ({
         guid,
@@ -2121,10 +2955,12 @@ export function createBrowserDownloadObserver(cdp: CDPSession) {
           }
           const candidate = created[0];
           assert(candidate);
-          assert(
-            expectedNames.includes(candidate.suggestedFilename),
-            'Browser download request used an unexpected filename'
-          );
+          if (expectedNames.length) {
+            assert(
+              expectedNames.includes(candidate.suggestedFilename),
+              'Browser download request used an unexpected filename'
+            );
+          }
           const status = progress.get(candidate.guid);
           if (status?.state === 'canceled') {
             throw new Error('Browser canceled the native download');
@@ -2295,6 +3131,81 @@ export async function observeNoNativeDownload(
     samples,
     boundary:
       'bounded browser events and owned files after held request terminal; not manager callback completion',
+  };
+}
+
+/** A canceled GM single may have one interrupted native ID, but never a saved result. */
+export function assertHeldSingleCancellationState(input: {
+  before: ManagerHistory;
+  after: ManagerHistory;
+  browserBegins: BrowserDownloadBegin[];
+  expectedUrl: string;
+  expectedNames: string[];
+  requireNativeId?: boolean;
+  transferEvents: UserscriptLoopbackEvent[];
+  beforeFiles: Set<string>;
+  files: string[];
+}) {
+  const {
+    before,
+    after,
+    browserBegins,
+    expectedUrl,
+    expectedNames,
+    requireNativeId,
+    transferEvents,
+    beforeFiles,
+    files,
+  } = input;
+  assert.equal(before.status, 'observed', 'Held native baseline is unavailable');
+  assert.equal(after.status, 'observed', 'Held native inventory is unavailable');
+  const seen = new Set(before.items.map(({ id }) => id));
+  const created = after.items.filter(({ id }) => !seen.has(id));
+  assert(created.length <= 1, 'Held single created multiple native IDs');
+  if (requireNativeId) {
+    assert.equal(created.length, 1, 'Header-released held single has no native ID');
+  }
+  assert(
+    created.every(
+      (item) =>
+        item.fixtureUrlMatch &&
+        item.managerOwnerMatch === true &&
+        item.state === 'interrupted' &&
+        (item.filenameEmpty === true
+          ? item.interruptReason === 'USER_CANCELED'
+          : item.filenameEmpty === false &&
+            item.requestedNameMatch &&
+            item.ownedPathMatch &&
+            (item.interruptReason === null || item.interruptReason === 'USER_CANCELED'))
+    ),
+    'Held native ID did not end as an owned interrupted download'
+  );
+  assert(browserBegins.length <= 1, 'Held single created multiple CDP downloads');
+  assert(
+    browserBegins.length === 0 || created.length === 1,
+    'Held CDP start has no owned native ID'
+  );
+  assert(
+    browserBegins.every(
+      (item) => item.url === expectedUrl && expectedNames.includes(item.suggestedFilename)
+    ),
+    'Held CDP start differs from the selected original'
+  );
+  assert.equal(transferEvents.length, 1, 'Held single created duplicate transfer requests');
+  assert.equal(transferEvents[0]?.method, 'GET');
+  assert.equal(transferEvents[0]?.result, 'aborted');
+  assert.deepEqual(files.sort(), [...beforeFiles].sort(), 'Held single left a native file');
+  return {
+    nativeIds: created.map(({ id, state, interruptReason, filenameEmpty }) => ({
+      id,
+      state,
+      interruptReason,
+      filenameEmpty,
+      filenameEvidence: filenameEmpty
+        ? 'native filename empty; requested name and path unverified'
+        : 'requested name and owned path verified',
+    })),
+    browserStarts: browserBegins.length,
   };
 }
 
@@ -2553,6 +3464,11 @@ async function runFixture(
   let phase = 'normal';
   let apiMode: 'healthy' | 'capacity' | 'redirect-allowed' | 'redirect-blocked' | null = null;
   let managerConsole: ReturnType<typeof watchManagerDownloadConsole> | undefined;
+  let heldDebuggerSession: CDPSession | undefined;
+  let heldPauseGuard: ReturnType<typeof createPreArmPauseGuard> | undefined;
+  let heldFrameTrace: InstalledUserscriptFrameTrace | undefined;
+  let heldTraceStopped = false;
+  let heldSingleBrowserStarts: number | undefined;
   const mediaNetwork = watchFixtureMediaNetwork(context);
   const routeFixture = async (route: Route) => {
     const url = new URL(route.request().url());
@@ -3084,6 +4000,288 @@ async function runFixture(
       transport: { ...heldTerminal },
     };
 
+    // The ZIP case above cancels before GM.download. Exercise an already
+    // dispatched, abortable single on the same owned held transport.
+    const heldOriginalUrl = `https://pbs.twimg.com/media/${MEDIA_COHORTS.held[0]}.jpg?format=jpg&name=orig`;
+    const heldSavedName = browserFilename(filename(0), 2);
+    const heldNativeBefore = await captureManagerDownloadHistory(
+      context,
+      managerId,
+      downloads,
+      heldSavedName,
+      imageAt(0).length,
+      heldOriginalUrl,
+      true
+    );
+    assert.equal(heldNativeBefore.status, 'observed', 'Held native baseline is unavailable');
+    assert.equal(heldNativeBefore.items.length, 0, 'Pre-dispatch ZIP created a held native ID');
+    const installedSource = await readFile(
+      join(root, 'dist/xcom-enhanced-gallery.user.js'),
+      'utf8'
+    );
+    assert.equal(
+      sha256(installedSource),
+      sourceSha256,
+      'Installed source changed before held trace'
+    );
+    heldDebuggerSession = await context.newCDPSession(page);
+    const parsedScripts: Array<{ scriptId: string; url: string }> = [];
+    let parsedOverflow = false;
+    heldDebuggerSession.on('Debugger.scriptParsed', (item: { scriptId: string; url: string }) => {
+      if (parsedScripts.length < 256) {
+        parsedScripts.push(item);
+      } else {
+        parsedOverflow = true;
+      }
+    });
+    heldPauseGuard = createPreArmPauseGuard(heldDebuggerSession);
+    heldPauseGuard.start();
+    await heldDebuggerSession.send('Runtime.enable');
+    await heldDebuggerSession.send('Debugger.enable');
+    assert(!parsedOverflow, 'Held installed script lookup exceeded its bound');
+    let heldScript:
+      | {
+          scriptId: string;
+          filenameLine: number;
+          gmCallLine: number;
+          gmCallerLines: { modern: number; legacy: number } | null;
+          productBody: ReturnType<typeof bindInstalledUserscriptSource>;
+        }
+      | undefined;
+    for (const candidate of parsedScripts) {
+      const response: { scriptSource?: string } | null = await heldDebuggerSession
+        .send('Debugger.getScriptSource', { scriptId: candidate.scriptId })
+        .catch(() => null);
+      const text: string | undefined = response?.scriptSource;
+      if (!text || text.length > 5_000_000 || !text.includes('function downloadSingleFile(')) {
+        continue;
+      }
+      const location = resolveFilenameCaptureLine(text);
+      const gmCallLine = resolveUserscriptGMCallLine(text);
+      assert(gmCallLine !== null, 'Held installed GM return site is missing');
+      assert(text.includes('function downloadViaGM('), 'Held GM adapter shape changed');
+      assert(!heldScript, 'Multiple installed XCOM download scripts in held page');
+      heldScript = {
+        scriptId: candidate.scriptId,
+        filenameLine: location.lineNumber,
+        gmCallLine,
+        gmCallerLines: resolveUserscriptGMCallerLines(text),
+        productBody: bindInstalledUserscriptSource(installedSource, text),
+      };
+    }
+    assert(heldScript, 'Held page lacks the exact installed XCOM download script');
+    heldPauseGuard.assertClean();
+    heldFrameTrace = createInstalledUserscriptFrameTrace({
+      session: heldDebuggerSession,
+      scriptId: heldScript.scriptId,
+      filenameLine: heldScript.filenameLine,
+      gmCallLine: heldScript.gmCallLine,
+      gmCallKind: 'shared',
+      gmCallerLines: heldScript.gmCallerLines,
+      target: { kind: 'held-fixture', originalUrl: heldOriginalUrl },
+    });
+    await heldFrameTrace.arm();
+    await heldPauseGuard.handoff();
+    const heldSingleSince = observer.snapshot();
+    const heldSingleBefore = new Set(await readdir(downloads));
+    const heldSingleTransportStart = loopback.mark();
+    const heldManagerConsoleStart = managerConsole.mark();
+    loopback.armHeld();
+    await current.click();
+    const heldMedia = await heldFrameTrace.waitForMedia();
+    const heldCall = await heldFrameTrace.waitForGmCall();
+    assert.equal(heldMedia.generatedFilename, filename(0));
+    assert.equal(heldCall.apiName, 'GM.download', 'Held single used an unexpected manager API');
+    assert.equal(heldCall.args.url, heldOriginalUrl);
+    assert.equal(heldCall.args.name, heldMedia.generatedFilename);
+    assert.equal(heldCall.abortType, 'function', 'GM.download returned no abort handle');
+    await waitFor(
+      () => loopback.findSince(heldSingleTransportStart, 'held', 0, 'started'),
+      'dispatched held single HTTPS GET'
+    );
+    const heldTraceStop = await heldFrameTrace.stop();
+    heldTraceStopped = heldTraceStop.removed && heldTraceStop.debuggerDisabled;
+    assert(heldTraceStopped, 'Held call-frame trace remained installed');
+    const heldTrace = heldFrameTrace.snapshot();
+    assert.equal(heldTrace.pauseCount, 2, 'Held click had unexpected debugger pauses');
+    assert.equal(heldTrace.captureJobs, 2, 'Held click did not capture exactly one GM call');
+    await heldDebuggerSession.detach();
+    heldDebuggerSession = undefined;
+    const heldCase: Record<string, unknown> = {
+      status: 'observing',
+      originalUrl: heldOriginalUrl,
+      installedBodySha256: heldScript.productBody.bodySha256,
+      gmCall: heldCall,
+      trace: heldTrace,
+      diagnosticsRemovedBeforeEscape: heldTraceStopped,
+    };
+    result.cases.inFlightSingleCancellation = heldCase;
+    const heldSingleNative = () =>
+      captureManagerDownloadHistory(
+        context,
+        managerId,
+        downloads,
+        heldSavedName,
+        imageAt(0).length,
+        heldOriginalUrl,
+        true
+      );
+    await page.keyboard.press('Escape');
+    await gallery.waitFor({ state: 'detached' });
+    heldCase.galleryDetachedBeforeHeaders = true;
+    const preHeaderNative: Array<{
+      elapsedMs: number;
+      status: string;
+      items: ManagerHistoryItem[];
+    }> = [];
+    heldCase.preHeaderNative = preHeaderNative;
+    const preHeaderStart = Date.now();
+    for (let sample = 0; sample < 2; sample += 1) {
+      if (sample) {
+        await delay(250);
+      }
+      const inventory = await heldSingleNative();
+      preHeaderNative.push({
+        elapsedMs: Date.now() - preHeaderStart,
+        status: inventory.status,
+        items: inventory.items,
+      });
+      assert.equal(inventory.status, 'observed', 'Pre-header manager inventory is unavailable');
+    }
+    heldCase.headerRelease = loopback.releaseHeldHeaders();
+    const heldSingleTerminal = await waitFor(
+      () => loopback.findSince(heldSingleTransportStart, 'held', 0, 'aborted'),
+      'dispatched held single HTTPS GET abortion'
+    );
+    assert.equal(heldSingleTerminal.bytes, 1, 'Held GET aborted before its released body byte');
+    heldCase.transport = { ...heldSingleTerminal };
+    assert.equal(loopback.activeCount(), 0, 'Canceled held single retains an active response');
+    assert(
+      !page.isClosed() && context.browser()?.isConnected(),
+      'Browser closed during cancellation'
+    );
+    const heldSingleEvents = () =>
+      loopback
+        .snapshot()
+        .events.slice(heldSingleTransportStart)
+        .filter(
+          (event) =>
+            event.phase === 'held' &&
+            event.cohort === 'held' &&
+            event.index === 0 &&
+            event.purpose === 'transfer'
+        );
+    const terminalNativeSnapshots: Array<{
+      elapsedMs: number;
+      status: string;
+      items: ManagerHistoryItem[];
+    }> = [];
+    heldCase.terminalNativeSnapshots = terminalNativeSnapshots;
+    const terminalNativeStart = Date.now();
+    const captureTerminalNative = async () => {
+      const inventory = await heldSingleNative();
+      if (terminalNativeSnapshots.length === 8) {
+        terminalNativeSnapshots.shift();
+      }
+      terminalNativeSnapshots.push({
+        elapsedMs: Date.now() - terminalNativeStart,
+        status: inventory.status,
+        items: inventory.items,
+      });
+      return inventory;
+    };
+    // A manager may briefly expose an in-progress ID and a .crdownload after
+    // the socket closes. Wait for terminal cleanup before the absence window.
+    const initialHeldState = await waitFor(
+      async () => {
+        const inventory = await captureTerminalNative();
+        assert.equal(inventory.status, 'observed', 'Held native inventory is unavailable');
+        const seen = new Set(heldNativeBefore.items.map(({ id }) => id));
+        const created = inventory.items.filter(({ id }) => !seen.has(id));
+        assert(created.length <= 1, 'Held single created multiple native IDs');
+        const browserBegins = observer.beginsSince(heldSingleSince);
+        assert(browserBegins.length <= 1, 'Held single created multiple CDP downloads');
+        assert(
+          browserBegins.every(
+            (item) =>
+              item.url === heldOriginalUrl &&
+              [filename(0), heldSavedName].includes(item.suggestedFilename)
+          ),
+          'Held CDP start differs from the selected original'
+        );
+        const files = await readdir(downloads);
+        const addedFiles = files.filter((name) => !heldSingleBefore.has(name));
+        assert(
+          addedFiles.every((name) => name.endsWith('.crdownload')),
+          'Held single left a complete native file'
+        );
+        if (created[0]?.state === 'in_progress' || created.length === 0 || addedFiles.length) {
+          return undefined;
+        }
+        return assertHeldSingleCancellationState({
+          before: heldNativeBefore,
+          after: inventory,
+          browserBegins,
+          expectedUrl: heldOriginalUrl,
+          expectedNames: [filename(0), heldSavedName],
+          requireNativeId: true,
+          transferEvents: heldSingleEvents(),
+          beforeFiles: heldSingleBefore,
+          files,
+        });
+      },
+      'held native terminal state and temporary file cleanup',
+      15_000
+    );
+    const initialConsole = managerConsole.snapshotSince(heldManagerConsoleStart);
+    const initialDispatches = initialConsole.branchCounts.manager_request_branch ?? -1;
+    assert(initialDispatches >= 0 && initialDispatches <= 1);
+    const absenceStart = Date.now();
+    let absenceSamples = 0;
+    while (Date.now() - absenceStart < 2_000) {
+      const state = assertHeldSingleCancellationState({
+        before: heldNativeBefore,
+        after: await captureTerminalNative(),
+        browserBegins: observer.beginsSince(heldSingleSince),
+        expectedUrl: heldOriginalUrl,
+        expectedNames: [filename(0), heldSavedName],
+        requireNativeId: true,
+        transferEvents: heldSingleEvents(),
+        beforeFiles: heldSingleBefore,
+        files: await readdir(downloads),
+      });
+      assert.deepEqual(state.nativeIds, initialHeldState.nativeIds, 'Late held native ID appeared');
+      assert.equal(
+        state.browserStarts,
+        initialHeldState.browserStarts,
+        'Late CDP download appeared'
+      );
+      assert.equal(
+        managerConsole.snapshotSince(heldManagerConsoleStart).branchCounts.manager_request_branch,
+        initialDispatches,
+        'Late manager download dispatch appeared'
+      );
+      assert(
+        !page.isClosed() && context.browser()?.isConnected(),
+        'Browser closed during held absence'
+      );
+      absenceSamples += 1;
+      await delay(100);
+    }
+    assert.deepEqual((await readdir(downloads)).sort(), [...heldSingleBefore].sort());
+    heldSingleBrowserStarts = initialHeldState.browserStarts;
+    result.cases.inFlightSingleCancellation = {
+      ...heldCase,
+      status: 'passed',
+      nativeIds: initialHeldState.nativeIds,
+      browserStarts: initialHeldState.browserStarts,
+      managerDispatches: initialDispatches,
+      observedMs: Date.now() - absenceStart,
+      samples: absenceSamples,
+    };
+
+    await heldTrigger.click();
+    await gallery.waitFor({ state: 'visible' });
     loopback.setPhase('normal');
     phase = 'normal';
     await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]').click();
@@ -3710,9 +4908,10 @@ async function runFixture(
       0,
       'Fixture route failed'
     );
+    assert(heldSingleBrowserStarts !== undefined, 'Held single cancellation was not observed');
     assert.equal(
       observer.snapshot(),
-      result.downloads.filter((download) => download.guid).length,
+      result.downloads.filter((download) => download.guid).length + heldSingleBrowserStarts,
       'Unexpected CDP download count'
     );
     const loopbackResult = loopback.snapshot();
@@ -3732,6 +4931,30 @@ async function runFixture(
     result.error = safeRouteError(error);
     throw error;
   } finally {
+    if (heldFrameTrace && !heldTraceStopped) {
+      try {
+        await heldFrameTrace.stop();
+      } catch (error) {
+        result.cleanup.heldFrameTraceError = safeRouteError(error).name;
+      }
+    }
+    if (heldPauseGuard) {
+      try {
+        const stopped = await heldPauseGuard.stop();
+        if (stopped.errors.length) {
+          result.cleanup.heldPauseGuardError = stopped.errors.join('; ').slice(0, 160);
+        }
+      } catch (error) {
+        result.cleanup.heldPauseGuardError = safeRouteError(error).name;
+      }
+    }
+    if (heldDebuggerSession) {
+      try {
+        await heldDebuggerSession.detach();
+      } catch (error) {
+        result.cleanup.heldDebuggerDetachError = safeRouteError(error).name;
+      }
+    }
     if (managerConsole) {
       try {
         managerConsole.dispose();
@@ -4247,7 +5470,10 @@ export async function runUserscriptInstallation({
   headless: boolean;
   attachmentFilenameProbe?: boolean;
 }) {
-  assert.equal(browserName, 'chrome', 'HTTPS userscript fixture currently supports Chrome only');
+  assert(
+    ['chrome', 'msedge'].includes(browserName),
+    'HTTPS userscript fixture supports installed Chrome and Edge only'
+  );
   const upgradeInput = await readUpgradeInput(root);
   assert(
     !attachmentFilenameProbe || !upgradeInput,
@@ -4434,7 +5660,24 @@ export async function runUserscriptInstallation({
         () => errors.push(new Error('fixture-loopback-cleanup-failed'))
       );
     }
-    if (result.cleanup.browserClosed || !context) {
+    let failureRetentionComplete = true;
+    if (caughtPrimaryError && (result.cleanup.browserClosed || !context)) {
+      try {
+        assertOwned(root, profile);
+        result.failedNativeRetention = await retainFailedLiveNativeFiles(
+          downloads,
+          output,
+          observer?.events(),
+          8
+        );
+        result.cleanup.failedNativeRetentionVerified = true;
+      } catch (error) {
+        failureRetentionComplete = false;
+        result.cleanup.failedNativeRetentionVerified = false;
+        errors.push(error);
+      }
+    }
+    if ((result.cleanup.browserClosed || !context) && failureRetentionComplete) {
       try {
         assertOwned(root, profile);
         await rm(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
@@ -4475,4 +5718,1047 @@ export async function runUserscriptInstallation({
     throw primaryError;
   }
   return result;
+}
+
+type LiveNativeItem = {
+  id: number;
+  state: string;
+  filename: string;
+  url: string;
+  finalUrl?: string;
+  error?: string;
+  fileSize?: number;
+  byExtensionId?: string;
+};
+
+async function liveNativeInventory(page: Page): Promise<LiveNativeItem[]> {
+  return page.evaluate(async (): Promise<LiveNativeItem[]> => {
+    const rows = await chrome.downloads.search({ limit: 32 });
+    if (!Array.isArray(rows) || rows.length >= 32) {
+      throw new Error('Live manager download inventory exceeded its bound');
+    }
+    return rows.map((item) => {
+      const finalUrl: unknown = Reflect.get(item, 'finalUrl');
+      const byExtensionId: unknown = Reflect.get(item, 'byExtensionId');
+      return {
+        id: item.id,
+        state: item.state,
+        filename: item.filename,
+        url: item.url,
+        ...(typeof finalUrl === 'string' ? { finalUrl } : {}),
+        ...(typeof item.error === 'string' ? { error: item.error } : {}),
+        ...(typeof item.fileSize === 'number' ? { fileSize: item.fileSize } : {}),
+        ...(typeof byExtensionId === 'string' ? { byExtensionId } : {}),
+      };
+    });
+  });
+}
+
+async function retainFailedLiveNativeFiles(
+  downloads: string,
+  output: string,
+  nativeAttempts: unknown,
+  maxEntries: 4 | 8 = 4
+) {
+  const names = await readdir(downloads);
+  assert(names.length <= maxEntries, 'Failed profile has too many native entries to retain');
+  const retained: Record<string, unknown>[] = [];
+  let total = 0;
+  for (const name of names) {
+    assert.equal(basename(name), name, 'Native entry has an unsafe basename');
+    const originalPath = join(downloads, name);
+    const observed = await readOwnedNativeBytes(downloads, originalPath, 4 * 1024 * 1024);
+    total += observed.bytes.length;
+    assert(total <= 16 * 1024 * 1024, 'Failed live native retention exceeded total bound');
+    const neutral = 'failure-native-' + (retained.length + 1) + '.bin';
+    const retainedPath = join(output, neutral);
+    await writeFile(retainedPath, observed.bytes, { flag: 'wx' });
+    const verified = await readFile(retainedPath);
+    assert.equal(sha256(verified), sha256(observed.bytes), 'Retained native copy differs');
+    const attempts = Array.isArray(nativeAttempts)
+      ? nativeAttempts.filter(
+          (item) =>
+            item && typeof item === 'object' && basename(String(item.filename ?? '')) === name
+        )
+      : [];
+    retained.push({
+      originalPath: observed.filename,
+      originalBasename: name,
+      bytes: observed.bytes.length,
+      sha256: sha256(observed.bytes),
+      retained: neutral,
+      nativeAttempts: attempts,
+    });
+  }
+  return retained;
+}
+
+const LIVE_SANDBOX_PROBE = `(() => {
+  const info = typeof GM_info === 'object' && GM_info !== null ? GM_info : null;
+  const globalInfo = typeof globalThis.GM_info === 'object' && globalThis.GM_info !== null
+    ? globalThis.GM_info : null;
+  return {
+    scriptName: info?.script?.name ?? null,
+    scriptVersion: info?.script?.version ?? null,
+    scriptHandler: info?.scriptHandler ?? null,
+    handlerVersion: info?.version ?? null,
+    globalScriptName: globalInfo?.script?.name ?? null,
+    globalHandler: globalInfo?.scriptHandler ?? null,
+    grants: Array.isArray(info?.script?.grant) ? info.script.grant.slice(0, 24) : null,
+    legacyDownloadType: typeof GM_download,
+    modernDownloadType: typeof GM === 'object' ? typeof GM.download : 'undefined',
+    globalLegacyDownloadType: typeof globalThis.GM_download,
+    globalModernDownloadType: typeof globalThis.GM?.download,
+    managerMode: info?.downloadMode ?? null
+  };
+})()`;
+
+/** Bind the executed manager wrapper to the exact installed product body. */
+export function bindInstalledUserscriptSource(installed: string, executed: string) {
+  assert(Buffer.byteLength(installed, 'utf8') <= 4 * 1024 * 1024);
+  assert(Buffer.byteLength(executed, 'utf8') <= 5 * 1024 * 1024);
+  const headerEnd = /^\/\/ ==\/UserScript==[ \t]*\r?$/mu.exec(installed);
+  assert(headerEnd, 'Installed userscript metadata boundary is missing');
+  const body = installed.slice(headerEnd.index + headerEnd[0].length).trim();
+  assert(body.length > 0, 'Installed userscript body is empty');
+  const bodyOffsetUtf16 = executed.indexOf(body);
+  assert(bodyOffsetUtf16 >= 0, 'Executed manager wrapper differs from installed product body');
+  assert.equal(
+    executed.indexOf(body, bodyOffsetUtf16 + 1),
+    -1,
+    'Installed product body is ambiguous in executed wrapper'
+  );
+  return {
+    installedSha256: sha256(installed),
+    wrapperSha256: sha256(executed),
+    bodySha256: sha256(body),
+    bodyBytes: Buffer.byteLength(body, 'utf8'),
+    bodyOffsetUtf16,
+  };
+}
+
+export function resolveUserscriptGMCallLine(source: string): number | null {
+  const lines = source.split(/\r?\n/u);
+  const start = lines.findIndex((line) => /^\s*function downloadViaGM\(/u.test(line));
+  if (start < 0) {
+    const older = lines.findIndex((line) => /^\s*const handle = gmDownloadModern\(\{/u.test(line));
+    if (older < 0) {
+      return null;
+    }
+    const next = lines.findIndex(
+      (line, index) =>
+        index > older && index <= older + 15 && /^\s*if \(settled\) return;/u.test(line)
+    );
+    assert(next > older, 'Older installed GM call return site changed');
+    return next;
+  }
+  const end = lines.findIndex((line, index) => index > start && /^\s*function \w+\(/u.test(line));
+  const range = lines.slice(start, end < 0 ? undefined : end);
+  const calls = range.flatMap((line, index) =>
+    /^\s*Promise\.resolve\(handle\)\.then\(/u.test(line) ? [start + index] : []
+  );
+  assert.equal(calls.length, 1, 'Expected one installed GM call return site');
+  assert(
+    range.some((line) => /^\s*handle = gmDownload\(\{/u.test(line)),
+    'GM call source changed before return capture'
+  );
+  return calls[0]!;
+}
+
+/** Optional probe sites inside the exact installed adapter source. */
+export function resolveUserscriptGMCallerLines(
+  source: string
+): { modern: number; legacy: number } | null {
+  const lines = source.split(/\r?\n/u);
+  const starts = lines.flatMap((line, index) =>
+    /^\s*function getUserscript\(\) \{/u.test(line) ? [index] : []
+  );
+  if (starts.length !== 1) {
+    return null;
+  }
+  const start = starts[0]!;
+  const adapter = lines.slice(start, start + 80);
+  if (
+    !adapter.some((line) =>
+      /^\s*const gmDownloadModern = asFunction\(g\.download\);/u.test(line)
+    ) ||
+    !adapter.some((line) =>
+      /^\s*const gmDownloadLegacy = asFunction\(g\.downloadLegacy\);/u.test(line)
+    )
+  ) {
+    return null;
+  }
+  const modern = adapter.flatMap((line, index) =>
+    /^\s*if \(gmDownloadModern\) return downloadViaGM\("GM\.download", gmDownloadModern, url, filename, signal\);/u.test(
+      line
+    )
+      ? [start + index]
+      : []
+  );
+  const legacy = adapter.flatMap((line, index) =>
+    /^\s*if \(gmDownloadLegacy\) return downloadViaGM\("GM_download", gmDownloadLegacy, url, filename, signal\);/u.test(
+      line
+    )
+      ? [start + index]
+      : []
+  );
+  return modern.length === 1 && legacy.length === 1
+    ? { modern: modern[0]!, legacy: legacy[0]! }
+    : null;
+}
+
+function diagnosticScriptUrl(value: string): string {
+  try {
+    const parsed = new URL(value);
+    return (parsed.origin + parsed.pathname).slice(0, 256);
+  } catch {
+    return value.split(/[?#]/u)[0]!.slice(0, 256);
+  }
+}
+
+function livePhotoIdentity(target: LiveFilenameTarget) {
+  const statusPath = new URL(target.pageUrl).pathname;
+  const match = /^\/([A-Za-z0-9_]{1,15})\/status\/([1-9]\d*)$/u.exec(statusPath);
+  assert(match, 'Live photo target has no exact status identity');
+  return { statusPath, identity: { handle: match[1]!, statusId: match[2]! } };
+}
+
+/** Bind the displayed image and the hit-tested action; X may render them as siblings. */
+export async function openUserscriptLivePhoto(
+  page: Page,
+  target: LiveFilenameTarget,
+  output: string
+) {
+  const { statusPath, identity } = livePhotoIdentity(target);
+  const readinessHandle = await page.waitForFunction(inspectLiveTargetDocument, identity, {
+    timeout: 30_000,
+    polling: 100,
+  });
+  const readiness = await readinessHandle.jsonValue().finally(() => readinessHandle.dispose());
+  assert(readiness && readiness.state === 'ready', 'Live status image is not ready');
+  assert.equal(readiness.target.kind, 'image', 'Live status target is not one image');
+  const imageTarget = readiness.target;
+  const sourceMedia = /^\/media\/([A-Za-z0-9_-]{1,40})(?:\.(?:jpg|jpeg|png|webp|gif))?$/u.exec(
+    imageTarget.imageSource.path
+  );
+  assert.equal(imageTarget.imageSource.host, 'pbs.twimg.com');
+  assert.equal(sourceMedia?.[1], target.mediaBasename, 'Live image differs from reported media');
+  const imageReference = await page.waitForFunction(
+    resolveLiveImageDocument,
+    { identity, target: imageTarget },
+    { timeout: 30_000, polling: 100 }
+  );
+  const image = imageReference.asElement() as ElementHandle<HTMLImageElement> | null;
+  if (!image) {
+    await imageReference.dispose();
+    throw new Error('Live image did not resolve to one element');
+  }
+  let action: ElementHandle<HTMLAnchorElement> | null = null;
+  try {
+    await image.scrollIntoViewIfNeeded({ timeout: 20_000 });
+    const hit = await inspectHitTestedAction(image, identity, imageTarget);
+    assert(hit, 'Live photo has no owned hit-tested action');
+    const photoSuffix = hit.actionPath.slice(statusPath.length);
+    assert(
+      hit.actionPath.toLowerCase().startsWith(statusPath.toLowerCase() + '/photo/') &&
+        /^\/photo\/[1-9]\d*$/u.test(photoSuffix) &&
+        hit.duplicateActionCount === 1,
+      'Live photo action path or uniqueness changed'
+    );
+    const actionReference = await image.evaluateHandle(resolveLiveImageActionDocument, {
+      actionIndex: hit.actionIndex,
+      compactQuote: false,
+    });
+    action = actionReference.asElement() as ElementHandle<HTMLAnchorElement> | null;
+    if (!action) {
+      await actionReference.dispose();
+      throw new Error('Live photo action detached');
+    }
+    const beforeScreenshot = 'userscript-live-entry-before.png';
+    await page.screenshot({ path: join(output, beforeScreenshot), timeout: 5_000 });
+    const binding = await action.evaluate(
+      (element, expected) => {
+        const image = expected.image;
+        const article = image.closest('article');
+        if (
+          !(element instanceof HTMLAnchorElement) ||
+          !(image instanceof HTMLImageElement) ||
+          !image.isConnected ||
+          !article ||
+          element.closest('article') !== article ||
+          !image.complete ||
+          image.naturalWidth <= 0
+        ) {
+          return null;
+        }
+        const anchors = [...article.querySelectorAll<HTMLAnchorElement>('a[href]')];
+        if (anchors.indexOf(element) !== expected.actionIndex) {
+          return null;
+        }
+        const actionUrl = new URL(element.href, location.href);
+        const imageUrl = new URL(image.currentSrc || image.src);
+        if (
+          !['x.com', 'twitter.com'].includes(actionUrl.hostname.toLowerCase()) ||
+          actionUrl.pathname !== expected.actionPath ||
+          imageUrl.origin !== 'https://pbs.twimg.com' ||
+          imageUrl.pathname !== expected.imagePath ||
+          !anchors.some((anchor) => {
+            try {
+              return (
+                anchor.closest('article') === article &&
+                new URL(anchor.href, location.href).pathname.toLowerCase() ===
+                  expected.statusPath.toLowerCase()
+              );
+            } catch {
+              return false;
+            }
+          })
+        ) {
+          return null;
+        }
+        const rectangle = image.getBoundingClientRect();
+        const x = Math.max(0, Math.min(innerWidth - 1, rectangle.left + rectangle.width / 2));
+        const y = Math.max(0, Math.min(innerHeight - 1, rectangle.top + rectangle.height / 2));
+        const topAction = document
+          .elementsFromPoint(x, y)
+          .map((candidate) => candidate.closest('a[href]'))
+          .find(Boolean);
+        if (topAction !== element) {
+          return null;
+        }
+        return {
+          imageSource: image.currentSrc || image.src,
+          actionUrl: element.href,
+          width: image.naturalWidth,
+          height: image.naturalHeight,
+          actionIndex: expected.actionIndex,
+        };
+      },
+      {
+        image,
+        actionIndex: hit.actionIndex,
+        actionPath: hit.actionPath,
+        imagePath: imageTarget.imageSource.path,
+        statusPath,
+      }
+    );
+    assert(binding, 'Live displayed photo and hit-tested action were not bound');
+    await action.click();
+    return { readiness: imageTarget, action: hit, binding, beforeScreenshot };
+  } finally {
+    await action?.dispose();
+    await imageReference.dispose();
+  }
+}
+
+async function captureUserscriptLiveEntryFailure(
+  page: Page,
+  target: LiveFilenameTarget,
+  output: string
+): Promise<Record<string, unknown>> {
+  const { statusPath, identity } = livePhotoIdentity(target);
+  const evidence: Record<string, unknown> = {
+    url: diagnosticScriptUrl(page.url()),
+    title: await page.title().then(
+      (value) => value.slice(0, 160),
+      () => null
+    ),
+    screenshot: 'not-captured',
+  };
+  evidence.candidates = await page
+    .evaluate(inspectLiveCandidateDocument, identity)
+    .catch(() => null);
+  evidence.dom = await page
+    .evaluate(
+      ({ statusPath, mediaBasename }) => {
+        const articles = document.querySelectorAll('article');
+        const links = [...document.querySelectorAll<HTMLAnchorElement>('article a[href]')].slice(
+          0,
+          256
+        );
+        const exactStatusLinks = links.filter((anchor) => {
+          try {
+            return (
+              new URL(anchor.href, location.href).pathname.toLowerCase() ===
+              statusPath.toLowerCase()
+            );
+          } catch {
+            return false;
+          }
+        }).length;
+        const selectedImages = [...document.querySelectorAll<HTMLImageElement>('img')]
+          .slice(0, 256)
+          .flatMap((image) => {
+            try {
+              const source = new URL(image.currentSrc || image.src);
+              const media =
+                /^\/media\/([A-Za-z0-9_-]{1,40})(?:\.(?:jpg|jpeg|png|webp|gif))?$/u.exec(
+                  source.pathname
+                );
+              if (source.hostname !== 'pbs.twimg.com' || media?.[1] !== mediaBasename) {
+                return [];
+              }
+              const article = image.closest('article');
+              return [
+                {
+                  sourcePath: source.pathname,
+                  articleIndex: article ? [...articles].indexOf(article) : -1,
+                  loaded: image.complete && image.naturalWidth > 0,
+                  ownStatusLinkCount: article
+                    ? [...article.querySelectorAll<HTMLAnchorElement>('a[href]')].filter(
+                        (anchor) => {
+                          try {
+                            return (
+                              anchor.closest('article') === article &&
+                              new URL(anchor.href, location.href).pathname.toLowerCase() ===
+                                statusPath.toLowerCase()
+                            );
+                          } catch {
+                            return false;
+                          }
+                        }
+                      ).length
+                    : 0,
+                },
+              ];
+            } catch {
+              return [];
+            }
+          });
+        return {
+          readyState: document.readyState,
+          articleCount: Math.min(articles.length, 100),
+          articleOverflow: articles.length > 100,
+          exactStatusLinkCount: Math.min(exactStatusLinks, 100),
+          selectedImages: selectedImages.slice(0, 8),
+          selectedImageOverflow: selectedImages.length > 8,
+          loginLinkCount: Math.min(
+            document.querySelectorAll('a[href="/login"], a[href*="/i/flow/login"]').length,
+            20
+          ),
+          dialogCount: Math.min(document.querySelectorAll('[role="dialog"]').length, 20),
+        };
+      },
+      { statusPath, mediaBasename: target.mediaBasename }
+    )
+    .catch(() => null);
+  try {
+    await page.screenshot({
+      path: join(output, 'userscript-live-entry-failure.png'),
+      timeout: 5_000,
+    });
+    evidence.screenshot = 'userscript-live-entry-failure.png';
+  } catch (error) {
+    evidence.screenshotError = error instanceof Error ? error.name : typeof error;
+  }
+  return evidence;
+}
+
+/** Fresh manager profile: one observed live save and one repeat after diagnostics are removed. */
+export async function runUserscriptLiveInstallation(options: {
+  chromium: BrowserType;
+  root: string;
+  output: string;
+  browserName: string;
+  headless: boolean;
+  target: LiveFilenameTarget;
+}) {
+  const { chromium, root, output, browserName, headless, target } = options;
+  assert(['chrome', 'msedge'].includes(browserName));
+  assert.equal(target.pageUrl, new URL(target.pageUrl).href);
+  await mkdir(output, { recursive: true });
+  const source = await readFile(join(root, 'dist/xcom-enhanced-gallery.user.js'));
+  const profile = await mkdtemp(join(root, PROFILE_PREFIX));
+  assertOwned(root, profile);
+  const downloads = join(profile, 'downloads');
+  await mkdir(downloads);
+  await mkdir(join(profile, 'Default'));
+  await writeFile(
+    join(profile, 'Default', 'Preferences'),
+    JSON.stringify({
+      download: {
+        default_directory: downloads,
+        prompt_for_download: false,
+        directory_upgrade: true,
+      },
+    })
+  );
+  const receipt: Record<string, unknown> = {
+    schemaVersion: 1,
+    status: 'incomplete',
+    target,
+    sourceSha256: sha256(source),
+    browserName,
+    scope: 'fresh installed manager and public X photo; original user profile unverified',
+    saves: [],
+    nativeAttempts: [],
+    cleanup: {},
+  };
+  let context: BrowserContext | undefined;
+  let cdp: CDPSession | undefined;
+  let debuggerSession: CDPSession | undefined;
+  let page: Page | undefined;
+  let managerPage: Page | undefined;
+  let managerId: string | undefined;
+  let observer: ReturnType<typeof createBrowserDownloadObserver> | undefined;
+  let pauseGuard: ReturnType<typeof createPreArmPauseGuard> | undefined;
+  let frameTrace: InstalledUserscriptFrameTrace | undefined;
+  let primaryError: unknown;
+  let dispatchedClicks = 0;
+  const cleanupErrors: unknown[] = [];
+  try {
+    context = await chromium.launchPersistentContext(profile, {
+      channel: browserName,
+      headless,
+      acceptDownloads: true,
+      downloadsPath: downloads,
+      locale: 'en-US',
+      viewport: { width: 1280, height: 800 },
+      ignoreDefaultArgs: ['--disable-extensions'],
+      args: ['--enable-unsafe-extension-debugging'],
+    });
+    const browser = context.browser();
+    assert(browser);
+    receipt.browserVersion = browser.version();
+    receipt.profileTransport = 'public network without fixture host mappings or SPKI exception';
+    await enableDeveloperMode(context, browserName);
+    await verifyDownloadDirectory(context, downloads);
+    cdp = await browser.newBrowserCDPSession();
+    await cdp.send('Browser.setDownloadBehavior', { behavior: 'default', eventsEnabled: true });
+    ({ id: managerId } = await cdp.send('Extensions.loadUnpacked', {
+      path: join(root, 'test-tools/userscript-manager'),
+    }));
+    assert(typeof managerId === 'string');
+    const manager = await installUserscript(
+      context,
+      managerId,
+      root,
+      output,
+      browserName,
+      sha256(source),
+      profile,
+      (ask, id, ownedContext) =>
+        inspectAndAllowNativeManagerPermission(
+          cdp!,
+          root,
+          output,
+          profile,
+          browserName,
+          ask,
+          id,
+          ownedContext
+        )
+    );
+    receipt.manager = manager;
+    observer = createBrowserDownloadObserver(cdp);
+    managerPage = await context.newPage();
+    await managerPage.goto('chrome-extension://' + managerId + '/options.html');
+    assert(isOwnedManagerOptionsUrl(managerPage.url(), managerId));
+    page = await context.newPage();
+    debuggerSession = await context.newCDPSession(page);
+    const scripts: Array<{ scriptId: string; url: string; executionContextId: number }> = [];
+    let scriptOverflow = 0;
+    debuggerSession.on(
+      'Debugger.scriptParsed',
+      (item: { scriptId: string; url: string; executionContextId: number }) => {
+        if (scripts.length < 256) {
+          scripts.push(item);
+        } else {
+          scriptOverflow += 1;
+        }
+      }
+    );
+    pauseGuard = createPreArmPauseGuard(debuggerSession);
+    pauseGuard.start();
+    await debuggerSession.send('Runtime.enable');
+    await debuggerSession.send('Debugger.enable');
+    const navigation = await page.goto(target.pageUrl, {
+      waitUntil: 'domcontentloaded',
+      timeout: 30_000,
+    });
+    receipt.liveNavigation = {
+      responseStatus: navigation?.status() ?? null,
+      finalUrl: diagnosticScriptUrl(page.url()),
+    };
+    assert.equal(page.url(), target.pageUrl, 'Live status navigated away');
+    pauseGuard.assertClean();
+    const liveEntry = await openUserscriptLivePhoto(page, target, output);
+    receipt.liveEntryReadiness = liveEntry.readiness;
+    receipt.liveEntryAction = liveEntry.action;
+    receipt.actionBinding = liveEntry.binding;
+    receipt.liveEntryBeforeScreenshot = liveEntry.beforeScreenshot;
+    const gallery = page.locator('[data-xeg-gallery-container]');
+    await gallery.waitFor({ state: 'visible', timeout: 20_000 });
+    assert.equal(await gallery.getAttribute('role'), 'dialog');
+    assert.equal(await gallery.getAttribute('aria-modal'), 'true');
+    const selected = await gallery.evaluate((element, mediaBasename) => {
+      const toolbar = element.querySelector('[data-gallery-element="toolbar"]');
+      const index = toolbar?.getAttribute('data-focused-index');
+      const item = element.querySelector(
+        '[data-gallery-element="item"][data-index="' + index + '"]'
+      );
+      const image = item?.querySelector('img');
+      if (
+        !(image instanceof HTMLImageElement) ||
+        !image.complete ||
+        image.naturalWidth <= 0 ||
+        toolbar?.getAttribute('data-current-index') !== index
+      ) {
+        return null;
+      }
+      const source = new URL(image.currentSrc || image.src);
+      const sourceMedia = /^\/media\/([A-Za-z0-9_-]{1,40})(?:\.(?:jpg|jpeg|png|webp|gif))?$/u.exec(
+        source.pathname
+      );
+      return source.origin === 'https://pbs.twimg.com' && sourceMedia?.[1] === mediaBasename
+        ? { index, source: image.currentSrc || image.src }
+        : null;
+    }, target.mediaBasename);
+    assert(selected, 'Live gallery selection differs from reported photo');
+    receipt.gallerySelection = selected;
+    const sourceLookup: Record<string, unknown> = {
+      parsedCount: scripts.length,
+      overflow: scriptOverflow,
+      taskCandidates: scripts
+        .filter(
+          (item) =>
+            item.url.includes(managerId!) ||
+            /(?:user-script|userscript|\.user\.js)/iu.test(item.url)
+        )
+        .slice(0, 16)
+        .map((item) => ({
+          url: diagnosticScriptUrl(item.url),
+          executionContextId: item.executionContextId,
+        })),
+      matches: [],
+    };
+    receipt.scriptSourceLookup = sourceLookup;
+    let script:
+      | {
+          scriptId: string;
+          url: string;
+          executionContextId: number;
+          lineNumber: number;
+          gmCallLine: number | null;
+          gmCallKind: 'shared' | 'older-modern' | null;
+          gmCallerLines: { modern: number; legacy: number } | null;
+          sha256: string;
+          productBody: ReturnType<typeof bindInstalledUserscriptSource>;
+        }
+      | undefined;
+    for (const item of scripts) {
+      const result = await debuggerSession
+        .send('Debugger.getScriptSource', {
+          scriptId: item.scriptId,
+        })
+        .catch(() => null);
+      const text = result?.scriptSource;
+      if (!text || text.length > 5_000_000 || !text.includes('function downloadSingleFile(')) {
+        continue;
+      }
+      const location = resolveFilenameCaptureLine(text);
+      (sourceLookup.matches as Record<string, unknown>[]).push({
+        url: diagnosticScriptUrl(item.url),
+        executionContextId: item.executionContextId,
+        sha256: location.expectedSourceSha256,
+      });
+      assert(!script, 'Multiple installed XCOM download scripts');
+      script = {
+        ...item,
+        lineNumber: location.lineNumber,
+        gmCallLine: resolveUserscriptGMCallLine(text),
+        gmCallerLines: resolveUserscriptGMCallerLines(text),
+        gmCallKind: text.includes('function downloadViaGM(')
+          ? 'shared'
+          : text.includes('const handle = gmDownloadModern({')
+            ? 'older-modern'
+            : null,
+        sha256: location.expectedSourceSha256,
+        productBody: bindInstalledUserscriptSource(source.toString('utf8'), text),
+      };
+    }
+    assert(script, 'Installed XCOM download source was not uniquely identified');
+    pauseGuard.assertClean();
+    assert(
+      Number.isSafeInteger(script.executionContextId) && script.executionContextId > 0,
+      'Installed XCOM script has no execution realm'
+    );
+    receipt.executedScript = script;
+    const sandboxProbe = await debuggerSession
+      .send('Runtime.evaluate', {
+        contextId: script.executionContextId,
+        expression: LIVE_SANDBOX_PROBE,
+        returnByValue: true,
+      })
+      .catch(() => null);
+    receipt.sandboxGlobalProbe = !sandboxProbe
+      ? { status: 'transport-unavailable' }
+      : sandboxProbe.exceptionDetails
+        ? {
+            status: 'expression-exception',
+            text: String(sandboxProbe.exceptionDetails.text).slice(0, 160),
+          }
+        : { status: 'evaluated', value: sandboxProbe.result?.value ?? null };
+    receipt.sandboxGlobalProbeScope = 'diagnostic-only; undefined does not establish API absence';
+    assert(script.gmCallLine !== null && script.gmCallKind, 'Installed GM call site missing');
+    frameTrace = createInstalledUserscriptFrameTrace({
+      session: debuggerSession,
+      scriptId: script.scriptId,
+      filenameLine: script.lineNumber,
+      gmCallLine: script.gmCallLine,
+      gmCallKind: script.gmCallKind,
+      gmCallerLines: script.gmCallerLines,
+      target,
+    });
+    await frameTrace.arm();
+    await pauseGuard.handoff();
+    receipt.frameTraceArmed = frameTrace.snapshot();
+    const button = gallery.locator(
+      '[data-gallery-element="toolbar"] button[aria-label="Download"]'
+    );
+    const saves = receipt.saves as Record<string, unknown>[];
+    let original: Buffer | undefined;
+    let requestedName: string | undefined;
+    let sentinelBytes: Buffer | undefined;
+    let firstNativeName: string | undefined;
+    for (let number = 1; number <= 2; number += 1) {
+      assert.equal(
+        await gallery
+          .locator('[data-gallery-element="toolbar"]')
+          .getAttribute('data-focused-index'),
+        selected.index
+      );
+      const before: Set<number> = new Set(
+        (await liveNativeInventory(managerPage)).map((item) => item.id)
+      );
+      const beforeFiles = new Set(await readdir(downloads));
+      const since = observer.snapshot();
+      dispatchedClicks += 1;
+      await button.click();
+      if (number === 1) {
+        const captured: FrameMedia = await frameTrace.waitForMedia();
+        receipt.selectedMedia = captured;
+        receipt.sandbox = captured.gm ?? null;
+        receipt.sandboxFrameGlobal = captured.frameGlobal;
+        receipt.sandboxScope =
+          'filename-frame visibility only; undefined does not establish API absence';
+        const sourceUrl: unknown =
+          (captured.downloadSource as { url?: unknown } | null)?.url ??
+          captured.originalUrl ??
+          captured.url;
+        assert(isLiveFilenameOriginal(sourceUrl, target), 'Selected original source differs');
+        const sourceUrlText = sourceUrl as string;
+        const format = new URL(sourceUrlText).searchParams.get('format');
+        assert(format);
+        requestedName = expectedLiveFilename(captured, format);
+        receipt.expectedFilename = requestedName;
+        receipt.generatedFilename = captured.generatedFilename;
+        receipt.selectedSource = sourceUrlText;
+        const reference = await fetchBoundedLiveOriginal(sourceUrlText, format);
+        original = reference.bytes;
+        receipt.independentOriginal = {
+          bytes: reference.contentLength,
+          sha256: sha256(reference.bytes),
+          contentType: reference.contentType,
+          transport: 'independent bounded Node GET without redirect',
+        };
+      }
+      const native: LiveNativeItem = await waitFor<LiveNativeItem>(
+        async (): Promise<LiveNativeItem | undefined> => {
+          const added: LiveNativeItem[] = (await liveNativeInventory(managerPage!)).filter(
+            (item) => !before.has(item.id)
+          );
+          assert(added.length <= 1, 'One live click created multiple native IDs');
+          const attempts = receipt.nativeAttempts as Record<string, unknown>[];
+          const current = added[0];
+          if (
+            current &&
+            !attempts.some(
+              (item) =>
+                item.number === number && item.id === current.id && item.state === current.state
+            )
+          ) {
+            assert(attempts.length < 16, 'Live native observation bound exceeded');
+            attempts.push({
+              number,
+              id: current.id,
+              state: current.state,
+              url: current.url,
+              finalUrl: current.finalUrl ?? null,
+              filename: current.filename,
+              byExtensionId: current.byExtensionId ?? null,
+              error: current.error ?? null,
+            });
+          }
+          if (added[0]?.state === 'interrupted') {
+            throw new Error('Native download interrupted: ' + added[0].error);
+          }
+          return added[0]?.state === 'complete' ? added[0] : undefined;
+        },
+        'unique live native completion',
+        30_000
+      );
+      assert.equal(
+        native.byExtensionId,
+        managerId,
+        'New native ID is not owned by the installed manager'
+      );
+      assert(original && requestedName);
+      const newNames = (await readdir(downloads)).filter(
+        (name) => !beforeFiles.has(name) && !name.endsWith('.crdownload')
+      );
+      assert.equal(newNames.length, 1, 'One live click must save one new original file');
+      const observedName = newNames[0]!;
+      assert.equal(
+        resolve(native.filename),
+        resolve(downloads, observedName),
+        'Native ID did not own the sole new file'
+      );
+      const { bytes } = await readExactDownloadFile(join(downloads, observedName), original.length);
+      assert.equal(
+        sha256(bytes),
+        sha256(original),
+        'Native original bytes differ from independent GET'
+      );
+      await observer.flush();
+      const eventCount: number = observer.snapshot() - since;
+      assert(eventCount <= 1, 'One live click created multiple CDP downloads');
+      const cdpItem: (BrowserDownloadBegin & BrowserDownloadStatus) | null = eventCount
+        ? await observer.waitForCompletion(since)
+        : null;
+      if (cdpItem) {
+        assert.equal(cdpItem.url, native.url, 'CDP GUID and native ID identify different URLs');
+        assert.equal(cdpItem.receivedBytes, bytes.length);
+      }
+      const sourceUrl = receipt.selectedSource as string;
+      assert(
+        native.url === sourceUrl ||
+          native.url.startsWith('blob:https://x.com/') ||
+          native.url.startsWith('blob:chrome-extension://' + managerId + '/'),
+        'Native URL is not the selected original or an owned Blob'
+      );
+      const nameConforms = liveFilenameConforms(observedName, requestedName);
+      const retained =
+        'live-original-' + number + '.' + (new URL(sourceUrl).searchParams.get('format') ?? 'bin');
+      await writeFile(join(output, retained), bytes, { flag: 'wx' });
+      saves.push({
+        number,
+        nativeId: native.id,
+        nativeUrl: native.url,
+        nativeState: native.state,
+        nativeFinalUrl: native.finalUrl ?? null,
+        nativeOriginalPath: native.filename,
+        byExtensionId: native.byExtensionId,
+        cdpGuid: cdpItem?.guid ?? null,
+        cdpSuggestedFilename: cdpItem?.suggestedFilename ?? null,
+        requestedFilename: requestedName,
+        observedFilename: observedName,
+        productObservedName: null,
+        nameConforms,
+        bytes: bytes.length,
+        sha256: sha256(bytes),
+        retained,
+      });
+      if (number === 1) {
+        const call: FrameGmCall = await frameTrace.waitForGmCall();
+        receipt.gmCalls = [call];
+        assert.equal(call.args.url, sourceUrl);
+        assert.equal(call.args.name, requestedName);
+        receipt.route = { kind: 'GM', apiName: call.apiName };
+        const traceStop: {
+          removed: boolean;
+          debuggerDisabled: boolean;
+          debuggerDetached: boolean;
+          errors: string[];
+        } = await frameTrace.stop();
+        receipt.frameTrace = frameTrace.snapshot();
+        assert(traceStop.removed && traceStop.debuggerDisabled);
+        receipt.diagnosticsRemovedBeforeRepeat = true;
+        const gm = (receipt.sandbox as FrameMedia['gm'] | null) ?? null;
+        receipt.gmInfoVisibility = {
+          scope: 'filename-utility-frame-diagnostic-only',
+          scriptNameMatches: gm?.scriptName == null ? null : gm.scriptName === SCRIPT_NAME,
+          handlerMatches: gm?.handler == null ? null : gm.handler === 'Tampermonkey',
+          versionMatches: gm?.version == null ? null : gm.version === manager.managerVersion,
+          grantsIncludeDownload: gm?.grants == null ? null : gm.grants.includes('GM_download'),
+        };
+        assert.equal(
+          receipt.generatedFilename,
+          requestedName,
+          'Executed product filename differs from independent MediaInfo policy'
+        );
+        assert(nameConforms, 'First native filename differs from selected attachment policy');
+        firstNativeName = observedName;
+        const sentinelName = browserFilename(requestedName, 1);
+        assert(
+          !(await readdir(downloads)).includes(sentinelName),
+          'Sentinel candidate already exists'
+        );
+        sentinelBytes = Buffer.from('xeg-owned-distinct-same-name-sentinel-495');
+        assert.notEqual(sha256(sentinelBytes), sha256(original));
+        await writeFile(join(downloads, sentinelName), sentinelBytes, { flag: 'wx' });
+        receipt.sameNameSentinel = {
+          filename: sentinelName,
+          sha256: sha256(sentinelBytes),
+          firstOriginal: observedName,
+        };
+      } else {
+        assert(sentinelBytes && firstNativeName);
+        assert.equal(
+          observedName,
+          browserFilename(requestedName, 2),
+          'Repeat did not use the expected conflict suffix'
+        );
+        const sentinel = await readExactDownloadFile(
+          join(downloads, browserFilename(requestedName, 1)),
+          sentinelBytes.length
+        );
+        assert.equal(
+          sha256(sentinel.bytes),
+          sha256(sentinelBytes),
+          'Distinct same-name sentinel was overwritten'
+        );
+        const first = await readExactDownloadFile(
+          join(downloads, firstNativeName),
+          original.length
+        );
+        assert.equal(
+          sha256(first.bytes),
+          sha256(original),
+          'First native original was overwritten'
+        );
+        receipt.sameNameSentinelPreserved = true;
+      }
+      assert(nameConforms, 'Observed native filename differs from selected attachment policy');
+    }
+    receipt.status = 'observed';
+  } catch (error) {
+    primaryError = error;
+    receipt.status = 'failed';
+    receipt.error = safeRouteError(error);
+    if (page && dispatchedClicks === 0) {
+      receipt.liveEntryFailure = await captureUserscriptLiveEntryFailure(
+        page,
+        target,
+        output
+      ).catch((captureError) => ({ captureError: safeRouteError(captureError) }));
+    }
+  } finally {
+    const cleanup = receipt.cleanup as Record<string, unknown>;
+    receipt.dispatchedClicks = dispatchedClicks;
+    if (observer) {
+      receipt.browserDownloadEvents = observer.events();
+    }
+    if (frameTrace && !receipt.diagnosticsRemovedBeforeRepeat) {
+      try {
+        const stopped = await frameTrace.stop();
+        receipt.frameTrace = frameTrace.snapshot();
+        cleanup.frameTraceStopped = stopped.removed && stopped.debuggerDisabled;
+      } catch (error) {
+        receipt.frameTrace = frameTrace.snapshot();
+        cleanupErrors.push(error);
+        cleanup.frameTraceStopError = safeRouteError(error);
+      }
+    }
+    if (pauseGuard) {
+      try {
+        cleanup.preArmPauseGuard = await pauseGuard.stop();
+      } catch (error) {
+        cleanupErrors.push(error);
+        cleanup.preArmPauseGuardError = safeRouteError(error);
+      }
+    }
+    if (
+      debuggerSession &&
+      (frameTrace?.snapshot().debuggerDetached || pauseGuard?.snapshot().detached)
+    ) {
+      cleanup.debuggerDetached = true;
+    } else if (debuggerSession) {
+      await debuggerSession.detach().then(
+        () => {
+          cleanup.debuggerDetached = true;
+        },
+        (error) => cleanupErrors.push(error)
+      );
+    }
+    observer?.dispose();
+    cleanup.downloadObserverRemoved = Boolean(observer);
+    if (managerPage) {
+      await managerPage.close().then(
+        () => {
+          cleanup.managerPageClosed = true;
+        },
+        (error) => cleanupErrors.push(error)
+      );
+    }
+    if (page) {
+      await page.close().then(
+        () => {
+          cleanup.livePageClosed = true;
+        },
+        (error) => cleanupErrors.push(error)
+      );
+    }
+    if (cdp && managerId) {
+      await cdp.send('Extensions.uninstall', { id: managerId }).then(
+        () => {
+          cleanup.managerUninstalled = true;
+        },
+        (error) => cleanupErrors.push(error)
+      );
+    }
+    if (context) {
+      await context.close().then(
+        () => {
+          cleanup.browserClosed = true;
+        },
+        (error) => cleanupErrors.push(error)
+      );
+    }
+    let failureRetentionComplete = true;
+    if (dispatchedClicks > 0 && (primaryError || cleanupErrors.length)) {
+      try {
+        const retained = await retainFailedLiveNativeFiles(
+          downloads,
+          output,
+          receipt.nativeAttempts
+        );
+        receipt.failedNativeRetention = retained;
+        failureRetentionComplete = retained.length > 0;
+        if (!failureRetentionComplete) {
+          cleanup.failureRetentionError = 'No native file remained after a dispatched save';
+        }
+      } catch (error) {
+        failureRetentionComplete = false;
+        cleanupErrors.push(error);
+        cleanup.failureRetentionError = safeRouteError(error);
+      }
+    }
+    if ((cleanup.browserClosed || !context) && failureRetentionComplete) {
+      try {
+        assertOwned(root, profile);
+        await rm(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+        cleanup.profileRemoved = true;
+      } catch (error) {
+        cleanupErrors.push(error);
+      }
+    } else {
+      cleanup.profilePreserved = true;
+      cleanup.profilePreservedReason = failureRetentionComplete
+        ? 'browser-close-failed'
+        : 'native-retention-unverified';
+    }
+    cleanup.errors = cleanupErrors.map(safeRouteError);
+    if (cleanupErrors.length) {
+      receipt.status = 'failed';
+    }
+    await writeFile(join(output, 'userscript-live-result.json'), JSON.stringify(receipt, null, 2));
+  }
+  if (primaryError || cleanupErrors.length) {
+    throw new AggregateError(
+      [...(primaryError ? [primaryError] : []), ...cleanupErrors],
+      'Installed userscript live qualification failed'
+    );
+  }
+  return receipt;
 }

@@ -179,6 +179,14 @@ polite in-gallery notice. A mismatch adds a separate explanation while the trans
 remains successful. Unknown native names keep the ordinary handoff status. The
 notice can be dismissed and clears on the next download or gallery session.
 
+Userscripts pass the generated name to the selected manager download API or a
+Blob anchor's `download` attribute. Manager completion callbacks and anchor
+dispatch do not expose the final native basename to the product; its observed
+name remains unknown. Installed verification must inspect the original native
+file independently. API selection and cancellation follow the
+[transport contract](network-redirects.md); a manager setting alone does not
+establish which product route executed.
+
 Chrome 156.0.8078.80, recorded revision
 `fb096c0011f9d50f0a264a9376420cdea9c421e3`, reproduced CDN fallback with a
 separate passive filename listener. Its [binding sends empty name/action values

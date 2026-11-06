@@ -48,6 +48,8 @@ import {
   type FilenameDecisionControl,
 } from './filename-decision-control.ts';
 import { withFilenameCorrelation } from './filename-correlation.ts';
+import { admitReportedLiveFilenameInstall } from './live-filename-target.ts';
+import { flattenUserscriptLiveEvidence } from './userscript-live-output.ts';
 import { runFirefoxInstallation, type FirefoxLauncher } from './firefox-install.ts';
 import {
   createControlledVideoSettings,
@@ -20365,12 +20367,15 @@ export async function run({
     }
     throw error;
   });
-  if (reportedFilenameText !== null) {
-    assert.deepEqual(JSON.parse(reportedFilenameText), { scenario: 'reported-live-filename' });
-    assert.equal(browserName, 'chrome');
-    assert.equal(installation, 'extension');
-    assert.deepEqual(liveUrls, ['https://x.com/yukurach/status/2118323627615785399']);
-  }
+  const reportedFilenameTarget =
+    reportedFilenameText === null
+      ? null
+      : admitReportedLiveFilenameInstall({
+          selector: JSON.parse(reportedFilenameText),
+          browserName,
+          installation,
+          liveUrls,
+        });
   const reportedFilenameProbe = reportedFilenameText !== null;
   const acceptanceSelectorText = await readFile(
     join(root, 'validation/windows/inputs/live-acceptance.json'),
@@ -20478,14 +20483,31 @@ export async function run({
   }
   if (installation === 'userscript') {
     assert.equal(acceptanceSelectorText, null, 'Actual-site acceptance requires an extension');
-    assert.equal(liveUrls.length, 0, 'Installed userscript fixture does not support public URLs');
+    assert(
+      liveUrls.length === 0 ||
+        (reportedFilenameTarget !== null &&
+          liveUrls.length === 1 &&
+          liveUrls[0] === reportedFilenameTarget.pageUrl),
+      'Installed userscript public URL requires the exact reported photo selector'
+    );
+    if (reportedFilenameTarget !== null) {
+      const selectors = (await readdir(join(root, 'validation/windows/inputs')))
+        .filter((name) => name.endsWith('.json'))
+        .sort();
+      assert.deepEqual(
+        selectors,
+        ['reported-live-filename.json'],
+        'Live userscript qualification requires an exclusive photo selector'
+      );
+    }
     assert.equal(
       liveObservation,
       null,
       'Installed userscript fixture does not support duration observation'
     );
-    const { runUserscriptInstallation } = await import('./userscript-install.ts');
-    return runUserscriptInstallation({
+    const { runUserscriptInstallation, runUserscriptLiveInstallation } =
+      await import('./userscript-install.ts');
+    const fixture = await runUserscriptInstallation({
       chromium,
       root,
       output,
@@ -20493,6 +20515,53 @@ export async function run({
       headless,
       attachmentFilenameProbe,
     });
+    if (reportedFilenameTarget === null) {
+      return fixture;
+    }
+    const stage = await mkdtemp(join(root, 'xeg-userscript-live-stage-'));
+    let live: Awaited<ReturnType<typeof runUserscriptLiveInstallation>> | undefined;
+    let liveError: unknown;
+    let liveFailed = false;
+    try {
+      live = await runUserscriptLiveInstallation({
+        chromium,
+        root,
+        output: stage,
+        browserName,
+        headless,
+        target: reportedFilenameTarget,
+      });
+    } catch (error) {
+      liveFailed = true;
+      liveError = error;
+    }
+    let liveEvidence: Awaited<ReturnType<typeof flattenUserscriptLiveEvidence>>;
+    try {
+      liveEvidence = await flattenUserscriptLiveEvidence({
+        root,
+        stage,
+        output,
+        phaseStatus: liveFailed ? 'failed' : 'observed',
+      });
+    } catch (error) {
+      throw new AggregateError(
+        [...(liveFailed ? [liveError] : []), error],
+        'Live userscript evidence could not be flattened; task-owned stage preserved'
+      );
+    }
+    try {
+      await rm(stage, { recursive: true });
+    } catch (error) {
+      throw new AggregateError(
+        [...(liveFailed ? [liveError] : []), error],
+        'Flattened live userscript stage could not be removed'
+      );
+    }
+    if (liveFailed) {
+      throw liveError;
+    }
+    assert(live, 'Live userscript phase produced no result');
+    return { ...fixture, live, liveEvidence, liveUrls: [reportedFilenameTarget.pageUrl] };
   }
   const upgradeInput = await readUpgradeInput(root);
   const sameVersionInput = await readSameVersionInput(root);
@@ -20985,7 +21054,15 @@ export async function run({
             liveUrls: validatedLiveUrls,
             output,
             actualSiteAcceptance: actualSiteAcceptance ? { downloads } : null,
-            reportedFilename: reportedFilenameText === null ? null : { root, downloads },
+            reportedFilename:
+              reportedFilenameTarget === null
+                ? null
+                : {
+                    root,
+                    downloads,
+                    target: reportedFilenameTarget,
+                    browserName: browserName as 'chrome' | 'msedge',
+                  },
           });
       if (liveSettingsProbe) {
         assert.equal(

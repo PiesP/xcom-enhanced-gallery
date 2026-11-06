@@ -4,6 +4,7 @@
 import type { Page } from '@playwright/test';
 import type { CookieAPI } from '../../../src/shared/types/core/cookie.types';
 import type {
+  GMDownloadDetails,
   GMNotificationDetails,
   GMXMLHttpRequestDetails,
   GMXMLHttpRequestResponse,
@@ -11,11 +12,12 @@ import type {
 
 interface GMMockOptions {
   readonly persistentStorage?: boolean;
+  readonly downloadApi?: boolean;
 }
 
 /** Install the userscript host contract used by behavior-level browser tests. */
 export async function installGMMock(page: Page, options: GMMockOptions = {}): Promise<void> {
-  await page.evaluate(({ persistentStorage }) => {
+  await page.evaluate(({ persistentStorage, downloadApi }) => {
     const host = window as unknown as Record<string, unknown>;
     const storageKey = '__xeg_e2e_gm_storage';
     let storage = new Map<string, unknown>();
@@ -52,32 +54,35 @@ export async function installGMMock(page: Page, options: GMMockOptions = {}): Pr
       persist();
     };
     window.GM_listValues = (): string[] => Array.from(storage.keys());
-    window.GM_download = (
-      urlOrDetails:
-        | string
-        | {
-            url: string;
-            name: string;
-            onload?: () => void;
-          },
-      name?: string
-    ): void => {
-      const details = typeof urlOrDetails === 'string' ? { url: urlOrDetails, name } : urlOrDetails;
-      if (!details.name) {
-        throw new Error('GM_download requires name');
-      }
-      const marker = document.createElement('span');
-      marker.dataset.gmDownload = 'true';
-      marker.dataset.gmDownloadUrl = details.url;
-      marker.dataset.gmDownloadName = details.name;
-      marker.hidden = true;
-      document.body.append(marker);
-      queueMicrotask(() => {
-        if ('onload' in details) {
-          details.onload?.();
+    if (downloadApi === false) {
+      delete window.GM_download;
+    } else {
+      window.GM_download = (urlOrDetails: string | GMDownloadDetails, name?: string) => {
+        const details =
+          typeof urlOrDetails === 'string' ? { url: urlOrDetails, name } : urlOrDetails;
+        if (!details.name) {
+          throw new Error('GM_download requires name');
         }
-      });
-    };
+        const marker = document.createElement('span');
+        marker.dataset.gmDownload = 'true';
+        marker.dataset.gmDownloadUrl = details.url;
+        marker.dataset.gmDownloadName = details.name;
+        marker.hidden = true;
+        document.body.append(marker);
+        let aborted = false;
+        queueMicrotask(() => {
+          if (!aborted && 'onload' in details) {
+            details.onload?.();
+          }
+        });
+        return {
+          abort: () => {
+            aborted = true;
+            marker.dataset.gmDownloadAborted = 'true';
+          },
+        };
+      };
+    }
     window.GM_notification = (
       details: GMNotificationDetails | string,
       titleOrDone?: string | (() => void)

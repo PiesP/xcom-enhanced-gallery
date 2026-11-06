@@ -216,6 +216,7 @@ export function createUserscriptFixtureHandler(
   let images: Buffer[] | undefined;
   let phase = 'normal';
   let heldArmed = false;
+  let heldPending: { response: ServerResponse; event: FixtureEvent; body: Buffer } | null = null;
   let requestCount = 0;
   let unexpectedCount = 0;
   let overflow = false;
@@ -519,6 +520,9 @@ export function createUserscriptFixtureHandler(
         event.result = 'aborted';
       }
       active.delete(response);
+      if (heldPending?.response === response) {
+        heldPending = null;
+      }
     });
     if (
       mediaRedirectArmed &&
@@ -547,6 +551,12 @@ export function createUserscriptFixtureHandler(
       media.index === 0 &&
       purpose === 'transfer'
     ) {
+      if (heldPending) {
+        event.result = 'held-duplicate';
+        reject(response, 'held-duplicate');
+        return;
+      }
+      heldPending = { response, event, body: bytes };
       return;
     }
     const unavailable =
@@ -615,7 +625,26 @@ export function createUserscriptFixtureHandler(
     armHeld() {
       assert.equal(phase, 'held');
       assert.equal(active.size, 0, 'Cannot arm a held response with active transport');
+      assert.equal(heldPending, null, 'Previous held response remains pending');
       heldArmed = true;
+    },
+    releaseHeldHeaders() {
+      assert.equal(phase, 'held');
+      assert(heldArmed && heldPending, 'No armed held transfer to release');
+      const { response, event, body } = heldPending;
+      assert(active.has(response) && !response.destroyed && !response.headersSent);
+      assert(body.length > 1 && servedBytes + 1 <= MAX_SERVED_BYTES);
+      response.writeHead(200, {
+        'Content-Type': 'image/jpeg',
+        'Content-Length': String(body.length),
+        'Cache-Control': 'no-store',
+        'Access-Control-Allow-Origin': '*',
+      });
+      response.write(body.subarray(0, 1));
+      servedBytes += 1;
+      event.result = 'headers-released';
+      event.bytes = 1;
+      return { ...event };
     },
     mark: () => events.length,
     findSince(mark: number, cohort: string, index: number, result: string) {

@@ -45,6 +45,37 @@ their separate verdict;
 this focused result does not qualify an authenticated session or the original
 user's profile cause. Remove the selector after the attempt.
 
+For the #495 Jeppi photo, use the same ignored selector with an explicit
+task-owned target:
+
+```json
+{
+  "scenario": "reported-live-filename",
+  "target": {
+    "pageUrl": "https://x.com/Jeppi_tan/status/2118423501095030841",
+    "mediaBasename": "HWYmWugaUAAi_4m"
+  }
+}
+```
+
+Use that exact page as the sole `--live-url`. The explicit target also admits
+installed Edge extension validation. With `--installation userscript` and an
+unpacked reviewed Tampermonkey directory, the controlled fixture runs first,
+then a fresh owned profile installs the same userscript through the manager UI
+and visits the public page without fixture host mappings or certificate
+exceptions. The live receipt records the installed sandbox's GM availability,
+selected MediaInfo, actual native ID and file, and an independently fetched
+original before comparing the requested and observed filename. After the first
+file is retained, a distinct-byte sentinel occupies its next conflict name.
+The repeat runs after the diagnostic breakpoints are removed and verifies that
+both the original file and sentinel remain unchanged. The original user profile cause
+remains outside this controlled scope.
+The separate live phase stages its evidence outside the flat output folder.
+After either success or failure, bounded regular files are copied under the
+`userscript-live-` prefix and listed in `userscript-live-artifacts.json`.
+If a copy cannot be verified, the task-owned stage is preserved and the run
+fails before collection.
+
 To check issue #484's video save format through the installed Chrome/Edge
 extension, create the ignored `video-save-format.json` file here with exactly:
 

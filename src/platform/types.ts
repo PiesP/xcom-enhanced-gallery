@@ -28,6 +28,8 @@ export interface DownloadReceipt {
 }
 
 export interface DownloadAdapter {
+  /** URL downloads settle cancellation themselves, including uncertain abort outcomes. */
+  readonly ownsUrlCancellation?: boolean;
   download(
     url: string,
     filename: string,
