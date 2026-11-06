@@ -3142,12 +3142,13 @@ $stable.sameForeground = $true
       ],
       expectedUrl: 'https://pbs.twimg.com/media/GkH1234ABCDEF.jpg?format=jpg&name=orig',
       expectedNames: ['held.jpg'],
+      requireNativeId: true,
       transferEvents: [transfer],
       beforeFiles: new Set(['earlier.jpg']),
       files: ['earlier.jpg'],
     };
     expect(userscriptInstall.assertHeldSingleCancellationState(input)).toEqual({
-      nativeIds: [{ id: 41, state: 'interrupted' }],
+      nativeIds: [{ id: 41, state: 'interrupted', interruptReason: 'USER_CANCELED' }],
       browserStarts: 1,
     });
     expect(() =>
@@ -3197,7 +3198,20 @@ $stable.sameForeground = $true
         ...input,
         after: { status: 'observed', items: [] },
       })
+    ).toThrow('no native ID');
+    expect(() =>
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        requireNativeId: false,
+        after: { status: 'observed', items: [] },
+      })
     ).toThrow('no owned native ID');
+    expect(() =>
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        after: { status: 'observed', items: [{ ...item, interruptReason: 'NETWORK_FAILED' }] },
+      })
+    ).toThrow('owned interrupted');
     expect(() =>
       userscriptInstall.assertHeldSingleCancellationState({
         ...input,

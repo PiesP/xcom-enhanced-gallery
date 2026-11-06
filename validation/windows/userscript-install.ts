@@ -3135,6 +3135,7 @@ export function assertHeldSingleCancellationState(input: {
   browserBegins: BrowserDownloadBegin[];
   expectedUrl: string;
   expectedNames: string[];
+  requireNativeId?: boolean;
   transferEvents: UserscriptLoopbackEvent[];
   beforeFiles: Set<string>;
   files: string[];
@@ -3145,6 +3146,7 @@ export function assertHeldSingleCancellationState(input: {
     browserBegins,
     expectedUrl,
     expectedNames,
+    requireNativeId,
     transferEvents,
     beforeFiles,
     files,
@@ -3154,6 +3156,9 @@ export function assertHeldSingleCancellationState(input: {
   const seen = new Set(before.items.map(({ id }) => id));
   const created = after.items.filter(({ id }) => !seen.has(id));
   assert(created.length <= 1, 'Held single created multiple native IDs');
+  if (requireNativeId) {
+    assert.equal(created.length, 1, 'Header-released held single has no native ID');
+  }
   assert(
     created.every(
       (item) =>
@@ -3161,7 +3166,8 @@ export function assertHeldSingleCancellationState(input: {
         item.managerOwnerMatch === true &&
         item.requestedNameMatch &&
         item.ownedPathMatch &&
-        item.state === 'interrupted'
+        item.state === 'interrupted' &&
+        (item.interruptReason === null || item.interruptReason === 'USER_CANCELED')
     ),
     'Held native ID did not end as an owned interrupted download'
   );
@@ -3181,7 +3187,7 @@ export function assertHeldSingleCancellationState(input: {
   assert.equal(transferEvents[0]?.result, 'aborted');
   assert.deepEqual(files.sort(), [...beforeFiles].sort(), 'Held single left a native file');
   return {
-    nativeIds: created.map(({ id, state }) => ({ id, state })),
+    nativeIds: created.map(({ id, state, interruptReason }) => ({ id, state, interruptReason })),
     browserStarts: browserBegins.length,
   };
 }
@@ -4083,12 +4089,45 @@ async function runFixture(
     assert.equal(heldTrace.captureJobs, 2, 'Held click did not capture exactly one GM call');
     await heldDebuggerSession.detach();
     heldDebuggerSession = undefined;
+    const heldCase: Record<string, unknown> = {
+      status: 'observing',
+      originalUrl: heldOriginalUrl,
+      installedBodySha256: heldScript.productBody.bodySha256,
+      gmCall: heldCall,
+      trace: heldTrace,
+      diagnosticsRemovedBeforeEscape: heldTraceStopped,
+    };
+    result.cases.inFlightSingleCancellation = heldCase;
+    const heldSingleNative = () =>
+      captureManagerDownloadHistory(
+        context,
+        managerId,
+        downloads,
+        heldSavedName,
+        imageAt(0).length,
+        heldOriginalUrl
+      );
     await page.keyboard.press('Escape');
     await gallery.waitFor({ state: 'detached' });
+    heldCase.galleryDetachedBeforeHeaders = true;
+    const preHeaderNative = [];
+    const preHeaderStart = Date.now();
+    for (let sample = 0; sample < 2; sample += 1) {
+      if (sample) {
+        await delay(250);
+      }
+      const inventory = await heldSingleNative();
+      assert.equal(inventory.status, 'observed', 'Pre-header manager inventory is unavailable');
+      preHeaderNative.push({ elapsedMs: Date.now() - preHeaderStart, items: inventory.items });
+    }
+    heldCase.preHeaderNative = preHeaderNative;
+    heldCase.headerRelease = loopback.releaseHeldHeaders();
     const heldSingleTerminal = await waitFor(
       () => loopback.findSince(heldSingleTransportStart, 'held', 0, 'aborted'),
       'dispatched held single HTTPS GET abortion'
     );
+    assert.equal(heldSingleTerminal.bytes, 1, 'Held GET aborted before its released body byte');
+    heldCase.transport = { ...heldSingleTerminal };
     assert.equal(loopback.activeCount(), 0, 'Canceled held single retains an active response');
     assert(
       !page.isClosed() && context.browser()?.isConnected(),
@@ -4105,15 +4144,6 @@ async function runFixture(
             event.index === 0 &&
             event.purpose === 'transfer'
         );
-    const heldSingleNative = () =>
-      captureManagerDownloadHistory(
-        context,
-        managerId,
-        downloads,
-        heldSavedName,
-        imageAt(0).length,
-        heldOriginalUrl
-      );
     // A manager may briefly expose an in-progress ID and a .crdownload after
     // the socket closes. Wait for terminal cleanup before the absence window.
     const initialHeldState = await waitFor(
@@ -4139,11 +4169,7 @@ async function runFixture(
           addedFiles.every((name) => name.endsWith('.crdownload')),
           'Held single left a complete native file'
         );
-        if (
-          created[0]?.state === 'in_progress' ||
-          (browserBegins.length === 1 && created.length === 0) ||
-          addedFiles.length
-        ) {
+        if (created[0]?.state === 'in_progress' || created.length === 0 || addedFiles.length) {
           return undefined;
         }
         return assertHeldSingleCancellationState({
@@ -4152,13 +4178,14 @@ async function runFixture(
           browserBegins,
           expectedUrl: heldOriginalUrl,
           expectedNames: [filename(0), heldSavedName],
+          requireNativeId: true,
           transferEvents: heldSingleEvents(),
           beforeFiles: heldSingleBefore,
           files,
         });
       },
       'held native terminal state and temporary file cleanup',
-      5_000
+      15_000
     );
     const initialConsole = managerConsole.snapshotSince(heldManagerConsoleStart);
     const initialDispatches = initialConsole.branchCounts.manager_request_branch ?? -1;
@@ -4172,6 +4199,7 @@ async function runFixture(
         browserBegins: observer.beginsSince(heldSingleSince),
         expectedUrl: heldOriginalUrl,
         expectedNames: [filename(0), heldSavedName],
+        requireNativeId: true,
         transferEvents: heldSingleEvents(),
         beforeFiles: heldSingleBefore,
         files: await readdir(downloads),
@@ -4197,18 +4225,13 @@ async function runFixture(
     assert.deepEqual((await readdir(downloads)).sort(), [...heldSingleBefore].sort());
     heldSingleBrowserStarts = initialHeldState.browserStarts;
     result.cases.inFlightSingleCancellation = {
+      ...heldCase,
       status: 'passed',
-      originalUrl: heldOriginalUrl,
-      installedBodySha256: heldScript.productBody.bodySha256,
-      gmCall: heldCall,
-      trace: heldTrace,
-      transport: { ...heldSingleTerminal },
       nativeIds: initialHeldState.nativeIds,
       browserStarts: initialHeldState.browserStarts,
       managerDispatches: initialDispatches,
       observedMs: Date.now() - absenceStart,
       samples: absenceSamples,
-      diagnosticsRemovedBeforeEscape: heldTraceStopped,
     };
 
     await heldTrigger.click();
@@ -5594,10 +5617,12 @@ export async function runUserscriptInstallation({
     let failureRetentionComplete = true;
     if (caughtPrimaryError && (result.cleanup.browserClosed || !context)) {
       try {
+        assertOwned(root, profile);
         result.failedNativeRetention = await retainFailedLiveNativeFiles(
           downloads,
           output,
-          observer?.events()
+          observer?.events(),
+          8
         );
         result.cleanup.failedNativeRetentionVerified = true;
       } catch (error) {
@@ -5686,10 +5711,11 @@ async function liveNativeInventory(page: Page): Promise<LiveNativeItem[]> {
 async function retainFailedLiveNativeFiles(
   downloads: string,
   output: string,
-  nativeAttempts: unknown
+  nativeAttempts: unknown,
+  maxEntries: 4 | 8 = 4
 ) {
   const names = await readdir(downloads);
-  assert(names.length <= 4, 'Failed live profile has too many native entries to retain');
+  assert(names.length <= maxEntries, 'Failed profile has too many native entries to retain');
   const retained: Record<string, unknown>[] = [];
   let total = 0;
   for (const name of names) {

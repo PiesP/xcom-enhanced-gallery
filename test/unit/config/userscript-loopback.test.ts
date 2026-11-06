@@ -293,6 +293,43 @@ describe('userscript HTTPS loopback protocol', () => {
     });
   });
 
+  it('releases one header and byte on the same held GET while keeping its body incomplete', async () => {
+    await withServer(async (fixture, port) => {
+      fixture.setImages([Buffer.from('first'), Buffer.from('second'), Buffer.from('third')]);
+      fixture.setPhase('held');
+      fixture.armHeld();
+      const before = fixture.mark();
+      const request = httpRequest({
+        hostname: '127.0.0.1',
+        port,
+        path: mediaPath('held', 0),
+        headers: { Host: 'pbs.twimg.com', 'Sec-Fetch-Dest': 'empty' },
+      });
+      request.on('error', () => {});
+      const responsePromise = new Promise<import('node:http').IncomingMessage>((resolveResponse) =>
+        request.once('response', resolveResponse)
+      );
+      request.end();
+      await waitFor(() => fixture.findSince(before, 'held', 0, 'started'));
+      const released = fixture.releaseHeldHeaders();
+      expect(released).toMatchObject({ result: 'headers-released', bytes: 1 });
+      expect(() => fixture.releaseHeldHeaders()).toThrow();
+      const response = await responsePromise;
+      expect(response.statusCode).toBe(200);
+      expect(response.headers['content-length']).toBe('5');
+      const chunks: Buffer[] = [];
+      response.on('data', (chunk: Buffer) => chunks.push(chunk));
+      await waitFor(() => chunks.length === 1);
+      expect(Buffer.concat(chunks)).toEqual(Buffer.from('f'));
+      expect(fixture.activeCount()).toBe(1);
+      response.destroy();
+      request.destroy();
+      await waitFor(() => fixture.findSince(before, 'held', 0, 'aborted'));
+      expect(fixture.snapshot()).toMatchObject({ activeCount: 0, servedBytes: 1 });
+      fixture.setPhase('normal');
+    });
+  });
+
   it('reserves the aggregate byte cap before writing and never exposes certificate output', async () => {
     await withServer(async (fixture, port) => {
       fixture.setImages(Array.from({ length: 3 }, () => Buffer.alloc(64 * 1024, 1)));
