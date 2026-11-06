@@ -16,7 +16,8 @@ for another, and none is a required CI lane.
    `.user.js` through the reviewed manager UI in a fresh owned profile. A declared
    public-release input first exercises the manager's update confirmation. It checks
    repeated native singles and ZIPs, a partial ZIP, routed transport failure,
-   cancellation before dispatch, gallery close/reopen, and reload recovery with
+   ZIP cancellation before dispatch, single cancellation after an abortable GM
+   call and held HTTPS GET, gallery close/reopen, and reload recovery with
    independently read saved files. It configures Browser API mode in the
    task-owned Tampermonkey options UI, checks the existing JPG/ZIP whitelist,
    and confirms the manager's own permission page when shown. That UI may
