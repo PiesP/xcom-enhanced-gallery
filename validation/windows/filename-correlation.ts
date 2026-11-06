@@ -47,24 +47,34 @@ const MAX_EVENTS = 4;
 const MAX_FILE_BYTES = 4 * 1024 * 1024;
 const CONTENT_KEY = '__xegFilenameCorrelation482V1';
 
-// These CDP functions are static. The marker and fixture URL cross as structured arguments.
+// These CDP functions are static. The target and marker cross as structured arguments.
 const CONTENT_INSTALL_FUNCTION = `function(config) {
   if (Object.prototype.hasOwnProperty.call(globalThis, '__xegFilenameCorrelation482V1')) {
     return { installed: false, reason: 'preexisting' };
   }
-  if (typeof config?.marker !== 'string' || config?.maxEvents !== 4 || typeof config?.expectedUrl !== 'string') {
+  if (typeof config?.marker !== 'string' || config?.maxEvents !== 4 ||
+      !['owned-fixture', 'reported-live-post'].includes(config?.target) ||
+      (config.target === 'owned-fixture' && typeof config.expectedUrl !== 'string')) {
     return { installed: false, reason: 'invalid-config' };
   }
   globalThis.__xegFilenameCorrelation482V1 = {
-    marker: config.marker, expectedUrl: config.expectedUrl, maxEvents: config.maxEvents, events: []
+    marker: config.marker, target: config.target, expectedUrl: config.expectedUrl,
+    maxEvents: config.maxEvents, events: []
   };
   return { installed: true };
 }`;
 const CONTENT_LOGPOINT_CONDITION = `(() => {
   const state = globalThis.__xegFilenameCorrelation482V1;
-  if (!state ||
-      (media?.downloadSource?.url ?? media?.originalUrl ?? media?.url) !== state.expectedUrl ||
-      typeof media?.id !== 'string' || !media.id || typeof filename !== 'string' || !filename) return false;
+  const preferred = media?.downloadSource?.url ?? media?.originalUrl ?? media?.url;
+  if (!state || typeof media?.id !== 'string' || !media.id ||
+      typeof filename !== 'string' || !filename || typeof preferred !== 'string') return false;
+  if (state.target === 'owned-fixture' && preferred !== state.expectedUrl) return false;
+  if (state.target === 'reported-live-post') {
+    let source;
+    try { source = new URL(preferred); } catch { return false; }
+    if (source.origin !== 'https://pbs.twimg.com' ||
+        !/^\\/media\\/HWXMF0bbcAEnfk6(?:\\.jpg)?$/.test(source.pathname)) return false;
+  }
   if (state.events.length < state.maxEvents) state.events.push({
     id: media.id.slice(0, 128), type: media.type, url: String(media.url).slice(0, 256),
     originalUrl: media.originalUrl?.slice(0, 256),
@@ -77,6 +87,12 @@ const CONTENT_LOGPOINT_CONDITION = `(() => {
     tweetUsername: media.tweetUsername?.slice(0, 128), tweetId: media.tweetId?.slice(0, 128),
     quotedUsername: media.quotedUsername?.slice(0, 128),
     quotedTweetId: media.quotedTweetId?.slice(0, 128), sourceLocation: media.sourceLocation,
+    metadata: {
+      requestTweetId: media.metadata?.requestTweetId,
+      extractionSource: media.metadata?.extractionSource,
+      apiIndex: media.metadata?.apiIndex, domIndex: media.metadata?.domIndex,
+      mediaKey: media.metadata?.apiData?.media_key?.slice(0, 128)
+    },
     generatedFilename: filename.slice(0, 256)
   });
   return false;
@@ -130,6 +146,7 @@ type FailureStage =
   | 'page-identity'
   | 'content-capture'
   | 'content-cleanup'
+  | 'original-resolution'
   | 'worker-capture'
   | 'identity-correlation'
   | 'file-inspection'
@@ -299,6 +316,59 @@ function assertOwnedFixtureUrl(url: string): void {
     'Diagnostic source must be the exact owned B1 fixture'
   );
 }
+
+/** The live diagnostic is restricted to the exact publicly reported page and photo. */
+export function assertReportedLiveFilenameTarget(pageUrl: string, sourceUrl: string): void {
+  assert.equal(pageUrl, 'https://x.com/yukurach/status/2118323627615785399');
+  assert(
+    isReportedLiveDownloadSource(sourceUrl),
+    'Selected live original source is not the reported photo'
+  );
+}
+
+/** A strict target filter; the observed URL is preserved byte-for-byte. */
+export function isReportedLiveDownloadSource(sourceUrl: unknown): sourceUrl is string {
+  if (typeof sourceUrl !== 'string') {
+    return false;
+  }
+  let source: URL;
+  try {
+    source = new URL(sourceUrl);
+  } catch {
+    return false;
+  }
+  if (source.href !== sourceUrl || source.origin !== 'https://pbs.twimg.com') {
+    return false;
+  }
+  if (source.username || source.password || source.hash || source.port) {
+    return false;
+  }
+  if (!/^\/media\/HWXMF0bbcAEnfk6(?:\.jpg)?$/u.test(source.pathname)) {
+    return false;
+  }
+  const pairs = [...source.searchParams].sort();
+  return (
+    pairs.length === 2 &&
+    pairs[0]?.[0] === 'format' &&
+    pairs[0][1] === 'jpg' &&
+    pairs[1]?.[0] === 'name' &&
+    pairs[1][1] === 'orig'
+  );
+}
+
+/** Prefer the selected product source over the gallery's rendered image URL. */
+export function selectedLivePreferredSource(media: Record<string, unknown>): string {
+  const source = media.downloadSource;
+  const preferred =
+    source && typeof source === 'object' && !Array.isArray(source)
+      ? (source as Record<string, unknown>).url
+      : (media.originalUrl ?? media.url);
+  assert(
+    isReportedLiveDownloadSource(preferred),
+    'Selected MediaInfo preferred source is not the reported original'
+  );
+  return preferred;
+}
 async function waitFor<T>(get: () => T | undefined, label: string): Promise<T> {
   const deadline = Date.now() + 5_000;
   while (Date.now() < deadline) {
@@ -333,11 +403,12 @@ function recordFromRemote(
 async function installWorkerObserver(
   worker: Worker,
   marker: string,
-  expectedUrl: string,
-  extensionId: string
+  expectedUrl: string | null,
+  extensionId: string,
+  ownerTabId: number
 ): Promise<void> {
   await worker.evaluate(
-    ({ marker: key, expectedUrl: target, extensionId: owner }) => {
+    ({ marker: key, expectedUrl: target, extensionId: owner, ownerTabId: tabId }) => {
       type Request = {
         type?: string;
         payload?: { url?: string; filename?: string; requestId?: string; mode?: string };
@@ -364,12 +435,42 @@ async function installWorkerObserver(
       };
       const clip = (value: unknown, limit = 256): string | undefined =>
         typeof value === 'string' ? value.slice(0, limit) : undefined;
+      const admitted = (url: unknown): url is string => {
+        if (typeof url !== 'string') {
+          return false;
+        }
+        if (target !== null) {
+          return url === target;
+        }
+        let parsed: URL;
+        try {
+          parsed = new URL(url);
+        } catch {
+          return false;
+        }
+        const pairs = [...parsed.searchParams].sort();
+        return (
+          parsed.href === url &&
+          parsed.origin === 'https://pbs.twimg.com' &&
+          !parsed.username &&
+          !parsed.password &&
+          !parsed.hash &&
+          !parsed.port &&
+          /^\/media\/HWXMF0bbcAEnfk6(?:\.jpg)?$/u.test(parsed.pathname) &&
+          pairs.length === 2 &&
+          pairs[0]?.[0] === 'format' &&
+          pairs[0][1] === 'jpg' &&
+          pairs[1]?.[0] === 'name' &&
+          pairs[1][1] === 'orig'
+        );
+      };
       state.listener = (message, sender) => {
         const item = message as Request | null;
         if (
           sender.id !== owner ||
+          sender.tab?.id !== tabId ||
           item?.type !== 'DOWNLOAD_REQUEST' ||
-          item.payload?.url !== target
+          !admitted(item.payload?.url)
         ) {
           return;
         }
@@ -378,7 +479,7 @@ async function installWorkerObserver(
           return;
         }
         requests.push({
-          url: target,
+          url: item.payload.url,
           requestId: clip(item.payload.requestId, 128),
           filename: clip(item.payload.filename),
           mode: clip(item.payload.mode, 32),
@@ -387,10 +488,10 @@ async function installWorkerObserver(
       };
       state.wrapper = function (this: unknown, ...args: unknown[]): Promise<number> {
         const options = args[0] as Call | undefined;
-        const observed = options?.url === target;
+        const observed = admitted(options?.url);
         const entry = observed
           ? ({
-              url: target,
+              url: options!.url!,
               filename: clip(options.filename),
               saveAs: options.saveAs,
               calledAt: Date.now(),
@@ -431,7 +532,7 @@ async function installWorkerObserver(
         throw error;
       }
     },
-    { marker, expectedUrl, extensionId }
+    { marker, expectedUrl, extensionId, ownerTabId }
   );
 }
 
@@ -504,7 +605,7 @@ async function disposeWorkerObserver(
   }, marker);
 }
 
-export async function withFilenameCorrelation<T>(options: {
+type CorrelationBase<T> = {
   context: BrowserContext;
   page: Page;
   extensionPage: Page;
@@ -512,31 +613,41 @@ export async function withFilenameCorrelation<T>(options: {
   root: string;
   output: string;
   downloads: string;
+  action: () => Promise<T>;
+};
+type FixtureCorrelation = {
+  target?: undefined;
   expectedUrl: string;
   expectedBytes: Uint8Array;
-  action: () => Promise<T>;
+  resolveLiveOriginal?: never;
   label?: 'xeg-alone' | 'passive' | 'passive-undefined' | 'active-suggestion';
-}): Promise<T> {
-  const {
-    context,
-    page,
-    extensionPage,
-    extensionId,
-    root,
-    output,
-    downloads,
-    expectedUrl,
-    expectedBytes,
-    action,
-  } = options;
+};
+type LiveCorrelation = {
+  target: 'reported-live-post';
+  expectedUrl?: never;
+  expectedBytes?: never;
+  resolveLiveOriginal(
+    selectedMedia: Record<string, unknown>
+  ): Promise<{ url: string; bytes: Uint8Array }>;
+  label: 'live-original';
+};
+
+export async function withFilenameCorrelation<T>(
+  options: CorrelationBase<T> & (FixtureCorrelation | LiveCorrelation)
+): Promise<T> {
+  const { context, page, extensionPage, extensionId, root, output, downloads, action } = options;
+  let expectedUrl: string | undefined =
+    options.target === 'reported-live-post' ? undefined : options.expectedUrl;
+  let expectedBytes: Uint8Array | undefined =
+    options.target === 'reported-live-post' ? undefined : options.expectedBytes;
   const receipt: Record<string, unknown> = {
     status: 'incomplete',
     diagnosticOnly: true,
     contentKey: CONTENT_KEY,
     label: options.label ?? 'xeg-alone',
     expectedUrl,
-    expectedBytes: expectedBytes.length,
-    expectedSha256: sha256(expectedBytes),
+    expectedBytes: expectedBytes?.length ?? null,
+    expectedSha256: expectedBytes ? sha256(expectedBytes) : null,
     source: null,
     selectedMedia: null,
     generatedFilename: null,
@@ -581,7 +692,12 @@ export async function withFilenameCorrelation<T>(options: {
   let fileVerified = false;
   const marker = `__xegFilenameCorrelation_${randomUUID()}`;
   try {
-    assertOwnedFixtureUrl(expectedUrl);
+    if (options.target === 'reported-live-post') {
+      assert.equal(page.url(), 'https://x.com/yukurach/status/2118323627615785399');
+      assert.equal(options.label, 'live-original');
+    } else {
+      assertOwnedFixtureUrl(options.expectedUrl);
+    }
     assert.equal(page.context(), context, 'Target page is outside the installed context');
     assert.equal(
       extensionPage.context(),
@@ -589,10 +705,12 @@ export async function withFilenameCorrelation<T>(options: {
       'Extension page is outside the installed context'
     );
     targetPageUrl = page.url();
-    assert(
-      targetPageUrl.startsWith(`${COMPACT_FIXTURE_URL}?compact=`),
-      'Target page is not the owned compact fixture'
-    );
+    if (options.target !== 'reported-live-post') {
+      assert(
+        targetPageUrl.startsWith(`${COMPACT_FIXTURE_URL}?compact=`),
+        'Target page is not the owned compact fixture'
+      );
+    }
     const targetIds = await extensionPage.evaluate(async (url) => {
       const tabs = await chrome.tabs.query({ url: 'https://x.com/*' });
       return tabs.filter((tab) => tab.url === url).map((tab) => tab.id);
@@ -602,10 +720,12 @@ export async function withFilenameCorrelation<T>(options: {
     targetTabId = targetIds[0]!;
     targetTimeOrigin = await page.evaluate(() => performance.timeOrigin);
     receipt.target = { tabId: targetTabId, fixturePath: new URL(targetPageUrl).pathname };
-    assert(
-      expectedBytes.length > 0 && expectedBytes.length <= MAX_FILE_BYTES,
-      'Expected fixture body is outside diagnostic bound'
-    );
+    if (expectedBytes) {
+      assert(
+        expectedBytes.length > 0 && expectedBytes.length <= MAX_FILE_BYTES,
+        'Expected fixture body is outside diagnostic bound'
+      );
+    }
     const source = await readFile(resolve(root, 'dist-extension/content.js'), 'utf8');
     const location = resolveFilenameCaptureLine(source);
     receipt.source = {
@@ -674,7 +794,16 @@ export async function withFilenameCorrelation<T>(options: {
     const installed = await cdp.send('Runtime.callFunctionOn', {
       executionContextId: contentRealmId,
       functionDeclaration: CONTENT_INSTALL_FUNCTION,
-      arguments: [{ value: { marker, expectedUrl, maxEvents: MAX_EVENTS } }],
+      arguments: [
+        {
+          value: {
+            marker,
+            target: options.target ?? 'owned-fixture',
+            expectedUrl: expectedUrl ?? null,
+            maxEvents: MAX_EVENTS,
+          },
+        },
+      ],
       returnByValue: true,
     });
     const installState = recordFromRemote(installed, 'Content observer install') as {
@@ -722,7 +851,7 @@ export async function withFilenameCorrelation<T>(options: {
     workerInstalled = true;
     cleanup.workerListener = 'failed';
     cleanup.nativeWrapper = 'failed';
-    await installWorkerObserver(worker, marker, expectedUrl, extensionId);
+    await installWorkerObserver(worker, marker, expectedUrl ?? null, extensionId, targetTabId);
     receipt.filenameCapabilities = await worker.evaluate(() => {
       type Api = typeof chrome & {
         downloads: typeof chrome.downloads & {
@@ -857,7 +986,31 @@ export async function withFilenameCorrelation<T>(options: {
         trace = undefined;
       }
     }
-    if (trace && targetTabId !== undefined) {
+    if (selectedVerified && options.target === 'reported-live-post') {
+      try {
+        const selectedMedia = receipt.selectedMedia;
+        assert(selectedMedia && typeof selectedMedia === 'object' && !Array.isArray(selectedMedia));
+        const selected = selectedMedia as Record<string, unknown>;
+        const preferred = selectedLivePreferredSource(selected);
+        const resolved = await options.resolveLiveOriginal(selected);
+        assertReportedLiveFilenameTarget(targetPageUrl!, resolved.url);
+        assert.equal(
+          resolved.url,
+          preferred,
+          'Independent original differs from selected MediaInfo source'
+        );
+        assert(resolved.bytes instanceof Uint8Array);
+        assert(resolved.bytes.length > 0 && resolved.bytes.length <= MAX_FILE_BYTES);
+        expectedUrl = resolved.url;
+        expectedBytes = resolved.bytes;
+        receipt.expectedUrl = resolved.url;
+        receipt.expectedBytes = resolved.bytes.length;
+        receipt.expectedSha256 = sha256(resolved.bytes);
+      } catch (error) {
+        addError('original-resolution', error);
+      }
+    }
+    if (trace && targetTabId !== undefined && expectedUrl) {
       const nativeId = trace.native.length === 1 ? trace.native[0]?.downloadId : undefined;
       if (Number.isSafeInteger(nativeId)) {
         try {
@@ -925,7 +1078,7 @@ export async function withFilenameCorrelation<T>(options: {
         addError('identity-correlation', new Error('Observed native call returned no ID'));
       }
     }
-    if (identityVerified && receipt.nativeItem && trace && nativeSavedPath) {
+    if (identityVerified && receipt.nativeItem && trace && nativeSavedPath && expectedBytes) {
       try {
         const nativeItem = receipt.nativeItem as { state: string; id: number };
         assert.equal(nativeItem.state, 'complete', 'Observed native download was not complete');

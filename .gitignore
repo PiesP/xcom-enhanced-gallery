@@ -98,5 +98,6 @@ memory/
 /validation/windows/inputs/ux-details.json
 /validation/windows/inputs/live-acceptance.json
 /validation/windows/inputs/live-click-admission.json
+/validation/windows/inputs/reported-live-filename.json
 /validation/windows/inputs/video-save-format.json
 .vitest/

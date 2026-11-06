@@ -15,6 +15,13 @@ filename, source and bytes. Remove the selector after the attempt. The filename
 cycle uses controlled fixtures. Extension runs may append separate public-status
 observations with `--live-url`; the live observer does not save files.
 
+For a diagnosis that must retain nonconforming native names and continue to the
+public observation, add `"diagnosticOnly": true` to this selector. Only that
+explicit mode records known CDN/active-control basenames without accepting
+filename conformance. Default qualification requires intended XEG-only names and visible actual-name
+reporting for browser filename overrides. Active controls use a distinct literal
+basename and verify the native bytes; a completed mismatch never starts another save.
+
 For #482's reported image click, the installed Chrome extension accepts the
 separate ignored `live-click-admission.json` input:
 
@@ -32,12 +39,26 @@ in force. This diagnostic does not enable downloads or establish live-file
 acceptance. Remove the selector after the attempt, and repeat any successful
 acceptance path without intervening diagnostic hooks.
 
-For a diagnosis that must retain nonconforming native names and continue to the
-public observation, add `"diagnosticOnly": true` to this selector. Only that
-explicit mode records known CDN/active-control basenames without accepting
-filename conformance. Default qualification requires intended XEG-only names and visible actual-name
-reporting for browser filename overrides. Active controls use a distinct literal
-basename and verify the native bytes; a completed mismatch never starts another save.
+To qualify the reported photo's actual native save after gallery entry, use
+the exclusive ignored `reported-live-filename.json` selector instead:
+
+```json
+{"scenario":"reported-live-filename"}
+```
+
+Use the same exact Chrome-extension live URL. This focused route uses the
+ordinary image click without admission logpoints, captures the selected
+MediaInfo and its preferred save URL during the real Download click, and
+compares the original native file with an independent bounded GET of that
+exact preferred source. It retains native IDs, requested/actual names and the
+notice, then verifies a second explicit toolbar save after the download
+observers are removed. It checks all extension-owned native IDs for duplicate
+saves. Each inspected original and reference body is limited to 4 MiB. Original
+receipts and files are inspected before evidence copies, whose basenames are
+preserved. Generic live API/host diagnostics retain their separate verdict;
+this focused result does not qualify an authenticated session or the original
+user's profile cause. Remove the selector after the attempt.
+
 To check issue #484's video save format through the installed Chrome/Edge
 extension, create the ignored `video-save-format.json` file here with exactly:
 

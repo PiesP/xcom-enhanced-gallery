@@ -5,7 +5,10 @@ import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import {
   compareObservedFilenames,
+  assertReportedLiveFilenameTarget,
+  isReportedLiveDownloadSource,
   resolveFilenameCaptureLine,
+  selectedLivePreferredSource,
   verifyFilenameCorrelation,
 } from './filename-correlation.ts';
 
@@ -22,6 +25,38 @@ function next() {}
 `;
 
 describe('filename correlation diagnostic', () => {
+  it('confines live correlation to the reported public page and original photo', () => {
+    const page = 'https://x.com/yukurach/status/2118323627615785399';
+    const source = 'https://pbs.twimg.com/media/HWXMF0bbcAEnfk6?format=jpg&name=orig';
+    expect(() => assertReportedLiveFilenameTarget(page, source)).not.toThrow();
+    for (const [target, url] of [
+      [page + '/photo/1', source],
+      [page, source.replace('HWXMF0bbcAEnfk6', 'OtherPhoto')],
+      [page, source + '&format=jpg'],
+      [page, source.replace('name=orig', 'name=small')],
+      [page, source.replace('https://', 'https://user@')],
+      [page, source + '#fragment'],
+    ]) {
+      expect(() => assertReportedLiveFilenameTarget(target!, url!)).toThrow();
+    }
+  });
+
+  it('uses the exact selected original URL even when its query order differs from the rendered image', () => {
+    const preferred = 'https://pbs.twimg.com/media/HWXMF0bbcAEnfk6.jpg?name=orig&format=jpg';
+    const media = {
+      url: 'https://pbs.twimg.com/media/HWXMF0bbcAEnfk6?format=webp&name=medium',
+      originalUrl: 'https://pbs.twimg.com/media/HWXMF0bbcAEnfk6?format=jpg&name=large',
+      downloadSource: { url: preferred, quality: 'original' },
+    };
+    expect(selectedLivePreferredSource(media)).toBe(preferred);
+    expect(isReportedLiveDownloadSource(preferred)).toBe(true);
+    expect(() => selectedLivePreferredSource({ ...media, downloadSource: null })).toThrow();
+    expect(isReportedLiveDownloadSource(preferred + '&token=private')).toBe(false);
+    expect(isReportedLiveDownloadSource(preferred.replace('https://', 'https://user@'))).toBe(
+      false
+    );
+  });
+
   it('binds to the line after the sole downloadSingleFile generation site', () => {
     expect(resolveFilenameCaptureLine(source).lineNumber).toBe(5);
     expect(() =>

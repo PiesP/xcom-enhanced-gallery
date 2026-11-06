@@ -5,6 +5,7 @@ import { open, writeFile, type FileHandle } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { isAbsolute, join } from 'node:path';
 import { withClickAdmissionTrace } from './click-admission.ts';
+import { runReportedLiveFilename } from './live-filename.ts';
 import {
   assessVisitEvidence,
   isVisitEvidenceV2,
@@ -314,6 +315,7 @@ type GalleryObservation = {
   scrollRestored?: boolean;
 };
 type LiveObservation = {
+  reportedFilename?: Record<string, unknown>;
   schemaVersion: number;
   kind: string;
   requestedUrl: string;
@@ -2973,7 +2975,8 @@ async function observeOne(
   } | null = null,
   strictPageClose = false,
   documentBaselines: Map<string, HostCspFingerprint[]> | null = null,
-  clickAdmission: { root: string } | null = null
+  clickAdmission: { root: string } | null = null,
+  reportedFilename: { root: string; downloads: string } | null = null
 ) {
   const identity = targetIdentity(targetUrl);
   const page = await context.newPage();
@@ -3482,6 +3485,18 @@ async function observeOne(
       selectedGallery,
       role: await gallery.getAttribute('role'),
     };
+    if (reportedFilename) {
+      if (!selectedGallery) {
+        throw new Error('Reported image selection was not verified before Download');
+      }
+      observation.reportedFilename = await runReportedLiveFilename({
+        context,
+        page,
+        extensionId,
+        output,
+        ...reportedFilename,
+      });
+    }
     const mixedProviderVideo =
       actualSiteAcceptance && !compactQuote && selectedGallery
         ? ownedMixedPhotoVideo(
@@ -4139,6 +4154,7 @@ export async function observeLiveUrls({
   ownedCandidateProof = null,
   actualSiteAcceptance = null,
   clickAdmission = null,
+  reportedFilename = null,
 }: {
   context: BrowserContext;
   extensionId: string;
@@ -4149,6 +4165,7 @@ export async function observeLiveUrls({
   ownedCandidateProof?: OwnedCandidateInBorrowedBrowser | null;
   actualSiteAcceptance?: { downloads: string } | null;
   clickAdmission?: { root: string } | null;
+  reportedFilename?: { root: string; downloads: string } | null;
 }) {
   if (
     session !== 'owned' &&
@@ -4177,6 +4194,14 @@ export async function observeLiveUrls({
   }
   if (clickAdmission && (session !== 'owned' || actualSiteAcceptance || urls.length !== 1)) {
     throw new Error('Click admission diagnostic requires one owned ordinary live observation');
+  }
+  if (
+    reportedFilename &&
+    (session !== 'owned' || actualSiteAcceptance || clickAdmission || urls.length !== 1)
+  ) {
+    throw new Error(
+      'Reported filename acceptance requires one owned live observation without admission hooks'
+    );
   }
   if (!urls.length) {
     return { status: 'not-requested', evidenceStatus: 'not-applicable', pages: [] };
@@ -4223,7 +4248,8 @@ export async function observeLiveUrls({
           : null,
         session === 'borrowed-browser-owned-extension',
         session === 'borrowed-browser-owned-extension' ? baselineByUrl : null,
-        clickAdmission
+        clickAdmission,
+        reportedFilename
       );
       if (
         session === 'borrowed' &&
