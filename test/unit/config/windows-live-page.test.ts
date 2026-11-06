@@ -3,6 +3,7 @@
 
 import { EventEmitter } from 'node:events';
 import { createHash } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -899,8 +900,11 @@ describe('Windows X live page validation', () => {
       'utf8'
     );
     expect(source).not.toMatch(
-      /CopyFromScreen|PrintWindow|BitBlt|System\.Drawing|GetWindowRect|SendInput|SetForegroundWindow/u
+      /CopyFromScreen|PrintWindow|BitBlt|System\.Drawing|GetWindowRect|SendInput/u
     );
+    expect(source.match(/\[XegPermissionWindow\]::SetForegroundWindow\([^)]*\)/gu)).toEqual([
+      '[XegPermissionWindow]::SetForegroundWindow($foreground)',
+    ]);
     expect(source).toContain("screenshot = 'not-captured'");
     expect(source).toContain('@($child, ($depth + 1))');
     for (const proof of [
@@ -913,6 +917,73 @@ describe('Windows X live page validation', () => {
     ]) {
       expect(source).toContain(proof);
     }
+  });
+
+  it('limits native Edge refocus to one owned, complete prompt in the expected process', () => {
+    const source = readFileSync(
+      resolve(import.meta.dirname, '../../../validation/windows/manager-permission-window.ps1'),
+      'ascii'
+    );
+    const start = source.indexOf('function Test-EdgeRefocusEligibility {');
+    const end = source.indexOf('\n\ntry {', start);
+    expect(start).toBeGreaterThanOrEqual(0);
+    expect(end).toBeGreaterThan(start);
+    const helper = source.slice(start, end);
+    const shell = process.platform === 'win32' ? 'powershell.exe' : 'pwsh';
+    const result = spawnSync(
+      shell,
+      [
+        '-NoProfile',
+        '-NonInteractive',
+        '-Command',
+        `${helper}
+$base = @{
+    CandidateBrowserName = 'msedge'; CandidateInvokeAllow = $true;
+    CandidateBrowserPid = 16616; ExpectedCreation = '639295430255644860';
+    ActualCreation = '639295430255644860'; ExpectedSession = 2; ActualSession = 2;
+    ExpectedHandle = '2033082'; OriginalHandle = '2033082'; CurrentHandle = '329022';
+    CurrentPid = 16616; SameCreation = $true; OriginalOwned = $true; CurrentOwned = $true;
+    WindowEnumeration = 'complete'; OwnedVisibleHandles = @('329022','2033082','1442762');
+    PromptComplete = $true; PromptNameTruncated = $false; PromptWindowCount = 1
+}
+function Test-Case([string]$Key, $Value) {
+    $candidate = $base.Clone()
+    if ($Key) { $candidate[$Key] = $Value }
+    return [bool](Test-EdgeRefocusEligibility @candidate)
+}
+[ordered]@{
+    observed = (Test-Case '' $null);
+    chrome = (Test-Case 'CandidateBrowserName' 'chrome');
+    diagnostic = (Test-Case 'CandidateInvokeAllow' $false);
+    otherPid = (Test-Case 'CurrentPid' 77);
+    foreignForeground = (Test-Case 'CurrentOwned' $false);
+    originalGone = (Test-Case 'OriginalOwned' $false);
+    missingOriginal = (Test-Case 'OwnedVisibleHandles' @('329022','1442762'));
+    changedCreation = (Test-Case 'SameCreation' $false);
+    wrongExpectedHandle = (Test-Case 'ExpectedHandle' '1442762');
+    incompletePrompt = (Test-Case 'PromptComplete' $false);
+    truncatedPrompt = (Test-Case 'PromptNameTruncated' $true);
+    multiplePrompts = (Test-Case 'PromptWindowCount' 2)
+} | ConvertTo-Json -Compress`,
+      ],
+      { encoding: 'utf8' }
+    );
+    expect(result.error).toBeUndefined();
+    expect(result.status, result.stderr).toBe(0);
+    expect(JSON.parse(result.stdout)).toEqual({
+      observed: true,
+      chrome: false,
+      diagnostic: false,
+      otherPid: false,
+      foreignForeground: false,
+      originalGone: false,
+      missingOriginal: false,
+      changedCreation: false,
+      wrongExpectedHandle: false,
+      incompletePrompt: false,
+      truncatedPrompt: false,
+      multiplePrompts: false,
+    });
   });
 
   it('keeps PowerShell 5.1 prompt labels ASCII-source and exact to observed ko-KR UIA', () => {
