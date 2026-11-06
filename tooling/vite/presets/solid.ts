@@ -11,7 +11,7 @@
  */
 
 import type { UserConfig } from 'vite';
-import solidPlugin from 'vite-plugin-solid';
+import { lazyPlugins } from 'vite-plus';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -33,13 +33,17 @@ export function solidPreset(options: SolidPresetOptions): UserConfig {
   const { isDev, cssClassNamePattern } = options;
 
   return {
-    plugins: [
-      solidPlugin({
-        solid: {
-          omitNestedClosingTags: !isDev,
-        },
-      }),
-    ],
+    plugins:
+      lazyPlugins(async () => {
+        const { default: solidPlugin } = await import('vite-plugin-solid');
+        return [
+          solidPlugin({
+            solid: {
+              omitNestedClosingTags: !isDev,
+            },
+          }),
+        ];
+      }) ?? [],
 
     css: {
       modules: {
