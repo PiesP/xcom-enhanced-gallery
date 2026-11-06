@@ -260,6 +260,12 @@ const userscriptInstall = (await import(
   isObservedChromeNativeDownloadPrompt(value: unknown): boolean;
   isObservedNativeDownloadPrompt(value: unknown, browserName: string): boolean;
   isObservedInitialEdgeWarning(value: unknown): boolean;
+  observedOwnedEdgeForegroundDrift(value: unknown): {
+    browserPid: number;
+    creationUtcTicks: string;
+    browserSessionId: number;
+    foregroundHandle: string;
+  } | null;
   isObservedEdgeWarning(
     value: unknown,
     original: unknown,
@@ -298,6 +304,13 @@ const userscriptInstall = (await import(
   ): Promise<{
     status: string;
     action: { status: string; reason: string | null };
+    warningEntryKind?: 'initial-warning' | 'owned-foreground-drift';
+    inspectionCandidate?: {
+      browserPid: number;
+      creationUtcTicks: string;
+      browserSessionId: number;
+      foregroundHandle: string;
+    };
     warning?: { status: string; reason: string | null };
     retry?: { status: string; reason: string | null };
   }>;
@@ -825,6 +838,107 @@ describe('Windows X live page validation', () => {
       },
     };
   };
+
+  const ownedForegroundDrift = () => ({
+    status: 'skipped',
+    reason: 'window-identity-changed',
+    capture: 'uia-only',
+    screenshot: 'not-captured',
+    permissionGrantAttempted: false,
+    windowOwnership: {
+      browserPid: 18556,
+      foregroundPid: 18556,
+      foregroundHandle: '4391416',
+      foregroundIsOwned: true,
+      creationUtcTicks: '639295513666172340',
+      browserSessionId: 2,
+      observerSessionId: 2,
+      ownedVisibleWindowCount: 2,
+      ownedVisibleHandles: ['4391416', '9240878'],
+    },
+    identityRecheck: {
+      ownedVisibleWindowCount: 3,
+      ownedVisibleHandles: ['2426246', '4391416', '9240878'],
+      afterForegroundHandle: '2426246',
+      sameForeground: false,
+      afterForegroundOwned: true,
+      ownedVisibleWindowEnumeration: 'complete',
+      sameCreation: true,
+      beforeCreationUtcTicks: '639295513666172340',
+      afterCreationUtcTicks: '639295513666172340',
+      beforeForegroundHandle: '4391416',
+      originalForegroundOwnedAndVisible: true,
+      afterForegroundPid: 18556,
+    },
+    promptScope: { ...edgeNativePrompt().promptScope, rootProcessId: 18556 },
+  });
+
+  it('admits only fixture11 owned foreground drift for fresh warning inspection', () => {
+    const candidate = {
+      browserPid: 18556,
+      creationUtcTicks: '639295513666172340',
+      browserSessionId: 2,
+      foregroundHandle: '2426246',
+    };
+    expect(userscriptInstall.observedOwnedEdgeForegroundDrift(ownedForegroundDrift())).toEqual(
+      candidate
+    );
+    const alterations: Array<(receipt: ReturnType<typeof ownedForegroundDrift>) => void> = [
+      (r) => {
+        r.reason = 'browser-profile-unverified';
+      },
+      (r) => {
+        r.permissionGrantAttempted = true;
+      },
+      (r) => {
+        r.windowOwnership.foregroundPid = 77;
+      },
+      (r) => {
+        r.windowOwnership.creationUtcTicks = '639295513666172341';
+      },
+      (r) => {
+        r.windowOwnership.browserSessionId = 3;
+      },
+      (r) => {
+        r.windowOwnership.foregroundIsOwned = false;
+      },
+      (r) => {
+        r.identityRecheck.afterForegroundPid = 77;
+      },
+      (r) => {
+        r.identityRecheck.afterCreationUtcTicks = '639295513666172341';
+      },
+      (r) => {
+        r.identityRecheck.afterForegroundHandle = '4391416';
+      },
+      (r) => {
+        r.identityRecheck.afterForegroundHandle = '7777777';
+      },
+      (r) => {
+        r.identityRecheck.originalForegroundOwnedAndVisible = false;
+      },
+      (r) => {
+        r.identityRecheck.ownedVisibleWindowEnumeration = 'unavailable';
+      },
+      (r) => {
+        r.identityRecheck.ownedVisibleHandles = ['2426246', '9240878'];
+      },
+      (r) => {
+        r.identityRecheck.ownedVisibleWindowCount = 9;
+      },
+      (r) => {
+        r.promptScope.complete = false;
+      },
+      (r) => {
+        r.promptScope.controls[20]!.name = 'Other permission';
+      },
+    ];
+    for (const alter of alterations) {
+      const receipt = ownedForegroundDrift();
+      alter(receipt);
+      expect(userscriptInstall.observedOwnedEdgeForegroundDrift(receipt)).toBeNull();
+    }
+  });
 
   it('admits only a stable owned initial Edge warning before any permission action', () => {
     const initial = initialEdgeWarning();
@@ -1377,6 +1491,152 @@ describe('Windows X live page validation', () => {
       expect(nativeActions).toBe(0);
       initial = initialEdgeWarning();
       initial.identityRecheck.sameCreation = false;
+      expect((await execute()).warning).toBeUndefined();
+      expect(run).toHaveBeenCalledOnce();
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('inspects a fixture11 owned foreground drift without granting permission first', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'xeg-edge-owned-drift-'));
+    const profile = join(root, 'xeg-userscript-install-owned');
+    const output = join(root, 'output');
+    mkdirSync(profile);
+    mkdirSync(output);
+    const initial = ownedForegroundDrift();
+    const identity = userscriptInstall.observedOwnedEdgeForegroundDrift(initial)!;
+    const warning = {
+      ...edgeWarning(),
+      mode: 'warning-first' as const,
+      originalPermissionHandle: null,
+      browserPid: identity.browserPid,
+      creationUtcTicks: identity.creationUtcTicks,
+      browserSessionId: identity.browserSessionId,
+      warningHandle: identity.foregroundHandle,
+    };
+    let warningCapture = warning;
+    let askUrl = 'chrome-extension://owned/ask.html?aid=opaque';
+    let permissionGranted = false;
+    let optionsCount = 1;
+    let currentPid = identity.browserPid;
+    let nativeCaptures = 0;
+    let nativeActions = 0;
+    const retryPrompt = edgeNativePrompt();
+    retryPrompt.browserPid = identity.browserPid;
+    retryPrompt.uiaRootProcessId = identity.browserPid;
+    retryPrompt.creationUtcTicks = identity.creationUtcTicks;
+    retryPrompt.promptScope.rootProcessId = identity.browserPid;
+    retryPrompt.foregroundHandle = '4391416';
+    const options = {
+      isClosed: () => false,
+      url: () => 'chrome-extension://owned/options.html',
+      evaluate: vi.fn(async () => permissionGranted),
+    };
+    const context = { pages: () => Array.from({ length: optionsCount }, () => options) };
+    const ask = { isClosed: () => false, context: () => context, url: () => askUrl };
+    const cdp = {
+      send: vi.fn(async () => ({ processInfo: [{ type: 'browser', id: currentPid }] })),
+    };
+    const run = vi.fn(async (_file: string, args: string[]) => {
+      const warningHelper = args.some((arg) => arg.endsWith('manager-edge-warning-window.ps1'));
+      const invoke = args.includes('-InvokeLater') || args.includes('-InvokeAllow');
+      if (warningHelper) {
+        expect(args).toContain('warning-first');
+        expect(args).not.toContain('-OriginalPermissionHandle');
+        expect(args[args.indexOf('-ExpectedWarningHandle') + 1]).toBe('2426246');
+        writeFileSync(
+          join(
+            output,
+            invoke
+              ? 'userscript-manager-edge-warning-action.json'
+              : 'userscript-manager-edge-warning.json'
+          ),
+          JSON.stringify(
+            invoke ? { ...warningCapture, status: 'invoked', laterAttempted: true } : warningCapture
+          )
+        );
+      } else if (invoke) {
+        nativeActions++;
+        writeFileSync(
+          join(output, 'userscript-manager-native-permission-action.json'),
+          JSON.stringify({
+            status: 'invoked',
+            capture: 'uia-only',
+            screenshot: 'not-captured',
+            permissionGrantAttempted: true,
+            postProcessStable: true,
+            postForegroundOwned: true,
+          })
+        );
+      } else {
+        nativeCaptures++;
+        writeFileSync(
+          join(output, 'userscript-manager-native-permission.json'),
+          JSON.stringify(nativeCaptures === 1 ? initial : retryPrompt)
+        );
+      }
+    });
+    const execute = async () => {
+      nativeCaptures = 0;
+      nativeActions = 0;
+      run.mockClear();
+      return userscriptInstall.inspectAndAllowNativeManagerPermission(
+        cdp,
+        root,
+        output,
+        profile,
+        'msedge',
+        ask,
+        'owned',
+        context,
+        run
+      );
+    };
+    try {
+      const result = await execute();
+      expect(result.warningEntryKind).toBe('owned-foreground-drift');
+      expect(result.inspectionCandidate).toEqual(identity);
+      expect(result.action).toEqual({
+        status: 'skipped',
+        reason: 'warning-before-permission-action',
+        permissionGrantAttempted: false,
+      });
+      expect(result.warning?.status).toBe('invoked');
+      expect(result.retry?.status).toBe('invoked');
+      expect(nativeActions).toBe(1);
+      expect(run).toHaveBeenCalledTimes(5);
+      expect(
+        readFileSync(join(output, 'userscript-manager-native-permission-initial.json'), 'utf8')
+      ).toBe(JSON.stringify(initial));
+
+      askUrl = 'chrome-extension://other/ask.html?aid=opaque';
+      expect((await execute()).warning?.status).toBe('skipped');
+      expect(run).toHaveBeenCalledOnce();
+      askUrl = 'chrome-extension://owned/ask.html?aid=opaque';
+      optionsCount = 2;
+      expect((await execute()).warning?.status).toBe('skipped');
+      expect(run).toHaveBeenCalledOnce();
+      optionsCount = 1;
+      permissionGranted = true;
+      expect((await execute()).warning?.status).toBe('skipped');
+      expect(run).toHaveBeenCalledOnce();
+      permissionGranted = false;
+      currentPid = 77;
+      expect((await execute()).warning?.status).toBe('skipped');
+      expect(run).toHaveBeenCalledOnce();
+      currentPid = identity.browserPid;
+      warningCapture = { ...warning, warningHandle: '7777777' };
+      expect((await execute()).warning?.status).toBe('skipped');
+      expect(run).toHaveBeenCalledTimes(2);
+      warningCapture = { ...warning, warningScope: { ...warning.warningScope, complete: false } };
+      expect((await execute()).warning?.status).toBe('skipped');
+      expect(run).toHaveBeenCalledTimes(2);
+      initial.reason = 'browser-profile-unverified';
+      expect((await execute()).warning).toBeUndefined();
+      expect(run).toHaveBeenCalledOnce();
+      initial.reason = 'window-identity-changed';
+      initial.permissionGrantAttempted = true;
       expect((await execute()).warning).toBeUndefined();
       expect(run).toHaveBeenCalledOnce();
     } finally {

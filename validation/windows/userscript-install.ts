@@ -6,7 +6,7 @@ import { Buffer } from 'node:buffer';
 import { execFile } from 'node:child_process';
 import { mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { basename, dirname, join, resolve } from 'node:path';
-import { promisify } from 'node:util';
+import { isDeepStrictEqual, promisify } from 'node:util';
 import type {
   BrowserContext,
   BrowserType,
@@ -114,6 +114,29 @@ const CHROME_KO_PRIOR_PERMISSIONS_LABEL = '이전에 가능했던 대상:';
 const CHROME_KO_DOWNLOADS_PERMISSION_LABEL = '다운로드 관리';
 const EDGE_KO_PRIOR_PERMISSIONS_LABEL = '확장은 다음을 할 수 있습니다.';
 const EDGE_KO_DOWNLOADS_PERMISSION_LABEL = '• 다운로드 관리';
+const EDGE_PERMISSION_SCOPE_21: ReadonlyArray<readonly [string, string, number]> = [
+  ['ControlType.Window', EDGE_KO_PERMISSION_TITLE, 0],
+  ['ControlType.Pane', '', 1],
+  ['ControlType.Pane', '', 2],
+  ['ControlType.Pane', '', 3],
+  ['ControlType.Pane', '', 3],
+  ['ControlType.Pane', '', 4],
+  ['ControlType.Pane', '', 4],
+  ['ControlType.Pane', '', 4],
+  ['ControlType.Button', '허용', 4],
+  ['ControlType.Button', '거부', 4],
+  ['ControlType.Pane', '', 5],
+  ['ControlType.Pane', '', 5],
+  ['ControlType.Text', EDGE_KO_PERMISSION_TITLE, 6],
+  ['ControlType.Pane', '', 6],
+  ['ControlType.Pane', '', 6],
+  ['ControlType.Pane', '', 7],
+  ['ControlType.Pane', '', 8],
+  ['ControlType.Pane', '', 9],
+  ['ControlType.Text', EDGE_KO_PRIOR_PERMISSIONS_LABEL, 10],
+  ['ControlType.Pane', '', 10],
+  ['ControlType.Text', EDGE_KO_DOWNLOADS_PERMISSION_LABEL, 11],
+];
 const PROMPT_SCOPE_REASONS = new Set([
   'prompt-window-not-unique',
   'prompt-identity-changed',
@@ -161,6 +184,8 @@ type NativePromptReceipt = {
     ownedVisibleHandles?: string[];
   };
   identityRecheck?: {
+    ownedVisibleWindowCount?: number;
+    ownedVisibleHandles?: string[];
     sameCreation?: boolean;
     sameForeground?: boolean;
     afterForegroundOwned?: boolean;
@@ -204,6 +229,16 @@ type EdgeWarningReceipt = {
     attemptedNodes?: number;
     controls?: Array<NativeControl & { depth?: number }>;
   };
+};
+type EdgeWarningIdentity = {
+  browserPid: number;
+  creationUtcTicks: string;
+  browserSessionId: number;
+  foregroundHandle: string;
+};
+type EdgeWarningFirstEntry = {
+  kind: 'initial-warning' | 'owned-foreground-drift';
+  identity: EdgeWarningIdentity;
 };
 type FixtureMediaEvent = {
   kind: string;
@@ -694,9 +729,97 @@ export function isObservedInitialEdgeWarning(receipt: NativePromptReceipt | null
   );
 }
 
+/** Eligible to inspect a new foreground HWND; this does not identify it as a warning. */
+export function observedOwnedEdgeForegroundDrift(
+  receipt: NativePromptReceipt | null
+): EdgeWarningIdentity | null {
+  const before = receipt?.windowOwnership;
+  const after = receipt?.identityRecheck;
+  const scope = receipt?.promptScope;
+  const validHandles = (handles: unknown, count: unknown) =>
+    Array.isArray(handles) &&
+    Number.isSafeInteger(count) &&
+    Number(count) > 0 &&
+    Number(count) <= 8 &&
+    handles.length === count &&
+    handles.every((handle) => typeof handle === 'string' && /^[1-9]\d{0,19}$/u.test(handle)) &&
+    new Set(handles).size === handles.length;
+  if (
+    receipt?.status !== 'skipped' ||
+    receipt.reason !== 'window-identity-changed' ||
+    receipt.capture !== 'uia-only' ||
+    receipt.screenshot !== 'not-captured' ||
+    receipt.permissionGrantAttempted !== false ||
+    !before ||
+    !after ||
+    !Number.isSafeInteger(before.browserPid) ||
+    before.browserPid! <= 0 ||
+    typeof before.creationUtcTicks !== 'string' ||
+    !/^\d{15,20}$/u.test(before.creationUtcTicks) ||
+    !Number.isSafeInteger(before.browserSessionId) ||
+    before.browserSessionId! <= 0 ||
+    before.observerSessionId !== before.browserSessionId ||
+    before.foregroundIsOwned !== true ||
+    before.foregroundPid !== before.browserPid ||
+    typeof before.foregroundHandle !== 'string' ||
+    !/^[1-9]\d{0,19}$/u.test(before.foregroundHandle) ||
+    !validHandles(before.ownedVisibleHandles, before.ownedVisibleWindowCount) ||
+    !before.ownedVisibleHandles?.includes(before.foregroundHandle) ||
+    after.sameCreation !== true ||
+    after.sameForeground !== false ||
+    after.afterForegroundOwned !== true ||
+    after.originalForegroundOwnedAndVisible !== true ||
+    after.ownedVisibleWindowEnumeration !== 'complete' ||
+    after.beforeCreationUtcTicks !== before.creationUtcTicks ||
+    after.afterCreationUtcTicks !== before.creationUtcTicks ||
+    after.beforeForegroundHandle !== before.foregroundHandle ||
+    typeof after.afterForegroundHandle !== 'string' ||
+    !/^[1-9]\d{0,19}$/u.test(after.afterForegroundHandle) ||
+    after.afterForegroundHandle === before.foregroundHandle ||
+    after.afterForegroundPid !== before.browserPid ||
+    !validHandles(after.ownedVisibleHandles, after.ownedVisibleWindowCount) ||
+    !after.ownedVisibleHandles?.includes(before.foregroundHandle) ||
+    !after.ownedVisibleHandles?.includes(after.afterForegroundHandle) ||
+    (receipt.browserPid !== undefined && receipt.browserPid !== before.browserPid) ||
+    (receipt.creationUtcTicks !== undefined &&
+      receipt.creationUtcTicks !== before.creationUtcTicks) ||
+    (receipt.browserSessionId !== undefined &&
+      receipt.browserSessionId !== before.browserSessionId) ||
+    (receipt.foregroundHandle !== undefined &&
+      receipt.foregroundHandle !== before.foregroundHandle) ||
+    scope?.complete !== true ||
+    scope.reason !== null ||
+    scope.nameTruncated !== false ||
+    scope.windowCount !== 1 ||
+    scope.rootProcessId !== before.browserPid ||
+    scope.visitedControls !== 21 ||
+    scope.attemptedNodes !== 21 ||
+    !Array.isArray(scope.controls) ||
+    scope.controls.length !== EDGE_PERMISSION_SCOPE_21.length ||
+    !scope.controls.every((control, index) => {
+      const [type, name, depth] = EDGE_PERMISSION_SCOPE_21[index]!;
+      return (
+        control.controlType === type &&
+        control.name === name &&
+        control.depth === depth &&
+        control.isEnabled === true &&
+        control.isOffscreen === false
+      );
+    })
+  ) {
+    return null;
+  }
+  return {
+    browserPid: before.browserPid!,
+    creationUtcTicks: before.creationUtcTicks,
+    browserSessionId: before.browserSessionId!,
+    foregroundHandle: after.afterForegroundHandle,
+  };
+}
+
 export function isObservedEdgeWarning(
   receipt: EdgeWarningReceipt | null,
-  original: NativePromptReceipt,
+  original: EdgeWarningIdentity,
   mode: 'after-permission' | 'warning-first' = 'after-permission'
 ) {
   const scope = receipt?.warningScope;
@@ -816,6 +939,12 @@ export async function dismissObservedEdgeWarningOnce(
     managerId,
     context,
     original,
+    {
+      browserPid: original.browserPid!,
+      creationUtcTicks: original.creationUtcTicks!,
+      browserSessionId: original.browserSessionId!,
+      foregroundHandle: original.foregroundHandle!,
+    },
     'after-permission',
     originalAction.foregroundHandle,
     originalAction,
@@ -832,9 +961,21 @@ async function dismissObservedEdgeWarningFirstOnce(
   managerId: string,
   context: BrowserContext,
   initial: NativePromptReceipt,
+  entry: EdgeWarningFirstEntry,
   run: typeof execFileAsync
 ) {
-  if (!isObservedInitialEdgeWarning(initial)) {
+  const observed =
+    entry.kind === 'initial-warning'
+      ? isObservedInitialEdgeWarning(initial)
+        ? {
+            browserPid: initial.browserPid!,
+            creationUtcTicks: initial.creationUtcTicks!,
+            browserSessionId: initial.browserSessionId!,
+            foregroundHandle: initial.foregroundHandle!,
+          }
+        : null
+      : observedOwnedEdgeForegroundDrift(initial);
+  if (!observed || !isDeepStrictEqual(observed, entry.identity)) {
     return { status: 'skipped', reason: 'initial-warning-not-exact' };
   }
   return captureAndDismissEdgeWarningOnce(
@@ -846,8 +987,9 @@ async function dismissObservedEdgeWarningFirstOnce(
     managerId,
     context,
     initial,
+    entry.identity,
     'warning-first',
-    initial.foregroundHandle!,
+    entry.identity.foregroundHandle,
     null,
     run
   );
@@ -861,7 +1003,8 @@ async function captureAndDismissEdgeWarningOnce(
   ask: Page,
   managerId: string,
   context: BrowserContext,
-  original: NativePromptReceipt,
+  initial: NativePromptReceipt,
+  identity: EdgeWarningIdentity,
   mode: 'after-permission' | 'warning-first',
   expectedWarningHandle: string,
   originalAction: NativePromptReceipt | null,
@@ -889,11 +1032,11 @@ async function captureAndDismissEdgeWarningOnce(
     await pending();
     assert.equal(
       browserProcessId(await cdp.send('SystemInfo.getProcessInfo')),
-      original.browserPid,
+      identity.browserPid,
       'browser-pid-changed'
     );
     const initialBytes = await readFile(join(output, NATIVE_PERMISSION_RECEIPT));
-    assert.deepEqual(JSON.parse(initialBytes.toString('utf8')), original);
+    assert.deepEqual(JSON.parse(initialBytes.toString('utf8')), initial);
     await writeFile(
       join(output, 'userscript-manager-native-permission-initial.json'),
       initialBytes
@@ -912,7 +1055,7 @@ async function captureAndDismissEdgeWarningOnce(
       '-File',
       join(root, 'validation/windows/manager-edge-warning-window.ps1'),
       '-BrowserPid',
-      String(original.browserPid),
+      String(identity.browserPid),
       '-Profile',
       profile,
       '-Output',
@@ -920,26 +1063,26 @@ async function captureAndDismissEdgeWarningOnce(
       '-Mode',
       mode,
       '-ExpectedCreationUtcTicks',
-      original.creationUtcTicks!,
+      identity.creationUtcTicks,
       '-ExpectedSessionId',
-      String(original.browserSessionId),
+      String(identity.browserSessionId),
       '-ExpectedWarningHandle',
       expectedWarningHandle,
     ];
     if (mode === 'after-permission') {
-      args.push('-OriginalPermissionHandle', original.foregroundHandle!);
+      args.push('-OriginalPermissionHandle', identity.foregroundHandle);
     }
     await run('powershell.exe', args, { timeout: 12_000, windowsHide: true, maxBuffer: 4_096 });
     const warning: EdgeWarningReceipt = JSON.parse(
       await readFile(join(output, EDGE_WARNING_RECEIPT), 'utf8')
     );
-    if (!isObservedEdgeWarning(warning, original, mode)) {
+    if (!isObservedEdgeWarning(warning, identity, mode)) {
       return skipped('warning-not-exact');
     }
     await pending();
     assert.equal(
       browserProcessId(await cdp.send('SystemInfo.getProcessInfo')),
-      original.browserPid,
+      identity.browserPid,
       'browser-pid-changed'
     );
     await run('powershell.exe', [...args, '-InvokeLater'], {
@@ -966,7 +1109,7 @@ async function captureAndDismissEdgeWarningOnce(
       !warning.warningScope ||
       !isObservedEdgeWarning(
         { ...action, status: 'captured', laterAttempted: false },
-        original,
+        identity,
         mode
       )
     ) {
@@ -1094,12 +1237,33 @@ export async function inspectAndAllowNativeManagerPermission(
   if (browserName !== 'chrome' && browserName !== 'msedge') {
     return skipped('browser-not-observed');
   }
-  if (diagnostic.status !== 'captured') {
+  const mayBeOwnedDrift =
+    browserName === 'msedge' &&
+    diagnostic.status === 'skipped' &&
+    diagnostic.reason === 'window-identity-changed';
+  if (diagnostic.status !== 'captured' && !mayBeOwnedDrift) {
     return skipped('prompt-not-captured');
   }
   try {
     const receipt = JSON.parse(await readFile(join(output, NATIVE_PERMISSION_RECEIPT), 'utf8'));
-    if (browserName === 'msedge' && isObservedInitialEdgeWarning(receipt)) {
+    const driftIdentity = mayBeOwnedDrift ? observedOwnedEdgeForegroundDrift(receipt) : null;
+    const warningEntry: EdgeWarningFirstEntry | null =
+      browserName === 'msedge' &&
+      diagnostic.status === 'captured' &&
+      isObservedInitialEdgeWarning(receipt)
+        ? {
+            kind: 'initial-warning',
+            identity: {
+              browserPid: receipt.browserPid,
+              creationUtcTicks: receipt.creationUtcTicks,
+              browserSessionId: receipt.browserSessionId,
+              foregroundHandle: receipt.foregroundHandle,
+            },
+          }
+        : driftIdentity
+          ? { kind: 'owned-foreground-drift', identity: driftIdentity }
+          : null;
+    if (warningEntry) {
       const warning = await dismissObservedEdgeWarningFirstOnce(
         cdp,
         root,
@@ -1109,10 +1273,13 @@ export async function inspectAndAllowNativeManagerPermission(
         managerId,
         context,
         receipt,
+        warningEntry,
         run
       );
       const outcome = {
         ...diagnostic,
+        warningEntryKind: warningEntry.kind,
+        inspectionCandidate: warningEntry.identity,
         action: {
           status: 'skipped',
           reason: 'warning-before-permission-action',
@@ -1142,6 +1309,9 @@ export async function inspectAndAllowNativeManagerPermission(
         };
       }
       return { ...outcome, retry };
+    }
+    if (diagnostic.status !== 'captured') {
+      return skipped('prompt-not-captured');
     }
     if (receipt.promptScope?.complete === false) {
       const reason = PROMPT_SCOPE_REASONS.has(receipt.promptScope.reason)
