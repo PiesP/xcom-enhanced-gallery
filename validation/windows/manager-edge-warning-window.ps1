@@ -25,7 +25,6 @@ $script:DisableLabel = [string]::Concat([char[]]@(0xD655,0xC7A5,0x0020,0xC0AC,0x
 $script:LaterLabel = [string]::Concat([char[]]@(0xB098,0xC911,0xC5D0))
 $script:BodyLabel = [string]::Concat([char[]]@(0xAC1C,0xBC1C,0xC790,0x0020,0xBAA8,0xB4DC,0xC5D0,0xC11C,0x0020,0xD655,0xC7A5,0xC744,0x0020,0xC2E4,0xD589,0xD558,0xBA74,0x0020,0xC7A5,0xCE58,0xB97C,0x0020,0xC190,0xC0C1,0xC2DC,0xD0AC,0x0020,0xC218,0x0020,0xC788,0xC2B5,0xB2C8,0xB2E4,0x002E,0x0020,0xAC1C,0xBC1C,0xC790,0xAC00,0x0020,0xC544,0xB2CC,0x0020,0xACBD,0xC6B0,0x0020,0xAC1C,0xBC1C,0xC790,0x0020,0xBAA8,0xB4DC,0xC5D0,0xC11C,0x0020,0xD655,0xC7A5,0x0020,0xC0AC,0xC6A9,0xC744,0x0020,0xD574,0xC81C,0xD558,0xC5EC,0x0020,0xC7A5,0xCE58,0xB97C,0x0020,0xBCF4,0xD638,0xD558,0xC138,0xC694,0x002E))
 $script:LinkLabel = [string]::Concat([char[]]@(0xC790,0xC138,0xD788,0x0020,0xC54C,0xC544,0xBCF4,0xAE30))
-$script:PermissionTitle = [string]::Concat([char[]]@(0x0022,0x0054,0x0061,0x006D,0x0070,0x0065,0x0072,0x006D,0x006F,0x006E,0x006B,0x0065,0x0079,0x0022,0x0020,0xC774,0x0028,0xAC00,0x0029,0x0020,0xC0AC,0xC6A9,0x0020,0xAD8C,0xD55C,0xC744,0x0020,0xC694,0xCCAD,0xD588,0xC2B5,0xB2C8,0xB2E4,0x002E))
 
 Add-Type -TypeDefinition @'
 using System;
@@ -199,27 +198,9 @@ try {
     }
     Add-Type -AssemblyName UIAutomationClient
     Add-Type -AssemblyName UIAutomationTypes
-    $oldRoot = [Windows.Automation.AutomationElement]::FromHandle($oldHandle)
     $warningRoot = [Windows.Automation.AutomationElement]::FromHandle($warning)
-    if ($null -eq $oldRoot -or $null -eq $warningRoot -or
-        $oldRoot.Current.ProcessId -ne $BrowserPid -or
+    if ($null -eq $warningRoot -or
         $warningRoot.Current.ProcessId -ne $BrowserPid) { throw 'uia-root-unverified' }
-    $walker = [Windows.Automation.TreeWalker]::ControlViewWalker
-    $oldChild = $walker.GetFirstChild($oldRoot)
-    $oldVisited = 0
-    $oldTitles = 0
-    while ($null -ne $oldChild -and $oldVisited -lt 32) {
-        $oldCurrent = $oldChild.Current
-        if ($oldCurrent.ProcessId -ne $BrowserPid) { throw 'prior-permission-cross-process' }
-        if ($oldCurrent.ControlType.ProgrammaticName -ceq 'ControlType.Window' -and
-            $oldCurrent.Name -ceq $script:PermissionTitle -and
-            -not $oldCurrent.IsOffscreen) { $oldTitles++ }
-        $oldVisited++
-        $oldChild = $walker.GetNextSibling($oldChild)
-    }
-    if ($null -ne $oldChild -or $oldTitles -ne 1) {
-        throw 'prior-permission-not-visible'
-    }
     $inspection = Get-CompleteTree -Root $warningRoot
     $receipt.warningScope = @{ complete = $inspection.complete; reason = $inspection.reason;
         controls = $inspection.controls; visitedControls = $inspection.visitedControls;
@@ -276,8 +257,7 @@ try {
         'browser-executable-unverified','browser-profile-unverified',
         'browser-session-unverified','browser-creation-changed','window-identity-changed',
         'warning-handle-changed','warning-signature-changed',
-        'uia-root-unverified','prior-permission-not-visible',
-        'prior-permission-cross-process',
+        'uia-root-unverified',
         'warning-not-exact','action-identity-changed-before-invoke',
         'later-invoke-pattern-unavailable')) { $reason = 'native-warning-unavailable' }
     $receipt.status = $(if ($receipt.laterAttempted) { 'unverified-after-invoke' }

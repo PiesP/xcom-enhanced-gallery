@@ -827,7 +827,12 @@ describe('Windows X live page validation', () => {
     expect(script).toContain('function Test-ExactWarning {');
     expect(script).toContain('function Test-SameWarningScope {');
     expect(script).toContain('function Get-CompleteTree {');
-    expect(script).toContain('$oldVisited -lt 32');
+    expect(script).toContain(
+      '$oldHandle = [IntPtr]::new([int64]::Parse($OriginalPermissionHandle))'
+    );
+    expect(script.match(/IsOwned\(\$oldHandle, \[uint32\]\$BrowserPid\)/gu)).toHaveLength(3);
+    expect(script).not.toContain('GetFirstChild($oldRoot)');
+    expect(script).not.toContain('prior-permission-cross-process');
     expect(script).toContain('$attempted -ge 128');
     expect(script).toContain('$pattern.Invoke()');
     expect(script).not.toMatch(/SetForegroundWindow|SendInput|CopyFromScreen|BitBlt/u);
