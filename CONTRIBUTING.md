@@ -344,13 +344,19 @@ Vite+ owns the Vite, Vitest, coverage, and core-tool versions. Dependabot keeps
 `vite-plus` update PRs visible while omitting ordinary component-version PRs for
 `vite`, `vitest`, `@vitest/*`, and `@voidzero-dev/vite-plus-core`. Security updates
 and alerts remain visible. For a Vite+ update, select an exact stable release
-published at least 24 hours earlier and set `VERSION` to that release. Follow the
+published at least 24 hours earlier and set `VERSION` to that release. The
+current catalog pairs Vite+ and its managed Vite alias at 1.5.0 with Vitest,
+coverage and Browser Mode at 5.1.0. Update that whole set and the exact peer
+selectors together, then perform a fresh strict lockfile resolution and audit
+its complete graph before invoking the migrator. Follow the
 [project upgrade guide](https://viteplus.dev/guide/upgrade-project): run
 `pnpm dlx --package="vite-plus@$VERSION" vp help migrate`, then
 `pnpm dlx --package="vite-plus@$VERSION" vp migrate --no-interactive --no-agent --no-editor --no-hooks`.
-Review the managed Vite alias, Vitest and coverage catalog entries, and exact
-peer-compatibility selectors against the bundled versions. Confirm fresh
-dependency resolution, a frozen install, and `vp run verify:full` before merging.
+The migrator can install dependencies. Review its changes before accepting them;
+quarantine generated broad peer allowances or release-age exemptions, restore
+the strict dependency policy, and resolve the graph again. Recheck the bundled
+Vite version against each original peer range, then complete a clean frozen
+`vp install --frozen-lockfile -- --no-runtime` and `vp run verify:full` before merging.
 Upgrading a global `vp` installation does not update this project's package graph.
 
 Every dependency update requires explicit maintainer review, including Action,

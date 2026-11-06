@@ -11,7 +11,7 @@ import { HttpResponseSizeLimitError } from '@shared/error/http-response-size-lim
 import { getUserscript } from '@shared/external/userscript/adapter';
 import type { GMXMLHttpRequestDetails } from '@shared/types/core/userscript';
 import { isAllowedUrl } from '@shared/utils/url/url-safety';
-import { safeResponseMetadata } from './http-response-metadata';
+import { safeHeadContentType, safeResponseMetadata } from './http-response-metadata';
 import type {
   HttpErrorCategory,
   HttpRequestAdapter,
@@ -236,12 +236,14 @@ export class GMHttpRequestAdapter implements HttpRequestAdapter {
             return;
           }
           details.onload?.({
-            finalUrl: '',
+            finalUrl: details.method === 'HEAD' ? response.finalUrl : '',
             readyState: 4,
             statusText: '',
             response: responseBody,
             responseText: '',
             ...safeResponseMetadata(response, true),
+            responseHeaders:
+              details.method === 'HEAD' ? safeHeadContentType(response.responseHeaders) : '',
           });
         } finally {
           reportSettled();

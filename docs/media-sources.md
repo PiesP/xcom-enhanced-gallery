@@ -12,7 +12,8 @@ preferred source selector; display bytes cannot satisfy a different save URL.
 | DOM ordinary CDN photo | Observed image URL | Verified CDN original |
 | Unverified photo | Observed image URL | Explicit original-source failure; no smaller substitute |
 | API MP4 video or animated GIF | Existing best-MP4 policy | Preferred best MP4, independent of display recovery |
-| DOM video | Observed playable source | Observed source, with the quality limitation disclosed |
+| DOM video with a direct MP4 source | Observed video URL | Observed MP4 URL, with the quality limitation disclosed |
+| DOM video with a playlist, unknown format or conflicting format control | Host video remains outside the gallery | No admitted save source |
 | Positively selected HLS-only API attachment | Unsupported-source diagnostic | Unavailable |
 
 The pure normalizer accepts validated HTTPS `pbs.twimg.com/media/` photo
@@ -37,6 +38,61 @@ absent bitrates preserve source order. Query data and posters cannot supply
 video dimensions. Click-time source evidence, requested/quoted owner separation,
 stale-click checks and originating-post filename attribution still govern
 selection; a candidate list is not a second owner-discovery mechanism.
+
+The API video parser requires declared `video/mp4` metadata. Both API and DOM
+video admission require a validated `video.twimg.com` URL with a direct `.mp4`
+path and either no `format` control or one matching `format=mp4`; control names
+are compared case-insensitively. After provider failure, DOM recovery applies
+that same rule to the selected owner-local video URL.
+A playlist, extensionless path, image path or contradictory/duplicate format
+control is rejected before filename planning, so single-save and ZIP naming
+cannot assign an image extension to the video. An ordinary image's supported
+extensionless `?format=` URL remains eligible. This rule relies on the
+direct-source URL contract; it does not inspect response MIME or relabel an
+unknown container. Controlled installed evidence for the actual native name,
+MP4 bytes and ZIP entries is tracked separately from these source rules.
+
+## Attachment filenames
+
+Single downloads and ZIP entries use the attachment's owning handle and post ID,
+followed by a zero-based owner-local attachment number when the API supplies its
+full media list or a uniquely bound, same-owner `/photo/N` DOM link establishes
+the position. Sorting the gallery, opening A's quote of B, or filtering an
+unavailable earlier attachment does not renumber B's attachments. A mixed-owner
+ZIP keeps gallery order, while each entry keeps its own owner and attachment
+identity; the ZIP archive name follows the first item in gallery order,
+independently of the active selection.
+
+If DOM recovery sees only part of a post and has no unambiguous position link,
+the filename uses `source-` plus a 16-digit hexadecimal key derived from the
+validated CDN path. Display-size and query variants of one image share the key;
+different sources are separated by a 64-bit hash rather than a DOM candidate
+position. A hash collision remains theoretically possible, so this key does
+not assert the missing original position or guarantee equality with an API
+filename. The selected item and preferred save URL are unchanged by naming.
+
+## DOM WebP originals
+
+An extensionless DOM WebP can be a display encoding whose `name=orig` URL is
+unavailable. DOM recovery confirms that original before returning the gallery's
+media. A successful WebP original remains WebP. Only HTTP 404 or 410 permits
+checking JPEG, then PNG originals of the same validated attachment, preserving
+the encoded identity, `name=orig`, and other query data. A candidate must return
+HTTP 200 with its expected image MIME type at the exact requested URL.
+
+The resolver uses bounded HEAD requests through the platform adapter and honors
+extraction cancellation. A forbidden response, network failure, timeout, missing
+source metadata, or failed alternatives leaves the original unverified. The
+observed display, owner, attachment identity, and gallery order remain intact.
+Single and ZIP plans receive the resolved preferred source and derive their
+extensions from it. Resolution happens before any native save; it does not
+retry or overwrite a completed transfer.
+
+`resolveDomImageOriginal` in
+[`dom-image-original.ts`](../src/shared/services/media-extraction/extractors/dom-image-original.ts)
+owns probe scope and limits. The DOM extractor bounds concurrency and rechecks
+the clicked source and owner after asynchronous work. Resolution observations
+retain only candidate URLs, HTTP status, and normalized image MIME metadata.
 
 ## HLS feasibility decision
 
@@ -76,6 +132,92 @@ The [download ownership contract](download-memory.md) governs accepted binary
 storage and handoffs. Deterministic installed Edge fixtures compare small
 display payloads with original single-save and ZIP entry bytes; those fixtures
 do not prove live-X authentication, DOM availability or production-CDN access.
+
+## Saved filename boundary
+
+Single-media, ZIP-entry and archive filenames use one final basename policy.
+The validator bounds its output to 255 UTF-16 code units, without splitting a
+Unicode surrogate pair. This is an application convention, not a universal
+filesystem or UTF-8 byte limit. It replaces Windows-reserved punctuation,
+ASCII controls (including NUL and newline), DEL and lone surrogates; trims
+leading/trailing spaces and periods; and prefixes reserved device basenames
+with `_`. The device list includes `CON`, `PRN`, `AUX`, `NUL`, `COM1`–`COM9`,
+`LPT1`–`LPT9`, and the documented `COM`/`LPT` superscript-digit forms, with
+or without an extension. These rules follow [Microsoft's file naming
+guidance](https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file).
+
+Generated names reserve the verified media extension and post/attachment
+identity before shortening the author or fallback prefix. ZIP duplicate
+allocation then reserves `-N` while retaining that generator-owned identity;
+it compares assigned names without case to avoid collisions on common Windows
+extraction paths, including an already present `-1` name. Assigned failed-entry
+names are reused exactly during recovery, and supplementary archives reserve
+`-missing[-N].zip` before truncation. Explicit caller-provided names retain up
+to 32 UTF-16 units from the end of an overlong stem as a best-effort way to
+keep a trailing identifier; arbitrary text in that tail is not treated as a
+verified post or attachment identity. Reapplying finalization to an assigned
+name is idempotent.
+
+Ordinary extracted media currently starts with an empty filename and usually
+produces short handle/post/ordinal names. The length, control-character and
+device-name cases are supported utility and caller boundaries; no previous
+Windows save failure is inferred from their unit tests. Parsed-ZIP tests cover
+entry bytes, duplicate names and failed-entry recovery. These utility tests alone
+do not verify native saved basenames or Windows filesystem behavior.
+
+The Chrome extension passes the requested filename to the native download API.
+For a completed direct download, the result keeps that request separate from the
+native observed basename. `requestedFilename` comes from the request bound to the
+actual native ID. Optional `observedFilename` and `filenameConforms` require an
+exact download ID, original URL, and initiating extension match. Numeric ` (N)`
+and `(N)` conflict suffixes are conforming; the prepared Windows runs observed
+the spaced form in Chrome/Edge and the unspaced form in Firefox.
+If native history is unavailable, the completed transfer remains complete and
+the observed filename stays unknown. A mismatched basename does not start another
+download or overwrite the saved file. A confirmed native basename is shown in a
+polite in-gallery notice. A mismatch adds a separate explanation while the transfer
+remains successful. Unknown native names keep the ordinary handoff status. The
+notice can be dismissed and clears on the next download or gallery session.
+
+Userscripts pass the generated name to the selected manager download API or a
+Blob anchor's `download` attribute. Manager completion callbacks and anchor
+dispatch do not expose the final native basename to the product; its observed
+name remains unknown. Installed verification must inspect the original native
+file independently. API selection and cancellation follow the
+[transport contract](network-redirects.md); a manager setting alone does not
+establish which product route executed.
+
+### External filename interference
+
+During manual reproduction on 2026-11-06, the user isolated
+[FetchV 4.0.3](https://chromewebstore.google.com/detail/fetchv-video-downloader-f/nfmmmhanepmpifddlkkmihkalkoekpfd)
+as the interfering extension: disabling it restored the generated filenames for
+both the XEG extension and userscript. This identifies the cause in that tested
+profile. The earlier reported profile was unavailable for the same comparison.
+The filename-listener callback order was not captured. FetchV's own
+[filename notice](https://v4.fetchv.net/announcement/en.html) describes native
+download filename interference and its 4.0.3 protection logic; its stated intent
+to change only its own downloads does not establish the original event sequence.
+The user-confirmed workaround is to disable FetchV during XEG downloads.
+
+In a controlled experiment, Chrome 156.0.8078.80, recorded revision
+`fb096c0011f9d50f0a264a9376420cdea9c421e3`, reproduced CDN fallback with a
+separate passive filename listener. Its [binding sends empty name/action values
+for no suggestion](https://github.com/chromium/chromium/blob/fb096c0011f9d50f0a264a9376420cdea9c421e3/chrome/renderer/resources/extensions/downloads_custom_bindings.js).
+The [internal API parses that action](https://github.com/chromium/chromium/blob/fb096c0011f9d50f0a264a9376420cdea9c421e3/chrome/browser/extensions/api/downloads_internal/downloads_internal_api.cc)
+into the enum's absent value; [native arbitration treats it as non-default and
+can clear the creator filename](https://github.com/chromium/chromium/blob/fb096c0011f9d50f0a264a9376420cdea9c421e3/chrome/browser/extensions/api/downloads/downloads_api.cc).
+A scoped explicit XEG suggestion also lost to the later-installed helper in the
+controlled run. XEG therefore preserves automatic native saving and reports the
+actual result; it installs no filename-renaming listener and claims no priority
+over other extensions. This version-specific experiment demonstrates a mechanism;
+it is not a replay of FetchV 4.0.3 in the user's tested profile.
+
+The userscript cancellation correction in
+[#496](https://github.com/PiesP/xcom-enhanced-gallery/pull/496) addresses a
+separate legacy-only API routing defect. A clean-profile baseline already saved
+the requested name through the modern API, so that correction is not evidence
+that XEG fixed the FetchV filename conflict.
 
 ## In-gallery limitations
 

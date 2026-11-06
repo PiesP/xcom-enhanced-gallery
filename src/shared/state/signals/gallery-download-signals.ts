@@ -13,6 +13,10 @@
 import { createSignal } from 'solid-js';
 
 export type DownloadStatus = 'idle' | 'working' | 'handedOff' | 'error';
+export interface SingleDownloadOutcome {
+  readonly observedFilename: string;
+  readonly filenameConforms?: boolean;
+}
 export interface BulkDownloadOutcome {
   /** The count refers to the media shown when Download all was requested. */
   readonly total: number;
@@ -38,6 +42,7 @@ export interface BulkDownloadOutcome {
 // Internal signal — exported for use by disposeGallerySignals.
 export const [_downloadStatus, _setDownloadStatus] = createSignal<DownloadStatus>('idle');
 const [bulkOutcome, setBulkOutcomeSignal] = createSignal<BulkDownloadOutcome | null>(null);
+const [singleOutcome, setSingleOutcomeSignal] = createSignal<SingleDownloadOutcome | null>(null);
 
 export const downloadState = {
   get status(): DownloadStatus {
@@ -49,7 +54,14 @@ export const downloadState = {
   get bulkOutcome(): BulkDownloadOutcome | null {
     return bulkOutcome();
   },
+  get singleOutcome(): SingleDownloadOutcome | null {
+    return singleOutcome();
+  },
 };
+
+export function setSingleDownloadOutcome(outcome: SingleDownloadOutcome | null): void {
+  setSingleOutcomeSignal(outcome);
+}
 
 export function setBulkDownloadOutcome(outcome: BulkDownloadOutcome | null): void {
   setBulkOutcomeSignal(outcome);

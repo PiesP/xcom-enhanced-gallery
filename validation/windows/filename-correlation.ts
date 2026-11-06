@@ -1,0 +1,1241 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 PiesP
+
+/** Diagnostic-only instrumentation for one task-owned installed Chromium download. */
+import assert from 'node:assert/strict';
+import { createHash, randomUUID } from 'node:crypto';
+import { readFile, writeFile } from 'node:fs/promises';
+import { basename, isAbsolute, resolve } from 'node:path';
+import type { BrowserContext, CDPSession, Page, Worker } from '@playwright/test';
+import { COMPACT_FIXTURE_URL } from './install-preparation.ts';
+import { readExactDownloadFile } from './download-memory.ts';
+import { readOwnedNativeBytes } from './firefox-install.ts';
+import {
+  isLiveFilenameOriginal,
+  PREVIOUS_LIVE_FILENAME_TARGET,
+  type LiveFilenameTarget,
+} from './live-filename-target.ts';
+
+declare const chrome: {
+  runtime: {
+    id: string;
+    sendMessage(message: unknown): Promise<unknown>;
+    onMessage: {
+      addListener(
+        listener: (message: unknown, sender: { id?: string; tab?: { id?: number } }) => void
+      ): void;
+      removeListener(
+        listener: (message: unknown, sender: { id?: string; tab?: { id?: number } }) => void
+      ): void;
+    };
+  };
+  downloads: {
+    download(options: unknown): Promise<number>;
+    search(query: { id: number }): Promise<
+      Array<{
+        id: number;
+        url: string;
+        finalUrl?: string;
+        filename: string;
+        state: string;
+        mime?: string;
+        byExtensionId?: string;
+        byExtensionName?: string;
+        error?: string;
+      }>
+    >;
+  };
+  storage: { local: { get(key: string): Promise<Record<string, unknown>> } };
+  tabs: { query(query: { url: string }): Promise<Array<{ id?: number; url?: string }>> };
+};
+
+const TRACKING_KEY = 'xeg.download-tracking.v1';
+const MAX_EVENTS = 4;
+const MAX_FILE_BYTES = 4 * 1024 * 1024;
+const CONTENT_KEY = '__xegFilenameCorrelation482V1';
+
+// These CDP functions are static. The target and marker cross as structured arguments.
+const CONTENT_INSTALL_FUNCTION = `function(config) {
+  if (Object.prototype.hasOwnProperty.call(globalThis, '__xegFilenameCorrelation482V1')) {
+    return { installed: false, reason: 'preexisting' };
+  }
+  if (typeof config?.marker !== 'string' || config?.maxEvents !== 4 ||
+      !['owned-fixture', 'reported-live-post'].includes(config?.target) ||
+      (config.target === 'owned-fixture' && typeof config.expectedUrl !== 'string') ||
+      (config.target === 'reported-live-post' &&
+       (typeof config.mediaBasename !== 'string' ||
+        !/^[A-Za-z0-9_-]{1,40}$/.test(config.mediaBasename)))) {
+    return { installed: false, reason: 'invalid-config' };
+  }
+  globalThis.__xegFilenameCorrelation482V1 = {
+    marker: config.marker, target: config.target, expectedUrl: config.expectedUrl,
+    mediaBasename: config.mediaBasename,
+    maxEvents: config.maxEvents, events: []
+  };
+  return { installed: true };
+}`;
+const CONTENT_LOGPOINT_CONDITION = `(() => {
+  const state = globalThis.__xegFilenameCorrelation482V1;
+  const preferred = media?.downloadSource?.url ?? media?.originalUrl ?? media?.url;
+  const resolution = media?.metadata?.originalSourceResolution;
+  if (!state || typeof media?.id !== 'string' || !media.id ||
+      typeof filename !== 'string' || !filename || typeof preferred !== 'string') return false;
+  if (state.target === 'owned-fixture' && preferred !== state.expectedUrl) return false;
+  if (state.target === 'reported-live-post') {
+    let source;
+    try { source = new URL(preferred || media?.originalUrl || media?.url); } catch { return false; }
+    const path = /^\\/media\\/([A-Za-z0-9_-]{1,40})(?:\\.(jpg|jpeg|png|webp|gif))?$/.exec(source.pathname);
+    const pairs = [...source.searchParams].sort();
+    const format = pairs[0]?.[1];
+    if (source.href !== preferred || source.origin !== 'https://pbs.twimg.com' ||
+        source.username || source.password || source.hash || source.port || !path ||
+        path[1] !== state.mediaBasename ||
+        pairs.length !== 2 || pairs[0][0] !== 'format' ||
+        !/^(?:jpg|jpeg|png|webp|gif)$/.test(format) ||
+        pairs[1][0] !== 'name' || pairs[1][1] !== 'orig' ||
+        (path[2] && path[2] !== format)) return false;
+  }
+  if (state.events.length < state.maxEvents) state.events.push({
+    id: media.id.slice(0, 128), type: media.type, url: String(media.url).slice(0, 256),
+    originalUrl: media.originalUrl?.slice(0, 256),
+    downloadSource: media.downloadSource ? {
+      url: media.downloadSource.url.slice(0, 256), quality: media.downloadSource.quality,
+      provenance: media.downloadSource.provenance
+    } : undefined,
+    filename: media.filename?.slice(0, 256), attachmentOrdinal: media.attachmentOrdinal,
+    attachmentSourceKey: media.attachmentSourceKey?.slice(0, 128),
+    tweetUsername: media.tweetUsername?.slice(0, 128), tweetId: media.tweetId?.slice(0, 128),
+    quotedUsername: media.quotedUsername?.slice(0, 128),
+    quotedTweetId: media.quotedTweetId?.slice(0, 128), sourceLocation: media.sourceLocation,
+    metadata: {
+      requestTweetId: media.metadata?.requestTweetId,
+      extractionSource: media.metadata?.extractionSource,
+      apiIndex: media.metadata?.apiIndex, domIndex: media.metadata?.domIndex,
+      mediaKey: media.metadata?.apiData?.media_key?.slice(0, 128),
+      originalSourceResolution: resolution && typeof resolution === 'object' ? {
+        requestedUrl: typeof resolution.requestedUrl === 'string' ? resolution.requestedUrl.slice(0, 256) : null,
+        selectedUrl: typeof resolution.selectedUrl === 'string' ? resolution.selectedUrl.slice(0, 256) : null,
+        attempts: Array.isArray(resolution.attempts) ? resolution.attempts.slice(0, 3).map(item => ({
+          url: typeof item?.url === 'string' ? item.url.slice(0, 256) : null,
+          status: Number.isInteger(item?.status) && item.status >= 100 && item.status <= 599 ? item.status : null,
+          mime: ['image/jpeg','image/png','image/webp'].includes(item?.mime) ? item.mime : null
+        })) : []
+      } : undefined
+    },
+    generatedFilename: filename.slice(0, 256)
+  });
+  return false;
+})()`;
+const CONTENT_CAPTURE_FUNCTION = `function(marker) {
+  const state = globalThis.__xegFilenameCorrelation482V1;
+  return state?.marker === marker ? { matched: true, events: state.events } : { matched: false, events: [] };
+}`;
+const CONTENT_REMOVE_FUNCTION = `function(marker) {
+  const state = globalThis.__xegFilenameCorrelation482V1;
+  if (!state) return { matched: false, existed: false, removed: true };
+  if (state.marker !== marker) return { matched: false, existed: true, removed: false };
+  const removed = delete globalThis.__xegFilenameCorrelation482V1;
+  return { matched: true, existed: true,
+    removed: removed && !Object.prototype.hasOwnProperty.call(globalThis, '__xegFilenameCorrelation482V1') };
+}`;
+
+type WorkerTrace = {
+  marker: string;
+  requests: Array<{
+    requestId?: string | undefined;
+    filename?: string | undefined;
+    url: string;
+    senderTabId?: number | undefined;
+    mode?: string | undefined;
+  }>;
+  native: Array<{
+    url: string;
+    filename?: string;
+    saveAs?: boolean;
+    downloadId?: number;
+    calledAt?: number;
+    returnedAt?: number;
+    error?: string;
+  }>;
+  overflow: boolean;
+  wrapperIntact: boolean;
+  selectedApi: 'browser' | 'chrome';
+};
+
+type CleanupOutcome = {
+  contentGlobal: 'not-installed' | 'absent' | 'removed' | 'foreign-preserved' | 'failed';
+  workerListener: 'not-installed' | 'removed' | 'failed';
+  nativeWrapper: 'not-installed' | 'restored' | 'failed';
+  breakpoint: 'not-installed' | 'removed' | 'failed';
+  debuggerSession: 'not-attached' | 'detached' | 'failed';
+};
+type FailureStage =
+  | 'setup'
+  | 'action'
+  | 'page-identity'
+  | 'content-capture'
+  | 'content-cleanup'
+  | 'original-resolution'
+  | 'worker-capture'
+  | 'identity-correlation'
+  | 'file-inspection'
+  | 'name-comparison'
+  | 'retention'
+  | 'worker-cleanup'
+  | 'breakpoint-cleanup'
+  | 'debugger-cleanup'
+  | 'receipt-write';
+
+type SourceLocation = { lineNumber: number; expectedSourceSha256: string };
+
+/** Find the sole executable line immediately after filename generation in this function. */
+export function resolveFilenameCaptureLine(source: string): SourceLocation {
+  const lines = source.split(/\r?\n/);
+  const matches: number[] = [];
+  let inside = false;
+  for (let index = 0; index < lines.length - 1; index += 1) {
+    if (/^\s*(?:async\s+)?function downloadSingleFile\(/.test(lines[index] ?? '')) {
+      inside = true;
+    } else if (inside && /^\s*(?:async\s+)?function \w+\(/.test(lines[index] ?? '')) {
+      inside = false;
+    }
+    if (
+      inside &&
+      /^\s*const filename = generateMediaFilename\(media, \{ nowMs: Date\.now\(\) \}\);\s*$/.test(
+        lines[index] ?? ''
+      )
+    ) {
+      assert(
+        /^\s*if \(options\.blob\)/.test(lines[index + 1] ?? ''),
+        'Filename capture must execute immediately after generation'
+      );
+      matches.push(index + 1);
+    }
+  }
+  assert.equal(matches.length, 1, 'Expected one unminified downloadSingleFile filename site');
+  return { lineNumber: matches[0]!, expectedSourceSha256: sha256(Buffer.from(source)) };
+}
+
+export function verifyFilenameCorrelation(input: {
+  requests: WorkerTrace['requests'];
+  native: WorkerTrace['native'];
+  tracking: Record<string, unknown>;
+  expectedUrl: string;
+  extensionId: string;
+  expectedOwnerTabId: number;
+  nativeItem: { id: number; url: string; byExtensionId?: string };
+}): { requestId: string; downloadId: number; ownerTabId: number; urlHash: string } {
+  const requests = input.requests.filter((item) => item.url === input.expectedUrl);
+  const native = input.native.filter((item) => item.url === input.expectedUrl);
+  assert.equal(requests.length, 1, 'Expected one observed direct DOWNLOAD_REQUEST');
+  assert.equal(native.length, 1, 'Expected one observed native download call');
+  const request = requests[0]!;
+  const call = native[0]!;
+  assert.equal(request.mode, 'direct', 'Observed request was not a direct download');
+  assert(
+    typeof request.requestId === 'string' && request.requestId.length > 0,
+    'Observed request has no request ID'
+  );
+  assert(Number.isSafeInteger(request.senderTabId), 'Observed request has no owner tab ID');
+  assert.equal(
+    request.senderTabId,
+    input.expectedOwnerTabId,
+    'Observed request came from a different tab'
+  );
+  assert(Number.isSafeInteger(call.downloadId), 'Native call returned no download ID');
+  assert.equal(input.nativeItem.id, call.downloadId, 'Native item ID differs from observed call');
+  assert.equal(input.nativeItem.byExtensionId, input.extensionId, 'Native initiator differs');
+  assert.equal(input.nativeItem.url, input.expectedUrl, 'Native item URL differs');
+  const record = input.tracking[request.requestId];
+  assert(
+    record && typeof record === 'object' && !Array.isArray(record),
+    'Request tracking record missing'
+  );
+  const tracked = record as Record<string, unknown>;
+  const urlHash = sha256(Buffer.from(input.expectedUrl));
+  assert.equal(tracked.route, 'direct', 'Tracked route differs');
+  assert.equal(tracked.downloadId, call.downloadId, 'Tracked native ID differs');
+  assert.equal(tracked.ownerTabId, request.senderTabId, 'Tracked owner differs');
+  assert.equal(tracked.urlHash, urlHash, 'Tracked URL hash differs');
+  return {
+    requestId: request.requestId,
+    downloadId: call.downloadId!,
+    ownerTabId: request.senderTabId!,
+    urlHash,
+  };
+}
+
+/** Name comparison is independent of ownership; divergence remains an observation. */
+export function compareObservedFilenames(input: {
+  generated: unknown;
+  requested: unknown;
+  nativeOption: unknown;
+  finalBasename: unknown;
+}): {
+  generatedEqualsRequest: boolean;
+  requestEqualsNativeOption: boolean;
+  nativeOptionEqualsFinal: boolean;
+} {
+  for (const [label, value] of Object.entries(input)) {
+    assert(typeof value === 'string' && value.length > 0, `${label} filename missing`);
+  }
+  return {
+    generatedEqualsRequest: input.generated === input.requested,
+    requestEqualsNativeOption: input.requested === input.nativeOption,
+    nativeOptionEqualsFinal: input.nativeOption === input.finalBasename,
+  };
+}
+
+function sha256(bytes: Uint8Array): string {
+  return createHash('sha256').update(bytes).digest('hex');
+}
+function bounded(value: unknown, limit = 256): string | undefined {
+  return typeof value === 'string' ? value.slice(0, limit) : undefined;
+}
+const SAFE_MESSAGES = new Set([
+  'Observed request has no filename',
+  'Native option has no filename',
+  'Observed request came from a different tab',
+  'Native initiator differs',
+  'Native item URL differs',
+  'Live native download interrupted',
+  'Product download failed before native completion',
+  'Tracked native ID differs',
+  'Tracked owner differs',
+  'Tracked URL hash differs',
+  'Expected one selected MediaInfo logpoint hit',
+  'Expected one observed direct DOWNLOAD_REQUEST',
+  'Expected one observed native download call',
+  'Native saved bytes differ',
+  'Native file escaped owned downloads directory',
+  'Native file exceeded inspection bound',
+  'Native file is not a regular file',
+  'Worker observer identity or event bound failed',
+  'Native method restoration identity failed',
+  'Executed content script differs from installed artifact',
+  'Filename logpoint did not bind to executed script',
+  'Target fixture tab identity is ambiguous',
+  'Target document changed during diagnostic action',
+  'Target page navigated during diagnostic action',
+]);
+function safeError(
+  error: unknown,
+  stage: FailureStage
+): { stage: FailureStage; name: string; message?: string } {
+  const name =
+    error instanceof Error && /^(?:AssertionError|Error|TypeError|TimeoutError)$/.test(error.name)
+      ? error.name
+      : 'Error';
+  const firstLine = error instanceof Error ? error.message.split(/\r?\n/u, 1)[0] : undefined;
+  const message =
+    error instanceof Error
+      ? firstLine && SAFE_MESSAGES.has(firstLine)
+        ? firstLine
+        : error.name === 'AssertionError' &&
+            error.message.startsWith('Expected values to be strictly equal:')
+          ? 'Strict equality assertion failed'
+          : error.name === 'AssertionError' && error.message.endsWith(' saved bytes differ')
+            ? 'Saved bytes differ'
+            : undefined
+      : undefined;
+  return { stage, name, ...(message ? { message } : {}) };
+}
+function assertOwnedFixtureUrl(url: string): void {
+  assert.equal(
+    url,
+    'https://pbs.twimg.com/media/GkE5678GHIJKL.jpg?format=jpg&name=orig',
+    'Diagnostic source must be the exact owned B1 fixture'
+  );
+}
+
+/** The live diagnostic is restricted to the exact publicly reported page and photo. */
+export function assertReportedLiveFilenameTarget(
+  pageUrl: string,
+  sourceUrl: string,
+  target: LiveFilenameTarget = PREVIOUS_LIVE_FILENAME_TARGET
+): void {
+  assert.equal(pageUrl, target.pageUrl);
+  assert(
+    isReportedLiveDownloadSource(sourceUrl, target),
+    'Selected live original source is not the reported photo'
+  );
+}
+
+/** A strict target filter; the observed URL is preserved byte-for-byte. */
+export function isReportedLiveDownloadSource(
+  sourceUrl: unknown,
+  target: LiveFilenameTarget = PREVIOUS_LIVE_FILENAME_TARGET
+): sourceUrl is string {
+  return isLiveFilenameOriginal(sourceUrl, target);
+}
+
+/** Prefer the selected product source over the gallery's rendered image URL. */
+export function selectedLivePreferredSource(
+  media: Record<string, unknown>,
+  target: LiveFilenameTarget = PREVIOUS_LIVE_FILENAME_TARGET
+): string {
+  const source = media.downloadSource;
+  const preferred =
+    source && typeof source === 'object' && !Array.isArray(source)
+      ? (source as Record<string, unknown>).url
+      : (media.originalUrl ?? media.url);
+  assert(
+    isReportedLiveDownloadSource(preferred, target),
+    'Selected MediaInfo preferred source is not the reported original'
+  );
+  return preferred;
+}
+async function waitFor<T>(get: () => T | undefined, label: string): Promise<T> {
+  const deadline = Date.now() + 5_000;
+  while (Date.now() < deadline) {
+    const result = get();
+    if (result !== undefined) {
+      return result;
+    }
+    await new Promise((done) => setTimeout(done, 50));
+  }
+  throw new Error(`${label} was not observed`);
+}
+async function waitForAsync<T>(get: () => Promise<T | undefined>, label: string): Promise<T> {
+  const deadline = Date.now() + 5_000;
+  while (Date.now() < deadline) {
+    const result = await get();
+    if (result !== undefined) {
+      return result;
+    }
+    await new Promise((done) => setTimeout(done, 50));
+  }
+  throw new Error(`${label} was not observed`);
+}
+
+function recordFromRemote(
+  result: { exceptionDetails?: unknown; result?: { value?: unknown } },
+  label: string
+): unknown {
+  assert(!result.exceptionDetails, `${label} failed in content realm`);
+  return result.result?.value;
+}
+
+async function installWorkerObserver(
+  worker: Worker,
+  marker: string,
+  expectedUrl: string | null,
+  extensionId: string,
+  ownerTabId: number,
+  mediaBasename: string
+): Promise<void> {
+  await worker.evaluate(
+    ({
+      marker: key,
+      expectedUrl: target,
+      extensionId: owner,
+      ownerTabId: tabId,
+      mediaBasename,
+    }) => {
+      type Request = {
+        type?: string;
+        payload?: { url?: string; filename?: string; requestId?: string; mode?: string };
+      };
+      type Call = { url?: string; filename?: string; saveAs?: boolean };
+      const store = globalThis as typeof globalThis & Record<string, unknown>;
+      const browserApi = (globalThis as typeof globalThis & { browser?: typeof chrome }).browser;
+      const api = browserApi ?? chrome;
+      if (store[key]) {
+        throw new Error('Filename observer already installed');
+      }
+      const requests: WorkerTrace['requests'] = [];
+      const native: WorkerTrace['native'] = [];
+      const state = {
+        marker: key,
+        requests,
+        native,
+        overflow: false,
+        original: api.downloads.download,
+        wrapper: null as typeof chrome.downloads.download | null,
+        listener: null as
+          | ((message: unknown, sender: { id?: string; tab?: { id?: number } }) => void)
+          | null,
+      };
+      const clip = (value: unknown, limit = 256): string | undefined =>
+        typeof value === 'string' ? value.slice(0, limit) : undefined;
+      const admitted = (url: unknown): url is string => {
+        if (typeof url !== 'string') {
+          return false;
+        }
+        if (target !== null) {
+          return url === target;
+        }
+        let parsed: URL;
+        try {
+          parsed = new URL(url);
+        } catch {
+          return false;
+        }
+        const pairs = [...parsed.searchParams].sort();
+        const path = /^\/media\/([A-Za-z0-9_-]{1,40})(?:\.(jpg|jpeg|png|webp|gif))?$/u.exec(
+          parsed.pathname
+        );
+        const format = pairs[0]?.[1];
+        return (
+          parsed.href === url &&
+          parsed.origin === 'https://pbs.twimg.com' &&
+          !parsed.username &&
+          !parsed.password &&
+          !parsed.hash &&
+          !parsed.port &&
+          !!path &&
+          path[1] === mediaBasename &&
+          pairs.length === 2 &&
+          pairs[0]?.[0] === 'format' &&
+          /^(?:jpg|jpeg|png|webp|gif)$/u.test(format ?? '') &&
+          pairs[1]?.[0] === 'name' &&
+          pairs[1][1] === 'orig' &&
+          (!path[2] || path[2] === format)
+        );
+      };
+      state.listener = (message, sender) => {
+        const item = message as Request | null;
+        if (
+          sender.id !== owner ||
+          sender.tab?.id !== tabId ||
+          item?.type !== 'DOWNLOAD_REQUEST' ||
+          !admitted(item.payload?.url)
+        ) {
+          return;
+        }
+        if (requests.length === 4) {
+          state.overflow = true;
+          return;
+        }
+        requests.push({
+          url: item.payload.url,
+          requestId: clip(item.payload.requestId, 128),
+          filename: clip(item.payload.filename),
+          mode: clip(item.payload.mode, 32),
+          senderTabId: sender.tab?.id,
+        });
+      };
+      state.wrapper = function (this: unknown, ...args: unknown[]): Promise<number> {
+        const options = args[0] as Call | undefined;
+        const observed = admitted(options?.url);
+        const entry = observed
+          ? ({
+              url: options!.url!,
+              filename: clip(options.filename),
+              saveAs: options.saveAs,
+              calledAt: Date.now(),
+            } as WorkerTrace['native'][number])
+          : null;
+        if (entry) {
+          if (native.length === 4) {
+            state.overflow = true;
+          } else {
+            native.push(entry);
+          }
+        }
+        // Return the original promise unchanged; the observer must never retry or rename.
+        const result = Reflect.apply(state.original, this, args) as Promise<number>;
+        if (entry) {
+          void Promise.resolve(result).then(
+            (id) => {
+              entry.downloadId = id;
+              entry.returnedAt = Date.now();
+            },
+            () => {
+              entry.error = 'native-rejected';
+            }
+          );
+        }
+        return result;
+      };
+      store[key] = state;
+      try {
+        api.runtime.onMessage.addListener(state.listener);
+        api.downloads.download = state.wrapper;
+      } catch (error) {
+        api.runtime.onMessage.removeListener(state.listener);
+        if (api.downloads.download === state.wrapper) {
+          api.downloads.download = state.original;
+        }
+        delete store[key];
+        throw error;
+      }
+    },
+    { marker, expectedUrl, extensionId, ownerTabId, mediaBasename }
+  );
+}
+
+async function readWorkerObserver(worker: Worker, marker: string): Promise<WorkerTrace> {
+  return worker.evaluate((key) => {
+    const state = (globalThis as typeof globalThis & Record<string, unknown>)[key] as
+      | {
+          marker: string;
+          requests: WorkerTrace['requests'];
+          native: WorkerTrace['native'];
+          overflow: boolean;
+          wrapper: typeof chrome.downloads.download;
+          original: typeof chrome.downloads.download;
+        }
+      | undefined;
+    if (!state) {
+      throw new Error('Filename observer missing after worker restart');
+    }
+    const browserApi = (globalThis as typeof globalThis & { browser?: typeof chrome }).browser;
+    const api = browserApi ?? chrome;
+    return {
+      marker: state.marker,
+      requests: structuredClone(state.requests),
+      native: structuredClone(state.native),
+      overflow: state.overflow,
+      wrapperIntact: api.downloads.download === state.wrapper,
+      selectedApi: browserApi ? 'browser' : 'chrome',
+    };
+  }, marker);
+}
+
+async function disposeWorkerObserver(
+  worker: Worker,
+  marker: string
+): Promise<{ listenerRemoved: boolean; wrapperRestored: boolean }> {
+  return worker.evaluate((key) => {
+    const store = globalThis as typeof globalThis & Record<string, unknown>;
+    const state = store[key] as
+      | {
+          original: typeof chrome.downloads.download;
+          wrapper: typeof chrome.downloads.download;
+          listener: (message: unknown, sender: { id?: string; tab?: { id?: number } }) => void;
+        }
+      | undefined;
+    if (!state) {
+      throw new Error('Filename observer lost on worker restart');
+    }
+    const browserApi = (globalThis as typeof globalThis & { browser?: typeof chrome }).browser;
+    const api = browserApi ?? chrome;
+    let listenerRemoved = false;
+    let wrapperRestored = false;
+    try {
+      api.runtime.onMessage.removeListener(state.listener);
+      listenerRemoved = true;
+    } catch {
+      // A separate method restoration is still required.
+    }
+    if (api.downloads.download === state.wrapper) {
+      try {
+        api.downloads.download = state.original;
+        wrapperRestored = api.downloads.download === state.original;
+      } catch {
+        // Report the failed identity check to the caller.
+      }
+    }
+    if (listenerRemoved && wrapperRestored) {
+      delete store[key];
+    }
+    return { listenerRemoved, wrapperRestored };
+  }, marker);
+}
+
+type CorrelationBase<T> = {
+  context: BrowserContext;
+  page: Page;
+  extensionPage: Page;
+  extensionId: string;
+  root: string;
+  output: string;
+  downloads: string;
+  action: () => Promise<T>;
+};
+type FixtureCorrelation = {
+  target?: undefined;
+  expectedUrl: string;
+  expectedBytes: Uint8Array;
+  resolveLiveOriginal?: never;
+  label?: 'xeg-alone' | 'passive' | 'passive-undefined' | 'active-suggestion';
+};
+type LiveCorrelation = {
+  target: 'reported-live-post';
+  liveTarget?: LiveFilenameTarget;
+  expectedUrl?: never;
+  expectedBytes?: never;
+  resolveLiveOriginal(
+    selectedMedia: Record<string, unknown>
+  ): Promise<{ url: string; bytes: Uint8Array }>;
+  label: 'live-original';
+};
+
+export async function withFilenameCorrelation<T>(
+  options: CorrelationBase<T> & (FixtureCorrelation | LiveCorrelation)
+): Promise<T> {
+  const { context, page, extensionPage, extensionId, root, output, downloads, action } = options;
+  let expectedUrl: string | undefined =
+    options.target === 'reported-live-post' ? undefined : options.expectedUrl;
+  let expectedBytes: Uint8Array | undefined =
+    options.target === 'reported-live-post' ? undefined : options.expectedBytes;
+  const receipt: Record<string, unknown> = {
+    status: 'incomplete',
+    diagnosticOnly: true,
+    contentKey: CONTENT_KEY,
+    label: options.label ?? 'xeg-alone',
+    expectedUrl,
+    expectedBytes: expectedBytes?.length ?? null,
+    expectedSha256: expectedBytes ? sha256(expectedBytes) : null,
+    source: null,
+    selectedMedia: null,
+    generatedFilename: null,
+    request: null,
+    nativeCall: null,
+    tracked: null,
+    nativeItem: null,
+    savedFile: null,
+    actionOutcome: { status: 'not-run' },
+    observationComplete: false,
+    cleanupOutcome: {
+      contentGlobal: 'not-installed',
+      workerListener: 'not-installed',
+      nativeWrapper: 'not-installed',
+      breakpoint: 'not-installed',
+      debuggerSession: 'not-attached',
+    } satisfies CleanupOutcome,
+    errors: [],
+  };
+  const cleanup = receipt.cleanupOutcome as CleanupOutcome;
+  const errors: Error[] = [];
+  const stageErrors: Array<ReturnType<typeof safeError>> = [];
+  const addError = (stage: FailureStage, error: unknown): void => {
+    errors.push(error instanceof Error ? error : new Error(String(error)));
+    stageErrors.push(safeError(error, stage));
+  };
+  let result!: T;
+  let cdp: CDPSession | undefined;
+  let worker: Worker | undefined;
+  let workerInstalled = false;
+  let breakpointId: string | undefined;
+  let contentRealmId: number | undefined;
+  let contentInstallAttempted = false;
+  let contentOwned = false;
+  let targetTabId: number | undefined;
+  let targetPageUrl: string | undefined;
+  let targetTimeOrigin: number | undefined;
+  let nativeSavedPath: string | undefined;
+  let actionStarted = false;
+  let selectedVerified = false;
+  let identityVerified = false;
+  let fileVerified = false;
+  const marker = `__xegFilenameCorrelation_${randomUUID()}`;
+  try {
+    if (options.target === 'reported-live-post') {
+      assert.equal(page.url(), (options.liveTarget ?? PREVIOUS_LIVE_FILENAME_TARGET).pageUrl);
+      assert.equal(options.label, 'live-original');
+    } else {
+      assertOwnedFixtureUrl(options.expectedUrl);
+    }
+    assert.equal(page.context(), context, 'Target page is outside the installed context');
+    assert.equal(
+      extensionPage.context(),
+      context,
+      'Extension page is outside the installed context'
+    );
+    targetPageUrl = page.url();
+    if (options.target !== 'reported-live-post') {
+      assert(
+        targetPageUrl.startsWith(`${COMPACT_FIXTURE_URL}?compact=`),
+        'Target page is not the owned compact fixture'
+      );
+    }
+    const targetIds = await extensionPage.evaluate(async (url) => {
+      const tabs = await chrome.tabs.query({ url: 'https://x.com/*' });
+      return tabs.filter((tab) => tab.url === url).map((tab) => tab.id);
+    }, targetPageUrl);
+    assert.equal(targetIds.length, 1, 'Target fixture tab identity is ambiguous');
+    assert(Number.isSafeInteger(targetIds[0]), 'Target fixture tab has no ID');
+    targetTabId = targetIds[0]!;
+    targetTimeOrigin = await page.evaluate(() => performance.timeOrigin);
+    receipt.target = { tabId: targetTabId, fixturePath: new URL(targetPageUrl).pathname };
+    if (expectedBytes) {
+      assert(
+        expectedBytes.length > 0 && expectedBytes.length <= MAX_FILE_BYTES,
+        'Expected fixture body is outside diagnostic bound'
+      );
+    }
+    const source = await readFile(resolve(root, 'dist-extension/content.js'), 'utf8');
+    const location = resolveFilenameCaptureLine(source);
+    receipt.source = {
+      url: `chrome-extension://${extensionId}/content.js`,
+      artifactSha256: location.expectedSourceSha256,
+      executedSha256: null,
+      line: location.lineNumber + 1,
+    };
+    cdp = await context.newCDPSession(page);
+    cleanup.debuggerSession = 'failed';
+    const scripts: Array<{ scriptId: string; url: string }> = [];
+    const realms: Array<{
+      id: number;
+      origin: string;
+      auxData?: { frameId?: string; isDefault?: boolean };
+    }> = [];
+    cdp.on('Debugger.scriptParsed', (event: { scriptId: string; url: string }) => {
+      if (
+        event.url === `chrome-extension://${extensionId}/content.js` &&
+        scripts.length < MAX_EVENTS
+      ) {
+        scripts.push(event);
+      }
+    });
+    cdp.on(
+      'Runtime.executionContextCreated',
+      (event: {
+        context: {
+          id: number;
+          origin: string;
+          auxData?: { frameId?: string; isDefault?: boolean };
+        };
+      }) => {
+        if (realms.length < 64) {
+          realms.push(event.context);
+        }
+      }
+    );
+    const { frameTree } = await cdp.send('Page.getFrameTree');
+    await cdp.send('Runtime.enable');
+    await cdp.send('Debugger.enable');
+    const script = await waitFor(() => scripts[0], 'Installed content script');
+    assert.equal(scripts.length, 1, 'Installed content script identity is ambiguous');
+    const executed = await cdp.send('Debugger.getScriptSource', { scriptId: script.scriptId });
+    const executedSha256 = sha256(Buffer.from(executed.scriptSource));
+    (receipt.source as Record<string, unknown>).executedSha256 = executedSha256;
+    assert.equal(
+      executedSha256,
+      location.expectedSourceSha256,
+      'Executed content script differs from installed artifact'
+    );
+    const realm = await waitFor(() => {
+      const matches = realms.filter(
+        (item) =>
+          (item.origin === `chrome-extension://${extensionId}` ||
+            item.origin === `chrome-extension://${extensionId}/`) &&
+          item.auxData?.frameId === frameTree.frame.id &&
+          item.auxData.isDefault === false
+      );
+      assert(matches.length <= 1, 'Installed content realm is ambiguous');
+      return matches[0];
+    }, 'Installed content realm');
+    contentRealmId = realm.id;
+    cleanup.contentGlobal = 'failed';
+    contentInstallAttempted = true;
+    const installed = await cdp.send('Runtime.callFunctionOn', {
+      executionContextId: contentRealmId,
+      functionDeclaration: CONTENT_INSTALL_FUNCTION,
+      arguments: [
+        {
+          value: {
+            marker,
+            target: options.target ?? 'owned-fixture',
+            expectedUrl: expectedUrl ?? null,
+            mediaBasename:
+              options.target === 'reported-live-post'
+                ? (options.liveTarget ?? PREVIOUS_LIVE_FILENAME_TARGET).mediaBasename
+                : null,
+            maxEvents: MAX_EVENTS,
+          },
+        },
+      ],
+      returnByValue: true,
+    });
+    const installState = recordFromRemote(installed, 'Content observer install') as {
+      installed?: boolean;
+      reason?: string;
+    };
+    if (installState?.reason === 'preexisting') {
+      cleanup.contentGlobal = 'foreign-preserved';
+    }
+    assert.equal(installState?.installed, true, 'Content observer slot was unavailable');
+    contentOwned = true;
+    const breakpoint = await cdp.send('Debugger.setBreakpointByUrl', {
+      url: script.url,
+      lineNumber: location.lineNumber,
+      condition: CONTENT_LOGPOINT_CONDITION,
+    });
+    breakpointId = breakpoint.breakpointId;
+    cleanup.breakpoint = 'failed';
+    assert(
+      breakpoint.locations?.some(
+        (item: { scriptId: string; lineNumber: number }) =>
+          item.scriptId === script.scriptId && item.lineNumber === location.lineNumber
+      ),
+      'Filename logpoint did not bind to executed script'
+    );
+    const wake = await extensionPage.evaluate(() =>
+      chrome.runtime.sendMessage({ type: 'NOT_A_REAL_MESSAGE' })
+    );
+    assert(
+      wake && typeof wake === 'object' && !Array.isArray(wake),
+      'Background wake response missing'
+    );
+    const wakeReply = wake as { success?: unknown; error?: unknown };
+    assert.equal(wakeReply.success, false, 'Background wake response unexpectedly succeeded');
+    assert.equal(wakeReply.error, 'Unknown message type', 'Background wake response changed');
+    const workers = await waitFor(() => {
+      const matching = context
+        .serviceWorkers()
+        .filter((item) => item.url() === `chrome-extension://${extensionId}/background.js`);
+      assert(matching.length <= 1, 'Installed background worker identity is ambiguous');
+      return matching.length === 1 ? matching : undefined;
+    }, 'Installed background worker');
+    assert.equal(workers.length, 1, 'Expected one exact installed background worker');
+    worker = workers[0]!;
+    workerInstalled = true;
+    cleanup.workerListener = 'failed';
+    cleanup.nativeWrapper = 'failed';
+    await installWorkerObserver(
+      worker,
+      marker,
+      expectedUrl ?? null,
+      extensionId,
+      targetTabId,
+      options.target === 'reported-live-post'
+        ? (options.liveTarget ?? PREVIOUS_LIVE_FILENAME_TARGET).mediaBasename
+        : PREVIOUS_LIVE_FILENAME_TARGET.mediaBasename
+    );
+    receipt.filenameCapabilities = await worker.evaluate(() => {
+      type Api = typeof chrome & {
+        downloads: typeof chrome.downloads & {
+          onDeterminingFilename?: { hasListeners(): boolean };
+        };
+      };
+      const alternate = (globalThis as typeof globalThis & { browser?: Api }).browser;
+      const native = chrome as Api;
+      const describe = (api: Api | undefined) => ({
+        runtimeId: api?.runtime.id ?? null,
+        eventAvailable: !!api?.downloads.onDeterminingFilename,
+        hasListeners: api?.downloads.onDeterminingFilename?.hasListeners() ?? null,
+      });
+      return {
+        chrome: describe(native),
+        browser: describe(alternate),
+        sameEvent:
+          native.downloads.onDeterminingFilename === alternate?.downloads.onDeterminingFilename,
+      };
+    });
+    const browser = context.browser();
+    assert(browser);
+    const versionSession = await browser.newBrowserCDPSession();
+    try {
+      const version = await versionSession.send('Browser.getVersion');
+      receipt.browserVersion = {
+        product: version.product,
+        revision: version.revision,
+        protocolVersion: version.protocolVersion,
+      };
+    } finally {
+      await versionSession.detach();
+    }
+    actionStarted = true;
+    result = await action();
+    receipt.actionOutcome = { status: 'passed' };
+  } catch (error) {
+    addError(actionStarted ? 'action' : 'setup', error);
+    if (actionStarted) {
+      receipt.actionOutcome = { status: 'failed', error: safeError(error, 'action') };
+    }
+  } finally {
+    // A failed product assertion can coexist with complete diagnostic observation.
+    let pageIdentityVerified = false;
+    if (actionStarted && targetPageUrl !== undefined && targetTimeOrigin !== undefined) {
+      try {
+        assert.equal(page.url(), targetPageUrl, 'Target page navigated during diagnostic action');
+        assert.equal(
+          await page.evaluate(() => performance.timeOrigin),
+          targetTimeOrigin,
+          'Target document changed during diagnostic action'
+        );
+        pageIdentityVerified = true;
+      } catch (error) {
+        addError('page-identity', error);
+      }
+    }
+    if (cdp && contentRealmId !== undefined) {
+      if (actionStarted && breakpointId && contentOwned) {
+        try {
+          const capture = await cdp.send('Runtime.callFunctionOn', {
+            executionContextId: contentRealmId,
+            functionDeclaration: CONTENT_CAPTURE_FUNCTION,
+            arguments: [{ value: marker }],
+            returnByValue: true,
+          });
+          const captured = recordFromRemote(capture, 'Filename logpoint') as {
+            matched?: boolean;
+            events?: unknown;
+          };
+          assert.equal(captured?.matched, true, 'Content observer marker changed');
+          const selected = captured.events;
+          assert(
+            Array.isArray(selected) && selected.length === 1,
+            'Expected one selected MediaInfo logpoint hit'
+          );
+          const item = selected[0] as Record<string, unknown>;
+          receipt.selectedMedia = Object.fromEntries(
+            Object.entries(item).filter(([key]) => key !== 'generatedFilename')
+          );
+          receipt.generatedFilename = bounded(item.generatedFilename);
+          assert(
+            typeof receipt.generatedFilename === 'string' && receipt.generatedFilename.length > 0,
+            'Generated filename missing'
+          );
+          selectedVerified = true;
+        } catch (error) {
+          addError('content-capture', error);
+        }
+      }
+      if (contentInstallAttempted) {
+        try {
+          const removed = await cdp.send('Runtime.callFunctionOn', {
+            executionContextId: contentRealmId,
+            functionDeclaration: CONTENT_REMOVE_FUNCTION,
+            arguments: [{ value: marker }],
+            returnByValue: true,
+          });
+          const state = recordFromRemote(removed, 'Content observer cleanup') as {
+            matched?: boolean;
+            existed?: boolean;
+            removed?: boolean;
+          };
+          if (state?.existed && !state.matched) {
+            cleanup.contentGlobal = 'foreign-preserved';
+            assert.equal(contentOwned, false, 'Content observer marker changed before cleanup');
+          } else {
+            assert(state?.removed === true, 'Content observer global removal failed');
+            cleanup.contentGlobal = state.existed ? 'removed' : 'absent';
+          }
+        } catch (error) {
+          if (cleanup.contentGlobal !== 'foreign-preserved') {
+            cleanup.contentGlobal = 'failed';
+          }
+          addError('content-cleanup', error);
+        }
+      }
+    }
+    let trace: WorkerTrace | undefined;
+    if (worker && workerInstalled) {
+      try {
+        trace = await readWorkerObserver(worker, marker);
+        receipt.request = trace.requests;
+        receipt.nativeCall = trace.native;
+        receipt.workerApi = trace.selectedApi;
+        assert(
+          trace.wrapperIntact && !trace.overflow,
+          'Worker observer identity or event bound failed'
+        );
+      } catch (error) {
+        addError('worker-capture', error);
+        trace = undefined;
+      }
+    }
+    if (selectedVerified && options.target === 'reported-live-post') {
+      try {
+        const selectedMedia = receipt.selectedMedia;
+        assert(selectedMedia && typeof selectedMedia === 'object' && !Array.isArray(selectedMedia));
+        const selected = selectedMedia as Record<string, unknown>;
+        const preferred = selectedLivePreferredSource(
+          selected,
+          options.liveTarget ?? PREVIOUS_LIVE_FILENAME_TARGET
+        );
+        const resolved = await options.resolveLiveOriginal(selected);
+        assertReportedLiveFilenameTarget(
+          targetPageUrl!,
+          resolved.url,
+          options.liveTarget ?? PREVIOUS_LIVE_FILENAME_TARGET
+        );
+        assert.equal(
+          resolved.url,
+          preferred,
+          'Independent original differs from selected MediaInfo source'
+        );
+        assert(resolved.bytes instanceof Uint8Array);
+        assert(resolved.bytes.length > 0 && resolved.bytes.length <= MAX_FILE_BYTES);
+        expectedUrl = resolved.url;
+        expectedBytes = resolved.bytes;
+        receipt.expectedUrl = resolved.url;
+        receipt.expectedBytes = resolved.bytes.length;
+        receipt.expectedSha256 = sha256(resolved.bytes);
+      } catch (error) {
+        addError('original-resolution', error);
+      }
+    }
+    if (trace && targetTabId !== undefined && expectedUrl) {
+      const nativeId = trace.native.length === 1 ? trace.native[0]?.downloadId : undefined;
+      if (Number.isSafeInteger(nativeId)) {
+        try {
+          const observed = await extensionPage.evaluate(
+            (id) => chrome.downloads.search({ id }),
+            nativeId!
+          );
+          assert.equal(observed.length, 1, 'Observed native ID has no unique DownloadItem');
+          const item = observed[0]!;
+          nativeSavedPath = item.filename;
+          receipt.nativeItem = {
+            id: item.id,
+            byExtensionId: item.byExtensionId,
+            byExtensionName: item.byExtensionName,
+            basename: basename(item.filename),
+            state: item.state,
+            url: item.url,
+            finalUrl: item.finalUrl,
+            mime: item.mime,
+            error: bounded(item.error, 128),
+          };
+          const requestId = trace.requests.length === 1 ? trace.requests[0]?.requestId : undefined;
+          assert(
+            typeof requestId === 'string' && requestId.length > 0,
+            'Observed request has no request ID'
+          );
+          const record = await waitForAsync(async () => {
+            const matching = await extensionPage.evaluate(
+              async ({ key, id }) => {
+                const stored = await chrome.storage.local.get(key);
+                const rows = stored[key];
+                if (!rows || typeof rows !== 'object' || Array.isArray(rows)) {
+                  return null;
+                }
+                return (rows as Record<string, unknown>)[id] ?? null;
+              },
+              { key: TRACKING_KEY, id: requestId }
+            );
+            if (!matching || typeof matching !== 'object' || Array.isArray(matching)) {
+              return undefined;
+            }
+            const row = matching as Record<string, unknown>;
+            return typeof row.downloadId === 'number' &&
+              typeof row.ownerTabId === 'number' &&
+              typeof row.urlHash === 'string'
+              ? row
+              : undefined;
+          }, 'Persisted direct download binding');
+          receipt.tracked = verifyFilenameCorrelation({
+            requests: trace.requests,
+            native: trace.native,
+            tracking: { [requestId]: record },
+            expectedUrl,
+            extensionId,
+            expectedOwnerTabId: targetTabId,
+            nativeItem: item,
+          });
+          receipt.filenameBinding = {
+            requestedFilename: bounded(record.requestedFilename),
+          };
+          identityVerified = true;
+        } catch (error) {
+          addError('identity-correlation', error);
+        }
+      } else {
+        addError('identity-correlation', new Error('Observed native call returned no ID'));
+      }
+    }
+    if (identityVerified && receipt.nativeItem && trace && nativeSavedPath && expectedBytes) {
+      try {
+        const nativeItem = receipt.nativeItem as { state: string; id: number };
+        assert.equal(nativeItem.state, 'complete', 'Observed native download was not complete');
+        const savedPath = nativeSavedPath;
+        assert(isAbsolute(savedPath), 'Native file path is not absolute');
+        const { bytes } = await readOwnedNativeBytes(downloads, savedPath, expectedBytes.length);
+        assert.equal(bytes.length, expectedBytes.length, 'Native download has an unexpected size');
+        const size = bytes.length;
+        receipt.savedFile = {
+          basename: basename(savedPath),
+          size,
+          sha256: sha256(bytes),
+          matchesExpectedBytes: Buffer.from(bytes).equals(Buffer.from(expectedBytes)),
+        };
+        fileVerified = true;
+        const retainedName = `filename-correlation-${options.label ?? 'xeg-alone'}-${nativeItem.id}.bin`;
+        try {
+          const retainedFile = resolve(output, retainedName);
+          await writeFile(retainedFile, bytes, { flag: 'wx' });
+          const retained = await readExactDownloadFile(retainedFile, bytes.length);
+          assert(
+            sha256(retained.bytes) === sha256(bytes),
+            'Retained native file differs from inspected file'
+          );
+          receipt.savedFile = {
+            ...(receipt.savedFile as Record<string, unknown>),
+            retainedFile: retainedName,
+          };
+        } catch (error) {
+          addError('retention', error);
+        }
+      } catch (error) {
+        addError('file-inspection', error);
+      }
+    }
+    let namesVerified = false;
+    if (identityVerified && trace && receipt.nativeItem) {
+      try {
+        receipt.nameComparison = compareObservedFilenames({
+          generated: receipt.generatedFilename,
+          requested: trace.requests[0]?.filename,
+          nativeOption: trace.native[0]?.filename,
+          finalBasename: (receipt.nativeItem as { basename: string }).basename,
+        });
+        namesVerified = true;
+      } catch (error) {
+        addError('name-comparison', error);
+      }
+    }
+    if (worker && workerInstalled) {
+      try {
+        const restored = await disposeWorkerObserver(worker, marker);
+        cleanup.workerListener = restored.listenerRemoved ? 'removed' : 'failed';
+        cleanup.nativeWrapper = restored.wrapperRestored ? 'restored' : 'failed';
+        assert(
+          restored.listenerRemoved && restored.wrapperRestored,
+          'Worker observer restoration failed'
+        );
+      } catch (error) {
+        cleanup.workerListener = 'failed';
+        cleanup.nativeWrapper = 'failed';
+        addError('worker-cleanup', error);
+      }
+    }
+    if (cdp) {
+      if (breakpointId) {
+        try {
+          await cdp.send('Debugger.removeBreakpoint', { breakpointId });
+          cleanup.breakpoint = 'removed';
+        } catch (error) {
+          cleanup.breakpoint = 'failed';
+          addError('breakpoint-cleanup', error);
+        }
+      }
+      try {
+        await cdp.detach();
+        cleanup.debuggerSession = 'detached';
+      } catch (error) {
+        cleanup.debuggerSession = 'failed';
+        addError('debugger-cleanup', error);
+      }
+    }
+    receipt.observationComplete =
+      pageIdentityVerified && selectedVerified && identityVerified && fileVerified && namesVerified;
+    receipt.cleanupComplete =
+      ['absent', 'removed', 'not-installed'].includes(cleanup.contentGlobal) &&
+      ['removed', 'not-installed'].includes(cleanup.workerListener) &&
+      ['restored', 'not-installed'].includes(cleanup.nativeWrapper) &&
+      ['removed', 'not-installed'].includes(cleanup.breakpoint) &&
+      ['detached', 'not-attached'].includes(cleanup.debuggerSession);
+    receipt.status = receipt.observationComplete ? 'captured' : 'incomplete';
+    receipt.errors = stageErrors;
+    try {
+      await writeFile(
+        resolve(output, `filename-correlation-${options.label ?? 'xeg-alone'}.json`),
+        `${JSON.stringify(receipt, null, 2)}\n`
+      );
+    } catch (error) {
+      addError('receipt-write', error);
+    }
+  }
+  if (errors.length === 1) {
+    throw errors[0];
+  }
+  if (errors.length > 1) {
+    throw new AggregateError(errors, 'Filename diagnostic or cleanup failed');
+  }
+  return result;
+}

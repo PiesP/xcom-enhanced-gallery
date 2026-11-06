@@ -3,6 +3,7 @@
 
 import { dismissBulkDownloadOutcome } from '@features/gallery/hooks/dismiss-bulk-download-outcome';
 import {
+  closeGallery,
   disposeGallerySignals,
   galleryIndexEvents,
   gallerySignals,
@@ -17,6 +18,7 @@ import {
 import {
   downloadState,
   setBulkDownloadOutcome,
+  setSingleDownloadOutcome,
   setDownloadStatus,
 } from '@shared/state/signals/gallery-download-signals';
 import {
@@ -33,6 +35,21 @@ function media(id: string): MediaInfo {
 afterEach(() => {
   disposeGallerySignals();
   setError(null);
+});
+
+it('clears an observed single filename on gallery replacement, close, and disposal', () => {
+  openGallery([media('a')]);
+  setSingleDownloadOutcome({ observedFilename: 'first.jpg', filenameConforms: false });
+  openGallery([media('b')]);
+  expect(downloadState.singleOutcome).toBeNull();
+
+  setSingleDownloadOutcome({ observedFilename: 'second.jpg' });
+  closeGallery();
+  expect(downloadState.singleOutcome).toBeNull();
+
+  setSingleDownloadOutcome({ observedFilename: 'third.jpg' });
+  disposeGallerySignals();
+  expect(downloadState.singleOutcome).toBeNull();
 });
 
 it('dismisses a partial ZIP result without reviving its old live error or clearing a newer error', () => {

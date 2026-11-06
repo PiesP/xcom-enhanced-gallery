@@ -12,22 +12,31 @@ for another, and none is a required CI lane.
    experience case also checks native keyboard activation and a return from
    manually scrolled focus to the last requested item. A declared
    public-release input first exercises a same-profile unpacked update.
-3. **Installed Chrome Tampermonkey profile:** installs the exact production
+3. **Installed Chrome/Edge Tampermonkey profile:** installs the exact production
    `.user.js` through the reviewed manager UI in a fresh owned profile. A declared
    public-release input first exercises the manager's update confirmation. It checks
    repeated native singles and ZIPs, a partial ZIP, routed transport failure,
-   cancellation before dispatch, gallery close/reopen, and reload recovery with
+   ZIP cancellation before dispatch, single cancellation after an abortable GM
+   call and held HTTPS GET, gallery close/reopen, and reload recovery with
    independently read saved files. It configures Browser API mode in the
    task-owned Tampermonkey options UI, checks the existing JPG/ZIP whitelist,
    and confirms the manager's own permission page when shown. That UI may
-   request Tampermonkey's optional downloads permission. On Chrome, a bounded
-   Windows UI Automation step may invoke the ordinary **Allow** button only
-   for the fully recognized downloads-only prompt in that fresh owned profile.
+   request Tampermonkey's optional downloads permission. On Chrome or Edge, a
+   bounded Windows UI Automation step may invoke the ordinary **Allow** button
+   only for the fully recognized downloads-only prompt in that fresh owned profile.
    It rechecks the browser process, session and foreground window before acting;
-   unrecognized, incomplete or changed prompts are skipped. Edge prompts are
-   not automated. An independent manager permission probe records whether the
-   permission was actually granted or remains pending. Native completion and
-   saved bytes require separate evidence.
+   unrecognized, incomplete or changed prompts are skipped. Edge uses its observed
+   title, permission description, and bullet-prefixed downloads-only label; if
+   its scoped UIA labels differ, the action remains skipped for review. An
+   owned Edge developer-mode warning can obscure that prompt. When that warning
+   is the initial owned foreground window or replaces an exactly captured
+   permission prompt, the validator may dismiss one fully recognized warning
+   through its visible **Later** control, then
+   recapture the still-pending permission prompt and make one guarded retry.
+   It preserves the initial permission receipts and never invokes **Disable**.
+   An independent manager permission probe records whether the permission was
+   actually granted or remains pending.
+   Native completion and saved bytes require separate evidence.
    The fresh manager profile sets General > LogLevel to Info (60) through its
    options UI, and the manager-console receipt keeps only bounded known branch counts.
    That setting is removed with the owned profile after browser closure; failed
@@ -121,12 +130,78 @@ This artifact-only result records browser zoom as `not-run`: the injected
 userscript has no installed extension worker with access to the browser tab's
 actual zoom setting. CSS zoom or pinch emulation is not used as a substitute.
 
+### Filename and ZIP utility boundary fixture (#483)
+
+The focused `filename-boundaries` scenario runs the production filename planner,
+download orchestrator, ZIP allocator/writer, and failed-entry recovery through a
+dedicated source-built Node bundle. Its save adapter writes real files in a fresh
+private directory on the prepared Windows guest. It verifies Unicode, reserved
+device names, malformed names, the 255 UTF-16-unit limit, duplicate identity
+suffixes, partial ZIP members and bytes, a failed retry with no save, and a
+successful `-missing-2.zip` recovery. The fixture retains safe ASCII evidence
+copies and a receipt, then deletes only its own verified native files and
+directory after rechecking directory and file identities. Replaced files,
+symlinks, reparse points, and foreign entries stop cleanup and remain for review.
+A failed assertion still writes a path-free receipt and copies any remaining
+unchanged, bounded native outputs before cleanup; failed cleanup is reported
+separately.
+
+Use the shared controller's `--scenario filename-boundaries --browser msedge
+--mode desktop` contract from a clean, exact-source checkout. Its declared
+preparation runs `build:ci` and the isolated `build:filename-boundaries` script;
+the controller generates the selector and hashes only the exact generated
+`dist-validation/filename-boundary-fixture.mjs` file.
+The normal product build target remains unchanged. The case names and long
+account name are deliberately supplied at the utility boundary because the
+current gallery has no custom filename control. A passing result is Windows
+Node native filesystem and production utility evidence; it does not prove a
+browser Save As dialog, installed extension download, gallery click path, or
+live X.com reachability. The browser launch in the shared controller does not
+change this tier because this fixture does not use that browser instance.
+
 This does not test userscript-manager installation, unpacked extension installation,
 privileged extension downloads, live authenticated X.com, Windows native Save As,
 Explorer, OS compositor, actual DPI changes, or physical GPU performance. A headless
 run is functional diagnostics only, not desktop visual acceptance.
 
 Run `node --experimental-strip-types --check validation/windows/profile.ts` for the profile syntax check.
+
+## Installed Firefox filename flow
+
+`--browser firefox --mode desktop --installation extension` uses the maintained
+controller's shared Firefox WebDriver BiDi transport and the production
+`dist-extension-firefox` distribution. It runs a focused filename fixture rather
+than the broader Chromium gallery matrix. An optional `attachment-filenames.json`
+selector must contain exactly `{"scenario":"attachment-filenames"}`; other
+focused selectors are rejected.
+
+The runner creates a task-owned profile and an installation copy. Its diagnostic
+extension page is added only to that copy; an inventory proves that every
+production file keeps its original digest. Profile preferences select the owned
+download directory and diagnostic extension origin. BiDi supplies the page
+fixture, while a task-owned loopback CONNECT proxy routes only the declared
+fixture hosts to its local HTTPS server for native download responses. The
+session explicitly accepts that server's temporary certificate and records
+Firefox's capability readback. This does not change Windows trust, hosts files
+or browser settings outside that profile.
+
+Trusted pointer actions open the installed gallery and activate its Download
+button. The fixture reads only matching extension-owned native download records,
+checks an independently specified owner/attachment basename and the original
+file bytes, and compares the visible saved-name notice with the native basename.
+It also exercises a same-name collision and dismisses the notice while requiring
+the native download IDs and original file contents to remain unchanged. Output
+copies are retained under flat neutral evidence names after byte-verifying the
+original browser-reported file; the original is never renamed for qualification.
+
+Firefox does not support
+[`downloads.onDeterminingFilename`](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Chrome_incompatibilities#javascript-apis).
+Its receipt records that capability separately; Chromium's passive/active
+filename-arbitration controls are not simulated. Browser installation, network
+intercepts, copied files, downloads and profile cleanup have separate outcomes.
+The focused fixture does not establish live X.com behavior or the Chromium
+matrix. This Firefox route rejects live URLs; existing Chrome/Edge public
+observations remain separate evidence.
 
 ## Installed Chrome/Edge extension flow
 
@@ -163,8 +238,15 @@ active transfer from an uncertain worker reply without a throughput claim.
 The extension-only classic route serves smaller display JPEGs, including one
 extensionless query-format photo URL, and separate original JPEGs. Each DOM
 recovery cycle asserts the observed display URL and natural dimensions, then
-checks that the native current save contains the original bytes. A separate
-healthy production-shaped API photo response starts from the same small sources,
+checks that the native current save contains the original bytes.
+The classic fixture now gives each of its known three photo positions a
+same-owner `/photo/N` link. Its numeric filename assertions rely on that
+explicit source position in all four phases. The browser contract test also
+removes those links from the actual fixture markup and checks literal stable
+source-key names for the no-hint DOM path. This synthetic position evidence
+does not establish what a live X page exposes.
+
+A separate healthy production-shaped API photo response starts from the same small sources,
 opens the second of three owned images, preserves original-quality API display,
 and verifies its source link, current filename and exact original bytes. Its ZIP
 must contain all three original entries with expected filenames, order, contents
@@ -185,6 +267,75 @@ beside the photo must navigate natively without requesting media. The cycle
 also checks keyboard activation of the media link, native B/C header navigation,
 gallery navigation, close/reopen and host-state restoration. Its
 bounded requests and partial failure observations remain separate from live X.
+
+For #482, the maintained filename cycle uses a second owned page with A quoting
+B (B1/B2) and B quoting C (C1). It opens A and B through hit-tested image
+clicks, checks B1/B2 single saves in both API request contexts, and reads the
+mixed-owner ZIP files for literal owner-local member names, order, bytes and
+CRC. The archive names follow the first gallery-order item: B in A's gallery,
+C in B's gallery, regardless of the active selection. B2 is saved again from
+complete and visible `/photo/2` partial DOM recovery after a controlled API
+403; the partial DOM uses an alternate size URL and retains an excluded profile
+image. Exact ordinary native names and bytes are retained before their verified
+task-owned files are cleared for the next context. A task-owned file with the
+desired B1 name is checked byte-identical before and after a separate conflict
+save; the browser's actual conflict name and new download ID are recorded. A
+controlled B1 source failure is armed at both context and native transports,
+and the observed 404 route is recorded. It then requires a partial ZIP with C1/B2 and a
+separate failed-only ZIP containing the assigned B1 name and original bytes.
+The existing C 403 recovery also checks its exact source-key filename and
+original WebP bytes. An executed run must bind these assertions to its source
+and installed artifact, retain the observed names and content checks, and
+report scoped cleanup. Prepared assertions alone do not establish Windows
+runtime acceptance.
+
+The ignored `validation/windows/inputs/attachment-filenames.json` selector
+(`{"scenario":"attachment-filenames"}`) runs the focused extension cycle.
+An extension run may append ordinary `--live-url` public observations after
+closing the fixture browser and loopback; those observations remain separate
+from the controlled saved-file qualification.
+With `--installation userscript`, the same selector runs a manager-backed
+visible `/photo/2` save that checks the owner-local filename and native bytes.
+
+With `--browser chrome` or `--browser msedge` and `--installation extension`, this cycle additionally
+installs a separate task-owned filename-decision control extension after the
+XEG-only cases. It repeats one known B1 Download-button save with a passive
+`suggest()` and separate `suggest(undefined)` control, an explicit distinct
+`control-override-482.jpg` suggestion, and that same suggestion with
+`conflictAction: 'uniquify'`. The helper filters by the XEG extension ID and the
+exact synthetic source URL. Each case records the matching native ID,
+tentative/suggested/final basenames, initiating extension, MIME, and original
+saved bytes. Independent expected names and observed native names remain
+separate. The request name is explicitly unobserved until the MV3 payload and
+worker options are captured. An intentional active override is an arbitration
+observation, not filename conformance. Unexpected completed basenames retain
+their native-item receipt and a byte-checked copy under a flat neutral `.bin`
+evidence name before the fixture fails and profile cleanup runs. The browser-reported
+basename remains separate; the original download is never renamed. Chrome and Edge
+acceptance keeps automatic saving and checks the visible actual-filename
+notice against the native item and disk file. Passive controls permit the intended
+or known CDN fallback basename while recording conformance separately. Active
+controls require the distinct suggested basename. A mismatch must remain a completed
+transfer with a notice, without another save or overwrite.
+Helper observations are read before uninstallation even when a case fails.
+The preexisting-file control above runs before this helper is installed and
+preserves its sentinel. The helper is uninstalled and its owned files removed
+before the normal profile cleanup. These controls do not identify the cause of
+a live-post report; request/worker correlation and a source-bound installed
+Chrome run still require separate observations.
+
+The Chrome and Edge cycles also perform two separate diagnostic B1 saves: XEG alone and
+an active filename suggestion. `filename-correlation.ts` binds the executed
+content script's SHA-256 and filename-generation location to a non-pausing CDP
+logpoint, observes the matching MV3 request and unchanged native API call, and
+checks the persisted request/native-ID/owner/source relationship. It records
+selected attachment metadata, generated/requested/native/final names and the
+actual saved file's bytes/hash in separately labeled JSON receipts. Name
+comparisons remain independent of request ownership. Missing or ambiguous
+observations fail with partial receipts. The debugger and worker observers are
+removed before repeating the ordinary, uninstrumented save and continuing the
+controls. These diagnostic saves do not qualify worker lifecycle behavior or
+identify the live-report cause without the required runtime evidence.
 
 The same installed profile invokes `media-api-reuse-profile.ts` to compare
 physical API requests across successive clicks, navigation, reload and a fresh
@@ -416,6 +567,14 @@ padding, text, SVG background and path through ordinary hit-tested input. Each
 must retain its actual `event.target`, open the same B video, and restore host
 focus, scroll and isolation after closing. These are bounded fixture cases;
 other browser installation modes and live X remain separate evidence tiers.
+
+The focused [video save format input](inputs/README.md) checks an installed
+extension after a controlled provider denial. The owned article contains a
+direct MP4 and photo for actual native single-save and ZIP byte/name checks;
+separate owned video articles contain a playlist, an unknown path, and a path
+whose `format` query contradicts its MP4 suffix. Those three clicks must show
+terminal source feedback without opening a gallery or native save. This
+qualifies only the controlled fixture once the recorded installed run executes.
 
 A held 403 response against a blob-only playing host video checks that the
 intercepted click does not pause the host during extraction. After release, the
@@ -691,11 +850,11 @@ original package digest and installation source separately. Use a clean
 committed checkout and run:
 
 ```bash
-python3 /home/piesp/projects/windows-acceptance/vmctl.py run \
+hyperv-control --profile /absolute/private/profile.json validate --kind browser \
   --repo /home/piesp/projects/xcom-enhanced-gallery \
-  --browser chrome --mode desktop --installation userscript \
-  --manager-directory /path/to/unpacked/tampermonkey \
-  --output /path/to/private/xcom-userscript-evidence
+  --output /path/to/private/xcom-userscript-evidence -- \
+  --browser chrome --installation userscript \
+  --manager-directory /path/to/unpacked/tampermonkey
 ```
 
 The HTTPS userscript fixture currently supports Chrome only; Edge userscript

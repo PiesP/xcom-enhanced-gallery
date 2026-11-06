@@ -2,9 +2,10 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { getDownloadAdapter } from '@platform/index';
+import type { DownloadReceipt } from '@platform/types';
 import { generateMediaFilename } from '@shared/core/filename/filename-utils';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
-import { USER_CANCELLED_MESSAGE } from '@shared/error/cancellation';
+import { isAbortError, USER_CANCELLED_MESSAGE } from '@shared/error/cancellation';
 import { DownloadSourceUnavailableError } from '@shared/error/download-source-unavailable-error';
 import type { DownloadOptions, SingleDownloadResult } from '@shared/services/download/types';
 import { reportProgress } from '@shared/services/download/types';
@@ -26,6 +27,15 @@ const createErrorDownloadResult = (error: unknown): SingleDownloadResult => ({
     : error instanceof DownloadSourceUnavailableError
       ? { code: ErrorCode.SOURCE_UNAVAILABLE }
       : {}),
+});
+
+const createSuccessDownloadResult = (
+  filename: string,
+  receipt: void | DownloadReceipt
+): SingleDownloadResult => ({
+  success: true,
+  filename,
+  ...(typeof receipt === 'object' && receipt !== null ? receipt : {}),
 });
 
 /**
@@ -108,37 +118,32 @@ async function downloadWithAdapter(
     filename,
   });
 
-  // Set up abort listener to race against the adapter download
-  if (abortSignal) {
-    return raceWithAbort(
-      adapter.download(url, filename, undefined, abortSignal).then(
-        () => {
-          reportProgress(options.onProgress, {
-            phase: 'complete',
-            current: 1,
-            total: 1,
-            percentage: 100,
-            filename,
-          });
-          return { success: true, filename } satisfies SingleDownloadResult;
-        },
-        (error: unknown) => createErrorDownloadResult(error)
-      ),
-      abortSignal,
-      createAbortResult
-    );
-  }
-
   try {
-    await adapter.download(url, filename, undefined, abortSignal);
-    reportProgress(options.onProgress, {
-      phase: 'complete',
-      current: 1,
-      total: 1,
-      percentage: 100,
-      filename,
-    });
-    return { success: true, filename };
+    const download = adapter.download(url, filename, undefined, abortSignal).then(
+      (receipt) => {
+        if (abortSignal?.aborted && adapter.ownsUrlCancellation !== true) {
+          return createAbortResult();
+        }
+        reportProgress(options.onProgress, {
+          phase: 'complete',
+          current: 1,
+          total: 1,
+          percentage: 100,
+          filename,
+        });
+        return createSuccessDownloadResult(filename, receipt);
+      },
+      (error: unknown) =>
+        abortSignal?.aborted && isAbortError(error)
+          ? createAbortResult()
+          : createErrorDownloadResult(error)
+    );
+    // The userscript URL adapter owns its signal and can distinguish an abort
+    // from an uncertain native handoff. Other adapters retain the bounded race.
+    if (abortSignal && adapter.ownsUrlCancellation !== true) {
+      return await raceWithAbort(download, abortSignal, createAbortResult);
+    }
+    return await download;
   } catch (error) {
     return createErrorDownloadResult(error);
   }

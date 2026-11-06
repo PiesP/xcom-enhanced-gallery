@@ -4,6 +4,8 @@
 import { open, writeFile, type FileHandle } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { isAbsolute, join } from 'node:path';
+import { runReportedLiveFilename } from './live-filename.ts';
+import type { LiveFilenameTarget } from './live-filename-target.ts';
 import {
   assessVisitEvidence,
   isVisitEvidenceV2,
@@ -44,6 +46,7 @@ import {
   quotedVideoHitTestPassed,
   captureActivationFocusDocument,
   captureLiveImageActivationDocument,
+  captureLiveImageClickEventsDocument,
   findActivationHitDocument,
   quotedVideoSurface,
 } from './live-page-document.ts';
@@ -281,6 +284,7 @@ type RestoredHostState = {
 type LiveCandidate = ReturnType<typeof inspectLiveCandidateDocument>;
 type GalleryObservation = {
   status: string;
+  activationEvents?: LiveImageClickEvent[];
   hostTimeline?: Array<Awaited<ReturnType<typeof captureHostGeometry>>>;
   before?: HostSnapshot;
   preparedBefore?: HostSnapshot;
@@ -310,6 +314,7 @@ type GalleryObservation = {
   scrollRestored?: boolean;
 };
 type LiveObservation = {
+  reportedFilename?: Record<string, unknown>;
   schemaVersion: number;
   kind: string;
   requestedUrl: string;
@@ -450,6 +455,108 @@ type BorrowedVideoClickMode = {
   mode: 'block-all' | 'block-controls-only' | 'allow-all';
   source: 'unset-default' | 'primary-valid' | 'fallback-valid';
 };
+
+type LiveImageClickEvent = {
+  phase: 'capture' | 'bubble';
+  timeOrigin: number;
+  timeStamp: number;
+  detail: number;
+  defaultPrevented: boolean;
+  altKey: boolean;
+  ctrlKey: boolean;
+  metaKey: boolean;
+  shiftKey: boolean;
+  pointInsideImage: boolean;
+  targetTag: string;
+  targetClosestTweetPhoto: boolean;
+  actionContainsImage: boolean;
+  targetContainsImage: boolean;
+  linkHasText: boolean;
+  path: { tag: string; testId: 'tweetPhoto' | 'tweet' | null }[];
+};
+const LIVE_IMAGE_CLICK_BINDING = '__xegLiveImageClickProbe';
+const LIVE_IMAGE_CLICK_TAGS = new Set([
+  'A',
+  'ARTICLE',
+  'BUTTON',
+  'DIV',
+  'IMG',
+  'PATH',
+  'SPAN',
+  'SVG',
+  'TIME',
+]);
+
+export function sanitizeLiveImageClickEvent(value: unknown): LiveImageClickEvent | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null;
+  }
+  const record = value as Record<string, unknown>;
+  if (
+    (record.phase !== 'capture' && record.phase !== 'bubble') ||
+    typeof record.timeOrigin !== 'number' ||
+    !Number.isFinite(record.timeOrigin) ||
+    record.timeOrigin < 0 ||
+    record.timeOrigin > 1e13 ||
+    typeof record.timeStamp !== 'number' ||
+    !Number.isFinite(record.timeStamp) ||
+    record.timeStamp < 0 ||
+    record.timeStamp > 1e12 ||
+    typeof record.detail !== 'number' ||
+    !Number.isInteger(record.detail) ||
+    record.detail < 0 ||
+    record.detail > 100 ||
+    !Array.isArray(record.path) ||
+    record.path.length > 8
+  ) {
+    return null;
+  }
+  const booleanFields = [
+    'defaultPrevented',
+    'altKey',
+    'ctrlKey',
+    'metaKey',
+    'shiftKey',
+    'pointInsideImage',
+    'targetClosestTweetPhoto',
+    'actionContainsImage',
+    'targetContainsImage',
+    'linkHasText',
+  ] as const;
+  if (booleanFields.some((field) => typeof record[field] !== 'boolean')) {
+    return null;
+  }
+  const tag = (raw: unknown): string =>
+    typeof raw === 'string' && LIVE_IMAGE_CLICK_TAGS.has(raw) ? raw : 'OTHER';
+  const path = record.path.map((entry: unknown): LiveImageClickEvent['path'][number] => {
+    const item =
+      entry && typeof entry === 'object' && !Array.isArray(entry)
+        ? (entry as Record<string, unknown>)
+        : {};
+    return {
+      tag: tag(item.tag),
+      testId: item.testId === 'tweetPhoto' || item.testId === 'tweet' ? item.testId : null,
+    };
+  });
+  return {
+    phase: record.phase,
+    timeOrigin: record.timeOrigin,
+    timeStamp: record.timeStamp,
+    detail: record.detail,
+    defaultPrevented: record.defaultPrevented as boolean,
+    altKey: record.altKey as boolean,
+    ctrlKey: record.ctrlKey as boolean,
+    metaKey: record.metaKey as boolean,
+    shiftKey: record.shiftKey as boolean,
+    pointInsideImage: record.pointInsideImage as boolean,
+    targetTag: tag(record.targetTag),
+    targetClosestTweetPhoto: record.targetClosestTweetPhoto as boolean,
+    actionContainsImage: record.actionContainsImage as boolean,
+    targetContainsImage: record.targetContainsImage as boolean,
+    linkHasText: record.linkHasText as boolean,
+    path,
+  };
+}
 
 // Match DEFAULT_SETTINGS.gallery.videoClickMode in src/constants/settings.ts.
 // This Windows script is packaged without src/, so the focused test guards drift.
@@ -2866,7 +2973,13 @@ async function observeOne(
     runMultiImage: boolean;
   } | null = null,
   strictPageClose = false,
-  documentBaselines: Map<string, HostCspFingerprint[]> | null = null
+  documentBaselines: Map<string, HostCspFingerprint[]> | null = null,
+  reportedFilename: {
+    root: string;
+    downloads: string;
+    target: LiveFilenameTarget;
+    browserName: 'chrome' | 'msedge';
+  } | null = null
 ) {
   const identity = targetIdentity(targetUrl);
   const page = await context.newPage();
@@ -2938,6 +3051,9 @@ async function observeOne(
   let imageOwnerHandle: ElementHandle<HTMLElement> | null = null;
   let imageActivationHandle: JSHandle<
     ReturnType<typeof captureLiveImageActivationDocument>
+  > | null = null;
+  let imageClickProbeHandle: JSHandle<
+    ReturnType<typeof captureLiveImageClickEventsDocument>
   > | null = null;
   try {
     if (documentBaselines) {
@@ -3277,6 +3393,29 @@ async function observeOne(
           source: observation.target.imageSource,
         }
       );
+      await page.exposeBinding(LIVE_IMAGE_CLICK_BINDING, (source, payload: unknown) => {
+        if (source.page !== page || source.frame !== page.mainFrame()) {
+          return;
+        }
+        const event = sanitizeLiveImageClickEvent(payload);
+        if (!event) {
+          return;
+        }
+        const events = (observation.gallery.activationEvents ??= []);
+        if (events.length < 6) {
+          events.push(event);
+        }
+      });
+      imageClickProbeHandle = await actionHandle.evaluateHandle(
+        captureLiveImageClickEventsDocument,
+        {
+          image,
+          owner: imageOwnerHandle,
+          actionPath: actionIdentity.actionPath,
+          source: observation.target.imageSource,
+          bindingName: LIVE_IMAGE_CLICK_BINDING,
+        }
+      );
     }
     await actionHandle.click({ timeout: ACTION_TIMEOUT_MS });
     if (imageActivationHandle) {
@@ -3328,6 +3467,18 @@ async function observeOne(
       selectedGallery,
       role: await gallery.getAttribute('role'),
     };
+    if (reportedFilename) {
+      if (!selectedGallery) {
+        throw new Error('Reported image selection was not verified before Download');
+      }
+      observation.reportedFilename = await runReportedLiveFilename({
+        context,
+        page,
+        extensionId,
+        output,
+        ...reportedFilename,
+      });
+    }
     const mixedProviderVideo =
       actualSiteAcceptance && !compactQuote && selectedGallery
         ? ownedMixedPhotoVideo(
@@ -3657,6 +3808,10 @@ async function observeOne(
       await imageActivationHandle.evaluate((capture) => capture.dispose()).catch(() => {});
       await imageActivationHandle.dispose().catch(() => {});
     }
+    if (imageClickProbeHandle) {
+      await imageClickProbeHandle.evaluate((probe) => probe.dispose()).catch(() => {});
+      await imageClickProbeHandle.dispose().catch(() => {});
+    }
     if (imageHandle) {
       await imageHandle.dispose().catch(() => {});
     }
@@ -3980,6 +4135,7 @@ export async function observeLiveUrls({
   borrowedHostProof = null,
   ownedCandidateProof = null,
   actualSiteAcceptance = null,
+  reportedFilename = null,
 }: {
   context: BrowserContext;
   extensionId: string;
@@ -3989,6 +4145,12 @@ export async function observeLiveUrls({
   borrowedHostProof?: BorrowedHostDiagnosticProof | null;
   ownedCandidateProof?: OwnedCandidateInBorrowedBrowser | null;
   actualSiteAcceptance?: { downloads: string } | null;
+  reportedFilename?: {
+    root: string;
+    downloads: string;
+    target: LiveFilenameTarget;
+    browserName: 'chrome' | 'msedge';
+  } | null;
 }) {
   if (
     session !== 'owned' &&
@@ -4014,6 +4176,14 @@ export async function observeLiveUrls({
   }
   if (actualSiteAcceptance && urls.length === 0) {
     throw new Error('Actual-site acceptance requires at least one public status URL');
+  }
+  if (reportedFilename && (session !== 'owned' || actualSiteAcceptance || urls.length !== 1)) {
+    throw new Error(
+      'Reported filename acceptance requires one owned live observation without admission hooks'
+    );
+  }
+  if (reportedFilename && urls[0] !== reportedFilename.target.pageUrl) {
+    throw new Error('Reported filename URL differs from the task-owned target');
   }
   if (!urls.length) {
     return { status: 'not-requested', evidenceStatus: 'not-applicable', pages: [] };
@@ -4059,7 +4229,8 @@ export async function observeLiveUrls({
             }
           : null,
         session === 'borrowed-browser-owned-extension',
-        session === 'borrowed-browser-owned-extension' ? baselineByUrl : null
+        session === 'borrowed-browser-owned-extension' ? baselineByUrl : null,
+        reportedFilename
       );
       if (
         session === 'borrowed' &&

@@ -113,6 +113,11 @@ export const ja: LanguageStrings = {
       recovery: 'Alt+Shift+Vは対象の動画クリックに失敗した直後のみ利用できます。',
     },
     dl: {
+      filenameNotice: {
+        label: '保存されたファイル名',
+        mismatch: '保存名が要求した名前と異なります。',
+        dismiss: 'ファイル名の通知を閉じる',
+      },
       bulkOutcome: {
         cancelRecoveryAndDismiss: '欠落項目の復旧をキャンセルして ZIP の結果を閉じる',
         details: 'ZIP の結果の詳細',

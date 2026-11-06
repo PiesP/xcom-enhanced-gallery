@@ -8,6 +8,11 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Gallery entry** — Handle admitted media clicks at document capture so a host listener that stops propagation before body does not leave the native photo link in control.
+- **DOM image originals** — Confirm the original format of an extensionless WebP display before saving. When that original is missing, use a verified JPEG or PNG original of the same attachment while preserving the displayed image and attachment filename identity.
+
 ## [2.3.10] - 2026-11-03
 
 ### Fixed

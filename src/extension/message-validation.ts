@@ -28,7 +28,7 @@ function isSafeText(
   );
 }
 
-function isSafeFilename(value: unknown): value is string {
+export function isSafeFilename(value: unknown): value is string {
   if (!isSafeText(value, MAX_FILENAME_LENGTH)) {
     return false;
   }

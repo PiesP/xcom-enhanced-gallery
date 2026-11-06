@@ -19,6 +19,11 @@ import {
   captureClickedMediaEvidence,
   getMediaSourceKey,
 } from '@shared/services/media-extraction/determine-clicked-index';
+import {
+  getDomImageOriginalProbeUrl,
+  markDomImageOriginalProbeLimit,
+  resolveDomImageOriginal,
+} from '@shared/services/media-extraction/extractors/dom-image-original';
 import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
 import type {
   MediaExtractionOptions,
@@ -29,6 +34,7 @@ import type {
 } from '@shared/types/media.types';
 import { createFailureResult } from '@shared/types/media.types';
 import { closestWithFallback } from '@shared/utils/dom/query-helpers';
+import { isDirectMp4Source } from '@shared/utils/media/direct-mp4-source';
 import {
   extractMediaUrlFromElement,
   findMediaElementInDOM,
@@ -38,6 +44,7 @@ import {
 } from '@shared/utils/media/media-element-utils';
 import { getImageDownloadSource } from '@shared/utils/media/media-source';
 import { isVideoPreview, isVideoThumbnailUrl } from '@shared/utils/media/video-preview';
+import { isHostMatching, tryParseUrl, TWITTER_HOSTS } from '@shared/utils/url/host';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
 
 /**
@@ -51,6 +58,43 @@ function findAllMediaInContainer(container: HTMLElement): MediaElement[] {
   return Array.from(container.querySelectorAll<HTMLElement>(`${cdnSelector}, video`)).filter(
     isMediaElement
   );
+}
+
+function getOwnedPhotoOrdinal(element: MediaElement, tweetInfo: TweetInfo): number | null {
+  if (!(element instanceof HTMLImageElement)) {
+    return null;
+  }
+  const link = element.closest<HTMLAnchorElement>('a[href]');
+  if (!link || link.querySelectorAll('img, video').length !== 1) {
+    return null;
+  }
+  const url = tryParseUrl(link.getAttribute('href'));
+  if (url?.protocol !== 'https:' || !isHostMatching(url, TWITTER_HOSTS)) {
+    return null;
+  }
+  const match = url.pathname.match(/^\/([^/]+)\/status\/(\d+)\/photo\/([1-9]\d*)\/?$/u);
+  if (
+    match?.[2] !== tweetInfo.tweetId ||
+    match[1]?.toLowerCase() !== tweetInfo.username.toLowerCase()
+  ) {
+    return null;
+  }
+  const ordinal = Number(match[3]) - 1;
+  return Number.isSafeInteger(ordinal) ? ordinal : null;
+}
+
+function getSourceFilenameKey(url: string): string | null {
+  const source =
+    getMediaSourceKey(url)?.replace(/:(?:thumb|small|medium|large|orig)$/iu, '') ?? null;
+  if (!source) {
+    return null;
+  }
+  // Hash the canonical CDN path; display size and query variants retain one identity.
+  let hash = 0xcbf29ce484222325n;
+  for (let i = 0; i < source.length; i++) {
+    hash = BigInt.asUintN(64, (hash ^ BigInt(source.charCodeAt(i))) * 0x100000001b3n);
+  }
+  return `source-${hash.toString(16).padStart(16, '0')}`;
 }
 
 /**
@@ -75,8 +119,14 @@ function createMediaInfoFromDOM(
     if (!mediaUrl || !isValidMediaUrl(mediaUrl)) {
       return null;
     }
-    if (element instanceof HTMLVideoElement && new URL(mediaUrl).hostname !== 'video.twimg.com') {
-      return null;
+    if (element instanceof HTMLVideoElement) {
+      const videoUrl = new URL(mediaUrl);
+      // A DOM video can play a playlist or an unknown source, but neither is a
+      // verified direct download. The filename code trusts ?format first, so a
+      // conflicting or ambiguous query must not relabel a selected MP4 path.
+      if (!isDirectMp4Source(videoUrl)) {
+        return null;
+      }
     }
 
     if (
@@ -90,6 +140,8 @@ function createMediaInfoFromDOM(
       mediaType === 'image'
         ? getImageDownloadSource(mediaUrl, 'dom')
         : { url: mediaUrl, quality: 'observed' as const, provenance: 'dom' as const };
+    const attachmentOrdinal = getOwnedPhotoOrdinal(element, tweetInfo);
+    const attachmentSourceKey = getSourceFilenameKey(mediaUrl);
 
     // Extract dimensions if available
     let width: number | undefined;
@@ -112,6 +164,8 @@ function createMediaInfoFromDOM(
       url: mediaUrl,
       type: mediaType,
       filename: '',
+      ...(attachmentOrdinal !== null ? { attachmentOrdinal } : {}),
+      ...(attachmentSourceKey ? { attachmentSourceKey } : {}),
       tweetUsername: tweetInfo.username,
       tweetId: tweetInfo.tweetId,
       tweetUrl: tweetInfo.tweetUrl,
@@ -250,6 +304,82 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
             'dom-clicked-media-unavailable'
           );
         }
+      }
+
+      // The clicked photo gets first claim on a four-source budget. Duplicate
+      // tiles share a probe while retaining their own identity and order.
+      const resolvedByUrl = new Map<string, Promise<MediaInfo>>();
+      const resolutions: Array<Promise<void>> = [];
+      const orderedIndices = [
+        clickedIndex,
+        ...mediaItems.map((_, index) => index).filter((index) => index !== clickedIndex),
+      ];
+      for (const index of orderedIndices) {
+        const media = mediaItems[index];
+        if (!media) {
+          continue;
+        }
+        const original = getDomImageOriginalProbeUrl(media);
+        if (!original) {
+          continue;
+        }
+        let task = resolvedByUrl.get(original);
+        if (!task && resolvedByUrl.size >= 4) {
+          mediaItems[index] = markDomImageOriginalProbeLimit(media, original);
+          continue;
+        }
+        if (!task) {
+          task = resolveDomImageOriginal(media, options.signal);
+          resolvedByUrl.set(original, task);
+        }
+        resolutions.push(
+          task.then((resolved) => {
+            mediaItems[index] = {
+              ...media,
+              originalUrl: resolved.originalUrl ?? original,
+              ...(resolved.downloadSource ? { downloadSource: resolved.downloadSource } : {}),
+              metadata: {
+                ...media.metadata,
+                originalSourceResolution: resolved.metadata?.originalSourceResolution,
+              },
+            };
+          })
+        );
+      }
+      await Promise.all(resolutions);
+      if (options.signal?.aborted) {
+        return createFailureResult(
+          'DOM extraction cancelled',
+          'dom-fallback',
+          'dom-extraction-cancelled'
+        );
+      }
+
+      // Network callbacks may settle after navigation or after the clicked tile changes.
+      const currentClicked = findMediaElementInDOM(clickedElement);
+      const currentOwnerAfterProbe = ownerExtractor.extractContext(clickedElement);
+      const currentSource = currentClicked ? extractMediaUrlFromElement(currentClicked) : null;
+      const currentContainer = article
+        ? closestWithFallback<HTMLElement>(clickedElement, TWEET_CONTAINER_SELECTORS)
+        : clickedElement.closest<HTMLElement>(STATUS_LINK_SELECTOR);
+      if (
+        !clickedElement.isConnected ||
+        !currentClicked?.isConnected ||
+        !tweetContainer.isConnected ||
+        currentContainer !== tweetContainer ||
+        currentClicked !== clickedMedia ||
+        currentOwnerAfterProbe?.ownership.ownerTweetId !== tweetInfo.tweetId ||
+        getMediaSourceKey(currentSource) !==
+          getMediaSourceKey(mediaItems[clickedIndex]?.url ?? null) ||
+        (options.clickedMediaEvidence &&
+          captureClickedMediaEvidence(clickedElement).sourceKey !==
+            options.clickedMediaEvidence.sourceKey)
+      ) {
+        return createFailureResult(
+          'Clicked media changed during extraction',
+          'dom-fallback',
+          'dom-clicked-media-unavailable'
+        );
       }
 
       if (__DEV__) {

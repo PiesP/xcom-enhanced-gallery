@@ -37,6 +37,52 @@ afterEach(() => {
 });
 
 describe('MV3HttpRequestAdapter', () => {
+  it('exposes only bounded HEAD MIME and source URL while keeping GET metadata private', async () => {
+    const source = 'https://pbs.twimg.com/media/HWXMF0bbcAEnfk6?format=jpg&name=orig';
+    const fetchSpy = vi.fn((_url: string, init: RequestInit) => {
+      const reply = new Response(init.method === 'HEAD' ? null : 'body', {
+        status: 200,
+        headers: {
+          'content-type': 'image/jpeg; charset=binary',
+          authorization: 'private-value',
+          'set-cookie': 'private-cookie',
+        },
+      });
+      Object.defineProperty(reply, 'url', { value: source });
+      return Promise.resolve(reply);
+    });
+    vi.stubGlobal('fetch', fetchSpy);
+    const adapter = new MV3HttpRequestAdapter();
+    const head = await new Promise<HttpRequestResponse>((resolve) => {
+      adapter.request({
+        method: 'HEAD',
+        url: source,
+        maxResponseBytes: 64 * 1024 * 1024,
+        onload: resolve,
+      });
+    });
+    expect(head).toMatchObject({ finalUrl: source, responseHeaders: 'Content-Type: image/jpeg' });
+    expect(JSON.stringify(head)).not.toContain('private-value');
+    expect(JSON.stringify(head)).not.toContain('private-cookie');
+    const get = await new Promise<HttpRequestResponse>((resolve) => {
+      adapter.request({ method: 'GET', url: source, onload: resolve });
+    });
+    expect(get).toMatchObject({ finalUrl: '', responseHeaders: '' });
+  });
+
+  it('rejects oversized or malformed HEAD Content-Type', async () => {
+    for (const mime of [`image/jpeg; ${'x'.repeat(300)}`, 'image/invalid value']) {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(new Response(null, { headers: { 'content-type': mime } }))
+      );
+      const result = await new Promise<HttpRequestResponse>((resolve) => {
+        new MV3HttpRequestAdapter().request({ method: 'HEAD', url: ALLOWED_URL, onload: resolve });
+      });
+      expect(result.responseHeaders).toBe('');
+    }
+  });
+
   it('rejects redirects through fetch policy while preserving caller headers and browser credential defaults', async () => {
     const fetchSpy = vi.fn((_url: string, init: RequestInit) => {
       expect(init.redirect).toBe('error');

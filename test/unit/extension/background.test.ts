@@ -141,9 +141,9 @@ describe('background direct download ownership', () => {
   const url = 'https://pbs.twimg.com/media/direct.jpg?format=jpg&name=orig';
   const owner = { id: 'extension-id', tab: { id: 17 }, url: 'https://x.com/author/status/123' };
   const otherTab = { id: 'extension-id', tab: { id: 18 }, url: 'https://x.com/other/status/456' };
-  const request = (requestId: string) => ({
+  const request = (requestId: string, requestedUrl = url) => ({
     type: 'DOWNLOAD_REQUEST',
-    payload: { url, filename: 'direct-original.jpg', requestId, mode: 'direct' },
+    payload: { url: requestedUrl, filename: 'direct-original.jpg', requestId, mode: 'direct' },
   });
   const status = (requestId: string, requestedUrl = url) => ({
     type: 'DOWNLOAD_DIRECT_STATUS_REQUEST',
@@ -190,14 +190,55 @@ describe('background direct download ownership', () => {
       success: true,
       data: { requestId, status: 'unknown' },
     });
+    state.searchDownload.mockResolvedValue([
+      {
+        id: 801,
+        url,
+        state: 'complete',
+        filename: 'C:\\Private\\cdn-original.jpg',
+        byExtensionId: 'extension-id',
+      },
+    ]);
     nativeCompletion.resolve();
-    expect(await pending).toEqual({ success: true, data: { requestId, status: 'complete' } });
+    const completed = {
+      requestId,
+      status: 'complete',
+      requestedFilename: 'direct-original.jpg',
+      observedFilename: 'cdn-original.jpg',
+      filenameConforms: false,
+    };
+    expect(await pending).toEqual({ success: true, data: completed });
+    expect(await sendMessage(status(requestId), owner)).toEqual({
+      success: true,
+      data: completed,
+    });
+    expect(state.download).toHaveBeenCalledOnce();
+    expect(JSON.stringify(state.storageValues)).not.toContain(url);
+  });
+
+  it('does not expose a filename from another initiator or invent one when history is absent', async () => {
+    const requestId = `direct-unobserved-${crypto.randomUUID()}`;
+    state.download.mockResolvedValueOnce(813);
+    state.searchDownload.mockResolvedValue([
+      {
+        id: 813,
+        url,
+        state: 'complete',
+        filename: 'C:\\Private\\unrelated.jpg',
+        byExtensionId: 'other-extension',
+      },
+    ]);
+
+    expect(await sendMessage(request(requestId), owner)).toEqual({
+      success: true,
+      data: { requestId, status: 'complete', requestedFilename: 'direct-original.jpg' },
+    });
+    state.searchDownload.mockResolvedValue([]);
     expect(await sendMessage(status(requestId), owner)).toEqual({
       success: true,
       data: { requestId, status: 'complete' },
     });
     expect(state.download).toHaveBeenCalledOnce();
-    expect(JSON.stringify(state.storageValues)).not.toContain(url);
   });
 
   it('keeps an unassigned restarted request unknown even if another download has the same URL', async () => {
@@ -250,12 +291,26 @@ describe('background direct download ownership', () => {
       expect(records[requestId]?.downloadId).toBe(802);
     });
 
-    state.searchDownload.mockResolvedValue([{ id: 802, url, state: 'complete' }]);
+    state.searchDownload.mockResolvedValue([
+      {
+        id: 802,
+        url,
+        state: 'complete',
+        filename: 'C:\\Private\\direct-original (1).jpg',
+        byExtensionId: 'extension-id',
+      },
+    ]);
     vi.resetModules();
     await import('@extension/background');
     expect(await sendMessage(status(requestId), owner)).toEqual({
       success: true,
-      data: { requestId, status: 'complete' },
+      data: {
+        requestId,
+        status: 'complete',
+        requestedFilename: 'direct-original.jpg',
+        observedFilename: 'direct-original (1).jpg',
+        filenameConforms: true,
+      },
     });
     expect(state.download).toHaveBeenCalledOnce();
     nativeCompletion.resolve();
@@ -341,7 +396,9 @@ describe('background direct download ownership', () => {
       await vi.waitFor(() => expect(state.download).toHaveBeenCalledOnce());
       now += 10 * 60_000 + 1;
       // Another direct registration invokes pruning while the first Chrome call is pending.
-      expect(await sendMessage(request(otherRequestId), owner)).toMatchObject({ success: false });
+      expect(
+        await sendMessage(request(otherRequestId, 'https://pbs.twimg.com/media/other.jpg'), owner)
+      ).toMatchObject({ success: false });
       const stored = state.storageValues['xeg.download-tracking.v1'] as Record<
         string,
         { ownerTabId?: number }
@@ -736,9 +793,11 @@ describe.each([
     state.download.mockReturnValueOnce(firstDownload.promise);
 
     const failedResponse = sendMessage(request(requestId));
+    await vi.waitFor(() => expect(state.download).toHaveBeenCalledOnce());
     await expect(
       sendMessage({ type: 'DOWNLOAD_CANCEL_REQUEST', payload: { requestId } })
     ).resolves.toEqual({ success: true });
+    await vi.waitFor(() => expect(state.download).toHaveBeenCalledOnce());
     firstDownload.reject(new Error('download ID unavailable'));
     await expect(failedResponse).resolves.toEqual({
       success: false,
@@ -761,6 +820,7 @@ describe.each([
     );
 
     const downloadResponse = sendMessage(request(requestId));
+    await vi.waitFor(() => expect(state.download).toHaveBeenCalledOnce());
     await expect(
       sendMessage({ type: 'DOWNLOAD_CANCEL_REQUEST', payload: { requestId } })
     ).resolves.toEqual({ success: true });

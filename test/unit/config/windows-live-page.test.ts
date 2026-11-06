@@ -3,6 +3,7 @@
 
 import { EventEmitter } from 'node:events';
 import { createHash } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -31,6 +32,7 @@ type LivePageModule = Pick<
   | 'summarizeNativePreviewEvidence'
   | 'canonicalOwnedPhotoPath'
   | 'ownedMixedPhotoVideo'
+  | 'sanitizeLiveImageClickEvent'
 > & {
   inspectLiveTargetDocument(identity: { handle: string; statusId: string }):
     | false
@@ -237,7 +239,7 @@ const userscriptInstall = (await import(
     .href
 )) as Pick<
   typeof import('../../../validation/windows/userscript-install.ts'),
-  'managerDetailsUrl'
+  'managerDetailsUrl' | 'openUserscriptLivePhoto' | 'assertHeldSingleCancellationState'
 > & {
   MEDIA_COHORTS: Record<'normal' | 'failure' | 'partial' | 'held', string[]>;
   PUBLIC_AVATAR_PATH: string;
@@ -256,6 +258,31 @@ const userscriptInstall = (await import(
   isOwnedManagerPermissionAskUrl(value: string, managerId: string): boolean;
   browserProcessId(value: unknown): number | null;
   isObservedChromeNativeDownloadPrompt(value: unknown): boolean;
+  isObservedNativeDownloadPrompt(value: unknown, browserName: string): boolean;
+  isObservedInitialEdgeWarning(value: unknown): boolean;
+  observedOwnedEdgeForegroundDrift(value: unknown): {
+    browserPid: number;
+    creationUtcTicks: string;
+    browserSessionId: number;
+    foregroundHandle: string;
+  } | null;
+  isObservedEdgeWarning(
+    value: unknown,
+    original: unknown,
+    mode?: 'after-permission' | 'warning-first'
+  ): boolean;
+  dismissObservedEdgeWarningOnce(
+    cdp: unknown,
+    root: string,
+    output: string,
+    profile: string,
+    ask: unknown,
+    managerId: string,
+    context: unknown,
+    original: unknown,
+    originalAction: unknown,
+    run: (file: string, args: string[]) => Promise<unknown>
+  ): Promise<{ status: string; reason: string | null }>;
   captureNativeManagerPermission(
     cdp: { send(method: string): Promise<unknown> },
     root: string,
@@ -274,7 +301,19 @@ const userscriptInstall = (await import(
     managerId: string,
     context: unknown,
     run: (file: string, args: string[], options: unknown) => Promise<unknown>
-  ): Promise<{ status: string; action: { status: string; reason: string | null } }>;
+  ): Promise<{
+    status: string;
+    action: { status: string; reason: string | null };
+    warningEntryKind?: 'initial-warning' | 'owned-foreground-drift';
+    inspectionCandidate?: {
+      browserPid: number;
+      creationUtcTicks: string;
+      browserSessionId: number;
+      foregroundHandle: string;
+    };
+    warning?: { status: string; reason: string | null };
+    retry?: { status: string; reason: string | null };
+  }>;
   requireManagerDownloadsHeading(actual: string, localizedDownloads: string): void;
   managerSettingRowLabel(localizedName: string): string;
   managerSettingRow(scope: unknown, localizedName: string): unknown;
@@ -318,6 +357,7 @@ const userscriptInstall = (await import(
     expectedName: string;
     expectedPath: string;
     expectedBytes: number;
+    captureFilenameEmpty?: boolean;
   }): Promise<{
     status: string;
     items: Array<{
@@ -424,6 +464,44 @@ describe('installed navigation notification creation history', () => {
 });
 
 describe('Windows X live page validation', () => {
+  it('retains only bounded click labels from a page binding payload', () => {
+    const event = livePage.sanitizeLiveImageClickEvent({
+      phase: 'bubble',
+      timeOrigin: 1_800_000_000_000,
+      timeStamp: 23,
+      detail: 1,
+      defaultPrevented: false,
+      altKey: false,
+      ctrlKey: false,
+      metaKey: false,
+      shiftKey: false,
+      pointInsideImage: true,
+      targetTag: 'IMG',
+      targetClosestTweetPhoto: true,
+      actionContainsImage: true,
+      targetContainsImage: false,
+      linkHasText: false,
+      path: [
+        { tag: 'IMG', testId: 'tweetPhoto', href: 'private URL' },
+        { tag: 'DIV', testId: 'private-id' },
+        { tag: 'SCRIPT', testId: null },
+      ],
+      arbitraryPageContent: 'private text',
+    });
+    expect(event).toMatchObject({
+      phase: 'bubble',
+      pointInsideImage: true,
+      targetTag: 'IMG',
+      path: [
+        { tag: 'IMG', testId: 'tweetPhoto' },
+        { tag: 'DIV', testId: null },
+        { tag: 'OTHER', testId: null },
+      ],
+    });
+    expect(JSON.stringify(event)).not.toContain('private');
+    expect(livePage.sanitizeLiveImageClickEvent({ ...event, phase: 'unknown' })).toBeNull();
+    expect(livePage.sanitizeLiveImageClickEvent({ ...event, path: Array(9).fill({}) })).toBeNull();
+  });
   it('serves exact classic photo metadata only for the failed-entry fixture', async () => {
     const root = resolve(import.meta.dirname, '../../..');
     const images: [Buffer, Buffer, Buffer] = [
@@ -497,17 +575,17 @@ describe('Windows X live page validation', () => {
       { method: 'GET', status: 403, url: '/i/api/graphql/owned/TweetResultByRestId' },
     ]);
   });
-  it('keeps the loopback certificate exception scoped to Chrome', async () => {
+  it('rejects an unsupported installed userscript browser before filesystem access', async () => {
     const chromium = { launchPersistentContext: vi.fn() };
     await expect(
       userscriptInstall.runUserscriptInstallation({
-        browserName: 'msedge',
+        browserName: 'firefox',
         chromium,
         root: '/unused',
         output: '/unused',
         headless: false,
       })
-    ).rejects.toThrow('Chrome only');
+    ).rejects.toThrow('HTTPS userscript fixture supports installed Chrome and Edge only');
     expect(chromium.launchPersistentContext).not.toHaveBeenCalled();
   });
 
@@ -586,6 +664,985 @@ describe('Windows X live page validation', () => {
         },
       ],
     },
+  });
+
+  const edgeNativePrompt = () => {
+    const prompt = nativePrompt();
+    const edgeTitle = '"Tampermonkey" 이(가) 사용 권한을 요청했습니다.';
+    prompt.controls[0]!.name = edgeTitle;
+    const pane = (depth: number) => ({
+      name: '',
+      controlType: 'ControlType.Pane',
+      depth,
+      isEnabled: true,
+      isOffscreen: false,
+    });
+    const named = (name: string, controlType: string, depth: number) => ({
+      name,
+      controlType,
+      depth,
+      isEnabled: true,
+      isOffscreen: false,
+    });
+    prompt.promptScope.controls = [
+      named(edgeTitle, 'ControlType.Window', 0),
+      pane(1),
+      pane(2),
+      pane(3),
+      pane(3),
+      pane(4),
+      pane(4),
+      pane(4),
+      named('허용', 'ControlType.Button', 4),
+      named('거부', 'ControlType.Button', 4),
+      pane(5),
+      pane(5),
+      named(edgeTitle, 'ControlType.Text', 6),
+      pane(6),
+      pane(6),
+      pane(7),
+      pane(8),
+      pane(9),
+      named('확장은 다음을 할 수 있습니다.', 'ControlType.Text', 10),
+      pane(10),
+      named('• 다운로드 관리', 'ControlType.Text', 11),
+    ];
+    prompt.promptScope.visitedControls = prompt.promptScope.controls.length;
+    prompt.promptScope.attemptedNodes = prompt.promptScope.controls.length;
+    return prompt;
+  };
+
+  it('admits only a complete known Edge downloads prompt in the Edge browser', () => {
+    expect(userscriptInstall.isObservedNativeDownloadPrompt(edgeNativePrompt(), 'msedge')).toBe(
+      true
+    );
+    expect(userscriptInstall.isObservedNativeDownloadPrompt(edgeNativePrompt(), 'chrome')).toBe(
+      false
+    );
+    const chromeBody = edgeNativePrompt();
+    chromeBody.promptScope.controls[18]!.name = '이전에 가능했던 대상:';
+    chromeBody.promptScope.controls[20]!.name = '다운로드 관리';
+    expect(userscriptInstall.isObservedNativeDownloadPrompt(chromeBody, 'msedge')).toBe(false);
+    const edgeBody = nativePrompt();
+    edgeBody.promptScope.controls[2]!.name = '확장은 다음을 할 수 있습니다.';
+    edgeBody.promptScope.controls[3]!.name = '• 다운로드 관리';
+    expect(userscriptInstall.isObservedNativeDownloadPrompt(edgeBody, 'chrome')).toBe(false);
+    const extraPermission = edgeNativePrompt();
+    extraPermission.promptScope.controls.push({
+      name: '방문 기록 읽기',
+      controlType: 'ControlType.Text',
+      depth: 2,
+      isEnabled: true,
+      isOffscreen: false,
+    });
+    extraPermission.promptScope.visitedControls++;
+    extraPermission.promptScope.attemptedNodes++;
+    expect(userscriptInstall.isObservedNativeDownloadPrompt(extraPermission, 'msedge')).toBe(false);
+    const truncated = edgeNativePrompt();
+    truncated.promptScope.complete = false;
+    truncated.promptScope.reason = 'node-cap';
+    expect(userscriptInstall.isObservedNativeDownloadPrompt(truncated, 'msedge')).toBe(false);
+  });
+
+  const edgeWarning = () => ({
+    status: 'captured',
+    mode: 'after-permission' as 'after-permission' | 'warning-first',
+    capture: 'uia-only',
+    screenshot: 'not-captured',
+    laterAttempted: false,
+    browserPid: 42,
+    creationUtcTicks: '639271195545735820',
+    browserSessionId: 2,
+    originalPermissionHandle: '8259362',
+    warningHandle: '8259364',
+    warningScope: {
+      complete: true,
+      reason: null as string | null,
+      visitedControls: 14,
+      attemptedNodes: 14,
+      controls: [
+        ['ControlType.Pane', '개발자 모드에서 확장 사용 해제', 0],
+        ['ControlType.Text', '개발자 모드에서 확장 사용 해제', 1],
+        ['ControlType.Pane', '', 2],
+        ['ControlType.Pane', '', 3],
+        ['ControlType.Pane', '', 4],
+        ['ControlType.Button', '닫기', 4],
+        ['ControlType.Pane', '', 4],
+        ['ControlType.Text', '개발자 모드에서 확장 사용 해제', 5],
+        ['ControlType.Pane', '', 5],
+        ['ControlType.Pane', '', 5],
+        ['ControlType.Button', '확장 사용 해제', 5],
+        ['ControlType.Button', '나중에', 5],
+        [
+          'ControlType.Text',
+          '개발자 모드에서 확장을 실행하면 장치를 손상시킬 수 있습니다. 개발자가 아닌 경우 개발자 모드에서 확장 사용을 해제하여 장치를 보호하세요.',
+          6,
+        ],
+        ['ControlType.Hyperlink', '자세히 알아보기', 6],
+      ].map(([controlType, name, depth]) => ({
+        controlType,
+        name,
+        depth,
+        isEnabled: true,
+        isOffscreen: false,
+      })),
+    },
+  });
+
+  const initialEdgeWarning = () => {
+    const warning = edgeWarning();
+    const foregroundHandle = warning.warningHandle;
+    const creationUtcTicks = warning.creationUtcTicks;
+    return {
+      status: 'captured',
+      capture: 'uia-only',
+      screenshot: 'not-captured',
+      permissionGrantAttempted: false,
+      truncated: false,
+      visitedControls: 15,
+      browserPid: 42,
+      uiaRootProcessId: 42,
+      browserSessionId: 2,
+      observerSessionId: 2,
+      creationUtcTicks,
+      foregroundHandle,
+      foregroundOwnedAndVisible: true,
+      controls: warning.warningScope.controls,
+      promptScope: {
+        complete: false,
+        reason: 'prompt-window-not-unique',
+        visitedControls: 0,
+        attemptedNodes: 0,
+      },
+      windowOwnership: {
+        browserPid: 42,
+        foregroundIsOwned: true,
+        foregroundPid: 42,
+        foregroundHandle,
+        creationUtcTicks,
+        browserSessionId: 2,
+        observerSessionId: 2,
+        ownedVisibleWindowCount: 1,
+        ownedVisibleHandles: [foregroundHandle],
+      },
+      identityRecheck: {
+        sameCreation: true,
+        sameForeground: true,
+        afterForegroundOwned: true,
+        originalForegroundOwnedAndVisible: true,
+        ownedVisibleWindowEnumeration: 'complete',
+        beforeForegroundHandle: foregroundHandle,
+        afterForegroundHandle: foregroundHandle,
+        beforeCreationUtcTicks: creationUtcTicks,
+        afterCreationUtcTicks: creationUtcTicks,
+        afterForegroundPid: 42,
+      },
+    };
+  };
+
+  const ownedForegroundDrift = () => ({
+    status: 'skipped',
+    reason: 'window-identity-changed',
+    capture: 'uia-only',
+    screenshot: 'not-captured',
+    permissionGrantAttempted: false,
+    windowOwnership: {
+      browserPid: 18556,
+      foregroundPid: 18556,
+      foregroundHandle: '4391416',
+      foregroundIsOwned: true,
+      creationUtcTicks: '639295513666172340',
+      browserSessionId: 2,
+      observerSessionId: 2,
+      ownedVisibleWindowCount: 2,
+      ownedVisibleHandles: ['4391416', '9240878'],
+    },
+    identityRecheck: {
+      ownedVisibleWindowCount: 3,
+      ownedVisibleHandles: ['2426246', '4391416', '9240878'],
+      afterForegroundHandle: '2426246',
+      sameForeground: false,
+      afterForegroundOwned: true,
+      ownedVisibleWindowEnumeration: 'complete',
+      sameCreation: true,
+      beforeCreationUtcTicks: '639295513666172340',
+      afterCreationUtcTicks: '639295513666172340',
+      beforeForegroundHandle: '4391416',
+      originalForegroundOwnedAndVisible: true,
+      afterForegroundPid: 18556,
+    },
+    promptScope: { ...edgeNativePrompt().promptScope, rootProcessId: 18556 },
+  });
+
+  it('admits only fixture11 owned foreground drift for fresh warning inspection', () => {
+    const candidate = {
+      browserPid: 18556,
+      creationUtcTicks: '639295513666172340',
+      browserSessionId: 2,
+      foregroundHandle: '2426246',
+    };
+    expect(userscriptInstall.observedOwnedEdgeForegroundDrift(ownedForegroundDrift())).toEqual(
+      candidate
+    );
+    const alterations: Array<(receipt: ReturnType<typeof ownedForegroundDrift>) => void> = [
+      (r) => {
+        r.reason = 'browser-profile-unverified';
+      },
+      (r) => {
+        r.permissionGrantAttempted = true;
+      },
+      (r) => {
+        r.windowOwnership.foregroundPid = 77;
+      },
+      (r) => {
+        r.windowOwnership.creationUtcTicks = '639295513666172341';
+      },
+      (r) => {
+        r.windowOwnership.browserSessionId = 3;
+      },
+      (r) => {
+        r.windowOwnership.foregroundIsOwned = false;
+      },
+      (r) => {
+        r.identityRecheck.afterForegroundPid = 77;
+      },
+      (r) => {
+        r.identityRecheck.afterCreationUtcTicks = '639295513666172341';
+      },
+      (r) => {
+        r.identityRecheck.afterForegroundHandle = '4391416';
+      },
+      (r) => {
+        r.identityRecheck.afterForegroundHandle = '7777777';
+      },
+      (r) => {
+        r.identityRecheck.originalForegroundOwnedAndVisible = false;
+      },
+      (r) => {
+        r.identityRecheck.ownedVisibleWindowEnumeration = 'unavailable';
+      },
+      (r) => {
+        r.identityRecheck.ownedVisibleHandles = ['2426246', '9240878'];
+      },
+      (r) => {
+        r.identityRecheck.ownedVisibleWindowCount = 9;
+      },
+      (r) => {
+        r.promptScope.complete = false;
+      },
+      (r) => {
+        r.promptScope.controls[20]!.name = 'Other permission';
+      },
+    ];
+    for (const alter of alterations) {
+      const receipt = ownedForegroundDrift();
+      alter(receipt);
+      expect(userscriptInstall.observedOwnedEdgeForegroundDrift(receipt)).toBeNull();
+    }
+  });
+
+  it('admits only a stable owned initial Edge warning before any permission action', () => {
+    const initial = initialEdgeWarning();
+    expect(userscriptInstall.isObservedInitialEdgeWarning(initial)).toBe(true);
+    const warning = edgeWarning();
+    warning.mode = 'warning-first';
+    Object.assign(warning, {
+      originalPermissionHandle: null,
+      warningHandle: initial.foregroundHandle,
+    });
+    expect(userscriptInstall.isObservedEdgeWarning(warning, initial, 'warning-first')).toBe(true);
+    warning.originalPermissionHandle = '8259362';
+    expect(userscriptInstall.isObservedEdgeWarning(warning, initial, 'warning-first')).toBe(false);
+
+    const changedOwnership = initialEdgeWarning();
+    changedOwnership.windowOwnership.foregroundIsOwned = false;
+    expect(userscriptInstall.isObservedInitialEdgeWarning(changedOwnership)).toBe(false);
+    const changedRecheck = initialEdgeWarning();
+    changedRecheck.identityRecheck.sameForeground = false;
+    expect(userscriptInstall.isObservedInitialEdgeWarning(changedRecheck)).toBe(false);
+    const attempted = initialEdgeWarning();
+    attempted.permissionGrantAttempted = true;
+    expect(userscriptInstall.isObservedInitialEdgeWarning(attempted)).toBe(false);
+    const unknownControl = initialEdgeWarning();
+    unknownControl.controls[11]!.name = 'Unknown';
+    expect(userscriptInstall.isObservedInitialEdgeWarning(unknownControl)).toBe(false);
+  });
+
+  it('admits only a complete owned Edge warning with one visible Later control', () => {
+    const original = edgeNativePrompt();
+    expect(userscriptInstall.isObservedEdgeWarning(edgeWarning(), original)).toBe(true);
+    const extraPane = edgeWarning();
+    extraPane.warningScope.controls.push({
+      controlType: 'ControlType.Pane',
+      name: '',
+      depth: 4,
+      isEnabled: true,
+      isOffscreen: false,
+    });
+    extraPane.warningScope.visitedControls++;
+    extraPane.warningScope.attemptedNodes++;
+    expect(userscriptInstall.isObservedEdgeWarning(extraPane, original)).toBe(true);
+    const changedPid = edgeWarning();
+    changedPid.browserPid = 43;
+    expect(userscriptInstall.isObservedEdgeWarning(changedPid, original)).toBe(false);
+    const extraName = edgeWarning();
+    extraName.warningScope.controls.push({
+      controlType: 'ControlType.Text',
+      name: 'Unknown',
+      depth: 4,
+      isEnabled: true,
+      isOffscreen: false,
+    });
+    extraName.warningScope.visitedControls++;
+    extraName.warningScope.attemptedNodes++;
+    expect(userscriptInstall.isObservedEdgeWarning(extraName, original)).toBe(false);
+    const duplicateLater = edgeWarning();
+    duplicateLater.warningScope.controls.push({
+      controlType: 'ControlType.Button',
+      name: '나중에',
+      depth: 5,
+      isEnabled: true,
+      isOffscreen: false,
+    });
+    duplicateLater.warningScope.visitedControls++;
+    duplicateLater.warningScope.attemptedNodes++;
+    expect(userscriptInstall.isObservedEdgeWarning(duplicateLater, original)).toBe(false);
+    const disabled = edgeWarning();
+    disabled.warningScope.controls[11]!.isEnabled = false;
+    expect(userscriptInstall.isObservedEdgeWarning(disabled, original)).toBe(false);
+    const incomplete = edgeWarning();
+    incomplete.warningScope.complete = false;
+    expect(userscriptInstall.isObservedEdgeWarning(incomplete, original)).toBe(false);
+    const crossProcess = edgeWarning();
+    crossProcess.warningScope.complete = false;
+    crossProcess.warningScope.reason = 'cross-process';
+    Object.assign(crossProcess.warningScope, {
+      rejectedControl: {
+        processId: 0,
+        controlType: 'ControlType.Pane',
+        name: 'provider',
+        depth: 1,
+        processIdSupported: false,
+        nativeWindowHandleSupported: false,
+        providerDescriptionSupported: true,
+      },
+    });
+    expect(userscriptInstall.isObservedEdgeWarning(crossProcess, original)).toBe(false);
+  });
+
+  it('keeps the separate warning helper ASCII, bounded, and free of focus or input injection', () => {
+    const path = resolve(
+      import.meta.dirname,
+      '../../../validation/windows/manager-edge-warning-window.ps1'
+    );
+    const source = readFileSync(path);
+    expect(source.every((byte) => byte < 128)).toBe(true);
+    const script = source.toString('ascii');
+    expect(script).toContain('function Test-ExactWarning {');
+    expect(script).toContain('function Test-SameWarningScope {');
+    expect(script).toContain('function Get-CompleteTree {');
+    expect(script).toContain('[IntPtr]::new([int64]::Parse($OriginalPermissionHandle))');
+    expect(script.match(/IsOwned\(\$oldHandle, \[uint32\]\$BrowserPid\)/gu)).toHaveLength(3);
+    expect(script).not.toContain('GetFirstChild($oldRoot)');
+    expect(script).not.toContain('prior-permission-cross-process');
+    expect(script).toContain("[ValidateSet('after-permission','warning-first')]");
+    expect(script).toContain("$Mode -ceq 'warning-first' -and $OriginalPermissionHandle");
+    expect(script).toContain('$ExpectedWarningHandle -cne $warningHandle');
+    expect(script).toContain('$capture.mode -cne $Mode');
+    expect(script).toContain("} else { '[redacted]' }");
+    expect(script).toContain('$rejectedControl.nameLength = $name.Length');
+    expect(script).toContain(
+      '$rejectedControl.controlType = $type.Substring(0, [Math]::Min(80, $type.Length))'
+    );
+    expect(script).toContain('rejectedControl = $inspection.rejectedControl');
+    expect(script).toContain('GetCurrentPropertyValue(');
+    expect(script).toContain('::ProcessIdProperty, $true)');
+    expect(script).toContain('::NativeWindowHandleProperty, $true)');
+    expect(script).toContain('::ProviderDescriptionProperty, $true)');
+    expect(script).toContain('::NotSupported');
+    expect(script).toContain('$rejectedControl.providerDescriptionSupported = -not');
+    expect(script).not.toContain('$rejectedControl.providerDescription =');
+    expect(script).toContain('$attempted -ge 128');
+    expect(script).toContain('$pattern.Invoke()');
+    expect(script).not.toMatch(/SetForegroundWindow|SendInput|CopyFromScreen|BitBlt/u);
+    const shell = process.platform === 'win32' ? 'powershell.exe' : 'pwsh';
+    const escapedPath = path.replaceAll("'", "''");
+    const parsed = spawnSync(
+      shell,
+      [
+        '-NoProfile',
+        '-NonInteractive',
+        '-Command',
+        `$tokens=$null; $errors=$null; [System.Management.Automation.Language.Parser]::ParseFile('${escapedPath}',[ref]$tokens,[ref]$errors) > $null; if ($errors.Count) { $errors | ForEach-Object { Write-Error $_ }; exit 1 }`,
+      ],
+      { encoding: 'utf8', timeout: 20_000 }
+    );
+    expect(parsed.error).toBeUndefined();
+    expect(parsed.status, parsed.stderr).toBe(0);
+  }, 30_000);
+
+  it('runs the warning action once only after a safely skipped permission action', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'xeg-edge-warning-'));
+    const profile = join(root, 'xeg-userscript-install-owned');
+    const output = join(root, 'output');
+    mkdirSync(profile);
+    mkdirSync(output);
+    const original = edgeNativePrompt();
+    const originalAction = {
+      status: 'skipped',
+      reason: 'action-identity-or-prompt-mismatch',
+      permissionGrantAttempted: false,
+      browserPid: 42,
+      creationUtcTicks: original.creationUtcTicks,
+      browserSessionId: 2,
+      foregroundHandle: '8259364',
+    };
+    writeFileSync(
+      join(output, 'userscript-manager-native-permission.json'),
+      JSON.stringify(original)
+    );
+    writeFileSync(
+      join(output, 'userscript-manager-native-permission-action.json'),
+      JSON.stringify(originalAction)
+    );
+    let permissionGranted = false;
+    let askUrl = 'chrome-extension://owned/ask.html?aid=opaque';
+    const context = { pages: () => [options] };
+    const options = {
+      isClosed: () => false,
+      url: () => 'chrome-extension://owned/options.html',
+      evaluate: vi.fn(async () => permissionGranted),
+    };
+    const ask = {
+      isClosed: () => false,
+      context: () => context,
+      url: () => askUrl,
+    };
+    const cdp = { send: vi.fn(async () => ({ processInfo: [{ type: 'browser', id: 42 }] })) };
+    let warning = edgeWarning();
+    const run = vi.fn(async (_file: string, args: string[]) => {
+      writeFileSync(
+        join(
+          output,
+          args.includes('-InvokeLater')
+            ? 'userscript-manager-edge-warning-action.json'
+            : 'userscript-manager-edge-warning.json'
+        ),
+        JSON.stringify(
+          args.includes('-InvokeLater')
+            ? { ...warning, status: 'invoked', laterAttempted: true }
+            : warning
+        )
+      );
+    });
+    try {
+      const result = await userscriptInstall.dismissObservedEdgeWarningOnce(
+        cdp,
+        root,
+        output,
+        profile,
+        ask,
+        'owned',
+        context,
+        original,
+        originalAction,
+        run
+      );
+      expect(result.status).toBe('invoked');
+      expect(run).toHaveBeenCalledTimes(2);
+      expect(run.mock.calls[1]?.[1]).toContain('-InvokeLater');
+      expect(run.mock.calls[0]?.[1]).toContain('after-permission');
+      expect(run.mock.calls[0]?.[1]).toContain('-OriginalPermissionHandle');
+      expect(run.mock.calls[0]?.[1]).toContain(original.foregroundHandle);
+      expect(run.mock.calls[0]?.[1]).toContain(originalAction.foregroundHandle);
+      expect(
+        readFileSync(join(output, 'userscript-manager-native-permission-initial.json'), 'utf8')
+      ).toBe(JSON.stringify(original));
+      run.mockClear();
+      const invokedAction = { ...originalAction, permissionGrantAttempted: true };
+      const rejected = await userscriptInstall.dismissObservedEdgeWarningOnce(
+        cdp,
+        root,
+        output,
+        profile,
+        ask,
+        'owned',
+        context,
+        original,
+        invokedAction,
+        run
+      );
+      expect(rejected.status).toBe('skipped');
+      expect(run).not.toHaveBeenCalled();
+      warning = edgeWarning();
+      warning.warningScope.controls[11]!.isEnabled = false;
+      const rejectedWarning = await userscriptInstall.dismissObservedEdgeWarningOnce(
+        cdp,
+        root,
+        output,
+        profile,
+        ask,
+        'owned',
+        context,
+        original,
+        originalAction,
+        run
+      );
+      expect(rejectedWarning.status).toBe('skipped');
+      expect(run).toHaveBeenCalledOnce();
+      run.mockClear();
+      askUrl = 'chrome-extension://other/ask.html?aid=opaque';
+      expect(
+        (
+          await userscriptInstall.dismissObservedEdgeWarningOnce(
+            cdp,
+            root,
+            output,
+            profile,
+            ask,
+            'owned',
+            context,
+            original,
+            originalAction,
+            run
+          )
+        ).status
+      ).toBe('skipped');
+      expect(run).not.toHaveBeenCalled();
+      askUrl = 'chrome-extension://owned/ask.html?aid=opaque';
+      permissionGranted = true;
+      expect(
+        (
+          await userscriptInstall.dismissObservedEdgeWarningOnce(
+            cdp,
+            root,
+            output,
+            profile,
+            ask,
+            'owned',
+            context,
+            original,
+            originalAction,
+            run
+          )
+        ).status
+      ).toBe('skipped');
+      expect(run).not.toHaveBeenCalled();
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('makes one bounded Edge warning recovery and one permission retry', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'xeg-edge-warning-sequence-'));
+    const profile = join(root, 'xeg-userscript-install-owned');
+    const output = join(root, 'output');
+    mkdirSync(profile);
+    mkdirSync(output);
+    const context = { pages: () => [options] };
+    const options = {
+      isClosed: () => false,
+      url: () => 'chrome-extension://owned/options.html',
+      evaluate: vi.fn(async () => false),
+    };
+    const ask = {
+      isClosed: () => false,
+      context: () => context,
+      url: () => 'chrome-extension://owned/ask.html?aid=opaque',
+    };
+    const cdp = { send: vi.fn(async () => ({ processInfo: [{ type: 'browser', id: 42 }] })) };
+    let firstActionUnverified = false;
+    let firstActionReason = 'action-identity-or-prompt-mismatch';
+    let nativeActions = 0;
+    const run = vi.fn(async (_file: string, args: string[]) => {
+      const warningHelper = args.some((arg) => arg.endsWith('manager-edge-warning-window.ps1'));
+      const invoke = args.includes('-InvokeLater') || args.includes('-InvokeAllow');
+      const target = warningHelper
+        ? invoke
+          ? 'userscript-manager-edge-warning-action.json'
+          : 'userscript-manager-edge-warning.json'
+        : invoke
+          ? 'userscript-manager-native-permission-action.json'
+          : 'userscript-manager-native-permission.json';
+      let receipt: unknown;
+      if (warningHelper) {
+        receipt = invoke
+          ? { ...edgeWarning(), status: 'invoked', laterAttempted: true }
+          : edgeWarning();
+      } else if (!invoke) {
+        receipt = edgeNativePrompt();
+      } else {
+        nativeActions++;
+        receipt =
+          nativeActions === 1
+            ? {
+                status: firstActionUnverified ? 'unverified-after-invoke' : 'skipped',
+                reason: firstActionUnverified ? 'native-capture-unavailable' : firstActionReason,
+                capture: 'uia-only',
+                screenshot: 'not-captured',
+                permissionGrantAttempted: firstActionUnverified,
+                browserPid: 42,
+                creationUtcTicks: '639271195545735820',
+                browserSessionId: 2,
+                foregroundHandle: '8259364',
+              }
+            : {
+                status: 'invoked',
+                capture: 'uia-only',
+                screenshot: 'not-captured',
+                permissionGrantAttempted: true,
+                postProcessStable: true,
+                postForegroundOwned: true,
+              };
+      }
+      writeFileSync(join(output, target), JSON.stringify(receipt));
+    });
+    try {
+      const result = await userscriptInstall.inspectAndAllowNativeManagerPermission(
+        cdp,
+        root,
+        output,
+        profile,
+        'msedge',
+        ask,
+        'owned',
+        context,
+        run
+      );
+      expect(result.action.status).toBe('skipped');
+      expect(result.warning?.status).toBe('invoked');
+      expect(result.retry?.status).toBe('invoked');
+      expect(run).toHaveBeenCalledTimes(6);
+      expect(nativeActions).toBe(2);
+      run.mockClear();
+      nativeActions = 0;
+      firstActionUnverified = true;
+      const unverified = await userscriptInstall.inspectAndAllowNativeManagerPermission(
+        cdp,
+        root,
+        output,
+        profile,
+        'msedge',
+        ask,
+        'owned',
+        context,
+        run
+      );
+      expect(unverified.action.status).toBe('unverified-after-invoke');
+      expect(unverified.warning).toBeUndefined();
+      expect(run).toHaveBeenCalledTimes(2);
+      run.mockClear();
+      nativeActions = 0;
+      firstActionUnverified = false;
+      firstActionReason = 'prior-permission-cross-process';
+      const unsafe = await userscriptInstall.inspectAndAllowNativeManagerPermission(
+        cdp,
+        root,
+        output,
+        profile,
+        'msedge',
+        ask,
+        'owned',
+        context,
+        run
+      );
+      expect(unsafe.action.status).toBe('skipped');
+      expect(unsafe.warning).toEqual({ status: 'skipped', reason: 'predecessor-not-safe' });
+      expect(run).toHaveBeenCalledTimes(2);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('handles an owned Edge warning before any permission action, then captures permission anew', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'xeg-edge-warning-first-'));
+    const profile = join(root, 'xeg-userscript-install-owned');
+    const output = join(root, 'output');
+    mkdirSync(profile);
+    mkdirSync(output);
+    let askUrl = 'chrome-extension://owned/ask.html?aid=opaque';
+    let permissionGranted = false;
+    let optionsCount = 1;
+    let currentPid = 42;
+    let nativeCaptures = 0;
+    let nativeActions = 0;
+    let initial = initialEdgeWarning();
+    let retryPrompt = edgeNativePrompt();
+    let warningCapture = {
+      ...edgeWarning(),
+      mode: 'warning-first' as const,
+      originalPermissionHandle: null,
+      warningHandle: initial.foregroundHandle,
+    };
+    let warningAction = { ...warningCapture, status: 'invoked', laterAttempted: true };
+    const options = {
+      isClosed: () => false,
+      url: () => 'chrome-extension://owned/options.html',
+      evaluate: vi.fn(async () => permissionGranted),
+    };
+    const context = { pages: () => Array.from({ length: optionsCount }, () => options) };
+    const ask = { isClosed: () => false, context: () => context, url: () => askUrl };
+    const cdp = {
+      send: vi.fn(async () => ({ processInfo: [{ type: 'browser', id: currentPid }] })),
+    };
+    const run = vi.fn(async (_file: string, args: string[]) => {
+      const isWarning = args.some((arg) => arg.endsWith('manager-edge-warning-window.ps1'));
+      const isAction = args.includes('-InvokeLater') || args.includes('-InvokeAllow');
+      if (isWarning) {
+        expect(args).toContain('warning-first');
+        expect(args).not.toContain('-OriginalPermissionHandle');
+        expect(args[args.indexOf('-ExpectedWarningHandle') + 1]).toBe(initial.foregroundHandle);
+        writeFileSync(
+          join(
+            output,
+            isAction
+              ? 'userscript-manager-edge-warning-action.json'
+              : 'userscript-manager-edge-warning.json'
+          ),
+          JSON.stringify(isAction ? warningAction : warningCapture)
+        );
+      } else if (isAction) {
+        nativeActions++;
+        writeFileSync(
+          join(output, 'userscript-manager-native-permission-action.json'),
+          JSON.stringify({
+            status: 'invoked',
+            capture: 'uia-only',
+            screenshot: 'not-captured',
+            permissionGrantAttempted: true,
+            postProcessStable: true,
+            postForegroundOwned: true,
+          })
+        );
+      } else {
+        nativeCaptures++;
+        writeFileSync(
+          join(output, 'userscript-manager-native-permission.json'),
+          JSON.stringify(nativeCaptures === 1 ? initial : retryPrompt)
+        );
+      }
+    });
+    const execute = async () => {
+      nativeCaptures = 0;
+      nativeActions = 0;
+      run.mockClear();
+      return userscriptInstall.inspectAndAllowNativeManagerPermission(
+        cdp,
+        root,
+        output,
+        profile,
+        'msedge',
+        ask,
+        'owned',
+        context,
+        run
+      );
+    };
+    try {
+      const result = await execute();
+      expect(result.action).toEqual({
+        status: 'skipped',
+        reason: 'warning-before-permission-action',
+        permissionGrantAttempted: false,
+      });
+      expect(result.warning?.status).toBe('invoked');
+      expect(result.retry?.status).toBe('invoked');
+      expect(run).toHaveBeenCalledTimes(5);
+      expect(nativeActions).toBe(1);
+      expect(
+        readFileSync(join(output, 'userscript-manager-native-permission-initial.json'), 'utf8')
+      ).toBe(JSON.stringify(initial));
+
+      askUrl = 'chrome-extension://other/ask.html?aid=opaque';
+      expect((await execute()).warning?.status).toBe('skipped');
+      expect(run).toHaveBeenCalledOnce();
+      askUrl = 'chrome-extension://owned/ask.html?aid=opaque';
+      optionsCount = 2;
+      expect((await execute()).warning?.status).toBe('skipped');
+      expect(run).toHaveBeenCalledOnce();
+      optionsCount = 1;
+      permissionGranted = true;
+      expect((await execute()).warning?.status).toBe('skipped');
+      expect(run).toHaveBeenCalledOnce();
+      permissionGranted = false;
+      currentPid = 43;
+      expect((await execute()).warning?.status).toBe('skipped');
+      expect(run).toHaveBeenCalledOnce();
+      currentPid = 42;
+
+      warningCapture = { ...warningCapture, warningHandle: '8259365' };
+      expect((await execute()).warning?.status).toBe('skipped');
+      expect(run).toHaveBeenCalledTimes(2);
+      warningCapture = { ...warningCapture, warningHandle: initial.foregroundHandle };
+      warningCapture.warningScope.complete = false;
+      warningCapture.warningScope.reason = 'cross-process';
+      expect((await execute()).warning?.status).toBe('skipped');
+      expect(run).toHaveBeenCalledTimes(2);
+      warningCapture.warningScope.complete = true;
+      warningCapture.warningScope.reason = null;
+      warningAction = { ...warningAction, warningHandle: '8259365' };
+      expect((await execute()).warning?.status).toBe('unavailable');
+      expect(run).toHaveBeenCalledTimes(3);
+      warningAction = { ...warningAction, warningHandle: initial.foregroundHandle };
+
+      retryPrompt = edgeNativePrompt();
+      retryPrompt.promptScope.complete = false;
+      expect((await execute()).retry?.status).toBe('skipped');
+      expect(run).toHaveBeenCalledTimes(4);
+      expect(nativeActions).toBe(0);
+      initial = initialEdgeWarning();
+      initial.identityRecheck.sameCreation = false;
+      expect((await execute()).warning).toBeUndefined();
+      expect(run).toHaveBeenCalledOnce();
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('inspects a fixture11 owned foreground drift without granting permission first', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'xeg-edge-owned-drift-'));
+    const profile = join(root, 'xeg-userscript-install-owned');
+    const output = join(root, 'output');
+    mkdirSync(profile);
+    mkdirSync(output);
+    const initial = ownedForegroundDrift();
+    const identity = userscriptInstall.observedOwnedEdgeForegroundDrift(initial)!;
+    const warning = {
+      ...edgeWarning(),
+      mode: 'warning-first' as const,
+      originalPermissionHandle: null,
+      browserPid: identity.browserPid,
+      creationUtcTicks: identity.creationUtcTicks,
+      browserSessionId: identity.browserSessionId,
+      warningHandle: identity.foregroundHandle,
+    };
+    let warningCapture = warning;
+    let askUrl = 'chrome-extension://owned/ask.html?aid=opaque';
+    let permissionGranted = false;
+    let optionsCount = 1;
+    let currentPid = identity.browserPid;
+    let nativeCaptures = 0;
+    let nativeActions = 0;
+    const retryPrompt = edgeNativePrompt();
+    retryPrompt.browserPid = identity.browserPid;
+    retryPrompt.uiaRootProcessId = identity.browserPid;
+    retryPrompt.creationUtcTicks = identity.creationUtcTicks;
+    retryPrompt.promptScope.rootProcessId = identity.browserPid;
+    retryPrompt.foregroundHandle = '4391416';
+    const options = {
+      isClosed: () => false,
+      url: () => 'chrome-extension://owned/options.html',
+      evaluate: vi.fn(async () => permissionGranted),
+    };
+    const context = { pages: () => Array.from({ length: optionsCount }, () => options) };
+    const ask = { isClosed: () => false, context: () => context, url: () => askUrl };
+    const cdp = {
+      send: vi.fn(async () => ({ processInfo: [{ type: 'browser', id: currentPid }] })),
+    };
+    const run = vi.fn(async (_file: string, args: string[]) => {
+      const warningHelper = args.some((arg) => arg.endsWith('manager-edge-warning-window.ps1'));
+      const invoke = args.includes('-InvokeLater') || args.includes('-InvokeAllow');
+      if (warningHelper) {
+        expect(args).toContain('warning-first');
+        expect(args).not.toContain('-OriginalPermissionHandle');
+        expect(args[args.indexOf('-ExpectedWarningHandle') + 1]).toBe('2426246');
+        writeFileSync(
+          join(
+            output,
+            invoke
+              ? 'userscript-manager-edge-warning-action.json'
+              : 'userscript-manager-edge-warning.json'
+          ),
+          JSON.stringify(
+            invoke ? { ...warningCapture, status: 'invoked', laterAttempted: true } : warningCapture
+          )
+        );
+      } else if (invoke) {
+        nativeActions++;
+        writeFileSync(
+          join(output, 'userscript-manager-native-permission-action.json'),
+          JSON.stringify({
+            status: 'invoked',
+            capture: 'uia-only',
+            screenshot: 'not-captured',
+            permissionGrantAttempted: true,
+            postProcessStable: true,
+            postForegroundOwned: true,
+          })
+        );
+      } else {
+        nativeCaptures++;
+        writeFileSync(
+          join(output, 'userscript-manager-native-permission.json'),
+          JSON.stringify(nativeCaptures === 1 ? initial : retryPrompt)
+        );
+      }
+    });
+    const execute = async () => {
+      nativeCaptures = 0;
+      nativeActions = 0;
+      run.mockClear();
+      return userscriptInstall.inspectAndAllowNativeManagerPermission(
+        cdp,
+        root,
+        output,
+        profile,
+        'msedge',
+        ask,
+        'owned',
+        context,
+        run
+      );
+    };
+    try {
+      const result = await execute();
+      expect(result.warningEntryKind).toBe('owned-foreground-drift');
+      expect(result.inspectionCandidate).toEqual(identity);
+      expect(result.action).toEqual({
+        status: 'skipped',
+        reason: 'warning-before-permission-action',
+        permissionGrantAttempted: false,
+      });
+      expect(result.warning?.status).toBe('invoked');
+      expect(result.retry?.status).toBe('invoked');
+      expect(nativeActions).toBe(1);
+      expect(run).toHaveBeenCalledTimes(5);
+      expect(
+        readFileSync(join(output, 'userscript-manager-native-permission-initial.json'), 'utf8')
+      ).toBe(JSON.stringify(initial));
+
+      askUrl = 'chrome-extension://other/ask.html?aid=opaque';
+      expect((await execute()).warning?.status).toBe('skipped');
+      expect(run).toHaveBeenCalledOnce();
+      askUrl = 'chrome-extension://owned/ask.html?aid=opaque';
+      optionsCount = 2;
+      expect((await execute()).warning?.status).toBe('skipped');
+      expect(run).toHaveBeenCalledOnce();
+      optionsCount = 1;
+      permissionGranted = true;
+      expect((await execute()).warning?.status).toBe('skipped');
+      expect(run).toHaveBeenCalledOnce();
+      permissionGranted = false;
+      currentPid = 77;
+      expect((await execute()).warning?.status).toBe('skipped');
+      expect(run).toHaveBeenCalledOnce();
+      currentPid = identity.browserPid;
+      warningCapture = { ...warning, warningHandle: '7777777' };
+      expect((await execute()).warning?.status).toBe('skipped');
+      expect(run).toHaveBeenCalledTimes(2);
+      warningCapture = { ...warning, warningScope: { ...warning.warningScope, complete: false } };
+      expect((await execute()).warning?.status).toBe('skipped');
+      expect(run).toHaveBeenCalledTimes(2);
+      initial.reason = 'browser-profile-unverified';
+      expect((await execute()).warning).toBeUndefined();
+      expect(run).toHaveBeenCalledOnce();
+      initial.reason = 'window-identity-changed';
+      initial.permissionGrantAttempted = true;
+      expect((await execute()).warning).toBeUndefined();
+      expect(run).toHaveBeenCalledOnce();
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 
   it('rejects a changed native title, extra permission, ambiguous Allow, and mismatched process', () => {
@@ -739,6 +1796,37 @@ describe('Windows X live page validation', () => {
         ])
       );
       expect(cdp.send).toHaveBeenCalledWith('SystemInfo.getProcessInfo');
+      run.mockClear();
+      promptReceipt = edgeNativePrompt();
+      const edgeInvoked = await userscriptInstall.inspectAndAllowNativeManagerPermission(
+        cdp,
+        root,
+        output,
+        profile,
+        'msedge',
+        ask,
+        'owned',
+        context,
+        run
+      );
+      expect(edgeInvoked.action.status).toBe('invoked');
+      expect(run.mock.calls[1]?.[1]).toEqual(
+        expect.arrayContaining(['-BrowserName', 'msedge', '-InvokeAllow'])
+      );
+      run.mockClear();
+      const otherContext = await userscriptInstall.inspectAndAllowNativeManagerPermission(
+        cdp,
+        root,
+        output,
+        profile,
+        'msedge',
+        ask,
+        'owned',
+        {},
+        run
+      );
+      expect(otherContext.action).toEqual({ status: 'skipped', reason: 'manager-ask-not-current' });
+      expect(run).toHaveBeenCalledOnce();
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
@@ -750,8 +1838,11 @@ describe('Windows X live page validation', () => {
       'utf8'
     );
     expect(source).not.toMatch(
-      /CopyFromScreen|PrintWindow|BitBlt|System\.Drawing|GetWindowRect|SendInput|SetForegroundWindow/u
+      /CopyFromScreen|PrintWindow|BitBlt|System\.Drawing|GetWindowRect|SendInput/u
     );
+    expect(source.match(/\[XegPermissionWindow\]::SetForegroundWindow\([^)]*\)/gu)).toEqual([
+      '[XegPermissionWindow]::SetForegroundWindow($OriginalForeground)',
+    ]);
     expect(source).toContain("screenshot = 'not-captured'");
     expect(source).toContain('@($child, ($depth + 1))');
     for (const proof of [
@@ -765,6 +1856,114 @@ describe('Windows X live page validation', () => {
       expect(source).toContain(proof);
     }
   });
+
+  it('limits native Edge refocus to one owned, complete prompt in the expected process', () => {
+    const source = readFileSync(
+      resolve(import.meta.dirname, '../../../validation/windows/manager-permission-window.ps1'),
+      'ascii'
+    );
+    const start = source.indexOf('function Test-EdgeRefocusEligibility {');
+    const end = source.indexOf('\n\nfunction Invoke-OneTimeEdgePromptRefocus {', start);
+    const finalStart = source.indexOf('function Test-FinalInvokeIdentity {');
+    const finalEnd = source.indexOf('\n\ntry {', finalStart);
+    expect(start).toBeGreaterThanOrEqual(0);
+    expect(end).toBeGreaterThan(start);
+    expect(finalStart).toBeGreaterThan(end);
+    expect(finalEnd).toBeGreaterThan(finalStart);
+    const helper = `${source.slice(start, end)}\n${source.slice(finalStart, finalEnd)}`;
+    const shell = process.platform === 'win32' ? 'powershell.exe' : 'pwsh';
+    const result = spawnSync(
+      shell,
+      [
+        '-NoProfile',
+        '-NonInteractive',
+        '-Command',
+        `${helper}
+$base = @{
+    CandidateBrowserName = 'msedge'; CandidateInvokeAllow = $true;
+    CandidateBrowserPid = 16616; ExpectedCreation = '639295430255644860';
+    ActualCreation = '639295430255644860'; ExpectedSession = 2; ActualSession = 2;
+    ExpectedHandle = '2033082'; OriginalHandle = '2033082'; CurrentHandle = '329022';
+    CurrentPid = 16616; SameCreation = $true; OriginalOwned = $true; CurrentOwned = $true;
+    WindowEnumeration = 'complete'; OwnedVisibleHandles = @('329022','2033082','1442762');
+    PromptComplete = $true; PromptNameTruncated = $false; PromptWindowCount = 1
+}
+function Test-Case([string]$Key, $Value) {
+    $candidate = $base.Clone()
+    if ($Key) { $candidate[$Key] = $Value }
+    return [bool](Test-EdgeRefocusEligibility @candidate)
+}
+$finalState = @{
+    sameCreation = $true; sameForeground = $false;
+    originalOwned = $true; currentOwned = $true; enumeration = 'complete';
+    allowProcessId = 16616; allowEnabled = $true; allowOffscreen = $false
+}
+function Test-FinalCase([string]$Key, $Value, [string]$Browser = 'msedge',
+    [bool]$Attempted = $false) {
+    $state = $finalState.Clone()
+    if ($Key) { $state[$Key] = $Value }
+    return [bool](Test-FinalEdgeRefocusCandidate -State $state -CandidateBrowserName $Browser -ExpectedPid 16616 -AlreadyAttempted $Attempted)
+}
+$stable = $finalState.Clone()
+$stable.sameForeground = $true
+[ordered]@{
+    observed = (Test-Case '' $null);
+    chrome = (Test-Case 'CandidateBrowserName' 'chrome');
+    diagnostic = (Test-Case 'CandidateInvokeAllow' $false);
+    otherPid = (Test-Case 'CurrentPid' 77);
+    foreignForeground = (Test-Case 'CurrentOwned' $false);
+    originalGone = (Test-Case 'OriginalOwned' $false);
+    missingOriginal = (Test-Case 'OwnedVisibleHandles' @('329022','1442762'));
+    changedCreation = (Test-Case 'SameCreation' $false);
+    wrongExpectedHandle = (Test-Case 'ExpectedHandle' '1442762');
+    incompletePrompt = (Test-Case 'PromptComplete' $false);
+    truncatedPrompt = (Test-Case 'PromptNameTruncated' $true);
+    multiplePrompts = (Test-Case 'PromptWindowCount' 2);
+    finalStable = (Test-FinalInvokeIdentity -State $stable -ExpectedPid 16616);
+    finalChanged = (Test-FinalInvokeIdentity -State $finalState -ExpectedPid 16616);
+    finalOwnedDrift = (Test-FinalCase '' $null);
+    finalChrome = (Test-FinalCase '' $null 'chrome');
+    finalAlreadyAttempted = (Test-FinalCase '' $null 'msedge' $true);
+    finalForeign = (Test-FinalCase 'currentOwned' $false);
+    finalOriginalGone = (Test-FinalCase 'originalOwned' $false);
+    finalBadBirth = (Test-FinalCase 'sameCreation' $false);
+    finalDisabled = (Test-FinalCase 'allowEnabled' $false);
+    finalOtherPid = (Test-FinalCase 'allowProcessId' 77);
+    finalEnumerationIncomplete = (Test-FinalCase 'enumeration' 'unavailable');
+    finalNoDrift = (Test-FinalCase 'sameForeground' $true)
+} | ConvertTo-Json -Compress`,
+      ],
+      { encoding: 'utf8', timeout: 20_000 }
+    );
+    expect(result.error).toBeUndefined();
+    expect(result.status, result.stderr).toBe(0);
+    expect(JSON.parse(result.stdout)).toEqual({
+      observed: true,
+      chrome: false,
+      diagnostic: false,
+      otherPid: false,
+      foreignForeground: false,
+      originalGone: false,
+      missingOriginal: false,
+      changedCreation: false,
+      wrongExpectedHandle: false,
+      incompletePrompt: false,
+      truncatedPrompt: false,
+      multiplePrompts: false,
+      finalStable: true,
+      finalChanged: false,
+      finalOwnedDrift: true,
+      finalChrome: false,
+      finalAlreadyAttempted: false,
+      finalForeign: false,
+      finalOriginalGone: false,
+      finalBadBirth: false,
+      finalDisabled: false,
+      finalOtherPid: false,
+      finalEnumerationIncomplete: false,
+      finalNoDrift: false,
+    });
+  }, 30_000);
 
   it('keeps PowerShell 5.1 prompt labels ASCII-source and exact to observed ko-KR UIA', () => {
     const source = readFileSync(
@@ -781,11 +1980,16 @@ describe('Windows X live page validation', () => {
         ...[...script.slice(start, end).matchAll(/0x[0-9A-F]{4}/gu)].map(([hex]) => Number(hex))
       );
     };
-    expect(`'Tampermonkey'${codePoints('PermissionTitle')}`).toBe(
+    expect(`'Tampermonkey'${codePoints('ChromePermissionTitle')}`).toBe(
       "'Tampermonkey'이(가) 추가 승인을 요청했습니다."
     );
-    expect(codePoints('PriorPermissionsLabel')).toBe('이전에 가능했던 대상:');
-    expect(codePoints('DownloadsPermissionLabel')).toBe('다운로드 관리');
+    expect(codePoints('EdgePermissionTitle')).toBe(
+      '"Tampermonkey" 이(가) 사용 권한을 요청했습니다.'
+    );
+    expect(codePoints('ChromePriorPermissionsLabel')).toBe('이전에 가능했던 대상:');
+    expect(codePoints('ChromeDownloadsPermissionLabel')).toBe('다운로드 관리');
+    expect(codePoints('EdgePriorPermissionsLabel')).toBe('확장은 다음을 할 수 있습니다.');
+    expect(codePoints('EdgeDownloadsPermissionLabel')).toBe('• 다운로드 관리');
     expect(codePoints('AllowButtonLabel')).toBe('허용');
     expect(codePoints('DenyButtonLabel')).toBe('거부');
   });
@@ -1575,6 +2779,46 @@ describe('Windows X live page validation', () => {
     }
   });
 
+  it('observes manager history on its owned options hash and rejects other routes', async () => {
+    const args = {
+      managerId: 'manager',
+      fixtureUrl: 'https://pbs.twimg.com/media/first.jpg',
+      expectedName: 'first.jpg',
+      expectedPath: 'C:\\owned\\first.jpg',
+      expectedBytes: 5,
+    };
+    const search = vi.fn(async () => []);
+    vi.stubGlobal('chrome', { downloads: { search } });
+    try {
+      const ownedHash = 'chrome-extension://manager/options.html#/downloads';
+      vi.stubGlobal('location', { href: ownedHash });
+      expect(userscriptInstall.isOwnedManagerOptionsUrl(ownedHash, args.managerId)).toBe(true);
+      expect(await userscriptInstall.inspectManagerDownloadHistoryDocument(args)).toEqual({
+        status: 'observed',
+        items: [],
+      });
+      expect(search).toHaveBeenCalledExactlyOnceWith({ url: args.fixtureUrl, limit: 9 });
+
+      for (const url of [
+        'chrome-extension://foreign/options.html#/downloads',
+        'chrome-extension://manager/options.html?token=private#/downloads',
+        'chrome-extension://manager/other.html#/downloads',
+        'chrome-extension://manager/options.html/child#/downloads',
+      ]) {
+        search.mockClear();
+        vi.stubGlobal('location', { href: url });
+        expect(userscriptInstall.isOwnedManagerOptionsUrl(url, args.managerId)).toBe(false);
+        expect(await userscriptInstall.inspectManagerDownloadHistoryDocument(args)).toEqual({
+          status: 'unowned-page',
+          items: [],
+        });
+        expect(search).not.toHaveBeenCalled();
+      }
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('records only an exact owned native redirect destination match', async () => {
     const fixtureUrl = 'https://pbs.twimg.com/media/GkE1234ABCDEF.jpg?format=jpg&name=orig';
     vi.stubGlobal('location', { href: 'chrome-extension://manager/options.html' });
@@ -1866,6 +3110,228 @@ describe('Windows X live page validation', () => {
     }
   });
 
+  it('permits one interrupted held native ID but rejects completion or duplicate dispatch', () => {
+    const item = {
+      id: 41,
+      state: 'interrupted',
+      interruptReason: 'USER_CANCELED',
+      requestedNameMatch: true,
+      ownedPathMatch: true,
+      expectedSizeMatch: false,
+      fixtureUrlMatch: true,
+      managerOwnerMatch: true,
+      filenameEmpty: false,
+    };
+    const transfer = {
+      phase: 'held',
+      cohort: 'held',
+      index: 0,
+      purpose: 'transfer',
+      method: 'GET',
+      result: 'aborted',
+      bytes: 0,
+      sha256: null,
+    };
+    const input = {
+      before: { status: 'observed', items: [] },
+      after: { status: 'observed', items: [item] },
+      browserBegins: [
+        {
+          guid: 'held-guid',
+          url: 'https://pbs.twimg.com/media/GkH1234ABCDEF.jpg?format=jpg&name=orig',
+          suggestedFilename: 'held.jpg',
+        },
+      ],
+      expectedUrl: 'https://pbs.twimg.com/media/GkH1234ABCDEF.jpg?format=jpg&name=orig',
+      expectedNames: ['held.jpg'],
+      requireNativeId: true,
+      transferEvents: [transfer],
+      beforeFiles: new Set(['earlier.jpg']),
+      files: ['earlier.jpg'],
+    };
+    expect(userscriptInstall.assertHeldSingleCancellationState(input)).toEqual({
+      nativeIds: [
+        {
+          id: 41,
+          state: 'interrupted',
+          interruptReason: 'USER_CANCELED',
+          filenameEmpty: false,
+          filenameEvidence: 'requested name and owned path verified',
+        },
+      ],
+      browserStarts: 1,
+    });
+    expect(() =>
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        after: { status: 'observed', items: [{ ...item, state: 'complete' }] },
+      })
+    ).toThrow('owned interrupted');
+    expect(() =>
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        after: { status: 'observed', items: [{ ...item, state: 'in_progress' }] },
+      })
+    ).toThrow('owned interrupted');
+    expect(() =>
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        after: { status: 'observed', items: [{ ...item, managerOwnerMatch: false }] },
+      })
+    ).toThrow('owned interrupted');
+    expect(() =>
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        after: { status: 'observed', items: [{ ...item, fixtureUrlMatch: false }] },
+      })
+    ).toThrow('owned interrupted');
+    expect(() =>
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        after: { status: 'observed', items: [{ ...item, requestedNameMatch: false }] },
+      })
+    ).toThrow('owned interrupted');
+    expect(() =>
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        after: { status: 'observed', items: [{ ...item, ownedPathMatch: false }] },
+      })
+    ).toThrow('owned interrupted');
+    const emptyCanceled = {
+      ...item,
+      filenameEmpty: true,
+      requestedNameMatch: false,
+      ownedPathMatch: false,
+    };
+    expect(
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        after: { status: 'observed', items: [emptyCanceled] },
+      }).nativeIds
+    ).toEqual([
+      {
+        id: 41,
+        state: 'interrupted',
+        interruptReason: 'USER_CANCELED',
+        filenameEmpty: true,
+        filenameEvidence: 'native filename empty; requested name and path unverified',
+      },
+    ]);
+    for (const changed of [
+      { ...emptyCanceled, interruptReason: null },
+      { ...emptyCanceled, interruptReason: 'NETWORK_FAILED' },
+      { ...emptyCanceled, managerOwnerMatch: false },
+      { ...emptyCanceled, fixtureUrlMatch: false },
+      { ...emptyCanceled, state: 'complete' },
+    ]) {
+      expect(() =>
+        userscriptInstall.assertHeldSingleCancellationState({
+          ...input,
+          after: { status: 'observed', items: [changed] },
+        })
+      ).toThrow('owned interrupted');
+    }
+    expect(() =>
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        after: { status: 'observed', items: [item, { ...item, id: 42 }] },
+      })
+    ).toThrow('multiple native IDs');
+    expect(() =>
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        after: { status: 'observed', items: [] },
+      })
+    ).toThrow('no native ID');
+    expect(() =>
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        requireNativeId: false,
+        after: { status: 'observed', items: [] },
+      })
+    ).toThrow('no owned native ID');
+    expect(() =>
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        after: { status: 'observed', items: [{ ...item, interruptReason: 'NETWORK_FAILED' }] },
+      })
+    ).toThrow('owned interrupted');
+    expect(() =>
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        transferEvents: [transfer, { ...transfer, result: 'started' }],
+      })
+    ).toThrow('duplicate transfer requests');
+    expect(() =>
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        browserBegins: [...input.browserBegins, { ...input.browserBegins[0]!, guid: 'other' }],
+      })
+    ).toThrow('multiple CDP downloads');
+    expect(() =>
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        browserBegins: [{ ...input.browserBegins[0]!, url: 'https://pbs.twimg.com/other' }],
+      })
+    ).toThrow('selected original');
+    expect(() =>
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        browserBegins: [{ ...input.browserBegins[0]!, suggestedFilename: 'other.jpg' }],
+      })
+    ).toThrow('selected original');
+    expect(() =>
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        files: ['earlier.jpg', 'late.jpg'],
+      })
+    ).toThrow('native file');
+    expect(() =>
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        files: ['earlier.jpg', 'late.crdownload'],
+      })
+    ).toThrow('native file');
+  });
+
+  it('records an empty held filename only from a literal empty native field', async () => {
+    const fixtureUrl = 'https://pbs.twimg.com/media/GkH1234ABCDEF.jpg?format=jpg&name=orig';
+    const item = {
+      id: 41,
+      url: fixtureUrl,
+      filename: '',
+      state: 'interrupted',
+      error: 'USER_CANCELED',
+      byExtensionId: 'manager',
+    };
+    let nativeFilename: string | undefined = '';
+    const search = vi.fn(async () => [{ ...item, filename: nativeFilename }]);
+    vi.stubGlobal('location', { href: 'chrome-extension://manager/options.html' });
+    vi.stubGlobal('chrome', { downloads: { search } });
+    const args = {
+      managerId: 'manager',
+      fixtureUrl,
+      expectedName: 'held.jpg',
+      expectedPath: 'C:\\owned\\held.jpg',
+      expectedBytes: 4_237,
+      captureFilenameEmpty: true,
+    };
+    try {
+      const empty = await userscriptInstall.inspectManagerDownloadHistoryDocument(args);
+      expect(empty.items[0]).toMatchObject({
+        filenameEmpty: true,
+        managerOwnerMatch: true,
+        requestedNameMatch: false,
+        ownedPathMatch: false,
+      });
+      nativeFilename = undefined;
+      const missing = await userscriptInstall.inspectManagerDownloadHistoryDocument(args);
+      expect(missing.items[0]).toMatchObject({ filenameEmpty: false });
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('rejects a paused in-progress download after all bytes have arrived', () => {
     const download = {
       bytesReceived: 256 * 1024 * 1024,
@@ -2013,7 +3479,7 @@ describe('Windows X live page validation', () => {
     }
   });
 
-  it('routes the installed userscript separately and rejects public URLs', async () => {
+  it('rejects installed userscript public URLs without an exact photo selector', async () => {
     const chromium = {
       launchPersistentContext: async (): Promise<never> => {
         throw new Error('browser must not launch');
@@ -2029,7 +3495,108 @@ describe('Windows X live page validation', () => {
         output: '/unused',
         root: '/unused',
       })
-    ).rejects.toThrow('does not support public URLs');
+    ).rejects.toThrow('Installed userscript public URL requires the exact reported photo selector');
+  });
+
+  it('opens a reported live photo through its sibling hit-tested action', async () => {
+    const target = {
+      pageUrl: 'https://x.com/fixture/status/123',
+      mediaBasename: 'PhotoOne',
+    };
+    const imageTarget = {
+      kind: 'image' as const,
+      articleIndex: 0,
+      imageIndex: 0,
+      imageLoaded: true,
+      imageSource: { host: 'pbs.twimg.com', path: '/media/PhotoOne' },
+      imageVisible: true,
+    };
+    const hit = {
+      actionAriaLabel: 'View media',
+      actionIndex: 4,
+      actionPath: '/fixture/status/123/photo/1',
+      duplicateActionCount: 1,
+    };
+    const order: string[] = [];
+    const action = {
+      evaluate: vi.fn(async () => {
+        order.push('binding');
+        return {
+          imageSource: 'https://pbs.twimg.com/media/PhotoOne?format=jpg&name=small',
+          actionUrl: 'https://x.com/fixture/status/123/photo/1',
+          width: 500,
+          height: 400,
+          actionIndex: 4,
+        };
+      }),
+      click: vi.fn(async () => {
+        order.push('click');
+      }),
+      dispose: vi.fn(async () => {}),
+    };
+    const actionReference = { asElement: () => action, dispose: vi.fn(async () => {}) };
+    const image = {
+      scrollIntoViewIfNeeded: vi.fn(async () => {}),
+      evaluate: vi.fn(async () => {
+        order.push('hit');
+        return hit;
+      }),
+      evaluateHandle: vi.fn(async () => actionReference),
+    };
+    const imageReference = { asElement: () => image, dispose: vi.fn(async () => {}) };
+    const readinessReference = {
+      jsonValue: vi.fn(async () => ({ state: 'ready', target: imageTarget })),
+      dispose: vi.fn(async () => {}),
+    };
+    const page = {
+      waitForFunction: vi
+        .fn()
+        .mockResolvedValueOnce(readinessReference)
+        .mockResolvedValueOnce(imageReference),
+      screenshot: vi.fn(async () => {
+        order.push('screenshot');
+      }),
+      locator: vi.fn(() => {
+        throw new Error('Descendant anchor locator must not be used');
+      }),
+    };
+    const open = () =>
+      userscriptInstall.openUserscriptLivePhoto(
+        page as unknown as Parameters<typeof userscriptInstall.openUserscriptLivePhoto>[0],
+        target,
+        '/output'
+      );
+    await expect(open()).resolves.toMatchObject({
+      readiness: imageTarget,
+      action: hit,
+      beforeScreenshot: 'userscript-live-entry-before.png',
+    });
+    expect(order).toEqual(['hit', 'screenshot', 'binding', 'click']);
+    expect(page.locator).not.toHaveBeenCalled();
+    expect(page.screenshot).toHaveBeenCalledWith({
+      path: join('/output', 'userscript-live-entry-before.png'),
+      timeout: 5_000,
+    });
+    expect(action.dispose).toHaveBeenCalledOnce();
+    expect(imageReference.dispose).toHaveBeenCalledOnce();
+
+    page.waitForFunction.mockReset().mockResolvedValueOnce({
+      jsonValue: async () => ({
+        state: 'ready',
+        target: { ...imageTarget, imageSource: { host: 'pbs.twimg.com', path: '/media/Other' } },
+      }),
+      dispose: async () => {},
+    });
+    await expect(open()).rejects.toThrow('Live image differs from reported media');
+    expect(page.screenshot).toHaveBeenCalledOnce();
+
+    hit.actionPath = '/other/status/123/photo/1';
+    page.waitForFunction
+      .mockReset()
+      .mockResolvedValueOnce(readinessReference)
+      .mockResolvedValueOnce(imageReference);
+    await expect(open()).rejects.toThrow('Live photo action path or uniqueness changed');
+    expect(action.click).toHaveBeenCalledOnce();
   });
 
   it('keeps live observation opt-in and bundles its imported module', async () => {

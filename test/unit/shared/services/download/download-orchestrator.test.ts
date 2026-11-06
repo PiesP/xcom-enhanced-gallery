@@ -212,6 +212,98 @@ describe('DownloadOrchestrator bulk resource limits', () => {
     orchestrator.destroy();
   });
 
+  it('retains long generated identity through ZIP collision, failure, and recovery', async () => {
+    const orchestrator = new DownloadOrchestrator();
+    orchestrator.initialize();
+    const media: MediaInfo[] = ['first', 'missing'].map((id) => ({
+      id: 'photo_media_0',
+      type: 'image',
+      url: `https://pbs.twimg.com/media/${id}.jpg?name=orig`,
+      tweetUsername: 'a'.repeat(260),
+      tweetId: '123456789',
+    }));
+    const saved: Array<{ filename: string; bytes: Buffer }> = [];
+    state.downloadBlob.mockImplementation(
+      async (blob: Blob, filename: string, _signal, released) => {
+        saved.push({ filename, bytes: Buffer.from(await blob.arrayBuffer()) });
+        released?.();
+      }
+    );
+    const provider = Object.assign(
+      vi
+        .fn()
+        .mockRejectedValueOnce(new HttpRequestError(503, true, 'http'))
+        .mockImplementationOnce(async () => ownedBlob(new Blob(['recovered']))),
+      { supports: (item: MediaInfo) => item.url === media[1]!.url }
+    );
+    const first = await orchestrator.downloadBulk(media, {
+      zipFilename: `${'z'.repeat(250)}.zip`,
+      cachedBlobs: new Map([[media[0]!.url, ownedBlob(new Blob(['first']))]]),
+      mediaBlobProvider: provider,
+      retries: 0,
+    });
+    expect(first).toMatchObject({ success: true, status: 'partial', filesSuccessful: 1 });
+    const assigned = first.failedEntries?.[0]?.filename;
+    expect(assigned).toBe(`${'a'.repeat(237)}_123456789_1-1.jpg`);
+    expect(assigned).toHaveLength(255);
+    expect(
+      verifyStoredZip(saved[0]!.bytes, [
+        {
+          filename: `${'a'.repeat(239)}_123456789_1.jpg`,
+          bytes: Buffer.from('first'),
+        },
+      ]).entryOrder
+    ).toHaveLength(1);
+
+    const recovered = await orchestrator.downloadFailedEntries(
+      [{ index: 1, media: media[1]!, url: media[1]!.url, filename: assigned! }],
+      first.filename!,
+      2,
+      { mediaBlobProvider: provider, retries: 0 }
+    );
+    expect(recovered).toMatchObject({ success: true, status: 'success' });
+    expect(recovered.filename).toHaveLength(255);
+    expect(recovered.filename?.endsWith('-missing-2.zip')).toBe(true);
+    expect(
+      verifyStoredZip(saved[1]!.bytes, [
+        {
+          filename: assigned!,
+          bytes: Buffer.from('recovered'),
+        },
+      ]).entryOrder
+    ).toEqual([assigned]);
+    orchestrator.destroy();
+  });
+
+  it('allocates case-insensitive names around an existing numeric suffix', async () => {
+    const orchestrator = new DownloadOrchestrator();
+    orchestrator.initialize();
+    const names = ['Alpha.JPG', 'alpha-1.jpg', 'alpha.jpg'];
+    const media: MediaInfo[] = names.map((filename, index) => ({
+      id: `${index}`,
+      type: 'image',
+      url: `https://pbs.twimg.com/media/${index}.jpg`,
+      filename,
+    }));
+    let saved: Buffer | undefined;
+    state.downloadBlob.mockImplementation(async (blob: Blob, _filename, _signal, released) => {
+      saved = Buffer.from(await blob.arrayBuffer());
+      released?.();
+    });
+    const result = await orchestrator.downloadBulk(media, {
+      cachedBlobs: new Map(media.map((item) => [item.url, ownedBlob(new Blob([item.id]))])),
+    });
+    expect(result).toMatchObject({ success: true, filesSuccessful: 3 });
+    expect(
+      verifyStoredZip(saved!, [
+        { filename: 'Alpha.JPG', bytes: Buffer.from('0') },
+        { filename: 'alpha-1.jpg', bytes: Buffer.from('1') },
+        { filename: 'alpha-2.jpg', bytes: Buffer.from('2') },
+      ]).entryOrder
+    ).toEqual(['Alpha.JPG', 'alpha-1.jpg', 'alpha-2.jpg']);
+    orchestrator.destroy();
+  });
+
   it('does not recover a changed or unverified source identity', async () => {
     const orchestrator = new DownloadOrchestrator();
     orchestrator.initialize();

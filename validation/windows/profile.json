@@ -1,6 +1,31 @@
 {
   "id": "xeg-gallery",
   "entry": "validation/windows/profile.ts",
+  "preparation": {
+    "selector_files": ["filename-boundaries.json", "settings-persistence.json"],
+    "scenarios": {
+      "filename-boundaries": {
+        "selector": "filename-boundaries.json",
+        "browsers": ["msedge"],
+        "modes": ["desktop"],
+        "required_inputs": [
+          "dist-validation/filename-boundary-fixture.mjs",
+          "validation/windows/inputs/filename-boundaries.json"
+        ],
+        "generated_assets": ["dist-validation/filename-boundary-fixture.mjs"],
+        "bundle_asset_policy": "source-modules-and-required-inputs",
+        "build_commands": [
+          ["vp", "run", "build:ci"],
+          ["vp", "run", "build:filename-boundaries"]
+        ],
+        "unused_full_campaign_assets": [
+          "dist/xcom-enhanced-gallery.user.js",
+          "test/e2e/fixtures/mock-gallery-page.html",
+          "validation/windows/inputs"
+        ]
+      }
+    }
+  },
   "assets": [
     "dist/xcom-enhanced-gallery.user.js",
     "test/e2e/fixtures/mock-gallery-page.html",
@@ -17,24 +42,39 @@
       "validation/windows/ux-result-validation.ts",
       "validation/windows/installed-settings-ux.ts",
       "validation/windows/userscript-install.ts",
+      "validation/windows/userscript-frame-trace.ts",
       "validation/windows/userscript-document.ts",
       "validation/windows/release-upgrade",
       "validation/windows/userscript-loopback.ts",
       "validation/windows/extension-native-loopback.ts",
+      "validation/windows/filename-decision-control.ts",
+      "validation/windows/filename-correlation.ts",
+      "validation/windows/live-filename-target.ts",
+      "validation/windows/live-original-fetch.ts",
+      "validation/windows/userscript-live-output.ts",
+      "validation/windows/live-filename.ts",
+      "validation/windows/firefox-install.ts",
+      "validation/windows/firefox-native-proxy.ts",
       "validation/windows/https-loopback-lifecycle.ts",
       "validation/windows/media-api-reuse-profile.ts",
       "validation/windows/video-loading-profile.ts",
+      "validation/windows/video-save-format-profile.ts",
       "validation/windows/userscript-fixture-certificate.ps1",
       "validation/windows/manager-permission-window.ps1",
+      "validation/windows/manager-edge-warning-window.ps1",
       "dist-extension",
+      "dist-extension-firefox",
+      "test/e2e/fixtures/native-original.jpg",
       "test/e2e/fixtures/installed-gallery-page.html",
       "test/e2e/fixtures/installed-gallery-experience-page.html",
       "test/e2e/fixtures/installed-panel-ownership-page.html",
       "test/e2e/fixtures/installed-compact-quote-photo-page.html",
+      "test/e2e/fixtures/installed-attachment-filename-page.html",
       "test/e2e/fixtures/installed-quoted-video-page.html",
       "test/e2e/fixtures/installed-unavailable-sequence-page.html",
       "test/e2e/fixtures/installed-public-preplayer-page.html",
       "test/e2e/fixtures/installed-unmarked-video-page.html",
+      "test/e2e/fixtures/installed-video-save-format-page.html",
       "test/e2e/fixtures/installed-rapid-video-page.html",
       "validation/windows/fixtures/installed-quoted-video-api.ts",
       "test/e2e/fixtures/installed-quote-one.mp4",
@@ -54,7 +94,8 @@
     ],
     "build_commands": [
       ["vp", "run", "build:ci"],
-      ["vp", "run", "build:extension:ci"]
+      ["vp", "run", "build:extension:ci"],
+      ["vp", "run", "build:extension:firefox:ci"]
     ]
   }
 }

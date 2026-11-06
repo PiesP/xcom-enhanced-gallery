@@ -5,10 +5,11 @@
  * @fileoverview E2E tests for download flow in X.com Enhanced Gallery.
  *
  * Tests verify:
- * 1. Clicking the download button fetches through the cancellable userscript
- *    request path and hands the correctly named file to the browser
- * 2. Download button is accessible via toolbar
- * 3. Video media keeps its native playback controls
+ * 1. Clicking Download calls the manager API with the selected source/name
+ * 2. Without a manager download API, the Blob fallback requests the name in
+ *    an anchor and produces a browser download in this controlled fixture
+ * 3. Download button is accessible via toolbar
+ * 4. Video media keeps its native playback controls
  *
  * Environment: Playwright + Chromium (headless)
  * Test page: Mock HTML served under https://x.com via page.route()
@@ -24,7 +25,7 @@ import { injectDevUserscript, waitForGalleryApp } from '../fixtures/userscript-h
 /**
  * Setup: Route x.com requests to mock HTML, install GM mocks, inject userscript.
  */
-async function setupGalleryPage(page: Page): Promise<void> {
+async function setupGalleryPage(page: Page, downloadApi = true): Promise<void> {
   await page.route('https://pbs.twimg.com/**', async (route) => {
     await route.fulfill({
       status: 200,
@@ -62,7 +63,7 @@ async function setupGalleryPage(page: Page): Promise<void> {
 
   await page.goto('https://x.com', { waitUntil: 'domcontentloaded', timeout: 15_000 });
 
-  await installGMMock(page);
+  await installGMMock(page, { downloadApi });
   await injectDevUserscript(page);
   await waitForGalleryApp(page);
 }
@@ -129,11 +130,37 @@ test.describe('X.com Enhanced Gallery Download Flow', () => {
     await expect(downloadButton).not.toBeDisabled();
   });
 
-  test('Download flow uses the cancellable request path and hands off the file', async ({
+  test('Download calls the mock manager once with the selected source and requested name', async ({
     page,
   }) => {
     await setupGalleryPage(page);
     await openGallery(page);
+
+    const downloadButton = page.locator(
+      '[data-gallery-element="toolbar"] button[aria-label*="Download" i]'
+    );
+    await downloadButton.click();
+
+    const marker = page.locator('[data-gm-download="true"]');
+    await expect(marker).toHaveCount(1);
+    await expect(marker).toHaveAttribute(
+      'data-gm-download-url',
+      'https://pbs.twimg.com/media/Example1.jpg?format=jpg&name=large'
+    );
+    await expect(marker).toHaveAttribute('data-gm-download-name', 'Example1.jpg');
+    await expect(page.locator('[data-gm-xhr-download="true"]')).toHaveCount(0);
+    await expect(page.locator('[data-gallery-element="toolbar"]').getByRole('status')).toHaveText(
+      'Handed off to browser'
+    );
+  });
+
+  test('Download uses a Blob anchor when the manager download API is unavailable', async ({
+    page,
+  }) => {
+    await setupGalleryPage(page, false);
+    await openGallery(page);
+
+    expect(await page.evaluate(() => typeof window.GM_download)).toBe('undefined');
 
     const downloadButton = page.locator(
       '[data-gallery-element="toolbar"] button[aria-label*="Download" i]'

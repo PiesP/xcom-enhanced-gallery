@@ -386,7 +386,7 @@ test('generated Firefox background keeps a direct URL download bound to its sour
   harness.emitDownloadChanged({ id: 931, state: { current: 'complete' } });
   assert.deepEqual(await request, {
     success: true,
-    data: { requestId, status: 'complete' },
+    data: { requestId, status: 'complete', requestedFilename: 'original.jpg' },
   });
   assert.equal(readStoredDownload(storage, requestId)?.downloadId, 931);
   assert.equal(JSON.stringify(storage.get(DOWNLOAD_TRACKING_STORAGE_KEY)).includes(url), false);

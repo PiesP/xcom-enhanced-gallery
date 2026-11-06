@@ -7,7 +7,11 @@
  *              into executable download plans.
  */
 
-import { generateMediaFilename, generateZipFilename } from '@shared/core/filename/filename-utils';
+import {
+  finalizeFilename,
+  generateZipFilename,
+  planMediaFilename,
+} from '@shared/core/filename/filename-utils';
 import type { OwnedBlob } from '@shared/services/download/live-byte-budget';
 import {
   getZipInputKind,
@@ -20,6 +24,7 @@ import { getMediaDownloadUrl } from '@shared/utils/media/media-source';
 export interface PlannedZipItem {
   readonly url: string;
   readonly desiredName: string;
+  readonly identitySuffix: string;
   readonly inputKind: ZipInputKind;
   readonly sourceUnavailable?: boolean;
   readonly expectedSizeBytes?: number | undefined;
@@ -43,10 +48,11 @@ interface BulkDownloadPlan {
 }
 
 /** Helper to generate filename with optional time source */
-function generateDesiredName(media: MediaInfo, nowMs?: number): string {
-  return nowMs === undefined
-    ? generateMediaFilename(media)
-    : generateMediaFilename(media, { nowMs });
+function generateDesiredName(
+  media: MediaInfo,
+  nowMs?: number
+): ReturnType<typeof planMediaFilename> {
+  return nowMs === undefined ? planMediaFilename(media) : planMediaFilename(media, { nowMs });
 }
 
 /** Helper to generate ZIP filename with optional time source */
@@ -61,6 +67,7 @@ function generateZipName(items: readonly MediaInfo[], nowMs?: number): string {
  */
 export function planBulkDownload(input: BulkDownloadPlanningInput): BulkDownloadPlan {
   const items: PlannedZipItem[] = input.mediaItems.map((media) => {
+    const name = generateDesiredName(media, input.nowMs);
     const url = getMediaDownloadUrl(media);
     const blob = input.cachedBlobs?.get(url);
     const provider = input.mediaBlobProvider;
@@ -73,7 +80,8 @@ export function planBulkDownload(input: BulkDownloadPlanningInput): BulkDownload
         : undefined;
     return {
       url,
-      desiredName: generateDesiredName(media, input.nowMs),
+      desiredName: name.filename,
+      identitySuffix: name.identitySuffix,
       inputKind: getZipInputKind({ blob, getBlob }),
       ...(media.downloadSource?.quality === 'unverified-original'
         ? { sourceUnavailable: true }
@@ -84,7 +92,10 @@ export function planBulkDownload(input: BulkDownloadPlanningInput): BulkDownload
     };
   });
 
-  const zipFilename = input.zipFilename ?? generateZipName(input.mediaItems, input.nowMs);
+  const zipFilename =
+    input.zipFilename === undefined
+      ? generateZipName(input.mediaItems, input.nowMs)
+      : finalizeFilename(input.zipFilename, { preserveTailUnits: 32 });
 
   return { items, zipFilename };
 }

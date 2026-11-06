@@ -12,6 +12,8 @@ import type { LiveByteBudget, OwnedBlob } from './live-byte-budget';
 export interface OrchestratorItem {
   readonly url: string;
   readonly desiredName: string;
+  /** Generator-owned post/attachment suffix retained when ZIP names collide. */
+  readonly identitySuffix?: string;
   readonly inputKind?: ZipInputKind;
   readonly sourceUnavailable?: boolean;
   readonly expectedSizeBytes?: number | undefined;
@@ -77,7 +79,12 @@ export interface DownloadOptions {
 
 export interface SingleDownloadResult {
   success: boolean;
+  /** Legacy field: the requested name, never a claim about the saved file. */
   filename?: string;
+  /** Native URL download metadata, available only when its adapter reports it. */
+  requestedFilename?: string;
+  observedFilename?: string;
+  filenameConforms?: boolean;
   error?: string;
   code?: ErrorCode;
 }

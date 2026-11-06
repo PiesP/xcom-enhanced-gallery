@@ -5,19 +5,17 @@
  * @fileoverview Userscript API adapter with robust download strategy.
  *
  * Download strategy (in priority order):
- * 1. GM.download (GM4+/Tampermonkey Promise-based) — if available
- * 2. GM_download options-object form — works in TM/VM/GM
- * 3. Blob-based fallback via GM_xmlhttpRequest + anchor download — universal
+ * 1. GM.download — if available
+ * 2. GM_download options-object form — supported by Tampermonkey and Violentmonkey
+ * 3. Blob-based fallback via GM_xmlhttpRequest + anchor download
  *
- * The URL-only form GM_download(url, filename) is NEVER used because:
- * - Greasemonkey 4.x doesn't support it
- * - Tampermonkey may ignore filename (uses CDN Content-Disposition)
- * - Violentmonkey only supports options-object form
+ * The options-object form carries the requested name, completion callbacks,
+ * timeout, and an abortable return handle in supported managers.
  *
  * Blob URL handling:
- * GM.download ignores the `filename` parameter for blob: URLs, instead
- * extracting the UUID from the URL path. All blob downloads use anchor
- * element download (`<a download>`) to guarantee correct filenames.
+ * Some manager download APIs use the Blob URL UUID as a filename. Blob
+ * downloads use an anchor's `download` attribute to request the desired name;
+ * the browser's final saved name is not observable through that handoff.
  *
  * Anchor placement:
  * Anchors are appended to `.xeg-gallery-root` (when present) instead of
@@ -88,7 +86,7 @@ export interface ResolvedGMAPIs {
 function getGMAPIs(): ResolvedGMAPIs {
   const g = globalThis as unknown as Record<string, unknown>;
   return {
-    // GM.download (GM4+/Tampermonkey Promise-based API)
+    // Manager-provided modern download API; aliases and return values vary.
     download:
       typeof g.GM !== 'undefined' && g.GM !== null
         ? (g.GM as Record<string, unknown>).download
@@ -215,7 +213,7 @@ function retainBlobUrl(url: string, onReleased?: () => void): () => void {
 
 /**
  * Blob-based download fallback using GM_xmlhttpRequest + anchor element.
- * Works in all userscript environments regardless of GM_download support.
+ * Fetches through the manager's HTTP API and requests a Blob URL save.
  */
 async function downloadViaBlob(
   url: string,
@@ -398,11 +396,96 @@ async function downloadViaBlob(
 }
 
 interface GMDownloadHandle {
-  readonly abort: () => void;
-  readonly then?: (
-    onFulfilled: ((value: unknown) => unknown) | undefined,
-    onRejected: (reason: unknown) => unknown
-  ) => unknown;
+  readonly abort?: () => void;
+}
+
+function downloadViaGM(
+  apiName: 'GM.download' | 'GM_download',
+  gmDownload: (details: GMDownloadDetails) => GMDownloadHandle | void,
+  url: string,
+  filename: string,
+  signal?: AbortSignal
+): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    let handle: GMDownloadHandle | void;
+    let dispatching = true;
+    let abortPending = false;
+    let settled = false;
+
+    const cleanup = (): void => signal?.removeEventListener('abort', abortHandler);
+    const complete = (): void => {
+      if (settled || abortPending) {
+        return;
+      }
+      settled = true;
+      cleanup();
+      resolve();
+    };
+    const fail = (error: unknown): void => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      cleanup();
+      reject(error);
+    };
+    const failUnlessAborting = (error: unknown): void => {
+      if (!abortPending) {
+        fail(error);
+      }
+    };
+    const abortHandler = (): void => {
+      if (settled) {
+        return;
+      }
+      abortPending = true;
+      if (dispatching) {
+        return;
+      }
+      if (!handle || typeof handle.abort !== 'function') {
+        fail(new Error(`${apiName} did not return an abortable handle; download outcome unknown`));
+        return;
+      }
+      try {
+        handle.abort();
+      } catch (error) {
+        fail(new Error(`${apiName} abort failed; download outcome unknown`, { cause: error }));
+        return;
+      }
+      fail(signal ? abortReason(signal) : new DOMException('Aborted', 'AbortError'));
+    };
+
+    signal?.addEventListener('abort', abortHandler, { once: true });
+    if (signal?.aborted) {
+      abortPending = true;
+      fail(abortReason(signal));
+      return;
+    }
+
+    try {
+      handle = gmDownload({
+        url,
+        name: filename,
+        saveAs: false,
+        timeout: GM_DOWNLOAD_TIMEOUT_MS,
+        onload: complete,
+        onerror: failUnlessAborting,
+        ontimeout: () => failUnlessAborting(new Error(`${apiName} timed out`)),
+      });
+    } catch (error) {
+      fail(error);
+      return;
+    } finally {
+      dispatching = false;
+    }
+
+    // Observe a returned Promise even if onload ran synchronously. A manager
+    // may resolve it before onload, so callbacks remain the completion signal.
+    void Promise.resolve(handle).then(undefined, failUnlessAborting);
+    if (abortPending && !settled) {
+      abortHandler();
+    }
+  });
 }
 
 let cachedUserscriptAPI: UserscriptAPI | null = null;
@@ -414,7 +497,7 @@ export function getUserscript(): UserscriptAPI {
 
   const g = getGMAPIs();
 
-  // GM.download (GM4+/Tampermonkey Promise-based) — preferred
+  // GM.download — preferred when exposed
   const gmDownloadModern = asFunction<(details: GMDownloadDetails) => GMDownloadHandle>(g.download);
   // GM_download (legacy) — fallback
   const gmDownloadLegacy = asFunction<typeof GM_download>(g.downloadLegacy);
@@ -444,9 +527,8 @@ export function getUserscript(): UserscriptAPI {
         throw abortReason(signal);
       }
 
-      // For blob: URLs, GM.download ignores the filename and uses the
-      // URL's UUID instead. Use anchor download directly to guarantee
-      // the correct filename and prevent gallery close-on-outside-click.
+      // Request the filename on the anchor for Blob URLs. Some managers use
+      // the URL's UUID instead; neither handoff observes the saved basename.
       if (url.startsWith('blob:')) {
         return anchorDownload(url, filename);
       }
@@ -455,95 +537,17 @@ export function getUserscript(): UserscriptAPI {
         throw new Error('Blocked unsafe media download URL');
       }
 
-      // Strategy 1: GM.download (GM4+/Tampermonkey Promise-based)
+      // Strategy 1: GM.download when exposed by the installed manager.
       if (gmDownloadModern) {
-        return new Promise<void>((resolve, reject) => {
-          let settled = false;
-          let abortHandler: (() => void) | null = null;
-
-          const cleanup = (): void => {
-            if (signal && abortHandler) {
-              signal.removeEventListener('abort', abortHandler);
-            }
-            abortHandler = null;
-          };
-          const complete = (): void => {
-            if (settled) {
-              return;
-            }
-            settled = true;
-            cleanup();
-            resolve();
-          };
-          const fail = (error: unknown): void => {
-            if (settled) {
-              return;
-            }
-            settled = true;
-            cleanup();
-            reject(error);
-          };
-
-          try {
-            const handle = gmDownloadModern({
-              url,
-              name: filename,
-              saveAs: false,
-              timeout: GM_DOWNLOAD_TIMEOUT_MS,
-              onload: complete,
-              onerror: fail,
-              ontimeout: () => fail(new Error('GM_download timed out')),
-            });
-
-            if (settled) {
-              return;
-            }
-            if (signal?.aborted) {
-              handle.abort();
-              fail(abortReason(signal));
-              return;
-            }
-            if (signal) {
-              abortHandler = () => {
-                try {
-                  handle.abort();
-                } finally {
-                  fail(abortReason(signal));
-                }
-              };
-              signal.addEventListener('abort', abortHandler, { once: true });
-            }
-            if (typeof handle.then === 'function') {
-              // Callbacks remain the completion source because userscript
-              // managers can resolve the returned thenable before onload.
-              // Observe rejection so permission/API failures cannot leave the
-              // wrapper pending forever or surface as unhandled rejections.
-              handle.then(undefined, fail);
-            }
-          } catch (error) {
-            fail(error);
-          }
-        });
+        return downloadViaGM('GM.download', gmDownloadModern, url, filename, signal);
       }
 
-      // Strategy 2: GM_download legacy options-object form. It cannot cancel
-      // an in-flight download, so use it only when the caller supplied no signal.
-      if (gmDownloadLegacy && !signal) {
-        return new Promise<void>((resolve, reject) => {
-          gmDownloadLegacy({
-            url,
-            name: filename,
-            saveAs: false,
-            timeout: GM_DOWNLOAD_TIMEOUT_MS,
-            onload: () => resolve(),
-            onerror: (error: Error) => reject(error),
-            ontimeout: () => reject(new Error('GM_download timed out')),
-          });
-        });
+      // Strategy 2: Supported managers return an abortable legacy handle.
+      if (gmDownloadLegacy) {
+        return downloadViaGM('GM_download', gmDownloadLegacy, url, filename, signal);
       }
 
-      // Strategy 3: Blob-based fallback via GM_xmlhttpRequest. This path keeps
-      // signal-aware downloads cancellable when the legacy API is present.
+      // Strategy 3: Blob-based fallback via GM_xmlhttpRequest.
       return downloadViaBlob(url, filename, gmXmlHttpRequest, signal);
     },
 
@@ -579,8 +583,8 @@ export function getUserscript(): UserscriptAPI {
         }
         throw error;
       }
-      // GM.download ignores the requested filename for blob URLs. A successful
-      // anchor click does not prove the browser has finished reading this URL.
+      // An anchor requests the name but does not prove which name the browser
+      // saved, nor that it has finished reading the Blob URL.
       await anchorDownload(url, filename, releaseUrl);
     },
 

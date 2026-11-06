@@ -3,6 +3,8 @@
 
 import type { BuildTweetResultByRestIdUrlArgs } from '@shared/core/twitter-api/endpoint';
 import { buildTweetResultByRestIdUrl } from '@shared/core/twitter-api/endpoint';
+import { generateMediaFilename } from '@shared/core/filename/filename-utils';
+import { convertAPIMediaToMediaInfo } from '@shared/services/media/media-factory';
 import type { TwitterTweet } from '@shared/services/media/types';
 import { HttpResponseSizeLimitError } from '@shared/error/http-response-size-limit-error';
 import { captureClickedMediaEvidence } from '@shared/services/media-extraction/determine-clicked-index';
@@ -246,6 +248,93 @@ describe('TweetMetadataReuse', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+  });
+
+  it('retains B1 and B2 owner filenames when requested through A or B quote contexts', async () => {
+    const photo = (owner: string, id: string, position: number) => ({
+      type: 'photo' as const,
+      id_str: id,
+      media_url_https: `https://pbs.twimg.com/media/${id}.jpg`,
+      expanded_url: `https://x.com/${owner}/status/${owner === 'bob' ? '222' : owner === 'carol' ? '333' : '111'}/photo/${position}`,
+    });
+    const post = (
+      id: string,
+      handle: string,
+      media: ReturnType<typeof photo>[],
+      quote?: object
+    ) => ({
+      rest_id: id,
+      core: { user_results: { result: { legacy: { screen_name: handle } } } },
+      legacy: { id_str: id, extended_entities: { media } },
+      ...(quote ? { quoted_status_result: { result: quote } } : {}),
+    });
+    const c = post('333', 'carol', [photo('carol', 'C1', 1)]);
+    const b = post('222', 'bob', [photo('bob', 'B2', 2), photo('bob', 'B1', 1)], c);
+    const a = post('111', 'alice', [photo('alice', 'A1', 1)], b);
+    httpGet.mockImplementation(async (url: string) => {
+      const variables = JSON.parse(new URL(url).searchParams.get('variables') ?? '{}') as {
+        tweetId?: string;
+      };
+      const result = variables.tweetId === '111' ? a : variables.tweetId === '222' ? b : c;
+      return { ok: true, status: 200, data: { data: { tweetResult: { result } } } };
+    });
+    const ownerInfo = (id: string, username: string) => ({
+      tweetId: id,
+      username,
+      tweetUrl: `https://x.com/${username}/status/${id}`,
+      extractionMethod: 'fixture',
+      confidence: 1,
+    });
+    const fromA = convertAPIMediaToMediaInfo(
+      await getTweetMedias('111'),
+      ownerInfo('111', 'alice')
+    );
+    const fromB = convertAPIMediaToMediaInfo(await getTweetMedias('222'), ownerInfo('222', 'bob'));
+    expect(
+      fromA.map((item) => [item.id, item.tweetId, generateMediaFilename(item), item.url])
+    ).toEqual([
+      [
+        '222_api_0',
+        '222',
+        'bob_222_0.jpg',
+        'https://pbs.twimg.com/media/B1.jpg?format=jpg&name=orig',
+      ],
+      [
+        '222_api_1',
+        '222',
+        'bob_222_1.jpg',
+        'https://pbs.twimg.com/media/B2.jpg?format=jpg&name=orig',
+      ],
+      [
+        '111_api_2',
+        '111',
+        'alice_111_0.jpg',
+        'https://pbs.twimg.com/media/A1.jpg?format=jpg&name=orig',
+      ],
+    ]);
+    expect(
+      fromB.map((item) => [item.id, item.tweetId, generateMediaFilename(item), item.url])
+    ).toEqual([
+      [
+        '333_api_0',
+        '333',
+        'carol_333_0.jpg',
+        'https://pbs.twimg.com/media/C1.jpg?format=jpg&name=orig',
+      ],
+      [
+        '222_api_1',
+        '222',
+        'bob_222_0.jpg',
+        'https://pbs.twimg.com/media/B1.jpg?format=jpg&name=orig',
+      ],
+      [
+        '222_api_2',
+        '222',
+        'bob_222_1.jpg',
+        'https://pbs.twimg.com/media/B2.jpg?format=jpg&name=orig',
+      ],
+    ]);
+    expect(httpGet).toHaveBeenCalledTimes(2);
   });
 
   it('reuses only normalized successful media and gives each caller a private copy', async () => {

@@ -110,6 +110,8 @@ interface TweetMediaEntryBase {
   readonly type: 'photo' | 'video';
   readonly typeOriginal: 'photo' | 'video' | 'animated_gif';
   readonly index: number;
+  /** Zero-based position within the owning post, before gallery ordering or quote merge. */
+  readonly attachmentOrdinal?: number;
   readonly preview_url: string;
   readonly media_id: string;
   readonly media_key: string;

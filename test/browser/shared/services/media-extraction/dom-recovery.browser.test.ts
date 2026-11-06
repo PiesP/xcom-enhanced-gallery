@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
+import type { HttpRequestDetails } from '@platform/types';
 import deepOverlayHtml from '../../../../fixtures/authenticated-x-layouts/video-deep-overlay.html?raw';
+import { planBulkDownload } from '@shared/core/download/download-plan';
+import { generateMediaFilename } from '@shared/core/filename/filename-utils';
 import { captureClickedMediaEvidence } from '@shared/services/media-extraction/determine-clicked-index';
 import { DOMFallbackExtractor } from '@shared/services/media-extraction/extractors/dom-fallback-extractor';
 import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
@@ -13,6 +16,8 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 const httpGet = vi.hoisted(() => vi.fn());
+const originalHead = vi.hoisted(() => vi.fn<(details: HttpRequestDetails) => { abort(): void }>());
+vi.mock('@platform/index', () => ({ getHttpRequestAdapter: () => ({ request: originalHead }) }));
 vi.mock('@shared/services/http-request-service', () => ({
   getHttpRequestService: () => ({ get: httpGet }),
 }));
@@ -35,7 +40,27 @@ async function recover(id: string) {
 }
 
 describe('scoped DOM recovery', () => {
-  beforeEach(() => httpGet.mockReset());
+  beforeEach(() => {
+    httpGet.mockReset();
+    originalHead.mockReset().mockImplementation((details) => {
+      if (details.method !== 'HEAD') {
+        throw new Error('Only original-source HEAD requests are supported by this fixture');
+      }
+      queueMicrotask(() =>
+        details.onload?.({
+          finalUrl: details.url,
+          readyState: 4,
+          status: 200,
+          statusText: '',
+          responseHeaders: 'Content-Type: image/webp',
+          response: '',
+          responseText: '',
+          readable: true,
+        })
+      );
+      return { abort: vi.fn() };
+    });
+  });
   afterEach(() => document.body.replaceChildren());
 
   it('preserves interleaved document order and the clicked item', async () => {
@@ -58,6 +83,7 @@ describe('scoped DOM recovery', () => {
     expect(result.success).toBe(true);
     expect(result.mediaItems).toHaveLength(1);
     expect(result.mediaItems[0]?.url).toContain('selected.jpg');
+    expect(generateMediaFilename(result.mediaItems[0]!)).toBe('author_222_1.jpg');
     expect(result.metadata?.recoveryScope).toBe('visible-tile');
   });
 
@@ -66,6 +92,100 @@ describe('scoped DOM recovery', () => {
     const result = await recover('second');
     expect(result.success).toBe(true);
     expect(result.clickedIndex).toBe(1);
+    expect(result.mediaItems[1]?.attachmentOrdinal).toBeUndefined();
+    expect(generateMediaFilename(result.mediaItems[1]!)).toMatch(
+      /^author_222_source-[0-9a-f]{16}\.jpg$/u
+    );
+  });
+
+  it('does not derive a filename from an excluded candidate or a partial DOM position', async () => {
+    document.body.innerHTML = `<article><a href="/author/status/222"><time>Now</time></a><img src="https://pbs.twimg.com/profile_images/222/avatar.jpg"><img id="target" src="https://pbs.twimg.com/media/second.jpg?name=small"></article>`;
+    const first = await recover('target');
+    expect(first.success).toBe(true);
+    expect(first.mediaItems).toHaveLength(1);
+    expect(first.mediaItems[0]?.id).toBe('222_dom_1');
+    const filename = generateMediaFilename(first.mediaItems[0]!);
+    expect(filename).toMatch(/^author_222_source-[0-9a-f]{16}\.jpg$/u);
+
+    document.querySelector('img[src*="profile_images"]')!.remove();
+    const partial = await recover('target');
+    expect(partial.mediaItems[0]?.id).toBe('222_dom_0');
+    expect(generateMediaFilename(partial.mediaItems[0]!)).toBe(filename);
+
+    document
+      .getElementById('target')!
+      .setAttribute('src', 'https://pbs.twimg.com/media/second?format=jpg&name=orig');
+    const variant = await recover('target');
+    expect(generateMediaFilename(variant.mediaItems[0]!)).toBe(filename);
+    document
+      .getElementById('target')!
+      .setAttribute('src', 'https://pbs.twimg.com/media/second:small');
+    const legacySize = await recover('target');
+    expect(generateMediaFilename(legacySize.mediaItems[0]!)).toBe(filename);
+  });
+
+  it('uses the installed compact quote source key for an unpositioned DOM photo', async () => {
+    document.body.innerHTML =
+      '<article><a href="/author/status/222"><time>Now</time></a><a href="/author/status/222"><img id="target" src="https://pbs.twimg.com/media/CompactQuoteSelected?format=webp&name=medium"></a></article>';
+    const result = await recover('target');
+    expect(result.success).toBe(true);
+    expect(result.mediaItems[0]?.attachmentOrdinal).toBeUndefined();
+    expect(generateMediaFilename(result.mediaItems[0]!)).toBe(
+      'author_222_source-2c5997cbd4186b55.webp'
+    );
+  });
+
+  it('does not assign one photo link ordinal to multiple enclosed sources', async () => {
+    document.body.innerHTML = `<article><a href="/author/status/222"><time>Now</time></a><a href="/author/status/222/photo/2">${photo('first')}${photo('second')}</a></article>`;
+    const result = await recover('second');
+    expect(result.success).toBe(true);
+    expect(result.mediaItems.map((item) => item.attachmentOrdinal)).toEqual([undefined, undefined]);
+    expect(generateMediaFilename(result.mediaItems[1]!)).toMatch(
+      /^author_222_source-[0-9a-f]{16}\.jpg$/u
+    );
+  });
+
+  it.each([
+    'https://evil.invalid/author/status/222/photo/8',
+    'http://x.com/author/status/222/photo/8',
+    '/other/status/222/photo/8',
+    '/author/status/222/photo/8/extra',
+  ])('does not borrow an ordinal from a conflicting image link: %s', async (href) => {
+    document.body.innerHTML = `<article><a href="/author/status/222"><time>Now</time></a><a href="${href}">${photo('target')}</a></article>`;
+    const result = await new DOMFallbackExtractor().extract(
+      {
+        tweetId: '222',
+        username: 'author',
+        tweetUrl: 'https://x.com/author/status/222',
+        extractionMethod: 'fixture',
+        confidence: 1,
+      },
+      document.getElementById('target')!,
+      {},
+      'conflicting-link'
+    );
+    expect(result.success).toBe(true);
+    expect(result.mediaItems[0]?.attachmentOrdinal).toBeUndefined();
+    expect(generateMediaFilename(result.mediaItems[0]!)).toMatch(
+      /^author_222_source-[0-9a-f]{16}\.jpg$/u
+    );
+  });
+
+  it('rejects a different post link instead of borrowing its position', async () => {
+    document.body.innerHTML = `<article><a href="/author/status/222"><time>Now</time></a><a href="/author/status/333/photo/8">${photo('target')}</a></article>`;
+    const result = await new DOMFallbackExtractor().extract(
+      {
+        tweetId: '222',
+        username: 'author',
+        tweetUrl: 'https://x.com/author/status/222',
+        extractionMethod: 'fixture',
+        confidence: 1,
+      },
+      document.getElementById('target')!,
+      {},
+      'other-post'
+    );
+    expect(result.success).toBe(false);
   });
 
   it.each(['https://x.com.evil.invalid/a/status/222/photo/1', '/author/status/333/photo/1'])(
@@ -92,6 +212,134 @@ describe('scoped DOM recovery', () => {
     document.body.innerHTML = `<a href="/author/status/222/video/1"><video id="target" src="blob:https://x.com/playback" poster="https://pbs.twimg.com/ext_tw_video_thumb/900/pu/img/poster.jpg"></video>${photo('other')}</a>`;
     const result = await recover('target');
     expect(result.success).toBe(false);
+  });
+
+  it.each([
+    ['direct MP4', 'https://video.twimg.com/ext_tw_video/900/pu/vid/clip.mp4', true],
+    [
+      'matching format',
+      'https://video.twimg.com/ext_tw_video/900/pu/vid/clip.mp4?format=mp4',
+      true,
+    ],
+    ['playlist', 'https://video.twimg.com/ext_tw_video/900/pu/vid/playlist.m3u8', false],
+    ['unknown path', 'https://video.twimg.com/ext_tw_video/900/pu/vid/clip', false],
+    ['image path', 'https://video.twimg.com/ext_tw_video/900/pu/vid/clip.jpg', false],
+    [
+      'query conflict',
+      'https://video.twimg.com/ext_tw_video/900/pu/vid/clip.mp4?format=jpg',
+      false,
+    ],
+    [
+      'ambiguous format',
+      'https://video.twimg.com/ext_tw_video/900/pu/vid/clip.mp4?format=mp4&format=jpg',
+      false,
+    ],
+    [
+      'case-varied conflicting format',
+      'https://video.twimg.com/ext_tw_video/900/pu/vid/clip.mp4?FORMAT=jpg',
+      false,
+    ],
+    [
+      'case-varied duplicate format',
+      'https://video.twimg.com/ext_tw_video/900/pu/vid/clip.mp4?format=mp4&FORMAT=mp4',
+      false,
+    ],
+    ['misleading query', 'https://video.twimg.com/ext_tw_video/900/pu/vid/clip?format=mp4', false],
+  ])(
+    'admits only a direct owned video save source after API denial: %s',
+    async (_label, url, supported) => {
+      httpGet.mockResolvedValue({ ok: false, status: 403, data: {} });
+      document.body.innerHTML = `<article><a href="/author/status/222"><time>Now</time></a><video id="target" src="${url}"></video></article>`;
+
+      const result = await new MediaExtractionService().extractFromClickedElement(
+        document.getElementById('target')!
+      );
+
+      expect(httpGet).toHaveBeenCalled();
+      if (!supported) {
+        expect(result.success).toBe(false);
+        expect(result.mediaItems).toEqual([]);
+        expect(planBulkDownload({ mediaItems: result.mediaItems }).items).toEqual([]);
+        return;
+      }
+      expect(result.success).toBe(true);
+      expect(result.metadata?.sourceType).toBe('dom-fallback');
+      const selected = result.mediaItems[result.clickedIndex ?? -1];
+      expect(selected?.downloadSource?.url).toBe(url);
+      expect(generateMediaFilename(selected!)).toMatch(/\.mp4$/);
+      expect(planBulkDownload({ mediaItems: result.mediaItems }).items).toEqual([
+        expect.objectContaining({ url, desiredName: expect.stringMatching(/\.mp4$/) }),
+      ]);
+    }
+  );
+
+  it('keeps extensionless image query formats after API denial', async () => {
+    httpGet.mockResolvedValue({ ok: false, status: 403, data: {} });
+    const url = 'https://pbs.twimg.com/media/known-image?format=webp&name=large';
+    document.body.innerHTML =
+      '<article><a href="/author/status/222"><time>Now</time></a><img id="target"></article>';
+    const target = document.getElementById('target') as HTMLImageElement;
+    target.src = url;
+    const result = await new MediaExtractionService().extractFromClickedElement(target);
+    expect(result.success).toBe(true);
+    const selected = result.mediaItems[result.clickedIndex ?? -1];
+    expect(selected?.type).toBe('image');
+    expect(generateMediaFilename(selected!)).toMatch(/\.webp$/);
+    expect(planBulkDownload({ mediaItems: result.mediaItems }).items[0]?.desiredName).toMatch(
+      /\.webp$/
+    );
+  });
+
+  it('does not borrow a valid API sibling photo for a selected contradictory video', async () => {
+    const selectedSource = 'https://video.twimg.com/ext_tw_video/900/pu/vid/clip.mp4?format=jpg';
+    const siblingSource = 'https://pbs.twimg.com/media/sibling?format=jpg&name=small';
+    httpGet.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        data: {
+          tweetResult: {
+            result: {
+              __typename: 'Tweet',
+              rest_id: '222',
+              core: {
+                user_results: {
+                  result: { legacy: { screen_name: 'author', name: 'author' } },
+                },
+              },
+              legacy: {
+                id_str: '222',
+                full_text: 'Video and sibling photo',
+                extended_entities: {
+                  media: [
+                    { type: 'photo', id_str: '901', media_url_https: siblingSource },
+                    {
+                      type: 'video',
+                      id_str: '900',
+                      media_url_https: 'https://pbs.twimg.com/ext_tw_video_thumb/900/poster.jpg',
+                      video_info: {
+                        variants: [{ content_type: 'video/mp4', url: selectedSource }],
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    document.body.innerHTML =
+      '<article><a href="/author/status/222"><time>Now</time></a><img id="sibling"><video id="target"></video></article>';
+    (document.getElementById('sibling') as HTMLImageElement).src = siblingSource;
+    (document.getElementById('target') as HTMLVideoElement).src = selectedSource;
+    const result = await new MediaExtractionService().extractFromClickedElement(
+      document.getElementById('target')!
+    );
+    expect(httpGet).toHaveBeenCalled();
+    expect(result.success).toBe(false);
+    expect(result.mediaItems).toEqual([]);
+    expect(planBulkDownload({ mediaItems: result.mediaItems }).items).toEqual([]);
   });
 
   it('resolves the uniquely owned video from the actual deep X overlay click', () => {

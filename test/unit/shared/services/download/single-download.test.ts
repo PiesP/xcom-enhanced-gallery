@@ -12,6 +12,7 @@ const { adapter, getDownloadAdapter } = vi.hoisted(() => ({
     download: vi.fn<DownloadAdapter['download']>(async () => undefined),
     downloadBlob: vi.fn<DownloadAdapter['downloadBlob']>(async () => undefined),
     needsBlobFallback: vi.fn<DownloadAdapter['needsBlobFallback']>(() => false),
+    ownsUrlCancellation: false,
   },
   getDownloadAdapter: vi.fn(),
 }));
@@ -32,6 +33,7 @@ describe('downloadSingleFile route ownership', () => {
     vi.clearAllMocks();
     getDownloadAdapter.mockReturnValue(adapter);
     adapter.download.mockResolvedValue(undefined);
+    adapter.ownsUrlCancellation = false;
     adapter.downloadBlob.mockImplementation(async (_blob, _filename, _signal, released) => {
       released?.();
     });
@@ -75,6 +77,44 @@ describe('downloadSingleFile route ownership', () => {
       'preparing',
       'complete',
     ]);
+  });
+
+  it('reports a completed native CDN-name mismatch without changing the requested name or retrying', async () => {
+    const onProgress = vi.fn();
+    adapter.download.mockImplementationOnce(async (_url, filename) => ({
+      requestedFilename: filename,
+      observedFilename: 'original-cdn.mp4',
+      filenameConforms: false,
+    }));
+
+    const result = await downloadSingleFile(video, { onProgress });
+    expect(result).toMatchObject({
+      success: true,
+      observedFilename: 'original-cdn.mp4',
+      filenameConforms: false,
+    });
+    expect(result.requestedFilename).toBe(result.filename);
+    expect(result.filename).toBe(adapter.download.mock.calls[0]?.[1]);
+    expect(onProgress.mock.calls.map(([progress]) => progress.filename)).toEqual([
+      result.filename,
+      result.filename,
+    ]);
+    expect(adapter.download).toHaveBeenCalledOnce();
+    expect(adapter.downloadBlob).not.toHaveBeenCalled();
+  });
+
+  it('propagates a conforming conflict suffix without changing transfer success', async () => {
+    adapter.download.mockImplementationOnce(async (_url, filename) => ({
+      requestedFilename: filename,
+      observedFilename: `${filename.slice(0, -4)} (1).mp4`,
+      filenameConforms: true,
+    }));
+
+    const result = await downloadSingleFile(video, { signal: new AbortController().signal });
+    expect(result).toMatchObject({ success: true, filenameConforms: true });
+    expect(result.requestedFilename).toBe(result.filename);
+    expect(result.observedFilename).not.toBe(result.filename);
+    expect(adapter.download).toHaveBeenCalledOnce();
   });
 
   it('sends a normal MP4 directly and does not replace a native failure with a Blob request', async () => {
@@ -150,7 +190,74 @@ describe('downloadSingleFile route ownership', () => {
     expect(adapter.downloadBlob).not.toHaveBeenCalled();
   });
 
+  it('preserves an uncertain abort result from a cancellation-owning URL adapter', async () => {
+    adapter.ownsUrlCancellation = true;
+    const controller = new AbortController();
+    adapter.download.mockImplementationOnce(
+      (_url, _name, _headers, signal) =>
+        new Promise<void>((_resolve, reject) => {
+          signal?.addEventListener(
+            'abort',
+            () => reject(new Error('GM_download abort failed; download outcome unknown')),
+            { once: true }
+          );
+        })
+    );
+
+    const pending = downloadSingleFile(video, { signal: controller.signal });
+    await vi.waitFor(() => expect(adapter.download).toHaveBeenCalledOnce());
+    controller.abort();
+
+    await expect(pending).resolves.toEqual({
+      success: false,
+      error: 'GM_download abort failed; download outcome unknown',
+    });
+    expect(adapter.download).toHaveBeenCalledOnce();
+    expect(adapter.downloadBlob).not.toHaveBeenCalled();
+  });
+
+  it('normalizes an owned URL adapter AbortError after caller cancellation', async () => {
+    adapter.ownsUrlCancellation = true;
+    const controller = new AbortController();
+    adapter.download.mockImplementationOnce(
+      (_url, _name, _headers, signal) =>
+        new Promise<void>((_resolve, reject) => {
+          signal?.addEventListener('abort', () => reject(signal.reason), { once: true });
+        })
+    );
+
+    const pending = downloadSingleFile(video, { signal: controller.signal });
+    await vi.waitFor(() => expect(adapter.download).toHaveBeenCalledOnce());
+    controller.abort();
+
+    await expect(pending).resolves.toEqual({ success: false, error: USER_CANCELLED_MESSAGE });
+    expect(adapter.download).toHaveBeenCalledOnce();
+  });
+
+  it('still races a stalled generic URL adapter after caller cancellation', async () => {
+    const controller = new AbortController();
+    const onProgress = vi.fn();
+    let complete: (() => void) | undefined;
+    adapter.download.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          complete = resolve;
+        })
+    );
+
+    const pending = downloadSingleFile(video, { signal: controller.signal, onProgress });
+    await vi.waitFor(() => expect(adapter.download).toHaveBeenCalledOnce());
+    controller.abort();
+
+    await expect(pending).resolves.toEqual({ success: false, error: USER_CANCELLED_MESSAGE });
+    expect(adapter.download).toHaveBeenCalledOnce();
+    complete?.();
+    await Promise.resolve();
+    expect(onProgress.mock.calls.map(([progress]) => progress.phase)).toEqual(['preparing']);
+  });
+
   it('keeps a supplied Blob charged through its actual URL owner release', async () => {
+    adapter.ownsUrlCancellation = true;
     const budget = new LiveByteBudget(8);
     let release: (() => void) | undefined;
     adapter.downloadBlob.mockImplementationOnce((_blob, _name, _signal, released) => {

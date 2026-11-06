@@ -7,6 +7,38 @@ import type { HttpErrorCategory, HttpRequestResponse } from './types';
 export const MAX_RETRY_AFTER_MS = 24 * 60 * 60 * 1000;
 const MAX_RETRY_AFTER_CHARS = 128;
 const MAX_RAW_HEADERS_CHARS = 8192;
+
+/** Export only a normalized MIME token from an explicit HEAD response. */
+export function safeHeadContentType(rawHeaders: string): string {
+  if (rawHeaders.length > MAX_RAW_HEADERS_CHARS) {
+    return '';
+  }
+  const values = rawHeaders.split(/\r?\n/u).filter((line) => /^content-type\s*:/iu.test(line));
+  const line = values[0];
+  if (values.length !== 1 || !line) {
+    return '';
+  }
+  const raw = line.slice(line.indexOf(':') + 1).trim();
+  if (
+    raw.length > 256 ||
+    raw.includes(',') ||
+    Array.from(raw).some((character) => {
+      const code = character.charCodeAt(0);
+      return code < 32 || code === 127;
+    })
+  ) {
+    return '';
+  }
+  const mime = raw.split(';', 1)[0]?.trim().toLowerCase();
+  if (
+    !mime ||
+    mime.length > 128 ||
+    !/^[a-z0-9][a-z0-9!#$&^_.+-]*\/[a-z0-9][a-z0-9!#$&^_.+-]*$/u.test(mime)
+  ) {
+    return '';
+  }
+  return `Content-Type: ${mime}`;
+}
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const SHORT_WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const LONG_WEEKDAYS = [

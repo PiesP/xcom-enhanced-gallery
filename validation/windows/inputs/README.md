@@ -1,5 +1,99 @@
 # Optional Windows artifact fixture selector
 
+For the focused #482 installed filename scenario, create ignored
+`attachment-filenames.json` with exactly:
+
+```json
+{"scenario":"attachment-filenames"}
+```
+
+With `--installation extension`, this runs the owned A/B/C quote, DOM, ZIP,
+conflict and failed-only recovery cycle in Chrome/Edge. Firefox uses its separate
+focused installed filename, collision and notice fixture. With `--installation userscript`, it
+runs a smaller manager-backed visible `/photo/2` save and checks the native
+filename, source and bytes. Remove the selector after the attempt. The filename
+cycle uses controlled fixtures. Extension runs may append separate public-status
+observations with `--live-url`; the live observer does not save files.
+
+For a diagnosis that must retain nonconforming native names and continue to the
+public observation, add `"diagnosticOnly": true` to this selector. Only that
+explicit mode records known CDN/active-control basenames without accepting
+filename conformance. Default qualification requires intended XEG-only names and visible actual-name
+reporting for browser filename overrides. Active controls use a distinct literal
+basename and verify the native bytes; a completed mismatch never starts another save.
+
+To qualify the reported photo's actual native save after gallery entry, use
+the exclusive ignored `reported-live-filename.json` selector:
+
+```json
+{"scenario":"reported-live-filename"}
+```
+
+Use `--installation extension --browser chrome` with only
+`--live-url https://x.com/yukurach/status/2118323627615785399`. This focused route uses the
+ordinary image click without admission logpoints and captures the selected
+MediaInfo and its preferred save URL during the real Download click. It
+compares the original native file with an independent bounded GET of that
+exact preferred source. The JSON receipt retains native IDs, original
+basenames, requested/actual names, provenance, and the notice. Flat binary
+copies satisfy the maintained evidence transport's filename restrictions.
+A second explicit toolbar save runs after the download observers are removed;
+all extension-owned native IDs are checked for duplicate saves. Each inspected
+original and reference body is limited to 4 MiB. Original receipts and files
+are inspected before any evidence copy. Generic live API/host diagnostics retain
+their separate verdict;
+this focused result does not qualify an authenticated session or the original
+user's profile cause. Remove the selector after the attempt.
+
+For the #495 Jeppi photo, use the same ignored selector with an explicit
+task-owned target:
+
+```json
+{
+  "scenario": "reported-live-filename",
+  "target": {
+    "pageUrl": "https://x.com/Jeppi_tan/status/2118423501095030841",
+    "mediaBasename": "HWYmWugaUAAi_4m"
+  }
+}
+```
+
+Use that exact page as the sole `--live-url`. The explicit target also admits
+installed Edge extension validation. With `--installation userscript` and an
+unpacked reviewed Tampermonkey directory, the controlled fixture runs first,
+then a fresh owned profile installs the same userscript through the manager UI
+and visits the public page without fixture host mappings or certificate
+exceptions. The live receipt records the installed sandbox's GM availability,
+selected MediaInfo, actual native ID and file, and an independently fetched
+original before comparing the requested and observed filename. After the first
+file is retained, a distinct-byte sentinel occupies its next conflict name.
+The repeat runs after the diagnostic breakpoints are removed and verifies that
+both the original file and sentinel remain unchanged. The original user profile cause
+remains outside this controlled scope.
+The separate live phase stages its evidence outside the flat output folder.
+After either success or failure, bounded regular files are copied under the
+`userscript-live-` prefix and listed in `userscript-live-artifacts.json`.
+If a copy cannot be verified, the task-owned stage is preserved and the run
+fails before collection.
+
+To check issue #484's video save format through the installed Chrome/Edge
+extension, create the ignored `video-save-format.json` file here with exactly:
+
+```json
+{"scenario":"video-save-format"}
+```
+
+Run `vmctl.py` with `--installation extension` and no live URLs. This focused
+owned fixture first denies the provider response and clicks a direct MP4 and
+three unsupported or ambiguous DOM video sources. It then serves API-shaped
+responses for a direct video, a video-encoded GIF, and conflicting or duplicate
+format queries. The API rejection cases include a valid sibling photo to check
+that the clicked video does not borrow its save. The scenario checks native MP4
+filenames and bytes, mixed ZIP member names and contents, API response status,
+and no gallery or native save for rejected sources. The source-bound receipt
+and copied files are retained outside Git. This does not establish live X
+behavior. Remove the selector after the attempt.
+
 For explicit installed-extension acceptance on public X statuses, create the
 ignored `live-acceptance.json` file here with exactly:
 

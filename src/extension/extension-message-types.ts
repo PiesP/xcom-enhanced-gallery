@@ -128,4 +128,10 @@ export interface DownloadDirectStatusResponse {
   readonly requestId: string;
   readonly status: 'never-started' | 'active' | 'complete' | 'interrupted' | 'unknown';
   readonly reason?: 'browser-rejected' | 'browser-interrupted' | 'user-cancelled' | 'timeout';
+  /** Name submitted to downloads.download; present with native completion metadata. */
+  readonly requestedFilename?: string;
+  /** Basename of the completed native DownloadItem, if observable. */
+  readonly observedFilename?: string;
+  /** Background-owned comparison, allowing legitimate conflict suffixes. */
+  readonly filenameConforms?: boolean;
 }

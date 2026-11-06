@@ -113,6 +113,11 @@ export const ko: LanguageStrings = {
       recovery: 'Alt+Shift+V는 적격 동영상 클릭이 실패한 직후에만 사용할 수 있습니다.',
     },
     dl: {
+      filenameNotice: {
+        label: '저장된 파일명',
+        mismatch: '요청한 이름과 다른 파일명으로 저장되었습니다.',
+        dismiss: '파일명 알림 닫기',
+      },
       bulkOutcome: {
         cancelRecoveryAndDismiss: '누락 항목 복구를 취소하고 ZIP 결과 닫기',
         details: 'ZIP 결과 자세히 보기',
