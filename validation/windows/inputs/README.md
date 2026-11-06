@@ -31,15 +31,17 @@ the exclusive ignored `reported-live-filename.json` selector:
 
 Use `--installation extension --browser chrome` with only
 `--live-url https://x.com/yukurach/status/2118323627615785399`. This focused route uses the
-ordinary image click without admission logpoints, captures the selected
-MediaInfo and its preferred save URL during the real Download click, and
+ordinary image click without admission logpoints and captures the selected
+MediaInfo and its preferred save URL during the real Download click. It
 compares the original native file with an independent bounded GET of that
-exact preferred source. It retains native IDs, requested/actual names and the
-notice, then verifies a second explicit toolbar save after the download
-observers are removed. It checks all extension-owned native IDs for duplicate
-saves. Each inspected original and reference body is limited to 4 MiB. Original
-receipts and files are inspected before evidence copies, whose basenames are
-preserved. Generic live API/host diagnostics retain their separate verdict;
+exact preferred source. The JSON receipt retains native IDs, original
+basenames, requested/actual names, provenance, and the notice. Flat binary
+copies satisfy the maintained evidence transport's filename restrictions.
+A second explicit toolbar save runs after the download observers are removed;
+all extension-owned native IDs are checked for duplicate saves. Each inspected
+original and reference body is limited to 4 MiB. Original receipts and files
+are inspected before any evidence copy. Generic live API/host diagnostics retain
+their separate verdict;
 this focused result does not qualify an authenticated session or the original
 user's profile cause. Remove the selector after the attempt.
 

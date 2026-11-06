@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 PiesP
 
+import type { HttpRequestDetails } from '@platform/types';
 import compactQuoteHtml from '../../../../e2e/fixtures/installed-compact-quote-photo-page.html?raw';
 import { generateMediaFilename } from '@shared/core/filename/filename-utils';
 import type { TwitterMedia, TwitterTweet } from '@shared/services/media/types';
@@ -11,6 +12,8 @@ import { isProcessableMedia } from '@shared/utils/media/media-click-detector';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 const httpGet = vi.hoisted(() => vi.fn());
+const originalHead = vi.hoisted(() => vi.fn<(details: HttpRequestDetails) => { abort(): void }>());
+vi.mock('@platform/index', () => ({ getHttpRequestAdapter: () => ({ request: originalHead }) }));
 vi.mock('@shared/services/http-request-service', () => ({
   getHttpRequestService: () => ({ get: httpGet }),
 }));
@@ -79,6 +82,24 @@ function installMiddlePhoto(): HTMLAnchorElement {
 describe('compact inner quote photo, preserving observed overlay ownership', () => {
   beforeEach(() => {
     httpGet.mockReset();
+    originalHead.mockReset().mockImplementation((details) => {
+      if (details.method !== 'HEAD') {
+        throw new Error('Only original-source HEAD requests are supported by this fixture');
+      }
+      queueMicrotask(() =>
+        details.onload?.({
+          finalUrl: details.url,
+          readyState: 4,
+          status: 200,
+          statusText: '',
+          responseHeaders: 'Content-Type: image/webp',
+          response: '',
+          responseText: '',
+          readable: true,
+        })
+      );
+      return { abort: vi.fn() };
+    });
     document.body.innerHTML = compactQuoteHtml;
   });
   afterEach(() => {

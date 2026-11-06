@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
+import type { HttpRequestDetails } from '@platform/types';
 import deepOverlayHtml from '../../../../fixtures/authenticated-x-layouts/video-deep-overlay.html?raw';
 import { planBulkDownload } from '@shared/core/download/download-plan';
 import { generateMediaFilename } from '@shared/core/filename/filename-utils';
@@ -15,6 +16,8 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 const httpGet = vi.hoisted(() => vi.fn());
+const originalHead = vi.hoisted(() => vi.fn<(details: HttpRequestDetails) => { abort(): void }>());
+vi.mock('@platform/index', () => ({ getHttpRequestAdapter: () => ({ request: originalHead }) }));
 vi.mock('@shared/services/http-request-service', () => ({
   getHttpRequestService: () => ({ get: httpGet }),
 }));
@@ -37,7 +40,27 @@ async function recover(id: string) {
 }
 
 describe('scoped DOM recovery', () => {
-  beforeEach(() => httpGet.mockReset());
+  beforeEach(() => {
+    httpGet.mockReset();
+    originalHead.mockReset().mockImplementation((details) => {
+      if (details.method !== 'HEAD') {
+        throw new Error('Only original-source HEAD requests are supported by this fixture');
+      }
+      queueMicrotask(() =>
+        details.onload?.({
+          finalUrl: details.url,
+          readyState: 4,
+          status: 200,
+          statusText: '',
+          responseHeaders: 'Content-Type: image/webp',
+          response: '',
+          responseText: '',
+          readable: true,
+        })
+      );
+      return { abort: vi.fn() };
+    });
+  });
   afterEach(() => document.body.replaceChildren());
 
   it('preserves interleaved document order and the clicked item', async () => {

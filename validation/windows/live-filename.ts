@@ -3,7 +3,7 @@
 
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import type { BrowserContext, Page } from '@playwright/test';
 import { readExactDownloadFile } from './download-memory.ts';
@@ -293,11 +293,11 @@ export async function runReportedLiveFilename(options: {
       assert.equal(bytes.length, original.length);
       assert(bytes.equals(original), 'Live saved file differs from independent original GET');
       const actualName = basename(item.filename);
-      const copyRoot = join(output, `live-original-${item.id}`);
-      await mkdir(copyRoot);
-      await writeFile(join(copyRoot, actualName), bytes, { flag: 'wx' });
+      // The maintained transport accepts flat safe names; retain the native name in evidence.
+      const retainedFile = `live-original-${item.id}.bin`;
+      await writeFile(join(output, retainedFile), bytes, { flag: 'wx' });
       assert(
-        (await readExactDownloadFile(join(copyRoot, actualName), bytes.length)).bytes.equals(bytes)
+        (await readExactDownloadFile(join(output, retainedFile), bytes.length)).bytes.equals(bytes)
       );
       const notice = gallery.locator('[data-gallery-element="download-filename-notice"]');
       await notice.waitFor({ state: 'visible', timeout: 15_000 });
@@ -332,7 +332,7 @@ export async function runReportedLiveFilename(options: {
           basename: actualName,
           bytes: bytes.length,
           sha256: sha256(bytes),
-          retainedFile: `live-original-${item.id}/${actualName}`,
+          retainedFile,
           originalInspectedBeforeCopy: true,
         },
         notice: {
