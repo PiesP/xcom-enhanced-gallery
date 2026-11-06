@@ -239,7 +239,7 @@ const userscriptInstall = (await import(
     .href
 )) as Pick<
   typeof import('../../../validation/windows/userscript-install.ts'),
-  'managerDetailsUrl' | 'openUserscriptLivePhoto'
+  'managerDetailsUrl' | 'openUserscriptLivePhoto' | 'assertHeldSingleCancellationState'
 > & {
   MEDIA_COHORTS: Record<'normal' | 'failure' | 'partial' | 'held', string[]>;
   PUBLIC_AVATAR_PATH: string;
@@ -3107,6 +3107,133 @@ $stable.sameForeground = $true
       observer.dispose();
       rmSync(directory, { recursive: true, force: true });
     }
+  });
+
+  it('permits one interrupted held native ID but rejects completion or duplicate dispatch', () => {
+    const item = {
+      id: 41,
+      state: 'interrupted',
+      interruptReason: 'USER_CANCELED',
+      requestedNameMatch: true,
+      ownedPathMatch: true,
+      expectedSizeMatch: false,
+      fixtureUrlMatch: true,
+      managerOwnerMatch: true,
+    };
+    const transfer = {
+      phase: 'held',
+      cohort: 'held',
+      index: 0,
+      purpose: 'transfer',
+      method: 'GET',
+      result: 'aborted',
+      bytes: 0,
+      sha256: null,
+    };
+    const input = {
+      before: { status: 'observed', items: [] },
+      after: { status: 'observed', items: [item] },
+      browserBegins: [
+        {
+          guid: 'held-guid',
+          url: 'https://pbs.twimg.com/media/GkH1234ABCDEF.jpg?format=jpg&name=orig',
+          suggestedFilename: 'held.jpg',
+        },
+      ],
+      expectedUrl: 'https://pbs.twimg.com/media/GkH1234ABCDEF.jpg?format=jpg&name=orig',
+      expectedNames: ['held.jpg'],
+      transferEvents: [transfer],
+      beforeFiles: new Set(['earlier.jpg']),
+      files: ['earlier.jpg'],
+    };
+    expect(userscriptInstall.assertHeldSingleCancellationState(input)).toEqual({
+      nativeIds: [{ id: 41, state: 'interrupted' }],
+      browserStarts: 1,
+    });
+    expect(() =>
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        after: { status: 'observed', items: [{ ...item, state: 'complete' }] },
+      })
+    ).toThrow('owned interrupted');
+    expect(() =>
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        after: { status: 'observed', items: [{ ...item, state: 'in_progress' }] },
+      })
+    ).toThrow('owned interrupted');
+    expect(() =>
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        after: { status: 'observed', items: [{ ...item, managerOwnerMatch: false }] },
+      })
+    ).toThrow('owned interrupted');
+    expect(() =>
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        after: { status: 'observed', items: [{ ...item, fixtureUrlMatch: false }] },
+      })
+    ).toThrow('owned interrupted');
+    expect(() =>
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        after: { status: 'observed', items: [{ ...item, requestedNameMatch: false }] },
+      })
+    ).toThrow('owned interrupted');
+    expect(() =>
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        after: { status: 'observed', items: [{ ...item, ownedPathMatch: false }] },
+      })
+    ).toThrow('owned interrupted');
+    expect(() =>
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        after: { status: 'observed', items: [item, { ...item, id: 42 }] },
+      })
+    ).toThrow('multiple native IDs');
+    expect(() =>
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        after: { status: 'observed', items: [] },
+      })
+    ).toThrow('no owned native ID');
+    expect(() =>
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        transferEvents: [transfer, { ...transfer, result: 'started' }],
+      })
+    ).toThrow('duplicate transfer requests');
+    expect(() =>
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        browserBegins: [...input.browserBegins, { ...input.browserBegins[0]!, guid: 'other' }],
+      })
+    ).toThrow('multiple CDP downloads');
+    expect(() =>
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        browserBegins: [{ ...input.browserBegins[0]!, url: 'https://pbs.twimg.com/other' }],
+      })
+    ).toThrow('selected original');
+    expect(() =>
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        browserBegins: [{ ...input.browserBegins[0]!, suggestedFilename: 'other.jpg' }],
+      })
+    ).toThrow('selected original');
+    expect(() =>
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        files: ['earlier.jpg', 'late.jpg'],
+      })
+    ).toThrow('native file');
+    expect(() =>
+      userscriptInstall.assertHeldSingleCancellationState({
+        ...input,
+        files: ['earlier.jpg', 'late.crdownload'],
+      })
+    ).toThrow('native file');
   });
 
   it('rejects a paused in-progress download after all bytes have arrived', () => {

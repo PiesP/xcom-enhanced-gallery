@@ -114,6 +114,19 @@ function create(session: FakeTraceSession, kind: 'shared' | 'older-modern' = 'sh
   });
 }
 
+const heldOriginalUrl = 'https://pbs.twimg.com/media/GkH1234ABCDEF.jpg?format=jpg&name=orig';
+
+function createHeld(session: FakeTraceSession) {
+  return createInstalledUserscriptFrameTrace({
+    session,
+    scriptId: 'installed-script',
+    filenameLine: 20,
+    gmCallLine: 40,
+    gmCallKind: 'shared',
+    target: { kind: 'held-fixture', originalUrl: heldOriginalUrl },
+  });
+}
+
 describe('installed userscript lexical frame trace', () => {
   it('evaluates utility and GM call expressions without assuming global GM_info visibility', () => {
     const media = selectedMedia();
@@ -217,6 +230,61 @@ describe('installed userscript lexical frame trace', () => {
     ).toHaveLength(2);
     expect(session.calls.at(-1)?.method).toBe('Debugger.disable');
     expect(session.listenerCount('Debugger.paused')).toBe(0);
+  });
+
+  it('binds the held original to one abortable GM.download return', async () => {
+    const session = new FakeTraceSession();
+    session.values.media = {
+      ...selectedMedia(),
+      url: heldOriginalUrl,
+      originalUrl: heldOriginalUrl,
+      downloadSource: {
+        url: heldOriginalUrl,
+        quality: 'verified-original',
+        provenance: 'media-api',
+      },
+    };
+    session.values.gm = { ...gmCall(), args: { ...gmCall().args, url: heldOriginalUrl } };
+    const trace = createHeld(session);
+    await trace.arm();
+    session.pause('media');
+    expect((await trace.waitForMedia()).downloadSource?.url).toBe(heldOriginalUrl);
+    session.pause('gm');
+    expect((await trace.waitForGmCall()).abortType).toBe('function');
+    expect((await trace.stop()).removed).toBe(true);
+  });
+
+  it('rejects a held source mismatch or a non-abortable GM result', async () => {
+    for (const change of ['source', 'abort'] as const) {
+      const session = new FakeTraceSession();
+      session.values.media = {
+        ...selectedMedia(),
+        url: heldOriginalUrl,
+        originalUrl: heldOriginalUrl,
+        downloadSource: {
+          url: change === 'source' ? sourceUrl : heldOriginalUrl,
+          quality: 'verified-original',
+          provenance: 'media-api',
+        },
+      };
+      session.values.gm = {
+        ...gmCall(),
+        args: { ...gmCall().args, url: heldOriginalUrl },
+        abortType: change === 'abort' ? 'undefined' : 'function',
+      };
+      const trace = createHeld(session);
+      await trace.arm();
+      session.pause('media');
+      if (change === 'source') {
+        await expect(trace.waitForMedia()).rejects.toThrow('selected original');
+      } else {
+        await trace.waitForMedia();
+        session.pause('gm');
+        await expect(trace.waitForGmCall()).rejects.toThrow('abort handle');
+      }
+      await expect(trace.stop()).rejects.toThrow('Installed frame trace teardown');
+      expect(session.listenerCount('Debugger.paused')).toBe(0);
+    }
   });
 
   it('rejects a changed actual location and still cleans the partially armed breakpoint', async () => {

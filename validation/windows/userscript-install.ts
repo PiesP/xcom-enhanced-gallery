@@ -253,6 +253,7 @@ type ManagerHistoryItem = {
   id: number;
   state: string;
   declaredRedirectFinalUrlMatch?: true;
+  managerOwnerMatch?: boolean;
   interruptReason: string | null;
   requestedNameMatch: boolean;
   ownedPathMatch: boolean;
@@ -349,6 +350,9 @@ type FixtureResult = {
     pageError?: string;
     routeRemoved?: boolean;
     routeError?: string;
+    heldFrameTraceError?: string;
+    heldPauseGuardError?: string;
+    heldDebuggerDetachError?: string;
   };
   firstCurrentDownload?: unknown;
   browserDownloadEvents?: ReturnType<ReturnType<typeof createBrowserDownloadObserver>['events']>;
@@ -2331,9 +2335,11 @@ export async function inspectManagerDownloadHistoryDocument({
       item.filename.replaceAll('/', '\\').toLowerCase() ===
         expectedPath.replaceAll('/', '\\').toLowerCase();
     const finalUrl: unknown = Reflect.get(item, 'finalUrl');
+    const byExtensionId: unknown = Reflect.get(item, 'byExtensionId');
     items.push({
       id: item.id,
       state: item.state,
+      ...(byExtensionId === managerId && { managerOwnerMatch: true }),
       ...(finalUrl === 'https://pbs.twimg.com/media/xeg-owned-redirect-final.jpg'
         ? { declaredRedirectFinalUrlMatch: true as const }
         : {}),
@@ -2356,7 +2362,8 @@ async function captureManagerDownloadHistory(
   managerId: string,
   downloads: string,
   savedName: string,
-  expectedBytes: number
+  expectedBytes: number,
+  fixtureUrl = FIRST_MEDIA_URL
 ): Promise<ManagerHistory> {
   let page: Page | undefined;
   try {
@@ -2370,7 +2377,7 @@ async function captureManagerDownloadHistory(
     }
     const result = await page.evaluate(inspectManagerDownloadHistoryDocument, {
       managerId,
-      fixtureUrl: FIRST_MEDIA_URL,
+      fixtureUrl,
       expectedName: savedName,
       expectedPath: join(downloads, savedName),
       expectedBytes,
@@ -2919,6 +2926,10 @@ export function createBrowserDownloadObserver(cdp: CDPSession) {
   cdp.on('Browser.downloadProgress', onProgress);
   return {
     snapshot: () => begun.length,
+    beginsSince(since: number) {
+      assert(Number.isSafeInteger(since) && since >= 0 && since <= begun.length);
+      return begun.slice(since).map((item) => ({ ...item }));
+    },
     events: () =>
       begun.map(({ guid, suggestedFilename, url }) => ({
         guid,
@@ -3114,6 +3125,64 @@ export async function observeNoNativeDownload(
     samples,
     boundary:
       'bounded browser events and owned files after held request terminal; not manager callback completion',
+  };
+}
+
+/** A canceled GM single may have one interrupted native ID, but never a saved result. */
+export function assertHeldSingleCancellationState(input: {
+  before: ManagerHistory;
+  after: ManagerHistory;
+  browserBegins: BrowserDownloadBegin[];
+  expectedUrl: string;
+  expectedNames: string[];
+  transferEvents: UserscriptLoopbackEvent[];
+  beforeFiles: Set<string>;
+  files: string[];
+}) {
+  const {
+    before,
+    after,
+    browserBegins,
+    expectedUrl,
+    expectedNames,
+    transferEvents,
+    beforeFiles,
+    files,
+  } = input;
+  assert.equal(before.status, 'observed', 'Held native baseline is unavailable');
+  assert.equal(after.status, 'observed', 'Held native inventory is unavailable');
+  const seen = new Set(before.items.map(({ id }) => id));
+  const created = after.items.filter(({ id }) => !seen.has(id));
+  assert(created.length <= 1, 'Held single created multiple native IDs');
+  assert(
+    created.every(
+      (item) =>
+        item.fixtureUrlMatch &&
+        item.managerOwnerMatch === true &&
+        item.requestedNameMatch &&
+        item.ownedPathMatch &&
+        item.state === 'interrupted'
+    ),
+    'Held native ID did not end as an owned interrupted download'
+  );
+  assert(browserBegins.length <= 1, 'Held single created multiple CDP downloads');
+  assert(
+    browserBegins.length === 0 || created.length === 1,
+    'Held CDP start has no owned native ID'
+  );
+  assert(
+    browserBegins.every(
+      (item) => item.url === expectedUrl && expectedNames.includes(item.suggestedFilename)
+    ),
+    'Held CDP start differs from the selected original'
+  );
+  assert.equal(transferEvents.length, 1, 'Held single created duplicate transfer requests');
+  assert.equal(transferEvents[0]?.method, 'GET');
+  assert.equal(transferEvents[0]?.result, 'aborted');
+  assert.deepEqual(files.sort(), [...beforeFiles].sort(), 'Held single left a native file');
+  return {
+    nativeIds: created.map(({ id, state }) => ({ id, state })),
+    browserStarts: browserBegins.length,
   };
 }
 
@@ -3372,6 +3441,11 @@ async function runFixture(
   let phase = 'normal';
   let apiMode: 'healthy' | 'capacity' | 'redirect-allowed' | 'redirect-blocked' | null = null;
   let managerConsole: ReturnType<typeof watchManagerDownloadConsole> | undefined;
+  let heldDebuggerSession: CDPSession | undefined;
+  let heldPauseGuard: ReturnType<typeof createPreArmPauseGuard> | undefined;
+  let heldFrameTrace: InstalledUserscriptFrameTrace | undefined;
+  let heldTraceStopped = false;
+  let heldSingleBrowserStarts: number | undefined;
   const mediaNetwork = watchFixtureMediaNetwork(context);
   const routeFixture = async (route: Route) => {
     const url = new URL(route.request().url());
@@ -3903,6 +3977,242 @@ async function runFixture(
       transport: { ...heldTerminal },
     };
 
+    // The ZIP case above cancels before GM.download. Exercise an already
+    // dispatched, abortable single on the same owned held transport.
+    const heldOriginalUrl = `https://pbs.twimg.com/media/${MEDIA_COHORTS.held[0]}.jpg?format=jpg&name=orig`;
+    const heldSavedName = browserFilename(filename(0), 2);
+    const heldNativeBefore = await captureManagerDownloadHistory(
+      context,
+      managerId,
+      downloads,
+      heldSavedName,
+      imageAt(0).length,
+      heldOriginalUrl
+    );
+    assert.equal(heldNativeBefore.status, 'observed', 'Held native baseline is unavailable');
+    assert.equal(heldNativeBefore.items.length, 0, 'Pre-dispatch ZIP created a held native ID');
+    const installedSource = await readFile(
+      join(root, 'dist/xcom-enhanced-gallery.user.js'),
+      'utf8'
+    );
+    assert.equal(
+      sha256(installedSource),
+      sourceSha256,
+      'Installed source changed before held trace'
+    );
+    heldDebuggerSession = await context.newCDPSession(page);
+    const parsedScripts: Array<{ scriptId: string; url: string }> = [];
+    let parsedOverflow = false;
+    heldDebuggerSession.on('Debugger.scriptParsed', (item: { scriptId: string; url: string }) => {
+      if (parsedScripts.length < 256) {
+        parsedScripts.push(item);
+      } else {
+        parsedOverflow = true;
+      }
+    });
+    heldPauseGuard = createPreArmPauseGuard(heldDebuggerSession);
+    heldPauseGuard.start();
+    await heldDebuggerSession.send('Runtime.enable');
+    await heldDebuggerSession.send('Debugger.enable');
+    assert(!parsedOverflow, 'Held installed script lookup exceeded its bound');
+    let heldScript:
+      | {
+          scriptId: string;
+          filenameLine: number;
+          gmCallLine: number;
+          gmCallerLines: { modern: number; legacy: number } | null;
+          productBody: ReturnType<typeof bindInstalledUserscriptSource>;
+        }
+      | undefined;
+    for (const candidate of parsedScripts) {
+      const response: { scriptSource?: string } | null = await heldDebuggerSession
+        .send('Debugger.getScriptSource', { scriptId: candidate.scriptId })
+        .catch(() => null);
+      const text: string | undefined = response?.scriptSource;
+      if (!text || text.length > 5_000_000 || !text.includes('function downloadSingleFile(')) {
+        continue;
+      }
+      const location = resolveFilenameCaptureLine(text);
+      const gmCallLine = resolveUserscriptGMCallLine(text);
+      assert(gmCallLine !== null, 'Held installed GM return site is missing');
+      assert(text.includes('function downloadViaGM('), 'Held GM adapter shape changed');
+      assert(!heldScript, 'Multiple installed XCOM download scripts in held page');
+      heldScript = {
+        scriptId: candidate.scriptId,
+        filenameLine: location.lineNumber,
+        gmCallLine,
+        gmCallerLines: resolveUserscriptGMCallerLines(text),
+        productBody: bindInstalledUserscriptSource(installedSource, text),
+      };
+    }
+    assert(heldScript, 'Held page lacks the exact installed XCOM download script');
+    heldPauseGuard.assertClean();
+    heldFrameTrace = createInstalledUserscriptFrameTrace({
+      session: heldDebuggerSession,
+      scriptId: heldScript.scriptId,
+      filenameLine: heldScript.filenameLine,
+      gmCallLine: heldScript.gmCallLine,
+      gmCallKind: 'shared',
+      gmCallerLines: heldScript.gmCallerLines,
+      target: { kind: 'held-fixture', originalUrl: heldOriginalUrl },
+    });
+    await heldFrameTrace.arm();
+    await heldPauseGuard.handoff();
+    const heldSingleSince = observer.snapshot();
+    const heldSingleBefore = new Set(await readdir(downloads));
+    const heldSingleTransportStart = loopback.mark();
+    const heldManagerConsoleStart = managerConsole.mark();
+    loopback.armHeld();
+    await current.click();
+    const heldMedia = await heldFrameTrace.waitForMedia();
+    const heldCall = await heldFrameTrace.waitForGmCall();
+    assert.equal(heldMedia.generatedFilename, filename(0));
+    assert.equal(heldCall.apiName, 'GM.download', 'Held single used an unexpected manager API');
+    assert.equal(heldCall.args.url, heldOriginalUrl);
+    assert.equal(heldCall.args.name, heldMedia.generatedFilename);
+    assert.equal(heldCall.abortType, 'function', 'GM.download returned no abort handle');
+    await waitFor(
+      () => loopback.findSince(heldSingleTransportStart, 'held', 0, 'started'),
+      'dispatched held single HTTPS GET'
+    );
+    const heldTraceStop = await heldFrameTrace.stop();
+    heldTraceStopped = heldTraceStop.removed && heldTraceStop.debuggerDisabled;
+    assert(heldTraceStopped, 'Held call-frame trace remained installed');
+    const heldTrace = heldFrameTrace.snapshot();
+    assert.equal(heldTrace.pauseCount, 2, 'Held click had unexpected debugger pauses');
+    assert.equal(heldTrace.captureJobs, 2, 'Held click did not capture exactly one GM call');
+    await heldDebuggerSession.detach();
+    heldDebuggerSession = undefined;
+    await page.keyboard.press('Escape');
+    await gallery.waitFor({ state: 'detached' });
+    const heldSingleTerminal = await waitFor(
+      () => loopback.findSince(heldSingleTransportStart, 'held', 0, 'aborted'),
+      'dispatched held single HTTPS GET abortion'
+    );
+    assert.equal(loopback.activeCount(), 0, 'Canceled held single retains an active response');
+    assert(
+      !page.isClosed() && context.browser()?.isConnected(),
+      'Browser closed during cancellation'
+    );
+    const heldSingleEvents = () =>
+      loopback
+        .snapshot()
+        .events.slice(heldSingleTransportStart)
+        .filter(
+          (event) =>
+            event.phase === 'held' &&
+            event.cohort === 'held' &&
+            event.index === 0 &&
+            event.purpose === 'transfer'
+        );
+    const heldSingleNative = () =>
+      captureManagerDownloadHistory(
+        context,
+        managerId,
+        downloads,
+        heldSavedName,
+        imageAt(0).length,
+        heldOriginalUrl
+      );
+    // A manager may briefly expose an in-progress ID and a .crdownload after
+    // the socket closes. Wait for terminal cleanup before the absence window.
+    const initialHeldState = await waitFor(
+      async () => {
+        const inventory = await heldSingleNative();
+        assert.equal(inventory.status, 'observed', 'Held native inventory is unavailable');
+        const seen = new Set(heldNativeBefore.items.map(({ id }) => id));
+        const created = inventory.items.filter(({ id }) => !seen.has(id));
+        assert(created.length <= 1, 'Held single created multiple native IDs');
+        const browserBegins = observer.beginsSince(heldSingleSince);
+        assert(browserBegins.length <= 1, 'Held single created multiple CDP downloads');
+        assert(
+          browserBegins.every(
+            (item) =>
+              item.url === heldOriginalUrl &&
+              [filename(0), heldSavedName].includes(item.suggestedFilename)
+          ),
+          'Held CDP start differs from the selected original'
+        );
+        const files = await readdir(downloads);
+        const addedFiles = files.filter((name) => !heldSingleBefore.has(name));
+        assert(
+          addedFiles.every((name) => name.endsWith('.crdownload')),
+          'Held single left a complete native file'
+        );
+        if (
+          created[0]?.state === 'in_progress' ||
+          (browserBegins.length === 1 && created.length === 0) ||
+          addedFiles.length
+        ) {
+          return undefined;
+        }
+        return assertHeldSingleCancellationState({
+          before: heldNativeBefore,
+          after: inventory,
+          browserBegins,
+          expectedUrl: heldOriginalUrl,
+          expectedNames: [filename(0), heldSavedName],
+          transferEvents: heldSingleEvents(),
+          beforeFiles: heldSingleBefore,
+          files,
+        });
+      },
+      'held native terminal state and temporary file cleanup',
+      5_000
+    );
+    const initialConsole = managerConsole.snapshotSince(heldManagerConsoleStart);
+    const initialDispatches = initialConsole.branchCounts.manager_request_branch ?? -1;
+    assert(initialDispatches >= 0 && initialDispatches <= 1);
+    const absenceStart = Date.now();
+    let absenceSamples = 0;
+    while (Date.now() - absenceStart < 2_000) {
+      const state = assertHeldSingleCancellationState({
+        before: heldNativeBefore,
+        after: await heldSingleNative(),
+        browserBegins: observer.beginsSince(heldSingleSince),
+        expectedUrl: heldOriginalUrl,
+        expectedNames: [filename(0), heldSavedName],
+        transferEvents: heldSingleEvents(),
+        beforeFiles: heldSingleBefore,
+        files: await readdir(downloads),
+      });
+      assert.deepEqual(state.nativeIds, initialHeldState.nativeIds, 'Late held native ID appeared');
+      assert.equal(
+        state.browserStarts,
+        initialHeldState.browserStarts,
+        'Late CDP download appeared'
+      );
+      assert.equal(
+        managerConsole.snapshotSince(heldManagerConsoleStart).branchCounts.manager_request_branch,
+        initialDispatches,
+        'Late manager download dispatch appeared'
+      );
+      assert(
+        !page.isClosed() && context.browser()?.isConnected(),
+        'Browser closed during held absence'
+      );
+      absenceSamples += 1;
+      await delay(100);
+    }
+    assert.deepEqual((await readdir(downloads)).sort(), [...heldSingleBefore].sort());
+    heldSingleBrowserStarts = initialHeldState.browserStarts;
+    result.cases.inFlightSingleCancellation = {
+      status: 'passed',
+      originalUrl: heldOriginalUrl,
+      installedBodySha256: heldScript.productBody.bodySha256,
+      gmCall: heldCall,
+      trace: heldTrace,
+      transport: { ...heldSingleTerminal },
+      nativeIds: initialHeldState.nativeIds,
+      browserStarts: initialHeldState.browserStarts,
+      managerDispatches: initialDispatches,
+      observedMs: Date.now() - absenceStart,
+      samples: absenceSamples,
+      diagnosticsRemovedBeforeEscape: heldTraceStopped,
+    };
+
+    await heldTrigger.click();
+    await gallery.waitFor({ state: 'visible' });
     loopback.setPhase('normal');
     phase = 'normal';
     await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Close"]').click();
@@ -4529,9 +4839,10 @@ async function runFixture(
       0,
       'Fixture route failed'
     );
+    assert(heldSingleBrowserStarts !== undefined, 'Held single cancellation was not observed');
     assert.equal(
       observer.snapshot(),
-      result.downloads.filter((download) => download.guid).length,
+      result.downloads.filter((download) => download.guid).length + heldSingleBrowserStarts,
       'Unexpected CDP download count'
     );
     const loopbackResult = loopback.snapshot();
@@ -4551,6 +4862,30 @@ async function runFixture(
     result.error = safeRouteError(error);
     throw error;
   } finally {
+    if (heldFrameTrace && !heldTraceStopped) {
+      try {
+        await heldFrameTrace.stop();
+      } catch (error) {
+        result.cleanup.heldFrameTraceError = safeRouteError(error).name;
+      }
+    }
+    if (heldPauseGuard) {
+      try {
+        const stopped = await heldPauseGuard.stop();
+        if (stopped.errors.length) {
+          result.cleanup.heldPauseGuardError = stopped.errors.join('; ').slice(0, 160);
+        }
+      } catch (error) {
+        result.cleanup.heldPauseGuardError = safeRouteError(error).name;
+      }
+    }
+    if (heldDebuggerSession) {
+      try {
+        await heldDebuggerSession.detach();
+      } catch (error) {
+        result.cleanup.heldDebuggerDetachError = safeRouteError(error).name;
+      }
+    }
     if (managerConsole) {
       try {
         managerConsole.dispose();

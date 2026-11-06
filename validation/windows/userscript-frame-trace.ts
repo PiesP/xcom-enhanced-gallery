@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';
 import type { LiveFilenameTarget } from './live-filename-target.ts';
 import { isLiveFilenameOriginal } from './live-filename-target.ts';
+import { MEDIA_COHORTS } from './userscript-document.ts';
 
 type TraceSession = {
   send(method: string, params?: Record<string, unknown>): Promise<unknown>;
@@ -197,6 +198,8 @@ export type FrameGmCall = {
   };
 };
 
+export type FrameTraceTarget = LiveFilenameTarget | { kind: 'held-fixture'; originalUrl: string };
+
 // These expressions read only the current lexical call frame. No page global receives evidence.
 export const LIVE_FILENAME_FRAME_EXPRESSION = `(() => {
   const text = (value, max) => typeof value === 'string' ? value.slice(0, max) : null;
@@ -278,12 +281,19 @@ function nullableDiagnosticString(value: unknown, max: number): boolean {
   return value === null || (typeof value === 'string' && value.length <= max);
 }
 
-function validateMedia(value: unknown, target: LiveFilenameTarget): FrameMedia {
+function validateMedia(value: unknown, target: FrameTraceTarget): FrameMedia {
   const item = boundedFrameValue(value);
   assert(stringField(item.generatedFilename, 256), 'Frame filename is missing');
   const source =
     (item.downloadSource as { url?: unknown } | null)?.url ?? item.originalUrl ?? item.url;
-  assert(isLiveFilenameOriginal(source, target), 'Frame media is not the selected original');
+  const selectedOriginal =
+    'kind' in target
+      ? target.kind === 'held-fixture' &&
+        target.originalUrl ===
+          `https://pbs.twimg.com/media/${MEDIA_COHORTS.held[0]}.jpg?format=jpg&name=orig` &&
+        source === target.originalUrl
+      : isLiveFilenameOriginal(source, target);
+  assert(selectedOriginal, 'Frame media is not the selected original');
   const gm = record(item.gm);
   const frameGlobal = record(item.frameGlobal);
   assert(nullableDiagnosticString(gm.scriptName, 80));
@@ -298,7 +308,7 @@ function validateMedia(value: unknown, target: LiveFilenameTarget): FrameMedia {
   return item as FrameMedia;
 }
 
-function validateGmCall(value: unknown, media: FrameMedia): FrameGmCall {
+function validateGmCall(value: unknown, media: FrameMedia, target: FrameTraceTarget): FrameGmCall {
   const item = boundedFrameValue(value);
   const args = record(item.args);
   const source = media.downloadSource?.url ?? media.originalUrl ?? media.url;
@@ -315,6 +325,10 @@ function validateGmCall(value: unknown, media: FrameMedia): FrameGmCall {
   assert(['undefined', 'object', 'function'].includes(String(item.returnType)));
   assert(['undefined', 'function'].includes(String(item.abortType)));
   assert(['undefined', 'function'].includes(String(item.thenType)));
+  if ('kind' in target) {
+    assert.equal(item.apiName, 'GM.download', 'Held fixture did not use GM.download');
+    assert.equal(item.abortType, 'function', 'Held GM.download returned no abort handle');
+  }
   return item as FrameGmCall;
 }
 
@@ -335,7 +349,7 @@ export function createInstalledUserscriptFrameTrace(options: {
   gmCallLine: number;
   gmCallKind: 'shared' | 'older-modern';
   gmCallerLines?: { modern: number; legacy: number } | null;
-  target: LiveFilenameTarget;
+  target: FrameTraceTarget;
 }): InstalledUserscriptFrameTrace {
   const { session, scriptId, filenameLine, gmCallLine, gmCallKind, gmCallerLines, target } =
     options;
@@ -483,7 +497,7 @@ export function createInstalledUserscriptFrameTrace(options: {
         media = validateMedia(result.value, target);
       } else {
         assert(media, 'GM call preceded selected media');
-        const call = validateGmCall(result.value, media);
+        const call = validateGmCall(result.value, media, target);
         const callerLine =
           call.apiName === 'GM.download' ? gmCallerLines?.modern : gmCallerLines?.legacy;
         const callers =
