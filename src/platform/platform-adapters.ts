@@ -61,6 +61,7 @@ export const getDownloadAdapter = createAdapter<DownloadAdapter>(
   () => {
     const api = getUserscript();
     return {
+      ownsUrlCancellation: true,
       download: (url: string, filename: string, _headers, signal) =>
         api.download(url, filename, signal),
       downloadBlob: (blob: Blob, filename: string, signal, onObjectUrlReleased) =>
