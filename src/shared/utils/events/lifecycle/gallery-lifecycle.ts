@@ -68,7 +68,11 @@ export function createGalleryLifecycle(): GalleryLifecycle {
       const clickHandler: EventListener = withTrustedEvent(async (evt: Event) => {
         await handleMediaClick(evt as MouseEvent, handlers, mergedOptions);
       });
-      eventManager.addEventListener(target, 'click', clickHandler, { ...listenerOptions, context });
+      // A host document capture listener may stop propagation before body.
+      eventManager.addEventListener(document, 'click', clickHandler, {
+        ...listenerOptions,
+        context,
+      });
     }
 
     resetKeyboardDebounceState();

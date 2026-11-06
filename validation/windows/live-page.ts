@@ -2977,7 +2977,7 @@ async function observeOne(
   } | null = null,
   strictPageClose = false,
   documentBaselines: Map<string, HostCspFingerprint[]> | null = null,
-  clickAdmission: { root: string } | null = null,
+  clickAdmission: { root: string; phaseOnly?: true } | null = null,
   reportedFilename: { root: string; downloads: string } | null = null
 ) {
   const identity = targetIdentity(targetUrl);
@@ -3432,6 +3432,7 @@ async function observeOne(
         page,
         extensionId,
         root: clickAdmission.root,
+        ...(clickAdmission.phaseOnly ? { phaseOnly: true as const } : {}),
         output,
         index,
         statusPath: new URL(targetUrl).pathname,
@@ -4169,7 +4170,7 @@ export async function observeLiveUrls({
   borrowedHostProof?: BorrowedHostDiagnosticProof | null;
   ownedCandidateProof?: OwnedCandidateInBorrowedBrowser | null;
   actualSiteAcceptance?: { downloads: string } | null;
-  clickAdmission?: { root: string } | null;
+  clickAdmission?: { root: string; phaseOnly?: true } | null;
   reportedFilename?: { root: string; downloads: string } | null;
 }) {
   if (

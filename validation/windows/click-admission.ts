@@ -9,6 +9,7 @@ import { isAbsolute, join } from 'node:path';
 import type { BrowserContext, CDPSession, Page } from '@playwright/test';
 
 const MAX_EVENTS = 48;
+const MAX_PHASE_EVENTS = 16;
 const CONTENT_URL = (id: string) => `chrome-extension://${id}/content.js`;
 
 type Stage = {
@@ -266,6 +267,138 @@ type ClickTraceEvent = {
   media?: { tag: string; host: string | null; path: string | null; pointInside: boolean | null };
 };
 
+type ClickPhaseEvent = {
+  stage: string;
+  timeStamp: number;
+  detail: number;
+  eventPhase: number;
+  isTrusted: true;
+  defaultPrevented: boolean;
+  cancelBubble: boolean;
+  targetTag: string;
+  targetTestId: string | null;
+  currentBodySame: boolean;
+  heldBodyInComposedPath: boolean;
+  currentBodyInComposedPath: boolean;
+  readinessMarker: boolean;
+  lastPathLabels: string[];
+};
+
+const PHASE_STAGES = new Set(
+  ['window', 'document', 'html', 'body'].flatMap((target) => [
+    `${target}.capture`,
+    `${target}.bubble`,
+  ])
+);
+
+/** Discard anything outside the phase observer's bounded, text-free record. */
+export function sanitizeClickPhaseEvent(raw: unknown): ClickPhaseEvent | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return null;
+  }
+  const item = raw as Record<string, unknown>;
+  if (
+    !PHASE_STAGES.has(String(item.stage)) ||
+    typeof item.timeStamp !== 'number' ||
+    !Number.isFinite(item.timeStamp) ||
+    typeof item.detail !== 'number' ||
+    !Number.isInteger(item.detail) ||
+    typeof item.eventPhase !== 'number' ||
+    ![1, 2, 3].includes(item.eventPhase) ||
+    item.isTrusted !== true ||
+    typeof item.defaultPrevented !== 'boolean' ||
+    typeof item.cancelBubble !== 'boolean' ||
+    typeof item.currentBodySame !== 'boolean' ||
+    typeof item.heldBodyInComposedPath !== 'boolean' ||
+    typeof item.currentBodyInComposedPath !== 'boolean' ||
+    typeof item.readinessMarker !== 'boolean' ||
+    typeof item.targetTag !== 'string' ||
+    !/^[A-Z]{1,16}$/u.test(item.targetTag) ||
+    (item.targetTestId !== null &&
+      (typeof item.targetTestId !== 'string' ||
+        !/^[A-Za-z0-9_-]{1,60}$/u.test(item.targetTestId))) ||
+    !Array.isArray(item.lastPathLabels) ||
+    item.lastPathLabels.length > 8 ||
+    item.lastPathLabels.some(
+      (label) =>
+        typeof label !== 'string' || !/^(?:[A-Z]{1,16}|DOCUMENT|WINDOW|OTHER)$/u.test(label)
+    )
+  ) {
+    return null;
+  }
+  return {
+    stage: item.stage as string,
+    timeStamp: item.timeStamp,
+    detail: item.detail,
+    eventPhase: item.eventPhase,
+    isTrusted: true,
+    defaultPrevented: item.defaultPrevented,
+    cancelBubble: item.cancelBubble,
+    targetTag: item.targetTag,
+    targetTestId: item.targetTestId as string | null,
+    currentBodySame: item.currentBodySame,
+    heldBodyInComposedPath: item.heldBodyInComposedPath,
+    currentBodyInComposedPath: item.currentBodyInComposedPath,
+    readinessMarker: item.readinessMarker,
+    lastPathLabels: [...item.lastPathLabels] as string[],
+  };
+}
+
+const PHASE_INSTALL_FUNCTION = `function(config, heldBody) {
+  if (Object.prototype.hasOwnProperty.call(globalThis, config.key) ||
+      !(heldBody instanceof HTMLBodyElement) ||
+      typeof globalThis[config.binding] !== 'function') return { installed: false };
+  const targets = [
+    ['window', window], ['document', document],
+    ['html', document.documentElement], ['body', heldBody]
+  ];
+  const listeners = [];
+  globalThis[config.key] = { marker: config.marker, listeners };
+  const label = (node) => node === window ? 'WINDOW' : node === document ? 'DOCUMENT' :
+    node instanceof Element && /^[A-Z]{1,16}$/.test(node.tagName) ? node.tagName : 'OTHER';
+  for (const [targetName, target] of targets) {
+    for (const capture of [true, false]) {
+      const callback = (event) => {
+        try {
+          if (!event.isTrusted || event.button !== 0 ||
+              location.pathname !== config.statusPath || !(event.target instanceof Element)) return;
+          const path = event.composedPath();
+          if (!path.some((node) => node instanceof HTMLAnchorElement &&
+              node.pathname === config.actionPath)) return;
+          const testId = event.target.getAttribute('data-testid');
+          globalThis[config.binding](JSON.stringify({
+            stage: targetName + '.' + (capture ? 'capture' : 'bubble'),
+            timeStamp: event.timeStamp, detail: event.detail, eventPhase: event.eventPhase,
+            isTrusted: true, defaultPrevented: event.defaultPrevented,
+            cancelBubble: event.cancelBubble, targetTag: event.target.tagName,
+            targetTestId: testId && /^[A-Za-z0-9_-]{1,60}$/.test(testId) ? testId : null,
+            currentBodySame: document.body === heldBody,
+            heldBodyInComposedPath: path.includes(heldBody),
+            currentBodyInComposedPath: path.includes(document.body),
+            readinessMarker: document.documentElement?.getAttribute('data-xeg-gallery-ready') === 'true',
+            lastPathLabels: path.slice(-8).map(label)
+          }));
+        } catch {}
+      };
+      target.addEventListener('click', callback, { capture, passive: true });
+      listeners.push({ target, callback, capture });
+    }
+  }
+  return { installed: true, targets: targets.map(([name]) => name), listenerCount: listeners.length,
+    heldBodyCurrent: document.body === heldBody };
+}`;
+
+const PHASE_REMOVE_FUNCTION = `function(config) {
+  const state = globalThis[config.key];
+  if (!state || state.marker !== config.marker) return { removed: false };
+  for (const item of state.listeners) {
+    item.target.removeEventListener('click', item.callback, item.capture);
+  }
+  const removed = delete globalThis[config.key];
+  return { removed: removed && !Object.prototype.hasOwnProperty.call(globalThis, config.key),
+    listenerCount: state.listeners.length };
+}`;
+
 export function sanitizeClickAdmissionEvent(raw: unknown): ClickTraceEvent | null {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
     return null;
@@ -395,6 +528,43 @@ function sha256(value: string): string {
   return createHash('sha256').update(value).digest('hex');
 }
 
+/** Phase-only traces prove propagation without requiring a product logpoint hit. */
+export function clickTraceCaptured(input: {
+  phaseOnly: boolean;
+  productEvents: number;
+  phaseEvents: number;
+  productOverflow: boolean;
+  phaseOverflow: boolean;
+  invalidProductEvents: number;
+  invalidPhaseEvents: number;
+}): boolean {
+  return (
+    (input.phaseOnly || input.productEvents > 0) &&
+    input.phaseEvents > 0 &&
+    !input.productOverflow &&
+    !input.phaseOverflow &&
+    input.invalidProductEvents === 0 &&
+    input.invalidPhaseEvents === 0
+  );
+}
+
+/** Accept only the two explicit, diagnostic-only selector shapes. */
+export function parseClickAdmissionSelector(text: string): { phaseOnly?: true } {
+  const selector: unknown = JSON.parse(text);
+  const phaseOnly =
+    selector !== null &&
+    typeof selector === 'object' &&
+    !Array.isArray(selector) &&
+    'phaseOnly' in selector &&
+    selector.phaseOnly === true;
+  assert.deepEqual(selector, {
+    scenario: 'live-click-admission',
+    diagnosticOnly: true,
+    ...(phaseOnly ? { phaseOnly: true } : {}),
+  });
+  return phaseOnly ? { phaseOnly: true } : {};
+}
+
 async function waitFor<T>(read: () => T | null, label: string): Promise<T> {
   const deadline = Date.now() + 5_000;
   while (Date.now() < deadline) {
@@ -417,35 +587,55 @@ export async function withClickAdmissionTrace<T>(options: {
   index: string | number;
   statusPath: string;
   actionPath: string;
+  phaseOnly?: true;
   action: () => Promise<T>;
 }): Promise<T> {
+  const phaseOnly = options.phaseOnly === true;
   const name = `__xegClickAdmission482${randomUUID().replaceAll('-', '')}`;
+  const phaseName = `${name}Phase`;
+  const phaseStateKey = `${name}PhaseState`;
   const receipt: Record<string, unknown> = {
     schemaVersion: 1,
     kind: 'installed-extension-live-click-admission',
+    traceMode: phaseOnly ? 'phase-only' : 'full',
     status: 'incomplete',
     source: null,
     target: { statusPath: options.statusPath, actionPath: options.actionPath },
     events: [],
+    phaseEvents: [],
+    phasePlacement: null,
+    installedPointCount: 0,
     overflow: false,
     invalidEvents: 0,
+    phaseOverflow: false,
+    invalidPhaseEvents: 0,
     cleanup: {
       breakpointsRemoved: false,
       bindingRemoved: false,
       globalBinding: 'not-installed',
+      phaseListeners: 'not-installed',
+      phaseBindingRemoved: false,
+      phaseGlobalBinding: 'not-installed',
       sessionDetached: false,
     },
   };
   const events = receipt.events as ClickTraceEvent[];
+  const phaseEvents = receipt.phaseEvents as ClickPhaseEvent[];
   const cleanup = receipt.cleanup as Record<string, boolean | string>;
   let cdp: CDPSession | null = null;
   const breakpoints: string[] = [];
   let bindingAdded = false;
+  let phaseBindingAdded = false;
+  let phaseInstallAttempted = false;
   let result!: T;
   let failure: unknown;
   const cleanupErrors: string[] = [];
   let realmId: number | null = null;
   let realmDestroyed = false;
+  let mainRealmId: number | null = null;
+  let mainRealmDestroyed = false;
+  let mainBodyObjectId: string | null = null;
+  let mainBodyObjectReleased = false;
   try {
     assert.equal(options.page.context(), options.context);
     assert(
@@ -458,7 +648,7 @@ export async function withClickAdmissionTrace<T>(options: {
     assert.equal(new URL(options.page.url()).pathname, options.statusPath);
     assert(/^[A-Za-z0-9-]{1,48}$/u.test(String(options.index)), 'Invalid observation index');
     const source = await readFile(join(options.root, 'dist-extension/content.js'), 'utf8');
-    const sites = resolveClickAdmissionSites(source);
+    const sites = phaseOnly ? [] : resolveClickAdmissionSites(source);
     cdp = await options.context.newCDPSession(options.page);
     const scripts: Array<{ scriptId: string; url: string }> = [];
     const realms: Array<{
@@ -489,22 +679,46 @@ export async function withClickAdmissionTrace<T>(options: {
       if (item.executionContextId === realmId) {
         realmDestroyed = true;
       }
+      if (item.executionContextId === mainRealmId) {
+        mainRealmDestroyed = true;
+      }
+    });
+    cdp.on('Runtime.executionContextsCleared', () => {
+      realmDestroyed = realmId !== null;
+      mainRealmDestroyed = mainRealmId !== null;
     });
     cdp.on(
       'Runtime.bindingCalled',
       (item: { name: string; payload: string; executionContextId: number }) => {
-        if (item.name !== name) {
+        if (item.name !== name && item.name !== phaseName) {
           return;
         }
-        if (item.payload.length > 2048 || item.executionContextId !== realmId) {
-          receipt.invalidEvents = Number(receipt.invalidEvents ?? 0) + 1;
+        const isPhase = item.name === phaseName;
+        if (
+          item.payload.length > 2048 ||
+          item.executionContextId !== (isPhase ? mainRealmId : realmId)
+        ) {
+          const key = isPhase ? 'invalidPhaseEvents' : 'invalidEvents';
+          receipt[key] = Number(receipt[key] ?? 0) + 1;
           return;
         }
         let parsed: unknown;
         try {
           parsed = JSON.parse(item.payload);
         } catch {
-          receipt.invalidEvents = Number(receipt.invalidEvents ?? 0) + 1;
+          const key = isPhase ? 'invalidPhaseEvents' : 'invalidEvents';
+          receipt[key] = Number(receipt[key] ?? 0) + 1;
+          return;
+        }
+        if (isPhase) {
+          const phase = sanitizeClickPhaseEvent(parsed);
+          if (!phase) {
+            receipt.invalidPhaseEvents = Number(receipt.invalidPhaseEvents ?? 0) + 1;
+          } else if (phaseEvents.length === MAX_PHASE_EVENTS) {
+            receipt.phaseOverflow = true;
+          } else {
+            phaseEvents.push(phase);
+          }
           return;
         }
         const event = sanitizeClickAdmissionEvent(parsed);
@@ -544,79 +758,160 @@ export async function withClickAdmissionTrace<T>(options: {
     assert.equal(matchingRealms.length, 1, 'Installed content realm is ambiguous');
     const realm = matchingRealms[0]!;
     realmId = realm.id;
+    const findMainRealms = () =>
+      realms.filter(
+        (item) => item.auxData?.frameId === frameTree.frame.id && item.auxData.isDefault === true
+      );
+    await waitFor(() => findMainRealms()[0] ?? null, 'Target main realm');
+    const mainRealms = findMainRealms();
+    assert.equal(mainRealms.length, 1, 'Target main realm is ambiguous');
+    mainRealmId = mainRealms[0]!.id;
     receipt.source = {
       artifactSha256: sha256(source),
       executedSha256: sha256(executed.scriptSource),
       siteCount: sites.length,
     };
-    const bodyObject = await cdp.send('Runtime.evaluate', {
-      expression: 'document.body',
-      contextId: realm.id,
-      objectGroup: name,
-    });
-    assert(bodyObject.result.objectId, 'Installed page body was not observed');
+    const inventoryRecord: Record<string, unknown> = {};
     try {
-      const inventory = await cdp.send('DOMDebugger.getEventListeners', {
-        objectId: bodyObject.result.objectId,
-        depth: 0,
-      });
-      const clickListeners = inventory.listeners.filter(
-        (item: { type: string }) => item.type === 'click'
-      );
-      const product = clickListeners.filter(
-        (item: { scriptId: string }) => item.scriptId === script.scriptId
-      );
-      receipt.listenerInventory = {
-        bodyClickCount: clickListeners.length,
-        productBodyClick: product.map(
-          (item: {
-            lineNumber: number;
-            columnNumber: number;
-            useCapture: boolean;
-            passive: boolean;
-            once: boolean;
-          }) => ({
-            lineNumber: item.lineNumber,
-            columnNumber: item.columnNumber,
-            capture: item.useCapture,
-            passive: item.passive,
-            once: item.once,
-          })
-        ),
-      };
+      for (const [expression, countKey, productKey] of [
+        ['document.body', 'bodyClickCount', 'productBodyClick'],
+        ['document', 'documentClickCount', 'productDocumentClick'],
+      ] as const) {
+        const targetObject: { result: { objectId?: string } } = await cdp.send('Runtime.evaluate', {
+          expression,
+          contextId: realm.id,
+          objectGroup: name,
+        });
+        assert(targetObject.result.objectId, 'Installed listener target was not observed');
+        const inventory = await cdp.send('DOMDebugger.getEventListeners', {
+          objectId: targetObject.result.objectId,
+          depth: 0,
+        });
+        const clickListeners = inventory.listeners.filter(
+          (item: { type: string }) => item.type === 'click'
+        );
+        inventoryRecord[countKey] = clickListeners.length;
+        inventoryRecord[productKey] = clickListeners
+          .filter((item: { scriptId: string }) => item.scriptId === script.scriptId)
+          .map(
+            (item: {
+              lineNumber: number;
+              columnNumber: number;
+              useCapture: boolean;
+              passive: boolean;
+              once: boolean;
+            }) => ({
+              lineNumber: item.lineNumber,
+              columnNumber: item.columnNumber,
+              capture: item.useCapture,
+              passive: item.passive,
+              once: item.once,
+            })
+          );
+      }
+      receipt.listenerInventory = inventoryRecord;
     } finally {
       await cdp.send('Runtime.releaseObjectGroup', { objectGroup: name });
     }
-    await cdp.send('Runtime.addBinding', { name, executionContextId: realm.id });
-    bindingAdded = true;
-    cleanup.globalBinding = 'pending';
-    for (const site of sites) {
-      const bound: {
-        breakpointId: string;
-        locations?: Array<{ scriptId: string; lineNumber: number }>;
-      } = await cdp.send('Debugger.setBreakpointByUrl', {
-        url: script.url,
-        lineNumber: site.lineNumber,
-        condition: logpointCondition(site, name, options.statusPath, options.actionPath),
-      });
-      assert(
-        bound.locations?.some(
-          (point: { scriptId: string; lineNumber: number }) =>
-            point.scriptId === script.scriptId && point.lineNumber === site.lineNumber
-        ),
-        `Click logpoint did not bind: ${site.name}`
-      );
-      breakpoints.push(bound.breakpointId);
+    const heldMainBody = await cdp.send('Runtime.evaluate', {
+      expression: 'document.body',
+      contextId: mainRealmId,
+      objectGroup: phaseStateKey,
+    });
+    assert(heldMainBody.result.objectId, 'Target main-realm body was not observed');
+    mainBodyObjectId = heldMainBody.result.objectId;
+    if (!phaseOnly) {
+      await cdp.send('Runtime.addBinding', { name, executionContextId: realm.id });
+      bindingAdded = true;
+      cleanup.globalBinding = 'pending';
+      for (const site of sites) {
+        const bound: {
+          breakpointId: string;
+          locations?: Array<{ scriptId: string; lineNumber: number }>;
+        } = await cdp.send('Debugger.setBreakpointByUrl', {
+          url: script.url,
+          lineNumber: site.lineNumber,
+          condition: logpointCondition(site, name, options.statusPath, options.actionPath),
+        });
+        assert(
+          bound.locations?.some(
+            (point: { scriptId: string; lineNumber: number }) =>
+              point.scriptId === script.scriptId && point.lineNumber === site.lineNumber
+          ),
+          `Click logpoint did not bind: ${site.name}`
+        );
+        breakpoints.push(bound.breakpointId);
+      }
     }
+    receipt.installedPointCount = breakpoints.length;
+    await cdp.send('Runtime.addBinding', { name: phaseName, executionContextId: mainRealmId });
+    phaseBindingAdded = true;
+    cleanup.phaseGlobalBinding = 'pending';
+    phaseInstallAttempted = true;
+    const installedPhase = await cdp.send('Runtime.callFunctionOn', {
+      executionContextId: mainRealmId,
+      functionDeclaration: PHASE_INSTALL_FUNCTION,
+      arguments: [
+        {
+          value: {
+            key: phaseStateKey,
+            binding: phaseName,
+            marker: name,
+            statusPath: options.statusPath,
+            actionPath: options.actionPath,
+          },
+        },
+        { objectId: mainBodyObjectId },
+      ],
+      returnByValue: true,
+    });
+    const placement = installedPhase.result.value as {
+      installed?: boolean;
+      targets?: string[];
+      listenerCount?: number;
+      heldBodyCurrent?: boolean;
+    };
+    assert.equal(placement.installed, true, 'Main-realm click phase observer was unavailable');
+    assert.deepEqual(placement.targets, ['window', 'document', 'html', 'body']);
+    assert.equal(placement.listenerCount, 8);
+    receipt.phasePlacement = {
+      realm: 'main-frame-default',
+      targets: placement.targets,
+      listenerCount: placement.listenerCount,
+      heldBodyCurrent: placement.heldBodyCurrent,
+      bodyObserverAddedAfterInventory: true,
+    };
+    cleanup.phaseListeners = 'pending';
+    await cdp.send('Runtime.releaseObjectGroup', { objectGroup: phaseStateKey });
+    mainBodyObjectReleased = true;
     result = await options.action();
     await new Promise((done) => setTimeout(done, 100));
-    receipt.status =
-      events.length && !receipt.overflow && !receipt.invalidEvents ? 'captured' : 'incomplete';
+    receipt.status = clickTraceCaptured({
+      phaseOnly,
+      productEvents: events.length,
+      phaseEvents: phaseEvents.length,
+      productOverflow: receipt.overflow === true,
+      phaseOverflow: receipt.phaseOverflow === true,
+      invalidProductEvents: Number(receipt.invalidEvents),
+      invalidPhaseEvents: Number(receipt.invalidPhaseEvents),
+    })
+      ? 'captured'
+      : 'incomplete';
   } catch (error) {
     failure = error;
     receipt.failure = error instanceof Error ? error.name : 'Error';
   } finally {
+    if (failure && (bindingAdded || phaseBindingAdded)) {
+      await new Promise((done) => setTimeout(done, 100));
+    }
     if (cdp) {
+      if (mainBodyObjectId && !mainBodyObjectReleased && !mainRealmDestroyed) {
+        try {
+          await cdp.send('Runtime.releaseObjectGroup', { objectGroup: phaseStateKey });
+        } catch {
+          cleanupErrors.push('main-body-object');
+        }
+      }
       for (const breakpointId of breakpoints) {
         try {
           await cdp.send('Debugger.removeBreakpoint', { breakpointId });
@@ -625,6 +920,58 @@ export async function withClickAdmissionTrace<T>(options: {
         }
       }
       cleanup.breakpointsRemoved = cleanupErrors.every((value) => value !== 'breakpoint');
+      if (phaseInstallAttempted) {
+        if (mainRealmDestroyed) {
+          cleanup.phaseListeners = 'context-destroyed';
+        } else {
+          try {
+            const removed = await cdp.send('Runtime.callFunctionOn', {
+              executionContextId: mainRealmId!,
+              functionDeclaration: PHASE_REMOVE_FUNCTION,
+              arguments: [{ value: { key: phaseStateKey, marker: name } }],
+              returnByValue: true,
+            });
+            assert.equal(removed.result.value?.removed, true, 'Click phase listeners remained');
+            assert.equal(removed.result.value?.listenerCount, 8);
+            cleanup.phaseListeners = 'removed';
+          } catch {
+            cleanup.phaseListeners = mainRealmDestroyed ? 'context-destroyed' : 'failed';
+            if (!mainRealmDestroyed) {
+              cleanupErrors.push('phase-listeners');
+            }
+          }
+        }
+      }
+      if (phaseBindingAdded) {
+        if (mainRealmDestroyed) {
+          cleanup.phaseGlobalBinding = 'context-destroyed';
+        } else {
+          try {
+            const removed = await cdp.send('Runtime.callFunctionOn', {
+              executionContextId: mainRealmId!,
+              functionDeclaration:
+                'function(key) { const removed = delete globalThis[key]; return removed && !Object.prototype.hasOwnProperty.call(globalThis, key); }',
+              arguments: [{ value: phaseName }],
+              returnByValue: true,
+            });
+            assert.equal(removed.result.value, true, 'Click phase global binding remained');
+            cleanup.phaseGlobalBinding = 'removed';
+          } catch {
+            cleanup.phaseGlobalBinding = mainRealmDestroyed ? 'context-destroyed' : 'failed';
+            if (!mainRealmDestroyed) {
+              cleanupErrors.push('phase-global-binding');
+            }
+          }
+        }
+        try {
+          await cdp.send('Runtime.removeBinding', { name: phaseName });
+          cleanup.phaseBindingRemoved = true;
+        } catch {
+          cleanupErrors.push('phase-binding');
+        }
+      } else {
+        cleanup.phaseBindingRemoved = true;
+      }
       if (bindingAdded) {
         if (realmDestroyed) {
           cleanup.globalBinding = 'context-destroyed';

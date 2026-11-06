@@ -13,7 +13,11 @@ import { DEFAULT_REQUEST_TIMEOUT_MS } from '@constants/performance';
 import { isHttpResponseSizeLimitError } from '@shared/error/http-response-size-limit-error';
 import { readResponseBody } from '@shared/network/bounded-response';
 import { isAllowedUrl } from '@shared/utils/url/url-safety';
-import { parseRetryAfter, validatedHttpStatus } from './http-response-metadata';
+import {
+  parseRetryAfter,
+  safeHeadContentType,
+  validatedHttpStatus,
+} from './http-response-metadata';
 import type {
   HttpRequestAdapter,
   HttpRequestControl,
@@ -207,11 +211,14 @@ export class MV3HttpRequestAdapter implements HttpRequestAdapter {
     }
 
     return {
-      finalUrl: '',
+      finalUrl: method === 'HEAD' ? response.url : '',
       readyState: 4,
       status: validatedHttpStatus(response.status),
       statusText: response.statusText,
-      responseHeaders: '',
+      responseHeaders:
+        method === 'HEAD'
+          ? safeHeadContentType(`Content-Type: ${response.headers.get('content-type') ?? ''}`)
+          : '',
       response: responseBody,
       readable: true,
       ...(retryAfterMs !== undefined ? { retryAfterMs } : {}),

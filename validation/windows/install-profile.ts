@@ -42,6 +42,7 @@ import {
   verifyStoredZip,
   waitForRemovedDownloadFile,
 } from './download-memory.ts';
+import { parseClickAdmissionSelector } from './click-admission.ts';
 import { startExtensionNativeFixtureLoopback } from './extension-native-loopback.ts';
 import {
   installFilenameDecisionControl,
@@ -20365,11 +20366,9 @@ export async function run({
     }
     throw error;
   });
+  const clickAdmissionSelector =
+    clickAdmissionText === null ? null : parseClickAdmissionSelector(clickAdmissionText);
   if (clickAdmissionText !== null) {
-    assert.deepEqual(JSON.parse(clickAdmissionText), {
-      scenario: 'live-click-admission',
-      diagnosticOnly: true,
-    });
     assert.equal(browserName, 'chrome', 'Live click diagnosis requires installed Chrome');
     assert.equal(installation, 'extension');
     assert.deepEqual(liveUrls, ['https://x.com/yukurach/status/2118323627615785399']);
@@ -21010,7 +21009,8 @@ export async function run({
             liveUrls: validatedLiveUrls,
             output,
             actualSiteAcceptance: actualSiteAcceptance ? { downloads } : null,
-            clickAdmission: clickAdmissionText === null ? null : { root },
+            clickAdmission:
+              clickAdmissionText === null ? null : { root, ...clickAdmissionSelector },
             reportedFilename: reportedFilenameText === null ? null : { root, downloads },
           });
       if (liveSettingsProbe) {

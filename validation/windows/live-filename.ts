@@ -3,10 +3,11 @@
 
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, realpath, writeFile } from 'node:fs/promises';
-import { basename, isAbsolute, join, relative } from 'node:path';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { basename, join } from 'node:path';
 import type { BrowserContext, Page } from '@playwright/test';
 import { readExactDownloadFile } from './download-memory.ts';
+import { readOwnedNativeBytes, readOwnedNativeFile } from './firefox-install.ts';
 import { selectedLivePreferredSource, withFilenameCorrelation } from './filename-correlation.ts';
 
 type NativeItem = {
@@ -187,6 +188,10 @@ export async function runReportedLiveFilename(options: {
           return { item: added, priorIds: [...ids] };
         }
         assert(!added || added.state !== 'interrupted', 'Live native download interrupted');
+        assert(
+          (await gallery.locator('[data-download-status="error"]').count()) === 0,
+          'Product download failed before native completion'
+        );
         await page.waitForTimeout(100);
       }
       throw new Error('Live native download did not complete');
@@ -284,14 +289,8 @@ export async function runReportedLiveFilename(options: {
     const verifySave = async (save: Awaited<ReturnType<typeof activate>>, label: string) => {
       const { item, priorIds } = save;
       assert.equal(item.url, source, 'Native URL differs from captured preferred source');
-      const ownedRoot = await realpath(downloads);
-      const actual = await realpath(item.filename);
-      const inside = relative(ownedRoot, actual);
-      assert(
-        inside && !inside.startsWith('..') && !isAbsolute(inside),
-        'Live native file escaped task directory'
-      );
-      const { bytes } = await readExactDownloadFile(item.filename, original.length);
+      const { bytes } = await readOwnedNativeBytes(downloads, item.filename, original.length);
+      assert.equal(bytes.length, original.length);
       assert(bytes.equals(original), 'Live saved file differs from independent original GET');
       const actualName = basename(item.filename);
       const copyRoot = join(output, `live-original-${item.id}`);
@@ -324,7 +323,7 @@ export async function runReportedLiveFilename(options: {
         [...priorIds, item.id].sort((a, b) => a - b),
         'Completion or dismissal created an extra save'
       );
-      assert((await readExactDownloadFile(item.filename, original.length)).bytes.equals(original));
+      await readOwnedNativeFile(downloads, item.filename, original);
       saves.push({
         label,
         native: { ...item, filename: actualName },

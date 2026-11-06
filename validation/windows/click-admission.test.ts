@@ -2,7 +2,13 @@
 // Copyright (c) 2026 PiesP
 
 import { describe, expect, it } from 'vitest';
-import { resolveClickAdmissionSites, sanitizeClickAdmissionEvent } from './click-admission.ts';
+import {
+  clickTraceCaptured,
+  parseClickAdmissionSelector,
+  resolveClickAdmissionSites,
+  sanitizeClickAdmissionEvent,
+  sanitizeClickPhaseEvent,
+} from './click-admission.ts';
 
 // Frozen excerpt of the production unminified content bundle at the diagnostic source revision.
 // Runtime binding separately requires byte-for-byte identity with the installed script.
@@ -111,6 +117,41 @@ const event = {
 };
 
 describe('installed live click admission diagnostic', () => {
+  it('admits only explicit phase-only or full diagnostic selectors', () => {
+    expect(
+      parseClickAdmissionSelector('{"scenario":"live-click-admission","diagnosticOnly":true}')
+    ).toEqual({});
+    expect(
+      parseClickAdmissionSelector(
+        '{"scenario":"live-click-admission","diagnosticOnly":true,"phaseOnly":true}'
+      )
+    ).toEqual({ phaseOnly: true });
+    for (const selector of [
+      '{"scenario":"live-click-admission","diagnosticOnly":true,"phaseOnly":false}',
+      '{"scenario":"live-click-admission","diagnosticOnly":true,"phaseOnly":true,"extra":1}',
+      '{"scenario":"live-click-admission","diagnosticOnly":false,"phaseOnly":true}',
+    ]) {
+      expect(() => parseClickAdmissionSelector(selector)).toThrow();
+    }
+  });
+
+  it('permits phase evidence alone only in the explicit phase-only mode', () => {
+    const evidence = {
+      phaseOnly: false,
+      productEvents: 0,
+      phaseEvents: 3,
+      productOverflow: false,
+      phaseOverflow: false,
+      invalidProductEvents: 0,
+      invalidPhaseEvents: 0,
+    };
+    expect(clickTraceCaptured(evidence)).toBe(false);
+    expect(clickTraceCaptured({ ...evidence, phaseOnly: true })).toBe(true);
+    expect(clickTraceCaptured({ ...evidence, productEvents: 1 })).toBe(true);
+    expect(clickTraceCaptured({ ...evidence, phaseOnly: true, phaseEvents: 0 })).toBe(false);
+    expect(clickTraceCaptured({ ...evidence, phaseOnly: true, phaseOverflow: true })).toBe(false);
+  });
+
   it('binds every required stage to one executable location and rejects source drift', () => {
     const sites = resolveClickAdmissionSites(executableFixture);
     expect(sites).toHaveLength(39);
@@ -165,5 +206,33 @@ describe('installed live click admission diagnostic', () => {
         media: { tag: 'IMG', host: 'example.com', path: '/secret', pointInside: false },
       })
     ).toBeNull();
+  });
+
+  it('keeps only bounded, text-free click propagation evidence', () => {
+    const phase = {
+      stage: 'window.capture',
+      timeStamp: 142.5,
+      detail: 1,
+      eventPhase: 1,
+      isTrusted: true,
+      defaultPrevented: false,
+      cancelBubble: false,
+      targetTag: 'A',
+      targetTestId: null,
+      currentBodySame: false,
+      heldBodyInComposedPath: false,
+      currentBodyInComposedPath: true,
+      readinessMarker: true,
+      lastPathLabels: ['A', 'DIV', 'BODY', 'HTML', 'DOCUMENT', 'WINDOW'],
+    };
+    expect(sanitizeClickPhaseEvent({ ...phase, privatePostText: 'discard' })).toEqual(phase);
+    expect(sanitizeClickPhaseEvent({ ...phase, stage: 'body.bubble' })).toEqual({
+      ...phase,
+      stage: 'body.bubble',
+    });
+    expect(sanitizeClickPhaseEvent({ ...phase, stage: 'private.phase' })).toBeNull();
+    expect(sanitizeClickPhaseEvent({ ...phase, isTrusted: false })).toBeNull();
+    expect(sanitizeClickPhaseEvent({ ...phase, lastPathLabels: ['private text'] })).toBeNull();
+    expect(sanitizeClickPhaseEvent({ ...phase, lastPathLabels: Array(9).fill('DIV') })).toBeNull();
   });
 });

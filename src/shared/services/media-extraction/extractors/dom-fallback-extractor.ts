@@ -19,6 +19,11 @@ import {
   captureClickedMediaEvidence,
   getMediaSourceKey,
 } from '@shared/services/media-extraction/determine-clicked-index';
+import {
+  getDomImageOriginalProbeUrl,
+  markDomImageOriginalProbeLimit,
+  resolveDomImageOriginal,
+} from '@shared/services/media-extraction/extractors/dom-image-original';
 import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
 import type {
   MediaExtractionOptions,
@@ -299,6 +304,82 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
             'dom-clicked-media-unavailable'
           );
         }
+      }
+
+      // The clicked photo gets first claim on a four-source budget. Duplicate
+      // tiles share a probe while retaining their own identity and order.
+      const resolvedByUrl = new Map<string, Promise<MediaInfo>>();
+      const resolutions: Array<Promise<void>> = [];
+      const orderedIndices = [
+        clickedIndex,
+        ...mediaItems.map((_, index) => index).filter((index) => index !== clickedIndex),
+      ];
+      for (const index of orderedIndices) {
+        const media = mediaItems[index];
+        if (!media) {
+          continue;
+        }
+        const original = getDomImageOriginalProbeUrl(media);
+        if (!original) {
+          continue;
+        }
+        let task = resolvedByUrl.get(original);
+        if (!task && resolvedByUrl.size >= 4) {
+          mediaItems[index] = markDomImageOriginalProbeLimit(media, original);
+          continue;
+        }
+        if (!task) {
+          task = resolveDomImageOriginal(media, options.signal);
+          resolvedByUrl.set(original, task);
+        }
+        resolutions.push(
+          task.then((resolved) => {
+            mediaItems[index] = {
+              ...media,
+              originalUrl: resolved.originalUrl ?? original,
+              ...(resolved.downloadSource ? { downloadSource: resolved.downloadSource } : {}),
+              metadata: {
+                ...media.metadata,
+                originalSourceResolution: resolved.metadata?.originalSourceResolution,
+              },
+            };
+          })
+        );
+      }
+      await Promise.all(resolutions);
+      if (options.signal?.aborted) {
+        return createFailureResult(
+          'DOM extraction cancelled',
+          'dom-fallback',
+          'dom-extraction-cancelled'
+        );
+      }
+
+      // Network callbacks may settle after navigation or after the clicked tile changes.
+      const currentClicked = findMediaElementInDOM(clickedElement);
+      const currentOwnerAfterProbe = ownerExtractor.extractContext(clickedElement);
+      const currentSource = currentClicked ? extractMediaUrlFromElement(currentClicked) : null;
+      const currentContainer = article
+        ? closestWithFallback<HTMLElement>(clickedElement, TWEET_CONTAINER_SELECTORS)
+        : clickedElement.closest<HTMLElement>(STATUS_LINK_SELECTOR);
+      if (
+        !clickedElement.isConnected ||
+        !currentClicked?.isConnected ||
+        !tweetContainer.isConnected ||
+        currentContainer !== tweetContainer ||
+        currentClicked !== clickedMedia ||
+        currentOwnerAfterProbe?.ownership.ownerTweetId !== tweetInfo.tweetId ||
+        getMediaSourceKey(currentSource) !==
+          getMediaSourceKey(mediaItems[clickedIndex]?.url ?? null) ||
+        (options.clickedMediaEvidence &&
+          captureClickedMediaEvidence(clickedElement).sourceKey !==
+            options.clickedMediaEvidence.sourceKey)
+      ) {
+        return createFailureResult(
+          'Clicked media changed during extraction',
+          'dom-fallback',
+          'dom-clicked-media-unavailable'
+        );
       }
 
       if (__DEV__) {

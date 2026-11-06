@@ -4,11 +4,12 @@
 /** Diagnostic-only instrumentation for one task-owned installed Chrome download. */
 import assert from 'node:assert/strict';
 import { createHash, randomUUID } from 'node:crypto';
-import { readFile, realpath, writeFile } from 'node:fs/promises';
-import { basename, isAbsolute, relative, resolve } from 'node:path';
+import { readFile, writeFile } from 'node:fs/promises';
+import { basename, isAbsolute, resolve } from 'node:path';
 import type { BrowserContext, CDPSession, Page, Worker } from '@playwright/test';
 import { COMPACT_FIXTURE_URL } from './install-preparation.ts';
 import { readExactDownloadFile } from './download-memory.ts';
+import { readOwnedNativeBytes } from './firefox-install.ts';
 
 declare const chrome: {
   runtime: {
@@ -67,12 +68,13 @@ const CONTENT_INSTALL_FUNCTION = `function(config) {
 const CONTENT_LOGPOINT_CONDITION = `(() => {
   const state = globalThis.__xegFilenameCorrelation482V1;
   const preferred = media?.downloadSource?.url ?? media?.originalUrl ?? media?.url;
+  const resolution = media?.metadata?.originalSourceResolution;
   if (!state || typeof media?.id !== 'string' || !media.id ||
       typeof filename !== 'string' || !filename || typeof preferred !== 'string') return false;
   if (state.target === 'owned-fixture' && preferred !== state.expectedUrl) return false;
   if (state.target === 'reported-live-post') {
     let source;
-    try { source = new URL(preferred); } catch { return false; }
+    try { source = new URL(preferred || media?.originalUrl || media?.url); } catch { return false; }
     const path = /^\\/media\\/HWXMF0bbcAEnfk6(?:\\.(jpg|jpeg|png|webp|gif))?$/.exec(source.pathname);
     const pairs = [...source.searchParams].sort();
     const format = pairs[0]?.[1];
@@ -99,7 +101,16 @@ const CONTENT_LOGPOINT_CONDITION = `(() => {
       requestTweetId: media.metadata?.requestTweetId,
       extractionSource: media.metadata?.extractionSource,
       apiIndex: media.metadata?.apiIndex, domIndex: media.metadata?.domIndex,
-      mediaKey: media.metadata?.apiData?.media_key?.slice(0, 128)
+      mediaKey: media.metadata?.apiData?.media_key?.slice(0, 128),
+      originalSourceResolution: resolution && typeof resolution === 'object' ? {
+        requestedUrl: typeof resolution.requestedUrl === 'string' ? resolution.requestedUrl.slice(0, 256) : null,
+        selectedUrl: typeof resolution.selectedUrl === 'string' ? resolution.selectedUrl.slice(0, 256) : null,
+        attempts: Array.isArray(resolution.attempts) ? resolution.attempts.slice(0, 3).map(item => ({
+          url: typeof item?.url === 'string' ? item.url.slice(0, 256) : null,
+          status: Number.isInteger(item?.status) && item.status >= 100 && item.status <= 599 ? item.status : null,
+          mime: ['image/jpeg','image/png','image/webp'].includes(item?.mime) ? item.mime : null
+        })) : []
+      } : undefined
     },
     generatedFilename: filename.slice(0, 256)
   });
@@ -278,6 +289,7 @@ const SAFE_MESSAGES = new Set([
   'Native initiator differs',
   'Native item URL differs',
   'Live native download interrupted',
+  'Product download failed before native completion',
   'Tracked native ID differs',
   'Tracked owner differs',
   'Tracked URL hash differs',
@@ -1102,17 +1114,8 @@ export async function withFilenameCorrelation<T>(
         assert.equal(nativeItem.state, 'complete', 'Observed native download was not complete');
         const savedPath = nativeSavedPath;
         assert(isAbsolute(savedPath), 'Native file path is not absolute');
-        const ownedRoot = await realpath(downloads);
-        const ownedFile = await realpath(savedPath);
-        const inside = relative(ownedRoot, ownedFile);
-        assert(
-          inside &&
-            inside !== '..' &&
-            !inside.startsWith(`..${process.platform === 'win32' ? '\\' : '/'}`) &&
-            !isAbsolute(inside),
-          'Native file escaped owned downloads directory'
-        );
-        const { bytes } = await readExactDownloadFile(savedPath, expectedBytes.length);
+        const { bytes } = await readOwnedNativeBytes(downloads, savedPath, expectedBytes.length);
+        assert.equal(bytes.length, expectedBytes.length, 'Native download has an unexpected size');
         const size = bytes.length;
         receipt.savedFile = {
           basename: basename(savedPath),

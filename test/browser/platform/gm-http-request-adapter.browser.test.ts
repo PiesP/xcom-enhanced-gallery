@@ -32,6 +32,74 @@ afterEach(() => {
 });
 
 describe('GMHttpRequestAdapter response bounds', () => {
+  it('exposes only the single normalized HEAD MIME and final source URL', () => {
+    let gmDetails: GMXMLHttpRequestDetails | undefined;
+    xmlHttpRequest.mockImplementation((details: GMXMLHttpRequestDetails) => {
+      gmDetails = details;
+      return { abort: vi.fn() };
+    });
+    const source = 'https://pbs.twimg.com/media/HWXMF0bbcAEnfk6?format=jpg&name=orig';
+    const onload = vi.fn();
+    new GMHttpRequestAdapter().request({ method: 'HEAD', url: source, onload });
+    gmDetails?.onload?.({
+      finalUrl: source,
+      readyState: 4,
+      status: 200,
+      statusText: 'OK',
+      responseHeaders:
+        'Content-Type: image/jpeg; charset=binary\r\nAuthorization: private-token\r\nSet-Cookie: private-cookie',
+      response: '',
+      responseText: '',
+      context: undefined,
+    });
+    expect(onload).toHaveBeenCalledWith(
+      expect.objectContaining({
+        finalUrl: source,
+        responseHeaders: 'Content-Type: image/jpeg',
+      })
+    );
+    expect(JSON.stringify(onload.mock.calls)).not.toContain('private-token');
+    expect(JSON.stringify(onload.mock.calls)).not.toContain('private-cookie');
+
+    onload.mockClear();
+    new GMHttpRequestAdapter().request({ method: 'GET', url: source, onload });
+    gmDetails?.onload?.({
+      finalUrl: source,
+      readyState: 4,
+      status: 200,
+      statusText: 'OK',
+      responseHeaders: 'Content-Type: image/jpeg',
+      response: '',
+      responseText: '',
+      context: undefined,
+    });
+    expect(onload).toHaveBeenCalledWith(
+      expect.objectContaining({ finalUrl: '', responseHeaders: '' })
+    );
+  });
+
+  it('rejects conflicting duplicate HEAD MIME headers', () => {
+    let gmDetails: GMXMLHttpRequestDetails | undefined;
+    xmlHttpRequest.mockImplementation((details: GMXMLHttpRequestDetails) => {
+      gmDetails = details;
+      return { abort: vi.fn() };
+    });
+    const source = 'https://pbs.twimg.com/media/HWXMF0bbcAEnfk6?format=jpg&name=orig';
+    const onload = vi.fn();
+    new GMHttpRequestAdapter().request({ method: 'HEAD', url: source, onload });
+    gmDetails?.onload?.({
+      finalUrl: source,
+      readyState: 4,
+      status: 200,
+      statusText: 'OK',
+      responseHeaders: 'Content-Type: image/jpeg\r\nContent-Type: image/png',
+      response: '',
+      responseText: '',
+      context: undefined,
+    });
+    expect(onload).toHaveBeenCalledWith(expect.objectContaining({ responseHeaders: '' }));
+  });
+
   it.each([
     ['https://x.com/i/api/graphql/fixture/TweetResultByRestId', true],
     ['https://pbs.twimg.com/media/redirected.jpg', true],
