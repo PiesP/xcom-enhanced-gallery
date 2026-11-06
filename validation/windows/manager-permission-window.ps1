@@ -294,10 +294,34 @@ try {
             rootProcessId = $inspection.rootProcessId;
             nameTruncated = $inspection.nameTruncated }
     }
+    $receipt.promptScope = $promptScope
     $after = Test-OwnedProcess
+    $afterForeground = [XegPermissionWindow]::GetForegroundWindow()
     $foregroundOwnedAndVisible = [XegPermissionWindow]::IsOwned($foreground, [uint32]$BrowserPid)
-    if ($before.CreationDate -ne $after.CreationDate -or
-        [XegPermissionWindow]::GetForegroundWindow() -ne $foreground -or
+    $sameCreation = ($before.CreationDate -eq $after.CreationDate)
+    $sameForeground = ($afterForeground -eq $foreground)
+    $afterWindows = @()
+    $afterWindowEnumeration = 'complete'
+    try {
+        $afterWindows = @([XegPermissionWindow]::OwnedVisibleWindows([uint32]$BrowserPid))
+    } catch {
+        $afterWindowEnumeration = 'unavailable'
+    }
+    $receipt.identityRecheck = @{
+        beforeCreationUtcTicks = ([datetime]$before.CreationDate).ToUniversalTime().Ticks.ToString();
+        afterCreationUtcTicks = ([datetime]$after.CreationDate).ToUniversalTime().Ticks.ToString();
+        sameCreation = $sameCreation;
+        beforeForegroundHandle = $foreground.ToInt64().ToString();
+        afterForegroundHandle = $afterForeground.ToInt64().ToString();
+        sameForeground = $sameForeground;
+        afterForegroundPid = [XegPermissionWindow]::ProcessIdOf($afterForeground);
+        afterForegroundOwned = [XegPermissionWindow]::IsOwned($afterForeground, [uint32]$BrowserPid);
+        originalForegroundOwnedAndVisible = $foregroundOwnedAndVisible;
+        ownedVisibleWindowEnumeration = $afterWindowEnumeration;
+        ownedVisibleWindowCount = $(if ($afterWindowEnumeration -eq 'complete') { $afterWindows.Count } else { $null });
+        ownedVisibleHandles = @($afterWindows | ForEach-Object { $_.ToInt64().ToString() })
+    }
+    if (-not $sameCreation -or -not $sameForeground -or
         -not $foregroundOwnedAndVisible) {
         throw 'window-identity-changed'
     }
