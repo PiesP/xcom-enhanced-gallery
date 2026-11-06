@@ -11,6 +11,7 @@ import type {
   BrowserContext,
   BrowserType,
   CDPSession,
+  APIResponse,
   ConsoleMessage,
   Locator,
   Page,
@@ -25,6 +26,7 @@ import {
   verifyStoredZip,
 } from './download-memory.ts';
 import { expectedLiveFilename, liveFilenameConforms } from './live-filename.ts';
+import { readOwnedNativeBytes } from './firefox-install.ts';
 import {
   isLiveFilenameOriginal,
   type LiveFilenameTarget,
@@ -4500,22 +4502,62 @@ type LiveNativeItem = {
 };
 
 async function liveNativeInventory(page: Page): Promise<LiveNativeItem[]> {
-  return page.evaluate(async () => {
+  return page.evaluate(async (): Promise<LiveNativeItem[]> => {
     const rows = await chrome.downloads.search({ limit: 32 });
     if (!Array.isArray(rows) || rows.length >= 32) {
       throw new Error('Live manager download inventory exceeded its bound');
     }
-    return rows.map((item) => ({
-      id: item.id,
-      state: item.state,
-      filename: item.filename,
-      url: item.url,
-      finalUrl: Reflect.get(item, 'finalUrl'),
-      error: item.error,
-      fileSize: item.fileSize,
-      byExtensionId: Reflect.get(item, 'byExtensionId'),
-    }));
+    return rows.map((item) => {
+      const finalUrl: unknown = Reflect.get(item, 'finalUrl');
+      const byExtensionId: unknown = Reflect.get(item, 'byExtensionId');
+      return {
+        id: item.id,
+        state: item.state,
+        filename: item.filename,
+        url: item.url,
+        ...(typeof finalUrl === 'string' ? { finalUrl } : {}),
+        ...(typeof item.error === 'string' ? { error: item.error } : {}),
+        ...(typeof item.fileSize === 'number' ? { fileSize: item.fileSize } : {}),
+        ...(typeof byExtensionId === 'string' ? { byExtensionId } : {}),
+      };
+    });
   });
+}
+
+async function retainFailedLiveNativeFiles(
+  downloads: string,
+  output: string,
+  nativeAttempts: unknown
+) {
+  const names = await readdir(downloads);
+  assert(names.length <= 4, 'Failed live profile has too many native entries to retain');
+  const retained: Record<string, unknown>[] = [];
+  let total = 0;
+  for (const name of names) {
+    assert.equal(basename(name), name, 'Native entry has an unsafe basename');
+    const originalPath = join(downloads, name);
+    const observed = await readOwnedNativeBytes(downloads, originalPath, 4 * 1024 * 1024);
+    total += observed.bytes.length;
+    assert(total <= 16 * 1024 * 1024, 'Failed live native retention exceeded total bound');
+    const neutral = 'failure-native-' + (retained.length + 1) + '.bin';
+    const retainedPath = join(output, neutral);
+    await writeFile(retainedPath, observed.bytes, { flag: 'wx' });
+    const verified = await readFile(retainedPath);
+    assert.equal(sha256(verified), sha256(observed.bytes), 'Retained native copy differs');
+    const attempts = Array.isArray(nativeAttempts)
+      ? nativeAttempts.filter((item) =>
+          item && typeof item === 'object' && basename(String(item.filename ?? '')) === name)
+      : [];
+    retained.push({
+      originalPath: observed.filename,
+      originalBasename: name,
+      bytes: observed.bytes.length,
+      sha256: sha256(observed.bytes),
+      retained: neutral,
+      nativeAttempts: attempts,
+    });
+  }
+  return retained;
 }
 
 const LIVE_SANDBOX_PROBE = `(() => {
@@ -4585,11 +4627,30 @@ const LIVE_GM_CALL_CONDITION = `(() => {
   });
   return false;
 })()`;
+const LIVE_OLD_GM_CALL_CONDITION = `(() => {
+  const slot = globalThis.__xegLiveFilename495;
+  if (!slot || slot.calls.length >= 1) return false;
+  slot.calls.push({
+    apiName: 'GM.download',
+    args: { url, name: filename, saveAs: false, timeout: GM_DOWNLOAD_TIMEOUT_MS },
+    returnType: typeof handle,
+    abortType: typeof handle?.abort,
+    thenType: typeof handle?.then
+  });
+  return false;
+})()`;
 
 export function resolveUserscriptGMCallLine(source: string): number | null {
   const lines = source.split(/\r?\n/u);
   const start = lines.findIndex((line) => /^\s*function downloadViaGM\(/u.test(line));
-  if (start < 0) return null;
+  if (start < 0) {
+    const older = lines.findIndex((line) => /^\s*const handle = gmDownloadModern\(\{/u.test(line));
+    if (older < 0) return null;
+    const next = lines.findIndex((line, index) =>
+      index > older && index <= older + 15 && /^\s*if \(settled\) return;/u.test(line));
+    assert(next > older, 'Older installed GM call return site changed');
+    return next;
+  }
   const end = lines.findIndex((line, index) =>
     index > start && /^\s*function \w+\(/u.test(line));
   const range = lines.slice(start, end < 0 ? undefined : end);
@@ -4649,6 +4710,7 @@ export async function runUserscriptLiveInstallation(options: {
   let gmBreakpointId: string | undefined;
   let sandboxId: number | undefined;
   let primaryError: unknown;
+  let dispatchedClicks = 0;
   const cleanupErrors: unknown[] = [];
   try {
     context = await chromium.launchPersistentContext(profile, {
@@ -4710,10 +4772,12 @@ export async function runUserscriptLiveInstallation(options: {
           !(image instanceof HTMLImageElement) || !article ||
           !image.complete || image.naturalWidth <= 0) return null;
       const source = new URL(image.currentSrc || image.src);
+      const sourceMedia = /^\/media\/([A-Za-z0-9_-]{1,40})(?:\.(?:jpg|jpeg|png|webp|gif))?$/u
+        .exec(source.pathname);
       const owner = [...article.querySelectorAll('a[href]')].some((candidate) =>
         new URL((candidate as HTMLAnchorElement).href).pathname === expected.statusPath);
       if (!owner || source.origin !== 'https://pbs.twimg.com' ||
-          !source.pathname.startsWith('/media/' + expected.mediaBasename)) return null;
+          sourceMedia?.[1] !== expected.mediaBasename) return null;
       return { imageSource: image.currentSrc || image.src, actionUrl: element.href,
         width: image.naturalWidth, height: image.naturalHeight };
     }, { statusPath, mediaBasename: target.mediaBasename });
@@ -4733,8 +4797,10 @@ export async function runUserscriptLiveInstallation(options: {
           image.naturalWidth <= 0 || toolbar?.getAttribute('data-current-index') !== index)
         return null;
       const source = new URL(image.currentSrc || image.src);
+      const sourceMedia = /^\/media\/([A-Za-z0-9_-]{1,40})(?:\.(?:jpg|jpeg|png|webp|gif))?$/u
+        .exec(source.pathname);
       return source.origin === 'https://pbs.twimg.com' &&
-        source.pathname.startsWith('/media/' + mediaBasename)
+        sourceMedia?.[1] === mediaBasename
         ? { index, source: image.currentSrc || image.src } : null;
     }, target.mediaBasename);
     assert(selected, 'Live gallery selection differs from reported photo');
@@ -4745,6 +4811,7 @@ export async function runUserscriptLiveInstallation(options: {
       executionContextId: number;
       lineNumber: number;
       gmCallLine: number | null;
+      gmCallKind: 'shared' | 'older-modern' | null;
       sha256: string;
     } | undefined;
     for (const item of scripts) {
@@ -4760,6 +4827,11 @@ export async function runUserscriptLiveInstallation(options: {
         ...item,
         lineNumber: location.lineNumber,
         gmCallLine: resolveUserscriptGMCallLine(text),
+        gmCallKind: text.includes('function downloadViaGM(')
+          ? 'shared'
+          : text.includes('const handle = gmDownloadModern({')
+            ? 'older-modern'
+            : null,
         sha256: location.expectedSourceSha256,
       };
     }
@@ -4787,7 +4859,9 @@ export async function runUserscriptLiveInstallation(options: {
     if (script.gmCallLine !== null) {
       const gmBreakpoint = await debuggerSession.send('Debugger.setBreakpoint', {
         location: { scriptId: script.scriptId, lineNumber: script.gmCallLine },
-        condition: LIVE_GM_CALL_CONDITION,
+        condition: script.gmCallKind === 'older-modern'
+          ? LIVE_OLD_GM_CALL_CONDITION
+          : LIVE_GM_CALL_CONDITION,
       });
       gmBreakpointId = gmBreakpoint.breakpointId;
     }
@@ -4800,9 +4874,12 @@ export async function runUserscriptLiveInstallation(options: {
     for (let number = 1; number <= 2; number += 1) {
       assert.equal(await gallery.locator('[data-gallery-element="toolbar"]')
         .getAttribute('data-focused-index'), selected.index);
-      const before = new Set((await liveNativeInventory(managerPage)).map((item) => item.id));
+      const before: Set<number> = new Set(
+        (await liveNativeInventory(managerPage)).map((item) => item.id)
+      );
       const beforeFiles = new Set(await readdir(downloads));
       const since = observer.snapshot();
+      dispatchedClicks += 1;
       await button.click();
       if (number === 1) {
         const captured = await waitFor(async () => {
@@ -4826,7 +4903,9 @@ export async function runUserscriptLiveInstallation(options: {
         receipt.expectedFilename = requestedName;
         receipt.generatedFilename = captured.generatedFilename;
         receipt.selectedSource = sourceUrlText;
-        const head = await page.request.head(sourceUrlText, { timeout: 15_000, maxRedirects: 0 });
+        const head: APIResponse = await page.request.head(sourceUrlText, {
+          timeout: 15_000, maxRedirects: 0,
+        });
         let length: number;
         try {
           assert.equal(head.status(), 200);
@@ -4835,7 +4914,7 @@ export async function runUserscriptLiveInstallation(options: {
         } finally {
           await head.dispose();
         }
-        const response = await page.request.get(sourceUrlText, {
+        const response: APIResponse = await page.request.get(sourceUrlText, {
           timeout: 20_000, maxRedirects: 0,
         });
         try {
@@ -4847,17 +4926,19 @@ export async function runUserscriptLiveInstallation(options: {
           );
           assert.equal(Number(response.headers()['content-length']), length,
             'Independent original GET length differs from HEAD');
-          original = await response.body();
-          assert.equal(original.length, length);
+          const body: Buffer = await response.body();
+          original = body;
+          assert.equal(body.length, length);
           receipt.independentOriginal = {
-            bytes: length, sha256: sha256(original), contentType: response.headers()['content-type'],
+            bytes: length, sha256: sha256(body), contentType: response.headers()['content-type'],
           };
         } finally {
           await response.dispose();
         }
       }
-      const native = await waitFor(async () => {
-        const added = (await liveNativeInventory(managerPage!)).filter((item) => !before.has(item.id));
+      const native: LiveNativeItem = await waitFor<LiveNativeItem>(async (): Promise<LiveNativeItem | undefined> => {
+        const added: LiveNativeItem[] = (await liveNativeInventory(managerPage!))
+          .filter((item) => !before.has(item.id));
         assert(added.length <= 1, 'One live click created multiple native IDs');
         const attempts = receipt.nativeAttempts as Record<string, unknown>[];
         const current = added[0];
@@ -4885,9 +4966,10 @@ export async function runUserscriptLiveInstallation(options: {
       const { bytes } = await readExactDownloadFile(join(downloads, observedName), original.length);
       assert.equal(sha256(bytes), sha256(original), 'Native original bytes differ from independent GET');
       await observer.flush();
-      const eventCount = observer.snapshot() - since;
+      const eventCount: number = observer.snapshot() - since;
       assert(eventCount <= 1, 'One live click created multiple CDP downloads');
-      const cdpItem = eventCount ? await observer.waitForCompletion(since) : null;
+      const cdpItem: (BrowserDownloadBegin & BrowserDownloadStatus) | null =
+        eventCount ? await observer.waitForCompletion(since) : null;
       if (cdpItem) {
         assert.equal(cdpItem.url, native.url, 'CDP GUID and native ID identify different URLs');
         assert.equal(cdpItem.receivedBytes, bytes.length);
@@ -4913,12 +4995,12 @@ export async function runUserscriptLiveInstallation(options: {
         sha256: sha256(bytes), retained,
       });
       if (number === 1) {
-        const callResult = await debuggerSession.send('Runtime.evaluate', {
+        const callResult: { result?: { value?: unknown } } = await debuggerSession.send('Runtime.evaluate', {
           contextId: sandboxId,
           expression: 'globalThis.__xegLiveFilename495?.calls ?? []',
           returnByValue: true,
         });
-        const calls = callResult.result?.value;
+        const calls: unknown = callResult.result?.value;
         assert(Array.isArray(calls) && calls.length <= 1, 'GM call capture exceeded bound');
         receipt.gmCalls = calls;
         if (calls.length === 1) {
@@ -4986,6 +5068,7 @@ export async function runUserscriptLiveInstallation(options: {
     receipt.error = safeRouteError(error);
   } finally {
     const cleanup = receipt.cleanup as Record<string, unknown>;
+    receipt.dispatchedClicks = dispatchedClicks;
     if (observer) receipt.browserDownloadEvents = observer.events();
     if (debuggerSession && breakpointId) {
       await debuggerSession.send('Debugger.removeBreakpoint', { breakpointId }).then(
@@ -5033,7 +5116,24 @@ export async function runUserscriptLiveInstallation(options: {
       () => { cleanup.browserClosed = true; },
       (error) => cleanupErrors.push(error)
     );
-    if (cleanup.browserClosed || !context) {
+    let failureRetentionComplete = true;
+    if (dispatchedClicks > 0 && (primaryError || cleanupErrors.length)) {
+      try {
+        const retained = await retainFailedLiveNativeFiles(
+          downloads, output, receipt.nativeAttempts
+        );
+        receipt.failedNativeRetention = retained;
+        failureRetentionComplete = retained.length > 0;
+        if (!failureRetentionComplete) {
+          cleanup.failureRetentionError = 'No native file remained after a dispatched save';
+        }
+      } catch (error) {
+        failureRetentionComplete = false;
+        cleanupErrors.push(error);
+        cleanup.failureRetentionError = safeRouteError(error);
+      }
+    }
+    if ((cleanup.browserClosed || !context) && failureRetentionComplete) {
       try {
         assertOwned(root, profile);
         await rm(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
@@ -5043,6 +5143,9 @@ export async function runUserscriptLiveInstallation(options: {
       }
     } else {
       cleanup.profilePreserved = true;
+      cleanup.profilePreservedReason = failureRetentionComplete
+        ? 'browser-close-failed'
+        : 'native-retention-unverified';
     }
     cleanup.errors = cleanupErrors.map(safeRouteError);
     if (cleanupErrors.length) receipt.status = 'failed';
