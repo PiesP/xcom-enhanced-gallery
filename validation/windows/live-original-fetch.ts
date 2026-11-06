@@ -40,7 +40,9 @@ export async function fetchBoundedLiveOriginal(
     let total = 0;
     for (;;) {
       const { value, done } = await reader.read();
-      if (done) break;
+      if (done) {
+        break;
+      }
       assert(value instanceof Uint8Array, 'Independent original yielded non-byte data');
       assert(
         total + value.byteLength <= contentLength && total + value.byteLength <= MAX_ORIGINAL_BYTES,

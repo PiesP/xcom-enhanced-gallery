@@ -4644,7 +4644,9 @@ export function resolveUserscriptGMCallLine(source: string): number | null {
   const start = lines.findIndex((line) => /^\s*function downloadViaGM\(/u.test(line));
   if (start < 0) {
     const older = lines.findIndex((line) => /^\s*const handle = gmDownloadModern\(\{/u.test(line));
-    if (older < 0) return null;
+    if (older < 0) {
+      return null;
+    }
     const next = lines.findIndex(
       (line, index) =>
         index > older && index <= older + 15 && /^\s*if \(settled\) return;/u.test(line)
@@ -4803,8 +4805,11 @@ export async function runUserscriptLiveInstallation(options: {
     debuggerSession.on(
       'Debugger.scriptParsed',
       (item: { scriptId: string; url: string; executionContextId: number }) => {
-        if (scripts.length < 256) scripts.push(item);
-        else scriptOverflow += 1;
+        if (scripts.length < 256) {
+          scripts.push(item);
+        } else {
+          scriptOverflow += 1;
+        }
       }
     );
     await debuggerSession.send('Runtime.enable');
@@ -4827,8 +4832,9 @@ export async function runUserscriptLiveInstallation(options: {
           !article ||
           !image.complete ||
           image.naturalWidth <= 0
-        )
+        ) {
           return null;
+        }
         const source = new URL(image.currentSrc || image.src);
         const sourceMedia =
           /^\/media\/([A-Za-z0-9_-]{1,40})(?:\.(?:jpg|jpeg|png|webp|gif))?$/u.exec(source.pathname);
@@ -4840,8 +4846,9 @@ export async function runUserscriptLiveInstallation(options: {
           !owner ||
           source.origin !== 'https://pbs.twimg.com' ||
           sourceMedia?.[1] !== expected.mediaBasename
-        )
+        ) {
           return null;
+        }
         return {
           imageSource: image.currentSrc || image.src,
           actionUrl: element.href,
@@ -4870,8 +4877,9 @@ export async function runUserscriptLiveInstallation(options: {
         !image.complete ||
         image.naturalWidth <= 0 ||
         toolbar?.getAttribute('data-current-index') !== index
-      )
+      ) {
         return null;
+      }
       const source = new URL(image.currentSrc || image.src);
       const sourceMedia = /^\/media\/([A-Za-z0-9_-]{1,40})(?:\.(?:jpg|jpeg|png|webp|gif))?$/u.exec(
         source.pathname
@@ -4917,8 +4925,9 @@ export async function runUserscriptLiveInstallation(options: {
         })
         .catch(() => null);
       const text = result?.scriptSource;
-      if (!text || text.length > 5_000_000 || !text.includes('function downloadSingleFile('))
+      if (!text || text.length > 5_000_000 || !text.includes('function downloadSingleFile(')) {
         continue;
+      }
       const location = resolveFilenameCaptureLine(text);
       (sourceLookup.matches as Record<string, unknown>[]).push({
         url: diagnosticScriptUrl(item.url),
@@ -5064,8 +5073,9 @@ export async function runUserscriptLiveInstallation(options: {
               error: current.error ?? null,
             });
           }
-          if (added[0]?.state === 'interrupted')
+          if (added[0]?.state === 'interrupted') {
             throw new Error('Native download interrupted: ' + added[0].error);
+          }
           return added[0]?.state === 'complete' ? added[0] : undefined;
         },
         'unique live native completion',
@@ -5237,7 +5247,9 @@ export async function runUserscriptLiveInstallation(options: {
   } finally {
     const cleanup = receipt.cleanup as Record<string, unknown>;
     receipt.dispatchedClicks = dispatchedClicks;
-    if (observer) receipt.browserDownloadEvents = observer.events();
+    if (observer) {
+      receipt.browserDownloadEvents = observer.events();
+    }
     if (debuggerSession && sandboxId && !receipt.diagnosticsRemovedBeforeRepeat) {
       try {
         const captured = await debuggerSession.send('Runtime.evaluate', {
@@ -5266,7 +5278,9 @@ export async function runUserscriptLiveInstallation(options: {
         if (receipt.selectedMedia === undefined && values.events.length === 1) {
           receipt.selectedMedia = values.events[0];
         }
-        if (receipt.gmCalls === undefined) receipt.gmCalls = values.calls;
+        if (receipt.gmCalls === undefined) {
+          receipt.gmCalls = values.calls;
+        }
         cleanup.sandboxDiagnosticsHarvested = true;
       } catch (error) {
         cleanupErrors.push(error);
@@ -5309,34 +5323,38 @@ export async function runUserscriptLiveInstallation(options: {
     }
     observer?.dispose();
     cleanup.downloadObserverRemoved = Boolean(observer);
-    if (managerPage)
+    if (managerPage) {
       await managerPage.close().then(
         () => {
           cleanup.managerPageClosed = true;
         },
         (error) => cleanupErrors.push(error)
       );
-    if (page)
+    }
+    if (page) {
       await page.close().then(
         () => {
           cleanup.livePageClosed = true;
         },
         (error) => cleanupErrors.push(error)
       );
-    if (cdp && managerId)
+    }
+    if (cdp && managerId) {
       await cdp.send('Extensions.uninstall', { id: managerId }).then(
         () => {
           cleanup.managerUninstalled = true;
         },
         (error) => cleanupErrors.push(error)
       );
-    if (context)
+    }
+    if (context) {
       await context.close().then(
         () => {
           cleanup.browserClosed = true;
         },
         (error) => cleanupErrors.push(error)
       );
+    }
     let failureRetentionComplete = true;
     if (dispatchedClicks > 0 && (primaryError || cleanupErrors.length)) {
       try {
@@ -5371,7 +5389,9 @@ export async function runUserscriptLiveInstallation(options: {
         : 'native-retention-unverified';
     }
     cleanup.errors = cleanupErrors.map(safeRouteError);
-    if (cleanupErrors.length) receipt.status = 'failed';
+    if (cleanupErrors.length) {
+      receipt.status = 'failed';
+    }
     await writeFile(join(output, 'userscript-live-result.json'), JSON.stringify(receipt, null, 2));
   }
   if (primaryError || cleanupErrors.length) {

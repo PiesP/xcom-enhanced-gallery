@@ -20504,7 +20504,9 @@ export async function run({
       headless,
       attachmentFilenameProbe,
     });
-    if (reportedFilenameTarget === null) return fixture;
+    if (reportedFilenameTarget === null) {
+      return fixture;
+    }
     const live = await runUserscriptLiveInstallation({
       chromium,
       root,
