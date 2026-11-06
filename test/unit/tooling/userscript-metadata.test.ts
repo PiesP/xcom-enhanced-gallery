@@ -8,6 +8,7 @@ import { Script } from 'node:vm';
 import { TWITTER_API_CONFIG } from '@shared/core/twitter-api/endpoint';
 import { describe, expect, it } from 'vite-plus/test';
 import { buildSummaryPlugin } from '../../../tooling/vite/plugins/build-summary.ts';
+import { solidPreset } from '../../../tooling/vite/presets/solid.ts';
 import {
   DISTRIBUTION_NOTICE_PATHS,
   readDistributionNotices,
@@ -40,6 +41,30 @@ function userscriptBundle(root: string, isDev: boolean): { code: string } {
 }
 
 describe('userscript release metadata provenance', () => {
+  it('keeps CSS settings available to metadata commands and loads Solid for builds', async () => {
+    const previous = process.env.VP_RESOLVING_CONFIG_METADATA;
+    try {
+      process.env.VP_RESOLVING_CONFIG_METADATA = '1';
+      const metadata = solidPreset({ isDev: false, cssClassNamePattern: 'xg-test' });
+      expect(metadata.plugins).toEqual([]);
+      expect(metadata.css).toMatchObject({ modules: { generateScopedName: 'xg-test' } });
+
+      delete process.env.VP_RESOLVING_CONFIG_METADATA;
+      const build = solidPreset({ isDev: true, cssClassNamePattern: 'dev-test' });
+      expect(build.css?.devSourcemap).toBe(true);
+      const pluginGroup = await build.plugins?.[0];
+      expect(pluginGroup).toEqual(
+        expect.arrayContaining([expect.objectContaining({ name: 'solid' })])
+      );
+    } finally {
+      if (previous === undefined) {
+        delete process.env.VP_RESOLVING_CONFIG_METADATA;
+      } else {
+        process.env.VP_RESOLVING_CONFIG_METADATA = previous;
+      }
+    }
+  });
+
   it.each([undefined, '2.3.0-custom'])(
     'keeps production metadata owned by production mode with BUILD_VERSION=%s',
     (override) => {
