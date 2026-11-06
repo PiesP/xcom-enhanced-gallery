@@ -5090,6 +5090,38 @@ export async function runUserscriptLiveInstallation(options: {
     const cleanup = receipt.cleanup as Record<string, unknown>;
     receipt.dispatchedClicks = dispatchedClicks;
     if (observer) receipt.browserDownloadEvents = observer.events();
+    if (debuggerSession && sandboxId && !receipt.diagnosticsRemovedBeforeRepeat) {
+      try {
+        const captured = await debuggerSession.send('Runtime.evaluate', {
+          contextId: sandboxId,
+          expression: '({ events: globalThis.__xegLiveFilename495?.events ?? [], calls: globalThis.__xegLiveFilename495?.calls ?? [] })',
+          returnByValue: true,
+        });
+        assert(!captured.exceptionDetails, 'Failed to harvest live sandbox diagnostics');
+        const values = captured.result?.value as {
+          events?: unknown;
+          calls?: unknown;
+        } | undefined;
+        assert(
+          values &&
+            Array.isArray(values.events) &&
+            values.events.length <= 1 &&
+            Array.isArray(values.calls) &&
+            values.calls.length <= 1,
+          'Live sandbox diagnostic capture exceeded its bound'
+        );
+        receipt.finalSandboxEvents = values.events;
+        receipt.finalSandboxCalls = values.calls;
+        if (receipt.selectedMedia === undefined && values.events.length === 1) {
+          receipt.selectedMedia = values.events[0];
+        }
+        if (receipt.gmCalls === undefined) receipt.gmCalls = values.calls;
+        cleanup.sandboxDiagnosticsHarvested = true;
+      } catch (error) {
+        cleanupErrors.push(error);
+        cleanup.sandboxHarvestError = safeRouteError(error);
+      }
+    }
     if (debuggerSession && breakpointId) {
       await debuggerSession.send('Debugger.removeBreakpoint', { breakpointId }).then(
         () => { cleanup.breakpointRemoved = true; },
