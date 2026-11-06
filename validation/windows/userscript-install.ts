@@ -4639,6 +4639,30 @@ const LIVE_OLD_GM_CALL_CONDITION = `(() => {
   return false;
 })()`;
 
+/** Bind the executed manager wrapper to the exact installed product body. */
+export function bindInstalledUserscriptSource(installed: string, executed: string) {
+  assert(Buffer.byteLength(installed, 'utf8') <= 4 * 1024 * 1024);
+  assert(Buffer.byteLength(executed, 'utf8') <= 5 * 1024 * 1024);
+  const headerEnd = /^\/\/ ==\/UserScript==[ \t]*\r?$/mu.exec(installed);
+  assert(headerEnd, 'Installed userscript metadata boundary is missing');
+  const body = installed.slice(headerEnd.index + headerEnd[0].length).trim();
+  assert(body.length > 0, 'Installed userscript body is empty');
+  const bodyOffsetUtf16 = executed.indexOf(body);
+  assert(bodyOffsetUtf16 >= 0, 'Executed manager wrapper differs from installed product body');
+  assert.equal(
+    executed.indexOf(body, bodyOffsetUtf16 + 1),
+    -1,
+    'Installed product body is ambiguous in executed wrapper'
+  );
+  return {
+    installedSha256: sha256(installed),
+    wrapperSha256: sha256(executed),
+    bodySha256: sha256(body),
+    bodyBytes: Buffer.byteLength(body, 'utf8'),
+    bodyOffsetUtf16,
+  };
+}
+
 export function resolveUserscriptGMCallLine(source: string): number | null {
   const lines = source.split(/\r?\n/u);
   const start = lines.findIndex((line) => /^\s*function downloadViaGM\(/u.test(line));
@@ -4916,6 +4940,7 @@ export async function runUserscriptLiveInstallation(options: {
           gmCallLine: number | null;
           gmCallKind: 'shared' | 'older-modern' | null;
           sha256: string;
+          productBody: ReturnType<typeof bindInstalledUserscriptSource>;
         }
       | undefined;
     for (const item of scripts) {
@@ -4945,6 +4970,7 @@ export async function runUserscriptLiveInstallation(options: {
             ? 'older-modern'
             : null,
         sha256: location.expectedSourceSha256,
+        productBody: bindInstalledUserscriptSource(source.toString('utf8'), text),
       };
     }
     assert(script, 'Installed XCOM download source was not uniquely identified');
